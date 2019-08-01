@@ -1196,6 +1196,31 @@ _compute_hodge_cost(const int       n_ent,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Copy the set of parameters associated to a discrete Hodge operator
+ *         to another one
+ *
+ * \param[in]       h_ref   reference set of parameters
+ * \param[in, out]  h_cpy   set of parameters to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_copy_parameters(const cs_param_hodge_t   *h_ref,
+                         cs_param_hodge_t         *h_cpy)
+{
+  if (h_ref == NULL || h_cpy == NULL)
+    return;
+
+  h_cpy->is_unity = h_ref->is_unity;
+  h_cpy->is_iso = h_ref->is_iso;
+  h_cpy->inv_pty = h_ref->inv_pty;
+  h_cpy->type = h_ref->type;
+  h_cpy->algo = h_ref->algo;
+  h_cpy->coef = h_ref->coef;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Build a local stiffness matrix using the generic COST algo.
  *          The computed matrix is stored in cb->loc
  *          Case of CDO face-based schemes

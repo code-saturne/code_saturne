@@ -105,6 +105,20 @@ cs_hodge_param_is_similar(const cs_param_hodge_t    h1_info,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Copy the set of parameters associated to a discrete Hodge operator
+ *         to another one
+ *
+ * \param[in]       h_ref   reference set of parameters
+ * \param[in, out]  h_cpy   set of parameters to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_copy_parameters(const cs_param_hodge_t   *h_ref,
+                         cs_param_hodge_t         *h_cpy);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Build a local stiffness matrix using the generic COST algo.
  *          The computed matrix is stored in cb->loc
  *          Case of CDO face-based schemes

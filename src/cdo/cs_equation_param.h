@@ -65,7 +65,14 @@ BEGIN_C_DECLS
  * \brief Convection term is needed
  *
  * \def CS_EQUATION_DIFFUSION
- * \brief Diffusion term is needed
+ * \brief Diffusion term is needed. A scalar-/vector-valued Laplacian
+ * with div .grad
+ *
+ * \def CS_EQUATION_CURLCURL
+ * \brief The term related to the curl-curl operator is needed
+ *
+ * \def CS_EQUATION_GRADDIV
+ * \brief The term related to the grad-div operator is needed
  *
  * \def CS_EQUATION_REACTION
  * \brief Reaction term is needed
@@ -75,12 +82,15 @@ BEGIN_C_DECLS
  *       interior degrees of freedom
  *
  */
-#define CS_EQUATION_LOCKED        (1 <<  0)  /* 1 */
-#define CS_EQUATION_UNSTEADY      (1 <<  1)  /* 2 */
-#define CS_EQUATION_CONVECTION    (1 <<  2)  /* 4 */
-#define CS_EQUATION_DIFFUSION     (1 <<  3)  /* 8 */
-#define CS_EQUATION_REACTION      (1 <<  4)  /* 16 */
-#define CS_EQUATION_FORCE_VALUES  (1 <<  5)  /* 32 */
+
+#define CS_EQUATION_LOCKED        (1 <<  0)  /*   1 */
+#define CS_EQUATION_UNSTEADY      (1 <<  1)  /*   2 */
+#define CS_EQUATION_CONVECTION    (1 <<  2)  /*   4 */
+#define CS_EQUATION_DIFFUSION     (1 <<  3)  /*   8 */
+#define CS_EQUATION_CURLCURL      (1 <<  4)  /*  16 */
+#define CS_EQUATION_GRADDIV       (1 <<  5)  /*  32 */
+#define CS_EQUATION_REACTION      (1 <<  6)  /*  64 */
+#define CS_EQUATION_FORCE_VALUES  (1 <<  7)  /* 128 */
 
 /*!
  * @}
@@ -276,7 +286,7 @@ typedef struct {
 
   /*!
    * @}
-   * @name Numerical settings for the diffusion term
+   * @name Numerical settings for the diffusion (Laplacian div-grad) term
    * @{
    *
    * \var diffusion_hodge
@@ -288,6 +298,38 @@ typedef struct {
 
   cs_param_hodge_t              diffusion_hodge;
   cs_property_t                *diffusion_property;
+
+  /*!
+   * @}
+   * @name Numerical settings for the curl-curl term
+   * @{
+   *
+   * \var curlcurl_hodge
+   * Set of parameters for the discrete Hodge operator related to the
+   * curl-curl operator
+   *
+   * \var curlcurl_property
+   * Pointer to the property related to the curl-curl term
+   */
+
+  cs_param_hodge_t              curlcurl_hodge;
+  cs_property_t                *curlcurl_property;
+
+  /*!
+   * @}
+   * @name Numerical settings for the grad-div term
+   * @{
+   *
+   * \var graddiv_hodge
+   * Set of parameters for the discrete Hodge operator related to the grad-div
+   * operator
+   *
+   * \var graddiv_property
+   * Pointer to the property related to the grad-div term
+   */
+
+  cs_param_hodge_t              graddiv_hodge;
+  cs_property_t                *graddiv_property;
 
   /*!
    * @}
@@ -718,6 +760,46 @@ cs_equation_param_has_diffusion(const cs_equation_param_t     *eqp)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Ask if the parameters of the equation needs a curl-curl term
+ *
+ * \param[in] eqp          pointer to a \ref cs_equation_param_t
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_equation_param_has_curlcurl(const cs_equation_param_t     *eqp)
+{
+  assert(eqp != NULL);
+  if (eqp->flag & CS_EQUATION_CURLCURL)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Ask if the parameters of the equation needs a grad-div term
+ *
+ * \param[in] eqp          pointer to a \ref cs_equation_param_t
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_equation_param_has_graddiv(const cs_equation_param_t     *eqp)
+{
+  assert(eqp != NULL);
+  if (eqp->flag & CS_EQUATION_GRADDIV)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Ask if the parameters of the equation needs a convection term
  *
  * \param[in] eqp          pointer to a \ref cs_equation_param_t
@@ -1119,8 +1201,10 @@ cs_equation_add_sliding_condition(cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize a new structure to store parameters related
- *         to a diffusion term
+ * \brief  Associate a new term related to the Laplacian operator for the
+ *         equation associated to the given \ref cs_equation_param_t structure
+ *         Laplacian means div-grad (either for vector-valued or scalar-valued
+ *         equations)
  *
  * \param[in, out] eqp        pointer to a cs_equation_param_t structure
  * \param[in]      property   pointer to a cs_property_t structure
@@ -1133,8 +1217,37 @@ cs_equation_add_diffusion(cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize a new structure to store parameters related
- *         to an unsteady term
+ * \brief  Associate a new term related to the curl-curl operator for the
+ *         equation associated to the given \ref cs_equation_param_t structure
+ *
+ * \param[in, out] eqp        pointer to a cs_equation_param_t structure
+ * \param[in]      property   pointer to a cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_curlcurl(cs_equation_param_t   *eqp,
+                         cs_property_t         *property);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Associate a new term related to the grad-div operator for the
+ *         equation associated to the given \ref cs_equation_param_t structure
+ *
+ * \param[in, out] eqp        pointer to a cs_equation_param_t structure
+ * \param[in]      property   pointer to a cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_graddiv(cs_equation_param_t   *eqp,
+                        cs_property_t         *property);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Associate a new term related to the time derivative operator for
+ *         the equation associated to the given \ref cs_equation_param_t
+ *         structure
  *
  * \param[in, out] eqp        pointer to a cs_equation_param_t structure
  * \param[in]      property   pointer to a cs_property_t structure
@@ -1147,8 +1260,8 @@ cs_equation_add_time(cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize a new structure to store parameters related
- *         to an advection term
+ * \brief  Associate a new term related to the advection operator for the
+ *         equation associated to the given \ref cs_equation_param_t structure
  *
  * \param[in, out] eqp        pointer to a cs_equation_param_t structure
  * \param[in]      adv_field  pointer to a cs_adv_field_t structure
@@ -1161,8 +1274,8 @@ cs_equation_add_advection(cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize a new structure to store parameters related
- *         to a reaction term
+ * \brief  Associate a new term related to the reaction operator for the
+ *         equation associated to the given \ref cs_equation_param_t structure
  *
  * \param[in, out] eqp        pointer to a cs_equation_param_t structure
  * \param[in]      property   pointer to a cs_property_t structure

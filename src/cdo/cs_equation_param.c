@@ -49,6 +49,7 @@
 #include "cs_boundary_zone.h"
 #include "cs_cdo_bc.h"
 #include "cs_fp_exception.h"
+#include "cs_hodge.h"
 #include "cs_log.h"
 #include "cs_mesh_location.h"
 #include "cs_multigrid.h"
@@ -1059,6 +1060,28 @@ cs_equation_create_param(const char            *name,
     .coef = 1./3.,
   };
 
+  /* Description of the discetization of the curl-curl term */
+  eqp->curlcurl_property = NULL;
+  eqp->curlcurl_hodge = (cs_param_hodge_t) {
+    .is_unity = false,
+    .is_iso = true,
+    .inv_pty = false,
+    .algo = CS_PARAM_HODGE_ALGO_COST,
+    .type = CS_PARAM_HODGE_TYPE_FPED,
+    .coef = 1./3.,
+  };
+
+  /* Description of the discetization of the grad-div term */
+  eqp->graddiv_property = NULL;
+  eqp->graddiv_hodge = (cs_param_hodge_t) {
+    .is_unity = true,
+    .is_iso = true,
+    .inv_pty = false,
+    .algo = CS_PARAM_HODGE_ALGO_VORONOI,
+    .type = CS_PARAM_HODGE_TYPE_EPFD,
+    .coef = 1./3.,
+  };
+
   /* Advection term */
   eqp->adv_field = NULL;
   eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
@@ -1142,17 +1165,12 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
     dst->bc_defs[i] = cs_xdef_copy(ref->bc_defs[i]);
 
   /* Description of the time discretization */
-  dst->time_hodge.is_unity = ref->time_hodge.is_unity;
-  dst->time_hodge.is_iso = ref->time_hodge.is_iso;
-  dst->time_hodge.inv_pty = ref->time_hodge.inv_pty;
-  dst->time_hodge.type = ref->time_hodge.type;
-  dst->time_hodge.algo = ref->time_hodge.algo;
-  dst->time_hodge.coef = ref->time_hodge.coef;
-
-  dst->time_property = ref->time_property;
   dst->time_scheme = ref->time_scheme;
   dst->theta = ref->theta;
   dst->do_lumping = ref->do_lumping;
+  dst->time_property = ref->time_property;
+
+  cs_hodge_copy_parameters(&(ref->time_hodge), &(dst->time_hodge));
 
   /* Initial condition (zero value by default) */
   dst->n_ic_defs = ref->n_ic_defs;
@@ -1162,12 +1180,18 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
 
   /* Diffusion term */
   dst->diffusion_property = ref->diffusion_property;
-  dst->diffusion_hodge.is_unity = ref->diffusion_hodge.is_unity;
-  dst->diffusion_hodge.is_iso = ref->diffusion_hodge.is_iso;
-  dst->diffusion_hodge.inv_pty = ref->diffusion_hodge.inv_pty;
-  dst->diffusion_hodge.type = ref->diffusion_hodge.type;
-  dst->diffusion_hodge.algo = ref->diffusion_hodge.algo;
-  dst->diffusion_hodge.coef = ref->diffusion_hodge.coef;
+
+  cs_hodge_copy_parameters(&(ref->diffusion_hodge), &(dst->diffusion_hodge));
+
+  /* Curl-curl term */
+  dst->curlcurl_property = ref->curlcurl_property;
+
+  cs_hodge_copy_parameters(&(ref->curlcurl_hodge), &(dst->curlcurl_hodge));
+
+  /* Grad-div term */
+  dst->graddiv_property = ref->graddiv_property;
+
+  cs_hodge_copy_parameters(&(ref->graddiv_hodge), &(dst->graddiv_hodge));
 
   /* Advection term */
   dst->adv_formulation = ref->adv_formulation;
@@ -1176,16 +1200,12 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
   dst->adv_field = ref->adv_field;
 
   /* Reaction term */
-  dst->reaction_hodge.is_unity = ref->reaction_hodge.is_unity;
-  dst->reaction_hodge.is_iso = ref->reaction_hodge.is_iso;
-  dst->reaction_hodge.inv_pty = ref->reaction_hodge.inv_pty;
-  dst->reaction_hodge.algo = ref->reaction_hodge.algo;
-  dst->reaction_hodge.type = ref->reaction_hodge.type;
-
   dst->n_reaction_terms = ref->n_reaction_terms;
   BFT_MALLOC(dst->reaction_properties, dst->n_reaction_terms, cs_property_t *);
   for (int i = 0; i < ref->n_reaction_terms; i++)
     dst->reaction_properties[i] = ref->reaction_properties[i];
+
+  cs_hodge_copy_parameters(&(ref->reaction_hodge), &(dst->reaction_hodge));
 
   /* Source term */
   dst->n_source_terms = ref->n_source_terms;
@@ -1723,6 +1743,8 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
   bool  unsteady = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
   bool  convection = (eqp->flag & CS_EQUATION_CONVECTION) ? true : false;
   bool  diffusion = (eqp->flag & CS_EQUATION_DIFFUSION) ? true : false;
+  bool  curlcurl = (eqp->flag & CS_EQUATION_CURLCURL) ? true : false;
+  bool  graddiv = (eqp->flag & CS_EQUATION_GRADDIV) ? true : false;
   bool  reaction = (eqp->flag & CS_EQUATION_REACTION) ? true : false;
   bool  source_term = (eqp->n_source_terms > 0) ? true : false;
   bool  force_values = (eqp->flag & CS_EQUATION_FORCE_VALUES) ? true : false;
@@ -1731,6 +1753,9 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
                 "  * %s | Terms: unsteady:%s, convection:%s, diffusion:%s\n",
                 eqname, cs_base_strtf(unsteady), cs_base_strtf(convection),
                 cs_base_strtf(diffusion));
+  cs_log_printf(CS_LOG_SETUP,
+                "  * %s | Terms: curl-curl:%s, grad-div:%s\n",
+                eqname, cs_base_strtf(curlcurl), cs_base_strtf(graddiv));
   cs_log_printf(CS_LOG_SETUP,
                 "  * %s | Terms: reaction:%s, source term:%s,"
                 " force internal values: %s\n",
@@ -1831,7 +1856,6 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
   if (diffusion) {
 
     cs_log_printf(CS_LOG_SETUP, "\n### %s: Diffusion term settings\n", eqname);
-
     cs_log_printf(CS_LOG_SETUP, "  * %s | Diffusion property: %s\n\n",
                   eqname, cs_property_get_name(eqp->diffusion_property));
 
@@ -1840,10 +1864,31 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
 
   } /* Diffusion term */
 
+  if (curlcurl) {
+
+    cs_log_printf(CS_LOG_SETUP, "\n### %s: Curl-Curl term settings\n", eqname);
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Curl-Curl property: %s\n\n",
+                  eqname, cs_property_get_name(eqp->curlcurl_property));
+
+    sprintf(prefix, "        Curl-curl Hodge op. ");
+    cs_param_hodge_log(prefix, eqp->curlcurl_hodge);
+
+  } /* Curl-curl term */
+
+  if (graddiv) {
+
+    cs_log_printf(CS_LOG_SETUP, "\n### %s: Grad-Div term settings\n", eqname);
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Grad-Div property: %s\n\n",
+                  eqname, cs_property_get_name(eqp->graddiv_property));
+
+    sprintf(prefix, "        Grad-Div Hodge op. ");
+    cs_param_hodge_log(prefix, eqp->graddiv_hodge);
+
+  } /* Curl-curl term */
+
   if (convection) {
 
     cs_log_printf(CS_LOG_SETUP, "\n### %s: Advection term settings\n", eqname);
-
     cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Field: %s\n",
                   eqname, cs_advection_field_get_name(eqp->adv_field));
 
@@ -2374,8 +2419,10 @@ cs_equation_add_sliding_condition(cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize a new structure to store parameters related
- *         to a diffusion term
+ * \brief  Associate a new term related to the Laplacian operator for the
+ *         equation associated to the given \ref cs_equation_param_t structure
+ *         Laplacian means div-grad (either for vector-valued or scalar-valued
+ *         equations)
  *
  * \param[in, out] eqp        pointer to a cs_equation_param_t structure
  * \param[in]      property   pointer to a cs_property_t structure
@@ -2401,8 +2448,63 @@ cs_equation_add_diffusion(cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize a new structure to store parameters related
- *         to an unsteady term
+ * \brief  Associate a new term related to the curl-curl operator for the
+ *         equation associated to the given \ref cs_equation_param_t structure
+ *
+ * \param[in, out] eqp        pointer to a cs_equation_param_t structure
+ * \param[in]      property   pointer to a cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_curlcurl(cs_equation_param_t   *eqp,
+                         cs_property_t         *property)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+  assert(property != NULL);
+
+  eqp->flag |= CS_EQUATION_CURLCURL;
+  eqp->curlcurl_property = property;
+  cs_property_type_t  type = cs_property_get_type(eqp->curlcurl_property);
+  if (type == CS_PROPERTY_ISO)
+    eqp->curlcurl_hodge.is_iso = true;
+  else
+    eqp->curlcurl_hodge.is_iso = false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Associate a new term related to the grad-div operator for the
+ *         equation associated to the given \ref cs_equation_param_t structure
+ *
+ * \param[in, out] eqp        pointer to a cs_equation_param_t structure
+ * \param[in]      property   pointer to a cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_graddiv(cs_equation_param_t   *eqp,
+                        cs_property_t         *property)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+  assert(property != NULL);
+
+  eqp->flag |= CS_EQUATION_GRADDIV;
+  eqp->graddiv_property = property;
+  cs_property_type_t  type = cs_property_get_type(eqp->graddiv_property);
+  if (type == CS_PROPERTY_ISO)
+    eqp->graddiv_hodge.is_iso = true;
+  else
+    eqp->graddiv_hodge.is_iso = false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Associate a new term related to the time derivative operator for
+ *         the equation associated to the given \ref cs_equation_param_t
+ *         structure
  *
  * \param[in, out] eqp        pointer to a cs_equation_param_t structure
  * \param[in]      property   pointer to a cs_property_t structure
@@ -2423,8 +2525,8 @@ cs_equation_add_time(cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize a new structure to store parameters related
- *         to an advection term
+ * \brief  Associate a new term related to the advection operator for the
+ *         equation associated to the given \ref cs_equation_param_t structure
  *
  * \param[in, out] eqp        pointer to a cs_equation_param_t structure
  * \param[in]      adv_field  pointer to a cs_adv_field_t structure
@@ -2445,8 +2547,8 @@ cs_equation_add_advection(cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define and initialize a new structure to store parameters related
- *         to a reaction term
+ * \brief  Associate a new term related to the reaction operator for the
+ *         equation associated to the given \ref cs_equation_param_t structure
  *
  * \param[in, out] eqp        pointer to a cs_equation_param_t structure
  * \param[in]      property   pointer to a cs_property_t structure

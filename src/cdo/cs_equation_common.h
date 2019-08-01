@@ -100,6 +100,8 @@ typedef struct {
    */
 
   bool   diff_pty_uniform;      /*!< Is diffusion property uniform ? */
+  bool   curlcurl_pty_uniform;  /*!< Is curl-curl property uniform ? */
+  bool   graddiv_pty_uniform;   /*!< Is grad-div property uniform ? */
   bool   time_pty_uniform;      /*!< Is time property uniform ? */
   bool   reac_pty_uniform[CS_CDO_N_MAX_REACTIONS]; /*!< Is each reaction
                                                     * property uniform ? */
@@ -241,11 +243,50 @@ cs_equation_set_diffusion_property(const cs_equation_param_t  *eqp,
     cb->dpty_val = cb->dpty_mat[0][0];
 
   /* Set additional quantities in case of more advanced way of enforcing the
-     Dirichlet BCs */
+     essential BCs */
   if (c_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
     if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
         eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
       cs_math_33_eigen((const cs_real_t (*)[3])cb->dpty_mat,
+                       &(cb->eig_ratio),
+                       &(cb->eig_max));
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the curl-curl property inside a cell and its related quantities
+ *
+ * \param[in]      eqp     pointer to a cs_equation_param_t structure
+ * \param[in]      c_id    id of the cell to deal with
+ * \param[in]      t_eval  time at which one performs the evaluation
+ * \param[in]      c_flag  flag related to this cell
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_equation_set_curlcurl_property(const cs_equation_param_t  *eqp,
+                                  const cs_lnum_t             c_id,
+                                  const cs_real_t             t_eval,
+                                  const cs_flag_t             c_flag,
+                                  cs_cell_builder_t          *cb)
+{
+  cs_property_get_cell_tensor(c_id,
+                              t_eval,
+                              eqp->curlcurl_property,
+                              eqp->curlcurl_hodge.inv_pty,
+                              cb->cpty_mat);
+
+  if (cs_property_is_isotropic(eqp->curlcurl_property))
+    cb->cpty_val = cb->cpty_mat[0][0];
+
+  /* Set additional quantities in case of more advanced way of enforcing
+     essential BCs */
+  if (c_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
+    if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+        eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+      cs_math_33_eigen((const cs_real_t (*)[3])cb->cpty_mat,
                        &(cb->eig_ratio),
                        &(cb->eig_max));
   }
@@ -281,11 +322,51 @@ cs_equation_set_diffusion_property_cw(const cs_equation_param_t   *eqp,
     cb->dpty_val = cb->dpty_mat[0][0];
 
   /* Set additional quantities in case of more advanced way of enforcing the
-     Dirichlet BCs */
+     essential BCs */
   if (c_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
     if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
         eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
       cs_math_33_eigen((const cs_real_t (*)[3])cb->dpty_mat,
+                       &(cb->eig_ratio),
+                       &(cb->eig_max));
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the curl-curl property inside a cell and its related quantities.
+ *         Cellwise version using a cs_cell_mesh_t structure
+ *
+ * \param[in]      eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]      t_eval    time at which one performs the evaluation
+ * \param[in]      c_flag    flag related to this cell
+ * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_equation_set_curlcurl_property_cw(const cs_equation_param_t    *eqp,
+                                     const cs_cell_mesh_t         *cm,
+                                     const cs_real_t               t_eval,
+                                     const cs_flag_t               c_flag,
+                                     cs_cell_builder_t            *cb)
+{
+  cs_property_tensor_in_cell(cm,
+                             eqp->curlcurl_property,
+                             t_eval,
+                             eqp->curlcurl_hodge.inv_pty,
+                             cb->cpty_mat);
+
+  if (cs_property_is_isotropic(eqp->curlcurl_property))
+    cb->cpty_val = cb->cpty_mat[0][0];
+
+  /* Set additional quantities in case of more advanced way of enforcing the
+     essential BCs */
+  if (c_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
+    if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+        eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+      cs_math_33_eigen((const cs_real_t (*)[3])cb->cpty_mat,
                        &(cb->eig_ratio),
                        &(cb->eig_max));
   }

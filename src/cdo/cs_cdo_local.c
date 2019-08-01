@@ -521,6 +521,11 @@ cs_cell_builder_create(void)
   cb->dpty_mat[0][1] = cb->dpty_mat[1][0] = cb->dpty_mat[2][0] = 0;
   cb->dpty_mat[0][2] = cb->dpty_mat[1][2] = cb->dpty_mat[2][1] = 0;
   cb->dpty_val = 1;
+  cb->cpty_mat[0][0] = cb->cpty_mat[1][1] = cb->cpty_mat[2][2] = 1;
+  cb->cpty_mat[0][1] = cb->cpty_mat[1][0] = cb->cpty_mat[2][0] = 0;
+  cb->cpty_mat[0][2] = cb->cpty_mat[1][2] = cb->cpty_mat[2][1] = 0;
+  cb->cpty_val = 1;
+  cb->gpty_val = 1;
   cb->tpty_val = 1;
   cb->rpty_val = 1;
 

@@ -59,9 +59,15 @@ typedef struct {
   double     eig_ratio; /*!< ratio of the eigenvalues of the diffusion tensor */
   double     eig_max;   /*!< max. value among eigenvalues */
 
-  /* Store the cellwise value for the diffusion, time and reaction properties */
+  /* Store the cellwise value for the diffusion, curl-curl, grad-div, time
+     and reaction properties */
   cs_real_33_t  dpty_mat; /*!< Property tensor if not isotropic for diffusion */
-  double        dpty_val; /*!< Property value if isotropic for diffusion*/
+  double        dpty_val; /*!< Property value if isotropic for diffusion */
+
+  cs_real_33_t  cpty_mat; /*!< Property tensor if not isotropic for curl-curl */
+  double        cpty_val; /*!< Property value if isotropic for curl-curl */
+
+  double        gpty_val; /*!< Property value if isotropic for grad-div */
 
   double        tpty_val; /*!< Property value for time operator */
 

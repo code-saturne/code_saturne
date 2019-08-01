@@ -281,14 +281,25 @@ cs_equation_init_builder(const cs_equation_param_t   *eqp,
   if (cs_equation_param_has_diffusion(eqp))
     eqb->diff_pty_uniform = cs_property_is_uniform(eqp->diffusion_property);
 
+  eqb->curlcurl_pty_uniform = true;
+  if (cs_equation_param_has_curlcurl(eqp))
+    eqb->curlcurl_pty_uniform = cs_property_is_uniform(eqp->curlcurl_property);
+
+  eqb->graddiv_pty_uniform = true;
+  if (cs_equation_param_has_graddiv(eqp))
+    eqb->graddiv_pty_uniform = cs_property_is_uniform(eqp->graddiv_property);
+
   eqb->time_pty_uniform = true;
   if (cs_equation_param_has_time(eqp))
     eqb->time_pty_uniform = cs_property_is_uniform(eqp->time_property);
 
   if (eqp->n_reaction_terms > CS_CDO_N_MAX_REACTIONS)
     bft_error(__FILE__, __LINE__, 0,
-              " Number of reaction terms for an equation is too high.\n"
-              " Modify your settings aor contact the developpement team.");
+              " %s: Number of reaction terms for an equation is too high.\n"
+              " Current value: %d (max: %d)\n"
+              " Change the value of CS_CDO_N_MAX_REACTIONS in the code or\n"
+              " modify your settings or contact the developpement team.",
+              __func__, eqp->n_reaction_terms, CS_CDO_N_MAX_REACTIONS);
 
   for (int i = 0; i < eqp->n_reaction_terms; i++)
     eqb->reac_pty_uniform[i]
@@ -779,12 +790,28 @@ cs_equation_init_properties(const cs_equation_param_t     *eqp,
   /* Preparatory step for diffusion term */
   if (cs_equation_param_has_diffusion(eqp))
     if (eqb->diff_pty_uniform)
-      /* One call this function as if it's a boundary cell */
+      /* One calls this function as if it's a boundary cell to scan all tests */
       cs_equation_set_diffusion_property(eqp,
                                          0, /* cell_id */
                                          t_eval,
                                          CS_FLAG_BOUNDARY_CELL_BY_FACE,
                                          cb);
+
+  /* Preparatory step for curl-curl term */
+  if (cs_equation_param_has_curlcurl(eqp))
+    if (eqb->curlcurl_pty_uniform)
+      /* One calls this function as if it's a boundary cell to scan all tests */
+      cs_equation_set_curlcurl_property(eqp,
+                                        0, /* cell_id */
+                                        t_eval,
+                                        CS_FLAG_BOUNDARY_CELL_BY_FACE,
+                                        cb);
+
+  /* Preparatory step for grad-div term */
+  if (cs_equation_param_has_graddiv(eqp))
+    if (eqb->graddiv_pty_uniform)
+      cb->gpty_val = cs_property_get_cell_value(0, t_eval,
+                                                eqp->graddiv_property);
 
   /* Preparatory step for unsteady term */
   if (cs_equation_param_has_time(eqp))
@@ -836,6 +863,12 @@ cs_equation_init_properties_cw(const cs_equation_param_t     *eqp,
   if (cs_equation_param_has_diffusion(eqp))
     if (!(eqb->diff_pty_uniform))
       cs_equation_set_diffusion_property_cw(eqp, cm, t_eval, cell_flag, cb);
+
+  /* Set the property related to the curl-curl operator */
+  if (cs_equation_param_has_curlcurl(eqp)) {
+    if (!(eqb->curlcurl_pty_uniform))
+      cs_equation_set_curlcurl_property_cw(eqp, cm, t_eval, cell_flag, cb);
+  }
 
   /* Set the (linear) reaction property */
   if (cs_equation_param_has_reaction(eqp)) {
