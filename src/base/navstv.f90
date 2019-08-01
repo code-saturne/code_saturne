@@ -451,7 +451,8 @@ endif
 !===============================================================================
 
 ! Note, for the compressible algorithm written in pressure increment,
-! this step is performed in the same time as the incompressible algorithm
+! this step is merged with the pressure correction step of the incompressible
+! algorithm
 if (ippmod(icompf).ge.0.and.ippmod(icompf).ne.3) then
 
   if(vcopt_p%iwarni.ge.1) then
