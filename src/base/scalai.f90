@@ -185,11 +185,6 @@ if (nscapp.gt.0) then
 !                QUE LES SCALAIRES SOIENT RESOLUS AVANT
 !                LEUR VARIANCE ASSOCIEE
 
-
-
-
-
-
 ! ---> Boucle sur les scalaires physiques particulieres.
 !      On peut imaginer a la place des resolutions couplees.
 !      Ici, on ne donne qu'un exemple.
