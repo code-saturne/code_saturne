@@ -487,7 +487,7 @@ if (iporos.ge.1) then
     call field_create(f_name,&
                       itycat,&
                       2,& ! location: inner faces
-                      1,& ! dimension
+                      2,& ! dimension: 2 per face
                       .false.,&
                       f_id)
 
