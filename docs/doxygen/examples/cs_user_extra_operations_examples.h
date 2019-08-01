@@ -37,8 +37,9 @@
   \section cs_user_extra_operations_examples_cs_user_extra_op_examples Extra operations examples
   Here is the list of examples dedicated to different physics:
 
-  - \subpage cs_user_extra_operations_examples_energy_balance_p
   - \subpage cs_user_extra_operations_examples_balance_by_zone_p
+  - \subpage cs_user_extra_operations_examples_scalar_balance_p
+  - \subpage cs_user_extra_operations_examples_energy_balance_p
   - \subpage cs_user_extra_operations_examples_force_temperature_p
   - \subpage cs_user_extra_operations_examples_boundary_forces_p
   - \subpage cs_user_extra_operations_examples_parallel_operations_p
@@ -272,6 +273,38 @@
   The following exemple shows how to access for example the mass flow
   components of the pressure drop computation:
   \snippet cs_user_extra_operations-balance_by_zone.c example_6
+
+*/
+// __________________________________________________________________________________
+/*!
+
+  \page cs_user_extra_operations_examples_scalar_balance_p Scalar balance on full domain
+
+  \section cs_user_extra_operations_examples_scalar_balance Scalar balance on full domain
+
+  This is an example of \ref cs_user_extra_operations which performs a scalar
+  balance on the full computational domain. It is possible to customize the output to extract
+  the contribution of some boundary zones of interest.
+
+  Define local variables
+
+  \snippet cs_user_extra_operations-scalar_balance.c local_variables
+
+  Get the physical fields
+
+  \snippet cs_user_extra_operations-scalar_balance.c local_variables
+
+  Initialization step
+
+  \snippet cs_user_extra_operations-scalar_balance.c init
+
+  Computation step
+
+  \snippet cs_user_extra_operations-scalar_balance.c computation
+
+  Write the balance at time step n
+
+  \snippet cs_user_extra_operations-scalar_balance.c computation
 
 */
 // __________________________________________________________________________________

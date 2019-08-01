@@ -89,6 +89,9 @@ cs_user_extra_operations(cs_domain_t     *domain)
 {
 
   /* Local variables */
+
+  /*! [local_variables] */
+
   cs_lnum_t n_faces;
   cs_lnum_t *face_list;
 
@@ -110,10 +113,16 @@ cs_user_extra_operations(cs_domain_t     *domain)
   const cs_real_3_t *diipb = (const cs_real_3_t *)mq->diipb;
   const cs_real_t *b_face_surf = (const cs_real_t *)mq->b_face_surf;
 
+  /*! [local_variables] */
+
+  /*! [physical_fields] */
+
   /* Get physical fields */
   const cs_real_t *dt = CS_F_(dt)->val;
   const cs_real_t *rho = CS_F_(rho)->val;
   const cs_field_t *h = cs_field_by_name_try("enthalpy");
+
+  /*! [physical_fields] */
 
   /*-------------------------------------------------------------------------
    * This example computes energy balance relative to enthalpy
@@ -149,6 +158,8 @@ cs_user_extra_operations(cs_domain_t     *domain)
     mass_i_balance: contribution from mass injections
     mass_o_balance: constribution from mass suctions
     tot_balance   : total balance */
+
+  /*! [init] */
 
   double vol_balance = 0.;
   double div_balance = 0.;
@@ -211,11 +222,18 @@ cs_user_extra_operations(cs_domain_t     *domain)
     }
   }
 
+  /*! [init] */
+
   /* 2. Compute the balance at time step n
     ======================================
+  */
 
+  /*! [computation] */
+
+  /*
     --> Balance on interior volumes
-        --------------------------- */
+        ---------------------------
+  */
 
   for (cell_id = 0; cell_id < n_cells; cell_id++) {
     vol_balance += cell_vol[cell_id] * rho[cell_id]
@@ -391,8 +409,13 @@ cs_user_extra_operations(cs_domain_t     *domain)
               + sym_balance + in_balance + out_balance + mass_i_balance
               + mass_o_balance;
 
+  /*! [computation] */
+
+
   /* 3. Write the balance at time step n
     ==================================== */
+
+  /*! [writing] */
 
   bft_printf("\n   ** Enthalpy balance **\n"
              "      ----------------\n"
@@ -408,6 +431,8 @@ cs_user_extra_operations(cs_domain_t     *domain)
     nt_cur, vol_balance, div_balance, a_wall_balance, h_wall_balance,
     sym_balance, in_balance, out_balance,
     mass_i_balance, mass_o_balance, tot_balance);
+
+  /*! [writing] */
 
 }
 
