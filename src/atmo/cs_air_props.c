@@ -626,16 +626,16 @@ cs_rho_humidair(const cs_real_t qwt,
   cs_real_t clatev = phys_pro->clatev;
   cs_real_t cp0 = phys_pro->cp0;
 
-  cs_real_t qsl = cs_air_yw_sat(t_h, p); 	// saturated vapor content
+  cs_real_t qsl = cs_air_yw_sat(t_h, p);         // saturated vapor content
   cs_real_t deltaq = qwt - qsl;
-  cs_real_t t_h_k = t_h + tkelvi; 	// temperature in kelvin
+  cs_real_t t_h_k = t_h + tkelvi;         // temperature in kelvin
 
-  if (deltaq <= 0.) {	 		// unsaturated air parcel
-    lrhum 	= rair*(1. + (rvsra - 1.)*qwt);
+  if (deltaq <= 0.) {                         // unsaturated air parcel
+    lrhum         = rair*(1. + (rvsra - 1.)*qwt);
     // density of the air parcel
     rho_h = p/(lrhum*t_h_k);
     }
-  else { 				// saturated (ie. with liquid water) air parcel
+  else {                                 // saturated (ie. with liquid water) air parcel
     cs_real_t qliq = deltaq/(1. + qsl*pow(clatev,2.)/(rair*rvsra*cp0*pow(t_h_k,2.)));
     lrhum = rair*(1. - qliq + (rvsra - 1.)*(qwt - qliq));
     // density

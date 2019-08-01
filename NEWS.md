@@ -60,7 +60,7 @@ Bug fixes:
   * without gravity and without hydro. pressure treatment.
   Note that the default behaviour (GUI) was to enable the hydro. pressure
   treatment at walls. Hence in all cases with this default setting and no
-  gravity, this fix has no impact.    
+  gravity, this fix has no impact.
 
 - Fix time stepping of VoF / Cavitation algo. (density in unsteady term of
   momentum equation) and ensure variable density indicator (irovar) is set to 1
