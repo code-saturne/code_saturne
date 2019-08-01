@@ -1135,10 +1135,11 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
 
   if (pty->type != CS_PROPERTY_ISO)
     bft_error(__FILE__, __LINE__, 0,
-              " Invalid type of property for this function.\n"
-              " Property %s has to be isotropic.", pty->name);
+              " %s: Invalid type of property for this function.\n"
+              " Property %s has to be isotropic.", __func__, pty->name);
 
   if (pty->n_definitions > 1) {
+    assert(pty->def_ids != NULL);
     def_id = pty->def_ids[c_id];
     assert(def_id > -1);
   }

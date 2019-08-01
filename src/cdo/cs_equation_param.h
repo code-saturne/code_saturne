@@ -623,9 +623,9 @@ typedef struct {
  * the "vol_tot" option is used for rescaling the residual.
  *
  * Available choices are:
- * "false" or "none"
+ * "false" or "none" (default)
  * "vol_tot"
- * "weighted_rhs" (default)
+ * "weighted_rhs"
  * "matrix_diag"
  *
  * \var CS_EQKEY_OMP_ASSEMBLY_STRATEGY
@@ -997,7 +997,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
  * \brief Set parameters for initializing SLES structures used for the
  *        resolution of the linear system.
  *        Settings are related to this equation.
-
+ *
  * \param[in, out]  eqp       pointer to a \ref cs_equation_param_t struct.
  */
 /*----------------------------------------------------------------------------*/

@@ -316,6 +316,7 @@ _add_contrib(const int           n_gpts,
       } /* wphi_i not zero */
 
     }
+
   }
 }
 
@@ -339,7 +340,7 @@ _symmetrize_and_clean(const int           n_rows,
     const cs_real_t  coef = 1/val_i[i];
     for (short int j = i + 1; j < n_rows; j++) {
       if (fabs(val_i[j]*coef) > _clean_threshold)
-        values[n_rows*j + i] = val_i[j];
+        values[n_rows*j+i] = val_i[j];
       else
         values[n_rows*j+i] = values[i*n_rows + j] = 0.;
     }
@@ -980,7 +981,7 @@ _ck1_compute_projector(void                    *pbf,
 
           for (short int e = 0; e < n_ef; e++) { /* Loop on face edges */
 
-            // Edge-related variables
+            /* Edge-related variables */
             const short int e0  = f2e_ids[e];
             const short int v0 = cm->e2v_ids[2*e0];
             const short int v1 = cm->e2v_ids[2*e0+1];

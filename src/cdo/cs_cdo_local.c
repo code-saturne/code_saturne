@@ -926,7 +926,8 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   const cs_lnum_t  *c2f_idx = connect->c2f->idx + c_id;
 
   cm->n_fc = c2f_idx[1] - c2f_idx[0];
-  cm->bface_shift = quant->n_i_faces;
+  cm->bface_shift = quant->n_i_faces; /* Border faces come after interior
+                                       * faces */
 
   if (build_flag == 0)
     return;
@@ -1021,13 +1022,13 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   /* Information related to primal faces */
   if (build_flag & cs_cdo_local_flag_f) {
 
-    const cs_lnum_t  *c2f_lst = connect->c2f->ids + c2f_idx[0];
+    const cs_lnum_t  *c2f_ids = connect->c2f->ids + c2f_idx[0];
     const short int  *c2f_sgn = connect->c2f->sgn + c2f_idx[0];
 
     for (short int f = 0; f < cm->n_fc; f++) {
-      cm->f_ids[f] = c2f_lst[f];
+      cm->f_ids[f] = c2f_ids[f];
       cm->f_sgn[f] = c2f_sgn[f];
-    } /* Loop on cell faces */
+    }
 
     /* Face related quantities */
     if (build_flag & cs_cdo_local_flag_pfq) {
@@ -1073,7 +1074,8 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_LOCAL_DBG > 0
         if (cm->hfc[f] <= 0)
           bft_error(__FILE__, __LINE__, 0,
-                    " Invalid result; hfc = %5.3e < 0 !\n", cm->hfc[f]);
+                    " %s: Invalid result; hfc = %5.3e < 0 !\n",
+                    __func__, cm->hfc[f]);
 #endif
 
         /* Volume of the pyramid of base f and apex x_c */
@@ -1085,8 +1087,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
   } /* Face information */
 
-  if (build_flag & CS_FLAG_COMP_EV ||
-      build_flag & CS_FLAG_COMP_FV) {
+  if (build_flag & CS_FLAG_COMP_EV || build_flag & CS_FLAG_COMP_FV) {
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int t_id = omp_get_thread_num();

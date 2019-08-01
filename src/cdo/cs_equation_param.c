@@ -1345,7 +1345,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
  * \brief Set parameters for initializing SLES structures used for the
  *        resolution of the linear system.
  *        Settings are related to this equation.
-
+ *
  * \param[in, out]  eqp       pointer to a \ref cs_equation_param_t struct.
  */
 /*----------------------------------------------------------------------------*/
