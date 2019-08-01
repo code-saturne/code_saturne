@@ -978,11 +978,10 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
       for (short int e = 0; e < cm->n_ec; e++) {
 
         const cs_lnum_t  e_id = cm->e_ids[e];
-        const cs_nvec3_t  nv = cs_quant_set_edge_nvec(cm->e_ids[e], quant);
-        const cs_lnum_t  v1_id = connect->e2v->ids[2*e_id];
-        const cs_lnum_t  v2_id = connect->e2v->ids[2*e_id + 1];
-        const cs_real_t  *xv1 = quant->vtx_coord + 3*v1_id;
-        const cs_real_t  *xv2 = quant->vtx_coord + 3*v2_id;
+        const cs_nvec3_t  nv = cs_quant_set_edge_nvec(e_id, quant);
+        const cs_lnum_t  *v_id = connect->e2v->ids + 2*e_id;
+        const cs_real_t  *xv1 = quant->vtx_coord + 3*v_id[0];
+        const cs_real_t  *xv2 = quant->vtx_coord + 3*v_id[1];
 
         cm->edge[e].meas = nv.meas;
         for (int k = 0; k < 3; k++) {
@@ -1122,50 +1121,43 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
     if (build_flag & CS_FLAG_COMP_FV) {
 
-      const cs_adjacency_t  *if2v = connect->if2v;
-      const cs_adjacency_t  *bf2v = connect->bf2v;
-
-      /* Build the index */
+      /* Build the index and the list of face vertices in the cellwise
+       * numbering */
       cm->f2v_idx[0] = 0;
       for (short int f = 0; f < cm->n_fc; f++) {
 
-        const cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
+        const cs_lnum_t  f_id = cm->f_ids[f];
+        if (f_id < cm->bface_shift) { /* Interior face */
 
-        int  n_vf = 0;
-        if (bf_id > -1) /* Boundary face */
-          n_vf = bf2v->idx[bf_id+1] - bf2v->idx[bf_id];
-        else
-          n_vf = if2v->idx[cm->f_ids[f]+1] - if2v->idx[cm->f_ids[f]];
+          const cs_lnum_t  *idx = connect->if2v->idx + f_id;
+          const cs_lnum_t  n_ent = idx[1] - idx[0];
+          const cs_lnum_t  *v_ids = connect->if2v->ids + idx[0];
 
-        cm->f2v_idx[f+1] = cm->f2v_idx[f] + n_vf;
+          cm->f2v_idx[f+1] = cm->f2v_idx[f] + n_ent;
+
+          short int  *_ids = cm->f2v_ids + cm->f2v_idx[f];
+          for (cs_lnum_t i = 0; i < n_ent; i++)
+            _ids[i] = kbuf[v_ids[i] - v_shift];
+
+        }
+        else { /* Border face */
+
+          const cs_lnum_t  bf_id = f_id - cm->bface_shift;
+          const cs_lnum_t  *idx = connect->bf2v->idx + bf_id;
+          const cs_lnum_t  n_ent = idx[1] - idx[0];
+          const cs_lnum_t  *v_ids = connect->bf2v->ids + idx[0];
+
+          cm->f2v_idx[f+1] = cm->f2v_idx[f] + n_ent;
+
+          short int  *_ids = cm->f2v_ids + cm->f2v_idx[f];
+          for (cs_lnum_t i = 0; i < n_ent; i++)
+            _ids[i] = kbuf[v_ids[i] - v_shift];
+
+        }
 
       } /* Loop on cell faces */
 
       assert(cm->f2v_idx[cm->n_fc] == 2*cm->n_ec);
-
-      /* Fill the list of vertices */
-      for (short int f = 0; f < cm->n_fc; f++) {
-
-        const cs_lnum_t  bf_id = cm->f_ids[f] - cm->bface_shift;
-
-        short int  *_ids = cm->f2v_ids + cm->f2v_idx[f];
-
-        if (bf_id > -1) { /* Boundary face */
-
-          const cs_lnum_t  *v_ids = bf2v->ids + bf2v->idx[bf_id];
-          for (short int i = 0; i < cm->f2v_idx[f+1]-cm->f2v_idx[f]; i++)
-            _ids[i] = kbuf[v_ids[i] - v_shift];
-
-        }
-        else { /* Interior face */
-
-          const cs_lnum_t  *v_ids = if2v->ids + if2v->idx[cm->f_ids[f]];
-          for (short int i = 0; i < cm->f2v_idx[f+1]-cm->f2v_idx[f]; i++)
-            _ids[i] = kbuf[v_ids[i] - v_shift];
-
-        }
-
-      } /* Loop on cell faces */
 
     } /* face --> vertices connectivity */
 
@@ -1190,24 +1182,20 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     for (short int e = 0; e < cm->n_ec; e++)
       kbuf[cm->e_ids[e]-shift] = e;
 
-    const cs_lnum_t  *f2e_idx = connect->f2e->idx;
-    const cs_lnum_t  *f2e_ids = connect->f2e->ids;
+    const cs_adjacency_t  *f2e = connect->f2e;
 
     cm->f2e_idx[0] = 0;
-    int shift_idx = 0;
     for (short int f = 0; f < cm->n_fc; f++) {
 
       const cs_lnum_t  f_id = cm->f_ids[f];
+      const cs_lnum_t  *idx = f2e->idx + f_id;
+      const cs_lnum_t  *ids = f2e->ids + idx[0];
+      const cs_lnum_t  n_ef = idx[1] - idx[0];
 
-      /* Build index */
-      const cs_lnum_t  f2e_start = f2e_idx[f_id];
-      const cs_lnum_t  f2e_end = f2e_idx[f_id+1];
-
-      cm->f2e_idx[f+1] = cm->f2e_idx[f] + f2e_start - f2e_end;
-
-      for (cs_lnum_t i = f2e_start; i < f2e_end; i++)
-        cm->f2e_ids[shift_idx++] = kbuf[f2e_ids[i] - shift];
-      cm->f2e_idx[f+1] = shift_idx;
+      cm->f2e_idx[f+1] = cm->f2e_idx[f] + n_ef;
+      short int  *_ids = cm->f2e_ids + cm->f2e_idx[f];
+      for (cs_lnum_t i = 0; i < n_ef; i++)
+        _ids[i] = kbuf[ids[i] - shift];
 
     } /* Loop on cell faces */
 
@@ -1232,14 +1220,14 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     for (short int i = 0; i < 2*cm->n_ec; i++) cm->e2f_ids[i] = -1;
 
     for (short int f = 0; f < cm->n_fc; f++) {
-      for (short int jf = cm->f2e_idx[f]; jf < cm->f2e_idx[f+1]; jf++) {
+      for (short int ie = cm->f2e_idx[f]; ie < cm->f2e_idx[f+1]; ie++) {
 
-        const short int  e = cm->f2e_ids[jf];
-        if (cm->e2f_ids[2*e] == -1)
-          cm->e2f_ids[2*e] = f;
+        short int  *ids = cm->e2f_ids + 2*cm->f2e_ids[ie];
+        if (ids[0] == -1)
+          ids[0] = f;
         else {
-          assert(cm->e2f_ids[2*e+1] == -1);
-          cm->e2f_ids[2*e+1] = f;
+          assert(ids[1] == -1);
+          ids[1] = f;
         }
 
       } /* Loop on face edges */
@@ -1254,19 +1242,18 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
         const cs_real_t  *sface0 = quant->sface_normal + 6*(c2e_idx[0] + e);
         const cs_real_t  *sface1 = sface0 + 3;
-        short int  ee = 2*e;
+        cs_nvec3_t  *_sefc = cm->sefc + 2*e;
 
         cs_nvec3(sface0, &nv);
-        cm->sefc[ee].meas = nv.meas;
-        cm->sefc[ee].unitv[0] = nv.unitv[0];
-        cm->sefc[ee].unitv[1] = nv.unitv[1];
-        cm->sefc[ee].unitv[2] = nv.unitv[2];
-        ee++;
+        _sefc[0].meas = nv.meas;
+        _sefc[0].unitv[0] = nv.unitv[0];
+        _sefc[0].unitv[1] = nv.unitv[1];
+        _sefc[0].unitv[2] = nv.unitv[2];
         cs_nvec3(sface1, &nv);
-        cm->sefc[ee].meas = nv.meas;
-        cm->sefc[ee].unitv[0] = nv.unitv[0];
-        cm->sefc[ee].unitv[1] = nv.unitv[1];
-        cm->sefc[ee].unitv[2] = nv.unitv[2];
+        _sefc[1].meas = nv.meas;
+        _sefc[1].unitv[0] = nv.unitv[0];
+        _sefc[1].unitv[1] = nv.unitv[1];
+        _sefc[1].unitv[2] = nv.unitv[2];
 
       } /* Loop on face edges */
 
