@@ -448,7 +448,7 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
           if (c2v_ids[_v] == v1_id) _v1 = _v;
           if (c2v_ids[_v] == v2_id) _v2 = _v;
         }
-        assert(_v1 < n_vc && _v2 < n_vc);
+        CS_CDO_OMP_ASSERT(_v1 < n_vc && _v2 < n_vc);
         vol_vc[_v1] += pvol;
         vol_vc[_v2] += pvol;
 
@@ -539,7 +539,7 @@ _compute_dface_quantities(const cs_cdo_connect_t  *topo,
               break;
             }
           }
-          assert(e < n_ec);
+          CS_CDO_OMP_ASSERT(e < n_ec);
 
           const cs_quant_t  peq = quant->edge[e_id]; /* Edge quantities */
 
@@ -553,7 +553,7 @@ _compute_dface_quantities(const cs_cdo_connect_t  *topo,
 
           /* One should have (trinorm, te) > 0 */
           const double  orient = _dp3(nvec.unitv, peq.unitv);
-          assert(fabs(orient) > 0);
+          CS_CDO_OMP_ASSERT(fabs(orient) > 0);
 
           /* Store the computed data */
           qdf[e].parent_id[parent[e]] = f_id;

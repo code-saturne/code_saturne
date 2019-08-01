@@ -16,6 +16,8 @@ Bug fixes
 Architectural changes
 ---------------------
 
+- Fix compilation with gcc 9 and OpenMP support enabled.
+
 - Shared library numbering for libsaturne.so now set to 5.0 to avoid confusion
   with other versions of the 5.x series.
 

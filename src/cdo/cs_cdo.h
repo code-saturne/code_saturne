@@ -108,6 +108,17 @@ BEGIN_C_DECLS
 #define CS_CDO_OMP_CHUNK_SIZE  128
 #define CS_CDO_OMP_SCHEDULE  schedule(static, CS_CDO_OMP_CHUNK_SIZE)
 
+/* Avoid issues with assert in some OpenMp contructs using gcc 9 */
+#if defined(HAVE_OPENMP) && defined(__GNUC__)
+  #if __GNUC__ == 9
+    #define CS_CDO_OMP_ASSERT(e)
+  #else
+    #define CS_CDO_OMP_ASSERT(e)  assert(e)
+  #endif
+#else
+  #define CS_CDO_OMP_ASSERT(e)  assert(e)
+#endif
+
 /*============================================================================
  * Type definitions
  *============================================================================*/

@@ -1672,8 +1672,9 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
   cs_timer_t  t0 = cs_timer_time();
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
-  shared(quant, connect, location, eqp, b, diff_flux, values, \
-         cs_cdovcb_cell_bld)
+  shared(quant, connect, location, eqp, b, diff_flux, values,           \
+         cs_cdovcb_cell_bld)                                            \
+  firstprivate(cs_cdo_primal_cell, cs_cdo_dual_face_byc)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();

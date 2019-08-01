@@ -1292,7 +1292,7 @@ cs_cdovb_scaleq_build_system(const cs_mesh_t        *mesh,
         cs_locmat_t  *mass_mat = cb->hdg;
         if (b->sys_flag & CS_FLAG_SYS_TIME_DIAG) {
 
-          assert(cs_test_flag(b->msh_flag, CS_CDO_LOCAL_PVQ));
+          CS_CDO_OMP_ASSERT(cs_test_flag(b->msh_flag, CS_CDO_LOCAL_PVQ));
           /* Switch to cb->loc. Used as a diagonal only */
           mass_mat = cb->loc;
 
@@ -1592,7 +1592,9 @@ cs_cdovb_scaleq_cellwise_diff_flux(const cs_real_t   *values,
   cs_timer_t  t0 = cs_timer_time();
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
-  shared(quant, connect, location, eqp, b, diff_flux, values, cs_cdovb_cell_bld)
+  shared(quant, connect, location, eqp, b, diff_flux, values,           \
+         cs_cdovb_cell_bld)                                             \
+  firstprivate(cs_cdo_dual_face_byc, cs_cdo_primal_cell)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();

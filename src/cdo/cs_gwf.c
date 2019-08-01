@@ -524,7 +524,8 @@ _genuchten_moisture_from_c_head(cs_lnum_t          n_elts,
   if (elt_ids != NULL) {
 
 # pragma omp parallel for if (n_elts > CS_THR_MIN) default(none) \
-  shared(n_elts, elt_ids, h_vals, soil, result)
+  shared(n_elts, elt_ids, h_vals, soil, result)                  \
+  firstprivate(law)
     for (cs_lnum_t i = 0; i < n_elts; i++) {
 
       const cs_lnum_t  id = elt_ids[i];
@@ -544,8 +545,9 @@ _genuchten_moisture_from_c_head(cs_lnum_t          n_elts,
   }
   else {
 
-# pragma omp parallel for if (n_elts > CS_THR_MIN) default(none)     \
-  shared(n_elts, elt_ids, h_vals, soil, result)
+# pragma omp parallel for if (n_elts > CS_THR_MIN) default(none) \
+  shared(n_elts, elt_ids, h_vals, soil, result)                  \
+  firstprivate(law)
     for (cs_lnum_t i = 0; i < n_elts; i++) {
 
       const cs_real_t  h = h_vals[i];
@@ -727,7 +729,8 @@ _tracy_moisture_from_c_head(cs_lnum_t         n_elts,
   if (elt_ids != NULL) {
 
 # pragma omp parallel for if (n_elts > CS_THR_MIN) default(none) \
-  shared(n_elts, elt_ids, h_vals, soil, result)
+  shared(n_elts, elt_ids, h_vals, soil, result)                  \
+  firstprivate(law)
     for (cs_lnum_t i = 0; i < n_elts; i++) {
 
       const cs_lnum_t  id = elt_ids[i];
@@ -742,7 +745,8 @@ _tracy_moisture_from_c_head(cs_lnum_t         n_elts,
   else {
 
 # pragma omp parallel for if (n_elts > CS_THR_MIN) default(none) \
-  shared(n_elts, h_vals, soil, result)
+  shared(n_elts, h_vals, soil, result)                           \
+  firstprivate(law)
     for (cs_lnum_t i = 0; i < n_elts; i++) {
 
       const cs_real_t  h = h_vals[i];
