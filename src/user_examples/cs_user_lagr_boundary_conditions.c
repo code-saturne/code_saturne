@@ -352,6 +352,8 @@ cs_lagr_user_boundary_interaction(cs_lagr_particle_set_t    *particles,
 {
   /* Update deposition-related counter */
 
+  /*! [update] */
+
 # pragma omp atomic
   particles->n_part_dep += 1;
 
@@ -373,6 +375,9 @@ cs_lagr_user_boundary_interaction(cs_lagr_particle_set_t    *particles,
 
   *event_flag = *event_flag | (CS_EVENT_OUTFLOW | CS_EVENT_DEPOSITION);
   *tracking_state = CS_LAGR_PART_OUT;
+
+  /*! [update] */
+
 }
 
 /*----------------------------------------------------------------------------*/

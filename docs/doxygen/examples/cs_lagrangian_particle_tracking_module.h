@@ -77,6 +77,16 @@
 
   An optional user-defined input function may also be associated.
 
+  \subsection cs_user_lagr_boundary_conditions_h_interactions  Boundary-particle interactions
+
+  It is also possible to decide of the behavior of particle when they
+  encounter a boundary (this boundary has to be of type \ref CS_LAGR_BC_USER).
+
+  In the following example, the particle is simply deposited and marked for
+  elimination:
+
+  \snippet cs_user_lagr_boundary_conditions.c update
+
   \section cs_user_lagr_volume_conditions_h  Volume conditions
 
   Lagrangian volume conditions are based on volume zone
@@ -105,4 +115,7 @@
   \ref cs_user_lagr_in function.
 
   \snippet cs_user_lagr_volume_conditions.c lagr_vol_define_injection_2
+
+
+
 */
