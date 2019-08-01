@@ -2346,6 +2346,16 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Init fluid mesh quantities
+
+    subroutine cs_mesh_init_fluid_quantities()   &
+      bind(C, name='cs_mesh_init_fluid_quantities')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_mesh_init_fluid_quantities
+
+    !---------------------------------------------------------------------------
+
     ! Set has_disable_flag
 
     subroutine cs_mesh_quantities_set_has_disable_flag(flag)   &

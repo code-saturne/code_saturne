@@ -501,8 +501,6 @@ if (iporos.ge.1) then
 
   endif
 
-  ! Make fluid surfaces of mesh quantity point to the created fields
-  call cs_mesh_quantities_set_has_disable_flag(1)
 endif
 
 !===============================================================================

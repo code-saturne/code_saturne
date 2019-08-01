@@ -333,6 +333,15 @@ void
 cs_mesh_quantities_fluid_compute(const cs_mesh_t       *mesh,
                                  cs_mesh_quantities_t  *mesh_quantities);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Init fluid quantities
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_init_fluid_quantities(void);
+
 /*----------------------------------------------------------------------------
  * Compute the total, min, and max fluid volumes of cells
  *

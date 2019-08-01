@@ -53,6 +53,7 @@
 #include "cs_mesh_connect.h"
 #include "cs_parall.h"
 #include "cs_bad_cells_regularisation.h"
+#include "cs_preprocess.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -2770,6 +2771,23 @@ cs_mesh_quantities_set_has_disable_flag(int  flag)
       }
       mq->cell_f_vol        = cs_field_by_name("cell_f_vol")->val;
     }
+  }
+
+  /* Update Fortran pointer quantities */
+  cs_preprocess_mesh_update_fortran();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Init fluid quantities
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_init_fluid_quantities(void)
+{
+  if (cs_glob_porous_model == 3) {
+    cs_mesh_init_fluid_sections(cs_glob_mesh, cs_glob_mesh_quantities);
   }
 }
 

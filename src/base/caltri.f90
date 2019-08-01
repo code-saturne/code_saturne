@@ -491,6 +491,10 @@ call iniva0(nscal)
 ! Compute the porosity if needed
 if (iporos.ge.1) then
 
+  ! Make fluid surfaces of mesh quantity point to the created fields
+  call cs_mesh_quantities_set_has_disable_flag(1)
+  call cs_mesh_init_fluid_quantities()
+
   if (iihmpr.eq.1) then
     call uiporo
   endif

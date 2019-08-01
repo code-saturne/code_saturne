@@ -400,11 +400,6 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
 
   cs_mesh_quantities_compute(cs_glob_mesh, cs_glob_mesh_quantities);
 
-  if (cs_glob_porous_model == 3) {
-    cs_mesh_init_fluid_sections(cs_glob_mesh, cs_glob_mesh_quantities);
-    cs_mesh_quantities_fluid_compute(cs_glob_mesh, cs_glob_mesh_quantities);
-  }
-
   /* If fluid_solid mode is activate: disable solid cells for the dynamics */
   if (stokes->fluid_solid)
     cs_internal_coupling_tag_disable_cells(cs_glob_mesh, cs_glob_mesh_quantities);
