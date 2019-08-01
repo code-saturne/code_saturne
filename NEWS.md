@@ -15,7 +15,7 @@ Bug fixes:
 - Fix time stepping of VoF / Cavitation algo. (density in unsteady term of
   momentum equation) and ensure variable density indicator (irovar) is set to 1
   when VoF / cavitation algorithm is enabled. Idem for variable viscosity
-  indicator. 
+  indicator.
 
 - Fix time stepping in pressure gradient weightening for VoF / Cavitation algo.
 

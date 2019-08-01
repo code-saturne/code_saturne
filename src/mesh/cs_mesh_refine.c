@@ -1989,8 +1989,8 @@ _build_vertices_gnum(cs_mesh_t       *m,
     if (m->global_vtx_num != NULL) {
       cs_lnum_t k = 0;
       for (cs_lnum_t i = 0; i < n_elts; i++) {
-	for (cs_lnum_t j = elt_v_idx[i]; j < elt_v_idx[i+1]; j++, k++)
-	  m->global_vtx_num[j] = add_vtx_gnum[k] + m->n_g_vertices;
+        for (cs_lnum_t j = elt_v_idx[i]; j < elt_v_idx[i+1]; j++, k++)
+          m->global_vtx_num[j] = add_vtx_gnum[k] + m->n_g_vertices;
       }
     }
 
