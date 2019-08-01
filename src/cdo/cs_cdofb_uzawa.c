@@ -675,9 +675,9 @@ _steady_build(const cs_mesh_t          *mesh,
   cs_matrix_assembler_values_t  *mav =
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)           \
-  shared(quant, connect, mom_eq, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,\
-         mav, rs, dir_values, zeta, vel_c, pr, sc)                           \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
+  shared(quant, connect, mom_eq, mom_eqp, mom_eqb, mom_eqc, rhs,        \
+         matrix, nsp, mav, rs, dir_values, zeta, vel_c, pr, sc)         \
   firstprivate(time_eval)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
@@ -873,9 +873,9 @@ _check_cvg_code(const cs_navsto_param_t         *nsp,
   if (eqp->sles_param.verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT,
                   "\n <Uzawa Summary> Convergence.Code       %-d\n"
-                  "                   Final.Residual         %7.6e\n"
-                  "                   Uzawa.Iters            %d\n"
-                  "                   Cumulated.Solver.Iters %d, mean: %6.1f\n",
+                  "                 Final.Residual         %7.6e\n"
+                  "                 Uzawa.Iters            %d\n"
+                  "                 Cumulated.Solver.Iters %d, mean: %6.1f\n",
                   *cvg_code, sc->residual, sc->last_iter, solv_iter,
                   (float)solv_iter/sc->last_iter);
 
@@ -1473,7 +1473,7 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
         break;
       }
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 4
       cs_dbg_darray_to_listing("FACE_DELTA_VELOCITY",
                                3*n_faces, delta_vel_f, 9);
 #endif
@@ -1490,7 +1490,7 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
 
       } /* End of the OpenMP region */
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 4
       cs_dbg_darray_to_listing("CELL_DELTA_VELOCITY",
                                3*n_cells, delta_vel_c, 9);
 #endif
@@ -1502,7 +1502,7 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
        */
       _update_pr_div_rhs(zeta, time_eval, sc->bf_type, vel_f, pr, div, rhs);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 4
       cs_dbg_darray_to_listing("FACE_VELOCITY", 3*n_faces, vel_f, 9);
       cs_dbg_darray_to_listing("CELL_VELOCITY", 3*n_cells, vel_c, 9);
       cs_dbg_darray_to_listing("PRESSURE", n_cells, pr, 9);
@@ -1531,10 +1531,16 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
 
   _check_cvg_code(nsp, sc, mom_eqp, solv_iter, &cvg_code);
 
+  /* Rescale pressure */
+  cs_cdofb_navsto_set_zero_mean_pressure(quant, pr);
+
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
-  cs_dbg_fprintf_system(mom_eqp->name, cs_shared_time_step->nt_cur,
-                        CS_CDOFB_UZAWA_DBG,
-                        vel_f, NULL, 3*n_faces);
+  cs_dbg_darray_to_listing("(FINAL) FACE_VELOCITY", 3*quant->n_faces, vel_f, 9);
+#if CS_CDOFB_UZAWA_DBG > 3
+  cs_dbg_darray_to_listing("(FINAL) CELL_VELOCITY", 3*quant->n_cells, vel_c, 9);
+  cs_dbg_darray_to_listing("(FINAL) PRESSURE", quant->n_cells, pr, 9);
+  cs_dbg_darray_to_listing("(FINAL) DIVERGENCE", quant->n_cells, div, 9);
+#endif
 #endif
 
   /* Frees */
@@ -1932,7 +1938,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
         break;
       }
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 4
       cs_dbg_darray_to_listing("FACE_DELTA_VELOCITY",
                                3*n_faces, delta_vel_f, 9);
 #endif
@@ -1949,7 +1955,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
 
       } /* End of the OpenMP region */
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 4
       cs_dbg_darray_to_listing("CELL_DELTA_VELOCITY",
                                3*n_cells, delta_vel_c, 9);
 #endif
@@ -1961,7 +1967,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
        */
       _update_pr_div_rhs(zeta, time_eval, sc->bf_type, vel_f, pr, div, rhs);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 4
       cs_dbg_darray_to_listing("FACE_VELOCITY", 3*n_faces, vel_f, 9);
       cs_dbg_darray_to_listing("CELL_VELOCITY", 3*n_cells, vel_c, 9);
       cs_dbg_darray_to_listing("PRESSURE", n_cells, pr, 9);
@@ -1990,9 +1996,16 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
 
   _check_cvg_code(nsp, sc, mom_eqp, solv_iter, &cvg_code);
 
+  /* Rescale pressure */
+  cs_cdofb_navsto_set_zero_mean_pressure(quant, pr);
+
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
-  cs_dbg_fprintf_system(mom_eqp->name, ts->nt_cur, CS_CDOFB_UZAWA_DBG,
-                        vel_f, NULL, 3*n_faces);
+  cs_dbg_darray_to_listing("(FINAL) FACE_VELOCITY", 3*quant->n_faces, vel_f, 9);
+#if CS_CDOFB_UZAWA_DBG > 3
+  cs_dbg_darray_to_listing("(FINAL) CELL_VELOCITY", 3*quant->n_cells, vel_c, 9);
+  cs_dbg_darray_to_listing("(FINAL) PRESSURE", quant->n_cells, pr, 9);
+  cs_dbg_darray_to_listing("(FINAL) DIVERGENCE", quant->n_cells, div, 9);
+#endif
 #endif
 
   /* Frees */
@@ -2436,7 +2449,7 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
         break;
       }
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 4
       cs_dbg_darray_to_listing("FACE_DELTA_VELOCITY",
                                3*n_faces, delta_vel_f, 9);
 #endif
@@ -2453,7 +2466,7 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
 
       } /* End of the OpenMP region */
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 4
       cs_dbg_darray_to_listing("CELL_DELTA_VELOCITY",
                                3*n_cells, delta_vel_c, 9);
 #endif
@@ -2465,7 +2478,7 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
        */
       _update_pr_div_rhs(zeta, time_eval, sc->bf_type, vel_f, pr, div, rhs);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 4
       cs_dbg_darray_to_listing("FACE_VELOCITY", 3*n_faces, vel_f, 9);
       cs_dbg_darray_to_listing("CELL_VELOCITY", 3*n_cells, vel_c, 9);
       cs_dbg_darray_to_listing("PRESSURE", n_cells, pr, 9);
@@ -2494,9 +2507,16 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
 
   _check_cvg_code(nsp, sc, mom_eqp, solv_iter, &cvg_code);
 
+  /* Rescale pressure */
+  cs_cdofb_navsto_set_zero_mean_pressure(quant, pr);
+
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
-  cs_dbg_fprintf_system(mom_eqp->name, ts->nt_cur, CS_CDOFB_UZAWA_DBG,
-                        vel_f, NULL, 3*n_faces);
+  cs_dbg_darray_to_listing("(FINAL) FACE_VELOCITY", 3*quant->n_faces, vel_f, 9);
+#if CS_CDOFB_UZAWA_DBG > 3
+  cs_dbg_darray_to_listing("(FINAL) CELL_VELOCITY", 3*quant->n_cells, vel_c, 9);
+  cs_dbg_darray_to_listing("(FINAL) PRESSURE", quant->n_cells, pr, 9);
+  cs_dbg_darray_to_listing("(FINAL) DIVERGENCE", quant->n_cells, div, 9);
+#endif
 #endif
 
   /* Frees */
@@ -2647,10 +2667,6 @@ cs_cdofb_uzawa_compute_steady_rebuild(const cs_mesh_t         *mesh,
       /* Build */
       _steady_build(mesh, nsp, sc, cc, &matrix, &rhs);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
-      /* Actually values from last iteration */
-#endif
-
       solv_iter +=
         (loc_solv_iter = cs_equation_solve_scalar_system(3*quant->n_faces,
                                                          mom_eqp,
@@ -2684,9 +2700,7 @@ cs_cdofb_uzawa_compute_steady_rebuild(const cs_mesh_t         *mesh,
         break;
       }
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 3
-      /* Rescale pressure */
-      cs_cdofb_navsto_set_zero_mean_pressure(quant, pr);
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 4
       cs_dbg_darray_to_listing("FACE_VELOCITY", 3*quant->n_faces, vel_f, 9);
       cs_dbg_darray_to_listing("CELL_VELOCITY", 3*quant->n_cells, vel_c, 9);
       cs_dbg_darray_to_listing("PRESSURE", quant->n_cells, pr, 9);
@@ -2716,9 +2730,12 @@ cs_cdofb_uzawa_compute_steady_rebuild(const cs_mesh_t         *mesh,
   cs_cdofb_navsto_set_zero_mean_pressure(quant, pr);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 2
-  cs_dbg_fprintf_system(mom_eqp->name, cs_shared_time_step->nt_cur,
-                        CS_CDOFB_UZAWA_DBG,
-                        vel_f, NULL, 3*quant->n_faces);
+  cs_dbg_darray_to_listing("(FINAL) FACE_VELOCITY", 3*quant->n_faces, vel_f, 9);
+#if CS_CDOFB_UZAWA_DBG > 3
+  cs_dbg_darray_to_listing("(FINAL) CELL_VELOCITY", 3*quant->n_cells, vel_c, 9);
+  cs_dbg_darray_to_listing("(FINAL) PRESSURE", quant->n_cells, pr, 9);
+  cs_dbg_darray_to_listing("(FINAL) DIVERGENCE", quant->n_cells, div, 9);
+#endif
 #endif
 
   t_tmp = cs_timer_time();
