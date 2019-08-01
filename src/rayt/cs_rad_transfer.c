@@ -136,6 +136,8 @@ BEGIN_C_DECLS
         - 4: T2 (32 directions)
         - 5: T4 (128 directions)
         - 6: Tn (8*ndirec^2 directions)
+        - 7: 120 directions (LC11)
+        - 8: 48 directions (DCT020-2468)
   \var  cs_rad_transfer_params_t::ndirec
         Number of directions for the angular discretisation of the radiation
         propagation with the DOM model.\n
@@ -208,6 +210,7 @@ const char *cs_rad_transfer_model_name[] = {
 
 /*! Quadrature name */
 const char *cs_rad_transfer_quadrature_name[] = {
+  "",
   "S4 (24 directions)",
   "S6 (48 directions)",
   "S8 (80 directions)",
