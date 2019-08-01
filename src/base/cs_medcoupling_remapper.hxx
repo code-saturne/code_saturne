@@ -187,6 +187,65 @@ cs_medcoupling_remapper_rotate(cs_medcoupling_remapper_t  *r,
                                cs_real_t                   angle);
 
 /*----------------------------------------------------------------------------*/
+/*! \brief Retrieve the two closest time steps indexes.
+ *
+ * The returned value is int[2].
+ * If the requested time value if outside the time bounds stored in the file,
+ * the both values are identical (first or last value), and a warning is printed
+ * in the listing file.
+ *
+ * \param[in]      r    pointer to remapper object
+ * \param[in]      t    requested time value
+ * \param[in,out]  id1  first returned index
+ * \param[in,out]  id2  second returned index
+ *
+/*----------------------------------------------------------------------------*/
+
+void
+cs_medcoupling_remapper_find_time_index(cs_medcoupling_remapper_t *r,
+                                        cs_real_t                  t,
+                                        int                       *id1,
+                                        int                       *id2);
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Retrieve the two closest time steps indexes.
+ *
+ * The returned value is int[2].
+ * If the requested time value if outside the time bounds stored in the file,
+ * the both values are identical (first or last value), and a warning is printed
+ * in the listing file.
+ *
+ * \param[in]      r    pointer to remapper object
+ * \param[in]      id   requested index
+ * \param[in,out]  t    corresponding time value
+ *
+/*----------------------------------------------------------------------------*/
+void
+cs_medcoupling_remapper_get_time_from_index(cs_medcoupling_remapper_t *r,
+                                            int                        id,
+                                            cs_real_t                 *t);
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Retrieve the two closest time steps indexes.
+ *
+ * The returned value is int[2].
+ * If the requested time value if outside the time bounds stored in the file,
+ * the both values are identical (first or last value), and a warning is printed
+ * in the listing file.
+ *
+ * \param[in]      r      pointer to remapper object
+ * \param[in]      id     requested time index
+ * \param[in,out]  iter   index iteration
+ * \param[in,out]  order  index iteration order
+ *
+/*----------------------------------------------------------------------------*/
+void
+cs_medcoupling_remapper_get_iter_order_from_index(cs_medcoupling_remapper_t *r,
+                                                  int                        id,
+                                                  int                       *it,
+                                                  int                       *order);
+
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Destroy all remappers
  */
