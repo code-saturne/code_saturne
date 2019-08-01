@@ -178,6 +178,7 @@ double precision temp, idifftp
 double precision turb_schmidt
 double precision xR, prdtl, alpha_theta
 double precision normp
+double precision l2norm, l2errork
 
 double precision rvoid(1)
 
@@ -210,6 +211,9 @@ double precision, dimension(:), pointer :: cpro_viscls, cpro_visct
 double precision, dimension(:), pointer :: cpro_tsscal
 double precision, dimension(:), pointer :: cpro_x2icla
 double precision, dimension(:), pointer :: cvar_var, cvara_var, cvara_varsca
+double precision, dimension(:), pointer :: cvark_var
+double precision, allocatable, dimension(:), target :: wcvark_var
+double precision, allocatable, dimension(:) :: errork
 double precision, allocatable, dimension(:) :: divflu
 ! Darcy arrays
 double precision, allocatable, dimension(:) :: diverg
@@ -1252,6 +1256,13 @@ endif
 ! 3. Solving
 !===============================================================================
 
+if (iterns.ge.1) then
+  allocate(wcvark_var(ncelet))
+  cvark_var => wcvark_var
+else
+  call field_get_val_s(ivarfl(ivar), cvark_var)
+endif
+
 iconvp = vcopt%iconv
 idiffp = vcopt%idiff
 idftnp = vcopt%idften
@@ -1289,7 +1300,7 @@ call codits &
    iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
    relaxp , thetv  ,                                              &
-   cvara_var       , cvar_var        ,                            &
+   cvara_var       , cvark_var       ,                            &
    coefap , coefbp , cofafp , cofbfp ,                            &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  , viscf  , viscb  , viscce ,                   &
@@ -1299,7 +1310,7 @@ call codits &
    xcpp   , rvoid  )
 
 !===============================================================================
-! 4. clipping
+! 4. clipping and log
 !===============================================================================
 
 call clpsca(iscal)
@@ -1378,7 +1389,25 @@ if (vcopt%iwarni.ge.2) then
   write(nfecra,1200)chaine(1:16) ,sclnor
 endif
 
+! Log in case of PISO-like sub iterations
+if (iterns.ge.1.and.vcopt%iwarni.ge.1) then
+
+  allocate(errork(ncelet))
+  do iel = 1, ncel
+    errork(iel) = cvar_var(iel) - cvark_var(iel)
+  enddo
+
+  l2errork = sqrt(cs_gres(ncel, cell_f_vol, errork, errork))
+  deallocate(errork)
+
+  l2norm = sqrt(cs_gres(ncel, cell_f_vol, cvara_var, cvara_var))
+
+  write(nfecra,2601) ivarfl(ivar), iterns, l2errork, l2errork/l2norm, l2norm
+
+endif
+
 ! Free memory
+if (allocated(wcvark_var)) deallocate(wcvark_var)
 deallocate(w1)
 deallocate(smbrs, rovsdt)
 if (allocated(viscce)) deallocate(viscce)
@@ -1432,6 +1461,8 @@ if (allocated(diverg)) deallocate(diverg)
 '@                                                            ',/)
 
 #endif
+
+2601 format('PISO scalar',I10, 'iter=', I10, 'L2 error = ',E12.4,' L2 normalized error', E12.4, 'L2 nomr', E12.4 ,/)
 
 !----
 ! End
