@@ -67,6 +67,9 @@ User changes:
   and buoyant terms for DRSM models
   (the user only has to create "rij_production" and/or "rij_buoyancy" field).
 
+- Keep user reconstruction sweeps number in case dynamic sweeping (iswdyn) is
+  enabled. Fix for issue #86.
+
 Physical modelling:
 
 - Add non-linear (quadratic) eddy viscosity model k-epsilon of Baglietto et al.
