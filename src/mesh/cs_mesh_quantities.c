@@ -2762,11 +2762,11 @@ cs_mesh_quantities_set_has_disable_flag(int  flag)
     } else {
       /* Use fluid sufaces and volume */
       if (cs_glob_porous_model == 3) {
-        mq->i_f_face_normal = cs_field_by_name("i_f_face_normal")->val;
-        mq->b_f_face_normal = cs_field_by_name("b_f_face_normal")->val;
+        mq->i_f_face_normal = (cs_real_3_t   *)cs_field_by_name("i_f_face_normal")->val;
+        mq->b_f_face_normal = (cs_real_3_t   *)cs_field_by_name("b_f_face_normal")->val;
         mq->i_f_face_surf   = cs_field_by_name("i_f_face_surf")->val;
         mq->b_f_face_surf   = cs_field_by_name("b_f_face_surf")->val;
-        mq->i_f_face_factor = cs_field_by_name("i_f_face_factor")->val;
+        mq->i_f_face_factor = (cs_real_2_t   *)cs_field_by_name("i_f_face_factor")->val;
         mq->b_f_face_factor = cs_field_by_name("b_f_face_factor")->val;
       }
       mq->cell_f_vol        = cs_field_by_name("cell_f_vol")->val;
