@@ -202,19 +202,12 @@ AC_ARG_ENABLE(python,
 )
 
 if test "${python_bindings}" = "yes" ; then
-
-  AX_PKG_SWIG(1.3.21) # check swig version
-  AX_SWIG_PYTHON
   AM_PATH_PYTHON(2.6)
   AX_PYTHON_DEVEL([>='2.6'])
   AX_PYTHON_MODULE(mpi4py)
-
 fi
 
 AM_CONDITIONAL(HAVE_MPI4PY, [test "${HAVE_PYMOD_MPI4PY}" = yes])
-AM_CONDITIONAL(HAVE_SWIG, [test "${SWIG}" != ""])
-
-AC_ARG_VAR([SWIG_PYTHON_FLAGS], [Additional flags for SWIG (usually -I<path>)])
 
 if test "${python_bindings}" = "yes" ; then
 
@@ -222,13 +215,6 @@ if test "${python_bindings}" = "yes" ; then
     AC_DEFINE([HAVE_MPI4PY], 1, [mpi4py module])
   else
     # AC_MSG_WARN(mpi4py MPI Python bindings not found])
-    python_bindings=no
-  fi
-
-  if test "${SWIG}" != ""; then
-    AC_DEFINE([HAVE_SWIG], 1, [swig presence])
-  else
-    # AC_MSG_WARN(SWIG not found])
     python_bindings=no
   fi
 

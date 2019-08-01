@@ -21,34 +21,21 @@
 
 # Main part
 
-if HAVE_SWIG
 if HAVE_MPI4PY
 
 AM_CPPFLAGS = $(MPI_CPPFLAGS)
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 AM_LDFLAGS = $(MPI_LDFLAGS)
 
-# SWIG Library for python
-BUILT_SOURCES = swig_wrap.c
-SWIG_SOURCES = swig.i
-#PYSWIG_SOURCES = pyple.py swig_wrap.c
+MPI4PY_CFLAGS = -I${shell ${PYTHON} -c 'import mpi4py; print( mpi4py.get_include() )'}
 
-pkgpython_PYTHON = __init__.py mpi_utilities.py
-nodist_pkgpython_PYTHON = pyple.py
-pkgpyexec_LTLIBRARIES = _pyple.la
-_pyple_la_SOURCES = $(SWIG_SOURCES)
-nodist__pyple_la_SOURCES = $(BUILT_SOURCES)
-_pyple_la_CPPFLAGS = $(AX_SWIG_PYTHON_CPPFLAGS) $(SWIG_PYTHON_FLAGS) -I$(srcdir)/../src $(MPI_CPPFLAGS)
-_pyple_la_LDFLAGS = -module
-_pyple_la_LIBADD = ../src/libple.la
+pkgpython_PYTHON = __init__.py Coupling.py Init.py
+pkgpyexec_LTLIBRARIES = libpyplecoupling.la
+libpyplecoupling_la_SOURCES = ple_coupling_wrapper.c
+libpyplecoupling_la_CFLAGS = $(MPI4PY_CFLAGS) $(PYTHON_CPPFLAGS) -I$(srcdir)/../src $(MPI_CPPFLAGS)
+libpyplecoupling_la_CPPFLAGS = $(MPI4PY_CFLAGS) $(PYTHON_CPPFLAGS) -I$(srcdir)/../src $(MPI_CPPFLAGS)
+libpyplecoupling_la_LDFLAGS = $(PYTHON_LIBS) $(PYTHON_EXTRA_LIBS)
+libpyplecoupling_la_LIBADD = $(top_builddir)/src/libple.la
 
-$(BUILT_SOURCES): $(SWIG_SOURCES)
-	$(SWIG) $(AX_SWIG_PYTHON_OPT) -I. $(AX_SWIG_PYTHON_CPPFLAGS) $(SWIG_PYTHON_FLAGS) -I$(srcdir)/../src -o $@ $<
 
 endif
-endif
-
-# Distribution
-
-EXTRA_DIST = \
-swig.i
