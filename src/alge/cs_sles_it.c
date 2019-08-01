@@ -36,6 +36,7 @@
 #include <string.h>
 #include <assert.h>
 #include <math.h>
+#include <float.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -358,7 +359,8 @@ _conjugate_gradient(cs_sles_it_t              *c,
 
     _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
 
-    alpha =  - ro_0 / ro_1;
+    cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    alpha =  - ro_0 * d_ro_1;
 
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
@@ -419,7 +421,8 @@ _conjugate_gradient(cs_sles_it_t              *c,
 
     _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
 
-    alpha =  - ro_0 / ro_1;
+    cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    alpha =  - ro_0 * d_ro_1;
 
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
@@ -731,7 +734,8 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
 
     _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
 
-    alpha =  - ro_0 / ro_1;
+    cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    alpha =  - ro_0 * d_ro_1;
 
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
@@ -794,7 +798,8 @@ _conjugate_gradient_ip(cs_sles_it_t              *c,
 
     _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
 
-    alpha =  - ro_0 / ro_1;
+    cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    alpha =  - ro_0 * d_ro_1;
 
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
@@ -934,7 +939,8 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 
     n_iter = 1;
 
-    alpha =  - ro_0 / ro_1;
+    cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    alpha =  - ro_0 * d_ro_1;
 
     rk_gkm1 = ro_0;
 
@@ -995,7 +1001,8 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
     ro_1 = gk_sk - beta*beta*ro_1;
     ro_0 = rk_gk;
 
-    alpha =  - ro_0 / ro_1;
+    cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    alpha =  - ro_0 * d_ro_1;
 
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
@@ -1123,7 +1130,8 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
 
     _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
 
-    alpha =  - ro_0 / ro_1;
+    cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    alpha =  - ro_0 * d_ro_1;
 
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
@@ -1178,7 +1186,8 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
 
     _dot_products_xy_yz(c, rk, dk, zk, &ro_0, &ro_1);
 
-    alpha =  - ro_0 / ro_1;
+    cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    alpha =  - ro_0 * d_ro_1;
 
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
@@ -1308,7 +1317,8 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 
     n_iter = 1;
 
-    alpha =  - ro_0 / ro_1;
+    cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    alpha =  - ro_0 * d_ro_1;
 
     rk_rkm1 = ro_0;
 
@@ -1364,7 +1374,8 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
     ro_1 = rk_sk - beta*beta*ro_1;
     ro_0 = rk_rk;
 
-    alpha =  - ro_0 / ro_1;
+    cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    alpha =  - ro_0 * d_ro_1;
 
 #   pragma omp parallel if(n_rows > CS_THR_MIN)
     {
@@ -2167,7 +2178,8 @@ _bi_cgstab(cs_sles_it_t              *c,
                    residue, n_iter, &cvg))
       break;
 
-    alpha = ro_0 / ro_1;
+    cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
+    alpha =  - ro_0 * d_ro_1;
 
     /* Final update of vx and rk */
 
