@@ -107,7 +107,7 @@ BEGIN_C_DECLS
  * \brief  Pre-compute the product between the diffusion property and the
  *         face vector areas
  *
- * \param[in]       h_info    \ref cs_param_hodge_t structure for diffusion
+ * \param[in]       hodgep    \ref cs_param_hodge_t structure for diffusion
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  kappa_f   diffusion property against face vector for all
@@ -116,18 +116,18 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_compute_kappa_f(const cs_param_hodge_t     h_info,
+_compute_kappa_f(const cs_param_hodge_t     hodgep,
                  const cs_cell_mesh_t      *cm,
                  cs_cell_builder_t         *cb,
                  cs_real_3_t               *kappa_f)
 {
-  if (h_info.is_unity) {
+  if (hodgep.is_unity) {
     for (short int f = 0; f < cm->n_fc; f++) {
       for (short int k = 0; k < 3; k++)
         kappa_f[f][k] = cm->face[f].meas*cm->face[f].unitv[k];
     }
   }
-  else if (h_info.is_iso) {
+  else if (hodgep.is_iso) {
     for (short int f = 0; f < cm->n_fc; f++) {
       const cs_real_t  coef = cm->face[f].meas*cb->dpty_val;
       for (short int k = 0; k < 3; k++)
@@ -151,7 +151,7 @@ _compute_kappa_f(const cs_param_hodge_t     h_info,
  * \param[in]       fb       index of the boundary face on the local numbering
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       cb        pointer to a \ref cs_cell_builder_t structure
- * \param[in]       h_info    \ref cs_param_hodge_t structure for diffusion
+ * \param[in]       hodgep    \ref cs_param_hodge_t structure for diffusion
  * \param[in]       kappa_f   diffusion property against face vector for all
  *                            faces
  * \param[in, out]  ntrgrd    pointer to a local matrix structure
@@ -162,15 +162,15 @@ static void
 _cdofb_normal_flux_reco(short int                  fb,
                         const cs_cell_mesh_t      *cm,
                         const cs_cell_builder_t   *cb,
-                        const cs_param_hodge_t     h_info,
+                        const cs_param_hodge_t     hodgep,
                         const cs_real_3_t         *kappa_f,
                         cs_sdm_t                  *ntrgrd)
 {
   CS_UNUSED(cb);
 
   /* Sanity check */
-  assert(h_info.type == CS_PARAM_HODGE_TYPE_EDFP);
-  assert(h_info.algo == CS_PARAM_HODGE_ALGO_COST);
+  assert(hodgep.type == CS_PARAM_HODGE_TYPE_EDFP);
+  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_COST);
   assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
                       CS_FLAG_COMP_HFQ));
   assert(cm->f_sgn[fb] == 1);  /* +1 because it's a boundary face */
@@ -181,7 +181,7 @@ _cdofb_normal_flux_reco(short int                  fb,
 
   /* |fb|^2 * nu_{fb}^T.kappa.nu_{fb} */
   const cs_real_t  fb_k_fb = pfbq.meas * _dp3(kappa_f[fb], pfbq.unitv);
-  const cs_real_t  beta_fbkfb_o_pfc = h_info.coef * fb_k_fb / cm->pfc[fb];
+  const cs_real_t  beta_fbkfb_o_pfc = hodgep.coef * fb_k_fb / cm->pfc[fb];
 
   cs_real_t  *ntrgrd_fb = ntrgrd->val + fb * (nfc + 1);
   cs_real_t  row_sum = 0.0;
@@ -1162,13 +1162,13 @@ cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
   assert(cm != NULL && cb != NULL);
   assert(cs_equation_param_has_diffusion(eqp));
 
-  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
   const double chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
   cs_real_3_t  *kappa_f = cb->vectors;
-  _compute_kappa_f(h_info, cm, cb, kappa_f);
+  _compute_kappa_f(hodgep, cm, cb, kappa_f);
 
   /* Initialize the matrix related this flux reconstruction operator */
   const short int n_dofs = cm->n_fc + 1;
@@ -1184,7 +1184,7 @@ cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute \int_f du/dn v and update the matrix */
-      _cdofb_normal_flux_reco(f, cm, cb, h_info,
+      _cdofb_normal_flux_reco(f, cm, cb, hodgep,
                               (const cs_real_t (*)[3])kappa_f,
                               bc_op);
 
@@ -1254,13 +1254,13 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
   assert(cm != NULL && cb != NULL && csys != NULL);
   assert(cs_equation_param_has_diffusion(eqp));
 
-  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
   const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
   cs_real_3_t  *kappa_f = cb->vectors;
-  _compute_kappa_f(h_info, cm, cb, kappa_f);
+  _compute_kappa_f(hodgep, cm, cb, kappa_f);
 
   /* Initialize the matrix related this flux reconstruction operator */
   const short int  n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
@@ -1276,7 +1276,7 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute \int_f du/dn v and update the matrix */
-      _cdofb_normal_flux_reco(f, cm, cb, h_info,
+      _cdofb_normal_flux_reco(f, cm, cb, hodgep,
                               (const cs_real_t (*)[3])kappa_f,
                               bc_op);
 
@@ -1309,7 +1309,7 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
 
   } /* Loop on boundary faces */
 
-  assert(h_info.is_iso == true); /* if not the case something else TODO ? */
+  assert(hodgep.is_iso == true); /* if not the case something else TODO ? */
 
   /* Update the local system matrix */
   for (int bi = 0; bi < n_dofs; bi++) { /* n_(scalar)_dofs == n_blocks */
@@ -1361,13 +1361,13 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   assert(cm != NULL && cb != NULL && csys != NULL);
   assert(cs_equation_param_has_diffusion(eqp));
 
-  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
   const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
   cs_real_3_t  *kappa_f = cb->vectors;
-  _compute_kappa_f(h_info, cm, cb, kappa_f);
+  _compute_kappa_f(hodgep, cm, cb, kappa_f);
 
   const short int n_dofs = cm->n_fc + 1, n_f = cm->n_fc;
   cs_sdm_t  *bc_op = cb->loc, *bc_op_t = cb->aux;
@@ -1382,7 +1382,7 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute \int_f du/dn v and update the matrix */
-      _cdofb_normal_flux_reco(f, cm, cb, h_info,
+      _cdofb_normal_flux_reco(f, cm, cb, hodgep,
                               (const cs_real_t (*)[3])kappa_f,
                               bc_op);
 
@@ -1467,14 +1467,14 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   assert(cm != NULL && cb != NULL && csys != NULL);
   assert(cs_equation_param_has_diffusion(eqp));
 
-  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
   const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
   const short int  n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
   cs_real_3_t  *kappa_f = cb->vectors;
-  _compute_kappa_f(h_info, cm, cb, kappa_f);
+  _compute_kappa_f(hodgep, cm, cb, kappa_f);
 
   /* Initialize the matrix related this flux reconstruction operator */
   cs_sdm_t *bc_op = cb->hdg, *bc_op_t = cb->aux;
@@ -1489,7 +1489,7 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute \int_f du/dn v and update the matrix */
-      _cdofb_normal_flux_reco(f, cm, cb, h_info,
+      _cdofb_normal_flux_reco(f, cm, cb, hodgep,
                               (const cs_real_t (*)[3])kappa_f,
                               bc_op);
 
@@ -1549,7 +1549,7 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
   } /* Loop on boundary faces */
 
-  assert(h_info.is_iso == true); /* if not the case something else TODO ? */
+  assert(hodgep.is_iso == true); /* if not the case something else TODO ? */
 
   /* Update the local system matrix */
   for (int bi = 0; bi < n_dofs; bi++) { /* n_(scalar)_dofs == n_blocks */
@@ -1598,11 +1598,11 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
   if (csys->has_sliding == false)
     return;  /* Nothing to do */
 
-  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
 
   /* Sanity checks */
   assert(cm != NULL && cb != NULL);
-  assert(h_info.is_iso == true); /* if not the case something else TODO ? */
+  assert(hodgep.is_iso == true); /* if not the case something else TODO ? */
   assert(cs_equation_param_has_diffusion(eqp));
 
   const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
@@ -1612,7 +1612,7 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
   cs_real_3_t  *kappa_f = cb->vectors;
-  _compute_kappa_f(h_info, cm, cb, kappa_f);
+  _compute_kappa_f(hodgep, cm, cb, kappa_f);
 
   /* Initialize the matrix related this flux reconstruction operator */
   cs_sdm_t *bc_op = cb->hdg;
@@ -1627,7 +1627,7 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
     if (csys->bf_flag[f] & CS_CDO_BC_SLIDING) {
 
       /* Compute \int_f du/dn v and update the matrix */
-      _cdofb_normal_flux_reco(f, cm, cb, h_info,
+      _cdofb_normal_flux_reco(f, cm, cb, hodgep,
                               (const cs_real_t (*)[3])kappa_f,
                               bc_op);
 
@@ -1812,7 +1812,7 @@ cs_cdo_diffusion_svb_cost_generic(const cs_equation_param_t      *eqp,
     return;  /* Nothing to do */
 
   const double  cs_gamma_generic = 1e-2;
-  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
 
   /* Robin BC expression: K du/dn + alpha*(u - u0) = g
    * Store x = u0 + g/alpha
@@ -1840,7 +1840,7 @@ cs_cdo_diffusion_svb_cost_generic(const cs_equation_param_t      *eqp,
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
-      _vb_cost_full_flux_op(f, cm, pty_nuf, h_info.coef, cb, bc_op, ntrgrd_tr);
+      _vb_cost_full_flux_op(f, cm, pty_nuf, hodgep.coef, cb, bc_op, ntrgrd_tr);
 
       /* Robin BC expression: K du/dn + alpha*(u - u0) = g */
       /* ------------------------------------------------- */
@@ -1937,10 +1937,10 @@ cs_cdo_diffusion_svb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
   assert(cm != NULL && cb != NULL);
   assert(cs_equation_param_has_diffusion(eqp));
 
-  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
   const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
   const cs_real_t  dbeta =
-    (h_info.algo == CS_PARAM_HODGE_ALGO_BUBBLE) ? h_info.coef : 3*h_info.coef;
+    (hodgep.algo == CS_PARAM_HODGE_ALGO_BUBBLE) ? hodgep.coef : 3*hodgep.coef;
 
   cs_sdm_t  *ntrgrd = cb->loc;
 
@@ -2013,10 +2013,10 @@ cs_cdo_diffusion_vvb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
     return;  /* Nothing to do */
   assert(cm != NULL && cb != NULL);
 
-  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
   const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
   const cs_real_t  dbeta =
-    (h_info.algo == CS_PARAM_HODGE_ALGO_BUBBLE) ? h_info.coef : 3*h_info.coef;
+    (hodgep.algo == CS_PARAM_HODGE_ALGO_BUBBLE) ? hodgep.coef : 3*hodgep.coef;
 
   cs_sdm_t  *ntrgrd = cb->loc;
 
@@ -2070,7 +2070,7 @@ cs_cdo_diffusion_vvb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
 #endif
 
   /* Add contribution to the linear system */
-  assert(h_info.is_iso == true); /* if not the case something else TODO ? */
+  assert(hodgep.is_iso == true); /* if not the case something else TODO ? */
 
   for (int bvi = 0; bvi < cm->n_vc; bvi++) {
     for (int bvj = 0; bvj < cm->n_vc; bvj++) {
@@ -2111,16 +2111,16 @@ cs_cdo_diffusion_vvb_ocs_sliding(const cs_equation_param_t      *eqp,
                                  cs_cell_builder_t              *cb,
                                  cs_cell_sys_t                  *csys)
 {
-  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
   const cs_real_t  dbeta =
-    (h_info.algo == CS_PARAM_HODGE_ALGO_BUBBLE) ? h_info.coef : 3*h_info.coef;
+    (hodgep.algo == CS_PARAM_HODGE_ALGO_BUBBLE) ? hodgep.coef : 3*hodgep.coef;
 
   /* Enforcement of the sliding BCs */
   if (csys->has_sliding == false)
     return;  /* Nothing to do */
 
   /* Sanity checks */
-  assert(h_info.is_iso == true); /* if not the case something else TODO ? */
+  assert(hodgep.is_iso == true); /* if not the case something else TODO ? */
 
   cs_sdm_t  *ntrgrd = cb->loc;
 
@@ -2239,7 +2239,7 @@ cs_cdo_diffusion_svb_ocs_wsym_dirichlet(const cs_equation_param_t      *eqp,
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
-  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
   const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
 
   cs_sdm_t  *ntrgrd = cb->loc;
@@ -2265,7 +2265,7 @@ cs_cdo_diffusion_svb_ocs_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
-      _vb_ocs_normal_flux_op(f, cm, pty_nuf, h_info.coef, cb, ntrgrd);
+      _vb_ocs_normal_flux_op(f, cm, pty_nuf, hodgep.coef, cb, ntrgrd);
 
       /* Update ntrgrd = ntrgrd + transp and transp = transpose(ntrgrd) */
       cs_sdm_square_add_transpose(ntrgrd, ntrgrd_tr);

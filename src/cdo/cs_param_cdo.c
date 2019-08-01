@@ -105,32 +105,32 @@ cs_param_hodge_algo_desc[CS_PARAM_N_HODGE_ALGOS][CS_BASE_STRING_LEN] =
 /*!
  * \brief   Get the name of algorithm related to a discrete Hdoge operator
  *
- * \param[in] h_info     cs_param_hodge_t structure
+ * \param[in] hodgep     cs_param_hodge_t structure
  *
  * \return the name of the algorithm
  */
 /*----------------------------------------------------------------------------*/
 
 const char *
-cs_param_hodge_get_algo_name(const cs_param_hodge_t   h_info)
+cs_param_hodge_get_algo_name(const cs_param_hodge_t   hodgep)
 {
-  return cs_param_hodge_algo_desc[h_info.algo];
+  return cs_param_hodge_algo_desc[hodgep.algo];
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Get the type of discrete Hodge operator
  *
- * \param[in] h_info     cs_param_hodge_t structure
+ * \param[in] hodgep     cs_param_hodge_t structure
  *
  * \return the name of the type
  */
 /*----------------------------------------------------------------------------*/
 
 const char *
-cs_param_hodge_get_type_name(const cs_param_hodge_t   h_info)
+cs_param_hodge_get_type_name(const cs_param_hodge_t   hodgep)
 {
-  return cs_param_hodge_type_desc[h_info.type];
+  return cs_param_hodge_type_desc[hodgep.type];
 }
 
 /*----------------------------------------------------------------------------*/

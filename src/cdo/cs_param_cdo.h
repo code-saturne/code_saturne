@@ -162,27 +162,27 @@ extern int  cs_param_cdo_mode;
 /*!
  * \brief   Get the name of algorithm related to a discrete Hdoge operator
  *
- * \param[in] h_info     cs_param_hodge_t structure
+ * \param[in] hodgep     cs_param_hodge_t structure
  *
  * \return the name of the algorithm
  */
 /*----------------------------------------------------------------------------*/
 
 const char *
-cs_param_hodge_get_algo_name(const cs_param_hodge_t   h_info);
+cs_param_hodge_get_algo_name(const cs_param_hodge_t   hodgep);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Get the type of discrete Hodge operator
  *
- * \param[in] h_info     cs_param_hodge_t structure
+ * \param[in] hodgep     cs_param_hodge_t structure
  *
  * \return the name of the type
  */
 /*----------------------------------------------------------------------------*/
 
 const char *
-cs_param_hodge_get_type_name(const cs_param_hodge_t   h_info);
+cs_param_hodge_get_type_name(const cs_param_hodge_t   hodgep);
 
 /*----------------------------------------------------------------------------*/
 /*!

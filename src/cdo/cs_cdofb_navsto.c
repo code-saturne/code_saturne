@@ -945,12 +945,12 @@ cs_cdofb_block_dirichlet_weak(short int                       f,
                               cs_cell_builder_t              *cb,
                               cs_cell_sys_t                  *csys)
 {
-  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
 
   /* Sanity checks */
   assert(cm != NULL && cb != NULL && csys != NULL);
   assert(cs_equation_param_has_diffusion(eqp));
-  assert(h_info.is_iso == true);
+  assert(hodgep.is_iso == true);
 
   /* 0) Pre-compute the product between diffusion property and the
      face vector areas */
@@ -969,7 +969,7 @@ cs_cdofb_block_dirichlet_weak(short int                       f,
   cs_sdm_square_init(n_dofs, bc_op);
 
   /* Compute \int_f du/dn v and update the matrix */
-  _normal_flux_reco(f, h_info.coef, cm, (const cs_real_t (*)[3])kappa_f, bc_op);
+  _normal_flux_reco(f, hodgep.coef, cm, (const cs_real_t (*)[3])kappa_f, bc_op);
 
   /* 2) Update the bc_op matrix and the RHS with the Dirichlet values. */
 
@@ -1024,12 +1024,12 @@ cs_cdofb_block_dirichlet_wsym(short int                       f,
                               cs_cell_builder_t              *cb,
                               cs_cell_sys_t                  *csys)
 {
-  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
 
   /* Sanity checks */
   assert(cm != NULL && cb != NULL && csys != NULL);
   assert(cs_equation_param_has_diffusion(eqp));
-  assert(h_info.is_iso == true);
+  assert(hodgep.is_iso == true);
 
   /* 0) Pre-compute the product between diffusion property and the
      face vector areas */
@@ -1048,7 +1048,7 @@ cs_cdofb_block_dirichlet_wsym(short int                       f,
   cs_sdm_square_init(n_dofs, bc_op);
 
   /* Compute \int_f du/dn v and update the matrix */
-  _normal_flux_reco(f, h_info.coef, cm, (const cs_real_t (*)[3])kappa_f, bc_op);
+  _normal_flux_reco(f, hodgep.coef, cm, (const cs_real_t (*)[3])kappa_f, bc_op);
 
   /* 2) Update the bc_op matrixand the RHS with the Dirichlet values */
 
@@ -1118,11 +1118,11 @@ cs_cdofb_symmetry(short int                       f,
                   cs_cell_builder_t              *cb,
                   cs_cell_sys_t                  *csys)
 {
-  const cs_param_hodge_t  h_info = eqp->diffusion_hodge;
+  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
 
   /* Sanity checks */
   assert(cm != NULL && cb != NULL && csys != NULL);
-  assert(h_info.is_iso == true); /* if not the case something else TODO ? */
+  assert(hodgep.is_iso == true); /* if not the case something else TODO ? */
   assert(cs_equation_param_has_diffusion(eqp));
 
   /* 0) Pre-compute the product between diffusion property and the
@@ -1140,7 +1140,7 @@ cs_cdofb_symmetry(short int                       f,
   cs_sdm_square_init(n_dofs, bc_op);
 
   /* Compute \int_f du/dn v and update the matrix */
-  _normal_flux_reco(f, h_info.coef, cm, (const cs_real_t (*)[3])kappa_f, bc_op);
+  _normal_flux_reco(f, hodgep.coef, cm, (const cs_real_t (*)[3])kappa_f, bc_op);
 
   /* 2) Update the bc_op matrix and nothing done to the RHS since a sliding
      means homogeneous Dirichlet values on the normal component and hommogeneous
