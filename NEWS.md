@@ -139,7 +139,7 @@ Bug fixes:
   * without gravity and without hydro. pressure treatment.
   Note that the default behaviour (GUI) was to enable the hydro. pressure
   treatment at walls. Hence in all cases with this default setting and no
-  gravity, this fix has no impact. 
+  gravity, this fix has no impact.
 
 - Fix missing variable change for computed pressure with EVM in a
   postprocessing utility function.
