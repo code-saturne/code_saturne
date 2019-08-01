@@ -43,6 +43,8 @@ Bug fixes:
 
 Architectural changes:
 
+- Fix compilation with gcc 9 and OpenMP support enabled.
+
 - Allow sourcing environment before launching with the
   --with-shell-env configure option.
 

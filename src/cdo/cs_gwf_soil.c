@@ -165,7 +165,8 @@ _update_saturated_iso_soil(const cs_mesh_t             *mesh,
   const  double  iso_satval = law->saturated_permeability[0][0];
 
 # pragma omp parallel for if (zone->n_elts > CS_THR_MIN) default(none)     \
-  shared(zone, law, permeability_values, moisture_values)
+  shared(zone, law, permeability_values, moisture_values)                  \
+  firstprivate(iso_satval)
   for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
 
     const cs_lnum_t  c_id = zone->elt_ids[i];
@@ -308,9 +309,10 @@ _update_genuchten_iso_soil(const cs_mesh_t             *mesh,
   const  double  delta_moisture =
     law->saturated_moisture - law->residual_moisture;
 
-# pragma omp parallel for if (zone->n_elts > CS_THR_MIN) default(none)     \
-  shared(head_values, zone, law, permeability_values, moisture_values, \
-         capacity_values)
+# pragma omp parallel for if (zone->n_elts > CS_THR_MIN) default(none)   \
+  shared(head_values, zone, law, permeability_values, moisture_values,   \
+         capacity_values)                                                \
+  firstprivate(iso_satval, delta_moisture)
   for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
 
     const cs_lnum_t  c_id = zone->elt_ids[i];

@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -451,7 +451,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
         }
         else {
           const cs_lnum_t  bf_id = f_id - quant->n_i_faces;
-          assert(bf_id > -1);
+          CS_CDO_OMP_ASSERT(bf_id > -1);
           for (int k = 0; k < 3; k++)
             xfxc[k] = quant->b_face_center[3*bf_id+k] - xc[k];
         }
@@ -479,14 +479,14 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
               break;
             }
           }
-          assert(e < n_ec);
+          CS_CDO_OMP_ASSERT(e < n_ec);
 
           /* Portion of dual faces to consider */
           cs_real_t  *sface = quant->sface_normal + 6*(c2e_idx[0]+e);
 
           /* One should have (normal_tria, tangent_e) > 0 */
           const double  orient = _dp3(tria.unitv, edge.unitv);
-          assert(fabs(orient) > 0);
+          CS_CDO_OMP_ASSERT(fabs(orient) > 0);
 
           /* Store the computed data */
           if (orient < 0) {
@@ -501,7 +501,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
 #if defined(DEBUG) && !defined(NDEBUG)
           cs_nvec3_t  df_nvec;
           cs_nvec3(sface + 3*parent[e], &df_nvec);
-          assert(fabs(_dp3(df_nvec.unitv, edge.unitv)) > 0);
+          CS_CDO_OMP_ASSERT(fabs(_dp3(df_nvec.unitv, edge.unitv)) > 0);
 #endif
           parent[e] += 1;
 
@@ -591,7 +591,7 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
           if (c2v_ids[_v] == v1_id) _v1 = _v;
           if (c2v_ids[_v] == v2_id) _v2 = _v;
         }
-        assert(_v1 < n_vc && _v2 < n_vc);
+        CS_CDO_OMP_ASSERT(_v1 < n_vc && _v2 < n_vc);
         vol_vc[_v1] += pvol;
         vol_vc[_v2] += pvol;
 

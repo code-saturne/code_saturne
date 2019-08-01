@@ -6,7 +6,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -82,7 +82,6 @@ BEGIN_C_DECLS
   \brief Build an algebraic CDO face-based system for unsteady
          convection-diffusion-reaction of scalar-valued equations with
          source terms
-
 */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -1169,9 +1168,10 @@ cs_cdofb_scaleq_solve_steady_state(double                      dt_cur,
   cs_matrix_assembler_values_t  *mav =
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
-  shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,   \
-         dir_values, neu_tags, fld, cs_cdofb_cell_sys, cs_cdofb_cell_bld)
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)      \
+  shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,     \
+         dir_values, neu_tags, fld, cs_cdofb_cell_sys, cs_cdofb_cell_bld) \
+  firstprivate(time_eval)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1384,9 +1384,10 @@ cs_cdofb_scaleq_solve_implicit(double                      dt_cur,
   cs_matrix_assembler_values_t  *mav =
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
-  shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,   \
-         dir_values, neu_tags, fld, cs_cdofb_cell_sys, cs_cdofb_cell_bld)
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)      \
+  shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,     \
+         dir_values, neu_tags, fld, cs_cdofb_cell_sys, cs_cdofb_cell_bld) \
+  firstprivate(time_eval)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1643,7 +1644,8 @@ cs_cdofb_scaleq_solve_theta(double                      dt_cur,
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)      \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,     \
          dir_values, neu_tags, fld, cs_cdofb_cell_sys, cs_cdofb_cell_bld, \
-         compute_initial_source)
+         compute_initial_source)                                          \
+  firstprivate(time_eval, t_cur, tcoef)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1938,7 +1940,8 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,        \
          dir_values, neu_tags, field_val,                                \
-         cs_cdofb_cell_sys, cs_cdofb_cell_bld)
+         cs_cdofb_cell_sys, cs_cdofb_cell_bld)                           \
+  firstprivate(t_cur)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -2073,8 +2076,8 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
 
         /* Assign local matrix to a mass matrix to define */
         cs_sdm_t  *mass_mat = cb->loc;
-        assert(mass_mat->n_rows == mass_mat->n_cols);
-        assert(mass_mat->n_rows == cm->n_fc + 1);
+        CS_CDO_OMP_ASSERT(mass_mat->n_rows == mass_mat->n_cols);
+        CS_CDO_OMP_ASSERT(mass_mat->n_rows == cm->n_fc + 1);
 
         if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) {
 
@@ -2089,7 +2092,7 @@ cs_cdofb_scaleq_build_system(const cs_mesh_t            *mesh,
                  sizeof(cs_real_t)*(cm->n_fc + 1)*(cm->n_fc + 1));
 
           bft_error(__FILE__, __LINE__, 0,
-                    "%s: Not implemented yet.", __func__);
+                    "Not implemented yet.");
 
         }
 
@@ -2261,7 +2264,8 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, pot, bflux,             \
-         eb, cs_cdofb_cell_bld)
+         eb, cs_cdofb_cell_bld)                                         \
+  firstprivate(time_eval)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();

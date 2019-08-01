@@ -735,7 +735,8 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)   \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,      \
          dir_values, neu_tags, field_val,                              \
-         cs_cdofb_cell_sys, cs_cdofb_cell_bld)
+         cs_cdofb_cell_sys, cs_cdofb_cell_bld)                         \
+  firstprivate(t_cur)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -797,8 +798,7 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
         eqc->get_stiffness_matrix(eqp->diffusion_hodge, cm, cb);
 
         if (eqp->diffusion_hodge.is_iso == false)
-          bft_error(__FILE__, __LINE__, 0, " %s: Case not handle yet\n",
-                    __func__);
+          bft_error(__FILE__, __LINE__, 0, " Case not handle yet\n");
 
         /* Add the local diffusion operator to the local system */
         const cs_real_t  *sval = cb->loc->val;
@@ -807,7 +807,8 @@ cs_cdofb_vecteq_build_system(const cs_mesh_t            *mesh,
 
             /* Retrieve the 3x3 matrix */
             cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bi, bj);
-            assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
+            CS_CDO_OMP_ASSERT(   bij->n_rows == bij->n_cols
+                              && bij->n_rows == 3);
 
             const cs_real_t  _val = sval[(cm->n_fc+1)*bi+bj];
             bij->val[0] += _val;

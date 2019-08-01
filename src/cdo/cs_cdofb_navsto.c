@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -387,8 +387,6 @@ cs_cdofb_navsto_ac_vpp_compute(const cs_mesh_t              *mesh,
 
   cs_cdofb_navsto_t  *nssc = cs_cdofb_navsto_context;
   cs_navsto_ac_vpp_t  *nscc = (cs_navsto_ac_vpp_t *)nsc_input;
-
-  cs_equation_t *mom_eq = nscc->momentum;
 
   cs_timer_t  t0 = cs_timer_time();
 

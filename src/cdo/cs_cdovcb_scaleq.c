@@ -6,7 +6,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -1171,7 +1171,9 @@ cs_cdovcb_scaleq_solve_steady_state(double                      dt_cur,
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,       \
-         dir_values, neu_tags, fld, rs, cs_cdovcb_cell_sys, cs_cdovcb_cell_bld)
+         dir_values, neu_tags, fld, rs, cs_cdovcb_cell_sys,             \
+         cs_cdovcb_cell_bld)                                            \
+  firstprivate(time_eval)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -1364,7 +1366,9 @@ cs_cdovcb_scaleq_solve_implicit(double                      dt_cur,
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,       \
-         dir_values, neu_tags, fld, rs, cs_cdovcb_cell_sys, cs_cdovcb_cell_bld)
+         dir_values, neu_tags, fld, rs, cs_cdovcb_cell_sys,             \
+         cs_cdovcb_cell_bld)                                            \
+  firstprivate(time_eval)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -1442,7 +1446,7 @@ cs_cdovcb_scaleq_solve_implicit(double                      dt_cur,
       if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping */
 
         /* |c|*wvc = |dual_cell(v) cap c| */
-        assert(cs_flag_test(eqb->msh_flag, CS_CDO_LOCAL_PVQ));
+        CS_CDO_OMP_ASSERT(cs_flag_test(eqb->msh_flag, CS_CDO_LOCAL_PVQ));
         const double  ptyc = cb->tpty_val * cm->vol_c / dt_cur;
 
         /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
@@ -1643,7 +1647,8 @@ cs_cdovcb_scaleq_solve_theta(double                      dt_cur,
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,       \
          dir_values, neu_tags, fld, rs, cs_cdovcb_cell_sys,             \
-         cs_cdovcb_cell_bld, compute_initial_source)
+         cs_cdovcb_cell_bld, compute_initial_source)                    \
+  firstprivate(n_vertices, time_eval, t_cur, tcoef)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -1765,7 +1770,7 @@ cs_cdovcb_scaleq_solve_theta(double                      dt_cur,
       if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping */
 
         /* |c|*wvc = |dual_cell(v) cap c| */
-        assert(cs_flag_test(eqb->msh_flag, CS_CDO_LOCAL_PVQ));
+        CS_CDO_OMP_ASSERT(cs_flag_test(eqb->msh_flag, CS_CDO_LOCAL_PVQ));
         const double  ptyc = cb->tpty_val * cm->vol_c / dt_cur;
 
         /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
@@ -1928,7 +1933,8 @@ cs_cdovcb_scaleq_build_system(const cs_mesh_t            *mesh,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)          \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav, dir_values, \
-         neu_tags, field_val, cs_cdovcb_cell_sys, cs_cdovcb_cell_bld)
+         neu_tags, field_val, cs_cdovcb_cell_sys, cs_cdovcb_cell_bld)         \
+  firstprivate(t_cur)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -2543,7 +2549,8 @@ cs_cdovcb_scaleq_cellwise_diff_flux(const cs_real_t             *values,
 
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)   \
   shared(quant, connect, location, eqp, eqb, eqc, diff_flux, values,  \
-         t_eval, cs_cdovcb_cell_bld)
+         t_eval, cs_cdovcb_cell_bld)                                  \
+  firstprivate(cs_flag_primal_cell, cs_flag_dual_face_byc)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();

@@ -6,7 +6,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -387,7 +387,6 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
   const cs_cdo_quantities_t *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_equation_param_t *eqp = eq->param;
-  const cs_real_t  odt = cs_equation_param_has_time(eqp) ? 1./dt_cur : 1.0;
   const cs_real_t  t_cur = cs_shared_time_step->t_cur;
 
   cs_equation_builder_t  *eqb = eq->builder;
@@ -422,7 +421,8 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)   \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,      \
-         dir_values, neu_tags, zeta, vel_vals, pr_vals, sc)
+         dir_values, neu_tags, zeta, vel_vals, pr_vals, sc)            \
+  firstprivate(t_cur)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -507,7 +507,7 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
 
         if (eqp->diffusion_hodge.is_iso == false)
           bft_error(__FILE__, __LINE__, 0,
-                    " %s: Case not handle yet\n", __func__);
+                    " Case not handle yet\n");
 
         /* Add the local diffusion operator to the local system
            sval stores the stiffness matrix corresponding to the scalar case
@@ -518,7 +518,8 @@ _build_system_uzawa(const cs_mesh_t       *mesh,
 
             /* Retrieve the 3x3 matrix */
             cs_sdm_t  *bij = cs_sdm_get_block(csys->mat, bi, bj);
-            assert(bij->n_rows == bij->n_cols && bij->n_rows == 3);
+            CS_CDO_OMP_ASSERT(   bij->n_rows == bij->n_cols
+                              && bij->n_rows == 3);
 
             const cs_real_t  _val = sval[(cm->n_fc+1)*bi+bj];
             bij->val[0] += _val;

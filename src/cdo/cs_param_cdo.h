@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -40,6 +40,17 @@ BEGIN_C_DECLS
 /*============================================================================
  * Macro definitions
  *============================================================================*/
+
+/* Avoid issues with assert in some OpenMp contructs using gcc 9 */
+#if defined(HAVE_OPENMP) && defined(__GNUC__)
+  #if __GNUC__ == 9
+    #define CS_CDO_OMP_ASSERT(e)
+  #else
+    #define CS_CDO_OMP_ASSERT(e)  assert(e)
+  #endif
+#else
+  #define CS_CDO_OMP_ASSERT(e)  assert(e)
+#endif
 
 /* Size of the buffer used to collect global ids for rows and columns
    when assembling the values in the global matrix from the local cellwise

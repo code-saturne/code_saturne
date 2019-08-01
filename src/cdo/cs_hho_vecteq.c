@@ -977,7 +977,8 @@ cs_hho_vecteq_compute_source(const cs_equation_param_t  *eqp,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(quant, connect, eqp, eqb, eqc,                                  \
-         cs_hho_cell_sys, cs_hho_cell_bld, cs_hho_builders)
+         cs_hho_cell_sys, cs_hho_cell_bld, cs_hho_builders)              \
+  firstprivate(t_cur)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1142,7 +1143,8 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(dt_cur, quant, connect, eqp, eqb, eqc, rhs, matrix, mav,        \
-         field_val, cs_hho_cell_sys, cs_hho_cell_bld, cs_hho_builders)
+         field_val, cs_hho_cell_sys, cs_hho_cell_bld, cs_hho_builders)   \
+  firstprivate(t_cur)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
