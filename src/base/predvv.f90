@@ -1457,32 +1457,26 @@ if (iterns.eq.1) then
   endif
 endif
 
-! At the first PISO iteration, explicit source terms are added
-if (iterns.eq.1.and.(iphydr.ne.1.or.igpust.ne.1)) then
+! Explicit user source terms are added
+if ((iphydr.ne.1.or.igpust.ne.1)) then
   ! If source terms are time-extrapolated, they are stored in fields
-  if (isno2t.gt.0) then
-    do iel = 1, ncel
-      do isou = 1, 3
-        c_st_vel(isou,iel) = c_st_vel(isou,iel) + tsexp(isou,iel)
-      enddo
-    enddo
-
-  else
-    ! If no PISO sweep
-    if (nterup.eq.1) then
+  if (iterns.eq.1) then
+    if (isno2t.gt.0) then
       do iel = 1, ncel
         do isou = 1, 3
-          trav(isou,iel) = trav(isou,iel) + tsexp(isou,iel)
-        enddo
-      enddo
-    ! If PISO sweeps
-    else
-      do iel = 1, ncel
-        do isou = 1, 3
-          trava(isou,iel) = trava(isou,iel) + tsexp(isou,iel)
+          c_st_vel(isou,iel) = c_st_vel(isou,iel) + tsexp(isou,iel)
         enddo
       enddo
     endif
+
+  else
+    ! Alwways in the current work array because this may be updated
+    ! during  PISO sweeps
+     do iel = 1, ncel
+       do isou = 1, 3
+        trav(isou,iel) = trav(isou,iel) + tsexp(isou,iel)
+       enddo
+    enddo
   endif
 endif
 
