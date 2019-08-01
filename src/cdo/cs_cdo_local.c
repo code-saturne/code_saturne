@@ -1265,57 +1265,67 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
     assert(cs_flag_test(build_flag, CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
 
+    double  cbox[6] = {DBL_MAX, DBL_MAX, DBL_MAX, -DBL_MAX, -DBL_MAX, -DBL_MAX};
+    for (int v = 0; v < cm->n_vc; v++) {
+      const double  *xv = cm->xv + 3*v;
+      if (xv[0] < cbox[0]) cbox[0] = xv[0];
+      if (xv[1] < cbox[1]) cbox[1] = xv[1];
+      if (xv[2] < cbox[2]) cbox[2] = xv[2];
+      if (xv[0] > cbox[3]) cbox[3] = xv[0];
+      if (xv[1] > cbox[4]) cbox[4] = xv[1];
+      if (xv[2] > cbox[5]) cbox[5] = xv[2];
+    }
+    cm->diam_c = cs_math_3_distance(cbox, cbox + 3);
+
+    /* Now compute an approximation of the diameter for each cell face */
+
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int t_id = omp_get_thread_num();
     assert(t_id < cs_glob_n_threads);
 #else
     int t_id = 0;
 #endif /* openMP */
-
-    double  *dbuf = cs_cdo_local_dbuf[t_id];
     short int  *vtag = cs_cdo_local_kbuf[t_id];
-    int  size = cm->n_vc*(cm->n_vc-1)/2;
-    int  shift = 0;
-
-    /* Reset diam */
-    cm->diam_c = -1;
-    memset(dbuf, 0, sizeof(cs_real_t)*size);
-
-    for (short int vi = 0; vi < cm->n_vc; vi++) {
-      const double *xvi = cm->xv + 3*vi;
-      for (short int vj = vi+1; vj < cm->n_vc; vj++) {
-        double  l = cs_math_3_distance(xvi, cm->xv + 3*vj);
-        dbuf[shift++] = l;
-        if (l > cm->diam_c) cm->diam_c = l;
-
-      } /* Loop on vj > vi */
-    }   /* Loop on vi */
 
     for (short int f = 0; f < cm->n_fc; f++) {
+
+      double  fbox[6] = { DBL_MAX,  DBL_MAX,  DBL_MAX,
+                         -DBL_MAX, -DBL_MAX, -DBL_MAX};
 
       /* Reset vtag */
       for (short int v = 0; v < cm->n_vc; v++) vtag[v] = -1;
 
       /* Tag face vertices */
       for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+        const short int  *id = cm->e2v_ids + 2*cm->f2e_ids[i];
 
-        const int  eshft = 2*cm->f2e_ids[i];
-        vtag[cm->e2v_ids[eshft  ]] = 1;
-        vtag[cm->e2v_ids[eshft+1]] = 1;
-      }
+        if (vtag[id[0]] < 0) {
+          const double  *xv = cm->xv + 3*id[0];
+          if (xv[0] < fbox[0]) fbox[0] = xv[0];
+          if (xv[1] < fbox[1]) fbox[1] = xv[1];
+          if (xv[2] < fbox[2]) fbox[2] = xv[2];
+          if (xv[0] > fbox[3]) fbox[3] = xv[0];
+          if (xv[1] > fbox[4]) fbox[4] = xv[1];
+          if (xv[2] > fbox[5]) fbox[5] = xv[2];
 
-      cm->f_diam[f] = -1;
-      shift = 0;
-      for (short int vi = 0; vi < cm->n_vc; vi++) {
-        for (short int vj = vi+1; vj < cm->n_vc; vj++) {
+          vtag[id[0]] = 1;
+        }
 
-          if (vtag[vi] > 0) /* belong to the current face */
-            if (vtag[vj] > 0) /* belong to the current face */
-              if (dbuf[shift] > cm->f_diam[f]) cm->f_diam[f] = dbuf[shift];
-          shift++;
+        if (vtag[id[1]] < 0) {
+          const double  *xv = cm->xv + 3*id[1];
+          if (xv[0] < fbox[0]) fbox[0] = xv[0];
+          if (xv[1] < fbox[1]) fbox[1] = xv[1];
+          if (xv[2] < fbox[2]) fbox[2] = xv[2];
+          if (xv[0] > fbox[3]) fbox[3] = xv[0];
+          if (xv[1] > fbox[4]) fbox[4] = xv[1];
+          if (xv[2] > fbox[5]) fbox[5] = xv[2];
 
-        } /* Loop on vj > vi */
-      }   /* Loop on vi */
+          vtag[id[1]] = 1;
+        }
+
+      } /* Loop on face edges */
+
+      cm->f_diam[f] = cs_math_3_distance(fbox, fbox + 3);
 
     } /* Loop on cell faces */
 
