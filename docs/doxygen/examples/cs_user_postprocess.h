@@ -416,10 +416,14 @@
 
   Probes and profiles may also be associated to the mesh boundary.
 
-  In the following example, two profiles are defined based on a mesh boundary
+  In the following example, a profile is defined based on a mesh boundary
   selection criterion, using the predefined
   \ref cs_b_face_criterion_probes_define (which assumes curvilinear coordinates
   based on the "x" direction):
+
+  \snippet cs_user_postprocess-boundary_pressure_profile.c post_profile_def
+
+  and in the below example using an array of 2 selection criteria:
 
   \snippet cs_user_postprocess-profiles.c post_profile_advanced_2
 
@@ -490,7 +494,14 @@
 
   \snippet cs_user_postprocess-profiles.c post_profile_advanced_var_1
 
-  For the second series, values for each column are also computed,
+  For the profile defined all around a foil, the following code is used to
+  compute the pressure coefficient and output its values:
+
+  \snippet cs_user_postprocess-boundary_pressure_profile.c variables_def
+
+  \snippet cs_user_postprocess-boundary_pressure_profile.c profile_variables
+
+  For the last profiles series, values for each column are also computed,
   requiring a reference pressure based on the mesh point closest to
   a given point, and computation of tangential stresses, so as to
   determine drag coefficients.

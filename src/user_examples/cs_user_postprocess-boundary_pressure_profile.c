@@ -123,6 +123,9 @@ cs_user_postprocess_probes(void)
   /* A probe will be located at each boundary face center */
 
   /* Create probes set of name foil_profile from criterion FOIL_WALL */
+
+  /*! [post_profile_def] */
+
   cs_probe_set_t *pset
     = cs_probe_set_create_from_local("foil_profile", /* probes set name */
                                      cs_b_face_criterion_probes_define,
@@ -135,6 +138,9 @@ cs_user_postprocess_probes(void)
   /* Associate profile writer to this probes set */
   const int writer_ids[] = {CS_POST_WRITER_PROFILES};
   cs_probe_set_associate_writers(pset, 1, writer_ids);
+
+  /*! [post_profile_def] */
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -188,10 +194,13 @@ cs_user_postprocess_values(const char            *mesh_name,
 
     /* check that current probes set is foil_profile */
     if (strncmp(name, "foil_profile", strlen("foil_profile")) == 0) {
-
+      /*! [variables_def] */
       const cs_mesh_t *m = cs_glob_mesh;
       const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
       const cs_real_3_t *b_face_cog = (const cs_real_3_t *)mq->b_face_cog;
+      /*! [variables_def] */
+
+      /*! [profile_variables] */
 
       cs_real_t *val;
       BFT_MALLOC(val, n_b_faces, cs_real_t);
@@ -248,6 +257,7 @@ cs_user_postprocess_values(const char            *mesh_name,
          ts);
 
       BFT_FREE(val);
+      /*! [profile_variables] */
     }
   }
 }
