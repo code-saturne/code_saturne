@@ -240,7 +240,8 @@ void
 cs_mesh_quantities_set_cocg_options(int  gradient_option);
 
 /*----------------------------------------------------------------------------
- * Compute Fluid volumes and fluid surface in addition to cell volume and surfaces.
+ * Compute fluid volumes and fluid surfaces in addition to cell volumes
+ * and surfaces.
  *
  * parameters:
  *   porous_model <-- porous model option (> 0 for porosity)

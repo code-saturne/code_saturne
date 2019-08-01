@@ -2709,8 +2709,8 @@ cs_mesh_quantities_set_cocg_options(int  gradient_option)
 }
 
 /*----------------------------------------------------------------------------
- * Compute Fluid volumes and fluid surface in addition to
- * cell volumes and surfaces.
+ * Compute fluid volumes and fluid surfaces in addition to cell volumes
+ * and surfaces.
  *
  * parameters:
  *   porous_model <-- porous model option (> 0 for porosity)
@@ -2726,7 +2726,7 @@ cs_mesh_quantities_set_porous_model(int  porous_model)
 /*!
  * \brief  Set (unset) has_disable_flag
  *
- * \param[in]  flag   1: on, 0: off
+ * \param[in]  flag 1: on, 0: off
  */
 /*----------------------------------------------------------------------------*/
 void
@@ -2735,11 +2735,11 @@ cs_mesh_quantities_set_has_disable_flag(int  flag)
   cs_mesh_quantities_t *mq =cs_glob_mesh_quantities;
 
   mq->has_disable_flag = flag;
-  /* if off, fluid surfaces points toward cell surfaces */
+  /* if off, fluid surfaces point toward cell surfaces */
   /* Porous models */
   if (cs_glob_porous_model > 0) {
     if (flag == 0) {
-      /* Set pointer of compution faces to standard faces */
+      /* Set pointers of face quantities to the standard ones */
       if (cs_glob_porous_model == 3) {
         mq->i_f_face_normal = mq->i_face_normal;
         mq->b_f_face_normal = mq->b_face_normal;
@@ -2750,7 +2750,7 @@ cs_mesh_quantities_set_has_disable_flag(int  flag)
       }
       mq->cell_f_vol = mq->cell_vol;
     } else {
-      /* Use fluid sufaces and volume */
+      /* Use fluid surfaces and volumes */
       if (cs_glob_porous_model == 3) {
         mq->i_f_face_normal = cs_field_by_name("i_f_face_normal")->val;
         mq->b_f_face_normal = cs_field_by_name("b_f_face_normal")->val;
@@ -3134,7 +3134,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
 
   cs_mesh_quantities_compute_preprocess(mesh, mesh_quantities);
 
-  /* Fluid surfaces and volume: point to standard quantities and
+  /* Fluid surfaces and volumes: point to standard quantities and
    * may be modified afterwards */
   mesh_quantities->i_f_face_normal = mesh_quantities->i_face_normal;
   mesh_quantities->b_f_face_normal = mesh_quantities->b_face_normal;
