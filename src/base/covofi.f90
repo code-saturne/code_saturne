@@ -1262,6 +1262,9 @@ endif
 if (iterns.ge.1) then
   allocate(wcvark_var(ncelet))
   cvark_var => wcvark_var
+  do iel = 1, ncelet
+    cvark_var(iel) = cvar_var(iel)
+  enddo
 else
   call field_get_val_s(ivarfl(ivar), cvark_var)
 endif
