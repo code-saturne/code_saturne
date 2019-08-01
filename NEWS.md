@@ -19,6 +19,9 @@ User changes:
 
 - Add VoF settings in the GUI.
 
+- Keep user reconstruction sweeps number in case dynamic sweeping (iswdyn) is
+  enabled. Fix for issue #86.
+
 Numerics and physical modelling:
 
 - Make clipping of Reynolds stresses more robust for the coupled solver.

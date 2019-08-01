@@ -1860,25 +1860,6 @@ cs_parameters_check(void)
     if (f->type & CS_FIELD_VARIABLE) {
       cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
       if (var_cal_opt.iswdyn >= 1) {
-        f_desc = _field_section_desc(f, "Dynamic relaxation enabled for "
-                                        "variable ");
-        /* The number of reconstruction sweeps is set to 20 at least */
-        cs_parameters_is_greater_int(CS_WARNING,
-                                     _(f_desc),
-                                     "var_cal_opt.nswrsm",
-                                     var_cal_opt.nswrsm,
-                                     20);
-
-        BFT_FREE(f_desc);
-
-        if (var_cal_opt.nswrsm < 20) {
-          var_cal_opt.nswrsm = 20;
-          int log_id = CS_LOG_DEFAULT;
-          cs_log_printf(log_id,
-                        _("The calculation continues with nswrsm = 20.\n"));
-          cs_field_set_key_struct(f, key_cal_opt_id, &var_cal_opt);
-        }
-
         if (f->id == CS_F_(vel)->id) {
           cs_parameters_is_equal_int(CS_WARNING,
                                      _("Dynamic relaxation enabled for "
