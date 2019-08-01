@@ -56,6 +56,7 @@
 #include <MEDCouplingField.hxx>
 #include <MEDCouplingFieldFloat.hxx>
 #include <MEDCouplingFieldDouble.hxx>
+#include <MEDFileFieldMultiTS.hxx>
 
 #include <MEDCouplingRemapper.hxx>
 
@@ -106,6 +107,11 @@ struct _cs_medcoupling_remapper_t {
   MEDCouplingUMesh         *bbox_source_mesh;
 
   MEDCouplingFieldDouble  **source_fields;
+
+  /* Time step values in the file */
+  int                                ntsteps;
+  std::vector< std::pair<int,int> >  iter_order;
+  std::vector<double>                time_steps;
 
   MEDCouplingRemapper      *remapper;     /* MEDCoupling remapper */
 
@@ -221,6 +227,13 @@ _create_remapper(const char   *name,
   cs_mesh_t *parent_mesh = cs_glob_mesh;
   cs_medcoupling_mesh_copy_from_base(parent_mesh, new_mesh, 1);
   r->target_mesh = new_mesh;
+
+  /* Get the time step values from the file */
+  MCAuto<MEDFileAnyTypeFieldMultiTS> tf(MEDFileAnyTypeFieldMultiTS::New(medfile_path,
+                                                                        field_names[0]));
+
+  r->iter_order = tf->getTimeSteps(r->time_steps);
+  r->ntsteps    = r->time_steps.size();
 
   // MEDCoupling remapper (sequential interpolation)
 
@@ -735,6 +748,98 @@ cs_medcoupling_remapper_rotate(cs_medcoupling_remapper_t  *r,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*! \brief Retrieve the two closest time steps indexes.
+ *
+ * The returned value is int[2].
+ * If the requested time value if outside the time bounds stored in the file,
+ * the both values are identical (first or last value), and a warning is printed
+ * in the listing file.
+ *
+ * \param[in]      r    pointer to remapper object
+ * \param[in]      t    requested time value
+ * \param[in,out]  id1  first returned index
+ * \param[in,out]  id2  second returned index
+ *
+/*----------------------------------------------------------------------------*/
+
+void
+cs_medcoupling_remapper_find_time_index(cs_medcoupling_remapper_t *r,
+                                        cs_real_t                  t,
+                                        int                       *id1,
+                                        int                       *id2)
+{
+
+  if (t < r->time_steps[0]) {
+    *id1 = 0;
+    *id2 = 0;
+
+  } else if (t > r->time_steps[r->ntsteps-1]) {
+    *id1 = r->ntsteps-1;
+    *id2 = r->ntsteps-1;
+
+  } else {
+    for (int i = 0; i < r->ntsteps-1; i++) {
+      if (t > r->time_steps[i] && t < r->time_steps[i+1]) {
+        *id1 = i;
+        *id2 = i+1;
+        break;
+      }
+    }
+  }
+
+  return;
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Retrieve the two closest time steps indexes.
+ *
+ * The returned value is int[2].
+ * If the requested time value if outside the time bounds stored in the file,
+ * the both values are identical (first or last value), and a warning is printed
+ * in the listing file.
+ *
+ * \param[in]      r    pointer to remapper object
+ * \param[in]      id   requested index
+ * \param[in,out]  t    corresponding time value
+ *
+/*----------------------------------------------------------------------------*/
+void
+cs_medcoupling_remapper_get_time_from_index(cs_medcoupling_remapper_t *r,
+                                            int                        id,
+                                            cs_real_t                 *t)
+{
+
+  *t = r->time_steps[id];
+  return;
+}
+
+/*----------------------------------------------------------------------------*/
+/*! \brief Retrieve the two closest time steps indexes.
+ *
+ * The returned value is int[2].
+ * If the requested time value if outside the time bounds stored in the file,
+ * the both values are identical (first or last value), and a warning is printed
+ * in the listing file.
+ *
+ * \param[in]      r      pointer to remapper object
+ * \param[in]      id     requested time index
+ * \param[in,out]  iter   index iteration
+ * \param[in,out]  order  index iteration order
+ *
+/*----------------------------------------------------------------------------*/
+void
+cs_medcoupling_remapper_get_iter_order_from_index(cs_medcoupling_remapper_t *r,
+                                                  int                        id,
+                                                  int                       *it,
+                                                  int                       *order)
+{
+
+  *it    = r->iter_order[id].first;
+  *order = r->iter_order[id].second;
+
+  return;
+}
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Destroy all remappers
