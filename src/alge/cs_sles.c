@@ -1627,8 +1627,6 @@ cs_sles_solve(cs_sles_t           *sles,
                                  vx,
                                  rhs);
 
-  do_solve = true;
-
   if (! do_solve) {
     sles->n_no_op += 1;
     *n_iter = 0;
