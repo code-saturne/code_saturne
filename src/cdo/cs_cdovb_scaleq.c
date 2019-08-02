@@ -178,7 +178,7 @@ _vbs_create_cell_builder(const cs_cdo_connect_t   *connect)
  * \param[in]      mesh            pointer to a cs_mesh_t structure
  * \param[in]      eqp             pointer to a cs_equation_param_t structure
  * \param[in]      eqb             pointer to a cs_equation_builder_t structure
- * \param[in, out] vtx_bc_flag      pointer to an array of BC flag for each vtx
+ * \param[in, out] vtx_bc_flag     pointer to an array of BC flag for each vtx
  * \param[in, out] p_dir_values    pointer to the Dirichlet values to set
  * \param[in, out] p_enforced_ids  pointer to the list of enforced vertices
  */

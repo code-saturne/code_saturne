@@ -2095,8 +2095,11 @@ cs_sdm_dump(cs_lnum_t           parent_id,
             const cs_lnum_t    *col_ids,
             const cs_sdm_t     *mat)
 {
-  if (mat == NULL)
+  if (mat == NULL) {
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "<< MATRIX is set to NULL (parent id: %d)>>\n", parent_id);
     return;
+  }
 
   cs_log_printf(CS_LOG_DEFAULT, "<< MATRIX parent id: %d >>\n", parent_id);
 

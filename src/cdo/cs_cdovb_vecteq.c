@@ -525,7 +525,7 @@ _vbv_apply_weak_bc(cs_real_t                      time_eval,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> Cell system after BC treatment", csys);
+      cs_cell_sys_dump("\n>> Cell system after BC weak treatment", csys);
 #endif
   } /* Cell with at least one boundary face */
 
