@@ -88,12 +88,12 @@ class HgnModel(Variables, Model):
         oldModel = self.node_hgn['model']
         self.node_hgn['model'] = model
 
-        if model == 'off':
-            self.__removeVariablesAndProperties()
-            self.node_np.xmlRemoveChild('hydrostatic_pressure')
-        elif oldModel and oldModel != "off":
+        if model != 'off':
             for v in self.var_list:
                 self.setNewVariable(self.node_hgn, v, tpe="model", label=v)
+        elif oldModel and oldModel != "off":
+            self.__removeVariablesAndProperties()
+            self.node_np.xmlRemoveChild('hydrostatic_pressure')
 
     @Variables.noUndo
     def getHgnModel(self):
