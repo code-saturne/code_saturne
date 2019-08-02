@@ -2179,7 +2179,7 @@ _bi_cgstab(cs_sles_it_t              *c,
       break;
 
     cs_real_t d_ro_1 = (CS_ABS(ro_1) > DBL_MIN) ? 1. / ro_1 : 0.;
-    alpha =  - ro_0 * d_ro_1;
+    alpha = ro_0 * d_ro_1;
 
     /* Final update of vx and rk */
 
