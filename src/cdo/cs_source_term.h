@@ -149,7 +149,7 @@ cs_source_term_get_flag(const cs_xdef_t  *st);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_flag_t
+cs_eflag_t
 cs_source_term_init(cs_param_space_scheme_t      space_scheme,
                     const int                    n_source_terms,
                     cs_xdef_t            *const *source_terms,

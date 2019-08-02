@@ -1898,7 +1898,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       const cs_flag_t  cell_flag = connect->cell_flag[c_id];
-      const cs_flag_t  msh_flag = cs_equation_cell_mesh_flag(cell_flag, eqb);
+      const cs_eflag_t  msh_flag = cs_equation_cell_mesh_flag(cell_flag, eqb);
 
       /* Set the local mesh structure for the current cell */
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
@@ -2103,8 +2103,8 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
     cs_cell_builder_t  *cb = cs_cdofb_cell_bld[t_id];
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
 
-    cs_flag_t  msh_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ;
-    cs_flag_t  add_flag = CS_FLAG_COMP_DEQ;
+    cs_eflag_t  msh_flag = CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ;
+    cs_eflag_t  add_flag = CS_FLAG_COMP_DEQ;
 
     if (eqb->diff_pty_uniform) /* c_id = 0, cell_flag = 0 */
       cs_equation_set_diffusion_property(eqp, 0, t_eval, 0, cb);

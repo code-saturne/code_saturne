@@ -380,9 +380,9 @@ cs_xdef_cw_eval_scalar_face_avg_by_analytic(const cs_cell_mesh_t   *cm,
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
   assert(input != NULL);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
-                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+                       CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_quadrature_tria_integral_t
     *qfunc = cs_quadrature_get_tria_integral(1, qtype);
@@ -422,9 +422,9 @@ cs_xdef_cw_eval_vector_face_avg_by_analytic(const cs_cell_mesh_t    *cm,
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
   assert(input != NULL);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
-                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+                       CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_quadrature_tria_integral_t
     *qfunc = cs_quadrature_get_tria_integral(3, qtype);
@@ -466,9 +466,9 @@ cs_xdef_cw_eval_tensor_face_avg_by_analytic(const cs_cell_mesh_t    *cm,
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
   assert(input != NULL);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
-                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+                       CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_quadrature_tria_integral_t
     *qfunc = cs_quadrature_get_tria_integral(9, qtype);;
@@ -509,9 +509,9 @@ cs_xdef_cw_eval_scalar_avg_by_analytic(const cs_cell_mesh_t     *cm,
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
   assert(input != NULL);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
-                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+                       CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_quadrature_tetra_integral_t
     *qfunc = cs_quadrature_get_tetra_integral(1, qtype);
@@ -552,9 +552,9 @@ cs_xdef_cw_eval_vector_avg_by_analytic(const cs_cell_mesh_t     *cm,
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
   assert(input != NULL);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
-                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+                       CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_quadrature_tetra_integral_t
     *qfunc = cs_quadrature_get_tetra_integral(3, qtype);
@@ -597,9 +597,9 @@ cs_xdef_cw_eval_tensor_avg_by_analytic(const cs_cell_mesh_t     *cm,
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
   assert(input != NULL);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
-                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+                       CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_quadrature_tetra_integral_t
     *qfunc = cs_quadrature_get_tetra_integral(9, qtype);
@@ -703,7 +703,7 @@ cs_xdef_cw_eval_by_array(const cs_cell_mesh_t      *cm,
   else if (cs_flag_test(array_input->loc, cs_flag_primal_vtx)) {
 
     /* Sanity checks */
-    assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PVQ));
+    assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
     /* Reconstruct (or interpolate) value at the current cell center */
     for (short int v = 0; v < cm->n_vc; v++) {
@@ -764,7 +764,7 @@ cs_xdef_cw_eval_by_field(const cs_cell_mesh_t        *cm,
 
     /* Sanity checks */
     assert(field->dim == 1);
-    assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PVQ));
+    assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
     /* Reconstruct (or interpolate) value at the current cell center */
     for (short int v = 0; v < cm->n_vc; v++)
@@ -861,7 +861,7 @@ cs_xdef_cw_eval_vector_at_xyz_by_array(const cs_cell_mesh_t       *cm,
   else if (cs_flag_test(array_input->loc, cs_flag_primal_vtx)) {
 
     /* Sanity checks */
-    assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PVQ));
+    assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
     assert(stride == 3);
 
     /* Reconstruct (or interpolate) value at the current cell center */
@@ -950,7 +950,7 @@ cs_xdef_cw_eval_vector_at_xyz_by_field(const cs_cell_mesh_t    *cm,
   else if (field->location_id == v_ml_id) {
 
     /* Sanity check */
-    assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PVQ));
+    assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
     /* Reconstruct (or interpolate) value at the current cell center */
     for (int k = 0; k < 3; k++) {
@@ -991,11 +991,11 @@ cs_xdef_cw_eval_flux_at_vtx_by_val(const cs_cell_mesh_t     *cm,
                                    cs_real_t                *eval)
 {
   CS_UNUSED(time_eval);
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
 
   const cs_real_t  *flux = (cs_real_t *)input;
 
-  if (cs_flag_test(cm->flag, CS_FLAG_COMP_FEQ)) {
+  if (cs_eflag_test(cm->flag, CS_FLAG_COMP_FEQ)) {
 
     /* Loop on face edges */
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
@@ -1052,8 +1052,8 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
                                         cs_quadrature_type_t       qtype,
                                         cs_real_t                 *eval)
 {
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PFQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PFQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
 
   const cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
   const cs_quant_t  fq = cm->face[f];

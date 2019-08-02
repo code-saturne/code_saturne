@@ -1158,7 +1158,7 @@ cs_cdofb_advection_build(const cs_equation_param_t   *eqp,
 {
   /* Sanity checks */
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOFB);
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ));
 
   /* Initialize the local matrix structure */
   cs_sdm_t  *adv = cb->loc;
@@ -1272,7 +1272,7 @@ cs_cdo_advection_fb_bc_wdi(const cs_equation_param_t   *eqp,
 {
   CS_UNUSED(eqp);
   /* Sanity checks */
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ));
   assert(csys->n_dofs == cm->n_fc + 1);
 
   const cs_real_t  *fluxes = cb->adv_fluxes;
@@ -1322,7 +1322,7 @@ cs_cdo_advection_fb_bc_v(const cs_equation_param_t   *eqp,
   CS_UNUSED(eqp);
 
   /* Sanity checks */
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ));
   assert(csys->n_dofs == 3*(cm->n_fc + 1));
 
   const cs_real_t  *fluxes = cb->adv_fluxes;
@@ -1400,7 +1400,7 @@ cs_cdo_advection_fb_bc_wdi_v(const cs_equation_param_t   *eqp,
                              cs_cell_sys_t               *csys)
 {
   /* Sanity checks */
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ));
   assert(csys->n_dofs == 3*(cm->n_fc + 1));
 
   const cs_real_t  *fluxes = cb->adv_fluxes;
@@ -1691,9 +1691,9 @@ cs_cdo_advection_vb_upwcsv_di(const cs_equation_param_t   *eqp,
   CS_UNUSED(fm);
   /* Sanity checks */
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PV | CS_FLAG_COMP_EV | CS_FLAG_COMP_PEQ |
-                      CS_FLAG_COMP_DFQ));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PV | CS_FLAG_COMP_EV | CS_FLAG_COMP_PEQ |
+                       CS_FLAG_COMP_DFQ));
 
   const cs_param_advection_scheme_t  adv_scheme = eqp->adv_scheme;
 
@@ -1768,8 +1768,8 @@ cs_cdo_advection_vb_upwcsv(const cs_equation_param_t   *eqp,
 
   /* Sanity checks */
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PV | CS_FLAG_COMP_EV | CS_FLAG_COMP_DFQ));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PV | CS_FLAG_COMP_EV | CS_FLAG_COMP_DFQ));
 
   const cs_param_advection_scheme_t  adv_scheme = eqp->adv_scheme;
 
@@ -1827,7 +1827,7 @@ cs_cdo_advection_vb_cencsv(const cs_equation_param_t   *eqp,
 
   /* Sanity check */
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB);  /* Sanity check */
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PV | CS_FLAG_COMP_EV));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PV | CS_FLAG_COMP_EV));
 
   /* Initialize the local matrix structure */
   cs_sdm_t  *adv = cb->loc;
@@ -1874,7 +1874,7 @@ cs_cdo_advection_vb_mcucsv(const cs_equation_param_t   *eqp,
 
   /* Sanity check */
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB);  /* Sanity check */
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PV | CS_FLAG_COMP_EV));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PV | CS_FLAG_COMP_EV));
 
   /* Initialize the local matrix structure */
   cs_sdm_t  *adv = cb->loc;
@@ -1921,8 +1921,8 @@ cs_cdo_advection_vb_upwnoc_di(const cs_equation_param_t   *eqp,
 
   /* Sanity checks */
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ));
 
   const cs_param_advection_scheme_t  adv_scheme = eqp->adv_scheme;
 
@@ -1995,8 +1995,8 @@ cs_cdo_advection_vb_upwnoc(const cs_equation_param_t   *eqp,
 
   /* Sanity checks */
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB);  /* Sanity check */
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PV | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_EV));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PV | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_EV));
 
   const cs_param_advection_scheme_t  adv_scheme = eqp->adv_scheme;
 
@@ -2054,7 +2054,7 @@ cs_cdo_advection_vb_cennoc(const cs_equation_param_t    *eqp,
 
   /* Sanity checks */
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB);
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PV | CS_FLAG_COMP_EV));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PV | CS_FLAG_COMP_EV));
 
   /* Initialize the local matrix structure */
   cs_sdm_t  *adv = cb->loc;
@@ -2102,10 +2102,10 @@ cs_cdo_advection_vcb_cw_cst(const cs_equation_param_t   *eqp,
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB);
   assert(eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_NONCONS);
   assert(eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP_CW);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PV  | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ |
-                      CS_FLAG_COMP_DEQ | CS_FLAG_COMP_EF  | CS_FLAG_COMP_FEQ |
-                      CS_FLAG_COMP_EV  | CS_FLAG_COMP_HFQ));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PV  | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ |
+                       CS_FLAG_COMP_DEQ | CS_FLAG_COMP_EF  | CS_FLAG_COMP_FEQ |
+                       CS_FLAG_COMP_EV  | CS_FLAG_COMP_HFQ));
 
   const int  n_sysc = cm->n_vc + 1;
 
@@ -2232,10 +2232,10 @@ cs_cdo_advection_vcb(const cs_equation_param_t   *eqp,
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVCB);
   assert(eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_NONCONS);
   assert(eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PV  | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ |
-                      CS_FLAG_COMP_DEQ | CS_FLAG_COMP_EF  | CS_FLAG_COMP_FEQ |
-                      CS_FLAG_COMP_EV  | CS_FLAG_COMP_HFQ));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PV  | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ |
+                       CS_FLAG_COMP_DEQ | CS_FLAG_COMP_EF  | CS_FLAG_COMP_FEQ |
+                       CS_FLAG_COMP_EV  | CS_FLAG_COMP_HFQ));
 
   const int  n_sysc = cm->n_vc + 1;
 
@@ -2351,9 +2351,9 @@ cs_cdo_advection_vb_bc(const cs_cell_mesh_t       *cm,
   CS_UNUSED(fm);
 
   /* Sanity checks */
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FEQ |
-                      CS_FLAG_COMP_EV | CS_FLAG_COMP_FV));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FEQ |
+                       CS_FLAG_COMP_EV | CS_FLAG_COMP_FV));
 
   cs_real_t  *tmp_rhs = cb->values;
   cs_real_t  *mat_diag = cb->values + cm->n_vc;
@@ -2462,9 +2462,9 @@ cs_cdo_advection_vcb_bc(const cs_cell_mesh_t        *cm,
   assert(eqp->adv_formulation == CS_PARAM_ADVECTION_FORM_NONCONS);
   assert(eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP ||
          eqp->adv_scheme == CS_PARAM_ADVECTION_SCHEME_CIP_CW);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PV  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
-                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PV  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
+                       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   const cs_adv_field_t  *adv = eqp->adv_field;
 

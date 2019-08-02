@@ -1052,7 +1052,7 @@ cs_hho_vecteq_compute_source(const cs_equation_param_t  *eqp,
     cs_cell_sys_t  *csys = cs_hho_cell_sys[t_id];
     cs_cell_builder_t  *cb = cs_hho_cell_bld[t_id];
     cs_hho_builder_t  *hhob = cs_hho_builders[t_id];
-    cs_flag_t  msh_flag = eqb->st_msh_flag;
+    cs_eflag_t  msh_flag = eqb->st_msh_flag;
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
@@ -1229,7 +1229,7 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       const cs_flag_t  cell_flag = connect->cell_flag[c_id];
-      const cs_flag_t  msh_flag = cs_equation_cell_mesh_flag(cell_flag, eqb);
+      const cs_eflag_t  msh_flag = cs_equation_cell_mesh_flag(cell_flag, eqb);
 
       /* Set the local mesh structure for the current cell */
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
@@ -1470,7 +1470,7 @@ cs_hho_vecteq_update_field(const cs_real_t            *solu,
 
       const cs_lnum_t  c2f_shift = connect->c2f->idx[c_id];
       const cs_flag_t  cell_flag = connect->cell_flag[c_id];
-      const cs_flag_t  msh_flag = cs_equation_cell_mesh_flag(cell_flag, eqb);
+      const cs_eflag_t  msh_flag = cs_equation_cell_mesh_flag(cell_flag, eqb);
 
       /* Set the local mesh structure for the current cell */
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);

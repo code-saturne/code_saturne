@@ -428,7 +428,7 @@ _vbs_advection_diffusion_reaction(double                         time_eval,
     if (eqb->sys_flag & CS_FLAG_SYS_REAC_DIAG) {
 
       /* |c|*wvc = |dual_cell(v) cap c| */
-      assert(cs_flag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
+      assert(cs_eflag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
       const double  ptyc = cb->rpty_val * cm->vol_c;
       for (short int i = 0; i < cm->n_vc; i++)
         csys->mat->val[i*(cm->n_vc + 1)] += cm->wvc[i] * ptyc;
@@ -1639,7 +1639,7 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
       if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping */
 
         /* |c|*wvc = |dual_cell(v) cap c| */
-        CS_CDO_OMP_ASSERT(cs_flag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
+        CS_CDO_OMP_ASSERT(cs_eflag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
         const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
         /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
@@ -1960,7 +1960,7 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
       if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping */
 
         /* |c|*wvc = |dual_cell(v) cap c| */
-        CS_CDO_OMP_ASSERT(cs_flag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
+        CS_CDO_OMP_ASSERT(cs_eflag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
         const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
         /* STEPS >> Compute the time contribution to the RHS: Mtime*pn
@@ -2198,7 +2198,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       const cs_flag_t  cell_flag = connect->cell_flag[c_id];
-      const cs_flag_t  msh_flag = cs_equation_cell_mesh_flag(cell_flag, eqb);
+      const cs_eflag_t  msh_flag = cs_equation_cell_mesh_flag(cell_flag, eqb);
 
       /* Set the local mesh structure for the current cell */
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
@@ -2222,7 +2222,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
 
         if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) {
 
-          CS_CDO_OMP_ASSERT(cs_flag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
+          CS_CDO_OMP_ASSERT(cs_eflag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
           /* |c|*wvc = |dual_cell(v) cap c| */
           const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
           for (short int v = 0; v < cm->n_vc; v++) {
@@ -2493,9 +2493,9 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
 
     /* msh_flag for Neumann and Robin BCs. Add add_flag for the other cases
        when one has to reconstruct a flux */
-    cs_flag_t  msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_FV;
-    cs_flag_t  add_flag = CS_FLAG_COMP_EV | CS_FLAG_COMP_FE | CS_FLAG_COMP_PEQ |
-      CS_FLAG_COMP_PFQ;
+    cs_eflag_t  msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_FV;
+    cs_eflag_t  add_flag = CS_FLAG_COMP_EV | CS_FLAG_COMP_FE |
+      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ;
 
     switch (eqp->diffusion_hodge.algo) {
 
@@ -2876,7 +2876,7 @@ cs_cdovb_scaleq_diff_flux_in_cells(const cs_real_t             *values,
     cs_cdo_diffusion_cw_flux_t  *compute_flux = NULL;
     cs_cell_builder_t  *cb = _vbs_cell_builder[t_id];
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    cs_flag_t  msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_EV;
+    cs_eflag_t  msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_EV;
 
     switch (eqp->diffusion_hodge.algo) {
 
@@ -3008,7 +3008,7 @@ cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
     double  *pot = NULL;
     BFT_MALLOC(pot, connect->n_max_vbyc + 1, double); /* +1for WBS algo. */
 
-    cs_flag_t  msh_flag = CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PV |
+    cs_eflag_t  msh_flag = CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PV |
       CS_FLAG_COMP_PVQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_DFQ;
 
     switch (eqp->diffusion_hodge.algo) {

@@ -107,9 +107,9 @@ cs_reco_cw_scalar_pv_at_face_center(const short int          f,
   if (p_v == NULL)
     return p_f;
 
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PFQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ |
-                      CS_FLAG_COMP_FE));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PFQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ |
+                       CS_FLAG_COMP_FE));
 
   const cs_quant_t  pfq = cm->face[f];
   for (int ie = cm->f2e_idx[f]; ie < cm->f2e_idx[f+1]; ie++) {
@@ -143,7 +143,7 @@ cs_reco_cw_scalar_pv_at_cell_center(const cs_cell_mesh_t     *cm,
   if (p_v == NULL || cm == NULL)
     return p_c;
 
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PVQ)); /* Sanity check */
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ)); /* Sanity check */
 
   /* Reconstruct the value at the cell center */
   for (short int v = 0; v < cm->n_vc; v++)

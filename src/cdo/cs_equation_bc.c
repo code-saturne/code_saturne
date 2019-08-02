@@ -273,7 +273,7 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
   CS_UNUSED(cb);
 
   /* Sanity check */
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
 
   /* Initialize the common part */
   _init_cell_sys_bc(face_bc, cm, csys);
@@ -850,8 +850,8 @@ cs_equation_compute_neumann_sv(cs_real_t                   t_eval,
 {
   assert(neu_values != NULL && cm != NULL && eqp != NULL);
   assert(def_id > -1);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_EV | CS_FLAG_COMP_FE | CS_FLAG_COMP_FV));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_EV | CS_FLAG_COMP_FE | CS_FLAG_COMP_FV));
 
   const cs_xdef_t  *def = eqp->bc_defs[def_id];
 

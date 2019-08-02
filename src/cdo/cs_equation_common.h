@@ -82,13 +82,13 @@ typedef struct {
    * @{
    */
 
-  cs_flag_t    msh_flag;     /*!< Information related to what to build in a
+  cs_eflag_t   msh_flag;     /*!< Information related to what to build in a
                               *   \ref cs_cell_mesh_t structure for a generic
                               *   cell */
-  cs_flag_t    bd_msh_flag;  /*!< Information related to what to build in a
+  cs_eflag_t   bd_msh_flag;  /*!< Information related to what to build in a
                               *   \ref cs_cell_mesh_t structure for a cell close
                               *   to the boundary */
-  cs_flag_t    st_msh_flag;  /*!< Information related to what to build in a
+  cs_eflag_t   st_msh_flag;  /*!< Information related to what to build in a
                               *   \ref cs_cell_mesh_t structure when only the
                               *   source term has to be built */
   cs_flag_t    sys_flag;     /*!< Information related to the sytem */
@@ -202,11 +202,11 @@ typedef struct {
  */
 /*----------------------------------------------------------------------------*/
 
-static inline cs_flag_t
+static inline cs_eflag_t
 cs_equation_cell_mesh_flag(cs_flag_t                      cell_flag,
                            const cs_equation_builder_t   *eqb)
 {
-  cs_flag_t  _flag = eqb->msh_flag | eqb->st_msh_flag;
+  cs_eflag_t  _flag = eqb->msh_flag | eqb->st_msh_flag;
 
   if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE)
     _flag |= eqb->bd_msh_flag;

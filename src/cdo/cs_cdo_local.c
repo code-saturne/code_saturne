@@ -905,7 +905,7 @@ cs_cell_mesh_free(cs_cell_mesh_t     **p_cm)
 
 void
 cs_cell_mesh_build(cs_lnum_t                    c_id,
-                   cs_flag_t                    build_flag,
+                   cs_eflag_t                   build_flag,
                    const cs_cdo_connect_t      *connect,
                    const cs_cdo_quantities_t   *quant,
                    cs_cell_mesh_t              *cm)
@@ -1586,9 +1586,9 @@ cs_face_mesh_build_from_cell_mesh(const cs_cell_mesh_t    *cm,
 
   /* Sanity checks */
   assert(f > -1 && f < cm->n_fc);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PV  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
-                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PV  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
+                       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   fm->c_id = cm->c_id;
   for (int k = 0; k < 3; k++) fm->xc[k] = cm->xc[k];
@@ -1787,8 +1787,8 @@ cs_face_mesh_light_build(const cs_cell_mesh_t    *cm,
 
   /* Sanity checks */
   assert(f > -1 && f < cm->n_fc);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PV | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PV | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   fm->c_id = cm->c_id;
   fm->f = f;

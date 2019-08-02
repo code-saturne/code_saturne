@@ -171,8 +171,8 @@ _cdofb_normal_flux_reco(short int                  fb,
   /* Sanity check */
   assert(hodgep.type == CS_PARAM_HODGE_TYPE_EDFP);
   assert(hodgep.algo == CS_PARAM_HODGE_ALGO_COST);
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
-                      CS_FLAG_COMP_HFQ));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
+                       CS_FLAG_COMP_HFQ));
   assert(cm->f_sgn[fb] == 1);  /* +1 because it's a boundary face */
 
   const short int  nfc = cm->n_fc;
@@ -2728,7 +2728,7 @@ cs_cdo_diffusion_svb_get_dfbyc_flux(const cs_cell_mesh_t      *cm,
                                     double                    *flx)
 {
   /* Sanity checks */
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_EV));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_EV));
 
   /* Cellwise DoFs related to the discrete gradient (size: n_ec) */
   double  *gec = cb->values;
@@ -2766,7 +2766,7 @@ cs_cdo_diffusion_svb_get_cell_flux(const cs_cell_mesh_t      *cm,
                                    double                    *flx)
 {
   /* Sanity checks */
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_EV | CS_FLAG_COMP_DFQ));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_EV | CS_FLAG_COMP_DFQ));
 
   cs_real_t  grd[3] = {0., 0., 0.};
 
@@ -2817,9 +2817,9 @@ cs_cdo_diffusion_svb_vbyf_flux(short int                   f,
   if (flux == NULL)
     return;
 
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_EV |
-                      CS_FLAG_COMP_DFQ | CS_FLAG_COMP_FE));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_EV |
+                       CS_FLAG_COMP_DFQ | CS_FLAG_COMP_FE));
 
   const cs_real_t  beta =
     (eqp->diffusion_hodge.algo == CS_PARAM_HODGE_ALGO_BUBBLE) ?
@@ -2872,7 +2872,7 @@ cs_cdo_diffusion_svb_vbyf_flux(short int                   f,
     for (int k = 0; k < 3; k++)
       grd_tef[k] = grd_cc[k] + stab_coef * dfq.unitv[k];
 
-    const cs_real_t  tef = (cs_flag_test(cm->flag, CS_FLAG_COMP_FEQ)) ?
+    const cs_real_t  tef = (cs_eflag_test(cm->flag, CS_FLAG_COMP_FEQ)) ?
       cm->tef[ie] : cs_compute_area_from_quant(peq, pfq.center);
 
     const double  _flx = -0.5 * tef * _dp3(grd_tef, pty_nuf);
@@ -2905,9 +2905,9 @@ cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
                                     cs_real_t              *flx)
 {
   /* Sanity checks */
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PV  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
-                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  | CS_FLAG_COMP_EFQ));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PV  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
+                       CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  | CS_FLAG_COMP_EFQ));
 
   cs_real_3_t  grd_c, grd_v1, grd_v2, grd_pef, mgrd;
 
@@ -3007,9 +3007,9 @@ cs_cdo_diffusion_wbs_get_cell_flux(const cs_cell_mesh_t   *cm,
                                    cs_real_t              *flx)
 {
   /* Sanity checks */
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PV  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
-                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  | CS_FLAG_COMP_HFQ));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PV  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
+                       CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  | CS_FLAG_COMP_HFQ));
 
   cs_real_t  cgrd[3] = {0, 0, 0};
 
@@ -3050,9 +3050,9 @@ cs_cdo_diffusion_wbs_vbyf_flux(short int                   f,
     return;
 
   assert(eqp->diffusion_hodge.algo == CS_PARAM_HODGE_ALGO_WBS);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_FV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ |
-                      CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_FE));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_FV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ |
+                       CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_FE));
 
   cs_real_t  grd_c[3] = {0, 0, 0},  grd_pef[3] = {0, 0, 0};
   cs_real_t  grd_v0[3] = {0, 0, 0}, grd_v1[3] = {0, 0, 0};
@@ -3221,7 +3221,7 @@ cs_cdo_diffusion_sfb_cost_flux(short int                   f,
     return;
 
   assert(eqp->diffusion_hodge.algo == CS_PARAM_HODGE_ALGO_COST);
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
   const cs_real_t  beta = eqp->diffusion_hodge.coef;
   const cs_quant_t  pfq = cm->face[f];
@@ -3288,8 +3288,8 @@ cs_cdovb_diffusion_p0_face_flux(const short int           f,
                                 const cs_real_t          *pot_values,
                                 cs_real_t                *fluxes)
 {
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PV | CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PV | CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ));
 
   cs_real_3_t  mnuf;
   cs_real_3_t  gc = {0, 0, 0};

@@ -490,15 +490,15 @@ cs_quadrature_tet_15pts(const cs_real_3_t   v1,
  *                     \ref CS_FLAG_EDGE plus \ref CS_FLAG_PRIMAL or
  *                     \ref CS_FLAG_DUAL
  *
- * \return  metadata stored in a \ref cs_flag_t to build a \ref cs_cell_mesh_t
+ * \return  metadata stored in a \ref cs_eflag_t to build a \ref cs_cell_mesh_t
  */
 /*----------------------------------------------------------------------------*/
 
-cs_flag_t
-cs_quadrature_get_flag(const cs_quadrature_type_t qtype,
-                       const cs_flag_t            loc)
+cs_eflag_t
+cs_quadrature_get_flag(const cs_quadrature_type_t  qtype,
+                       const cs_flag_t             loc)
 {
-  cs_flag_t ret_flag = 0;
+  cs_eflag_t ret_flag = 0;
 
   /* If necessary, enrich the mesh flag to account for the property */
   switch (qtype) {

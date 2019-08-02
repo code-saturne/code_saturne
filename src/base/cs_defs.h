@@ -301,7 +301,8 @@ typedef double              cs_coord_t;   /* Real number (coordinate value) */
 typedef int                 cs_int_t;    /* Fortran integer */
 typedef double              cs_real_t;   /* Fortran double precision */
 typedef char                cs_byte_t;   /* Byte (untyped memory unit) */
-typedef unsigned short int  cs_flag_t;   /* Flag for storing metadata */
+typedef unsigned short int  cs_flag_t;   /* Flag storing metadata */
+typedef unsigned int        cs_eflag_t;  /* Flag storing extended metadata */
 
 /* Vector or array block types */
 
@@ -374,6 +375,7 @@ typedef struct {
 #    define CS_MPI_GNUM       MPI_UNSIGNED
 #  endif
 
+#  define CS_MPI_EFLAG    MPI_UNSIGNED       /* MPI type for cs_mflag_t type */
 #  define CS_MPI_FLAG     MPI_UNSIGNED_SHORT /* MPI type for cs_flag_t type */
 #  define CS_MPI_LNUM     MPI_INT            /* MPI type for cs_lnum_t type */
 #  define CS_MPI_COORD    MPI_DOUBLE         /* MPI type for cs_coord_t type */
@@ -410,6 +412,7 @@ typedef struct {
 #endif
 
 #define CS_FLAG_TYPE      CS_UINT16
+#define CS_EFLAG_TYPE     CS_UINT_TYPE
 #define CS_REAL_TYPE      CS_DOUBLE
 #define CS_COORD_TYPE     CS_DOUBLE
 

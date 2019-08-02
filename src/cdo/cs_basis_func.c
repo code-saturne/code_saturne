@@ -406,9 +406,9 @@ _iner_cell_basis_setup(void                    *pbf,
                        cs_cell_builder_t       *cb)
 {
   cs_basis_func_t  *bf = (cs_basis_func_t *)pbf;
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ |
-                      CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ |
+                       CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ));
 
   /* Advanced parameters for controlling the algorithm */
   const int  n_algo_iters = 20;
@@ -521,7 +521,7 @@ _mono_face_basis_setup(void                    *pbf,
                        cs_cell_builder_t       *cb)
 {
   cs_basis_func_t  *bf = (cs_basis_func_t *)pbf;
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ |
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ |
                        CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DIAM));
 
   for (int k = 0; k < 3; k++)
@@ -594,8 +594,8 @@ _iner_face_basis_setup(void                    *pbf,
                        cs_cell_builder_t       *cb)
 {
   cs_basis_func_t  *bf = (cs_basis_func_t *)pbf;
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ |
-                      CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ |
+                       CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ));
 
   /* Initialization using the monomial basis */
   _mono_face_basis_setup(bf, cm, f, center, cb);
@@ -905,9 +905,9 @@ _ck1_compute_projector(void                    *pbf,
 {
   CS_UNUSED(id);
   /* Sanity checks */
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PFQ| CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FEQ |
-                      CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PFQ| CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FEQ |
+                       CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
 
   const int n_rows = CK1_SIZE;
   const int n_gpts = 4;
@@ -1078,9 +1078,9 @@ _ck2_compute_projector(void                    *pbf,
 {
   CS_UNUSED(id);
   /* Sanity checks */
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PFQ| CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FEQ |
-                      CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PFQ| CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FEQ |
+                       CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
 
   const int n_rows = CK2_SIZE;
   const int n_gpts = 15;
@@ -1274,9 +1274,9 @@ _cka_compute_projector(void                    *pbf,
 {
   CS_UNUSED(id);
   /* Sanity checks */
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PFQ| CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FEQ |
-                      CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PFQ| CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FEQ |
+                       CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
 
   cs_basis_func_t  *bf = (cs_basis_func_t *)pbf;
 
@@ -1836,8 +1836,8 @@ _fk1_compute_projector(void                    *pbf,
                        const short int          f)
 {
   /* Sanity checks */
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ| CS_FLAG_COMP_FEQ |
-                      CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FEQ |
+                       CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
 
   /* First row (or first column since projector is symmetric) is easy.
      So, 1st row is computed differently */
@@ -1982,8 +1982,8 @@ _fk2_compute_projector(void                    *pbf,
                        const short int          f)
 {
   /* Sanity checks */
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ| CS_FLAG_COMP_FEQ |
-                      CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FEQ |
+                       CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
 
   /* First row (or first column since projector is symmetric) is easy.
      So, 1st row is computed differently */
@@ -2200,8 +2200,8 @@ _fka_compute_projector(void                    *pbf,
                        const short int          f)
 {
   /* Sanity checks */
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ| CS_FLAG_COMP_FEQ |
-                      CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FEQ |
+                       CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
 
   cs_basis_func_t  *bf = (cs_basis_func_t *)pbf;
 

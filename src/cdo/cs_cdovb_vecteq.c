@@ -431,7 +431,7 @@ _vbv_advection_diffusion_reaction(const cs_equation_param_t     *eqp,
     if (eqb->sys_flag & CS_FLAG_SYS_REAC_DIAG) {
 
       /* |c|*wvc = |dual_cell(v) cap c| */
-      assert(cs_flag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
+      assert(cs_eflag_test(eqb->msh_flag, CS_FLAG_COMP_PVQ));
       const double  ptyc = cb->rpty_val * cm->vol_c;
 
       /* Only the diagonal block and its diagonal entries are modified */

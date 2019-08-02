@@ -281,7 +281,7 @@ cs_xdef_cw_eval_flux_by_val(const cs_cell_mesh_t     *cm,
   CS_UNUSED(time_eval);
 
   /* Sanity check */
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PFQ));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ));
 
   const cs_real_t  *flux = (cs_real_t *)input;
   const cs_quant_t  fq = cm->face[f];

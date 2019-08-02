@@ -123,8 +123,9 @@ BEGIN_C_DECLS
  * @}
  */
 
-/* According to the flag which are set, different quantities or connectivities
-   are built on-the-fly and stored in a local cache structure (cell/base) */
+/* According to the extended flag which is set different quantities or
+ * connectivities are built on-the-fly and stored in a local structure
+ * possibly owned by each thread and with a cellwise scope */
 
 #define CS_FLAG_COMP_PV   (1 <<  0) /*     1: local info. for vertices */
 #define CS_FLAG_COMP_PVQ  (1 <<  1) /*     2: local quant. on vertices */
@@ -186,6 +187,29 @@ extern const cs_flag_t  cs_flag_dual_closure_byf;
 static inline bool
 cs_flag_test(cs_flag_t    flag_to_check,
              cs_flag_t    reference)
+{
+  if ((flag_to_check & reference) == reference)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if a two compute flag share the same pattern
+ *         Return true if the computed flag to check has at least the pattern
+ *         of the reference compute flag.
+ *
+ * \param[in]  flag_to_check   flag corresponding to the location to check
+ * \param[in]  reference       flag corresponding to the referenced support
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_eflag_test(cs_eflag_t    flag_to_check,
+              cs_eflag_t    reference)
 {
   if ((flag_to_check & reference) == reference)
     return true;

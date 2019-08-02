@@ -84,22 +84,26 @@ cs_flag_str_location(cs_flag_t  loc)
 {
   if (cs_flag_test(loc, cs_flag_primal_vtx))
     return "vertices";
+  else if (cs_flag_test(loc, cs_flag_primal_edge))
+    return "edges";
   else if (cs_flag_test(loc, cs_flag_primal_face))
     return "faces";
   else if (cs_flag_test(loc, cs_flag_primal_cell))
     return "cells";
   else if (cs_flag_test(loc, cs_flag_dual_vtx))
     return "dual vertices";
+  else if (cs_flag_test(loc, cs_flag_dual_edge))
+    return "dual edges";
   else if (cs_flag_test(loc, cs_flag_dual_face))
     return "dual faces";
   else if (cs_flag_test(loc, cs_flag_dual_cell))
     return "dual cells";
   else if (cs_flag_test(loc, cs_flag_dual_face_byc))
-    return "dual face (cellwise)";
+    return "dual faces (cellwise)";
   else if (cs_flag_test(loc, cs_flag_dual_closure_byf))
     return "dual cell closure (facewise)";
   else
-    return "";
+    return "unknown";
 }
 
 /*----------------------------------------------------------------------------*/

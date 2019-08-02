@@ -151,7 +151,7 @@ typedef struct {
 
 typedef struct {
 
-  cs_flag_t      flag;    /*!< indicate which quantities have to be defined */
+  cs_eflag_t     flag;    /*!< indicate which quantities have to be computed */
   fvm_element_t  type;    /*!< type of element related to this cell */
 
   /* Sizes used to allocate buffers */
@@ -598,7 +598,7 @@ cs_cell_mesh_free(cs_cell_mesh_t     **p_cm);
 
 void
 cs_cell_mesh_build(cs_lnum_t                    c_id,
-                   cs_flag_t                    build_flag,
+                   cs_eflag_t                   build_flag,
                    const cs_cdo_connect_t      *connect,
                    const cs_cdo_quantities_t   *quant,
                    cs_cell_mesh_t              *cm);

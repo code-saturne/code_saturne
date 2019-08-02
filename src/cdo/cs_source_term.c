@@ -478,7 +478,7 @@ cs_source_term_get_flag(const cs_xdef_t  *st)
  */
 /*----------------------------------------------------------------------------*/
 
-cs_flag_t
+cs_eflag_t
 cs_source_term_init(cs_param_space_scheme_t       space_scheme,
                     const int                     n_source_terms,
                     cs_xdef_t             *const *source_terms,
@@ -491,7 +491,7 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
               " Limitation to %d source terms has been reached!",
               CS_N_MAX_SOURCE_TERMS);
 
-  cs_flag_t  msh_flag = 0;
+  cs_eflag_t  msh_flag = 0;
   *source_mask = NULL;
   for (short int i = 0; i < CS_N_MAX_SOURCE_TERMS; i++)
     compute_source[i] = NULL;
@@ -876,7 +876,7 @@ cs_source_term_pvsp_by_value(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
   assert(cb != NULL && cb->hdg != NULL);
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PV));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PV));
 
   const cs_real_t *s_input = (const cs_real_t *)source->input;
   const cs_real_t  pot_value = s_input[0];
@@ -928,7 +928,7 @@ cs_source_term_pvsp_by_analytic(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
   assert(cb != NULL && cb->hdg != NULL);
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PV));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PV));
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
@@ -979,7 +979,7 @@ cs_source_term_dcsd_by_value(const cs_xdef_t           *source,
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PVQ));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
   const cs_real_t *s_input = (const cs_real_t *)source->input;
   const cs_real_t  density_value = s_input[0];
@@ -1020,7 +1020,7 @@ cs_source_term_dcvd_by_value(const cs_xdef_t           *source,
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PVQ));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
   const cs_real_t *st_vect = (const cs_real_t *)source->input;
 
@@ -1061,7 +1061,7 @@ cs_source_term_dcsd_by_array(const cs_xdef_t           *source,
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
-  assert(cs_flag_test(cm->flag, CS_FLAG_COMP_PVQ));
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
   const cs_xdef_array_input_t  *ai =
     (const cs_xdef_array_input_t *)source->input;
@@ -1104,9 +1104,9 @@ cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ |
-                      CS_FLAG_COMP_FE  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ |
+                       CS_FLAG_COMP_FE  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
@@ -1197,9 +1197,9 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE |
-                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE |
+                       CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
@@ -1277,10 +1277,10 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
   assert(cb != NULL);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE  |
-                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  | CS_FLAG_COMP_PVQ |
-                      CS_FLAG_COMP_PEQ));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE  |
+                       CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  | CS_FLAG_COMP_PVQ |
+                       CS_FLAG_COMP_PEQ));
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
@@ -1481,9 +1481,9 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
   assert(cb != NULL);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
-                      CS_FLAG_COMP_EV));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+                       CS_FLAG_COMP_EV));
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
@@ -1813,9 +1813,9 @@ cs_source_term_pcsd_by_analytic(const cs_xdef_t           *source,
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
-                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+                       CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   assert(source->dim == 1);
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
@@ -2033,9 +2033,9 @@ cs_source_term_pcvd_by_analytic(const cs_xdef_t           *source,
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
-                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+                       CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
   assert(source->dim == 3);
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
@@ -2341,9 +2341,9 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL && input != NULL);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
-                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+                       CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_hho_builder_t  *hhob = (cs_hho_builder_t *)input;
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
@@ -2462,9 +2462,9 @@ cs_source_term_hhovd_by_analytic(const cs_xdef_t           *source,
 
   /* Sanity checks */
   assert(values != NULL && cm != NULL && input != NULL);
-  assert(cs_flag_test(cm->flag,
-                      CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
-                      CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
+                       CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_hho_builder_t  *hhob = (cs_hho_builder_t *)input;
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;

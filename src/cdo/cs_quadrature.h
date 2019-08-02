@@ -1734,13 +1734,13 @@ cs_quadrature_get_tetra_integral(int                   dim,
  *                     \ref CS_FLAG_EDGE plus \ref CS_FLAG_PRIMAL or
  *                     \ref CS_FLAG_DUAL
  *
- * \return  metadata stored in a \ref cs_flag_t to build a \ref cs_cell_mesh_t
+ * \return  metadata stored in a \ref cs_eflag_t to build a \ref cs_cell_mesh_t
  */
 /*----------------------------------------------------------------------------*/
 
-cs_flag_t
-cs_quadrature_get_flag(const cs_quadrature_type_t qtype,
-                       const cs_flag_t            loc);
+cs_eflag_t
+cs_quadrature_get_flag(const cs_quadrature_type_t  qtype,
+                       const cs_flag_t             loc);
 
 /*----------------------------------------------------------------------------*/
 
