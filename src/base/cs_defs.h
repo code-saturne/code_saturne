@@ -403,6 +403,12 @@ typedef struct {
 # define CS_INT_TYPE      CS_INT32
 #endif
 
+#if (SIZEOF_INT == 8)
+# define CS_UINT_TYPE     CS_UINT64
+#else
+# define CS_UINT_TYPE     CS_UINT32
+#endif
+
 #define CS_FLAG_TYPE      CS_UINT16
 #define CS_REAL_TYPE      CS_DOUBLE
 #define CS_COORD_TYPE     CS_DOUBLE
