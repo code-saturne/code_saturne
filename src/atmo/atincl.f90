@@ -476,17 +476,20 @@ integer, save :: kopint
 
     !> \brief Calculation of the density of humid air.
 
-    !> \param[in]  qw  air water mass fraction
-    !> \param[in]  p    pressure
-    !> \param[in]  t_h  temperature (in Celsius)
+    !> \param[in]  ywm           air water mass fraction
+    !> \param[in]  t_liq         pressure
+    !> \param[in]  p             pressure
+    !> \param[out] yw_liq        liquid water mass fraction
+    !> \param[out] t_h           temperature of humid air in Celsius
+    !> \param[out] rho_h         density of humid air
 
-    function cs_rho_humidair(qw, p, t_h) result(rho_h) &
+    subroutine cs_rho_humidair(ywm, t_liq, p, yw_liq, t_h, rho_h) &
         bind(C, name='cs_rho_humidair')
       use, intrinsic :: iso_c_binding
       implicit none
-      real(c_double), value :: qw, p, t_h
-      real(c_double) :: rho_h
-    end function cs_rho_humidair
+      real(c_double), value :: ywm, t_liq, p
+      real(c_double), intent(out) :: yw_liq, t_h, rho_h
+    end subroutine cs_rho_humidair
 
     !=============================================================================
 

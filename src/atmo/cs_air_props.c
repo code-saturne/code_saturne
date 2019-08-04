@@ -43,6 +43,7 @@
 #include "bft_mem.h"
 
 #include "cs_base.h"
+#include "cs_math.h"
 #include "cs_physical_constants.h"
 
 /*----------------------------------------------------------------------------
@@ -458,7 +459,7 @@ cs_air_x_sat(const cs_real_t  t_c,
  *
  * \return the air water mass fraction at saturation
  *
- * \param[in]     t_c            temperature in Celsius degree
+ * \param[in]     t_c          temperature in Celsius degree
  * \param[in]     p            reference pressure
  */
 /*----------------------------------------------------------------------------*/
@@ -603,22 +604,27 @@ cs_air_yw_to_x(const cs_real_t  qw)
 /*!
  * \brief Calculation of the density of humid air
  *
- * \return density of humid air
- *
- * \param[in]     qwt           air water mass fraction
+ * \param[in]     ywm           air water mass fraction
+ * \param[in]     t_liq         temperature computed from
+ *                              liquid potential temperature (K)
  * \param[in]     p             pressure
- * \param[in]     t_h           temperature of humid air in Celsius
+ * \param[out]    yw_liq        liquid water mass fraction
+ * \param[out]    t_h           temperature of humid air in Celsius
+ * \param[out]    rho_h         density of humid air
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_rho_humidair(const cs_real_t qwt,
+void
+cs_rho_humidair(const cs_real_t ywm, //TODO rename yw_h
+                const cs_real_t t_liq,
                 const cs_real_t p,
-                const cs_real_t t_h)
+                cs_real_t      *yw_liq,
+                cs_real_t      *t_h,
+                cs_real_t      *rho_h)
 {
-  cs_real_t rho_h;
-  cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
   const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
+
+  /* Mixture equivalent R perfect gas constant */
   cs_real_t lrhum;
 
   cs_real_t rair = phys_pro->r_pg_cnst;
@@ -626,23 +632,33 @@ cs_rho_humidair(const cs_real_t qwt,
   cs_real_t clatev = phys_pro->clatev;
   cs_real_t cp0 = phys_pro->cp0;
 
-  cs_real_t qsl = cs_air_yw_sat(t_h, p);         // saturated vapor content
-  cs_real_t deltaq = qwt - qsl;
-  cs_real_t t_h_k = t_h + tkelvi;         // temperature in kelvin
+  /* Saturated vapor content */
+  cs_real_t yw_sat = cs_air_yw_sat(*t_h, p);
+  cs_real_t delta_yw = ywm - yw_sat;
 
-  if (deltaq <= 0.) {                         // unsaturated air parcel
-    lrhum         = rair*(1. + (rvsra - 1.)*qwt);
-    // density of the air parcel
-    rho_h = p/(lrhum*t_h_k);
-    }
-  else {                                 // saturated (ie. with liquid water) air parcel
-    cs_real_t qliq = deltaq/(1. + qsl*pow(clatev,2.)/(rair*rvsra*cp0*pow(t_h_k,2.)));
-    lrhum = rair*(1. - qliq + (rvsra - 1.)*(qwt - qliq));
-    // density
-    rho_h = p/(lrhum*(t_h_k + (clatev/cp0)*qliq));
+  /* Temperature of the mixture in Kelvin */
+  cs_real_t t_h_k = t_liq;
+
+  /* Density of the air parcel
+   * ------------------------- */
+
+  /* Unsaturated air parcel */
+  if (delta_yw <= 0.) {
+    lrhum = rair*(1. + (rvsra - 1.)*ywm);
+    *yw_liq = 0.;
+  }
+  /* Saturated (ie. with liquid water) air parcel */
+  else {
+    *yw_liq = delta_yw
+      / (1. + yw_sat * cs_math_pow2(clatev) / (rair*rvsra*cp0*cs_math_pow2(t_h_k))); //FIXME rair * rvsra =rvap
+    lrhum = rair*(1. + (rvsra - 1.)*(ywm - *yw_liq) -* yw_liq);
+    t_h_k += (clatev/cp0) * *yw_liq;
   }
 
-  return rho_h;
+  /* Temperature of the mixture in Celsius */
+  *t_h = t_h_k - cs_physical_constants_celsius_to_kelvin;
+  /* Perfect gas law */
+  *rho_h = p / (lrhum * t_h_k);
 }
 
 /*----------------------------------------------------------------------------*/

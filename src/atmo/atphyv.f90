@@ -63,9 +63,9 @@ integer          ivart, iel
 double precision xvart, rhum, rscp, pp, zent
 double precision lrhum, lrscp
 double precision qsl, deltaq
-double precision qliq, qwt, tliq, dum
+double precision yw_liq, qwt, tliq, dum
 
-double precision, dimension(:), pointer :: brom, crom
+double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cvar_vart, cvar_totwt
 double precision, dimension(:), pointer :: cpro_tempc, cpro_liqwt
 
@@ -107,14 +107,15 @@ else
   call csexit (1)
 endif
 
-! --- Masse volumique
-
+! Density
 call field_get_val_s(icrom, crom)
-call field_get_val_s(ibrom, brom)
 
 call field_get_val_s(itempc,cpro_tempc)
 call field_get_val_s(ivarfl(ivart), cvar_vart)
-if (ippmod(iatmos).ge.2) call field_get_val_s(ivarfl(isca(iymw)), cvar_totwt)
+if (ippmod(iatmos).ge.2) then
+  call field_get_val_s(ivarfl(isca(iymw)), cvar_totwt)
+  call field_get_val_s(iliqwt,cpro_liqwt)
+endif
 
 ! From potential temperature, compute:
 ! - Temperature in Celsius
@@ -126,23 +127,14 @@ if (ippmod(iatmos).ge.2) call field_get_val_s(ivarfl(isca(iymw)), cvar_totwt)
 rhum = rair
 rscp = rair/cp0
 
-lrhum = rair
 lrscp = rair/cp0
 
 do iel = 1, ncel
 
-  xvart = cvar_vart(iel) !  The thermal scalar is potential temperature
-
-  if (ippmod(iatmos).ge.2) then  ! humid atmosphere
-    lrhum = rair*(1.d0 + (rvsra - 1.d0)*cvar_totwt(iel))
-    ! R/Cp
-    lrscp = (rair/cp0)*(1.d0 + (rvsra - cpvcpa)*                    &
-            cvar_totwt(iel))
-  endif
-
   zent = xyzcen(3,iel)
 
-  if (imeteo.eq.0) then
+  ! Reference pressure
+  if (imeteo.eq.0) then !FIXME useless...
     call atmstd(zent,pp,dum,dum)
   else
     ! Pressure profile from meteo file:
@@ -152,31 +144,39 @@ do iel = 1, ncel
          ztmet , tmmet , phmet , zent, ttcabs, pp )
   endif
 
-  ! Temperature in Celsius in cell centers:
-  ! ---------------------------------------
+  ! Potential temperature
+  ! or liquid potential temperature for humid atmosphere
+  xvart = cvar_vart(iel)
+
+  ! (liquid) temperature
   ! law: T = theta * (p/ps) ** (Rair/Cp0)
+  tliq = xvart*(pp/ps)**rscp
 
-  cpro_tempc(iel) = xvart*(pp/ps)**lrscp
-  cpro_tempc(iel) = cpro_tempc(iel) - tkelvi
+  ! Dry atmosphere, total water fraction
+  qwt = 0.d0
 
-  !   Density in cell centers:
-  !   ------------------------
-  !   law:    RHO       =   P / ( Rair * T(K) )
+  ! Humid atmosphere
+  if (ippmod(iatmos).ge.2) then
+    qwt = cvar_totwt(iel)
+  endif
 
-  crom(iel) = cs_rho_humidair(cvar_totwt(iel), pp, cpro_tempc(iel))
+  ! Density in cell centers:
+  ! ------------------------
+  ! law: rho = P / ( R_mixture * T_mixture(K) )
+
+  call cs_rho_humidair(qwt, tliq, pp, yw_liq, cpro_tempc(iel), crom(iel))
+
+  ! Humid atmosphere
+  if (ippmod(iatmos).ge.2) then
+    cpro_liqwt(iel) = yw_liq
+  endif
 
 enddo
 
-if (ippmod(iatmos).ge.2) then ! humid atmosphere physics
-
-  call field_get_val_s(iliqwt,cpro_liqwt)
-
-  if (moddis.eq.1)then ! all or nothing condensation scheme
-    call all_or_nothing()
-  elseif (moddis.ge.2)then ! gaussian subgrid condensation scheme
-    call gaussian()
-  endif
-endif ! (ippmod(iatmos).ge.2)
+! Gaussian subgrid condensation scheme for humid atmosphere physics
+if (ippmod(iatmos).ge.2.and. moddis.ge.2) then
+  call gaussian()
+endif
 
 ! User re-definition:
 call usatph ()
@@ -209,73 +209,11 @@ call usatph ()
 '@                                                            ',/)
 
 !----
-! FIN
+! End
 !----
 
 return
 contains
-
-! *******************************************************************
-!> \brief Internal function -
-!>      for all cells : initialise physical variables of the atmospheric module
-!-------------------------------------------------------------------------------
-subroutine all_or_nothing()
-
-lrhum = rhum
-
-do iel = 1, ncel
-
-  zent = xyzcen(3,iel)
-
-  if (imeteo.eq.0) then
-    call atmstd(zent,pp,dum,dum)
-  else
-    ! Pressure profile from meteo file:
-    call intprf &
-         !   ===========
-       ( nbmett, nbmetm,                                            &
-         ztmet , tmmet , phmet , zent, ttcabs, pp )
-  endif
-
-  xvart = cvar_vart(iel) ! thermal scalar: liquid potential temperature
-  tliq = xvart*(pp/ps)**rscp ! liquid temperature
-  qwt  = cvar_totwt(iel) !total water content
-  qsl = cs_air_yw_sat(tliq-tkelvi, pp) ! saturated vapor content
-  deltaq = qwt - qsl
-
-  if (activate) then
-    write(nfecra,*)"atphyv::all_or_nothing::xvart = ",xvart
-    write(nfecra,*)"atphyv::all_or_nothing::tliq = ",tliq
-    write(nfecra,*)"atphyv::all_or_nothing::qwt = ",qwt
-    write(nfecra,*)"atphyv::all_or_nothing::qsl = ",qsl
-    write(nfecra,*)"atphyv::all_or_nothing::qwt,qsl,deltaq = ",qwt,qsl,deltaq
-    write(nfecra,*)"atphyv::all_or_nothing::zc = ",xyzcen(3,iel)
-    write(nfecra,*)"atphyv::all_or_nothing::pp = ",pp
-    write(nfecra,*)"atphyv::all_or_nothing::p0 = ",ps
-    write(nfecra,*)"atphyv::all_or_nothing::zent = ",zent
-  endif
-
-  if (deltaq.le.0.d0) then ! unsaturated air parcel
-    !Celcius temperature of the air parcel
-    cpro_tempc(iel) = tliq - tkelvi
-    !liquid water content
-    cpro_liqwt(iel) = 0.d0
-    nebdia(iel) = 0.d0
-    nn(iel) = 0.d0
-  else ! saturated (ie. with liquid water) air parcel
-    qliq = deltaq/ &
-         (1.d0 + qsl*clatev**2/(rair*rvsra*cp0*tliq**2))
-    ! liquid water content
-    cpro_liqwt(iel) = qliq
-    ! Celcius temperature of the air parcel
-    cpro_tempc(iel) = tliq + (clatev/cp0)*qliq - tkelvi
-    nebdia(iel) = 1.d0
-    nn(iel) = 0.d0
-  endif
-  crom(iel) = cs_rho_humidair(qwt, pp, tliq-tkelvi)
-
-enddo ! iel = 1, ncel
-end subroutine all_or_nothing
 
 ! *******************************************************************
 !> \brief Internal function -
@@ -351,7 +289,7 @@ do iel = 1, ncel
   qsl = cs_air_yw_sat(tliq-tkelvi, pp) ! saturated vapor content
   deltaq = qwt - qsl
   alpha = (clatev*qsl/(rvap*tliq**2))*(pp/ps)**rscp
-  sig_flu = sqrt(var_q + alpha**2*var_tl - 2.d0*alpha*cov_tlq)
+  sig_flu = sqrt(var_q + alpha**2*var_tl - 2.d0*alpha*cov_tlq) !FIXME a^2 +b^2 -2ab = (a-b)^2, a = a_coeff dqsd; b = alpha dtlsd
 
   if (sig_flu.lt.1.d-30) sig_flu = 1.d-30
   q1 = deltaq/sig_flu
@@ -360,42 +298,42 @@ do iel = 1, ncel
 
   nebdia(iel) = 0.5d0*(1.d0 + ferf(q1/sqrt(2.d0)))
 
-  qliq = (sig_flu                                                               &
+  !FIXME MF : put in input of the global function...
+  yw_liq = (sig_flu                                                               &
         /(1.d0 + qsl*clatev**2/(rvap*cp0*tliq**2)))                             &
         *(nebdia(iel)*q1 + exp(-q1**2/2.d0)/sqrt(2.d0*pi))
-  qliq = max(qliq,1d-15)
+  yw_liq = max(yw_liq, 1d-15)
   nn(iel) = nebdia(iel) - (nebdia(iel)*q1                                       &
           + exp(-q1**2/2.d0)/sqrt(2.d0*pi))*exp(-q1**2/2.d0)/sqrt(2.d0*pi)
 
-  if(qwt.lt.qliq)then
-    ! go back to all or nothing
+  ! go back to all or nothing
+  if(qwt.lt.yw_liq)then
+
+    nn(iel) = 0.d0
+
+    ! deltaq set to 0 if unsaturted air parcel
     if (deltaq.le.0.d0) then ! unsaturated air parcel
-      !Celcius temperature of the air parcel
-      cpro_tempc(iel) = tliq - tkelvi
-      !density of the air parcel
-      !liquid water content
-      cpro_liqwt(iel) = 0.d0
+      deltaq = 0.d0
       nebdia(iel) = 0.d0
-      nn(iel) = 0.d0
     else ! saturated (ie. with liquid water) air parcel
-      qliq = deltaq / (1.d0 + qsl*clatev**2/(rair*rvsra*cp0*tliq**2))
-      ! liquid water content
-      cpro_liqwt(iel) = qliq
-      ! Celcius temperature of the air parcel
-      cpro_tempc(iel) = tliq+(clatev/cp0)*qliq - tkelvi
       nebdia(iel) = 1.d0
-      nn(iel) = 0.d0
     endif
-    crom(iel) = cs_rho_humidair(qwt, pp, tliq-tkelvi)
-  else ! coherent subgrid diagnostic
-    lrhum = rair*(1.d0 - qliq + (rvsra - 1.d0)*(qwt - qliq))
-    ! liquid water content
-    cpro_liqwt(iel) = qliq
-    !Celcius temperature of the air parcel
-    cpro_tempc(iel) = tliq + (clatev/cp0)*qliq - tkelvi
-    !density
-    crom(iel) = pp/(lrhum*(tliq + (clatev/cp0)*qliq)) !FIXME use property function of humid air at saturation?
-  endif ! qwt.lt.qliq
+
+    ! TODO input ?
+    ! 0 if unsaturated air parcel
+    yw_liq = deltaq / (1.d0 + qsl*clatev**2/(rvap*cp0*tliq**2))
+  endif ! qwt.lt.yw_liq
+
+  cpro_liqwt(iel) = yw_liq
+  ! Celcius temperature of the air parcel
+  cpro_tempc(iel) = tliq + (clatev/cp0)*yw_liq - tkelvi
+
+  !FIXME back to the previous formulation
+  call cs_rho_humidair(qwt, tliq, pp,   &
+                       cpro_liqwt(iel), &
+                       cpro_tempc(iel), &
+                       crom(iel))
+
 enddo
 
 ! when properly finished deallocate dtlsd

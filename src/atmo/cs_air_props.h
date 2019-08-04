@@ -267,18 +267,23 @@ cs_air_yw_to_x(const cs_real_t  qw);
 /*!
  * \brief Calculation of the density of humid air
  *
- * \return density of humid air
- *
- * \param[in]     qwt           air water mass fraction
+ * \param[in]     ywm           air water mass fraction
+ * \param[in]     t_liq         temperature  computed from
+ *                              liquid potential temperature (K)
  * \param[in]     p             pressure
- * \param[in]     t_h           temperature of humid air in Celsius
+ * \param[out]    yw_liq        liquid water mass fraction
+ * \param[out]    t_h           temperature of humid air in Celsius
+ * \param[out]    rho_h         density of humid air
  */
 /*----------------------------------------------------------------------------*/
 
-cs_real_t
-cs_rho_humidair(const cs_real_t qwt,
+void
+cs_rho_humidair(const cs_real_t ywm, //TODO rename yw_h
+                const cs_real_t t_liq,
                 const cs_real_t p,
-                const cs_real_t t_h);
+                cs_real_t      *yw_liq,
+                cs_real_t      *t_h,
+                cs_real_t      *rho_h);
 
 /*----------------------------------------------------------------------------*/
 /*!

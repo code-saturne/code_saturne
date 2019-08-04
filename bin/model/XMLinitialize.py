@@ -335,6 +335,10 @@ class XMLinit(BaseXmlInit):
             if from_vers[:3] < "6.0.0":
                 self.__backwardCompatibilityFrom_5_3()
 
+        if from_vers[:3] < "7.0.0":
+            if from_vers[:3] < "6.1.0":
+                self.__backwardCompatibilityFrom_6_0()
+
 
     def __backwardCompatibilityBefore_3_0(self):
         """
@@ -1643,6 +1647,27 @@ class XMLinit(BaseXmlInit):
                             nc.xmlChildsCopy(node)
                             node.xmlRemoveNode()
 
+    def __backwardCompatibilityFrom_6_0(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
+
+        # Update due to Cooling Towers and Atmospheric Flows merge
+        XMLThermoPhysicalModelNode = self.case.xmlGetNode('thermophysical_models')
+        npr = XMLThermoPhysicalModelNode.xmlGetNode('atmospheric_flows')
+        if npr:
+            node = npr.xmlGetNode('variable', name="total_water")
+            if node:
+                node['name'] = "ym_water"
+
+        XMLAnaControl = self.case.xmlGetNode('analysis_control')
+        node_profiles = XMLAnaControl.xmlGetNode('profiles')
+        if node_profiles:
+            node_profile = node_profiles.xmlGetNode('profile')
+            if node_profile:
+                node = node_profile.xmlGetNode('var_prop', name="total_water")
+                if node:
+                    node['name'] = "ym_water"
 
     def _backwardCompatibilityCurrentVersion(self):
         """
