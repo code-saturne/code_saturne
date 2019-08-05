@@ -1602,6 +1602,8 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
   const cs_real_t  dt_cur = ts->dt[0];
   const cs_real_t  time_eval = t_cur + dt_cur;
 
+  const char *func_name = __func__;
+
   /* Sanity checks */
   assert(cs_equation_param_has_time(mom_eqp) == true);
   assert(mom_eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
@@ -1627,7 +1629,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
 
 # pragma omp parallel if (n_cells > CS_THR_MIN) default(none)           \
   shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
-         mav, rs, dir_values, zeta, vel_c, pr, sc)                      \
+         mav, rs, dir_values, zeta, vel_c, pr, sc, func_name)           \
   firstprivate(n_cells, dt_cur, time_eval)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
@@ -1754,7 +1756,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
       else
         bft_error(__FILE__, __LINE__, 0,
                   "%s: Only diagonal time treatment is available so far.",
-                  __func__);
+                  func_name);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_UZAWA_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
