@@ -853,14 +853,14 @@ module optcal
   integer(c_int), pointer, save :: iccvfg
 
   !> Algorithm to take into account the density variation in time
+  !>    - 0: boussinesq algorithm with constant density
   !>    - 1: dilatable steady algorithm (default)
   !>    - 2: dilatable unsteady algorithm
   !>    - 3: low-Mach algorithm
   !>    - 4: algorithm for fire
-  !    - 0: boussinesq algorithm with constant density
   integer(c_int), pointer, save :: idilat
 
-  !> Option to switch on massflux predcition befor momentum solving
+  !> Option to switch on massflux prediction befor momentum solving
   !> to be fully conservative in momentum over time for variable density flows.
   !> This option is to be removed.
   integer, save :: ipredfl
