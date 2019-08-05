@@ -949,9 +949,11 @@ do ifac = 1, nfabor
     ! In case of transient turbomachinery computations, save the coefficents
     ! associated to turbulent wall velocity BC, in order to update the wall
     ! velocity after the geometry update(between prediction and correction step)
-    if (iturbo.eq.2 .and. irotce(iel).ne.0) then
-      coftur(ifac) = cofimp
-      hfltur(ifac) = hflui
+    if (iturbo.eq.2) then
+      if (irotce(iel).ne.0) then
+        coftur(ifac) = cofimp
+        hfltur(ifac) = hflui
+      endif
     endif
 
     !===========================================================================

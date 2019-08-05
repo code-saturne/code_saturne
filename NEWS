@@ -4,6 +4,9 @@ Release 5.0.11 (Unreleased)
 Bug fixes
 ---------
 
+- Avoid possible crash with some Fortran compilers in wall boundary
+  condition code when the transient turbomachinery model is not active.
+
 - Fix restart of time moments defined by starting physical time.
 
 - GUI: fix reading of reconstruction flux option for pressure and hydraulic
