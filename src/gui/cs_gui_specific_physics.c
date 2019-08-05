@@ -2282,6 +2282,8 @@ cs_gui_physical_model_select(cs_int_t  *ieos,
                     _("Invalid gas combustion flow model: %s.\n"),
                     vars->model_value);
       }
+
+      BFT_FREE(model);
     }
     else if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
       if (cs_gui_strcmp(vars->model_value, "constant"))
