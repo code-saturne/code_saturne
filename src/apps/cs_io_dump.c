@@ -2206,7 +2206,7 @@ _compare_ints(_cs_io_t         *inp1,
  *   block_size  <-- buffer size
  *   n_echo      <-- number of values to echo
  *   n_echo_cur  <-> number of values already echoed
- *   f_stats     <-> max, and total difference
+ *   f_stats     <-> max, total, max relative, total relative difference
  *
  * returns:
  *   number of different values
@@ -2223,7 +2223,7 @@ _compare_floats(_cs_io_t         *inp1,
                 size_t            block_size,
                 size_t            n_echo,
                 long long        *n_echo_cur,
-                double            f_stats[2])
+                double            f_stats[4])
 {
   size_t i;
   size_t n_diffs = 0;
@@ -2233,10 +2233,14 @@ _compare_floats(_cs_io_t         *inp1,
     if (delta < 0.0)
       delta = -delta;
     if (delta > f_threshold) {
+      double delta_r = delta / CS_MAX(CS_ABS(cmp1[i]), CS_ABS(cmp2[i]));
       n_diffs++;
       if (delta > f_stats[0])
         f_stats[0] = delta;
+      if (delta_r > f_stats[2])
+        f_stats[2] = delta_r;
       f_stats[1] += delta;
+      f_stats[3] += delta_r;
     }
   }
 
@@ -2367,7 +2371,7 @@ _compare_sections(_cs_io_t    *inp1,
     size_t max_block_size = 2 << 16;
     void *buf1 = NULL, *buf2 = NULL;
     void *cmp1 = NULL, *cmp2 = NULL;
-    double f_stats[2] = {0.0, 0.0};
+    double f_stats[4] = {0.0, 0.0, 0.0, 0.0};
     const size_t type_size1 = _type_size_from_name(type1);
     const size_t type_size2 = _type_size_from_name(type2);
 
@@ -2429,8 +2433,10 @@ _compare_sections(_cs_io_t    *inp1,
 
     if (n_diffs > 0) {
       if (type1[0] == 'r')
-        printf(_("    Differences: %llu; Max: %g; Mean: %g\n\n"),
-               n_diffs, f_stats[0], f_stats[1]/n_diffs);
+        printf(_("    Differences: %llu; Max: %g; Mean: %g; "
+                 "Rel Max: %6.2e; Rel Mean: %6.2e\n\n"),
+               n_diffs, f_stats[0], f_stats[1]/n_diffs,
+               f_stats[2], f_stats[3]/n_diffs);
       else
         printf(_("    Differences: %llu\n\n"), n_diffs);
       retval = 1;
