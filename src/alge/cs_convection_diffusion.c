@@ -4229,7 +4229,6 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   /* Local variables */
 
-  cs_real_t *cv_limiter = NULL;
   cs_real_t *df_limiter = NULL;
 
   cs_field_t *f = NULL;
@@ -4237,11 +4236,6 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
-
-    int cv_limiter_id =
-      cs_field_get_key_int(f, cs_field_key_id("convection_limiter_id"));
-    if (cv_limiter_id > -1)
-      cv_limiter = cs_field_by_id(cv_limiter_id)->val;
 
     int df_limiter_id =
       cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
@@ -5847,7 +5841,6 @@ cs_convection_diffusion_tensor(int                         idtvar,
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
 
-  cs_real_t *cv_limiter = NULL;
   cs_real_t *df_limiter = NULL;
 
   const int *bc_type = cs_glob_bc_type;
@@ -5903,11 +5896,6 @@ cs_convection_diffusion_tensor(int                         idtvar,
 
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
-
-    int cv_limiter_id =
-      cs_field_get_key_int(f, cs_field_key_id("convection_limiter_id"));
-    if (cv_limiter_id > -1)
-      cv_limiter = cs_field_by_id(cv_limiter_id)->val;
 
     int df_limiter_id =
       cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
@@ -8031,7 +8019,6 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 
   /* Local variables */
 
-  cs_real_t *cv_limiter = NULL;
   cs_real_t *df_limiter = NULL;
 
   char var_name[32];
@@ -8090,11 +8077,6 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
-
-    int cv_limiter_id =
-      cs_field_get_key_int(f, cs_field_key_id("convection_limiter_id"));
-    if (cv_limiter_id > -1)
-      cv_limiter = cs_field_by_id(cv_limiter_id)->val;
 
     int df_limiter_id =
       cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
@@ -8804,7 +8786,6 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
 
   /* Local variables */
 
-  cs_real_t *cv_limiter = NULL;
   cs_real_t *df_limiter = NULL;
 
   char var_name[32];
@@ -8846,11 +8827,6 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
 
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
-
-    int cv_limiter_id =
-      cs_field_get_key_int(f, cs_field_key_id("convection_limiter_id"));
-    if (cv_limiter_id > -1)
-      cv_limiter = cs_field_by_id(cv_limiter_id)->val;
 
     int df_limiter_id =
       cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
@@ -9359,7 +9335,6 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
 
   /* Local variables */
 
-  cs_real_t *cv_limiter = NULL;
   cs_real_t *df_limiter = NULL;
 
   char var_name[32];
@@ -9403,11 +9378,6 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
 
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
-
-    int cv_limiter_id =
-      cs_field_get_key_int(f, cs_field_key_id("convection_limiter_id"));
-    if (cv_limiter_id > -1)
-      cv_limiter = cs_field_by_id(cv_limiter_id)->val;
 
     int df_limiter_id =
       cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
@@ -11045,7 +11015,6 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
 
   /* Local variables */
 
-  cs_real_t *cv_limiter = NULL;
   cs_real_t *df_limiter = NULL;
 
   char var_name[32];
@@ -11092,11 +11061,6 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
 
   if (f_id > -1) {
     f = cs_field_by_id(f_id);
-
-    int cv_limiter_id =
-      cs_field_get_key_int(f, cs_field_key_id("convection_limiter_id"));
-    if (cv_limiter_id > -1)
-      cv_limiter = cs_field_by_id(cv_limiter_id)->val;
 
     int df_limiter_id =
       cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
