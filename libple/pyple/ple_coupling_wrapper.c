@@ -77,10 +77,10 @@ static ple_coupling_mpi_set_t **_mpi_sets;
  * \return id associated with local name.
  */
 /*----------------------------------------------------------------------------*/
+
 static PyObject *
 pyple_coupling_mpi_name_to_id(PyObject *self, PyObject *args)
 {
-
   PyObject *py_comm = NULL;
   MPI_Comm *comm_p  = NULL;
 
@@ -107,7 +107,6 @@ pyple_coupling_mpi_name_to_id(PyObject *self, PyObject *args)
 
   /* Return a Python value */
   return Py_BuildValue("i", new_id);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -124,10 +123,10 @@ pyple_coupling_mpi_name_to_id(PyObject *self, PyObject *args)
  * \return PLE coupling MPI set info id within the static local array
  */
 /*----------------------------------------------------------------------------*/
+
 static PyObject *
 pyple_coupling_mpi_set_create(PyObject *self, PyObject *args)
 {
-
   int sync_flags = 0;
 
   const char *app_type = "";
@@ -186,6 +185,7 @@ pyple_coupling_mpi_set_create(PyObject *self, PyObject *args)
  * \param[in] index id of the set to free
  */
 /*----------------------------------------------------------------------------*/
+
 static PyObject *
 pyple_coupling_mpi_set_destroy(PyObject *self, PyObject *args)
 {
@@ -197,7 +197,6 @@ pyple_coupling_mpi_set_destroy(PyObject *self, PyObject *args)
 
   Py_INCREF(Py_None);
   return Py_None;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -210,10 +209,10 @@ pyple_coupling_mpi_set_destroy(PyObject *self, PyObject *args)
  * \return application information structure as a dictionnary.
  */
 /*----------------------------------------------------------------------------*/
+
 static PyObject *
 pyple_coupling_mpi_set_get_info(PyObject *self, PyObject *args)
 {
-
   int set_index = 0;
   int app_id    = 0;
 
@@ -249,10 +248,10 @@ pyple_coupling_mpi_set_get_info(PyObject *self, PyObject *args)
  * \return number of application in set's common communicator.
  */
 /*----------------------------------------------------------------------------*/
+
 static PyObject *
 pyple_coupling_mpi_set_n_apps(PyObject *self, PyObject *args)
 {
-
   int set_index = 0;
 
   /* We verify that the correct arguments are provided.
@@ -280,10 +279,10 @@ pyple_coupling_mpi_set_n_apps(PyObject *self, PyObject *args)
  * \return id of the local application in set's common communicator.
  */
 /*----------------------------------------------------------------------------*/
+
 static PyObject *
 pyple_coupling_mpi_set_get_app_id(PyObject *self, PyObject *args)
 {
-
   int set_index = 0;
 
   /* We verify that the correct arguments are provided.
@@ -311,10 +310,10 @@ pyple_coupling_mpi_set_get_app_id(PyObject *self, PyObject *args)
  * \param[in] time_step   app time step
  */
 /*----------------------------------------------------------------------------*/
+
 static PyObject *
 pyple_coupling_mpi_set_synchronize(PyObject *self, PyObject *args)
 {
-
   int    set_index = 0;
   int    sync_flag = 0;
   double time_step = 0.;
@@ -346,10 +345,10 @@ pyple_coupling_mpi_set_synchronize(PyObject *self, PyObject *args)
  * \return a python list of status flags
  */
 /*----------------------------------------------------------------------------*/
+
 static PyObject *
 pyple_coupling_mpi_set_get_status(PyObject *self, PyObject *args)
 {
-
   int set_index = 0;
   /* We verify that the correct arguments are provided.
    * format is of the form "var1_typevar2_type..varn_type:function_name"
@@ -385,7 +384,6 @@ pyple_coupling_mpi_set_get_status(PyObject *self, PyObject *args)
 static PyObject *
 pyple_coupling_mpi_set_get_timestep(PyObject *self, PyObject *args)
 {
-
   int set_index = 0;
   /* We verify that the correct arguments are provided.
    * format is of the form "var1_typevar2_type..varn_type:function_name"
@@ -407,6 +405,14 @@ pyple_coupling_mpi_set_get_timestep(PyObject *self, PyObject *args)
   /* Return a Python list */
   return dt_list;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Dump printout of an PLE coupling MPI set info structure.
+ *
+ * \param[in] index       index of the PLE coupling MPI set info structure.
+ */
+/*----------------------------------------------------------------------------*/
 
 static PyObject *
 pyple_coupling_mpi_set_dump(PyObject *self, PyObject *args)
@@ -433,7 +439,7 @@ pyple_coupling_mpi_set_dump(PyObject *self, PyObject *args)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Create an intracommunicator from a local and distant communicator
- * within a base communicator.
+ *        within a base communicator.
  *
  * \param[in] base_comm     communicator associated with both applications
  * \param[in] app_comm      communicator associated with local application
@@ -510,7 +516,6 @@ pyple_coupling_mpi_intracomm_create(PyObject *self, PyObject *args)
 static PyObject *
 pyple_coupling_get_masks(PyObject *self, PyObject *args)
 {
-
   /* Return a Python dictionary */
   return Py_BuildValue("{sisisisisisisisisisisisisisisi}",
                        "INIT", PLE_COUPLING_INIT,
@@ -535,6 +540,7 @@ pyple_coupling_get_masks(PyObject *self, PyObject *args)
  * \brief Free all the ple_coupling_mpi_set_t pointers created.
  */
 /*----------------------------------------------------------------------------*/
+
 static PyObject *
 pyple_coupling_mpi_set_destroy_all(PyObject *self, PyObject *args)
 {
@@ -549,7 +555,6 @@ pyple_coupling_mpi_set_destroy_all(PyObject *self, PyObject *args)
   return Py_None;
 
 }
-/*----------------------------------------------------------------------------*/
 
 /*============================================================================
  * Define the list of methods available for Python.
@@ -618,7 +623,6 @@ pyple_coupling_methods[] = {
  * Define the python module specific functions needed for it to be imported
  *============================================================================*/
 
-/*----------------------------------------------------------------------------*/
 #if PY_MAJOR_VERSION < 3
 /* --- Python 2 --- */
 
@@ -673,6 +677,7 @@ PyInit_libpyplecoupling(void)
 }
 
 #endif
+
 /*----------------------------------------------------------------------------*/
 
 #ifdef __cplusplus
