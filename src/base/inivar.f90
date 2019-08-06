@@ -186,6 +186,14 @@ if (iihmpr.eq.1) then
 
 endif
 
+! Compute the total pressure (defined as a post-processed property).
+! For the compressible module, the solved pressure is already the total pressure.
+! NB: for Eddy Viscosity Models, TKE might be included in the solved pressure.
+
+if (ippmod(icompf).lt.0) then
+  call navstv_total_pressure
+endif
+
 !   - Sous-programme utilisateur
 !     ==========================
 

@@ -93,7 +93,7 @@ use field_operator
 use cavitation
 use vof
 use cs_c_bindings
-use atincl, only: iatmst, imomst, iautom, imeteo
+use atincl, only: iatmst, iautom, imeteo
 
 !===============================================================================
 
@@ -125,7 +125,6 @@ double precision rnorm , rnormt, rnorma, rnormi, vitnor
 double precision dtsrom, unsrom, rhom, rovolsdt
 double precision epsrgp, climgp, extrap, xyzmax(3), xyzmin(3)
 double precision thetap, xdu, xdv, xdw
-double precision xxp0 , xyp0 , xzp0
 double precision rhofac, dtfac
 double precision xnrdis, xnrtmp
 double precision t1, t2, t3, t4
@@ -167,12 +166,10 @@ double precision, dimension(:,:), pointer :: trav
 double precision, dimension(:,:), pointer :: mshvel
 double precision, dimension(:,:), pointer :: disale
 double precision, dimension(:,:), pointer :: disala
-double precision, dimension(:,:), pointer :: cpro_momst
 double precision, dimension(:), pointer :: porosi
 double precision, dimension(:), pointer :: cvar_pr
 double precision, dimension(:), pointer :: cpro_prtot, c_estim
 double precision, dimension(:), pointer :: cvar_voidf, cvara_voidf
-double precision, dimension(:), pointer :: cvara_k
 double precision, dimension(:), pointer :: cpro_rho_mass
 double precision, dimension(:), pointer :: bpro_rho_mass
 double precision, dimension(:), pointer :: brom_eos, crom_eos
@@ -1576,40 +1573,7 @@ endif
 ! NB: for Eddy Viscosity Models, TKE might be included in the solved pressure.
 
 if (ippmod(icompf).lt.0) then
-  call field_get_val_s(iprtot, cpro_prtot)
-  xxp0   = xyzp0(1)
-  xyp0   = xyzp0(2)
-  xzp0   = xyzp0(3)
-
-  if (iatmst.eq.0) then
-    do iel=1,ncel
-      cpro_prtot(iel)= cvar_pr(iel)               &
-           + ro0*( gx*(xyzcen(1,iel)-xxp0)               &
-           + gy*(xyzcen(2,iel)-xyp0)                     &
-           + gz*(xyzcen(3,iel)-xzp0) )                   &
-           + p0 - pred0
-    enddo
-  else
-    call field_get_val_v(imomst, cpro_momst)
-
-    do iel=1,ncel
-      cpro_prtot(iel)= cvar_pr(iel)                      &
-           + ro0*(gx*(xyzcen(1,iel)-xxp0)                &
-           + gy*(xyzcen(2,iel)-xyp0)                     &
-           + gz*(xyzcen(3,iel)-xzp0))                    &
-           + p0 - pred0                                  &
-           - cpro_momst(1,iel)*(xyzcen(1,iel)-xxp0)      &
-           - cpro_momst(2,iel)*(xyzcen(2,iel)-xyp0)      &
-           - cpro_momst(3,iel)*(xyzcen(3,iel)-xzp0)
-    enddo
-  endif
-  ! For Eddy Viscosity Models, "2/3 rho k" is included in the solved pressure
-  if ((itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60).and. igrhok.ne.1) then
-    call field_get_val_s(ivarfl(ik), cvara_k)
-    do iel = 1, ncel
-      cpro_prtot(iel) = cpro_prtot(iel) - 2.d0 / 3.d0 * crom(iel) * cvara_k(iel)
-    enddo
-  endif
+  call navstv_total_pressure
 endif
 
 !===============================================================================
@@ -1883,3 +1847,118 @@ deallocate(coefa_dp, coefb_dp)
 return
 
 end subroutine
+
+!===============================================================================
+! Local functions
+!===============================================================================
+
+!===============================================================================
+! Function:
+! ---------
+
+!> \brief Update total pressure (defined as a post-processed property).
+!
+!> For the compressible module, the solved pressure is already
+!> the total pressure.
+!
+!> Note: for Eddy Viscosity Models, the TKE may be included in the
+!> solved pressure.
+
+!-------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!_______________________________________________________________________________
+
+
+subroutine navstv_total_pressure
+
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use atincl, only: iatmst, imomst
+use numvar
+use cstphy
+use cstnum
+use optcal
+use pointe
+use parall
+use paramx, only: isymet
+use ppincl
+use mesh
+use ptrglo
+use field
+
+!===============================================================================
+
+implicit none
+
+! Local variables
+
+integer          iel
+double precision xxp0 , xyp0 , xzp0
+
+double precision, dimension(:), pointer :: cpro_rho
+double precision, dimension(:,:), pointer :: cpro_momst
+double precision, dimension(:), pointer :: cvar_pr
+double precision, dimension(:), pointer :: cpro_prtot
+double precision, dimension(:), pointer :: cvara_k
+
+!===============================================================================
+! 0. Initialization
+!===============================================================================
+
+call field_get_val_s(iprtot, cpro_prtot)
+call field_get_val_s(ivarfl(ipr), cvar_pr)
+
+xxp0   = xyzp0(1)
+xyp0   = xyzp0(2)
+xzp0   = xyzp0(3)
+
+if (iatmst.eq.0) then
+  do iel=1,ncel
+    cpro_prtot(iel) =  cvar_pr(iel)                        &
+                     + ro0*(  gx*(xyzcen(1,iel)-xxp0)      &
+                            + gy*(xyzcen(2,iel)-xyp0)      &
+                            + gz*(xyzcen(3,iel)-xzp0) )    &
+                     + p0 - pred0
+  enddo
+else
+  call field_get_val_v(imomst, cpro_momst)
+
+  do iel=1,ncel
+    cpro_prtot(iel) =   cvar_pr(iel)                             &
+                      + ro0*(  gx*(xyzcen(1,iel)-xxp0)           &
+                             + gy*(xyzcen(2,iel)-xyp0)           &
+                             + gz*(xyzcen(3,iel)-xzp0))          &
+                      + p0 - pred0                               &
+                      - cpro_momst(1,iel)*(xyzcen(1,iel)-xxp0)   &
+                      - cpro_momst(2,iel)*(xyzcen(2,iel)-xyp0)   &
+                      - cpro_momst(3,iel)*(xyzcen(3,iel)-xzp0)
+  enddo
+endif
+
+! For Eddy Viscosity Models, "2/3 rho k" is included in the solved pressure
+if ((itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60).and. igrhok.ne.1) then
+  call field_get_val_s(ivarfl(ik), cvara_k)
+  call field_get_val_s(icrom, cpro_rho)
+  do iel = 1, ncel
+    cpro_prtot(iel) =   cpro_prtot(iel)                              &
+                      - 2.d0 / 3.d0 * cpro_rho(iel) * cvara_k(iel)
+  enddo
+endif
+
+!----
+! End
+!----
+
+return
+
+end subroutine navstv_total_pressure
