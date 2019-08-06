@@ -652,7 +652,7 @@ _log_func_var_cal_opt(const void *t)
 static void
 _log_func_default_var_cal_opt(const void *t)
 {
-  const char fmt_i[] = "      %-19s  %d %s\n";
+  const char fmt_i[] = "      %-19s  %-12d %s\n";
   const char fmt_r[] = "      %-19s  %-12.3g %s\n";
   const cs_var_cal_opt_t *_t = (const void *)t;
   cs_log_printf(CS_LOG_SETUP,"  var_cal_opt\n");
