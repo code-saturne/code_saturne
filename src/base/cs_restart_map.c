@@ -453,10 +453,12 @@ cs_restart_map_free(void)
   _tolerance[0] = 0;
   _tolerance[1] = 0.1;
 
-  (void)cs_restart_set_read_section_func(_read_section_f);
-  _read_section_f = NULL;
+  if (_read_section_f != NULL) {
+    (void)cs_restart_set_read_section_func(_read_section_f);
+    _read_section_f = NULL;
 
-  cs_restart_clear_locations_ref();
+    cs_restart_clear_locations_ref();
+  }
 
   _locator = ple_locator_destroy(_locator);
 }
