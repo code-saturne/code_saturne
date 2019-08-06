@@ -91,7 +91,7 @@ class NumericalParamEquatModel(Model):
         return list of variables
         """
         list = []
-        from MainFieldsModel import MainFieldsModel
+        from code_saturne.model.MainFieldsModel import MainFieldsModel
         for node in self.XMLNodeVariable.xmlGetNodeList('variable') :
             if self._isPressure(node) != 1 :
                 # control to add enthalpy only if solved!!!
