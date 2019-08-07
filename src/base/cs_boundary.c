@@ -342,7 +342,7 @@ _ale_type_descr(cs_boundary_type_t  b_type,
   if (b_type & CS_BOUNDARY_ALE_INTERNAL_COUPLING)
     _descr_append(descr_len_max, descr, _("internal coupling"));
 
-  if (b_type & CS_BOUNDARY_ALE_INTERNAL_COUPLING)
+  if (b_type & CS_BOUNDARY_ALE_EXTERNAL_COUPLING)
     _descr_append(descr_len_max, descr, _("external coupling"));
 
   if (b_type & CS_BOUNDARY_ALE_FREE_SURFACE)
