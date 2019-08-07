@@ -50,8 +50,8 @@ Manual installation
 Detailed installation instructions are also available as a pdf file,
 available on the _Code_Saturne_ web site, or as part of this package.
 
-For generic instructions relative to the GNU autotools-based
-installation, see also the file 'INSTALL'.
+Manual installation may be used to modify or extend a build
+initialized with the semi-automatic installation if desired.
 
 Semi-automatic installation
 ---------------------------
@@ -63,7 +63,7 @@ section II for element by element install.
 These scripts are given in the hope that they will be useful, but
 WITHOUT ANY WARRANTY.
 
-The script can download every package needed by the code to run
+The script can download the main packages needed by the code to run
 properly. If this behaviour is not wanted, set the "download" variable
 to "no" in the setup script.
 
@@ -85,11 +85,11 @@ variable), and to specify the language (between English and French).
   The following packages are not handled by the installer so must be installed
   first:
 
-  - Zlib (optional)
-  - PyQt (optional, required for the GUI)
   - C, C++, and Fortran compilers
   - Python
-  - MPI (optional)
+  - MPI (optional, strongly recommended)
+  - PyQt (optional, required for the GUI)
+  - Zlib (optional)
 
   The install script uses a "setup" file to determine which library to
   install or to use. In not already present, This file is generated the
@@ -121,9 +121,9 @@ variable), and to specify the language (between English and French).
      the script is relaunched (if there was a problem with a later element).
 
    Before using the "install_saturne.py" script, the C, Fortran, and optional
-   C++ compilers to be used can be specified next to the CompC and CompF keywords.
-   The Python interpreter may also be specified.
-   MPI compiler wrappers (for the C and C++ languages) can also be specified.
+   C++ compilers to be used can be specified next to the CompC and CompF
+   keywords. The Python interpreter and MPI C and C++ compiler wrappers
+   can also be specified.
 
    If the "use_arch" variable is set to "yes", then the "arch" keyword refers
    to the architecture of the machine. Leaving it blank will make it
