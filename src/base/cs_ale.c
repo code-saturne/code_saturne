@@ -1002,7 +1002,8 @@ cs_ale_project_displacement(const int           ale_bc_type[],
     const cs_lnum_t  cell_id = m->b_face_cells[face_id];
 
     for (cs_lnum_t j = m->b_face_vtx_idx[face_id];
-         j < m->b_face_vtx_idx[face_id+1]; j++) {
+         j < m->b_face_vtx_idx[face_id+1]
+         && ale_bc_type[face_id] != CS_ALE_SLIDING; j++) {
 
       const cs_lnum_t  vtx_id = m->b_face_vtx_lst[j];
 
@@ -1040,6 +1041,27 @@ cs_ale_project_displacement(const int           ale_bc_type[],
 
   } /* End of loop on border faces */
 
+  if (m->vtx_interfaces != NULL) {
+
+    cs_interface_set_sum(m->vtx_interfaces,
+                         n_vertices,
+                         3,
+                         true,
+                         CS_REAL_TYPE,
+                         disp_proj);
+
+    cs_interface_set_sum(m->vtx_interfaces,
+                         n_vertices,
+                         1,
+                         true,
+                         CS_REAL_TYPE,
+                         vtx_counter);
+  }
+
+  for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
+    for (int i = 0; i < dim; i++)
+      disp_proj[v_id][i] /= vtx_counter[v_id];
+  }
 
   /* If the boundary face IS a sliding face.
      We project the displacment paralelly to the face. */
@@ -1068,27 +1090,6 @@ cs_ale_project_displacement(const int           ale_bc_type[],
     } /* Sliding condition */
 
   } /* End of loop on border faces */
-
-  if (m->vtx_interfaces != NULL) {
-
-    cs_interface_set_sum(m->vtx_interfaces,
-                         n_vertices,
-                         3,
-                         true,
-                         CS_REAL_TYPE,
-                         disp_proj);
-
-    cs_interface_set_sum(m->vtx_interfaces,
-                         n_vertices,
-                         1,
-                         true,
-                         CS_REAL_TYPE,
-                         vtx_counter);
-  }
-
-  for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
-    for (int i = 0; i < dim; i++)
-      disp_proj[v_id][i] /= vtx_counter[v_id];
 
   BFT_FREE(vtx_counter);
   BFT_FREE(vtx_interior_indicator);
