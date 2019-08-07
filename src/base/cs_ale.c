@@ -60,6 +60,7 @@
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_bad_cells.h"
+#include "cs_parall.h"
 #include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------
@@ -176,25 +177,93 @@ _free_surface(const cs_domain_t  *domain,
 
   /* Transform face flux to vertex displacement */
   cs_real_3_t *_mesh_vel = NULL;
+
+  /* Dual surface associated to vertices */
   cs_real_t *_v_surf = NULL;
+
+  /* Squared sum of partial surface associated to a vertex */
+  cs_real_t *_is_loc_min = NULL;
+  cs_real_t *_is_loc_max = NULL;
+
+  cs_real_3_t normal;
+  /* Normal direction is given by the gravity */
+  cs_math_3_normalise(grav, normal);
+
+  const cs_real_t  invdt = 1./domain->time_step->dt_ref; /* JB: dt[0] ? */
 
   BFT_MALLOC(_mesh_vel, m->n_vertices, cs_real_3_t);
   BFT_MALLOC(_v_surf, m->n_vertices, cs_real_t);
+  BFT_MALLOC(_is_loc_min, m->n_vertices, cs_real_t);
+  BFT_MALLOC(_is_loc_max, m->n_vertices, cs_real_t);
 
   for (cs_lnum_t v_id = 0; v_id < m->n_vertices; v_id++) {
     _mesh_vel[v_id][0] = 0;
     _mesh_vel[v_id][1] = 0;
     _mesh_vel[v_id][2] = 0;
     _v_surf[v_id] = 0;
+    _is_loc_min[v_id] = 1;
+    _is_loc_max[v_id] = 1;
   }
 
+  /* Loop over boundary faces */
   for (cs_lnum_t elt_id = 0; elt_id < z->n_elts; elt_id++) {
 
     const cs_lnum_t face_id = z->elt_ids[elt_id];
 
-    cs_real_3_t normal;
-    /* Normal direction is given by the gravity */
-    cs_math_3_normalise(grav, normal);
+    const cs_lnum_t s = m->b_face_vtx_idx[face_id];
+    const cs_lnum_t e = m->b_face_vtx_idx[face_id+1];
+
+    /* Compute the portion of surface associated to v_id_1 */
+    for (cs_lnum_t k = s; k < e; k++) {
+
+      const cs_lnum_t v_id = m->b_face_vtx_lst[k];
+
+      cs_real_3_t v_cog = {
+        b_face_cog[face_id][0] - vtx_coord[v_id][0],
+        b_face_cog[face_id][1] - vtx_coord[v_id][1],
+        b_face_cog[face_id][2] - vtx_coord[v_id][2],
+      };
+
+      /* g . (x_f - x_N) S_fN  */
+      cs_real_t dz_fn = cs_math_3_dot_product(normal, v_cog);
+
+      /* v1 is heigher than x_f */
+      if (dz_fn > 0.)
+        _is_loc_min[v_id] = 0.; /* not a min */
+
+      /* x_f is heigher than v1 */
+      if (dz_fn < 0.)
+        _is_loc_max[v_id] = 0.; /* not a max */
+
+    }
+
+  } /* Loop on selected border faces */
+
+  /* Handle parallelism */
+  if (m->vtx_interfaces != NULL) {
+
+    cs_interface_set_min(m->vtx_interfaces,
+                         m->n_vertices,
+                         1,
+                         true,
+                         CS_REAL_TYPE,
+                         _is_loc_min);
+
+    cs_interface_set_min(m->vtx_interfaces,
+                         m->n_vertices,
+                         1,
+                         true,
+                         CS_REAL_TYPE,
+                         _is_loc_max);
+  }
+
+  cs_gnum_t _f_count_filter = 0;
+  cs_gnum_t _f_n_elts = z->n_elts;
+
+  /* Loop over boundary faces */
+  for (cs_lnum_t elt_id = 0; elt_id < z->n_elts; elt_id++) {
+
+    const cs_lnum_t face_id = z->elt_ids[elt_id];
 
     const cs_real_t mf_inv_rho_n_dot_s = b_mass_flux[face_id] /
       (cs_math_3_dot_product(normal, b_face_normal[face_id])
@@ -209,6 +278,45 @@ _free_surface(const cs_domain_t  *domain,
     const cs_lnum_t s = m->b_face_vtx_idx[face_id];
     const cs_lnum_t e = m->b_face_vtx_idx[face_id+1];
 
+    cs_real_t f_has_min = 0;
+    cs_real_t f_has_max = 0;
+
+    /* First loop to determine if filtering is needed:
+     * - if face has a local min and a local max
+     * - if the slope is greater than pi/4
+     *   */
+    int f_need_filter = 0;
+
+    for (cs_lnum_t k = s; k < e; k++) {
+      const cs_lnum_t k_1 = (k+1 < e) ? k+1 : k+1-(e-s);
+      const cs_lnum_t v_id0 = m->b_face_vtx_lst[k];
+      const cs_lnum_t v_id1 = m->b_face_vtx_lst[k_1];
+      /* Edge to CoG vector */
+      cs_real_3_t e_cog = {
+        0.5 * (b_face_cog[face_id][0] - vtx_coord[v_id0][0])
+          + 0.5 * (b_face_cog[face_id][0] - vtx_coord[v_id1][0]),
+        0.5 * (b_face_cog[face_id][1] - vtx_coord[v_id0][1])
+          + 0.5 * (b_face_cog[face_id][1] - vtx_coord[v_id1][1]),
+        0.5 * (b_face_cog[face_id][2] - vtx_coord[v_id0][2])
+          + 0.5 * (b_face_cog[face_id][2] - vtx_coord[v_id1][2])
+      };
+      cs_real_t dz = CS_ABS(cs_math_3_dot_product(normal, e_cog));
+      cs_real_3_t e_cog_hor;
+      cs_math_3_orthogonal_projection(normal, e_cog, e_cog_hor);
+      cs_real_t dx = cs_math_3_norm(e_cog_hor);
+      /* Too high slope */
+      if (dz > dx)
+        f_need_filter = 1;
+
+      f_has_max = CS_MAX(f_has_max, _is_loc_max[v_id0]);
+      f_has_min = CS_MAX(f_has_min, _is_loc_min[v_id0]);
+    }
+
+    if (f_has_max > 0.5 && f_has_min > 0.5 || f_need_filter == 1) {
+      f_need_filter = 1;
+      _f_count_filter++;
+    }
+
     /* Compute the portion of surface associated to v_id_1 */
     for (cs_lnum_t k = s; k < e; k++) {
 
@@ -221,17 +329,17 @@ _free_surface(const cs_domain_t  *domain,
       cs_real_3_t v0v1 = {
         vtx_coord[v_id1][0] - vtx_coord[v_id0][0],
         vtx_coord[v_id1][1] - vtx_coord[v_id0][1],
-        vtx_coord[v_id1][2] - vtx_coord[v_id0][2],
+        vtx_coord[v_id1][2] - vtx_coord[v_id0][2]
       };
       cs_real_3_t v1v2 = {
         vtx_coord[v_id2][0] - vtx_coord[v_id1][0],
         vtx_coord[v_id2][1] - vtx_coord[v_id1][1],
-        vtx_coord[v_id2][2] - vtx_coord[v_id1][2],
+        vtx_coord[v_id2][2] - vtx_coord[v_id1][2]
       };
       cs_real_3_t v1_cog = {
         b_face_cog[face_id][0] - vtx_coord[v_id1][0],
         b_face_cog[face_id][1] - vtx_coord[v_id1][1],
-        b_face_cog[face_id][2] - vtx_coord[v_id1][2],
+        b_face_cog[face_id][2] - vtx_coord[v_id1][2]
       };
 
       /* Portion of the surface associated to the vertex
@@ -242,11 +350,24 @@ _free_surface(const cs_domain_t  *domain,
 
       _v_surf[v_id1] += portion_surf;
 
+      /* g . (x_f - x_N) S_fN  */
+      cs_real_t dz_fn = cs_math_3_dot_product(normal, v1_cog);
+
       for (int i = 0; i < 3; i++)
-        _mesh_vel[v_id1][i] += f_vel[i] * portion_surf;
+        _mesh_vel[v_id1][i] += (f_vel[i] + invdt * f_need_filter * dz_fn * normal[i]) * portion_surf;
     }
 
   } /* Loop on selected border faces */
+
+  cs_var_cal_opt_t var_cal_opt;
+  cs_field_get_key_struct(CS_F_(mesh_u), cs_field_key_id("var_cal_opt"), &var_cal_opt);
+  if (var_cal_opt.iwarni >= 1) {
+    cs_parall_sum(1, CS_GNUM_TYPE, &_f_count_filter);
+    cs_parall_sum(1, CS_GNUM_TYPE, &_f_n_elts);
+    bft_printf("Free surface condition %d: %f percents of limited face\n",
+      select_id, (cs_real_t) _f_count_filter / (cs_real_t) _f_n_elts);
+  }
+
 
   /* Handle parallelism */
   if (m->vtx_interfaces != NULL) {
@@ -268,20 +389,23 @@ _free_surface(const cs_domain_t  *domain,
   /* Loop on selected border vertices */
   for (cs_lnum_t i = 0; i < _cdo_bc->n_vertices[select_id]; i++) {
 
-    const cs_lnum_t  v_id = _cdo_bc->vtx_select[select_id][i];
+    const cs_lnum_t v_id = _cdo_bc->vtx_select[select_id][i];
     const double  invsurf = 1./_v_surf[v_id];
-    const cs_real_t  *_m_vel = (cs_real_t *)_mesh_vel + 3*v_id;
 
     cs_real_t  *_val = _cdo_bc->vtx_values + 3*v_id;
 
-    for (int k = 0; k < 3; k++)
-      _val[k] = _m_vel[k] * invsurf;
+    for (int k = 0; k < 3; k++) {
+      _mesh_vel[v_id][k] *= invsurf;
+      _val[k] = _mesh_vel[v_id][k];
+    }
 
   } /* Loop on selected vertices */
 
   /* Free memory */
   BFT_FREE(_mesh_vel);
   BFT_FREE(_v_surf);
+  BFT_FREE(_is_loc_min);
+  BFT_FREE(_is_loc_max);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1245,6 +1369,8 @@ cs_ale_activate(void)
   cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
 
   cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
+
+  cs_equation_set_param(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "vol_tot");
 
   /* BC settings */
   cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "algebraic");
