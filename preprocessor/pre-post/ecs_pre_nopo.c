@@ -974,8 +974,6 @@ ecs_pre_nopo__lit_maillage(const char  *nom_fic_maillage)
   ecs_coord_t   *nop4;
   ecs_int_t     *nop5;
 
-  ecs_int_t     ndsr;    /* maximum reference number */
-  ecs_int_t     ndsd;    /* maximum sub-domain number */
   ecs_int_t     ncopnp;  /* 1 if vertices = noeuds, 0 otherwise */
   ecs_int_t     ne;      /* number of elements */
   ecs_int_t     nepo;    /* number of point elements */
@@ -1268,8 +1266,9 @@ ecs_pre_nopo__lit_maillage(const char  *nom_fic_maillage)
 
   /* Other dimensions and parameters */
 
-  ndsr   = (ecs_int_t) nop2[1];  /* maximum reference number */
-  ndsd   = (ecs_int_t) nop2[2];  /* maximum sub-domain number */
+  /* nop2[1] : maximum reference number
+     nop2[2] ! maximum sub-domain number */
+
   ncopnp = (ecs_int_t) nop2[3];  /* 1 if vertices = nodes, 0 otherwise */
   ne     = (ecs_int_t) nop2[4];  /* number of elements */
   nepo   = (ecs_int_t) nop2[5];  /* number of point elements */

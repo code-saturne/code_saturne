@@ -195,10 +195,13 @@ cs_f_atmo_chem_finalize(void)
 
 static char *
 _strtolower(char       *dest,
-           const char *src)
+            const char *src)
 {
   char *result = dest;
-  while (*dest++ = tolower(*src++));
+  while (*dest = tolower(*src)) {
+    dest++;
+    src++;
+  }
   return result;
 }
 
@@ -490,7 +493,7 @@ cs_atmo_declare_chem_from_spack(void)
   /* Read  SPACK: second loop Create variables and read molar mass */
   for (int i = 0; i < _atmo_chem.n_species; i++ ) {
     /* Read species */
-    if (fscanf(file, "%s %f\n", line, &(_atmo_chem.molar_mass[i])) != 1)
+    if (fscanf(file, "%s %lf\n", line, &(_atmo_chem.molar_mass[i])) != 1)
       bft_error(__FILE__,__LINE__, 0,
                 _("Atmo chemistry from SPACK file: warning, may be end of file."));
 

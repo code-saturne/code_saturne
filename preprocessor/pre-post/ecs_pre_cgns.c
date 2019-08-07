@@ -2845,7 +2845,6 @@ ecs_loc_pre_cgns__cree_grps_boco(const ecs_loc_cgns_base_t  *base_maillage,
   ecs_int_t    ind_ent;
   ecs_int_t    ind_glob;
   ecs_int_t    ind_nom;
-  ecs_int_t    n_elts_zone;
 
   int          cel_dim;
 
@@ -2988,8 +2987,6 @@ ecs_loc_pre_cgns__cree_grps_boco(const ecs_loc_cgns_base_t  *base_maillage,
       if (ptr_boco->support == CS_CG_ENUM(FaceCenter)) {
 
         ptr_zone = tab_zone + ptr_boco->num_zone - 1;
-
-        n_elts_zone = ptr_zone->num_elt_fin - ptr_zone->num_elt_deb;
 
         /* Liste définie par numéro de début et fin */
 

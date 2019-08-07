@@ -1647,7 +1647,6 @@ cs_ext_force_flux(const cs_mesh_t          *m,
     = (const cs_lnum_2_t *restrict)m->i_face_cells;
   const cs_lnum_t *restrict b_face_cells
     = (const cs_lnum_t *restrict)m->b_face_cells;
-  const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict i_dist = fvq->i_dist;
   const cs_real_t *restrict b_dist = fvq->b_dist;
   const cs_real_t *restrict i_f_face_surf = fvq->i_f_face_surf;

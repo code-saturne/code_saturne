@@ -691,8 +691,6 @@ _compute_weighted_cell_cocg_s_lsq(const cs_mesh_t              *m,
     = (const cs_real_3_t *restrict)fvq->cell_cen;
   const cs_real_3_t *restrict b_face_normal
     = (const cs_real_3_t *restrict)fvq->b_face_normal;
-  const cs_real_t *restrict b_face_surf
-    = (const cs_real_t *restrict)fvq->b_face_surf;
 
   const cs_real_t *restrict weight = fvq->weight;
 
@@ -4332,8 +4330,6 @@ _compute_cocgb_rhsb_lsq_v(cs_lnum_t                     cell_id,
 
   const cs_real_3_t *restrict b_face_normal
     = (const cs_real_3_t *restrict)fvq->b_face_normal;
-  const cs_real_t *restrict b_face_surf
-    = (const cs_real_t *restrict)fvq->b_face_surf;
   const cs_real_t *restrict b_dist
     = (const cs_real_t *restrict)fvq->b_dist;
 
@@ -4670,8 +4666,6 @@ _lsq_vector_gradient(const cs_mesh_t              *m,
 
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)fvq->b_face_cog;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict b_dist = fvq->b_dist;
   const cs_real_3_t *restrict b_face_normal
@@ -4977,8 +4971,6 @@ _lsq_tensor_gradient(const cs_mesh_t              *m,
 
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
-  const cs_real_3_t *restrict b_face_cog
-    = (const cs_real_3_t *restrict)fvq->b_face_cog;
   cs_real_33_t *restrict cocg = fvq->cocg_lsq;
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict b_dist = fvq->b_dist;

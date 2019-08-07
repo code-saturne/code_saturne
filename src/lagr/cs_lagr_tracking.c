@@ -2829,8 +2829,6 @@ _sync_particle_set(cs_lagr_particle_set_t  *particles)
 static void
 _initialize_displacement(cs_lagr_particle_set_t  *particles)
 {
-  const cs_lagr_model_t *lagr_model = cs_glob_lagr_model;
-
   const cs_lagr_attribute_map_t  *am = particles->p_am;
 
   /* Initialize builder if needed */

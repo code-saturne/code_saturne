@@ -94,35 +94,42 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_extra_operations(cs_domain_t     *domain)
+cs_user_extra_operations(cs_domain_t  *domain)
 {
+  CS_UNUSED(domain);
+
   FILE *file = NULL;
-  const cs_real_3_t *b_face_cog = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-  const cs_real_3_t *surfbo = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
+  const cs_real_3_t *b_face_cog
+    = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+  const cs_real_3_t *surfbo
+    = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
   const cs_real_t *surfbn = cs_glob_mesh_quantities->b_face_surf;
 
-  const cs_real_t *f_b_temp = (const cs_real_t *)cs_field_by_name("boundary_temperature")->val;
-  const cs_real_3_t  *forbr = (const cs_real_3_t *)cs_field_by_name("boundary_forces")->val;
+  const cs_real_t    *f_b_temp
+    = (const cs_real_t *)cs_field_by_name("boundary_temperature")->val;
+  const cs_real_3_t  *forbr
+    = (const cs_real_3_t *)cs_field_by_name("boundary_forces")->val;
 
   cs_field_t *f = cs_thermal_model_field();
-  const double visls0 = cs_field_get_key_double(f, cs_field_key_id("diffusivity_ref"));
+  const double visls0
+    = cs_field_get_key_double(f, cs_field_key_id("diffusivity_ref"));
 
   if (cs_glob_time_step->nt_cur == cs_glob_time_step->nt_max) {
 
     /* We compute the thermal fluxes at boundaries */
     const int location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
     const cs_lnum_t n_elts = cs_mesh_location_get_n_elts(location_id)[0];
-    cs_real_t *boundary_flux ;
+    cs_real_t *boundary_flux = NULL;
     BFT_MALLOC(boundary_flux, n_elts, cs_real_t);
 
     cs_post_boundary_flux(f->name, n_elts, NULL, boundary_flux);
 
     /* Some declarations */
-    cs_real_t srfbn, srfnor[3], fornor, stresses[3] ;
-    cs_real_t *loc_nusselt , *glo_nusselt  ;
-    cs_real_t *loc_friction, *glo_friction ;
-    cs_real_t *loc_coords  , *glo_coords   ;
+    cs_real_t srfbn, srfnor[3], fornor, stresses[3];
+    cs_real_t *loc_nusselt = NULL, *loc_friction = NULL, *loc_coords = NULL;
+    cs_real_t *glo_nusselt = NULL, *glo_friction = NULL, *glo_coords = NULL;
 
     /* Print Nusselt and friction coeff file header*/
     if (cs_glob_rank_id <= 0) {
@@ -138,7 +145,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
     /* -------- TO MODIFY ---------- */
 
     cs_lnum_t   n_selected_faces   = 0;
-    cs_lnum_t   n_selected_faces_g = 0;
+    cs_gnum_t   n_selected_faces_g = 0;
     cs_lnum_t  *selected_faces = NULL;
 
     BFT_MALLOC(selected_faces, n_b_faces, cs_lnum_t);
@@ -147,18 +154,16 @@ cs_user_extra_operations(cs_domain_t     *domain)
                                 &n_selected_faces,
                                 selected_faces);
 
-    /* Get the total number of faces shared on each procs */
-    n_selected_faces_g = n_selected_faces ;
-    if (cs_glob_rank_id >= 0) {
-      cs_parall_sum(1 , CS_LNUM_TYPE, &n_selected_faces_g);
-    }
+    /* Get the total number of faces shared on all ranks */
+    n_selected_faces_g = n_selected_faces;
+    cs_parall_sum(1 , CS_GNUM_TYPE, &n_selected_faces_g);
 
     /*Allocate local and global arrays to store the desired data */
-    BFT_MALLOC(loc_nusselt , n_selected_faces, cs_real_t);
+    BFT_MALLOC(loc_nusselt,  n_selected_faces, cs_real_t);
     BFT_MALLOC(loc_friction, n_selected_faces, cs_real_t);
-    BFT_MALLOC(loc_coords  , n_selected_faces, cs_real_t);
+    BFT_MALLOC(loc_coords,   n_selected_faces, cs_real_t);
 
-    if (cs_glob_rank_id >= 0) {
+    if (cs_glob_n_ranks > 1) {
       BFT_MALLOC(glo_nusselt , n_selected_faces_g, cs_real_t);
       BFT_MALLOC(glo_friction, n_selected_faces_g, cs_real_t);
       BFT_MALLOC(glo_coords  , n_selected_faces_g, cs_real_t);
@@ -167,20 +172,17 @@ cs_user_extra_operations(cs_domain_t     *domain)
     /* Add some reference values */
 
     /* -------- TO MODIFY ---------- */
-    cs_real_t longueur_ref = 1.0 ;
-    cs_real_t temp_ref     = 1.0 ;
-    cs_real_t vel_ref      = 1.0 ;
+    cs_real_t length_ref = 1.0;
+    cs_real_t temp_ref     = 1.0;
     /* -------- TO MODIFY ---------- */
-
-    cs_real_t tfac ;
 
     for (cs_lnum_t ielt = 0; ielt < n_selected_faces; ielt++) {
       cs_lnum_t f_id = selected_faces[ielt];
 
       // Compute the Nusselt number
-      tfac = f_b_temp[f_id];
-      loc_nusselt[ielt]  = boundary_flux[f_id] * longueur_ref
-                         / ( visls0 * (tfac-temp_ref) );
+      cs_real_t tfac = f_b_temp[f_id];
+      loc_nusselt[ielt] =   boundary_flux[f_id] * length_ref
+                          / (visls0 * (tfac-temp_ref));
 
       // Compute the friction coefficient
       srfbn = surfbn[f_id];
@@ -191,30 +193,28 @@ cs_user_extra_operations(cs_domain_t     *domain)
              + forbr[f_id][1]*srfnor[1]
              + forbr[f_id][2]*srfnor[2];
 
-      stresses[0] = (forbr[f_id][0] - fornor*srfnor[0]) / srfbn ;
-      stresses[1] = (forbr[f_id][1] - fornor*srfnor[1]) / srfbn ;
-      stresses[2] = (forbr[f_id][2] - fornor*srfnor[2]) / srfbn ;
+      stresses[0] = (forbr[f_id][0] - fornor*srfnor[0]) / srfbn;
+      stresses[1] = (forbr[f_id][1] - fornor*srfnor[1]) / srfbn;
+      stresses[2] = (forbr[f_id][2] - fornor*srfnor[2]) / srfbn;
 
-      loc_friction[ielt] = sqrt( stresses[0]*stresses[0] +
-                                 stresses[1]*stresses[1] +
-                                 stresses[2]*stresses[2] );
+      loc_friction[ielt] = cs_math_3_norm(stresses);
 
-      // Here we plot the results with respects to X
+      // Here we plot the results with respect to X
       loc_coords[ielt]   = b_face_cog[f_id][0];
     }
 
-    /* Gather the data of each procs */
-    if (cs_glob_rank_id >= 0) {
-      cs_parall_allgather_r(n_selected_faces , n_selected_faces_g,
-                            loc_nusselt      , glo_nusselt       );
-      cs_parall_allgather_r(n_selected_faces , n_selected_faces_g,
-                            loc_friction     , glo_friction      );
-      cs_parall_allgather_r(n_selected_faces , n_selected_faces_g,
-                            loc_coords       , glo_coords        );
+    /* Gather the data of all ranks */
+    if (cs_glob_n_ranks > 1) {
+      cs_parall_allgather_r(n_selected_faces, n_selected_faces_g,
+                            loc_nusselt,      glo_nusselt);
+      cs_parall_allgather_r(n_selected_faces, n_selected_faces_g,
+                            loc_friction,     glo_friction);
+      cs_parall_allgather_r(n_selected_faces, n_selected_faces_g,
+                            loc_coords,       glo_coords);
     }
 
     /* Print in file */
-    for (cs_lnum_t ielt = 0; ielt < n_selected_faces_g; ielt++) {
+    for (cs_gnum_t ielt = 0; ielt < n_selected_faces_g; ielt++) {
       if (cs_glob_rank_id == -1)
         fprintf(file,"%17.9e %17.9e %17.9e\n",
                 loc_coords[ielt], loc_friction[ielt], loc_nusselt[ielt]);
@@ -223,7 +223,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
                 glo_coords[ielt], glo_friction[ielt], glo_nusselt[ielt]);
     }
 
-    /* Free allocated memmory */
+    /* Free allocated memory */
     BFT_FREE(boundary_flux);
     BFT_FREE(selected_faces);
 
@@ -231,11 +231,9 @@ cs_user_extra_operations(cs_domain_t     *domain)
     BFT_FREE(loc_friction);
     BFT_FREE(loc_coords);
 
-    if (cs_glob_rank_id >= 0) {
-      BFT_FREE(glo_nusselt);
-      BFT_FREE(glo_friction);
-      BFT_FREE(glo_coords);
-    }
+    BFT_FREE(glo_nusselt);
+    BFT_FREE(glo_friction);
+    BFT_FREE(glo_coords);
   }
 }
 

@@ -1366,7 +1366,7 @@ _ensure_init_moment(cs_lagr_moment_t  *mt)
 /*----------------------------------------------------------------------------*/
 
 static void
-_cs_lagr_stat_update_mesh_stats(cs_time_step_t  *ts)
+_cs_lagr_stat_update_mesh_stats(const cs_time_step_t  *ts)
 {
   for (int ms_id = 0; ms_id < _n_lagr_mesh_stats; ms_id++) {
 
