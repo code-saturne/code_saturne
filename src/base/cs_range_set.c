@@ -220,7 +220,7 @@ _interface_set_partition_ids(const cs_interface_set_t  *ifs,
                          CS_GNUM_TYPE,
                          g_id);
 
-  /* Now count and mark fo global elements */
+  /* Now count and mark of global elements */
 
   l_range[0] = 0;
   l_range[1] = 0;
