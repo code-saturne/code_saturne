@@ -7355,6 +7355,8 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
 
 #endif /* defined(HAVE_MKL) */
 
+#if defined(HAVE_OPENMP)
+
     switch(m->fill_type) {
     case CS_MATRIX_SCALAR:
     case CS_MATRIX_SCALAR_SYM:
@@ -7372,6 +7374,9 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
                  n_variants,
                  &n_variants_max,
                  m_variant);
+
+#endif /* defined(HAVE_OPENMP) */
+
   }
 
   n_variants_max = *n_variants;
