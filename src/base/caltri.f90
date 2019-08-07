@@ -975,6 +975,18 @@ if (ntmabs.gt.ntpabs .and. itrale.gt.0) then
 endif
 
 !===============================================================================
+! Update mesh (ALE)
+!===============================================================================
+
+if (iale.ge.1 .and. ntmabs.gt.ntpabs) then
+
+  if (itrale.eq.0 .or. itrale.gt.nalinf) then
+    call cs_ale_update_mesh(itrale, xyzno0)
+  endif
+
+endif
+
+!===============================================================================
 ! Optional processing by user
 !===============================================================================
 
@@ -994,18 +1006,6 @@ if (itrale.gt.0) then
   call user_extra_operations()
 
   call timer_stats_stop(post_stats_id)
-
-endif
-
-!===============================================================================
-! Update mesh (ALE)
-!===============================================================================
-
-if (iale.ge.1 .and. ntmabs.gt.ntpabs) then
-
-  if (itrale.eq.0 .or. itrale.gt.nalinf) then
-    call cs_ale_update_mesh(itrale, xyzno0)
-  endif
 
 endif
 
