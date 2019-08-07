@@ -1460,8 +1460,8 @@ endif
 ! Explicit user source terms are added
 if ((iphydr.ne.1.or.igpust.ne.1)) then
   ! If source terms are time-extrapolated, they are stored in fields
-  if (iterns.eq.1) then
-    if (isno2t.gt.0) then
+  if (isno2t.gt.0) then
+    if (iterns.eq.1) then
       do iel = 1, ncel
         do isou = 1, 3
           c_st_vel(isou,iel) = c_st_vel(isou,iel) + tsexp(isou,iel)
