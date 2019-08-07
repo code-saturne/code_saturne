@@ -1663,11 +1663,23 @@ class XMLinit(BaseXmlInit):
         XMLAnaControl = self.case.xmlGetNode('analysis_control')
         node_profiles = XMLAnaControl.xmlGetNode('profiles')
         if node_profiles:
-            node_profile = node_profiles.xmlGetNode('profile')
-            if node_profile:
+            for node_profile in node_profiles.xmlGetNodeList('profile'):
                 node = node_profile.xmlGetNode('var_prop', name="total_water")
                 if node:
                     node['name'] = "ym_water"
+        node_scalar_balances = XMLAnaControl.xmlGetNode('scalar_balances')
+        if node_scalar_balances:
+            for node_scalar_balance in node_scalar_balances.xmlGetNodeList('scalar_balance'):
+                node = node_scalar_balance.xmlGetNode('var_prop', name="total_water")
+                if node:
+                    node['name'] = "ym_water"
+        node_time_averages = XMLAnaControl.xmlGetNode('time_averages')
+        if node_time_averages:
+            for node_time_average in node_time_averages.xmlGetNodeList('time_average'):
+                node = node_time_average.xmlGetNode('var_prop', name="total_water")
+                if node:
+                    node['name'] = "ym_water"
+
 
     def _backwardCompatibilityCurrentVersion(self):
         """
