@@ -948,11 +948,17 @@ _matrix_time_test(double                       t_measure,
               }
               wt1 = cs_timer_wtime();
               double wt_r0 = wt1 - wt0;
+
+#if defined(HAVE_MPI)
+
               if (cs_glob_n_ranks > 1 && mpi_flag > 0) {
                 double _wt_r0 = wt_r0;
                 MPI_Allreduce(&_wt_r0, &wt_r0, 1, MPI_DOUBLE, MPI_MAX,
                               cs_glob_mpi_comm);
               }
+
+#endif
+
               if (wt_r0 < t_measure)
                 n_runs *= 2;
             }
