@@ -279,7 +279,9 @@ if (iturbo.eq.2) then
   if (nberro.eq.0)  write(nfecra,2412) ttpmob
 endif
 
-call turbomachinery_restart_read(rp)
+if (iturbo.ne.0) then
+  call turbomachinery_restart_read(rp)
+endif
 
 ! Fin de la lecture des options
 write(nfecra,1499)
