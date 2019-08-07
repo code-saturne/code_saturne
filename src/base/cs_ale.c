@@ -1370,7 +1370,7 @@ cs_ale_activate(void)
 
   cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
 
-  cs_equation_set_param(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "vol_tot");
+  cs_equation_set_param(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "rhs");
 
   /* BC settings */
   cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "algebraic");
