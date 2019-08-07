@@ -117,7 +117,6 @@ cs_medcoupling_remapper_initialize(const char   *name,
  * \param[in] r            pointer to the cs_medcoupling_remapper_t struct
  * \param[in] iteration    time iteration to load
  * \param[in] order        iteration order to load
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -198,7 +197,7 @@ cs_medcoupling_remapper_rotate(cs_medcoupling_remapper_t  *r,
  * \param[in]      t    requested time value
  * \param[in,out]  id1  first returned index
  * \param[in,out]  id2  second returned index
- *
+ */
 /*----------------------------------------------------------------------------*/
 
 void
@@ -218,7 +217,7 @@ cs_medcoupling_remapper_find_time_index(cs_medcoupling_remapper_t *r,
  * \param[in]      r    pointer to remapper object
  * \param[in]      id   requested index
  * \param[in,out]  t    corresponding time value
- *
+ */
 /*----------------------------------------------------------------------------*/
 void
 cs_medcoupling_remapper_get_time_from_index(cs_medcoupling_remapper_t *r,
@@ -237,8 +236,9 @@ cs_medcoupling_remapper_get_time_from_index(cs_medcoupling_remapper_t *r,
  * \param[in]      id     requested time index
  * \param[in,out]  iter   index iteration
  * \param[in,out]  order  index iteration order
- *
+ */
 /*----------------------------------------------------------------------------*/
+
 void
 cs_medcoupling_remapper_get_iter_order_from_index(cs_medcoupling_remapper_t *r,
                                                   int                        id,
