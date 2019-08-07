@@ -186,7 +186,6 @@ _cs_medcoupling_read_field_real(const char  *medfile_path,
  * \param[in] order            iteration order to load
  *
  * \return  pointer to the new cs_medcoupling_remapper_t struct
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -282,7 +281,6 @@ _create_remapper(const char   *name,
  * \param[in] field_names      names of the fields to load
  * \param[in] iteration        time iteration to load
  * \param[in] order            iteration order to load
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -465,7 +463,6 @@ _setup_no_bbox(cs_medcoupling_remapper_t *r)
  * \brief update the interpolation matrix using the reduced bbox
  *
  * \param[in] r  pointer to the cs_medcoupling_remapper_t struct
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -760,7 +757,7 @@ cs_medcoupling_remapper_rotate(cs_medcoupling_remapper_t  *r,
  * \param[in]      t    requested time value
  * \param[in,out]  id1  first returned index
  * \param[in,out]  id2  second returned index
- *
+ */
 /*----------------------------------------------------------------------------*/
 
 void
@@ -802,8 +799,9 @@ cs_medcoupling_remapper_find_time_index(cs_medcoupling_remapper_t *r,
  * \param[in]      r    pointer to remapper object
  * \param[in]      id   requested index
  * \param[in,out]  t    corresponding time value
- *
+ */
 /*----------------------------------------------------------------------------*/
+
 void
 cs_medcoupling_remapper_get_time_from_index(cs_medcoupling_remapper_t *r,
                                             int                        id,
@@ -826,8 +824,9 @@ cs_medcoupling_remapper_get_time_from_index(cs_medcoupling_remapper_t *r,
  * \param[in]      id     requested time index
  * \param[in,out]  iter   index iteration
  * \param[in,out]  order  index iteration order
- *
+ */
 /*----------------------------------------------------------------------------*/
+
 void
 cs_medcoupling_remapper_get_iter_order_from_index(cs_medcoupling_remapper_t *r,
                                                   int                        id,
