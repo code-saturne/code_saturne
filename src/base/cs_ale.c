@@ -694,13 +694,13 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
       } else if (idftnp & CS_ANISOTROPIC_LEFT_DIFFUSION) {
         for (int isou = 0; isou < 6; isou++)
           hintt[isou] = CS_F_(vism)->val[6*cell_id+isou] / distbf;
-     }
+      }
 
-     cs_real_t prosrf = cs_math_3_dot_product(grav, b_face_normal[face_id]);
+      cs_real_t prosrf = cs_math_3_dot_product(grav, b_face_normal[face_id]);
 
-     cs_real_3_t pimpv;
-     for (int i = 0; i < 3; i++)
-       pimpv[i] = grav[i]*b_massflux[face_id]/(brom[face_id]*prosrf);
+      cs_real_3_t pimpv;
+      for (int i = 0; i < 3; i++)
+        pimpv[i] = grav[i]*b_massflux[face_id]/(brom[face_id]*prosrf);
 
      cs_boundary_conditions_set_dirichlet_vector_aniso(bc_a[face_id],
                                                        bc_af[face_id],
@@ -918,7 +918,8 @@ cs_ale_project_displacement(const int           ale_bc_type[],
     vtx_counter[v_id] = 0.;
     vtx_interior_indicator[v_id] = true;
 
-    for (int i = 0; i < dim; i++) disp_proj[v_id][i] = 0.;
+    for (int i = 0; i < dim; i++)
+      disp_proj[v_id][i] = 0.;
 
   }
 
@@ -948,8 +949,10 @@ cs_ale_project_displacement(const int           ale_bc_type[],
 
     const cs_lnum_t  cell_id1 = m->i_face_cells[face_id][0];
     const cs_lnum_t  cell_id2 = m->i_face_cells[face_id][1];
-    const cs_real_t  dvol1 = 1./mq->cell_vol[cell_id1];
-    const cs_real_t  dvol2 = 1./mq->cell_vol[cell_id2];
+    const cs_real_t  dvol1 = 1. / mq->cell_vol[cell_id1];
+    const cs_real_t  dvol2 = 1. / mq->cell_vol[cell_id2];
+    const cs_real_t  dt_dvol1 = dt[cell_id1] * dvol1;
+    const cs_real_t  dt_dvol2 = dt[cell_id2] * dvol2;
 
     if (cell_id1 < n_cells) { /* Test to take into account face only once */
 
@@ -972,14 +975,13 @@ cs_ale_project_displacement(const int           ale_bc_type[],
 
           for (int i = 0; i < 3; i++) {
             disp_proj[vtx_id][i] +=
-              dvol1*(meshv[cell_id1][i] + gradm[cell_id1][i][0]*cen1_node[0]
-                                        + gradm[cell_id1][i][1]*cen1_node[1]
-                                        + gradm[cell_id1][i][2]*cen1_node[2])
-              * dt[cell_id1]
-            + dvol2*(meshv[cell_id2][i] + gradm[cell_id2][i][0]*cen2_node[0]
-                                        + gradm[cell_id2][i][1]*cen2_node[1]
-                                        + gradm[cell_id2][i][2]*cen2_node[2])
-              * dt[cell_id2];
+              dt_dvol1*(meshv[cell_id1][i] + gradm[cell_id1][i][0]*cen1_node[0]
+                                           + gradm[cell_id1][i][1]*cen1_node[1]
+                                           + gradm[cell_id1][i][2]*cen1_node[2])
+
+            + dt_dvol2*(meshv[cell_id2][i] + gradm[cell_id2][i][0]*cen2_node[0]
+                                           + gradm[cell_id2][i][1]*cen2_node[1]
+                                           + gradm[cell_id2][i][2]*cen2_node[2]);
           }
 
           vtx_counter[vtx_id] += dvol1 + dvol2;
