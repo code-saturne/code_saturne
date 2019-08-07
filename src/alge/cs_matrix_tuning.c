@@ -183,9 +183,6 @@ _matrix_tune_test(const cs_matrix_t     *m,
       cs_matrix_vector_product_t
         *vector_multiply = v->vector_multiply[ed_flag];
 
-      if (vector_multiply == NULL)
-        continue;
-
       if (vector_multiply != NULL) {
 
         cs_matrix_t m_t;
@@ -209,17 +206,25 @@ _matrix_tune_test(const cs_matrix_t     *m,
           }
           wt1 = cs_timer_wtime();
           double wt_r0 = wt1 - wt0;
+
+#if defined(HAVE_MPI)
+
           if (cs_glob_n_ranks > 1) {
             double _wt_r0 = wt_r0;
             MPI_Allreduce(&_wt_r0, &wt_r0, 1, MPI_DOUBLE, MPI_MAX,
                           cs_glob_mpi_comm);
           }
+
+#endif /* defined(HAVE_MPI) */
+
           if (wt_r0 < t_measure)
             n_runs *= 2;
         }
         wtu = (wt1 - wt0) / n_runs;
         spmv_cost[v_id*2 + ed_flag] = wtu;
       }
+      else
+        spmv_cost[v_id*2 + ed_flag] = -1;
 
     } /* end of loop on ed_flag */
 
@@ -276,7 +281,8 @@ _matrix_tune_spmv_select(const cs_matrix_t    *m,
 
   for (int i = 1; i < n_variants; i++) {
     for (int j = 0; j < 2; j++) {
-      if (spmv_cost[i*2 + j] < spmv_cost[min_c[j]*2 + j])
+      if (    spmv_cost[i*2 + j] > 0
+	  && (spmv_cost[i*2 + j] < spmv_cost[min_c[j]*2 + j]))
         min_c[j] = i;
     }
   }
