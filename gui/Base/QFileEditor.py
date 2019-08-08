@@ -50,11 +50,11 @@ except ImportError:
 try:
     # PyQt5
     from code_saturne.Base.QtWidgets import QMainWindow, QMessageBox, \
-        QAction, QFileDialog, QTextEdit, QSizePolicy, QMenu, QMessageBox
+        QAction, QFileDialog, QTextEdit, QPlainTextEdit, QSizePolicy, QMenu, QMessageBox
 except Exception:
     # PyQt4
-    from code_saturne.Base.QtQui import QMainWindow, QMessageBox, \
-        QAction, QFileDialog, QTextEdit, QSizePolicy, QMenu, QMessagBox
+    from code_saturne.Base.QtGui import QMainWindow, QMessageBox, \
+        QAction, QFileDialog, QTextEdit, QPlainTextEdit, QSizePolicy, QMenu, QMessagBox
 
 import resource_base_rc
 
@@ -111,6 +111,108 @@ class HighlightingRule():
 
 
 #-------------------------------------------------------------------------------
+# CodeEditor with line numbering
+#-------------------------------------------------------------------------------
+
+class LineNumberArea(QtWidgets.QWidget):
+
+    def __init__(self, editor):
+        super().__init__(editor)
+        self.editor = editor
+
+    def sizeHint(self):
+        return QtCore.QSize(self.editor.lineNumberAreaWidth(),0)
+
+    def paintEvent(self, event):
+        self.editor.lineNumberAreaPaintEvent(event)
+
+class CodeEditor(QPlainTextEdit):
+    def __init__(self):
+        super().__init__()
+        self.lineNumberArea = LineNumberArea(self)
+
+        self.blockCountChanged.connect(self.updateLineNumberAreaWidth)
+        self.updateRequest.connect(self.updateLineNumberArea)
+        self.cursorPositionChanged.connect(self.highlightCurrentLine)
+
+        self.updateLineNumberAreaWidth(0)
+
+
+    def lineNumberAreaWidth(self):
+        digits = 1
+        count = max(1, self.blockCount())
+        while count >= 10:
+            count /= 10
+            digits += 1
+        space = 3 + self.fontMetrics().width('9') * digits
+        return space
+
+
+    def updateLineNumberAreaWidth(self, _):
+        self.setViewportMargins(self.lineNumberAreaWidth(), 0, 0, 0)
+
+
+    def updateLineNumberArea(self, rect, dy):
+
+        if dy:
+            self.lineNumberArea.scroll(0, dy)
+        else:
+            self.lineNumberArea.update(0, rect.y(), self.lineNumberArea.width(),
+                       rect.height())
+
+        if rect.contains(self.viewport().rect()):
+            self.updateLineNumberAreaWidth(0)
+
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+
+        cr = self.contentsRect();
+        self.lineNumberArea.setGeometry(QtCore.QRect(cr.left(), cr.top(),
+                    self.lineNumberAreaWidth(), cr.height()))
+
+
+    def lineNumberAreaPaintEvent(self, event):
+        mypainter = QtGui.QPainter(self.lineNumberArea)
+
+        mypainter.fillRect(event.rect(), QtCore.Qt.lightGray)
+
+        block = self.firstVisibleBlock()
+        blockNumber = block.blockNumber()
+        top = self.blockBoundingGeometry(block).translated(self.contentOffset()).top()
+        bottom = top + self.blockBoundingRect(block).height()
+
+        # Just to make sure I use the right font
+        height = self.fontMetrics().height()
+        while block.isValid() and (top <= event.rect().bottom()):
+            if block.isVisible() and (bottom >= event.rect().top()):
+                number = str(blockNumber + 1)
+                mypainter.setPen(QtCore.Qt.black)
+                mypainter.drawText(0, top, self.lineNumberArea.width(), height,
+                 QtCore.Qt.AlignRight, number)
+
+            block = block.next()
+            top = bottom
+            bottom = top + self.blockBoundingRect(block).height()
+            blockNumber += 1
+
+
+    def highlightCurrentLine(self):
+        extraSelections = []
+
+        if not self.isReadOnly():
+            selection = QTextEdit.ExtraSelection()
+
+            lineColor = QtGui.QColor(QtCore.Qt.yellow).lighter(160)
+
+            selection.format.setBackground(lineColor)
+            selection.format.setProperty(QtGui.QTextFormat.FullWidthSelection, True)
+            selection.cursor = self.textCursor()
+            selection.cursor.clearSelection()
+            extraSelections.append(selection)
+        self.setExtraSelections(extraSelections)
+
+#-------------------------------------------------------------------------------
 # QtextHighlighter class
 #-------------------------------------------------------------------------------
 
@@ -138,7 +240,8 @@ class QtextHighlighter(QtGui.QSyntaxHighlighter):
                       'assert', 'true', 'false', 'continue', 'break',
                       'fprintf', 'bft_printf', 'bft_printf_flush', 'bft_error',
                       'cs_real_t', 'cs_lnum_t', 'cs_real_3_t', 'int', 'char',
-                      'string', 'void', 'double', 'const']
+                      'string', 'void', 'double', 'const',
+                      'BEGIN_C_DECLS', 'END_C_DECLS']
 
         py_kw      = ['if', 'elif', 'for', 'range', 'while', 'return', 'def',
                       'True', 'False']
@@ -515,7 +618,7 @@ class QFileEditor(QMainWindow):
             _tab_string += ' '
 
         # Main text zone
-        textEdit = QTextEdit()
+        textEdit = CodeEditor()
         textEdit.setFont(base_font)
         textEdit.textChanged.connect(self.updateFileState)
         textEdit.setReadOnly(self.readOnly)
@@ -879,7 +982,7 @@ class QFileEditor(QMainWindow):
             self.newFile()
             with file:
                 text = file.read()
-                self.textEdit.setText(text)
+                self.textEdit.setPlainText(text)
                 self.updateFileState(True)
 
     def openFileForAction(self, fn = None):
@@ -900,7 +1003,7 @@ class QFileEditor(QMainWindow):
         self.opened = True
         self.updateFileState(False)
         if self.useHighlight:
-            hl = QtextHighlighter(self.textEdit, self.file_extension)
+            hl = QtextHighlighter(self.textEdit.document(), self.file_extension)
         self.textEdit.show()
     # ---------------------------------------------------------------
 
@@ -966,7 +1069,7 @@ class QFileEditor(QMainWindow):
         self.opened = False
 
         self.filename = ''
-        self.textEdit.setText('')
+        self.textEdit.setPlainText('')
     # ---------------------------------------------------------------
 
 
