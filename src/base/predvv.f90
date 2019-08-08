@@ -970,27 +970,20 @@ if (iappel.eq.1) then
     ! The theta-scheme for the Coriolis term is the same as the other terms
     thetap = vcopt_u%thetav
 
+    ! Reference frame rotation
+    do iel = 1, ncel
+      romvom = -2.d0*crom(iel)*cell_f_vol(iel)*thetap
+      call add_coriolis_t(0, romvom, fimp(:,:,iel))
+    enddo
     ! Turbomachinery frozen rotors rotation
     if (iturbo.eq.1) then
-      ! Reference frame rotation
-      do iel = 1, ncel
-        romvom = -2.d0*crom(iel)*cell_f_vol(iel)*thetap
-        call add_coriolis_t(irotce(iel), romvom, fimp(:,:,iel))
-      enddo
       do iel = 1, ncel
         if (irotce(iel).gt.0) then
           romvom = -crom(iel)*cell_f_vol(iel)*thetap
           call add_coriolis_t(irotce(iel), romvom, fimp(:,:,iel))
         endif
       enddo
-    else if (icorio.eq.1) then
-      ! Reference frame rotation
-      do iel = 1, ncel
-        romvom = -2.d0*crom(iel)*cell_f_vol(iel)*thetap
-        call add_coriolis_t(0, romvom, fimp(:,:,iel))
-      enddo
     endif
-
   endif
 endif
 
