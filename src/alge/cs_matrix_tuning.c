@@ -266,7 +266,7 @@ _matrix_tune_spmv_select(const cs_matrix_t    *m,
     int     n = n_variants*2;
     double *cost_local;
     BFT_MALLOC(cost_local, n, double);
-    for (int i = 0; i < n_variants; i++)
+    for (int i = 0; i < n; i++)
       cost_local[i] = spmv_cost[i];
 
     MPI_Allreduce(cost_local, spmv_cost, n, MPI_DOUBLE, MPI_MAX, cs_glob_mpi_comm);
