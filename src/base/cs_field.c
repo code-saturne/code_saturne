@@ -536,7 +536,6 @@ _add_val(cs_lnum_t   n_elts,
          int         dim,
          cs_real_t  *val_old)
 {
-  cs_lnum_t  ii;
   cs_real_t  *val = val_old;
 
   BFT_REALLOC(val, n_elts*dim, cs_real_t);
@@ -546,19 +545,10 @@ _add_val(cs_lnum_t   n_elts,
      first be touched by the same core that will later operate on
      this memory, usually leading to better core/memory affinity. */
 
-  if (dim == 1) {
-#   pragma omp parallel for
-    for (ii = 0; ii < n_elts; ii++)
-      val[ii] = 0.0;
-  }
-  else {
-    cs_lnum_t jj;
-#   pragma omp parallel for private(jj)
-    for (ii = 0; ii < n_elts; ii++) {
-      for (jj = 0; jj < dim; jj++)
-        val[ii*dim + jj] = 0.0;
-    }
-  }
+  const cs_lnum_t _n_elts = dim * n_elts;
+# pragma omp parallel for if (_n_elts > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < _n_elts; ii++)
+    val[ii] = 0.0;
 
   return val;
 }
@@ -2141,7 +2131,7 @@ cs_field_set_values(cs_field_t  *f,
   const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
   const cs_lnum_t _n_vals = n_elts[2]*f->dim;
 
-# pragma omp parallel for
+# pragma omp parallel for if (n_elts > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < _n_vals; ii++)
     f->val[ii] = c;
 }
@@ -2166,7 +2156,7 @@ cs_field_current_to_previous(cs_field_t  *f)
 
     const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
 
-#   pragma omp parallel
+#   pragma omp parallel if (n_elts > CS_THR_MIN)
     {
       const int dim = f->dim;
       const cs_lnum_t _n_elts = n_elts[2];
