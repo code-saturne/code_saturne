@@ -130,6 +130,8 @@ integer          ipass
 data             ipass /0/
 save             ipass
 
+integer :: verbosity
+
 integer, pointer, dimension(:,:) :: icodcl
 integer, allocatable, dimension(:) :: isostd
 
@@ -258,6 +260,12 @@ call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
 ! 1. Initialisation
 !===============================================================================
 
+if (mod(ntcabs,nfreqr).eq.0) then
+  verbosity = 1
+else
+  verbosity = 0
+endif
+
 allocate(isostd(nfabor+1))
 
 must_return = .false.
@@ -320,9 +328,10 @@ if (ippmod(idarcy).eq.-1) then
 ! On ne le fait pas dans le cas de la prise en compte de la pression
 !   hydrostatique, ni dans le cas du compressible
 
-  if( ntcabs.le.ntinit .and. isuite.eq.0 .and. (iphydr.eq.0.or.iphydr.eq.2)    &
-                  .and. ippmod(icompf).lt.0                               &
-                  .and. idilat .le.1                 ) then
+  if (      ntcabs.le.ntinit .and. isuite.eq.0               &
+      .and. (iphydr.eq.0.or.iphydr.eq.2)                     &
+      .and. ippmod(icompf).lt.0                              &
+      .and. idilat.le.1) then
 
     if(vcopt_p%iwarni.ge.2) then
       write(nfecra,2000) ntcabs
@@ -333,10 +342,9 @@ if (ippmod(idarcy).eq.-1) then
     xzp0   = xyzp0(3)
     do iel = 1, ncel
       cvar_pr(iel) = pred0
-      cpro_prtot(iel) = p0                                   &
-           + ro0*( gx*(xyzcen(1,iel)-xxp0)                   &
-           +       gy*(xyzcen(2,iel)-xyp0)                   &
-           +       gz*(xyzcen(3,iel)-xzp0) )
+      cpro_prtot(iel) = p0 + ro0*(  gx*(xyzcen(1,iel)-xxp0)   &
+                                  + gy*(xyzcen(2,iel)-xyp0)   &
+                                  + gz*(xyzcen(3,iel)-xzp0))
     enddo
   endif
 
@@ -536,7 +544,7 @@ if(nctsmt.gt.0) then
     ! Cooling tower model
     ! Evaporation mass exchange term
     call cs_ctwr_bulk_mass_source_term &
-      (p0   , molmass_rat, mass_source)
+      (p0, molmass_rat, mass_source)
 
     do ii = 1, ncetsm
       iel = icetsm(ii)
@@ -1407,7 +1415,7 @@ if (fluid_solid) call cs_mesh_quantities_set_has_disable_flag(0)
 
 if (nscal.ge.1 .and. iirayo.gt.0) then
 
-  if (vcopt_u%iwarni.ge.1 .and. mod(ntcabs,nfreqr).eq.0) then
+  if (vcopt_u%iwarni.ge.1) then
     write(nfecra,1070)
   endif
 
@@ -1417,12 +1425,12 @@ if (nscal.ge.1 .and. iirayo.gt.0) then
     call atr1vf()
   endif
 
-  call cs_rad_transfer_solve(itypfb, dt, cp2fol, cp2ch, ichcor)
+  call cs_rad_transfer_solve(verbosity, itypfb, dt, cp2fol, cp2ch, ichcor)
 endif
 
 if (nscal.ge.1) then
 
-  if(vcopt_u%iwarni.ge.1) then
+  if (vcopt_u%iwarni.ge.1) then
     write(nfecra,1060)
   endif
 

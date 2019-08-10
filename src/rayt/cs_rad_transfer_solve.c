@@ -891,6 +891,7 @@ _compute_net_flux(const int        itypfb[],
  *  - Discretes Ordinates Methods (DOM)
  *  - P-1 approximation (only recommended for pulverized coal)
  *
+ *  \param[in]       verbosity     verbosity level
  *  \param[in, out]  bc_type       boundary face types
  *  \param[in]       dt            time step (per cell)
  *  \param[in]       cp2fol        fuel oil liquid CP
@@ -900,7 +901,8 @@ _compute_net_flux(const int        itypfb[],
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_solve(int               bc_type[],
+cs_rad_transfer_solve(int               verbosity,
+                      int               bc_type[],
                       const cs_real_t   dt[],
                       cs_real_t         cp2fol,
                       const cs_real_t   cp2ch[],
@@ -1036,9 +1038,10 @@ cs_rad_transfer_solve(int               bc_type[],
       && cs_glob_time_step->nt_cur%rt_params->nfreqr != 0)
     return;
 
-  cs_log_printf(CS_LOG_DEFAULT,
-                _("   ** Information on the radiative source term\n"
-                  "      ----------------------------------------\n"));
+  if (verbosity > 0)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  _("   ** Information on the radiative source term\n"
+                    "      ----------------------------------------\n"));
 
   /* Constants initialization */
   cs_real_t onedpi  = 1.0 / cs_math_pi;
@@ -1228,7 +1231,7 @@ cs_rad_transfer_solve(int               bc_type[],
     }
 
     /* Only necessary when grey gas radiation properties are applied.
-       In case of the ADF model this test doesnt make sense. */
+       In case of the ADF model this test does not make sense. */
 
     if (rt_params->imoadf == 0 && rt_params->imfsck == 0) {
 
@@ -1320,11 +1323,13 @@ cs_rad_transfer_solve(int               bc_type[],
       cs_parall_max(1, CS_REAL_TYPE, &ckmax);
 
       if (ckmax <= cs_math_epzero) {
-        cs_log_printf(CS_LOG_DEFAULT,
-                      _("      Radiative transfer with transparent medium."));
+        if (verbosity > 0)
+          cs_log_printf(CS_LOG_DEFAULT,
+                        _("      Radiative transfer with transparent medium."));
         idiver = -1;
       }
     }
+
     /* Infra red atmospheric model */
     else {
       cs_real_t *ck_u = cs_field_by_name("rad_absorption_coeff_up")->val;
@@ -1337,9 +1342,11 @@ cs_rad_transfer_solve(int               bc_type[],
 
       cs_parall_max(1, CS_REAL_TYPE, &ckumax);
 
-      if (ckumax <= cs_math_epzero)
-        cs_log_printf(CS_LOG_DEFAULT,
-            _("      Atmo radiative transfer with transparent medium for upward directions.\n"));
+      if (verbosity > 0 && ckumax <= cs_math_epzero)
+        cs_log_printf
+          (CS_LOG_DEFAULT,
+           _("      Atmospheric radiative transfer with transparent medium %s\n"),
+           _("for upward directions."));
 
       cs_real_t ckdmax = 0.0;
 
@@ -1348,9 +1355,11 @@ cs_rad_transfer_solve(int               bc_type[],
 
       cs_parall_max(1, CS_REAL_TYPE, &ckdmax);
 
-      if (ckdmax <= cs_math_epzero)
-        cs_log_printf(CS_LOG_DEFAULT,
-            _("      Atmo radiative transfer with transparent medium for downward directions.\n"));
+      if (verbosity > 0 && ckdmax <= cs_math_epzero)
+        cs_log_printf
+          (CS_LOG_DEFAULT,
+           _("      Atmospheric radiative transfer with transparent medium %s\n"),
+           _("for downward directions."));
 
       if (ckumax <= cs_math_epzero && ckdmax <= cs_math_epzero)
         idiver = -1;
@@ -1790,31 +1799,36 @@ cs_rad_transfer_solve(int               bc_type[],
     cs_parall_max(n_zones, CS_INT_TYPE, iflux);
   }
 
-  cs_log_printf
-    (CS_LOG_DEFAULT,
-     _("\n"
-       "Zone         Radiative net flux (Watt) (outward-facing unit normal)\n"
-       "--------------------------------------\n"));
+  if (verbosity > 0) {
 
-  for (int izone = 0; izone < n_zones; izone++) {
+    cs_log_printf
+      (CS_LOG_DEFAULT,
+       _("\n"
+         "Zone         Radiative net flux (Watt) (outward-facing unit normal)\n"
+         "--------------------------------------\n"));
 
-    if (iflux[izone] == 1)
-      cs_log_printf(CS_LOG_DEFAULT,
-                    _("%6d             %11.4e\n"),
-                    izone,
-                    flux[izone]);
+    for (int izone = 0; izone < n_zones; izone++) {
+
+      if (iflux[izone] == 1)
+        cs_log_printf(CS_LOG_DEFAULT,
+                      _("%6d             %11.4e\n"),
+                      izone,
+                      flux[izone]);
+    }
+    cs_log_printf(CS_LOG_DEFAULT, "\n");
+
   }
-  cs_log_printf(CS_LOG_DEFAULT, "\n");
 
-  /* -> Integration de la densite de flux net aux frontieres */
-  cs_real_t aa = cs_dot(n_b_faces, f_fnet->val, b_face_surf);
+  /* -> Integrate net flux density at boundaries */
+  if (verbosity > 0) {
+    cs_real_t aa = cs_dot(n_b_faces, f_fnet->val, b_face_surf);
+    cs_parall_sum(1, CS_REAL_TYPE, &aa);
 
-  cs_parall_sum(1, CS_REAL_TYPE, &aa);
-
-  cs_log_printf
-    (CS_LOG_DEFAULT,
-     _("Net radiative flux on all boundaries:      Fnet = %11.4e Watt\n"),
-     aa);
+    cs_log_printf
+      (CS_LOG_DEFAULT,
+       _("Net radiative flux on all boundaries:      Fnet = %11.4e Watt\n"),
+       aa);
+  }
 
   /* Semi-analitical radiative source terms */
   if (idiver >= 0) {
@@ -1941,7 +1955,7 @@ cs_rad_transfer_solve(int               bc_type[],
   }
 
   /* Log information */
-  if (idiver >= 0) {
+  if (verbosity > 0 && idiver >= 0) {
 
     /* Volume integration of the explicit source term.
      * The result of this integration MUST be the same as that of the surface
@@ -1967,9 +1981,10 @@ cs_rad_transfer_solve(int               bc_type[],
 
   }
 
-  cs_log_printf
-    (CS_LOG_DEFAULT,
-     _("-------------------------------------------------------------------\n"));
+  if (verbosity > 0)
+    cs_log_printf
+      (CS_LOG_DEFAULT,
+       _("-------------------------------------------------------------------\n"));
 
   /* Free memory */
 
