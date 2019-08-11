@@ -1233,6 +1233,10 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
 
   if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_DOM) {
 
+    const cs_real_t *grav = cs_glob_physical_constants->gravity;
+    const cs_real_t g_norm = cs_math_3_norm(grav);
+    const cs_real_t d_g = (g_norm > 0.) ? 1./g_norm : 0.;
+
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
 
       /* Copy the appropriate flux density to the local variable qpatmp*/
@@ -1268,16 +1272,13 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
          * or if coupled to a 1D module (Atmospheric module)
          * (warning: the treatment is different from than of P-1 model) */
         if (vect_s != NULL) {
-          cs_real_3_t normal;
+          cs_real_t normal[3];
           cs_math_3_normalise(b_face_normal[face_id], normal);
-          cs_real_t vs_dot_n = cs_math_3_dot_product(vect_s,  normal);
-          cs_real_t *grav = cs_glob_physical_constants->gravity;
-          cs_real_t g_norm = cs_math_3_norm(grav);
-          cs_real_t d_g = (g_norm > 0.) ? 1. / g_norm : 0.;
-          cs_real_t g_dot_n_norm = cs_math_3_dot_product(grav,  normal) * d_g;
-          if (CS_ABS(vs_dot_n) < cs_math_epzero
-              || (vs_dot_n < 0. /* Entering */
-                &&  g_dot_n_norm < -0.5) )
+          cs_real_t vs_dot_n = cs_math_3_dot_product(vect_s, normal);
+          cs_real_t g_dot_n_norm = cs_math_3_dot_product(grav, normal) * d_g;
+          if (    CS_ABS(vs_dot_n) < cs_math_epzero
+              || (   vs_dot_n < 0. /* Entering */
+                  && g_dot_n_norm < -0.5) )
             neumann = false;
         }
 

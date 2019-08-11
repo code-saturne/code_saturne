@@ -268,9 +268,8 @@ cs_rad_transfer_prp(void)
                               false);
 
           /* show or hide property */
-          if (!hide[i]) {
+          if (!hide[i])
             cs_field_set_key_int(f, keyvis, 1);
-          }
           cs_field_set_key_int(f, keylog, 1);
 
           /* set label */
