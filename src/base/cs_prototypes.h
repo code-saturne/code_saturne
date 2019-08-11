@@ -192,9 +192,8 @@ cs_user_head_losses(const cs_zone_t  *zone,
  *----------------------------------------------------------------------------*/
 
 void
-cs_user_rad_transfer_absorption(const int         bc_type[],
-                                const cs_real_t   dt[],
-                                cs_real_t         ck[]);
+cs_user_rad_transfer_absorption(const int  bc_type[],
+                                cs_real_t  ck[]);
 
 /*----------------------------------------------------------------------------
  * Compute the net radiation flux
@@ -202,7 +201,6 @@ cs_user_rad_transfer_absorption(const int         bc_type[],
 
 void
 cs_user_rad_transfer_net_flux(const int        itypfb[],
-                              const cs_real_t  dt[],
                               const cs_real_t  coefap[],
                               const cs_real_t  coefbp[],
                               const cs_real_t  cofafp[],

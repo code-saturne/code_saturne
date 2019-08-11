@@ -206,17 +206,14 @@ cs_user_radiative_transfer_parameters(void)
  * In the case of the P-1 model, we check that the optical length is at
  * least of the order of 1.
  *
- * \param[in]     bc_type       boundary face types
- * \param[in]     dt            time step (per cell)
- * \param[out]    ck            medium's absorption coefficient
- *                              (zero if transparent)
+ * \param[in]   bc_type  boundary face types
+ * \param[out]  ck       medium's absorption coefficient (zero if transparent)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_rad_transfer_absorption(const int         bc_type[],
-                                const cs_real_t   dt[],
-                                cs_real_t         ck[])
+cs_user_rad_transfer_absorption(const int  bc_type[],
+                                cs_real_t  ck[])
 {
   /* Note: ck argument could be removed, access using field ids */
   {
@@ -311,7 +308,6 @@ cs_user_rad_transfer_absorption(const int         bc_type[],
  * and the radiative absorbing part.
  *
  * \param[in]   bc_type   boundary face types
- * \param[in]   dt        time step (per cell)
  * \param[in]   coefap    boundary condition work array for the luminance
  *                         (explicit part)
  * \param[in]   coefbp    boundary condition work array for the luminance
@@ -332,7 +328,6 @@ cs_user_rad_transfer_absorption(const int         bc_type[],
 
 void
 cs_user_rad_transfer_net_flux(const int        bc_type[],
-                              const cs_real_t  dt[],
                               const cs_real_t  coefap[],
                               const cs_real_t  coefbp[],
                               const cs_real_t  cofafp[],
