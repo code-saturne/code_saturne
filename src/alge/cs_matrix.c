@@ -1183,7 +1183,7 @@ _6_6_mat_vec_p_l_native(bool                exclude_diag,
 
   const cs_real_t  *restrict xa = mc->xa;
 
-  assert(matrix->db_size[0] == 3 && matrix->db_size[3] == 9);
+  assert(matrix->db_size[0] == 6 && matrix->db_size[3] == 36);
 
   /* Diagonal part of matrix.vector product */
 
