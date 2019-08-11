@@ -1978,6 +1978,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           }
         }
 
+        BFT_FREE(xvals);
+
         if (cs_gui_strcmp(vars->model, "compressible_model")) {
           if (boundaries->itype[izone] == CS_EPHCF) {
             xvals = cs_meg_boundary_function(bz,
@@ -1993,6 +1995,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
               for (cs_lnum_t i = 0; i < 3; i++)
                 rcodcl[(ivarv + i) * n_b_faces + ifbr] = x[i];
             }
+            BFT_FREE(xvals);
           }
         }
       }
