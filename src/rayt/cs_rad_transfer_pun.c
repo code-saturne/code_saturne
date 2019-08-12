@@ -4,7 +4,7 @@
 
 /* This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2018 EDF S.A.
+  Copyright (C) 1998-2019 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -336,17 +336,17 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
       if (cs_glob_rad_transfer_params->imoadf >= 1)
         f_qinspe->val[iband + ifac * f_qinspe->dim]
           =   stephn * f_theta4->val[iel]
-            + (  q[0][iel] * cs_glob_mesh_quantities->b_face_normal[ifac * 3]
-               + q[1][iel] * cs_glob_mesh_quantities->b_face_normal[ifac * 3 + 1]
-               + q[2][iel] * cs_glob_mesh_quantities->b_face_normal[ifac * 3 + 2])
+            + (  q[iel][0] * cs_glob_mesh_quantities->b_face_normal[ifac * 3]
+               + q[iel][1] * cs_glob_mesh_quantities->b_face_normal[ifac * 3 + 1]
+               + q[iel][2] * cs_glob_mesh_quantities->b_face_normal[ifac * 3 + 2])
             / (0.5 * cs_glob_mesh_quantities->b_face_surf[ifac]);
 
       else
         f_qinci->val[ifac]
           =   stephn * f_theta4->val[iel]
-            + (  q[0][iel] * cs_glob_mesh_quantities->b_face_normal[ifac * 3]
-               + q[1][iel] * cs_glob_mesh_quantities->b_face_normal[ifac * 3 + 1 ]
-               + q[2][iel] * cs_glob_mesh_quantities->b_face_normal[ifac * 3 + 2])
+            + (  q[iel][0] * cs_glob_mesh_quantities->b_face_normal[ifac * 3]
+               + q[iel][1] * cs_glob_mesh_quantities->b_face_normal[ifac * 3 + 1 ]
+               + q[iel][2] * cs_glob_mesh_quantities->b_face_normal[ifac * 3 + 2])
             / (0.5 *  cs_glob_mesh_quantities->b_face_surf[ifac]);
 
     }
