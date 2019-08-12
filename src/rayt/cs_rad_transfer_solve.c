@@ -646,7 +646,7 @@ _cs_rad_transfer_sol(int                        gg_id,
                                              -1,  /* normp */
                                              &vcopt,
                                              radiance_prev,
-                                             radiance,
+                                             radiance_prev,
                                              coefap,
                                              coefbp,
                                              cofafp,
@@ -1111,8 +1111,8 @@ cs_rad_transfer_solve(int               verbosity,
      * agi must be set to 1. */
   for (int i = 0; i < nwsgg; i++) {
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      kgi[n_cells*i + cell_id]  = 0.0;
-      agi[n_cells*i + cell_id]  = 1.0;
+      kgi[n_cells*i + cell_id] = 0.0;
+      agi[n_cells*i + cell_id] = 1.0;
     }
   }
 
@@ -1135,7 +1135,7 @@ cs_rad_transfer_solve(int               verbosity,
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       cpro_abso[cell_id] = 0.0;
       cpro_emi[cell_id]  = 0.0;
-      cpro_stri[cell_id]  = 0.0;
+      cpro_stri[cell_id] = 0.0;
     }
   }
 
@@ -1157,7 +1157,6 @@ cs_rad_transfer_solve(int               verbosity,
     if (cs_glob_thermal_model->itpscl == 2) {
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
         tempk[cell_id] = cvara_scalt[cell_id] + tkelvi;
-
     }
     else {
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
@@ -1707,9 +1706,9 @@ cs_rad_transfer_solve(int               verbosity,
   BFT_FREE(dcp);
   BFT_FREE(int_rad_domega);
 
-  /* The total radiative flux is copied in bqinci   */
-  /* a) for post-processing reasons and   */
-  /* b) in order to calculate bfnet  */
+  /* The total radiative flux is copied in bqinci
+   * a) for post-processing reasons and
+   * b) in order to calculate bfnet */
   if (rt_params->imoadf >= 1) {
     for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++)
       f_qinci->val[ifac] = iqpato[ifac];

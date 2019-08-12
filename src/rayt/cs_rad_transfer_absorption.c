@@ -438,7 +438,7 @@ cs_rad_transfer_absorption_check_p1(const cs_real_t  cpro_cak[])
 
   cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
 
-  cs_real_t s[3] = {0, 0, 0};
+  cs_real_t s[2] = {0, 0};
 
   /* Compute the characteristic length of the computational domain */
 
@@ -481,9 +481,9 @@ cs_rad_transfer_absorption_check_p1(const cs_real_t  cpro_cak[])
            "   this optical length is xkmin = %11.4e.\n"
            "   This value is not reached for %11.4e%% of mesh cells.\n\n"
            "   The percentage of cells for which we allow this condition\n"
-           "   is not reached is currently set to:\n"
+           "   not to be reached is currently set to:\n"
            "   \"cs_glob_rad_transfer_params->xnp1mx\" = %11.4e.\n\n"),
-         __func__, xkmin, iok/n_cells*100.,
+         __func__, xkmin, iok/cs_glob_mesh->n_g_cells*100.,
          rt_params->xnp1mx);
     rt_params->iwrp1t += 1;
 
