@@ -137,6 +137,8 @@ cs_user_model(void)
 
   /*--------------------------------------------------------------------------*/
 
+  /*! [turbulence_model_choice] */
+
   /* Example: Chose a turbulence model
    *   CS_TURB_NONE: no turbulence model (laminar flow)
    *   CS_TURB_MIXING_LENGTH: mixing length model
@@ -158,8 +160,9 @@ cs_user_model(void)
   cs_turb_model_t *turb_model = cs_get_glob_turb_model();
   turb_model->iturb = CS_TURB_K_EPSILON_LIN_PROD;
 
+  /*! [turbulence_model_choice] */
   /*--------------------------------------------------------------------------*/
-
+  /*! [Rij_coupled_solver_choice] */
   /* Example: Coupled solver for Rij components (when iturb=30, 31 or 32)
    *   0: switch off
    *   1: switch on (default)
@@ -168,7 +171,11 @@ cs_user_model(void)
   cs_turb_rans_model_t *rans_model = cs_get_glob_turb_rans_model();
   rans_model->irijco = 1;
 
+  /*! [Rij_coupled_solver_choice] */
+
   /*--------------------------------------------------------------------------*/
+
+  /*! [thermal_model_choice] */
 
   /* Example: Choose a thermal model
    *
@@ -188,6 +195,8 @@ cs_user_model(void)
   cs_thermal_model_t *thermal_model = cs_get_glob_thermal_model();
   thermal_model->itherm = 1;
 
+  /*! [thermal_model_choice] */
+
   /*--------------------------------------------------------------------------*/
 
   /* Volume of Fluid model with mass transfer Merkle model (cavitating flow)
@@ -200,6 +209,8 @@ cs_user_model(void)
 
   /*--------------------------------------------------------------------------*/
 
+  /*! [ALE_activation] */
+
   /* Example: activate ALE (Arbitrary Lagrangian Eulerian) method
    *   CS_ALE_NONE: switch off
    *   CS_ALE_LEGACY: legacy solver
@@ -208,7 +219,11 @@ cs_user_model(void)
 
   cs_glob_ale = CS_ALE_LEGACY;
 
+  /*! [ALE_activation] */
+
   /*--------------------------------------------------------------------------*/
+
+  /*! [scalars_addition] */
 
   /* Example: add 2 scalar variables ("species" in the GUI nomenclature).
    *
@@ -227,7 +242,11 @@ cs_user_model(void)
   cs_parameters_add_variable("species_1", 1);
   cs_parameters_add_variable("tracer", 1);
 
+  /*! [scalars_addition] */
+
   /*--------------------------------------------------------------------------*/
+
+  /*! [scalars_variance_addition] */
 
   /* Example: add the variance of a user variable.
    *
@@ -239,7 +258,11 @@ cs_user_model(void)
   cs_parameters_add_variable_variance("variance_1",
                                       "species_1");
 
+  /*! [scalars_variance_addition] */
+
   /*--------------------------------------------------------------------------*/
+
+  /*! [user_property_addition] */
 
   /* Example: add a user property defined on boundary faces.
    *
@@ -259,6 +282,8 @@ cs_user_model(void)
 
 }
 
+  /*! [user_property_addition] */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define or modify general numerical and physical user parameters.
@@ -277,6 +302,8 @@ void
 cs_user_parameters(cs_domain_t *domain)
 {
 
+  /*! [time_stepping_options] */
+
   /* Time stepping  (0 : uniform and constant
                      1 : variable in time, uniform in space
                      2 : variable in time and space
@@ -286,12 +313,19 @@ cs_user_parameters(cs_domain_t *domain)
   cs_time_step_options_t *time_opt = cs_get_glob_time_step_options();
   time_opt->idtvar = 0;
 
+  /*! [time_stepping_options] */
+
+  /*! [ref_time_step] */
 
   /* Reference time step dt_ref
      The example given below is probably not adapted to your case. */
 
   cs_real_t dt_ref = 0.005; // was 0.05
   domain->time_step->dt_ref = dt_ref;
+
+  /*! [ref_time_step] */
+
+  /*! [duration] */
 
   /* Duration
      nt_max is absolute number of the last time step required
@@ -300,6 +334,7 @@ cs_user_parameters(cs_domain_t *domain)
 
   domain->time_step->nt_max = (int) (40./dt_ref);
 
+  /*! [duration] */
 
   /* Example: set options for Stokes solving */
   /*-----------------------------------------*/

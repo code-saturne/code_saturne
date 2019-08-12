@@ -50,6 +50,52 @@
   Most definitions should be done in the \ref cs_user_parameters
   function (Fortran equivalent is \ref usipsu subroutine).
 
+  Choose a turbulent model among the available models
+
+  \snippet cs_user_parameters-base.c turbulence_model_choice
+
+  Coupled solver for Rij components (when iturb=30, 31 or 32): 0 to switch off, 1 to switch on
+
+  \snippet cs_user_parameters-base.c Rij_coupled_solver_choice
+
+  To set a thermal model (0: none, 1: temperature, 2: entyhalpy, 3: total energy)
+
+  \snippet cs_user_parameters-base.c thermal_model_choice
+
+  Volume of Fluid model with mass transfer Merkle model to take into account
+  vaporization / condensation
+
+  \snippet cs_user_parameters-base.c enable_cavit
+
+  To activate ALE (Arbitrary Lagrangian Eulerian) method
+  (CS_ALE_NONE: switch off, CS_ALE_LEGACY: legacy solver, CS_ALE_CDO: CDO solver)
+
+  \snippet cs_user_parameters-base.c ALE_activation
+
+  The user can add a scalar to be solved
+
+  \snippet cs_user_parameters-base.c scalars_addition
+
+  After adding a scalar, the user can add the variance of this scalar
+
+  \snippet cs_user_parameters-base.c scalars_variance_addition
+
+  Add a user property defined on a mesh location (cells, interior faces, boundary faces or vertices).
+
+  \snippet cs_user_parameters-base.c user_property_addition
+
+  Choose a time step option
+
+  \snippet cs_user_parameters-base.c time_stepping_options
+
+  Choose a reference time step
+
+  \snippet cs_user_parameters-base.c ref_time_step
+
+  To set a duration
+
+  \snippet cs_user_parameters-base.c duration
+
   For example, to change the log (run_solver.log) verbosity of all the variables:
 
   \snippet cs_user_parameters-base.c param_log_verbosity
