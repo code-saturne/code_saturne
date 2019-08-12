@@ -30,7 +30,7 @@ from code_saturne.model.MainFieldsModel import *
 from code_saturne.model.TurbulenceNeptuneModel import TurbulenceModel
 
 
-class SolidModel(MainFieldsModel, TurbulenceModel, Variables, Model):
+class SolidModel(TurbulenceModel):
 
     """
     This class manages the turbulence objects in the XML file
