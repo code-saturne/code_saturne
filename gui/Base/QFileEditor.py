@@ -953,6 +953,8 @@ class QFileEditor(QMainWindow):
         Update file state (saved or not)
         """
         self.saved  = new_state
+	# To ensure syntax highlighting while modifying the text
+        self.textEdit.viewport().update()
     # ---------------------------------------------------------------
 
 
