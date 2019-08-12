@@ -51,6 +51,7 @@
 
 #include "cs_field_pointer.h"
 #include "cs_log.h"
+#include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
@@ -109,6 +110,7 @@ BEGIN_C_DECLS
 /*!
  * \brief  Radiative flux and source term computation
  *
+ * \param[in]       iband     number of the i-th gray gas
  * \param[in]       bc_type   boundary face types
  * \param[in, out]  coefap    boundary condition work array for the luminance
  *                             (explicit part)
@@ -128,13 +130,14 @@ BEGIN_C_DECLS
  * \param[in, out]  ckmel     absorption coefficient for gas-particles mix
  * \param[out]      q         explicit flux density vector
  * \param[in]       abo       weights of the i-th gray gas at boundaries
- * \param[out]      int_rad_domega integral of I dOmega
- * \param[in]       iband     number of the i-th gray gas
- */
+ * \param[out]      int_rad_domega  integral of I dOmega
+ * \param[out]      theta4    bulk absorption
+*/
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_pun(cs_int_t         bc_type[],
+cs_rad_transfer_pun(int              iband,
+                    int              bc_type[],
                     cs_real_t        coefap[],
                     cs_real_t        coefbp[],
                     cs_real_t        cofafp[],
@@ -150,9 +153,17 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
                     cs_real_3_t      q[],
                     const cs_real_t  abo[],
                     cs_real_t        int_rad_domega[],
-                    int              iband)
+                    cs_real_t        theta4[])
 {
-  cs_real_t stephn = cs_physical_constants_stephan;
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+
+  const cs_real_3_t *b_face_normal
+    = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
+  const cs_real_t *b_face_surf = cs_glob_mesh_quantities->b_face_surf;
+
+  const cs_real_t stephn = cs_physical_constants_stephan;
 
   /* Pointer to the spectral flux density field */
   cs_field_t *f_qinspe = NULL;
@@ -160,13 +171,12 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
     f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
 
   cs_field_t *f_qinci = CS_F_(qinci);
-  cs_field_t *f_theta4 = CS_FI_(rad_abs, 0);
-  cs_field_t *f_thetaa = CS_FI_(rad_emi, 0);
   cs_field_t *f_eps = CS_F_(emissivity);
 
-  /* Allocate temporary array  */
-  cs_real_t *dpvar;
-  BFT_MALLOC(dpvar, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
+  /* Allocate temporary arrays */
+  cs_real_t *dpvar, *thetaa;
+  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
+  BFT_MALLOC(thetaa, n_cells_ext, cs_real_t);
 
   /* Solver settings and initialization */
 
@@ -189,23 +199,24 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
   /* all boundary convective flux with upwind */
   int icvflb = 0;
 
-
   /* Reset arrays before solve */
-  for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
-    f_theta4->val[iel]    = 0.0;
-    f_thetaa->val[iel]    = 0.0;
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    theta4[cell_id] = 0.0;
+    thetaa[cell_id] = 0.0;
   }
+  for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++)
+    thetaa[cell_id] = 0.0;
 
   for (cs_lnum_t ifac = 0; ifac < cs_glob_mesh->n_i_faces; ifac++)
-    flurds[ifac]   = 0.0;
+    flurds[ifac] = 0.0;
 
   for (cs_lnum_t ifac = 0; ifac < cs_glob_mesh->n_b_faces; ifac++)
     flurdb[ifac] = 0.0;
 
   /* Diffusion coefficients at faces  */
 
-  for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++)
-    ckmel[iel] = 1.0 / ckmel[iel];
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+    ckmel[cell_id] = 1.0 / ckmel[cell_id];
 
   cs_face_viscosity(cs_glob_mesh,
                     cs_glob_mesh_quantities,
@@ -225,8 +236,8 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
                                      imucpp,
                                      -1, /* normp */
                                      &vcopt,
-                                     f_thetaa->val,
-                                     f_theta4->val,
+                                     thetaa,
+                                     thetaa,
                                      coefap,
                                      coefbp,
                                      cofafp,
@@ -244,7 +255,7 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
                                      NULL,
                                      rovsdt,
                                      smbrs,
-                                     f_theta4->val,
+                                     theta4,
                                      dpvar,
                                      NULL,
                                      NULL);
@@ -287,49 +298,49 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
                      NULL,
                      coefap,
                      coefbp,
-                     f_theta4->val,
+                     theta4,
                      NULL,
                      NULL, /* internal coupling */
                      q);
 
   cs_real_t aa = - stephn * 4.0 / 3.0;
-  for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++) {
-    cs_real_t aaa = aa * ckmel[iel];
-    q[iel][0] = q[iel][0] * aaa;
-    q[iel][1] = q[iel][1] * aaa;
-    q[iel][2] = q[iel][2] * aaa;
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+    cs_real_t aaa = aa * ckmel[cell_id];
+    q[cell_id][0] = q[cell_id][0] * aaa;
+    q[cell_id][1] = q[cell_id][1] * aaa;
+    q[cell_id][2] = q[cell_id][2] * aaa;
   }
 
   /* Absorption radiative source temr and incident flux density */
 
   /* Compute part of absorption or radiative source term */
   aa = 4.0 * stephn;
-  for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++)
-    int_rad_domega[iel] = aa * f_theta4->val[iel];
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
+    int_rad_domega[cell_id] = aa * theta4[cell_id];
 
   const cs_real_t *b_dist = cs_glob_mesh_quantities->b_dist;
 
   /*     Calcul du flux incident Qincid  */
   for (cs_lnum_t ifac = 0; ifac < cs_glob_mesh->n_b_faces; ifac++) {
-    cs_lnum_t iel  = cs_glob_mesh->b_face_cells[ifac];
+    cs_lnum_t cell_id  = cs_glob_mesh->b_face_cells[ifac];
 
     if (   bc_type[ifac] == CS_SMOOTHWALL
         || bc_type[ifac] == CS_ROUGHWALL) {
 
       if (cs_glob_rad_transfer_params->imoadf >= 1) {
         f_qinspe->val[iband + ifac * f_qinspe->dim] =
-            stephn * (  (2.0 * f_theta4->val[iel])
-                      + (  abo[ifac + (iband) * cs_glob_mesh->n_b_faces]
-                         * f_eps->val[ifac] * (pow (twall[ifac], 4))))
+            stephn * (  (2.0 * theta4[cell_id])
+                      + (  abo[ifac + (iband) * n_b_faces]
+                         * f_eps->val[ifac] * cs_math_pow4(twall[ifac])))
           / (2.0 - f_eps->val[ifac]);
       } else {
-        cs_real_t tw4 = pow(twall[ifac], 4.);
-        cs_real_t aaa = 1.5*b_dist[ifac]/ckmel[iel]
+        cs_real_t tw4 = cs_math_pow4(twall[ifac]);
+        cs_real_t aaa = 1.5*b_dist[ifac]/ckmel[cell_id]
                         * ( 2. /(2.-f_eps->val[ifac])-1.);
-        aa = (aaa*tw4+f_theta4->val[iel])/(1.+aaa);
+        aa = (aaa*tw4+theta4[cell_id])/(1.+aaa);
 
         f_qinci->val[ifac]
-          =  stephn * ( 2.0 * aa - f_eps->val[ifac] * tw4)
+          =  stephn * (2.0 * aa - f_eps->val[ifac] * tw4)
                     / (2.0 - f_eps->val[ifac]);
       }
     }
@@ -337,25 +348,25 @@ cs_rad_transfer_pun(cs_int_t         bc_type[],
     else {
       if (cs_glob_rad_transfer_params->imoadf >= 1)
         f_qinspe->val[iband + ifac * f_qinspe->dim]
-          =   stephn * f_theta4->val[iel]
-            + (  q[0][iel] * cs_glob_mesh_quantities->b_face_normal[ifac * 3]
-               + q[1][iel] * cs_glob_mesh_quantities->b_face_normal[ifac * 3 + 1]
-               + q[2][iel] * cs_glob_mesh_quantities->b_face_normal[ifac * 3 + 2])
-            / (0.5 * cs_glob_mesh_quantities->b_face_surf[ifac]);
+          =   stephn * theta4[cell_id]
+            + (  q[cell_id][0] * b_face_normal[ifac][0]
+               + q[cell_id][1] * b_face_normal[ifac][1]
+               + q[cell_id][2] * b_face_normal[ifac][2])
+            / (0.5 * b_face_surf[ifac]);
 
       else
         f_qinci->val[ifac]
-          =   stephn * f_theta4->val[iel]
-            + (  q[0][iel] * cs_glob_mesh_quantities->b_face_normal[ifac * 3]
-               + q[1][iel] * cs_glob_mesh_quantities->b_face_normal[ifac * 3 + 1 ]
-               + q[2][iel] * cs_glob_mesh_quantities->b_face_normal[ifac * 3 + 2])
-            / (0.5 *  cs_glob_mesh_quantities->b_face_surf[ifac]);
-
+          =   stephn * theta4[cell_id]
+            + (  q[cell_id][0] * b_face_normal[ifac][0]
+               + q[cell_id][1] * b_face_normal[ifac][1]
+               + q[cell_id][2] * b_face_normal[ifac][2])
+            / (0.5 * b_face_surf[ifac]);
     }
   }
 
-  /* Free memory     */
+  /* Free memory */
   BFT_FREE(dpvar);
+  BFT_FREE(thetaa);
 }
 
 /*----------------------------------------------------------------------------*/
