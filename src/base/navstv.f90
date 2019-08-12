@@ -1915,6 +1915,8 @@ double precision, dimension(:), pointer :: cvara_k
 ! 0. Initialization
 !===============================================================================
 
+if (ipr.lt.1) return
+
 call field_get_val_s(iprtot, cpro_prtot)
 call field_get_val_s(ivarfl(ipr), cvar_pr)
 
