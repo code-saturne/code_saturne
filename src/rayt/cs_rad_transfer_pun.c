@@ -156,6 +156,7 @@ cs_rad_transfer_pun(int              iband,
                     cs_real_t        theta4[])
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
   const cs_real_3_t *b_face_normal
     = (const cs_real_3_t *)cs_glob_mesh_quantities->b_face_normal;
@@ -326,7 +327,7 @@ cs_rad_transfer_pun(int              iband,
       if (cs_glob_rad_transfer_params->imoadf >= 1) {
         f_qinspe->val[iband + ifac * f_qinspe->dim] =
             stephn * (  (2.0 * theta4[cell_id])
-                      + (  abo[ifac + (iband) * cs_glob_mesh->n_b_faces]
+                      + (  abo[ifac + (iband) * n_b_faces]
                          * f_eps->val[ifac] * cs_math_pow4(twall[ifac])))
           / (2.0 - f_eps->val[ifac]);
       } else {
@@ -345,19 +346,18 @@ cs_rad_transfer_pun(int              iband,
       if (cs_glob_rad_transfer_params->imoadf >= 1)
         f_qinspe->val[iband + ifac * f_qinspe->dim]
           =   stephn * theta4[cell_id]
-            + (  q[0][cell_id] * b_face_normal[ifac][0]
-               + q[1][cell_id] * b_face_normal[ifac][1]
-               + q[2][cell_id] * b_face_normal[ifac][2])
+            + (  q[cell_id][0] * b_face_normal[ifac][0]
+               + q[cell_id][1] * b_face_normal[ifac][1]
+               + q[cell_id][2] * b_face_normal[ifac][2])
             / (0.5 * b_face_surf[ifac]);
 
       else
         f_qinci->val[ifac]
           =   stephn * theta4[cell_id]
-            + (  q[0][cell_id] * b_face_normal[ifac][0]
-               + q[1][cell_id] * b_face_normal[ifac][1]
-               + q[2][cell_id] * b_face_normal[ifac][2])
+            + (  q[cell_id][0] * b_face_normal[ifac][0]
+               + q[cell_id][1] * b_face_normal[ifac][1]
+               + q[cell_id][2] * b_face_normal[ifac][2])
             / (0.5 * b_face_surf[ifac]);
-
     }
   }
 
