@@ -339,6 +339,25 @@
 
   \snippet cs_user_postprocess.c post_define_mesh_5
 
+  \subsection cs_user_postprocess_h_sfc Output of various space-filling curves
+
+  In the below example, edge meshes illustrating various space-filling curves
+  possibilities are output.
+
+  First the below functions write the various space-filling curves either in
+  serial or parallel.
+
+  \snippet cs_user_postprocess-sfc.c sfc_fvm_writer_def
+
+  Then a fake cell selection function is used to call the writing of the
+  space-filling curves at the correct step.
+
+  \snippet cs_user_postprocess-sfc.c sfc_cells_selection
+
+  Finally edge meshes are defined to illustrate the various possibilities.
+
+  \snippet cs_user_postprocess-sfc.c mesh_def
+
   \page cs_user_postprocess_h_probes_p Probes and profiles
 
   \section cs_user_postprocess_h_probes About Probes and profiles
