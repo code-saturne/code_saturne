@@ -7357,23 +7357,27 @@ cs_matrix_variant_build_list(const cs_matrix_t       *m,
 
 #if defined(HAVE_OPENMP)
 
-    switch(m->fill_type) {
-    case CS_MATRIX_SCALAR:
-    case CS_MATRIX_SCALAR_SYM:
-      vector_multiply = _mat_vec_p_l_msr_omp_sched;
-      break;
-    default:
-      vector_multiply = NULL;
-    }
+    if (omp_get_num_threads() > 1) {
 
-    _variant_add(_("MSR, OpenMP scheduling"),
-                 m->type,
-                 m->fill_type,
-                 2, /* ed_flag */
-                 vector_multiply,
-                 n_variants,
-                 &n_variants_max,
-                 m_variant);
+      switch(m->fill_type) {
+      case CS_MATRIX_SCALAR:
+      case CS_MATRIX_SCALAR_SYM:
+        vector_multiply = _mat_vec_p_l_msr_omp_sched;
+        break;
+      default:
+        vector_multiply = NULL;
+      }
+
+      _variant_add(_("MSR, OpenMP scheduling"),
+                   m->type,
+                   m->fill_type,
+                   2, /* ed_flag */
+                   vector_multiply,
+                   n_variants,
+                   &n_variants_max,
+                   m_variant);
+
+    }
 
 #endif /* defined(HAVE_OPENMP) */
 
