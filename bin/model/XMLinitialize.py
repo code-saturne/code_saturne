@@ -1716,10 +1716,13 @@ class XMLinit(BaseXmlInit):
         XMLFluidPropertiesNode = self.case.xmlInitNode('physical_properties')
         nodeFluidProp = XMLFluidPropertiesNode.xmlInitNode('fluid_properties')
 
+        nodeComp = XMLThermoPhysicalNode.xmlGetNode('compressible_model')
+        comp = nodeComp['model'] and nodeComp['model'] != "off"
+
         for nodep in nodeFluidProp.xmlGetNodeList('property'):
             if nodep['choice'] == 'variable':
                 nodef = nodep.xmlGetNode('formula')
-                if nodef:
+                if nodef and not (nodep['name'] == 'density' and comp):
                     nodep['choice'] = 'user_law'
                 else:
                     nodep['choice'] = 'predefined_law'
