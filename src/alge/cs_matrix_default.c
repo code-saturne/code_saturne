@@ -626,7 +626,7 @@ cs_matrix_default_set_tuned(cs_matrix_t  *m)
       && (_t_measure > 0 || _n_min_products > 0)) {
 
     _matrix_variant_tuned[m->type][m->fill_type]
-      = cs_matrix_variant_tuned(_matrix[m->type],
+      = cs_matrix_variant_tuned(_get_matrix(m->type),
                                 1,
                                 m->fill_type,
                                 _t_measure);
