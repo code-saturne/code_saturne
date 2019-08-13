@@ -710,9 +710,17 @@ cs_sles_solve_native(int                  f_id,
        constraints. */
 
     if (cs_sles_get_context(sc) == NULL) {
-      a = cs_matrix_native(symmetric,
-                           diag_block_size,
-                           extra_diag_block_size);
+      int eb_size = 1;
+      if (extra_diag_block_size != NULL)
+        eb_size = extra_diag_block_size[1];
+      if (eb_size > 1)
+        a = cs_matrix_native(symmetric,
+                             diag_block_size,
+                             extra_diag_block_size);
+      else
+        a = cs_matrix_msr(symmetric,
+                          diag_block_size,
+                          extra_diag_block_size);
 
       cs_matrix_set_coefficients(a,
                                  symmetric,
