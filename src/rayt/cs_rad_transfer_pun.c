@@ -156,6 +156,7 @@ cs_rad_transfer_pun(int              iband,
                     cs_real_t        theta4[])
 {
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
   const cs_real_3_t *b_face_normal
@@ -174,8 +175,8 @@ cs_rad_transfer_pun(int              iband,
 
   /* Allocate temporary arrays */
   cs_real_t *dpvar, *thetaa;
-  BFT_MALLOC(dpvar, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
-  BFT_MALLOC(thetaa, cs_glob_mesh->n_cells_with_ghosts, cs_real_t);
+  BFT_MALLOC(dpvar, n_cells_ext, cs_real_t);
+  BFT_MALLOC(thetaa, n_cells_ext, cs_real_t);
 
   /* Solver settings and initialization */
 
@@ -203,6 +204,8 @@ cs_rad_transfer_pun(int              iband,
     theta4[cell_id] = 0.0;
     thetaa[cell_id] = 0.0;
   }
+  for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++)
+    thetaa[cell_id] = 0.0;
 
   for (cs_lnum_t ifac = 0; ifac < cs_glob_mesh->n_i_faces; ifac++)
     flurds[ifac] = 0.0;
