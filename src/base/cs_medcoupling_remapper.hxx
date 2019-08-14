@@ -246,6 +246,17 @@ cs_medcoupling_remapper_get_iter_order_from_index(cs_medcoupling_remapper_t *r,
                                                   int                       *order);
 
 /*----------------------------------------------------------------------------*/
+/*! \brief Load the time value corresponding to id.
+ *
+ * \param[in]      r      pointer to remapper object
+ * \param[in]      id     requested time index
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_medcoupling_remapper_update_time_value(cs_medcoupling_remapper_t *r,
+                                          int                        id);
+/*----------------------------------------------------------------------------*/
 /*!
  * \brief Destroy all remappers
  */
