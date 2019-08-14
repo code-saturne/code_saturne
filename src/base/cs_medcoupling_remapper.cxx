@@ -109,9 +109,9 @@ struct _cs_medcoupling_remapper_t {
   MEDCouplingFieldDouble  **source_fields;
 
   /* Time step values in the file */
-  int                                ntsteps;
-  std::vector< std::pair<int,int> >  iter_order;
-  std::vector<double>                time_steps;
+  int                       ntsteps;
+  int                     **iter_order;
+  cs_real_t                *time_steps;
 
   MEDCouplingRemapper      *remapper;     /* MEDCoupling remapper */
 
@@ -231,8 +231,20 @@ _create_remapper(const char   *name,
   MCAuto<MEDFileAnyTypeFieldMultiTS> tf(MEDFileAnyTypeFieldMultiTS::New(medfile_path,
                                                                         field_names[0]));
 
-  r->iter_order = tf->getTimeSteps(r->time_steps);
-  r->ntsteps    = r->time_steps.size();
+  std::vector<double> t2s;
+  std::vector< std::pair<int,int> > ito = tf->getTimeSteps(t2s);
+
+  r->ntsteps = ito.size();
+  BFT_MALLOC(r->iter_order, r->ntsteps, int *);
+  for (int ii = 0; ii < ito.size(); ii++)
+    BFT_MALLOC(r->iter_order[ii], 2, int);
+  BFT_MALLOC(r->time_steps, r->ntsteps, cs_real_t);
+
+  for (int ii = 0; ii < ito.size(); ii++) {
+    r->iter_order[ii][0] = ito[ii].first;
+    r->iter_order[ii][1] = ito[ii].second;
+    r->time_steps[ii]    = t2s[ii];
+  }
 
   // MEDCoupling remapper (sequential interpolation)
 
@@ -492,6 +504,7 @@ _setup_with_bbox(cs_medcoupling_remapper_t  *r)
     r->remapper->prepare(source_field->getMesh(),
                          r->target_mesh->med_mesh,
                          r->interp_method);
+
   }
 }
 
@@ -777,7 +790,7 @@ cs_medcoupling_remapper_find_time_index(cs_medcoupling_remapper_t *r,
 
   } else {
     for (int i = 0; i < r->ntsteps-1; i++) {
-      if (t > r->time_steps[i] && t < r->time_steps[i+1]) {
+      if (t >= r->time_steps[i] && t < r->time_steps[i+1]) {
         *id1 = i;
         *id2 = i+1;
         break;
@@ -834,8 +847,8 @@ cs_medcoupling_remapper_get_iter_order_from_index(cs_medcoupling_remapper_t *r,
                                                   int                       *order)
 {
 
-  *it    = r->iter_order[id].first;
-  *order = r->iter_order[id].second;
+  *it    = r->iter_order[id][0];
+  *order = r->iter_order[id][1];
 
   return;
 }
@@ -856,6 +869,30 @@ cs_medcoupling_remapper_destroy_all(void)
 
 }
 
+/*----------------------------------------------------------------------------*/
+/*! \brief Load the time value corresponding to id.
+ *
+ * \param[in]      r      pointer to remapper object
+ * \param[in]      id     requested time index
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_medcoupling_remapper_update_time_value(cs_medcoupling_remapper_t *r,
+                                          int                        id)
+{
+
+  int it    = r->iter_order[id][0];
+  int order = r->iter_order[id][1];
+
+  for (int ii = 0; ii < r->n_fields; ii++) {
+    r->source_fields[ii] = _cs_medcoupling_read_field_real(r->medfile_path,
+                                                           r->field_names[ii],
+                                                           it,
+                                                           order);
+  }
+  return;
+}
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
