@@ -109,6 +109,7 @@ typedef struct {
   int           ifgrno;
   int           ifrefl;
   int           itpt1d;
+  int           ifinfe;
 
   bool          atmo_ir_absorption;  /*!< infrared absorption model */
 
