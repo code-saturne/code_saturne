@@ -443,19 +443,21 @@ cs_rad_transfer_bcs(int         nvar,
     /* Error if isothm not defined on wall, or defined on non-wall */
 
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-      if (  (   bc_type[face_id] == CS_SMOOTHWALL
-             || bc_type[face_id] == CS_ROUGHWALL)
-          && isothm[face_id] ==  -1) {
-        nrferr[2]++;
-        icoerr[2]    = face_zone_id[face_id];
-        bc_type[face_id] = -CS_ABS(bc_type[face_id]);
+      if (   bc_type[face_id] == CS_SMOOTHWALL
+          || bc_type[face_id] == CS_ROUGHWALL) {
+        if (isothm[face_id] == -1) {
+          nrferr[2]++;
+          icoerr[2]    = face_zone_id[face_id];
+          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
+        }
       }
-      else if (   bc_type[face_id] != CS_SMOOTHWALL
-               && bc_type[face_id] != CS_ROUGHWALL
-               && isothm[face_id] != -1) {
-        nrferr[3]++;
-        icoerr[3]    =  face_zone_id[face_id];
-        bc_type[face_id] = -CS_ABS(bc_type[face_id]);
+      else {
+        if (   isothm[face_id] != -1
+            && isothm[face_id] != cs_glob_rad_transfer_params->ifinfe) {
+          nrferr[3]++;
+          icoerr[3]    =  face_zone_id[face_id];
+          bc_type[face_id] = -CS_ABS(bc_type[face_id]);
+        }
       }
     }
 
@@ -1133,6 +1135,14 @@ cs_rad_transfer_bcs(int         nvar,
 
     }
 
+    else {
+      /* We use f_beps values as an indicator for open boundary types
+       * (as this value si otherwise onlyused for wall conditons and we do not
+       * yet have "revised" radiative boundary condition types */
+      if (   cs_glob_rad_transfer_params->atmo_ir_absorption
+          || isothm[face_id] == cs_glob_rad_transfer_params->ifinfe)
+        f_beps->val[face_id] = 1.0;
+    }
   }
 
   /* Free memory     */
@@ -1248,19 +1258,46 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
 
       cs_real_t hint = 0.0;
 
-      /* Inlet/Outlet face: entering intensity fixed to zero flux
-       * which mimic an infinite extrusion
-       * (warning: the treatment is different from than of P-1 model)
-       * Symmetry: the reflecting boundary conditions (eps=0)
-       * is not feasible (because that would required to couple directions)
-       * So we impose an homogeneous Neumann that model an infinite extrusion */
-      if ( bc_type[face_id] == CS_INLET
-        || bc_type[face_id] == CS_CONVECTIVE_INLET
-        || bc_type[face_id] == CS_OUTLET
-        || bc_type[face_id] == CS_FREE_INLET
-        || bc_type[face_id] == CS_SYMMETRY) {
+      /* Open boundary conditions */
 
+      if (   bc_type[face_id] == CS_INLET
+          || bc_type[face_id] == CS_CONVECTIVE_INLET
+          || bc_type[face_id] == CS_OUTLET
+          || bc_type[face_id] == CS_FREE_INLET
+          || bc_type[face_id] == CS_SYMMETRY) {
 
+        /* Legacy open boundary conditions if (eps < 0)
+           TODO use boundary definitions from cs_boundary.h instead
+           of this temporary hack. */
+
+        if (f_eps->val[face_id] < 0.5) {
+
+          cs_real_t pimp;
+          /* Symmetry: pseudo-reflecting boundary conditions
+           * true symmetry would require coupling directions */
+          if (bc_type[face_id] == CS_SYMMETRY)
+            pimp  = qpatmp * onedpi;
+          /* Inlet/Outlet face: entering intensity fixed to zero
+           * (warning: the treatment is different from than of P-1 model) */
+          else
+            pimp  = cs_math_epzero;
+
+          cs_boundary_conditions_set_dirichlet_scalar(&coefap[face_id],
+                                                      &cofafp[face_id],
+                                                      &coefbp[face_id],
+                                                      &cofbfp[face_id],
+                                                      pimp,
+                                                      hint,
+                                                      cs_math_infinite_r);
+          continue;
+        }
+
+        /* Inlet/Outlet face: entering intensity fixed to zero flux
+         * which mimics an infinite extrusion
+         * (warning: the treatment is different from than of P-1 model)
+         * Symmetry: the reflecting boundary conditions (eps=0)
+         * is not feasible (because that would required to couple directions)
+         * So we impose a homogeneous Neumann that models an infinite extrusion */
         bool neumann = true;
 
         /* Entering intensity fixed to zero

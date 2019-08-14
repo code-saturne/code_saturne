@@ -184,6 +184,8 @@ BEGIN_C_DECLS
   \var  cs_rad_transfer_params_t::itpt1d
         Calculation of the temperature with the 1D wall thermal module,
         which solves a heat equation.
+  \var  cs_rad_transfer_params_t::ifinfe
+        Modeling of an infinite extrusion for open boundaries.
 */
 
 /*----------------------------------------------------------------------------*/
@@ -245,6 +247,7 @@ cs_rad_transfer_params_t _rt_params = {.type = CS_RAD_TRANSFER_NONE,
                                        .ifgrno = 31,
                                        .ifrefl = 32,
                                        .itpt1d = 4,
+                                       .ifinfe = 5,
                                        .atmo_ir_absorption = false,
                                        .dispersion = false,
                                        .dispersion_coeff = 1.};
