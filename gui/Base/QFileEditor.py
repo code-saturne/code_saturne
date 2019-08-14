@@ -117,7 +117,9 @@ class HighlightingRule():
 class LineNumberArea(QtWidgets.QWidget):
 
     def __init__(self, editor):
-        super().__init__(editor)
+        # Handle the python2/python3 differences for super
+        super(LineNumberArea, self).__init__(editor)
+
         self.editor = editor
 
     def sizeHint(self):
@@ -128,7 +130,9 @@ class LineNumberArea(QtWidgets.QWidget):
 
 class CodeEditor(QPlainTextEdit):
     def __init__(self):
-        super().__init__()
+        # Handle the python2/python3 differences for super
+        super(CodeEditor, self).__init__()
+
         self.lineNumberArea = LineNumberArea(self)
 
         self.blockCountChanged.connect(self.updateLineNumberAreaWidth)
@@ -165,7 +169,8 @@ class CodeEditor(QPlainTextEdit):
 
 
     def resizeEvent(self, event):
-        super().resizeEvent(event)
+        # Handle the python2/python3 differences for super
+        super(resizeEvent, self).resizeEvent(event)
 
         cr = self.contentsRect();
         self.lineNumberArea.setGeometry(QtCore.QRect(cr.left(), cr.top(),
