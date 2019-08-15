@@ -1297,11 +1297,13 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
           cs_real_t normal[3];
           cs_math_3_normalise(b_face_normal[face_id], normal);
           cs_real_t vs_dot_n = cs_math_3_dot_product(vect_s, normal);
-          cs_real_t g_dot_n_norm = cs_math_3_dot_product(grav, normal) * d_g;
-          if (    CS_ABS(vs_dot_n) < cs_math_epzero
-              || (   vs_dot_n < 0. /* Entering */
-                  && g_dot_n_norm < -0.5) )
+          if (CS_ABS(vs_dot_n) < cs_math_epzero) /* entering */
             neumann = false;
+          if (cs_glob_rad_transfer_params->atmo_ir_absorption) {
+            cs_real_t g_dot_n_norm = cs_math_3_dot_product(grav, normal) * d_g;
+            if (g_dot_n_norm < -0.5)
+              neumann = false;
+          }
         }
 
         if (neumann) {
