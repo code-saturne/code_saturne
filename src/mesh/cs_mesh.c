@@ -2054,29 +2054,6 @@ void CS_PROCF(synvie, SYNVIE)
 }
 
 /*----------------------------------------------------------------------------
- * Update a diagonal tensor array in case of parallelism and/or periodicity.
- *
- * Fortran interface:
- *
- * subroutine syndia(var)
- * *****************
- *
- * var11   : <-> : diagonal tensor component 11 array
- * var22   : <-> : diagonal tensor component 22 array
- * var33   : <-> : diagonal tensor component 33 array
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(syndia, SYNDIA)
-(
- cs_real_t  var11[],
- cs_real_t  var22[],
- cs_real_t  var33[]
-)
-{
-  cs_mesh_sync_var_diag_ni(var11, var22, var33);
-}
-
-/*----------------------------------------------------------------------------
  * Update a tensor array in case of parallelism and/or periodicity.
  *
  * Fortran interface:
