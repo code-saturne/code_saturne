@@ -4,23 +4,22 @@ Release 6.0.0 (unreleased)
 Notes:
 
   This is a beta version of version 6.0, which should be released
-  June 2019. Most features are frozen while the version undergoes
+  September 2019. Most features are frozen while the version undergoes
   the complete validation process, with the exceptions below.
 
 Changes expected between the current version and 6.0.0 final:
 
 - Some GUI changes or page reorganizations are possible
-- Run script improvements:
-  * In new cases, replacement of SCRIPTS/runcase by DATA/run.cfg will
-    allow keeping run settings across multiple system types
-- The C API for user boundary conditions should be redesigned, leading
-  to changes in the use of the cs_user_boundary_conditions function.
-- Various minor improvements not impacting current case setups
-- Handling of Catalyst script and writer naming may change to adapt
-  to changes in ParaView 5.6.
 - Documentation will be updated
 
 User changes:
+
+- Changed Catalyst writer behavior:
+  * The name of the writer now only defines the name of the input referred by
+    the coprocessing scripts.
+  * All Catalyst coprocessing Python scripts present in the DATA (and execution)
+    directory are used, irrespective of their name.
+  This allows defining multiple pipelines with shared outputs.
 
 - Add the possibility to define in the GUI postprocessing meshes based on the
   volume and boundary zones defined beforehand by the user.
