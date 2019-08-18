@@ -3,6 +3,13 @@ Master (not on release branches yet)
 
 User changes:
 
+- Changed Catalyst writer behavior:
+  * The name of the writer now only defines the name of the input referred by
+    the coprocessing scripts.
+  * All Catalyst coprocessing Python scripts present in the DATA (and execution)
+    directory are used, irrespective of their name.
+  This allows defining multiple pipelines with shared outputs.
+
 - Add the possibility to define in the GUI postprocessing meshes based on the
   volume and boundary zones defined beforehand by the user.
 
