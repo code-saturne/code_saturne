@@ -130,7 +130,6 @@ Default option changes:
 
 - Change a default setting (GUI) of the compressible model:
   for hydro. pressure treatment at walls (disabled by default now).
-  Physical modelling:
 
 Bug fixes:
 
