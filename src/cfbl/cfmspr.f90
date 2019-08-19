@@ -224,7 +224,7 @@ do ifac = 1, nfabor
 
   call set_neumann_scalar                 &
      ( wbfa(ifac)    , coefaf_p(ifac),    &
-       wbfb(ifac)    , coefbf_p(ifac),    &
+       wbfb(ifac)    , rvoid(1)      ,    &
        coefaf_p(ifac), hint )
 enddo
 
