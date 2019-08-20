@@ -609,7 +609,7 @@ domains = [
         if self.cat_case_name is not None:
             config = configparser.ConfigParser()
             config.read(self.package.get_configfiles())
-            cathare_libpath=os.path.join(config.get('install', 'cathare'), 'lib')
+            cathare_libpath=config.get('install', 'cathare')
         else:
             cathare_libpath=None
 
@@ -815,13 +815,16 @@ domains = [
         # If a cathare LIBPATH is given, it is added to LD_LIBRARY_PATH.
         # This modification is needed for the dlopen of the cathare .so file
         if cathare_path:
-            new_line="export LD_PATH_LIBRARY="+cathare_path+":$LD_LIBRARY_PATH"
+            v25_3_line="export v25_3=%s" % cathare_path
+            new_line="export LD_PATH_LIBRARY=$v25_3/%s/"+":$LD_LIBRARY_PATH"
             il=0
             for line in runcase.lines:
                 il+=1
                 if 'export PATH' in line:
-                    runcase.lines.insert(il, new_line)
-                    runcase.run_cmd_line_id += 1
+                    runcase.lines.insert(il, new_line % ("lib/ICoCo"))
+                    runcase.lines.insert(il, new_line % ("lib"))
+                    runcase.lines.insert(il, v25_3_line)
+                    runcase.run_cmd_line_id += 3⏎
                     break
 
         runcase.save()
