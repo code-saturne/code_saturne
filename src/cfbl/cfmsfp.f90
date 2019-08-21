@@ -409,8 +409,6 @@ endif
 ! Computation of the flux
 
 ! volumic flux part based on dt*f^n
-! In order to avoid a misfit boundary condition, we impose a homogeneous
-! Neumann condition.
 
 ! Initialization of the mass flux
 init   = 1
@@ -429,17 +427,26 @@ extrap = vcopt_p%extrag
 ! Velocity flux (crom, brom not used)
 itypfl = 0
 
-do ifac= 1, nfabor
+! No contribution of f to the boundary flux.
+! (if hydro. equilibrium at walls is enabled, contribution is
+!  added afterwards to balance hydrostatic pressure gradient)
+do ifac = 1, nfabor
   do isou = 1, 3
     do jsou = 1, 3
-      if (isou.eq.jsou) then
-        coefbv(isou,jsou,ifac) = 1.d0
-      else
-        coefbv(isou,jsou,ifac) = 0.d0
-      endif
+      coefbv(isou,jsou,ifac) = 0.d0
     enddo
   enddo
 enddo
+
+! In order to avoid a misfit boundary condition, we impose a homogeneous
+! Neumann condition when flux contains the velocity component.
+if (idtcfl.eq.1) then
+  do ifac = 1, nfabor
+    do isou = 1, 3
+      coefbv(isou,isou,ifac) = 1.d0
+    enddo
+  enddo
+endif
 
 call inimav                                                      &
 !==========

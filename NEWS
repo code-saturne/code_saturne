@@ -4,6 +4,10 @@ Release 5.1.7 (unreleased)
 Bug fixes
 ---------
 
+- Fix hydrostatic equilibrium option of compressible model.
+  Hydrostatic pressure contribution at walls was added twice to the right
+  hand side of the mass balance.
+
 - Fix balance on vectorial work arrays (if no field id is provided) for example
   used if dynamic reconstruction algorithm is enabled (iswdyn >= 1).
   Internal coupling indicator was used uninitialiazed, blending coefficient
