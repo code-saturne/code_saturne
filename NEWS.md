@@ -3,6 +3,10 @@ Release 5.3.4 - Unreleased
 
 Bug fixes:
 
+- Fix hydrostatic equilibrium option of compressible model.
+  Hydrostatic pressure contribution at walls was added twice to the right
+  hand side of the mass balance.
+
 - Fix restart of time moments defined by starting physical time.
 
 - Improve mesh extrusion robustness: in the rare case where a boundary edge
