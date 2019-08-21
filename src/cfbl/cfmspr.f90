@@ -190,9 +190,9 @@ if (ippmod(icompf).gt.1) then
   call field_get_val_s(ivarfl(isca(ifracm)), cvar_fracm)
   call field_get_val_s(ivarfl(isca(ifrace)), cvar_frace)
 else
-  cvar_fracv => null()
-  cvar_fracm => null()
-  cvar_frace => null()
+  cvar_fracv => rvoid1
+  cvar_fracm => rvoid1
+  cvar_frace => rvoid1
 endif
 
 if(vcopt_p%iwarni.ge.1) then
