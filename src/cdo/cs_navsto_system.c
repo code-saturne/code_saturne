@@ -745,6 +745,10 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
       switch (nsp->time_scheme) {
 
+      case CS_TIME_SCHEME_STEADY:
+        ns->compute = NULL;
+        break; /* Nothing to set */
+
       case CS_TIME_SCHEME_EULER_IMPLICIT:
         ns->compute = cs_cdofb_uzawa_compute_implicit;
         break;
