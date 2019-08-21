@@ -135,15 +135,6 @@ call field_get_val_s_by_name('dt', dt)
 
 jj = 0
 
-! En compressible, ISYMPA initialise (= 1) car utile dans le calcul
-!     du pas de temps variable avant passage dans les C.L.
-
-if ( ippmod(icompf).ge.0 ) then
-  do ifac = 1, nfabor
-    isympa(ifac) = 1
-  enddo
-endif
-
 !===============================================================================
 ! 2. PAS DE TEMPS
 !===============================================================================
