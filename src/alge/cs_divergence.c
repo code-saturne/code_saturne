@@ -345,8 +345,7 @@ void CS_PROCF (divrij, DIVRIJ)
  * \param[in]     itypfl        indicator (take rho into account or not)
  *                               - 1 compute \f$ \rho\vect{u}\cdot\vect{s} \f$
  *                               - 0 compute \f$ \vect{u}\cdot\vect{s} \f$
- * \param[in]     iflmb0        the mass flux is set to 0 on walls and
- *                               symmetries if = 1
+ * \param[in]     iflmb0        the mass flux is set to 0 on symmetries if = 1
  * \param[in]     init          the mass flux is initialized to 0 if > 0
  * \param[in]     inc           indicator
  *                               - 0 solve an increment
@@ -899,8 +898,7 @@ cs_mass_flux(const cs_mesh_t          *m,
  * \param[in]     itypfl        indicator (take rho into account or not)
  *                               - 1 compute \f$ \rho\vect{u}\cdot\vect{s} \f$
  *                               - 0 compute \f$ \vect{u}\cdot\vect{s} \f$
- * \param[in]     iflmb0        the mass flux is set to 0 on walls and
- *                               symmetries if = 1
+ * \param[in]     iflmb0        the mass flux is set to 0 on symmetries if = 1
  * \param[in]     init          the mass flux is initialized to 0 if > 0
  * \param[in]     inc           indicator
  *                               - 0 solve an increment
