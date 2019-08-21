@@ -824,7 +824,7 @@ domains = [
                     runcase.lines.insert(il, new_line % ("lib/ICoCo"))
                     runcase.lines.insert(il, new_line % ("lib"))
                     runcase.lines.insert(il, v25_3_line)
-                    runcase.run_cmd_line_id += 3⏎
+                    runcase.run_cmd_line_id += 3
                     break
 
         runcase.save()
