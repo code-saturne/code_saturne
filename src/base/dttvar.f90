@@ -1,3 +1,4 @@
+
 !-------------------------------------------------------------------------------
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
@@ -206,8 +207,7 @@ if (ippmod(icompf).ge.0) then
    icepdc , icetsm , itypsm ,                                   &
    dt     ,                                                     &
    ckupdc , smacel ,                                            &
-   wcf    ,                                                     &
-   viscf  , viscb  , cofbft )
+   wcf    )
 
 endif
 
