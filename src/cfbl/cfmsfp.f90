@@ -23,10 +23,10 @@
 subroutine cfmsfp &
 !================
 
- ( nvar   , nscal  , idtcfl , iterns , ncepdp , ncesmp ,          &
-   icepdc , icetsm , itypsm ,                                     &
-   dt     , vela   ,                                              &
-   ckupdc , smacel ,                                              &
+ ( nvar   , nscal  , iterns , ncepdp , ncesmp ,          &
+   icepdc , icetsm , itypsm ,                            &
+   dt     , vela   ,                                     &
+   ckupdc , smacel ,                                     &
    flumas , flumab )
 
 !===============================================================================
@@ -43,7 +43,6 @@ subroutine cfmsfp &
 !__________________!____!_____!________________________________________________!
 ! nvar             ! i  ! <-- ! total number of variables                      !
 ! nscal            ! i  ! <-- ! total number of scalars                        !
-! idtcfl           ! i  ! <-- ! flux used in CFL mass (1:true, 0:false)        !
 ! iterns           ! i  ! <-- ! Navier-Stokes iteration number                 !
 ! ncepdp           ! i  ! <-- ! number of cells with head loss                 !
 ! ncesmp           ! i  ! <-- ! number of cells with mass source term          !
@@ -94,7 +93,7 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal, iterns
-integer          ncepdp , ncesmp, idtcfl
+integer          ncepdp , ncesmp
 
 integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
@@ -398,19 +397,9 @@ do iel = 1, ncel
   enddo
 enddo
 
-if (idtcfl.eq.1) then
-  do iel = 1, ncel
-    do isou = 1, 3
-      tsexp(isou,iel) = vela(isou,iel) + tsexp(isou,iel)
-    enddo
-  enddo
-endif
-
 ! Computation of the flux
 
 ! volumic flux part based on dt*f^n
-! In order to avoid a misfit boundary condition, we impose a homogeneous
-! Neumann condition.
 
 ! Initialization of the mass flux
 init   = 1
@@ -429,14 +418,11 @@ extrap = vcopt_p%extrag
 ! Velocity flux (crom, brom not used)
 itypfl = 0
 
-do ifac= 1, nfabor
+! No contribution of f to the boundary mass flux
+do ifac = 1, nfabor
   do isou = 1, 3
     do jsou = 1, 3
-      if (isou.eq.jsou) then
-        coefbv(isou,jsou,ifac) = 1.d0
-      else
-        coefbv(isou,jsou,ifac) = 0.d0
-      endif
+      coefbv(isou,jsou,ifac) = 0.d0
     enddo
   enddo
 enddo
@@ -452,23 +438,21 @@ call inimav                                                      &
   coefau , coefbv ,                                              &
   flumas , flumab )
 
-if (idtcfl.eq.0) then
-  ! volumic flux part based on velocity u^n
-  init   = 0
-  ! take into account Dirichlet velocity boundary conditions
-  inc    = 1
+! volumic flux part based on velocity u^n
+init   = 0
+! take into account Dirichlet velocity boundary conditions
+inc    = 1
 
-  call inimav                                                      &
-  !==========
-  ( ivarfl(iu)      , itypfl ,                                     &
-    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
-    iwarnp ,                                                       &
-    epsrgp , climgp ,                                              &
-    crom, brom,                                                    &
-    vela,                                                          &
-    coefau , coefbu ,                                              &
-    flumas , flumab )
-endif
+call inimav                                                      &
+!==========
+( ivarfl(iu)      , itypfl ,                                     &
+  iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+  iwarnp ,                                                       &
+  epsrgp , climgp ,                                              &
+  crom, brom,                                                    &
+  vela,                                                          &
+  coefau , coefbu ,                                              &
+  flumas , flumab )
 
 ! Free memory
 deallocate(w1)

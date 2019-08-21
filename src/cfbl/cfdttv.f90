@@ -101,7 +101,7 @@ double precision wflmas(nfac), wflmab(nfabor), viscb(nfabor)
 
 ! Local variables
 
-integer          ifac, iel, iterns, idtcfl
+integer          ifac, iel, iterns
 integer          iconvp, idiffp, isym
 
 double precision, allocatable, dimension(:) :: viscf
@@ -171,10 +171,9 @@ do ifac = 1, nfabor
 enddo
 
 iterns = 1
-idtcfl = 1
 call cfmsfp                                                       &
 !==========
- ( nvar   , nscal  , idtcfl , iterns , ncepdp , ncesmp ,          &
+ ( nvar   , nscal  , iterns , ncepdp , ncesmp ,                   &
    icepdc , icetsm , itypsm ,                                     &
    dt     , vela   ,                                              &
    ckupdc , smacel ,                                              &

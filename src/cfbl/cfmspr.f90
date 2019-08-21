@@ -111,7 +111,7 @@ double precision epsrsp
 double precision sclnor, hint
 
 integer          imucpp, idftnp, iswdyp
-integer          imvis1, f_id0, idtcfl
+integer          imvis1, f_id0
 integer          f_id
 
 double precision thetv, relaxp
@@ -276,9 +276,8 @@ enddo
 ! computation of the "convective flux" for the density
 
 ! volumic flux (u + dt f)
-idtcfl = 0
 call cfmsfp                                                                    &
-( nvar   , nscal  , idtcfl , iterns , ncepdp , ncesmp ,                        &
+( nvar   , nscal  , iterns , ncepdp , ncesmp ,                                 &
   icepdc , icetsm , itypsm ,                                                   &
   dt     , vela   ,                                                            &
   ckupdc , smacel ,                                                            &
@@ -301,23 +300,8 @@ do ifac = 1, nfabor
   wflmab(ifac) = -brom(ifac)*bvolfl(ifac)
 enddo
 
-if (icfgrp.eq.1) then
-  ! The hydrostatic pressure gradient contribution has to be added to the mass
-  ! flux if it has been taken into account in the pressure B.C. at walls.
-  do ifac = 1, nfabor
-    iel = ifabor(ifac)
-    if (itypfb(ifac).eq.iparoi .or. itypfb(ifac).eq.iparug) then
-      wflmab(ifac) = wflmab(ifac)                                              &
-                     -dt(iel)*crom(iel)*(  gx*surfbo(1,ifac)                   &
-                                         + gy*surfbo(2,ifac)                   &
-                                         + gz*surfbo(3,ifac))
-    endif
-  enddo
-endif
-
 init = 0
 call divmas(init,wflmas,wflmab,smbrs)
-
 
 call field_get_id_try("predicted_vel_divergence", f_id)
 if (f_id.ge.0) then
