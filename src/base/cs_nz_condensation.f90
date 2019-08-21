@@ -56,9 +56,9 @@ module cs_nz_condensation
   integer, save :: nzones
 
   !> \anchor izzftcd
-  !> list on the zones associated to the faces where a condensation source terms
+  !> list of the zones associated to the faces where a condensation source term
   !> is imposed. On each zone a specific wall temperature and material properties
-  !> can be specify be the user.
+  !> can be specified by the user.
   integer, allocatable, dimension(:) :: izzftcd
 
   !> \anchor izcophc

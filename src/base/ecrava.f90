@@ -544,7 +544,7 @@ if (iecaux.eq.1) then
 
 !----------------------------------------------------------------
 ! ---> Wall temperature associated to the condensation model
-!      with or wihtout the 1D thermal model tag1D
+!      with or without the 1D thermal model tag1D
 !----------------------------------------------------------------
 
   if (icondb.eq.0) then

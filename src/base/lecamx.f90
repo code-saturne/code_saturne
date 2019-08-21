@@ -751,7 +751,7 @@ if (icondb.eq.0) then
     nberro=nberro+ierror
 
     do ii = 1, nfbpcd
-      ifac= ifbpcd(ii)
+      ifac = ifbpcd(ii)
       iz  = izzftcd(ii)
       do kk = 1, znmur(iz)
         ztmur(ii,kk) =  tmurbf(ifac,kk)
