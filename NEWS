@@ -1,3 +1,13 @@
+Release 5.2.3 (unreleased)
+==========================
+
+Bug fixes
+---------
+
+- Fix hydrostatic equilibrium option of compressible model.
+  Hydrostatic pressure contribution at walls was added twice to the right
+  hand side of the mass balance.
+
 
 Release 5.2.2 (May 6 2019)
 ==========================
