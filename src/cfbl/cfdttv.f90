@@ -27,8 +27,7 @@ subroutine cfdttv &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
    ckupdc , smacel ,                                              &
-   wcf    ,                                                       &
-   wflmas , wflmab , viscb  )
+   wcf    )
 
 !===============================================================================
 ! FUNCTION :
@@ -56,9 +55,6 @@ subroutine cfdttv &
 ! (ncesmp,nvar)    !    !     !  source de masse                               !
 !                  !    !     ! pour ivar=ipr, smacel=flux de masse            !
 ! wcf(ncelet)      ! tr ! --> ! contrainte compressible                        !
-! wflmas(nfac)     ! tr ! --- ! tab de trav aux faces internes                 !
-! wflmab(nfabor    ! tr ! --- ! tab de trav aux faces de bord                  !
-! viscb(nfabor     ! tr ! --- ! tab de trav aux faces de bord                  !
 !__________________!____!_____!________________________________________________!
 
 
@@ -97,7 +93,6 @@ integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 double precision dt(ncelet)
 double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
 double precision wcf(ncelet)
-double precision wflmas(nfac), wflmab(nfabor), viscb(nfabor)
 
 ! Local variables
 
@@ -106,7 +101,7 @@ integer          iconvp, idiffp, isym
 
 double precision, allocatable, dimension(:) :: viscf
 double precision, allocatable, dimension(:) :: coefbt, cofbft
-double precision, allocatable, dimension(:) :: w1, c2
+double precision, allocatable, dimension(:) :: w1, c2, wflmas, wflmab, viscb
 
 double precision, dimension(:,:), pointer :: vela
 double precision, dimension(:), pointer :: crom, cpro_cp, cpro_cv
@@ -137,8 +132,8 @@ endif
 !===============================================================================
 
 ! Allocate temporary arrays
-allocate(viscf(nfac))
-allocate(coefbt(nfabor),cofbft(nfabor))
+allocate(viscf(nfac), wflmas(nfac))
+allocate(coefbt(nfabor),cofbft(nfabor), wflmab(nfabor), viscb(nfabor))
 
 ! Allocate work arrays
 allocate(w1(ncelet))
@@ -225,10 +220,10 @@ else
 endif
 
 ! Free memory
-deallocate(viscf)
+deallocate(viscf, viscb)
 deallocate(w1)
 deallocate(c2)
-deallocate(coefbt,cofbft)
+deallocate(coefbt,cofbft, wflmas, wflmab)
 
 !--------
 ! Formats
