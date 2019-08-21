@@ -117,10 +117,8 @@ use cs_f_interfaces
 use atchem
 use darcy_module
 use cs_c_bindings
-use cs_cf_bindings
 use pointe, only: itypfb, pmapper_double_r1
 use atincl, only: kopint
-use cfpoin, only: hgn_relax_eq_st
 
 !===============================================================================
 
@@ -1331,12 +1329,6 @@ if (ippmod(idarcy).eq.1) then
   if (sorption_scal%imxsol.ge.0) then
     call cs_gwf_precipitation(ivarfl(ivar))
   endif
-endif
-
-! Return to equilibrium source term step for volume, mass, energy fractions
-! in the compressible homogeneous two-phase model
-if (ippmod(icompf).gt.1.and.hgn_relax_eq_st.ge.0) then
-  call cs_cf_hgn_source_terms_step
 endif
 
 if (idilat.ge.4.and.itspdv.eq.1) then

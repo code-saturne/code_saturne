@@ -62,6 +62,8 @@ use mesh
 use atchem
 use siream
 use field
+use cs_cf_bindings
+use cfpoin, only: hgn_relax_eq_st
 
 !===============================================================================
 
@@ -391,9 +393,14 @@ if (ippmod(ielarc).ge.1 .and. iterns.eq.-1) then
   iappel = 2
 
   call elflux(iappel)
-  !==========
-
 endif
+
+! Compressible homogeneous two-phase model:
+! return to equilibrium source term step for volume, mass, energy fractions
+if (ippmod(icompf).eq.1.and.hgn_relax_eq_st.ge.0) then
+  call cs_cf_hgn_source_terms_step
+endif
+
 
 !===============================================================================
 ! 3. TRAITEMENT DES SCALAIRES UTILISATEURS STANDARD
