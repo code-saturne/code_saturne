@@ -142,6 +142,10 @@ Bug fixes:
   treatment at walls. Hence in all cases with this default setting and no
   gravity, this fix has no impact.
 
+- Fix hydrostatic equilibrium option of compressible model / algorithm.
+  Hydrostatic pressure was contributing twice to right hand side in mass
+  balance step.
+
 - Fix missing variable change for computed pressure with EVM in a
   postprocessing utility function.
 
