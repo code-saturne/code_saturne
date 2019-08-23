@@ -114,11 +114,13 @@ cs_porosity_from_scan_set_file_name(const char *file_name);
  * \brief This function add a scanner source point
  *
  * \param[in] source     source vector
+ * \param[in] transform  flag to apply the transformation matrix to the source
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_porosity_from_scan_add_source(cs_real_3_t source);
+cs_porosity_from_scan_add_source(const cs_real_3_t source,
+                                 const bool transform);
 
 /*----------------------------------------------------------------------------*/
 /*!

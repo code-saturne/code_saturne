@@ -227,7 +227,7 @@ _count_from_file(const cs_mesh_t *m,
       if (fscanf(file, "%lf", &(xyz[2])) != 1)
         bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Error while reading dataset."));
 
-      /* Translation  and rotation */
+      /* Translation and rotation */
       xyz[3] = 1.;
       for (int j = 0; j < 3; j++) {
         for (int k = 0; k < 4; k++)
@@ -516,14 +516,16 @@ cs_porosity_from_scan_set_file_name(const char *file_name)
  * \brief This function add a scanner source point
  *
  * \param[in] source     source vector
+ * \param[in] transform  flag to apply the transformation matrix to the source
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_porosity_from_scan_add_source(cs_real_3_t source)
+cs_porosity_from_scan_add_source(const cs_real_3_t source,
+                                 const bool transform)
 {
   /* Add a source */
-  int s_id = _porosity_from_scan_opt.nb_sources;
+  const int s_id = _porosity_from_scan_opt.nb_sources;
   _porosity_from_scan_opt.nb_sources++;
 
   BFT_REALLOC(
@@ -536,8 +538,21 @@ cs_porosity_from_scan_add_source(cs_real_3_t source)
       _porosity_from_scan_opt.nb_sources,
       cs_real_3_t);
 
-  for (int i = 0; i < 3; i++)
-    _porosity_from_scan_opt.sources[s_id][i] = source[i];
+  if (transform) {
+    /* Apply translation and rotation */
+    for (int i = 0; i < 3; i++) {
+      _porosity_from_scan_opt.sources[s_id][i] = 0;
+      for (int j = 0; j < 3; j++)
+        _porosity_from_scan_opt.sources[s_id][i] +=
+          _porosity_from_scan_opt.transformation_matrix[i][j] * source[j];
+      _porosity_from_scan_opt.sources[s_id][i] +=
+        _porosity_from_scan_opt.transformation_matrix[i][3];
+    }
+  } else {
+    for (int i = 0; i < 3; i++)
+      _porosity_from_scan_opt.sources[s_id][i] = source[i];
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
