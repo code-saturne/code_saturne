@@ -144,7 +144,7 @@ _define_bcs(cs_real_t           time,
   CS_UNUSED(time);
   CS_UNUSED(input);
 
-  const double  pi = 4.0*atan(1.0);
+  const double  pi = cs_math_pi;
   for (cs_lnum_t p = 0; p < n_pts; p++) {
 
     const cs_lnum_t  id = (pt_ids == NULL) ? p : pt_ids[p];
