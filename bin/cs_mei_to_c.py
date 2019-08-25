@@ -1115,7 +1115,7 @@ class mei_to_c_interpreter:
             # Volume code
             self.generate_volume_code()
 
-            # Bouondary code
+            # Boundary code
             self.generate_boundary_code()
 
             # Source terms code
