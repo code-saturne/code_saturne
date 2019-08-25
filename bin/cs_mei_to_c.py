@@ -1413,10 +1413,10 @@ class mei_to_c_interpreter:
                         usr_defs += ntabs*tab + l
                         known_symbols.append(sn)
 
-            for nb in self.notebook.keys():
-                if nb in line_comp and nb not in known_symbols:
+            for sn in self.notebook.keys():
+                if sn in line_comp and sn not in known_symbols:
                         l = 'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
-                                % (nb, nb)
+                                % (sn, sn)
                         usr_defs += ntabs*tab + l
                         known_symbols.append(sn)
 
