@@ -59,6 +59,7 @@
 #include "cs_gui_variables.h"
 #include "cs_gui_boundary_conditions.h"
 #include "cs_mesh.h"
+#include "cs_prototypes.h"
 #include "cs_timer.h"
 #include "cs_time_step.h"
 
@@ -227,30 +228,19 @@ _get_ale_boundary_formula(cs_tree_node_t  *tn_w,
  *
  * parameters:
  *   tn_w           <-- pointer to tree node for a given mobile_boundary BC
- *   begin          <-- begin index for nodfbr
- *   end            <-- end index for nodfbr
- *   nnod           <-> number of nodes
- *   b_face_vtx_lst <-- nodfbr
+ *   z              <-- selected boundary zone
  *   impale         --> impale
  *   disale         --> disale
- *   dtref          <-- time step
- *   ttcabs         <-- current time
- *   ntcabs         <-- current iteration number
  *----------------------------------------------------------------------------*/
 
 static void
 _uialcl_fixed_displacement(cs_tree_node_t   *tn_w,
-                           const cs_lnum_t   begin,
-                           const cs_lnum_t   end,
-                           const cs_lnum_t   b_face_vtx_lst[],
+                           const cs_zone_t  *z,
                            int              *impale,
-                           cs_real_3_t      *disale,
-                           const double      dtref,
-                           const double      ttcabs,
-                           const int         ntcabs)
+                           cs_real_3_t      *disale)
 {
-  const char*  variables[3] = {"mesh_x", "mesh_y", "mesh_z"};
-  int variable_nbr = 3;
+
+  const cs_mesh_t *m = cs_glob_mesh;
 
   /* Get formula */
   const char *formula = _get_ale_boundary_formula(tn_w, "fixed_displacement");
@@ -260,27 +250,30 @@ _uialcl_fixed_displacement(cs_tree_node_t   *tn_w,
               _("Boundary nature formula is null for %s."),
               cs_gui_node_get_tag(tn_w, "label"));
 
-  /* Init mei */
-  mei_tree_t *ev = _init_mei_tree(formula, variables, variable_nbr,
-                                  0, 0, 0, dtref, ttcabs, ntcabs);
+  /* Evaluate formula using meg */
+  cs_real_t *bc_vals = cs_meg_boundary_function(z,
+                                                "mesh_velocity",
+                                                "fixed_displacement");
 
-  mei_evaluate(ev);
+  /* Loop over boundary faces */
+  for (cs_lnum_t elt_id = 0; elt_id < z->n_elts; elt_id++) {
+    const cs_lnum_t face_id = z->elt_ids[elt_id];
 
-  /* Get mei results */
-  cs_real_t x_mesh = mei_tree_lookup(ev, "mesh_x");
-  cs_real_t y_mesh = mei_tree_lookup(ev, "mesh_y");
-  cs_real_t z_mesh = mei_tree_lookup(ev, "mesh_z");
+    /* ALE BC on vertices */
+    const cs_lnum_t s = m->b_face_vtx_idx[face_id];
+    const cs_lnum_t e = m->b_face_vtx_idx[face_id+1];
 
-  mei_tree_destroy(ev);
+    /* Compute the portion of surface associated to v_id_1 */
+    for (cs_lnum_t k = s; k < e; k++) {
 
-  /* Set disale and impale */
-  for (cs_lnum_t ii = begin; ii < end; ++ii) {
-    cs_lnum_t inod = b_face_vtx_lst[ii];
-    if (impale[inod] == 0) {
-      disale[inod][0] = x_mesh;
-      disale[inod][1] = y_mesh;
-      disale[inod][2] = z_mesh;
-      impale[inod] = 1;
+      const cs_lnum_t v_id = m->b_face_vtx_lst[k];
+      cs_real_t *_val = disale + 3 * v_id;
+
+      impale[v_id] = 1;
+      //FIXME prorata
+      for (int d = 0; d < 3; d++)
+        _val[d] = bc_vals[elt_id + d * z->n_elts];
+
     }
   }
 }
@@ -294,12 +287,8 @@ _uialcl_fixed_displacement(cs_tree_node_t   *tn_w,
  *   ivma         <-- ivma
  *   iwma         <-- iwma
  *   nfabor       <-- Number of boundary faces
- *   n_faces      <-- number of selected faces
- *   faces_list   <-- listof selected faces
+ *   z            <-- selected boundary zone
  *   rcodcl       --> rcodcl
- *   dtref        <-- time step
- *   ttcabs       <-- current time
- *   ntcabs       <-- current iteration number
  *----------------------------------------------------------------------------*/
 
 static void
@@ -309,18 +298,10 @@ _uialcl_fixed_velocity(cs_tree_node_t  *tn_w,
                        int              iwma,
                        int              ivimpo,
                        cs_lnum_t        nfabor,
-                       cs_lnum_t        n_faces,
-                       const cs_lnum_t  faces_list[],
+                       const cs_zone_t *z,
                        int              ialtyb[],
-                       double          *rcodcl,
-                       double           dtref,
-                       double           ttcabs,
-                       int              ntcabs)
+                       double          *rcodcl)
 {
-  const char*  variables[3] = {"mesh_velocity_U",
-                               "mesh_velocity_V",
-                               "mesh_velocity_W" };
-
   /* Get formula */
   const char *formula = _get_ale_boundary_formula(tn_w, "fixed_velocity");
 
@@ -329,26 +310,28 @@ _uialcl_fixed_velocity(cs_tree_node_t  *tn_w,
               _("Boundary nature formula is null for %s."),
               cs_gui_node_get_tag(tn_w, "label"));
 
-  /* Init MEI */
-  mei_tree_t *ev = _init_mei_tree(formula, variables, 3, 0, 0, 0,
-                                  dtref, ttcabs, ntcabs);
+  /* Evaluate formula using meg */
+  cs_real_t *bc_vals = cs_meg_boundary_function(z,
+                                                "mesh_velocity",
+                                                "fixed_velocity");
 
-  for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
+  /* Loop over boundary faces */
+  for (cs_lnum_t elt_id = 0; elt_id < z->n_elts; elt_id++) {
+    const cs_lnum_t face_id = z->elt_ids[elt_id];
 
-    cs_lnum_t ifbr = faces_list[ifac];
-
-    mei_evaluate(ev);
 
     /* Fill  rcodcl */
-    rcodcl[(iuma-1) * nfabor + ifbr] = mei_tree_lookup(ev, "mesh_velocity_U");
-    rcodcl[(ivma-1) * nfabor + ifbr] = mei_tree_lookup(ev, "mesh_velocity_V");
-    rcodcl[(iwma-1) * nfabor + ifbr] = mei_tree_lookup(ev, "mesh_velocity_W");
+    rcodcl[(iuma-1) * nfabor + face_id] = bc_vals[elt_id + 0 * z->n_elts];
+    rcodcl[(ivma-1) * nfabor + face_id] = bc_vals[elt_id + 1 * z->n_elts];
+    rcodcl[(iwma-1) * nfabor + face_id] = bc_vals[elt_id + 2 * z->n_elts];
 
-    ialtyb[ifbr]  = ivimpo;
+    ialtyb[face_id]  = ivimpo;
 
   }
 
-  mei_tree_destroy(ev);
+  /* Free memory */
+  BFT_FREE(bc_vals);
+
 }
 
 /*-----------------------------------------------------------------------------
@@ -792,28 +775,16 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    ibfixe,
       }
     }
     else if (nature == ale_boundary_nature_fixed_displacement) {
-      t0 = cs_timer_wtime();
-      for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) {
-        cs_lnum_t ifbr = faces_list[ifac];
-        _uialcl_fixed_displacement(tn_bc,
-                                   m->b_face_vtx_idx[ifbr],
-                                   m->b_face_vtx_idx[ifbr+1],
-                                   m->b_face_vtx_lst, impale, disale,
-                                   cs_glob_time_step->dt_ref,
-                                   cs_glob_time_step->t_cur,
-                                   cs_glob_time_step->nt_cur);
-      }
-      cs_gui_add_mei_time(cs_timer_wtime() - t0);
+      _uialcl_fixed_displacement(tn_bc,
+                                 z,
+                                 impale,
+                                 disale);
     }
     else if (nature == ale_boundary_nature_fixed_velocity) {
-      t0 = cs_timer_wtime();
       _uialcl_fixed_velocity(tn_bc, *iuma, *ivma, *iwma, *ivimpo,
-                             m->n_b_faces, n_faces, faces_list,
-                             ialtyb, rcodcl,
-                             cs_glob_time_step->dt_ref,
-                             cs_glob_time_step->t_cur,
-                             cs_glob_time_step->nt_cur);
-      cs_gui_add_mei_time(cs_timer_wtime() - t0);
+                             m->n_b_faces,
+                             z,
+                             ialtyb, rcodcl);
     }
   }
 }
@@ -1151,28 +1122,13 @@ cs_gui_mobile_mesh_get_boundaries(cs_domain_t     *domain)
 
     /* TODO */
     /* else if (nature == ale_boundary_nature_fixed_displacement) { */
-    /*   t0 = cs_timer_wtime(); */
-    /*   for (cs_lnum_t ifac = 0; ifac < n_faces; ifac++) { */
-    /*     cs_lnum_t ifbr = faces_list[ifac]; */
-    /*     _uialcl_fixed_displacement(tn_bndy, */
-    /*                                m->b_face_vtx_idx[ifbr], */
-    /*                                m->b_face_vtx_idx[ifbr+1], */
-    /*                                m->b_face_vtx_lst, impale, disale, */
-    /*                                cs_glob_time_step->dt_ref, */
-    /*                                cs_glob_time_step->t_cur, */
-    /*                                cs_glob_time_step->nt_cur); */
-    /*   } */
-    /*   cs_gui_add_mei_time(cs_timer_wtime() - t0); */
+    /*   _uialcl_fixed_displacement(tn_bndy, z, */
+    /*                              impale, disale); */
     /* } */
     /* else if (nature == ale_boundary_nature_fixed_velocity) { */
-    /*   t0 = cs_timer_wtime(); */
     /*   _uialcl_fixed_velocity(tn_bndy, *iuma, *ivma, *iwma, *ivimpo, */
-    /*                          m->n_b_faces, n_faces, faces_list, */
-    /*                          ialtyb, rcodcl, */
-    /*                          cs_glob_time_step->dt_ref, */
-    /*                          cs_glob_time_step->t_cur, */
-    /*                          cs_glob_time_step->nt_cur); */
-    /*   cs_gui_add_mei_time(cs_timer_wtime() - t0); */
+    /*                          m->n_b_faces, z, */
+    /*                          ialtyb, rcodcl); */
     /* } */
 
 }
@@ -1182,17 +1138,13 @@ cs_gui_mobile_mesh_get_boundaries(cs_domain_t     *domain)
  * \brief Return the fixed velocity for a boundary
  *
  * \param[in]  label boundary condition label
- * \param[out] vel   imposed mesh velocity
+ *
+ * \return a pointer to an array of cs_real_t values
  *----------------------------------------------------------------------------*/
 
-void
-cs_gui_mobile_mesh_get_fixed_velocity(const char*    label,
-                                      cs_real_3_t    vel)
+cs_real_t *
+cs_gui_mobile_mesh_get_fixed_velocity(const char    *label)
 {
-  cs_real_t dtref = cs_glob_time_step->dt_ref;
-  cs_real_t ttcabs = cs_glob_time_step->t_cur;
-  int ntcabs = cs_glob_time_step->nt_cur;
-
   cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
 
   /* Loop on boundary zones */
@@ -1212,9 +1164,6 @@ cs_gui_mobile_mesh_get_fixed_velocity(const char*    label,
 
     if (strcmp(label_bndy, label) == 0) {
 
-      const char*  variables[3] = {"mesh_velocity_U",
-                                   "mesh_velocity_V",
-                                   "mesh_velocity_W" };
 
       /* Get formula */
       const char *formula = _get_ale_boundary_formula(tn, "fixed_velocity");
@@ -1224,20 +1173,17 @@ cs_gui_mobile_mesh_get_fixed_velocity(const char*    label,
                   _("Boundary nature formula is null for %s."),
                   cs_gui_node_get_tag(tn, "label"));
 
-      /* Init MEI */
-      mei_tree_t *ev = _init_mei_tree(formula, variables, 3, 0, 0, 0,
-                                      dtref, ttcabs, ntcabs);
+      const cs_zone_t *bz = cs_boundary_zone_by_name(label);
 
-      mei_evaluate(ev);
-
-      vel[0] = mei_tree_lookup(ev, "mesh_velocity_U");
-      vel[1] = mei_tree_lookup(ev, "mesh_velocity_V");
-      vel[2] = mei_tree_lookup(ev, "mesh_velocity_W");
-
-      mei_tree_destroy(ev);
+      /* Evaluate formula using meg */
+      return cs_meg_boundary_function(bz,
+                                      "mesh_velocity",
+                                      "fixed_velocity");
 
     }
   }
+
+  return NULL; /* avoid a compilation warning */
 }
 
 /*----------------------------------------------------------------------------*/

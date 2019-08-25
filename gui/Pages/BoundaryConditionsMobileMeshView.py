@@ -53,7 +53,7 @@ from code_saturne.model.MobileMeshModel import MobileMeshModel
 from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 from code_saturne.model.Boundary import Boundary
 
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
@@ -113,37 +113,45 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
         """
         Run formula editor.
         """
-        exp = self.__boundary.getFormula()
-        aleChoice = self.__boundary.getALEChoice();
+        exp = self.__boundary.getALEFormula()
+        c = self.__boundary.getALEChoice();
 
-        if aleChoice == "fixed_velocity":
+        if c == "fixed_velocity":
             if not exp:
-                exp = 'mesh_velocity_U ='
-            req = [('mesh_velocity_U', 'Fixed velocity of the mesh'),
-                   ('mesh_velocity_V', 'Fixed velocity of the mesh'),
-                   ('mesh_velocity_W', 'Fixed velocity of the mesh')]
-            exa = 'mesh_velocity_U = 1000;\nmesh_velocity_V = 1000;\nmesh_velocity_W = 1000;'
-        elif aleChoice == "fixed_displacement":
+                exp = 'mesh_velocity[0] = 0.;\nmesh_velocity[1] = 0.;\nmesh_velocity[2] = 0.;'
+            req = [('mesh_velocity[0]', 'Fixed velocity of the mesh'),
+                   ('mesh_velocity[1]', 'Fixed velocity of the mesh'),
+                   ('mesh_velocity[2]', 'Fixed velocity of the mesh')]
+            exa = 'mesh_velocity[0] = 0.;\nmesh_velocity[1] = 0.;\nmesh_velocity[2] = 1.;'
+        elif c == "fixed_displacement":
             if not exp:
-                exp = 'mesh_x ='
-            req = [('mesh_x', 'Fixed displacement of the mesh'),
-                   ('mesh_y', 'Fixed displacement of the mesh'),
-                   ('mesh_z', 'Fixed displacement of the mesh')]
-            exa = 'mesh_x = 1000;\nmesh_y = 1000;\nmesh_z = 1000;'
+                exp = 'mesh_displacement[0] = 0.;\nmesh_displacement[1] = 0.;\nmesh_displacement[2] = 0.;'
+            req = [('mesh_displacement[0]', 'Fixed displacement of the mesh'),
+                   ('mesh_displacement[1]', 'Fixed displacement of the mesh'),
+                   ('mesh_displacement[2]', 'Fixed displacement of the mesh')]
+            exa = 'mesh_displacement[0] = 0.;\nmesh_displacement[1] = 0.;\nmesh_displacement[2] = 1.;'
 
-        symbs = [('dt', 'time step'),
-                 ('t', 'current time'),
-                 ('iter', 'number of iteration')]
+        sym = [('x', "X face's gravity center"),
+               ('y', "Y face's gravity center"),
+               ('z', "Z face's gravity center"),
+               ('dt', 'time step'),
+               ('t', 'current time'),
+               ('iter', 'number of iteration'),
+               ('surface', 'Boundary zone surface')]
 
         for (nme, val) in self.notebook.getNotebookList():
-            symbs.append((nme, 'value (notebook) = ' + str(val)))
+            sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = symbs,
-                                examples   = exa)
+        dialog = QMegEditorView(parent = self,
+                                function_type = 'bnd',
+                                zone_name     = self.__boundary._label,
+                                variable_name = 'mesh_velocity',
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                condition     = c,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaMobileMeshBoundary -> %s" % str(result))
@@ -163,7 +171,7 @@ class BoundaryConditionsMobileMeshView(QWidget, Ui_BoundaryConditionsMobileMeshF
             return
 
         self.__boundary.setALEChoice(modelData)
-        exp = self.__boundary.getFormula()
+        exp = self.__boundary.getALEFormula()
 
         # Hide/Show formula button.
         # Formula is always reset when changing values, so set

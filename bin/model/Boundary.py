@@ -178,8 +178,8 @@ class Boundary(object) :
 
         formula_velocity = 'ale_formula_' + "fixed_velocity"
         formula_displacement = 'ale_formula_' + "fixed_displacement"
-        self._defaultValues[formula_velocity] = 'mesh_velocity_U = 0;\nmesh_velocity_V = 0;\nmesh_velocity_W = 0;'
-        self._defaultValues[formula_displacement] = 'mesh_x = 0;\nmesh_y = 0;\nmesh_z = 0;'
+        self._defaultValues[formula_velocity] = 'mesh_velocity[0] = 0;\nmesh_velocity[1] = 0;\nmesh_velocity[2] = 0;'
+        self._defaultValues[formula_displacement] = 'mesh_displacement[0] = 0;\nmesh_displacement[1] = 0;\nmesh_displacement[2] = 0;'
 
 
     @Variables.noUndo
@@ -216,7 +216,7 @@ class Boundary(object) :
 
 
     @Variables.noUndo
-    def getFormula(self):
+    def getALEFormula(self):
         """
         Get the formula from the xml
         """

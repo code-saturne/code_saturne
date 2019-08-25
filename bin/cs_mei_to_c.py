@@ -2045,10 +2045,36 @@ class mei_to_c_interpreter:
             tm = TurbulenceModel(self.case)
 
             for zone in blm.getZones():
-                if zone._nature == "symmetry":
-                    continue
 
                 boundary = Boundary(zone._nature, zone._label, self.case)
+
+                # ALE: imposed mesh velocity
+                c = boundary.getALEChoice()
+                if c == "fixed_velocity":
+                    sym = ['x', 'y', 'z', 't', 'dt', 'iter', 'surface']
+                    for (name, val) in NotebookModel(self.case).getNotebookList():
+                        sym.append((name, 'value (notebook) = ' + str(val)))
+                    req = ['mesh_velocity[0]', 'mesh_velocity[1]', 'mesh_velocity[2]']
+                    exp = boundary.getALEFormula()
+
+                    name = 'mesh_velocity'
+                    self.init_block('bnd', zone._label, name,
+                                    exp, req, sym, known_fields=[],
+                                    condition=c)
+                elif c == "fixed_displacement":
+                    sym = ['x', 'y', 'z', 't', 'dt', 'iter', 'surface']
+                    for (name, val) in NotebookModel(self.case).getNotebookList():
+                        sym.append((name, 'value (notebook) = ' + str(val)))
+                    req = ['mesh_displacement[0]', 'mesh_displacement[1]', 'mesh_displacement[2]']
+                    exp = boundary.getALEFormula()
+
+                    name = 'mesh_velocity'
+                    self.init_block('bnd', zone._label, name,
+                                    exp, req, sym, known_fields=[],
+                                    condition=c)
+
+                if zone._nature == "symmetry":
+                    continue
 
                 # Velocity for inlets
                 if 'inlet' in zone._nature and zone._nature != 'free_inlet_outlet':

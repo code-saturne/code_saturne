@@ -214,12 +214,12 @@ cs_gui_mobile_mesh_get_boundaries(cs_domain_t     *domain);
  * \brief Return the fixed velocity for a boundary
  *
  * \param[in]  label boundary condition label
- * \param[out] vel   imposed mesh velocity
+ *
+ * \return a pointer to an array of cs_real_t values
  *----------------------------------------------------------------------------*/
 
-void
-cs_gui_mobile_mesh_get_fixed_velocity(const char*    label,
-                                      cs_real_t     *vel);
+cs_real_t *
+cs_gui_mobile_mesh_get_fixed_velocity(const char*    label);
 
 /*----------------------------------------------------------------------------*/
 

@@ -512,12 +512,12 @@ _update_bcs(const cs_domain_t  *domain,
 
     case CS_BOUNDARY_ALE_IMPOSED_VEL:
       {
-        /* Retrieve the velocity to enforce */
-        cs_real_3_t vel = {0., 0., 0.};
-        cs_gui_mobile_mesh_get_fixed_velocity(z->name, vel);
+        /* Retrieve the velocities to enforce  on faces */
+        cs_real_t *bc_vals = cs_gui_mobile_mesh_get_fixed_velocity(z->name);
 
         assert(select_id < _cdo_bc->n_selections);
 
+#if 0 //TODO when we will have meg on vertices
         /* Loop on selected border vertices */
         for (cs_lnum_t i = 0; i < _cdo_bc->n_vertices[select_id]; i++) {
 
@@ -526,19 +526,37 @@ _update_bcs(const cs_domain_t  *domain,
           _val[0] = vel[0];
           _val[1] = vel[1];
           _val[2] = vel[2];
-
-
         }
+#endif
 
-        /* Loop over boundary faces for the fluid velocity */
+        /* Loop over boundary faces */
         for (cs_lnum_t elt_id = 0; elt_id < z->n_elts; elt_id++) {
           const cs_lnum_t face_id = z->elt_ids[elt_id];
 
+          /* ALE BC on vertices */
+          const cs_lnum_t s = m->b_face_vtx_idx[face_id];
+          const cs_lnum_t e = m->b_face_vtx_idx[face_id+1];
+
+          /* Compute the portion of surface associated to v_id_1 */
+          for (cs_lnum_t k = s; k < e; k++) {
+
+            const cs_lnum_t v_id = m->b_face_vtx_lst[k];
+            cs_real_t *_val = _cdo_bc->vtx_values + 3 * v_id;
+
+            //FIXME prorata
+            for (int d = 0; d < 3; d++)
+              _val[d] = bc_vals[elt_id + d * z->n_elts];
+
+          }
+
+          /* fluid velocity BC */
           ale_bc_type[face_id] = CS_ALE_IMPOSED_VEL;
-          b_fluid_vel[face_id][0] = vel[0];
-          b_fluid_vel[face_id][1] = vel[1];
-          b_fluid_vel[face_id][2] = vel[1];
+          for (int d = 0; d < 3; d++)
+            b_fluid_vel[face_id][d] = bc_vals[elt_id + d * z->n_elts];
         }
+
+        /* Free memory */
+        BFT_FREE(bc_vals);
 
         select_id++;
       }
