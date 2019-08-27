@@ -205,7 +205,8 @@ _free_surface(const cs_domain_t  *domain,
     _is_loc_max[v_id] = 1;
   }
 
-  /* Loop over boundary faces */
+  /* First Loop over boundary faces
+   * to compute if there is a local min and max elevation */
   for (cs_lnum_t elt_id = 0; elt_id < z->n_elts; elt_id++) {
 
     const cs_lnum_t face_id = z->elt_ids[elt_id];
@@ -439,11 +440,11 @@ _update_bc_list(const cs_mesh_t   *mesh,
   memset(vtag, 0, n_vertices*sizeof(bool));
 
   /* Count the number of vertices to select */
-  for (cs_lnum_t  i = 0; i < z->n_elts; i++) {
+  for (cs_lnum_t i = 0; i < z->n_elts; i++) {
 
-    const cs_lnum_t  bf_id = z->elt_ids[i];
-    const cs_lnum_t  *idx = bf2v_idx + bf_id;
-    const cs_lnum_t  *lst = bf2v_lst + idx[0];
+    const cs_lnum_t bf_id = z->elt_ids[i];
+    const cs_lnum_t *idx = bf2v_idx + bf_id;
+    const cs_lnum_t *lst = bf2v_lst + idx[0];
 
     /* Loop on face vertices */
     for (cs_lnum_t j = 0; j < idx[1]-idx[0]; j++) {
@@ -462,18 +463,19 @@ _update_bc_list(const cs_mesh_t   *mesh,
   /* Fill the list of selected vertices */
   memset(vtag, 0, n_vertices*sizeof(bool));
   counter = 0;
-  for (cs_lnum_t  i = 0; i < z->n_elts; i++) {
+  for (cs_lnum_t i = 0; i < z->n_elts; i++) {
 
-    const cs_lnum_t  bf_id = z->elt_ids[i];
-    const cs_lnum_t  *idx = bf2v_idx + bf_id;
-    const cs_lnum_t  *lst = bf2v_lst + idx[0];
+    const cs_lnum_t bf_id = z->elt_ids[i];
+    const cs_lnum_t *idx = bf2v_idx + bf_id;
+    const cs_lnum_t *lst = bf2v_lst + idx[0];
 
     /* Loop on face vertices */
     for (cs_lnum_t j = 0; j < idx[1]-idx[0]; j++) {
-      cs_lnum_t  v_id = lst[j];
+      cs_lnum_t v_id = lst[j];
       if (!vtag[v_id]) {  /* Not already selected */
         vtag[v_id] = true;
-        _cdo_bc->vtx_select[id][counter++] = v_id;
+        _cdo_bc->vtx_select[id][counter] = v_id;
+        counter++;
       }
     }
 
@@ -1495,12 +1497,12 @@ cs_ale_setup_boundaries(const cs_domain_t   *domain)
   bool   *vtag = NULL;
   BFT_MALLOC(vtag, n_vertices, bool);
 
-  for (int i = 0;  i < domain->ale_boundaries->n_boundaries; i++) {
+  for (int b_id = 0;  b_id < domain->ale_boundaries->n_boundaries; b_id++) {
 
-    const int z_id = domain->ale_boundaries->zone_ids[i];
+    const int z_id = domain->ale_boundaries->zone_ids[b_id];
     const cs_zone_t *z = cs_boundary_zone_by_id(z_id);
 
-    switch(domain->ale_boundaries->types[i]) {
+    switch(domain->ale_boundaries->types[b_id]) {
 
     case CS_BOUNDARY_ALE_FIXED:
       {
