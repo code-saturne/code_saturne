@@ -254,16 +254,12 @@ class Boundary(object) :
         """
         Check and update type of scalar scalarName for boundary conditions for wall
         """
-        if self.sca_model.getMeteoScalarsNameList() != None:
-            if scalarName in self.sca_model.getMeteoScalarsNameList():
-                scalarNode['type'] = self.sca_model.getMeteoScalarType(scalarName)
-            else :
-                scalarNode['type'] = self.sca_model.getScalarTypeByName(scalarName)
-        elif self.sca_model.getElectricalScalarsNameList() != None:
-            if scalarName in self.sca_model.getElectricalScalarsNameList():
-                scalarNode['type'] = self.sca_model.getElectricalScalarType(scalarName)
-            else :
-                scalarNode['type'] = self.sca_model.getScalarTypeByName(scalarName)
+        if self.sca_model.getMeteoScalarsNameList() != None and \
+           scalarName in self.sca_model.getMeteoScalarsNameList():
+            scalarNode['type'] = self.sca_model.getMeteoScalarType(scalarName)
+        elif self.sca_model.getElectricalScalarsNameList() != None and \
+             scalarName in self.sca_model.getElectricalScalarsNameList():
+            scalarNode['type'] = self.sca_model.getElectricalScalarType(scalarName)
         else:
             scalarNode['type'] = self.sca_model.getScalarTypeByName(scalarName)
 
