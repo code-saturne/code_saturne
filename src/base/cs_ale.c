@@ -510,6 +510,12 @@ _update_bcs(const cs_domain_t  *domain,
       }
       break;
 
+      /* Treated elsewhere, only increased selected_id */
+      case CS_BOUNDARY_ALE_FREE_SURFACE:
+        assert(select_id < _cdo_bc->n_selections);
+        select_id++;
+        break;
+
     default:
       break; /* Nothing to do */
     }
@@ -538,14 +544,24 @@ _update_bcs_free_surface(const cs_domain_t  *domain)
 
     switch(domain->ale_boundaries->types[b_id]) {
 
-    case CS_BOUNDARY_ALE_FREE_SURFACE:
-      assert(select_id < _cdo_bc->n_selections);
-      _free_surface(domain, z, select_id);
-      select_id++;
-      break;
+      /* Treated elsewhere, only increased selected_id */
+      case CS_BOUNDARY_ALE_IMPOSED_VEL:
+        select_id++;
+        break;
 
-    default:
-      break; /* Nothing to do */
+      /* Treated elsewhere, only increased selected_id */
+      case CS_BOUNDARY_ALE_IMPOSED_DISP:
+        select_id++;
+        break;
+
+      case CS_BOUNDARY_ALE_FREE_SURFACE:
+        assert(select_id < _cdo_bc->n_selections);
+        _free_surface(domain, z, select_id);
+        select_id++;
+        break;
+
+      default:
+        break; /* Nothing to do */
     }
 
   } /* Loop on ALE boundaries */
