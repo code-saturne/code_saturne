@@ -503,6 +503,12 @@ _update_bcs(const cs_domain_t  *domain,
   const cs_mesh_t  *m = domain->mesh;
   const cs_mesh_quantities_t *mq = domain->mesh_quantities;
 
+  const cs_real_3_t *b_face_normal = (const cs_real_3_t *)mq->b_face_normal;
+  const cs_real_3_t *restrict vtx_coord
+    = (const cs_real_3_t *restrict)m->vtx_coord;
+  const cs_real_3_t *restrict  b_face_cog
+    = (const cs_real_3_t *restrict)mq->b_face_cog;
+
   /* Only a part of the boundaries has to be updated */
   int  select_id = 0;
   for (int b_id = 0; b_id < domain->ale_boundaries->n_boundaries; b_id++) {
@@ -530,26 +536,113 @@ _update_bcs(const cs_domain_t  *domain,
           _val[2] = vel[2];
         }
 #endif
+        /* Dual surface associated to vertices */
+        cs_real_t *_v_surf = NULL;
 
-        /* Loop over boundary faces */
+        /* Transform face flux to vertex velocities */
+        cs_real_3_t *_mesh_vel = NULL;
+
+        BFT_MALLOC(_v_surf, m->n_vertices, cs_real_t);
+        BFT_MALLOC(_mesh_vel, m->n_vertices, cs_real_3_t);
+
+        /* Initialize */
+        for (cs_lnum_t v_id = 0; v_id < m->n_vertices; v_id++) {
+          _v_surf[v_id] = 0;
+          _mesh_vel[v_id][0] = 0;
+          _mesh_vel[v_id][1] = 0;
+          _mesh_vel[v_id][2] = 0;
+        }
+
+        /* First Loop over boundary faces
+         * to compute face portion associated to the vertex
+         * and add the portion of face velocity to the vertex velocity */
         for (cs_lnum_t elt_id = 0; elt_id < z->n_elts; elt_id++) {
+
           const cs_lnum_t face_id = z->elt_ids[elt_id];
 
-          /* ALE BC on vertices */
+          cs_real_3_t normal;
+          cs_math_3_normalise(b_face_normal[face_id], normal);
+
           const cs_lnum_t s = m->b_face_vtx_idx[face_id];
           const cs_lnum_t e = m->b_face_vtx_idx[face_id+1];
+
 
           /* Compute the portion of surface associated to v_id_1 */
           for (cs_lnum_t k = s; k < e; k++) {
 
-            const cs_lnum_t v_id = m->b_face_vtx_lst[k];
-            cs_real_t *_val = _cdo_bc->vtx_values + 3 * v_id;
+            const cs_lnum_t k_1 = (k+1 < e) ? k+1 : k+1-(e-s);
+            const cs_lnum_t k_2 = (k+2 < e) ? k+2 : k+2-(e-s);
+            const cs_lnum_t v_id0 = m->b_face_vtx_lst[k];
+            const cs_lnum_t v_id1 = m->b_face_vtx_lst[k_1];
+            const cs_lnum_t v_id2 = m->b_face_vtx_lst[k_2];
 
-            //FIXME prorata
-            for (int d = 0; d < 3; d++)
-              _val[d] = bc_vals[elt_id + d * z->n_elts];
+            cs_real_3_t v0v1 = {
+              vtx_coord[v_id1][0] - vtx_coord[v_id0][0],
+              vtx_coord[v_id1][1] - vtx_coord[v_id0][1],
+              vtx_coord[v_id1][2] - vtx_coord[v_id0][2]
+            };
+            cs_real_3_t v1v2 = {
+              vtx_coord[v_id2][0] - vtx_coord[v_id1][0],
+              vtx_coord[v_id2][1] - vtx_coord[v_id1][1],
+              vtx_coord[v_id2][2] - vtx_coord[v_id1][2]
+            };
+            cs_real_3_t v1_cog = {
+              b_face_cog[face_id][0] - vtx_coord[v_id1][0],
+              b_face_cog[face_id][1] - vtx_coord[v_id1][1],
+              b_face_cog[face_id][2] - vtx_coord[v_id1][2]
+            };
+
+            /* Portion of the surface associated to the vertex
+             * projected in the normal direction */
+            cs_real_t portion_surf = 0.25 * (
+                cs_math_3_triple_product(v0v1, v1_cog, normal)
+                + cs_math_3_triple_product(v1v2, v1_cog, normal));
+
+            _v_surf[v_id1] += portion_surf;
+
+            /* Portion of the face velocity is added to the node velocity
+             * Warning: bc_vals is not interleaved */
+            for (int i = 0; i < 3; i++)
+              _mesh_vel[v_id1][i] += bc_vals[elt_id + i * z->n_elts] * portion_surf;
 
           }
+
+        } /* Loop on selected border faces */
+
+        /* Handle parallelism */
+        if (m->vtx_interfaces != NULL) {
+          cs_interface_set_sum(m->vtx_interfaces,
+                               m->n_vertices,
+                               3,
+                               true,
+                               CS_REAL_TYPE,
+                               _mesh_vel);
+
+          cs_interface_set_sum(m->vtx_interfaces,
+                               m->n_vertices,
+                               1,
+                               true,
+                               CS_REAL_TYPE,
+                               _v_surf);
+        }
+
+        /* Loop on selected border vertices */
+        for (cs_lnum_t i = 0; i < _cdo_bc->n_vertices[select_id]; i++) {
+
+          const cs_lnum_t v_id = _cdo_bc->vtx_select[select_id][i];
+          const double  invsurf = 1./_v_surf[v_id];
+
+          cs_real_t  *_val = _cdo_bc->vtx_values + 3*v_id;
+
+          for (int k = 0; k < 3; k++) {
+            _mesh_vel[v_id][k] *= invsurf;
+            _val[k] = _mesh_vel[v_id][k];
+          }
+        }
+
+        /* Loop over boundary faces and impose node mesh velocity */
+        for (cs_lnum_t elt_id = 0; elt_id < z->n_elts; elt_id++) {
+          const cs_lnum_t face_id = z->elt_ids[elt_id];
 
           /* fluid velocity BC */
           ale_bc_type[face_id] = CS_ALE_IMPOSED_VEL;
@@ -559,6 +652,8 @@ _update_bcs(const cs_domain_t  *domain,
 
         /* Free memory */
         BFT_FREE(bc_vals);
+        BFT_FREE(_mesh_vel);
+        BFT_FREE(_v_surf);
 
         select_id++;
       }
@@ -568,11 +663,6 @@ _update_bcs(const cs_domain_t  *domain,
       {
         const cs_real_3_t *restrict  disale
           = (const cs_real_3_t *restrict)cs_field_by_name("disale")->val;
-        const cs_real_3_t *restrict vtx_coord
-          = (const cs_real_3_t *restrict)m->vtx_coord;
-        const cs_real_3_t *restrict  b_face_cog
-          = (const cs_real_3_t *restrict)mq->b_face_cog;
-        const cs_real_3_t *b_face_normal = (const cs_real_3_t *)mq->b_face_normal;
         const cs_real_t  invdt = 1./domain->time_step->dt_ref; /* JB: dt[0] ? */
 
         assert(select_id < _cdo_bc->n_selections);
