@@ -133,6 +133,12 @@ call field_get_key_struct_var_cal_opt(f_id, vcopt)
 call field_get_val_s(f_id, cvar_var)
 call field_get_val_prev_s(f_id, cvara_var)
 
+! Always start from a 0 previous wall distance
+do iel = 1, ncel
+  cvara_var(iel) = 0.d0
+enddo
+call synsce(cvara_var)
+
 !===============================================================================
 ! 2. Boundary conditions
 !===============================================================================
