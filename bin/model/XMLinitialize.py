@@ -1685,20 +1685,21 @@ class XMLinit(BaseXmlInit):
             nn = node.xmlGetNode('formula')
             if nn:
                 content = nn.xmlGetTextNode()
-                # Substitute only perfectly matching labels (between '\\b' and '\\b')
-                pattern = '\\bmesh_velocity_U\\b'
-                content = re.sub(pattern, 'mesh_velocity[0]', content)
-                pattern = '\\bmesh_velocity_V\\b'
-                content = re.sub(pattern, 'mesh_velocity[1]', content)
-                pattern = '\\bmesh_velocity_W\\b'
-                content = re.sub(pattern, 'mesh_velocity[2]', content)
-                pattern = '\\bmesh_x\\b'
-                content = re.sub(pattern, 'mesh_displacement[0]', content)
-                pattern = '\\bmesh_y\\b'
-                content = re.sub(pattern, 'mesh_displacement[1]', content)
-                pattern = '\\bmesh_z\\b'
-                content = re.sub(pattern, 'mesh_displacement[2]', content)
-                nn.xmlSetTextNode(content)
+                if content: # node formula can be empty
+                    # Substitute only perfectly matching labels (between '\\b' and '\\b')
+                    pattern = '\\bmesh_velocity_U\\b'
+                    content = re.sub(pattern, 'mesh_velocity[0]', content)
+                    pattern = '\\bmesh_velocity_V\\b'
+                    content = re.sub(pattern, 'mesh_velocity[1]', content)
+                    pattern = '\\bmesh_velocity_W\\b'
+                    content = re.sub(pattern, 'mesh_velocity[2]', content)
+                    pattern = '\\bmesh_x\\b'
+                    content = re.sub(pattern, 'mesh_displacement[0]', content)
+                    pattern = '\\bmesh_y\\b'
+                    content = re.sub(pattern, 'mesh_displacement[1]', content)
+                    pattern = '\\bmesh_z\\b'
+                    content = re.sub(pattern, 'mesh_displacement[2]', content)
+                    nn.xmlSetTextNode(content)
 
 
     def _backwardCompatibilityCurrentVersion(self):
