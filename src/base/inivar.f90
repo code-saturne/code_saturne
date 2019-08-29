@@ -187,14 +187,6 @@ if (iihmpr.eq.1) then
 
 endif
 
-! Compute the total pressure (defined as a post-processed property).
-! For the compressible module, the solved pressure is already the total pressure.
-! NB: for Eddy Viscosity Models, TKE might be included in the solved pressure.
-
-if (ippmod(icompf).lt.0) then
-  call navstv_total_pressure
-endif
-
 !   - Sous-programme utilisateur
 !     ==========================
 
@@ -301,13 +293,7 @@ if (ippmod(icompf).lt.0.and.ippmod(idarcy).lt.0) then
                     + pred0 - p0
     enddo
   elseif (isuite.eq.0.or.ileaux.eq.0) then
-    do iel = 1, ncel
-      cpro_prtot(iel) =  cvar_pr(iel)                  &
-                       + ro0*( gx*(xyzcen(1,iel)-xxp0) &
-                       + gy*(xyzcen(2,iel)-xyp0)       &
-                       + gz*(xyzcen(3,iel)-xzp0) )     &
-                       + p0 - pred0
-    enddo
+    call navstv_total_pressure
   endif
 
 else if ((ippmod(idarcy).ge.0).and.(darcy_gravity.ge.1)) then
