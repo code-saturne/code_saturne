@@ -9351,7 +9351,7 @@ msgstr ""
 "    dimension:              %d\n"
 
 msgid "Definition of simple data requires at least one field id."
-msgstr "La définition de données simples nécessite ua moins un id de champ"
+msgstr "La définition de données simples nécessite au moins un id de champ"
 
 #, c-format
 msgid ""
