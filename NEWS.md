@@ -133,6 +133,9 @@ Default option changes:
 
 Bug fixes:
 
+- Fix restart from LES to LES (do not add noise on velocity) and
+  from RSM to LES.
+
 - Fix for wall boundary conditions with the compressible model / algorithm.
   Always use a homogeneous Neumann on pressure for the mass balance step.
   This fixes mass conservation for cases:
