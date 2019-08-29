@@ -189,17 +189,9 @@ cs_air_dxsath(const cs_real_t  th,
   cs_real_t   a1,b1,c1,ps,pv,grpim;
   cs_real_t   dxsath = 0.;
 
-  /* T less than -20 degrees */
-
-  if (th < -20.) {
-
-    dxsath = 0.;
-
-  }
-
   /* T between -20 and 0 degrees C */
-
-  else if (th >= -20. && th <= 0.) {
+  /* Warning if T less than -20 degrees C */
+  if (th >= -20. && th <= 0.) {
 
     a1 = 6.4147;
     b1 = 22.376;
@@ -424,17 +416,10 @@ cs_air_x_sat(const cs_real_t  t_c,
   cs_real_t  pv;
   cs_real_t  x_s = 0.;
 
-  /* T less than -20 degrees C */
-
-  if (t_c  < -20.) {
-
-    x_s = 0.;
-
-  }
-
+  /* Warning if T less than -20 degrees C */
   /* T between -20 and 80 degrees C */
 
-  else if ((t_c >= -20.) && (t_c <= 80.)) {
+  if ((t_c <= 80.)) {
 
     pv = cs_air_pwv_sat(t_c);
     x_s = 0.622 * pv/(p-pv);
@@ -501,14 +486,10 @@ cs_air_pwv_sat(const cs_real_t  t_c)
     a1  = 6.4147;
     b1  = 22.376;
     c1  = 271.68;
-    cs_real_t  tt_c;
-    tt_c = t_c;
 
-    /* T less than -20 degrees C, clipped at -20°C */
-    if (t_c  < -20.)
-      tt_c = -20.;
+    /* Warning if T less than -20 degrees C */
 
-    ps  = a1 + (b1 * tt_c)/(c1 + tt_c);
+    ps  = a1 + (b1 * t_c)/(c1 + t_c);
     pv  = exp(ps);
 
   }
