@@ -31,6 +31,8 @@ User changes:
 
 Numerics and physical modelling:
 
+- Fuse Atmospheric module and Cooling towers module air properties calculation.
+
 - Make clipping of Reynolds stresses more robust for the coupled solver.
   When there is a negative eigen value, Rij is now clipped with a term of
   return to isotropy (hence preventing increase of turbulent kinetic energy).
