@@ -308,8 +308,8 @@ static cs_fluid_properties_t  _fluid_properties = {
   .t0       = 293.15,
   .cp0      = 1017.24,
   .cv0      = 0.,
-  .r_pg_cnst = 287.,
-  .rvsra    = 1.608,
+  .r_pg_cnst = 287.058, /* dry air pperfect gas constant J/mol/K */
+  .rvsra    = 1.607768, /* Note: Rv = 461.52272377 J/mol/K */
   .clatev   = 2.501e6,
   .xmasmr   = 0.028966, /* air molar mass */
   .ipthrm   = 0,
@@ -328,11 +328,11 @@ static cs_fluid_properties_t  _fluid_properties = {
 
 /*! Ideal gas constant (\f$J.mol^{-1}.K^{-1}\f$) */
 
-const double cs_physical_constants_r = 8.31446;
+const double cs_physical_constants_r = 8.31446261815324;
 
 /*! Boltzmann constant (\f$J.K^{-1}\f$) */
 
-const double cs_physical_constants_kb = 1.38e-23;
+const double cs_physical_constants_kb = 1.380649e-23;
 
 /*! Conversion from Celsius to Kelvin: 275.15   */
 

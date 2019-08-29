@@ -91,14 +91,14 @@ cs_air_fluid_props_t *cs_glob_air_props = &_props;
 
 void
 cs_air_glob_properties_get_pointer(double  **humidity0,
-                                    double  **cp_a,
-                                    double  **cp_v,
-                                    double  **cp_l,
-                                    double  **hv0,
-                                    double  **rho_l,
-                                    double  **lambda_h,
-                                    double  **lambda_l,
-                                    double  **droplet_diam);
+                                   double  **cp_a,
+                                   double  **cp_v,
+                                   double  **cp_l,
+                                   double  **hv0,
+                                   double  **rho_l,
+                                   double  **lambda_h,
+                                   double  **lambda_l,
+                                   double  **droplet_diam);
 
 /*============================================================================
  *  Public functions for Fortran API
