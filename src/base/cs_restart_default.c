@@ -1496,12 +1496,29 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
 
   } else if (itytur_cur == 4) { /* LES mode */
 
+    if (itytur_old != 4) { /* restart from RANS */
+
       cs_real_3_t *v_vel = (cs_real_3_t *)(CS_F_(vel)->vals[t_id]);
 
       cs_real_t *v_k;
       BFT_MALLOC(v_k, n_cells, cs_real_t);
 
-      err_sum += _read_turb_array_1d_compat(r, "k", "k", t_id, v_k);
+      if (itytur_old == 3) { /* Rij */
+
+        err_sum += _read_turb_array_1d_compat(r, "r11", "R11", t_id, v_k);
+
+        err_sum += _read_turb_array_1d_compat(r, "r22", "R22", t_id, v_tmp);
+        for (cs_lnum_t i = 0; i < n_cells; i++)
+          v_k[i] += v_tmp[i];
+
+        err_sum += _read_turb_array_1d_compat(r, "r33", "R33", t_id, v_tmp);
+        for (cs_lnum_t i = 0; i < n_cells; i++)
+          v_k[i] = 0.5 * (v_k[i] + v_tmp[i]);
+
+      }
+      else {
+        err_sum += _read_turb_array_1d_compat(r, "k", "k", t_id, v_k);
+      }
 
       /* Now add sqrt(2/3 k) as noise on the velocity */
 
@@ -1512,6 +1529,8 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
         for (int i = 0; i < 3; i++)
           v_vel[cell_id][i] += rand[i] * sqrt(2./3.*v_k[cell_id]);
       }
+
+    }
 
   }
 
