@@ -664,16 +664,6 @@ do izone = 1, nozppm
 enddo
 ihpm=0
 
-!--> Initialisation for the time and space reference of the run
-syear=-999
-squant=-999
-shour=-999
-smin=-999
-ssec=-999
-
-xlon=rinfin
-xlat=rinfin
-
 ! --> Initialisation for the 1d radiative model:
 
 iatra1 = 0

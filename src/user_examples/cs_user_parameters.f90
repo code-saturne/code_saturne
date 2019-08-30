@@ -1181,7 +1181,7 @@ iatmst = 1
 !  smin   --> starting minute
 !  ssec   --> starting second
 
-syear = 1994
+syear = 2019
 squant = 1
 shour = 1
 smin = 0

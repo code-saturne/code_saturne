@@ -190,25 +190,25 @@ double precision, save:: rvap
 !-------------------------------------------------------------------------------
 
 !> starting year
-integer, save:: syear
+integer(c_int), pointer, save:: syear
 
 !> starting quantile
-integer, save:: squant
+integer(c_int), pointer, save:: squant
 
 !> starting hour
-integer, save:: shour
+integer(c_int), pointer, save:: shour
 
 !> starting min
-integer, save:: smin
+integer(c_int), pointer, save:: smin
 
 !> starting second
-double precision, save :: ssec
+real(c_double), pointer, save :: ssec
 
 !> longitude of the domain origin
-double precision, save:: xlon
+real(c_double), pointer, save:: xlon
 
 !> latitude of the domain origin
-double precision, save:: xlat
+real(c_double), pointer, save:: xlat
 
 ! 2.3 Data specific to the meteo profile above the domain
 !--------------------------------------------------------
@@ -511,9 +511,22 @@ contains
 
     ! Local variables
     type(c_ptr) :: c_compute_z_ground, c_model, c_nrg, c_nespg
+    type(c_ptr) :: c_syear, c_squant, c_shour, c_smin, c_ssec
+    type(c_ptr) :: c_longitude, c_latitude
 
-    call cs_f_atmo_get_pointers(c_compute_z_ground, c_model, c_nespg, c_nrg)
+    call cs_f_atmo_get_pointers( &
+      c_syear, c_squant, c_shour, c_smin, c_ssec, &
+      c_longitude, c_latitude,                    &
+      c_compute_z_ground,                         &
+      c_model, c_nespg, c_nrg)
 
+    call c_f_pointer(c_syear, syear)
+    call c_f_pointer(c_squant, squant)
+    call c_f_pointer(c_shour, shour)
+    call c_f_pointer(c_smin, smin)
+    call c_f_pointer(c_ssec, ssec)
+    call c_f_pointer(c_longitude, xlon)
+    call c_f_pointer(c_latitude, xlat)
     call c_f_pointer(c_compute_z_ground, compute_z_ground)
     call c_f_pointer(c_model, ichemistry)
     call c_f_pointer(c_nespg, nespg)

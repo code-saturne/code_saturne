@@ -201,8 +201,8 @@ endif
 ! Check simulation times used by atmo
 ! radiative transfer or chemistry models
 if (     (iatra1.eq.1.or.ifilechemistry.ge.1)              &
-    .and.(syear.eq.-999.or.squant.eq.-999.or.shour.eq.-999 &
-          .or.smin.eq.-999.or.ssec.eq.-999)) then
+    .and.(syear.eq.-1.or.squant.eq.-1.or.shour.eq.-1 &
+          .or.smin.eq.-1.or.ssec.le.-1.d0)) then
   if (iatra1.eq.1) write(nfecra,1000)
   if (ifilechemistry.ge.1) write(nfecra,1001)
   call csexit (1)

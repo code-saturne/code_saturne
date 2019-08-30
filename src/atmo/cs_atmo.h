@@ -69,6 +69,23 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 typedef struct {
+  /* Space and tim reference of the run */
+  /*! Starting year */
+  int syear;
+  /*! Starting quantile */
+  int squant;
+  /*! Starting hour */
+  int shour;
+  /*! Starting minute */
+  int smin;
+  /*! Starting second */
+  cs_real_t ssec;
+  /*! longitude of the domain origin */
+  cs_real_t longitute;
+  /*! latitude of the domain origin */
+  cs_real_t latitude;
+
+  /* Model options */
   bool compute_z_ground;
 } cs_atmo_option_t;
 

@@ -100,6 +100,13 @@ BEGIN_C_DECLS
 
 /* global atmo options structure */
 static cs_atmo_option_t  _atmo_option = {
+  .syear = -1,
+  .squant = -1,
+  .shour = -1,
+  .smin = -1,
+  .ssec = -1.,
+  .longitute = 1e12, // TODO use cs_math_big_r
+  .latitude = 1e12,
   .compute_z_ground = false
 };
 
@@ -127,10 +134,17 @@ cs_atmo_chemistry_t *cs_glob_atmo_chemistry = &_atmo_chem;
  *============================================================================*/
 
 void
-cs_f_atmo_get_pointers(bool  **compute_z_ground,
-                       int   **model,
-                       int   **n_species,
-                       int   **n_reactions);
+cs_f_atmo_get_pointers(int       **syear,
+                       int       **squant,
+                       int       **shour,
+                       int       **smin,
+                       cs_real_t **ssec,
+                       cs_real_t **longitute,
+                       cs_real_t **latitude,
+                       bool      **compute_z_ground,
+                       int       **model,
+                       int       **n_species,
+                       int       **n_reactions);
 
 void
 cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
@@ -148,11 +162,25 @@ cs_f_atmo_chem_finalize(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_atmo_get_pointers(bool  **compute_z_ground,
-                       int   **model,
-                       int   **n_species,
-                       int   **n_reactions)
+cs_f_atmo_get_pointers(int       **syear,
+                       int       **squant,
+                       int       **shour,
+                       int       **smin,
+                       cs_real_t **ssec,
+                       cs_real_t **longitute,
+                       cs_real_t **latitude,
+                       bool      **compute_z_ground,
+                       int       **model,
+                       int       **n_species,
+                       int       **n_reactions)
 {
+  *syear     = &(_atmo_option.syear);
+  *squant    = &(_atmo_option.squant);
+  *shour     = &(_atmo_option.shour);
+  *smin      = &(_atmo_option.smin);
+  *ssec      = &(_atmo_option.ssec);
+  *longitute = &(_atmo_option.longitute);
+  *latitude  = &(_atmo_option.latitude);
   *compute_z_ground = &(_atmo_option.compute_z_ground);
   *model = &(_atmo_chem.model);
   *n_species = &(_atmo_chem.n_species);
