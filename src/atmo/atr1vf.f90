@@ -97,8 +97,9 @@ if (mod(ntcabs,nfatr1).eq.0.or.ideb.eq.0) then
 
   ideb = 1
 
-  heuray = float(shour) + float(smin)/60.d0+ssec/3600.d0                       &
-         + (ntcabs-1)*dtref/3600.d0
+  heuray = float(shour) + float(smin)/60.d0+ssec/3600.d0
+
+  if (idtvar.eq.0 .or. idtvar.eq.1) heuray = heuray + ttcabs/3600.d0
 
   if (ntcabs.le.2.or.isuite.eq.1) then
     ico2 = 1
