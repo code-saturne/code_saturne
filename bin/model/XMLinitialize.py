@@ -1682,8 +1682,7 @@ class XMLinit(BaseXmlInit):
         # Update for ALE using MEG
         XMLBoundaryNode = self.case.xmlGetNode('boundary_conditions')
         for node in XMLBoundaryNode.xmlGetNodeList('ale'):
-            nn = node.xmlGetNode('formula')
-            if nn:
+            for nn in node.xmlGetNodeList('formula'):
                 content = nn.xmlGetTextNode()
                 if content: # node formula can be empty
                     # Substitute only perfectly matching labels (between '\\b' and '\\b')
