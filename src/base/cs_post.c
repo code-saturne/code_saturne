@@ -4762,8 +4762,7 @@ cs_post_activate_by_time_step(const cs_time_step_t  *ts)
     }
     else if (writer->frequency_n > 0) {
       if (   ts->nt_cur % (writer->frequency_n) == 0
-          && ts->nt_cur > 0
-          && ts->nt_cur != ts->nt_prev)
+          && ts->nt_cur > ts->nt_prev)
         writer->active = 1;
     }
 
@@ -6284,7 +6283,7 @@ cs_post_time_step_output(const cs_time_step_t  *ts)
 
   int t_top_id = cs_timer_stats_switch(_post_out_stat_id);
 
-    /* Output of variables by registered function instances */
+  /* Output of variables by registered function instances */
   /*------------------------------------------------------*/
 
   for (int i = 0; i < _cs_post_n_output_tp; i++)

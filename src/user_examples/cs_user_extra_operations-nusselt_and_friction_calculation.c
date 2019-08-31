@@ -1,7 +1,7 @@
 /*============================================================================
  * This function is called at the end of each time step, and has a very
  *  general purpose
- *  (i.e. anything that does not have another dedicated user subroutine)
+ *  (i.e. anything that does not have another dedicated user function)
  *============================================================================*/
 
 /* VERS */
@@ -36,7 +36,7 @@
 
 #include <assert.h>
 #include <math.h>
-#include <string.h>
+#include <stdio.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -49,17 +49,13 @@
 #include <ple_coupling.h>
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
-
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
 
 #include "cs_headers.h"
 
 /*----------------------------------------------------------------------------
- *  Header for the current file
+ * Header for the current file
  *----------------------------------------------------------------------------*/
 
 #include "cs_prototypes.h"
