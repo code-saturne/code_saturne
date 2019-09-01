@@ -1717,8 +1717,13 @@ class XMLinit(BaseXmlInit):
 
         for ref_str in ['velocity', 'length']:
             value = nodeRefValues.xmlGetDouble(ref_str)
+            if ref_str == 'length':
+                l_choice = nodeRefValues.xmlInitNode('length')['choice']
             if value:
                 nodeTurb.xmlSetData('reference_' + ref_str, value)
+                if ref_str == 'length':
+                    ref_l = nodeTurb.xmlInitNode('reference_length')
+                    ref_l['choice'] = l_choice
                 nodeRefValues.xmlRemoveChild(ref_str)
 
         for ref_str in ['pressure', 'temperature', 'oxydant_temperature', \
