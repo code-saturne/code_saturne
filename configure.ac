@@ -85,7 +85,7 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 
 AC_ARG_WITH(shell-env,
             [AS_HELP_STRING([--with-shell-env],
-                            [source given or detected shell environment)])],
+                            [source given or detected shell environment])],
             [if test "x$with_shell_env" = "x"; then
                shell_env=auto
              elif test -f "$with_shell_env"; then
