@@ -619,15 +619,9 @@ _cpl_initialize(cs_internal_coupling_t *cpl)
 
   cpl->coupled_faces = NULL;
 
-  /* cpl->h_int = NULL; */
-  /* cpl->h_ext = NULL; */
-
   cpl->g_weight = NULL;
   cpl->ci_cj_vect = NULL;
   cpl->offset_vect = NULL;
-
-  /* cpl->thetav = 0; */
-  /* cpl->idiff = 0; */
 
   cpl->cocgb_s_lsq = NULL;
   cpl->cocg_it = NULL;
@@ -659,6 +653,27 @@ _criteria_initialize(const char               criteria_cells[],
 }
 
 /*----------------------------------------------------------------------------
+ * Define face to face mappings for internal couplings.
+ *
+ * parameters:
+ *   cpl          <->  pointer to internal coupling structure
+ *   coupling_id  <--  associated coupling id
+ *----------------------------------------------------------------------------*/
+
+static void
+_auto_group_name(cs_internal_coupling_t  *cpl,
+                 int                      coupling_id)
+{
+  char group_name[64];
+  snprintf(group_name, 63, "auto:internal_coupling_%d", coupling_id);
+  group_name[63] = '\0';
+  BFT_REALLOC(cpl->faces_criteria,
+              strlen(group_name)+1,
+              char);
+  strcpy(cpl->faces_criteria, group_name);
+}
+
+/*----------------------------------------------------------------------------
  * Initialize internal coupling and insert boundaries
  * using cell selection criteria ONLY.
  *
@@ -683,26 +698,16 @@ _volume_initialize_insert_boundary(cs_mesh_t               *m,
                             &n_selected_cells,
                             selected_cells);
 
-  int coupling_id = _n_internal_couplings;
+  int coupling_id = _n_internal_couplings - 1;
 
-  char group_name[64];
-
-  snprintf(group_name, 63, "auto:internal_coupling_%d", coupling_id);
-  group_name[63] = '\0';
+  _auto_group_name(cpl, coupling_id);
 
   cs_mesh_boundary_insert_separating_cells(m,
-                                           group_name,
+                                           cpl->faces_criteria,
                                            n_selected_cells,
                                            selected_cells);
 
   BFT_FREE(selected_cells);
-
-  /* Save new boundary group name */
-  BFT_MALLOC(cpl->faces_criteria,
-             strlen(group_name)+1,
-             char);
-
-  strcpy(cpl->faces_criteria, group_name);
 }
 
 /*----------------------------------------------------------------------------
@@ -2874,6 +2879,8 @@ cs_internal_coupling_map(cs_mesh_t   *mesh)
 
   for (int cpl_id = 0; cpl_id < _n_internal_couplings; cpl_id++) {
     cs_internal_coupling_t  *cpl = _internal_coupling + cpl_id;
+    if (cpl->faces_criteria == NULL)
+      _auto_group_name(cpl, cpl_id);
     _volume_face_initialize(mesh, cpl);
   }
 }
