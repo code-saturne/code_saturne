@@ -111,7 +111,7 @@ integer          nberro, inierr, ivers(1)
 integer          ilu   , ierrch
 integer          nfmtsc, nfmtfl, nfmtch, nfmtcl
 integer          nfmtst
-integer          jale, jcavit, jvolfl
+integer          jale, jvolfl
 integer          f_id, iflmas, iflmab, iflvoi, iflvob
 integer          key_t_ext_id, icpext
 integer          iviext
@@ -1852,27 +1852,6 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
- 9220 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ERREUR A LA LECTURE DU FICHIER SUITE        ',/,&
-'@    =========                                     AUXILIAIRE',/,&
-'@                                                            ',/,&
-'@      ERREUR A LA LECTURE DE L''INDICATEUR DE MODELE DE     ',/,&
-'@                                                  CAVITATION',/,&
-'@                                                            ',/,&
-'@    Il se peut que le fichier suite relu corresponde a une  ',/,&
-'@      version anterieure de Code_Saturne, sans modele de    ',/,&
-'@                                                 cavitation.',/,&
-'@    Le calcul sera execute en reinitialisant toutes les     ',/,&
-'@      donnees du modele de cavitation.                      ',/,&
-'@    Verifier neanmoins que le fichier suite utilise n''a    ',/,&
-'@        pas ete endommage.                                  ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  9221 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -2046,25 +2025,6 @@ return
 '@      version of Code_Saturne, without the ALE method.      ',/,&
 '@    The run will be executed with reinitialising all        ',/,&
 '@      ALE data.                                             ',/,&
-'@                                                            ',/,&
-'@    Verify that the restart file used has not been damaged. ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9220 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING: ERROR WHILE READING THE AUXILIARY RESTART FILE ',/,&
-'@    =======                                                 ',/,&
-'@                                                            ',/,&
-'@      ERROR WHEN READING THE INDICATOR OF THE CAVITATION    ',/,&
-'@                                                      MODEL ',/,&
-'@                                                            ',/,&
-'@    It is possible that the file read corresponds to an old ',/,&
-'@      version of Code_Saturne, without the cavitation model.',/,&
-'@    The run will be executed with reinitialising all        ',/,&
-'@      cavitation model data.                                ',/,&
 '@                                                            ',/,&
 '@    Verify that the restart file used has not been damaged. ',/,&
 '@                                                            ',/,&
