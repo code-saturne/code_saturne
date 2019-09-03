@@ -4388,8 +4388,27 @@ _renum_cells_rcm(const cs_mesh_t  *mesh,
     }
 
     /* Generate next set */
-    if (l_e >= mesh->n_cells || l_e == l_s)
+    if (l_e >= mesh->n_cells)
       break;
+    else if (l_e == l_s) {
+      /* Disjoint set ? Find next starting cell, similar to boot
+         (could be improved, but avoids failure) */
+      cs_lnum_t  id_min = mesh->n_cells, nn_min = mesh->n_cells;
+      for (cs_lnum_t i = 0; i < mesh->n_cells; i++) {
+        cs_lnum_t nn = a->idx[i+1] - a->idx[i];
+        if (nn <= nn_min && cell_class[i] == 0) {
+          id_min = i;
+          nn_min = nn;
+        }
+      }
+      assert(id_min < mesh->n_cells);
+      cell_class[id_min] = level;
+      keys[l_e*3  ] = a->idx[id_min+1]- a->idx[id_min];
+      keys[l_e*3+1] = id_min;
+      keys[l_e*3+2] = id_min;
+      rl[l_e] = id_min;
+      l_e += 1;
+    }
 
     cs_lnum_t n = 0;
     for (cs_lnum_t l_id = l_s; l_id < l_e; l_id++) {
