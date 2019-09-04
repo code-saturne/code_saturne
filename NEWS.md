@@ -3,6 +3,8 @@ Release 5.3.4 - Unreleased
 
 Bug fixes:
 
+- Fix for crash reading some CGNS files.
+
 - Fix shifted index in imposed pressure outlet (GUI).
 
 - Fix hydrostatic equilibrium option of compressible model.
