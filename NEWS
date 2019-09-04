@@ -4,6 +4,8 @@ Release 5.0.11 (Unreleased)
 Bug fixes
 ---------
 
+- Fix shifted index in imposed pressure outlet (GUI).
+
 - P1 radiative transfer model: fix computation of incident flux.
 
 - Avoid possible crash with some Fortran compilers in wall boundary
