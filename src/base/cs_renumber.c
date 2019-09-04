@@ -3380,7 +3380,7 @@ _get_coord_extents(int               dim,
 {
   size_t  i, j;
 
-  /* Get global min/max coordinates */
+  /* Get local min/max coordinates */
 
   for (j = 0; j < (size_t)dim; j++) {
     extents[j]       = DBL_MAX;
@@ -3391,7 +3391,7 @@ _get_coord_extents(int               dim,
     for (j = 0; j < (size_t)dim; j++) {
       if (coords[i*dim + j] < extents[j])
         extents[j] = coords[i*dim + j];
-      else if (coords[i*dim + j] > extents[j + dim])
+      if (coords[i*dim + j] > extents[j + dim])
         extents[j + dim] = coords[i*dim + j];
     }
   }
