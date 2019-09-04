@@ -2873,7 +2873,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
 
       if (cs_gui_strcmp(_choice_d, "dirichlet")) {
         for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-          ifbr = face_ids[ifac] -1;
+          ifbr = face_ids[ifac];
           icodcl[ivar1 * n_b_faces + ifbr] = 1;
           rcodcl[ivar1 * n_b_faces + ifbr] = boundaries->preout[izone];
         }
