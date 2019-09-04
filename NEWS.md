@@ -133,6 +133,8 @@ Default option changes:
 
 Bug fixes:
 
+- Fix shifted index in imposed pressure outlet (GUI).
+
 - Fix restart from LES to LES (do not add noise on velocity) and
   from RSM to LES.
 
