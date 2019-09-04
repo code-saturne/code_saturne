@@ -3,6 +3,8 @@ Release 5.3.4 - Unreleased
 
 Bug fixes:
 
+- Fix shifted index in imposed pressure outlet (GUI).
+
 - Fix hydrostatic equilibrium option of compressible model.
   Hydrostatic pressure contribution at walls was added twice to the right
   hand side of the mass balance.

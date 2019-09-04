@@ -2602,7 +2602,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
       const int var_key_id = cs_field_key_id("variable_id");
       int ivar1 = cs_field_get_key_int(fp1, var_key_id) -1;
       for (cs_lnum_t ifac = 0; ifac < faces; ifac++) {
-        ifbr = face_ids[ifac] -1;
+        ifbr = face_ids[ifac];
         icodcl[ivar1 * n_b_faces + ifbr] = 1;
         rcodcl[ivar1 * n_b_faces + ifbr] = boundaries->preout[izone];
       }
