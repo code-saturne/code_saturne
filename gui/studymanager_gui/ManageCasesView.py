@@ -461,6 +461,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
 
         self.groupBoxPrepro.hide()
         self.groupBoxPost.hide()
+        self.groupBoxInput.hide()
         self.groupBoxCompare.hide()
 
         self.lineEditPrepro.setEnabled(False)
@@ -557,6 +558,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.treeViewCases.setModel(self.modelCases)
         self.groupBoxPrepro.hide()
         self.groupBoxPost.hide()
+        self.groupBoxInput.hide()
         self.treeViewCases.expandAll()
         self.slotChangeSelection()
 
@@ -573,6 +575,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.treeViewCases.setModel(self.modelCases)
         self.groupBoxPrepro.hide()
         self.groupBoxPost.hide()
+        self.groupBoxInput.hide()
         self.treeViewCases.expandAll()
         self.slotChangeSelection()
 
@@ -593,6 +596,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.treeViewCases.setModel(self.modelCases)
         self.groupBoxPrepro.hide()
         self.groupBoxPost.hide()
+        self.groupBoxInput.hide()
         self.treeViewCases.expandAll()
         self.slotChangeSelection()
 
@@ -609,6 +613,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.treeViewCases.setModel(self.modelCases)
         self.groupBoxPrepro.hide()
         self.groupBoxPost.hide()
+        self.groupBoxInput.hide()
         self.treeViewCases.expandAll()
         self.slotChangeSelection()
 
@@ -625,6 +630,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.treeViewCases.setModel(self.modelCases)
         self.groupBoxPrepro.hide()
         self.groupBoxPost.hide()
+        self.groupBoxInput.hide()
         self.treeViewCases.expandAll()
         self.slotChangeSelection()
 
@@ -638,6 +644,7 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
         self.pushButtonAdd.setEnabled(True)
         self.groupBoxPrepro.hide()
         self.groupBoxPost.hide()
+        self.groupBoxInput.hide()
         self.groupBoxCompare.hide()
 
         current = self.treeViewCases.currentIndex()
@@ -648,9 +655,6 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
             # study
             self.pushButtonDeleteStudy.setEnabled(True)
             self.groupBoxPost.show()
-            self.pushButtonInput.hide()
-            self.lineEditInput.hide()
-            self.labelinput.hide()
             study = current.internalPointer().item.name
 
             status = self.mdl.getStudyPostScriptStatus(study)
@@ -677,10 +681,8 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
             self.toolButtonDuplicate.setEnabled(True)
             self.groupBoxPrepro.show()
             self.groupBoxPost.show()
+            self.groupBoxInput.show()
             self.groupBoxCompare.show()
-            self.pushButtonInput.show()
-            self.lineEditInput.show()
-            self.labelinput.show()
             study = current.parent().internalPointer().item.name
 
             # prepro
