@@ -1005,7 +1005,7 @@ cs_equation_assemble_init(const cs_cdo_connect_t       *connect,
   for (int i = 0; i < CS_CDO_CONNECT_N_CASES; i++)
     cs_equation_assemble_ms[i] = NULL;
 
-  const cs_lnum_t  n_faces = connect->n_faces[0];
+  const cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
   const cs_lnum_t  n_vertices = connect->n_vertices;
   const cs_lnum_t  n_edges = connect->n_edges;
 

@@ -2302,7 +2302,7 @@ cs_cdovcb_scaleq_flux_across_plane(const cs_real_t             normal[],
 
   if (ml_t == CS_MESH_LOCATION_BOUNDARY_FACES) {
 
-    const cs_lnum_t  n_i_faces = connect->n_faces[2];
+    const cs_lnum_t  n_i_faces = connect->n_faces[CS_INT_FACES];
     const cs_lnum_t  *cell_ids = f2c->ids + f2c->idx[n_i_faces];
 
     for (cs_lnum_t id = 0; id < n_elts[0]; id++) { /* Loop on selected faces */

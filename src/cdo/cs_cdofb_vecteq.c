@@ -1381,7 +1381,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_lnum_t  n_cells = connect->n_cells;
-  const cs_lnum_t  n_faces = connect->n_faces[0];
+  const cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
 
   cs_cdofb_vecteq_t  *eqc = NULL;
 
@@ -1759,7 +1759,7 @@ cs_cdofb_vecteq_extra_op(const char                 *eqname,
   cs_timer_t  t0 = cs_timer_time();
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_lnum_t  n_i_faces = connect->n_faces[2];
+  const cs_lnum_t  n_i_faces = connect->n_faces[CS_INT_FACES];
   const cs_real_t  *face_pdi = cs_cdofb_vecteq_get_face_values(data);
 
   /* Field post-processing */

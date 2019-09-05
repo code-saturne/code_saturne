@@ -293,7 +293,7 @@ _build_f2f_through_cell(const cs_cdo_connect_t     *connect)
 {
   cs_adjacency_t  *f2f = NULL;
 
-  const cs_lnum_t  n_faces = connect->n_faces[0];
+  const cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
 
   /* Build a face -> face connectivity */
   f2f = cs_adjacency_compose(n_faces, connect->f2c, connect->c2f);
@@ -576,8 +576,8 @@ static void
 _build_cell_type_and_flag(cs_cdo_connect_t   *connect)
 {
   const cs_lnum_t  n_vertices = connect->n_vertices;
-  const cs_lnum_t  n_i_faces = connect->n_faces[2];
-  const cs_lnum_t  n_b_faces = connect->n_faces[1];
+  const cs_lnum_t  n_i_faces = connect->n_faces[CS_INT_FACES];
+  const cs_lnum_t  n_b_faces = connect->n_faces[CS_BND_FACES];
   const cs_lnum_t  n_cells = connect->n_cells;
 
   BFT_MALLOC(connect->cell_flag, n_cells, cs_flag_t);
@@ -971,9 +971,9 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
 
   connect->n_vertices = n_vertices;
   connect->n_edges = n_edges;
-  connect->n_faces[0] = n_faces;
-  connect->n_faces[1] = mesh->n_b_faces;
-  connect->n_faces[2] = mesh->n_i_faces;
+  connect->n_faces[CS_ALL_FACES] = n_faces;
+  connect->n_faces[CS_BND_FACES] = mesh->n_b_faces;
+  connect->n_faces[CS_INT_FACES] = mesh->n_i_faces;
   connect->n_cells = n_cells;
 
   /* Build additional connectivity cell --> edges and cell --> vertices

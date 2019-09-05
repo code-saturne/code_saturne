@@ -786,7 +786,7 @@ cs_equation_set_vertex_bc_flag(const cs_cdo_connect_t     *connect,
 
   const cs_adjacency_t  *bf2v = connect->bf2v;
   const cs_lnum_t  n_vertices = connect->n_vertices;
-  const cs_lnum_t  n_b_faces = connect->n_faces[1];
+  const cs_lnum_t  n_b_faces = connect->n_faces[CS_BND_FACES];
 
   /* Initialization */
   memset(vflag, 0, n_vertices*sizeof(cs_flag_t));

@@ -135,7 +135,7 @@ cs_equation_common_init(const cs_cdo_connect_t       *connect,
   cs_cdo_local_initialize(connect);
 
   const cs_lnum_t  n_cells = connect->n_cells;
-  const cs_lnum_t  n_faces = connect->n_faces[0];
+  const cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
   const cs_lnum_t  n_vertices = connect->n_vertices;
   const cs_lnum_t  n_edges = connect->n_edges;
 
@@ -1326,7 +1326,7 @@ cs_equation_sync_definitions_at_faces(const cs_cdo_connect_t    *connect,
   if (n_defs == 0)
     return;
 
-  const cs_lnum_t  n_faces = connect->n_faces[0];
+  const cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
   const cs_adjacency_t  *c2f = connect->c2f;
 
   int  *f2def_ids = NULL;
