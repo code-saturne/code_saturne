@@ -1283,7 +1283,8 @@ cs_equation_sync_definitions_at_vertices(const cs_cdo_connect_t  *connect,
 
   /* 1. Count number of vertices related to each definition */
   for (cs_lnum_t v = 0; v < n_vertices; v++)
-    def2v_idx[v2def_ids[v]+1] += 1;
+    if (v2def_ids[v] > -1)
+      def2v_idx[v2def_ids[v]+1] += 1;
 
   /* 2. Build index */
   for (int def_id = 0; def_id < n_defs; def_id++)
@@ -1292,8 +1293,10 @@ cs_equation_sync_definitions_at_vertices(const cs_cdo_connect_t  *connect,
   /* 3. Build list */
   for (cs_lnum_t v = 0; v < n_vertices; v++) {
     const int def_id = v2def_ids[v];
-    def2v_ids[def2v_idx[def_id] + count[def_id]] = v;
-    count[def_id] += 1;
+    if (def_id > -1) {
+      def2v_ids[def2v_idx[def_id] + count[def_id]] = v;
+      count[def_id] += 1;
+    }
   }
 
   /* Free memory */
@@ -1363,7 +1366,7 @@ cs_equation_sync_definitions_at_faces(const cs_cdo_connect_t    *connect,
     assert(connect->interfaces[CS_CDO_CONNECT_FACE_SP0] != NULL);
     /* Last definition is used if there is a conflict between several
        definitions */
-    cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+    cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_FACE_SP0],
                          n_faces,
                          1,             /* stride */
                          false,         /* interlace (not useful here) */
@@ -1378,9 +1381,10 @@ cs_equation_sync_definitions_at_faces(const cs_cdo_connect_t    *connect,
   memset(count, 0, n_defs*sizeof(cs_lnum_t));
   memset(def2f_idx, 0, (n_defs+1)*sizeof(cs_lnum_t));
 
-  /* 1. Count number of vertices related to each definition */
+  /* 1. Count number of faces related to each definition */
   for (cs_lnum_t f = 0; f < n_faces; f++)
-    def2f_idx[f2def_ids[f]+1] += 1;
+    if (f2def_ids[f] > -1)
+      def2f_idx[f2def_ids[f]+1] += 1;
 
   /* 2. Build index */
   for (int def_id = 0; def_id < n_defs; def_id++)
@@ -1389,8 +1393,10 @@ cs_equation_sync_definitions_at_faces(const cs_cdo_connect_t    *connect,
   /* 3. Build list */
   for (cs_lnum_t f = 0; f < n_faces; f++) {
     const int def_id = f2def_ids[f];
-    def2f_ids[def2f_idx[def_id] + count[def_id]] = f;
-    count[def_id] += 1;
+    if (def_id > -1) {
+      def2f_ids[def2f_idx[def_id] + count[def_id]] = f;
+      count[def_id] += 1;
+    }
   }
 
   /* Free memory */
