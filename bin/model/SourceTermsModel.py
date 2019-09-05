@@ -211,9 +211,11 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
 
         exp = self.getGroundWaterSpeciesFormula(zone, species)
         if not exp:
-            exp = """Q = 0;"""
+            exp = """Q = 0;\nlambda = 0;"""
 
-        req = [('Q', 'species source term')]
+        req = [('Q',      'species source term'),
+               ('lambda', 'radioactive decay')]
+
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
                ('z', 'cell center coordinate'),
