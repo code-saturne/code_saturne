@@ -772,14 +772,12 @@ cs_cdoeb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
   BFT_MALLOC(circ_bc_vals, n_edges, cs_real_t);
   memset(circ_bc_vals, 0, n_edges*sizeof(cs_real_t));
 
-  cs_equation_compute_circulation_eb(mesh,
+  cs_equation_compute_circulation_eb(time_eval,
+                                     mesh,
                                      quant,
                                      connect,
                                      eqp,
-                                     eqb->face_bc,
-                                     t_eval,
-                                     cs_cdoeb_cell_builder[0],
-                                     ciric_bc_vals);
+                                     circ_bc_vals);
 
   /* Initialize the local system: matrix and rhs */
   cs_real_t  res_normalization = 0.0;

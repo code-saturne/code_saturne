@@ -2276,7 +2276,8 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
 
   assert(cs_flag_test(loc, cs_flag_primal_face) ||
-         cs_flag_test(loc, cs_flag_primal_vtx));
+         cs_flag_test(loc, cs_flag_primal_vtx)  ||
+         cs_flag_test(loc, cs_flag_primal_edge)); /* for circulation */
 
   /* Add a new cs_xdef_t structure */
   cs_xdef_array_input_t  input = {.stride = eqp->dim,
@@ -2302,7 +2303,6 @@ cs_equation_add_bc_by_array(cs_equation_param_t        *eqp,
       bft_error(__FILE__, __LINE__, 0,
                 "%s: This situation is not handled yet.\n", __func__);
   }
-
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
                                           dim,

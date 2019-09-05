@@ -299,6 +299,29 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
                           double                      *rob_values);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the values of the tangential component lying on the domain
+ *          boundary. Kind of BCs used when DoFs are attached to CDO (primal)
+ *          edge-based schemes. One sets the values of the circulation.
+ *
+ * \param[in]      t_eval     time at which one evaluates the boundary cond.
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
+ * \param[in]      eqp        pointer to a cs_equation_param_t
+ * \param[in, out] values     pointer to the array of values to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_circulation_eb(cs_real_t                    t_eval,
+                                   const cs_mesh_t             *mesh,
+                                   const cs_cdo_quantities_t   *quant,
+                                   const cs_cdo_connect_t      *connect,
+                                   const cs_equation_param_t   *eqp,
+                                   cs_real_t                   *values);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

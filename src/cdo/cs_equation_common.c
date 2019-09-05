@@ -1307,22 +1307,22 @@ cs_equation_sync_vol_def_at_vertices(const cs_cdo_connect_t  *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Synchronize the definition to consider at each edge
+ * \brief  Synchronize the volumetric definitions to consider at each edge
  *
  * \param[in]       connect     pointer to a cs_cdo_connect_t structure
  * \param[in]       n_defs      number of definitions
  * \param[in]       defs        number of times the values has been updated
- * \param[in, out]  def2v_idx   index array  to define
- * \param[in, out]  def2v_ids   array of ids to define
+ * \param[in, out]  def2e_idx   index array  to define
+ * \param[in, out]  def2e_ids   array of ids to define
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_sync_definitions_at_edges(const cs_cdo_connect_t  *connect,
-                                      int                      n_defs,
-                                      cs_xdef_t              **defs,
-                                      cs_lnum_t                def2e_idx[],
-                                      cs_lnum_t                def2e_ids[])
+cs_equation_sync_vol_def_at_edges(const cs_cdo_connect_t  *connect,
+                                  int                      n_defs,
+                                  cs_xdef_t              **defs,
+                                  cs_lnum_t                def2e_idx[],
+                                  cs_lnum_t                def2e_ids[])
 {
   if (n_defs == 0)
     return;
@@ -1334,12 +1334,13 @@ cs_equation_sync_definitions_at_edges(const cs_cdo_connect_t  *connect,
   BFT_MALLOC(e2def_ids, n_edges, int);
 # pragma omp parallel for if (n_edges > CS_THR_MIN)
   for (cs_lnum_t e = 0; e < n_edges; e++)
-    e2def_ids[e] = -1;          /* default */
+    e2def_ids[e] = -1; /* default: not associated to a definition */
 
   for (int def_id = 0; def_id < n_defs; def_id++) {
 
     /* Get and then set the definition of the initial condition */
     const cs_xdef_t  *def = defs[def_id];
+    assert(def->support == CS_XDEF_SUPPORT_VOLUME);
 
     if (def->meta & CS_FLAG_FULL_LOC) {
 

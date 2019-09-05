@@ -42,6 +42,7 @@
 
 #include "cs_boundary_zone.h"
 #include "cs_equation_common.h"
+#include "cs_evaluate.h"
 #include "cs_xdef.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
@@ -153,6 +154,103 @@ _init_cell_sys_bc(const cs_cdo_bc_face_t     *face_bc,
     }
 
   } /* Loop on cell faces */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Synchronize the boundary definitions related to the enforcement of
+ *         a circulation along a boundary edge
+ *
+ * \param[in]       connect     pointer to a cs_cdo_connect_t structure
+ * \param[in]       n_defs      number of definitions
+ * \param[in]       defs        number of times the values has been updated
+ * \param[in, out]  def2e_idx   index array  to define
+ * \param[in, out]  def2e_ids   array of ids to define
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_sync_circulation_def_at_edges(const cs_cdo_connect_t    *connect,
+                               int                        n_defs,
+                               cs_xdef_t                **defs,
+                               cs_lnum_t                  def2e_idx[],
+                               cs_lnum_t                  def2e_ids[])
+{
+  if (n_defs == 0)
+    return;
+
+  const cs_lnum_t  n_edges = connect->n_edges;
+  const cs_adjacency_t  *f2e = connect->f2e;
+
+  int  *e2def_ids = NULL;
+  BFT_MALLOC(e2def_ids, n_edges, int);
+# pragma omp parallel for if (n_edges > CS_THR_MIN)
+  for (cs_lnum_t e = 0; e < n_edges; e++)
+    e2def_ids[e] = -1; /* default: not associated to a definition */
+
+  const cs_lnum_t  face_shift = connect->n_faces[CS_INT_FACES];
+
+  for (int def_id = 0; def_id < n_defs; def_id++) {
+
+    /* Get and then set the definition of the initial condition */
+    const cs_xdef_t  *def = defs[def_id];
+    assert(def->support == CS_XDEF_SUPPORT_BOUNDARY);
+
+    if (def->meta & CS_CDO_BC_TANGENTIAL_DIRICHLET) {
+
+      const cs_zone_t  *z = cs_boundary_zone_by_id(def->z_id);
+
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) { /* Loop on selected cells */
+        const cs_lnum_t  f_id = face_shift + z->elt_ids[i];
+        for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++)
+          e2def_ids[f2e->ids[j]] = def_id;
+      }
+
+    } /* Enforcement of the tangential component */
+
+  } /* Loop on definitions */
+
+  if (cs_glob_n_ranks > 1) { /* Parallel mode */
+
+    assert(connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL] != NULL);
+    /* Last definition is used if there is a conflict between several
+       definitions */
+    cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL],
+                         n_edges,
+                         1,             /* stride */
+                         false,         /* interlace (not useful here) */
+                         CS_INT_TYPE,   /* int */
+                         e2def_ids);
+
+  }
+
+  /* 0. Initialization */
+  cs_lnum_t  *count = NULL;
+  BFT_MALLOC(count, n_defs, cs_lnum_t);
+  memset(count, 0, n_defs*sizeof(cs_lnum_t));
+  memset(def2e_idx, 0, (n_defs+1)*sizeof(cs_lnum_t));
+
+  /* 1. Count the number of edges related to each definition */
+  for (cs_lnum_t e = 0; e < n_edges; e++)
+    if (e2def_ids[e] > -1)
+      def2e_idx[e2def_ids[e]+1] += 1;
+
+  /* 2. Build the index */
+  for (int def_id = 0; def_id < n_defs; def_id++)
+    def2e_idx[def_id+1] += def2e_idx[def_id];
+
+  /* 3. Build the list */
+  for (cs_lnum_t e = 0; e < n_edges; e++) {
+    const int def_id = e2def_ids[e];
+    if (def_id > -1) {
+      def2e_ids[def2e_idx[def_id] + count[def_id]] = e;
+      count[def_id] += 1;
+    }
+  }
+
+  /* Free memory */
+  BFT_FREE(e2def_ids);
+  BFT_FREE(count);
 }
 
 /*============================================================================
@@ -1089,6 +1187,92 @@ cs_equation_compute_robin(cs_real_t                    t_eval,
 
   } /* switch def_type */
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Compute the values of the tangential component lying on the domain
+ *          boundary. Kind of BCs used when DoFs are attached to CDO (primal)
+ *          edge-based schemes. One sets the values of the circulation.
+ *
+ * \param[in]      t_eval     time at which one evaluates the boundary cond.
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t struct.
+ * \param[in]      eqp        pointer to a cs_equation_param_t
+ * \param[in, out] values     pointer to the array of values to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_compute_circulation_eb(cs_real_t                    t_eval,
+                                   const cs_mesh_t             *mesh,
+                                   const cs_cdo_quantities_t   *quant,
+                                   const cs_cdo_connect_t      *connect,
+                                   const cs_equation_param_t   *eqp,
+                                   cs_real_t                   *values)
+{
+  assert(values != NULL);
+
+  /* Synchronization of the definition of the circulation if needed */
+  cs_lnum_t  *def2e_ids = (cs_lnum_t *)cs_equation_get_tmpbuf();
+  cs_lnum_t  *def2e_idx = NULL;
+  BFT_MALLOC(def2e_idx, eqp->n_bc_defs + 1, cs_lnum_t);
+
+  _sync_circulation_def_at_edges(connect,
+                                 eqp->n_bc_defs,
+                                 eqp->bc_defs,
+                                 def2e_idx,
+                                 def2e_ids);
+
+  /* Define the array storing the circulation values */
+  for (int def_id = 0; def_id < eqp->n_bc_defs; def_id++) {
+
+    const cs_xdef_t  *def = eqp->bc_defs[def_id];
+
+    if (def->meta & CS_CDO_BC_TANGENTIAL_DIRICHLET) {
+
+      const cs_lnum_t  n_elts = def2e_idx[def_id+1] - def2e_idx[def_id];
+      const cs_lnum_t  *elt_ids = def2e_ids + def2e_idx[def_id];
+
+      switch(def->type) {
+
+      case CS_XDEF_BY_VALUE:
+        cs_evaluate_circulation_along_edges_by_value(def,
+                                                     n_elts,
+                                                     elt_ids,
+                                                     values);
+        break;
+
+      case CS_XDEF_BY_ARRAY:
+        cs_evaluate_circulation_along_edges_by_array(def,
+                                                     n_elts,
+                                                     elt_ids,
+                                                     values);
+        break;
+
+      case CS_XDEF_BY_ANALYTIC_FUNCTION:
+        cs_evaluate_circulation_along_edges_by_analytic(def,
+                                                        t_eval,
+                                                        n_elts,
+                                                        elt_ids,
+                                                        values);
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  _(" %s: Invalid type of definition.\n"
+                    " Stop computing the circulation.\n"), __func__);
+
+      } /* Switch on def_type */
+
+    } /* Definition related to a circulation */
+
+  } /* Loop on definitions */
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_BC_DBG > 1
+  cs_dbg_darray_to_listing("CIRCULATION_VALUES", quant->n_edges, values, 9);
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
