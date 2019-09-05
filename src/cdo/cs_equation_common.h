@@ -777,7 +777,7 @@ cs_equation_balance_destroy(cs_equation_balance_t   **p_balance);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Synchronize the definition to consider at each vertex
+ * \brief  Synchronize the volumetric definitions to consider at each vertex
  *
  * \param[in]       connect     pointer to a cs_cdo_connect_t structure
  * \param[in]       n_defs      number of definitions
@@ -788,11 +788,11 @@ cs_equation_balance_destroy(cs_equation_balance_t   **p_balance);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_sync_definitions_at_vertices(const cs_cdo_connect_t  *connect,
-                                         int                      n_defs,
-                                         cs_xdef_t              **defs,
-                                         cs_lnum_t                def2v_idx[],
-                                         cs_lnum_t                def2v_ids[]);
+cs_equation_sync_vol_def_at_vertices(const cs_cdo_connect_t  *connect,
+                                     int                      n_defs,
+                                     cs_xdef_t              **defs,
+                                     cs_lnum_t                def2v_idx[],
+                                     cs_lnum_t                def2v_ids[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -815,7 +815,7 @@ cs_equation_sync_definitions_at_edges(const cs_cdo_connect_t  *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Synchronize the definition to consider at each face
+ * \brief  Synchronize the volumetric definitions to consider at each face
  *
  * \param[in]       connect     pointer to a cs_cdo_connect_t structure
  * \param[in]       n_defs      number of definitions
@@ -826,11 +826,11 @@ cs_equation_sync_definitions_at_edges(const cs_cdo_connect_t  *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_sync_definitions_at_faces(const cs_cdo_connect_t  *connect,
-                                      int                      n_defs,
-                                      cs_xdef_t              **defs,
-                                      cs_lnum_t                def2f_idx[],
-                                      cs_lnum_t                def2f_ids[]);
+cs_equation_sync_vol_def_at_faces(const cs_cdo_connect_t  *connect,
+                                  int                      n_defs,
+                                  cs_xdef_t              **defs,
+                                  cs_lnum_t                def2f_idx[],
+                                  cs_lnum_t                def2f_ids[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -1028,11 +1028,11 @@ cs_cdofb_scaleq_init_values(cs_real_t                     t_eval,
     cs_lnum_t  *def2f_idx = NULL;
     BFT_MALLOC(def2f_idx, eqp->n_ic_defs + 1, cs_lnum_t);
 
-    cs_equation_sync_definitions_at_faces(connect,
-                                          eqp->n_ic_defs,
-                                          eqp->ic_defs,
-                                          def2f_idx,
-                                          def2f_ids);
+    cs_equation_sync_vol_def_at_faces(connect,
+                                      eqp->n_ic_defs,
+                                      eqp->ic_defs,
+                                      def2f_idx,
+                                      def2f_ids);
 
     for (int def_id = 0; def_id < eqp->n_ic_defs; def_id++) {
 

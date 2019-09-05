@@ -1229,11 +1229,11 @@ cs_cdovb_scaleq_init_values(cs_real_t                     t_eval,
     cs_lnum_t  *def2v_idx = NULL;
     BFT_MALLOC(def2v_idx, eqp->n_ic_defs + 1, cs_lnum_t);
 
-    cs_equation_sync_definitions_at_vertices(connect,
-                                             eqp->n_ic_defs,
-                                             eqp->ic_defs,
-                                             def2v_idx,
-                                             def2v_ids);
+    cs_equation_sync_vol_def_at_vertices(connect,
+                                         eqp->n_ic_defs,
+                                         eqp->ic_defs,
+                                         def2v_idx,
+                                         def2v_ids);
 
     for (int def_id = 0; def_id < eqp->n_ic_defs; def_id++) {
 
@@ -1289,7 +1289,6 @@ cs_cdovb_scaleq_init_values(cs_real_t                     t_eval,
                                    _vbs_cell_builder[0], /* static variable */
                                    eqc->vtx_bc_flag,
                                    v_vals);
-
 }
 
 /*----------------------------------------------------------------------------*/

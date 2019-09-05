@@ -549,11 +549,11 @@ cs_cdofb_navsto_init_face_pressure(const cs_navsto_param_t     *nsp,
   cs_lnum_t  *def2f_idx = NULL;
   BFT_MALLOC(def2f_idx, nsp->n_pressure_ic_defs + 1, cs_lnum_t);
 
-  cs_equation_sync_definitions_at_faces(connect,
-                                        nsp->n_pressure_ic_defs,
-                                        nsp->pressure_ic_defs,
-                                        def2f_idx,
-                                        def2f_ids);
+  cs_equation_sync_vol_def_at_faces(connect,
+                                    nsp->n_pressure_ic_defs,
+                                    nsp->pressure_ic_defs,
+                                    def2f_idx,
+                                    def2f_ids);
 
   const cs_real_t  t_cur = ts->t_cur;
 
