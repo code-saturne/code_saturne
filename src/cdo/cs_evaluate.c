@@ -1924,16 +1924,40 @@ cs_evaluate_circulation_along_edges_by_value(const cs_xdef_t   *def,
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
   assert(def != NULL);
-  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(def->type == CS_XDEF_BY_VALUE);
 
   const cs_lnum_t  n_edges = cs_cdo_quant->n_edges;
   const cs_real_t  *edge_vector = cs_cdo_quant->edge_vector;
   const cs_real_t  *input = (cs_real_t *)def->input;
 
-  if (def->dim == 3) { /* DoF is scalar-valued
-                        * since this is a circulation */
+  /* DoF is scalar-valued since this is a circulation but the definition is
+   * either scalar-valued meaning that one only gives the tangential part or
+   * vector-valued (in this case, one needs to extract the tangential part) */
 
+  switch (def->dim) {
+
+  case 1: /* Scalar-valued integral */
+    if (n_edges == n_e_selected) {
+
+#     pragma omp parallel for if (n_edges > CS_THR_MIN)
+      for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++)
+        retval[e_id] = input[0];
+
+    }
+    else { /* A selection of edges is selected */
+
+      assert(selected_lst != NULL);
+
+#     pragma omp parallel for if (n_e_selected > CS_THR_MIN)
+      for (cs_lnum_t e = 0; e < n_e_selected; e++) {
+        const cs_lnum_t e_id = selected_lst[e];
+        retval[e_id] = input[0];
+      }
+
+    }
+    break;
+
+  case 3:
     if (n_edges == n_e_selected) {
 
 #     pragma omp parallel for if (n_edges > CS_THR_MIN)
@@ -1941,23 +1965,116 @@ cs_evaluate_circulation_along_edges_by_value(const cs_xdef_t   *def,
         retval[e_id] = _dp3(input, edge_vector + 3*e_id);
 
     }
-    else { /* Multi-valued case */
+    else { /* A selection of edges is selected */
 
       assert(selected_lst != NULL);
 
-#     pragma omp parallel for if (n_edges > CS_THR_MIN)
+#     pragma omp parallel for if (n_e_selected > CS_THR_MIN)
       for (cs_lnum_t e = 0; e < n_e_selected; e++) {
         const cs_lnum_t e_id = selected_lst[e];
         retval[e_id] = _dp3(input, edge_vector + 3*e_id);
       }
 
     }
+    break;
 
-  }
-  else
+  default:
     bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid type of definition\n"
-              " for computing a circulation along primal edges.\n", __func__);
+              " %s: Invalid dimension value %d. Only 1 and 3 are valid.\n",
+              __func__, def->dim);
+
+  } /* End of switch on dimension */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the circulation along a selection of (primal) edges.
+ *         Circulation is defined thanks to an array
+ *
+ * \param[in]      def            pointer to a cs_xdef_t pointer
+ * \param[in]      n_e_selected   number of selected edges
+ * \param[in]      selected_lst   list of selected edges
+ * \param[in, out] retval         pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_circulation_along_edges_by_array(const cs_xdef_t   *def,
+                                             const cs_lnum_t    n_e_selected,
+                                             const cs_lnum_t   *selected_lst,
+                                             cs_real_t          retval[])
+{
+  /* Sanity checks */
+  if (retval == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
+
+  assert(def != NULL);
+  assert(def->type == CS_XDEF_BY_ARRAY);
+
+  const cs_lnum_t  n_edges = cs_cdo_quant->n_edges;
+  const cs_real_t  *edge_vector = cs_cdo_quant->edge_vector;
+
+  cs_xdef_array_input_t  *ainput = (cs_xdef_array_input_t *)def->input;
+  assert(cs_flag_test(ainput->loc, cs_flag_primal_edge));
+
+  /* DoF is scalar-valued since this is a circulation but the definition is
+   * either scalar-valued meaning that one only gives the tangential part or
+   * vector-valued (in this case, one needs to extract the tangential part) */
+
+  switch (def->dim) {
+
+  case 1: /* Scalar-valued integral */
+    assert(ainput->stride == 1);
+    if (n_edges == n_e_selected) {
+
+#     pragma omp parallel for if (n_edges > CS_THR_MIN)
+      for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++)
+        retval[e_id] = ainput->values[e_id];
+
+    }
+    else { /* A selection of edges is selected */
+
+      assert(selected_lst != NULL);
+
+#     pragma omp parallel for if (n_e_selected > CS_THR_MIN)
+      for (cs_lnum_t e = 0; e < n_e_selected; e++) {
+        const cs_lnum_t e_id = selected_lst[e];
+        retval[e_id] = ainput->values[e_id];
+      }
+
+    }
+    break;
+
+  case 3:
+    assert(ainput->stride == 3);
+    if (n_edges == n_e_selected) {
+
+#     pragma omp parallel for if (n_edges > CS_THR_MIN)
+      for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++)
+        retval[e_id] = _dp3(ainput->values + 3*e_id, edge_vector + 3*e_id);
+
+    }
+    else { /* A selection of edges is selected */
+
+      assert(selected_lst != NULL);
+
+#     pragma omp parallel for if (n_e_selected > CS_THR_MIN)
+      for (cs_lnum_t e = 0; e < n_e_selected; e++) {
+        const cs_lnum_t e_id = selected_lst[e];
+        retval[e_id] = _dp3(ainput->values + 3*e_id, edge_vector + 3*e_id);
+      }
+
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid dimension value %d. Only 1 and 3 are valid.\n",
+              __func__, def->dim);
+
+  } /* End of switch on dimension */
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1985,7 +2102,6 @@ cs_evaluate_circulation_along_edges_by_analytic(const cs_xdef_t   *def,
     bft_error(__FILE__, __LINE__, 0, _err_empty_array, __func__);
 
   assert(def != NULL);
-  assert(def->support == CS_XDEF_SUPPORT_VOLUME);
   assert(def->type == CS_XDEF_BY_ANALYTIC_FUNCTION);
 
   const cs_lnum_t  n_edges = cs_cdo_quant->n_edges;
@@ -1993,13 +2109,16 @@ cs_evaluate_circulation_along_edges_by_analytic(const cs_xdef_t   *def,
   const cs_real_t  *xv = cs_cdo_quant->vtx_coord;
   const cs_adjacency_t  *e2v = cs_cdo_connect->e2v;
 
+  cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)def->input;
   cs_quadrature_edge_integral_t
     *qfunc = cs_quadrature_get_edge_integral(def->dim, def->qtype);
-  cs_xdef_analytic_input_t *anai = (cs_xdef_analytic_input_t *)def->input;
 
-  if (def->dim == 3) { /* DoF is scalar-valued
-                        * since this is a circulation */
+  /* DoF is scalar-valued since this is a circulation but the definition is
+   * either scalar-valued meaning that one only gives the tangential part or
+   * vector-valued (in this case, one needs to extract the tangential part) */
+  switch (def->dim) {
 
+  case 1: /* Scalar-valued integral */
     if (n_edges == n_e_selected) {
 
 #     pragma omp parallel for if (n_edges > CS_THR_MIN)
@@ -2007,9 +2126,48 @@ cs_evaluate_circulation_along_edges_by_analytic(const cs_xdef_t   *def,
 
         const cs_lnum_t  *_v = e2v->ids + 2*e_id;
 
+        cs_real_t  e_len = cs_math_3_norm(edge_vector + 3*e_id);
+        cs_real_t  integral = 0.;
+        qfunc(time_eval, xv + 3*_v[0], xv + 3*_v[1], e_len,
+              anai->func, anai->input, &integral);
+
+        retval[e_id] = integral;
+
+      }
+
+    }
+    else { /* A selection of edges is selected */
+
+      assert(selected_lst != NULL);
+
+#     pragma omp parallel for if (n_e_selected > CS_THR_MIN)
+      for (cs_lnum_t e = 0; e < n_e_selected; e++) {
+
+        const cs_lnum_t e_id = selected_lst[e];
+        const cs_lnum_t  *_v = e2v->ids + 2*e_id;
+
+        cs_real_t  e_len = cs_math_3_norm(edge_vector + 3*e_id);
+        cs_real_t  integral = 0.;
+        qfunc(time_eval, xv + 3*_v[0], xv + 3*_v[1], e_len,
+              anai->func, anai->input, &integral);
+
+        retval[e_id] = integral;
+
+      }
+
+    }
+    break;
+
+  case 3: /* Vector-valued case */
+    if (n_edges == n_e_selected) {
+
+#   pragma omp parallel for if (n_edges > CS_THR_MIN)
+      for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++) {
+
+        const cs_lnum_t  *_v = e2v->ids + 2*e_id;
+
         cs_nvec3_t  e_vec;
         cs_nvec3(edge_vector + 3*e_id, &e_vec);
-
 
         cs_real_3_t  integral = {0., 0., 0.};
         qfunc(time_eval, xv + 3*_v[0], xv + 3*_v[1], e_vec.meas,
@@ -2018,12 +2176,13 @@ cs_evaluate_circulation_along_edges_by_analytic(const cs_xdef_t   *def,
         retval[e_id] = _dp3(integral, e_vec.unitv);
 
       }
+
     }
-    else { /* Multi-valued case */
+    else { /* A selection of edges is selected */
 
       assert(selected_lst != NULL);
 
-#     pragma omp parallel for if (n_edges > CS_THR_MIN)
+#     pragma omp parallel for if (n_e_selected > CS_THR_MIN)
       for (cs_lnum_t e = 0; e < n_e_selected; e++) {
 
         const cs_lnum_t e_id = selected_lst[e];
@@ -2041,12 +2200,15 @@ cs_evaluate_circulation_along_edges_by_analytic(const cs_xdef_t   *def,
       }
 
     }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid dimension value %d. Only 1 and 3 are valid.\n",
+              __func__, def->dim);
 
   }
-  else
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid type of definition\n"
-              " for computing a circulation along primal edges.\n", __func__);
+
 }
 
 /*----------------------------------------------------------------------------*/

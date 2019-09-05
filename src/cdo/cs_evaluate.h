@@ -249,6 +249,24 @@ cs_evaluate_circulation_along_edges_by_value(const cs_xdef_t   *def,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Evaluate the circulation along a selection of (primal) edges.
+ *         Circulation is defined thanks to an array
+ *
+ * \param[in]      def            pointer to a cs_xdef_t pointer
+ * \param[in]      n_e_selected   number of selected edges
+ * \param[in]      selected_lst   list of selected edges
+ * \param[in, out] retval         pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_circulation_along_edges_by_array(const cs_xdef_t   *def,
+                                             const cs_lnum_t    n_e_selected,
+                                             const cs_lnum_t   *selected_lst,
+                                             cs_real_t          retval[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate the circulation along a selection of (primal) edges.
  *         Circulation is defined by an analytical function.
  *
  * \param[in]      def            pointer to a cs_xdef_t pointer
