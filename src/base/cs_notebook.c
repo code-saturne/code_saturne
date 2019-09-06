@@ -330,6 +330,8 @@ cs_notebook_log(void)
 void
 cs_notebook_load_from_file(void)
 {
+  const char na[] = "NA";
+
   cs_tree_node_t *tnb = cs_tree_get_node(cs_glob_tree,
                                          "physical_properties/notebook");
   for (cs_tree_node_t *n = cs_tree_find_node(tnb, "var");
@@ -342,8 +344,10 @@ cs_notebook_load_from_file(void)
     const char *c_val  = cs_tree_node_get_tag(n, "value");
     const char *c_edit = cs_tree_node_get_tag(n, "editable");
 
-    if (d == NULL || d == "")
-      d = "NA";
+    if (d == NULL)
+      d = na;
+    else if (strlen(d) == 0)
+      d = na;
 
     int uncertain = -1;
     if (oturns != NULL) {
