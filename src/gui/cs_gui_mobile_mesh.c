@@ -724,8 +724,6 @@ void CS_PROCF (uialcl, UIALCL) (const int *const    ibfixe,
                                 const int *const    iwma,
                                 double    *const    rcodcl)
 {
-  double t0;
-
   const cs_mesh_t *m = cs_glob_mesh;
 
   cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree, "boundary_conditions");

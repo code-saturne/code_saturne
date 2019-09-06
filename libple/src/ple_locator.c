@@ -90,7 +90,9 @@ extern "C" {
  * Algorithm ID's
  */
 
-#define _LOCATE_BB_SENDRECV      100  /* bounding boxes + send-receive */
+#define _LOCATE_BB_SENDRECV          100  /* bounding boxes + send-receive */
+#define _LOCATE_BB_SENDRECV_ORDERED  200  /* bounding boxes + send-receive
+                                             with communication ordering */
 
 #define _EXCHANGE_SENDRECV       100  /* Sendrecv */
 #define _EXCHANGE_ISEND_IRECV    200  /* Isend/Irecv/Waitall */
@@ -325,6 +327,179 @@ _locator_trace_end_comm(int      end_p_comm,
 
   timing[0] += ple_timer_wtime() - timing[2];
   timing[1] += ple_timer_cpu_time() - timing[3];
+}
+
+/*----------------------------------------------------------------------------
+ * Descend binary tree for the ordering of an integer array.
+ *
+ * parameters:
+ *   number  <-- pointer to numbers of entities that should be ordered.
+ *               (if NULL, a default 1 to n numbering is considered)
+ *   level   <-- level of the binary tree to descend
+ *   n       <-- number of entities in the binary tree to descend
+ *   order   <-> ordering array
+ *----------------------------------------------------------------------------*/
+
+inline static void
+_order_int_descend_tree(const int     number[],
+                        size_t        level,
+                        const size_t  n,
+                        int           order[])
+{
+  size_t i_save, i1, i2, lv_cur;
+
+  i_save = (size_t)(order[level]);
+
+  while (level <= (n/2)) {
+
+    lv_cur = (2*level) + 1;
+
+    if (lv_cur < n - 1) {
+
+      i1 = (size_t)(order[lv_cur+1]);
+      i2 = (size_t)(order[lv_cur]);
+
+      if (number[i1] > number[i2]) lv_cur++;
+    }
+
+    if (lv_cur >= n) break;
+
+    i1 = i_save;
+    i2 = (size_t)(order[lv_cur]);
+
+    if (number[i1] >= number[i2]) break;
+
+    order[level] = order[lv_cur];
+    level = lv_cur;
+
+  }
+
+  order[level] = i_save;
+}
+
+/*----------------------------------------------------------------------------
+ * Order an array of local numbers.
+ *
+ * parameters:
+ *   number  <-- array of entity numbers (if NULL, a default 1 to n
+ *               numbering is considered)
+ *   order   <-- pre-allocated ordering table
+ *   n       <-- number of entities considered
+ *----------------------------------------------------------------------------*/
+
+static void
+_order_int(const int     number[],
+           int           order[],
+           const size_t  n)
+{
+  size_t i;
+  int o_save;
+
+  /* Initialize ordering array */
+
+  for (i = 0; i < n; i++)
+    order[i] = i;
+
+  if (n < 2)
+    return;
+
+  /* Create binary tree */
+
+  i = (n / 2);
+  do {
+    i--;
+    _order_int_descend_tree(number, i, n, order);
+  } while (i > 0);
+
+  /* Sort binary tree */
+
+  for (i = n - 1; i > 0; i--) {
+    o_save   = order[0];
+    order[0] = order[i];
+    order[i] = o_save;
+    _order_int_descend_tree(number, 0, i, order);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Order communicating ranks to reduce serialization
+ *
+ * parameters:
+ *   rank_id       <--  local rank id
+ *   n_ranks       <--  communicator size
+ *   n_comm_ranks  <--  number of communicating ranks
+ *   comm_rank     <->  communicating ranks
+ *----------------------------------------------------------------------------*/
+
+static void
+_order_comm_ranks(int  rank_id,
+                  int  n_ranks,
+                  int  n_comm_ranks,
+                  int  comm_rank[])
+{
+  int *sub_rank, *rank_dist;
+
+  PLE_MALLOC(sub_rank, n_comm_ranks, int);
+  PLE_MALLOC(rank_dist, n_comm_ranks, int);
+
+  /* Compute ordering ("distance") key */
+
+  for (int i = 0; i < n_comm_ranks; i++) {
+    sub_rank[i] = comm_rank[i];
+    rank_dist[i] = 0;
+  }
+
+  int l_r_id = rank_id;
+  int m_r_id = (n_ranks+1) / 2;
+
+  while (true) {
+
+    if (l_r_id < m_r_id) {
+      for (int i = 0; i < n_comm_ranks; i++) {
+        if (sub_rank[i] >= m_r_id) {
+          rank_dist[i] = rank_dist[i]*2 + 1;
+          sub_rank[i] -= m_r_id;
+        }
+        else
+          rank_dist[i] = rank_dist[i]*2;
+      }
+    }
+    else {
+      for (int i = 0; i < n_comm_ranks; i++) {
+        if (sub_rank[i] >= m_r_id) {
+          rank_dist[i] = rank_dist[i]*2;
+          sub_rank[i] -= m_r_id;
+        }
+        else
+          rank_dist[i] = rank_dist[i]*2 + 1;
+      }
+      l_r_id -= m_r_id;
+    }
+
+    if (m_r_id < 2)
+      break;
+
+    m_r_id = (m_r_id+1) / 2;
+
+  }
+
+  /* Order results */
+
+  int *order = sub_rank;         /* reuse with more appropriate name */
+  _order_int(rank_dist, order, n_ranks);
+
+  int *_comm_rank = rank_dist;  /* reuse with more appropriate name */
+  for (int i = 0; i < n_comm_ranks; i++)
+    _comm_rank[i] = comm_rank[i];
+
+  for (int i = 0; i < n_comm_ranks; i++)
+    comm_rank[i] = _comm_rank[order[i]];
+
+  _comm_rank = NULL;
+  order = NULL;
+
+  PLE_FREE(sub_rank);
+  PLE_FREE(rank_dist);
 }
 
 #endif /* defined(PLE_HAVE_MPI) */
@@ -589,11 +764,19 @@ _location_ranks(ple_locator_t  *this_locator,
       this_locator->intersect_rank[k++] = j;
   }
 
+  if (this_locator->locate_algorithm == _LOCATE_BB_SENDRECV_ORDERED) {
+    int rank_id;
+    MPI_Comm_rank(this_locator->comm, &rank_id);
+    _order_comm_ranks(rank_id,
+                      comm_size,
+                      this_locator->n_intersects,
+                      this_locator->intersect_rank);
+  }
+
   PLE_FREE(send_flag);
   PLE_FREE(recv_flag);
 
-  /* Now convert location rank id to intersect rank
-     (communication ordering not yet optimized) */
+  /* Now convert location rank id to intersect rank */
 
   PLE_MALLOC(intersect_rank_id, this_locator->n_ranks, int);
 
@@ -2591,9 +2774,6 @@ ple_locator_create(void)
   this_locator->dim = 0;
   this_locator->have_tags = 0;
 
-  this_locator->locate_algorithm = _LOCATE_BB_SENDRECV;
-  this_locator->exchange_algorithm = _EXCHANGE_SENDRECV;
-
 #if defined(PLE_HAVE_MPI)
   this_locator->comm = comm;
   this_locator->n_ranks = n_ranks;
@@ -2602,6 +2782,9 @@ ple_locator_create(void)
   this_locator->n_ranks = 1;
   this_locator->start_rank = 0;
 #endif
+
+  this_locator->locate_algorithm = _LOCATE_BB_SENDRECV;
+  this_locator->exchange_algorithm = _EXCHANGE_SENDRECV;
 
   this_locator->point_id_base = 0;
 
@@ -2847,13 +3030,20 @@ ple_locator_extend_search(ple_locator_t               *this_locator,
   if (mpi_flag) {
 
     /* Flag values
-       0: mesh dimension; 1: space dimension;
-       2: minimum algorithm version; 3: maximum algorithm version,
-       4: preferred algorithm version,
+       0: mesh dimension
+       1: space dimension
+       2: minimum algorithm version
+       3: maximum algorithm version
+       4: preferred algorithm version
        5: have point tags */
 
     int globflag[6];
-    int locflag[6] = {-1, -1, 1, -1, -1, 0};
+    int locflag[6] = {-1,
+                      -1,
+                      _LOCATE_BB_SENDRECV,
+                      -_LOCATE_BB_SENDRECV_ORDERED,
+                      _LOCATE_BB_SENDRECV_ORDERED,
+                      0};
     ple_lnum_t  *location_rank_id;
 
     /* Check that at least one of the local or distant nodal meshes
@@ -2893,6 +3083,11 @@ ple_locator_extend_search(ple_locator_t               *this_locator,
 
     globflag[3] = -globflag[3];
 
+    /* Compatibility with older versions,
+       which initialized locflag[3] to -1 */
+    if (globflag[3] == 1)
+      globflag[3] = _LOCATE_BB_SENDRECV;
+
     if (globflag[2] > globflag[3])
       ple_error(__FILE__, __LINE__, 0,
                 _("Incompatible locator algorithm ranges:\n"
@@ -2900,6 +3095,13 @@ ple_locator_extend_search(ple_locator_t               *this_locator,
                   "  global maximum algorithm id %d\n"
                   "PLE library versions or builds are incompatible."),
                 globflag[2], globflag[3]);
+
+    if (globflag[4] < globflag[2])
+      globflag[4] = globflag[2];
+    if (globflag[4] > globflag[3])
+      globflag[4] = globflag[3];
+
+    this_locator->locate_algorithm = globflag[4];
 
     if (globflag[5] > 0)
       this_locator->have_tags = 1;

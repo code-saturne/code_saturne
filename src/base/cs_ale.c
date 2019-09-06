@@ -313,7 +313,7 @@ _free_surface(const cs_domain_t  *domain,
       f_has_min = CS_MAX(f_has_min, _is_loc_min[v_id0]);
     }
 
-    if (f_has_max > 0.5 && f_has_min > 0.5 || f_need_filter == 1) {
+    if ((f_has_max > 0.5 && f_has_min > 0.5) || f_need_filter == 1) {
       f_need_filter = 1;
       _f_count_filter++;
     }

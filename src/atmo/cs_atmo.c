@@ -221,16 +221,16 @@ cs_f_atmo_chem_finalize(void)
  * Convert string to lower case
  *----------------------------------------------------------------------------*/
 
-static char *
-_strtolower(char       *dest,
-            const char *src)
+static void
+_strtolower(char        *dest,
+            const char  *src)
 {
-  char *result = dest;
-  while (*dest = tolower(*src)) {
-    dest++;
+  char *_dest = dest;
+  while (*src) {
+    *_dest = tolower(*src);
     src++;
+    _dest++;
   }
-  return result;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

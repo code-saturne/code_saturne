@@ -964,16 +964,16 @@ _control_checkpoint(const char   *cur_line,
 static void
 _control_notebook(const cs_time_step_t   *ts,
                   char                   *cur_line,
-                  const char            **s)
+                  char                  **s)
 {
-  *s += 9; /* shift in string by lenght of "postprocess_" part */
+  *s += 9; /* shift in string by length of "postprocess_" part */
 
   bool ignored = true;
   if (strncmp(*s, "set ", 4) == 0) {
     char *name;
     double val = 0.;
-    _read_next_string(false, &s, &name);
-    if (_read_next_double(cur_line, s, &val) == 1) {
+    _read_next_string(false, s, &name);
+    if (_read_next_double(cur_line, (const char **)s, &val) == 1) {
       int editable;
       int is_present = cs_notebook_parameter_is_present(name,
                                                         &editable);
@@ -984,7 +984,7 @@ _control_notebook(const cs_time_step_t   *ts,
       }
       ignored = false;
     }
- }
+  }
 
   if (ignored)
     bft_printf(_("   ignored: \"%s\"\n"), cur_line);

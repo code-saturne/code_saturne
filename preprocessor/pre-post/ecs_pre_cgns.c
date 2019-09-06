@@ -2512,7 +2512,9 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
           ient = ECS_ENTMAIL_CEL;
 
+#if CGNS_VERSION >= 3400
           cgsize_t *elt_idx = ptr_section->offsets;
+#endif
           ptr_ele = ptr_section->elems;
 
           size_t   connect_size = 0;

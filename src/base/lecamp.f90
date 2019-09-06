@@ -85,7 +85,7 @@ integer          ivar  , ivers(1), f_id
 integer          ierror, itysup, nbval
 integer          nberro, t_id
 integer          nfmtru
-integer          jale, jcavit, jvolfl
+integer          jale, jvolfl
 integer          ival(1)
 double precision rval(1)
 
@@ -721,25 +721,6 @@ return
 '@      rotor/stator coupling method.                         ',/,&
 '@    The calculation will be executed with the previous      ',/,&
 '@      moving mesh moment initialized to TTCMOB = ',E12.4     ,/,&
-'@    Please check the integrity of the file used as          ',/,&
-'@        restart file, however.                              ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9404 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ WARNING : ERROR AT THE MAIN RESTART FILE READING        ',/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@      ERROR AT READING THE INDICATOR OF THE CAVITATION MODEL',/,&
-'@                                                            ',/,&
-'@    The read restart file might come from a previous        ',/,&
-'@      version of Code Saturne, without cavitation.          ',/,&
-'@    The calculation will be executed but                    ',/,&
-'@      cavitation model data will be reset.                  ',/,&
 '@    Please check the integrity of the file used as          ',/,&
 '@        restart file, however.                              ',/,&
 '@                                                            ',/,&

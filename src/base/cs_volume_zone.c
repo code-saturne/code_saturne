@@ -313,7 +313,7 @@ _log_type(int type)
  */
 /*----------------------------------------------------------------------------*/
 
-void
+static void
 _volume_zone_compute_metadata(bool       mesh_modified,
                               cs_zone_t *z)
 {

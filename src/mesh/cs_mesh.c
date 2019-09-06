@@ -2491,7 +2491,7 @@ cs_mesh_discard_free_vertices(cs_mesh_t  *mesh)
 {
   cs_gnum_t n_g_f_vertices = _check_free_vertices(mesh);
 
-  if (_check_free_vertices(mesh) > 0) {
+  if (n_g_f_vertices > 0) {
     cs_gnum_t n_g_vertices_old = mesh->n_g_vertices;
     _discard_free_vertices(mesh);
     bft_printf(_("\n"

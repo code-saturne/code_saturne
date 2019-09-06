@@ -2131,7 +2131,7 @@ cs_field_set_values(cs_field_t  *f,
   const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
   const cs_lnum_t _n_vals = n_elts[2]*f->dim;
 
-# pragma omp parallel for if (n_elts > CS_THR_MIN)
+# pragma omp parallel for if (_n_vals > CS_THR_MIN)
   for (cs_lnum_t ii = 0; ii < _n_vals; ii++)
     f->val[ii] = c;
 }
@@ -2155,11 +2155,11 @@ cs_field_current_to_previous(cs_field_t  *f)
   if (f->n_time_vals > 1) {
 
     const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
+    const cs_lnum_t _n_elts = n_elts[2];
 
-#   pragma omp parallel if (n_elts > CS_THR_MIN)
+#   pragma omp parallel if (_n_elts > CS_THR_MIN)
     {
       const int dim = f->dim;
-      const cs_lnum_t _n_elts = n_elts[2];
 
       if (f->is_owner) {
         if (dim == 1) {
