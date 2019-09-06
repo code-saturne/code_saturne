@@ -66,7 +66,7 @@ BEGIN_C_DECLS
  *-----------------------------------------------------------------------------*/
 
 /*-----------------------------------------------------------------------------
- * Local static variable definitions
+ * Local variable definitions
  *-----------------------------------------------------------------------------*/
 
 static bool  _cs_log_atexit_set = false;
@@ -75,6 +75,9 @@ static FILE* _cs_log[] = {NULL, NULL, NULL};
 static const char* _cs_log_name[] = {"",
                                      "setup.log",
                                      "performance.log"};
+
+static bool  _cs_log_default_active = true;
+
 int cs_glob_log_frequency = 1;
 
 /*============================================================================
@@ -83,7 +86,7 @@ int cs_glob_log_frequency = 1;
  *============================================================================*/
 
 void
-cs_f_log_frequency_get_pointer(int     **ntlist);
+cs_f_log_frequency_get_pointer(int  **ntlist);
 
 /*============================================================================
  * Private function definitions
@@ -240,6 +243,41 @@ cs_f_log_frequency_get_pointer(int     **ntlist)
 /*============================================================================
  * Public function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update "active" or "inactive" flag of default log.
+ *
+ * This does not prevent output to the log file, but the flag can be queried
+ * using \ref cs_log_default_is_active, so in most cases, this status
+ * should be checked before logging output
+ *
+ * \param[in]  activate  true to activate, false to deactivate.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_log_default_activate(bool  activate)
+{
+  _cs_log_default_active = activate;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update "active" or "inactive" flag of default log.
+ *
+ * This does not prevent output to the log file, but the flag can be queried
+ * using \
+ *
+ * \return  true if active, false otherwise.
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_log_default_is_active(void)
+{
+  return _cs_log_default_active;
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

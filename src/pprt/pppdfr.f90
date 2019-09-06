@@ -82,6 +82,7 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
+use cs_c_bindings
 
 !===============================================================================
 
@@ -106,10 +107,13 @@ integer          iel, n1, n2, n3, n4, n5 , n6 ,nfp2 , nbspdf
 double precision t1, t2, t3, t1mod, t2mod , fp2max
 double precision fp2mmax1,fp2mmin1,fp2mmax2,fp2mmin2
 
-!
+logical(kind=c_bool) :: log_active
+
 !===============================================================================
 ! 0.  INITIALISATION
 !===============================================================================
+
+log_active = cs_log_default_is_active()
 
 do iel = 1, ncel
 
@@ -167,29 +171,31 @@ do iel = 1, ncel
     nfp2 = nfp2 + 1
   endif
 enddo
-if ( irangp .ge. 0 ) then
+if (irangp .ge. 0) then
   call parcpt(nfp2)
 endif
-WRITE(NFECRA,*) ' PPPDFR : Points de clipping',                   &
-                ' de la variance : ',NFP2
-fp2mmin2 = 1.D+20
-fp2mmax2 =-1.D+20
-do iel = 1, ncel
-  fp2mmin2 = min(fp2mmin2,fp2m(iel))
-  fp2mmax2 = max(fp2mmax2,fp2m(iel))
-enddo
-if ( irangp .ge.0 ) then
-  call parmin(fp2mmin2)
-  call parmax(fp2mmax2)
-endif
+if (log_active) then
 
-if ( nfp2 .gt. 0 ) then
-  write(nfecra,*) '     Valeur min max',                   &
-                  '   variance avant clipping : ',fp2mmin1,fp2mmax1
-  write(nfecra,*) '     Valeur min max',                   &
-                  '   variance apres clipping : ',fp2mmin2,fp2mmax2
-endif
+  write(nfecra,*) ' pppdfr: variance clipping points: ', nfp2
 
+  fp2mmin2 = 1.d+20
+  fp2mmax2 =-1.d+20
+  do iel = 1, ncel
+    fp2mmin2 = min(fp2mmin2,fp2m(iel))
+    fp2mmax2 = max(fp2mmax2,fp2m(iel))
+  enddo
+  if (irangp .ge.0) then
+    call parmin(fp2mmin2)
+    call parmax(fp2mmax2)
+  endif
+
+  if (nfp2 .gt. 0) then
+    write(nfecra, *) '     Variance before clipping min and max: ', &
+                     fp2mmin1, fp2mmax1
+    write(nfecra, *) '     Variance after  clipping min and max: ', &
+                     fp2mmin2, fp2mmax2
+  endif
+endif
 
 !===============================================================================
 ! 2.  CALCUL DES PARAMETRES DE LA FONCTION DENSITE DE PROBABILITE
@@ -311,14 +317,18 @@ do iel=1,ncel
   endif
 enddo
 
-if ( irangp .ge. 0 ) then
-   call parcpt(nbspdf)
+if (log_active) then
+  if (irangp .ge. 0) then
+    call parcpt(nbspdf)
+  endif
+  write(nfecra,*) ' pppdfr: switch off PDF ', nbspdf
 endif
-WRITE(NFECRA,*) ' PPPDFR : Basculement sans les PDF ',NBSPDF
 
 !===============================================================================
 ! 4.  IMPRESSION
 !===============================================================================
+
+if (log_active .eqv. .false.) return
 
 n1 = 0
 n2 = 0
@@ -327,61 +337,49 @@ n4 = 0
 n5 = 0
 n6 = ncel
 do iel = 1, ncel
-  if ( indpdf(iel).eq.1 ) then
+  if (indpdf(iel).eq.1) then
     n1 = n1+1
-    if ( dirmin(iel).gt.epzero                                    &
-         .and. dirmax(iel).lt.epzero ) then
+    if (dirmin(iel).gt.epzero .and. dirmax(iel).lt.epzero) then
       n2 = n2+1
-    else if ( dirmin(iel).lt.epzero                               &
-         .and. dirmax(iel).gt.epzero ) then
+    else if (dirmin(iel).lt.epzero .and. dirmax(iel).gt.epzero) then
       n3 = n3+1
-    else if ( dirmin(iel).gt.epzero                               &
-         .and. dirmax(iel).gt.epzero ) then
+    else if (dirmin(iel).gt.epzero .and. dirmax(iel).gt.epzero) then
       n4 = n4+1
-    else if ( dirmin(iel).lt.epzero                               &
-         .and. dirmax(iel).lt.epzero ) then
+    else if (dirmin(iel).lt.epzero .and. dirmax(iel).lt.epzero) then
       n5 = n5+1
     endif
   endif
 enddo
 
-if ( irangp.ge.0 ) then
-
+if (irangp.ge.0) then
   call parcpt (n1)
-  !==========
   call parcpt (n2)
-  !==========
   call parcpt (n3)
-  !==========
   call parcpt (n4)
-  !==========
   call parcpt (n5)
-  !==========
   call parcpt (n6)
-  !==========
 endif
 
 write(nfecra,1000) n1, n6
 write(nfecra,2000) n5, n2, n3, n4
 
+!----
+! Formats
+!----
+
+ 1000 format ( /,                                           &
+'Rectangle PDF - Dirac peaks', /,                           &
+'Mean, variance of transported tracer',/,                   &
+'Number of turbulent points (using the PDFs)   = ', i6,/,   &
+'Number of computation points                  = ', i6)
+ 2000 format(                                                        &
+' Nb points with rectangle PDF without Dirac              = ', i6,/, &
+' - - - - - - - - - -- - - - and Dirac in FMINI           = ', i6,/, &
+' - - - - - - - - - -- - - - - - - - - -  FMAXI           = ', i6,/, &
+' - - - - - - - - - - - - - - - Diracs in FMINI and FMAXI = ', i6,/)
 
 !----
-! FORMATS
-!----
-
- 1000 format ( /,                                                 &
-'PDF RECTANGLE - PICS DE DIRAC COPDFR',/,                   &
-'MOYENNE, VARIANCE DU TRACEUR TRANPORTES',/,                &
-'NOMBRE DE POINTS TURBULENTS (PASSAGE PAR LES PDF)   = ',I6,/,    &
-'NOMBRE DE POINTS DE CALCULS                         = ',I6 )
- 2000 format(                                                           &
-' Nb points avec PDF rectangle sans Dirac                = ',I6,/,&
-' - - - - - - - - - -- - - -  et Dirac en FMINI          = ',I6,/,&
-' - - - - - - - - - -- - - - - - - - - -  FMAXI          = ',I6,/,&
-' - - - - - - - - - - - - - - - Diracs en FMINI et FMAXI = ',I6,/)
-
-!----
-! FIN
+! Fin
 !----
 
 return

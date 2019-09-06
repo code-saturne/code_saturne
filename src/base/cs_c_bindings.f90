@@ -227,6 +227,28 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function activating default log.
+
+    subroutine cs_log_default_activate(activate)  &
+      bind(C, name='cs_log_default_activate')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      logical(kind=c_bool), value :: activate
+    end subroutine cs_log_default_activate
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function activating default log.
+
+    function cs_log_default_is_active() result(active) &
+      bind(C, name='cs_log_default_is_active')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      logical(kind=c_bool) :: active
+    end function cs_log_default_is_active
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function logging field and other array statistics
     ! at relevant time steps.
 

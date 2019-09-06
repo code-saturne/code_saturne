@@ -260,7 +260,7 @@ call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
 ! 1. Initialisation
 !===============================================================================
 
-if (mod(ntcabs,nfreqr).eq.0) then
+if (cs_log_default_is_active()) then
   verbosity = 1
 else
   verbosity = 0

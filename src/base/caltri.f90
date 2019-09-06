@@ -90,9 +90,9 @@ implicit none
 
 ! Local variables
 
-logical(kind=c_bool) mesh_modified
+logical(kind=c_bool) :: mesh_modified, log_active
 
-integer          modhis, iappel, modntl, iisuit, imrgrl
+integer          modhis, iappel, iisuit, imrgrl
 integer          iel
 
 integer          inod   , idim, ifac
@@ -906,24 +906,6 @@ if (itrale.gt.0 .and. ntmabs.gt.ntpabs) then
   endif
 endif
 
-if (ntlist.gt.0) then
-  modntl = mod(ntcabs,ntlist)
-  ! Always print 10 first iterations
-  if (ntcabs - ntpabs.le.10) then
-    modntl = 0
-  endif
-elseif(ntlist.eq.-1.and.ntcabs.eq.ntmabs) then
-  modntl = 0
-else
-  modntl = 1
-endif
-
-if (ntmabs.gt.ntpabs .and. itrale.gt.0) then
-  if (modntl.eq.0) then
-    write(nfecra,3001) ttcabs,ntcabs
-  endif
-endif
-
 !===============================================================================
 ! Step forward in time
 !===============================================================================
@@ -934,6 +916,21 @@ call cs_control_check_file
 if (      (idtvar.eq.0 .or. idtvar.eq.1)                          &
     .and. (ttmabs.gt.0 .and. ttcabs.ge.ttmabs)) then
   ntmabs = ntcabs
+endif
+
+! Set default logging (always log 10 first iterations and last one=)
+log_active = .false.
+if (ntcabs - ntpabs.le.10 .or. ntcabs.eq.ntmabs) then
+  log_active = .true.
+else if (ntlist.gt.0) then
+  if (mod(ntcabs,ntlist) .eq. 0) log_active = .true.
+endif
+call cs_log_default_activate(log_active)
+
+if (ntmabs.gt.ntpabs .and. itrale.gt.0) then
+  if (log_active) then
+    write(nfecra,3001) ttcabs, ntcabs
+  endif
 endif
 
 mesh_modified = .false.
@@ -1131,7 +1128,7 @@ endif
 ! Write to "run_solver.log" every ntlist iterations
 !===============================================================================
 
-if (modntl.eq.0) then
+if (log_active) then
 
   call ecrlis(ncelet, ncel, dt, cell_f_vol)
 

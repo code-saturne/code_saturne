@@ -72,6 +72,7 @@ use ppppar
 use ppthch
 use coincl
 use ppincl
+use cs_c_bindings
 
 !===============================================================================
 
@@ -95,6 +96,7 @@ double precision epsi
 integer          n1, n2
 double precision hsmax, hsmin
 
+logical(kind=c_bool) :: log_active
 
 !===============================================================================
 
@@ -110,6 +112,7 @@ n2 = 0
 hsmin = grand
 hsmax =-grand
 
+log_active = cs_log_default_is_active()
 
 do iel = 1, ncel
 
@@ -175,34 +178,33 @@ do iel = 1, ncel
 
 enddo
 
-if (irangp.ge.0) then
-  call parcpt (n1)
-  !==========
-  call parcpt (n2)
-  !==========
-  call parmax (hsmax)
-  !==========
-  call parmin (hsmin)
-  !==========
-endif
+if (log_active) then
 
-if ( n1.gt.0 ) then
-  write(nfecra,1000) n1,hsmax,hh(1)
-endif
-if ( n2.gt.0 ) then
-  write(nfecra,1001) n2,hsmin,hh(nmaxh)
+  if (irangp.ge.0) then
+    call parcpt (n1)
+    call parcpt (n2)
+    call parmax (hsmax)
+    call parmin (hsmin)
+  endif
+
+  if (n1.gt.0) then
+    write(nfecra,1000) n1,hsmax,hh(1)
+  endif
+  if (n2.gt.0) then
+    write(nfecra,1001) n2,hsmin,hh(nmaxh)
+  endif
 endif
 
 !----
 ! FORMATS
 !----
 
- 1000   format(1X,' Clipping de HSTOE EN MAX EN ',I8,' POINTS',/, &
-         1X,'     Valeur Max : ',G15.7,/,                   &
-         1X,'     Valeur De Clipping : ',G15.7,/)
- 1001   format(1X,' Clipping de HSTOE EN MIN EN ',I8,' POINTS',/, &
-         1X,'     Valeur Max : ',G15.7,/,                   &
-         1X,'     Valeur De Clipping : ',G15.7,/)
+ 1000   format(1X,' Clipping of HSTOE to max on ',i8,' points',/, &
+         1X,'     Max value:   ', g15.7,/,                        &
+         1X,'     Clip value:  ', g15.7,/)
+ 1001   format(1X,' Clipping of HSTOE to min on ',i8,' points',/, &
+         1X,'     Min value:   ', g15.7,/,                        &
+         1X,'     Clip value:  ', g15.7,/)
 
 return
 end subroutine
