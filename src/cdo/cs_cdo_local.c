@@ -934,6 +934,8 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   cm->bface_shift = quant->n_i_faces; /* Border faces come after interior
                                        * faces */
 
+  assert(cm->n_fc > 3); /* A tetrahedron has at least 4 faces */
+
   if (build_flag == 0)
     return;
 
@@ -944,6 +946,8 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     const cs_lnum_t  *c2v_ids = connect->c2v->ids + c2v_idx[0];
 
     cm->n_vc = c2v_idx[1] - c2v_idx[0];
+
+    assert(cm->n_vc > 3); /* A tetrahedron has at least 4 vertices */
 
     for (short int v = 0; v < cm->n_vc; v++) {
       const cs_lnum_t  v_id = c2v_ids[v];
@@ -1293,71 +1297,100 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
   if (build_flag & CS_FLAG_COMP_DIAM) {
 
-    assert(cs_flag_test(build_flag, CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
+    if (cm->n_fc == 4) {        /* Tetrahedron */
 
-    double  cbox[6] = {DBL_MAX, DBL_MAX, DBL_MAX, -DBL_MAX, -DBL_MAX, -DBL_MAX};
-    for (int v = 0; v < cm->n_vc; v++) {
-      const double  *xv = cm->xv + 3*v;
-      if (xv[0] < cbox[0]) cbox[0] = xv[0];
-      if (xv[1] < cbox[1]) cbox[1] = xv[1];
-      if (xv[2] < cbox[2]) cbox[2] = xv[2];
-      if (xv[0] > cbox[3]) cbox[3] = xv[0];
-      if (xv[1] > cbox[4]) cbox[4] = xv[1];
-      if (xv[2] > cbox[5]) cbox[5] = xv[2];
+      assert(cs_flag_test(build_flag, CS_FLAG_COMP_PEQ | CS_FLAG_COMP_FE));
+
+      cs_real_t  perim_surf = 0.;
+      for (short int f = 0; f < cm->n_fc; f++) {
+
+        cs_real_t  perim = 0.;
+        for (int j = cm->f2e_idx[f]; j < cm->f2e_idx[f+1]; j++) {
+
+          short int  e = cm->f2e_ids[j];
+          perim += cm->edge[e].meas;
+
+        } /* Loop on edges */
+
+        cm->f_diam[f] = 4*cm->face[f].meas/perim;
+        perim_surf += cm->face[f].meas;
+
+      } /* Loop on faces */
+
+      cm->diam_c = 6*cm->vol_c/perim_surf;
+
     }
-    cm->diam_c = cs_math_3_distance(cbox, cbox + 3);
+    else {
 
-    /* Now compute an approximation of the diameter for each cell face */
+      assert(cs_flag_test(build_flag, CS_FLAG_COMP_EV | CS_FLAG_COMP_FE));
+
+      double  cbox[6] = {cm->xv[0], cm->xv[1], cm->xv[2],
+                         cm->xv[0], cm->xv[1], cm->xv[2]};
+
+      for (int v = 1; v < cm->n_vc; v++) {
+        const double  *xv = cm->xv + 3*v;
+        if (xv[0] < cbox[0]) cbox[0] = xv[0];
+        if (xv[1] < cbox[1]) cbox[1] = xv[1];
+        if (xv[2] < cbox[2]) cbox[2] = xv[2];
+        if (xv[0] > cbox[3]) cbox[3] = xv[0];
+        if (xv[1] > cbox[4]) cbox[4] = xv[1];
+        if (xv[2] > cbox[5]) cbox[5] = xv[2];
+      }
+      cm->diam_c = cs_math_3_distance(cbox, cbox + 3);
+
+      /* Now compute an approximation of the diameter for each cell face */
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-    int t_id = omp_get_thread_num();
-    assert(t_id < cs_glob_n_threads);
+      int t_id = omp_get_thread_num();
+      assert(t_id < cs_glob_n_threads);
 #else
-    int t_id = 0;
+      int t_id = 0;
 #endif /* openMP */
-    short int  *vtag = cs_cdo_local_kbuf[t_id];
+      short int  *vtag = cs_cdo_local_kbuf[t_id];
 
-    for (short int f = 0; f < cm->n_fc; f++) {
+      for (short int f = 0; f < cm->n_fc; f++) {
 
-      double  fbox[6] = { DBL_MAX,  DBL_MAX,  DBL_MAX,
-                         -DBL_MAX, -DBL_MAX, -DBL_MAX};
+        double  fbox[6] = { DBL_MAX,  DBL_MAX,  DBL_MAX,
+                            -DBL_MAX, -DBL_MAX, -DBL_MAX};
 
-      /* Reset vtag */
-      for (short int v = 0; v < cm->n_vc; v++) vtag[v] = -1;
+        /* Reset vtag */
+        for (short int v = 0; v < cm->n_vc; v++) vtag[v] = -1;
 
-      /* Tag face vertices */
-      for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
-        const short int  *id = cm->e2v_ids + 2*cm->f2e_ids[i];
+        /* Tag face vertices */
+        for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+          const short int  *id = cm->e2v_ids + 2*cm->f2e_ids[i];
 
-        if (vtag[id[0]] < 0) {
-          const double  *xv = cm->xv + 3*id[0];
-          if (xv[0] < fbox[0]) fbox[0] = xv[0];
-          if (xv[1] < fbox[1]) fbox[1] = xv[1];
-          if (xv[2] < fbox[2]) fbox[2] = xv[2];
-          if (xv[0] > fbox[3]) fbox[3] = xv[0];
-          if (xv[1] > fbox[4]) fbox[4] = xv[1];
-          if (xv[2] > fbox[5]) fbox[5] = xv[2];
+          if (vtag[id[0]] < 0) {
+            const double  *xv = cm->xv + 3*id[0];
+            if (xv[0] < fbox[0]) fbox[0] = xv[0];
+            if (xv[1] < fbox[1]) fbox[1] = xv[1];
+            if (xv[2] < fbox[2]) fbox[2] = xv[2];
+            if (xv[0] > fbox[3]) fbox[3] = xv[0];
+            if (xv[1] > fbox[4]) fbox[4] = xv[1];
+            if (xv[2] > fbox[5]) fbox[5] = xv[2];
 
-          vtag[id[0]] = 1;
-        }
+            vtag[id[0]] = 1;
+          }
 
-        if (vtag[id[1]] < 0) {
-          const double  *xv = cm->xv + 3*id[1];
-          if (xv[0] < fbox[0]) fbox[0] = xv[0];
-          if (xv[1] < fbox[1]) fbox[1] = xv[1];
-          if (xv[2] < fbox[2]) fbox[2] = xv[2];
-          if (xv[0] > fbox[3]) fbox[3] = xv[0];
-          if (xv[1] > fbox[4]) fbox[4] = xv[1];
-          if (xv[2] > fbox[5]) fbox[5] = xv[2];
+          if (vtag[id[1]] < 0) {
+            const double  *xv = cm->xv + 3*id[1];
+            if (xv[0] < fbox[0]) fbox[0] = xv[0];
+            if (xv[1] < fbox[1]) fbox[1] = xv[1];
+            if (xv[2] < fbox[2]) fbox[2] = xv[2];
+            if (xv[0] > fbox[3]) fbox[3] = xv[0];
+            if (xv[1] > fbox[4]) fbox[4] = xv[1];
+            if (xv[2] > fbox[5]) fbox[5] = xv[2];
 
-          vtag[id[1]] = 1;
-        }
+            vtag[id[1]] = 1;
+          }
 
-      } /* Loop on face edges */
+        } /* Loop on face edges */
 
-      cm->f_diam[f] = cs_math_3_distance(fbox, fbox + 3);
+        cm->f_diam[f] = cs_math_3_distance(fbox, fbox + 3);
 
-    } /* Loop on cell faces */
+      } /* Loop on cell faces */
+
+    } /* Not a tetrahedron */
 
   } /* Compute diameters */
 }
