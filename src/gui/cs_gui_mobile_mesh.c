@@ -237,7 +237,7 @@ static void
 _uialcl_fixed_displacement(cs_tree_node_t   *tn_w,
                            const cs_zone_t  *z,
                            int              *impale,
-                           cs_real_3_t      *disale)
+                           cs_real_t         disale[][3])
 {
 
   const cs_mesh_t *m = cs_glob_mesh;
@@ -267,7 +267,7 @@ _uialcl_fixed_displacement(cs_tree_node_t   *tn_w,
     for (cs_lnum_t k = s; k < e; k++) {
 
       const cs_lnum_t v_id = m->b_face_vtx_lst[k];
-      cs_real_t *_val = disale + 3 * v_id;
+      cs_real_t *_val = disale[v_id];
 
       impale[v_id] = 1;
       //FIXME prorata
