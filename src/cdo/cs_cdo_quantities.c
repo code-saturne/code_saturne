@@ -616,7 +616,7 @@ _compute_quant_info(cs_cdo_quantities_t     *quant)    /* In/out */
   quant->cell_info.h_min = quant->cell_info.meas_min = DBL_MAX;
   quant->cell_info.h_max = quant->cell_info.meas_max = -DBL_MAX;
 
-  for (cs_lnum_t  c_id = 0; c_id < quant->n_cells; c_id++) {
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
     const double  meas = quant->cell_vol[c_id];
 
@@ -648,7 +648,7 @@ _compute_quant_info(cs_cdo_quantities_t     *quant)    /* In/out */
       quant->face_info.h_min = sqrt(meas);
     }
 
-  } /* Loop on faces */
+  } /* Loop on interior faces */
 
   for (cs_lnum_t  f_id = 0; f_id < quant->n_b_faces; f_id++) {
 
@@ -663,7 +663,7 @@ _compute_quant_info(cs_cdo_quantities_t     *quant)    /* In/out */
       quant->face_info.h_min = sqrt(meas);
     }
 
-  } /* Loop on faces */
+  } /* Loop on border faces */
 
   /* Edge info (set default values) */
   quant->edge_info.h_min = quant->edge_info.meas_min = DBL_MAX;
@@ -684,6 +684,32 @@ _compute_quant_info(cs_cdo_quantities_t     *quant)    /* In/out */
 
   } /* Loop on edges */
 
+  if (cs_glob_n_ranks > 1) { /* Synchronization across ranks needed */
+
+    double  buf[12] =
+      {  quant->cell_info.meas_max,  quant->cell_info.h_max,
+        -quant->cell_info.meas_min, -quant->cell_info.h_min,
+         quant->face_info.meas_max,  quant->face_info.h_max,
+        -quant->face_info.meas_min, -quant->face_info.h_min,
+         quant->edge_info.meas_max,  quant->edge_info.h_max,
+        -quant->edge_info.meas_min, -quant->edge_info.h_min };
+
+    cs_parall_max(12, CS_DOUBLE, buf);
+
+    quant->cell_info.meas_max =  buf[0];
+    quant->cell_info.h_max    =  buf[1];
+    quant->cell_info.meas_min = -buf[2];
+    quant->cell_info.h_min    = -buf[3];
+    quant->face_info.meas_max =  buf[4];
+    quant->face_info.h_max    =  buf[5];
+    quant->face_info.meas_min = -buf[6];
+    quant->face_info.h_min    = -buf[7];
+    quant->edge_info.meas_max =  buf[8];
+    quant->edge_info.h_max    =  buf[9];
+    quant->edge_info.meas_min = -buf[10];
+    quant->edge_info.h_min    = -buf[11];
+
+  } /* Synchronization */
 }
 
 /*----------------------------------------------------------------------------
@@ -1166,23 +1192,13 @@ cs_cdo_quantities_summary(const cs_cdo_quantities_t  *quant)
                 " --cdo-- n_ortho_cells  %9lu\n", n_ortho_cells);
 
   /* Output */
-  double  h_min[3] = {quant->cell_info.h_min,
-                      quant->face_info.h_min,
-                      quant->edge_info.h_min};
-  double  h_max[3] = {quant->cell_info.h_max,
-                      quant->face_info.h_max,
-                      quant->edge_info.h_max};
-
-  if (cs_glob_n_ranks > 1) {
-    cs_parall_min(3, CS_DOUBLE, h_min);
-    cs_parall_max(3, CS_DOUBLE, h_max);
-  }
-
   cs_log_printf(CS_LOG_DEFAULT,
                 " --cdo-- h_cell  %6.4e %6.4e (min/max)\n"
                 " --cdo-- h_face  %6.4e %6.4e (min/max)\n"
                 " --cdo-- h_edge  %6.4e %6.4e (min/max)\n\n",
-                h_min[0], h_max[0], h_min[1], h_max[1], h_min[2], h_max[2]);
+                quant->cell_info.h_min, quant->cell_info.h_max,
+                quant->face_info.h_min, quant->face_info.h_max,
+                quant->edge_info.h_min, quant->edge_info.h_max);
 
 #if CS_CDO_QUANTITIES_DBG > 0 && defined(DEBUG) && !defined(NDEBUG)
   cs_cdo_quantities_dump(quant);
