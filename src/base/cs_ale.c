@@ -509,6 +509,8 @@ _update_bcs(const cs_domain_t  *domain,
   const cs_real_3_t *restrict  b_face_cog
     = (const cs_real_3_t *restrict)mq->b_face_cog;
 
+  cs_field_t *f_displ = cs_field_by_name("mesh_displacement");
+
   /* Only a part of the boundaries has to be updated */
   int  select_id = 0;
   for (int b_id = 0; b_id < domain->ale_boundaries->n_boundaries; b_id++) {
@@ -662,7 +664,7 @@ _update_bcs(const cs_domain_t  *domain,
     case CS_BOUNDARY_ALE_IMPOSED_DISP:
       {
         const cs_real_3_t *restrict  disale
-          = (const cs_real_3_t *restrict)cs_field_by_name("disale")->val;
+          = (const cs_real_3_t *restrict)(f_displ->val);
         const cs_real_t  invdt = 1./domain->time_step->dt_ref; /* JB: dt[0] ? */
 
         assert(select_id < _cdo_bc->n_selections);
@@ -671,9 +673,9 @@ _update_bcs(const cs_domain_t  *domain,
         for (cs_lnum_t i = 0; i < _cdo_bc->n_vertices[select_id]; i++) {
 
           const cs_lnum_t  v_id = _cdo_bc->vtx_select[select_id][i];
-          const cs_real_t  *_dpl = (cs_real_t *)disale + 3*v_id;
-          const cs_real_t  *restrict  _xyz = (cs_real_t *)vtx_coord + 3*v_id;
-          const cs_real_t  *restrict  _xyz0 = (cs_real_t *)_vtx_coord0 + 3*v_id;
+          const cs_real_t  *_dpl = disale[v_id];
+          const cs_real_t  *restrict  _xyz = vtx_coord[v_id];
+          const cs_real_t  *restrict  _xyz0 = _vtx_coord0[v_id];
 
           cs_real_t  *_val = _cdo_bc->vtx_values + 3*v_id;
 
@@ -839,8 +841,9 @@ _ale_solve_poisson_cdo(const cs_domain_t  *domain,
   }
 
   /* Retrieving fields */
-  cs_real_3_t *disale = (cs_real_3_t *)cs_field_by_name("disale")->val;
-  cs_real_3_t *disala = (cs_real_3_t *)cs_field_by_name("disale")->val_pre;
+  cs_field_t  *f_displ = cs_field_by_name("mesh_displacement");
+  cs_real_3_t *disale = (cs_real_3_t *)(f_displ->val);
+  cs_real_3_t *disala = (cs_real_3_t *)(f_displ->val_pre);
   cs_real_3_t *m_vel = (cs_real_3_t *)(cs_field_by_name("mesh_velocity")->val);
 
   for (cs_lnum_t v = 0; v < m->n_vertices; v++) {
@@ -906,8 +909,10 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
 
   cs_real_3_t *mshvel = (cs_real_3_t *)CS_F_(mesh_u)->val;
   cs_real_3_t *mshvela = (cs_real_3_t *)CS_F_(mesh_u)->val_pre;
-  cs_real_3_t *disale = (cs_real_3_t *)cs_field_by_name("disale")->val;
-  cs_real_3_t *disala = (cs_real_3_t *)cs_field_by_name("disale")->val_pre;
+
+  cs_field_t  *f_displ = cs_field_by_name("mesh_displacement");
+  cs_real_3_t *disale = (cs_real_3_t *)(f_displ->val);
+  cs_real_3_t *disala = (cs_real_3_t *)(f_displ->val_pre);
 
   cs_var_cal_opt_t var_cal_opt;
   cs_field_get_key_struct(CS_F_(mesh_u), key_cal_opt_id, &var_cal_opt);
@@ -1379,8 +1384,9 @@ cs_ale_update_mesh(const int           itrale,
                "  =================\n\n");
 
   /* Retrieving fields */
-  cs_real_3_t *disale = (cs_real_3_t *)cs_field_by_name("disale")->val;
-  cs_real_3_t *disala = (cs_real_3_t *)cs_field_by_name("disale")->val_pre;
+  cs_field_t  *f_displ = cs_field_by_name("mesh_displacement");
+  cs_real_3_t *disale = (cs_real_3_t *)(f_displ->val);
+  cs_real_3_t *disala = (cs_real_3_t *)(f_displ->val_pre);
 
   /* Update geometry */
   for (int v_id = 0; v_id < n_vertices; v_id++) {

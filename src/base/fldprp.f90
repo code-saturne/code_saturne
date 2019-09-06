@@ -296,7 +296,7 @@ if (iale.ge.1) then
 
   has_previous = .true.
   idim3 = 3
-  f_name = 'disale'
+  f_name = 'mesh_displacement'
   f_label = 'Mesh displacement'
   type_flag = FIELD_PROPERTY
   post_flag = POST_ON_LOCATION
