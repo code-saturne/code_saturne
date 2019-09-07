@@ -90,7 +90,9 @@ extern "C" {
  * Algorithm ID's
  */
 
-#define _LOCATE_BB_SENDRECV      100  /* bounding boxes + send-receive */
+#define _LOCATE_BB_SENDRECV          100  /* bounding boxes + send-receive */
+#define _LOCATE_BB_SENDRECV_ORDERED  200  /* bounding boxes + send-receive
+                                             with communication ordering */
 
 #define _EXCHANGE_SENDRECV       100  /* Sendrecv */
 #define _EXCHANGE_ISEND_IRECV    200  /* Isend/Irecv/Waitall */
@@ -131,6 +133,7 @@ struct _ple_locator_t {
 
   int       n_intersects;        /* Number of intersecting distant ranks */
   int      *intersect_rank;      /* List of intersecting distant ranks */
+  int      *comm_order;          /* Optional communication ordering */
 
   ple_lnum_t    point_id_base;   /* base numbering for (external) point ids */
 
@@ -327,6 +330,170 @@ _locator_trace_end_comm(int      end_p_comm,
   timing[1] += ple_timer_cpu_time() - timing[3];
 }
 
+/*----------------------------------------------------------------------------
+ * Descend binary tree for the ordering of an integer array.
+ *
+ * parameters:
+ *   number  <-- pointer to numbers of entities that should be ordered.
+ *               (if NULL, a default 1 to n numbering is considered)
+ *   level   <-- level of the binary tree to descend
+ *   n       <-- number of entities in the binary tree to descend
+ *   order   <-> ordering array
+ *----------------------------------------------------------------------------*/
+
+inline static void
+_order_int_descend_tree(const int     number[],
+                        size_t        level,
+                        const size_t  n,
+                        int           order[])
+{
+  size_t i_save, i1, i2, lv_cur;
+
+  i_save = (size_t)(order[level]);
+
+  while (level <= (n/2)) {
+
+    lv_cur = (2*level) + 1;
+
+    if (lv_cur < n - 1) {
+
+      i1 = (size_t)(order[lv_cur+1]);
+      i2 = (size_t)(order[lv_cur]);
+
+      if (number[i1] > number[i2]) lv_cur++;
+    }
+
+    if (lv_cur >= n) break;
+
+    i1 = i_save;
+    i2 = (size_t)(order[lv_cur]);
+
+    if (number[i1] >= number[i2]) break;
+
+    order[level] = order[lv_cur];
+    level = lv_cur;
+
+  }
+
+  order[level] = i_save;
+}
+
+/*----------------------------------------------------------------------------
+ * Order an array of local numbers.
+ *
+ * parameters:
+ *   number  <-- array of entity numbers (if NULL, a default 1 to n
+ *               numbering is considered)
+ *   order   <-- pre-allocated ordering table
+ *   n       <-- number of entities considered
+ *----------------------------------------------------------------------------*/
+
+static void
+_order_int(const int     number[],
+           int           order[],
+           const size_t  n)
+{
+  size_t i;
+  int o_save;
+
+  /* Initialize ordering array */
+
+  for (i = 0; i < n; i++)
+    order[i] = i;
+
+  if (n < 2)
+    return;
+
+  /* Create binary tree */
+
+  i = (n / 2);
+  do {
+    i--;
+    _order_int_descend_tree(number, i, n, order);
+  } while (i > 0);
+
+  /* Sort binary tree */
+
+  for (i = n - 1; i > 0; i--) {
+    o_save   = order[0];
+    order[0] = order[i];
+    order[i] = o_save;
+    _order_int_descend_tree(number, 0, i, order);
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Order communicating ranks to reduce serialization
+ *
+ * parameters:
+ *   rank_id       <--  local rank id
+ *   n_ranks       <--  communicator size
+ *   n_comm_ranks  <--  number of communicating ranks
+ *   comm_rank     <--  communicating ranks
+ *   order         -->  communication order
+ *----------------------------------------------------------------------------*/
+
+static void
+_order_comm_ranks(int        rank_id,
+                  int        n_ranks,
+                  int        n_comm_ranks,
+                  const int  comm_rank[],
+                  int        order[])
+{
+  int *sub_rank, *rank_dist;
+
+  PLE_MALLOC(sub_rank, n_comm_ranks, int);
+  PLE_MALLOC(rank_dist, n_comm_ranks, int);
+
+  /* Compute ordering ("distance") key */
+
+  for (int i = 0; i < n_comm_ranks; i++) {
+    sub_rank[i] = comm_rank[i];
+    rank_dist[i] = 0;
+  }
+
+  int l_r_id = rank_id;
+  int m_r_id = (n_ranks+1) / 2;
+
+  while (true) {
+
+    if (l_r_id < m_r_id) {
+      for (int i = 0; i < n_comm_ranks; i++) {
+        if (sub_rank[i] >= m_r_id) {
+          rank_dist[i] = rank_dist[i]*2 + 1;
+          sub_rank[i] -= m_r_id;
+        }
+        else
+          rank_dist[i] = rank_dist[i]*2;
+      }
+    }
+    else {
+      for (int i = 0; i < n_comm_ranks; i++) {
+        if (sub_rank[i] >= m_r_id) {
+          rank_dist[i] = rank_dist[i]*2;
+          sub_rank[i] -= m_r_id;
+        }
+        else
+          rank_dist[i] = rank_dist[i]*2 + 1;
+      }
+      l_r_id -= m_r_id;
+    }
+
+    if (m_r_id < 2)
+      break;
+
+    m_r_id = (m_r_id+1) / 2;
+
+  }
+
+  /* Order results */
+
+  _order_int(rank_dist, order, n_comm_ranks);
+
+  PLE_FREE(sub_rank);
+  PLE_FREE(rank_dist);
+}
+
 #endif /* defined(PLE_HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
@@ -435,6 +602,8 @@ _point_extents(int                  dim,
     if (point_list != NULL) {
 
       for (j = 0; j < n_points; j++) {
+        if (location[j] >= 0)
+          continue;
         coord_idx = point_list[j] - point_list_base;
         for (i = 0; i < dim; i++) {
           if (extents[i]       > point_coords[(coord_idx * dim) + i])
@@ -448,6 +617,8 @@ _point_extents(int                  dim,
     else {
 
       for (coord_idx = 0; coord_idx < n_points; coord_idx++) {
+        if (location[coord_idx] >= 0)
+          continue;
         for (i = 0; i < dim; i++) {
           if (extents[i]       > point_coords[(coord_idx * dim) + i])
             extents[i]       = point_coords[(coord_idx * dim) + i];
@@ -463,8 +634,6 @@ _point_extents(int                  dim,
     if (point_list != NULL) {
 
       for (j = 0; j < n_points; j++) {
-        if (location[j] >= 0)
-          continue;
         coord_idx = point_list[j] - point_list_base;
         for (i = 0; i < dim; i++) {
           if (extents[i]       > point_coords[(coord_idx * dim) + i])
@@ -478,8 +647,6 @@ _point_extents(int                  dim,
     else {
 
       for (j = 0; j < n_points; j++) {
-        if (location[j] >= 0)
-          continue;
         for (i = 0; i < dim; i++) {
           if (extents[i]       > point_coords[(j * dim) + i])
             extents[i]       = point_coords[(j * dim) + i];
@@ -589,11 +756,21 @@ _location_ranks(ple_locator_t  *this_locator,
       this_locator->intersect_rank[k++] = j;
   }
 
+  if (this_locator->locate_algorithm == _LOCATE_BB_SENDRECV_ORDERED) {
+    int rank_id;
+    MPI_Comm_rank(this_locator->comm, &rank_id);
+    PLE_REALLOC(this_locator->comm_order, this_locator->n_intersects, int);
+    _order_comm_ranks(rank_id,
+                      comm_size,
+                      this_locator->n_intersects,
+                      this_locator->intersect_rank,
+                      this_locator->comm_order);
+  }
+
   PLE_FREE(send_flag);
   PLE_FREE(recv_flag);
 
-  /* Now convert location rank id to intersect rank
-     (communication ordering not yet optimized) */
+  /* Now convert location rank id to intersect rank */
 
   PLE_MALLOC(intersect_rank_id, this_locator->n_ranks, int);
 
@@ -666,7 +843,6 @@ _intersects_distant(ple_locator_t       *this_locator,
                     const ple_lnum_t     location[],
                     ple_mesh_extents_t  *mesh_extents_f)
 {
-  int i;
   int stride2;
   double extents[12];
 
@@ -687,7 +863,7 @@ _intersects_distant(ple_locator_t       *this_locator,
   intersects.n = 0;
 
   /* initialize mesh extents in case mesh is empty or dim < 3 */
-  for (i = 0; i < dim; i++) {
+  for (int i = 0; i < dim; i++) {
     extents[i]       =  HUGE_VAL;
     extents[i + dim] = -HUGE_VAL;
   }
@@ -705,7 +881,7 @@ _intersects_distant(ple_locator_t       *this_locator,
                  location,
                  extents + 2*dim);
 
-  for (i = 0; i < dim; i++) {
+  for (int i = 0; i < dim; i++) {
 
     if (extents[i] > -HUGE_VAL + tolerance_base)
       extents[i]         -= tolerance_base;
@@ -750,7 +926,7 @@ _intersects_distant(ple_locator_t       *this_locator,
   n_intersects = 0;
   PLE_MALLOC(intersect_rank, this_locator->n_ranks, int);
 
-  for (i = 0; i < this_locator->n_ranks; i++) {
+  for (int i = 0; i < this_locator->n_ranks; i++) {
     j = this_locator->start_rank + i;
     if (  (_intersect_extents(dim,
                               extents + (2*dim),
@@ -761,14 +937,13 @@ _intersects_distant(ple_locator_t       *this_locator,
       intersect_rank[n_intersects] = j;
       n_intersects += 1;
     }
-
   }
 
   intersects.n = n_intersects;
   PLE_MALLOC(intersects.rank, intersects.n, int);
   PLE_MALLOC(intersects.extents, intersects.n * stride2, double);
 
-  for (i = 0; i < intersects.n; i++) {
+  for (int i = 0; i < intersects.n; i++) {
 
     intersects.rank[i] = intersect_rank[i];
 
@@ -812,8 +987,8 @@ _transfer_location_distant(ple_locator_t  *this_locator,
                            ple_lnum_t      location[],
                            ple_lnum_t      location_rank_id[])
 {
-  int i, k, dist_rank;
-  ple_lnum_t j, dist_index, n_points_loc, n_points_dist, dist_v_idx;
+  int dist_rank;
+  ple_lnum_t j, k, n_points_loc, n_points_dist, dist_v_idx;
 
   double comm_timing[4] = {0., 0., 0., 0.};
 
@@ -831,15 +1006,17 @@ _transfer_location_distant(ple_locator_t  *this_locator,
      exact location info is not necessary, so not determined;
      all that is necessary is to mark located points as such */
 
-  for (i = 0; i < this_locator->n_intersects; i++) {
+  for (int li = 0; li < this_locator->n_intersects; li++) {
+
+    int i = (this_locator->comm_order != NULL) ?
+      this_locator->comm_order[li] : li;
 
     MPI_Status status;
     ple_lnum_t *loc_v_buf, *dist_v_ptr;
     const ple_lnum_t *_local_point_ids
       = this_locator->local_point_ids + this_locator->local_points_idx[i];
 
-    dist_index = i; /* Ordering (communication schema) not yet optimized */
-    dist_rank = this_locator->intersect_rank[dist_index];
+    dist_rank = this_locator->intersect_rank[i];
 
     n_points_loc =    this_locator->local_points_idx[i+1]
                     - this_locator->local_points_idx[i];
@@ -874,6 +1051,7 @@ _transfer_location_distant(ple_locator_t  *this_locator,
 
   this_locator->n_intersects = 0;
   PLE_FREE(this_locator->intersect_rank);
+  PLE_FREE(this_locator->comm_order);
   PLE_FREE(this_locator->local_points_idx);
   PLE_FREE(this_locator->distant_points_idx);
   PLE_FREE(this_locator->local_point_ids);
@@ -926,7 +1104,7 @@ _locate_distant(ple_locator_t               *this_locator,
                 ple_mesh_extents_t          *mesh_extents_f,
                 ple_mesh_elements_locate_t  *mesh_locate_f)
 {
-  int i, k;
+  int k;
   int dist_rank, dist_index;
   ple_lnum_t j;
   ple_lnum_t n_coords_loc, n_coords_dist;
@@ -1009,10 +1187,26 @@ _locate_distant(ple_locator_t               *this_locator,
   else
     send_tag = NULL;
 
+  int *comm_order = NULL;
+  if (this_locator->locate_algorithm == _LOCATE_BB_SENDRECV_ORDERED) {
+    int comm_size, rank_id;
+    MPI_Comm_size(this_locator->comm, &comm_size);
+    MPI_Comm_rank(this_locator->comm, &rank_id);
+    PLE_MALLOC(comm_order, intersects.n, int);
+    _order_comm_ranks(rank_id,
+                      comm_size,
+                      intersects.n,
+                      intersects.rank,
+                      comm_order);
+  }
+
   /* First loop on possibly intersecting distant ranks */
   /*---------------------------------------------------*/
 
-  for (i = 0; i < intersects.n; i++) {
+  for (int li = 0; li < intersects.n; li++) {
+
+    int i = (comm_order != NULL) ?
+      comm_order[li] : li;
 
     dist_index = i; /* Ordering (communication schema) not yet optimized */
     dist_rank  = intersects.rank[dist_index];
@@ -1157,6 +1351,8 @@ _locate_distant(ple_locator_t               *this_locator,
 
   }
 
+  PLE_FREE(comm_order);
+
   /* Free temporary arrays */
 
   PLE_FREE(send_id);
@@ -1220,8 +1416,8 @@ _locate_all_distant(ple_locator_t               *this_locator,
                     ple_mesh_extents_t          *mesh_extents_f,
                     ple_mesh_elements_locate_t  *mesh_locate_f)
 {
-  int i, k;
-  int dist_rank, dist_index;
+  int k;
+  int dist_rank;
   ple_lnum_t j;
   ple_lnum_t n_coords_loc, n_coords_dist, n_interior, n_exterior;
   ple_lnum_t coord_idx, start_idx;
@@ -1278,7 +1474,7 @@ _locate_all_distant(ple_locator_t               *this_locator,
   PLE_MALLOC(location_shift, this_locator->n_intersects, ple_lnum_t);
   PLE_MALLOC(location_count, this_locator->n_intersects, ple_lnum_t);
 
-  for (i = 0; i < this_locator->n_intersects; i++)
+  for (int i = 0; i < this_locator->n_intersects; i++)
     location_count[i] = 0;
 
   n_exterior = 0;
@@ -1297,10 +1493,10 @@ _locate_all_distant(ple_locator_t               *this_locator,
 
   if (this_locator->n_intersects > 0)
     location_shift[0] = 0;
-  for (i = 1; i < this_locator->n_intersects; i++)
+  for (int i = 1; i < this_locator->n_intersects; i++)
     location_shift[i] = location_shift[i-1] + location_count[i-1];
 
-  for (i = 0; i < this_locator->n_intersects; i++)
+  for (int i = 0; i < this_locator->n_intersects; i++)
     location_count[i] = 0;
 
   PLE_MALLOC(send_id, n_points, ple_lnum_t);
@@ -1342,15 +1538,16 @@ _locate_all_distant(ple_locator_t               *this_locator,
   this_locator->local_points_idx[0] = 0;
   this_locator->distant_points_idx[0] = 0;
 
-  for (i = 0; i < this_locator->n_intersects; i++) {
+  for (int li = 0; li < this_locator->n_intersects; li++) {
 
-    dist_index = i; /* Ordering (communication schema) not yet optimized */
-    dist_rank = this_locator->intersect_rank[dist_index];
+    int i = (this_locator->comm_order != NULL) ?
+      this_locator->comm_order[li] : li;
+
+    dist_rank = this_locator->intersect_rank[i];
 
     n_coords_loc = location_count[i];
 
-    this_locator->local_points_idx[i+1]
-      = this_locator->local_points_idx[i] + n_coords_loc;
+    this_locator->local_points_idx[i+1] = n_coords_loc;
 
     _locator_trace_start_comm(_ple_locator_log_start_p_comm, comm_timing);
 
@@ -1360,9 +1557,18 @@ _locate_all_distant(ple_locator_t               *this_locator,
 
     _locator_trace_end_comm(_ple_locator_log_end_p_comm, comm_timing);
 
-    this_locator->distant_points_idx[i+1]
-      = this_locator->distant_points_idx[i] + n_coords_dist;
+    this_locator->distant_points_idx[i+1] = n_coords_dist;
 
+  }
+
+  /* Counts to index */
+
+  this_locator->local_points_idx[0] = 0;
+  this_locator->distant_points_idx[0] = 0;
+
+  for (int i = 0; i < this_locator->n_intersects; i++) {
+    this_locator->local_points_idx[i+1] += this_locator->local_points_idx[i];
+    this_locator->distant_points_idx[i+1] += this_locator->distant_points_idx[i];
   }
 
   /* Third loop on possibly intersecting distant ranks */
@@ -1380,12 +1586,13 @@ _locate_all_distant(ple_locator_t               *this_locator,
               this_locator->distant_points_idx[this_locator->n_intersects] * dim,
               ple_coord_t);
 
-  for (i = 0; i < this_locator->n_intersects; i++) {
+  for (int li = 0; li < this_locator->n_intersects; li++) {
 
     ple_coord_t *send_coords;
 
-    dist_index = i; /* Ordering (communication schema) not yet optimized */
-    dist_rank = this_locator->intersect_rank[dist_index];
+    int i = (this_locator->comm_order != NULL) ?
+      this_locator->comm_order[li] : li;
+    dist_rank = this_locator->intersect_rank[i];
 
     n_coords_loc =    this_locator->local_points_idx[i+1]
                     - this_locator->local_points_idx[i];
@@ -1499,6 +1706,7 @@ _transfer_location_local(ple_locator_t  *this_locator,
 
   this_locator->n_intersects = 0;
   PLE_FREE(this_locator->intersect_rank);
+  PLE_FREE(this_locator->comm_order);
   PLE_FREE(this_locator->local_points_idx);
   PLE_FREE(this_locator->distant_points_idx);
   PLE_FREE(this_locator->local_point_ids);
@@ -1885,8 +2093,8 @@ _exchange_point_var_distant(ple_locator_t     *this_locator,
                             size_t             stride,
                             _Bool              reverse)
 {
-  int i, dist_v_count, loc_v_count, size;
-  int dist_rank, dist_index;
+  int dist_v_count, loc_v_count, size;
+  int dist_rank;
   int dist_v_flag, loc_v_flag;
   ple_lnum_t n_points_loc, n_points_loc_max, n_points_dist;
   size_t dist_v_idx;
@@ -1917,7 +2125,7 @@ _exchange_point_var_distant(ple_locator_t     *this_locator,
 
   n_points_loc_max = 0;
 
-  for (i = 0; i < this_locator->n_intersects; i++) {
+  for (int i = 0; i < this_locator->n_intersects; i++) {
     n_points_loc =    this_locator->local_points_idx[i+1]
                     - this_locator->local_points_idx[i];
     if (n_points_loc > n_points_loc_max)
@@ -1929,13 +2137,15 @@ _exchange_point_var_distant(ple_locator_t     *this_locator,
   /* Loop on MPI ranks */
   /*-------------------*/
 
-  for (i = 0; i < this_locator->n_intersects; i++) {
+  for (int li = 0; li < this_locator->n_intersects; li++) {
+
+    int i = (this_locator->comm_order != NULL) ?
+      this_locator->comm_order[li] : li;
 
     const ple_lnum_t *_local_point_ids
       = this_locator->local_point_ids + this_locator->local_points_idx[i];
 
-    dist_index = i; /* Ordering (communication schema) not yet optimized */
-    dist_rank = this_locator->intersect_rank[dist_index];
+    dist_rank = this_locator->intersect_rank[i];
 
     n_points_loc =    this_locator->local_points_idx[i+1]
                     - this_locator->local_points_idx[i];
@@ -2591,9 +2801,6 @@ ple_locator_create(void)
   this_locator->dim = 0;
   this_locator->have_tags = 0;
 
-  this_locator->locate_algorithm = _LOCATE_BB_SENDRECV;
-  this_locator->exchange_algorithm = _EXCHANGE_SENDRECV;
-
 #if defined(PLE_HAVE_MPI)
   this_locator->comm = comm;
   this_locator->n_ranks = n_ranks;
@@ -2603,10 +2810,14 @@ ple_locator_create(void)
   this_locator->start_rank = 0;
 #endif
 
+  this_locator->locate_algorithm = _LOCATE_BB_SENDRECV;
+  this_locator->exchange_algorithm = _EXCHANGE_SENDRECV;
+
   this_locator->point_id_base = 0;
 
   this_locator->n_intersects = 0;
   this_locator->intersect_rank = NULL;
+  this_locator->comm_order = NULL;
 
   this_locator->local_points_idx = NULL;
   this_locator->distant_points_idx = NULL;
@@ -2660,6 +2871,7 @@ ple_locator_destroy(ple_locator_t  *this_locator)
     PLE_FREE(this_locator->distant_point_coords);
 
     PLE_FREE(this_locator->intersect_rank);
+    PLE_FREE(this_locator->comm_order);
 
     PLE_FREE(this_locator->interior_list);
     PLE_FREE(this_locator->exterior_list);
@@ -2812,9 +3024,6 @@ ple_locator_extend_search(ple_locator_t               *this_locator,
   double w_start, w_end, cpu_start, cpu_end;
   ple_lnum_t  *location;
 
-#if defined(PLE_HAVE_MPI)
-#endif
-
   double comm_timing[4] = {0., 0., 0., 0.};
   int mpi_flag = 0;
 
@@ -2847,13 +3056,20 @@ ple_locator_extend_search(ple_locator_t               *this_locator,
   if (mpi_flag) {
 
     /* Flag values
-       0: mesh dimension; 1: space dimension;
-       2: minimum algorithm version; 3: maximum algorithm version,
-       4: preferred algorithm version,
+       0: mesh dimension
+       1: space dimension
+       2: minimum algorithm version
+       3: maximum algorithm version
+       4: preferred algorithm version
        5: have point tags */
 
     int globflag[6];
-    int locflag[6] = {-1, -1, 1, -1, -1, 0};
+    int locflag[6] = {-1,
+                      -1,
+                      _LOCATE_BB_SENDRECV,
+                      -_LOCATE_BB_SENDRECV_ORDERED,
+                      _LOCATE_BB_SENDRECV_ORDERED,
+                      0};
     ple_lnum_t  *location_rank_id;
 
     /* Check that at least one of the local or distant nodal meshes
@@ -2893,6 +3109,11 @@ ple_locator_extend_search(ple_locator_t               *this_locator,
 
     globflag[3] = -globflag[3];
 
+    /* Compatibility with older versions,
+       which initialized locflag[3] to -1 */
+    if (globflag[3] == 1)
+      globflag[3] = _LOCATE_BB_SENDRECV;
+
     if (globflag[2] > globflag[3])
       ple_error(__FILE__, __LINE__, 0,
                 _("Incompatible locator algorithm ranges:\n"
@@ -2900,6 +3121,13 @@ ple_locator_extend_search(ple_locator_t               *this_locator,
                   "  global maximum algorithm id %d\n"
                   "PLE library versions or builds are incompatible."),
                 globflag[2], globflag[3]);
+
+    if (globflag[4] < globflag[2])
+      globflag[4] = globflag[2];
+    if (globflag[4] > globflag[3])
+      globflag[4] = globflag[3];
+
+    this_locator->locate_algorithm = globflag[4];
 
     if (globflag[5] > 0)
       this_locator->have_tags = 1;
@@ -3442,10 +3670,18 @@ ple_locator_dump(const ple_locator_t  *this_locator)
   /* Arrays indexed by rank */
   /*------------------------*/
 
-  for (i = 0; i < _locator->n_intersects; i++)
-    ple_printf("\n"
-               "  Intersection %d with distant rank %d\n\n",
-               i+1, _locator->intersect_rank[i]);
+  if (_locator->intersect_rank != NULL) {
+    for (i = 0; i < _locator->n_intersects; i++)
+      ple_printf("\n"
+                 "  Intersection %d with distant rank %d\n\n",
+                 i, _locator->intersect_rank[i]);
+  }
+  if (_locator->intersect_rank != NULL) {
+    for (i = 0; i < _locator->n_intersects; i++)
+      ple_printf("\n"
+                 "  Communication ordering %d: %d\n\n",
+                 i, _locator->comm_order[i]);
+  }
 
   if (_locator->n_interior > 0) {
 
@@ -3457,7 +3693,7 @@ ple_locator_dump(const ple_locator_t  *this_locator)
       for (i = 0; i < _locator->n_intersects; i++) {
         if (idx[i+1] > idx[i]) {
           ple_printf("%6d (idx = %10d) %10d\n",
-                     i + 1, idx[i], index[idx[i]]);
+                     i, idx[i], index[idx[i]]);
           for (j = idx[i] + 1; j < idx[i + 1]; j++)
             ple_printf("                          %10d\n", index[j]);
         }

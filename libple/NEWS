@@ -1,8 +1,17 @@
 Release 2.0.3 (Unreleased)
 ==========================
 
+Changes:
+--------
+
+- Add communication ordering to reduce serialization in parallel.
+  Algorithm versioning ensures this is not used when combined
+  with an older PLE library version.
+
 Bug fixes:
 ----------
+
+- Really fix PLE locator for local cases when points fall outside domain.
 
 - Avoid crash in ple_locator_shift_location() for empty locator.
 
