@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>605</width>
-    <height>574</height>
+    <height>586</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -363,7 +363,7 @@
       <item row="2" column="0">
        <widget class="QCheckBox" name="checkBoxMeshRestart">
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;In case of restart, automatically use the mesh_input from the matching checkpoint,&lt;/p&gt;&lt;p&gt;and skip all preprocessing modifications.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;In case of restart, automatically use the mesh_input from the matching checkpoint, and skip all preprocessing modifications.&lt;/p&gt;&lt;p&gt;This option is ignored when restarting from a different mesh.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>Use unmodified checkpoint mesh in case of restart</string>
