@@ -147,6 +147,9 @@
           <layout class="QGridLayout" name="gridLayout">
            <item row="3" column="1">
             <widget class="QLabel" name="labelCheckRestartMesh">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Map restart from a checkpoint based on a different mesh than the current computational mesh.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string>Different mesh</string>
              </property>
@@ -228,6 +231,9 @@
            </item>
            <item row="3" column="0">
             <widget class="QCheckBox" name="checkBoxRestartMesh">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Map restart from a checkpoint based on a different mesh than the current computational mesh.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
              <property name="text">
               <string/>
              </property>
