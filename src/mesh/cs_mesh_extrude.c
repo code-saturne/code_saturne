@@ -120,11 +120,17 @@ _angle(const cs_lnum_t  v_ids[3],
   const cs_real_t lsq0 = cs_math_3_square_norm(u);
   const cs_real_t lsq1 = cs_math_3_square_norm(v);
 
+  double r = d/sqrt(lsq0*lsq1);
+  if (r > 1)
+    r = 1;
+  else if (r < -1)
+    r = -1;
+
+  double theta = acos(r);
+
   cs_real_t uv[3];
 
   cs_math_3_cross_product(u, v, uv);
-
-  double theta = acos(d/sqrt(lsq0*lsq1));
 
   /* Check the sign */
   if (cs_math_3_dot_product(uv, f_n) < 0)
