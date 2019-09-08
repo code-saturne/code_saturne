@@ -768,7 +768,8 @@ class domain(base_domain):
             if not os.path.exists(restart_input_mesh):
                 restart_input_mesh = None
 
-        if restart_input_mesh is None or self.preprocess_on_restart:
+        if restart_input_mesh is None or self.preprocess_on_restart \
+           or self.restart_mesh_input:
             if self.mesh_input:
                 mesh_input = os.path.expanduser(self.mesh_input)
                 if not os.path.isabs(mesh_input):
