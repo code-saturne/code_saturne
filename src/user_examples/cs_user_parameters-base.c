@@ -848,13 +848,13 @@ cs_user_finalize_setup(cs_domain_t     *domain)
    * (Luminance and radiative density flux vector) */
 
   /*! [setup_post_lum] */
-   cs_field_t *f = cs_field_by_name_try('luminance');
+   cs_field_t *f = cs_field_by_name_try("luminance");
    if (f != NULL)
      cs_field_set_key_int_bits(f,
                                cs_field_key_id("post_vis"),
                                CS_POST_MONITOR);
 
-   f = cs_field_by_name_try('radiative_flux');
+   f = cs_field_by_name_try("radiative_flux");
    if (f != NULL)
      cs_field_set_key_int_bits(f,
                                cs_field_key_id("post_vis"),
@@ -864,5 +864,7 @@ cs_user_finalize_setup(cs_domain_t     *domain)
 
 
 }
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

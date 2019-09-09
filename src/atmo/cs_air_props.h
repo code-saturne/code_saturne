@@ -82,100 +82,101 @@ extern  cs_air_fluid_props_t  *cs_glob_air_props;
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_air_h_l(const cs_real_t  t_l);
+cs_air_h_l(cs_real_t  t_l);
 
-/*----------------------------------------------------------------------------
- * Calculation water vapour mass enthalpy
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation water vapor mass enthalpy
  *
- * parameters:
- *   tvap <-- water vapour temperature in Celsius degree
+ * \return water vapour mass enthalpy
  *
- * returns:
- *   water vapour mass enthalpy
- *----------------------------------------------------------------------------*/
-
-cs_real_t
-cs_air_hvap(const cs_real_t  t_vap);
-
-/*----------------------------------------------------------------------------
- * Calculation of the derivate of the absolute humidity at saturation
- *
- * parameters:
- *   th <-- temperature in Celsius degree
- *
- * returns:
- *   derivative of the humidity of saturated air
- *----------------------------------------------------------------------------*/
+ * \param[in]     t_vap          water vapour temperature in Celsius
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_air_dxsath(const cs_real_t  th,
-              const cs_real_t  p0);
+cs_air_hvap(cs_real_t  t_vap);
 
-/*----------------------------------------------------------------------------
- * Calculation of the Cp of humid air
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of the derivate of the absolute humidity at saturation
  *
- * parameters:
- *   humid     <-- absolute humidity of humid air
- *   humid_sat <-- absolute humidity of saturated humid air
+ * \return derivative of the humidity of saturated air
  *
- * returns:
- *   cp_h <-- specific heat of humid air
- *----------------------------------------------------------------------------*/
-
-cs_real_t
-cs_air_cp_humidair(const cs_real_t  humid,
-                   const cs_real_t  humid_sat);
-
-/*----------------------------------------------------------------------------
- * Calculation of the specific enthalpy of humid air
- *
- * parameters:
- *   cp_h      <-- Cp of humid air
- *   humid     <-- absolute humidity of humid air
- *   humid_sat <-- absolute humidity of saturated humid air
- *   t_h       <-- humid air temperature in Celsius (in Celsius)
- *
- * returns:
- *   h_h <-- specific enthalpy of humid air
- *----------------------------------------------------------------------------*/
+ * \param[in]     th            temperature in Celsius degree
+ * \param[in]     p0            reference pressure
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_air_h_humidair(const cs_real_t  cp_h,
-                  const cs_real_t  humid,
-                  const cs_real_t  humid_sat,
-                  const cs_real_t  t_h);
+cs_air_dxsath(cs_real_t  th,
+              cs_real_t  p0);
 
-/*----------------------------------------------------------------------------
- * Calculation of the temperature of humid air
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of the Cp of humid air
  *
- * parameters:
- *   cp_h      <-- Cp of humid air
- *   humid     <-- absolute humidity of humid air
- *   humid_sat <-- absolute humidity of saturated humid air
- *   h_h       <-- humid air enthalpy
+ * \return specific heat of humid air
  *
- * returns:
- *   t_h <-- temperature of humid air (in Celsius)
- *----------------------------------------------------------------------------*/
+ * \param[in]     x             absolute humidity of humid air
+ * \param[in]     x_s           absolute humidity of saturated humid air
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_air_t_humidair(const cs_real_t  cp_h,
-                  const cs_real_t  humid,
-                  const cs_real_t  humid_sat,
-                  const cs_real_t  h_h);
+cs_air_cp_humidair(cs_real_t  x,
+                   cs_real_t  x_s);
 
-/*----------------------------------------------------------------------------
- * Calculation of the temperature of liquid water
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of the specific enthalpy of humid air
  *
- * parameters:
- *   h_liqwater <-- specific enthalpy of liquid water
+ * \return specific enthalpy of humid air
  *
- * returns:
- *   liquid water temperature (in Celsius)
- *----------------------------------------------------------------------------*/
+ * \param[in]     cp_h          Cp of humid air
+ * \param[in]     x             absolute humidity of humid air
+ * \param[in]     x_s           absolute humidity of saturated humid air
+ * \param[in]     t_h           temperature of humid air in Celsius
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_liq_h_to_t(const cs_real_t h_liqwater);
+cs_air_h_humidair(cs_real_t  cp_h,
+                  cs_real_t  x,
+                  cs_real_t  x_s,
+                  cs_real_t  t_h);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of the temperature of humid air
+ *
+ * \return temperature of humid air (in Celsius)
+ *
+ * \param[in]     cp_h          Cp of humid air
+ * \param[in]     x             absolute humidity of humid air
+ * \param[in]     x_s           absolute humidity of saturated humid air
+ * \param[in]     h_h           humid air enthalpy
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_air_t_humidair(cs_real_t  cp_h,
+                  cs_real_t  x,
+                  cs_real_t  x_s,
+                  cs_real_t  h_h);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Calculation of the temperature of liquid water
+ *
+ * \return liquid water temperature (in Celsius)
+ *
+ * \param[in]     h_l           specific enthalpy of liquid water
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_liq_h_to_t(cs_real_t  h_l);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -188,7 +189,7 @@ cs_liq_h_to_t(const cs_real_t h_liqwater);
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_liq_t_to_h(const cs_real_t t_liqwater);
+cs_liq_t_to_h(cs_real_t  t_l);
 
 /*----------------------------------------------------------------------------*/
 
@@ -196,49 +197,51 @@ cs_liq_t_to_h(const cs_real_t t_liqwater);
 /*!
  * \brief Calculation of the air humidity at saturation for a given temperature
  *
- * \returns absolute humidity of saturated air
+ * \return absolute humidity of saturated air
  *
- * \param[in]  t_c   temperature in Celsius degree
- * \param[in]  p     reference pressure
- *
- *----------------------------------------------------------------------------*/
+ * \param[in]     t_c            temperature in Celsius degree
+ * \param[in]     p            reference pressure
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_air_x_sat(const cs_real_t  t_c,
-             const cs_real_t  p);
+cs_air_x_sat(cs_real_t  t_c,
+             cs_real_t  p);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Calculation of the air water mass fraction at saturation for a
  * given temperature
  *
- * \returns qw_s  the air water mass fraction at saturation
+ * \return the air water mass fraction at saturation
  *
  * \param[in]  t_c   temperature in Celsius degree
  * \param[in]  p     reference pressure
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_air_yw_sat(const cs_real_t  t_c,
-              const cs_real_t  p);
+cs_air_yw_sat(cs_real_t  t_c,
+              cs_real_t  p);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Computes the saturation water vapour pressure function of the
- *      temperature (in Celcius)
+ *      temperature (in Celsius)
  *
- * \returns e_sat  the saturation water vapour pressure (=esatliq)
+ * \return the saturation water vapour pressure (=esatliq)
  *
  * \param[in]  t_c   temperature in Celsius degree
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_air_pwv_sat(const cs_real_t  t_c);
+cs_air_pwv_sat(cs_real_t  t_c);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Convert the absolute humidity of humid air to the air water
- * mass fraction qwt = Ym = mw/mh
+ * \brief Convert the absolute humidity of humid air to the air
+ *  water mass fraction qwt = Ym = mw/mh
  *
  * \return air water mass fraction
  *
@@ -251,8 +254,8 @@ cs_air_x_to_yw(const cs_real_t  x);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Convert the air water mass fraction qwt = Ym = mw/mh to the
- * absolute humidity of humid air
+ * \brief Convert the air water mass fraction qwt = Ym = mw/mh to the absolute
+ * humidity of humid air
  *
  * \return absolute humidity of humid air
  *
@@ -261,14 +264,14 @@ cs_air_x_to_yw(const cs_real_t  x);
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_air_yw_to_x(const cs_real_t  qw);
+cs_air_yw_to_x(cs_real_t  qw);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Calculation of the density of humid air
  *
  * \param[in]     ywm           air water mass fraction
- * \param[in]     t_liq         temperature  computed from
+ * \param[in]     t_liq         temperature computed from
  *                              liquid potential temperature (K)
  * \param[in]     p             pressure
  * \param[out]    yw_liq        liquid water mass fraction
@@ -278,12 +281,12 @@ cs_air_yw_to_x(const cs_real_t  qw);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rho_humidair(const cs_real_t ywm, //TODO rename yw_h
-                const cs_real_t t_liq,
-                const cs_real_t p,
-                cs_real_t      *yw_liq,
-                cs_real_t      *t_h,
-                cs_real_t      *rho_h);
+cs_rho_humidair(cs_real_t   ywm, //TODO rename yw_h
+                cs_real_t   t_liq,
+                cs_real_t   p,
+                cs_real_t  *yw_liq,
+                cs_real_t  *t_h,
+                cs_real_t  *rho_h);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -301,12 +304,12 @@ cs_rho_humidair(const cs_real_t ywm, //TODO rename yw_h
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_air_rho_humidair(const cs_real_t x,
-                    const cs_real_t rho0,
-                    const cs_real_t p0,
-                    const cs_real_t t0,
-                    const cs_real_t molmassrat,
-                    const cs_real_t t_h);
+cs_air_rho_humidair(cs_real_t  x,
+                    cs_real_t  rho0,
+                    cs_real_t  p0,
+                    cs_real_t  t0,
+                    cs_real_t  molmassrat,
+                    cs_real_t  t_h);
 
 /*----------------------------------------------------------------------------*/
 

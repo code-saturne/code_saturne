@@ -106,23 +106,23 @@ cs_air_glob_properties_get_pointer(double  **humidity0,
 
 void
 cs_air_glob_properties_get_pointer(double  **humidity0,
-                                    double  **cp_a,
-                                    double  **cp_v,
-                                    double  **cp_l,
-                                    double  **hv0,
-                                    double  **rho_l,
-                                    double  **lambda_h,
-                                    double  **lambda_l,
-                                    double  **droplet_diam)
+                                   double  **cp_a,
+                                   double  **cp_v,
+                                   double  **cp_l,
+                                   double  **hv0,
+                                   double  **rho_l,
+                                   double  **lambda_h,
+                                   double  **lambda_l,
+                                   double  **droplet_diam)
 {
-  *humidity0    = &(_props.humidity0    );
-  *cp_a         = &(_props.cp_a         );
-  *cp_v         = &(_props.cp_v         );
-  *cp_l         = &(_props.cp_l         );
-  *hv0          = &(_props.hv0          );
-  *rho_l        = &(_props.rho_l        );
-  *lambda_h     = &(_props.lambda_h     );
-  *lambda_l     = &(_props.lambda_l     );
+  *humidity0    = &(_props.humidity0);
+  *cp_a         = &(_props.cp_a);
+  *cp_v         = &(_props.cp_v);
+  *cp_l         = &(_props.cp_l);
+  *hv0          = &(_props.hv0);
+  *rho_l        = &(_props.rho_l);
+  *lambda_h     = &(_props.lambda_h);
+  *lambda_l     = &(_props.lambda_l);
   *droplet_diam = &(_props.droplet_diam );
 }
 
@@ -141,7 +141,7 @@ cs_air_glob_properties_get_pointer(double  **humidity0,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_air_h_l(const cs_real_t  t_l)
+cs_air_h_l(cs_real_t  t_l)
 {
   cs_real_t h_l = (cs_glob_air_props->cp_l) * t_l;
 
@@ -150,7 +150,7 @@ cs_air_h_l(const cs_real_t  t_l)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Calculation water vapour mass enthalpy
+ * \brief Calculation water vapor mass enthalpy
  *
  * \return water vapour mass enthalpy
  *
@@ -159,7 +159,7 @@ cs_air_h_l(const cs_real_t  t_l)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_air_hvap(const cs_real_t  t_vap)
+cs_air_hvap(cs_real_t  t_vap)
 {
   cs_air_fluid_props_t  *ct_prop = cs_glob_air_props;
 
@@ -183,8 +183,8 @@ cs_air_hvap(const cs_real_t  t_vap)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_air_dxsath(const cs_real_t  th,
-              const cs_real_t  p0)
+cs_air_dxsath(cs_real_t  th,
+              cs_real_t  p0)
 {
   cs_real_t   a1,b1,c1,ps,pv,grpim;
   cs_real_t   dxsath = 0.;
@@ -276,8 +276,8 @@ cs_air_dxsath(const cs_real_t  th,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_air_cp_humidair(const cs_real_t  x,
-                   const cs_real_t  x_s)
+cs_air_cp_humidair(cs_real_t  x,
+                   cs_real_t  x_s)
 {
   cs_real_t  cp_h;
   cs_air_fluid_props_t  *ct_prop = cs_glob_air_props;
@@ -307,10 +307,10 @@ cs_air_cp_humidair(const cs_real_t  x,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_air_h_humidair(const cs_real_t  cp_h,
-                   const cs_real_t  x,
-                   const cs_real_t  x_s,
-                   const cs_real_t  t_h)
+cs_air_h_humidair(cs_real_t  cp_h,
+                  cs_real_t  x,
+                  cs_real_t  x_s,
+                  cs_real_t  t_h)
 {
   cs_air_fluid_props_t  *ct_prop = cs_glob_air_props;
   cs_real_t h_h;
@@ -340,10 +340,10 @@ cs_air_h_humidair(const cs_real_t  cp_h,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_air_t_humidair(const cs_real_t  cp_h,
-                  const cs_real_t  x,
-                  const cs_real_t  x_s,
-                  const cs_real_t  h_h)
+cs_air_t_humidair(cs_real_t  cp_h,
+                  cs_real_t  x,
+                  cs_real_t  x_s,
+                  cs_real_t  h_h)
 {
   cs_air_fluid_props_t  *ct_prop = cs_glob_air_props;
   cs_real_t t_h;
@@ -368,7 +368,7 @@ cs_air_t_humidair(const cs_real_t  cp_h,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_liq_h_to_t(const cs_real_t h_l)
+cs_liq_h_to_t(cs_real_t  h_l)
 {
   cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
@@ -389,7 +389,7 @@ cs_liq_h_to_t(const cs_real_t h_l)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_liq_t_to_h(const cs_real_t t_l)
+cs_liq_t_to_h(cs_real_t  t_l)
 {
   cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
@@ -410,8 +410,8 @@ cs_liq_t_to_h(const cs_real_t t_l)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_air_x_sat(const cs_real_t  t_c,
-             const cs_real_t  p)
+cs_air_x_sat(cs_real_t  t_c,
+             cs_real_t  p)
 {
   cs_real_t  pv;
   cs_real_t  x_s = 0.;
@@ -444,14 +444,14 @@ cs_air_x_sat(const cs_real_t  t_c,
  *
  * \return the air water mass fraction at saturation
  *
- * \param[in]     t_c          temperature in Celsius degree
- * \param[in]     p            reference pressure
+ * \param[in]  t_c   temperature in Celsius degree
+ * \param[in]  p     reference pressure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_air_yw_sat(const cs_real_t  t_c,
-              const cs_real_t  p)
+cs_air_yw_sat(cs_real_t  t_c,
+              cs_real_t  p)
 {
   cs_real_t  x_s = 0.;
   cs_real_t  y_s = 0.;
@@ -470,14 +470,14 @@ cs_air_yw_sat(const cs_real_t  t_c,
  *
  * \return the saturation water vapour pressure (=esatliq)
  *
- * \param[in]     t_c            temperature in Celsius degree
+ * \param[in]  t_c   temperature in Celsius degree
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_air_pwv_sat(const cs_real_t  t_c)
+cs_air_pwv_sat(cs_real_t  t_c)
 {
-  cs_real_t  a1,b1,c1,ps,pv;
+  cs_real_t  a1, b1, c1, ps, pv;
 
   /* T between -20 and 0 degrees C */
 
@@ -496,7 +496,7 @@ cs_air_pwv_sat(const cs_real_t  t_c)
 
   /* T between 0 and 40 degrees C */
 
-  else if ((t_c >= 0.) && (t_c <= 40.)) {
+  else if (t_c <= 40.) {
 
     a1  = 6.4147;
     b1  = 17.438;
@@ -507,16 +507,16 @@ cs_air_pwv_sat(const cs_real_t  t_c)
 
   /* T between 40 and 80 degrees C */
 
-  else if (t_c >= 40.) {
+  else {
 
     const cs_real_t  t0 = 273.16;
-    const cs_real_t  Ax = 8.2969;
-    const cs_real_t  Ay = 4.76955;
-    const cs_real_t  A0 = 0.78614;
-    const cs_real_t  A2 = 5.028;
-    const cs_real_t  A3 = 0.000150475;
-    const cs_real_t  A4 = 0.00042873;
-    cs_real_t  tt,px,py,g1,g2,g3,g4;
+    const cs_real_t  ax = 8.2969;
+    const cs_real_t  ay = 4.76955;
+    const cs_real_t  a0 = 0.78614;
+    const cs_real_t  a2 = 5.028;
+    const cs_real_t  a3 = 0.000150475;
+    const cs_real_t  a4 = 0.00042873;
+    cs_real_t  tt, px, py, g1, g2, g3, g4;
 
     a1 = 10.7954;
 
@@ -524,14 +524,14 @@ cs_air_pwv_sat(const cs_real_t  t_c)
     /* T greater than 80 degrees C, clipped at 80°C */
     if (t_c > 80.)
       tt = 80./t0;
-    px = Ax * tt;
-    py = Ay * tt/(1. + tt);
+    px = ax * tt;
+    py = ay * tt/(1. + tt);
     g1 = a1 * tt/(1. + tt);
-    g2 = -A2 * log10(1. + tt);
-    g3 = A3 * (1. - 1./pow(10.,px));
-    g4 = A4 * (pow(10.,py) - 1.);
-    ps = A0 + g1 + g2 + g3 + g4;
-    pv = pow(10.,ps) * 100.;
+    g2 = -a2 * log10(1. + tt);
+    g3 = a3 * (1. - 1./pow(10.,px));
+    g4 = a4 * (pow(10., py) - 1.);
+    ps = a0 + g1 + g2 + g3 + g4;
+    pv = pow(10., ps) * 100.;
 
   }
 
@@ -550,7 +550,7 @@ cs_air_pwv_sat(const cs_real_t  t_c)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_air_x_to_yw(const cs_real_t  x)
+cs_air_x_to_yw(cs_real_t  x)
 {
   cs_real_t  qw = 0.;
 
@@ -571,7 +571,7 @@ cs_air_x_to_yw(const cs_real_t  x)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_air_yw_to_x(const cs_real_t  qw)
+cs_air_yw_to_x(cs_real_t  qw)
 {
   cs_real_t  x = 0.;
 
@@ -596,12 +596,12 @@ cs_air_yw_to_x(const cs_real_t  qw)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rho_humidair(const cs_real_t ywm, //TODO rename yw_h
-                const cs_real_t t_liq,
-                const cs_real_t p,
-                cs_real_t      *yw_liq,
-                cs_real_t      *t_h,
-                cs_real_t      *rho_h)
+cs_rho_humidair(cs_real_t   ywm, //TODO rename yw_h
+                cs_real_t   t_liq,
+                cs_real_t   p,
+                cs_real_t  *yw_liq,
+                cs_real_t  *t_h,
+                cs_real_t  *rho_h)
 {
   const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
 
@@ -631,7 +631,8 @@ cs_rho_humidair(const cs_real_t ywm, //TODO rename yw_h
   /* Saturated (ie. with liquid water) air parcel */
   else {
     *yw_liq = delta_yw
-      / (1. + yw_sat * cs_math_pow2(clatev) / (rair*rvsra*cp0*cs_math_pow2(t_h_k))); //FIXME rair * rvsra =rvap
+      / (1. + yw_sat * cs_math_pow2(clatev)
+      / (rair*rvsra*cp0*cs_math_pow2(t_h_k))); //FIXME rair * rvsra =rvap
     lrhum = rair*(1. + (rvsra - 1.)*(ywm - *yw_liq) -* yw_liq);
     t_h_k += (clatev/cp0) * *yw_liq;
   }
@@ -658,12 +659,12 @@ cs_rho_humidair(const cs_real_t ywm, //TODO rename yw_h
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_air_rho_humidair(const cs_real_t x,
-                    const cs_real_t rho0,
-                    const cs_real_t p0,
-                    const cs_real_t t0,
-                    const cs_real_t molmassrat,
-                    const cs_real_t t_h)
+cs_air_rho_humidair(cs_real_t  x,
+                    cs_real_t  rho0,
+                    cs_real_t  p0,
+                    cs_real_t  t0,
+                    cs_real_t  molmassrat,
+                    cs_real_t  t_h)
 {
   cs_real_t  rho_h;
 
