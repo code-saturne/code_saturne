@@ -415,7 +415,7 @@ do ifac = 1, nfabor
         call turbulence_bc_inlet_hyd_diam(ifac,                            &
                                           uref2, dhy, rhomoy, viscla,      &
                                           rcodcl)
-      else if (icalke(izone).eq.1) then
+      else if (icalke(izone).eq.2) then
         uref2 =   rcodcl(ifac,iu,1)**2                       &
                 + rcodcl(ifac,iv,1)**2                       &
                 + rcodcl(ifac,iw,1)**2
