@@ -4,6 +4,11 @@ Release 5.0.11 (Unreleased)
 Bug fixes
 ---------
 
+- Fix crash in ouptut of postprocessing files with subdivided polyhedra
+  or polygons in serial mode.
+
+- GUI convergence tracker: fix crash when changing font (GitHub issue #49).
+
 - Fix for crash reading some CGNS files.
 
 - Fix error in some cases of local mesh renumbering using space-filling
