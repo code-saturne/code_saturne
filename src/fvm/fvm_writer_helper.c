@@ -705,7 +705,7 @@ _field_helper_output_el(fvm_writer_field_helper_t          *helper,
     n_elements += section->n_elements;
     if (current_section->type != section->type)
       sub_size += fvm_tesselation_n_sub_elements(section->tesselation,
-                                                 current_section->type);
+                                                 export_section->type);
     else
       sub_size += section->n_elements;
 
@@ -773,7 +773,7 @@ _field_helper_output_el(fvm_writer_field_helper_t          *helper,
                                      elt_size*convert_dim,
                                      _values);
           start_id += fvm_tesselation_n_sub_elements(section->tesselation,
-                                                     current_section->type);
+                                                     export_section->type);
         }
         else
           start_id += section->n_elements;
