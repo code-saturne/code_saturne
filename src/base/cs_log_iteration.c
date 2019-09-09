@@ -649,7 +649,7 @@ _log_fields(void)
         BFT_REALLOC(wsum, log_count_max, double);
       }
 
-      if (have_weight && (f->type | CS_FIELD_INTENSIVE)) {
+      if (have_weight && (f->type & CS_FIELD_INTENSIVE)) {
         cs_array_reduce_simple_stats_l_w(_n_elts,
                                          f->dim,
                                          NULL,
