@@ -200,8 +200,25 @@ _compute_unsteady_user_equations(cs_domain_t   *domain,
 static void
 _solve_steady_state_domain(cs_domain_t  *domain)
 {
-  if (!cs_equation_needs_steady_state_solve())
-    return;
+  if (domain->cdo_context->mode == CS_DOMAIN_CDO_MODE_ONLY) {
+    /* Otherwise log is called from the FORTRAN part */
+
+    if (!cs_equation_needs_steady_state_solve()) {
+      cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "-ite- 0; >> Initial state");
+      cs_log_printf(CS_LOG_DEFAULT, "\n%s\n", h1_sep);
+
+      /* Extra operations and post-processing of the computed solutions */
+      cs_post_time_step_begin(domain->time_step);
+
+      cs_domain_post(domain);
+
+      cs_post_time_step_end();
+
+      return;
+    }
+  }
 
   bool  do_output = cs_domain_needs_log(domain);
 
@@ -244,9 +261,6 @@ _solve_steady_state_domain(cs_domain_t  *domain)
   cs_post_time_step_begin(domain->time_step);
 
   cs_post_activate_writer(CS_POST_WRITER_ALL_ASSOCIATED, true);
-
-  /* User-defined extra operations */
-  cs_user_extra_operations(domain);
 
   cs_domain_post(domain);
 
@@ -596,18 +610,18 @@ cs_cdo_main(cs_domain_t   *domain)
     /* Build and solve equations related to the computational domain */
     _solve_domain(domain);
 
+    /* Increment time (time increment is not performed at the same time as the
+       time step (since one starts with nt_cur == 1) */
+    cs_domain_increment_time(domain);
+
     /* Extra operations and post-processing of the computed solutions */
     cs_post_time_step_begin(domain->time_step);
-
-    /* User-defined extra operations */
-    cs_user_extra_operations(domain);
 
     cs_domain_post(domain);
 
     cs_post_time_step_end();
 
-    /* Increment time and time steps */
-    cs_domain_increment_time(domain);
+    /* Increment time steps */
     cs_domain_increment_time_step(domain);
 
     /* Read a control file if present */
