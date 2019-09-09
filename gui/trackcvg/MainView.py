@@ -75,7 +75,7 @@ except:
     sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from code_saturne.Base.QtPage import getexistingdirectory
-from code_saturne.Base.QtPage import DoubleValidator, from_qvariant
+from code_saturne.Base.QtPage import DoubleValidator, from_qvariant, to_text_string
 
 import numpy
 import matplotlib
