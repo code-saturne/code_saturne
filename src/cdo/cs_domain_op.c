@@ -430,6 +430,9 @@ cs_domain_post(cs_domain_t  *domain)
   /* Extra-operations */
   /* ================ */
 
+  /* User-defined extra operations */
+  cs_user_extra_operations(domain);
+
   /* Predefined extra-operations related to advection fields */
   cs_advection_field_update(domain->time_step->t_cur, true);
 
