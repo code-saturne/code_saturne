@@ -104,6 +104,13 @@ BEGIN_C_DECLS
         - 70: Spalart-Allmaras model
   \var  cs_turb_model_t::itytur
         class of turbulence model (integer value iturb/10)
+  \var  cs_turb_model_t::hybrid_turb
+        Type of hybrid turbulence model
+        - 0: No model
+        - 1: Detached Eddy Simulation
+        - 2: Delayed Detached Eddy Simulation
+        - 3: Scale Adaptive Model (Menter et al.)
+
 */
 /*----------------------------------------------------------------------------*/
 
@@ -188,10 +195,6 @@ BEGIN_C_DECLS
         coupled solving of Rij
         - 1: true (default)
         - 0: false
-  \var  cs_turb_rans_model_t::iddes
-        delayed detached eddy simulation
-        - 1: true
-        - 0: false (default)
   \var  cs_turb_rans_model_t::irijnu
         pseudo eddy viscosity in the matrix of momentum equation to partially
         implicit \f$ \divv \left( \rho \tens{R} \right) \f$
@@ -293,6 +296,8 @@ BEGIN_C_DECLS
         This keyword requires the completion of the routine  \ref usvort
 */
 
+/*----------------------------------------------------------------------------*/
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================
@@ -308,7 +313,8 @@ BEGIN_C_DECLS
 static cs_turb_model_t  _turb_model =
 {
   .iturb  = -999,
-  .itytur = -999
+  .itytur = -999,
+  .hybrid_turb = 0
 };
 
 const cs_turb_model_t  *cs_glob_turb_model = &_turb_model;
@@ -339,7 +345,6 @@ _turb_rans_model =
   .ikecou     =    0,
   .reinit_turb=    1,
   .irijco     =    1, /* Coupled version of DRSM models */
-  .iddes      =    0,
   .irijnu     =    0,
   .irijrb     =    0,
   .irijec     =    0,
@@ -959,7 +964,8 @@ const double cs_turb_cthdfm = 0.31;
 
 void
 cs_f_turb_model_get_pointers(int     **iturb,
-                             int     **itytur);
+                             int     **itytur,
+                             int     **hybrid_turb);
 
 void
 cs_f_turb_rans_model_get_pointers(int     **irccor,
@@ -972,7 +978,6 @@ cs_f_turb_rans_model_get_pointers(int     **irccor,
                                   int     **ikecou,
                                   int     **reinit_turb,
                                   int     **irijco,
-                                  int     **iddes,
                                   int     **irijnu,
                                   int     **irijrb,
                                   int     **irijec,
@@ -1011,14 +1016,17 @@ cs_f_turb_model_constants_get_pointers(double  **sigmae,
  * parameters:
  *   iturb  --> pointer to cs_glob_turb_model->iturb
  *   itytur --> pointer to cs_glob_turb_model->itytur
+ *   hybrid_turb --> pointer to cs_glob_turb_model->hybrid_turb
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_turb_model_get_pointers(int     **iturb,
-                             int     **itytur)
+                             int     **itytur,
+                             int     **hybrid_turb)
 {
   *iturb  = &(_turb_model.iturb);
   *itytur = &(_turb_model.itytur);
+  *hybrid_turb = &(_turb_model.hybrid_turb);
 }
 
 /*----------------------------------------------------------------------------
@@ -1038,7 +1046,6 @@ cs_f_turb_model_get_pointers(int     **iturb,
  *   ikecou --> pointer to cs_glob_turb_rans_model->ikecou
  *   reinit_turb --> pointer to cs_glob_turb_rans_model->reinit_turb
  *   irijco --> pointer to cs_glob_turb_rans_model->irijco
- *   iddes  --> pointer to cs_glob_turb_rans_model->iddes
  *   irijnu --> pointer to cs_glob_turb_rans_model->irijnu
  *   irijrb --> pointer to cs_glob_turb_rans_model->irijrb
  *   irijec --> pointer to cs_glob_turb_rans_model->irijec
@@ -1058,7 +1065,6 @@ cs_f_turb_rans_model_get_pointers(int     **irccor,
                                   int     **ikecou,
                                   int     **reinit_turb,
                                   int     **irijco,
-                                  int     **iddes,
                                   int     **irijnu,
                                   int     **irijrb,
                                   int     **irijec,
@@ -1076,7 +1082,6 @@ cs_f_turb_rans_model_get_pointers(int     **irccor,
   *ikecou = &(_turb_rans_model.ikecou);
   *reinit_turb= &(_turb_rans_model.reinit_turb);
   *irijco = &(_turb_rans_model.irijco);
-  *iddes  = &(_turb_rans_model.iddes);
   *irijnu = &(_turb_rans_model.irijnu);
   *irijrb = &(_turb_rans_model.irijrb);
   *irijec = &(_turb_rans_model.irijec);
@@ -1523,12 +1528,16 @@ cs_turb_model_log_setup(void)
          "    almax:       %14.5e (Characteristic length)\n"
          "    uref:        %14.5e (Characteristic velocity)\n"
          "    ikecou:      %14d (k-epsilon coupling mode)\n"
-         "    iddes :      %14d (1: DDES mode)\n"
+         "    hybrid_turb :%14d (RANS-LES hybrid modelling mode)\n"
+         "                            (0 No model)\n"
+         "                            (1 DES)\n"
+         "                            (2 DDES)\n"
+         "                            (3 Scale Adaptive Model)\n"
          "    igrake:      %14d (Account for gravity)\n"),
          cs_glob_turb_ref_values->almax,
          cs_glob_turb_ref_values->uref,
          cs_glob_turb_rans_model->ikecou,
-         cs_glob_turb_rans_model->iddes,
+         cs_glob_turb_model->hybrid_turb,
          cs_glob_turb_rans_model->igrake);
     if (cs_glob_turb_rans_model->ikecou == 0 &&
         cs_glob_time_step_options->idtvar >= 0) {

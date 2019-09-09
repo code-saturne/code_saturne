@@ -550,7 +550,7 @@ ihgas = -1
 
 iturb  =-999
 itytur =-999
-iddes  = 0
+hybrid_turb  = 0
 
 ! Parfois, IGRHOK=1 donne des vecteurs non physiques en paroi
 !        IGRHOK = 1
@@ -857,6 +857,10 @@ ckwc1  = 10.d0
 
 ! pour la ddes
 cddes = 0.65d0
+
+! pour le sas
+csas  = 0.11d0
+csas_eta2 = 3.51d0
 
 !   pour le modele de Spalart Allmaras
 csab1    = 0.1355d0

@@ -100,6 +100,7 @@ integer          iclipk(1), iclipw, iclpkmx(1)
 integer          nswrgp, imligp
 integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
+integer          ivisep
 integer          iflmas, iflmab
 integer          iwarnp
 integer          istprv
@@ -122,7 +123,10 @@ double precision blencp, epsilp, epsrgp, climgp, extrap, relaxp
 double precision thetp1, thetak, thetaw, thets, thetap, epsrsp
 double precision tuexpk, tuexpw
 double precision cdkw, xarg1, xxf1, xgamma, xbeta, sigma, produc
-double precision xlt, xdelta, xrd, xfd, xs2pw2, xdist, xdiff, fddes
+double precision xlt, xdelta, xrd, xfd, xs2pw2, xdist, xdiff, fhybr
+double precision xsij2, lvkmin, lvk, lvksas, lmod, xqsas
+double precision xgdk2sk, xgdw2sw
+double precision xulap, xvlap, xwlap
 double precision var, vrmin(2), vrmax(2)
 double precision utaurf,ut2,ypa,ya,xunorm, limiter, nu0
 double precision turb_schmidt
@@ -136,6 +140,7 @@ double precision, allocatable, dimension(:) :: tinstk, tinstw, xf1
 double precision, allocatable, dimension(:,:) :: gradk, grado, grad
 double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:) :: s2pw2
+double precision, allocatable, dimension(:) :: maxgdsv
 double precision, allocatable, dimension(:) :: w1, w2
 double precision, allocatable, dimension(:) :: gdkgdw
 double precision, allocatable, dimension(:) :: w5, w6
@@ -145,6 +150,8 @@ double precision, allocatable, dimension(:) :: usimpk, usimpw
 double precision, allocatable, dimension(:) :: w7
 double precision, allocatable, dimension(:) :: dpvar
 double precision, allocatable, dimension(:) :: rotfct
+double precision, allocatable, dimension(:,:) :: vel_laplacian
+double precision, allocatable, dimension(:) :: d2uidxi2
 double precision, dimension(:), pointer :: imasfl, bmasfl
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: bromo, cromo
@@ -155,16 +162,18 @@ double precision, dimension(:), pointer :: cvar_var
 double precision, dimension(:), pointer :: cpro_pcvto, cpro_pcvlo
 double precision, dimension(:), pointer :: viscl, cvisct
 double precision, dimension(:), pointer :: c_st_k_p, c_st_omg_p
-double precision, dimension(:,:), pointer :: vel
+double precision, dimension(:,:), pointer :: vel, cvar_vel, cvar_vela
 double precision, dimension(:), pointer :: cpro_divukw, cpro_s2kw
-double precision, dimension(:), pointer :: ddes_fd_coeff
+double precision, dimension(:), pointer :: hybrid_fd_coeff, sas_source_term
 double precision, dimension(:), pointer :: w_dist
 double precision, dimension(:), pointer :: cpro_k_clipped
 double precision, dimension(:), pointer :: cpro_w_clipped
 double precision, dimension(:), pointer :: cpro_beta
 double precision, allocatable, dimension(:) :: grad_dot_g
+double precision, dimension(:,:), pointer :: coefav, cofafv
+double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
 
-type(var_cal_opt) :: vcopt_w, vcopt_k
+type(var_cal_opt) :: vcopt_w, vcopt_k, vcopt_u
 
 !===============================================================================
 
@@ -182,9 +191,15 @@ allocate(w1(ncelet), w2(ncelet))
 allocate(dpvar(ncelet))
 allocate(gdkgdw(ncelet))
 allocate(prodk(ncelet), prodw(ncelet))
-if (iddes.eq.1) then
+if (hybrid_turb.eq.2) then
+  ! DDES hybrid model
   allocate(gradv(3, 3, ncelet))
   allocate(s2pw2(ncelet))
+elseif (hybrid_turb.eq.3) then
+  ! SAS hybrid model
+  allocate(maxgdsv(ncelet))
+  allocate(d2uidxi2(ncelet))
+  allocate(vel_laplacian(3, ncelet))
 endif
 
 epz2 = epzero**2
@@ -287,15 +302,102 @@ call field_gradient_scalar(ivarfl(iomg), iprev, imrgra, inc,        &
                            iccocg,                                  &
                            grado)
 
-if (iddes.eq.1) then
-  call field_get_val_s_by_name("hybrid_blend", ddes_fd_coeff)
+! **********************************************************
+! Initialization of work arrays in case of Hybrid turbulence
+! modelling.
+!***********************************************************
 
+if (hybrid_turb.ge.1) then
+  ! For all hybrid model, possibility to have hybrid scheme
+  call field_get_val_s_by_name("hybrid_blend", hybrid_fd_coeff)
+endif
+
+if (hybrid_turb.eq.2) then
+  ! DDES hybrid model (Menter et al.)
+  ! Computation of dU_i/dx_j * dU_i/dx_j
   call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,        &
                              gradv)
+
   do iel = 1, ncel
     s2pw2(iel) = gradv(1,1,iel)**2.d0 + gradv(2,1,iel)**2.d0 + gradv(3,1,iel)**2.d0 &
                + gradv(1,2,iel)**2.d0 + gradv(2,2,iel)**2.d0 + gradv(3,2,iel)**2.d0 &
                + gradv(1,3,iel)**2.d0 + gradv(2,3,iel)**2.d0 + gradv(3,3,iel)**2.d0
+  enddo
+else if (hybrid_turb.eq.3) then
+
+  call field_get_val_s_by_name("hybrid_sas_source_term", sas_source_term)
+  ! Scale Adaptive hybrid model (Menter et al.)
+  ! Computation of max( |grad k|^2 /k^2 , |grad w|^2/w^2 )
+  ! and div( grad (U) )
+  call field_get_coefa_v(ivarfl(iu), coefav)
+  call field_get_coefb_v(ivarfl(iu), coefbv)
+  call field_get_coefaf_v(ivarfl(iu), cofafv)
+  call field_get_coefbf_v(ivarfl(iu), cofbfv)
+
+  call field_get_val_v(ivarfl(iu), cvar_vel)
+  call field_get_val_prev_v(ivarfl(iu), cvar_vela)
+
+  call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
+
+  do iel = 1, ncel
+    xgdk2sk      = ( gradk(1,iel)**2.d0 + &
+                     gradk(2,iel)**2.d0 + &
+                     gradk(3,iel)**2.d0 ) / cvar_k(iel)**2.d0
+
+    xgdw2sw      = ( grado(1,iel)**2.d0 + &
+                     grado(2,iel)**2.d0 + &
+                     grado(3,iel)**2.d0 ) / cvar_omg(iel)**2.d0
+
+    maxgdsv(iel) = max(xgdk2sk, xgdw2sw)
+
+    ! Viscosity for the following computation of the velocity laplacian
+    w1(iel) = 1.0d0
+  enddo
+
+  call viscfa &
+       !==========
+     ( imvisf ,                                                       &
+       w1     ,                                                       &
+       viscf  , viscb  )
+
+  f_id   = -1
+  imasac = 0
+  iconvp = 0
+  idiffp = vcopt_u%idiff
+  nswrgp = vcopt_u%nswrgr
+  imligp = vcopt_u%imligr
+  ircflp = vcopt_u%ircflu
+  ischcp = vcopt_u%ischcv
+  isstpp = vcopt_u%isstpc
+  inc    = 1
+  ivisep = 0
+  iwarnp = vcopt_u%iwarni
+  idftnp = vcopt_u%idften
+  blencp = vcopt_u%blencv
+  epsrgp = vcopt_u%epsrgr
+  climgp = vcopt_u%climgr
+  thetap = vcopt_u%thetav
+  relaxp = vcopt_u%relaxv
+  icvflb = 0
+
+  call bilscv &
+  ( idtvar  , f_id     , iconvp , idiffp , nswrgp , imligp , ircflp , &
+    ischcp  , isstpp   , inc    , imrgra , ivisep ,                   &
+    iwarnp  , idftnp   , imasac ,                                     &
+    blencp  , epsrgp   , climgp , relaxp , thetap ,                   &
+    cvar_vel, cvar_vela,                                              &
+    coefav  , coefbv  , cofafv , cofbfv ,                             &
+    imasfl  , bmasfl  ,                                               &
+    viscf   , viscb   , rvoid  , rvoid  ,                             &
+    rvoid   , rvoid   , rvoid  ,                                      &
+    icvflb  , ivoid   ,                                               &
+    vel_laplacian   )
+
+  do iel= 1, ncel
+    xulap = vel_laplacian(1,iel)/volume(iel)
+    xvlap = vel_laplacian(2,iel)/volume(iel)
+    xwlap = vel_laplacian(3,iel)/volume(iel)
+    d2uidxi2(iel) = xulap**2.d0 + xvlap**2.d0 + xwlap**2.d0
   enddo
 end if
 
@@ -581,7 +683,7 @@ endif
 !      En sortie de l'etape on conserve smbrk,smbrw,gdkgdw
 !===============================================================================
 ! Standard k-w SST RANS model
-if(iddes.ne.1) then
+if(hybrid_turb.eq.0) then
   do iel = 1, ncel
 
     visct  = cpro_pcvto(iel)
@@ -606,8 +708,8 @@ if(iddes.ne.1) then
     tinstw(iel) = tinstw(iel) + volume(iel)*max(-2.d0*rho/xw**2*(1.d0-xxf1) &
                                                 /ckwsw2*gdkgdw(iel), 0.d0)
   enddo
-! DDES mode for k-w SST
-else
+! DES or DDES mode for k-w SST
+else if (hybrid_turb.eq.1.or.hybrid_turb.eq.2) then
   do iel = 1, ncel
 
     visct  = cpro_pcvto(iel)
@@ -618,28 +720,37 @@ else
     xxf1   = xf1(iel)
     xgamma = xxf1*ckwgm1 + (1.d0-xxf1)*ckwgm2
     xbeta  = xxf1*ckwbt1 + (1.d0-xxf1)*ckwbt2
-    xs2pw2 = max(sqrt(s2pw2(iel)),epzero)
     xdist  = max(w_dist(iel),epzero)
 
     xlt    = sqrt(xk)/(cmu*xw)
     xdelta = volume(iel)**(1.d0/3.d0)
-    xrd    = (visct + xnu)/ ( xs2pw2 *(xkappa**2) *(xdist**2))
-    xfd    = 1.d0 -tanh((8.d0*xrd)**3)
-    xdiff  = max((xlt-(cddes*xdelta)),0.d0)
-    fddes  = xlt/(xlt-xfd*xdiff)
 
-    ddes_fd_coeff(iel) = xfd
+    if(hybrid_turb.eq.1) then
+      ! Detached Eddy Simulation - DES - mode
+      xfd    = 1.d0
+    else if(hybrid_turb.eq.2) then
+      ! Delayed Detached Eddy Simulation - DDES - mode
+      xs2pw2 = max(sqrt(s2pw2(iel)),epzero)
+      xrd    = (visct + xnu)/ ( rho * xs2pw2 *(xkappa**2) *(xdist**2))
+      xfd    = 1.d0 -tanh((8.d0*xrd)**3)
+    endif
+
+    xdiff  = max((xlt-(cddes*xdelta)),0.d0)
+    fhybr  = xlt/(xlt-xfd*xdiff)
+    ! fhybr is stored so that it can be used after
+    w1(iel)= fhybr
+    hybrid_fd_coeff(iel) = xfd
 
     ! Storage of the Fd coefficient and check locally if
     ! DDES is activated for post-propcessing
     ! NB: for RANS zones (L_RANS < L_LES) Fd is clipped to 0
     if ((cddes*xdelta).ge.xlt)then
-      ddes_fd_coeff(iel) = 0.d0
+      hybrid_fd_coeff(iel) = 0.d0
     endif
 
     smbrk(iel) = smbrk(iel) + volume(iel)*(                         &
                                             prodk(iel)              &
-                                          - cmu*rho*xw*xk*fddes)
+                                          - cmu*rho*xw*xk*fhybr)
 
     smbrw(iel) = smbrw(iel)                                                &
                + volume(iel)*(                                             &
@@ -651,6 +762,49 @@ else
     tinstw(iel) = tinstw(iel) + volume(iel)*max(-2.d0*rho/xw**2*(1.d0-xxf1) &
                                                 /ckwsw2*gdkgdw(iel), 0.d0)
   enddo
+
+! Scale Adaptive mode for k-w SST
+else
+  do iel = 1, ncel
+
+    visct  = cpro_pcvto(iel)
+    rho    = cromo(iel)
+    xk     = cvara_k(iel)
+    xw     = cvara_omg(iel)
+    xxf1   = xf1(iel)
+    xgamma = xxf1*ckwgm1 + (1.d0-xxf1)*ckwgm2
+    xbeta  = xxf1*ckwbt1 + (1.d0-xxf1)*ckwbt2
+
+    ! Computation of the Scale Adaptive model source term xqsas
+    ! that is added to the omega equation
+    xsij2  = cpro_s2kw(iel)
+    lvkmin = csas * sqrt( csas_eta2 * xkappa / ((xbeta/cmu)-xgamma) ) &
+                  * volume(iel)**(1.d0/3.d0)
+    lvk    = xkappa*sqrt( xsij2 / d2uidxi2(iel) )
+    lvksas = max(lvkmin,lvk)
+    lmod   = sqrt(xk)/(cmu**0.25d0*xw)
+
+    xqsas   = max (rho * csas_eta2 * xkappa * xsij2 * (lmod/lvksas)**2 &
+                  - 6.d0*rho*xk*maxgdsv(iel) , 0.d0 )
+
+    sas_source_term(iel) = xqsas
+
+    smbrk(iel) = smbrk(iel) + volume(iel)*(                         &
+                                            prodk(iel)              &
+                                          - cmu*rho*xw*xk )
+
+    smbrw(iel) = smbrw(iel)                                                &
+               + volume(iel)*(                                             &
+                               rho*xgamma/visct*prodw(iel)                 &
+                             - xbeta*rho*xw**2                             &
+                             + 2.d0*rho/xw*(1.d0-xxf1)/ckwsw2*gdkgdw(iel)  &
+                             + xqsas)
+
+    tinstw(iel) = tinstw(iel) + volume(iel)*max(-2.d0*rho/xw**2*(1.d0-xxf1) &
+                                                /ckwsw2*gdkgdw(iel), 0.d0)
+  enddo
+
+  ! End test on hybrid models
 endif
 
 ! If the solving of k-omega is uncoupled, negative source terms are implicited
@@ -660,8 +814,16 @@ if (ikecou.eq.0) then
     xxf1  = xf1(iel)
     xbeta = xxf1*ckwbt1 + (1.d0-xxf1)*ckwbt2
     rho = crom(iel)
-    tinstk(iel) = tinstk(iel) + volume(iel)*cmu*rho*xw
-    tinstw(iel) = tinstw(iel) + 2.d0*volume(iel)*xbeta*rho*xw
+    fhybr = w1(iel)
+
+    if(hybrid_turb.eq.1.or.hybrid_turb.eq.2) then
+      tinstk(iel) = tinstk(iel) + volume(iel)*cmu*rho*xw*fhybr
+      tinstw(iel) = tinstw(iel) + 2.d0*volume(iel)*xbeta*rho*xw
+    else
+      tinstk(iel) = tinstk(iel) + volume(iel)*cmu*rho*xw
+      tinstw(iel) = tinstw(iel) + 2.d0*volume(iel)*xbeta*rho*xw
+    endif
+
   enddo
 endif
 
@@ -1316,6 +1478,9 @@ deallocate(dpvar)
 deallocate(prodk, prodw)
 if (allocated(gradv)) deallocate(gradv)
 if (allocated(s2pw2)) deallocate(s2pw2)
+if (allocated(maxgdsv))  deallocate(maxgdsv)
+if (allocated(d2uidxi2)) deallocate(d2uidxi2)
+if (allocated(vel_laplacian)) deallocate(vel_laplacian)
 
 if (allocated(rotfct))  deallocate(rotfct)
 

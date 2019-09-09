@@ -824,7 +824,15 @@ else
 endif
 
 if (iturb.eq.60) then !sst-ddes
-  cddes = 0.65d0
+  ! SST DDES
+  if (hybrid_turb.eq.2) then
+    cddes = 0.65d0
+  else if (hybrid_turb.eq.1) then
+    cddes = 0.61d0
+  endif
+  ! SST SAS
+  csas  = 0.11d0
+  csas_eta2 = 3.51d0
 elseif (iturb.eq.51) then !phif-ddes
   cddes = 0.60d0
 endif

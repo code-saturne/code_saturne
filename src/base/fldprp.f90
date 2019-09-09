@@ -156,26 +156,26 @@ if (iturb.eq.0) then
   call hide_property(ivisct)
 endif
 
+! Hybrid RANS/LES function f_d is stored for Post Processing in hybrid_blend.
 ! If hybrid spatial scheme is activated for the velocity (ischcv=3)
 ! creation of the field hybrid_blend wihich contains the
 ! local blending factor for each cell
+
 call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
 ischcp = vcopt_u%ischcv
-if (ischcp.eq.3) then
+if (ischcp.eq.3.or.hybrid_turb.gt.0) then
   call add_property_field_1d('hybrid_blend', 'Hybrid blending function', iflid)
 end if
+
+if (hybrid_turb.eq.3) then
+  call add_property_field_1d('hybrid_sas_source_term', 'SAS hybrid source term', iflid)
+endif
 
 if  (iturb.eq.60) then
   call add_property_field_1d('s2', 'S2', is2kw)
   call hide_property(is2kw)
   call add_property_field_1d('vel_gradient_trace', 'Vel. Gradient Trace', idivukw)
   call hide_property(idivukw)
-  ! Hybrid RANS/LES function f_d is stored for Post Processing in hybrid_blend.
-  ! If  hybrid spatial scheme is activated for the velocity (ischcv=3) f_d
-  ! is used as blending factor and this field already exists
-  if (iddes.eq.1.and.ischcp.ne.3) then
-    call add_property_field_1d('hybrid_blend', 'Hybrid blending function', iflid)
-  end if
 endif
 
 call add_property_field_1d('courant_number', 'CFL', icour)

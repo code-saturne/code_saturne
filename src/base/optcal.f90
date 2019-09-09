@@ -569,6 +569,9 @@ module optcal
   !> Class of turbulence model (integer value iturb/10)
   integer(c_int), pointer, save :: itytur
 
+  !> Activation of Hybrid RANS/LES model (only valid for iturb equal to 60)
+  integer(c_int), pointer, save :: hybrid_turb
+
   !> Activation of rotation/curvature correction for eddy viscosity turbulence models
   !>    - 0: false
   !>    - 1: true
@@ -688,9 +691,6 @@ module optcal
   !>    - 1: true
   !>    - 0: false (default)
   integer(c_int), pointer, save :: irijco
-
-  !> Activation of Hybrid DDES model (only valid for iturb equal to 60)
-  integer(c_int), pointer, save :: iddes
 
   !> pseudo eddy viscosity in the matrix of momentum equation to partially
   !> implicit \f$ \divv \left( \rho \tens{R} \right) \f$
@@ -1369,11 +1369,11 @@ module optcal
     ! Interface to C function retrieving pointers to members of the
     ! global turbulence model structure
 
-    subroutine cs_f_turb_model_get_pointers(iturb, itytur) &
+    subroutine cs_f_turb_model_get_pointers(iturb, itytur, hybrid_turb) &
       bind(C, name='cs_f_turb_model_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: iturb, itytur
+      type(c_ptr), intent(out) :: iturb, itytur, hybrid_turb
     end subroutine cs_f_turb_model_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -1393,14 +1393,14 @@ module optcal
     subroutine cs_f_turb_rans_model_get_pointers(irccor, itycor, idirsm, &
                                                  iclkep, igrhok, igrake, &
                                                  igrari, ikecou, reinit_turb, &
-                                                 irijco, iddes, irijnu,  &
+                                                 irijco, irijnu,  &
                                                  irijrb, irijec, idifre, &
                                                  iclsyr, iclptr)         &
       bind(C, name='cs_f_turb_rans_model_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: irccor, itycor, idirsm, iclkep, igrhok
-      type(c_ptr), intent(out) :: igrake, igrari, ikecou, reinit_turb, irijco, irijnu, irijrb, iddes
+      type(c_ptr), intent(out) :: igrake, igrari, ikecou, reinit_turb, irijco, irijnu, irijrb
       type(c_ptr), intent(out) :: irijec, idifre, iclsyr, iclptr
     end subroutine cs_f_turb_rans_model_get_pointers
 
@@ -1618,12 +1618,13 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_iturb, c_itytur
+    type(c_ptr) :: c_iturb, c_itytur, c_hybrid_turb
 
-    call cs_f_turb_model_get_pointers(c_iturb, c_itytur)
+    call cs_f_turb_model_get_pointers(c_iturb, c_itytur, c_hybrid_turb)
 
     call c_f_pointer(c_iturb, iturb)
     call c_f_pointer(c_itytur, itytur)
+    call c_f_pointer(c_hybrid_turb, hybrid_turb)
 
   end subroutine turb_model_init
 
@@ -1661,13 +1662,13 @@ contains
     ! Local variables
 
     type(c_ptr) :: c_irccor, c_itycor, c_idirsm, c_iclkep, c_igrhok, c_igrake
-    type(c_ptr) :: c_igrari, c_ikecou, c_reinit_turb, c_irijco, c_irijnu, c_irijrb, c_irijec, c_idifre, c_iddes
+    type(c_ptr) :: c_igrari, c_ikecou, c_reinit_turb, c_irijco, c_irijnu, c_irijrb, c_irijec, c_idifre
     type(c_ptr) :: c_iclsyr, c_iclptr
 
     call cs_f_turb_rans_model_get_pointers( c_irccor, c_itycor, c_idirsm, &
                                             c_iclkep, c_igrhok, c_igrake, &
                                             c_igrari, c_ikecou, c_reinit_turb, &
-                                            c_irijco, c_iddes, c_irijnu, &
+                                            c_irijco, c_irijnu, &
                                             c_irijrb, c_irijec, c_idifre, &
                                             c_iclsyr, c_iclptr)
 
@@ -1681,7 +1682,6 @@ contains
     call c_f_pointer(c_ikecou, ikecou)
     call c_f_pointer(c_reinit_turb, reinit_turb)
     call c_f_pointer(c_irijco, irijco)
-    call c_f_pointer(c_iddes, iddes)
     call c_f_pointer(c_irijnu, irijnu)
     call c_f_pointer(c_irijrb, irijrb)
     call c_f_pointer(c_irijec, irijec)

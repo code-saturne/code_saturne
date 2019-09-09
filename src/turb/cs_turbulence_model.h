@@ -68,6 +68,16 @@ enum {
   CS_TURB_SPALART_ALLMARAS = 70
 };
 
+/*----------------------------------------------------------------------------
+ * hybrid models
+ *----------------------------------------------------------------------------*/
+
+enum {
+  CS_HYBRID_NONE = 0,
+  CS_HYBRID_DES  = 1,
+  CS_HYBRID_DDES = 2,
+  CS_HYBRID_SAS  = 3
+};
 
 /* turbulence model general options descriptor */
 /*---------------------------------------------*/
@@ -98,6 +108,11 @@ typedef struct {
                           CS_TURB_SPALART_ALLMARAS: Spalart-Allmaras model */
   int           itytur;       /* class of turbulence model (integer value
                                  iturb/10) */
+  int           hybrid_turb;  /* Type of Hybrid Turbulence Model
+                                   - CS_HYBRID_NONE : No model
+                                   - CS_HYBRID_DES  : Detached Eddy Simulation
+                                   - CS_HYBRID_DDES : Delayed Detached Eddy Simulation
+                                   - CS_HYBRID_SAM  : Scale Adaptive Model */
 } cs_turb_model_t;
 
 
@@ -153,9 +168,6 @@ typedef struct {
                                  - 1: true (default)
                                  - 0: false */
   int           irijco;       /* coupled solving of Rij
-                                 - 1: true
-                                 - 0: false (default) */
-  int           iddes;        /* delayed detached eddy simulation
                                  - 1: true
                                  - 0: false (default) */
   int           irijnu;       /* pseudo eddy viscosity in the matrix of momentum

@@ -1351,14 +1351,13 @@ cs_parameters_check(void)
                                  NULL);
   }
 
-  /* Delayed Detached Eddy Simulation model compatible only with RANS
-     k-omega SST model */
-  if (cs_glob_turb_rans_model->iddes == 1) {
+  /* Hybrid RANS/LES model only with k-omega SST model */
+  if (cs_glob_turb_model->hybrid_turb > 0) {
     const int iturb_ddes_vals[1] = {CS_TURB_K_OMEGA};
 
     cs_parameters_is_in_list_int(CS_ABORT_DELAYED,
                                  _("while reading input data,\n"
-                                   "Delayed Detached Eddy Simulation is only "
+                                   "Hybrid RANS/LES model is only "
                                    "compatible with k-omega SST model "
                                    "(iturb=60)"),
                                  "cs_glob_turb_model->iturb",
