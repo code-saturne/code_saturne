@@ -3181,12 +3181,14 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
   }
 
   if (mesh_quantities->has_disable_flag == 1) {
-    BFT_MALLOC(mesh_quantities->c_disable_flag, n_cells_with_ghosts, int);
+    if (mesh_quantities->c_disable_flag == NULL)
+      BFT_MALLOC(mesh_quantities->c_disable_flag, n_cells_with_ghosts, int);
     for (cs_lnum_t cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++)
       mesh_quantities->c_disable_flag[cell_id] = 0;
   }
   else {
-    BFT_MALLOC(mesh_quantities->c_disable_flag, 1, int);
+    if (mesh_quantities->c_disable_flag == NULL)
+      BFT_MALLOC(mesh_quantities->c_disable_flag, 1, int);
     mesh_quantities->c_disable_flag[0] = 0;
   }
 
