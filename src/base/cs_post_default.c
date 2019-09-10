@@ -101,7 +101,7 @@ static bool                     _default_input_is_set = false;
 
 /*----------------------------------------------------------------------------
  * Default additional output of mesh and time-dependent variables for the
- * call to pstvar / cs_post_write_vars.
+ * call to cs_post_write_vars.
  *
  * Note: if the input pointer is non-NULL, it must point to valid data
  * when the output function is called, so either:

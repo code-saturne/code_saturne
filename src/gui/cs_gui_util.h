@@ -120,7 +120,7 @@ cs_gui_is_equal_real(cs_real_t v1,
  * \brief  Update an integer value based on a tree node
  *
  * If no node is present, the initial value is unchanged.
- * If the node is present but the value missing, an error is returne.
+ * If the node is present but the value missing, an error is returned.
  *
  * \param[in]       node    node whose value is queried
  * \param[in, out]  value   queried value
@@ -136,7 +136,7 @@ cs_gui_node_get_int(cs_tree_node_t  *node,
  * \brief  Update an real value based on a tree node
  *
  * If no node is present, the initial value is unchanged.
- * If the node is present but the value missing, an error is returne.
+ * If the node is present but the value missing, an error is returned.
  *
  * \param[in]       node    node whose value is queried
  * \param[in, out]  value   queried value
@@ -202,7 +202,7 @@ cs_gui_node_get_tag(cs_tree_node_t  *node,
  * \brief  Update an integer value based on a tree's child node
  *
  * If no node is present, the initial value is unchanged.
- * If the node is present but the value missing, an error is returne.
+ * If the node is present but the value missing, an error is returned.
  *
  * \param[in]       node        node whose value is queried
  * \param[in]       child_name  name of child node
@@ -220,7 +220,7 @@ cs_gui_node_get_child_int(cs_tree_node_t  *node,
  * \brief  Update an integer value based on a tree's child node
  *
  * If no node is present, the initial value is unchanged.
- * If the node is present but the value missing, an error is returne.
+ * If the node is present but the value missing, an error is returned.
  *
  * \param[in]       node        node whose value is queried
  * \param[in]       child_name  name of child node
