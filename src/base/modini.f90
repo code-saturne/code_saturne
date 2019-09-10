@@ -103,10 +103,6 @@ if (idtvar.lt.0) then
   call hide_property(ifour)
 endif
 
-if (iale.ge.1) then
-  call cs_post_set_deformable
-endif
-
 !---> sorties historiques ?
 !      Si une valeur non modifiee par l'utilisateur (=-999)
 !        on la met a sa valeur par defaut

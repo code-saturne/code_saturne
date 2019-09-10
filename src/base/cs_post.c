@@ -340,11 +340,6 @@ typedef struct {
 static int _cs_post_default_format_id = 0;
 static char *_cs_post_default_format_options = NULL;
 
-/* Backup of initial vertex coordinates */
-
-static bool        _cs_post_deformable = false;
-static cs_real_t  *_cs_post_ini_vtx_coo = NULL;
-
 /* Minimum global mesh time dependency */
 
 fvm_writer_time_dep_t  _cs_post_mod_flag_min = FVM_WRITER_FIXED_MESH;
@@ -2323,113 +2318,6 @@ _cs_post_assmb_var_faces(const fvm_nodal_t  *exp_mesh,
 
 }
 
-/*----------------------------------------------------------------------------
- * Loop on post-processing meshes to output variables
- *
- * parameters:
- *   nt_cur_abs <-- current time step number
- *   t_cur_abs  <-- current physical time
- *----------------------------------------------------------------------------*/
-
-static void
-_cs_post_write_displacements(int     nt_cur_abs,
-                             double  t_cur_abs)
-{
-  int i, j;
-  cs_lnum_t  k, nbr_val;
-  cs_datatype_t datatype;
-
-  cs_lnum_t  parent_num_shift[1]  = {0};
-  cs_post_mesh_t  *post_mesh = NULL;
-  cs_post_writer_t  *writer = NULL;
-  cs_real_t  *deplacements = NULL;
-
-  const cs_mesh_t  *mesh = cs_glob_mesh;
-  const cs_real_t   *var_ptr[1] = {NULL};
-
-  /* Loop on writers to check if something must be done */
-  /*----------------------------------------------------*/
-
-  if (_cs_post_deformable == false)
-    return;
-
-  for (j = 0; j < _cs_post_n_writers; j++) {
-    writer = _cs_post_writers + j;
-    if (writer->active == 1)
-      break;
-  }
-  if (j == _cs_post_n_writers)
-    return;
-
-  /* Compute main deformation field */
-  /*--------------------------------*/
-
-  nbr_val = mesh->n_vertices * 3;
-
-  BFT_MALLOC(deplacements, nbr_val, cs_real_t);
-
-  assert(mesh->n_vertices == 0 || _cs_post_ini_vtx_coo != NULL);
-
-  for (k = 0; k < nbr_val; k++)
-    deplacements[k] = mesh->vtx_coord[k] - _cs_post_ini_vtx_coo[k];
-
-  /* Prepare post-processing */
-  /*-------------------------*/
-
-  if (sizeof(cs_real_t) == sizeof(double))
-    datatype = CS_DOUBLE;
-  else if (sizeof(cs_real_t) == sizeof(float))
-    datatype = CS_FLOAT;
-
-  var_ptr[0] = deplacements;
-
-  /* Loop on meshes to output displacements */
-  /*----------------------------------------*/
-
-  for (i = 0; i < _cs_post_n_meshes; i++) {
-
-    post_mesh = _cs_post_meshes + i;
-
-    for (j = 0; j < post_mesh->n_writers; j++) {
-
-      writer = _cs_post_writers + post_mesh->writer_id[j];
-
-      if (writer->writer == NULL)
-        continue;
-
-      fvm_writer_time_dep_t time_dep = fvm_writer_get_time_dep(writer->writer);
-
-      if (writer->active == 1 && time_dep == FVM_WRITER_FIXED_MESH) {
-
-        fvm_writer_export_field(writer->writer,
-                                post_mesh->exp_mesh,
-                                "displacement",
-                                FVM_WRITER_PER_NODE,
-                                3,
-                                CS_INTERLACE,
-                                1,
-                                parent_num_shift,
-                                datatype,
-                                (int)nt_cur_abs,
-                                (double)t_cur_abs,
-                                (const void * *)var_ptr);
-
-        if (nt_cur_abs >= 0) {
-          writer->n_last = nt_cur_abs;
-          writer->t_last = t_cur_abs;
-        }
-
-      }
-
-    }
-
-  }
-
-  /* Free memory */
-
-  BFT_FREE(deplacements);
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Check if post-processing is activated and then update post-processing
@@ -2458,9 +2346,6 @@ _update_meshes(const cs_time_step_t  *ts)
 
   int t_top_id = cs_timer_stats_switch(_post_out_stat_id);
 
-  const int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
-  const double t_cur = (ts != NULL) ? ts->t_cur : 0.;
-
   /* Possible modification of post-processing meshes */
   /*-------------------------------------------------*/
 
@@ -2488,9 +2373,6 @@ _update_meshes(const cs_time_step_t  *ts)
   /*------------------------------------------------------------*/
 
   cs_post_write_meshes(ts);
-
-  if (_cs_post_deformable == true)
-    _cs_post_write_displacements(nt_cur, t_cur);
 
   cs_timer_stats_switch(t_top_id);
 }
@@ -3133,7 +3015,51 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
 
     } /* End of loop on fields */
 
-  } /* End of main output for cell or boundary mesh or submesh */
+  } /* End of main output for probes */
+
+  /* Special case for mesh displacement even when mesh category does
+     not indicate automatic propagation to sub-meshes
+     --------------------------------------------------------------- */
+
+  else if (   post_mesh->ent_flag[0]
+           || post_mesh->ent_flag[1]
+           || post_mesh->ent_flag[2]) {
+
+    const cs_field_t  *f = cs_field_by_name_try("mesh_displacement");
+
+    if (   f != NULL
+        && fvm_nodal_get_parent(post_mesh->exp_mesh) == cs_glob_mesh) {
+
+      const cs_mesh_location_type_t field_loc_type
+         = cs_mesh_location_get_type(f->location_id);
+
+      if (field_loc_type == CS_MESH_LOCATION_VERTICES) {
+
+        const int vis_key_id = cs_field_key_id("post_vis");
+
+        if (cs_field_get_key_int(f, vis_key_id) & CS_POST_ON_LOCATION) {
+
+          const int label_key_id = cs_field_key_id("label");
+          const char *name = cs_field_get_key_str(f, label_key_id);
+          if (name == NULL)
+            name = f->name;
+
+          cs_post_write_vertex_var(post_mesh->id,
+                                   CS_POST_WRITER_ALL_ASSOCIATED,
+                                   name,
+                                   f->dim,
+                                   true,
+                                   true, /* use_parent */
+                                   CS_POST_TYPE_cs_real_t,
+                                   f->val,
+                                   ts);
+
+        }
+      }
+
+    }
+
+  } /* End of special output for mesh displacement */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -5906,20 +5832,6 @@ cs_post_renum_faces(const cs_lnum_t  init_i_face_num[],
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Configure the post-processing output so that a mesh displacement
- *        field may be output automatically for meshes based on the global
- *        volume mesh.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_post_set_deformable(void)
-{
-  _cs_post_deformable = true;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Configure the post-processing output so that mesh connectivity
  * may be automatically updated.
  *
@@ -6201,21 +6113,6 @@ cs_post_init_meshes(int check_mask)
       _define_mesh(post_mesh, NULL);
   }
 #endif
-
-  /* If we must compute the vertices displacement field, we need
-     to save the initial vertex coordinates */
-
-  if (_cs_post_deformable && _cs_post_ini_vtx_coo == NULL) {
-    cs_mesh_t *mesh = cs_glob_mesh;
-    if (mesh->n_vertices > 0) {
-      BFT_MALLOC(_cs_post_ini_vtx_coo,
-                 mesh->n_vertices * 3,
-                 cs_real_t);
-      memcpy(_cs_post_ini_vtx_coo,
-             mesh->vtx_coord,
-             mesh->n_vertices * 3 * sizeof(cs_real_t));
-    }
-  }
 
   /* Initial output */
 
@@ -6636,11 +6533,6 @@ cs_post_finalize(void)
 
   cs_log_printf(CS_LOG_PERFORMANCE, "\n");
   cs_log_separator(CS_LOG_PERFORMANCE);
-
-  /* Initial coordinates (if mesh is deformable) */
-
-  if (_cs_post_ini_vtx_coo != NULL)
-    BFT_FREE(_cs_post_ini_vtx_coo);
 
   /* Exportable meshes */
 

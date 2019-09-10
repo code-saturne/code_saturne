@@ -81,7 +81,7 @@ BEGIN_C_DECLS
 #define CS_POST_MESH_TRAJECTORIES     -4       /* particle output */
 #define CS_POST_MESH_PROBES           -5       /* probes output */
 
-/* Additional categories (no associated default mesh */
+/* Additional categories (no associated default mesh) */
 
 #define CS_POST_MESH_SURFACE         -12       /* surface (boundary and/or
                                                   interior) mesh */
@@ -1168,17 +1168,6 @@ cs_post_renum_cells(const cs_lnum_t  init_cell_num[]);
 void
 cs_post_renum_faces(const cs_lnum_t  init_i_face_num[],
                     const cs_lnum_t  init_b_face_num[]);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Configure the post-processing output so that a mesh displacement
- *        field may be output automatically for meshes based on the global
- *        volume mesh.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_post_set_deformable(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

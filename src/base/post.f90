@@ -43,17 +43,6 @@ module post
 
     !---------------------------------------------------------------------------
 
-    !> \brief Configure the post-processing output so that a mesh
-    !>        displacement field may be output automatically
-
-    subroutine cs_post_set_deformable()        &
-      bind(C, name='cs_post_set_deformable')
-      use, intrinsic :: iso_c_binding
-      implicit none
-    end subroutine cs_post_set_deformable
-
-    !---------------------------------------------------------------------------
-
     !> \brief Update "active" or "inactive" flag of writers based on the
     !>        time step.
 
