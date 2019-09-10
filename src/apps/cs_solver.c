@@ -62,6 +62,7 @@
 #include "cs_gradient.h"
 #include "cs_gradient_perio.h"
 #include "cs_gui.h"
+#include "cs_gui_boundary_conditions.h"
 #include "cs_gui_conjugate_heat_transfer.h"
 #include "cs_gui_output.h"
 #include "cs_gui_particles.h"
@@ -268,6 +269,8 @@ cs_run(void)
     CS_PROCF (haltyp, HALTYP) (&ivoset);
     if (ivoset)
       halo_type = CS_HALO_EXTENDED;
+
+    cs_gui_boundary_conditions_define(cs_glob_domain->boundaries);
 
     cs_cdo_initialize_setup(cs_glob_domain);
 

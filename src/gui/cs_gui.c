@@ -51,6 +51,7 @@
 #include "mei_evaluate.h"
 
 #include "cs_base.h"
+#include "cs_boundary.h"
 #include "cs_boundary_zone.h"
 #include "cs_equation.h"
 #include "cs_equation_param.h"

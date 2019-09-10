@@ -778,9 +778,6 @@ cs_domain_setup_log(const cs_domain_t   *domain)
   cs_cdo_connect_summary(domain->connect);
   cs_cdo_quantities_summary(domain->cdo_quantities);
 
-  /* Boundaries of the domain */
-  cs_boundary_log_setup(domain->boundaries);
-
   /* Time step summary */
   cs_log_printf(CS_LOG_SETUP, "\n## Time step information\n");
   if (domain->only_steady)

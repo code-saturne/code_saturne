@@ -614,7 +614,7 @@ cs_boundary_get_type_descr(const cs_boundary_t  *bdy,
   }
 
   if (descr[0] == '\0') {
-    strncpy(descr, "undefined", descr_len_max-1);
+    strncpy(descr, _("undefined"), descr_len_max-1);
     descr[descr_len_max-1] = '\0';
   }
 }
@@ -635,15 +635,15 @@ cs_boundary_log_setup(const cs_boundary_t  *bdy)
 
   char descr[128];
 
-  cs_log_printf(CS_LOG_SETUP, "\n## Domain boundary settings\n");
-  cs_log_printf(CS_LOG_SETUP, " * Domain boundary | Category: %s\n",
+  cs_log_printf(CS_LOG_SETUP, _("\n## Domain boundary settings\n"));
+  cs_log_printf(CS_LOG_SETUP, _(" * Domain boundary | Category: %s\n"),
                 _(_boundary_category_name[bdy->category]));
 
   cs_boundary_get_type_descr(bdy, bdy->default_type, 127, descr);
-  cs_log_printf(CS_LOG_SETUP, " * Domain boundary | Default: %s\n",
+  cs_log_printf(CS_LOG_SETUP, _(" * Domain boundary | Default: %s\n"),
                 descr);
   cs_log_printf(CS_LOG_SETUP,
-                " * Domain boundary | Number of definitions: %d\n",
+                _(" * Domain boundary | Number of definitions: %d\n"),
                 bdy->n_boundaries);
 
   for (int i = 0; i < bdy->n_boundaries; i++) {

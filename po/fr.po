@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-08-12 14:39+0200\n"
+"POT-Creation-Date: 2019-09-10 22:02+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5021,7 +5021,7 @@ msgid "radiative"
 msgstr "de rayonnement"
 
 msgid "wall"
-msgstr ""
+msgstr "paroi"
 
 msgid "inlet-outlet"
 msgstr "entrée-sortie"
@@ -5075,7 +5075,7 @@ msgid "decentered flux"
 msgstr "flux décentré"
 
 msgid "fixed"
-msgstr "bloquuée"
+msgstr "bloquée"
 
 msgid "imposed displacement"
 msgstr "déplacement imposé"
@@ -5098,6 +5098,28 @@ msgid ""
 " No matching zone is defined.\n"
 msgstr ""
 
+msgid "undefined"
+msgstr "non défini"
+
+msgid ""
+"\n"
+"## Domain boundary settings\n"
+msgstr ""
+"\n"
+"## Frontières du domaine\n"
+
+#, c-format
+msgid " * Domain boundary | Category: %s\n"
+msgstr " * Frontières du domaine | Catégorie : %s\n"
+
+#, c-format
+msgid " * Domain boundary | Default: %s\n"
+msgstr " * Frontières du domaine | Défaut : %s\n"
+
+#, c-format
+msgid " * Domain boundary | Number of definitions: %d\n"
+msgstr " * Frontières du domaine | Nombre de définitions : %d\n"
+
 #, c-format
 msgid ""
 "\n"
@@ -5106,6 +5128,11 @@ msgid ""
 "    zone id:  %d\n"
 "    n_faces:  %llu\n"
 msgstr ""
+"\n"
+"  Frontière :  %s\n"
+"    type :     %s\n"
+"    id zone :  %d\n"
+"    n_faces :  %llu\n"
 
 msgid "boundary condition type"
 msgstr "type de conditions aux limites"
@@ -7287,11 +7314,11 @@ msgstr ""
 
 msgid ""
 "while reading input data,\n"
-"Delayed Detached Eddy Simulation is only compatible with k-omega SST model "
-"(iturb=60)"
+"Hybrid RANS/LES model is only compatible with k-omega SST model (iturb=60)"
 msgstr ""
 "lors de la lecture des données d'entrée,\n"
-"le modèle DDES n'est compatible qu'avec le modèle k-omega SST (iturb=60)"
+"le modèle hybride RANS/LES n'est compatible qu'avec le modèle k-omega SST "
+"(iturb=60)"
 
 msgid ""
 "while reading input data,\n"
@@ -10856,9 +10883,6 @@ msgstr ""
 msgid "Tesselation of element type %s not implemented."
 msgstr ""
 
-msgid "All Catalyst writers must use the same MPI communicator"
-msgstr ""
-
 #, c-format
 msgid ""
 "Error initializing pipeline from \"%s\":\n"
@@ -10867,10 +10891,7 @@ msgstr ""
 "Erreur à l'initialisation du pipeline depuis \"%s\" :\n"
 "\n"
 
-#, c-format
-msgid ""
-"Missing Catalyst pipeline file \"%s\":\n"
-"\n"
+msgid "All Catalyst writers must use the same MPI communicator"
 msgstr ""
 
 #, c-format
@@ -15964,14 +15985,22 @@ msgid ""
 "    almax:       %14.5e (Characteristic length)\n"
 "    uref:        %14.5e (Characteristic velocity)\n"
 "    ikecou:      %14d (k-epsilon coupling mode)\n"
-"    iddes :      %14d (1: DDES mode)\n"
+"    hybrid_turb :%14d (RANS-LES hybrid modelling mode)\n"
+"                            (0 No model)\n"
+"                            (1 DES)\n"
+"                            (2 DDES)\n"
+"                            (3 Scale Adaptive Model)\n"
 "    igrake:      %14d (Account for gravity)\n"
 msgstr ""
 "   k-omega SST         (iturb = CS_TURB_K_OMEGA)\n"
-"    almax:       %14.5e (Longueur caractéristique)\n"
-"    uref:        %14.5e (Vitesse caractéristique)\n"
-"    ikecou:      %14d (Mode de couplage k-epsilon)\n"
-"    iddes :      %14d (1: mode DDES)\n"
+"    almax:        %14.5e (Longueur caractéristique)\n"
+"    uref:         %14.5e (Vitesse caractéristique)\n"
+"    ikecou:       %14d (Mode de couplage k-epsilon)\n"
+"    hybrid_turb: %14d (modèle hybride RANS-LES)\n"
+"                            (0 pas de modèle)\n"
+"                            (1 DES)\n"
+"                            (2 DDES)\n"
+"                            (3 Modèle adaptatif à l'échelle)\n"
 "    igrake:      %14d (Prise en compte de la gravité)\n"
 
 #, c-format

@@ -32,6 +32,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_base.h"
+#include "cs_boundary.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -113,12 +114,22 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
  * Public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Free boundary conditions structures
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define boundary conditions based on setup file.
  *
- * parameters:
- *   ncharb  <-- number of coals
- *----------------------------------------------------------------------------*/
+ * \param[in, out]  bdy   main boundaries structure to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_boundary_conditions_define(cs_boundary_t  *bdy);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free GUI boundary condition structures.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_gui_boundary_conditions_free_memory(void);

@@ -50,6 +50,7 @@
 
 #include "cs_ale.h"
 #include "cs_base.h"
+#include "cs_boundary.h"
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_zone.h"
 #include "cs_parameters.h"
@@ -67,6 +68,7 @@
 #include "cs_turbulence_model.h"
 #include "cs_parall.h"
 #include "cs_elec_model.h"
+#include "cs_physical_model.h"
 #include "cs_prototypes.h"
 #include "cs_wall_functions.h"
 
@@ -2663,9 +2665,184 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
  * Public function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Free boundary conditions structures
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define boundary conditions based on setup file.
+ *
+ * \param[in, out]  bdy   boundaries structure to update
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gui_boundary_conditions_define(cs_boundary_t  *bdy)
+{
+  cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree,
+                                           "boundary_conditions");
+
+  int izone = 0;
+
+  /* Wall function info to filter roughness */
+  cs_wall_functions_t *wall_fnt = cs_get_glob_wall_functions();
+
+  /* Build boundary zone definitions */
+
+  for (cs_tree_node_t *tn = cs_tree_get_node(tn_b0, "boundary");
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn), izone++) {
+
+    /* nature, label and description of the ith boundary zone;
+       zones are shifted by 1, as default zone 0 is defined
+       first, before GUI-based definitions (and non-GUI-based
+       user definitions come last). */
+
+    const char *label = cs_tree_node_get_tag(tn, "label");
+
+    int bc_num = izone+1;
+
+    const int *vi = cs_tree_node_get_child_values_int(tn, "name");
+    if (vi != NULL)
+      bc_num = vi[0];
+
+    /* label of the ith initialization zone */
+
+    const cs_zone_t *z = cs_boundary_zone_by_id(izone + 1);
+
+    if (strcmp(label, z->name) != 0)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Mismatch between GUI-defined zone %d (%s)\n"
+                  "and boundary condition %d (%s), number %d."),
+                z->id, z->name, izone+1, label, bc_num);
+
+    /* Note: boundary nature is determined again later for most cases,
+       but at least symmetry is only defined here, and ALE can define
+       "wall" sections instead of the appropriate type to handle
+       fixed sections, so also predefine the boundary nature here */
+
+    /* Now loop on boundary condition definitions proper */
+
+    cs_tree_node_t *tn_bc = NULL;
+
+    cs_tree_node_t *tn_b1 = (tn_b0 != NULL) ? tn_b0->children : tn_b0;
+    for (tn_bc = tn_b1; tn_bc != NULL; tn_bc = tn_bc->next) {
+
+      if (cs_gui_strcmp(tn_bc->name, "boundary")) /* handled in parent loop */
+        continue;
+
+      const char *c_label = cs_tree_node_get_tag(tn_bc, "label");
+      if (c_label != NULL) {
+        /* Search for label matching boundary */
+        if (strcmp(c_label, label) == 0)
+          break;
+      }
+
+    }
+
+    if (tn_bc == NULL)
+      continue;
+
+    z = cs_boundary_zone_by_name_try(label);
+
+    if (z == NULL)  /* may occur when "dead" leaves or present in tree */
+      continue;
+
+    const char *nature = tn_bc->name;
+
+    cs_boundary_type_t bc_type = 0;
+
+    izone = z->id - 1;
+    assert(izone >= 0);
+
+    if (cs_gui_strcmp(nature, "inlet")) {
+
+      bc_type |= CS_BOUNDARY_INLET;
+
+      cs_tree_node_t *tn_vp
+        = cs_tree_node_get_child(tn_bc, "velocity_pressure");
+
+      if (cs_glob_physical_model_flag[CS_GROUNDWATER] < 0)
+        bc_type |= CS_BOUNDARY_IMPOSED_VEL;
+
+      if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
+
+        cs_tree_node_t *tnc = cs_tree_get_node(tn_vp, "compressible_type");
+        const char *choice = cs_gui_node_get_tag(tnc, "choice");
+
+        if (cs_gui_strcmp(choice, "imposed_inlet"))
+          bc_type |= CS_BOUNDARY_INLET_QH;
+        else if (cs_gui_strcmp(choice, "subsonic_inlet_PH"))
+          bc_type |= CS_BOUNDARY_INLET_SUBSONIC_PH;
+
+      }
+
+    }
+    else if (cs_gui_strcmp(nature, "wall")) {
+
+      bc_type |= CS_BOUNDARY_WALL;
+
+      /* sliding wall: velocity */
+
+      cs_tree_node_t *tn_vp
+        = cs_tree_node_get_child(tn_bc, "velocity_pressure");
+
+      if (tn_vp != NULL) {
+        const char *choice = cs_gui_node_get_tag(tn_vp, "choice");
+        if (cs_gui_strcmp(choice, "on"))
+          bc_type |= CS_BOUNDARY_SLIDING_WALL;
+
+        /* check for roughness */
+        if (   wall_fnt->iwallf != CS_WALL_F_DISABLED
+            && wall_fnt->iwallf != CS_WALL_F_1SCALE_POWER
+            && wall_fnt->iwallf != CS_WALL_F_SCALABLE_2SCALES_LOG
+            && wall_fnt->iwallf != CS_WALL_F_2SCALES_CONTINUOUS) {
+          cs_real_t roughness = -1.;
+          cs_gui_node_get_child_real(tn_vp, "roughness", &roughness);
+          if (roughness > 0)
+            bc_type |= CS_BOUNDARY_ROUGH_WALL;
+        }
+
+      }
+    }
+
+    else if (cs_gui_strcmp(nature, "outlet")) {
+
+      bc_type |= CS_BOUNDARY_OUTLET;
+
+      if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] > -1) {
+
+        cs_tree_node_t *tnc = cs_tree_get_node(tn_bc, "compressible_type");
+        const char *choice = cs_gui_node_get_tag(tnc, "choice");
+
+        if (cs_gui_strcmp(choice, "supersonic_outlet"))
+          bc_type |= CS_BOUNDARY_SUPERSONIC;
+        else if (cs_gui_strcmp(choice, "subsonic_outlet"))
+          bc_type |= CS_BOUNDARY_SUBSONIC;
+
+      }
+
+    }
+
+    else if (cs_gui_strcmp(nature, "free_inlet_outlet")) {
+      bc_type = bc_type | CS_BOUNDARY_INLET | CS_BOUNDARY_OUTLET;
+    }
+
+    else if (cs_gui_strcmp(nature, "imposed_p_outlet")) {
+      bc_type = bc_type | CS_BOUNDARY_OUTLET;
+      bc_type = bc_type | CS_BOUNDARY_IMPOSED_P;
+    }
+
+    else if (!cs_gui_strcmp(nature, "symmetry")) {
+      bc_type = bc_type | CS_BOUNDARY_SYMMETRY;
+    }
+
+    cs_boundary_add(bdy, bc_type, z->name);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Free GUI boundary condition structures.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_gui_boundary_conditions_free_memory(void)
