@@ -2771,20 +2771,25 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
       formula = cs_tree_node_get_value_str(tn);
 
       if (formula != NULL) {
-        if (*idarcy == -1) {
-          cs_real_t *st_vals = cs_meg_source_terms(z,
-                                                   f->name,
-                                                   "scalar_source_term");
+        cs_real_t *st_vals = cs_meg_source_terms(z,
+                                                 f->name,
+                                                 "scalar_source_term");
 
-          for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
-            cs_lnum_t c_id = cell_ids[e_id];
-            tsimp[c_id] = cell_f_vol[c_id] * st_vals[2 * e_id + 1];
-            tsexp[c_id] = cell_f_vol[c_id] * st_vals[2 * e_id]
-                        - tsimp[c_id] * pvar[c_id];
-          }
-          if (st_vals != NULL)
-            BFT_FREE(st_vals);
+        cs_real_t sign = 1.0;
+        /* for groundwater flow, the user filled in the positive radioactive
+           decay rate (lambda) */
+        if (*idarcy > -1) {
+          sign = -1.0;
         }
+
+        for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
+          cs_lnum_t c_id = cell_ids[e_id];
+          tsimp[c_id] = cell_f_vol[c_id] * sign * st_vals[2 * e_id + 1];
+          tsexp[c_id] = cell_f_vol[c_id] * st_vals[2 * e_id]
+                        - tsimp[c_id] * pvar[c_id];
+        }
+        if (st_vals != NULL)
+          BFT_FREE(st_vals);
       }
     }
   }
