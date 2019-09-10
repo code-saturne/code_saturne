@@ -43,6 +43,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_ale.h"
 #include "cs_all_to_all.h"
 #include "cs_base.h"
 #include "cs_base_fortran.h"
@@ -64,6 +65,7 @@
 #include "cs_gui.h"
 #include "cs_gui_boundary_conditions.h"
 #include "cs_gui_conjugate_heat_transfer.h"
+#include "cs_gui_mobile_mesh.h"
 #include "cs_gui_output.h"
 #include "cs_gui_particles.h"
 #include "cs_gui_radiative_transfer.h"
@@ -271,6 +273,8 @@ cs_run(void)
       halo_type = CS_HALO_EXTENDED;
 
     cs_gui_boundary_conditions_define(cs_glob_domain->boundaries);
+    if (cs_glob_ale > 0)
+      cs_gui_mobile_mesh_get_boundaries(cs_glob_domain);
 
     cs_cdo_initialize_setup(cs_glob_domain);
 

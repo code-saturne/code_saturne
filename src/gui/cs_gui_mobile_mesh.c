@@ -1090,7 +1090,7 @@ cs_gui_mesh_viscosity(void)
  *----------------------------------------------------------------------------*/
 
 void
-cs_gui_mobile_mesh_get_boundaries(cs_domain_t     *domain)
+cs_gui_mobile_mesh_get_boundaries(cs_domain_t  *domain)
 {
   assert(domain != NULL);
 
@@ -1161,7 +1161,6 @@ cs_gui_mobile_mesh_get_fixed_velocity(const char    *label)
     tn = cs_tree_node_get_sibling_with_tag(tn, "label", label_bndy);
 
     if (strcmp(label_bndy, label) == 0) {
-
 
       /* Get formula */
       const char *formula = _get_ale_boundary_formula(tn, "fixed_velocity");

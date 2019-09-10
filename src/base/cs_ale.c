@@ -1688,9 +1688,6 @@ cs_ale_finalize_setup(cs_domain_t     *domain)
 
   }
 
-  /* Fill ALE boundaries */
-  cs_gui_mobile_mesh_get_boundaries(domain);
-
   /* Set the boundary conditions */
   cs_ale_setup_boundaries(domain);
 }

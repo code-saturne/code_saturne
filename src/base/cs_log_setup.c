@@ -165,6 +165,7 @@ _log_global_model_options(void)
 
   /* BC information */
   cs_boundary_log_setup(cs_glob_domain->boundaries);
+  cs_boundary_log_setup(cs_glob_domain->ale_boundaries);
 }
 
 
