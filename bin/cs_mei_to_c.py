@@ -531,7 +531,7 @@ def update_expressions_syntax(expressions):
                     new_sub = []
                     x = sub_expr[j]
                     li, ci = get_start_lc(x)
-                    new_sub.append(('(', li, ci))
+                    new_sub.append(('((int)', li, ci))
                     if ic > 2:
                         sub_sub = []
                         sub_sub.append(('(', li, ci))
@@ -544,7 +544,7 @@ def update_expressions_syntax(expressions):
                         new_sub.append(sub_sub)
                     else:
                         new_sub.append(x)
-                    new_sub.append(('%', li, ci))
+                    new_sub.append(('% (int)', li, ci))
                     j = ic+1
                     x = sub_expr[j]
                     if pc - j > 1:
@@ -695,7 +695,7 @@ def rebuild_text(expressions, comments,
 
             else:      # Try to put spaces in recommended places
                 add_space = True
-                if t_prev in ('(', '[', '{', ''):
+                if t_prev in ('(', '[', '{', '', '% (int)'):
                     add_space = False
                 elif e[0] in (';', ':', ',', ')', ']', '}') \
                    or e[0] in no_spacing_operators:
