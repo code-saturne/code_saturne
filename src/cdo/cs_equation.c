@@ -50,7 +50,7 @@
 #include "cs_cdovb_scaleq.h"
 #include "cs_cdovb_vecteq.h"
 #include "cs_cdovcb_scaleq.h"
-#include "cs_cdoeb_scaleq.h"
+#include "cs_cdoeb_vecteq.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_cdofb_vecteq.h"
 #include "cs_equation_bc.h"
@@ -933,7 +933,8 @@ cs_equation_uses_new_mechanism(const cs_equation_t    *eq)
   }
   else if (eq->param->dim == 3) {
     if ((eq->param->space_scheme == CS_SPACE_SCHEME_CDOVB) ||
-        (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB))
+        (eq->param->space_scheme == CS_SPACE_SCHEME_CDOFB) ||
+        (eq->param->space_scheme == CS_SPACE_SCHEME_CDOEB))
       return true;
   }
 
@@ -1379,11 +1380,13 @@ cs_equation_set_shared_structures(const cs_cdo_connect_t      *connect,
   if (eb_scheme_flag > 0) {
 
     if (eb_scheme_flag  & CS_FLAG_SCHEME_SCALAR) {
+      /* This is a vector-valued equation but the DoF is scalar-valued since
+       * it is a circulation associated to each edge */
 
       cs_matrix_structure_t  *ms
         = cs_equation_get_matrix_structure(CS_CDO_CONNECT_EDGE_SCAL);
 
-      cs_cdoeb_scaleq_init_common(quant, connect, time_step, ms);
+      cs_cdoeb_vecteq_init_common(quant, connect, time_step, ms);
 
     } /* scalar-valued DoFs */
 
@@ -1476,7 +1479,7 @@ cs_equation_unset_shared_structures(cs_flag_t    vb_scheme_flag,
     cs_cdovcb_scaleq_finalize_common();
 
   if (eb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
-    cs_cdoeb_scaleq_finalize_common();
+    cs_cdoeb_vecteq_finalize_common();
 
   if (fb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
     cs_cdofb_scaleq_finalize_common();
@@ -1558,6 +1561,24 @@ cs_equation_set_range_set(const cs_cdo_connect_t   *connect)
 
         /* Set the cs_range_set_t structure */
         eq->rset = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+
+        /* Set the size of the algebraic system arising from the cellwise
+           process */
+        eq->n_sles_gather_elts = eq->n_sles_scatter_elts = connect->n_vertices;
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0, s_err_msg, __func__);
+
+      break;
+
+    case CS_SPACE_SCHEME_CDOEB:
+      if (eqp->dim == 3) {
+        /* This is a vector-valued equation but the DoF is scalar-valued since
+         * it is a circulation associated to each edge */
+
+        /* Set the cs_range_set_t structure */
+        eq->rset = connect->range_sets[CS_CDO_CONNECT_EDGE_SCAL];
 
         /* Set the size of the algebraic system arising from the cellwise
            process */
@@ -1670,8 +1691,8 @@ cs_equation_set_range_set(const cs_cdo_connect_t   *connect)
 
     default:
       bft_error(__FILE__, __LINE__, 0,
-                _(" Invalid scheme for the space discretization.\n"
-                  " Please check your settings."));
+                _(" %s: Invalid scheme for the space discretization.\n"
+                  " Please check your settings."), __func__);
       break;
     }
 
@@ -1983,11 +2004,13 @@ cs_equation_set_functions(void)
       break;
 
     case CS_SPACE_SCHEME_CDOEB:
-      if (eqp->dim == 1) {
+      if (eqp->dim == 3) {
+        /* This is a vector-valued equation but the DoF is scalar-valued since
+         * it is a circulation associated to each edge */
 
-        eq->init_context = cs_cdoeb_scaleq_init_context;
-        eq->free_context = cs_cdoeb_scaleq_free_context;
-        eq->init_field_values = cs_cdoeb_scaleq_init_values;
+        eq->init_context = cs_cdoeb_vecteq_init_context;
+        eq->free_context = cs_cdoeb_vecteq_free_context;
+        eq->init_field_values = cs_cdoeb_vecteq_init_values;
 
         /* Deprecated */
         eq->set_dir_bc = NULL;
@@ -1997,7 +2020,7 @@ cs_equation_set_functions(void)
         eq->update_field = NULL;
 
         /* New mechanism */
-        eq->solve_steady_state = cs_cdoeb_scaleq_solve_steady_state;
+        eq->solve_steady_state = cs_cdoeb_vecteq_solve_steady_state;
         switch (eqp->time_scheme) {
         case CS_TIME_SCHEME_STEADY:
           eq->solve = eq->solve_steady_state;
@@ -2009,17 +2032,17 @@ cs_equation_set_functions(void)
                     __func__, eqp->name);
         }
 
-        eq->postprocess = cs_cdoeb_scaleq_extra_op;
-        eq->read_restart = cs_cdoeb_scaleq_read_restart;
-        eq->write_restart = cs_cdoeb_scaleq_write_restart;
+        eq->postprocess = cs_cdoeb_vecteq_extra_op;
+        eq->read_restart = cs_cdoeb_vecteq_read_restart;
+        eq->write_restart = cs_cdoeb_vecteq_write_restart;
 
         /* Function pointers to retrieve values at mesh locations */
         eq->get_vertex_values = NULL;
-        eq->get_edge_values = cs_cdoeb_scaleq_get_edge_values;
+        eq->get_edge_values = cs_cdoeb_vecteq_get_edge_values;
         eq->get_face_values = NULL;
-        eq->get_cell_values = cs_cdoeb_scaleq_get_cell_values;
+        eq->get_cell_values = cs_cdoeb_vecteq_get_cell_values;
 
-        eq->get_cw_build_structures = cs_cdoeb_scaleq_get;
+        eq->get_cw_build_structures = cs_cdoeb_vecteq_get;
 
       }
       else

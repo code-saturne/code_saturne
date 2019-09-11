@@ -1123,6 +1123,7 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect)
 
   cs_adjacency_destroy(&(connect->v2v));
   cs_adjacency_destroy(&(connect->f2f));
+  cs_adjacency_destroy(&(connect->e2e));
 
   BFT_FREE(connect->cell_type);
   BFT_FREE(connect->cell_flag);
@@ -1134,6 +1135,7 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect)
   cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_FACE_SP2);
   cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_FACE_VHP1);
   cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_FACE_VHP2);
+  cs_range_set_destroy(connect->range_sets + CS_CDO_CONNECT_EDGE_SCAL);
 
   cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_VTX_VECT);
   cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_FACE_SP0);
@@ -1141,6 +1143,7 @@ cs_cdo_connect_free(cs_cdo_connect_t   *connect)
   cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_FACE_SP2);
   cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_FACE_VHP1);
   cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_FACE_VHP2);
+  cs_interface_set_destroy(connect->interfaces + CS_CDO_CONNECT_EDGE_SCAL);
 
   BFT_FREE(connect);
 

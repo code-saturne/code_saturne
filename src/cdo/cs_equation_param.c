@@ -2355,6 +2355,16 @@ cs_equation_add_bc_by_analytic(cs_equation_param_t        *eqp,
       bc_type == CS_PARAM_BC_HMG_NEUMANN)
     dim *= 3;  /* vector if scalar eq, tensor if vector eq. */
 
+  if (bc_type == CS_PARAM_BC_CIRCULATION) {
+    /* This is a vector-valued equation but the DoF is scalar-valued since
+     * it is a circulation associated to each edge */
+    if (eqp->dim == 3)
+      dim = 1;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: This situation is not handled.\n", __func__);
+  }
+
   if (bc_type == CS_PARAM_BC_ROBIN) {
     /* FluxNormal = alpha * (u_0 - u) + beta => Set (alpha, beta, u_0) */
     if (eqp->dim == 1)

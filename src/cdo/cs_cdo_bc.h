@@ -123,6 +123,10 @@ typedef struct {
   cs_lnum_t    n_sliding_faces;
   cs_lnum_t   *sliding_ids;
 
+  /* Circulation */
+  cs_lnum_t    n_circulation_faces;
+  cs_lnum_t   *circulation_ids;
+
 } cs_cdo_bc_face_t;
 
 /*============================================================================
@@ -169,6 +173,9 @@ cs_cdo_bc_get_desc(cs_flag_t   bc_flag,
     break;
   case CS_CDO_BC_SLIDING:
     sprintf(desc, "%s", "Sliding");
+    break;
+  case CS_CDO_BC_TANGENTIAL_DIRICHLET:
+    sprintf(desc, "%s", "Dirichlet on the tangential component");
     break;
 
   default:

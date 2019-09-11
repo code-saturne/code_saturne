@@ -196,11 +196,12 @@ _sync_circulation_def_at_edges(const cs_cdo_connect_t    *connect,
     const cs_xdef_t  *def = defs[def_id];
     assert(def->support == CS_XDEF_SUPPORT_BOUNDARY);
 
-    if (def->meta & CS_CDO_BC_TANGENTIAL_DIRICHLET) {
+    if ((def->meta & CS_CDO_BC_TANGENTIAL_DIRICHLET) ||
+        (def->meta & CS_CDO_BC_DIRICHLET)) {
 
       const cs_zone_t  *z = cs_boundary_zone_by_id(def->z_id);
 
-      for (cs_lnum_t i = 0; i < z->n_elts; i++) { /* Loop on selected cells */
+      for (cs_lnum_t i = 0; i < z->n_elts; i++) { /* Loop on selected faces */
         const cs_lnum_t  f_id = face_shift + z->elt_ids[i];
         for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++)
           e2def_ids[f2e->ids[j]] = def_id;
@@ -436,6 +437,74 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
       default:   /* Nothing to do for */
         /* case CS_CDO_BC_HMG_DIRICHLET: */
         /* case CS_CDO_BC_DIRICHLET: */
+        /* case CS_CDO_BC_HMG_NEUMANN: */
+        break;
+
+      } /* End of switch */
+
+    } /* Boundary face */
+  } /* Loop on cell faces */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Set the BC into a cellwise view of the current system.
+ *          Case of edge-based schemes
+ *
+ * \param[in]      cm           pointer to a cellwise view of the mesh
+ * \param[in]      eqp          pointer to a cs_equation_param_t structure
+ * \param[in]      face_bc      pointer to a cs_cdo_bc_face_t structure
+ * \param[in]      dir_values   Dirichlet values associated to each vertex
+ * \param[in, out] csys         pointer to a cellwise view of the system
+ * \param[in, out] cb           pointer to a cellwise builder
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_eb_set_cell_bc(const cs_cell_mesh_t         *cm,
+                           const cs_equation_param_t    *eqp,
+                           const cs_cdo_bc_face_t       *face_bc,
+                           const cs_real_t               dir_values[],
+                           cs_cell_sys_t                *csys,
+                           cs_cell_builder_t            *cb)
+{
+  CS_UNUSED(cb);
+  CS_UNUSED(eqp);
+
+  /* Sanity check */
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_FE));
+
+  /* Initialize the common part */
+  _init_cell_sys_bc(face_bc, cm, csys);
+
+  /* From BC related to faces to edges. */
+  for (short int f = 0; f < cm->n_fc; f++) {
+    if (csys->bf_ids[f] > -1) { /* This a boundary face */
+
+      switch(csys->bf_flag[f]) {
+
+      case CS_CDO_BC_DIRICHLET:
+      case CS_CDO_BC_TANGENTIAL_DIRICHLET:
+        csys->has_dirichlet = true;
+        for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+          const short int  e = cm->f2e_ids[i];
+          csys->dof_flag[e] |= CS_CDO_BC_DIRICHLET;
+          csys->dir_values[e] = dir_values[cm->e_ids[e]];
+        }
+        break;
+
+      case CS_CDO_BC_HMG_DIRICHLET:
+        csys->has_dirichlet = true;
+        for (int i = cm->f2e_idx[f]; f < cm->f2e_idx[f+1]; f++) {
+          const short int  e = cm->f2e_ids[i];
+          csys->dof_flag[e] |= CS_CDO_BC_HMG_DIRICHLET;
+          csys->dir_values[e] = 0.;
+        }
+        break;
+
+      default:   /* Nothing to do for */
+        /* case CS_CDO_BC_HMG_DIRICHLET: */
         /* case CS_CDO_BC_HMG_NEUMANN: */
         break;
 
@@ -1212,6 +1281,8 @@ cs_equation_compute_circulation_eb(cs_real_t                    t_eval,
                                    const cs_equation_param_t   *eqp,
                                    cs_real_t                   *values)
 {
+  CS_UNUSED(mesh);
+  CS_UNUSED(quant);
   assert(values != NULL);
 
   /* Synchronization of the definition of the circulation if needed */
@@ -1230,7 +1301,8 @@ cs_equation_compute_circulation_eb(cs_real_t                    t_eval,
 
     const cs_xdef_t  *def = eqp->bc_defs[def_id];
 
-    if (def->meta & CS_CDO_BC_TANGENTIAL_DIRICHLET) {
+    if ((def->meta & CS_CDO_BC_TANGENTIAL_DIRICHLET) ||
+        (def->meta & CS_CDO_BC_DIRICHLET)) {
 
       const cs_lnum_t  n_elts = def2e_idx[def_id+1] - def2e_idx[def_id];
       const cs_lnum_t  *elt_ids = def2e_ids + def2e_idx[def_id];
@@ -1269,6 +1341,8 @@ cs_equation_compute_circulation_eb(cs_real_t                    t_eval,
     } /* Definition related to a circulation */
 
   } /* Loop on definitions */
+
+  BFT_FREE(def2e_idx);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_BC_DBG > 1
   cs_dbg_darray_to_listing("CIRCULATION_VALUES", quant->n_edges, values, 9);

@@ -1,6 +1,7 @@
 /*============================================================================
  * Build an algebraic CDO edge-based system. Degrees of freedom are defined as
- * a circulation. Degrees of freedom are scalar-valued.
+ * a circulation. Degrees of freedom are scalar-valued but the equation to
+ * solve is vector-valued
  *============================================================================*/
 
 /*
@@ -56,7 +57,7 @@
 #include "cs_evaluate.h"
 #include "cs_reco.h"
 
-#include "cs_cdoeb_scaleq.h"
+#include "cs_cdoeb_vecteq.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -68,7 +69,7 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-#define CS_CDOEB_SCALEQ_DBG      0
+#define CS_CDOEB_VECTEQ_DBG      3
 
 /*============================================================================
  * Private variables
@@ -133,14 +134,15 @@ _ebs_create_cell_builder(const cs_cdo_connect_t   *connect)
 /*!
  * \brief   Initialize the local structure for the current cell
  *
- * \param[in]      t_eval      time at which one performs the evaluation
- * \param[in]      cell_flag   flag related to the current cell
- * \param[in]      cm          pointer to a cellwise view of the mesh
- * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      eqb         pointer to a cs_equation_builder_t structure
- * \param[in]      eqc         pointer to a cs_cdoeb_scaleq_t structure
- * \param[in, out] csys        pointer to a cellwise view of the system
- * \param[in, out] cb          pointer to a cellwise builder
+ * \param[in]      t_eval          time at which one performs the evaluation
+ * \param[in]      cell_flag       flag related to the current cell
+ * \param[in]      cm              pointer to a cellwise view of the mesh
+ * \param[in]      eqp             pointer to a cs_equation_param_t structure
+ * \param[in]      eqb             pointer to a cs_equation_builder_t structure
+ * \param[in]      eqc             pointer to a cs_cdoeb_vecteq_t structure
+ * \param[in]      edge_bc_values  boundary values of the circulation
+ * \param[in, out] csys            pointer to a cellwise view of the system
+ * \param[in, out] cb              pointer to a cellwise builder
  */
 /*----------------------------------------------------------------------------*/
 
@@ -150,7 +152,8 @@ _eb_init_cell_system(cs_real_t                            t_eval,
                      const cs_cell_mesh_t                *cm,
                      const cs_equation_param_t           *eqp,
                      const cs_equation_builder_t         *eqb,
-                     const cs_cdoeb_scaleq_t             *eqc,
+                     const cs_cdoeb_vecteq_t             *eqc,
+                     const cs_real_t                      edge_bc_values[],
                      cs_cell_sys_t                       *csys,
                      cs_cell_builder_t                   *cb)
 {
@@ -166,6 +169,7 @@ _eb_init_cell_system(cs_real_t                            t_eval,
 
   for (short int e = 0; e < cm->n_ec; e++) {
     csys->dof_ids[e] = cm->e_ids[e];
+    csys->dof_flag[e] = 0;
     csys->val_n[e] = eqc->edge_values[cm->e_ids[e]];
   }
 
@@ -174,21 +178,19 @@ _eb_init_cell_system(cs_real_t                            t_eval,
   if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
     /* Set the bc (specific part) */
-    /* cs_equation_eb_set_cell_bc(cm, */
-    /*                            eqp, */
-    /*                            eqb->face_bc, */
-    /*                            edge_bc_flag, */
-    /*                            bc_values, */
-    /*                            t_eval, */
-    /*                            csys, */
-    /*                            cb); */
+    cs_equation_eb_set_cell_bc(cm,
+                               eqp,
+                               eqb->face_bc,
+                               edge_bc_values,
+                               csys,
+                               cb);
 
   }
 
   /* Set the properties for this cell if not uniform */
   cs_equation_init_properties_cw(eqp, eqb, t_eval, cell_flag, cm, cb);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOEB_SCALEQ_DBG > 2
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOEB_VECTEQ_DBG > 2
   if (cs_dbg_cw_test(eqp, cm, csys)) cs_cell_mesh_dump(cm);
 #endif
 }
@@ -212,7 +214,7 @@ static void
 _eb_curlcurl(double                         time_eval,
              const cs_equation_param_t     *eqp,
              const cs_equation_builder_t   *eqb,
-             const cs_cdoeb_scaleq_t       *eqc,
+             const cs_cdoeb_vecteq_t       *eqc,
              const cs_cell_mesh_t          *cm,
              cs_cell_sys_t                 *csys,
              cs_cell_builder_t             *cb)
@@ -259,12 +261,66 @@ _eb_curlcurl(double                         time_eval,
     /* Add the local diffusion operator to the local system */
     cs_sdm_add(csys->mat, cb->loc);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOEB_SCALEQ_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOEB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
       cs_cell_sys_dump("\n>> Local system after curlcurl", csys);
 #endif
   }
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Apply boundary conditions. Only Dirichlet BCs which
+ *         are enforced strongly.
+ *         Update the local system after applying the time scheme.
+ *         Case of CDO-Eb schemes
+ *
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqc         context for this kind of discretization
+ * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in, out] csys        pointer to a cellwise view of the system
+ * \param[in, out] cb          pointer to a cellwise builder
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_eb_enforce_values(const cs_equation_param_t     *eqp,
+                   const cs_cdoeb_vecteq_t       *eqc,
+                   const cs_cell_mesh_t          *cm,
+                   cs_cell_sys_t                 *csys,
+                   cs_cell_builder_t             *cb)
+{
+  if (csys->cell_flag > 0 && csys->has_dirichlet) {
+
+    /* Boundary element (through either edges or faces) */
+    if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC ||
+        eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED) {
+
+      /* csys is updated inside (matrix and rhs) */
+      eqc->enforce_essential_bc(eqp, cm, NULL, cb, csys);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOEB_VECTEQ_DBG > 1
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump("\n>> Cell system after strong BC treatment", csys);
+#endif
+    }
+  }
+
+  if (cs_equation_param_has_internal_enforcement(eqp) == false)
+    return;
+
+  /* Internal enforcement of DoFs: Update csys (matrix and rhs) */
+  if (csys->has_internal_enforcement) {
+
+    cs_equation_enforced_internal_dofs(eqp, cb, csys);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOEB_VECTEQ_DBG > 1
+    if (cs_dbg_cw_test(eqp, cm, csys))
+      cs_cell_sys_dump("\n>> Cell system after the internal enforcement",
+                       csys);
+#endif
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -282,7 +338,7 @@ _eb_curlcurl(double                         time_eval,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-_assemble(const cs_cdoeb_scaleq_t           *eqc,
+_assemble(const cs_cdoeb_vecteq_t           *eqc,
           const cs_cell_mesh_t              *cm,
           const cs_cell_sys_t               *csys,
           const cs_range_set_t              *rs,
@@ -340,7 +396,7 @@ _assemble(const cs_cdoeb_scaleq_t           *eqc,
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_cdoeb_scaleq_is_initialized(void)
+cs_cdoeb_vecteq_is_initialized(void)
 {
   if (cs_cdoeb_cell_builder == NULL || cs_cdoeb_cell_system == NULL)
     return false;
@@ -361,7 +417,7 @@ cs_cdoeb_scaleq_is_initialized(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdoeb_scaleq_init_common(const cs_cdo_quantities_t    *quant,
+cs_cdoeb_vecteq_init_common(const cs_cdo_quantities_t    *quant,
                             const cs_cdo_connect_t       *connect,
                             const cs_time_step_t         *time_step,
                             const cs_matrix_structure_t  *ms)
@@ -383,7 +439,6 @@ cs_cdoeb_scaleq_init_common(const cs_cdo_quantities_t    *quant,
     cs_cdoeb_cell_builder[i] = NULL;
   }
 
-  /* TODO */
   const int  n_max_dofs = connect->n_max_ebyc;
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
@@ -394,8 +449,6 @@ cs_cdoeb_scaleq_init_common(const cs_cdo_quantities_t    *quant,
 
     cs_cell_builder_t  *cb = _ebs_create_cell_builder(connect);
     cs_cdoeb_cell_builder[t_id] = cb;
-
-    int  block_size = 3;
     cs_cdoeb_cell_system[t_id] = cs_cell_sys_create(n_max_dofs,
                                                     connect->n_max_fbyc,
                                                     1, NULL);
@@ -405,13 +458,10 @@ cs_cdoeb_scaleq_init_common(const cs_cdo_quantities_t    *quant,
 
   cs_cell_builder_t  *cb = _ebs_create_cell_builder(connect);
   cs_cdoeb_cell_builder[0] = cb;
-
-  int  block_size = 3;
   cs_cdoeb_cell_system[0] =  cs_cell_sys_create(n_max_dofs,
-                                            connect->n_max_fbyc,
-                                            1, NULL);
+                                                connect->n_max_fbyc,
+                                                1, NULL);
 #endif /* openMP */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -425,7 +475,7 @@ cs_cdoeb_scaleq_init_common(const cs_cdo_quantities_t    *quant,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdoeb_scaleq_get(cs_cell_sys_t       **csys,
+cs_cdoeb_vecteq_get(cs_cell_sys_t       **csys,
                     cs_cell_builder_t   **cb)
 {
   int t_id = 0;
@@ -447,7 +497,7 @@ cs_cdoeb_scaleq_get(cs_cell_sys_t       **csys,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdoeb_scaleq_finalize_common(void)
+cs_cdoeb_vecteq_finalize_common(void)
 {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
 #pragma omp parallel
@@ -470,7 +520,7 @@ cs_cdoeb_scaleq_finalize_common(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a cs_cdoeb_scaleq_t structure storing data useful for
+ * \brief  Initialize a cs_cdoeb_vecteq_t structure storing data useful for
  *         building and managing such a scheme
  *
  * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
@@ -478,12 +528,12 @@ cs_cdoeb_scaleq_finalize_common(void)
  * \param[in]      bflux_id   id of the boundary flux field
  * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
  *
- * \return a pointer to a new allocated cs_cdoeb_scaleq_t structure
+ * \return a pointer to a new allocated cs_cdoeb_vecteq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void  *
-cs_cdoeb_scaleq_init_context(const cs_equation_param_t   *eqp,
+cs_cdoeb_vecteq_init_context(const cs_equation_param_t   *eqp,
                              int                          var_id,
                              int                          bflux_id,
                              cs_equation_builder_t       *eqb)
@@ -491,18 +541,19 @@ cs_cdoeb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* Sanity checks */
   assert(eqp != NULL && eqb != NULL);
 
-  if (eqp->space_scheme != CS_SPACE_SCHEME_CDOEB || eqp->dim != 1)
+  /* This is a vector-valued equation but the DoF is scalar-valued since
+   * it is a circulation associated to each edge */
+  if (eqp->space_scheme != CS_SPACE_SCHEME_CDOEB || eqp->dim != 3)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Invalid type of equation.\n"
               " Expected: scalar-valued CDO edge-based equation.", __func__);
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_lnum_t  n_cells = connect->n_cells;
   const cs_lnum_t  n_edges = connect->n_edges;
 
-  cs_cdoeb_scaleq_t  *eqc = NULL;
+  cs_cdoeb_vecteq_t  *eqc = NULL;
 
-  BFT_MALLOC(eqc, 1, cs_cdoeb_scaleq_t);
+  BFT_MALLOC(eqc, 1, cs_cdoeb_vecteq_t);
 
   eqc->var_field_id = var_id;
   eqc->bflux_field_id = bflux_id;
@@ -510,8 +561,8 @@ cs_cdoeb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* Dimensions of the algebraic system */
   eqc->n_dofs = n_edges;
 
-  eqb->msh_flag = CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_EF
-    | CS_FLAG_COMP_FES;
+  eqb->msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ |
+    CS_FLAG_COMP_EF | CS_FLAG_COMP_FES;
 
   /* Store additional flags useful for building boundary operator.
      Only activated on boundary cells */
@@ -612,18 +663,18 @@ cs_cdoeb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy a cs_cdoeb_scaleq_t structure
+ * \brief  Destroy a cs_cdoeb_vecteq_t structure
  *
- * \param[in, out]  builder   pointer to a cs_cdoeb_scaleq_t structure
+ * \param[in, out]  builder   pointer to a cs_cdoeb_vecteq_t structure
  *
  * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdoeb_scaleq_free_context(void   *builder)
+cs_cdoeb_vecteq_free_context(void   *builder)
 {
-  cs_cdoeb_scaleq_t  *eqc = (cs_cdoeb_scaleq_t *)builder;
+  cs_cdoeb_vecteq_t  *eqc = (cs_cdoeb_vecteq_t *)builder;
 
   if (eqc == NULL)
     return eqc;
@@ -654,17 +705,21 @@ cs_cdoeb_scaleq_free_context(void   *builder)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdoeb_scaleq_init_values(cs_real_t                     t_eval,
+cs_cdoeb_vecteq_init_values(cs_real_t                     t_eval,
                             const int                     field_id,
                             const cs_mesh_t              *mesh,
                             const cs_equation_param_t    *eqp,
                             cs_equation_builder_t        *eqb,
                             void                         *context)
 {
+  CS_UNUSED(field_id);
+  CS_UNUSED(mesh);
+  CS_UNUSED(eqb);
+
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
-  cs_cdoeb_scaleq_t  *eqc = (cs_cdoeb_scaleq_t *)context;
+  cs_cdoeb_vecteq_t  *eqc = (cs_cdoeb_vecteq_t *)context;
   cs_real_t  *e_vals = eqc->edge_values;
 
   /* By default, 0 is set as initial condition for the computational domain */
@@ -673,7 +728,6 @@ cs_cdoeb_scaleq_init_values(cs_real_t                     t_eval,
   if (eqp->n_ic_defs > 0) {
 
     /* Initialize values at mesh vertices */
-    cs_flag_t  e_dof_flag = CS_FLAG_SCALAR | cs_flag_primal_edge;
     cs_lnum_t  *def2e_ids = (cs_lnum_t *)cs_equation_get_tmpbuf();
     cs_lnum_t  *def2e_idx = NULL;
     BFT_MALLOC(def2e_idx, eqp->n_ic_defs + 1, cs_lnum_t);
@@ -719,17 +773,14 @@ cs_cdoeb_scaleq_init_values(cs_real_t                     t_eval,
 
   } /* Initial values to set */
 
-  /* /\* Set the boundary values as initial values: Compute the values of the */
-  /*    circulation where it is known thanks to the BCs *\/ */
-  /* cs_equation_compute_circulation_eb(t_eval, */
-  /*                                    mesh, */
-  /*                                    quant, */
-  /*                                    connect, */
-  /*                                    eqp, */
-  /*                                    eqb->face_bc, */
-  /*                                    cs_cdoeb_cell_builder[0], */
-  /*                                    e_vals); */
-
+  /* Set the boundary values as initial values: Compute the values of the
+     circulation where it is known thanks to the BCs */
+  cs_equation_compute_circulation_eb(t_eval,
+                                     mesh,
+                                     quant,
+                                     connect,
+                                     eqp,
+                                     e_vals);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -742,12 +793,12 @@ cs_cdoeb_scaleq_init_values(cs_real_t                     t_eval,
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] context    pointer to cs_cdoeb_scaleq_t structure
+ * \param[in, out] context    pointer to cs_cdoeb_vecteq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdoeb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
+cs_cdoeb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
                                    const int                   field_id,
                                    const cs_equation_param_t  *eqp,
                                    cs_equation_builder_t      *eqb,
@@ -762,7 +813,7 @@ cs_cdoeb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 
   cs_timer_t  t0 = cs_timer_time();
 
-  cs_cdoeb_scaleq_t  *eqc = (cs_cdoeb_scaleq_t *)context;
+  cs_cdoeb_vecteq_t  *eqc = (cs_cdoeb_vecteq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id); /* vector-valued cell-based */
 
   /* Build an array storing the values of the prescribed circulation at
@@ -834,6 +885,7 @@ cs_cdoeb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _eb_init_cell_system(time_eval, cell_flag, cm, eqp, eqb, eqc,
+                           circ_bc_vals,
                            csys, cb);
 
       /* Build and add the diffusion term to the local system. A mass matrix is
@@ -869,9 +921,10 @@ cs_cdoeb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
                                             &res_normalization);
 
       /* Boundary conditions */
+      _eb_enforce_values(eqp, eqc, cm, csys, cb);
 
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOEB_SCALEQ_DBG > 0
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOEB_VECTEQ_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
 #endif
@@ -885,10 +938,11 @@ cs_cdoeb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 
   } /* OPENMP Block */
 
+  cs_matrix_assembler_values_done(mav); /* optional */
+
   /* Free temporary buffers and structures */
   BFT_FREE(circ_bc_vals);
-
-  cs_matrix_assembler_values_done(mav); /* optional */
+  cs_matrix_assembler_values_finalize(&mav);
 
   /* Last step in the computation of the renormalization coefficient */
   cs_equation_sync_res_normalization(eqp->sles_param.resnorm_type,
@@ -906,7 +960,7 @@ cs_cdoeb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
                                   matrix,
                                   rs,
                                   res_normalization,
-                                  fld->val,
+                                  eqc->edge_values,
                                   rhs);
 
   /* Copy current field values to previous values and update the related
@@ -931,12 +985,12 @@ cs_cdoeb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
  * \param[in]       field      pointer to a field structure
  * \param[in]       eqp        pointer to a cs_equation_param_t structure
  * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  data       pointer to cs_cdoeb_scaleq_t structure
+ * \param[in, out]  data       pointer to cs_cdoeb_vecteq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdoeb_scaleq_extra_op(const char                 *eqname,
+cs_cdoeb_vecteq_extra_op(const char                 *eqname,
                          const cs_field_t           *field,
                          const cs_equation_param_t  *eqp,
                          cs_equation_builder_t      *eqb,
@@ -962,9 +1016,9 @@ cs_cdoeb_scaleq_extra_op(const char                 *eqname,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdoeb_scaleq_get_edge_values(void      *context)
+cs_cdoeb_vecteq_get_edge_values(void      *context)
 {
-  cs_cdoeb_scaleq_t  *eqc = (cs_cdoeb_scaleq_t *)context;
+  cs_cdoeb_vecteq_t  *eqc = (cs_cdoeb_vecteq_t *)context;
 
   return eqc->edge_values;
 }
@@ -982,9 +1036,9 @@ cs_cdoeb_scaleq_get_edge_values(void      *context)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdoeb_scaleq_get_cell_values(void      *context)
+cs_cdoeb_vecteq_get_cell_values(void      *context)
 {
-  cs_cdoeb_scaleq_t  *eqc = (cs_cdoeb_scaleq_t *)context;
+  cs_cdoeb_vecteq_t  *eqc = (cs_cdoeb_vecteq_t *)context;
   cs_field_t  *c_field = cs_field_by_id(eqc->var_field_id);
 
   return c_field->val;
@@ -1002,7 +1056,7 @@ cs_cdoeb_scaleq_get_cell_values(void      *context)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdoeb_scaleq_read_restart(cs_restart_t    *restart,
+cs_cdoeb_vecteq_read_restart(cs_restart_t    *restart,
                              const char      *eqname,
                              void            *scheme_context)
 {
@@ -1021,7 +1075,7 @@ cs_cdoeb_scaleq_read_restart(cs_restart_t    *restart,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdoeb_scaleq_write_restart(cs_restart_t    *restart,
+cs_cdoeb_vecteq_write_restart(cs_restart_t    *restart,
                               const char      *eqname,
                               void            *scheme_context)
 {

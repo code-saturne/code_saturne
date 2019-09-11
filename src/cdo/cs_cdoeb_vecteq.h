@@ -3,7 +3,8 @@
 
 /*============================================================================
  * Build an algebraic CDO edge-based system. Degrees of freedom are defined as
- * a circulation. Degrees of freedom are scalar-valued.
+ * a circulation. Degrees of freedom are scalar-valued but the equation to
+ * solve is vector-valued
  *============================================================================*/
 
 /*
@@ -57,7 +58,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Algebraic system for CDO edge-based discretization */
-typedef struct _cs_cdoeb_t cs_cdoeb_scaleq_t;
+typedef struct _cs_cdoeb_t cs_cdoeb_vecteq_t;
 
 /*============================================================================
  * Public function prototypes
@@ -73,7 +74,7 @@ typedef struct _cs_cdoeb_t cs_cdoeb_scaleq_t;
 /*----------------------------------------------------------------------------*/
 
 bool
-cs_cdoeb_scaleq_is_initialized(void);
+cs_cdoeb_vecteq_is_initialized(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -88,7 +89,7 @@ cs_cdoeb_scaleq_is_initialized(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdoeb_scaleq_init_common(const cs_cdo_quantities_t    *quant,
+cs_cdoeb_vecteq_init_common(const cs_cdo_quantities_t    *quant,
                             const cs_cdo_connect_t       *connect,
                             const cs_time_step_t         *time_step,
                             const cs_matrix_structure_t  *ms);
@@ -104,7 +105,7 @@ cs_cdoeb_scaleq_init_common(const cs_cdo_quantities_t    *quant,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdoeb_scaleq_get(cs_cell_sys_t       **csys,
+cs_cdoeb_vecteq_get(cs_cell_sys_t       **csys,
                     cs_cell_builder_t   **cb);
 
 /*----------------------------------------------------------------------------*/
@@ -115,11 +116,11 @@ cs_cdoeb_scaleq_get(cs_cell_sys_t       **csys,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdoeb_scaleq_finalize_common(void);
+cs_cdoeb_vecteq_finalize_common(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize a cs_cdoeb_scaleq_t structure storing data useful for
+ * \brief  Initialize a cs_cdoeb_vecteq_t structure storing data useful for
  *         building and managing such a scheme
  *
  * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
@@ -127,28 +128,28 @@ cs_cdoeb_scaleq_finalize_common(void);
  * \param[in]      bflux_id   id of the boundary flux field
  * \param[in, out] eqb        pointer to a \ref cs_equation_builder_t structure
  *
- * \return a pointer to a new allocated cs_cdoeb_scaleq_t structure
+ * \return a pointer to a new allocated cs_cdoeb_vecteq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void  *
-cs_cdoeb_scaleq_init_context(const cs_equation_param_t   *eqp,
+cs_cdoeb_vecteq_init_context(const cs_equation_param_t   *eqp,
                              int                          var_id,
                              int                          bflux_id,
                              cs_equation_builder_t       *eqb);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Destroy a cs_cdoeb_scaleq_t structure
+ * \brief  Destroy a cs_cdoeb_vecteq_t structure
  *
- * \param[in, out]  builder   pointer to a cs_cdoeb_scaleq_t structure
+ * \param[in, out]  builder   pointer to a cs_cdoeb_vecteq_t structure
  *
  * \return a NULL pointer
  */
 /*----------------------------------------------------------------------------*/
 
 void *
-cs_cdoeb_scaleq_free_context(void   *builder);
+cs_cdoeb_vecteq_free_context(void   *builder);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -166,7 +167,7 @@ cs_cdoeb_scaleq_free_context(void   *builder);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdoeb_scaleq_init_values(cs_real_t                     t_eval,
+cs_cdoeb_vecteq_init_values(cs_real_t                     t_eval,
                             const int                     field_id,
                             const cs_mesh_t              *mesh,
                             const cs_equation_param_t    *eqp,
@@ -183,12 +184,12 @@ cs_cdoeb_scaleq_init_values(cs_real_t                     t_eval,
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] context    pointer to cs_cdoeb_scaleq_t structure
+ * \param[in, out] context    pointer to cs_cdoeb_vecteq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdoeb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
+cs_cdoeb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
                                    const int                   field_id,
                                    const cs_equation_param_t  *eqp,
                                    cs_equation_builder_t      *eqb,
@@ -202,12 +203,12 @@ cs_cdoeb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
  * \param[in]       field      pointer to a field structure
  * \param[in]       eqp        pointer to a cs_equation_param_t structure
  * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  data       pointer to cs_cdoeb_scaleq_t structure
+ * \param[in, out]  data       pointer to cs_cdoeb_vecteq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdoeb_scaleq_extra_op(const char                 *eqname,
+cs_cdoeb_vecteq_extra_op(const char                 *eqname,
                          const cs_field_t           *field,
                          const cs_equation_param_t  *eqp,
                          cs_equation_builder_t      *eqb,
@@ -226,7 +227,7 @@ cs_cdoeb_scaleq_extra_op(const char                 *eqname,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdoeb_scaleq_get_edge_values(void      *context);
+cs_cdoeb_vecteq_get_edge_values(void      *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -241,7 +242,7 @@ cs_cdoeb_scaleq_get_edge_values(void      *context);
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdoeb_scaleq_get_cell_values(void      *context);
+cs_cdoeb_vecteq_get_cell_values(void      *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -255,7 +256,7 @@ cs_cdoeb_scaleq_get_cell_values(void      *context);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdoeb_scaleq_read_restart(cs_restart_t    *restart,
+cs_cdoeb_vecteq_read_restart(cs_restart_t    *restart,
                              const char      *eqname,
                              void            *scheme_context);
 
@@ -271,7 +272,7 @@ cs_cdoeb_scaleq_read_restart(cs_restart_t    *restart,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdoeb_scaleq_write_restart(cs_restart_t    *restart,
+cs_cdoeb_vecteq_write_restart(cs_restart_t    *restart,
                               const char      *eqname,
                               void            *scheme_context);
 
@@ -279,4 +280,4 @@ cs_cdoeb_scaleq_write_restart(cs_restart_t    *restart,
 
 END_C_DECLS
 
-#endif /* __CS_CDOEB_SCALEQ_H__ */
+#endif /* __CS_CDOEB_VECTEQ_H__ */

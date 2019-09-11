@@ -157,7 +157,7 @@ cs_equation_common_init(const cs_cdo_connect_t       *connect,
 
     if (vb_flag & CS_FLAG_SCHEME_VECTOR || vcb_flag & CS_FLAG_SCHEME_VECTOR) {
 
-      cwb_size *= 3; /* 3*n_cells by default */
+      cwb_size = CS_MAX(cwb_size, (size_t)3*n_cells);
       if (vb_flag & CS_FLAG_SCHEME_VECTOR)
         cwb_size = CS_MAX(cwb_size, (size_t)3*n_vertices);
 
@@ -170,13 +170,15 @@ cs_equation_common_init(const cs_cdo_connect_t       *connect,
 
   if (eb_flag > 0) {
 
-    if (eb_flag & CS_FLAG_SCHEME_VECTOR) {
+    if (eb_flag & CS_FLAG_SCHEME_SCALAR) {
 
-      cwb_size *= 3; /* 3*n_cells by default */
-      if (eb_flag & CS_FLAG_SCHEME_VECTOR)
-        cwb_size = CS_MAX(cwb_size, (size_t)n_edges);
+      /* This is a vector-valued equation but the DoF is scalar-valued since
+       * it is a circulation associated to each edge */
 
-    } /* vector-valued equations */
+      cwb_size = CS_MAX(cwb_size, (size_t)3*n_cells);
+      cwb_size = CS_MAX(cwb_size, (size_t)n_edges);
+
+    } /* vector-valued equations with scalar-valued DoFs */
 
   } /* Edge-based schemes */
 

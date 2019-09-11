@@ -141,6 +141,28 @@ cs_equation_vb_set_cell_bc(const cs_cell_mesh_t         *cm,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Set the BC into a cellwise view of the current system.
+ *          Case of edge-based schemes
+ *
+ * \param[in]      cm           pointer to a cellwise view of the mesh
+ * \param[in]      eqp          pointer to a cs_equation_param_t structure
+ * \param[in]      face_bc      pointer to a cs_cdo_bc_face_t structure
+ * \param[in]      dir_values   Dirichlet values associated to each vertex
+ * \param[in, out] csys         pointer to a cellwise view of the system
+ * \param[in, out] cb           pointer to a cellwise builder
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_eb_set_cell_bc(const cs_cell_mesh_t         *cm,
+                           const cs_equation_param_t    *eqp,
+                           const cs_cdo_bc_face_t       *face_bc,
+                           const cs_real_t               dir_values[],
+                           cs_cell_sys_t                *csys,
+                           cs_cell_builder_t            *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Set the BC into a cellwise view of the current system.
  *          Case of Face-based schemes
  *
  * \param[in]      cm          pointer to a cellwise view of the mesh

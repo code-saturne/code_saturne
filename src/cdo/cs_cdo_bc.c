@@ -115,6 +115,9 @@ _cdo_bc_face_create(bool       is_steady,
   bc->n_sliding_faces = 0;
   bc->sliding_ids = NULL;
 
+  bc->n_circulation_faces = 0;
+  bc->circulation_ids = NULL;
+
   return bc;
 }
 
@@ -194,6 +197,12 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
       bc->n_sliding_faces += z->n_elts;
       break;
 
+      /* For vector-valued equations only */
+    case CS_CDO_BC_TANGENTIAL_DIRICHLET:
+      assert(dim > 1);
+      bc->n_circulation_faces += z->n_elts;
+      break;
+
     default:
       bft_error(__FILE__, __LINE__, 0,
                 " %s: This type of boundary condition is not handled.",
@@ -237,7 +246,7 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
   cs_lnum_t n_set_faces =
     bc->n_hmg_neu_faces + bc->n_nhmg_neu_faces +
     bc->n_hmg_dir_faces + bc->n_nhmg_dir_faces +
-    bc->n_robin_faces + bc->n_sliding_faces;
+    bc->n_robin_faces + bc->n_sliding_faces + bc->n_circulation_faces;
   if (n_set_faces != bc->n_b_faces)
     bft_error(__FILE__, __LINE__, 0,
               " %s: There are %d faces without boundary conditions.\n"
@@ -252,6 +261,7 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
   BFT_MALLOC(bc->nhmg_neu_ids, bc->n_nhmg_neu_faces, cs_lnum_t);
   BFT_MALLOC(bc->robin_ids, bc->n_robin_faces, cs_lnum_t);
   BFT_MALLOC(bc->sliding_ids, bc->n_sliding_faces, cs_lnum_t);
+  BFT_MALLOC(bc->circulation_ids, bc->n_circulation_faces, cs_lnum_t);
 
   /* Fill the allocated lists */
   cs_lnum_t  shift[CS_PARAM_N_BC_TYPES];
@@ -290,10 +300,17 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
       shift[CS_PARAM_BC_SLIDING] += 1;
       break;
 
+      /* For vector-valued equations only */
+    case CS_CDO_BC_TANGENTIAL_DIRICHLET:
+      bc->circulation_ids[shift[CS_PARAM_BC_CIRCULATION]] = i;
+      shift[CS_PARAM_BC_CIRCULATION] += 1;
+      break;
+
     default:
       bft_error(__FILE__, __LINE__, 0,
                 " %s: This type of boundary condition is not handled.",
                 __func__);
+
     } /* End of switch */
 
   } /* Loop on boundary faces */
@@ -326,6 +343,7 @@ cs_cdo_bc_free(cs_cdo_bc_face_t   *face_bc)
   BFT_FREE(face_bc->nhmg_neu_ids);
   BFT_FREE(face_bc->robin_ids);
   BFT_FREE(face_bc->sliding_ids);
+  BFT_FREE(face_bc->circulation_ids);
 
   BFT_FREE(face_bc);
 

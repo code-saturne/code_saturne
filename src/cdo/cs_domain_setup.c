@@ -163,10 +163,10 @@ _set_scheme_flags(cs_domain_t    *domain)
       break;
 
     case CS_SPACE_SCHEME_CDOEB:
-      cc->eb_scheme_flag |= CS_FLAG_SCHEME_POLY0;
       assert(vardim == 3);
       /* vardim should equal to 3 but each edge is associated a scalar-valued
          quantity */
+      cc->eb_scheme_flag |= CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_SCALAR;
       break;
 
     case CS_SPACE_SCHEME_CDOFB:
