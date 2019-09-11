@@ -68,7 +68,7 @@ implicit none
 
 double precision nc(ncelet),w(3,ncelet),qldia(ncelet)
 double precision tempc(ncelet),rom(ncelet),pphy(ncelet)
-double precision refrad(ncelet)
+double precision refrad(ncel)
 
 ! Local variables
 
