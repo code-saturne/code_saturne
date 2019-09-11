@@ -666,7 +666,7 @@ do f_id = 0, nfld - 1
 
       call field_current_to_previous(f_id)
 
-      ! For buoyant scalar with source termes, current to previous for them
+      ! For buoyant scalar with source terms, current to previous for them
       call field_get_key_int(f_id, kst, st_id)
       if (st_id .ge.0) then
         call field_current_to_previous(st_id)

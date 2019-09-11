@@ -240,7 +240,7 @@ enddo
 !--------
 
 !< [format_1]
- 1000 format(' User source termes for variable ',A8,/)
+ 1000 format(' User source terms for variable ',A8,/)
 !< [format_1]
 !----
 ! End

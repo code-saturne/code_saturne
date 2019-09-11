@@ -300,7 +300,7 @@ cs_user_parameters(cs_domain_t *domain)
   /* Example: set options for Stokes solving */
   /*-----------------------------------------*/
 
-  /* Members of the strucutre cs_glob_stokes_model:
+  /* Members of the structure cs_glob_stokes_model:
    *  ivisse: take viscous term of transposed velocity
    *          gradient into account in momentum equation
    *                   - 1: true (default)

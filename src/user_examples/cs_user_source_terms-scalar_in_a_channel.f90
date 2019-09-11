@@ -215,7 +215,7 @@ enddo
 ! Formats
 !--------
 
- 1000 format(' User source termes for variable ',A8,/)
+ 1000 format(' User source terms for variable ',A8,/)
 
 !----
 ! End

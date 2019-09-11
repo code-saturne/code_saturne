@@ -225,11 +225,11 @@ f_name= 'b_x_c'
 call field_create(f_name, itycat, 3, idim1, inoprv, f_id)
 call field_set_key_str(f_id, keylbl, f_name)
 
-! Explicit interfacial source termes for x1 h1 (deduced from thoses of x2 h2)
+! Explicit interfacial source terms for x1 h1 (deduced from thoses of x2 h2)
 f_name= 'x_h_c_exp_st'
 call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
 
-! Implicit interfacial source termes for x1 h1 (deduced from thoses of x2 h2)
+! Implicit interfacial source terms for x1 h1 (deduced from thoses of x2 h2)
 f_name= 'x_h_c_imp_st'
 call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
 
