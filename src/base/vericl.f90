@@ -1671,7 +1671,7 @@ endif
 '@ @@ WARNING: ABORT DURING THE BOUNDARY CONDITIONS CHECK     ',/,&
 '@    ========                                                ',/,&
 '@                                                            ',/,&
-'@         Unexpeted boundary conditions:                     ',/,&
+'@         Unexpected boundary conditions:                    ',/,&
 '@             on the velocity                      : ',I10    ,/,&
 '@             on the pressure                      : ',I10    ,/,&
 '@             on k and epsilon                     : ',I10    ,/,&
