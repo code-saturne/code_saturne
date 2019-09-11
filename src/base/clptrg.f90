@@ -200,7 +200,7 @@ double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: cvara_nusa
 
 double precision, dimension(:), pointer :: cvar_totwt, cvar_t, cpro_liqwt
-double precision, dimension(:), pointer :: cpro_rugt
+double precision, dimension(:), pointer :: cpro_rugd, cpro_rugt
 
 double precision, dimension(:,:), pointer :: coefau, cofafu, visten
 double precision, dimension(:,:,:), pointer :: coefbu, cofbfu
@@ -595,6 +595,7 @@ if (ippmod(iatmos).ge.1) then
     call field_get_val_s(iliqwt, cpro_liqwt)
 
     if (modsedi.eq.1.and.moddep.gt.0) then
+      call field_get_val_s_by_name('boundary_roughness', cpro_rugd)
       call field_get_val_s_by_name('boundary_thermal_roughness', cpro_rugt)
     endif
   endif
@@ -756,6 +757,13 @@ do ifac = 1, nfabor
     ! rugd: rugosite de paroi pour les variables dynamiques
     !       seule la valeur stockee pour iu est utilisee
     rugd = rcodcl(ifac,iu,3)
+
+    ! FIXME This is only used for sedimentation velocity computation
+    if (ippmod(iatmos).eq.2) then
+      if (modsedi.eq.1.and.moddep.gt.0) then
+        cpro_rugd(ifac) = rugd
+      endif
+    endif
 
     ! NB: for rough walls, yplus is computed from the roughness and not uk.
     yplus = distbf/rugd

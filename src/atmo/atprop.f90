@@ -83,6 +83,10 @@ if (ippmod(iatmos).eq.2) then
     ! wall friction velocity if not already created
     call field_find_or_create('ustar', itycat, ityloc, idim1, f_id)
 
+    ! boundary roughness
+    call add_boundary_property_field_owner('boundary_roughness',  &
+                                           'Boundary Roughness', f_id)
+
     ! boundary thermal roughness
     call add_boundary_property_field_owner('boundary_thermal_roughness',  &
                                            'Boundary Thermal Roughness', f_id)

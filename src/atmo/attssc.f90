@@ -123,7 +123,7 @@ if (ippmod(iatmos).ge.1.and.iatra1.ge.1.and.iirayo.eq.0) then
 
     ! Call the 1D radiative model
     ! Compute the divergence of the ir and solar radiative fluxes:
-    call atr1vf()
+    call atr1vf
 
     ! Cressman interpolation of the 1D radiative fluxes on the 3D mesh:
     ! Infra red
@@ -131,6 +131,19 @@ if (ippmod(iatmos).ge.1.and.iatra1.ge.1.and.iirayo.eq.0) then
 
     ! Sun
     call mscrss(idrayst, 1, ray3Dst)
+
+    ! Store radiative fluxes for droplet nucleation model
+    ! FIXME if temperature not the first specific physics scalar
+    if (ippmod(iatmos).eq.2.and.modsedi.eq.1) then ! for humid atmo. physics only
+      if (.not.r3_is_defined) then
+        if (modnuc.gt.0)then
+          allocate(refrad(ncel))
+          do iel = 1, ncel
+            refrad(iel) = (-ray3Di(iel)  + ray3Dst(iel))
+          enddo
+        endif
+      endif
+    endif
 
     ! Explicit source term for the thermal scalar equation:
 
@@ -166,7 +179,7 @@ if (ippmod(iatmos).eq.2.and.modsedi.eq.1) then ! for humid atmo. physics only
   enddo
   if (irangp.ge.0) call parmax(qliqmax)
 
-  if(qliqmax.gt.1e-8)then
+  if (qliqmax.gt.1d-8) then
 
     if (.not.r3_is_defined)then
 
@@ -195,11 +208,6 @@ if (ippmod(iatmos).eq.2.and.modsedi.eq.1) then ! for humid atmo. physics only
           enddo
         endif
 
-        allocate(refrad(ncelet))
-        do iel = 1, ncel
-          refrad(iel) = 0.d0
-        enddo
-
         call nuclea (                                                 &
              cvar_ntdrp,                                              &
              vel,                                                     &
@@ -213,7 +221,7 @@ if (ippmod(iatmos).eq.2.and.modsedi.eq.1) then ! for humid atmo. physics only
       endif ! (modnuc.gt.0)
 
       allocate(r3(ncelet))
-      call define_r3()
+      call define_r3
       r3_is_defined = .true.
 
       allocate(grad1(3,ncelet), grad2(3,ncelet))
@@ -312,7 +320,7 @@ contains
       rho = crom(iel)
       qliq = cpro_liqwt(iel)
       nc = cvar_ntdrp(iel)
-      if(qliq.ge.1e-8)then
+      if(qliq.ge.1d-8)then
         nc = max(nc,1.d0)
         r3(iel) = ((rho*qliq)/(rho_water*nc*1.d6)*0.75d0*pi)**(1.d0/3.d0)
       else
@@ -385,6 +393,7 @@ contains
     double precision, dimension(:), allocatable :: local_field, sed_vel
     double precision, dimension(:), allocatable :: pres, temp
 
+    double precision, dimension(:), pointer :: rugd
     double precision, dimension(:), pointer :: bcfnns, ustar, cvar_temp, rugt
 
     type(var_cal_opt) :: vcopt
@@ -433,13 +442,14 @@ contains
 
       call field_get_val_s_by_name('non_neutral_scalar_correction', bcfnns)
       call field_get_val_s_by_name('ustar', ustar)
+      call field_get_val_s_by_name('boundary_roughness', rugd)
       call field_get_val_s_by_name('boundary_thermal_roughness', rugt)
 
       do ifac = 1, nfabor
         if (itypfb(ifac).eq.iparug) then
           iel  = ifabor(ifac)
           if (r3(iel).gt.0.d0) then
-            if (rugt(ifac).gt.0.d0) then
+            if (rugd(ifac).gt.0.d0) then
               call deposition_vel(temp(iel), crom(iel), pres(iel),         &
                                   bcfnns(ifac), ustar(ifac), rugt(ifac),   &
                                   r3(iel), sed_vel(iel), depo)
