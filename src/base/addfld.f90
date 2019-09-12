@@ -80,7 +80,7 @@ implicit none
 
 ! Local variables
 
-integer          ii, iscal, iloc1
+integer          ii, iscal
 integer          ifcvsl, kbfid
 integer          iflid, iopchr
 integer          itycat, ityloc, idim1, idim3
@@ -157,8 +157,6 @@ call field_get_key_id('label', keylbl)
 ! 1. Additional variable fields
 !===============================================================================
 
-iloc1 = 1
-
 ! User variables
 !---------------
 
@@ -177,7 +175,7 @@ do ii = 1, nscal
       f_name = trim(name)//'_turbulent_flux'
 
       if (ityturt(ii).eq.3) then
-        call add_variable_field(f_name, f_name, 3, ivtmp, iloc1)
+        call add_variable_field(f_name, f_name, 3, ivtmp)
         iflid = ivarfl(ivtmp)
 
         call field_set_key_int(iflid, keycpl, 1)
@@ -202,7 +200,7 @@ do ii = 1, nscal
       if (iturt(ii).eq.11 .or. iturt(ii).eq.21 .or. iturt(ii).eq.31) then
         f_name = trim(name)//'_alpha'
 
-        call add_variable_field(f_name, f_name, 1, ivtmp, iloc1)
+        call add_variable_field(f_name, f_name, 1, ivtmp)
         iflid = ivarfl(ivtmp)
 
         ! Elliptic equation (no convection, no time term)
@@ -360,7 +358,7 @@ endif
 if (ineedy.eq.1) then
   f_name  = 'wall_distance'
   f_label = 'Wall distance'
-  call add_variable_field(f_name, f_label, 1, ivar, iloc1)
+  call add_variable_field(f_name, f_label, 1, ivar)
   iflid = ivarfl(ivar)
 
   ! Elliptic equation (no convection, no time term)
@@ -378,7 +376,7 @@ if (ineedy.eq.1) then
   if (itytur.eq.4.and.idries.eq.1) then
     f_name  = 'wall_yplus'
     f_label = 'Wall Y+'
-    call add_variable_field(f_name, f_label, 1, ivar, iloc1)
+    call add_variable_field(f_name, f_label, 1, ivar)
     iflid = ivarfl(ivar)
 
     call field_set_key_int(iflid, keyvis, 1)
@@ -414,7 +412,7 @@ endif
 if (ippmod(iatmos).ge.0.and.compute_z_ground) then
   f_name  = 'z_ground'
   f_label = 'Z ground'
-  call add_variable_field(f_name, f_label, 1, ivar, iloc1)
+  call add_variable_field(f_name, f_label, 1, ivar)
   iflid = ivarfl(ivar)
 
   ! Elliptic equation (no convection, no time term)
@@ -445,7 +443,7 @@ endif
 if (compute_porosity_from_scan) then
   f_name  = 'porosity_w_field'
   f_label = 'Porosity w'
-  call add_variable_field(f_name, f_label, 1, ivar, iloc1)
+  call add_variable_field(f_name, f_label, 1, ivar)
   iflid = ivarfl(ivar)
 
   ! Elliptic equation (no convection, no time term)

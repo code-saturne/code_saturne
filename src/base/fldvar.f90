@@ -71,8 +71,8 @@ integer       nmodpp
 
 ! Local variables
 
-integer       ipp, iloc1, ityloc
-integer       iok   , keycpl, nmodpp_compatibility, vof_mask
+integer       ipp
+integer       iok, keycpl, nmodpp_compatibility, vof_mask
 
 type(var_cal_opt) :: vcopt
 
@@ -179,11 +179,9 @@ endif
 
 nvar = 0
 
-iloc1 = 1
-
 ! Velocity
 
-call add_variable_field('velocity', 'Velocity', 3, iu, iloc1)
+call add_variable_field('velocity', 'Velocity', 3, iu)
 call field_set_key_int(ivarfl(iu), keycpl, 1)
 
 ! All components point to same field
@@ -193,9 +191,9 @@ iw = iv + 1
 ! Pressure or hydraulic head for groundwater flow module
 
 if (ippmod(idarcy).eq.-1) then
-  call add_variable_field('pressure', 'Pressure', 1, ipr, iloc1)
+  call add_variable_field('pressure', 'Pressure', 1, ipr)
 else
-  call add_variable_field('hydraulic_head', 'Hydraulic head', 1, ipr, iloc1)
+  call add_variable_field('hydraulic_head', 'Hydraulic head', 1, ipr)
 endif
 
 ! Enabled VoF model if free surface or mass transfer modeling enabled
@@ -223,7 +221,7 @@ call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
 ! void fraction (VoF algorithm)
 if (ivofmt.gt.0) then
-  call add_variable_field('void_fraction', 'Void Fraction', 1, ivolf2, iloc1)
+  call add_variable_field('void_fraction', 'Void Fraction', 1, ivolf2)
   call field_get_key_struct_var_cal_opt(ivarfl(ivolf2), vcopt)
   vcopt%idiff = 0  ! pure convection equation
   call field_set_key_struct_var_cal_opt(ivarfl(ivolf2), vcopt)
@@ -232,11 +230,11 @@ endif
 ! Turbulence
 
 if (itytur.eq.2) then
-  call add_variable_field('k', 'Turb Kinetic Energy', 1, ik, iloc1)
-  call add_variable_field('epsilon', 'Turb Dissipation', 1, iep, iloc1)
+  call add_variable_field('k', 'Turb Kinetic Energy', 1, ik)
+  call add_variable_field('epsilon', 'Turb Dissipation', 1, iep)
 else if (itytur.eq.3) then
   if (irijco.eq.1) then
-    call add_variable_field('rij', 'Rij', 6, irij, iloc1)
+    call add_variable_field('rij', 'Rij', 6, irij)
     call field_set_key_int(ivarfl(irij), keycpl, 1)
 
     ! All rij components point to same field
@@ -247,18 +245,18 @@ else if (itytur.eq.3) then
     ir23 = ir12 + 1
     ir13 = ir23 + 1
   else
-    call add_variable_field('r11', 'R11', 1, ir11, iloc1)
+    call add_variable_field('r11', 'R11', 1, ir11)
     irij = ir11
-    call add_variable_field('r22', 'R22', 1, ir22, iloc1)
-    call add_variable_field('r33', 'R33', 1, ir33, iloc1)
-    call add_variable_field('r12', 'R12', 1, ir12, iloc1)
-    call add_variable_field('r23', 'R23', 1, ir23, iloc1)
-    call add_variable_field('r13', 'R13', 1, ir13, iloc1)
+    call add_variable_field('r22', 'R22', 1, ir22)
+    call add_variable_field('r33', 'R33', 1, ir33)
+    call add_variable_field('r12', 'R12', 1, ir12)
+    call add_variable_field('r23', 'R23', 1, ir23)
+    call add_variable_field('r13', 'R13', 1, ir13)
   endif
 
-  call add_variable_field('epsilon', 'Turb Dissipation', 1, iep, iloc1)
+  call add_variable_field('epsilon', 'Turb Dissipation', 1, iep)
   if (iturb.eq.32) then
-    call add_variable_field('alpha', 'Alphap', 1, ial, iloc1)
+    call add_variable_field('alpha', 'Alphap', 1, ial)
     ! Elliptic equation (no convection, no time term)
     call field_get_key_struct_var_cal_opt(ivarfl(ial), vcopt)
     vcopt%istat = 0
@@ -268,11 +266,11 @@ else if (itytur.eq.3) then
     call field_set_key_struct_var_cal_opt(ivarfl(ial), vcopt)
   endif
 else if (itytur.eq.5) then
-  call add_variable_field('k', 'Turb Kinetic Energy', 1, ik, iloc1)
-  call add_variable_field('epsilon', 'Turb Dissipation', 1, iep, iloc1)
-  call add_variable_field('phi', 'Phi', 1, iphi, iloc1)
+  call add_variable_field('k', 'Turb Kinetic Energy', 1, ik)
+  call add_variable_field('epsilon', 'Turb Dissipation', 1, iep)
+  call add_variable_field('phi', 'Phi', 1, iphi)
   if (iturb.eq.50) then
-    call add_variable_field('f_bar', 'f_bar', 1, ifb, iloc1)
+    call add_variable_field('f_bar', 'f_bar', 1, ifb)
     call field_get_key_struct_var_cal_opt(ivarfl(ifb), vcopt)
     vcopt%istat = 0
     vcopt%iconv = 0
@@ -280,7 +278,7 @@ else if (itytur.eq.5) then
     vcopt%idircl = 0
     call field_set_key_struct_var_cal_opt(ivarfl(ifb), vcopt)
   else if (iturb.eq.51) then
-    call add_variable_field('alpha', 'Alpha', 1, ial, iloc1)
+    call add_variable_field('alpha', 'Alpha', 1, ial)
     call field_get_key_struct_var_cal_opt(ivarfl(ial), vcopt)
     vcopt%istat = 0
     vcopt%iconv = 0
@@ -289,10 +287,10 @@ else if (itytur.eq.5) then
     call field_set_key_struct_var_cal_opt(ivarfl(ial), vcopt)
   endif
 else if (iturb.eq.60) then
-  call add_variable_field('k', 'Turb Kinetic Energy', 1, ik, iloc1)
-  call add_variable_field('omega', 'Omega', 1, iomg, iloc1)
+  call add_variable_field('k', 'Turb Kinetic Energy', 1, ik)
+  call add_variable_field('omega', 'Omega', 1, iomg)
 else if (iturb.eq.70) then
-  call add_variable_field('nu_tilda', 'NuTilda', 1, inusa, iloc1)
+  call add_variable_field('nu_tilda', 'NuTilda', 1, inusa)
 endif
 
 ! Mesh velocity with ALE
@@ -300,12 +298,10 @@ if (iale.ge.1) then
 
   ! field defined on vertices if CDO-Vb scheme is used
   if (iale.eq.2) then
-    ityloc = 4
-    call add_cdo_variable_field('mesh_velocity', 'Mesh Velocity', &
-                                3, iuma, ityloc, 1)
+    call add_cdo_variable_field('mesh_velocity', 'Mesh Velocity',    &
+                                3, MESH_LOCATION_VERTICES, 1, iuma)
   else
-    ityloc = 1
-    call add_variable_field('mesh_velocity', 'Mesh Velocity', 3, iuma, ityloc)
+    call add_variable_field('mesh_velocity', 'Mesh Velocity', 3, iuma)
   endif
 
   call field_set_key_int(ivarfl(iuma), keycpl, 1)
@@ -666,11 +662,10 @@ end subroutine
 !> \param[in]  label         field default label, or empty
 !> \param[in]  dim           field dimension
 !> \param[out] ivar          variable number for defined field
-!> \param[in]  location_id   id of the mesh location where the field is defined
 !_______________________________________________________________________________
 
 subroutine add_variable_field &
- ( name, label, dim, ivar , location_id )
+ ( name, label, dim, ivar )
 
 !===============================================================================
 ! Module files
@@ -690,7 +685,7 @@ implicit none
 ! Arguments
 
 character(len=*), intent(in) :: name, label
-integer, intent(in)          :: dim, location_id
+integer, intent(in)          :: dim
 integer, intent(out)         :: ivar
 
 ! Local variables
@@ -701,7 +696,7 @@ integer, save :: keyvar = -1
 
 ! Create field
 
-call variable_field_create(name, label, location_id, dim, id)
+call variable_field_create(name, label, MESH_LOCATION_CELLS, dim, id)
 
 if (keyvar.lt.0) then
   call field_get_key_id("variable_id", keyvar)
@@ -745,14 +740,14 @@ end subroutine add_variable_field
 !______________________________________________________________________________!
 !> \param[in]  name          field name
 !> \param[in]  label         field default label, or empty
-!> \param[out] ivar          variable number for defined field
 !> \param[in]  dim           field dimension
 !> \param[in]  location_id   id of the mesh location where the field is defined
 !> \param[in]  has_previous  if greater than 0 then stores previous state
+!> \param[out] ivar          variable number for defined field
 !_______________________________________________________________________________
 
 subroutine add_cdo_variable_field &
- ( name, label, dim, ivar, location_id, has_previous )
+ ( name, label, dim, location_id, has_previous, ivar )
 
 !===============================================================================
 ! Module files
