@@ -405,7 +405,7 @@ _scalar_properties_choice(const char *f_name,
   } else {
     ichoice = 1;
 
-    if (cs_gui_strcmp(buff, "variable"))
+    if (cs_gui_strcmp(buff, "user_law"))
       *choice = 1;
     else if (cs_gui_strcmp(buff, "constant"))
       *choice = 0;
