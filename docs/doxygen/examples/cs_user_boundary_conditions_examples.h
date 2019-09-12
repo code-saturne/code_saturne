@@ -50,6 +50,8 @@
   - \subpage gas_libby_williams_examples
   - \subpage pulverized_coal1
   - \subpage pulverized_coal2
+  - \subpage note_book
+  - \subpage medcoupling_remapper_2d
 
 */
 // __________________________________________________________________________________
@@ -906,4 +908,53 @@ TODO : Verifier la traduction
 
   \snippet cs_user_boundary_conditions-pulverized_coal_lagrangian.f90 example_4
 
+*/
+// __________________________________________________________________________________
+/*!
+
+  \page note_book Boundary conditions using notebook
+
+  Get a user parameter defined in the GUI notebook.
+
+  \snippet cs_user_boundary_conditions-notebook.c user_defined_param
+
+  Define some variables needed for the boundary condition specification.
+
+  \snippet cs_user_boundary_conditions-notebook.c bc_param
+
+  Apply a Dirichlet boundary condition on temperature at inlet by using the
+  user parameter "t_inlet" which value has been retrieved above.
+
+  \snippet cs_user_boundary_conditions-notebook.c apply_bc
+
+*/
+// __________________________________________________________________________________
+/*!
+
+  \page medcoupling_remapper_2d Boundary conditions definition by remapping with medcoupling
+
+  Local definitions
+
+  \snippet cs_user_boundary_conditions-medcoupling_remapper_2d.c loc_var_def
+
+  Initialization of some variables
+
+  \snippet cs_user_boundary_conditions-medcoupling_remapper_2d.c init
+
+  Create a medcoupling remapper
+
+  \snippet cs_user_boundary_conditions-medcoupling_remapper_2d.c remapper
+
+  Translate or rotate med data if needed
+
+  \snippet cs_user_boundary_conditions-medcoupling_remapper_2d.c trans_rota
+
+  We retrieve an array containing the interpolated values.
+
+  \snippet cs_user_boundary_conditions-medcoupling_remapper_2d.c copy_values
+
+  We prescribe for the inlet a Dirichlet condition on the scalar "scalar1":
+
+  \snippet cs_user_boundary_conditions-medcoupling_remapper_2d.c dirichlet_condition
+// __________________________________________________________________________________
 */
