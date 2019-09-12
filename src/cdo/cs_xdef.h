@@ -239,7 +239,7 @@ typedef struct {
    * \ref cs_time_func_t to call
    */
   void                *input;
-  cs_time_func_t  *func;
+  cs_time_func_t      *func;
 
 } cs_xdef_time_func_input_t;
 

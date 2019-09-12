@@ -65,8 +65,9 @@ BEGIN_C_DECLS
 
 /* The following limitation only results from an optimization in the size of
    the bit mask (can be changed if needed by changing the definition of
-   the type cs_mask_t) */
-#define CS_CDO_N_MAX_REACTIONS  8 // Max number of reaction terms in an equation
+   the type cs_mask_t)
+   Here is the max. number of reaction terms allowed in an equation */
+#define CS_CDO_N_MAX_REACTIONS  8
 
 #define CS_ALL_FACES   0        /* All faces: interior + border */
 #define CS_BND_FACES   1        /* Boundary faces */

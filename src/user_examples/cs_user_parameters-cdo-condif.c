@@ -79,12 +79,12 @@ BEGIN_C_DECLS
  *         Rely on a generic function pointer for an analytic function
  *
  * \param[in]      time       when ?
- * \param[in]      n_elts     number of elements to consider
+ * \param[in]      n_pts      number of elements to consider
  * \param[in]      pt_ids     list of elements ids (to access coords and fill)
- * \param[in]      coords     where ?
+ * \param[in]      xyz        where ?
  * \param[in]      compact    true:no indirection, false:indirection for filling
  * \param[in]      input      NULL or pointer to a structure cast on-the-fly
- * \param[in, out] retval     result of the function
+ * \param[in, out] res        result of the function
  */
 /*----------------------------------------------------------------------------*/
 
@@ -123,9 +123,9 @@ _define_adv_field(cs_real_t           time,
  *         Rely on a generic function pointer for an analytic function
  *
  * \param[in]      time      when ?
- * \param[in]      n_elts    number of elements to consider
+ * \param[in]      n_pts     number of elements to consider
  * \param[in]      pt_ids    list of elements ids (to access coords and fill)
- * \param[in]      coords    where ?
+ * \param[in]      xyz       where ?
  * \param[in]      compact   true:no indirection, false:indirection for filling
  * \param[in]      input     NULL or pointer to a structure cast on-the-fly
  * \param[in, out] res       result of the function
@@ -260,20 +260,18 @@ cs_user_model(void)
 
   /*! [param_cdo_wall_distance] */
   {
+    /*  Activate predefined module as the computation of the wall distance */
     cs_walldistance_activate();
   }
   /*! [param_cdo_wall_distance] */
 
   /*! [param_cdo_add_user_equation] */
   {
-    /* Add a new user equation:
-       Set the default boundary condition among:
-       CS_PARAM_BC_HMG_DIRICHLET or
-       CS_PARAM_BC_HMG_NEUMANN
-
-       By default, initial values are set to zero (or the value given by the
-       restart file in case of restart).
-    */
+    /* Add a new user equation.
+     *   The default boundary condition has to be chosen among:
+     *    CS_PARAM_BC_HMG_DIRICHLET
+     *    CS_PARAM_BC_HMG_NEUMANN
+     */
 
     cs_equation_add_user("AdvDiff.Upw", // equation name
                          "Pot.Upw",     // associated variable field name

@@ -1005,12 +1005,12 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     /* Dual face quantities related to each edge */
     if (build_flag & CS_FLAG_COMP_DFQ) {
 
+      const cs_real_t  *sface = quant->sface_normal + 6*c2e_idx[0];
+
       for (short int e = 0; e < cm->n_ec; e++) {
 
-        const cs_real_t  *sface0 = quant->sface_normal + 6*(c2e_idx[0] + e);
-        const cs_real_t  *sface1 = sface0 + 3;
-
         cs_real_3_t  df_vect;
+        const cs_real_t  *sface0 = sface + 6*e, *sface1 = sface0 + 3;
         for (int k = 0; k < 3; k++)
           df_vect[k] = sface0[k] + sface1[k];
 
