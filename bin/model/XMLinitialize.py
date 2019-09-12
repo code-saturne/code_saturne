@@ -667,6 +667,7 @@ class XMLinit(BaseXmlInit):
                     ("Fr_HET_O2",                    "fr_het_o2"),
                     ("Fr_HET_CO2",                   "fr_het_co2"),
                     ("Fr_HET_H2O",                   "fr_het_h2o"),
+                    ("Xc_Ent",                       "x_c_h"),
                     ("FR_HCN",                       "x_c_hcn"),
                     ("FR_NO",                        "x_c_no"),
                     ("FR_NH3",                       "x_c_nh3"),
