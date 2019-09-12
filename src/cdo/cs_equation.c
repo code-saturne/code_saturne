@@ -553,6 +553,80 @@ cs_equation_get_field_id(const cs_equation_t    *eq)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Return the global number of degrees of freedom associated to this
+ *         cs_equation_t structure
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ * \param[in]  cdoq     pointer to a cs_cdo_quantities_t structure
+ *
+ * \return a global number of degrees of freedom (DoFs)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gnum_t
+cs_equation_get_global_n_dofs(const cs_equation_t         *eq,
+                              const cs_cdo_quantities_t   *cdoq)
+{
+  if (eq == NULL || cdoq == NULL)
+    return 0;
+
+  switch (cs_equation_get_space_scheme(eq)) {
+
+  case CS_SPACE_SCHEME_CDOVB:
+    if (cs_glob_n_ranks > 1)
+      return cdoq->n_g_vertices;
+    else
+      return (cs_gnum_t)cdoq->n_vertices;
+    break;
+
+  case CS_SPACE_SCHEME_CDOVCB:
+    if (cs_glob_n_ranks > 1)
+      return cdoq->n_g_vertices + cdoq->n_g_cells;
+    else
+      return (cs_gnum_t)(cdoq->n_vertices + cdoq->n_cells);
+    break;
+
+  case CS_SPACE_SCHEME_CDOEB:
+    if (cs_glob_n_ranks > 1)
+      return cdoq->n_g_edges;
+    else
+      return (cs_gnum_t)(cdoq->n_edges);
+    break;
+
+  case CS_SPACE_SCHEME_CDOFB:
+  case CS_SPACE_SCHEME_HHO_P0:
+    if (cs_glob_n_ranks > 1)
+      return cdoq->n_g_faces + cdoq->n_g_cells;
+    else
+      return (cs_gnum_t)(cdoq->n_faces + cdoq->n_cells);
+    break;
+
+  case CS_SPACE_SCHEME_HHO_P1:
+    if (cs_glob_n_ranks > 1)
+      return CS_N_FACE_DOFS_1ST*cdoq->n_g_faces
+        + CS_N_CELL_DOFS_1ST*cdoq->n_g_cells;
+    else
+      return (cs_gnum_t)(CS_N_FACE_DOFS_1ST*cdoq->n_faces
+                         + CS_N_CELL_DOFS_1ST*cdoq->n_cells);
+    break;
+
+  case CS_SPACE_SCHEME_HHO_P2:
+    if (cs_glob_n_ranks > 1)
+      return CS_N_FACE_DOFS_2ND*cdoq->n_g_faces
+        + CS_N_CELL_DOFS_2ND*cdoq->n_g_cells;
+    else
+      return (cs_gnum_t)(CS_N_FACE_DOFS_2ND*cdoq->n_faces
+                         + CS_N_CELL_DOFS_2ND*cdoq->n_cells);
+    break;
+
+  default:
+    return 0;
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return the field structure for the (normal) boundary flux associated
  *         to a cs_equation_t structure
  *

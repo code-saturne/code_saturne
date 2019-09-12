@@ -196,6 +196,22 @@ cs_equation_get_field_id(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Return the global number of degrees of freedom associated to this
+ *         cs_equation_t structure
+ *
+ * \param[in]  eq       pointer to a cs_equation_t structure
+ * \param[in]  cdoq     pointer to a cs_cdo_quantities_t structure
+ *
+ * \return a global number of degrees of freedom (DoFs)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_gnum_t
+cs_equation_get_global_n_dofs(const cs_equation_t         *eq,
+                              const cs_cdo_quantities_t   *cdoq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return the field structure for the (normal) boundary flux associated
  *         to a cs_equation_t structure
  *
