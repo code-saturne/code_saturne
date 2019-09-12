@@ -2096,7 +2096,7 @@ cs_equation_create_fields(void)
 
     cs_equation_param_t  *eqp = eq->param;
 
-    /* Redondant definition to handle C/FORTRAN */
+    /* Redundant definition to handle C/FORTRAN */
     int  has_previous = (eqp->flag & CS_EQUATION_UNSTEADY) ? 1 : 0;
     bool  previous = (eqp->flag & CS_EQUATION_UNSTEADY) ? true : false;
 
