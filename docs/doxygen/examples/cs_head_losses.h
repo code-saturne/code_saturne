@@ -77,7 +77,7 @@
   \section init_and_final Initialization and finalization
 
   It is useful to map a field array to a local pointer for a clear and concise
-  access, such as done here fro the velocity:
+  access, such as done here for the velocity:
 
   \snippet cs_user_head_losses.c map_field_arrays
 
@@ -100,7 +100,7 @@
 
   \subsection head_loss_examples Head loss examples
 
-  Note that in the following examples, we checku the zone name, so we
+  Note that in the following examples, we check the zone name, so we
   know which zone we are dealing with using in case of multiple zones.
 
   head loss tensor coefficients for each cell are organized as follows:

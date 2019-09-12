@@ -295,7 +295,7 @@ Example of arbitrary volumic heat term in the equation for enthalpy h.
 
   \subsection end2 Body
 
-   \warning It is assumed here that the thermal scalar is an enthalpy. If the scalar is a  temperature. PWatt does not need to  be divided by \f$ C_p \f$ because \f$C_p\f$ is put outside thediffusion term and multiplied in the temperature equation as follows:
+   \warning It is assumed here that the thermal scalar is an enthalpy. If the scalar is a  temperature. PWatt does not need to  be divided by \f$ C_p \f$ because \f$C_p\f$ is put outside the diffusion term and multiplied in the temperature equation as follows:
  \f[ \rho C_p \norm{\vol{\celli}} \frac{dT}{dt} + ... = \norm{\vol{\celli}(iel)} \frac{pwatt}{voltf} \f]
 
 with  <tt> pwatt = 100.d0 </tt>
