@@ -2701,17 +2701,20 @@ void CS_PROCF(uitssc, UITSSC)(const int                  *idarcy,
                                                  "scalar_source_term");
 
         cs_real_t sign = 1.0;
+        cs_real_t non_linear = 1.0;
         /* for groundwater flow, the user filled in the positive radioactive
-           decay rate (lambda) */
+           decay rate (lambda) - this source term is always linear:
+           -lambda Y^{n+1} */
         if (*idarcy > -1) {
           sign = -1.0;
+          non_linear = 0.;
         }
 
         for (cs_lnum_t e_id = 0; e_id < n_cells; e_id++) {
           cs_lnum_t c_id = cell_ids[e_id];
           tsimp[c_id] = cell_f_vol[c_id] * sign * st_vals[2 * e_id + 1];
           tsexp[c_id] = cell_f_vol[c_id] * st_vals[2 * e_id]
-                        - tsimp[c_id] * pvar[c_id];
+                        - non_linear * tsimp[c_id] * pvar[c_id];
         }
         if (st_vals != NULL)
           BFT_FREE(st_vals);
