@@ -1284,6 +1284,54 @@ cs_cdo_quantities_dump(const cs_cdo_quantities_t  *cdoq)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the portion of volume surrounding each edge of a cell
+ *        The computed quantity is scanned with the c2e adjacency
+ *
+ * \param[in]      cdoq       pointer to cs_cdo_quantities_t structure
+ * \param[in]      c2e        pointer to the cell --> edges connectivity
+ * \param[in, out] pvol_ec   dual volumes related to each vertex
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_compute_pvol_ec(const cs_cdo_quantities_t   *cdoq,
+                                  const cs_adjacency_t        *c2e,
+                                  cs_real_t                   *pvol_ec)
+{
+  if (pvol_ec == NULL)
+    return;
+  if (cdoq == NULL || c2e == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: A mandatory structure is not allocated.\n", __func__);
+
+  const cs_lnum_t  n_cells = cdoq->n_cells;
+
+  /* Initialize array */
+  memset(pvol_ec, 0, c2e->idx[n_cells]*sizeof(cs_real_t));
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+    const cs_lnum_t  start = c2e->idx[c_id];
+    const cs_real_t  *sface = cdoq->sface_normal + 6*start;
+    const cs_lnum_t  *e_ids = c2e->ids + start;
+
+    cs_real_t  *_pvol = pvol_ec + start;
+
+    for (cs_lnum_t j = 0; j < c2e->idx[c_id+1]-start; j++) {
+
+      cs_real_3_t  df_vect;
+      const cs_real_t  *sface0 = sface + 6*j, *sface1 = sface0 + 3;
+      for (int k = 0; k < 3; k++)
+        df_vect[k] = sface0[k] + sface1[k];
+
+      _pvol[j] = cs_math_1ov3 * _dp3(df_vect, cdoq->edge_vector + 3*e_ids[j]);
+
+    } /* Loop on cell edges */
+  } /* Loop on cells */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the dual volume surrounding each vertex
  *
  * \param[in]      cdoq       pointer to cs_cdo_quantities_t structure

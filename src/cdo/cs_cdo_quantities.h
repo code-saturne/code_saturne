@@ -276,6 +276,22 @@ cs_cdo_quantities_dump(const cs_cdo_quantities_t  *cdoq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the portion of volume surrounding each edge of a cell
+ *        The computed quantity is scanned with the c2e adjacency
+ *
+ * \param[in]      cdoq       pointer to cs_cdo_quantities_t structure
+ * \param[in]      c2e        pointer to the cell --> edges connectivity
+ * \param[in, out] pvol_ec   dual volumes related to each vertex
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_compute_pvol_ec(const cs_cdo_quantities_t   *cdoq,
+                                  const cs_adjacency_t        *c2e,
+                                  cs_real_t                   *pvol_ec);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the dual volume surrounding each vertex
  *
  * \param[in]      cdoq       pointer to cs_cdo_quantities_t structure
