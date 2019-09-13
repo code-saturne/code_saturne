@@ -1648,6 +1648,7 @@ class XMLinit(BaseXmlInit):
                             nc.xmlChildsCopy(node)
                             node.xmlRemoveNode()
 
+
     def __backwardCompatibilityFrom_6_0(self):
         """
         Change XML in order to ensure backward compatibility.
@@ -1769,6 +1770,16 @@ class XMLinit(BaseXmlInit):
                     for k in porosity_rename.keys():
                         f = f.replace(k, porosity_rename[k])
                         nf.xmlSetTextNode(f)
+
+        # Update 'variable' property tag to 'user_law'
+        scalar_node = self.case.xmlGetNode('additional_scalars')
+        if scalar_node:
+            for node in scalar_node.xmlGetNodeList('variable'):
+                np = node.xmlGetNode("property")
+                if np:
+                    choice = np['choice']
+                    if choice == 'variable':
+                        np['choice'] = 'user_law'
 
 
 #-------------------------------------------------------------------------------
