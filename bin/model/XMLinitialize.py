@@ -1689,6 +1689,16 @@ class XMLinit(Variables):
                         f = f.replace(k, porosity_rename[k])
                         nf.xmlSetTextNode(f)
 
+        # Update 'variable' property tag to 'user_law'
+        scalar_node = self.case.xmlGetNode('additional_scalars')
+        if scalar_node:
+            for node in scalar_node.xmlGetNodeList('variable'):
+                np = node.xmlGetNode("property")
+                if np:
+                    choice = np['choice']
+                    if choice == 'variable':
+                        np['choice'] = 'user_law'
+
 
 #-------------------------------------------------------------------------------
 # XMLinit test case
