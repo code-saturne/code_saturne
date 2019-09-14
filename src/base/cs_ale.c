@@ -957,13 +957,13 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
       for (int i = 0; i < 3; i++)
         pimpv[i] = grav[i]*b_massflux[face_id]/(brom[face_id]*prosrf);
 
-     cs_boundary_conditions_set_dirichlet_vector_aniso(bc_a[face_id],
-                                                       bc_af[face_id],
-                                                       bc_b[face_id],
-                                                       bc_bf[face_id],
-                                                       pimpv,
-                                                       hintt,
-                                                       rinfiv);
+      cs_boundary_conditions_set_dirichlet_vector_aniso(bc_a[face_id],
+                                                        bc_af[face_id],
+                                                        bc_b[face_id],
+                                                        bc_bf[face_id],
+                                                        pimpv,
+                                                        hintt,
+                                                        rinfiv);
     }
   }
 

@@ -1467,7 +1467,7 @@ if ((iphydr.ne.1.or.igpust.ne.1)) then
     ! during  PISO sweeps
      do iel = 1, ncel
        do isou = 1, 3
-        trav(isou,iel) = trav(isou,iel) + tsexp(isou,iel)
+         trav(isou,iel) = trav(isou,iel) + tsexp(isou,iel)
        enddo
     enddo
   endif
