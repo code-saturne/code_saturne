@@ -647,14 +647,8 @@ cs_boundary_log_setup(const cs_boundary_t  *bdy)
                 bdy->n_boundaries);
 
   for (int i = 0; i < bdy->n_boundaries; i++) {
-
     const int  z_id = bdy->zone_ids[i];
     const cs_zone_t  *z = cs_boundary_zone_by_id(z_id);
-
-    /* Count the number of boundary faces related to this definition */
-    cs_gnum_t  n_g_elts = (cs_gnum_t)z->n_elts;
-    if (cs_glob_n_ranks > 1)
-      cs_parall_counter(&n_g_elts, 1);
 
     cs_boundary_get_type_descr(bdy, bdy->types[i], 127, descr);
 
@@ -662,11 +656,9 @@ cs_boundary_log_setup(const cs_boundary_t  *bdy)
                   _("\n"
                     "  Boundary:   %s\n"
                     "    type:     %s\n"
-                    "    zone id:  %d\n"
-                    "    n_faces:  %llu\n"),
-                  z->name, descr, z_id,
-                  (unsigned long long)n_g_elts);
-  } /* Loop on domain boundaries */
+                    "    zone id:  %d\n"),
+                  z->name, descr, z_id);
+  }
 }
 
 /*----------------------------------------------------------------------------*/
