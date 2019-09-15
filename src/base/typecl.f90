@@ -1614,6 +1614,31 @@ do f_id = 0, nfld - 1
   endif
 enddo
 
+! Ensure that for all scalars without diffusion
+! wall values ignore diffusion
+
+do iscal = 1, nscal
+  ivar = isca(iscal)
+  f_id = ivarfl(ivar)
+  ! Name of the scalar ivar
+  call field_get_type(f_id, f_type)
+  if (iand(f_type, FIELD_CDO) .ne. 0) cycle
+  call field_get_key_struct_var_cal_opt(f_id, vcopt)
+  if (vcopt%idiff .eq. 0) then
+    call field_get_dim (f_id, f_dim)
+    do i_dim = 0, f_dim-1
+      do ifac = 1, nfabor
+        if (icodcl(ifac,ivar+i_dim).eq.5 .or. icodcl(ifac,ivar+i_dim).eq.6) then
+          icodcl(ifac,ivar+i_dim) = 3
+          rcodcl(ifac,ivar+i_dim,3) = 0
+        else if (icodcl(ifac,ivar+i_dim).eq.3) then
+          rcodcl(ifac,ivar+i_dim,3) = 0
+        endif
+      enddo
+    enddo
+  endif
+enddo
+
 !===============================================================================
 ! 7.  RENFORCEMENT DIAGONALE DE LA MATRICE SI AUCUN POINTS DIRICHLET
 !===============================================================================

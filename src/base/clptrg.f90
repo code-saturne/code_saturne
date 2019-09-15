@@ -1791,6 +1791,17 @@ endif
 
 call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
+! If we have no diffusion, no boundary face should have a wall BC type
+! (this is ensured in typecl)
+
+if (vcopt%idiff .eq. 0) then
+  tetmax = 0.d0
+  tetmin = 0.d0
+  tplumx = 0.d0
+  tplumn = 0.d0
+  return
+endif
+
 if (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0.or.ityturt(iscal).eq.3) then
   if (iturb.ne.32.or.ityturt(iscal).eq.3) then
     call field_get_val_v(ivsten, visten)

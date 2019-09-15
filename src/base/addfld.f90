@@ -495,8 +495,14 @@ if (iscalt.le.0) then
 endif
 
 if (ipstdv(ipstnu).gt.0) then
-  call field_find_or_create('tplus', itycat, ityloc, idim1, iflid)
-  call field_find_or_create('tstar', itycat, ityloc, idim1, iflid)
+  if (iscalt.gt.0) then
+    f_id = ivarfl(isca(iscalt))
+    call field_get_key_struct_var_cal_opt(f_id, vcopt)
+    if (vcopt_dfm%idiff .ne. 0) then
+      call field_find_or_create('tplus', itycat, ityloc, idim1, iflid)
+      call field_find_or_create('tstar', itycat, ityloc, idim1, iflid)
+    endif
+  endif
 endif
 
 ! In case of ALE or boundary efforts postprocessing, create appropriate field
