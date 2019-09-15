@@ -69,7 +69,7 @@ BEGIN_C_DECLS
 /*!
  * \brief   Create a cs_cdo_bc_face_t structure
  *
- * \param[in] is_steady   true o false
+ * \param[in] is_steady   true or false
  * \param[in] n_b_faces   number of boundary faces
  *
  * \return  a new allocated pointer to a cs_cdo_bc_face_t structure

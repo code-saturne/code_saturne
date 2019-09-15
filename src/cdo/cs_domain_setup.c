@@ -696,7 +696,7 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
   cs_advection_field_update(domain->time_step->t_cur,
                             false); /* operate current to previous ? */
 
-  /* Set the initial state for the groundawater flow module */
+  /* Set the initial state for the Navier-Stokes system */
   if (cs_navsto_system_is_activated())
     cs_navsto_system_initialize(domain->mesh,
                                 domain->connect,
