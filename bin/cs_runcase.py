@@ -33,10 +33,12 @@ except Exception:
 
 try:
     from code_saturne.cs_exec_environment import separate_args, assemble_args, \
-        enquote_arg, get_command_single_value, update_command_single_value
+        enquote_arg, get_command_single_value, update_command_single_value, \
+        update_command_no_value
 except exception:
     from cs_exec_environment import separate_args, assemble_args, \
-        enquote_arg, get_command_single_value, update_command_single_value
+        enquote_arg, get_command_single_value, update_command_single_value, \
+        update_command_no_value
 
 #===============================================================================
 # Class used to manage runcase files
@@ -444,6 +446,37 @@ class runcase(object):
             args = update_command_single_value(args,
                                                ('--id-suffix', '--id-suffix='),
                                                enquote_arg(run_id_suffix))
+
+        self.lines[self.run_cmd_line_id] = assemble_args(args)
+
+    #---------------------------------------------------------------------------
+
+    def get_run_stage(self, stage):
+        """
+        Return True if a given stage is specified in the run command,
+        False otherwise
+        """
+
+        args = separate_args(self.lines[self.run_cmd_line_id])
+
+        s_arg = '--' + stage
+        if s_arg in args:
+            return True
+
+        return False
+
+    #---------------------------------------------------------------------------
+
+    def set_run_stage(self, stage, present=False):
+        """
+        Specify the given stage in the run command
+        """
+
+        line = self.lines[self.run_cmd_line_id]
+
+        args = update_command_no_value(separate_args(line),
+                                       ('--' + stage,),
+                                       present)
 
         self.lines[self.run_cmd_line_id] = assemble_args(args)
 

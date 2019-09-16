@@ -234,6 +234,18 @@
             <translation>Case display</translation>
         </message>
         <message>
+            <source>SOLVER_LAUNCH_ACTION_TEXT</source>
+            <translation>Run computation</translation>
+        </message>
+        <message>
+            <source>SOLVER_LAUNCH_ACTION_TIP</source>
+            <translation>Run or submit solver</translation>
+        </message>
+        <message>
+            <source>SOLVER_LAUNCH_ACTION_SB</source>
+            <translation>Run or submit solver</translation>
+        </message>
+        <message>
             <source>REMOVE_ACTION_TEXT</source>
             <translation>Remove</translation>
         </message>

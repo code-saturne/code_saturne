@@ -747,8 +747,7 @@ class batch:
     def update_lines(self, lines, keyword=None):
         """
         Update the batch file from reading dictionary self.params.
-        If keyword == None, all keywords are updated
-        If keyword == key, only key is updated.
+        If a keyword is given, its presence is checked.
         """
         l = list(self.params.keys())
         l.append(None) # Add 'None' when no keyword is specified in argument.

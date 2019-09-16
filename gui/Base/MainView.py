@@ -91,6 +91,7 @@ except:
 from code_saturne.Pages.WelcomeView import WelcomeView
 from code_saturne.model.IdentityAndPathesModel import IdentityAndPathesModel
 from code_saturne.Pages.XMLEditorView import XMLEditorView
+from code_saturne.Pages.BatchRunningDialogView import BatchRunningDialogView
 from code_saturne.model.ScriptRunningModel import ScriptRunningModel
 from code_saturne.model.SolutionDomainModel import getRunType
 from code_saturne.Base.QtPage import getexistingdirectory
@@ -373,6 +374,8 @@ class MainView(object):
         self.openTextEditorAction.triggered.connect(self.fileEditorOpen)
         self.openResultsFileAction.triggered.connect(self.fileViewerOpen)
         self.testUserCompilationAction.triggered.connect(self.testUserFilesCompilation)
+
+        self.runOrSubmitAction.triggered.connect(self.runOrSubmit)
 
         self.openXtermAction.triggered.connect(self.openXterm)
         self.displayCaseAction.triggered.connect(self.displayCase)
@@ -907,7 +910,7 @@ class MainView(object):
                         open_editor = False
 
         if not open_editor:
-            title = self.tr("WARNING")
+            title = self.tr("Warning")
             msg   = self.tr("Warning: you can only manage user files for a "\
                             "Code_Saturne CASE with an xml file.")
             QMessageBox.warning(self, title, msg)
@@ -949,7 +952,7 @@ class MainView(object):
                         open_viewer = False
 
         if not open_viewer:
-            title = self.tr("WARNING")
+            title = self.tr("Warning")
             msg   = self.tr("Warning: you can only view log files for a "\
                             "Code_Saturne CASE with an xml file.")
             QMessageBox.warning(self, title, msg)
@@ -1082,7 +1085,7 @@ class MainView(object):
             dialog.show()
 
 
-    def fileSave(self, renew_page=True):
+    def fileSave(self):
         """
         public slot
 
@@ -1121,6 +1124,7 @@ class MainView(object):
         self.saveUserFormulaInC()
 
         # force to blank after save
+        self.case['saved'] = 'yes'
         self.case['undo'] = []
         self.case['redo'] = []
 
@@ -1130,19 +1134,6 @@ class MainView(object):
 
         msg = self.tr("%s saved" % file_name)
         self.statusbar.showMessage(msg, 2000)
-
-        if renew_page:
-            if self.case['current_page'] == 'Calculation management':
-                p = displaySelectedPage(self.case['current_page'],
-                                        self,
-                                        self.case,
-                                        stbar=self.statusbar,
-                                        tree=self.Browser)
-                # Side effects of page display may mark as not saved
-                # based on queried models, so force saved here to avoid
-                # issues with saved state detection.
-                self.case['saved'] = 'yes'
-                self.scrollArea.setWidget(p)
 
 
     def fileSaveAs(self):
@@ -1312,6 +1303,17 @@ class MainView(object):
 
         self.case['runcase'].set_parameters(parameters)
         self.case['runcase'].save()
+
+
+    def runOrSubmit(self):
+        """
+        public slot
+
+        print the case (xml file) on the current terminal
+        """
+        if hasattr(self, 'case'):
+            dialog = BatchRunningDialogView(self, self.case)
+            dialog.show()
 
 
     def displayNewPage(self, index):

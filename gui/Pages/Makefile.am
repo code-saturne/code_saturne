@@ -28,7 +28,7 @@ AnalysisFeaturesView.py \
 AtmosphericFlowsView.py \
 BalanceView.py \
 BalanceViewNeptune.py \
-BatchRunningView.py \
+BatchRunningDialogView.py \
 BodyForcesView.py \
 BoundaryConditionsCoalInletView.py \
 BoundaryConditionsCompressibleOutletView.py \
@@ -131,7 +131,7 @@ AnalysisFeaturesForm.ui \
 AtmosphericFlowsForm.ui \
 BalanceForm.ui \
 BatchRunningDebugOptionsHelpDialogForm.ui \
-BatchRunningForm.ui \
+BatchRunningDialogForm.ui \
 BatchRunningStopByIterationDialogForm.ui \
 BodyForcesForm.ui \
 BoundaryConditionsCoalInletForm.ui \

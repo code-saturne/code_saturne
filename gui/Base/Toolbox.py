@@ -255,11 +255,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
             import code_saturne.Pages.NumericalParamGlobalView as Page
             thisPage = Page.NumericalParamGlobalView(root, case, tree)
 
-    elif page_name == tr("Calculation management"):
-        import code_saturne.Pages.BatchRunningView as Page
-        thisPage = Page.BatchRunningView(root, case)
-
-    elif page_name == tr("Performance tuning"):
+    elif page_name == tr("Performance settings"):
         import code_saturne.Pages.PerformanceTuningView as Page
         thisPage = Page.PerformanceTuningView(root, case)
 

@@ -73,6 +73,7 @@ class BatchRunningModel(Model):
         self.dictValues['run_nthreads'] = None
         self.dictValues['run_id'] = None
         self.dictValues['run_build'] = None
+        self.dictValues['run_stage_init'] = None
 
         # Is a batch file present ?
 
@@ -89,6 +90,7 @@ class BatchRunningModel(Model):
         self.dictValues['run_nthreads'] = self.case['runcase'].get_nthreads()
         self.dictValues['run_id'] = self.case['runcase'].get_run_id()[0]
         self.dictValues['run_build'] = self.case['runcase'].get_compute_build()
+        self.dictValues['run_stage_init'] = self.case['runcase'].get_run_stage('initialize')
 
 
     def updateBatchRunOptions(self, keyword=None):
@@ -104,6 +106,9 @@ class BatchRunningModel(Model):
             self.case['runcase'].set_run_id(run_id = self.dictValues['run_id'])
         if (keyword == 'run_build' or not keyword) and self.case['runcase']:
             self.case['runcase'].set_compute_build(self.dictValues['run_build'])
+        if (keyword == 'run_stage_init' or not keyword) and self.case['runcase']:
+            self.case['runcase'].set_run_stage('initialize',
+                                               self.dictValues['run_stage_init'])
 
 
     def parseBatchFile(self):

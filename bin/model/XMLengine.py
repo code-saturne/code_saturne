@@ -307,8 +307,6 @@ class XMLElement:
         Set attributes to a XMLElement node, only if these attributes
         do not already exist.
         """
-        if self.ca: self.ca.modified()
-
         for attr, value in list(kwargs.items()):
             if not self.el.hasAttribute(attr):
                 self.el.setAttribute(attr, _encode(str(value)))
@@ -353,8 +351,6 @@ class XMLElement:
         """
         Set several attribute (key=value) to a node
         """
-        if self.ca: self.ca.modified()
-
         for attr, value in list(kwargs.items()):
             self.el.setAttribute(attr, _encode(str(value)))
 
@@ -365,8 +361,6 @@ class XMLElement:
         """
         Delete the XMLElement node attribute
         """
-        if self.ca: self.ca.modified()
-
         if self.el.hasAttribute(attr):
             self.el.removeAttribute(attr)
 
@@ -390,7 +384,6 @@ class XMLElement:
         Set a XMLElement attribute an its value
         with a dictionary syntax: node['attr'] = value
         """
-        if self.ca: self.ca.modified()
         self.el.setAttribute(attr, _encode(str(value)))
 
         log.debug("__setitem__-> %s" % self.__xmlLog())
@@ -400,7 +393,6 @@ class XMLElement:
         """
         Delete a XMLElement attribute with a dictionary syntax: del node['attr']
         """
-        if self.ca: self.ca.modified()
         self.xmlDelAttribute(name)
 
         #log.debug("__delitem__-> %s" % self.__xmlLog())
@@ -590,7 +582,6 @@ class XMLElement:
         Add a new XMLElement node as a child of the current
         XMLElement node (i.e. self), with attributes and value.
         """
-        if self.ca: self.ca.modified()
 
         el = self.doc.createElement(tag)
         for k in attrList:
@@ -635,8 +626,6 @@ class XMLElement:
         If the elementNode 'node' has no TEXT_NODE as childNodes,
         it will be created.
         """
-        if self.ca: self.ca.modified()
-
         if newTextNode == "" or newTextNode == None : return
 
         if type(newTextNode) != str: newTextNode = str(newTextNode)
@@ -863,7 +852,6 @@ class XMLElement:
         """
         Create a comment XMLElement node.
         """
-        if self.ca: self.ca.modified()
         elt = self._inst( self.el.appendChild(self.doc.createComment(data)) )
         log.debug("xmlAddComment-> %s" % self.__xmlLog())
         return elt
@@ -1030,8 +1018,6 @@ class XMLElement:
         Copy all childsNode of oldNode to the node newNode.
         'deep' is the childs and little-childs level of the copy.
         """
-        if self.ca: self.ca.modified()
-
         if oldNode.el.hasChildNodes():
             for n in oldNode.el.childNodes:
                 self._inst(self.el.appendChild(n.cloneNode(deep)))
@@ -1043,7 +1029,6 @@ class XMLElement:
         """
         Destroy a single node.
         """
-        if self.ca: self.ca.modified()
         oldChild = self.el.parentNode.removeChild(self.el)
         oldChild.unlink()
 
@@ -1275,13 +1260,6 @@ class Case(Dico, XMLDocument):
         (higher level of ELEMENT_NODE).
         """
         return self.doc.documentElement
-
-
-    def modified(self):
-        """
-        Return if the xml doc is modified.
-        """
-        self['saved'] = "no"
 
 
     def isModified(self):

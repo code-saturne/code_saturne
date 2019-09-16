@@ -290,6 +290,11 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             self._CurrentWindow.fileViewerOpen()
 
 
+    def onLaunchSolver(self):
+        if self._CurrentWindow != None:
+            self._CurrentWindow.runOrSubmit()
+
+
     def onHelpAbout(self):
         if self._CurrentWindow != None:
             self._CurrentWindow.displayAbout()

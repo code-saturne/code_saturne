@@ -98,6 +98,11 @@
             <translation>file_transfer.png</translation>
         </message>
         <message>
+            <source>CFDSTUDY_SOLVER_LAUNCH_ICON</source>
+            <translation>run_button.png</translation>
+        </message>
+
+        <message>
             <source>MESH_OBJ_ICON</source>
             <translation>mesh.png</translation>
         </message>

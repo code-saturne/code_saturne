@@ -27,7 +27,7 @@ This module contains the following classes and function:
 - BatchRunningStopByIterationDialogView
 - BatchRunningListingLinesDisplayedDialogView
 - ListingDialogView
-- BatchRunningView
+- BatchRunningDialogView
 """
 
 #-------------------------------------------------------------------------------
@@ -63,7 +63,7 @@ import cs_submit
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.Pages.BatchRunningForm import Ui_BatchRunningForm
+from code_saturne.Pages.BatchRunningDialogForm import Ui_BatchRunningDialogForm
 from code_saturne.Pages.BatchRunningDebugOptionsHelpDialogForm import Ui_BatchRunningDebugOptionsHelpDialogForm
 from code_saturne.Pages.BatchRunningStopByIterationDialogForm import Ui_BatchRunningStopByIterationDialogForm
 
@@ -80,7 +80,7 @@ from code_saturne.model.LocalizationModel import LocalizationModel, Zone
 #-------------------------------------------------------------------------------
 
 logging.basicConfig()
-log = logging.getLogger("BatchRunningView")
+log = logging.getLogger("BatchRunningDialogView")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
@@ -329,7 +329,7 @@ class ListingDialogView(CommandMgrDialogView):
 # Main class
 #-------------------------------------------------------------------------------
 
-class BatchRunningView(QWidget, Ui_BatchRunningForm):
+class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
     """
     This class is devoted to the queue selection.
     If the batch script file name is known, informations are displayed
@@ -341,11 +341,16 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         QWidget.__init__(self, parent)
 
-        Ui_BatchRunningForm.__init__(self)
+        Ui_BatchRunningDialogForm.__init__(self)
         self.setupUi(self)
 
         self.case = case
         self.parent = parent
+
+        case_is_saved = not self.case.isModified()
+
+        title = self.tr("Run computation")
+        self.setWindowTitle(title)
 
         self.case.undoStopGlobal()
 
@@ -384,7 +389,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
                 elif run_build:
                     compute_build_id = -1
                     self.jmdl.dictValues['run_build'] = None
-                    self.jmdl.updateBatchFile('run_build')
 
         if compute_build_id >= 0:
             pkg_compute = self.case['package'].get_alternate_version(self.compute_versions[compute_build_id])
@@ -419,7 +423,7 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
 
         self.class_list = None
 
-        self.__updateRunButton__()
+        self.__updateRunButton__(case_is_saved)
 
         if self.jmdl.batch.rm_type != None:
 
@@ -467,11 +471,16 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.spinBoxNProcs.valueChanged[int].connect(self.slotNProcs)
             self.spinBoxNThreads.valueChanged[int].connect(self.slotNThreads)
 
+        self.pushButtonCancel.clicked.connect(self.slotCancel)
+        self.pushButtonApply.clicked.connect(self.slotApply)
+
         self.pushButtonRunSubmit.clicked.connect(self.slotBatchRunning)
         self.lineEditRunId.textChanged[str].connect(self.slotJobRunId)
 
         self.lineEdit_tool.textChanged[str].connect(self.slotDebug)
         self.toolButton_2.clicked.connect(self.slotDebugHelp)
+
+        self.checkBoxInitOnly.stateChanged.connect(self.slotInitOnly)
 
         self.checkBoxTrace.stateChanged.connect(self.slotTrace)
         self.checkBoxLogParallel.stateChanged.connect(self.slotLogParallel)
@@ -484,10 +493,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         #rm_type = self.jmdl.batch.rm_type
         run_id = str(self.jmdl.dictValues['run_id'])
 
-        #if run_id == 'None' and self.case['scripts_path']:
-        #    run_id, run_title = self.__suggest_run_id()
-        #    self.__updateRuncase(run_id)
-
         if run_id != 'None':
             self.lineEditRunId.setText(run_id)
         else:
@@ -499,10 +504,15 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         if self.debug is not None:
             self.lineEdit_tool.setText(str(self.debug))
 
-        if self.mdl.getTrace():
+        self.trace_iter = self.mdl.getTrace()
+        self.log_parallel = self.mdl.getLogParallel()
+
+        if self.trace_iter:
             self.checkBoxTrace.setChecked(True)
-        if self.mdl.getLogParallel():
+        if self.log_parallel:
             self.checkBoxLogParallel.setChecked(True)
+
+        self.checkBoxInitOnly.setChecked(self.jmdl.dictValues['run_stage_init'])
 
         # Script info is based on the XML model
 
@@ -511,33 +521,11 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         self.case.undoStartGlobal()
 
 
-    def __caseIsSaved__(self):
-        """
-        Launch Code_Saturne batch running.
-        """
-        # Is the file saved?
-
-        xml_current = os.path.basename(self.case['xmlfile'])
-        xml_param = None
-        if self.case['runcase']:
-            xml_param = self.case['runcase'].get_parameters()
-        if not xml_current or xml_current != xml_param:
-            self.case['saved'] = "no"
-
-        is_saved = True
-        if self.case['saved'] == "no":
-            is_saved = False
-        if len(self.case['undo']) > 0 or len(self.case['redo']) > 0:
-            is_saved = False
-
-        return is_saved
-
-
-    def __updateRunButton__(self):
+    def __updateRunButton__(self, case_is_saved):
         """
         Update push button for run
         """
-        if self.__caseIsSaved__():
+        if case_is_saved:
             if self.jmdl.batch.rm_type != None:
                 self.pushButtonRunSubmit.setText("Submit job")
             else:
@@ -557,7 +545,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         if self.lineEditJobName.validator().state == QValidator.Acceptable:
             self.jmdl.batch.params['job_name'] = str(v)
-            self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_name')
 
 
     @pyqtSlot(int)
@@ -567,7 +554,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         n = int(self.spinBoxNodes.text())
         self.jmdl.batch.params['job_nodes'] = str(self.spinBoxNodes.text())
-        self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_nodes')
         if self.job_ppn:
             ppn = int(self.jmdl.batch.params['job_ppn'])
             tot_ranks = n*ppn
@@ -581,7 +567,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         ppn = int(self.spinBoxPpn.text())
         self.jmdl.batch.params['job_ppn']  = str(ppn)
-        self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_ppn')
         if self.job_nodes:
             n = int(self.jmdl.batch.params['job_nodes'])
             tot_ranks = n*ppn
@@ -598,7 +583,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         Increment, decrement and colorize the input argument entry
         """
         self.jmdl.batch.params['job_procs']  = str(self.spinBoxProcs.text())
-        self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_procs')
 
 
     @pyqtSlot(int)
@@ -608,7 +592,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         n_threads = int(self.spinBoxThreads.text())
         self.jmdl.batch.params['job_threads']  = str(n_threads)
-        self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_threads')
         if self.job_ppn:
             ppn = int(self.jmdl.batch.params['job_ppn'])
             node_threads = n_threads*ppn
@@ -622,15 +605,12 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         m_cput = self.spinBoxMinutes.value()
         s_cput = self.spinBoxSeconds.value()
         self.jmdl.batch.params['job_walltime'] = h_cput*3600 + m_cput*60 + s_cput
-        self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_walltime')
 
 
     @pyqtSlot()
     def slotClass(self):
 
         self.jmdl.batch.params['job_class'] = str(self.comboBoxClass.currentText())
-        if len(self.jmdl.batch.params['job_class']) > 0:
-            self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_class')
 
 
     @pyqtSlot(str)
@@ -640,7 +620,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         if self.lineEditJobAccount.validator().state == QValidator.Acceptable:
             self.jmdl.batch.params['job_account'] = str(v)
-            self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_account')
 
 
     @pyqtSlot(str)
@@ -650,7 +629,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         if self.lineEditJobWCKey.validator().state == QValidator.Acceptable:
             self.jmdl.batch.params['job_wckey'] = str(v)
-            self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_wckey')
 
 
     @pyqtSlot(int)
@@ -662,7 +640,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.jmdl.dictValues['run_nprocs'] = str(v)
         else:
             self.jmdl.dictValues['run_nprocs'] = None
-        self.jmdl.updateBatchFile('run_nprocs')
 
 
     @pyqtSlot(int)
@@ -674,7 +651,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.jmdl.dictValues['run_nthreads'] = str(v)
         else:
             self.jmdl.dictValues['run_nthreads'] = None
-        self.jmdl.updateBatchFile('run_nthreads')
 
 
     @pyqtSlot(int)
@@ -684,7 +660,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.jmdl.dictValues['run_build'] = None
         else:
             self.jmdl.dictValues['run_build'] = str(self.compute_versions[v])
-        self.jmdl.updateBatchFile('run_build')
         compute_build_id = v
 
         pkg_compute = self.case['package'].get_alternate_version(self.compute_versions[compute_build_id])
@@ -695,7 +670,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.have_mpi = False
             self.spinBoxNProcs.setValue(1)
             self.jmdl.dictValues['run_nprocs'] = None
-            self.jmdl.updateBatchFile('run_nprocs')
 
         if config_features['openmp'] == 'yes':
             self.have_openmp = True
@@ -703,7 +677,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.have_openmp = False
             self.spinBoxNThreads.setValue(1)
             self.jmdl.dictValues['run_nthreads'] = None
-            self.jmdl.updateBatchFile('run_nthreads')
 
         self.displayScriptInfo()
 
@@ -714,22 +687,43 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         if self.lineEditRunId.validator().state == QValidator.Acceptable:
             self.jmdl.dictValues['run_id'] = str(v)
-            self.jmdl.updateBatchFile('run_id')
-            if v != 'None':
-                self.__updateRuncase(str(v))
 
 
     @pyqtSlot()
-    def slotAdvancedOptions(self):
+    def slotCancel(self):
         """
-        Ask one popup for advanced specifications
+        Close dialog with no modifications
         """
-        log.debug("slotAdvancedOptions")
 
-        dialog = BatchRunningAdvancedOptionsDialogView(self)
+        self.case['runcase'] = None  # to force re-read
+        QDialog.accept(self)
 
-        if dialog.exec_():
-            log.debug("slotAdvancedOptions validated")
+
+    def Apply(self):
+        """
+        Apply changes
+        """
+
+        self.jmdl.batch.update_lines(self.case['runcase'].lines)
+
+        for k in list(self.jmdl.dictValues.keys()):
+            self.jmdl.updateBatchFile(k)
+
+        self.mdl.setTrace(self.trace_iter)
+        self.mdl.setLogParallel(self.log_parallel)
+        self.mdl.setString('debug', self.debug.strip())
+
+        self.parent.batchFileSave()
+
+
+    @pyqtSlot()
+    def slotApply(self):
+        """
+        Apply changes and close dialog without running computation
+        """
+
+        self.Apply()
+        QDialog.accept(self)
 
 
     @pyqtSlot()
@@ -737,19 +731,13 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         """
         Launch Code_Saturne batch running.
         """
-        # Is the file saved?
 
-        if not self.__caseIsSaved__():
-            #self.parent.fileSave(renew_page=False)
-            self.parent.fileSave(renew_page=True)
-            self.__updateRunButton__
+        QDialog.accept(self)
 
-        if not self.__caseIsSaved__():
-            title = self.tr("Warning")
-            msg   = self.tr("The current case must be saved before "\
-                            "running the computation script.")
-            QMessageBox.information(self, title, msg)
-            return
+        self.Apply()
+
+        if not self.case.isModified():
+            self.parent.fileSave()
 
         # Ensure code is run from a case subdirectory
 
@@ -819,7 +807,6 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         Input for Debug.
         """
         self.debug = str(text)
-        self.mdl.setString('debug', self.debug.strip())
 
 
     @pyqtSlot()
@@ -831,7 +818,13 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         dialog = BatchRunningDebugOptionsHelpDialogView(self)
         dialog.show()
 
-        return
+
+    @pyqtSlot()
+    def slotInitOnly(self):
+        """
+        Update runcase for initialization only
+        """
+        self.jmdl.dictValues['run_stage_init'] = self.checkBoxInitOnly.isChecked()
 
 
     @pyqtSlot()
@@ -840,10 +833,9 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         Update log type for trace
         """
         if self.checkBoxTrace.isChecked():
-            trace = True
+            self.trace_iter = True
         else:
-            trace = False
-        self.mdl.setTrace(trace)
+            self.trace_iter = False
 
 
     @pyqtSlot()
@@ -852,10 +844,9 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
         Update log type for trace
         """
         if self.checkBoxLogParallel.isChecked():
-            logp = True
+            self.log_parallel = True
         else:
-            logp = False
-        self.mdl.setLogParallel(logp)
+            self.log_parallel = False
 
 
     def __suggest_run_id(self):
@@ -1023,10 +1014,8 @@ class BatchRunningView(QWidget, Ui_BatchRunningForm):
             self.labelClass.show()
             self.comboBoxClass.show()
 
-            # update runcase (compute class specific to ivanoe)
+            # update runcase
             self.jmdl.batch.params['job_class'] = str(self.comboBoxClass.currentText())
-            if len(self.jmdl.batch.params['job_class']) > 0:
-                self.jmdl.batch.update_lines(self.case['runcase'].lines, 'job_class')
 
         if self.job_account != None:
             self.labelJobAccount.show()
