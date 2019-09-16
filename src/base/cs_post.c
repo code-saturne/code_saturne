@@ -3275,6 +3275,7 @@ _check_non_transient(const cs_post_writer_t  *writer,
                      double                  *t_cur)
 {
   assert(writer->active > 0);
+  assert(writer->writer != NULL);
 
   fvm_writer_time_dep_t time_dep = fvm_writer_get_time_dep(writer->writer);
 
