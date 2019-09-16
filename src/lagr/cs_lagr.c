@@ -702,7 +702,8 @@ _lagr_map_fields_default(void)
     /* TODO FIXME */
     _lagr_extra_module.visls0      = 0.;
 
-    _lagr_extra_module.ustar   = cs_field_by_name_try("lagr_wall_friction_velocity");
+    _lagr_extra_module.ustar
+      = cs_field_by_name_try("lagr_wall_friction_velocity");
   }
   else {
     /* we use Code_Saturne */
@@ -1943,8 +1944,10 @@ cs_lagr_solve_time_step(const int         itypfb[],
   /* Initialization for the agglomeration/fragmentation models
      --------------------------------------------------------- */
 
-  /* The algorithms are based on discrete values of particle radii (CS_LAGR_DIAMETER).
-     It uses a minimum diameter, corresponding to monomers (unbreakable particles).
+  /* The algorithms are based on discrete values of particle radii
+     (CS_LAGR_DIAMETER).
+     It uses a minimum diameter, corresponding to monomers
+     (unbreakable particles).
      Aggregates are formed of multiples of these monomers. */
 
   /* Evaluation of the minimum diameter */
@@ -2092,10 +2095,6 @@ cs_lagr_solve_time_step(const int         itypfb[],
         }
 
       }
-
-      /* Fields at current time step if using NEPTUNE_CFD */
-      if (cs_field_by_name_try("velocity_1") != NULL)
-        iprev = 0;
 
       cs_lagr_car(iprev,
                   dt,

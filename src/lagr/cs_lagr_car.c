@@ -137,6 +137,7 @@ cs_lagr_car(int              iprev,
   cs_lnum_t ncel = mesh->n_cells;
 
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
+  iprev = CS_MIN(iprev, extra->vel->n_time_vals -1);
 
   /* Initialization
      ---------------*/

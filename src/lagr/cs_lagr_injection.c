@@ -1091,9 +1091,12 @@ cs_lagr_injection(int        time_id,
 {
   CS_UNUSED(itypfb);
 
+  /* We may be mapped to an auxiliary field with no previous time id */
+
   cs_real_t dnbpnw_preci = 0.;
 
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
+  time_id = CS_MIN(time_id, extra->vel->n_time_vals -1);
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
   const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
