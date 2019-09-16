@@ -147,8 +147,10 @@ SolverCompileSRCFiles          = 122
 SolverViewLogFiles             = 123
 SolverFileTransfer             = 124
 
-SolverHelpMenu                 = 130
-SolverHelpAboutAction          = 131
+SolverLaunch                   = 131
+
+SolverHelpMenu                 = 140
+SolverHelpAboutAction          = 141
 
 #Help menu
 SolverHelpLicense              = 251
@@ -713,6 +715,20 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
         self._SolverActionIdMap[SolverFileTransfer] = action_id
+
+        # Run computation
+        action = sgPyQt.createAction(-1,
+                                     ObjectTR.tr("SOLVER_LAUNCH_ACTION_TEXT"),
+                                     ObjectTR.tr("SOLVER_LAUNCH_ACTION_TIP"),
+                                     ObjectTR.tr("SOLVER_LAUNCH_ACTION_SB"),
+                                     ObjectTR.tr("CFDSTUDY_SOLVER_LAUNCH_ICON"))
+        sgPyQt.createTool(action, tool_id)
+        sgPyQt.createMenu(action, self._SolverActionIdMap[SolverToolsMenu])
+        action.triggered.connect(self.slotLaunchSolver)
+
+        action_id = sgPyQt.actionId(action)
+        self._ActionMap[action_id] = action
+        self._SolverActionIdMap[SolverLaunch] = action_id
 
         #for auto hide last separator in tools menu
         self._HelpActionIdMap[0] = action_id
@@ -2222,6 +2238,13 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         """
         popen = subprocess.Popen("remotefilebrowser", stdout=subprocess.PIPE)
         popen.wait()
+
+    def slotLaunchSolver(self):
+        """
+        Manage and edit user SRC files of the currently open CASE.
+        """
+        self._SolverGUI.onLaunchSolver()
+
 
     def slotHelpAbout(self):
         """

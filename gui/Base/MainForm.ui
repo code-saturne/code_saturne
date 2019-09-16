@@ -7,7 +7,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>757</width>
+    <width>717</width>
     <height>665</height>
    </rect>
   </property>
@@ -41,7 +41,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>757</width>
+     <width>717</width>
      <height>28</height>
     </rect>
    </property>
@@ -55,6 +55,9 @@
     <addaction name="separator"/>
     <addaction name="openTextEditorAction"/>
     <addaction name="testUserCompilationAction"/>
+    <addaction name="separator"/>
+    <addaction name="runOrSubmitAction"/>
+    <addaction name="separator"/>
     <addaction name="openResultsFileAction"/>
    </widget>
    <widget class="QMenu" name="menu_Edit">
@@ -193,6 +196,18 @@
     <number>1</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetBrowserContents"/>
+  </widget>
+  <widget class="QToolBar" name="toolBar_3">
+   <property name="windowTitle">
+    <string>toolBar_3</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="runOrSubmitAction"/>
   </widget>
   <action name="fileOpenAction">
    <property name="icon">
@@ -618,6 +633,21 @@
   <action name="RestoreStyleDefaults">
    <property name="text">
     <string>Restore Defaults</string>
+   </property>
+  </action>
+  <action name="runOrSubmitAction">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/run_button.png</normaloff>:/icons/22x22/run_button.png</iconset>
+   </property>
+   <property name="text">
+    <string>Run</string>
+   </property>
+   <property name="toolTip">
+    <string>Run computation</string>
+   </property>
+   <property name="statusTip">
+    <string>Run computation</string>
    </property>
   </action>
  </widget>

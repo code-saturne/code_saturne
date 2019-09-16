@@ -62,6 +62,7 @@ MoveFile.png \
 MoveFolder.png \
 NewTreeCreate.png \
 OpenedFolder.png \
+run_button.png \
 RunScript.png \
 Save.png \
 SetTreeLocation.png \

@@ -4,13 +4,7 @@ Release 6.0.0 (unreleased)
 Notes:
 
   This is a beta version of version 6.0, which should be released
-  September 2019. Most features are frozen while the version undergoes
-  the complete validation process, with the exceptions below.
-
-Changes expected between the current version and 6.0.0 final:
-
-- Some GUI changes or page reorganizations are possible
-- Documentation will be updated
+  September 2019.
 
 User changes:
 
@@ -42,6 +36,7 @@ User changes:
 - GUI: allow disabling paralel IO for MED output writer.
 
 - GUI: significant reorganization
+  * Run or submit page moved to pop-up dialog callable from toolbar
   * Folders replaced by active pages (with new icons reflecting this)
   * Preprocessor/calculation modes replaced by run type in mesh page
   * Many minor changes
@@ -141,8 +136,8 @@ Bug fixes:
 - Fix for wall boundary conditions with the compressible model / algorithm.
   Always use a homogeneous Neumann on pressure for the mass balance step.
   This fixes mass conservation for cases:
-  * with gravity and hydro. pressure treatment
-  * without gravity and without hydro. pressure treatment.
+  * with gravity and hydrostatic pressure treatment
+  * without gravity and without hydrostatic pressure treatment.
   Note that the default behaviour (GUI) was to enable the hydro. pressure
   treatment at walls. Hence in all cases with this default setting and no
   gravity, this fix has no impact.
@@ -180,7 +175,7 @@ Bug fixes:
     balance unsteady term if mass flux is predicted.
   * Use EOS density in momentum balance unsteady term for the weakly variable
     density algorithm (idilat=1). Use it also in correction step to be coherent.
-    This algorithm is now as before changes on time stepping.
+    This algorithm is now the same as pre v5.3 changes on time stepping.
   * Update density which is coherent with mass balance after velocity update for
     low Mach algorithm.
   * Use same time schemes for vector transport equation as for scalar transport
@@ -195,7 +190,7 @@ Bug fixes:
   scheme for the void fraction is not upwind. Update was not ensuring proper
   mass conservation at solver precision.
 
-- Fix time stepping in pressure gradient weightening for VoF / Cavitation algo.
+- Fix time stepping in pressure gradient weighting for VoF / Cavitation algo.
 
 - Fixes for parallel runs in sedimentation source term with humid atmosphere
   model.
@@ -209,11 +204,11 @@ Numerics:
 
 Architectural changes:
 
-- Scripts: add library dependency paths to LD_LIBRARY_PATH for better
-  robustness when "rpath" does not have priority.
-
 - Allow sourcing environment before launching with the
   --with-shell-env configure option.
+
+- Scripts: add library dependency paths to LD_LIBRARY_PATH for better
+  robustness when "rpath" does not have priority.
 
 - Update CGNS support for CGNS 3.4 compatibility.
 
@@ -494,7 +489,7 @@ Architectural changes:
 
 - Use matrix assembler instead of matrix extension function for
   internal coupling, to allow for a broader range of linear system
-  solvers and preconditionners.
+  solvers and preconditioners.
 
 - Add "Melissa" type writers for coupling with in-situ statistics
   Melissa server.

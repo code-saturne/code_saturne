@@ -1,27 +1,45 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>BatchRunningForm</class>
- <widget class="QWidget" name="BatchRunningForm">
+ <class>BatchRunningDialogForm</class>
+ <widget class="QDialog" name="BatchRunningDialogForm">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>719</width>
-    <height>675</height>
+    <width>756</width>
+    <height>0</height>
    </rect>
   </property>
-  <property name="windowTitle">
-   <string>Form</string>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
-  <layout class="QGridLayout" name="gridLayout_3">
-   <item row="0" column="0">
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>0</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>Dialog</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_3">
+   <item>
     <widget class="QTabWidget" name="tabWidget">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="currentIndex">
       <number>0</number>
      </property>
      <widget class="QWidget" name="tab_7">
       <attribute name="title">
-       <string>Calculation</string>
+       <string>Computation</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout">
        <item>
@@ -498,13 +516,13 @@
        <item>
         <widget class="QGroupBox" name="groupBoxScript">
          <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Complete the calculation script parameters.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Complete the computation script parameters.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
          <property name="statusTip">
           <string/>
          </property>
          <property name="title">
-          <string>Calculation script parameters</string>
+          <string>Script parameters</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_2">
           <item row="0" column="1">
@@ -514,14 +532,14 @@
               <item row="0" column="1">
                <widget class="QLineEdit" name="lineEditRunId">
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Name of the calculation directory that will be created.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Name of the computation directory that will be created.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                </widget>
               </item>
               <item row="1" column="1">
                <widget class="QSpinBox" name="spinBoxNProcs">
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the number of MPI processes for the calculation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the number of MPI processes for the computation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="maximum">
                  <number>524288</number>
@@ -538,7 +556,7 @@
               <item row="1" column="0">
                <widget class="QLabel" name="labelNProcs">
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the number of MPI processes for the calculation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the number of MPI processes for the computation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="text">
                  <string>Number of processes</string>
@@ -555,7 +573,7 @@
               <item row="0" column="0">
                <widget class="QLabel" name="labelRunId">
                 <property name="toolTip">
-                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Name of the calculation directory that will be created.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Name of the computation directory that will be created.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                 </property>
                 <property name="text">
                  <string>Result subdirectory name</string>
@@ -674,7 +692,7 @@
             <item>
              <widget class="QToolButton" name="toolButton_2">
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;More informations about running a calculation under a debugger.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;More informations about running a computation under a debugger.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string>...</string>
@@ -691,6 +709,25 @@
         </widget>
        </item>
        <item>
+        <widget class="QGroupBox" name="groupBox_4">
+         <property name="title">
+          <string>Execution stages</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_5">
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="checkBoxInitOnly">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Prepare for execution, but do not start computation.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This is useful so as to manually run the code and debug from the prepare run directory.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Initialize only</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
         <widget class="QGroupBox" name="groupBox_3">
          <property name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Modify the output redirection (listing).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -699,42 +736,25 @@
           <string>Logging  management</string>
          </property>
          <layout class="QGridLayout" name="_4">
-          <item row="0" column="1">
-           <spacer name="horizontalSpacer_9">
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>7</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
           <item row="0" column="0">
-           <layout class="QGridLayout" name="_5">
-            <item row="0" column="0">
-             <widget class="QCheckBox" name="checkBoxTrace">
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Trace iterations progress in terminal.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="text">
-               <string>Trace progress</string>
-              </property>
-             </widget>
-            </item>
-            <item row="1" column="0">
-             <widget class="QCheckBox" name="checkBoxLogParallel">
-              <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Output &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;run_solver_r&amp;lt;p&amp;gt;.log&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; for each process r in addition to rank 0.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-              </property>
-              <property name="text">
-               <string>Log all parallel ranks</string>
-              </property>
-             </widget>
-            </item>
-           </layout>
+           <widget class="QCheckBox" name="checkBoxTrace">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Trace iterations progress in terminal.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Trace progress</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QCheckBox" name="checkBoxLogParallel">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Output &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;run_solver_r&amp;lt;p&amp;gt;.log&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; for each process r in addition to rank 0.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Log all parallel ranks</string>
+            </property>
+           </widget>
           </item>
          </layout>
         </widget>
@@ -744,10 +764,13 @@
          <property name="orientation">
           <enum>Qt::Vertical</enum>
          </property>
+         <property name="sizeType">
+          <enum>QSizePolicy::MinimumExpanding</enum>
+         </property>
          <property name="sizeHint" stdset="0">
           <size>
            <width>20</width>
-           <height>40</height>
+           <height>0</height>
           </size>
          </property>
         </spacer>
@@ -756,19 +779,25 @@
      </widget>
     </widget>
    </item>
-   <item row="2" column="0">
+   <item>
     <widget class="QGroupBox" name="groupBox">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="MinimumExpanding">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="sizeHint" stdset="0">
       <size>
-       <width>194</width>
+       <width>354</width>
        <height>64</height>
       </size>
      </property>
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Run the calculation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Run the computation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
-      <string>Calculation start</string>
+      <string>Computation start</string>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_5">
       <item>
@@ -785,46 +814,34 @@
        </spacer>
       </item>
       <item>
+       <widget class="QPushButton" name="pushButtonCancel">
+        <property name="text">
+         <string>Cancel</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="pushButtonApply">
+        <property name="text">
+         <string>Apply</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QPushButton" name="pushButtonRunSubmit">
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Run the calculation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Run the computation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="layoutDirection">
          <enum>Qt::LeftToRight</enum>
         </property>
         <property name="text">
-         <string>Start calculation</string>
+         <string>Start computation</string>
         </property>
        </widget>
       </item>
-      <item>
-       <spacer>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>16</width>
-          <height>16</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
      </layout>
     </widget>
-   </item>
-   <item row="3" column="0">
-    <spacer>
-     <property name="orientation">
-      <enum>Qt::Vertical</enum>
-     </property>
-     <property name="sizeHint" stdset="0">
-      <size>
-       <width>432</width>
-       <height>16</height>
-      </size>
-     </property>
-    </spacer>
    </item>
   </layout>
  </widget>

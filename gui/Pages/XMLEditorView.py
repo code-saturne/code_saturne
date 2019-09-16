@@ -199,6 +199,9 @@ class XMLEditorView(QDialog, Ui_XMLEditor):
         self.symbols  = []
         self.case = case
 
+        title = self.tr("XML source")
+        self.setWindowTitle(title)
+
         # Syntax highlighting
         self.h1 = XMLHighlighter(self.textEditContent, self.symbols)
 

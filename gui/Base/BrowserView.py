@@ -207,7 +207,7 @@ class TreeModel(QAbstractItemModel):
                     img_path = ":/icons/22x22/closure_modeling.png"
                     icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
-                elif page_name == 'Calculation management':
+                elif page_name == 'Performance settings':
                     img_path = ":/icons/22x22/run_button.png"
                     icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
@@ -518,9 +518,8 @@ Postprocessing
     Lagrangian solution control
     Profiles
     Balance by zone
-Calculation management
-    Performance tuning
-    OpenTurns study
+Performance settings
+OpenTurns study
 """
         return tree
 

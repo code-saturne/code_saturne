@@ -111,6 +111,10 @@
             <translation>Exécution du script...</translation>
         </message>
         <message>
+            <source>RUN_SCRIPT_ACTION_ACCESS_ERROR</source>
+            <translation>Vous n'avez pas les droits d'accès pour le script d'exécution !</translation>
+        </message>
+        <message>
             <source>UPDATE_CASE_PATH_ACTION_TEXT</source>
             <translation>Mise à jour du chemin du cas...</translation>
         </message>
@@ -121,10 +125,6 @@
         <message>
             <source>UPDATE_CASE_PATH_ACTION_SB</source>
             <translation>Mise à jour du chemin du cas...</translation>
-        </message>
-        <message>
-            <source>RUN_SCRIPT_ACTION_ACCESS_ERROR</source>
-            <translation>Vous n'avez pas les droits d'accès pour le script d'exécution !</translation>
         </message>
         <message>
             <source>SOLVER_FILE_MENU_TEXT</source>
@@ -233,6 +233,18 @@
         <message>
             <source>SOLVER_DISPLAYCASE_ACTION_SB</source>
             <translation>Afficher le contenu du XML</translation>
+        </message>
+        <message>
+            <source>SOLVER_LAUNCH_ACTION_TEXT</source>
+            <translation>Lancer le calcul</translation>
+        </message>
+        <message>
+            <source>SOLVER_LAUNCH_ACTION_TIP</source>
+            <translation>Lancer le calcul</translation>
+        </message>
+        <message>
+            <source>SOLVER_LAUNCH_ACTION_SB</source>
+            <translation>Lancer le calcul</translation>
         </message>
         <message>
             <source>REMOVE_ACTION_TEXT</source>

@@ -126,7 +126,7 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
             return
         file = os.path.basename(file)
         if file not in os.listdir(data):
-            title = self.tr("WARNING")
+            title = self.tr("Warning")
             msg   = self.tr("This selected file is not in the DATA directory")
             QMessageBox.information(self, title, msg)
         else:

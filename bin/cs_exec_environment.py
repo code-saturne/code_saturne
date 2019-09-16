@@ -154,6 +154,60 @@ def assemble_args(cmd):
     return l.strip()
 
 #-------------------------------------------------------------------------------
+# Update command line arguments with no associated value
+#-------------------------------------------------------------------------------
+
+def update_command_no_value(args, options, present):
+    """
+    Adds, updates, or removes parts of a command to pass a given option.
+    The command is provided as a list, and options defining a value may be
+    defined as a tuple (to allow for multiple variants).
+
+    If no option was previously present and a value is added, the first
+    syntax of the options tuple will be used.
+    """
+
+    i = -1
+
+    # Update first occurence
+
+    count = 0
+    target = 0
+    if present:
+        target = 1
+
+    for opt in options:
+        j = i
+        while j < len(args):
+            if args[j] == opt:
+                count += 1
+                if count > target:
+                    args.pop(j)       # option
+                else:
+                    j += 1
+            else:
+                j += 1
+
+    if count < target:
+        args.append(options[0])
+
+    # Special cases at end
+
+    i = 0
+    args_tail = []
+    while i < len(args):
+        if args[i][0] == '$' or args[i] == '&':
+             a = args.pop(i)
+             args_tail.append(a)
+        else:
+             i = i+1
+    args += args_tail
+
+    # Return updated list
+
+    return args
+
+#-------------------------------------------------------------------------------
 # Update command line arguments for a given value
 #-------------------------------------------------------------------------------
 
