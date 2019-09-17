@@ -154,12 +154,16 @@
   Then the identifiers of the rotors are incremented as the user add rotors
   (\ref cs_turbomachinery_add_rotor, see above).
 
-  Once the rotor identifier is known, one can acces to its parameters:
+  Local definitions and initialization
+
+  \snippet cs_user_extra_operations-turbomachinery.c loc_def_init
+
+  Once the rotor identifier is known, access to its parameters as follows:
 
   \snippet cs_user_extra_operations-turbomachinery.c extra_tbm_get_rotor_info
 
-  Importantly, one access to the rotor associated to each cell of the domain
-  thanks to a rotor identifier list, like in this example:
+  Importantly, the rotor associated to each cell of the domain can be retrieved
+  thanks to a rotor identifier list as follows:
 
   \snippet cs_user_extra_operations-turbomachinery.c extra_tbm_get_rotor
 
@@ -174,6 +178,13 @@
   criteria must be specified.
 
   \snippet cs_user_extra_operations-turbomachinery.c extra_tbm_post_util
+
+  \subsection tbm_user_vel_cyl Velocity profiles extraction in cylindrical coordinates
+
+  Below is another example showing how to extract velocity profile in cylindrical
+  coordinates.
+
+  \snippet cs_user_extra_operations-turbomachinery.c extra_tbm_velocity_cylinder
 
   \subsection tbm_user_fortran Fortran naming
 

@@ -150,6 +150,8 @@ void
 cs_user_extra_operations(cs_domain_t     *domain)
 {
 
+  /*! [loc_def_init] */
+
   /* Mesh-related variables */
 
   const cs_lnum_t n_b_faces = domain->mesh->n_b_faces;
@@ -169,6 +171,8 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
   double ro0 = cs_glob_fluid_properties->ro0;
   cs_real_t flowrate = 0.238;
+
+  /*! [loc_def_init] */
 
   /* Assert there is a rotation zone */
 
@@ -232,8 +236,10 @@ cs_user_extra_operations(cs_domain_t     *domain)
              "Flowrate [m3/s]","Head [m]", "Power [W]", "Efficiency [1]",
              flowrate, manometric_head, power, efficiency);
 
-  /* Example 2: extraction of a velocity profile in cylindrical corordinates
+  /* Example 2: extraction of a velocity profile in cylindrical coordinates
      ======================================================================= */
+
+  /*! [extra_tbm_velocity_cylinder] */
 
   if (domain->time_step->nt_cur == domain->time_step->nt_max){
 
@@ -348,6 +354,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
   } /* end of if statement on current time step */
 
+  /*! [extra_tbm_velocity_cylinder] */
 }
 
 END_C_DECLS
