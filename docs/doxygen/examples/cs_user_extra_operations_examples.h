@@ -492,3 +492,16 @@
   \snippet cs_user_extra_operations-stopping_criterion.c extra_stopping_criterion
 
 */
+// __________________________________________________________________________________
+/*!
+
+  \page cs_user_extra_operations_examples_verif_cdo_diff Postprocessing of results obtained with CDO schemes for a scalar transport equation.
+
+  \section cs_user_extra_operations_examples_verif_cdo_diff Postprocessing of results obtained with CDO schemes for a scalar transport equation.
+
+  This is an example of \ref cs_user_extra_operations allowing to add operations on results produced by CDO schemes. It allows to define advanced
+  postprocessing.
+
+  \snippet cs_user_extra_operations-verif_cdo_diffusion.c extra_verif_cdo_diff
+
+*/

@@ -72,8 +72,6 @@ BEGIN_C_DECLS
 */
 /*----------------------------------------------------------------------------*/
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
-
 /*=============================================================================
  * Local Macro definitions and structure definitions
  *============================================================================*/
@@ -273,8 +271,6 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
 
 }
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
@@ -291,6 +287,9 @@ _cdovb_post(const cs_cdo_connect_t     *connect,
 void
 cs_user_extra_operations(cs_domain_t          *domain)
 {
+
+  /*! [extra_verif_cdo_diff] */
+
   const cs_cdo_connect_t  *connect = domain->connect;
   const cs_cdo_quantities_t  *cdoq = domain->cdo_quantities;
   const cs_time_step_t  *time_step = domain->time_step;
@@ -350,6 +349,8 @@ cs_user_extra_operations(cs_domain_t          *domain)
   /* Free */
   BFT_FREE(filename);
   fclose(resume);
+
+  /*! [extra_verif_cdo_diff] */
 }
 
 /*----------------------------------------------------------------------------*/
