@@ -511,6 +511,8 @@ _assemble_row_scal_l(const cs_matrix_assembler_t     *ma,
   }
 }
 
+#if defined(HAVE_MPI)
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Add values to a matrix assembler values structure using global
@@ -590,8 +592,6 @@ _assemble_row_scal_ld(const cs_matrix_assembler_t      *ma,
 
 }
 
-#if defined(HAVE_MPI)
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Add values to a matrix assembler values structure using global
@@ -659,10 +659,6 @@ _assemble_row_scal_dt(cs_matrix_assembler_values_t         *mav,
 
   }
 }
-
-#endif /* defined(HAVE_MPI) */
-
-#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------*/
 /*!
