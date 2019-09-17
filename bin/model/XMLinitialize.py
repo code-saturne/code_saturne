@@ -1686,8 +1686,9 @@ class XMLinit(Variables):
                 if nf != None:
                     f = n.xmlGetString('formula')
                     for k in porosity_rename.keys():
-                        f = f.replace(k, porosity_rename[k])
-                        nf.xmlSetTextNode(f)
+                        if f.find(porosity_rename[k]) == -1: # not already replaced
+                            f = f.replace(k, porosity_rename[k])
+                            nf.xmlSetTextNode(f)
 
         # Update 'variable' property tag to 'user_law'
         scalar_node = self.case.xmlGetNode('additional_scalars')
