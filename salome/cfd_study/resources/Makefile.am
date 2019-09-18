@@ -37,14 +37,17 @@ CaseRun.png \
 CFDSTUDY.png \
 CheckCompilation.png \
 CloseGui.png \
+compiler-icon.png \
 edit-undo.png \
 edit-redo.png \
+editor-icon.png \
 ot-logo.png \
 Delete.png \
 Document.png \
 EditableDocument.png \
 EditFile.png \
 Executable.png \
+file-transfer.png \
 Folder.png \
 FolderRed.png \
 InfoCFDSTUDY.png \
@@ -69,6 +72,7 @@ TmpFile.png \
 UnknownDocument.png \
 UpdateObjBrowser.png \
 ViewFile.png \
+viewer-icon.png \
 VISU_Module_Export.png \
 VISU_Plot_Export.png \
 VISU_Plot.png

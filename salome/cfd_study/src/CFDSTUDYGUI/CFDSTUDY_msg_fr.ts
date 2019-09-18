@@ -175,6 +175,54 @@
             <translation>Ouvrir un terminal</translation>
         </message>
         <message>
+            <source>SOLVER_EDITOR_ACTION_TEXT</source>
+            <translation>Gestion des sources utilisateur</translation>
+        </message>
+        <message>
+            <source>SOLVER_EDITOR_ACTION_TIP</source>
+            <translation>Gestion des sources utilisateur</translation>
+        </message>
+        <message>
+            <source>SOLVER_EDITOR_ACTION_SB</source>
+            <translation>Gestion des sources utilisateur</translation>
+        </message>
+        <message>
+            <source>SOLVER_COMPILER_ACTION_TEXT</source>
+            <translation>Tester la compilation des fonctions utilisateur</translation>
+        </message>
+        <message>
+            <source>SOLVER_COMPILER_ACTION_TIP</source>
+            <translation>Tester la compilation des fonctions utilisateur</translation>
+        </message>
+        <message>
+            <source>SOLVER_COMPILER_ACTION_SB</source>
+            <translation>Tester la compilation des fonctions utilisateur</translation>
+        </message>
+        <message>
+            <source>SOLVER_LOGVIEWER_ACTION_TEXT</source>
+            <translation>Visionner les fichiers log</translation>
+        </message>
+        <message>
+            <source>SOLVER_LOGVIEWER_ACTION_TIP</source>
+            <translation>Visionner les fichiers log</translation>
+        </message>
+        <message>
+            <source>SOLVER_LOGVIEWER_ACTION_SB</source>
+            <translation>Visionner les fichiers log</translation>
+        </message>
+        <message>
+            <source>SOLVER_FILETRANSFER_ACTION_TEXT</source>
+            <translation>Transférer des fichiers sur un cluster distant</translation>
+        </message>
+        <message>
+            <source>SOLVER_FILETRANSFER_ACTION_TIP</source>
+            <translation>Transférer des fichiers sur un cluster distant</translation>
+        </message>
+        <message>
+            <source>SOLVER_FILETRANSFER_ACTION_SB</source>
+            <translation>Transférer des fichiers sur un cluster distant</translation>
+        </message>
+        <message>
             <source>SOLVER_DISPLAYCASE_ACTION_TEXT</source>
             <translation>Afficher le contenu du XML</translation>
         </message>

@@ -82,6 +82,22 @@
             <translation>LaunchGUI.png</translation>
         </message>
         <message>
+            <source>CFDSTUDY_COMPILER_OBJ_ICON</source>
+            <translation>compiler-icon.png</translation>
+        </message>
+        <message>
+            <source>CFDSTUDY_FILE_EDITOR_OBJ_ICON</source>
+            <translation>editor-icon.png</translation>
+        </message>
+        <message>
+            <source>CFDSTUDY_FILE_VIEWER_OBJ_ICON</source>
+            <translation>viewer-icon.png</translation>
+        </message>
+        <message>
+            <source>CFDSTUDY_FILE_TRANSFER_OBJ_ICON</source>
+            <translation>file_transfer.png</translation>
+        </message>
+        <message>
             <source>MESH_OBJ_ICON</source>
             <translation>mesh.png</translation>
         </message>
