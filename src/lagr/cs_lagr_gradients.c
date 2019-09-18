@@ -114,6 +114,18 @@ cs_lagr_gradients(int            time_id,
                          cs_glob_physical_constants->gravity[1],
                          cs_glob_physical_constants->gravity[2]};
 
+  /* Use pressure gradient of NEPTUNE_CFD if needed */
+  if (cs_field_by_name_try("velocity_1") != NULL) {
+    cs_real_t *romf = extra->cromf->val;
+    cs_real_t *cpro_pgradlagr = cs_field_by_name_try("lagr_pressure_gradient")->val;
+
+    for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++)
+      for (cs_lnum_t id = 0; id < 3; id++)
+        grad_pr[iel][id] = cpro_pgradlagr[3*iel + id] - romf[iel] * grav[id];
+
+    return;
+  }
+
   cs_real_t *wpres = NULL;
 
   /* Hydrostatic pressure algorithm? */
