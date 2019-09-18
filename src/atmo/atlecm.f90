@@ -41,6 +41,7 @@ use entsor
 use cstnum
 use cstphy
 use ppppar
+use optcal
 use atincl
 
 !===============================================================================
@@ -315,6 +316,19 @@ else
 
   endif
 
+endif
+
+! For Boussinesq approximation, initialize p0, rho0 and theta0 at the first level
+if (imode.eq.1.and.idilat.eq.0.and.itp.eq.1) then
+  p0 = pmer(itp)
+  t0 = (ttmet(1,itp)+tkelvi)*(ps/p0)**rscp ! theta0
+  ! Humid atmosphere
+  if (ippmod(iatmos).eq.2) then
+    rhum = rair*(1.d0+(rvsra-1.d0)*qvmet(1,itp)*ih2o)
+  else
+    rhum = rair
+  endif
+  ro0 = p0 / (ttmet(1,itp) + tkelvi)/rhum
 endif
 
 !===============================================================================
