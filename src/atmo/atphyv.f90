@@ -68,6 +68,7 @@ double precision qliq, qwt, tliq, dum
 double precision, dimension(:), pointer :: brom, crom
 double precision, dimension(:), pointer :: cvar_vart, cvar_totwt
 double precision, dimension(:), pointer :: cpro_tempc, cpro_liqwt
+double precision, dimension(:), pointer :: cpro_beta
 
 logical activate
 
@@ -87,7 +88,9 @@ activate = .false.
 
 ivart = -1
 
-! --- Initialisation memoire
+if (idilat.eq.0) then
+  call field_get_val_s_by_name("thermal_expansion", cpro_beta)
+endif
 
 ! This routine computes the density and the thermodynamic temperature.
 ! The computations require the pressure profile which is here taken from
@@ -168,7 +171,14 @@ do iel = 1, ncel
   !   ------------------------
   !   law:    RHO       =   P / ( Rair * T(K) )
 
-  crom(iel) = pp/(lrhum*xvart)*(ps/pp)**lrscp
+  if (idilat.eq.0) then
+    crom(iel) = ro0
+    ! "delta rho = - beta rho0 delta theta" gives
+    ! "beta = 1 / theta"
+    cpro_beta(iel) = 1.d0 / xvart
+  else
+    crom(iel) = pp/(lrhum*xvart)*(ps/pp)**lrscp
+  endif
 
 enddo
 
