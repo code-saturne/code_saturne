@@ -773,9 +773,13 @@ cs_domain_setup_log(const cs_domain_t   *domain)
   cs_log_printf(CS_LOG_SETUP, " **Number of advection fields**      %2d\n",
                 cs_advection_field_get_n_fields());
 
+  cs_domain_cdo_context_t  *cc = domain->cdo_context;
 
+  cs_cdo_connect_summary(domain->connect,
+                         cc->eb_scheme_flag,
+                         cc->vb_scheme_flag,
+                         cc->vcb_scheme_flag);
 
-  cs_cdo_connect_summary(domain->connect);
   cs_cdo_quantities_summary(domain->cdo_quantities);
 
   /* Time step summary */

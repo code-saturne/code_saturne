@@ -246,12 +246,18 @@ cs_cdo_connect_discrete_curl(const cs_cdo_connect_t    *connect,
 /*!
  * \brief  Summary of connectivity information
  *
- * \param[in]  connect     pointer to cs_cdo_connect_t structure
+ * \param[in]  connect           pointer to cs_cdo_connect_t structure
+ * \param[in]  eb_scheme_flag    metadata for Edge-based schemes
+ * \param[in]  vb_scheme_flag    metadata for Vertex-based schemes
+ * \param[in]  vcb_scheme_flag   metadata for Vertex+Cell-based schemes
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_connect_summary(const cs_cdo_connect_t  *connect);
+cs_cdo_connect_summary(const cs_cdo_connect_t  *connect,
+                       cs_flag_t                eb_scheme_flag,
+                       cs_flag_t                vb_scheme_flag,
+                       cs_flag_t                vcb_scheme_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -566,76 +566,108 @@ _get_cell_type(cs_lnum_t                 c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Associate to each cell a type and a flag.
+ * \brief  Associate a flag to each cell.
  *
- * \param[in, out]  connect   pointer to a cs_cdo_connect_t structure
+ * \param[in, out]  connect           pointer to a cs_cdo_connect_t structure
+ * \param[in]       eb_scheme_flag    metadata for Edge-based schemes
+ * \param[in]       vb_scheme_flag    metadata for Vertex-based schemes
+ * \param[in]       vcb_scheme_flag   metadata for Vertex+Cell-based schemes
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_build_cell_type_and_flag(cs_cdo_connect_t   *connect)
+_build_cell_flag(cs_cdo_connect_t   *connect,
+                 cs_flag_t           eb_scheme_flag,
+                 cs_flag_t           vb_scheme_flag,
+                 cs_flag_t           vcb_scheme_flag)
 {
-  const cs_lnum_t  n_vertices = connect->n_vertices;
   const cs_lnum_t  n_i_faces = connect->n_faces[CS_INT_FACES];
   const cs_lnum_t  n_b_faces = connect->n_faces[CS_BND_FACES];
   const cs_lnum_t  n_cells = connect->n_cells;
 
   BFT_MALLOC(connect->cell_flag, n_cells, cs_flag_t);
-  BFT_MALLOC(connect->cell_type, n_cells, fvm_element_t);
-
-  cs_flag_t  *is_border_vtx = NULL;
-  BFT_MALLOC(is_border_vtx, n_vertices, cs_flag_t);
-
-# pragma omp parallel if (n_cells > CS_THR_MIN)
-  {
-#   pragma omp for nowait
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      connect->cell_flag[c_id] = 0;
-      connect->cell_type[c_id] = _get_cell_type(c_id, connect);
-    }
-
-#   pragma omp for nowait
-    for (cs_lnum_t v = 0; v < n_vertices; v++)
-      is_border_vtx[v] = 0;
-
-  } /* End of OpenMP block */
+  memset(connect->cell_flag, 0, n_cells*sizeof(cs_flag_t));
 
   /* Loop on border faces and flag boundary cells */
   const cs_lnum_t  *c_ids = connect->f2c->ids + connect->f2c->idx[n_i_faces];
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
     connect->cell_flag[c_ids[f_id]] = CS_FLAG_BOUNDARY_CELL_BY_FACE;
 
-  const cs_adjacency_t  *bf2v = connect->bf2v;
-  for (cs_lnum_t bf_id = 0; bf_id < n_b_faces; bf_id++) {
-    for (cs_lnum_t j = bf2v->idx[bf_id]; j < bf2v->idx[bf_id+1]; j++) {
-      assert(bf2v->ids[j] < n_vertices);
-      is_border_vtx[bf2v->ids[j]] = 1;
-    }
-  } /* Loop on border faces */
 
-  /* Synchronization needed in parallel computations */
-  if (cs_glob_n_ranks > 1) {
+  if (vb_scheme_flag > 0 || vcb_scheme_flag > 0) {
 
-    assert(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL);
+    const cs_lnum_t  n_vertices = connect->n_vertices;
 
-    cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
-                         n_vertices,
-                         1,             /* stride */
-                         false,         /* interlace (not useful here) */
-                         CS_FLAG_TYPE,  /* unsigned short int */
-                         is_border_vtx);
+    cs_flag_t  *is_border_vtx = NULL;
+    BFT_MALLOC(is_border_vtx, n_vertices, cs_flag_t);
+    memset(is_border_vtx, 0, n_vertices*sizeof(cs_flag_t));
 
-  }
+    const cs_adjacency_t  *bf2v = connect->bf2v;
+    for (cs_lnum_t bf_id = 0; bf_id < n_b_faces; bf_id++) {
+      for (cs_lnum_t j = bf2v->idx[bf_id]; j < bf2v->idx[bf_id+1]; j++) {
+        assert(bf2v->ids[j] < n_vertices);
+        is_border_vtx[bf2v->ids[j]] = 1;
+      }
+    } /* Loop on border faces */
 
-  const cs_adjacency_t  *c2v = connect->c2v;
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
-      if (is_border_vtx[c2v->ids[j]] > 0)
-        connect->cell_flag[c_id] |= CS_FLAG_BOUNDARY_CELL_BY_VERTEX;
-    }
-  } /* Loop on cells */
+    /* Synchronization needed in parallel computations */
+    if (cs_glob_n_ranks > 1)
+      cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+                           n_vertices,
+                           1,             /* stride */
+                           false,         /* interlace (not useful here) */
+                           CS_FLAG_TYPE,  /* unsigned short int */
+                           is_border_vtx);
 
-  BFT_FREE(is_border_vtx);
+    const cs_adjacency_t  *c2v = connect->c2v;
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+        if (is_border_vtx[c2v->ids[j]] > 0)
+          connect->cell_flag[c_id] |= CS_FLAG_BOUNDARY_CELL_BY_VERTEX;
+      }
+    } /* Loop on cells */
+
+    BFT_FREE(is_border_vtx);
+
+  } /* At least one equation with DoFs at vertices */
+
+
+  if (eb_scheme_flag > 0) {
+
+    const cs_lnum_t  n_edges = connect->n_edges;
+
+    cs_flag_t  *is_border_edge = NULL;
+    BFT_MALLOC(is_border_edge, n_edges, cs_flag_t);
+    memset(is_border_edge, 0, n_edges*sizeof(cs_flag_t));
+
+    const cs_adjacency_t  *f2e = connect->f2e;
+    for (cs_lnum_t bf_id = n_i_faces; bf_id < n_i_faces + n_b_faces; bf_id++) {
+      for (cs_lnum_t j = f2e->idx[bf_id]; j < f2e->idx[bf_id+1]; j++) {
+        is_border_edge[f2e->ids[j]] = 1;
+      }
+    } /* Loop on border faces */
+
+    /* Synchronization needed in parallel computations */
+    if (cs_glob_n_ranks > 1)
+      cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL],
+                           n_edges,
+                           1,             /* stride */
+                           false,         /* interlace (not useful here) */
+                           CS_FLAG_TYPE,  /* unsigned short int */
+                           is_border_edge);
+
+    const cs_adjacency_t  *c2e = connect->c2e;
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      for (cs_lnum_t j = c2e->idx[c_id]; j < c2e->idx[c_id+1]; j++) {
+        if (is_border_edge[c2e->ids[j]] > 0)
+          connect->cell_flag[c_id] |= CS_FLAG_BOUNDARY_CELL_BY_EDGE;
+      }
+    } /* Loop on cells */
+
+    BFT_FREE(is_border_edge);
+
+  } /* edge interfaces */
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1077,13 +1109,19 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
                         connect->range_sets + CS_CDO_CONNECT_FACE_VHP2);
 
   /* CDO vertex- or vertex+cell-based schemes for scalar-valued variables */
-  if (eb_scheme_flag & CS_FLAG_SCHEME_SCALAR)
+  if (eb_scheme_flag > 0)
     _assign_edge_ifs_rs(mesh, connect, 1,
                         connect->interfaces + CS_CDO_CONNECT_EDGE_SCAL,
                         connect->range_sets + CS_CDO_CONNECT_EDGE_SCAL);
 
-  /* Build the cell flag and associate a cell type to each cell */
-  _build_cell_type_and_flag(connect);
+  /* Build the cell type for each cell */
+  BFT_MALLOC(connect->cell_type, n_cells, fvm_element_t);
+# pragma omp parallel if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    connect->cell_type[c_id] = _get_cell_type(c_id, connect);
+
+  /* Build the cell flag for each cell */
+  _build_cell_flag(connect, eb_scheme_flag, vb_scheme_flag, vcb_scheme_flag);
 
   /* Monitoring */
   cs_timer_t  t1 = cs_timer_time();
@@ -1200,13 +1238,47 @@ cs_cdo_connect_discrete_curl(const cs_cdo_connect_t    *connect,
 /*!
  * \brief  Summary of connectivity information
  *
- * \param[in]  connect     pointer to cs_cdo_connect_t structure
+ * \param[in]  connect           pointer to cs_cdo_connect_t structure
+ * \param[in]  eb_scheme_flag    metadata for Edge-based schemes
+ * \param[in]  vb_scheme_flag    metadata for Vertex-based schemes
+ * \param[in]  vcb_scheme_flag   metadata for Vertex+Cell-based schemes
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_connect_summary(const cs_cdo_connect_t  *connect)
+cs_cdo_connect_summary(const cs_cdo_connect_t  *connect,
+                       cs_flag_t                eb_scheme_flag,
+                       cs_flag_t                vb_scheme_flag,
+                       cs_flag_t                vcb_scheme_flag)
 {
+  /* Information about the element types */
+  cs_gnum_t  n_type_cells[FVM_N_ELEMENT_TYPES];
+  for (int i = 0; i < FVM_N_ELEMENT_TYPES; i++)
+    n_type_cells[i] = 0;
+
+  for (cs_lnum_t i = 0; i < connect->n_cells; i++)
+    n_type_cells[connect->cell_type[i]] += 1;
+
+  if (cs_glob_n_ranks > 1)
+    cs_parall_sum(FVM_N_ELEMENT_TYPES, CS_GNUM_TYPE, n_type_cells);
+
+  cs_log_printf(CS_LOG_DEFAULT,
+                " --dim-- number of tetrahedra: %8lu\n",
+                n_type_cells[FVM_CELL_TETRA]);
+  cs_log_printf(CS_LOG_DEFAULT,
+                " --dim-- number of pyramids:   %8lu\n",
+                n_type_cells[FVM_CELL_PYRAM]);
+  cs_log_printf(CS_LOG_DEFAULT,
+                " --dim-- number of prisms:     %8lu\n",
+                n_type_cells[FVM_CELL_PRISM]);
+  cs_log_printf(CS_LOG_DEFAULT,
+                " --dim-- number of hexahedra:  %8lu\n",
+                n_type_cells[FVM_CELL_HEXA]);
+  cs_log_printf(CS_LOG_DEFAULT,
+                " --dim-- number of polyhedra:  %8lu\n\n",
+                n_type_cells[FVM_CELL_POLY]);
+
+
   cs_lnum_t  n_max_entbyc[5] = {connect->n_max_fbyc,
                                 connect->n_max_ebyc,
                                 connect->n_max_vbyc,
@@ -1236,47 +1308,45 @@ cs_cdo_connect_summary(const cs_cdo_connect_t  *connect)
 
   /* Information about special case where vertices are lying on the boundary
      but not a face (for instance a tetrahedron) */
-  cs_lnum_t  count = 0;
-  for (cs_lnum_t c = 0; c < connect->n_cells; c++) {
-    if ((connect->cell_flag[c] & CS_FLAG_BOUNDARY_CELL_BY_VERTEX) &&
-        !(connect->cell_flag[c] & CS_FLAG_BOUNDARY_CELL_BY_FACE))
-      count++;
-  }
+  if (vb_scheme_flag > 0 || vcb_scheme_flag > 0) {
 
-  cs_gnum_t  counter = count;
-  if (cs_glob_n_ranks > 1)
-    cs_parall_counter(&counter, 1);
+    cs_lnum_t  v_count = 0;
+    for (cs_lnum_t c = 0; c < connect->n_cells; c++) {
+      if ((connect->cell_flag[c] & CS_FLAG_BOUNDARY_CELL_BY_VERTEX) &&
+          !(connect->cell_flag[c] & CS_FLAG_BOUNDARY_CELL_BY_FACE))
+        v_count++;
+    }
 
-  cs_log_printf(CS_LOG_DEFAULT,
-                " --dim-- number of boundary cells through a vertex only"
-                " %lu\n\n", counter);
+    cs_gnum_t  v_counter = v_count;
+    if (cs_glob_n_ranks > 1)
+      cs_parall_counter(&v_counter, 1);
 
-  /* Information about the element types */
-  cs_gnum_t  n_type_cells[FVM_N_ELEMENT_TYPES];
-  for (int i = 0; i < FVM_N_ELEMENT_TYPES; i++)
-    n_type_cells[i] = 0;
+    cs_log_printf(CS_LOG_DEFAULT,
+                  " --dim-- number of boundary cells through a vertex only"
+                  " %lu\n\n", v_counter);
 
-  for (cs_lnum_t i = 0; i < connect->n_cells; i++)
-    n_type_cells[connect->cell_type[i]] += 1;
+  } /* At least one equation with a scheme with DoFs at vertices */
 
-  if (cs_glob_n_ranks > 1)
-    cs_parall_sum(FVM_N_ELEMENT_TYPES, CS_GNUM_TYPE, n_type_cells);
+  if (eb_scheme_flag > 0) {
 
-  cs_log_printf(CS_LOG_DEFAULT,
-                " --dim-- number of tetrahedra: %8lu\n",
-                n_type_cells[FVM_CELL_TETRA]);
-  cs_log_printf(CS_LOG_DEFAULT,
-                " --dim-- number of pyramids:   %8lu\n",
-                n_type_cells[FVM_CELL_PYRAM]);
-  cs_log_printf(CS_LOG_DEFAULT,
-                " --dim-- number of prisms:     %8lu\n",
-                n_type_cells[FVM_CELL_PRISM]);
-  cs_log_printf(CS_LOG_DEFAULT,
-                " --dim-- number of hexahedra:  %8lu\n",
-                n_type_cells[FVM_CELL_HEXA]);
-  cs_log_printf(CS_LOG_DEFAULT,
-                " --dim-- number of polyhedra:  %8lu\n\n",
-                n_type_cells[FVM_CELL_POLY]);
+    /* Information about special case where edges are lying on the boundary
+       but not a face (for instance a tetrahedron) */
+    cs_lnum_t  e_count = 0;
+    for (cs_lnum_t c = 0; c < connect->n_cells; c++) {
+      if ((connect->cell_flag[c] & CS_FLAG_BOUNDARY_CELL_BY_EDGE) &&
+          !(connect->cell_flag[c] & CS_FLAG_BOUNDARY_CELL_BY_FACE))
+        e_count++;
+    }
+
+    cs_gnum_t  e_counter = e_count;
+    if (cs_glob_n_ranks > 1)
+      cs_parall_counter(&e_counter, 1);
+
+    cs_log_printf(CS_LOG_DEFAULT,
+                  " --dim-- number of boundary cells through an edge only"
+                  " %lu\n\n", e_counter);
+
+  } /* At least one equation with a scheme with DoFs at edges */
 
 #if CS_CDO_CONNECT_DBG > 0 && defined(DEBUG) && !defined(NDEBUG)
   cs_cdo_connect_dump(connect);
