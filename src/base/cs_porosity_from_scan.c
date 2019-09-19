@@ -109,6 +109,7 @@ BEGIN_C_DECLS
 static cs_porosity_from_scan_opt_t _porosity_from_scan_opt = {
   .compute_porosity_from_scan = false,
   .file_name = NULL,
+  .output_name = NULL,
   .postprocess_points = true,
   .transformation_matrix =
   {{1., 0., 0., 0.},
@@ -278,11 +279,17 @@ _count_from_file(const cs_mesh_t *m,
     /* FVM meshes for writers */
     if (_porosity_from_scan_opt.postprocess_points) {
       char *fvm_name;
-      BFT_MALLOC(fvm_name,
-                 strlen(_porosity_from_scan_opt.file_name) + 3 + 1,
-                 char);
-
-      strcpy(fvm_name, _porosity_from_scan_opt.file_name);
+      if (_porosity_from_scan_opt.output_name == NULL) {
+        BFT_MALLOC(fvm_name,
+                   strlen(_porosity_from_scan_opt.file_name) + 3 + 1,
+                   char);
+        strcpy(fvm_name, _porosity_from_scan_opt.file_name);
+      } else {
+        BFT_MALLOC(fvm_name,                                                                             
+                   strlen(_porosity_from_scan_opt.output_name) + 3 + 1,                                    
+                   char);
+        strcpy(fvm_name, _porosity_from_scan_opt.output_name);
+      }
       char suffix[13];
       sprintf(suffix, "_%02d", n_scan);
       strcat(fvm_name, suffix);
@@ -502,6 +509,11 @@ cs_f_porosity_from_scan_get_pointer(bool **compute_porosity_from_scan)
 void
 cs_porosity_from_scan_set_file_name(const char *file_name)
 {
+  if (file_name == NULL) {
+    _porosity_from_scan_opt.compute_porosity_from_scan = false;
+    return;
+  }
+ 
   _porosity_from_scan_opt.compute_porosity_from_scan = true;
 
   BFT_MALLOC(_porosity_from_scan_opt.file_name,
@@ -509,6 +521,31 @@ cs_porosity_from_scan_set_file_name(const char *file_name)
              char);
 
   sprintf(_porosity_from_scan_opt.file_name, "%s", file_name);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function sets the output name for the FVM writer of scan points.
+ *
+ * \param[in] output_name  name of the output (a suffix will be added)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_porosity_from_scan_set_output_name(const char *output_name)
+{
+  if (output_name == NULL) {
+    _porosity_from_scan_opt.postprocess_points = false;
+    return;
+  }
+
+  _porosity_from_scan_opt.postprocess_points = true;
+
+  BFT_MALLOC(_porosity_from_scan_opt.output_name,
+             strlen(output_name) + 1,
+             char);
+
+  sprintf(_porosity_from_scan_opt.output_name, "%s", output_name);
 }
 
 /*----------------------------------------------------------------------------*/

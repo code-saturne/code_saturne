@@ -71,6 +71,7 @@ BEGIN_C_DECLS
 typedef struct {
   bool  compute_porosity_from_scan;
   char *file_name;
+  char *output_name;
   bool  postprocess_points;
   /*! Matrix of associated transformation
      (3x4 matrix, 3 first rows of a homogeneous
@@ -108,6 +109,17 @@ extern cs_porosity_from_scan_opt_t *cs_glob_porosity_from_scan_opt;
 
 void
 cs_porosity_from_scan_set_file_name(const char *file_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function sets the output name for the FVM writer of scan points.
+ *
+ * \param[in] output_name  name of the output (a suffix will be added)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_porosity_from_scan_set_output_name(const char *output_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
