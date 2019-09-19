@@ -273,6 +273,7 @@ cs_reco_cell_vectors_by_ib_face_dofs(const cs_adjacency_t       *c2f,
   /* Initialization */
   memset(cell_reco, 0, 3*cdoq->n_cells*sizeof(cs_real_t));
 
+# pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
 
     cs_real_t  *cval = cell_reco + 3*c_id;

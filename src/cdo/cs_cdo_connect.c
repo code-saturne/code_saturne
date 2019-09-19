@@ -1179,6 +1179,7 @@ cs_cdo_connect_discrete_curl(const cs_cdo_connect_t    *connect,
   const cs_adjacency_t  *f2e = connect->f2e;
   assert(f2e != NULL && f2e->sgn != NULL); /* Sanity checks */
 
+# pragma omp parallel for if (n_faces > CS_THR_MIN)
   for (cs_lnum_t f = 0; f < n_faces; f++) {
 
     const cs_lnum_t  start = f2e->idx[f], end = f2e->idx[f+1];
