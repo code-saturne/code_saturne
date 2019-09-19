@@ -261,11 +261,11 @@ cs_reco_vect_pv_at_cell_centers(const cs_adjacency_t        *c2v,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_reco_cell_vect_from_face_dofs(const cs_adjacency_t       *c2f,
-                                 const cs_cdo_quantities_t  *cdoq,
-                                 const cs_real_t             i_face_vals[],
-                                 const cs_real_t             b_face_vals[],
-                                 cs_real_t                  *cell_reco)
+cs_reco_cell_vectors_by_ib_face_dofs(const cs_adjacency_t       *c2f,
+                                     const cs_cdo_quantities_t  *cdoq,
+                                     const cs_real_t             i_face_vals[],
+                                     const cs_real_t             b_face_vals[],
+                                     cs_real_t                  *cell_reco)
 {
   /* Sanity checks */
   assert(c2f != NULL && i_face_vals != NULL && b_face_vals != NULL);
@@ -296,6 +296,56 @@ cs_reco_cell_vect_from_face_dofs(const cs_adjacency_t       *c2f,
           cval[k] += i_face_vals[f_id] * dedge_vect[k];
 
       }
+
+    } /* Loop on cell faces */
+
+    const cs_real_t  invvol = 1./cdoq->cell_vol[c_id];
+    for (int k =0; k < 3; k++) cval[k] *= invvol;
+
+  } /* Loop on cells */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct the vector-valued quantity inside each cell from the face
+ *        DoFs (interior and boundary). Scalar-valued face DoFs are related to
+ *        the normal flux across faces.
+ *
+ * \param[in]   c2f           cell -> faces connectivity
+ * \param[in]   quant         pointer to the additional quantities struct.
+ * \param[in]   face_dofs     array of DoF values at faces
+ * \param[out]  cell_reco     vector-valued reconstruction inside cells. This
+ *                            quantity should have been allocated before calling
+ *                            this function
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_cell_vectors_by_face_dofs(const cs_adjacency_t       *c2f,
+                                  const cs_cdo_quantities_t  *cdoq,
+                                  const cs_real_t             face_dofs[],
+                                  cs_real_t                  *cell_reco)
+{
+  /* Sanity checks */
+  assert(c2f != NULL && cdoq !=  NULL && face_dofs != NULL);
+
+  /* Initialization */
+  memset(cell_reco, 0, 3*cdoq->n_cells*sizeof(cs_real_t));
+
+# pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+
+    cs_real_t  *cval = cell_reco + 3*c_id;
+
+    /* Loop on cell faces */
+    for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+
+      const cs_lnum_t  f_id = c2f->ids[j];
+      const cs_real_t  *dedge_vect = cdoq->dedge_vector + 3*j;
+
+      for (int k = 0; k < 3; k++)
+        cval[k] += face_dofs[f_id] * dedge_vect[k];
 
     } /* Loop on cell faces */
 
@@ -673,6 +723,46 @@ cs_reco_ccen_edge_dofs(const cs_cdo_connect_t     *connect,
 
   /* Return pointer */
   *p_ccrec = ccrec;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct a cell-wise constant curl from the knowledge of the
+ *         circulation at primal edges
+ *
+ * \param[in]      connect  pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant    pointer to the additional quantities struct.
+ * \param[in]      circ     pointer to the array of circulations at edges
+ * \param[in, out] p_curl   pointer to value of the reconstructed curl inside
+ *                          cells (allocated if set to NULL)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_cell_curl_by_edge_dofs(const cs_cdo_connect_t        *connect,
+                               const cs_cdo_quantities_t     *quant,
+                               const cs_real_t               *circ,
+                               cs_real_t                    **p_curl)
+{
+  if (circ == NULL)
+    return;
+
+  assert(connect != NULL && quant != NULL);
+
+  cs_real_t  *curl_vectors = *p_curl;
+  if (curl_vectors == NULL)
+    BFT_MALLOC(curl_vectors, 3*quant->n_cells, cs_real_t);
+
+  cs_real_t  *face_curl = NULL;
+  cs_cdo_connect_discrete_curl(connect, circ, &face_curl);
+
+  cs_reco_cell_vectors_by_face_dofs(connect->c2f, quant, face_curl,
+                                    curl_vectors);
+
+  BFT_FREE(face_curl);
+
+  /* Returns pointer */
+  *p_curl = curl_vectors;
 }
 
 /*----------------------------------------------------------------------------*/

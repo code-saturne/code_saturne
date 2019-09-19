@@ -229,11 +229,32 @@ cs_reco_vect_pv_at_cell_centers(const cs_adjacency_t        *c2v,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_reco_cell_vect_from_face_dofs(const cs_adjacency_t       *c2f,
-                                 const cs_cdo_quantities_t  *cdoq,
-                                 const cs_real_t             i_face_vals[],
-                                 const cs_real_t             b_face_vals[],
-                                 cs_real_t                  *cell_reco);
+cs_reco_cell_vectors_by_ib_face_dofs(const cs_adjacency_t       *c2f,
+                                     const cs_cdo_quantities_t  *cdoq,
+                                     const cs_real_t             i_face_vals[],
+                                     const cs_real_t             b_face_vals[],
+                                     cs_real_t                  *cell_reco);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reconstruct the vector-valued quantity inside each cell from the face
+ *        DoFs (interior and boundary). Scalar-valued face DoFs are related to
+ *        the normal flux across faces.
+ *
+ * \param[in]   c2f           cell -> faces connectivity
+ * \param[in]   quant         pointer to the additional quantities struct.
+ * \param[in]   face_dofs     array of DoF values at faces
+ * \param[out]  cell_reco     vector-valued reconstruction inside cells. This
+ *                            quantity should have been allocated before calling
+ *                            this function
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_cell_vectors_by_face_dofs(const cs_adjacency_t       *c2f,
+                                  const cs_cdo_quantities_t  *cdoq,
+                                  const cs_real_t             face_dofs[],
+                                  cs_real_t                  *cell_reco);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -390,6 +411,25 @@ cs_reco_ccen_edge_dofs(const cs_cdo_connect_t     *connect,
                        const cs_cdo_quantities_t  *quant,
                        const double               *dof,
                        double                     *p_ccrec[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct a cell-wise constant curl from the knowledge of the
+ *         circulation at primal edges
+ *
+ * \param[in]      connect  pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant    pointer to the additional quantities struct.
+ * \param[in]      circ     pointer to the array of circulations at edges
+ * \param[in, out] p_curl   pointer to value of the reconstructed curl inside
+ *                          cells (allocated if set to NULL)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_cell_curl_by_edge_dofs(const cs_cdo_connect_t        *connect,
+                               const cs_cdo_quantities_t     *quant,
+                               const cs_real_t               *circ,
+                               cs_real_t                    **p_curl);
 
 /*----------------------------------------------------------------------------*/
 /*!

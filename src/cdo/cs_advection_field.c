@@ -1236,11 +1236,11 @@ cs_advection_field_in_cells(const cs_adv_field_t  *adv,
           cs_field_t  *b_mflx_fld = cs_field_by_id(adv->bdy_field_id);
           assert(b_mflx_fld != NULL);
 
-          cs_reco_cell_vect_from_face_dofs(cs_cdo_connect->c2f,
-                                           cdoq,
-                                           field->val,
-                                           b_mflx_fld->val,
-                                           cell_values);
+          cs_reco_cell_vectors_by_ib_face_dofs(cs_cdo_connect->c2f,
+                                               cdoq,
+                                               field->val,
+                                               b_mflx_fld->val,
+                                               cell_values);
         }
         break;
 
