@@ -636,7 +636,8 @@ cs_equation_prepare_system(int                     stride,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve a linear system arising from a scalar-valued CDO scheme
+ * \brief  Solve a linear system arising from CDO schemes with scalar-valued
+ *         degrees of freedom
  *
  * \param[in]  n_scatter_dofs local number of DoFs (may be != n_gather_elts)
  * \param[in]  eqp            pointer to a cs_equation_param_t structure

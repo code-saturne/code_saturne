@@ -69,7 +69,7 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-#define CS_CDOEB_VECTEQ_DBG      3
+#define CS_CDOEB_VECTEQ_DBG      0
 
 /*============================================================================
  * Private variables
@@ -720,10 +720,9 @@ cs_cdoeb_vecteq_init_values(cs_real_t                     t_eval,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   cs_cdoeb_vecteq_t  *eqc = (cs_cdoeb_vecteq_t *)context;
-  cs_real_t  *e_vals = eqc->edge_values;
 
   /* By default, 0 is set as initial condition for the computational domain */
-  memset(e_vals, 0, quant->n_edges*sizeof(cs_real_t));
+  memset(eqc->edge_values, 0, quant->n_edges*sizeof(cs_real_t));
 
   if (eqp->n_ic_defs > 0) {
 
@@ -751,7 +750,7 @@ cs_cdoeb_vecteq_init_values(cs_real_t                     t_eval,
         cs_evaluate_circulation_along_edges_by_value(def,
                                                      n_e_selected,
                                                      selected_lst,
-                                                     e_vals);
+                                                     eqc->edge_values);
         break;
 
       case CS_XDEF_BY_ANALYTIC_FUNCTION:
@@ -759,7 +758,7 @@ cs_cdoeb_vecteq_init_values(cs_real_t                     t_eval,
                                                         t_eval,
                                                         n_e_selected,
                                                         selected_lst,
-                                                        e_vals);
+                                                        eqc->edge_values);
         break;
 
       default:
@@ -780,7 +779,7 @@ cs_cdoeb_vecteq_init_values(cs_real_t                     t_eval,
                                      quant,
                                      connect,
                                      eqp,
-                                     e_vals);
+                                     eqc->edge_values);
 }
 
 /*----------------------------------------------------------------------------*/
