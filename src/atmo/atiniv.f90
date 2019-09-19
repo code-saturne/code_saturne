@@ -496,7 +496,7 @@ call cs_user_f_initialization &
 '@    The simulation time is wrong                            ',/,&
 '@    Check variables syear, squant, shour, smin, ssec        ',/,&
 '@                                                            ',/,&
-'@    By decreasing priority these variablse can be defined   ',/,&
+'@    By decreasing priority, these variables can be defined  ',/,&
 '@    in cs_user_parameters or the meteo file                 ',/,&
 '@    or the chemistry file                                   ',/,&
 '@                                                            ',/,&
@@ -514,7 +514,7 @@ call cs_user_f_initialization &
 '@    The simulation time is wrong                            ',/,&
 '@    Check variables syear, squant, shour, smin, ssec        ',/,&
 '@                                                            ',/,&
-'@    By decreasing priority these variablse can be defined   ',/,&
+'@    By decreasing priority, these variables can be defined  ',/,&
 '@    in cs_user_parameters or the meteo file                 ',/,&
 '@    or the chemistry file                                   ',/,&
 '@                                                            ',/,&
