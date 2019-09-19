@@ -1768,6 +1768,8 @@ class mei_to_c_interpreter:
     #---------------------------------------------------------------------------
 
     def generate_volume_code(self):
+        # Ground water model enabled ?
+        gwm = False
 
         from code_saturne.model.LocalizationModel import LocalizationModel
         from code_saturne.model.GroundwaterLawModel import GroundwaterLawModel
@@ -1814,6 +1816,9 @@ class mei_to_c_interpreter:
                                             'capacity+saturation+permeability',
                                             exp, req, sym, [])
 
+            from code_saturne.model.GroundwaterModel import GroundwaterModel
+            # Ground water model enabled ?
+            gwm = not (GroundwaterModel(self.case).getGroundwaterModel() == 'off')
 
         elif self.pkg_name == 'neptune_cfd':
             from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
@@ -1880,21 +1885,23 @@ class mei_to_c_interpreter:
         # Porosity for both solvers
         vlm = LocalizationModel('VolumicZone', self.case)
         from code_saturne.model.PorosityModel import PorosityModel
-        prm = PorosityModel(self.case)
-        for zone in vlm.getZones():
-            z_id = zone.getCodeNumber()
-            zone_name = zone.getLabel()
-            nature_list = zone.getNatureList()
-            if 'porosity' in nature_list:
-                if zone.getNature()['porosity'] == 'on':
-                    fname = 'porosity'
-                    if prm.getPorosityModel(z_id) == 'anisotropic':
-                        fname += '+tensorial_porosity'
-                    exp, req, known_fields, sym = \
-                    prm.getPorosityFormulaComponents(z_id)
 
-                    self.init_block('vol', zone_name, fname,
-                                    exp, req, sym, known_fields)
+        if not gwm:
+            prm = PorosityModel(self.case)
+            for zone in vlm.getZones():
+                z_id = zone.getCodeNumber()
+                zone_name = zone.getLabel()
+                nature_list = zone.getNatureList()
+                if 'porosity' in nature_list:
+                    if zone.getNature()['porosity'] == 'on':
+                        fname = 'porosity'
+                        if prm.getPorosityModel(z_id) == 'anisotropic':
+                            fname += '+tensorial_porosity'
+                        exp, req, known_fields, sym = \
+                        prm.getPorosityFormulaComponents(z_id)
+
+                        self.init_block('vol', zone_name, fname,
+                                        exp, req, sym, known_fields)
 
 
     #---------------------------------------------------------------------------
