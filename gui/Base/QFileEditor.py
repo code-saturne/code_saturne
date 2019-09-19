@@ -170,7 +170,7 @@ class CodeEditor(QPlainTextEdit):
 
     def resizeEvent(self, event):
         # Handle the python2/python3 differences for super
-        super(resizeEvent, self).resizeEvent(event)
+        super(CodeEditor, self).resizeEvent(event)
 
         cr = self.contentsRect();
         self.lineNumberArea.setGeometry(QtCore.QRect(cr.left(), cr.top(),
