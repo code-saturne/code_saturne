@@ -36,6 +36,17 @@
 ### End of section.
 
 
+### Section for Code_Saturne distant installations.
+#
+[distant_hosts]
+### Define paths to the directory containing the different installations of the
+### given version (opt, debug, etc...).
+### Syntaxe is <batch_system>_<cluster url or name>=<path>
+### distant installation paths
+
+### End of section.
+
+
 ### Section for Code_Saturne run customizations.
 
 [run]
