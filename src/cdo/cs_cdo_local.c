@@ -816,12 +816,11 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
 
   if (cm->flag & cs_cdo_local_flag_fe) {
 
-    bft_printf(" n_ef | f: pef\n");
+    bft_printf(" n_ef | f:tef\n");
     for (short int f = 0; f < cm->n_fc; f++) {
-      bft_printf(" %4d |",
-                 cm->f2e_idx[f+1] - cm->f2e_idx[f]);
+      bft_printf(" %4d |", cm->f2e_idx[f+1] - cm->f2e_idx[f]);
       for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++)
-        bft_printf(" %2d:%.4e (%1d)|",
+        bft_printf(" f%2d:%.4e (%+1d)",
                    cm->f2e_ids[i], cm->tef[i], cm->f2e_sgn[i]);
       bft_printf("\n");
     }
@@ -830,7 +829,7 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
 
   if (cm->flag & cs_cdo_local_flag_ef) {
 
-    bft_printf("%-4s | f0 | %-53s | f1 | %-53s\n",
+    bft_printf("%4s | f0 | %-53s | f1 | %-53s\n",
                "e", "sef0c: meas, unitv", "sef1c: meas, unitv");
     for (short int e = 0; e < cm->n_ec; e++)
       bft_printf(" %3d | %2d | % .4e (% .4e % .4e % .4e) |"

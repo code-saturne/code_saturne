@@ -1262,6 +1262,7 @@ cs_cdo_connect_summary(const cs_cdo_connect_t  *connect,
   if (cs_glob_n_ranks > 1)
     cs_parall_sum(FVM_N_ELEMENT_TYPES, CS_GNUM_TYPE, n_type_cells);
 
+  cs_log_printf(CS_LOG_DEFAULT, "\n Connectivity information:\n");
   cs_log_printf(CS_LOG_DEFAULT,
                 " --dim-- number of tetrahedra: %8lu\n",
                 n_type_cells[FVM_CELL_TETRA]);
@@ -1289,7 +1290,6 @@ cs_cdo_connect_summary(const cs_cdo_connect_t  *connect,
     cs_parall_max(5, CS_LNUM_TYPE, n_max_entbyc);
 
   /* Output */
-  cs_log_printf(CS_LOG_DEFAULT, "\n Connectivity information:\n");
   cs_log_printf(CS_LOG_DEFAULT,
                 " --dim-- max. number of faces by cell:    %4d\n",
                 n_max_entbyc[0]);
@@ -1300,7 +1300,7 @@ cs_cdo_connect_summary(const cs_cdo_connect_t  *connect,
                 " --dim-- max. number of vertices by cell: %4d\n",
                 n_max_entbyc[2]);
   cs_log_printf(CS_LOG_DEFAULT,
-                " --dim-- max. vertex range for a cell:      %d\n",
+                "\n --dim-- max. vertex range for a cell:      %d\n",
                 n_max_entbyc[3]);
   cs_log_printf(CS_LOG_DEFAULT,
                 " --dim-- max. edge range for a cell:        %d\n",
