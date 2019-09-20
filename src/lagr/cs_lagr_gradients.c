@@ -121,7 +121,7 @@ cs_lagr_gradients(int            time_id,
 
     for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++)
       for (cs_lnum_t id = 0; id < 3; id++)
-        grad_pr[iel][id] = cpro_pgradlagr[3*iel + id] - romf[iel] * grav[id];
+        grad_pr[iel][id] = cpro_pgradlagr[3*iel + id];
 
     return;
   }
