@@ -1220,7 +1220,7 @@ cs_turb_compute_constants(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Provide acces to cs_glob_turb_ref_values
+ * \brief Provide access to cs_glob_turb_ref_values
  *
  * needed to initialize structure with GUI
  */
@@ -1234,7 +1234,7 @@ cs_get_glob_turb_ref_values(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Provide acces to cs_glob_turb_rans_model
+ * \brief Provide access to cs_glob_turb_rans_model
  *
  * needed to initialize structure with GUI
  */
@@ -1248,7 +1248,7 @@ cs_get_glob_turb_rans_model(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Provide acces to cs_glob_turb_les_model
+ * \brief Provide access to cs_glob_turb_les_model
  *
  * needed to initialize structure with GUI
  */

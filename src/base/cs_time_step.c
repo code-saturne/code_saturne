@@ -395,7 +395,7 @@ _update_kahan_compensation(double  *a,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Provide acces to cs_glob_time_step
+ * \brief Provide access to cs_glob_time_step
  *
  * needed to initialize structure with GUI
  *----------------------------------------------------------------------------*/
@@ -408,7 +408,7 @@ cs_get_glob_time_step(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Provide acces to cs_glob_time_step_options
+ * \brief Provide access to cs_glob_time_step_options
  *
  * needed to initialize structure with GUI
  *----------------------------------------------------------------------------*/

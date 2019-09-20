@@ -517,7 +517,7 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
 
 /*----------------------------------------------------------------------------
  *!
- * \brief Provide acces to cs_glob_physical_constants
+ * \brief Provide access to cs_glob_physical_constants
  *
  * needed to initialize structure with GUI
  *----------------------------------------------------------------------------*/
@@ -530,7 +530,7 @@ cs_get_glob_physical_constants(void)
 
 /*----------------------------------------------------------------------------
  *!
- * \brief Provide acces to cs_glob_fluid_properties
+ * \brief Provide access to cs_glob_fluid_properties
  *
  * needed to initialize structure with GUI
  *----------------------------------------------------------------------------*/

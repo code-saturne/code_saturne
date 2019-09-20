@@ -338,7 +338,7 @@ extern const double cs_turb_cthdfm;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Provide acces to cs_glob_turb_model
+ * Provide access to cs_glob_turb_model
  *
  * needed to initialize structure with GUI
  *----------------------------------------------------------------------------*/
@@ -355,7 +355,7 @@ void
 cs_turb_compute_constants(void);
 
 /*----------------------------------------------------------------------------
- * Provide acces to cs_glob_turb_ref_values
+ * Provide access to cs_glob_turb_ref_values
  *
  * needed to initialize structure with GUI
  *----------------------------------------------------------------------------*/
@@ -364,7 +364,7 @@ cs_turb_ref_values_t *
 cs_get_glob_turb_ref_values(void);
 
 /*----------------------------------------------------------------------------
- * Provide acces to cs_glob_turb_rans_model
+ * Provide access to cs_glob_turb_rans_model
  *
  * needed to initialize structure with GUI
  *----------------------------------------------------------------------------*/
@@ -373,7 +373,7 @@ cs_turb_rans_model_t *
 cs_get_glob_turb_rans_model(void);
 
 /*----------------------------------------------------------------------------
- * Provide acces to cs_glob_turb_les_model
+ * Provide access to cs_glob_turb_les_model
  *
  * needed to initialize structure with GUI
  *----------------------------------------------------------------------------*/

@@ -92,7 +92,7 @@ def process_cmd_line(argv, pkg):
 
     parser.add_option("--id-prefix", dest="id_prefix", type="string",
                       metavar="<prefix>",
-                      help="prefix the run id with the given tring")
+                      help="prefix the run id with the given string")
 
     parser.add_option("--id-suffix", dest="id_suffix", type="string",
                       metavar="<suffix>",
@@ -343,4 +343,3 @@ if __name__ == '__main__':
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------
-

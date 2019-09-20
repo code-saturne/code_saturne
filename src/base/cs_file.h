@@ -133,7 +133,7 @@ extern const char  *cs_file_mpi_positionning_name[];
  *
  * parameters:
  *   name       <-- file name
- *   mode       <-- file acces mode: read, write, or append
+ *   mode       <-- file access mode: read, write, or append
  *   method     <-- file access method
  *   hints      <-- associated hints for MPI-IO, or MPI_INFO_NULL
  *   block_comm <-- handle to MPI communicator used for distributed file
@@ -174,7 +174,7 @@ cs_file_open(const char        *name,
  *
  * parameters:
  *   name    <-- file name
- *   mode    <-- file acces mode: read, write, or append
+ *   mode    <-- file access mode: read, write, or append
  *
  * returns:
  *   pointer to cs_file_t file descriptor (NULL in case of failure);
@@ -194,7 +194,7 @@ cs_file_open_default(const char        *name,
  * modified by cs_file_set_swap_endian().
  *
  * \param[in]  name   file name
- * \param[in]  mode   file acces mode: read, write, or append
+ * \param[in]  mode   file access mode: read, write, or append
  *
  * \return pointer to cs_file_t file descriptor (NULL in case of failure);
  *   currently, errors are fatal.

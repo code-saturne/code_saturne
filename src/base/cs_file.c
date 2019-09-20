@@ -1192,7 +1192,7 @@ _mpi_io_error_message
  *
  * parameters:
  *   f     <-- pointer to file handler
- *   mode  <-- file acces mode: read, write, or append
+ *   mode  <-- file access mode: read, write, or append
  *
  * returns:
  *   MPI_SUCCESS in case of success, MPI error code in case of failure
@@ -1772,7 +1772,7 @@ _cs_file_compare_names(const void  *a,
  * modified by cs_file_set_swap_endian().
  *
  * \param[in]  name    file name
- * \param[in]  mode    file acces mode: read, write, or append
+ * \param[in]  mode    file access mode: read, write, or append
  * \param[in]  method  file access method (currently only C standard-IO when
  *                     built without MPI)
  *
@@ -1896,7 +1896,7 @@ cs_file_open(const char        *name,
  * modified by cs_file_set_swap_endian().
  *
  * \param[in]  name   file name
- * \param[in]  mode   file acces mode: read, write, or append
+ * \param[in]  mode   file access mode: read, write, or append
  *
  * \return pointer to cs_file_t file descriptor (NULL in case of failure);
  *   currently, errors are fatal.
@@ -1950,7 +1950,7 @@ cs_file_open_default(const char      *name,
  * modified by cs_file_set_swap_endian().
  *
  * \param[in]  name   file name
- * \param[in]  mode   file acces mode: read, write, or append
+ * \param[in]  mode   file access mode: read, write, or append
  *
  * \return pointer to cs_file_t file descriptor (NULL in case of failure);
  *   currently, errors are fatal.

@@ -224,7 +224,7 @@ cs_thermal_model_field(void)
 
 /*----------------------------------------------------------------------------
  *!
- * \brief Provide acces to cs_glob_thermal_model
+ * \brief Provide access to cs_glob_thermal_model
  *
  * needed to initialize structure with GUI
  *----------------------------------------------------------------------------*/

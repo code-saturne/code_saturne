@@ -291,7 +291,7 @@ cs_get_glob_space_disc(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Provide acces to cs_glob_piso
+ * \brief Provide access to cs_glob_piso
  *
  * needed to initialize structure with GUI and user C functions.
  *

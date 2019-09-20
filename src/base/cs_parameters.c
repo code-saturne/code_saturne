@@ -81,7 +81,7 @@ BEGIN_C_DECLS
 /*!
   \enum cs_parameter_error_behavior_t
 
-  \brief File acces modes
+  \brief File access modes
 
   \var CS_WARNING
        Warn only
@@ -850,7 +850,7 @@ cs_f_piso_get_pointers(int     **nterup,
 
 /*----------------------------------------------------------------------------
  *!
- * \brief Provide acces to cs_glob_space_disc.
+ * \brief Provide access to cs_glob_space_disc.
  *
  * Needed to initialize structure with GUI and user C functions.
  *
@@ -866,7 +866,7 @@ cs_get_glob_space_disc(void)
 
 /*----------------------------------------------------------------------------
  *!
- * \brief Provide acces to cs_glob_piso.
+ * \brief Provide access to cs_glob_piso.
  *
  * Needed to initialize structure with GUI.
  *

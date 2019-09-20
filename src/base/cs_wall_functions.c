@@ -271,7 +271,7 @@ void CS_PROCF (hturbp, HTURBP)
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- *! \brief Provide acces to cs_glob_wall_functions
+ *! \brief Provide access to cs_glob_wall_functions
  *
  * needed to initialize structure with GUI
  *----------------------------------------------------------------------------*/

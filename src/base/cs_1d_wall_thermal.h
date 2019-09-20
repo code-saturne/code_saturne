@@ -228,7 +228,7 @@ cs_1d_wall_thermal_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Provide acces to cs_glob_1d_wall_thermal.
+ * \brief Provide access to cs_glob_1d_wall_thermal.
  */
 /*----------------------------------------------------------------------------*/
 

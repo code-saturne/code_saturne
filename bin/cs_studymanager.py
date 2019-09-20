@@ -57,7 +57,7 @@ except Exception: # email version 4.0 (Python2 from Python 2.5)
 # Do not import studymanager yet, as it pulls Python packages such as
 # matplotlib which may not be in the standard path, and may need
 # sourcing of a specific environment (which itself is delayed in case
-# the main and coputation packages are not the same).
+# the main and computation packages are not the same).
 
 #-------------------------------------------------------------------------------
 # Processes the passed command line arguments

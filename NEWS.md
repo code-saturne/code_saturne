@@ -527,7 +527,7 @@ Architectural changes:
 
 - Use matrix assembler instead of matrix extension function for
   internal coupling, to allow for a broader range of linear system
-  solvers and preconditionners.
+  solvers and preconditioners.
 
 - Add "Melissa" type writers for coupling with in-situ statistics
   Melissa server.

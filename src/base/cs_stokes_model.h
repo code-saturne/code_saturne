@@ -130,7 +130,7 @@ extern const cs_stokes_model_t  *cs_glob_stokes_model;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Provide acces to cs_glob_stokes_model
+ * Provide access to cs_glob_stokes_model
  *
  * needed to initialize structure with GUI
  *----------------------------------------------------------------------------*/

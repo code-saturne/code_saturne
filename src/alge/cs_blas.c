@@ -1655,7 +1655,7 @@ cs_gdot(cs_lnum_t         n,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Return the global residual of 2 extensive vectors:
- *        1/sum(vol) . sum(X.Y/vol)
+ *        1/sum(vol) . sum(X.Y.vol)
  *
  * In parallel mode, the local results are summed on the default
  * global communicator.

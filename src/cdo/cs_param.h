@@ -393,7 +393,7 @@ typedef enum {
 /*!
  * \enum cs_param_amg_type_t
  * Type of AMG (Algebraic MultiGrid) algorithm to use (either as a
- * preconditionnerwith or a solver).
+ * preconditioner with or a solver).
  */
 
 typedef enum {
@@ -410,7 +410,7 @@ typedef enum {
 
 /*!
  * \enum cs_param_precond_type_t
- * Type of preconditionner to use with the iterative solver. Some
+ * Type of preconditioner to use with the iterative solver. Some
  * preconditionners as \ref CS_PARAM_PRECOND_ILU0, \ref CS_PARAM_PRECOND_ICC0,
  * \ref CS_PARAM_PRECOND_AS and \ref CS_PARAM_PRECOND_AMG_BLOCK are available
  * only with the PETSc interface.

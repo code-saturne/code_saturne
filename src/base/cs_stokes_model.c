@@ -352,7 +352,7 @@ cs_f_stokes_options_get_pointers(int     **ivisse,
 
 /*----------------------------------------------------------------------------
  *!
- * \brief Provide acces to cs_glob_stokes_model
+ * \brief Provide access to cs_glob_stokes_model
  *
  * needed to initialize structure with GUI
  *----------------------------------------------------------------------------*/
