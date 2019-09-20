@@ -168,7 +168,6 @@ do iel = 1, ncel
   ! law: rho = P / ( R_mixture * T_mixture(K) )
 
   if (idilat.eq.0) then
-    call field_get_val_s_by_name("thermal_expansion", cpro_beta)
     crom(iel) = ro0
     ! "delta rho = - beta rho0 delta theta" gives
     ! "beta = 1 / theta"
