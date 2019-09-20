@@ -982,13 +982,13 @@ cs_equation_set_vertex_bc_flag(const cs_cdo_connect_t     *connect,
   if (cs_glob_n_ranks > 1) { /* Parallel mode */
 
     assert(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL] != NULL);
+    cs_interface_set_inclusive_or(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+                                  n_vertices,
+                                  1,             /* stride */
+                                  false,         /* interlace */
+                                  CS_FLAG_TYPE,  /* unsigned short int */
+                                  vflag);
 
-    cs_interface_set_max(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
-                         n_vertices,
-                         1,             /* stride */
-                         false,         /* interlace (not useful here) */
-                         CS_FLAG_TYPE,  /* unsigned short int */
-                         vflag);
 
   }
 }
