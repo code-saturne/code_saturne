@@ -35,7 +35,6 @@
 
 ### End of section.
 
-
 ### Section for Code_Saturne distant installations.
 #
 [distant_hosts]
@@ -45,7 +44,6 @@
 ### distant installation paths
 
 ### End of section.
-
 
 ### Section for Code_Saturne run customizations.
 

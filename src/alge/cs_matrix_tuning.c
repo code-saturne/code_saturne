@@ -282,7 +282,7 @@ _matrix_tune_spmv_select(const cs_matrix_t    *m,
   for (int i = 1; i < n_variants; i++) {
     for (int j = 0; j < 2; j++) {
       if (    spmv_cost[i*2 + j] > 0
-	  && (spmv_cost[i*2 + j] < spmv_cost[min_c[j]*2 + j]))
+          && (spmv_cost[i*2 + j] < spmv_cost[min_c[j]*2 + j]))
         min_c[j] = i;
     }
   }
