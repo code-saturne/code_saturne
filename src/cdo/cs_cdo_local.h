@@ -310,6 +310,30 @@ cs_cell_mesh_get_v(const cs_lnum_t              v_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Retrieve the edge id in the cellwise numbering associated to the
+ *          given edge id in the mesh numbering
+ *
+ * \param[in]       e_id    vertex id in the mesh numbering
+ * \param[in]       cm      pointer to a cs_cell_mesh_t structure
+ *
+ * \return the edge id in the cell numbering or -1 if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline short int
+cs_cell_mesh_get_e(const cs_lnum_t              e_id,
+                   const cs_cell_mesh_t  *const cm)
+{
+  if (cm == NULL)
+    return -1;
+  for (short int e = 0; e < cm->n_ec; e++)
+    if (cm->e_ids[e] == e_id)
+      return e;
+  return -1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Retrieve the face id in the cellwise numbering associated to the
  *          given face id in the mesh numbering
  *
