@@ -47,7 +47,7 @@ Document.png \
 EditableDocument.png \
 EditFile.png \
 Executable.png \
-file-transfer.png \
+file_transfer.png \
 Folder.png \
 FolderRed.png \
 InfoCFDSTUDY.png \
