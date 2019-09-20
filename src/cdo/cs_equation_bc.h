@@ -257,6 +257,23 @@ cs_equation_set_vertex_bc_flag(const cs_cdo_connect_t     *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Define an array of flags for each edge collecting the flags
+ *          of associated boundary faces
+ *
+ * \param[in]      connect     pointer to a \ref cs_cdo_connect_t struct.
+ * \param[in]      face_bc     pointer to a structure collecting boundary
+ *                             conditions applied to faces
+ * \param[in, out] edge_flag   BC flag on edges to define
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_edge_bc_flag(const cs_cdo_connect_t     *connect,
+                             const cs_cdo_bc_face_t     *face_bc,
+                             cs_flag_t                  *edge_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Compute the values of the Neumann BCs when DoFs are scalar-valued
  *          and attached to vertices.
  *

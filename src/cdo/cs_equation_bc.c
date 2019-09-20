@@ -989,6 +989,68 @@ cs_equation_set_vertex_bc_flag(const cs_cdo_connect_t     *connect,
                                   CS_FLAG_TYPE,  /* unsigned short int */
                                   vflag);
 
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Define an array of flags for each edge collecting the flags
+ *          of associated boundary faces
+ *
+ * \param[in]      connect     pointer to a \ref cs_cdo_connect_t struct.
+ * \param[in]      face_bc     pointer to a structure collecting boundary
+ *                             conditions applied to faces
+ * \param[in, out] edge_flag   BC flag on edges to define
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_edge_bc_flag(const cs_cdo_connect_t     *connect,
+                             const cs_cdo_bc_face_t     *face_bc,
+                             cs_flag_t                  *edge_flag)
+{
+  if (edge_flag == NULL)
+    return;
+
+  const cs_adjacency_t  *f2e = connect->f2e;
+  const cs_lnum_t  n_edges = connect->n_edges;
+  const cs_lnum_t  n_i_faces = connect->n_faces[CS_INT_FACES];
+  const cs_lnum_t  n_faces = connect->n_faces[CS_ALL_FACES];
+
+  /* Initialization */
+  memset(edge_flag, 0, n_edges*sizeof(cs_flag_t));
+
+  for (cs_lnum_t bf_id = 0, f_id = n_i_faces; f_id < n_faces;
+       f_id++, bf_id++) {
+
+    const cs_flag_t  bc_flag = face_bc->flag[bf_id];
+    for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
+      edge_flag[f2e->ids[j]] |= bc_flag;
+    }
+
+  } /* Loop on border faces */
+
+#if defined(DEBUG) && !defined(NDEBUG)
+  for (cs_lnum_t bf_id = n_i_faces; bf_id < n_faces; bf_id++) {
+    for (cs_lnum_t j = f2e->idx[bf_id]; j < f2e->idx[bf_id+1]; j++) {
+      const cs_lnum_t e_id = f2e->ids[j];
+      if (edge_flag[e_id] == 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Border edge %d without any boundary conditions.",
+                  __func__, e_id);
+    }
+  } /* Loop on border faces */
+#endif
+
+  if (cs_glob_n_ranks > 1) { /* Parallel mode */
+
+    assert(connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL] != NULL);
+    cs_interface_set_inclusive_or(connect->interfaces[CS_CDO_CONNECT_EDGE_SCAL],
+                                  n_edges,
+                                  1,             /* stride */
+                                  false,         /* interlace */
+                                  CS_FLAG_TYPE,  /* unsigned short int */
+                                  edge_flag);
 
   }
 }

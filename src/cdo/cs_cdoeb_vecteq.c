@@ -187,6 +187,22 @@ _eb_init_cell_system(cs_real_t                            t_eval,
 
   }
 
+  /* Special case to handle if enforcement by penalization or algebraic
+   * This situation may happen with a tetrahedron with an edge
+   * lying on the boundary (but no face)
+   */
+  if ((cell_flag & CS_FLAG_BOUNDARY_CELL_BY_EDGE)) {
+
+    for (short int e = 0; e < cm->n_ec; e++) {
+      csys->dof_flag[e] = eqc->edge_bc_flag[cm->e_ids[e]];
+      if (cs_cdo_bc_is_circulation(csys->dof_flag[e])) {
+        csys->has_dirichlet = true;
+        csys->dir_values[e] = edge_bc_values[cm->e_ids[e]];
+      }
+    }
+
+  }
+
   /* Set the properties for this cell if not uniform */
   cs_equation_init_properties_cw(eqp, eqb, t_eval, cell_flag, cm, cb);
 
@@ -609,6 +625,9 @@ cs_cdoeb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   /* Essential boundary condition enforcement. The circulation along boundary
    * edges has the same behavior as enforcing a Dirichlet BC */
+  BFT_MALLOC(eqc->edge_bc_flag, n_edges, cs_flag_t);
+  cs_equation_set_edge_bc_flag(connect, eqb->face_bc, eqc->edge_bc_flag);
+
   eqc->enforce_essential_bc = NULL;
   switch (eqp->default_enforcement) {
 
@@ -679,6 +698,7 @@ cs_cdoeb_vecteq_free_context(void   *builder)
   if (eqc == NULL)
     return eqc;
 
+  BFT_FREE(eqc->edge_bc_flag);
   BFT_FREE(eqc->source_terms);
   BFT_FREE(eqc->edge_values);
   if (eqc->edge_values_pre != NULL)

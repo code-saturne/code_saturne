@@ -80,6 +80,7 @@ struct _cs_cdoeb_t {
   cs_equation_assembly_t   *assemble;
 
   /* Boundary conditions */
+  cs_flag_t                *edge_bc_flag;
   cs_cdo_enforce_bc_t      *enforce_essential_bc;
 
   /* Pointer of function to build the diffusion term */
