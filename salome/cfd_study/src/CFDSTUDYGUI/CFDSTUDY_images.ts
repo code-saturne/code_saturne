@@ -202,9 +202,5 @@
             <source>SOLVER_SAVE_ACTION_ICON</source>
             <translation>Save.png</translation>
         </message>
-        <message>
-            <source>SOLVER_SAVEAS_ACTION_ICON</source>
-            <translation>SaveAs.png</translation>
-        </message>
     </context>
 </TS>

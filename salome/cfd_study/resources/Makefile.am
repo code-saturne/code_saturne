@@ -63,7 +63,6 @@ MoveFolder.png \
 NewTreeCreate.png \
 OpenedFolder.png \
 RunScript.png \
-SaveAs.png \
 Save.png \
 SetTreeLocation.png \
 SMESH_Module_Export.png \
