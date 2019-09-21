@@ -429,22 +429,47 @@ cs_stokes_model_log_setup(void)
        "                                    terms, and head losses\n"
        "                                  2: compute a hydrostatic\n"
        "                                     pressure which is\n"
-       "                                     in balance with buoyancy)\n"
-       "    icalhy:      %14d (1: compute hydrostatic\n"
-       "                                    pressure for dirichlet\n"
-       "                                    conditions for pressure\n"
-       "                                    on outlet)\n"
-       "    iprco :      %14d (1: pressure-continuity)\n"
+       "                                     in balance with buoyancy)\n"),
+     cs_glob_stokes_model->idilat,
+     cs_glob_porous_model,
+     cs_glob_stokes_model->iphydr);
+
+  /* Sub options of "iphydr=1" */
+  if (cs_glob_stokes_model->iphydr == 1) {
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("      icalhy:    %14d (1: compute hydrostatic\n"
+         "                                    pressure for dirichlet\n"
+         "                                    conditions for pressure\n"
+         "                                    on outlet)\n"
+         "      igpust:    %14d (1: take user momentum source\n"
+         "                                    terms into account\n"
+         "                                    in the hydrostatic\n"
+         "                                    pressure computation)\n"),
+       cs_glob_stokes_model->icalhy,
+       cs_glob_stokes_model->igpust);
+
+    if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER)
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("      igprij:    %14d (1: take div(rho R)\n"
+           "                                    terms into account\n"
+           "                                    in the hydrostatic\n"
+           "                                    pressure computation)\n"),
+         cs_glob_stokes_model->igprij);
+
+  }
+
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("    iprco :      %14d (1: pressure-continuity)\n"
        "    ipucou:      %14d (1: reinforced u-p coupling)\n"
        "    nterup:      %14d (n: n sweeps on navsto for\n"
        "                                    velocity/pressure coupling)\n"),
-     cs_glob_stokes_model->idilat,
-     cs_glob_porous_model,
-     cs_glob_stokes_model->iphydr,
-     cs_glob_stokes_model->icalhy,
      cs_glob_stokes_model->iprco,
      cs_glob_stokes_model->ipucou,
      cs_glob_piso->nterup);
+
 
   cs_log_printf
     (CS_LOG_SETUP,
