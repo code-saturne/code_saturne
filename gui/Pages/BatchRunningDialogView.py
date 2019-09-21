@@ -778,14 +778,8 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         cmd = None
         run_title = None
 
-        run_id = self.jmdl.dictValues['run_id']
-
         if rm_type == None:
-            if not run_id:
-                tmp_run_id, run_title = self.__suggest_run_id()
-                self.__updateRuncase(tmp_run_id)
-            else:
-                run_title = self.case['package'].code_name + run_id
+            run_title = self.case['package'].code_name + ' - Job Run'
             cmd = cs_exec_environment.enquote_arg(batch)
         else:
             run_title = self.case['package'].code_name + ' - Job Submission'
@@ -794,9 +788,6 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
 
         dlg = ListingDialogView(self.parent, self.case, run_title, cmd)
         dlg.show()
-
-        if rm_type == None and not run_id:
-            self.__updateRuncase('')  # remove --id <id> from runcase
 
         os.chdir(prv_dir)
 
@@ -847,39 +838,6 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
             self.log_parallel = True
         else:
             self.log_parallel = False
-
-
-    def __suggest_run_id(self):
-        """
-        Return an id.
-        """
-        cmd = os.path.join(self.case['package'].get_dir('bindir'),
-                           self.case['package'].name)
-        cmd = cs_exec_environment.enquote_arg(cmd) + " run --suggest-id"
-        xmlfile = self.case['xmlfile']
-        if xmlfile:
-            cmd += " --param " + cs_exec_environment.enquote_arg(xmlfile)
-
-        r_title = subprocess.Popen(cmd,
-                                   shell=True,
-                                   stdout=subprocess.PIPE,
-                                   universal_newlines=True).stdout.read()[:-1]
-        r_id = os.path.join(self.case['resu_path'], r_title)
-
-        run_id = r_id
-        run_title = r_title
-
-        return os.path.basename(run_id), run_title
-
-
-    def __updateRuncase(self, run_id):
-        """
-        Update the command line in the launcher C{runcase}.
-        """
-        runcase = self.case['runcase']
-
-        runcase.set_run_id(run_id=run_id)
-        runcase.save()
 
 
     def hideBatchInfo(self):
