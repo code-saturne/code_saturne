@@ -605,7 +605,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
         # Undo action
         action = sgPyQt.createAction(-1, "Undo", "Undo", "Undo", \
-                                      ObjectTR.tr("UNDO_CFD_GUI_ACTION_ICON"))
+                                     ObjectTR.tr("UNDO_CFD_GUI_ACTION_ICON"))
         sgPyQt.createTool(action, tool_id)
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
@@ -658,55 +658,64 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
 
         # Management for User files (SRC, Logs, transfer to clusters)
         action = sgPyQt.createSeparator()
+        sgPyQt.createMenu(action, menu_id)
         sgPyQt.createTool(action, tool_id)
 
         # SRC EDITOR
-        action_id = sgPyQt.createAction(-1,
-                                        ObjectTR.tr("SOLVER_EDITOR_ACTION_TEXT"),\
-                                        ObjectTR.tr("SOLVER_EDITOR_ACTION_TIP"),\
-                                        ObjectTR.tr("SOLVER_EDITOR_ACTION_SB"),\
-                                        ObjectTR.tr("CFDSTUDY_FILE_EDITOR_OBJ_ICON"))
+        action = sgPyQt.createAction(-1,
+                                     ObjectTR.tr("SOLVER_EDITOR_ACTION_TEXT"),
+                                     ObjectTR.tr("SOLVER_EDITOR_ACTION_TIP"),
+                                     ObjectTR.tr("SOLVER_EDITOR_ACTION_SB"),
+                                     ObjectTR.tr("CFDSTUDY_FILE_EDITOR_OBJ_ICON"))
         sgPyQt.createTool(action, tool_id)
-        action_id = sgPyQt.action(action)
-        self._ActionMap[action_id] = action
-        self._SolverActionIdMap[SolverEditSRCFiles] = action_id
+        sgPyQt.createMenu(action, self._SolverActionIdMap[SolverToolsMenu], 100)
         action.triggered.connect(self.slotEditSRCFiles)
 
-        # SRC COMPILER
-        action_id = sgPyQt.createAction(-1,
-                                        ObjectTR.tr("SOLVER_COMPILER_ACTION_TEXT"),\
-                                        ObjectTR.tr("SOLVER_COMPILER_ACTION_TIP"),\
-                                        ObjectTR.tr("SOLVER_COMPILER_ACTION_SB"),\
-                                        ObjectTR.tr("CFDSTUDY_COMPILER_OBJ_ICON"))
-        sgPyQt.createTool(action, tool_id)
-        action_id = sgPyQt.action(action)
+        action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
-        self._SolverActionIdMap[SolverCompileSRCFiles] = action_id
+        self._SolverActionIdMap[SolverEditSRCFiles] = action_id
+
+        # SRC COMPILER
+        action = sgPyQt.createAction(-1,
+                                     ObjectTR.tr("SOLVER_COMPILER_ACTION_TEXT"),
+                                     ObjectTR.tr("SOLVER_COMPILER_ACTION_TIP"),
+                                     ObjectTR.tr("SOLVER_COMPILER_ACTION_SB"),
+                                     ObjectTR.tr("CFDSTUDY_COMPILER_OBJ_ICON"))
+        sgPyQt.createTool(action, tool_id)
+        sgPyQt.createMenu(action, self._SolverActionIdMap[SolverToolsMenu])
         action.triggered.connect(self.slotCheckUsersCompilation)
 
-        # LOG VIEWER
-        action_id = sgPyQt.createAction(-1,
-                                        ObjectTR.tr("SOLVER_LOGVIEWER_ACTION_TEXT"),\
-                                        ObjectTR.tr("SOLVER_LOGVIEWER_ACTION_TIP"),\
-                                        ObjectTR.tr("SOLVER_LOGVIEWER_ACTION_SB"),\
-                                        ObjectTR.tr("CFDSTUDY_FILE_VIEWER_OBJ_ICON"))
-        sgPyQt.createTool(action, tool_id)
-        action_id = sgPyQt.action(action)
+        action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
-        self._SolverActionIdMap[SolverViewLogFiles] = action_id
+        self._SolverActionIdMap[SolverCompileSRCFiles] = action_id
+
+        # LOG VIEWER
+        action = sgPyQt.createAction(-1,
+                                     ObjectTR.tr("SOLVER_LOGVIEWER_ACTION_TEXT"),
+                                     ObjectTR.tr("SOLVER_LOGVIEWER_ACTION_TIP"),
+                                     ObjectTR.tr("SOLVER_LOGVIEWER_ACTION_SB"),
+                                     ObjectTR.tr("CFDSTUDY_FILE_VIEWER_OBJ_ICON"))
+        sgPyQt.createTool(action, tool_id)
+        sgPyQt.createMenu(action, self._SolverActionIdMap[SolverToolsMenu])
         action.triggered.connect(self.slotViewLogFiles)
 
+        action_id = sgPyQt.actionId(action)
+        self._ActionMap[action_id] = action
+        self._SolverActionIdMap[SolverViewLogFiles] = action_id
+
         # FILE TRANSFER
-        action_id = sgPyQt.createAction(-1,
-                                        ObjectTR.tr("SOLVER_FILETRANSFER_ACTION_TEXT"),\
-                                        ObjectTR.tr("SOLVER_FILETRANSFER_ACTION_TIP"),\
-                                        ObjectTR.tr("SOLVER_FILETRANSFER_ACTION_SB"),\
-                                        ObjectTR.tr("CFDSTUDY_FILE_TRANSFER_OBJ_ICON"))
+        action = sgPyQt.createAction(-1,
+                                     ObjectTR.tr("SOLVER_FILETRANSFER_ACTION_TEXT"),
+                                     ObjectTR.tr("SOLVER_FILETRANSFER_ACTION_TIP"),
+                                     ObjectTR.tr("SOLVER_FILETRANSFER_ACTION_SB"),
+                                     ObjectTR.tr("CFDSTUDY_FILE_TRANSFER_OBJ_ICON"))
         sgPyQt.createTool(action, tool_id)
-        action_id = sgPyQt.action(action)
+        sgPyQt.createMenu(action, self._SolverActionIdMap[SolverToolsMenu])
+        action.triggered.connect(self.slotFileTransfer)
+
+        action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
         self._SolverActionIdMap[SolverFileTransfer] = action_id
-        action.triggered.connect(self.slotFileTransfer)
 
         #for auto hide last separator in tools menu
         self._HelpActionIdMap[0] = action_id
@@ -2191,21 +2200,21 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         """
         Manage and edit user SRC files of the currently open CASE.
         """
-        self._SolverGUI.fileEditorOpen()
+        self._SolverGUI.onEditSRCFiles()
 
 
     def slotViewLogFiles(self):
         """
         View log files of the currently open CASE.
         """
-        self._SolverGUI.fileViewerOpen()
+        self._SolverGUI.onViewLogFiles()
 
 
     def slotCheckUsersCompilation(self):
         """
         Test compilation of user SRC files.
         """
-        self._SolverGUI.testUserFilesCompilation()
+        self._SolverGUI.onCheckSRCFiles()
 
 
     def slotFileTransfer(self):

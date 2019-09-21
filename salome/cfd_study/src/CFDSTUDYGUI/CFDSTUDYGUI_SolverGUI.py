@@ -275,6 +275,21 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             self._CurrentWindow.displayCase()
 
 
+    def onEditSRCFiles(self):
+        if self._CurrentWindow != None:
+            self._CurrentWindow.fileEditorOpen()
+
+
+    def onCheckSRCFiles(self):
+        if self._CurrentWindow != None:
+            self._CurrentWindow.testUserFilesCompilation()
+
+
+    def onViewLogFiles(self):
+        if self._CurrentWindow != None:
+            self._CurrentWindow.fileViewerOpen()
+
+
     def onHelpAbout(self):
         if self._CurrentWindow != None:
             self._CurrentWindow.displayAbout()
