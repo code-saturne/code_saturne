@@ -71,6 +71,15 @@ def main(argv, pkg):
     Main function.
     """
 
+    # Save PYTHONPATH as CS_SALOME_TOP_PYTHONPATH to avoid issues
+    # with launch of code due to PYTHONPATH with extra (cumulative) entries
+    # encountered with Python 3.6 (i.e. post Python 3.3, with current
+    # import logic).
+    pythonpath = os.getenv('PYTHONPATH')
+    if not pythonpath:
+        pythonpath = ""
+    os.environ['CS_SALOME_TOP_PYTHONPATH'] = pythonpath
+
     template = """\
 %(salomeenv)s
 CFDSTUDY_ROOT_DIR=%(prefix)s

@@ -202,7 +202,23 @@ class ListingDialogView(CommandMgrDialogView):
         self.listing  = "listing"
         self.n_lines = 0
 
+        # When runnng under "code_saturne salome" session, we may need to
+        # work around an issue due to extra (cumulative) entries in the
+        # PYTHONPATH, so we use  value saved at session launch.
+        pythonpath_save = None
+        if self.objBr:
+            pythonpath_top = os.getenv('CS_SALOME_TOP_PYTHONPATH')
+            if pythonpath_top:
+                pythonpath_save = os.getenv('PYTHONPATHE')
+                os.environ['PYTHONPATH'] = pythonpath_top
+
+        # Start process
         self.proc.start(self.cmd)
+
+        # Now process is launched, restore environment
+        if pythonpath_save:
+            os.environ['PYTHONPATH'] = pythonpath_save
+
         self.proc.waitForFinished(100)
 
 
