@@ -86,30 +86,37 @@ BEGIN_C_DECLS
 
   \var  cs_turb_model_t::iturb
         turbulence model
-        - 0: no turbulence model (laminar flow)
-        - 10: mixing length model
-        - 20: standard \f$ k-\varepsilon \f$ model
-        - 21: \f$ k-\varepsilon \f$ model with Linear Production (LP) correction
-        - 22: Launder-Sharma \f$ k-\varepsilon \f$ model
-        - 23: Baglietto et al. quadratic \f$ k-\varepsilon \f$ model
-        - 30: \f$ R_{ij}-\epsilon \f$ (LRR)
-        - 31: \f$ R_{ij}-\epsilon \f$ (SSG)
-        - 32: \f$ R_{ij}-\epsilon \f$ (EBRSM)
-        - 40: LES (constant Smagorinsky model)
-        - 41: LES ("classical" dynamic Smagorisky model)
-        - 42: LES (WALE)
-        - 50: v2f phi-model
-        - 51: v2f \f$ BL-v^2-k \f$
-        - 60: \f$ k-\omega \f$ SST
-        - 70: Spalart-Allmaras model
+        - CS_TURB_NONE: no turbulence model (laminar flow)
+        - CS_TURB_MIXING_LENGTH: mixing length model
+        - CS_TURB_K_EPSILON: standard \f$ k-\varepsilon \f$ model
+        - CS_TURB_K_EPSILON_LIN_PROD: \f$ k-\varepsilon \f$ model with Linear Production (LP) correction
+        - CS_TURB_K_EPSILON_LS: Launder-Sharma \f$ k-\varepsilon \f$ model
+        - CS_TURB_K_EPSILON_QUAD: Baglietto et al. quadratic \f$ k-\varepsilon \f$ model
+        - CS_TURB_RIJ_EPSILON_LRR: \f$ R_{ij}-\epsilon \f$ (LRR)
+        - CS_TURB_RIJ_EPSILON_SSG: \f$ R_{ij}-\epsilon \f$ (SSG)
+        - CS_TURB_RIJ_EPSILON_EBRSM: \f$ R_{ij}-\epsilon \f$ (EBRSM)
+        - CS_TURB_LES_SMAGO_CONST: LES (constant Smagorinsky model)
+        - CS_TURB_LES_SMAGO_DYN: LES ("classical" dynamic Smagorisky model)
+        - CS_TURB_LES_WALE: LES (WALE)
+        - CS_TURB_V2F_PHI: v2f phi-model
+        - CS_TURB_V2F_BL_V2K: v2f \f$ BL-v^2-k \f$
+        - CS_TURB_K_OMEGA: \f$ k-\omega \f$ SST
+        - CS_TURB_SPALART_ALLMARAS: Spalart-Allmaras model
   \var  cs_turb_model_t::itytur
-        class of turbulence model (integer value iturb/10)
+        class of turbulence model (integer value iturb/10, deprecated)
   \var  cs_turb_model_t::hybrid_turb
         Type of hybrid turbulence model
         - 0: No model
         - 1: Detached Eddy Simulation
         - 2: Delayed Detached Eddy Simulation
         - 3: Scale Adaptive Model (Menter et al.)
+  \var  cs_turb_model_t::type
+        Type of modelling
+        - CS_TURB_NONE: No model
+        - CS_TURB_RANS: RANS
+        - CS_TURB_LES: LES
+        - CS_TURB_HYBRID: Hybrid RANS LES
+
 
 */
 /*----------------------------------------------------------------------------*/
@@ -314,7 +321,9 @@ static cs_turb_model_t  _turb_model =
 {
   .iturb  = -999,
   .itytur = -999,
-  .hybrid_turb = 0
+  .hybrid_turb = 0,
+  .type = -1,
+  .order = -1
 };
 
 const cs_turb_model_t  *cs_glob_turb_model = &_turb_model;
@@ -1159,6 +1168,48 @@ cs_f_turb_model_constants_get_pointers(double  **sigmae,
  * Public function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Provide access to global turbulence model structure cs_glob_turb_model
+ *
+ * It is needed to initialize structure with GUI.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_set_type_order_turbulence_model(void)
+{
+
+  _turb_model.type = CS_TURB_NONE;
+  if (_turb_model.iturb == CS_TURB_MIXING_LENGTH) {
+     _turb_model.type = CS_TURB_RANS;
+     _turb_model.order = CS_TURB_ALGEBRAIC;
+  }
+  else if (_turb_model.iturb == CS_TURB_K_EPSILON
+      ||   _turb_model.iturb == CS_TURB_K_EPSILON_LIN_PROD
+      ||   _turb_model.iturb == CS_TURB_K_EPSILON_LS
+      ||   _turb_model.iturb == CS_TURB_K_EPSILON_QUAD
+      ||   _turb_model.iturb == CS_TURB_V2F_PHI
+      ||   _turb_model.iturb == CS_TURB_V2F_BL_V2K
+      ||   _turb_model.iturb == CS_TURB_K_OMEGA
+      ||   _turb_model.iturb == CS_TURB_SPALART_ALLMARAS) {
+     _turb_model.type = CS_TURB_RANS;
+     _turb_model.order = CS_TURB_FIRST_ORDER;
+  }
+  else if (_turb_model.iturb == CS_TURB_RIJ_EPSILON_LRR
+      ||   _turb_model.iturb == CS_TURB_RIJ_EPSILON_SSG
+      ||   _turb_model.iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+     _turb_model.type = CS_TURB_RANS;
+     _turb_model.order = CS_TURB_SECOND_ORDER;
+  }
+  else if (_turb_model.iturb == CS_TURB_LES_SMAGO_CONST
+      ||   _turb_model.iturb == CS_TURB_LES_SMAGO_DYN
+      ||   _turb_model.iturb == CS_TURB_LES_WALE) {
+     _turb_model.type = CS_TURB_LES;
+     _turb_model.order = CS_TURB_ALGEBRAIC;
+  }
+
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1276,12 +1327,38 @@ cs_turb_model_log_setup(void)
     (CS_LOG_SETUP,
      _("\n"
        "Turbulence model options\n"
-       "------------------------\n\n"));
+       "------------------------\n\n"
+       "  Continuous phase:\n\n"));
+
+  if (cs_glob_turb_model->type == CS_TURB_RANS) {
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("    RANS modeling               (type = CS_TURB_RANS)\n"));
+  }
+  if (cs_glob_turb_model->type == CS_TURB_LES) {
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("   LES modeling                 (type = CS_TURB_LES)\n"));
+  }
+  if (cs_glob_turb_model->order == CS_TURB_ALGEBRAIC) {
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("   Algebraic model              (order = CS_TURB_ALGEBRAIC)\n"));
+  }
+  if (cs_glob_turb_model->order == CS_TURB_FIRST_ORDER) {
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("   First order model            (order = CS_TURB_FIRST_ORDER)\n"));
+  }
+  if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("   Second order model           (order = CS_TURB_SECOND_ORDER)\n"));
+  }
 
   cs_log_printf
     (CS_LOG_SETUP,
-     _("  Continuous phase:\n\n"
-       "    iturb :      %14d (Turbulence model)\n"
+     _("    iturb :      %14d (Turbulence model)\n"
        "    iwallf:      %14d (wall function)\n"
        "                                (0: disabled)\n"
        "                                (1: one scale power law\n"
@@ -1435,7 +1512,7 @@ cs_turb_model_log_setup(void)
          cs_glob_turb_rans_model->igrari,
          cs_glob_turb_rans_model->iclsyr,
          cs_glob_turb_rans_model->iclptr);
-  } else if (cs_glob_turb_model->itytur == 4) {
+  } else if (cs_glob_turb_model->type == CS_TURB_LES) {
     cs_log_printf
       (CS_LOG_SETUP,
        _("   LES                 (iturb = CS_TURB_LES_SMAGO_CONST,\n"
@@ -1567,10 +1644,8 @@ cs_turb_model_log_setup(void)
          var_cal_opt.relaxv);
   }
 
-  if (cs_glob_turb_model->itytur == 2
-   || cs_glob_turb_model->itytur == 5
-   || cs_glob_turb_model->iturb == CS_TURB_K_OMEGA
-   || cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
+  if (cs_glob_turb_model->type == CS_TURB_RANS
+   && cs_glob_turb_model->order == CS_TURB_FIRST_ORDER) {
     cs_log_printf
       (CS_LOG_SETUP,
        _("   Rotation/curvature correction\n"

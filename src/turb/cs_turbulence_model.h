@@ -69,6 +69,28 @@ enum {
 };
 
 /*----------------------------------------------------------------------------
+ * turbulence type of model
+ *----------------------------------------------------------------------------*/
+
+enum {
+/* We also use
+  CS_TURB_NONE = 0, */
+  CS_TURB_RANS = 1,
+  CS_TURB_LES = 2,
+  CS_TURB_HYBRID = 3
+};
+
+/*----------------------------------------------------------------------------
+ * turbulence order of model
+ *----------------------------------------------------------------------------*/
+
+enum {
+  CS_TURB_ALGEBRAIC = 0,
+  CS_TURB_FIRST_ORDER = 1,
+  CS_TURB_SECOND_ORDER = 2
+};
+
+/*----------------------------------------------------------------------------
  * hybrid models
  *----------------------------------------------------------------------------*/
 
@@ -113,6 +135,15 @@ typedef struct {
                                    - CS_HYBRID_DES  : Detached Eddy Simulation
                                    - CS_HYBRID_DDES : Delayed Detached Eddy Simulation
                                    - CS_HYBRID_SAM  : Scale Adaptive Model */
+  int           type;  /* Type of turbulence modelling:
+                          - CS_TURB_NONE: No model
+                          - CS_TURB_RANS: RANS modelling
+                          - CS_TURB_LES: LES modelling
+                          - CS_TURB_HYBRID: RANS -- LES modelling */
+  int           order; /* Order of the turbulence model:
+                          - CS_TURB_ALGEBRAIC: 0th order algebraik model
+                          - CS_TURB_FIRST_ORDER: 1st order Eddy Viscosity type models
+                          - CS_TURB_SECOND_ORDER: 2nd order Differential Reynolds Stress type models */
 } cs_turb_model_t;
 
 
@@ -336,6 +367,13 @@ extern const double cs_turb_cthdfm;
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Set type and order of the turbulence model
+ *----------------------------------------------------------------------------*/
+
+void
+cs_set_type_order_turbulence_model(void);
 
 /*----------------------------------------------------------------------------
  * Provide access to cs_glob_turb_model

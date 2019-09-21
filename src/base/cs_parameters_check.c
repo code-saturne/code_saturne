@@ -976,7 +976,7 @@ cs_parameters_check(void)
    * Only a warning for non standard parameters, but stop if
    * there is more than 5% of upwind.
    * Centered scheme with/without slope test, nwsrsm */
-  if (cs_glob_turb_model->itytur == 4) {
+  if (cs_glob_turb_model->type == CS_TURB_LES) {
     cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &var_cal_opt);
     f_desc = _field_section_desc(CS_F_(vel), "in LES, while reading time "
                                            "scheme parameters for variable");
@@ -1388,7 +1388,7 @@ cs_parameters_check(void)
                                 cs_glob_turb_les_model->ivrtex,
                                 0, 2);
 
-  if (   cs_glob_turb_model->itytur != 4
+  if (   cs_glob_turb_model->type != CS_TURB_LES
       && cs_glob_turb_les_model->ivrtex == 1) {
     cs_parameters_is_equal_int(CS_WARNING,
                                _("while reading input data,\n"
@@ -1551,7 +1551,7 @@ cs_parameters_check(void)
   }
 
   /* checks for RSM models */
-  if (cs_glob_turb_model->itytur == 3) {
+  if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("while reading input data"),
                                   "cs_glob_turb_rans_model->irijnu",
@@ -1600,7 +1600,7 @@ cs_parameters_check(void)
   }
 
   /* Specifique LES */
-  if (cs_glob_turb_model->itytur == 4) {
+  if (cs_glob_turb_model->type == CS_TURB_LES) {
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("while reading input data"),
                                   "cs_glob_turb_les_model->idries",
@@ -1979,11 +1979,8 @@ cs_parameters_check(void)
   /* uref is needed for automatic initialisation and boundary conditions
      of turbulence variables check that it is positive
      and warn the user if not */
-  if (   cs_glob_turb_model->itytur == 2
-      || cs_glob_turb_model->itytur == 3
-      || cs_glob_turb_model->itytur == 5
-      || cs_glob_turb_model->iturb == CS_TURB_K_OMEGA
-      || cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
+  if (   cs_glob_turb_model->type == CS_TURB_RANS
+      && cs_glob_turb_model->order == CS_TURB_FIRST_ORDER) {
     cs_parameters_is_greater_double(CS_WARNING,
                                     _("Reference velocity is used for the "
                                       "automatic initialisation and boundary "
@@ -2005,7 +2002,7 @@ cs_parameters_check(void)
   }
 
   /* LES (check also in Fortran for now because constants are duplicated) */
-  if (cs_glob_turb_model->itytur == 4) {
+  if (cs_glob_turb_model->type == CS_TURB_LES) {
     cs_parameters_is_greater_double(CS_ABORT_DELAYED,
                                     _("LES dynamic model constant"),
                                     "cs_turb_xlesfl",

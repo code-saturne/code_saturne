@@ -341,7 +341,7 @@ _inlet_bc(cs_lnum_t   face_id,
 
   }
 
-  else if (cs_glob_turb_model->itytur == 3) {
+  else if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
 
     double d2s3 = 2./3.;
     if (_turb_bc_id.rij == -1) {
@@ -363,7 +363,7 @@ _inlet_bc(cs_lnum_t   face_id,
       rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
     }
 
-    if (cs_glob_turb_model->iturb == 32)
+    if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
       rcodcl[_turb_bc_id.alp_bl*n_b_faces + face_id] = 1.;
 
     /* Initialization of the turbulent fluxes to 0 if DFM or
@@ -400,13 +400,13 @@ _inlet_bc(cs_lnum_t   face_id,
     }
 
   }
-  else if (cs_glob_turb_model->itytur == 6) {
+  else if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA) {
 
     rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
     rcodcl[_turb_bc_id.omg*n_b_faces + face_id] = eps/cs_turb_cmu/k;
 
   }
-  else if (cs_glob_turb_model->itytur == 7) {
+  else if (cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
 
     rcodcl[_turb_bc_id.nusa*n_b_faces + face_id] = cs_turb_cmu*k*k/eps;
 
@@ -441,7 +441,7 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
 
   }
 
-  else if (cs_glob_turb_model->itytur == 3) {
+  else if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
 
     double d2s3 = 2./3.;
     if (_turb_bc_id.rij == -1) {
@@ -524,7 +524,7 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
     }
 
   }
-  else if (cs_glob_turb_model->itytur == 6) {
+  else if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA) {
 
     if (rcodcl[_turb_bc_id.k  *n_b_faces + face_id] > 0.5*cs_math_infinite_r)
       rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
@@ -532,7 +532,7 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
       rcodcl[_turb_bc_id.omg*n_b_faces + face_id] = eps/cs_turb_cmu/k;
 
   }
-  else if (cs_glob_turb_model->itytur == 7) {
+  else if (cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
     if (rcodcl[_turb_bc_id.nusa*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
       rcodcl[_turb_bc_id.nusa*n_b_faces + face_id] = cs_turb_cmu*k*k/eps;
 

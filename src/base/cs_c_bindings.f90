@@ -274,6 +274,16 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Set type and order of the turbulence model
+
+    subroutine cs_set_type_order_turbulence_model()  &
+      bind(C, name='cs_set_type_order_turbulence_model')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_set_type_order_turbulence_model
+
+    !---------------------------------------------------------------------------
+
     !> \brief Compute filters for dynamic models.
 
 

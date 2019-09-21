@@ -55,6 +55,7 @@
 #include "cs_physical_model.h"
 #include "cs_mesh_location.h"
 #include "cs_time_step.h"
+#include "cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file

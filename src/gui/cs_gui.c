@@ -1583,62 +1583,62 @@ void cs_gui_turb_model(void)
   cs_turb_rans_model_t *rans_mdl = cs_get_glob_turb_rans_model();
 
   if (cs_gui_strcmp(model, "off"))
-    turb_mdl->iturb = 0;
+    turb_mdl->iturb = CS_TURB_NONE;
   else if (cs_gui_strcmp(model, "mixing_length")) {
-    turb_mdl->iturb = 10;
+    turb_mdl->iturb = CS_TURB_MIXING_LENGTH;
     cs_gui_node_get_child_real(tn_t, "mixing_length_scale", &(rans_mdl->xlomlg));
   }
   else if (cs_gui_strcmp(model, "k-epsilon")) {
-    turb_mdl->iturb = 20;
+    turb_mdl->iturb = CS_TURB_K_EPSILON;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
     cs_gui_node_get_child_status_int(tn_t, "gravity_terms", &(rans_mdl->igrake));
   }
   else if (cs_gui_strcmp(model, "k-epsilon-PL")) {
-    turb_mdl->iturb = 21;
+    turb_mdl->iturb = CS_TURB_K_EPSILON_LIN_PROD;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
     cs_gui_node_get_child_status_int(tn_t, "gravity_terms", &(rans_mdl->igrake));
   }
   else if (cs_gui_strcmp(model, "Rij-epsilon")) {
-    turb_mdl->iturb = 30;
+    turb_mdl->iturb = CS_TURB_RIJ_EPSILON_LRR;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
     cs_gui_node_get_child_status_int(tn_t, "gravity_terms", &(rans_mdl->igrari));
   }
   else if (cs_gui_strcmp(model, "Rij-SSG")) {
-    turb_mdl->iturb = 31;
+    turb_mdl->iturb = CS_TURB_RIJ_EPSILON_SSG;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
     cs_gui_node_get_child_status_int(tn_t, "gravity_terms", &(rans_mdl->igrari));
   }
   else if (cs_gui_strcmp(model, "Rij-EBRSM")) {
-    turb_mdl->iturb = 32;
+    turb_mdl->iturb = CS_TURB_RIJ_EPSILON_EBRSM;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
     cs_gui_node_get_child_status_int(tn_t, "gravity_terms", &(rans_mdl->igrari));
   }
   else if (cs_gui_strcmp(model, "LES_Smagorinsky")) {
-    turb_mdl->iturb = 40;
+    turb_mdl->iturb = CS_TURB_LES_SMAGO_CONST;
   }
   else if (cs_gui_strcmp(model, "LES_dynamique")) {
-    turb_mdl->iturb = 41;
+    turb_mdl->iturb = CS_TURB_LES_SMAGO_DYN;
   }
   else if (cs_gui_strcmp(model, "LES_WALE")) {
-    turb_mdl->iturb = 42;
+    turb_mdl->iturb = CS_TURB_LES_WALE;
   }
   else if (cs_gui_strcmp(model, "v2f-phi")) {
-    turb_mdl->iturb = 50;
+    turb_mdl->iturb = CS_TURB_V2F_PHI;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
     cs_gui_node_get_child_status_int(tn_t, "gravity_terms", &(rans_mdl->igrake));
   }
   else if (cs_gui_strcmp(model, "v2f-BL-v2/k")) {
-    turb_mdl->iturb = 51;
+    turb_mdl->iturb = CS_TURB_V2F_BL_V2K;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
     cs_gui_node_get_child_status_int(tn_t, "gravity_terms", &(rans_mdl->igrake));
   }
   else if (cs_gui_strcmp(model, "k-omega-SST")) {
-    turb_mdl->iturb = 60;
+    turb_mdl->iturb = CS_TURB_K_OMEGA;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
     cs_gui_node_get_child_status_int(tn_t, "gravity_terms", &(rans_mdl->igrake));
   }
   else if (cs_gui_strcmp(model, "Spalart-Allmaras")) {
-    turb_mdl->iturb = 70;
+    turb_mdl->iturb = CS_TURB_SPALART_ALLMARAS;
   }
   else
     bft_error(__FILE__, __LINE__, 0,
@@ -2334,7 +2334,7 @@ void CS_PROCF (cssca2, CSSCA2) (int        *iturt)
           cs_field_set_key_double(f, kscmin, scal_min);
           cs_field_set_key_double(f, kscmax, scal_max);
 
-          if (cs_glob_turb_model->itytur == 3) {
+          if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
             int turb_mdl;
             _variable_turbulent_flux_model(tn_v, &turb_mdl);
             iturt[i] = turb_mdl;
@@ -2369,7 +2369,7 @@ void CS_PROCF (cssca2, CSSCA2) (int        *iturt)
     cs_field_set_key_double(f, kscmax, scal_max);
     int i = cs_field_get_key_int(f, keysca) - 1;
 
-    if (cs_glob_turb_model->itytur == 3) {
+    if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
       _variable_turbulent_flux_model(tn_v, &(iturt[i]));
     }
 #if _XML_DEBUG_
