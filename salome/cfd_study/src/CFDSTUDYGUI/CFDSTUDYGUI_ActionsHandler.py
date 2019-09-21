@@ -575,10 +575,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         action = sgPyQt.createAction(-1,\
                                       ObjectTR.tr("SOLVER_SAVEAS_ACTION_TEXT"),\
                                       ObjectTR.tr("SOLVER_SAVEAS_ACTION_TIP"),\
-                                      ObjectTR.tr("SOLVER_SAVEAS_ACTION_SB"),\
-                                      ObjectTR.tr("SOLVER_SAVEAS_ACTION_ICON"),
-                                      Qt.SHIFT+Qt.CTRL+Qt.Key_A)
-        sgPyQt.createTool(action, tool_id)
+                                      ObjectTR.tr("SOLVER_SAVEAS_ACTION_SB"))
         sgPyQt.createMenu(action, self._SolverActionIdMap[SolverFileMenu], 100)
         action.triggered.connect(self.slotSaveAsDataFile)
 
