@@ -31,10 +31,10 @@ import os
 import os.path
 import sys
 
-from cs_case_domain import *
-from cs_case import *
-import cs_exec_environment
-import cs_runcase
+from code_saturne.cs_case_domain import *
+from code_saturne.cs_case import *
+from code_saturne import cs_exec_environment
+from code_saturne import cs_runcase
 
 #===============================================================================
 # Main function for code coupling execution

@@ -35,9 +35,9 @@ import platform
 import sys
 import stat
 
-import cs_exec_environment
+from code_saturne import cs_exec_environment
 
-from cs_case_domain import *
+from code_saturne.cs_case_domain import *
 
 homard_prefix = None
 

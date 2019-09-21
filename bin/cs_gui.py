@@ -74,7 +74,7 @@ if list(map(int, PYQT_VERSION_STR.split("."))) < [4, 5, 0]:
 # Application modules
 #-------------------------------------------------------------------------------
 
-import cs_config
+from code_saturne import cs_config
 
 #-------------------------------------------------------------------------------
 # Processes the passed command line arguments
@@ -132,18 +132,11 @@ def main(argv, pkg):
     Start Qt and a session of the application.
     """
 
-    from cs_exec_environment import set_modules, source_rcfile
+    from code_saturne.cs_exec_environment import set_modules, source_rcfile
     set_modules(pkg)
     source_rcfile(pkg)
 
-    # Test the package name to know which modules have to be imported
-    if pkg.name == 'code_saturne':
-        images_path = os.path.join(pkg.get_dir('pkgdatadir'), 'images')
-        sys.path.insert(1, os.path.join(pkg.get_dir('pkgpythondir'), 'Base'))
-    else:
-        images_path = os.path.join(pkg.get_dir('pkgpythondir'), 'core', 'icons')
-        sys.path.insert(1, os.path.join(pkg.get_dir('pkgpythondir'), 'core'))
-        sys.path.insert(1, pkg.get_dir('pythondir'))
+    images_path = os.path.join(pkg.get_dir('pkgdatadir'), 'images')
 
     # Test if EOS modules could be imported
     cfg = cs_config.config()

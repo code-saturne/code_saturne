@@ -36,15 +36,15 @@ import sys
 import shutil
 import stat
 
-import cs_compile
-import cs_xml_reader
+from code_saturne import cs_compile
+from code_saturne import cs_xml_reader
 
-from cs_exec_environment import run_command, source_shell_script
-from cs_exec_environment import enquote_arg, separate_args
-from cs_exec_environment import get_ld_library_path_additions
-from cs_exec_environment import source_syrthes_env
+from code_saturne.cs_exec_environment import run_command, source_shell_script
+from code_saturne.cs_exec_environment import enquote_arg, separate_args
+from code_saturne.cs_exec_environment import get_ld_library_path_additions
+from code_saturne.cs_exec_environment import source_syrthes_env
 
-from cs_mei_to_c import mei_to_c_interpreter
+from code_saturne.cs_mei_to_c import mei_to_c_interpreter
 
 #===============================================================================
 # Utility functions
@@ -451,7 +451,7 @@ class domain(base_domain):
 
         self.restart_input = None
 
-        from cs_exec_environment import get_command_output
+        from code_saturne.cs_exec_environment import get_command_output
 
         results_dir = os.path.abspath(os.path.join(self.result_dir, '..'))
         results = os.listdir(results_dir)
@@ -601,7 +601,7 @@ class domain(base_domain):
             needs_comp = True
 
         if self.param != None:
-            from model.XMLengine import Case
+            from code_saturne.model.XMLengine import Case
             from code_saturne.model.SolutionDomainModel import getRunType
 
             fp = os.path.join(self.data_dir, self.param)
@@ -611,9 +611,9 @@ class domain(base_domain):
 
             prepro = (getRunType(case) != 'standard')
             if case['package'].name == 'code_saturne':
-                from model.XMLinitialize import XMLinit
+                from code_saturne.model.XMLinitialize import XMLinit
             else:
-                from model.XMLinitializeNeptune import XMLinitNeptune as XMLinit
+                from code_saturne.model.XMLinitializeNeptune import XMLinitNeptune as XMLinit
             XMLinit(case).initialize(prepro)
             case.xmlSaveDocument()
 
@@ -1613,7 +1613,7 @@ class aster_domain(base_domain):
         s_path = os.path.join(self.exec_dir, "aster_by_yacs")
         s = open(s_path, 'w')
 
-        from cs_exec_environment import write_shell_shebang
+        from code_saturne.cs_exec_environment import write_shell_shebang
         write_shell_shebang(s)
 
         s.write('cd ..\n')

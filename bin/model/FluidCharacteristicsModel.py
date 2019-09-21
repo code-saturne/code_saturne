@@ -68,7 +68,7 @@ eos_excl = ["Argon", "Nitrogen", "Hydrogen", "Oxygen", "Helium", "Air"]
 # Coolprop
 #-------------------------------------------------------------------------------
 
-import cs_config
+from code_saturne import cs_config
 
 coolprop_fluids = []
 coolprop_warn = False
@@ -158,7 +158,7 @@ class FluidCharacteristicsModel(Variables, Model):
 
         self.tables = 0
 
-        import cs_config
+        from code_saturne import cs_config
         cfg = cs_config.config()
 
         self.lib_properties = {}

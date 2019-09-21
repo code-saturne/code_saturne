@@ -35,7 +35,7 @@ from __future__ import print_function
 import sys, unittest
 import os, os.path, shutil, sys, types, re
 
-import cs_batch
+from code_saturne import cs_batch
 
 #-------------------------------------------------------------------------------
 # Library modules import
@@ -43,7 +43,7 @@ import cs_batch
 
 from code_saturne.model.XMLvariables import Variables, Model
 
-import cs_exec_environment
+from code_saturne import cs_exec_environment
 
 #-------------------------------------------------------------------------------
 # Class BatchRunningModel

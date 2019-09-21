@@ -649,9 +649,11 @@ def main(argv, pkg):
     if opts.print_pythondir: print(pkg.get_dir("pythondir"))
     if opts.print_datarootdir: print(pkg.get_dir("datarootdir"))
 
+#-------------------------------------------------------------------------------
+
 if __name__ == '__main__':
     import sys
-    import cs_package
+    from code_saturne import cs_package
     pkg = cs_package.package()
     main(sys.argv[1:], pkg)
 

@@ -211,7 +211,7 @@ class FormatWriterDelegate(QItemDelegate):
         editor.addItem("CCM-IO")
         editor.installEventFilter(self)
 
-        import cs_config
+        from code_saturne import cs_config
         cfg = cs_config.config()
         if cfg.libs['med'].have == "no":
             editor.setItemData(1, QColor(Qt.red), Qt.TextColorRole);
@@ -1314,7 +1314,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         self.mdl = OutputControlModel(self.case)
         self.notebook = NotebookModel(self.case)
 
-        import cs_config
+        from code_saturne import cs_config
         cfg = cs_config.config()
         no_catalyst = False
         if cfg.libs['catalyst'].have == "no":

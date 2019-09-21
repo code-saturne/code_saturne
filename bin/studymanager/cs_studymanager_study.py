@@ -39,26 +39,26 @@ import fnmatch
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from cs_exec_environment import get_shell_type, enquote_arg
-from cs_compile import files_to_compile, compile_and_link
-import cs_create
-from cs_create import set_executable
-import cs_runcase
+from code_saturne.cs_exec_environment import get_shell_type, enquote_arg
+from code_saturne.cs_compile import files_to_compile, compile_and_link
+import code_saturne.cs_create
+from code_saturne.cs_create import set_executable
+import code_saturne.cs_runcase
 
 from code_saturne.model import XMLengine
 from code_saturne.studymanager.cs_studymanager_pathes_model import PathesModel
 
-from studymanager.cs_studymanager_parser import Parser
-from studymanager.cs_studymanager_texmaker import Report1, Report2
+from code_saturne.studymanager.cs_studymanager_parser import Parser
+from code_saturne.studymanager.cs_studymanager_texmaker import Report1, Report2
 
 try:
-    from studymanager.cs_studymanager_drawing import Plotter
+    from code_saturne.studymanager.cs_studymanager_drawing import Plotter
 except Exception:
     print("Warning: import studymanager Plotter failed. Plotting disabled.\n")
     pass
 
-from studymanager.cs_studymanager_run import run_studymanager_command
-from studymanager.cs_studymanager_xml_init import smgr_xml_init
+from code_saturne.studymanager.cs_studymanager_run import run_studymanager_command
+from code_saturne.studymanager.cs_studymanager_xml_init import smgr_xml_init
 
 #-------------------------------------------------------------------------------
 # log config.
@@ -192,7 +192,7 @@ class Case(object):
 
         coupling = os.path.join(self.__repo, self.label, "coupling_parameters.py")
         if os.path.isfile(coupling):
-            import cs_case_coupling
+            from code_saturne import cs_case_coupling
             try:
                 exec(compile(open(coupling).read(), '<string>', 'exec'))
             except Exception:
@@ -222,9 +222,9 @@ class Case(object):
         runcase = cs_runcase.runcase(run_ref)
 
         if runcase.cmd_name == "code_saturne":
-            from cs_package import package
+            from code_saturne.cs_package import package
         elif runcase.cmd_name == "neptune_cfd":
-            from nc_package import package
+            from neptune_cfd.nc_package import package
         pkg = package()
 
         return runcase.cmd_name, pkg
@@ -440,8 +440,8 @@ class Case(object):
         """
         Update the command line in the launcher C{runcase}.
         """
-        from cs_exec_environment import separate_args, \
-                                 get_command_single_value
+        from code_saturne.cs_exec_environment import separate_args, \
+            get_command_single_value
 
         # Prepare runcase path
         scripts_repo = os.path.join(self.__repo, self.label)
@@ -885,7 +885,7 @@ class Study(object):
 
         # Create study if necessary
         if not os.path.isdir(self.__dest):
-            # build instance of study class from cs_create
+            # build instance of study class
             cr_study = cs_create.Study(self.__package,
                                        self.label,
                                        [],   # cases

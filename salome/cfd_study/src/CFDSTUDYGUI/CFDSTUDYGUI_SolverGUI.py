@@ -57,7 +57,7 @@ from CFDSTUDYGUI_Commons import CFD_Code, CFD_Saturne, CFD_Neptune, sgPyQt, sg
 from CFDSTUDYGUI_Commons import LoggingMgr
 import CFDSTUDYGUI_DataModel
 from CFDSTUDYGUI_Management import CFDGUI_Management
-import cs_info
+from code_saturne import cs_info
 
 #-------------------------------------------------------------------------------
 # log config
@@ -306,55 +306,55 @@ class CFDSTUDYGUI_SolverGUI(QObject):
 
 
     def onSaturneHelpManual(self):
-        from cs_package import package
+        from code_saturne.cs_package import package
         argv_info = ['--guide', 'user']
         cs_info.main(argv_info, package())
 
 
     def onSaturneHelpTutorial(self):
-        from cs_package import package
+        from code_saturne.cs_package import package
         msg = "See http://code-saturne.org web site for tutorials."
         QMessageBox.about(self._CurrentWindow, 'code_saturne Interface', msg)
 
 
     def onSaturneHelpKernel(self):
-        from cs_package import package
+        from code_saturne.cs_package import package
         argv_info = ['--guide', 'theory']
         cs_info.main(argv_info, package())
 
 
     def onSaturneHelpRefcard(self):
-        from cs_package import package
+        from code_saturne.cs_package import package
         argv_info = ['--guide', 'refcard']
         cs_info.main(argv_info, package())
 
 
     def onSaturneHelpDoxygen(self):
-        from cs_package import package
+        from code_saturne.cs_package import package
         argv_info = ['--guide', 'Doxygen']
         cs_info.main(argv_info, package())
 
 
     def onNeptuneHelpManual(self):
-        from nc_package import package
+        from neptune_cfd.nc_package import package
         argv_info = ['--guide', 'user']
         cs_info.main(argv_info, package())
 
 
     def onNeptuneHelpTutorial(self):
-        from nc_package import package
+        from neptune_cfd.nc_package import package
         argv_info = ['--guide', 'tutorial']
         cs_info.main(argv_info, package())
 
 
     def onNeptuneHelpKernel(self):
-        from nc_package import package
+        from neptune_cfd.nc_package import package
         argv_info = ['--guide', 'theory']
         cs_info.main(argv_info, package())
 
 
     def onNeptuneHelpDoxygen(self):
-        from nc_package import package
+        from neptune_cfd.nc_package import package
         argv_info = ['--guide', 'Doxygen']
         cs_info.main(argv_info, package())
 
@@ -373,12 +373,12 @@ class CFDSTUDYGUI_SolverGUI(QObject):
         mw.dockWidgetBrowser is the Browser of the CFD MainView
         """
         log.debug("launchGUI")
-        from cs_gui import process_cmd_line
+        from code_saturne.cs_gui import process_cmd_line
         from code_saturne.Base.MainView import MainView
         if CFD_Code() == CFD_Saturne:
-            from cs_package import package
+            from code_saturne.cs_package import package
         elif CFD_Code() == CFD_Neptune:
-            from nc_package import package
+            from neptune_cfd.nc_package import package
 
         if sobjXML == None:
             Title = "unnamed"

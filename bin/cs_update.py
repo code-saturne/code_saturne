@@ -50,8 +50,8 @@ try:
 except Exception:
     import configparser  # Python3
 
-import cs_exec_environment
-import cs_runcase
+from code_saturne import cs_exec_environment
+from code_saturne import cs_runcase
 
 #-------------------------------------------------------------------------------
 # Process the passed command line arguments

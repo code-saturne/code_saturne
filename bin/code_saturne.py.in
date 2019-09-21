@@ -60,14 +60,23 @@ if relocatable == 'yes':
 
 if __name__ == '__main__':
 
-    # Trick so that one doesn't have to set the PYTHONPATH variable
-    if os.path.isdir(cspath) and not cspath in sys.path:
-        sys.path.insert(0, cspath)
+    sitedir = os.path.split(cspath)[0]
 
-    from cs_script import master_script
+    if os.path.isdir(sitedir) and not sitedir in sys.path:
+        sys.path.insert(0, sitedir)
+
+    if sys.version > '3.3':
+        import importlib
+        importlib.invalidate_caches()
+
+    try:
+        from code_saturne.cs_script import master_script
+    except Exception:
+        print(sys.path)
+        sys.exit(0)
 
     # Retrieve package information (name, version, installation dirs, ...)
-    from cs_package import package
+    from code_saturne.cs_package import package
     pkg = package()
 
     # Create an instance of the main script

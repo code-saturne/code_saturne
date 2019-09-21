@@ -38,7 +38,7 @@ import os, sys
 
 from optparse import OptionParser
 
-import cs_exec_environment
+from code_saturne import cs_exec_environment
 
 #-------------------------------------------------------------------------------
 # Processes the passed command line arguments
@@ -100,9 +100,6 @@ export CFDSTUDY_ROOT_DIR PYTHONPATH
 
     path = pkg.get_dir('pkgpythondir')
     path = path+":"+pkg.get_dir('pythondir')
-    if pkg.name == 'neptune_cfd':
-        cspath = os.path.join(pkg.get_dir('pythondir'), 'code_saturne')
-        path = path+":"+cspath
 
     # Test if EOS modules could be imported
     if pkg.config.libs['eos'].have == "yes":

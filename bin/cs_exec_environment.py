@@ -39,7 +39,10 @@ import tempfile
 
 python_version = sys.version[:3]
 
-import cs_batch
+try:
+    from code_saturne import cs_batch
+except Exception:
+    import cs_batch
 
 #===============================================================================
 # Utility functions
@@ -1990,7 +1993,7 @@ class exec_environment:
 
 if __name__ == '__main__':
 
-    import cs_package
+    from code_saturne import cs_package
     pkg = cs_package.package()
     e = exec_environment(pkg)
 

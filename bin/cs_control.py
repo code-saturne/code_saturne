@@ -198,7 +198,7 @@ if __name__ == '__main__':
     # Run package
 
     try:
-        from cs_package import package
+        from code_saturne.cs_package import package
         pkg = package()
     except Exception:
         pkg = None

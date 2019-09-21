@@ -61,10 +61,10 @@ from code_saturne.Base.QtWidgets import *
 # Application modules
 #-------------------------------------------------------------------------------
 
-import cs_info
-from cs_exec_environment import \
+from code_saturne import cs_info
+from code_saturne.cs_exec_environment import \
     separate_args, update_command_single_value, assemble_args, enquote_arg
-import cs_runcase
+from code_saturne import cs_runcase
 
 try:
     from code_saturne.Base.MainForm import Ui_MainForm

@@ -138,7 +138,7 @@ def print_modules(pkg):
     Print Code_Saturne environment modules info.
     """
 
-    import cs_config
+    from code_saturne import cs_config
     c = cs_config.config()
 
     if c.env_modulecmd:

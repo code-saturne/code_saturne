@@ -36,9 +36,9 @@ import logging
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from cs_exec_environment import run_command
-from cs_exec_environment import separate_args
-from cs_exec_environment import enquote_arg
+from code_saturne.cs_exec_environment import run_command
+from code_saturne.cs_exec_environment import separate_args
+from code_saturne.cs_exec_environment import enquote_arg
 
 #-------------------------------------------------------------------------------
 # log config.

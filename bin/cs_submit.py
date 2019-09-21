@@ -37,10 +37,10 @@ This module defines the following functions:
 import os, sys, subprocess
 import types, string
 
-import cs_batch
-from cs_exec_environment import enquote_arg, get_shell_type
-import cs_run
-import cs_runcase
+from code_saturne import cs_batch
+from code_saturne.cs_exec_environment import enquote_arg, get_shell_type
+from code_saturne import cs_run
+from code_saturne import cs_runcase
 
 #-------------------------------------------------------------------------------
 # Print a help page.
@@ -183,7 +183,7 @@ def main(argv, pkg):
 if __name__ == '__main__':
 
     # Run package
-    from cs_package import package
+    from code_saturne.cs_package import package
     pkg = package()
 
     retval = main(sys.argv[1:], pkg)

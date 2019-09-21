@@ -126,59 +126,59 @@ Options:
         print(usage % {'prog':sys.argv[0]})
 
     def studymanager(self, options = None):
-        import cs_studymanager
+        from code_saturne import cs_studymanager
         return cs_studymanager.main(options, self.package)
 
     def bdiff(self, options = None):
-        import cs_bdiff
+        from code_saturne import cs_bdiff
         return cs_bdiff.main(options, self.package)
 
     def bdump(self, options = None):
-        import cs_bdump
+        from code_saturne import cs_bdump
         return cs_bdump.main(options, self.package)
 
     def compile(self, options = None):
-        import cs_compile
+        from code_saturne import cs_compile
         return cs_compile.main(options, self.package)
 
     def config(self, options = None):
-        import cs_config
+        from code_saturne import cs_config
         return cs_config.main(options, self.package)
 
     def create(self, options = None):
-        import cs_create
+        from code_saturne import cs_create
         return cs_create.main(options, self.package)
 
     def gui(self, options = None):
-        import cs_gui
+        from code_saturne import cs_gui
         return cs_gui.main(options, self.package)
 
     def studymanager_gui(self, options = None):
-        import cs_studymanager_gui
+        from code_saturne import cs_studymanager_gui
         return cs_studymanager_gui.main(options, self.package)
 
     def trackcvg(self, options = None):
-        import cs_trackcvg
+        from code_saturne import cs_trackcvg
         return cs_trackcvg.main(options, self.package)
 
     def info(self, options = None):
-        import cs_info
+        from code_saturne import cs_info
         return cs_info.main(options, self.package)
 
     def run(self, options = None):
-        import cs_run
+        from code_saturne import cs_run
         return cs_run.main(options, self.package)
 
     def salome(self, options = None):
-        import cs_salome
+        from code_saturne import cs_salome
         return cs_salome.main(options, self.package)
 
     def submit(self, options = None):
-        import cs_submit
+        from code_saturne import cs_submit
         return cs_submit.main(options, self.package)
 
     def update(self, options = None):
-        import cs_update
+        from code_saturne import cs_update
         return cs_update.main(options, self.package)
 
 #-------------------------------------------------------------------------------

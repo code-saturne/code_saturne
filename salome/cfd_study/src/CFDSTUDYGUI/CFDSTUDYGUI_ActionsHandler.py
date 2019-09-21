@@ -899,7 +899,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
                 self.solverAction(a).setEnabled(isActivatedView)
 
         try:
-            from nc_package import package
+            from neptune_cfd.nc_package import package
         except:
             self.solverAction(NCSolverHelpUserGuide).setEnabled(False)
             self.solverAction(NCSolverHelpTutorial).setEnabled(False)

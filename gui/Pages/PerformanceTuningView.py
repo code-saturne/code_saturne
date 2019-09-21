@@ -97,7 +97,7 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.modelPartType.addItem(self.tr("Hilbert curve (bounding cube)"), 'hilbert sfc cube')
         self.modelPartType.addItem(self.tr("Block (unoptimized)"), 'block')
 
-        import cs_config
+        from code_saturne import cs_config
         cfg = cs_config.config()
         if cfg.libs['scotch'].have == "no":
             self.comboBox_PartType.setItemData(1, QColor(Qt.red), Qt.TextColorRole);

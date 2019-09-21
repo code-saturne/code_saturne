@@ -326,7 +326,7 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
         self.lineEditAccZInit.textChanged[str].connect(self.slotObjAccZinit)
 
         # Check for MEDCoupling presence
-        import cs_config
+        from code_saturne import cs_config
         cfg = cs_config.config()
         self.has_medcoupling = cfg.libs['medcoupling'].have == 'yes'
         # deactivated for the moment

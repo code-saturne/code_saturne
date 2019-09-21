@@ -43,9 +43,9 @@ try:
 except Exception:
     import configparser  # Python3
 
-import cs_exec_environment
-import cs_case_domain
-import cs_case
+from code_saturne import cs_exec_environment
+from code_saturne import cs_case_domain
+from code_saturne import cs_case
 
 #-------------------------------------------------------------------------------
 # Process the command line arguments
@@ -265,7 +265,7 @@ def run(argv, pkg):
     if coupling:
 
         # Specific case for coupling
-        import cs_case_coupling
+        from code_saturne import cs_case_coupling
 
         if os.path.isfile(coupling):
             try:
@@ -333,7 +333,7 @@ def main(argv, pkg):
 if __name__ == '__main__':
 
     # Run package
-    from cs_package import package
+    from code_saturne.cs_package import package
     pkg = package()
 
     retval = main(sys.argv[1:], pkg)

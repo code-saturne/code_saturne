@@ -26,7 +26,10 @@
 import os
 import sys
 
-import cs_config
+try:
+    from code_saturne import cs_config
+except Exception:
+    import cs_config
 
 
 # Package information
@@ -219,15 +222,15 @@ class package:
             import sys
             sys.path.insert(0, pythondir)
             if sys.version < '3.4':
-                import cs_config
+                from code_saturne import cs_config
                 reload(cs_config)
                 import cs_package
                 reload(cs_package)
             else:
                 import importlib
-                import cs_config
+                from code_saturne import cs_config
                 importlib.reload(cs_config)
-                import cs_package
+                from code_saturne import cs_package
                 importlib.reload(cs_package)
             pkg = cs_package.package()
             sys.path.pop(0)

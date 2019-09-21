@@ -640,7 +640,10 @@ def main(argv, pkg):
     Main function.
     """
 
-    from cs_exec_environment import set_modules, source_rcfile
+    try:
+        from code_saturne.cs_exec_environment import set_modules, source_rcfile
+    except Exception:
+        from cs_exec_environment import set_modules, source_rcfile
 
     test_mode, force_link, keep_going, src_dir, dest_dir, \
         version, cflags, cxxflags, fcflags, libs = process_cmd_line(argv, pkg)
@@ -672,7 +675,7 @@ if __name__ == '__main__':
 
     # Retrieve package information (name, version, installation dirs, ...)
 
-    from cs_package import package
+    from code_saturne.cs_package import package
     pkg = package()
 
     # Create an instance of the main script

@@ -1197,7 +1197,7 @@ temperature = enthalpy / 1000;
         """
         if EOS == 1:
             import subprocess
-            import cs_config
+            from code_saturne import cs_config
 
             cfg = cs_config.config()
             if cfg.libs['eos'].have == "yes":

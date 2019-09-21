@@ -118,11 +118,11 @@ class InfoDialogHandler(InfoDialog):
     def setCode(self, env_saturne, env_neptune):
         if env_neptune:
             code = CFD_Neptune
-            from nc_package import package
+            from neptune_cfd.nc_package import package
 
         elif env_saturne:
             code = CFD_Saturne
-            from cs_package import package
+            from code_saturne.cs_package import package
 
         else:
             raise ValueError("Invalid CFD_Code in InfoDialog class")
@@ -136,9 +136,9 @@ class InfoDialogHandler(InfoDialog):
 
     def update(self, code):
         if code == CFD_Saturne:
-            from cs_package import package
+            from code_saturne.cs_package import package
         if code == CFD_Neptune:
-            from nc_package import package
+            from neptune_cfd.nc_package import package
 
         pkg = package()
         self.labelVersionValue.setText(pkg.version)

@@ -54,10 +54,10 @@ from code_saturne.Base.QtCore    import *
 from code_saturne.Base.QtGui     import *
 from code_saturne.Base.QtWidgets import *
 
-import cs_case
-import cs_exec_environment
-import cs_runcase
-import cs_submit
+from code_saturne import cs_case
+from code_saturne import cs_exec_environment
+from code_saturne import cs_runcase
+from code_saturne import cs_submit
 
 #-------------------------------------------------------------------------------
 # Application modules import
@@ -199,7 +199,7 @@ class ListingDialogView(CommandMgrDialogView):
         self.scratch_dir = ""
         self.result_dir = ""
         self.suffix   = ""
-        self.listing  = "listing"
+        self.listing  = "run_solver.log"
         self.n_lines = 0
 
         # When running under "code_saturne salome" session, we may need to

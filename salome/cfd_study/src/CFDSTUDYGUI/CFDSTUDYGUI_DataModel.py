@@ -101,7 +101,7 @@ import CFDSTUDYGUI_SolverGUI
 import CFDSTUDYGUI_Commons
 from CFDSTUDYGUI_CommandMgr import runCommand
 from CFDSTUDYGUI_Message import cfdstudyMess
-from cs_exec_environment import separate_args
+from code_saturne.cs_exec_environment import separate_args
 
 #-------------------------------------------------------------------------------
 # log config
@@ -110,7 +110,6 @@ from cs_exec_environment import separate_args
 logging.basicConfig()
 log = logging.getLogger("CFDSTUDYGUI_DataModel")
 log.setLevel(logging.NOTSET)
-
 
 #-------------------------------------------------------------------------------
 # Module name. Attribut "AttributeName" for the related SObject.
