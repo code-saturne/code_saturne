@@ -644,7 +644,10 @@
     <string>Run</string>
    </property>
    <property name="toolTip">
-    <string>Run case</string>
+    <string>Run computation</string>
+   </property>
+   <property name="statusTip">
+    <string>Run computation</string>
    </property>
   </action>
  </widget>

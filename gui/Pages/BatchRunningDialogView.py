@@ -736,7 +736,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
 
         self.Apply()
 
-        if not self.case.isModified():
+        if self.case.isModified():
             self.parent.fileSave()
 
         # Ensure code is run from a case subdirectory
