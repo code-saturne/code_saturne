@@ -555,67 +555,84 @@ cs_time_step_redefine_cur(int     nt_cur,
 void
 cs_time_step_log_setup(void)
 {
-
   cs_log_printf
     (CS_LOG_SETUP,
      _("\nTime stepping options\n"
        "---------------------\n\n"));
 
-  /* Steady */
+  /* Steady (SIMPLE) */
   if (cs_glob_time_step_options->idtvar < 0) {
-    /* Time step parameters */
+    /* Relaxation parameters */
     cs_log_printf
       (CS_LOG_SETUP,
-       _("  Steady algorithm\n\n"
+       _("  Steady (SIMPLE) algorithm\n\n"
          "   Global parameters\n\n"
          "    idtvar:     %14d (-1: steady algorithm)\n"
          "    relxst:     %14.5e (Reference relaxation coefficient)\n\n"),
          cs_glob_time_step_options->idtvar,
          cs_glob_time_step_options->relxst);
-
-    /* Frozen velocity field */
-    cs_log_printf
-      (CS_LOG_SETUP,
-       _("   Frozen velocity field\n\n"
-         "    iccvfg:      %14d (1: Frozen velocity field)\n"),
-         cs_glob_stokes_model->iccvfg);
   }
 
-  /* Unsteady */
-  else {
-    cs_log_printf
-      (CS_LOG_SETUP,
-       _("  Unsteady algorithm\n\n"
-         "   Time step parameters\n\n"
-         "    idtvar:      %14d (0 cst; 1,2 var (t, t-space)\n"
-         "    iptlro:      %14d (1: rho-related DT clipping)\n"
-         "    coumax:      %14.5e (Maximum target CFL)\n"
-         "    foumax:      %14.5e (Maximum target Fourier)\n"
-         "    varrdt:      %14.5e (For var. DT, max. increase)\n"
-         "    dtmin:       %14.5e (Minimum time step)\n"
-         "    dtmax:       %14.5e (Maximum time step)\n"
-         "    dtref:       %14.5e (Reference time step)\n\n"
-         "    With a non-constant time step (idtvar = 1 or 2)\n"
-         "    when the value of coumax or foumax is negative\n"
-         "    or zero, the associated time step limitation\n"
-         "    (for CFL and Fourier respectively) is ignored.\n\n"),
-         cs_glob_time_step_options->idtvar,
-         cs_glob_time_step_options->iptlro,
-         cs_glob_time_step_options->coumax,
-         cs_glob_time_step_options->foumax,
-         cs_glob_time_step_options->varrdt,
-         cs_glob_time_step_options->dtmin,
-         cs_glob_time_step_options->dtmax,
-         cs_glob_time_step->dt_ref);
+  else { /* (SIMPLEC) */
 
-    /* Frozen velocity field */
-    cs_log_printf
-      (CS_LOG_SETUP,
-       _("   Frozen velocity field\n\n"
-         "    iccvfg:      %14d (1: Frozen velocity field)\n"),
-         cs_glob_stokes_model->iccvfg);
+    /* Unsteady constant time step */
+    if (cs_glob_time_step_options->idtvar == 0) {
 
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("  Constant time step algorithm (unsteady)\n\n"
+           "   Time step parameters\n\n"
+           "    idtvar:      %14d (0 cst; 1,2 var (t, t-space)\n"
+           "    dtref:       %14.5e (Reference time step)\n\n"),
+           cs_glob_time_step_options->idtvar,
+           cs_glob_time_step->dt_ref);
+
+    /* Unsteady time varying time step */
+    } else {
+
+      if (cs_glob_time_step_options->idtvar == 1) {
+        cs_log_printf
+          (CS_LOG_SETUP,
+           _("  Time varying time step algorithm (unsteady)\n\n"));
+        /* Unsteady space & time varying time step */
+      } else if (cs_glob_time_step_options->idtvar == 2) {
+        cs_log_printf
+          (CS_LOG_SETUP,
+           _("  Space & time varying time step algorithm (pseudo-steady)\n\n"));
+      }
+
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("   Time step parameters\n\n"
+           "    idtvar:      %14d (0 cst; 1,2 var (t, t-space)\n"
+           "    iptlro:      %14d (1: rho-related DT clipping)\n"
+           "    coumax:      %14.5e (Maximum target CFL)\n"
+           "    foumax:      %14.5e (Maximum target Fourier)\n"
+           "    varrdt:      %14.5e (For var. DT, max. increase)\n"
+           "    dtmin:       %14.5e (Minimum time step)\n"
+           "    dtmax:       %14.5e (Maximum time step)\n"
+           "    dtref:       %14.5e (Reference time step)\n\n"
+           "    When the value of coumax or foumax is negative\n"
+           "    or zero, the associated time step limitation\n"
+           "    (for CFL and Fourier respectively) is ignored.\n\n"),
+           cs_glob_time_step_options->idtvar,
+           cs_glob_time_step_options->iptlro,
+           cs_glob_time_step_options->coumax,
+           cs_glob_time_step_options->foumax,
+           cs_glob_time_step_options->varrdt,
+           cs_glob_time_step_options->dtmin,
+           cs_glob_time_step_options->dtmax,
+           cs_glob_time_step->dt_ref);
+
+    }
   }
+
+  /* Frozen velocity field */
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("   Frozen velocity field\n\n"
+       "    iccvfg:      %14d (1: Frozen velocity field)\n"),
+       cs_glob_stokes_model->iccvfg);
 }
 
 /*----------------------------------------------------------------------------*/
