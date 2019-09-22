@@ -637,7 +637,11 @@ if test "x$cs_have_dlloader" = "xyes" ; then
 
 fi
 
-# Use long global numbers ?
+# Use RTLD_GLOBAL for dlopen ?
+
+# Note setting enable_dlopen_rtld_global in the last statement is not
+# useful on modern systems but avoids error due to empty else on Centos 6...
+
 AC_ARG_ENABLE(dlopen-rtld-global,
   [AS_HELP_STRING([--enable-dlopen-rtld-global], [add RTLD_GLOBAL to dlopen flags])],
   [
@@ -648,7 +652,7 @@ AC_ARG_ENABLE(dlopen-rtld-global,
       *)   AC_MSG_ERROR([bad value ${enableval} for --enable-dlopen-rtld-global]) ;;
     esac
   ],
-  [ ]
+  [ enable_dlopen_rtld_global=no ]
 )
 
 #------------------------------------------------------------------------------
