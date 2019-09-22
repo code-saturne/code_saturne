@@ -26,6 +26,7 @@ case $cs_gettext_version in
   0.17* | 0.18*)
     cp -p configure.ac configure.ac.tmp
     sed -e s/AM_GNU_GETTEXT_VERSION.*/AM_GNU_GETTEXT_VERSION\(\[$cs_gettext_version\]\)/g ./configure.ac.tmp > configure.ac
+    rm configure.ac.tmp
     ;;
   *)
     ;;
@@ -79,14 +80,6 @@ else
   automake -a -c
 
 fi
-
-case $cs_gettext_version in
-  0.17* | 0.18*)
-    \mv configure.ac.tmp configure.ac
-    ;;
-  *)
-    ;;
-esac
 
 # Remove cache directory
 \rm -rf autom4te.cache
