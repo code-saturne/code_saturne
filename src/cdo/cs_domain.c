@@ -327,7 +327,7 @@ cs_domain_needs_iteration(cs_domain_t  *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Check if an ouput is requested according to the domain setting
+ * \brief  Check if an output is requested according to the domain setting
  *
  * \param[in]   domain    pointer to a cs_domain_t structure
  *

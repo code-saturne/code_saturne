@@ -55,7 +55,7 @@ BEGIN_C_DECLS
  * \brief   Define the local convection operator in CDO-Fb schemes
  *
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      fluxes      array of advctive fluxes on primal faces
+ * \param[in]      fluxes      array of advective fluxes on primal faces
  * \param[in, out] adv         pointer to a cs_sdm_t structure to update
  */
 /*----------------------------------------------------------------------------*/

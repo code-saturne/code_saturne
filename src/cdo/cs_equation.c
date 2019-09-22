@@ -2030,7 +2030,7 @@ cs_equation_set_functions(void)
         eq->free_context = cs_cdofb_vecteq_free_context;
         eq->init_field_values = cs_cdofb_vecteq_init_values;
 
-        /* Depreacted */
+        /* Deprecated */
         eq->initialize_system = NULL;
         eq->set_dir_bc = NULL;
         eq->build_system = NULL;

@@ -191,7 +191,7 @@ typedef struct {
    * Number of definitions related to the normal flux at the boundary
    *
    * \var bdy_flux_defs
-   * Array of pointers to the definitions of the jormal flux at the boundary
+   * Array of pointers to the definitions of the normal flux at the boundary
    */
 
   int                           id;

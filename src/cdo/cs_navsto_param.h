@@ -128,7 +128,7 @@ typedef enum {
  * Navier-Stokes system of equations is solved using a block diagonal
  * preconditioner where the block 00 is A_{00} preconditioned with one multigrid
  * iteration and the block 11 is an approximation of the Schur complement
- * preconditionned with one multigrid iteration. The main iterative solver is a
+ * preconditioned with one multigrid iteration. The main iterative solver is a
  * flexible GMRES. This option is only available with the support to the PETSc
  * library up to now.
  *
@@ -385,7 +385,7 @@ typedef struct {
 
   /*! \var velocity_ic_is_owner
    *  True if the definitions are stored inside this structure, otherwise
-   *  the definitions are stored inside the a \ref cs_equation_param_t
+   *  the definitions are stored inside a \ref cs_equation_param_t
    *  structure dedicated to the momentum equation.
    *
    * \var n_velocity_ic_defs
@@ -688,7 +688,7 @@ cs_navsto_add_velocity_ic_by_value(cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the initial condition for the velocity unkowns.
+ * \brief  Define the initial condition for the velocity unknowns.
  *         This definition can be done on a specified mesh location.
  *         By default, the unknown is set to zero everywhere.
  *         Here the initial value is set according to an analytical function
@@ -732,7 +732,7 @@ cs_navsto_add_pressure_ic_by_value(cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the initial condition for the pressure unkowns.
+ * \brief  Define the initial condition for the pressure unknowns.
  *         This definition can be done on a specified mesh location.
  *         By default, the unknown is set to zero everywhere.
  *         Here the initial value is set according to an analytical function

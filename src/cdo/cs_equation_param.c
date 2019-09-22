@@ -1494,7 +1494,7 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp)
                CS_SLES_PCG,      /* coarse solver type (CS_SLES_PCG) */
                slesp.n_max_iter, /* n max cycles (100) */
                5,                /* n max iter for descent (10) */
-               5,                /* n max iter for asscent (10) */
+               5,                /* n max iter for ascent (10) */
                1000,             /* n max iter coarse solver (10000) */
                0,                /* polynomial precond. degree descent (0) */
                0,                /* polynomial precond. degree ascent (0) */
@@ -1511,9 +1511,9 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp)
 
             cs_multigrid_set_solver_options
               (mg,
-               CS_SLES_P_SYM_GAUSS_SEIDEL, /* descent smoothe */
-               CS_SLES_P_SYM_GAUSS_SEIDEL, /* ascent smoothe */
-               CS_SLES_PCG,                /* coarse smoothe */
+               CS_SLES_P_SYM_GAUSS_SEIDEL, /* descent smoother */
+               CS_SLES_P_SYM_GAUSS_SEIDEL, /* ascent smoother */
+               CS_SLES_PCG,                /* coarse smoother */
                slesp.n_max_iter,           /* n_max_cycles */
                1,                          /* n_max_iter_descent, */
                1,                          /* n_max_iter_ascent */
@@ -1556,8 +1556,8 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp)
              preconditioner */
           cs_multigrid_set_solver_options
             (mg,
-             CS_SLES_PCG,       /* descent smoothe */
-             CS_SLES_PCG,       /* ascent smoothe */
+             CS_SLES_PCG,       /* descent smoother */
+             CS_SLES_PCG,       /* ascent smoother */
              CS_SLES_PCG,       /* coarse solver */
              slesp.n_max_iter,  /* n_max_cycles */
              4,                 /* n_max_iter_descent, */

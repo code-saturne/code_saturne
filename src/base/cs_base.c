@@ -103,7 +103,7 @@ BEGIN_C_DECLS
 
 /*
  * 'usual' maximum name length; a longer name is possible, but will
- * provoque a dynamic memory allocation.
+ * provoke a dynamic memory allocation.
  */
 
 #define CS_BASE_N_STRINGS                               5
@@ -167,8 +167,8 @@ static _cs_base_sighandler_t cs_glob_base_sigtrap_save = SIG_DFL;
 static _cs_base_sighandler_t cs_glob_base_sigcpu_save = SIG_DFL;
 #endif
 
-/* Workaround fo SIGSEGV at exit
-   with some ParaViw Catalyst/OpenGL driver combinations */
+/* Workaround for SIGSEGV at exit
+   with some ParaView Catalyst/OpenGL driver combinations */
 
 #if _CS_EXIT_DEPLIB_CRASH_WORKAROUND
 static jmp_buf _cs_exit_jmp_buf;
@@ -403,7 +403,7 @@ _cs_base_sig_exit_crash_workaround(int  signum)
  * This is used at exit to transform errors into warnings on rank 0
  * only during a standard exit routine.
  *
- * This is an ugly workaroud to an ugly crash observed when exiting after
+ * This is an ugly workaround to an ugly crash observed when exiting after
  * have used VTK (Paraview Catalyst) libraries (on Debian Stretch with
  * NVIDIA 390 driver at least).
  *
@@ -750,7 +750,7 @@ _get_path(const char   *dir_path,
     const char *cs_root_dir = NULL;
     const char *rel_path = NULL;
 
-    /* Allow for displacable install */
+    /* Allow for displaceable install */
 
     if (*env_path != NULL)
       return *env_path;
@@ -1879,7 +1879,7 @@ cs_base_bft_printf_init(const char  *log_name,
 
   const char ext[] = ".log";
 
-  /* Allow bypassing this with environment variable to accomodate
+  /* Allow bypassing this with environment variable to accommodate
      some debug habits */
 
   bool log_to_stdout = false;
@@ -2053,7 +2053,7 @@ cs_base_warn(const char  *file_name,
  * Define a function to be called when entering cs_exit() or bft_error().
  *
  * Compared to the C atexit(), only one function may be called (latest
- * setting wins), but the function is called slighty before exit,
+ * setting wins), but the function is called slightly before exit,
  * so it is well adapted to cleanup such as flushing of non-C API logging.
  *
  * parameters:
@@ -2324,8 +2324,8 @@ cs_base_dlopen(const char *filename)
   void *retval = NULL;
 
   /* Disable floating-point traps as the initialization of some libraries
-     may interfere with this (for example, embree, and optional Paraview
-     depedency) */
+     may interfere with this (for example, embree, and optional ParaView
+     dependency) */
 
   cs_fp_exception_disable_trap();
 
@@ -2348,7 +2348,7 @@ cs_base_dlopen(const char *filename)
 /*!
  * \brief Load a plugin's dynamic library
  *
- * This function is similar to \ref cs_base_dlopen, execpt that only
+ * This function is similar to \ref cs_base_dlopen, except that only
  * the base plugin file name (with no extension) needs to be given.
  * It is assumed the file is available in the code's "pkglibdir" directory,
  *

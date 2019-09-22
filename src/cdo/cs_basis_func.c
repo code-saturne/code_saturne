@@ -89,12 +89,10 @@ static  cs_flag_t  cs_basis_func_hho_cell_flag = 0;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the x^exp where exp is a positive integer
+ * \brief  Swap two short int
  *
- * \param[in]     x        base
- * \param[in]     exp      exponent
- *
- * \return the result
+ * \param[in, out]     a      first
+ * \param[in, out]     b      second
  */
 /*----------------------------------------------------------------------------*/
 

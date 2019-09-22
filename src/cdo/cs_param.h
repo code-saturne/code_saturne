@@ -101,28 +101,28 @@ typedef void
  * Cell-centered Finite Volume Two-Point Flux
  *
  * \var CS_SPACE_SCHEME_CDOVB
- * CDO scheme with vertex-based positionning
+ * CDO scheme with vertex-based positioning
  *
  * \var CS_SPACE_SCHEME_CDOVCB
- * CDO scheme with vertex+cell-based positionning
+ * CDO scheme with vertex+cell-based positioning
  *
  * \var CS_SPACE_SCHEME_CDOEB
  * CDO scheme with edge-based positionning
  *
  * \var CS_SPACE_SCHEME_CDOFB
- * CDO scheme with face-based positionning
+ * CDO scheme with face-based positioning
  *
  * \var CS_SPACE_SCHEME_HHO_P0
  * Hybrid High Order (HHO) schemes
- * HHO scheme with face-based positionning (lowest order)
+ * HHO scheme with face-based positioning (lowest order)
  *
  * \var CS_SPACE_SCHEME_HHO_P1
  * Hybrid High Order (HHO) schemes
- * HHO scheme with face-based positionning (k=1 up to order 3)
+ * HHO scheme with face-based positioning (k=1 up to order 3)
  *
  * \var CS_SPACE_SCHEME_HHO_P2
  * Hybrid High Order (HHO) schemes
- * HHO scheme with face-based positionning (k=2 up to order 4)
+ * HHO scheme with face-based positioning (k=2 up to order 4)
  */
 
 typedef enum {
@@ -302,7 +302,7 @@ typedef enum {
  * Robin conditions.
  *
  * \var CS_PARAM_BC_SLIDING
- * Sliding conditions. Homogeneous Dirichlet for the normal componenent and
+ * Sliding conditions. Homogeneous Dirichlet for the normal component and
  * homogeneous Neumann for the tangential components. Only available for
  * vector-valued equations.
  *
@@ -411,7 +411,7 @@ typedef enum {
 /*!
  * \enum cs_param_precond_type_t
  * Type of preconditioner to use with the iterative solver. Some
- * preconditionners as \ref CS_PARAM_PRECOND_ILU0, \ref CS_PARAM_PRECOND_ICC0,
+ * preconditioners as \ref CS_PARAM_PRECOND_ILU0, \ref CS_PARAM_PRECOND_ICC0,
  * \ref CS_PARAM_PRECOND_AS and \ref CS_PARAM_PRECOND_AMG_BLOCK are available
  * only with the PETSc interface.
  */

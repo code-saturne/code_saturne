@@ -315,7 +315,7 @@ cs_equation_init_builder(const cs_equation_param_t   *eqp,
   eqb->source_mask = NULL;
   if (cs_equation_param_has_sourceterm(eqp)) {
 
-    /* Default intialization */
+    /* Default initialization */
     eqb->st_msh_flag = cs_source_term_init(eqp->space_scheme,
                                            eqp->n_source_terms,
                        (cs_xdef_t *const *)eqp->source_terms,
@@ -553,10 +553,10 @@ cs_equation_sync_res_normalization(cs_param_resnorm_type_t    type,
  *        algebraic description for the linear system in x and b.
  *
  * \param[in]      stride   stride to apply to the range set operations
- * \param[in]      x_size   size of the vector unknows (scatter view)
+ * \param[in]      x_size   size of the vector unknowns (scatter view)
  * \param[in]      matrix   pointer to a cs_matrix_t structure
  * \param[in]      rset     pointer to a range set structure
- * \param[in, out] x        array of unknows (in: initial guess)
+ * \param[in, out] x        array of unknowns (in: initial guess)
  * \param[in, out] b        right-hand side
  *
  * \returns the number of non-zeros in the matrix

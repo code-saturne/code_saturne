@@ -537,7 +537,7 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
                                         cc->vcb_scheme_flag,
                                         cc->hho_scheme_flag);
 
-  /* Build additional mesh quantities in a seperate structure */
+  /* Build additional mesh quantities in a separate structure */
   domain->cdo_quantities =  cs_cdo_quantities_build(domain->mesh,
                                                     domain->mesh_quantities,
                                                     domain->connect);

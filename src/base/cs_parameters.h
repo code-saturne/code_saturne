@@ -204,7 +204,7 @@ typedef struct {
 
 typedef struct {
 
-  int           nterup;         /* number of interations on the pressure-velocity
+  int           nterup;         /* number of iterations on the pressure-velocity
                                    coupling on Navier-Stokes */
 
   double        epsup;          /* relative precision for the convergence test of
@@ -455,7 +455,7 @@ cs_parameters_add_boundary_values(cs_field_t  *f);
  *
  * When a volume temperature variable field already exists, this amounts
  * to calling \ref cs_parameters_add_boundary_values for that field.
- * When such a variblae does not exist but we have an Enthalpy variables,
+ * When such a variable does not exist but we have an Enthalpy variables,
  * an associated temperature boundary field is returned.
  *
  * \return  pointer to boundary values field, or NULL if not applicable

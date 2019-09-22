@@ -553,7 +553,8 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
                 _(" %s: Invalid val %s related to key CS_NSKEY_SLES_STRATEGY\n"
-                  " Choice between \"no_block\", \"block_amg_cg\"..."),
+                  " Choice between no_block, block_amg_cg, additive_gmres"
+                  " {diag,upper}_schur_gmres, gkb{,_gmres}."),
                 __func__, _val);
     }
     break;
@@ -872,7 +873,7 @@ cs_navsto_add_velocity_ic_by_value(cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the initial condition for the velocity unkowns.
+ * \brief  Define the initial condition for the velocity unknowns.
  *         This definition can be done on a specified mesh location.
  *         By default, the unknown is set to zero everywhere.
  *         Here the initial value is set according to an analytical function
@@ -987,7 +988,7 @@ cs_navsto_add_pressure_ic_by_value(cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define the initial condition for the pressure unkowns.
+ * \brief  Define the initial condition for the pressure unknowns.
  *         This definition can be done on a specified mesh location.
  *         By default, the unknown is set to zero everywhere.
  *         Here the initial value is set according to an analytical function
@@ -1112,7 +1113,7 @@ cs_navsto_set_symmetries(cs_navsto_param_t    *nsp)
     if (bdy->types[i] & CS_BOUNDARY_SYMMETRY) {
 
       /* Homogeneous Dirichlet on the normal component of the velocity field
-         and homogenous Neumann on the normal stress (balance betwwen the
+         and homogeneous Neumann on the normal stress (balance between the
          pressure gradient and the viscous term) */
       cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_VALUE,
                                               1,    /* dim */

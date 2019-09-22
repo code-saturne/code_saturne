@@ -134,7 +134,7 @@ typedef void
  * Private constant variables
  *============================================================================*/
 
-/* Advanced developper parameters (stabilization coefficient) */
+/* Advanced developer parameters (stabilization coefficient) */
 static double  cs_cip_stab_coef = 1e-2;
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -3294,7 +3294,7 @@ cs_cdo_advection_vb_bc(const cs_cell_mesh_t       *cm,
 
   const cs_adv_field_t  *adv = eqp->adv_field;
 
-  /* Reset local temporay RHS and diagonal contributions */
+  /* Reset local temporary RHS and diagonal contributions */
   for (short int v = 0; v < cm->n_vc; v++) mat_diag[v] = tmp_rhs[v] = 0;
 
   /* Add diagonal term for vertices attached to a boundary face where
@@ -3324,7 +3324,7 @@ cs_cdo_advection_vb_bc(const cs_cell_mesh_t       *cm,
         if (v_nflx[v_id] < 0) {
           /* advection field is inward w.r.t. the face normal */
           if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET)
-            /* Homogoneous Dirichlet don't contribute. Other Bcs are invalid */
+            /* Homogeneous Dirichlet don't contribute. Other Bcs are invalid */
             tmp_rhs[v_id] -= v_nflx[v_id] * csys->dir_values[v_id];
         }
         else  /* advection is oriented outward */
@@ -3343,7 +3343,7 @@ cs_cdo_advection_vb_bc(const cs_cell_mesh_t       *cm,
 
           /* advection field is inward w.r.t. the face normal */
           if (csys->bf_flag[f] & CS_CDO_BC_DIRICHLET)
-            /* Homogoneous Dirichlet don't contribute. Other Bcs are invalid */
+            /* Homogeneous Dirichlet don't contribute. Other Bcs are invalid */
             tmp_rhs[v_id] -= v_nflx[v_id] * csys->dir_values[v_id];
 
           mat_diag[v_id] -= v_nflx[v_id];

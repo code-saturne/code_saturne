@@ -1806,7 +1806,6 @@ cs_source_term_pcsd_by_analytic(const cs_xdef_t           *source,
                                 void                      *input,
                                 double                    *values)
 {
-  CS_UNUSED(cb);
   CS_UNUSED(input);
   if (source == NULL)
     return;
@@ -2024,9 +2023,7 @@ cs_source_term_pcvd_by_analytic(const cs_xdef_t           *source,
                                 void                      *input,
                                 double                    *values)
 {
-  CS_UNUSED(cb);
   CS_UNUSED(input);
-  CS_UNUSED(time_eval);
 
   if (source == NULL)
     return;

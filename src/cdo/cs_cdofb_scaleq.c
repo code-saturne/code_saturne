@@ -2005,7 +2005,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
             (p_cur[cm->n_fc] - p_prev[cm->n_fc]);
         else
           bft_error(__FILE__, __LINE__, 0,
-                    "Not implemented yet.");
+                    "%s: Not implemented yet.", __func__);
 
       } /* End of time contribution */
 

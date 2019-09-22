@@ -439,7 +439,7 @@ BEGIN_C_DECLS
   concise  syntax, as they are expected to be used in many places.
 
   \var  cs_piso_t::nterup
-        number of interations on the pressure-velocity coupling on Navier-Stokes
+        number of iterations on the pressure-velocity coupling on Navier-Stokes
   \var  cs_piso_t::epsup
         relative precision for the convergence test of the iterative process on
         pressure-velocity coupling
@@ -479,7 +479,7 @@ typedef struct {
 
   char     *name;               /* Property name */
   int       dim;                /* Property dimension */
-  int       location_id;        /* Propert location id */
+  int       location_id;        /* Property location id */
 
 } cs_user_property_def_t;
 

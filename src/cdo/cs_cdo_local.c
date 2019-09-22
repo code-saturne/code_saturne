@@ -1290,7 +1290,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
       } /* Loop on face edges */
 
-    } /* (edga,face) quantities */
+    } /* (edge,face) quantities */
 
   } /* edge-->faces */
 

@@ -382,7 +382,7 @@ cs_advection_field_add(const char                    *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free all alllocated cs_adv_field_t structures and its related array
+ * \brief  Free all allocated cs_adv_field_t structures and its related array
  *
  * \return a NULL pointer
  */
