@@ -51,8 +51,8 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, IntValidator, DoubleValidator, from_qvariant
-from GlobalNumericalParameters import Ui_GlobalNumericalParameters
-from GlobalNumericalParametersAdvancedOptionsDialog import Ui_GlobalNumericalParametersAdvancedOptionsDialog
+from code_saturne.Pages.GlobalNumericalParameters import Ui_GlobalNumericalParameters
+from code_saturne.Pages.GlobalNumericalParametersAdvancedOptionsDialog import Ui_GlobalNumericalParametersAdvancedOptionsDialog
 from code_saturne.model.GlobalNumericalParametersModel import GlobalNumericalParametersModel
 from code_saturne.model.MainFieldsModel import MainFieldsModel
 

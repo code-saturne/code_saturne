@@ -50,7 +50,7 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, DoubleValidator, from_qvariant
-from InterfacialArea import Ui_InterfacialArea
+from code_saturne.Pages.InterfacialArea import Ui_InterfacialArea
 from code_saturne.model.InterfacialAreaModel import InterfacialAreaModel
 from code_saturne.model.MainFieldsModel import MainFieldsModel
 from code_saturne.model.InterfacialForcesModel import InterfacialForcesModel

@@ -1580,7 +1580,7 @@ class InletBoundaryTestCase(ModelTest):
         """Check whether the InletBoundaryModel class could set and get NonCondensableValue"""
         MainFieldsModel(self.case).addField()
         MainFieldsModel(self.case).addDefinedField("2", "field2", 'dispersed', 'gas', 'on', 'on', 'off', 2)
-        from NonCondensableModel import NonCondensableModel
+        from code_saturne.model.NonCondensableModel import NonCondensableModel
         NonCondensableModel(self.case).addNonCondensable()
         mdl = Boundary('inlet','BC_1',self.case)
         mdl.setNonCondensableValue('1','H2',16.5)

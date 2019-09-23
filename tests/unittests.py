@@ -40,23 +40,23 @@ import sys
 
 
 def starttest1():
-    from model.XMLengine import runTest
+    from code_saturne.model.XMLengine import runTest
     runTest()
 
 def starttest2():
-    from model.XMLvariables import runTest
+    from code_saturne.model.XMLvariables import runTest
     runTest()
 
 def starttest3():
-    from model.XMLmodel import runTest
+    from code_saturne.model.XMLmodel import runTest
     runTest()
 
 def starttest4():
-    from model.IdentityAndPathesModel import runTest
+    from code_saturne.model.IdentityAndPathesModel import runTest
     runTest()
 
 def starttest5():
-    from model.SolutionDomainModel import runTest
+    from code_saturne.model.SolutionDomainModel import runTest
     runTest()
 
 def starttest8():
@@ -72,7 +72,7 @@ def starttest10():
     runTest()
 
 def starttest11():
-    from model.CurrentSpeciesModel import runTest
+    from code_saturne.model.CurrentSpeciesModel import runTest
     runTest()
 
 def starttest12():
@@ -88,24 +88,24 @@ def starttest14():
     runTest()
 
 def starttest15():
-    from model.ReferenceValuesModel import runTest
+    from code_saturne.model.ReferenceValuesModel import runTest
     runTest()
 
 def starttest16():
-    from model.FluidCharacteristicsModel import runTest
+    from code_saturne.model.FluidCharacteristicsModel import runTest
     runTest()
 
 def starttest17():
-    from model.BodyForcesModel import runTest
+    from code_saturne.model.BodyForcesModel import runTest
     runTest()
 
 def starttest18():
-    from model.DefineUserScalarsModel import runTest
+    from code_saturne.model.DefineUserScalarsModel import runTest
     runTest()
 
 def starttest19():
-    from model.Boundary import runTest, runTest2, runTest3, runTest4, runTest5
-    from model.Boundary import runTest6, runTest7
+    from code_saturne.model.Boundary import runTest, runTest2, runTest3, runTest4, runTest5
+    from code_saturne.model.Boundary import runTest6, runTest7
     runTest()
     runTest2()
     runTest3()
@@ -115,73 +115,73 @@ def starttest19():
     runTest7()
 
 def starttest23():
-    from model.TimeAveragesModel import runTest
+    from code_saturne.model.TimeAveragesModel import runTest
     runTest()
 
 def starttest25():
-    from model.TimeStepModel import runTest
-    from model.TimeStepModel import runTest2
+    from code_saturne.model.TimeStepModel import runTest
+    from code_saturne.model.TimeStepModel import runTest2
     runTest()
     runTest2()
 
 def starttest26():
-    from model.OutputControlModel import runTest
+    from code_saturne.model.OutputControlModel import runTest
     runTest()
 
 def starttest27():
-    from model.OutputVolumicVariablesModel import runTest
+    from code_saturne.model.OutputVolumicVariablesModel import runTest
     runTest()
 
 def starttest28():
-    from model.OutputSurfacicVariablesModel import runTest
+    from code_saturne.model.OutputSurfacicVariablesModel import runTest
     runTest()
 
 def starttest29():
-    from model.ProfilesModel import runTest
+    from code_saturne.model.ProfilesModel import runTest
     runTest()
 
 def starttest30():
-    from model.NumericalParamEquationModel import runTest
+    from code_saturne.model.NumericalParamEquationModel import runTest
     runTest()
 
 def starttest31():
-    from model.NumericalParamGlobalModel import runTest
+    from code_saturne.model.NumericalParamGlobalModel import runTest
     runTest()
 
 def starttest33():
-    from model.StartRestartModel import runTest
+    from code_saturne.model.StartRestartModel import runTest
     runTest()
 
 def starttest34():
-    from model.BatchRunningModel import runTest
+    from code_saturne.model.BatchRunningModel import runTest
     runTest()
 
 def starttest35():
-    from model.LagrangianModel import runTest
+    from code_saturne.model.LagrangianModel import runTest
     runTest()
 
 def starttest36():
-    from model.ElectricalModel import runTest
+    from code_saturne.model.ElectricalModel import runTest
     runTest()
 
 def starttest37():
-    from model.GasCombustionModel import runTest
+    from code_saturne.model.GasCombustionModel import runTest
     runTest()
 
 def starttest45():
-    from model.LocalizationModel import runTest
+    from code_saturne.model.LocalizationModel import runTest
     runTest()
 
 def starttest46():
-    from model.HeadLossesModel import runTest
+    from code_saturne.model.HeadLossesModel import runTest
     runTest()
 
 def starttest47():
-    from model.FluidStructureInteractionModel import runTest
+    from code_saturne.model.FluidStructureInteractionModel import runTest
     runTest()
 
 def starttest48():
-    from model.AtmosphericFlowsModel import runTest
+    from code_saturne.model.AtmosphericFlowsModel import runTest
     runTest()
 
 if __name__ == '__main__':

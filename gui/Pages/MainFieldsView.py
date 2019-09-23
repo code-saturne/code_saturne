@@ -58,7 +58,7 @@ from code_saturne.Base.QtPage import ComboModel, RegExpValidator
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 
-from MainFields import Ui_MainFields
+from code_saturne.Pages.MainFields import Ui_MainFields
 from code_saturne.model.MainFieldsModel import MainFieldsModel
 
 from code_saturne.model.LagrangianModel import LagrangianModel

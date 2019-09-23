@@ -53,7 +53,7 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.Base.QtPage import ComboModel, RegExpValidator
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
-from UsersControl import Ui_UsersControl
+from code_saturne.Pages.UsersControl import Ui_UsersControl
 from code_saturne.model.UsersControlModel import UsersControlModel
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
 

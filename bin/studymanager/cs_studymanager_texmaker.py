@@ -32,7 +32,7 @@ import os
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from studymanager.cs_studymanager_run import run_studymanager_command
+from code_saturne.studymanager.cs_studymanager_run import run_studymanager_command
 
 #-------------------------------------------------------------------------------
 

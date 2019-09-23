@@ -41,9 +41,9 @@ import fnmatch
 
 from code_saturne.cs_exec_environment import get_shell_type, enquote_arg
 from code_saturne.cs_compile import files_to_compile, compile_and_link
-import code_saturne.cs_create
+from code_saturne import cs_create
 from code_saturne.cs_create import set_executable
-import code_saturne.cs_runcase
+from code_saturne import cs_runcase
 
 from code_saturne.model import XMLengine
 from code_saturne.studymanager.cs_studymanager_pathes_model import PathesModel
@@ -238,12 +238,12 @@ class Case(object):
         # 1) Load the xml file of parameters in order to update it
         #    with the __backwardCompatibility method.
 
-        from model.XMLengine import Case
+        from code_saturne.model.XMLengine import Case
 
         if self.exe == "code_saturne":
-            from model.XMLinitialize import XMLinit as solver_xml_init
+            from code_saturne.model.XMLinitialize import XMLinit as solver_xml_init
         elif self.exe == "neptune_cfd":
-            from model.XMLinitializeNeptune import XMLinit as solver_xml_init
+            from code_saturne.model.XMLinitializeNeptune import XMLinit as solver_xml_init
 
         for fn in os.listdir(os.path.join(self.__repo, subdir, "DATA")):
             fp = os.path.join(self.__repo, subdir, "DATA", fn)

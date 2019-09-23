@@ -78,11 +78,6 @@ from code_saturne.studymanager_gui.Toolbox import displaySelectedPage
 from code_saturne.studymanager_gui.BrowserView import BrowserView
 from code_saturne.studymanager.cs_studymanager_xml_init import smgr_xml_init
 
-try:
-    import code_saturne.Pages
-except:
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from code_saturne.Pages.WelcomeView import WelcomeView
 from code_saturne.model.IdentityAndPathesModel import IdentityAndPathesModel
 from code_saturne.Pages.XMLEditorView import XMLEditorView

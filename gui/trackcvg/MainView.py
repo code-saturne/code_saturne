@@ -69,11 +69,6 @@ except:
     sys.path.insert(1, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "Base"))
     from code_saturne.trackcvg.MainForm import Ui_MainForm
 
-try:
-    import code_saturne.trackcvg
-except:
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
 from code_saturne.Base.QtPage import getexistingdirectory
 from code_saturne.Base.QtPage import DoubleValidator, from_qvariant, to_text_string
 

@@ -56,7 +56,7 @@ from code_saturne.Base.QtWidgets import *
 from code_saturne.Base.QtPage import ComboModel, RegExpValidator, DoubleValidator
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
-from Noncondensable import Ui_NonCondensable
+from code_saturne.Pages.Noncondensable import Ui_NonCondensable
 from code_saturne.model.NonCondensableModel import *
 from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
 #-------------------------------------------------------------------------------

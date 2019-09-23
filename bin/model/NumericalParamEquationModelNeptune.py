@@ -358,7 +358,7 @@ class NumericalParamEquatTestCase(ModelTest):
 
     def checkGetVariableList(self):
         """Check whether the NumericalParamEquationModel class could get the VariableList"""
-        from MainFieldsModel import MainFieldsModel
+        from code_saturne.model.MainFieldsModel import MainFieldsModel
         MainFieldsModel(self.case).addField()
         mdl = NumericalParamEquatModel(self.case)
         assert mdl.getVariableList() == ['enthalpy1', 'alpha1', 'U1', 'V1', 'W1'],\
@@ -367,7 +367,7 @@ class NumericalParamEquatTestCase(ModelTest):
 
     def checkGetandSetSchemeModel(self):
         """Check whether the NumericalParamEquationModel class could be set and get SchemeModel"""
-        from MainFieldsModel import MainFieldsModel
+        from code_saturne.model.MainFieldsModel import MainFieldsModel
         MainFieldsModel(self.case).addField()
         mdl = NumericalParamEquatModel(self.case)
         mdl.setSchemeModel('pressure','solu')
@@ -384,7 +384,7 @@ class NumericalParamEquatTestCase(ModelTest):
 
     def checkGetandSetSlopeTestStatus(self):
         """Check whether the NumericalParamEquationModel class could be set and get SlopeTestStatus"""
-        from MainFieldsModel import MainFieldsModel
+        from code_saturne.model.MainFieldsModel import MainFieldsModel
         MainFieldsModel(self.case).addField()
         mdl = NumericalParamEquatModel(self.case)
         mdl.setSlopeTestStatus('Pressure','off')
@@ -401,7 +401,7 @@ class NumericalParamEquatTestCase(ModelTest):
 
     def checkGetandSetSolverModel(self):
         """Check whether the NumericalParamEquationModel class could be set and get SolverModel"""
-        from MainFieldsModel import MainFieldsModel
+        from code_saturne.model.MainFieldsModel import MainFieldsModel
         MainFieldsModel(self.case).addField()
         mdl = NumericalParamEquatModel(self.case)
         mdl.setSolverModel('Pressure','jacobi')
@@ -418,7 +418,7 @@ class NumericalParamEquatTestCase(ModelTest):
 
     def checkGetandSetSolverPrecision(self):
         """Check whether the NumericalParamEquationModel class could be set and get SolverPrecision"""
-        from MainFieldsModel import MainFieldsModel
+        from code_saturne.model.MainFieldsModel import MainFieldsModel
         MainFieldsModel(self.case).addField()
         mdl = NumericalParamEquatModel(self.case)
         mdl.setSolverPrecision('Pressure',56.23)
@@ -437,7 +437,7 @@ class NumericalParamEquatTestCase(ModelTest):
 
     def checkGetandSetMaximumIteration(self):
         """Check whether the NumericalParamEquationModel class could be set and get MaximumIteration"""
-        from MainFieldsModel import MainFieldsModel
+        from code_saturne.model.MainFieldsModel import MainFieldsModel
         MainFieldsModel(self.case).addField()
         mdl = NumericalParamEquatModel(self.case)
         mdl.setMaximumIteration('Pressure',18)

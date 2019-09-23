@@ -454,7 +454,7 @@ class MainFieldsInitializationTestCase(ModelTest):
         """Check whether the MainFieldsInitiaziationModel class could set and get InitialNonCondensable"""
         MainFieldsModel(self.case).addField()
         MainFieldsModel(self.case).addDefinedField("2", "field2", 'dispersed', 'gas', 'on', 'on', 'off', 2)
-        from NonCondensableModel import NonCondensableModel
+        from code_saturne.model.NonCondensableModel import NonCondensableModel
         NonCondensableModel(self.case).addNonCondensable()
         mdl = MainFieldsInitializationModel(self.case)
         mdl.setInitialNonCondensable('1','2','mass_fraction_non_condensable_gas_0',0.23)

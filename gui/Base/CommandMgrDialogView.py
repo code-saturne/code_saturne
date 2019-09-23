@@ -47,8 +47,8 @@ from code_saturne.Base.QtWidgets import *
 # Application modules
 #-------------------------------------------------------------------------------
 
-from CommandMgrDialogForm import Ui_CommandMgrDialogForm
-from CommandMgrLinesDisplayedDialogForm import Ui_CommandMgrLinesDisplayedDialogForm
+from code_saturne.Base.CommandMgrDialogForm import Ui_CommandMgrDialogForm
+from code_saturne.Base.CommandMgrLinesDisplayedDialogForm import Ui_CommandMgrLinesDisplayedDialogForm
 from QtPage import IntValidator, from_qvariant, to_text_string
 
 #-------------------------------------------------------------------------------
