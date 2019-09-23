@@ -73,7 +73,7 @@ class BatchRunningModel(Model):
         self.dictValues['run_nthreads'] = None
         self.dictValues['run_id'] = None
         self.dictValues['run_build'] = None
-        self.dictValues['run_stage_init'] = None
+        self.dictValues['run_stage_init'] = False
 
         # Is a batch file present ?
 

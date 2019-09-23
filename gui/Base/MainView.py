@@ -1848,7 +1848,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
 def isAlive(qobj):
     """
-    return True if the object qobj exist
+    return True if the object qobj exists
 
     @param qobj: the name of the attribute
     @return: C{True} or C{False}

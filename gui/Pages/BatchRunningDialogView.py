@@ -501,6 +501,9 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.checkBoxTrace.stateChanged.connect(self.slotTrace)
         self.checkBoxLogParallel.stateChanged.connect(self.slotLogParallel)
 
+        if not self.case['scripts_path']:
+            self.pushButtonRunSubmit.setEnabled(False)
+
         # initialize Widgets
 
         if self.jmdl.batch.rm_type != None and self.case['runcase']:
@@ -720,14 +723,17 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         Apply changes
         """
 
+        self.mdl.setTrace(self.trace_iter)
+        self.mdl.setLogParallel(self.log_parallel)
+        self.mdl.setString('debug', self.debug.strip())
+
+        if not self.case['scripts_path']:
+            return
+
         self.jmdl.batch.update_lines(self.case['runcase'].lines)
 
         for k in list(self.jmdl.dictValues.keys()):
             self.jmdl.updateBatchFile(k)
-
-        self.mdl.setTrace(self.trace_iter)
-        self.mdl.setLogParallel(self.log_parallel)
-        self.mdl.setString('debug', self.debug.strip())
 
         self.parent.batchFileSave()
 
