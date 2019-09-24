@@ -2624,6 +2624,95 @@ cs_convection_diffusion_scalar(int                       idtvar,
         }
       }
 
+      /* The scalar is internal_coupled and an implicit contribution
+       * is required */
+      if (icoupl > 0) {
+        /* Prepare data for sending */
+        BFT_MALLOC(pvar_distant, n_distant, cs_real_t);
+
+        for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
+          cs_lnum_t face_id = faces_distant[ii];
+          cs_lnum_t jj = b_face_cells[face_id];
+          cs_real_t pip, pipr;
+
+          cs_real_t bldfrp = (cs_real_t) ircflp;
+          /* Local limitation of the reconstruction */
+          if (df_limiter != NULL && ircflp > 0)
+            bldfrp = CS_MAX(df_limiter[jj], 0.);
+
+          cs_b_cd_steady(bldfrp,
+                         relaxp,
+                         diipb[face_id],
+                         grad[jj],
+                         _pvar[jj],
+                         pvara[jj],
+                         &pip,
+                         &pipr);
+          pvar_distant[ii] = pipr;
+        }
+
+        /* Receive data */
+        BFT_MALLOC(pvar_local, n_local, cs_real_t);
+        cs_internal_coupling_exchange_var(cpl,
+                                          1, /* Dimension */
+                                          pvar_distant,
+                                          pvar_local);
+
+        /* Exchange diffusion limiter */
+        if (df_limiter != NULL) {
+          BFT_MALLOC(df_limiter_local, n_local, cs_real_t);
+          cs_internal_coupling_exchange_var(cpl,
+                                            1, /* Dimension */
+                                            df_limiter,
+                                            df_limiter_local);
+        }
+
+        /* Flux contribution */
+        assert(f != NULL);
+        cs_real_t *hintp = f->bc_coeffs->hint;
+        cs_real_t *hextp = f->bc_coeffs->hext;
+        for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+          cs_lnum_t face_id = faces_local[ii];
+          cs_lnum_t jj = b_face_cells[face_id];
+          cs_real_t pip, pipr, pjpr;
+          cs_real_t fluxi = 0.;
+
+          cs_real_t bldfrp = (cs_real_t) ircflp;
+          /* Local limitation of the reconstruction */
+          if (df_limiter != NULL && ircflp > 0)
+            bldfrp = CS_MAX(CS_MIN(df_limiter_local[ii], df_limiter[jj]), 0.);
+
+          cs_b_cd_steady(bldfrp,
+                         relaxp,
+                         diipb[face_id],
+                         grad[jj],
+                         _pvar[jj],
+                         pvara[jj],
+                         &pip,
+                         &pipr);
+
+          pjpr = pvar_local[ii];
+
+          hint = hintp[face_id];
+          hext = hextp[face_id];
+          heq = hint * hext / (hint + hext);
+
+          cs_b_diff_flux_coupling(idiffp,
+                                  pipr,
+                                  pjpr,
+                                  heq,
+                                  &fluxi);
+
+          rhs[jj] -= thetap * fluxi;
+        }
+
+        BFT_FREE(pvar_local);
+        /* Sending structures are no longer needed */
+        BFT_FREE(pvar_distant);
+        if (df_limiter != NULL)
+          BFT_FREE(df_limiter_local);
+      }
+
     /* Unsteady */
     } else {
 
@@ -2679,7 +2768,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
         }
       }
 
-      /* The scalar is internal_coupled and an implicit contribution
+      /* The scalar is internally coupled and an implicit contribution
        * is required */
       if (icoupl > 0) {
         /* Prepare data for sending */
@@ -5117,6 +5206,128 @@ cs_convection_diffusion_vector(int                         idtvar,
         }
       }
 
+      if (icoupl > 0) {
+        /* Prepare data for sending */
+        BFT_MALLOC(pvar_distant, n_distant, cs_real_3_t);
+
+        for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
+          cs_lnum_t face_id = faces_distant[ii];
+          cs_lnum_t jj = b_face_cells[face_id];
+
+          cs_real_3_t pip, pipr;
+          cs_real_3_t _pj, _pja;
+
+          for (int i = 0; i < 3; i++) {
+            _pj[i]  = _pvar[jj][i];
+            _pja[i]  = pvara[jj][i];
+          }
+
+          cs_real_t bldfrp = (cs_real_t) ircflp;
+          /* Local limitation of the reconstruction */
+          /* Note: to be treated exactly as a internal face, should be a bending
+           * between the two cells... */
+          if (df_limiter != NULL && ircflp > 0)
+            bldfrp = CS_MAX(df_limiter[jj], 0.);
+
+          /* Scaling due to mass balance in porous modelling */
+          if (b_f_face_factor != NULL) {
+            cs_real_3_t n;
+            cs_math_3_normalise(b_face_normal[face_id], n);
+
+            cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pj);
+          }
+
+          cs_b_cd_steady_vector(bldfrp,
+                                relaxp,
+                                diipb[face_id],
+                                (const cs_real_3_t *)grad[jj],
+                                _pj,
+                                _pja,
+                                pip,
+                                pipr);
+
+          for (int k = 0; k < 3; k++)
+            pvar_distant[ii][k] = pipr[k];
+        }
+
+        /* Receive data */
+        BFT_MALLOC(pvar_local, n_local, cs_real_3_t);
+        cs_internal_coupling_exchange_var(cpl,
+                                          3, /* Dimension */
+                                          (cs_real_t *)pvar_distant,
+                                          (cs_real_t *)pvar_local);
+
+        if (df_limiter != NULL) {
+          BFT_MALLOC(df_limiter_local, n_local, cs_real_t);
+          cs_internal_coupling_exchange_var(cpl,
+                                            1, /* Dimension */
+                                            df_limiter,
+                                            df_limiter_local);
+        }
+
+        /* Flux contribution */
+        assert(f != NULL);
+        cs_real_t *hintp = f->bc_coeffs->hint;
+        cs_real_t *hextp = f->bc_coeffs->hext;
+        for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+          cs_lnum_t face_id = faces_local[ii];
+          cs_lnum_t jj = b_face_cells[face_id];
+          cs_real_t pip[3], pipr[3], pjpr[3];
+          cs_real_t fluxi[3] = {0., 0., 0.};
+          cs_real_3_t _pj, _pja;
+
+          for (cs_lnum_t i = 0; i < 3; i++) {
+            _pj[i]  = _pvar[jj][i];
+            _pja[i]  = pvara[jj][i];
+          }
+
+          /* Scaling due to mass balance in porous modelling */
+          if (b_f_face_factor != NULL) {
+            cs_real_3_t n;
+            cs_math_3_normalise(b_face_normal[face_id], n);
+
+            cs_math_3_normal_scaling(n, b_f_face_factor[face_id], _pj);
+          }
+
+          cs_real_t bldfrp = (cs_real_t) ircflp;
+          /* Local limitation of the reconstruction */
+          if (df_limiter != NULL && ircflp > 0)
+            bldfrp = CS_MAX(CS_MIN(df_limiter_local[ii], df_limiter[jj]), 0.);
+
+          cs_b_cd_steady_vector(bldfrp,
+                                relaxp,
+                                diipb[face_id],
+                                (const cs_real_3_t *)grad[jj],
+                                _pj,
+                                _pja,
+                                pip,
+                                pipr);
+
+          for (cs_lnum_t k = 0; k < 3; k++)
+            pjpr[k] = pvar_local[ii][k];
+
+          hint = hintp[face_id];
+          hext = hextp[face_id];
+          heq = hint * hext / (hint + hext);
+
+          cs_b_diff_flux_coupling_vector(idiffp,
+                                         pipr,
+                                         pjpr,
+                                         heq,
+                                         fluxi);
+
+          for (int k = 0; k < 3; k++)
+            rhs[jj][k] -= thetap * fluxi[k];
+        }
+
+        BFT_FREE(pvar_local);
+        /* Sending structures are no longer needed */
+        BFT_FREE(pvar_distant);
+        if (df_limiter != NULL) {
+          BFT_FREE(df_limiter_local);
+        }
+      }
+
       /* Unsteady */
     } else {
 
@@ -5189,7 +5400,7 @@ cs_convection_diffusion_vector(int                         idtvar,
         }
       }
 
-      /* The variable is internal_coupled and an implicit contribution
+      /* The variable is internally coupled and an implicit contribution
        * is required */
       if (icoupl > 0) {
         /* Prepare data for sending */
@@ -5212,7 +5423,6 @@ cs_convection_diffusion_vector(int                         idtvar,
            * between the two cells... */
           if (df_limiter != NULL && ircflp > 0)
             bldfrp = CS_MAX(df_limiter[jj], 0.);
-
 
           /* Scaling due to mass balance in porous modelling */
           if (b_f_face_factor != NULL) {
@@ -7650,6 +7860,96 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
         }
       }
+    }
+
+    /* The thermal is internal_coupled and an implicit contribution
+     * is required */
+    if (icoupl > 0) {
+      /* Prepare data for sending */
+      BFT_MALLOC(pvar_distant, n_distant, cs_real_t);
+
+      for (cs_lnum_t ii = 0; ii < n_distant; ii++) {
+        cs_lnum_t face_id = faces_distant[ii];
+        cs_lnum_t jj = b_face_cells[face_id];
+        cs_real_t pip, pipr;
+
+        cs_real_t bldfrp = (cs_real_t) ircflp;
+        /* Local limitation of the reconstruction */
+        /* Note: to be treated exactly as a internal face, should be a bending
+         * between the two cells... */
+        if (df_limiter != NULL && ircflp > 0)
+          bldfrp = CS_MAX(df_limiter[jj], 0.);
+
+        cs_b_cd_steady(bldfrp,
+                       relaxp,
+                       diipb[face_id],
+                       grad[jj],
+                       _pvar[jj],
+                       pvara[jj],
+                       &pip,
+                       &pipr);
+        pvar_distant[ii] = pipr;
+      }
+
+      /* Receive data */
+      BFT_MALLOC(pvar_local, n_local, cs_real_t);
+      cs_internal_coupling_exchange_var(cpl,
+                                        1, /* Dimension */
+                                        pvar_distant,
+                                        pvar_local);
+      if (df_limiter != NULL) {
+        BFT_MALLOC(df_limiter_local, n_local, cs_real_t);
+        cs_internal_coupling_exchange_var(cpl,
+                                          1, /* Dimension */
+                                          df_limiter,
+                                          df_limiter_local);
+      }
+
+      /* Flux contribution */
+      assert(f_id!=-1); // Otherwise the "f" can't be used
+      cs_real_t *hintp = f->bc_coeffs->hint;
+      cs_real_t *hextp = f->bc_coeffs->hext;
+      for (cs_lnum_t ii = 0; ii < n_local; ii++) {
+        cs_lnum_t face_id = faces_local[ii];
+        cs_lnum_t jj = b_face_cells[face_id];
+        cs_real_t pip, pipr, pjpr;
+        cs_real_t fluxi = 0.;
+
+        cs_real_t bldfrp = (cs_real_t) ircflp;
+        /* Local limitation of the reconstruction */
+        if (df_limiter != NULL && ircflp > 0)
+          bldfrp = CS_MAX(CS_MIN(df_limiter_local[ii], df_limiter[jj]), 0.);
+
+        cs_b_cd_steady(bldfrp,
+                       relaxp,
+                       diipb[face_id],
+                       grad[jj],
+                       _pvar[jj],
+                       pvara[jj],
+                       &pip,
+                       &pipr);
+
+        pjpr = pvar_local[ii];
+
+        hint = hintp[face_id];
+        hext = hextp[face_id];
+        heq = hint * hext / (hint + hext);
+
+        cs_b_diff_flux_coupling(idiffp,
+                                pipr,
+                                pjpr,
+                                heq,
+                                &fluxi);
+
+        rhs[jj] -= thetap * fluxi;
+      }
+
+      BFT_FREE(pvar_local);
+      /* Sending structures are no longer needed */
+      BFT_FREE(pvar_distant);
+      if (df_limiter != NULL)
+        BFT_FREE(df_limiter_local);
+
     }
 
     /* Unsteady */
