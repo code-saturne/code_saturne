@@ -69,6 +69,9 @@ User changes:
 
 Physical modelling:
 
+- Add an option to disable dynamics in solid cells for internal coupling or for
+  porous modelling.
+
 - Add non-linear (quadratic) eddy viscosity model k-epsilon of Baglietto et al.
   * to enable it, set cs_glob_turb_model->iturb = 23
   * it is a Low Reynolds model, compatible with adaptative wall functions.
