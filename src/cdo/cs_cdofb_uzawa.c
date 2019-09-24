@@ -677,7 +677,7 @@ _steady_build(const cs_mesh_t          *mesh,
   cs_matrix_assembler_values_t  *mav =
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
   shared(quant, connect, mom_eq, mom_eqp, mom_eqb, mom_eqc, rhs,        \
          matrix, nsp, mav, rs, dir_values, zeta, vel_c, pr, sc)         \
   firstprivate(time_eval)
@@ -1178,7 +1178,7 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
   cs_matrix_assembler_values_t  *mav =
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (n_cells > CS_THR_MIN) default(none)           \
+# pragma omp parallel if (n_cells > CS_THR_MIN)                         \
   shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
          mav, rs, dir_values, zeta, vel_c, pr, sc)                      \
   firstprivate(n_cells, time_eval)
@@ -1629,7 +1629,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
   cs_matrix_assembler_values_t  *mav =
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (n_cells > CS_THR_MIN) default(none)           \
+# pragma omp parallel if (n_cells > CS_THR_MIN)                         \
   shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
          mav, rs, dir_values, zeta, vel_c, pr, sc, func_name)           \
   firstprivate(n_cells, dt_cur, time_eval)
@@ -2105,9 +2105,10 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
   cs_matrix_assembler_values_t  *mav =
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (n_cells > CS_THR_MIN) default(none)              \
-  shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,      \
-         mav, rs, dir_values, zeta, vel_c, pr, sc, compute_initial_source) \
+# pragma omp parallel if (n_cells > CS_THR_MIN)                         \
+  shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
+         mav, rs, dir_values, zeta, vel_c, pr, sc,                      \
+         compute_initial_source)                                        \
   firstprivate(n_cells, dt_cur, t_cur, time_eval, tcoef)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */

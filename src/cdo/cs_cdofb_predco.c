@@ -1007,7 +1007,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
   cs_matrix_assembler_values_t  *mav =
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
   shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
          mav, mom_rs, dir_values, vel_c, pr_c, sc)                      \
   firstprivate(time_eval, inv_dtcur)

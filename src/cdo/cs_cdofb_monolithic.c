@@ -1541,8 +1541,8 @@ _solve_system(cs_sles_t                     *sles,
   BFT_MALLOC(b, n_scatter_elts, cs_real_t);
 
   /* De-interlace the velocity array and the rhs for the face DoFs */
-# pragma omp parallel for if (CS_THR_MIN > n_faces) default(none) \
-  shared(vel_f, b_f, xsol, b) \
+# pragma omp parallel for if (CS_THR_MIN > n_faces)     \
+  shared(vel_f, b_f, xsol, b)                           \
   firstprivate(n_faces)
   for (cs_lnum_t f = 0; f < n_faces; f++) {
 
@@ -1610,8 +1610,8 @@ _solve_system(cs_sles_t                     *sles,
 #endif
 
   /* Interlace xsol --> vel_f and pre_c */
-# pragma omp parallel for if (CS_THR_MIN > n_faces) default(none) \
-  shared(vel_f, xsol) \
+# pragma omp parallel for if (CS_THR_MIN > n_faces)     \
+  shared(vel_f, xsol)                                   \
   firstprivate(n_faces)
   for (cs_lnum_t f = 0; f < n_faces; f++) {
 
@@ -2054,7 +2054,7 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
   cs_matrix_assembler_values_t  *mav =
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
   shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
          mass_rhs, mav, dir_values, vel_c, sc)                          \
          firstprivate(t_eval)
@@ -2284,7 +2284,7 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t          *mesh,
   cs_matrix_assembler_values_t  *mav =
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
   shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
          mass_rhs, mav, dir_values, vel_c, sc)                          \
          firstprivate(t_eval, inv_dtcur)
@@ -2548,7 +2548,7 @@ cs_cdofb_monolithic_compute_theta(const cs_mesh_t          *mesh,
   cs_matrix_assembler_values_t  *mav =
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
   shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
          mass_rhs, mav, dir_values, vel_c, sc, compute_initial_source)  \
   firstprivate(t_eval, t_cur, dt_cur, tcoef, inv_dtcur)

@@ -164,8 +164,8 @@ _update_saturated_iso_soil(const cs_real_t              t_eval,
 
   const  double  iso_satval = law->saturated_permeability[0][0];
 
-# pragma omp parallel for if (zone->n_elts > CS_THR_MIN) default(none)     \
-  shared(zone, law, permeability_values, moisture_values)                  \
+# pragma omp parallel for if (zone->n_elts > CS_THR_MIN)                \
+  shared(zone, law, permeability_values, moisture_values)               \
   firstprivate(iso_satval)
   for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
 
@@ -222,7 +222,7 @@ _update_saturated_aniso_soil(const cs_real_t              t_eval,
   const cs_gwf_soil_saturated_param_t  *law =
     (cs_gwf_soil_saturated_param_t *)input;
 
-# pragma omp parallel for if (zone->n_elts > CS_THR_MIN) default(none)     \
+# pragma omp parallel for if (zone->n_elts > CS_THR_MIN)        \
   shared(zone, law, permeability_values, moisture_values)
   for (cs_lnum_t id = 0; id < zone->n_elts; id++) {
 
@@ -309,9 +309,9 @@ _update_genuchten_iso_soil(const cs_real_t              t_eval,
   const  double  delta_moisture =
     law->saturated_moisture - law->residual_moisture;
 
-# pragma omp parallel for if (zone->n_elts > CS_THR_MIN) default(none)     \
-  shared(head_values, zone, law, permeability_values, moisture_values,     \
-         capacity_values)                                                  \
+# pragma omp parallel for if (zone->n_elts > CS_THR_MIN)                \
+  shared(head_values, zone, law, permeability_values, moisture_values,  \
+         capacity_values)                                               \
   firstprivate(iso_satval, delta_moisture)
   for (cs_lnum_t i = 0; i < zone->n_elts; i++) {
 

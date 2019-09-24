@@ -576,7 +576,7 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
   cs_matrix_assembler_values_t  *mav
     = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
   shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,           \
          dir_values, fld, cs_cdofb_cell_sys, cs_cdofb_cell_bld)         \
   firstprivate(time_eval)
@@ -774,7 +774,7 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
   cs_matrix_assembler_values_t  *mav
     = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
   shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,           \
          dir_values, fld, cs_cdofb_cell_sys, cs_cdofb_cell_bld)         \
   firstprivate(time_eval, inv_dtcur)
@@ -1007,7 +1007,7 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
   cs_matrix_assembler_values_t  *mav
     = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)        \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                      \
   shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs, dir_values,   \
          fld, cs_cdofb_cell_sys, cs_cdofb_cell_bld, compute_initial_source) \
   firstprivate(time_eval, tcoef, t_cur, dt_cur, inv_dtcur)

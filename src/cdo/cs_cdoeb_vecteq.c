@@ -865,7 +865,7 @@ cs_cdoeb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
   /* Main OpenMP block on cell */
   /* ------------------------- */
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
+#pragma omp parallel if (quant->n_cells > CS_THR_MIN)                   \
   shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, circ_bc_vals, \
          fld, rs, cs_cdoeb_cell_system, cs_cdoeb_cell_builder,          \
          res_normalization)                                             \

@@ -411,7 +411,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
   for (int i = 0; i < cs_glob_n_threads; i++)
     parent_thread_array[i] = NULL;
 
-# pragma omp parallel default(none) \
+# pragma omp parallel                                                   \
   shared(quant, topo, parent_thread_array, edge_center, cs_glob_n_threads)
   { /* OMP Block */
     const cs_adjacency_t  *c2f = topo->c2f, *f2e = topo->f2e;
@@ -550,7 +550,7 @@ _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
   /* Allocate and initialize arrays */
   BFT_MALLOC(quant->dcell_vol, topo->c2v->idx[quant->n_cells], double);
 
-# pragma omp parallel for default(none) shared(quant, topo, c2f, f2e)   \
+# pragma omp parallel for shared(quant, topo, c2f, f2e) \
   CS_CDO_OMP_SCHEDULE
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 

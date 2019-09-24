@@ -746,9 +746,9 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
   cs_matrix_assembler_values_t  *mav =
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
-  shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,    \
-         mav, rs, dir_values, zeta, vel_c, pr, sc)                       \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
+  shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
+         mav, rs, dir_values, zeta, vel_c, pr, sc)                      \
   firstprivate(time_eval, dt_cur)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
@@ -1072,7 +1072,7 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
   cs_matrix_assembler_values_t  *mav =
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)    \
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
   shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
          mav, rs, dir_values, zeta, vel_c, pr, sc,                      \
          compute_initial_source)                                        \
