@@ -882,7 +882,7 @@ schemes (Original SOLU, CENTER, Standard SOLU)
 - Handling of linear solver errors is improved to allow re-try with
   different solvers or parameters.
 
-- Default to multigrid-preconditionned conjugate gradient for
+- Default to multigrid-preconditioned conjugate gradient for
   most symetric linear systems.
 
 - Improve performance and possible precision of reduction operations.
