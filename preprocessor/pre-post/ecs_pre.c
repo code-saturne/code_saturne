@@ -235,7 +235,7 @@ _get_path(const char   *dir_path,
     const char *cs_root_dir = NULL;
     const char *rel_path = NULL;
 
-    /* Allow for displacable install */
+    /* Allow for displaceable install */
 
     if (*env_path != NULL)
       return *env_path;
@@ -604,4 +604,3 @@ ecs_pre__lit_maillage(const char        *nom_fic,
 }
 
 /*----------------------------------------------------------------------------*/
-

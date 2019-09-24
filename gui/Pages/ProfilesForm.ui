@@ -203,7 +203,7 @@
              <item row="1" column="0">
               <widget class="QLabel" name="labelFreq">
                <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select and specify the ouput frequency of the 1D profile between:&lt;br/&gt;- At the end of the calculation,&lt;br/&gt;- At each ’n’ time steps.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select and specify the output frequency of the 1D profile between:&lt;br/&gt;- At the end of the calculation,&lt;br/&gt;- At each ’n’ time steps.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="text">
                 <string>Output
@@ -214,7 +214,7 @@ frequency</string>
              <item row="1" column="1">
               <widget class="QComboBox" name="comboBoxFreq">
                <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select and specify the ouput frequency of the 1D profile between:&lt;br/&gt;- At the end of the calculation,&lt;br/&gt;- At each ’n’ time steps.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select and specify the output frequency of the 1D profile between:&lt;br/&gt;- At the end of the calculation,&lt;br/&gt;- At each ’n’ time steps.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
               </widget>
              </item>
@@ -229,7 +229,7 @@ frequency</string>
                   </size>
                  </property>
                  <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select and specify the ouput frequency of the 1D profile between:&lt;br/&gt;- At the end of the calculation,&lt;br/&gt;- At each ’n’ time steps.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select and specify the output frequency of the 1D profile between:&lt;br/&gt;- At the end of the calculation,&lt;br/&gt;- At each ’n’ time steps.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                 </widget>
                </item>
@@ -242,7 +242,7 @@ frequency</string>
                   </size>
                  </property>
                  <property name="toolTip">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select and specify the ouput frequency of the 1D profile between:&lt;br/&gt;- At the end of the calculation,&lt;br/&gt;- At each ’n’ time steps.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select and specify the output frequency of the 1D profile between:&lt;br/&gt;- At the end of the calculation,&lt;br/&gt;- At each ’n’ time steps.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                 </widget>
                </item>

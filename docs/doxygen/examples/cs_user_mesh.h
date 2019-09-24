@@ -66,7 +66,7 @@
   \subsection cs_user_mesh_h_cs_user_mesh_modifiy_boundary_layer_1 Boundary layer insertion
 
   Boundary faces extrusion can also be used to insert boundary layer cells,
-  by first shrinking the mesh around the selected zones so as to accomodate for
+  by first shrinking the mesh around the selected zones so as to accommodate for
   added cells. The following example shows how this can be done for 2 different
   zones, using different parameters for each zone. Note that adjacent zones with
   a different number of inserted layers are possible. Also a positive zone

@@ -244,16 +244,16 @@ cs_math_sym_33_eigen(const cs_real_t  m[6],
     }
 
     /* r should be between -1 and 1 but truncation error and bad conditionning
-       can lead to slighty under/over-shoot */
+       can lead to slightly under/over-shoot */
     cs_real_t  r = 0.5 * cs_math_sym_33_determinant(n);
 
     cs_real_t  cos_theta, cos_theta_2pi3;
     if (r <= -1.) {
-      cos_theta = 0.5; // theta = pi/3;
+      cos_theta = 0.5; /* theta = pi/3; */
       cos_theta_2pi3 = -1.;
     }
     else if (r >= 1.) {
-      cos_theta = 1.; // theta = 0.;
+      cos_theta = 1.; /* theta = 0.; */
       cos_theta_2pi3 = -0.5;
     }
     else {
@@ -267,7 +267,7 @@ cs_math_sym_33_eigen(const cs_real_t  m[6],
     e2 = tr - e1 -e3; // since tr(m) = e1 + e2 + e3
 
   }
-  else { // m is diagonal
+  else { /* m is diagonal */
 
     e1 = m[0], e2 = m[1], e3 = m[2];
 
@@ -278,6 +278,7 @@ cs_math_sym_33_eigen(const cs_real_t  m[6],
   else {
     if (e2 < e1) e = e2, e2 = e1, e1 = e;
   }
+
   /* Return values */
   eig_vals[0] = e1;
   eig_vals[1] = e2;
@@ -317,7 +318,7 @@ cs_math_33_eigen(const cs_real_t     m[3][3],
 
   cs_real_t  p1 = m[0][1]*m[0][1] + m[0][2]*m[0][2] + m[1][2]*m[1][2];
 
-  if (p1 > 0.0) { // m is not diagonal
+  if (p1 > 0.0) { /* m is not diagonal */
 
     cs_real_t  theta;
     cs_real_t  n[3][3];
@@ -339,7 +340,7 @@ cs_math_33_eigen(const cs_real_t     m[3][3],
     }
 
     /* r should be between -1 and 1 but truncation error and bad conditionning
-       can lead to slighty under/over-shoot */
+       can lead to slightly under/over-shoot */
     cs_real_t  r = 0.5 * cs_math_33_determinant((const cs_real_t (*)[3])n);
 
     if (r <= -1)
@@ -349,13 +350,13 @@ cs_math_33_eigen(const cs_real_t     m[3][3],
     else
       theta = cs_math_1ov3*acos(r);
 
-    // eigenvalues computed should satisfy e1 < e2 < e3
+    /* eigenvalues computed should satisfy e1 < e2 < e3 */
     e3 = tr + 2*p*cos(theta);
     e1 = tr + 2*p*cos(theta + 2*cs_math_pi*cs_math_1ov3);
     e2 = 3*tr - e1 -e3; // since tr(m) = e1 + e2 + e3
 
   }
-  else { // m is diagonal
+  else { /* m is diagonal */
 
     e1 = m[0][0], e2 = m[1][1], e3 = m[2][2];
     if (e3 < e2) e = e3, e3 = e2, e2 = e;

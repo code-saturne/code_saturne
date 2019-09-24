@@ -630,7 +630,7 @@ _update_variables(const cs_real_t              dt_cur,
                          vel_f);
   }
 
-  /* Update face-related unknows */
+  /* Update face-related unknowns */
 # pragma omp parallel for if (n_faces > CS_THR_MIN)
   for (cs_lnum_t f = 0; f < n_faces; f++) {
 

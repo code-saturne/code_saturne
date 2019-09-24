@@ -1007,7 +1007,7 @@ cs_sles_default_error(cs_sles_t                    *sles,
 
       bft_printf(_("\n\n"
                    "%s [%s]: divergence\n"
-                   "  fallback from multigrid to %s-preconditionned CG solver\n"
+                   "  fallback from multigrid to %s-preconditioned CG solver\n"
                    "  for re-try and subsequent solves.\n"),
                    "Multigrid", name, "Jacobi");
 

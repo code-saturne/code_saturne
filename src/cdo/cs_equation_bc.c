@@ -678,7 +678,7 @@ cs_equation_compute_dirichlet_vb(cs_real_t                   t_eval,
         /* Evaluate the boundary condition at each boundary vertex */
         cs_xdef_eval_at_vertices_by_array(n_vf,
                                           lst,
-                                          true, /* compact ouput */
+                                          true, /* compact output */
                                           mesh,
                                           connect,
                                           quant,

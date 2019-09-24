@@ -107,7 +107,7 @@ typedef void
  * CDO scheme with vertex+cell-based positioning
  *
  * \var CS_SPACE_SCHEME_CDOEB
- * CDO scheme with edge-based positionning
+ * CDO scheme with edge-based positioning
  *
  * \var CS_SPACE_SCHEME_CDOFB
  * CDO scheme with face-based positioning

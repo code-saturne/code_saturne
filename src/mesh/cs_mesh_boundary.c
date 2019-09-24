@@ -1088,7 +1088,7 @@ _split_vertices_vtx_min_cell_num(cs_mesh_t       *mesh,
 }
 
 /*----------------------------------------------------------------------------
- * Seperate vertices at inserted boundary faces based on their cell adjacency.
+ * Separate vertices at inserted boundary faces based on their cell adjacency.
  *
  * parameters:
  *   mesh         <-> pointer to mesh structure

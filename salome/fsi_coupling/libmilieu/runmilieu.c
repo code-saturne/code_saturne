@@ -259,7 +259,7 @@ runmilieu(void *icompo)
       c2 = 0.;
       c3 = 0.;
 
-      /* seperate prediction for explicit/implicit cases */
+      /* separate prediction for explicit/implicit cases */
       if (j == 1) {
         alpha = 0.5;
         beta  = 0.;

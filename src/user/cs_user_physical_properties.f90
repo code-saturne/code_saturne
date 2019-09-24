@@ -163,7 +163,7 @@ end subroutine usphyv
 !> Turbulent viscosity \f$ \mu_T \f$ (kg/(m s)) can be modified.
 !>
 !> A modification of the turbulent viscosity can lead to very
-!> significant differences betwwen solutions and even give wrong
+!> significant differences between solutions and even give wrong
 !> results.
 !>
 !> This subroutine is therefore reserved to expert users.

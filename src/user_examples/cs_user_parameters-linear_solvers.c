@@ -286,7 +286,7 @@ cs_user_linear_solvers(void)
 {
   /* Available native iterative linear solvers are:
    *
-   *  CS_SLES_PCG                 (preconditionned conjugate gradient)
+   *  CS_SLES_PCG                 (preconditioned conjugate gradient)
    *  CS_SLES_JACOBI              (Jacobi)
    *  CS_SLES_BICGSTAB            (Bi-conjugate gradient stabilized)
    *  CS_SLES_BICGSTAB2           (BiCGStab2)

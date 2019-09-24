@@ -470,7 +470,7 @@ cs_base_fortran_bft_printf_set(const char  *log_name,
 
   if (suppress == false) {
 
-    /* Allow bypassing this with environment variable to accomodate
+    /* Allow bypassing this with environment variable to accommodate
        some debug habits */
 
     const char *p = getenv("CS_LOG_TO_STDOUT");

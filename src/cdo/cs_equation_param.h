@@ -463,7 +463,7 @@ typedef struct {
  * - "upwind" (cf. \ref CS_PARAM_ADVECTION_SCHEME_UPWIND)
  * - "centered" (cf. \ref CS_PARAM_ADVECTION_SCHEME_CENTERED)
  * - "mix_centered_upwind" (\ref CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND)
- * - "samarskii" --> switch smoothly betwwen an upwind and a centered scheme
+ * - "samarskii" --> switch smoothly between an upwind and a centered scheme
  *   thanks to a weight depending on the Peclet number. (cf.
  * \ref CS_PARAM_ADVECTION_SCHEME_SAMARSKII). Only for CDO-Vb schemes.
  * - "sg" --> closely related to "samarskii" but with a different definition of

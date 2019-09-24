@@ -115,7 +115,7 @@ cs_internal_coupling_n_couplings(void);
 /*!
  * \brief Define coupling volume using given selection criteria.
  *
- * Then, this volume must be seperated from the rest of the domain with a wall.
+ * Then, this volume must be separated from the rest of the domain with a wall.
  *
  * \param[in, out] mesh            pointer to mesh structure to modify
  * \param[in]      criteria_cells  criteria for the first group of cells
@@ -546,7 +546,7 @@ cs_internal_coupling_dump(void);
  * Add preprocessing operations required by coupling volume using given
  * criteria.
  *
- * The volume is seperated from the rest of the domain with inserted
+ * The volume is separated from the rest of the domain with inserted
  * boundaries.
  *
  * parameters:

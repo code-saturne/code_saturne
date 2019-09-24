@@ -176,8 +176,8 @@ if (ippmod(icoebu).ge.0) then
   endif
 endif
 
-! 1.3 Flamme de premelange : modele BML A DEVELOPPER
-! ==================================================
+! 1.3 Flamme de premelange : modele BML A DEVELOPER
+! =================================================
 
 ! 1.4 Flamme de premelange : modele LWC
 ! =====================================

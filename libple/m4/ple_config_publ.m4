@@ -5,8 +5,8 @@ dnl information, see the COPYING file in the top level directory of the
 dnl PLE source distribution.
 
 
-# PLE_AC_CONFIG_PUBL_INIT([OUPUT FILE NAME])
-#-------------------------------------------
+# PLE_AC_CONFIG_PUBL_INIT([OUTPUT FILE NAME])
+#--------------------------------------------
 # Initialize file
 
 AC_DEFUN([PLE_AC_CONFIG_PUBL_INIT],[
@@ -133,4 +133,3 @@ fi
 echo >> "$ple_ac_config_publ_h"-tmp
 
 ])dnl
-

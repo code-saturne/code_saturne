@@ -669,7 +669,7 @@ if (ieqnox.eq.1) then
 endif
 
 ! Age of bulk
-!FIXME give the possibility of having the age seperately
+!FIXME give the possibility of having the age separately
 if (i_comb_drift.ge.1) then
 
   f_name = 'age'

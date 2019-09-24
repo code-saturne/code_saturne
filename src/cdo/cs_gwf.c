@@ -1599,7 +1599,7 @@ cs_gwf_integrate_tracer(const cs_cdo_connect_t     *connect,
 
         const cs_lnum_t  c_id = (z->elt_ids == NULL) ? i : z->elt_ids[i];
 
-        /* Shares between cell and vertex unknows:
+        /* Shares between cell and vertex unknowns:
            - the cell unknown stands for 1/4 of the cell volume
            - the vertex unknown stands for 3/4 of the dual cell volume
          */

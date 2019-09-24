@@ -310,7 +310,7 @@ cs_base_warn(const char  *file_name,
  * Define a function to be called when entering cs_exit() or bft_error().
  *
  * Compared to the C atexit(), only one function may be called (latest
- * setting wins), but the function is called slighty before exit,
+ * setting wins), but the function is called slightly before exit,
  * so it is well adapted to cleanup such as flushing of non-C API logging.
  *
  * parameters:
@@ -449,7 +449,7 @@ cs_base_dlopen(const char *filename);
 /*!
  * \brief Load a plugin's dynamic library
  *
- * This function is similar to \ref cs_base_dlopen, execpt that only
+ * This function is similar to \ref cs_base_dlopen, except that only
  * the base plugin file name (with no extension) needs to be given.
  * It is assumed the file is available in the code's "pkglibdir" directory,
  *

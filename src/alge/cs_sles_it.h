@@ -56,7 +56,7 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_SLES_PCG,                 /*!< Preconditionned conjugate gradient */
+  CS_SLES_PCG,                 /*!< Preconditioned conjugate gradient */
   CS_SLES_FCG,                 /*!< Preconditions flexible conjugate gradient,
                                     described in \cite Notay:2015 */
   CS_SLES_IPCG,                /*!< Preconditions inexact conjugate gradient */

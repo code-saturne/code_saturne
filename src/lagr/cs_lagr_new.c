@@ -362,7 +362,7 @@ cs_lagr_new(cs_lagr_particle_set_t  *particles,
                             acc_surf_r,
                             part_coord);
 
-      /* For safety, move particle slighty inside cell */
+      /* For safety, move particle slightly inside cell */
 
       for (cs_lnum_t j = 0; j < 3; j++)
         part_coord[j] += (c_cen[j] - part_coord[j])*d_eps;
@@ -600,7 +600,7 @@ cs_lagr_new_v(cs_lagr_particle_set_t  *particles,
           part_coord[j] += (cell_cen[j] - part_coord[j]) * (1. - t);
       }
 
-      /* Move particle slighty towards cell center cell
+      /* Move particle slightly towards cell center cell
          (assuming cell is star-shaped) */
 
       else {

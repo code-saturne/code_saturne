@@ -75,7 +75,7 @@ module optcal
   !> and \ref istmpf = 1 otherwise.
   integer, save ::          istmpf
 
-  !> number of interations on the pressure-velocity coupling on Navier-Stokes
+  !> number of iterations on the pressure-velocity coupling on Navier-Stokes
   !> (for the PISO algorithm)
   integer(c_int), pointer, save ::          nterup
 

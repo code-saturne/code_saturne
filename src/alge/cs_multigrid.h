@@ -264,7 +264,7 @@ cs_multigrid_setup(void               *context,
                    int                 verbosity);
 
 /*----------------------------------------------------------------------------
- * Setup multigrid sparse linear equation solver with seperate
+ * Setup multigrid sparse linear equation solver with separate
  * convection-diffusion matrixes
  *
  * parameters:

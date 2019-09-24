@@ -3027,7 +3027,7 @@ ecs_loc_pre_cgns__cree_grps_boco(const ecs_loc_cgns_base_t  *base_maillage,
             ind_ent = ptr_boco->pnts[ind] - ptr_zone->num_elt_deb;
 
             /* If boundary condition references elements not present,
-               ignore it (workaroud for bug in ICEM Meshing 13 output). */
+               ignore it (workaround for bug in ICEM Meshing 13 output). */
 
             if (ind_ent >= ptr_zone->renum_size)
               continue;

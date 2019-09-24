@@ -2094,7 +2094,7 @@ cs_cdo_diffusion_vvb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
 /*!
  * \brief   Take into account a sliding BCs.
  *          Case of vector-valued CDO-Vb schemes with a OCS algorithm.
- *          Orthogonal splitting betwwen Consistency/Stabilization parts.
+ *          Orthogonal splitting between Consistency/Stabilization parts.
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure

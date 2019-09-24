@@ -347,7 +347,7 @@
   \subsection cs_user_parameters_h_sles_ex_1 Example: distance to wall
 
   By default, the wall distance (active only with turbulence models which
-  require it) is computed with a preconditionned conjugate gradient.
+  require it) is computed with a preconditioned conjugate gradient.
   The following example shows how to use a multigrid solver for this
   quantity (useful especially if computed repeatedly, such as for ALE).
 
