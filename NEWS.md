@@ -1,10 +1,13 @@
 Release 6.0.0 (unreleased)
 --------------------------
 
-Notes:
+known issues:
 
-  This is a beta version of version 6.0, which should be released
-  September 2019.
+- Internal coupling for scalars is not handled yet when using the
+  steady algorithm with relaxion (itdvar -1).
+
+- Upon computation restart, we may exhibit a spurious jump in pressure
+  values at the second time step, which then return to normal.
 
 User changes:
 
