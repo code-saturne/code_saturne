@@ -259,14 +259,6 @@ _petsc_set_pc_options_from_command_line(cs_param_sles_t    slesp)
 
   switch (slesp.precond) {
 
-  case CS_PARAM_PRECOND_BJACOB:
-#if PETSC_VERSION_GE(3,7,0)
-    PetscOptionsSetValue(NULL, "-sub_pc_factor_levels", "2");
-#else
-    PetscOptionsSetValue("-sub_pc_factor_levels", "2");
-#endif
-    break;
-
   case CS_PARAM_PRECOND_AMG:
     {
       switch (slesp.amg_type) {
@@ -473,10 +465,32 @@ _petsc_setup_hook(void   *context,
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
 
+  /* 1) Set the solver */
+  _petsc_set_krylov_solver(slesp, a, ksp);
+
+  /* 2) Set the preconditioner */
+  PCType  pc_type = _petsc_get_pc_type(slesp, eqp->name);
+  PC  pc;
+  KSPGetPC(ksp, &pc);
+
   /* Sanity checks */
   if (cs_glob_n_ranks > 1) {
-    if (slesp.precond == CS_PARAM_PRECOND_SSOR ||
-        slesp.precond == CS_PARAM_PRECOND_ILU0) {
+
+    if (slesp.precond == CS_PARAM_PRECOND_ILU0 ||
+        slesp.precond == CS_PARAM_PRECOND_ICC0) {
+#if defined(PETSC_HAVE_HYPRE)
+      PCHYPRESetType(pc, "euclid");
+#else
+      slesp.precond = CS_PARAM_PRECOND_BJACOB;
+      cs_base_warn(__FILE__, __LINE__);
+      cs_log_printf(CS_LOG_DEFAULT,
+                    " %s: Eq. %s: Modify the requested preconditioner to"
+                    " enable a parallel computation with PETSC.\n"
+                    " Switch to a block jacobi preconditioner.\n"
+                    " Please check your settings.", __func__, eqp->name);
+#endif
+    }
+    else if (slesp.precond == CS_PARAM_PRECOND_SSOR) {
 
       slesp.precond = CS_PARAM_PRECOND_BJACOB;
       cs_base_warn(__FILE__, __LINE__);
@@ -487,15 +501,8 @@ _petsc_setup_hook(void   *context,
                     " Please check your settings.", __func__, eqp->name);
 
     }
+
   } /* Advanced check for parallel run */
-
-  /* 1) Set the solver */
-  _petsc_set_krylov_solver(slesp, a, ksp);
-
-  /* 2) Set the preconditioner */
-  PCType  pc_type = _petsc_get_pc_type(slesp, eqp->name);
-  PC  pc;
-  KSPGetPC(ksp, &pc);
 
   if (slesp.solver != CS_PARAM_ITSOL_MUMPS &&
       slesp.solver != CS_PARAM_ITSOL_MUMPS_LDLT)
@@ -518,9 +525,6 @@ _petsc_setup_hook(void   *context,
     break;
 
   case CS_PARAM_PRECOND_ICC0:
-    PCFactorSetLevels(pc, 0);
-    break;
-
   case CS_PARAM_PRECOND_ILU0:
     PCFactorSetLevels(pc, 0);
     break;
@@ -645,17 +649,16 @@ _petsc_amg_block_hook(void     *context,
 
   }
 
-  PCSetFromOptions(pc);
-  PCSetUp(pc);
-
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, a, ksp);
 
+  PCSetFromOptions(pc);
   KSPSetFromOptions(ksp);
   KSPSetUp(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
   if (!slesp.setup_done) {
+
     cs_sles_petsc_log_setup(ksp);
     slesp.setup_done = true;
   }
@@ -691,18 +694,8 @@ _petsc_block_jacobi_hook(void     *context,
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
 
-  /* Set the solver */
+  /* Set the solver (tolerance and max_it too) */
   _petsc_set_krylov_solver(slesp, a, ksp);
-
-  /* Set KSP tolerances */
-  PetscReal rtol, abstol, dtol;
-  PetscInt  maxit;
-  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
-  KSPSetTolerances(ksp,
-                   slesp.eps,         /* relative convergence tolerance */
-                   abstol,            /* absolute convergence tolerance */
-                   dtol,              /* divergence tolerance */
-                   slesp.n_max_iter); /* max number of iterations */
 
   /* Try to have "true" norm */
   KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
@@ -735,8 +728,9 @@ _petsc_block_jacobi_hook(void     *context,
     KSPSetType(_ksp, KSPPREONLY);
     KSPGetPC(_ksp, &_pc);
     PCSetType(_pc, PCBJACOBI);
+    PCFactorSetLevels(_pc, 0);
     PCFactorSetReuseOrdering(_pc, PETSC_TRUE);
-    PCFactorSetReuseFill(_pc, PETSC_TRUE);
+    PCFactorSetMatOrderingType(_pc, MATORDERING1WD);
   }
 
   PCSetFromOptions(pc);
@@ -746,10 +740,10 @@ _petsc_block_jacobi_hook(void     *context,
   cs_user_sles_petsc_hook(context, a, ksp);
 
   KSPSetFromOptions(ksp);
-  KSPSetUp(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
   if (!slesp.setup_done) {
+    KSPSetUp(ksp);
     cs_sles_petsc_log_setup(ksp);
     slesp.setup_done = true;
   }
@@ -2002,44 +1996,25 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp)
 
     cs_sles_petsc_init();
 
-    if (slesp.precond == CS_PARAM_PRECOND_SSOR ||
-        slesp.precond == CS_PARAM_PRECOND_ILU0 ||
-        slesp.precond == CS_PARAM_PRECOND_ICC0) {
-
-      if (cs_glob_n_ranks > 1)
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Incompatible PETSc settings for parallel run.\n",
-                  __func__);
-
+    if (slesp.precond == CS_PARAM_PRECOND_AMG_BLOCK)
       cs_sles_petsc_define(slesp.field_id,
                            NULL,
-                           MATSEQAIJ, /* Warning SEQ not MPI */
+                           MATMPIAIJ,
+                           _petsc_amg_block_hook,
+                           (void *)eqp);
+    else if (slesp.precond == CS_PARAM_PRECOND_BJACOB && eqp->dim > 1)
+      cs_sles_petsc_define(slesp.field_id,
+                           NULL,
+                           MATMPIAIJ,
+                           _petsc_block_jacobi_hook,
+                           (void *)eqp);
+    else
+      cs_sles_petsc_define(slesp.field_id,
+                           NULL,
+                           MATMPIAIJ,
                            _petsc_setup_hook,
                            (void *)eqp);
 
-    }
-    else {
-
-      if (slesp.precond == CS_PARAM_PRECOND_AMG_BLOCK)
-        cs_sles_petsc_define(slesp.field_id,
-                             NULL,
-                             MATMPIAIJ,
-                             _petsc_amg_block_hook,
-                             (void *)eqp);
-      else if (slesp.precond == CS_PARAM_PRECOND_BJACOB && eqp->dim > 1)
-        cs_sles_petsc_define(slesp.field_id,
-                             NULL,
-                             MATMPIAIJ,
-                             _petsc_block_jacobi_hook,
-                             (void *)eqp);
-      else
-        cs_sles_petsc_define(slesp.field_id,
-                             NULL,
-                             MATMPIAIJ,
-                             _petsc_setup_hook,
-                             (void *)eqp);
-
-    }
 #else
     bft_error(__FILE__, __LINE__, 0,
               _(" %s: PETSC algorithms used to solve %s are not linked.\n"

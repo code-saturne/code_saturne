@@ -307,9 +307,6 @@ cs_navsto_sles_amg_block_hook(void     *context,
       break;
     }
 
-    PCSetFromOptions(_pc);
-    PCSetUp(_pc);
-
   }
 
   /* User function for additional settings */
@@ -320,8 +317,10 @@ cs_navsto_sles_amg_block_hook(void     *context,
 
   /* Dump the setup related to PETSc in a specific file */
   if (!slesp.setup_done) {
+
     cs_sles_petsc_log_setup(ksp);
     slesp.setup_done = true;
+
   }
 
   PetscFree(uvw_subksp);
