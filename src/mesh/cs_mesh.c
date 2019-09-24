@@ -2442,6 +2442,8 @@ cs_mesh_discard_free_faces(cs_mesh_t  *mesh)
              (unsigned long long)(mesh->n_g_vertices));
 
   mesh->n_g_free_faces = 0;
+
+  mesh->modified = 1;
 }
 
 /*----------------------------------------------------------------------------
