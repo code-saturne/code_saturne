@@ -285,8 +285,8 @@ _count_from_file(const cs_mesh_t *m,
                    char);
         strcpy(fvm_name, _porosity_from_scan_opt.file_name);
       } else {
-        BFT_MALLOC(fvm_name,                                                                             
-                   strlen(_porosity_from_scan_opt.output_name) + 3 + 1,                                    
+        BFT_MALLOC(fvm_name,
+                   strlen(_porosity_from_scan_opt.output_name) + 3 + 1,
                    char);
         strcpy(fvm_name, _porosity_from_scan_opt.output_name);
       }
@@ -513,7 +513,7 @@ cs_porosity_from_scan_set_file_name(const char *file_name)
     _porosity_from_scan_opt.compute_porosity_from_scan = false;
     return;
   }
- 
+
   _porosity_from_scan_opt.compute_porosity_from_scan = true;
 
   BFT_MALLOC(_porosity_from_scan_opt.file_name,
