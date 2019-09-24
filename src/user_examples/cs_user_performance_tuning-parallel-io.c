@@ -147,7 +147,7 @@ cs_user_parallel_io(void)
 
   cs_file_set_default_comm(block_rank_step, block_min_size, cs_glob_mpi_comm);
 
-  cs_file_set_mpi_io_positionning(CS_FILE_MPI_INDIVIDUAL_POINTERS);
+  cs_file_set_mpi_io_positioning(CS_FILE_MPI_INDIVIDUAL_POINTERS);
 
   MPI_Info_free(&hints);
 

@@ -92,14 +92,14 @@ typedef enum {
 
 } cs_file_access_t;
 
-/* MPI-IO file positionning methods */
+/* MPI-IO file positioning methods */
 
 typedef enum {
 
   CS_FILE_MPI_EXPLICIT_OFFSETS,
   CS_FILE_MPI_INDIVIDUAL_POINTERS
 
-} cs_file_mpi_positionning_t;
+} cs_file_mpi_positioning_t;
 
 /* Offset for file position indicator (int64_t in C99) */
 
@@ -117,9 +117,9 @@ typedef long cs_file_off_t;
 
 extern const char  *cs_file_access_name[];
 
-/* names associated with MPI-IO positionning */
+/* names associated with MPI-IO positioning */
 
-extern const char  *cs_file_mpi_positionning_name[];
+extern const char  *cs_file_mpi_positioning_name[];
 
 /*=============================================================================
  * Public function prototypes
@@ -612,19 +612,19 @@ cs_file_block_comm(int       block_rank_step,
 #endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
- * Get the positionning method for MPI-IO
+ * Get the positioning method for MPI-IO
  *
- * For details, see cs_file_set_mpi_io_positionning().
+ * For details, see cs_file_set_mpi_io_positioning().
  *
  * returns:
- *   positionning method for MPI-IO
+ *   positioning method for MPI-IO
  *----------------------------------------------------------------------------*/
 
-cs_file_mpi_positionning_t
-cs_file_get_mpi_io_positionning(void);
+cs_file_mpi_positioning_t
+cs_file_get_mpi_io_positioning(void);
 
 /*----------------------------------------------------------------------------
- * Set the positionning method for MPI-IO
+ * Set the positioning method for MPI-IO
  *
  * It is not always known whether a performance or robustness difference is
  * to be expected using explicit file offsets or individual file pointers.
@@ -637,11 +637,11 @@ cs_file_get_mpi_io_positionning(void);
  * showing this would be useful.
  *
  * parameters:
- *   positionning <-- chosen positionning method for MPI-IO
+ *   positioning <-- chosen positioning method for MPI-IO
  *----------------------------------------------------------------------------*/
 
 void
-cs_file_set_mpi_io_positionning(cs_file_mpi_positionning_t  positionning);
+cs_file_set_mpi_io_positioning(cs_file_mpi_positioning_t  positioning);
 
 /*----------------------------------------------------------------------------
  * Print information on default options for file access.

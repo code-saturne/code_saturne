@@ -1837,7 +1837,7 @@ ecs_loc_pre_ens__c_bin_endian_6(ecs_file_t  *fic,
     ecs_file_read_check_error(fic, 0);
 
     ecs_error(__FILE__, __LINE__, 0,
-              _("EnSight: positionning (seek) error\n"
+              _("EnSight: positioning (seek) error\n"
                 "in file \"%s\"."), ecs_file_get_name(fic));
   }
 
@@ -2592,4 +2592,3 @@ ecs_pre_ens__lit_maillage(const char  *nom_fic_case,
 }
 
 /*----------------------------------------------------------------------------*/
-

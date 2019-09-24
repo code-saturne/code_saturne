@@ -1385,7 +1385,7 @@ msgstr ""
 
 #, c-format
 msgid ""
-"EnSight: positionning (seek) error\n"
+"EnSight: positioning (seek) error\n"
 "in file \"%s\"."
 msgstr ""
 "EnSight : Problème de positionnement\n"
