@@ -2475,6 +2475,8 @@ cs_mesh_discard_free_faces(cs_mesh_t  *mesh)
              (unsigned long long)(mesh->n_g_vertices));
 
   mesh->n_g_free_faces = 0;
+
+  mesh->modified = 1;
 }
 
 /*----------------------------------------------------------------------------
@@ -2500,6 +2502,8 @@ cs_mesh_discard_free_vertices(cs_mesh_t  *mesh)
                  "     Number of vertices:          %llu\n\n"),
                (unsigned long long)(n_g_vertices_old),
                (unsigned long long)(mesh->n_g_vertices));
+
+    mesh->modified = 1;
   }
 }
 
