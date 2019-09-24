@@ -1039,7 +1039,10 @@ cs_cdoeb_vecteq_get_edge_values(void      *context)
 {
   cs_cdoeb_vecteq_t  *eqc = (cs_cdoeb_vecteq_t *)context;
 
-  return eqc->edge_values;
+  if (eqc != NULL)
+    return eqc->edge_values;
+  else
+    return NULL;
 }
 
 /*----------------------------------------------------------------------------*/
