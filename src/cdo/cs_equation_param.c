@@ -767,9 +767,11 @@ _set_key(const char            *label,
       eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_NONE;
     else if (strcmp(keyval, "rhs") == 0)
       eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
-    else if (strcmp(keyval, "weighted_rhs") == 0)
+    else if (strcmp(keyval, "weighted_rhs") == 0 ||
+             strcmp(keyval, "weighted") == 0)
       eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_WEIGHTED_RHS;
-    else if (strcmp(keyval, "filtered") == 0)
+    else if (strcmp(keyval, "filtered_rhs") == 0 ||
+             strcmp(keyval, "filtered") == 0)
       eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_FILTERED_RHS;
     else {
       const char *_val = keyval;

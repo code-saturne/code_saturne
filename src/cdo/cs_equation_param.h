@@ -624,9 +624,9 @@ typedef struct {
  *
  * Available choices are:
  * "false" or "none" (default)
- * "vol_tot"
- * "weighted_rhs"
- * "matrix_diag"
+ * "rhs"
+ * "weighted_rhs" or "weighted"
+ * "filtered_rhs" or "fieltered_rhs"
  *
  * \var CS_EQKEY_OMP_ASSEMBLY_STRATEGY
  * Choice of the way to perform the assembly when OpenMP is active
