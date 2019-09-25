@@ -1,7 +1,7 @@
 Release 6.0.0-rc1 (Sep 24 2019)
 -------------------------------
 
-known issues:
+Known issues:
 
 - Internal coupling for scalars is not handled yet when using the
   steady algorithm with relaxion (itdvar -1).
