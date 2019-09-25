@@ -347,6 +347,8 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         physical model and study
         """
 
+        QDialog.accept(self)
+
         if self.case['salome']:
             import salome_ot
 
