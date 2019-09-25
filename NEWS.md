@@ -18,6 +18,20 @@ Numerics and physical modelling:
 
 - Fuse Atmospheric module and Cooling towers module air properties calculation.
 
+- Add the capability to solve CDO equations with an advection field defined by the mass
+  flux arising from the FV legacy scheme
+
+- Add CDO edge-based schemes to solve vector-valued equations with curl terms
+
+- Add a Maxwell module to solve electrostatic with CDO vertex-based schemes and
+  magnetostatic equations with CDO edge-based schemes
+
+- Add the resolution of Oseen and Navier-Stokes equations with CDO face-based schemes
+  (rely on the work of Milani's PhD)
+
+- Add new Hodge operators for vertex-based and face-based schemes based on a
+  bubble stabilization or a sub-stabilization
+
 Architectural changes:
 
 - Simplify handling of SpMV tuning, as various contraints on the type
