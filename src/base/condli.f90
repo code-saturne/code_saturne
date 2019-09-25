@@ -5237,16 +5237,6 @@ call cs_internal_coupling_bcs(itypfb)
 ! 2. treatment of types of bcs given by itypfb
 !===============================================================================
 
-if (     ippmod(iphpar).ge.1.and.ippmod(igmix).eq.-1               &
-    .and.ippmod(ieljou).eq.-1.and.ippmod(ielarc).eq.-1             &
-    .or.ippmod(icompf).ge.0.and.ippmod(igmix).ge.0) then
-  call pptycl &
- ( nvar   , .true.,                                               &
-   icodcl , itypfb , izfppp ,                                     &
-   dt     ,                                                       &
-   rcodcl )
-endif
-
 if (iale.ge.1) then
   call altycl &
  ( itypfb , ialtyb , icodcl , impale ,                            &
@@ -5264,6 +5254,16 @@ iterns = 1
 if (nbrcpl.gt.0) then
   call cscloc
   call cscfbr_init(icodcl, itypfb)
+endif
+
+if (     ippmod(iphpar).ge.1.and.ippmod(igmix).eq.-1               &
+    .and.ippmod(ieljou).eq.-1.and.ippmod(ielarc).eq.-1             &
+    .or.ippmod(icompf).ge.0.and.ippmod(igmix).ge.0) then
+  call pptycl &
+ ( nvar   , .true.,                                               &
+   icodcl , itypfb , izfppp ,                                     &
+   dt     ,                                                       &
+   rcodcl )
 endif
 
 call typecl &
