@@ -404,7 +404,7 @@ cs_stokes_model_log_setup(void)
      _("\n"
        "Stokes model\n"
        "------------\n\n"
-       "    idilat:      %14d (0: Boussines approximation\n"
+       "    idilat:      %14d (0: Boussinesq approximation\n"
        "                                 1: without unsteady term\n"
        "                                    in the continuity equation\n"
        "                                 2: with unsteady term in\n"

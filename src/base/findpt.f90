@@ -88,18 +88,18 @@ zz1 = xyzcen(3,node)
 dis2mn = (xx-xx1)**2+(yy-yy1)**2+(zz-zz1)**2
 
 do ii = 1, ncel
-   xx1 = xyzcen(1,ii)
-   yy1 = xyzcen(2,ii)
-   zz1 = xyzcen(3,ii)
-   dis2 = (xx-xx1)**2+(yy-yy1)**2+(zz-zz1)**2
-   if (dis2.lt.dis2mn) then
-      node = ii
-      dis2mn = dis2
-   endif
+  xx1 = xyzcen(1,ii)
+  yy1 = xyzcen(2,ii)
+  zz1 = xyzcen(3,ii)
+  dis2 = (xx-xx1)**2+(yy-yy1)**2+(zz-zz1)**2
+  if (dis2.lt.dis2mn) then
+    node = ii
+    dis2mn = dis2
+  endif
 enddo
 
 if (irangp.ge.0) then
-   call parfpt (node, ndrang, dis2mn)
+  call parfpt (node, ndrang, dis2mn)
 else
   ndrang = -1
 endif
