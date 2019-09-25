@@ -101,7 +101,10 @@
             <source>CFDSTUDY_SOLVER_LAUNCH_ICON</source>
             <translation>run_button.png</translation>
         </message>
-
+        <message>
+            <source>CFDSTUDY_SOLVER_LAUNCH_OT_ICON</source>
+            <translation>ot-logo.png</translation>
+        </message>
         <message>
             <source>MESH_OBJ_ICON</source>
             <translation>mesh.png</translation>

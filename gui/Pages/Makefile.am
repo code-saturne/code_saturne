@@ -119,7 +119,7 @@ XMLEditorView.py \
 SpeciesView.py \
 UsersControlView.py \
 OutputFieldsView.py \
-OpenTurnsView.py \
+OpenTurnsDialogView.py \
 SolidView.py \
 ThermodynamicsView.py \
 TimeStepViewNeptune.py
@@ -177,7 +177,7 @@ MobileMeshForm.ui \
 NotebookForm.ui \
 NumericalParamEquationForm.ui \
 NumericalParamGlobalForm.ui \
-OpenTurnsForm.ui \
+OpenTurnsDialogForm.ui \
 OutputControlForm.ui \
 OutputSurfacicVariablesForm.ui \
 OutputVolumicVariablesForm.ui \

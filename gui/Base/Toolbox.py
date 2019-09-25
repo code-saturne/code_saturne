@@ -299,10 +299,6 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
         import code_saturne.Pages.InterfacialAreaView as Page
         thisPage = Page.InterfacialAreaView(root, case)
 
-    elif page_name == tr("OpenTurns study"):
-        import code_saturne.Pages.OpenTurnsView as Page
-        thisPage = Page.OpenTurnsView(root, case)
-
     else:
         msg = tr("Warning: the corresponding Page %s doesn't exist!") % page_name
         print(msg)

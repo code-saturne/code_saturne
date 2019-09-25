@@ -24,7 +24,7 @@
 
 """
 This module contains the following classes and function:
-- OpenTurnsView
+- OpenTurnsDialogView
 """
 
 #-------------------------------------------------------------------------------
@@ -55,7 +55,7 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import ComboModel, IntValidator, DoubleValidator, from_qvariant
-from code_saturne.Pages.OpenTurnsForm import Ui_OpenTurnsForm
+from code_saturne.Pages.OpenTurnsDialogForm import Ui_OpenTurnsDialogForm
 from code_saturne.model.OpenTurnsModel import OpenTurnsModel
 
 #-------------------------------------------------------------------------------
@@ -63,14 +63,14 @@ from code_saturne.model.OpenTurnsModel import OpenTurnsModel
 #-------------------------------------------------------------------------------
 
 logging.basicConfig()
-log = logging.getLogger("OpenTurnsView")
+log = logging.getLogger("OpenTurnsDialogView")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
 # Main class
 #-------------------------------------------------------------------------------
 
-class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
+class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
     """
     OpenTurns Page viewer class
     """
@@ -79,13 +79,20 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
         """
         Constructor
         """
-        QWidget.__init__(self, parent)
+        QDialog.__init__(self, parent)
 
-        Ui_OpenTurnsForm.__init__(self)
+        Ui_OpenTurnsDialogForm.__init__(self)
         self.setupUi(self)
 
         self.case = case
+        self.parent = parent
+
+        title = self.tr("OpenTURNS parameters")
+        self.setWindowTitle(title)
+
         self.case.undoStopGlobal()
+
+        case_is_saved = not self.case.isModified()
 
         self.mdl = OpenTurnsModel(case)
         if not self.mdl.getHostName():
@@ -160,6 +167,8 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
 
         self.pushButtonLaunchOT.clicked.connect(self.slotLaunchCsOt)
 
+        self.pushButtonCancel.clicked.connect(self.slotCancel)
+
         # ---------------------------------------
         # Hide/Show initial elements
         if self.nmodes == 1:
@@ -196,6 +205,8 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
         self.spinBoxNumberSeconds.setValue(int(wct[3]))
 
         self.lineEditWCKEY.setText(self.mdl.getWCKEY())
+
+        self.case.undoStartGlobal()
 
 
     @pyqtSlot(str)
@@ -352,6 +363,15 @@ class OpenTurnsView(QWidget, Ui_OpenTurnsForm):
 
         else:
             print("This option is only available within the SALOME_CFD platform")
+
+
+    @pyqtSlot()
+    def slotCancel(self):
+        """
+        Close dialog with no modifications
+        """
+
+        QDialog.accept(self)
 
 
     def tr(self, text):

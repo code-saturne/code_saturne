@@ -247,6 +247,18 @@
             <translation>Lancer le calcul</translation>
         </message>
         <message>
+            <source>SOLVER_LAUNCH_OT_ACTION_TEXT</source>
+            <translation>Passer la mise en données à OpenTURNS</translation>
+        </message>
+        <message>
+            <source>SOLVER_LAUNCH_OT_ACTION_TIP</source>
+            <translation>Passer la mise en données à OpenTURNS</translation>
+        </message>
+        <message>
+            <source>SOLVER_LAUNCH_OT_ACTION_SB</source>
+            <translation>Passer la mise en données à OpenTURNS</translation>
+        </message>
+        <message>
             <source>REMOVE_ACTION_TEXT</source>
             <translation>Supprimer</translation>
         </message>
