@@ -346,7 +346,6 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         Translate the Code_Sature reference case and study into an OpenTurs
         physical model and study
         """
-
         QDialog.accept(self)
 
         if self.case['salome']:

@@ -1323,6 +1323,15 @@ class MainView(object):
 
         CFD to OpenTURNS mode
         """
+        # Test if pydefx is available for the OpenTURNS coupling.
+        # Needed for Salome 9.3
+        try:
+            from pydefx import Parameters
+        except:
+            ydefx_root=os.environ['YDEFX_ROOT_DIR']
+            sys.path.insert(0, os.path.join(ydefx_root, 'lib/salome'))
+            sys.path.insert(0, os.path.join(ydefx_root, 'lib/python3.6/site-packages/salome'))
+
         if hasattr(self, 'case'):
             dialog = OpenTurnsDialogView(self, self.case)
             dialog.show()
