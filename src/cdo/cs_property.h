@@ -45,6 +45,10 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/* Common property names (property which is shared between different module) */
+
+#define CS_PROPERTY_MASS_DENSITY   "mass_density"
+
 /*!
  * @defgroup cdo_property_flags Flags specifying metadata related to the
  *  post-processing for a property

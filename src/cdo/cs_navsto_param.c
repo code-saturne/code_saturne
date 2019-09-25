@@ -258,8 +258,13 @@ cs_navsto_param_create(const cs_boundary_t              *boundaries,
   param->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
 
   /* Main set of properties */
-  param->density = cs_property_add("density", CS_PROPERTY_ISO);
-  param->lami_viscosity = cs_property_add("laminar_viscosity", CS_PROPERTY_ISO);
+  param->density = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
+  if (param->density == NULL)
+    param->density = cs_property_add(CS_PROPERTY_MASS_DENSITY,
+                                     CS_PROPERTY_ISO);
+
+  param->lami_viscosity = cs_property_add(CS_NAVSTO_LAMINAR_VISCOSITY,
+                                          CS_PROPERTY_ISO);
 
   /* Remark: As velocity and pressure may not be associated to an equation
      directly, one stores the definition of initial conditions and boundary

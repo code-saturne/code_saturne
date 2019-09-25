@@ -40,6 +40,9 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+/* Manage the naming of properties and variables */
+#define CS_NAVSTO_LAMINAR_VISCOSITY  "laminar_viscosity"
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
