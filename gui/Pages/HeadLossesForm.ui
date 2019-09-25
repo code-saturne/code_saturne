@@ -84,7 +84,7 @@
            <string notr="true">font: 9pt &quot;Sans Serif&quot;;abd</string>
           </property>
           <property name="text">
-           <string>&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Head losses coefficients(m&lt;span style=&quot; vertical-align:super;&quot;&gt;-1&lt;/span&gt;):  &lt;span style=&quot; font-family:'Symbol';&quot;&gt;&amp;rho;&lt;/span&gt;dU&lt;span style=&quot; vertical-align:sub;&quot;&gt;i &lt;/span&gt;/dt = -0.5 &lt;span style=&quot; font-family:'Symbol';&quot;&gt;&amp;rho;&amp;alpha;&lt;/span&gt;&lt;span style=&quot; vertical-align:sub;&quot;&gt;ij &lt;/span&gt;|U| U&lt;span style=&quot; vertical-align:sub;&quot;&gt;j&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>Head losses coefficients: ρdU/dt = -0.5ρα&lt;sub&gt;ij&lt;/sub&gt;|U| U&lt;/sub&gt;j</string>
           </property>
          </widget>
         </item>
@@ -96,7 +96,7 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the first diagonal component of the head losses tensor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
-             <string>&lt;span style=&quot; font-family:'Symbol,serif';&quot;&gt;&amp;alpha;&lt;/span&gt;&lt;span style=&quot; vertical-align:sub;&quot;&gt;XX&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>α&lt;sub&gt;XX&lt;/sub&gt;</string>
             </property>
            </widget>
           </item>
@@ -126,7 +126,7 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the second diagonal component of the head losses tensor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
-             <string>&lt;span style=&quot; font-family:'Symbol,serif';&quot;&gt;&amp;alpha;&lt;/span&gt;&lt;span style=&quot; vertical-align:sub;&quot;&gt;YY&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>α&lt;sub&gt;YY&lt;/sub&gt;</string>
             </property>
            </widget>
           </item>
@@ -156,7 +156,7 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the third diagonal component of the head losses tensor.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
-             <string>&lt;span style=&quot; font-family:'Symbol';&quot;&gt;&amp;alpha;&lt;/span&gt;&lt;span style=&quot; vertical-align:sub;&quot;&gt;ZZ&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>α&lt;sub&gt;ZZ&lt;/sub&gt;</string>
             </property>
            </widget>
           </item>
