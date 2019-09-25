@@ -81,7 +81,7 @@ pdf-local:
 
 clean-local:
 	-rm -f *.out *.log *.aux *.toc *.lof *.lot \
-	 *.ilg *.idx *.bbl *.blg *.ind *.sym *.nsy 
+	 *.ilg *.idx *.bbl *.blg *.ind *.sym *.nsy
 
 install-pdf-local:
 	$(MKDIR_P) "$(DESTDIR)$(pdfdir)"
