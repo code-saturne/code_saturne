@@ -57,6 +57,7 @@
 #include "cs_parall.h"
 #include "cs_prototypes.h"
 #include "cs_source_term.h"
+#include "cs_thermal_system.h"
 #include "cs_time_step.h"
 #include "cs_walldistance.h"
 
@@ -468,6 +469,10 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
   if (cs_mesh_deform_is_activated())
     cs_mesh_deform_setup(domain);
 
+  /* Thermal module */
+  if (cs_thermal_system_is_activated())
+    cs_thermal_system_init_setup();
+
   /* Groundwater flow module */
   if (cs_gwf_is_activated())
     cs_gwf_init_setup();
@@ -641,6 +646,7 @@ cs_domain_finalize_setup(cs_domain_t         *domain)
 
   /* Last stage for the settings for each predefined set of equations:
      - wall distance computation
+     - thermal module
      - groundwater flow module
      - Maxwell equations
      - Navier-Stokes system
@@ -649,6 +655,9 @@ cs_domain_finalize_setup(cs_domain_t         *domain)
 
   if (cs_walldistance_is_activated())
     cs_walldistance_finalize_setup(domain->connect, domain->cdo_quantities);
+
+  if (cs_thermal_system_is_activated())
+    cs_thermal_system_finalize_setup(domain->connect, domain->cdo_quantities);
 
   if (cs_gwf_is_activated())
     cs_gwf_finalize_setup(domain->connect, domain->cdo_quantities);
@@ -697,6 +706,14 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
   /* Set the initial condition for all advection fields */
   cs_advection_field_update(domain->time_step->t_cur,
                             false); /* operate current to previous ? */
+
+  /* Set the initial state for the thermal module */
+  if (cs_thermal_system_is_activated())
+    cs_thermal_system_update(domain->mesh,
+                             domain->connect,
+                             domain->cdo_quantities,
+                             domain->time_step,
+                             false); /* operate current to previous ? */
 
   /* Set the initial state for the Navier-Stokes system */
   if (cs_navsto_system_is_activated())

@@ -61,6 +61,7 @@
 #include "cs_param_cdo.h"
 #include "cs_post.h"
 #include "cs_prototypes.h"
+#include "cs_thermal_system.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
 #include "cs_volume_zone.h"
@@ -247,6 +248,13 @@ _solve_steady_state_domain(cs_domain_t  *domain)
   /* If the problem is globally unsteady, only steady-state equations are
      solved */
 
+  /* Thermal module */
+  if (cs_thermal_system_is_activated())
+    cs_thermal_system_compute_steady_state(domain->mesh,
+                                           domain->time_step,
+                                           domain->connect,
+                                           domain->cdo_quantities);
+
   /* Groundwater flow module */
   if (cs_gwf_is_activated())
     cs_gwf_compute_steady_state(domain->mesh,
@@ -309,6 +317,13 @@ _solve_domain(cs_domain_t  *domain)
 
   }
 
+  /* Thermal module */
+  if (cs_thermal_system_is_activated())
+    cs_thermal_system_compute(domain->mesh,
+                              domain->time_step,
+                              domain->connect,
+                              domain->cdo_quantities);
+
   /* Groundwater flow module */
   if (cs_gwf_is_activated())
     cs_gwf_compute(domain->mesh,
@@ -351,16 +366,7 @@ _log_setup(const cs_domain_t   *domain)
   /* Output domain settings */
   cs_domain_setup_log(domain);
 
-  /* Summary for each equation */
-  cs_equation_log_setup();
-
   if (domain->verbosity > -1) {
-
-    /* Properties */
-    cs_property_log_setup();
-
-    /* Advection fields */
-    cs_advection_field_log_setup();
 
     /* Summary of the groundwater module */
     cs_gwf_log_setup();
@@ -368,10 +374,22 @@ _log_setup(const cs_domain_t   *domain)
     /* Summary of the Maxwell module */
     cs_maxwell_log_setup();
 
+    /* Summary of the thermal module */
+    cs_thermal_system_log_setup();
+
     /* Summary of the Navier-Stokes system */
     cs_navsto_system_log_setup();
 
+    /* Advection fields */
+    cs_advection_field_log_setup();
+
+    /* Properties */
+    cs_property_log_setup();
+
   } /* Domain->verbosity > 0 */
+
+  /* Summary for each equation */
+  cs_equation_log_setup();
 
 }
 
@@ -546,6 +564,9 @@ cs_cdo_finalize(cs_domain_t    *domain)
 
   /* Free memory related to properties */
   cs_property_destroy_all();
+
+  /* Free memory related to the thermal module */
+  cs_thermal_system_destroy();
 
   /* Free memory related to the groundwater flow module */
   cs_gwf_destroy_all();

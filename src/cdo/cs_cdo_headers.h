@@ -83,6 +83,7 @@
 #include "cs_sdm.h"
 #include "cs_source_term.h"
 #include "cs_static_condensation.h"
+#include "cs_thermal_system.h"
 #include "cs_walldistance.h"
 #include "cs_xdef_cw_eval.h"
 #include "cs_xdef_eval.h"

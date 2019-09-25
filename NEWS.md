@@ -29,6 +29,8 @@ Numerics and physical modelling:
 - Add the resolution of Oseen and Navier-Stokes equations with CDO face-based schemes
   (rely on the work of Milani's PhD)
 
+- Add the first brick of a thermal module based on CDO schemes
+
 - Add new Hodge operators for vertex-based and face-based schemes based on a
   bubble stabilization or a sub-stabilization
 

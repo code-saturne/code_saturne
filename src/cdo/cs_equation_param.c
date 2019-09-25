@@ -1731,6 +1731,9 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
   case CS_EQUATION_TYPE_MAXWELL:
     cs_log_printf(CS_LOG_SETUP, "Associated to the Maxwell module\n");
     break;
+  case CS_EQUATION_TYPE_THERMAL:
+    cs_log_printf(CS_LOG_SETUP, "Associated to the thermal module\n");
+    break;
   case CS_EQUATION_TYPE_NAVSTO:
     cs_log_printf(CS_LOG_SETUP, "Associated to the Navier-Stokes system\n");
     break;
