@@ -92,6 +92,7 @@ from code_saturne.Pages.WelcomeView import WelcomeView
 from code_saturne.model.IdentityAndPathesModel import IdentityAndPathesModel
 from code_saturne.Pages.XMLEditorView import XMLEditorView
 from code_saturne.Pages.BatchRunningDialogView import BatchRunningDialogView
+from code_saturne.Pages.OpenTurnsDialogView import OpenTurnsDialogView
 from code_saturne.model.ScriptRunningModel import ScriptRunningModel
 from code_saturne.model.SolutionDomainModel import getRunType
 from code_saturne.Base.QtPage import getexistingdirectory
@@ -1313,6 +1314,17 @@ class MainView(object):
         """
         if hasattr(self, 'case'):
             dialog = BatchRunningDialogView(self, self.case)
+            dialog.show()
+
+
+    def runOTMode(self):
+        """
+        public slot
+
+        CFD to OpenTURNS mode
+        """
+        if hasattr(self, 'case'):
+            dialog = OpenTurnsDialogView(self, self.case)
             dialog.show()
 
 

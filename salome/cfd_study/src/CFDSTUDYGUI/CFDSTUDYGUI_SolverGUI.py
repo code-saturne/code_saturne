@@ -295,6 +295,10 @@ class CFDSTUDYGUI_SolverGUI(QObject):
             self._CurrentWindow.runOrSubmit()
 
 
+    def onLaunchOT(self):
+        if self._CurrentWindow != None:
+            self._CurrentWindow.runOTMode()
+
     def onHelpAbout(self):
         if self._CurrentWindow != None:
             self._CurrentWindow.displayAbout()

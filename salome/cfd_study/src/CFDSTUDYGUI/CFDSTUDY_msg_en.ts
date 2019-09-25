@@ -246,6 +246,18 @@
             <translation>Run or submit solver</translation>
         </message>
         <message>
+            <source>SOLVER_LAUNCH_OT_ACTION_TEXT</source>
+            <translation>Transfer CFD model to OpenTURNS</translation>
+        </message>
+        <message>
+            <source>SOLVER_LAUNCH_OT_ACTION_TIP</source>
+            <translation>Transfer CFD model to OpenTURNS</translation>
+        </message>
+        <message>
+            <source>SOLVER_LAUNCH_OT_ACTION_SB</source>
+            <translation>Transfer CFD model to OpenTURNS</translation>
+        </message>
+        <message>
             <source>REMOVE_ACTION_TEXT</source>
             <translation>Remove</translation>
         </message>

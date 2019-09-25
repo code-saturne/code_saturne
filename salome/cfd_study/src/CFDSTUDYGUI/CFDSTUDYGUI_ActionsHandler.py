@@ -148,6 +148,7 @@ SolverViewLogFiles             = 123
 SolverFileTransfer             = 124
 
 SolverLaunch                   = 131
+SolverLaunchOT                 = 132
 
 SolverHelpMenu                 = 140
 SolverHelpAboutAction          = 141
@@ -729,6 +730,21 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         action_id = sgPyQt.actionId(action)
         self._ActionMap[action_id] = action
         self._SolverActionIdMap[SolverLaunch] = action_id
+
+        # OpenTURNS study
+        action = sgPyQt.createAction(-1,
+                                     ObjectTR.tr("SOLVER_LAUNCH_OT_ACTION_TEXT"),
+                                     ObjectTR.tr("SOLVER_LAUNCH_OT_ACTION_TIP"),
+                                     ObjectTR.tr("SOLVER_LAUNCH_OT_ACTION_SB"),
+                                     ObjectTR.tr("CFDSTUDY_SOLVER_LAUNCH_OT_ICON"))
+        sgPyQt.createTool(action, tool_id)
+        sgPyQt.createMenu(action, self._SolverActionIdMap[SolverToolsMenu])
+        action.triggered.connect(self.slotLaunchOT)
+
+        action_id = sgPyQt.actionId(action)
+        self._ActionMap[action_id] = action
+        self._SolverActionIdMap[SolverLaunchOT] = action_id
+
 
         #for auto hide last separator in tools menu
         self._HelpActionIdMap[0] = action_id
@@ -2245,6 +2261,12 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         """
         self._SolverGUI.onLaunchSolver()
 
+
+    def slotLaunchOT(self):
+        """
+        Transfer the CFD model to OpenTURNS
+        """
+        self._SolverGUI.onLaunchOT()
 
     def slotHelpAbout(self):
         """
