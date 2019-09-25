@@ -511,6 +511,9 @@ void
 cs_navsto_system_set_sles(void)
 {
   cs_navsto_system_t  *ns = cs_navsto_system;
+
+  if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+
   void  *nscc = ns->coupling_context;
 
   const cs_navsto_param_t *nsp = ns->param;
@@ -1038,6 +1041,9 @@ cs_navsto_system_extra_post(void                      *input,
   CS_UNUSED(time_step);
 
   cs_navsto_system_t  *ns = (cs_navsto_system_t *)input;
+  if (ns == NULL)
+    return;
+
   cs_navsto_param_t  *nsp = ns->param;
 
   switch (nsp->coupling) {
