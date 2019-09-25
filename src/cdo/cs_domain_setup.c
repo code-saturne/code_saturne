@@ -642,7 +642,9 @@ cs_domain_finalize_setup(cs_domain_t         *domain)
   /* Last stage for the settings for each predefined set of equations:
      - wall distance computation
      - groundwater flow module
+     - Maxwell equations
      - Navier-Stokes system
+     - ALE equation
    */
 
   if (cs_walldistance_is_activated())

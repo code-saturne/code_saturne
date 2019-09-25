@@ -416,7 +416,7 @@ cs_navsto_system_extra_op(const cs_cdo_connect_t      *connect,
  *         pointer defined in cs_post.h (\ref cs_post_time_mesh_dep_output_t)
  *
  * \param[in, out] input        pointer to a optional structure (here a
- *                              cs_gwf_t structure)
+ *                              cs_navsto_system_t structure)
  * \param[in]      mesh_id      id of the output mesh for the current call
  * \param[in]      cat_id       category id of the output mesh for this call
  * \param[in]      ent_flag     indicate global presence of cells (ent_flag[0]),

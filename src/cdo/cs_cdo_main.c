@@ -246,18 +246,22 @@ _solve_steady_state_domain(cs_domain_t  *domain)
 
   /* If the problem is globally unsteady, only steady-state equations are
      solved */
+
+  /* Groundwater flow module */
   if (cs_gwf_is_activated())
     cs_gwf_compute_steady_state(domain->mesh,
                                 domain->time_step,
                                 domain->connect,
                                 domain->cdo_quantities);
 
+  /* Maxwell module */
   if (cs_maxwell_is_activated())
     cs_maxwell_compute_steady_state(domain->mesh,
                                     domain->time_step,
                                     domain->connect,
                                     domain->cdo_quantities);
 
+  /* Navier-Stokes module */
   if (cs_navsto_system_is_activated())
     cs_navsto_system_compute_steady_state(domain->mesh,
                                           domain->time_step);
@@ -305,18 +309,21 @@ _solve_domain(cs_domain_t  *domain)
 
   }
 
+  /* Groundwater flow module */
   if (cs_gwf_is_activated())
     cs_gwf_compute(domain->mesh,
                    domain->time_step,
                    domain->connect,
                    domain->cdo_quantities);
 
+  /* Maxwell module */
   if (cs_maxwell_is_activated())
     cs_maxwell_compute(domain->mesh,
                        domain->time_step,
                        domain->connect,
                        domain->cdo_quantities);
 
+  /* Navier-Stokes module */
   if (cs_navsto_system_is_activated())
     cs_navsto_system_compute(domain->mesh, domain->time_step);
 
