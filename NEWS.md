@@ -6,9 +6,6 @@ known issues:
 - Internal coupling for scalars is not handled yet when using the
   steady algorithm with relaxion (itdvar -1).
 
-- Upon computation restart, we may exhibit a spurious jump in pressure
-  values at the second time step, which then return to normal.
-
 User changes:
 
 - Changed Catalyst writer behavior:
