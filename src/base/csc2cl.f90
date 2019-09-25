@@ -145,8 +145,11 @@ call field_get_val_v(ivarfl(iu), vel)
 call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
 call field_get_val_s(iflmab, bmasfl)
 
+! No face to face assumption
 if (ifaccp.eq.0) then
   icscp = icscpl
+
+! Face to face mapping assumption
 else
   icscp = icscpd
 endif
@@ -507,8 +510,11 @@ integer          ipt
 ! 1.  Translation of the coupling to boundary conditions
 !===============================================================================
 
+! No face to face assumption
 if (ifaccp.eq.0) then
   icscp = icscpl
+
+! Face to face mapping assumption
 else
   icscp = icscpd
 endif
@@ -525,7 +531,7 @@ do ivar = 1, nvcp
       ifac = lfbcpl(ipt)
 
       itypfb(ifac) = icscp
-      icodcl(ifac,ivar  ) = 1
+      icodcl(ifac,ivar) = 1
 
     enddo
 
@@ -538,9 +544,9 @@ do ivar = 1, nvcp
       itypfb(ifac) = icscp
 
       if (ivar.ne.ipr) then
-        icodcl(ifac,ivar  ) = 1
+        icodcl(ifac, ivar) = 1
       else
-        icodcl(ifac,ivar  ) = 3
+        icodcl(ifac, ivar) = 3
       endif
 
     enddo
