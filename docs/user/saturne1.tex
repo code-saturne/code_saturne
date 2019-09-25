@@ -146,8 +146,8 @@ The second thing is to prepare the computation directories. For instance, the st
 \texttt{code\_saturne create -s T\_JUNCTION}\
 \end{center}
 The mesh files should be copied in the directory \texttt{MESH} (though they may also be selected from another directory, see \S\ref{sec:prg_stepbystepcalculation}),
-and the Fortran user files necessary for the calculation in the directory \texttt{CASE1/SRC}.  Finally, the calculation data file \texttt{case\_name.xml} read by the GUI should be copied to the directory \texttt{CASE1/DATA}.
-Once these steps completed, the user should go in the directory \texttt{CASE1/DATA} and type de command line \texttt{./SaturneGUI case\_name.xml} to load the calculation file into the interface. A window similar to \figurename\ref{fig:3_e1} will appear. Click on the heading ``Calculation management'', select the heading ``Prepare batch calculation'', see \figurename~\ref{fig:43_e1}. After having chosen the number of processors, press ``start calculation'' to run the calculation.
+and the Fortran user files necessary for the calculation in the directory \texttt{CASE1/SRC}.  Finally, the calculation data file \texttt{setup.xml} read by the GUI should be copied to the directory \texttt{CASE1/DATA}.
+Once these steps completed, the user should go in the directory \texttt{CASE1/DATA} and type de command line \texttt{./SaturneGUI setup.xml} to load the calculation file into the interface. A window similar to \figurename\ref{fig:3_e1} will appear. Click on the heading ``Calculation management'', select the heading ``Prepare batch calculation'', see \figurename~\ref{fig:43_e1}. After having chosen the number of processors, press ``start calculation'' to run the calculation.
 
 \begin{figure}[!ht]
 \begin{center}
@@ -2966,7 +2966,7 @@ parameters, see \figurename\ref{fig:joining}.
 %
 \begin{figure}[!h]
 \begin{center}
-\includegraphics[width=\textwidth]{gui_mesh_join}
+\includegraphics[width=0.9\textwidth]{gui_mesh_join}
 \caption{Conformal or non-conformal joining}
 \label{fig:joining}
 \end{center}
@@ -3107,7 +3107,7 @@ Then specific parameters must be set.
 
 \begin{figure}[!h]
 \begin{center}
-\includegraphics[width=14cm]{gui_mesh_periodicity}
+\includegraphics[width=0.9\textwidth]{gui_mesh_periodicity}
 \caption{Periodicity}
 \label{fig:periodicities}
 \end{center}
@@ -3296,7 +3296,7 @@ but this behaviour is rare.
 
 This operation is done in the Graphical User Interface (GUI) or by using the user subroutines in \\ \texttt{cs\_user\_parameters.f90}.
 In the GUI, the initialisation is performed by filling the parameters displayed in \figurename\ref{fig:gui_calculation_features}
-to \ref{fig:gui_output_profiles}. If the option 'Mobile mesh' is activated in \figurename~\ref{fig:gui_mobile_mesh},
+to \ref{fig:gui_output_profiles}. If the 'Mobile mesh' option is activated,
 please see Section \ref{sec:ALE} for more details. The headings filled for the initialisation of the main parameters
 are the followings:
 \begin{list}{-}{}
@@ -3304,13 +3304,13 @@ are the followings:
       turbulence model, thermal model and species transport (definition of the scalars and their variances),
 see \figurename~\ref{fig:gui_calculation_features} to \figurename~\ref{fig:gui_species}. If a thermal scalar, temperature or enthalpy, is selected,
 two other headings on conjugate heat transfer and radiative transfers can be filled in (see \figurename~\ref{fig:gui_thermal_scalar}).
+\item Body forces: gravity and coriolis forces, see \figurename~\ref{fig:gui_body_forces}.
 \item Physical properties: reference pressure, velocity and length, fluid properties (density, viscosity, thermal conductivity,
-specific heat and scalar diffusivity), gravity, see \figurename~\ref{fig:gui_reference_values} to \figurename~\ref{fig:gui_gravity}.
+specific heat and scalar diffusivity), see \figurename~\ref{fig:gui_reference_values} to \figurename~\ref{fig:gui_fluid_props}.
 If non-constant values are used for the fluid properties, and if the GUI is not used, the \\ \texttt{cs\_user\_physical\_properties}
 file must be used, see \S~\ref{sec:usphyv}.
 \item Volume conditions: definition of volume regions (for initialisation, head losses and source terms,
-see \S~\ref{sec:prg_usersourceterms} and \S~\ref{sec:prg_headlosses}), initialisation of the variables (including scalars),
-Coriolis source term, see \figurename~\ref{fig:gui_initialisation} and \figurename~\ref{fig:gui_coriolis}.
+see \S~\ref{sec:prg_usersourceterms} and \S~\ref{sec:prg_headlosses}), initialisation of the variables (including scalars), see \figurename~\ref{fig:gui_initialisation}.
 \item Boundary conditions: definition and parametrisation of boundary conditions for all variables (including scalars).
 If the GUI is not used, the \texttt{cs\_user\_boundary\_conditions} file must be used, see \S~\ref{sec:prg_boundaryconditions}.
 \item Numerical parameters: number and type of time steps, and advanced parameters for the numerical solution of the equations,
@@ -3328,7 +3328,7 @@ see \figurename~\ref{fig:gui_global_parameters} to \figurename~\ref{fig:gui_time
 
 \begin{figure}[!ht]
 \begin{center}
-\includegraphics[width=\textwidth]{gui_calculation_features}
+\includegraphics[width=0.9\textwidth]{gui_calculation_features}
 \caption{Calculation features options}
 \label{fig:gui_calculation_features}
 \end{center}
@@ -3336,15 +3336,7 @@ see \figurename~\ref{fig:gui_global_parameters} to \figurename~\ref{fig:gui_time
 
 \begin{figure}[!ht]
 \begin{center}
-\includegraphics[width=\textwidth]{gui_mobile_mesh}
-\caption{Mobile mesh option}
-\label{fig:gui_mobile_mesh}
-\end{center}
-\end{figure}
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=\textwidth]{gui_turbulence_models}
+\includegraphics[width=0.9\textwidth]{gui_turbulence_models}
 \caption{Turbulence model selection}
 \label{fig:gui_turbulence_models}
 \end{center}
@@ -3352,7 +3344,7 @@ see \figurename~\ref{fig:gui_global_parameters} to \figurename~\ref{fig:gui_time
 
 \begin{figure}[!ht]
 \begin{center}
-\includegraphics[width=\textwidth]{gui_thermal_scalar}
+\includegraphics[width=0.9\textwidth]{gui_thermal_scalar}
 \caption{Thermal scalar selection}
 \label{fig:gui_thermal_scalar}
 \end{center}
@@ -3363,6 +3355,14 @@ see \figurename~\ref{fig:gui_global_parameters} to \figurename~\ref{fig:gui_time
 \includegraphics[width=\textwidth]{gui_user_scal_def_init}
 \caption{Definition of the transported species/scalars}
 \label{fig:gui_species}
+\end{center}
+\end{figure}
+
+\begin{figure}[!ht]
+\begin{center}
+\includegraphics[width=0.9\textwidth]{gui_body_forces}
+\caption{Setting of the gravity}
+\label{fig:gui_body_forces}
 \end{center}
 \end{figure}
 
@@ -3384,26 +3384,9 @@ see \figurename~\ref{fig:gui_global_parameters} to \figurename~\ref{fig:gui_time
 
 \begin{figure}[!ht]
 \begin{center}
-\includegraphics[width=\textwidth]{gui_gravity}
-\caption{Setting of the gravity}
-\label{fig:gui_gravity}
-\end{center}
-\end{figure}
-
-\begin{figure}[!ht]
-\begin{center}
 \includegraphics[width=\textwidth]{gui_initialisation}
 \caption{Initialisation of variables}
 \label{fig:gui_initialisation}
-\end{center}
-\end{figure}
-
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=\textwidth]{gui_coriolis}
-\caption{Setting of the Coriolis source term}
-\label{fig:gui_coriolis}
 \end{center}
 \end{figure}
 
@@ -3417,7 +3400,7 @@ see \figurename~\ref{fig:gui_global_parameters} to \figurename~\ref{fig:gui_time
 
 \begin{figure}[!ht]
 \begin{center}
-\includegraphics[width=\textwidth]{gui_numerical_parameters}
+\includegraphics[width=0.9\textwidth]{gui_numerical_parameters}
 \caption{Numerical parameters for the main variables resolution}
 \label{fig:gui_numerical_parameters}
 \end{center}
@@ -3425,7 +3408,7 @@ see \figurename~\ref{fig:gui_global_parameters} to \figurename~\ref{fig:gui_time
 
 \begin{figure}[!ht]
 \begin{center}
-\includegraphics[width=\textwidth]{gui_time_step}
+\includegraphics[width=0.9\textwidth]{gui_time_step}
 \caption{Time step settings}
 \label{fig:gui_time_step}
 \end{center}
@@ -3433,7 +3416,7 @@ see \figurename~\ref{fig:gui_global_parameters} to \figurename~\ref{fig:gui_time
 
 \begin{figure}[!ht]
 \begin{center}
-\includegraphics[width=\textwidth]{gui_time_averages}
+\includegraphics[width=0.9\textwidth]{gui_time_averages}
 \caption{Management of time averaged variables}
 \label{fig:gui_time_averages}
 \end{center}
@@ -3441,7 +3424,7 @@ see \figurename~\ref{fig:gui_global_parameters} to \figurename~\ref{fig:gui_time
 
 \begin{figure}[!ht]
 \begin{center}
-\includegraphics[width=\textwidth]{gui_output_log}
+\includegraphics[width=0.9\textwidth]{gui_output_log}
 \caption{Parameters of chronological logging options}
 \label{fig:gui_output_log}
 \end{center}
@@ -3449,7 +3432,7 @@ see \figurename~\ref{fig:gui_global_parameters} to \figurename~\ref{fig:gui_time
 
 \begin{figure}[!ht]
 \begin{center}
-\includegraphics[width=\textwidth]{gui_output_writers}
+\includegraphics[width=0.9\textwidth]{gui_output_writers}
 \caption{Management of postprocessing writers}
 \label{fig:gui_output_writers}
 \end{center}
@@ -3457,7 +3440,7 @@ see \figurename~\ref{fig:gui_global_parameters} to \figurename~\ref{fig:gui_time
 
 \begin{figure}[!ht]
 \begin{center}
-\includegraphics[width=\textwidth]{gui_output_meshes}
+\includegraphics[width=0.9\textwidth]{gui_output_meshes}
 \caption{Management of postprocessing meshes}
 \label{fig:gui_output_meshes}
 \end{center}
@@ -3465,7 +3448,7 @@ see \figurename~\ref{fig:gui_global_parameters} to \figurename~\ref{fig:gui_time
 
 \begin{figure}[!ht]
 \begin{center}
-\includegraphics[width=\textwidth]{gui_output_profiles}
+\includegraphics[width=0.9\textwidth]{gui_output_profiles}
 \caption{Management of 1D profiles of the solution}
 \label{fig:gui_output_profiles}
 \end{center}
@@ -3641,7 +3624,7 @@ under the heading ``Definition of boundary regions $\rightarrow$ Add from Prepro
 %
 \begin{figure}[!ht]
 \begin{center}
-\includegraphics[width=13cm]{gui_bc_regions}
+\includegraphics[width=0.9\textwidth]{gui_bc_regions}
 \caption{Definition of the boundary conditions}
 \label{fig:gui_bc_regions}
 \end{center}
@@ -4449,7 +4432,7 @@ When the fluid properties are not constant, the user is offered the choice to de
 %
 \begin{figure}[!ht]
 \begin{center}
-\includegraphics[width=\textwidth]{gui_fluid_props}
+\includegraphics[width=0.9\textwidth]{gui_fluid_props}
 \caption{Physical properties - Fluid properties}
 \label{fig:gui_fluid_props2}
 \end{center}
@@ -4854,7 +4837,7 @@ and positive.
 \begin{center}
 %\begin{tabular}{c}
 %\includegraphics[width=14cm]{gui_volume_regions} \\
-\includegraphics[width=\textwidth]{gui_head_loss_regions}
+\includegraphics[width=0.9\textwidth]{gui_head_loss_regions}
 %\end{tabular}
 \caption{Creation of head losses region}
 \label{fig:hl1}
@@ -4863,7 +4846,7 @@ and positive.
 %
 \begin{figure}[!ht]
 \begin{center}
-\includegraphics[width=\textwidth]{gui_head_loss_coeffs}
+\includegraphics[width=0.9\textwidth]{gui_head_loss_coeffs}
 \caption{Head losses coefficients}
 \label{fig:hl2}
 \end{center}
@@ -5133,7 +5116,7 @@ and \ref{sec:Ini-coal}).
 
 \begin{figure}[!ht]
 \begin{center}
-\includegraphics[width=\textwidth]{gui_calculation_features}
+\includegraphics[width=0.9\textwidth]{gui_calculation_features}
 \caption{Specific physics models selection}
 \label{fig:5_GUI}
 \end{center}
@@ -5271,7 +5254,7 @@ being 1). For more details, the user may refer to the following note
 
 \minititre{Note: the thermo-chemical files}
 The user must not forget to place in the directory DATA the
-thermochemical file \texttt{dp\_FCP.xml}, \texttt{dp\_C3P}, \texttt{dp\_C3PSJ} or
+thermochemical file \texttt{dp\_C3P}, \texttt{dp\_C3PSJ} or
 \texttt{dp\_ELE} (depending on the specific physics module he activated)
 Some example files are placed in the directory \texttt{DATA/REFERENCE} at the creation of the
 study case. Their content is described below.
@@ -5366,127 +5349,6 @@ study case. Their content is described below.
 \end{table}
         \end{list}
 
-       \item Example of file for the pulverised coal combustion:
-             \texttt{dp\_FCP.xml} (see the example in the directory \texttt{DATA/REFERENCE},
-             this file can be filled in thanks to the GUI).
-
-%\begin{table}[htbp]
-%\begin{center}
-%\tiny{
-%\begin{tabular}{|c|c|c|c|} \hline
-% Lines  &      Examples of values        &        Variables              & Observations                      %                   \\ \hline
-%   1    &          THERMOCHEMISTRY       &                               & Comment line                      %                   \\ \hline
-%   2    &               8                & \texttt{ncoel\index{ncoel}}   & Number of current species         %                   \\ \hline
-%   3    &               8                &  \texttt{npo\index{npo}}      & Number of points for the          %                   \\
-%        &                                &                               & enthalpy-temperature tabulation   %                   \\ \hline
-%   4    &        CURRENT SPECIES         &                               & Comment line                      %                   \\ \hline
-%   5    & CH4 C2H4 CO O2 CO2 H2O N2 C(S) & \texttt{nomcoel\index{nomcoel}}(\texttt{ncoel}) & List of the     %                                     \\
-%        &                                &                               & current species                   %                   \\ \hline
-%   6    &               300.             &  \texttt{tmin\index{tmin}}    & Temperature inferior limit (Kelvin)                  \\
-%        &                                &                               & for the enthalpy-temperature tabulation              \\ \hline
-%   7    &              2400.             &  \texttt{tmax\index{tmax}}    & Temperature superior limit (Kelvin)                  \\
-%        &                                &                               & for the enthalpy-temperature tabulation              \\ \hline
-%   8    &               4                &  \texttt{nato\index{nato}}    & Number of elementary species                          \\ \hline
-%   9    &  .012  1  2  1  0  1  0  0  1  &                               & Molar mass of the elemental species                  \\
-%  10    &  .001  4  4  0  0  0  2  0  0  &\texttt{wmolat\index{wmolat}}(\texttt{nato}),    & (first column)                                       \\
-%  11    &  .016  0  0  1  2  2  1  0  0  &\texttt{atcoel\index{atcoel}}(\texttt{ncoel,nato})& and composition of the current species              \\
-%  12    &  .014  0  0  0  0  0  0  2  0  &                               & as a function of the elemental species               \\ \hline
-%  13    &          RADIATION             &                               & Comment line                                         \\ \hline
-%  14    &               0.1              & \texttt{ckabs1\index{ckabs1}}  & Constant absorption coefficient                      \\
-%        &                                &                               & for the gas mixture                                  \\ \hline
-%  15    &   COAL CHARACTERISTICS         &                               & Comment line                                         \\ \hline
-%  16    &               2                & \texttt{ncharb\index{ncharb}} & Number of coal types                                 \\ \hline
-%  17    &         1            1         & \texttt{nclpch\index{nclpch}}(\texttt{ncharb}) & Number of classes for each coal                      \\
-%        &                                &                               & (each column corresponding to                        \\
-%        &                                &                               & one coal type )                                      \\ \hline
-%  18    &    50.E-6        50.E-6        & \texttt{diam20\index{diam20}}(\texttt{nclacp})  & Initial diameter of each class (m)                   \\
-%        &                                &                               & \texttt{nclacp\index{nclacp}} is the total number of classes. \\
-%        &                                &                               & All the diameters are written on the same line       \\
-%        &                                &                               & (sucessively for each coal, we give the              \\
-%        &                                &                               & diameter corresponding to each class)                \\ \hline
-%  19    &    74.8          60.5          & \texttt{cch\index{cch}}(\texttt{ncharb})& Composition in C (mass.-\%, dry) of each coal        \\ \hline
-%  20    &     5.1           4.14         & \texttt{hch\index{hch}}(\texttt{ncharb})& Composition in H (mass.-\%, dry) of each coal        \\ \hline
-%  21    &    12.01          5.55         & \texttt{och\index{och}}(\texttt{ncharb})& Composition in O (mass.-\%, dry) of each coal        \\ \hline
-%  22    & 0  31524000.    0  31524000.   & \texttt{ipci\index{ipci}}(\texttt{ncharb})      & Value of the PCI ($Jkg^{-1}$) for each coal,         \\
-%        &                                & \texttt{pcich\index{pcich}}(\texttt{ncharb})    & the first integer indicating if this value refers    \\
-%        &                                &                               & to pure (0) or dry coal (1)                          \\ \hline
-%  23    &   1800.      1800.             & \texttt{cp2ch\index{cp2ch}}(\texttt{ncharb})& Heat-storage capacity at constant pressure        \\
-%        &                                &                               & ($Jkg^{-1}K^{-1}$) for each coal                     \\ \hline
-%  24    &   1200.      1200.             & \texttt{rho0ch\index{rho0ch}}(\texttt{ncharb})   & Initial density ($kgm^{-3}$) of each                 \\ \hline
-%  25    &          Coke                  &                               & Comment line                                         \\ \hline
-%  26    &      0.         0.             & \texttt{cck\index{cck}}(\texttt{ncharb}) & Composition in C (mass.-\%, dry) of the coke         \\
-%        &                                &                               & for each coal                                        \\ \hline
-%  27    &      0.         0.             & \texttt{hck\index{hck}}(\texttt{ncharb}) & Composition in H (mass.-\%, dry) of the coke         \\
-%        &                                &                               & for each coal                                        \\ \hline
-%  28    &      0.         0.             & \texttt{ock\index{ock}}(\texttt{ncharb}) & Composition in O (mass.\%, dry) of the coke          \\
-%        &                                &                               & for each coal                                        \\ \hline
-%  29    &      0.         0.             & \texttt{pcick\index{pcick}}(\texttt{ncharb})& PCI of the dry coke ($Jkg^{-1}$) for each coal       \\ \hline
-%  30    &          Ashes               &                               & Comment line                                         \\ \hline
-%  31    &      6.3        6.3            & \texttt{xashch\index{xashch}}(\texttt{ncharb})& Ash mass fraction (mass.-\%, dry) in each coal       \\ \hline
-%  32    &      0.         0.             & \texttt{h0ashc\index{h0ashc}}(\texttt{ncharb})  & Ash formation enthalpy ($Jkg^{-1}$)                  \\
-%        &                                &                               & for each coal                                        \\ \hline
-%  33    &      0.         0.             & \texttt{cpashc\index{cpashc}}(\texttt{ncharb})   & CP of the ashes ($Jkg^{-1}K^{-1}$) for each coal     \\ \hline
-%  34    &      0.         0.             & \texttt{xwatch\index{cpashc}}(\texttt{ncharb})   & humidity rate of the ashes (mass.-\%) for each coal     \\ \hline
-%  35    &  Devolatilisation (Kobayashi)  &                             & Comment line                                         \\ \hline
-%  36    &  1  0.37      0  0.37          & \texttt{iy1ch\index{iy1ch}}(\texttt{ncharb}),   & For each coal, pairs (\texttt{iy1ch}, \texttt{y1ch}).                  \\
-%        &                                & \texttt{y1ch\index{y1ch}}(\texttt{ncharb})     & The real \texttt{y1ch} is the dimensionless stoich. coefficient\\
-%        &                                &                               & If the integer \texttt{iy1ch} is worth 1,                     \\
-%        &                                &                               & the provided value of \texttt{y1ch} is adopted and            \\
-%        &                                &                               & the composition of the light volatile matters        \\
-%        &                                &                               & is calculated automatically.                         \\
-%        &                                &                               & If the integer \texttt{iy1ch} is worth 0,                     \\
-%        &                                &                               & the provided value of \texttt{y1ch} is ignored:               \\
-%        &                                &                               & \texttt{y1ch} is calculated automatically (the light          \\
-%        &                                &                               & volatiles are then composed of {$CH_{4}$}, {$CO$}).  \\ \hline
-%  37    &  1  0.74      1  0.74          & \texttt{iy2ch\index{iy2ch}}(\texttt{ncharb}),   & For each coal, pairs (\texttt{iy2ch}, \texttt{y2ch}).                  \\
-%        &                                & \texttt{y2ch\index{y2ch}}(\texttt{ncharb})     & The real \texttt{y2ch} is the adimensional stoich. coefficient\\
-%        &                                &                               & If the integer \texttt{iy2ch} is worth 1,                     \\
-%        &                                &                               & the provided value of \texttt{y2ch} is adopted and            \\
-%        &                                &                               & the composition of the heavy volatile matters        \\
-%        &                                &                               & is calculated automatically.                         \\
-%        &                                &                               & If the integer \texttt{iy2ch} is worth 0,                     \\
-%        &                                &                               & the provided value of \texttt{y2ch} is ignored:               \\
-%        &                                &                               & \texttt{y2ch} is calculated automatically (the heavy          \\
-%        &                                &                               & volatiles are then composed of {$C_{2}H_{4}$}, {$CO$}).\\ \hline
-%  38    &  370000.      410000.          & \texttt{a1ch\index{a1ch}}(\texttt{ncharb})& Devolatilisation pre-exponential factor A1 ($s^{-1}$)\\
-%        &                                &                               & for each coal (light volatile matters)               \\ \hline
-%  39    &  1.3E13       1.52E13          & \texttt{a2ch\index{a2ch}}(\texttt{ncharb})& Devolatilisation pre-exponential factor A2 ($s^{-1}$)\\
-%        &                                &                               & for each coal (heavy volatile matters)               \\ \hline
-%  40    &   74000.       80000.          & \texttt{e1ch\index{e1ch}}(\texttt{ncharb})& Devolatilisation activation energy E1 ($Jmol^{-1}$)  \\
-%        &                                &                               & for each coal (light volatile matters)               \\ \hline
-%  41    &  250000.      310000.          & \texttt{e2ch\index{e2ch}}(\texttt{ncharb})& Activation energy E2 ($Jmol^{-1}$) of devolatilisation\\
-%        &                                &                               & for each coal (heavy volatile matters)               \\ \hline
-%  42    &  heterogeneous combustion $O_2$   &                               & Comment lign                                 \\ \hline
-%  43    &      17.88        17.88        & \texttt{ahetch\index{ahetch}}(\texttt{ncharb})   & Char burnout pre-exponential constant                \\
-%        &                                &                               & ($kgm^{-2}s^{-1}atm^{-1}$) for each coal             \\ \hline
-%  44    &      16.55        16.55        & \texttt{ehetch\index{ehetch}}(\texttt{ncharb})   & Char burnout activation energy ($kcalmol^{-1}$)       \\
-%        &                                &                               & for each coal                                        \\ \hline
-%  45    &       1            1           & \texttt{iochet\index{iochet}}(\texttt{ncharb})   & Char burnout reaction order for each coal            \\
-%        &                                &                               & 0.5 if \texttt{iochet} = 0 and 1 if \texttt{iochet} = 1                \\ \hline
-%  46    &  heterogeneous combustion $CO_2$  &                               & Comment lign                               \\ \hline
-%  47    &      1.788        1.788        & \texttt{ahetch\index{ahetch}}(\texttt{ncharb})   & Char burnout pre-exponential constant                \\
-%        &                                &                               & ($kgm^{-2}s^{-1}atm^{-1}$) for each coal             \\ \hline
-%  48    &      1.655        1.655        & \texttt{ehetch\index{ehetch}}(\texttt{ncharb})   & Char burnout activation energy ($kcalmol^{-1}$)       \\
-%        &                                &                               & for each coal                                        \\ \hline
-%  49    &       1            1           & \texttt{iochet\index{iochet}}(\texttt{ncharb})   & Char burnout reaction order for each coal            \\
-%        &                                &                               & 0.5 if \texttt{iochet} = 0 and 1 if \texttt{iochet} = 1                \\ \hline
-%  50    &    OXYDIZERS CHARACTERISTICS   &                               & Comment lign                               \\ \hline
-%  51    &              3                 & \texttt{noxyd\index{noxyd}}    & Number of oxydizers  \\
-%        &                                &                               & (mixtures of $O_2,N_2,H_2O,CO_2$) \\ \hline
-%  52    &    1.        0.        1.      & \texttt{oxyo2\index{oxyo2}}(\texttt{noxyd})   & Composition in $O_2$ of each oxydizer ($moles$) \\
-%  53    &    0.        0.        1.      & \texttt{oxyn2\index{oxyn2}}(\texttt{noxyd})   & Composition in $N_2$ of each oxydizer ($moles$) \\
-%  54    &    0.        0.        1.      & \texttt{oxyh2o\index{oxyh2o}}(\texttt{noxyd}) & Composition in $H_2O$ of each oxydizer ($moles$) \\
-%  55    &  2.39        1.        1.      & \texttt{oxyco2\index{oxyco2}}(\texttt{noxyd}) & Composition in $CO_2$ of each oxydizer ($moles$) \\ \hline
-%\end{tabular}
-%}
-%\caption{Example of file for the pulverised coal combustion:
-% \texttt{dp\_FCP}}\label{tab_dpFCP}
-%\end{center}
-%\end{table}
-
-       \item Example of file for the heavy fuel combustion: \texttt{DP\_FUE\_new} (see
-             the example in \texttt{DATA/REFERENCE}).
-
        \item Example of file for the electric arcs: \texttt{dp\_ELE} (see
              array \ref{tab:dpELE}).
 
@@ -5554,14 +5416,6 @@ For coal combustion, it is possible to initialise the specific variables in the 
 \includegraphics[width=12cm]{gui_coal_classes}
 \caption{Thermophysical models - Pulverized coal combustion, coal classes}
 \label{fig:Ini-coal1}
-\end{center}
-\end{figure}
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=11cm]{gui_coal_coke}
-\caption{Pulverized coal combustion, coke}
-\label{fig:Ini-coal2}
 \end{center}
 \end{figure}
 
@@ -6046,15 +5900,7 @@ see \figurename~\ref{fig:5_ray}, where radiative transfer variables can be selec
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=13cm]{gui_rad_transf_models}
-\caption{Radiative transfers models}
-\label{fig:0_ray}
-\end{center}
-\end{figure}
-
-\begin{figure}[ht]
-\begin{center}
-\includegraphics[width=10cm]{gui_rad_transf_do_params}
+\includegraphics[width=0.9\textwidth]{gui_rad_transf_do_params}
 \caption{Radiative transfers - parameters of the DO method}
 \label{fig:1_ray}
 \end{center}
@@ -6070,7 +5916,7 @@ see \figurename~\ref{fig:5_ray}, where radiative transfer variables can be selec
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=10cm]{gui_rad_transf_p1_params}
+\includegraphics[width=0.9\textwidth]{gui_rad_transf_p1_params}
 \caption{Radiative transfers - parameters of the P-1 model}
 \label{fig:3_ray}
 \end{center}
@@ -6086,7 +5932,7 @@ see \figurename~\ref{fig:5_ray}, where radiative transfer variables can be selec
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=6cm]{gui_rad_transf_post_output}
+\includegraphics[width=0.9\textwidth]{gui_rad_transf_post_output}
 \caption{Calculation control - Radiative transfers post-processing output}
 \label{fig:5_ray}
 \end{center}
@@ -6116,16 +5962,16 @@ keyword list (\S~\ref{sec:prg_motscles}).
 \subsubsection{Radiative transfers boundary conditions}
 %==================================
 These informations can be filled by the user through the Graphical User Interface
-(GUI) or by using the subroutine \texttt{cs\_user\_radiative\_transfer\_bcs.f90} (called every time step). If the
+(GUI) or by using the subroutine \texttt{cs\_user\_radiative\_transfer\_bcs.c} (called every time step). If the
 interface is used, when one of the ``Radiative transfers'' options is selected in
-\figurename~\ref{fig:0_ray}, it activates specific boundary conditions each time
+\figurename~\ref{fig:gui_thermal_scalar}, it activates specific boundary conditions each time
 a ``Wall'' is defined, see \figurename~\ref{fig:6_ray}. The user can then choose
 between 3 cases. The parameters the user must specify are displayed for one of
 them in \figurename~\ref{fig:7_ray}.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=11cm]{gui_rad_transf_wall_model}
+\includegraphics[width=0.9\textwidth]{gui_rad_transf_wall_model}
 \caption{Boundary conditions - choice of wall thermal radiative transfers}
 \label{fig:6_ray}
 \end{center}
@@ -6133,7 +5979,7 @@ them in \figurename~\ref{fig:7_ray}.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=11cm]{gui_rad_transf_wall_params}
+\includegraphics[width=0.9\textwidth]{gui_rad_transf_wall_params}
 \caption{Boundary conditions - example of wall thermal radiative transfer}
 \label{fig:7_ray}
 \end{center}
@@ -6304,7 +6150,7 @@ specified in case of 2D coupling.
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=8cm]{gui_syrthes_coupling}
+\includegraphics[width=0.9\textwidth]{gui_syrthes_coupling}
 \caption{Thermophysical models - coupling with \syrthes}
 \label{fig:syrthes}
 \end{center}
@@ -6389,19 +6235,11 @@ In the GUI, the selection of the Lagrangian module activates the heading \texttt
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{gui_lagr_global_settings}
+\includegraphics[width=0.9\textwidth]{gui_lagr_global_settings}
 \caption{Lagrangian module - View of the \texttt{Global Settings} page}
 \label{fig:Ini-Lag1}
 \end{center}
 \end{figure}
-%
-% \begin{figure}[ht]
-% \begin{center}
-% \includegraphics[width=10cm]{gui_lagr_global_settings_coal}
-% \caption{Lagrangian module - global settings, specific physics}
-% \label{fig:Ini-Lag2}
-% \end{center}
-% \end{figure}
 %
  \begin{figure}[ht]
  \begin{center}
@@ -6460,7 +6298,7 @@ In the framework of the multiphase Lagrangian modelling, the management of the b
 
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=16cm]{gui_lagr_bc}
+\includegraphics[width=0.9\textwidth]{gui_lagr_bc}
 \caption{Lagrangian module - boundary conditions}
 \label{fig:CL-Lag}
 \end{center}
@@ -6894,7 +6732,7 @@ geometrical criterion or reference number then a structure number (negative valu
 %==================================
 This initialisation can be performed in the Graphical User Interface (GUI)
  or in the subroutines \texttt{usipph} and \texttt{usstr1}. Firstly,
- when the ``Mobile mesh'' is selected in GUI under the ``Thermophysical models''
+ when the ``Mobile mesh'' is selected in GUI under the ``Calculation features''
  heading, additional options are displayed. The user must choose the type of mesh
  viscosity and describe its spatial distribution, see \figurename~\ref{fig:Ini-ale}.
 
@@ -6958,7 +6796,7 @@ These boundary conditions can be managed through the Graphical User Interface (G
 %
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{gui_ale_internal}
+\includegraphics[width=0.9\textwidth]{gui_ale_internal}
 \caption{Boundary conditions - internal coupling}
 \label{fig:CL-ale1}
 \end{center}
@@ -6966,7 +6804,7 @@ These boundary conditions can be managed through the Graphical User Interface (G
 %
 \begin{figure}[ht]
 \begin{center}
-\includegraphics[width=12cm]{gui_ale_external}
+\includegraphics[width=0.9\textwidth]{gui_ale_external}
 \caption{Boundary conditions - external coupling}
 \label{fig:CL-ale2}
 \end{center}
