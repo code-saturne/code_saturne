@@ -452,7 +452,7 @@ if (iale.ge.1) then
     rcodcl , xyzno0 , disale )
 
   !     Au cas ou l'utilisateur aurait touche disale sans mettre impale=1, on
-  !       remet le deplacement initial
+  !     remet le deplacement initial
   do ii  = 1, nnod
     if (impale(ii).eq.0) then
       disale(1,ii) = xyznod(1,ii)-xyzno0(1,ii)
@@ -504,10 +504,7 @@ endif
 
 !Radiative transfer: add contribution to enrgy BCs.
 if (iirayo.gt.0 .and. itrfin.eq.1 .and. itrfup.eq.1) then
-
-  call cs_rad_transfer_bcs(nvar, itypfb, icodcl,             &
-    dt, rcodcl)
-
+  call cs_rad_transfer_bcs(nvar, itypfb, icodcl, dt, rcodcl)
 endif
 
 ! For internal coupling, set itypfb to wall function by default
@@ -637,7 +634,7 @@ if (     ippmod(iphpar).ge.1.and.ippmod(igmix).eq.-1               &
     .and.ippmod(ieljou).eq.-1.and.ippmod(ielarc).eq.-1             &
     .or.ippmod(icompf).ge.0.and.ippmod(igmix).ge.0) then
   call pptycl &
- ( nvar   ,                                                       &
+ ( nvar   , .false.,                                              &
    icodcl , itypfb , izfppp ,                                     &
    dt     ,                                                       &
    rcodcl )
@@ -3180,7 +3177,7 @@ if (nscal.ge.1) then
             enddo
           endif
 
-        ! convective boundary for marangoni effects (generalized symmetry condition)
+        ! convective boundary for Marangoni effects (generalized symmetry condition)
         !---------------------------------------------------------------------------
 
         elseif (icodcl(ifac,ivar).eq.14) then
@@ -5228,7 +5225,7 @@ if (iale.ge.1) then
     rcodcl , xyzno0 , disale )
 
   !     Au cas ou l'utilisateur aurait touche disale sans mettre impale=1, on
-  !       remet le deplacement initial
+  !     remet le deplacement initial
   do ii  = 1, nnod
     if (impale(ii).eq.0) then
       disale(1,ii) = xyznod(1,ii)-xyzno0(1,ii)
@@ -5270,7 +5267,7 @@ if (     ippmod(iphpar).ge.1.and.ippmod(igmix).eq.-1               &
     .and.ippmod(ieljou).eq.-1.and.ippmod(ielarc).eq.-1             &
     .or.ippmod(icompf).ge.0.and.ippmod(igmix).ge.0) then
   call pptycl &
- ( nvar   ,                                                       &
+ ( nvar   , .true.,                                               &
    icodcl , itypfb , izfppp ,                                     &
    dt     ,                                                       &
    rcodcl )
