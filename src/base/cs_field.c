@@ -699,6 +699,9 @@ static int
 _check_key(const cs_field_t  *f,
            int                key_id)
 {
+  if (f == NULL)
+    return CS_FIELD_INVALID_FIELD;
+
   int errcode = CS_FIELD_OK;
 
   assert(f->id >= 0 && f->id < _n_fields);
@@ -1642,6 +1645,8 @@ cs_field_set_n_time_vals(cs_field_t  *f,
                          int          n_time_vals)
 {
   assert(f != NULL);
+  if (f == NULL)
+    return;
 
   int _n_time_vals = n_time_vals;
 
@@ -1733,6 +1738,8 @@ cs_field_map_values(cs_field_t   *f,
                     cs_real_t    *val_pre)
 {
   assert(f != NULL);
+  if (f == NULL)
+    return;
 
   if (f->is_owner) {
     BFT_FREE(f->val);
@@ -2127,6 +2134,8 @@ cs_field_set_values(cs_field_t  *f,
                     cs_real_t    c)
 {
   assert(f != NULL);
+  if (f == NULL)
+    return;
 
   const cs_lnum_t *n_elts = cs_mesh_location_get_n_elts(f->location_id);
   const cs_lnum_t _n_vals = n_elts[2]*f->dim;
@@ -2880,6 +2889,9 @@ cs_field_lock_key(cs_field_t  *f,
 {
   int retval = CS_FIELD_OK;
 
+  if (f == NULL)
+    return CS_FIELD_INVALID_FIELD;
+
   assert(f->id >= 0 && f->id < _n_fields);
 
   if (key_id > -1) {
@@ -2923,6 +2935,8 @@ cs_field_set_key_int(cs_field_t  *f,
 {
   int retval = CS_FIELD_OK;
 
+  if (f == NULL)
+    return CS_FIELD_INVALID_FIELD;
   assert(f->id >= 0 && f->id < _n_fields);
 
   if (key_id > -1) {
@@ -2968,6 +2982,8 @@ cs_field_get_key_int(const cs_field_t  *f,
 {
   int errcode = CS_FIELD_OK;
 
+  if (f == NULL)
+    return CS_FIELD_INVALID_FIELD;
   assert(f->id >= 0 && f->id < _n_fields);
 
   if (key_id > -1 && key_id < _n_keys) {
@@ -3010,7 +3026,7 @@ cs_field_get_key_int(const cs_field_t  *f,
                 key_id);
   }
 
-  return 0;
+  return CS_FIELD_OK;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3099,6 +3115,8 @@ cs_field_set_key_double(cs_field_t  *f,
 {
   int retval = CS_FIELD_OK;
 
+  if (f == NULL)
+    return CS_FIELD_INVALID_FIELD;
   assert(f->id >= 0 && f->id < _n_fields);
 
   if (key_id > -1) {
@@ -3144,6 +3162,9 @@ cs_field_get_key_double(const cs_field_t  *f,
 {
   int errcode = CS_FIELD_OK;
 
+  if (f == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Field is not defined.", __func__);
   assert(f->id >= 0 && f->id < _n_fields);
 
   if (key_id > -1 && key_id < _n_keys) {
@@ -3212,6 +3233,8 @@ cs_field_set_key_str(cs_field_t  *f,
 {
   int retval = CS_FIELD_OK;
 
+  if (f == NULL)
+    return CS_FIELD_INVALID_FIELD;
   assert(f->id >= 0 && f->id < _n_fields);
 
   if (key_id > -1) {
@@ -3261,6 +3284,8 @@ cs_field_get_key_str(const cs_field_t  *f,
 {
   int errcode = CS_FIELD_OK;
 
+  if (f == NULL)
+    return NULL;
   assert(f->id >= 0 && f->id < _n_fields);
 
   if (key_id > -1 && key_id < _n_keys) {
@@ -3329,6 +3354,8 @@ cs_field_set_key_struct(cs_field_t  *f,
 {
   int retval = CS_FIELD_OK;
 
+  if (f == NULL)
+    return CS_FIELD_INVALID_FIELD;
   assert(f->id >= 0 && f->id < _n_fields);
 
   if (key_id > -1) {
@@ -3377,9 +3404,11 @@ cs_field_get_key_struct(const cs_field_t  *f,
                         const int          key_id,
                         void              *s)
 {
-  int errcode = CS_FIELD_OK;
-
+  if (f == NULL)
+    return NULL;
   assert(f->id >= 0 && f->id < _n_fields);
+
+  int errcode = CS_FIELD_OK;
 
   if (key_id > -1 && key_id < _n_keys) {
     cs_field_key_def_t *kd = _key_defs + key_id;
@@ -3447,9 +3476,11 @@ void *
 cs_field_get_key_struct_ptr(cs_field_t  *f,
                             int          key_id)
 {
-  int errcode = CS_FIELD_OK;
-
+  if (f == NULL)
+    return NULL;
   assert(f->id >= 0 && f->id < _n_fields);
+
+  int errcode = CS_FIELD_OK;
 
   if (key_id > -1) {
     cs_field_key_def_t *kd = _key_defs + key_id;
@@ -3523,9 +3554,11 @@ const void *
 cs_field_get_key_struct_const_ptr(const cs_field_t  *f,
                                   int                key_id)
 {
-  int errcode = CS_FIELD_OK;
-
+  if (f == NULL)
+    return NULL;
   assert(f->id >= 0 && f->id < _n_fields);
+
+  int errcode = CS_FIELD_OK;
 
   if (key_id > -1 && key_id < _n_keys) {
     cs_field_key_def_t *kd = _key_defs + key_id;
