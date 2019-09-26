@@ -64,6 +64,7 @@ class CFDSTUDY_DistantLauncher:
                                             self.host_build_name,
                                             'bin')
 
+        self.dist_wdir       = self.cfg.get('batch_parameters', 'distant_workdir')
         self.package_name    = self.cfg.get('study_parameters', 'code_name')
         self.paramfile       = self.cfg.get('study_parameters', 'xmlfile')
         self.results_file    = "cs_uncertain_output.dat"
@@ -73,7 +74,10 @@ class CFDSTUDY_DistantLauncher:
             self.run_prefix = run_prefix + "_"
 
         self.run_id = None
+        tmp = os.getcwd()
+        os.chdir(self.case_dir)
         self.__setRunId__()
+        os.chdir(tmp)
 
         self.job_params = self.__getJobParameters__()
 
@@ -174,9 +178,6 @@ class CFDSTUDY_DistantLauncher:
 
         # ---------------------------------
         resManager = salome.lcc.getResourcesManager()
-        rdef       = resManager.GetResourceDefinition(self.host)
-
-        dist_wdir  = os.path.split(rdef.working_directory)[0]
 
         job_params = salome.JobParameters()
         # ---------------------------------
@@ -195,7 +196,7 @@ class CFDSTUDY_DistantLauncher:
         # ---------------------------------
 
         # ---------------------------------
-        job_params.work_directory   = os.path.join(dist_wdir,
+        job_params.work_directory   = os.path.join(self.dist_wdir,
                                                    self.study_name,
                                                    self.case_name)
 

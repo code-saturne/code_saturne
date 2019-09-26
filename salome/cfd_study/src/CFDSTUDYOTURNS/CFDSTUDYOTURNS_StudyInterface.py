@@ -61,6 +61,7 @@ class cfd_openturns_study:
         # --------------------------
         # Init from user values
         self.study_path = study_path
+        os.chdir(study_path)
 
         self.cfg_name = study_cfg
         cfg_path      = os.path.join(study_path, study_cfg)
@@ -120,12 +121,12 @@ class cfd_openturns_study:
 
         case_dir = os.path.join(self.study_path, self.case_id)
 
-        if os.path.isdir(case_dir):
+        case_resu_dir = os.path.join(case_dir, "RESU")
             # Check if the case directory allready exists.
             # if it exists, check if a case has allready been run
-            case_resu_dir = os.path.join(case_dir, "RESU")
+        if os.path.isdir(case_dir):
 
-            dirs = filter(os.path.isdir, glob(case_resu_dir + "/*"))
+            dirs = [e for e in filter(os.path.isdir, glob(case_resu_dir + "/*"))]
 
             self.__setCsCase__()
             self.case['case_path'] = case_dir
@@ -139,6 +140,8 @@ class cfd_openturns_study:
         else:
             self.__createCase__()
             self.load_launcher(case_dir)
+
+#       os.chdir(case_resu_dir)
 
     # ---------------------------------------
 
@@ -279,10 +282,6 @@ class cfd_openturns_study:
 
         paramfile = self.cfg.get('study_parameters', 'xmlfile')
         fp = os.path.join(self.study_path, self.case_id, 'DATA', paramfile)
-
-        print("=======================================")
-        print(fp)
-        print("=======================================")
 
         self.case = Case(package=self.pkg, file_name=fp)
         self.case['xmlfile'] = fp
