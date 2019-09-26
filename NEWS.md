@@ -1,10 +1,26 @@
-Release 6.0.0-rc1 (Sep 24 2019)
--------------------------------
+Release 6.0.0 (Sep 26 2019)
+---------------------------
 
 Known issues:
 
 - Internal coupling for scalars is not handled yet when using the
   steady algorithm with relaxion (itdvar -1).
+
+Physical modeling:
+
+- Add an option to disable dynamics in solid cells for internal coupling or for
+  porous modelling.
+
+Bug fixes:
+
+- Fixes in CS/OT workflow for python3 and following salome kernel evolutions.
+
+Documentation:
+
+- Updated pdf user manual.
+
+Release 6.0.0-rc1 (Sep 24 2019)
+-------------------------------
 
 User changes:
 
@@ -64,10 +80,7 @@ User changes:
 - Keep user reconstruction sweeps number in case dynamic sweeping (iswdyn) is
   enabled. Fix for issue #86.
 
-Physical modelling:
-
-- Add an option to disable dynamics in solid cells for internal coupling or for
-  porous modelling.
+Physical modeling:
 
 - Add non-linear (quadratic) eddy viscosity model k-epsilon of Baglietto et al.
   * to enable it, set cs_glob_turb_model->iturb = 23
