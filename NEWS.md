@@ -61,8 +61,8 @@ Bug fixes:
 - Fix in turbulent isotropic diffusion (Shir model) with EB-RSM. The turbulent
   viscosity did not take into account the effect of the wall.
 
-Release 6.0.0 (Sep 26 2019)
----------------------------
+Release 6.0.0 (September 26 2019)
+---------------------------------
 
 User changes:
 
