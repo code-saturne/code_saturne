@@ -1,5 +1,5 @@
-Release 6.0.0 (Sep 26 2019)
----------------------------
+Release 6.0.0 (September 26 2019)
+---------------------------------
 
 Known issues:
 
@@ -19,8 +19,8 @@ Documentation:
 
 - Updated pdf user manual.
 
-Release 6.0.0-rc1 (Sep 24 2019)
--------------------------------
+Release 6.0.0-rc1 (September 24 2019)
+-------------------------------------
 
 User changes:
 
