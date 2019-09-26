@@ -1,6 +1,8 @@
 Release 5.3.4 - September 26, 2019
 ----------------------------------
 
+This is the last release of the 5.3 series.
+
 Bug fixes:
 
 - Fix for crash reading some CGNS files.
