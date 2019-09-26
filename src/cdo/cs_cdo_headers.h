@@ -69,6 +69,7 @@
 #include "cs_hho_stokes.h"
 #include "cs_hho_vecteq.h"
 #include "cs_hodge.h"
+#include "cs_maxwell.h"
 #include "cs_mesh_deform.h"
 #include "cs_navsto_coupling.h"
 #include "cs_navsto_param.h"

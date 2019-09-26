@@ -613,12 +613,13 @@ cs_maxwell_log_setup(void)
 
   cs_log_printf(CS_LOG_SETUP, "  * Maxwell | Model:");
   if (mxl->model & CS_MAXWELL_MODEL_ELECTROSTATIC)
-     cs_log_printf(CS_LOG_SETUP, "  Electro-static\n");
+    cs_log_printf(CS_LOG_SETUP, "  Electro-static");
   if (mxl->model & CS_MAXWELL_MODEL_MAGNETOSTATIC)
-     cs_log_printf(CS_LOG_SETUP, "  Magneto-static\n");
+    cs_log_printf(CS_LOG_SETUP, "+  Magneto-static");
+  cs_log_printf(CS_LOG_SETUP, "\n");
 
   if (mxl->options & CS_MAXWELL_JOULE_EFFECT)
-     cs_log_printf(CS_LOG_SETUP, "  * Maxwell | Joule effect\n");
+    cs_log_printf(CS_LOG_SETUP, "  * Maxwell | Joule effect\n");
 
 }
 
@@ -649,8 +650,11 @@ cs_maxwell_compute_steady_state(const cs_mesh_t              *mesh,
 
     cs_equation_t  *es_eq = cs_equation_by_name(CS_MAXWELL_ESTATIC_EQNAME);
 
+    /* Sanity checks */
+    assert(es_eq != NULL);
     assert(cs_equation_uses_new_mechanism(es_eq));
-    cs_equation_solve(mesh, es_eq);
+
+    cs_equation_solve_steady_state(mesh, es_eq);
 
   }
 
@@ -658,12 +662,15 @@ cs_maxwell_compute_steady_state(const cs_mesh_t              *mesh,
 
     cs_equation_t  *ms_eq = cs_equation_by_name(CS_MAXWELL_MSTATIC_EQNAME);
 
+    /* Sanity checks */
+    assert(ms_eq != NULL);
     assert(cs_equation_uses_new_mechanism(ms_eq));
-    cs_equation_solve(mesh, ms_eq);
+
+    cs_equation_solve_steady_state(mesh, ms_eq);
 
   }
 
-  /* Update fields which are related to the scalar potential computed */
+  /* Update fields and properties which are related to solved variables */
   cs_maxwell_update(mesh, connect, quant, time_step,
                     true); /* operate current to previous ? */
 }
@@ -687,15 +694,14 @@ cs_maxwell_compute(const cs_mesh_t              *mesh,
 {
   cs_maxwell_t  *mxl = cs_maxwell_structure;
 
-  CS_UNUSED(mesh);
-  CS_UNUSED(time_step);
-  CS_UNUSED(connect);
-  CS_UNUSED(quant);
-
   /* Sanity checks */
   if (mxl == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_maxwell));
 
-  /* TODO */
+  /* Add equations to be solved at each time step */
+
+  /* Update fields and properties which are related to solved variables */
+  cs_maxwell_update(mesh, connect, quant, time_step,
+                    true); /* operate current to previous ? */
 }
 
 /*----------------------------------------------------------------------------*/
