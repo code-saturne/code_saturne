@@ -517,7 +517,7 @@ _lages1(cs_real_t           dtp,
           part_coords[id] = old_part_coords[id] + displ_r[id];
           part_vel[id] = part_vel_r[id];
           part_vel_seen[id] = part_vel_seen_r[id];
-	}
+        }
       }
 
       else if (cs_glob_lagr_model->shape == 2 ) {

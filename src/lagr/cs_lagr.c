@@ -2199,13 +2199,13 @@ cs_lagr_solve_time_step(const int         itypfb[],
       if (lagr_model->shape == 1) {
         cs_lagr_orientation_dyn_spheroids(iprev,
                                           cs_glob_lagr_time_step->dtp,
-                                          extra->grad_vel);
+                                          (const cs_real_33_t *)extra->grad_vel);
       }
       /* Integration of Jeffrey equations for ellispoids */
       else if (lagr_model->shape == 2) {
         cs_lagr_orientation_dyn_ellipsoids(iprev,
                                            cs_glob_lagr_time_step->dtp,
-                                           extra->grad_vel);
+                                           (const cs_real_33_t *)extra->grad_vel);
       }
 
 

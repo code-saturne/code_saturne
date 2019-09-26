@@ -563,18 +563,19 @@ typedef struct {
   cs_real_t   diameter_variance;    /*!< particle diameter variance */
 
   cs_real_t   shape;                /*!< particle shape for spheroids
-                        				       (if \ref shape_model is activated */
+                                        (if \ref shape_model is activated */
   cs_real_t   orientation[3];       /*!< particle orintation for spheroids */
   cs_real_t   radii[3];             /*!< particle radii for ellispoids */
   cs_real_t   angular_vel[3];       /*!< particle angular velocity
-				                               (if \ref shape_model is activated */
+                                         (if \ref shape_model is activated */
 
   cs_real_t   euler[4];             /*!< particle four Euler parameters
-				                               (if \ref shape_model is activated */
-  cs_real_t   shape_param[4];       /*!< particle shape parameters for ellispoids
-                                      (alpha_0, beta_0, gamma_0, chi _0)
-                                      in Brenner 1964
-				                               (if \ref shape_model is activated */
+                                         (if \ref shape_model is activated */
+  cs_real_t   shape_param[4];       /*!< particle shape parameters
+                                         for ellispoids
+                                         (alpha_0, beta_0, gamma_0, chi _0)
+                                         in Brenner 1964
+                                         (if \ref shape_model is activated */
   cs_real_t   density;              /*!< particle density */
 
   cs_real_t   fouling_index;        /*!< fouling index */
@@ -600,7 +601,8 @@ typedef struct {
   int  ltsdyn;
 
   /*! activation (=1) or not (=0) of the two-way coupling on the mass.
-    Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING, \ref physical_model = 1 and \ref impvar = 1 */
+    Useful if \ref iilagr = CS_LAGR_TWOWAY_COUPLING,
+    \ref physical_model = 1 and \ref impvar = 1 */
   int  ltsmas;
 
   /*  if \ref physical_model = 1 and \ref itpvar = 1, \ref ltsthe
@@ -855,7 +857,7 @@ typedef struct {
     file (\ref isuist =1). If the name of a variable is changed between two
     calculations, it will not be possible to read its value from the restart
     file */
-  char           **nombrd;
+  char  **nombrd;
 
 } cs_lagr_boundary_interactions_t;
 
