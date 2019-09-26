@@ -326,7 +326,7 @@ static cs_turb_model_t  _turb_model =
   .order = -1
 };
 
-const cs_turb_model_t  *cs_glob_turb_model = &_turb_model;
+const cs_turb_model_t  *cs_glob_turb_model = NULL;
 
 /* Reference values for turbulence structure and associated pointer */
 
@@ -1240,6 +1240,9 @@ cs_turb_compute_constants(void)
   cs_turb_cstlog_alpha = exp(-cs_turb_xkappa
                              * (cs_turb_cstlog_rough - cs_turb_cstlog));
 
+  /* If not set yet, points to the locally defined structure */
+  if (cs_glob_turb_model == NULL)
+    cs_glob_turb_model = &_turb_model;
 
   if (   cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR
       || cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG)
@@ -1320,6 +1323,9 @@ cs_get_glob_turb_les_model(void)
 void
 cs_turb_model_log_setup(void)
 {
+  if (cs_glob_turb_model == NULL)
+    return;
+
   cs_var_cal_opt_t var_cal_opt;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
@@ -1664,6 +1670,9 @@ cs_turb_model_log_setup(void)
 void
 cs_turb_constants_log_setup(void)
 {
+  if (cs_glob_turb_model == NULL)
+    return;
+
   cs_log_printf
     (CS_LOG_SETUP,
      _("\nConstants\n\n"
