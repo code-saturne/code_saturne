@@ -2488,7 +2488,8 @@ void
 cs_equation_solve_steady_state(const cs_mesh_t            *mesh,
                                cs_equation_t              *eq)
 {
-  assert(eq != NULL);
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: Empty equation structure", __func__);
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_start(eq->main_ts_id);
@@ -2496,7 +2497,11 @@ cs_equation_solve_steady_state(const cs_mesh_t            *mesh,
   /* Allocate, build and solve the algebraic system:
      The linear solver is called inside and the field value is updated inside
   */
-  eq->solve(mesh, eq->field_id, eq->param, eq->builder, eq->scheme_context);
+  eq->solve_steady_state(mesh,
+                         eq->field_id,
+                         eq->param,
+                         eq->builder,
+                         eq->scheme_context);
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_stop(eq->main_ts_id);
@@ -2525,7 +2530,11 @@ cs_equation_solve(const cs_mesh_t            *mesh,
   /* Allocate, build and solve the algebraic system:
      The linear solver is called inside and the field value is updated inside
   */
-  eq->solve(mesh, eq->field_id, eq->param, eq->builder, eq->scheme_context);
+  eq->solve(mesh,
+            eq->field_id,
+            eq->param,
+            eq->builder,
+            eq->scheme_context);
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_stop(eq->main_ts_id);
