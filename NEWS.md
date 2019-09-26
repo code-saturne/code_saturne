@@ -16,7 +16,7 @@ User changes:
 
 Numerics and physical modelling:
 
-- Fuse Atmospheric module and Cooling towers module air properties calculation.
+- Merge Atmospheric module and Cooling towers module air properties.
 
 - Add the capability to solve CDO equations with an advection field defined by the mass
   flux arising from the FV legacy scheme
@@ -61,8 +61,8 @@ Bug fixes:
 - Fix in turbulent isotropic diffusion (Shir model) with EB-RSM. The turbulent
   viscosity did not take into account the effect of the wall.
 
-Release 6.0.0-rc1 (Sep 24 2019)
--------------------------------
+Release 6.0.0 (Sep 26 2019)
+---------------------------
 
 User changes:
 
@@ -122,7 +122,10 @@ User changes:
 - Keep user reconstruction sweeps number in case dynamic sweeping (iswdyn) is
   enabled. Fix for issue #86.
 
-Physical modelling:
+Physical modeling:
+
+- Add an option to disable dynamics in solid cells for internal coupling or for
+  porous modelling.
 
 - Add non-linear (quadratic) eddy viscosity model k-epsilon of Baglietto et al.
   * to enable it, set cs_glob_turb_model->iturb = 23
