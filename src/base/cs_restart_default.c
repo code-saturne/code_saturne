@@ -1866,7 +1866,9 @@ cs_restart_read_variables(cs_restart_t               *r,
 
   /* Read and convert turbulence variables in case of model change */
 
-  const int iturb_cur = cs_glob_turb_model->iturb;
+  const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
+  assert(turb_model != NULL);
+  const int iturb_cur = turb_model->iturb;
   const int iturb_old = _read_turbulence_model(r);
 
   if (iturb_cur != iturb_old)

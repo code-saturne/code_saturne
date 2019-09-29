@@ -1213,7 +1213,7 @@ cs_set_type_order_turbulence_model(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Provide access to global turbulence model structure cs_glob_turb_model
+ * \brief Provide access to the turbulence model structure
  *
  * It is needed to initialize structure with GUI.
  */

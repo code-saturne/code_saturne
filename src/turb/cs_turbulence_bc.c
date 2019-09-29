@@ -333,15 +333,17 @@ _inlet_bc(cs_lnum_t   face_id,
           double     *rcodcl)
 {
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+  const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
+  assert(turb_model != NULL);
 
-  if (cs_glob_turb_model->itytur == 2) {
+  if (turb_model->itytur == 2) {
 
     rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
     rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
 
   }
 
-  else if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
+  else if (turb_model->order == CS_TURB_SECOND_ORDER) {
 
     double d2s3 = 2./3.;
     if (_turb_bc_id.rij == -1) {
@@ -363,7 +365,7 @@ _inlet_bc(cs_lnum_t   face_id,
       rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
     }
 
-    if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
+    if (turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
       rcodcl[_turb_bc_id.alp_bl*n_b_faces + face_id] = 1.;
 
     /* Initialization of the turbulent fluxes to 0 if DFM or
@@ -386,27 +388,27 @@ _inlet_bc(cs_lnum_t   face_id,
     }
 
   }
-  else if (cs_glob_turb_model->itytur == 5) {
+  else if (turb_model->itytur == 5) {
 
     rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
     rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
 
     rcodcl[_turb_bc_id.phi*n_b_faces + face_id] = 2./3.;
-    if (cs_glob_turb_model->iturb == 50) {
+    if (turb_model->iturb == 50) {
       rcodcl[_turb_bc_id.f_bar*n_b_faces + face_id] = 0.;
     }
-    else if (cs_glob_turb_model->iturb == 51) {
+    else if (turb_model->iturb == 51) {
       rcodcl[_turb_bc_id.alp_bl*n_b_faces + face_id] = 0.;
     }
 
   }
-  else if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA) {
+  else if (turb_model->iturb == CS_TURB_K_OMEGA) {
 
     rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
     rcodcl[_turb_bc_id.omg*n_b_faces + face_id] = eps/cs_turb_cmu/k;
 
   }
-  else if (cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
+  else if (turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
 
     rcodcl[_turb_bc_id.nusa*n_b_faces + face_id] = cs_turb_cmu*k*k/eps;
 
@@ -430,8 +432,9 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
                      double     *rcodcl)
 {
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+  const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
 
-  if (cs_glob_turb_model->itytur == 2) {
+  if (turb_model->itytur == 2) {
 
     if (rcodcl[_turb_bc_id.k  *n_b_faces + face_id] > 0.5*cs_math_infinite_r)
       rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
@@ -441,7 +444,7 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
 
   }
 
-  else if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
+  else if (turb_model->order == CS_TURB_SECOND_ORDER) {
 
     double d2s3 = 2./3.;
     if (_turb_bc_id.rij == -1) {
@@ -477,7 +480,7 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
         rcodcl[_turb_bc_id.eps*n_b_faces + face_id] = eps;
     }
 
-    if (cs_glob_turb_model->iturb == 32)
+    if (turb_model->iturb == 32)
       if (rcodcl[_turb_bc_id.alp_bl*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
         rcodcl[_turb_bc_id.alp_bl*n_b_faces + face_id] = 1.;
 
@@ -505,7 +508,7 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
     }
 
   }
-  else if (cs_glob_turb_model->itytur == 5) {
+  else if (turb_model->itytur == 5) {
 
     if (rcodcl[_turb_bc_id.k  *n_b_faces + face_id] > 0.5*cs_math_infinite_r)
       rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
@@ -514,17 +517,17 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
 
     if (rcodcl[_turb_bc_id.phi*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
       rcodcl[_turb_bc_id.phi*n_b_faces + face_id] = 2./3.;
-    if (cs_glob_turb_model->iturb == 50) {
+    if (turb_model->iturb == 50) {
       if (rcodcl[_turb_bc_id.f_bar*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
         rcodcl[_turb_bc_id.f_bar*n_b_faces + face_id] = 0.;
     }
-    else if (cs_glob_turb_model->iturb == 51) {
+    else if (turb_model->iturb == 51) {
         if (rcodcl[_turb_bc_id.alp_bl*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
           rcodcl[_turb_bc_id.alp_bl*n_b_faces + face_id] = 0.;
     }
 
   }
-  else if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA) {
+  else if (turb_model->iturb == CS_TURB_K_OMEGA) {
 
     if (rcodcl[_turb_bc_id.k  *n_b_faces + face_id] > 0.5*cs_math_infinite_r)
       rcodcl[_turb_bc_id.k  *n_b_faces + face_id] = k;
@@ -532,7 +535,7 @@ _set_uninit_inlet_bc(cs_lnum_t   face_id,
       rcodcl[_turb_bc_id.omg*n_b_faces + face_id] = eps/cs_turb_cmu/k;
 
   }
-  else if (cs_glob_turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
+  else if (turb_model->iturb == CS_TURB_SPALART_ALLMARAS) {
     if (rcodcl[_turb_bc_id.nusa*n_b_faces + face_id] > 0.5*cs_math_infinite_r)
       rcodcl[_turb_bc_id.nusa*n_b_faces + face_id] = cs_turb_cmu*k*k/eps;
 

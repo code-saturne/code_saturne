@@ -449,14 +449,16 @@ cs_stokes_model_log_setup(void)
        cs_glob_stokes_model->icalhy,
        cs_glob_stokes_model->igpust);
 
-    if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER)
-      cs_log_printf
-        (CS_LOG_SETUP,
+    const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
+    if (turb_model != NULL) {
+      if (turb_model->order == CS_TURB_SECOND_ORDER)
+        cs_log_printf(CS_LOG_SETUP,
          _("      igprij:    %14d (1: take div(rho R)\n"
            "                                    terms into account\n"
            "                                    in the hydrostatic\n"
            "                                    pressure computation)\n"),
          cs_glob_stokes_model->igprij);
+    }
 
   }
 

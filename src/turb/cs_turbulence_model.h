@@ -375,11 +375,13 @@ extern const double cs_turb_cthdfm;
 void
 cs_set_type_order_turbulence_model(void);
 
-/*----------------------------------------------------------------------------
- * Provide access to cs_glob_turb_model
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Provide access to the turbulence model structure
  *
- * needed to initialize structure with GUI
- *----------------------------------------------------------------------------*/
+ * It is needed to initialize structure with GUI.
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_turb_model_t *
 cs_get_glob_turb_model(void);

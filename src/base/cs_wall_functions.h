@@ -422,11 +422,12 @@ cs_wall_functions_2scales_continuous(cs_real_t   rnnb,
     /* Turbulent viscocity is modified for RSM so that its expression
      * remain valid down to the wall, according to Durbin :
      * nu_t = 0.22 * v'2 * k / eps */
-    if (cs_glob_turb_model->itytur == 3) {
-      t_visc_durb = t_visc / (kinetic_en * cs_turb_cmu ) * rnnb * 0.22 ;
-    } else {
-      t_visc_durb = t_visc ;
-    }
+    const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
+    assert(turb_model != NULL);
+    if (turb_model->itytur == 3)
+      t_visc_durb = t_visc / (kinetic_en * cs_turb_cmu ) * rnnb * 0.22;
+    else
+      t_visc_durb = t_visc;
 
     *cofimp     = 1. - *ypup * (2.0 * sqrt( l_visc / t_visc_durb * dup1 * (1.0 - dup1) ) -  dup2) ;
 

@@ -312,8 +312,10 @@ cs_user_postprocess_values(const char            *mesh_name,
 
       /* Reynolds stresses */
 
-      const cs_turb_model_t *turb_mdl = cs_glob_turb_model;
+      const cs_turb_model_t  *turb_mdl = cs_get_glob_turb_model();
+      assert(turb_mdl != NULL);
       const cs_turb_rans_model_t *turb_rans_mdl = cs_glob_turb_rans_model;
+      assert(turb_rans_mdl != NULL);
 
       cs_real_6_t *rij = NULL;
       BFT_MALLOC(rij, n_cells, cs_real_6_t);

@@ -2312,12 +2312,16 @@ void CS_PROCF (cssca2, CSSCA2) (int        *iturt)
 
   cs_var_t  *vars = cs_glob_var;
 
+  const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
+  assert(turb_model != NULL);
+
   const int kscmin = cs_field_key_id("min_scalar_clipping");
   const int kscmax = cs_field_key_id("max_scalar_clipping");
 
   /* Specific physics: the min max of the model scalar are not given */
   const int keysca = cs_field_key_id("scalar_id");
   const int kscavr = cs_field_key_id("first_moment_id");
+
 
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t  *f = cs_field_by_id(f_id);
@@ -2334,7 +2338,7 @@ void CS_PROCF (cssca2, CSSCA2) (int        *iturt)
           cs_field_set_key_double(f, kscmin, scal_min);
           cs_field_set_key_double(f, kscmax, scal_max);
 
-          if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
+          if (turb_model->order == CS_TURB_SECOND_ORDER) {
             int turb_mdl;
             _variable_turbulent_flux_model(tn_v, &turb_mdl);
             iturt[i] = turb_mdl;
@@ -2369,9 +2373,11 @@ void CS_PROCF (cssca2, CSSCA2) (int        *iturt)
     cs_field_set_key_double(f, kscmax, scal_max);
     int i = cs_field_get_key_int(f, keysca) - 1;
 
-    if (cs_glob_turb_model->order == CS_TURB_SECOND_ORDER) {
+    const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
+    assert(turb_model != NULL);
+    if (turb_model->order == CS_TURB_SECOND_ORDER)
       _variable_turbulent_flux_model(tn_v, &(iturt[i]));
-    }
+
 #if _XML_DEBUG_
     bft_printf("--min_scalar_clipping[%i] = %f\n", i, scal_min);
     bft_printf("--max_scalar_clipping[%i] = %f\n", i, scal_max);
