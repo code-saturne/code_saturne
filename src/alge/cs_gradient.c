@@ -65,7 +65,6 @@
 #include "cs_prototypes.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
-#include "cs_internal_coupling.h"
 #include "cs_bad_cells_regularisation.h"
 
 /*----------------------------------------------------------------------------
