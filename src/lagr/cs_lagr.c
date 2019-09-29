@@ -606,8 +606,14 @@ cs_f_lagr_specific_physics(int        *iirayo,
                            int        *ncharm,
                            cs_real_t  *diftl0)
 {
-  _lagr_extra_module.iturb  = cs_glob_turb_model->iturb;
-  _lagr_extra_module.itytur = cs_glob_turb_model->itytur;
+  cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
+
+  if (turb_model == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Turbulence modelling is not set.", __func__);
+
+  _lagr_extra_module.iturb  = turb_model->iturb;
+  _lagr_extra_module.itytur = turb_model->itytur;
   _lagr_extra_module.ncharb = *ncharb;
   _lagr_extra_module.ncharm = *ncharm;
   _lagr_extra_module.icp    = cs_glob_fluid_properties->icp;
