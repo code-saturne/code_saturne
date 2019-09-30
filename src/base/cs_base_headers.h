@@ -80,6 +80,7 @@
 #include "cs_restart_map.h"
 #include "cs_rotation.h"
 #include "cs_sat_coupling.h"
+#include "cs_syr_coupling.h"
 #include "cs_selector.h"
 #include "cs_stokes_model.h"
 #include "cs_time_moment.h"

@@ -195,4 +195,4 @@ cs_ast_coupling_finalize(void);
 
 END_C_DECLS
 
-#endif /* __CS_SYR_COUPLING_H__ */
+#endif /* __CS_AST_COUPLING_H__ */
