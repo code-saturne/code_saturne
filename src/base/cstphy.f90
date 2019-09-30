@@ -379,12 +379,13 @@ module cstphy
   !> constant \f$C_1\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
   !> Useful if and only if \ref iturb=30
   !> (\f$R_{ij}-\varepsilon\f$ LRR)
-  double precision, save :: crij1
+  real(c_double), pointer, save :: crij1
+
 
   !> constant \f$C_2\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
   !> Useful if and only if \ref iturb=30
   !> (\f$R_{ij}-\varepsilon\f$ LRR)
-  double precision, save :: crij2
+  real(c_double), pointer, save :: crij2
 
   !> constant \f$C_3\f$ for the buoyant production term \f$R_{ij}-\varepsilon\f$
   !>  models.
@@ -874,11 +875,11 @@ module cstphy
     ! Interface to C function retrieving pointers to constants of the
     ! turbulence model
 
-    subroutine cs_f_turb_model_constants_get_pointers(sigmae, cmu, cmu025) &
+    subroutine cs_f_turb_model_constants_get_pointers(sigmae, cmu, cmu025, crij1, crij2) &
       bind(C, name='cs_f_turb_model_constants_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: sigmae , cmu  , cmu025
+      type(c_ptr), intent(out) :: sigmae , cmu  , cmu025 , crij1 , crij2
     end subroutine cs_f_turb_model_constants_get_pointers
 
     !---------------------------------------------------------------------------
@@ -1002,13 +1003,15 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_sigmae, c_cmu, c_cmu025
+    type(c_ptr) :: c_sigmae, c_cmu, c_cmu025, c_crij1, c_crij2
 
-    call cs_f_turb_model_constants_get_pointers(c_sigmae, c_cmu, c_cmu025)
+    call cs_f_turb_model_constants_get_pointers(c_sigmae, c_cmu, c_cmu025, c_crij1, c_crij2)
 
     call c_f_pointer(c_sigmae , sigmae)
     call c_f_pointer(c_cmu    , cmu   )
     call c_f_pointer(c_cmu025 , cmu025)
+    call c_f_pointer(c_crij1 , crij1)
+    call c_f_pointer(c_crij2 , crij2)
 
   end subroutine turb_model_constants_init
 

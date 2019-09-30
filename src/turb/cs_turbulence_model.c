@@ -1008,7 +1008,9 @@ cs_f_turb_reference_values(double  **almax,
 void
 cs_f_turb_model_constants_get_pointers(double  **sigmae,
                                        double  **cmu,
-                                       double  **cmu025);
+                                       double  **cmu025,
+                                       double **crij1,
+                                       double **crij2);
 
 /*============================================================================
  * Private function definitions
@@ -1157,11 +1159,15 @@ cs_f_turb_reference_values(double  **almax,
 void
 cs_f_turb_model_constants_get_pointers(double  **sigmae,
                                        double  **cmu,
-                                       double  **cmu025)
+                                       double  **cmu025,
+                                       double **crij1,
+                                       double **crij2)
 {
   *sigmae = &cs_turb_sigmae;
   *cmu    = &cs_turb_cmu;
   *cmu025 = &cs_turb_cmu025;
+  *crij1 = &cs_turb_crij1;
+  *crij2 = &cs_turb_crij2;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
