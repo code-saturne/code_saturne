@@ -1796,31 +1796,25 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
    * "fixed_wall" means a no-slip BC
    */
   sc->apply_symmetry = cs_cdofb_symmetry;
+  sc->apply_sliding_wall = cs_cdofb_block_dirichlet_alge;
+  sc->apply_fixed_wall = cs_cdofb_block_dirichlet_alge;
 
   switch (mom_eqp->default_enforcement) {
 
   case CS_PARAM_BC_ENFORCE_ALGEBRAIC:
     sc->apply_velocity_inlet = cs_cdofb_block_dirichlet_alge;
-    sc->apply_sliding_wall = cs_cdofb_block_dirichlet_alge;
-    sc->apply_fixed_wall = cs_cdofb_block_dirichlet_alge;
     break;
 
   case CS_PARAM_BC_ENFORCE_PENALIZED:
     sc->apply_velocity_inlet = cs_cdofb_block_dirichlet_pena;
-    sc->apply_sliding_wall = cs_cdofb_block_dirichlet_pena;
-    sc->apply_fixed_wall = cs_cdofb_block_dirichlet_pena;
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_NITSCHE:
     sc->apply_velocity_inlet = cs_cdofb_block_dirichlet_weak;
-    sc->apply_sliding_wall = cs_cdofb_block_dirichlet_weak;
-    sc->apply_fixed_wall = cs_cdofb_block_dirichlet_weak;
     break;
 
   case CS_PARAM_BC_ENFORCE_WEAK_SYM:
     sc->apply_velocity_inlet = cs_cdofb_block_dirichlet_wsym;
-    sc->apply_sliding_wall = cs_cdofb_block_dirichlet_wsym;
-    sc->apply_fixed_wall = cs_cdofb_block_dirichlet_wsym;
     break;
 
   default:
@@ -2067,7 +2061,6 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
-    cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = NULL;
     cs_cell_builder_t  *cb = NULL;
@@ -2124,8 +2117,8 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
       /* 2- VELOCITY (VECTORIAL) EQUATION */
       /* ================================ */
 
-      cs_cdofb_vecteq_diffusion(t_eval, mom_eqp, mom_eqb, mom_eqc,
-                                cm, fm, csys, cb);
+      cs_cdofb_vecteq_advection_diffusion(t_eval, mom_eqp, mom_eqc, cm,
+                                          csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
@@ -2152,6 +2145,11 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
        * Apply a part of BC before the time scheme */
 
       _apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, csys, cb);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
+      if (cs_dbg_cw_test(mom_eqp, cm, csys))
+        cs_cell_sys_dump(">> Local system matrix before condensation", csys);
+#endif
 
       /* 5- STATIC CONDENSATION
        * ======================
@@ -2297,7 +2295,6 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t          *mesh,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
-    cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = NULL;
     cs_cell_builder_t  *cb = NULL;
@@ -2356,8 +2353,7 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t          *mesh,
       /* 2- VELOCITY (VECTORIAL) EQUATION */
       /* ================================ */
 
-      cs_cdofb_vecteq_diffusion(t_eval, mom_eqp, mom_eqb, mom_eqc,
-                                cm, fm, csys, cb);
+      cs_cdofb_vecteq_diffusion(t_eval, mom_eqp, mom_eqc, cm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
