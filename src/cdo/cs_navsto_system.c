@@ -46,6 +46,7 @@
 
 #include "cs_cdofb_ac.h"
 #include "cs_cdofb_monolithic.h"
+#include "cs_cdofb_monolithic_sles.h"
 #include "cs_cdofb_navsto.h"
 #include "cs_cdofb_predco.h"
 #include "cs_cdofb_uzawa.h"

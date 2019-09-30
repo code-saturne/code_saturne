@@ -3,7 +3,8 @@
 
 /*============================================================================
  * Build an algebraic CDO face-based system for the Navier-Stokes equations
- * and solved it with a monolithic algorithm
+ * and solved it as one block (monolithic approach of the velocity-pressure
+ * coupling)
  *============================================================================*/
 
 /*
@@ -130,21 +131,6 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
 
 void *
 cs_cdofb_monolithic_free_scheme_context(void   *scheme_context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Start setting-up the Navier-Stokes equations when a monolithic
- *         algorithm is used to coupled the system.
- *         No mesh information is available at this stage
- *
- * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] context  pointer to a context structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
-                             void                       *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
