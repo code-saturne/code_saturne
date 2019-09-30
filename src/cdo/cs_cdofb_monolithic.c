@@ -1302,6 +1302,7 @@ _apply_remaining_bc(const cs_cdofb_monolithic_t   *sc,
       const short int  f = csys->_f_ids[i];
 
       if (bf_type[i] & CS_BOUNDARY_IMPOSED_VEL) {
+
         /* Update mass RHS from the knowledge of the mass flux
          * TODO: multiply by rho */
         mass_rhs[0] -= cs_math_3_dot_product(csys->dir_values + 3*f,
@@ -1310,22 +1311,25 @@ _apply_remaining_bc(const cs_cdofb_monolithic_t   *sc,
         /* Strong enforcement of u.n (--> dp/dn = 0) on the divergence */
         for (int k = 0; k < 3; k++) div_op[3*f+k] = 0;
 
-        /* Enforcement of the velocity for the velocity-block
-         * Dirichlet on the three components of the velocity field */
+        /* Enforcement of the velocity DoFs for the velocity-block
+         * Dirichlet BCs on the three components of the velocity field.
+         * If a weak enforcement is requested, this was done in a previous
+         * step (before the static condensation) */
         if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
-            eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {
+            eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC)
           sc->apply_velocity_inlet(f, eqp, cm, cb, csys);
-        }
-      }
 
+      }
       else if (bf_type[i] & CS_BOUNDARY_IMPOSED_P) {
-        /* Close the definition of the pressure grandient for this face */
+
+        /* Close the definition of the pressure gradient for this face */
         for (int k = 0; k < 3; k++)
           csys->rhs[3*f+k] += div_op[3*f+k] * nsb->pressure_bc_val[i];
         break;
-      }
 
+      }
       else if (bf_type[i] & CS_BOUNDARY_WALL) {
+
         /* No need to update the mass RHS since there is no mass flux */
 
         /* Strong enforcement of u.n (--> dp/dn = 0) on the divergence */
@@ -1340,8 +1344,8 @@ _apply_remaining_bc(const cs_cdofb_monolithic_t   *sc,
           else
             sc->apply_fixed_wall(f, eqp, cm, cb, csys);
         }
-      }
 
+      }
       else if (bf_type[i] & CS_BOUNDARY_SYMMETRY) {
 
         /* No need to update the mass RHS since there is no mass flux */
@@ -1357,7 +1361,7 @@ _apply_remaining_bc(const cs_cdofb_monolithic_t   *sc,
 
     } /* Loop over boundary faces */
 
-  } /* Boundary cell */
+  } /* This is a boundary cell */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1398,8 +1402,7 @@ _assemble(const cs_cell_sys_t            *csys,
   assert(bd->n_row_blocks == n_f);
 
   /* 1. Matrix assembly
-   * ==================
-   */
+   * ================== */
 
   cs_gnum_t  r_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
   cs_gnum_t  c_gids[CS_CDO_ASSEMBLE_BUF_SIZE];
@@ -1490,16 +1493,16 @@ _assemble(const cs_cell_sys_t            *csys,
     bufsize = 0;
   }
 
-  /* 2. RHS assembly
-   * ===============
-   */
+  /* 2. RHS assembly (only the part with face DoFs)
+   * ============================================== */
 
   for (short int f = 0; f < 3*n_f; f++)
 #   pragma omp atomic
     rhs[csys->dof_ids[f]] += csys->rhs[f];
 
   /* Reset the value of the source term for the cell DoF
-     Source term is only hold by the cell DoF in face-based schemes */
+     Source term is only hold by the cell DoF in face-based schemes so
+     there is no need to assemble this term. Use directly mass_rhs */
   if (has_sourceterm)
     for (int k = 0; k < 3; k++)
       eqc_st[3*cm->c_id + k] = csys->source[3*n_f + k];
@@ -2059,7 +2062,7 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
     int  t_id = 0;
 #endif
 
-    /* Each thread get back its related structures:
+    /* Each thread gets back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = NULL;
@@ -2105,13 +2108,13 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
        * ================================= *
        * - Set the type of boundary
        * - Set the pressure boundary conditions (if required)
-       * - Define  the divergence operator used in the linear system
+       * - Define the divergence operator used in the linear system
        */
       cs_cdofb_navsto_define_builder(t_eval, nsp, cm, csys,
                                      sc->pressure_bc, sc->bf_type,
                                      &nsb);
 
-      /* Initialize the RHS for the mass eq */
+      /* Initialize the RHS for the mass equation */
       mass_rhs[c_id] = 0.;
 
       /* 2- VELOCITY (VECTORIAL) EQUATION */
