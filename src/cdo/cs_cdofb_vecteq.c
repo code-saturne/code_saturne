@@ -374,10 +374,8 @@ cs_cdofb_vecteq_init_cell_system(const cs_flag_t               cell_flag,
  *
  * \param[in]      time_eval   time at which analytic function are evaluated
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      eqc         context for this kind of discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
- * \param[in, out] fm          pointer to a facewise view of the mesh
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
  */
@@ -386,15 +384,11 @@ cs_cdofb_vecteq_init_cell_system(const cs_flag_t               cell_flag,
 void
 cs_cdofb_vecteq_diffusion(double                         time_eval,
                           const cs_equation_param_t     *eqp,
-                          const cs_equation_builder_t   *eqb,
                           const cs_cdofb_vecteq_t       *eqc,
                           const cs_cell_mesh_t          *cm,
-                          cs_face_mesh_t                *fm,
                           cs_cell_sys_t                 *csys,
                           cs_cell_builder_t             *cb)
 {
-  CS_UNUSED(eqb);
-  CS_UNUSED(fm);
   CS_UNUSED(time_eval);
 
   if (cs_equation_param_has_diffusion(eqp)) {   /* DIFFUSION TERM
@@ -619,7 +613,7 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 
       /* Build and add the diffusion/advection/reaction term to the local
          system. */
-      cs_cdofb_vecteq_diffusion(time_eval, eqp, eqb, eqc, cm, fm, csys, cb);
+      cs_cdofb_vecteq_diffusion(time_eval, eqp, eqc, cm, csys, cb);
 
       const bool has_sourceterm = cs_equation_param_has_sourceterm(eqp);
       if (has_sourceterm) { /* SOURCE TERM
@@ -819,7 +813,7 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
 
       /* Build and add the diffusion/advection/reaction term to the local
          system. */
-      cs_cdofb_vecteq_diffusion(time_eval, eqp, eqb, eqc, cm, fm, csys, cb);
+      cs_cdofb_vecteq_diffusion(time_eval, eqp, eqc, cm, csys, cb);
 
       const bool has_sourceterm = cs_equation_param_has_sourceterm(eqp);
       if (has_sourceterm) { /* SOURCE TERM
@@ -1052,7 +1046,7 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
 
       /* Build and add the diffusion/advection/reaction term to the local
          system. */
-      cs_cdofb_vecteq_diffusion(time_eval, eqp, eqb, eqc, cm, fm, csys, cb);
+      cs_cdofb_vecteq_diffusion(time_eval, eqp, eqc, cm, csys, cb);
 
       const bool has_sourceterm = cs_equation_param_has_sourceterm(eqp);
       if (has_sourceterm) { /* SOURCE TERM

@@ -1077,9 +1077,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
       /* 2- VELOCITY (VECTORIAL) EQUATION */
       /* ================================ */
-      cs_cdofb_vecteq_diffusion(time_eval, mom_eqp, mom_eqb, mom_eqc,
-                                cm, fm, csys, cb);
-
+      cs_cdofb_vecteq_diffusion(time_eval, mom_eqp, mom_eqc, cm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_PREDCO_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))

@@ -2180,8 +2180,7 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
 
       /* 2- VELOCITY (VECTORIAL) EQUATION */
       /* ================================ */
-      cs_cdofb_vecteq_diffusion(time_eval, mom_eqp, mom_eqb, mom_eqc,
-                                cm, fm, csys, cb);
+      cs_cdofb_vecteq_diffusion(time_eval, mom_eqp, mom_eqc, cm, csys, cb);
 
       /* Update the property */
       if ( !(sc->is_gdscale_uniform) )

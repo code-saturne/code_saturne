@@ -248,10 +248,8 @@ cs_cdofb_vecteq_setup_bc(cs_real_t                     t_eval,
  *
  * \param[in]      time_eval   time at which analytic function are evaluated
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
- * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      eqc         context for this kind of discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
- * \param[in, out] fm          pointer to a facewise view of the mesh
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
  */
@@ -260,10 +258,8 @@ cs_cdofb_vecteq_setup_bc(cs_real_t                     t_eval,
 void
 cs_cdofb_vecteq_diffusion(double                         time_eval,
                           const cs_equation_param_t     *eqp,
-                          const cs_equation_builder_t   *eqb,
                           const cs_cdofb_vecteq_t       *eqc,
                           const cs_cell_mesh_t          *cm,
-                          cs_face_mesh_t                *fm,
                           cs_cell_sys_t                 *csys,
                           cs_cell_builder_t             *cb);
 
