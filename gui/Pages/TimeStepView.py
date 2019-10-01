@@ -127,7 +127,7 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
         validatorCDTMIN = DoubleValidator(self.lineEditCDTMIN, min=0.0, max=1.0)
         validatorCDTMIN.setExclusiveMin(True)
         validatorCDTMAX = DoubleValidator(self.lineEditCDTMAX, min=1.0)
-        validatorVARRDT = DoubleValidator(self.lineEditVARRDT, min=0.0, max=1.0)
+        validatorVARRDT = DoubleValidator(self.lineEditVARRDT, min=0.0)
         validatorVARRDT.setExclusiveMin(True)
 
         self.lineEditDTREF.setValidator(validatorDTREF)
