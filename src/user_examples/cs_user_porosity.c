@@ -158,6 +158,12 @@ cs_user_porosity(cs_domain_t   *domain)
     else
       cpro_porosi[cell_id] = 0.5;
   }
+
+  /* synchronize for use in fluid face factor calculation below */
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_field_synchronize(cs_field_by_name("porosity"),
+                       halo_type);
+
   /*!< [set_poro_cells_1] */
 
   /* Set interior face values */
