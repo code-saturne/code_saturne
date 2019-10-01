@@ -35,6 +35,7 @@
 #include "cs_cdo_bc.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_diffusion.h"
+#include "cs_cdo_field_interpolation.h"
 #include "cs_cdofb_ac.h"
 #include "cs_cdofb_monolithic.h"
 #include "cs_cdofb_navsto.h"

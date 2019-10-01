@@ -54,6 +54,7 @@ cs_cdo_advection.h \
 cs_cdo_bc.h \
 cs_cdo_connect.h \
 cs_cdo_diffusion.h \
+cs_cdo_field_interpolation.h \
 cs_cdo_local.h \
 cs_cdo_main.h \
 cs_cdo_quantities.h \
@@ -124,6 +125,7 @@ cs_cdo_advection.c \
 cs_cdo_bc.c \
 cs_cdo_connect.c \
 cs_cdo_diffusion.c \
+cs_cdo_field_interpolation.c \
 cs_cdo_local.c \
 cs_cdo_main.c \
 cs_cdo_quantities.c \

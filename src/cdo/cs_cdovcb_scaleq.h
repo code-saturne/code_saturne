@@ -167,6 +167,30 @@ cs_cdovcb_scaleq_init_values(cs_real_t                     t_eval,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Build and solve the linear system arising from a scalar steady-state
+ *         equation with a CDO-VCb scheme. Use for interpolation purpose from
+ *         cell values to vertex values.
+ *         One works cellwise and then process to the assembly.
+ *
+ * \param[in]      mesh         pointer to a cs_mesh_t structure
+ * \param[in]      cell_values  array of cell values
+ * \param[in]      field_id     id of the variable field
+ * \param[in]      eqp          pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb          pointer to a cs_equation_builder_t structure
+ * \param[in, out] context      pointer to cs_cdovcb_scaleq_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovcb_scaleq_interpolate(const cs_mesh_t            *mesh,
+                             const cs_real_t            *cell_values,
+                             const int                   field_id,
+                             const cs_equation_param_t  *eqp,
+                             cs_equation_builder_t      *eqb,
+                             void                       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build and solve the linear system arising from a scalar steady-state
  *         convection/diffusion/reaction equation with a CDO-VCb scheme
  *         One works cellwise and then process to the assembly.
  *

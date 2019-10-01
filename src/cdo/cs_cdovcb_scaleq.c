@@ -1177,6 +1177,220 @@ cs_cdovcb_scaleq_init_values(cs_real_t                     t_eval,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Build and solve the linear system arising from a scalar steady-state
+ *         equation with a CDO-VCb scheme. Use for interpolation purpose from
+ *         cell values to vertex values.
+ *         One works cellwise and then process to the assembly.
+ *
+ * \param[in]      mesh         pointer to a cs_mesh_t structure
+ * \param[in]      cell_values  array of cell values
+ * \param[in]      field_id     id of the variable field
+ * \param[in]      eqp          pointer to a cs_equation_param_t structure
+ * \param[in, out] eqb          pointer to a cs_equation_builder_t structure
+ * \param[in, out] context      pointer to cs_cdovcb_scaleq_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovcb_scaleq_interpolate(const cs_mesh_t            *mesh,
+                             const cs_real_t            *cell_values,
+                             const int                   field_id,
+                             const cs_equation_param_t  *eqp,
+                             cs_equation_builder_t      *eqb,
+                             void                       *context)
+{
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_SCAL];
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_lnum_t  n_vertices = quant->n_vertices;
+  const cs_time_step_t  *ts = cs_shared_time_step;
+  const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
+
+  cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t *)context;
+  cs_field_t  *fld = cs_field_by_id(field_id);
+
+  cs_timer_t  t0 = cs_timer_time();
+
+  /* Build an array storing the Dirichlet values at vertices */
+  cs_real_t  *dir_values = NULL;
+
+  /* First argument is set to t_cur even if this is a steady computation since
+   * one can call this function to compute a steady-state solution at each time
+   * step of an unsteady computation. */
+  _setup_vcb(time_eval, mesh, eqp, eqb, eqc->vtx_bc_flag, &dir_values);
+
+  if (eqb->init_step)
+    eqb->init_step = false;
+
+  /* Initialize the local system: matrix and rhs */
+  cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
+  cs_real_t  *rhs = NULL;
+
+  BFT_MALLOC(rhs, n_vertices, cs_real_t);
+# pragma omp parallel for if  (n_vertices > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < n_vertices; i++) rhs[i] = 0.0;
+
+  /* Initialize the structure to assemble values */
+  cs_matrix_assembler_values_t  *mav
+    = cs_matrix_assembler_values_init(matrix, NULL, NULL);
+
+  /* ------------------------- */
+  /* Main OpenMP block on cell */
+  /* ------------------------- */
+
+#pragma omp parallel if (quant->n_cells > CS_THR_MIN)                   \
+  shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, dir_values,   \
+         fld, rs, _vcbs_cell_system, _vcbs_cell_builder, cell_values)   \
+  firstprivate(time_eval)
+  {
+    /* Set variables and structures inside the OMP section so that each thread
+       has its own value */
+
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+    int  t_id = omp_get_thread_num();
+#else
+    int  t_id = 0;
+#endif
+
+    /* Each thread get back its related structures:
+       Get the cell-wise view of the mesh and the algebraic system */
+    cs_face_mesh_t  *fm = cs_cdo_local_get_face_mesh(t_id);
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
+    cs_cell_sys_t  *csys = _vcbs_cell_system[t_id];
+    cs_cell_builder_t  *cb = _vcbs_cell_builder[t_id];
+    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
+
+    /* Initialization of the values of properties */
+    cs_equation_init_properties(eqp, eqb, time_eval, cb);
+
+    /* --------------------------------------------- */
+    /* Main loop on cells to build the linear system */
+    /* --------------------------------------------- */
+
+#   pragma omp for CS_CDO_OMP_SCHEDULE
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+      const cs_flag_t  cell_flag = connect->cell_flag[c_id];
+
+      /* Set the local mesh structure for the current cell */
+      cs_cell_mesh_build(c_id,
+                         cs_equation_cell_mesh_flag(cell_flag, eqb),
+                         connect, quant, cm);
+
+      /* Set the local (i.e. cellwise) structures for the current cell */
+      _init_vcb_cell_system(cell_flag, cm, eqp, eqb, eqc,
+                            dir_values, eqc->vtx_bc_flag, fld->val, time_eval,
+                            csys, cb);
+
+      /* Build and add the diffusion/advection/reaction term to the local
+         system. A mass matrix is also built if needed (stored it cb->hdg) */
+      _vcb_advection_diffusion_reaction(time_eval,
+                                        eqp, eqb, eqc, cm, fm, csys, cb);
+
+      if (cs_equation_param_has_sourceterm(eqp)) { /* SOURCE TERM
+                                                    * =========== */
+        /* Reset the local contribution */
+        memset(csys->source, 0, csys->n_dofs*sizeof(cs_real_t));
+
+        /* Source term contribution to the algebraic system
+           If the equation is steady, the source term has already been computed
+           and is added to the right-hand side during its initialization. */
+        cs_source_term_compute_cellwise(eqp->n_source_terms,
+                    (cs_xdef_t *const *)eqp->source_terms,
+                                        cm,
+                                        eqb->source_mask,
+                                        eqb->compute_source,
+                                        time_eval,
+                                        NULL,  /* No input structure */
+                                        cb,    /* mass matrix is cb->hdg */
+                                        csys->source);
+
+        for (short int v = 0; v < cm->n_vc; v++)
+          csys->rhs[v] += csys->source[v];
+        csys->rhs[cm->n_vc] += csys->source[cm->n_vc];
+
+      } /* End of term source */
+
+      /* Apply boundary conditions (those which are weakly enforced) */
+      _vcb_apply_weak_bc(time_eval, eqp, eqc, cm, fm, csys, cb);
+
+
+      { /* Reduce the system size since one has the knowledge of the cell
+           value */
+
+        /* Reshape the local system */
+        for (short int i = 0; i < cm->n_vc; i++) {
+
+          double  *old_i = csys->mat->val + csys->n_dofs*i;   /* Old "i" row  */
+          double  *new_i = csys->mat->val + cm->n_vc*i;       /* New "i" row */
+
+          for (short int j = 0; j < cm->n_vc; j++)
+            new_i[j] = old_i[j];
+
+          /* Update RHS: RHS = RHS - Avc*pc */
+          csys->rhs[i] -= cell_values[csys->c_id] * old_i[cm->n_vc];
+
+        }
+        csys->n_dofs = cm->n_vc;
+        csys->mat->n_rows = csys->mat->n_cols = cm->n_vc;
+
+      }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 1
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump(">> Cell system matrix after condensation", csys);
+#endif
+
+      /* Enforce values if needed (internal or Dirichlet) */
+      _vcb_enforce_values(eqp, eqc, cm, fm, csys, cb);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVCB_SCALEQ_DBG > 0
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_cell_sys_dump(">> (FINAL) Cell system matrix", csys);
+#endif
+
+      /* ASSEMBLY PROCESS
+       * ================ */
+
+      _assemble(eqc, cm, csys, rs, eqa, mav, rhs);
+
+    } /* Main loop on cells */
+
+  } /* OPENMP Block */
+
+  cs_matrix_assembler_values_done(mav); /* optional */
+
+  /* Free temporary buffers and structures */
+  BFT_FREE(dir_values);
+  cs_matrix_assembler_values_finalize(&mav);
+
+  /* End of the system building */
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
+
+  /* Copy current field values to previous values */
+  cs_field_current_to_previous(fld);
+
+  /* Solve the linear system */
+  cs_real_t  normalization = 1.0;
+  cs_equation_solve_scalar_system(n_vertices,
+                                  eqp,
+                                  matrix,
+                                  rs,
+                                  normalization,
+                                  fld->val,
+                                  rhs);
+
+  /* Compute values at cells pc = acc^-1*(RHS - Acv*pv) */
+  memcpy(eqc->cell_values, cell_values, quant->n_cells*sizeof(cs_real_t));
+
+  /* Free remaining buffers */
+  BFT_FREE(rhs);
+  cs_matrix_destroy(&matrix);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build and solve the linear system arising from a scalar steady-state
  *         convection/diffusion/reaction equation with a CDO-VCb scheme
  *         One works cellwise and then process to the assembly.
  *
