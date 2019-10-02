@@ -1313,7 +1313,6 @@ cs_cdovcb_scaleq_interpolate(const cs_mesh_t            *mesh,
       /* Apply boundary conditions (those which are weakly enforced) */
       _vcb_apply_weak_bc(time_eval, eqp, eqc, cm, fm, csys, cb);
 
-
       { /* Reduce the system size since one has the knowledge of the cell
            value */
 

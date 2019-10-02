@@ -74,7 +74,7 @@ BEGIN_C_DECLS
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 cs_flag_t       _field_interpolation_flag = 0;
-cs_equation_t  *_field_interpolation_eq_cell2vertices = NULL;
+cs_equation_t  *_field_interpolation_scalar_c2v_eq = NULL;
 
 /*============================================================================
  * Private variables
@@ -99,19 +99,21 @@ cs_equation_t  *_field_interpolation_eq_cell2vertices = NULL;
 void
 cs_cdo_field_interpolation_activate(cs_flag_t     mode)
 {
+  /* Store which kind of interpolation will be called */
   _field_interpolation_flag = mode;
 
-  if (mode & CS_CDO_FIELD_INTERPOL_SCALAR_CELL_TO_VERTICES) {
+  if (mode & CS_CDO_FIELD_INTERPOLATION_SCALAR_C2V) {
 
-    _field_interpolation_eq_cell2vertices
-      = cs_equation_add("Interpolation_Cell2Vertices",
-                        "Interpolation_at_vertices",
+    /* Add a new equation to build a cell --> vertices interpolation */
+    _field_interpolation_scalar_c2v_eq
+      = cs_equation_add("scalar_c2v_field_interpolation",
+                        "scalar_c2v_field_interpolation",
                         CS_EQUATION_TYPE_PREDEFINED,
                         1,
                         CS_PARAM_BC_HMG_NEUMANN);
 
     cs_equation_param_t  *eqp
-      = cs_equation_get_param(_field_interpolation_eq_cell2vertices);
+      = cs_equation_get_param(_field_interpolation_scalar_c2v_eq);
 
     cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vcb");
     cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
@@ -144,11 +146,15 @@ cs_cdo_field_interpolation_cell_to_vertices(const cs_mesh_t    *mesh,
   if (vtx_values == NULL)
     return; /* Should be allocated */
 
-  if (_field_interpolation_eq_cell2vertices == NULL)
+  if (_field_interpolation_scalar_c2v_eq == NULL)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Equation related to the interpolation of cell array to"
               " vertices is not allocated.", __func__);
-  cs_equation_t  *eq = _field_interpolation_eq_cell2vertices;
+
+  cs_equation_t  *eq = _field_interpolation_scalar_c2v_eq;
+
+  /* Sanity check */
+  assert(CS_SPACE_SCHEME_CDOVCB == cs_equation_get_space_scheme(eq));
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_start(eq->main_ts_id);

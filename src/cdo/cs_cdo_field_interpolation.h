@@ -41,7 +41,19 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-#define CS_CDO_FIELD_INTERPOL_SCALAR_CELL_TO_VERTICES    (1 << 0)
+/*!
+ * @defgroup cdo_field_interpolation
+ *   Flags specifying which kind of interpolation will be used
+ *   This enables to activate/add equations at the setup stage
+ * @{
+ */
+
+/*!  1: Perform an interpolation at vertices of a scalar-valued field defined
+ *      at cells */
+
+#define CS_CDO_FIELD_INTERPOLATION_SCALAR_C2V       (1 << 0)
+
+/*! @} */
 
 /*============================================================================
  * Public function prototypes
