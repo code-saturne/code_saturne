@@ -1284,6 +1284,60 @@ cs_cdo_quantities_dump(const cs_cdo_quantities_t  *cdoq)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the portion of volume surrounding each face of a cell.
+ *        This volume corresponds to a pyramid with base f and apex x_f
+ *        The computed quantity is scanned with the c2f adjacency
+ *
+ * \param[in]      cdoq        pointer to cs_cdo_quantities_t structure
+ * \param[in]      c2f         pointer to the cell --> edges connectivity
+ * \param[in, out] p_pvol_fc   double pointer to the face volume in each cell
+ *                             If not allocated before calling this function,
+ *                             one allocates the array storing the volumes
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_compute_pvol_fc(const cs_cdo_quantities_t    *cdoq,
+                                  const cs_adjacency_t         *c2f,
+                                  cs_real_t                   **p_pvol_fc)
+{
+  if (cdoq == NULL || c2f == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: A mandatory structure is not allocated.\n", __func__);
+
+  const cs_lnum_t  n_cells = cdoq->n_cells;
+
+  cs_real_t  *pvol_fc = *p_pvol_fc;
+
+  /* Initialize array */
+  if (pvol_fc == NULL)
+    BFT_MALLOC(pvol_fc, c2f->idx[n_cells], cs_real_t);
+
+#if defined(DEBUG) && !defined(NDEBUG)
+  memset(pvol_fc, 0, c2f->idx[n_cells]*sizeof(cs_real_t));
+#endif
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+
+      const cs_lnum_t  f_id = c2f->ids[j];
+      const cs_nvec3_t  fp_nvec = cs_quant_set_face_nvec(f_id, cdoq);
+      const cs_nvec3_t  ed_nvec = cs_quant_set_dedge_nvec(j, cdoq);
+
+      cs_real_t  p_fc = _dp3(fp_nvec.unitv, ed_nvec.unitv);
+      p_fc *= cs_math_1ov3 * fp_nvec.meas * ed_nvec.meas;
+
+      pvol_fc[j] = p_fc;
+
+    } /* Loop on cell faces */
+  } /* Loop on cells */
+
+  /* Return pointer */
+  *p_pvol_fc = pvol_fc;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the portion of volume surrounding each edge of a cell
  *        The computed quantity is scanned with the c2e adjacency
  *
@@ -1312,7 +1366,9 @@ cs_cdo_quantities_compute_pvol_ec(const cs_cdo_quantities_t   *cdoq,
   if (pvol_ec == NULL)
     BFT_MALLOC(pvol_ec, c2e->idx[n_cells], cs_real_t);
 
+#if defined(DEBUG) && !defined(NDEBUG)
   memset(pvol_ec, 0, c2e->idx[n_cells]*sizeof(cs_real_t));
+#endif
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
