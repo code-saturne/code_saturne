@@ -150,6 +150,23 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Solve the steady Navier-Stokes system with a CDO face-based scheme
+ *         using a monolithic approach and Picard iterations to solve the
+ *         on-linearities arising from the advection term
+ *
+ * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
+ * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_monolithic_compute_steady_nl(const cs_mesh_t          *mesh,
+                                      const cs_navsto_param_t  *nsp,
+                                      void                     *scheme_context);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Solve the unsteady Navier-Stokes system with a CDO face-based scheme
  *         using a monolithic approach and an Euler time scheme.
  *

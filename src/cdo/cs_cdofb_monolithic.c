@@ -279,6 +279,53 @@ _fields_to_previous(cs_cdofb_monolithic_t   *sc)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Test if one has to do one more Picard iteration
+ *
+ * \param[in]      nsp           pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      mom_eqc       scheme context for the momentum equation
+ * \param[in]      div_l2        L2 norm of the velocity divergence
+ * \param[in, out] picard_iter   number of Picard iteration
+ * \param[in, out] picard_res    residual of the Picard algorithm
+ *
+ * \return the convergence status of the Picard algorithm
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_sles_convergence_state_t
+_picard_cvg_test(const cs_navsto_param_t      *nsp,
+                 const cs_cdofb_vecteq_t      *mom_eqc,
+                 cs_real_t                     div_l2,
+                 int                          *picard_iter,
+                 cs_real_t                    *picard_res)
+{
+  cs_real_t  previous_picard_res = *picard_res;
+  cs_real_t  diverg_factor = 100;
+
+  /* Increment the number of Picard iterations */
+  *picard_iter += 1;
+
+  /* Compute the new residual: L2 norm of the face velocity increment */
+  *picard_res = cs_evaluate_delta_3_square_wc2x_norm(mom_eqc->face_values,
+                                                     mom_eqc->face_values_pre,
+                                                     cs_shared_connect->c2f,
+                                                     cs_shared_quant->pvol_fc);
+
+  /* Set the convergence status */
+  if (*picard_res < nsp->residual_tolerance &&
+      div_l2 < nsp->residual_tolerance)
+    return CS_SLES_CONVERGED;
+
+  if (*picard_res >  diverg_factor * previous_picard_res)
+    return CS_SLES_DIVERGED;
+
+  if (*picard_iter >= nsp->max_algo_iter)
+    return CS_SLES_MAX_ITERATION;
+
+  return CS_SLES_ITERATING;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define the cs_range_set_t, cs_interface_set_t, cs_matrix_assembler_t
  *         and cs_matrix_structure_t structures
  */
@@ -823,15 +870,15 @@ _assemble(const cs_cell_sys_t            *csys,
 /*----------------------------------------------------------------------------*/
 
 static void
-_steady_build(const cs_navsto_param_t  *nsp,
-              cs_cdofb_monolithic_t    *sc,
-              const cs_real_t          *dir_values,
-              cs_matrix_t              *matrix,
-              cs_real_t                *mom_rhs,
-              cs_real_t                *mass_rhs)
+_steady_build(const cs_navsto_param_t      *nsp,
+              cs_cdofb_monolithic_t        *sc,
+              const cs_real_t              *dir_values,
+              cs_matrix_t                  *matrix,
+              cs_real_t                    *mom_rhs,
+              cs_real_t                    *mass_rhs)
 {
   /* Sanity check */
-  assert(matrix != NULL);
+  assert(matrix != NULL && dir_values !=  NULL);
 
   /* Retrieve shared structures */
   const cs_cdo_connect_t  *connect = cs_shared_connect;
@@ -1337,27 +1384,63 @@ _solve_system(cs_sles_t                     *sles,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve the linear system and update the velocity fields and the
- *         pressure field
+ * \brief  Update the divergence of the velocity fields and compute its
+ *         weighted L2-norm (squared)
  *
  * \param[in, out]  sc       scheme context
- * \param[in, out]  mom_eq   equation structure related to the momentum
+ * \param[in, out]  mom_eqc  context of the momentum equation
+ *
+ * \return the square L2-norm of the divergence
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_real_t
+_update_divergence(cs_cdofb_monolithic_t         *sc,
+                   cs_cdofb_vecteq_t             *mom_eqc)
+{
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_real_t  *vel_f = mom_eqc->face_values;
+
+  /* Update the divergence of the velocity field */
+  cs_real_t  *div = sc->divergence->val;
+  cs_real_t  norm2 = 0.;
+
+# pragma omp parallel for if (quant->n_cells > CS_THR_MIN) reduction(+:norm2)
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+    div[c_id] = cs_cdofb_navsto_cell_divergence(c_id,
+                                                quant, cs_shared_connect->c2f,
+                                                vel_f);
+    norm2 += quant->cell_vol[c_id] * div[c_id] * div[c_id];
+  }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
+  cs_dbg_darray_to_listing("VELOCITY_DIV", quant->n_cells, div, 9);
+#endif
+
+  return norm2;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the velocity fields at cells and rescale the pressure field
+ *
+ * \param[in, out]  sc       scheme context
+ * \param[in, out]  mom_eqc  context of the momentum equation
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _update_fields(cs_cdofb_monolithic_t         *sc,
-               cs_equation_t                 *mom_eq)
+               cs_cdofb_vecteq_t             *mom_eqc)
 {
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_real_t  *vel_f = mom_eqc->face_values;
 
   /* Update pressure, velocity and divergence fields */
-
-  cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_field_t  *pr_fld = sc->pressure;
   cs_field_t  *vel_fld = sc->velocity;
-  cs_real_t  *vel_f = mom_eqc->face_values;
 
   /* Compute values at cells vel_c from values at faces vel_f
      vel_c = acc^-1*(RHS - Acf*vel_f) */
@@ -1366,21 +1449,12 @@ _update_fields(cs_cdofb_monolithic_t         *sc,
                                         mom_eqc->acf_tilda,
                                         vel_f, vel_fld->val);
 
-  /* Update the divergence of the velocity field */
-  cs_real_t  *div = sc->divergence->val;
-
-# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
-    div[c_id] = cs_cdofb_navsto_cell_divergence(c_id,
-                                                quant, connect->c2f, vel_f);
-
   /* Rescale pressure */
   cs_cdofb_navsto_set_zero_mean_pressure(quant, pr_fld->val);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
   cs_dbg_darray_to_listing("VELOCITY", 3*quant->n_faces, vel_f, 9);
   cs_dbg_darray_to_listing("PRESSURE", quant->n_cells, pr_fld->val, 9);
-  cs_dbg_darray_to_listing("VELOCITY_DIV", quant->n_cells, div, 9);
 #endif
 }
 
@@ -1620,11 +1694,162 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
                 sc->pressure->val,    /* pressure DoFs at cells */
                 mom_rhs, mass_rhs);
 
+  /* Compute the velocity divergence and retrieve its L2-norm */
+  cs_real_t  div_l2 = _update_divergence(sc, mom_eqc);
+  cs_log_printf(CS_LOG_DEFAULT, " ||div(u)|| = %6.4e\n", sqrt(div_l2));
+
   /* Now compute/update the velocity and pressure fields */
-  _update_fields(sc, mom_eq);
+  _update_fields(sc, mom_eqc);
 
   /* Frees */
   cs_sles_free(sles);
+  BFT_FREE(mom_rhs);
+  BFT_FREE(mass_rhs);
+  cs_matrix_destroy(&matrix);
+
+  cs_timer_t  t_end = cs_timer_time();
+  cs_timer_counter_add_diff(&(sc->timer), &t_start, &t_end);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve the steady Navier-Stokes system with a CDO face-based scheme
+ *         using a monolithic approach and Picard iterations to solve the
+ *         on-linearities arising from the advection term
+ *
+ * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
+ * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_monolithic_compute_steady_nl(const cs_mesh_t          *mesh,
+                                      const cs_navsto_param_t  *nsp,
+                                      void                     *scheme_context)
+{
+  cs_timer_t  t_start = cs_timer_time();
+
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_lnum_t  n_faces = quant->n_faces, n_cells = quant->n_cells;
+
+  /* Retrieve high-level structures */
+  cs_cdofb_monolithic_t  *sc = (cs_cdofb_monolithic_t *)scheme_context;
+  cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
+  cs_equation_t  *mom_eq = cc->momentum;
+  cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
+  cs_equation_param_t  *mom_eqp = mom_eq->param;
+  cs_equation_builder_t  *mom_eqb = mom_eq->builder;
+
+  /*--------------------------------------------------------------------------
+   *                    INITIAL BUILD: START
+   *--------------------------------------------------------------------------*/
+
+  const cs_time_step_t  *ts = cs_shared_time_step;
+  const cs_real_t  t_cur = ts->t_cur;
+
+  /* Build an array storing the Dirichlet values at faces. */
+  cs_real_t  *dir_values = NULL;
+  cs_cdofb_vecteq_setup_bc(t_cur, mesh, mom_eqp, mom_eqb, &dir_values);
+
+  /* Initialize the local matrix */
+  cs_matrix_t  *matrix = cs_matrix_create(cs_shared_matrix_structure);
+
+  /* Initialize the two right-hand side */
+  cs_real_t  *mom_rhs = NULL, *mass_rhs = NULL;
+
+  BFT_MALLOC(mom_rhs, 3*n_faces, cs_real_t);
+  BFT_MALLOC(mass_rhs, n_cells, cs_real_t);
+
+  /* Main loop on cells to define the linear system to solve */
+  _steady_build(nsp, sc, dir_values, matrix, mom_rhs, mass_rhs);
+
+  /* End of the system building */
+  cs_timer_t  t_bld_end = cs_timer_time();
+  cs_timer_counter_add_diff(&(mom_eqb->tcb), &t_start, &t_bld_end);
+
+  /*--------------------------------------------------------------------------
+   *                   INITIAL BUILD: END
+   *--------------------------------------------------------------------------*/
+
+  /* Current to previous for main variable fields */
+  _fields_to_previous(sc);
+
+  /* Solve the linear system */
+  cs_sles_t  *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
+  int  _inner_solver_iter = 0, _inner_solver_cumul = 0;
+
+  _inner_solver_cumul +=
+    (_inner_solver_iter =
+     _solve_system(sles, matrix, mom_eqp,
+                   mom_eqc->face_values, /* velocity DoFs at faces */
+                   sc->pressure->val,    /* pressure DoFs at cells */
+                   mom_rhs, mass_rhs));
+
+  /* Compute the velocity divergence and retrieve its L2-norm */
+  cs_real_t  div_l2 = _update_divergence(sc, mom_eqc);
+
+  /*--------------------------------------------------------------------------
+   *                   PICARD ITERATIONS: START
+   *--------------------------------------------------------------------------*/
+  cs_sles_convergence_state_t  picard_cvg = CS_SLES_ITERATING;
+  int  picard_iter = 1;
+  double  picard_res = cs_math_big_r;
+
+  if (nsp->verbosity > 1) {
+    cs_log_printf(CS_LOG_DEFAULT, "%13s-- Algo.Res  Inner  Cumul  ||div(u)||\n",
+                  "Picard.It");
+    cs_log_printf(CS_LOG_DEFAULT, "%11s%02d-- %9s %5d  %6d  %6.4e\n",
+                  "Picard.It",
+                  picard_iter, " ", _inner_solver_iter, _inner_solver_cumul,
+                  sqrt(div_l2));
+  }
+
+  while (picard_cvg == CS_SLES_ITERATING) {
+
+    /* Main loop on cells to define the linear system to solve */
+    _steady_build(nsp, sc, dir_values, matrix, mom_rhs, mass_rhs);
+
+    /* Current to previous */
+    memcpy(mom_eqc->face_values_pre, mom_eqc->face_values,
+           3*n_faces*sizeof(cs_real_t));
+
+    /* Redo the setup since the matrix is modified */
+    cs_sles_setup(sles, matrix);
+
+    /* Solve the new system */
+    _inner_solver_cumul +=
+      (_inner_solver_iter =
+       _solve_system(sles, matrix, mom_eqp,
+                     mom_eqc->face_values, /* velocity DoFs at faces */
+                     sc->pressure->val,    /* pressure DoFs at cells */
+                     mom_rhs, mass_rhs));
+
+    /* Compute the velocity divergence and retrieve its L2-norm */
+    cs_real_t  div_l2 = _update_divergence(sc, mom_eqc);
+
+    picard_cvg = _picard_cvg_test(nsp, mom_eqc, div_l2,
+                                  &picard_iter,
+                                  &picard_res);
+
+    if (nsp->verbosity > 1)
+      cs_log_printf(CS_LOG_DEFAULT, " %10s%02d-- %.3e %5d  %6d  %6.4e\n",
+                    "Picard.It",
+                    picard_iter, picard_res, _inner_solver_iter,
+                    _inner_solver_cumul, sqrt(div_l2));
+
+  } /* Loop on Picard iterations */
+
+  /*--------------------------------------------------------------------------
+   *                   PICARD ITERATIONS: END
+   *--------------------------------------------------------------------------*/
+
+  /* Now compute/update the velocity and pressure fields */
+  _update_fields(sc, mom_eqc);
+
+  /* Frees */
+  cs_sles_free(sles);
+  BFT_FREE(dir_values);
   BFT_FREE(mom_rhs);
   BFT_FREE(mass_rhs);
   cs_matrix_destroy(&matrix);
@@ -1709,8 +1934,12 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t          *mesh,
                 sc->pressure->val,    /* pressure DoFs at cells */
                 mom_rhs, mass_rhs);
 
+  /* Compute the velocity divergence and retrieve its L2-norm */
+  cs_real_t  div_l2 = _update_divergence(sc, mom_eqc);
+  cs_log_printf(CS_LOG_DEFAULT, " ||div(u)|| = %6.4e\n", sqrt(div_l2));
+
   /* Now compute/update the velocity and pressure fields */
-  _update_fields(sc, mom_eq);
+  _update_fields(sc, mom_eqc);
 
   /* Frees */
   cs_sles_free(sles);
@@ -2007,8 +2236,12 @@ cs_cdofb_monolithic_compute_theta(const cs_mesh_t          *mesh,
                 sc->pressure->val,    /* pressure DoFs at cells */
                 mom_rhs, mass_rhs);
 
+  /* Compute the velocity divergence and retrieve its L2-norm */
+  cs_real_t  div_l2 = _update_divergence(sc, mom_eqc);
+  cs_log_printf(CS_LOG_DEFAULT, " ||div(u)|| = %6.4e\n", sqrt(div_l2));
+
   /* Now compute/update the velocity and pressure fields */
-  _update_fields(sc, mom_eq);
+  _update_fields(sc, mom_eqc);
 
   /* Frees */
   cs_sles_free(sles);

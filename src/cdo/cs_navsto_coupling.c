@@ -882,9 +882,6 @@ cs_navsto_monolithic_init_setup(const cs_navsto_param_t    *nsp,
     break;  /* Nothing to do */
 
   case CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES:
-    if (nsp->time_state == CS_NAVSTO_TIME_STATE_FULL_STEADY)
-      bft_error(__FILE__, __LINE__, 0, " %s: Model not available yet for the"
-                " monolithic coupling and steady state", __func__);
     /* It's in the cs_navsto_system_t structure, but it cannot be seen from
      * here */
     cs_equation_add_advection(mom_eqp,
@@ -893,8 +890,8 @@ cs_navsto_monolithic_init_setup(const cs_navsto_param_t    *nsp,
 
   case CS_NAVSTO_MODEL_OSEEN:
   case CS_NAVSTO_MODEL_BOUSSINESQ_NAVIER_STOKES:
-    bft_error(__FILE__, __LINE__, 0,
-        " %s: Model not available yet for the monolithic coupling" , __func__);
+    /* Nothing to do: the Oseen field is set by the user via
+     * cs_navsto_add_oseen_field() */
     break;
 
   default:

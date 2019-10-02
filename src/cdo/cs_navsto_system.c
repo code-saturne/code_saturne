@@ -105,6 +105,35 @@ static cs_navsto_system_t  *cs_navsto_system = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve the \ref cs_equation_param_t structure related to the
+ *         momentum equation according to the type of coupling
+ *
+ * \param[in]  nsp       pointer to a \ref cs_navsto_param_t structure
+ *
+ * \return a pointer to the corresponding \ref cs_equation_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+_handle_non_linearities(cs_navsto_param_t    *nsp)
+{
+  if (nsp == NULL)
+    return false;
+
+  switch (nsp->model) {
+
+  case CS_NAVSTO_MODEL_OSEEN:
+  case CS_NAVSTO_MODEL_STOKES:
+    return false;
+
+  default:
+    return true;
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Allocate an empty Navier-Stokes system
  *
  * \return a pointer to a new allocated groundwater flow structure
@@ -686,12 +715,18 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       ns->free_scheme_context = cs_cdofb_monolithic_free_scheme_context;
       ns->init_velocity = NULL;
       ns->init_pressure = cs_cdofb_navsto_init_pressure;
-      ns->compute_steady = cs_cdofb_monolithic_compute_steady;
+      if (_handle_non_linearities(nsp))
+        ns->compute_steady = cs_cdofb_monolithic_compute_steady_nl;
+      else
+        ns->compute_steady = cs_cdofb_monolithic_compute_steady;
 
       switch (nsp->time_scheme) {
 
       case CS_TIME_SCHEME_STEADY:
-        ns->compute = NULL;
+        if (_handle_non_linearities(nsp))
+          ns->compute = cs_cdofb_monolithic_compute_steady_nl;
+        else
+          ns->compute = cs_cdofb_monolithic_compute_steady;
         break; /* Nothing to set */
 
       case CS_TIME_SCHEME_EULER_IMPLICIT:
@@ -755,16 +790,20 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       ns->free_scheme_context = cs_cdofb_uzawa_free_scheme_context;
       ns->init_velocity = NULL;
       ns->init_pressure = cs_cdofb_navsto_init_pressure;
-      if (nsp->model == CS_NAVSTO_MODEL_STOKES)
-        ns->compute_steady = cs_cdofb_uzawa_compute_steady;
-      else
+
+      if (_handle_non_linearities(nsp))
         ns->compute_steady = cs_cdofb_uzawa_compute_steady_rebuild;
+      else
+        ns->compute_steady = cs_cdofb_uzawa_compute_steady;
 
       switch (nsp->time_scheme) {
 
       case CS_TIME_SCHEME_STEADY:
-        ns->compute = NULL;
-        break; /* Nothing to set */
+        if (_handle_non_linearities(nsp))
+          ns->compute = cs_cdofb_uzawa_compute_steady_rebuild;
+        else
+          ns->compute = cs_cdofb_uzawa_compute_steady;
+        break;
 
       case CS_TIME_SCHEME_EULER_IMPLICIT:
         ns->compute = cs_cdofb_uzawa_compute_implicit;
@@ -896,7 +935,7 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 
     cs_advection_field_def_by_array(ns->adv_field, loc_flag, face_vel,
                                     false, /* advection field is not owner */
-                                    NULL);
+                                    NULL); /* index (not useful here) */
 
     /* Assign the velocity boundary flux to the boundary flux for the advection
        field*/
