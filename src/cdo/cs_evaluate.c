@@ -40,6 +40,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_array_reduce.h"
 #include "cs_halo.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
@@ -82,6 +83,80 @@ static const char _err_not_handled[] = " %s: Case not handled yet.";
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Parallel synchronization of the local reduction operations
+ *
+ * \param[in]      dim     local array dimension (max: 3)
+ * \param[in, out] min     resulting min array (size: dim, or 4 if dim = 3)
+ * \param[in, out] max     resulting max array (size: dim, or 4 if dim = 3)
+ * \param[in, out] wsum    (weighted) sum array (size: dim, or 4 if dim = 3)
+ * \param[in, out] asum    (weighted) sum of absolute values (same size as wsum)
+ * \param[in, out] ssum    (weighted) sum of squared values (same size as wsum)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_synchronize_reduction(int              dim,
+                       cs_real_t       *min,
+                       cs_real_t       *max,
+                       cs_real_t       *wsum,
+                       cs_real_t       *asum,
+                       cs_real_t       *ssum)
+{
+  if (cs_glob_n_ranks < 2)
+    return; /* Nothing to do */
+
+  /* Min/Max */
+  if (dim == 1) {
+
+    cs_real_t  minmax[2] = {-min[0], max[0]};
+    cs_parall_max(2, CS_REAL_TYPE, minmax);
+
+    min[0] = -minmax[0];
+    max[0] = minmax[1];
+
+  }
+  else {
+
+    assert(dim == 3);
+    cs_real_t  minmax[8];
+    for (int i = 0; i < 4; i++)
+      minmax[i] = -min[i], minmax[4+i] = max[i];
+
+    cs_parall_max(8, CS_REAL_TYPE, minmax);
+
+    for (int i = 0; i < 4; i++)
+      min[i] = -minmax[i], max[i] = minmax[4+i];
+
+  }
+
+  /* Sums */
+  if (dim == 1) {
+
+    cs_real_t  sums[3] = {wsum[0], asum[0], ssum[0]};
+    cs_parall_sum(3, CS_REAL_TYPE, sums);
+
+    wsum[0] = sums[0];
+    asum[0] = sums[1];
+    ssum[0] = sums[2];
+
+  }
+  else {
+
+    assert(dim == 3);
+    cs_real_t  sums[12];
+    for (int i = 0; i < 4; i++)
+      sums[i] = wsum[i], sums[4+i] = asum[i], sums[8+i] = ssum[i];
+
+    cs_parall_sum(12, CS_REAL_TYPE, sums);
+
+    for (int i = 0; i < 4; i++)
+      wsum[i] = sums[i], asum[i] = sums[4+i], ssum[i] = sums[8+i];
+
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -1285,6 +1360,107 @@ cs_evaluate_set_shared_pointers(const cs_cdo_quantities_t    *quant,
   /* Assign static const pointers */
   cs_cdo_quant = quant;
   cs_cdo_connect = connect;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute reduced quantities for an array of size equal to dim * n_x
+ *         The quantities computed are synchronized in parallel.
+ *
+ * \param[in]      dim     local array dimension (max: 3)
+ * \param[in]      n_x     number of elements
+ * \param[in]      array   array to analyze
+ * \param[in]      w_x     weight to apply (may be set to  NULL)
+ * \param[in, out] min     resulting min array (size: dim, or 4 if dim = 3)
+ * \param[in, out] max     resulting max array (size: dim, or 4 if dim = 3)
+ * \param[in, out] wsum    (weighted) sum array (size: dim, or 4 if dim = 3)
+ * \param[in, out] asum    (weighted) sum of absolute values (same size as wsum)
+ * \param[in, out] ssum    (weighted) sum of squared values (same size as wsum)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_array_reduction(int                     dim,
+                            cs_lnum_t               n_x,
+                            const cs_real_t        *array,
+                            const cs_real_t        *w_x,
+                            cs_real_t              *min,
+                            cs_real_t              *max,
+                            cs_real_t              *wsum,
+                            cs_real_t              *asum,
+                            cs_real_t              *ssum)
+{
+  assert(cs_cdo_quant != NULL && cs_cdo_connect != NULL);
+
+  /* Get reduced quantities for this array and for this MPI rank */
+  cs_real_t  dummy[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+  cs_array_reduce_simple_norms_l(n_x,
+                                 dim,
+                                 NULL, NULL, /* elt_list, weight_list */
+                                 array,
+                                 w_x,
+                                 min, max,
+                                 dummy,     /* Not useful in this context */
+                                 wsum,
+                                 asum,
+                                 dummy + 4, /* Not useful in this context */
+                                 ssum);
+
+  /* Parallel treatment */
+  _synchronize_reduction(dim, min, max, wsum, asum, ssum);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute reduced quantities for an array attached to either vertex,
+ *         face or edge DoFs
+ *         The weight to apply to each entity x is scanned using the adjacency
+ *         structure. array size is equal to dim * n_x
+ *         The quantities computed are synchronized in parallel.
+ *
+ * \param[in]      dim     local array dimension (max: 3)
+ * \param[in]      n_x     number of elements
+ * \param[in]      array   array to analyze
+ * \param[in]      w_x     weight to apply (may be set to  NULL)
+ * \param[in, out] min     resulting min array (size: dim, or 4 if dim = 3)
+ * \param[in, out] max     resulting max array (size: dim, or 4 if dim = 3)
+ * \param[in, out] wsum    (weighted) sum array (size: dim, or 4 if dim = 3)
+ * \param[in, out] asum    (weighted) sum of absolute values (same size as wsum)
+ * \param[in, out] ssum    (weighted) sum of squared values (same size as wsum)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_scatter_array_reduction(int                     dim,
+                                    cs_lnum_t               n_x,
+                                    const cs_real_t        *array,
+                                    const cs_adjacency_t   *c2x,
+                                    const cs_real_t        *w_x,
+                                    cs_real_t              *min,
+                                    cs_real_t              *max,
+                                    cs_real_t              *wsum,
+                                    cs_real_t              *asum,
+                                    cs_real_t              *ssum)
+{
+  assert(cs_cdo_quant != NULL && cs_cdo_connect != NULL);
+
+  if (c2x == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: One needs an adjacency.\n", __func__);
+
+  /* Get the min/max for this MPI rank */
+  cs_array_reduce_minmax_l(n_x, dim, NULL, array, min, max);
+
+  /* Get reduced quantities for this array and for this MPI rank */
+  cs_array_scatter_reduce_norms_l(cs_cdo_quant->n_cells,
+                                  c2x->idx, c2x->ids,
+                                  NULL, /* filter list */
+                                  dim,
+                                  n_x, array, w_x,
+                                  wsum, asum, ssum); /* results */
+
+  /* Parallel treatment */
+  _synchronize_reduction(dim, min, max, wsum, asum, ssum);
 }
 
 /*----------------------------------------------------------------------------*/

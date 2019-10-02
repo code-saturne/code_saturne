@@ -69,6 +69,66 @@ cs_evaluate_set_shared_pointers(const cs_cdo_quantities_t    *quant,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute reduced quantities for an array of size equal to dim * n_x
+ *         The quantities computed are synchronized in parallel.
+ *
+ * \param[in]      dim     local array dimension (max: 3)
+ * \param[in]      n_x     number of elements
+ * \param[in]      array   array to analyze
+ * \param[in]      w_x     weight to apply (may be set to  NULL)
+ * \param[in, out] min     resulting min array (size: dim, or 4 if dim = 3)
+ * \param[in, out] max     resulting max array (size: dim, or 4 if dim = 3)
+ * \param[in, out] wsum    (weighted) sum array (size: dim, or 4 if dim = 3)
+ * \param[in, out] asum    (weighted) sum of absolute values (same size as wsum)
+ * \param[in, out] ssum    (weighted) sum of squared values (same size as wsum)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_array_reduction(int                     dim,
+                            cs_lnum_t               n_x,
+                            const cs_real_t        *array,
+                            const cs_real_t        *w_x,
+                            cs_real_t              *min,
+                            cs_real_t              *max,
+                            cs_real_t              *wsum,
+                            cs_real_t              *asum,
+                            cs_real_t              *ssum);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute reduced quantities for an array attached to either vertex,
+ *         face or edge DoFs
+ *         The weight to apply to each entity x is scanned using the adjacency
+ *         structure. array size is equal to dim * n_x
+ *         The quantities computed are synchronized in parallel.
+ *
+ * \param[in]      dim     local array dimension (max: 3)
+ * \param[in]      n_x     number of elements
+ * \param[in]      array   array to analyze
+ * \param[in]      w_x     weight to apply (may be set to  NULL)
+ * \param[in, out] min     resulting min array (size: dim, or 4 if dim = 3)
+ * \param[in, out] max     resulting max array (size: dim, or 4 if dim = 3)
+ * \param[in, out] vsum    (weighted) sum array (size: dim, or 4 if dim = 3)
+ * \param[in, out] asum    (weighted) sum of absolute values (same size as vsum)
+ * \param[in, out] ssum    (weighted) sum of squared values (same size as vsum)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_evaluate_scatter_array_reduction(int                     dim,
+                                    cs_lnum_t               n_x,
+                                    const cs_real_t        *array,
+                                    const cs_adjacency_t   *c2x,
+                                    const cs_real_t        *w_x,
+                                    cs_real_t              *min,
+                                    cs_real_t              *max,
+                                    cs_real_t              *wsum,
+                                    cs_real_t              *asum,
+                                    cs_real_t              *ssum);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the value related to each DoF in the case of a density field
  *         The value defined by the analytic function is by unity of volume
  *
