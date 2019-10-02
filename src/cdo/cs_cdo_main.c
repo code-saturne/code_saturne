@@ -447,9 +447,11 @@ cs_cdo_initialize_setup(cs_domain_t   *domain)
   cs_domain_cdo_log(domain);
 
   /* Add predefined properties */
-  cs_property_t  *pty = cs_property_add("unity", CS_PROPERTY_ISO);
-
-  cs_property_def_iso_by_value(pty, "cells", 1.0);
+  cs_property_t  *pty = cs_property_by_name("unity");
+  if (pty == NULL) {
+    cs_property_add("unity", CS_PROPERTY_ISO);
+    cs_property_def_iso_by_value(pty, "cells", 1.0);
+  }
 
   cs_timer_stats_start(cs_cdo_ts_id);
 

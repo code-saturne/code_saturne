@@ -102,6 +102,12 @@ cs_cdo_field_interpolation_activate(cs_flag_t     mode)
   /* Store which kind of interpolation will be called */
   _field_interpolation_flag = mode;
 
+  cs_property_t  *pty = cs_property_by_name("unity");
+  if (pty == NULL) {
+    pty = cs_property_add("unity", CS_PROPERTY_ISO);
+    cs_property_def_iso_by_value(pty, "cells", 1.0);
+  }
+
   if (mode & CS_CDO_FIELD_INTERPOLATION_SCALAR_C2V) {
 
     /* Add a new equation to build a cell --> vertices interpolation */
@@ -121,8 +127,9 @@ cs_cdo_field_interpolation_activate(cs_flag_t     mode)
     cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
     cs_equation_set_param(eqp, CS_EQKEY_ITSOL_EPS, "1e-4");
 
+    /* Add a diffusion term (Poisson eq.) */
+    cs_equation_add_diffusion(eqp, pty);
 
-    cs_equation_add_diffusion(eqp, cs_property_by_name("unity"));
 
   }
 }
