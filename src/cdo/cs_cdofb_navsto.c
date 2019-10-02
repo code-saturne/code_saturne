@@ -329,24 +329,17 @@ cs_cdofb_navsto_cell_divergence(const cs_lnum_t               c_id,
                                 const cs_adjacency_t         *c2f,
                                 const cs_real_t              *f_vals)
 {
-  cs_real_t  div = 0.0;
+  const cs_lnum_t  thd = 3 * quant->n_i_faces;
 
+  cs_real_t  div = 0.0;
   for (cs_lnum_t f = c2f->idx[c_id]; f < c2f->idx[c_id+1]; f++) {
 
-    const cs_lnum_t  f_id = c2f->ids[f];
-    const cs_real_t  *_val = f_vals + 3*f_id;
+    const cs_lnum_t  shift = 3*c2f->ids[f];
+    const cs_real_t  *_val = f_vals + shift;
+    const cs_real_t  *fnorm = (shift < thd) ?
+      quant->i_face_normal + shift : quant->b_face_normal + (shift - thd);
 
-    if (f_id < quant->n_i_faces)
-      div += c2f->sgn[f]*cs_math_3_dot_product(_val,
-                                               quant->i_face_normal + 3*f_id);
-    else {
-
-      const cs_lnum_t  bf_id = f_id - quant->n_i_faces;
-
-      div += c2f->sgn[f]* cs_math_3_dot_product(_val,
-                                                quant->b_face_normal + 3*bf_id);
-
-    } /* Boundary face */
+    div += c2f->sgn[f]*cs_math_3_dot_product(_val, fnorm);
 
   } /* Loop on cell faces */
 
