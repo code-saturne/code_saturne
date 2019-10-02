@@ -999,6 +999,216 @@ _steady_build(const cs_navsto_param_t  *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Build a linear system for Stokes, Oseen or Navier-Stokes in the
+ *         steady-state case
+ *
+ * \param[in]         nsp         pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out]    sc          pointerr to the scheme context
+ * \param[in, out]    matrix      pointer to a \ref cs_matrix_t structure
+ * \param[in, out]    mom_rhs     rhs array related to the momentum eq.
+ * \param[in, out]    mass_rhs    rhs array related to the mass eq.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_implicit_euler_build(const cs_navsto_param_t  *nsp,
+                      cs_cdofb_monolithic_t    *sc,
+                      const cs_real_t          *dir_values,
+                      cs_matrix_t              *matrix,
+                      cs_real_t                *mom_rhs,
+                      cs_real_t                *mass_rhs)
+{
+  /* Sanity check */
+  assert(matrix != NULL);
+
+  /* Retrieve shared structures */
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_time_step_t *ts = cs_shared_time_step;
+  const cs_real_t  t_cur = ts->t_cur;
+  const cs_real_t  dt_cur = ts->dt[0];
+  const cs_real_t  t_eval = t_cur + dt_cur;
+  const cs_real_t  inv_dtcur = 1./dt_cur;
+
+  /* Retrieve high-level structures */
+  cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
+  cs_equation_t  *mom_eq = cc->momentum;
+  cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
+  cs_equation_param_t *mom_eqp = mom_eq->param;
+  cs_equation_builder_t *mom_eqb = mom_eq->builder;
+
+  /* Current values of the velocity field */
+  const cs_real_t  *vel_c = sc->velocity->val;
+
+  /* Reset RHS arrays */
+  _set_rhs_to_zero(mom_rhs, mass_rhs);
+
+  /* Initialize the structure to assemble values */
+  cs_matrix_assembler_values_t  *mav =
+    cs_matrix_assembler_values_init(matrix, NULL, NULL);
+
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)      \
+  shared(quant, connect, mom_eq, mom_eqp, mom_eqb, mom_eqc, matrix, nsp,  \
+         mav, mom_rhs, mass_rhs, dir_values, vel_c, sc)                   \
+  firstprivate(t_eval, inv_dtcur)
+  {
+#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
+    int  t_id = omp_get_thread_num();
+#else
+    int  t_id = 0;
+#endif
+
+    /* Each thread get back its related structures:
+       Get the cell-wise view of the mesh and the algebraic system */
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
+    cs_cell_sys_t  *csys = NULL;
+    cs_cell_builder_t  *cb = NULL;
+
+    cs_cdofb_vecteq_get(&csys, &cb);
+
+    cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(connect);
+
+    /* Initialization of the values of properties */
+    cs_equation_init_properties(mom_eqp, mom_eqb, t_eval, cb);
+
+    /* --------------------------------------------- */
+    /* Main loop on cells to build the linear system */
+    /* --------------------------------------------- */
+
+#   pragma omp for CS_CDO_OMP_SCHEDULE
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+      const cs_flag_t  cell_flag = connect->cell_flag[c_id];
+
+      /* Set the local mesh structure for the current cell */
+      cs_cell_mesh_build(c_id, cs_equation_cell_mesh_flag(cell_flag, mom_eqb),
+                         connect, quant, cm);
+
+      /* The global system problem writes:
+       *
+       *     |        |         |
+       *     |   A    |    Bt   |  B is the divergence (Bt the gradient)
+       *     |        |         |  A is csys->mat in what follows
+       *     |--------|---------|  The viscous part arising from the CDO-Fb
+       *     |        |         |  schemes for vector-valued variables and
+       *     |   B    |    0    |  additional terms as the linearized
+       *     |        |         |  convective term + an unsteady term
+       */
+
+      /* Set the local (i.e. cellwise) structures for the current cell */
+      cs_cdofb_vecteq_init_cell_system(cell_flag, cm, mom_eqp, mom_eqb, mom_eqc,
+                                       dir_values, vel_c, t_eval,
+                                       csys, cb);
+
+      /* 1- SETUP THE NAVSTO LOCAL BUILDER *
+       * ================================= *
+       * - Set the type of boundary
+       * - Set the pressure boundary conditions (if required)
+       * - Define  the divergence operator used in the linear system
+       */
+      cs_cdofb_navsto_define_builder(t_eval, nsp, cm, csys,
+                                     sc->pressure_bc, sc->bf_type,
+                                     &nsb);
+
+      /* 2- VELOCITY (VECTORIAL) EQUATION */
+      /* ================================ */
+
+      cs_cdofb_vecteq_advection_diffusion(t_eval, mom_eqp, mom_eqc, cm,
+                                          csys, cb);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
+      if (cs_dbg_cw_test(mom_eqp, cm, csys))
+        cs_cell_sys_dump(">> Local system after convection/diffusion", csys);
+#endif
+
+      /* 3- SOURCE TERM COMPUTATION (for the momentum equation) */
+      /* ====================================================== */
+
+      const bool  has_sourceterm = cs_equation_param_has_sourceterm(mom_eqp);
+      if (has_sourceterm) {
+
+        cs_cdofb_vecteq_sourceterm(cm, mom_eqp,
+                                   t_eval, 1., /* scaling if theta */
+                                   cb, mom_eqb, csys);
+
+      } /* End of term source */
+
+      /* 3b- OTHER RHS CONTRIBUTIONS *
+       * =========================== *
+       *
+       * First part of the BOUNDARY CONDITIONS
+       *                   ===================
+       * Apply a part of BC before the time scheme */
+
+      _apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, csys, cb);
+
+      /* 4- TIME CONTRIBUTION */
+      /* ==================== */
+
+      if (mom_eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping
+                                                          or Hodge-Voronoi */
+
+        const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
+
+        /* Get cell-cell block */
+        cs_sdm_t *acc = cs_sdm_get_block(csys->mat, cm->n_fc, cm->n_fc);
+
+        for (short int k = 0; k < 3; k++) {
+          csys->rhs[3*cm->n_fc + k] += ptyc * csys->val_n[3*cm->n_fc+k];
+          /* Simply add an entry in mat[cell, cell] */
+          acc->val[4*k] += ptyc;
+        }
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  "Only diagonal time treatment available so far.\n");
+
+      /* 5- STATIC CONDENSATION
+       * ======================
+       * Static condensation of the local system matrix of size n_fc + 1 into
+       * a matrix of size n_fc.
+       * Store data in rc_tilda and acf_tilda to compute the values at cell
+       * centers after solving the system */
+
+      cs_static_condensation_vector_eq(connect->c2f,
+                                       mom_eqc->rc_tilda,
+                                       mom_eqc->acf_tilda,
+                                       cb, csys);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
+      if (cs_dbg_cw_test(mom_eqp, cm, csys))
+        cs_cell_sys_dump(">> Local system matrix after static condensation",
+                         csys);
+#endif
+
+      /* 6- Remaining part of BOUNDARY CONDITIONS
+       * ======================================== */
+
+      _apply_remaining_bc(sc, mom_eqp, cm, csys, cb, &nsb, mass_rhs + c_id);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 0
+      if (cs_dbg_cw_test(mom_eqp, cm, csys))
+        cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
+#endif
+
+      /* ************************* ASSEMBLY PROCESS ************************* */
+
+      _assemble(csys, cm, nsb.div_op,
+                has_sourceterm, mav, mom_rhs, mom_eqc->source_terms);
+
+    } /* Main loop on cells */
+
+    /* Free temporary buffer */
+    cs_cdofb_navsto_free_builder(&nsb);
+
+  } /* OPENMP Block */
+
+  cs_matrix_assembler_values_finalize(&mav);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Solve a linear system arising from a scalar-valued CDO-Fb scheme
  *
  * \param[in, out] sles     pointer to a cs_sles_t structure
@@ -1458,195 +1668,26 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t          *mesh,
    *--------------------------------------------------------------------------*/
 
   const cs_time_step_t *ts = cs_shared_time_step;
-  const cs_real_t  t_cur = ts->t_cur;
-  const cs_real_t  dt_cur = ts->dt[0];
-  const cs_real_t  t_eval = t_cur + dt_cur;
-  const cs_real_t  inv_dtcur = 1./dt_cur;
+  const cs_real_t  t_eval = ts->t_cur + ts->dt[0];
 
   /* Build an array storing the Dirichlet values at faces. */
   cs_real_t  *dir_values = NULL;
-  cs_cdofb_vecteq_setup_bc(t_cur + dt_cur, mesh, mom_eqp, mom_eqb, &dir_values);
+  cs_cdofb_vecteq_setup_bc(t_eval, mesh, mom_eqp, mom_eqb, &dir_values);
 
   /* Initialize the local matrix */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_matrix_structure);
 
   /* Initialize the two right-hand side */
-  cs_real_t  *mom_rhs = NULL;
-  cs_real_t  *mass_rhs = NULL;
+  cs_real_t  *mom_rhs = NULL,  *mass_rhs = NULL;
 
   BFT_MALLOC(mom_rhs, 3*n_faces, cs_real_t);
   BFT_MALLOC(mass_rhs, n_cells, cs_real_t);
 
-  /* Reset RHS arrays */
-  _set_rhs_to_zero(mom_rhs, mass_rhs);
-
-  /* Initialize the structure to assemble values */
-  cs_matrix_assembler_values_t  *mav =
-    cs_matrix_assembler_values_init(matrix, NULL, NULL);
-
-# pragma omp parallel if (n_cells > CS_THR_MIN)                  \
-  shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, mom_rhs, matrix, nsp,   \
-         mass_rhs, mav, dir_values, vel_c, sc)                          \
-         firstprivate(t_eval, inv_dtcur)
-  {
-#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
-    int  t_id = omp_get_thread_num();
-#else
-    int  t_id = 0;
-#endif
-
-    /* Each thread get back its related structures:
-       Get the cell-wise view of the mesh and the algebraic system */
-    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    cs_cell_sys_t  *csys = NULL;
-    cs_cell_builder_t  *cb = NULL;
-
-    cs_cdofb_vecteq_get(&csys, &cb);
-
-    cs_cdofb_navsto_builder_t  nsb
-      = cs_cdofb_navsto_create_builder(connect);
-
-    /* Initialization of the values of properties */
-    cs_equation_init_properties(mom_eqp, mom_eqb, t_eval, cb);
-
-    /* --------------------------------------------- */
-    /* Main loop on cells to build the linear system */
-    /* --------------------------------------------- */
-
-#   pragma omp for CS_CDO_OMP_SCHEDULE
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-
-      const cs_flag_t  cell_flag = connect->cell_flag[c_id];
-
-      /* Set the local mesh structure for the current cell */
-      cs_cell_mesh_build(c_id,
-                         cs_equation_cell_mesh_flag(cell_flag, mom_eqb),
-                         connect, quant, cm);
-
-      /* Starts from the stationary Stokes problem where
-       *
-       *     |        |         |
-       *     |   A    |    Bt   |  B is the divergence (Bt the gradient)
-       *     |        |         |  A is csys->mat in what follows
-       *     |--------|---------|  The viscous part arising from the CDO-Fb
-       *     |        |         |  schemes for vector-valued variables
-       *     |   B    |    0    |
-       *     |        |         |
-       */
-
-      /* Set the local (i.e. cellwise) structures for the current cell */
-      cs_cdofb_vecteq_init_cell_system(cell_flag, cm, mom_eqp, mom_eqb, mom_eqc,
-                                       dir_values, vel_c, t_eval,
-                                       csys, cb);
-
-      /* 1- SETUP THE NAVSTO LOCAL BUILDER *
-       * ================================= *
-       * - Set the type of boundary
-       * - Set the pressure boundary conditions (if required)
-       * - Define  the divergence operator used in the linear system
-       */
-      cs_cdofb_navsto_define_builder(t_eval, nsp, cm, csys,
-                                     sc->pressure_bc, sc->bf_type,
-                                     &nsb);
-
-      /* 2- VELOCITY (VECTORIAL) EQUATION */
-      /* ================================ */
-
-      cs_cdofb_vecteq_diffusion(t_eval, mom_eqp, mom_eqc, cm, csys, cb);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
-      if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump(">> Local system after diffusion", csys);
-#endif
-
-      /* 3- SOURCE TERM COMPUTATION (for the momentum equation) */
-      /* ====================================================== */
-
-      const bool  has_sourceterm = cs_equation_param_has_sourceterm(mom_eqp);
-      if (has_sourceterm) {
-
-        cs_cdofb_vecteq_sourceterm(cm, mom_eqp,
-                                   t_eval, 1., /* scaling if theta */
-                                   cb, mom_eqb, csys);
-
-      } /* End of term source */
-
-      /* 3b- OTHER RHS CONTRIBUTIONS *
-       * =========================== *
-       *
-       * First part of the BOUNDARY CONDITIONS
-       *                   ===================
-       * Apply a part of BC before the time scheme */
-
-      _apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, csys, cb);
-
-      /* 4- TIME CONTRIBUTION */
-      /* ==================== */
-
-      if (mom_eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping
-                                                          or Hodge-Voronoi */
-
-        const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
-
-        /* Get cell-cell block */
-        cs_sdm_t *acc = cs_sdm_get_block(csys->mat, cm->n_fc, cm->n_fc);
-
-        for (short int k = 0; k < 3; k++) {
-          csys->rhs[3*cm->n_fc + k] += ptyc * csys->val_n[3*cm->n_fc+k];
-          /* Simply add an entry in mat[cell, cell] */
-          acc->val[4*k] += ptyc;
-        }
-
-      }
-      else
-        bft_error(__FILE__, __LINE__, 0,
-                  "Only diagonal time treatment available so far.\n");
-
-      /* 5- STATIC CONDENSATION
-       * ======================
-       * Static condensation of the local system matrix of size n_fc + 1 into
-       * a matrix of size n_fc.
-       * Store data in rc_tilda and acf_tilda to compute the values at cell
-       * centers after solving the system */
-
-      cs_static_condensation_vector_eq(connect->c2f,
-                                       mom_eqc->rc_tilda,
-                                       mom_eqc->acf_tilda,
-                                       cb, csys);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
-      if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump(">> Local system matrix after static condensation",
-                         csys);
-#endif
-
-      /* 6- Remaining part of BOUNDARY CONDITIONS
-       * ======================================== */
-
-      _apply_remaining_bc(sc, mom_eqp, cm, csys, cb, &nsb, mass_rhs + c_id);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 0
-      if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
-#endif
-
-      /* ************************* ASSEMBLY PROCESS ************************* */
-
-      _assemble(csys, cm, nsb.div_op,
-                has_sourceterm, mav, mom_rhs, mom_eqc->source_terms);
-
-    } /* Main loop on cells */
-
-    /* Free temporary buffer */
-    cs_cdofb_navsto_free_builder(&nsb);
-
-  } /* OPENMP Block */
-
-  cs_matrix_assembler_values_done(mav); /* optional */
+  /* Main loop on cells to define the linear system to solve */
+  _implicit_euler_build(nsp, sc, dir_values, matrix, mom_rhs, mass_rhs);
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
-  cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */
   cs_timer_t  t_bld_end = cs_timer_time();
