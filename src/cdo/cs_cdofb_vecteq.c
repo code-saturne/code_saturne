@@ -1676,6 +1676,7 @@ cs_cdofb_vecteq_init_values(cs_real_t                     t_eval,
 
     cs_lnum_t  *def2f_ids = (cs_lnum_t *)cs_equation_get_tmpbuf();
     cs_lnum_t  *def2f_idx = NULL;
+
     BFT_MALLOC(def2f_idx, eqp->n_ic_defs + 1, cs_lnum_t);
 
     cs_equation_sync_vol_def_at_faces(connect,
@@ -1744,6 +1745,9 @@ cs_cdofb_vecteq_init_values(cs_real_t                     t_eval,
       } /* Switch on possible type of definition */
 
     } /* Loop on definitions */
+
+    /* Free */
+    BFT_FREE(def2f_idx);
 
   } /* Initial values to set */
 
