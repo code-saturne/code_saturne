@@ -42,6 +42,7 @@
 
 #include <bft_mem.h>
 
+#include "cs_cdofb_scaleq.h"
 #include "cs_cdovcb_scaleq.h"
 #include "cs_equation.h"
 #include "cs_equation_priv.h"
@@ -75,6 +76,7 @@ BEGIN_C_DECLS
 
 cs_flag_t       _field_interpolation_flag = 0;
 cs_equation_t  *_field_interpolation_scalar_c2v_eq = NULL;
+cs_equation_t  *_field_interpolation_scalar_c2f_eq = NULL;
 
 /*============================================================================
  * Private variables
@@ -130,6 +132,29 @@ cs_cdo_field_interpolation_activate(cs_flag_t     mode)
     /* Add a diffusion term (Poisson eq.) */
     cs_equation_add_diffusion(eqp, pty);
 
+  }
+
+  if (mode & CS_CDO_FIELD_INTERPOLATION_SCALAR_C2F) {
+
+    /* Add a new equation to build a cell --> faces interpolation */
+    _field_interpolation_scalar_c2f_eq
+      = cs_equation_add("scalar_c2f_field_interpolation",
+                        "scalar_c2f_field_interpolation",
+                        CS_EQUATION_TYPE_PREDEFINED,
+                        1,
+                        CS_PARAM_BC_HMG_NEUMANN);
+
+    cs_equation_param_t  *eqp
+      = cs_equation_get_param(_field_interpolation_scalar_c2f_eq);
+
+    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
+    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
+    cs_equation_set_param(eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_EPS, "1e-4");
+
+    /* Add a diffusion term (Poisson eq.) */
+    cs_equation_add_diffusion(eqp, pty);
 
   }
 }
@@ -179,6 +204,57 @@ cs_cdo_field_interpolation_cell_to_vertices(const cs_mesh_t    *mesh,
   /* Copy the computed solution into the given array at vertices */
   cs_field_t  *f = cs_field_by_id(eq->field_id);
   memcpy(vtx_values, f->val, mesh->n_vertices*sizeof(cs_real_t));
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_stop(eq->main_ts_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Interpolate an array defined at faces from an array defined at
+ *         cells
+ *
+ * \param[in]      mesh            pointer to a mesh structure
+ * \param[in]      cell_values     values at cells
+ * \param[in, out] face_values     interpolated values at faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_field_interpolation_cell_to_faces(const cs_mesh_t    *mesh,
+                                         const cs_real_t    *cell_values,
+                                         cs_real_t          *face_values)
+{
+  if (face_values == NULL)
+    return; /* Should be allocated */
+
+  if (_field_interpolation_scalar_c2f_eq == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Equation related to the interpolation of cell array to"
+              " faces is not allocated.", __func__);
+
+  cs_equation_t  *eq = _field_interpolation_scalar_c2f_eq;
+
+  /* Sanity check */
+  assert(CS_SPACE_SCHEME_CDOFB == cs_equation_get_space_scheme(eq));
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_start(eq->main_ts_id);
+
+  /* Allocate, build and solve the algebraic system:
+   * The linear solver is called inside and the field value is updated inside
+   */
+  cs_cdofb_scaleq_interpolate(mesh,
+                              cell_values,
+                              eq->field_id,
+                              eq->param,
+                              eq->builder,
+                              eq->scheme_context);
+
+  /* Copy the computed solution into the given array at vertices */
+  cs_real_t *_face_values = cs_cdofb_scaleq_get_face_values(eq->scheme_context);
+  memcpy(face_values, _face_values,
+         (mesh->n_i_faces + mesh->n_b_faces)*sizeof(cs_real_t));
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_stop(eq->main_ts_id);

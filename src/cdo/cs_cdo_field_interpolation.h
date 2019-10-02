@@ -49,9 +49,18 @@ BEGIN_C_DECLS
  */
 
 /*!  1: Perform an interpolation at vertices of a scalar-valued field defined
- *      at cells */
+ *      at cells. Activating this flag yields the creation of the equation and
+ *      its related field called "scalar_c2v_field_interpolation"
+ */
 
 #define CS_CDO_FIELD_INTERPOLATION_SCALAR_C2V       (1 << 0)
+
+/*!  2: Perform an interpolation at faces of a scalar-valued field defined
+ *      at cells. Activating this flag yields the creation of the equation and
+ *      its related field called "scalar_c2f_field_interpolation"
+ */
+
+#define CS_CDO_FIELD_INTERPOLATION_SCALAR_C2F       (1 << 1)
 
 /*! @} */
 
@@ -86,6 +95,22 @@ void
 cs_cdo_field_interpolation_cell_to_vertices(const cs_mesh_t    *mesh,
                                             const cs_real_t    *cell_values,
                                             cs_real_t          *vtx_values);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Interpolate an array defined at faces from an array defined at
+ *         cells
+ *
+ * \param[in]      mesh            pointer to a mesh structure
+ * \param[in]      cell_values     values at cells
+ * \param[in, out] face_values     interpolated values at faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_field_interpolation_cell_to_faces(const cs_mesh_t    *mesh,
+                                         const cs_real_t    *cell_values,
+                                         cs_real_t          *face_values);
 
 /*----------------------------------------------------------------------------*/
 
