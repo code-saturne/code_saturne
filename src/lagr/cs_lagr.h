@@ -191,7 +191,7 @@ typedef struct {
     either be 0 or be larger than \ref idstnt. */
   int     modcpl;
 
-  /*!  direction (1=x, 2=y, 3=z) of the complete model.
+  /*!  direction (1=x, 2=y, 3=z, 4=local_max) of the complete model.
     it corresponds to the main directions of the flow.
     Useful if \ref modcpl > 0 */
   int     idirla;

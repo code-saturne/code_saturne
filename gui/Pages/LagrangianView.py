@@ -97,6 +97,7 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
         self.modelIDIRLA.addItem(self.tr("X"), "1")
         self.modelIDIRLA.addItem(self.tr("Y"), "2")
         self.modelIDIRLA.addItem(self.tr("Z"), "3")
+        self.modelIDIRLA.addItem(self.tr("Local projection"), "4")
 
         # Connections
         self.comboBoxNORDRE.activated[str].connect(self.slotNORDRE)

@@ -45,7 +45,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_printf.h"
-#include "bft_error.h"
 #include "bft_mem.h"
 
 #include "cs_log.h"
@@ -432,9 +431,9 @@ cs_lagr_log_setup(void)
      cs_glob_lagr_time_scheme->modcpl);
 
   if (cs_glob_lagr_time_scheme->modcpl) {
-    const char c_dir[] = "xyze";
+    const char c_dir[] = "xyz*";
     int _idirla = cs_glob_lagr_time_scheme->idirla;
-    assert(_idirla > -1 && _idirla < 4);
+    assert(_idirla > -1 && _idirla < 5);
     cs_log_printf
       (CS_LOG_SETUP,
        _("    complete model main flow direction: %c\n"),

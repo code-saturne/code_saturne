@@ -180,7 +180,8 @@ cs_lagr_car(int              iprev,
     cs_real_t  xnul          = extra->viscl->val[cell_id] / rom;
     cs_real_t *part_vel_seen = cs_lagr_particle_attr(particle, p_am,
                                                      CS_LAGR_VELOCITY_SEEN);
-    cs_real_t *part_vel      = cs_lagr_particle_attr(particle, p_am, CS_LAGR_VELOCITY);
+    cs_real_t *part_vel      = cs_lagr_particle_attr(particle, p_am,
+                                                     CS_LAGR_VELOCITY);
 
     cs_real_t rel_vel_norm = cs_math_3_distance(part_vel_seen, part_vel);
 
@@ -209,9 +210,8 @@ cs_lagr_car(int              iprev,
 
     cs_user_lagr_rt(ip, rep, rel_vel_norm, rom, p_rom, xnul, taup, dt);
 
-    /**************************
-     *    Tc computation      *
-     **************************/
+    /* Tc computation */
+
     if (   (   cs_glob_lagr_model->physical_model == 1
             && cs_glob_lagr_specific_physics->itpvar == 1)
         || (cs_glob_lagr_model->physical_model == 2) ) {
@@ -254,9 +254,8 @@ cs_lagr_car(int              iprev,
 
   }
 
-  /* ====================================================================
-   * 3. CALCUL DE TL
-   * ====================================================================   */
+  /* Compute TL
+     ---------- */
 
   /* Compute turbulent kinetic energy and dissipation
      based on turbulence model */
@@ -313,17 +312,16 @@ cs_lagr_car(int              iprev,
 
     else {
 
-      bft_printf(_("\n WARNING: STOP AT LAGRANGIAN MODULE EXECUTION\n"));
-      bft_printf
-        (_("The lagrangian module is not compatible with the selected turbulence model.\n"
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("Lagrangian turbulent dispersion is not compatible with\n"
+           "the selected turbulence model.\n"
            "\n"
-           "Turbulent dispersion is taken into account with IDISTU = %d\n"
+           "Turbulent dispersion is taken into account with idistu = %d\n"
            " Activated turbulence model is %d, when only k-eps, Rij-eps,\n"
-           " V2f or k-omega are compatible with turbulent dispersion and Lagrangian module.\n"
-           "\n"),
+           " V2f or k-omega are handled."),
          (int)cs_glob_lagr_time_scheme->idistu,
          (int)extra->iturb);
-      cs_exit(1);
 
     }
 
@@ -391,16 +389,16 @@ cs_lagr_car(int              iprev,
         for  (cs_lnum_t i = 0; i < 3; i++)
           uvwdif += cs_math_sq(vflui[i] - vpart[i]);
 
-        uvwdif   = (3.0 * uvwdif) / (2.0 * energi[cell_id]);
+        uvwdif = (3.0 * uvwdif) / (2.0 * energi[cell_id]);
 
         if (   cs_glob_lagr_time_scheme->modcpl > 0
             && cs_glob_time_step->nt_cur > cs_glob_lagr_time_scheme->modcpl) {
 
           if (cs_glob_lagr_time_scheme->idirla == 1) {
 
-            bbi[0] = sqrt (1.0 + cbcb * uvwdif);
-            bbi[1] = sqrt (1.0 + 4.0 * cbcb * uvwdif);
-            bbi[2] = sqrt (1.0 + 4.0 * cbcb * uvwdif);
+            bbi[0] = sqrt(1.0 +       cbcb * uvwdif);
+            bbi[1] = sqrt(1.0 + 4.0 * cbcb * uvwdif);
+            bbi[2] = sqrt(1.0 + 4.0 * cbcb * uvwdif);
             for (cs_lnum_t id = 0; id < 3; id++)
               tlag[ip][id] = tl / bbi[id];
 
@@ -408,9 +406,9 @@ cs_lagr_car(int              iprev,
 
           else if (cs_glob_lagr_time_scheme->idirla == 2) {
 
-            bbi[0] = sqrt (1.0 + 4.0 * cbcb * uvwdif);
-            bbi[1] = sqrt (1.0 + cbcb * uvwdif);
-            bbi[2] = sqrt (1.0 + 4.0 * cbcb * uvwdif);
+            bbi[0] = sqrt(1.0 + 4.0 * cbcb * uvwdif);
+            bbi[1] = sqrt(1.0 +       cbcb * uvwdif);
+            bbi[2] = sqrt(1.0 + 4.0 * cbcb * uvwdif);
             for (cs_lnum_t id = 0; id < 3; id++)
               tlag[ip][id] = tl / bbi[id];
 
@@ -418,27 +416,76 @@ cs_lagr_car(int              iprev,
 
           else if (cs_glob_lagr_time_scheme->idirla == 3) {
 
-            bbi[0] = sqrt (1.0 + 4.0 * cbcb * uvwdif);
-            bbi[1] = sqrt (1.0 + 4.0 * cbcb * uvwdif);
-            bbi[2] = sqrt (1.0 + cbcb * uvwdif);
+            bbi[0] = sqrt(1.0 + 4.0 * cbcb * uvwdif);
+            bbi[1] = sqrt(1.0 + 4.0 * cbcb * uvwdif);
+            bbi[2] = sqrt(1.0 +       cbcb * uvwdif);
             for (cs_lnum_t id = 0; id < 3; id++)
               tlag[ip][id] = tl / bbi[id];
 
           }
 
-          else {
+          else { /* if (cs_glob_lagr_time_scheme->idirla == 4) */
 
-            bft_printf(_("\n WARNING: STOP AT LAGRANGIAN MODULE EXECUTION\n"));
-            bft_printf
-              (_("Complete model direction choice value is not correct (in LAGCAR).\n"
-                 " IDIRLA should be an integer ranging from 1 to 3:\n"
-                 " =1 for a flow along x-axis\n"
-                 " =2 for a flow along y-axis\n"
-                 " =3 for a flow along z-axis\n"
-                 " Here IDIRLA = %d\n"),
-               (int)cs_glob_lagr_time_scheme->idirla);
-            cs_exit(1);
+            /* relative main direction */
+            cs_real_t vrn[3];
+            for  (cs_lnum_t i = 0; i < 3; i++)
+              vrn[i] = vpart[i] - vflui[i];
+            cs_real_t vrnn = cs_math_3_norm(vrn);
+            vrnn = sqrt(vrnn);
+            if (vrnn > 1.e-10) { /* TODO replace this with adimensional test */
+              for  (cs_lnum_t i = 0; i < 3; i++)
+                vrn[i] /= vrnn;
+            }
+            else {
+              vrn[0] = 1.;
+              vrn[1] = 0.;
+              vrn[2] = 0.;
+            }
 
+            /* Choose the first normal direction */
+            cs_real_t vn1[3] = {0, 0, 1};
+            cs_real_t n1[3]  = {1, 0, 0};
+            cs_real_t n2[3]  = {0, 1, 0};
+            cs_real_t n3[3]  = {0, 0, 1};
+
+            cs_real_t psca1 = cs_math_fabs(cs_math_3_dot_product(vrn, n1));
+            cs_real_t psca2 = cs_math_fabs(cs_math_3_dot_product(vrn, n2));
+            cs_real_t psca3 = cs_math_fabs(cs_math_3_dot_product(vrn, n3));
+
+            if (psca1 < psca2 && psca1 < psca3)
+              cs_math_3_cross_product(vrn, n1, vn1);
+            else if (psca2 < psca1 && psca2 < psca3)
+              cs_math_3_cross_product(vrn, n2, vn1);
+            else if (psca3 < psca1 && psca3 < psca2)
+              cs_math_3_cross_product(vrn, n3, vn1);
+
+            /* second normal direction */
+            cs_real_t vn2[3];
+            cs_math_3_cross_product(vrn, vn1, vn2);
+
+            /* crossing trajectory in the vrn direction */
+            cs_real_t an, at;
+            an = (1.0 + cbcb * uvwdif);
+            at = (1.0 + 4.0 * cbcb * uvwdif);
+
+            /* projection in space directions */
+
+            bbi[0] =   an * cs_math_pow2(cs_math_3_dot_product(vrn, n1))
+                     + at * cs_math_pow2(cs_math_3_dot_product(vn1, n1))
+                     + at * cs_math_pow2(cs_math_3_dot_product(vn2, n1));
+            bbi[1] =   an * cs_math_pow2(cs_math_3_dot_product(vrn, n2))
+                     + at * cs_math_pow2(cs_math_3_dot_product(vn1, n2))
+                     + at * cs_math_pow2(cs_math_3_dot_product(vn2, n2));
+            bbi[2] =   an * cs_math_pow2(cs_math_3_dot_product(vrn, n3))
+                     + at * cs_math_pow2(cs_math_3_dot_product(vn1, n3))
+                     + at * cs_math_pow2(cs_math_3_dot_product(vn2, n3));
+
+            bbi[0] = sqrt(bbi[0]);
+            bbi[1] = sqrt(bbi[1]);
+            bbi[2] = sqrt(bbi[2]);
+
+            for (cs_lnum_t id = 0; id < 3; id++)
+              tlag[ip][id] = tl / bbi[id];
           }
 
           if (extra->itytur == 3) {
@@ -461,7 +508,8 @@ cs_lagr_car(int              iprev,
 
           }
 
-          else if (extra->itytur == 2 || extra->iturb == 50 || extra->iturb == 60)
+          else if (   extra->itytur == 2
+                   || extra->iturb == 50 || extra->iturb == 60)
             ktil = energi[cell_id];
 
           for (cs_lnum_t id = 0; id < 3; id++) {
@@ -524,13 +572,12 @@ cs_lagr_car(int              iprev,
 
   }
 
-  /* ====================================================================   */
-  /* 4. CALCUL DE PII     */
-  /* ====================================================================   */
+  /* Compute Pii
+     ----------- */
 
   if (   cs_glob_lagr_time_scheme->modcpl > 0
-      &&   cs_glob_time_step->nt_cur
-         > cs_glob_lagr_time_scheme->modcpl) {
+      && (  cs_glob_time_step->nt_cur
+          > cs_glob_lagr_time_scheme->modcpl)) {
 
     int stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY);
 

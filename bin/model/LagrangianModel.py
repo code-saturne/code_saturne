@@ -97,7 +97,7 @@ class LagrangianModel(Model):
         default['turbulent_dispersion']                = "on"
         default['fluid_particles_turbulent_diffusion'] = "off"
         default['complete_model_iteration']            = 0
-        default['complete_model_direction']            = 1
+        default['complete_model_direction']            = 4
 
         return default
 
@@ -682,7 +682,7 @@ class LagrangianModel(Model):
         Set value for complete model direction.
         """
         self.isInt(value)
-        self.isInList(value, (1,2,3))
+        self.isInList(value, (1,2,3,4))
         node_direction = self.node_lagr.xmlInitChildNode('complete_model_direction', 'choice')
         node_direction['choice'] = value
 
