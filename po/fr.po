@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-09-22 18:01+0200\n"
+"POT-Creation-Date: 2019-10-03 15:49+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3197,40 +3197,6 @@ msgstr ""
 "Réglage pour matrices grossières de niveau %d et type : %s\n"
 "================================\n"
 
-#, c-format
-msgid "    minimum count =         %10d\n"
-msgstr "    nombre minimal =        %10d\n"
-
-#, c-format
-msgid ""
-"    maximum count =         %10d\n"
-"\n"
-msgstr ""
-"    nombre maximal =        %10d\n"
-"\n"
-
-#, c-format
-msgid ""
-"\n"
-"Neighbor rank counts for matrix assembler: %s\n"
-"-----------------------------------------\n"
-msgstr ""
-
-msgid "Neighbor ranks for vector update (halo)"
-msgstr ""
-
-msgid "Neighbor ranks for matrix assembly"
-msgstr ""
-
-msgid "Maximum neighbor ranks during halo construction"
-msgstr ""
-
-msgid "Maximum neighbor ranks during assembly determination"
-msgstr ""
-
-msgid "invalid value of isym"
-msgstr ""
-
 msgid "native"
 msgstr "native"
 
@@ -3344,6 +3310,40 @@ msgid ""
 msgstr ""
 "La fonction de produit matrice.vecteur de type \"%s\"\n"
 "n'est pas disponible dans cette installation."
+
+#, c-format
+msgid "    minimum count =         %10d\n"
+msgstr "    nombre minimal =        %10d\n"
+
+#, c-format
+msgid ""
+"    maximum count =         %10d\n"
+"\n"
+msgstr ""
+"    nombre maximal =        %10d\n"
+"\n"
+
+#, c-format
+msgid ""
+"\n"
+"Neighbor rank counts for matrix assembler: %s\n"
+"-----------------------------------------\n"
+msgstr ""
+
+msgid "Neighbor ranks for vector update (halo)"
+msgstr ""
+
+msgid "Neighbor ranks for matrix assembly"
+msgstr ""
+
+msgid "Maximum neighbor ranks during halo construction"
+msgstr ""
+
+msgid "Maximum neighbor ranks during assembly determination"
+msgstr ""
+
+msgid "invalid value of isym"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -4403,16 +4403,6 @@ msgstr ""
 "\n"
 " Destruction des structures et clôture du calcul\n"
 
-msgid "Atmo chemistry from SPACK file: Could not open file."
-msgstr ""
-
-#, c-format
-msgid "Atmo chemistry from SPACK file: Could not read line %d."
-msgstr ""
-
-msgid "Atmo chemistry from SPACK file: warning, may be end of file."
-msgstr ""
-
 msgid "Defining an optimal interpolation requires a name."
 msgstr "La définition d'une interpolation optimale nécessite un nom."
 
@@ -4435,6 +4425,16 @@ msgid ""
 msgstr ""
 "Support de bibliothèques partagées non disponible.\n"
 "Impossible de charger : %s\n"
+
+msgid "Atmo chemistry from SPACK file: Could not open file."
+msgstr ""
+
+#, c-format
+msgid "Atmo chemistry from SPACK file: Could not read line %d."
+msgstr ""
+
+msgid "Atmo chemistry from SPACK file: warning, may be end of file."
+msgstr ""
 
 #, c-format
 msgid ""
@@ -8717,7 +8717,7 @@ msgid ""
 "Stokes model\n"
 "------------\n"
 "\n"
-"    idilat:      %14d (0: Boussines approximation\n"
+"    idilat:      %14d (0: Boussinesq approximation\n"
 "                                 1: without unsteady term\n"
 "                                    in the continuity equation\n"
 "                                 2: with unsteady term in\n"
@@ -8742,14 +8742,6 @@ msgid ""
 "                                  2: compute a hydrostatic\n"
 "                                     pressure which is\n"
 "                                     in balance with buoyancy)\n"
-"    icalhy:      %14d (1: compute hydrostatic\n"
-"                                    pressure for dirichlet\n"
-"                                    conditions for pressure\n"
-"                                    on outlet)\n"
-"    iprco :      %14d (1: pressure-continuity)\n"
-"    ipucou:      %14d (1: reinforced u-p coupling)\n"
-"    nterup:      %14d (n: n sweeps on navsto for\n"
-"                                    velocity/pressure coupling)\n"
 msgstr ""
 "\n"
 "Modèle de Stokes\n"
@@ -8771,7 +8763,7 @@ msgstr ""
 "    iporos:      %14d (0: sans modélisation poreuse\n"
 "                                 1: avec modélisation poreuse\n"
 "                                 2: avec modélisation poreuse tensorielle\n"
-"                                 1: avec formulation intégrale\n"
+"                                 3: avec formulation intégrale\n"
 "                                    incluant les volumes et surfaces "
 "fluides)\n"
 "    iphydr:      %14d (1: prise en compte explicite\n"
@@ -8780,11 +8772,48 @@ msgstr ""
 "                                    sources de gravite et de\n"
 "                                    pertes de charge\n"
 "                                 2: calcul d'une pression hydrostatique\n"
-"                                    en équilibre avec la floattabilité)\n"
-"    icalhy:      %14d (1: calcul de la pression\n"
+"                                    en équilibre avec la flottabilité)\n"
+
+#, c-format
+msgid ""
+"      icalhy:    %14d (1: compute hydrostatic\n"
+"                                    pressure for dirichlet\n"
+"                                    conditions for pressure\n"
+"                                    on outlet)\n"
+"      igpust:    %14d (1: take user momentum source\n"
+"                                    terms into account\n"
+"                                    in the hydrostatic\n"
+"                                    pressure computation)\n"
+msgstr ""
+"      icalhy:    %14d (1: calcul de la pression\n"
 "                                    hydrostatique pour les\n"
 "                                    conditions de Dirichlet en\n"
 "                                    sortie sur la pression)\n"
+"      igpust:    %14d (1: prise en compte des termes\n"
+"                                    source utilisateur de\n"
+"                                    QdM dans le calcul\n"
+"                                    de la pression hydrostatique)\n"
+"\n"
+
+#, c-format
+msgid ""
+"      igprij:    %14d (1: take div(rho R)\n"
+"                                    terms into account\n"
+"                                    in the hydrostatic\n"
+"                                    pressure computation)\n"
+msgstr ""
+"      igprij:    %14d (1: prise en compte des\n"
+"                                    termes (rho R)\n"
+"                                    dans le calcul de la\n"
+"                                    pression hydrotatique)\n"
+
+#, c-format
+msgid ""
+"    iprco :      %14d (1: pressure-continuity)\n"
+"    ipucou:      %14d (1: reinforced u-p coupling)\n"
+"    nterup:      %14d (n: n sweeps on navsto for\n"
+"                                    velocity/pressure coupling)\n"
+msgstr ""
 "    iprco :      %14d (1: avec pression-continuité)\n"
 "    ipucou:      %14d (1: avec couplage U-P renforcé)\n"
 "    nterup:      %14d (n: avec n sweep sur navsto\n"
@@ -9517,39 +9546,6 @@ msgstr ""
 msgid "Plot number must be in the interval [1, %d] and not %d."
 msgstr ""
 
-msgid "clock_gettime() function"
-msgstr ""
-
-msgid "gettimeofday() function"
-msgstr ""
-
-msgid "Iso C time() function"
-msgstr ""
-
-msgid "Disabled"
-msgstr ""
-
-msgid "getrusage() function"
-msgstr ""
-
-msgid "Posix times() function"
-msgstr ""
-
-msgid "Iso C clock() function"
-msgstr ""
-
-#, c-format
-msgid ""
-"Timer statistics \"%s\"\n"
-" parent \"%s\" not defined."
-msgstr ""
-
-#, c-format
-msgid ""
-"Timer statistics \"%s\"\n"
-" is already defined, with id %d and parent %d."
-msgstr ""
-
 msgid ""
 "\n"
 "Time stepping options\n"
@@ -9651,6 +9647,39 @@ msgstr ""
 "   Champ de vitesse figé\n"
 "\n"
 "    iccvfg:      %14d (1: Champ de vitesse figé)\n"
+
+msgid "clock_gettime() function"
+msgstr ""
+
+msgid "gettimeofday() function"
+msgstr ""
+
+msgid "Iso C time() function"
+msgstr ""
+
+msgid "Disabled"
+msgstr ""
+
+msgid "getrusage() function"
+msgstr ""
+
+msgid "Posix times() function"
+msgstr ""
+
+msgid "Iso C clock() function"
+msgstr ""
+
+#, c-format
+msgid ""
+"Timer statistics \"%s\"\n"
+" parent \"%s\" not defined."
+msgstr ""
+
+#, c-format
+msgid ""
+"Timer statistics \"%s\"\n"
+" is already defined, with id %d and parent %d."
+msgstr ""
 
 #, c-format
 msgid ""
@@ -9781,6 +9810,18 @@ msgid ""
 "    id              = %d\n"
 "    Number of cells = %llu\n"
 "    Volume          = %14.7e\n"
+msgstr ""
+"  Zone volumique \"%s\"\n"
+"    id                 = %d\n"
+"    Nombre de cellules = %llu\n"
+"    Volume             = %14.7e\n"
+
+#, c-format
+msgid ""
+"  Volume zone \"%s\"\n"
+"    id              = %d\n"
+"    Number of cells = %llu\n"
+"    Volume          = %14.7e\n"
 "    Fluid volume    = %14.7e\n"
 msgstr ""
 
@@ -9824,6 +9865,16 @@ msgstr ""
 
 #, c-format
 msgid ""
+" Face %d not found.\n"
+" Stop build a face mesh."
+msgstr ""
+
+#, c-format
+msgid "%s: Unkwown algorithm for cell center computation\n"
+msgstr ""
+
+#, c-format
+msgid ""
 " %s: Invalid type of reduction.\n"
 " Stop computing the Dirichlet value.\n"
 msgstr ""
@@ -9856,16 +9907,6 @@ msgstr "faces intérieures"
 msgid "boundary_faces"
 msgstr "faces de bord"
 
-#, c-format
-msgid ""
-" Face %d not found.\n"
-" Stop build a face mesh."
-msgstr ""
-
-#, c-format
-msgid "%s: Unkwown algorithm for cell center computation\n"
-msgstr ""
-
 msgid ""
 " Mesh location type is incompatible with the computation\n"
 " of the flux across faces.\n"
@@ -9891,17 +9932,6 @@ msgid ""
 msgstr ""
 
 msgid " Invalid idtvar value for the CDO module.\n"
-msgstr ""
-
-msgid ""
-" Invalid type of definition.\n"
-" Stop computing the Neumann value.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-" %s: Invalid type of definition.\n"
-" Stop computing the circulation.\n"
 msgstr ""
 
 #, c-format
@@ -9953,6 +9983,17 @@ msgid ""
 msgstr ""
 
 msgid " Invalid mesh location id (= -1) for the current field\n"
+msgstr ""
+
+msgid ""
+" Invalid type of definition.\n"
+" Stop computing the Neumann value.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+" %s: Invalid type of definition.\n"
+" Stop computing the circulation.\n"
 msgstr ""
 
 msgid ""
@@ -10093,7 +10134,8 @@ msgstr ""
 #, c-format
 msgid ""
 " %s: Invalid val %s related to key CS_NSKEY_SLES_STRATEGY\n"
-" Choice between \"no_block\", \"block_amg_cg\"..."
+" Choice between no_block, block_amg_cg, additive_gmres {diag,upper}"
+"_schur_gmres, gkb{,_gmres}."
 msgstr ""
 
 #, c-format
@@ -11533,6 +11575,92 @@ msgid ""
 msgstr ""
 
 #, c-format
+msgid "Error: can not evaluate property: %s using a thermal law\n"
+msgstr ""
+
+#, c-format
+msgid "Invalid node in function %s\n"
+msgstr "Noeud invalide dans la fonction : %s\n"
+
+#, c-format
+msgid "Error converting profile component tag %s to integer."
+msgstr ""
+
+#, c-format
+msgid "Field with name \"%s\" not found"
+msgstr "Le champ de nom \"%s\" n'a pas été trouvé."
+
+msgid "Incorrect setup tree definition for the following node:\n"
+msgstr ""
+
+#, c-format
+msgid "Missing child node: %s"
+msgstr "Noeud enfant manquant : %s"
+
+#, c-format
+msgid "Invalid profile format: %s"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+" Warning: noncontiguous %s zone ids in XML:\n"
+"          zone with index %d has id %d.\n"
+msgstr ""
+
+#, c-format
+msgid "Invalid turbulence model: %s.\n"
+msgstr ""
+
+msgid "mass molar value is zero or not found in the xml file.\n"
+msgstr ""
+
+msgid "Density value is zero or not found in the xml file.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"soil_tracer_law, WARNING:\n"
+"  saturation is outside [0, 1] in %llu cells.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"soil_tracer_law, WARNING:\n"
+"  capacity is < 0 in %llu cells.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"soil_tracer_law, WARNING:\n"
+"  isotropic permeability is < 0 in %llu cells.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"Error: can not interpret expression: %s\n"
+" %i"
+msgstr ""
+
+#, c-format
+msgid "Error: can not find the required symbol: %s\n"
+msgstr ""
+
+#, c-format
+msgid "Unable to open the file: %s\n"
+msgstr ""
+
+#, c-format
+msgid "Invalid thermal model: %s\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"\n"
+"Time elapsed defining values using MEI: %12.5f\n"
+msgstr ""
+
+#, c-format
 msgid "Invalid number of coal: %i xml: %i\n"
 msgstr ""
 
@@ -11571,10 +11699,6 @@ msgstr ""
 msgid ""
 "Error in the boundary conditions: the normal direction is of norm 0.\n"
 " "
-msgstr ""
-
-#, c-format
-msgid "Invalid turbulence model: %s.\n"
 msgstr ""
 
 #, c-format
@@ -11625,88 +11749,6 @@ msgid ""
 "@                                                            \n"
 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
 "@                                                            \n"
-msgstr ""
-
-#, c-format
-msgid "Error: can not evaluate property: %s using a thermal law\n"
-msgstr ""
-
-#, c-format
-msgid "Invalid node in function %s\n"
-msgstr "Noeud invalide dans la fonction : %s\n"
-
-#, c-format
-msgid "Error converting profile component tag %s to integer."
-msgstr ""
-
-#, c-format
-msgid "Field with name \"%s\" not found"
-msgstr "Le champ de nom \"%s\" n'a pas été trouvé."
-
-msgid "Incorrect setup tree definition for the following node:\n"
-msgstr ""
-
-#, c-format
-msgid "Missing child node: %s"
-msgstr "Noeud enfant manquant : %s"
-
-#, c-format
-msgid "Invalid profile format: %s"
-msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-" Warning: noncontiguous %s zone ids in XML:\n"
-"          zone with index %d has id %d.\n"
-msgstr ""
-
-msgid "mass molar value is zero or not found in the xml file.\n"
-msgstr ""
-
-msgid "Density value is zero or not found in the xml file.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"soil_tracer_law, WARNING:\n"
-"  saturation is outside [0, 1] in %llu cells.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"soil_tracer_law, WARNING:\n"
-"  capacity is < 0 in %llu cells.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"soil_tracer_law, WARNING:\n"
-"  isotropic permeability is < 0 in %llu cells.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Error: can not interpret expression: %s\n"
-" %i"
-msgstr ""
-
-#, c-format
-msgid "Error: can not find the required symbol: %s\n"
-msgstr ""
-
-#, c-format
-msgid "Unable to open the file: %s\n"
-msgstr ""
-
-#, c-format
-msgid "Invalid thermal model: %s\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"\n"
-"Time elapsed defining values using MEI: %12.5f\n"
 msgstr ""
 
 #, c-format
@@ -11941,30 +11983,14 @@ msgid ""
 "---------------------------------------------\n"
 msgstr ""
 
-msgid ""
-"\n"
-" WARNING: STOP AT LAGRANGIAN MODULE EXECUTION\n"
-msgstr ""
-
 #, c-format
 msgid ""
-"The lagrangian module is not compatible with the selected turbulence model.\n"
+"Lagrangian turbulent dispersion is not compatible with\n"
+"the selected turbulence model.\n"
 "\n"
-"Turbulent dispersion is taken into account with IDISTU = %d\n"
+"Turbulent dispersion is taken into account with idistu = %d\n"
 " Activated turbulence model is %d, when only k-eps, Rij-eps,\n"
-" V2f or k-omega are compatible with turbulent dispersion and Lagrangian "
-"module.\n"
-"\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"Complete model direction choice value is not correct (in LAGCAR).\n"
-" IDIRLA should be an integer ranging from 1 to 3:\n"
-" =1 for a flow along x-axis\n"
-" =2 for a flow along y-axis\n"
-" =3 for a flow along z-axis\n"
-" Here IDIRLA = %d\n"
+" V2f or k-omega are handled."
 msgstr ""
 
 msgid "Thermal coupling not implemented in multi-layer case"
@@ -12050,6 +12076,14 @@ msgid ""
 "Lagrangian %s zone %d, set %d:\n"
 "  diameter (%g) is smaller than 3 times\n"
 "  its standard deviation (%g)."
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian %s zone %d, set %d:\n"
+"  error on particle properties definition:\n"
+"  Ellispoid radii = %g, %g, %g\n"
+"This may lead to injection of  particles with negative radii."
 msgstr ""
 
 #, c-format
@@ -12439,6 +12473,14 @@ msgid ""
 msgstr ""
 "    diamètre : %g ; (variance : %g)\n"
 "    densité : %g\n"
+
+#, c-format
+msgid "    shape parameter: %g\n"
+msgstr "    paramètre de forme : %g\n"
+
+#, c-format
+msgid "    ellipsoid radii: [%g, %g, %g]\n"
+msgstr "    rayons de l'ellispoide : [%g, %g, %g]\n"
 
 #, c-format
 msgid "    flow rate: %g\n"
@@ -12875,6 +12917,22 @@ msgstr ""
 msgid ""
 "The deposition model (Guingo & Minier, 2008) is not implemented\n"
 "with the second order scheme (%s)."
+msgstr ""
+
+msgid ""
+"\n"
+" WARNING: STOP AT LAGRANGIAN MODULE EXECUTION\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"The lagrangian module is not compatible with the selected turbulence model.\n"
+"\n"
+"Turbulent dispersion is taken into account with IDISTU = %d\n"
+" Activated turbulence model is %d, when only k-eps, Rij-eps,\n"
+" V2f or k-omega are compatible with turbulent dispersion and Lagrangian "
+"module.\n"
+"\n"
 msgstr ""
 
 #, c-format
@@ -13902,139 +13960,6 @@ msgstr ""
 "  Définition de maillage incohérente. Ne peut pas construire les arêtes.\n"
 "  La Face %d contient deux fois le sommet %d.\n"
 
-msgid "Bad Cell Ortho Norm"
-msgstr ""
-
-msgid "Bad Cell Offset"
-msgstr ""
-
-msgid "Bad Cell LSQ Gradient"
-msgstr ""
-
-msgid "Bad Cell Volume Ratio"
-msgstr ""
-
-msgid "Bad Cell Association"
-msgstr ""
-
-msgid "Bad Cell by User"
-msgstr ""
-
-msgid "Bad Cell to regularize"
-msgstr ""
-
-msgid ""
-"\n"
-"  Criterion 1: Orthogonality:\n"
-msgstr ""
-"\n"
-"  Critère 1 : orthogonalité :\n"
-
-#, c-format
-msgid "    Number of bad cells detected: %llu --> %3.0f %%\n"
-msgstr "    Nombre de mauvaises cellules détecté : %llu --> %3.0f %%\n"
-
-msgid ""
-"\n"
-"  Criterion 2: Offset:\n"
-msgstr ""
-"\n"
-"  Critère 2 : décentrement :\n"
-
-msgid ""
-"\n"
-"  Criterion 3: Least-Squares Gradient Quality:\n"
-msgstr ""
-"\n"
-"  Critère 3 : qualité du gradient moindres-carrés :\n"
-
-msgid ""
-"\n"
-"  Criterion 4: Cells Volume Ratio:\n"
-msgstr ""
-"\n"
-"  Critère 4 : ratio des volumes de cellules :\n"
-
-msgid ""
-"\n"
-"  Criterion 5: Guilt by Association:\n"
-msgstr ""
-"\n"
-"  Critère 5 : culpabilité par association :\n"
-
-msgid ""
-"\n"
-"  Regularisation:\n"
-msgstr ""
-
-msgid ""
-"\n"
-" Warning:\n"
-" --------\n"
-"    Mesh quality issue has been detected\n"
-"\n"
-"    The mesh should be re-considered using the listed criteria.\n"
-"\n"
-"    The calculation will run but the solution quality may be degraded...\n"
-msgstr ""
-"\n"
-" Attention :\n"
-" ---------\n"
-"    Un défaut de qualité de maillage a été détecté\n"
-"\n"
-"    Le maillage devrait être revu en fonction des critères indiqués.\n"
-"\n"
-"    Le calcul sera effectué mais la qualité de la solution peut être "
-"dégradée...\n"
-
-#, c-format
-msgid "%s should be called before halo creation in case of periodicity."
-msgstr ""
-"%s devrait être appelé avant la création des halos en cas de périodicité."
-
-#, c-format
-msgid ""
-" %s\n"
-"   Number of cells:          %llu\n"
-"   Number of interior faces: %llu\n"
-"   Number of boundary faces: %llu\n"
-"   Number of vertices:       %llu\n"
-"\n"
-msgstr ""
-" %s\n"
-"  Nombre de cellules :       %llu\n"
-"  Nombre de faces internes : %llu\n"
-"  Nombre de faces de bord :  %llu\n"
-"  Nombre de sommets :        %llu\n"
-"\n"
-
-msgid "Before insertion of user-defined boundary"
-msgstr "Avant insertion de frontière définie par l'utilisateur"
-
-msgid "After insertion of user-defined boundary"
-msgstr "Après insertion de frontière définie par l'utilisateur"
-
-#, c-format
-msgid "%s should be called before halo creation."
-msgstr "%s devrait être appelé avant la création des halos."
-
-#, c-format
-msgid ""
-"\n"
-"Boundary layer insertion:\n"
-"  %llu cells would have a negative volume\n"
-"  %llu cells would have a volume reduced by more than %g\n"
-"    (which is the user-defined threshold)\n"
-"  reducing insertion at nearby boundary vertices.\n"
-msgstr ""
-
-#, c-format
-msgid ""
-"%llu cells would have a negative volume after boundary insertion\n"
-"but none of these are near to an inserted boundary.\n"
-"Unable to detemine appropriate insertion limitation."
-msgstr ""
-
 msgid "Synchronizing cell families\n"
 msgstr " Synchronisation des familles des cellules\n"
 
@@ -14342,6 +14267,139 @@ msgid ""
 "  cells            %10d  %12.5f\n"
 "  interior faces   %10d  %12.5f\n"
 "  boundary faces   %10d  %12.5f\n"
+msgstr ""
+
+msgid "Bad Cell Ortho Norm"
+msgstr ""
+
+msgid "Bad Cell Offset"
+msgstr ""
+
+msgid "Bad Cell LSQ Gradient"
+msgstr ""
+
+msgid "Bad Cell Volume Ratio"
+msgstr ""
+
+msgid "Bad Cell Association"
+msgstr ""
+
+msgid "Bad Cell by User"
+msgstr ""
+
+msgid "Bad Cell to regularize"
+msgstr ""
+
+msgid ""
+"\n"
+"  Criterion 1: Orthogonality:\n"
+msgstr ""
+"\n"
+"  Critère 1 : orthogonalité :\n"
+
+#, c-format
+msgid "    Number of bad cells detected: %llu --> %3.0f %%\n"
+msgstr "    Nombre de mauvaises cellules détecté : %llu --> %3.0f %%\n"
+
+msgid ""
+"\n"
+"  Criterion 2: Offset:\n"
+msgstr ""
+"\n"
+"  Critère 2 : décentrement :\n"
+
+msgid ""
+"\n"
+"  Criterion 3: Least-Squares Gradient Quality:\n"
+msgstr ""
+"\n"
+"  Critère 3 : qualité du gradient moindres-carrés :\n"
+
+msgid ""
+"\n"
+"  Criterion 4: Cells Volume Ratio:\n"
+msgstr ""
+"\n"
+"  Critère 4 : ratio des volumes de cellules :\n"
+
+msgid ""
+"\n"
+"  Criterion 5: Guilt by Association:\n"
+msgstr ""
+"\n"
+"  Critère 5 : culpabilité par association :\n"
+
+msgid ""
+"\n"
+"  Regularisation:\n"
+msgstr ""
+
+msgid ""
+"\n"
+" Warning:\n"
+" --------\n"
+"    Mesh quality issue has been detected\n"
+"\n"
+"    The mesh should be re-considered using the listed criteria.\n"
+"\n"
+"    The calculation will run but the solution quality may be degraded...\n"
+msgstr ""
+"\n"
+" Attention :\n"
+" ---------\n"
+"    Un défaut de qualité de maillage a été détecté\n"
+"\n"
+"    Le maillage devrait être revu en fonction des critères indiqués.\n"
+"\n"
+"    Le calcul sera effectué mais la qualité de la solution peut être "
+"dégradée...\n"
+
+#, c-format
+msgid "%s should be called before halo creation in case of periodicity."
+msgstr ""
+"%s devrait être appelé avant la création des halos en cas de périodicité."
+
+#, c-format
+msgid ""
+" %s\n"
+"   Number of cells:          %llu\n"
+"   Number of interior faces: %llu\n"
+"   Number of boundary faces: %llu\n"
+"   Number of vertices:       %llu\n"
+"\n"
+msgstr ""
+" %s\n"
+"  Nombre de cellules :       %llu\n"
+"  Nombre de faces internes : %llu\n"
+"  Nombre de faces de bord :  %llu\n"
+"  Nombre de sommets :        %llu\n"
+"\n"
+
+msgid "Before insertion of user-defined boundary"
+msgstr "Avant insertion de frontière définie par l'utilisateur"
+
+msgid "After insertion of user-defined boundary"
+msgstr "Après insertion de frontière définie par l'utilisateur"
+
+#, c-format
+msgid "%s should be called before halo creation."
+msgstr "%s devrait être appelé avant la création des halos."
+
+#, c-format
+msgid ""
+"\n"
+"Boundary layer insertion:\n"
+"  %llu cells would have a negative volume\n"
+"  %llu cells would have a volume reduced by more than %g\n"
+"    (which is the user-defined threshold)\n"
+"  reducing insertion at nearby boundary vertices.\n"
+msgstr ""
+
+#, c-format
+msgid ""
+"%llu cells would have a negative volume after boundary insertion\n"
+"but none of these are near to an inserted boundary.\n"
+"Unable to detemine appropriate insertion limitation."
 msgstr ""
 
 msgid "Mesh before refinement"
@@ -15045,6 +15103,15 @@ msgstr ""
 "  temps écoulé :              %.3g s\n"
 "\n"
 
+msgid "<none>"
+msgstr "<aucun>"
+
+msgid "DOM (Discrete Ordinates Method)"
+msgstr ""
+
+msgid "P-1"
+msgstr ""
+
 #, c-format
 msgid ""
 " Warning: P-1 radiative model (in %s)\n"
@@ -15200,15 +15267,6 @@ msgid ""
 "    XLAMP = %12.4e\n"
 "    EPAP  = %12.4e\n"
 "    TEXTP = %12.4e\n"
-msgstr ""
-
-msgid "<none>"
-msgstr "<aucun>"
-
-msgid "DOM (Discrete Ordinates Method)"
-msgstr ""
-
-msgid "P-1"
 msgstr ""
 
 #, c-format
@@ -15762,16 +15820,33 @@ msgid ""
 "Turbulence model options\n"
 "------------------------\n"
 "\n"
+"  Continuous phase:\n"
+"\n"
 msgstr ""
 "\n"
 "Options du modèle de turbulence\n"
 "-------------------------------\n"
 "\n"
+"  Phase continue :\n"
+"\n"
+
+msgid "    RANS modeling               (type = CS_TURB_RANS)\n"
+msgstr ""
+
+msgid "   LES modeling                 (type = CS_TURB_LES)\n"
+msgstr ""
+
+msgid "   Algebraic model              (order = CS_TURB_ALGEBRAIC)\n"
+msgstr ""
+
+msgid "   First order model            (order = CS_TURB_FIRST_ORDER)\n"
+msgstr ""
+
+msgid "   Second order model           (order = CS_TURB_SECOND_ORDER)\n"
+msgstr ""
 
 #, c-format
 msgid ""
-"  Continuous phase:\n"
-"\n"
 "    iturb :      %14d (Turbulence model)\n"
 "    iwallf:      %14d (wall function)\n"
 "                                (0: disabled)\n"
