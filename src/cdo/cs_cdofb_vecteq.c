@@ -1392,12 +1392,16 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
     CS_FLAG_COMP_FEQ;
 
   BFT_MALLOC(eqc->face_values, 3*n_faces, cs_real_t);
+  BFT_MALLOC(eqc->face_values_pre, 3*n_faces, cs_real_t);
   BFT_MALLOC(eqc->rc_tilda, 3*n_cells, cs_real_t);
 # pragma omp parallel if (3*n_cells > CS_THR_MIN)
   {
     /* Values at each face (interior and border) i.e. take into account BCs */
 #   pragma omp for nowait
     for (cs_lnum_t i = 0; i < 3*n_faces; i++) eqc->face_values[i] = 0;
+
+#   pragma omp for nowait
+    for (cs_lnum_t i = 0; i < 3*n_faces; i++) eqc->face_values_pre[i] = 0;
 
     /* Store the last computed values of the field at cell centers and the data
        needed to compute the cell values from the face values.
@@ -1629,6 +1633,7 @@ cs_cdofb_vecteq_free_context(void   *data)
   /* Free temporary buffers */
   BFT_FREE(eqc->source_terms);
   BFT_FREE(eqc->face_values);
+  BFT_FREE(eqc->face_values_pre);
   BFT_FREE(eqc->rc_tilda);
   BFT_FREE(eqc->acf_tilda);
 
@@ -1860,6 +1865,30 @@ cs_cdofb_vecteq_get_face_values(void    *context)
     return NULL;
   else
     return  eqc->face_values;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve an array of values at mesh faces for the current context.
+ *         This are values at the previous state.
+ *         The lifecycle of this array is managed by the code. So one does not
+ *         have to free the return pointer.
+ *
+ * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ *
+ * \return  a pointer to an array of cs_real_t (size n_faces)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdofb_vecteq_get_face_values_prev(void    *context)
+{
+  cs_cdofb_vecteq_t  *eqc = (cs_cdofb_vecteq_t *)context;
+
+  if (eqc == NULL)
+    return NULL;
+  else
+    return  eqc->face_values_pre;
 }
 
 /*----------------------------------------------------------------------------*/

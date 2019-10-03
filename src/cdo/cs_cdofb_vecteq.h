@@ -517,6 +517,22 @@ cs_cdofb_vecteq_get_face_values(void    *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve an array of values at mesh faces for the current context.
+ *         This are values at the previous state.
+ *         The lifecycle of this array is managed by the code. So one does not
+ *         have to free the return pointer.
+ *
+ * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ *
+ * \return  a pointer to an array of cs_real_t (size n_faces)
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_cdofb_vecteq_get_face_values_prev(void    *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Read additional arrays (not defined as fields) but useful for the
  *         checkpoint/restart process
  *
