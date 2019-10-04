@@ -41,7 +41,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_error.h"
 #include "bft_mem.h"
 #include "bft_printf.h"
 
@@ -1484,7 +1483,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                                   _("in Lagrangian module"),
                                   "cs_glob_lagr_time_scheme->idirla",
                                   lagr_time_scheme->idirla,
-                                  1, 4);
+                                  1, 5);
   }
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,

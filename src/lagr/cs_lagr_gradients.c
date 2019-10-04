@@ -123,6 +123,17 @@ cs_lagr_gradients(int            time_id,
       for (cs_lnum_t id = 0; id < 3; id++)
         grad_pr[iel][id] = cpro_pgradlagr[3*iel + id];
 
+    cs_real_33_t *cpro_vgradlagr = cs_field_by_name_try("lagr_velocity_gradient")->val;
+
+    if (cpro_vgradlagr != NULL) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          for (cs_lnum_t j = 0; j < 3; j++)
+            grad_vel[c_id][i][j] = cpro_vgradlagr[c_id][i][j];
+       }
+     }
+    }
+
     return;
   }
 
@@ -140,9 +151,11 @@ cs_lagr_gradients(int            time_id,
 
   /* retrieve 2/3 rho^{n} k^{n} from solved pressure field for EVM models */
   // FIXME if time_id = 1, we don't have k^{n-1}
-  if (   cs_glob_turb_model->itytur == 2
-      || cs_glob_turb_model->itytur == 5
-      || cs_glob_turb_model->itytur == 6) {
+  const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
+  assert(turb_model != NULL);
+  if (   turb_model->itytur == 2
+      || turb_model->itytur == 5
+      || turb_model->itytur == 6) {
     BFT_MALLOC(wpres, n_cells_with_ghosts, cs_real_t);
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
