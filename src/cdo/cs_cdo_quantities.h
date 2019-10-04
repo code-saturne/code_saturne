@@ -46,9 +46,6 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-/* Information useful to get simpler algo. */
-#define CS_CDO_ORTHO      (1 << 0)  // Orthogonality condition is checked
-
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -103,9 +100,6 @@ typedef struct { /* Specific mesh quantities */
   cs_gnum_t         n_g_cells;      /* Global number of cells */
   cs_real_t        *cell_centers;
   cs_real_t        *cell_vol;
-  cs_flag_t        *cell_flag;      /* Flag attached to cell to associate
-                                       metadata like boundary cell or
-                                       orthogonality */
 
   cs_quant_info_t   cell_info;
 

@@ -152,7 +152,6 @@ _create_cdo_quantities(void)
   cdoq->n_g_cells = 0;
   cdoq->cell_centers = NULL;
   cdoq->cell_vol = NULL;
-  cdoq->cell_flag = NULL;
 
   /* Face-based quantities */
   cdoq->face_info.h_min = cdoq->face_info.meas_min = DBL_MAX;
@@ -944,53 +943,6 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
 
 }
 
-/*----------------------------------------------------------------------------
- * Compute dual face normals (face crossed by primal edges).
- * Given a cell and an edge, there are two faces attached to the
- * couple (cell, edge)
- * The triplet (edge, face, cell) induces an elementary triangle s(e,f,c)
- * The dual face is the union of these two triangles.
- * Storage based on c2e connectivity
- * ---------------------------------------------------------------------------*/
-
-static void
-_define_cell_flag(const cs_cdo_connect_t  *topo,
-                  cs_cdo_quantities_t     *cdoq)
-{
-  assert(topo->cell_type != NULL); /* Sanity check */
-
-  const double  ortho_threshold = 1e-10;
-
-  /* Allocate flag related to each cell */
-  BFT_MALLOC(cdoq->cell_flag, cdoq->n_cells, cs_flag_t);
-  for (cs_lnum_t i = 0; i < cdoq->n_cells; i++)
-    cdoq->cell_flag[i] = 0;
-
-  for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
-
-    if (topo->cell_type[c_id] == FVM_CELL_HEXA) { /* Check if orthogonal */
-
-      double  ortho_crit = 0.;
-      for (cs_lnum_t i = topo->c2f->idx[c_id]; i < topo->c2f->idx[c_id+1];
-           i++) {
-
-        const cs_lnum_t  f_id = topo->c2f->ids[i];
-        const cs_nvec3_t  de_nv = cs_quant_set_dedge_nvec(i, cdoq);
-        const cs_nvec3_t  pf_nv = cs_quant_set_face_nvec(f_id, cdoq);
-
-        ortho_crit += fabs(1 - _dp3(de_nv.unitv, pf_nv.unitv));
-
-      } /* Loop on cell faces */
-
-      if (ortho_crit < ortho_threshold)
-        cdoq->cell_flag[c_id] |= CS_CDO_ORTHO;
-
-    } /* Hexahedron */
-
-  } /* Loop on cells */
-
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1153,9 +1105,6 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
   /* Define cs_quant_info_t structure */
   _compute_quant_info(cdoq);
 
-  /* Define a flag for each cell */
-  _define_cell_flag(topo, cdoq);
-
   /* Monitoring */
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_t  time_count = cs_timer_diff(&t0, &t1);
@@ -1182,7 +1131,6 @@ cs_cdo_quantities_free(cs_cdo_quantities_t   *cdoq)
     return cdoq;
 
   /* Cell-related quantities */
-  BFT_FREE(cdoq->cell_flag);
   if (cs_cdo_quantities_cc_algo != CS_CDO_QUANTITIES_SATURNE_CENTER)
     BFT_FREE(cdoq->cell_centers);
 
@@ -1236,20 +1184,8 @@ cs_cdo_quantities_summary(const cs_cdo_quantities_t  *quant)
     break;
   } /* switch according to cs_cdo_quantities_cc_algo */
 
-  cs_log_printf(CS_LOG_DEFAULT, "\n CDO mesh quantities information:\n");
-
-  /* Information about activated flags */
-  cs_gnum_t  n_ortho_cells = 0;
-  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
-    if (quant->cell_flag[c_id] & CS_CDO_ORTHO)
-      n_ortho_cells += 1;
-  if (cs_glob_n_ranks > 1)
-    cs_parall_sum(1, CS_GNUM_TYPE, &n_ortho_cells);
-
-  cs_log_printf(CS_LOG_DEFAULT,
-                " --cdo-- n_ortho_cells  %9lu\n", n_ortho_cells);
-
   /* Output */
+  cs_log_printf(CS_LOG_DEFAULT, "\n CDO mesh quantities information:\n");
   cs_log_printf(CS_LOG_DEFAULT,
                 " --cdo-- h_cell  %6.4e %6.4e (min/max)\n"
                 " --cdo-- h_face  %6.4e %6.4e (min/max)\n",
