@@ -2373,8 +2373,6 @@ void CS_PROCF (cssca2, CSSCA2) (int        *iturt)
     cs_field_set_key_double(f, kscmax, scal_max);
     int i = cs_field_get_key_int(f, keysca) - 1;
 
-    const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
-    assert(turb_model != NULL);
     if (turb_model->order == CS_TURB_SECOND_ORDER)
       _variable_turbulent_flux_model(tn_v, &(iturt[i]));
 
