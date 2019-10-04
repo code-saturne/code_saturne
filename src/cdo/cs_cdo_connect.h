@@ -77,6 +77,7 @@ typedef struct {
 
   cs_lnum_t          n_vertices;
   cs_lnum_t          n_edges;
+  cs_gnum_t          n_g_edges;
   cs_lnum_t          n_faces[3];  /* 0: all, 1: border, 2: interior */
   cs_lnum_t          n_cells;
 

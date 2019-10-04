@@ -673,29 +673,27 @@ _build_cell_flag(cs_cdo_connect_t   *connect,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Allocate and define a \ref cs_range_set_t structure and a
- *        \ref cs_interface_set_t structure for schemes with DoFs at edges.
+ *        \ref cs_interface_set_t structure for schemes with DoFs at edges
+ *        otherwise set the number of global edges
  *
- * \param[in]       mesh          pointer to a cs_mesh_t structure
- * \param[in]       n_faces       number of faces (interior + border)
- * \param[in]       n_face_dofs   number of DoFs per face
- * \param[in, out]  p_ifs         pointer of  pointer to a cs_interface_set_t
- * \param[in, out]  p_rs          pointer of  pointer to a cs_range_set_t
+ * \param[in]       mesh            pointer to a cs_mesh_t structure
+ * \param[in]       connect         pointer to a cs_cdo_connect_t structure
+ * \param[in]       eb_scheme_flag  metadata for edge-based schemes
+ * \param[in, out]  p_ifs           pointer of pointer to a cs_interface_set_t
+ * \param[in, out]  p_rs            pointer of pointer to a cs_range_set_t
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _assign_edge_ifs_rs(const cs_mesh_t       *mesh,
                     cs_cdo_connect_t      *connect,
-                    int                    stride,
+                    cs_flag_t              eb_scheme_flag,
                     cs_interface_set_t   **p_ifs,
                     cs_range_set_t       **p_rs)
 {
-  assert(stride == 1); /* Up to now, only sscalar-valued edge DoFs are
-                          handled */
-
   const cs_lnum_t  n_edges = connect->n_edges;
-  cs_gnum_t n_g_edges = n_edges;
-  cs_gnum_t *edge_gnum = NULL;
+  cs_gnum_t  n_g_edges = n_edges;
+  cs_gnum_t  *edge_gnum = NULL;
 
   BFT_MALLOC(edge_gnum, n_edges, cs_gnum_t);
 
@@ -704,16 +702,16 @@ _assign_edge_ifs_rs(const cs_mesh_t       *mesh,
     const cs_adjacency_t  *e2v = connect->e2v;
 
     /* Build global edge numbering and edges interface */
+    cs_gnum_t *e2v_gnum = NULL;
+    BFT_MALLOC(e2v_gnum, n_edges*2, cs_gnum_t);
 
-    cs_gnum_t *g_e_vtx = NULL;
-    BFT_MALLOC(g_e_vtx, n_edges*2, cs_gnum_t);
-
+#   pragma omp parallel for if (n_edges > CS_THR_MIN)
     for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++) {
 
-      cs_gnum_t  *v_gids = g_e_vtx + 2*e_id;
+      cs_gnum_t  *v_gids = e2v_gnum + 2*e_id;
       const cs_lnum_t  *_v_ids = e2v->ids + 2*e_id;
-      const cs_gnum_t v0_gid = mesh->global_vtx_num[_v_ids[0]];
-      const cs_gnum_t v1_gid = mesh->global_vtx_num[_v_ids[1]];
+      const cs_gnum_t  v0_gid = mesh->global_vtx_num[_v_ids[0]];
+      const cs_gnum_t  v1_gid = mesh->global_vtx_num[_v_ids[1]];
 
       if (v0_gid < v1_gid)
         v_gids[0] = v0_gid, v_gids[1] = v1_gid;
@@ -722,14 +720,30 @@ _assign_edge_ifs_rs(const cs_mesh_t       *mesh,
 
     } /* Loop on edges */
 
-    fvm_io_num_t *edge_io_num
-      = fvm_io_num_create_from_adj_s(NULL, g_e_vtx, n_edges, 2);
+    cs_lnum_t  *order = NULL;
+    BFT_MALLOC(order, n_edges, cs_lnum_t);
+    cs_order_gnum_allocated_s(NULL, e2v_gnum, 2, order, n_edges);
 
-    BFT_FREE(g_e_vtx);
+    cs_gnum_t  *order_couples = NULL;
+    BFT_MALLOC(order_couples, 2*n_edges, cs_gnum_t);
+#   pragma omp parallel for if (n_edges > CS_THR_MIN)
+    for (cs_lnum_t e = 0; e < n_edges; e++) {
+      const cs_lnum_t  o_id = 2*order[e];
+      order_couples[2*e] = e2v_gnum[o_id];
+      order_couples[2*e+1] = e2v_gnum[o_id+1];
+    }
+
+    fvm_io_num_t *edge_io_num
+      = fvm_io_num_create_from_adj_s(NULL, order_couples, n_edges, 2);
+
+    BFT_FREE(order);
+    BFT_FREE(order_couples);
+    BFT_FREE(e2v_gnum);
 
     const cs_gnum_t *_g_num =  fvm_io_num_get_global_num(edge_io_num);
     memcpy(edge_gnum, _g_num, n_edges*sizeof(cs_gnum_t));
 
+    connect->n_g_edges = fvm_io_num_get_global_count(edge_io_num);
     edge_io_num = fvm_io_num_destroy(edge_io_num);
 
   }
@@ -740,21 +754,28 @@ _assign_edge_ifs_rs(const cs_mesh_t       *mesh,
 
   } /* Sequential or parallel run */
 
+  cs_interface_set_t  *ifs = NULL;
+  cs_range_set_t  *rs = NULL;
+
+  if (eb_scheme_flag > 0) {
+
   /* Do not consider periodicity up to now. Should split the face interface
      into interior and border faces to do this, since only boundary faces
      can be associated to a periodicity */
-  cs_interface_set_t  *ifs = cs_interface_set_create(n_edges,
-                                                     NULL,
-                                                     edge_gnum,
-                                                     mesh->periodicity,
-                                                     0,
-                                                     NULL, NULL, NULL);
+    ifs = cs_interface_set_create(n_edges,
+                                  NULL,
+                                  edge_gnum,
+                                  mesh->periodicity,
+                                  0,
+                                  NULL, NULL, NULL);
 
-  cs_range_set_t  *rs = cs_range_set_create(ifs,   /* interface set */
-                                            NULL,  /* halo */
-                                            n_edges,
-                                            false, /* TODO: Ask Yvan */
-                                            0);    /* g_id_base */
+    rs = cs_range_set_create(ifs,   /* interface set */
+                             NULL,  /* halo */
+                             n_edges,
+                             false, /* TODO: Ask Yvan */
+                             0);    /* g_id_base */
+
+  }
 
   /* Free memory */
   BFT_FREE(edge_gnum);
@@ -1003,6 +1024,7 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
 
   connect->n_vertices = n_vertices;
   connect->n_edges = n_edges;
+  connect->n_g_edges = n_edges;
   connect->n_faces[CS_ALL_FACES] = n_faces;
   connect->n_faces[CS_BND_FACES] = mesh->n_b_faces;
   connect->n_faces[CS_INT_FACES] = mesh->n_i_faces;
@@ -1109,10 +1131,9 @@ cs_cdo_connect_init(cs_mesh_t      *mesh,
                         connect->range_sets + CS_CDO_CONNECT_FACE_VHP2);
 
   /* CDO vertex- or vertex+cell-based schemes for scalar-valued variables */
-  if (eb_scheme_flag > 0)
-    _assign_edge_ifs_rs(mesh, connect, 1,
-                        connect->interfaces + CS_CDO_CONNECT_EDGE_SCAL,
-                        connect->range_sets + CS_CDO_CONNECT_EDGE_SCAL);
+  _assign_edge_ifs_rs(mesh, connect, eb_scheme_flag,
+                      connect->interfaces + CS_CDO_CONNECT_EDGE_SCAL,
+                      connect->range_sets + CS_CDO_CONNECT_EDGE_SCAL);
 
   /* Build the cell type for each cell */
   BFT_MALLOC(connect->cell_type, n_cells, fvm_element_t);
