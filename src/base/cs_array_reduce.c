@@ -1086,7 +1086,7 @@ _cs_real_scatter_norms_1d(cs_lnum_t          n_src_elts,
         double c[3] = {0., 0., 0.};
 
         /* Loop on source elements */
-        for (cs_lnum_t id = start_id; id < end_id; id++) {
+        for (cs_lnum_t id = s_id + start_id; id < s_id + end_id; id++) {
           for (cs_lnum_t j = src2v_idx[id]; j < src2v_idx[id+1]; j++) {
 
             const cs_real_t  val = v[src2v_ids[j]];
@@ -2428,7 +2428,7 @@ _cs_real_scatter_norms_3d_filtered(cs_lnum_t           n_src_elts,
         for (int i = 0; i < 12; i++) c[i] = 0;
 
         /* Loop on source elements */
-        for (cs_lnum_t lid = start_id; lid < end_id; lid++) {
+        for (cs_lnum_t lid = s_id + start_id; lid < s_id + end_id; lid++) {
           const cs_lnum_t  id = _vl[lid];
           for (cs_lnum_t j = src2v_idx[id]; j < src2v_idx[id+1]; j++) {
 
