@@ -140,6 +140,12 @@ typedef struct { /* Specific mesh quantities */
 
   cs_real_t        *dedge_vector;   /* Allocation to 3*c2f->idx[n_faces] */
 
+  cs_real_t        *pvol_fc;        /* Portion of volume surrounding a face
+                                     * in each cell. This is a pyramid of
+                                     * base the face and apex the cell center
+                                     * Scanned with the c2f adjacency.
+                                     * Not always allocated.
+                                     */
   cs_quant_info_t   face_info;
 
   /* Edge-based quantities */
@@ -153,6 +159,11 @@ typedef struct { /* Specific mesh quantities */
                                        distance between two vertices.
                                        Unit vector is the tangential direction
                                        attached to the edge */
+  cs_real_t        *pvol_ec;        /* Portion of volume surrounding an edge
+                                     * in each cell. Scanned with the c2e
+                                     * adjacency.
+                                     * Not always allocated.
+                                     */
 
   /* For each edge e belonging to a cell c, two contributions coming from 2
      triangles  s(x_c, x_f, x_e) for a face f in Face_e are considered.
@@ -170,7 +181,9 @@ typedef struct { /* Specific mesh quantities */
   cs_gnum_t         n_g_vertices;    /* Global number of vertices */
 
   cs_real_t        *dcell_vol;       /* Dual volume related to each vertex.
-                                        Scan with the c2v connectivity */
+                                      * Scanned with the c2v adjacency.
+                                      * Not always allocated.
+                                      */
   const cs_real_t  *vtx_coord;       /* Shared with the cs_mesh_t structure */
 
 } cs_cdo_quantities_t;
@@ -222,11 +235,18 @@ cs_cdo_quantities_set_algo_ccenter(cs_cdo_quantities_algo_ccenter_t   algo);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Build a cs_cdo_quantities_t structure
+ * \brief Build a cs_cdo_quantities_t structure. Some quantities are shared
+ *        with the \ref cs_mesh_quantities_t structure and other are not
+ *        built according to the given scheme flags.
  *
- * \param[in]  m           pointer to a cs_mesh_t structure
- * \param[in]  mq          pointer to a cs_mesh_quantities_t structure
- * \param[in]  topo        pointer to a cs_cdo_connect_t structure
+ * \param[in]  m                 pointer to a cs_mesh_t structure
+ * \param[in]  mq                pointer to a cs_mesh_quantities_t structure
+ * \param[in]  topo              pointer to a cs_cdo_connect_t structure
+ * \param[in]  eb_scheme_flag    metadata for Edge-based schemes
+ * \param[in]  fb_scheme_flag    metadata for Face-based schemes
+ * \param[in]  vb_scheme_flag    metadata for Vertex-based schemes
+ * \param[in]  vcb_scheme_flag   metadata for Vertex+Cell-based schemes
+ * \param[in]  hho_scheme_flag   metadata for HHO schemes
  *
  * \return  a new allocated pointer to a cs_cdo_quantities_t structure
  */
@@ -235,7 +255,12 @@ cs_cdo_quantities_set_algo_ccenter(cs_cdo_quantities_algo_ccenter_t   algo);
 cs_cdo_quantities_t *
 cs_cdo_quantities_build(const cs_mesh_t             *m,
                         const cs_mesh_quantities_t  *mq,
-                        const cs_cdo_connect_t      *topo);
+                        const cs_cdo_connect_t      *topo,
+                        cs_flag_t                    eb_scheme_flag,
+                        cs_flag_t                    fb_scheme_flag,
+                        cs_flag_t                    vb_scheme_flag,
+                        cs_flag_t                    vcb_scheme_flag,
+                        cs_flag_t                    hho_scheme_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!

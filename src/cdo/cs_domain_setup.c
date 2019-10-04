@@ -543,9 +543,14 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
                                         cc->hho_scheme_flag);
 
   /* Build additional mesh quantities in a separate structure */
-  domain->cdo_quantities =  cs_cdo_quantities_build(domain->mesh,
-                                                    domain->mesh_quantities,
-                                                    domain->connect);
+  domain->cdo_quantities = cs_cdo_quantities_build(domain->mesh,
+                                                   domain->mesh_quantities,
+                                                   domain->connect,
+                                                   cc->eb_scheme_flag,
+                                                   cc->fb_scheme_flag,
+                                                   cc->vb_scheme_flag,
+                                                   cc->vcb_scheme_flag,
+                                                   cc->hho_scheme_flag);
 
   /* Shared main generic structure
      Avoid the declaration of global variables by sharing pointers */
