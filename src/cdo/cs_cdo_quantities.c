@@ -777,12 +777,9 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
   assert(connect->f2c != NULL);
   assert(connect->c2f != NULL);
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < n_cells; i++) {
-    quant->cell_vol[i] = 0.0;
-    for (int k = 0; k < 3; k++)
-      quant->cell_centers[3*i+k] = 0.0;
-  }
+# pragma omp parallel for if (3*n_cells > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < 3*n_cells; i++)
+    quant->cell_centers[i] = 0.0;
 
   for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++) {   /* Loop on faces */
 
@@ -797,8 +794,7 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
     cs_lnum_t  C = fspec.XYZ[Z];
 
     _cdo_fsubq_t  fsubq = _get_fsub_quantities(f_id,
-                                               connect,
-                                               quant->vtx_coord,
+                                               connect, quant->vtx_coord,
                                                fspec);
 
     /* Update cell quantities */
@@ -807,10 +803,7 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
 
       const cs_lnum_t  c_id = f2c->ids[i];
       const short int  sgn = f2c->sgn[i];
-      const double Fvol = ( (fspec.XYZ[X] == 0) ? fsubq.Fa :
-                            ( (fspec.XYZ[Y] == 0) ? fsubq.Fb : fsubq.Fc) );
 
-      quant->cell_vol[c_id] += sgn * fspec.q.unitv[0] * Fvol;
       quant->cell_centers[3*c_id + A] += sgn * fspec.q.unitv[A] * fsubq.Fa2;
       quant->cell_centers[3*c_id + B] += sgn * fspec.q.unitv[B] * fsubq.Fb2;
       quant->cell_centers[3*c_id + C] += sgn * fspec.q.unitv[C] * fsubq.Fc2;
@@ -950,17 +943,15 @@ cs_cdo_quantities_build(const cs_mesh_t              *m,
   cdoq->n_g_vertices = m->n_g_vertices;
   cdoq->vtx_coord = m->vtx_coord;
 
-  /* Compute cell centers and cell volumes */
+  /* Retrieve the cell volume */
+  cdoq->cell_vol = mq->cell_vol;
+
+  /* Compute the cell centers */
   BFT_MALLOC(cdoq->cell_centers, 3*n_cells, cs_real_t);
-  BFT_MALLOC(cdoq->cell_vol, n_cells, cs_real_t);
 
   switch (cs_cdo_quantities_cc_algo) {
 
   case CS_CDO_QUANTITIES_MEANV_CENTER:
-    /* Copy cell volumes */
-    memcpy(cdoq->cell_vol, mq->cell_vol, n_cells*sizeof(cs_real_t));
-
-    /* Compute the cell center */
     _vtx_algorithm(topo, cdoq);
     break;
 
@@ -971,9 +962,8 @@ cs_cdo_quantities_build(const cs_mesh_t              *m,
 
 
   case CS_CDO_QUANTITIES_SATURNE_CENTER:
-    /* Copy cell volumes and cell centers */
-    memcpy(cdoq->cell_centers, mq->cell_cen, 3*n_cells*sizeof(cs_real_t));
-    memcpy(cdoq->cell_vol, mq->cell_vol, n_cells*sizeof(cs_real_t));
+    /* Copy cell centers */
+    cdoq->cell_centers = mq->cell_cen;
     break;
 
   default:
@@ -1125,9 +1115,9 @@ cs_cdo_quantities_free(cs_cdo_quantities_t   *q)
     return q;
 
   /* Cell-related quantities */
-  BFT_FREE(q->cell_centers);
-  BFT_FREE(q->cell_vol);
   BFT_FREE(q->cell_flag);
+  if (cs_cdo_quantities_cc_algo != CS_CDO_QUANTITIES_SATURNE_CENTER)
+    BFT_FREE(q->cell_centers);
 
   /* Face-related quantities */
   BFT_FREE(q->dedge_vector);
