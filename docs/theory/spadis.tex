@@ -105,7 +105,7 @@ which means that $\vect{S}_\ij$ is oriented from $\celli$ toward $\cellj$.
 
 Then $\varia_{\centf}$ is expressed as an average of the degree of freedom, which are for the interface $\fij$ the value of $\varia_\celli$
 and $\varia_\cellj$ but also the gradients in these cells. The use of gradients to reach an higher order in space is called \emph{reconstruction}
-in the coming sections. The detailed computation of $\int_{\vol{\celli}} \divv \left( \varia \tens{1}\right) \dd \Omega $ is given in
+in the following sections. The detailed computation of $\int_{\vol{\celli}} \divv \left( \varia \tens{1}\right) \dd \Omega $ is given in
  \S~\ref{sec:spadis:iteratif_gradient}.
 %
 \nomenclature[rpij]{$P_{\fij}$}{average of the pressure field on the interface between the neighbouring cells $\celli$ and $\cellj$ \nomunit{$Pa$}}
@@ -126,7 +126,7 @@ in the coming sections. The detailed computation of $\int_{\vol{\celli}} \divv \
 \displaystyle \int_{\vol{\celli}} \der{\rho \varia}{t} + \dive \left( \varia \rho \vect{u} \right)  \dd \vol{},
 \end{array}
  \end{equation}
-the second line is obtained using Green relation.
+the second line is obtained using Green's relation.
 
 Moreover, the unsteady and convection terms are usually written in a \emph{non-conservative} form that is in continuous formalism:
 \begin{equation}\label{eq:spadis:non_conservative}
@@ -145,7 +145,7 @@ Moreover, the unsteady and convection terms are usually written in a \emph{non-c
 \displaystyle \sum_{\face \in \Face{\celli}} \left(\varia_\face - \varia_\celli \right) \left(\rho \vect{u}\right)_\face \cdot \vect{S}_{\iface},
  \end{array}
  \end{equation}
-the second line is obtained using once again Green relation. In formula \eqref{eq:spadis:convection_def}, one still has to express the face value
+the second line is obtained using once again Green's formula. In formula \eqref{eq:spadis:convection_def}, one still has to express the face value
  $\varia_\face$ and also the value of the mass flux $\left(\rho \vect{u}\right)_\face\cdot \vect{S}_{\iface}$: all the available convective schemes (\emph{upwind, centred, SOLU, etc.}) are presented in \S~\ref{sec:spadis:convection}. Let $\dot{m}_\iface$ be the outgoing
  mass flux from cell $\celli$ through the face $\face$:
  %
@@ -201,7 +201,7 @@ quantities which will be used during the approximation process of linking face f
 cell centred quantities.
 % fa modification : reconstruction is compulsory for consistence
 For consistency and to reach a higher order in space, the values of the
-variables at points $\centip$ and $\centjp$ have to be used.
+variables at points $\centip$ and $\centjp$ are used.
 These points are respectively the projection of the centres $\centi$ and $\centj$
 along the orthogonal line to the interior face $\fij$ passing through $\centf$.
 When considering a boundary face $\fib$, $\centip$ is defined as the projection of $\centi$
@@ -273,13 +273,12 @@ numerical fluxes $C_\ij \left( \dot{m}_\ij , \, \varia \right)$ calculated at th
  and the numerical fluxes $C_\ib \left( \dot{m}_\ib , \, \varia \right)$ calculated at the
 boundary faces of the computational domain $\Omega$ defined by Equation~\eqref{eq:spadis:convection_flux}.
 
-Note that $C_\ib \left( \dot{m}_\ib , \, \varia \right)$ makes appear the boundary conditions of the field $\varia$
+Note that $C_\ib \left( \dot{m}_\ib , \, \varia \right)$ involves the boundary conditions of the field $\varia$
  and are described in detail in \chaptername~\ref{chapter:bndcnd}. The value of $\varia_\fib$ is expressed as follows:
  %
 \begin{equation}%TODO use recall
 \varia_\fib \equiv A_\fib^g + B_\fib^g \varia_\centip.
 \end{equation}
-
 
 The value of the convective flux $ C_\ij \left(\dot{m}_\fij , \, \varia \right) $ depends on the numerical scheme. Three different types of convection schemes are available in \CS.
 
@@ -371,7 +370,7 @@ numerical fluxes $D_\ij \left( K_\fij , \, \varia \right)$ calculated at the int
  and the numerical fluxes $D_\ib \left( K_\fib , \, \varia \right)$ calculated at the
 boundary faces of the computational domain $\Omega$ defined by Equation~\eqref{eq:spadis:diffusion_flux}.
 
-Note that $D_\ib \left( K_\fib , \, \varia \right)$ makes appear the \textbf{diffusion} boundary conditions of the field $\varia$
+Note that $D_\ib \left( K_\fib , \, \varia \right)$ includes the \textbf{diffusion} boundary conditions of the field $\varia$
  and are described in detail in \chaptername~\ref{chapter:bndcnd}. The value of the flux $D_\ib $ of $\varia_\fib$ is expressed as follows:
  %
 \begin{equation}\label{eq:spadis:boundary_flux}%TODO use recall
@@ -411,7 +410,7 @@ D_\ij^{Rec} \left( K_\fij , \, \varia \right)  =  - \dfrac{K_\fij \norm{\vect{S}
 \end{equation}
 
 \begin{remark}
-In fact, it is actually written that
+In fact, it is actually written as
 %
 \begin{equation}
 \begin{array}{r c l}
@@ -431,7 +430,7 @@ The factor $ \frac{1}{2}$ is used for numerical stability reasons.
 \hypertarget{gradreco}{}
 
 The aim of the present section is to describe the algorithms available in \CS
-to compute cell gradient for scalar or vector fields. The first one uses an
+to compute the cell gradient for scalar or vector fields. The first one uses an
 iterative process to handle with non-orthogonalities. It is robust but requires
 computational effort. The second one, the least square method, minimizes a
 function. It is quick, but less accurate.
@@ -553,7 +552,7 @@ Bringing $\grad_\celli \varia$ terms all together on the left hand side, we have
 \end{equation}
 
 \subsubsection{Without reconstruction}
-On an orthogonal mesh, or if chosen, only $0^{th}$-order contributions are considered.
+On an orthogonal mesh, or if this option is chosen, only $0^{th}$-order contributions are considered.
 Everything is as if
 $\vect{\centi \centip} = \vect{0}$ and $\vect{\cento \centf} = \vect{0}$ in the previous calculation:
 \begin{equation}\notag
@@ -705,9 +704,9 @@ with:
 \end{array}\right.
 \end{equation}
 
-The invert of the matrix $\tens{C}_{\celli}$ is used to compute $\left( \delta \grad_\celli^{k+1} \varia \right)$
-and so $\left( \grad^{k+1}_{\celli} \varia \right)$. The iterative process stops as soon as the Euclidean norm of the right-hand-side $\vect{R}^{k+1}_{\celli}$ tends toward zero (\emph{i.e.} when the Euclidean norm
-of $\left( \delta \grad^{k}_{\celli} \varia \right)$ tends to zero) or when the number of iterations reaches the maximal number of iterations.
+The inverse of the matrix $\tens{C}_{\celli}$ is used to compute $\left( \delta \grad_\celli^{k+1} \varia \right)$
+and so $\left( \grad^{k+1}_{\celli} \varia \right)$. The iterative process stops as soon as the Euclidean norm of the right-hand-side $\vect{R}^{k+1}_{\celli}$ becomes smaller than a chosen threshold (\emph{i.e.} when the Euclidean norm
+of $\left( \delta \grad^{k}_{\celli} \varia \right)$ falls under a threshold) or when the number of iterations reaches the maximal number of iterations.
 
 %-------------------------------------------------------------------------------
 \subsection{Standard method: iterative process for vectorial fields}\label{sec:spadis:iteratif_gradient_vectors}
@@ -752,8 +751,7 @@ The same Taylor series as \eqref{eq:compute_gradrc1} of $\gradt_{\celli} \variav
 \end{equation}
 
 Once again, the variable $\epsilon_{\delta \variav}$ is set to $0$ for an increment of a variable,
- to $1$ for the variable itself in order to take
-correctly the boundary condition into account.
+ to $1$ for the variable itself in order to correctly account for the boundary condition.
 
 The same $1^{st}$-order in space approximation as in the scalar gradient calculation is used:
 \begin{equation*}
@@ -865,10 +863,10 @@ with:
 
 \begin{remark}
 Note that the matrix $\tens{C}_{\celli}$ in \eqref{eq:eq_second_membre_gradrv} is not the same as in \eqref{eq:eq_second_membre_gradrc}. First of all,
-there is no boundary term and thus its invert has not to be recomputed at each iteration (except if the mesh is modified). This matrix thus  only
+there is no boundary term and thus its inverse does not need  to be recomputed at each iteration (except if the mesh is modified). This matrix thus  only
 measures the quality of the mesh (if the mesh is orthogonal, $\tens{C}_{\celli} = \tens{1}$ for all cells).
 Secondly, this matrix is dimensionless, whereas in \eqref{eq:eq_second_membre_gradrc} $\tens{C}_\celli$ has the dimension of a volume. This choice has
-been motivated to minimize truncature errors.
+been motivated to minimize truncation errors.
 \end{remark}
 
 %-------------------------------------------------------------------------------
@@ -878,12 +876,12 @@ Notations of the geometrical quantities are recalled in \figurename~\ref{fig:geo
 The aim of the present algorithm is to compute the cell gradient $\grad_{\celli} \varia $ of the scalar field $\varia$
 using a least square method.
 The idea is to evaluate the gradient of the variable at the cell faces using the value of the gradient at the cell centres.
-The method is supposed to be not as robust as the \emph{iterative} process presented in \S~\ref{sec:spadis:iteratif_gradient},
+The method is not expected to be as robust as the \emph{iterative} process presented in \S~\ref{sec:spadis:iteratif_gradient},
 but much more efficient.
 
-Let introduce $\grad_\fij \varia \cdot \vect{d}_\ij$  an estimation at the internal face $\fij$
+Let us introduce $\grad_\fij \varia \cdot \vect{d}_\ij$  an estimation at the internal face $\fij$
 of the gradient projected in the direction $\vect{d}_{ij}$ (which will be chosen afterwards).
-Let also define the analogous quantity for boundary faces $\fib$: $\grad_\fib \varia \cdot \vect{d}_\ib$
+Let us also define the analogous quantity for boundary faces $\fib$: $\grad_\fib \varia \cdot \vect{d}_\ib$
  ($\vect{d}_\ib$ will also be chosen afterwards).
 
 The goal would be to find $\grad_{\celli} \varia $ such that, for all faces
@@ -908,7 +906,7 @@ problem is reformulated as the minimisation of the $\mathcal{F}_\celli$ function
  \variav   \cdot \vect{d}_\ib  -  \grad_{\fib} \varia   \cdot \vect{d}_\ib
 \right]^2,
 \end{equation}
-where $\cellj \in \Neigh{\celli} $ is the neighbouring of the cell $\celli$. By default, the neighbouring is composed of
+where $\cellj \in \Neigh{\celli} $ is the neighbourhood of the cell $\celli$. By default, the neighbourhood is composed of
 cells which share at least a face with $\celli$. But \emph{extended} neighbouring can be used.
 
 To minimize $\mathcal{F}_\celli$, derivatives with respect to the components of the
@@ -918,7 +916,7 @@ as $\variav_{\min}$ such that $\mathcal{F}_\celli \left( \variav_{\min}\right)$ 
 In order to solve the systems for each cell $\celli$ separately from one to an other,
 vectors $\vect{d}_\ij$ and $\vect{d}_\ib$ are chosen so that the quantities
 $\grad_{\fij} \varia   \cdot \vect{d}_\ij $ and $\grad_{\fib} \varia   \cdot \vect{d}_\ib $
-do not depend on neighbouring  cell gradients  $\grad_{\cellj} \varia $.
+do not depend on neighbour cell gradients  $\grad_{\cellj} \varia $.
 The following choice makes it possible:
 \begin{equation}\label{eq:spadis:gradmc_scalar_d_choice}
 \begin{array}{r c l}
@@ -958,7 +956,7 @@ A^g_\fib +\left(B^g_\fib -1 \right) \left( \varia_\celli +  \grad_\celli \varia 
 },
 \end{equation}
 
-Equation \eqref{eq:spadis:gradmc_bound_gradient} makes appear a term in $\grad_\celli \varia$
+Equation \eqref{eq:spadis:gradmc_bound_gradient} contains a term in $\grad_\celli \varia$
 and thus should be injected into Equation
 \eqref{eq:spadis:gradmc_function} before deriving it. Thus \eqref{eq:spadis:gradmc_function} becomes:
 \begin{equation}\label{eq:spadis:gradmc_function2}
@@ -1016,7 +1014,7 @@ A^g_\fib +\left(B^g_\fib -1 \right) \varia_\celli
 
 
 A $3\times 3$ system for each cell $\celli$
-is got by writing  $\der{\mathcal{F}_\celli}{\variav }
+is obtained by writing  $\der{\mathcal{F}_\celli}{\variav }
 \left( \grad_\celli \varia \right)= \vect{0}$:
 %
 \begin{equation}\label{eq:spadis:gradmc_matrix}
@@ -1085,18 +1083,18 @@ A^g_\fib +\left(B^g_\fib -1 \right) \varia_\celli
 \begin{enumerate}[ label=\roman{*}/, ref=(\roman{*})]
 \item Note that the $3\times3$ $\tens{C}_\celli$ tensor is symmetric.
 \item For cells $\celli$ having at least a boundary face $\fib$, the tensor $\tens{C}_\celli$ must be recomputed at each time step,
-for the other, the tensor $\tens{C}_\celli$ only have to be recomputed when the mesh is updated (in ALE for instance).
+for the other, the tensor $\tens{C}_\celli$ only needs to be recomputed when the mesh is updated (in ALE for instance).
 \item If the user chooses not to reconstruct the gradients (which introduces a lack of consistency on non-orthogonal meshes),
 then the gradient is computed thanks to formula \eqref{eq:spadis:gradrc_nonrecontruit}.
-\item For highly non-orthogonal meshes, an extended support\footnote{
-the support is the set of neighbouring cells used in the cell gradient computation.
+\item For highly non-orthogonal meshes, an extended stencil\footnote{
+the stencil is the set of neighbour cells used in the cell gradient computation.
 } can be used (see different support in \figurename~\ref{fig:spadis:gradmc_support}) and can drastically improve the results when using tetrahedral meshes.
 \end{enumerate}
 \end{remark}
 
 \begin{figure}[!htp]
 \centerline{\includegraphics[height=8cm]{support}}
-\caption{Available supports for computing the gradient with the least square method.\label{fig:spadis:gradmc_support}}
+\caption{Available stencils for computing the gradient with the least square method.\label{fig:spadis:gradmc_support}}
 \end{figure}
 
 
@@ -1155,7 +1153,7 @@ $\mathcal{F}_\celli \left( \variat \right)$ with respect to the $ \variat$ compo
 
 
 A $3\times 3$ system for each cell $\celli$
-is got by writing  $\der{\mathcal{F}_\celli}{\variat }
+is obtained by writing  $\der{\mathcal{F}_\celli}{\variat }
 \left( \gradt_\celli \variav \right)= \tens{0}$:
 %
 \begin{equation}\label{eq:spadis:gradmv_matrix}
@@ -1191,17 +1189,10 @@ with
 \end{equation}
 %
 
-
 \begin{remark}
 Note that the $3\times3$ $\tens{C}_\celli$ tensor is  slightly different from \eqref{eq:spadis:gradmc_matrix} and does not depend
  on boundary condition coefficients (and thus does not require re-computation if the mesh is not modified).
 \end{remark}
-
-
-
-
-
-
 
 %-------------------------------------------------------------------------------
 \section{Advanced topic}
@@ -1227,6 +1218,4 @@ reference of the dedicated keyword \texttt{iphydr}}.
 
 Please refer to the \doxygenanchor{structcs__var__cal__opt__t.html\#extrag}{programmers
 reference of the dedicated keyword \texttt{extrag}}.
-
-
 

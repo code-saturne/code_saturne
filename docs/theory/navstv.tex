@@ -24,7 +24,7 @@
 
 \hypertarget{navstv}{}
 
-Consideration is given to solving the non-stationary, pressure-based,
+Consideration is given to solving the unsteady, pressure-based,
 single-phase, three-dimensional Navier-Stokes system of equations for
 incompressible or weakly compressible flows based on first-order implicit
 Euler or second-order Crank-Nicolson time discretization with collocated
@@ -200,7 +200,7 @@ $n+\theta_F$, with $\theta_\Phi$ and $\theta_F$ being dependent on the
 specific time-stepping schemes employed for these
 quantities\footnote{cf. \fort{introd}}.
 
-After rewriting the non-stationary terms based on the mass conservation relation,
+After rewriting the unsteady terms based on the mass conservation relation,
 we solve the following system:
 \begin{equation}
 \displaystyle
@@ -217,7 +217,7 @@ with:
 
 \subsubsection*{\bf Pressure correction step (or projection of velocities)}
 The predicted velocity has \emph{a priori} non-zero divergence. The second step
-corrects the pressure by imposing the nullity of the stationary constraint for
+corrects the pressure by imposing the nullity of the steady constraint for
 the velocity computed at time instant ${t^{n+1}}$.
 We then solve:
 \begin{equation}\label{eq:navstv:c0_correction_step}
@@ -501,7 +501,7 @@ Applying the divergence of the first equation of the system
 =\dive(-\Delta t\, \grad  \delta P^{n+\theta})
 \end{equation}
 
-By applying the stationary constraint $\dive(\rho\vect{u})^{n+1}=\Gamma$,
+By applying the steady constraint $\dive(\rho\vect{u})^{n+1}=\Gamma$,
 this becomes:
 
 \begin{equation}

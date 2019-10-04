@@ -217,7 +217,7 @@ else
   vcopt%istat = 0
 endif
 
-! VoF algorithm: activate the weightening for the pressure
+! VoF algorithm: activate the weighting for the pressure
 if (ivofmt.gt.0) vcopt%iwgrec = 1
 
 call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)

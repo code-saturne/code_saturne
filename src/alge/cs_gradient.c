@@ -1801,8 +1801,8 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
           jj = i_face_cells[face_id][1];
 
           cs_real_t ktpond = (c_weight == NULL) ?
-             weight[face_id] :              /* no cell weightening */
-             weight[face_id] * c_weight[ii] /* cell weightening active */
+             weight[face_id] :              /* no cell weighting */
+             weight[face_id] * c_weight[ii] /* cell weighting active */
                / (      weight[face_id] * c_weight[ii]
                  + (1.0-weight[face_id])* c_weight[jj]);
 
@@ -1913,8 +1913,8 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
           jj = i_face_cells[face_id][1];
 
           cs_real_t ktpond = (c_weight == NULL) ?
-             weight[face_id] :              /* no cell weightening */
-             weight[face_id] * c_weight[ii] /* cell weightening active */
+             weight[face_id] :              /* no cell weighting */
+             weight[face_id] * c_weight[ii] /* cell weighting active */
                / (      weight[face_id] * c_weight[ii]
                  + (1.0-weight[face_id])* c_weight[jj]);
 
@@ -2880,7 +2880,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
               for (cs_lnum_t ll = 0; ll < 3; ll++)
                 rhsv[jj][ll] += c_weight[ii] * denom * fctb[ll];
           }
-          else { // no cell weightening
+          else { // no cell weighting
             for (cs_lnum_t ll = 0; ll < 3; ll++)
               rhsv[ii][ll] += fctb[ll];
 
@@ -3619,8 +3619,8 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
         pond = weight[face_id];
 
         cs_real_t ktpond = (c_weight == NULL) ?
-          pond :                    // no cell weightening
-          pond * c_weight[cell_id1] // cell weightening active
+          pond :                    // no cell weighting
+          pond * c_weight[cell_id1] // cell weighting active
             / (      pond * c_weight[cell_id1]
               + (1.0-pond)* c_weight[cell_id2]);
 
@@ -4030,8 +4030,8 @@ _iterative_vector_gradient(const cs_mesh_t              *m,
             pond = weight[face_id];
 
             cs_real_t ktpond = (c_weight == NULL) ?
-              pond :                     // no cell weightening
-              pond  * c_weight[cell_id1] // cell weightening active
+              pond :                     // no cell weighting
+              pond  * c_weight[cell_id1] // cell weighting active
                 / (      pond  * c_weight[cell_id1]
                   + (1.0-pond) * c_weight[cell_id2]);
 
