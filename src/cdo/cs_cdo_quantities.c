@@ -408,15 +408,30 @@ _get_fsub_quantities(cs_lnum_t                 f_id,
  *         - Dual edges (segment between x_f and x_c and scanned with c2f
  *           adjacency
  *
- * \param[in]      topo     pointer to a cs_cdo_connect_t structure
- * \param[in, out] cdoq     pointer to cs_cdo_quantities_t structure
+ * \param[in]      topo              pointer to a cs_cdo_connect_t structure
+ * \param[in, out] cdoq              pointer to cs_cdo_quantities_t structure
+ * \param[in]      eb_scheme_flag    metadata for Edge-based schemes
+ * \param[in]      fb_scheme_flag    metadata for Face-based schemes
+ * \param[in]      vb_scheme_flag    metadata for Vertex-based schemes
+ * \param[in]      vcb_scheme_flag   metadata for Vertex+Cell-based schemes
+ * \param[in]      hho_scheme_flag   metadata for HHO schemes
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _compute_face_based_quantities(const cs_cdo_connect_t  *topo,
-                               cs_cdo_quantities_t     *cdoq)
+                               cs_cdo_quantities_t     *cdoq,
+                               cs_flag_t                eb_scheme_flag,
+                               cs_flag_t                fb_scheme_flag,
+                               cs_flag_t                vb_scheme_flag,
+                               cs_flag_t                vcb_scheme_flag,
+                               cs_flag_t                hho_scheme_flag)
 {
+  /* Parameters not used up to now */
+  CS_UNUSED(eb_scheme_flag);
+  CS_UNUSED(vb_scheme_flag);
+  CS_UNUSED(vcb_scheme_flag);
+
   /* Compute dual edge quantities */
   const cs_lnum_t  n_cells = cdoq->n_cells;
   const cs_adjacency_t  *c2f = topo->c2f;
@@ -443,6 +458,9 @@ _compute_face_based_quantities(const cs_cdo_connect_t  *topo,
 
   } /* End of loop on cells */
 
+  /* Compute the volume of the pyramid */
+  if (fb_scheme_flag > 0 || hho_scheme_flag > 0)
+    cs_cdo_quantities_compute_pvol_fc(cdoq, topo->c2f, &(cdoq->pvol_fc));
 }
 
 /*----------------------------------------------------------------------------*/
@@ -474,11 +492,15 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
                                cs_flag_t                hho_scheme_flag)
 
 {
-  const int n_edges = quant->n_edges;
+  /* Unused parameters up to now */
+  CS_UNUSED(fb_scheme_flag);
+  CS_UNUSED(hho_scheme_flag);
 
   /* Sanity check */
   assert(topo->e2v != NULL);
   assert(topo->f2e != NULL && topo->f2c != NULL && topo->c2e != NULL);
+
+  const int n_edges = quant->n_edges;
 
   cs_real_t  *edge_center = NULL;
 
@@ -518,6 +540,7 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
   /* Allocate and initialize array */
   if (eb_scheme_flag > 0 || vb_scheme_flag > 0 || vcb_scheme_flag > 0) {
 
+    /* Compute the two vector areas composing each dual face  */
     BFT_MALLOC(quant->sface_normal,
                6*topo->c2e->idx[quant->n_cells], cs_real_t);
 
@@ -641,6 +664,11 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
     } /* End of OpenMP block */
 
     BFT_FREE(parent_thread_array);
+
+    /* Compute the two vector areas composing each dual face. This operation
+     * should be done after the computation of sface since one needs these
+     * quantities */
+    cs_cdo_quantities_compute_pvol_ec(quant, topo->c2e, &(quant->pvol_ec));
 
   } /* Test scheme flag */
 
@@ -1076,7 +1104,13 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
   /* Face-related quantities */
   /* ----------------------- */
 
-  _compute_face_based_quantities(topo, cdoq);
+  _compute_face_based_quantities(topo,
+                                 cdoq,
+                                 eb_scheme_flag,
+                                 fb_scheme_flag,
+                                 vb_scheme_flag,
+                                 vcb_scheme_flag,
+                                 hho_scheme_flag);
 
   /* 3) Define specific quantities */
   /*    ========================== */
@@ -1316,6 +1350,7 @@ cs_cdo_quantities_compute_pvol_fc(const cs_cdo_quantities_t    *cdoq,
   memset(pvol_fc, 0, c2f->idx[n_cells]*sizeof(cs_real_t));
 #endif
 
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
     for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
 
@@ -1369,6 +1404,7 @@ cs_cdo_quantities_compute_pvol_ec(const cs_cdo_quantities_t   *cdoq,
   memset(pvol_ec, 0, c2e->idx[n_cells]*sizeof(cs_real_t));
 #endif
 
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
     const cs_lnum_t  start = c2e->idx[c_id];
