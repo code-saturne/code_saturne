@@ -676,8 +676,8 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
 
             /* TODO: Are all these flags really necessary? Check in the */
             /* integration */
-            msh_flag |= CS_FLAG_COMP_EV  |CS_FLAG_COMP_EF |CS_FLAG_COMP_PFQ |
-                        CS_FLAG_COMP_FEQ |CS_FLAG_COMP_HFQ|CS_FLAG_COMP_PEQ |
+            msh_flag |= CS_FLAG_COMP_EV  |CS_FLAG_COMP_EF | CS_FLAG_COMP_PFQ |
+                        CS_FLAG_COMP_FEQ |CS_FLAG_COMP_HFQ| CS_FLAG_COMP_PEQ |
                         CS_FLAG_COMP_FE;
             compute_source[st_id] = cs_source_term_pcvd_by_analytic;
 
@@ -693,8 +693,8 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
 
             /* TODO: Are all these flags really necessary? Check in the */
             /* integration */
-            msh_flag |= CS_FLAG_COMP_EV  |CS_FLAG_COMP_EF |CS_FLAG_COMP_PFQ |
-                        CS_FLAG_COMP_FEQ |CS_FLAG_COMP_HFQ|CS_FLAG_COMP_PEQ |
+            msh_flag |= CS_FLAG_COMP_EV  |CS_FLAG_COMP_EF | CS_FLAG_COMP_PFQ |
+                        CS_FLAG_COMP_FEQ |CS_FLAG_COMP_HFQ| CS_FLAG_COMP_PEQ |
                         CS_FLAG_COMP_FE;
             compute_source[st_id] = cs_source_term_pcsd_by_analytic;
 

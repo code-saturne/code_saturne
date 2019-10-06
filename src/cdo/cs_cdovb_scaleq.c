@@ -988,7 +988,8 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  " Invalid advection scheme for vertex-based discretization");
+                  " %s: Invalid advection scheme for vertex-based schemes",
+                  __func__);
       } /* Scheme */
       break; /* Formulation */
 
@@ -1011,13 +1012,15 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
       default:
         bft_error(__FILE__, __LINE__, 0,
-                  " Invalid advection scheme for vertex-based discretization");
+                  " %s: Invalid advection scheme for vertex-based scheme",
+                  __func__);
       } /* Scheme */
       break; /* Formulation */
 
     default:
       bft_error(__FILE__, __LINE__, 0,
-                " Invalid type of formulation for the advection term");
+                " %s: Invalid type of formulation for the advection term",
+                __func__);
     }
 
     /* Boundary conditions for advection */
