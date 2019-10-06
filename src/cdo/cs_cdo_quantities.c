@@ -564,36 +564,30 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
       short int  *parent = parent_thread_array[t_id];
       BFT_MALLOC(parent, topo->n_max_ebyc, short int);
 
-#   pragma omp for CS_CDO_OMP_SCHEDULE
+#     pragma omp for CS_CDO_OMP_SCHEDULE
       for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
         const cs_lnum_t  *c2e_idx = topo->c2e->idx + c_id;
         const cs_lnum_t  *c2e_ids = topo->c2e->ids + c2e_idx[0];
         const short int  n_ec = c2e_idx[1] - c2e_idx[0];
 
-        /* Get cell center */
-        const cs_real_t  *xc = quant->cell_centers + 3*c_id;
-
         /* Initialize parent array */
         for (short int e = 0; e < n_ec; e++) parent[e] = 0;
+
+        /* Get cell center */
+        const cs_real_t  *xc = quant->cell_centers + 3*c_id;
 
         for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
           const cs_lnum_t  f_id = c2f->ids[i];
 
           /* Compute xf -> xc */
-          cs_real_3_t  xfxc;
-
-          if (f_id < quant->n_i_faces) {
-            for (int k = 0; k < 3; k++)
-              xfxc[k] = quant->i_face_center[3*f_id+k] - xc[k];
-          }
-          else {
-            const cs_lnum_t  bf_id = f_id - quant->n_i_faces;
-            CS_CDO_OMP_ASSERT(bf_id > -1);
-            for (int k = 0; k < 3; k++)
-              xfxc[k] = quant->b_face_center[3*bf_id+k] - xc[k];
-          }
+          const cs_real_t  *xf = (f_id < quant->n_i_faces) ?
+            quant->i_face_center + 3* f_id :
+            quant->b_face_center + 3*(f_id - quant->n_i_faces);
+          const cs_real_3_t  xfxc = { xf[0] - xc[0],
+                                      xf[1] - xc[1],
+                                      xf[2] - xc[2] };
 
           for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
 

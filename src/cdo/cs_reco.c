@@ -850,25 +850,13 @@ cs_reco_cw_cell_vect_from_face_dofs(const cs_cell_mesh_t    *cm,
     /* Related dual edge quantity */
     const cs_lnum_t  f_id = cm->f_ids[f];
     const cs_nvec3_t  deq = cm->dedge[f];
+    const cs_real_t  coef = (cm->f_ids[f] < cm->bface_shift) ?
+      i_face_vals[f_id] * deq.meas :
+      b_face_vals[f_id - cm->bface_shift] * deq.meas;
 
-    if (cm->f_ids[f] < cm->bface_shift) { /* Interior face */
-
-      const cs_real_t  coef = i_face_vals[f_id] * deq.meas;
-
-      cell_reco[0] += coef*deq.unitv[0];
-      cell_reco[1] += coef*deq.unitv[1];
-      cell_reco[2] += coef*deq.unitv[2];
-
-    }
-    else {
-
-      const cs_real_t  coef = b_face_vals[f_id - cm->bface_shift] * deq.meas;
-
-      cell_reco[0] += coef*deq.unitv[0];
-      cell_reco[1] += coef*deq.unitv[1];
-      cell_reco[2] += coef*deq.unitv[2];
-
-    }
+    cell_reco[0] += coef*deq.unitv[0];
+    cell_reco[1] += coef*deq.unitv[1];
+    cell_reco[2] += coef*deq.unitv[2];
 
   } /* Loop on cell faces */
 
@@ -1028,10 +1016,10 @@ cs_reco_cw_vgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
     double  p_f = 0.;
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-      const short int  ee = 2*cm->f2e_ids[i];
+      const short int  *_v_ids = cm->e2v_ids + 2*cm->f2e_ids[i];
 
-      p_f += cm->tef[i]*(  p_v[cm->e2v_ids[ee]]      /* p_v1 */
-                         + p_v[cm->e2v_ids[ee+1]] ); /* p_v2 */
+      p_f += cm->tef[i]*(  p_v[_v_ids[0]] + p_v[_v_ids[1]] );
+
     }
     p_f *= 0.5/pfq.meas;
 
@@ -1041,9 +1029,8 @@ cs_reco_cw_vgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
     const cs_real_t  hf_coef = cs_math_1ov3 * cm->hfc[f];
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-      const short int  ee = 2*cm->f2e_ids[i];
-      const short int  v1 = cm->e2v_ids[ee];
-      const short int  v2 = cm->e2v_ids[ee+1];
+      const short int  *_v_ids = cm->e2v_ids + 2*cm->f2e_ids[i];
+      const short int  v1 = _v_ids[0], v2 = _v_ids[1];
 
       cs_compute_grd_ve(v1, v2, deq, (const cs_real_t (*)[3])u_vc, l_vc,
                         grd_v1, grd_v2);
@@ -1053,13 +1040,13 @@ cs_reco_cw_vgrd_wbs_from_pvc(const cs_cell_mesh_t   *cm,
          This formula is a consequence of the Partition of the Unity.
          This yields the following formula for grd(Lv^conf)|_p_{ef,c} */
       const cs_real_t  sefv_vol = 0.5 * hf_coef * cm->tef[i]; /* 0.5 pef_vol */
-      cs_real_3_t  _grd;
+      cs_real_t  _grd;
       for (int k = 0; k < 3; k++) {
-        _grd[k] = sefv_vol * ( dp_cf          * grd_c[k]  +
-                              (p_v[v1] - p_f) * grd_v1[k] +
-                              (p_v[v2] - p_f) * grd_v2[k]);
-        vgrd[3*v1 + k] += _grd[k];
-        vgrd[3*v2 + k] += _grd[k];
+        _grd = sefv_vol * ( dp_cf           * grd_c[k]  +
+                            (p_v[v1] - p_f) * grd_v1[k] +
+                            (p_v[v2] - p_f) * grd_v2[k]);
+        vgrd[3*v1 + k] += _grd;
+        vgrd[3*v2 + k] += _grd;
       }
 
     } /* Loop on face edges */
