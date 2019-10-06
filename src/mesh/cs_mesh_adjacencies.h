@@ -59,45 +59,55 @@ BEGIN_C_DECLS
 /*! @} */
 
 /*============================================================================
- * Type definition
+ * Type definitions
  *============================================================================*/
+
+/*! General adjacency structure */
+
+typedef struct {
+
+  cs_flag_t    flag;    /*!< compact way to store metadata */
+  int          stride;  /*!< stride if strided, 0 if indexed */
+
+  cs_lnum_t    n_elts;
+  cs_lnum_t   *idx;     /*!< index, or NULL if strided (size = n_elts + 1) */
+  cs_lnum_t   *ids;     /*!< ids from 0 to n-1 (there is no multifold entry) */
+  short int   *sgn;     /*!< +/- 1 according to the orientation of the element */
+
+} cs_adjacency_t;
+
+/*! Additional mesh adjacencies build from mesh structure */
 
 typedef struct {
 
   /* metadata */
 
-  bool        single_faces_to_cells;   /* true if a single face is adjacent
-                                          to 2 given cells */
+  bool        single_faces_to_cells;   /*!< true if a single face is adjacent
+                                         to 2 given cells */
 
   /* cells -> cells connectivity (standard) */
 
-  cs_lnum_t  *cell_cells_idx;          /* indexes (shared) */
-  cs_lnum_t  *cell_cells;              /* adjacency (shared) */
+  cs_lnum_t  *cell_cells_idx;          /*!< indexes (shared) */
+  cs_lnum_t  *cell_cells;              /*!< adjacency (shared) */
 
   /* cells -> cells connectivity (extended) */
 
-  const cs_lnum_t  *cell_cells_e_idx;  /* indexes (shared) */
-  const cs_lnum_t  *cell_cells_e;      /* adjacency (shared) */
+  const cs_lnum_t  *cell_cells_e_idx;  /*!< indexes (shared) */
+  const cs_lnum_t  *cell_cells_e;      /*!< adjacency (shared) */
 
   /* cells -> boundary faces connectivity */
 
-  cs_lnum_t        *cell_b_faces_idx;
-  cs_lnum_t        *cell_b_faces;
+  cs_lnum_t        *cell_b_faces_idx;  /*!< cells to boundary faces index */
+  cs_lnum_t        *cell_b_faces;      /*!< cells to boundary faces adjacency */
+
+  /* cells -> vertices connectivity */
+
+  const cs_adjacency_t  *c2v;          /*!< cells to vertices adjacency */
+
+  cs_adjacency_t        *_c2v;         /*!< cells to vertices adjacency if owner,
+                                         NULL otherwise */
 
 } cs_mesh_adjacencies_t;
-
-
-typedef struct {
-
-  cs_flag_t    flag;    /* Compact way to store metadata */
-  int          stride;
-
-  cs_lnum_t    n_elts;
-  cs_lnum_t   *idx;     /* size = n_elts + 1 */
-  cs_lnum_t   *ids;     /* ids from 0 to n-1 (there is no multifold entry) */
-  short int   *sgn;     /* +/- 1 according to the orientation of the element */
-
-} cs_adjacency_t;
 
 /*============================================================================
  *  Global variables
@@ -147,6 +157,19 @@ cs_mesh_adjacencies_update_mesh(void);
 
 void
 cs_mesh_adjacencies_update_cell_cells_e(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return cell -> vertex connectivites in
+ *         mesh adjacencies helper API relative to mesh.
+ *
+ * This connectivity is built only when first requested, the updated
+ * later if needed.
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_adjacency_t  *
+cs_mesh_adjacencies_cell_vertices(void);
 
 /*----------------------------------------------------------------------------*/
 /*!

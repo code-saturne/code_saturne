@@ -331,6 +331,138 @@ _update_v2v_lst(int               n_vf,
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Update cells -> vertices connectivity
+ *
+ * parameters:
+ *   ma <-> mesh adjacecies structure to update
+ *----------------------------------------------------------------------------*/
+
+static void
+_update_cell_vertices(cs_mesh_adjacencies_t  *ma,
+                      const cs_mesh_t        *m)
+{
+  if (ma->_c2v == NULL && ma->c2v != NULL)   /* not owner */
+    return;
+
+  if (ma->_c2v == NULL) {
+    ma->_c2v = cs_adjacency_create(0, 0, m->n_cells);
+    ma->c2v = ma->_c2v;
+  }
+
+  cs_adjacency_t *c2v = ma->_c2v;
+
+  if (c2v->n_elts != m->n_cells)
+    BFT_REALLOC(c2v->idx, m->n_cells+1, cs_lnum_t);
+  BFT_FREE(c2v->ids);
+
+  const cs_lnum_t n_cells = m->n_cells;
+
+  /* Count maximum number of nonzero elements per row */
+
+  for (cs_lnum_t i = 0; i < n_cells+1; i++)
+    c2v->idx[i] = 0;
+
+  for (int f_t = 0; f_t < 2; f_t++) {
+
+    const cs_lnum_t n_f = (f_t == 0) ? m->n_i_faces : m->n_b_faces;
+    const cs_lnum_t stride = (f_t == 0) ? 2 : 1;
+    const cs_lnum_t *f2v_idx = NULL, *f2c = NULL;
+    if (f_t == 0) {
+      f2v_idx = m->i_face_vtx_idx;
+      f2c = (const cs_lnum_t *)m->i_face_cells;
+    }
+    else {
+      f2v_idx = m->b_face_vtx_idx;
+      f2c = (const cs_lnum_t *)m->b_face_cells;
+    }
+
+    for (cs_lnum_t f_id = 0; f_id < n_f; f_id++) {
+      cs_lnum_t n_vtx = f2v_idx[f_id+1] - f2v_idx[f_id];
+      for (cs_lnum_t j = 0; j < stride; j++) {
+        cs_lnum_t c_id = f2c[f_id*stride + j];
+        if (c_id < 0 || c_id >= n_cells)
+          continue;
+        c2v->idx[c_id + 1] += n_vtx;
+      }
+    }
+
+  }
+
+  /* Transform count to index */
+
+  for (cs_lnum_t i = 0; i < n_cells; i++)
+    c2v->idx[i+1] += c2v->idx[i];
+
+  /* Add vertices */
+
+  BFT_REALLOC(c2v->ids, c2v->idx[n_cells], cs_lnum_t);
+
+  cs_lnum_t *ids = c2v->ids;
+
+  for (int f_t = 0; f_t < 2; f_t++) {
+
+    const cs_lnum_t n_f = (f_t == 0) ? m->n_i_faces : m->n_b_faces;
+    const cs_lnum_t stride = (f_t == 0) ? 2 : 1;
+    const cs_lnum_t *f2v_idx= NULL, *f2v = NULL, *f2c = NULL;
+    if (f_t == 0) {
+      f2v_idx = m->i_face_vtx_idx;
+      f2v = m->i_face_vtx_lst;
+      f2c = (const cs_lnum_t *)m->i_face_cells;
+    }
+    else {
+      f2v_idx = m->b_face_vtx_idx;
+      f2v = m->b_face_vtx_lst;
+      f2c = (const cs_lnum_t *)m->b_face_cells;
+    }
+
+    for (cs_lnum_t f_id = 0; f_id < n_f; f_id++) {
+      cs_lnum_t s_id = f2v_idx[f_id];
+      cs_lnum_t e_id = f2v_idx[f_id+1];
+      for (cs_lnum_t j = 0; j < stride; j++) {
+        cs_lnum_t c_id = f2c[f_id*stride + j];
+        if (c_id < 0 || c_id >= n_cells)
+          continue;
+        cs_lnum_t _idx = c2v->idx[c_id];
+        for (cs_lnum_t k = s_id; k < e_id; k++) {
+          ids[_idx] = f2v[k];
+          _idx++;
+        }
+        c2v->idx[c_id] = _idx;
+      }
+    }
+
+  }
+
+  /* Now restore index */
+
+  for (cs_lnum_t i = n_cells; i > 0; i--)
+    c2v->idx[i] = c2v->idx[i-1];
+  c2v->idx[0] = 0;
+
+  /* Sort and remove duplicates */
+
+  cs_sort_indexed(n_cells, c2v->idx, ids);
+
+  cs_lnum_t k = 0, s_id = 0;
+  for (cs_lnum_t i = 0; i < n_cells; i++) {
+    cs_lnum_t e_id = c2v->idx[i+1];
+    cs_lnum_t p_id = -1;
+    for (cs_lnum_t j = s_id; j < e_id; j++) {
+      cs_lnum_t v_id = ids[j];
+      if (v_id != p_id) {
+        ids[k] = v_id;
+        k++;
+        p_id = v_id;
+      }
+    }
+    c2v->idx[i+1] = k;
+    s_id = e_id;
+  }
+
+  BFT_REALLOC(c2v->ids, c2v->idx[n_cells], cs_lnum_t);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -357,6 +489,9 @@ cs_mesh_adjacencies_initialize(void)
   ma->cell_b_faces_idx = NULL;
   ma->cell_b_faces = NULL;
 
+  ma->c2v = NULL;
+  ma->_c2v = NULL;
+
   cs_glob_mesh_adjacencies = ma;
 }
 
@@ -376,6 +511,8 @@ cs_mesh_adjacencies_finalize(void)
 
   BFT_FREE(ma->cell_b_faces_idx);
   BFT_FREE(ma->cell_b_faces);
+
+  cs_adjacency_destroy(&(ma->_c2v));
 
   cs_glob_mesh_adjacencies = NULL;
 }
@@ -402,6 +539,11 @@ cs_mesh_adjacencies_update_mesh(void)
   /* (re)build cell -> boundary face connectivities */
 
   _update_cell_b_faces(ma);
+
+  /* (re)build or map cell -> vertex connectivities */
+
+  if (ma->c2v != NULL)
+    _update_cell_vertices(ma, cs_glob_mesh);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -420,6 +562,29 @@ cs_mesh_adjacencies_update_cell_cells_e(void)
 
   ma->cell_cells_e_idx = m->cell_cells_idx;
   ma->cell_cells_e = m->cell_cells_lst;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return cell -> vertex connectivites in
+ *         mesh adjacencies helper API relative to mesh.
+ *
+ * This connectivity is built only when first requested, the updated
+ * later if needed.
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_adjacency_t  *
+cs_mesh_adjacencies_cell_vertices(void)
+{
+  const cs_mesh_t *m = cs_glob_mesh;
+
+  cs_mesh_adjacencies_t *ma = &_cs_glob_mesh_adjacencies;
+
+  if (ma->c2v == NULL)
+    _update_cell_vertices(ma, m);
+
+  return ma->c2v;
 }
 
 /*----------------------------------------------------------------------------*/

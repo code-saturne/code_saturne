@@ -63,6 +63,7 @@ cs_benchmark.h \
 cs_benchmark_matrix.h \
 cs_blas.h \
 cs_balance_by_zone.h \
+cs_cell_to_vertex.h \
 cs_convection_diffusion.h \
 cs_face_viscosity.h \
 cs_divergence.h \
@@ -105,6 +106,7 @@ cs_benchmark_matrix.c \
 cs_blas.c \
 cs_bw_time_diff.c \
 cs_balance_by_zone.c \
+cs_cell_to_vertex.c \
 cs_convection_diffusion.c \
 cs_face_viscosity.c \
 cs_divergence.c \

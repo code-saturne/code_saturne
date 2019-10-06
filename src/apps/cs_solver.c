@@ -51,6 +51,7 @@
 #include "cs_boundary_zone.h"
 #include "cs_calcium.h"
 #include "cs_cdo_main.h"
+#include "cs_cell_to_vertex.h"
 #include "cs_control.h"
 #include "cs_coupling.h"
 #include "cs_ctwr.h"
@@ -556,6 +557,7 @@ cs_run(void)
 
   /* Free main mesh after printing some statistics */
 
+  cs_cell_to_vertex_free();
   cs_mesh_adjacencies_finalize();
 
   cs_boundary_zone_finalize();
