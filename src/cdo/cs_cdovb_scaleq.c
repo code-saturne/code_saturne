@@ -838,7 +838,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       break;
 
     case CS_PARAM_HODGE_ALGO_OCS2:
-      eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_EFQ;
+      eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_SEF;
       eqc->get_stiffness_matrix = cs_hodge_vb_ocs2_get_aniso_stiffness;
       eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
       eqc->enforce_robin_bc = cs_cdo_diffusion_svb_cost_robin;
@@ -949,7 +949,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       eqb->msh_flag |= CS_FLAG_COMP_PEQ;
       break;
     case CS_XDEF_BY_ANALYTIC_FUNCTION:
-      eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_EFQ | CS_FLAG_COMP_PFQ;
+      eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_SEF | CS_FLAG_COMP_PFQ;
       break;
     case CS_XDEF_BY_FIELD:
       if (eqp->adv_field->status == CS_ADVECTION_FIELD_LEGACY_NAVSTO)
@@ -3027,14 +3027,15 @@ cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
       break;
 
     case CS_PARAM_HODGE_ALGO_VORONOI:
-      msh_flag |= CS_FLAG_COMP_EFQ;
       get_diffusion_hodge = cs_hodge_epfd_voro_get;
       compute_flux = cs_cdo_diffusion_svb_get_dfbyc_flux;
+      if (!eqp->diffusion_hodge.is_iso)
+        msh_flag |= CS_FLAG_COMP_SEF;
       break;
 
     case CS_PARAM_HODGE_ALGO_WBS:
       msh_flag |= CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
-        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EFQ;
+        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_SEF;
       compute_flux = cs_cdo_diffusion_wbs_get_dfbyc_flux;
       break;
 

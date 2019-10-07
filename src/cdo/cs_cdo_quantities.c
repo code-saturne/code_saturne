@@ -170,7 +170,7 @@ _create_cdo_quantities(void)
   cdoq->n_g_edges = 0;
   cdoq->edge_vector = NULL;
   cdoq->pvol_ec = NULL;
-  cdoq->sface_normal = NULL;
+  cdoq->dface_normal = NULL;
 
   /* Vertex-based quantities */
   cdoq->n_vertices = 0;
@@ -500,13 +500,14 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
   assert(topo->e2v != NULL);
   assert(topo->f2e != NULL && topo->f2c != NULL && topo->c2e != NULL);
 
-  const int n_edges = quant->n_edges;
+  const cs_lnum_t  n_cells = quant->n_cells;
+  const cs_lnum_t  n_edges = quant->n_edges;
 
   cs_real_t  *edge_center = NULL;
 
   /* Build edge centers and edge vectors */
-  BFT_MALLOC(quant->edge_vector, 3*n_edges, cs_real_t);
   BFT_MALLOC(edge_center, 3*n_edges, cs_real_t);
+  BFT_MALLOC(quant->edge_vector, 3*n_edges, cs_real_t);
 
 # pragma omp parallel for if (n_edges > CS_THR_MIN)
   for (cs_lnum_t e_id = 0; e_id < n_edges; e_id++) {
@@ -540,19 +541,15 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
   /* Allocate and initialize array */
   if (eb_scheme_flag > 0 || vb_scheme_flag > 0 || vcb_scheme_flag > 0) {
 
-    /* Compute the two vector areas composing each dual face  */
-    BFT_MALLOC(quant->sface_normal,
-               6*topo->c2e->idx[quant->n_cells], cs_real_t);
+    /* a) Compute the two vector areas composing each dual face
+     * b) Compute the volume associated to eachedge in a cell
+     */
+    BFT_MALLOC(quant->pvol_ec, topo->c2e->idx[n_cells], cs_real_t);
+    BFT_MALLOC(quant->dface_normal, 3*topo->c2e->idx[n_cells], cs_real_t);
 
-    /* Manage openMP cache */
-    short int  **parent_thread_array = NULL;
-    BFT_MALLOC(parent_thread_array, cs_glob_n_threads, short int *);
-    for (int i = 0; i < cs_glob_n_threads; i++)
-      parent_thread_array[i] = NULL;
-
-# pragma omp parallel                                                   \
-  shared(quant, topo, parent_thread_array, edge_center, cs_glob_n_threads)
+# pragma omp parallel shared(quant, topo, edge_center)
     { /* OMP Block */
+
       const cs_adjacency_t  *c2f = topo->c2f, *f2e = topo->f2e;
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
@@ -561,18 +558,16 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
       int t_id = 0;
 #endif
 
-      short int  *parent = parent_thread_array[t_id];
-      BFT_MALLOC(parent, topo->n_max_ebyc, short int);
-
 #     pragma omp for CS_CDO_OMP_SCHEDULE
-      for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
         const cs_lnum_t  *c2e_idx = topo->c2e->idx + c_id;
         const cs_lnum_t  *c2e_ids = topo->c2e->ids + c2e_idx[0];
         const short int  n_ec = c2e_idx[1] - c2e_idx[0];
 
-        /* Initialize parent array */
-        for (short int e = 0; e < n_ec; e++) parent[e] = 0;
+        /* Initialize sface */
+        cs_real_t  *cell_dface = quant->dface_normal + 3*c2e_idx[0];
+        memset(cell_dface, 0, 3*n_ec*sizeof(cs_real_t));
 
         /* Get cell center */
         const cs_real_t  *xc = quant->cell_centers + 3*c_id;
@@ -600,10 +595,6 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
               xexc[k] = xc[k] - xe[k];
             cs_math_3_cross_product(xfxc, xexc, tria_vect);
 
-            cs_nvec3_t  tria;
-            cs_nvec3(tria_vect, &tria);
-            cs_nvec3_t  edge = cs_quant_set_edge_nvec(e_id, quant);
-
             /* Find the corresponding local cell edge */
             short int e = n_ec;
             for (short int _e = 0; _e < n_ec; _e++) {
@@ -614,55 +605,35 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
             }
             CS_CDO_OMP_ASSERT(e < n_ec);
 
-            /* Portion of dual faces to consider */
-            cs_real_t  *sface = quant->sface_normal + 6*(c2e_idx[0]+e);
-
             /* One should have (normal_tria, tangent_e) > 0 */
+            cs_nvec3_t  edge = cs_quant_set_edge_nvec(e_id, quant);
+            cs_nvec3_t  tria;
+            cs_nvec3(tria_vect, &tria);
             const double  orient = _dp3(tria.unitv, edge.unitv);
             CS_CDO_OMP_ASSERT(fabs(orient) > 0);
 
             /* Store the computed data */
-            if (orient < 0) {
-              for (int k = 0; k < 3; k++)
-                sface[3*parent[e] + k] = -0.5 * tria_vect[k];
-            }
-            else {
-              for (int k = 0; k < 3; k++)
-                sface[3*parent[e] + k] =  0.5 * tria_vect[k];
-            }
-
-#if defined(DEBUG) && !defined(NDEBUG)
-            cs_nvec3_t  df_nvec;
-            cs_nvec3(sface + 3*parent[e], &df_nvec);
-            CS_CDO_OMP_ASSERT(fabs(_dp3(df_nvec.unitv, edge.unitv)) > 0);
-#endif
-            parent[e] += 1;
+            cs_real_t  *_dface = cell_dface + 3*e;
+            if (orient < 0)
+              for (int k = 0; k < 3; k++) _dface[k] -= 0.5 * tria_vect[k];
+            else
+              for (int k = 0; k < 3; k++) _dface[k] += 0.5 * tria_vect[k];
 
           } /* Loop on face edges */
 
         } /* Loop on cell faces */
 
-#if defined(DEBUG) && !defined(NDEBUG)
-        for (short int e = 0; e < n_ec; e++)
-          if (parent[e] != 2)
-            bft_error(__FILE__, __LINE__, 0,
-                      " Connectivity error detected while building dual face"
-                      " quantity for cell %d\n"
-                      " Each edge should have 2 adjacent faces in a cell.\n"
-                      " Here, there is (are) %d face(s).", c_id, parent[e]);
-#endif
+        /* Compute pvol_ec */
+        cs_real_t  *_pvol = quant->pvol_ec + c2e_idx[0];
+        for (short int e = 0; e < n_ec; e++) {
+          _pvol[e] = cs_math_1ov3 * _dp3(cell_dface + 3*e,
+                                         quant->edge_vector + 3*c2e_ids[e]);
+          CS_CDO_OMP_ASSERT(_pvol[e] > 0);
+        }
+
       } /* End of loop on cells */
 
-      BFT_FREE(parent);
-
     } /* End of OpenMP block */
-
-    BFT_FREE(parent_thread_array);
-
-    /* Compute the two vector areas composing each dual face. This operation
-     * should be done after the computation of sface since one needs these
-     * quantities */
-    cs_cdo_quantities_compute_pvol_ec(quant, topo->c2e, &(quant->pvol_ec));
 
   } /* Test scheme flag */
 
@@ -1168,7 +1139,7 @@ cs_cdo_quantities_free(cs_cdo_quantities_t   *cdoq)
 
   /* Edge-related quantities */
   BFT_FREE(cdoq->edge_vector);
-  BFT_FREE(cdoq->sface_normal);
+  BFT_FREE(cdoq->dface_normal);
   BFT_FREE(cdoq->pvol_ec);
 
   /* Vertex-related quantities */
@@ -1394,30 +1365,30 @@ cs_cdo_quantities_compute_pvol_ec(const cs_cdo_quantities_t   *cdoq,
   if (pvol_ec == NULL)
     BFT_MALLOC(pvol_ec, c2e->idx[n_cells], cs_real_t);
 
+  if (cdoq->pvol_ec != NULL)
+    memcpy(pvol_ec, cdoq->pvol_ec, c2e->idx[n_cells]*sizeof(cs_real_t));
+
+  else {
+
 #if defined(DEBUG) && !defined(NDEBUG)
-  memset(pvol_ec, 0, c2e->idx[n_cells]*sizeof(cs_real_t));
+    memset(pvol_ec, 0, c2e->idx[n_cells]*sizeof(cs_real_t));
 #endif
 
-# pragma omp parallel for if (n_cells > CS_THR_MIN)
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-    const cs_lnum_t  start = c2e->idx[c_id];
-    const cs_real_t  *sface = cdoq->sface_normal + 6*start;
-    const cs_lnum_t  *e_ids = c2e->ids + start;
+      const cs_lnum_t  start = c2e->idx[c_id];
+      const cs_real_t  *sface = cdoq->dface_normal + 3*start;
+      const cs_lnum_t  *c2e_ids = c2e->ids + start;
 
-    cs_real_t  *_pvol = pvol_ec + start;
+      cs_real_t  *_pvol = pvol_ec + start;
+      for (cs_lnum_t j = 0; j < c2e->idx[c_id+1]-start; j++)
+        _pvol[j] = cs_math_1ov3 * _dp3(sface + 3*j,
+                                       cdoq->edge_vector + 3*c2e_ids[j]);
 
-    for (cs_lnum_t j = 0; j < c2e->idx[c_id+1]-start; j++) {
+    } /* Loop on cells */
 
-      cs_real_3_t  df_vect;
-      const cs_real_t  *sface0 = sface + 6*j, *sface1 = sface0 + 3;
-      for (int k = 0; k < 3; k++)
-        df_vect[k] = sface0[k] + sface1[k];
-
-      _pvol[j] = cs_math_1ov3 * _dp3(df_vect, cdoq->edge_vector + 3*e_ids[j]);
-
-    } /* Loop on cell edges */
-  } /* Loop on cells */
+  } /* Not already existing */
 
   /* Return pointer */
   *p_pvol_ec = pvol_ec;

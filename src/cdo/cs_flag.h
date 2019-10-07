@@ -142,7 +142,7 @@ BEGIN_C_DECLS
 #define CS_FLAG_COMP_FEQ  (1 << 10) /*  1024: local f2e quantities */
 #define CS_FLAG_COMP_FV   (1 << 11) /*  2048: local f2v connectivity */
 #define CS_FLAG_COMP_EF   (1 << 12) /*  4096: local e2f connectivity */
-#define CS_FLAG_COMP_EFQ  (1 << 13) /*  8192: local e2f quantities */
+#define CS_FLAG_COMP_SEF  (1 << 13) /*  8192: local sefc quantities */
 #define CS_FLAG_COMP_HFQ  (1 << 14) /* 16384: local quant. on face pyramids */
 #define CS_FLAG_COMP_FES  (1 << 15) /* 32768: local f2e orientations */
 #define CS_FLAG_COMP_DIAM (1 << 16) /* 65536: local diameters on faces/cell */

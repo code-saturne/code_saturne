@@ -2772,7 +2772,7 @@ cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
 #endif
 
     cs_eflag_t  msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ |
-      CS_FLAG_COMP_EFQ |  CS_FLAG_COMP_DEQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV;
+      CS_FLAG_COMP_SEF |  CS_FLAG_COMP_DEQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV;
 
     /* Each thread get back its related structures:
        Get the cellwise view of the mesh and the algebraic system */

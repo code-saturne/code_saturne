@@ -542,7 +542,7 @@ _define_cm_hexa_unif(double            a,
   /* Set all quantities */
   cm->flag = CS_FLAG_COMP_PV |CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PEQ |
     CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ |
-    CS_FLAG_COMP_DFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE | CS_FLAG_COMP_EFQ |
+    CS_FLAG_COMP_DFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE | CS_FLAG_COMP_SEF |
     CS_FLAG_COMP_DIAM;
   cm->xc[0] = cm->xc[1] = cm->xc[2] = ah;
   cm->vol_c = a*a*a;
@@ -758,7 +758,7 @@ _define_cm_tetra_ref(double            a,
   /* Set all quantities */
   cm->flag = CS_FLAG_COMP_PV |CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PEQ |
     CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ |
-    CS_FLAG_COMP_DFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE | CS_FLAG_COMP_EFQ |
+    CS_FLAG_COMP_DFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE | CS_FLAG_COMP_SEF |
     CS_FLAG_COMP_DIAM;
 
   cm->vol_c = cs_math_1ov6*a*a*a;
@@ -937,15 +937,26 @@ _define_cm_tetra_ref(double            a,
   }  /* Loop on cell faces */
 
   /* Compute dual face quantities */
-  for (short int e = 0; e < cm->n_ec; e++) {
+  cs_real_t  *df = NULL;
+  BFT_MALLOC(df, 3*cm->n_ec, cs_real_t);
+  memset(df, 0, 3*cm->n_ec*sizeof(cs_real_t));
 
-    cs_real_3_t  df;
-    const cs_nvec3_t  s1 = cm->sefc[2*e], s2 = cm->sefc[2*e+1];
-    for (int k = 0; k < 3; k++)
-      df[k] = s1.meas*s1.unitv[k] + s2.meas*s2.unitv[k];
-    cs_nvec3(df, &(cm->dface[e]));
+  for (short int f = 0; f < cm->n_fc; f++) {
 
-  }  /* Loop on cell edges */
+    for (short int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+      const short int  e = cm->f2e_ids[i];
+      for (int k = 0; k < 3; k++)
+        df[3*e+k] += cm->sefc[i].meas*cm->sefc[i].unitv[k];
+
+    } /* Loop on face edges */
+
+  } /* Loop on cell faces */
+
+  for (int e = 0; e < cm->n_ec; e++)
+    cs_nvec3(df + 3*e, &(cm->dface[e]));
+
+  BFT_FREE(df);
 
   /* Compute dual cell volume */
   for (short int f = 0; f < cm->n_fc; f++) {

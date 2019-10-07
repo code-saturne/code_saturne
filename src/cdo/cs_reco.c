@@ -647,7 +647,7 @@ cs_reco_dfbyc_in_pec(const cs_cell_mesh_t        *cm,
 /*!
  * \brief  Reconstruct at the cell center a field of edge-based DoFs
  *
- *  \param[in]      cid     cell id
+ *  \param[in]      c_id    cell id
  *  \param[in]      c2e     cell -> edges connectivity
  *  \param[in]      quant   pointer to the additional quantities struct.
  *  \param[in]      dof     pointer to the field of edge-based DoFs
@@ -656,7 +656,7 @@ cs_reco_dfbyc_in_pec(const cs_cell_mesh_t        *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_reco_ccen_edge_dof(cs_lnum_t                    cid,
+cs_reco_ccen_edge_dof(cs_lnum_t                    c_id,
                       const cs_adjacency_t        *c2e,
                       const cs_cdo_quantities_t   *quant,
                       const double                *dof,
@@ -668,20 +668,20 @@ cs_reco_ccen_edge_dof(cs_lnum_t                    cid,
   /* Initialize value */
   reco[0] = reco[1] = reco[2] = 0.0;
 
-  for (cs_lnum_t i = c2e->idx[cid]; i < c2e->idx[cid+1]; i++) {
+  const cs_lnum_t  *c2e_idx = c2e->idx + c_id;
+  const cs_lnum_t  *c2e_ids = c2e->ids + c2e_idx[0];
+  const cs_real_t  *dface = quant->dface_normal + 3*c2e_idx[0];
+  for (cs_lnum_t i = 0; i < c2e_idx[1] - c2e_idx[0]; i++) {
 
     /* Dual face quantities */
-    const cs_real_t  *sf0 = quant->sface_normal + 6*i;
-    const cs_real_t  *sf1 = sf0 + 3;
-    const double  val = dof[c2e->ids[i]];     /* Edge value */
-
+    const double  val = dof[c2e_ids[i]];     /* Edge value */
     for (int k = 0; k < 3; k++)
-      reco[k] += val * (sf0[k] + sf1[k]);
+      reco[k] += val * dface[3*i+k];
 
   } /* End of loop on cell edges */
 
   /* Divide by cell volume */
-  const double  invvol = 1/quant->cell_vol[cid];
+  const double  invvol = 1/quant->cell_vol[c_id];
   for (int k = 0; k < 3; k++)
     reco[k] *= invvol;
 }
@@ -791,23 +791,22 @@ cs_reco_grad_cell_from_pv(cs_lnum_t                    c_id,
   if (pdi == NULL)
     return;
 
-  const cs_adjacency_t  *c2e = connect->c2e;
   const cs_adjacency_t  *e2v = connect->e2v;
+  const cs_adjacency_t  *c2e = connect->c2e;
+  const cs_lnum_t  *c2e_idx = c2e->idx + c_id;
+  const cs_lnum_t  *c2e_ids = c2e->ids + c2e_idx[0];
+  const cs_real_t  *dface = quant->dface_normal + 3*c2e_idx[0];
 
-  for (cs_lnum_t i = c2e->idx[c_id]; i < c2e->idx[c_id+1]; i++) {
+  for (cs_lnum_t i = 0; i < c2e_idx[1] - c2e_idx[0]; i++) {
 
-    const cs_lnum_t  shift_e = 2*c2e->ids[i];
+    const cs_lnum_t  shift_e = 2*c2e_ids[i];
     const short int  sgn_v1 = e2v->sgn[shift_e];
     const cs_real_t  pv1 = pdi[e2v->ids[shift_e]];
     const cs_real_t  pv2 = pdi[e2v->ids[shift_e+1]];
     const cs_real_t  gdi_e = sgn_v1*(pv1 - pv2);
 
-    /* Dual face quantities */
-    const cs_real_t  *sf0 = quant->sface_normal + 6*i;
-    const cs_real_t  *sf1 = sf0 + 3;
-
     for (int k = 0; k < 3; k++)
-      val_xc[k] += gdi_e * (sf0[k] + sf1[k]);
+      val_xc[k] += gdi_e * dface[3*i+k];
 
   } /* Loop on cell edges */
 

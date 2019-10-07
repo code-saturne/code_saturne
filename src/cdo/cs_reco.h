@@ -380,7 +380,7 @@ cs_reco_dfbyc_in_pec(const cs_cell_mesh_t        *cm,
 /*!
  * \brief  Reconstruct at the cell center a field of edge-based DoFs
  *
- *  \param[in]      cid     cell id
+ *  \param[in]      c_id    cell id
  *  \param[in]      c2e     cell -> edges connectivity
  *  \param[in]      quant   pointer to the additional quantities struct.
  *  \param[in]      dof     pointer to the field of edge-based DoFs
@@ -389,7 +389,7 @@ cs_reco_dfbyc_in_pec(const cs_cell_mesh_t        *cm,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_reco_ccen_edge_dof(cs_lnum_t                   cid,
+cs_reco_ccen_edge_dof(cs_lnum_t                   c_id,
                       const cs_adjacency_t       *c2e,
                       const cs_cdo_quantities_t  *quant,
                       const double               *dof,

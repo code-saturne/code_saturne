@@ -153,18 +153,17 @@ typedef struct { /* Specific mesh quantities */
                                        distance between two vertices.
                                        Unit vector is the tangential direction
                                        attached to the edge */
-  cs_real_t        *pvol_ec;        /* Portion of volume surrounding an edge
-                                     * in each cell. Scanned with the c2e
-                                     * adjacency.
-                                     * Not always allocated.
-                                     */
 
   /* For each edge e belonging to a cell c, two contributions coming from 2
      triangles  s(x_c, x_f, x_e) for a face f in Face_e are considered.
      Scan this quantity with the c2e connectivity */
 
-  cs_real_t        *sface_normal;   /* 2 triangle-face normals by edge in a
-                                       cell */
+  cs_real_t        *dface_normal;   /* Vector-valued normal for each dual face
+                                     * inside a cell associated to an edge */
+  cs_real_t        *pvol_ec;        /* Portion of volume surrounding an edge
+                                     * in each cell. Scanned with the c2e
+                                     * adjacency.
+                                     * Not always allocated. */
 
   cs_quant_info_t   edge_info;
 

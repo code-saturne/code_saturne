@@ -2382,135 +2382,138 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
     {
-      assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PEQ | CS_FLAG_COMP_EFQ |
+      assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PEQ | CS_FLAG_COMP_SEF |
                            CS_FLAG_COMP_PFQ));
 
       cs_quadrature_type_t  qtype = cs_xdef_get_quadrature(def);
 
-      /* Loop on cell edges */
-      for (short int e = 0; e < cm->n_ec; e++) {
+      /* Reset fluxes across dual faces */
+      memset(fluxes, 0, cm->n_ec*sizeof(cs_real_t));
 
-        const cs_quant_t  edge = cm->edge[e];
+      switch (qtype) {
 
-        /* Two triangles composing the dual face inside a cell */
-        const short int  f0 = cm->e2f_ids[2*e];
-        const cs_nvec3_t  sef0 = cm->sefc[2*e];
-        const cs_quant_t  fq0 = cm->face[f0];
+      case CS_QUADRATURE_NONE:
+      case CS_QUADRATURE_BARY:
+      case CS_QUADRATURE_BARY_SUBDIV:
+        {
+          cs_real_3_t  xg, adv_xg;
 
-        const short int  f1 = cm->e2f_ids[2*e+1];
-        const cs_nvec3_t  sef1 = cm->sefc[2*e+1];
-        const cs_quant_t  fq1 = cm->face[f1];
+          /* Loop on cell faces */
+          for (short int f = 0; f < cm->n_fc; f++) {
 
-        fluxes[e] = 0.;
-        switch (qtype) {
+            const cs_quant_t  face = cm->face[f];
+            const cs_real_3_t  xfc = { cm->xc[0] + face.center[0],
+                                       cm->xc[1] + face.center[1],
+                                       cm->xc[2] + face.center[2] };
 
-        case CS_QUADRATURE_NONE:
-        case CS_QUADRATURE_BARY:
-        case CS_QUADRATURE_BARY_SUBDIV:
-          {
-            cs_real_3_t  xg[2], adv_xg[2];
+            for (short int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-            for (int k = 0; k < 3; k++) {
-              const double  xec = cm->xc[k] + edge.center[k];
-              xg[0][k] = xec + fq0.center[k];
-              xg[0][k] *= cs_math_1ov3;
-              xg[1][k] = xec + fq1.center[k];
-              xg[1][k] *= cs_math_1ov3;
-            }
+              const short int  e = cm->f2e_ids[i];
+              const cs_quant_t  edge = cm->edge[e];
+              const cs_nvec3_t  sefc = cm->sefc[i];
 
-            cs_xdef_cw_eval_at_xyz_by_analytic(cm,
-                                               2, (const cs_real_t *)xg,
-                                               time_eval,
-                                               def->input,
-                                               (cs_real_t *)adv_xg);
+              for (int k = 0; k < 3; k++)
+                xg[k] = cs_math_1ov3 * (xfc[k] + edge.center[k]);
 
-            fluxes[e] = sef0.meas * _dp3(adv_xg[0], sef0.unitv)
-              + sef1.meas * _dp3(adv_xg[1], sef1.unitv);
-          }
-          break;
+              cs_xdef_cw_eval_at_xyz_by_analytic(cm,
+                                                 1, (const cs_real_t *)xg,
+                                                 time_eval,
+                                                 def->input,
+                                                 (cs_real_t *)adv_xg);
 
-        case CS_QUADRATURE_HIGHER:
-          {
-            /* Two triangles s_{vef} related to a vertex and three values by
-             * triangle --> 2*3 = 6 Gauss points
-             * The flux returns by the analytic function is a vector. So the
-             * size of _val is 18=6*3
-             */
-            cs_real_t  w0[6], eval0[18];
-            cs_real_t *eval1 = eval0 + 9, *w1 = w0 + 3;
-            cs_real_3_t  gpts[6];
+              fluxes[e] += sefc.meas * _dp3(adv_xg, sefc.unitv);
 
-            /* Two triangles composing the dual face inside a cell:
-             * Evaluate the field at the three quadrature points for each one */
-            cs_quadrature_tria_3pts(edge.center, fq0.center, cm->xc,
-                                    sef0.meas,
-                                    gpts, w0);
+            } /* Loop on face edges */
 
-            cs_quadrature_tria_3pts(edge.center, fq1.center, cm->xc,
-                                    sef1.meas,
-                                    gpts + 3, w1);
+          } /* Loop on cell faces */
 
-            cs_xdef_cw_eval_at_xyz_by_analytic(cm,
-                                               6, (const cs_real_t *)gpts,
-                                               time_eval,
-                                               def->input,
-                                               eval0);
+        }
+        break; /* quadrature NONE, BARY or BARY_SUBDIV */
 
-            cs_real_t  add0 = 0, add1 = 0;
-            for (int p = 0; p < 3; p++) {
-              add0 += w0[p] * _dp3(eval0 + 3*p, sef0.unitv);
-              add1 += w1[p] * _dp3(eval1 + 3*p, sef1.unitv);
-          }
+      case CS_QUADRATURE_HIGHER:
+        {
+          /* 3 Gauss points by triangle spanned by x_c, x_f, x_e */
+          cs_real_t  w[3], eval[9];
+          cs_real_3_t  gpts[3];
 
-            fluxes[e] = add0 + add1;
-          }
-          break;
+          /* Loop on cell faces */
+          for (short int f = 0; f < cm->n_fc; f++) {
 
-        case CS_QUADRATURE_HIGHEST:
-          {
-            /* Two triangles s_{vef} related to a vertex and four values by
-             * triangle --> 2*4 = 8 Gauss points
-             * The flux returns by the analytic function is a vector. So the
-             * size of _val is 24=8*3
-             */
-            cs_real_t  w0[8], eval0[24];
-            cs_real_t *eval1 = eval0 + 12, *w1 = w0 + 4;
-            cs_real_3_t  gpts[8];
+            const cs_quant_t  face = cm->face[f];
 
-            /* Two triangles composing the dual face inside a cell:
-             * Evaluate the field at the four quadrature points for each one */
-            cs_quadrature_tria_4pts(edge.center, fq0.center, cm->xc,
-                                    sef0.meas,
-                                    gpts, w0);
+            for (short int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-            cs_quadrature_tria_4pts(edge.center, fq1.center, cm->xc,
-                                    sef1.meas,
-                                    gpts + 4, w1);
+              const short int  e = cm->f2e_ids[i];
+              const cs_quant_t  edge = cm->edge[e];
+              const cs_nvec3_t  sefc = cm->sefc[i];
 
-            cs_xdef_cw_eval_at_xyz_by_analytic(cm,
-                                               8, (const cs_real_t *)gpts,
-                                               time_eval,
-                                               def->input,
-                                               eval0);
+              cs_quadrature_tria_3pts(edge.center, face.center, cm->xc,
+                                      sefc.meas,
+                                      gpts, w);
 
-            cs_real_t  add0 = 0, add1 = 0;
-            for (int p = 0; p < 4; p++) {
-              add0 += w0[p] * _dp3(eval0 + 3*p, sef0.unitv);
-              add1 += w1[p] * _dp3(eval1 + 3*p, sef1.unitv);
-            }
+              cs_xdef_cw_eval_at_xyz_by_analytic(cm,
+                                                 3, (const cs_real_t *)gpts,
+                                                 time_eval,
+                                                 def->input,
+                                                 eval);
 
-            fluxes[e] = add0 + add1;
-          }
-          break;
+              cs_real_t  add = 0;
+              for (int p = 0; p < 3; p++)
+                add += w[p] * _dp3(eval + 3*p, sefc.unitv);
+              fluxes[e] += add;
 
-        default:
-          bft_error(__FILE__, __LINE__, 0,
-                    " %s: Invalid type of quadrature.", __func__);
-          break;
+            } /* Loop on face edges */
 
-        }  /* Switch type of quadrature */
+          } /* Loop on cell faces */
 
-      }  /* Loop on cell edges */
+        }
+        break; /* CS_QUADRATURE_HIGHER */
+
+      case CS_QUADRATURE_HIGHEST:
+        {
+          /* 4 Gauss points by triangle spanned by x_c, x_f, x_e */
+          cs_real_t  w[4], eval[12];
+          cs_real_3_t  gpts[4];
+
+          /* Loop on cell faces */
+          for (short int f = 0; f < cm->n_fc; f++) {
+
+            const cs_quant_t  face = cm->face[f];
+
+            for (short int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+              const short int  e = cm->f2e_ids[i];
+              const cs_quant_t  edge = cm->edge[e];
+              const cs_nvec3_t  sefc = cm->sefc[i];
+
+              cs_quadrature_tria_4pts(edge.center, face.center, cm->xc,
+                                      sefc.meas,
+                                      gpts, w);
+
+              cs_xdef_cw_eval_at_xyz_by_analytic(cm,
+                                                 4, (const cs_real_t *)gpts,
+                                                 time_eval,
+                                                 def->input,
+                                                 eval);
+
+              cs_real_t  add = 0;
+              for (int p = 0; p < 4; p++)
+                add += w[p] * _dp3(eval + 3*p, sefc.unitv);
+              fluxes[e] += add;
+
+            } /* Loop on face edges */
+
+          } /* Loop on cell faces */
+
+        }
+        break; /* CS_QUADRATURE_HIGHEST */
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid type of quadrature.", __func__);
+        break;
+
+      }  /* Switch type of quadrature */
 
     }  /* Definition by analytic function */
     break;

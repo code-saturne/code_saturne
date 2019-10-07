@@ -562,7 +562,7 @@ cs_quadrature_get_flag(const cs_quadrature_type_t  qtype,
 
     case CS_QUADRATURE_HIGHER:
     case CS_QUADRATURE_HIGHEST:
-      ret_flag |= CS_FLAG_COMP_DFQ | CS_FLAG_COMP_EFQ;
+      ret_flag |= CS_FLAG_COMP_DFQ | CS_FLAG_COMP_SEF;
       /* No break, pass to the following too */
     case CS_QUADRATURE_BARY_SUBDIV:
       ret_flag |= CS_FLAG_COMP_EF | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_PEQ |

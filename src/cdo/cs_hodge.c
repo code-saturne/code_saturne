@@ -1077,36 +1077,42 @@ _compute_aniso_hepfd_ocs2_ur(const double            dbeta2,
 
   }
 
-  /* Stabilization part */
-  cs_sdm_square_init(n_ent, cb->aux);
+  /* Compute the contribution part of each edge for the stabilization term */
+  cs_real_t  *contrib_pe = cb->values;
+  memset(contrib_pe, 0, n_ent*sizeof(cs_real_t));
 
+  for (int f = 0; f < cm->n_fc; f++) {
+
+    for (int i = cm->f2e_idx[f]; f < cm->f2e_idx[f+1]; f++) {
+
+      const short int  k = cm->f2e_ids[i]; /* edge k */
+      const cs_real_t  ep_k[3] = { cm->edge[k].meas * cm->edge[k].unitv[0],
+                                   cm->edge[k].meas * cm->edge[k].unitv[1],
+                                   cm->edge[k].meas * cm->edge[k].unitv[2] };
+
+      cs_real_3_t  pty_fdk = {0, 0, 0};
+      for (int kk = 0; kk < 3; kk++) {
+        pty_fdk[0] += pty[0][kk] * cm->sefc[i].unitv[kk];
+        pty_fdk[1] += pty[1][kk] * cm->sefc[i].unitv[kk];
+        pty_fdk[2] += pty[2][kk] * cm->sefc[i].unitv[kk];
+      }
+
+      const cs_real_t  coef = cm->sefc[i].meas * dbeta2;
+      contrib_pe[k] +=
+        coef * _dp3(cm->sefc[i].unitv, pty_fdk)/_dp3(cm->sefc[i].unitv, ep_k) ;
+
+    } /* Loop on face edges */
+
+  } /* Loop on cell faces */
+
+  /* Stabilization part */
   for (int k = 0; k < n_ent; k++) {
 
+    const cs_real_t  contrib_pek = contrib_pe[k];
     const cs_real_t  ep_k[3] = { cm->edge[k].meas * cm->edge[k].unitv[0],
                                  cm->edge[k].meas * cm->edge[k].unitv[1],
                                  cm->edge[k].meas * cm->edge[k].unitv[2] };
-    const cs_real_3_t  nkf0 = { cm->sefc[2*k].unitv[0],
-                                cm->sefc[2*k].unitv[1],
-                                cm->sefc[2*k].unitv[2] };
-    const cs_real_3_t  nkf1 = { cm->sefc[2*k+1].unitv[0],
-                                cm->sefc[2*k+1].unitv[1],
-                                cm->sefc[2*k+1].unitv[2] };
 
-    cs_real_3_t  pty_fdk0 = {0, 0, 0}, pty_fdk1 = {0, 0, 0};
-    for (int kk = 0; kk < 3; kk++) {
-      pty_fdk0[0] += pty[0][kk] * nkf0[kk];
-      pty_fdk0[1] += pty[1][kk] * nkf0[kk];
-      pty_fdk0[2] += pty[2][kk] * nkf0[kk];
-
-      pty_fdk1[0] += pty[0][kk] * nkf1[kk];
-      pty_fdk1[1] += pty[1][kk] * nkf1[kk];
-      pty_fdk1[2] += pty[2][kk] * nkf1[kk];
-    }
-
-    double  contrib_pek = 0;
-    contrib_pek  = cm->sefc[2*k  ].meas*_dp3(nkf0, pty_fdk0)/_dp3(ep_k, nkf0);
-    contrib_pek += cm->sefc[2*k+1].meas*_dp3(nkf1, pty_fdk1)/_dp3(ep_k, nkf1);
-    contrib_pek *= dbeta2;
 
     for (int i = 0; i < n_ent; i++) {
 
@@ -1619,7 +1625,7 @@ cs_hodge_vb_ocs2_get_aniso_stiffness(const cs_param_hodge_t    hodgep,
   assert(hodgep.algo == CS_PARAM_HODGE_ALGO_OCS2);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ |
-                       CS_FLAG_COMP_EV | CS_FLAG_COMP_EFQ));
+                       CS_FLAG_COMP_EV | CS_FLAG_COMP_SEF));
 
   /* Initialize the hodge matrix */
   cs_sdm_t  *hloc = cb->hdg;
@@ -2567,36 +2573,36 @@ cs_hodge_epfd_voro_get(const cs_param_hodge_t    hodgep,
   assert(hodgep.type == CS_PARAM_HODGE_TYPE_EPFD);
   assert(hodgep.algo == CS_PARAM_HODGE_ALGO_VORONOI);
   assert(cs_eflag_test(cm->flag,
-                       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_EFQ));
+                       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_SEF));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
   cs_sdm_t  *hdg = cb->hdg;
   cs_sdm_square_init(cm->n_ec, hdg);
 
-  for (short int e = 0; e < cm->n_ec; e++) {
+  if (hodgep.is_iso) {
 
-    if (hodgep.is_iso) {
+    for (short int e = 0; e < cm->n_ec; e++)
       hdg->val[e*cm->n_ec+e] = cb->dpty_val*cm->dface[e].meas/cm->edge[e].meas;
+
+  }
+  else {
+
+    const cs_real_3_t  *tens = (const cs_real_3_t *)cb->dpty_mat;
+
+    cs_real_3_t  mv;
+    for (short int f = 0; f < cm->n_fc; f++) {
+      for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+        const short int  e = cm->f2e_ids[i];
+        const cs_nvec3_t  *sefc = cm->sefc + i;
+        cs_math_33_3_product(tens, sefc->unitv, mv);
+        hdg->val[e*cm->n_ec+e] += sefc->meas * _dp3(mv, sefc->unitv);
+      }
     }
-    else {
 
-      const cs_nvec3_t  sef0c = cm->sefc[2*e], sef1c = cm->sefc[2*e+1];
-      const cs_real_3_t *tens = (const cs_real_3_t *)cb->dpty_mat;
-
-      cs_real_3_t  mv;
-
-      /* First sub-triangle contribution */
-      cs_math_33_3_product(tens, sef0c.unitv, mv);
-      hdg->val[e*cm->n_ec+e] = sef0c.meas * _dp3(mv, sef0c.unitv);
-      /* Second sub-triangle contribution */
-      cs_math_33_3_product(tens, sef1c.unitv, mv);
-      hdg->val[e*cm->n_ec+e] += sef1c.meas * _dp3(mv, sef1c.unitv);
-
+    for (short int e = 0; e < cm->n_ec; e++)
       hdg->val[e*cm->n_ec+e] /= cm->edge[e].meas;
 
-    }
-
-  } /* Loop on cell edges */
+  } /* anisotropic */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
@@ -2761,7 +2767,7 @@ cs_hodge_epfd_ocs2_get(const cs_param_hodge_t    hodgep,
   assert(hodgep.algo == CS_PARAM_HODGE_ALGO_OCS2);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ |
-                       CS_FLAG_COMP_EV | CS_FLAG_COMP_EFQ));
+                       CS_FLAG_COMP_EV | CS_FLAG_COMP_SEF));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
   cs_sdm_t  *hdg = cb->hdg;
@@ -3313,11 +3319,11 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
         compute = cs_hodge_epfd_bubble_get;
         break;
       case CS_PARAM_HODGE_ALGO_OCS2:
-        msh_flag |= CS_FLAG_COMP_EV | CS_FLAG_COMP_EFQ;
+        msh_flag |= CS_FLAG_COMP_EV | CS_FLAG_COMP_SEF;
         compute = cs_hodge_epfd_ocs2_get;
         break;
       case CS_PARAM_HODGE_ALGO_VORONOI:
-        msh_flag |= CS_FLAG_COMP_EFQ;
+        msh_flag |= CS_FLAG_COMP_SEF;
         compute = cs_hodge_epfd_voro_get;
         break;
       default:

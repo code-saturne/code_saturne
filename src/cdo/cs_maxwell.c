@@ -176,11 +176,10 @@ _build_edge_based_vector_fields(const cs_cdo_quantities_t   *quant,
       const cs_lnum_t  e_id = c2e->ids[j];
       const cs_real_t  e_val = ep_values[e_id];
       const cs_real_t  *e_vect = quant->edge_vector + 3*e_id;
-      const cs_real_t  *sf0 = quant->sface_normal + 6*j;
-      const cs_real_t  *sf1 = sf0 + 3;
+      const cs_real_t  *dface = quant->dface_normal + 3*j;
       for (int k = 0; k < 3; k++) {
         c_fd[k] += fd_values[j] * e_vect[k];
-        c_ep[k] += e_val * (sf0[k] + sf1[k]);
+        c_ep[k] += e_val * dface[k];
       }
 
     }

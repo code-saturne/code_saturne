@@ -2907,7 +2907,7 @@ cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
   /* Sanity checks */
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PV  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
-                       CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  | CS_FLAG_COMP_EFQ));
+                       CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  | CS_FLAG_COMP_SEF));
 
   cs_real_3_t  grd_c, grd_v1, grd_v2, grd_pef, mgrd;
 
@@ -2973,12 +2973,7 @@ cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
 
       cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat, grd_pef, mgrd);
 
-      if (f == cm->e2f_ids[ee])
-        flx[e] -= cm->sefc[ee].meas * _dp3(cm->sefc[ee].unitv, mgrd);
-      else {
-        assert(f == cm->e2f_ids[ee+1]);
-        flx[e] -= cm->sefc[ee+1].meas * _dp3(cm->sefc[ee+1].unitv, mgrd);
-      }
+      flx[e] -= cm->sefc[i].meas * _dp3(cm->sefc[i].unitv, mgrd);
 
     }  /* Loop on face edges */
 

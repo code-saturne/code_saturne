@@ -71,6 +71,9 @@ BEGIN_C_DECLS
 
 #define CS_CDO_LOCAL_DBG       0
 
+/* Redefined names of function from cs_math to get shorter names */
+#define _dp3 cs_math_3_dot_product
+
 /*============================================================================
  * Global variables
  *============================================================================*/
@@ -91,21 +94,21 @@ static const cs_flag_t  cs_cdo_local_flag_v =
   CS_FLAG_COMP_PV | CS_FLAG_COMP_PVQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FV;
 static const cs_flag_t  cs_cdo_local_flag_e =
   CS_FLAG_COMP_PE | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_EV |
-  CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EF  | CS_FLAG_COMP_EFQ;
+  CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EF  | CS_FLAG_COMP_SEF;
 static const cs_flag_t  cs_cdo_local_flag_peq =
-  CS_FLAG_COMP_PEQ | CS_FLAG_COMP_FEQ;
+  CS_FLAG_COMP_PEQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_SEF;
 static const cs_flag_t  cs_cdo_local_flag_f =
   CS_FLAG_COMP_PF  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_FE  |
-  CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EF  | CS_FLAG_COMP_EFQ | CS_FLAG_COMP_HFQ |
+  CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EF  | CS_FLAG_COMP_SEF | CS_FLAG_COMP_HFQ |
   CS_FLAG_COMP_FV;
 static const cs_flag_t  cs_cdo_local_flag_pfq =
-  CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FEQ;
+  CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_SEF;
 static const cs_flag_t  cs_cdo_local_flag_deq =
-  CS_FLAG_COMP_HFQ | CS_FLAG_COMP_DEQ;
+  CS_FLAG_COMP_HFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_SEF;
 static const cs_flag_t  cs_cdo_local_flag_fe =
-  CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EF | CS_FLAG_COMP_EFQ;
+  CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EF | CS_FLAG_COMP_SEF;
 static const cs_flag_t  cs_cdo_local_flag_ef =
-  CS_FLAG_COMP_EF | CS_FLAG_COMP_EFQ;
+  CS_FLAG_COMP_EF;
 
 /* Auxiliary buffers for computing quantities related to a cs_cell_mesh_t */
 static double     **cs_cdo_local_dbuf = NULL;
@@ -626,13 +629,13 @@ cs_cell_mesh_create(const cs_cdo_connect_t   *connect)
   BFT_MALLOC(cm->f2e_ids, 2*cm->n_max_ebyc, short int);
   BFT_MALLOC(cm->f2e_sgn, 2*cm->n_max_ebyc, short int);
   BFT_MALLOC(cm->tef, 2*cm->n_max_ebyc, double);
+  BFT_MALLOC(cm->sefc, 2*cm->n_max_ebyc, cs_nvec3_t);
 
   /* edge --> vertices connectivity */
   BFT_MALLOC(cm->e2v_ids, 2*cm->n_max_ebyc, short int);
 
   /* edge --> face connectivity */
   BFT_MALLOC(cm->e2f_ids, 2*cm->n_max_ebyc, short int);
-  BFT_MALLOC(cm->sefc, 2*cm->n_max_ebyc, cs_nvec3_t);
 
   cs_cell_mesh_reset(cm);
 
@@ -816,29 +819,35 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
 
   if (cm->flag & cs_cdo_local_flag_fe) {
 
-    bft_printf(" n_ef | f:tef\n");
+    bft_printf("   f | n_ef | e:tef\n");
     for (short int f = 0; f < cm->n_fc; f++) {
-      bft_printf(" %4d |", cm->f2e_idx[f+1] - cm->f2e_idx[f]);
+      bft_printf(" f%2d | %4d |", f, cm->f2e_idx[f+1] - cm->f2e_idx[f]);
       for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++)
-        bft_printf(" f%2d:%.4e (%+1d)",
+        bft_printf(" e%2d:%.4e (%+1d)",
                    cm->f2e_ids[i], cm->tef[i], cm->f2e_sgn[i]);
       bft_printf("\n");
     }
 
-  }
+    bft_printf("   e | f0 | sefc ...\n");
+    for (short int e = 0; e < cm->n_ec; e++) {
+      int count = 0;
+      bft_printf("  %2d", e);
+      for (short int f = 0; f < cm->n_fc; f++) {
+        for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+          if (e == cm->f2e_ids[i]) {
+            cs_nvec3_t  _s = cm->sefc[i];
+            bft_printf(" | %2d |  %.4e (%- .4e %- .4e %- .4e)", f,
+                       _s.meas, _s.unitv[0], _s.unitv[1], _s.unitv[2]);
+            count++;
+          }
+        } /* Loop on face edges */
+        if (count == 2)
+          break;
+      } /* Loop on faces */
 
-  if (cm->flag & cs_cdo_local_flag_ef) {
+      bft_printf("\n");
 
-    bft_printf("%4s | f0 | %-53s | f1 | %-53s\n",
-               "e", "sef0c: meas, unitv", "sef1c: meas, unitv");
-    for (short int e = 0; e < cm->n_ec; e++)
-      bft_printf(" %3d | %2d | % .4e (% .4e % .4e % .4e) |"
-                 " %2d | % .4e (% .4e % .4e % .4e)\n",
-                 e, cm->e2f_ids[2*e], cm->sefc[2*e].meas,
-                 cm->sefc[2*e].unitv[0], cm->sefc[2*e].unitv[1],
-                 cm->sefc[2*e].unitv[2], cm->e2f_ids[2*e+1],
-                 cm->sefc[2*e+1].meas, cm->sefc[2*e+1].unitv[0],
-                 cm->sefc[2*e+1].unitv[1], cm->sefc[2*e+1].unitv[2]);
+    } /* Loop on edges */
 
   }
 
@@ -1004,18 +1013,12 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     /* Dual face quantities related to each edge */
     if (build_flag & CS_FLAG_COMP_DFQ) {
 
-      const cs_real_t  *sface = quant->sface_normal + 6*c2e_idx[0];
+      const cs_real_t  *dface = quant->dface_normal + 3*c2e_idx[0];
 
       for (short int e = 0; e < cm->n_ec; e++) {
 
-        cs_real_3_t  df_vect;
-        const cs_real_t  *sface0 = sface + 6*e, *sface1 = sface0 + 3;
-        for (int k = 0; k < 3; k++)
-          df_vect[k] = sface0[k] + sface1[k];
-
         cs_nvec3_t  df_nvect;
-        cs_nvec3(df_vect, &df_nvect);
-
+        cs_nvec3(dface + 3*e, &df_nvect);
         cm->dface[e].meas = df_nvect.meas;
         for (int k = 0; k < 3; k++)
           cm->dface[e].unitv[k] = df_nvect.unitv[k];
@@ -1075,8 +1078,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
       /* Compute the height of the pyramid of base f whose apex is
          the cell center */
       for (short int f = 0; f < cm->n_fc; f++) {
-        cm->hfc[f] = cs_math_3_dot_product(cm->face[f].unitv,
-                                           cm->dedge[f].unitv);
+        cm->hfc[f] = _dp3(cm->face[f].unitv, cm->dedge[f].unitv);
         cm->hfc[f] *= cm->dedge[f].meas;
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_LOCAL_DBG > 0
         if (cm->hfc[f] <= 0)
@@ -1245,6 +1247,41 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
     } /* face --> edges quantities */
 
+    if (build_flag & CS_FLAG_COMP_SEF) { /* Build cm->sefc */
+
+      for (short int f = 0; f < cm->n_fc; f++) {
+
+        const cs_quant_t  pfq = cm->face[f];
+        const cs_nvec3_t  deq = cm->dedge[f];
+        const cs_real_t  de_coef = 0.5*deq.meas;
+
+        /* Loop on face edges */
+        for (short int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+          const cs_quant_t  peq = cm->edge[cm->f2e_ids[i]];
+
+          /* Vector area : 0.5 (x_f - x_e) cross.prod (x_f - x_c) */
+          const cs_real_3_t  xexf = { pfq.center[0] - peq.center[0],
+                                      pfq.center[1] - peq.center[1],
+                                      pfq.center[2] - peq.center[2] };
+          cs_real_3_t  vect_area
+            = { deq.unitv[1]*xexf[2] - deq.unitv[2]*xexf[1],
+                deq.unitv[2]*xexf[0] - deq.unitv[0]*xexf[2],
+                deq.unitv[0]*xexf[1] - deq.unitv[1]*xexf[0] };
+
+          if (_dp3(peq.unitv, vect_area) > 0)
+            for (int k = 0; k < 3; k++) vect_area[k] *= de_coef;
+          else
+            for (int k = 0; k < 3; k++) vect_area[k] *= -de_coef;
+
+          cs_nvec3(vect_area, cm->sefc + i);
+
+        } /* Loop on face edges */
+
+      } /* Loop on cell faces */
+
+    } /* sefc quantities */
+
   } /* face --> edges connectivity */
 
   if (build_flag & cs_cdo_local_flag_ef) {
@@ -1265,32 +1302,6 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
       } /* Loop on face edges */
     } /* Loop on cell faces */
-
-    if (build_flag & CS_FLAG_COMP_EFQ) { /* Build cm->sefc */
-
-      cs_nvec3_t  nv;
-      const cs_lnum_t  *c2e_idx = connect->c2e->idx + c_id;
-
-      for (short int e = 0; e < cm->n_ec; e++) {
-
-        const cs_real_t  *sface0 = quant->sface_normal + 6*(c2e_idx[0] + e);
-        const cs_real_t  *sface1 = sface0 + 3;
-        cs_nvec3_t  *_sefc = cm->sefc + 2*e;
-
-        cs_nvec3(sface0, &nv);
-        _sefc[0].meas = nv.meas;
-        _sefc[0].unitv[0] = nv.unitv[0];
-        _sefc[0].unitv[1] = nv.unitv[1];
-        _sefc[0].unitv[2] = nv.unitv[2];
-        cs_nvec3(sface1, &nv);
-        _sefc[1].meas = nv.meas;
-        _sefc[1].unitv[0] = nv.unitv[0];
-        _sefc[1].unitv[1] = nv.unitv[1];
-        _sefc[1].unitv[2] = nv.unitv[2];
-
-      } /* Loop on face edges */
-
-    } /* (edge,face) quantities */
 
   } /* edge-->faces */
 
@@ -1902,5 +1913,7 @@ cs_face_mesh_light_build(const cs_cell_mesh_t    *cm,
 }
 
 /*----------------------------------------------------------------------------*/
+
+#undef _dp3
 
 END_C_DECLS
