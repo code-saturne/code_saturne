@@ -2334,7 +2334,7 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    hodgep,
 
     /* Define useful quantities for WBS algo. */
     const double pfc_vol = cs_compute_fwbs_q1(f, cm, wvf, pefc_vol);
-    const double f_coef = 0.3 * pfc_vol;
+    const double f_coef = 0.3 * cm->pvol_f[f];
 
     /* Add face contribution:
        Diagonal entry    H(i,i) += 0.3*wif*wif*pfc_vol

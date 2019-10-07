@@ -564,7 +564,7 @@ cs_compute_fwbs_q1(short int                 f,
   /* Compute geometric quantities */
   _get_wvf_pefcvol(f, cm, h_coef, f_coef, wvf, pefc_vol);
 
-  return  h_coef * pfq.meas; // volume of p_{f,c}
+  return  cm->pvol_f[f];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -652,7 +652,7 @@ cs_compute_fwbs_q3(short int                 f,
   for (int k = 0; k < 3; k++)
     grd_c[k] = ohf * pfq.unitv[k];
 
-  return  h_coef * pfq.meas; // volume of p_{f,c}
+  return  cm->pvol_f[f];
 }
 
 /*----------------------------------------------------------------------------*/

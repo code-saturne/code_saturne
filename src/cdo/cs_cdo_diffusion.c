@@ -172,7 +172,7 @@ _cdofb_normal_flux_reco(short int                  fb,
   assert(hodgep.type == CS_PARAM_HODGE_TYPE_EDFP);
   assert(hodgep.algo == CS_PARAM_HODGE_ALGO_COST);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
-                       CS_FLAG_COMP_HFQ));
+                       CS_FLAG_COMP_PFC));
   assert(cm->f_sgn[fb] == 1);  /* +1 because it's a boundary face */
 
   const short int  nfc = cm->n_fc;
@@ -181,7 +181,7 @@ _cdofb_normal_flux_reco(short int                  fb,
 
   /* |fb|^2 * nu_{fb}^T.kappa.nu_{fb} */
   const cs_real_t  fb_k_fb = pfbq.meas * _dp3(kappa_f[fb], pfbq.unitv);
-  const cs_real_t  beta_fbkfb_o_pfc = hodgep.coef * fb_k_fb / cm->pfc[fb];
+  const cs_real_t  beta_fbkfb_o_pfc = hodgep.coef * fb_k_fb / cm->pvol_f[fb];
 
   cs_real_t  *ntrgrd_fb = ntrgrd->val + fb * (nfc + 1);
   cs_real_t  row_sum = 0.0;

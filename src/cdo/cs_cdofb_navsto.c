@@ -129,7 +129,7 @@ _normal_flux_reco(short int                  fb,
 {
   /* Sanity check */
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
-                       CS_FLAG_COMP_HFQ));
+                       CS_FLAG_COMP_PFC));
   assert(cm->f_sgn[fb] == 1);  /* +1 because it's a boundary face */
 
   const short int  nfc = cm->n_fc;
@@ -138,7 +138,7 @@ _normal_flux_reco(short int                  fb,
 
   /* |fb|^2 * nu_{fb}^T.kappa.nu_{fb} */
   const cs_real_t  fb_k_fb = pfbq.meas * _dp3(kappa_f[fb], pfbq.unitv);
-  const cs_real_t  beta_fbkfb_o_pfc = beta * fb_k_fb / cm->pfc[fb];
+  const cs_real_t  beta_fbkfb_o_pfc = beta * fb_k_fb / cm->pvol_f[fb];
   const cs_real_t  ov_vol = 1./cm->vol_c;
 
   cs_real_t  *ntrgrd_fb = ntrgrd->val + fb * (nfc + 1);

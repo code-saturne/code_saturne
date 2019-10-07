@@ -33,6 +33,7 @@
 
 #include "cs_base.h"
 #include "cs_defs.h"
+#include "cs_flag.h"
 #include "cs_math.h"
 #include "cs_param.h"
 

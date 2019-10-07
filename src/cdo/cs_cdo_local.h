@@ -166,27 +166,28 @@ typedef struct {
   double         diam_c;  /*!< diameter of the current cell */
 
   /* Vertex information */
-  short int    n_vc;  /*!< local number of vertices in a cell */
+  short int    n_vc;  /*!< number of vertices in a cell */
   cs_lnum_t   *v_ids; /*!< vertex ids on this rank */
   double      *xv;    /*!< local vertex coordinates (copy) */
   double      *wvc;   /*!< weight |dualvol(v) cap vol_c|/|vol_c|, size: n_vc */
 
   /* Edge information */
-  short int    n_ec;  /*!< local number of edges in a cell */
-  cs_lnum_t   *e_ids; /*!< edge ids on this rank */
-  cs_quant_t  *edge;  /*!< local edge quantities (xe, length and unit vector) */
-  cs_nvec3_t  *dface; /*!< local dual face quantities (area and unit normal) */
+  short int    n_ec;   /*!< number of edges in a cell */
+  cs_lnum_t   *e_ids;  /*!< edge ids on this rank */
+  cs_quant_t  *edge;   /*!< edge quantities (xe, length and unit vector) */
+  cs_nvec3_t  *dface;  /*!< dual face quantities (area and unit normal) */
+  cs_real_t   *pvol_e; /*!< volume associated to an edge in the cell */
 
   /* Face information */
-  short int    n_fc;     /*!< local number of faces in a cell */
+  short int    n_fc;        /*!< number of faces in a cell */
   cs_lnum_t    bface_shift; /*!< shift to get the boundary face numbering */
-  cs_lnum_t   *f_ids;    /*!< face ids on this rank */
-  short int   *f_sgn;    /*!< incidence number between f and c */
-  double      *f_diam;   /*!< diameters of local faces */
-  double      *hfc;      /*!< height of the pyramid of basis f and apex c */
-  double      *pfc;      /*!< volume of the pyramid for each face */
-  cs_quant_t  *face;     /*!< face quantities (xf, area and unit normal) */
-  cs_nvec3_t  *dedge;    /*!< dual edge quantities (length and unit vector) */
+  cs_lnum_t   *f_ids;       /*!< face ids on this rank */
+  short int   *f_sgn;       /*!< incidence number between f and c */
+  double      *f_diam;      /*!< diameters of local faces */
+  double      *hfc;         /*!< height of the pyramid of basis f and apex c */
+  cs_quant_t  *face;        /*!< face quantities (xf, area and unit normal) */
+  cs_nvec3_t  *dedge;      /*!< dual edge quantities (length and unit vector) */
+  cs_real_t   *pvol_f;      /*!< volume associated to a face in the cell */
 
   /* Local e2v connectivity: size 2*n_ec (allocated to 2*n_max_ebyc) */
   short int   *e2v_ids;  /*!< cell-wise edge->vertices connectivity */

@@ -430,7 +430,6 @@ _compute_face_based_quantities(const cs_cdo_connect_t  *topo,
   /* Parameters not used up to now */
   CS_UNUSED(eb_scheme_flag);
   CS_UNUSED(vb_scheme_flag);
-  CS_UNUSED(vcb_scheme_flag);
 
   /* Compute dual edge quantities */
   const cs_lnum_t  n_cells = cdoq->n_cells;
@@ -459,7 +458,7 @@ _compute_face_based_quantities(const cs_cdo_connect_t  *topo,
   } /* End of loop on cells */
 
   /* Compute the volume of the pyramid */
-  if (fb_scheme_flag > 0 || hho_scheme_flag > 0)
+  if (fb_scheme_flag > 0 || hho_scheme_flag > 0 || vcb_scheme_flag > 0)
     cs_cdo_quantities_compute_pvol_fc(cdoq, topo->c2f, &(cdoq->pvol_fc));
 }
 

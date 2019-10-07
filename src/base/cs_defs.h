@@ -302,7 +302,6 @@ typedef int                 cs_int_t;    /* Fortran integer */
 typedef double              cs_real_t;   /* Fortran double precision */
 typedef char                cs_byte_t;   /* Byte (untyped memory unit) */
 typedef unsigned short int  cs_flag_t;   /* Flag storing metadata */
-typedef unsigned int        cs_eflag_t;  /* Flag storing extended metadata */
 
 /* Vector or array block types */
 

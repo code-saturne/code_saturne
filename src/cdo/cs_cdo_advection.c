@@ -689,7 +689,7 @@ _vcb_cellwise_consistent_part(const cs_nvec3_t            adv_cell,
   const cs_nvec3_t  deq = fm->dedge;
   const cs_quant_t  pfq = fm->face;
   const double  hf_coef = cs_math_1ov3 * cm->hfc[fm->f_id];
-  const double  pfc_vol = hf_coef * pfq.meas;
+  const double  pfc_vol = cm->pvol_f[fm->f_id];
 
   /* Set the consistent part for already known part.
      Consistent part (c,c) contribution: sum_(f \in F_c) |pfc| bgc

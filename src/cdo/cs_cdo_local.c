@@ -90,25 +90,30 @@ static const int  n_robin_parameters = 3;
 static int  cs_cdo_local_n_structures = 0;
 
 /* Store predefined flags */
-static const cs_flag_t  cs_cdo_local_flag_v =
+static const cs_eflag_t  cs_cdo_local_flag_v =
   CS_FLAG_COMP_PV | CS_FLAG_COMP_PVQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FV;
-static const cs_flag_t  cs_cdo_local_flag_e =
+static const cs_eflag_t  cs_cdo_local_flag_e =
   CS_FLAG_COMP_PE | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_EV |
   CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EF  | CS_FLAG_COMP_SEF;
-static const cs_flag_t  cs_cdo_local_flag_peq =
-  CS_FLAG_COMP_PEQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_SEF;
-static const cs_flag_t  cs_cdo_local_flag_f =
+static const cs_eflag_t  cs_cdo_local_flag_peq =
+  CS_FLAG_COMP_PEQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_SEF | CS_FLAG_COMP_PEC;
+static const cs_eflag_t  cs_cdo_local_flag_dfq =
+  CS_FLAG_COMP_DFQ | CS_FLAG_COMP_SEF | CS_FLAG_COMP_PEC;
+static const cs_eflag_t  cs_cdo_local_flag_f =
   CS_FLAG_COMP_PF  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_FE  |
   CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EF  | CS_FLAG_COMP_SEF | CS_FLAG_COMP_HFQ |
   CS_FLAG_COMP_FV;
-static const cs_flag_t  cs_cdo_local_flag_pfq =
-  CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_SEF;
-static const cs_flag_t  cs_cdo_local_flag_deq =
+static const cs_eflag_t  cs_cdo_local_flag_pfq =
+  CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_SEF |
+  CS_FLAG_COMP_PFC;
+static const cs_eflag_t  cs_cdo_local_flag_deq =
   CS_FLAG_COMP_HFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_SEF;
-static const cs_flag_t  cs_cdo_local_flag_fe =
+static const cs_eflag_t  cs_cdo_local_flag_fe =
   CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EF | CS_FLAG_COMP_SEF;
-static const cs_flag_t  cs_cdo_local_flag_ef =
+static const cs_eflag_t  cs_cdo_local_flag_ef =
   CS_FLAG_COMP_EF;
+static const cs_eflag_t  cs_cdo_local_flag_pfc =
+  CS_FLAG_COMP_PFC | CS_FLAG_COMP_HFQ;
 
 /* Auxiliary buffers for computing quantities related to a cs_cell_mesh_t */
 static double     **cs_cdo_local_dbuf = NULL;
@@ -607,18 +612,19 @@ cs_cell_mesh_create(const cs_cdo_connect_t   *connect)
 
   /* Edge information */
   BFT_MALLOC(cm->e_ids, cm->n_max_ebyc, cs_lnum_t);
+  BFT_MALLOC(cm->e2v_sgn, cm->n_max_ebyc, short int);
   BFT_MALLOC(cm->edge, cm->n_max_ebyc, cs_quant_t);
   BFT_MALLOC(cm->dface, cm->n_max_ebyc, cs_nvec3_t);
-  BFT_MALLOC(cm->e2v_sgn, cm->n_max_ebyc, short int);
+  BFT_MALLOC(cm->pvol_e, cm->n_max_ebyc, double);
 
   /* Face information */
   BFT_MALLOC(cm->f_ids, cm->n_max_fbyc, cs_lnum_t);
   BFT_MALLOC(cm->f_sgn, cm->n_max_fbyc, short int);
   BFT_MALLOC(cm->f_diam, cm->n_max_fbyc, double);
-  BFT_MALLOC(cm->hfc, cm->n_max_fbyc, double);
-  BFT_MALLOC(cm->pfc, cm->n_max_fbyc, double);
   BFT_MALLOC(cm->face, cm->n_max_fbyc, cs_quant_t);
   BFT_MALLOC(cm->dedge, cm->n_max_fbyc, cs_nvec3_t);
+  BFT_MALLOC(cm->hfc, cm->n_max_fbyc, double);
+  BFT_MALLOC(cm->pvol_f, cm->n_max_fbyc, double);
 
   /* face --> vertices connectivity */
   BFT_MALLOC(cm->f2v_idx, cm->n_max_fbyc + 1, short int);
@@ -700,6 +706,7 @@ cs_cell_mesh_reset(cs_cell_mesh_t   *cm)
   for (short int e = 0; e < cm->n_max_ebyc; e++) {
     cm->e_ids[e] = -1;
     cm->e2v_sgn[e] = 0;
+    cm->pvol_e[e] = -DBL_MAX;
     cm->edge[e].meas = cm->dface[e].meas = -DBL_MAX;
     cm->edge[e].unitv[0] = cm->dface[e].unitv[0] = -DBL_MAX;
     cm->edge[e].unitv[1] = cm->dface[e].unitv[1] = -DBL_MAX;
@@ -715,7 +722,7 @@ cs_cell_mesh_reset(cs_cell_mesh_t   *cm)
     cm->f_sgn[f] = 0;
     cm->f_diam[f] = -DBL_MAX;
     cm->hfc[f] = -DBL_MAX;
-    cm->pfc[f] = -DBL_MAX;
+    cm->pvol_f[f] = -DBL_MAX;
     cm->face[f].meas = cm->dedge[f].meas = -DBL_MAX;
     cm->face[f].unitv[0] = cm->dedge[f].unitv[0] = -DBL_MAX;
     cm->face[f].unitv[1] = cm->dedge[f].unitv[1] = -DBL_MAX;
@@ -776,20 +783,21 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
   if (cm->flag & cs_cdo_local_flag_e) {
 
     bft_printf(" %s | %6s | %3s | %2s | %2s | %9s |"
-               " %35s | %35s | %10s | %35s\n",
+               " %35s | %35s | %10s | %35s | %9s\n",
                "e", "id", "sgn", "v1", "v2", "length", "unit", "coords",
-               "df.meas", "df.unit");
+               "df.meas", "df.unit", "pvol_e");
     for (short int e = 0; e < cm->n_ec; e++) {
 
       cs_quant_t  peq = cm->edge[e];
       cs_nvec3_t  dfq = cm->dface[e];
       bft_printf("%2d | %6d | %3d | %2d | %2d | %.3e |"
                  " % .4e % .4e % .4e | % .4e % .4e % .4e | %.4e |"
-                 " % .4e % .4e % .4e\n",
+                 " % .4e % .4e % .4e | % .4e\n",
                  e, cm->e_ids[e], cm->e2v_sgn[e], cm->e2v_ids[2*e],
                  cm->e2v_ids[2*e+1], peq.meas, peq.unitv[0], peq.unitv[1],
                  peq.unitv[2], peq.center[0], peq.center[1], peq.center[2],
-                 dfq.meas, dfq.unitv[0], dfq.unitv[1], dfq.unitv[2]);
+                 dfq.meas, dfq.unitv[0], dfq.unitv[1], dfq.unitv[2],
+                 cm->pvol_e[e]);
 
     } /* Loop on edges */
 
@@ -811,7 +819,7 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
                  f, cm->f_ids[f], pfq.meas, cm->f_sgn[f],
                  pfq.unitv[0], pfq.unitv[1], pfq.unitv[2], pfq.center[0],
                  pfq.center[1], pfq.center[2], deq.meas, deq.unitv[0],
-                 deq.unitv[1], deq.unitv[2], cm->pfc[f], cm->hfc[f],
+                 deq.unitv[1], deq.unitv[2], cm->pvol_f[f], cm->hfc[f],
                  cm->f_diam[f]);
     }
 
@@ -876,12 +884,13 @@ cs_cell_mesh_free(cs_cell_mesh_t     **p_cm)
   BFT_FREE(cm->e_ids);
   BFT_FREE(cm->edge);
   BFT_FREE(cm->dface);
+  BFT_FREE(cm->pvol_e);
 
   BFT_FREE(cm->f_ids);
   BFT_FREE(cm->f_sgn);
   BFT_FREE(cm->f_diam);
   BFT_FREE(cm->hfc);
-  BFT_FREE(cm->pfc);
+  BFT_FREE(cm->pvol_f);
   BFT_FREE(cm->face);
   BFT_FREE(cm->dedge);
 
@@ -1011,7 +1020,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     } /* Primal edge quantities */
 
     /* Dual face quantities related to each edge */
-    if (build_flag & CS_FLAG_COMP_DFQ) {
+    if (build_flag & cs_cdo_local_flag_dfq) {
 
       const cs_real_t  *dface = quant->dface_normal + 3*c2e_idx[0];
 
@@ -1026,6 +1035,15 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
       }
 
     } /* Dual face quantities */
+
+    if (build_flag & CS_FLAG_COMP_PEC) {
+
+      assert(quant->pvol_ec != NULL);
+      const cs_real_t  *_pvol = quant->pvol_ec + c2e_idx[0];
+      for (short int e = 0; e < cm->n_ec; e++)
+        cm->pvol_e[e] = _pvol[e];
+
+    }
 
   } /* Edge-related quantities */
 
@@ -1073,24 +1091,34 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
     } /* Dual edge quantities */
 
+    if (build_flag & cs_cdo_local_flag_pfc) {
+
+      if (quant->pvol_fc != NULL) {
+
+        const cs_real_t  *_pvol = quant->pvol_fc + c2f_idx[0];
+        for (short int f = 0; f < cm->n_fc; f++)
+          cm->pvol_f[f] = _pvol[f];
+
+      }
+      else {
+
+        assert(cs_eflag_test(build_flag,
+                             CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
+        for (short int f = 0; f < cm->n_fc; f++) {
+          cm->pvol_f[f] =  _dp3(cm->face[f].unitv, cm->dedge[f].unitv);
+          cm->pvol_f[f] *= cs_math_1ov3 * cm->face[f].meas * cm->dedge[f].meas;
+        }
+
+      }
+
+    }
+
     if (build_flag & CS_FLAG_COMP_HFQ) {
 
       /* Compute the height of the pyramid of base f whose apex is
          the cell center */
-      for (short int f = 0; f < cm->n_fc; f++) {
-        cm->hfc[f] = _dp3(cm->face[f].unitv, cm->dedge[f].unitv);
-        cm->hfc[f] *= cm->dedge[f].meas;
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_LOCAL_DBG > 0
-        if (cm->hfc[f] <= 0)
-          bft_error(__FILE__, __LINE__, 0,
-                    " %s: Invalid result; hfc = %5.3e < 0 !\n",
-                    __func__, cm->hfc[f]);
-#endif
-
-        /* Volume of the pyramid of base f and apex x_c */
-        cm->pfc[f] = cs_math_1ov3 * cm->hfc[f] * cm->face[f].meas;
-
-      } /* Loop on cell faces */
+      for (short int f = 0; f < cm->n_fc; f++)
+        cm->hfc[f] = 3 * cm->pvol_f[f] / cm->face[f].meas;
 
     } /* Quantities related to the pyramid of base f */
 
