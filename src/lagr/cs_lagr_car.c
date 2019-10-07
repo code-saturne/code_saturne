@@ -428,12 +428,12 @@ cs_lagr_car(int              iprev,
 
             /* relative main direction */
             cs_real_t vrn[3];
-            for  (cs_lnum_t i = 0; i < 3; i++)
+            for (cs_lnum_t i = 0; i < 3; i++)
               vrn[i] = vpart[i] - vflui[i];
+
             cs_real_t vrnn = cs_math_3_norm(vrn);
-            vrnn = sqrt(vrnn);
             if (vrnn > 1.e-10) { /* TODO replace this with adimensional test */
-              for  (cs_lnum_t i = 0; i < 3; i++)
+              for (cs_lnum_t i = 0; i < 3; i++)
                 vrn[i] /= vrnn;
             }
             else {
