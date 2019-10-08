@@ -1650,7 +1650,6 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t          *mesh,
 
   cs_timer_t  t_start = cs_timer_time();
 
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces, n_cells = quant->n_cells;
 
@@ -1661,7 +1660,6 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t          *mesh,
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t *mom_eqp = mom_eq->param;
   cs_equation_builder_t *mom_eqb = mom_eq->builder;
-  cs_real_t  *vel_c = sc->velocity->val;
 
   /*--------------------------------------------------------------------------
    *                      BUILD: START

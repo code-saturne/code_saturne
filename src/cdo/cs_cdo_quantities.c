@@ -551,12 +551,6 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
 
       const cs_adjacency_t  *c2f = topo->c2f, *f2e = topo->f2e;
 
-#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
-      int t_id = omp_get_thread_num();
-#else
-      int t_id = 0;
-#endif
-
 #     pragma omp for CS_CDO_OMP_SCHEDULE
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
