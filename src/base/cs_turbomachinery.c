@@ -47,6 +47,7 @@
 #include "cs_base.h"
 #include "cs_boundary_zone.h"
 #include "cs_coupling.h"
+#include "cs_cell_to_vertex.h"
 #include "cs_gradient.h"
 #include "cs_gui.h"
 #include "cs_gui_mesh.h"
@@ -1119,6 +1120,7 @@ _update_mesh(bool     restart_mode,
 
   }
 
+  cs_cell_to_vertex_free();
   cs_mesh_adjacencies_update_mesh();
 
   /* Update linear algebra APIs relative to mesh */

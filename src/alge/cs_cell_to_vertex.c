@@ -502,6 +502,7 @@ cs_cell_to_vertex_free(void)
  * \param[in]       verbosity   verbosity level
  * \param[in]       tr_dim      2 for tensor with periodicity of rotation,
  *                              0 otherwise
+ * \param[in]       c_weight    cell weight, or NULL
  * \param[in]       c_var       base cell-based variable
  * \param[in]       b_var       base boundary-face values, or NULL
  * \param[out]      v_var       vertex-based variable
@@ -512,6 +513,7 @@ void
 cs_cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
                          int                        verbosity,
                          int                        tr_dim,
+                         const cs_real_t            c_weight[restrict],
                          const cs_real_t            c_var[restrict],
                          const cs_real_t            b_var[restrict],
                          cs_real_t                  v_var[restrict])
@@ -538,26 +540,64 @@ cs_cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
     v_var[v_id] = 0;
 
   switch(method) {
+
   case CS_CELL_TO_VERTEX_UNWEIGHTED:
     {
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        cs_lnum_t s_id = c2v_idx[c_id];
-        cs_lnum_t e_id = c2v_idx[c_id+1];
-        for (cs_lnum_t j = s_id; j < e_id; j++) {
-          cs_lnum_t v_id = c2v_ids[j];
-          v_var[v_id] += c_var[c_id];
+      if (c_weight == NULL) {
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+          cs_lnum_t s_id = c2v_idx[c_id];
+          cs_lnum_t e_id = c2v_idx[c_id+1];
+          for (cs_lnum_t j = s_id; j < e_id; j++) {
+            cs_lnum_t v_id = c2v_ids[j];
+            v_var[v_id] += c_var[c_id];
+          }
         }
-      }
 
-      if (m->vtx_interfaces != NULL)
-        cs_interface_set_sum(m->vtx_interfaces,
-                             m->n_vertices,
-                             1,
-                             true,
-                             CS_REAL_TYPE,
-                             v_var);
+        if (m->vtx_interfaces != NULL)
+          cs_interface_set_sum(m->vtx_interfaces,
+                               m->n_vertices,
+                               1,
+                               true,
+                               CS_REAL_TYPE,
+                               v_var);
+      }
+      else {
+        cs_real_t *v_w;
+        BFT_MALLOC(v_w, n_vertices, cs_real_t);
+        for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
+          v_w[v_id] = 0;
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+          cs_lnum_t s_id = c2v_idx[c_id];
+          cs_lnum_t e_id = c2v_idx[c_id+1];
+          for (cs_lnum_t j = s_id; j < e_id; j++) {
+            cs_lnum_t v_id = c2v_ids[j];
+            v_var[v_id] += c_var[c_id]*c_weight[c_id];
+            v_w[v_id] += c_weight[c_id];
+          }
+        }
+
+        if (m->vtx_interfaces != NULL) {
+          cs_interface_set_sum(m->vtx_interfaces,
+                               n_vertices,
+                               1,
+                               true,
+                               CS_REAL_TYPE,
+                               v_var);
+          cs_interface_set_sum(m->vtx_interfaces,
+                               n_vertices,
+                               1,
+                               true,
+                               CS_REAL_TYPE,
+                               v_w);
+        }
+        for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
+          v_var[v_id] /= v_w[v_id];
+
+        BFT_FREE(v_w);
+      }
     }
     break;
+
   case CS_CELL_TO_VERTEX_SHEPARD:
     {
       if (! _set[CS_CELL_TO_VERTEX_SHEPARD])
@@ -565,36 +605,88 @@ cs_cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
 
       const cs_weight_t *w = _weights[CS_CELL_TO_VERTEX_SHEPARD][0];
 
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        cs_lnum_t s_id = c2v_idx[c_id];
-        cs_lnum_t e_id = c2v_idx[c_id+1];
-        for (cs_lnum_t j = s_id; j < e_id; j++) {
-          cs_lnum_t v_id = c2v_ids[j];
-          v_var[v_id] += c_var[c_id]*w[j];
+      cs_real_t *v_w = NULL;
+      if (c_weight != NULL) {
+        BFT_MALLOC(v_w, n_vertices, cs_real_t);
+        for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
+          v_w[v_id] = 0;
+      }
+
+      if (c_weight == NULL) {
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+          cs_lnum_t s_id = c2v_idx[c_id];
+          cs_lnum_t e_id = c2v_idx[c_id+1];
+          for (cs_lnum_t j = s_id; j < e_id; j++) {
+            cs_lnum_t v_id = c2v_ids[j];
+            v_var[v_id] += c_var[c_id] * w[j];
+          }
+        }
+      }
+      else {
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+          cs_lnum_t s_id = c2v_idx[c_id];
+          cs_lnum_t e_id = c2v_idx[c_id+1];
+          for (cs_lnum_t j = s_id; j < e_id; j++) {
+            cs_lnum_t v_id = c2v_ids[j];
+            v_var[v_id] += c_var[c_id] * w[j] * c_weight[c_id];
+            v_w[v_id] += c_weight[c_id];
+          }
         }
       }
 
       const cs_weight_t *wb = _weights[CS_CELL_TO_VERTEX_SHEPARD][1];
 
-      if (b_var == NULL) {
-        for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-          cs_lnum_t c_id = m->b_face_cells[f_id];
-          cs_real_t _b_var = c_var[c_id];
-          cs_lnum_t s_id = f2v_idx[f_id];
-          cs_lnum_t e_id = f2v_idx[f_id+1];
-          for (cs_lnum_t j = s_id; j < e_id; j++) {
-            cs_lnum_t v_id = f2v_ids[j];
-            v_var[v_id] += _b_var*wb[j];
+      if (c_weight == NULL) {
+
+        if (b_var == NULL) {
+          for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+            cs_lnum_t c_id = m->b_face_cells[f_id];
+            cs_real_t _b_var = c_var[c_id];
+            cs_lnum_t s_id = f2v_idx[f_id];
+            cs_lnum_t e_id = f2v_idx[f_id+1];
+            for (cs_lnum_t j = s_id; j < e_id; j++) {
+              cs_lnum_t v_id = f2v_ids[j];
+              v_var[v_id] += _b_var * wb[j];
+            }
           }
         }
+        else {
+          for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+            cs_lnum_t s_id = f2v_idx[f_id];
+            cs_lnum_t e_id = f2v_idx[f_id+1];
+            for (cs_lnum_t j = s_id; j < e_id; j++) {
+              cs_lnum_t v_id = f2v_ids[j];
+            v_var[v_id] += b_var[f_id] * wb[j];
+            }
+          }
+        }
+
       }
-      else {
-        for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
-          cs_lnum_t s_id = f2v_idx[f_id];
-          cs_lnum_t e_id = f2v_idx[f_id+1];
-          for (cs_lnum_t j = s_id; j < e_id; j++) {
-            cs_lnum_t v_id = f2v_ids[j];
-            v_var[v_id] += b_var[f_id]*wb[j];
+      else { /* c_weight != NULL */
+
+        if (b_var == NULL) {
+          for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+            cs_lnum_t c_id = m->b_face_cells[f_id];
+            cs_real_t _b_var = c_var[c_id];
+            cs_lnum_t s_id = f2v_idx[f_id];
+            cs_lnum_t e_id = f2v_idx[f_id+1];
+            for (cs_lnum_t j = s_id; j < e_id; j++) {
+              cs_lnum_t v_id = f2v_ids[j];
+              v_var[v_id] += _b_var * wb[j] * c_weight[c_id];
+              v_w[v_id] += c_weight[c_id];
+            }
+          }
+        }
+        else {
+          for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+            cs_lnum_t c_id = m->b_face_cells[f_id];
+            cs_lnum_t s_id = f2v_idx[f_id];
+            cs_lnum_t e_id = f2v_idx[f_id+1];
+            for (cs_lnum_t j = s_id; j < e_id; j++) {
+              cs_lnum_t v_id = f2v_ids[j];
+              v_var[v_id] += b_var[f_id] * wb[j] * c_weight[c_id];
+              v_w[v_id] += c_weight[c_id];
+            }
           }
         }
       }
@@ -606,6 +698,20 @@ cs_cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
                              true,
                              CS_REAL_TYPE,
                              v_var);
+
+      if (c_weight != NULL) {
+        if (m->vtx_interfaces != NULL)
+          cs_interface_set_sum(m->vtx_interfaces,
+                               n_vertices,
+                               1,
+                               true,
+                               CS_REAL_TYPE,
+                               v_w);
+        for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
+          v_var[v_id] /= v_w[v_id];
+        BFT_FREE(v_w);
+      }
+
     }
     break;
 

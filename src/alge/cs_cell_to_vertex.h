@@ -90,6 +90,7 @@ cs_cell_to_vertex_free(void);
  * \param[in]       verbosity   verbosity level
  * \param[in]       tr_dim      2 for tensor with periodicity of rotation,
  *                              0 otherwise
+ * \param[in]       c_weight    cell weight, or NULL
  * \param[in]       c_var       base cell-based variable
  * \param[in]       b_var       base boundary-face values, or NULL
  * \param[out]      v_var       vertex-based variable
@@ -100,6 +101,7 @@ void
 cs_cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
                          int                        verbosity,
                          int                        tr_dim,
+                         const cs_real_t            c_weight[restrict],
                          const cs_real_t            c_var[restrict],
                          const cs_real_t            b_var[restrict],
                          cs_real_t                  v_var[restrict]);

@@ -40,6 +40,7 @@
 #include "cs_base.h"
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_zone.h"
+#include "cs_cell_to_vertex.h"
 #include "cs_cdo_quantities.h"
 #include "cs_cdo_connect.h"
 #include "cs_cdo_main.h"
@@ -1116,6 +1117,7 @@ cs_ale_update_mesh_quantities(cs_real_t  *min_vol,
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
+  cs_cell_to_vertex_free();
   cs_mesh_quantities_compute(m, mq);
   cs_mesh_bad_cells_detect(m, mq);
 
