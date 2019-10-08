@@ -427,62 +427,23 @@ cs_lagr_car(int              iprev,
           else { /* if (cs_glob_lagr_time_scheme->idirla == 4) */
 
             /* relative main direction */
-            cs_real_t vrn[3];
+            cs_real_3_t vrn, n_dir;
             for (cs_lnum_t i = 0; i < 3; i++)
               vrn[i] = vpart[i] - vflui[i];
 
-            cs_real_t vrnn = cs_math_3_norm(vrn);
-            if (vrnn > 1.e-10) { /* TODO replace this with adimensional test */
-              for (cs_lnum_t i = 0; i < 3; i++)
-                vrn[i] /= vrnn;
-            }
-            else {
-              vrn[0] = 1.;
-              vrn[1] = 0.;
-              vrn[2] = 0.;
-            }
+            cs_math_3_normalise(vrn, n_dir);
 
-            /* Choose the first normal direction */
-            cs_real_t vn1[3] = {0, 0, 1};
-            cs_real_t n1[3]  = {1, 0, 0};
-            cs_real_t n2[3]  = {0, 1, 0};
-            cs_real_t n3[3]  = {0, 0, 1};
-
-            cs_real_t psca1 = cs_math_fabs(cs_math_3_dot_product(vrn, n1));
-            cs_real_t psca2 = cs_math_fabs(cs_math_3_dot_product(vrn, n2));
-            cs_real_t psca3 = cs_math_fabs(cs_math_3_dot_product(vrn, n3));
-
-            if (psca1 < psca2 && psca1 < psca3)
-              cs_math_3_cross_product(vrn, n1, vn1);
-            else if (psca2 < psca1 && psca2 < psca3)
-              cs_math_3_cross_product(vrn, n2, vn1);
-            else if (psca3 < psca1 && psca3 < psca2)
-              cs_math_3_cross_product(vrn, n3, vn1);
-
-            /* second normal direction */
-            cs_real_t vn2[3];
-            cs_math_3_cross_product(vrn, vn1, vn2);
-
-            /* crossing trajectory in the vrn direction */
+            /* crossing trajectory in the n_dir direction */
             cs_real_t an, at;
             an = (1.0 + cbcb * uvwdif);
             at = (1.0 + 4.0 * cbcb * uvwdif);
 
-            /* projection in space directions */
+            /* We take the diagonal part of
+             *  an. n(x)n + at (1 - n(x)n) */
 
-            bbi[0] =   an * cs_math_pow2(cs_math_3_dot_product(vrn, n1))
-                     + at * cs_math_pow2(cs_math_3_dot_product(vn1, n1))
-                     + at * cs_math_pow2(cs_math_3_dot_product(vn2, n1));
-            bbi[1] =   an * cs_math_pow2(cs_math_3_dot_product(vrn, n2))
-                     + at * cs_math_pow2(cs_math_3_dot_product(vn1, n2))
-                     + at * cs_math_pow2(cs_math_3_dot_product(vn2, n2));
-            bbi[2] =   an * cs_math_pow2(cs_math_3_dot_product(vrn, n3))
-                     + at * cs_math_pow2(cs_math_3_dot_product(vn1, n3))
-                     + at * cs_math_pow2(cs_math_3_dot_product(vn2, n3));
-
-            bbi[0] = sqrt(bbi[0]);
-            bbi[1] = sqrt(bbi[1]);
-            bbi[2] = sqrt(bbi[2]);
+            for (cs_lnum_t id = 0; id < 3; id++)
+              bbi[id] = sqrt(an * cs_math_pow2(n_dir[id])
+                           + at * (1. - cs_math_pow2(n_dir[id])));
 
             for (cs_lnum_t id = 0; id < 3; id++)
               tlag[ip][id] = tl / bbi[id];
