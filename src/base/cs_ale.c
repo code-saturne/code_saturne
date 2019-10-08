@@ -1117,6 +1117,7 @@ cs_ale_update_mesh_quantities(cs_real_t  *min_vol,
   cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
 
+  cs_gradient_free_quantities();
   cs_cell_to_vertex_free();
   cs_mesh_quantities_compute(m, mq);
   cs_mesh_bad_cells_detect(m, mq);

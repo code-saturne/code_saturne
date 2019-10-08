@@ -1120,6 +1120,7 @@ _update_mesh(bool     restart_mode,
 
   }
 
+  cs_gradient_free_quantities();
   cs_cell_to_vertex_free();
   cs_mesh_adjacencies_update_mesh();
 

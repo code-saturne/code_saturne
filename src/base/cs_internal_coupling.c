@@ -164,19 +164,14 @@ _compute_ani_weighting_cocg(const cs_real_t  wi[],
   for (int ii = 0; ii < 6; ii++)
     sum[ii] = a*wi[ii] + (1. - a)*wj[ii];
 
-  cs_math_sym_33_inv_cramer(wj,
-                            inv_wj);
+  cs_math_sym_33_inv_cramer(wj, inv_wj);
 
   /* Note: K_i.K_f^-1 = SUM.K_j^-1
    *       K_j.K_f^-1 = SUM.K_i^-1
    * So: K_i d = SUM.K_j^-1.IJ */
 
-  cs_math_sym_33_3_product(inv_wj,
-                           d,
-                           _d);
-  cs_math_sym_33_3_product(sum,
-                           _d,
-                           ki_d);
+  cs_math_sym_33_3_product(inv_wj, d, _d);
+  cs_math_sym_33_3_product(sum, _d, ki_d);
 }
 
 /*----------------------------------------------------------------------------
@@ -208,15 +203,10 @@ _compute_ani_weighting(const cs_real_t  wi[],
   for (ii = 0; ii < 6; ii++)
     sum[ii] = a*wi[ii] + (1. - a)*wj[ii];
 
-  cs_math_sym_33_inv_cramer(wj,
-                            inv_wj);
+  cs_math_sym_33_inv_cramer(wj, inv_wj);
 
-  cs_math_sym_33_3_product(inv_wj,
-                           d,
-                           _d);
-  cs_math_sym_33_3_product(sum,
-                           _d,
-                           ki_d);
+  cs_math_sym_33_3_product(inv_wj, d, _d);
+  cs_math_sym_33_3_product(sum, _d, ki_d);
 
   /* 1 / ||Ki. K_f^-1. IJ||^2 */
   cs_real_t normi = 1. / cs_math_3_dot_product(ki_d, ki_d);
@@ -348,8 +338,6 @@ _destroy_entity(cs_internal_coupling_t  *cpl)
   BFT_FREE(cpl->ci_cj_vect);
   BFT_FREE(cpl->offset_vect);
   BFT_FREE(cpl->coupled_faces);
-  BFT_FREE(cpl->cocgb_s_lsq);
-  BFT_FREE(cpl->cocg_it);
   BFT_FREE(cpl->cells_criteria);
   BFT_FREE(cpl->faces_criteria);
   BFT_FREE(cpl->namesca);
@@ -623,9 +611,6 @@ _cpl_initialize(cs_internal_coupling_t *cpl)
   cpl->ci_cj_vect = NULL;
   cpl->offset_vect = NULL;
 
-  cpl->cocgb_s_lsq = NULL;
-  cpl->cocg_it = NULL;
-
   cpl->namesca = NULL;
 }
 
@@ -872,9 +857,6 @@ _locator_initialize(cs_mesh_t               *m,
   _compute_ci_cj_vect(cpl);
 
   BFT_MALLOC(cpl->coupled_faces, m->n_b_faces, bool);
-
-  cpl->cocgb_s_lsq = NULL;
-  cpl->cocg_it = NULL;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -922,6 +904,8 @@ cs_internal_coupling_add(cs_mesh_t   *mesh,
 
   cs_internal_coupling_t *cpl = _internal_coupling + _n_internal_couplings;
 
+  cpl->id = _n_internal_couplings;
+
   _cpl_initialize(cpl);
 
   _criteria_initialize(criteria_cells, criteria_faces, cpl);
@@ -954,6 +938,8 @@ cs_internal_coupling_add_volume(cs_mesh_t   *mesh,
               cs_internal_coupling_t);
 
   cs_internal_coupling_t *cpl = _internal_coupling + _n_internal_couplings;
+
+  cpl->id = _n_internal_couplings;
 
   _cpl_initialize(cpl);
 
@@ -2693,82 +2679,10 @@ cs_internal_coupling_setup(void)
 void
 cs_internal_coupling_initialize(void)
 {
-  if (_n_internal_couplings < 1)
-    return;
-
-  int field_id;
-  cs_field_t *f;
-  int coupling_id = 0;
-
-  const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-  cs_var_cal_opt_t var_cal_opt;
-
-  const int n_fields = cs_field_n_fields();
-
   for (int i = 0; i < _n_internal_couplings; i++) {
     cs_internal_coupling_t *cpl = _internal_coupling + i;
     _locator_initialize(cs_glob_mesh, cpl);
-  }
-
-  /* Initialization of coupling entities */
-
-  coupling_id = 0;
-  cs_internal_coupling_t *cpl = _internal_coupling;
-  for (field_id = 0; field_id < n_fields; field_id++) {
-    f = cs_field_by_id(field_id);
-    if (f->type & CS_FIELD_VARIABLE) {
-      cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-      if (var_cal_opt.icoupl > 0) {
-
-        if (coupling_id == 0) {
-
-          /* Initialize coupled_faces */
-          _initialize_coupled_faces(cpl);
-
-          /* Initialize cocg & cocgb */
-          cs_halo_type_t halo_type = CS_HALO_STANDARD;
-          cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
-
-          cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
-                                     &gradient_type,
-                                     &halo_type);
-
-          if (halo_type == CS_HALO_EXTENDED)
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Extended neighborhood "
-                        "not implemented for internal coupling."));
-
-          switch(gradient_type){
-          case CS_GRADIENT_ITER:
-            cs_compute_cell_cocg_it_coupling(cs_glob_mesh,
-                                             cs_glob_mesh_quantities,
-                                             cpl);
-            break;
-          case CS_GRADIENT_LSQ:
-            cs_compute_cell_cocg_lsq_coupling(cs_glob_mesh,
-                                              cs_glob_mesh_quantities,
-                                              cpl);
-            break;
-          case CS_GRADIENT_LSQ_ITER:
-            cs_compute_cell_cocg_it_coupling(cs_glob_mesh,
-                                             cs_glob_mesh_quantities,
-                                             cpl);
-            cs_compute_cell_cocg_lsq_coupling(cs_glob_mesh,
-                                              cs_glob_mesh_quantities,
-                                              cpl);
-            break;
-          default:
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Gradient type %s is \n"
-                        "not implemented with internal coupling."),
-                      cs_gradient_type_name[gradient_type]);
-            break;
-          }
-
-        }
-        coupling_id++;
-      }
-    }
+    _initialize_coupled_faces(cpl);
   }
 }
 

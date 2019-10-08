@@ -349,9 +349,6 @@ if (ippmod(icompf).ge.0) then
   cv0 = l_cv(1)
 endif
 
-! Choose which 3x3 cocg matrixes are computed for gradient algorithms.
-call comcoc(imrgra)
-
 ! Choose the porous model
 call cs_mesh_quantities_set_porous_model(iporos)
 

@@ -61,6 +61,9 @@ BEGIN_C_DECLS
 
 typedef struct {
 
+  /* Id */
+  int id;
+
   /* Locator + tag for exchanging variables */
   ple_locator_t   *locator;
   int             *c_tag;
@@ -86,10 +89,6 @@ typedef struct {
 
   /* OF vectors  */
   cs_real_3_t *offset_vect;
-
-  /* Gradient reconstruction */
-  cs_real_33_t *cocgb_s_lsq;
-  cs_real_33_t *cocg_it;
 
   /* User information */
   char *namesca;

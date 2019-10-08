@@ -134,18 +134,6 @@ typedef struct {
   cs_real_t      max_f_vol;        /* Maximum cell volume */
   cs_real_t      tot_f_vol;        /* Total volume */
 
-  cs_real_33_t  *cocgb_s_it;     /* coupling of gradient components for
-                                    iterative reconstruction at boundary */
-  cs_real_33_t  *cocg_s_it;      /* coupling of gradient components for
-                                    iterative reconstruction */
-  cs_real_33_t  *cocgb_s_lsq;    /* coupling of gradient components for
-                                    least-square reconstruction at boundary */
-
-  cs_real_33_t  *cocg_it;        /* Interleaved cocg matrix
-                                    for iterative gradients */
-  cs_real_33_t  *cocg_lsq;       /* Interleaved cocg matrix
-                                    for least square gradients */
-
   cs_real_t     *corr_grad_lin_det;  /* Determinant of geometrical matrix
                                         linear gradient correction */
   cs_real_33_t  *corr_grad_lin;      /* Geometrical matrix
@@ -174,25 +162,6 @@ extern unsigned cs_glob_mesh_quantities_flag;
 
 /* Choice of the porous model */
 extern int cs_glob_porous_model;
-
-/*============================================================================
- * Public function prototypes for API Fortran
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Set behavior for computing the cocg matrixes for the iterative algo
- * and for the Least square method for scalar and vector gradients.
- *
- * Fortran interface :
- *
- * subroutine comcoc (imrgra)
- * *****************
- *
- * integer          imrgra        : <-- : gradient reconstruction option
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (comcoc, COMCOC) (const cs_int_t  *const imrgra);
 
 /*=============================================================================
  * Public function prototypes
@@ -228,16 +197,6 @@ cs_mesh_quantities_cell_cen_choice(int  algo_choice);
 
 int
 cs_mesh_quantities_face_cog_choice(int  algo_choice);
-
-/*----------------------------------------------------------------------------
- * Compute cocg for iterative gradient reconstruction for scalars.
- *
- * parameters:
- *   gradient_option <-- gradient option (Fortran IMRGRA)
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_quantities_set_cocg_options(int  gradient_option);
 
 /*----------------------------------------------------------------------------
  * Compute fluid volumes and fluid surfaces in addition to cell volumes
@@ -488,19 +447,6 @@ cs_mesh_quantities_check_vol(const cs_mesh_t             *mesh,
                              int                          allow_error);
 
 /*----------------------------------------------------------------------------
- * Update mesh quantities relative to extended ghost cells when the
- * neighborhood is reduced.
- *
- * parameters:
- *   mesh            <-- pointer to a cs_mesh_t structure
- *   mesh_quantities <-> pointer to a cs_mesh_quantities_t structure
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_quantities_reduce_extended(const cs_mesh_t       *mesh,
-                                   cs_mesh_quantities_t  *mesh_quantities);
-
-/*----------------------------------------------------------------------------
  * Return the number of times mesh quantities have been computed.
  *
  * returns:
@@ -565,36 +511,6 @@ cs_mesh_quantities_log_setup(void);
 void
 cs_mesh_quantities_dump(const cs_mesh_t             *mesh,
                         const cs_mesh_quantities_t  *mesh_quantities);
-
-/*----------------------------------------------------------------------------
- * Compute 3x3 matrix cocg for the scalar gradient least squares algorithm
- * adapted for internal coupling.
- *
- * parameters:
- *   m    <--  mesh
- *   fvq  <->  mesh quantities
- *   ce   <->  coupling
- *----------------------------------------------------------------------------*/
-
-void
-cs_compute_cell_cocg_lsq_coupling(const cs_mesh_t         *m,
-                                  cs_mesh_quantities_t    *fvq,
-                                  cs_internal_coupling_t  *ce);
-
-/*----------------------------------------------------------------------------
- * Compute 3x3 matrix cocg for the scalar gradient iterative algorithm
- * adapted for internal coupling.
- *
- * parameters:
- *   m    <--  mesh
- *   fvq  <->  mesh quantities
- *   ce   <->  coupling
- *----------------------------------------------------------------------------*/
-
-void
-cs_compute_cell_cocg_it_coupling(const cs_mesh_t         *m,
-                                 cs_mesh_quantities_t    *fvq,
-                                 cs_internal_coupling_t  *ce);
 
 /*----------------------------------------------------------------------------*/
 /*!

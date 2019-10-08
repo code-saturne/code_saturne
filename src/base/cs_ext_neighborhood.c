@@ -1213,7 +1213,6 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
 
   cs_sort_indexed(n_cells, mesh->cell_cells_idx, mesh->cell_cells_lst);
 
-  cs_mesh_quantities_reduce_extended(mesh, mesh_quantities);
   cs_mesh_adjacencies_update_cell_cells_e();
 }
 

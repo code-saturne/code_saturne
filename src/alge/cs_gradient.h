@@ -176,6 +176,18 @@ cs_gradient_initialize(void);
 void
 cs_gradient_finalize(void);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free saved gradient quantities.
+ *
+ * This is required when the mesh changes, so that the on-demand computation
+ * will be updated.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gradient_free_quantities(void);
+
 /*----------------------------------------------------------------------------
  * Compute cell gradient of scalar field or component of vector or
  * tensor field.
