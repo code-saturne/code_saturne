@@ -57,24 +57,147 @@ BEGIN_C_DECLS
 /*!
  * \brief  Compute the value of the constant gradient of the Lagrange function
  *         attached to xc in p_{f,c} (constant inside this volume)
+ *         Cellwise version.
  *
- * \param[in]      f_sgn    orientation of the face
- * \param[in]      pfq      quantities related to a face
- * \param[in]      deq      quantities related a dual edge
+ * \param[in]      f        face number in the cellwise numbering to handle
+ * \param[in]      cm       pointer to a cell_mesh_t structure
  * \param[in, out] grd_c    gradient of the Lagrange function related to xc
  */
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_compute_grdfc(const short int     f_sgn,
-                 const cs_quant_t    pfq,
-                 const cs_nvec3_t    deq,
-                 cs_real_t          *grd_c)
+cs_compute_grdfc_cw(short int               f,
+                    const cs_cell_mesh_t   *cm,
+                    cs_real_t              *grd_c)
 {
-  const double  hfc = cs_math_3_dot_product(pfq.unitv, deq.unitv) * deq.meas;
-  const cs_real_t  ohf = -f_sgn/hfc;
+  /* Sanity checks */
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ));
 
-  for (int k = 0; k < 3; k++) grd_c[k] = ohf * pfq.unitv[k];
+  const cs_real_t  ohf = -cm->f_sgn[f]/cm->hfc[f];
+
+  grd_c[0] = ohf * cm->face[f].unitv[0];
+  grd_c[1] = ohf * cm->face[f].unitv[1];
+  grd_c[2] = ohf * cm->face[f].unitv[2];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the value of the constant gradient of the Lagrange function
+ *         attached to xc in p_{f,c} (constant inside this volume)
+ *         Facewise version.
+ *
+ * \param[in]      f        face number in the cellwise numbering to handle
+ * \param[in]      cm       pointer to a cell_mesh_t structure
+ * \param[in, out] grd_c    gradient of the Lagrange function related to xc
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_compute_grdfc_fw(const cs_face_mesh_t   *fm,
+                    cs_real_t              *grd_c)
+{
+  const cs_real_t  ohf = -fm->f_sgn/fm->hfc;
+
+  grd_c[0] = ohf * fm->face.unitv[0];
+  grd_c[1] = ohf * fm->face.unitv[1];
+  grd_c[2] = ohf * fm->face.unitv[2];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the weight wef = |tef|/|f|
+ *
+ * \param[in]       f          id of the face in the cell-wise numbering
+ * \param[in]       cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out]  wef        pointer to an array storing the weight/vertex
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_compute_wef(short int                 f,
+               const cs_cell_mesh_t     *cm,
+               cs_real_t                *wef)
+{
+  /* Sanity checks */
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FEQ));
+
+  const short int  *f2e_idx = cm->f2e_idx + f;
+  const double  *tef_vals = cm->tef + f2e_idx[0];
+  const double  inv_f = 1./cm->face[f].meas;
+
+  /* Compute a weight for each edge of the current face */
+  for (short int e = 0; e < f2e_idx[1] - f2e_idx[0]; e++)
+    wef[e] = tef_vals[e] * inv_f;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the volume related to each tetrahedron of base tef and apex
+ *         x_c (there are as many tetrahedra as edges in a face)
+ *
+ * \param[in]       f      id of the face in the cell-wise numbering
+ * \param[in]       cm     pointer to a cs_cell_mesh_t structure
+ * \param[in, out]  pefc   pointer to an array storing the volumes
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_compute_pefc(short int                 f,
+                const cs_cell_mesh_t     *cm,
+                cs_real_t                *pefc)
+{
+  /* Sanity checks */
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_PFC));
+
+  const short int  *f2e_idx = cm->f2e_idx + f;
+  const double  *tef_vals = cm->tef + f2e_idx[0];
+  const double  f_coef = cm->pvol_f[f]/cm->face[f].meas;
+
+  /* Compute a weight for each edge of the current face */
+  for (short int e = 0; e < f2e_idx[1] - f2e_idx[0]; e++)
+    pefc[e] = tef_vals[e] * f_coef;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute for a face the weight related to each vertex w_{v,f}
+ *         This weight is equal to |dc(v) cap f|/|f| so that the sum of the
+ *         weights is equal to 1.
+ *
+ * \param[in]       f          id of the face in the cell-wise numbering
+ * \param[in]       cm         pointer to a cs_cell_mesh_t structure
+ * \param[in, out]  wvf        pointer to an array storing the weight/vertex
+ *                             (allocated to the number of cell vertices)
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_compute_wvf(short int                 f,
+               const cs_cell_mesh_t     *cm,
+               cs_real_t                *wvf)
+{
+  /* Sanity checks */
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
+
+  /* Reset weights */
+  memset(wvf, 0, cm->n_vc*sizeof(cs_real_t));
+
+  const short int  *f2e_idx = cm->f2e_idx + f;
+  const short int  *f2e_ids = cm->f2e_ids + f2e_idx[0];
+  const double  *tef_vals = cm->tef + f2e_idx[0];
+  const double  inv_f = 1./cm->face[f].meas;
+
+  /* Compute a weight for each vertex of the current face */
+  for (short int e = 0; e < f2e_idx[1] - f2e_idx[0]; e++) {
+
+    const short int  *v = cm->e2v_ids + 2*f2e_ids[e];
+    const double  w = 0.5*tef_vals[e] * inv_f;
+    wvf[v[0]] += w;
+    wvf[v[1]] += w;
+
+  }
 }
 
 /*============================================================================
@@ -123,7 +246,7 @@ cs_compute_inertia_tensor(const cs_cell_mesh_t   *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Compute the gradient of a Lagrange hat function related to primal
+ * \brief   Compute the gradient of a Lagrange function related to primal
  *          vertices in a p_{ef,c} subvolume of a cell c where e is an edge
  *          belonging to the face f with vertices v1 and v2
  *
@@ -148,74 +271,24 @@ cs_compute_grd_ve(const short int      v1,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute for a face the weight related to each vertex w_{v,f}
- *         This weight is equal to |dc(v) cap f|/|f| so that the sum of the
- *         weights is equal to 1.
- *         Compute also the volume pefc attached to each edge of the face
- *         wvf should be allocated to n_max_vbyc and pefc_vol to n_max_ebyf
+ * \brief  Compute for a face the weight related to each vertex w_{v,f} and
+ *         the weight related to each edge
+ *         w_{v,f} = |dc(v) cap f|/|f|
+ *         Sum of w_{v,f} over the face vertices is equal to 1
+ *         Sum of w_{e,f} over the face edges is equal to 1
  *
- * \param[in]      f          id of the face in the cell-wise numbering
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in, out] wvf        pointer to an array storing the weight/vertex
- * \param[in, out] pefc_vol   pointer to an array storing the volume of pefc
- *
- * \return the volume of p_{f,c}
- */
-/*----------------------------------------------------------------------------*/
-
-double
-cs_compute_fwbs_q1(short int                 f,
-                   const cs_cell_mesh_t     *cm,
-                   cs_real_t                *wvf,
-                   cs_real_t                *pefc_vol);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute for a face the weight related to each vertex w_{v,f}
- *         This weight is equal to |dc(v) cap f|/|f| so that the sum of the
- *         weights is equal to 1.
- *         Compute also the volume pefc attached to each edge of the face
- *         wvf should be allocated to n_max_vbyc and pefc_vol to n_max_ebyf
- *
- * \param[in]      f          id of the face in the cell-wise numbering
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in, out] grd_c      gradient of the Lagrange function related to xc
- * \param[in, out] wvf        pointer to an array storing the weight/vertex
- * \param[in, out] pefc_vol   pointer to an array storing the volume of pefc
+ * \param[in]       f      id of the face in the cell-wise numbering
+ * \param[in]       cm     pointer to a cs_cell_mesh_t structure
+ * \param[in, out]  wvf    weights of each face vertex
+ * \param[in, out]  wef    weights of each face edge
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_compute_fwbs_q2(short int                 f,
+cs_compute_wef_wvf(short int                 f,
                    const cs_cell_mesh_t     *cm,
-                   cs_real_3_t               grd_c,
                    cs_real_t                *wvf,
-                   cs_real_t                *pefc_vol);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Compute for a face the weight related to each vertex w_{v,f}
- *         This weight is equal to |dc(v) cap f|/|f| so that the sum of the
- *         weights is equal to 1.
- *         Compute also the volume pefc attached to each edge of the face
- *         wvf should be allocated to n_max_vbyc and pefc_vol to n_max_ebyf
- *
- * \param[in]      f          id of the face in the cell-wise numbering
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in, out] grd_c      gradient of the Lagrange function related to xc
- * \param[in, out] wvf        pointer to an array storing the weight/vertex
- * \param[in, out] pefc_vol   pointer to an array storing the volume of pefc
- *
- * \return the volume of p_{f,c}
- */
-/*----------------------------------------------------------------------------*/
-
-double
-cs_compute_fwbs_q3(short int                 f,
-                   const cs_cell_mesh_t     *cm,
-                   cs_real_3_t               grd_c,
-                   cs_real_t                *wvf,
-                   cs_real_t                *pefc_vol);
+                   cs_real_t                *wef);
 
 /*----------------------------------------------------------------------------*/
 

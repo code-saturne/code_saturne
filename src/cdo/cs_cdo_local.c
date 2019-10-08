@@ -133,8 +133,8 @@ static short int  **cs_cdo_local_kbuf = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate global structures related to a cs_cell_mesh_t and
- *         cs_face_mesh_t structures
+ * \brief  Allocate global structures used for build system with a cellwise or
+ *         facewise process
  *
  * \param[in]   connect   pointer to a \ref cs_cdo_connect_t structure
  */
@@ -1458,6 +1458,8 @@ cs_face_mesh_create(short int   n_max_vbyf)
   /* Face-related quantities */
   fm->f_id = -1;
   fm->f_sgn = 0;
+  fm->pvol = 0.;
+  fm->hfc = 0.;
 
   /* Vertex-related quantities */
   fm->n_vf = 0;
@@ -1567,18 +1569,22 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
   const cs_lnum_t  *c2f_ids = connect->c2f->ids + c2f_idx[0];
   const int  n_fc = c2f_idx[1] - c2f_idx[0];
 
+  assert(quant->pvol_fc != NULL);
+
   short int _f = n_fc;
   for (short int f = 0; f < n_fc; f++) {
     if (c2f_ids[f] == f_id) {
 
-      const cs_nvec3_t  de_nvect = cs_quant_set_dedge_nvec(c2f_idx[0]+f,
-                                                           quant);
-      const short int  *f_sgn = connect->c2f->sgn + c2f_idx[0];
+      const cs_lnum_t  f_shift = c2f_idx[0]+f;
+      const cs_nvec3_t  de_nvect = cs_quant_set_dedge_nvec(f_shift, quant);
+
+      for (int k = 0; k < 3; k++) fm->dedge.unitv[k] = de_nvect.unitv[k];
+      fm->dedge.meas = de_nvect.meas;
+      fm->f_sgn = connect->c2f->sgn[f_shift];
+      fm->pvol = quant->pvol_fc[f_shift];
+      fm->hfc = 3*fm->pvol/fm->face.meas;
 
       _f = f;
-      fm->dedge.meas = de_nvect.meas;
-      for (int k = 0; k < 3; k++) fm->dedge.unitv[k] = de_nvect.unitv[k];
-      fm->f_sgn = f_sgn[f];
       break;
     }
   }
@@ -1689,7 +1695,8 @@ cs_face_mesh_build_from_cell_mesh(const cs_cell_mesh_t    *cm,
   assert(f > -1 && f < cm->n_fc);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PV  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
-                       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
+                       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV |
+                       CS_FLAG_COMP_HFQ));
 
   fm->c_id = cm->c_id;
   for (int k = 0; k < 3; k++) fm->xc[k] = cm->xc[k];
@@ -1697,6 +1704,8 @@ cs_face_mesh_build_from_cell_mesh(const cs_cell_mesh_t    *cm,
   /* Face-related quantities */
   fm->f_id = f;
   fm->f_sgn = cm->f_sgn[f];
+  fm->pvol = cm->pvol_f[f];
+  fm->hfc = cm->hfc[f];
 
   const cs_quant_t  pfq = cm->face[f];
   fm->face.meas = pfq.meas;
@@ -1910,18 +1919,16 @@ cs_face_mesh_light_build(const cs_cell_mesh_t    *cm,
   for (short int e = 0; e < fm->n_ef; e++) {
 
     const short int  e_cellwise = f2e_ids[e];
-    const int  eshft = 2*e_cellwise;
-    const short int  v1_cellwise = cm->e2v_ids[eshft];
-    const short int  v2_cellwise = cm->e2v_ids[eshft+1];
+    const short int  *vc = cm->e2v_ids + 2*e_cellwise;
 
     fm->e_ids[e] = e_cellwise;
     fm->tef[e] = _tef[e];
-    fm->v_ids[v1_cellwise] = 1;
-    fm->v_ids[v2_cellwise] = 1;
+    fm->v_ids[vc[0]] = 1;
+    fm->v_ids[vc[1]] = 1;
 
     /* Build wvf */
-    fm->wvf[v1_cellwise] += _tef[e];
-    fm->wvf[v2_cellwise] += _tef[e];
+    fm->wvf[vc[0]] += _tef[e];
+    fm->wvf[vc[1]] += _tef[e];
 
   } /* Loop on face edges */
 

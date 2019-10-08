@@ -45,6 +45,7 @@
 #include "cs_hho_builder.h"
 #include "cs_log.h"
 #include "cs_math.h"
+#include "cs_scheme_geometry.h"
 #include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
@@ -540,27 +541,33 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
           switch (st_def->qtype) {
 
           case CS_QUADRATURE_BARY:
-            msh_flag |= CS_FLAG_COMP_PVQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_PFQ |
-              CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE  | CS_FLAG_COMP_FEQ;
+            msh_flag |=
+              CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC |
+              CS_FLAG_COMP_FE  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  |
+              CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PEC | CS_FLAG_COMP_DEQ;
             compute_source[st_id] = cs_source_term_dcsd_bary_by_analytic;
             break;
 
           case CS_QUADRATURE_BARY_SUBDIV:
-            msh_flag |= CS_FLAG_COMP_EV | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ |
-              CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ;
+            msh_flag |=
+              CS_FLAG_COMP_EV | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC |
+              CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_DEQ;
             compute_source[st_id] = cs_source_term_dcsd_q1o1_by_analytic;
             break;
 
           case CS_QUADRATURE_HIGHER:
-            msh_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE |
-              CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_PVQ |
-              CS_FLAG_COMP_PEQ;
+            msh_flag |=
+              CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC | CS_FLAG_COMP_FE  |
+              CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  | CS_FLAG_COMP_PVQ |
+              CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DEQ;
             compute_source[st_id] = cs_source_term_dcsd_q10o2_by_analytic;
             break;
 
           case CS_QUADRATURE_HIGHEST:
-            msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
-              CS_FLAG_COMP_EV;
+            msh_flag |=
+              CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE  |
+              CS_FLAG_COMP_EV  | CS_FLAG_COMP_PFC | CS_FLAG_COMP_FEQ |
+              CS_FLAG_COMP_DEQ;
             compute_source[st_id] = cs_source_term_dcsd_q5o3_by_analytic;
             break;
 
@@ -1105,49 +1112,62 @@ cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
   assert(cs_eflag_test(cm->flag,
-                       CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ |
-                       CS_FLAG_COMP_FE  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
+                       CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC |
+                       CS_FLAG_COMP_FE  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  |
+                       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PEC));
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
   /* Compute the barycenter of each portion of dual cells */
-  cs_real_3_t  *xgv = cb->vectors;
+  double  *vol_vc = cb->values;
   for (short int v = 0; v < cm->n_vc; v++)
-    xgv[v][0] = xgv[v][1] = xgv[v][2] = 0.;
+    vol_vc[v] = cm->vol_c * cm->wvc[v];
 
+  /* cell and vertex contribution */
+  cs_real_3_t  *xgv = cb->vectors;
+  for (short int v = 0; v < cm->n_vc; v++) {
+    xgv[v][0] = 0.25 * vol_vc[v] * (cm->xc[0] + cm->xv[0]);
+    xgv[v][1] = 0.25 * vol_vc[v] * (cm->xc[1] + cm->xv[1]);
+    xgv[v][2] = 0.25 * vol_vc[v] * (cm->xc[2] + cm->xv[2]);
+  }
+
+  /* edge contribution */
+  for (short int e = 0; e < cm->n_ec; e++) {
+
+    cs_real_t  *xgv1 = xgv[cm->e2v_ids[2*e]];
+    cs_real_t  *xgv2 = xgv[cm->e2v_ids[2*e+1]];
+
+    const cs_real_t  *xe = cm->edge[e].center;
+    const double  e_coef = 0.125 * cm->pvol_e[e]; /* 0.25* (0.5*|pvol_ec|)  */
+    for (int k = 0; k < 3; k++) {
+      xgv1[k] += e_coef * xe[k];
+      xgv2[k] += e_coef * xe[k];
+    }
+
+  } /* Loop on cell edges */
+
+  /* face contribution */
+  cs_real_t  *wvf = cb->values + cm->n_vc;
   for (short int f = 0; f < cm->n_fc; f++) {
 
-    cs_real_3_t  xfc;
+    cs_compute_wvf(f, cm, wvf);
 
     const double  *xf = cm->face[f].center;
-    const double  hf_coef = cs_math_1ov6 * cm->hfc[f];
+    const double  f_coef = 0.25 * cm->pvol_f[f];
 
-    for (int k = 0; k < 3; k++) xfc[k] = 0.25*(xf[k] + cm->xc[k]);
+    for (short int v = 0; v < cm->n_vc; v++) {
+      if (wvf[v] > 0) {
+        const double  vf_coef = f_coef * wvf[v];
+        xgv[v][0] += vf_coef * xf[0];
+        xgv[v][1] += vf_coef * xf[1];
+        xgv[v][2] += vf_coef * xf[2];
+      }
 
-    for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+    }
 
-      const short int  e = cm->f2e_ids[i];
-      const short int  v1 = cm->e2v_ids[2*e];
-      const short int  v2 = cm->e2v_ids[2*e+1];
-      const double  *xv1 = cm->xv + 3*v1, *xv2 = cm->xv + 3*v2;
-      const double  tet_vol = cm->tef[i]*hf_coef;
+  } /* Loop on faces */
 
-      /* xg = 0.25(xv1 + xe + xf + xc) where xe = 0.5*(xv1 + xv2) */
-      for (int k = 0; k < 3; k++)
-        xgv[v1][k] += tet_vol*(xfc[k] + 0.375*xv1[k] + 0.125*xv2[k]);
-
-      /* xg = 0.25(xv2 + xe + xf + xc) where xe = 0.5*(xv1 + xv2) */
-      for (int k = 0; k < 3; k++)
-        xgv[v2][k] += tet_vol*(xfc[k] + 0.375*xv2[k] + 0.125*xv1[k]);
-
-    } /* Loop on face edges */
-
-  } /* Loop on cell faces */
-
-  /* Compute the source term contribution for each vertex */
-  double  *vol_vc = cb->values;
   for (short int v = 0; v < cm->n_vc; v++) {
-    vol_vc[v] = cm->vol_c * cm->wvc[v];
     const double  invvol = 1/vol_vc[v];
     for (int k = 0; k < 3; k++) xgv[v][k] *= invvol;
   }
@@ -1160,7 +1180,7 @@ cs_source_term_dcsd_bary_by_analytic(const cs_xdef_t           *source,
              eval_xgv);
 
   for (short int v = 0; v < cm->n_vc; v++)
-    values[v] = cm->vol_c * cm->wvc[v] * eval_xgv[v];
+    values[v] = vol_vc[v] * eval_xgv[v];
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1198,7 +1218,7 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
   /* Sanity checks */
   assert(values != NULL && cm != NULL);
   assert(cs_eflag_test(cm->flag,
-                       CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE |
+                       CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC | CS_FLAG_COMP_FE |
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
@@ -1209,7 +1229,7 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
     cs_real_t  eval_xg[2];
 
     const double  *xf = cm->face[f].center;
-    const double  hf_coef = cs_math_1ov6 * cm->hfc[f];
+    const double  hf_coef = 0.5 * cm->pvol_f[f]/cm->face[f].meas;
 
     for (int k = 0; k < 3; k++) xfc[k] = 0.25*(xf[k] + cm->xc[k]);
 
@@ -1219,7 +1239,6 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
       const short int  v1 = cm->e2v_ids[2*e];
       const short int  v2 = cm->e2v_ids[2*e+1];
       const double  *xv1 = cm->xv + 3*v1, *xv2 = cm->xv + 3*v2;
-      const double  half_pef_vol = cm->tef[i]*hf_coef;
 
       /* xg = 0.25(xv1 + xe + xf + xc) where xe = 0.5*(xv1 + xv2) */
       for (int k = 0; k < 3; k++)
@@ -1234,6 +1253,7 @@ cs_source_term_dcsd_q1o1_by_analytic(const cs_xdef_t           *source,
                  anai->input,
                  eval_xg);
 
+      const double  half_pef_vol = cm->tef[i]*hf_coef;
       values[v1] += half_pef_vol * eval_xg[0];
       values[v2] += half_pef_vol * eval_xg[1];
 
@@ -1278,7 +1298,7 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
   assert(values != NULL && cm != NULL);
   assert(cb != NULL);
   assert(cs_eflag_test(cm->flag,
-                       CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE  |
+                       CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PFC | CS_FLAG_COMP_FE  |
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  | CS_FLAG_COMP_PVQ |
                        CS_FLAG_COMP_PEQ));
 
@@ -1373,7 +1393,7 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
   for (short int f = 0; f < cm->n_fc; f++) {
 
     const double  *xf = cm->face[f].center;
-    const double  hfc = cm->hfc[f];
+    const double  hf_coef = 0.5* cm->pvol_f[f]/cm->face[f].meas;
 
     /* Reset volume of the face related to a vertex */
     for (short int v = 0; v < cm->n_vc; v++) pvf_vol[v] = 0;
@@ -1383,7 +1403,7 @@ cs_source_term_dcsd_q10o2_by_analytic(const cs_xdef_t           *source,
       const short int  e = cm->f2e_ids[i];
       const short int  v1 = cm->e2v_ids[2*e];
       const short int  v2 = cm->e2v_ids[2*e+1];
-      const double  half_pef_vol = cs_math_1ov6 * cm->tef[i] * hfc;
+      const double  half_pef_vol = hf_coef * cm->tef[i];
 
       pvf_vol[v1] += half_pef_vol;
       pvf_vol[v2] += half_pef_vol;
@@ -1483,32 +1503,30 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
   assert(cb != NULL);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_FE |
-                       CS_FLAG_COMP_EV));
+                       CS_FLAG_COMP_EV  | CS_FLAG_COMP_PFC | CS_FLAG_COMP_FEQ));
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
   /* Temporary buffers */
   double  *contrib = cb->values;
-  for (short int v = 0; v < cm->n_vc; v++) contrib[v] = 0;
+  memset(contrib, 0, cm->n_vc*sizeof(double));
 
   /* Main loop on faces */
   for (short int f = 0; f < cm->n_fc; f++) {
 
     const double  *xf = cm->face[f].center;
+    const double  hf_coef = 0.5* cm->pvol_f[f]/cm->face[f].meas;
 
     for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
       const short int  e = cm->f2e_ids[i];
       const short int  v1 = cm->e2v_ids[2*e];
       const short int  v2 = cm->e2v_ids[2*e+1];
-      const double  tet_vol = 0.5*cs_math_voltet(cm->xv + 3*v1,
-                                                 cm->xv + 3*v2,
-                                                 xf,
-                                                 cm->xc);
+      const double  half_pef_vol = hf_coef * cm->tef[i];
 
       /* Compute Gauss points and its weights */
       cs_quadrature_tet_5pts(cm->xv + 3*v1, cm->edge[e].center, xf, cm->xc,
-                             tet_vol,
+                             half_pef_vol,
                              gauss_pts, weights);
 
       anai->func(time_eval, 5, NULL, (const cs_real_t *)gauss_pts,
@@ -1522,7 +1540,7 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
 
       /* Compute Gauss points and its weights */
       cs_quadrature_tet_5pts(cm->xv + 3*v2, cm->edge[e].center, xf, cm->xc,
-                             tet_vol,
+                             half_pef_vol,
                              gauss_pts, weights);
 
       anai->func(time_eval, 5, NULL, (const cs_real_t *)gauss_pts,

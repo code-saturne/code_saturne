@@ -111,12 +111,11 @@ cs_reco_cw_scalar_pv_at_face_center(const short int          f,
                        CS_FLAG_COMP_PFQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ |
                        CS_FLAG_COMP_FE));
 
-  const cs_quant_t  pfq = cm->face[f];
   for (int ie = cm->f2e_idx[f]; ie < cm->f2e_idx[f+1]; ie++) {
     const short int  *v = cm->e2v_ids + 2*cm->f2e_ids[ie];
     p_f += (p_v[v[0]] + p_v[v[1]]) * cm->tef[ie];
   }
-  p_f *= 0.5 / pfq.meas;
+  p_f *= 0.5 / cm->face[f].meas;
 
   return p_f;
 }

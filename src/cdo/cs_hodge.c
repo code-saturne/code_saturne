@@ -1968,7 +1968,7 @@ cs_hodge_vb_wbs_get_stiffness(const cs_param_hodge_t    hodgep,
   cs_real_3_t  *glv = cb->vectors + cm->n_vc;
   cs_real_t  *lvc = cb->values;
   cs_real_t  *wvf = cb->values + cm->n_vc;
-  cs_real_t  *pefc_vol = cb->values + 2*cm->n_vc;
+  cs_real_t  *wef = cb->values + 2*cm->n_vc;
 
   /* Set the diffusion tensor */
   cs_real_33_t  tensor = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
@@ -1997,15 +1997,18 @@ cs_hodge_vb_wbs_get_stiffness(const cs_param_hodge_t    hodgep,
 
     /* Compute the gradient of the lagrange function related to a cell
        in each p_{f,c} and the weights for each vertex related to this face */
-    cs_compute_fwbs_q2(f, cm, grd_c, wvf, pefc_vol);
+    cs_compute_grdfc_cw(f, cm, grd_c);
+    cs_compute_wef_wvf(f, cm, wvf, wef);
 
     /* Loop on face edges to scan p_{e,f,c} subvolumes */
-    for (int i = cm->f2e_idx[f], jj = 0; i < cm->f2e_idx[f+1]; i++, jj++) {
+    const short int  *f2e_idx = cm->f2e_idx + f;
+    const short int  *f2e_ids = cm->f2e_ids + f2e_idx[0];
+    for (int i = 0; i < f2e_idx[1] - f2e_idx[0]; i++) {
 
-      const double  subvol = pefc_vol[jj];
-      const short int  e = cm->f2e_ids[i];
-      const short int  v1 = cm->e2v_ids[2*e];
-      const short int  v2 = cm->e2v_ids[2*e+1];
+      const short int  ee = 2*f2e_ids[i];
+      const double  subvol = wef[i]*cm->pvol_f[f];
+      const short int  v1 = cm->e2v_ids[ee];
+      const short int  v2 = cm->e2v_ids[ee+1];
 
       /* Gradient of the lagrange function related to v1 and v2 */
       cs_compute_grd_ve(v1, v2, deq, (const cs_real_t (*)[3])uvc, lvc,
@@ -2092,7 +2095,7 @@ cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    hodgep,
   cs_real_3_t  *glv = cb->vectors + cm->n_vc;
   cs_real_t  *lvc = cb->values;
   cs_real_t  *wvf = cb->values + cm->n_vc;
-  cs_real_t  *pefc_vol = cb->values + 2*cm->n_vc;
+  cs_real_t  *wef = cb->values + 2*cm->n_vc;
 
   /* Set the diffusion tensor */
   cs_real_33_t  tensor = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
@@ -2128,19 +2131,22 @@ cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    hodgep,
        - weights related to vertices
        - subvolume p_{ef,c} related to edges
     */
-    const double  pfc_vol = cs_compute_fwbs_q3(f, cm, grd_c, wvf, pefc_vol);
+    cs_compute_grdfc_cw(f, cm, grd_c);
+    cs_compute_wef_wvf(f, cm, wvf, wef);
 
     /* Compute the contribution to the entry A(c,c) */
     cs_math_33_3_product((const cs_real_t (*)[3])tensor, grd_c, matg_c);
-    sloc->val[cc] += pfc_vol * _dp3(grd_c, matg_c);
+    sloc->val[cc] += cm->pvol_f[f] * _dp3(grd_c, matg_c);
 
     /* Loop on face edges to scan p_{e,f,c} subvolumes */
-    for (int i = cm->f2e_idx[f], jj = 0; i < cm->f2e_idx[f+1]; i++, jj++) {
+    const short int  *f2e_idx = cm->f2e_idx + f;
+    const short int  *f2e_ids = cm->f2e_ids + f2e_idx[0];
+    for (short int i = 0; i < f2e_idx[1] - f2e_idx[0]; i++) {
 
-      const double  subvol = pefc_vol[jj];
-      const short int  e = cm->f2e_ids[i];
-      const short int  v1 = cm->e2v_ids[2*e];
-      const short int  v2 = cm->e2v_ids[2*e+1];
+      const short int  ee = 2*f2e_ids[i];
+      const double  subvol = wef[i]*cm->pvol_f[f];
+      const short int  v1 = cm->e2v_ids[ee];
+      const short int  v2 = cm->e2v_ids[ee+1];
 
       /* Gradient of the lagrange function related to v1 and v2 */
       cs_compute_grd_ve(v1, v2, deq, (const cs_real_t (*)[3])uvc, lvc,
@@ -2307,7 +2313,7 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    hodgep,
   cs_sdm_square_init(cm->n_vc + 1, hdg);
 
   double  *wvf = cb->values;
-  double  *pefc_vol = cb->values + cm->n_vc;
+  double  *wef = cb->values + cm->n_vc;
 
   const int  msize = cm->n_vc + 1;
   const double  c_coef1 = 0.2*cm->vol_c;
@@ -2333,8 +2339,10 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    hodgep,
   for (short int f = 0; f < cm->n_fc; f++) {
 
     /* Define useful quantities for WBS algo. */
-    const double pfc_vol = cs_compute_fwbs_q1(f, cm, wvf, pefc_vol);
+    cs_compute_wef_wvf(f, cm, wvf, wef);
+
     const double f_coef = 0.3 * cm->pvol_f[f];
+    const double ef_coef = 0.05 * cm->pvol_f[f];
 
     /* Add face contribution:
        Diagonal entry    H(i,i) += 0.3*wif*wif*pfc_vol
@@ -2351,18 +2359,20 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    hodgep,
     } /* Extra-diag entries */
 
     /* Add edge-face contribution (only extra-diag) = 0.05 * |p_{ef,c}| */
-    for (int i = cm->f2e_idx[f], ii = 0; i < cm->f2e_idx[f+1]; i++, ii++) {
+    const short int  *f2e_idx = cm->f2e_idx + f;
+    const short int  *f2e_ids = cm->f2e_ids + f2e_idx[0];
+    for (short int i = 0; i < f2e_idx[1] - f2e_idx[0]; i++) {
 
-      const short int  e = cm->f2e_ids[i];
-      const short int  v1 = cm->e2v_ids[2*e];
-      const short int  v2 = cm->e2v_ids[2*e+1];
+      const short int  ee = 2*f2e_ids[i];
+      const short int  v1 = cm->e2v_ids[ee];
+      const short int  v2 = cm->e2v_ids[ee+1];
 
       /* Sanity check */
       assert(v1 > -1 && v2 > -1);
       if (v1 < v2)
-        hdg->val[v1*msize+v2] += 0.05 * pefc_vol[ii];
+        hdg->val[v1*msize+v2] += ef_coef * wef[i];
       else
-        hdg->val[v2*msize+v1] += 0.05 * pefc_vol[ii];
+        hdg->val[v2*msize+v1] += ef_coef * wef[i];
 
     } /* Loop on face edges */
 
@@ -2418,7 +2428,7 @@ cs_hodge_vpcd_wbs_get(const cs_param_hodge_t    hodgep,
                        CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ));
 
   double  *wvf = cb->values;
-  double  *pefc_vol = cb->values + cm->n_vc;
+  double  *wef = cb->values + cm->n_vc;
 
   cs_sdm_t  *hdg = cb->hdg;
   cs_sdm_square_init(cm->n_vc, hdg);
@@ -2442,8 +2452,10 @@ cs_hodge_vpcd_wbs_get(const cs_param_hodge_t    hodgep,
   for (short int f = 0; f < cm->n_fc; f++) {
 
     /* Define useful quantities for WBS algo. */
-    const double pfc_vol = cs_compute_fwbs_q1(f, cm, wvf, pefc_vol);
-    const double f_coef = 0.3 * pfc_vol;
+    cs_compute_wef_wvf(f, cm, wvf, wef);
+
+    const double  f_coef = 0.3 * cm->pvol_f[f];
+    const double  ef_coef = 0.05 * cm->pvol_f[f];
 
     /* Add face contribution:
        Diagonal entry    H(i,i) += 0.3*wif*wif*pfc_vol
@@ -2460,19 +2472,20 @@ cs_hodge_vpcd_wbs_get(const cs_param_hodge_t    hodgep,
     } /* Face contribution */
 
     /* Add edge-face contribution (only extra-diag) = 0.05 * |p_{ef,c}| */
-    for (int i = cm->f2e_idx[f], ii = 0; i < cm->f2e_idx[f+1]; i++, ii++) {
+    const short int  *f2e_idx = cm->f2e_idx + f;
+    const short int  *f2e_ids = cm->f2e_ids + f2e_idx[0];
+    for (short int i = 0; i < f2e_idx[1] - f2e_idx[0]; i++) {
 
-      const short int  eshft = 2*cm->f2e_ids[i];
-      const short int  v1 = cm->e2v_ids[eshft];
-      const short int  v2 = cm->e2v_ids[eshft+1];
+      const short int  ee = 2*f2e_ids[i];
+      const short int  v1 = cm->e2v_ids[ee];
+      const short int  v2 = cm->e2v_ids[ee+1];
 
       /* Sanity check */
       assert(v1 > -1 && v2 > -1);
-
       if (v1 < v2)
-        hdg->val[v1*cm->n_vc+v2] += 0.05 * pefc_vol[ii];
+        hdg->val[v1*cm->n_vc+v2] += ef_coef * wef[i];
       else
-        hdg->val[v2*cm->n_vc+v1] += 0.05 * pefc_vol[ii];
+        hdg->val[v2*cm->n_vc+v1] += ef_coef * wef[i];
 
     } /* Loop on face edges */
 

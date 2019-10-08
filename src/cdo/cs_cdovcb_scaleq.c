@@ -843,8 +843,9 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   /* Flag to indicate what to build in a cell mesh */
   eqb->msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PVQ | CS_FLAG_COMP_DEQ |
-    CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_EV |
-    CS_FLAG_COMP_FE  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ;
+    CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_EV  |
+    CS_FLAG_COMP_FE  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_PFC |
+    CS_FLAG_COMP_HFQ;
   eqb->bd_msh_flag = 0;
 
   /* Store the last computed values of the field at cell centers and the data

@@ -229,6 +229,8 @@ typedef struct {
   short int    f_sgn;  /*!< incidence number between f and c */
   cs_quant_t   face;   /*!< face quantities (xf, area and unit normal) */
   cs_nvec3_t   dedge;  /*!< its dual edge quantities (length and unit vector) */
+  double       pvol;   /*!< volume of the pyramid of base f and apex x_c */
+  double       hfc;    /*!< height of the pyramid of base f and apex x_c */
 
   /* Vertex information */
   short int    n_vf;    /*!< local number of vertices on this face */
@@ -450,8 +452,8 @@ cs_cell_mesh_is_boundary_face(const cs_cell_mesh_t    *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Allocate global structures related to a cs_cell_mesh_t and
- *         cs_face_mesh_t structures
+ * \brief  Allocate global structures used for build system with a cellwise or
+ *         facewise process
  *
  * \param[in]   connect   pointer to a \ref cs_cdo_connect_t structure
  */

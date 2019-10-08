@@ -679,17 +679,14 @@ _vcb_cellwise_consistent_part(const cs_nvec3_t            adv_cell,
   cs_sdm_t  *af = cb->aux;
 
   /* tef_save is not set here but its length is 2*n_ec */
-  double  *bgc_save = cb->values; // size = n_fc
-  double  *l_vc = cb->values + cm->n_fc + 2*cm->n_ec;  // size = n_vc
+  double  *bgc_save = cb->values;                      /* size = n_fc */
+  double  *l_vc = cb->values + cm->n_fc + 2*cm->n_ec;  /* size = n_vc */
 
-  cs_real_3_t  *bgvf = cb->vectors + fshift;     // size 2*n_ec
-  cs_real_3_t  *u_vc = cb->vectors + 2*cm->n_ec; // size n_vc
+  cs_real_3_t  *bgvf = cb->vectors + fshift;           /* size 2*n_ec */
+  cs_real_3_t  *u_vc = cb->vectors + 2*cm->n_ec;       /* size n_vc */
 
   /* Useful quantities are stored in cb->values and cb->vectors */
-  const cs_nvec3_t  deq = fm->dedge;
-  const cs_quant_t  pfq = fm->face;
-  const double  hf_coef = cs_math_1ov3 * cm->hfc[fm->f_id];
-  const double  pfc_vol = cm->pvol_f[fm->f_id];
+  const double  hf_coef = cs_math_1ov3 * fm->hfc;
 
   /* Set the consistent part for already known part.
      Consistent part (c,c) contribution: sum_(f \in F_c) |pfc| bgc
@@ -698,16 +695,16 @@ _vcb_cellwise_consistent_part(const cs_nvec3_t            adv_cell,
 
   /* Compute the gradient of the Lagrange function related to xc which is
      constant inside p_{f,c} */
-  cs_compute_grdfc(fm->f_sgn, pfq, deq, grd_c);
+  cs_compute_grdfc_fw(fm, grd_c);
 
   const double  bgc = _dp3(grd_c, adv_cell.unitv);
-  const double  pfc_bgc = adv_cell.meas * pfc_vol * bgc;
+  const double  pfc_bgc = adv_cell.meas * fm->pvol * bgc;
 
   bgc_save[fm->f_id] = bgc;  /* Store it for a future use */
 
-  af->val[n_sysf*fm->n_vf + fm->n_vf] = 0.25 * pfc_bgc;         // (c,c)
+  af->val[n_sysf*fm->n_vf + fm->n_vf] = 0.25 * pfc_bgc;         /* (c,c) */
   for (short int v = 0; v < fm->n_vf; v++)
-    af->val[n_sysf*v + fm->n_vf] = 0.75 * fm->wvf[v] * pfc_bgc; // (i,c)
+    af->val[n_sysf*v + fm->n_vf] = 0.75 * fm->wvf[v] * pfc_bgc; /* (i,c) */
 
   /* Compute xc --> xv length and unit vector for all face vertices */
   for (short int v = 0; v < fm->n_vf; v++)
@@ -722,7 +719,7 @@ _vcb_cellwise_consistent_part(const cs_nvec3_t            adv_cell,
     const short int  v2 = fm->e2v_ids[2*e+1];
 
     /* Gradient of the Lagrange function related to v1 and v2 */
-    cs_compute_grd_ve(v1, v2, deq, (const cs_real_t (*)[3])u_vc, l_vc,
+    cs_compute_grd_ve(v1, v2, fm->dedge, (const cs_real_t (*)[3])u_vc, l_vc,
                       grd_v1, grd_v2);
 
     const double  bgv1 = _dp3(grd_v1, adv_cell.unitv);
