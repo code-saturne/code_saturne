@@ -89,32 +89,6 @@ cs_face_mesh_light_t  **cs_cdo_local_face_meshes_light = NULL;
 static const int  n_robin_parameters = 3;
 static int  cs_cdo_local_n_structures = 0;
 
-/* Store predefined flags */
-static const cs_eflag_t  cs_cdo_local_flag_v =
-  CS_FLAG_COMP_PV | CS_FLAG_COMP_PVQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FV;
-static const cs_eflag_t  cs_cdo_local_flag_e =
-  CS_FLAG_COMP_PE | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_EV |
-  CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EF  | CS_FLAG_COMP_SEF;
-static const cs_eflag_t  cs_cdo_local_flag_peq =
-  CS_FLAG_COMP_PEQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_SEF | CS_FLAG_COMP_PEC;
-static const cs_eflag_t  cs_cdo_local_flag_dfq =
-  CS_FLAG_COMP_DFQ | CS_FLAG_COMP_SEF | CS_FLAG_COMP_PEC;
-static const cs_eflag_t  cs_cdo_local_flag_f =
-  CS_FLAG_COMP_PF  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_FE  |
-  CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EF  | CS_FLAG_COMP_SEF | CS_FLAG_COMP_HFQ |
-  CS_FLAG_COMP_FV;
-static const cs_eflag_t  cs_cdo_local_flag_pfq =
-  CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_SEF |
-  CS_FLAG_COMP_PFC;
-static const cs_eflag_t  cs_cdo_local_flag_deq =
-  CS_FLAG_COMP_HFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_SEF;
-static const cs_eflag_t  cs_cdo_local_flag_fe =
-  CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EF | CS_FLAG_COMP_SEF;
-static const cs_eflag_t  cs_cdo_local_flag_ef =
-  CS_FLAG_COMP_EF;
-static const cs_eflag_t  cs_cdo_local_flag_pfc =
-  CS_FLAG_COMP_PFC | CS_FLAG_COMP_HFQ;
-
 /* Auxiliary buffers for computing quantities related to a cs_cell_mesh_t */
 static double     **cs_cdo_local_dbuf = NULL;
 static short int  **cs_cdo_local_kbuf = NULL;
@@ -768,7 +742,7 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
              cm->diam_c);
 
   /* Information related to primal vertices */
-  if (cm->flag & cs_cdo_local_flag_v) {
+  if (cm->flag & cs_flag_need_v) {
 
     bft_printf(" %s | %6s | %35s | %10s\n",
                "v", "id", "coord", "wvc");
@@ -780,7 +754,7 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
   } /* Vertex quantities */
 
   /* Information related to primal edges */
-  if (cm->flag & cs_cdo_local_flag_e) {
+  if (cm->flag & cs_flag_need_e) {
 
     bft_printf(" %s | %6s | %3s | %2s | %2s | %9s |"
                " %35s | %35s | %10s | %35s | %9s\n",
@@ -804,7 +778,7 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
   } /* Edge quantities */
 
   /* Information related to primal faces */
-  if (cm->flag & cs_cdo_local_flag_f) {
+  if (cm->flag & cs_flag_need_f) {
 
     bft_printf(" %s | %6s | %9s | %3s | %35s | %35s |"
                " %10s | %35s | %11s  %11s  %11s\n",
@@ -825,7 +799,7 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
 
   } /* Face quantities */
 
-  if (cm->flag & cs_cdo_local_flag_fe) {
+  if (cm->flag & cs_flag_need_fe) {
 
     bft_printf("   f | n_ef | e:tef\n");
     for (short int f = 0; f < cm->n_fc; f++) {
@@ -957,7 +931,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     return;
 
   /* Information related to primal vertices */
-  if (build_flag & cs_cdo_local_flag_v) {
+  if (build_flag & cs_flag_need_v) {
 
     const cs_lnum_t  *c2v_idx = connect->c2v->idx + c_id;
     const cs_lnum_t  *c2v_ids = connect->c2v->ids + c2v_idx[0];
@@ -986,7 +960,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   } /* vertices */
 
   /* Information related to primal edges */
-  if (build_flag & cs_cdo_local_flag_e) {
+  if (build_flag & cs_flag_need_e) {
 
     const cs_lnum_t  *c2e_idx = connect->c2e->idx + c_id;
     const cs_lnum_t  *c2e_ids = connect->c2e->ids + c2e_idx[0];
@@ -996,7 +970,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     for (short int e = 0; e < cm->n_ec; e++)
       cm->e_ids[e] = c2e_ids[e];
 
-    if (build_flag & cs_cdo_local_flag_peq) {
+    if (build_flag & cs_flag_need_peq) {
 
       assert(build_flag & CS_FLAG_COMP_PV);
 
@@ -1020,7 +994,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     } /* Primal edge quantities */
 
     /* Dual face quantities related to each edge */
-    if (build_flag & cs_cdo_local_flag_dfq) {
+    if (build_flag & cs_flag_need_dfq) {
 
       const cs_real_t  *dface = quant->dface_normal + 3*c2e_idx[0];
 
@@ -1048,7 +1022,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
   } /* Edge-related quantities */
 
   /* Information related to primal faces */
-  if (build_flag & cs_cdo_local_flag_f) {
+  if (build_flag & cs_flag_need_f) {
 
     const cs_lnum_t  *c2f_ids = connect->c2f->ids + c2f_idx[0];
     const short int  *c2f_sgn = connect->c2f->sgn + c2f_idx[0];
@@ -1059,7 +1033,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
     }
 
     /* Face related quantities */
-    if (build_flag & cs_cdo_local_flag_pfq) {
+    if (build_flag & cs_flag_need_pfq) {
 
       for (short int f = 0; f < cm->n_fc; f++) {
 
@@ -1075,7 +1049,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
     } /* Primal face quantities */
 
-    if (build_flag & cs_cdo_local_flag_deq) {
+    if (build_flag & cs_flag_need_deq) {
 
       for (short int f = 0; f < cm->n_fc; f++) {
 
@@ -1091,7 +1065,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
     } /* Dual edge quantities */
 
-    if (build_flag & cs_cdo_local_flag_pfc) {
+    if (build_flag & cs_flag_need_pfc) {
 
       if (quant->pvol_fc != NULL) {
 
@@ -1201,7 +1175,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
   } /* EV or FV flag */
 
-  if (build_flag & cs_cdo_local_flag_fe) {
+  if (build_flag & cs_flag_need_fe) {
 
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
     int t_id = omp_get_thread_num();
@@ -1312,7 +1286,7 @@ cs_cell_mesh_build(cs_lnum_t                    c_id,
 
   } /* face --> edges connectivity */
 
-  if (build_flag & cs_cdo_local_flag_ef) {
+  if (build_flag & cs_flag_need_ef) {
 
     /* Build the e2f connectivity */
     for (short int i = 0; i < 2*cm->n_ec; i++) cm->e2f_ids[i] = -1;

@@ -63,6 +63,38 @@ const cs_flag_t  cs_flag_dual_face_byc =
 const cs_flag_t  cs_flag_dual_closure_byf =
   CS_FLAG_DUAL | CS_FLAG_CELL | CS_FLAG_BORDER | CS_FLAG_BY_FACE;
 
+/* According to the extended flag defined below one can identify which set of
+ * quantities or connectivities have to be built on-the-fly and stored in a
+ * local structure possibly owned by each thread and with a cellwise scope
+ *
+ * Store predefined flags to test if one some specific computations of
+ * cell quantities
+ */
+const cs_eflag_t  cs_flag_need_v =
+  CS_FLAG_COMP_PV | CS_FLAG_COMP_PVQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FV;
+const cs_eflag_t  cs_flag_need_e =
+  CS_FLAG_COMP_PE | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_EV |
+  CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EF  | CS_FLAG_COMP_SEF;
+const cs_eflag_t  cs_flag_need_f =
+  CS_FLAG_COMP_PF  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_FE  |
+  CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EF  | CS_FLAG_COMP_SEF | CS_FLAG_COMP_HFQ |
+  CS_FLAG_COMP_FV;
+const cs_eflag_t  cs_flag_need_fe =
+  CS_FLAG_COMP_FE | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EF | CS_FLAG_COMP_SEF;
+const cs_eflag_t  cs_flag_need_ef =
+  CS_FLAG_COMP_EF;
+const cs_eflag_t  cs_flag_need_peq =
+  CS_FLAG_COMP_PEQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_SEF | CS_FLAG_COMP_PEC;
+const cs_eflag_t  cs_flag_need_dfq =
+  CS_FLAG_COMP_DFQ | CS_FLAG_COMP_SEF | CS_FLAG_COMP_PEC;
+const cs_eflag_t  cs_flag_need_pfq =
+  CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_SEF |
+  CS_FLAG_COMP_PFC;
+const cs_eflag_t  cs_flag_need_deq =
+  CS_FLAG_COMP_HFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_SEF;
+const cs_eflag_t  cs_flag_need_pfc =
+  CS_FLAG_COMP_PFC | CS_FLAG_COMP_HFQ;
+
 /*============================================================================
  * Private function prototypes
  *============================================================================*/

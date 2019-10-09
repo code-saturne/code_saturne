@@ -152,29 +152,103 @@ extern const cs_flag_t  cs_flag_dual_closure_byf;
  * quantities or connectivities have to be built on-the-fly and stored in a
  * local structure possibly owned by each thread and with a cellwise scope */
 
-typedef enum {
+typedef unsigned int  cs_eflag_t;
 
-  CS_FLAG_COMP_PV   = 1,      /*  local info. for vertices */
-  CS_FLAG_COMP_PVQ  = 2,      /*  local quant. on vertices */
-  CS_FLAG_COMP_PE   = 4,      /*  local info. for edges */
-  CS_FLAG_COMP_PEQ  = 8,      /*  local quant. on edges */
-  CS_FLAG_COMP_DFQ  = 16,     /*  local quant. on dual faces */
-  CS_FLAG_COMP_PF   = 32,     /*  local info. for faces */
-  CS_FLAG_COMP_PFQ  = 64,     /*  local quant. on faces */
-  CS_FLAG_COMP_DEQ  = 128,    /*  local quant. on dual edges */
-  CS_FLAG_COMP_EV   = 256,    /*  local e2v connectivity */
-  CS_FLAG_COMP_FE   = 512,    /*  local f2e connectivity */
-  CS_FLAG_COMP_FEQ  = 1024,   /*  local f2e quantities */
-  CS_FLAG_COMP_FV   = 2048,   /*  local f2v connectivity */
-  CS_FLAG_COMP_EF   = 4096,   /*  local e2f connectivity */
-  CS_FLAG_COMP_SEF  = 8192,   /*  local sefc quantities */
-  CS_FLAG_COMP_HFQ  = 16384,  /* local quant. on face pyramids */
-  CS_FLAG_COMP_FES  = 32768,  /* local f2e orientations */
-  CS_FLAG_COMP_PFC  = 65536,  /* pvol_fc face subvolumes */
-  CS_FLAG_COMP_PEC  = 131072, /* pvol_ec edge subvolumes */
-  CS_FLAG_COMP_DIAM = 262144  /* local diameters on faces/cell */
+/* Store predefined flags */
+extern const cs_eflag_t  cs_flag_need_v;
+extern const cs_eflag_t  cs_flag_need_e;
+extern const cs_eflag_t  cs_flag_need_f;
+extern const cs_eflag_t  cs_flag_need_fe;
+extern const cs_eflag_t  cs_flag_need_ef;
+extern const cs_eflag_t  cs_flag_need_peq;
+extern const cs_eflag_t  cs_flag_need_dfq;
+extern const cs_eflag_t  cs_flag_need_pfq;
+extern const cs_eflag_t  cs_flag_need_deq;
+extern const cs_eflag_t  cs_flag_need_pfc;
 
-} cs_eflag_t;
+/* Compute simple and cellwise information for vertices */
+#define CS_FLAG_COMP_PV      (1 << 0)   /* = 1 */
+
+/* Compute cellwise quantities for vertices */
+#define CS_FLAG_COMP_PVQ     (1 << 1)   /* = 2 */
+
+/* Compute simple and cellwise information for edges */
+#define CS_FLAG_COMP_PE      (1 << 2)   /* = 4 */
+
+/* Compute cellwise quantities for edges */
+#define CS_FLAG_COMP_PEQ     (1 << 3)   /* = 8 */
+
+/* Compute cellwise quantities for dual faces (associated to edges) */
+#define CS_FLAG_COMP_DFQ     (1 << 4)   /* = 16 */
+
+/* Compute simple and cellwise information for faces */
+#define CS_FLAG_COMP_PF      (1 << 5)   /* = 32 */
+
+/* Compute cellwise quantities for faces */
+#define CS_FLAG_COMP_PFQ     (1 << 6)   /* = 64 */
+
+/* Compute cellwise quantities for dual edges (associated to faces) */
+#define CS_FLAG_COMP_DEQ     (1 << 7)   /* = 128 */
+
+/* Compute the cellwise connectivity edge to vertices */
+#define CS_FLAG_COMP_EV      (1 << 8)   /* = 256 */
+
+/* Compute cellwise connectivity face to edges */
+#define CS_FLAG_COMP_FE      (1 << 9)   /* = 512 */
+
+/* Compute cellwise quantities associated to the couple (face, edge) */
+#define CS_FLAG_COMP_FEQ     (1 << 10)  /* = 1024 */
+
+/* Compute cellwise connectivity face to vertices */
+#define CS_FLAG_COMP_FV      (1 << 11)  /* = 2048 */
+
+/* Compute cellwise connectivity edge to faces */
+#define CS_FLAG_COMP_EF      (1 << 12)  /* = 4096 */
+
+/* Compute elemental portion of dual faces associated to the couple
+   (edge, face) */
+#define CS_FLAG_COMP_SEF     (1 << 13)  /* = 8192 */
+
+/* Compute cellwise quantities related to the height of the pyramid with basis
+   spanned by a face and with apex the cell center */
+#define CS_FLAG_COMP_HFQ     (1 << 14)  /* = 16384 */
+
+/* Compute cellwise orientation of oriented edges belonging to a face */
+#define CS_FLAG_COMP_FES     (1 << 15)  /* = 32768 */
+
+/* Compute cellwise quantities related to the volume of the pyramid with basis
+   spanned by a face and with apex the cell center */
+#define CS_FLAG_COMP_PFC     (1 << 16)  /* = 65536 */
+
+/* Compute cellwise quantities related to the volume surrounding an edge */
+#define CS_FLAG_COMP_PEC     (1 << 17)  /* = 131072 */
+
+/* Compute cellwise diameters */
+#define CS_FLAG_COMP_DIAM    (1 << 18)  /* = 262144 */
+
+/* typedef enum { */
+
+/*   CS_FLAG_COMP_PV   = 1,      /\*  local info. for vertices *\/ */
+/*   CS_FLAG_COMP_PVQ  = 2,      /\*  local quant. on vertices *\/ */
+/*   CS_FLAG_COMP_PE   = 4,      /\*  local info. for edges *\/ */
+/*   CS_FLAG_COMP_PEQ  = 8,      /\*  local quant. on edges *\/ */
+/*   CS_FLAG_COMP_DFQ  = 16,     /\*  local quant. on dual faces *\/ */
+/*   CS_FLAG_COMP_PF   = 32,     /\*  local info. for faces *\/ */
+/*   CS_FLAG_COMP_PFQ  = 64,     /\*  local quant. on faces *\/ */
+/*   CS_FLAG_COMP_DEQ  = 128,    /\*  local quant. on dual edges *\/ */
+/*   CS_FLAG_COMP_EV   = 256,    /\*  local e2v connectivity *\/ */
+/*   CS_FLAG_COMP_FE   = 512,    /\*  local f2e connectivity *\/ */
+/*   CS_FLAG_COMP_FEQ  = 1024,   /\*  local f2e quantities *\/ */
+/*   CS_FLAG_COMP_FV   = 2048,   /\*  local f2v connectivity *\/ */
+/*   CS_FLAG_COMP_EF   = 4096,   /\*  local e2f connectivity *\/ */
+/*   CS_FLAG_COMP_SEF  = 8192,   /\*  local sefc quantities *\/ */
+/*   CS_FLAG_COMP_HFQ  = 16384,  /\* local quant. on face pyramids *\/ */
+/*   CS_FLAG_COMP_FES  = 32768,  /\* local f2e orientations *\/ */
+/*   CS_FLAG_COMP_PFC  = 65536,  /\* pvol_fc face subvolumes *\/ */
+/*   CS_FLAG_COMP_PEC  = 131072, /\* pvol_ec edge subvolumes *\/ */
+/*   CS_FLAG_COMP_DIAM = 262144  /\* local diameters on faces/cell *\/ */
+
+/* } cs_eflag_t; */
 
 /*============================================================================
  * Public function prototypes
