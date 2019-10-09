@@ -944,6 +944,7 @@ cs_cdofb_uzawa_init_scheme_context(const cs_navsto_param_t    *nsp,
   /* Cast the coupling context (CC) */
   cs_navsto_uzawa_t  *cc = (cs_navsto_uzawa_t  *)nsc_input;
   cs_equation_param_t  *mom_eqp = cc->momentum->param;
+  cs_equation_builder_t  *mom_eqb = cc->momentum->builder;
 
   /* Navier-Stokes scheme context (SC) */
   cs_cdofb_uzawa_t  *sc = NULL;
@@ -980,6 +981,8 @@ cs_cdofb_uzawa_init_scheme_context(const cs_navsto_param_t    *nsp,
   /* Set the way to enforce the Dirichlet BC on the velocity
    * "fixed_wall" means a no-slip BC
    */
+  mom_eqb->bd_msh_flag |= CS_FLAG_COMP_PFC;
+
   sc->apply_symmetry = cs_cdofb_symmetry;
 
   switch (mom_eqp->default_enforcement) {

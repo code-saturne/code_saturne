@@ -792,11 +792,14 @@ cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t    *nsp,
                                           nsp->pressure_bc_defs,
                                           cs_shared_quant->n_b_faces);
 
+  cs_equation_param_t  *mom_eqp = cc->prediction->param;
+  cs_equation_builder_t  *mom_eqb = cc->prediction->builder;
+
+  mom_eqb->bd_msh_flag |= CS_FLAG_COMP_PFC;
+
   /* Set the way to enforce the Dirichlet BC on the velocity
    * "fixed_wall" means a no-slip BC */
   sc->apply_symmetry = cs_cdofb_symmetry;
-
-  cs_equation_param_t *mom_eqp = cc->prediction->param;
 
   switch (mom_eqp->default_enforcement) {
 

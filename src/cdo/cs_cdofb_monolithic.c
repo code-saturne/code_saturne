@@ -1449,7 +1449,8 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
   /* Cast the coupling context (CC) */
   cs_navsto_monolithic_t  *cc = (cs_navsto_monolithic_t  *)nsc_input;
   cs_equation_t  *mom_eq = cc->momentum;
-  cs_equation_param_t *mom_eqp = mom_eq->param;
+  cs_equation_param_t  *mom_eqp = mom_eq->param;
+  cs_equation_builder_t  *mom_eqb = mom_eq->builder;
 
   sc->coupling_context = cc; /* shared with cs_navsto_system_t */
 
@@ -1472,6 +1473,8 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
   /* Set the way to enforce the Dirichlet BC on the velocity
    * "fixed_wall" means a no-slip BC
    */
+  mom_eqb->bd_msh_flag |= CS_FLAG_COMP_PFC;
+
   sc->apply_symmetry = cs_cdofb_symmetry;
   sc->apply_sliding_wall = cs_cdofb_block_dirichlet_alge;
   sc->apply_fixed_wall = cs_cdofb_block_dirichlet_alge;
