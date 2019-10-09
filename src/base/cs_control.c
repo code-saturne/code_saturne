@@ -820,15 +820,20 @@ _read_next_opt_int(const char  **s,
  *----------------------------------------------------------------------------*/
 
 static int
-_read_next_double(const char   *cur_line,
+_read_next_double(bool          skip_prev,
+                  const char   *cur_line,
                   const char  **s,
                   double       *val)
 {
   int n_val = 0;
 
   const char *p = *s;
-  while (*p != '\0' && *p != ' ' && *p != '\t')
-    p++;
+
+  if (skip_prev) {
+    while (*p != '\0' && *p != ' ' && *p != '\t')
+      p++;
+  }
+
   while (*p != '\0' && (*p == ' ' || *p == '\t'))
     p++;
   *s = p;
@@ -901,7 +906,7 @@ _control_checkpoint(const char   *cur_line,
   }
   else if (strncmp(*s, "time_value ", 11) == 0) {
     double t;
-    if (_read_next_double(cur_line, s, &t) > 0) {
+    if (_read_next_double(false, cur_line, s, &t) > 0) {
       cs_restart_checkpoint_set_next_tv(t);
       bft_printf("  %-32s %12.5g\n",
                  "checkpoint_time_value", t);
@@ -909,7 +914,7 @@ _control_checkpoint(const char   *cur_line,
   }
   else if (strncmp(*s, "wall_time ", 10) == 0) {
     double wt;
-    if (_read_next_double(cur_line, s, &wt) > 0) {
+    if (_read_next_double(false, cur_line, s, &wt) > 0) {
       cs_restart_checkpoint_set_next_wt(wt);
       bft_printf("  %-32s %12.5g\n",
                  "checkpoint_wall_time", wt);
@@ -925,7 +930,7 @@ _control_checkpoint(const char   *cur_line,
   }
   else if (strncmp(*s, "time_value_interval ", 20) == 0) {
     double t;
-    if (_read_next_double(cur_line, s, &t) > 0) {
+    if (_read_next_double(false, cur_line, s, &t) > 0) {
       if (t > 0) {
         cs_restart_checkpoint_set_defaults(-1, t, -1.);
         bft_printf("  %-32s %12.5g\n",
@@ -938,7 +943,7 @@ _control_checkpoint(const char   *cur_line,
   }
   else if (strncmp(*s, "wall_time_interval ", 19) == 0) {
     double wt;
-    if (_read_next_double(cur_line, s, &wt) > 0) {
+    if (_read_next_double(false, cur_line, s, &wt) > 0) {
       if (wt > 0) {
         cs_restart_checkpoint_set_defaults(-1, -1., wt);
         bft_printf("  %-32s %12.5g\n",
@@ -972,8 +977,8 @@ _control_notebook(const cs_time_step_t   *ts,
   if (strncmp(*s, "set ", 4) == 0) {
     char *name;
     double val = 0.;
-    _read_next_string(false, s, &name);
-    if (_read_next_double(cur_line, (const char **)s, &val) == 1) {
+    _read_next_string(true, s, &name);
+    if (_read_next_double(true, cur_line, (const char **)s, &val) == 1) {
       int editable;
       int is_present = cs_notebook_parameter_is_present(name,
                                                         &editable);
@@ -1022,7 +1027,7 @@ _control_postprocess(const cs_time_step_t   *ts,
   else if (strncmp(*s, "time_value ", 11) == 0) {
     int writer_id = 0;
     double t = 0.;
-    if (_read_next_double(cur_line, s, &t) > 0) {
+    if (_read_next_double(false, cur_line, s, &t) > 0) {
       if (_read_next_opt_int(s, &writer_id) == 0)
         writer_id = 0;
       if (t >= 0)
@@ -1151,7 +1156,7 @@ _parse_control_buffer(const char         *name,
     }
     else if (strncmp(s, "max_time_value ", 15) == 0) {
       double t_max;
-      if (_read_next_double(cur_line, (const char **)&s, &t_max) > 0)
+      if (_read_next_double(false, cur_line, (const char **)&s, &t_max) > 0)
         t_max = CS_MAX(t_max, ts->t_cur);
       cs_time_step_define_t_max(t_max);
       bft_printf("  %-32s %12.5g (%s %12.5g)\n",
@@ -1159,7 +1164,7 @@ _parse_control_buffer(const char         *name,
     }
     else if (strncmp(s, "max_wall_time ", 14) == 0) {
       double wt_max;
-      if (_read_next_double(cur_line, (const char **)&s, &wt_max) > 0)
+      if (_read_next_double(false, cur_line, (const char **)&s, &wt_max) > 0)
         wt_max = CS_MAX(wt_max, cs_timer_wtime());
       bft_printf("  %-32s %12.5g (%s %12.5g)\n",
                  "max_wall_time", wt_max, _("current:"),
@@ -1171,7 +1176,7 @@ _parse_control_buffer(const char         *name,
 
     else if (strncmp(s, "control_file_wtime_interval ", 28) == 0) {
       double wt;
-      if (_read_next_double(cur_line, (const char **)&s, &wt) > 0)
+      if (_read_next_double(false, cur_line, (const char **)&s, &wt) > 0)
         _control_file_wt_interval = wt;
     }
 
