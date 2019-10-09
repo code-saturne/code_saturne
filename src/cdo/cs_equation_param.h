@@ -594,21 +594,25 @@ typedef struct {
  * \var CS_EQKEY_ITSOL
  * Specify the iterative solver for solving the linear system related to an
  * equation. Avalaible choices are:
- * - "jacobi" --> simpliest algorithm
- * - "gauss_seidel" --> Gauss-Seidel algorithm
+ * - "jacobi"           --> simpliest iterative solver
+ * - "gauss_seidel"     --> Gauss-Seidel algorithm
  * - "sym_gauss_seidel" --> Symmetric version of Gauss-Seidel algorithm;
  *                          one backward and forward sweep
- * - "cg" --> (default) the standard conjuguate gradient algorithm
- * - "fcg" --> flexible version of the conjuguate gradient algorithm used
- *             when the preconditioner can change iteration by iteration
- * - "bicg" --> Bi-CG algorithm (for non-symmetric linear systems)
- * - "bicgstab2" --> BiCG-Stab2 algorithm (for non-symmetric linear systems)
- * - "cr3" --> a 3-layer conjugate residual solver (when "cs" is chosen as the
- *    solver family)
- * - "gmres" --> a robust iterative solver but slower as previous one if the
- *   system is not difficult to solve
- * - "amg" --> an algebraic multigrid iterative solver. Good choice for a
- * symmetric positive definite system.
+ * - "cg"               --> conjuguate gradient algorithm
+ * - "fcg"              --> flexible version of the conjuguate gradient
+ *                          algorithm used when the preconditioner can change
+ *                          iteration by iteration
+ * - "bicg"             --> Bi-CG algorithm (for non-symmetric linear systems)
+ * - "bicgstab2"        --> BiCG-Stab2 algorithm (for non-symmetric linear
+ *                          systems)
+ * - "cr3"              --> a 3-layer conjugate residual solver (when "cs" is
+ *                          chosen as the solver family)
+ * - "gmres"            --> robust iterative solver. Not the best choice if the
+ *                          system is easy to solve
+ * - "amg"              --> algebraic multigrid iterative solver. Good choice
+ *                          for a scalable solver related to symmetric positive
+ *                          definite system.
+ * - "minres"           --> Solver of choice for symmetric indefinite systems
  *
  * \var CS_EQKEY_ITSOL_EPS
  * Tolerance factor for stopping the iterative processus for solving the

@@ -208,7 +208,7 @@ _petsc_set_krylov_solver(cs_param_sles_t   slesp,
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              " Iterative solver not interfaced with PETSc.");
+              " %s: Iterative solver not interfaced with PETSc.", __func__);
   }
 
   /* Set KSP tolerances */
