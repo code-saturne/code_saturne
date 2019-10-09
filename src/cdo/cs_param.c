@@ -236,6 +236,12 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver)
   case CS_PARAM_ITSOL_MINRES:
     return  "MinRes";
     break;
+  case CS_PARAM_ITSOL_MUMPS:
+    return  "MUMPS (LU factorization)";
+    break;
+  case CS_PARAM_ITSOL_MUMPS_LDLT:
+    return  "MUMPS (LDLT factorization)";
+    break;
   case CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL:
     return  "Symmetric.Gauss.Seidel";
     break;

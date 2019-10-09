@@ -451,6 +451,8 @@ typedef enum {
   CS_PARAM_ITSOL_GMRES,            /*!< Generalized Minimal RESidual */
   CS_PARAM_ITSOL_JACOBI,           /*!< Jacobi */
   CS_PARAM_ITSOL_MINRES,           /*!< Mininal Residual */
+  CS_PARAM_ITSOL_MUMPS,            /*!< MUMPS direct solver (LU facto.) */
+  CS_PARAM_ITSOL_MUMPS_LDLT,       /*!< MUMPS direct solver (LDLT facto.) */
   CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL, /*!< Symetric Gauss-Seidel */
   CS_PARAM_N_ITSOL_TYPES
 

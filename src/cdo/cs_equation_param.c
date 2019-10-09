@@ -159,11 +159,13 @@ _petsc_pchypre_hook(void)
  * \brief Set PETSc solver and preconditioner
  *
  * \param[in]      slesp    pointer to SLES parameters
+ * \param[in, out] a        pointer to PETSc matrix
  * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
 _petsc_set_krylov_solver(cs_param_sles_t   slesp,
+                         Mat               a,
                          KSP               ksp)
 {
   switch (slesp.solver) {
@@ -206,6 +208,42 @@ _petsc_set_krylov_solver(cs_param_sles_t   slesp,
     KSPSetType(ksp, KSPMINRES);
     break;
 
+  case CS_PARAM_ITSOL_MUMPS:
+    {
+      PC  pc;
+#if defined(PETSC_HAVE_MUMPS)
+      KSPSetType(ksp, KSPPREONLY);
+      KSPGetPC(ksp, &pc);
+      PCSetType(pc, PCLU);
+      PCFactorSetMatSolverType(pc, MATSOLVERMUMPS);
+#else
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: MUMPS not interfaced with this installation of PETSc.",
+                __func__);
+#endif
+    }
+    break;
+
+  case CS_PARAM_ITSOL_MUMPS_LDLT:
+    {
+      PC  pc;
+#if defined(PETSC_HAVE_MUMPS)
+      KSPSetType(ksp, KSPPREONLY);
+      KSPGetPC(ksp, &pc);
+      MatSetOption(a, MAT_SPD, PETSC_TRUE); /* set MUMPS id%SYM=1 */
+      PCSetType(pc, PCCHOLESKY);
+
+      PCFactorSetMatSolverType(pc, MATSOLVERMUMPS);
+      PCFactorSetUpMatSolverType(pc); /* call MatGetFactor() to create F */
+
+#else
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: MUMPS not interfaced with this installation of PETSc.",
+                __func__);
+#endif
+    }
+    break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               " %s: Iterative solver not interfaced with PETSc.", __func__);
@@ -245,7 +283,7 @@ _petsc_setup_hook(void   *context,
                                      SIGFPE detection */
 
   /* Set the solver */
-  _petsc_set_krylov_solver(slesp, ksp);
+  _petsc_set_krylov_solver(slesp, a, ksp);
 
   /* Set the preconditioner */
   PC pc;
@@ -270,7 +308,10 @@ _petsc_setup_hook(void   *context,
   switch (slesp.precond) {
 
   case CS_PARAM_PRECOND_NONE:
-    PCSetType(pc, PCNONE);
+    /* MUMPS solver is called as a preconditioner in PETSc */
+    if (slesp.solver != CS_PARAM_ITSOL_MUMPS &&
+        slesp.solver != CS_PARAM_ITSOL_MUMPS_LDLT)
+      PCSetType(pc, PCNONE);
     break;
   case CS_PARAM_PRECOND_DIAG:
     PCSetType(pc, PCJACOBI);    /* Jacobi (diagonal) preconditioning */
@@ -397,7 +438,7 @@ _petsc_amg_block_hook(void     *context,
                                      SIGFPE detection */
 
   /* Set the solver */
-  _petsc_set_krylov_solver(slesp, ksp);
+  _petsc_set_krylov_solver(slesp, a, ksp);
 
   /* Set KSP tolerances */
   PetscReal rtol, abstol, dtol;
@@ -747,6 +788,14 @@ _set_key(const char            *label,
       eqp->sles_param.solver = CS_PARAM_ITSOL_JACOBI;
     else if (strcmp(keyval, "minres") == 0)
       eqp->sles_param.solver = CS_PARAM_ITSOL_MINRES;
+    else if (strcmp(keyval, "mumps") == 0) {
+      eqp->sles_param.solver = CS_PARAM_ITSOL_MUMPS;
+      eqp->sles_param.precond = CS_PARAM_PRECOND_NONE;
+    }
+    else if (strcmp(keyval, "mumps_ldlt") == 0) {
+      eqp->sles_param.solver = CS_PARAM_ITSOL_MUMPS_LDLT;
+      eqp->sles_param.precond = CS_PARAM_PRECOND_NONE;
+    }
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,

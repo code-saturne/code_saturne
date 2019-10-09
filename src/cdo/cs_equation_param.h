@@ -613,6 +613,10 @@ typedef struct {
  *                          for a scalable solver related to symmetric positive
  *                          definite system.
  * - "minres"           --> Solver of choice for symmetric indefinite systems
+ * - "mumps"            --> Direct solver (very robust but memory consumming)
+ *                          via PETSc only. LU factorization.
+ * - "mumps_ldlt"       --> Direct solver (very robust but memory consumming)
+ *                          via PETSc only. LDLT factorization.
  *
  * \var CS_EQKEY_ITSOL_EPS
  * Tolerance factor for stopping the iterative processus for solving the
