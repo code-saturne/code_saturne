@@ -173,6 +173,12 @@ typedef enum {
  * saddle-point system is symmetric. The residual for the GKB part is computed
  * in the energy norm. This option is only available with the support to the
  * PETSc library up to now.
+ *
+ * * \var CS_NAVSTO_SLES_MUMPS
+ * Associated keyword: "mumps"
+ *
+ * Direct solver to solve systems arising from the discretization of the
+ * Navier-Stokes equations
  */
 
 typedef enum {
@@ -184,6 +190,7 @@ typedef enum {
   CS_NAVSTO_SLES_UPPER_SCHUR_GMRES,
   CS_NAVSTO_SLES_GKB_GMRES,
   CS_NAVSTO_SLES_GKB,
+  CS_NAVSTO_SLES_MUMPS,
 
   CS_NAVSTO_SLES_N_TYPES
 

@@ -554,6 +554,9 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     else if (strcmp(val, "gkb") == 0) {
       nsp->sles_strategy = CS_NAVSTO_SLES_GKB;
     }
+    else if (strcmp(val, "mumps") == 0) {
+      nsp->sles_strategy = CS_NAVSTO_SLES_MUMPS;
+    }
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,

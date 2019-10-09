@@ -848,6 +848,58 @@ _gkb_gmres_hook(void     *context,
                                      SIGFPE detection */
 }
 #endif  /* GKB available only if version >= 3.11 */
+
+#if defined(PETSC_HAVE_MUMPS)
+/*----------------------------------------------------------------------------
+ * \brief  Function pointer: setup hook for setting PETSc solver and
+ *         preconditioner.
+ *         Case of MUMPS via PETSc
+ *
+ * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] a        pointer to PETSc Matrix context
+ * \param[in, out] ksp      pointer to PETSc KSP context
+ *----------------------------------------------------------------------------*/
+
+static void
+_mumps_hook(void     *context,
+            Mat       a,
+            KSP       ksp)
+{
+  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
+  cs_param_sles_t  slesp = eqp->sles_param;
+
+  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
+
+  PC  pc;
+  KSPSetType(ksp, KSPPREONLY);
+  KSPGetPC(ksp, &pc);
+  PCSetType(pc, PCLU);
+  PCFactorSetMatSolverType(pc, MATSOLVERMUMPS);
+
+  PetscReal rtol, abstol, dtol;
+  PetscInt  maxit;
+  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
+  KSPSetTolerances(ksp,
+                   slesp.eps,   /* relative convergence tolerance */
+                   abstol,      /* absolute convergence tolerance */
+                   dtol,        /* divergence tolerance */
+                   slesp.n_max_iter); /* max number of iterations */
+
+  /* User function for additional settings */
+  cs_user_sles_petsc_hook(context, a, ksp);
+
+  /* Dump the setup related to PETSc in a specific file */
+  if (!slesp.setup_done) {
+    cs_sles_petsc_log_setup(ksp);
+    slesp.setup_done = true;
+  }
+
+  cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
+}
+#endif  /* PETSC_HAVE_MUMPS */
+
 #endif  /* HAVE_PETSC */
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -966,10 +1018,30 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
     break;
 #endif
 
+#if defined(PETSC_HAVE_MUMPS)
+  case CS_NAVSTO_SLES_MUMPS:
+    cs_sles_petsc_init();
+    cs_sles_petsc_define(field_id,
+                         NULL,
+                         MATMPIAIJ,
+                         _mumps_hook,
+                         (void *)mom_eqp);
+    break;
+#else
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid strategy for solving the linear system %s\n"
+              " PETSc with MUMPS is required with this option.\n",
+              __func__, mom_eqp->name);
+    break;
+#endif
+
 #else
   case CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK:
   case CS_NAVSTO_SLES_DIAG_SCHUR_GMRES:
   case CS_NAVSTO_SLES_UPPER_SCHUR_GMRES:
+  case CS_NAVSTO_SLES_GKB:
+  case CS_NAVSTO_SLES_GKB_GMRES:
+  case CS_NAVSTO_SLES_MUMPS:
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid strategy for solving the linear system %s\n"
               " PETSc is required with this option.\n"
