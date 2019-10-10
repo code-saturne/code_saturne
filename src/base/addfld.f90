@@ -498,7 +498,7 @@ if (ipstdv(ipstnu).gt.0) then
   if (iscalt.gt.0) then
     f_id = ivarfl(isca(iscalt))
     call field_get_key_struct_var_cal_opt(f_id, vcopt)
-    if (vcopt_dfm%idiff .ne. 0) then
+    if (vcopt%idiff .ne. 0) then
       call field_find_or_create('tplus', itycat, ityloc, idim1, iflid)
       call field_find_or_create('tstar', itycat, ityloc, idim1, iflid)
     endif
