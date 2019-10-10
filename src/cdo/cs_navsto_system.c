@@ -638,6 +638,8 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
     switch (nsp->coupling) {
 
     case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+      /* ============================================= */
+
       ns->init_scheme_context = cs_cdofb_ac_init_scheme_context;
       ns->free_scheme_context = cs_cdofb_ac_free_scheme_context;
       ns->init_velocity = NULL;
@@ -651,9 +653,11 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
                   "%s: The Artificial Compressibility "
                   "can be used only in unsteady problems", __func__);
         break;
+
       case CS_TIME_SCHEME_EULER_IMPLICIT:
         ns->compute = cs_cdofb_ac_compute_implicit;
         break;
+
       case CS_TIME_SCHEME_THETA:
       case CS_TIME_SCHEME_CRANKNICO:
         ns->compute = cs_cdofb_ac_compute_theta;
@@ -676,6 +680,8 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       break;
 
     case CS_NAVSTO_COUPLING_MONOLITHIC:
+      /* ============================= */
+
       ns->init_scheme_context = cs_cdofb_monolithic_init_scheme_context;
       ns->free_scheme_context = cs_cdofb_monolithic_free_scheme_context;
       ns->init_velocity = NULL;
@@ -691,6 +697,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       case CS_TIME_SCHEME_EULER_IMPLICIT:
         ns->compute = cs_cdofb_monolithic_compute_implicit;
         break;
+
       case CS_TIME_SCHEME_THETA:
       case CS_TIME_SCHEME_CRANKNICO:
         ns->compute = cs_cdofb_monolithic_compute_theta;
@@ -708,6 +715,8 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       break;
 
     case CS_NAVSTO_COUPLING_PROJECTION:
+      /* ============================= */
+
       ns->init_scheme_context = cs_cdofb_predco_init_scheme_context;
       ns->free_scheme_context = cs_cdofb_predco_free_scheme_context;
       ns->init_velocity = NULL;
@@ -721,9 +730,11 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
                   "%s: The projection coupling algorithm "
                   "can be used only in unsteady problems", __func__);
         break;
+
       case CS_TIME_SCHEME_EULER_IMPLICIT:
         ns->compute = cs_cdofb_predco_compute_implicit;
         break;
+
       case CS_TIME_SCHEME_THETA:
       case CS_TIME_SCHEME_CRANKNICO:
       default:
@@ -738,6 +749,8 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       break;
 
     case CS_NAVSTO_COUPLING_UZAWA:
+      /* ======================== */
+
       ns->init_scheme_context = cs_cdofb_uzawa_init_scheme_context;
       ns->free_scheme_context = cs_cdofb_uzawa_free_scheme_context;
       ns->init_velocity = NULL;
@@ -756,6 +769,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       case CS_TIME_SCHEME_EULER_IMPLICIT:
         ns->compute = cs_cdofb_uzawa_compute_implicit;
         break;
+
       case CS_TIME_SCHEME_THETA:
       case CS_TIME_SCHEME_CRANKNICO:
         ns->compute = cs_cdofb_uzawa_compute_theta;

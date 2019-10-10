@@ -91,9 +91,11 @@ static const char _err_empty_eqp[] =
  *============================================================================*/
 
 #if defined(HAVE_PETSC)
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Predefined settings for GAMG as a preconditioner
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 static inline void
 _petsc_pcmg_hook(void)
@@ -109,9 +111,11 @@ _petsc_pcmg_hook(void)
 #endif
 }
 
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Predefined settings for GAMG as a preconditioner
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 static inline void
 _petsc_pcgamg_hook(void)
@@ -129,9 +133,11 @@ _petsc_pcgamg_hook(void)
 #endif
 }
 
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Predefined settings for BoomerAMG in HYPRE as a preconditioner
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 static inline void
 _petsc_pchypre_hook(void)
@@ -414,7 +420,8 @@ _petsc_setup_hook(void   *context,
                                      SIGFPE detection */
 }
 
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Function pointer: setup hook for setting PETSc solver and
  *         preconditioner.
  *         Case of multiplicative AMG block preconditioner for a CG
@@ -422,7 +429,8 @@ _petsc_setup_hook(void   *context,
  * \param[in, out] context  pointer to optional (untyped) value or structure
  * \param[in, out] a        pointer to PETSc Matrix context
  * \param[in, out] ksp      pointer to PETSc KSP context
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
 _petsc_amg_block_hook(void     *context,
