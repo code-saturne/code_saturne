@@ -509,7 +509,7 @@ cs_cdofb_vecteq_advection_diffusion(double                         time_eval,
       }
     }
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))
       cs_cell_sys_dump("\n>> Local system after advection", csys);
 #endif

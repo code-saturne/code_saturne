@@ -1378,7 +1378,7 @@ _update_fields(cs_cdofb_monolithic_t         *sc,
   cs_cdofb_navsto_set_zero_mean_pressure(quant, pr_fld->val);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
-  cs_dbg_darray_to_listing("VELOCITY", quant->n_faces, vel_f, 9);
+  cs_dbg_darray_to_listing("VELOCITY", 3*quant->n_faces, vel_f, 9);
   cs_dbg_darray_to_listing("PRESSURE", quant->n_cells, pr_fld->val, 9);
   cs_dbg_darray_to_listing("VELOCITY_DIV", quant->n_cells, div, 9);
 #endif
