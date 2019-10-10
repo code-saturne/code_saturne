@@ -337,8 +337,10 @@ _solve_steady_state_domain(cs_domain_t  *domain)
   /* Extra operations and post-processing of the computed solutions */
   cs_post_time_step_begin(domain->time_step);
 
-  cs_post_activate_writer(CS_POST_WRITER_ALL_ASSOCIATED, true);
-  cs_post_write_meshes(domain->time_step);
+  if (domain->only_steady) { /* Force writer activation and mesh output */
+    cs_post_activate_writer(CS_POST_WRITER_ALL_ASSOCIATED, true);
+    cs_post_write_meshes(domain->time_step);
+  }
   cs_domain_post(domain);
 
   cs_post_time_step_end();
