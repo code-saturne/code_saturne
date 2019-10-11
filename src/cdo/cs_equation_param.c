@@ -161,22 +161,166 @@ _petsc_pchypre_hook(void)
 #endif
 }
 
-/*----------------------------------------------------------------------------
- * \brief Set PETSc solver and preconditioner
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set command line options for PC according to the kind of
+ *        preconditionner
+ *
+ * \param[in]   slesp      set of parameters for the linear algebra
+ * \param[in]   eqname     name of the equation to handle
+ */
+/*----------------------------------------------------------------------------*/
+
+static PCType
+_petsc_get_pc_type(cs_param_sles_t    slesp,
+                   const char        *eqname)
+{
+  PCType  pc_type = PCNONE;
+
+  switch (slesp.precond) {
+
+  case CS_PARAM_PRECOND_NONE:
+    return PCNONE;
+
+  case CS_PARAM_PRECOND_DIAG:
+    return PCJACOBI;
+
+  case CS_PARAM_PRECOND_BJACOB:
+    return PCBJACOBI;
+
+  case CS_PARAM_PRECOND_SSOR:
+    return PCSOR;
+
+  case CS_PARAM_PRECOND_ICC0:
+    return PCICC;
+
+  case CS_PARAM_PRECOND_ILU0:
+    return PCILU;
+
+  case CS_PARAM_PRECOND_AS:
+    return PCASM;
+
+  case CS_PARAM_PRECOND_AMG:
+    {
+      switch (slesp.amg_type) {
+
+      case CS_PARAM_AMG_PETSC_GAMG:
+        return PCGAMG;
+        break;
+
+      case CS_PARAM_AMG_PETSC_PCMG:
+        return PCMG;
+        break;
+
+      case CS_PARAM_AMG_HYPRE_BOOMER:
+#if defined(PETSC_HAVE_HYPRE)
+        return PCHYPRE;
+#else
+        cs_base_warn(__FILE__, __LINE__);
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "%s: Eq. %s: Switch to MG since BoomerAMG is not"
+                      " available.\n",
+                      __func__, eqname);
+        return PCMG;
+#endif
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Eq. %s: Invalid AMG type for the PETSc library.",
+                  __func__, eqname);
+        break;
+
+      } /* End of switch on the AMG type */
+
+    } /* AMG as preconditioner */
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Eq. %s: Preconditioner not interfaced with PETSc.",
+              __func__, eqname);
+  }
+
+  return pc_type;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set command line options for PC according to the kind of
+ *        preconditionner
+ *
+ * \param[in]    slesp     set of parameters for the linear algebra solver
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_petsc_set_pc_options_from_command_line(cs_param_sles_t    slesp)
+{
+
+  switch (slesp.precond) {
+
+  case CS_PARAM_PRECOND_BJACOB:
+#if PETSC_VERSION_GE(3,7,0)
+    PetscOptionsSetValue(NULL, "-sub_pc_factor_levels", "2");
+#else
+    PetscOptionsSetValue("-sub_pc_factor_levels", "2");
+#endif
+    break;
+
+  case CS_PARAM_PRECOND_AMG:
+    {
+      switch (slesp.amg_type) {
+
+      case CS_PARAM_AMG_PETSC_GAMG:
+        _petsc_pcgamg_hook();
+        break;
+
+      case CS_PARAM_AMG_PETSC_PCMG:
+        _petsc_pcmg_hook();
+        break;
+
+      case CS_PARAM_AMG_HYPRE_BOOMER:
+#if defined(PETSC_HAVE_HYPRE)
+        _petsc_pchypre_hook();
+#else
+        _petsc_pcmg_hook();
+#endif
+        break;
+
+      default:
+        break; /* Nothing else to do at this stage */
+
+      } /* End of switch on the AMG type */
+
+    } /* AMG as preconditioner */
+    break;
+
+  default:
+    break; /* Nothing else to do at this stage */
+
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set PETSc solver
  *
  * \param[in]      slesp    pointer to SLES parameters
  * \param[in, out] a        pointer to PETSc matrix
  * \param[in, out] ksp      pointer to PETSc KSP context
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
 _petsc_set_krylov_solver(cs_param_sles_t   slesp,
                          Mat               a,
                          KSP               ksp)
 {
+  /* 1) Set the krylov solver */
   switch (slesp.solver) {
 
-  case CS_PARAM_ITSOL_BICG: /* Improved Bi-CG stab */
+  case CS_PARAM_ITSOL_BICG:      /* Improved Bi-CG stab */
     KSPSetType(ksp, KSPIBCGS);
     break;
 
@@ -184,7 +328,7 @@ _petsc_set_krylov_solver(cs_param_sles_t   slesp,
     KSPSetType(ksp, KSPBCGSL);
     break;
 
-  case CS_PARAM_ITSOL_CG:    /* Preconditioned Conjugate Gradient */
+  case CS_PARAM_ITSOL_CG:        /* Preconditioned Conjugate Gradient */
     if (slesp.precond == CS_PARAM_PRECOND_AMG ||
         slesp.precond == CS_PARAM_PRECOND_AMG_BLOCK)
       KSPSetType(ksp, KSPFCG);
@@ -192,67 +336,100 @@ _petsc_set_krylov_solver(cs_param_sles_t   slesp,
       KSPSetType(ksp, KSPCG);
     break;
 
-  case CS_PARAM_ITSOL_FCG:   /* Flexible Conjuguate Gradient */
+  case CS_PARAM_ITSOL_FCG:       /* Flexible Conjuguate Gradient */
     KSPSetType(ksp, KSPFCG);
     break;
+
+  case CS_PARAM_ITSOL_GMRES:     /* Preconditioned GMRES */
+    KSPSetType(ksp, KSPLGMRES);
+    break;
+
+  case CS_PARAM_ITSOL_MINRES:    /* Minimal residual */
+    KSPSetType(ksp, KSPMINRES);
+    break;
+
+  case CS_PARAM_ITSOL_MUMPS:     /* Direct solver (factorization) */
+  case CS_PARAM_ITSOL_MUMPS_LDLT:
+#if defined(PETSC_HAVE_MUMPS)
+    KSPSetType(ksp, KSPPREONLY);
+#else
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: MUMPS not interfaced with this installation of PETSc.",
+              __func__);
+#endif
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Iterative solver not interfaced with PETSc.", __func__);
+  }
+
+  /* 2) Additional settings arising from command lines */
+  switch (slesp.solver) {
+
+  case CS_PARAM_ITSOL_GMRES: /* Preconditioned GMRES */
+#if PETSC_VERSION_GE(3,7,0)
+    PetscOptionsSetValue(NULL, "-ksp_gmres_modifiedgramschmidt", "1");
+#else
+    PetscOptionsSetValue("-ksp_gmres_modifiedgramschmidt", "1");
+#endif
+    break;
+
+  default:
+    break; /* Nothing to do. Settings performed with another mechanism */
+
+  }
+
+  /* Apply modifications to the KSP structure given with command lines.
+   * This setting stands for a first setting and may be overwritten with
+   * parameters stored in the structure cs_param_sles_t
+   *
+   * Automatic monitoring
+   *  PetscOptionsSetValue(NULL, "-ksp_monitor", "");
+   *
+   */
+
+  KSPSetFromOptions(ksp);
+
+  /* Try to have "true" norm */
+  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+
+  /* Apply settings from the cs_param_sles_t structure */
+  switch (slesp.solver) {
 
   case CS_PARAM_ITSOL_GMRES: /* Preconditioned GMRES */
     {
       const int  n_max_restart = 40;
 
-#if PETSC_VERSION_GE(3,7,0)
-      PetscOptionsSetValue(NULL, "-ksp_gmres_modifiedgramschmidt", "1");
-#else
-      PetscOptionsSetValue("-ksp_gmres_modifiedgramschmidt", "1");
-#endif
-      KSPSetType(ksp, KSPLGMRES);
       KSPGMRESSetRestart(ksp, n_max_restart);
     }
     break;
 
-  case CS_PARAM_ITSOL_MINRES:
-    KSPSetType(ksp, KSPMINRES);
-    break;
-
+#if defined(PETSC_HAVE_MUMPS)
   case CS_PARAM_ITSOL_MUMPS:
     {
       PC  pc;
-#if defined(PETSC_HAVE_MUMPS)
-      KSPSetType(ksp, KSPPREONLY);
       KSPGetPC(ksp, &pc);
       PCSetType(pc, PCLU);
       PCFactorSetMatSolverType(pc, MATSOLVERMUMPS);
-#else
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: MUMPS not interfaced with this installation of PETSc.",
-                __func__);
-#endif
     }
     break;
 
   case CS_PARAM_ITSOL_MUMPS_LDLT:
     {
       PC  pc;
-#if defined(PETSC_HAVE_MUMPS)
-      KSPSetType(ksp, KSPPREONLY);
       KSPGetPC(ksp, &pc);
       MatSetOption(a, MAT_SPD, PETSC_TRUE); /* set MUMPS id%SYM=1 */
       PCSetType(pc, PCCHOLESKY);
 
       PCFactorSetMatSolverType(pc, MATSOLVERMUMPS);
       PCFactorSetUpMatSolverType(pc); /* call MatGetFactor() to create F */
-
-#else
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: MUMPS not interfaced with this installation of PETSc.",
-                __func__);
-#endif
     }
     break;
+#endif
 
   default:
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Iterative solver not interfaced with PETSc.", __func__);
+    break; /* Nothing else to do */
   }
 
   /* Set KSP tolerances */
@@ -261,21 +438,21 @@ _petsc_set_krylov_solver(cs_param_sles_t   slesp,
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
   KSPSetTolerances(ksp,
                    slesp.eps,          /* relative convergence tolerance */
-                   abstol,            /* absolute convergence tolerance */
-                   dtol,              /* divergence tolerance */
+                   abstol,             /* absolute convergence tolerance */
+                   dtol,               /* divergence tolerance */
                    slesp.n_max_iter);  /* max number of iterations */
 
-  /* Apply modifications to the KSP structure */
-  KSPSetFromOptions(ksp);
 }
 
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Set PETSc solver and preconditioner
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
  * \param[in, out] a        pointer to PETSc Matrix context
  * \param[in, out] ksp      pointer to PETSc KSP context
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 static void
 _petsc_setup_hook(void   *context,
@@ -288,14 +465,7 @@ _petsc_setup_hook(void   *context,
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
 
-  /* Set the solver */
-  _petsc_set_krylov_solver(slesp, a, ksp);
-
-  /* Set the preconditioner */
-  PC pc;
-
-  KSPGetPC(ksp, &pc);
-
+  /* Sanity checks */
   if (cs_glob_n_ranks > 1) {
     if (slesp.precond == CS_PARAM_PRECOND_SSOR ||
         slesp.precond == CS_PARAM_PRECOND_ILU0) {
@@ -303,48 +473,48 @@ _petsc_setup_hook(void   *context,
       slesp.precond = CS_PARAM_PRECOND_DIAG;
       cs_base_warn(__FILE__, __LINE__);
       cs_log_printf(CS_LOG_DEFAULT,
-                    " %s: Modify the requested preconditioner to enable a"
-                    " parallel computation with PETSC.\n"
+                    " %s: Eq. %s: Modify the requested preconditioner to"
+                    " enable a parallel computation with PETSC.\n"
                     " Switch to a jacobi preconditioner.\n"
-                    " Please check your settings.", __func__);
+                    " Please check your settings.", __func__, eqp->name);
 
     }
   } /* Advanced check for parallel run */
 
+  /* 1) Set the solver */
+  _petsc_set_krylov_solver(slesp, a, ksp);
+
+  /* 2) Set the preconditioner */
+  PCType  pc_type = _petsc_get_pc_type(slesp, eqp->name);
+  PC  pc;
+  KSPGetPC(ksp, &pc);
+
+  if (slesp.solver != CS_PARAM_ITSOL_MUMPS &&
+      slesp.solver != CS_PARAM_ITSOL_MUMPS_LDLT)
+    PCSetType(pc, pc_type);
+
+  /* 3) Set PC options from command line */
+  _petsc_set_pc_options_from_command_line(slesp);
+
+  /* Apply modifications to the PC structure given with command lines.
+   * This setting stands for a first setting and may be overwritten with
+   * parameters stored in the structure cs_param_sles_t
+   * To get the last word use cs_user_sles_petsc_hook()  */
+  PCSetFromOptions(pc);
+
+  /* 4) Additional settings not using command lines */
   switch (slesp.precond) {
 
-  case CS_PARAM_PRECOND_NONE:
-    /* MUMPS solver is called as a preconditioner in PETSc */
-    if (slesp.solver != CS_PARAM_ITSOL_MUMPS &&
-        slesp.solver != CS_PARAM_ITSOL_MUMPS_LDLT)
-      PCSetType(pc, PCNONE);
-    break;
-  case CS_PARAM_PRECOND_DIAG:
-    PCSetType(pc, PCJACOBI);    /* Jacobi (diagonal) preconditioning */
-    break;
-  case CS_PARAM_PRECOND_BJACOB:
-    PCSetType(pc, PCBJACOBI);   /* Block-Jacobi (diagonal) preconditioning */
-#if PETSC_VERSION_GE(3,7,0)
-    PetscOptionsSetValue(NULL, "-sub_pc_factor_levels", "2");
-#else
-    PetscOptionsSetValue("-sub_pc_factor_levels", "2");
-#endif
-    break;
   case CS_PARAM_PRECOND_SSOR:
-    PCSetType(pc, PCSOR);
     PCSORSetSymmetric(pc, SOR_SYMMETRIC_SWEEP);
     break;
+
   case CS_PARAM_PRECOND_ICC0:
-    PCSetType(pc, PCICC);
-    PCFactorSetLevels(pc, 0);
-    break;
-  case CS_PARAM_PRECOND_ILU0:
-    PCSetType(pc, PCILU);
     PCFactorSetLevels(pc, 0);
     break;
 
-  case CS_PARAM_PRECOND_AS:
-    PCSetType(pc, PCASM);
+  case CS_PARAM_PRECOND_ILU0:
+    PCFactorSetLevels(pc, 0);
     break;
 
   case CS_PARAM_PRECOND_AMG:
@@ -352,36 +522,11 @@ _petsc_setup_hook(void   *context,
       switch (slesp.amg_type) {
 
       case CS_PARAM_AMG_PETSC_GAMG:
-        PCSetType(pc, PCGAMG);
         PCGAMGSetType(pc, PCGAMGAGG);
         PCGAMGSetNSmooths(pc, 1);
-
-        _petsc_pcgamg_hook();
-        break;
-
-      case CS_PARAM_AMG_PETSC_PCMG:
-        PCSetType(pc, PCMG);
-        _petsc_pcmg_hook();
-        break;
-
-      case CS_PARAM_AMG_HYPRE_BOOMER:
-#if defined(PETSC_HAVE_HYPRE)
-        PCSetType(pc, PCHYPRE);
-        _petsc_pchypre_hook();
-#else
-        cs_base_warn(__FILE__, __LINE__);
-        cs_log_printf(CS_LOG_DEFAULT,
-                      "%s: Switch to MG since BoomerAMG is not available.\n",
-                      __func__);
-        PCSetType(pc, PCMG);
-        _petsc_pcmg_hook();
-#endif
         break;
 
       default:
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid AMG type with PETSc library for equation %s.",
-                  __func__, eqp->name);
         break;
 
       } /* End of switch on the AMG type */
@@ -390,22 +535,11 @@ _petsc_setup_hook(void   *context,
     break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Preconditioner not interfaced with PETSc for equation %s.",
-              __func__, eqp->name);
+    break; /* Nothing else to set-up */
   }
-
-  /* Try to have "true" norm */
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook((void *)eqp, a, ksp);
-
-  /* Update the preconditioner with the new defined options */
-  PCSetFromOptions(pc);
-
-  /* Update with the solver with the new defined options */
-  KSPSetFromOptions(ksp);
 
   /* Dump the setup related to PETSc in a specific file */
   if (!slesp.setup_done) {
