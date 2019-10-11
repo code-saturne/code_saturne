@@ -2322,7 +2322,7 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
     cs_eflag_t  msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_FV;
     cs_eflag_t  add_flag = CS_FLAG_COMP_EV | CS_FLAG_COMP_FE |
       CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PVQ |
-      CS_FLAG_COMP_DEQ | CS_FLAG_COMP_FEQ;
+      CS_FLAG_COMP_DEQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ;
 
     if (eqb->diff_pty_uniform)  /* c_id = 0, cell_flag = 0 */
       cs_equation_set_diffusion_property(eqp, 0, t_eval, 0, cb);
@@ -2773,7 +2773,8 @@ cs_cdovcb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
 #endif
 
     cs_eflag_t  msh_flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PFQ |
-      CS_FLAG_COMP_SEF |  CS_FLAG_COMP_DEQ | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV;
+      CS_FLAG_COMP_SEF | CS_FLAG_COMP_DEQ  | CS_FLAG_COMP_FEQ |
+      CS_FLAG_COMP_EV  | CS_FLAG_COMP_HFQ;
 
     /* Each thread get back its related structures:
        Get the cellwise view of the mesh and the algebraic system */
