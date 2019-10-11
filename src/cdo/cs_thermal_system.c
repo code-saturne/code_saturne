@@ -201,7 +201,7 @@ cs_thermal_system_activate(cs_flag_t         model,
     cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vcb");
 
   }
-  else if (thm->numeric & CS_THERMAL_CDOVCB) {
+  else if (thm->numeric & CS_THERMAL_CDOFB) {
 
     cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
     cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "ocs");
