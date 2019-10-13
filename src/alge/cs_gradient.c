@@ -7764,10 +7764,10 @@ void CS_PROCF (cgdcel, CGDCEL)
 
 void CS_PROCF (cgdvec, CGDVEC)
 (
- const cs_int_t         *const f_id,
+ const cs_int_t         *const f_id,      /* <-- field id, or -1              */
  const cs_int_t         *const imrgra,    /* <-- gradient computation mode    */
  const cs_int_t         *const inc,       /* <-- 0 or 1: increment or not     */
- const cs_int_t         *const n_r_sweeps,    /* <-- >1: with reconstruction      */
+ const cs_int_t         *const n_r_sweeps,/* <-- >1: with reconstruction      */
  const cs_int_t         *const iwarnp,    /* <-- verbosity level              */
  const cs_int_t         *const imligp,    /* <-- type of clipping             */
  const cs_real_t        *const epsrgp,    /* <-- precision for iterative
@@ -8109,8 +8109,8 @@ cs_gradient_scalar(const char                    *var_name,
  * \param[in, out]  var             gradient's base variable
  * \param[in, out]  c_weight        cell variable weight, or NULL
  * \param[in]       cpl             associated internal coupling, or NULL
- * \param[out]      grad            gradient
-                                    (\f$ \der{u_i}{x_j} \f$ is grad[][i][j])
+ * \param[out]      gradv           gradient
+                                    (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
  */
 /*----------------------------------------------------------------------------*/
 
@@ -8202,6 +8202,7 @@ cs_gradient_vector(const char                    *var_name,
  * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
  * \param[in]       n_r_sweeps      if > 1, number of reconstruction sweeps
+ *                                  (only used by CS_GRADIENT_ITER)
  * \param[in]       verbosity       verbosity level
  * \param[in]       clip_mode       clipping mode
  * \param[in]       epsilon         precision for iterative gradient calculation
@@ -8209,8 +8210,8 @@ cs_gradient_vector(const char                    *var_name,
  * \param[in]       bc_coeff_a      boundary condition term a
  * \param[in]       bc_coeff_b      boundary condition term b
  * \param[in, out]  var             gradient's base variable
- * \param[out]      grad           gradient
-                                    (\f$ \der{u_i}{x_j} \f$ is grad[][i][j])
+ * \param[out]      grad            gradient
+                                    (\f$ \der{t_ij}{x_k} \f$ is grad[][ij][k])
  */
 /*----------------------------------------------------------------------------*/
 
@@ -8221,7 +8222,7 @@ cs_gradient_tensor(const char                *var_name,
                    int                        inc,
                    int                        n_r_sweeps,
                    int                        verbosity,
-                   int                        clip_mode,
+                   cs_gradient_limit_t        clip_mode,
                    double                     epsilon,
                    double                     clip_coeff,
                    const cs_real_6_t          bc_coeff_a[],
@@ -8332,7 +8333,7 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
                                 int                         hyd_p_flag,
                                 int                         w_stride,
                                 int                         verbosity,
-                                int                         clip_mode,
+                                cs_gradient_limit_t         clip_mode,
                                 double                      epsilon,
                                 double                      extrap,
                                 double                      clip_coeff,
@@ -8435,7 +8436,7 @@ cs_gradient_vector_synced_input(const char                *var_name,
                                 int                        inc,
                                 int                        n_r_sweeps,
                                 int                        verbosity,
-                                int                        clip_mode,
+                                cs_gradient_limit_t        clip_mode,
                                 double                     epsilon,
                                 double                     clip_coeff,
                                 const cs_real_t            bc_coeff_a[][3],
@@ -8443,7 +8444,7 @@ cs_gradient_vector_synced_input(const char                *var_name,
                                 const cs_real_t            var[restrict][3],
                                 const cs_real_t            c_weight[restrict],
                                 const cs_internal_coupling_t    *cpl,
-                                cs_real_33_t     *restrict grad)
+                                cs_real_t                  grad[restrict][3][3])
 {
   cs_gradient_info_t *gradient_info = NULL;
   cs_timer_t t0, t1;
@@ -8499,6 +8500,7 @@ cs_gradient_vector_synced_input(const char                *var_name,
  * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
  * \param[in]       n_r_sweeps      if > 1, number of reconstruction sweeps
+ *                                  (only used by CS_GRADIENT_ITER)
  * \param[in]       verbosity       verbosity level
  * \param[in]       clip_mode       clipping mode
  * \param[in]       epsilon         precision for iterative gradient calculation
@@ -8518,7 +8520,7 @@ cs_gradient_tensor_synced_input(const char                *var_name,
                                 int                        inc,
                                 int                        n_r_sweeps,
                                 int                        verbosity,
-                                int                        clip_mode,
+                                cs_gradient_limit_t        clip_mode,
                                 double                     epsilon,
                                 double                     clip_coeff,
                                 const cs_real_t            bc_coeff_a[][6],

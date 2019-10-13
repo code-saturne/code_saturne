@@ -122,7 +122,7 @@ void CS_PROCF (cgdcel, CGDCEL)
                                              calculation                      */
  const cs_real_t  *const extrap,      /* <-- extrapolate gradient at boundary */
  const cs_real_t  *const climgp,      /* <-- clipping coefficient             */
-       cs_real_3_t       f_ext[],      /* <-- exterior force generating the
+       cs_real_3_t       f_ext[],     /* <-- exterior force generating the
                                              hydrostatic pressure             */
  const cs_real_t         coefap[],    /* <-- boundary condition term          */
  const cs_real_t         coefbp[],    /* <-- boundary condition term          */
