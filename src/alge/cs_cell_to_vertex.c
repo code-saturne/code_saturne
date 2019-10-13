@@ -473,30 +473,9 @@ _cell_to_vertex_f_lsq(void)
     _sym_44_factor_ldlt(w + v_id*10);
 }
 
-/*============================================================================
- * Public function definitions
- *============================================================================*/
-
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free cell to vertex interpolation weights.
- *
- * This will force subsequent calls to rebuild those weights if needed.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cell_to_vertex_free(void)
-{
-  for (int i = 0; i < 3; i++) {
-    for (int j = 0; j < 2; j++)
-    BFT_FREE(_weights[i][j]);
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Interpolate cell values to vertex values for a scalar array.
+ * \brief  Interpolate cell values to vertex values for a scalar arrray.
  *
  * \param[in]       method      interpolation method
  * \param[in]       verbosity   verbosity level
@@ -509,14 +488,14 @@ cs_cell_to_vertex_free(void)
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
-                         int                        verbosity,
-                         int                        tr_dim,
-                         const cs_real_t            c_weight[restrict],
-                         const cs_real_t            c_var[restrict],
-                         const cs_real_t            b_var[restrict],
-                         cs_real_t                  v_var[restrict])
+static void
+_cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
+                       int                        verbosity,
+                       int                        tr_dim,
+                       const cs_real_t            c_weight[restrict],
+                       const cs_real_t            c_var[restrict],
+                       const cs_real_t            b_var[restrict],
+                       cs_real_t                  v_var[restrict])
 {
   CS_UNUSED(verbosity);
   CS_UNUSED(tr_dim); /* FIXME handle rotations in cs_interface_set_sum */
@@ -813,6 +792,425 @@ cs_cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
     for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
       v_var[v_id] *= w[v_id];
   }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Interpolate cell values to vertex values for a strided arrray.
+ *
+ * \param[in]       method      interpolation method
+ * \param[in]       verbosity   verbosity level
+ * \param[in]       var_dim     varible dimension
+ * \param[in]       tr_dim      2 for tensor with periodicity of rotation,
+ *                              0 otherwise
+ * \param[in]       c_weight    cell weight, or NULL
+ * \param[in]       c_var       base cell-based variable
+ * \param[in]       b_var       base boundary-face values, or NULL
+ * \param[out]      v_var       vertex-based variable
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
+                        int                        verbosity,
+                        cs_lnum_t                  var_dim,
+                        int                        tr_dim,
+                        const cs_real_t            c_weight[restrict],
+                        const cs_real_t            c_var[restrict],
+                        const cs_real_t            b_var[restrict],
+                        cs_real_t                  v_var[restrict])
+{
+  CS_UNUSED(verbosity);
+  CS_UNUSED(tr_dim); /* FIXME handle rotations in cs_interface_set_sum */
+
+  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  const cs_adjacency_t  *c2v = cs_mesh_adjacencies_cell_vertices();
+
+  const cs_lnum_t n_vertices = m->n_vertices;
+  const cs_lnum_t n_cells = m->n_cells;
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+
+  const cs_lnum_t *c2v_idx = c2v->idx;
+  const cs_lnum_t *c2v_ids = c2v->ids;
+
+  const cs_lnum_t *f2v_idx = m->b_face_vtx_idx;
+  const cs_lnum_t *f2v_ids = m->b_face_vtx_lst;
+
+  const cs_lnum_t n_v_values = n_vertices*var_dim;
+
+# pragma omp parallel for if(n_v_values > CS_THR_MIN)
+  for (cs_lnum_t v_id = 0; v_id < n_v_values; v_id++)
+    v_var[v_id] = 0;
+
+  switch(method) {
+
+  case CS_CELL_TO_VERTEX_UNWEIGHTED:
+    {
+      if (c_weight == NULL) {
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+          cs_lnum_t s_id = c2v_idx[c_id];
+          cs_lnum_t e_id = c2v_idx[c_id+1];
+          for (cs_lnum_t j = s_id; j < e_id; j++) {
+            cs_lnum_t v_id = c2v_ids[j];
+            for (cs_lnum_t k = 0; k < var_dim; k++)
+              v_var[v_id*var_dim + k] += c_var[c_id*var_dim + k];
+          }
+        }
+
+        if (m->vtx_interfaces != NULL)
+          cs_interface_set_sum(m->vtx_interfaces,
+                               m->n_vertices,
+                               var_dim,
+                               true,
+                               CS_REAL_TYPE,
+                               v_var);
+      }
+      else {
+        cs_real_t *v_w;
+        BFT_MALLOC(v_w, n_vertices, cs_real_t);
+        for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
+          v_w[v_id] = 0;
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+          cs_lnum_t s_id = c2v_idx[c_id];
+          cs_lnum_t e_id = c2v_idx[c_id+1];
+          for (cs_lnum_t j = s_id; j < e_id; j++) {
+            cs_lnum_t v_id = c2v_ids[j];
+            for (cs_lnum_t k = 0; k < var_dim; k++)
+              v_var[v_id*var_dim + k] += c_var[c_id*var_dim + k] * c_weight[c_id];
+            v_w[v_id] += c_weight[c_id];
+          }
+        }
+
+        if (m->vtx_interfaces != NULL) {
+          cs_interface_set_sum(m->vtx_interfaces,
+                               n_vertices,
+                               var_dim,
+                               true,
+                               CS_REAL_TYPE,
+                               v_var);
+          cs_interface_set_sum(m->vtx_interfaces,
+                               n_vertices,
+                               var_dim,
+                               true,
+                               CS_REAL_TYPE,
+                               v_w);
+        }
+        for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
+          for (cs_lnum_t k = 0; k < var_dim; k++)
+            v_var[v_id*var_dim + k] /= v_w[v_id];
+        }
+
+        BFT_FREE(v_w);
+      }
+    }
+    break;
+
+  case CS_CELL_TO_VERTEX_SHEPARD:
+    {
+      if (! _set[CS_CELL_TO_VERTEX_SHEPARD])
+        _cell_to_vertex_w_inv_distance();
+
+      const cs_weight_t *w = _weights[CS_CELL_TO_VERTEX_SHEPARD][0];
+
+      cs_real_t *v_w = NULL;
+      if (c_weight != NULL) {
+        BFT_MALLOC(v_w, n_vertices, cs_real_t);
+        for (cs_lnum_t v_id = 0; v_id < n_v_values; v_id++)
+          v_w[v_id] = 0;
+      }
+
+      if (c_weight == NULL) {
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+          cs_lnum_t s_id = c2v_idx[c_id];
+          cs_lnum_t e_id = c2v_idx[c_id+1];
+          for (cs_lnum_t j = s_id; j < e_id; j++) {
+            cs_lnum_t v_id = c2v_ids[j];
+            for (cs_lnum_t k = 0; k < var_dim; k++)
+              v_var[v_id*var_dim + k] += c_var[c_id*var_dim + k] * w[j];
+          }
+        }
+      }
+      else {
+        for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+          cs_lnum_t s_id = c2v_idx[c_id];
+          cs_lnum_t e_id = c2v_idx[c_id+1];
+          for (cs_lnum_t j = s_id; j < e_id; j++) {
+            cs_lnum_t v_id = c2v_ids[j];
+            for (cs_lnum_t k = 0; k < var_dim; k++)
+              v_var[v_id*var_dim + k] +=   c_var[c_id*var_dim + k] * w[j]
+                                         * c_weight[c_id];
+            v_w[v_id] += c_weight[c_id];
+          }
+        }
+      }
+
+      const cs_weight_t *wb = _weights[CS_CELL_TO_VERTEX_SHEPARD][1];
+
+      if (c_weight == NULL) {
+
+        if (b_var == NULL) {
+          for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+            cs_lnum_t c_id = m->b_face_cells[f_id];
+            const cs_real_t *_b_var = c_var + c_id*var_dim;
+            cs_lnum_t s_id = f2v_idx[f_id];
+            cs_lnum_t e_id = f2v_idx[f_id+1];
+            for (cs_lnum_t j = s_id; j < e_id; j++) {
+              cs_lnum_t v_id = f2v_ids[j];
+              for (cs_lnum_t k = 0; k < var_dim; k++)
+                v_var[v_id*var_dim + k] += _b_var[k] * wb[j];
+            }
+          }
+        }
+        else {
+          for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+            cs_lnum_t s_id = f2v_idx[f_id];
+            cs_lnum_t e_id = f2v_idx[f_id+1];
+            for (cs_lnum_t j = s_id; j < e_id; j++) {
+              cs_lnum_t v_id = f2v_ids[j];
+              for (cs_lnum_t k = 0; k < var_dim; k++)
+                v_var[v_id*var_dim+k] += b_var[f_id*var_dim+k] * wb[j];
+            }
+          }
+        }
+
+      }
+      else { /* c_weight != NULL */
+
+        if (b_var == NULL) {
+          for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+            cs_lnum_t c_id = m->b_face_cells[f_id];
+            const cs_real_t *_b_var = c_var + c_id*var_dim;
+            cs_lnum_t s_id = f2v_idx[f_id];
+            cs_lnum_t e_id = f2v_idx[f_id+1];
+            for (cs_lnum_t j = s_id; j < e_id; j++) {
+              cs_lnum_t v_id = f2v_ids[j];
+              for (cs_lnum_t k = 0; k < var_dim; k++)
+                v_var[v_id*var_dim + k] += _b_var[k] * wb[j] * c_weight[c_id];
+              v_w[v_id] += c_weight[c_id];
+            }
+          }
+        }
+        else {
+          for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+            cs_lnum_t c_id = m->b_face_cells[f_id];
+            cs_lnum_t s_id = f2v_idx[f_id];
+            cs_lnum_t e_id = f2v_idx[f_id+1];
+            for (cs_lnum_t j = s_id; j < e_id; j++) {
+              cs_lnum_t v_id = f2v_ids[j];
+              for (cs_lnum_t k = 0; k < var_dim; k++)
+                v_var[v_id*var_dim + k] +=   b_var[f_id*var_dim + k] * wb[j]
+                                           * c_weight[c_id];
+              v_w[v_id] += c_weight[c_id];
+            }
+          }
+        }
+      }
+
+      if (m->vtx_interfaces != NULL)
+        cs_interface_set_sum(m->vtx_interfaces,
+                             m->n_vertices,
+                             var_dim,
+                             true,
+                             CS_REAL_TYPE,
+                             v_var);
+
+      if (c_weight != NULL) {
+        if (m->vtx_interfaces != NULL)
+          cs_interface_set_sum(m->vtx_interfaces,
+                               n_vertices,
+                               var_dim,
+                               true,
+                               CS_REAL_TYPE,
+                               v_w);
+        for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
+          for (cs_lnum_t k = 0; k < var_dim; k++)
+            v_var[v_id*var_dim+k] /= v_w[v_id];
+        }
+        BFT_FREE(v_w);
+      }
+
+    }
+    break;
+
+  case CS_CELL_TO_VERTEX_LR:
+    {
+      if (! _set[CS_CELL_TO_VERTEX_LR])
+        _cell_to_vertex_f_lsq();
+
+      cs_real_t  *rhs;
+      cs_lnum_t  rhs_size = n_vertices*4*var_dim;
+      BFT_MALLOC(rhs, rhs_size, cs_real_t);
+      for (cs_lnum_t i = 0; i < rhs_size; i++)
+        rhs[i] = 0;
+
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+        const cs_real_t *c_coo = mq->cell_cen + c_id*3;
+        const cs_real_t *_c_var = c_var + c_id*var_dim;
+        cs_lnum_t s_id = c2v_idx[c_id];
+        cs_lnum_t e_id = c2v_idx[c_id+1];
+        for (cs_lnum_t j = s_id; j < e_id; j++) {
+          cs_lnum_t v_id = c2v_ids[j];
+          for (cs_lnum_t k = 0; k < var_dim; k++) {
+            cs_real_t  *_rhs = rhs + v_id*4*var_dim + k*4;
+            _rhs[0] += c_coo[0] * _c_var[k];
+            _rhs[1] += c_coo[1] * _c_var[k];
+            _rhs[2] += c_coo[2] * _c_var[k];
+            _rhs[3] += _c_var[k];
+          }
+        }
+      }
+
+      if (b_var == NULL) {
+        for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+          const cs_real_t *f_coo = mq->b_face_cog + f_id*3;
+          cs_lnum_t c_id = m->b_face_cells[f_id];
+          const cs_real_t *_b_var = c_var + c_id*var_dim;
+          cs_lnum_t s_id = f2v_idx[f_id];
+          cs_lnum_t e_id = f2v_idx[f_id+1];
+          for (cs_lnum_t j = s_id; j < e_id; j++) {
+            cs_lnum_t v_id = f2v_ids[j];
+            for (cs_lnum_t k = 0; k < var_dim; k++) {
+              cs_real_t  *_rhs = rhs + v_id*4*var_dim + k*4;
+              _rhs[0] += f_coo[0] * _b_var[k];
+              _rhs[1] += f_coo[1] * _b_var[k];
+              _rhs[2] += f_coo[2] * _b_var[k];
+              _rhs[3] += _b_var[k];
+            }
+          }
+        }
+      }
+      else {
+        for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++) {
+          const cs_real_t *f_coo = mq->b_face_cog + f_id*3;
+          const cs_real_t *_b_var = b_var + f_id*var_dim;
+          cs_lnum_t s_id = f2v_idx[f_id];
+          cs_lnum_t e_id = f2v_idx[f_id+1];
+          for (cs_lnum_t j = s_id; j < e_id; j++) {
+            cs_lnum_t v_id = f2v_ids[j];
+            for (cs_lnum_t k = 0; k < var_dim; k++) {
+              cs_real_t  *_rhs = rhs + v_id*4*var_dim + k*4;
+              _rhs[0] += f_coo[0] * _b_var[k];
+              _rhs[1] += f_coo[1] * _b_var[k];
+              _rhs[2] += f_coo[2] * _b_var[k];
+              _rhs[3] += _b_var[k];
+            }
+          }
+        }
+      }
+
+      if (m->vtx_interfaces != NULL)
+        cs_interface_set_sum(m->vtx_interfaces,
+                             m->n_vertices,
+                             4*var_dim,
+                             true,
+                             CS_REAL_TYPE,
+                             rhs);
+
+      const cs_weight_t *ldlt = _weights[CS_CELL_TO_VERTEX_LR][0];
+
+#     pragma omp parallel for if(n_vertices > CS_THR_MIN)
+      for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
+        const cs_real_t *v_coo = m->vtx_coord + v_id*3;
+        const cs_real_t  *_ldlt = ldlt + v_id*10;
+        for (cs_lnum_t k = 0; k < var_dim; k++) {
+          const cs_real_t  *_rhs = rhs + v_id*4*var_dim + k*4;
+          cs_real_t x[4];
+          _sym_44_solve_ldlt(_ldlt, _rhs, x);
+          v_var[v_id*var_dim + k] = (  x[0]*v_coo[0]
+                                     + x[1]*v_coo[1]
+                                     + x[2]*v_coo[2]
+                                     + x[3]);
+        }
+      }
+
+      BFT_FREE(rhs);
+    }
+    break;
+  default:
+    break;
+  }
+
+  if (method == CS_CELL_TO_VERTEX_UNWEIGHTED) {
+    if (! _set[CS_CELL_TO_VERTEX_UNWEIGHTED])
+      _cell_to_vertex_w_unweighted();
+
+    const cs_weight_t *w = _weights[CS_CELL_TO_VERTEX_UNWEIGHTED][0];
+    for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
+      for (cs_lnum_t k = 0; k < var_dim; k++)
+        v_var[v_id*var_dim + k] *= w[v_id];
+    }
+  }
+}
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free cell to vertex interpolation weights.
+ *
+ * This will force subsequent calls to rebuild those weights if needed.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cell_to_vertex_free(void)
+{
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 2; j++)
+    BFT_FREE(_weights[i][j]);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Interpolate cell values to vertex values.
+ *
+ * \param[in]       method      interpolation method
+ * \param[in]       verbosity   verbosity level
+ * \param[in]       var_dim     varible dimension
+ * \param[in]       tr_dim      2 for tensor with periodicity of rotation,
+ *                              0 otherwise
+ * \param[in]       c_weight    cell weight, or NULL
+ * \param[in]       c_var       base cell-based variable
+ * \param[in]       b_var       base boundary-face values, or NULL
+ * \param[out]      v_var       vertex-based variable
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cell_to_vertex(cs_cell_to_vertex_type_t   method,
+                  int                        verbosity,
+                  cs_lnum_t                  var_dim,
+                  int                        tr_dim,
+                  const cs_real_t            c_weight[restrict],
+                  const cs_real_t            c_var[restrict],
+                  const cs_real_t            b_var[restrict],
+                  cs_real_t                  v_var[restrict])
+{
+  CS_UNUSED(verbosity);
+  CS_UNUSED(tr_dim); /* FIXME handle rotations in cs_interface_set_sum */
+
+  if (var_dim == 1)
+    _cell_to_vertex_scalar(method,
+                           verbosity,
+                           tr_dim,
+                           c_weight,
+                           c_var,
+                           b_var,
+                           v_var);
+
+  else
+    _cell_to_vertex_strided(method,
+                            verbosity,
+                            var_dim,
+                            tr_dim,
+                            c_weight,
+                            c_var,
+                            b_var,
+                            v_var);
 }
 
 /*----------------------------------------------------------------------------*/

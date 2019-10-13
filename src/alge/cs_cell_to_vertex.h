@@ -84,10 +84,11 @@ cs_cell_to_vertex_free(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Interpolate cell values to vertex values for a scalar array.
+ * \brief  Interpolate cell values to vertex values.
  *
  * \param[in]       method      interpolation method
  * \param[in]       verbosity   verbosity level
+ * \param[in]       var_dim     varible dimension
  * \param[in]       tr_dim      2 for tensor with periodicity of rotation,
  *                              0 otherwise
  * \param[in]       c_weight    cell weight, or NULL
@@ -98,13 +99,14 @@ cs_cell_to_vertex_free(void);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
-                         int                        verbosity,
-                         int                        tr_dim,
-                         const cs_real_t            c_weight[restrict],
-                         const cs_real_t            c_var[restrict],
-                         const cs_real_t            b_var[restrict],
-                         cs_real_t                  v_var[restrict]);
+cs_cell_to_vertex(cs_cell_to_vertex_type_t   method,
+                  int                        verbosity,
+                  cs_lnum_t                  var_dim,
+                  int                        tr_dim,
+                  const cs_real_t            c_weight[restrict],
+                  const cs_real_t            c_var[restrict],
+                  const cs_real_t            b_var[restrict],
+                  cs_real_t                  v_var[restrict]);
 
 /*----------------------------------------------------------------------------*/
 
