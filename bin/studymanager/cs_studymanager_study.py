@@ -130,9 +130,8 @@ def isStudy(dirpath):
     """Try to determine if dirpath is a Code_Saturne study directory.
     """
 
-    postd = os.path.join(dirpath, 'POST')
     meshd = os.path.join(dirpath, 'MESH')
-    is_study = os.path.isdir(postd) and os.path.isdir(meshd)
+    is_study = os.path.isdir(meshd)
 
     return is_study
 
