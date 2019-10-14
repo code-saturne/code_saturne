@@ -31,6 +31,8 @@
 
 #include "cs_boundary.h"
 #include "cs_equation_param.h"
+#include "cs_math.h"
+#include "cs_sles.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -483,6 +485,35 @@ typedef struct {
 
 } cs_navsto_param_t;
 
+/*! \struct cs_navsto_algo_info_t
+ *  \brief Set of information related to the convergence of the iterative
+ *         algorithm (Picard or Uzawa for instance)
+ *
+ * \var cvg
+ * convergence or divergence status
+ *
+ * \var res
+ * value of the residual for the iterative algorithm
+ *
+ * \var n_algo_iter
+ * number of iterations for the algorithm (outer iterations)
+ *
+ * \var n_inner_iter
+ * cumulated number of inner iterations (sum over the outer iterations)
+ *
+ * \var last_inner_iter
+ * last number of iterations for the inner solver
+ */
+
+typedef struct {
+
+  cs_sles_convergence_state_t      cvg;
+  double                           res;
+  int                              n_algo_iter;
+  int                              n_inner_iter;
+  int                              last_inner_iter;
+
+} cs_navsto_algo_info_t;
 
 /*! \enum cs_navsto_key_t
  *  \brief List of available keys for setting the parameters of the
@@ -560,6 +591,73 @@ typedef enum {
 /*============================================================================
  * Inline static public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Initialize a cs_navsto_algo_info_t structure
+ *
+ * \param[in]   ns_info   pointer to a cs_navsto_algo_info_t to initialize
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_navsto_algo_info_init(cs_navsto_algo_info_t   *ns_info)
+{
+  if (ns_info == NULL)
+    return;
+
+  ns_info->cvg = CS_SLES_ITERATING;
+  ns_info->res = cs_math_big_r;
+  ns_info->n_algo_iter = 0;
+  ns_info->n_inner_iter = 0;
+  ns_info->last_inner_iter = 0;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Print header before dumping information gathered in the structure
+ *         cs_navsto_algo_info_t
+ *
+ * \param[in]  algo_name     name of the algorithm
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_navsto_algo_info_header(const char   *algo_name)
+{
+  assert(algo_name != NULL);
+  cs_log_printf(CS_LOG_DEFAULT,
+                "%8s.It  -- Algo.Res   Inner    Cumul  ||div(u)||\n", algo_name);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Print header before dumping information gathered in the structure
+ *         cs_navsto_algo_info_t
+ *
+ * \param[in]  algo_name     name of the algorithm
+ * \param[in]  ns_info       cs_navsto_algo_info_t structure
+ * \param[in]  div_l2        l2 norm of the divergence
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_navsto_algo_info_printf(const char                    *algo_name,
+                           const cs_navsto_algo_info_t    ns_info,
+                           double                         div_l2)
+{
+  assert(algo_name != NULL);
+  if (ns_info.n_algo_iter == 1)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "%8s.It%02d-- %9s  %5d  %6d  %6.4e\n",
+                  algo_name, ns_info.n_algo_iter, " ",
+                  ns_info.last_inner_iter, ns_info.n_inner_iter, div_l2);
+  else
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "%8s.It%02d-- %5.3e  %5d  %6d  %6.4e\n",
+                  algo_name, ns_info.n_algo_iter, ns_info.res,
+                  ns_info.last_inner_iter, ns_info.n_inner_iter, div_l2);
+}
 
 /*----------------------------------------------------------------------------*/
 /*!

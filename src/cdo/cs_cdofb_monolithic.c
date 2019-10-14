@@ -69,7 +69,6 @@
 #include "cs_equation_priv.h"
 #include "cs_evaluate.h"
 #include "cs_log.h"
-#include "cs_math.h"
 #include "cs_navsto_coupling.h"
 #include "cs_param.h"
 #include "cs_post.h"
@@ -284,44 +283,47 @@ _fields_to_previous(cs_cdofb_monolithic_t   *sc)
  * \param[in]      nsp           pointer to a \ref cs_navsto_param_t structure
  * \param[in]      mom_eqc       scheme context for the momentum equation
  * \param[in]      div_l2        L2 norm of the velocity divergence
- * \param[in, out] picard_iter   number of Picard iteration
- * \param[in, out] picard_res    residual of the Picard algorithm
- *
- * \return the convergence status of the Picard algorithm
+ * \param[in, out] ns_info       pointer to a cs_navsto_algo_info_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_sles_convergence_state_t
+static void
 _picard_cvg_test(const cs_navsto_param_t      *nsp,
                  const cs_cdofb_vecteq_t      *mom_eqc,
                  cs_real_t                     div_l2,
-                 int                          *picard_iter,
-                 cs_real_t                    *picard_res)
+                 cs_navsto_algo_info_t        *ns_info)
 {
-  cs_real_t  previous_picard_res = *picard_res;
-  cs_real_t  diverg_factor = 100;
+  const cs_real_t  diverg_factor = 100;
+
+  cs_real_t  previous_picard_res = ns_info->res;
 
   /* Increment the number of Picard iterations */
-  *picard_iter += 1;
+  ns_info->n_algo_iter += 1;
 
   /* Compute the new residual: L2 norm of the face velocity increment */
-  *picard_res = cs_evaluate_delta_3_square_wc2x_norm(mom_eqc->face_values,
-                                                     mom_eqc->face_values_pre,
-                                                     cs_shared_connect->c2f,
-                                                     cs_shared_quant->pvol_fc);
+  ns_info->res = cs_evaluate_delta_3_square_wc2x_norm(mom_eqc->face_values,
+                                                      mom_eqc->face_values_pre,
+                                                      cs_shared_connect->c2f,
+                                                      cs_shared_quant->pvol_fc);
 
   /* Set the convergence status */
-  if (*picard_res < nsp->residual_tolerance &&
-      div_l2 < nsp->residual_tolerance)
-    return CS_SLES_CONVERGED;
+  if (ns_info->res < nsp->residual_tolerance &&
+      div_l2 < nsp->residual_tolerance) {
+    ns_info->cvg = CS_SLES_CONVERGED;
+    return;
+  }
 
-  if (*picard_res >  diverg_factor * previous_picard_res)
-    return CS_SLES_DIVERGED;
+  if (ns_info->res >  diverg_factor * previous_picard_res) {
+    ns_info->cvg = CS_SLES_DIVERGED;
+    return;
+  }
 
-  if (*picard_iter >= nsp->max_algo_iter)
-    return CS_SLES_MAX_ITERATION;
+  if (ns_info->n_algo_iter >= nsp->max_algo_iter) {
+    ns_info->cvg = CS_SLES_MAX_ITERATION;
+    return;
+  }
 
-  return CS_SLES_ITERATING;
+  ns_info->cvg = CS_SLES_ITERATING;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1776,15 +1778,19 @@ cs_cdofb_monolithic_compute_steady_nl(const cs_mesh_t          *mesh,
   _fields_to_previous(sc);
 
   /* Solve the linear system */
+  cs_navsto_algo_info_t  ns_info;
   cs_sles_t  *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
-  int  _inner_solver_iter = 0, _inner_solver_cumul = 0;
 
-  _inner_solver_cumul +=
-    (_inner_solver_iter =
+  cs_navsto_algo_info_init(&ns_info);
+
+  ns_info.n_inner_iter =
+    (ns_info.last_inner_iter =
      _solve_system(sles, matrix, mom_eqp,
-                   mom_eqc->face_values, /* velocity DoFs at faces */
-                   sc->pressure->val,    /* pressure DoFs at cells */
+                   mom_eqc->face_values,   /* velocity DoFs at faces */
+                   sc->pressure->val,      /* pressure DoFs at cells */
                    mom_rhs, mass_rhs));
+
+  ns_info.n_algo_iter += 1;
 
   /* Compute the velocity divergence and retrieve its L2-norm */
   cs_real_t  div_l2 = _update_divergence(sc, mom_eqc);
@@ -1792,20 +1798,13 @@ cs_cdofb_monolithic_compute_steady_nl(const cs_mesh_t          *mesh,
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: START
    *--------------------------------------------------------------------------*/
-  cs_sles_convergence_state_t  picard_cvg = CS_SLES_ITERATING;
-  int  picard_iter = 1;
-  double  picard_res = cs_math_big_r;
 
   if (nsp->verbosity > 1) {
-    cs_log_printf(CS_LOG_DEFAULT, "%13s-- Algo.Res  Inner  Cumul  ||div(u)||\n",
-                  "Picard.It");
-    cs_log_printf(CS_LOG_DEFAULT, "%11s%02d-- %9s %5d  %6d  %6.4e\n",
-                  "Picard.It",
-                  picard_iter, " ", _inner_solver_iter, _inner_solver_cumul,
-                  sqrt(div_l2));
+    cs_navsto_algo_info_header("Picard");
+    cs_navsto_algo_info_printf("Picard", ns_info, sqrt(div_l2));
   }
 
-  while (picard_cvg == CS_SLES_ITERATING) {
+  while (ns_info.cvg == CS_SLES_ITERATING) {
 
     /* Main loop on cells to define the linear system to solve */
     _steady_build(nsp, sc, dir_values, matrix, mom_rhs, mass_rhs);
@@ -1818,25 +1817,21 @@ cs_cdofb_monolithic_compute_steady_nl(const cs_mesh_t          *mesh,
     cs_sles_setup(sles, matrix);
 
     /* Solve the new system */
-    _inner_solver_cumul +=
-      (_inner_solver_iter =
+    ns_info.n_inner_iter +=
+      (ns_info.last_inner_iter =
        _solve_system(sles, matrix, mom_eqp,
                      mom_eqc->face_values, /* velocity DoFs at faces */
                      sc->pressure->val,    /* pressure DoFs at cells */
                      mom_rhs, mass_rhs));
 
     /* Compute the velocity divergence and retrieve its L2-norm */
-    cs_real_t  div_l2 = _update_divergence(sc, mom_eqc);
+    div_l2 = _update_divergence(sc, mom_eqc);
 
-    picard_cvg = _picard_cvg_test(nsp, mom_eqc, div_l2,
-                                  &picard_iter,
-                                  &picard_res);
+    /* Check convergence status and update ns_info following the convergence */
+    _picard_cvg_test(nsp, mom_eqc, div_l2, &ns_info);
 
     if (nsp->verbosity > 1)
-      cs_log_printf(CS_LOG_DEFAULT, " %10s%02d-- %.3e %5d  %6d  %6.4e\n",
-                    "Picard.It",
-                    picard_iter, picard_res, _inner_solver_iter,
-                    _inner_solver_cumul, sqrt(div_l2));
+      cs_navsto_algo_info_printf("Picard", ns_info, sqrt(div_l2));
 
   } /* Loop on Picard iterations */
 
