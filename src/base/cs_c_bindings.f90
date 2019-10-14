@@ -274,6 +274,16 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Initialize turbulence model structures
+
+    subroutine cs_turb_model_init()  &
+      bind(C, name='cs_turb_model_init')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_turb_model_init
+
+    !---------------------------------------------------------------------------
+
     ! Set type and order of the turbulence model
 
     subroutine cs_set_type_order_turbulence_model()  &

@@ -126,7 +126,8 @@ base/entsor.lo: base/paramx.lo base/field.lo
 base/field_operator.lo: base/paramx.lo base/dimens.lo base/mesh.lo \
  base/optcal.lo base/field.lo
 base/numvar.lo: base/paramx.lo
-base/optcal.lo: base/paramx.lo base/field.lo base/numvar.lo base/cstphy.lo
+base/optcal.lo: base/paramx.lo base/field.lo base/numvar.lo base/cstphy.lo \
+ base/cs_c_bindings.lo
 base/pointe.lo: base/paramx.lo base/numvar.lo base/mesh.lo base/parall.lo \
  base/period.lo base/optcal.lo base/entsor.lo lagr/lagran.lo rayt/radiat.lo \
  pprt/ppincl.lo base/ihmpre.lo base/albase.lo base/cstnum.lo base/cs_c_bindings.lo

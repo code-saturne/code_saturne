@@ -1178,16 +1178,27 @@ cs_f_turb_model_constants_get_pointers(double  **sigmae,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Provide access to global turbulence model structure cs_glob_turb_model
- *
- * It is needed to initialize structure with GUI.
+ * \brief Initialize turbulence model structures
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turb_model_init(void) {
+
+  /* set global pointer to turbulence model */
+  cs_set_glob_turb_model();
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initialize type and order members of turbulence model structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_set_type_order_turbulence_model(void)
 {
-
   _turb_model.type = CS_TURB_NONE;
   if (_turb_model.iturb == CS_TURB_MIXING_LENGTH) {
      _turb_model.type = CS_TURB_RANS;
@@ -1216,14 +1227,11 @@ cs_set_type_order_turbulence_model(void)
      _turb_model.type = CS_TURB_LES;
      _turb_model.order = CS_TURB_ALGEBRAIC;
   }
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Provide access to the turbulence model structure
- *
- * It is needed to initialize structure with GUI.
+ * \brief Provide write access to turbulence model structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1231,6 +1239,22 @@ cs_turb_model_t *
 cs_get_glob_turb_model(void)
 {
   return &_turb_model;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set global pointer to turbulence model structure
+ *
+ * This global pointer provides a read-only access to the structure.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_set_glob_turb_model(void)
+{
+  /* If not set yet, points to the locally defined structure */
+  if (cs_glob_turb_model == NULL)
+    cs_glob_turb_model = &_turb_model;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1247,10 +1271,6 @@ cs_turb_compute_constants(void)
   cs_turb_cmu025 = pow(cs_turb_cmu,0.25);
   cs_turb_cstlog_alpha = exp(-cs_turb_xkappa
                              * (cs_turb_cstlog_rough - cs_turb_cstlog));
-
-  /* If not set yet, points to the locally defined structure */
-  if (cs_glob_turb_model == NULL)
-    cs_glob_turb_model = &_turb_model;
 
   if (   cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR
       || cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG)

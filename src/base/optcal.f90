@@ -1614,11 +1614,17 @@ contains
   subroutine turb_model_init
 
     use, intrinsic :: iso_c_binding
+    use cs_c_bindings
+    use cdomod
     implicit none
 
     ! Local variables
 
     type(c_ptr) :: c_iturb, c_itytur, c_hybrid_turb
+
+    if (icdo.lt.2) then
+      call cs_turb_model_init
+    endif
 
     call cs_f_turb_model_get_pointers(c_iturb, c_itytur, c_hybrid_turb)
 
