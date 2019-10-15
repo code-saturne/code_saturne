@@ -1661,15 +1661,13 @@ cs_time_moment_define_by_func(const char                *name,
         break;
       }
     }
+  } else { /* Build field matching moment */
+    f = cs_field_create(name,
+                        CS_FIELD_POSTPROCESS | CS_FIELD_ACCUMULATOR,
+                        location_id,
+                        moment_dim,
+                        false);  /* no previous values */
   }
-
-  /* Build field matching moment */
-
-  f = cs_field_create(name,
-                      CS_FIELD_POSTPROCESS | CS_FIELD_ACCUMULATOR,
-                      location_id,
-                      moment_dim,
-                      false);  /* no previous values */
 
   moment_id = _find_or_add_moment(location_id,
                                   dim,
