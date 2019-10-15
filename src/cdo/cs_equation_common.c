@@ -51,7 +51,6 @@
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_parall.h"
-#include "cs_sles.h"
 #include "cs_xdef_eval.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)
@@ -647,6 +646,7 @@ cs_equation_prepare_system(int                     stride,
  * \param[in]  matrix         pointer to a cs_matrix_t structure
  * \param[in]  rs             pointer to a cs_range_set_t structure
  * \param[in]  normalization  value used for the residual normalization
+ * \param[in]  sles           pointer to a cs_sles_t structure
  * \param[in, out] x          solution of the linear system (in: initial guess)
  * \param[in, out] b          right-hand side (scatter/gather if needed)
  *
@@ -660,14 +660,12 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
                                 const cs_matrix_t            *matrix,
                                 const cs_range_set_t         *rset,
                                 cs_real_t                     normalization,
+                                cs_sles_t                    *sles,
                                 cs_real_t                    *x,
                                 cs_real_t                    *b)
 {
   const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
   const cs_param_sles_t  slesp = eqp->sles_param;
-
-  /* Retrieve the cs_sles_t structure */
-  cs_sles_t  *sles = cs_sles_find_or_add(slesp.field_id, NULL);
 
   /* Set xsol */
   cs_real_t  *xsol = NULL;
@@ -731,9 +729,6 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
                         slesp.verbosity,
                         x, b, n_scatter_dofs);
 #endif
-
-  /* Free what can be freed at this stage */
-  cs_sles_free(sles);
 
   if (n_cols > n_scatter_dofs)
     BFT_FREE(xsol);

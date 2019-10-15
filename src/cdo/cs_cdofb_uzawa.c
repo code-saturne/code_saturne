@@ -1380,11 +1380,14 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
    * Solve the linear system (treated as a scalar-valued system
    *  with 3 times more DoFs) */
   cs_real_t  normalization = 1.0; /* TODO */
+  cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param.field_id, NULL);
+
   solv_iter += cs_equation_solve_scalar_system(3*n_faces,
                                                mom_eqp,
                                                matrix,
                                                rs,
                                                normalization,
+                                               sles,
                                                vel_f,
                                                rhs);
 
@@ -1456,6 +1459,7 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
                                                          matrix,
                                                          rs,
                                                          normalization,
+                                                         sles,
                                                          delta_vel_f,
                                                          rhs));
 
@@ -1550,6 +1554,7 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
 
   /* Frees */
   BFT_FREE(rhs);
+  cs_sles_free(sles);
   cs_matrix_destroy(&matrix);
 
   t_tmp = cs_timer_time();
@@ -1848,11 +1853,14 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
    * Solve the linear system (treated as a scalar-valued system
    * with 3 times more DoFs) */
   cs_real_t  normalization = 1.0; /* TODO */
+  cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param.field_id, NULL);
+
   solv_iter += cs_equation_solve_scalar_system(3*n_faces,
                                                mom_eqp,
                                                matrix,
                                                rs,
                                                normalization,
+                                               sles,
                                                vel_f,
                                                rhs);
 
@@ -1923,6 +1931,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
                                                          matrix,
                                                          rs,
                                                          normalization,
+                                                         sles,
                                                          delta_vel_f,
                                                          rhs));
 
@@ -2017,6 +2026,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
 
   /* Frees */
   BFT_FREE(rhs);
+  cs_sles_free(sles);
   cs_matrix_destroy(&matrix);
 
   t_tmp = cs_timer_time();
@@ -2357,11 +2367,14 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
    * Solve the linear system (treated as a scalar-valued system
    * with 3 times more DoFs) */
   cs_real_t  normalization = 1.0; /* TODO */
+  cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param.field_id, NULL);
+
   solv_iter += cs_equation_solve_scalar_system(3*n_faces,
                                                mom_eqp,
                                                matrix,
                                                rs,
                                                normalization,
+                                               sles,
                                                vel_f,
                                                rhs);
 
@@ -2433,6 +2446,7 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
                                                          matrix,
                                                          rs,
                                                          normalization,
+                                                         sles,
                                                          delta_vel_f,
                                                          rhs));
 
@@ -2527,6 +2541,7 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
 
   /* Frees */
   BFT_FREE(rhs);
+  cs_sles_free(sles);
   cs_matrix_destroy(&matrix);
 
   t_tmp = cs_timer_time();
@@ -2625,11 +2640,14 @@ cs_cdofb_uzawa_compute_steady_rebuild(const cs_mesh_t         *mesh,
    * Solve the linear system (treated as a scalar-valued system
    * with 3 times more DoFs) */
   cs_real_t  normalization = 1.0; /* TODO */
+  cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param.field_id, NULL);
+
   solv_iter += cs_equation_solve_scalar_system(3*quant->n_faces,
                                                mom_eqp,
                                                matrix,
                                                rs,
                                                normalization,
+                                               sles,
                                                vel_f,
                                                rhs);
 
@@ -2679,10 +2697,12 @@ cs_cdofb_uzawa_compute_steady_rebuild(const cs_mesh_t         *mesh,
                                                          matrix,
                                                          rs,
                                                          normalization,
+                                                         sles,
                                                          vel_f,
                                                          rhs));
 
       /* Frees */
+      cs_sles_free(sles);
       cs_matrix_destroy(&matrix); matrix = NULL;
       BFT_FREE(rhs);              rhs    = NULL;
 

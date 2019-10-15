@@ -1372,11 +1372,14 @@ cs_cdovcb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
   /* Solve the linear system */
   cs_real_t  normalization = 1.0;
+  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
+
   cs_equation_solve_scalar_system(n_vertices,
                                   eqp,
                                   matrix,
                                   rs,
                                   normalization,
+                                  sles,
                                   fld->val,
                                   rhs);
 
@@ -1385,6 +1388,7 @@ cs_cdovcb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
   /* Free remaining buffers */
   BFT_FREE(rhs);
+  cs_sles_free(sles);
   cs_matrix_destroy(&matrix);
 }
 
@@ -1570,11 +1574,14 @@ cs_cdovcb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 
   /* Solve the linear system */
   cs_real_t  normalization = 1.0;
+  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
+
   cs_equation_solve_scalar_system(n_vertices,
                                   eqp,
                                   matrix,
                                   rs,
                                   normalization,
+                                  sles,
                                   fld->val,
                                   rhs);
 
@@ -1593,6 +1600,7 @@ cs_cdovcb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 
   /* Free remaining buffers */
   BFT_FREE(rhs);
+  cs_sles_free(sles);
   cs_matrix_destroy(&matrix);
 }
 
@@ -1834,11 +1842,14 @@ cs_cdovcb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 
   /* Solve the linear system */
   cs_real_t  normalization = 1.0;
+  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
+
   cs_equation_solve_scalar_system(n_vertices,
                                   eqp,
                                   matrix,
                                   rs,
                                   normalization,
+                                  sles,
                                   fld->val,
                                   rhs);
 
@@ -1856,6 +1867,7 @@ cs_cdovcb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 
   /* Free remaining buffers */
   BFT_FREE(rhs);
+  cs_sles_free(sles);
   cs_matrix_destroy(&matrix);
 }
 
@@ -2177,11 +2189,14 @@ cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
 
   /* Solve the linear system */
   cs_real_t  normalization = 1.0;
+  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
+
   cs_equation_solve_scalar_system(n_vertices,
                                   eqp,
                                   matrix,
                                   rs,
                                   normalization,
+                                  sles,
                                   fld->val,
                                   rhs);
 
@@ -2200,6 +2215,7 @@ cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
 
   /* Free remaining buffers */
   BFT_FREE(rhs);
+  cs_sles_free(sles);
   cs_matrix_destroy(&matrix);
 }
 

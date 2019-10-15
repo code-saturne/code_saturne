@@ -974,11 +974,14 @@ cs_cdoeb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
   /* Solve the linear system */
+  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
+
   cs_equation_solve_scalar_system(eqc->n_dofs,
                                   eqp,
                                   matrix,
                                   rs,
                                   res_normalization,
+                                  sles,
                                   eqc->edge_values,
                                   rhs);
 
@@ -993,6 +996,7 @@ cs_cdoeb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 
   /* Free remaining buffers */
   BFT_FREE(rhs);
+  cs_sles_free(sles);
   cs_matrix_destroy(&matrix);
 }
 

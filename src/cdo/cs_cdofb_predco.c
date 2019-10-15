@@ -1194,11 +1194,14 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
   /* Solve the linear system (treated as a scalar-valued system
    * with 3 times more DoFs) */
   cs_real_t  normalization = 1.0; /* TODO */
+  cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param.field_id, NULL);
+
   cs_equation_solve_scalar_system(3*n_faces,
                                   mom_eqp,
                                   matrix,
                                   mom_rs,
                                   normalization,
+                                  sles,
                                   velp_f,
                                   rhs);
 
@@ -1214,6 +1217,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
   /* Frees */
   BFT_FREE(rhs);
+  cs_sles_free(sles);
   cs_matrix_destroy(&matrix);
 
   t_tmp = cs_timer_time();

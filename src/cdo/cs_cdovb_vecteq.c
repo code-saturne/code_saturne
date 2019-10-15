@@ -1284,16 +1284,20 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 
   /* Solve the linear system (treated as a scalar-valued system
      with 3 times more DoFs) */
+  cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
+
   cs_equation_solve_scalar_system(eqc->n_dofs, /* 3*n_vertices */
                                   eqp,
                                   matrix,
                                   rs,
                                   rhs_norm,
+                                  sles,
                                   fld->val,
                                   rhs);
 
   /* Free remaining buffers */
   BFT_FREE(rhs);
+  cs_sles_free(sles);
   cs_matrix_destroy(&matrix);
 }
 

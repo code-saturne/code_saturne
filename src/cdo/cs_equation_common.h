@@ -39,6 +39,7 @@
 #include "cs_matrix.h"
 #include "cs_time_step.h"
 #include "cs_timer.h"
+#include "cs_sles.h"
 #include "cs_source_term.h"
 
 /*----------------------------------------------------------------------------*/
@@ -542,6 +543,7 @@ cs_equation_prepare_system(int                     stride,
  * \param[in]  matrix         pointer to a cs_matrix_t structure
  * \param[in]  rs             pointer to a cs_range_set_t structure
  * \param[in]  normalization  value used for the residual normalization
+ * \param[in]  sles           pointer to a cs_sles_t structure
  * \param[in, out] x          solution of the linear system (in: initial guess)
  * \param[in, out] b          right-hand side (scatter/gather if needed)
  *
@@ -555,6 +557,7 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
                                 const cs_matrix_t            *matrix,
                                 const cs_range_set_t         *rset,
                                 cs_real_t                     normalization,
+                                cs_sles_t                    *sles,
                                 cs_real_t                    *x,
                                 cs_real_t                    *b);
 
