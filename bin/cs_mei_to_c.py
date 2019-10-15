@@ -1204,11 +1204,11 @@ class mei_to_c_interpreter:
                 if sn in line_comp and sn not in known_symbols:
                     if sn == 'dt':
                         usr_defs += ntabs*tab
-                        usr_defs += 'const cs_real_t dt = cs_glob_time_step->dt;\n'
+                        usr_defs += 'const cs_real_t dt = cs_glob_time_step->dt[0];\n'
                         known_symbols.append(sn)
                     elif sn == 't':
                         usr_defs += ntabs*tab
-                        usr_defs += 'const cs_real_t time = cs_glob_time_step->t_cur;\n'
+                        usr_defs += 'const cs_real_t t = cs_glob_time_step->t_cur;\n'
                         known_symbols.append(sn)
                     elif sn == 'iter':
                         usr_defs += ntabs*tab
@@ -1388,7 +1388,7 @@ class mei_to_c_interpreter:
                 if sn in line_comp and sn not in known_symbols:
                     if sn == 'dt':
                         usr_defs += ntabs*tab
-                        usr_defs += 'const cs_real_t dt = cs_glob_time_step->dt;\n'
+                        usr_defs += 'const cs_real_t dt = cs_glob_time_step->dt[0];\n'
                         known_symbols.append(sn)
                     elif sn == 't':
                         usr_defs += ntabs*tab
@@ -1534,11 +1534,11 @@ class mei_to_c_interpreter:
                 if sn in line_comp and sn not in known_symbols:
                     if sn == 'dt':
                         usr_defs += ntabs*tab
-                        usr_defs += 'const cs_real_t dt = cs_glob_time_step->dt;\n'
+                        usr_defs += 'const cs_real_t dt = cs_glob_time_step->dt[0];\n'
                         known_symbols.append(sn)
                     elif sn == 't':
                         usr_defs += ntabs*tab
-                        usr_defs += 'const cs_real_t time = cs_glob_time_step->t_cur;\n'
+                        usr_defs += 'const cs_real_t t = cs_glob_time_step->t_cur;\n'
                         known_symbols.append(sn)
                     elif sn == 'iter':
                         usr_defs += ntabs*tab
@@ -1805,11 +1805,11 @@ class mei_to_c_interpreter:
                 if sn in line_comp and sn not in known_symbols:
                     if sn == 'dt':
                         usr_defs += ntabs*tab
-                        usr_defs += 'const cs_real_t dt = cs_glob_time_step->dt;\n'
+                        usr_defs += 'const cs_real_t dt = cs_glob_time_step->dt[0];\n'
                         known_symbols.append(sn)
                     elif sn == 't':
                         usr_defs += ntabs*tab
-                        usr_defs += 'const cs_real_t time = cs_glob_time_step->t_cur;\n'
+                        usr_defs += 'const cs_real_t t = cs_glob_time_step->t_cur;\n'
                         known_symbols.append(sn)
                     elif sn == 'iter':
                         usr_defs += ntabs*tab
