@@ -89,6 +89,7 @@ cs_cdofb_monolithic_get_face_velocity(void    *scheme_context)
 /*!
  * \brief  Set shared pointers from the main domain members
  *
+ * \param[in]  nsp         pointer to NavSto parameter settings
  * \param[in]  mesh        pointer to a cs_mesh_t structure
  * \param[in]  quant       additional mesh quantities struct.
  * \param[in]  connect     pointer to a \ref cs_cdo_connect_t struct.
@@ -97,7 +98,8 @@ cs_cdofb_monolithic_get_face_velocity(void    *scheme_context)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_init_common(const cs_mesh_t               *mesh,
+cs_cdofb_monolithic_init_common(const cs_navsto_param_t       *nsp,
+                                const cs_mesh_t               *mesh,
                                 const cs_cdo_quantities_t     *quant,
                                 const cs_cdo_connect_t        *connect,
                                 const cs_time_step_t          *time_step);
@@ -131,6 +133,22 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
 
 void *
 cs_cdofb_monolithic_free_scheme_context(void   *scheme_context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve the steady Stokes or Oseen system with a CDO face-based scheme
+ *         using a monolithic approach and GKB algorithm
+ *
+ * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
+ * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_monolithic_steady_gkb(const cs_mesh_t            *mesh,
+                               const cs_navsto_param_t    *nsp,
+                               void                       *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!

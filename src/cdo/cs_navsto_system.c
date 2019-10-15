@@ -717,8 +717,12 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       ns->init_pressure = cs_cdofb_navsto_init_pressure;
       if (_handle_non_linearities(nsp))
         ns->compute_steady = cs_cdofb_monolithic_compute_steady_nl;
-      else
-        ns->compute_steady = cs_cdofb_monolithic_compute_steady;
+      else {
+        if (nsp->sles_strategy == CS_NAVSTO_SLES_GKB_SATURNE)
+          ns->compute_steady = cs_cdofb_monolithic_steady_gkb;
+        else
+          ns->compute_steady = cs_cdofb_monolithic_compute_steady;
+      }
 
       switch (nsp->time_scheme) {
 
@@ -746,7 +750,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
       } /* Switch */
 
-      cs_cdofb_monolithic_init_common(mesh, quant, connect, time_step);
+      cs_cdofb_monolithic_init_common(nsp, mesh, quant, connect, time_step);
       break;
 
     case CS_NAVSTO_COUPLING_PROJECTION:

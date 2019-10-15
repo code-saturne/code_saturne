@@ -435,6 +435,19 @@ typedef enum {
  * Diagonal (also Jacobi) preconditioner. The cheapest one but not the most
  * efficient one.
  *
+ * \var CS_PARAM_PRECOND_GKB_CG
+ * Golub-Kahan Bidiagonalization solver used as a preconditioner. Only
+ * useful if one has to solve a saddle-point system (such systems arise
+ * when solving Stokes or Navier-Stokes in a fully couple manner).
+ * Variant with CG as inner solver.
+ *
+ *
+ * \var CS_PARAM_PRECOND_GKB_GMRES
+ * Golub-Kahan Bidiagonalization solver used as a preconditioner. Only
+ * useful if one has to solve a saddle-point system (such systems arise
+ * when solving Stokes or Navier-Stokes in a fully couple manner).
+ * Variant with GMRES as inner solver.
+ *
  * \var CS_PARAM_PRECOND_ILU0
  * Incomplute LU factorization (fill-in coefficient set to 0)
  *
@@ -463,6 +476,8 @@ typedef enum {
   CS_PARAM_PRECOND_AMG_BLOCK,
   CS_PARAM_PRECOND_AS,          /*!< Only with PETSc */
   CS_PARAM_PRECOND_DIAG,
+  CS_PARAM_PRECOND_GKB_CG,
+  CS_PARAM_PRECOND_GKB_GMRES,
   CS_PARAM_PRECOND_ILU0,        /*!< Only with PETSc */
   CS_PARAM_PRECOND_ICC0,        /*!< Only with PETSc*/
   CS_PARAM_PRECOND_POLY1,
@@ -504,6 +519,14 @@ typedef enum {
  * \var CS_PARAM_ITSOL_GAUSS_SEIDEL
  * Gauss-Seidel
  *
+ * \var CS_PARAM_ITSOL_GKB_CG
+ * Golub-Kahan Bidiagonalization algorithm. Useful for solving saddle-point
+ * systems. The inner solver is a (flexible) CG solver.
+ *
+ * \var CS_PARAM_ITSOL_GKB_GMRES
+ * Golub-Kahan Bidiagonalization algorithm. Useful for solving saddle-point
+ * systems. The inner solver is a (flexible) GMRES solver.
+ *
  * \var CS_PARAM_ITSOL_GMRES
  * Generalized Minimal RESidual
  *
@@ -533,6 +556,8 @@ typedef enum {
   CS_PARAM_ITSOL_CR3,
   CS_PARAM_ITSOL_FCG,
   CS_PARAM_ITSOL_GAUSS_SEIDEL,
+  CS_PARAM_ITSOL_GKB_CG,
+  CS_PARAM_ITSOL_GKB_GMRES,
   CS_PARAM_ITSOL_GMRES,            /*!< Only with PETsc */
   CS_PARAM_ITSOL_JACOBI,
   CS_PARAM_ITSOL_MINRES,           /*!< Only with PETsc */

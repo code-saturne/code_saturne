@@ -53,12 +53,14 @@
 
 #include <bft_mem.h>
 
+#include "cs_blas.h"
 #if defined(DEBUG) && !defined(NDEBUG)
 #include "cs_dbg.h"
 #endif
 #include "cs_equation.h"
 #include "cs_fp_exception.h"
 #include "cs_navsto_coupling.h"
+#include "cs_parall.h"
 #include "cs_sles.h"
 #if defined(HAVE_PETSC)
 #include "cs_sles_petsc.h"
@@ -95,17 +97,166 @@ BEGIN_C_DECLS
 
 #define CS_CDOFB_MONOLITHIC_SLES_DBG      0
 
+/* GKB advanced settings */
+
+#define CS_GKB_TRUNCATION_THRESHOLD     5
+
+/* Block size for superblock algorithm */
+
+#define CS_SBLOCK_BLOCK_SIZE 60
+
+/* Cache line multiple, in cs_real_t units */
+
+#define CS_CL  (CS_CL_SIZE/8)
+
+/* This structure follow notations given in the article entitled
+ * "An iterative generalized Golub-Kahan algorithm for problems in structural
+ *  mechanics" by M. Arioli, C. Kruse, U. Ruede and N. Tardieu
+ *
+ * M space is isomorphic to the velocity space (size = 3.n_faces)
+ * N space is isomorphic to the pressure space (size = n_cells)
+ */
+
+typedef struct {
+
+  /* Vector transformation */
+  cs_real_t               *b_tilda;  /* Modified RHS */
+  cs_real_t               *u_tilda;  /* Modified velocity unknown */
+
+  cs_lnum_t                n_u_dofs; /* Size of the space M */
+  cs_lnum_t                n_p_dofs; /* Size of the space N */
+
+  /* Auxiliary vectors */
+  cs_real_t               *q;        /* vector iterates in space N */
+  cs_real_t               *d;        /* vector iterates in space N */
+  cs_real_t               *d__v;     /* buffer in space N */
+  cs_real_t               *dt_q;     /* buffer in space M */
+  cs_real_t               *m__v;     /* vector iterates in space M */
+  cs_real_t               *v;        /* vector iterates in space M */
+
+  /* Orthogonalization coefficients */
+  cs_real_t                alpha;
+  cs_real_t                beta;
+  cs_real_t                zeta;
+
+  /* Store z_size zeta coefficients */
+  int                      z_size;
+  cs_real_t               *zeta_array;
+  cs_real_t                zeta_square_sum;
+
+  cs_navsto_algo_info_t    info;     /* Information related to the convergence
+                                        of the algorithm */
+
+} cs_gkb_builder_t;
+
 /*============================================================================
  * Private variables
  *============================================================================*/
 
 /* Pointer to shared structures */
+static const cs_cdo_connect_t       *cs_shared_connect;
 static const cs_cdo_quantities_t    *cs_shared_quant;
 static const cs_range_set_t         *cs_shared_range_set;
 
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute array index bounds for a local thread.
+ *
+ * When called inside an OpenMP parallel section, this will return the
+ * start an past-the-end indexes for the array range assigned to that thread.
+ * In other cases, the start index is 1, and the past-the-end index is n;
+ *
+ * \param[in]   n     size of array
+ * \param[out]  s_id  start index for the current thread
+ * \param[out]  e_id  past-the-end index for the current thread
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_thread_range(cs_lnum_t   n,
+              cs_lnum_t  *s_id,
+              cs_lnum_t  *e_id)
+{
+#if defined(HAVE_OPENMP)
+  int t_id = omp_get_thread_num();
+  int n_t = omp_get_num_threads();
+  cs_lnum_t t_n = (n + n_t - 1) / n_t;
+  *s_id =  t_id    * t_n;
+  *e_id = (t_id+1) * t_n;
+  *s_id = cs_align(*s_id, CS_CL);
+  *e_id = cs_align(*e_id, CS_CL);
+  if (*e_id > n) *e_id = n;
+#else
+  *s_id = 0;
+  *e_id = n;
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Dot product between two arrays on face unknowns.
+ *         One assumes that input arrays are in a "scattered" distribution
+ *         So the size should be 3*n_faces.
+ *
+ * \param[in]       size   size of arrays
+ * \param[in, out]  x      first array
+ * \param[in, out]  y      second array
+ *
+ * \return the computed value
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+_face_gdot(cs_lnum_t    size,
+           cs_real_t    x[],
+           cs_real_t    y[])
+{
+  cs_range_set_t  *rset = cs_shared_range_set;
+
+  assert(size == rset->n_elts[1]);
+  assert(size == 3*cs_shared_quant->n_faces);
+
+  /* x and y are scattered arrays. One assumes that values are synchronized
+     across ranks (for instance by using a cs_interface_set_sum()) */
+  if (cs_glob_n_ranks > 1) {
+
+    cs_range_set_gather(rset,
+                        CS_REAL_TYPE,/* type */
+                        1,           /* stride (treated as scalar up to now) */
+                        x,           /* in: size = n_sles_scatter_elts */
+                        x);          /* out: size = n_sles_gather_elts */
+
+    cs_range_set_gather(rset,
+                        CS_REAL_TYPE,/* type */
+                        1,           /* stride (treated as scalar up to now) */
+                        y,           /* in: size = n_sles_scatter_elts */
+                        y);          /* out: size = n_sles_gather_elts */
+
+  }
+
+  cs_real_t  result = cs_gdot(rset->n_elts[0], x, y);
+
+  if (cs_glob_n_ranks > 1) { /* Parallel mode */
+
+    cs_range_set_scatter(rset,
+                         CS_REAL_TYPE,
+                         1,
+                         x,
+                         x);
+    cs_range_set_scatter(rset,
+                         CS_REAL_TYPE,
+                         1,
+                         y,
+                         y);
+
+  }
+
+  return result;
+}
 
 #if defined(HAVE_PETSC)
 #if defined(PETSC_HAVE_HYPRE)
@@ -902,6 +1053,429 @@ _mumps_hook(void     *context,
 
 #endif  /* HAVE_PETSC */
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create and initialize a GKB builder structure
+ *
+ * \param[in]  n_u_dofs   number of velocity DoFs (degrees of freedom)
+ * \param[in]  n_p_dofs   number of pressure DoFs
+ *
+ * \return a pointer to a new allocated GKB builder
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_gkb_builder_t *
+_init_gkb_builder(cs_lnum_t             n_u_dofs,
+                  cs_lnum_t             n_p_dofs)
+{
+  cs_gkb_builder_t  *gkb = NULL;
+
+  BFT_MALLOC(gkb, 1, cs_gkb_builder_t);
+
+  gkb->n_u_dofs = n_u_dofs;
+  gkb->n_p_dofs = n_p_dofs;
+
+  /* Vector transformation */
+  BFT_MALLOC(gkb->u_tilda, n_u_dofs, cs_real_t);
+  /* Rk: b_tilda stores quantities in space M and N alternatively */
+  assert(n_u_dofs >= n_p_dofs);
+  BFT_MALLOC(gkb->b_tilda, n_u_dofs, cs_real_t);
+
+  /* Auxiliary vectors */
+  BFT_MALLOC(gkb->v, n_u_dofs, cs_real_t);
+  memset(gkb->v, 0, n_u_dofs*sizeof(cs_real_t));
+
+  BFT_MALLOC(gkb->q, n_p_dofs, cs_real_t);
+  BFT_MALLOC(gkb->d, n_p_dofs, cs_real_t);
+  BFT_MALLOC(gkb->d__v, n_p_dofs, cs_real_t);
+  BFT_MALLOC(gkb->dt_q, n_u_dofs, cs_real_t);
+  BFT_MALLOC(gkb->m__v, n_u_dofs, cs_real_t);
+
+  /* Orthogonalization coefficients */
+  gkb->alpha = gkb->beta = gkb->zeta = 0.;
+
+  /* Convergence members */
+  gkb->z_size = CS_GKB_TRUNCATION_THRESHOLD;
+  BFT_MALLOC(gkb->zeta_array, gkb->z_size, cs_real_t);
+  memset(gkb->zeta_array, 0, gkb->z_size*sizeof(cs_real_t));
+
+  gkb->zeta_square_sum = 0.;
+
+  cs_navsto_algo_info_init(&(gkb->info));
+
+  return gkb;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a GKB builder structure
+ *
+ * \param[in, out]  p_gkb   double pointer to a GKB builder structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_free_gkb_builder(cs_gkb_builder_t   **p_gkb)
+{
+  cs_gkb_builder_t  *gkb = *p_gkb;
+
+  if (gkb == NULL)
+    return;
+
+  BFT_FREE(gkb->b_tilda);
+  BFT_FREE(gkb->u_tilda);
+
+  BFT_FREE(gkb->q);
+  BFT_FREE(gkb->d);
+  BFT_FREE(gkb->d__v);
+  BFT_FREE(gkb->dt_q);
+  BFT_FREE(gkb->m__v);
+  BFT_FREE(gkb->v);
+
+  BFT_FREE(gkb->zeta_array);
+
+  BFT_FREE(gkb);
+  *p_gkb = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Apply the divergence operator and store the result in div_v
+ *
+ * \param[in]      div_op  pointer to the values of divergence operator
+ * \param[in]      v       vector to apply in velocity space
+ * \param[in, out] div_v   resulting vector in pressure space
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_apply_div_op(const cs_real_t   *div_op,
+              const cs_real_t   *v,
+              cs_real_t         *div_v)
+{
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_adjacency_t  *c2f = cs_shared_connect->c2f;
+
+# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+    cs_real_t _div_v = 0;
+    for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++)
+      _div_v += cs_math_3_dot_product(div_op + 3*j, v + 3*c2f->ids[j]);
+    div_v[c_id] = _div_v;
+
+  } /* Loop on cells */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Apply the gradient operator (which is the transpose of the
+ *         divergence operator) and store the result in dt_q
+ *
+ * \param[in]      div_op   pointer to the values of divergence operator
+ * \param[in]      q        vector to apply in pressure space
+ * \param[in, out] dt_q     resulting vector in velocity space
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_apply_div_op_transpose(const cs_real_t   *div_op,
+                        const cs_real_t   *q,
+                        cs_real_t         *dt_q)
+{
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_adjacency_t  *c2f = cs_shared_connect->c2f;
+
+  memset(dt_q, 0, 3*quant->n_faces*sizeof(cs_real_t));
+
+# pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+    const cs_real_t  qc = q[c_id];
+    for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+
+      const cs_real_t  *_div_f = div_op + 3*j;
+
+      cs_real_t  *_dt_q = dt_q + 3*c2f->ids[j];
+#     pragma omp critical
+      {
+        _dt_q[0] += qc * _div_f[0];
+        _dt_q[1] += qc * _div_f[1];
+        _dt_q[2] += qc * _div_f[2];
+      }
+
+    } /* Loop on cell faces */
+
+  } /* Loop on cells */
+
+  if (cs_glob_n_ranks > 1)
+    cs_interface_set_sum(cs_shared_range_set->ifs,
+                         3*quant->n_faces,
+                         1, false, CS_REAL_TYPE, /* stride, interlaced */
+                         dt_q);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Transform the initial saddle-point problem. The velocity unknown
+ *         is modified and is stored in u_tilda as well as the RHS related to
+ *         the mass equation and stored in b_tilda
+ *
+ * \param[in]      matrix   pointer to a cs_matrix_t structure
+ * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      div_op   pointer to the values of divergence operator
+ * \param[in, out] gkb      pointer to a GKB builder structure
+ * \param[in, out] sles     pointer to a cs_sles_t structure
+ * \param[in, out] u_f      initial velocity on faces
+ * \param[in, out] b_f      right-hand side (scatter/gather if needed) on faces
+ * \param[in, out] b_c      right_hand side on cells (mass equation)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_transform_gkb_system(const cs_matrix_t             *matrix,
+                      const cs_equation_param_t     *eqp,
+                      const cs_real_t               *div_op,
+                      cs_gkb_builder_t              *gkb,
+                      cs_sles_t                     *sles,
+                      cs_real_t                     *u_f,
+                      cs_real_t                     *b_f,
+                      cs_real_t                     *b_c)
+{
+  assert(gkb != NULL);
+
+  cs_real_t  normalization = 1.0; /* TODO */
+
+  /* Modifiy the tolerance in order to be more accurate on this step */
+  cs_equation_param_t  *_eqp = NULL;
+
+  BFT_MALLOC(_eqp, 1, cs_equation_param_t);
+  BFT_MALLOC(_eqp->name, strlen(eqp->name) + strlen(":gkb0") + 1, char);
+  sprintf(_eqp->name, "%s:gkb0", eqp->name);
+  _eqp->sles_param.field_id = eqp->sles_param.field_id;
+
+  cs_equation_param_update_from(eqp, _eqp);
+  _eqp->sles_param.eps = fmin(0.1*eqp->sles_param.eps, 1e-10);
+
+  /* Compute M^-1.(b_f + gamma. Bt.N^-1.b_c) up to now gamma = 0 */
+  gkb->info.n_inner_iter
+    += (gkb->info.last_inner_iter
+        = cs_equation_solve_scalar_system(gkb->n_u_dofs,
+                                          _eqp,
+                                          matrix,
+                                          cs_shared_range_set,
+                                          normalization,
+                                          true, /* rhs_redux */
+                                          sles,
+                                          gkb->v,
+                                          b_f));
+
+  /* Compute the initial u_tilda := u_f - M^-1.b_f */
+# pragma omp parallel for if (gkb->n_u_dofs > CS_THR_MIN)
+  for (cs_lnum_t iu = 0; iu < gkb->n_u_dofs; iu++)
+    gkb->u_tilda[iu] = u_f[iu] - gkb->v[iu];
+
+  /* Compute b_tilda := b_c - div(M^-1.b_f) */
+  _apply_div_op(div_op, gkb->v, gkb->d__v);
+
+# pragma omp parallel for if (gkb->n_p_dofs > CS_THR_MIN)
+  for (cs_lnum_t ip = 0; ip < gkb->n_p_dofs; ip++)
+    gkb->b_tilda[ip] = b_c[ip] - gkb->d__v[ip];
+
+  BFT_FREE(_eqp);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Initialize the GKB algorithm
+ *
+ * \param[in]      matrix   pointer to a cs_matrix_t structure
+ * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      div_op   pointer to the values of divergence operator
+ * \param[in, out] gkb      pointer to a GKB builder structure
+ * \param[in, out] sles     pointer to a cs_sles_t structure
+ * \param[in, out] p_c      right_hand side on cells (mass equation)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_init_gkb_algo(const cs_matrix_t             *matrix,
+               const cs_equation_param_t     *eqp,
+               const cs_real_t               *div_op,
+               cs_gkb_builder_t              *gkb,
+               cs_sles_t                     *sles,
+               cs_real_t                     *p_c)
+{
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_lnum_t  size = quant->n_cells;
+
+  double beta2 = 0.0;
+
+  /* Compute beta := ||b_tilta||_N^-1 and q := N^-1(b_tilda)/beta */
+# pragma omp parallel reduction(+:beta2) if (size > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    _thread_range(size, &s_id, &e_id);
+
+    const cs_lnum_t  n = e_id - s_id;
+    const cs_real_t  *_w = quant->cell_vol + s_id;
+    const cs_real_t  *_b = gkb->b_tilda + s_id;
+    const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
+    const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
+    const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
+    const cs_lnum_t  blocks_in_sblocks =
+      (n + block_size*n_sblocks - 1) / (block_size*n_sblocks);
+
+    cs_real_t  *_q = gkb->q + s_id;
+    cs_lnum_t  shift = 0;
+
+    for (cs_lnum_t s = 0; s < n_sblocks; s++) { /* Loop on slices */
+
+      double  s_beta2 = 0.0;
+
+      for (cs_lnum_t b_id = 0; b_id < blocks_in_sblocks; b_id++) {
+
+        const cs_lnum_t  start_id = shift;
+        shift += block_size;
+        if (shift > n)
+          shift = n, b_id = blocks_in_sblocks;
+        const cs_lnum_t  end_id = shift;
+
+        double  _beta2 = 0.0;
+        for (cs_lnum_t j = start_id; j < end_id; j++) {
+
+          const  cs_real_t  b_ov_w = _b[j]/_w[j];
+          _beta2 += b_ov_w*_b[j];
+          _q[j] = b_ov_w;
+
+        } /* Loop on block_size */
+
+        s_beta2 += _beta2;
+
+      } /* Loop on blocks */
+
+      beta2 += s_beta2;
+
+    } /* Loop on super-blocks */
+
+  } /* OpenMP block */
+
+  /* Parallel synchronization */
+  cs_parall_sum(1, CS_DOUBLE, &beta2);
+
+  /* Keep the value of beta = ||b||_{N^-1} */
+  assert(beta2 > -DBL_MIN);
+  gkb->beta = sqrt(beta2);
+
+  /* Store M^-1.(b_f + gamma. Bt.N^-1.b_c) in b_tilda which is not useful
+   * anymore */
+  memcpy(gkb->b_tilda, gkb->v, gkb->n_u_dofs*sizeof(cs_real_t));
+
+  const  cs_real_t  inv_beta = 1./gkb->beta;
+# pragma omp parallel for if (size > CS_THR_MIN)
+  for (cs_lnum_t i = 0; i < size; i++)
+    gkb->q[i] *= inv_beta;
+
+  /* Solve M.w = Dt.q (set_sum done inside) */
+  _apply_div_op_transpose(div_op, gkb->q, gkb->dt_q);
+
+  cs_real_t  normalization = 1.0; /* TODO */
+
+  gkb->info.n_inner_iter
+    += (gkb->info.last_inner_iter =
+        cs_equation_solve_scalar_system(gkb->n_u_dofs,
+                                        eqp,
+                                        matrix,
+                                        cs_shared_range_set,
+                                        normalization,
+                                        false, /* rhs_redux */
+                                        sles,
+                                        gkb->v,
+                                        gkb->dt_q));
+
+  gkb->alpha = _face_gdot(gkb->n_u_dofs, gkb->v, gkb->dt_q);
+  assert(gkb->alpha > -DBL_MIN);
+  gkb->alpha = sqrt(gkb->alpha);
+
+  const double ov_alpha = 1./gkb->alpha;
+
+  gkb->zeta = gkb->beta * ov_alpha;
+
+  /* Initialize auxiliary vectors and first update of the solution vectors */
+
+# pragma omp parallel for if (gkb->n_u_dofs > CS_THR_MIN)
+  for (cs_lnum_t iu = 0; iu < gkb->n_u_dofs; iu++) {
+    gkb->v[iu] *= ov_alpha;
+    gkb->u_tilda[iu] = gkb->zeta * gkb->v[iu];
+    gkb->m__v[iu] = ov_alpha * gkb->dt_q[iu];
+  }
+
+# pragma omp parallel for if (gkb->n_p_dofs > CS_THR_MIN)
+  for (cs_lnum_t ip = 0; ip < gkb->n_p_dofs; ip++) {
+    gkb->d[ip] = gkb->q[ip] * ov_alpha;
+    p_c[ip] = -gkb->zeta * gkb->d[ip];
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Test if one needs one more GKB iteration
+ *
+ * \param[in]      nsp      pointer to a set of parameters for Navier-Stokes
+ * \param[in, out] gkb     pointer to a GKB builder structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_gkb_cvg_test(const cs_navsto_param_t    *nsp,
+              cs_gkb_builder_t           *gkb)
+{
+  const cs_real_t  diverg_factor = 100;
+
+  /* Update the sum of square of zeta values (used for renormalization) */
+  cs_real_t  z2 = gkb->zeta*gkb->zeta;
+
+  gkb->zeta_square_sum += z2;
+  gkb->zeta_array[gkb->info.n_algo_iter % gkb->z_size] = z2;
+
+  /* Increment the number of Picard iterations */
+  gkb->info.n_algo_iter += 1;
+
+  /* Compute the relative energy norm. The normalization arises from an
+     iterative estimation of the initial error in the energy norm */
+  int  n = gkb->z_size;
+  if (gkb->info.n_algo_iter < gkb->z_size)
+    n = gkb->info.n_algo_iter;
+  cs_real_t  err2_energy = 0.;
+  for (int i = 0; i < n; i++)
+    err2_energy += gkb->zeta_array[i];
+
+  const cs_real_t  prev_res = gkb->info.res;
+  const double  tau = nsp->residual_tolerance * nsp->residual_tolerance;
+  gkb->info.res = sqrt(err2_energy);
+
+  /* Set the convergence status */
+  if (err2_energy < tau * gkb->zeta_square_sum)
+    gkb->info.cvg = CS_SLES_CONVERGED;
+  else if (gkb->info.n_algo_iter >= nsp->max_algo_iter)
+    gkb->info.cvg = CS_SLES_MAX_ITERATION;
+  else if (gkb->info.res > diverg_factor * prev_res)
+    gkb->info.cvg = CS_SLES_DIVERGED;
+  else
+    gkb->info.cvg = CS_SLES_ITERATING;
+
+  if (nsp->verbosity > 2)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "GKB.It%02d-- %5.3e %5d %6d z2:%6.4e renorm:%6.4e\n",
+                  gkb->info.n_algo_iter, gkb->info.res,
+                  gkb->info.last_inner_iter, gkb->info.n_inner_iter,
+                  z2, gkb->zeta_square_sum);
+
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -912,16 +1486,21 @@ _mumps_hook(void     *context,
 /*!
  * \brief  Set pointers to shared structures
  *
+ * \param[in]  connect  pointer to cdo connectivities
  * \param[in]  quant    pointer to additional mesh quantities
  * \param[in]  rset     pointer to a \ref cs_range_set_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_sles_set_shared(const cs_cdo_quantities_t     *quant,
+cs_cdofb_monolithic_sles_set_shared(const cs_cdo_connect_t        *connect,
+                                    const cs_cdo_quantities_t     *quant,
                                     const cs_range_set_t          *rset)
 {
+  assert(rset != NULL);
+
   /* Assign static const pointers */
+  cs_shared_connect = connect;
   cs_shared_quant = quant;
   cs_shared_range_set = rset;
 }
@@ -946,11 +1525,12 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
   assert(nsp != NULL && nsc != NULL);
 
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
+  cs_param_sles_t  *mom_slesp = &(mom_eqp->sles_param);
   int  field_id = cs_equation_get_field_id(nsc->momentum);
 
-  mom_eqp->sles_param.field_id = field_id;
-  if (mom_eqp->sles_param.amg_type == CS_PARAM_AMG_NONE)
-    mom_eqp->sles_param.amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
+  mom_slesp->field_id = field_id;
+  if (mom_slesp->amg_type == CS_PARAM_AMG_NONE)
+    mom_slesp->amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
 
   /* Initialization must be called before setting options;
      it does not need to be called before calling
@@ -961,6 +1541,52 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
   case CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK: /* "Classical" way to set SLES */
     cs_equation_param_set_sles(mom_eqp);
     break;
+
+  case CS_NAVSTO_SLES_GKB_SATURNE:
+     /* Set solver and preconditioner for solving M = A + zeta * Bt*N^-1*B
+      * Notice that zeta can be equal to 0 */
+    cs_equation_param_set_sles(mom_eqp);
+    break;
+
+#if defined(HAVE_PETSC)
+#if PETSC_VERSION_GE(3,11,0)    /* Golub-Kahan Bi-diagonalization */
+  case CS_NAVSTO_SLES_GKB:
+    cs_sles_petsc_init();
+    cs_sles_petsc_define(field_id,
+                         NULL,
+                         MATMPIAIJ,
+                         _gkb_hook,
+                         (void *)mom_eqp);
+    break;
+
+  case CS_NAVSTO_SLES_GKB_GMRES:
+    cs_sles_petsc_init();
+    cs_sles_petsc_define(field_id,
+                         NULL,
+                         MATMPIAIJ,
+                         _gkb_gmres_hook,
+                         (void *)mom_eqp);
+    break;
+#else
+  case CS_NAVSTO_SLES_GKB:
+  case CS_NAVSTO_SLES_GKB_GMRES:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid strategy for solving the linear system %s\n"
+              " PETSc 3.11.x or greater is required with this option.\n",
+              __func__, mom_eqp->name);
+    break;
+#endif
+#else  /* HAVE_PETSC */
+  case CS_NAVSTO_SLES_GKB:
+  case CS_NAVSTO_SLES_GKB_GMRES:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid strategy for solving the linear system %s\n"
+              " PETSc is required with this option.\n"
+              " Please use a version of Code_Saturne built with PETSc.",
+              __func__, mom_eqp->name);
+    break;
+
+#endif
 
 #if defined(HAVE_PETSC)
   case CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK:
@@ -990,62 +1616,31 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
                          (void *)mom_eqp);
     break;
 
-#if PETSC_VERSION_GE(3,11,0)    /* Golub-Kahan Bi-diagonalization */
-  case CS_NAVSTO_SLES_GKB:
-    cs_sles_petsc_init();
-    cs_sles_petsc_define(field_id,
-                         NULL,
-                         MATMPIAIJ,
-                         _gkb_hook,
-                         (void *)mom_eqp);
-    break;
-
-  case CS_NAVSTO_SLES_GKB_GMRES:
-    cs_sles_petsc_init();
-    cs_sles_petsc_define(field_id,
-                         NULL,
-                         MATMPIAIJ,
-                         _gkb_gmres_hook,
-                         (void *)mom_eqp);
-    break;
-#else
-  case CS_NAVSTO_SLES_GKB:
-  case CS_NAVSTO_SLES_GKB_GMRES:
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid strategy for solving the linear system %s\n"
-              " PETSc 3.11.x or greater is required with this option.\n",
-              __func__, mom_eqp->name);
-    break;
-#endif
-
-#if defined(PETSC_HAVE_MUMPS)
   case CS_NAVSTO_SLES_MUMPS:
+#if defined(PETSC_HAVE_MUMPS)
     cs_sles_petsc_init();
     cs_sles_petsc_define(field_id,
                          NULL,
                          MATMPIAIJ,
                          _mumps_hook,
                          (void *)mom_eqp);
-    break;
 #else
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid strategy for solving the linear system %s\n"
               " PETSc with MUMPS is required with this option.\n",
               __func__, mom_eqp->name);
-    break;
 #endif
+    break;
 
 #else
   case CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK:
   case CS_NAVSTO_SLES_DIAG_SCHUR_GMRES:
   case CS_NAVSTO_SLES_UPPER_SCHUR_GMRES:
-  case CS_NAVSTO_SLES_GKB:
-  case CS_NAVSTO_SLES_GKB_GMRES:
   case CS_NAVSTO_SLES_MUMPS:
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid strategy for solving the linear system %s\n"
               " PETSc is required with this option.\n"
-              " Please build a version of Code_Saturne with the PETSc support.",
+              " Please use a version of Code_Saturne built with PETSc.",
               __func__, mom_eqp->name);
     break;
 #endif /* HAVE_PETSC */
@@ -1056,16 +1651,152 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
               __func__, mom_eqp->name);
   }
 
-      /* Define the level of verbosity for SLES structure */
-  if (mom_eqp->sles_param.verbosity > 1) {
+  /* Define the level of verbosity for SLES structure */
+  if (mom_slesp->verbosity > 1) {
 
     cs_sles_t  *sles = cs_sles_find_or_add(field_id, NULL);
 
     /* Set verbosity */
-    cs_sles_set_verbosity(sles, mom_eqp->sles_param.verbosity);
+    cs_sles_set_verbosity(sles, mom_slesp->verbosity);
 
   }
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Use the GKB algorithm to solve the saddle-point problem arising
+ *         from CDO-Fb schemes for Stokes and Navier-Stokes with a monolithic
+ *         coupling
+ *
+ * \param[in]      matrix   pointer to a cs_matrix_t structure
+ * \param[in]      nsp      pointer to a cs_navsto_param_t structure
+ * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      div_op   pointer to the values of divergence operator
+ * \param[in, out] sles     pointer to a cs_sles_t structure
+ * \param[in, out] u_f      initial velocity on faces
+ * \param[in, out] p_c      initial pressure in cells
+ * \param[in, out] b_f      right-hand side (scatter/gather if needed) on faces
+ * \param[in, out] b_c      right_hand side on cells (mass equation)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_gkb_solve(const cs_matrix_t             *matrix,
+                   const cs_navsto_param_t       *nsp,
+                   const cs_equation_param_t     *eqp,
+                   const cs_real_t               *div_op,
+                   cs_sles_t                     *sles,
+                   cs_real_t                     *u_f,
+                   cs_real_t                     *p_c,
+                   cs_real_t                     *b_f,
+                   cs_real_t                     *b_c)
+{
+  /* Sanity checks */
+  assert(nsp != NULL && nsp->sles_strategy == CS_NAVSTO_SLES_GKB_SATURNE);
+  assert(cs_shared_range_set != NULL);
+
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_real_t  *vol = quant->cell_vol;
+
+  /* Allocate and initialize the GKB builder structure */
+  cs_gkb_builder_t  *gkb = _init_gkb_builder(3*quant->n_faces, quant->n_cells);
+
+  /* Transformation of the initial saddle-point system */
+  _transform_gkb_system(matrix, eqp, div_op, gkb, sles, u_f, b_f, b_c);
+
+  /* Initialization */
+  _init_gkb_algo(matrix, eqp, div_op, gkb, sles, p_c);
+
+  /* Main loop */
+  /* ========= */
+
+  while (gkb->info.cvg == CS_SLES_ITERATING) {
+
+    /* Compute g (store as an update of d__v), q */
+    _apply_div_op(div_op, gkb->v, gkb->d__v);
+
+#   pragma omp parallel for if (gkb->n_p_dofs > CS_THR_MIN)
+    for (cs_lnum_t ip = 0; ip < gkb->n_p_dofs; ip++) {
+      gkb->d__v[ip] /= vol[ip];
+      gkb->d__v[ip] -= gkb->alpha * gkb->q[ip];
+    }
+
+    /* Compute beta */
+    gkb->beta = cs_dot_wxx(gkb->n_p_dofs, vol, gkb->d__v);
+    cs_parall_sum(1, CS_DOUBLE, &(gkb->beta));
+    assert(gkb->beta > -DBL_MIN);
+    gkb->beta = sqrt(gkb->beta);
+
+    const double  ov_beta = 1./gkb->beta;
+
+#   pragma omp parallel for if (gkb->n_p_dofs > CS_THR_MIN)
+    for (cs_lnum_t ip = 0; ip < gkb->n_p_dofs; ip++)
+      gkb->q[ip] = ov_beta*gkb->d__v[ip];
+
+    /* Solve M.w_tilda = Dt.q (set_sum done inside) */
+    _apply_div_op_transpose(div_op, gkb->q, gkb->dt_q);
+
+    /* Prepare update of m__v:
+     *  m__v(k+1) = 1/alpha(k+1) * (dt_q - beta*m__v(k)) */
+#   pragma omp parallel for if (gkb->n_u_dofs > CS_THR_MIN)
+    for (cs_lnum_t iu = 0; iu < gkb->n_u_dofs; iu++) {
+      gkb->m__v[iu] *= -gkb->beta;
+      gkb->m__v[iu] +=  gkb->dt_q[iu];
+    }
+
+    cs_real_t  normalization = gkb->alpha; /* TODO */
+    gkb->info.n_inner_iter
+      += (gkb->info.last_inner_iter =
+          cs_equation_solve_scalar_system(gkb->n_u_dofs,
+                                          eqp,
+                                          matrix,
+                                          cs_shared_range_set,
+                                          normalization,
+                                          false, /* rhs_redux */
+                                          sles,
+                                          gkb->v,
+                                          gkb->m__v));
+
+    /* Compute alpha */
+    gkb->alpha = _face_gdot(gkb->n_u_dofs, gkb->v, gkb->m__v);
+    assert(gkb->alpha > -DBL_MIN);
+    gkb->alpha = sqrt(gkb->alpha);
+
+    const double ov_alpha = 1./gkb->alpha;
+
+    /* zeta(k+1) = -beta/alpha * zeta(k) */
+    gkb->zeta *= -gkb->beta * ov_alpha;
+
+    /* Update vectors and solutions */
+#   pragma omp parallel for if (gkb->n_u_dofs > CS_THR_MIN)
+    for (cs_lnum_t iu = 0; iu < gkb->n_u_dofs; iu++) {
+      gkb->v[iu] *= ov_alpha;
+      gkb->u_tilda[iu] += gkb->zeta * gkb->v[iu];
+      /* Last step: m__v(k+1) = 1/alpha(k+1) * (dt_q - beta*m__v(k)) */
+      gkb->m__v[iu] *= ov_alpha;
+    }
+
+#   pragma omp parallel for if (gkb->n_p_dofs > CS_THR_MIN)
+    for (cs_lnum_t ip = 0; ip < gkb->n_p_dofs; ip++) {
+      gkb->d[ip] = ov_alpha * (gkb->q[ip] - gkb->beta*gkb->d[ip]);
+      p_c[ip] += -gkb->zeta * gkb->d[ip];
+    }
+
+    /* Update error norm and test if one needs one more iteration */
+    _gkb_cvg_test(nsp, gkb);
+
+  }
+
+  /* Return to the initial velocity formulation
+   * u: = u_tilda + M^-1.(b_f + gamma.N^-1.b_c)
+   * where M^-1.(b_f + gamma.N^-1.b_c) is stored in b_tilda */
+# pragma omp parallel for if (gkb->n_u_dofs > CS_THR_MIN)
+  for (cs_lnum_t iu = 0; iu < gkb->n_u_dofs; iu++)
+    u_f[iu] = gkb->u_tilda[iu] + gkb->b_tilda[iu];
+
+  /* Last step: Free temporary memory */
+  _free_gkb_builder(&gkb);
 }
 
 /*----------------------------------------------------------------------------*/

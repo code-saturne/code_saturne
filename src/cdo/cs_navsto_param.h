@@ -150,7 +150,6 @@ typedef enum {
  * GMRES. This option is only available with the support to the PETSc
  * library up to now.
  *
- *
  * \var CS_NAVSTO_SLES_GKB
  * Associated keyword: "gkb"
  *
@@ -176,7 +175,20 @@ typedef enum {
  * in the energy norm. This option is only available with the support to the
  * PETSc library up to now.
  *
- * * \var CS_NAVSTO_SLES_MUMPS
+ * \var CS_NAVSTO_SLES_GKB_SATURNE
+ * Associated keyword: "gkb_saturne"
+ *
+ * Available choice when a monolithic approach is used (i.e. with the parameter
+ * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm). The
+ * Navier-Stokes system of equations is solved using a Golub-Kahan
+ * bi-diagonalization.
+ * By default, the block A_{00} may be augmented (this is not the default
+ * choice) and is solved with the SLES settings given to the momentum equation
+ * A conjugate gradient algorithm preconditioned
+ * with a multigrid for Stokes for instance.
+ * The residual is computed in the energy norm.
+ *
+ * \var CS_NAVSTO_SLES_MUMPS
  * Associated keyword: "mumps"
  *
  * Direct solver to solve systems arising from the discretization of the
@@ -190,8 +202,9 @@ typedef enum {
   CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK,
   CS_NAVSTO_SLES_DIAG_SCHUR_GMRES,
   CS_NAVSTO_SLES_UPPER_SCHUR_GMRES,
-  CS_NAVSTO_SLES_GKB_GMRES,
   CS_NAVSTO_SLES_GKB,
+  CS_NAVSTO_SLES_GKB_GMRES,
+  CS_NAVSTO_SLES_GKB_SATURNE,
   CS_NAVSTO_SLES_MUMPS,
 
   CS_NAVSTO_SLES_N_TYPES
