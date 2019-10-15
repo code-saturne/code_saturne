@@ -410,50 +410,135 @@ typedef enum {
 
 /*!
  * \enum cs_param_precond_type_t
- * Type of preconditioner to use with the iterative solver. Some
- * preconditioners as \ref CS_PARAM_PRECOND_ILU0, \ref CS_PARAM_PRECOND_ICC0,
- * \ref CS_PARAM_PRECOND_AS and \ref CS_PARAM_PRECOND_AMG_BLOCK are available
- * only with the PETSc interface.
+ * Type of preconditioner to use with the iterative solver.
+ * Some of the mentionned preconditioners are available only if the PETSc
+ * library is linked with code_saturne
+ *
+ * \var CS_PARAM_PRECOND_NONE
+ * No preconditioner
+ *
+ * \var CS_PARAM_PRECOND_BJACOB
+ * Block Jacobi
+ *
+ * \var CS_PARAM_PRECOND_AMG
+ * Algebraic multigrid preconditioner (additional options may be set using
+ * \ref \cs_param_amg_type_t)
+ *
+ * \var CS_PARAM_PRECOND_AMG_BLOCK
+ * Algebraic multigrid preconditioner by block (useful in case of vector
+ * valued variables)
+ *
+ * \var CS_PARAM_PRECOND_AS
+ * Additive Schwarz preconditioner
+ *
+ * \var CS_PARAM_PRECOND_DIAG
+ * Diagonal (also Jacobi) preconditioner. The cheapest one but not the most
+ * efficient one.
+ *
+ * \var CS_PARAM_PRECOND_ILU0
+ * Incomplute LU factorization (fill-in coefficient set to 0)
+ *
+ * \var CS_PARAM_PRECOND_ICC0
+ * Incomplute Cholesky factorization (fill-in coefficient set to 0). This is
+ * variant of the ILU0 preconditioner dedicated to symmetric positive definite
+ * system
+ *
+ * \var CS_PARAM_PRECOND_POLY1
+ * Neumann polynomial preconditioning. Polynoms of order 1.
+ *
+ * \var CS_PARAM_PRECOND_POLY2
+ * Neumann polynomial preconditioning. Polynoms of order 2.
+ *
+ * \var CS_PARAM_PRECOND_SSOR
+ * Symmetric Successive OverRelaxations (can be seen as a symmetric
+ * Gauss-Seidel preconditioner)
  */
 
 typedef enum {
 
-  CS_PARAM_PRECOND_NONE,    /*!< No preconditioning */
-  CS_PARAM_PRECOND_DIAG,    /*!< Diagonal (or Jacobi) preconditioning */
-  CS_PARAM_PRECOND_BJACOB,  /*!< Block Jacobi */
-  CS_PARAM_PRECOND_POLY1,   /*!< Neumann polynomial preconditioning (Order 1) */
-  CS_PARAM_PRECOND_POLY2,   /*!< Neumann polynomial preconditioning (Order 2) */
-  CS_PARAM_PRECOND_SSOR,    /*!< Symmetric Successive OverRelaxations */
-  CS_PARAM_PRECOND_ILU0,    /*!< Incomplete LU factorization */
-  CS_PARAM_PRECOND_ICC0,    /*!< Incomplete Cholesky factorization */
-  CS_PARAM_PRECOND_AMG,     /*!< Algebraic MultiGrid */
-  CS_PARAM_PRECOND_AMG_BLOCK,  /*!< Algebraic MultiGrid by block */
-  CS_PARAM_PRECOND_AS,         /*!< Additive Schwarz method */
+  CS_PARAM_PRECOND_NONE,
+
+  CS_PARAM_PRECOND_BJACOB,
+  CS_PARAM_PRECOND_AMG,
+  CS_PARAM_PRECOND_AMG_BLOCK,
+  CS_PARAM_PRECOND_AS,          /*!< Only with PETSc */
+  CS_PARAM_PRECOND_DIAG,
+  CS_PARAM_PRECOND_ILU0,        /*!< Only with PETSc */
+  CS_PARAM_PRECOND_ICC0,        /*!< Only with PETSc*/
+  CS_PARAM_PRECOND_POLY1,
+  CS_PARAM_PRECOND_POLY2,
+  CS_PARAM_PRECOND_SSOR,
+
   CS_PARAM_N_PRECOND_TYPES
 
 } cs_param_precond_type_t;
 
 /*!
  * \enum cs_param_itsol_type_t
- * Type of iterative solver to use to inverse the linear system.
- * \ref CS_PARAM_ITSOL_CR3 is available only inside the Code_Saturne framework.
+ *  Type of solver to use to solve a linear system.
+ *  Some of the mentionned solver are available only if the PETSc library is
+ *  linked with code_saturne.
+ *
+ * \var CS_PARAM_ITSOL_AMG
+ *  Algebraic multigrid solver (additional options may be set using
+ *  \ref \cs_param_amg_type_t)
+ *
+ * \var CS_PARAM_ITSOL_BICG
+ *  Bi-Conjuguate gradient (useful for non-symmetric systems)
+ *
+ * \var CS_PARAM_ITSOL_BICGSTAB2
+ *  Stabilized Bi-Conjuguate gradient (useful for non-symmetric systems)
+ *
+ * \var CS_PARAM_ITSOL_CG
+ *  Conjuguate Gradient (solver of choice for symmetric positive definite
+ *  systems)
+ *
+ * \var CS_PARAM_ITSOL_CR3
+ * 3-layer conjugate residual (can handle non-symmetric systems)
+ *
+ * \var CS_PARAM_ITSOL_FCG
+ * Flexible Conjuguate Gradient (variant of the CG when the preconditioner
+ * may change from one iteration to another. For instance when using an AMG
+ * as preconditioner)
+ *
+ * \var CS_PARAM_ITSOL_GAUSS_SEIDEL
+ * Gauss-Seidel
+ *
+ * \var CS_PARAM_ITSOL_GMRES
+ * Generalized Minimal RESidual
+ *
+ * \var CS_PARAM_ITSOL_JACOBI
+ * Jacobi (diagonal relaxation)
+ *
+ * \var CS_PARAM_ITSOL_MINRES
+ * Mininal residual algorithm
+ *
+ * \var CS_PARAM_ITSOL_MUMPS
+ * MUMPS direct solver (LU factorization)
+ *
+ * \var CS_PARAM_ITSOL_MUMPS_LDLT
+ * MUMPS direct solver (LDLT factorization also known as Cholesky factorization)
+ *
+ * \var CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL
+ * Symmetric Gauss-Seidel
+ *
  */
 
 typedef enum {
 
-  CS_PARAM_ITSOL_AMG,              /*!< Algebraic MultiGrid */
-  CS_PARAM_ITSOL_BICG,             /*!< Bi-Conjuguate gradient */
-  CS_PARAM_ITSOL_BICGSTAB2,        /*!< Stabilized Bi-Conjuguate gradient */
-  CS_PARAM_ITSOL_CG,               /*!< Conjuguate Gradient */
-  CS_PARAM_ITSOL_CR3,              /*!< 3-layer conjugate residual*/
-  CS_PARAM_ITSOL_FCG,              /*!< Flexible Conjuguate Gradient */
-  CS_PARAM_ITSOL_GAUSS_SEIDEL,     /*!< Gauss-Seidel */
-  CS_PARAM_ITSOL_GMRES,            /*!< Generalized Minimal RESidual */
-  CS_PARAM_ITSOL_JACOBI,           /*!< Jacobi */
-  CS_PARAM_ITSOL_MINRES,           /*!< Mininal Residual */
-  CS_PARAM_ITSOL_MUMPS,            /*!< MUMPS direct solver (LU facto.) */
-  CS_PARAM_ITSOL_MUMPS_LDLT,       /*!< MUMPS direct solver (LDLT facto.) */
-  CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL, /*!< Symetric Gauss-Seidel */
+  CS_PARAM_ITSOL_AMG,
+  CS_PARAM_ITSOL_BICG,
+  CS_PARAM_ITSOL_BICGSTAB2,
+  CS_PARAM_ITSOL_CG,
+  CS_PARAM_ITSOL_CR3,
+  CS_PARAM_ITSOL_FCG,
+  CS_PARAM_ITSOL_GAUSS_SEIDEL,
+  CS_PARAM_ITSOL_GMRES,            /*!< Only with PETsc */
+  CS_PARAM_ITSOL_JACOBI,
+  CS_PARAM_ITSOL_MINRES,           /*!< Only with PETsc */
+  CS_PARAM_ITSOL_MUMPS,            /*!< Only with PETsc */
+  CS_PARAM_ITSOL_MUMPS_LDLT,       /*!< Only with PETsc */
+  CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL,
   CS_PARAM_N_ITSOL_TYPES
 
 } cs_param_itsol_type_t;

@@ -83,7 +83,7 @@ BEGIN_C_DECLS
   elements which may be on parallel boundaries, such as vertices, edges,
   and faces).
 
-  Elements and their periodic matches allways have distinct global ids;
+  Elements and their periodic matches always have distinct global ids;
  */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
