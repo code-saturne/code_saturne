@@ -9,6 +9,8 @@ User changes:
 
 - Minor Documentation (Doxygen) and user example improvements.
 
+- Minor improvements of readibility of some smgr error messages.
+
 Bug fixes:
 
 - GUI: fix loss of "--initialize-only" runcase setting after first run.
