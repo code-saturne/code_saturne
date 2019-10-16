@@ -1794,7 +1794,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
   /* Choose gradient type */
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   cs_gradient_type_by_imrgra(imrgra,
                              &gradient_type,
@@ -3137,7 +3137,7 @@ cs_face_convection_scalar(int                       idtvar,
   /* Choose gradient type */
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   cs_gradient_type_by_imrgra(imrgra,
                              &gradient_type,
@@ -4291,7 +4291,7 @@ cs_convection_diffusion_vector(int                         idtvar,
   /* Choose gradient type */
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   cs_gradient_type_by_imrgra(imrgra,
                              &gradient_type,
@@ -5872,7 +5872,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
   /* Choose gradient type */
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   cs_gradient_type_by_imrgra(imrgra,
                              &gradient_type,
@@ -6861,7 +6861,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
   /* Choose gradient type */
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   cs_gradient_type_by_imrgra(imrgra,
                              &gradient_type,
@@ -8057,7 +8057,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 
   /* Choose gradient type */
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   cs_gradient_type_by_imrgra(imrgra,
                              &gradient_type,
@@ -8803,7 +8803,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
   /* Choose gradient type */
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   cs_gradient_type_by_imrgra(imrgra,
                              &gradient_type,
@@ -9354,7 +9354,7 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
   /* Choose gradient type */
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   cs_gradient_type_by_imrgra(imrgra,
                              &gradient_type,
@@ -10056,7 +10056,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
 
   /* Choose gradient type */
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   cs_gradient_type_by_imrgra(imrgra,
                              &gradient_type,
@@ -10689,7 +10689,7 @@ cs_face_diffusion_potential(const int                 f_id,
   /* Use iterative gradient */
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   if (imrgra < 0)
     imrgra = 0;
@@ -11050,7 +11050,7 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
   /* Use iterative gradient */
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   if (imrgra < 0)
     imrgra = 0;
@@ -11530,7 +11530,7 @@ cs_diffusion_potential(const int                 f_id,
   /* Use iterative gradient */
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   if (imrgra < 0)
     imrgra = 0;
@@ -11913,7 +11913,7 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
   /* Use iterative gradient */
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   if (imrgra < 0)
     imrgra = 0;

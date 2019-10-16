@@ -757,8 +757,8 @@ _cs_rad_transfer_sol(int                        gg_id,
                                 * c_stefan * cs_math_pow3(tempk[cell_id]);
       }
     } else {
-      cs_real_t *cpro_t4m = cs_field_by_name_try("temperature_4")->val;
-      cs_real_t *cpro_t3m = cs_field_by_name_try("temperature_3")->val;
+      cs_real_t *cpro_t4m = cs_field_by_name("temperature_4")->val;
+      cs_real_t *cpro_t3m = cs_field_by_name("temperature_3")->val;
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
         int_emi[cell_id] -=   ckg[cell_id] * 4.0 * c_stefan
@@ -1481,8 +1481,8 @@ cs_rad_transfer_solve(int               verbosity,
         }
       }
       else {
-        const cs_real_t *cpro_t4m = cs_field_by_name_try("temperature_4")->val;
-        const cs_real_t *cpro_t3m = cs_field_by_name_try("temperature_3")->val;
+        const cs_real_t *cpro_t4m = cs_field_by_name("temperature_4")->val;
+        const cs_real_t *cpro_t3m = cs_field_by_name("temperature_3")->val;
 
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
           int_emi[cell_id] =   -4.0 * ckg[cell_id]
@@ -1511,7 +1511,7 @@ cs_rad_transfer_solve(int               verbosity,
                                      * cell_vol[cell_id]
                                      * onedpi;
       } else {
-        cs_real_t *cpro_t4m = cs_field_by_name_try("temperature_4")->val;
+        cs_real_t *cpro_t4m = cs_field_by_name("temperature_4")->val;
 
         for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
           rhs[cell_id] =  c_stefan * ckg[cell_id]
@@ -1890,7 +1890,7 @@ cs_rad_transfer_solve(int               verbosity,
     /* Data for computation of divergence */
 
     cs_halo_type_t halo_type = CS_HALO_STANDARD;
-    cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+    cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
     cs_gradient_type_by_imrgra(cs_glob_space_disc->imrgra,
                                &gradient_type,

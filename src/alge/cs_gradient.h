@@ -53,11 +53,10 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_GRADIENT_ITER,              /*!< Iterative */
+  CS_GRADIENT_GREEN_ITER,        /*!< Iterative */
   CS_GRADIENT_LSQ,               /*!< Least-squares */
-  CS_GRADIENT_LSQ_ITER,          /*!< conservative gradient reconstructed
-                                   with least squares initialization */
-  CS_GRADIENT_ITER_OLD           /*!< Iterative (old) */
+  CS_GRADIENT_GREEN_LSQ          /*!< Green-Gauss reconstruction with
+                                   least squares gradient face values */
 
 } cs_gradient_type_t;
 

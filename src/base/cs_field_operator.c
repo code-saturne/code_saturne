@@ -533,7 +533,7 @@ cs_field_gradient_scalar(const cs_field_t          *f,
                          cs_real_3_t      *restrict grad)
 {
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   static int key_cal_opt_id = -1;
   if (key_cal_opt_id < 0)
@@ -630,7 +630,7 @@ cs_field_gradient_potential(const cs_field_t          *f,
                             cs_real_3_t      *restrict grad)
 {
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   static int key_cal_opt_id = -1;
   if (key_cal_opt_id < 0)
@@ -716,7 +716,7 @@ cs_field_gradient_vector(const cs_field_t          *f,
                          cs_real_33_t     *restrict grad)
 {
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   static int key_cal_opt_id = -1;
   if (key_cal_opt_id < 0)
@@ -794,7 +794,7 @@ cs_field_gradient_tensor(const cs_field_t          *f,
                          cs_real_63_t     *restrict grad)
 {
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   static int key_cal_opt_id = -1;
   if (key_cal_opt_id < 0)

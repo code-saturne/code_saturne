@@ -106,7 +106,7 @@ diverv (cs_real_t    *diverg,
    * ====================================================================*/
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   cs_gradient_type_by_imrgra(cs_glob_space_disc->imrgra,
                              &gradient_type,
@@ -445,7 +445,7 @@ cs_lagr_poisson(const int  itypfb[])
     coefbp[ifac] = 0.0;
   }
 
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
 
   cs_gradient_type_by_imrgra(cs_glob_space_disc->imrgra,

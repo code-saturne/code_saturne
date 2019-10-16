@@ -174,7 +174,7 @@ cs_lagr_gradients(int            time_id,
   int tr_dim = 0;
   cs_lnum_t inc = 1;
   cs_lnum_t iccocg = 1;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_var_cal_opt_t var_cal_opt;
 

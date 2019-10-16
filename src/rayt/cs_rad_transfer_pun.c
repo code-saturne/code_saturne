@@ -272,7 +272,7 @@ cs_rad_transfer_pun(int              iband,
   int nswrgp = 100;
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   cs_gradient_type_by_imrgra(vcopt.imrgra,
                              &gradient_type,

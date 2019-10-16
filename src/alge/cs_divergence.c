@@ -461,7 +461,7 @@ cs_mass_flux(const cs_mesh_t          *m,
   /* Choose gradient type */
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   cs_gradient_type_by_imrgra(imrgra,
                              &gradient_type,
@@ -472,7 +472,7 @@ cs_mass_flux(const cs_mesh_t          *m,
     snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
   }
   else {
-    strcpy(var_name, "Work array"); var_name[31] = '\0';
+    strcpy(var_name, "Work array (momentum)"); var_name[31] = '\0';
   }
 
   /* ---> Momentum computation */
@@ -601,19 +601,21 @@ cs_mass_flux(const cs_mesh_t          *m,
           f_momentum[face_id][isou] = romb[face_id]*vel[cell_id][isou];
         }
       }
-      /* With porosity */
-    } else if (porosi != NULL && porosf == NULL) {
+    } /* With porosity */
+    else if (porosi != NULL && porosf == NULL) {
 #     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
       for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
         cs_lnum_t cell_id = b_face_cells[face_id];
         for (int isou = 0; isou < 3; isou++) {
           coefaq[face_id][isou] = romb[face_id]
                                  *coefav[face_id][isou]*porosi[cell_id];
-          f_momentum[face_id][isou] = romb[face_id]*vel[cell_id][isou]*porosi[cell_id];
+          f_momentum[face_id][isou] =  romb[face_id]*vel[cell_id][isou]
+                                      *porosi[cell_id];
         }
       }
-      /* With anisotropic porosity */
-    } else if (porosi != NULL && porosf != NULL) {
+
+    } /* With anisotropic porosity */
+    else if (porosi != NULL && porosf != NULL) {
 #     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
       for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
         cs_lnum_t cell_id = b_face_cells[face_id];
@@ -657,8 +659,8 @@ cs_mass_flux(const cs_mesh_t          *m,
           f_momentum[face_id][isou] = vel[cell_id][isou];
         }
       }
-      /* With porosity */
-    } else if (porosi != NULL && porosf == NULL) {
+    } /* With porosity */
+    else if (porosi != NULL && porosf == NULL) {
 #     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
       for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
         cs_lnum_t cell_id = b_face_cells[face_id];
@@ -667,8 +669,8 @@ cs_mass_flux(const cs_mesh_t          *m,
           f_momentum[face_id][isou] = vel[cell_id][isou]*porosi[cell_id];
         }
       }
-      /* With anisotropic porosity */
-    } else if (porosi != NULL && porosf != NULL) {
+    } /* With anisotropic porosity */
+    else if (porosi != NULL && porosf != NULL) {
 #     pragma omp parallel for if(m->n_b_faces > CS_THR_MIN)
       for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++) {
         cs_lnum_t cell_id = b_face_cells[face_id];
@@ -753,7 +755,7 @@ cs_mass_flux(const cs_mesh_t          *m,
   }
 
   /*==========================================================================
-    4. Compute mass flux with reconstruction technics if the mesh is
+    4. Compute mass flux with reconstruction method if the mesh is
        non orthogonal
     ==========================================================================*/
 
@@ -761,8 +763,7 @@ cs_mass_flux(const cs_mesh_t          *m,
 
     BFT_MALLOC(grdqdm, n_cells_ext, cs_real_33_t);
 
-
-    /* Computation of qdm gradient
+    /* Computation of momentum gradient
        (vectorial gradient, the periodicity has already been treated) */
 
     cs_gradient_vector(var_name,
@@ -995,7 +996,7 @@ cs_tensor_face_flux(const cs_mesh_t          *m,
   /* Choose gradient type */
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   cs_gradient_type_by_imrgra(imrgra,
                              &gradient_type,
@@ -1276,19 +1277,19 @@ cs_tensor_face_flux(const cs_mesh_t          *m,
     /* Computation of c_mass_var gradient
        (tensor gradient, the periodicity has already been treated) */
 
-    cs_gradient_tensor(var_name,
-                       gradient_type,
-                       halo_type,
-                       inc,
-                       nswrgu,
-                       iwarnu,
-                       imligu,
-                       epsrgu,
-                       climgu,
-                       coefaq,
-                       coefbv,
-                       c_mass_var,
-                       c_grad_mvar);
+    cs_gradient_tensor_synced_input(var_name,
+                                    gradient_type,
+                                    halo_type,
+                                    inc,
+                                    nswrgu,
+                                    iwarnu,
+                                    imligu,
+                                    epsrgu,
+                                    climgu,
+                                    (const cs_real_6_t *)coefaq,
+                                    (const cs_real_66_t *)coefbv,
+                                    (const cs_real_6_t *)c_mass_var,
+                                    c_grad_mvar);
 
     /* Mass flow through interior faces */
 

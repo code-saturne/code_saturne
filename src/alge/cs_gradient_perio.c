@@ -335,7 +335,7 @@ void CS_PROCF (perinr, PERINR)
   cs_field_t  *f = NULL;
 
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_ITER;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
