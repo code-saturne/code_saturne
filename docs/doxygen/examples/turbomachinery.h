@@ -69,28 +69,22 @@
   \section tbm_data_setting Data setting
 
   The data setting is made through the GUI or through the
-  cs_user_turbomachinery.c source file. In that case, the type of
-  turbomachinery model is first set in \ref cs_user_turbomachinery subroutine:
-
-  - CS_TURBOMACHINERY_NONE       -> No turbomachinery modelling
-  - CS_TURBOMACHINERY_FROZEN     -> Frozen rotor model
-  - CS_TURBOMACHINERY_TRANSIENT  -> Full transient simulation
-
-  as in the following example:
+  cs_user_turbomachinery.c source file. Through the latter, the type of
+  turbomachinery model can be first set in \ref cs_user_turbomachinery function:
 
   \snippet cs_user_turbomachinery.c user_tbm_set_model
 
-  Then, the rotor region and the rotor/stator interface boundaries must be
-  specified in the \ref cs_user_turbomachinery_rotor subroutine. The rotor
-  region is first specified, like in this example:
+  Then, the rotor region and the rotor/stator interface boundaries has to be
+  specified in \ref cs_user_turbomachinery_rotor function. The rotor
+  region is first specified, as follows:
 
   \snippet cs_user_turbomachinery.c user_tbm_set_rotor
 
   In this example, rotation_velocity refers to the rotation angular velocity
-  of the rotor, in rad/s. The rotation axis might be normilized (elsewhere it
-  is normalized afterward by the code). Note that from the code point of view,
-  adding a rotor results in the addition of an internal \ref cs_rotation_t
-  structure in the global corresponding list (see \ref tbm_user_basic_op
+  of the rotor, in rad/s. The rotation axis can be normalized (it is eventually
+  normalized afterwards by the code). Note that if a rotor is added,
+  the code appends an instance of \ref cs_rotation_t
+  structure in the global list of rotors (see \ref tbm_user_basic_op
   section in the following).
 
   Then the rotor/stator interface boundary is specified. This step is mandatory
@@ -99,6 +93,12 @@
   is made of boundary faces (see \ref tbm_mesh_interface subsection above).
 
   \snippet cs_user_turbomachinery.c user_tbm_set_interface
+
+  The rotation velocity can be modified during the calculation. The following example
+  shows how to set a linearly increasing rotation velocity in
+  \ref cs_user_turbomachinery_set_rotation_velocity function:
+
+  \snippet cs_user_turbomachinery.c user_tbm_set_linear_rotation_velocity
 
   \section tbm_user_bpg User recomandations
 
