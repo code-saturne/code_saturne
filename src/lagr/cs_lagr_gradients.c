@@ -116,13 +116,14 @@ cs_lagr_gradients(int            time_id,
 
   /* Use pressure gradient of NEPTUNE_CFD if needed */
   if (cs_field_by_name_try("velocity_1") != NULL) {
-    cs_real_t *cpro_pgradlagr = cs_field_by_name_try("lagr_pressure_gradient")->val;
+    cs_real_t *cpro_pgradlagr = cs_field_by_name("lagr_pressure_gradient")->val;
 
     for (cs_lnum_t iel = 0; iel < cs_glob_mesh->n_cells; iel++)
       for (cs_lnum_t id = 0; id < 3; id++)
         grad_pr[iel][id] = cpro_pgradlagr[3*iel + id];
 
-    cs_real_33_t *cpro_vgradlagr = cs_field_by_name_try("lagr_velocity_gradient")->val;
+    cs_real_33_t *cpro_vgradlagr
+      = cs_field_by_name("lagr_velocity_gradient")->val;
 
     if (cpro_vgradlagr != NULL) {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {

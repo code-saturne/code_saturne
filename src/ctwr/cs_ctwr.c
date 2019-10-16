@@ -1540,7 +1540,7 @@ cs_ctwr_phyvar_update(cs_real_t  rho0,
   cs_real_t *t_h = (cs_real_t *)CS_F_(t)->val;        /* humid air temperature */
   cs_real_t *t_h_a = (cs_real_t *)CS_F_(t)->val_pre;  /* humid air temperature */
   cs_real_t *h_h = (cs_real_t *)CS_F_(h)->val;        /* humid air enthalpy */
-  cs_real_t *therm_diff_h = cs_field_by_name_try("thermal_conductivity")->val;
+  cs_real_t *therm_diff_h = cs_field_by_name("thermal_conductivity")->val;
   cs_real_t *cpro_x1 = cs_field_by_name("x_c")->val;
   cs_real_t *bpro_x1 = cs_field_by_name("b_x_c")->val;
   cs_real_t *y_w = (cs_real_t *)CS_F_(ym_w)->val;     /* Water mass fraction

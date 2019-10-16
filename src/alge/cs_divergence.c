@@ -1671,8 +1671,8 @@ cs_ext_force_flux(const cs_mesh_t          *m,
   if (f_i_poro_duq_0 != NULL) {
     is_p = 1;
     i_poro_duq_0 = f_i_poro_duq_0->val;
-    i_poro_duq_1 = cs_field_by_name_try("i_poro_duq_1")->val;
-    b_poro_duq = cs_field_by_name_try("b_poro_duq")->val;
+    i_poro_duq_1 = cs_field_by_name("i_poro_duq_1")->val;
+    b_poro_duq = cs_field_by_name("b_poro_duq")->val;
   } else {
     i_poro_duq_0 = &_f_ext;
     i_poro_duq_1 = &_f_ext;
