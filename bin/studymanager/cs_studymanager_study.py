@@ -1115,15 +1115,15 @@ class Studies(object):
             init_xml_file_with_study(smgr, studyp)
 
         elif options.create_xml and not is_study:
-            print("Can not create XML file of parameter:\n" \
-                  + "current directory is not a study.")
-            sys.exit(1)
+            msg =   "Can not create XML file of parameter:\n" \
+                  + "current directory is apparently not a study (no MESH directory).\n"
+            sys.exit(msg)
 
         if filename == None:
-            print("A file of parameters must be specified or created " \
-                  "for studymanager to run.\n"
-                  "See help message and use '--file' or '--create-xml' option.")
-            sys.exit(1)
+            msg =    "A file of parameters must be specified or created " \
+                   + "for studymanager to run.\n" \
+                   + "See help message and use '--file' or '--create-xml' option.\n"
+            sys.exit(msg)
 
         # create a first xml parser only for
         #   the repository verification and
@@ -1132,8 +1132,8 @@ class Studies(object):
         if os.path.isfile(filename):
             self.__parser = Parser(filename)
         else:
-            print("Specified XML parameter file for studymanager does not exist.")
-            sys.exit(1)
+            msg = "Specified XML parameter file for studymanager does not exist.\n"
+            sys.exit(msg)
 
         # call smgr xml backward compatibility
 
@@ -1143,7 +1143,7 @@ class Studies(object):
 
         # minimal modification of xml for now
         smgr_xml_init(smgr).initialize(reinit_indices = False)
-        smgr.xmlSaveDocument(prettyString=False)
+        smgr.xmlSaveDocument()
 
         self.__xmlupdate = options.update_xml
 
@@ -1163,9 +1163,10 @@ class Studies(object):
                 self.__parser.setRepository(os.path.join(studyp,".."))
                 self.__repo = self.__parser.getRepository()
             else:
-                msg="Parser.getRepository() >> No repository set.\n"
-                msg+="Add a path to the *.xml file or use the command "
-                msg+="line argument.\n"
+                msg =   "Can not set a default repository directory:\n" \
+                      + "current directory is apparently not a study (no MESH directory).\n" \
+                      + "Add a repository path to the parameter file or use the command " \
+                      + "line option (--repo=..).\n"
                 sys.exit(msg)
 
         # set destination
@@ -1183,10 +1184,11 @@ class Studies(object):
                                                               "../RUN_"+studyd))
                     self.__dest = self.__parser.getDestination()
                 else:
-                    msg="Parser.getDestination() >> No destination set.\n"
-                    msg+="Add a path to the *.xml file or use the command "
-                    msg+="line argument.\n"
-                    sys.exit(msg)
+                  msg =   "Can not set a default destination directory:\n" \
+                        + "current directory is apparently not a study (no MESH directory).\n" \
+                        + "Add a destination path to the parameter file or use the command " \
+                        + "line option (--dest=..).\n"
+                  sys.exit(msg)
 
         # create if necessary the destination directory
 
