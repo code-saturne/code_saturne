@@ -7,10 +7,18 @@ User changes:
   * also add possibility for mapping mean velocity gradient to turbulent
     dispersion, for use with multiple fluid phases.
 
+- Minor Documentation (Doxygen) and user example improvements.
+
 Bug fixes:
 
 - GUI: fix loss of "--initialize-only" runcase setting after first run.
 
+- GUI: fix formulae using time step or time (generated code did not compile).
+
+- Fix incorrect gradient option logging for gradient options other than
+  simple iterative or least squares (shift in indicated type).
+
+- Studymanager: fix reading of error bars in drawing.
 
 Release 6.0.0 (September 26 2019)
 ---------------------------------
