@@ -331,8 +331,8 @@ class FluidCharacteristicsModel(Variables, Model):
         else:
            default['reference_temperature'] = 293.15
 
-        default['fuel_temperature']      = 436.
-        default['oxydant_temperature']   = 353.
+        default['reference_fuel_temperature']      = 436.
+        default['reference_oxydant_temperature']   = 353.
         # molar mass for dry air
         default['reference_molar_mass'] = 28.966e-3
 

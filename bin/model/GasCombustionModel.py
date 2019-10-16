@@ -69,8 +69,8 @@ class GasCombustionModel(Variables, Model):
         self.node_coal   = nModels.xmlInitNode('solid_fuels',       'model')
         self.node_joule  = nModels.xmlInitNode('joule_effect',      'model')
         self.node_atmo   = nModels.xmlInitNode('atmospheric_flows', 'model')
-        self.node_models = self.case.xmlGetNode('thermophysical_models')
-        self.node_reference = self.node_models.xmlInitNode('reference_values')
+        self.node_prop   = self.case.xmlGetNode('physical_properties')
+        self.node_fluid  = self.node_prop.xmlInitNode('fluid_properties')
 
         self.gasCombustionModel = ('off', 'ebu', 'd3p','lwp')
         self.d3p_list = ("adiabatic", "extended")
@@ -162,8 +162,8 @@ class GasCombustionModel(Variables, Model):
                         Boundary("inlet", zone.getLabel(), self.case).deleteGas()
 
         if model != 'd3p':
-            self.node_reference.xmlRemoveChild('oxydant_temperature')
-            self.node_reference.xmlRemoveChild('fuel_temperature')
+            self.node_fluid.xmlRemoveChild('reference_oxydant_temperature')
+            self.node_fluid.xmlRemoveChild('reference_fuel_temperature')
 
         self.createModel()
 

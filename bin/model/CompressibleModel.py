@@ -55,7 +55,7 @@ from code_saturne.model.ThermalScalarModel import ThermalScalarModel
 class CompressibleModel(Variables, Model):
     """
     Active de compressible model
-    There is three different thermodynamic law
+    There are three thermodynamic laws
     """
     def __init__(self, case):
         """
@@ -68,7 +68,6 @@ class CompressibleModel(Variables, Model):
         self.node_np     = self.case.xmlInitNode('numerical_parameters')
         self.node_prop   = self.case.xmlGetNode('physical_properties')
         self.node_fluid  = self.node_prop.xmlInitNode('fluid_properties')
-        self.node_ref    = self.node_thermo.xmlInitNode('reference_values')
 
         self.comp_choice = ['off', 'constant_gamma', 'variable_gamma', 'van_der_waals']
         self.var_list   = ['temperature']
@@ -103,8 +102,8 @@ class CompressibleModel(Variables, Model):
                 self.__removeVariablesAndProperties()
                 self.node_np.xmlRemoveChild('hydrostatic_equilibrium')
                 self.node_fluid.xmlRemoveChild('property', name = 'volume_viscosity')
-                self.node_ref.xmlRemoveChild('mass_molar')
-                self.node_ref.xmlRemoveChild('temperature')
+                self.node_fluid.xmlRemoveChild('reference_molar_mass')
+                self.node_fluid.xmlRemoveChild('reference_temperature')
                 if ThermalScalarModel(self.case).getThermalScalarModel() == 'total_energy':
                     ThermalScalarModel(self.case).setThermalModel('off')
             else :

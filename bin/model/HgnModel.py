@@ -62,7 +62,6 @@ class HgnModel(Variables, Model):
         self.node_np     = self.case.xmlInitNode('numerical_parameters')
         self.node_prop   = self.case.xmlGetNode('physical_properties')
         self.node_fluid  = self.node_prop.xmlInitNode('fluid_properties')
-        self.node_ref    = self.node_thermo.xmlInitNode('reference_values')
 
         self.hgn_choice = ['off', 'no_mass_transfer', 'merkle_model']
         self.var_list   = ['void_fraction']
