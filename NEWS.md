@@ -7,6 +7,11 @@ User changes:
   * also add possibility for mapping mean velocity gradient to turbulent
     dispersion, for use with multiple fluid phases.
 
+Bug fixes:
+
+- GUI: fix loss of "--initialize-only" runcase setting after first run.
+
+
 Release 6.0.0 (September 26 2019)
 ---------------------------------
 
