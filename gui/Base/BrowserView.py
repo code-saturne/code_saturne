@@ -520,7 +520,6 @@ Postprocessing
     Profiles
     Balance by zone
 Performance settings
-OpenTurns study
 """
         return tree
 
@@ -813,8 +812,6 @@ OpenTurns study
         self.setRowClose(self.tr('Profiles'))
         self.setRowClose(self.tr('Balance by zone'))
 
-        self.setRowClose(self.tr('OpenTurns study'))
-
         self.__hideRow()
 
 
@@ -1077,7 +1074,6 @@ OpenTurns study
 
         self.setRowShow(self.tr('Performance tuning'), True)
         self.setRowShow(self.tr('Prepare batch calculation'), True)
-        self.setRowShow(self.tr('OpenTurns study'), case['salome'])
 
         # End of test of physical module
 
