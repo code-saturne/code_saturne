@@ -532,7 +532,7 @@ cs_lagr_particles_set_flag(const cs_lagr_particle_set_t  *particle_set,
                             + particle_set->p_am->extents*particle_id
                             + particle_set->p_am->displ[0][CS_LAGR_P_FLAG]));
 
-  flag = flag & mask;
+  flag = flag | mask;
 
   *((cs_lnum_t *)(  particle_set->p_buffer
                   + particle_set->p_am->extents*particle_id
