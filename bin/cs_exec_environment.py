@@ -170,8 +170,6 @@ def update_command_no_value(args, options, present):
     syntax of the options tuple will be used.
     """
 
-    i = -1
-
     # Update first occurence
 
     count = 0
@@ -180,7 +178,7 @@ def update_command_no_value(args, options, present):
         target = 1
 
     for opt in options:
-        j = i
+        j = 0
         while j < len(args):
             if args[j] == opt:
                 count += 1
