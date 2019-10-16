@@ -343,7 +343,7 @@ _class_name(const char  *name,
 
   size_t l0 = strlen(_class_ext);
 
-  snprintf(class_name, 63 - l0, name);
+  snprintf(class_name, 63 - l0, "%s", name);
   class_name[63-l0] = '\0';
   strcat(class_name, _class_ext);
   class_name[63] = '\0';
