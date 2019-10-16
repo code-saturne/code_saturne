@@ -166,18 +166,20 @@ cs_user_turbomachinery_rotor(void)
 void
 cs_user_turbomachinery_set_rotation_velocity(void)
 {
+  /*! [user_tbm_set_linear_rotation_velocity] */
+  {
+    /* Linearly increase the rotation velocity from 0 to 1470 rd/min in 0.2 s */
+    /* ---------------------------------------------------------------------- */
 
-  /* Linearly increase the rotation velocity from 0 to 1470 rd/min in 0.2 s */
-  /* ---------------------------------------------------------------------- */
+    int rotor_num = 1;
+    double two_pi = 2. * acos(-1.);
+    double rotation_velocity = -1470. * two_pi / 60.;
+    double rotor_vel = rotation_velocity * CS_MIN(cs_glob_time_step->t_cur / 0.2, 1.);
 
-  int rotor_num = 1;
-  double two_pi = 2. * acos(-1.);
-  double rotation_velocity = -1470. * two_pi / 60.;
-  double rotor_vel = rotation_velocity * CS_MIN(cs_glob_time_step->t_cur / 0.2, 1.);
-
-  cs_turbomachinery_set_rotation_velocity(rotor_num,
-                                          rotor_vel);
-
+    cs_turbomachinery_set_rotation_velocity(rotor_num,
+                                            rotor_vel);
+  }
+  /*! [user_tbm_set_linear_rotation_velocity] */
 }
 
 /*----------------------------------------------------------------------------*/
