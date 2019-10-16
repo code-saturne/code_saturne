@@ -265,14 +265,14 @@ class Case(object):
                     case.xmlSaveDocument()
 
 
-        # 2) Create RESU and SRC directory if needed
+        # 2) Recreate missing directories which are compulsory
+        # git removes these usually empty directories
         if not xmlonly:
-            r = os.path.join(self.__repo, subdir, "RESU")
-            if not os.path.isdir(r):
-                os.makedirs(r)
-            r = os.path.join(self.__repo, subdir, "SRC")
-            if not os.path.isdir(r):
-                os.makedirs(r)
+            git_rm_dirs = ["RESU", "SRC"]
+            for gd in git_rm_dirs:
+                r = os.path.join(self.__repo, subdir, gd)
+                if not os.path.isdir(r):
+                    os.makedirs(r)
 
         # 3) Update the GUI script from the Repository
         data_subdir = os.path.join(self.__repo, subdir, "DATA")
@@ -372,11 +372,16 @@ class Case(object):
         for d in cdirs:
             self.__update_domain(d, xmlonly)
 
-        # Update the runcase script from the Repository in case of coupling
+        # Update the runcase script from the repository in case of coupling
 
         if self.subdomains:
             case_dir = os.path.join(self.__repo, self.label)
             self.update_runcase_path(case_dir, None, xmlonly)
+            # recreate possibly missing but compulsory directory
+            r = os.path.join(case_dir, "RESU_COUPLING")
+            if not os.path.isdir(r):
+                os.makedirs(r)
+
 
     #---------------------------------------------------------------------------
 

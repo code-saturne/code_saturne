@@ -20,7 +20,8 @@ Bug fixes:
 - Fix incorrect gradient option logging for gradient options other than
   simple iterative or least squares (shift in indicated type).
 
-- Studymanager: fix reading of error bars in drawing.
+- Studymanager: fix reading of error bars in drawing and code/code coupling
+  runs (recreate RUN_COUPLING directory at update stage if not present).
 
 Release 6.0.0 (September 26 2019)
 ---------------------------------
