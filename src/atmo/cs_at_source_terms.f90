@@ -317,14 +317,7 @@ do iel = 1, ncel
 
   cpro_momst(1,iel) = - dpdtx_ent / dt(iel)
   cpro_momst(2,iel) = - dpdty_ent / dt(iel)
-  !FIXME not ok
-  if (iz1.ne.iz2.and..false.) then
-    cpro_momst(3,iel) = &
-      + (dpdtx(iz2) - dpdtx(iz1)) / (zdmet(iz2) - zdmet(iz1)) * xent / dt(iel) &
-      + (dpdty(iz2) - dpdty(iz1)) / (zdmet(iz2) - zdmet(iz1)) * yent / dt(iel)
-  else
-    cpro_momst(3,iel) = 0.d0
-  endif
+  cpro_momst(3,iel) = 0.d0 !FIXME not ok
 
   crvexp(1,iel) = crvexp(1,iel) + cpro_momst(1,iel) * cell_f_vol(iel)
   crvexp(2,iel) = crvexp(2,iel) + cpro_momst(2,iel) * cell_f_vol(iel)
