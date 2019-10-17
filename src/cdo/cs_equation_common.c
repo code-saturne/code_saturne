@@ -714,17 +714,16 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
                   eqp->name, code, sinfo.n_it, sinfo.res_norm, sinfo.rhs_norm,
                   nnz);
 
-  if (cs_glob_n_ranks > 1) /* Parallel mode */
+  if (cs_glob_n_ranks > 1) { /* Parallel mode */
     cs_range_set_scatter(rset,
                          CS_REAL_TYPE, 1, /* type and stride */
                          xsol, x);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_COMMON_DBG > 1
-  if (cs_glob_n_ranks > 1) /* Parallel mode */
     cs_range_set_scatter(rset,
                          CS_REAL_TYPE, 1, /* type and stride */
                          b, b);
+  }
 
+#if defined(DEBUG) && !defined(NDEBUG) && CS_EQUATION_COMMON_DBG > 1
   cs_dbg_fprintf_system(eqp->name, cs_shared_time_step->nt_cur,
                         slesp.verbosity,
                         x, b, n_scatter_dofs);
