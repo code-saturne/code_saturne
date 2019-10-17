@@ -5276,6 +5276,8 @@ cs_matrix_structure_destroy(cs_matrix_structure_t  **ms)
 cs_matrix_t *
 cs_matrix_create(const cs_matrix_structure_t  *ms)
 {
+  assert(ms != NULL); /* Sanity check */
+
   cs_matrix_t *m = _matrix_create(ms->type);
 
   /* Map shared structure */
