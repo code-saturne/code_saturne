@@ -3980,10 +3980,6 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
                             const cs_real_t     *restrict c_weight,
                             cs_real_33_t        *restrict grad)
 {
-  int g_id, t_id;
-  cs_lnum_t f_id;
-  cs_real_t pond;
-
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
@@ -4021,27 +4017,27 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
 
 # pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
-    for (int i = 0; i < 3; i++) {
-      for (int j = 0; j < 3; j++)
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++)
         grad[c_id][i][j] = 0.0;
     }
   }
 
   /* Interior faces contribution */
 
-  for (g_id = 0; g_id < n_i_groups; g_id++) {
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
-#   pragma omp parallel for private(f_id, pond)
-    for (t_id = 0; t_id < n_i_threads; t_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
-      for (f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+      for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
            f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
            f_id++) {
 
         cs_lnum_t c_id1 = i_face_cells[f_id][0];
         cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
-        pond = weight[f_id];
+        cs_real_t pond = weight[f_id];
 
         cs_real_t ktpond = (c_weight == NULL) ?
           pond :                    // no cell weighting
@@ -4080,12 +4076,12 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
 
   /* Boundary face treatment */
 
-  for (g_id = 0; g_id < n_b_groups; g_id++) {
+  for (int g_id = 0; g_id < n_b_groups; g_id++) {
 
-#   pragma omp parallel for private(f_id)
-    for (t_id = 0; t_id < n_b_threads; t_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
 
-      for (f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+      for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
            f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
            f_id++) {
 
@@ -4093,10 +4089,6 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
 
           cs_lnum_t c_id = b_face_cells[f_id];
 
-          /*
-             Remark: for the cell \f$ \celli \f$ we remove
-                     \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
-           */
           for (int i = 0; i < 3; i++) {
             cs_real_t pfac = inc*coefav[f_id][i];
 
@@ -4150,7 +4142,11 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
  *   m              <-- pointer to associated mesh structure
  *   fvq            <-- pointer to associated finite volume quantities
  *   cpl            <-- structure associated with internal coupling, or NULL
+ *   inc            <-- if 0, solve on increment; 1 otherwise
+ *   coefav         <-- B.C. coefficients for boundary face normals
  *   coefbv         <-- B.C. coefficients for boundary face normals
+ *   pvar           <-- variable
+ *   c_weight       <-- weighted gradient coefficient variable
  *   r_grad         --> gradient used for reconstruction
  *   grad           --> gradient of pvar (du_i/dx_j : grad[][i][j])
  *----------------------------------------------------------------------------*/
@@ -4160,12 +4156,14 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
                              const cs_mesh_quantities_t   *fvq,
                              const cs_internal_coupling_t *cpl,
                              cs_halo_type_t                halo_type,
+                             int                           inc,
+                             const cs_real_3_t   *restrict coefav,
                              const cs_real_33_t  *restrict coefbv,
+                             const cs_real_3_t   *restrict pvar,
+                             const cs_real_t     *restrict c_weight,
                              cs_real_33_t        *restrict r_grad,
                              cs_real_33_t        *restrict grad)
 {
-  int g_id, t_id;
-
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const int n_i_groups = m->i_face_numbering->n_groups;
@@ -4183,6 +4181,7 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
   const int *restrict c_disable_flag = fvq->c_disable_flag;
   int has_dc = fvq->has_disable_flag; /* Has cells disabled? */
 
+  const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
     cell_f_vol = fvq->cell_vol;
@@ -4204,20 +4203,22 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
   /* Initialize gradient */
   /*---------------------*/
 
+  /* Initialization */
+
 # pragma omp parallel for
   for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
     for (cs_lnum_t i = 0; i < 3; i++) {
       for (cs_lnum_t j = 0; j < 3; j++)
-        grad[c_id][i][j] = grad[c_id][i][j] * cell_f_vol[c_id];
+        grad[c_id][i][j] = 0.0;
     }
   }
 
   /* Interior faces contribution */
 
-  for (g_id = 0; g_id < n_i_groups; g_id++) {
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
 
 #   pragma omp parallel for
-    for (t_id = 0; t_id < n_i_threads; t_id++) {
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
 
       for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
            f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
@@ -4226,21 +4227,41 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
         cs_lnum_t c_id1 = i_face_cells[f_id][0];
         cs_lnum_t c_id2 = i_face_cells[f_id][1];
 
-        for (int i = 0; i < 3; i++) {
+        cs_real_t pond = weight[f_id];
+
+        cs_real_t ktpond = (c_weight == NULL) ?
+          pond :                    // no cell weighting
+          pond * c_weight[c_id1] // cell weighting active
+            / (      pond * c_weight[c_id1]
+              + (1.0-pond)* c_weight[c_id2]);
+
+        /*
+           Remark: \f$ \varia_\face = \alpha_\ij \varia_\celli
+                                    + (1-\alpha_\ij) \varia_\cellj\f$
+                   but for the cell \f$ \celli \f$ we remove
+                   \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+                   and for the cell \f$ \cellj \f$ we remove
+                   \f$ \varia_\cellj \sum_\face \vect{S}_\face = \vect{0} \f$
+        */
+
+        for (cs_lnum_t i = 0; i < 3; i++) {
+
+          cs_real_t pfaci = (1.0-ktpond) * (pvar[c_id2][i] - pvar[c_id1][i]);
+          cs_real_t pfacj = - ktpond * (pvar[c_id2][i] - pvar[c_id1][i]);
+
           /* Reconstruction part */
-          cs_real_t
-          rfac = 0.5 *
-              (  dofij[f_id][0]*(  r_grad[c_id1][i][0]
-                                 + r_grad[c_id2][i][0])
-               + dofij[f_id][1]*(  r_grad[c_id1][i][1]
-                                 + r_grad[c_id2][i][1])
-               + dofij[f_id][2]*(  r_grad[c_id1][i][2]
-                                 + r_grad[c_id2][i][2]));
+          cs_real_t rfac = 0.5 * (  dofij[f_id][0]*(  r_grad[c_id1][i][0]
+                                                    + r_grad[c_id2][i][0])
+                                  + dofij[f_id][1]*(  r_grad[c_id1][i][1]
+                                                     + r_grad[c_id2][i][1])
+                                  + dofij[f_id][2]*(  r_grad[c_id1][i][2]
+                                                    + r_grad[c_id2][i][2]));
 
           for (int j = 0; j < 3; j++) {
-            grad[c_id1][i][j] += rfac * i_f_face_normal[f_id][j];
-            grad[c_id2][i][j] -= rfac * i_f_face_normal[f_id][j];
+            grad[c_id1][i][j] += (pfaci + rfac) * i_f_face_normal[f_id][j];
+            grad[c_id2][i][j] -= (pfacj + rfac) * i_f_face_normal[f_id][j];
           }
+
         }
 
       } /* End of loop on faces */
@@ -4250,16 +4271,17 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
   } /* End of loop on thread groups */
 
   /* Contribution from coupled faces */
-  if (cpl != NULL)
-    cs_internal_coupling_reconstruct_vector_gradient
-      (cpl, r_grad, grad);
+  if (cpl != NULL) {
+    cs_internal_coupling_initialize_vector_gradient(cpl, c_weight, pvar, grad);
+    cs_internal_coupling_reconstruct_vector_gradient(cpl, r_grad, grad);
+  }
 
   /* Boundary face treatment */
 
-  for (g_id = 0; g_id < n_b_groups; g_id++) {
+  for (int g_id = 0; g_id < n_b_groups; g_id++) {
 
 #   pragma omp parallel for
-    for (t_id = 0; t_id < n_b_threads; t_id++) {
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
 
       for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
            f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
@@ -4268,18 +4290,32 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
         if (cpl == NULL || !coupled_faces[f_id]) {
           cs_lnum_t c_id = b_face_cells[f_id];
 
-          /* Reconstruction part */
-          for (int i = 0; i < 3; i++) {
+          /*
+             Remark: for the cell \f$ \celli \f$ we remove
+                     \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+           */
+
+          for (cs_lnum_t i = 0; i < 3; i++) {
+
+            cs_real_t pfac = inc*coefav[f_id][i];
+
+            for (int k = 0; k < 3; k++)
+              pfac += coefbv[f_id][i][k] * pvar[c_id][k];
+
+            pfac -= pvar[c_id][i];
+
+            /* Reconstruction part */
+
             cs_real_t rfac = 0.;
             for (int k = 0; k < 3; k++) {
-              cs_real_t vecfac = grad[c_id][k][0] * diipb[f_id][0]
-                               + grad[c_id][k][1] * diipb[f_id][1]
-                               + grad[c_id][k][2] * diipb[f_id][2];
+              cs_real_t vecfac =   grad[c_id][k][0] * diipb[f_id][0]
+                                 + grad[c_id][k][1] * diipb[f_id][1]
+                                 + grad[c_id][k][2] * diipb[f_id][2];
               rfac += coefbv[f_id][i][k] * vecfac;
             }
 
             for (int j = 0; j < 3; j++)
-              grad[c_id][i][j] += rfac * b_f_face_normal[f_id][j];
+              grad[c_id][i][j] += (pfac + rfac) * b_f_face_normal[f_id][j];
           }
         }
 
@@ -4304,7 +4340,7 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
     }
 
     if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION) {
-      cs_real_3_t gradpa;
+      cs_real_t gradpa[3];
       for (int i = 0; i < 3; i++) {
         for (int j = 0; j < 3; j++) {
           gradpa[j] = grad[c_id][i][j];
@@ -6473,22 +6509,15 @@ _gradient_vector(const char                     *var_name,
                                 (const cs_real_3_t *)var,
                                 r_gradv);
 
-      _initialize_vector_gradient(mesh,
-                                  fvq,
-                                  cpl,
-                                  halo_type,
-                                  inc,
-                                  bc_coeff_a,
-                                  bc_coeff_b,
-                                  var,
-                                  c_weight,
-                                  grad);
-
       _reconstruct_vector_gradient(mesh,
                                    fvq,
                                    cpl,
                                    halo_type,
+                                   inc,
+                                   bc_coeff_a,
                                    bc_coeff_b,
+                                   (const cs_real_3_t *)var,
+                                   c_weight,
                                    r_gradv,
                                    grad);
 
