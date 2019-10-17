@@ -933,10 +933,12 @@ _set_key(const char            *label,
     else if (strcmp(keyval, "mumps") == 0) {
       eqp->sles_param.solver = CS_PARAM_ITSOL_MUMPS;
       eqp->sles_param.precond = CS_PARAM_PRECOND_NONE;
+      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
     }
     else if (strcmp(keyval, "mumps_ldlt") == 0) {
       eqp->sles_param.solver = CS_PARAM_ITSOL_MUMPS_LDLT;
       eqp->sles_param.precond = CS_PARAM_PRECOND_NONE;
+      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
     }
     else {
       const char *_val = keyval;
