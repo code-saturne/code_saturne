@@ -529,6 +529,12 @@
 
   \snippet cs_user_parameters-time_moments.c tmom_u
 
+  In the next example, we define the variance of the vector velocity.
+  All components are used again (component -1 means all components),
+  so the moment is a tensor.
+
+  \snippet cs_user_parameters-time_moments.c tmom_variance_u
+
   \subsection cs_user_parameters_h_example_2 Example 2
 
   In the next example, we multiply the expression by the density.

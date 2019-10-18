@@ -286,6 +286,7 @@ cs_user_time_moments(void)
   /*! [tmom_u] */
   {
     /* Moment <U> calculated starting from time step 1000. */
+    /* resulting field is a vector */
 
     int moment_f_id[] = {CS_F_(vel)->id};
     int moment_c_id[] = {-1};
@@ -302,9 +303,30 @@ cs_user_time_moments(void)
   }
   /*! [tmom_u] */
 
+  /*! [tmom_variance_u] */
+  {
+    /* Second order moment <UU>-<U><U> calculated starting from time step 1000. */
+    /* resulting field is a tensor */
+
+    int moment_f_id[] = {CS_F_(vel)->id};
+    int moment_c_id[] = {-1};
+    int n_fields = 1;
+    cs_time_moment_define_by_field_ids("U_variance",
+                                       n_fields,
+                                       moment_f_id,
+                                       moment_c_id,
+                                       CS_TIME_MOMENT_VARIANCE,
+                                       1000, /* nt_start */
+                                       -1,   /* t_start */
+                                       CS_TIME_MOMENT_RESTART_AUTO,
+                                       NULL);
+  }
+  /*! [tmom_variance_u] */
+
   /*! [tmom_rho_u] */
   {
-    /* Moment <U> calculated starting from time step 1000. */
+    /* Moment <rho U> (vector) calculated starting from time step 1000. */
+    /* resulting field is a vector */
 
     int moment_f_id[] = {CS_F_(rho)->id, CS_F_(vel)->id};
     int moment_c_id[] = {-1, -1};
