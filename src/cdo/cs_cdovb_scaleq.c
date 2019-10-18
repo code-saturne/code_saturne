@@ -1485,6 +1485,7 @@ cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
                                   matrix,
                                   rs,
                                   res_normalization,
+                                  true, /* rhs_redux */
                                   sles,
                                   fld->val,
                                   rhs);
@@ -1738,6 +1739,7 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
                                   matrix,
                                   rs,
                                   res_normalization,
+                                  true, /* rhs_redux */
                                   sles,
                                   fld->val,
                                   rhs);
@@ -2064,6 +2066,7 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
                                   matrix,
                                   rs,
                                   res_normalization,
+                                  true, /* rhs_redux */
                                   sles,
                                   fld->val,
                                   rhs);

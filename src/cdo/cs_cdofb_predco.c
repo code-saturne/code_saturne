@@ -1201,6 +1201,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
                                   matrix,
                                   mom_rs,
                                   normalization,
+                                  true, /* rhs_redux */
                                   sles,
                                   velp_f,
                                   rhs);

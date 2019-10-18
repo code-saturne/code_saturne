@@ -554,12 +554,13 @@ cs_equation_sync_res_normalization(cs_param_resnorm_type_t    type,
  *        Transfer a mesh-based description of arrays x0 and rhs into an
  *        algebraic description for the linear system in x and b.
  *
- * \param[in]      stride   stride to apply to the range set operations
- * \param[in]      x_size   size of the vector unknowns (scatter view)
- * \param[in]      matrix   pointer to a cs_matrix_t structure
- * \param[in]      rset     pointer to a range set structure
- * \param[in, out] x        array of unknowns (in: initial guess)
- * \param[in, out] b        right-hand side
+ * \param[in]      stride     stride to apply to the range set operations
+ * \param[in]      x_size     size of the vector unknowns (scatter view)
+ * \param[in]      matrix     pointer to a cs_matrix_t structure
+ * \param[in]      rset       pointer to a range set structure
+ * \param[in]      rhs_redux  do or not a parallel sum reduction on the RHS
+ * \param[in, out] x          array of unknowns (in: initial guess)
+ * \param[in, out] b          right-hand side
  *
  * \returns the number of non-zeros in the matrix
  */
@@ -570,6 +571,7 @@ cs_equation_prepare_system(int                     stride,
                            cs_lnum_t               x_size,
                            const cs_matrix_t      *matrix,
                            const cs_range_set_t   *rset,
+                           bool                    rhs_redux,
                            cs_real_t              *x,
                            cs_real_t              *b)
 {
@@ -606,9 +608,10 @@ cs_equation_prepare_system(int                     stride,
     /* The right-hand side stems from a cellwise building on this rank.
        Other contributions from distant ranks may contribute to an element
        owned by the local rank */
-    cs_interface_set_sum(rset->ifs,
-                         n_scatter_elts, stride, false, CS_REAL_TYPE,
-                         b);
+    if (rhs_redux)
+      cs_interface_set_sum(rset->ifs,
+                           n_scatter_elts, stride, false, CS_REAL_TYPE,
+                           b);
 
     cs_range_set_gather(rset,
                         CS_REAL_TYPE,/* type */
@@ -646,7 +649,8 @@ cs_equation_prepare_system(int                     stride,
  * \param[in]  matrix         pointer to a cs_matrix_t structure
  * \param[in]  rs             pointer to a cs_range_set_t structure
  * \param[in]  normalization  value used for the residual normalization
- * \param[in]  sles           pointer to a cs_sles_t structure
+ * \param[in]  rhs_redux      do or not a parallel sum reduction on the RHS
+ * \param[in, out] sles       pointer to a cs_sles_t structure
  * \param[in, out] x          solution of the linear system (in: initial guess)
  * \param[in, out] b          right-hand side (scatter/gather if needed)
  *
@@ -660,6 +664,7 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
                                 const cs_matrix_t            *matrix,
                                 const cs_range_set_t         *rset,
                                 cs_real_t                     normalization,
+                                bool                          rhs_redux,
                                 cs_sles_t                    *sles,
                                 cs_real_t                    *x,
                                 cs_real_t                    *b)
@@ -691,6 +696,7 @@ cs_equation_solve_scalar_system(cs_lnum_t                     n_scatter_dofs,
                                               n_scatter_dofs,
                                               matrix,
                                               rset,
+                                              rhs_redux,
                                               xsol,
                                               b);
 

@@ -1291,6 +1291,7 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
                                   matrix,
                                   rs,
                                   rhs_norm,
+                                  true, /* rhs_redux */
                                   sles,
                                   fld->val,
                                   rhs);

@@ -1379,6 +1379,7 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
                                   matrix,
                                   rs,
                                   normalization,
+                                  true, /* rhs_redux */
                                   sles,
                                   eqc->face_values,
                                   rhs);
@@ -1572,6 +1573,7 @@ cs_cdofb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
                                   matrix,
                                   rs,
                                   normalization,
+                                  true, /* rhs_redux */
                                   sles,
                                   eqc->face_values,
                                   rhs);
@@ -1813,6 +1815,7 @@ cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
                                   matrix,
                                   rs,
                                   normalization,
+                                  true, /* rhs_redux */
                                   sles,
                                   eqc->face_values,
                                   rhs);
@@ -2102,6 +2105,7 @@ cs_cdofb_scaleq_solve_theta(const cs_mesh_t            *mesh,
                                   matrix,
                                   rs,
                                   normalization,
+                                  true, /* rhs_redux */
                                   sles,
                                   eqc->face_values,
                                   rhs);

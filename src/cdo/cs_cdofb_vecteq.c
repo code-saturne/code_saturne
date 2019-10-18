@@ -694,6 +694,7 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
                                   matrix,
                                   rs,
                                   normalization,
+                                  true, /* rhs_redux */
                                   sles,
                                   eqc->face_values,
                                   rhs);
@@ -918,6 +919,7 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
                                   matrix,
                                   rs,
                                   normalization,
+                                  true, /* rhs_redux */
                                   sles,
                                   eqc->face_values,
                                   rhs);
@@ -1182,6 +1184,7 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
                                   matrix,
                                   rs,
                                   normalization,
+                                  true, /* rhs_redux */
                                   sles,
                                   eqc->face_values,
                                   rhs);

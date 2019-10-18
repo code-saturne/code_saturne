@@ -1322,6 +1322,7 @@ _solve_system(cs_sles_t                     *sles,
                                               n_scatter_elts,
                                               matrix,
                                               rset,
+                                              true, /* rhs_redux */
                                               xsol, b);
 
   /* Solve the linear solver */

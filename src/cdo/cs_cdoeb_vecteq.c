@@ -981,6 +981,7 @@ cs_cdoeb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
                                   matrix,
                                   rs,
                                   res_normalization,
+                                  true, /* rhs_redux */
                                   sles,
                                   eqc->edge_values,
                                   rhs);

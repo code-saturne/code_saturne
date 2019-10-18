@@ -1387,6 +1387,7 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
                                                matrix,
                                                rs,
                                                normalization,
+                                               true, /* rhs_redux */
                                                sles,
                                                vel_f,
                                                rhs);
@@ -1459,6 +1460,7 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
                                                          matrix,
                                                          rs,
                                                          normalization,
+                                                         true, /* rhs_redux */
                                                          sles,
                                                          delta_vel_f,
                                                          rhs));
@@ -1860,6 +1862,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
                                                matrix,
                                                rs,
                                                normalization,
+                                               true, /* rhs_redux */
                                                sles,
                                                vel_f,
                                                rhs);
@@ -1931,6 +1934,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
                                                          matrix,
                                                          rs,
                                                          normalization,
+                                                         true, /* rhs_redux */
                                                          sles,
                                                          delta_vel_f,
                                                          rhs));
@@ -2374,6 +2378,7 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
                                                matrix,
                                                rs,
                                                normalization,
+                                               true, /* rhs_redux */
                                                sles,
                                                vel_f,
                                                rhs);
@@ -2446,6 +2451,7 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
                                                          matrix,
                                                          rs,
                                                          normalization,
+                                                         true, /* rhs_redux */
                                                          sles,
                                                          delta_vel_f,
                                                          rhs));
@@ -2647,6 +2653,7 @@ cs_cdofb_uzawa_compute_steady_rebuild(const cs_mesh_t         *mesh,
                                                matrix,
                                                rs,
                                                normalization,
+                                               true, /* rhs_redux */
                                                sles,
                                                vel_f,
                                                rhs);
@@ -2697,6 +2704,7 @@ cs_cdofb_uzawa_compute_steady_rebuild(const cs_mesh_t         *mesh,
                                                          matrix,
                                                          rs,
                                                          normalization,
+                                                         true, /* rhs_redux */
                                                          sles,
                                                          vel_f,
                                                          rhs));

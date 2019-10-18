@@ -959,6 +959,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
                                   matrix,
                                   rs,
                                   normalization,
+                                  true, /* rhs_redux */
                                   sles,
                                   vel_f,
                                   rhs);
@@ -1315,6 +1316,7 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
                                   matrix,
                                   rs,
                                   normalization,
+                                  true, /* rhs_redux */
                                   sles,
                                   vel_f,
                                   rhs);
