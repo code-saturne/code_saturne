@@ -635,9 +635,6 @@ _petsc_amg_block_hook(void     *context,
     PCSetType(_pc, PCGAMG);
 #endif
 
-    PCSetFromOptions(_pc);
-    PCSetUp(_pc);
-
   }
 
   PCSetFromOptions(pc);
