@@ -96,6 +96,7 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
  * \param[in]      div_op   pointer to the values of divergence operator
+ * \param[in]      gamma    value of the grad-div coefficient
  * \param[in, out] sles     pointer to a cs_sles_t structure
  * \param[in, out] u_f      initial velocity on faces
  * \param[in, out] p_c      initial pressure in cells
@@ -109,6 +110,7 @@ cs_cdofb_gkb_solve(const cs_matrix_t             *matrix,
                    const cs_navsto_param_t       *nsp,
                    const cs_equation_param_t     *eqp,
                    const cs_real_t               *div_op,
+                   cs_real_t                      gamma,
                    cs_sles_t                     *sles,
                    cs_real_t                     *u_f,
                    cs_real_t                     *p_c,

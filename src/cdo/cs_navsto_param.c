@@ -495,11 +495,11 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     switch (nsp->coupling) {
     case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
     case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
+    case CS_NAVSTO_COUPLING_MONOLITHIC:
     case CS_NAVSTO_COUPLING_UZAWA:
       nsp->gd_scale_coef = atof(val);
       break;
 
-    case CS_NAVSTO_COUPLING_MONOLITHIC:
     case CS_NAVSTO_COUPLING_PROJECTION:
       cs_base_warn(__FILE__, __LINE__);
       bft_printf(" %s: Trying to set the zeta parameter with the %s\n "

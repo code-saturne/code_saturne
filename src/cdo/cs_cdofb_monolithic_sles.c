@@ -119,12 +119,16 @@ BEGIN_C_DECLS
 
 typedef struct {
 
+  /* Value of the grad-div coefficient */
+  cs_real_t                gamma;
+
+  /* Size of spaces */
+  cs_lnum_t                n_u_dofs; /* Size of the space M */
+  cs_lnum_t                n_p_dofs; /* Size of the space N */
+
   /* Vector transformation */
   cs_real_t               *b_tilda;  /* Modified RHS */
   cs_real_t               *u_tilda;  /* Modified velocity unknown */
-
-  cs_lnum_t                n_u_dofs; /* Size of the space M */
-  cs_lnum_t                n_p_dofs; /* Size of the space N */
 
   /* Auxiliary vectors */
   cs_real_t               *q;        /* vector iterates in space N */
@@ -215,7 +219,7 @@ _face_gdot(cs_lnum_t    size,
            cs_real_t    x[],
            cs_real_t    y[])
 {
-  cs_range_set_t  *rset = cs_shared_range_set;
+  const cs_range_set_t  *rset = cs_shared_range_set;
 
   assert(size == rset->n_elts[1]);
   assert(size == 3*cs_shared_quant->n_faces);
@@ -1057,6 +1061,7 @@ _mumps_hook(void     *context,
 /*!
  * \brief  Create and initialize a GKB builder structure
  *
+ * \param[in]  gamma      value of the grad-div coefficient
  * \param[in]  n_u_dofs   number of velocity DoFs (degrees of freedom)
  * \param[in]  n_p_dofs   number of pressure DoFs
  *
@@ -1065,13 +1070,15 @@ _mumps_hook(void     *context,
 /*----------------------------------------------------------------------------*/
 
 static cs_gkb_builder_t *
-_init_gkb_builder(cs_lnum_t             n_u_dofs,
+_init_gkb_builder(cs_real_t             gamma,
+                  cs_lnum_t             n_u_dofs,
                   cs_lnum_t             n_p_dofs)
 {
   cs_gkb_builder_t  *gkb = NULL;
 
   BFT_MALLOC(gkb, 1, cs_gkb_builder_t);
 
+  gkb->gamma = gamma;
   gkb->n_u_dofs = n_u_dofs;
   gkb->n_p_dofs = n_p_dofs;
 
@@ -1209,12 +1216,6 @@ _apply_div_op_transpose(const cs_real_t   *div_op,
 
   } /* Loop on cells */
 
-  if (cs_glob_n_ranks > 1)
-    cs_interface_set_sum(cs_shared_range_set->ifs,
-                         3*quant->n_faces,
-                         1, false, CS_REAL_TYPE, /* stride, interlaced */
-                         dt_q);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1259,6 +1260,32 @@ _transform_gkb_system(const cs_matrix_t             *matrix,
   cs_equation_param_update_from(eqp, _eqp);
   _eqp->sles_param.eps = fmin(0.1*eqp->sles_param.eps, 1e-10);
 
+  bool  rhs_redux = true;
+  if (gkb->gamma > 0) {
+
+    rhs_redux = false;
+
+#   pragma omp parallel for if (gkb->n_p_dofs > CS_THR_MIN)
+    for (cs_lnum_t ip = 0; ip < gkb->n_p_dofs; ip++)
+      gkb->b_tilda[ip] = gkb->gamma*b_c[ip]/cs_shared_quant->cell_vol[ip];
+
+    /* Solve Dt.b_tilda */
+    _apply_div_op_transpose(div_op, gkb->b_tilda, gkb->dt_q);
+
+#   pragma omp parallel for if (gkb->n_u_dofs > CS_THR_MIN)
+    for (cs_lnum_t iu = 0; iu < gkb->n_u_dofs; iu++)
+      gkb->b_tilda[iu] = b_f[iu] + gkb->dt_q[iu];
+
+    if (cs_glob_n_ranks > 1)
+      cs_interface_set_sum(cs_shared_range_set->ifs,
+                           gkb->n_u_dofs,
+                           1, false, CS_REAL_TYPE, /* stride, interlaced */
+                           gkb->b_tilda);
+
+  }
+  else
+    memcpy(gkb->b_tilda, b_f, gkb->n_u_dofs*sizeof(cs_real_t));
+
   /* Compute M^-1.(b_f + gamma. Bt.N^-1.b_c) up to now gamma = 0 */
   gkb->info.n_inner_iter
     += (gkb->info.last_inner_iter
@@ -1267,10 +1294,10 @@ _transform_gkb_system(const cs_matrix_t             *matrix,
                                           matrix,
                                           cs_shared_range_set,
                                           normalization,
-                                          true, /* rhs_redux */
+                                          rhs_redux,
                                           sles,
                                           gkb->v,
-                                          b_f));
+                                          gkb->b_tilda));
 
   /* Compute the initial u_tilda := u_f - M^-1.b_f */
 # pragma omp parallel for if (gkb->n_u_dofs > CS_THR_MIN)
@@ -1378,8 +1405,14 @@ _init_gkb_algo(const cs_matrix_t             *matrix,
   for (cs_lnum_t i = 0; i < size; i++)
     gkb->q[i] *= inv_beta;
 
-  /* Solve M.w = Dt.q (set_sum done inside) */
+  /* Solve M.w = Dt.q */
   _apply_div_op_transpose(div_op, gkb->q, gkb->dt_q);
+
+  if (cs_glob_n_ranks > 1)
+    cs_interface_set_sum(cs_shared_range_set->ifs,
+                         gkb->n_u_dofs,
+                         1, false, CS_REAL_TYPE, /* stride, interlaced */
+                         gkb->dt_q);
 
   cs_real_t  normalization = 1.0; /* TODO */
 
@@ -1424,7 +1457,7 @@ _init_gkb_algo(const cs_matrix_t             *matrix,
 /*!
  * \brief  Test if one needs one more GKB iteration
  *
- * \param[in]      nsp      pointer to a set of parameters for Navier-Stokes
+ * \param[in]      nsp     pointer to a set of parameters for Navier-Stokes
  * \param[in, out] gkb     pointer to a GKB builder structure
  */
 /*----------------------------------------------------------------------------*/
@@ -1673,6 +1706,7 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
  * \param[in]      div_op   pointer to the values of divergence operator
+ * \param[in]      gamma    value of the grad-div coefficient
  * \param[in, out] sles     pointer to a cs_sles_t structure
  * \param[in, out] u_f      initial velocity on faces
  * \param[in, out] p_c      initial pressure in cells
@@ -1686,6 +1720,7 @@ cs_cdofb_gkb_solve(const cs_matrix_t             *matrix,
                    const cs_navsto_param_t       *nsp,
                    const cs_equation_param_t     *eqp,
                    const cs_real_t               *div_op,
+                   cs_real_t                      gamma,
                    cs_sles_t                     *sles,
                    cs_real_t                     *u_f,
                    cs_real_t                     *p_c,
@@ -1700,7 +1735,9 @@ cs_cdofb_gkb_solve(const cs_matrix_t             *matrix,
   const cs_real_t  *vol = quant->cell_vol;
 
   /* Allocate and initialize the GKB builder structure */
-  cs_gkb_builder_t  *gkb = _init_gkb_builder(3*quant->n_faces, quant->n_cells);
+  cs_gkb_builder_t  *gkb = _init_gkb_builder(gamma,
+                                             3*quant->n_faces,
+                                             quant->n_cells);
 
   /* Transformation of the initial saddle-point system */
   _transform_gkb_system(matrix, eqp, div_op, gkb, sles, u_f, b_f, b_c);
@@ -1734,8 +1771,14 @@ cs_cdofb_gkb_solve(const cs_matrix_t             *matrix,
     for (cs_lnum_t ip = 0; ip < gkb->n_p_dofs; ip++)
       gkb->q[ip] = ov_beta*gkb->d__v[ip];
 
-    /* Solve M.w_tilda = Dt.q (set_sum done inside) */
+    /* Solve M.w_tilda = Dt.q */
     _apply_div_op_transpose(div_op, gkb->q, gkb->dt_q);
+
+    if (cs_glob_n_ranks > 1)
+      cs_interface_set_sum(cs_shared_range_set->ifs,
+                           gkb->n_u_dofs,
+                           1, false, CS_REAL_TYPE, /* stride, interlaced */
+                           gkb->dt_q);
 
     /* Prepare update of m__v:
      *  m__v(k+1) = 1/alpha(k+1) * (dt_q - beta*m__v(k)) */
@@ -1797,6 +1840,8 @@ cs_cdofb_gkb_solve(const cs_matrix_t             *matrix,
 
   /* Last step: Free temporary memory */
   _free_gkb_builder(&gkb);
+
+  printf(" GRAD-DIV COEF: %6.3e\n", gamma); /* DEBUG */
 }
 
 /*----------------------------------------------------------------------------*/

@@ -198,6 +198,7 @@ typedef struct {
    */
 
   cs_real_t                      *c2f_divergence;
+  cs_real_t                       ref_graddiv_coef;
 
   /*!
    * @}
@@ -733,6 +734,7 @@ _apply_remaining_bc(const cs_cdofb_monolithic_t   *sc,
  * \param[in]       cm                pointer to a cs_cell_mesh_t structure
  * \param[in]       div_op            array with the divergence op. values
  * \param[in]       has_sourceterm    has the equation a source term?
+ * \param[in]       sc                pointer to scheme context structure
  * \param[in, out]  eqc               context structure for a vector-valued Fb
  * \param[in, out]  eqa               pointer to cs_equation_assemble_t
  * \param[in, out]  mav               pointer to cs_matrix_assembler_values_t
@@ -746,7 +748,7 @@ _assemble_gkb(const cs_cell_sys_t            *csys,
               const cs_cell_mesh_t           *cm,
               const cs_real_t                *div_op,
               const bool                      has_sourceterm,
-              cs_cdofb_monolithic_t          *sc,
+              const cs_cdofb_monolithic_t    *sc,
               cs_cdofb_vecteq_t              *eqc,
               cs_equation_assemble_t         *eqa,
               cs_matrix_assembler_values_t   *mav,
@@ -758,6 +760,11 @@ _assemble_gkb(const cs_cell_sys_t            *csys,
 
   /* 1. Matrix assembly
    * ================== */
+
+  if (sc->ref_graddiv_coef > 0.) {
+    cs_real_t  gamma = sc->ref_graddiv_coef / cm->vol_c;
+    cs_cdofb_navsto_add_grad_div(cm->n_fc, gamma, div_op, csys->mat);
+  }
 
   cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm, eqc, eqa, mav, rhs);
 
@@ -1833,11 +1840,18 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
   }
 
   /* GKB solver if need */
+  sc->ref_graddiv_coef = 0;
   sc->c2f_divergence = NULL;
-  if (nsp->sles_strategy == CS_NAVSTO_SLES_GKB_SATURNE)
+
+  if (nsp->sles_strategy == CS_NAVSTO_SLES_GKB_SATURNE) {
+
+    sc->ref_graddiv_coef = nsp->gd_scale_coef;
+
     BFT_MALLOC(sc->c2f_divergence,
                3*cs_shared_connect->c2f->idx[cs_shared_quant->n_cells],
                cs_real_t);
+
+  }
 
   /* Monitoring */
   CS_TIMER_COUNTER_INIT(sc->timer);
@@ -1956,6 +1970,7 @@ cs_cdofb_monolithic_steady_gkb(const cs_mesh_t            *mesh,
 
   cs_cdofb_gkb_solve(matrix, nsp, mom_eqp,
                      sc->c2f_divergence,
+                     sc->ref_graddiv_coef,
                      sles,
                      mom_eqc->face_values, /* velocity DoFs at faces */
                      sc->pressure->val,    /* pressure DoFs at cells */
