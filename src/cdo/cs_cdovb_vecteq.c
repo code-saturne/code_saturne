@@ -868,7 +868,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
   eqc->enforce_sliding = NULL;
   if (eqb->face_bc->n_sliding_faces > 0) {
     /* There is at least one face with a sliding condition to handle */
-    eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PEQ;
+    eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_HFQ;
     eqc->enforce_sliding = cs_cdo_diffusion_vvb_ocs_sliding;
   }
 
