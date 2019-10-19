@@ -238,6 +238,8 @@ cs_navsto_param_create(const cs_boundary_t              *boundaries,
 
   /* Which equations are solved and which terms are needed */
   param->model = model;
+  param->coupling = algo_coupling;
+
   param->has_gravity = false;
   param->gravity[0] = param->gravity[1] = param->gravity[2] = 0.;
   param->time_state = time_state;
@@ -248,11 +250,8 @@ cs_navsto_param_create(const cs_boundary_t              *boundaries,
     param->time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT;
 
   /* Resolution parameters */
-  param->sles_strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
+  param->max_algo_iter = 25;
   param->residual_tolerance = 1e-10;
-  param->coupling = algo_coupling;
-  param->gd_scale_coef = 1.0;    /* Default value if not set by the user */
-  param->max_algo_iter = 20;
 
   param->adv_form   = CS_PARAM_N_ADVECTION_FORMULATIONS;
   param->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
@@ -274,8 +273,20 @@ cs_navsto_param_create(const cs_boundary_t              *boundaries,
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
-  case CS_NAVSTO_COUPLING_MONOLITHIC:
   case CS_NAVSTO_COUPLING_UZAWA:
+    param->sles_strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
+    param->gd_scale_coef = 1.0;    /* Default value if not set by the user */
+
+    param->velocity_ic_is_owner = false;
+    param->velocity_bc_is_owner = false;
+    param->pressure_ic_is_owner = true;
+    param->pressure_bc_is_owner = true;
+    break;
+
+  case CS_NAVSTO_COUPLING_MONOLITHIC:
+    param->sles_strategy = CS_NAVSTO_SLES_GKB_SATURNE;
+    param->gd_scale_coef = 0.0;    /* Default value if not set by the user */
+
     param->velocity_ic_is_owner = false;
     param->velocity_bc_is_owner = false;
     param->pressure_ic_is_owner = true;
@@ -283,6 +294,9 @@ cs_navsto_param_create(const cs_boundary_t              *boundaries,
     break;
 
   case CS_NAVSTO_COUPLING_PROJECTION:
+    param->sles_strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
+    param->gd_scale_coef = 0.0;    /* Default value if not set by the user */
+
     param->velocity_ic_is_owner = false;
     param->velocity_bc_is_owner = false;
     param->pressure_ic_is_owner = false;
