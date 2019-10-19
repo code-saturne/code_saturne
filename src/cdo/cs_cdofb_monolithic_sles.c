@@ -1102,7 +1102,19 @@ _init_gkb_builder(cs_real_t             gamma,
   gkb->alpha = gkb->beta = gkb->zeta = 0.;
 
   /* Convergence members */
-  gkb->z_size = CS_GKB_TRUNCATION_THRESHOLD;
+  if (gamma < 1)
+    gkb->z_size = CS_GKB_TRUNCATION_THRESHOLD + 1;
+  else if (gamma < 10)
+    gkb->z_size = CS_GKB_TRUNCATION_THRESHOLD;
+  else if (gamma < 100)
+    gkb->z_size = CS_MAX(1, CS_GKB_TRUNCATION_THRESHOLD - 1);
+  else if (gamma < 1e3)
+    gkb->z_size = CS_MAX(1, CS_GKB_TRUNCATION_THRESHOLD - 2);
+  else if (gamma < 1e4)
+    gkb->z_size = CS_MAX(1, CS_GKB_TRUNCATION_THRESHOLD - 3);
+  else
+    gkb->z_size = CS_MAX(1, CS_GKB_TRUNCATION_THRESHOLD - 4);
+
   BFT_MALLOC(gkb->zeta_array, gkb->z_size, cs_real_t);
   memset(gkb->zeta_array, 0, gkb->z_size*sizeof(cs_real_t));
 
@@ -1479,18 +1491,28 @@ _gkb_cvg_test(const cs_navsto_param_t    *nsp,
 
   /* Compute the relative energy norm. The normalization arises from an
      iterative estimation of the initial error in the energy norm */
+  const cs_real_t  prev_res = gkb->info.res;
+
   int  n = gkb->z_size;
   if (gkb->info.n_algo_iter < gkb->z_size)
     n = gkb->info.n_algo_iter;
+
   cs_real_t  err2_energy = 0.;
   for (int i = 0; i < n; i++)
     err2_energy += gkb->zeta_array[i];
 
-  const cs_real_t  prev_res = gkb->info.res;
-  const double  tau = nsp->residual_tolerance * nsp->residual_tolerance;
+  double  tau = (gkb->gamma > 0) ?
+    gkb->gamma*nsp->residual_tolerance : nsp->residual_tolerance;
+
   gkb->info.res = sqrt(err2_energy);
 
   /* Set the convergence status */
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_SLES_DBG > 0
+  cs_log_printf(CS_LOG_DEFAULT,
+                "\nGKB.It%02d-- err2 = %6.4e ?<? tau * square_sum %6.4e\n",
+                gkb->info.n_algo_iter, err2_energy, tau * gkb->zeta_square_sum);
+#endif
+
   if (err2_energy < tau * gkb->zeta_square_sum)
     gkb->info.cvg = CS_SLES_CONVERGED;
   else if (gkb->info.n_algo_iter >= nsp->max_algo_iter)
@@ -1502,10 +1524,10 @@ _gkb_cvg_test(const cs_navsto_param_t    *nsp,
 
   if (nsp->verbosity > 2)
     cs_log_printf(CS_LOG_DEFAULT,
-                  "GKB.It%02d-- %5.3e %5d %6d z2:%6.4e renorm:%6.4e\n",
+                  "GKB.It%02d-- %5.3e %5d %6d z2:%6.4e renorm:%6.4e cvg:%d\n",
                   gkb->info.n_algo_iter, gkb->info.res,
                   gkb->info.last_inner_iter, gkb->info.n_inner_iter,
-                  z2, gkb->zeta_square_sum);
+                  z2, sqrt(gkb->zeta_square_sum), gkb->info.cvg);
 
 }
 
