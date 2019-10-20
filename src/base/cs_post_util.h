@@ -99,6 +99,42 @@ cs_cell_segment_intersect_select(void        *input,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Select cells cut by a line composed of segments
+ *
+ * This selection function may be used as an elements selection function
+ * for postprocessing.
+ *
+ * In this case, the input points to a real array containing the segment's
+ * start and end coordinates.
+ *
+ * Note: the input pointer must point to valid data when this selection
+ * function is called, so either:
+ * - that value or structure should not be temporary (i.e. local);
+ * - post-processing output must be ensured using cs_post_write_meshes()
+ *   with a fixed-mesh writer before the data pointed to goes out of scope;
+ *
+ * The caller is responsible for freeing the returned cell_ids array.
+ * When passed to postprocessing mesh or probe set definition functions,
+ * this is handled automatically.
+ *
+ * \param[in]   input     pointer to segments starts and ends:
+ *                        [x0, y0, z0, x1, y1, z1]
+ * \param[in]   n_points  number of vertices in the polyline
+ * \param[out]  n_cells   number of selected cells
+ * \param[out]  cell_ids  array of selected cell ids (0 to n-1 numbering)
+ * \param[out]  seg_c_len array of length of the segment in the selected cells
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cell_polyline_intersect_select(void        *input,
+                                  cs_lnum_t   n_points,
+                                  cs_lnum_t   *n_cells,
+                                  cs_lnum_t  **cell_ids,
+                                  cs_real_t  **seg_c_len);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define probes based on the centers of cells intersected by
  *        a given segment.
  *

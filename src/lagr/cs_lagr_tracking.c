@@ -2076,7 +2076,7 @@ _local_propagation(cs_lagr_particle_set_t         *particles,
       n_out += n_crossings[1];
 
       /* Store the nearest intesection from the O point...*/
-      if (t < adist_min) {
+      if (t < adist_min && t >= 0) {
         exit_face = face_num;
         t_intersect = t;
         adist_min = t_intersect;

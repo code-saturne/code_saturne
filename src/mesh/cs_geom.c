@@ -211,7 +211,7 @@ cs_geom_closest_point(cs_lnum_t         n_points,
  * \param[in]      face_cog       coordinates of face center
  * \param[in]      sx0            segment start coordinates
  * \param[in]      sx1            segment end coordinates
- * \param[out]     n_crossings    number sub_face crossings
+ * \param[out]     n_inout        number sub_face crossings
  *                                 [0: in; 1: out]
  * \param[in, out] face_norm      local face unit normal of the crossed sub
  *                                 triangle (if entering with something
@@ -232,12 +232,12 @@ cs_geom_segment_intersect_face(int               orient,
                                const cs_real_t   face_cog[3],
                                const cs_real_t   sx0[3],
                                const cs_real_t   sx1[3],
-                               int               n_crossings[2],
+                               int               n_inout[2],
                                cs_real_t        *face_norm)
 {
   const double epsilon = 1.e-15;
 
-  /* Initialization of retval to unity*/
+  /* Initialization of retval to two */
   double retval = 2.;
 
   assert(sizeof(cs_real_t) == 8);
@@ -306,7 +306,8 @@ cs_geom_segment_intersect_face(int               orient,
       e1[j] = vtx_1[j] - face_cog[j];
     }
 
-    /* P = e1^e0: same value for the two neighbooring cells */
+    /* P = e1^e0: same value for the two neighbooring cells
+     * NB: in the other direction to the face normal */
 
     const cs_real_3_t pvec = {e1[1]*e0[2] - e1[2]*e0[1],
                               e1[2]*e0[0] - e1[0]*e0[2],
@@ -369,10 +370,45 @@ cs_geom_segment_intersect_face(int               orient,
 
     /* Same sign (meaning there is a possible intersection with t > 0). */
     if (sign_od_p == sign_og_p) {
-      /* The line (OD) enters (n_crossings[0]++)
-       * or leaves (n_crossings[1]++) the cell */
-      if (orient != sign_od_p) {
-        n_crossings[1]++;
+      /* The line (OD) enters (n_inout[0]++)
+       * (it means OD points toward cell i)
+       * or leaves (n_inout[1]++) the cell
+       * (it means OD points toward cell j)
+       * */
+
+      /* We dont care if it is entering or outgoing
+       * but we store this information correctly
+       * Convention
+       * t > 0: entering i
+       * t < 0: outgoing i */
+      if (orient == 0) {
+        /* entering cell i */
+        if (sign_od_p == 1)
+          n_inout[0]++;
+        /* going out cell i */
+        if (sign_od_p == -1)
+          n_inout[1]++;
+
+        if (fabs(og_p) < fabs(od_p)) {
+          /* There is a real intersection (inward or outward) with 0 <= t < 1 */
+          double t = 0.;
+          n_intersects++;
+
+          const double det = cs_math_3_norm(e0)*cs_math_3_norm(pvec);
+          if (fabs(od_p) > epsilon * fabs(det)) {
+            t = og_p / od_p;
+          }
+
+          if (t < retval) {
+            retval = t;
+            /* Store the normal if needed */
+            if (face_norm != NULL)
+              cs_math_3_normalise(pvec, face_norm);
+          }
+        }
+      }
+      else if (orient != sign_od_p) {
+        n_inout[1]++;
         if (fabs(og_p) < fabs(od_p)) {
           /* There is a real intersection (outward) with 0 <= t < 1 */
           double t = 0.;
@@ -391,7 +427,7 @@ cs_geom_segment_intersect_face(int               orient,
           }
         }
       } else {
-        n_crossings[0]++;
+        n_inout[0]++;
         /* Incomming intersection on segment [OD] */
         if (fabs(og_p) < fabs(od_p))
           n_intersects--;
@@ -400,10 +436,31 @@ cs_geom_segment_intersect_face(int               orient,
     } else {
       /* Opposite sign (meaning there is a possible intersection of the line
        * with t<0).  */
-      if (orient != sign_od_p)
-        n_crossings[1]++;
+
+      /* We dont car if it is entering or outgoing
+       * but we store this information correctly
+       * Convention
+       * t > 0: entering i
+       * t < 0: outgoing i */
+      if (orient == 0) {
+        cs_real_t t = -1;
+        const double det = cs_math_3_norm(e0)*cs_math_3_norm(pvec);
+        if (fabs(od_p) > epsilon * fabs(det))
+          t = og_p / od_p;
+
+        if (t < retval)
+          retval = t;
+
+        if (sign_od_p == -1)
+          n_inout[1]++;
+        else
+          n_inout[0]++;
+
+      }
+      else if (orient != sign_od_p)
+        n_inout[1]++;
       else
-        n_crossings[0]++;
+        n_inout[0]++;
     }
 
   }
@@ -411,7 +468,7 @@ cs_geom_segment_intersect_face(int               orient,
    *  (i.e.  n_intersects < 1 , but retval < 1),
    *  the retval value is forced to 2
    *  (no intersection since the particle entered and left from this face). */
-  if ((n_intersects < 1) && retval < 1.) {
+  if ((n_intersects < 1) && retval < 1. && retval >= 0) {
     retval = 2.;
   }
 
