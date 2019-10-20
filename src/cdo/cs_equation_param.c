@@ -1801,9 +1801,12 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
                       cs_equation_key_t      key,
                       const char            *keyval)
 {
+  /* Sanity checks */
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
-
+  if (keyval == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: Eq: %s: Key value is empty",
+              __func__, eqp->name);
   if (eqp->flag & CS_EQUATION_LOCKED)
     bft_error(__FILE__, __LINE__, 0,
               _(" %s: Equation %s is not modifiable anymore.\n"

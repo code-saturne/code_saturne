@@ -419,6 +419,8 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 {
   if (nsp == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
+  if (keyval == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: Empty key value.\n", __func__);
 
   /* Conversion of the string to lower case */
   char val[CS_BASE_STRING_LEN];
