@@ -204,7 +204,7 @@ AC_ARG_ENABLE(python,
 if test "${python_bindings}" = "yes" ; then
   AM_PATH_PYTHON(2.6)
   AX_PYTHON_DEVEL([>='2.6'])
-  AX_PYTHON_MODULE(mpi4py)
+  PLE_AC_TEST_MPI4PY
 fi
 
 AM_CONDITIONAL(HAVE_MPI4PY, [test "${HAVE_PYMOD_MPI4PY}" = yes])
