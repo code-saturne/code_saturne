@@ -39,6 +39,7 @@ SUBDIRS = src pyple tests doc po
 EXTRA_DIST = m4/ple_config_info.m4 \
              m4/ple_config_publ.m4 \
              m4/ple_mpi.m4 \
+             m4/ple_mpi4py.m4 \
              m4/ple_types.m4 \
              config/ple_auto_flags.sh \
              sbin/backup \
