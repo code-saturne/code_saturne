@@ -716,30 +716,26 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       ns->init_velocity = NULL;
       ns->init_pressure = cs_cdofb_navsto_init_pressure;
       if (_handle_non_linearities(nsp))
-        ns->compute_steady = cs_cdofb_monolithic_compute_steady_nl;
-      else {
-        if (nsp->sles_strategy == CS_NAVSTO_SLES_GKB_SATURNE)
-          ns->compute_steady = cs_cdofb_monolithic_steady_gkb;
-        else
-          ns->compute_steady = cs_cdofb_monolithic_compute_steady;
-      }
+        ns->compute_steady = cs_cdofb_monolithic_steady_nl;
+      else
+        ns->compute_steady = cs_cdofb_monolithic_steady;
 
       switch (nsp->time_scheme) {
 
       case CS_TIME_SCHEME_STEADY:
         if (_handle_non_linearities(nsp))
-          ns->compute = cs_cdofb_monolithic_compute_steady_nl;
+          ns->compute = cs_cdofb_monolithic_steady_nl;
         else
-          ns->compute = cs_cdofb_monolithic_compute_steady;
+          ns->compute = cs_cdofb_monolithic_steady;
         break; /* Nothing to set */
 
       case CS_TIME_SCHEME_EULER_IMPLICIT:
-        ns->compute = cs_cdofb_monolithic_compute_implicit;
+        ns->compute = cs_cdofb_monolithic_implicit_euler;
         break;
 
       case CS_TIME_SCHEME_THETA:
       case CS_TIME_SCHEME_CRANKNICO:
-        ns->compute = cs_cdofb_monolithic_compute_theta;
+        ns->compute = cs_cdofb_monolithic_theta_scheme;
         break;
 
       default:

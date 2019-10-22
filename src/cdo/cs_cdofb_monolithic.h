@@ -136,22 +136,6 @@ cs_cdofb_monolithic_free_scheme_context(void   *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve the steady Stokes or Oseen system with a CDO face-based scheme
- *         using a monolithic approach and GKB algorithm
- *
- * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
- * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_monolithic_steady_gkb(const cs_mesh_t            *mesh,
-                               const cs_navsto_param_t    *nsp,
-                               void                       *scheme_context);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Solve the steady Navier-Stokes system with a CDO face-based scheme
  *         using a monolithic approach.
  *
@@ -162,9 +146,9 @@ cs_cdofb_monolithic_steady_gkb(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
-                                   const cs_navsto_param_t    *nsp,
-                                   void                       *scheme_context);
+cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
+                           const cs_navsto_param_t    *nsp,
+                           void                       *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -179,14 +163,14 @@ cs_cdofb_monolithic_compute_steady(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_compute_steady_nl(const cs_mesh_t          *mesh,
-                                      const cs_navsto_param_t  *nsp,
-                                      void                     *scheme_context);
+cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
+                              const cs_navsto_param_t   *nsp,
+                              void                      *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Solve the unsteady Navier-Stokes system with a CDO face-based scheme
- *         using a monolithic approach and an Euler time scheme.
+ *         using a monolithic approach and an implicit Euler time scheme.
  *
  * \param[in] mesh            pointer to a \ref cs_mesh_t structure
  * \param[in] nsp             pointer to a \ref cs_navsto_param_t structure
@@ -195,9 +179,9 @@ cs_cdofb_monolithic_compute_steady_nl(const cs_mesh_t          *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_compute_implicit(const cs_mesh_t         *mesh,
-                                     const cs_navsto_param_t *nsp,
-                                     void                    *scheme_context);
+cs_cdofb_monolithic_implicit_euler(const cs_mesh_t         *mesh,
+                                   const cs_navsto_param_t *nsp,
+                                   void                    *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -211,9 +195,9 @@ cs_cdofb_monolithic_compute_implicit(const cs_mesh_t         *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_compute_theta(const cs_mesh_t         *mesh,
-                                  const cs_navsto_param_t *nsp,
-                                  void                    *scheme_context);
+cs_cdofb_monolithic_theta_scheme(const cs_mesh_t         *mesh,
+                                 const cs_navsto_param_t *nsp,
+                                 void                    *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 

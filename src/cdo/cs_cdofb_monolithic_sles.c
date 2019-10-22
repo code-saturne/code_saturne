@@ -1720,41 +1720,179 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Use the GKB algorithm to solve the saddle-point problem arising
- *         from CDO-Fb schemes for Stokes and Navier-Stokes with a monolithic
- *         coupling
+ * \brief  Solve a linear system arising from a scalar-valued CDO-Fb scheme
  *
- * \param[in]      matrix   pointer to a cs_matrix_t structure
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in]      div_op   pointer to the values of divergence operator
- * \param[in]      gamma    value of the grad-div coefficient
+ * \param[in]      matrix   pointer to a cs_matrix_t structure
+ * \param[in, out] sc       pointer to the scheme context
  * \param[in, out] sles     pointer to a cs_sles_t structure
  * \param[in, out] u_f      initial velocity on faces
  * \param[in, out] p_c      initial pressure in cells
  * \param[in, out] b_f      right-hand side (scatter/gather if needed) on faces
  * \param[in, out] b_c      right_hand side on cells (mass equation)
+ *
+ * \return the (cumulated) number of iterations of the solver
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cdofb_gkb_solve(const cs_matrix_t             *matrix,
-                   const cs_navsto_param_t       *nsp,
-                   const cs_equation_param_t     *eqp,
-                   const cs_real_t               *div_op,
-                   cs_real_t                      gamma,
-                   cs_sles_t                     *sles,
-                   cs_real_t                     *u_f,
-                   cs_real_t                     *p_c,
-                   cs_real_t                     *b_f,
-                   cs_real_t                     *b_c)
+int
+cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
+                          const cs_equation_param_t     *eqp,
+                          const cs_matrix_t             *matrix,
+                          cs_cdofb_monolithic_t         *sc,
+                          cs_sles_t                     *sles,
+                          cs_real_t                     *u_f,
+                          cs_real_t                     *p_c,
+                          cs_real_t                     *b_f,
+                          cs_real_t                     *b_c)
+{
+  CS_UNUSED(nsp);
+  CS_UNUSED(sc);
+
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_lnum_t  n_faces = quant->n_faces;
+  const cs_lnum_t  n_cells = quant->n_cells;
+  const cs_lnum_t  n_cols = cs_matrix_get_n_columns(matrix);
+  const cs_lnum_t  n_scatter_elts = 3*n_faces + n_cells;
+
+  /* De-interlace the velocity array and the rhs for the face DoFs */
+  cs_real_t  *xsol = NULL;
+  BFT_MALLOC(xsol, n_cols, cs_real_t);
+
+  cs_real_t  *b = NULL;
+  BFT_MALLOC(b, n_scatter_elts, cs_real_t);
+
+# pragma omp parallel for if (CS_THR_MIN > n_faces)     \
+  shared(u_f, b_f, xsol, b)                             \
+  firstprivate(n_faces)
+  for (cs_lnum_t f = 0; f < n_faces; f++) {
+
+    xsol[f            ] = u_f[3*f];
+    xsol[f +   n_faces] = u_f[3*f+1];
+    xsol[f + 2*n_faces] = u_f[3*f+2];
+
+    b[f            ] = b_f[3*f];
+    b[f +   n_faces] = b_f[3*f+1];
+    b[f + 2*n_faces] = b_f[3*f+2];
+
+  }
+
+  /* Add the pressure related elements */
+  memcpy(xsol + 3*n_faces, p_c, n_cells*sizeof(cs_real_t));
+  memcpy(b + 3*n_faces, b_c, n_cells*sizeof(cs_real_t));
+
+  const cs_range_set_t  *rset = cs_shared_range_set;
+  int  n_iters = 0;
+  double  residual = DBL_MAX;
+
+  /* Prepare solving (handle parallelism) */
+  cs_gnum_t  nnz = cs_equation_prepare_system(1,     /* stride */
+                                              n_scatter_elts,
+                                              matrix,
+                                              rset,
+                                              true,  /* rhs_redux */
+                                              xsol, b);
+
+  /* Solve the linear solver */
+  const double  r_norm = 1.0; /* No renormalization by default (TODO) */
+  const cs_param_sles_t  sles_param = eqp->sles_param;
+
+  cs_sles_convergence_state_t  code = cs_sles_solve(sles,
+                                                    matrix,
+                                                    CS_HALO_ROTATION_IGNORE,
+                                                    sles_param.eps,
+                                                    r_norm,
+                                                    &n_iters,
+                                                    &residual,
+                                                    b,
+                                                    xsol,
+                                                    0,      /* aux. size */
+                                                    NULL);  /* aux. buffers */
+
+  /* Output information about the convergence of the resolution */
+  if (sles_param.verbosity > 0)
+    cs_log_printf(CS_LOG_DEFAULT, "  <%s/sles_cvg> code %-d n_iters %d"
+                  " residual % -8.4e nnz %lu\n",
+                  eqp->name, code, n_iters, residual, nnz);
+
+  if (cs_glob_n_ranks > 1) /* Parallel mode */
+    cs_range_set_scatter(rset,
+                         CS_REAL_TYPE, 1, /* type and stride */
+                         xsol, xsol);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_SLES_DBG > 1
+  if (cs_glob_n_ranks > 1) /* Parallel mode */
+    cs_range_set_scatter(rset,
+                         CS_REAL_TYPE, 1, /* type and stride */
+                         b, b);
+
+  cs_dbg_fprintf_system(eqp->name, cs_shared_time_step->nt_cur,
+                        CS_CDOFB_MONOLITHIC_DBG,
+                        xsol, b, 3*n_faces);
+#endif
+
+  /* Interlace xsol --> u_f and p_c */
+# pragma omp parallel for if (CS_THR_MIN > n_faces)     \
+  shared(u_f, xsol) firstprivate(n_faces)
+  for (cs_lnum_t f = 0; f < n_faces; f++) {
+
+    u_f[3*f]   = xsol[f];
+    u_f[3*f+1] = xsol[f +   n_faces];
+    u_f[3*f+2] = xsol[f + 2*n_faces];
+
+  }
+
+  /* Copy the part of the solution array related to the pressure in cells */
+  memcpy(p_c, xsol + 3*n_faces, n_cells*sizeof(cs_real_t));
+
+  /* Free what can be freed at this stage */
+  BFT_FREE(xsol);
+  BFT_FREE(b);
+
+  return n_iters;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Use the GKB algorithm to solve the saddle-point problem arising
+ *         from CDO-Fb schemes for Stokes and Navier-Stokes with a monolithic
+ *         coupling
+ *
+ * \param[in]      nsp      pointer to a cs_navsto_param_t structure
+ * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      matrix   pointer to a cs_matrix_t structure
+ * \param[in, out] sc       pointer to the scheme context
+ * \param[in, out] sles     pointer to a cs_sles_t structure
+ * \param[in, out] u_f      initial velocity on faces
+ * \param[in, out] p_c      initial pressure in cells
+ * \param[in, out] b_f      right-hand side (scatter/gather if needed) on faces
+ * \param[in, out] b_c      right_hand side on cells (mass equation)
+ *
+ * \return the cumulated number of iterations of the solver
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
+                              const cs_equation_param_t     *eqp,
+                              const cs_matrix_t             *matrix,
+                              cs_cdofb_monolithic_t         *sc,
+                              cs_sles_t                     *sles,
+                              cs_real_t                     *u_f,
+                              cs_real_t                     *p_c,
+                              cs_real_t                     *b_f,
+                              cs_real_t                     *b_c)
 {
   /* Sanity checks */
   assert(nsp != NULL && nsp->sles_strategy == CS_NAVSTO_SLES_GKB_SATURNE);
+  assert(sc != NULL);
   assert(cs_shared_range_set != NULL);
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_real_t  *vol = quant->cell_vol;
+  const cs_real_t  gamma = sc->ref_graddiv_coef;
+  const cs_real_t  *div_op = sc->c2f_divergence;
 
   /* Allocate and initialize the GKB builder structure */
   cs_gkb_builder_t  *gkb = _init_gkb_builder(gamma,
@@ -1860,10 +1998,12 @@ cs_cdofb_gkb_solve(const cs_matrix_t             *matrix,
   for (cs_lnum_t iu = 0; iu < gkb->n_u_dofs; iu++)
     u_f[iu] = gkb->u_tilda[iu] + gkb->b_tilda[iu];
 
+  int n_inner_iter = gkb->info.n_inner_iter;
+
   /* Last step: Free temporary memory */
   _free_gkb_builder(&gkb);
 
-  printf(" GRAD-DIV COEF: %6.3e\n", gamma); /* DEBUG */
+  return  n_inner_iter;
 }
 
 /*----------------------------------------------------------------------------*/

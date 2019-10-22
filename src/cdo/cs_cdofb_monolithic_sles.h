@@ -38,6 +38,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_cdofb_monolithic_priv.h"
 #include "cs_navsto_param.h"
 
 /*----------------------------------------------------------------------------*/
@@ -88,34 +89,63 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Use the GKB algorithm to solve the saddle-point problem arising
- *         from CDO-Fb schemes for Stokes and Navier-Stokes with a monolithic
- *         coupling
+ * \brief  Solve a linear system arising from a scalar-valued CDO-Fb scheme
  *
- * \param[in]      matrix   pointer to a cs_matrix_t structure
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in]      div_op   pointer to the values of divergence operator
- * \param[in]      gamma    value of the grad-div coefficient
+ * \param[in]      matrix   pointer to a cs_matrix_t structure
+ * \param[in, out] sc       pointer to the scheme context
  * \param[in, out] sles     pointer to a cs_sles_t structure
  * \param[in, out] u_f      initial velocity on faces
  * \param[in, out] p_c      initial pressure in cells
  * \param[in, out] b_f      right-hand side (scatter/gather if needed) on faces
  * \param[in, out] b_c      right_hand side on cells (mass equation)
+ *
+ * \return the (cumulated) number of iterations of the solver
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_cdofb_gkb_solve(const cs_matrix_t             *matrix,
-                   const cs_navsto_param_t       *nsp,
-                   const cs_equation_param_t     *eqp,
-                   const cs_real_t               *div_op,
-                   cs_real_t                      gamma,
-                   cs_sles_t                     *sles,
-                   cs_real_t                     *u_f,
-                   cs_real_t                     *p_c,
-                   cs_real_t                     *b_f,
-                   cs_real_t                     *b_c);
+int
+cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
+                          const cs_equation_param_t     *eqp,
+                          const cs_matrix_t             *matrix,
+                          cs_cdofb_monolithic_t         *sc,
+                          cs_sles_t                     *sles,
+                          cs_real_t                     *u_f,
+                          cs_real_t                     *p_c,
+                          cs_real_t                     *b_f,
+                          cs_real_t                     *b_c);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Use the GKB algorithm to solve the saddle-point problem arising
+ *         from CDO-Fb schemes for Stokes and Navier-Stokes with a monolithic
+ *         coupling
+ *
+ * \param[in]      nsp      pointer to a cs_navsto_param_t structure
+ * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      matrix   pointer to a cs_matrix_t structure
+ * \param[in, out] sc       pointer to the scheme context
+ * \param[in, out] sles     pointer to a cs_sles_t structure
+ * \param[in, out] u_f      initial velocity on faces
+ * \param[in, out] p_c      initial pressure in cells
+ * \param[in, out] b_f      right-hand side (scatter/gather if needed) on faces
+ * \param[in, out] b_c      right_hand side on cells (mass equation)
+ *
+ * \return the cumulated number of iterations of the solver
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
+                              const cs_equation_param_t     *eqp,
+                              const cs_matrix_t             *matrix,
+                              cs_cdofb_monolithic_t         *sc,
+                              cs_sles_t                     *sles,
+                              cs_real_t                     *u_f,
+                              cs_real_t                     *p_c,
+                              cs_real_t                     *b_f,
+                              cs_real_t                     *b_c);
 
 /*----------------------------------------------------------------------------*/
 
