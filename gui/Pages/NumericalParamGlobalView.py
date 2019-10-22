@@ -94,9 +94,9 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.modelIMRGRA.addItem(self.tr("Least squares method over neighboring cells"),'1')
         self.modelIMRGRA.addItem(self.tr("Least squares method over extended cell neighborhood"),'2')
         self.modelIMRGRA.addItem(self.tr("Least squares method over partial extended cell neighborhood"),'3')
-        self.modelIMRGRA.addItem(self.tr("Iterative method with least squares initialization"),'4')
-        self.modelIMRGRA.addItem(self.tr("Iterative method with least squares initialization and extended neighbordood"),'5')
-        self.modelIMRGRA.addItem(self.tr("Iterative method with least squares initialization and partial extended neighbordood"),'6')
+        self.modelIMRGRA.addItem(self.tr("Green-Gauss with least squares gradient face values"),'4')
+        self.modelIMRGRA.addItem(self.tr("Green-Gauss with extended neighborhood least squares gradient face values"),'5')
+        self.modelIMRGRA.addItem(self.tr("Green-Gauss with partial extended neighborhood least squares gradient face values"),'6')
 
         self.comboBoxEXTRAG.setSizeAdjustPolicy(QComboBox.AdjustToContents)
 
