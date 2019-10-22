@@ -3457,6 +3457,12 @@ cs_post_define_writer(int                     writer_id,
   w->active = 0;
   w->n_last = -2;
   w->t_last = cs_glob_time_step->t_prev;
+  if (frequency_n < 0 && frequency_t > 0) {
+    int n_steps = w->t_last / frequency_t;
+    if (n_steps * frequency_t > w->t_last)
+      n_steps -= 1;
+    w->t_last = n_steps * frequency_t;
+  }
   w->ot = NULL;
 
   wd->time_dep = time_dep;
