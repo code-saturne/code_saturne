@@ -222,7 +222,7 @@ cs_lagr_gradients(int            time_id,
   /* Compute pressure gradient
    * ========================= */
 
-  cs_gradient_scalar("Work array",
+  cs_gradient_scalar("pressure [Lagrangian module]",
                      gradient_type,
                      halo_type,
                      inc,

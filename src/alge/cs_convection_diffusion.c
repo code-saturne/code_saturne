@@ -1847,7 +1847,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
     bft_error(__FILE__, __LINE__, 0,
               _("invalid value of isstpp for a work array"));
   } else {
-    strcpy(var_name, "Work array");
+    strcpy(var_name, "[scalar convection-diffusion]");
   }
   var_name[31] = '\0';
 
@@ -3190,7 +3190,7 @@ cs_face_convection_scalar(int                       idtvar,
     bft_error(__FILE__, __LINE__, 0,
               _("invalid value of isstpp for a work array"));
   } else {
-    strcpy(var_name, "Work array");
+    strcpy(var_name, "[scalar face flux from convection]");
   }
   var_name[31] = '\0';
 
@@ -4245,7 +4245,7 @@ cs_convection_diffusion_vector(int                         idtvar,
     snprintf(var_name, 31, "%s", f->name);
   }
   else
-    strcpy(var_name, "Work array");
+    strcpy(var_name, "[convection-diffusion, vector]");
   var_name[31] = '\0';
 
   /* Discontinuous porous treatment */
@@ -5906,7 +5906,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
     snprintf(var_name, 31, "%s", f->name);
   }
   else
-    strcpy(var_name, "Work array");
+    strcpy(var_name, "[convection-diffusion, tensor]");
   var_name[31] = '\0';
 
   if (iwarnp >= 2 && iconvp == 1) {
@@ -6908,7 +6908,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
     snprintf(var_name, 31, "%s", f->name);
   }
   else
-    strcpy(var_name, "Work array");
+    strcpy(var_name, "[convection-diffusion, thermal]");
   var_name[31] = '\0';
 
   if (iwarnp >= 2) {
@@ -8086,7 +8086,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
     snprintf(var_name, 31, "%s", f->name);
   }
   else
-    strcpy(var_name, "Work array");
+    strcpy(var_name, "[anisotropic diffusion, scalar]");
   var_name[31] = '\0';
 
   /* Porosity fields */
@@ -8836,7 +8836,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
     snprintf(var_name, 31, "%s", f->name);
   }
   else
-    strcpy(var_name, "Work array");
+    strcpy(var_name, "[anisotropic left diffusion, vector]");
   var_name[31] = '\0';
 
   if (icoupl > 0) {
@@ -9387,7 +9387,7 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
     snprintf(var_name, 31, "%s", f->name);
   }
   else
-    strcpy(var_name, "Work array");
+    strcpy(var_name, "[anisotropic right diffusion, vector]");
   var_name[31] = '\0';
 
   viscce = viscel;
@@ -9403,7 +9403,6 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
                                        &n_distant,
                                        &faces_distant);
   }
-
 
   /* 2. Compute the diffusive part with reconstruction technics */
 
@@ -10094,7 +10093,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
     snprintf(var_name, 31, "%s", f->name);
   }
   else
-    strcpy(var_name, "Work array");
+    strcpy(var_name, "[anisotropic diffusion, tensor]");
   var_name[31] = '\0';
 
   /* Porosity fields */
@@ -10547,7 +10546,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
  *
  * Please refer to the
  * <a href="../../theory.pdf#itrmas"><b>itrmas/itrgrp</b></a> section of the
- * theory guide for more informations.
+ * theory guide for more information.
  *
  * \param[in]     f_id          field id (or -1)
  * \param[in]     m             pointer to mesh
@@ -10703,7 +10702,7 @@ cs_face_diffusion_potential(const int                 f_id,
     snprintf(var_name, 31, "%s", f->name);
   }
   else
-    strcpy(var_name, "Work array");
+    strcpy(var_name, "[face mass flux update]");
   var_name[31] = '\0';
 
   /* Handle parallelism and periodicity */
@@ -11070,7 +11069,7 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
     snprintf(var_name, 31, "%s", f->name);
   }
   else
-    strcpy(var_name, "Work array");
+    strcpy(var_name, "[face mass flux update]");
   var_name[31] = '\0';
 
   /* Porosity fields */
@@ -11543,7 +11542,7 @@ cs_diffusion_potential(const int                 f_id,
     snprintf(var_name, 31, "%s", f->name);
   }
   else
-    strcpy(var_name, "Work array");
+    strcpy(var_name, "[cell mass flux divergence update]");
   var_name[31] = '\0';
 
   /* Handle parallelism and periodicity */
@@ -11939,7 +11938,7 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
     snprintf(var_name, 31, "%s", f->name);
   }
   else
-    strcpy(var_name, "Work array");
+    strcpy(var_name, "[cell mass flux divergence update]");
   var_name[31] = '\0';
 
   /* Porosity fields */

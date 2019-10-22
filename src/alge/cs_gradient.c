@@ -157,8 +157,7 @@ static cs_gradient_info_t **cs_glob_gradient_systems = NULL;
 const char *cs_gradient_type_name[]
   = {N_("Iterative reconstruction"),
      N_("Least-squares"),
-     N_("Reconstruction with Least-squares"),
-     N_("Iterative (old)")};
+     N_("Reconstruction with Least-squares")};
 
 /* Timer statistics */
 
@@ -428,7 +427,8 @@ _gradient_info_dump(cs_gradient_info_t *this_info)
 
   cs_log_printf(CS_LOG_PERFORMANCE,
                 _("\n"
-                  "Summary of gradient computations for \"%s\" (%s):\n\n"
+                  "Summary of gradient computations for \"%s\":\n\n"
+                  "  Reconstruction type:   %s\n"
                   "  Number of calls:       %d\n"),
                 this_info->name, cs_gradient_type_name[this_info->type],
                 n_calls);

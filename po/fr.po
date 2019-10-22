@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-10-03 15:49+0200\n"
+"POT-Creation-Date: 2019-10-22 19:47+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3060,25 +3060,21 @@ msgstr "Reconstruction itérative"
 msgid "Least-squares"
 msgstr "Moindres carrés"
 
-msgid "Least-squares, then iterative (old))"
-msgstr "Moindres carrés puis itérative (ancienne)"
-
-msgid "conservative, reconstruction with Least-squares"
-msgstr "conservatif, reconstruction par Moindres carrés"
-
-msgid "Iterative (old)"
-msgstr "Itérative (ancienne)"
+msgid "Reconstruction with Least-squares"
+msgstr "Reconstruction Green-Gauss avec Moindres carrés"
 
 #, c-format
 msgid ""
 "\n"
-"Summary of gradient computations for \"%s\" (%s):\n"
+"Summary of gradient computations for \"%s\":\n"
 "\n"
+"  Reconstruction type:   %s\n"
 "  Number of calls:       %d\n"
 msgstr ""
 "\n"
-"Bilan des calculs de gradient pour \"%s\" (%s) :\n"
+"Bilan des calculs de gradient pour \"%s\" :\n"
 "\n"
+"  Type de méthode :      %s\n"
 "  Nombre d'appels :      %d\n"
 
 #, c-format
@@ -6232,15 +6228,6 @@ msgstr ""
 
 #, c-format
 msgid "Called cs_interface_set_max with unhandled datatype (%d)."
-msgstr ""
-
-msgid "Extended neighborhood not implemented for internal coupling."
-msgstr "Voisinage étendu non utilisable avec le couplage interne."
-
-#, c-format
-msgid ""
-"Gradient type %s is \n"
-"not implemented with internal coupling."
 msgstr ""
 
 #, c-format
@@ -10002,6 +9989,12 @@ msgid ""
 msgstr ""
 
 #, c-format
+msgid ""
+" %s: Undefined iterative solver for solving %s equation.\n"
+" Please modify your settings."
+msgstr ""
+
+#, c-format
 msgid " %s: Invalid key for setting the equation %s."
 msgstr "%s : type de clé invalide pour l'équation %s."
 
@@ -10009,12 +10002,6 @@ msgstr "%s : type de clé invalide pour l'équation %s."
 msgid ""
 " %s: Equation %s is not modifiable anymore.\n"
 " Please check your settings."
-msgstr ""
-
-#, c-format
-msgid ""
-" %s: Undefined iterative solver for solving %s equation.\n"
-" Please modify your settings."
 msgstr ""
 
 #, c-format
@@ -16416,3 +16403,9 @@ msgstr ""
 "    cssr1:       %14.5e (Coef c_r1)\n"
 "    cssr2:       %14.5e (Coef c_r2)\n"
 "    cssr3:       %14.5e (Coef c_r3)\n"
+
+#~ msgid "Least-squares, then iterative (old))"
+#~ msgstr "Moindres carrés puis itérative (ancienne)"
+
+#~ msgid "Extended neighborhood not implemented for internal coupling."
+#~ msgstr "Voisinage étendu non utilisable avec le couplage interne."

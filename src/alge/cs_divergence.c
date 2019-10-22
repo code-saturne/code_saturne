@@ -472,7 +472,7 @@ cs_mass_flux(const cs_mesh_t          *m,
     snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
   }
   else {
-    strcpy(var_name, "Work array (momentum)"); var_name[31] = '\0';
+    strcpy(var_name, "[momentum]"); var_name[31] = '\0';
   }
 
   /* ---> Momentum computation */
@@ -1007,7 +1007,7 @@ cs_tensor_face_flux(const cs_mesh_t          *m,
     snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
   }
   else {
-    strcpy(var_name, "Work array"); var_name[31] = '\0';
+    strcpy(var_name, "[tensor face flux]"); var_name[31] = '\0';
   }
 
   /* ---> Momentum computation */
