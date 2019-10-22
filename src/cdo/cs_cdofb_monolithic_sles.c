@@ -1323,7 +1323,7 @@ _transform_gkb_system(const cs_matrix_t             *matrix,
   for (cs_lnum_t ip = 0; ip < gkb->n_p_dofs; ip++)
     gkb->b_tilda[ip] = b_c[ip] - gkb->d__v[ip];
 
-  BFT_FREE(_eqp);
+  cs_equation_free_param(_eqp);
 }
 
 /*----------------------------------------------------------------------------*/
