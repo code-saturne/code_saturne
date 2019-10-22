@@ -9,6 +9,8 @@ User changes:
   * also add possibility for mapping mean velocity gradient to turbulent
     dispersion, for use with multiple fluid phases.
 
+- Improve naming of gradient options in GUI.
+
 - Minor Documentation (Doxygen) and user example improvements.
 
 - Minor improvements of readibility of some smgr error messages.
