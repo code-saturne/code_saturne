@@ -255,7 +255,7 @@ _write_string(_ensight_file_t   f,
     strncpy(buf, s, 80);
     buf[80] = '\0';
     for (i = strlen(buf); i < 80; i++)
-      buf[i] = ' ';
+      buf[i] = '\0';
     cs_file_write_global(f.bf, buf, 1, 80);
   }
 }
