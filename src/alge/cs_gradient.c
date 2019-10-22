@@ -6340,7 +6340,7 @@ _gradient_scalar(const char                    *var_name,
 
   case CS_GRADIENT_LSQ:
 
-    if (w_stride == 6)
+    if (w_stride == 6 && c_weight != NULL)
       _lsq_scalar_gradient_ani(mesh,
                                fvq,
                                cpl,
@@ -6378,7 +6378,7 @@ _gradient_scalar(const char                    *var_name,
       cs_real_3_t  *restrict r_grad;
       BFT_MALLOC(r_grad, n_cells_ext, cs_real_3_t);
 
-      if (w_stride == 6)
+      if (w_stride == 6 && c_weight != NULL)
         _lsq_scalar_gradient_ani(mesh,
                                  fvq,
                                  cpl,
