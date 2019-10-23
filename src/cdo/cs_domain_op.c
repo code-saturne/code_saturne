@@ -430,18 +430,11 @@ cs_domain_post(cs_domain_t  *domain)
   /* Extra-operations */
   /* ================ */
 
-  /* User-defined extra operations */
-  cs_user_extra_operations(domain);
-
   /* Predefined extra-operations related to advection fields */
   cs_advection_field_update(domain->time_step->t_cur, true);
 
   /* Log output */
   if (cs_domain_needs_log(domain)) {
-
-    /* Basic statistic related to variables */
-    if (domain->cdo_context->mode == CS_DOMAIN_CDO_MODE_ONLY)
-      cs_log_iteration(); /* Otherwise called from the FORTRAN part */
 
     /* Post-processing */
     /* =============== */
@@ -500,6 +493,10 @@ cs_domain_post(cs_domain_t  *domain)
     if (cs_navsto_system_is_activated())
       cs_navsto_system_extra_op(domain->connect, domain->cdo_quantities);
 
+    /* Basic statistic related to variables */
+    if (domain->cdo_context->mode == CS_DOMAIN_CDO_MODE_ONLY)
+      cs_log_iteration(); /* Otherwise called from the FORTRAN part */
+
   } /* Needs a new log */
 
   /* Predefined extra-operations related to
@@ -511,6 +508,9 @@ cs_domain_post(cs_domain_t  *domain)
      cs_post_add_time_mesh_dep_output() function pointer
   */
   cs_post_time_step_output(domain->time_step);
+
+  /* User-defined extra operations */
+  cs_user_extra_operations(domain);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(domain->tcp), &t0, &t1);
