@@ -761,6 +761,12 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
   /* Predefined post-processing */
   /* ========================== */
 
+  cs_flag_t  integral_masks[3] = { CS_NAVSTO_POST_KINETIC_ENERGY,
+                                   CS_NAVSTO_POST_HELICITY,
+                                   CS_NAVSTO_POST_ENSTROPHY };
+  if (nsp->verbosity > 0 && cs_flag_at_least(nsp->post_flag, 3, integral_masks))
+    cs_log_printf(CS_LOG_DEFAULT, "\n- Integral over the domain\n");
+
   if (nsp->post_flag & CS_NAVSTO_POST_KINETIC_ENERGY) {
 
     cs_field_t  *kinetic_energy = cs_field_by_name("kinetic_energy");
@@ -771,6 +777,16 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 #   pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < quant->n_cells; i++)
       kinetic_energy->val[i] = 0.5*cs_math_3_square_norm(u_cell + 3*i);
+
+    if (nsp->verbosity > 0) {
+
+      double  k = cs_weighted_sum(quant->n_cells, quant->cell_vol,
+                                  kinetic_energy->val);
+
+      cs_parall_sum(1, CS_DOUBLE, &k);
+      cs_log_printf(CS_LOG_DEFAULT, "i Kinetic energy  | %- 8.6e\n", k);
+
+    }
 
   } /* Kinetic energy */
 
@@ -789,10 +805,11 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 
   } /* Velocity gradient */
 
-  cs_flag_t  mask_velgrd = CS_NAVSTO_POST_VORTICITY | CS_NAVSTO_POST_HELICITY |
-    CS_NAVSTO_POST_ENSTROPHY;
+  cs_flag_t  mask_velgrd[3] = { CS_NAVSTO_POST_VORTICITY,
+                                CS_NAVSTO_POST_HELICITY,
+                                CS_NAVSTO_POST_ENSTROPHY };
 
-  if (cs_flag_test(nsp->post_flag, mask_velgrd)) {
+  if (cs_flag_at_least(nsp->post_flag, 3, mask_velgrd)) {
 
     cs_field_t  *vorticity = cs_field_by_name("vorticity");
     cs_field_current_to_previous(vorticity);
@@ -855,6 +872,30 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
       } /* Loop on cells */
 
     } /* velocity gradient has been computed previously */
+
+    if (nsp->verbosity > 0) {
+
+      if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY) {
+
+        double  e = cs_weighted_sum(quant->n_cells, quant->cell_vol,
+                                    enstrophy->val);
+
+        cs_parall_sum(1, CS_DOUBLE, &e);
+        cs_log_printf(CS_LOG_DEFAULT, "i Enstrophy       | %- 8.6e\n", e);
+
+      }
+
+      if (nsp->post_flag & CS_NAVSTO_POST_HELICITY) {
+
+        double  h = cs_weighted_sum(quant->n_cells, quant->cell_vol,
+                                    helicity->val);
+
+        cs_parall_sum(1, CS_DOUBLE, &h);
+        cs_log_printf(CS_LOG_DEFAULT, "i Helicity        | %- 8.6e\n", h);
+
+      }
+
+    } /* verbosity > 0 */
 
   } /* vorticity, helicity or enstrophy computations */
 
