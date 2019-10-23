@@ -70,7 +70,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
                              'liquid_potential_temperature',
                              'total_energy')
 
-        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
+        if case.module_name() == "neptune_cfd":
             self.node_models = None
             self.node_therm = None
             return
@@ -208,7 +208,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         """
         self.isInList(thermal_scalar, self.thermalModel)
 
-        if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
+        if self.case.module_name() == "neptune_cfd":
             return
 
         prev_model = self.getThermalScalarModel()
@@ -244,7 +244,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         """
         Get name of thermal scalar (not label)
         """
-        if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
+        if self.case.module_name() == "neptune_cfd":
             return 'enthalpy'
         else:
             model = self.node_therm['model']
@@ -260,7 +260,7 @@ class ThermalScalarModel(DefineUserScalarsModel, Variables, Model):
         Get name for thermal scalar
         """
         name = ""
-        if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
+        if self.case.module_name() == "neptune_cfd":
             name = 'enthalpy'
         else:
             node = self.node_therm.xmlGetNode('variable', type='thermal')

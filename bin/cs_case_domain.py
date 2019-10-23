@@ -36,15 +36,15 @@ import sys
 import shutil
 import stat
 
-import cs_compile
-import cs_xml_reader
+from code_saturne import cs_compile
+from code_saturne import cs_xml_reader
 
-from cs_exec_environment import run_command, source_shell_script
-from cs_exec_environment import enquote_arg, separate_args
-from cs_exec_environment import get_ld_library_path_additions
-from cs_exec_environment import source_syrthes_env
+from code_saturne.cs_exec_environment import run_command, source_shell_script
+from code_saturne.cs_exec_environment import enquote_arg, separate_args
+from code_saturne.cs_exec_environment import get_ld_library_path_additions
+from code_saturne.cs_exec_environment import source_syrthes_env
 
-from cs_mei_to_c import mei_to_c_interpreter
+from code_saturne.cs_mei_to_c import mei_to_c_interpreter
 
 #===============================================================================
 # Utility functions
@@ -357,7 +357,7 @@ class base_domain:
         else:
             debug_args += 'python '
         cs_pkg_dir = self.package.get_dir('pkgpythondir')
-        if self.package.name == 'neptune_cfd':
+        if self.package.name != 'code_saturne':
             cs_pkg_dir = os.path.join(cs_pkg_dir, '../code_saturne')
         dbg_wrapper_path = os.path.join(cs_pkg_dir, 'cs_debug_wrapper.py')
         debug_args += dbg_wrapper_path + ' '
@@ -406,7 +406,8 @@ class domain(base_domain):
 
         # Default executable
 
-        self.solver_path = self.package_compute.get_solver()
+        self.solver_path = os.path.join(self.package_compute.get_dir("pkglibexecdir"),
+                                        "cs_solver" + self.package.config.exeext)
 
         # Preprocessor options
 
@@ -453,7 +454,7 @@ class domain(base_domain):
 
         self.restart_input = None
 
-        from cs_exec_environment import get_command_output
+        from code_saturne.cs_exec_environment import get_command_output
 
         results_dir = os.path.abspath(os.path.join(self.result_dir, '..'))
         results = os.listdir(results_dir)
@@ -490,16 +491,19 @@ class domain(base_domain):
         """
 
         if param != None:
-            root_str = self.package.code_name + '_GUI'
             version_str = '2.0'
             P = cs_xml_reader.Parser(os.path.join(self.data_dir, param),
-                                     root_str = root_str,
                                      version_str = version_str)
             params = P.getParams()
             for k in list(params.keys()):
                 self.__dict__[k] = params[k]
 
             self.param = param
+
+            if params['xml_root_name'] == 'NEPTUNE_CFD_GUI':
+                solver_dir = self.package_compute.get_dir("pkglibexecdir")
+                solver_name = "nc_solver" + self.package.config.exeext
+                self.solver_path = os.path.join(solver_dir, solver_name)
 
     #---------------------------------------------------------------------------
 
@@ -603,7 +607,7 @@ class domain(base_domain):
             needs_comp = True
 
         if self.param != None:
-            from model.XMLengine import Case
+            from code_saturne.model.XMLengine import Case
             from code_saturne.model.SolutionDomainModel import getRunType
 
             fp = os.path.join(self.data_dir, self.param)
@@ -612,15 +616,17 @@ class domain(base_domain):
             case.xmlCleanAllBlank(case.xmlRootNode())
 
             prepro = (getRunType(case) != 'standard')
-            if case['package'].name == 'code_saturne':
-                from model.XMLinitialize import XMLinit
-            else:
-                from model.XMLinitializeNeptune import XMLinitNeptune as XMLinit
-            XMLinit(case).initialize(prepro)
+            module_name = case.module_name()
+            if module_name == 'code_saturne':
+                from code_saturne.model.XMLinitialize import XMLinit
+                XMLinit(case).initialize(prepro)
+            elif module_name == 'neptune_cfd':
+                from code_saturne.model.XMLinitializeNeptune import XMLinitNeptune
+                XMLinitNeptune(case).initialize(prepro)
             case.xmlSaveDocument()
 
             case['case_path'] = self.exec_dir
-            self.mci = mei_to_c_interpreter(case)
+            self.mci = mei_to_c_interpreter(case, module_name=module_name)
 
             if self.mci.has_meg_code():
                 needs_comp = True
@@ -673,7 +679,10 @@ class domain(base_domain):
             log_name = os.path.join(self.exec_dir, 'compile.log')
             log = open(log_name, 'w')
 
+            solver_name = os.path.basename(self.solver_path)
+
             retval = cs_compile.compile_and_link(self.package_compute,
+                                                 solver_name,
                                                  exec_src,
                                                  self.exec_dir,
                                                  self.compile_cflags,
@@ -687,8 +696,8 @@ class domain(base_domain):
             log.close()
 
             if retval == 0:
-                self.solver_path = os.path.join('.',
-                                                self.package_compute.solver)
+                solver_dir = '.'
+                self.solver_path = os.path.join(solver_dir, solver_name)
             else:
                 # In case of error, copy source to results directory now,
                 # as no calculation is possible, then raise exception
@@ -1004,7 +1013,7 @@ class domain(base_domain):
 
         if hasattr(self, 'fsi_aster'):
             if not sys.platform.startswith('linux'):
-                raise RunCaseError(' Coupling with Code_Aster only avalaible on Linux.')
+                raise RunCaseError(' Coupling with code_aster only avalaible on Linux.')
             salome_module = os.path.join(self.package_compute.get_dir('libdir'),
                                          'salome',
                                          'libFSI_SATURNEExelib.so')
@@ -1061,7 +1070,8 @@ class domain(base_domain):
 
         # Determine files from this stage to ignore or to possibly remove
 
-        for f in [self.package.solver, self.package.runsolver]:
+        solver_name = os.path.basename(self.solver_path)
+        for f in [solver_name, self.package.runsolver]:
             if f in dir_files:
                 purge_list.append(f)
 
@@ -1622,7 +1632,7 @@ class aster_domain(base_domain):
         s_path = os.path.join(self.exec_dir, "aster_by_yacs")
         s = open(s_path, 'w')
 
-        from cs_exec_environment import write_shell_shebang
+        from code_saturne.cs_exec_environment import write_shell_shebang
         write_shell_shebang(s)
 
         s.write('cd ..\n')

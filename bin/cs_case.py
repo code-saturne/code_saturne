@@ -316,15 +316,21 @@ class case:
 
         name = self.package.code_name
 
-        if len(self.domains) == 1:
-            if self.domains[0].n_procs > 1:
-                msg = ' Parallel ' + name + ' on ' \
-                    + str(self.domains[0].n_procs) + ' processes.\n'
+        for d in self.domains:
+            solver_name = os.path.basename(d.solver_path)
+            if solver_name == 'cs_solver':
+                name = 'code_saturne'
+            elif solver_name == 'nc_solver':
+                name = 'neptune_cfd'
+
+            if len(self.domains) == 1:
+                if d.n_procs > 1:
+                    msg = ' Parallel ' + name + ' on ' \
+                          + str(d.n_procs) + ' processes.\n'
+                else:
+                    msg = ' Single processor ' + name + ' simulation.\n'
+                sys.stdout.write(msg)
             else:
-                msg = ' Single processor ' + name + ' simulation.\n'
-            sys.stdout.write(msg)
-        else:
-            for d in self.domains:
                 msg = ' ' + name + ' domain ' + d.name + ' on ' \
                     + str(d.n_procs) + ' process(es).\n'
                 sys.stdout.write(msg)

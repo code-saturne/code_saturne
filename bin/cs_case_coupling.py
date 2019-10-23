@@ -137,10 +137,10 @@ def coupling(package,
             use_syrthes = True
             syr_domains.append(dom)
 
-        elif (d.get('solver') == 'Code_Aster' or d.get('solver') == 'Aster'):
+        elif (d.get('solver') in ('Code_Aster', 'code_aster', 'Aster')):
 
             if len(ast_domain) > 0:
-                err_str = 'Only 1 Code_Aster domain is currently handled\n'
+                err_str = 'Only 1 code_aster domain is currently handled\n'
                 raise RunCaseError(err_str)
 
             try:
@@ -149,7 +149,7 @@ def coupling(package,
                                    param = d.get('script'))
 
             except Exception:
-                err_str = 'Cannot create Code_Aster domain.\n'
+                err_str = 'Cannot create code_aster domain.\n'
                 err_str += ' domain = ' + d.get('domain') + '\n'
                 err_str += ' script = ' + d.get('script') + '\n'
                 raise RunCaseError(err_str)

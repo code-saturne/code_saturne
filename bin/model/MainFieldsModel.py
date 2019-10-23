@@ -91,9 +91,7 @@ class MainFieldsModel(Variables, Model):
         """
         # XML file parameters
         self.case = case
-        #~ if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
-            #
-            # XML file parameters
+
         self.XMLNodethermo   = self.case.xmlGetNode('thermophysical_models')
         self.__XMLNodefields = self.XMLNodethermo.xmlInitNode('fields')
         self.XMLNodeVariable = self.XMLNodethermo.xmlInitNode('variables')
@@ -106,7 +104,6 @@ class MainFieldsModel(Variables, Model):
         self.node_anal       = self.case.xmlInitNode('analysis_control')
         self.node_average    = self.node_anal.xmlInitNode('time_averages')
         self.node_profile    = self.node_anal.xmlInitNode('profiles')
-
 
         pressure_node = self.XMLNodethermo.xmlGetNode('variable',
                                                       name='pressure')

@@ -197,7 +197,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
 
         self.coal_or_gas = "off"
 
-        if self.case['package'].name == 'code_saturne':
+        if self.case.module_name() == 'code_saturne':
             from code_saturne.model.CoalCombustionModel import CoalCombustionModel
             self.coal_or_gas = CoalCombustionModel(self.case).getCoalCombustionModel("only")
             del CoalCombustionModel
@@ -232,7 +232,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
             if sca not in self.thermal.thermalScalarModelsList():
                 self.modelThermal.disableItem(str_model=sca)
 
-        if self.case['package'].name != 'code_saturne':
+        if self.case.module_name() != 'code_saturne':
             self.comboBoxThermal.setEnabled(False)
 
         else:
@@ -272,7 +272,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
         """
         Update for radiation model
         """
-        if self.case['package'].name == "code_saturne" and model == 'off':
+        if self.case.module_name() == "code_saturne" and model == 'off':
             self.ThermalRadiationGroupBox.hide()
             return
 
@@ -332,7 +332,7 @@ class ThermalView(QWidget, Ui_ThermalForm):
         self.modelRadModel.setItem(str_model=self.rmdl.getRadiativeModel())
 
         # For multiphase flows, only droplet laden gas flows are accepted
-        if self.case['package'].name != 'code_saturne':
+        if self.case.module_name() != 'code_saturne':
             mfm = MainFieldsModel(self.case)
             if mfm.getPredefinedFlow() != 'droplet_flow':
                 self.modelRadModel.setItem(str_model='off')

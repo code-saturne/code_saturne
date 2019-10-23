@@ -552,7 +552,7 @@ class cs_compile(object):
 
     #---------------------------------------------------------------------------
 
-    def compile_and_link(self, srcdir, destdir=None, src_list=None,
+    def compile_and_link(self, base_name, srcdir, destdir=None, src_list=None,
                          opt_cflags=None, opt_cxxflags=None, opt_fcflags=None,
                          opt_libs=None, force_link=False, keep_going=False,
                          stdout=sys.stdout, stderr=sys.stderr):
@@ -563,7 +563,7 @@ class cs_compile(object):
 
         # Determine executable name
 
-        exec_name = self.pkg.solver
+        exec_name = base_name
         if destdir != None:
             exec_name = os.path.join(destdir, exec_name)
 
@@ -609,7 +609,7 @@ class cs_compile(object):
 
 #---------------------------------------------------------------------------
 
-def compile_and_link(pkg, srcdir, destdir=None,
+def compile_and_link(pkg, base_name, srcdir, destdir=None,
                      opt_cflags=None, opt_cxxflags=None, opt_fcflags=None,
                      opt_libs=None, force_link=False, keep_going=False,
                      stdout=sys.stdout, stderr=sys.stderr):
@@ -618,7 +618,8 @@ def compile_and_link(pkg, srcdir, destdir=None,
     """
     c = cs_compile(pkg)
 
-    retcode = c.compile_and_link(srcdir,
+    retcode = c.compile_and_link(base_name,
+                                 srcdir,
                                  destdir=destdir,
                                  opt_cflags=opt_cflags,
                                  opt_cxxflags=opt_cxxflags,
@@ -655,6 +656,7 @@ def main(argv, pkg):
         dest_dir = None
 
     retcode = compile_and_link(pkg,
+                               pkg.solver,
                                src_dir,
                                destdir=dest_dir,
                                opt_cflags=cflags,

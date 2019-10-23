@@ -210,7 +210,7 @@ class SourceTermsView(QWidget, Ui_SourceTermsForm):
         if zone['thermal_source_term']  == "on":
             self.pushButtonThermal.show()
             self.labelThermal.show()
-            if self.case['package'].name != "code_saturne" and self.th_sca_name=="":
+            if self.case.module_name() != "code_saturne" and self.th_sca_name=="":
                 self.th_sca_name = 'enthalpy'
             exp = self.mdl.getThermalFormula(self.zone, self.th_sca_name)
             if exp:

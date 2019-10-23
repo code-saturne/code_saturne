@@ -59,7 +59,7 @@ else :
    import eosAva
 
 #-------------------------------------------------------------------------------
-# class XMLinitNeptune
+# class XMLinitNeptune for neptune_cfd solver
 #-------------------------------------------------------------------------------
 
 class XMLinitNeptune(Variables):
@@ -703,11 +703,6 @@ class XMLinitTestCaseNeptune(unittest.TestCase):
         """
         Check whether the headings markups could be initialized
         """
-        #doc = \
-        #'<NeptuneCFD case="" study="" version="1.0">'\
-        #'<solution_domain/>'\
-        #'</NEPTUNE_CFD_GUI>'
-
         XMLinit(self.case)
 
         assert self.case.root() == self.xmlNodeFromString(doc), \

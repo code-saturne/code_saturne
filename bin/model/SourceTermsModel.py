@@ -328,14 +328,14 @@ dSwdu = 0;\ndSwdv = 0;\ndSwdw = 0;\n"""
                ('t', 'current time'),
                ('volume', 'Source terms zone volume')]
 
-        if self.case['package'].name == 'code_saturne':
+        if self.case.module_name() == 'code_saturne':
             if self.therm.getThermalScalarModel() == 'enthalpy':
                 sym.append(('enthalpy', 'thermal scalar'))
             if self.therm.getThermalScalarModel() == 'total_energy':
                 sym.append(('total_energy', 'thermal scalar'))
             else:
                 sym.append(('temperature', 'thermal scalar'))
-        else:
+        elif self.case.module_name() == 'neptune_cfd':
             sym.append(('enthalpy', 'Enthalpy'))
 
         for (nme, val) in self.notebook.getNotebookList():
