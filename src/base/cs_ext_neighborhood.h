@@ -48,56 +48,109 @@ BEGIN_C_DECLS
  * Type definition
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Extended neighborhood type
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+
+  CS_EXT_NEIGHBORHOOD_NONE,                  /* No extended neighborhood */
+  CS_EXT_NEIGHBORHOOD_COMPLETE,              /* Full extended neighborhood */
+  CS_EXT_NEIGHBORHOOD_CELL_CENTER_OPPOSITE,  /* Cell centers best aligned
+                                                opposite to adjacent
+                                                cell centers */
+  CS_EXT_NEIGHBORHOOD_FACE_CENTER_OPPOSITE,  /* Cell centers best aligned
+                                                opposite to face centers */
+  CS_EXT_NEIGHBORHOOD_FACE_CENTER_ALIGNED,   /* Cell centers best aligned
+                                                with face centers */
+  CS_EXT_NEIGHBORHOOD_NON_ORTHO_MAX          /* Cells adjacent to faces
+                                                whose non-orthogonality exceeds
+                                                a given threshold */
+
+} cs_ext_neighborhood_type_t;
+
 /*============================================================================
- * Public function prototypes for Fortran API
+ *  Global variables
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Reduce the "cell -> cells" connectivity for the  extended neighborhood
- * using a non-orthogonality criterion.
+/* Short names for extended neighborhood types */
+
+extern const char *cs_ext_neighborhood_type_name[];
+
+/*============================================================================
+ * Public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the extended neighborhood type.
  *
- * Note: Only cells sharing only a vertex or vertices (not a face)
- *       belong to the "cell -> cells" connectivity.
+ * \return  extended neighborhood type
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_ext_neighborhood_type_t
+cs_ext_neighborhood_get_type(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the extended neighborhood type.
  *
- * Fortran Interface :
- *
- * SUBROUTINE REDVSE
- * *****************
- *    & ( ANOMAX )
- *
- * parameters:
- *   anomax  -->  non-orthogonality angle (rad) above which cells
- *                are selected for the extended neighborhood
- *----------------------------------------------------------------------------*/
+ * \param[in]  enh_type  extended neighborhood type
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (redvse, REDVSE) (const cs_real_t  *anomax);
+cs_ext_neighborhood_set_type(cs_ext_neighborhood_type_t  enh_type);
 
-/*----------------------------------------------------------------------------
- * Reduce the "cell -> cells" connectivity for the  extended neighborhood
- * using a non-orthogonality criterion.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Get the non_orthogonality threshold  (in degrees) associated with the
+ *        CS_EXT_NEIGHBORHOOD_NON_ORTHO_MAX neighborhood type.
+ *
+ * \return  non-orthogonality threshold
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_ext_neighborhood_get_non_ortho_max(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the non_orthogonality threshold (in degrees) associated with the
+ *        CS_EXT_NEIGHBORHOOD_NON_ORTHO_MAX neighborhood type.
+ *
+ * \param[in]  non_ortho_max  non-orthogonality threshold
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ext_neighborhood_set_non_ortho_max(cs_real_t  non_ortho_max);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reduce the "cell -> cells" connectivity for the
+ *        extended neighborhood using a non-orthogonality criterion.
  *
  * Note: Only cells sharing only a vertex or vertices (not a face)
  *       belong to the "cell -> cells" connectivity.
  *
- * parameters:
- *   mesh            <-> pointer to mesh structure
- *   mesh_quantities <-> associated mesh quantities
- *   non_ortho_max   <-- non-orthogonality angle (rad) above which cells
- *                       are selected for the extended neighborhood
- *----------------------------------------------------------------------------*/
+ * \param[in]  mesh             pointer to mesh structure
+ * \param[in]  mesh_quantities  associated mesh quantities
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
-                           cs_mesh_quantities_t  *mesh_quantities,
-                           double                 non_ortho_max);
+                           cs_mesh_quantities_t  *mesh_quantities);
 
-/*----------------------------------------------------------------------------
- * Create the  "cell -> cells" connectivity.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Create the  "cell -> cells" connectivity.
  *
- * parameters:
- *   mesh <-> pointer to a mesh structure
- *---------------------------------------------------------------------------*/
+ * \param[in, out]  mesh  pointer to a mesh structure
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_ext_neighborhood_define(cs_mesh_t  *mesh);

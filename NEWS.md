@@ -16,6 +16,9 @@ User changes:
 
 Numerics and physical modelling:
 
+- Gradient reconstruction and extended cell neighborhood:
+  * allow new options for extended neighborhood reduction.
+
 - Merge Atmospheric module and Cooling towers module air properties.
 
 - Add the capability to solve CDO equations with an advection field defined by the mass

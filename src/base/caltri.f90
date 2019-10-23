@@ -92,7 +92,7 @@ implicit none
 
 logical(kind=c_bool) :: mesh_modified, log_active
 
-integer          modhis, iappel, iisuit, imrgrl
+integer          modhis, iappel, iisuit
 integer          iel
 
 integer          inod   , idim, ifac
@@ -236,19 +236,6 @@ if (iilagr.gt.0) then
   stats_id = timer_stats_create("lagrangian_stage", &
                                 "particle_displacement_stage", &
                                 "particle displacement")
-endif
-
-!===============================================================================
-! Geometry
-!===============================================================================
-
-! Filter extended neighborhood for least-squares gradients
-
-imrgrl = abs(imrgra)
-imrgrl = modulo(imrgrl,10)
-
-if (imrgrl.eq.3 .or. imrgrl.eq.6 .or. imrgrl.eq.9) then
-  call redvse(anomax)
 endif
 
 !===============================================================================

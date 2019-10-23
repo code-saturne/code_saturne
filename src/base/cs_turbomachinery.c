@@ -48,6 +48,7 @@
 #include "cs_boundary_zone.h"
 #include "cs_coupling.h"
 #include "cs_cell_to_vertex.h"
+#include "cs_ext_neighborhood.h"
 #include "cs_gradient.h"
 #include "cs_gui.h"
 #include "cs_gui_mesh.h"
@@ -1086,6 +1087,9 @@ _update_mesh(bool     restart_mode,
   cs_mesh_quantities_compute(cs_glob_mesh, cs_glob_mesh_quantities);
   cs_mesh_bad_cells_detect(cs_glob_mesh, cs_glob_mesh_quantities);
   cs_user_mesh_bad_cells_tag(cs_glob_mesh, cs_glob_mesh_quantities);
+
+  cs_ext_neighborhood_reduce(cs_glob_mesh,
+                             cs_glob_mesh_quantities);
 
   /* Initialize selectors and locations for the mesh */
 

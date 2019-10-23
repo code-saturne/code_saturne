@@ -46,6 +46,7 @@
 #include "bft_printf.h"
 
 #include "cs_boundary_zone.h"
+#include "cs_ext_neighborhood.h"
 #include "cs_gui.h"
 #include "cs_gui_mesh.h"
 #include "cs_internal_coupling.h"
@@ -418,6 +419,9 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   cs_volume_zone_print_info();
   cs_boundary_zone_build_all(true);
   cs_boundary_zone_print_info();
+
+  cs_ext_neighborhood_reduce(cs_glob_mesh,
+                             cs_glob_mesh_quantities);
 
   /* For debugging purposes */
 

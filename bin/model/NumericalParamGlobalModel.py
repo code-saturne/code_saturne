@@ -79,12 +79,8 @@ class NumericalParamGlobalModel(Model):
         self.default['hydrostatic_equilibrium'] ='off'
         self.default['wall_pressure_extrapolation'] = 'neumann'
         self.default['time_scheme_order'] = 1
-        from code_saturne.model.GroundwaterModel import GroundwaterModel
-        if GroundwaterModel(self.case).getGroundwaterModel() != 'off':
-            self.default['gradient_reconstruction'] = 1
-        else:
-            self.default['gradient_reconstruction'] = 0
-        del GroundwaterModel
+        self.default['gradient_reconstruction'] = 'default'
+        self.default['extended_neighborhood'] = 'default'
         return self.default
 
 
@@ -186,13 +182,24 @@ class NumericalParamGlobalModel(Model):
     @Variables.noUndo
     def getGradientReconstruction(self):
         """
-        Return IMRGRA value : 0, 1, 2, 3, 4, 5, or 6
+        Return gradient reconstruction method
         """
         node = self.node_np.xmlInitNode('gradient_reconstruction', 'choice')
         choice = node['choice']
         if not choice:
             choice = self._defaultValues()['gradient_reconstruction']
-            self.setGradientReconstruction(choice)
+        return choice
+
+
+    @Variables.noUndo
+    def getExtendedNeighborType(self):
+        """
+        Return extended neighborhood type
+        """
+        node = self.node_np.xmlInitNode('extended_neighborhood', 'choice')
+        choice = node['choice']
+        if not choice:
+            choice = self._defaultValues()['extended_neighborhood']
         return choice
 
 
@@ -287,10 +294,23 @@ class NumericalParamGlobalModel(Model):
         """
         Put value of gradient_reconstruction
         """
-        self.isInt(value)
-        self.isInList(value, (0, 1, 2, 3, 4, 5, 6))
         node = self.node_np.xmlInitNode('gradient_reconstruction', 'choice')
-        node['choice'] = value
+        if value == self._defaultValues()['gradient_reconstruction']:
+            node.xmlRemoveNode()
+        else:
+            node['choice'] = value
+
+
+    @Variables.undoLocal
+    def setExtendedNeighborType(self, value):
+        """
+        Put value of extended_neighborhood
+        """
+        node = self.node_np.xmlInitNode('extended_neighborhood', 'choice')
+        if value == self._defaultValues()['extended_neighborhood']:
+            node.xmlRemoveNode()
+        else:
+            node['choice'] = value
 
 
     @Variables.undoLocal

@@ -114,11 +114,6 @@ BEGIN_C_DECLS
         - 2: least squares method with extended neighborhood
         - 3: least squares method with reduced extended neighborhood
         - 4: iterative process initialized by the least squares method
-  \var  cs_space_disc_t::anomax
-        <a name="anomax"></a>
-        non orthogonality angle of the faces, in radians.
-        For larger angle values, cells with one node on the wall are kept in the
-        extended support of the neighboring cells.
   \var  cs_space_disc_t::iflxmw
         method to compute interior mass flux due to ALE mesh velocity
         - 0: based on nodes displacement
@@ -271,20 +266,17 @@ BEGIN_C_DECLS
         Indicates the type of gradient reconstruction (one method for all the
         variables)
            - 0: iterative reconstruction of the non-orthogonalities
-           - 1: least squares method based on the first neighbour cells (cells
+           - 1: least squares method based on the first neighbor cells (cells
         which share a face with the treated cell)
-           - 2: least squares method based on the extended neighbourhood (cells
+           - 2: least squares method based on the extended neighborhood (cells
         which share a node with the treated cell)
-           - 3: least squares method based on a partial extended neighbourhood
-        (all first neighbours plus the extended neighbourhood cells that are
-        connected to a face where the non-orthogonality angle is larger than
-        parameter anomax)
+           - 3: least squares method based on a partial extended neighborhood
            - 4: iterative reconstruction with initialisation using the least
-        squares method (first neighbours)
+        squares method (first neighbors)
            - 5: iterative reconstruction with initialisation using the least
-        squares method based on an extended neighbourhood
+        squares method based on an extended neighborhood
            - 6: iterative reconstruction with initialisation using the least
-        squares method based on a partial extended neighbourhood
+        squares method based on a partial extended neighborhood
         if \ref imrgra fails due to probable mesh quality problems, it is usually
         effective to use \ref imrgra = 3. Moreover, \ref imrgra = 3 is usually
         faster than \ref imrgra = 0 (but with less feedback on its use).
@@ -301,7 +293,7 @@ BEGIN_C_DECLS
         \anchor imligr
         For each unknown variable, indicates the type of gradient limitation
            - -1: no limitation
-           - 0: based on the neighbours
+           - 0: based on the neighbors
            - 1: superior order\n
         For all the unknowns, \ref imligr is initialized to -1 if \ref imrgra
         = 0 or 4 and to 1 if \ref imrgra = 1, 2 or 3.
@@ -400,7 +392,7 @@ BEGIN_C_DECLS
              - 0.5: improved homogeneous Neumann, calculated at second-order in
         the case of an orthogonal mesh and at first-order otherwise
              - 1: gradient extrapolation (gradient at the boundary face equal to
-        the gradient in the neighbour cell), calculated at second-order in the
+        the gradient in the neighbor cell), calculated at second-order in the
         case of an orthogonal mesh and at first-order otherwise extrag often
         allows to correct the non-physical velocities that appear on horizontal
         walls when density is variable and there is gravity. It is strongly
@@ -527,7 +519,6 @@ static cs_space_disc_t  _space_disc =
 {
   .imvisf = 0,
   .imrgra = 0,
-  .anomax = -1e12*10.,
   .iflxmw = 0
 };
 
@@ -595,7 +586,6 @@ cs_tree_node_t  *cs_glob_tree = NULL;
 void
 cs_f_space_disc_get_pointers(int     **imvisf,
                              int     **imrgra,
-                             double  **anomax,
                              int     **iflxmw);
 
 void
@@ -798,19 +788,16 @@ _log_func_default_gas_mix_species_prop(const void *t)
  * parameters:
  *   imvisf  --> pointer to cs_glob_space_disc->imvisf
  *   imrgra  --> pointer to cs_glob_space_disc->imrgra
- *   anomax  --> pointer to cs_glob_space_disc->anomax
  *   iflxmw  --> pointer to cs_glob_space_disc->iflxmw
  *----------------------------------------------------------------------------*/
 
 void
 cs_f_space_disc_get_pointers(int     **imvisf,
                              int     **imrgra,
-                             double  **anomax,
                              int     **iflxmw)
 {
   *imvisf = &(_space_disc.imvisf);
   *imrgra = &(_space_disc.imrgra);
-  *anomax = &(_space_disc.anomax);
   *iflxmw = &(_space_disc.iflxmw);
 }
 
@@ -1565,19 +1552,15 @@ cs_space_disc_log_setup(void)
         "neighborhood\n"
         "                    3: standard least squares method with reduced "
         "extended neighborhood\n"
-        "                    4: iterative process initialized by the least "
-        "squares method)\n"
+        "                    4: Green-Gauss using least squares face value"
+        "interpolation)\n"
         "\n"
-        "    anomax       %-12.3g (non-orthogonality angle (rad) above which "
-        "cells are\n"
-        "                    selected for the extended neighborhood)\n"
         "    iflxmw:      %d (method to compute inner mass flux due to mesh "
         "velocity in ALE\n"
         "                    0: based on mesh velocity at cell centers\n"
         "                    1: based on nodes displacement)\n"),
         cs_glob_space_disc->imvisf,
         cs_glob_space_disc->imrgra,
-        cs_glob_space_disc->anomax,
         cs_glob_space_disc->iflxmw);
 }
 

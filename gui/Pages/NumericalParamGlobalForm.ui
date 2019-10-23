@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>871</width>
-    <height>783</height>
+    <width>688</width>
+    <height>391</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -20,8 +20,40 @@
    <property name="spacing">
     <number>6</number>
    </property>
+   <item row="1" column="0">
+    <widget class="QGroupBox" name="groupBoxTerms">
+     <property name="title">
+      <string/>
+     </property>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="checkBoxIVISSE">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate whether the source terms in transposed gradient and velocity divergence should be taken into account in the momentum equation. In the compressible module, these terms also account for the volume viscosity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;ivisse&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Handling of transposed gradient and divergence source terms in momentum equation</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <spacer>
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>420</width>
+       <height>20</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
    <item row="0" column="0">
-    <widget class="QGroupBox" name="groupBox">
+    <widget class="QGroupBox" name="groupBoxGradient">
      <property name="mouseTracking">
       <bool>false</bool>
      </property>
@@ -29,260 +61,187 @@
       <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define global numerical parameters for the calculation.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
-      <string>Global parameters</string>
+      <string/>
      </property>
-     <layout class="QGridLayout">
-      <property name="margin">
-       <number>9</number>
-      </property>
-      <property name="spacing">
-       <number>6</number>
-      </property>
-      <item row="0" column="0">
-       <layout class="QGridLayout" name="gridLayout_3">
-        <property name="margin">
-         <number>0</number>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <item row="0" column="3">
+       <widget class="QComboBox" name="comboBoxGradientType">
+        <property name="minimumSize">
+         <size>
+          <width>360</width>
+          <height>20</height>
+         </size>
         </property>
-        <item row="1" column="0">
-         <widget class="QComboBox" name="comboBoxIMRGRA">
-          <property name="minimumSize">
-           <size>
-            <width>360</width>
-            <height>20</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate the gradient reconstruction method (one method for all the variables):&lt;br/&gt;- Iterative handling of the non-orthogonalities,&lt;br/&gt;- Least squares method based on the first neighbour cells (which share a face with the treated cell),&lt;br/&gt;- Least squares method based on the extended neighbourhood (cells which share a node with the treated cell),&lt;br/&gt;- Least squares method based on a partial extended neighbourhood (all first neighbours plus the extended neighbourhood cells that are connected to a face where the non-orthogonality angle is larger than a certain parameter),&lt;br/&gt;- Iterative method with least squares initialization on the first neighbours&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <spacer>
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>20</width>
-            <height>20</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="0" column="0">
-         <widget class="QLabel" name="labelIMRGRA">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate the gradient reconstruction method (one method for all the variables):&lt;br/&gt;- Iterative handling of the non-orthogonalities,&lt;br/&gt;- Least squares method based on the first neighbour cells (which share a face with the treated cell),&lt;br/&gt;- Least squares method based on the extended neighbourhood (cells which share a node with the treated cell),&lt;br/&gt;- Least squares method based on a partial extended neighbourhood (all first neighbours plus the extended neighbourhood cells that are connected to a face where the non-orthogonality angle is larger than a certain parameter),&lt;br/&gt;- Iterative method with least squares initialization on the first neighbours&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Gradient calculation method:</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate the global gradient reconstruction method (one method for all the variables):&lt;br/&gt;- Green's theorem with iterative handling of the non-orthogonalities,&lt;br/&gt;- Least squares method&lt;br/&gt;- Green's theorem using face values based on least-squares gradient&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
       </item>
-      <item row="3" column="0">
+      <item row="0" column="0" colspan="2">
+       <widget class="QLabel" name="labelGradientType">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate the gradient reconstruction method (one method for all the variables):&lt;br/&gt;- Iterative handling of the non-orthogonalities,&lt;br/&gt;- Least squares method based on the first neighbour cells (which share a face with the treated cell),&lt;br/&gt;- Least squares method based on the extended neighbourhood (cells which share a node with the treated cell),&lt;br/&gt;- Least squares method based on a partial extended neighbourhood (all first neighbours plus the extended neighbourhood cells that are connected to a face where the non-orthogonality angle is larger than a certain parameter),&lt;br/&gt;- Iterative method with least squares initialization on the first neighbours&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Gradient reconstruction type</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="3">
+       <widget class="QComboBox" name="comboBoxExtNeighbors">
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Stencil used for least squares&lt;br/&gt;- face-neighbor cells&lt;br/&gt;- extended neighborhood (cells which share a vertex with the treated cell),&lt;br/&gt;- partial extended neighborhood (all face neighbours plus the extended neighbourhood cells that are connected to a face where the non-orthogonality angle is larger than a certain parameter),&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0" rowspan="2" colspan="3">
+       <widget class="QLabel" name="labelExtNeighbors">
+        <property name="text">
+         <string>Extended cell neighbors</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="4">
        <spacer>
         <property name="orientation">
-         <enum>Qt::Vertical</enum>
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Expanding</enum>
         </property>
         <property name="sizeHint" stdset="0">
          <size>
-          <width>420</width>
+          <width>133</width>
           <height>20</height>
          </size>
         </property>
        </spacer>
       </item>
+     </layout>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QGroupBox" name="groupBoxVelPres">
+     <property name="title">
+      <string/>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_4">
       <item row="1" column="0">
-       <layout class="QGridLayout" name="gridLayout_2">
-        <property name="margin">
-         <number>0</number>
+       <widget class="QCheckBox" name="checkBoxImprovedPressure">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Specify the method for taking into account the balance between the pressure gradient and the source terms (gravity and head losses):&lt;/p&gt;&lt;p&gt;- Standard algorithm (Unticked box),&lt;/p&gt;&lt;p&gt;- Improved algorithm (Ticked box).&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;When the density effects are important, the choice of the improved algorithm allows to improve the interpolation of the pressure and correct the non-physical velocities which may appear in highly stratified areas or near horizontal walls. The improved algorithm also allows eradicating the velocity oscillations which tend toappear at the frontiers of areas with high head losses.&lt;/p&gt;&lt;p&gt;(key words: &lt;span style=&quot; font-weight:600;&quot;&gt;iphyhr&lt;/span&gt; and &lt;span style=&quot; font-weight:600;&quot;&gt;icalhy&lt;/span&gt;)&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
-        <item row="1" column="1">
-         <widget class="QLabel" name="labelIVISSE">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate whether the source terms in transposed gradient and velocity divergence should be taken into account in the moment equation. In the compressible module, these terms also account for the volume viscosity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IVISSE&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Handling of transposed gradient and divergence
-source terms in momentum equation</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="3">
-         <spacer>
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>16</width>
-            <height>16</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="0" column="3">
-         <spacer>
-          <property name="orientation">
-           <enum>Qt::Horizontal</enum>
-          </property>
-          <property name="sizeHint" stdset="0">
-           <size>
-            <width>16</width>
-            <height>16</height>
-           </size>
-          </property>
-         </spacer>
-        </item>
-        <item row="4" column="2">
-         <widget class="QLineEdit" name="lineEditRELAXP">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>60</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the relaxation coefficient of the pressure, in case of unsteady algorithm. Its default value is 1 for the pressure.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="1">
-         <widget class="QLabel" name="labelSRROM">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the sub-relaxation coefficient &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;SRROM&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; for the density, in case of gas combustion, pulverized coal or electric arcs: &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;rho&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; vertical-align:super;&quot;&gt;n+1&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt; = SRROM * rho&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; vertical-align:super;&quot;&gt;n&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt; + (1-SRROM) * rho&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; vertical-align:super;&quot;&gt;n+1&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;SRROM&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Relaxation of density</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="1">
-         <widget class="QLabel" name="labelEXTRAG">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the extrapolation of pressure gradient on domain boundary:&lt;br/&gt;- Homogeneous Neumann calculated at first-order,&lt;br/&gt;- Gradient extrapolation (gradient at the boundary face equal to the gradient in the neighbour cell), calculated at second-order in the case of an orthogonal mesh and at first-order otherwise. It can correct the non-physical velocities that appear on horizontal walls when there is a variable density and gravity.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Extrapolation of pressure gradient
-on domain boundary</string>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="1">
-         <widget class="QLabel" name="labelICFGRP">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose whether the boundary conditions should take into account the hydrostatic balance.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;In the cases where gravity is predominant, taking into account the hydrostatic pressure allows to get rid of the disturbances which may appear near the horizontal walls when the flow is little convective. Otherwise, the pressure condition is calculated from the solution of the one-dimensional Euler equations for a perfect gas near a wall, for the variables normal velocity, density and pressure.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;ICFGRP&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Hydrostatic equilibrium for pressure at walls</string>
-          </property>
-         </widget>
-        </item>
-        <item row="4" column="1">
-         <widget class="QLabel" name="labelRELAXP">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the relaxation coefficient of the pressure, in case of unsteady algorithm. Its default value is 1 for the pressure.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Relaxation of pressure increase</string>
-          </property>
-         </widget>
-        </item>
-        <item row="5" column="2">
-         <widget class="QLineEdit" name="lineEditSRROM">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>60</width>
-            <height>0</height>
-           </size>
-          </property>
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the sub-relaxation coefficient &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;SRROM&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; for the density, in case of gas combustion, pulverized coal or electric arcs: &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;rho&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; vertical-align:super;&quot;&gt;n+1&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt; = SRROM * rho&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; vertical-align:super;&quot;&gt;n&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt; + (1-SRROM) * rho&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; vertical-align:super;&quot;&gt;n+1&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;SRROM&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="1">
-         <widget class="QLabel" name="labelIPUCOU">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the algorithm for velocity/pressure coupling:&lt;br/&gt;- Standard algorithm (unticked box),&lt;br/&gt;- Reinforced coupling in case of calculation with long time steps (ticked box).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IPUCOU&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Pseudo-coupled velocity-pressure solver</string>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="1">
-         <widget class="QLabel" name="labelImprovedPressure">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the method for taking into account the balance between the pressure gradient and the source terms (gravity and head losses):&lt;br/&gt;- Standard algorithm (Unticked box),&lt;br/&gt;- Improved algorithm (Ticked box).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;&lt;br/&gt;When the density effects are important, the choice of the improved algorithm allows to improve the interpolation of the pressure and correct the non-physical velocities which may appear in highly stratified areas or near horizontal walls. The improved algorithm also allows eradicating the velocity oscillations which tend toappear at the frontiers of areas with high head losses.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IPHYDR&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; and &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;ICALHY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string>Improved pressure interpolation in stratified flow</string>
-          </property>
-         </widget>
-        </item>
-        <item row="2" column="2">
-         <widget class="QComboBox" name="comboBoxEXTRAG">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the extrapolation of pressure gradient on domain boundary:&lt;br/&gt;- Homogeneous Neumann calculated at first-order,&lt;br/&gt;- Gradient extrapolation (gradient at the boundary face equal to the gradient in the neighbour cell), calculated at second-order in the case of an orthogonal mesh and at first-order otherwise. It can correct the non-physical velocities that appear on horizontal walls when there is a variable density and gravity.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-         </widget>
-        </item>
-        <item row="6" column="2">
-         <widget class="QCheckBox" name="checkBoxImprovedPressure">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Specify the method for taking into account the balance between the pressure gradient and the source terms (gravity and head losses):&lt;br/&gt;- Standard algorithm (Unticked box),&lt;br/&gt;- Improved algorithm (Ticked box).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;&lt;br/&gt;When the density effects are important, the choice of the improved algorithm allows to improve the interpolation of the pressure and correct the non-physical velocities which may appear in highly stratified areas or near horizontal walls. The improved algorithm also allows eradicating the velocity oscillations which tend toappear at the frontiers of areas with high head losses.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IPHYDR&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; and &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;ICALHY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item row="3" column="2">
-         <widget class="QCheckBox" name="checkBoxICFGRP">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose whether the boundary conditions should take into account the hydrostatic balance.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;In the cases where gravity is predominant, taking into account the hydrostatic pressure allows to get rid of the disturbances which may appear near the horizontal walls when the flow is little convective. Otherwise, the pressure condition is calculated from the solution of the one-dimensional Euler equations for a perfect gas near a wall, for the variables normal velocity, density and pressure.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;ICFGRP&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="2">
-         <widget class="QCheckBox" name="checkBoxIVISSE">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate whether the source terms in transposed gradient and velocity divergence should be taken into account in the moment equation. In the compressible module, these terms also account for the volume viscosity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IVISSE&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-        <item row="0" column="2">
-         <widget class="QCheckBox" name="checkBoxIPUCOU">
-          <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the algorithm for velocity/pressure coupling:&lt;br/&gt;- Standard algorithm (unticked box),&lt;br/&gt;- Reinforced coupling in case of calculation with long time steps (ticked box).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IPUCOU&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-         </widget>
-        </item>
-       </layout>
+        <property name="text">
+         <string>Improved pressure interpolation in stratified flow</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QCheckBox" name="checkBoxICFGRP">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose whether the boundary conditions should take into account the hydrostatic balance.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;In the cases where gravity is predominant, taking into account the hydrostatic pressure allows to get rid of the disturbances which may appear near the horizontal walls when the flow is little convective. Otherwise, the pressure condition is calculated from the solution of the one-dimensional Euler equations for a perfect gas near a wall, for the variables normal velocity, density and pressure.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;icfgrp&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Hydrostatic equilibrium for pressure at walls</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="0">
+       <widget class="QLabel" name="labelRELAXP">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the relaxation coefficient of the pressure, in case of unsteady algorithm. Its default value is 1 for the pressure.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Relaxation of pressure increase</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <spacer>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>16</width>
+          <height>16</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="0" column="0">
+       <widget class="QCheckBox" name="checkBoxIPUCOU">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the algorithm for velocity/pressure coupling:&lt;br/&gt;- Standard algorithm (unticked box),&lt;br/&gt;- Reinforced coupling in case of calculation with large time steps (ticked box).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;ipucou&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Pseudo-coupled velocity-pressure solver</string>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QLineEdit" name="lineEditRELAXP">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>60</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the relaxation coefficient of the pressure, in case of unsteady algorithm. Its default value is 1 for the pressure.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="0">
+       <widget class="QLabel" name="labelSRROM">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the sub-relaxation coefficient &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;SRROM&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; for the density, in case of gas combustion, pulverized coal or electric arcs: &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;rho&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; vertical-align:super;&quot;&gt;n+1&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt; = SRROM * rho&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; vertical-align:super;&quot;&gt;n&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt; + (1-SRROM) * rho&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; vertical-align:super;&quot;&gt;n+1&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;SRROM&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Relaxation of density</string>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="1">
+       <widget class="QLineEdit" name="lineEditSRROM">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="minimumSize">
+         <size>
+          <width>60</width>
+          <height>20</height>
+         </size>
+        </property>
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the sub-relaxation coefficient &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;srrom&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; for the density, in case of gas combustion, pulverized coal or electric arcs: &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;rho&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; vertical-align:super;&quot;&gt;n+1&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt; = srrom * rho&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; vertical-align:super;&quot;&gt;n&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt; + (1-srrom) * rho&lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600; vertical-align:super;&quot;&gt;n+1&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;srrom&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QCheckBox" name="checkBoxEXTRAG">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Choose the extrapolation of pressure gradient on domain boundary:&lt;br/&gt;- Homogeneous Neumann calculated at first-order,&lt;br/&gt;- Gradient extrapolation (gradient at the boundary face equal to the gradient in the neighbour cell), calculated at second-order in the case of an orthogonal mesh and at first-order otherwise. It can correct the non-physical velocities that appear on horizontal walls when there is a variable density and gravity.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>Extrapolation of pressure gradient at boundary</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>

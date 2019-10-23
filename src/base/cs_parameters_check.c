@@ -1151,24 +1151,7 @@ cs_parameters_check(void)
                                 cs_glob_space_disc->imrgra,
                                 -10, 11);
 
-  int imrgrl = CS_ABS(cs_glob_space_disc->imrgra);
-  imrgrl = imrgrl%10;
-
-  /* We check the non-orthogonality angle of the extended neighborhood
-   * in case of a least squares gradient method */
-  if (imrgrl == 3 || imrgrl == 6 || imrgrl == 9) {
-    cs_parameters_is_in_range_double(CS_ABORT_DELAYED,
-                                     _("while reading gradient "
-                                       "reconstruction parameters for "
-                                       "least squares method on reduced "
-                                       "extended neighborhood"),
-                                     "cs_glob_space_disc->anomax "
-                                     "(max. non-orthogonality angle in radians)",
-                                     cs_glob_space_disc->anomax,
-                                     0., cs_math_pi*0.5);
-  }
-
-  /* Numbers of sweeps don't have to be checked : they are simply
+  /* Numbers of sweeps don't need to be checked: they are simply
    * integers (negative if one wants to be sure to never enter the loops */
   for (int f_id = 0 ; f_id < n_fields ; f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);

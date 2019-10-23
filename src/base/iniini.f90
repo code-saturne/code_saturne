@@ -497,15 +497,6 @@ enddo
 ! default: based on cell center mesh velocity
 iflxmw = 0
 
-! --- Reconstruction des gradients
-!       On donne les valeurs par defaut
-!       Pour la methode de limitation, on decidera plus tard
-!         selon les choix de l'utilisateur
-!       On n'active pas l'extrapolation des gradients par defaut
-!         meme pour la pression (par securite : moins stable sur certains cas)
-
-anomax = -grand*10.d0
-
 ! --- Restarted calculation
 !       By default, non-restarted calculation
 !       Write auxiliary restart file by default

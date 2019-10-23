@@ -183,13 +183,8 @@ typedef struct {
                                       neighborhood
                                  - 3: least square method with reduced extended
                                       neighborhood
-                                 - 4: iterative process initialized by the least
-                                      square method */
-
-  double        anomax;       /* non orthogonality angle of the faces, in radians.
-                                 For larger angle values, cells with one node
-                                 on the wall are kept in the extended support of
-                                 the neighboring cells. */
+                                 - 4: Green-Gauss using least squares face
+                                      values interpolation */
 
   int           iflxmw;       /* method to compute interior mass flux due to ALE
                                  mesh velocity

@@ -55,6 +55,7 @@
 #include "cs_boundary_zone.h"
 #include "cs_equation.h"
 #include "cs_equation_param.h"
+#include "cs_ext_neighborhood.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_file.h"
@@ -2116,12 +2117,63 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
  * INTEGER          IMRGRA  -->   gradient reconstruction
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csnum2, CSNUM2)(double *relaxp,
-                               double *extrag,
-                                  int *imrgra)
+void CS_PROCF (csnum2, CSNUM2)(double  *relaxp,
+                               double  *extrag,
+                               int     *imrgra)
 {
   cs_piso_t *piso = cs_get_glob_piso();
   cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
+
+  const char *choice = NULL;
+
+  cs_tree_node_t *tn_n = cs_tree_get_node(cs_glob_tree, "numerical_parameters");
+
+  int _imrgra = -1;
+
+  cs_ext_neighborhood_type_t enh_type = cs_ext_neighborhood_get_type();
+
+  choice = cs_tree_node_get_tag(cs_tree_get_node(tn_n, "gradient_reconstruction"),
+                                "choice");
+  if (cs_gui_strcmp(choice, "green_iter"))
+    _imrgra = 0;
+  else if (cs_gui_strcmp(choice, "lsq"))
+    _imrgra = 1;
+  else if (cs_gui_strcmp(choice, "lsq_iter"))
+    _imrgra = 4;
+
+  if (_imrgra != 0) {
+    choice = cs_tree_node_get_tag(cs_tree_get_node(tn_n, "extended_neighborhood"),
+                                  "choice");
+    if (cs_gui_strcmp(choice, "none")) {
+      enh_type = CS_EXT_NEIGHBORHOOD_NONE;
+    }
+    else if (cs_gui_strcmp(choice, "complete")) {
+      enh_type = CS_EXT_NEIGHBORHOOD_COMPLETE;
+      _imrgra += 1;
+    }
+    else if (cs_gui_strcmp(choice, "cell_center_opposite")) {
+      enh_type = CS_EXT_NEIGHBORHOOD_CELL_CENTER_OPPOSITE;
+      _imrgra += 2;
+    }
+    else if (cs_gui_strcmp(choice, "face_center_opposite")) {
+      enh_type = CS_EXT_NEIGHBORHOOD_FACE_CENTER_OPPOSITE;
+      _imrgra += 2;
+    }
+    else if (cs_gui_strcmp(choice, "face_center_aligned")) {
+      enh_type = CS_EXT_NEIGHBORHOOD_FACE_CENTER_ALIGNED;
+      _imrgra += 2;
+    }
+    else if (cs_gui_strcmp(choice, "non_ortho_max")) {
+      enh_type = CS_EXT_NEIGHBORHOOD_NON_ORTHO_MAX;
+      _imrgra += 2;
+    }
+  }
+
+  cs_ext_neighborhood_set_type(enh_type);
+
+  if (_imrgra > -1)
+    *imrgra = _imrgra;
+
   _numerical_int_parameters("gradient_transposed", &(stokes->ivisse));
   _numerical_int_parameters("velocity_pressure_coupling", &(stokes->ipucou));
   _numerical_int_parameters("gradient_reconstruction", imrgra);

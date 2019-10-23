@@ -2774,6 +2774,13 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
 
   /* Build halo */
 
+#if 0
+  /* TODO: activating this option needs a better upstream setting
+           of extended neighborhood type */
+  if (cs_ext_neighborhood_get_type() > CS_EXT_NEIGHBORHOOD_NONE)
+    halo_type = CS_HALO_EXTENDED;
+#endif
+
   mesh->halo_type = halo_type;
 
   if (mesh->n_domains > 1 || mesh->n_init_perio > 0) {
@@ -2948,7 +2955,7 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
   /* Define a cell -> cells connectivity for the extended neighborhood
      if necessary */
 
-  if (halo_type ==  CS_HALO_EXTENDED) {
+  if (halo_type == CS_HALO_EXTENDED) {
 
     t1 = cs_timer_wtime();
     if (mesh->verbosity > 0) {

@@ -489,15 +489,6 @@ do f_id = 0, nfld - 1
   endif
 enddo
 
-! ---> ANOMAX
-!        Si l'utilisateur n'a rien specifie pour l'angle de non
-!          orthogonalite pour la selection du voisinage etendu,
-!          on impose pi/4 (utile aussi en mode verifications)
-
-if (anomax.le.-grand) then
-  anomax = pi*0.25d0
-endif
-
 ! ---> IMLIGR
 !        Si l'utilisateur n'a rien specifie pour la limitation des
 !          gradients (=-999),

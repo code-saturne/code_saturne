@@ -1687,6 +1687,7 @@ class XMLinit(BaseXmlInit):
         """
         Change XML in order to ensure backward compatibility.
         """
+
         # Reference values
         XMLThermoPhysicalNode = self.case.xmlInitNode('thermophysical_models')
         nodeRefValues = XMLThermoPhysicalNode.xmlInitNode('reference_values')
@@ -1782,6 +1783,29 @@ class XMLinit(BaseXmlInit):
                     pattern = '\\bmesh_z\\b'
                     content = re.sub(pattern, 'mesh_displacement[2]', content)
                     nn.xmlSetTextNode(content)
+
+        # Update gradients handling
+
+        node_np = self.case.xmlInitNode('numerical_parameters')
+        node = node_np.xmlGetNode('gradient_reconstruction')
+        if node:
+            if node['choice'] in ('0', '1', '2', '3', '4', '5', '6'):
+                c = int(node['choice'])
+                if c == 0:
+                    node['choice'] = 'green_iter'
+                elif c in (1, 2, 3):
+                    node['choice'] = 'lsq'
+                elif c in (4, 5, 6):
+                    node['choice'] = 'green_lsq'
+                if c > 0:
+                    node = node_np.xmlInitNode('extended_neighborhood', 'choice')
+                    if c in (1, 4):
+                        node['choice'] = 'none'
+                    elif c in (2, 5):
+                        node['choice'] = 'complete'
+                    else:
+                        node['choice'] = 'non_ortho_max'
+
 
 #-------------------------------------------------------------------------------
 # End of XMLinit
