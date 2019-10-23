@@ -1087,7 +1087,9 @@ cs_cdoeb_vecteq_read_restart(cs_restart_t    *restart,
                              const char      *eqname,
                              void            *scheme_context)
 {
-
+  CS_UNUSED(restart);
+  CS_UNUSED(eqname);
+  CS_UNUSED(scheme_context);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1106,7 +1108,9 @@ cs_cdoeb_vecteq_write_restart(cs_restart_t    *restart,
                               const char      *eqname,
                               void            *scheme_context)
 {
-
+  CS_UNUSED(restart);
+  CS_UNUSED(eqname);
+  CS_UNUSED(scheme_context);
 }
 
 /*----------------------------------------------------------------------------*/
