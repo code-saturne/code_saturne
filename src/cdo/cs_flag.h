@@ -279,6 +279,31 @@ cs_flag_test(cs_flag_t    flag_to_check,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Check if a two flag share the same pattern
+ *         Return true if the flag to check has at least the pattern of the
+ *         reference flag.
+ *
+ * \param[in]  flag_to_check   flag corresponding to the location to check
+ * \param[in]  n_masks         number of masks to check
+ * \param[in]  masks           array of masks
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_flag_at_least(cs_flag_t    flag_to_check,
+                 int          n_masks,
+                 cs_flag_t    masks[])
+{
+  for (int i = 0; i < n_masks; i++)
+    if ((flag_to_check & masks[i]) == masks[i])
+      return true;
+  return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Check if a two compute flag share the same pattern
  *         Return true if the computed flag to check has at least the pattern
  *         of the reference compute flag.
