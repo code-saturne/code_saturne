@@ -59,12 +59,12 @@ else :
    import eosAva
 
 #-------------------------------------------------------------------------------
-# class XMLinitNeptune for NEPTUNE_CFD solver
+# class XMLinitNeptune for neptune_cfd solver
 #-------------------------------------------------------------------------------
 
 class XMLinitNeptune(BaseXmlInit):
     """
-    This class initializes the XML parameter file for NEPTUNE_CFD solver.
+    This class initializes the XML parameter file for the neptune_cfd solver.
     """
     def initialize(self, prepro = False):
         """
@@ -543,7 +543,7 @@ class XMLinitNeptune(BaseXmlInit):
         Change XML in order to ensure backward compatibility.
         """
 
-        # Retrocompatibility: the use of probes in neptune is now the same as for saturn
+        # Retrocompatibility: the use of probes in neptune is now the same as for code_saturne
         for variableType in ('variable', 'property', 'scalar', 'time_average') :
             for parent in self.case.xmlGetNodeList(variableType):
                 parent.xmlRemoveChild('probe_recording')
@@ -668,11 +668,6 @@ class XMLinitTestCaseNeptune(unittest.TestCase):
         """
         Check whether the headings markups could be initialized
         """
-        #doc = \
-        #'<NeptuneCFD case="" study="" version="1.0">'\
-        #'<solution_domain/>'\
-        #'</NEPTUNE_CFD_GUI>'
-
         XMLinit(self.case)
 
         assert self.case.root() == self.xmlNodeFromString(doc), \

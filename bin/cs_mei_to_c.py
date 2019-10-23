@@ -1089,10 +1089,13 @@ class mei_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
-    def __init__(self, case, create_functions=True):
+    def __init__(self, case, create_functions=True, module_name=None):
 
         self.case = case
-        self.pkg_name = case['package'].name
+        if module_name:
+            self.module_name = module_name
+        else:
+            self.module_name = case.module_name()
 
         self.data_path = os.path.join(case['case_path'], 'DATA')
         self.tmp_path = os.path.join(self.data_path, 'tmp')
@@ -1235,7 +1238,7 @@ class mei_to_c_interpreter:
                         usr_defs += ntabs*tab + l
                         known_symbols.append(sn)
 
-                    elif sn in _pkg_fluid_prop_dict[self.pkg_name].keys():
+                    elif sn in _pkg_fluid_prop_dict[self.module_name].keys():
                         if len(name.split("_")) > 1:
                             try:
                                 phase_id = int(name.split('_')[-1])-1
@@ -1243,9 +1246,9 @@ class mei_to_c_interpreter:
                                 phase_id = -1
                         else:
                             phase_id = -1
-                        gs = _pkg_glob_struct[self.pkg_name].replace('PHASE_ID',
+                        gs = _pkg_glob_struct[self.module_name].replace('PHASE_ID',
                                                                      str(phase_id))
-                        pn = _pkg_fluid_prop_dict[self.pkg_name][sn]
+                        pn = _pkg_fluid_prop_dict[self.module_name][sn]
                         ms = 'const cs_real_t %s = %s->%s;\n' %(sn, gs, pn)
                         usr_defs += ntabs*tab + ms
                         known_symbols.append(sn)
@@ -1688,7 +1691,7 @@ class mei_to_c_interpreter:
                         usr_defs += ntabs*tab + l
                         known_symbols.append(sn)
 
-                    elif sn in _pkg_fluid_prop_dict[self.pkg_name].keys():
+                    elif sn in _pkg_fluid_prop_dict[self.module_name].keys():
                         if len(name.split("_")) > 1:
                             try:
                                 phase_id = int(name.split('_')[-1])-1
@@ -1697,9 +1700,9 @@ class mei_to_c_interpreter:
                         else:
                             phase_id = -1
 
-                        gs = _pkg_glob_struct[self.pkg_name].replace('PHASE_ID',
+                        gs = _pkg_glob_struct[self.module_name].replace('PHASE_ID',
                                                                      str(phase_id))
-                        pn = _pkg_fluid_prop_dict[self.pkg_name][sn]
+                        pn = _pkg_fluid_prop_dict[self.module_name][sn]
                         ms = 'const cs_real_t %s = %s->%s;\n' %(sn, gs, pn)
                         usr_defs += ntabs*tab + ms
                         known_symbols.append(sn)
@@ -1907,7 +1910,7 @@ class mei_to_c_interpreter:
 
         from code_saturne.model.LocalizationModel import LocalizationModel
         from code_saturne.model.GroundwaterLawModel import GroundwaterLawModel
-        if self.pkg_name == 'code_saturne':
+        if self.module_name == 'code_saturne':
             from code_saturne.model.FluidCharacteristicsModel \
                 import FluidCharacteristicsModel
 
@@ -1954,7 +1957,7 @@ class mei_to_c_interpreter:
             # Ground water model enabled ?
             gwm = not (GroundwaterModel(self.case).getGroundwaterModel() == 'off')
 
-        elif self.pkg_name == 'neptune_cfd':
+        elif self.module_name == 'neptune_cfd':
             from code_saturne.model.ThermodynamicsModel import ThermodynamicsModel
             from code_saturne.model.MainFieldsModel import MainFieldsModel
 
@@ -2044,7 +2047,7 @@ class mei_to_c_interpreter:
 
         from code_saturne.model.NotebookModel import NotebookModel
 
-        if self.pkg_name == 'code_saturne':
+        if self.module_name == 'code_saturne':
             from code_saturne.model.LocalizationModel import LocalizationModel
             from code_saturne.model.Boundary import Boundary
             from code_saturne.model.TurbulenceModel import TurbulenceModel
@@ -2313,7 +2316,7 @@ class mei_to_c_interpreter:
 
     def generate_source_terms_code(self):
 
-        if self.pkg_name == 'code_saturne':
+        if self.module_name == 'code_saturne':
             from code_saturne.model.LocalizationModel import LocalizationModel
             from code_saturne.model.SourceTermsModel import SourceTermsModel
             from code_saturne.model.GroundwaterModel import GroundwaterModel
@@ -2397,7 +2400,7 @@ class mei_to_c_interpreter:
 
     def generate_initialize_code(self):
 
-        if self.pkg_name == 'code_saturne':
+        if self.module_name == 'code_saturne':
             from code_saturne.model.LocalizationModel import LocalizationModel
             from code_saturne.model.InitializationModel import InitializationModel
             from code_saturne.model.CompressibleModel import CompressibleModel
@@ -2559,7 +2562,7 @@ class mei_to_c_interpreter:
 
     def generate_immersed_boundaries_code(self):
 
-        if self.pkg_name == 'neptune_cfd':
+        if self.module_name == 'neptune_cfd':
             from code_saturne.model.ImmersedBoundariesModel import ImmersedBoundariesModel
             ibm = ImmersedBoundariesModel(self.case)
 
@@ -2590,6 +2593,7 @@ class mei_to_c_interpreter:
         out = open('comp.out', 'w')
         err = open('comp.err', 'w')
         compilation_test = cs_compile.compile_and_link(self.case['package'],
+                                                       self.case['package'].solver,
                                                        self.tmp_path,
                                                        opt_cflags='-w',
                                                        stdout=out,
@@ -2693,7 +2697,7 @@ class mei_to_c_interpreter:
         code_to_write = ''
         if len(self.funcs[func_type].keys()) > 0:
             code_to_write = _file_header
-#            if self.pkg_name != "code_saturne":
+#            if self.module_name != "code_saturne":
 #                code_to_write += _file_header2
             code_to_write += _file_header3
             code_to_write += _function_header[func_type]

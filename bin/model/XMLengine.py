@@ -108,6 +108,7 @@ class Dico:
         self.data['batch']            = None
         self.data['no_boundary_conditions'] = False
         self.data['salome']           = False
+        self.data['module']           = None
         self.data['package']          = None
         self.data['current_page']     = ""
         self.data['current_index']    = None
@@ -1223,7 +1224,11 @@ class XMLDocument(XMLElement):
 
 class Case(Dico, XMLDocument):
 
-    def __init__(self, package=None, file_name="", studymanager=False):
+    def __init__(self,
+                 package=None,
+                 file_name="",
+                 module=None,
+                 studymanager=False):
         """
         Instantiate a new dico and a new xml doc
         """
@@ -1232,10 +1237,20 @@ class Case(Dico, XMLDocument):
 
         if package:
             self['package'] = package
-            rootNode = '<' + self['package'].code_name +'_GUI study="" case="" version="2.0"/>'
         else:
-            rootNode = '<' + '_GUI study="" case="" version="2.0"/>'
+            from code_saturne import cs_package
+            self['package'] = cs_package.package()
 
+        code_name = ''
+        if module:
+            if module == 'code_saturne':
+                code_name = 'Code_Saturne'
+            elif module == 'neptune_cfd':
+                code_name = 'NEPTUNE_CFD'
+        if package and not code_name:
+            code_name = package.code_name
+
+        rootNode = '<' + code_name +'_GUI study="" case="" version="2.0"/>'
         if studymanager:
             rootNode = '<studymanager/>'
 
@@ -1253,6 +1268,14 @@ class Case(Dico, XMLDocument):
         self.xml_prev = ""
         self.xml_saved = self.toString()
 
+
+    def module_name(self):
+        # Specific module
+        if (self.doc.documentElement.tagName == "NEPTUNE_CFD_GUI"):
+            return 'neptune_cfd'
+
+        # General case
+        return 'code_saturne'
 
     def xmlRootNode(self):
         """
@@ -1449,11 +1472,9 @@ class Case(Dico, XMLDocument):
             file.write('sys.path.insert(0, "' + self['package'].dirs['pythondir'][1] + '")\n')
             file.write('sys.path.insert(0, "' + os.path.join(self['package'].dirs['pythondir'][1], self['package'].name) + '")\n\n')
 
-            if self['package'].code_name == 'Code_Saturne':
-                file.write('from code_saturne import cs_package\n')
+            if self.module_name() == 'code_saturne':
                 file.write('from model.XMLinitialize import XMLinit\n')
-            else:
-                file.write('from neptune_cfd import nc_package\n')
+            elif self.module_name() == 'neptune_cfd':
                 file.write('from model.XMLinitializeNeptune import XMLinit\n')
             file.write('from model.XMLengine import Case\n\n')
 
@@ -1463,10 +1484,7 @@ class Case(Dico, XMLDocument):
                 name = os.path.splitext(self['pythonfile'])[0] + ".xml"
                 file.write("fp = '" + name + "'\n")
 
-            if self['package'].code_name == 'Code_Saturne':
-                file.write("case = Case(package = cs_package.package())\n")
-            else:
-                file.write("case = Case(package = nc_package.package())\n")
+            file.write("case = Case(module=" + self.module_name + ")\n")
             file.write("case['xmlfile'] = fp\n")
             file.write("case.xmlCleanAllBlank(case.xmlRootNode())\n")
             file.write("XMLinit(case).initialize()\n")

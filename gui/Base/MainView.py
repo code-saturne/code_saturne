@@ -1003,6 +1003,7 @@ class MainView(object):
             err = open('comp.err', 'w')
 
             state = cs_compile.compile_and_link(self.case['package'],
+                                                self.case['package'].solver,
                                                 src_dir,
                                                 destdir=None,
                                                 stdout=out,

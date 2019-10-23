@@ -3,6 +3,8 @@ Master (not on release branches yet)
 
 User changes:
 
+- Correctly handle mixed code_saturne/neptune_cfd couplings in run script.
+
 - Add the possibility to compute a porosity from a file containing
   points (*.pts) coming from a 3D scan. To use it set the scan file
   with "cs_porosity_from_scan_set_file_name("my_scan.pts")" in

@@ -41,7 +41,7 @@ import sys, unittest
 #-------------------------------------------------------------------------------
 
 from code_saturne.model.Common import *
-import code_saturne.model.IdentityAndPathesModel as IdentityAndPathesModel
+from code_saturne.model.IdentityAndPathesModel import IdentityAndPathesModel
 from code_saturne.model.XMLvariables import Variables, Model
 from code_saturne.model.XMLmodel import ModelTest
 from code_saturne.model.FluidCharacteristicsModel import FluidCharacteristicsModel

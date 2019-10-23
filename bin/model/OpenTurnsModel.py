@@ -156,7 +156,7 @@ class OpenTurnsModel(Model):
 
         cfg.add_section('study_parameters')
         case_dir = self.case['case_path']
-        cfg.set('study_parameters', 'code_name', self.case['package'].name)
+        cfg.set('study_parameters', 'code_name', self.case.module_name())
 
         tmp_study_name = os.path.split(self.otstudy_path)[-1]
         cfg.set('study_parameters', 'study_name', tmp_study_name)

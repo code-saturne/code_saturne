@@ -50,9 +50,9 @@ from code_saturne.model.XMLengine import *
 
 try:
     from code_saturne.model.BoundaryNeptune import Boundary as BoundaryNCFD
-    from code_saturne.model.Boundary import Boundary
 except:
-    from code_saturne.model.Boundary import Boundary
+    pass
+from code_saturne.model.Boundary import Boundary
 
 #-------------------------------------------------------------------------------
 #
@@ -185,7 +185,7 @@ class BoundaryZone(Zone):
         self._natureDict['symmetry']          = self.tr("Symmetry")
 
         if case != None:
-            if self.case['package'].name == 'code_saturne':
+            if self.case.module_name() == 'code_saturne':
                 self._natureList = ['wall', 'inlet', 'outlet', 'symmetry',
                                     'free_inlet_outlet', 'imposed_p_outlet']
                 self._natureDict['free_inlet_outlet'] = self.tr("Free inlet/outlet")
@@ -246,7 +246,7 @@ class VolumicZone(Zone):
         self._natureDict = {}
         self._natureDict['initialization']       = self.tr("Initialization")
 
-        if self.case['package'].name == 'code_saturne':
+        if self.case.module_name() == 'code_saturne':
             from code_saturne.model.GroundwaterModel import GroundwaterModel
             if GroundwaterModel(self.case).getGroundwaterModel() != "groundwater":
                 self._natureList.append('head_losses')
@@ -273,7 +273,7 @@ class VolumicZone(Zone):
                 if node_darcy['model'] != 'off':
                     self._natureList.append('groundwater_law')
                     self._natureDict['groundwater_law']  = self.tr("Groundwater\n volumic law")
-        else:
+        elif self.case.module_name() == 'neptune_cfd':
             self._natureList.append('head_losses')
             self._natureList.append('porosity')
 
@@ -926,17 +926,16 @@ class BoundaryLocalizationModel(LocalizationModel):
         oldNature = node['nature']
         node['nature'] = str(nature)
 
-        if self.case['package'].name == 'code_saturne':
+        if self.case.module_name() == 'code_saturne':
             # Delete oldNature boundary
             Boundary(oldNature, label, self.case).delete()
             # Create nature boundary
             Boundary(nature, label, self.case)
-        else:
+        elif self.case.module_name() == 'neptune_cfd':
             # Delete oldNature boundary
             BoundaryNCFD(oldNature, label, self.case).delete()
             # Create nature boundary
             BoundaryNCFD(nature, label, self.case)
-
 
 
     @Variables.undoGlobal
@@ -954,9 +953,9 @@ class BoundaryLocalizationModel(LocalizationModel):
         node.xmlSetTextNode(newZone.getLocalization())
 
         # Create nature boundary
-        if self.case['package'].name == 'code_saturne':
+        if self.case.module_name() == 'code_saturne':
             Boundary(newZone.getNature(), newZone.getLabel(), self.case)
-        else:
+        elif self.case.module_name() == 'neptune_cfd':
             BoundaryNCFD(newZone.getNature(), newZone.getLabel(), self.case)
 
         return newZone
@@ -968,9 +967,9 @@ class BoundaryLocalizationModel(LocalizationModel):
         Replace a zone by another in the XML file
         """
         if (new_zone.getNature() != old_zone.getNature()):
-            if self.case['package'].name == 'code_saturne':
+            if self.case.module_name() == 'code_saturne':
                 Boundary(old_zone.getNature(), old_zone.getLabel(), self.case).delete()
-            else:
+            elif self.case.module_name() == 'neptune_cfd':
                 BoundaryNCFD(old_zone.getNature(), old_zone.getLabel(), self.case).delete()
             newLabel, newCodeNumber, newLocal = LocalizationModel.replaceZone(self, old_zone, new_zone)
 
@@ -985,9 +984,9 @@ class BoundaryLocalizationModel(LocalizationModel):
             node['nature'] = newNature
             node.xmlSetTextNode(newLocal)
 
-            if self.case['package'].name == 'code_saturne':
+            if self.case.module_name() == 'code_saturne':
                 Boundary(new_zone.getNature(), new_zone.getLabel(), self.case)
-            else:
+            elif self.case.module_name() == 'neptune_cfd':
                 BoundaryNCFD(new_zone.getNature(), new_zone.getLabel(), self.case)
         else:
             label      = old_zone.getLabel()
@@ -1021,9 +1020,9 @@ class BoundaryLocalizationModel(LocalizationModel):
         node.xmlRemoveNode()
 
         # Delete nature boundary
-        if self.case['package'].name == 'code_saturne':
+        if self.case.module_name() == 'code_saturne':
             Boundary(nature, label, self.case).delete()
-        else:
+        elif self.case.module_name() == 'neptune_cfd':
             BoundaryNCFD(nature, label, self.case).delete()
 
         self.renumberZones()
@@ -1047,9 +1046,9 @@ class BoundaryLocalizationModel(LocalizationModel):
                                                             name = z + 1)
             label = n['label']
             nature = n['nature']
-            if self.case['package'].name == 'code_saturne':
+            if self.case.module_name() == 'code_saturne':
                 Boundary(nature, label, self.case).delete()
-            else:
+            elif self.case.module_name() == 'neptune_cfd':
                 BoundaryNCFD(nature, label, self.case).delete()
             n.xmlRemoveNode()
 

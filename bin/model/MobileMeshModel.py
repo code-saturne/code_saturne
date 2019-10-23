@@ -108,7 +108,7 @@ class MobileMeshModel(Model):
             node = node_pm.xmlGetNode('groundwater_model',  'model')
             if node and node['model'] != 'off':
                 compat = False
-        if self.case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
+        if self.case.module_name() == "neptune_cfd":
             compat = False
 
         return compat
