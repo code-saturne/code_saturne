@@ -432,6 +432,54 @@ cs_reco_cell_curl_by_edge_dofs(const cs_cdo_connect_t        *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Reconstruct the mean-value of the gradient field with DoFs arising
+ *         from a face-based scheme (values at face center and cell center)
+ *         The reconstruction only deals with the consistent part so that there
+ *         is no distinction betwwen Fb schemes
+ *
+ * \param[in]      c_id     cell id
+ * \param[in]      connect  pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant    pointer to the additional quantities struct.
+ * \param[in]      p_c      pointer to the array of values in cells
+ * \param[in]      p_f      pointer to the array of values on faces
+ * \param[in, out] grd_c    value of the reconstructed gradient at cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_grad_cell_from_fb_dofs(cs_lnum_t                    c_id,
+                               const cs_cdo_connect_t      *connect,
+                               const cs_cdo_quantities_t   *quant,
+                               const cs_real_t             *p_c,
+                               const cs_real_t             *p_f,
+                               cs_real_t                    grd_c[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct the mean-value of the tensor gradient field with DoFs
+ *         arising from a face-based scheme (vector-valued at face center and
+ *         cell center) The reconstruction only deals with the consistent part
+ *         so that there is no distinction between Fb schemes
+ *
+ * \param[in]      c_id     cell id
+ * \param[in]      connect  pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant    pointer to the additional quantities struct.
+ * \param[in]      u_c      pointer to the array of values in cells
+ * \param[in]      u_f      pointer to the array of values on faces
+ * \param[in, out] grd_c    value of the reconstructed gradient at cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_grad_33_cell_from_fb_dofs(cs_lnum_t                    c_id,
+                                  const cs_cdo_connect_t      *connect,
+                                  const cs_cdo_quantities_t   *quant,
+                                  const cs_real_t             *u_c,
+                                  const cs_real_t             *u_f,
+                                  cs_real_t                    grd_c[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Reconstruct the value at the cell center of the gradient of a field
  *         defined on primal vertices.
  *

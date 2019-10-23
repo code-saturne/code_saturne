@@ -768,6 +768,113 @@ cs_reco_cell_curl_by_edge_dofs(const cs_cdo_connect_t        *connect,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Reconstruct the mean-value of the gradient field with DoFs arising
+ *         from a face-based scheme (values at face center and cell center)
+ *         The reconstruction only deals with the consistent part so that there
+ *         is no distinction between Fb schemes
+ *
+ * \param[in]      c_id     cell id
+ * \param[in]      connect  pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant    pointer to the additional quantities struct.
+ * \param[in]      p_c      pointer to the array of values in cells
+ * \param[in]      p_f      pointer to the array of values on faces
+ * \param[in, out] grd_c    value of the reconstructed gradient at cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_grad_cell_from_fb_dofs(cs_lnum_t                    c_id,
+                               const cs_cdo_connect_t      *connect,
+                               const cs_cdo_quantities_t   *quant,
+                               const cs_real_t             *p_c,
+                               const cs_real_t             *p_f,
+                               cs_real_t                    grd_c[])
+{
+  /* Initialize the value to return */
+  grd_c[0] = grd_c[1] = grd_c[2] = 0.;
+
+  if (p_c == NULL || p_f == NULL)
+    return;
+  assert(connect != NULL && quant != NULL); /* sanity checks */
+
+  const cs_real_t  _p_c = p_c[c_id];
+  const cs_lnum_t  s = connect->c2f->idx[c_id], e = connect->c2f->idx[c_id+1];
+  const cs_lnum_t  *c2f_ids = connect->c2f->ids + s;
+  const short int  *c2f_sgn = connect->c2f->sgn + s;
+
+  for (cs_lnum_t  i = 0; i < e-s; i++) {
+
+    const cs_lnum_t  f_id = c2f_ids[i];
+    const cs_real_t  *fq = cs_quant_get_face_vector_area(f_id, quant);
+    for (int k = 0; k < 3; k++)
+      grd_c[k] += c2f_sgn[i] * (p_f[f_id] - _p_c) * fq[k];
+
+  } /* Loop on cell faces */
+
+  const cs_real_t  invvol = 1./quant->cell_vol[c_id];
+  for (int k = 0; k < 3; k++)
+    grd_c[k] *= invvol;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Reconstruct the mean-value of the tensor gradient field with DoFs
+ *         arising from a face-based scheme (vector-valued at face center and
+ *         cell center) The reconstruction only deals with the consistent part
+ *         so that there is no distinction between Fb schemes
+ *
+ * \param[in]      c_id     cell id
+ * \param[in]      connect  pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant    pointer to the additional quantities struct.
+ * \param[in]      u_c      pointer to the array of values in cells
+ * \param[in]      u_f      pointer to the array of values on faces
+ * \param[in, out] grd_c    value of the reconstructed gradient at cell center
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_grad_33_cell_from_fb_dofs(cs_lnum_t                    c_id,
+                                  const cs_cdo_connect_t      *connect,
+                                  const cs_cdo_quantities_t   *quant,
+                                  const cs_real_t             *u_c,
+                                  const cs_real_t             *u_f,
+                                  cs_real_t                    grd_c[])
+{
+  /* Initialize the value to return */
+  grd_c[0] = grd_c[1] = grd_c[2] = 0.;
+  grd_c[3] = grd_c[4] = grd_c[5] = 0.;
+  grd_c[6] = grd_c[7] = grd_c[8] = 0.;
+
+  if (u_c == NULL || u_f == NULL)
+    return;
+  assert(connect != NULL && quant != NULL); /* sanity checks */
+
+  const cs_real_t  *_u_c = u_c + 3*c_id;
+  const cs_lnum_t  s = connect->c2f->idx[c_id], e = connect->c2f->idx[c_id+1];
+  const cs_lnum_t  *c2f_ids = connect->c2f->ids + s;
+  const short int  *c2f_sgn = connect->c2f->sgn + s;
+
+  for (cs_lnum_t  i = 0; i < e-s; i++) {
+
+    const cs_lnum_t  f_id = c2f_ids[i];
+    const cs_real_t  *fq = cs_quant_get_face_vector_area(f_id, quant);
+    const cs_real_t  *_u_f = u_f + 3*f_id;
+
+    for (int ki = 0; ki < 3; ki++) {
+      const cs_real_t  gki = c2f_sgn[i] * (_u_f[ki] - _u_c[ki]);
+      for (int kj = 0; kj < 3; kj++)
+        grd_c[3*ki+kj] += gki * fq[kj];
+    }
+
+  } /* Loop on cell faces */
+
+  const cs_real_t  invvol = 1./quant->cell_vol[c_id];
+  for (int k = 0; k < 9; k++)
+    grd_c[k] *= invvol;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Reconstruct the value at the cell center of the gradient of a field
  *         defined on primal vertices.
  *
