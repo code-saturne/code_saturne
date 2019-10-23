@@ -85,13 +85,6 @@ cs_navsto_param_model_name[CS_NAVSTO_N_MODELS][CS_BASE_STRING_LEN] =
   };
 
 static const char
-cs_navsto_param_time_state_name[CS_NAVSTO_N_TIME_STATES][CS_BASE_STRING_LEN] =
-  { N_("Fully steady"),
-    N_("Steaty-state as the limit of an unsteady computation"),
-    N_("Fully unsteady")
-  };
-
-static const char
 cs_navsto_param_coupling_name[CS_NAVSTO_N_COUPLINGS][CS_BASE_STRING_LEN] =
   { N_("Artificial compressibility algorithm"),
     N_("Artificial compressibility solved with the VPP_eps algorithm"),
@@ -209,42 +202,45 @@ _get_momentum_param(cs_navsto_param_t    *nsp)
  *
  * \param[in]  boundaries     pointer to a cs_boundary_t structure
  * \param[in]  model          model related to the NS system to solve
- * \param[in]  time_state     state of the time for the NS equations
  * \param[in]  algo_coupling  algorithm used for solving the NS system
+ * \param[in]  option_flag    additional high-level numerical options
+ * \param[in]  post_flag      predefined post-processings
  *
  * \return a pointer to a new allocated structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_navsto_param_t *
-cs_navsto_param_create(const cs_boundary_t              *boundaries,
-                       cs_navsto_param_model_t           model,
-                       cs_navsto_param_time_state_t      time_state,
-                       cs_navsto_param_coupling_t        algo_coupling)
+cs_navsto_param_create(const cs_boundary_t             *boundaries,
+                       cs_navsto_param_model_t          model,
+                       cs_navsto_param_coupling_t       algo_coupling,
+                       cs_flag_t                        option_flag,
+                       cs_flag_t                        post_flag)
 {
   cs_navsto_param_t  *param = NULL;
   BFT_MALLOC(param, 1, cs_navsto_param_t);
 
-  param->boundaries = boundaries; /* shared structure */
-
+  /* Flags and indicators */
   param->verbosity = 1;
-
-  /* Default numerical settings */
-  param->theta = 1.0;
-  param->space_scheme = CS_SPACE_SCHEME_CDOFB;
-
-  param->dof_reduction_mode = CS_PARAM_REDUCTION_AVERAGE;
-  param->qtype = CS_QUADRATURE_BARY;
+  param->option_flag = option_flag;
+  param->post_flag = post_flag;
 
   /* Which equations are solved and which terms are needed */
   param->model = model;
   param->coupling = algo_coupling;
-
   param->has_gravity = false;
   param->gravity[0] = param->gravity[1] = param->gravity[2] = 0.;
-  param->time_state = time_state;
-  if (time_state == CS_NAVSTO_TIME_STATE_FULL_STEADY)
-    /* Forcing steady state in order to avoid inconsistencies */
+
+  /* Default numerical settings */
+  param->theta = 1.0;
+  param->space_scheme = CS_SPACE_SCHEME_CDOFB;
+  param->dof_reduction_mode = CS_PARAM_REDUCTION_AVERAGE;
+  param->qtype = CS_QUADRATURE_BARY;
+
+  param->boundaries = boundaries; /* shared structure */
+
+  /* Forcing steady state in order to avoid inconsistencies */
+  if (option_flag &  CS_NAVSTO_FLAG_STEADY)
     param->time_scheme = CS_TIME_SCHEME_STEADY;
   else
     param->time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT;
@@ -734,8 +730,11 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
 
   cs_log_printf(CS_LOG_SETUP, "  * NavSto | Model: %s\n",
                 cs_navsto_param_model_name[nsp->model]);
-  cs_log_printf(CS_LOG_SETUP, "  * NavSto | Time status: %s\n",
-                cs_navsto_param_time_state_name[nsp->time_state]);
+
+  if (cs_navsto_param_is_steady(nsp))
+    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Time status: Steady\n");
+  else
+    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Time status: Unsteady\n");
 
   cs_log_printf(CS_LOG_SETUP, "  * NavSto | Coupling: %s",
                 cs_navsto_param_coupling_name[nsp->coupling]);
@@ -768,7 +767,7 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Undefined space scheme.", __func__);
 
-  if (nsp->time_state != CS_NAVSTO_TIME_STATE_FULL_STEADY) {
+  if (!cs_navsto_param_is_steady(nsp)) {
 
     const char  *time_scheme = cs_param_get_time_scheme_name(nsp->time_scheme);
     if (time_scheme != NULL) {

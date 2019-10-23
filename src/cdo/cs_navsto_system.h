@@ -150,7 +150,7 @@ typedef struct {
   cs_boundary_type_t    *bf_type;
 
   /*!
-   * @name Fields
+   * @name Variable fields
    * Set of fields (resolved variables): fields are created according to the
    * choice of model for Navier-Stokes
    * @{
@@ -168,25 +168,62 @@ typedef struct {
 
   cs_field_t           *velocity;
 
-  /*! \var velocity_divergence
-   *  Divergence of the velocity fied, scalar-valued
-   *  pointer to \ref cs_field_t
-   */
-
-  cs_field_t           *velocity_divergence;
-
   /*! \var pressure
    *  Pressure, scalar-valued, pointer to \ref cs_field_t
    */
 
   cs_field_t           *pressure;
 
-  /*! \var temperature
-   *  Temperature, scalar-var, pointer to \ref cs_field_t. NULL if no
-   *  energy-like equation is defined
+  /*!
+   * @name Post-processing fields
+   * Set of fields which are induced by the variable fields and which have
+   * meaningful information for understanding the flow
+   * @{
    */
 
-  cs_field_t           *temperature;
+  /*! \var velocity_divergence
+   *  Divergence of the velocity fied.
+   *  Pointer to a scalar-valued \ref cs_field_t
+   */
+
+  cs_field_t           *velocity_divergence;
+
+  /*! \var kinetic_energy
+   *  Kinetic energy defined as 1/2 velocity \cdot velocity
+   *  Pointer to a scalar-valued \ref cs_field_t
+   */
+
+  cs_field_t           *kinetic_energy;
+
+  /*! \var vorticity
+   *  Vorticity of the velocity fied defined as curl(velocity)
+   *  Pointer to a vector-valued \ref cs_field_t
+   */
+  cs_field_t           *vorticity;
+
+  /*! \var helicity
+   *  Helicity is defined as \int_c velocity \cdot vorticity
+   *  Pointer to a scalar-valued \ref cs_field_t
+   */
+  cs_field_t           *helicity;
+
+  /*! \var enstrophy
+   *  Enstrophy is defined as \int_c vorticity \cdot vorticity
+   *  Pointer to a scalar-valued \ref cs_field_t
+   */
+  cs_field_t           *enstrophy;
+
+  /*! \var velocity_gradient
+   *  Pointer to a tnesor-valued \ref cs_field_t
+   */
+  cs_field_t           *velocity_gradient;
+
+  /*!
+   * @}
+   * @name Context structures to get a greater flexibility in what can be done
+   *       in the given framework
+   * @{
+   */
 
   /*! \var coupling_context
    * Additional structure storing information according to the way equations
@@ -269,8 +306,9 @@ cs_navsto_system_is_activated(void);
  *
  * \param[in] boundaries     pointer to the domain boundaries
  * \param[in] model          type of model related to the NS system
- * \param[in] time_state     state of the time for the NS equations
  * \param[in] algo_coupling  algorithm used for solving the NS system
+ * \param[in] option_flag    additional high-level numerical options
+ * \param[in] post_flag      predefined post-processings
  *
  * \return a pointer to a new allocated cs_navsto_system_t structure
  */
@@ -279,8 +317,9 @@ cs_navsto_system_is_activated(void);
 cs_navsto_system_t *
 cs_navsto_system_activate(const cs_boundary_t           *boundaries,
                           cs_navsto_param_model_t        model,
-                          cs_navsto_param_time_state_t   time_state,
-                          cs_navsto_param_coupling_t     algo_coupling);
+                          cs_navsto_param_coupling_t     algo_coupling,
+                          cs_flag_t                      option_flag,
+                          cs_flag_t                      post_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!

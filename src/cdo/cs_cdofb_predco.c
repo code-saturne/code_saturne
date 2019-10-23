@@ -771,7 +771,11 @@ cs_cdofb_predco_init_scheme_context(const cs_navsto_param_t    *nsp,
   /* Quick access to the main fields */
   sc->velocity = cs_field_by_name("velocity");
   sc->pressure = cs_field_by_name("pressure");
-  sc->divergence = cs_field_by_name("velocity_divergence");
+
+  if (nsp->post_flag & CS_NAVSTO_POST_VELOCITY_DIVERGENCE)
+    sc->divergence = cs_field_by_name("velocity_divergence");
+  else
+    sc->divergence = NULL;
 
   /* Values of the predicted velocity at faces */
   BFT_MALLOC(sc->predicted_velocity_f, 3*quant->n_faces, cs_real_t);

@@ -45,6 +45,48 @@ BEGIN_C_DECLS
 /* Manage the naming of properties and variables */
 #define CS_NAVSTO_LAMINAR_VISCOSITY  "laminar_viscosity"
 
+/*!
+ * @name Flags specifying numerical options
+ * @{
+ */
+
+/* Value = 1 */
+#define CS_NAVSTO_FLAG_STEADY            (1 <<  0) /*!< Steady-state */
+
+/*!
+ * @} @name Flag specifying predefined post-processing
+ *
+ * \brief w denotes the vorticity * vector and u the velocity vector, k is the
+ *        kinetic energy defined by k := 1/2 * u \cdot u
+ *
+ * @{
+ */
+
+/* Value =   1 */
+#define CS_NAVSTO_POST_VELOCITY_DIVERGENCE (1 <<  0) /*!< div(u) */
+
+/* Value =   2 */
+#define CS_NAVSTO_POST_KINETIC_ENERGY      (1 <<  1) /*!< k := 0.5 u \cdot u  */
+
+/* Value =   4 */
+#define CS_NAVSTO_POST_VORTICITY           (1 <<  2) /*!< w = curl(u) */
+
+/* Value =   8 */
+#define CS_NAVSTO_POST_VELOCITY_GRADIENT   (1 <<  3)
+
+/* Value =  16 */
+#define CS_NAVSTO_POST_STREAM_FUNCTION     (1 <<  4) /*!< -Lap(Psi) = w_z */
+
+/* Value =  32 */
+#define CS_NAVSTO_POST_HELICITY            (1 <<  5) /*!< u \cdot w */
+
+/* Value =  64 */
+#define CS_NAVSTO_POST_ENSTROPHY           (1 <<  6) /*!< w \cdot w */
+
+/*!
+ * @}
+ */
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -211,31 +253,6 @@ typedef enum {
 
 } cs_navsto_param_sles_t;
 
-/*! \enum cs_navsto_param_time_state_t
- *  \brief Status of the time for the Navier-Stokes system of equations
- *
- * \var CS_NAVSTO_TIME_STATE_UNSTEADY
- * The Navier-Stokes system of equations is time-dependent
- *
- * \var CS_NAVSTO_TIME_STATE_FULL_STEADY
- * The Navier-Stokes system of equations is solved without taking into account
- * the time effect
- *
- * \var CS_NAVSTO_TIME_STATE_LIMIT_STEADY
- * The Navier-Stokes system of equations is solved as a limit of a unsteady
- * process
- */
-
-typedef enum {
-
-  CS_NAVSTO_TIME_STATE_FULL_STEADY,
-  CS_NAVSTO_TIME_STATE_LIMIT_STEADY,
-  CS_NAVSTO_TIME_STATE_UNSTEADY,
-
-  CS_NAVSTO_N_TIME_STATES
-
-} cs_navsto_param_time_state_t;
-
 /*! \enum cs_navsto_param_coupling_t
  *  \brief Choice of algorithm for solving the system
  *
@@ -284,6 +301,16 @@ typedef struct {
    */
   int                           verbosity;
 
+  /*! \var option_flag
+   * Flag storing high-level option related to the Navier-Stokes system
+   */
+  cs_flag_t                     option_flag;
+
+  /*! \var post_flag
+   * Flag storing which predefined post-processing has to be done
+   */
+  cs_flag_t                     post_flag;
+
   /*!
    * @name Algorithm properties
    * Set of properties: properties and their related fields are allocated
@@ -324,11 +351,6 @@ typedef struct {
    */
   bool                          has_gravity;
   cs_real_3_t                   gravity;
-
-  /*! \var time_state
-   * Status of the time for the Navier-Stokes system of equations
-   */
-  cs_navsto_param_time_state_t  time_state;
 
   /*! \var sles_strategy
    * Choice of strategy for solving the SLES system
@@ -684,12 +706,12 @@ cs_navsto_algo_info_printf(const char                    *algo_name,
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-cs_navsto_param_is_steady(cs_navsto_param_t       *nsp)
+cs_navsto_param_is_steady(const cs_navsto_param_t       *nsp)
 {
   if (nsp == NULL)
     return true;
 
-  if (nsp->time_state == CS_NAVSTO_TIME_STATE_FULL_STEADY)
+  if (nsp->option_flag & CS_NAVSTO_FLAG_STEADY)
     return true;
   else
     return false;
@@ -706,18 +728,20 @@ cs_navsto_param_is_steady(cs_navsto_param_t       *nsp)
  *
  * \param[in]  boundaries     pointer to a cs_boundary_t structure
  * \param[in]  model          model related to the NS system to solve
- * \param[in]  time_state     state of the time for the NS equations
  * \param[in]  algo_coupling  algorithm used for solving the NS system
+ * \param[in]  option_flag    additional high-level numerical options
+ * \param[in]  post_flag      predefined post-processings
  *
  * \return a pointer to a new allocated structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_navsto_param_t *
-cs_navsto_param_create(const cs_boundary_t              *boundaries,
-                       cs_navsto_param_model_t           model,
-                       cs_navsto_param_time_state_t      time_state,
-                       cs_navsto_param_coupling_t        algo_coupling);
+cs_navsto_param_create(const cs_boundary_t             *boundaries,
+                       cs_navsto_param_model_t          model,
+                       cs_navsto_param_coupling_t       algo_coupling,
+                       cs_flag_t                        option_flag,
+                       cs_flag_t                        post_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!

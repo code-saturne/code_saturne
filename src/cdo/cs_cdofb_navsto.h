@@ -278,11 +278,18 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
  * \brief  Perform extra-operation related to Fb schemes when solving
  *         Navier-Stokes.
  *         - Compute the mass flux accross the boundaries.
+ *         - Compute the kinetic energy
+ *         - Compute the velocity gradient
+ *         - Compute the vorticity
+ *         - Compute the helicity
+ *         - Compute the enstrophy
  *
  * \param[in]  nsp        pointer to a \ref cs_navsto_param_t struct.
  * \param[in]  quant      pointer to a \ref cs_cdo_quantities_t struct.
  * \param[in]  connect    pointer to a \ref cs_cdo_connect_t struct.
  * \param[in]  adv_field  pointer to a \ref cs_adv_field_t struct.
+ * \param[in]  u_cell     vector-valued velocity in each cell
+ * \param[in]  u_face     vector-valued velocity on each face
  */
 /*----------------------------------------------------------------------------*/
 
@@ -290,7 +297,9 @@ void
 cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
                          const cs_cdo_quantities_t   *quant,
                          const cs_cdo_connect_t      *connect,
-                         const cs_adv_field_t        *adv_field);
+                         const cs_adv_field_t        *adv_field,
+                         const cs_real_t             *u_cell,
+                         const cs_real_t             *u_face);
 
 /*----------------------------------------------------------------------------*/
 /*!

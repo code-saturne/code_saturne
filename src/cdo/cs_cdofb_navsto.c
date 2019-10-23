@@ -58,6 +58,7 @@
 #include "cs_navsto_param.h"
 #include "cs_parall.h"
 #include "cs_post.h"
+#include "cs_reco.h"
 #include "cs_sdm.h"
 #include "cs_timer.h"
 
@@ -666,11 +667,18 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
  * \brief  Perform extra-operation related to Fb schemes when solving
  *         Navier-Stokes.
  *         - Compute the mass flux accross the boundaries.
+ *         - Compute the kinetic energy
+ *         - Compute the velocity gradient
+ *         - Compute the vorticity
+ *         - Compute the helicity
+ *         - Compute the enstrophy
  *
  * \param[in]  nsp        pointer to a \ref cs_navsto_param_t struct.
  * \param[in]  quant      pointer to a \ref cs_cdo_quantities_t struct.
  * \param[in]  connect    pointer to a \ref cs_cdo_connect_t struct.
  * \param[in]  adv_field  pointer to a \ref cs_adv_field_t struct.
+ * \param[in]  u_cell     vector-valued velocity in each cell
+ * \param[in]  u_face     vector-valued velocity on each face
  */
 /*----------------------------------------------------------------------------*/
 
@@ -678,7 +686,9 @@ void
 cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
                          const cs_cdo_quantities_t   *quant,
                          const cs_cdo_connect_t      *connect,
-                         const cs_adv_field_t        *adv_field)
+                         const cs_adv_field_t        *adv_field,
+                         const cs_real_t             *u_cell,
+                         const cs_real_t             *u_face)
 {
   CS_UNUSED(connect);
 
@@ -686,7 +696,8 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 
   /* Retrieve the boundary velocity flux (mass flux) */
   cs_field_t  *nflx
-    = cs_advection_field_get_field(adv_field, CS_MESH_LOCATION_BOUNDARY_FACES);
+    = cs_advection_field_get_field(adv_field,
+                                   CS_MESH_LOCATION_BOUNDARY_FACES);
 
   /* 1. Compute for each boundary the integrated flux */
   bool  *belong_to_default = NULL;
@@ -759,6 +770,107 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
   /* Free temporary buffers */
   BFT_FREE(belong_to_default);
   BFT_FREE(boundary_fluxes);
+
+  /* Predefined post-processing */
+  /* ========================== */
+
+  if (nsp->post_flag & CS_NAVSTO_POST_KINETIC_ENERGY) {
+
+    cs_field_t  *kinetic_energy = cs_field_by_name("kinetic_energy");
+    assert(kinetic_energy != NULL);
+
+    cs_field_current_to_previous(kinetic_energy);
+
+#   pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < quant->n_cells; i++)
+      kinetic_energy->val[i] = 0.5*cs_math_3_square_norm(u_cell + 3*i);
+
+  } /* Kinetic energy */
+
+  if (nsp->post_flag & CS_NAVSTO_POST_VELOCITY_GRADIENT) {
+
+    cs_field_t  *velocity_gradient = cs_field_by_name("velocity_gradient");
+    assert(velocity_gradient != NULL);
+
+    cs_field_current_to_previous(velocity_gradient);
+
+#   pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
+      cs_reco_grad_33_cell_from_fb_dofs(c_id, connect, quant,
+                                        u_cell, u_face,
+                                        velocity_gradient->val + 9*c_id);
+
+  } /* Velocity gradient */
+
+  cs_flag_t  mask_velgrd = CS_NAVSTO_POST_VORTICITY | CS_NAVSTO_POST_HELICITY |
+    CS_NAVSTO_POST_ENSTROPHY;
+
+  if (cs_flag_test(nsp->post_flag, mask_velgrd)) {
+
+    cs_field_t  *vorticity = cs_field_by_name("vorticity");
+    cs_field_current_to_previous(vorticity);
+
+    cs_field_t  *enstrophy = cs_field_by_name_try("enstrophy");
+    if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY)
+      cs_field_current_to_previous(enstrophy);
+
+    cs_field_t  *helicity = cs_field_by_name_try("helicity");
+    if (nsp->post_flag & CS_NAVSTO_POST_HELICITY)
+      cs_field_current_to_previous(helicity);
+
+    cs_field_t  *velocity_gradient = cs_field_by_name_try("velocity_gradient");
+
+    if (velocity_gradient == NULL) {
+
+#     pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+        cs_real_t  grd_uc[9];
+
+        /* Compute the velocity gradient */
+        cs_reco_grad_33_cell_from_fb_dofs(c_id, connect, quant,
+                                          u_cell, u_face, grd_uc);
+
+        /* Compute the cell vorticity */
+        cs_real_t  *w = vorticity->val + 3*c_id;
+        w[0] = grd_uc[7] - grd_uc[5];
+        w[1] = grd_uc[2] - grd_uc[6];
+        w[2] = grd_uc[3] - grd_uc[1];
+
+        if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY)
+          enstrophy->val[c_id] = cs_math_3_square_norm(w);
+
+        if (nsp->post_flag & CS_NAVSTO_POST_HELICITY)
+          helicity->val[c_id] = cs_math_3_dot_product(u_cell + 3*c_id, w);
+
+      } /* Loop on cells */
+
+    }
+    else {
+
+#     pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+      for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+        cs_real_t  *grd_uc = velocity_gradient->val + 9*c_id;
+
+        /* Compute the cell vorticity */
+        cs_real_t  *w = vorticity->val + 3*c_id;
+        w[0] = grd_uc[7] - grd_uc[5];
+        w[1] = grd_uc[2] - grd_uc[6];
+        w[2] = grd_uc[3] - grd_uc[1];
+
+        if (nsp->post_flag & CS_NAVSTO_POST_ENSTROPHY)
+          enstrophy->val[c_id] = cs_math_3_square_norm(w);
+
+        if (nsp->post_flag & CS_NAVSTO_POST_HELICITY)
+          helicity->val[c_id] = cs_math_3_dot_product(u_cell + 3*c_id, w);
+
+      } /* Loop on cells */
+
+    } /* velocity gradient has been computed previously */
+
+  } /* vorticity, helicity or enstrophy computations */
+
 }
 
 /*----------------------------------------------------------------------------*/

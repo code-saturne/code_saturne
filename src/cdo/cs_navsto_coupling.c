@@ -195,20 +195,8 @@ cs_navsto_uzawa_init_setup(const cs_navsto_param_t    *nsp,
   cs_navsto_param_transfer(nsp, mom_eqp);
 
   /* Link the time property to the momentum equation */
-  switch (nsp->time_state) {
-
-  case CS_NAVSTO_TIME_STATE_FULL_STEADY:
-    break; /* Nothing to add */
-
-  case CS_NAVSTO_TIME_STATE_UNSTEADY:
-  case CS_NAVSTO_TIME_STATE_LIMIT_STEADY:
+  if (!cs_navsto_param_is_steady(nsp))
     cs_equation_add_time(mom_eqp, cs_property_by_name("unity"));
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid choice for the time state", __func__);
-  }
 
   /* Add advection if necessary */
   switch (nsp->model) {
@@ -420,17 +408,8 @@ cs_navsto_ac_init_setup(const cs_navsto_param_t    *nsp,
   cs_navsto_param_transfer(nsp, mom_eqp);
 
   /* Link the time property to the momentum equation */
-  switch (nsp->time_state) {
-
-  case CS_NAVSTO_TIME_STATE_UNSTEADY:
-  case CS_NAVSTO_TIME_STATE_LIMIT_STEADY:
+  if (!cs_navsto_param_is_steady(nsp))
     cs_equation_add_time(mom_eqp, cs_property_by_name("unity"));
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid choice for the time state", __func__);
-  }
 
   /* Add advection if necessary */
   switch (nsp->model) {
@@ -652,17 +631,9 @@ cs_navsto_ac_vpp_init_setup(const cs_navsto_param_t    *nsp,
   cs_navsto_param_transfer(nsp, gd_eqp);
 
   /* Link the time property to the momentum equation */
-  switch (nsp->time_state) {
-
-  case CS_NAVSTO_TIME_STATE_UNSTEADY:
-  case CS_NAVSTO_TIME_STATE_LIMIT_STEADY:
+  if (!cs_navsto_param_is_steady(nsp)) {
     cs_equation_add_time(mom_eqp, cs_property_by_name("unity"));
     cs_equation_add_time(gd_eqp, cs_property_by_name("unity"));
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid choice for the time state", __func__);
   }
 
   /* Add advection if necessary */
@@ -860,20 +831,8 @@ cs_navsto_monolithic_init_setup(const cs_navsto_param_t    *nsp,
   cs_navsto_param_transfer(nsp, mom_eqp);
 
   /* Link the time property to the momentum equation */
-  switch (nsp->time_state) {
-
-  case CS_NAVSTO_TIME_STATE_FULL_STEADY:
-    break; /* Nothing to add */
-
-  case CS_NAVSTO_TIME_STATE_UNSTEADY:
-  case CS_NAVSTO_TIME_STATE_LIMIT_STEADY:
+  if (!cs_navsto_param_is_steady(nsp))
     cs_equation_add_time(mom_eqp, cs_property_by_name("unity"));
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid choice for the time state", __func__);
-  }
 
   /* Add advection if necessary */
   switch (nsp->model) {
