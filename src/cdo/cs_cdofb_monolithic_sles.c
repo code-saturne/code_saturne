@@ -1412,10 +1412,16 @@ _init_gkb_algo(const cs_matrix_t             *matrix,
    * anymore */
   memcpy(gkb->b_tilda, gkb->v, gkb->n_u_dofs*sizeof(cs_real_t));
 
-  const  cs_real_t  inv_beta = 1./gkb->beta;
+  if (fabs(gkb->beta) > FLT_MIN) {
+    const  cs_real_t  inv_beta = 1./gkb->beta;
 # pragma omp parallel for if (size > CS_THR_MIN)
-  for (cs_lnum_t i = 0; i < size; i++)
-    gkb->q[i] *= inv_beta;
+    for (cs_lnum_t i = 0; i < size; i++)
+      gkb->q[i] *= inv_beta;
+  }
+  else {
+    gkb->info.cvg = CS_SLES_CONVERGED;
+    return;
+  }
 
   /* Solve M.w = Dt.q */
   _apply_div_op_transpose(div_op, gkb->q, gkb->dt_q);
