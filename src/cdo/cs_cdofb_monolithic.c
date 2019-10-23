@@ -926,6 +926,7 @@ _steady_build(const cs_navsto_param_t      *nsp,
        * - Set the pressure boundary conditions (if required)
        * - Define  the divergence operator used in the linear system
        */
+
       cs_cdofb_navsto_define_builder(t_eval, nsp, cm, csys,
                                      sc->pressure_bc, sc->bf_type,
                                      &nsb);
@@ -938,7 +939,7 @@ _steady_build(const cs_navsto_param_t      *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump(">> Local system after convection/diffusion", csys);
+        cs_cell_sys_dump("\n>> Local system after convection/diffusion", csys);
 #endif
 
       /* 3- SOURCE TERM COMPUTATION (for the momentum equation) */
@@ -964,7 +965,7 @@ _steady_build(const cs_navsto_param_t      *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump(">> Local system matrix before condensation", csys);
+        cs_cell_sys_dump("\n>> Local system matrix before condensation", csys);
 #endif
 
       /* 5- STATIC CONDENSATION
@@ -981,7 +982,7 @@ _steady_build(const cs_navsto_param_t      *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump(">> Local system matrix after static condensation",
+        cs_cell_sys_dump("\n>> Local system matrix after static condensation",
                          csys);
 #endif
 
@@ -992,7 +993,7 @@ _steady_build(const cs_navsto_param_t      *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 0
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
+        cs_cell_sys_dump("\n>> (FINAL) Local system matrix", csys);
 #endif
 
       /* ************************* ASSEMBLY PROCESS ************************* */
@@ -1134,7 +1135,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump(">> Local system after convection/diffusion", csys);
+        cs_cell_sys_dump("\n>> Local system after convection/diffusion", csys);
 #endif
 
       /* 3- SOURCE TERM COMPUTATION (for the momentum equation) */
@@ -1194,7 +1195,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump(">> Local system matrix after static condensation",
+        cs_cell_sys_dump("\n>> Local system matrix after static condensation",
                          csys);
 #endif
 
@@ -1205,7 +1206,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 0
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
+        cs_cell_sys_dump("\n>> (FINAL) Local system matrix", csys);
 #endif
 
       /* ************************* ASSEMBLY PROCESS ************************* */
@@ -1359,7 +1360,7 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump(">> Local system after convection/diffusion", csys);
+        cs_cell_sys_dump("\n>> Local system after convection/diffusion", csys);
 #endif
 
       /* 3- SOURCE TERM COMPUTATION (for the momentum equation) */
@@ -1450,7 +1451,7 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump(">> Local system matrix after static condensation",
+        cs_cell_sys_dump("\n>> Local system matrix after static condensation",
                          csys);
 #endif
 
@@ -1461,7 +1462,7 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 0
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
+        cs_cell_sys_dump("\n>> (FINAL) Local system matrix", csys);
 #endif
 
       /* ************************* ASSEMBLY PROCESS ************************* */

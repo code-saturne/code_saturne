@@ -734,38 +734,25 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 
   /* Output result */
   cs_log_printf(CS_LOG_DEFAULT,
-                "--- Balance of the mass flux across the boundaries:\n");
+                "\n- Balance of the mass flux across the boundaries:\n");
 
+  char descr[32];
   for (int b_id = 0; b_id < boundaries->n_boundaries; b_id++) {
 
     const cs_zone_t  *z = cs_boundary_zone_by_id(boundaries->zone_ids[b_id]);
 
-    char descr[33];
-    cs_boundary_get_type_descr(boundaries, boundaries->types[b_id], 33, descr);
+    cs_boundary_get_type_descr(boundaries, boundaries->types[b_id], 32, descr);
 
-    cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -8.6e\n",
+    cs_log_printf(CS_LOG_DEFAULT, "b %-32s | %-32s |% -8.6e\n",
                   descr, z->name, boundary_fluxes[b_id]);
 
   } /* Loop on boundaries */
 
   /* Default boundary */
-  switch (boundaries->default_type) {
-  case CS_BOUNDARY_SYMMETRY:
-    cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -8.6e\n",
-                  "symmetry", "default boundary",
-                  boundary_fluxes[boundaries->n_boundaries]);
-    break;
-  case CS_BOUNDARY_WALL:
-    cs_log_printf(CS_LOG_DEFAULT, "-b- %-22s |%-32s |% -8.6e\n",
-                  "wall", "default boundary",
-                  boundary_fluxes[boundaries->n_boundaries]);
-    break;
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _(" %s: Invalid type of default boundary.\n"
-                " A valid choice is either \"CS_BOUNDARY_WALL\" or"
-                " \"CS_BOUNDARY_SYMMETRY\"."), __func__);
-  }
+  cs_boundary_get_type_descr(boundaries, boundaries->default_type, 32, descr);
+  cs_log_printf(CS_LOG_DEFAULT, "b %-32s | %-32s |% -8.6e\n",
+                descr, "default boundary",
+                boundary_fluxes[boundaries->n_boundaries]);
 
   /* Free temporary buffers */
   BFT_FREE(belong_to_default);
