@@ -1603,7 +1603,7 @@ cs_gwf_integrate_tracer(const cs_cdo_connect_t     *connect,
            - the cell unknown stands for 1/4 of the cell volume
            - the vertex unknown stands for 3/4 of the dual cell volume
          */
-        cs_real_t  _int_value = 0.25*c_vals[c_id];
+        cs_real_t  _int_value = 0.25*cdoq->cell_vol[c_id]*c_vals[c_id];
         for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
           _int_value += 0.75 * cdoq->dcell_vol[j] * v_vals[c2v->ids[j]];
         }
@@ -1622,7 +1622,7 @@ cs_gwf_integrate_tracer(const cs_cdo_connect_t     *connect,
 
   } /* End of switch */
 
-  /* Parallel synchronisation */
+  /* Parallel synchronization */
   if (cs_glob_n_ranks > 1)
     cs_parall_sum(1, CS_REAL_TYPE, &int_value);
 
