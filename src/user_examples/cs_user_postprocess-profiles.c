@@ -346,7 +346,7 @@ cs_user_postprocess_values(const char            *mesh_name,
         cs_real_6_t *cvar_rij = (cs_real_6_t *)CS_F_(rij)->val;
         for (cs_lnum_t i = 0; i < n_cells; i++) {
           cs_lnum_t c_id = cell_list[i];
-          for (cs_lnum_t j = 0; i < 6; i++)
+          for (cs_lnum_t j = 0; j < 6; j++)
             rij[i][j] = cvar_rij[c_id][j];
         }
 

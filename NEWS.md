@@ -3,6 +3,8 @@ Release 6.0.1 (Unreleased)
 
 User changes:
 
+- Fix bug in user example (Rij profile).
+
 - Langrangian module: add local projection (idirla 4) for turbulent dispersion.
   * also add possibility for mapping mean velocity gradient to turbulent
     dispersion, for use with multiple fluid phases.
