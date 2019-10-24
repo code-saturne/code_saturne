@@ -283,8 +283,10 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
  *         - Compute the vorticity
  *         - Compute the helicity
  *         - Compute the enstrophy
+ *         - Compute the stream function
  *
  * \param[in]  nsp        pointer to a \ref cs_navsto_param_t struct.
+ * \param[in]  mesh       pointer to a cs_mesh_t structure
  * \param[in]  quant      pointer to a \ref cs_cdo_quantities_t struct.
  * \param[in]  connect    pointer to a \ref cs_cdo_connect_t struct.
  * \param[in]  adv_field  pointer to a \ref cs_adv_field_t struct.
@@ -295,6 +297,7 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
 
 void
 cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
+                         const cs_mesh_t             *mesh,
                          const cs_cdo_quantities_t   *quant,
                          const cs_cdo_connect_t      *connect,
                          const cs_adv_field_t        *adv_field,
@@ -440,6 +443,27 @@ cs_cdofb_fixed_wall(short int                       f,
                     const cs_cell_mesh_t           *cm,
                     cs_cell_builder_t              *cb,
                     cs_cell_sys_t                  *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the source term for computing the stream function.
+ *         This relies on the prototype associated to the generic function
+ *         pointer \ref cs_dof_function_t
+ *
+ * \param[in]      n_elts   number of elements to consider
+ * \param[in]      elt_ids  list of elements ids
+ * \param[in]      compact  true:no indirection, false:indirection for retval
+ * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
+ * \param[in, out] retval   result of the function
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_stream_source_term(cs_lnum_t            n_elts,
+                                   const cs_lnum_t     *elt_ids,
+                                   bool                 compact,
+                                   void                *input,
+                                   cs_real_t           *retval);
 
 /*----------------------------------------------------------------------------*/
 

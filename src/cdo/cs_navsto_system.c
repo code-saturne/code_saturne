@@ -170,6 +170,7 @@ _allocate_navsto_system(void)
 
   /* Stream function is associated to the variable field of an equation
      So the treatment is different */
+  navsto->stream_function_eq = NULL;
 
   /* Additional data fitting the choice of the coupling model */
   navsto->coupling_context = NULL;
@@ -299,6 +300,14 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
     break;
 
   }
+
+  /* Create associated equations */
+  if (post_flag & CS_NAVSTO_POST_STREAM_FUNCTION)
+    navsto->stream_function_eq = cs_equation_add(CS_NAVSTO_STREAM_EQNAME,
+                                                 "stream_function",
+                                                 CS_EQUATION_TYPE_NAVSTO,
+                                                 1,
+                                                 CS_PARAM_BC_HMG_NEUMANN);
 
   /* Set the static variable */
   cs_navsto_system = navsto;
@@ -534,8 +543,25 @@ cs_navsto_system_init_setup(void)
 
   }
 
-  if (nsp->post_flag & CS_NAVSTO_POST_STREAM_FUNCTION)
+  if (nsp->post_flag & CS_NAVSTO_POST_STREAM_FUNCTION) {
+
     nsp->post_flag |= CS_NAVSTO_POST_VORTICITY; /* automatic */
+    cs_equation_param_t  *eqp = cs_equation_get_param(ns->stream_function_eq);
+    assert(eqp != NULL);
+
+    /* Default settings for this equation */
+    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
+    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "dga");
+    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
+    cs_equation_set_param(eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
+
+    /* This is for post-processing purpose, so, there is no need to have
+     * a restrictive convergence tolerance on the resolution of the linear
+     * system */
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_EPS, "1e-6");
+
+  }
 
   if (nsp->post_flag & CS_NAVSTO_POST_HELICITY) {
 
@@ -937,6 +963,25 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
   /* Add default post-processing related to the Navier-Stokes system */
   cs_post_add_time_mesh_dep_output(cs_navsto_system_extra_post, ns);
+
+  if (nsp->post_flag & CS_NAVSTO_POST_STREAM_FUNCTION) {
+
+    cs_equation_param_t  *eqp = cs_equation_get_param(ns->stream_function_eq);
+    assert(eqp != NULL);
+    cs_field_t  *w = cs_field_by_name("vorticity");
+
+    /* Add a laplacian term: -div.grad */
+    cs_equation_add_diffusion(eqp, cs_property_by_name("unity"));
+
+    /* Add source term as the vorticity w.r.t. the z-axis */
+    cs_equation_add_source_term_by_dof_func(eqp,
+                                            NULL,
+                                            cs_flag_primal_cell,
+                                            cs_cdofb_navsto_stream_source_term,
+                                            (void *)w->val);
+
+  } /* Post-processing of the stream function is requested */
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1097,6 +1142,7 @@ cs_navsto_system_compute(const cs_mesh_t         *mesh,
 
   /* Build and solve the Navier-Stokes system */
   ns->compute(mesh, nsp, ns->scheme_context);
+
   /* Retrieve the boundary velocity flux (mass flux) and perform the update */
   cs_field_t  *nflx
     = cs_advection_field_get_field(ns->adv_field,
@@ -1111,13 +1157,15 @@ cs_navsto_system_compute(const cs_mesh_t         *mesh,
 /*!
  * \brief  Predefined extra-operations for the Navier-Stokes system
  *
+ * \param[in]  mesh      pointer to a cs_mesh_t structure
  * \param[in]  connect   pointer to a cs_cdo_connect_t structure
  * \param[in]  cdoq      pointer to a cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_extra_op(const cs_cdo_connect_t      *connect,
+cs_navsto_system_extra_op(const cs_mesh_t             *mesh,
+                          const cs_cdo_connect_t      *connect,
                           const cs_cdo_quantities_t   *cdoq)
 {
   cs_navsto_system_t  *navsto = cs_navsto_system;
@@ -1134,7 +1182,7 @@ cs_navsto_system_extra_op(const cs_cdo_connect_t      *connect,
       cs_real_t  *u_face = cs_equation_get_face_values(eq);
       cs_real_t  *u_cell = navsto->velocity->val;
 
-      cs_cdofb_navsto_extra_op(nsp, cdoq, connect,
+      cs_cdofb_navsto_extra_op(nsp, mesh, cdoq, connect,
                                navsto->adv_field,
                                u_cell, u_face);
     }

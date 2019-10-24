@@ -491,7 +491,9 @@ cs_domain_post(cs_domain_t  *domain)
 
     /* 5.c Specific operations for the Navier-Stokes module */
     if (cs_navsto_system_is_activated())
-      cs_navsto_system_extra_op(domain->connect, domain->cdo_quantities);
+      cs_navsto_system_extra_op(domain->mesh,
+                                domain->connect,
+                                domain->cdo_quantities);
 
     /* Basic statistic related to variables */
     if (domain->cdo_context->mode == CS_DOMAIN_CDO_MODE_ONLY)

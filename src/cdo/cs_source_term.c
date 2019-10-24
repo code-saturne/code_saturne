@@ -583,6 +583,11 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
           compute_source[st_id] = cs_source_term_dcsd_by_array;
           break;
 
+        case CS_XDEF_BY_DOF_FUNCTION:
+          msh_flag |= CS_FLAG_COMP_PVQ;
+          compute_source[st_id] = cs_source_term_dcsd_by_dof_func;
+          break;
+
         default:
           bft_error(__FILE__, __LINE__, 0,
                     "%s: Invalid type of definition for a source term in CDOVB",
@@ -669,6 +674,10 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
           compute_source[st_id] = cs_source_term_pcvd_by_value;
         else
           compute_source[st_id] = cs_source_term_pcsd_by_value;
+        break;
+
+      case CS_XDEF_BY_DOF_FUNCTION:
+        compute_source[st_id] = cs_source_term_pcsd_by_dof_func;
         break;
 
       case CS_XDEF_BY_ANALYTIC_FUNCTION:
@@ -1081,7 +1090,56 @@ cs_source_term_dcsd_by_array(const cs_xdef_t           *source,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the contribution for a cell related to a source term and
- *         add it the given array of values.
+ *         add it to the given array of values.
+ *         Case of a scalar density defined at dual cells by a DoF function.
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_dcsd_by_dof_func(const cs_xdef_t           *source,
+                                const cs_cell_mesh_t      *cm,
+                                cs_real_t                  time_eval,
+                                cs_cell_builder_t         *cb,
+                                void                      *input,
+                                double                    *values)
+{
+  CS_UNUSED(cb);
+  CS_UNUSED(time_eval);
+
+  if (source == NULL)
+    return;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
+
+  const cs_xdef_dof_input_t  *context = (cs_xdef_dof_input_t *)source->input;
+
+  /* Up to now this should be the only location allowed */
+  assert(cs_flag_test(context->loc, cs_flag_primal_cell));
+
+  /* Call the DoF function to evaluate the function at xc */
+  double  cell_eval;
+  context->func(1, &(cm->c_id), true,  /* compacted output ? */
+                context->input,
+                &cell_eval);
+
+  cell_eval *= cm->vol_c;
+  for (int v = 0; v < cm->n_vc; v++)
+    values[v] += cell_eval * cm->wvc[v];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it to the given array of values.
  *         Case of a scalar density defined at dual cells by an analytical
  *         function.
  *         Use the barycentric approximation as quadrature to evaluate the
@@ -1715,6 +1773,51 @@ cs_source_term_pcsd_by_value(const cs_xdef_t           *source,
 /*!
  * \brief  Compute the contribution for a cell related to a source term and
  *         add it to the given array of values.
+ *         Case of a scalar density (sd) defined on primal cells by a DoF
+ *         function.
+ *         Case of face-based schemes
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_pcsd_by_dof_func(const cs_xdef_t           *source,
+                                const cs_cell_mesh_t      *cm,
+                                cs_cell_builder_t         *cb,
+                                void                      *input,
+                                double                    *values)
+{
+  CS_UNUSED(cb);
+  if (source == NULL)
+    return;
+
+  cs_xdef_dof_input_t  *context = (cs_xdef_dof_input_t *)source->input;
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+
+  /* Up to now this should be the only location allowed */
+  assert(cs_flag_test(context->loc, cs_flag_primal_cell));
+
+  /* Call the DoF function to evaluate the function at xc */
+  double  cell_eval;
+  context->func(1, &(cm->c_id), true,  /* compacted output ? */
+                context->input,
+                &cell_eval);
+
+  values[cm->n_fc] += cell_eval * cm->vol_c;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it the given array of values.
  *         Case of a vector-valued density (vd) defined on primal cells
  *         by a value.
  *         Case of face-based schemes

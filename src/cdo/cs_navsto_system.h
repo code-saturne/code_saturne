@@ -214,9 +214,17 @@ typedef struct {
   cs_field_t           *enstrophy;
 
   /*! \var velocity_gradient
-   *  Pointer to a tnesor-valued \ref cs_field_t
+   *  Pointer to a tensor-valued \ref cs_field_t
    */
   cs_field_t           *velocity_gradient;
+
+  /*! \var stream_function_eq
+   *  Pointer to a \ref cs_equation_t structure related to the computation
+   *  of the stream function -Laplacian(psi) = vorticity_z where psi is the
+   *  scalar-valued stream function. This is relevant only for a 2D
+   *  computation
+   */
+  cs_equation_t        *stream_function_eq;
 
   /*!
    * @}
@@ -439,13 +447,15 @@ cs_navsto_system_compute(const cs_mesh_t         *mesh,
 /*!
  * \brief  Predefined extra-operations for the Navier-Stokes system
  *
+ * \param[in]  mesh      pointer to a cs_mesh_t structure
  * \param[in]  connect   pointer to a cs_cdo_connect_t structure
  * \param[in]  cdoq      pointer to a cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_extra_op(const cs_cdo_connect_t      *connect,
+cs_navsto_system_extra_op(const cs_mesh_t             *mesh,
+                          const cs_cdo_connect_t      *connect,
                           const cs_cdo_quantities_t   *cdoq);
 
 /*----------------------------------------------------------------------------*/

@@ -42,8 +42,11 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-/* Manage the naming of properties and variables */
+/* Manage the naming of properties, variables and equations related to the
+ * Navier-Stokes module */
+
 #define CS_NAVSTO_LAMINAR_VISCOSITY  "laminar_viscosity"
+#define CS_NAVSTO_STREAM_EQNAME      "streamfunction_eq"
 
 /*!
  * @name Flags specifying numerical options

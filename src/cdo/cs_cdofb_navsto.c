@@ -672,8 +672,10 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
  *         - Compute the vorticity
  *         - Compute the helicity
  *         - Compute the enstrophy
+ *         - Compute the stream function
  *
  * \param[in]  nsp        pointer to a \ref cs_navsto_param_t struct.
+ * \param[in]  mesh       pointer to a cs_mesh_t structure
  * \param[in]  quant      pointer to a \ref cs_cdo_quantities_t struct.
  * \param[in]  connect    pointer to a \ref cs_cdo_connect_t struct.
  * \param[in]  adv_field  pointer to a \ref cs_adv_field_t struct.
@@ -684,14 +686,13 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
 
 void
 cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
+                         const cs_mesh_t             *mesh,
                          const cs_cdo_quantities_t   *quant,
                          const cs_cdo_connect_t      *connect,
                          const cs_adv_field_t        *adv_field,
                          const cs_real_t             *u_cell,
                          const cs_real_t             *u_face)
 {
-  CS_UNUSED(connect);
-
   const cs_boundary_t  *boundaries = nsp->boundaries;
 
   /* Retrieve the boundary velocity flux (mass flux) */
@@ -898,6 +899,41 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
     } /* verbosity > 0 */
 
   } /* vorticity, helicity or enstrophy computations */
+
+  /* Stream function */
+  if (nsp->post_flag & CS_NAVSTO_POST_STREAM_FUNCTION) {
+
+    cs_equation_t  *eq = cs_equation_by_name(CS_NAVSTO_STREAM_EQNAME);
+    assert(eq != NULL);
+    if (cs_equation_uses_new_mechanism(eq))
+      cs_equation_solve_steady_state(mesh, eq);
+
+    else { /* Deprecated */
+
+      /* Define the algebraic system */
+      cs_equation_build_system(mesh, eq);
+
+      /* Solve the algebraic system */
+      cs_equation_solve_deprecated(eq);
+
+    }
+
+    cs_equation_param_t  *eqp = cs_equation_get_param(eq);
+    if (eqp->n_bc_defs == 0) {
+
+      /* Since this is an equation solved with only homogeneous Neumann BCs, one
+       * substracts the mean value to get a unique solution */
+      cs_real_t  mean_value;
+      cs_equation_integrate_variable(connect, quant, eq, &mean_value);
+      mean_value /= quant->vol_tot;
+
+      cs_real_t  *psi_v = cs_equation_get_vertex_values(eq);
+      for (cs_lnum_t i = 0; i < quant->n_vertices; i++)
+        psi_v[i] -= mean_value;
+
+    } /* If homogeneous Neumann everywhere */
+
+  } /* Computation of the stream function is requested */
 
 }
 
@@ -1372,6 +1408,43 @@ cs_cdofb_fixed_wall(short int                       f,
 
   for (short int k = 0; k < 9; k++)
     bii->val[k] += pcoef * ni_ni[k];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get the source term for computing the stream function.
+ *         This relies on the prototype associated to the generic function
+ *         pointer \ref cs_dof_function_t
+ *
+ * \param[in]      n_elts   number of elements to consider
+ * \param[in]      elt_ids  list of elements ids
+ * \param[in]      compact  true:no indirection, false:indirection for retval
+ * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
+ * \param[in, out] retval   result of the function
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_stream_source_term(cs_lnum_t            n_elts,
+                                   const cs_lnum_t     *elt_ids,
+                                   bool                 compact,
+                                   void                *input,
+                                   cs_real_t           *retval)
+{
+  assert(input != NULL);
+  assert(retval != NULL);
+
+  /* input is a pointer to the vorticity field */
+  const cs_real_t  *w = (cs_real_t *)input;
+
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+    cs_lnum_t  id = (elt_ids == NULL) ? i : elt_ids[i];
+    cs_lnum_t  r_id = compact ? i : id;
+
+    retval[r_id] = w[3*id+2];   /* Extract the z component */
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
