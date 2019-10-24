@@ -55,7 +55,7 @@ BEGIN_C_DECLS
  * \enum cs_xdef_type_t
  *
  * \var CS_XDEF_BY_ANALYTIC_FUNCTION
- * Definition relying on an analytic function (see \ref cs_analytic_func_t)
+ * Definition relying on a \ref cs_analytic_func_t function pointer
  *
  * \var CS_XDEF_BY_ARRAY
  * Definition based on an array
@@ -177,7 +177,8 @@ typedef struct {
 
 typedef struct {
 
-  /*! * \var stride
+  /*!
+   * \var stride
    * Stride to access the array values
    *
    * \var loc
@@ -206,7 +207,7 @@ typedef struct {
 
 /*!
  * \struct cs_xdef_analytic_input_t
- * \brief Input structure when an analytic function is used for the definition
+ * \brief Input structure when a definition by analytic function is used
  */
 
 typedef struct {
@@ -218,7 +219,7 @@ typedef struct {
   void                *input;
 
   /*! \var func
-   * \ref cs_analytic_func_t to call
+   * pointer to a \ref cs_analytic_func_t to call
    */
   cs_analytic_func_t  *func;
 
@@ -234,11 +235,12 @@ typedef struct {
   /*! \var input
    * NULL or pointer to a structure cast on-the-fly for additional information
    * used in the function
-   *
-   * \var func
-   * \ref cs_time_func_t to call
    */
   void                *input;
+
+  /*! \var func
+   * pointer to a \ref cs_time_func_t to call
+   */
   cs_time_func_t      *func;
 
 } cs_xdef_time_func_input_t;

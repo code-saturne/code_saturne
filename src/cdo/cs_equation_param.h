@@ -1302,14 +1302,15 @@ cs_equation_add_reaction(cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a new source term structure and initialize it by value
+ * \brief  Add a new source term by initializing a cs_xdef_t structure.
+ *         Case of a definition by a constant value
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
  * \param[in]      z_name    name of the associated zone (if NULL or
  *                           "" all cells are considered)
  * \param[in]      val       pointer to the value
  *
- * \return a pointer to the new cs_xdef_t structure
+ * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1320,28 +1321,29 @@ cs_equation_add_source_term_by_val(cs_equation_param_t    *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a new source term structure and initialize it by an analytical
- *         function
+ * \brief  Add a new source term by initializing a cs_xdef_t structure.
+ *         Case of a definition by an analytical function
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
  * \param[in]      z_name    name of the associated zone (if NULL or "" if
  *                           all cells are considered)
- * \param[in]      ana       pointer to an analytical function
+ * \param[in]      func      pointer to an analytical function
  * \param[in]      input     NULL or pointer to a structure cast on-the-fly
  *
- * \return a pointer to the new cs_source_term_t structure
+ * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_xdef_t *
 cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
                                         const char             *z_name,
-                                        cs_analytic_func_t     *ana,
+                                        cs_analytic_func_t     *func,
                                         void                   *input);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a new source term defined by an array
+ * \brief  Add a new source term by initializing a cs_xdef_t structure.
+ *         Case of a definition by an array.
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
  * \param[in]      z_name    name of the associated zone (if NULL or "" if
