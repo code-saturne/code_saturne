@@ -1708,7 +1708,7 @@ cs_source_term_pcsd_by_value(const cs_xdef_t           *source,
 
   const cs_real_t *s_input = (const cs_real_t *)source->input;
 
-  values[cm->n_fc] = s_input[0] * cm->vol_c;
+  values[cm->n_fc] += s_input[0] * cm->vol_c;
 }
 
 /*----------------------------------------------------------------------------*/
