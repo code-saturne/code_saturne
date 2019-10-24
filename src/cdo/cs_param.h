@@ -73,6 +73,29 @@ typedef void
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Generic function pointer for defining a quantity at known locations
+ *         (cells, faces, edges or vertices) with a function.  elt_ids is
+ *         optional. If not NULL, the function works on a sub-list of
+ *         elements. Moreover, it enables to fill retval with an indirection if
+ *         compact is set to false
+ *
+ * \param[in]      n_elts   number of elements to consider
+ * \param[in]      elt_ids  list of elements ids
+ * \param[in]      compact  true:no indirection, false:indirection for retval
+ * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
+ * \param[in, out] retval   result of the function
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_dof_func_t) (cs_lnum_t            n_elts,
+                 const cs_lnum_t     *elt_ids,
+                 bool                 compact,
+                 void                *input,
+                 cs_real_t           *retval);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Function which defines the evolution of a quantity according to the
  *         number of iteration already done, the current time and any structure
  *         given as a parameter

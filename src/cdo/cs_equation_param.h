@@ -1343,6 +1343,29 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Add a new source term by initializing a cs_xdef_t structure.
+ *         Case of a definition by a DoF function
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      loc_flag  location of element ids given as parameter
+ * \param[in]      func      pointer to a DoF function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_source_term_by_dof_func(cs_equation_param_t    *eqp,
+                                        const char             *z_name,
+                                        cs_flag_t               loc_flag,
+                                        cs_dof_func_t          *func,
+                                        void                   *input);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new source term by initializing a cs_xdef_t structure.
  *         Case of a definition by an array.
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
@@ -1354,7 +1377,7 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
  *                           (true or false)
  * \param[in]      index     optional pointer to the array index
  *
- * \return a pointer to the new cs_source_term_t structure
+ * \return a pointer to the new \ref cs_xdef_t structure
  */
 /*----------------------------------------------------------------------------*/
 

@@ -136,6 +136,20 @@ cs_xdef_volume_create(cs_xdef_type_t    type,
     }
     break;
 
+  case CS_XDEF_BY_DOF_FUNCTION:
+    {
+      cs_xdef_dof_input_t  *a = (cs_xdef_dof_input_t *)input;
+      cs_xdef_dof_input_t  *b = NULL;
+
+      BFT_MALLOC(b, 1, cs_xdef_dof_input_t);
+      b->func = a->func;
+      b->loc = a->loc;
+      b->input = a->input;
+
+      d->input = b;
+    }
+    break;
+
   case CS_XDEF_BY_TIME_FUNCTION:
     {
       cs_xdef_time_func_input_t  *a = (cs_xdef_time_func_input_t *)input;
@@ -272,6 +286,20 @@ cs_xdef_boundary_create(cs_xdef_type_t    type,
 
       BFT_MALLOC(b, 1, cs_xdef_analytic_input_t);
       b->func = a->func;
+      b->input = a->input;
+
+      d->input = b;
+    }
+    break;
+
+  case CS_XDEF_BY_DOF_FUNCTION:
+    {
+      cs_xdef_dof_input_t  *a = (cs_xdef_dof_input_t *)input;
+      cs_xdef_dof_input_t  *b = NULL;
+
+      BFT_MALLOC(b, 1, cs_xdef_dof_input_t);
+      b->func = a->func;
+      b->loc = a->loc;
       b->input = a->input;
 
       d->input = b;
@@ -419,9 +447,10 @@ cs_xdef_free(cs_xdef_t     *d)
     BFT_FREE(d->input);
 
   }
-  else if (d->type == CS_XDEF_BY_TIME_FUNCTION ||
-           d->type == CS_XDEF_BY_VALUE ||
+  else if (d->type == CS_XDEF_BY_TIME_FUNCTION     ||
+           d->type == CS_XDEF_BY_VALUE             ||
            d->type == CS_XDEF_BY_ANALYTIC_FUNCTION ||
+           d->type == CS_XDEF_BY_DOF_FUNCTION      ||
            d->type == CS_XDEF_BY_QOV)
     BFT_FREE(d->input);
 
@@ -661,6 +690,9 @@ cs_xdef_log(const char          *prefix,
                 _p, cs_base_strtf(is_uniform), cs_base_strtf(is_cellwise),
                 cs_base_strtf(is_steady), d->meta);
 
+  /* Which support */
+  /* ============= */
+
   if (d->support == CS_XDEF_SUPPORT_VOLUME) {
 
     const cs_zone_t  *z = cs_volume_zone_by_id(d->z_id);
@@ -680,11 +712,18 @@ cs_xdef_log(const char          *prefix,
   else if (d->support == CS_XDEF_SUPPORT_TIME)
     cs_log_printf(CS_LOG_SETUP, "%s | Support: time\n", _p);
 
+  /* Type of definition */
+  /* ================== */
+
   switch (d->type) {
 
   case CS_XDEF_BY_ANALYTIC_FUNCTION:
     cs_log_printf(CS_LOG_SETUP, "%s | Definition by an analytical function\n",
                   _p);
+    break;
+
+  case CS_XDEF_BY_DOF_FUNCTION:
+    cs_log_printf(CS_LOG_SETUP, "%s | Definition by a DoF function\n", _p);
     break;
 
   case CS_XDEF_BY_ARRAY:

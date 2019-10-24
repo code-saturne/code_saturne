@@ -60,6 +60,9 @@ BEGIN_C_DECLS
  * \var CS_XDEF_BY_ARRAY
  * Definition based on an array
  *
+ * \var CS_XDEF_BY_DOF_FUNCTION
+ * Definition relying on a \ref cs_dof_func_t function pointer
+ *
  * \var CS_XDEF_BY_FIELD
  * Definition based on a field (see \ref cs_field_t)
  *
@@ -83,6 +86,7 @@ typedef enum {
 
   CS_XDEF_BY_ANALYTIC_FUNCTION,
   CS_XDEF_BY_ARRAY,
+  CS_XDEF_BY_DOF_FUNCTION,
   CS_XDEF_BY_FIELD,
   CS_XDEF_BY_FUNCTION,
   CS_XDEF_BY_QOV,
@@ -224,6 +228,32 @@ typedef struct {
   cs_analytic_func_t  *func;
 
 } cs_xdef_analytic_input_t;
+
+/*!
+ * \struct cs_xdef_dof_input_t
+ * \brief Input structure when a definition by DoF function is used
+ */
+
+typedef struct {
+
+  /*! \var input
+   * NULL or pointer to a structure cast on-the-fly for additional information
+   * used in the function
+   */
+  void                *input;
+
+  /*! \var loc
+   *  Flag to know which type of entities are given as parameter in the
+   *  \ref cs_dof_func_t
+   */
+  cs_flag_t            loc;
+
+  /*! \var func
+   * pointer to a \ref cs_dof_func_t to call
+   */
+  cs_dof_func_t       *func;
+
+} cs_xdef_dof_input_t;
 
 /*!
  * \struct cs_xdef_time_func_input_t

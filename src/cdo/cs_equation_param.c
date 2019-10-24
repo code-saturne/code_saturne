@@ -2941,7 +2941,65 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a new source term defined by an array
+ * \brief  Add a new source term by initializing a cs_xdef_t structure.
+ *         Case of a definition by a DoF function
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      loc_flag  location of element ids given as parameter
+ * \param[in]      func      pointer to a DoF function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_source_term_by_dof_func(cs_equation_param_t    *eqp,
+                                        const char             *z_name,
+                                        cs_flag_t               loc_flag,
+                                        cs_dof_func_t          *func,
+                                        void                   *input)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+
+  /* Add a new cs_xdef_t structure */
+  int z_id = cs_get_vol_zone_id(z_name);
+
+  /* Define a flag according to the kind of space discretization */
+  cs_flag_t  state_flag = CS_FLAG_STATE_DENSITY;
+  cs_flag_t  meta_flag = cs_source_term_set_default_flag(eqp->space_scheme);
+
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
+
+  cs_xdef_dof_input_t  context = { .func = func,
+                                   .input = input,
+                                   .loc = loc_flag };
+
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_DOF_FUNCTION,
+                                        eqp->dim,
+                                        z_id,
+                                        state_flag,
+                                        meta_flag,
+                                        &context);
+
+  /* Default setting for quadrature is different in this case */
+  cs_xdef_set_quadrature(d, CS_QUADRATURE_BARY_SUBDIV);
+
+  int  new_id = eqp->n_source_terms;
+  eqp->n_source_terms += 1;
+  BFT_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_xdef_t *);
+  eqp->source_terms[new_id] = d;
+
+  return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new source term by initializing a cs_xdef_t structure.
  *         Case of a definition by an array.
  *
  * \param[in, out] eqp       pointer to a cs_equation_param_t structure
