@@ -1146,9 +1146,9 @@ class Studies(object):
             smgr = XMLengine.Case(package=pkg, file_name=filename, studymanager=True)
             smgr['xmlfile'] = filename
 
-        # minimal modification of xml for now
-        smgr_xml_init(smgr).initialize(reinit_indices = False)
-        smgr.xmlSaveDocument()
+            # minimal modification of xml for now
+            smgr_xml_init(smgr).initialize(reinit_indices = False)
+            smgr.xmlSaveDocument(prettyString=False)
 
         self.__xmlupdate = options.update_xml
 
