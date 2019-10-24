@@ -776,6 +776,24 @@ cs_equation_get_vertex_values(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the integral over the domain of the variable field
+ *         associated to the given equation.
+ *
+ * \param[in]      connect    pointer to a \ref cs_cdo_connect_t structure
+ * \param[in]      cdoq       pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]      eq         pointer to a \ref cs_equation_t structure
+ * \param[in, out] integral   result of the computation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_integrate_variable(const cs_cdo_connect_t     *connect,
+                               const cs_cdo_quantities_t  *cdoq,
+                               const cs_equation_t        *eq,
+                               cs_real_t                  *result);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the diffusive flux across all boundary faces
  *         According to the space discretization scheme, the size of the
  *         resulting array differs.

@@ -2665,6 +2665,115 @@ cs_equation_get_vertex_values(const cs_equation_t    *eq)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the integral over the domain of the variable field
+ *         associated to the given equation.
+ *
+ * \param[in]      connect    pointer to a \ref cs_cdo_connect_t structure
+ * \param[in]      cdoq       pointer to a \ref cs_cdo_quantities_t structure
+ * \param[in]      eq         pointer to a \ref cs_equation_t structure
+ * \param[in, out] integral   result of the computation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_integrate_variable(const cs_cdo_connect_t     *connect,
+                               const cs_cdo_quantities_t  *cdoq,
+                               const cs_equation_t        *eq,
+                               cs_real_t                  *result)
+{
+  /* Initialize the value to return */
+  *result = 0.;
+
+  if (eq == NULL)
+    return;
+
+  const cs_equation_param_t  *eqp = eq->param;
+  assert(eqp != NULL);
+  if (eqp->dim > 1)
+    bft_error(__FILE__, __LINE__, 0, "%s: (Eq. %s) Not implemented",
+              __func__, eqp->name);
+
+  /* Scalar-valued equation */
+  switch (eqp->space_scheme) {
+
+  case CS_SPACE_SCHEME_CDOVB:
+    {
+      const cs_real_t  *p_v = cs_equation_get_vertex_values(eq);
+      const cs_adjacency_t  *c2v = connect->c2v;
+
+      for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+
+        cs_real_t  int_cell = 0.;
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+          int_cell += cdoq->dcell_vol[j] * p_v[c2v->ids[j]];
+
+        *result += int_cell;
+
+      } /* Loop on cells */
+
+    }
+    break;
+
+  case CS_SPACE_SCHEME_CDOVCB:
+    {
+      const cs_real_t  *p_v = cs_equation_get_vertex_values(eq);
+      const cs_real_t  *p_c = cs_equation_get_cell_values(eq);
+      const cs_adjacency_t  *c2v = connect->c2v;
+
+      for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+
+        /* Shares between cell and vertex unknowns:
+           - the cell unknown stands for 1/4 of the cell volume
+           - the vertex unknown stands for 3/4 of the dual cell volume
+         */
+        cs_real_t  int_cell = 0.25*cdoq->cell_vol[c_id]*p_c[c_id];
+        for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++)
+          int_cell += 0.75*cdoq->dcell_vol[j] * p_v[c2v->ids[j]];
+
+        *result += int_cell;
+
+      } /* Loop on cells */
+
+    }
+    break;
+
+  case CS_SPACE_SCHEME_CDOFB:
+    {
+      const cs_real_t  *p_f = cs_equation_get_face_values(eq);
+      const cs_real_t  *p_c = cs_equation_get_cell_values(eq);
+      const cs_adjacency_t  *c2f = connect->c2f;
+
+      assert(cdoq->pvol_fc != NULL); /* Sanity check */
+
+      for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+
+        /* Shares between cell and face unknowns (assuming stab.coeff = 1/3):
+           - the cell unknown stands for 1/4 of the cell volume
+           - the face unknown stands for 3/4 of the dual cell volume
+         */
+        cs_real_t  int_cell = 0.25*cdoq->cell_vol[c_id]*p_c[c_id];
+        for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++)
+          int_cell += 0.75*cdoq->pvol_fc[j] * p_f[c2f->ids[j]];
+
+        *result += int_cell;
+
+      } /* Loop on cells */
+
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: (Eq. %s). Not implemented.", __func__, eqp->name);
+
+  } /* End of switch */
+
+  /* Parallel synchronization */
+  cs_parall_sum(1, CS_REAL_TYPE, result);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the diffusive flux across all boundary faces
  *         According to the space discretization scheme, the size of the
  *         resulting array differs.
