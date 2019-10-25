@@ -50,9 +50,10 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
+#include "cs_cell_to_vertex.h"
+#include "cs_ext_neighborhood.h"
 #include "cs_mesh.h"
+#include "cs_mesh_adjacencies.h"
 #include "cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------
@@ -60,6 +61,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_les_filter.h"
+#include "cs_halo.h"
+#include "cs_halo_perio.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -83,12 +86,6 @@ BEGIN_C_DECLS
  * Private function definitions
  *============================================================================*/
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*=============================================================================
- * Public function definitions
- *============================================================================*/
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute filters for dynamic models.
@@ -101,10 +98,10 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-void
-cs_les_filter(int        stride,
-              cs_real_t  val[],
-              cs_real_t  f_val[])
+static void
+_les_filter_ext_neighborhood(int        stride,
+                             cs_real_t  val[],
+                             cs_real_t  f_val[])
 {
   cs_real_t *w1 = NULL, *w2 = NULL;
 
@@ -263,6 +260,123 @@ cs_les_filter(int        stride,
 
   BFT_FREE(w2);
   BFT_FREE(w1);
+}
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*=============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute filters for dynamic models.
+ *
+ * This function deals with the standard or extended neighborhood.
+ *
+ * \param[in]   stride   stride of array to filter
+ * \param[in]   val      array of values to filter
+ * \param[out]  f_val    array of filtered values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_les_filter(int        stride,
+              cs_real_t  val[],
+              cs_real_t  f_val[])
+{
+  if (cs_ext_neighborhood_get_type == CS_EXT_NEIGHBORHOOD_COMPLETE) {
+    _les_filter_ext_neighborhood(stride, val, f_val);
+    return;
+  }
+
+  cs_real_t *v_val = NULL, *v_weight = NULL;
+
+  const cs_mesh_t  *mesh = cs_glob_mesh;
+  const cs_lnum_t  _stride = stride;
+  const cs_lnum_t  n_cells = mesh->n_cells;
+  const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
+
+  /* Allocate and initialize working buffer */
+
+  BFT_MALLOC(v_val, mesh->n_vertices*_stride, cs_real_t);
+  BFT_MALLOC(v_weight, mesh->n_vertices, cs_real_t);
+
+  /* Define filtered variable array */
+
+  cs_cell_to_vertex(CS_CELL_TO_VERTEX_LR,
+                    0,
+                    _stride,
+                    true, /* ignore periodicity of rotation */
+                    cell_vol,
+                    val,
+                    NULL,
+                    v_val);
+
+  cs_cell_to_vertex(CS_CELL_TO_VERTEX_LR,
+                    0,
+                    1,
+                    true, /* ignore periodicity of rotation */
+                    NULL,
+                    cell_vol,
+                    NULL,
+                    v_weight);
+
+  /* Build cell average */
+
+  const cs_adjacency_t  *c2v = cs_mesh_adjacencies_cell_vertices();
+  const cs_lnum_t *c2v_idx = c2v->idx;
+  const cs_lnum_t *c2v_ids = c2v->ids;
+
+  if (_stride == 1) {
+
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      cs_lnum_t s_id = c2v_idx[c_id];
+      cs_lnum_t e_id = c2v_idx[c_id+1];
+      cs_real_t _f_val = 0, _f_weight = 0;
+      for (cs_lnum_t j = s_id; j < e_id; j++) {
+        cs_lnum_t v_id = c2v_ids[j];
+        _f_val += v_val[v_id] * v_weight[v_id];
+        _f_weight += v_weight[v_id];
+      }
+      f_val[c_id] = _f_val / _f_weight;
+    }
+
+  }
+  else {
+
+    assert(_stride <= 9);
+
+#   pragma omp parallel for if (n_cells > CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      cs_lnum_t s_id = c2v_idx[c_id];
+      cs_lnum_t e_id = c2v_idx[c_id+1];
+      cs_real_t _f_val[9], _f_weight = 0;
+      for (cs_lnum_t k = 0; k < _stride; k++)
+        _f_val[k] = 0;
+      for (cs_lnum_t j = s_id; j < e_id; j++) {
+        cs_lnum_t v_id = c2v_ids[j];
+        for (cs_lnum_t k = 0; k < _stride; k++) {
+          _f_val[k] += v_val[v_id*_stride + k] * v_weight[v_id];
+        }
+        _f_weight += v_weight[v_id];
+      }
+      for (cs_lnum_t k = 0; k < _stride; k++) {
+        f_val[c_id*_stride + k] = _f_val[k] / _f_weight;
+      }
+
+    }
+
+  }
+
+  BFT_FREE(v_weight);
+  BFT_FREE(v_val);
+
+  /* Synchronize variable */
+
+  if (mesh->halo != NULL)
+    cs_halo_sync_var_strided(mesh->halo, CS_HALO_STANDARD, f_val, _stride);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -18,7 +18,10 @@ User changes:
 
 Numerics and physical modelling:
 
-- Add tensor gradiet clipping.
+- LES: for dynamic Smagorinsky model, add a new filter for cases where
+  the full extended cell neighborhood is not availble.
+
+- Add tensor gradient clipping.
 
 - Add local (single cell) gradient reconstruction options for
   postprocessing.

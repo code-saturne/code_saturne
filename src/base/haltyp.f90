@@ -78,8 +78,6 @@ if (     imrgrl.eq.2 .or. imrgrl.eq.3 &
   ivoset = 1
 endif
 
-if (iturb.eq.41) ivoset = 1
-
 if (ippmod(iatmos).ge.0) then
   ivoset = max(ivoset, cs_at_opt_interp_is_p1_proj_needed())
 endif
