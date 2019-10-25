@@ -1745,7 +1745,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
   /* Local variables */
 
-  char var_name[32];
+  char var_name[64];
 
   int iupwin = 0;
   int tr_dim = 0;
@@ -3096,7 +3096,7 @@ cs_face_convection_scalar(int                       idtvar,
 
   /* Local variables */
 
-  char var_name[32];
+  char var_name[64];
 
   int iupwin = 0;
   int tr_dim = 0;
@@ -4232,7 +4232,7 @@ cs_convection_diffusion_vector(int                         idtvar,
   cs_real_t *df_limiter = NULL;
 
   cs_field_t *f = NULL;
-  char var_name[32];
+  char var_name[64];
 
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
@@ -5847,7 +5847,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
 
   /* Local variables */
 
-  char var_name[32];
+  char var_name[64];
 
   int tr_dim = 0;
 
@@ -6815,7 +6815,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
   /* Local variables */
 
-  char var_name[32];
+  char var_name[64];
 
   cs_gnum_t n_upwind;
   int iupwin;
@@ -8021,7 +8021,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 
   cs_real_t *df_limiter = NULL;
 
-  char var_name[32];
+  char var_name[64];
 
   int tr_dim = 0;
   int w_stride = 1;
@@ -8788,7 +8788,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
 
   cs_real_t *df_limiter = NULL;
 
-  char var_name[32];
+  char var_name[64];
 
   cs_real_33_t *gradv;
   cs_real_t *bndcel;
@@ -9337,7 +9337,7 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
 
   cs_real_t *df_limiter = NULL;
 
-  char var_name[32];
+  char var_name[64];
 
   cs_real_6_t *viscce;
   cs_real_33_t *grad;
@@ -10037,7 +10037,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
   cs_real_t *cv_limiter = NULL;
   cs_real_t *df_limiter = NULL;
 
-  char var_name[32];
+  char var_name[64];
 
   cs_real_6_t *viscce;
   cs_real_6_t *w2;
@@ -10652,7 +10652,7 @@ cs_face_diffusion_potential(const int                 f_id,
 
   /* Local variables */
 
-  char var_name[32];
+  char var_name[64];
   int tr_dim = 0;
   int w_stride = 1;
 
@@ -11016,7 +11016,7 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
 
   cs_real_t *df_limiter = NULL;
 
-  char var_name[32];
+  char var_name[64];
   int tr_dim = 0;
   int w_stride = 6;
 
@@ -11493,7 +11493,7 @@ cs_diffusion_potential(const int                 f_id,
 
   /* Local variables */
 
-  char var_name[32];
+  char var_name[64];
   int tr_dim = 0;
   int mass_flux_rec_type = cs_glob_stokes_model->irecmf;
   int w_stride = 1;
@@ -11877,7 +11877,7 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
   cs_real_t *cv_limiter = NULL;
   cs_real_t *df_limiter = NULL;
 
-  char var_name[32];
+  char var_name[64];
   int tr_dim = 0;
   int w_stride = 6;
 

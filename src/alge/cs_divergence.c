@@ -443,7 +443,7 @@ cs_mass_flux(const cs_mesh_t          *m,
   const cs_real_3_t *restrict dofij
     = (const cs_real_3_t *restrict)fvq->dofij;
 
-  char var_name[32];
+  char var_name[64];
 
   cs_real_3_t *qdm, *f_momentum, *coefaq;
   cs_real_33_t *grdqdm;
@@ -979,7 +979,7 @@ cs_tensor_face_flux(const cs_mesh_t          *m,
 
   /* Local variables */
 
-  char var_name[32];
+  char var_name[64];
 
   cs_real_6_t *c_mass_var, *b_mass_var, *coefaq;
 
