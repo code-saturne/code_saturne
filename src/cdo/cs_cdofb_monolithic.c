@@ -1820,7 +1820,7 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
   cs_cdofb_vecteq_setup_bc(t_cur, mesh, mom_eqp, mom_eqb, &dir_values);
 
   /* Initialize the local matrix */
-  cs_matrix_t  *matrix = cs_matrix_create(cs_cdofb_vecteq_matrix_structure());
+  cs_matrix_t  *matrix = cs_matrix_create(cs_shared_matrix_structure);
 
   /* Initialize the two right-hand side */
   cs_real_t  *mom_rhs = NULL, *mass_rhs = NULL;
