@@ -669,17 +669,15 @@ _assemble_gkb(const cs_cell_sys_t            *csys,
  *         with CDO-Fb schemes
  *         Shares similarities with cs_equation_assemble_block_matrix()
  *
- * \param[in]        csys              pointer to a cs_cell_sys_t structure
- * \param[in]        cm                pointer to a cs_cell_mesh_t structure
- * \param[in]        div_op            array with the divergence op. values
- * \param[in]        has_sourceterm    has the equation a source term ?
- * \param[in, out]  sc                pointer to scheme context structure
- * \param[in, out]  eqc               context structure for a vector-valued Fb
- * \param[in, out]  eqa               pointer to cs_equation_assemble_t
- * \param[in, out]
- * \param[in, out]   mav               pointer to cs_matrix_assembler_values_t
- * \param[in, out]   rhs               right-end side of the system
- * \param[in, out]   eqc_st            source term from the context view
+ * \param[in]      csys             pointer to a cs_cell_sys_t structure
+ * \param[in]      cm               pointer to a cs_cell_mesh_t structure
+ * \param[in]      div_op           array with the divergence op. values
+ * \param[in]      has_sourceterm   has the equation a source term ?
+ * \param[in, out] sc               pointer to scheme context structure
+ * \param[in, out] eqc              context structure for a vector-valued Fb
+ * \param[in, out] eqa              pointer to cs_equation_assemble_t
+ * \param[in, out] mav              pointer to cs_matrix_assembler_values_t
+ * \param[in, out] rhs              right-end side of the system
  */
 /*----------------------------------------------------------------------------*/
 
@@ -745,12 +743,12 @@ _assemble(const cs_cell_sys_t            *csys,
 
       for (short int ii = 0; ii < 3; ii++) {
 
-        const cs_gnum_t  i_gid = bi_gids[ii];
+        const cs_gnum_t  bi_gid = bi_gids[ii];
 
         for (short int jj = 0; jj < 3; jj++) {
 
           /* Add an entry */
-          r_gids[bufsize] = i_gid;
+          r_gids[bufsize] = bi_gid;
           c_gids[bufsize] = bj_gids[jj];
           values[bufsize] = mIJ->val[3*ii + jj];
           bufsize += 1;
@@ -1800,9 +1798,6 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
 {
   cs_timer_t  t_start = cs_timer_time();
 
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_lnum_t  n_faces = quant->n_faces, n_cells = quant->n_cells;
-
   /* Retrieve high-level structures */
   cs_cdofb_monolithic_t  *sc = (cs_cdofb_monolithic_t *)scheme_context;
   cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
@@ -1815,6 +1810,8 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
    *                      BUILD: START
    *--------------------------------------------------------------------------*/
 
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_lnum_t  n_faces = quant->n_faces, n_cells = quant->n_cells;
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  t_cur = ts->t_cur;
 
@@ -1892,9 +1889,6 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 {
   cs_timer_t  t_start = cs_timer_time();
 
-  const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_lnum_t  n_faces = quant->n_faces, n_cells = quant->n_cells;
-
   /* Retrieve high-level structures */
   cs_cdofb_monolithic_t  *sc = (cs_cdofb_monolithic_t *)scheme_context;
   cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
@@ -1907,6 +1901,8 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
    *                    INITIAL BUILD: START
    *--------------------------------------------------------------------------*/
 
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_lnum_t  n_faces = quant->n_faces, n_cells = quant->n_cells;
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  t_cur = ts->t_cur;
 
@@ -1946,9 +1942,9 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   ns_info.n_inner_iter =
     (ns_info.last_inner_iter =
      sc->solve(nsp, mom_eqp, matrix, sc, sles,
-                   mom_eqc->face_values,   /* velocity DoFs at faces */
-                   sc->pressure->val,      /* pressure DoFs at cells */
-                   mom_rhs, mass_rhs));
+               mom_eqc->face_values,   /* velocity DoFs at faces */
+               sc->pressure->val,      /* pressure DoFs at cells */
+               mom_rhs, mass_rhs));
 
   ns_info.n_algo_iter += 1;
 

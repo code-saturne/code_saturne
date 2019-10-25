@@ -243,8 +243,8 @@ cs_cdofb_vecteq_setup_bc(cs_real_t                     t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build the local matrices arising from the diffusion, advection,
- *          reaction terms in CDO-Fb schemes.
+ * \brief   Build the local matrices arising from the diffusion term in the
+ *          vector-valued CDO-Fb schemes.
  *
  * \param[in]      time_eval   time at which analytic function are evaluated
  * \param[in]      eqp         pointer to a cs_equation_param_t structure

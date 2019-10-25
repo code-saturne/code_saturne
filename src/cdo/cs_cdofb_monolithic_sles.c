@@ -219,6 +219,7 @@ _face_gdot(cs_lnum_t    size,
            cs_real_t    x[],
            cs_real_t    y[])
 {
+  CS_UNUSED(size);       /* Avoid a compilation warning in during compilation */
   const cs_range_set_t  *rset = cs_shared_range_set;
 
   assert(size == rset->n_elts[1]);

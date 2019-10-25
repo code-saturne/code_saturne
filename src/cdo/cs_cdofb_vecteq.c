@@ -369,8 +369,8 @@ cs_cdofb_vecteq_init_cell_system(const cs_flag_t               cell_flag,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build the local matrices arising from the diffusion, advection,
- *          reaction terms in CDO-Fb schemes.
+ * \brief   Build the local matrices arising from the diffusion term in the
+ *          vector-valued CDO-Fb schemes.
  *
  * \param[in]      time_eval   time at which analytic function are evaluated
  * \param[in]      eqp         pointer to a cs_equation_param_t structure

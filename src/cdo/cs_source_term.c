@@ -1112,6 +1112,7 @@ cs_source_term_dcsd_by_dof_func(const cs_xdef_t           *source,
 {
   CS_UNUSED(cb);
   CS_UNUSED(time_eval);
+  CS_UNUSED(input);
 
   if (source == NULL)
     return;
@@ -1794,6 +1795,9 @@ cs_source_term_pcsd_by_dof_func(const cs_xdef_t           *source,
                                 double                    *values)
 {
   CS_UNUSED(cb);
+  CS_UNUSED(time_eval);
+  CS_UNUSED(input);
+
   if (source == NULL)
     return;
 

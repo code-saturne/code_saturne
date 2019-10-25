@@ -330,7 +330,7 @@ _fb_advection_diffusion_reaction(double                         time_eval,
     /* Build the mass matrix adn store it in cb->hdg */
     eqc->get_mass_matrix(eqc->hdg_mass, cm, cb);
 
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys)) {
       cs_log_printf(CS_LOG_DEFAULT, ">> Local mass matrix");
       cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, cb->hdg);
@@ -786,7 +786,9 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     } /* Switch on Hodge algo. */
 
-    /* If necessary, enrich the mesh flag to account for the property */
+    /* If necessary, enrich the mesh flag to account for a property defined
+     * by an analytical expression. In this case, one evaluates the definition
+     * as the mean value over the cell */
     const cs_xdef_t *diff_def = eqp->diffusion_property->defs[0];
     if (diff_def->type == CS_XDEF_BY_ANALYTIC_FUNCTION)
       eqb->msh_flag |= cs_quadrature_get_flag(diff_def->qtype,
@@ -978,7 +980,9 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
       eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
     }
 
-    /* If necessary, enrich the mesh flag to account for the property */
+    /* If necessary, enrich the mesh flag to account for a property defined
+     * by an analytical expression. In this case, one evaluates the definition
+     * as the mean value over the cell */
     for (short int ir = 0; ir < eqp->n_reaction_terms; ir++) {
       const cs_xdef_t *rea_def = eqp->reaction_properties[ir]->defs[0];
       if (rea_def->type == CS_XDEF_BY_ANALYTIC_FUNCTION)
