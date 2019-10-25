@@ -86,15 +86,14 @@ cs_cell_to_vertex_free(void);
 /*!
  * \brief  Interpolate cell values to vertex values.
  *
- * \param[in]       method      interpolation method
- * \param[in]       verbosity   verbosity level
- * \param[in]       var_dim     varible dimension
- * \param[in]       tr_dim      2 for tensor with periodicity of rotation,
- *                              0 otherwise
- * \param[in]       c_weight    cell weight, or NULL
- * \param[in]       c_var       base cell-based variable
- * \param[in]       b_var       base boundary-face values, or NULL
- * \param[out]      v_var       vertex-based variable
+ * \param[in]       method            interpolation method
+ * \param[in]       verbosity         verbosity level
+ * \param[in]       var_dim           varible dimension
+ * \param[in]       ignore_rot_perio  if true, ignore periodicity of rotation
+ * \param[in]       c_weight          cell weight, or NULL
+ * \param[in]       c_var             base cell-based variable
+ * \param[in]       b_var             base boundary-face values, or NULL
+ * \param[out]      v_var             vertex-based variable
  */
 /*----------------------------------------------------------------------------*/
 
@@ -102,7 +101,7 @@ void
 cs_cell_to_vertex(cs_cell_to_vertex_type_t   method,
                   int                        verbosity,
                   cs_lnum_t                  var_dim,
-                  int                        tr_dim,
+                  bool                       ignore_rot_perio,
                   const cs_real_t            c_weight[restrict],
                   const cs_real_t            c_var[restrict],
                   const cs_real_t            b_var[restrict],

@@ -4730,6 +4730,285 @@ cs_interface_set_sum(const cs_interface_set_t  *ifs,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Update the sum of values for elements associated with an
+ * interface set, allowing control over periodicity of rotation.
+ *
+ * On input, the variable array should contain local contributions. On output,
+ * contributions from matching elements on parallel or periodic boundaries
+ * have been added.
+ *
+ * Only the values of elements belonging to the interfaces are modified.
+ *
+ * \param[in]       ifs        pointer to a fvm_interface_set_t structure
+ * \param[in]       n_elts     number of elements in var buffer
+ * \param[in]       stride     number of values (non interlaced) by entity
+ * \param[in]       interlace  true if variable is interlaced (for stride > 1)
+ * \param[in]       datatype   type of data considered
+ * \param[in]       ignore_rotation  ignore rotation if present ?
+ * \param[in, out]  var        variable buffer
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_interface_set_sum_tr(const cs_interface_set_t  *ifs,
+                        cs_lnum_t                  n_elts,
+                        cs_lnum_t                  stride,
+                        bool                       interlace,
+                        cs_datatype_t              datatype,
+                        bool                       ignore_rotation,
+                        void                      *var)
+{
+  int i;
+  cs_lnum_t j, k, l;
+  cs_lnum_t stride_size = cs_datatype_size[datatype]*stride;
+  unsigned char *buf = NULL;
+
+  bool ignore_tr = false;
+
+  if (ignore_rotation && ifs->periodicity != NULL) {
+    int n_tr = fvm_periodicity_get_n_transforms(ifs->periodicity);
+    for (int tr_id = 0; tr_id < n_tr; tr_id++) {
+      if (fvm_periodicity_get_type(ifs->periodicity, tr_id)
+          > FVM_PERIODICITY_TRANSLATION)
+        ignore_tr = true;
+    }
+  }
+
+  if (ignore_tr == false) {
+    cs_interface_set_sum(ifs,
+                         n_elts,
+                         stride,
+                         interlace,
+                         datatype,
+                         var);
+    return;
+  }
+
+  BFT_MALLOC(buf, cs_interface_set_n_elts(ifs)*stride_size, unsigned char);
+
+  if (stride < 2 || interlace)
+    cs_interface_set_copy_array(ifs,
+                                datatype,
+                                stride,
+                                true, /* src_on_parent */
+                                var,
+                                buf);
+
+  else
+    _interface_set_copy_array_ni(ifs,
+                                 datatype,
+                                 n_elts,
+                                 stride,
+                                 var,
+                                 buf);
+
+  /* Now increment values */
+
+  switch (datatype) {
+
+  case CS_CHAR:
+    for (i = 0, j = 0; i < ifs->size; i++) {
+      cs_interface_t *itf = ifs->interfaces[i];
+      cs_lnum_t itf_size = itf->tr_index[1];
+      char *v = var;
+      const char *p = (const char *)buf + j*stride;
+      if (stride < 2 || interlace) {
+        for (k = 0; k < itf_size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id*stride + l] += p[k*stride + l];
+        }
+      }
+      else {
+        for (k = 0; k < itf_size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id + l*n_elts] += p[k*stride + l];
+        }
+      }
+      j += itf->size;
+    }
+    break;
+
+  case CS_FLOAT:
+    for (i = 0, j = 0; i < ifs->size; i++) {
+      cs_interface_t *itf = ifs->interfaces[i];
+      cs_lnum_t itf_size = itf->tr_index[1];
+      float *v = var;
+      const float *p = (const float *)buf + j*stride;
+      if (stride < 2 || interlace) {
+        for (k = 0; k < itf_size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id*stride + l] += p[k*stride + l];
+        }
+      }
+      else {
+        for (k = 0; k < itf_size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id + l*n_elts] += p[k*stride + l];
+        }
+      }
+      j += itf->size;
+    }
+    break;
+
+  case CS_DOUBLE:
+    for (i = 0, j = 0; i < ifs->size; i++) {
+      cs_interface_t *itf = ifs->interfaces[i];
+      cs_lnum_t itf_size = itf->tr_index[1];
+      double *v = var;
+      const double *p = (const double *)buf + j*stride;
+      if (stride < 2 || interlace) {
+        for (k = 0; k < itf_size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id*stride + l] += p[k*stride + l];
+        }
+      }
+      else {
+        for (k = 0; k < itf_size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id + l*n_elts] += p[k*stride + l];
+        }
+      }
+      j += itf->size;
+    }
+    break;
+
+  case CS_INT32:
+    for (i = 0, j = 0; i < ifs->size; i++) {
+      cs_interface_t *itf = ifs->interfaces[i];
+      cs_lnum_t itf_size = itf->tr_index[1];
+      int32_t *v = var;
+      const int32_t *p = (const int32_t *)buf + j*stride;
+      if (stride < 2 || interlace) {
+        for (k = 0; k < itf_size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id*stride + l] += p[k*stride + l];
+        }
+      }
+      else {
+        for (k = 0; k < itf_size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id + l*n_elts] += p[k*stride + l];
+        }
+      }
+      j += itf->size;
+    }
+    break;
+
+  case CS_INT64:
+    for (i = 0, j = 0; i < ifs->size; i++) {
+      cs_interface_t *itf = ifs->interfaces[i];
+      cs_lnum_t itf_size = itf->tr_index[1];
+      int64_t *v = var;
+      const int64_t *p = (const int64_t *)buf + j*stride;
+      if (stride < 2 || interlace) {
+        for (k = 0; k < itf_size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id*stride + l] += p[k*stride + l];
+        }
+      }
+      else {
+        for (k = 0; k < itf_size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id + l*n_elts] += p[k*stride + l];
+        }
+      }
+      j += itf->size;
+    }
+    break;
+
+  case CS_UINT16:
+    for (i = 0, j = 0; i < ifs->size; i++) {
+      cs_interface_t *itf = ifs->interfaces[i];
+      cs_lnum_t itf_size = itf->tr_index[1];
+      uint16_t *v = var;
+      const uint16_t *p = (const uint16_t *)buf + j*stride;
+      if (stride < 2 || interlace) {
+        for (k = 0; k < itf_size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id*stride + l] += p[k*stride + l];
+        }
+      }
+      else {
+        for (k = 0; k < itf_size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id + l*n_elts] += p[k*stride + l];
+        }
+      }
+      j += itf->size;
+    }
+    break;
+
+  case CS_UINT32:
+    for (i = 0, j = 0; i < ifs->size; i++) {
+      cs_interface_t *itf = ifs->interfaces[i];
+      cs_lnum_t itf_size = itf->tr_index[1];
+      uint32_t *v = var;
+      const uint32_t *p = (const uint32_t *)buf + j*stride;
+      if (stride < 2 || interlace) {
+        for (k = 0; k < itf_size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id*stride + l] += p[k*stride + l];
+        }
+      }
+      else {
+        for (k = 0; k < itf_size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id + l*n_elts] += p[k*stride + l];
+        }
+      }
+      j += itf->size;
+    }
+    break;
+
+  case CS_UINT64:
+    for (i = 0, j = 0; i < ifs->size; i++) {
+      cs_interface_t *itf = ifs->interfaces[i];
+      cs_lnum_t itf_size = itf->tr_index[1];
+      uint64_t *v = var;
+      const uint64_t *p = (const uint64_t *)buf + j*stride;
+      if (stride < 2 || interlace) {
+        for (k = 0; k < itf_size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id*stride + l] += p[k*stride + l];
+        }
+      }
+      else {
+        for (k = 0; k < itf_size; k++) {
+          cs_lnum_t elt_id = itf->elt_id[k];
+          for (l = 0; l < stride; l++)
+            v[elt_id + l*n_elts] += p[k*stride + l];
+        }
+      }
+      j += itf->size;
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              _("Called %s with unhandled datatype (%d)."),
+              __func__, (int)datatype);
+  }
+
+  BFT_FREE(buf);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Update to minimum value for elements associated with an
  * interface set.
  *
