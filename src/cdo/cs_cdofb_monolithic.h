@@ -170,7 +170,9 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Solve the unsteady Navier-Stokes system with a CDO face-based scheme
- *         using a monolithic approach and an implicit Euler time scheme.
+ *         using a monolithic approach.
+ *         According to the settings, this function can handle either an
+ *         implicit Euler time scheme or more generally a theta time scheme.
  *
  * \param[in] mesh            pointer to a \ref cs_mesh_t structure
  * \param[in] nsp             pointer to a \ref cs_navsto_param_t structure
@@ -179,25 +181,29 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_implicit_euler(const cs_mesh_t         *mesh,
-                                   const cs_navsto_param_t *nsp,
-                                   void                    *scheme_context);
+cs_cdofb_monolithic(const cs_mesh_t          *mesh,
+                    const cs_navsto_param_t  *nsp,
+                    void                     *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Solve the unsteady Navier-Stokes system with a CDO face-based scheme
- *         using a monolithic approach and a theta time scheme.
+ *         using a monolithic approach.
+ *         According to the settings, this function can handle either an
+ *         implicit Euler time scheme or more generally a theta time scheme.
+ *         Rely on Picard iterations to solve the on-linearities arising from
+ *         the advection term
  *
- * \param[in] mesh            pointer to a \ref cs_mesh_t structure
- * \param[in] nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in] scheme_context  pointer to a structure cast on-the-fly
+ * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
+ * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_theta_scheme(const cs_mesh_t         *mesh,
-                                 const cs_navsto_param_t *nsp,
-                                 void                    *scheme_context);
+cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
+                       const cs_navsto_param_t   *nsp,
+                       void                      *scheme_context);
 
 /*----------------------------------------------------------------------------*/
 

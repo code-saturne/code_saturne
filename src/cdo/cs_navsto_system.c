@@ -850,12 +850,12 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
         break; /* Nothing to set */
 
       case CS_TIME_SCHEME_EULER_IMPLICIT:
-        ns->compute = cs_cdofb_monolithic_implicit_euler;
-        break;
-
       case CS_TIME_SCHEME_THETA:
       case CS_TIME_SCHEME_CRANKNICO:
-        ns->compute = cs_cdofb_monolithic_theta_scheme;
+        if (_handle_non_linearities(nsp))
+          ns->compute = cs_cdofb_monolithic_nl;
+        else
+          ns->compute = cs_cdofb_monolithic;
         break;
 
       default:
