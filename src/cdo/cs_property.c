@@ -251,6 +251,8 @@ _create_property(const char           *name,
   pty->state_flag = 0;
   pty->process_flag = 0;
 
+  pty->ref_value = 1.0;         /* default setting */
+
   pty->n_definitions = 0;
   pty->defs = NULL;
   pty->def_ids = NULL;
@@ -519,35 +521,57 @@ cs_property_finalize_setup(void)
     else if (pty->n_definitions == 1) {
 
       if (pty->defs[0]->type == CS_XDEF_BY_VALUE)
-        pty->state_flag |= CS_FLAG_STATE_UNIFORM;
+        pty->state_flag |= CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_STEADY;
 
     }
     else {
 
-      if (pty->type & CS_PROPERTY_ISO)
-        cs_property_def_iso_by_value(pty, NULL, 1.0);
+      pty->state_flag |= CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_STEADY;
 
+      if (pty->type & CS_PROPERTY_ISO)
+        cs_property_def_iso_by_value(pty, NULL, pty->ref_value);
       else if (pty->type & CS_PROPERTY_ORTHO) {
-        cs_real_t unity[3] =  {1, 1, 1};
-        cs_property_def_ortho_by_value(pty, NULL, unity);
+        cs_real_t  ref[3] =  {pty->ref_value, pty->ref_value, pty->ref_value};
+        cs_property_def_ortho_by_value(pty, NULL, ref);
       }
       else if (pty->type & CS_PROPERTY_ANISO) {
-        cs_real_t unity[3][3] = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
-        cs_property_def_aniso_by_value(pty, NULL, unity);
+        cs_real_t  ref[3][3] = { {pty->ref_value, 0, 0},
+                                 {0, pty->ref_value, 0},
+                                 {0, 0, pty->ref_value} };
+        cs_property_def_aniso_by_value(pty, NULL, ref);
       }
       else
         bft_error(__FILE__, __LINE__, 0, "%s: Incompatible property type.",
                   __func__);
 
-      cs_base_warn(__FILE__, __LINE__);
       cs_log_printf(CS_LOG_DEFAULT,
-                    " %s: Property \"%s\" exists with no definition.\n"
-                    "     Switch to unity by default.", __func__, pty->name);
+                    "\n Property \"%s\" will be defined using its reference"
+                    " value.\n", pty->name);
 
     }
 
   } /* Loop on properties */
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the reference value associated to a \ref cs_property_t structure
+ *         This is a real number even whatever the type of property is.
+ *
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       refval   value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_set_reference_value(cs_property_t    *pty,
+                                double            refval)
+{
+  if (pty == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
+
+  pty->ref_value = refval;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1375,6 +1399,8 @@ cs_property_log_setup(void)
     cs_log_printf(CS_LOG_SETUP, "\n  * %s | Uniform %s Steady %s\n",
                   pty->name,
                   cs_base_strtf(is_uniform), cs_base_strtf(is_steady));
+    cs_log_printf(CS_LOG_SETUP, "\n  * %s | Reference value  % -8.4e\n",
+                  pty->name, pty->ref_value);
 
     if (pty->type & CS_PROPERTY_ISO)
       cs_log_printf(CS_LOG_SETUP, "  * %s | Type: isotropic\n", pty->name);

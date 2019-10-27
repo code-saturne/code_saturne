@@ -104,17 +104,23 @@ typedef enum {
 
 } cs_property_key_t;
 
+/* ======================================== */
 /* Set of parameters attached to a property */
+/* ======================================== */
+
 typedef struct {
 
   char  *restrict      name;
   int                  id;
   cs_flag_t            state_flag;
   cs_flag_t            process_flag;
-
-  /* The number of values to set depends on the type of property
-      isotropic   = 1, orthotropic = 3, anisotropic = 9  */
   cs_property_type_t   type;
+
+  /* Reference value wich is used as default when nothing else is set. This
+   * value can also be used to renormalized quantities related to this property
+   * By default, this is set to 1
+   */
+  cs_real_t            ref_value;
 
   /* Property is up to now only defined on the whole domain (volume) */
   int                  n_definitions;  /* Current number of definitions used */
@@ -325,6 +331,20 @@ cs_property_get_type(const cs_property_t   *pty)
 
   return pty->type;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the reference value associated to a \ref cs_property_t structure
+ *         This is a real number even whatever the type of property is.
+ *
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       refval   value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_set_reference_value(cs_property_t    *pty,
+                                double            refval);
 
 /*----------------------------------------------------------------------------*/
 /*!
