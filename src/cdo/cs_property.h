@@ -60,9 +60,35 @@ BEGIN_C_DECLS
 
 /*! @} */
 
+/*!
+ * @defgroup cdo_property_type Flags specifying metadata related to the
+ *  the type of property
+ * @{
+ */
+
+/*! \var CS_PROPERTY_ISO
+ *  1: Isotropic behavior (one real number is sufficient to describe the
+ *  property) */
+#define CS_PROPERTY_ISO           (1 << 0)
+
+/*! \var CS_PROPERTY_ORTHO
+ *  2: Orthotropic behavior (three real numbers describe the behavior assuming
+ *  that the different behavior is aligned with Cartesian axis) */
+#define CS_PROPERTY_ORTHO         (1 << 1)
+
+/*! \var CS_PROPERTY_ANISO
+ *  4: Anisotropic behavior (a 3x3 tensor describe the behavior). This tensor
+ *  should be symmetric positive definite (i.e 6 real numbers describe the
+ *  behavior). */
+#define CS_PROPERTY_ANISO         (1 << 2)
+
+/*! @} */
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
+
+typedef cs_flag_t cs_property_type_t;
 
 /*! \enum cs_property_key_t
  *  \brief List of available keys for setting options on a property
@@ -77,32 +103,6 @@ typedef enum {
   CS_PTYKEY_N_KEYS
 
 } cs_property_key_t;
-
-/*! \enum cs_property_type_t
- *  \brief Type of property to consider
- *
- *  \var CS_PROPERTY_ISO
- *  Isotropic behavior (one real number is sufficient to describe the property)
- *
- *  \var CS_PROPERTY_ORTHO
- *  Orthotropic behavior (three real numbers describe the behavior assuming
- *  that the different behavior is aligned with Cartesian axis)
- *
- *  \var CS_PROPERTY_ANISO
- *  Anisotropic behavior (a 3x3 tensor describe the behavior). This tensor
- *  should be symmetric positive definite (i.e 6 real numbers describe the
- *  behavior).
- */
-
-typedef enum {
-
-  CS_PROPERTY_ISO,
-  CS_PROPERTY_ORTHO,
-  CS_PROPERTY_ANISO,
-
-  CS_PROPERTY_N_TYPES
-
-} cs_property_type_t;
 
 /* Set of parameters attached to a property */
 typedef struct {
@@ -282,7 +282,7 @@ cs_property_is_isotropic(const cs_property_t   *pty)
   if (pty == NULL)
     return false;
 
-  if (pty->type == CS_PROPERTY_ISO)
+  if (pty->type & CS_PROPERTY_ISO)
     return true;
   else
     return false;
@@ -321,7 +321,7 @@ static inline cs_property_type_t
 cs_property_get_type(const cs_property_t   *pty)
 {
   if (pty == NULL)
-    return CS_PROPERTY_N_TYPES;
+    return 0; /* means undefined */
 
   return pty->type;
 }

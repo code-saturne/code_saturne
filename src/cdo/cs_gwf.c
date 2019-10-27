@@ -1061,28 +1061,15 @@ cs_gwf_init_setup(void)
   if (!(gw->flag & CS_GWF_SOIL_ALL_SATURATED) ||
       gw->post_flag & CS_GWF_POST_PERMEABILITY) {
 
-    /* Set the values for the permeability and the moisture content
-       and if needed set also the value of the soil capacity */
-    int  permeability_dim;
-    switch (gw->permeability->type) {
-
-    case CS_PROPERTY_ISO:
+    /* Set the dimension of the permeability */
+    int  permeability_dim = 0;  /* not set by default */
+    if (gw->permeability->type & CS_PROPERTY_ISO)
       permeability_dim = 1;
-      break;
-    case CS_PROPERTY_ORTHO:
+    else if (gw->permeability->type & CS_PROPERTY_ORTHO)
       permeability_dim = 3;
-      break;
-    case CS_PROPERTY_ANISO:
+    else if (gw->permeability->type & CS_PROPERTY_ANISO)
       permeability_dim = 9;
-      break;
-
-    default:
-      permeability_dim = 0;  /* avoid warning */
-      bft_error(__FILE__, __LINE__, 0, "%s: Invalid type of property for %s.",
-                __func__, cs_property_get_name(gw->permeability));
-      break;
-
-    } /* Switch on property type */
+    assert(permeability_dim != 0);
 
     gw->permea_field = cs_field_create("permeability",
                                        pty_mask,

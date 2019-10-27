@@ -2702,7 +2702,7 @@ cs_equation_add_diffusion(cs_equation_param_t   *eqp,
   eqp->flag |= CS_EQUATION_DIFFUSION;
   eqp->diffusion_property = property;
   cs_property_type_t  type = cs_property_get_type(eqp->diffusion_property);
-  if (type == CS_PROPERTY_ISO)
+  if (type & CS_PROPERTY_ISO)
     eqp->diffusion_hodge.is_iso = true;
   else
     eqp->diffusion_hodge.is_iso = false;
@@ -2729,7 +2729,7 @@ cs_equation_add_curlcurl(cs_equation_param_t   *eqp,
   eqp->flag |= CS_EQUATION_CURLCURL;
   eqp->curlcurl_property = property;
   cs_property_type_t  type = cs_property_get_type(eqp->curlcurl_property);
-  if (type == CS_PROPERTY_ISO)
+  if (type & CS_PROPERTY_ISO)
     eqp->curlcurl_hodge.is_iso = true;
   else
     eqp->curlcurl_hodge.is_iso = false;
@@ -2756,7 +2756,7 @@ cs_equation_add_graddiv(cs_equation_param_t   *eqp,
   eqp->flag |= CS_EQUATION_GRADDIV;
   eqp->graddiv_property = property;
   cs_property_type_t  type = cs_property_get_type(eqp->graddiv_property);
-  if (type == CS_PROPERTY_ISO)
+  if (type & CS_PROPERTY_ISO)
     eqp->graddiv_hodge.is_iso = true;
   else
     eqp->graddiv_hodge.is_iso = false;
