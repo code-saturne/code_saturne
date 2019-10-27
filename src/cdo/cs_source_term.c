@@ -1790,6 +1790,7 @@ cs_source_term_pcsd_by_value(const cs_xdef_t           *source,
 void
 cs_source_term_pcsd_by_dof_func(const cs_xdef_t           *source,
                                 const cs_cell_mesh_t      *cm,
+                                cs_real_t                  time_eval,
                                 cs_cell_builder_t         *cb,
                                 void                      *input,
                                 double                    *values)
