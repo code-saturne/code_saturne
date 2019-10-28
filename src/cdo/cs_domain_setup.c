@@ -477,10 +477,6 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
   if (cs_gwf_is_activated())
     cs_gwf_init_setup();
 
-  /* Navier-Stokes system */
-  if (cs_navsto_system_is_activated())
-    cs_navsto_system_init_setup();
-
   /* ALE mesh velocity */
   if (cs_ale_is_activated())
     cs_ale_init_setup(domain);
@@ -488,6 +484,27 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
   /* Maxwell module */
   if (cs_maxwell_is_activated())
     cs_maxwell_init_setup();
+
+  /* Navier-Stokes system */
+  if (cs_navsto_system_is_activated())
+    cs_navsto_system_init_setup();
+  else {
+
+    cs_domain_cdo_context_t  *cdo = domain->cdo_context;
+
+    /* Switch off turbulence modelling if in CDO mode only */
+    if (cdo->mode == CS_DOMAIN_CDO_MODE_ONLY) {
+
+      cs_turb_model_t  *turb = cs_get_glob_turb_model();
+
+      turb->iturb = CS_TURB_NONE;          /* laminar flow */
+      turb->itytur = 0;                    /* deprecated */
+      turb->hybrid_turb = CS_HYBRID_NONE;
+      turb->type = CS_TURB_NONE;
+
+    }
+
+  }
 
   /* Add variables related to user-defined and predefined equations */
   cs_equation_create_fields();

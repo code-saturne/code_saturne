@@ -261,6 +261,16 @@ cs_navsto_param_create(const cs_boundary_t             *boundaries,
   param->lami_viscosity = cs_property_add(CS_NAVSTO_LAMINAR_VISCOSITY,
                                           CS_PROPERTY_ISO);
 
+  /* Turbulence modelling (pointer to global structures) */
+  param->turbulence = cs_get_glob_turb_model();
+  param->rans_modelling = cs_get_glob_turb_rans_model();
+
+  /* By default: no turbulence modelling --> laminar flows */
+  param->turbulence->iturb = CS_TURB_NONE;
+  param->turbulence->itytur = 0;                    /* deprecated */
+  param->turbulence->hybrid_turb = CS_HYBRID_NONE;
+  param->turbulence->type = CS_TURB_NONE;
+
   /* Remark: As velocity and pressure may not be associated to an equation
      directly, one stores the definition of initial conditions and boundary
      conditions at this level */

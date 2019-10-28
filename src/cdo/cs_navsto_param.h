@@ -33,6 +33,7 @@
 #include "cs_equation_param.h"
 #include "cs_math.h"
 #include "cs_sles.h"
+#include "cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -421,6 +422,24 @@ typedef struct {
    */
 
   cs_property_t      *lami_viscosity;
+
+  /*!
+   * @}
+   * @name Turbulence modelling
+   * Set of parameters to handle turbulence modelling.
+   * @{
+   */
+
+  /*! \var turbulence
+   * Main set of parameters to handle turbulence modelling
+   */
+  cs_turb_model_t        *turbulence;
+
+  /*! \var rans_modelling
+   * Main set of parameters to handle RANS modelling
+   * RANS = Reynolds Average Navier-Stokes
+   */
+  cs_turb_rans_model_t   *rans_modelling;
 
   /*!
    * @}
