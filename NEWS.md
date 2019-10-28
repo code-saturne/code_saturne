@@ -21,6 +21,8 @@ Bug fixes:
 
 - GUI: fix formulae using time step or time (generated code did not compile).
 
+- GUI: fix crash in physical properties page using gas combustion model.
+
 - Fix incorrect gradient option logging for gradient options other than
   simple iterative or least squares (shift in indicated type).
 
