@@ -61,6 +61,7 @@
 #include "cs_param_cdo.h"
 #include "cs_post.h"
 #include "cs_prototypes.h"
+#include "cs_solidification.h"
 #include "cs_thermal_system.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
@@ -248,33 +249,45 @@ _solve_steady_state_domain(cs_domain_t  *domain)
   /* If the problem is globally unsteady, only steady-state equations are
      solved */
 
-  /* 1. Thermal module */
-  if (cs_thermal_system_is_activated())
-    cs_thermal_system_compute_steady_state(domain->mesh,
-                                           domain->time_step,
-                                           domain->connect,
-                                           domain->cdo_quantities);
+  if (cs_solidification_is_activated()) {
 
-  /* 2. Groundwater flow module */
-  if (cs_gwf_is_activated())
-    cs_gwf_compute_steady_state(domain->mesh,
-                                domain->time_step,
-                                domain->connect,
-                                domain->cdo_quantities);
+    cs_solidification_compute(domain->mesh,
+                              domain->time_step,
+                              domain->connect,
+                              domain->cdo_quantities);
 
-  /* 3. Maxwell module */
-  if (cs_maxwell_is_activated())
-    cs_maxwell_compute_steady_state(domain->mesh,
-                                    domain->time_step,
-                                    domain->connect,
-                                    domain->cdo_quantities);
+  }
+  else {
 
-  /* 4. Navier-Stokes module */
-  if (cs_navsto_system_is_activated())
-    cs_navsto_system_compute_steady_state(domain->mesh,
-                                          domain->time_step,
-                                          domain->connect,
-                                          domain->cdo_quantities);
+    /* 1. Thermal module */
+    if (cs_thermal_system_is_activated())
+      cs_thermal_system_compute_steady_state(domain->mesh,
+                                             domain->time_step,
+                                             domain->connect,
+                                             domain->cdo_quantities);
+
+    /* 2. Groundwater flow module */
+    if (cs_gwf_is_activated())
+      cs_gwf_compute_steady_state(domain->mesh,
+                                  domain->time_step,
+                                  domain->connect,
+                                  domain->cdo_quantities);
+
+    /* 3. Maxwell module */
+    if (cs_maxwell_is_activated())
+      cs_maxwell_compute_steady_state(domain->mesh,
+                                      domain->time_step,
+                                      domain->connect,
+                                      domain->cdo_quantities);
+
+    /* 4. Navier-Stokes module */
+    if (cs_navsto_system_is_activated())
+      cs_navsto_system_compute_steady_state(domain->mesh,
+                                            domain->time_step,
+                                            domain->connect,
+                                            domain->cdo_quantities);
+
+  } /* Solidification module not activated */
 
   /* User-defined equations */
   _compute_steady_user_equations(domain);
@@ -319,33 +332,45 @@ _solve_domain(cs_domain_t  *domain)
 
   }
 
-  /* 1. Thermal module */
-  if (cs_thermal_system_is_activated())
-    cs_thermal_system_compute(domain->mesh,
+  if (cs_solidification_is_activated()) {
+
+    cs_solidification_compute(domain->mesh,
                               domain->time_step,
                               domain->connect,
                               domain->cdo_quantities);
 
-  /* 2. Groundwater flow module */
-  if (cs_gwf_is_activated())
-    cs_gwf_compute(domain->mesh,
-                   domain->time_step,
-                   domain->connect,
-                   domain->cdo_quantities);
+  }
+  else {
 
-  /* 3. Maxwell module */
-  if (cs_maxwell_is_activated())
-    cs_maxwell_compute(domain->mesh,
-                       domain->time_step,
-                       domain->connect,
-                       domain->cdo_quantities);
+    /* 1. Thermal module */
+    if (cs_thermal_system_is_activated())
+      cs_thermal_system_compute(domain->mesh,
+                                domain->time_step,
+                                domain->connect,
+                                domain->cdo_quantities);
 
-  /* 4. Navier-Stokes module */
-  if (cs_navsto_system_is_activated())
-    cs_navsto_system_compute(domain->mesh,
-                             domain->time_step,
-                             domain->connect,
-                             domain->cdo_quantities);
+    /* 2. Groundwater flow module */
+    if (cs_gwf_is_activated())
+      cs_gwf_compute(domain->mesh,
+                     domain->time_step,
+                     domain->connect,
+                     domain->cdo_quantities);
+
+    /* 3. Maxwell module */
+    if (cs_maxwell_is_activated())
+      cs_maxwell_compute(domain->mesh,
+                         domain->time_step,
+                         domain->connect,
+                         domain->cdo_quantities);
+
+    /* 4. Navier-Stokes module */
+    if (cs_navsto_system_is_activated())
+      cs_navsto_system_compute(domain->mesh,
+                               domain->time_step,
+                               domain->connect,
+                               domain->cdo_quantities);
+
+  }
 
   /* User-defined equations */
   _compute_unsteady_user_equations(domain, nt_cur);

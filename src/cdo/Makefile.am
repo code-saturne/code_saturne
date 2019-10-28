@@ -107,6 +107,7 @@ cs_quadrature.h \
 cs_reco.h \
 cs_scheme_geometry.h \
 cs_sdm.h \
+cs_solidification.h \
 cs_source_term.h \
 cs_static_condensation.h \
 cs_thermal_system.h \
@@ -175,6 +176,7 @@ cs_quadrature.c \
 cs_reco.c \
 cs_scheme_geometry.c \
 cs_sdm.c \
+cs_solidification.c \
 cs_source_term.c \
 cs_static_condensation.c \
 cs_thermal_system.c \
