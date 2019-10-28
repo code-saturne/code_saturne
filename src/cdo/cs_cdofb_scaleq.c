@@ -152,24 +152,28 @@ _cell_builder_create(const cs_cdo_connect_t   *connect)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the boundary conditions known from the settings
+ * \brief  Set the boundary conditions known from the settings and build the
+ *         list of DoFs associated to an (internal) enforcement
  *
  * \param[in]      t_eval        time at which one evaluates BCs
  * \param[in]      mesh          pointer to a cs_mesh_t structure
  * \param[in]      eqp           pointer to a cs_equation_param_t structure
  * \param[in, out] eqb           pointer to a cs_equation_builder_t structure
  * \param[in, out] p_dir_values  pointer to the Dirichlet values to set
+ * \param[in, out] p_forced_ids  pointer to the indirection list of forced ids
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_setup_bc(cs_real_t                     t_eval,
-          const cs_mesh_t              *mesh,
-          const cs_equation_param_t    *eqp,
-          cs_equation_builder_t        *eqb,
-          cs_real_t                    *p_dir_values[])
+_setup(cs_real_t                     t_eval,
+       const cs_mesh_t              *mesh,
+       const cs_equation_param_t    *eqp,
+       cs_equation_builder_t        *eqb,
+       cs_real_t                    *p_dir_values[],
+       cs_lnum_t                    *p_forced_ids[])
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   cs_real_t  *dir_values = NULL;
 
@@ -178,15 +182,20 @@ _setup_bc(cs_real_t                     t_eval,
   memset(dir_values, 0, quant->n_b_faces*sizeof(cs_real_t));
 
   /* Compute the values of the Dirichlet BC */
-  cs_equation_compute_dirichlet_fb(mesh,
-                                   quant,
-                                   cs_shared_connect,
-                                   eqp,
-                                   eqb->face_bc,
+  cs_equation_compute_dirichlet_fb(mesh, quant, connect, eqp, eqb->face_bc,
                                    t_eval,
                                    cs_cdofb_cell_bld[0], /* static variable */
                                    dir_values);
   *p_dir_values = dir_values;
+
+  /* Internal enforcement of DoFs  */
+  if (cs_equation_param_has_internal_enforcement(eqp))
+    cs_equation_build_dof_enforcement(quant->n_faces,
+                                      connect->c2f,
+                                      eqp,
+                                      p_forced_ids);
+  else
+    *p_forced_ids = NULL;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -199,6 +208,7 @@ _setup_bc(cs_real_t                     t_eval,
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      eqc         pointer to a cs_cdofb_scaleq_t structure
  * \param[in]      dir_values  Dirichlet values associated to each face
+ * \param[in]      forced_ids  indirection in case of internal enforcement
  * \param[in]      field_tn    values of the field at the last computed time
  * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] csys        pointer to a cellwise view of the system
@@ -213,6 +223,7 @@ _init_fb_cell_system(const cs_flag_t               cell_flag,
                      const cs_equation_builder_t  *eqb,
                      const cs_cdofb_scaleq_t      *eqc,
                      const cs_real_t               dir_values[],
+                     const cs_lnum_t               forced_ids[],
                      const cs_real_t               field_tn[],
                      cs_real_t                     t_eval,
                      cs_cell_sys_t                *csys,
@@ -253,6 +264,34 @@ _init_fb_cell_system(const cs_flag_t               cell_flag,
     cs_dbg_check_hmg_dirichlet_cw(__func__, csys);
 #endif
   } /* Border cell */
+
+  /* Internal enforcement of DoFs  */
+  if (cs_equation_param_has_internal_enforcement(eqp)) {
+
+    assert(forced_ids != NULL);
+    for (short int f = 0; f < cm->n_fc; f++) {
+
+      const cs_lnum_t  id = forced_ids[cm->f_ids[f]];
+
+      if (id < 0) { /* No enforcement for this face */
+        csys->intern_forced_ids[f] = -1;
+      }
+      else {
+
+        /* In case of a Dirichlet BC, this BC is applied and the enforcement
+           is ignored */
+        if (cs_cdo_bc_is_dirichlet(csys->dof_flag[f]))
+          csys->intern_forced_ids[f] = -1;
+        else {
+          csys->intern_forced_ids[f] = id;
+          csys->has_internal_enforcement = true;
+        }
+
+      }
+
+    } /* Loop on cell faces */
+
+  } /* Enforcement ? */
 
   /* Set the properties for this cell if not uniform */
   cs_equation_init_properties_cw(eqp, eqb, t_eval, cell_flag, cm, cb);
@@ -465,6 +504,17 @@ _fb_apply_remaining_bc(const cs_equation_param_t     *eqp,
     }
 
   } /* Boundary cell */
+
+  /* Internal enforcement of DoFs: Update csys (matrix and rhs) */
+  if (csys->has_internal_enforcement) {
+
+    cs_equation_enforced_internal_dofs(eqp, cb, csys);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 2
+    if (cs_dbg_cw_test(eqp, cm, csys))
+      cs_cell_sys_dump("\n>> Cell system after the internal enforcement", csys);
+#endif
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1227,11 +1277,12 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
   /* Build an array storing the Dirichlet values at faces */
   cs_real_t  *dir_values = NULL;
+  cs_lnum_t  *forced_ids = NULL;
 
   /* First argument is set to t_cur even if this is a steady computation since
    * one can call this function to compute a steady-state solution at each time
    * step of an unsteady computation. */
-  _setup_bc(time_eval, mesh, eqp, eqb, &dir_values);
+  _setup(time_eval, mesh, eqp, eqb, &dir_values, &forced_ids);
 
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -1248,7 +1299,7 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
   shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,           \
          cell_values, dir_values, fld, cs_cdofb_cell_sys,               \
-         cs_cdofb_cell_bld)                                             \
+         forced_ids, cs_cdofb_cell_bld)                                 \
   firstprivate(time_eval)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
@@ -1284,7 +1335,7 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _init_fb_cell_system(cell_flag, cm, eqp, eqb, eqc,
-                           dir_values, fld->val, time_eval,
+                           dir_values, forced_ids, fld->val, time_eval,
                            csys, cb);
 
       /* Build and add the diffusion/advection/reaction term to the local
@@ -1433,11 +1484,12 @@ cs_cdofb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 
   /* Build an array storing the Dirichlet values at faces */
   cs_real_t  *dir_values = NULL;
+  cs_lnum_t  *forced_ids = NULL;
 
   /* First argument is set to t_cur even if this is a steady computation since
    * one can call this function to compute a steady-state solution at each time
    * step of an unsteady computation. */
-  _setup_bc(time_eval, mesh, eqp, eqb, &dir_values);
+  _setup(time_eval, mesh, eqp, eqb, &dir_values, &forced_ids);
 
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -1452,8 +1504,8 @@ cs_cdofb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
     = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
-  shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,           \
-         dir_values, fld, cs_cdofb_cell_sys, cs_cdofb_cell_bld)         \
+  shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs, fld,      \
+         dir_values, forced_ids, cs_cdofb_cell_sys, cs_cdofb_cell_bld)  \
   firstprivate(time_eval)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
@@ -1489,7 +1541,7 @@ cs_cdofb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _init_fb_cell_system(cell_flag, cm, eqp, eqb, eqc,
-                           dir_values, fld->val, time_eval,
+                           dir_values, forced_ids, fld->val, time_eval,
                            csys, cb);
 
       /* Build and add the diffusion/advection/reaction term to the local
@@ -1639,8 +1691,9 @@ cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 
   /* Build an array storing the Dirichlet values at faces */
   cs_real_t  *dir_values = NULL;
+  cs_lnum_t  *forced_ids = NULL;
 
-  _setup_bc(t_cur + dt_cur, mesh, eqp, eqb, &dir_values);
+  _setup(t_cur + dt_cur, mesh, eqp, eqb, &dir_values, &forced_ids);
 
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -1655,8 +1708,8 @@ cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
     = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
-  shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,           \
-         dir_values, fld, cs_cdofb_cell_sys, cs_cdofb_cell_bld)         \
+  shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs, fld,      \
+         dir_values, forced_ids, cs_cdofb_cell_sys, cs_cdofb_cell_bld)  \
   firstprivate(time_eval, inv_dtcur)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
@@ -1692,7 +1745,7 @@ cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _init_fb_cell_system(cell_flag, cm, eqp, eqb, eqc,
-                           dir_values, fld->val, time_eval,
+                           dir_values, forced_ids, fld->val, time_eval,
                            csys, cb);
 
       /* Build and add the diffusion/advection/reaction term to the local
@@ -1892,9 +1945,10 @@ cs_cdofb_scaleq_solve_theta(const cs_mesh_t            *mesh,
 
   /* Build an array storing the Dirichlet values at faces */
   cs_real_t  *dir_values = NULL;
+  cs_lnum_t  *forced_ids = NULL;
 
   /* Should not be t_eval since one sets the Dirichlet values */
-  _setup_bc(t_cur + dt_cur, mesh, eqp, eqb, &dir_values);
+  _setup(t_cur + dt_cur, mesh, eqp, eqb, &dir_values, &forced_ids);
 
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -1909,8 +1963,8 @@ cs_cdofb_scaleq_solve_theta(const cs_mesh_t            *mesh,
     = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
-  shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,           \
-         dir_values, fld, cs_cdofb_cell_sys, cs_cdofb_cell_bld,         \
+  shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs, fld,      \
+         dir_values, forced_ids, cs_cdofb_cell_sys, cs_cdofb_cell_bld,  \
          compute_initial_source)                                        \
   firstprivate(time_eval, dt_cur, t_cur, tcoef, inv_dtcur)
   {
@@ -1947,7 +2001,7 @@ cs_cdofb_scaleq_solve_theta(const cs_mesh_t            *mesh,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _init_fb_cell_system(cell_flag, cm, eqp, eqb, eqc,
-                           dir_values, fld->val, time_eval,
+                           dir_values, forced_ids, fld->val, time_eval,
                            csys, cb);
 
       /* Build and add the diffusion/advection/reaction term to the local

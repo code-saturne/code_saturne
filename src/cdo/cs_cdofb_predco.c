@@ -997,10 +997,14 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
   cs_timer_t  t_bld = cs_timer_time();
 
-  /* Build an array storing the Dirichlet values at faces.
-     Evaluation should be performed at t_cur + dt_cur */
+  /* Build an array storing the Dirichlet values at faces and ids of DoFs if
+   * an enforcement of (internal) DoFs is requested
+   * Evaluation should be performed at t_cur + dt_cur */
   cs_real_t  *dir_values = NULL;
-  cs_cdofb_vecteq_setup_bc(t_cur + dt_cur, mesh, mom_eqp, mom_eqb, &dir_values);
+  cs_lnum_t  *enforced_ids = NULL;
+
+  cs_cdofb_vecteq_setup(t_cur + dt_cur, mesh, mom_eqp, mom_eqb,
+                        &dir_values, &enforced_ids);
 
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_mom_ms);
@@ -1016,7 +1020,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
   shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
-         mav, mom_rs, dir_values, vel_c, pr_c, sc)                      \
+         mav, mom_rs, dir_values, enforced_ids, vel_c, pr_c, sc)        \
   firstprivate(time_eval, inv_dtcur)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
@@ -1065,7 +1069,8 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       cs_cdofb_vecteq_init_cell_system(cell_flag, cm, mom_eqp, mom_eqb, mom_eqc,
-                                       dir_values, vel_c, time_eval,
+                                       dir_values, enforced_ids,
+                                       vel_c, time_eval,
                                        csys, cb);
 
       const short int  n_fc = cm->n_fc, nf_dofs = 3*n_fc;
@@ -1177,6 +1182,7 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
+  BFT_FREE(enforced_ids);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */

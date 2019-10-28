@@ -110,6 +110,7 @@ typedef void
  *
  * \param[in]      nsp           pointer to a \ref cs_navsto_param_t structure
  * \param[in]      dir_values    array storing the Dirichlet values
+ * \param[in]      forced_ids    indirection in case of internal enforcement
  * \param[in, out] sc            pointer to the scheme context
  * \param[in, out] matrix        pointer to a \ref cs_matrix_t structure
  * \param[in, out] mom_rhs       rhs array related to the momentum eq.
@@ -120,6 +121,7 @@ typedef void
 typedef void
 (cs_cdofb_monolithic_build_t)(const cs_navsto_param_t      *nsp,
                               const cs_real_t              *dir_values,
+                              const cs_lnum_t               forced_ids[],
                               cs_cdofb_monolithic_t        *sc,
                               cs_matrix_t                  *matrix,
                               cs_real_t                    *mom_rhs,

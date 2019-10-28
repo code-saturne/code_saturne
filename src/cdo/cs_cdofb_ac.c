@@ -739,7 +739,10 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
   /* Build an array storing the Dirichlet values at faces.
      Evaluation should be performed at t_cur + dt_cur */
   cs_real_t  *dir_values = NULL;
-  cs_cdofb_vecteq_setup_bc(t_cur + dt_cur, mesh, mom_eqp, mom_eqb, &dir_values);
+  cs_lnum_t  *enforced_ids = NULL;
+
+  cs_cdofb_vecteq_setup(t_cur + dt_cur, mesh, mom_eqp, mom_eqb,
+                        &dir_values, &enforced_ids);
 
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -755,7 +758,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
   shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
-         mav, rs, dir_values, zeta, vel_c, pr, sc)                      \
+         mav, rs, dir_values, enforced_ids, zeta, vel_c, pr, sc)        \
   firstprivate(time_eval, dt_cur)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
@@ -808,7 +811,8 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       cs_cdofb_vecteq_init_cell_system(cell_flag, cm, mom_eqp, mom_eqb, mom_eqc,
-                                       dir_values, vel_c, time_eval,
+                                       dir_values, enforced_ids,
+                                       vel_c, time_eval,
                                        csys, cb);
 
       const short int  n_fc = cm->n_fc, f_dofs = 3*n_fc;
@@ -931,6 +935,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
+  BFT_FREE(enforced_ids);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */
@@ -1066,9 +1071,13 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
   if (ts->nt_cur == ts->nt_prev || ts->nt_prev == 0)
     compute_initial_source = true;
 
-  /* Build an array storing the Dirichlet values at faces */
+  /* Build an array storing the Dirichlet values at faces and ids of DoFs if
+   * an enforcement of (internal) DoFs is requested */
   cs_real_t  *dir_values = NULL;
-  cs_cdofb_vecteq_setup_bc(t_cur + dt_cur, mesh, mom_eqp, mom_eqb, &dir_values);
+  cs_lnum_t  *enforced_ids = NULL;
+
+  cs_cdofb_vecteq_setup(t_cur + dt_cur, mesh, mom_eqp, mom_eqb,
+                        &dir_values, &enforced_ids);
 
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -1084,7 +1093,7 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
   shared(quant, connect, mom_eqp, mom_eqb, mom_eqc, rhs, matrix, nsp,   \
-         mav, rs, dir_values, zeta, vel_c, pr, sc,                      \
+         mav, rs, dir_values, enforced_ids, zeta, vel_c, pr, sc,        \
          compute_initial_source)                                        \
   firstprivate(time_eval, t_cur, dt_cur, tcoef)
   {
@@ -1136,7 +1145,8 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       cs_cdofb_vecteq_init_cell_system(cell_flag, cm, mom_eqp, mom_eqb, mom_eqc,
-                                       dir_values, vel_c, time_eval,
+                                       dir_values, enforced_ids,
+                                       vel_c, time_eval,
                                        csys, cb);
 
       const short int  n_fc = cm->n_fc, f_dofs = 3*n_fc;
@@ -1287,6 +1297,7 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
+  BFT_FREE(enforced_ids);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */

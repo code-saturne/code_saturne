@@ -141,6 +141,7 @@ _ebs_create_cell_builder(const cs_cdo_connect_t   *connect)
  * \param[in]      eqb             pointer to a cs_equation_builder_t structure
  * \param[in]      eqc             pointer to a cs_cdoeb_vecteq_t structure
  * \param[in]      edge_bc_values  boundary values of the circulation
+ * \param[in]      forced_ids      indirection in case of internal enforcement
  * \param[in, out] csys            pointer to a cellwise view of the system
  * \param[in, out] cb              pointer to a cellwise builder
  */
@@ -154,6 +155,7 @@ _eb_init_cell_system(cs_real_t                            t_eval,
                      const cs_equation_builder_t         *eqb,
                      const cs_cdoeb_vecteq_t             *eqc,
                      const cs_real_t                      edge_bc_values[],
+                     const cs_lnum_t                      forced_ids[],
                      cs_cell_sys_t                       *csys,
                      cs_cell_builder_t                   *cb)
 {
@@ -200,6 +202,28 @@ _eb_init_cell_system(cs_real_t                            t_eval,
         csys->dir_values[e] = edge_bc_values[cm->e_ids[e]];
       }
     }
+
+  }
+
+  /* Internal enforcement of DoFs  */
+  if (cs_equation_param_has_internal_enforcement(eqp)) {
+
+    assert(forced_ids != NULL);
+    for (short int e = 0; e < cm->n_ec; e++) {
+
+      const cs_lnum_t  id = forced_ids[cm->e_ids[e]];
+
+      /* In case of a Dirichlet BC, this BC is applied and the enforcement
+         is ignored */
+      if (cs_cdo_bc_is_circulation(csys->dof_flag[e]))
+        csys->intern_forced_ids[e] = -1;
+      else {
+        csys->intern_forced_ids[e] = id;
+        if (id > -1)
+          csys->has_internal_enforcement = true;
+      }
+
+    } /* Loop on cell edges */
 
   }
 
@@ -849,6 +873,13 @@ cs_cdoeb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
                                      eqp,
                                      circ_bc_vals);
 
+  cs_lnum_t  *enforced_ids = NULL;
+  if (cs_equation_param_has_internal_enforcement(eqp))
+    cs_equation_build_dof_enforcement(n_edges,
+                                      connect->c2e,
+                                      eqp,
+                                      &enforced_ids);
+
   /* Initialize the local system: matrix and rhs */
   cs_real_t  res_normalization = 0.0;
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
@@ -868,7 +899,7 @@ cs_cdoeb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 #pragma omp parallel if (quant->n_cells > CS_THR_MIN)                   \
   shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, circ_bc_vals, \
          fld, rs, cs_cdoeb_cell_system, cs_cdoeb_cell_builder,          \
-         res_normalization)                                             \
+         enforced_ids, res_normalization)                               \
   firstprivate(time_eval)
   {
     /* Set variables and structures inside the OMP section so that each thread
@@ -904,7 +935,7 @@ cs_cdoeb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       _eb_init_cell_system(time_eval, cell_flag, cm, eqp, eqb, eqc,
-                           circ_bc_vals,
+                           circ_bc_vals, enforced_ids,
                            csys, cb);
 
       /* Build and add the diffusion term to the local system. A mass matrix is
@@ -961,6 +992,7 @@ cs_cdoeb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 
   /* Free temporary buffers and structures */
   BFT_FREE(circ_bc_vals);
+  BFT_FREE(enforced_ids);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* Last step in the computation of the renormalization coefficient */

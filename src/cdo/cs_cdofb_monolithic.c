@@ -611,6 +611,19 @@ _apply_remaining_bc(const cs_cdofb_monolithic_t   *sc,
     } /* Loop over boundary faces */
 
   } /* This is a boundary cell */
+
+  /* Internal enforcement of DoFs: Update csys (matrix and rhs) */
+  if (csys->has_internal_enforcement) {
+
+    cs_equation_enforced_internal_block_dofs(eqp, cb, csys);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
+    if (cs_dbg_cw_test(eqp, cm, csys))
+      cs_cell_sys_dump("\n>> Cell system after the internal enforcement",
+                       csys);
+#endif
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -825,6 +838,7 @@ _assemble(const cs_cell_sys_t            *csys,
  *
  * \param[in]         nsp         pointer to a \ref cs_navsto_param_t structure
  * \param[in]         dir_values  array storing the Dirichlet values
+ * \param[in]         forced_ids  indirection in case of internal enforcement
  * \param[in, out]    sc          pointer to the scheme context
  * \param[in, out]    matrix      pointer to a \ref cs_matrix_t structure
  * \param[in, out]    mom_rhs     rhs array related to the momentum eq.
@@ -835,6 +849,7 @@ _assemble(const cs_cell_sys_t            *csys,
 static void
 _steady_build(const cs_navsto_param_t      *nsp,
               const cs_real_t              *dir_values,
+              const cs_lnum_t               forced_ids[],
               cs_cdofb_monolithic_t        *sc,
               cs_matrix_t                  *matrix,
               cs_real_t                    *mom_rhs,
@@ -868,7 +883,7 @@ _steady_build(const cs_navsto_param_t      *nsp,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)      \
   shared(quant, connect, mom_eq, mom_eqp, mom_eqb, mom_eqc, matrix, nsp,  \
-         mav, mom_rhs, mass_rhs, dir_values, vel_c, sc)                   \
+         mav, mom_rhs, mass_rhs, dir_values, forced_ids, vel_c, sc)       \
   firstprivate(t_eval)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
@@ -917,7 +932,7 @@ _steady_build(const cs_navsto_param_t      *nsp,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       cs_cdofb_vecteq_init_cell_system(cell_flag, cm, mom_eqp, mom_eqb, mom_eqc,
-                                       dir_values, vel_c, t_eval,
+                                       dir_values, forced_ids, vel_c, t_eval,
                                        csys, cb);
 
       /* 1- SETUP THE NAVSTO LOCAL BUILDER
@@ -1019,6 +1034,7 @@ _steady_build(const cs_navsto_param_t      *nsp,
  *
  * \param[in]         nsp         pointer to a \ref cs_navsto_param_t structure
  * \param[in]         dir_values  array storing the Dirichlet values
+ * \param[in]         forced_ids  indirection in case of internal enforcement
  * \param[in, out]    sc          pointer to the scheme context
  * \param[in, out]    matrix      pointer to a \ref cs_matrix_t structure
  * \param[in, out]    mom_rhs     rhs array related to the momentum eq.
@@ -1029,6 +1045,7 @@ _steady_build(const cs_navsto_param_t      *nsp,
 static void
 _implicit_euler_build(const cs_navsto_param_t  *nsp,
                       const cs_real_t          *dir_values,
+                      const cs_lnum_t           forced_ids[],
                       cs_cdofb_monolithic_t    *sc,
                       cs_matrix_t              *matrix,
                       cs_real_t                *mom_rhs,
@@ -1065,7 +1082,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
 # pragma omp parallel if (quant->n_cells > CS_THR_MIN) default(none)     \
   shared(quant, connect, mom_eq, mom_eqp, mom_eqb, mom_eqc, matrix, nsp, \
-         mav, mom_rhs, mass_rhs, dir_values, vel_c, sc)                  \
+         mav, mom_rhs, mass_rhs, dir_values, forced_ids, vel_c, sc)      \
   firstprivate(t_eval, inv_dtcur)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
@@ -1114,7 +1131,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       cs_cdofb_vecteq_init_cell_system(cell_flag, cm, mom_eqp, mom_eqb, mom_eqc,
-                                       dir_values, vel_c, t_eval,
+                                       dir_values, forced_ids, vel_c, t_eval,
                                        csys, cb);
 
       /* 1- SETUP THE NAVSTO LOCAL BUILDER *
@@ -1159,11 +1176,10 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
       _apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, csys, cb);
 
-      /* 4- TIME CONTRIBUTION */
+      /* 4- TIME CONTRIBUTION (mass lumping or vaornoï) */
       /* ==================== */
 
-      if (mom_eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping
-                                                          or Hodge-Voronoi */
+      if (mom_eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) {
 
         const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
@@ -1232,6 +1248,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
  *
  * \param[in]         nsp         pointer to a \ref cs_navsto_param_t structure
  * \param[in]         dir_values  array storing the Dirichlet values
+ * \param[in]         forced_ids  indirection in case of internal enforcement
  * \param[in, out]    sc          pointer to the scheme context
  * \param[in, out]    matrix      pointer to a \ref cs_matrix_t structure
  * \param[in, out]    mom_rhs     rhs array related to the momentum eq.
@@ -1242,6 +1259,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 static void
 _theta_scheme_build(const cs_navsto_param_t  *nsp,
                     const cs_real_t          *dir_values,
+                    const cs_lnum_t           forced_ids[],
                     cs_cdofb_monolithic_t    *sc,
                     cs_matrix_t              *matrix,
                     cs_real_t                *mom_rhs,
@@ -1339,7 +1357,7 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
 
       /* Set the local (i.e. cellwise) structures for the current cell */
       cs_cdofb_vecteq_init_cell_system(cell_flag, cm, mom_eqp, mom_eqb, mom_eqc,
-                                       dir_values, vel_c, t_eval,
+                                       dir_values, forced_ids, vel_c, t_eval,
                                        csys, cb);
 
       /* 1- SETUP THE NAVSTO LOCAL BUILDER *
@@ -1817,9 +1835,13 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  t_cur = ts->t_cur;
 
-  /* Build an array storing the Dirichlet values at faces. */
+  /* Build an array storing the Dirichlet values at faces and ids of DoFs if
+   * an enforcement of (internal) DoFs is requested */
   cs_real_t  *dir_values = NULL;
-  cs_cdofb_vecteq_setup_bc(t_cur, mesh, mom_eqp, mom_eqb, &dir_values);
+  cs_lnum_t  *enforced_ids = NULL;
+
+  cs_cdofb_vecteq_setup(t_cur, mesh, mom_eqp, mom_eqb,
+                        &dir_values, &enforced_ids);
 
   /* Initialize the local matrix */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_matrix_structure);
@@ -1831,10 +1853,13 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
   BFT_MALLOC(mass_rhs, n_cells, cs_real_t);
 
   /* Main loop on cells to define the linear system to solve */
-  sc->steady_build(nsp, dir_values, sc, matrix, mom_rhs, mass_rhs);
+  sc->steady_build(nsp,
+                   dir_values, enforced_ids,
+                   sc, matrix, mom_rhs, mass_rhs);
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
+  BFT_FREE(enforced_ids);
 
   /* End of the system building */
   cs_timer_t  t_bld_end = cs_timer_time();
@@ -1908,9 +1933,13 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  t_cur = ts->t_cur;
 
-  /* Build an array storing the Dirichlet values at faces. */
+  /* Build an array storing the Dirichlet values at faces and ids of DoFs if
+   * an enforcement of (internal) DoFs is requested */
   cs_real_t  *dir_values = NULL;
-  cs_cdofb_vecteq_setup_bc(t_cur, mesh, mom_eqp, mom_eqb, &dir_values);
+  cs_lnum_t  *enforced_ids = NULL;
+
+  cs_cdofb_vecteq_setup(t_cur, mesh, mom_eqp, mom_eqb,
+                        &dir_values, &enforced_ids);
 
   /* Initialize the local matrix */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_matrix_structure);
@@ -1922,7 +1951,9 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   BFT_MALLOC(mass_rhs, n_cells, cs_real_t);
 
   /* Main loop on cells to define the linear system to solve */
-  sc->steady_build(nsp, dir_values, sc, matrix, mom_rhs, mass_rhs);
+  sc->steady_build(nsp,
+                   dir_values, enforced_ids,
+                   sc, matrix, mom_rhs, mass_rhs);
 
   /* End of the system building */
   cs_timer_t  t_bld_end = cs_timer_time();
@@ -1965,7 +1996,9 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   while (ns_info.cvg == CS_SLES_ITERATING) {
 
     /* Main loop on cells to define the linear system to solve */
-    sc->steady_build(nsp, dir_values, sc, matrix, mom_rhs, mass_rhs);
+    sc->steady_build(nsp,
+                     dir_values, enforced_ids,
+                     sc, matrix, mom_rhs, mass_rhs);
 
     /* Current to previous */
     memcpy(mom_eqc->face_values_pre, mom_eqc->face_values,
@@ -2003,6 +2036,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   /* Frees */
   cs_sles_free(sles);
   BFT_FREE(dir_values);
+  BFT_FREE(enforced_ids);
   BFT_FREE(mom_rhs);
   BFT_FREE(mass_rhs);
   cs_matrix_destroy(&matrix);
@@ -2048,9 +2082,13 @@ cs_cdofb_monolithic(const cs_mesh_t          *mesh,
   const cs_time_step_t *ts = cs_shared_time_step;
   const cs_real_t  t_eval = ts->t_cur + ts->dt[0];
 
-  /* Build an array storing the Dirichlet values at faces. */
+  /* Build an array storing the Dirichlet values at faces and ids of DoFs if
+   * an enforcement of (internal) DoFs is requested */
   cs_real_t  *dir_values = NULL;
-  cs_cdofb_vecteq_setup_bc(t_eval, mesh, mom_eqp, mom_eqb, &dir_values);
+  cs_lnum_t  *enforced_ids = NULL;
+
+  cs_cdofb_vecteq_setup(t_eval, mesh, mom_eqp, mom_eqb,
+                        &dir_values, &enforced_ids);
 
   /* Initialize the local matrix */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_matrix_structure);
@@ -2062,10 +2100,11 @@ cs_cdofb_monolithic(const cs_mesh_t          *mesh,
   BFT_MALLOC(mass_rhs, n_cells, cs_real_t);
 
   /* Main loop on cells to define the linear system to solve */
-  sc->build(nsp, dir_values, sc, matrix, mom_rhs, mass_rhs);
+  sc->build(nsp, dir_values, enforced_ids, sc, matrix, mom_rhs, mass_rhs);
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
+  BFT_FREE(enforced_ids);
 
   /* End of the system building */
   cs_timer_t  t_bld_end = cs_timer_time();
@@ -2142,9 +2181,13 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  t_eval = ts->t_cur + ts->dt[0];
 
-  /* Build an array storing the Dirichlet values at faces. */
+  /* Build an array storing the Dirichlet values at faces and ids of DoFs if
+   * an enforcement of (internal) DoFs is requested */
   cs_real_t  *dir_values = NULL;
-  cs_cdofb_vecteq_setup_bc(t_eval, mesh, mom_eqp, mom_eqb, &dir_values);
+  cs_lnum_t  *enforced_ids = NULL;
+
+  cs_cdofb_vecteq_setup(t_eval, mesh, mom_eqp, mom_eqb,
+                        &dir_values, &enforced_ids);
 
   /* Initialize the local matrix */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_matrix_structure);
@@ -2156,7 +2199,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   BFT_MALLOC(mass_rhs, n_cells, cs_real_t);
 
   /* Main loop on cells to define the linear system to solve */
-  sc->build(nsp, dir_values, sc, matrix, mom_rhs, mass_rhs);
+  sc->build(nsp, dir_values, enforced_ids, sc, matrix, mom_rhs, mass_rhs);
 
   /* End of the system building */
   cs_timer_t  t_bld_end = cs_timer_time();
@@ -2199,7 +2242,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   while (ns_info.cvg == CS_SLES_ITERATING) {
 
     /* Main loop on cells to define the linear system to solve */
-    sc->build(nsp, dir_values, sc, matrix, mom_rhs, mass_rhs);
+    sc->build(nsp, dir_values, enforced_ids, sc, matrix, mom_rhs, mass_rhs);
 
     /* Current to previous */
     memcpy(mom_eqc->face_values_pre, mom_eqc->face_values,
