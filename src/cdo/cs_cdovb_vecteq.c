@@ -216,7 +216,10 @@ _vbv_setup(cs_real_t                      t_eval,
 
   /* Internal enforcement of DoFs  */
   if (cs_equation_param_has_internal_enforcement(eqp))
-    cs_build_enforcement_at_vertices(connect, quant, eqp, p_enforced_ids);
+    cs_equation_build_dof_enforcement(quant->n_vertices,
+                                      connect->c2v,
+                                      eqp,
+                                      p_enforced_ids);
   else
     *p_enforced_ids = NULL;
 
@@ -321,17 +324,24 @@ _vbv_init_cell_system(cs_real_t                       t_eval,
 
       const cs_lnum_t  id = forced_ids[cm->v_ids[v]];
 
-      /* In case of a Dirichlet BC, this BC is applied and the enforcement
-         is ignored */
-      for (int k = 0; k < 3; k++) {
-        int  dof_id = 3*v+k;
-        if (cs_cdo_bc_is_dirichlet(csys->dof_flag[dof_id]))
-          csys->intern_forced_ids[dof_id] = -1;
-        else {
-          csys->intern_forced_ids[dof_id] = 3*id+k;
-          if (id > -1)
+      if (id < 0) { /* No enforcement for this vertex */
+        for (int k = 0; k < 3; k++)
+          csys->intern_forced_ids[3*v+k] = -1;
+      }
+      else {
+
+        /* In case of a Dirichlet BC, this BC is applied and the enforcement
+           is ignored */
+        for (int k = 0; k < 3; k++) {
+          int  dof_id = 3*v+k;
+          if (cs_cdo_bc_is_dirichlet(csys->dof_flag[dof_id]))
+            csys->intern_forced_ids[dof_id] = -1;
+          else {
+            csys->intern_forced_ids[dof_id] = 3*id+k;
             csys->has_internal_enforcement = true;
+          }
         }
+
       }
 
     } /* Loop on cell vertices */

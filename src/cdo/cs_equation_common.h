@@ -663,6 +663,25 @@ cs_equation_set_diffusion_property_cw(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Build the list of degrees of freedom (DoFs) related to an internal
+ *         enforcement. If set to NULL, the array dof_ids (storing the
+ *         indirection) is allocated to n_x.
+ *
+ * \param[in]      n_x        number of entities where DoFs are defined
+ * \param[in]      c2x        cell --> x connectivity
+ * \param[in]      eqp        set of parameters related to an equation
+ * \param[in, out] p_dof_ids  double pointer on DoF ids subject to enforcement
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_build_dof_enforcement(cs_lnum_t                     n_x,
+                                  const cs_adjacency_t         *c2x,
+                                  const cs_equation_param_t    *eqp,
+                                  cs_lnum_t                    *p_dof_ids[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Take into account the enforcement of internal DoFs. Apply an
  *          algebraic manipulation
  *
@@ -705,9 +724,9 @@ cs_equation_enforced_internal_dofs(const cs_equation_param_t       *eqp,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_enforced_internal_block_dofs(const cs_equation_param_t       *eqp,
-                                         cs_cell_builder_t               *cb,
-                                         cs_cell_sys_t                   *csys);
+cs_equation_enforced_internal_block_dofs(const cs_equation_param_t     *eqp,
+                                         cs_cell_builder_t             *cb,
+                                         cs_cell_sys_t                 *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!

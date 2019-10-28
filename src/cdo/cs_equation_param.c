@@ -1505,7 +1505,6 @@ cs_equation_create_param(const char            *name,
   eqp->default_bc = default_bc;
   eqp->n_bc_defs = 0;
   eqp->bc_defs = NULL;
-
   eqp->default_enforcement = CS_PARAM_BC_ENFORCE_ALGEBRAIC;
   eqp->strong_pena_bc_coeff = _strong_pena_bc_coef_by_default;
   eqp->weak_pena_bc_coeff = _weak_pena_bc_coef_by_default;
@@ -1584,7 +1583,16 @@ cs_equation_create_param(const char            *name,
   eqp->n_source_terms = 0;
   eqp->source_terms = NULL;
 
-  /* No enforcement of internal DoFs */
+  /* Members of the structure to handle the enforcement of (internal) DoFs */
+  eqp->enforcement_type = 0;
+  BFT_MALLOC(eqp->enforcement_ref_value, eqp->dim, cs_real_t);
+  for (int i = 0; i < eqp->dim; i++)
+    eqp->enforcement_ref_value[i] = 0.;
+
+  eqp->n_enforced_cells = 0;
+  eqp->enforced_cell_ids = NULL;
+  eqp->enforced_cell_values = NULL;
+
   eqp->n_enforced_dofs = 0;
   eqp->enforced_dof_ids = NULL;
   eqp->enforced_dof_values = NULL;
@@ -1693,14 +1701,43 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
     dst->source_terms[i] = cs_xdef_copy(ref->source_terms[i]);
 
   /* No enforcement of internal DoFs */
+  dst->enforcement_type = ref->enforcement_type;
+  BFT_MALLOC(dst->enforcement_ref_value, dst->dim, cs_real_t);
+  memcpy(dst->enforcement_ref_value, ref->enforcement_ref_value,
+         dst->dim*sizeof(cs_real_t));
+
+  dst->n_enforced_cells = ref->n_enforced_cells;
+  if (ref->n_enforced_cells > 0) {
+
+    BFT_MALLOC(dst->enforced_cell_ids, dst->n_enforced_cells, cs_lnum_t);
+    memcpy(dst->enforced_cell_ids, ref->enforced_cell_ids,
+           dst->n_enforced_cells*sizeof(cs_lnum_t));
+
+    dst->enforced_cell_values= NULL;
+    if (ref->enforced_cell_values != NULL) {
+      cs_lnum_t  size = dst->n_enforced_cells*dst->dim;
+      BFT_MALLOC(dst->enforced_cell_values, size, cs_real_t);
+      memcpy(dst->enforced_dof_values, ref->enforced_dof_values,
+             size*sizeof(cs_real_t));
+    }
+
+  }
+
   dst->n_enforced_dofs = ref->n_enforced_dofs;
   if (ref->n_enforced_dofs > 0) {
+
     BFT_MALLOC(dst->enforced_dof_ids, dst->n_enforced_dofs, cs_lnum_t);
     memcpy(dst->enforced_dof_ids, ref->enforced_dof_ids,
            dst->n_enforced_dofs*sizeof(cs_lnum_t));
-    BFT_MALLOC(dst->enforced_dof_values, dst->n_enforced_dofs, cs_real_t);
-    memcpy(dst->enforced_dof_values, ref->enforced_dof_values,
-           dst->n_enforced_dofs*sizeof(cs_real_t));
+
+    dst->enforced_dof_values = NULL;
+    if (ref->enforced_dof_values != NULL) {
+      cs_lnum_t  size = dst->n_enforced_dofs*dst->dim;
+      BFT_MALLOC(dst->enforced_dof_values, size, cs_real_t);
+      memcpy(dst->enforced_dof_values, ref->enforced_dof_values,
+             size*sizeof(cs_real_t));
+    }
+
   }
 
   /* Settings for driving the linear algebra.
@@ -1762,12 +1799,18 @@ cs_equation_free_param(cs_equation_param_t     *eqp)
   }
 
   /* Information related to the enforcement of internal DoFs */
-  if (eqp->n_enforced_dofs > 0) {
+  BFT_FREE(eqp->enforcement_ref_value);
 
+  if (eqp->n_enforced_cells > 0) {
+    eqp->n_enforced_cells = 0;
+    BFT_FREE(eqp->enforced_cell_ids);
+    BFT_FREE(eqp->enforced_cell_values);
+  }
+
+  if (eqp->n_enforced_dofs > 0) {
     eqp->n_enforced_dofs = 0;
     BFT_FREE(eqp->enforced_dof_ids);
     BFT_FREE(eqp->enforced_dof_values);
-
   }
 
   /* Information related to the definition of initial conditions */
@@ -3066,12 +3109,16 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
  *         mesh vertices.
  *         The spatial discretization scheme for the given equation has to be
  *         CDO-Vertex based or CDO-Vertex+Cell-based schemes.
- *         We assume that values are interlaced (if eqp->dim > 1)
+ *
+ *         One assumes that values are interlaced if eqp->dim > 1
+ *         ref_value or elt_values has to be defined. If both parameters are
+ *         defined, one keeps the definition in elt_values
  *
  * \param[in, out] eqp         pointer to a cs_equation_param_t structure
  * \param[in]      n_elts      number of vertices to enforce
  * \param[in]      elt_ids     list of vertices
- * \param[in]      elt_values  list of associated values
+ * \param[in]      ref_value   ignored if NULL
+ * \param[in]      elt_values  list of associated values, ignored if NULL
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3079,34 +3126,136 @@ void
 cs_equation_enforce_vertex_dofs(cs_equation_param_t    *eqp,
                                 cs_lnum_t               n_elts,
                                 const cs_lnum_t         elt_ids[],
+                                const cs_real_t         ref_value[],
                                 const cs_real_t         elt_values[])
 {
+  if (n_elts < 1)
+    return; /* Nothing to do */
+
+  /* Sanity checks */
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+  if (eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_CELLS)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Eq: %s: Two types of enforcement are requested (by DoFs and"
+              " by cells).\n", __func__, eqp->name);
   if (eqp->space_scheme != CS_SPACE_SCHEME_CDOVB &&
       eqp->space_scheme != CS_SPACE_SCHEME_CDOVCB)
     bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid space scheme. This should be a vertex-based one.",
-              __func__);
+              "%s: Eq: %s: Invalid space scheme.\n"
+              "This should be a vertex-based one.", __func__, eqp->name);
+  if (ref_value == NULL && elt_values == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Eq: %s: No enforcement value.\n",
+              __func__, eqp->name);
 
-  if (eqp->n_enforced_dofs > 0) { /* A set of vertices is already defined
-                                    -> Erase it */
-
+  if (eqp->n_enforced_dofs > 0) { /* Reset the selection of DoFs */
+    eqp->n_enforced_dofs = 0;
     BFT_FREE(eqp->enforced_dof_ids);
     BFT_FREE(eqp->enforced_dof_values);
-
+  }
+  if (eqp->n_enforced_cells > 0) { /* Reset the selection of cells */
+    eqp->n_enforced_cells = 0;
+    BFT_FREE(eqp->enforced_cell_ids);
+    BFT_FREE(eqp->enforced_cell_values);
   }
 
   eqp->flag |= CS_EQUATION_FORCE_VALUES;
   eqp->n_enforced_dofs = n_elts;
-
-  /* Copy user-defined data in the structure */
-  BFT_MALLOC(eqp->enforced_dof_values, eqp->dim*n_elts, cs_real_t);
-  memcpy(eqp->enforced_dof_values, elt_values,
-         eqp->dim*n_elts*sizeof(cs_real_t));
+  eqp->enforcement_type = CS_EQUATION_ENFORCE_BY_DOFS;
 
   BFT_MALLOC(eqp->enforced_dof_ids, n_elts, cs_lnum_t);
   memcpy(eqp->enforced_dof_ids, elt_ids, n_elts*sizeof(cs_lnum_t));
+
+  if (elt_values == NULL) { /* Use a reference value for all enforced DoFs */
+
+    eqp->enforcement_type |= CS_EQUATION_ENFORCE_BY_REFERENCE_VALUE;
+    for (int i = 0; i < eqp->dim; i++)
+      eqp->enforcement_ref_value[i] = ref_value[i];
+
+  }
+  else {
+
+    /* Copy user-defined data in the structure */
+    const cs_lnum_t  size = eqp->dim*n_elts;
+    BFT_MALLOC(eqp->enforced_dof_values, size, cs_real_t);
+    memcpy(eqp->enforced_dof_values, elt_values, size*sizeof(cs_real_t));
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add an enforcement of the value related to the degrees of freedom
+ *         associated to the list of selected cells.
+ *
+ *         One assumes that values are interlaced if eqp->dim > 1
+ *         ref_value or elt_values has to be defined. If both parameters are
+ *         defined, one keeps the definition in elt_values
+ *
+ * \param[in, out] eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      n_elts      number of selected cells
+ * \param[in]      elt_ids     list of cell ids
+ * \param[in]      ref_value   ignored if NULL
+ * \param[in]      elt_values  list of associated values, ignored if NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_enforce_by_cell_selection(cs_equation_param_t    *eqp,
+                                      cs_lnum_t               n_elts,
+                                      const cs_lnum_t         elt_ids[],
+                                      const cs_real_t         ref_value[],
+                                      const cs_real_t         elt_values[])
+{
+  if (n_elts < 1)
+    return; /* Nothing to do */
+
+  /* Sanity checks */
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+  if (eqp->enforcement_type & CS_EQUATION_ENFORCE_BY_DOFS)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Eq: %s: Two types of enforcement are requested (by DoFs and"
+              " by cells).\n", __func__, eqp->name);
+  if (ref_value == NULL && elt_values == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Eq: %s: No enforcement value.\n",
+              __func__, eqp->name);
+
+  if (eqp->n_enforced_dofs > 0) { /* Reset the selection of DoFs */
+    eqp->n_enforced_dofs = 0;
+    BFT_FREE(eqp->enforced_dof_ids);
+    BFT_FREE(eqp->enforced_dof_values);
+  }
+  if (eqp->n_enforced_cells > 0) { /* Reset the selection of cells */
+    eqp->n_enforced_cells = 0;
+    BFT_FREE(eqp->enforced_cell_ids);
+    BFT_FREE(eqp->enforced_cell_values);
+  }
+
+  eqp->n_enforced_cells = n_elts;
+  eqp->enforcement_type = CS_EQUATION_ENFORCE_BY_CELLS;
+  eqp->flag |= CS_EQUATION_FORCE_VALUES;
+
+  BFT_MALLOC(eqp->enforced_cell_ids, n_elts, cs_lnum_t);
+  memcpy(eqp->enforced_cell_ids, elt_ids, n_elts*sizeof(cs_lnum_t));
+
+  if (elt_values == NULL) { /* Use a reference value for all enforced DoFs */
+
+    eqp->enforcement_type |= CS_EQUATION_ENFORCE_BY_REFERENCE_VALUE;
+    for (int i = 0; i < eqp->dim; i++)
+      eqp->enforcement_ref_value[i] = ref_value[i];
+
+  }
+  else {
+
+    /* Copy user-defined data in the structure */
+    const cs_lnum_t  size = eqp->dim*n_elts;
+    BFT_MALLOC(eqp->enforced_cell_values, size, cs_real_t);
+    memcpy(eqp->enforced_cell_values, elt_values, size*sizeof(cs_real_t));
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/

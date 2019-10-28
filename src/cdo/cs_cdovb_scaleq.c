@@ -195,6 +195,7 @@ _vbs_setup(cs_real_t                      t_eval,
 {
   assert(vtx_bc_flag != NULL);  /* Sanity check */
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   cs_real_t  *dir_values = NULL;
 
@@ -205,31 +206,21 @@ _vbs_setup(cs_real_t                      t_eval,
   cs_equation_compute_dirichlet_vb(t_eval,
                                    mesh,
                                    quant,
-                                   cs_shared_connect,
+                                   connect,
                                    eqp,
                                    eqb->face_bc,
                                    _vbs_cell_builder[0], /* static variable */
                                    vtx_bc_flag,
                                    dir_values);
 
-
   *p_dir_values = dir_values;
 
   /* Internal enforcement of DoFs  */
-  if (cs_equation_param_has_internal_enforcement(eqp)) {
-
-    cs_lnum_t  *enforced_ids = NULL;
-    BFT_MALLOC(enforced_ids, quant->n_vertices, cs_lnum_t);
-    for (cs_lnum_t i = 0; i < quant->n_vertices; i++)
-      enforced_ids[i] = -1;     /* Not selected */
-
-    for (cs_lnum_t i = 0; i < eqp->n_enforced_dofs; i++) {
-      cs_lnum_t  id = eqp->enforced_dof_ids[i];
-      enforced_ids[id] = i;
-    }
-
-    *p_enforced_ids = enforced_ids;
-  }
+  if (cs_equation_param_has_internal_enforcement(eqp))
+    cs_equation_build_dof_enforcement(quant->n_vertices,
+                                      connect->c2v,
+                                      eqp,
+                                      p_enforced_ids);
   else
     *p_enforced_ids = NULL;
 
@@ -538,6 +529,18 @@ _vbs_enforce_values(const cs_equation_param_t     *eqp,
                     cs_cell_sys_t                 *csys,
                     cs_cell_builder_t             *cb)
 {
+  /* Internal enforcement of DoFs: Update csys (matrix and rhs) */
+  if (csys->has_internal_enforcement) {
+
+    cs_equation_enforced_internal_dofs(eqp, cb, csys);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
+    if (cs_dbg_cw_test(eqp, cm, csys))
+      cs_cell_sys_dump("\n>> Cell system after the internal enforcement",
+                       csys);
+#endif
+  }
+
   if (csys->cell_flag > 0 && csys->has_dirichlet) {
 
     /* Boundary element (through either vertices or faces) */
@@ -555,20 +558,6 @@ _vbs_enforce_values(const cs_equation_param_t     *eqp,
     }
   }
 
-  if (cs_equation_param_has_internal_enforcement(eqp) == false)
-    return;
-
-  /* Internal enforcement of DoFs: Update csys (matrix and rhs) */
-  if (csys->has_internal_enforcement) {
-
-    cs_equation_enforced_internal_dofs(eqp, cb, csys);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
-    if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> Cell system after the internal enforcement",
-                       csys);
-#endif
-  }
 }
 
 /*----------------------------------------------------------------------------*/

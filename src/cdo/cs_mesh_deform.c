@@ -295,6 +295,7 @@ cs_mesh_deform_setup(cs_domain_t  *domain)
       cs_equation_enforce_vertex_dofs(eqp,
                                       _n_fixed_vertices,
                                       _fixed_vtx_ids,
+                                      NULL, /* reference value */
                                       fixed_vtx_values);
 
       BFT_FREE(fixed_vtx_values);

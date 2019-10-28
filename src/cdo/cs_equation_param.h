@@ -116,6 +116,27 @@ BEGIN_C_DECLS
 #define CS_EQUATION_POST_UPWIND_COEF (1 << 2) /* 4 */
 #define CS_EQUATION_POST_NORMAL_FLUX (1 << 3) /* 8 */
 
+/*!
+ * @}
+ * @name Flags to handle the enforcement of degrees of freedom (DoFs)
+ * @{
+ *
+ * \def CS_EQUATION_ENFORCE_BY_CELLS
+ * \brief Definition of a selection of DoFs to enforce using a cell selection
+ *
+ * \def CS_EQUATION_ENFORCE_BY_DOFs
+ * \brief Definition of a selection of DoFs
+ *
+ * \def CS_EQUATION_ENFORCE_BY_REFERENCE_VALUE
+ * \brief Assign to all the selected DoFs the same value. This value is stored
+ *        in enforcement_ref_value
+ *
+ */
+
+#define CS_EQUATION_ENFORCE_BY_CELLS            (1 << 0) /* 1 */
+#define CS_EQUATION_ENFORCE_BY_DOFS             (1 << 1) /* 2 */
+#define CS_EQUATION_ENFORCE_BY_REFERENCE_VALUE  (1 << 2) /* 4 */
+
 /*! @} */
 
 /*============================================================================
@@ -404,11 +425,33 @@ typedef struct {
 
   /*!
    * @}
-   * @name Enforcement of values in the computational domain
-   * Assign a values to a selection of degrees of freedom inside the domain
+   * @name Enforcement of values inside the computational domain
+   *
    * This is different from the enforcement of boundary conditions but rely on
    * the same algebraic manipulation.
+   * Two mechanisms are possible.
+   *
+   * 1) CELL SELECTION: defined a selection of cells and then
+   * automatically built the related selection of degrees of freedom and
+   * assigned a value to each selected degrees of freedom
+   *
+   * 2) DOF SELECTION: defined a selection of degrees of freedom (DoFs) and
+   *    assign a values to a selection of degrees of freedom inside the domain
+   *
    * @{
+   *
+   * \var enforcement_type
+   * Flag specifying which kind of enforcement to perform
+   *
+   * \var enforcement_ref_value
+   * Reference value to use. Avod to allocate an array with the same value
+   * for all selected entities
+   *
+   * \var n_enforced_cells
+   * Number of selected cells related to an enforcement
+   *
+   * \var enforced_cell_ids
+   * List of selected cell ids related to an enforcement
    *
    * \var n_enforced_dofs
    * Number of degrees of freedom (DoFs) to enforce
@@ -419,6 +462,13 @@ typedef struct {
    * \var enforced_dof_values
    * List of related values to enforce
    */
+
+  cs_flag_t                   enforcement_type;
+  cs_real_t                  *enforcement_ref_value;
+
+  cs_lnum_t                   n_enforced_cells;
+  cs_lnum_t                  *enforced_cell_ids;
+  cs_real_t                  *enforced_cell_values;
 
   cs_lnum_t                   n_enforced_dofs;
   cs_lnum_t                  *enforced_dof_ids;
@@ -1395,12 +1445,16 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
  *         mesh vertices.
  *         The spatial discretization scheme for the given equation has to be
  *         CDO-Vertex based or CDO-Vertex+Cell-based schemes.
- *         We assume that values are interlaced (if eqp->dim > 1)
+ *
+ *         One assumes that values are interlaced if eqp->dim > 1
+ *         ref_value or elt_values has to be defined. If both parameters are
+ *         defined, one keeps the definition in elt_values
  *
  * \param[in, out] eqp         pointer to a cs_equation_param_t structure
  * \param[in]      n_elts      number of vertices to enforce
  * \param[in]      elt_ids     list of vertices
- * \param[in]      elt_values  list of associated values
+ * \param[in]      ref_value   ignored if NULL
+ * \param[in]      elt_values  list of associated values, ignored if NULL
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1408,7 +1462,32 @@ void
 cs_equation_enforce_vertex_dofs(cs_equation_param_t    *eqp,
                                 cs_lnum_t               n_elts,
                                 const cs_lnum_t         elt_ids[],
+                                const cs_real_t         ref_value[],
                                 const cs_real_t         elt_values[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add an enforcement of the value related to the degrees of freedom
+ *         associated to the list of selected cells.
+ *
+ *         One assumes that values are interlaced if eqp->dim > 1
+ *         ref_value or elt_values has to be defined. If both parameters are
+ *         defined, one keeps the definition in elt_values
+ *
+ * \param[in, out] eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      n_elts      number of selected cells
+ * \param[in]      elt_ids     list of cell ids
+ * \param[in]      ref_value   ignored if NULL
+ * \param[in]      elt_values  list of associated values, ignored if NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_enforce_by_cell_selection(cs_equation_param_t    *eqp,
+                                      cs_lnum_t               n_elts,
+                                      const cs_lnum_t         elt_ids[],
+                                      const cs_real_t         ref_value[],
+                                      const cs_real_t         elt_values[]);
 
 /*----------------------------------------------------------------------------*/
 
