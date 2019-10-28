@@ -194,6 +194,7 @@ _vbv_setup(cs_real_t                      t_eval,
 {
   assert(vtx_bc_flag != NULL);  /* Sanity check */
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
 
   cs_real_t  *dir_values = NULL;
 
@@ -204,7 +205,7 @@ _vbv_setup(cs_real_t                      t_eval,
   cs_equation_compute_dirichlet_vb(t_eval,
                                    mesh,
                                    quant,
-                                   cs_shared_connect,
+                                   connect,
                                    eqp,
                                    eqb->face_bc,
                                    _vbv_cell_builder[0], /* static variable */
@@ -214,20 +215,8 @@ _vbv_setup(cs_real_t                      t_eval,
   *p_dir_values = dir_values;
 
   /* Internal enforcement of DoFs  */
-  if (cs_equation_param_has_internal_enforcement(eqp)) {
-
-    /* By default, not selected */
-    cs_lnum_t  *enforced_ids = NULL;
-    BFT_MALLOC(enforced_ids, quant->n_vertices, cs_lnum_t);
-    for (cs_lnum_t i = 0; i < quant->n_vertices; i++) enforced_ids[i] = -1;
-
-    for (cs_lnum_t i = 0; i < eqp->n_enforced_dofs; i++) {
-      cs_lnum_t  id = eqp->enforced_dof_ids[i];
-      enforced_ids[id] = i;
-    }
-
-    *p_enforced_ids = enforced_ids;
-  }
+  if (cs_equation_param_has_internal_enforcement(eqp))
+    cs_build_enforcement_at_vertices(connect, quant, eqp, p_enforced_ids);
   else
     *p_enforced_ids = NULL;
 

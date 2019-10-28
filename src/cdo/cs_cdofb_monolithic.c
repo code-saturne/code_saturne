@@ -202,6 +202,8 @@ _picard_cvg_test(const cs_navsto_param_t      *nsp,
                                                       mom_eqc->face_values_pre,
                                                       cs_shared_connect->c2f,
                                                       cs_shared_quant->pvol_fc);
+  assert(ns_info->res > -DBL_MIN);
+  ns_info->res = sqrt(ns_info->res);
 
   /* Set the convergence status */
   if (ns_info->res < nsp->residual_tolerance &&
