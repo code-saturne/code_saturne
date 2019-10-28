@@ -515,6 +515,26 @@ cs_cdofb_vecteq_advection_diffusion(double                         time_eval,
 #endif
   }
 
+  if (cs_equation_param_has_reaction(eqp)) {  /* REACTION TERM
+                                               * ============= */
+
+    /* Use a \mathbb{P}_0 reconstruction in the cell
+     *
+     * Update the local system with reaction term. Only the block attached to
+     * the current cell is involved */
+    cs_sdm_t  *bcc = cs_sdm_get_block(csys->mat, cm->n_fc, cm->n_fc);
+
+    const double  r_val = cb->rpty_val * cm->vol_c;
+    bcc->val[0] += r_val;
+    bcc->val[4] += r_val;
+    bcc->val[8] += r_val;
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 1
+    if (cs_dbg_cw_test(eqp, cm, csys))
+      cs_cell_sys_dump(">> Local system after reaction", csys);
+#endif
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1590,6 +1610,26 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
                 __func__);
 
     } /* Switch on the formulation */
+
+  }
+
+  /* Reaction */
+  if (cs_equation_param_has_reaction(eqp)) {
+
+    if (eqp->reaction_hodge.algo != CS_PARAM_HODGE_ALGO_VORONOI)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Eq. %s: Invalid type of discretization for the reaction"
+                " term\n", __func__, eqp->name);
+
+    /* If necessary, enrich the mesh flag to account for a property defined
+     * by an analytical expression. In this case, one evaluates the definition
+     * as the mean value over the cell */
+    for (short int ir = 0; ir < eqp->n_reaction_terms; ir++) {
+      const cs_xdef_t *rea_def = eqp->reaction_properties[ir]->defs[0];
+      if (rea_def->type == CS_XDEF_BY_ANALYTIC_FUNCTION)
+        eqb->msh_flag |= cs_quadrature_get_flag(rea_def->qtype,
+                                                cs_flag_primal_cell);
+    } /* Loop on definitions of reaction terms */
 
   }
 
