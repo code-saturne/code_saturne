@@ -987,8 +987,9 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
       const cs_xdef_t *rea_def = eqp->reaction_properties[ir]->defs[0];
       if (rea_def->type == CS_XDEF_BY_ANALYTIC_FUNCTION)
         eqb->msh_flag |= cs_quadrature_get_flag(rea_def->qtype,
-                                                cs_flag_primal_face);
-    } /* Loop on ir */
+                                                cs_flag_primal_cell);
+    } /* Loop on definitions of reaction terms */
+
   }
 
   /* Time */
