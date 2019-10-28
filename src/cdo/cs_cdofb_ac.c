@@ -827,8 +827,7 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 
       /* 2- VELOCITY (VECTORIAL) EQUATION */
       /* ================================ */
-      cs_cdofb_vecteq_advection_diffusion(time_eval, mom_eqp, mom_eqc, cm,
-                                          csys, cb);
+      cs_cdofb_vecteq_conv_diff_reac(time_eval, mom_eqp, mom_eqc, cm, csys, cb);
 
       /* Update the property */
       if ( !(sc->is_zeta_uniform) )
@@ -840,8 +839,8 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump(">> Local system after diffusion and grad-div (lhs)",
-                         csys);
+        cs_cell_sys_dump(">> Local system after conv/diff/reac and grad-div"
+                         " terms", csys);
 #endif
 
       /* 3- SOURCE TERM COMPUTATION (for the momentum equation) */
@@ -1155,8 +1154,7 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
 
       /* 2- VELOCITY (VECTORIAL) EQUATION */
       /* ================================ */
-      cs_cdofb_vecteq_advection_diffusion(time_eval, mom_eqp, mom_eqc, cm,
-                                          csys, cb);
+      cs_cdofb_vecteq_conv_diff_reac(time_eval, mom_eqp, mom_eqc, cm, csys, cb);
 
       /* Update the property */
       if ( !(sc->is_zeta_uniform) )
@@ -1168,8 +1166,8 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump(">> Local system after diffusion and grad-div (lhs)",
-                         csys);
+        cs_cell_sys_dump(">> Local system after conv/diff/reac and grad-div"
+                         " terms", csys);
 #endif
 
       /* 3- SOURCE TERM COMPUTATION (for the momentum equation) */

@@ -429,8 +429,8 @@ cs_cdofb_vecteq_diffusion(double                         time_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build the local matrices arising from the diffusion, advection,
- *          reaction terms in CDO-Fb schemes.
+ * \brief   Build the local matrices arising from the convection, diffusion,
+ *          reaction terms in vector-valued CDO-Fb schemes.
  *
  * \param[in]      time_eval   time at which analytic function are evaluated
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
@@ -442,12 +442,12 @@ cs_cdofb_vecteq_diffusion(double                         time_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_vecteq_advection_diffusion(double                         time_eval,
-                                    const cs_equation_param_t     *eqp,
-                                    const cs_cdofb_vecteq_t       *eqc,
-                                    const cs_cell_mesh_t          *cm,
-                                    cs_cell_sys_t                 *csys,
-                                    cs_cell_builder_t             *cb)
+cs_cdofb_vecteq_conv_diff_reac(double                         time_eval,
+                               const cs_equation_param_t     *eqp,
+                               const cs_cdofb_vecteq_t       *eqc,
+                               const cs_cell_mesh_t          *cm,
+                               cs_cell_sys_t                 *csys,
+                               cs_cell_builder_t             *cb)
 {
   CS_UNUSED(time_eval);
 

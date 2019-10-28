@@ -932,12 +932,12 @@ _steady_build(const cs_navsto_param_t      *nsp,
       /* 2- VELOCITY (VECTORIAL) EQUATION */
       /* ================================ */
 
-      cs_cdofb_vecteq_advection_diffusion(t_eval, mom_eqp, mom_eqc, cm,
-                                          csys, cb);
+      cs_cdofb_vecteq_conv_diff_reac(t_eval, mom_eqp, mom_eqc, cm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump("\n>> Local system after convection/diffusion", csys);
+        cs_cell_sys_dump("\n>> Local system after advection/diffusion/reaction",
+                         csys);
 #endif
 
       /* 3- SOURCE TERM COMPUTATION (for the momentum equation) */
@@ -1128,12 +1128,12 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
       /* 2- VELOCITY (VECTORIAL) EQUATION */
       /* ================================ */
 
-      cs_cdofb_vecteq_advection_diffusion(t_eval, mom_eqp, mom_eqc, cm,
-                                          csys, cb);
+      cs_cdofb_vecteq_conv_diff_reac(t_eval, mom_eqp, mom_eqc, cm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump("\n>> Local system after convection/diffusion", csys);
+        cs_cell_sys_dump("\n>> Local system after advection/diffusion/reaction",
+                         csys);
 #endif
 
       /* 3- SOURCE TERM COMPUTATION (for the momentum equation) */
@@ -1353,12 +1353,12 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
       /* 2- VELOCITY (VECTORIAL) EQUATION */
       /* ================================ */
 
-      cs_cdofb_vecteq_advection_diffusion(t_eval, mom_eqp, mom_eqc, cm,
-                                          csys, cb);
+      cs_cdofb_vecteq_conv_diff_reac(t_eval, mom_eqp, mom_eqc, cm, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
-        cs_cell_sys_dump("\n>> Local system after convection/diffusion", csys);
+        cs_cell_sys_dump("\n>> Local system after advection/diffusion/reaction",
+                         csys);
 #endif
 
       /* 3- SOURCE TERM COMPUTATION (for the momentum equation) */
