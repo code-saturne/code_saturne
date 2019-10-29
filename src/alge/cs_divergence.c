@@ -469,13 +469,14 @@ cs_mass_flux(const cs_mesh_t          *m,
 
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
-    snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
+    snprintf(var_name, 63, "%s", f->name);
   }
   else {
-    strcpy(var_name, "[momentum]"); var_name[31] = '\0';
+    strncpy(var_name, "[momentum]", 63);
   }
+  var_name[63] = '\0';
 
-  /* ---> Momentum computation */
+  /* Momentum computation */
 
   if (init == 1) {
 #   pragma omp parallel for
@@ -1004,11 +1005,12 @@ cs_tensor_face_flux(const cs_mesh_t          *m,
 
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
-    snprintf(var_name, 31, "%s", f->name); var_name[31] = '\0';
+    snprintf(var_name, 63, "%s", f->name);
   }
   else {
-    strcpy(var_name, "[tensor face flux]"); var_name[31] = '\0';
+    strncpy(var_name, "[tensor face flux]", 63);
   }
+  var_name[63] = '\0';
 
   /* ---> Momentum computation */
 

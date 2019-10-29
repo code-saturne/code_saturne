@@ -1841,15 +1841,15 @@ cs_convection_diffusion_scalar(int                       idtvar,
     if (df_limiter_id > -1)
       df_limiter = cs_field_by_id(df_limiter_id)->val;
 
-    snprintf(var_name, 31, "%s", f->name);
+    snprintf(var_name, 63, "%s", f->name);
   }
   else if (isstpp > 1) {
     bft_error(__FILE__, __LINE__, 0,
               _("invalid value of isstpp for a work array"));
   } else {
-    strcpy(var_name, "[scalar convection-diffusion]");
+    strncpy(var_name, "[scalar convection-diffusion]", 63);
   }
-  var_name[31] = '\0';
+  var_name[63] = '\0';
 
   if (iwarnp >= 2) {
     if (ischcp == 1) {
@@ -3184,15 +3184,15 @@ cs_face_convection_scalar(int                       idtvar,
     if (df_limiter_id > -1)
       df_limiter = cs_field_by_id(df_limiter_id)->val;
 
-    snprintf(var_name, 31, "%s", f->name);
+    snprintf(var_name, 63, "%s", f->name);
   }
   else if (isstpp > 1) {
     bft_error(__FILE__, __LINE__, 0,
               _("invalid value of isstpp for a work array"));
   } else {
-    strcpy(var_name, "[scalar face flux from convection]");
+    strncpy(var_name, "[scalar face flux from convection]", 63);
   }
-  var_name[31] = '\0';
+  var_name[63] = '\0';
 
   if (iwarnp >= 2) {
     if (ischcp == 1) {
@@ -4242,11 +4242,11 @@ cs_convection_diffusion_vector(int                         idtvar,
     if (df_limiter_id > -1)
       df_limiter = cs_field_by_id(df_limiter_id)->val;
 
-    snprintf(var_name, 31, "%s", f->name);
+    snprintf(var_name, 63, "%s", f->name);
   }
   else
-    strcpy(var_name, "[convection-diffusion, vector]");
-  var_name[31] = '\0';
+    strncpy(var_name, "[convection-diffusion, vector]", 63);
+  var_name[63] = '\0';
 
   /* Discontinuous porous treatment */
   if (cs_glob_porous_model == 3 && f == CS_F_(vel)) {
@@ -5903,11 +5903,11 @@ cs_convection_diffusion_tensor(int                         idtvar,
       df_limiter = cs_field_by_id(df_limiter_id)->val;
 
     cs_gradient_perio_init_rij_tensor(&tr_dim, grad);
-    snprintf(var_name, 31, "%s", f->name);
+    snprintf(var_name, 63, "%s", f->name);
   }
   else
-    strcpy(var_name, "[convection-diffusion, tensor]");
-  var_name[31] = '\0';
+    strncpy(var_name, "[convection-diffusion, tensor]", 63);
+  var_name[63] = '\0';
 
   if (iwarnp >= 2 && iconvp == 1) {
     if (ischcp == 1) {
@@ -6905,11 +6905,11 @@ cs_convection_diffusion_thermal(int                       idtvar,
     if (df_limiter_id > -1)
       df_limiter = cs_field_by_id(df_limiter_id)->val;
 
-    snprintf(var_name, 31, "%s", f->name);
+    snprintf(var_name, 63, "%s", f->name);
   }
   else
-    strcpy(var_name, "[convection-diffusion, thermal]");
-  var_name[31] = '\0';
+    strncpy(var_name, "[convection-diffusion, thermal]", 63);
+  var_name[63] = '\0';
 
   if (iwarnp >= 2) {
     if (ischcp == 1) {
@@ -8083,11 +8083,11 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
     if (df_limiter_id > -1)
       df_limiter = cs_field_by_id(df_limiter_id)->val;
 
-    snprintf(var_name, 31, "%s", f->name);
+    snprintf(var_name, 63, "%s", f->name);
   }
   else
-    strcpy(var_name, "[anisotropic diffusion, scalar]");
-  var_name[31] = '\0';
+    strncpy(var_name, "[anisotropic diffusion, scalar]", 63);
+  var_name[63] = '\0';
 
   /* Porosity fields */
   cs_field_t *fporo = cs_field_by_name_try("porosity");
@@ -8833,11 +8833,11 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
     if (df_limiter_id > -1)
       df_limiter = cs_field_by_id(df_limiter_id)->val;
 
-    snprintf(var_name, 31, "%s", f->name);
+    snprintf(var_name, 63, "%s", f->name);
   }
   else
-    strcpy(var_name, "[anisotropic left diffusion, vector]");
-  var_name[31] = '\0';
+    strncpy(var_name, "[anisotropic left diffusion, vector]", 63);
+  var_name[63] = '\0';
 
   if (icoupl > 0) {
     assert(f_id != -1);
@@ -9384,11 +9384,11 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
     if (df_limiter_id > -1)
       df_limiter = cs_field_by_id(df_limiter_id)->val;
 
-    snprintf(var_name, 31, "%s", f->name);
+    snprintf(var_name, 63, "%s", f->name);
   }
   else
-    strcpy(var_name, "[anisotropic right diffusion, vector]");
-  var_name[31] = '\0';
+    strncpy(var_name, "[anisotropic right diffusion, vector]", 63);
+  var_name[63] = '\0';
 
   viscce = viscel;
 
@@ -10090,11 +10090,11 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
     if (df_limiter_id > -1)
       df_limiter = cs_field_by_id(df_limiter_id)->val;
 
-    snprintf(var_name, 31, "%s", f->name);
+    snprintf(var_name, 63, "%s", f->name);
   }
   else
-    strcpy(var_name, "[anisotropic diffusion, tensor]");
-  var_name[31] = '\0';
+    strncpy(var_name, "[anisotropic diffusion, tensor]", 63);
+  var_name[63] = '\0';
 
   /* Porosity fields */
   cs_field_t *fporo = cs_field_by_name_try("porosity");
@@ -10699,11 +10699,11 @@ cs_face_diffusion_potential(const int                 f_id,
 
   if (f_id > -1) {
     f = cs_field_by_id(f_id);
-    snprintf(var_name, 31, "%s", f->name);
+    snprintf(var_name, 63, "%s", f->name);
   }
   else
-    strcpy(var_name, "[face mass flux update]");
-  var_name[31] = '\0';
+    strncpy(var_name, "[face mass flux update]", 63);
+  var_name[63] = '\0';
 
   /* Handle parallelism and periodicity */
 
@@ -11066,11 +11066,11 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
     if (df_limiter_id > -1)
       df_limiter = cs_field_by_id(df_limiter_id)->val;
 
-    snprintf(var_name, 31, "%s", f->name);
+    snprintf(var_name, 63, "%s", f->name);
   }
   else
-    strcpy(var_name, "[face mass flux update]");
-  var_name[31] = '\0';
+    strncpy(var_name, "[face mass flux update]", 63);
+  var_name[63] = '\0';
 
   /* Porosity fields */
   cs_field_t *fporo = cs_field_by_name_try("porosity");
@@ -11539,11 +11539,11 @@ cs_diffusion_potential(const int                 f_id,
                              &halo_type);
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
-    snprintf(var_name, 31, "%s", f->name);
+    snprintf(var_name, 63, "%s", f->name);
   }
   else
-    strcpy(var_name, "[cell mass flux divergence update]");
-  var_name[31] = '\0';
+    strncpy(var_name, "[cell mass flux divergence update]", 63);
+  var_name[63] = '\0';
 
   /* Handle parallelism and periodicity */
 
@@ -11935,11 +11935,11 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
       df_limiter = cs_field_by_id(df_limiter_id)->val;
 
 
-    snprintf(var_name, 31, "%s", f->name);
+    snprintf(var_name, 63, "%s", f->name);
   }
   else
-    strcpy(var_name, "[cell mass flux divergence update]");
-  var_name[31] = '\0';
+    strncpy(var_name, "[cell mass flux divergence update]", 63);
+  var_name[63] = '\0';
 
   /* Porosity fields */
   cs_field_t *fporo = cs_field_by_name_try("porosity");
