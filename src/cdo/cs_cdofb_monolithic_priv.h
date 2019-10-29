@@ -162,7 +162,8 @@ typedef int
 
 /*! \struct cs_cdofb_monolithic_t
  *  \brief Context related to CDO face-based discretization when dealing with
- *         vector-valued unknowns
+ *         Navier-Stokes equations and vector-valued face unknowns.
+ *         Case of a monolithic approach (i.e fully coupled)
  */
 
 struct _cdofb_monolithic_t {
