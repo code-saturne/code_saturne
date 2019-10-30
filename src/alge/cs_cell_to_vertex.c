@@ -547,6 +547,13 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
                                   CS_REAL_TYPE,
                                   ignore_r_tr,
                                   v_var);
+
+        if (! _set[CS_CELL_TO_VERTEX_UNWEIGHTED])
+          _cell_to_vertex_w_unweighted(ignore_r_tr);
+
+        const cs_weight_t *w = _weights[CS_CELL_TO_VERTEX_UNWEIGHTED][0];
+        for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
+          v_var[v_id] *= w[v_id];
       }
       else {
         cs_real_t *v_w;
@@ -579,6 +586,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
                                   ignore_r_tr,
                                   v_w);
         }
+
         for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
           v_var[v_id] /= v_w[v_id];
 
@@ -796,15 +804,6 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
   default:
     break;
   }
-
-  if (method == CS_CELL_TO_VERTEX_UNWEIGHTED) {
-    if (! _set[CS_CELL_TO_VERTEX_UNWEIGHTED])
-      _cell_to_vertex_w_unweighted(ignore_r_tr);
-
-    const cs_weight_t *w = _weights[CS_CELL_TO_VERTEX_UNWEIGHTED][0];
-    for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
-      v_var[v_id] *= w[v_id];
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -877,6 +876,15 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
                                   CS_REAL_TYPE,
                                   ignore_r_tr,
                                   v_var);
+
+        if (! _set[CS_CELL_TO_VERTEX_UNWEIGHTED])
+          _cell_to_vertex_w_unweighted(ignore_r_tr);
+
+        const cs_weight_t *w = _weights[CS_CELL_TO_VERTEX_UNWEIGHTED][0];
+        for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
+          for (cs_lnum_t k = 0; k < var_dim; k++)
+            v_var[v_id*var_dim + k] *= w[v_id];
+        }
       }
       else {
         cs_real_t *v_w;
@@ -904,7 +912,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
                                   v_var);
           cs_interface_set_sum_tr(m->vtx_interfaces,
                                   n_vertices,
-                                  var_dim,
+                                  1,
                                   true,
                                   CS_REAL_TYPE,
                                   ignore_r_tr,
@@ -1034,7 +1042,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
         if (m->vtx_interfaces != NULL)
           cs_interface_set_sum_tr(m->vtx_interfaces,
                                   n_vertices,
-                                  var_dim,
+                                  1,
                                   true,
                                   CS_REAL_TYPE,
                                   ignore_r_tr,
@@ -1146,17 +1154,6 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
     break;
   default:
     break;
-  }
-
-  if (method == CS_CELL_TO_VERTEX_UNWEIGHTED) {
-    if (! _set[CS_CELL_TO_VERTEX_UNWEIGHTED])
-      _cell_to_vertex_w_unweighted(ignore_r_tr);
-
-    const cs_weight_t *w = _weights[CS_CELL_TO_VERTEX_UNWEIGHTED][0];
-    for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
-      for (cs_lnum_t k = 0; k < var_dim; k++)
-        v_var[v_id*var_dim + k] *= w[v_id];
-    }
   }
 }
 
