@@ -155,6 +155,8 @@ class base_domain:
         # Error reporting
         self.error = ''
 
+        self.error_long = ''
+
     #---------------------------------------------------------------------------
 
     def set_case_dir(self, case_dir, staging_dir = None):
@@ -659,6 +661,14 @@ class domain(base_domain):
 
             if self.mci != None:
                 mci_state = self.mci.save_all_functions()
+                if mci_state['state'] == -1:
+                    self.error = 'compile or link'
+                    self.error_long = ' missing mathematical expressions:\n\n'
+                    for i, eme in enumerate(mci_state['exps']):
+                        self.error_long += " (%d/%d) %s is not provided for %s for zone %s\n" % (i+1, mci_state['nexps'], eme['func'], eme['var'], eme['zone'])
+
+                    return
+
 
             log_name = os.path.join(self.exec_dir, 'compile.log')
             log = open(log_name, 'w')

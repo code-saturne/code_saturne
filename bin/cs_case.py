@@ -305,6 +305,7 @@ class case:
 
         # Error reporting
         self.error = ''
+        self.error_long = ''
 
     #---------------------------------------------------------------------------
 
@@ -1586,6 +1587,8 @@ $appli/salome kill `cat $port_log`
                 d.compile_and_link()
                 if len(d.error) > 0:
                     self.error = d.error
+                    if len(d.error_long) > 0:
+                        self.error_long = d.error_long
 
         if len(self.error) > 0:
             self.update_scripts_tmp('preparing', 'failed', self.error)
@@ -1627,6 +1630,8 @@ $appli/salome kill `cat $port_log`
 
         if len(self.error) > 0:
             err_str = ' Error in ' + self.error + ' stage.\n\n'
+            if len(self.error_long) > 0:
+                err_str += self.error_long + '\n\n'
             sys.stderr.write(err_str)
             return 1
         else:
@@ -2064,6 +2069,8 @@ $appli/salome kill `cat $port_log`
             else:
                 error_stage = self.error
             err_str = ' Error in ' + error_stage + ' stage.\n\n'
+            if len(self.error_long) > 0:
+                err_str += self.error_long + '\n\n'
             sys.stderr.write(err_str)
             return 1
         else:

@@ -1122,7 +1122,9 @@ class MainView(object):
         self.updateTitleBar()
         self.case.xmlSaveDocument()
         self.batchFileSave()
-        self.saveUserFormulaInC()
+        meg_state = self.saveUserFormulaInC()
+        if meg_state == -1:
+            return
 
         # force to blank after save
         self.case['saved'] = 'yes'
@@ -1382,9 +1384,23 @@ class MainView(object):
         """
         Save user defined laws with MEI to C functions
         """
+        state = 0
         if self.case['run_type'] == 'standard':
             mci = mei_to_c_interpreter(self.case)
-            state = mci.save_all_functions()
+
+            mci_state = mci.save_all_functions()
+
+            state = mci_state['state']
+
+            if state == -1:
+                msg = ''
+                title = self.tr("Save error")
+                msg = "Expressions are missing !\n"
+                for i, d in enumerate(mci_state['exps']):
+                    msg += "(%d) %s %s is not provided or zone %s\n" % (i+1, d['var'], d['func'], d['zone'])
+                QMessageBox.critical(self, title, msg)
+                msg = self.tr("Saving aborted")
+                self.statusbar.showMessage(msg, 2000)
 
             if state == 1:
                 title = self.tr("Warning!")
@@ -1398,10 +1414,9 @@ class MainView(object):
                 msg = self.tr("Saving was done within a RESU folder and not in CASE.")
                 self.statusbar.showMessage(msg, 2000)
                 self.updateTitleBar()
-                return
 
-            else:
-                return
+
+        return state
 
 
 
