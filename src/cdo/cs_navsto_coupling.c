@@ -110,9 +110,6 @@ void *
 cs_navsto_uzawa_create_context(cs_navsto_param_t    *nsp,
                                cs_param_bc_type_t    bc)
 {
-  assert(nsp != NULL);
-  CS_UNUSED(nsp); /* Avoid a warning when compiling */
-
   cs_navsto_uzawa_t  *nsc = NULL;
 
   BFT_MALLOC(nsc, 1, cs_navsto_uzawa_t);
@@ -134,7 +131,11 @@ cs_navsto_uzawa_create_context(cs_navsto_param_t    *nsp,
 
     /* Solver settings */
     cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
+
+    if (nsp->model &  CS_NAVSTO_MODEL_STOKES)
+      cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
+    else
+      cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
   }
 
   nsc->energy = NULL;   /* Not used up to now */
@@ -197,9 +198,6 @@ cs_navsto_uzawa_init_setup(const cs_navsto_param_t    *nsp,
   /* Link the time property to the momentum equation */
   if (!cs_navsto_param_is_steady(nsp))
     cs_equation_add_time(mom_eqp, nsp->density);
-
-  if (nsp->model &  CS_NAVSTO_MODEL_STOKES)
-    cs_equation_set_param(mom_eqp, CS_EQKEY_ITSOL, "cg");
 
   /* Add advection term: It's in the cs_navsto_system_t structure, but it cannot
    * be seen from here */
@@ -302,9 +300,6 @@ void *
 cs_navsto_ac_create_context(cs_navsto_param_t    *nsp,
                             cs_param_bc_type_t    bc)
 {
-  assert(nsp != NULL);
-  CS_UNUSED(nsp); /* Avoid warning when compiling */
-
   cs_navsto_ac_t  *nsc = NULL;
 
   BFT_MALLOC(nsc, 1, cs_navsto_ac_t);
@@ -324,7 +319,11 @@ cs_navsto_ac_create_context(cs_navsto_param_t    *nsp,
     cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
 
     cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
+    if (nsp->model &  CS_NAVSTO_MODEL_STOKES)
+      cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
+    else
+      cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
+
   }
 
   /* Additional property */
@@ -387,9 +386,6 @@ cs_navsto_ac_init_setup(const cs_navsto_param_t    *nsp,
   /* Link the time property to the momentum equation */
   if (!cs_navsto_param_is_steady(nsp))
     cs_equation_add_time(mom_eqp, nsp->density);
-
-  if (nsp->model &  CS_NAVSTO_MODEL_STOKES)
-    cs_equation_set_param(mom_eqp, CS_EQKEY_ITSOL, "cg");
 
   /* Add advection term: It's in the cs_navsto_system_t structure, but it cannot
    * be seen from here */
@@ -485,9 +481,6 @@ void *
 cs_navsto_ac_vpp_create_context(cs_navsto_param_t    *nsp,
                                 cs_param_bc_type_t    bc)
 {
-  assert(nsp != NULL);
-  CS_UNUSED(nsp); /* Avoid warning when compiling */
-
   cs_navsto_ac_vpp_t  *nsc = NULL;
 
   BFT_MALLOC(nsc, 1, cs_navsto_ac_vpp_t);
@@ -507,7 +500,10 @@ cs_navsto_ac_vpp_create_context(cs_navsto_param_t    *nsp,
     cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
 
     cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
+    if (nsp->model &  CS_NAVSTO_MODEL_STOKES)
+      cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
+    else
+      cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
   }
 
   /* The grad-div equation is usually always with homogeneous Dirichlet */
@@ -526,7 +522,10 @@ cs_navsto_ac_vpp_create_context(cs_navsto_param_t    *nsp,
     cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
 
     cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
+    if (nsp->model &  CS_NAVSTO_MODEL_STOKES)
+      cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
+    else
+      cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
   }
 
   nsc->zeta = cs_property_add("graddiv_coef", CS_PROPERTY_ISO);
@@ -594,9 +593,6 @@ cs_navsto_ac_vpp_init_setup(const cs_navsto_param_t    *nsp,
     cs_equation_add_time(mom_eqp, nsp->density);
     cs_equation_add_time(gd_eqp, nsp->density);
   }
-
-  if (nsp->model &  CS_NAVSTO_MODEL_STOKES)
-    cs_equation_set_param(mom_eqp, CS_EQKEY_ITSOL, "cg");
 
   /* Add advection term: It's in the cs_navsto_system_t structure, but it cannot
    * be seen from here */
@@ -698,9 +694,6 @@ void *
 cs_navsto_monolithic_create_context(cs_navsto_param_t    *nsp,
                                     cs_param_bc_type_t    bc)
 {
-  assert(nsp != NULL);
-  CS_UNUSED(nsp); /* Avoid a warning when compiling */
-
   cs_navsto_monolithic_t  *nsc = NULL;
 
   BFT_MALLOC(nsc, 1, cs_navsto_monolithic_t);
@@ -721,8 +714,15 @@ cs_navsto_monolithic_create_context(cs_navsto_param_t    *nsp,
     cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
 
     /* Solver settings */
-    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "none");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "gmres");
+    if (nsp->model &  CS_NAVSTO_MODEL_STOKES) {
+      cs_navsto_param_set(nsp, CS_NSKEY_SLES_STRATEGY, "gkb_saturne");
+      cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
+    }
+    else {
+      cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "none");
+      cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "gmres");
+    }
+
   }
 
   return nsc;
@@ -780,9 +780,6 @@ cs_navsto_monolithic_init_setup(const cs_navsto_param_t    *nsp,
   /* Link the time property to the momentum equation */
   if (!cs_navsto_param_is_steady(nsp))
     cs_equation_add_time(mom_eqp, nsp->density);
-
-  if (nsp->model &  CS_NAVSTO_MODEL_STOKES)
-    cs_equation_set_param(mom_eqp, CS_EQKEY_ITSOL, "cg");
 
   /* Add advection term: It's in the cs_navsto_system_t structure, but it cannot
    * be seen from here */
@@ -874,9 +871,6 @@ void *
 cs_navsto_projection_create_context(cs_navsto_param_t    *nsp,
                                     cs_param_bc_type_t    bc)
 {
-  assert(nsp != NULL);
-  CS_UNUSED(nsp); /* Avoid warning when compiling */
-
   cs_navsto_projection_t  *nsc = NULL;
 
   BFT_MALLOC(nsc, 1, cs_navsto_projection_t);
@@ -897,7 +891,10 @@ cs_navsto_projection_create_context(cs_navsto_param_t    *nsp,
 
     /* Solver settings */
     cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "jacobi");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
+    if (nsp->model & CS_NAVSTO_MODEL_STOKES)
+      cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
+    else
+      cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "bicg");
   }
 
   /* The default boundary condition on the pressure field is always a
