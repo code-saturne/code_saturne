@@ -1160,13 +1160,15 @@ cs_navsto_system_compute(const cs_mesh_t         *mesh,
  * \param[in]  mesh      pointer to a cs_mesh_t structure
  * \param[in]  connect   pointer to a cs_cdo_connect_t structure
  * \param[in]  cdoq      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts        pointer to a cs\time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_navsto_system_extra_op(const cs_mesh_t             *mesh,
                           const cs_cdo_connect_t      *connect,
-                          const cs_cdo_quantities_t   *cdoq)
+                          const cs_cdo_quantities_t   *cdoq,
+                          const cs_time_step_t        *ts)
 {
   cs_navsto_system_t  *navsto = cs_navsto_system;
 
@@ -1182,7 +1184,7 @@ cs_navsto_system_extra_op(const cs_mesh_t             *mesh,
       cs_real_t  *u_face = cs_equation_get_face_values(eq);
       cs_real_t  *u_cell = navsto->velocity->val;
 
-      cs_cdofb_navsto_extra_op(nsp, mesh, cdoq, connect,
+      cs_cdofb_navsto_extra_op(nsp, mesh, cdoq, connect, ts,
                                navsto->adv_field,
                                u_cell, u_face);
     }

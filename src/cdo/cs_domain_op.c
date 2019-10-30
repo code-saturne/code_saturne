@@ -493,7 +493,8 @@ cs_domain_post(cs_domain_t  *domain)
     if (cs_navsto_system_is_activated())
       cs_navsto_system_extra_op(domain->mesh,
                                 domain->connect,
-                                domain->cdo_quantities);
+                                domain->cdo_quantities,
+                                domain->time_step);
 
     /* Basic statistic related to variables */
     if (domain->cdo_context->mode == CS_DOMAIN_CDO_MODE_ONLY)
