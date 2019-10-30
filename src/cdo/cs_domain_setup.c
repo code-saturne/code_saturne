@@ -679,7 +679,9 @@ cs_domain_finalize_setup(cs_domain_t         *domain)
     cs_walldistance_finalize_setup(domain->connect, domain->cdo_quantities);
 
   if (cs_thermal_system_is_activated())
-    cs_thermal_system_finalize_setup(domain->connect, domain->cdo_quantities);
+    cs_thermal_system_finalize_setup(domain->connect,
+                                     domain->cdo_quantities,
+                                     domain->time_step);
 
   if (cs_gwf_is_activated())
     cs_gwf_finalize_setup(domain->connect, domain->cdo_quantities);

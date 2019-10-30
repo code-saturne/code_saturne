@@ -52,6 +52,21 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/*! \struct cs_source_term_boussinesq_t
+ *  \brief Structure storing the parameters related to the Boussinesq source
+ *         term
+ */
+
+typedef struct {
+
+  cs_real_t    g[3];      /* gravity vector */
+  cs_real_t    rho0;      /* reference value for the mass density */
+  cs_real_t    beta;      /* dilatation coefficient */
+  cs_real_t    var0;      /* reference value of the variable */
+  cs_real_t   *var;       /* array of values of the variable */
+
+} cs_source_term_boussinesq_t;
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the contribution for a cell related to a source term and

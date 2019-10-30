@@ -35,6 +35,7 @@
 #include "cs_param.h"
 #include "cs_property.h"
 #include "cs_mesh.h"
+#include "cs_source_term.h"
 #include "cs_time_step.h"
 #include "cs_xdef.h"
 
@@ -43,10 +44,18 @@
 BEGIN_C_DECLS
 
 /*!
-  \file cs_thermal_system.h
-
-  \brief  Routines to handle the cs_thermal_system_t structure
-*/
+ *  \file cs_thermal_system.h
+ *
+ *  \brief  Routines to handle the cs_thermal_system_t structure.
+ *  The temperature field is automatically defined when this module
+ *  is activated.
+ *
+ *  Moreover, one considers according to the modelling
+ *  rho    the volumetric mass (mass density)
+ *  Cp     the heat capacity
+ *  lambda the heat conductivity
+ *  kappa  the thermal diffusivity (= lambda/(rho.Cp))
+ */
 
 /*============================================================================
  * Macro definitions
@@ -55,62 +64,11 @@ BEGIN_C_DECLS
 /* Generic name given to fields and equations related to this module */
 
 #define CS_THERMAL_EQNAME           "thermal_equation"
-
 #define CS_THERMAL_CP_NAME          "thermal_capacity"
 #define CS_THERMAL_LAMBDA_NAME      "thermal_conductivity"
 #define CS_THERMAL_DIFF_NAME        "thermal_diffusivity"
 
 /*!
- * @name Flags specifying the modelling for the thermal module
- * @{
- *
- * The temperature field is automatically defined when this module
- * is activated.
- *
- * Moreover, one considers
- * rho    the volumetric mass (mass density)
- * Cp     the heat capacity
- * lambda the heat conductivity
- *
- * \def CS_THERMAL_MODEL_STEADY
- * \brief Disable the unsteady term of the thermal equation
- *
- * \def CS_THERMAL_MODEL_WITH_ENTHALPY
- * \brief The thermal equation solved using the enthalpy variable
- *       instead of the temperature (the default choice)
- *
- * \def CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY
- * \brief The thermal equation solved using an anisotropic conductivity
- *        instead of an isotropic one (the default choice)
- */
-
-#define CS_THERMAL_MODEL_STEADY                      (1 << 0) /* 1 */
-#define CS_THERMAL_MODEL_WITH_ENTHALPY               (1 << 1) /* 2 */
-#define CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY    (1 << 2) /* 4 */
-
-/*!
- * @}
- * @name Flags specifying the numerics for the thermal module
- * @{
- *
- * \def CS_THERMAL_CDOVB
- * \brief Use a CDO vertex-based strategy to solve the thermal module. If
- *        nothing is set, this is the default.
- *
- * \def CS_THERMAL_CDOVCB
- * \brief Use a CDO vertex+cell-based strategy to solve the thermal module
- *
- * \def CS_THERMAL_CDOFB
- * \brief Use a CDO face-based strategy to solve the thermal module
- *
- */
-
-#define CS_THERMAL_CDOVB                    (1 << 0) /* 1 */
-#define CS_THERMAL_CDOVCB                   (1 << 1) /* 2 */
-#define CS_THERMAL_CDOFB                    (1 << 2) /* 4 */
-
-/*!
- * @}
  * @name Flags specifying automatic post-processing for the thermal module
  * @{
  *
@@ -123,10 +81,6 @@ BEGIN_C_DECLS
 
 #define CS_THERMAL_POST_ENTHALPY               (1 << 0) /* 1 */
 
-/*
- * TODO: Kelvin or Celsius
- */
-
 /*!
  * @}
  */
@@ -136,6 +90,67 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 typedef struct _thermal_system_t  cs_thermal_system_t;
+
+typedef cs_flag_t  cs_thermal_model_type_t;
+
+/*! \enum cs_thermal_model_type_bit_t
+ *  \brief Bit values for physical modelling related to thermal system
+ *
+ * \def CS_THERMAL_MODEL_STEADY
+ * \brief Disable the unsteady term of the thermal equation
+ *
+ * \def CS_THERMAL_MODEL_NAVSTO_VELOCITY
+ * \brief Add an advection term arising from the velocity field solution
+ *        of the Navier-Stokes equations
+ *
+ * \def CS_THERMAL_MODEL_WITH_ENTHALPY
+ * \brief The thermal equation solved using the enthalpy variable
+ *        instead of the temperature (the default choice)
+ *
+ * \def CS_THERMAL_MODEL_WITH_TOTAL_ENERGY
+ * \brief The thermal equation solved using the total energy variable
+ *        instead of the temperature (the default choice)
+ *
+ * \def CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY
+ * \brief The thermal equation solved using an anisotropic conductivity
+ *        instead of an isotropic one (the default choice)
+ *
+ * \def CS_THERMAL_MODEL_WITH_THERMAL_DIFFUSIVITY
+ * \brief The heat equation considered writes in this case as follows:
+ *
+ *        \partial_t T + div(velocity.T) - div( lamda/(rho.Cp) T) = s/(rho.Cp)
+ *
+ * the thermal diffusivity is lambda/(rho.Cp). One assumes in this case that
+ * Cp and rho are constants while lambda may be variable. According to the
+ * modelling, the advection or the unsteady term may be dropped.
+ * This formulation is typically used with a Boussinesq approximation for the
+ * Navier-Stokes equations.
+ *
+ */
+
+typedef enum {
+
+  CS_THERMAL_MODEL_STEADY                     = 1<<0,  /* =  1 */
+  CS_THERMAL_MODEL_NAVSTO_VELOCITY            = 1<<1,  /* =  2 */
+
+  /* Main variable to consider (by default the temperature in Kelvin)
+     ------------- */
+
+  CS_THERMAL_MODEL_WITH_ENTHALPY              = 1<<2,  /* =  4 */
+  CS_THERMAL_MODEL_WITH_TOTAL_ENERGY          = 1<<3,  /* =  8 */
+
+  /* Treatment of the diffusion term
+     ------------------------------- */
+
+  CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY   = 1<<4,  /* = 16 */
+  CS_THERMAL_MODEL_WITH_THERMAL_DIFFUSIVITY   = 1<<5,  /* = 32 */
+
+  /* Additional bit settings
+     ----------------------- */
+
+  CS_THERMAL_MODEL_IN_CELSIUS                 = 1<<6   /* = 64 */
+
+} cs_thermal_model_type_bit_t;
 
 /*============================================================================
  * Public function prototypes
@@ -180,6 +195,43 @@ cs_thermal_system_destroy(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Set a reference temperature
+ *
+ * \param[in]  temp0     reference temperature
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_thermal_system_set_reference_temperature(cs_real_t  temp0);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the thermal dilatation coefficient
+ *
+ * \param[in]  beta0     reference value of the thermal dilatation coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_thermal_system_set_thermal_dilatation_coef(cs_real_t   beta0);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a structure to compute the Boussinesq source term
+ *
+ * \param[in]  gravity    gravity vector
+ * \param[in]  rho0       reference value for the mass density
+ *
+ * \return a pointer to a new allocated \ref cs_source_term_boussinesq_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_source_term_boussinesq_t *
+cs_thermal_system_add_boussinesq_source_term(const cs_real_t   *gravity,
+                                             cs_real_t          rho0);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Start setting-up the thermal system
  *         At this stage, numerical settings should be completely determined
  *         but connectivity and geometrical information is not yet available.
@@ -195,12 +247,14 @@ cs_thermal_system_init_setup(void);
  *
  * \param[in]  connect    pointer to a cs_cdo_connect_t structure
  * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  time_step  pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_thermal_system_finalize_setup(const cs_cdo_connect_t     *connect,
-                                 const cs_cdo_quantities_t  *quant);
+                                 const cs_cdo_quantities_t  *quant,
+                                 const cs_time_step_t       *time_step);
 
 /*----------------------------------------------------------------------------*/
 /*!

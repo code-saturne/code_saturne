@@ -301,7 +301,23 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
 
   }
 
-  /* Create associated equations */
+  /* Create associated equation(s) */
+  if (navsto->param->model & CS_NAVSTO_MODEL_BOUSSINESQ) {
+
+    cs_flag_t  thm_num = 0, thm_post = 0;
+    cs_flag_t  thm_model =
+      CS_THERMAL_MODEL_WITH_THERMAL_DIFFUSIVITY |
+      CS_THERMAL_MODEL_NAVSTO_VELOCITY;
+
+    if (navsto->param->option_flag & CS_NAVSTO_FLAG_STEADY)
+      thm_model |= CS_THERMAL_MODEL_STEADY;
+
+    cs_thermal_system_t  *thm = cs_thermal_system_activate(thm_model,
+                                                           thm_num,
+                                                           thm_post);
+
+  }
+
   if (post_flag & CS_NAVSTO_POST_STREAM_FUNCTION) {
 
     navsto->stream_function_eq = cs_equation_add(CS_NAVSTO_STREAM_EQNAME,
@@ -972,6 +988,28 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid space discretization scheme.", __func__);
   }
+
+  if (nsp->model & CS_NAVSTO_MODEL_BOUSSINESQ) {
+
+    cs_equation_t  *mom_eq = cs_navsto_system_get_momentum_eq();
+    cs_equation_param_t  *mom_eqp = cs_equation_get_param(mom_eq);
+
+    const cs_real_t  *g_vector = nsp->phys_constants->gravity;
+    cs_source_term_boussinesq_t  *bq =
+      cs_thermal_system_add_boussinesq_source_term(g_vector,
+                                                   nsp->density->ref_value);
+
+    /* Up to now, only CDO Face-based schemes are considered */
+    assert(nsp->space_scheme == CS_SPACE_SCHEME_CDOFB);
+
+    cs_dof_func_t  *func = cs_cdofb_navsto_boussinesq_source_term;
+    cs_equation_add_source_term_by_dof_func(mom_eqp,
+                                            NULL, /* = all cells */
+                                            cs_flag_primal_cell,
+                                            func,
+                                            bq);
+
+  } /* Add the Boussinesq source term */
 
   /* Add default post-processing related to the Navier-Stokes system */
   cs_post_add_time_mesh_dep_output(cs_navsto_system_extra_post, ns);

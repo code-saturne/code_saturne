@@ -448,6 +448,27 @@ cs_cdofb_fixed_wall(short int                       f,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Get the source term for computing the Boussinesq approximation
+ *         This relies on the prototype associated to the generic function
+ *         pointer \ref cs_dof_function_t
+ *
+ * \param[in]      n_elts   number of elements to consider
+ * \param[in]      elt_ids  list of elements ids
+ * \param[in]      compact  true:no indirection, false:indirection for retval
+ * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
+ * \param[in, out] retval   result of the function
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_boussinesq_source_term(cs_lnum_t            n_elts,
+                                       const cs_lnum_t     *elt_ids,
+                                       bool                 compact,
+                                       void                *input,
+                                       cs_real_t           *retval);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Get the source term for computing the stream function.
  *         This relies on the prototype associated to the generic function
  *         pointer \ref cs_dof_function_t

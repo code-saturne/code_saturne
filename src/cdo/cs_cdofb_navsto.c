@@ -1439,6 +1439,46 @@ cs_cdofb_fixed_wall(short int                       f,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Get the source term for computing the Boussinesq approximation
+ *         This relies on the prototype associated to the generic function
+ *         pointer \ref cs_dof_function_t
+ *
+ * \param[in]      n_elts   number of elements to consider
+ * \param[in]      elt_ids  list of elements ids
+ * \param[in]      compact  true:no indirection, false:indirection for retval
+ * \param[in]      input    pointer to a structure cast on-the-fly (may be NULL)
+ * \param[in, out] retval   result of the function
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_boussinesq_source_term(cs_lnum_t            n_elts,
+                                       const cs_lnum_t     *elt_ids,
+                                       bool                 compact,
+                                       void                *input,
+                                       cs_real_t           *retval)
+{
+  /* Sanity checks */
+  assert(input != NULL && retval != NULL);
+
+  /* input is a pointer to a structure */
+  const cs_source_term_boussinesq_t  *bq = (cs_source_term_boussinesq_t *)input;
+
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+    cs_lnum_t  id = (elt_ids == NULL) ? i : elt_ids[i];
+    cs_lnum_t  r_id = compact ? i : id;
+    cs_real_t  *_r = retval + 3*r_id;
+
+    const cs_real_t  bq_coef = bq->rho0*bq->beta * (bq->var[id] - bq->var0);
+    for (int k = 0; k < 3; k++)
+      _r[k] = bq_coef * bq->g[k];
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Get the source term for computing the stream function.
  *         This relies on the prototype associated to the generic function
  *         pointer \ref cs_dof_function_t

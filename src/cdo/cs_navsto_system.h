@@ -34,9 +34,11 @@
 #include "cs_field.h"
 #include "cs_param.h"
 #include "cs_property.h"
+#include "cs_maxwell.h"
 #include "cs_mesh.h"
 #include "cs_navsto_param.h"
 #include "cs_time_step.h"
+#include "cs_thermal_system.h"
 #include "cs_xdef.h"
 
 /*----------------------------------------------------------------------------*/
@@ -142,12 +144,12 @@ typedef struct {
   /*! \var param
    *  Set of parameters to handle the Navier-Stokes system
    */
-  cs_navsto_param_t     *param;
+  cs_navsto_param_t          *param;
 
   /*! \var boundary_type
    * Array storing the type of boundary for each boundary face
    */
-  cs_boundary_type_t    *bf_type;
+  cs_boundary_type_t         *bf_type;
 
   /*!
    * @name Variable fields
@@ -160,21 +162,46 @@ typedef struct {
    *  Advection field, pointer to \ref cs_adv_field_t
    */
 
-  cs_adv_field_t       *adv_field;
+  cs_adv_field_t             *adv_field;
 
   /*! \var velocity
    *  Velocity, vector-valued, pointer to \ref cs_field_t
    */
 
-  cs_field_t           *velocity;
+  cs_field_t                 *velocity;
 
   /*! \var pressure
    *  Pressure, scalar-valued, pointer to \ref cs_field_t
    */
 
-  cs_field_t           *pressure;
+  cs_field_t                 *pressure;
 
   /*!
+   * @}
+   * @name Related systems of equations
+   * According to the modelling choice other systems of equations can
+   * be solved in a more or less coupled manner. For instance, the
+   * energy equation (with the thermal system) or the magneto-hydrodynamic
+   * equations (with the Maxwell system of equations)
+   * @{
+   */
+
+  /*! \var thm
+   *  Structure storing all settings, fields or properties related to the
+   *  thermal system of equation(s)
+   */
+
+  cs_thermal_system_t        *thm;
+
+  /*! \var mxl
+   *  Structure storing all settings, fields or properties related to the
+   *  Maxwell system of equation(s)
+   */
+
+  cs_maxwell_t               *mxl;
+
+  /*!
+   * @}
    * @name Post-processing fields
    * Set of fields which are induced by the variable fields and which have
    * meaningful information for understanding the flow
@@ -186,37 +213,37 @@ typedef struct {
    *  Pointer to a scalar-valued \ref cs_field_t
    */
 
-  cs_field_t           *velocity_divergence;
+  cs_field_t                 *velocity_divergence;
 
   /*! \var kinetic_energy
    *  Kinetic energy defined as 1/2 velocity \cdot velocity
    *  Pointer to a scalar-valued \ref cs_field_t
    */
 
-  cs_field_t           *kinetic_energy;
+  cs_field_t                 *kinetic_energy;
 
   /*! \var vorticity
    *  Vorticity of the velocity fied defined as curl(velocity)
    *  Pointer to a vector-valued \ref cs_field_t
    */
-  cs_field_t           *vorticity;
+  cs_field_t                 *vorticity;
 
   /*! \var helicity
    *  Helicity is defined as \int_c velocity \cdot vorticity
    *  Pointer to a scalar-valued \ref cs_field_t
    */
-  cs_field_t           *helicity;
+  cs_field_t                 *helicity;
 
   /*! \var enstrophy
    *  Enstrophy is defined as \int_c vorticity \cdot vorticity
    *  Pointer to a scalar-valued \ref cs_field_t
    */
-  cs_field_t           *enstrophy;
+  cs_field_t                 *enstrophy;
 
   /*! \var velocity_gradient
    *  Pointer to a tensor-valued \ref cs_field_t
    */
-  cs_field_t           *velocity_gradient;
+  cs_field_t                 *velocity_gradient;
 
   /*! \var stream_function_eq
    *  Pointer to a \ref cs_equation_t structure related to the computation
@@ -224,7 +251,7 @@ typedef struct {
    *  scalar-valued stream function. This is relevant only for a 2D
    *  computation
    */
-  cs_equation_t        *stream_function_eq;
+  cs_equation_t              *stream_function_eq;
 
   /*!
    * @}
@@ -237,14 +264,14 @@ typedef struct {
    * Additional structure storing information according to the way equations
    * of model for the Navier-Stokes system are coupled and thus solved
    */
-  void                 *coupling_context;
+  void                       *coupling_context;
 
   /*! \var scheme_context
    * Additional structure storing information according to the space
    * discretization scheme used for solving the model for the Navier-Stokes
    * system
    */
-  void                 *scheme_context;
+  void                       *scheme_context;
 
   /*!
    * @}
