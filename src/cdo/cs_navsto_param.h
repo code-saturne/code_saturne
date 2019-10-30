@@ -32,6 +32,7 @@
 #include "cs_boundary.h"
 #include "cs_equation_param.h"
 #include "cs_math.h"
+#include "cs_physical_constants.h"
 #include "cs_sles.h"
 #include "cs_turbulence_model.h"
 
@@ -58,7 +59,8 @@ BEGIN_C_DECLS
 #define CS_NAVSTO_FLAG_STEADY            (1 <<  0) /*!< Steady-state */
 
 /*!
- * @} @name Flag specifying predefined post-processing
+ * @}
+ * @name Flag specifying predefined post-processing
  *
  * \brief w denotes the vorticity * vector and u the velocity vector, k is the
  *        kinetic energy defined by k := 1/2 * u \cdot u
@@ -70,7 +72,7 @@ BEGIN_C_DECLS
 #define CS_NAVSTO_POST_VELOCITY_DIVERGENCE (1 <<  0) /*!< div(u) */
 
 /* Value =   2 */
-#define CS_NAVSTO_POST_KINETIC_ENERGY      (1 <<  1) /*!< k := 0.5 u \cdot u  */
+#define CS_NAVSTO_POST_KINETIC_ENERGY      (1 <<  1) /*!< k := rho/2 u\cdot u */
 
 /* Value =   4 */
 #define CS_NAVSTO_POST_VORTICITY           (1 <<  2) /*!< w = curl(u) */
@@ -95,38 +97,57 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/*! \enum cs_navsto_param_model_t
- *  \brief Modelling related to the Navier-Stokes system of equations
+typedef cs_flag_t  cs_navsto_param_model_t;
+
+/*! \enum cs_navsto_param_model_bit_t
+ *  \brief Bit values for physical modelling related to the Navier-Stokes system
+ *  of equations
  *
  * \var CS_NAVSTO_MODEL_STOKES
  * Stokes equations (mass and momentum) with the classical choice of variables
- * i.e. velocity and pressure
+ * i.e. velocity and pressure. Mass density is assumed to be constant.
  *
  * \var CS_NAVSTO_MODEL_OSEEN
  * Like the incompressible Navier-Stokes equations (mass and momentum) but with
  * a velocity field which is given. Thus the advection term in the momentum
- * equation is linear. Unknowns: velocity and pressure
+ * equation is linear. Unknowns: velocity and pressure. Mass density is assumed
+ * to be constant.
  *
  * \var CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES
  * Navier-Stokes equations: mass and momentum with a constant mass density
  *
- * \var CS_NAVSTO_MODEL_BOUSSINESQ_NAVIER_STOKES
- * Navier-Stokes equations: mass and momentum with a constant mass density
+ * \var CS_NAVSTO_MODEL_GRAVITY_EFFECTS
+ * Take into account the gravity effects (add a constant source term equal to
+ * rho*vect(g))
+ *
+ * \var CS_NAVSTO_MODEL_CORIOLIS_EFFECTS
+ * Take into account the Coriolis effects (add a source term)
+ *
+ * \var CS_NAVSTO_MODEL_BOUSSINESQ
+ * Gravity effects are taken into account as well as the effect of small
+ * variation of temperatures.
  * The gradient of temperature is assumed to have a small norm and the mass
  * density variates in a small range. In this case, an additional equation
- * related to the energy is considered.
+ * related to the temperature is considered and momentum source term is added.
  */
 
 typedef enum {
 
-  CS_NAVSTO_MODEL_STOKES,
-  CS_NAVSTO_MODEL_OSEEN,
-  CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES,
-  CS_NAVSTO_MODEL_BOUSSINESQ_NAVIER_STOKES,
+  /* Main modelling for the dynamic
+     ------------------------------ */
 
-  CS_NAVSTO_N_MODELS
+  CS_NAVSTO_MODEL_STOKES                          = 1<<0, /* =   1 */
+  CS_NAVSTO_MODEL_OSEEN                           = 1<<1, /* =   2 */
+  CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES    = 1<<2, /* =   4 */
 
-} cs_navsto_param_model_t;
+  /* Additional modelling bits
+     ------------------------- */
+
+  CS_NAVSTO_MODEL_GRAVITY_EFFECTS                 = 1<<3, /* =   8 */
+  CS_NAVSTO_MODEL_CORIOLIS_EFFECTS                = 1<<4, /* =  16 */
+  CS_NAVSTO_MODEL_BOUSSINESQ                      = 1<<5  /* =  32 */
+
+} cs_navsto_param_model_bit_t;
 
 /*! \enum cs_navsto_param_sles_t
  *
@@ -303,28 +324,78 @@ typedef struct {
   /*! \var verbosity
    * Level of display of the information related to the Navier-Stokes system
    */
-  int                           verbosity;
+  int                         verbosity;
+
+  /*! \var post_flag
+   * Flag storing which predefined post-processing has to be done
+   */
+  cs_flag_t                   post_flag;
+
+  /*!
+   * @}
+   * @name Physical modelling
+   * Which equations to solve ?  Properties and their related fields are
+   * allocated according to the choice of model for Navier-Stokes @{
+   */
+
+  /*! \var model
+   * Modelling related to the Navier-Stokes system of equations
+   */
+  cs_navsto_param_model_t     model;
+
+  /*! \var model
+   * Main physical constants (gravity vector and coriolis source term). This
+   * structure is shared with the legacy part.
+   */
+  cs_physical_constants_t    *phys_constants;
+
+  /*! \var density
+   *  Density of the fluid, pointer to \ref cs_property_t used in several
+   *  terms in the Navier-Stokes equations
+   */
+
+  cs_property_t              *density;
+
+  /*! \var lami_viscosity
+   *  Laminar viscosity, pointer to \ref cs_property_t associated to the
+   *  diffusion term for the momentum equation
+   */
+
+  cs_property_t              *lami_viscosity;
+
+  /*!
+   * @}
+   * @name Turbulence modelling
+   * Set of parameters to handle turbulence modelling.
+   * @{
+   */
+
+  /*! \var turbulence
+   * Main set of parameters to handle turbulence modelling. This
+   * structure is shared with the legacy part.
+   */
+
+  cs_turb_model_t            *turbulence;
+
+  /*! \var rans_modelling
+   * Main set of parameters to handle RANS modelling. This
+   * structure is shared with the legacy part.
+   * RANS means Reynolds Average Navier-Stokes
+   */
+
+  cs_turb_rans_model_t       *rans_modelling;
+
+
+  /*!
+   * @name Numerical options
+   * Set of numerical options to build the linear system and how to solve it
+   * @{
+   */
 
   /*! \var option_flag
    * Flag storing high-level option related to the Navier-Stokes system
    */
   cs_flag_t                     option_flag;
-
-  /*! \var post_flag
-   * Flag storing which predefined post-processing has to be done
-   */
-  cs_flag_t                     post_flag;
-
-  /*!
-   * @name Algorithm properties
-   * Set of properties: properties and their related fields are allocated
-   * according to the choice of model for Navier-Stokes
-   * @{
-   */
-  /*! \var dof_reduction_mode
-   *  How are defined the Degrees of freedom
-   */
-  cs_param_dof_reduction_t      dof_reduction_mode;
 
   /*! \var time_scheme
    * Discretization scheme for time
@@ -341,25 +412,10 @@ typedef struct {
    */
   cs_param_space_scheme_t       space_scheme;
 
-  /*! \var model
-   * Modelling related to the Navier-Stokes system of equations
+  /*! \var dof_reduction_mode
+   *  How are defined the Degrees of freedom
    */
-  cs_navsto_param_model_t       model;
-
-  /*!
-   * \var has_gravity
-   * Take into account the gravity effect: true or false
-   *
-   * \var gravity
-   * Vector related to the gravity effect
-   */
-  bool                          has_gravity;
-  cs_real_3_t                   gravity;
-
-  /*! \var sles_strategy
-   * Choice of strategy for solving the SLES system
-   */
-  cs_navsto_param_sles_t        sles_strategy;
+  cs_param_dof_reduction_t      dof_reduction_mode;
 
   /*! \var coupling
    * Choice of algorithm for solving the system
@@ -373,11 +429,25 @@ typedef struct {
    */
   cs_real_t                     gd_scale_coef;
 
+  /*! \var adv_form
+   *  Type of formulation for the advection term
+   *
+   *  \var adv_scheme
+   *  Type of scheme for the advection term
+   */
+  cs_param_advection_form_t     adv_form;
+  cs_param_advection_scheme_t   adv_scheme;
+
   /*! \var qtype
    *  A \ref cs_quadrature_type_t indicating the type of quadrature to use in
    *  all routines involving quadratures
    */
   cs_quadrature_type_t          qtype;
+
+  /*! \var sles_strategy
+   * Choice of strategy for solving the SLES system
+   */
+  cs_navsto_param_sles_t        sles_strategy;
 
   /*! \var residual_tolerance
    *  Tolerance at which the Navier--Stokes is resolved (apply to the residual
@@ -391,55 +461,6 @@ typedef struct {
    * for the iterative solver is taken into account
    */
   int                           max_algo_iter;
-
-  /*! \var adv_form
-   *  Type of formulation for the advection term
-   *
-   *  \var adv_scheme
-   *  Type of scheme for the advection term
-   */
-  cs_param_advection_form_t     adv_form;
-  cs_param_advection_scheme_t   adv_scheme;
-
-  /*!
-   * @}
-   * @name Physical properties
-   * Set of properties: properties and their related fields are allocated
-   * according to the choice of model for Navier-Stokes
-   * @{
-   */
-
-  /*! \var density
-   *  Density of the fluid, pointer to \ref cs_property_t used in several
-   *  terms in the Navier-Stokes equations
-   */
-
-  cs_property_t      *density;
-
-  /*! \var lami_viscosity
-   *  Laminar viscosity, pointer to \ref cs_property_t associated to the
-   *  diffusion term for the momentum equation
-   */
-
-  cs_property_t      *lami_viscosity;
-
-  /*!
-   * @}
-   * @name Turbulence modelling
-   * Set of parameters to handle turbulence modelling.
-   * @{
-   */
-
-  /*! \var turbulence
-   * Main set of parameters to handle turbulence modelling
-   */
-  cs_turb_model_t        *turbulence;
-
-  /*! \var rans_modelling
-   * Main set of parameters to handle RANS modelling
-   * RANS = Reynolds Average Navier-Stokes
-   */
-  cs_turb_rans_model_t   *rans_modelling;
 
   /*!
    * @}

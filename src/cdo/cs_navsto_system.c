@@ -233,9 +233,9 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
                           cs_flag_t                      post_flag)
 {
   /* Sanity checks */
-  if (model == CS_NAVSTO_N_MODELS)
-    bft_error(__FILE__, __LINE__, 0, "%s: Invalid model for Navier-Stokes.\n",
-              __func__);
+  if (model < 1)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid model for Navier-Stokes.\n", __func__);
 
   /* Allocate an empty structure */
   cs_navsto_system_t  *navsto = _allocate_navsto_system();
@@ -269,7 +269,7 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
               __func__);
     break;
 
-  } /* Switch */
+  } /* End of switch */
 
   /* Additional initialization fitting the choice of model */
   switch (navsto->param->coupling) {

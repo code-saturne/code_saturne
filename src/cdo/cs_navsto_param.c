@@ -77,14 +77,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 static const char
-cs_navsto_param_model_name[CS_NAVSTO_N_MODELS][CS_BASE_STRING_LEN] =
-  { N_("Stokes velocity-pressure system"),
-    N_("Oseen velocity-pressure system"),
-    N_("Incompressible Navier-Stokes velocity-pressure system"),
-    N_("Navier-Stokes with velocity-pressure unknowns and Boussinesq model")
-  };
-
-static const char
 cs_navsto_param_coupling_name[CS_NAVSTO_N_COUPLINGS][CS_BASE_STRING_LEN] =
   { N_("Artificial compressibility algorithm"),
     N_("Artificial compressibility solved with the VPP_eps algorithm"),
@@ -200,11 +192,11 @@ _get_momentum_param(cs_navsto_param_t    *nsp)
  * \brief  Create a new structure to store all numerical parameters related
  *         to the resolution of the Navier-Stokes (NS) system
  *
- * \param[in]  boundaries     pointer to a cs_boundary_t structure
- * \param[in]  model          model related to the NS system to solve
- * \param[in]  algo_coupling  algorithm used for solving the NS system
- * \param[in]  option_flag    additional high-level numerical options
- * \param[in]  post_flag      predefined post-processings
+ * \param[in]  boundaries       pointer to a cs_boundary_t structure
+ * \param[in]  model            model related to the NS system to solve
+ * \param[in]  algo_coupling    algorithm used for solving the NS system
+ * \param[in]  option_flag      additional high-level numerical options
+ * \param[in]  post_flag        predefined post-processings
  *
  * \return a pointer to a new allocated structure
  */
@@ -222,35 +214,18 @@ cs_navsto_param_create(const cs_boundary_t             *boundaries,
 
   /* Flags and indicators */
   param->verbosity = 1;
-  param->option_flag = option_flag;
   param->post_flag = post_flag;
+
+  /* Physical modelling */
+  /* ------------------ */
 
   /* Which equations are solved and which terms are needed */
   param->model = model;
-  param->coupling = algo_coupling;
-  param->has_gravity = false;
-  param->gravity[0] = param->gravity[1] = param->gravity[2] = 0.;
+  param->phys_constants = cs_get_glob_physical_constants();
 
-  /* Default numerical settings */
-  param->theta = 1.0;
-  param->space_scheme = CS_SPACE_SCHEME_CDOFB;
-  param->dof_reduction_mode = CS_PARAM_REDUCTION_AVERAGE;
-  param->qtype = CS_QUADRATURE_BARY;
-
-  param->boundaries = boundaries; /* shared structure */
-
-  /* Forcing steady state in order to avoid inconsistencies */
-  if (option_flag &  CS_NAVSTO_FLAG_STEADY)
-    param->time_scheme = CS_TIME_SCHEME_STEADY;
-  else
-    param->time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT;
-
-  /* Resolution parameters */
-  param->max_algo_iter = 25;
-  param->residual_tolerance = 1e-10;
-
-  param->adv_form   = CS_PARAM_N_ADVECTION_FORMULATIONS;
-  param->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
+  /* Turbulence modelling (pointer to global structures) */
+  param->turbulence = cs_get_glob_turb_model();
+  param->rans_modelling = cs_get_glob_turb_rans_model();
 
   /* Main set of properties */
   param->density = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
@@ -261,15 +236,30 @@ cs_navsto_param_create(const cs_boundary_t             *boundaries,
   param->lami_viscosity = cs_property_add(CS_NAVSTO_LAMINAR_VISCOSITY,
                                           CS_PROPERTY_ISO);
 
-  /* Turbulence modelling (pointer to global structures) */
-  param->turbulence = cs_get_glob_turb_model();
-  param->rans_modelling = cs_get_glob_turb_rans_model();
+  /* Default numerical settings */
+  /* -------------------------- */
 
-  /* By default: no turbulence modelling --> laminar flows */
-  param->turbulence->iturb = CS_TURB_NONE;
-  param->turbulence->itytur = 0;                    /* deprecated */
-  param->turbulence->hybrid_turb = CS_HYBRID_NONE;
-  param->turbulence->type = CS_TURB_NONE;
+  param->option_flag = option_flag;
+  param->coupling = algo_coupling;
+  param->space_scheme = CS_SPACE_SCHEME_CDOFB;
+  param->dof_reduction_mode = CS_PARAM_REDUCTION_AVERAGE;
+  param->qtype = CS_QUADRATURE_BARY;
+
+  param->adv_form   = CS_PARAM_N_ADVECTION_FORMULATIONS;
+  param->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
+
+  /* Forcing steady state in order to avoid inconsistencies */
+  if (option_flag &  CS_NAVSTO_FLAG_STEADY)
+    param->time_scheme = CS_TIME_SCHEME_STEADY;
+  else
+    param->time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT;
+  param->theta = 1.0;
+
+  /* Resolution parameters */
+  param->max_algo_iter = 25;
+  param->residual_tolerance = 1e-10;
+
+  param->boundaries = boundaries; /* shared structure */
 
   /* Remark: As velocity and pressure may not be associated to an equation
      directly, one stores the definition of initial conditions and boundary
@@ -728,7 +718,7 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
     return;
 
   /* Sanity checks */
-  if (nsp->model == CS_NAVSTO_N_MODELS)
+  if (nsp->model < 1)
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid model for Navier-Stokes.\n",
               __func__);
   if (nsp->coupling == CS_NAVSTO_N_COUPLINGS)
@@ -737,14 +727,41 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
               __func__);
 
   cs_log_printf(CS_LOG_SETUP, "  * NavSto | Verbosity: %d\n", nsp->verbosity);
-
-  cs_log_printf(CS_LOG_SETUP, "  * NavSto | Model: %s\n",
-                cs_navsto_param_model_name[nsp->model]);
-
   if (cs_navsto_param_is_steady(nsp))
     cs_log_printf(CS_LOG_SETUP, "  * NavSto | Time status: Steady\n");
   else
     cs_log_printf(CS_LOG_SETUP, "  * NavSto | Time status: Unsteady\n");
+
+  /* Describe the physical modelling */
+
+  if (nsp->model & CS_NAVSTO_MODEL_STOKES) {
+    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Model: %s\n",
+                  "Stokes velocity-pressure system");
+    assert(!(nsp->model & CS_NAVSTO_MODEL_OSEEN) &&
+           !(nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES));
+  }
+  else if (nsp->model & CS_NAVSTO_MODEL_OSEEN) {
+    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Model: %s\n",
+                  "Oseen velocity-pressure system");
+    assert(!(nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES));
+  }
+  else if (nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES)
+    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Model: %s\n",
+                  "Incompressible Navier-Stokes velocity-pressure system");
+
+  if (nsp->model & CS_NAVSTO_MODEL_GRAVITY_EFFECTS)
+    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Model: %s\n",
+                  "Gravity effect activated");
+
+  if (nsp->model & CS_NAVSTO_MODEL_CORIOLIS_EFFECTS)
+    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Model: %s\n",
+                  "Coriolis effect activated");
+
+  if (nsp->model & CS_NAVSTO_MODEL_BOUSSINESQ)
+    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Model: %s\n",
+                  " Boussinesq approximation activated");
+
+  /* Describe the coupling algorithm */
 
   cs_log_printf(CS_LOG_SETUP, "  * NavSto | Coupling: %s",
                 cs_navsto_param_coupling_name[nsp->coupling]);
@@ -761,13 +778,6 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
     cs_log_printf(CS_LOG_SETUP, "\n");
     break;
   }
-
-  cs_log_printf(CS_LOG_SETUP, "  * NavSto | Gravity effect: %s\n",
-                cs_base_strtf(nsp->has_gravity));
-  if (nsp->has_gravity)
-    cs_log_printf(CS_LOG_SETUP,
-                  "  * NavSto | Gravity vector: [% 5.3e; % 5.3e; % 5.3e]\n",
-                  nsp->gravity[0], nsp->gravity[1], nsp->gravity[2]);
 
   const char *space_scheme = cs_param_get_space_scheme_name(nsp->space_scheme);
   if (nsp->space_scheme < CS_SPACE_N_SCHEMES)

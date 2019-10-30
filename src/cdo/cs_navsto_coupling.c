@@ -198,40 +198,17 @@ cs_navsto_uzawa_init_setup(const cs_navsto_param_t    *nsp,
   if (!cs_navsto_param_is_steady(nsp))
     cs_equation_add_time(mom_eqp, cs_property_by_name("unity"));
 
-  /* Add advection if necessary */
-  switch (nsp->model) {
-
-  case CS_NAVSTO_MODEL_STOKES:
+  if (nsp->model &  CS_NAVSTO_MODEL_STOKES)
     cs_equation_set_param(mom_eqp, CS_EQKEY_ITSOL, "cg");
-    break;/* No advection, nothing to do */
 
-  case CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES:
-    /* It's in the cs_navsto_system_t structure, but it cannot be seen from
-     * here */
+  /* Add advection term: It's in the cs_navsto_system_t structure, but it cannot
+   * be seen from here */
+  if (nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES)
     cs_equation_add_advection(mom_eqp,
                               cs_advection_field_by_name("velocity_field"));
-    break;
 
-  case CS_NAVSTO_MODEL_OSEEN:
-    /* Nothing to do: the Oseen field is set by the user via
-     * cs_navsto_add_oseen_field() */
-    cs_equation_set_param(mom_eqp, CS_EQKEY_ITSOL, "cg");
-    break;
-
-  case CS_NAVSTO_MODEL_BOUSSINESQ_NAVIER_STOKES:
-    bft_error(__FILE__, __LINE__, 0,
-        " %s: Model not available yet for the Augmented Lagrangian - Uzawa"
-        " coupling" , __func__);
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-        " %s: Invalid choice for the equation model.\n"
-        " Possible choices are: CS_NAVSTO_MODEL_STOKES, "
-        "CS_NAVSTO_MODEL_OSEEN, CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES, "
-        "CS_NAVSTO_MODEL_BOUSSINESQ_NAVIER_STOKES", __func__);
-    break;
-  }
+  /* CS_NAVSTO_MODEL_OSEEN: Nothing to do since the Oseen field is set by the
+   * user via cs_navsto_add_oseen_field() */
 
   /* All considered models needs a viscous term */
   cs_equation_add_diffusion(mom_eqp, nsp->lami_viscosity);
@@ -411,38 +388,20 @@ cs_navsto_ac_init_setup(const cs_navsto_param_t    *nsp,
   if (!cs_navsto_param_is_steady(nsp))
     cs_equation_add_time(mom_eqp, cs_property_by_name("unity"));
 
-  /* Add advection if necessary */
-  switch (nsp->model) {
+  if (nsp->model &  CS_NAVSTO_MODEL_STOKES)
+    cs_equation_set_param(mom_eqp, CS_EQKEY_ITSOL, "cg");
 
-  case CS_NAVSTO_MODEL_STOKES:
-    break;/* No advection, nothing to do */
-
-  case CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES:
-    /* It's in the cs_navsto_system_t structure, but it cannot be seen from
-     * here */
+  /* Add advection term: It's in the cs_navsto_system_t structure, but it cannot
+   * be seen from here */
+  if (nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES)
     cs_equation_add_advection(mom_eqp,
                               cs_advection_field_by_name("velocity_field"));
-    break;
 
-  case CS_NAVSTO_MODEL_OSEEN:
-  case CS_NAVSTO_MODEL_BOUSSINESQ_NAVIER_STOKES:
-    bft_error(__FILE__, __LINE__, 0,
-        " %s: Model not available yet for the Artificial Compressibility"
-        " coupling" , __func__);
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-        " %s: Invalid choice for the equation model.\n"
-        " Possible choices are: CS_NAVSTO_MODEL_STOKES, "
-        "CS_NAVSTO_MODEL_OSEEN, CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES, "
-        "CS_NAVSTO_MODEL_BOUSSINESQ_NAVIER_STOKES", __func__);
-    break;
-  }
+  /* CS_NAVSTO_MODEL_OSEEN: Nothing to do since the Oseen field is set by the
+   * user via cs_navsto_add_oseen_field() */
 
   /* All considered models needs a viscous term */
   cs_equation_add_diffusion(mom_eqp, nsp->lami_viscosity);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -636,33 +595,21 @@ cs_navsto_ac_vpp_init_setup(const cs_navsto_param_t    *nsp,
     cs_equation_add_time(gd_eqp, cs_property_by_name("unity"));
   }
 
-  /* Add advection if necessary */
-  switch (nsp->model) {
+  if (nsp->model &  CS_NAVSTO_MODEL_STOKES)
+    cs_equation_set_param(mom_eqp, CS_EQKEY_ITSOL, "cg");
 
-  case CS_NAVSTO_MODEL_STOKES:
-    break;  /* Nothing to do */
+  /* Add advection term: It's in the cs_navsto_system_t structure, but it cannot
+   * be seen from here */
+  if (nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES)
+    cs_equation_add_advection(mom_eqp,
+                              cs_advection_field_by_name("velocity_field"));
 
-  case CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES:
-  case CS_NAVSTO_MODEL_BOUSSINESQ_NAVIER_STOKES:
-  case CS_NAVSTO_MODEL_OSEEN:
-    bft_error(__FILE__, __LINE__, 0,
-        " %s: Model not available yet for the VPP coupling" , __func__);
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              " %s: Invalid choice for the equation model.\n"
-              " Possible choices are: CS_NAVSTO_MODEL_STOKES,"
-              " CS_NAVSTO_MODEL_OSEEN,"
-              " CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES,"
-              " CS_NAVSTO_MODEL_BOUSSINESQ_NAVIER_STOKES", __func__);
-    break;
-  }
+  /* CS_NAVSTO_MODEL_OSEEN: Nothing to do since the Oseen field is set by the
+   * user via cs_navsto_add_oseen_field() */
 
   /* All considered models needs a viscous term */
   cs_equation_add_diffusion(mom_eqp, nsp->lami_viscosity);
   cs_equation_add_diffusion(gd_eqp, nsp->lami_viscosity);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -834,33 +781,17 @@ cs_navsto_monolithic_init_setup(const cs_navsto_param_t    *nsp,
   if (!cs_navsto_param_is_steady(nsp))
     cs_equation_add_time(mom_eqp, cs_property_by_name("unity"));
 
-  /* Add advection if necessary */
-  switch (nsp->model) {
+  if (nsp->model &  CS_NAVSTO_MODEL_STOKES)
+    cs_equation_set_param(mom_eqp, CS_EQKEY_ITSOL, "cg");
 
-  case CS_NAVSTO_MODEL_STOKES:
-    break;  /* Nothing to do */
-
-  case CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES:
-    /* It's in the cs_navsto_system_t structure, but it cannot be seen from
-     * here */
+  /* Add advection term: It's in the cs_navsto_system_t structure, but it cannot
+   * be seen from here */
+  if (nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES)
     cs_equation_add_advection(mom_eqp,
                               cs_advection_field_by_name("velocity_field"));
-    break;
 
-  case CS_NAVSTO_MODEL_OSEEN:
-  case CS_NAVSTO_MODEL_BOUSSINESQ_NAVIER_STOKES:
-    /* Nothing to do: the Oseen field is set by the user via
-     * cs_navsto_add_oseen_field() */
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-        " %s: Invalid choice for the equation model.\n"
-        " Possible choices are: CS_NAVSTO_MODEL_STOKES,"
-        " CS_NAVSTO_MODEL_OSEEN, CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES,"
-        " CS_NAVSTO_MODEL_BOUSSINESQ_NAVIER_STOKES", __func__);
-    break;
-  }
+  /* CS_NAVSTO_MODEL_OSEEN: Nothing to do since the Oseen field is set by the
+   * user via cs_navsto_add_oseen_field() */
 
   /* All considered models needs a viscous term */
   cs_equation_add_diffusion(mom_eqp, nsp->lami_viscosity);
