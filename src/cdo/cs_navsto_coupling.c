@@ -196,7 +196,7 @@ cs_navsto_uzawa_init_setup(const cs_navsto_param_t    *nsp,
 
   /* Link the time property to the momentum equation */
   if (!cs_navsto_param_is_steady(nsp))
-    cs_equation_add_time(mom_eqp, cs_property_by_name("unity"));
+    cs_equation_add_time(mom_eqp, nsp->density);
 
   if (nsp->model &  CS_NAVSTO_MODEL_STOKES)
     cs_equation_set_param(mom_eqp, CS_EQKEY_ITSOL, "cg");
@@ -386,7 +386,7 @@ cs_navsto_ac_init_setup(const cs_navsto_param_t    *nsp,
 
   /* Link the time property to the momentum equation */
   if (!cs_navsto_param_is_steady(nsp))
-    cs_equation_add_time(mom_eqp, cs_property_by_name("unity"));
+    cs_equation_add_time(mom_eqp, nsp->density);
 
   if (nsp->model &  CS_NAVSTO_MODEL_STOKES)
     cs_equation_set_param(mom_eqp, CS_EQKEY_ITSOL, "cg");
@@ -591,8 +591,8 @@ cs_navsto_ac_vpp_init_setup(const cs_navsto_param_t    *nsp,
 
   /* Link the time property to the momentum equation */
   if (!cs_navsto_param_is_steady(nsp)) {
-    cs_equation_add_time(mom_eqp, cs_property_by_name("unity"));
-    cs_equation_add_time(gd_eqp, cs_property_by_name("unity"));
+    cs_equation_add_time(mom_eqp, nsp->density);
+    cs_equation_add_time(gd_eqp, nsp->density);
   }
 
   if (nsp->model &  CS_NAVSTO_MODEL_STOKES)
@@ -779,7 +779,7 @@ cs_navsto_monolithic_init_setup(const cs_navsto_param_t    *nsp,
 
   /* Link the time property to the momentum equation */
   if (!cs_navsto_param_is_steady(nsp))
-    cs_equation_add_time(mom_eqp, cs_property_by_name("unity"));
+    cs_equation_add_time(mom_eqp, nsp->density);
 
   if (nsp->model &  CS_NAVSTO_MODEL_STOKES)
     cs_equation_set_param(mom_eqp, CS_EQKEY_ITSOL, "cg");
@@ -983,7 +983,7 @@ cs_navsto_projection_init_setup(const cs_navsto_param_t    *nsp,
 
   cs_navsto_param_transfer(nsp, u_eqp);
 
-  cs_equation_add_time(u_eqp, cs_property_by_name("unity"));
+  cs_equation_add_time(u_eqp, nsp->density);
 
   /* All considered models needs a viscous term */
   cs_equation_add_diffusion(u_eqp, nsp->lami_viscosity);
