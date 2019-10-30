@@ -452,6 +452,7 @@ class InletBoundary(Boundary):
         XMLTurbulenceNode = node.xmlInitNode('turbulence')
 
         formula = XMLTurbulenceNode.xmlGetString('formula')
+
         return formula
 
 

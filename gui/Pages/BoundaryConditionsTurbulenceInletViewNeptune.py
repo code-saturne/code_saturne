@@ -62,6 +62,12 @@ log = logging.getLogger("BoundaryConditionsTurbulenceInletView")
 log.setLevel(GuiParam.DEBUG)
 
 #-------------------------------------------------------------------------------
+# expression control
+#-------------------------------------------------------------------------------
+
+_empty_exps = [None, ""]
+
+#-------------------------------------------------------------------------------
 # Main class
 #-------------------------------------------------------------------------------
 
@@ -225,7 +231,7 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
 
         # Set model name and specific examples
         if turb_model in ('k-epsilon', 'k-epsilon_linear_production'):
-            if not exp:
+            if exp in _empty_exps:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
             exa = """#example :
 uref2 = 10.;
@@ -256,7 +262,7 @@ eps = ustar2^1.5/(kappa*dh*0.1);"""
             name = 'turbulence_ke_%s' % (self.__currentField)
 
         elif turb_model in ('rij-epsilon_ssg', 'rij-epsilon_ebrsm'):
-            if not exp:
+            if exp in _empty_exps:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
             exa = """#exemple :
 uref2 = 10.;
@@ -295,7 +301,7 @@ R23 = 0;
 
         elif turb_model in ('tchen', 'q2-q12'):
             name = 'turbulence_tchen_%s' % (self.__currentField)
-            if not exp:
+            if exp in _empty_exps:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
             exa = """#example :
 q2 = 5.e-05;
@@ -303,7 +309,7 @@ q12 = 0.0001;"""
 
         elif turb_model in ('r2-q12'):
             name = 'turbulence_r2q12_%s' % (self.__currentField)
-            if not exp:
+            if exp in _empty_exps:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
             exa = """#example :
 R11 = 5e-05;
@@ -316,7 +322,7 @@ q12 = 0.0001;"""
 
         elif turb_model in ('r2-r12-tchen'):
             name = 'turbulence_r2r12_%s' % (self.__currentField)
-            if not exp:
+            if exp in _empty_exps:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
             exa = """#example :
 R11 = 5e-05;

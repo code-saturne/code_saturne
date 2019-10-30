@@ -2548,12 +2548,31 @@ class mei_to_c_interpreter:
     def save_all_functions(self):
 
         save_status = 0
+
+        is_empty    = 0
+        empty_exps  = []
         for func_type in self.funcs.keys():
             state = self.save_function(func_type)
             if state != 0:
                 save_status = state
 
-        return save_status
+            for ek in self.funcs[func_type].keys():
+                if self.funcs[func_type][ek]['exp'] in [None, ""]:
+                    is_empty = 1
+
+                    empty_exps.append({})
+                    empty_exps[-1]['zone'] = ek.split('::')[0]
+                    empty_exps[-1]['var']  = ek.split('::')[1]
+                    empty_exps[-1]['func'] = _func_short_to_long[func_type] + ' formula'
+
+        if is_empty == 1:
+            state = -1
+
+        ret = {'state':state,
+               'exps':empty_exps,
+               'nexps':len(empty_exps)}
+
+        return ret
 
 #-------------------------------------------------------------------------------
 # End
