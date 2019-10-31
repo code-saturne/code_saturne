@@ -221,7 +221,7 @@ _set_scheme_flags(cs_domain_t    *domain)
 
   } /* Loop on equations */
 
-  /* Navier-Stokes sytem */
+  /* Navier-Stokes system */
   if (cs_navsto_system_is_activated()) {
 
     cs_navsto_param_t  *nsp = cs_navsto_system_get_param();

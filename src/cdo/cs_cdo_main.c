@@ -248,28 +248,28 @@ _solve_steady_state_domain(cs_domain_t  *domain)
   /* If the problem is globally unsteady, only steady-state equations are
      solved */
 
-  /* Thermal module */
+  /* 1. Thermal module */
   if (cs_thermal_system_is_activated())
     cs_thermal_system_compute_steady_state(domain->mesh,
                                            domain->time_step,
                                            domain->connect,
                                            domain->cdo_quantities);
 
-  /* Groundwater flow module */
+  /* 2. Groundwater flow module */
   if (cs_gwf_is_activated())
     cs_gwf_compute_steady_state(domain->mesh,
                                 domain->time_step,
                                 domain->connect,
                                 domain->cdo_quantities);
 
-  /* Maxwell module */
+  /* 3. Maxwell module */
   if (cs_maxwell_is_activated())
     cs_maxwell_compute_steady_state(domain->mesh,
                                     domain->time_step,
                                     domain->connect,
                                     domain->cdo_quantities);
 
-  /* Navier-Stokes module */
+  /* 4. Navier-Stokes module */
   if (cs_navsto_system_is_activated())
     cs_navsto_system_compute_steady_state(domain->mesh,
                                           domain->time_step);
@@ -317,28 +317,28 @@ _solve_domain(cs_domain_t  *domain)
 
   }
 
-  /* Thermal module */
+  /* 1. Thermal module */
   if (cs_thermal_system_is_activated())
     cs_thermal_system_compute(domain->mesh,
                               domain->time_step,
                               domain->connect,
                               domain->cdo_quantities);
 
-  /* Groundwater flow module */
+  /* 2. Groundwater flow module */
   if (cs_gwf_is_activated())
     cs_gwf_compute(domain->mesh,
                    domain->time_step,
                    domain->connect,
                    domain->cdo_quantities);
 
-  /* Maxwell module */
+  /* 3. Maxwell module */
   if (cs_maxwell_is_activated())
     cs_maxwell_compute(domain->mesh,
                        domain->time_step,
                        domain->connect,
                        domain->cdo_quantities);
 
-  /* Navier-Stokes module */
+  /* 4. Navier-Stokes module */
   if (cs_navsto_system_is_activated())
     cs_navsto_system_compute(domain->mesh, domain->time_step);
 
@@ -350,8 +350,7 @@ _solve_domain(cs_domain_t  *domain)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Summary the setup of all major structures:
- *          cs_domain_t structure,
- *          all equations and all properties
+ *          cs_domain_t structure, all equations and all properties
  *
  * \param[in]   domain    pointer to the cs_domain_t structure to summarize
  */
@@ -368,23 +367,23 @@ _log_setup(const cs_domain_t   *domain)
 
   if (domain->verbosity > -1) {
 
+    /* Advection fields */
+    cs_advection_field_log_setup();
+
+    /* Properties */
+    cs_property_log_setup();
+
+    /* Summary of the thermal module */
+    cs_thermal_system_log_setup();
+
     /* Summary of the groundwater module */
     cs_gwf_log_setup();
 
     /* Summary of the Maxwell module */
     cs_maxwell_log_setup();
 
-    /* Summary of the thermal module */
-    cs_thermal_system_log_setup();
-
     /* Summary of the Navier-Stokes system */
     cs_navsto_system_log_setup();
-
-    /* Advection fields */
-    cs_advection_field_log_setup();
-
-    /* Properties */
-    cs_property_log_setup();
 
   } /* Domain->verbosity > 0 */
 
@@ -428,7 +427,10 @@ cs_f_cdo_solve_unsteady_state_domain(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Initialize the computational domain when CDO/HHO schemes are
- *         activated and cs_user_model() has been called
+ *         activated and cs_user_model() has been called.
+ *         At this stage of the settings, mesh quantities and adjacencies are
+ *         not defined. Only the major moddeling options are set. The related
+ *         equations and main properties have been added.
  *
  * \param[in, out]  domain    pointer to a cs_domain_t structure
  */

@@ -332,10 +332,10 @@ typedef struct {
   cs_flag_t                   post_flag;
 
   /*!
-   * @}
    * @name Physical modelling
    * Which equations to solve ?  Properties and their related fields are
-   * allocated according to the choice of model for Navier-Stokes @{
+   * allocated according to the choice of model for Navier-Stokes
+   * @{
    */
 
   /*! \var model
@@ -343,7 +343,7 @@ typedef struct {
    */
   cs_navsto_param_model_t     model;
 
-  /*! \var model
+  /*! \var phys_constants
    * Main physical constants (gravity vector and coriolis source term). This
    * structure is shared with the legacy part.
    */

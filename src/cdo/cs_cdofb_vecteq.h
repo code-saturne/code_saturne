@@ -293,7 +293,7 @@ cs_cdofb_vecteq_conv_diff_reac(double                         time_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the term source for a vector-valued CDO-Fb scheme
+ * \brief  Compute the source term for a vector-valued CDO-Fb scheme
  *         and add it to the local rhs
  *
  * \param[in]       cm      pointer to a \ref cs_cell_mesh_t structure

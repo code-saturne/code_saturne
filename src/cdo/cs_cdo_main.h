@@ -56,6 +56,9 @@ BEGIN_C_DECLS
 /*!
  * \brief  Initialize the computational domain when CDO/HHO schemes are
  *         activated and cs_user_model() has been called
+ *         At this stage of the settings, mesh quantities and adjacencies are
+ *         not defined. Only the major moddeling options are set. The related
+ *         equations and main properties have been added.
  *
  * \param[in, out]  domain    pointer to a cs_domain_t structure
  */

@@ -402,6 +402,7 @@ cs_navsto_system_set_sles(void);
 /*!
  * \brief  Initialize the context structure used to build the algebraic system
  *         This is done after the setup step.
+ *         Set an initial value for the velocity and pressure field if needed
  *
  * \param[in]  mesh      pointer to a cs_mesh_t structure
  * \param[in]  connect   pointer to a cs_cdo_connect_t structure
