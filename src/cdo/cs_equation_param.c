@@ -2740,10 +2740,14 @@ cs_equation_add_diffusion(cs_equation_param_t   *eqp,
 {
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
-  assert(property != NULL);
+  if (property == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Eq. %s: Stop adding an empty property.",
+              __func__, eqp->name);
 
   eqp->flag |= CS_EQUATION_DIFFUSION;
   eqp->diffusion_property = property;
+
   cs_property_type_t  type = cs_property_get_type(eqp->diffusion_property);
   if (type & CS_PROPERTY_ISO)
     eqp->diffusion_hodge.is_iso = true;
@@ -2767,10 +2771,14 @@ cs_equation_add_curlcurl(cs_equation_param_t   *eqp,
 {
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
-  assert(property != NULL);
+  if (property == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Eq. %s: Stop adding an empty property.",
+              __func__, eqp->name);
 
   eqp->flag |= CS_EQUATION_CURLCURL;
   eqp->curlcurl_property = property;
+
   cs_property_type_t  type = cs_property_get_type(eqp->curlcurl_property);
   if (type & CS_PROPERTY_ISO)
     eqp->curlcurl_hodge.is_iso = true;
@@ -2794,10 +2802,14 @@ cs_equation_add_graddiv(cs_equation_param_t   *eqp,
 {
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
-  assert(property != NULL);
+  if (property == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Eq. %s: Stop adding an empty property.",
+              __func__, eqp->name);
 
   eqp->flag |= CS_EQUATION_GRADDIV;
   eqp->graddiv_property = property;
+
   cs_property_type_t  type = cs_property_get_type(eqp->graddiv_property);
   if (type & CS_PROPERTY_ISO)
     eqp->graddiv_hodge.is_iso = true;
@@ -2822,7 +2834,10 @@ cs_equation_add_time(cs_equation_param_t   *eqp,
 {
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
-  assert(property != NULL);
+  if (property == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Eq. %s: Stop adding an empty property.",
+              __func__, eqp->name);
 
   eqp->flag |= CS_EQUATION_UNSTEADY;
   eqp->time_property = property;
@@ -2844,7 +2859,10 @@ cs_equation_add_advection(cs_equation_param_t   *eqp,
 {
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
-  assert(adv_field != NULL);
+  if (adv_field == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Eq: %s: Stop adding an empty advection field.",
+              __func__, eqp->name);
 
   eqp->flag |= CS_EQUATION_CONVECTION;
   eqp->adv_field = adv_field;
@@ -2868,6 +2886,10 @@ cs_equation_add_reaction(cs_equation_param_t   *eqp,
 {
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+  if (property == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Eq. %s: Stop adding an empty property.",
+              __func__, eqp->name);
 
   /* Only this kind of reaction term is available up to now.
      Add a new reaction term */
