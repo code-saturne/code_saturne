@@ -33,6 +33,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <assert.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -56,6 +57,7 @@
 #include "cs_parameters.h"
 #include "cs_parall.h"
 #include "cs_mesh.h"
+#include "cs_mesh_adjacencies.h"
 #include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
 #include "cs_internal_coupling.h"
@@ -276,67 +278,72 @@ _local_extrema_scalar(const cs_real_t *restrict pvar,
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_lnum_t n_cells = m->n_cells;
-  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
-  const int n_i_groups = m->i_face_numbering->n_groups;
-  const int n_i_threads = m->i_face_numbering->n_threads;
-  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t n_vertices = m->n_vertices;
 
-  const cs_lnum_t *restrict cell_cells_idx
-    = (const cs_lnum_t *restrict) m->cell_cells_idx;
-  const cs_lnum_t *restrict cell_cells_lst
-    = (const cs_lnum_t *restrict) m->cell_cells_lst;
-  const cs_lnum_2_t *restrict i_face_cells
-    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_adjacency_t  *c2v = cs_mesh_adjacencies_cell_vertices();
+  const cs_lnum_t *c2v_idx = c2v->idx;
+  const cs_lnum_t *c2v_ids = c2v->ids;
 
-# pragma omp parallel for
-  for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
     local_max[ii] = pvar[ii];
     local_min[ii] = pvar[ii];
   }
 
-  /* Contribution from interior faces */
+  cs_real_t *v_min, *v_max;
+  BFT_MALLOC(v_min, n_vertices, cs_real_t);
+  BFT_MALLOC(v_max, n_vertices, cs_real_t);
 
-  for (int g_id = 0; g_id < n_i_groups; g_id++) {
-#   pragma omp parallel for
-    for (int t_id = 0; t_id < n_i_threads; t_id++) {
-      for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
-          face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
-          face_id++) {
+# pragma omp parallel for if (n_vertices > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < n_vertices; ii++) {
+    v_max[ii] = -HUGE_VAL;
+    v_min[ii] = HUGE_VAL;
+  }
 
-        cs_lnum_t ii = i_face_cells[face_id][0];
-        cs_lnum_t jj = i_face_cells[face_id][1];
+  /* Scatter min/max values to vertices */
 
-        cs_real_t pi = pvar[ii];
-        cs_real_t pj = pvar[jj];
-
-        local_max[ii] = CS_MAX(local_max[ii], pj);
-        local_max[jj] = CS_MAX(local_max[jj], pi);
-        local_min[ii] = CS_MIN(local_min[ii], pj);
-        local_min[jj] = CS_MIN(local_min[jj], pi);
-      }
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    cs_lnum_t s_id = c2v_idx[c_id];
+    cs_lnum_t e_id = c2v_idx[c_id+1];
+    cs_real_t _c_var = pvar[c_id];
+    for (cs_lnum_t j = s_id; j < e_id; j++) {
+      cs_lnum_t v_id = c2v_ids[j];
+      if (_c_var < v_min[v_id])
+        v_min[v_id] = _c_var;
+      if (_c_var > v_max[v_id])
+        v_max[v_id] = _c_var;
     }
   }
 
-  /* Contribution from extended neighborhood */
+  if (m->vtx_interfaces != NULL) {
+    cs_interface_set_min(m->vtx_interfaces,
+                         m->n_vertices,
+                         1,
+                         true,
+                         CS_REAL_TYPE,
+                         v_min);
+    cs_interface_set_max(m->vtx_interfaces,
+                         m->n_vertices,
+                         1,
+                         true,
+                         CS_REAL_TYPE,
+                         v_max);
+  }
 
-  if (halo_type == CS_HALO_EXTENDED) {
-#   pragma omp parallel for
-    for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
-      for (cs_lnum_t cidx = cell_cells_idx[ii];
-           cidx < cell_cells_idx[ii + 1];
-           cidx++) {
-        cs_lnum_t jj = cell_cells_lst[cidx];
+  /* Gather min/max values from vertices */
 
-        cs_real_t pi = pvar[ii];
-        cs_real_t pj = pvar[jj];
-
-        local_max[ii] = CS_MAX(local_max[ii], pj);
-        local_max[jj] = CS_MAX(local_max[jj], pi);
-        local_min[ii] = CS_MIN(local_min[ii], pj);
-        local_min[jj] = CS_MIN(local_min[jj], pi);
-      }
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    cs_lnum_t s_id = c2v_idx[c_id];
+    cs_lnum_t e_id = c2v_idx[c_id+1];
+    for (cs_lnum_t j = s_id; j < e_id; j++) {
+      cs_lnum_t v_id = c2v_ids[j];
+      if (v_min[v_id] < local_min[c_id])
+        local_min[c_id] = v_min[v_id];
+      if (v_max[v_id] > local_max[c_id])
+        local_max[c_id] = v_max[v_id];
     }
-  } /* End for extended neighborhood */
+  }
 
   /* Synchronisation */
   if (m->halo != NULL) {
