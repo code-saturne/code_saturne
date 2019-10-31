@@ -126,7 +126,7 @@ class runcase(object):
             if j > -1:
                 line = line[0:j]
 
-            args = separate_args(line.rstrip())
+            args = separate_args(line.strip())
             if args.count('run') == 1:
                 if args.index('run') == 1: # "<package_name> run"
                     for name in ('code_saturne', 'neptune_cfd'):
@@ -139,6 +139,10 @@ class runcase(object):
 
                         test_name = '\\' + name
                         if args[0].find(test_name) == 0:
+                            self.cmd_name = name
+                            self.run_cmd_line_id = i
+                            return
+                        elif args[0] == name:
                             self.cmd_name = name
                             self.run_cmd_line_id = i
                             return
