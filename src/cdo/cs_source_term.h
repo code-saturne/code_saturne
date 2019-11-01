@@ -515,8 +515,7 @@ cs_source_term_pcsd_by_value(const cs_xdef_t           *source,
 /*!
  * \brief  Compute the contribution for a cell related to a source term and
  *         add it to the given array of values.
- *         Case of a scalar density (sd) defined on primal cells by a DoF
- *         function.
+ *         Case of a density defined on primal cells by a DoF function.
  *         Case of face-based schemes
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
@@ -530,6 +529,30 @@ cs_source_term_pcsd_by_value(const cs_xdef_t           *source,
 
 void
 cs_source_term_pcsd_by_dof_func(const cs_xdef_t           *source,
+                                const cs_cell_mesh_t      *cm,
+                                cs_real_t                  time_eval,
+                                cs_cell_builder_t         *cb,
+                                void                      *input,
+                                double                    *values);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it to the given array of values.
+ *         Case of a density defined on primal cells by a DoF function.
+ *         Case of vector-valued face-based schemes
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed value
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_pcvd_by_dof_func(const cs_xdef_t           *source,
                                 const cs_cell_mesh_t      *cm,
                                 cs_real_t                  time_eval,
                                 cs_cell_builder_t         *cb,
