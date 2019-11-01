@@ -343,6 +343,13 @@ typedef struct {
    */
   cs_navsto_param_model_t     model;
 
+  /*! \var reference_pressure
+   *  Value of the reference pressure p0 (used for rescaling or during update
+   *  of physical quantities). By default: 0.
+   */
+
+  cs_real_t                   reference_pressure;
+
   /*! \var phys_constants
    * Main physical constants (gravity vector and coriolis source term). This
    * structure is shared with the legacy part.
@@ -852,6 +859,19 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp);
 
 const char *
 cs_navsto_param_get_coupling_name(cs_navsto_param_coupling_t  coupling);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the value to consider for the reference pressure
+ *
+ * \param[in]  nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]  pref      value of the reference pressure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_set_reference_pressure(cs_navsto_param_t    *nsp,
+                                 cs_real_t             pref);
 
 /*----------------------------------------------------------------------------*/
 /*!

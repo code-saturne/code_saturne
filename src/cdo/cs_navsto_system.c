@@ -989,6 +989,13 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
               "%s: Invalid space discretization scheme.", __func__);
   }
 
+  if (fabs(nsp->reference_pressure) > 0 && nsp->n_pressure_ic_defs == 0) {
+
+    /* Initialize the initial pressure to the reference pressure */
+    cs_navsto_add_pressure_ic_by_value(nsp, NULL, &(nsp->reference_pressure));
+
+  }
+
   if (nsp->model & CS_NAVSTO_MODEL_BOUSSINESQ) {
 
     cs_equation_t  *mom_eq = cs_navsto_system_get_momentum_eq();

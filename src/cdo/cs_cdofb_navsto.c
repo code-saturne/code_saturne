@@ -619,6 +619,46 @@ cs_cdofb_navsto_init_face_pressure(const cs_navsto_param_t     *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Update the pressure field in order to get a field with a mean-value
+ *         equal to the reference value
+ *
+ * \param[in]       nsp       pointer to a cs_navsto_param_t structure
+ * \param[in]       quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in, out]  values    pressure field values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_rescale_pressure_to_ref(const cs_navsto_param_t    *nsp,
+                                        const cs_cdo_quantities_t  *quant,
+                                        cs_real_t                   values[])
+{
+  const cs_lnum_t  n_cells = quant->n_cells;
+
+  /*
+   * The algorithm used for summing is l3superblock60, based on the article:
+   * "Reducing Floating Point Error in Dot Product Using the Superblock Family
+   * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
+   * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156--1174
+   * 2008 Society for Industrial and Applied Mathematics
+   */
+
+  cs_real_t  intgr = cs_weighted_sum(n_cells, quant->cell_vol, values);
+
+  if (cs_glob_n_ranks > 1)
+    cs_parall_sum(1, CS_REAL_TYPE, &intgr);
+
+  assert(quant->vol_tot > 0.);
+  const cs_real_t  g_avg = intgr / quant->vol_tot;
+  const cs_real_t  p_shift = nsp->reference_pressure - g_avg;
+
+# pragma omp parallel for if (n_cells > CS_THR_MIN)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+    values[c_id] = values[c_id] + p_shift;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Update the pressure field in order to get a field with a zero-mean
  *         average
  *

@@ -221,6 +221,7 @@ cs_navsto_param_create(const cs_boundary_t             *boundaries,
 
   /* Which equations are solved and which terms are needed */
   param->model = model;
+  param->reference_pressure = 0.;
   param->phys_constants = cs_get_glob_physical_constants();
 
   /* Turbulence modelling (pointer to global structures) */
@@ -853,6 +854,25 @@ cs_navsto_param_get_coupling_name(cs_navsto_param_coupling_t  coupling)
   }
 
   return NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the value to consider for the reference pressure
+ *
+ * \param[in]  nsp       pointer to a \ref cs_navsto_param_t structure
+ * \param[in]  pref      value of the reference pressure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_set_reference_pressure(cs_navsto_param_t    *nsp,
+                                 cs_real_t             pref)
+{
+  if (nsp == NULL)
+    bft_error(__FILE__, __LINE__, 0, _err_empty_nsp, __func__);
+
+  nsp->reference_pressure = pref;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -261,6 +261,22 @@ cs_cdofb_navsto_init_face_pressure(const cs_navsto_param_t     *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Update the pressure field in order to get a field with a mean-value
+ *         equal to the reference value
+ *
+ * \param[in]       nsp       pointer to a cs_navsto_param_t structure
+ * \param[in]       quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in, out]  values    pressure field values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_rescale_pressure_to_ref(const cs_navsto_param_t    *nsp,
+                                        const cs_cdo_quantities_t  *quant,
+                                        cs_real_t                   values[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Update the pressure field in order to get a field with a zero-mean
  *         average
  *
