@@ -1144,17 +1144,57 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Update variables and related quantities when a new state of the
+ *         Navier-Stokes system has been computed
+ *
+ * \param[in] mesh       pointer to a cs_mesh_t structure
+ * \param[in] time_step  structure managing the time stepping
+ * \param[in] connect    pointer to a cs_cdo_connect_t structure
+ * \param[in] cdoq       pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_system_update(const cs_mesh_t             *mesh,
+                        const cs_time_step_t        *time_step,
+                        const cs_cdo_connect_t      *connect,
+                        const cs_cdo_quantities_t   *cdoq)
+{
+  cs_navsto_system_t  *ns = cs_navsto_system;
+
+  if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+
+  cs_navsto_param_t  *nsp = ns->param;
+
+  /* Retrieve the boundary velocity flux (mass flux) and perform the update */
+  cs_field_t  *nflx
+    = cs_advection_field_get_field(ns->adv_field,
+                                   CS_MESH_LOCATION_BOUNDARY_FACES);
+
+  assert(nflx != NULL);
+  cs_advection_field_across_boundary(ns->adv_field,
+                                     time_step->t_cur,
+                                     nflx->val);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build, solve and update the Navier-Stokes system in case of a
  *         steady-state approach
  *
  * \param[in] mesh       pointer to a cs_mesh_t structure
  * \param[in] time_step  structure managing the time stepping
+ * \param[in] connect    pointer to a cs_cdo_connect_t structure
+ * \param[in] cdoq       pointer to a cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_compute_steady_state(const cs_mesh_t        *mesh,
-                                      const cs_time_step_t   *time_step)
+cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
+                                      const cs_time_step_t        *time_step,
+                                      const cs_cdo_connect_t      *connect,
+                                      const cs_cdo_quantities_t   *cdoq)
 {
   cs_navsto_system_t  *ns = cs_navsto_system;
 
@@ -1166,15 +1206,8 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t        *mesh,
   if (cs_navsto_param_is_steady(nsp))
     ns->compute_steady(mesh, nsp, ns->scheme_context);
 
-  /* Retrieve the boundary velocity flux (mass flux) and perform the update */
-  cs_field_t  *nflx
-    = cs_advection_field_get_field(ns->adv_field,
-                                   CS_MESH_LOCATION_BOUNDARY_FACES);
-
-  assert(nflx != NULL);
-  cs_advection_field_across_boundary(ns->adv_field,
-                                     time_step->t_cur,
-                                     nflx->val);
+  /* Update variable, properties according to the new computed variables */
+  cs_navsto_system_update(mesh, time_step, connect, cdoq);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1183,12 +1216,16 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t        *mesh,
  *
  * \param[in] mesh       pointer to a cs_mesh_t structure
  * \param[in] time_step  structure managing the time stepping
+ * \param[in] connect    pointer to a cs_cdo_connect_t structure
+ * \param[in] cdoq       pointer to a cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_compute(const cs_mesh_t         *mesh,
-                         const cs_time_step_t    *time_step)
+cs_navsto_system_compute(const cs_mesh_t             *mesh,
+                         const cs_time_step_t        *time_step,
+                         const cs_cdo_connect_t      *connect,
+                         const cs_cdo_quantities_t   *cdoq)
 {
   cs_navsto_system_t  *ns = cs_navsto_system;
 
@@ -1201,14 +1238,8 @@ cs_navsto_system_compute(const cs_mesh_t         *mesh,
   /* Build and solve the Navier-Stokes system */
   ns->compute(mesh, nsp, ns->scheme_context);
 
-  /* Retrieve the boundary velocity flux (mass flux) and perform the update */
-  cs_field_t  *nflx
-    = cs_advection_field_get_field(ns->adv_field,
-                                   CS_MESH_LOCATION_BOUNDARY_FACES);
-
-  assert(nflx != NULL);
-  cs_advection_field_across_boundary(ns->adv_field, time_step->t_cur,
-                                     nflx->val);
+  /* Update variable, properties according to the new computed variables */
+  cs_navsto_system_update(mesh, time_step, connect, cdoq);
 }
 
 /*----------------------------------------------------------------------------*/

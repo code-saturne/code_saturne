@@ -446,17 +446,39 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Update variables and related quantities when a new state of the
+ *         Navier-Stokes system has been computed
+ *
+ * \param[in] mesh       pointer to a cs_mesh_t structure
+ * \param[in] time_step  structure managing the time stepping
+ * \param[in] connect    pointer to a cs_cdo_connect_t structure
+ * \param[in] cdoq       pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_system_update(const cs_mesh_t             *mesh,
+                        const cs_time_step_t        *time_step,
+                        const cs_cdo_connect_t      *connect,
+                        const cs_cdo_quantities_t   *cdoq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build, solve and update the Navier-Stokes system in case of a
  *         steady-state approach
  *
  * \param[in] mesh       pointer to a cs_mesh_t structure
  * \param[in] time_step  structure managing the time stepping
+ * \param[in] connect    pointer to a cs_cdo_connect_t structure
+ * \param[in] cdoq       pointer to a cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_compute_steady_state(const cs_mesh_t        *mesh,
-                                      const cs_time_step_t   *time_step);
+cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
+                                      const cs_time_step_t        *time_step,
+                                      const cs_cdo_connect_t      *connect,
+                                      const cs_cdo_quantities_t   *cdoq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -464,12 +486,16 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t        *mesh,
  *
  * \param[in] mesh       pointer to a cs_mesh_t structure
  * \param[in] time_step  structure managing the time stepping
+ * \param[in] connect    pointer to a cs_cdo_connect_t structure
+ * \param[in] cdoq       pointer to a cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_navsto_system_compute(const cs_mesh_t         *mesh,
-                         const cs_time_step_t    *time_step);
+cs_navsto_system_compute(const cs_mesh_t             *mesh,
+                         const cs_time_step_t        *time_step,
+                         const cs_cdo_connect_t      *connect,
+                         const cs_cdo_quantities_t   *cdoq);
 
 /*----------------------------------------------------------------------------*/
 /*!

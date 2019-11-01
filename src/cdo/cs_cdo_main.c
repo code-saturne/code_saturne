@@ -272,7 +272,9 @@ _solve_steady_state_domain(cs_domain_t  *domain)
   /* 4. Navier-Stokes module */
   if (cs_navsto_system_is_activated())
     cs_navsto_system_compute_steady_state(domain->mesh,
-                                          domain->time_step);
+                                          domain->time_step,
+                                          domain->connect,
+                                          domain->cdo_quantities);
 
   /* User-defined equations */
   _compute_steady_user_equations(domain);
@@ -340,7 +342,10 @@ _solve_domain(cs_domain_t  *domain)
 
   /* 4. Navier-Stokes module */
   if (cs_navsto_system_is_activated())
-    cs_navsto_system_compute(domain->mesh, domain->time_step);
+    cs_navsto_system_compute(domain->mesh,
+                             domain->time_step,
+                             domain->connect,
+                             domain->cdo_quantities);
 
   /* User-defined equations */
   _compute_unsteady_user_equations(domain, nt_cur);
