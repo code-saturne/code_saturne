@@ -131,6 +131,30 @@ static cs_thermal_system_t  *cs_thermal_system = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Is the thermal system solved with the temperature as variable
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+_solve_with_temperature(void)
+{
+  if (cs_thermal_system == NULL)
+    return false;
+
+  else {
+
+    if (cs_thermal_system->model & CS_THERMAL_MODEL_WITH_ENTHALPY)
+      return false;
+    if (cs_thermal_system->model & CS_THERMAL_MODEL_WITH_TOTAL_ENERGY)
+      return false;
+
+  }
+
+  return true;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Evaluate the thermal diffusivity for a given list of cells
  *         Case of an anisotropic thermal conductivity
  *         This function fits the generic prototype of cs_xdef_cell_eval_t
@@ -708,6 +732,15 @@ cs_thermal_system_finalize_setup(const cs_cdo_connect_t     *connect,
     } /* Anisotropic ? */
 
   } /* Need to define a thermal diffusivity */
+
+  if (_solve_with_temperature() && fabs(thm->ref_temperature) > 0) {
+
+    cs_equation_param_t  *eqp = cs_equation_get_param(thm->thermal_eq);
+
+    if (eqp->n_ic_defs == 0)  /* Initialize with the reference temperature */
+      cs_equation_add_ic_by_value(eqp, NULL, &(thm->ref_temperature));
+
+  }
 
 }
 
