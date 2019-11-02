@@ -1168,6 +1168,17 @@ cs_advection_field_in_cells(const cs_adv_field_t   *adv,
                                        cell_values + 3*c_id);
 
       }
+      else if (cs_flag_test(array_input->loc, cs_flag_primal_face)) {
+
+        assert(array_input->index == cs_cdo_connect->c2f->idx);
+        assert(adv->status & CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX);
+
+        cs_reco_cell_vectors_by_face_dofs(cs_cdo_connect->c2f,
+                                          cdoq,
+                                          array_input->values,
+                                          cell_values);
+
+      }
       else
         bft_error(__FILE__, __LINE__, 0,
                   " %s: Invalid location for array", __func__);
@@ -1331,6 +1342,68 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
                                        cdoq,
                                        array_input->values,
                                        cell_vector);
+
+          for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
+
+            const cs_real_t  vc_vol = cdoq->dcell_vol[j];
+            cs_real_t  *_val = vtx_values + 3*c2v->ids[j];
+
+            _val[0] += vc_vol * cell_vector[0];
+            _val[1] += vc_vol * cell_vector[1];
+            _val[2] += vc_vol * cell_vector[2];
+
+          }
+
+        } /* Loop on cells */
+
+        /* Parallel synchronization of values at vertices */
+        if (cs_glob_n_ranks > 1)
+          cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+                               cdoq->n_vertices,
+                               3,             /* stride */
+                               true,          /* = interlace */
+                               CS_REAL_TYPE,
+                               vtx_values);
+
+        cs_real_t  *dual_vol = NULL;
+        BFT_MALLOC(dual_vol, cdoq->n_vertices, cs_real_t);
+        cs_cdo_quantities_compute_dual_volumes(cdoq, c2v, dual_vol);
+
+        if (cs_glob_n_ranks > 1)
+          cs_interface_set_sum(connect->interfaces[CS_CDO_CONNECT_VTX_SCAL],
+                               cdoq->n_vertices,
+                               1,             /* stride */
+                               true,          /* = interlace */
+                               CS_REAL_TYPE,
+                               dual_vol);
+
+#       pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
+        for (cs_lnum_t v_id = 0; v_id < cdoq->n_vertices; v_id++) {
+          const cs_real_t  invvol = 1./dual_vol[v_id];
+          for (int k = 0; k < 3; k++)
+            vtx_values[3*v_id+k] *= invvol;
+        }
+
+        BFT_FREE(dual_vol);
+
+      }
+      else if (cs_flag_test(array_input->loc, cs_flag_primal_face)) {
+
+        assert(array_input->index == connect->c2f->idx);
+        assert(adv->status & CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX);
+
+        memset(vtx_values, 0, 3*cdoq->n_vertices*sizeof(cs_real_t));
+
+        const cs_adjacency_t  *c2v = connect->c2v;
+
+        for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
+
+          cs_real_t  cell_vector[3];
+          cs_reco_cell_vector_by_face_dofs(c_id,
+                                           connect->c2f,
+                                           cdoq,
+                                           array_input->values,
+                                           cell_vector);
 
           for (cs_lnum_t j = c2v->idx[c_id]; j < c2v->idx[c_id+1]; j++) {
 

@@ -309,6 +309,50 @@ cs_reco_cell_vectors_by_ib_face_dofs(const cs_adjacency_t       *c2f,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Reconstruct the vector-valued quantity inside a cell from the face
+ *        DoFs (interior and boundary). Scalar-valued face DoFs are related to
+ *        the normal flux across faces.
+ *
+ * \param[in]   c_id          id of the cell to handle
+ * \param[in]   c2f           cell -> faces connectivity
+ * \param[in]   quant         pointer to the additional quantities struct.
+ * \param[in]   face_dofs     array of DoF values at faces
+ * \param[out]  cell_reco     vector-valued reconstruction inside cells. This
+ *                            quantity should have been allocated before calling
+ *                            this function
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_reco_cell_vector_by_face_dofs(cs_lnum_t                   c_id,
+                                 const cs_adjacency_t       *c2f,
+                                 const cs_cdo_quantities_t  *cdoq,
+                                 const cs_real_t             face_dofs[],
+                                 cs_real_t                  *cell_reco)
+{
+  /* Sanity checks */
+  assert(c2f != NULL && cdoq !=  NULL && face_dofs != NULL);
+
+  /* Initialization */
+  cell_reco[0] = cell_reco[1] = cell_reco[2] = 0;
+
+  /* Loop on cell faces */
+  for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+
+    const cs_lnum_t  f_id = c2f->ids[j];
+    const cs_real_t  *dedge_vect = cdoq->dedge_vector + 3*j;
+
+    for (int k = 0; k < 3; k++)
+      cell_reco[k] += face_dofs[f_id] * dedge_vect[k];
+
+  } /* Loop on cell faces */
+
+  const cs_real_t  invvol = 1./cdoq->cell_vol[c_id];
+  for (int k =0; k < 3; k++) cell_reco[k] *= invvol;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Reconstruct the vector-valued quantity inside each cell from the face
  *        DoFs (interior and boundary). Scalar-valued face DoFs are related to
  *        the normal flux across faces.
