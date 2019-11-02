@@ -245,12 +245,10 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
                                          option_flag, post_flag);
 
   /* Advection field related to the resolved velocity */
-  navsto->adv_field = cs_advection_field_add("velocity_field",
-                                             CS_ADVECTION_FIELD_NAVSTO);
+  cs_advection_field_status_t  adv_status =
+    CS_ADVECTION_FIELD_NAVSTO | CS_ADVECTION_FIELD_DEFINE_AT_BOUNDARY_FACES;
 
-  /* Normal flux at the boundary faces */
-  cs_advection_field_set_option(navsto->adv_field,
-                                CS_ADVKEY_DEFINE_AT_BOUNDARY_FACES);
+  navsto->adv_field = cs_advection_field_add("velocity_field", adv_status);
 
   /* Set the default boundary condition for the equations of the Navier-Stokes
      system according to the default domain boundary */

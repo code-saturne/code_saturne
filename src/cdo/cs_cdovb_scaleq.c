@@ -941,7 +941,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_SEF | CS_FLAG_COMP_PFQ;
       break;
     case CS_XDEF_BY_FIELD:
-      if (eqp->adv_field->status == CS_ADVECTION_FIELD_LEGACY_NAVSTO)
+      if (eqp->adv_field->status & CS_ADVECTION_FIELD_LEGACY_FV)
         eqb->msh_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ;
       break;
 

@@ -105,7 +105,7 @@ _needs_adimensional_numbers(void)
   int n_adv_fields = cs_advection_field_get_n_fields();
   for (int adv_id = 0; adv_id < n_adv_fields; adv_id++) {
     const cs_adv_field_t  *adv = cs_advection_field_by_id(adv_id);
-    if (adv->flag & CS_ADVECTION_FIELD_POST_COURANT)
+    if (adv->post_flag & CS_ADVECTION_FIELD_POST_COURANT)
       return true;
   }
 
@@ -188,7 +188,7 @@ _post_courant_number(const cs_adv_field_t       *adv,
 {
   if (adv == NULL)
     return;
-  if (!(adv->flag & CS_ADVECTION_FIELD_POST_COURANT))
+  if (!(adv->post_flag & CS_ADVECTION_FIELD_POST_COURANT))
     return;
 
   int  len = strlen(adv->name) + 8 + 1;

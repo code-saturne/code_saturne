@@ -44,6 +44,8 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+#define CS_GWF_ADVECTION_NAME   "darcy_velocity"
+
 /*!
  * @name Flags specifying the general behavior of the groundwater flow module
  * @{
@@ -200,19 +202,6 @@ cs_gwf_set_post_options(cs_flag_t       post_flag);
 
 void
 cs_gwf_set_gravity_vector(const cs_real_3_t      gvec);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Advanced setting: indicate where the darcian flux is stored
- *         cs_flag_primal_cell is the default setting
- *         cs_flag_dual_face_byc is a valid choice for vertex-based schemes
- *
- * \param[in] location_flag   where the flux is defined
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_set_darcian_flux_location(cs_flag_t      location_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!

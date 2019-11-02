@@ -320,24 +320,29 @@ cs_user_model(void)
   }
   /*! [param_cdo_add_user_adv_field] */
 
-  /*! [param_cdo_add_user_adv_field_opt] */
+  /*! [param_cdo_add_adv_field] */
+  {
+    /* Add a user-defined advection field named "adv_field"  */
+    cs_advection_field_status_t  adv_status =
+      CS_ADVECTION_FIELD_USER                 | /* = user-defined */
+      CS_ADVECTION_FIELD_TYPE_VELOCITY_VECTOR | /* = define by a vector field */
+      CS_ADVECTION_FIELD_DEFINE_AT_VERTICES   | /* = add a field at vertices */
+      CS_ADVECTION_FIELD_DEFINE_AT_BOUNDARY_FACES;  /* = add boundary fluxes */
+
+    cs_adv_field_t  *adv = cs_advection_field_add("adv_field", adv_status);
+  }
+  /*! [param_cdo_add_adv_field] */
+
+  /*! [param_cdo_add_user_adv_field_post] */
   {
     /* Retrieve an advection field named "adv_field"  */
     cs_adv_field_t  *adv = cs_advection_field_by_name("adv_field");
 
     /* Compute the Courant number (if unsteady simulation) */
-    cs_advection_field_set_option(adv, CS_ADVKEY_POST_COURANT);
+    cs_advection_field_set_postprocess(adv, CS_ADVECTION_FIELD_POST_COURANT);
 
-    /* Set other advanced options: for instance, define an interpolation of the
-       advection field at vertices */
-    cs_advection_field_set_option(adv, CS_ADVKEY_DEFINE_AT_VERTICES);
-
-    /* Both options in one call */
-    cs_advection_field_set_option(adv,
-                                  CS_ADVKEY_POST_COURANT |
-                                  CS_ADVKEY_DEFINE_AT_VERTICES);
   }
-  /*! [param_cdo_add_user_adv_field_opt] */
+  /*! [param_cdo_add_user_adv_field_post] */
 
 }
 
@@ -501,11 +506,8 @@ cs_user_finalize_setup(cs_domain_t   *domain)
 
     cs_advection_field_def_by_analytic(adv, _define_adv_field, NULL);
 
-    /* Enable also the defintion of the advection field at mesh vertices */
-    cs_advection_field_set_option(adv, CS_ADVKEY_DEFINE_AT_VERTICES);
-
     /* Activate the post-processing of the related Courant number */
-    cs_advection_field_set_option(adv, CS_ADVKEY_POST_COURANT);
+    cs_advection_field_set_postprocess(adv, CS_ADVECTION_FIELD_POST_COURANT);
   }
   /*! [param_cdo_setup_advfield] */
 

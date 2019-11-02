@@ -622,8 +622,13 @@ cs_gwf_activate(cs_property_type_t    pty_type,
 
   /* Add an advection field related to the darcian flux stemming from the
      Richards equation */
-  gw->adv_field = cs_advection_field_add("darcy_velocity",
-                                         CS_ADVECTION_FIELD_GWF);
+  cs_advection_field_status_t  adv_status =
+    CS_ADVECTION_FIELD_GWF | CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
+
+  if (!(flag & CS_GWF_RICHARDS_UNSTEADY)) /* Steady-state Richards eq. */
+    adv_status |= CS_ADVECTION_FIELD_STEADY;
+
+  gw->adv_field = cs_advection_field_add(CS_GWF_ADVECTION_NAME, adv_status);
 
   /* Add a property related to the diffusion term of the Richards eq. */
   gw->permeability = cs_property_add("permeability", pty_type);
@@ -785,8 +790,7 @@ cs_gwf_set_post_options(cs_flag_t       post_flag)
 
   gw->post_flag = post_flag;
   if (gw->post_flag & CS_GWF_POST_DARCY_FLUX_AT_BOUNDARY)
-    cs_advection_field_set_option(gw->adv_field,
-                                  CS_ADVKEY_DEFINE_AT_BOUNDARY_FACES);
+    gw->adv_field->status |= CS_ADVECTION_FIELD_DEFINE_AT_BOUNDARY_FACES;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -808,35 +812,6 @@ cs_gwf_set_gravity_vector(const cs_real_3_t      gvec)
   gw->gravity[0] = gvec[0];
   gw->gravity[1] = gvec[1];
   gw->gravity[2] = gvec[2];
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Advanced setting: indicate where the darcian flux is stored
- *
- *         cs_flag_dual_face_byc is the default setting for Vb (default space
- *         scheme) whereas cs_flag_primal_cell should be prefered for other
- *         schemes
- *
- * \param[in]  location_flag      where the flux is defined
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_set_darcian_flux_location(cs_flag_t      location_flag)
-{
-  cs_gwf_t  *gw = cs_gwf_main_structure;
-
-  if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
-
-  gw->flux_location = location_flag;
-
-  if (cs_flag_test(gw->flux_location, cs_flag_dual_face_byc))
-    cs_advection_field_set_type(gw->adv_field,
-                                CS_ADVECTION_FIELD_TYPE_FLUX);
-  else if (cs_flag_test(gw->flux_location, cs_flag_primal_cell))
-    cs_advection_field_set_type(gw->adv_field,
-                                CS_ADVECTION_FIELD_TYPE_VELOCITY);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1199,18 +1174,20 @@ cs_gwf_finalize_setup(const cs_cdo_connect_t     *connect,
                                         false, /* transfer ownership */
                                         c2e->idx);
 
-        /* Set the type of advection field */
-        cs_advection_field_set_type(gw->adv_field,
-                                    CS_ADVECTION_FIELD_TYPE_FLUX);
+        /* Reset the type of advection field */
+        if (gw->adv_field->status & CS_ADVECTION_FIELD_TYPE_VELOCITY_VECTOR)
+          gw->adv_field->status -= CS_ADVECTION_FIELD_TYPE_VELOCITY_VECTOR;
+        gw->adv_field->status |= CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
 
       }
       else if (cs_flag_test(gw->flux_location, cs_flag_primal_cell)) {
 
         cs_advection_field_def_by_field(gw->adv_field, cell_adv_field);
 
-        /* Set the type of advection field */
-        cs_advection_field_set_type(gw->adv_field,
-                                    CS_ADVECTION_FIELD_TYPE_VELOCITY);
+        /* Reset the type of advection field */
+        if (gw->adv_field->status & CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX)
+          gw->adv_field->status -= CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
+        gw->adv_field->status |= CS_ADVECTION_FIELD_TYPE_VELOCITY_VECTOR;
 
       }
       else
