@@ -327,6 +327,54 @@ cs_get_bdy_zone_id(const char   *z_name)
   return z_id;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the value associated to the given definition.
+ *         This should be a definition by value and the dimension should be
+ *         equal to one.
+ *
+ * \param[in]  def    pointer to a cs_xdef_t structure
+ *
+ * \return the value of the definition
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static cs_real_t
+cs_xdef_get_scalar_value(cs_xdef_t     *def)
+{
+  if (def == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: Empty definition.", __func__);
+  assert(def->dim == 1);
+  assert(def->type == CS_XDEF_BY_VALUE);
+
+  cs_real_t  *value = (cs_real_t *)def->input;
+
+  return value[0];
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the values associated to the given definition.
+ *         This should be a definition by array
+ *
+ * \param[in]  def    pointer to a cs_xdef_t structure
+ *
+ * \return the pointer to the array of values
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static cs_real_t *
+cs_xdef_get_array(cs_xdef_t     *def)
+{
+  if (def == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: Empty definition.", __func__);
+  assert(def->type == CS_XDEF_BY_ARRAY);
+
+  cs_xdef_array_input_t  *ai = (cs_xdef_array_input_t *)def->input;
+
+  return ai->values;
+}
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
