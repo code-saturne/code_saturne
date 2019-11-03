@@ -2028,8 +2028,9 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
     memcpy(mom_eqc->face_values_pre, mom_eqc->face_values,
            3*n_faces*sizeof(cs_real_t));
 
-    /* Redo the setup since the matrix is modified */
-    cs_sles_setup(sles, matrix);
+    /* Free the SLES structure in order to redo the setup since the matrix
+     * should be modified */
+    cs_sles_free(sles);
 
     /* Solve the new system */
     ns_info.n_inner_iter +=
@@ -2272,8 +2273,9 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
     memcpy(mom_eqc->face_values_pre, mom_eqc->face_values,
            3*n_faces*sizeof(cs_real_t));
 
-    /* Redo the setup since the matrix is modified */
-    cs_sles_setup(sles, matrix);
+    /* Free the SLES structure in order to redo the setup since the matrix
+     * should be modified */
+    cs_sles_free(sles);
 
     /* Solve the new system */
     ns_info.n_inner_iter +=
