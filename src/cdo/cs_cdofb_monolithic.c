@@ -116,6 +116,14 @@ static const cs_cdo_quantities_t    *cs_shared_quant;
 static const cs_cdo_connect_t       *cs_shared_connect;
 static const cs_time_step_t         *cs_shared_time_step;
 
+/* If one solves the saddle-point system as it is, then one needs to define
+ * new shared structure. Otherwise, one points to shared structures with
+ * vector-valued face-based schemes */
+static cs_range_set_t         *_shared_range_set = NULL;
+static cs_interface_set_t     *_shared_interface_set = NULL;
+static cs_matrix_structure_t  *_shared_matrix_structure = NULL;
+static cs_matrix_assembler_t  *_shared_matrix_assembler = NULL;
+
 static cs_range_set_t         *cs_shared_range_set = NULL;
 static cs_interface_set_t     *cs_shared_interface_set = NULL;
 static cs_matrix_structure_t  *cs_shared_matrix_structure = NULL;
@@ -301,17 +309,17 @@ _build_shared_structures(void)
      into interior and border faces to do this, since only boundary faces
      can be associated to a periodicity */
 
-  cs_shared_interface_set = cs_interface_set_create(size,
-                                                    NULL,
-                                                    gnum,
-                                                    m->periodicity,
-                                                    0, NULL, NULL, NULL);
+  _shared_interface_set = cs_interface_set_create(size,
+                                                  NULL,
+                                                  gnum,
+                                                  m->periodicity,
+                                                  0, NULL, NULL, NULL);
 
-  cs_shared_range_set = cs_range_set_create(cs_shared_interface_set,
-                                            NULL,      /* halo */
-                                            size,
-                                            false,     /* TODO: Ask Yvan */
-                                            0);        /* g_id_base */
+  _shared_range_set = cs_range_set_create(_shared_interface_set,
+                                          NULL,      /* halo */
+                                          size,
+                                          false,     /* TODO: Ask Yvan */
+                                          0);        /* g_id_base */
 
   /* Free memory */
   BFT_FREE(gnum);
@@ -324,8 +332,8 @@ _build_shared_structures(void)
    * separately --> MSR storage
    * Create the matrix assembler structure
    */
-  cs_shared_matrix_assembler
-    = cs_matrix_assembler_create(cs_shared_range_set->l_range, true);
+  _shared_matrix_assembler =
+    cs_matrix_assembler_create(_shared_range_set->l_range, true);
 
   /* First loop to count max size of the buffer used to fill the matrix
    * structure. +1 to take into account the diagonal term.
@@ -363,9 +371,9 @@ _build_shared_structures(void)
       = (end-start + 1)*9 + 6*(f2c->idx[frow_id+1]-f2c->idx[frow_id]);
 
     const cs_gnum_t  grow_ids[3]
-      = {cs_shared_range_set->g_id[frow_id],              /* x-component */
-         cs_shared_range_set->g_id[frow_id +   n_faces],  /* y-component */
-         cs_shared_range_set->g_id[frow_id + 2*n_faces]}; /* z-component */
+      = {_shared_range_set->g_id[frow_id],              /* x-component */
+         _shared_range_set->g_id[frow_id +   n_faces],  /* y-component */
+         _shared_range_set->g_id[frow_id + 2*n_faces]}; /* z-component */
 
     int shift = 0;
 
@@ -384,9 +392,9 @@ _build_shared_structures(void)
 
       const cs_lnum_t  fcol_id = f2f->ids[idx];
       const cs_gnum_t  gcol_ids[3]
-        = {cs_shared_range_set->g_id[fcol_id],              /* x-component */
-           cs_shared_range_set->g_id[fcol_id + n_faces],    /* y-component */
-           cs_shared_range_set->g_id[fcol_id + 2*n_faces]}; /* z-component */
+        = {_shared_range_set->g_id[fcol_id],              /* x-component */
+           _shared_range_set->g_id[fcol_id + n_faces],    /* y-component */
+           _shared_range_set->g_id[fcol_id + 2*n_faces]}; /* z-component */
 
       for (int i = 0; i < 3; i++) {
         const cs_gnum_t  grow_id = grow_ids[i];
@@ -403,7 +411,7 @@ _build_shared_structures(void)
     for (cs_lnum_t idx = f2c->idx[frow_id]; idx < f2c->idx[frow_id+1]; idx++) {
 
       const cs_lnum_t  ccol_id = f2c->ids[idx];
-      const cs_gnum_t  gcol_id = cs_shared_range_set->g_id[3*n_faces + ccol_id];
+      const cs_gnum_t  gcol_id = _shared_range_set->g_id[3*n_faces + ccol_id];
 
       for (int i = 0; i < 3; i++) { /* x,y,z-component */
 
@@ -420,18 +428,18 @@ _build_shared_structures(void)
 
     } /* Loop on pressure related DoFs */
 
-    cs_matrix_assembler_add_g_ids(cs_shared_matrix_assembler,
+    cs_matrix_assembler_add_g_ids(_shared_matrix_assembler,
                                   n_entries, grows, gcols);
     assert(shift == n_entries);
 
   } /* Loop on face entities */
 
   /* 4. Build the matrix structure */
-  cs_matrix_assembler_compute(cs_shared_matrix_assembler);
+  cs_matrix_assembler_compute(_shared_matrix_assembler);
 
-  cs_shared_matrix_structure
-    = cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR,
-                                                cs_shared_matrix_assembler);
+  _shared_matrix_structure =
+    cs_matrix_structure_create_from_assembler(CS_MATRIX_MSR,
+                                              _shared_matrix_assembler);
 
   /* Free temporary buffers */
   BFT_FREE(grows);
@@ -1607,9 +1615,16 @@ cs_cdofb_monolithic_init_common(const cs_navsto_param_t       *nsp,
   cs_shared_time_step = time_step;
 
   /* Need to build special range set and interfaces ? */
-  if (nsp->sles_strategy != CS_NAVSTO_SLES_GKB_SATURNE)
+  if (nsp->sles_strategy != CS_NAVSTO_SLES_GKB_SATURNE) {
+
     _build_shared_structures();
 
+    cs_shared_interface_set = _shared_interface_set;
+    cs_shared_range_set = _shared_range_set;
+    cs_shared_matrix_structure = _shared_matrix_structure;
+    cs_shared_matrix_assembler = _shared_matrix_assembler;
+
+  }
   else {
     cs_shared_range_set = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
     cs_shared_matrix_structure = cs_cdofb_vecteq_matrix_structure();
@@ -1783,13 +1798,22 @@ cs_cdofb_monolithic_free_scheme_context(void   *scheme_context)
   /* Free BC structure */
   sc->pressure_bc = cs_cdo_bc_free(sc->pressure_bc);
 
-  if (cs_shared_interface_set != NULL) {
-    /* Shared structures have to be freed */
-    cs_range_set_destroy(&cs_shared_range_set);
-    cs_interface_set_destroy(&cs_shared_interface_set);
-    cs_matrix_structure_destroy(&cs_shared_matrix_structure);
-    cs_matrix_assembler_destroy(&cs_shared_matrix_assembler);
-  }
+  /* Shared structures which have been allocated only for the function used
+   * in the monolithic approach have to be freed */
+  if (_shared_interface_set != NULL)
+    cs_interface_set_destroy(&_shared_interface_set);
+  if (_shared_range_set != NULL)
+    cs_range_set_destroy(&_shared_range_set);
+  if (_shared_matrix_assembler != NULL)
+    cs_matrix_assembler_destroy(&_shared_matrix_assembler);
+  if (_shared_matrix_structure != NULL)
+    cs_matrix_structure_destroy(&_shared_matrix_structure);
+
+  /* Unset shared pointers */
+  cs_shared_range_set = NULL;
+  cs_shared_matrix_structure = NULL;
+  cs_shared_matrix_assembler = NULL;
+  cs_shared_interface_set = NULL;
 
   /* Divergence operator (unassembled storage). May be set to NULL */
   BFT_FREE(sc->c2f_divergence);
