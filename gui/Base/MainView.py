@@ -1397,7 +1397,7 @@ class MainView(object):
                 title = self.tr("Save error")
                 msg = "Expressions are missing !\n"
                 for i, d in enumerate(mci_state['exps']):
-                    msg += "(%d) %s %s is not provided or zone %s\n" % (i+1, d['var'], d['func'], d['zone'])
+                    msg += "(%d/%d) %s %s is not provided or zone %s\n" % (i+1, mci_state['nexps'], d['var'], d['func'], d['zone'])
                 QMessageBox.critical(self, title, msg)
                 msg = self.tr("Saving aborted")
                 self.statusbar.showMessage(msg, 2000)
