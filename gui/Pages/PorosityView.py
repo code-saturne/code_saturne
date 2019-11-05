@@ -140,7 +140,7 @@ class PorosityView(QWidget, Ui_PorosityForm):
         self.treeView.setModel(self.modelPorosity)
 
         # Combo model
-        if self.case['package'].name == 'code_saturne':
+        if self.case.module_name() == 'code_saturne':
             self.modelPorosityType = ComboModel(self.comboBoxType, 2, 1)
             self.modelPorosityType.addItem(self.tr("isotropic"), 'isotropic')
             self.modelPorosityType.addItem(self.tr("anisotropic"), 'anisotropic')
