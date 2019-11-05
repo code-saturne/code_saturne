@@ -600,7 +600,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
             except Exception:
                 from code_saturne.cs_package import package as cs_package
                 self.case['package'] = cs_package()
-                self.case['package'].code_name = 'NEPTUNE_CFD'
 
             if hasattr(self.parent, 'updateTitleBar'):
                 self.parent.updateTitleBar()

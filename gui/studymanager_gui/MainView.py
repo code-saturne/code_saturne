@@ -717,7 +717,7 @@ class MainView(object):
               self.package.bugreport + "\n\n"               +\
               "Please visit our site:\n"                    +\
               self.package.url
-        QMessageBox.about(self, self.package.name + ' study manager', msg)
+        QMessageBox.about(self, self.package.code_name + ' study manager', msg)
 
 
     def displayLicence(self):
@@ -898,7 +898,7 @@ class MainViewSmgr(QMainWindow, Ui_MainForm, MainView):
         open the tutorial for Code_Saturne
         """
         msg = "See " + self.package.url + " web site for tutorials."
-        QMessageBox.about(self, self.package.name + ' study manager', msg)
+        QMessageBox.about(self, self.package.code_name + ' study manager', msg)
 
 
     def displayCSTheory(self):

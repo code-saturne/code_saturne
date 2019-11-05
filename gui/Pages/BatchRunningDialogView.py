@@ -801,10 +801,10 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         run_title = None
 
         if rm_type == None:
-            run_title = self.case['package'].code_name + ' - Job Run'
+            run_title = self.case.module_name() + ' - Job Run'
             cmd = cs_exec_environment.enquote_arg(batch)
         else:
-            run_title = self.case['package'].code_name + ' - Job Submission'
+            run_title = self.case.module_name() + ' - Job Submission'
             cmd = cs_exec_environment.enquote_arg(sys.argv[0]) \
                   + ' submit ' +  cs_exec_environment.enquote_arg(batch)
 

@@ -200,7 +200,7 @@ class Case(object):
             self.exe, self.pkg = self.__get_exe(pkg, run_ref)
             self.subdomains = []
             for d in locals()['domains']:
-                if d['solver'] == self.pkg.code_name:
+                if d['solver'].lower() in ('code_saturne', 'neptune_cfd'):
                     self.subdomains.append(d['domain'])
             self.resu = 'RESU_COUPLING'
 

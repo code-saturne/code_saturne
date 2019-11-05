@@ -563,7 +563,7 @@ class MainView(object):
         icon = QIcon(QPixmap(iconpath))
         self.setWindowIcon(icon)
 
-        self.setWindowTitle(self.package.code_name + " TRACKING CONVERGENCE" + " - " + self.package.version)
+        self.setWindowTitle(self.package.code_name + " convergence plot" + " - " + self.package.version)
 
         # Validator
         validator = DoubleValidator(self.lineEditTime, min=0.0)

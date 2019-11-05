@@ -270,9 +270,21 @@ class case:
         if staging_dir:
             staging_dir = check_exec_dir_stamp(staging_dir)
 
+        n_nc_solver = 0
+
         for d in ( self.domains + self.syr_domains \
                  + self.ast_domains + self.py_domains ):
             d.set_case_dir(self.case_dir, staging_dir)
+            try:
+                solver_name = os.path.basename(d.solver_path)
+                if solver_name == 'nc_solver':
+                    n_nc_solver += 1
+            except Exception:
+                pass
+
+        self.module_name = 'code_saturne'
+        if n_nc_solver == len(self.domains):
+            self.module_name = 'neptune_cfd'
 
         # Working directory
 
@@ -317,7 +329,7 @@ class case:
 
         # Print process info
 
-        name = self.package.code_name
+        name = self.module_name
 
         for d in self.domains:
             solver_name = os.path.basename(d.solver_path)
@@ -1656,10 +1668,9 @@ $appli/salome kill `cat $port_log`
         os.chdir(self.exec_dir)
 
         for d in self.domains:
-            if os.path.isfile(os.path.join(d.exec_dir,
-                                           d.package_compute.solver)):
-               d.solver_path = os.path.join('.',
-                                            d.package_compute.solver)
+            solver = os.path.basename(d.solver_path)
+            if os.path.isfile(os.path.join(d.exec_dir, solver)):
+                d.solver_path = os.path.join('.', solver)
 
         for d in self.syr_domains:
             d.solver_path = os.path.join('.', 'syrthes')
@@ -1821,7 +1832,7 @@ $appli/salome kill `cat $port_log`
 
         # Update error codes
 
-        name = self.package.code_name
+        name = self.module_name
 
         if retcode != 0:
             self.error = 'solver'
@@ -2012,7 +2023,7 @@ $appli/salome kill `cat $port_log`
 
         msg = \
             '\n' \
-            + '                      ' + self.package.code_name + '\n' \
+            + '                      ' + self.module_name + '\n' \
             + '                      ************\n' \
             + '\n' \
             + ' Version:   ' + self.package.version + '\n' \

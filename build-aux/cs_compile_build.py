@@ -335,7 +335,8 @@ def install_exec_name(pkg, exec_name, destdir=None):
         if pkg.get_cross_compile() != 'cygwin': #mingw32 or mingw64
             exec_name = os.path.normpath('C:\\MinGW\\msys\\1.0' + exec_name)
         else:
-            exec_name = pkg.dirs['pkglibexecdir'][1] + "/" + pkg.solver
+            exec_name = os.path.join(pkg.dirs['pkglibexecdir'][1],
+                                     os.path.basename(exec_name))
     if destdir:
         exec_name = dest_subdir(destdir, exec_name)
     dirname = os.path.dirname(exec_name)
@@ -365,7 +366,9 @@ if __name__ == '__main__':
 
     exec_name=options.out_file
     if not exec_name:
-        exec_name = pkg.solver
+        exec_name = 'cs_solver'
+        if os.path.basename(sys.argv[0]) == 'neptune_cfd':
+            exec_name = 'nc_solver'
 
     if options.mode == 'install':
         c = compile_install(pkg, src_dir, destdir=options.dest_dir)

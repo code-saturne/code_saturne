@@ -2592,8 +2592,13 @@ class mei_to_c_interpreter:
         os.chdir(self.tmp_path)
         out = open('comp.out', 'w')
         err = open('comp.err', 'w')
+
+        solver = "cs_solver" + self.package.config.exeext
+        if self.case.module_name() == 'neptune_cfd':
+            solver = "nc_solver" + self.package.config.exeext
+
         compilation_test = cs_compile.compile_and_link(self.case['package'],
-                                                       self.case['package'].solver,
+                                                       solver,
                                                        self.tmp_path,
                                                        opt_cflags='-w',
                                                        stdout=out,

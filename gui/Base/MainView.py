@@ -833,7 +833,11 @@ class MainView(object):
 
         title += self.tr(package.code_name)
 
-        if package.code_name == "NEPTUNE_CFD":
+        module_name = 'code_saturne'
+        if hasattr(self, 'case'):
+            module_name = self.case.module_name()
+
+        if module_name == "NEPTUNE_CFD":
             icon = QIcon(QPixmap(icondir+"logoneptune.png"))
         else:
             icon = QIcon(QPixmap(icondir+"MONO-bulle-HD.png"))
@@ -1002,8 +1006,12 @@ class MainView(object):
             out = open('comp.out', 'w')
             err = open('comp.err', 'w')
 
+            solver = "cs_solver" + self.package.config.exeext
+            if self.case.module_name() == 'neptune_cfd':
+                solver = "nc_solver" + self.package.config.exeext
+
             state = cs_compile.compile_and_link(self.case['package'],
-                                                self.case['package'].solver,
+                                                solver,
                                                 src_dir,
                                                 destdir=None,
                                                 stdout=out,
