@@ -1307,7 +1307,7 @@ if (iappel.eq.1.and.iphydr.eq.1) then
 
     ! Delta rho = - rho_0 beta Delta T
     do iel = 1, ncel
-      drom = - ro0 * cpro_beta(iel) * (cvar_t(iel) - t0)
+      drom = - ro0 * cpro_beta(iel) * (cvar_t(iel) - t0) * (1 - isolid(iporos, iel))
       dfrcxt(1, iel) = drom*gx - frcxt(1, iel)
       dfrcxt(2, iel) = drom*gy - frcxt(2, iel)
       dfrcxt(3, iel) = drom*gz - frcxt(3, iel)
@@ -1315,7 +1315,8 @@ if (iappel.eq.1.and.iphydr.eq.1) then
 
   else
     do iel = 1, ncel
-      drom = (crom(iel)-ro0)
+      drom = (crom(iel)-ro0) * (1 - isolid(iporos, iel))
+
       dfrcxt(1, iel) = drom*gx - frcxt(1, iel)
       dfrcxt(2, iel) = drom*gy - frcxt(2, iel)
       dfrcxt(3, iel) = drom*gz - frcxt(3, iel)
@@ -1326,9 +1327,9 @@ if (iappel.eq.1.and.iphydr.eq.1) then
   if (ncepdp.gt.0) then
     do ielpdc = 1, ncepdp
       iel=icepdc(ielpdc)
-      vit1   = vela(1,iel)
-      vit2   = vela(2,iel)
-      vit3   = vela(3,iel)
+      vit1   = vela(1,iel) * (1 - isolid(iporos, iel))
+      vit2   = vela(2,iel) * (1 - isolid(iporos, iel))
+      vit3   = vela(3,iel) * (1 - isolid(iporos, iel))
       cpdc11 = ckupdc(1,ielpdc)
       cpdc22 = ckupdc(2,ielpdc)
       cpdc33 = ckupdc(3,ielpdc)
@@ -1349,21 +1350,21 @@ if (iappel.eq.1.and.iphydr.eq.1) then
 
     ! Reference frame rotation
     do iel = 1, ncel
-      rom = -2.d0*crom(iel)
+      rom = -2.d0*crom(iel) * (1 - isolid(iporos, iel))
       call add_coriolis_v(0, rom, vela(:,iel), dfrcxt(:,iel))
     enddo
     ! Turbomachinery frozen rotors rotation
     if (iturbo.eq.1) then
       do iel = 1, ncel
         if (irotce(iel).gt.0) then
-          rom = -crom(iel)
+          rom = -crom(iel) * (1 - isolid(iporos, iel))
           call add_coriolis_v(irotce(iel), rom, vela(:,iel), dfrcxt(:,iel))
         endif
       enddo
     else if (icorio.eq.1) then
       do iel = 1, ncel
         if (irotce(iel).gt.0) then
-          rom = -crom(iel)
+          rom = -crom(iel) * (1 - isolid(iporos, iel))
           call add_coriolis_v(0, rom, vela(:,iel), dfrcxt(:,iel))
         endif
       enddo
