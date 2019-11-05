@@ -987,9 +987,9 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
       ! Update external forces for the computation of the gradients
       !$omp parallel do
       do iel=1,ncel
-        frcxt(1 ,iel) = frcxt(1 ,iel) + dfrcxt(1 ,iel)
-        frcxt(2 ,iel) = frcxt(2 ,iel) + dfrcxt(2 ,iel)
-        frcxt(3 ,iel) = frcxt(3 ,iel) + dfrcxt(3 ,iel)
+        frcxt(1 ,iel) = frcxt(1 ,iel) * (1 - isolid(iporos, iel)) + dfrcxt(1 ,iel)
+        frcxt(2 ,iel) = frcxt(2 ,iel) * (1 - isolid(iporos, iel)) + dfrcxt(2 ,iel)
+        frcxt(3 ,iel) = frcxt(3 ,iel) * (1 - isolid(iporos, iel)) + dfrcxt(3 ,iel)
       enddo
       if (irangp.ge.0.or.iperio.eq.1) then
         call synvin(frcxt)
