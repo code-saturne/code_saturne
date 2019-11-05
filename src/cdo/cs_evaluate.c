@@ -1839,7 +1839,7 @@ cs_evaluate_delta_3_square_wc2x_norm(const cs_real_t        *array,
 {
   _sanity_checks(__func__, c2x, w_c2x);
 
-  const cs_lnum_t  size = cs_cdo_quant->n_cells;
+  const cs_lnum_t  size = c2x->idx[cs_cdo_quant->n_cells];
 
  /*
   * The algorithm used is l3superblock60, based on the article:
