@@ -632,12 +632,6 @@ nzones = -1
 
 itagms = 0
 
-! --- Interpolation face des viscosites
-!     = 0 ARITHMETIQUE
-!     = 1 HARMONIQUE
-
-imvisf = 0
-
 ! --- Type des CL, tables de tri
 !       Sera calcule apres cs_user_boundary_conditions.
 
