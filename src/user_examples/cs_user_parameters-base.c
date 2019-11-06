@@ -241,9 +241,8 @@ cs_user_model(void)
                              1,
                              CS_MESH_LOCATION_BOUNDARY_FACES);
 
-}
-
   /*! [user_property_addition] */
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
