@@ -57,7 +57,7 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_WALL_F_DISABLED,
+  CS_WALL_F_DISABLED = 0,
   CS_WALL_F_1SCALE_POWER,
   CS_WALL_F_1SCALE_LOG,
   CS_WALL_F_2SCALES_LOG,
@@ -70,7 +70,7 @@ typedef enum {
 
 typedef enum {
 
-  CS_WALL_F_S_ARPACI_LARSEN,
+  CS_WALL_F_S_ARPACI_LARSEN = 0,
   CS_WALL_F_S_VDRIEST,
 
 } cs_wall_f_s_type_t;

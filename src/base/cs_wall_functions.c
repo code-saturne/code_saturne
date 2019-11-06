@@ -90,21 +90,21 @@ BEGIN_C_DECLS
   \var  cs_wall_functions_t::iwallf
         Indicates the type of wall function used for the velocity
         boundary conditions on a frictional wall.\n
-        - 0: no wall functions
-        - 1: one scale of friction velocities (power law)
-        - 2: one scale of friction velocities (log law)
-        - 3: two scales of friction velocities (log law)
-        - 4: two scales of friction velocities (log law) (scalable wall functions)
-        - 5: two scales of friction velocities (mixing length based on V. Driest analysis)
-        \ref iwallf is initialised to 2 for \ref iturb = 10, 40, 41 or 70
+        - CS_WALL_F_DISABLED: no wall functions
+        - CS_WALL_F_1SCALE_POWER: one scale of friction velocities (power law)
+        - CS_WALL_F_1SCALE_LOG: one scale of friction velocities (log law)
+        - CS_WALL_F_2SCALES_LOG: two scales of friction velocities (log law)
+        - CS_WALL_F_SCALABLE_2SCALES_LOG: two scales of friction velocities (log law) (scalable wall functions)
+        - CS_WALL_F_2SCALES_VDRIEST: two scales of friction velocities (mixing length based on V. Driest analysis)
+        \ref iwallf is initialised to CS_WALL_F_1SCALE_LOG for \ref iturb = 10, 40, 41 or 70
         (mixing length, LES and Spalart Allmaras).\n
-        \ref iwallf is initialised to 0 for \ref iturb = 0, 32, 50 or 51\n
-        \ref iwallf is initialised to 3 for \ref iturb = 20, 21, 30, 31 or 60
+        \ref iwallf is initialised to CS_WALL_F_DISABLED for \ref iturb = 0, 32, 50 or 51\n
+        \ref iwallf is initialised to CS_WALL_F_2SCALES_LOG for \ref iturb = 20, 21, 30, 31 or 60
         (\f$k-\epsilon\f$, \f$R_{ij}-\epsilon\f$ LRR, \f$R_{ij}-\epsilon\f$ SSG and
         \f$k-\omega\f$ SST models).\n
         The v2f model (\ref iturb=50) is not designed to use wall functions
         (the mesh must be low Reynolds).\n
-        The value \ref iwallf = 3 is not compatible with \ref iturb=0, 10, 40
+        The value \ref iwallf = CS_WALL_F_2SCALES_LOG is not compatible with \ref iturb=0, 10, 40
         or 41 (laminar, mixing length and LES).\n
         Concerning the \f$k-\epsilon\f$ and \f$R_{ij}-\epsilon\f$ models, the
         two-scales model is usually at least as satisfactory as the one-scale
@@ -116,9 +116,9 @@ BEGIN_C_DECLS
         Useful if \ref iturb is different from 50.
   \var  cs_wall_functions_t::iwalfs
         wall functions for scalar
-        - 0: three layers (Arpaci and Larsen) or two layers (Prandtl-Taylor) for
+        - CS_WALL_F_S_ARPACI_LARSEN: three layers (Arpaci and Larsen) or two layers (Prandtl-Taylor) for
              Prandtl number smaller than 0.1
-        - 1: consistant with the 2 scales wall function for velocity using Van
+        - CS_WALL_F_S_VDRIEST: consistant with the 2 scales wall function for velocity using Van
              Driest mixing length
   \var  cs_wall_functions_t::iwallt
         exchange coefficient correlation
@@ -144,7 +144,12 @@ BEGIN_C_DECLS
 /* wall functions structure and associated pointer */
 
 static cs_wall_functions_t  _wall_functions =
-  {-999, -999, 0, -1e13};
+{
+  .iwallf = -999,
+  .iwalfs = -999,
+  .iwallt = 0,
+  .ypluli = -1e13
+};
 
 const cs_wall_functions_t  * cs_glob_wall_functions = &_wall_functions;
 
