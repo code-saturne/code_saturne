@@ -302,12 +302,31 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
   }
 
   /* Create associated equations */
-  if (post_flag & CS_NAVSTO_POST_STREAM_FUNCTION)
+  if (post_flag & CS_NAVSTO_POST_STREAM_FUNCTION) {
+
     navsto->stream_function_eq = cs_equation_add(CS_NAVSTO_STREAM_EQNAME,
                                                  "stream_function",
                                                  CS_EQUATION_TYPE_NAVSTO,
                                                  1,
                                                  CS_PARAM_BC_HMG_NEUMANN);
+
+    cs_equation_param_t  *eqp =
+      cs_equation_get_param(navsto->stream_function_eq);
+    assert(eqp != NULL);
+
+    /* Default settings for this equation */
+    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
+    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "dga");
+    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
+    cs_equation_set_param(eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
+
+    /* This is for post-processing purpose, so, there is no need to have
+     * a restrictive convergence tolerance on the resolution of the linear
+     * system */
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_EPS, "1e-6");
+
+  }
 
   /* Set the static variable */
   cs_navsto_system = navsto;
@@ -543,25 +562,8 @@ cs_navsto_system_init_setup(void)
 
   }
 
-  if (nsp->post_flag & CS_NAVSTO_POST_STREAM_FUNCTION) {
-
+  if (nsp->post_flag & CS_NAVSTO_POST_STREAM_FUNCTION)
     nsp->post_flag |= CS_NAVSTO_POST_VORTICITY; /* automatic */
-    cs_equation_param_t  *eqp = cs_equation_get_param(ns->stream_function_eq);
-    assert(eqp != NULL);
-
-    /* Default settings for this equation */
-    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
-    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "dga");
-    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
-    cs_equation_set_param(eqp, CS_EQKEY_AMG_TYPE, "k_cycle");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
-
-    /* This is for post-processing purpose, so, there is no need to have
-     * a restrictive convergence tolerance on the resolution of the linear
-     * system */
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_EPS, "1e-6");
-
-  }
 
   if (nsp->post_flag & CS_NAVSTO_POST_HELICITY) {
 
@@ -703,6 +705,16 @@ cs_navsto_system_set_sles(void)
 
   } /* Switch space scheme */
 
+  if (nsp->post_flag & CS_NAVSTO_POST_STREAM_FUNCTION) {
+
+    cs_equation_param_t  *eqp = cs_equation_get_param(ns->stream_function_eq);
+    assert(eqp != NULL);
+
+    /* Equation related to Navier-Stokes do not follow the classical setup
+       stage */
+    cs_equation_param_set_sles(eqp);
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
