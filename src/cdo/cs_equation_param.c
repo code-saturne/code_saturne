@@ -920,7 +920,7 @@ _set_saturne_sles(cs_equation_param_t   *eqp)
     if (slesp.amg_type == CS_PARAM_AMG_HOUSE_K)
       cs_multigrid_set_coarsening_options(mg,
                                           8,   /* aggregation_limit*/
-                                          CS_GRID_COARSENING_SPD_PW,
+                                          CS_GRID_COARSENING_SPD_MX,
                                           10,  /* n_max_levels */
                                           50,  /* min_g_cells */
                                           0.,  /* P0P1 relaxation */
