@@ -34,6 +34,8 @@
 #include "cs_base.h"
 #include "cs_halo.h"
 #include "cs_internal_coupling.h"
+#include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -478,6 +480,99 @@ cs_gradient_tensor_synced_input(const char                *var_name,
                                 const cs_real_t            bc_coeff_b[][6][6],
                                 const cs_real_t            var[restrict][6],
                                 cs_real_63_t     *restrict grad);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the gradient of a scalar field at a given cell
+ *         using least-squares reconstruction.
+ *
+ * This assumes ghost cell values which might be used are already
+ * synchronized.
+ *
+ * \param[in]   m               pointer to associated mesh structure
+ * \param[in]   fvq             pointer to associated finite volume quantities
+ * \param[in]   c_id            cell id
+ * \param[in]   halo_type       halo type
+ * \param[in]   bc_coeff_a      boundary condition term a, or NULL
+ * \param[in]   bc_coeff_b      boundary condition term b, or NULL
+ * \param[in]   var             gradient's base variable
+ * \param[in]   c_weight        cell variable weight, or NULL
+ * \param[out]  grad            gradient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gradient_scalar_cell(const cs_mesh_t             *m,
+                        const cs_mesh_quantities_t  *fvq,
+                        cs_lnum_t                    c_id,
+                        cs_halo_type_t               halo_type,
+                        const cs_real_t              bc_coeff_a[],
+                        const cs_real_t              bc_coeff_b[],
+                        const cs_real_t              var[],
+                        const cs_real_t              c_weight[],
+                        cs_real_t                    grad[3]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the gradient of a vector field at a given cell
+ *         using least-squares reconstruction.
+ *
+ * This assumes ghost cell values which might be used are already
+ * synchronized.
+ *
+ * \param[in]   m               pointer to associated mesh structure
+ * \param[in]   fvq             pointer to associated finite volume quantities
+ * \param[in]   c_id            cell id
+ * \param[in]   halo_type       halo type
+ * \param[in]   bc_coeff_a      boundary condition term a, or NULL
+ * \param[in]   bc_coeff_b      boundary condition term b, or NULL
+ * \param[in]   var             gradient's base variable
+ * \param[in]   c_weight        cell variable weight, or NULL
+ * \param[out]  grad            gradient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gradient_vector_cell(const cs_mesh_t             *m,
+                        const cs_mesh_quantities_t  *fvq,
+                        cs_lnum_t                    c_id,
+                        cs_halo_type_t               halo_type,
+                        const cs_real_t              bc_coeff_a[][3],
+                        const cs_real_t              bc_coeff_b[][3][3],
+                        const cs_real_t              var[restrict][3],
+                        const cs_real_t              c_weight[],
+                        cs_real_t                    grad[3][3]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the gradient of a tensor field at a given cell
+ *         using least-squares reconstruction.
+ *
+ * This assumes ghost cell values which might be used are already
+ * synchronized.
+ *
+ * \param[in]   m               pointer to associated mesh structure
+ * \param[in]   fvq             pointer to associated finite volume quantities
+ * \param[in]   c_id            cell id
+ * \param[in]   halo_type       halo type
+ * \param[in]   bc_coeff_a      boundary condition term a, or NULL
+ * \param[in]   bc_coeff_b      boundary condition term b, or NULL
+ * \param[in]   var             gradient's base variable
+ * \param[in]   c_weight        cell variable weight, or NULL
+ * \param[out]  grad            gradient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_gradient_tensor_cell(const cs_mesh_t             *m,
+                        const cs_mesh_quantities_t  *fvq,
+                        cs_lnum_t                    c_id,
+                        cs_halo_type_t               halo_type,
+                        const cs_real_t              bc_coeff_a[][6],
+                        const cs_real_t              bc_coeff_b[][6][6],
+                        const cs_real_t              var[restrict][6],
+                        const cs_real_t              c_weight[],
+                        cs_real_t                    grad[6][3]);
 
 /*----------------------------------------------------------------------------
  * Determine gradient type by Fortran "imrgra" value

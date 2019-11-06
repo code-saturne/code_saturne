@@ -12,32 +12,35 @@ User changes:
 
 - Multigrid: simplify plotting behavior.
   * Only convergence of cycles is now plotted, as many smoother
-    operators do not compute the residual
+    operators do not compute the residual.
   * With a high enough verbosity, the residual after each level's
     smoother or solver application is logged.
 
 Numerics and physical modelling:
+
+- Add local (single cell) gradient reconstruction options for
+  postprocessing.
 
 - Gradient reconstruction and extended cell neighborhood:
   * allow new options for extended neighborhood reduction.
 
 - Merge Atmospheric module and Cooling towers module air properties.
 
-- Add the capability to solve CDO equations with an advection field defined by the mass
-  flux arising from the FV legacy scheme
+- Add the capability to solve CDO equations with an advection field
+  defined by the mass flux arising from the FV legacy scheme.
 
 - Add CDO edge-based schemes to solve vector-valued equations with curl terms
 
 - Add a Maxwell module to solve electrostatic with CDO vertex-based schemes and
-  magnetostatic equations with CDO edge-based schemes
+  magnetostatic equations with CDO edge-based schemes.
 
-- Add the resolution of Oseen and Navier-Stokes equations with CDO face-based schemes
-  (rely on the work of Milani's PhD)
+- Add the resolution of Oseen and Navier-Stokes equations with CDO
+  face-based schemes (based on the work of Milani's PhD).
 
-- Add the first brick of a thermal module based on CDO schemes
+- Add the first pieces of a thermal module based on CDO schemes.
 
 - Add new Hodge operators for vertex-based and face-based schemes based on a
-  bubble stabilization or a sub-stabilization
+  bubble stabilization or a sub-stabilization.
 
 Architectural changes:
 
