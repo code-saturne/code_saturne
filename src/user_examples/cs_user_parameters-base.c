@@ -280,7 +280,7 @@ cs_user_parameters(cs_domain_t *domain)
   /* Reference time step dt_ref
      The example given below is probably not adapted to your case. */
 
-  cs_real_t dt_ref = 0.005; // was 0.05
+  cs_real_t dt_ref = 0.005;
   domain->time_step->dt_ref = dt_ref;
 
   /*! [ref_time_step] */
