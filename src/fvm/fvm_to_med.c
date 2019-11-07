@@ -451,13 +451,14 @@ _add_med_mesh(fvm_to_med_writer_t  *writer,
         axisunit[MED_SNAME_SIZE*j + i] = ' ';
       }
     }
+    med_int space_dim = writer->med_meshes[id]->space_dim;
     dtunit[MED_LNAME_SIZE] = '\0';
-    axisname[MED_SNAME_SIZE*3] = '\0';
+    axisname[MED_SNAME_SIZE*space_dim] = '\0';
     axisunit[MED_SNAME_SIZE] = '\0';
 
     retval = MEDmeshCr(writer->fid,
                        med_mesh_name,
-                       writer->med_meshes[id]->space_dim,
+                       space_dim,
                        writer->med_meshes[id]->entity_dim,
                        MED_UNSTRUCTURED_MESH,
                        med_info,
