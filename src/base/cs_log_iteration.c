@@ -1235,7 +1235,7 @@ _log_clips(void)
     const char *name = NULL;
     int f_id = _clips[clip_id].f_id;
     int f_dim = 0;
-    if (f_id > 0) {
+    if (f_id > -1) {
       const cs_field_t  *f = cs_field_by_id(f_id);
       name = cs_field_get_key_str(f, label_key_id);
       if (name == NULL)
@@ -1325,7 +1325,7 @@ _log_clips(void)
 
       const char *name = NULL;
       int f_id = _clips[clip_id].f_id;
-      if (f_id > 0) {
+      if (f_id > -1) {
         const cs_field_t  *f = cs_field_by_id(f_id);
         name = cs_field_get_key_str(f, label_key_id);
         if (name == NULL)
