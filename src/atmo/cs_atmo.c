@@ -117,6 +117,7 @@ static cs_atmo_chemistry_t _atmo_chem = {
   .n_reactions = 0,
   .spack_file_name = NULL,
   .species_to_scalar_id = NULL,
+  .species_to_field_id = NULL,
   .molar_mass = NULL,
   .chempoint = NULL
 };
@@ -195,6 +196,8 @@ cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
 
   if (_atmo_chem.species_to_scalar_id == NULL)
     BFT_MALLOC(_atmo_chem.species_to_scalar_id, _atmo_chem.n_species, int);
+  if (_atmo_chem.species_to_field_id == NULL)
+    BFT_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
   if (_atmo_chem.molar_mass == NULL)
     BFT_MALLOC(_atmo_chem.molar_mass, _atmo_chem.n_species, cs_real_t);
   if (_atmo_chem.chempoint == NULL)
@@ -209,8 +212,10 @@ void
 cs_f_atmo_chem_finalize(void)
 {
   BFT_FREE(_atmo_chem.species_to_scalar_id);
+  BFT_FREE(_atmo_chem.species_to_field_id);
   BFT_FREE(_atmo_chem.molar_mass);
   BFT_FREE(_atmo_chem.chempoint);
+  BFT_FREE(_atmo_chem.spack_file_name);
 }
 
 /*============================================================================
@@ -449,8 +454,13 @@ cs_atmo_z_ground_compute(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmos_chemistry_set_spack_file_name(const char *file_name)
+cs_atmo_chemistry_set_spack_file_name(const char *file_name)
 {
+  if (file_name == NULL) {
+    _atmo_chem.model = 0;
+    return;
+  }
+
   _atmo_chem.model = 4;
 
   BFT_MALLOC(_atmo_chem.spack_file_name,
@@ -463,20 +473,24 @@ cs_atmos_chemistry_set_spack_file_name(const char *file_name)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function declare additional transported variables for
- *        atmospheric module  for the chemistry defined from SPACK.
+ * \brief This function declares additional transported variables for
+ *        atmospheric module for the chemistry defined from SPACK.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_atmo_declare_chem_from_spack(void)
 {
-  char line[512];
-  char name[512];
-  char label[512];
+  assert(_atmo_chem.model == 4);
+
+  if (_atmo_chem.spack_file_name == NULL)
+    bft_error(__FILE__,__LINE__, 0,
+              _("Atmo chemistry from SPACK file: requires a SPACK file."));
+
+  char line[512] = "";
 
   /* Open file */
-  bft_printf(" Open a SPACK file for atmo chemistry:\n    %s \n",
+  bft_printf("SPACK file for atmo chemistry:\n    %s \n",
       _atmo_chem.spack_file_name);
 
   FILE* file = fopen(_atmo_chem.spack_file_name, "rt");
@@ -490,14 +504,14 @@ cs_atmo_declare_chem_from_spack(void)
   for (int i = 1; loop; i++ ) {
     if (fscanf(file, "%s\n", line) != 1)
       bft_error(__FILE__,__LINE__, 0,
-                _("Atmo chemistry from SPACK file: Could not open file."));
+                _("Atmo chemistry from SPACK file: Could not skip header."));
 
     if (strcmp("[species]", line) == 0)
       loop = false;
   }
 
   loop = true;
-  /* Read  SPACK: first loop count the number of species */
+  /* Read SPACK: first loop count the number of species */
   for (int i = 1; loop; i++ ) {
     /* Read species */
     if (fscanf(file, "%s\n", line) != 1)
@@ -514,16 +528,21 @@ cs_atmo_declare_chem_from_spack(void)
   }
 
   /* Now allocate arrays */
+  BFT_MALLOC(_atmo_chem.species_to_field_id, _atmo_chem.n_species, int);
   BFT_MALLOC(_atmo_chem.species_to_scalar_id, _atmo_chem.n_species, int);
   BFT_MALLOC(_atmo_chem.molar_mass, _atmo_chem.n_species, cs_real_t);
   BFT_MALLOC(_atmo_chem.chempoint, _atmo_chem.n_species, int);
 
-  /* Read  SPACK: second loop Create variables and read molar mass */
+  /* Read SPACK: second loop Create variables and read molar mass */
   for (int i = 0; i < _atmo_chem.n_species; i++ ) {
-    /* Read species */
-    if (fscanf(file, "%s %lf\n", line, &(_atmo_chem.molar_mass[i])) != 1)
+    char name[512] = "";
+    char label[512] = "";
+
+    /* Read species name and molar mass */
+    if (fscanf(file, "%s %lf\n", line, &(_atmo_chem.molar_mass[i])) != 2)
       bft_error(__FILE__,__LINE__, 0,
-                _("Atmo chemistry from SPACK file: warning, may be end of file."));
+                _("Atmo chemistry from SPACK file: could not read species name and molar mass, line %d."),
+                i);
 
     /* The order is already ok */
     _atmo_chem.chempoint[i] = i+1;//FIXME ?
@@ -535,10 +554,10 @@ cs_atmo_declare_chem_from_spack(void)
     strcat(name, label);
 
     /* Field of dimension 1 */
-    int f_id = cs_variable_field_create(name, line, CS_MESH_LOCATION_CELLS, 1);
+    _atmo_chem.species_to_field_id[i] = cs_variable_field_create(name, line, CS_MESH_LOCATION_CELLS, 1);
 
     /* Scalar field, store in isca_chem/species_to_scalar_id (FORTRAN/C) array */
-    _atmo_chem.species_to_scalar_id[i] = cs_add_model_field_indexes(f_id);
+    _atmo_chem.species_to_scalar_id[i] = cs_add_model_field_indexes(_atmo_chem.species_to_field_id[i]);
 
   }
 

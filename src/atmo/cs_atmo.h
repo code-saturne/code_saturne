@@ -104,7 +104,8 @@ typedef struct {
   int n_species;
   int n_reactions;
   char *spack_file_name;
-  int *species_to_scalar_id;
+  int *species_to_scalar_id; // used only in fortran
+  int *species_to_field_id;
   /*! Molar mass of the chemical species (g/mol) */
   cs_real_t *molar_mass;
   int *chempoint;
@@ -133,7 +134,7 @@ extern cs_atmo_chemistry_t *cs_glob_atmo_chemistry;
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmos_chemistry_set_spack_file_name(const char *file_name);
+cs_atmo_chemistry_set_spack_file_name(const char *file_name);
 
 /*----------------------------------------------------------------------------*/
 /*!

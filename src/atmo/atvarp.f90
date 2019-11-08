@@ -405,9 +405,18 @@ if (ifilechemistry.ge.1) then
   ! User defined chemistry using SPACK file and routines
   else if (ifilechemistry.eq.4) then
 
-    ! This function read the numver of species and reactions
+    ! This function read the number of species, their molar mass
     ! and creates variables
     call cs_atmo_declare_chem_from_spack()
+
+    ! Read the number of reactions
+    call dimensions(ii, nrg, jj)
+
+    ! Verification
+    if (ii.ne.nespg) then
+      write(nfecra,1003)
+      call csexit (1)
+    endif
 
     ! Map isca_chem, dmmk, chempoint and allocate it if needed
     call init_chemistry_pointers()
@@ -491,6 +500,20 @@ icp = -1
 
 #if defined(_CS_LANG_FR)
 
+ 1003 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
+'@    =========                                               ',/,&
+'@    CHIMIE ATMOSPHERIQUE SPACK DEMANDEE                     ',/,&
+'@                                                            ',/,&
+'@  Le nombre de composés gaseux lu dans le fichier SPACK     ',/,&
+'@  differe de celui lu dans les sources SPACK                ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+
  1004 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -510,6 +533,20 @@ icp = -1
 '@                                                            ',/)
 
 #else
+
+ 1003 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
+'@    =========                                               ',/,&
+'@    ATMOSPHERIC CHEMISTRY FROM SPACK                        ',/,&
+'@                                                            ',/,&
+'@  The number of gaseous species read from the SPACK file    ',/,&
+'@  is not equal to the one read in the SPACK source file     ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
 
  1004 format(                                                           &
 '@                                                            ',/,&

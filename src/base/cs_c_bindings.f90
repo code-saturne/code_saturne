@@ -2265,7 +2265,18 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Declare chemistry variables from SAPCK
+    !> \brief Sets the file name used to initialize SPACK
+
+    subroutine cs_atmo_chemistry_set_spack_file_name(name) &
+      bind(C, name='cs_atmo_chemistry_set_spack_file_name')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in) :: name
+    end subroutine cs_atmo_chemistry_set_spack_file_name
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Declare chemistry variables from SPACK
 
     subroutine cs_atmo_declare_chem_from_spack() &
       bind(C, name='cs_atmo_declare_chem_from_spack')
@@ -5729,6 +5740,30 @@ contains
     val = c_val
 
   end function notebook_parameter_value_by_name
+
+  !=============================================================================
+
+  !> \brief Sets the file name used to initialize SPACK
+
+  !> \param[in]     name      name of the file
+
+  subroutine atmo_chemistry_set_spack_file_name(name)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    character(len=*), intent(in) :: name
+
+    ! Local variables
+
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+
+    c_name = trim(name)//c_null_char
+    call cs_atmo_chemistry_set_spack_file_name(c_name)
+
+  end subroutine atmo_chemistry_set_spack_file_name
 
   !=============================================================================
 

@@ -124,7 +124,7 @@ do iel = 1, ncel
       call fexchem_3 (nespg,nrg,dlconc,rk,source,conv_factor,dchema)
     endif
   else if (ichemistry.eq.4) then
-    call fexchem (nespg,nrg,dlconc,rk,source,conv_factor,dchema)
+    call fexchem_4 (nespg,nrg,dlconc,rk,source,conv_factor,dchema)
   endif
 
   ! Adding source term to crvexp

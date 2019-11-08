@@ -32,7 +32,7 @@
 
 !===============================================================================
 !
-!> \brief kinetic
+!> \brief kinetic_4
 !>
 !> \brief Computation of kinetic rates for atmospheric chemistry
 !
@@ -51,7 +51,7 @@
 !> \param[out]    rk(nr)            kinetic rates
 !______________________________________________________________________________
 
-subroutine kinetic(nr,rk,temp,xlw,press,azi,att,                  &
+subroutine kinetic_4(nr,rk,temp,xlw,press,azi,att,                  &
      option_photolysis)
 
 use entsor
@@ -65,18 +65,36 @@ double precision rk(nr),temp,xlw,press
 double precision azi, att
 integer option_photolysis
 
+! Dummy local variables required by SPACK
+
+integer, parameter :: ns = 1
+integer, parameter :: nbin = 1
+integer, parameter :: iheter = 0
+integer icld
+double precision lwctmp
+double precision granulo(nbin)
+double precision WetDiam(nbin)
+double precision dsf_aero(nbin)
+integer ispeclost(4)
+double precision Wmol(ns)
+double precision LWCmin
+
+call kinetic(ns,nbin,nr,iheter,icld,rk,temp,xlw, &
+             press,azi,att,lwctmp,granulo,WetDiam,dsf_aero,ispeclost, &
+             Wmol,LWCmin,option_photolysis)
+
 return
 
 !--------
 ! Formats
 !--------
 
-end subroutine kinetic
+end subroutine kinetic_4
 
 !===============================================================================
-!> \brief fexchem
+!> \brief fexchem_4
 !>
-!> \brief Computation of the chemical production terms
+!> \brief Computes the chemical production terms
 !------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -93,7 +111,7 @@ end subroutine kinetic
 !> \param[out]    chem              chemical production terms for every species
 !______________________________________________________________________________
 
-subroutine fexchem(ns,nr,y,rk,zcsourc,convers_factor,chem)
+subroutine fexchem_4(ns,nr,y,rk,zcsourc,convers_factor,chem)
 
 use entsor
 
@@ -105,18 +123,24 @@ integer nr,ns
 double precision rk(nr),y(ns),chem(ns),zcsourc(ns)
 double precision convers_factor(ns)
 
+! Activate volumic source terms
+
+integer, parameter :: nemis = 1
+
+call fexchem(ns,nr,nemis,y,rk,zcsourc,convers_factor,chem)
+
 return
 
 !--------
 ! Formats
 !--------
 
-end subroutine fexchem
+end subroutine fexchem_4
 
 !===============================================================================
 !> \brief jacdchemdc
 !>
-!> \brief Computation of the Jacobian matrix for atmospheric chemistry
+!> \brief Routine provided by SPACK. Computes the Jacobian matrix for chemistry
 !------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -158,83 +182,9 @@ return
 end subroutine jacdchemdc
 
 !===============================================================================
-!> \brief rates
-!>
-!> \brief Computation of reaction rates
-!------------------------------------------------------------------------------
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]     nr                 total number of chemical reactions
-!> \param[in]     ns                 total number of chemical species
-!> \param[in]     rk                 kinetic rates
-!> \param[in]     y                  concentrations vector
-!> \param[out]    w                  reaction rates
-!______________________________________________________________________________
-
-subroutine rates(ns,nr,rk,y,w)
-
-use entsor
-
-implicit none
-
-! Arguments
-
-integer nr,ns
-double precision rk(nr),y(ns)
-double precision w(nr)
-
-!--------
-! FORMATS
-!--------
-
-return
-end subroutine rates
-
-!===============================================================================
-!> \brief dratedc
-!>
-!> \brief Computation of derivatives of reaction rates
-!------------------------------------------------------------------------------
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!> \param[in]     nr                 total number of chemical reactions
-!> \param[in]     ns                 total number of chemical species
-!> \param[in]     rk                 kinetic rates
-!> \param[in]     y                  concentrations vector
-!> \param[out]    dw                 derivatives of reaction rates
-!______________________________________________________________________________
-
-subroutine dratedc(ns,nr,rk,y,dw)
-
-use entsor
-
-implicit none
-
-! Arguments
-
-integer nr,ns
-double precision rk(nr),y(ns)
-double precision dw(nr,ns)
-
-!--------
-! FORMATS
-!--------
-
-return
-end subroutine dratedc
-
-!===============================================================================
 !> \brief lu_decompose
 !>
-!> \brief Computation of LU factorization of matrix m
+!> \brief Routine provided by SPACK. Computes LU factorization of matrix m
 !------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -267,10 +217,10 @@ return
 end subroutine lu_decompose
 
 !===============================================================================
-!> \brief  lu_solve
+!> \brief lu_solve
 !>
 !> \brief Resolution of MY=X where M is an LU factorization computed
-!>        by lu_decompose
+!>        by lu_decompose. Routine provided by SPACK.
 !------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -303,3 +253,107 @@ double precision x(ns)
 
 return
 end subroutine lu_solve
+
+!===============================================================================
+!> \brief dimensions
+!>
+!> \brief Rountine provided by SPACK. Return number of species / reactions
+!------------------------------------------------------------------------------
+
+subroutine dimensions(Ns, Nr, Nr_photolysis)
+
+implicit none
+
+! Arguments
+
+integer Ns, Nr, Nr_photolysis
+
+end subroutine dimensions
+
+!===============================================================================
+!> \brief kinetic
+!>
+!> \brief Routine provided by SPACK. Computes kinetic rates for the gas-phase.
+!------------------------------------------------------------------------------
+
+subroutine kinetic( &
+    Ns,Nbin_aer,nr,IHETER,ICLD,rk,temp,xlw, &
+    Press,azi,att,lwctmp,granulo,WetDiam,dsf_aero,ispeclost, &
+    Wmol,LWCmin,option_photolysis)
+
+implicit none
+
+! Arguments
+
+integer Ns,Nbin_aer,nr
+double precision rk156,rk157,rk158,rk159
+double precision lwctmp
+double precision WetDiam(Nbin_aer)
+double precision granulo(Nbin_aer)
+double precision dsf_aero(Nbin_aer)
+integer ICLD,IHETER
+integer ispeclost(4)
+double precision Wmol(Ns),LWCmin
+double precision rk(nr),temp,xlw,Press
+double precision Effko,Rapk,facteur,SumM,azi,att
+double precision YlH2O
+integer option_photolysis
+
+end subroutine kinetic
+
+!===============================================================================
+!> \brief fexchem
+!>
+!> \brief Routine provided by SPACK. Computes the chemical production terms
+!------------------------------------------------------------------------------
+
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]     nr                total number of chemical reactions
+!> \param[in]     ns                total number of chemical species
+!> \param[in]     nemis             flag to activate source terms
+!> \param[in]     y                 concentrations vector
+!> \param[in]     rk                kinetic rates
+!> \param[in]     zcsourc           source term
+!> \param[in]     convers_factor    conversion factors
+!> \param[out]    chem              chemical production terms for every species
+!______________________________________________________________________________
+
+subroutine fexchem(NS,Nr,nemis,y,rk,ZCsourc,convers_factor,chem)
+
+implicit none
+
+integer nemis
+integer nr,ns,i
+double precision w(nr),rk(nr),y(ns),chem(ns),ZCsourc(ns)
+double precision conc(ns), convers_factor(ns)
+
+end subroutine fexchem
+
+!===============================================================================
+!> \brief hetrxn
+!>
+!> \brief Dummy function for compatibility with SPACK
+!------------------------------------------------------------------------------
+
+subroutine hetrxn(Ns,Nbin_aer,temp,press,ICLD,lwctmp, &
+      WetDiam,granulo,rk156,rk157,rk158,rk159, &
+      dsf_aero,ispeclost,Wmol,LWCmin)
+
+implicit none
+
+integer Ns,Nbin_aer
+double precision rk156,rk157,rk158,rk159
+double precision lwctmp
+double precision WetDiam(Nbin_aer)
+double precision granulo(Nbin_aer)
+double precision dsf_aero(Nbin_aer)
+integer ICLD
+integer ispeclost(4)
+double precision Wmol(Ns),LWCmin
+double precision temp,Press
+
+end subroutine hetrxn

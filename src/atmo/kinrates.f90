@@ -158,7 +158,7 @@ do iel = 1, ncel
       call kinetic_3(nrg,rk,temp,hspec,press,azi,1.0d0,iphotolysis)
     endif
   else if (ichemistry.eq.4) then
-    call kinetic(nrg,rk,temp,hspec,press,azi,1.0d0,iphotolysis)
+    call kinetic_4(nrg,rk,temp,hspec,press,azi,1.0d0,iphotolysis)
   endif
 
   ! Storage of kinetic rates
