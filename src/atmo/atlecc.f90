@@ -68,18 +68,19 @@ integer           imode
 
 ! Local variables
 
+logical, save :: switch_to_labels
 integer f_id
 integer itp, ii, ios, k
 integer sjday,minute
 double precision second
 integer year, month, quant, hour, day, jday
-character(len=80) :: ccomnt, label, oneline
+character(len=80) :: ccomnt, label, oneline, fname
 character(len=1) :: csaute
 
 ! altitudes and concentrations of every nespgi species
 double precision  zconctemp(nespgi+1)
-! names of species defined in the file in case of a user defined chemical scheme
-character(len=80), allocatable, dimension(:) ::      namespg
+! names of species in the initialization file
+character(len=80), dimension(:), allocatable :: labels
 
 !===============================================================================
 
@@ -218,6 +219,14 @@ backspace(impmec)
 
 if (imode.eq.0) then
   read (impmec,*,err=999,end=999) nespgi
+  ! If nespgi < 0, we will read labels
+  ! If nepsgi > 0, we will read scalar ids (default)
+  if (nespgi < 0) then
+    nespgi = - nespgi
+    switch_to_labels = .true.
+  else
+   switch_to_labels = .false.
+  endif
   if (nespgi.gt.size(isca_chem)) then
     write(nfecra,8002) size(isca_chem), nespgi
     call csexit (1)
@@ -241,7 +250,39 @@ if (nespgi.ge.1) then
   if (imode.eq.0) then
     read(impmec,*,err=999,end=999)
   else
-    read(impmec,*,err=999,end=999) idespgi(1:nespgi)
+    if (switch_to_labels) then
+       allocate(labels(nespgi))
+       read(impmec,*,err=999,end=999) labels
+
+       do ii = 1, nespgi
+
+         ! Initialize idespgi
+         idespgi(ii) = -1
+
+         ! Find the field matching the given label
+         ! Update idespgi and break innermost for loop
+         do k = 1, nespg
+           call field_get_label(ivarfl(isca(isca_chem(k))),fname)
+           if (trim(labels(ii)).eq.fname) then
+             idespgi(ii) = k
+             exit
+           endif
+         enddo
+
+         ! Verification
+         if (idespgi(ii).lt.1 .or. idespgi(ii).gt.size(isca_chem)) then
+           write(nfecra,8003) labels(ii)
+           call csexit (1)
+           !==========
+         endif
+
+       enddo
+
+       deallocate(labels)
+
+    else
+      read(impmec,*,err=999,end=999) idespgi(1:nespgi)
+    endif
   endif
 
 !===============================================================================
@@ -404,6 +445,24 @@ call csexit (1)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
+ 8003 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (atlecc)      ',/,&
+'@    =========                                               ',/,&
+'@    PHYSIQUE PARTICULIERE (ATMOSPHERIQUE) DEMANDEE          ',/,&
+'@    MODULE DE CHIMIE (ICHEMISTRY) SPACK                     ',/,&
+'@                                                            ',/,&
+'@  L''espece a initialiser avec le fichier chimie            ',/,&
+'@  n''est pas definie                                        ',/,&
+'@                                                            ',/,&
+'@   Scalaire a initialiser : ',A80                            ,/,&
+'@                                                            ',/,&
+'@  Le calcul ne sera pas execute.                            ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
  8005 format (                                                    &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -516,6 +575,22 @@ call csexit (1)
 '@                                                            ',/,&
 '@   Number of chemistry model scalars: ',I10                  ,/,&
 '@   Number of species to initialize: ',I10                    ,/,&
+'@                                                            ',/,&
+'@  The computation will not be run                           ',/,&
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/)
+ 8003 format(                                                           &
+'@                                                            ',/,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@                                                            ',/,&
+'@ @@ WARNING : STOP WHILE READING INPUT DATA (atlecc)        ',/,&
+'@    =========                                               ',/,&
+'@      ATMOSPHERIC CHEMISTRY FROM SPACK                      ',/,&
+'@                                                            ',/,&
+'@  Could not identify the given species label                ',/,&
+'@                                                            ',/,&
+'@   Given species label : ',A80                               ,/,&
 '@                                                            ',/,&
 '@  The computation will not be run                           ',/,&
 '@                                                            ',/,&
