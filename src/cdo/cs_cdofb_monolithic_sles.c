@@ -153,6 +153,37 @@ typedef struct {
 
 } cs_gkb_builder_t;
 
+/* This structure follow notations given in the article entitled
+ * "An iterative generalized Golub-Kahan algorithm for problems in structural
+ *  mechanics" by M. Arioli, C. Kruse, U. Ruede and N. Tardieu
+ *
+ * M space is isomorphic to the velocity space (size = 3.n_faces)
+ * N space is isomorphic to the pressure space (size = n_cells)
+ */
+
+typedef struct {
+
+  /* Value of the grad-div coefficient */
+  cs_real_t                gamma;
+
+  /* Size of spaces */
+  cs_lnum_t                n_u_dofs; /* Size of the space M */
+  cs_lnum_t                n_p_dofs; /* Size of the space N */
+
+  /* Vector transformation */
+  cs_real_t               *b_tilda;  /* Modified RHS */
+
+  /* Auxiliary vectors */
+  cs_real_t               *inv_mp;   /* reciprocal of the pressure mass matrix */
+  cs_real_t               *res_p;    /* buffer in space N */
+  cs_real_t               *d__v;     /* buffer in space N */
+  cs_real_t               *rhs;      /* buffer in space M */
+
+  cs_navsto_algo_info_t    info;     /* Information related to the convergence
+                                        of the algorithm */
+
+} cs_uza_builder_t;
+
 /*============================================================================
  * Private variables
  *============================================================================*/
@@ -1160,6 +1191,77 @@ _free_gkb_builder(cs_gkb_builder_t   **p_gkb)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Create and initialize a Uzawa builder structure
+ *
+ * \param[in]  gamma      value of the grad-div coefficient
+ * \param[in]  n_u_dofs   number of velocity DoFs (degrees of freedom)
+ * \param[in]  n_p_dofs   number of pressure DoFs
+ * \param[in]  quant      pointer to additional mesh quantities
+ *
+ * \return a pointer to a new allocated Uzawa builder
+ */
+/*----------------------------------------------------------------------------*/
+
+static cs_uza_builder_t *
+_init_uzawa_builder(cs_real_t                     gamma,
+                    cs_lnum_t                     n_u_dofs,
+                    cs_lnum_t                     n_p_dofs,
+                    const cs_cdo_quantities_t    *quant)
+{
+  cs_uza_builder_t  *uza = NULL;
+
+  BFT_MALLOC(uza, 1, cs_uza_builder_t);
+
+  uza->gamma = gamma;
+  uza->n_u_dofs = n_u_dofs;
+  uza->n_p_dofs = n_p_dofs;
+
+  BFT_MALLOC(uza->b_tilda, n_u_dofs, cs_real_t);
+
+  /* Auxiliary vectors */
+  BFT_MALLOC(uza->inv_mp, n_p_dofs, cs_real_t);
+# pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
+  for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++)
+    uza->inv_mp[ip] = 1./quant->cell_vol[ip];
+
+  BFT_MALLOC(uza->res_p, n_p_dofs, cs_real_t);
+  BFT_MALLOC(uza->d__v, n_p_dofs, cs_real_t);
+  BFT_MALLOC(uza->rhs, n_u_dofs, cs_real_t);
+
+  cs_navsto_algo_info_init(&(uza->info));
+
+  return uza;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a Uzawa builder structure
+ *
+ * \param[in, out]  p_uza   double pointer to a Uzawa builder structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_free_uza_builder(cs_uza_builder_t   **p_uza)
+{
+  cs_uza_builder_t  *uza = *p_uza;
+
+  if (uza == NULL)
+    return;
+
+  BFT_FREE(uza->b_tilda);
+
+  BFT_FREE(uza->inv_mp);
+  BFT_FREE(uza->res_p);
+  BFT_FREE(uza->d__v);
+  BFT_FREE(uza->rhs);
+
+  BFT_FREE(uza);
+  *p_uza = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Apply the divergence operator and store the result in div_v
  *
  * \param[in]      div_op  pointer to the values of divergence operator
@@ -1538,6 +1640,60 @@ _gkb_cvg_test(const cs_navsto_param_t    *nsp,
 
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Test if one needs one more Uzawa iteration
+ *
+ * \param[in]      nsp     pointer to a set of parameters for Navier-Stokes
+ * \param[in, out] uza     pointer to a Uzawa builder structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_uza_cvg_test(const cs_navsto_param_t    *nsp,
+              cs_uza_builder_t           *uza)
+{
+  const cs_real_t  diverg_factor = 100;
+
+  /* Increment the number of Picard iterations */
+  uza->info.n_algo_iter += 1;
+
+  /* Compute the new residual based on the norm of the divergence constraint */
+  const cs_real_t  prev_res = uza->info.res;
+
+  cs_real_t  res_square = cs_dot_wxx(uza->n_p_dofs, uza->inv_mp, uza->res_p);
+  cs_parall_sum(1, CS_DOUBLE, &res_square);
+  assert(res_square > -DBL_MIN);
+  uza->info.res = sqrt(res_square);
+
+  double  tau = (uza->gamma > 0) ?
+    nsp->residual_tolerance/uza->gamma : nsp->residual_tolerance;
+
+  /* Set the convergence status */
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_SLES_DBG > 0
+  cs_log_printf(CS_LOG_DEFAULT,
+                "\nUZA.It%02d-- res = %6.4e ?<? eps %6.4e\n",
+                uza->info.n_algo_iter, uza->info.res, nsp->residual_tolerance);
+#endif
+
+  if (uza->info.res < tau)
+    uza->info.cvg = CS_SLES_CONVERGED;
+  else if (uza->info.n_algo_iter >= nsp->max_algo_iter)
+    uza->info.cvg = CS_SLES_MAX_ITERATION;
+  else if (uza->info.res > diverg_factor * prev_res)
+    uza->info.cvg = CS_SLES_DIVERGED;
+  else
+    uza->info.cvg = CS_SLES_ITERATING;
+
+  if (nsp->verbosity > 2)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "UZA.It%02d-- %5.3e %5d %6d cvg:%d\n",
+                  uza->info.n_algo_iter, uza->info.res,
+                  uza->info.last_inner_iter, uza->info.n_inner_iter,
+                  uza->info.cvg);
+
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1605,6 +1761,12 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
     break;
 
   case CS_NAVSTO_SLES_GKB_SATURNE:
+     /* Set solver and preconditioner for solving M = A + zeta * Bt*N^-1*B
+      * Notice that zeta can be equal to 0 */
+    cs_equation_param_set_sles(mom_eqp);
+    break;
+
+  case CS_NAVSTO_SLES_UZAWA_AL:
      /* Set solver and preconditioner for solving M = A + zeta * Bt*N^-1*B
       * Notice that zeta can be equal to 0 */
     cs_equation_param_set_sles(mom_eqp);
@@ -2009,6 +2171,129 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
 
   /* Last step: Free temporary memory */
   _free_gkb_builder(&gkb);
+
+  return  n_inner_iter;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Use the Uzawa algorithm with an Augmented Lagrangian technique to
+ *         solve the saddle-point problem arisinfg from CDO-Fb schemes for
+ *         Stokes and Navier-Stokes with a monolithic coupling
+ *
+ * \param[in]      nsp      pointer to a cs_navsto_param_t structure
+ * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      matrix   pointer to a cs_matrix_t structure
+ * \param[in, out] sc       pointer to the scheme context
+ * \param[in, out] sles     pointer to a cs_sles_t structure
+ * \param[in, out] u_f      initial velocity on faces
+ * \param[in, out] p_c      initial pressure in cells
+ * \param[in, out] b_f      right-hand side (scatter/gather if needed) on faces
+ * \param[in, out] b_c      right_hand side on cells (mass equation)
+ *
+ * \return the cumulated number of iterations of the solver
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
+                                   const cs_equation_param_t     *eqp,
+                                   const cs_matrix_t             *matrix,
+                                   cs_cdofb_monolithic_t         *sc,
+                                   cs_sles_t                     *sles,
+                                   cs_real_t                     *u_f,
+                                   cs_real_t                     *p_c,
+                                   cs_real_t                     *b_f,
+                                   cs_real_t                     *b_c)
+{
+  /* Sanity checks */
+  assert(nsp != NULL && nsp->sles_strategy == CS_NAVSTO_SLES_UZAWA_AL);
+  assert(sc != NULL);
+  assert(cs_shared_range_set != NULL);
+
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_real_t  gamma = sc->ref_graddiv_coef;
+  const cs_real_t  *div_op = sc->c2f_divergence;
+
+  /* Allocate and initialize the GKB builder structure */
+  cs_uza_builder_t  *uza = _init_uzawa_builder(gamma,
+                                               3*quant->n_faces,
+                                               quant->n_cells,
+                                               quant);
+
+  /* Transformation of the initial right-hand side */
+  cs_real_t  *btilda_c = uza->d__v;
+# pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
+  for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++)
+    btilda_c[ip] = uza->inv_mp[ip]*b_c[ip];
+
+  _apply_div_op_transpose(div_op, btilda_c, uza->b_tilda);
+
+  if (cs_glob_n_ranks > 1)
+    cs_interface_set_sum(cs_shared_range_set->ifs,
+                         uza->n_u_dofs,
+                         1, false, CS_REAL_TYPE, /* stride, interlaced */
+                         uza->b_tilda);
+
+  /* Update the modify right-hand side: b_tilda = b_f + gamma*Dt.W^-1.b_c */
+# pragma omp parallel for if (uza->n_u_dofs > CS_THR_MIN)
+  for (cs_lnum_t iu = 0; iu < uza->n_u_dofs; iu++) {
+    uza->b_tilda[iu] *= gamma;
+    uza->b_tilda[iu] += b_f[iu];
+  }
+
+  /* Main loop */
+  /* ========= */
+
+  while (uza->info.cvg == CS_SLES_ITERATING) {
+
+    /* Compute the RHS for the Uzawa system: rhs = b_tilda - Dt.p_c */
+    _apply_div_op_transpose(div_op, p_c, uza->rhs);
+
+    if (cs_glob_n_ranks > 1)
+      cs_interface_set_sum(cs_shared_range_set->ifs,
+                           uza->n_u_dofs,
+                           1, false, CS_REAL_TYPE, /* stride, interlaced */
+                           uza->rhs);
+
+#   pragma omp parallel for if (uza->n_u_dofs > CS_THR_MIN)
+    for (cs_lnum_t iu = 0; iu < uza->n_u_dofs; iu++) {
+      uza->rhs[iu] *= -1;
+      uza->rhs[iu] += uza->b_tilda[iu];
+    }
+
+    /* Solve AL.u_f = rhs */
+    cs_real_t  normalization = 1.; /* TODO */
+    uza->info.n_inner_iter
+      += (uza->info.last_inner_iter =
+          cs_equation_solve_scalar_system(uza->n_u_dofs,
+                                          eqp,
+                                          matrix,
+                                          cs_shared_range_set,
+                                          normalization,
+                                          false, /* rhs_redux */
+                                          sles,
+                                          u_f,
+                                          uza->rhs));
+
+    /* Update p_c = p_c - gamma * (D.u_f - b_c) */
+    _apply_div_op(div_op, u_f, uza->d__v);
+
+#   pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
+    for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++) {
+      uza->res_p[ip] = uza->d__v[ip] - b_c[ip];
+      p_c[ip] += gamma * uza->inv_mp[ip] * uza->res_p[ip];
+    }
+
+    /* Update error norm and test if one needs one more iteration */
+    _uza_cvg_test(nsp, uza);
+
+  }
+
+  int n_inner_iter = uza->info.n_inner_iter;
+
+  /* Last step: Free temporary memory */
+  _free_uza_builder(&uza);
 
   return  n_inner_iter;
 }

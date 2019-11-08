@@ -260,6 +260,10 @@ typedef enum {
  *
  * Direct solver to solve systems arising from the discretization of the
  * Navier-Stokes equations
+ *
+ * \var CS_NAVSTO_SLES_UZAWA_AL
+ * Associated keyword: "uzawa_al"
+ * Resolution using an uzawa algorithm with an Augmented Lagrangian approach
  */
 
 typedef enum {
@@ -273,6 +277,7 @@ typedef enum {
   CS_NAVSTO_SLES_GKB_GMRES,
   CS_NAVSTO_SLES_GKB_SATURNE,
   CS_NAVSTO_SLES_MUMPS,
+  CS_NAVSTO_SLES_UZAWA_AL,
 
   CS_NAVSTO_SLES_N_TYPES
 

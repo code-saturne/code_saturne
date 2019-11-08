@@ -573,13 +573,16 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     else if (strcmp(val, "mumps") == 0) {
       nsp->sles_strategy = CS_NAVSTO_SLES_MUMPS;
     }
+    else if (strcmp(val, "uzawa_al") == 0) {
+      nsp->sles_strategy = CS_NAVSTO_SLES_UZAWA_AL;
+    }
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
-                _(" %s: Invalid val %s related to key CS_NSKEY_SLES_STRATEGY\n"
-                  " Choice between no_block, block_amg_cg, additive_gmres"
-                  " {diag,upper}_schur_gmres, gkb{,_gmres}."),
-                __func__, _val);
+                " %s: Invalid val %s related to key CS_NSKEY_SLES_STRATEGY\n"
+                " Choice between no_block, block_amg_cg, additive_gmres\n"
+                " {diag,upper}_schur_gmres, gkb, gkb_saturne, mumps, or\n"
+                "uzawa_al", __func__, _val);
     }
     break;
 

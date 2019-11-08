@@ -10093,13 +10093,6 @@ msgstr ""
 
 #, c-format
 msgid ""
-" %s: Invalid val %s related to key CS_NSKEY_SLES_STRATEGY\n"
-" Choice between no_block, block_amg_cg, additive_gmres {diag,upper}"
-"_schur_gmres, gkb{,_gmres}."
-msgstr ""
-
-#, c-format
-msgid ""
 " %s: Invalid val %s related to key CS_NSKEY_SPACE_SCHEME\n"
 " Choice between hho_{p0, p1, p2} or cdo_fb"
 msgstr ""

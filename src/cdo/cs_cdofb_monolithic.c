@@ -1615,19 +1615,23 @@ cs_cdofb_monolithic_init_common(const cs_navsto_param_t       *nsp,
   cs_shared_time_step = time_step;
 
   /* Need to build special range set and interfaces ? */
-  if (nsp->sles_strategy != CS_NAVSTO_SLES_GKB_SATURNE) {
+  switch (nsp->sles_strategy) {
 
+  case CS_NAVSTO_SLES_GKB_SATURNE:
+  case CS_NAVSTO_SLES_UZAWA_AL:
+    cs_shared_range_set = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
+    cs_shared_matrix_structure = cs_cdofb_vecteq_matrix_structure();
+    break;
+
+  default: /* Build the fully coupled system */
     _build_shared_structures();
 
     cs_shared_interface_set = _shared_interface_set;
     cs_shared_range_set = _shared_range_set;
     cs_shared_matrix_structure = _shared_matrix_structure;
     cs_shared_matrix_assembler = _shared_matrix_assembler;
+    break;
 
-  }
-  else {
-    cs_shared_range_set = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
-    cs_shared_matrix_structure = cs_cdofb_vecteq_matrix_structure();
   }
 
   /* SLES needs these structures for advanced PETSc hooks */
@@ -1753,10 +1757,20 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
   /* Set the solve and assemble functions */
   switch (nsp->sles_strategy) {
 
-  case CS_NAVSTO_SLES_GKB_SATURNE:
-    /* GKB solver if need */
+  case CS_NAVSTO_SLES_GKB_SATURNE:    /* GKB solver if need */
     sc->assemble = _assemble_gkb;
     sc->solve = cs_cdofb_monolithic_gkb_solve;
+    sc->ref_graddiv_coef = nsp->gd_scale_coef;
+
+    BFT_MALLOC(sc->c2f_divergence,
+               3*cs_shared_connect->c2f->idx[cs_shared_quant->n_cells],
+               cs_real_t);
+    break;
+
+  case CS_NAVSTO_SLES_UZAWA_AL:
+    /* GKB solver if need */
+    sc->assemble = _assemble_gkb;
+    sc->solve = cs_cdofb_monolithic_uzawa_al_solve;
     sc->ref_graddiv_coef = nsp->gd_scale_coef;
 
     BFT_MALLOC(sc->c2f_divergence,
