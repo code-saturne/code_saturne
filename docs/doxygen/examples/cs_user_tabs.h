@@ -50,6 +50,7 @@ Here is a list of user examples. Thoroughly documented snippets are provided.
 \section example_physical_properties Physical properties definition
    - \subpage physical_properties
    - \subpage cs_porosity "Define porous modelling properties"
+   - \subpage cs_lagrangian_particle_tracking_physical_properties
    - \subpage drift_coal_scalars
    - \subpage drift_scalars
 
@@ -57,6 +58,7 @@ Here is a list of user examples. Thoroughly documented snippets are provided.
    - \subpage user_initialization "Physical fields user initialization"
    - \subpage cs_user_boundary_conditions_examples "User boundary condition definitions"
    - \subpage cs_user_boundary_conditions_ale "User boundary condition definition for the ALE model"
+   - \subpage cs_lagrangian_particle_tracking_bc "User boundary condition definition for the Lagrangian model"
    - \subpage les_inflow "Inflow Boundary conditions for LES"
    - \subpage cs_head_losses "Define head losses zones"
    - \subpage cs_user_source_terms "Define additional source terms for transport equations (momentum and species)"
@@ -70,6 +72,7 @@ Here is a list of user examples. Thoroughly documented snippets are provided.
    - \subpage cs_user_postprocess
    - \subpage cs_user_extra_operations_examples "User extra operations"
    - \subpage cs_user_extra_operations-nusselt_calculation
+   - \subpage cs_user_lagr_extra_operations
 
 \section example_other Other Calculation control
    - \subpage cs_user_modules
@@ -78,5 +81,5 @@ Here is a list of user examples. Thoroughly documented snippets are provided.
    - \subpage us_vosy
    - \subpage us_pt1d
    - \subpage us_vort
-
+   - \subpage cs_user_lagr_sde
 */

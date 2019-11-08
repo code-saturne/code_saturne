@@ -220,7 +220,7 @@ _inlet2(cs_lagr_particle_set_t  *p_set,
  * \param[out]    fextla   user external force field (m/s^2)$
  */
 /*----------------------------------------------------------------------------*/
-
+  /*! [lagr_ef] */
 void
 cs_user_lagr_ef(cs_real_t            dt_p,
                 const cs_real_t      taup[],
@@ -241,8 +241,9 @@ cs_user_lagr_ef(cs_real_t            dt_p,
     fextla[ip][1] = 0;
     fextla[ip][2] = 0;
   }
-}
 
+}
+/*! [lagr_ef] */
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief User function (non-mandatory intervention)
@@ -258,11 +259,17 @@ cs_user_lagr_ef(cs_real_t            dt_p,
 void
 cs_user_lagr_extra_operations(const cs_real_t  dt[])
 {
+
+  /*! [lagr_init] */
+
   cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
   const cs_lagr_attribute_map_t *p_am = p_set->p_am;
 
+  /*! [lagr_init] */
+
   /* Example: computation of the particle mass flow rate on 4 planes
      --------------------------------------------------------------- */
+  /*! [lagr_example] */
 
   {
     cs_real_t zz[4] = {0.1e0, 0.15e0, 0.20e0, 0.25e0};
@@ -309,6 +316,9 @@ cs_user_lagr_extra_operations(const cs_real_t  dt[])
                  iplan,
                  _m_flow[iplan]/stat_age);
   }
+
+  /*! [lagr_example] */
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -324,11 +334,13 @@ cs_user_lagr_extra_operations(const cs_real_t  dt[])
  */
 /*----------------------------------------------------------------------------*/
 
+/*! [lagr_imposed_motion] */
 void
 cs_user_lagr_imposed_motion(const cs_real_t  coords[3],
                             cs_real_t        dt,
                             cs_real_t        disp[3])
 {
+
   /* Angular velocity */
   cs_real_t omega = 1.0;
 
@@ -341,7 +353,9 @@ cs_user_lagr_imposed_motion(const cs_real_t  coords[3],
   disp[0] = 0.;
   disp[1] = rcost * (cos(omega*dt) - 1.0 ) - rsint * sin(omega*dt);
   disp[2] = rsint * (cos(omega*dt) - 1.0 ) + rcost * sin(omega*dt);
+
 }
+/*! [lagr_imposed_motion] */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -367,6 +381,7 @@ cs_user_lagr_imposed_motion(const cs_real_t  coords[3],
  */
 /*----------------------------------------------------------------------------*/
 
+/*! [lagr_inj] */
 void
 cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
                 const cs_lagr_injection_set_t  *zis,
@@ -374,6 +389,7 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
                 const cs_lnum_t                 particle_face_id[],
                 const cs_real_t                 visc_length[])
 {
+
   const int ntcabs = cs_glob_time_step->nt_cur;
 
   cs_lagr_zone_data_t  *lagr_bdy_conditions
@@ -463,6 +479,7 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
                               visc_length);
   }
 }
+/*! [lagr_inj] */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -472,42 +489,29 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
  * This function is called in a loop on the particles, so be careful
  * to avoid too costly operations.
  *
- *                m   Cp
- *                 p    p
- *       Tau = ---------------
- *          c          2
- *                PI d    h
- *                    p    e
  *
- *      Tau  : Thermal relaxation time (value to be computed)
- *         c
+ *      \tau_c = \frac{m_p{C_p}_p}{PId_p^2h_e}
  *
- *      m    : Particle mass
- *       p
+ *      \tau_c  : Thermal relaxation time (value to be computed)
  *
- *      Cp   : Particle specific heat
- *        p
+ *      m_p    : Particle mass
  *
- *      d    : Particle diameter
- *       p
+ *      {C_p}_p   : Particle specific heat
  *
- *      h    : Coefficient of thermal exchange
- *       e
+ *      d_p    : Particle diameter
+ *
+ *      h_e    : Coefficient of thermal exchange
  *
  *  The coefficient of thermal exchange is calculated from a Nusselt number,
  *  itself evaluated by a correlation (Ranz-Marshall by default)
  *
- *             h  d
- *              e  p
- *      Nu = --------  = 2 + 0.55 Re **(0.5) Prt**(0.33)
- *            Lambda                p
+ *      \nu =  \frac{h_ed_p}{\lambda} = 2 + 0.55{\Re_e}_p^{0.5}P_{rt}^{0.33}
  *
- *      Lambda : Thermal conductivity of the carrier field
+ *      \lambda : Thermal conductivity of the carrier field
  *
- *      Re     : Particle Reynolds number
- *        p
+ *      {\Re_e}_p     : Particle Reynolds number
  *
- *      Prt    : Prandtl number
+ *      P_{rt}    : Prandtl number
  *
  * \param[in]   id_p   particle id
  * \param[in]   re_p   particle Reynolds number
@@ -523,6 +527,7 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
  */
 /*----------------------------------------------------------------------------*/
 
+/*! [lagr_particle_relax_time] */
 void
 cs_user_lagr_rt(cs_lnum_t        id_p,
                 cs_real_t        re_p,
@@ -588,6 +593,7 @@ cs_user_lagr_rt(cs_lnum_t        id_p,
 
   taup[id_p] = rho_p / rho_f / fdr;
 }
+/*! [lagr_particle_relax_time] */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -612,6 +618,7 @@ cs_user_lagr_rt(cs_lnum_t        id_p,
  */
 /*----------------------------------------------------------------------------*/
 
+/*! [lagr_thermal_relax_time] */
 void
 cs_user_lagr_rt_t(cs_lnum_t        id_p,
                   cs_real_t        re_p,
@@ -644,6 +651,7 @@ cs_user_lagr_rt_t(cs_lnum_t        id_p,
 
   tauc[id_p]= diam * diam * rho_p * cp_p  / ( fnus * 6.0 * rho_f * cp_f * k_f);
 }
+/*! [lagr_thermal_relax_time] */
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -677,6 +685,7 @@ cs_user_lagr_rt_t(cs_lnum_t        id_p,
  */
 /*----------------------------------------------------------------------------*/
 
+/*! [lagr_SDE] */
 void
 cs_user_lagr_sde(const cs_real_t  dt[],
                  cs_real_t        taup[],
@@ -739,6 +748,7 @@ cs_user_lagr_sde(const cs_real_t  dt[],
   BFT_FREE(tcarac);
   BFT_FREE(pip);
 }
+/*! [lagr_SDE] */
 
 /*----------------------------------------------------------------------------*/
 

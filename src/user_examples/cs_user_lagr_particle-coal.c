@@ -136,6 +136,9 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
                 const cs_lnum_t                 particle_face_id[],
                 const cs_real_t                 visc_length[])
 {
+
+  /*! [lagr_inj_example_coal] */
+
   const cs_lagr_coal_comb_t  *lagr_cc = cs_glob_lagr_coal_comb;
 
   /* Changes to selected attributes to define coal
@@ -242,7 +245,7 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
     cs_lagr_particles_set_real(particles, p_id, CS_LAGR_INITIAL_DIAMETER,
                                initial_diameter);
   }
-
+  /*! [lagr_inj_example_coal] */
 }
 
 /*----------------------------------------------------------------------------*/

@@ -156,6 +156,9 @@ _incident_kinetic_energy(const void                 *input,
 void
 cs_user_lagr_model(void)
 {
+
+  /*! [particle_tracking_mode] */
+
   /* Particle-tracking mode
    * ====================== */
 
@@ -168,6 +171,10 @@ cs_user_lagr_model(void)
    *     scalars). This option is stronger than iccvfg)     */
 
   cs_glob_lagr_time_scheme->iilagr = CS_LAGR_ONEWAY_COUPLING;
+
+  /*! [particle_tracking_mode] */
+
+  /*! [particle_tracking_restart] */
 
   /* Particle-tracking calculation restart
    * ===================================== */
@@ -183,6 +190,10 @@ cs_user_lagr_model(void)
 
   if (cs_glob_lagr_time_scheme->isuila == 1)
     cs_glob_lagr_stat_options->isuist = 0;
+
+  /*! [particle_tracking_restart] */
+
+  /*! [particle_tracking_specific_models] */
 
   /* Particle tracking: specific models
    * ================================== */
@@ -209,6 +220,10 @@ cs_user_lagr_model(void)
     /* (default off: 0 ; on: 1)  */
     cs_glob_lagr_specific_physics->impvar   = 0;
   }
+
+  /*! [particle_tracking_specific_models] */
+
+  /*! [coal_fouling_example] */
 
   /* Coal fouling
    * ---------------------------------------------------------------------
@@ -272,6 +287,11 @@ cs_user_lagr_model(void)
     cs_glob_lagr_encrustation->enc2[icha]
       =  0.0415  * sio2 + 0.0192  * al2o3 + 0.0276 * fe2o3 + 0.016 * cao - 3.92;
   }
+
+  /*! [coal_fouling_example] */
+
+
+  /*! [dispersed_phases] */
 
   /* Calculation features for the dispersed phases
    * ============================================= */
@@ -340,6 +360,10 @@ cs_user_lagr_model(void)
 
   }
 
+  /*! [dispersed_phases] */
+
+  /*! [V_statistics] */
+
   /* Volume statistics
      ----------------- */
 
@@ -404,6 +428,10 @@ cs_user_lagr_model(void)
 
   cs_glob_lagr_model->n_stat_classes = 0;
 
+  /*! [V_statistics] */
+
+  /*! [dispersed_phases_treatment] */
+
   /* Options concerning the numerical treatment of the dispersed phase
    * ================================================================= */
 
@@ -451,6 +479,10 @@ cs_user_lagr_model(void)
   if (cs_glob_lagr_time_scheme->modcpl > 0)
     cs_glob_lagr_time_scheme->idirla = 1;
 
+  /*! [dispersed_phases_treatment] */
+
+  /*! [specific_forces_treatment] */
+
   /* Options concerning the treatment of specific forces
    * =================================================== */
 
@@ -487,6 +519,10 @@ cs_user_lagr_model(void)
     cs_glob_lagr_physico_chemical->fion   = 0.01;
   }
 
+  /*! [specific_forces_treatment] */
+
+  /*! [Brownian_motion_activation] */
+
   /* Activation of Brownian motion
    * ============================= */
 
@@ -496,11 +532,19 @@ cs_user_lagr_model(void)
      ======== */
   cs_glob_lagr_brownian->lamvbr = 0;
 
+  /*! [Brownian_motion_activation] */
+
+  /*! [deposition_model_activation] */
+
   /* Activation of deposition model
    * ============================== */
 
   /* Activation of the deposition model (default off: 0 ; on: 1) */
   cs_glob_lagr_model->deposition = 0;
+
+  /*! [deposition_model_activation] */
+
+  /*! [roughness_resuspension_model_activation] */
 
   /* Activation of roughness and resuspension model
    * ============================================== */
@@ -531,6 +575,10 @@ cs_user_lagr_model(void)
   /* Young's modulus (GPa) */
   cs_glob_lagr_reentrained_model->modyeq = 266000000000.0;
 
+  /*! [roughness_resuspension_model_activation] */
+
+  /*! [clogging_model_activation] */
+
   /* Activation of the clogging model
    * ================================ */
 
@@ -557,6 +605,10 @@ cs_user_lagr_model(void)
   /* Hamaker constant for the particle/fluid/particle system */
   cs_glob_lagr_clogging_model->csthpp      = 5e-20;
 
+  /*! [clogging_model_activation] */
+
+  /*! [deposit_influence_activation] */
+
   /* Influence of the deposit on the flow
    * ==================================== */
 
@@ -576,6 +628,10 @@ cs_user_lagr_model(void)
     cs_glob_lagr_time_scheme->isttio   = 1;
 
   }
+
+  /*! [deposit_influence_activation] */
+
+  /*! [consolidation_model_activation] */
 
   /* Activation of the consolidation model
    * ===================================== */
@@ -605,6 +661,10 @@ cs_user_lagr_model(void)
   /* Consolidation rate (m/s) */
   cs_glob_lagr_consolidation_model->rate_consol  = 4.0e-3;
 
+  /*! [consolidation_model_activation] */
+
+  /*! [precipitation_disolution_model_activation] */
+
   /* Activation of the precipitation/disolution model
    * ================================================ */
 
@@ -621,6 +681,10 @@ cs_user_lagr_model(void)
 
   /* Number of particle classes */
   cs_glob_lagr_precipitation_model->nbrclas   = 2;
+
+  /*! [precipitation_disolution_model_activation] */
+
+  /*! [boundary_statistics] */
 
   /* Boundary statistics
    * =================== */
@@ -710,6 +774,8 @@ cs_user_lagr_model(void)
    * ================================ */
 
   cs_lagr_post_set_attr(CS_LAGR_STAT_CLASS, true);
+
+  /*! [boundary_statistics] */
 }
 
 /*----------------------------------------------------------------------------*/
