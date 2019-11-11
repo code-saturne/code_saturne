@@ -484,11 +484,11 @@ cs_mesh_boundary_layer_insert(cs_mesh_t                  *m,
   cs_cdo_initialize_structures(domain, m, mq);
 
   /* Create equation builder and context.
-   *  Initialize field values */
+   * Initialize field values (connect can be updated) */
   cs_equation_initialize(domain->mesh,
-                         domain->connect,
+                         domain->time_step,
                          domain->cdo_quantities,
-                         domain->time_step);
+                         domain->connect);
 
   /* Compute or access reference volume for displacement limiter */
 

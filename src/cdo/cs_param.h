@@ -649,6 +649,20 @@ typedef struct {
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Return true if the space scheme has degrees of freedom on faces,
+ *          otherwise false
+ *
+ * \param[in] scheme      type of space scheme
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_param_space_scheme_is_face_based(cs_param_space_scheme_t    scheme);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Get the name of the space discretization scheme
  *
  * \param[in] scheme      type of space scheme

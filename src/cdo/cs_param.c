@@ -117,6 +117,29 @@ cs_param_bc_enforcement_name[CS_PARAM_N_BC_ENFORCEMENTS][CS_BASE_STRING_LEN] =
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Return true if the space scheme has degrees of freedom on faces,
+ *          otherwise false
+ *
+ * \param[in] scheme      type of space scheme
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_param_space_scheme_is_face_based(cs_param_space_scheme_t    scheme)
+{
+  if (scheme == CS_SPACE_SCHEME_CDOFB  ||
+      scheme == CS_SPACE_SCHEME_HHO_P0 ||
+      scheme == CS_SPACE_SCHEME_HHO_P1 ||
+      scheme == CS_SPACE_SCHEME_HHO_P2)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Get the name of the space discretization scheme
  *
  * \param[in] scheme      type of space scheme

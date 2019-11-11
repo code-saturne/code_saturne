@@ -508,18 +508,18 @@ cs_equation_create_fields(void);
  *         Set the initialize condition to all variable fields associated to
  *         each cs_equation_t structure.
  *
- * \param[in]  mesh      pointer to a cs_mesh_t structure
- * \param[in]  connect   pointer to a cs_cdo_connect_t structure
- * \param[in]  quant     pointer to a cs_cdo_quantities_t structure
- * \param[in]  ts        pointer to a cs_time_step_t structure
+ * \param[in]       mesh      pointer to a cs_mesh_t structure
+ * \param[in]       ts        pointer to a cs_time_step_t structure
+ * \param[in]       quant     pointer to a cs_cdo_quantities_t structure
+ * \param[in, out]  connect   pointer to a cs_cdo_connect_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_initialize(const cs_mesh_t             *mesh,
-                       const cs_cdo_connect_t      *connect,
+                       const cs_time_step_t        *ts,
                        const cs_cdo_quantities_t   *quant,
-                       const cs_time_step_t        *ts);
+                       cs_cdo_connect_t            *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!

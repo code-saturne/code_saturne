@@ -958,6 +958,60 @@ _assign_vtx_ifs_rs(const cs_mesh_t       *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Create and define a new cs_interface_set_t structure on faces
+ *
+ * \param[in]  mesh          pointer to a cs_mesh_t structure
+ *
+ * \return a pointer to a new allocated cs_interface_set_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_interface_set_t *
+cs_cdo_connect_define_face_interface(const cs_mesh_t       *mesh)
+{
+  cs_interface_set_t  *ifs = NULL;
+
+  const cs_lnum_t  n_elts = mesh->n_i_faces + mesh->n_b_faces;
+
+  cs_gnum_t *face_gnum = NULL;
+  BFT_MALLOC(face_gnum, n_elts, cs_gnum_t);
+
+  if (cs_glob_n_ranks > 1) {
+
+    memcpy(face_gnum, mesh->global_i_face_num,
+           mesh->n_i_faces*sizeof(cs_gnum_t));
+
+    cs_gnum_t  *_fg = face_gnum + mesh->n_i_faces;
+#   pragma omp parallel for if (mesh->n_b_faces > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++)
+      _fg[i] = mesh->n_g_i_faces + mesh->global_b_face_num[i];
+
+  }
+  else {
+
+#   pragma omp parallel for if (n_elts > CS_THR_MIN)
+    for (cs_gnum_t i = 0; i < (cs_gnum_t)(n_elts); i++)
+      face_gnum[i] = i + 1;
+
+  } /* Sequential or parallel run */
+
+  /* Do not consider periodicity up to now. Should split the face interface
+     into interior and border faces to do this, since only boundary faces
+     can be associated to a periodicity */
+  ifs = cs_interface_set_create(n_elts,
+                                NULL,
+                                face_gnum,
+                                mesh->periodicity, 0, NULL, NULL, NULL);
+
+  /* Free memory */
+  BFT_FREE(face_gnum);
+
+  /* Return pointers */
+  return  ifs;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Allocate and define a new cs_cdo_connect_t structure
  *        Range sets and interface sets are allocated and defined according to
  *        the value of the different scheme flags.

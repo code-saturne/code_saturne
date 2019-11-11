@@ -169,6 +169,19 @@ cs_connect_get_next_3_vertices(const cs_lnum_t   *f2e_ids,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Create and define a new cs_interface_set_t structure on faces
+ *
+ * \param[in]  mesh          pointer to a cs_mesh_t structure
+ *
+ * \return a pointer to a new allocated cs_interface_set_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_interface_set_t *
+cs_cdo_connect_define_face_interface(const cs_mesh_t       *mesh);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Allocate and define a new cs_cdo_connect_t structure
  *        Range sets and interface sets are allocated and defined according to
  *        the value of the different scheme flags.

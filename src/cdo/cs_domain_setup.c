@@ -718,14 +718,17 @@ void
 cs_domain_initialize_systems(cs_domain_t   *domain)
 {
   /* Initialize system before resolution for all equations
-     - create system builder
-     - initialize field according to initial conditions
-     - initialize source term
-     - set the initial condition to all variable fields */
+   *   - create system builder
+   *  - initialize field according to initial conditions
+   *  - initialize source term
+   *  - set the initial condition to all variable fields
+   *
+   * connect can be updated during this initialization step
+   */
   cs_equation_initialize(domain->mesh,
-                         domain->connect,
+                         domain->time_step,
                          domain->cdo_quantities,
-                         domain->time_step);
+                         domain->connect);
 
   /* Set the initial condition for all advection fields */
   cs_advection_field_update(domain->time_step->t_cur,
