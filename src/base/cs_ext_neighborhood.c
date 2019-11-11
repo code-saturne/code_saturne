@@ -180,6 +180,7 @@ const char *cs_ext_neighborhood_type_name[]
 static cs_ext_neighborhood_type_t _ext_nbh_type
   = CS_EXT_NEIGHBORHOOD_CELL_CENTER_OPPOSITE;
 static cs_real_t                  _non_ortho_max = 45;
+static bool                       _full_nb_boundary = false;
 
 /*============================================================================
  * Private function definitions
@@ -1805,6 +1806,48 @@ _neighborhood_reduce_face_center_opposite(cs_mesh_t             *mesh,
   BFT_FREE(cell_b_faces_lst);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Reduce extended neighborhood based on proximity to boundary
+ *
+ * \param[in, out]  mesh            pointer to a mesh structure
+ * \param[in, out]  cell_cells_tag  tag adjacencies to retain
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_neighborhood_reduce_full_boundary(cs_mesh_t             *mesh,
+                                   char                   cell_cells_tag[])
+{
+  const cs_lnum_t  *cell_cells_lst = mesh->cell_cells_lst;
+  const cs_lnum_t  *cell_cells_idx = mesh->cell_cells_idx;
+
+  const cs_lnum_t n_b_cells = mesh->n_b_cells;
+
+# pragma omp parallel if (n_b_cells > CS_THR_MIN)
+  {
+    cs_lnum_t t_s_id, t_e_id;
+    _thread_range(n_b_cells, &t_s_id, &t_e_id);
+
+    /* Loop on boundary cells */
+
+    for (cs_lnum_t b_c_id = t_s_id; b_c_id < t_e_id; b_c_id++) {
+
+      cs_lnum_t c_id = mesh->b_cells[b_c_id];
+
+      /* Build cache for extended neighbors */
+
+      cs_lnum_t c_s_id = cell_cells_idx[c_id];
+      cs_lnum_t c_e_id = cell_cells_idx[c_id+1];
+
+      for (cs_lnum_t i = c_s_id; i < c_e_id; i++)
+        cell_cells_tag[i] = 1;
+
+    } /* End of loop on boundary cells */
+
+  } /* End of Open MP block */
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -1893,7 +1936,7 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
   /* Return if there is no extended neighborhood */
 
   if (   mesh->cell_cells_idx == NULL
-      || mesh->halo_type == CS_HALO_STANDARD
+      || (mesh->halo_type == CS_HALO_STANDARD && _full_nb_boundary == false)
       || _ext_nbh_type == CS_EXT_NEIGHBORHOOD_COMPLETE)
     return;
 
@@ -1941,6 +1984,9 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
   default:
     break;
   }
+
+  if (_full_nb_boundary)
+    _neighborhood_reduce_full_boundary(mesh, cell_cells_tag);
 
   /* Delete cells with tag == 0 */
 
