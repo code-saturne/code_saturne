@@ -18,6 +18,8 @@ User changes:
 
 Numerics and physical modelling:
 
+- Add tensor gradiet clipping.
+
 - Add local (single cell) gradient reconstruction options for
   postprocessing.
 
