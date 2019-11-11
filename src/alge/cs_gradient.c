@@ -6380,9 +6380,6 @@ _gradient_scalar(const char                    *var_name,
 
   case CS_GRADIENT_GREEN_LSQ:
     {
-      const cs_int_t  _imlini = 1;
-      const cs_real_t _climin = 1.5;
-
       cs_real_3_t  *restrict r_grad;
       BFT_MALLOC(r_grad, n_cells_ext, cs_real_3_t);
 
@@ -6414,10 +6411,6 @@ _gradient_scalar(const char                    *var_name,
                              var,
                              c_weight,
                              r_grad);
-
-      _scalar_gradient_clipping(halo_type, _imlini, verbosity, tr_dim, _climin,
-                                var_name,
-                                var, r_grad);
 
       _reconstruct_scalar_gradient(mesh,
                                    fvq,
@@ -6581,11 +6574,6 @@ _gradient_vector(const char                     *var_name,
   case CS_GRADIENT_GREEN_LSQ:
 
     {
-      /* Clipping algorithm and clipping factor */
-
-      const cs_int_t  _imlini = 1;
-      const cs_real_t _climin = 1.5;
-
       cs_real_33_t  *restrict r_gradv;
       BFT_MALLOC(r_gradv, n_cells_ext, cs_real_33_t);
 
@@ -6600,16 +6588,6 @@ _gradient_vector(const char                     *var_name,
                            (const cs_real_3_t *)var,
                            c_weight,
                            r_gradv);
-
-      _vector_gradient_clipping(mesh,
-                                fvq,
-                                halo_type,
-                                _imlini,
-                                verbosity,
-                                _climin,
-                                var_name,
-                                (const cs_real_3_t *)var,
-                                r_gradv);
 
       _reconstruct_vector_gradient(mesh,
                                    fvq,
