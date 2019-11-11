@@ -2138,7 +2138,7 @@ void CS_PROCF (csnum2, CSNUM2)(double  *relaxp,
     _imrgra = 0;
   else if (cs_gui_strcmp(choice, "lsq"))
     _imrgra = 1;
-  else if (cs_gui_strcmp(choice, "lsq_iter"))
+  else if (cs_gui_strcmp(choice, "green_lsq"))
     _imrgra = 4;
 
   if (_imrgra != 0) {
@@ -2176,7 +2176,6 @@ void CS_PROCF (csnum2, CSNUM2)(double  *relaxp,
 
   _numerical_int_parameters("gradient_transposed", &(stokes->ivisse));
   _numerical_int_parameters("velocity_pressure_coupling", &(stokes->ipucou));
-  _numerical_int_parameters("gradient_reconstruction", imrgra);
   _numerical_int_parameters("piso_sweep_number", &(piso->nterup));
   _numerical_double_parameters("wall_pressure_extrapolation", extrag);
   _numerical_double_parameters("pressure_relaxation", relaxp);
