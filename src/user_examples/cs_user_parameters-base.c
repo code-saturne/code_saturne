@@ -990,6 +990,16 @@ cs_user_parameters(cs_domain_t *domain)
   }
   /*! [param_var_boundary_vals_1] */
 
+  /* Example: add handling (storage) of previous values for a field */
+  /*-------------------------------------------------------------------*/
+
+  /*! [user_field_n_time_vals] */
+  {
+    /* add previous values handling for boundary temperature */
+    cs_field_set_n_time_vals(CS_F_(t_b), 2);
+  }
+  /*! [user_field_n_time_vals] */
+
   /* Example: post-process clippings for slope test */
   /*------------------------------------------------*/
 

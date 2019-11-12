@@ -42,13 +42,8 @@
 
   \section cs_user_parameters_h_cs_user_model  Base model related options
 
-  Definition of user variables or properties should be defined here,
-  if not already done throught the GUI.
-
-  \section cs_user_parameters_h_cs_user_parameters General options (\ref cs_user_parameters)
-
-  Most definitions should be done in the \ref cs_user_parameters
-  function (Fortran equivalent is \ref usipsu subroutine).
+  Definition of user variables or properties as well as choices of physical
+  models should be done here, if not already done through the GUI.
 
   Choose a turbulent model among the available models
 
@@ -83,6 +78,8 @@
   Add a user property defined on a mesh location (cells, interior faces, boundary faces or vertices).
 
   \snippet cs_user_parameters-base.c user_property_addition
+
+  \section cs_user_parameters_h_cs_user_parameters General options
 
   Choose a time step option
 
@@ -141,6 +138,11 @@
   following code can be added:
 
   \snippet cs_user_parameters-base.c param_var_boundary_vals_1
+
+  To add handling (storage) of previous values for a field, the following
+  following code can be added:
+
+  \snippet cs_user_parameters-base.c user_field_n_time_vals
 
   Enforce existence of 'tplus' and 'tstar' fields, so that
   a Nusselt number may be computed using the
