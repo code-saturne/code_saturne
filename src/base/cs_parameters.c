@@ -244,13 +244,9 @@ BEGIN_C_DECLS
 
   \var  cs_var_cal_opt_t::nswrgr
         \anchor nswrgr
-        For each unknown variable, \ref nswrgr <= 1 indicates that the gradients
-        are not reconstructed
-         - if \ref imrgra = 0 or 4, \ref nswrgr is the number of iterations for
-         the gradient reconstruction
-         - if \ref imrgra = 1, 2 or 3, \ref nswrgr > 1 indicates that the
-         gradients are reconstructed (but the method is not iterative, so any
-         value larger than 1 for \ref nswrgr yields the same result).\n
+        Number of iterations for the iterative gradient reconstruction
+        (\ref imrgra = 0).
+        If \ref imrgra = 0 and \ref nswrgr <= 1, gradients are not reconstructed.
 
   \var  cs_var_cal_opt_t::nswrsm
         \anchor nswrsm
@@ -268,35 +264,25 @@ BEGIN_C_DECLS
            - 0: iterative reconstruction of the non-orthogonalities
            - 1: least squares method based on the first neighbor cells (cells
         which share a face with the treated cell)
-           - 2: least squares method based on the extended neighborhood (cells
-        which share a node with the treated cell)
-           - 3: least squares method based on a partial extended neighborhood
-           - 4: iterative reconstruction with initialisation using the least
-        squares method (first neighbors)
-           - 5: iterative reconstruction with initialisation using the least
-        squares method based on an extended neighborhood
-           - 6: iterative reconstruction with initialisation using the least
+           - 2, 3: least squares method using the extended neighborhood
+           - 4: Green-Gauss based using the least squares method (first neighbors)
+                to compute face values
+           - 5, 6: Green-Gauss based using the least squares method with an
+                extended neighborhood to compute face values
         squares method based on a partial extended neighborhood
         if \ref imrgra fails due to probable mesh quality problems, it is usually
         effective to use \ref imrgra = 3. Moreover, \ref imrgra = 3 is usually
         faster than \ref imrgra = 0 (but with less feedback on its use).
-        It should be noted that \ref imrgra = 1, 2 or 3 automatically triggers
-        a gradient limitation procedure. See \ref imligr.\n
-        Useful if and only if there is \ref nswrgr > 1 for at least one variable.
-        Also, pressure gradients (or other gradients deriving from a potential)
-        always use an iterative reconstruction. To force a non-iterative
-        reconstruction for those gradients, a negative value of this keyword
-        may be used, in which case the method matching the absolute value
-        of the keyword will be used.
 
   \var  cs_var_cal_opt_t::imligr
         \anchor imligr
         For each unknown variable, indicates the type of gradient limitation
-           - -1: no limitation
-           - 0: based on the neighbors
-           - 1: superior order\n
-        For all the unknowns, \ref imligr is initialized to -1 if \ref imrgra
-        = 0 or 4 and to 1 if \ref imrgra = 1, 2 or 3.
+           - -1 (CS_GRADIENT_LIMIT_NONE): no limitation
+           - 0 (CS_GRADIENT_LIMIT_CELL): based on the neighbors
+           - 1 (CS_GRADIENT_LIMIT_FACE): superior order\n
+        \ref imligr is applied only to least-squares gradients.
+        In the case of the Green-Gauss gradient with least-squares-based
+        face gradients, it is applied to the least-squares step.
 
   \var  cs_var_cal_opt_t::ircflu
         \anchor ircflu
@@ -379,9 +365,10 @@ BEGIN_C_DECLS
 
   \var  cs_var_cal_opt_t::climgr
         \anchor climgr
-        For each unknown variable, factor of gradient limitation (high value means
-        little limitation). \n
-        Useful for all the unknowns variables for which \ref imligr = -1.
+        For least squares gradients, factor of gradient limitation
+        (high value means little limitation). \n
+        Useful for all the variables using least-squares gradients for
+        which \ref imligr > CS_GRADIENT_LIMIT_NONE.
 
   \var  cs_var_cal_opt_t::extrag
         \anchor extrag
@@ -389,8 +376,6 @@ BEGIN_C_DECLS
         gradients at the boundaries. It affects only the Neumann conditions.
         The only possible values of \ref extrag are:
              - 0: homogeneous Neumann calculated at first-order
-             - 0.5: improved homogeneous Neumann, calculated at second-order in
-        the case of an orthogonal mesh and at first-order otherwise
              - 1: gradient extrapolation (gradient at the boundary face equal to
         the gradient in the neighbor cell), calculated at second-order in the
         case of an orthogonal mesh and at first-order otherwise extrag often
@@ -398,8 +383,7 @@ BEGIN_C_DECLS
         walls when density is variable and there is gravity. It is strongly
         advised to keep \ref extrag = 0 for the variables apart from pressure.
         See also \ref cs_stokes_model_t::iphydr "iphydr". In practice, only the
-        values 0 and 1 are allowed. The value 0.5 is not allowed by default (but
-        the lock can be overridden if necessary, contact the development team).
+        values 0 and 1 are allowed.
 
   \var  cs_var_cal_opt_t::relaxv
         \anchor relaxv
