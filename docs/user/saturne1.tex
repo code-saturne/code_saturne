@@ -3610,6 +3610,8 @@ modifying the array \texttt{dt} which contains the value of the time step read
 from the restart file (array whose size is \texttt{ncelet}, defined at the cell
 centres whatever the chosen time step type is).
 
+\clearpage
+
 %==================================
 \subsection{Manage boundary conditions}
 %==================================
@@ -3637,7 +3639,7 @@ under the heading ``Definition of boundary regions $\rightarrow$ Add from Prepro
 \label{fig:gui_bc_parameters}
 \end{center}
 \end{figure}
-
+%
 \texttt{cs\_user\_boundary\_conditions} is the second compulsory subroutine for every calculation launched
 without interface (except in the case of specific physics where the
 corresponding boundary condition user subroutine must be used).
@@ -5399,7 +5401,6 @@ study case. Their content is described below.
 
 \clearpage
 
-
 %==================================
 \subsection[Pulverised coal and gas combustion module]
 {Pulverised coal and gas combustion module (needs update)}
@@ -6723,7 +6724,9 @@ geometrical criterion or reference number then a structure number (negative valu
  \item the value passed to \texttt{asddlf}, for user-chosen component, for every negative
  structure number, defines the movement imposed to the external structure.
 \end{list}
-
+%
+\clearpage
+%
 %==================================
 \subsection{ALE module}
 %==================================
@@ -6735,15 +6738,15 @@ This initialisation can be performed in the Graphical User Interface (GUI)
  when the ``Mobile mesh'' is selected in GUI under the ``Calculation features''
  heading, additional options are displayed. The user must choose the type of mesh
  viscosity and describe its spatial distribution, see \figurename~\ref{fig:Ini-ale}.
-
-\begin{figure}[ht]
+%
+\begin{figure}[!ht]
 \begin{center}
 \includegraphics[width=12cm]{gui_ale_mei}
 \caption{Thermophysical models - mobile mesh (ALE method)}
 \label{fig:Ini-ale}
 \end{center}
 \end{figure}
-
+%
 The following paragraphs are relevant if the GUI is not used.
 
 \minititre{Subroutine \texttt{usipph}}
