@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-10-30 13:46+0100\n"
+"POT-Creation-Date: 2019-11-13 11:10+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -4422,14 +4422,23 @@ msgstr ""
 "Support de bibliothèques partagées non disponible.\n"
 "Impossible de charger : %s\n"
 
+msgid "Atmo chemistry from SPACK file: requires a SPACK file."
+msgstr ""
+
 msgid "Atmo chemistry from SPACK file: Could not open file."
+msgstr ""
+
+msgid "Atmo chemistry from SPACK file: Could not skip header."
 msgstr ""
 
 #, c-format
 msgid "Atmo chemistry from SPACK file: Could not read line %d."
 msgstr ""
 
-msgid "Atmo chemistry from SPACK file: warning, may be end of file."
+#, c-format
+msgid ""
+"Atmo chemistry from SPACK file: could not read species name and molar mass, "
+"line %d."
 msgstr ""
 
 #, c-format
@@ -9829,9 +9838,6 @@ msgid ""
 " Stop adding this advection field.\n"
 msgstr ""
 
-msgid " Key not implemented for setting an advection field."
-msgstr ""
-
 #, c-format
 msgid ""
 " %s: Incompatible type of boundary condition by default.\n"
@@ -10037,18 +10043,6 @@ msgid " Convection term is not handled yet.\n"
 msgstr ""
 
 msgid " Unsteady terms are not handled yet.\n"
-msgstr ""
-
-msgid "Stokes velocity-pressure system"
-msgstr ""
-
-msgid "Oseen velocity-pressure system"
-msgstr ""
-
-msgid "Incompressible Navier-Stokes velocity-pressure system"
-msgstr ""
-
-msgid "Navier-Stokes with velocity-pressure unknowns and Boussinesq model"
 msgstr ""
 
 msgid "Artificial compressibility algorithm"
