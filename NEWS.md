@@ -20,6 +20,9 @@ User changes:
 
 Bug fixes:
 
+- Radiative transfers: fix handling of radiative restart file when
+  not available or dectivated in GUI.
+
 - Lagrangian: fix set flag function for particles (flags were not set).
 
 - GUI: fix loss of "--initialize-only" runcase setting after first run.
