@@ -260,7 +260,6 @@ cs_gui_radiative_transfer_parameters(void)
 
   const char *model = cs_gui_get_thermophysical_model("radiative_transfer");
 
-  int isuird = 0;
   int ac_type = 0;
 
   if (cs_gui_strcmp(model, "off"))
@@ -276,11 +275,13 @@ cs_gui_radiative_transfer_parameters(void)
       = cs_tree_get_node(cs_glob_tree,
                          "thermophysical_models/radiative_transfer");
 
+    int isuird = -1;
     cs_gui_node_get_child_status_int(tn0, "restart", &isuird);
-    if (isuird) {
-      if (cs_restart_present())
-        cs_glob_rad_transfer_params->restart = true;
-    }
+    if (! cs_restart_present() || isuird == 0)
+      cs_glob_rad_transfer_params->restart = false;
+    else if (isuird == 1)
+      cs_glob_rad_transfer_params->restart = true;
+
     cs_gui_node_get_child_int(tn0, "quadrature",
                               &cs_glob_rad_transfer_params->i_quadrature);
     cs_gui_node_get_child_int(tn0, "directions_number",
