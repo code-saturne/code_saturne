@@ -803,9 +803,13 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
  *
  * \f$ u^+ \f$ is computed as follows:
  *   \f[ u^+ = \dfrac{1}{\kappa}
- *             \ln \left(\dfrac{(y+\xi) u_k}{\nu + \alpha \xi u_k} \right)
+ *             \ln \left(\dfrac{(y+y_0) u_k}{\nu + \alpha \xi u_k} \right)
  *            + Cst_{smooth} \f]
- * with \f$ \alpha = \exp \left(- \kappa(Cst_{rough}-Cst_{smooth})\right) \f$.
+ * with \f$ \alpha = \exp \left(- \kappa(Cst_{rough}-Cst_{smooth})\right)
+ *                 \simeq 0.26 \f$
+ * and \f$ y_0 = \alpha \xi \exp \left(-\kapp Cst_{smooth} \right)
+ *             = \xi \exp \left(-\kapp Cst_{rough} \right)
+ *             \simeq \dfrac{\xi}{33}\f$.
  *
  * \param[in]     l_visc        kinematic viscosity
  * \param[in]     t_visc        turbulent kinematic viscosity
@@ -857,7 +861,13 @@ cs_wall_functions_2scales_smooth_rough(cs_real_t   l_visc,
    *
    * ln((y+y0)/y0) = ln((y+y0)/alpha xi) + kappa * 5.2
    *
-   * y0 =  roughness * exp(-kappa * 8.5)
+   * y0 =  xi * exp(-kappa * 8.5)
+   * where xi is the roughness here
+   * y0 = alpha * xi * exp(-kappa * 5.2)
+   *
+   * so:
+   *  alpha = exp(-kappa * (8.5 - 5.2)) = 0.26
+   *
    */
   double y0 = roughness*exp(-cs_turb_xkappa*cs_turb_cstlog_rough);
 
