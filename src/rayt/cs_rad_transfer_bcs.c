@@ -519,7 +519,8 @@ cs_rad_transfer_bcs(int         nvar,
         }
       }
 
-      else if (isothm[face_id] !=  -1) {
+      else if (   isothm[face_id] !=  -1
+               && isothm[face_id] != cs_glob_rad_transfer_params->ifinfe) {
         nrferr[9]++;
         icoerr[9]    = face_zone_id[face_id];
         icoerr[10]   = isothm[face_id];
