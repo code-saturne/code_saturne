@@ -3,6 +3,9 @@ Release 6.0.1 (Unreleased)
 
 User changes:
 
+- Allow user to define "rad_transfer_parames->ifinfe" type radiative BCs
+  ("at infinity" conditions for non-wall faces).
+
 - Fix bug in user example (Rij profile).
 
 - Langrangian module: add local projection (idirla 4) for turbulent dispersion.
