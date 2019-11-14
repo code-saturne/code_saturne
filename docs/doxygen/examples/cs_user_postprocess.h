@@ -524,7 +524,7 @@
 
   If a field's boundary values (i.e. associated field) are known,
   they are used in the interpolation. Otherwise, if boundary conditions
-  are defined, they are used. When neither boudnary values nor boundary
+  are defined, they are used. When neither boundary values nor boundary
   conditions are known (i.e. for a non-solved variable field or
   values not defined as a field), homogeneous Neumann boundary conditions
   are assumed.
