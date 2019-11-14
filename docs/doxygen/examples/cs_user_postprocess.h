@@ -541,7 +541,7 @@
   For simplicity here, values are output to the main probe set and writer,
   which is assumed to be defined using the GUI in this example.
 
-  Note also that intepolation could be also used in
+  Note also that interpolation could be also used in
   some \ref cs_user_extra_operations cases.
 
   \page cs_user_postprocess_h_activation_p Advanced management of output times
