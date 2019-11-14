@@ -37,6 +37,7 @@
   - \subpage cs_user_postprocess_h_mesh_advanced_p
   - \subpage cs_user_postprocess_h_probes_p
   - \subpage cs_user_postprocess_h_var_p
+  - \subpage cs_user_postprocess_h_interpolate_p
   - \subpage cs_user_postprocess_h_activation_p
 
   \page cs_user_postprocess_h_intro_p Introduction and main concepts
@@ -507,6 +508,40 @@
   determine drag coefficients.
 
   \snippet cs_user_postprocess-profiles.c post_profile_advanced_var_2
+
+  \page cs_user_postprocess_h_interpolate_p Interpolation
+
+  By default, probes and profile values are "P0" interpolated,
+  that is their value is that of the containing cell or face,
+  or closest vertex.
+
+  For cell-based values, a "P1" piecewise linear interpolation may be defined,
+  using gradient reconstruction..
+
+  The following example shows how intepolation may be used in
+  the \ref cs_user_postprocess_values function.
+
+  First, we define an interpolation function:
+
+  \snippet cs_user_postprocess-probes-interpolate.c post_interpolate_p1_func
+
+  Note the the gradient reconstruction used here assumes ghost cell values are
+  synchronized, which should be the case for field values at this calling stage.
+
+  This interpolation function may the be passed to the probe values
+  output function (in \ref cs_user_postprocess_values):
+
+  \snippet cs_user_postprocess-probes-interpolate.c post_probes_interpolate_var_1
+
+  In this case, selected outputs are named by appending "_p" to the
+  field name to allow combining default probe outputs with
+  interpolated outputs of specific fields.
+
+  For simplicity here, values are output to the main probe set and writer,
+  which is assumed to be defined using the GUI in this example.
+
+  Note also that interpolation could be also used in
+  some \ref cs_user_extra_operations cases.
 
   \page cs_user_postprocess_h_activation_p Advanced management of output times
 

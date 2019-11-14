@@ -15,6 +15,7 @@ User changes:
 - Improve naming of gradient options in GUI.
 
 - Minor Documentation (Doxygen) and user example improvements.
+  * includes P1 interpolation example for probes output.
 
 - Minor improvements of readibility of some smgr error messages.
 
