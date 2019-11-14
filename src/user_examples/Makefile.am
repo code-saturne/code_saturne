@@ -120,6 +120,7 @@ cs_user_physical_properties.c \
 cs_user_porosity.c \
 cs_user_postprocess.c \
 cs_user_postprocess-profiles.c \
+cs_user_postprocess-probes-interpolate.c \
 cs_user_postprocess-sfc.c \
 cs_user_radiative_transfer.c \
 cs_user_radiative_transfer_bcs.c \

@@ -112,6 +112,46 @@ cs_interpolate_from_location_p0(void                *input,
                                 void                *point_vals);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Interpolate values defined on a mesh location at a given set of
+ *        points using a P1 interpolation.
+ *
+ * This function assumes the input is a field name. If no field matches
+ * the name, a "generic" interpolation (assuming homogeneous Neumann boundary
+ * conditions) is used).
+ *
+ * The P1 interpolation is based on a local least-squares gradient,
+ * so it is assumed that ghost values of the localtion_vals array
+ * are synchronized if present.
+ *
+ * If the field's boundary values (i.e. associated field) are known,
+ * they are used in the interpolation. Otherwise, if boundary conditions
+ * are defined, they are used. When neither boundary values nor boundary
+ * conditions are known, homogeneous Neumann boundary conditions are assumed.
+ *
+ * \param[in, out]  input           pointer to optional (untyped) value
+ *                                  or structure.
+ * \param[in]       datatype        associated datatype
+ * \param[in]       val_dim         dimension of data values
+ * \param[in]       n_points        number of interpolation points
+ * \param[in]       point_location  location of points in mesh elements
+ * \param[in]       point_coords    point coordinates
+ * \param[in]       location_vals   values at mesh location
+ * \param[out]      point_vals      interpolated values at points
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_interpolate_from_location_p1(void                *input,
+                                 cs_datatype_t        datatype,
+                                 int                  val_dim,
+                                 cs_lnum_t            n_points,
+                                 const cs_lnum_t      point_location[],
+                                 const cs_real_3_t    point_coords[],
+                                 const void          *location_vals,
+                                 void                *point_vals);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

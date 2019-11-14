@@ -3,6 +3,8 @@ Master (not on release branches yet)
 
 User changes:
 
+- Add P1 interpolation function and associated example for probes output.
+
 - Correctly handle mixed code_saturne/neptune_cfd couplings in run script.
 
 - Add the possibility to compute a porosity from a file containing
