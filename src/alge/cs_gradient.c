@@ -8268,6 +8268,10 @@ cs_gradient_vector_synced_input(const char                *var_name,
 /*!
  * \brief  Compute cell gradient of tensor.
  *
+ * This variant of the \ref cs_gradient_tensor function assumes ghost cell
+ * values for input arrays (var and optionally c_weight)
+ * have already been synchronized.
+ *
  * \param[in]       var_name        variable name
  * \param[in]       gradient_type   gradient type
  * \param[in]       halo_type       halo type
@@ -8351,6 +8355,11 @@ cs_gradient_tensor_synced_input(const char                *var_name,
  *
  * This assumes ghost cell values which might be used are already
  * synchronized.
+ *
+ * When boundary conditions are provided, both the bc_coeff_a and bc_coeff_b
+ * arrays must be given. If boundary values are known, bc_coeff_a
+ * can point to the boundary values array, and bc_coeff_b set to NULL.
+ * If bc_coeff_a is NULL, bc_coeff_b is ignored.
  *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
@@ -8462,7 +8471,7 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
                             / (c_weight[c_id] + c_weight[c_id1]);
 
         for (cs_lnum_t ll = 0; ll < 3; ll++)
-          rhsv[ll] += dc[ll] * pfac* _weight;
+          rhsv[ll] += dc[ll] * pfac * _weight;
 
         cocg[0] += dc[0]*dc[0]*ddc;
         cocg[1] += dc[1]*dc[1]*ddc;
@@ -8501,7 +8510,7 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
     for (cs_lnum_t ll = 0; ll < 3; ll++)
       dsij[ll] = udbfs * b_face_normal[f_id][ll];
 
-    if (bc_coeff_a != NULL && bc_coeff_b != NULL) {
+    if (bc_coeff_a != NULL && bc_coeff_b != NULL) { /* Known face BC's */
 
       cs_real_t unddij = 1. / b_dist[f_id];
       cs_real_t umcbdd = (1. -bc_coeff_b[f_id]) * unddij;
@@ -8516,13 +8525,30 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
         rhsv[ll] += dsij[ll] * pfac;
 
     }
+    else if (bc_coeff_a != NULL) { /* Known face values */
 
-    cocg[0] += dsij[0]*dsij[0];
-    cocg[1] += dsij[1]*dsij[1];
-    cocg[2] += dsij[2]*dsij[2];
-    cocg[3] += dsij[0]*dsij[1];
-    cocg[4] += dsij[1]*dsij[2];
-    cocg[5] += dsij[0]*dsij[2];
+      const cs_real_3_t *restrict b_face_cog
+        = (const cs_real_3_t *restrict)fvq->b_face_cog;
+
+      cs_real_t dc[3];
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        dc[ii] = b_face_cog[f_id][ii] - cell_cen[c_id][ii];
+
+      cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+      cs_real_t pfac = (bc_coeff_a[f_id] - var[c_id]) * ddc;
+
+      for (cs_lnum_t ll = 0; ll < 3; ll++)
+        rhsv[ll] += dc[ll] * pfac;
+
+      cocg[0] += dc[0]*dc[0]*ddc;
+      cocg[1] += dc[1]*dc[1]*ddc;
+      cocg[2] += dc[2]*dc[2]*ddc;
+      cocg[3] += dc[0]*dc[1]*ddc;
+      cocg[4] += dc[1]*dc[2]*ddc;
+      cocg[5] += dc[0]*dc[2]*ddc;
+
+    }
 
   } // end of contribution from boundary cells
 
@@ -8555,6 +8581,11 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
  *
  * This assumes ghost cell values which might be used are already
  * synchronized.
+ *
+ * When boundary conditions are provided, both the bc_coeff_a and bc_coeff_b
+ * arrays must be given. If boundary values are known, bc_coeff_a
+ * can point to the boundary values array, and bc_coeff_b set to NULL.
+ * If bc_coeff_a is NULL, bc_coeff_b is ignored.
  *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
@@ -8598,18 +8629,6 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
 
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
-
-  /* Build indices bijection between [1-9] and [1-3]*[1-3] */
-
-  cs_lnum_t _33_9_idx[9][2];
-  int nn = 0;
-  for (int ll = 0; ll < 3; ll++) {
-    for (int mm = 0; mm < 3; mm++) {
-      _33_9_idx[nn][0] = ll;
-      _33_9_idx[nn][1] = mm;
-      nn++;
-    }
-  }
 
   /* Compute covariance matrix and Right-Hand Side */
 
@@ -8697,14 +8716,12 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
 
   } /* end of contribution from interior and extended cells */
 
-  /* Contribution from boundary faces */
+  /* Contribution from boundary conditions */
 
   cs_lnum_t s_id = cell_b_faces_idx[c_id];
   cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
 
   if (e_id > s_id && bc_coeff_a != NULL && bc_coeff_b != NULL) {
-
-    cs_real_t cocgb_v[45], rhsb_v[9], x[9];
 
     for (cs_lnum_t i = s_id; i < e_id; i++) {
 
@@ -8737,6 +8754,19 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
       }
     }
 
+    /* Build indices bijection between [1-9] and [1-3]*[1-3] */
+    cs_lnum_t _33_9_idx[9][2];
+    int nn = 0;
+    for (int ll = 0; ll < 3; ll++) {
+      for (int mm = 0; mm < 3; mm++) {
+        _33_9_idx[nn][0] = ll;
+        _33_9_idx[nn][1] = mm;
+        nn++;
+      }
+    }
+
+    cs_real_t cocgb_v[45], rhsb_v[9], x[9];
+
     _compute_cocgb_rhsb_lsq_v(c_id,
                               1,
                               ma,
@@ -8762,9 +8792,41 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
     }
   }
 
-  /* Case with no boundary contribution */
+  /* Case with no boundary conditions or known face values */
 
   else {
+
+    if (bc_coeff_a != NULL) {
+
+      for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+        const cs_real_3_t *restrict b_face_cog
+          = (const cs_real_3_t *restrict)fvq->b_face_cog;
+
+        cs_lnum_t f_id = cell_b_faces[i];
+
+        cs_real_t dc[3];
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          dc[ii] = b_face_cog[f_id][ii] - cell_cen[c_id][ii];
+
+        cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+        for (cs_lnum_t kk = 0; kk < 3; kk++) {
+
+          cs_real_t pfac = (bc_coeff_a[f_id][kk] - var[c_id][kk]) * ddc;
+
+          for (cs_lnum_t ll = 0; ll < 3; ll++) {
+            rhs[kk][ll] += dc[ll] * pfac;
+            cocg[kk][ll] += dc[kk]*dc[ll]*ddc;
+          }
+
+        }
+
+      }
+
+    }
+
+    /* Invert */
 
     cs_math_33_inv_cramer_in_place(cocg);
 
@@ -8787,6 +8849,11 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
  *
  * This assumes ghost cell values which might be used are already
  * synchronized.
+ *
+ * When boundary conditions are provided, both the bc_coeff_a and bc_coeff_b
+ * arrays must be given. If boundary values are known, bc_coeff_a
+ * can point to the boundary values array, and bc_coeff_b set to NULL.
+ * If bc_coeff_a is NULL, bc_coeff_b is ignored.
  *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
@@ -8873,15 +8940,15 @@ cs_gradient_tensor_cell(const cs_mesh_t             *m,
 
         cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
-        for (cs_lnum_t kk = 0; kk < 6; kk++) {
-
-          cs_real_t pfac = (var[c_id1][kk] - var[c_id][kk]) * ddc;
-
-          for (cs_lnum_t ll = 0; ll < 3; ll++) {
-            rhs[kk][ll] += dc[ll] * pfac;
+        for (cs_lnum_t kk = 0; kk < 3; kk++) {
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
             cocg[kk][ll] += dc[kk]*dc[ll]*ddc;
-          }
+        }
 
+        for (cs_lnum_t kk = 0; kk < 6; kk++) {
+          cs_real_t pfac = (var[c_id1][kk] - var[c_id][kk]) * ddc;
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            rhs[kk][ll] += dc[ll] * pfac;
         }
 
       }
@@ -8901,15 +8968,15 @@ cs_gradient_tensor_cell(const cs_mesh_t             *m,
         cs_real_t _weight =   2. * c_weight[c_id1]
                             / (c_weight[c_id] + c_weight[c_id1]);
 
-        for (cs_lnum_t kk = 0; kk < 6; kk++) {
-
-          cs_real_t pfac = (var[c_id1][kk] - var[c_id][kk]) * ddc;
-
-          for (cs_lnum_t ll = 0; ll < 3; ll++) {
-            rhs[kk][ll] += dc[ll] * pfac * _weight;
+        for (cs_lnum_t kk = 0; kk < 3; kk++) {
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
             cocg[kk][ll] += dc[kk]*dc[ll]*ddc;
-          }
+        }
 
+        for (cs_lnum_t kk = 0; kk < 6; kk++) {
+          cs_real_t pfac = (var[c_id1][kk] - var[c_id][kk]) * ddc;
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            rhs[kk][ll] += dc[ll] * pfac * _weight;
         }
 
       }
@@ -8917,12 +8984,12 @@ cs_gradient_tensor_cell(const cs_mesh_t             *m,
 
   } /* end of contribution from interior and extended cells */
 
-  /* Contribution from boundary faces */
+  /* Contribution from boundary conditions */
 
-  if (bc_coeff_a != NULL && bc_coeff_b != NULL) {
+  cs_lnum_t s_id = cell_b_faces_idx[c_id];
+  cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
 
-    cs_lnum_t s_id = cell_b_faces_idx[c_id];
-    cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
+  if (e_id > s_id && bc_coeff_a != NULL && bc_coeff_b != NULL) {
 
     for (cs_lnum_t i = s_id; i < e_id; i++) {
 
@@ -8954,6 +9021,7 @@ cs_gradient_tensor_cell(const cs_mesh_t             *m,
 
     }
 
+    /* Build indices bijection between [1-18] and [1-6]*[1-3] */
     cs_lnum_t _63_18_idx[18][2];
     cs_lnum_t nn = 0;
     for (cs_lnum_t ll = 0; ll < 6; ll++) {
@@ -8990,6 +9058,54 @@ cs_gradient_tensor_cell(const cs_mesh_t             *m,
       grad[ii][jj] = x[kk];
     }
 
+  }
+
+  /* Case with no boundary conditions or known face values */
+
+  else {
+
+    if (bc_coeff_a != NULL) {
+
+      for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+        const cs_real_3_t *restrict b_face_cog
+          = (const cs_real_3_t *restrict)fvq->b_face_cog;
+
+        cs_lnum_t f_id = cell_b_faces[i];
+
+        cs_real_t dc[3];
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          dc[ii] = b_face_cog[f_id][ii] - cell_cen[c_id][ii];
+
+        cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+        for (cs_lnum_t kk = 0; kk < 3; kk++) {
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            cocg[kk][ll] += dc[kk]*dc[ll]*ddc;
+        }
+
+        for (cs_lnum_t kk = 0; kk < 6; kk++) {
+          cs_real_t pfac = (bc_coeff_a[f_id][kk] - var[c_id][kk]) * ddc;
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            rhs[kk][ll] += dc[ll] * pfac;
+        }
+
+      }
+
+    }
+
+    /* Invert */
+
+    cs_math_33_inv_cramer_in_place(cocg);
+
+    for (cs_lnum_t jj = 0; jj < 3; jj++) {
+      for (cs_lnum_t ii = 0; ii < 6; ii++) {
+        grad[ii][jj] = 0.0;
+        for (cs_lnum_t k = 0; k < 3; k++)
+          grad[ii][jj] += rhs[ii][k] * cocg[k][jj];
+
+      }
+    }
   }
 
 }

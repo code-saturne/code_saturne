@@ -448,6 +448,10 @@ cs_gradient_vector_synced_input(const char                *var_name,
 /*!
  * \brief  Compute cell gradient of tensor.
  *
+ * This variant of the \ref cs_gradient_tensor function assumes ghost cell
+ * values for input arrays (var and optionally c_weight)
+ * have already been synchronized.
+ *
  * \param[in]       var_name        variable name
  * \param[in]       gradient_type   gradient type
  * \param[in]       halo_type       halo type
@@ -489,6 +493,11 @@ cs_gradient_tensor_synced_input(const char                *var_name,
  * This assumes ghost cell values which might be used are already
  * synchronized.
  *
+ * When boundary conditions are provided, both the bc_coeff_a and bc_coeff_b
+ * arrays must be given. If boundary values are known, bc_coeff_a
+ * can point to the boundary values array, and bc_coeff_b set to NULL.
+ * If bc_coeff_a is NULL, bc_coeff_b is ignored.
+ *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
  * \param[in]   c_id            cell id
@@ -520,6 +529,11 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
  * This assumes ghost cell values which might be used are already
  * synchronized.
  *
+ * When boundary conditions are provided, both the bc_coeff_a and bc_coeff_b
+ * arrays must be given. If boundary values are known, bc_coeff_a
+ * can point to the boundary values array, and bc_coeff_b set to NULL.
+ * If bc_coeff_a is NULL, bc_coeff_b is ignored.
+ *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
  * \param[in]   c_id            cell id
@@ -550,6 +564,11 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
  *
  * This assumes ghost cell values which might be used are already
  * synchronized.
+ *
+ * When boundary conditions are provided, both the bc_coeff_a and bc_coeff_b
+ * arrays must be given. If boundary values are known, bc_coeff_a
+ * can point to the boundary values array, and bc_coeff_b set to NULL.
+ * If bc_coeff_a is NULL, bc_coeff_b is ignored.
  *
  * \param[in]   m               pointer to associated mesh structure
  * \param[in]   fvq             pointer to associated finite volume quantities
