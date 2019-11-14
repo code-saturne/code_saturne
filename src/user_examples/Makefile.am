@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2018 EDF S.A.
+# Copyright (C) 1998-2019 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -108,6 +108,7 @@ cs_user_performance_tuning-parallel-io.c \
 cs_user_performance_tuning-partition.c \
 cs_user_postprocess.c \
 cs_user_postprocess-boundary_pressure_profile.c \
+cs_user_postprocess-probes-interpolate.c \
 cs_user_postprocess-profiles.c \
 cs_user_postprocess-sfc.c \
 cs_user_radiative_transfer.c \
