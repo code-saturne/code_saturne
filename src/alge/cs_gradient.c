@@ -3355,7 +3355,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
           cs_real_t pfacj = pfaci;
 
           pfaci += (1.0-ktpond) * (c_var[c_id2] - c_var[c_id1]);
-          pfacj -=      ktpond  * (c_var[c_id1] - c_var[c_id1]);
+          pfacj -=      ktpond  * (c_var[c_id2] - c_var[c_id1]);
 
           cs_real_t rfac =
                  weight[f_id]
