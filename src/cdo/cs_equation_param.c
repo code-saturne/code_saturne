@@ -657,6 +657,100 @@ _petsc_amg_block_hook(void     *context,
   cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer: setup hook for setting PETSc solver and
+ *         preconditioner.
+ *         Case of block Jacobi preconditioner
+ *
+ * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] a        pointer to PETSc Matrix context
+ * \param[in, out] ksp      pointer to PETSc KSP context
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_petsc_block_jacobi_hook(void     *context,
+                         Mat       a,
+                         KSP       ksp)
+{
+  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
+  cs_param_sles_t  slesp = eqp->sles_param;
+
+  assert(eqp->dim == 3);        /* This designed for this case */
+
+  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
+
+  /* Set the solver */
+  _petsc_set_krylov_solver(slesp, a, ksp);
+
+  /* Set KSP tolerances */
+  PetscReal rtol, abstol, dtol;
+  PetscInt  maxit;
+  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
+  KSPSetTolerances(ksp,
+                   slesp.eps,         /* relative convergence tolerance */
+                   abstol,            /* absolute convergence tolerance */
+                   dtol,              /* divergence tolerance */
+                   slesp.n_max_iter); /* max number of iterations */
+
+  /* Try to have "true" norm */
+  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+
+  PC  pc;
+  KSPGetPC(ksp, &pc);
+  PCSetType(pc, PCFIELDSPLIT);
+  PCFieldSplitSetType(pc, PC_COMPOSITE_ADDITIVE);
+
+  /* Apply modifications to the KSP structure */
+  PetscInt  id, n_split;
+  KSP  *xyz_subksp;
+
+  PCFieldSplitSetBlockSize(pc, 3);
+  id = 0;
+  PCFieldSplitSetFields(pc, "x", 1, &id, &id);
+  id = 1;
+  PCFieldSplitSetFields(pc, "y", 1, &id, &id);
+  id = 2;
+  PCFieldSplitSetFields(pc, "z", 1, &id, &id);
+
+  PCFieldSplitGetSubKSP(pc, &n_split, &xyz_subksp);
+  assert(n_split == 3);
+
+  /* Predefined settings when using AMG as a preconditioner */
+  PC  _pc;
+  for (id = 0; id < 3; id++) {
+
+    KSP  _ksp = xyz_subksp[id];
+    KSPSetType(_ksp, KSPPREONLY);
+    KSPGetPC(_ksp, &_pc);
+    PCSetType(_pc, PCBJACOBI);
+    PCFactorSetReuseOrdering(_pc, PETSC_TRUE);
+    PCFactorSetReuseFill(_pc, PETSC_TRUE);
+  }
+
+  PCSetFromOptions(pc);
+  PCSetUp(pc);
+
+  /* User function for additional settings */
+  cs_user_sles_petsc_hook(context, a, ksp);
+
+  KSPSetFromOptions(ksp);
+  KSPSetUp(ksp);
+
+  /* Dump the setup related to PETSc in a specific file */
+  if (!slesp.setup_done) {
+    cs_sles_petsc_log_setup(ksp);
+    slesp.setup_done = true;
+  }
+
+  PetscFree(xyz_subksp);
+
+  cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
+}
 #endif /* defined(HAVE_PETSC) */
 
 /*----------------------------------------------------------------------------*/
@@ -1914,6 +2008,12 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp)
                              NULL,
                              MATMPIAIJ,
                              _petsc_amg_block_hook,
+                             (void *)eqp);
+      else if (slesp.precond == CS_PARAM_PRECOND_BJACOB && eqp->dim > 1)
+        cs_sles_petsc_define(slesp.field_id,
+                             NULL,
+                             MATMPIAIJ,
+                             _petsc_block_jacobi_hook,
                              (void *)eqp);
       else
         cs_sles_petsc_define(slesp.field_id,
