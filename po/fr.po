@@ -9983,12 +9983,6 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid ""
-" %s: Undefined iterative solver for solving %s equation.\n"
-" Please modify your settings."
-msgstr ""
-
-#, c-format
 msgid " %s: Invalid key for setting the equation %s."
 msgstr "%s : type de clé invalide pour l'équation %s."
 

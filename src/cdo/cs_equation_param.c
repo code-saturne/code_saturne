@@ -884,8 +884,8 @@ _set_saturne_sles(cs_equation_param_t   *eqp)
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _(" %s: Undefined iterative solver for solving %s equation.\n"
-                " Please modify your settings."), __func__, eqp->name);
+              " %s: Invalid iterative solver for solving equation %s.\n"
+              " Please modify your settings.", __func__, eqp->name);
     break;
 
   } /* end of switch */
@@ -1296,7 +1296,7 @@ _set_key(const char            *label,
 
     }
     else if (strcmp(keyval, "amg_block") == 0) {
-      if (eqp->dim == 1) {  /* Swith to a classical AMG preconditioner */
+      if (eqp->dim == 1) {  /* Switch to a classical AMG preconditioner */
 
         eqp->sles_param.precond = CS_PARAM_PRECOND_AMG;
 

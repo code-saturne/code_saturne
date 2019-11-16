@@ -99,7 +99,7 @@ BEGIN_C_DECLS
 
 /* GKB advanced settings */
 
-#define CS_GKB_TRUNCATION_THRESHOLD     5
+#define CS_GKB_TRUNCATION_THRESHOLD       5
 
 /* Block size for superblock algorithm */
 
