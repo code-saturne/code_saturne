@@ -470,12 +470,12 @@ _petsc_setup_hook(void   *context,
     if (slesp.precond == CS_PARAM_PRECOND_SSOR ||
         slesp.precond == CS_PARAM_PRECOND_ILU0) {
 
-      slesp.precond = CS_PARAM_PRECOND_DIAG;
+      slesp.precond = CS_PARAM_PRECOND_BJACOB;
       cs_base_warn(__FILE__, __LINE__);
       cs_log_printf(CS_LOG_DEFAULT,
                     " %s: Eq. %s: Modify the requested preconditioner to"
                     " enable a parallel computation with PETSC.\n"
-                    " Switch to a jacobi preconditioner.\n"
+                    " Switch to a block jacobi preconditioner.\n"
                     " Please check your settings.", __func__, eqp->name);
 
     }
