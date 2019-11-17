@@ -57,7 +57,11 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------
  * Initialize FVM to Melissa output writer.
  *
- * No options are currently handled
+ * Options are:
+ *   dry_run               trace output to <name>.log file, but do not
+ *                         actually communicate with Melissa server
+ *   rank_step=<integer>   MPI rank step
+ *   trace                 trace output to <name>.log file
  *
  * parameters:
  *   name           <-- base output case name.
@@ -92,7 +96,7 @@ fvm_to_melissa_init_writer(const char             *name,
  * Finalize FVM to Melissa output writer.
  *
  * parameters:
- *   this_writer_p <-- pointer to opaque Cp_Stat Gold writer structure.
+ *   this_writer_p <-- pointer to opaque Melissa writer structure.
  *
  * returns:
  *   NULL pointer.
@@ -102,7 +106,7 @@ void *
 fvm_to_melissa_finalize_writer(void  *this_writer_p);
 
 /*----------------------------------------------------------------------------
- * Associate new time step with an Cp_Stat geometry.
+ * Associate new time step with a Melissa geometry.
  *
  * parameters:
  *   this_writer_p <-- pointer to associated writer
@@ -134,7 +138,7 @@ fvm_to_melissa_needs_tesselation(void               *this_writer_p,
                                  fvm_element_t       element_type);
 
 /*----------------------------------------------------------------------------
- * Write nodal mesh to a a Melissa output
+ * Write nodal mesh to a Melissa output
  *
  * parameters:
  *   this_writer_p <-- pointer to associated writer.
@@ -149,7 +153,13 @@ fvm_to_melissa_export_nodal(void               *this_writer_p,
  * Write field associated with a nodal mesh to a Melissa output.
  *
  * Assigning a negative value to the time step indicates a time-independent
- * field (in which case the time_value argument is unused).
+ * field.
+ *
+ * Fields already exported by another Melissa writer will be ignored,
+ * as will fields already exported for the same or greater time step,
+ * or exported with a different time dependency.
+ * Use a different field name if you really need to output fields in such
+ * a configuration.
  *
  * parameters:
  *   writer           <-- pointer to associated writer
@@ -166,7 +176,7 @@ fvm_to_melissa_export_nodal(void               *this_writer_p,
  *                        size: n_parent_lists
  *   datatype         <-- indicates the data type of (source) field values
  *   time_step        <-- number of the current time step
- *   time_value       <-- associated time value
+ *   time_value       <-- associated time value (ignored)
  *   field_values     <-- array of associated field value arrays
  *----------------------------------------------------------------------------*/
 
