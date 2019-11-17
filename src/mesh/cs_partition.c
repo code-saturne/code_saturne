@@ -965,7 +965,8 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
 #endif
 {
   cs_lnum_t i;
-  double  start_time, end_time;
+  cs_timer_t  start_time, end_time;
+  cs_timer_counter_t dt;
 
   cs_lnum_t n_cells = 0, block_size = 0;
 
@@ -976,7 +977,7 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
   bft_printf(_("\n Partitioning by space-filling curve: %s.\n"),
              _(fvm_io_num_sfc_type_name[sfc_type]));
 
-  start_time = cs_timer_wtime();
+  start_time = cs_timer_time();
 
   n_cells = mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0];
   block_size = mb->cell_bi.block_size;
@@ -989,6 +990,14 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
 #endif
   if (n_ranks == 1)
     _precompute_cell_center_l(mb, cell_center);
+
+  end_time = cs_timer_time();
+  dt = cs_timer_diff(&start_time, &end_time);
+  start_time = end_time;
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("  precompute cell centers:    %.3g s\n"),
+                (double)(dt.wall_nsec)/1.e9);
 
   cell_io_num = fvm_io_num_create_from_sfc(cell_center,
                                            3,
@@ -1044,16 +1053,17 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
 
   cell_io_num = fvm_io_num_destroy(cell_io_num);
 
-  end_time = cs_timer_wtime();
+  end_time = cs_timer_time();
+  dt = cs_timer_diff(&start_time, &end_time);
 
   if (sfc_type < FVM_IO_NUM_SFC_HILBERT_BOX)
     cs_log_printf(CS_LOG_PERFORMANCE,
                   _("  Morton (Z) curve:           %.3g s \n"),
-                  (double)(end_time - start_time));
+                  (double)(dt.wall_nsec)/1.e9);
   else
     cs_log_printf(CS_LOG_PERFORMANCE,
                   _("  Peano-Hilbert curve:        %.3g s \n"),
-                  (double)(end_time - start_time));
+                  (double)(dt.wall_nsec)/1.e9);
 }
 
 #if defined(HAVE_MPI)
