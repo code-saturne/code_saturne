@@ -412,6 +412,195 @@ _build_is_for_fieldsplit(IS   *isp,
   PetscFree(indices);
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set command line options for PC according to the kind of
+ *        preconditionner
+ *
+ * \param[in]   slesp      set of parameters for the linear algebra
+ */
+/*----------------------------------------------------------------------------*/
+
+static PCType
+_petsc_get_pc_type(const cs_param_sles_t    slesp)
+{
+  PCType  pc_type = PCNONE;
+
+  switch (slesp.precond) {
+
+  case CS_PARAM_PRECOND_NONE:
+    return PCNONE;
+
+  case CS_PARAM_PRECOND_DIAG:
+    return PCJACOBI;
+
+  case CS_PARAM_PRECOND_BJACOB:
+    return PCBJACOBI;
+
+  case CS_PARAM_PRECOND_SSOR:
+    return PCSOR;
+
+  case CS_PARAM_PRECOND_ICC0:
+    return PCICC;
+
+  case CS_PARAM_PRECOND_ILU0:
+    return PCILU;
+
+  case CS_PARAM_PRECOND_AS:
+    return PCASM;
+
+  case CS_PARAM_PRECOND_AMG:
+    {
+      switch (slesp.amg_type) {
+
+      case CS_PARAM_AMG_PETSC_GAMG:
+        return PCGAMG;
+        break;
+
+      case CS_PARAM_AMG_PETSC_PCMG:
+        return PCMG;
+        break;
+
+      case CS_PARAM_AMG_HYPRE_BOOMER:
+#if defined(PETSC_HAVE_HYPRE)
+        return PCHYPRE;
+#else
+        cs_base_warn(__FILE__, __LINE__);
+        cs_log_printf(CS_LOG_DEFAULT,
+                      "%s: Switch to MG since BoomerAMG is not available.\n",
+                      __func__);
+        return PCMG;
+#endif
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid AMG type for the PETSc library.", __func__);
+        break;
+
+      } /* End of switch on the AMG type */
+
+    } /* AMG as preconditioner */
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Preconditioner not interfaced with PETSc.", __func__);
+  }
+
+  return pc_type;
+}
+
+/*----------------------------------------------------------------------------
+ * \brief  Function pointer: setup hook for setting PETSc solver and
+ *         preconditioner.
+ *         Case of additive block preconditioner for a GMRES
+ *
+ * \param[in]      slesp     pointer to a set of SLES settings
+ * \param[in, out] u_ksp     pointer to PETSc KSP context
+ *----------------------------------------------------------------------------*/
+
+static void
+_set_velocity_ksp(const cs_param_sles_t    slesp,
+                  KSP                      u_ksp)
+{
+  PC u_pc;
+  KSPGetPC(u_ksp, &u_pc);
+  PCType  pc_type = _petsc_get_pc_type(slesp);
+
+  /* Set the solver */
+  switch (slesp.solver) {
+
+  case CS_PARAM_ITSOL_FCG:
+  case CS_PARAM_ITSOL_CG:
+    KSPSetType(u_ksp, KSPCG);
+    break;
+  case CS_PARAM_ITSOL_BICG:      /* Improved Bi-CG stab */
+    KSPSetType(u_ksp, KSPIBCGS);
+    break;
+  case CS_PARAM_ITSOL_BICGSTAB2: /* BiCGstab2 */
+    KSPSetType(u_ksp, KSPBCGSL);
+    break;
+  case CS_PARAM_ITSOL_MUMPS:     /* Direct solver (factorization) */
+#if defined(PETSC_HAVE_MUMPS)
+    KSPSetType(u_ksp, KSPPREONLY);
+    PCSetType(u_pc, PCLU);
+    PCFactorSetMatSolverType(u_pc, MATSOLVERMUMPS);
+#else
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: MUMPS not interfaced with this installation of PETSc.",
+              __func__);
+#endif
+    break;
+  case CS_PARAM_ITSOL_GMRES:
+    KSPSetType(u_ksp, KSPGMRES);
+    break;
+
+  case CS_PARAM_ITSOL_MUMPS_LDLT:     /* Direct solver (factorization) */
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid solver. Try mumps.",
+              __func__);
+    break;
+  default:
+    bft_error(__FILE__, __LINE__, 0, "%s: Invalid solver.", __func__);
+    break;
+
+  } /* Switch on solver */
+
+  if (slesp.solver != CS_PARAM_ITSOL_MUMPS)
+    PCSetType(u_pc, pc_type);
+
+  /* Additional settings for the preconditioner */
+  switch (slesp.precond) {
+
+  case CS_PARAM_PRECOND_AMG:
+    switch (slesp.amg_type) {
+
+    case CS_PARAM_AMG_PETSC_GAMG:
+      PCGAMGSetType(u_pc, PCGAMGAGG);
+      PCGAMGSetNSmooths(u_pc, 1);
+      _setup_velocity_gamg();
+      break;
+
+    case CS_PARAM_AMG_HYPRE_BOOMER:
+#if defined(PETSC_HAVE_HYPRE)
+      PCHYPRESetType(u_pc, "boomeramg");
+      _setup_velocity_boomeramg();
+#else
+      PCGAMGSetType(u_pc, PCGAMGAGG);
+      PCGAMGSetNSmooths(u_pc, 1);
+      _setup_velocity_gamg();
+#endif
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0, "%s: Invalid AMG type.", __func__);
+      break;
+
+    } /* AMG type */
+    break;
+
+  default:
+    break; /* Nothing else to do */
+
+  } /* Switch on preconditioner */
+
+  /* Set tolerance and number of iterations */
+  PetscReal rtol, abstol, dtol;
+  PetscInt  maxit;
+  KSPGetTolerances(u_ksp, &rtol, &abstol, &dtol, &maxit);
+  rtol = fmin(1e-4, fmax(1e4*slesp.eps, 1e-5));
+  KSPSetTolerances(u_ksp,
+                   rtol,        /* relative convergence tolerance */
+                   abstol,      /* absolute convergence tolerance */
+                   dtol,        /* divergence tolerance */
+                   500);        /* max number of iterations */
+
+  PCSetFromOptions(u_pc);
+  PCSetUp(u_pc);
+
+  KSPSetFromOptions(u_ksp);
+  KSPSetUp(u_ksp);
+}
+
 /*----------------------------------------------------------------------------
  * \brief  Function pointer: setup hook for setting PETSc solver and
  *         preconditioner.
@@ -600,7 +789,7 @@ _diag_schur_gmres_hook(void     *context,
   KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
 
   /* Apply modifications to the KSP structure */
-  PC up_pc, u_pc, p_pc;
+  PC up_pc, p_pc;
 
   KSPGetPC(ksp, &up_pc);
   PCSetType(up_pc, PCFIELDSPLIT);
@@ -634,35 +823,8 @@ _diag_schur_gmres_hook(void     *context,
   PCSetUp(p_pc);
   KSPSetUp(p_ksp);
 
-  KSP  u_ksp = up_subksp[0];
-  KSPSetType(u_ksp, KSPCG);
-  KSPGetPC(u_ksp, &u_pc);
-
-#if defined(PETSC_HAVE_HYPRE)
-  PCSetType(u_pc, PCHYPRE);
-  PCHYPRESetType(u_pc, "boomeramg");
-
-  _setup_velocity_boomeramg();
-#else
-  PCSetType(u_pc, PCGAMG);
-  PCGAMGSetType(u_pc, PCGAMGAGG);
-  PCGAMGSetNSmooths(u_pc, 1);
-
-  _setup_velocity_gamg();
-#endif
-
-  KSPSetTolerances(u_ksp,
-                   slesp.eps,   /* relative convergence tolerance */
-                   abstol,      /* absolute convergence tolerance */
-                   dtol,        /* divergence tolerance */
-                   5);          /* max number of iterations */
-
-
-  PCSetFromOptions(u_pc);
-  PCSetUp(u_pc);
-
-  KSPSetFromOptions(u_ksp);
-  KSPSetUp(u_ksp);
+  /* Set the velocity block */
+  _set_velocity_ksp(slesp, up_subksp[0]);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, a, ksp);
@@ -727,7 +889,7 @@ _upper_schur_gmres_hook(void     *context,
   KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
 
   /* Apply modifications to the KSP structure */
-  PC up_pc, u_pc, p_pc;
+  PC up_pc, p_pc;
 
   KSPGetPC(ksp, &up_pc);
   PCSetType(up_pc, PCFIELDSPLIT);
@@ -761,33 +923,8 @@ _upper_schur_gmres_hook(void     *context,
   PCSetUp(p_pc);
   KSPSetUp(p_ksp);
 
-  KSP  u_ksp = up_subksp[0];
-  KSPSetType(u_ksp, KSPCG);
-  KSPGetPC(u_ksp, &u_pc);
-#if defined(PETSC_HAVE_HYPRE)
-  PCSetType(u_pc, PCHYPRE);
-  PCHYPRESetType(u_pc, "boomeramg");
-
-  _setup_velocity_boomeramg();
-#else
-  PCSetType(u_pc, PCGAMG);
-  PCGAMGSetType(u_pc, PCGAMGAGG);
-  PCGAMGSetNSmooths(u_pc, 1);
-
-  _setup_velocity_gamg();
-#endif
-
-  KSPSetTolerances(u_ksp,
-                   slesp.eps,   /* relative convergence tolerance */
-                   abstol,      /* absolute convergence tolerance */
-                   dtol,        /* divergence tolerance */
-                   5);          /* max number of iterations */
-
-  PCSetFromOptions(u_pc);
-  PCSetUp(u_pc);
-
-  KSPSetFromOptions(u_ksp);
-  KSPSetUp(u_ksp);
+  /* Set the velocity block */
+  _set_velocity_ksp(slesp, up_subksp[0]);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, a, ksp);
