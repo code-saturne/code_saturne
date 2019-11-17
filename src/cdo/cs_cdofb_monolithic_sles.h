@@ -38,7 +38,6 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_cdofb_monolithic_priv.h"
 #include "cs_navsto_param.h"
 
 /*----------------------------------------------------------------------------*/
@@ -53,9 +52,53 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/* Context related to the resolution of a saddle point problem */
+typedef struct {
+
+  /* Block matrices: The gradient operator is the -transpose of div_op */
+
+  cs_matrix_t   *matrix;    /* Block related to the velocity momentum */
+  cs_real_t     *div_op;    /* Block related to the -divergence (block A_{10} */
+
+  /* Arrays split according to the block shape */
+  cs_real_t     *u_f;           /* velocity values at faces */
+  cs_real_t     *p_c;           /* pressure values at cells */
+
+  cs_real_t     *b_f;           /* RHS for the momentum */
+  cs_real_t     *b_c;           /* RHS for the mass equation */
+
+  cs_sles_t     *sles;          /* main SLES structure */
+
+  cs_real_t      graddiv_coef;  /* value of the grad-div coefficient in case
+                                 * of augmented system */
+
+} cs_cdofb_monolithic_sles_t;
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create an empty cs_cdofb_monolithic_sles_t structure
+ *
+ * \return a pointer to a newly allocated structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_cdofb_monolithic_sles_t *
+cs_cdofb_monolithic_sles_create(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create an empty cs_cdofb_monolithic_sles_t structure
+ *
+ * \param[in, out]  p_msles  double pointer to the structure to free
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_monolithic_sles_free(cs_cdofb_monolithic_sles_t   **p_msles);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -93,13 +136,7 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in]      matrix   pointer to a cs_matrix_t structure
- * \param[in, out] sc       pointer to the scheme context
- * \param[in, out] sles     pointer to a cs_sles_t structure
- * \param[in, out] u_f      initial velocity on faces
- * \param[in, out] p_c      initial pressure in cells
- * \param[in, out] b_f      right-hand side (scatter/gather if needed) on faces
- * \param[in, out] b_c      right_hand side on cells (mass equation)
+ * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
  *
  * \return the (cumulated) number of iterations of the solver
  */
@@ -108,13 +145,7 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
 int
 cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
                           const cs_equation_param_t     *eqp,
-                          const cs_matrix_t             *matrix,
-                          cs_cdofb_monolithic_t         *sc,
-                          cs_sles_t                     *sles,
-                          cs_real_t                     *u_f,
-                          cs_real_t                     *p_c,
-                          cs_real_t                     *b_f,
-                          cs_real_t                     *b_c);
+                          cs_cdofb_monolithic_sles_t    *msles);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -124,13 +155,7 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in]      matrix   pointer to a cs_matrix_t structure
- * \param[in, out] sc       pointer to the scheme context
- * \param[in, out] sles     pointer to a cs_sles_t structure
- * \param[in, out] u_f      initial velocity on faces
- * \param[in, out] p_c      initial pressure in cells
- * \param[in, out] b_f      right-hand side (scatter/gather if needed) on faces
- * \param[in, out] b_c      right_hand side on cells (mass equation)
+ * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
  *
  * \return the cumulated number of iterations of the solver
  */
@@ -139,13 +164,7 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
 int
 cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
                               const cs_equation_param_t     *eqp,
-                              const cs_matrix_t             *matrix,
-                              cs_cdofb_monolithic_t         *sc,
-                              cs_sles_t                     *sles,
-                              cs_real_t                     *u_f,
-                              cs_real_t                     *p_c,
-                              cs_real_t                     *b_f,
-                              cs_real_t                     *b_c);
+                              cs_cdofb_monolithic_sles_t    *msles);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -155,13 +174,7 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in]      matrix   pointer to a cs_matrix_t structure
- * \param[in, out] sc       pointer to the scheme context
- * \param[in, out] sles     pointer to a cs_sles_t structure
- * \param[in, out] u_f      initial velocity on faces
- * \param[in, out] p_c      initial pressure in cells
- * \param[in, out] b_f      right-hand side (scatter/gather if needed) on faces
- * \param[in, out] b_c      right_hand side on cells (mass equation)
+ * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
  *
  * \return the cumulated number of iterations of the solver
  */
@@ -170,13 +183,7 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
 int
 cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
                                    const cs_equation_param_t     *eqp,
-                                   const cs_matrix_t             *matrix,
-                                   cs_cdofb_monolithic_t         *sc,
-                                   cs_sles_t                     *sles,
-                                   cs_real_t                     *u_f,
-                                   cs_real_t                     *p_c,
-                                   cs_real_t                     *b_f,
-                                   cs_real_t                     *b_c);
+                                   cs_cdofb_monolithic_sles_t    *msles);
 
 /*----------------------------------------------------------------------------*/
 

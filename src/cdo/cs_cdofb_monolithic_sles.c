@@ -1839,6 +1839,59 @@ _uza_cvg_test(const cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Create an empty cs_cdofb_monolithic_sles_t structure
+ *
+ * \return a pointer to a newly allocated structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_cdofb_monolithic_sles_t *
+cs_cdofb_monolithic_sles_create(void)
+{
+  cs_cdofb_monolithic_sles_t  *msles = NULL;
+
+  BFT_MALLOC(msles, 1, cs_cdofb_monolithic_sles_t);
+
+  msles->matrix = NULL;
+  msles->div_op = NULL;
+
+  msles->graddiv_coef = 0.;
+
+  msles->sles = NULL;
+
+  msles->u_f = NULL;
+  msles->p_c = NULL;
+  msles->b_f = NULL;
+  msles->b_c = NULL;
+
+  return msles;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create an empty cs_cdofb_monolithic_sles_t structure
+ *
+ * \param[in, out]  p_msles  double pointer to the structure to free
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_monolithic_sles_free(cs_cdofb_monolithic_sles_t   **p_msles)
+{
+  cs_cdofb_monolithic_sles_t  *msles = *p_msles;
+
+  if (msles == NULL)
+    return;
+
+  BFT_FREE(msles->div_op);
+  /* other pointer are shared, thus no free at this stage */
+
+  BFT_FREE(msles);
+  *p_msles = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set pointers to shared structures
  *
  * \param[in]  connect  pointer to cdo connectivities
@@ -2030,13 +2083,7 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in]      matrix   pointer to a cs_matrix_t structure
- * \param[in, out] sc       pointer to the scheme context
- * \param[in, out] sles     pointer to a cs_sles_t structure
- * \param[in, out] u_f      initial velocity on faces
- * \param[in, out] p_c      initial pressure in cells
- * \param[in, out] b_f      right-hand side (scatter/gather if needed) on faces
- * \param[in, out] b_c      right_hand side on cells (mass equation)
+ * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
  *
  * \return the (cumulated) number of iterations of the solver
  */
@@ -2045,17 +2092,11 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
 int
 cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
                           const cs_equation_param_t     *eqp,
-                          const cs_matrix_t             *matrix,
-                          cs_cdofb_monolithic_t         *sc,
-                          cs_sles_t                     *sles,
-                          cs_real_t                     *u_f,
-                          cs_real_t                     *p_c,
-                          cs_real_t                     *b_f,
-                          cs_real_t                     *b_c)
+                          cs_cdofb_monolithic_sles_t    *msles)
 {
   CS_UNUSED(nsp);
-  CS_UNUSED(sc);
 
+  const cs_matrix_t  *matrix = msles->matrix;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
   const cs_lnum_t  n_cells = quant->n_cells;
@@ -2070,23 +2111,23 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
   BFT_MALLOC(b, n_scatter_elts, cs_real_t);
 
 # pragma omp parallel for if (CS_THR_MIN > n_faces)     \
-  shared(u_f, b_f, xsol, b)                             \
+  shared(msles, xsol, b)                             \
   firstprivate(n_faces)
   for (cs_lnum_t f = 0; f < n_faces; f++) {
 
-    xsol[f            ] = u_f[3*f];
-    xsol[f +   n_faces] = u_f[3*f+1];
-    xsol[f + 2*n_faces] = u_f[3*f+2];
+    xsol[f            ] = msles->u_f[3*f];
+    xsol[f +   n_faces] = msles->u_f[3*f+1];
+    xsol[f + 2*n_faces] = msles->u_f[3*f+2];
 
-    b[f            ] = b_f[3*f];
-    b[f +   n_faces] = b_f[3*f+1];
-    b[f + 2*n_faces] = b_f[3*f+2];
+    b[f            ] = msles->b_f[3*f];
+    b[f +   n_faces] = msles->b_f[3*f+1];
+    b[f + 2*n_faces] = msles->b_f[3*f+2];
 
   }
 
   /* Add the pressure related elements */
-  memcpy(xsol + 3*n_faces, p_c, n_cells*sizeof(cs_real_t));
-  memcpy(b + 3*n_faces, b_c, n_cells*sizeof(cs_real_t));
+  memcpy(xsol + 3*n_faces, msles->p_c, n_cells*sizeof(cs_real_t));
+  memcpy(b + 3*n_faces, msles->b_c, n_cells*sizeof(cs_real_t));
 
   const cs_range_set_t  *rset = cs_shared_range_set;
   int  n_iters = 0;
@@ -2104,7 +2145,7 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
   const double  r_norm = 1.0; /* No renormalization by default (TODO) */
   const cs_param_sles_t  sles_param = eqp->sles_param;
 
-  cs_sles_convergence_state_t  code = cs_sles_solve(sles,
+  cs_sles_convergence_state_t  code = cs_sles_solve(msles->sles,
                                                     matrix,
                                                     CS_HALO_ROTATION_IGNORE,
                                                     sles_param.eps,
@@ -2140,17 +2181,17 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
 
   /* Interlace xsol --> u_f and p_c */
 # pragma omp parallel for if (CS_THR_MIN > n_faces)     \
-  shared(u_f, xsol) firstprivate(n_faces)
+  shared(msles, xsol) firstprivate(n_faces)
   for (cs_lnum_t f = 0; f < n_faces; f++) {
 
-    u_f[3*f]   = xsol[f];
-    u_f[3*f+1] = xsol[f +   n_faces];
-    u_f[3*f+2] = xsol[f + 2*n_faces];
+    msles->u_f[3*f]   = xsol[f];
+    msles->u_f[3*f+1] = xsol[f +   n_faces];
+    msles->u_f[3*f+2] = xsol[f + 2*n_faces];
 
   }
 
   /* Copy the part of the solution array related to the pressure in cells */
-  memcpy(p_c, xsol + 3*n_faces, n_cells*sizeof(cs_real_t));
+  memcpy(msles->p_c, xsol + 3*n_faces, n_cells*sizeof(cs_real_t));
 
   /* Free what can be freed at this stage */
   BFT_FREE(xsol);
@@ -2167,13 +2208,7 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in]      matrix   pointer to a cs_matrix_t structure
- * \param[in, out] sc       pointer to the scheme context
- * \param[in, out] sles     pointer to a cs_sles_t structure
- * \param[in, out] u_f      initial velocity on faces
- * \param[in, out] p_c      initial pressure in cells
- * \param[in, out] b_f      right-hand side (scatter/gather if needed) on faces
- * \param[in, out] b_c      right_hand side on cells (mass equation)
+ * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
  *
  * \return the cumulated number of iterations of the solver
  */
@@ -2182,23 +2217,22 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
 int
 cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
                               const cs_equation_param_t     *eqp,
-                              const cs_matrix_t             *matrix,
-                              cs_cdofb_monolithic_t         *sc,
-                              cs_sles_t                     *sles,
-                              cs_real_t                     *u_f,
-                              cs_real_t                     *p_c,
-                              cs_real_t                     *b_f,
-                              cs_real_t                     *b_c)
+                              cs_cdofb_monolithic_sles_t    *msles)
 {
   /* Sanity checks */
   assert(nsp != NULL && nsp->sles_strategy == CS_NAVSTO_SLES_GKB_SATURNE);
-  assert(sc != NULL);
   assert(cs_shared_range_set != NULL);
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_real_t  *vol = quant->cell_vol;
-  const cs_real_t  gamma = sc->ref_graddiv_coef;
-  const cs_real_t  *div_op = sc->c2f_divergence;
+  const cs_real_t  gamma = msles->graddiv_coef;
+  const cs_real_t  *div_op = msles->div_op;
+  const cs_matrix_t  *matrix = msles->matrix;
+
+  cs_real_t  *u_f = msles->u_f;
+  cs_real_t  *p_c = msles->p_c;
+  cs_real_t  *b_f = msles->b_f;
+  cs_real_t  *b_c = msles->b_c;
 
   /* Allocate and initialize the GKB builder structure */
   cs_gkb_builder_t  *gkb = _init_gkb_builder(gamma,
@@ -2206,10 +2240,10 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
                                              quant->n_cells);
 
   /* Transformation of the initial saddle-point system */
-  _transform_gkb_system(matrix, eqp, div_op, gkb, sles, u_f, b_f, b_c);
+  _transform_gkb_system(matrix, eqp, div_op, gkb, msles->sles, u_f, b_f, b_c);
 
   /* Initialization */
-  _init_gkb_algo(matrix, eqp, div_op, gkb, sles, p_c);
+  _init_gkb_algo(matrix, eqp, div_op, gkb, msles->sles, p_c);
 
   /* Main loop */
   /* ========= */
@@ -2263,7 +2297,7 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
                                           cs_shared_range_set,
                                           normalization,
                                           false, /* rhs_redux */
-                                          sles,
+                                          msles->sles,
                                           gkb->v,
                                           gkb->m__v));
 
@@ -2320,13 +2354,7 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in]      matrix   pointer to a cs_matrix_t structure
- * \param[in, out] sc       pointer to the scheme context
- * \param[in, out] sles     pointer to a cs_sles_t structure
- * \param[in, out] u_f      initial velocity on faces
- * \param[in, out] p_c      initial pressure in cells
- * \param[in, out] b_f      right-hand side (scatter/gather if needed) on faces
- * \param[in, out] b_c      right_hand side on cells (mass equation)
+ * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
  *
  * \return the cumulated number of iterations of the solver
  */
@@ -2335,22 +2363,20 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
 int
 cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
                                    const cs_equation_param_t     *eqp,
-                                   const cs_matrix_t             *matrix,
-                                   cs_cdofb_monolithic_t         *sc,
-                                   cs_sles_t                     *sles,
-                                   cs_real_t                     *u_f,
-                                   cs_real_t                     *p_c,
-                                   cs_real_t                     *b_f,
-                                   cs_real_t                     *b_c)
+                                   cs_cdofb_monolithic_sles_t    *msles)
 {
   /* Sanity checks */
   assert(nsp != NULL && nsp->sles_strategy == CS_NAVSTO_SLES_UZAWA_AL);
-  assert(sc != NULL);
   assert(cs_shared_range_set != NULL);
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
-  const cs_real_t  gamma = sc->ref_graddiv_coef;
-  const cs_real_t  *div_op = sc->c2f_divergence;
+  const cs_real_t  gamma = msles->graddiv_coef;
+  const cs_real_t  *div_op = msles->div_op;
+
+  cs_real_t  *u_f = msles->u_f;
+  cs_real_t  *p_c = msles->p_c;
+  cs_real_t  *b_f = msles->b_f;
+  cs_real_t  *b_c = msles->b_c;
 
   /* Allocate and initialize the GKB builder structure */
   cs_uza_builder_t  *uza = _init_uzawa_builder(gamma,
@@ -2405,11 +2431,11 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
       += (uza->info.last_inner_iter =
           cs_equation_solve_scalar_system(uza->n_u_dofs,
                                           eqp,
-                                          matrix,
+                                          msles->matrix,
                                           cs_shared_range_set,
                                           normalization,
                                           false, /* rhs_redux */
-                                          sles,
+                                          msles->sles,
                                           u_f,
                                           uza->rhs));
 

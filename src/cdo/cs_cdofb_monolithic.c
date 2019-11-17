@@ -671,8 +671,8 @@ _assemble_gkb(const cs_cell_sys_t            *csys,
   /* 1. Matrix assembly
    * ================== */
 
-  if (sc->ref_graddiv_coef > 0.) {
-    cs_real_t  gamma = sc->ref_graddiv_coef / cm->vol_c;
+  if (sc->msles->graddiv_coef > 0.) {
+    cs_real_t  gamma = sc->msles->graddiv_coef / cm->vol_c;
     cs_cdofb_navsto_add_grad_div(cm->n_fc, gamma, div_op, csys->mat);
   }
 
@@ -681,7 +681,7 @@ _assemble_gkb(const cs_cell_sys_t            *csys,
   /* 2. Store divergence operator in non assembly
    * ============================================ */
 
-  cs_real_t  *_div = sc->c2f_divergence + 3*connect->c2f->idx[cm->c_id];
+  cs_real_t  *_div = sc->msles->div_op + 3*connect->c2f->idx[cm->c_id];
   memcpy(_div, div_op, 3*n_f*sizeof(cs_real_t));
 
 }
@@ -1751,8 +1751,8 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
 
   } /* Switch on time schme */
 
-  sc->ref_graddiv_coef = 0;
-  sc->c2f_divergence = NULL;
+  /* Handle the resolution of a saddle-point system */
+  sc->msles = cs_cdofb_monolithic_sles_create();
 
   /* Set the solve and assemble functions */
   switch (nsp->sles_strategy) {
@@ -1760,9 +1760,9 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
   case CS_NAVSTO_SLES_GKB_SATURNE:    /* GKB solver if need */
     sc->assemble = _assemble_gkb;
     sc->solve = cs_cdofb_monolithic_gkb_solve;
-    sc->ref_graddiv_coef = nsp->gd_scale_coef;
+    sc->msles->graddiv_coef = nsp->gd_scale_coef;
 
-    BFT_MALLOC(sc->c2f_divergence,
+    BFT_MALLOC(sc->msles->div_op,
                3*cs_shared_connect->c2f->idx[cs_shared_quant->n_cells],
                cs_real_t);
     break;
@@ -1771,9 +1771,9 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
     /* GKB solver if need */
     sc->assemble = _assemble_gkb;
     sc->solve = cs_cdofb_monolithic_uzawa_al_solve;
-    sc->ref_graddiv_coef = nsp->gd_scale_coef;
+    sc->msles->graddiv_coef = nsp->gd_scale_coef;
 
-    BFT_MALLOC(sc->c2f_divergence,
+    BFT_MALLOC(sc->msles->div_op,
                3*cs_shared_connect->c2f->idx[cs_shared_quant->n_cells],
                cs_real_t);
     break;
@@ -1829,8 +1829,8 @@ cs_cdofb_monolithic_free_scheme_context(void   *scheme_context)
   cs_shared_matrix_assembler = NULL;
   cs_shared_interface_set = NULL;
 
-  /* Divergence operator (unassembled storage). May be set to NULL */
-  BFT_FREE(sc->c2f_divergence);
+  /* Free the context structure for solving saddle-point system */
+  cs_cdofb_monolithic_sles_free(&(sc->msles));
 
   /* Other pointers are only shared (i.e. not owner) */
   BFT_FREE(sc);
@@ -1911,12 +1911,16 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
   _fields_to_previous(sc);
 
   /* Solve the linear system */
-  cs_sles_t  *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
+  cs_cdofb_monolithic_sles_t  *msles = sc->msles;
 
-  sc->solve(nsp, mom_eqp, matrix, sc, sles,
-            mom_eqc->face_values, /* velocity DoFs at faces */
-            sc->pressure->val,    /* pressure DoFs at cells */
-            mom_rhs, mass_rhs);
+  msles->sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
+  msles->matrix = matrix;
+  msles->u_f = mom_eqc->face_values; /* velocity DoFs at faces */
+  msles->p_c = sc->pressure->val;    /* pressure DoFs at cells */
+  msles->b_f = mom_rhs;
+  msles->b_c = mass_rhs;
+
+  sc->solve(nsp, mom_eqp, msles);
 
   /* Compute the velocity divergence and retrieve its L2-norm */
   cs_real_t  div_l2 = _update_divergence(sc, mom_eqc);
@@ -1926,7 +1930,7 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
   _update_fields(sc, mom_eqc);
 
   /* Frees */
-  cs_sles_free(sles);
+  cs_sles_free(msles->sles);
   BFT_FREE(mom_rhs);
   BFT_FREE(mass_rhs);
   cs_matrix_destroy(&matrix);
@@ -2006,17 +2010,19 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
   /* Solve the linear system */
   cs_navsto_algo_info_t  ns_info;
-  cs_sles_t  *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
-
   cs_navsto_algo_info_init(&ns_info);
 
-  ns_info.n_inner_iter =
-    (ns_info.last_inner_iter =
-     sc->solve(nsp, mom_eqp, matrix, sc, sles,
-               mom_eqc->face_values,   /* velocity DoFs at faces */
-               sc->pressure->val,      /* pressure DoFs at cells */
-               mom_rhs, mass_rhs));
+  cs_cdofb_monolithic_sles_t  *msles = sc->msles;
 
+  msles->sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
+  msles->matrix = matrix;
+  msles->u_f = mom_eqc->face_values; /* velocity DoFs at faces */
+  msles->p_c = sc->pressure->val;    /* pressure DoFs at cells */
+  msles->b_f = mom_rhs;
+  msles->b_c = mass_rhs;
+
+  ns_info.n_inner_iter =
+    (ns_info.last_inner_iter = sc->solve(nsp, mom_eqp, msles));
   ns_info.n_algo_iter += 1;
 
   /* Compute the velocity divergence and retrieve its L2-norm */
@@ -2044,15 +2050,11 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
     /* Free the SLES structure in order to redo the setup since the matrix
      * should be modified */
-    cs_sles_free(sles);
+    cs_sles_free(msles->sles);
 
     /* Solve the new system */
     ns_info.n_inner_iter +=
-      (ns_info.last_inner_iter =
-       sc->solve(nsp, mom_eqp, matrix, sc, sles,
-                 mom_eqc->face_values, /* velocity DoFs at faces */
-                 sc->pressure->val,    /* pressure DoFs at cells */
-                 mom_rhs, mass_rhs));
+      (ns_info.last_inner_iter = sc->solve(nsp, mom_eqp, msles));
 
     /* Compute the velocity divergence and retrieve its L2-norm */
     div_l2 = _update_divergence(sc, mom_eqc);
@@ -2073,7 +2075,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   _update_fields(sc, mom_eqc);
 
   /* Frees */
-  cs_sles_free(sles);
+  cs_sles_free(msles->sles);
   BFT_FREE(dir_values);
   BFT_FREE(enforced_ids);
   BFT_FREE(mom_rhs);
@@ -2157,12 +2159,16 @@ cs_cdofb_monolithic(const cs_mesh_t          *mesh,
   _fields_to_previous(sc);
 
   /* Solve the linear system */
-  cs_sles_t  *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
+  cs_cdofb_monolithic_sles_t  *msles = sc->msles;
 
-  sc->solve(nsp, mom_eqp, matrix, sc, sles,
-            mom_eqc->face_values, /* velocity DoFs at faces */
-            sc->pressure->val,    /* pressure DoFs at cells */
-            mom_rhs, mass_rhs);
+  msles->sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
+  msles->matrix = matrix;
+  msles->u_f = mom_eqc->face_values; /* velocity DoFs at faces */
+  msles->p_c = sc->pressure->val;    /* pressure DoFs at cells */
+  msles->b_f = mom_rhs;
+  msles->b_c = mass_rhs;
+
+  sc->solve(nsp, mom_eqp, msles);
 
   /* Compute the velocity divergence and retrieve its L2-norm */
   cs_real_t  div_l2 = _update_divergence(sc, mom_eqc);
@@ -2172,7 +2178,7 @@ cs_cdofb_monolithic(const cs_mesh_t          *mesh,
   _update_fields(sc, mom_eqc);
 
   /* Frees */
-  cs_sles_free(sles);
+  cs_sles_free(msles->sles);
   BFT_FREE(mom_rhs);
   BFT_FREE(mass_rhs);
   cs_matrix_destroy(&matrix);
@@ -2253,17 +2259,19 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   /* Solve the linear system */
   cs_navsto_algo_info_t  ns_info;
-  cs_sles_t  *sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
-
   cs_navsto_algo_info_init(&ns_info);
 
-  ns_info.n_inner_iter =
-    (ns_info.last_inner_iter =
-     sc->solve(nsp, mom_eqp, matrix, sc, sles,
-               mom_eqc->face_values,   /* velocity DoFs at faces */
-               sc->pressure->val,      /* pressure DoFs at cells */
-               mom_rhs, mass_rhs));
+  cs_cdofb_monolithic_sles_t  *msles = sc->msles;
 
+  msles->sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
+  msles->matrix = matrix;
+  msles->u_f = mom_eqc->face_values; /* velocity DoFs at faces */
+  msles->p_c = sc->pressure->val;    /* pressure DoFs at cells */
+  msles->b_f = mom_rhs;
+  msles->b_c = mass_rhs;
+
+  ns_info.n_inner_iter =
+    (ns_info.last_inner_iter = sc->solve(nsp, mom_eqp, msles));
   ns_info.n_algo_iter += 1;
 
   /* Compute the velocity divergence and retrieve its L2-norm */
@@ -2289,15 +2297,11 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
     /* Free the SLES structure in order to redo the setup since the matrix
      * should be modified */
-    cs_sles_free(sles);
+    cs_sles_free(msles->sles);
 
     /* Solve the new system */
     ns_info.n_inner_iter +=
-      (ns_info.last_inner_iter =
-       sc->solve(nsp, mom_eqp, matrix, sc, sles,
-                 mom_eqc->face_values, /* velocity DoFs at faces */
-                 sc->pressure->val,    /* pressure DoFs at cells */
-                 mom_rhs, mass_rhs));
+      (ns_info.last_inner_iter = sc->solve(nsp, mom_eqp, msles));
 
     /* Compute the velocity divergence and retrieve its L2-norm */
     div_l2 = _update_divergence(sc, mom_eqc);
@@ -2318,7 +2322,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   _update_fields(sc, mom_eqc);
 
   /* Frees */
-  cs_sles_free(sles);
+  cs_sles_free(msles->sles);
   BFT_FREE(dir_values);
   BFT_FREE(mom_rhs);
   BFT_FREE(mass_rhs);

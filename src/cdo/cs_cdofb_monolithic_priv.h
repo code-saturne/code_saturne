@@ -43,6 +43,7 @@
 #include "cs_cdofb_priv.h"
 #include "cs_cdofb_scaleq.h"
 #include "cs_cdofb_vecteq.h"
+#include "cs_cdofb_monolithic_sles.h"
 #include "cs_cdofb_navsto.h"
 #include "cs_equation_bc.h"
 #include "cs_equation_common.h"
@@ -135,13 +136,7 @@ typedef void
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
- * \param[in]      matrix   pointer to a cs_matrix_t structure
- * \param[in, out] sc       pointer to the scheme context
- * \param[in, out] sles     pointer to a cs_sles_t structure
- * \param[in, out] u_f      initial velocity on faces
- * \param[in, out] p_c      initial pressure in cells
- * \param[in, out] b_f      right-hand side (scatter/gather if needed) on faces
- * \param[in, out] b_c      right_hand side on cells (mass equation)
+ * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
  *
  * \return the cumulated number of iterations of the solver
  */
@@ -150,13 +145,7 @@ typedef void
 typedef int
 (cs_cdofb_monolithic_solve_t)(const cs_navsto_param_t       *nsp,
                               const cs_equation_param_t     *eqp,
-                              const cs_matrix_t             *matrix,
-                              cs_cdofb_monolithic_t         *sc,
-                              cs_sles_t                     *sles,
-                              cs_real_t                     *u_f,
-                              cs_real_t                     *p_c,
-                              cs_real_t                     *b_f,
-                              cs_real_t                     *b_c);
+                              cs_cdofb_monolithic_sles_t    *msles);
 
 /*=============================================================================
  * Structure definitions
@@ -266,12 +255,15 @@ struct _cdofb_monolithic_t {
 
   cs_cdofb_monolithic_solve_t      *solve;
 
-  /* \var c2f_divergence
-   * Allocated only if a GKB solver is need. This corresponds to an
-   * unassembled divergence operator (and consequently gradient operator)
+  /* \var msles
+   * Set of pointers to enable the resolution of saddle-point system
+   * with various algorithms. This structure allows us to unify the prototype
+   * of "solve" functions
+   * Some members of this structure are allocated only if a specific algorithm
+   * is requested.
    */
-  cs_real_t                        *c2f_divergence;
-  cs_real_t                         ref_graddiv_coef;
+
+  cs_cdofb_monolithic_sles_t       *msles;
 
   /*!
    * @}
