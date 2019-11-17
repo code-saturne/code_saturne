@@ -41,18 +41,11 @@
  * Statistics library header
  *----------------------------------------------------------------------------*/
 
-#if defined(HAVE_MPI)
-
-#undef BUILD_WITH_MPI
-#define BUILD_WITH_MPI 1
-
+#if defined(HAVE_MELISSA_MPI)
 #include "melissa_api.h"
-
-#else
+#endif
 
 #include "melissa_api_no_mpi.h"
-
-#endif
 
 /*----------------------------------------------------------------------------
  *  Local headers
@@ -68,10 +61,8 @@
 #include "fvm_writer_helper.h"
 #include "fvm_writer_priv.h"
 
-#include "cs_block_dist.h"
-#include "cs_file.h"
+#include "cs_map.h"
 #include "cs_parall.h"
-#include "cs_part_to_block.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -97,13 +88,16 @@ typedef struct {
 
   char        *name;               /* Writer name */
 
+  bool         dry_run;            /* If true, do not connect to Melissa */
+  FILE        *tracefile;          /* optional file for tracing */
+
   int          rank;               /* Rank of current process in communicator */
   int          n_ranks;            /* Number of processes in communicator */
-  int          simu_id;            /* simulation ID */
 
-  int          nt_cur;             /* current time step */
-  int          time_stamp;         /* current time stamp */
-  int          is_init;            /* Melissa field initialization */
+  size_t       buffer_size;        /* buffer size required */
+
+  cs_map_name_to_id_t  *f_map;     /* field names mapping */
+  int         *f_ts;               /* last field output time step */
 
 #if defined(HAVE_MPI)
   int          min_rank_step;      /* Minimum rank step */
@@ -120,8 +114,11 @@ typedef struct {
 
 typedef struct {
 
-  fvm_to_melissa_writer_t  *writer;      /* Pointer to writer structure */
+  fvm_to_melissa_writer_t  *writer;      /* pointer to writer structure */
+
   const char               *name;        /* current field name */
+  int                       time_step;   /* current_time_step */
+  bool                      call_init;   /* call melissa_init ? */
 
 } _melissa_context_t;
 
@@ -129,58 +126,14 @@ typedef struct {
  * Static global variables
  *============================================================================*/
 
+/* Since the Melissa API specifies the field name (and communicator)
+   only, only one Melissa writer can be active a a given time. */
+
+static fvm_to_melissa_writer_t  *_writer = NULL;
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Write block of a vector of doubles to Melissa output
- *
- * parameters:
- *   n_values <-- number of values to write
- *   num_end  <-- global number of past the last element for this block
- *   values   <-- pointer to values block array
- *   f        <-- file to write to
- *----------------------------------------------------------------------------*/
-
-static void
-_write_block_doubles_l(size_t             n_values,
-                      const double        values[],
-                      _melissa_context_t *c)
-{
-  int n = (int)n_values;
-  int coupling = 1;
-
-  if (c->writer->is_init == 0 && c->writer->time_stamp > 0) {
-#if defined(HAVE_MPI)
-    melissa_init(c->name,
-                 &n,
-                 &c->writer->n_ranks,
-                 &c->writer->rank,
-                 &c->writer->simu_id,
-                 &c->writer->comm,
-                 &coupling);
-#else
-    melissa_init_no_mpi(c->name,
-                        &n,
-                        &c->writer->simu_id,
-                        &coupling);
-#endif
-    c->writer->is_init = 1;
-  }
-
-  if (c->writer->time_stamp > 0) {
-#if defined(HAVE_MPI)
-    melissa_send(c->name,
-                 values);
-#else
-    melissa_send_no_mpi(c->name,
-                        values);
-#endif
-  }
-}
-
-#if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
  * Output function for field values.
@@ -198,7 +151,7 @@ _write_block_doubles_l(size_t             n_values,
  *----------------------------------------------------------------------------*/
 
 static void
-_field_output_g(void           *context,
+_field_c_output(void           *context,
                 cs_datatype_t   datatype,
                 int             dimension,
                 int             component_id,
@@ -206,201 +159,80 @@ _field_output_g(void           *context,
                 cs_gnum_t       block_end,
                 void           *buffer)
 {
-  CS_UNUSED(dimension);
-  CS_UNUSED(component_id);
-
   _melissa_context_t *c = context;
+  fvm_to_melissa_writer_t  *w = c->writer;
 
-  int local_vect_size = block_end - block_start;
+  cs_gnum_t n_values = block_end - block_start;
 
   assert(datatype == CS_DOUBLE);
+  double *values = (double*)buffer;
 
-  int coupling = 1;
+  /* Build component name */
 
-  if (c->writer->is_init == 0 && c->writer->time_stamp > 0) {
-    melissa_init(c->name,
-                 &local_vect_size,
-                 &c->writer->n_ranks,
-                 &c->writer->rank,
-                 &c->writer->simu_id,
-                 &c->writer->comm,
-                 &coupling);
-    c->writer->is_init = 1;
+  char tmpn[128], tmpe[6];
+  char *c_name = tmpn;
+
+  fvm_writer_field_component_name(tmpe, 6, false, dimension, component_id);
+
+  size_t lce = strlen(tmpe);
+  size_t l =  strlen(c->name) + 1;
+
+  if (lce > 0)
+    l += 2 + lce;
+
+  if (l > 128)
+    BFT_MALLOC(c_name, l, char);
+
+  if (lce > 0)
+    sprintf(c_name, "%s[%s]", c->name, tmpe);
+  else
+    strcpy(c_name, c->name);
+
+  /* Check which API we use */
+
+  bool use_melissa_mpi = false;
+#if defined(HAVE_MELISSA_MPI)
+  if (w->block_comm != MPI_COMM_NULL)
+    use_melissa_mpi = true;
+#endif
+
+  /* Case of first call for this variable */
+
+  if (c->call_init) {
+
+    if (w->tracefile != NULL)
+      fprintf(w->tracefile, "[melissa_init] name: %s (time_step: %d)\n",
+              c_name, c->time_step);
+
+    if (w->dry_run == false) {
+#if defined(HAVE_MELISSA_MPI)
+      if (use_melissa_mpi == true)
+        melissa_init(c_name, n_values, w->block_comm);
+#endif
+      if (use_melissa_mpi == false)
+        melissa_init_no_mpi(c_name, n_values);
+    }
+
   }
 
-  if (c->writer->time_stamp > 0) {
-    melissa_send(c->name,
-                 buffer);
-  }
-}
+  /* Output values */
 
-#endif /* defined(HAVE_MPI) */
+  if (w->tracefile != NULL)
+    fprintf(w->tracefile, "[melissa_send] name: %s (time_step: %d)\n",
+            c_name, c->time_step);
 
-/*----------------------------------------------------------------------------
- * Write field values associated with nodal values of a nodal mesh to
- * an Melissa output in serial mode.
- *
- * Output fields ar either scalar or 3d vectors or scalars, and are
- * non interlaced. Input arrays may be less than 2d, in which case the z
- * values are set to 0, and may be interlaced or not.
- *
- * parameters:
- *   n_entities         <-- number of entities
- *   input_dim          <-- input field dimension
- *   output_dim         <-- output field dimension
- *   interlace          <-- indicates if field in memory is interlaced
- *   n_parent_lists     <-- indicates if field values are to be obtained
- *                          directly through the local entity index (when 0) or
- *                          through the parent entity numbers (when 1 or more)
- *   parent_num_shift   <-- parent list to common number index shifts;
- *                          size: n_parent_lists
- *   datatype           <-- input data type (output is real)
- *   field_values       <-- array of associated field value arrays
- *   f                  <-- associated file handle
- *----------------------------------------------------------------------------*/
-
-static void
-_export_field_values_nl(const fvm_nodal_t           *mesh,
-                        fvm_writer_field_helper_t   *helper,
-                        int                          input_dim,
-                        cs_interlace_t               interlace,
-                        int                          n_parent_lists,
-                        const cs_lnum_t              parent_num_shift[],
-                        cs_datatype_t                datatype,
-                        const void            *const field_values[],
-                        void                        *context)
-{
-  int  i;
-  size_t  output_size;
-  double  *output_buffer;
-
-  int output_dim = fvm_writer_field_helper_field_dim(helper);
-
-  const size_t  output_buffer_size
-    = mesh->n_vertices >  16 ? (mesh->n_vertices / 4) : mesh->n_vertices;
-
-  BFT_MALLOC(output_buffer, output_buffer_size, double);
-
-  for (i = 0; i < output_dim; i++) {
-
-    const int i_in = i;
-
-    while (fvm_writer_field_helper_step_nl(helper,
-                                           mesh,
-                                           input_dim,
-                                           i_in,
-                                           interlace,
-                                           n_parent_lists,
-                                           parent_num_shift,
-                                           datatype,
-                                           field_values,
-                                           output_buffer,
-                                           output_buffer_size,
-                                           &output_size) == 0)
-      _write_block_doubles_l(output_buffer_size, output_buffer, context);
+  if (w->dry_run == false) {
+#if defined(HAVE_MELISSA_MPI)
+    if (use_melissa_mpi == true)
+      melissa_send(c_name, values);
+#endif
+    if (use_melissa_mpi == false)
+      melissa_send_no_mpi(c_name, values);
   }
 
-  BFT_FREE(output_buffer);
-}
-
-/*----------------------------------------------------------------------------
- * Write field values associated with element values of a nodal mesh to
- * an Melissa output.
- *
- * Output fields ar either scalar or 3d vectors or scalars, and are
- * non interlaced. Input arrays may be less than 2d, in which case the z
- * values are set to 0, and may be interlaced or not.
- *
- * parameters:
- *   export_section   <-- pointer to EnSight section helper structure
- *   helper           <-- pointer to general writer helper structure
- *   input_dim        <-- input field dimension
- *   interlace        <-- indicates if field in memory is interlaced
- *   n_parent_lists   <-- indicates if field values are to be obtained
- *                        directly through the local entity index (when 0) or
- *                        through the parent entity numbers (when 1 or more)
- *   parent_num_shift <-- parent list to common number index shifts;
- *                        size: n_parent_lists
- *   datatype         <-- indicates the data type of (source) field values
- *   field_values     <-- array of associated field value arrays
- *   f                <-- associated file handle
- *----------------------------------------------------------------------------*/
-
-static const fvm_writer_section_t *
-_export_field_values_el(const fvm_writer_section_t      *export_section,
-                        fvm_writer_field_helper_t       *helper,
-                        int                              input_dim,
-                        cs_interlace_t                   interlace,
-                        int                              n_parent_lists,
-                        const cs_lnum_t                  parent_num_shift[],
-                        cs_datatype_t                    datatype,
-                        const void                *const field_values[],
-                        void                            *context)
-{
-  int  i;
-  size_t  input_size = 0, output_size = 0;
-  size_t  min_output_buffer_size = 0, output_buffer_size = 0;
-  double  *output_buffer = NULL;
-
-  const fvm_writer_section_t  *current_section = NULL;
-
-  int output_dim = fvm_writer_field_helper_field_dim(helper);
-
-  /* Blocking for arbitrary buffer size, but should be small enough
-     to add little additional memory requirement (in proportion), large
-     enough to limit number of write calls. */
-
-  fvm_writer_field_helper_get_size(helper,
-                                   &input_size,
-                                   &output_size,
-                                   &min_output_buffer_size);
-
-  output_buffer_size = input_size;
-  output_buffer_size = CS_MAX(output_buffer_size, min_output_buffer_size);
-  output_buffer_size = CS_MAX(output_buffer_size, 128);
-  output_buffer_size = CS_MIN(output_buffer_size, output_size);
-
-  BFT_MALLOC(output_buffer, output_buffer_size, double);
-
-  /* Loop on dimension (de-interlace vectors, always 3D for EnSight) */
-
-  for (i = 0; i < output_dim; i++) {
-
-    bool loop_on_sections = true;
-
-    const int i_in = i;
-
-    current_section = export_section;
-
-    while (loop_on_sections == true) {
-
-      while (fvm_writer_field_helper_step_el(helper,
-                                             current_section,
-                                             input_dim,
-                                             i_in,
-                                             interlace,
-                                             n_parent_lists,
-                                             parent_num_shift,
-                                             datatype,
-                                             field_values,
-                                             output_buffer,
-                                             output_buffer_size,
-                                             &output_size) == 0)
-        _write_block_doubles_l(output_buffer_size, output_buffer, context);
-
-      current_section = current_section->next;
-
-      if (   current_section == NULL
-          || current_section->continues_previous == false)
-        loop_on_sections = false;
-
-    } /* while (loop on sections) */
-
-  } /* end of loop on spatial dimension */
-
-  BFT_FREE(output_buffer);
-
-  return current_section;
+  /* Local cleanup */
+  if (c_name != tmpn)
+    BFT_FREE(c_name);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -412,7 +244,11 @@ _export_field_values_el(const fvm_writer_section_t      *export_section,
 /*----------------------------------------------------------------------------
  * Initialize FVM to Melissa output writer.
  *
- * No options are currently handled
+ * Options are:
+ *   dry_run               trace output to <name>.log file, but do not
+ *                         actually communicate with Melissa server
+ *   rank_step=<integer>   MPI rank step
+ *   trace                 trace output to <name>.log file
  *
  * parameters:
  *   name           <-- base output case name.
@@ -439,10 +275,60 @@ fvm_to_melissa_init_writer(const char             *name,
                            fvm_writer_time_dep_t   time_dependency)
 #endif
 {
-  CS_UNUSED(path);
   CS_UNUSED(time_dependency);
 
   fvm_to_melissa_writer_t  *w = NULL;
+
+  /* Parse options */
+
+  int rank_step = 1;
+  bool trace = false;
+  bool dry_run = false;
+
+  if (options != NULL) {
+
+    int i1 = 0, i2 = 0;
+    int l_tot = strlen(options);
+
+    const char rs[] = "rank_step=";
+    const int l_rs = strlen(rs);
+
+    while (i1 < l_tot) {
+
+      for (i2 = i1; i2 < l_tot && options[i2] != ' '; i2++);
+      int l_opt = i2 - i1;
+
+      if ((l_opt == 5) && (strncmp(options + i1, "trace", l_opt) == 0))
+        trace = true;
+
+      else if ((l_opt == 7) && (strncmp(options + i1, "dry_run", l_opt) == 0)) {
+        dry_run = true;
+        trace = true;
+      }
+
+      else if ((strncmp(options + i1, rs, l_rs) == 0)) {
+        if (l_opt < l_rs+32) { /* 32 integers more than enough
+                                  for maximum integer string */
+          char options_c[32];
+          strncpy(options_c, options+i1+l_rs, l_opt-l_rs);
+          options_c[l_opt-l_rs] = '\0';
+          rank_step = atoi(options_c);
+
+        }
+      }
+
+      for (i1 = i2 + 1; i1 < l_tot && options[i1] == ' '; i1++);
+
+    }
+  }
+
+  if (dry_run == false && _writer != NULL) {
+    bft_error(__FILE__, __LINE__, errno,
+              _("Error creating Melissa writer: \"%s\":\n"
+                "only one Melissa server may be used, and is already used by\n"
+                "writer: \"%s\"."), name, _writer->name);
+    return NULL;
+  }
 
   /* Initialize writer */
 
@@ -451,13 +337,20 @@ fvm_to_melissa_init_writer(const char             *name,
   BFT_MALLOC(w->name, strlen(name) + 1, char);
   strcpy(w->name, name);
 
+  w->dry_run = dry_run;
+  w->tracefile = NULL;
+
   w->rank = 0;
   w->n_ranks = 1;
 
+  w->buffer_size = 0;
+
+  w->f_map = cs_map_name_to_id_create();
+  w->f_ts = NULL;
+
 #if defined(HAVE_MPI)
   {
-    int mpi_flag, rank, n_ranks, min_rank_step, min_block_size;
-    MPI_Comm w_block_comm, w_comm;
+    int mpi_flag, rank, n_ranks;
     w->min_rank_step = 1;
     w->min_block_size = 1024*1024*8;
     w->block_comm = MPI_COMM_NULL;
@@ -469,45 +362,55 @@ fvm_to_melissa_init_writer(const char             *name,
       MPI_Comm_size(w->comm, &n_ranks);
       w->rank = rank;
       w->n_ranks = n_ranks;
-      cs_file_get_default_comm(&min_rank_step, &min_block_size,
-                               &w_block_comm, &w_comm);
-      if (comm == w_comm) {
-        w->min_rank_step = min_rank_step;
-        w->min_block_size = min_block_size;
-        w->block_comm = w_block_comm;
+      if (rank_step < 1)
+        rank_step = 1;
+      else if (rank_step > n_ranks)
+        rank_step = n_ranks;
+
+#if defined(HAVE_MELISSA_MPI)
+      w->min_rank_step = rank_step;
+      if (rank_step > 1) {
+        w->block_comm = cs_base_get_rank_step_comm(rank_step);
       }
+      else
+        w->block_comm = comm;
+#else
+      w->min_rank_step = n_ranks;
+      w->block_comm = MPI_COMM_NULL;
+#endif
+
       w->comm = comm;
     }
   }
 #endif /* defined(HAVE_MPI) */
 
-  /* Parse options */
+  if (trace && w->rank < 1) {
 
-  w->simu_id = 0;
+    int  path_len = 0;
+    if (path != NULL)
+      path_len = strlen(path) + 1;
 
-  if (options != NULL) {
+    int tracefile_path_l = path_len + strlen(name) + strlen(".log") + 1;
+    char *tracefile_path;
+    BFT_MALLOC(tracefile_path, tracefile_path_l, char);
+    if (path != NULL)
+      strcpy(tracefile_path, path);
+    else
+      tracefile_path[0] = '\0';
+    strcat(tracefile_path, name);
+    strcat(tracefile_path, ".log");
 
-    size_t l = strlen(options);
+    w->tracefile = fopen(tracefile_path, "w");
+    if (w->tracefile ==  NULL)
+      bft_error(__FILE__, __LINE__, errno,
+                _("Error opening file: \"%s\""), tracefile_path);
 
-    if (l > 0) {
+    BFT_FREE(tracefile_path);
 
-      /* Add metadata */
-
-      char       *options_c = NULL;
-
-      BFT_MALLOC(options_c, l+1, char);
-      strncpy(options_c, options, l);
-      options_c[l] = '\0';
-      w->simu_id = atoi(options_c);
-
-      BFT_FREE(options_c);
-
-    }
   }
 
-  w->nt_cur = -1;
-  w->time_stamp = 0;
-  w->is_init = 0;
+  if (w->dry_run == false)
+    _writer = w;
 
   /* Return writer */
   return w;
@@ -517,7 +420,7 @@ fvm_to_melissa_init_writer(const char             *name,
  * Finalize FVM to Melissa output writer.
  *
  * parameters:
- *   this_writer_p <-- pointer to opaque Ensight Gold writer structure.
+ *   this_writer_p <-- pointer to opaque Melissa writer structure.
  *
  * returns:
  *   NULL pointer
@@ -527,19 +430,30 @@ void *
 fvm_to_melissa_finalize_writer(void  *this_writer_p)
 {
   fvm_to_melissa_writer_t *w = (fvm_to_melissa_writer_t *)this_writer_p;
-  static int disconnected = 0;
 
-  if (disconnected == 0) {
-    BFT_FREE(w->name);
-    melissa_finalize();
-    BFT_FREE(w);
-    disconnected = 1;
+  if (_writer == w)
+    _writer = NULL;
+
+  if (w->tracefile != NULL) {
+    if (fclose(w->tracefile) != 0)
+      bft_error(__FILE__, __LINE__, errno,
+                _("Error closing file: \"%s.log\""), w->name);
   }
+  BFT_FREE(w->name);
+
+  cs_map_name_to_id_destroy(&(w->f_map));
+  BFT_FREE(w->f_ts);
+
+  if (w->dry_run == false)
+    melissa_finalize();
+
+  BFT_FREE(w);
+
   return NULL;
 }
 
 /*----------------------------------------------------------------------------
- * Associate new time step with an EnSight geometry.
+ * Associate new time step with a Melissa geometry.
  *
  * parameters:
  *   this_writer_p <-- pointer to associated writer
@@ -552,15 +466,13 @@ fvm_to_melissa_set_mesh_time(void          *this_writer_p,
                              const int      time_step,
                              const double   time_value)
 {
-  fvm_to_melissa_writer_t  *w = (fvm_to_melissa_writer_t *)this_writer_p;
-  if (time_step > w->nt_cur) {
-    w->nt_cur = time_step;
-    w->time_stamp += 1;
-  }
+  CS_UNUSED(this_writer_p);
+  CS_UNUSED(time_value);
+  CS_UNUSED(time_step);
 }
 
 /*----------------------------------------------------------------------------
- * Write nodal mesh to a an Melissa output
+ * Write nodal mesh to a Melissa output
  *
  * parameters:
  *   this_writer_p <-- pointer to associated writer
@@ -571,14 +483,21 @@ void
 fvm_to_melissa_export_nodal(void               *this_writer_p,
                             const fvm_nodal_t  *mesh)
 {
-
+  CS_UNUSED(this_writer_p);
+  CS_UNUSED(mesh);
 }
 
 /*----------------------------------------------------------------------------
  * Write field associated with a nodal mesh to a Melissa output.
  *
  * Assigning a negative value to the time step indicates a time-independent
- * field (in which case the time_value argument is unused).
+ * field.
+ *
+ * Fields already exported by another Melissa writer will be ignored,
+ * as will fields already exported for the same or greater time step,
+ * or exported with a different time dependency.
+ * Use a different field name if you really need to output fields in such
+ * a configuration.
  *
  * parameters:
  *   this_writer_p    <-- pointer to associated writer
@@ -595,7 +514,7 @@ fvm_to_melissa_export_nodal(void               *this_writer_p,
  *                        size: n_parent_lists
  *   datatype         <-- indicates the data type of (source) field values
  *   time_step        <-- number of the current time step
- *   time_value       <-- associated time value
+ *   time_value       <-- associated time value (ignored)
  *   field_values     <-- array of associated field value arrays
  *----------------------------------------------------------------------------*/
 
@@ -613,29 +532,48 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
                             double                 time_value,
                             const void      *const field_values[])
 {
-  int   output_dim;
+  CS_UNUSED(time_value);
 
-  const fvm_writer_section_t  *export_section = NULL;
+  fvm_to_melissa_writer_t  *w = (fvm_to_melissa_writer_t *)this_writer_p;
+
+  _melissa_context_t  c;
+  c.writer = w;
+  c.name = name;
+  c.time_step = time_step;
+  c.call_init = false;
+
   fvm_writer_field_helper_t   *helper = NULL;
   fvm_writer_section_t        *export_list = NULL;
-  fvm_to_melissa_writer_t     *w = (fvm_to_melissa_writer_t *)this_writer_p;
 
-  const int  rank = w->rank;
   const int  n_ranks = w->n_ranks;
 
-  if (time_step > w->nt_cur) {
-    w->nt_cur = time_step;
-    w->time_stamp += 1;
+  int f_id = cs_map_name_to_id_try(w->f_map, name);
+  if (f_id < 0) {
+    f_id = cs_map_name_to_id(w->f_map, name);
+    int n_fields = cs_map_name_to_id_size(w->f_map);
+    BFT_REALLOC(w->f_ts, n_fields, int);
+    c.call_init = true;
+    if (w->tracefile != NULL) {
+      fprintf
+        (w->tracefile,
+         "[init] name: %s (time step: %d; location: %d; dimension: %d)\n",
+         name, time_step, location, dimension);
+    }
   }
-  else if (time_step < w->nt_cur)
-    return;
+  else {
+    int prev_ts = w->f_ts[f_id];
+    if (prev_ts < 0 || prev_ts >= time_step) {
+      if (w->tracefile != NULL) {
+        fprintf
+          (w->tracefile,
+           "[ignore] name: %s (time step: %d; location: %d; dimension: %d)\n",
+           name, time_step, location, dimension);
+      }
+      return;
+    }
+  }
 
-  /* Initialization */
-  /*----------------*/
-
-  output_dim = dimension;
-  if (dimension != 1)
-    return; /* currently handled only for scalars */
+  w->f_ts[f_id] = time_step;
 
   /* Initialize writer helper */
   /*--------------------------*/
@@ -643,16 +581,16 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
   /* Build list of sections that are used here, in order of output */
   export_list = fvm_writer_export_list(mesh,
                                        fvm_nodal_get_max_entity_dim(mesh),
-                                       true,
+                                       false, /* group by type */
+                                       true,  /* group all */
                                        false,
-                                       true,
-                                       true,
+                                       false,
                                        false,
                                        false);
 
   helper = fvm_writer_field_helper_create(mesh,
                                           export_list,
-                                          output_dim,
+                                          dimension,
                                           CS_NO_INTERLACE,
                                           CS_DOUBLE,
                                           location);
@@ -664,91 +602,50 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
                                    w->min_rank_step,
                                    w->min_block_size,
                                    w->comm);
-
 #endif
-
-  _melissa_context_t c;
-  c.writer = w;
-  c.name = name;
 
   /* Per node variable */
   /*-------------------*/
 
   if (location == FVM_WRITER_PER_NODE) {
 
-#if defined(HAVE_MPI)
+    fvm_writer_field_helper_output_n(helper,
+                                     &c,
+                                     mesh,
+                                     dimension,
+                                     interlace,
+                                     NULL,
+                                     n_parent_lists,
+                                     parent_num_shift,
+                                     datatype,
+                                     field_values,
+                                     _field_c_output);
 
-    if (n_ranks > 1)
-      fvm_writer_field_helper_output_n(helper,
-                                       &c,
-                                       mesh,
-                                       dimension,
-                                       interlace,
-                                       NULL,
-                                       n_parent_lists,
-                                       parent_num_shift,
-                                       datatype,
-                                       field_values,
-                                       _field_output_g);
-
-#endif /* defined(HAVE_MPI) */
-
-    if (n_ranks == 1)
-      _export_field_values_nl(mesh,
-                              helper,
-                              dimension,
-                              interlace,
-                              n_parent_lists,
-                              parent_num_shift,
-                              datatype,
-                              field_values,
-                              &c);
   }
 
   /* Per element variable */
   /*----------------------*/
 
   else if (location == FVM_WRITER_PER_ELEMENT) {
-    export_section = export_list;
 
-    while (export_section != NULL) {
+    /* Output per grouped sections */
 
-      /* Output per grouped sections */
-
-#if defined(HAVE_MPI)
-
-      if (n_ranks > 1)
-        export_section = fvm_writer_field_helper_output_e(helper,
-                                                          &c,
-                                                          export_section,
-                                                          dimension,
-                                                          interlace,
-                                                          NULL,
-                                                          n_parent_lists,
-                                                          parent_num_shift,
-                                                          datatype,
-                                                          field_values,
-                                                          _field_output_g);
-
-#endif /* defined(HAVE_MPI) */
-
-      if (n_ranks == 1)
-        export_section = _export_field_values_el(export_section,
-                                                 helper,
-                                                 dimension,
-                                                 interlace,
-                                                 n_parent_lists,
-                                                 parent_num_shift,
-                                                 datatype,
-                                                 field_values,
-                                                 &c);
-
-    } /* End of loop on sections */
+    fvm_writer_field_helper_output_e(helper,
+                                     &c,
+                                     export_list,
+                                     dimension,
+                                     interlace,
+                                     NULL,
+                                     n_parent_lists,
+                                     parent_num_shift,
+                                     datatype,
+                                     field_values,
+                                     _field_c_output);
 
   } /* End for per element variable */
 
   /* Free helper structures */
-  /*------------------------*/
+
   fvm_writer_field_helper_destroy(&helper);
   BFT_FREE(export_list);
 }

@@ -76,6 +76,16 @@ Numerics and physical modelling:
 
 Architectural changes:
 
+- Update Melissa output driver to current Melissa API (c8608e1a6, January 2020)
+  * Ensure components of multidimensional arrays are named distinctly, as
+    Melissa ignores field dimension.
+  * Add trace option to log main operations to file.
+  * Add dry_run options to simulate output without Melissa (activates trace)
+  * Add rank_step option to allow working with coarser communicators.
+  * When a single MPI rank would be used, use the serial API instead.
+  * If Melissa is build without MPI, use a ranks step so data is aggregated
+    to the first ranks (rank_step = n_ranks) and use serial API.
+
 - Addition of file extensions for both checkpoint (.csc) and mesh_input
   files (.csm). Code_Saturne still accepts old files
   (mesh_input/mesh_output/main/auxiliary/...) without the extensions.
