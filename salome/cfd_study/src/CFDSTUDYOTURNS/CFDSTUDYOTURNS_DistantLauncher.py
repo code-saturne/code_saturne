@@ -188,8 +188,13 @@ class CFDSTUDY_DistantLauncher:
         job_params.resource_required.nb_proc = int(self.cfg.get('batch_parameters', 'nprocs'))
         job_params.resource_required.type    = 'rsync'
 
-        job_params.maximum_duration = self.cfg.get('batch_parameters',
-                                                   'wall_clock')
+        # Jobmanager wall clock format is hh:mm !
+        wall_clock = self.cfg.get('batch_parameters','wall_clock')
+        days, hms = wall_clock.split("-")
+        wch, wcm, wcs = hms.split(':')
+
+        jp_wc = "%d:%s:%s" % (int(days)*24+int(wch), wcm, wcs)
+        job_params.maximum_duration = jp_wc
 
         job_params.wckey            = self.cfg.get('batch_parameters', 'wckey')
         job_params.job_name         = "CS_OT"
