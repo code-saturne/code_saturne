@@ -78,6 +78,8 @@ Bug fixes:
 - Fix in turbulent isotropic diffusion (Shir model) with EB-RSM. The turbulent
   viscosity did not take into account the effect of the wall.
 
+- Fix to set number of iterations to 0 by studymanager command line (option -n).
+
 Release 6.0.0 (September 26 2019)
 ---------------------------------
 
