@@ -807,8 +807,8 @@ cs_wall_functions_2scales_vdriest(cs_real_t   rnnb,
  *            + Cst_{smooth} \f]
  * with \f$ \alpha = \exp \left(- \kappa(Cst_{rough}-Cst_{smooth})\right)
  *                 \simeq 0.26 \f$
- * and \f$ y_0 = \alpha \xi \exp \left(-\kapp Cst_{smooth} \right)
- *             = \xi \exp \left(-\kapp Cst_{rough} \right)
+ * and \f$ y_0 = \alpha \xi \exp \left(-\kappa Cst_{smooth} \right)
+ *             = \xi \exp \left(-\kappa Cst_{rough} \right)
  *             \simeq \dfrac{\xi}{33}\f$.
  *
  * \param[in]     l_visc        kinematic viscosity
