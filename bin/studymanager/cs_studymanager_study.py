@@ -1479,7 +1479,7 @@ class Studies(object):
                 if self.__running:
                     if case.compute == 'on' and case.is_compiled != "KO":
 
-                        if self.__n_iter:
+                        if self.__n_iter is not None:
                             if case.subdomains:
                                 case_dir = os.path.join(self.__dest, s.label, case.label,
                                                         case.subdomains[0], "DATA")

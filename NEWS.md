@@ -55,6 +55,8 @@ Bug fixes:
 
 - Fixes in CS/OT workflow for python3 and following salome kernel evolutions.
 
+- Fix to set number of iterations to 0 by studymanager command line (option -n).
+
 Documentation:
 
 - Updated pdf user manual.
