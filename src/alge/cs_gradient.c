@@ -8524,6 +8524,13 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
       for (cs_lnum_t ll = 0; ll < 3; ll++)
         rhsv[ll] += dsij[ll] * pfac;
 
+      cocg[0] += dsij[0] * dsij[0];
+      cocg[1] += dsij[1] * dsij[1];
+      cocg[2] += dsij[2] * dsij[2];
+      cocg[3] += dsij[0] * dsij[1];
+      cocg[4] += dsij[1] * dsij[2];
+      cocg[5] += dsij[0] * dsij[2];
+
     }
     else if (bc_coeff_a != NULL) { /* Known face values */
 
@@ -8540,6 +8547,27 @@ cs_gradient_scalar_cell(const cs_mesh_t             *m,
 
       for (cs_lnum_t ll = 0; ll < 3; ll++)
         rhsv[ll] += dc[ll] * pfac;
+
+      cocg[0] += dc[0]*dc[0]*ddc;
+      cocg[1] += dc[1]*dc[1]*ddc;
+      cocg[2] += dc[2]*dc[2]*ddc;
+      cocg[3] += dc[0]*dc[1]*ddc;
+      cocg[4] += dc[1]*dc[2]*ddc;
+      cocg[5] += dc[0]*dc[2]*ddc;
+
+    }
+
+    else { /* Assign cell values as face values (homogeneous Neumann);
+              as above, pfac cancels out, so does contribution to RHS */
+
+      const cs_real_3_t *restrict b_face_cog
+        = (const cs_real_3_t *restrict)fvq->b_face_cog;
+
+      cs_real_t dc[3];
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
+        dc[ii] = b_face_cog[f_id][ii] - cell_cen[c_id][ii];
+
+      cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
 
       cocg[0] += dc[0]*dc[0]*ddc;
       cocg[1] += dc[1]*dc[1]*ddc;
@@ -8736,6 +8764,11 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
       /* Normal is vector 0 if the b_face_normal norm is too small */
       cs_math_3_normalise(b_face_normal[f_id], n_d_dist);
 
+      for (int ii = 0; ii < 3; ii++) {
+        for (int jj = 0; jj < 3; jj++)
+          cocg[ii][jj] += n_d_dist[ii] * n_d_dist[jj];
+      }
+
       cs_real_t d_b_dist = 1. / b_dist[f_id];
 
       /* Normal divided by b_dist */
@@ -8752,6 +8785,7 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
         for (cs_lnum_t k = 0; k < 3; k++)
           rhs[j][k] += n_d_dist[k] * pfac;
       }
+
     }
 
     /* Build indices bijection between [1-9] and [1-3]*[1-3] */
@@ -8820,6 +8854,32 @@ cs_gradient_vector_cell(const cs_mesh_t             *m,
             cocg[kk][ll] += dc[kk]*dc[ll]*ddc;
           }
 
+        }
+
+      }
+
+    }
+
+    else { /* if bc_coeff_a == NUL
+              use homogeneous Neumann BC; as above, but
+              pfac and RHS contribution become zero */
+
+      for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+        const cs_real_3_t *restrict b_face_cog
+          = (const cs_real_3_t *restrict)fvq->b_face_cog;
+
+        cs_lnum_t f_id = cell_b_faces[i];
+
+        cs_real_t dc[3];
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          dc[ii] = b_face_cog[f_id][ii] - cell_cen[c_id][ii];
+
+        cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+        for (cs_lnum_t kk = 0; kk < 3; kk++) {
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            cocg[kk][ll] += dc[kk]*dc[ll]*ddc;
         }
 
       }
@@ -9004,6 +9064,11 @@ cs_gradient_tensor_cell(const cs_mesh_t             *m,
       /* Normal is vector 0 if the b_face_normal norm is too small */
       cs_math_3_normalise(b_face_normal[f_id], n_d_dist);
 
+      for (int ii = 0; ii < 3; ii++) {
+        for (int jj = 0; jj < 3; jj++)
+          cocg[ii][jj] += n_d_dist[ii] * n_d_dist[jj];
+      }
+
       cs_real_t d_b_dist = 1. / b_dist[f_id];
 
       /* Normal divided by b_dist */
@@ -9088,6 +9153,31 @@ cs_gradient_tensor_cell(const cs_mesh_t             *m,
           cs_real_t pfac = (bc_coeff_a[f_id][kk] - var[c_id][kk]) * ddc;
           for (cs_lnum_t ll = 0; ll < 3; ll++)
             rhs[kk][ll] += dc[ll] * pfac;
+        }
+
+      }
+
+    }
+
+    else { /* Use homogeneous Neumann;
+              pfac and RHS contribution cancel out */
+
+      for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+        const cs_real_3_t *restrict b_face_cog
+          = (const cs_real_3_t *restrict)fvq->b_face_cog;
+
+        cs_lnum_t f_id = cell_b_faces[i];
+
+        cs_real_t dc[3];
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
+          dc[ii] = b_face_cog[f_id][ii] - cell_cen[c_id][ii];
+
+        cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+        for (cs_lnum_t kk = 0; kk < 3; kk++) {
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            cocg[kk][ll] += dc[kk]*dc[ll]*ddc;
         }
 
       }
