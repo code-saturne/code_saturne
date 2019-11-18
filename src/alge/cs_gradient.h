@@ -57,8 +57,9 @@ typedef enum {
 
   CS_GRADIENT_GREEN_ITER,        /*!< Iterative */
   CS_GRADIENT_LSQ,               /*!< Least-squares */
-  CS_GRADIENT_GREEN_LSQ          /*!< Green-Gauss reconstruction with
+  CS_GRADIENT_GREEN_LSQ,         /*!< Green-Gauss reconstruction with
                                    least squares gradient face values */
+  CS_GRADIENT_GREEN_VTX          /*!< Green-Gauss with vertex interpolation */
 
 } cs_gradient_type_t;
 

@@ -51,6 +51,7 @@
 #include "bft_printf.h"
 
 #include "cs_blas.h"
+#include "cs_cell_to_vertex.h"
 #include "cs_halo.h"
 #include "cs_halo_perio.h"
 #include "cs_internal_coupling.h"
@@ -157,7 +158,8 @@ static cs_gradient_info_t **cs_glob_gradient_systems = NULL;
 const char *cs_gradient_type_name[]
   = {N_("Iterative reconstruction"),
      N_("Least-squares"),
-     N_("Reconstruction with Least-squares")};
+     N_("Reconstruction with Least-squares"),
+     N_("Green-Gauss, vertex-based face interpolation")};
 
 /* Timer statistics */
 
@@ -3567,6 +3569,761 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
 }
 
 /*----------------------------------------------------------------------------
+ * Compute boundary face scalar values using least-squares reconstruction
+ * for non-orthogonal meshes.
+ *
+ * parameters:
+ *   m              <-- pointer to associated mesh structure
+ *   fvq            <-- pointer to associated finite volume quantities
+ *   cpl            <-- structure associated with internal coupling, or NULL
+ *   halo_type      <-- halo type (extended or not)
+ *   recompute_cocg <-- flag to recompute cocg
+ *   nswrgp         <-- number of sweeps for gradient reconstruction
+ *   idimtr         <-- 0 if ivar does not match a vector or tensor
+ *                        or there is no periodicity of rotation
+ *                      1 for velocity, 2 for Reynolds stress
+ *   inc            <-- if 0, solve on increment; 1 otherwise
+ *   bc_coeff_a     <-- B.C. coefficients for boundary face normals
+ *   bc_coeff_b     <-- B.C. coefficients for boundary face normals
+ *   c_var          <-- variable
+ *   c_weight       <-- weighted gradient coefficient variable,
+ *                      or NULL
+ *   b_f_var        --> boundary face value.
+ *----------------------------------------------------------------------------*/
+
+static void
+_lsq_scalar_b_face_val(const cs_mesh_t             *m,
+                       const cs_mesh_quantities_t  *fvq,
+                       cs_halo_type_t               halo_type,
+                       cs_real_t                    inc,
+                       const cs_real_t              bc_coeff_a[],
+                       const cs_real_t              bc_coeff_b[],
+                       const cs_real_t              c_var[],
+                       const cs_real_t              c_weight[],
+                       cs_real_t                    b_f_var[restrict])
+{
+  const cs_lnum_t n_b_cells = m->n_b_cells;
+
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+  const cs_lnum_t *restrict cell_b_faces_idx
+    = (const cs_lnum_t *restrict) ma->cell_b_faces_idx;
+  const cs_lnum_t *restrict cell_b_faces
+    = (const cs_lnum_t *restrict) ma->cell_b_faces;
+
+  const cs_real_3_t *restrict diipb
+    = (const cs_real_3_t *restrict)fvq->diipb;
+
+  cs_real_t  *_bc_coeff_a = NULL;
+
+  if (inc < 1) {
+    BFT_MALLOC(_bc_coeff_a, m->n_b_faces, cs_real_t);
+    for (cs_lnum_t i = 0; i < m->n_b_faces; i++)
+      _bc_coeff_a[i] = 0;
+    bc_coeff_a = (const cs_real_t*)_bc_coeff_a;
+  }
+
+  /* Reconstruct gradients using least squares for non-orthogonal meshes */
+
+# pragma omp parallel for if (n_b_cells > CS_THR_MIN)
+  for (cs_lnum_t ci = 0; ci < n_b_cells; ci++) {
+
+    cs_real_t grad[3];
+    cs_lnum_t c_id = m->b_cells[ci];
+
+    cs_gradient_scalar_cell(m,
+                            fvq,
+                            c_id,
+                            halo_type,
+                            bc_coeff_a,
+                            bc_coeff_b,
+                            c_var,
+                            c_weight,
+                            grad);
+
+    /* Update boundary face value */
+
+    cs_lnum_t s_id = cell_b_faces_idx[c_id];
+    cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
+
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+      cs_lnum_t f_id = cell_b_faces[i];
+
+      cs_real_t pip =   c_var[c_id]
+                      + cs_math_3_dot_product(diipb[f_id], grad);
+      b_f_var[f_id] = bc_coeff_a[f_id]*inc + pip*bc_coeff_b[f_id];
+
+    }
+  }
+
+  BFT_FREE(_bc_coeff_a);
+}
+
+/*----------------------------------------------------------------------------
+ * Compute boundary face scalar values using least-squares reconstruction
+ * for non-orthogonal meshes in the presence of a volume force generating
+ * a hydrostatic pressure component.
+ *
+ * parameters:
+ *   m              <-- pointer to associated mesh structure
+ *   fvq            <-- pointer to associated finite volume quantities
+ *   cpl            <-- structure associated with internal coupling, or NULL
+ *   halo_type      <-- halo type (extended or not)
+ *   recompute_cocg <-- flag to recompute cocg
+ *   nswrgp         <-- number of sweeps for gradient reconstruction
+ *   idimtr         <-- 0 if ivar does not match a vector or tensor
+ *                        or there is no periodicity of rotation
+ *                      1 for velocity, 2 for Reynolds stress
+ *   inc            <-- if 0, solve on increment; 1 otherwise
+ *   f_ext          <-- exterior force generating pressure
+ *   bc_coeff_a     <-- B.C. coefficients for boundary face normals
+ *   bc_coeff_b     <-- B.C. coefficients for boundary face normals
+ *   c_var          <-- cell variable
+ *   c_weight       <-- weighted gradient coefficient variable,
+ *                      or NULL
+ *   b_f_var        --> boundary face value.
+ *----------------------------------------------------------------------------*/
+
+static void
+_lsq_scalar_b_face_val_phyd(const cs_mesh_t             *m,
+                            const cs_mesh_quantities_t  *fvq,
+                            cs_halo_type_t               halo_type,
+                            cs_real_t                    inc,
+                            const cs_real_t              f_ext[][3],
+                            const cs_real_t              bc_coeff_a[],
+                            const cs_real_t              bc_coeff_b[],
+                            const cs_real_t              c_var[],
+                            const cs_real_t              c_weight[],
+                            cs_real_t                    b_f_var[restrict])
+{
+  const cs_lnum_t n_b_cells = m->n_b_cells;
+
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+  const cs_lnum_t *restrict cell_cells_idx
+    = (const cs_lnum_t *restrict) ma->cell_cells_idx;
+  const cs_lnum_t *restrict cell_cells_e_idx
+    = (const cs_lnum_t *restrict) ma->cell_cells_e_idx;
+  const cs_lnum_t *restrict cell_b_faces_idx
+    = (const cs_lnum_t *restrict) ma->cell_b_faces_idx;
+  const cs_lnum_t *restrict cell_cells
+    = (const cs_lnum_t *restrict) ma->cell_cells;
+  const cs_lnum_t *restrict cell_cells_e
+    = (const cs_lnum_t *restrict) ma->cell_cells_e;
+  const cs_lnum_t *restrict cell_b_faces
+    = (const cs_lnum_t *restrict) ma->cell_b_faces;
+
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)fvq->cell_cen;
+  const cs_real_3_t *restrict b_face_cog
+    = (const cs_real_3_t *restrict)fvq->b_face_cog;
+  const cs_real_3_t *restrict b_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_face_normal;
+  const cs_real_t *restrict b_dist
+    = (const cs_real_t *restrict)fvq->b_dist;
+  const cs_real_3_t *restrict diipb
+    = (const cs_real_3_t *restrict)fvq->diipb;
+
+  /*Additional terms due to porosity */
+
+  cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
+
+  cs_real_t *b_poro_duq;
+  cs_real_t _f_ext = 0.;
+
+  cs_lnum_t is_porous = false;
+  if (f_i_poro_duq_0 != NULL) {
+    is_porous = 1;
+    b_poro_duq = cs_field_by_name_try("b_poro_duq")->val;
+  }
+  else {
+    b_poro_duq = &_f_ext;
+  }
+
+  /* Reconstruct gradients using least squares for non-orthogonal meshes */
+
+# pragma omp parallel for if (n_b_cells > CS_THR_MIN)
+  for (cs_lnum_t ci = 0; ci < n_b_cells; ci++) {
+
+    cs_lnum_t c_id = m->b_cells[ci];
+
+    cs_real_t cocg[6] = {0., 0., 0., 0., 0., 0.};
+    cs_real_t rhsv[3] = {0., 0., 0.};
+
+    int n_adj = (halo_type == CS_HALO_EXTENDED) ? 2 : 1;
+
+    for (int adj_id = 0; adj_id < n_adj; adj_id++) {
+
+      const cs_lnum_t *restrict cell_cells_p;
+      cs_lnum_t s_id, e_id;
+
+      if (adj_id == 0){
+        s_id = cell_cells_idx[c_id];
+        e_id = cell_cells_idx[c_id+1];
+        cell_cells_p = (const cs_lnum_t *restrict)(cell_cells);
+      }
+      else if (cell_cells_e_idx != NULL){
+        s_id = cell_cells_e_idx[c_id];
+        e_id = cell_cells_e_idx[c_id+1];
+        cell_cells_p = (const cs_lnum_t *restrict)(cell_cells_e);
+      }
+      else
+        break;
+
+      if (c_weight == NULL) {
+
+        for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+          cs_real_t dc[3];
+          cs_lnum_t c_id1 = cell_cells_p[i];
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            dc[ll] = cell_cen[c_id1][ll] - cell_cen[c_id][ll];
+
+          cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+          cs_real_t pfac = (  c_var[c_id1] - c_var[c_id]
+                            - 0.5 * dc[0] * f_ext[c_id][0]
+                            - 0.5 * dc[1] * f_ext[c_id][1]
+                            - 0.5 * dc[2] * f_ext[c_id][2]
+                            - 0.5 * dc[0] * f_ext[c_id1][0]
+                            - 0.5 * dc[1] * f_ext[c_id1][1]
+                            - 0.5 * dc[2] * f_ext[c_id1][2]) * ddc;
+
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            rhsv[ll] += dc[ll] * pfac;
+
+          cocg[0] += dc[0]*dc[0]*ddc;
+          cocg[1] += dc[1]*dc[1]*ddc;
+          cocg[2] += dc[2]*dc[2]*ddc;
+          cocg[3] += dc[0]*dc[1]*ddc;
+          cocg[4] += dc[1]*dc[2]*ddc;
+          cocg[5] += dc[0]*dc[2]*ddc;
+
+        }
+
+      }
+      else {
+
+        for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+          cs_real_t dc[3];
+          cs_lnum_t c_id1 = cell_cells_p[i];
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            dc[ll] = cell_cen[c_id1][ll] - cell_cen[c_id][ll];
+
+          cs_real_t ddc = 1. / (dc[0]*dc[0] + dc[1]*dc[1] + dc[2]*dc[2]);
+
+          cs_real_t pfac = (  c_var[c_id1] - c_var[c_id]
+                            - 0.5 * dc[0] * f_ext[c_id][0]
+                            - 0.5 * dc[1] * f_ext[c_id][1]
+                            - 0.5 * dc[2] * f_ext[c_id][2]
+                            - 0.5 * dc[0] * f_ext[c_id1][0]
+                            - 0.5 * dc[1] * f_ext[c_id1][1]
+                            - 0.5 * dc[2] * f_ext[c_id1][2]) * ddc;
+
+          cs_real_t _weight =   2. * c_weight[c_id1]
+                              / (c_weight[c_id] + c_weight[c_id1]);
+
+          for (cs_lnum_t ll = 0; ll < 3; ll++)
+            rhsv[ll] += dc[ll] * pfac* _weight;
+
+          cocg[0] += dc[0]*dc[0]*ddc;
+          cocg[1] += dc[1]*dc[1]*ddc;
+          cocg[2] += dc[2]*dc[2]*ddc;
+          cocg[3] += dc[0]*dc[1]*ddc;
+          cocg[4] += dc[1]*dc[2]*ddc;
+          cocg[5] += dc[0]*dc[2]*ddc;
+
+        }
+
+      }
+
+    } /* end of contribution from interior and extended cells */
+
+    cs_lnum_t s_id = cell_b_faces_idx[c_id];
+    cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
+
+    /* Contribution from boundary faces */
+
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+      cs_real_t  dsij[3];
+
+      cs_lnum_t f_id = cell_b_faces[i];
+
+      cs_real_t poro = b_poro_duq[is_porous*f_id];
+
+      cs_real_t unddij = 1. / b_dist[f_id];
+      cs_real_t umcbdd = (1. -bc_coeff_b[f_id]) * unddij;
+
+      cs_real_t normal[3];
+      /* Normal is vector 0 if the b_face_normal norm is too small */
+      cs_math_3_normalise(b_face_normal[f_id], normal);
+
+      for (cs_lnum_t ll = 0; ll < 3; ll++)
+        dsij[ll] = normal[ll] + umcbdd*diipb[f_id][ll];
+
+      /* (b_face_cog - cell_cen).f_ext, or IF.F_I */
+      cs_real_t c_f_ext
+        = cs_math_3_distance_dot_product(b_face_cog[f_id],
+                                         cell_cen[c_id],
+                                         f_ext[c_id]);
+
+      cs_real_t pfac =  (  bc_coeff_a[f_id]*inc + (bc_coeff_b[f_id] -1.)
+                         * (c_var[c_id] + c_f_ext + poro))
+                       * unddij;
+
+      for (cs_lnum_t ll = 0; ll < 3; ll++)
+        rhsv[ll] += dsij[ll] * pfac;
+
+      cocg[0] += dsij[0]*dsij[0];
+      cocg[1] += dsij[1]*dsij[1];
+      cocg[2] += dsij[2]*dsij[2];
+      cocg[3] += dsij[0]*dsij[1];
+      cocg[4] += dsij[1]*dsij[2];
+      cocg[5] += dsij[0]*dsij[2];
+
+    } // end of contribution from boundary cells
+
+    /* Invert */
+
+    cs_real_t a11 = cocg[1]*cocg[2] - cocg[4]*cocg[4];
+    cs_real_t a12 = cocg[4]*cocg[5] - cocg[3]*cocg[2];
+    cs_real_t a13 = cocg[3]*cocg[4] - cocg[1]*cocg[5];
+    cs_real_t a22 = cocg[0]*cocg[2] - cocg[5]*cocg[5];
+    cs_real_t a23 = cocg[3]*cocg[5] - cocg[0]*cocg[4];
+    cs_real_t a33 = cocg[0]*cocg[1] - cocg[3]*cocg[3];
+
+    cs_real_t det_inv = 1. / (cocg[0]*a11 + cocg[3]*a12 + cocg[5]*a13);
+
+    cs_real_t grad[3];
+
+    grad[0] =  (  a11 * rhsv[0]
+                + a12 * rhsv[1]
+                + a13 * rhsv[2]) * det_inv
+                + f_ext[c_id][0];
+    grad[1] =  (  a12 * rhsv[0]
+                + a22 * rhsv[1]
+                + a23 * rhsv[2]) * det_inv
+                + f_ext[c_id][1];
+    grad[2] =  (  a13 * rhsv[0]
+                + a23 * rhsv[1]
+                + a33 * rhsv[2]) * det_inv
+                + f_ext[c_id][2];
+
+    /* Update boundary face value */
+
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+      cs_lnum_t f_id = cell_b_faces[i];
+
+      cs_real_t pip =   c_var[c_id]
+                      + cs_math_3_dot_product(diipb[f_id], grad);
+      b_f_var[f_id] = bc_coeff_a[f_id]*inc + pip*bc_coeff_b[f_id];
+
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute gradient using vertex-based face values for scalar gradient
+ * reconstruction.
+ *
+ * Optionally, a volume force generating a hydrostatic pressure component
+ * may be accounted for.
+ *
+ * parameters:
+ *   m              <-- pointer to associated mesh structure
+ *   fvq            <-- pointer to associated finite volume quantities
+ *   cpl            <-- structure associated with internal coupling, or NULL
+ *   halo_type      <-- halo type (extended or not)
+ *   tr_dim         <-- 0 if ivar does not match a vector or tensor
+ *                        or there is no periodicity of rotation
+ *                      1 for velocity, 2 for Reynolds stress
+ *   hyd_p_flag     <-- flag for hydrostatic pressure
+ *   inc            <-- if 0, solve on increment; 1 otherwise
+ *   f_ext          <-- exterior force generating pressure
+ *   bc_coeff_a     <-- B.C. coefficients for boundary face normals
+ *   bc_coeff_b     <-- B.C. coefficients for boundary face normals
+ *   c_var          <-- variable
+ *   c_weight       <-- weighted gradient coefficient variable
+ *   grad           <-> gradient of pvar (halo prepared for periodicity
+ *                      of rotation)
+ *----------------------------------------------------------------------------*/
+
+static void
+_fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
+                              const cs_mesh_quantities_t     *fvq,
+                              const cs_internal_coupling_t   *cpl,
+                              int                             tr_dim,
+                              int                             hyd_p_flag,
+                              cs_real_t                       inc,
+                              const cs_real_3_t               f_ext[],
+                              const cs_real_t                 bc_coeff_a[],
+                              const cs_real_t                 bc_coeff_b[],
+                              const cs_real_t                 c_var[],
+                              const cs_real_t                 c_weight[],
+                              cs_real_3_t           *restrict grad)
+{
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  const int *restrict c_disable_flag = fvq->c_disable_flag;
+  int has_dc = fvq->has_disable_flag; /* Has cells disabled? */
+
+  const cs_real_t *restrict weight = fvq->weight;
+  const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
+  if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
+    cell_f_vol = fvq->cell_vol;
+  const cs_real_3_t *restrict cell_cen
+    = (const cs_real_3_t *restrict)fvq->cell_cen;
+  const cs_real_3_t *restrict i_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+  const cs_real_3_t *restrict b_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+  const cs_real_3_t *restrict i_face_cog
+    = (const cs_real_3_t *restrict)fvq->i_face_cog;
+  const cs_real_3_t *restrict b_face_cog
+    = (const cs_real_3_t *restrict)fvq->b_face_cog;
+
+  bool  *coupled_faces = (cpl == NULL) ?
+    NULL : (bool *)cpl->coupled_faces;
+
+  /*Additional terms due to porosity */
+  cs_field_t *f_i_poro_duq_0 = cs_field_by_name_try("i_poro_duq_0");
+
+  cs_real_t *i_poro_duq_0;
+  cs_real_t *i_poro_duq_1;
+  cs_real_t *b_poro_duq;
+  cs_real_t _f_ext = 0.;
+
+  cs_lnum_t is_porous = 0;
+  if (f_i_poro_duq_0 != NULL) {
+    is_porous = 1;
+    i_poro_duq_0 = f_i_poro_duq_0->val;
+    i_poro_duq_1 = cs_field_by_name_try("i_poro_duq_1")->val;
+    b_poro_duq = cs_field_by_name_try("b_poro_duq")->val;
+  } else {
+    i_poro_duq_0 = &_f_ext;
+    i_poro_duq_1 = &_f_ext;
+    b_poro_duq = &_f_ext;
+  }
+
+  /* Initialize gradient
+     ------------------- */
+
+# pragma omp parallel for
+  for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+    for (int j = 0; j < 3; j++)
+      grad[c_id][j] = 0.0;
+  }
+
+  /* Pre-compute values at boundary using least squares */
+
+  cs_real_t *b_f_var;
+  BFT_MALLOC(b_f_var, m->n_b_faces, cs_real_t);
+
+  if (hyd_p_flag == 1)
+    _lsq_scalar_b_face_val_phyd(m,
+                                fvq,
+                                CS_HALO_STANDARD,
+                                inc,
+                                f_ext,
+                                bc_coeff_a,
+                                bc_coeff_b,
+                                c_var,
+                                c_weight,
+                                b_f_var);
+  else
+    _lsq_scalar_b_face_val(m,
+                           fvq,
+                           CS_HALO_STANDARD,
+                           inc,
+                           bc_coeff_a,
+                           bc_coeff_b,
+                           c_var,
+                           c_weight,
+                           b_f_var);
+
+  /* Compute vertex-based values
+     --------------------------- */
+
+  cs_real_t *v_var;
+  BFT_MALLOC(v_var, m->n_vertices, cs_real_t);
+
+  cs_cell_to_vertex(CS_CELL_TO_VERTEX_LR,
+                    0, /* verbosity */
+                    1, /* var_dim */
+                    tr_dim,
+                    c_weight,
+                    c_var,
+                    b_f_var,
+                    v_var);
+
+  /* Interpolate to face-based values
+     -------------------------------- */
+
+  cs_real_t *i_f_var;
+  BFT_MALLOC(i_f_var, m->n_i_faces, cs_real_t);
+
+  for (int f_t = 0; f_t < 2; f_t++) {
+
+    const cs_lnum_t n_faces = (f_t == 0) ? m->n_i_faces : m->n_b_faces;
+    const cs_lnum_t *f2v_idx= NULL, *f2v_ids = NULL;
+    cs_real_t *f_var = NULL;
+
+    if (f_t == 0) {
+      f2v_idx = m->i_face_vtx_idx;
+      f2v_ids = m->i_face_vtx_lst;
+      f_var = i_f_var;
+    }
+    else {
+      f2v_idx = m->b_face_vtx_idx;
+      f2v_ids = m->b_face_vtx_lst;
+      f_var = b_f_var;
+    }
+
+#   pragma omp parallel for if (n_faces > CS_THR_MIN)
+    for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++) {
+      cs_lnum_t s_id = f2v_idx[f_id];
+      cs_lnum_t e_id = f2v_idx[f_id+1];
+      cs_real_t s = 0;
+      for (cs_lnum_t i = s_id; i < e_id; i++)
+        s += v_var[f2v_ids[i]];
+      f_var[f_id] = s / (e_id-s_id);
+    }
+
+  }
+
+  /* Vertex values are not needed after this stage */
+
+  cs_real_t mean[4] = {0, 0, 0, 0};
+  for (cs_lnum_t i = 0; i < n_cells; i++)
+    mean[0] += c_var[i];
+  mean[0] /= n_cells;
+  for (cs_lnum_t i = 0; i < m->n_vertices; i++)
+    mean[1] += v_var[i];
+  mean[1] /= m->n_vertices;
+  for (cs_lnum_t i = 0; i < m->n_i_faces; i++)
+    mean[2] += i_f_var[i];
+  mean[2] /= m->n_i_faces;
+  for (cs_lnum_t i = 0; i < m->n_b_faces; i++)
+    mean[3] += b_f_var[i];
+  mean[3] /= m->n_b_faces;
+
+  BFT_FREE(v_var);
+
+  /* Case with hydrostatic pressure
+     ------------------------------ */
+
+  if (hyd_p_flag == 1) {
+
+    /* Contribution from interior faces */
+
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+
+        for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+             f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+             f_id++) {
+
+          cs_lnum_t ii = i_face_cells[f_id][0];
+          cs_lnum_t jj = i_face_cells[f_id][1];
+
+          cs_real_t ktpond = (c_weight == NULL) ?
+             weight[f_id] :              /* no cell weighting */
+             weight[f_id] * c_weight[ii] /* cell weighting active */
+               / (      weight[f_id] * c_weight[ii]
+                 + (1.0-weight[f_id])* c_weight[jj]);
+
+          cs_real_2_t poro = {
+            i_poro_duq_0[is_porous*f_id],
+            i_poro_duq_1[is_porous*f_id]
+          };
+
+          cs_real_t pfaci
+            =  ktpond
+                 * (  (i_face_cog[f_id][0] - cell_cen[ii][0])*f_ext[ii][0]
+                    + (i_face_cog[f_id][1] - cell_cen[ii][1])*f_ext[ii][1]
+                    + (i_face_cog[f_id][2] - cell_cen[ii][2])*f_ext[ii][2]
+                    + poro[0])
+            +  (1.0 - ktpond)
+                 * (  (i_face_cog[f_id][0] - cell_cen[jj][0])*f_ext[jj][0]
+                    + (i_face_cog[f_id][1] - cell_cen[jj][1])*f_ext[jj][1]
+                    + (i_face_cog[f_id][2] - cell_cen[jj][2])*f_ext[jj][2]
+                    - poro[1]);
+          cs_real_t pfacj = pfaci;
+
+          pfaci += i_f_var[f_id] - c_var[ii];
+          pfacj += i_f_var[f_id] - c_var[jj];
+
+          for (int j = 0; j < 3; j++) {
+            grad[ii][j] += pfaci * i_f_face_normal[f_id][j];
+            grad[jj][j] -= pfacj * i_f_face_normal[f_id][j];
+          }
+
+        } /* loop on faces */
+
+      } /* loop on threads */
+
+    } /* loop on thread groups */
+
+    /* Contribution from coupled faces */
+    if (cpl != NULL) {
+      assert(0); /* not handled yet */
+    }
+
+    /* Contribution from boundary faces */
+
+    for (int g_id = 0; g_id < n_b_groups; g_id++) {
+
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+
+        for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+             f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+             f_id++) {
+
+          if (cpl == NULL || !coupled_faces[f_id]) {
+
+            cs_lnum_t c_id = b_face_cells[f_id];
+
+            cs_real_t poro = b_poro_duq[is_porous*f_id];
+            /*
+               Remark: for the cell \f$ \celli \f$ we remove
+                       \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+             */
+
+            cs_real_t pfac = b_f_var[f_id] - c_var[c_id];
+
+            pfac +=
+                bc_coeff_b[f_id]
+              * ( (b_face_cog[f_id][0] - cell_cen[c_id][0])*f_ext[c_id][0]
+                + (b_face_cog[f_id][1] - cell_cen[c_id][1])*f_ext[c_id][1]
+                + (b_face_cog[f_id][2] - cell_cen[c_id][2])*f_ext[c_id][2]
+                + poro);
+
+            for (int j = 0; j < 3; j++)
+              grad[c_id][j] += pfac * b_f_face_normal[f_id][j];
+
+          } /* face without internal coupling */
+
+        } /* loop on faces */
+
+      } /* loop on threads */
+
+    } /* loop on thread groups */
+
+  } /* End of test on hydrostatic pressure */
+
+  /* Standard case, without hydrostatic pressure
+     ------------------------------------------- */
+
+  else {
+
+    /* Contribution from interior faces */
+
+    for (int g_id = 0; g_id < n_i_groups; g_id++) {
+
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_i_threads; t_id++) {
+
+        for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+             f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+             f_id++) {
+
+          cs_lnum_t ii = i_face_cells[f_id][0];
+          cs_lnum_t jj = i_face_cells[f_id][1];
+
+          cs_real_t pfaci = i_f_var[f_id] - c_var[ii];
+          cs_real_t pfacj = i_f_var[f_id] - c_var[jj];
+
+          for (int j = 0; j < 3; j++) {
+            grad[ii][j] += pfaci * i_f_face_normal[f_id][j];
+            grad[jj][j] -= pfacj * i_f_face_normal[f_id][j];
+          }
+
+        } /* loop on faces */
+
+      } /* loop on threads */
+
+    } /* loop on thread groups */
+
+    /* Contribution from coupled faces */
+    if (cpl != NULL) {
+      assert(0); /* not handled yet */
+    }
+
+    /* Contribution from boundary faces */
+
+    for (int g_id = 0; g_id < n_b_groups; g_id++) {
+
+#     pragma omp parallel for
+      for (int t_id = 0; t_id < n_b_threads; t_id++) {
+
+        for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+             f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+             f_id++) {
+
+          if (cpl == NULL || !coupled_faces[f_id]) {
+
+            cs_lnum_t ii = b_face_cells[f_id];
+
+            /*
+               Remark: for the cell \f$ \celli \f$ we remove
+                       \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+             */
+
+            cs_real_t pfac = b_f_var[f_id] - c_var[ii];
+
+            for (int j = 0; j < 3; j++)
+              grad[ii][j] += pfac * b_f_face_normal[f_id][j];
+
+          } /* face without internal coupling */
+
+        } /* loop on faces */
+
+      } /* loop on threads */
+
+    } /* loop on thread groups */
+
+  }
+
+  BFT_FREE(i_f_var);
+  BFT_FREE(b_f_var);
+
+# pragma omp parallel for
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    cs_real_t dvol;
+    /* Is the cell disabled (for solid or porous)? Not the case if coupled */
+    if (has_dc * c_disable_flag[has_dc * c_id] == 0)
+      dvol = 1. / cell_f_vol[c_id];
+    else
+      dvol = 0.;
+
+    for (int j = 0; j < 3; j++)
+      grad[c_id][j] *= dvol;
+  }
+
+  /* Synchronize halos */
+
+  _sync_scalar_gradient_halo(m, CS_HALO_EXTENDED, tr_dim, grad);
+}
+
+
+/*----------------------------------------------------------------------------
  * Clip the gradient of a vector if necessary. This function deals with the
  * standard or extended neighborhood.
  *
@@ -5480,7 +6237,7 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
                      const cs_mesh_quantities_t    *fvq,
                      const cs_internal_coupling_t  *cpl,
                      const cs_halo_type_t           halo_type,
-                     const cs_int_t                 inc,
+                     const int                      inc,
                      const cs_real_3_t    *restrict coefav,
                      const cs_real_33_t   *restrict coefbv,
                      const cs_real_3_t    *restrict pvar,
@@ -5760,6 +6517,357 @@ _lsq_vector_gradient(const cs_mesh_t               *m,
 }
 
 /*----------------------------------------------------------------------------
+ * Compute boundary face vector values using least-squares reconstruction
+ * for non-orthogonal meshes.
+ *
+ * parameters:
+ *   m              <-- pointer to associated mesh structure
+ *   ma             <-- pointer to mesh adjacencies structure
+ *   fvq            <-- pointer to associated finite volume quantities
+ *   cpl            <-- structure associated with internal coupling, or NULL
+ *   halo_type      <-- halo type (extended or not)
+ *   inc            <-- if 0, solve on increment; 1 otherwise
+ *   coefav         <-- B.C. coefficients for boundary face normals
+ *   coefbv         <-- B.C. coefficients for boundary face normals
+ *   c_var          <-- cell variable
+ *   c_weight       <-- weighted gradient coefficient variable,
+ *                      or NULL
+ *   b_f_var        --> boundary face value.
+ *----------------------------------------------------------------------------*/
+
+static void
+_lsq_vector_b_face_val(const cs_mesh_t               *m,
+                       const cs_mesh_adjacencies_t   *ma,
+                       const cs_mesh_quantities_t    *fvq,
+                       const cs_internal_coupling_t  *cpl,
+                       const cs_halo_type_t           halo_type,
+                       const int                      inc,
+                       const cs_real_t                bc_coeff_a[][3],
+                       const cs_real_t                bc_coeff_b[][3][3],
+                       const cs_real_t                c_var[][3],
+                       const cs_real_t                c_weight[],
+                       cs_real_t                      b_f_var[restrict][3])
+{
+  const cs_lnum_t n_b_cells = m->n_b_cells;
+
+  const cs_lnum_t *restrict cell_b_faces_idx
+    = (const cs_lnum_t *restrict) ma->cell_b_faces_idx;
+  const cs_lnum_t *restrict cell_b_faces
+    = (const cs_lnum_t *restrict) ma->cell_b_faces;
+
+  const cs_real_3_t *restrict diipb
+    = (const cs_real_3_t *restrict)fvq->diipb;
+
+  bool  *coupled_faces = (cpl == NULL) ?
+    NULL : (bool *)cpl->coupled_faces;
+
+  cs_real_3_t  *_bc_coeff_a = NULL;
+
+  if (inc == 0) {
+    BFT_MALLOC(_bc_coeff_a, m->n_b_faces, cs_real_3_t);
+    for (cs_lnum_t i = 0; i < m->n_b_faces; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++)
+        _bc_coeff_a[i][j] = 0;
+    }
+    bc_coeff_a = (const cs_real_3_t*)_bc_coeff_a;
+  }
+
+  /* Reconstruct gradients using least squares for non-orthogonal meshes */
+
+# pragma omp parallel for if (n_b_cells > CS_THR_MIN)
+  for (cs_lnum_t ci = 0; ci < n_b_cells; ci++) {
+
+    cs_real_t gradc[3][3];
+    cs_lnum_t c_id = m->b_cells[ci];
+
+    cs_gradient_vector_cell(m,
+                            fvq,
+                            c_id,
+                            halo_type,
+                            bc_coeff_a,
+                            bc_coeff_b,
+                            c_var,
+                            c_weight,
+                            gradc);
+
+    /* Compute boundary face values */
+
+    cs_lnum_t s_id = cell_b_faces_idx[c_id];
+    cs_lnum_t e_id = cell_b_faces_idx[c_id+1];
+
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
+
+      cs_lnum_t f_id = cell_b_faces[i];
+
+      if (cpl == NULL || !coupled_faces[f_id]) {
+
+        const cs_real_t *_c_var = c_var[c_id];
+        cs_real_t pip[3];
+        for (cs_lnum_t k = 0; k < 3; k++) {
+          pip[k] =   _c_var[k]
+                   + cs_math_3_dot_product(diipb[f_id], gradc[k]);
+        }
+        for (cs_lnum_t k = 0; k < 3; k++) {
+          b_f_var[f_id][k] =   inc * bc_coeff_a[f_id][k]
+                             + bc_coeff_b[f_id][0][k] * pip[0]
+                             + bc_coeff_b[f_id][1][k] * pip[1]
+                             + bc_coeff_b[f_id][2][k] * pip[2];
+        }
+
+      }
+    }
+
+  }
+
+  BFT_FREE(_bc_coeff_a);
+}
+
+/*----------------------------------------------------------------------------
+ * Compute gradient using vertex-based face values for scalar gradient
+ * reconstruction.
+ *
+ * parameters:
+ *   m              <-- pointer to associated mesh structure
+ *   fvq            <-- pointer to associated finite volume quantities
+ *   cpl            <-- structure associated with internal coupling, or NULL
+ *   inc            <-- if 0, solve on increment; 1 otherwise
+ *   bc_coeff_a     <-- B.C. coefficients for boundary face normals
+ *   bc_coeff_b     <-- B.C. coefficients for boundary face normals
+ *   c_var          <-- variable
+ *   c_weight       <-- weighted gradient coefficient variable
+ *   grad           --> gradient of c_var (du_i/dx_j : grad[][i][j])
+ *----------------------------------------------------------------------------*/
+
+static void
+_fv_vtx_based_vector_gradient(const cs_mesh_t               *m,
+                              const cs_mesh_quantities_t    *fvq,
+                              const cs_internal_coupling_t  *cpl,
+                              cs_real_t                      inc,
+                              const cs_real_t                bc_coeff_a[][3],
+                              const cs_real_t                bc_coeff_b[][3][3],
+                              const cs_real_t                c_var[][3],
+                              const cs_real_t                c_weight[],
+                              cs_real_t                      grad[restrict][3][3])
+{
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = m->n_cells;
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
+  const cs_mesh_adjacencies_t *ma = cs_glob_mesh_adjacencies;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  const int *restrict c_disable_flag = fvq->c_disable_flag;
+  int has_dc = fvq->has_disable_flag; /* Has cells disabled? */
+
+  const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
+  if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
+    cell_f_vol = fvq->cell_vol;
+  const cs_real_3_t *restrict i_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_f_face_normal;
+  const cs_real_3_t *restrict b_f_face_normal
+    = (const cs_real_3_t *restrict)fvq->b_f_face_normal;
+
+  bool  *coupled_faces = (cpl == NULL) ?
+    NULL : (bool *)cpl->coupled_faces;
+
+  /* Initialize gradient
+     ------------------- */
+
+# pragma omp parallel for
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++)
+        grad[cell_id][i][j] = 0.0;
+    }
+  }
+
+  /* Pre-compute gradient at boundary using least squares */
+
+  cs_real_3_t *b_f_var;
+  BFT_MALLOC(b_f_var, m->n_b_faces, cs_real_3_t);
+
+  _lsq_vector_b_face_val(m,
+                         ma,
+                         fvq,
+                         cpl,
+                         CS_HALO_STANDARD,
+                         inc,
+                         bc_coeff_a,
+                         bc_coeff_b,
+                         c_var,
+                         c_weight,
+                         b_f_var);
+
+  /* Compute vertex-based values
+     --------------------------- */
+
+  cs_real_3_t *v_var;
+  BFT_MALLOC(v_var, m->n_vertices, cs_real_3_t);
+
+  cs_cell_to_vertex(CS_CELL_TO_VERTEX_LR,
+                    0, /* verbosity */
+                    3, /* var_dim */
+                    0,
+                    c_weight,
+                    (const cs_real_t *)c_var,
+                    (const cs_real_t *)b_f_var,
+                    (cs_real_t *)v_var);
+
+  /* Interpolate to face-based values
+     -------------------------------- */
+
+  cs_real_3_t *i_f_var;
+  BFT_MALLOC(i_f_var, m->n_i_faces, cs_real_3_t);
+
+  for (int f_t = 0; f_t < 2; f_t++) {
+
+    const cs_lnum_t n_faces = (f_t == 0) ? m->n_i_faces : m->n_b_faces;
+    const cs_lnum_t *f2v_idx= NULL, *f2v_ids = NULL;
+    cs_real_3_t *f_var = NULL;
+
+    if (f_t == 0) {
+      f2v_idx = m->i_face_vtx_idx;
+      f2v_ids = m->i_face_vtx_lst;
+      f_var = i_f_var;
+    }
+    else {
+      f2v_idx = m->b_face_vtx_idx;
+      f2v_ids = m->b_face_vtx_lst;
+      f_var = b_f_var;
+    }
+
+#   pragma omp parallel for if (n_faces > CS_THR_MIN)
+    for (cs_lnum_t f_id = 0; f_id < n_faces; f_id++) {
+      cs_lnum_t s_id = f2v_idx[f_id];
+      cs_lnum_t e_id = f2v_idx[f_id+1];
+      cs_real_t s[3] = {0, 0, 0};
+      for (cs_lnum_t i = s_id; i < e_id; i++) {
+        for (cs_lnum_t k = 0; k < 3; k++)
+          s[k] += v_var[f2v_ids[i]][k];
+      }
+      for (cs_lnum_t k = 0; k < 3; k++)
+        f_var[f_id][k] = s[k] / (e_id-s_id);
+    }
+
+  }
+
+  /* Vertex values are not needed after this stage */
+
+  BFT_FREE(v_var);
+
+  /* Contribution from interior faces */
+
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
+
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
+
+      for (cs_lnum_t f_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+           f_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+           f_id++) {
+
+        cs_lnum_t ii = i_face_cells[f_id][0];
+        cs_lnum_t jj = i_face_cells[f_id][1];
+
+        for (cs_lnum_t k = 0; k < 3; k++) {
+
+          cs_real_t pfaci = i_f_var[f_id][k] - c_var[ii][k];
+          cs_real_t pfacj = i_f_var[f_id][k] - c_var[jj][k];
+
+          for (cs_lnum_t l = 0; l < 3; l++) {
+            grad[ii][k][l] += pfaci * i_f_face_normal[f_id][l];
+            grad[jj][k][l] -= pfacj * i_f_face_normal[f_id][l];
+          }
+
+        }
+
+      } /* loop on faces */
+
+    } /* loop on threads */
+
+  } /* loop on thread groups */
+
+  /* Contribution from coupled faces */
+  if (cpl != NULL) {
+    assert(0); /* not handled yet */
+  }
+
+  /* Contribution from boundary faces */
+
+  for (int g_id = 0; g_id < n_b_groups; g_id++) {
+
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+
+      for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+           f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+           f_id++) {
+
+        if (cpl == NULL || !coupled_faces[f_id]) {
+
+          cs_lnum_t ii = b_face_cells[f_id];
+
+          /*
+            Remark: for the cell \f$ \celli \f$ we remove
+            \f$ \varia_\celli \sum_\face \vect{S}_\face = \vect{0} \f$
+          */
+
+          for (cs_lnum_t k = 0; k < 3; k++) {
+
+            cs_real_t pfac = b_f_var[f_id][k] - c_var[ii][k];
+
+            for (cs_lnum_t l = 0; l < 3; l++)
+              grad[ii][k][l] += pfac * b_f_face_normal[f_id][l];
+
+          }
+
+        } /* face without internal coupling */
+
+      } /* loop on faces */
+
+    }
+
+  }
+
+  BFT_FREE(i_f_var);
+  BFT_FREE(b_f_var);
+
+# pragma omp parallel for
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    cs_real_t dvol;
+    /* Is the cell disabled (for solid or porous)? Not the case if coupled */
+    if (has_dc * c_disable_flag[has_dc * c_id] == 0)
+      dvol = 1. / cell_f_vol[c_id];
+    else
+      dvol = 0.;
+
+    for (cs_lnum_t i = 0; i < 3; i++) {
+      for (cs_lnum_t j = 0; j < 3; j++)
+        grad[c_id][i][j] *= dvol;
+    }
+  }
+
+  /* Synchronize halos */
+
+  if (m->halo != NULL) {
+    cs_halo_sync_var_strided(m->halo, CS_HALO_STANDARD, (cs_real_t *)grad, 9);
+    if (cs_glob_mesh->n_init_perio > 0)
+      cs_halo_perio_sync_var_tens(m->halo,
+                                  CS_HALO_STANDARD,
+                                  (cs_real_t *)grad);
+  }
+}
+
+/*----------------------------------------------------------------------------
  * Compute cell gradient of a tensor using least-squares reconstruction for
  * non-orthogonal meshes (n_r_sweeps > 1).
  *
@@ -5780,7 +6888,7 @@ _lsq_tensor_gradient(const cs_mesh_t              *m,
                      const cs_mesh_adjacencies_t  *madj,
                      const cs_mesh_quantities_t   *fvq,
                      const cs_halo_type_t          halo_type,
-                     const cs_int_t                inc,
+                     const int                     inc,
                      const cs_real_6_t   *restrict coefat,
                      const cs_real_66_t  *restrict coefbt,
                      const cs_real_6_t   *restrict pvar,
@@ -6446,6 +7554,21 @@ _gradient_scalar(const char                    *var_name,
     }
     break;
 
+  case CS_GRADIENT_GREEN_VTX:
+    _fv_vtx_based_scalar_gradient(mesh,
+                                  fvq,
+                                  cpl,
+                                  tr_dim,
+                                  hyd_p_flag,
+                                  inc,
+                                  (const cs_real_3_t *)f_ext,
+                                  bc_coeff_a,
+                                  bc_coeff_b,
+                                  var,
+                                  c_weight,
+                                  grad);
+    break;
+
   }
 
   if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_REGULARISATION)
@@ -6635,6 +7758,20 @@ _gradient_vector(const char                     *var_name,
 
       BFT_FREE(r_gradv);
     }
+    break;
+
+  case CS_GRADIENT_GREEN_VTX:
+
+    _fv_vtx_based_vector_gradient(mesh,
+                                  fvq,
+                                  cpl,
+                                  inc,
+                                  bc_coeff_a,
+                                  bc_coeff_b,
+                                  var,
+                                  c_weight,
+                                  grad);
+
     break;
 
   }
@@ -8014,7 +9151,8 @@ cs_gradient_tensor(const char                *var_name,
 
   bool update_stats = true;
 
-  if (gradient_type == CS_GRADIENT_GREEN_LSQ)
+  if (   gradient_type == CS_GRADIENT_GREEN_LSQ
+      || gradient_type == CS_GRADIENT_GREEN_VTX)
     gradient_type = CS_GRADIENT_GREEN_ITER;
 
   t0 = cs_timer_time();
@@ -8312,7 +9450,8 @@ cs_gradient_tensor_synced_input(const char                *var_name,
 
   t0 = cs_timer_time();
 
-  if (gradient_type == CS_GRADIENT_GREEN_LSQ)
+  if (   gradient_type == CS_GRADIENT_GREEN_LSQ
+      || gradient_type == CS_GRADIENT_GREEN_VTX)
     gradient_type = CS_GRADIENT_GREEN_ITER;
 
   if (update_stats == true)
@@ -9236,6 +10375,9 @@ cs_gradient_type_by_imrgra(int                  imrgra,
   case 6:
     *gradient_type = CS_GRADIENT_GREEN_LSQ;
     *halo_type = CS_HALO_EXTENDED;
+    break;
+  case 7:
+    *gradient_type = CS_GRADIENT_GREEN_VTX;
     break;
   default:
     *gradient_type = CS_GRADIENT_GREEN_ITER;
