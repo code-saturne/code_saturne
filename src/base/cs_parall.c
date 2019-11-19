@@ -584,51 +584,6 @@ cs_f_parall_barrier(void)
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
-/*============================================================================
- * Public function definitions for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Return the value associated to a probe.
- *
- * Fortran Interface :
- *
- * subroutine parhis (node, ndrang, var, varcap)
- * *****************
- *
- * integer          node        : <-- : local number of the element related to
- *                                      a measure node
- * integer          ndrang      : <-- : rank of the process owning the closest
- *                                      node from the measure node
- * double precision var(*)      : <-- : values of the variable on local elements
- * double precision varcap      : --> : value of the variable for the element
- *                                      related to the measure node
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (parhis, PARHIS)(cs_int_t   *node,
-                          cs_int_t   *ndrang,
-                          cs_real_t   var[],
-                          cs_real_t  *varcap)
-{
-#if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1) {
-
-    assert(sizeof(double) == sizeof(cs_real_t));
-
-    if (*ndrang == cs_glob_rank_id)
-      *varcap = var[*node - 1];
-    else
-      *varcap = 0.0;
-
-    MPI_Bcast(varcap, 1, CS_MPI_REAL, *ndrang, cs_glob_mpi_comm);
-
-  }
-
-#endif
-}
-
 /*=============================================================================
  * Public function definitions
  *============================================================================*/
