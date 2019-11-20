@@ -295,26 +295,9 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond)
   case CS_PARAM_PRECOND_NONE:
     return  "None";
     break;
-  case CS_PARAM_PRECOND_DIAG:
-    return  "Diagonal";
-    break;
+
   case CS_PARAM_PRECOND_BJACOB:
     return  "Block-Jacobi";
-    break;
-  case CS_PARAM_PRECOND_POLY1:
-    return  "Neumann.Poly.O1";
-    break;
-  case CS_PARAM_PRECOND_POLY2:
-    return  "Neumann.Poly.O2";
-    break;
-  case CS_PARAM_PRECOND_SSOR:
-    return  "SSOR";
-    break;
-  case CS_PARAM_PRECOND_ILU0:
-    return  "ILU0";
-    break;
-  case CS_PARAM_PRECOND_ICC0:
-    return  "ICC0";
     break;
   case CS_PARAM_PRECOND_AMG:
     return  "Algebraic.MultiGrid";
@@ -325,6 +308,31 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond)
   case CS_PARAM_PRECOND_AS:
     return  "Additive.Schwarz";
     break;
+  case CS_PARAM_PRECOND_DIAG:
+    return  "Diagonal";
+    break;
+  case CS_PARAM_PRECOND_GKB_CG:
+    return "Golub-Kahan.BiOrthogonalization.with.CG.(inner.solver)";
+    break;
+  case CS_PARAM_PRECOND_GKB_GMRES:
+    return "Golub-Kahan.BiOrthogonalization.with.GMRES.(inner.solver)";
+    break;
+  case CS_PARAM_PRECOND_ILU0:
+    return  "ILU0";
+    break;
+  case CS_PARAM_PRECOND_ICC0:
+    return  "ICC0";
+    break;
+  case CS_PARAM_PRECOND_POLY1:
+    return  "Neumann.Poly.O1";
+    break;
+  case CS_PARAM_PRECOND_POLY2:
+    return  "Neumann.Poly.O2";
+    break;
+  case CS_PARAM_PRECOND_SSOR:
+    return  "SSOR";
+    break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" %s: Invalid preconditioner. Stop execution."), __func__);
