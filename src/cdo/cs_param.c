@@ -250,6 +250,12 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver)
   case CS_PARAM_ITSOL_GAUSS_SEIDEL:
     return  "Gauss.Seidel";
     break;
+  case CS_PARAM_ITSOL_GKB_CG:
+    return "Golub-Kahan.BiOrthogonalization.with.CG.(inner.solver)";
+    break;
+  case CS_PARAM_ITSOL_GKB_GMRES:
+    return "Golub-Kahan.BiOrthogonalization.with.GMRES.(inner.solver)";
+    break;
   case CS_PARAM_ITSOL_GMRES:
     return "GMRES";
     break;
