@@ -50,6 +50,7 @@
 #include "cs_field.h"
 #include "cs_field_pointer.h"
 #include "cs_lagr.h"
+#include "cs_les_balance.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh_quantities.h"
@@ -1388,6 +1389,21 @@ cs_parameters_check(void)
 
     cs_turb_les_model_t *les_model = cs_get_glob_turb_les_model();
     les_model->ivrtex = 0;
+  }
+
+  /* LES balance */
+  if (   cs_glob_turb_model->itytur != 4
+      && cs_glob_les_balance->i_les_balance != 0) {
+    cs_parameters_is_equal_int(CS_WARNING,
+                               _("while reading input data,\n"
+                                 "LES balance only for LES , "
+                                 "this setting will be ignored"),
+                               "cs_glob_les_balance->i_les_balance",
+                               cs_glob_les_balance->i_les_balance,
+                               0);
+
+    cs_les_balance_t *les_balance = cs_get_glob_les_balance();
+    les_balance->i_les_balance = 0;
   }
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,

@@ -312,6 +312,56 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief Create the LES balance structure.
+
+    subroutine les_balance_create()  &
+      bind(C, name='cs_les_balance_create')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine les_balance_create
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Destroy the LES balance structure.
+
+    subroutine les_balance_finalize()  &
+      bind(C, name='cs_les_balance_finalize')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine les_balance_finalize
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Write the LES balance restart file.
+
+    subroutine les_balance_write_restart()  &
+      bind(C, name='cs_les_balance_write_restart')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine les_balance_write_restart
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Compute additional time averages for LES balance.
+
+    subroutine les_balance_update_gradients()  &
+      bind(C, name='cs_les_balance_update_gradients')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine les_balance_update_gradients
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Compute the LES balance.
+
+    subroutine les_balance_compute()  &
+      bind(C, name='cs_les_balance_compute')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine les_balance_compute
+
+    !---------------------------------------------------------------------------
+
     !> \brief  Destroy name to id map structure.
 
     !> \param[in, out] m pointer to map structure

@@ -67,6 +67,7 @@ AM_LDFLAGS =
 pkginclude_HEADERS = \
 cs_les_filter.h \
 cs_les_inflow.h \
+cs_les_balance.h \
 cs_turbulence_bc.h \
 cs_turbulence_model.h
 
@@ -77,6 +78,7 @@ noinst_LTLIBRARIES = libcsturb.la
 libcsturb_la_SOURCES = \
 cs_les_filter.c \
 cs_les_inflow.c \
+cs_les_balance.c \
 cs_turbulence_bc.c \
 cs_turbulence_model.c \
 clipke.f90 \

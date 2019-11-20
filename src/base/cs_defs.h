@@ -308,28 +308,33 @@ typedef unsigned short int  cs_flag_t;   /* Flag storing metadata */
 typedef int        cs_lnum_2_t[2];      /* Vector of 2 local numbers */
 typedef int        cs_lnum_3_t[3];      /* Vector of 3 local numbers */
 
-typedef double     cs_coord_3_t[3];     /* Vector of 3 real (coordinate)
-                                           values */
+typedef double     cs_coord_3_t[3];         /* Vector of 3 real (coordinate)
+                                               values */
 
-typedef cs_real_t  cs_real_2_t[2];      /* Vector of 2 real values */
-typedef cs_real_t  cs_real_3_t[3];      /* Vector of 3 real values */
-typedef cs_real_t  cs_real_4_t[4];      /* Vector of 4 real values */
-typedef cs_real_t  cs_real_6_t[6];      /* Vector of 6 real values
-                                           (for symmetric tensor) */
-typedef cs_real_t  cs_real_9_t[9];      /* Vector of 9 real values */
+typedef cs_real_t  cs_real_2_t[2];          /* Vector of 2 real values */
+typedef cs_real_t  cs_real_3_t[3];          /* Vector of 3 real values */
+typedef cs_real_t  cs_real_4_t[4];          /* Vector of 4 real values */
+typedef cs_real_t  cs_real_6_t[6];          /* Vector of 6 real values
+                                               (for symmetric tensor) */
+typedef cs_real_t  cs_real_9_t[9];          /* Vector of 9 real values */
+typedef cs_real_t  cs_real_10_t[10];        /* Vector of 10 real values */
 
-typedef cs_real_t  cs_real_33_t[3][3];  /* Matrix of 3x3 real values */
-typedef cs_real_t  cs_real_66_t[6][6];  /* Matrix of 6x6 real values */
-typedef cs_real_t  cs_real_99_t[9][9];  /* Matrix of 9x9 real values */
+typedef cs_real_t  cs_real_33_t[3][3];      /* Matrix of 3x3 real values */
+typedef cs_real_t  cs_real_66_t[6][6];      /* Matrix of 6x6 real values */
+typedef cs_real_t  cs_real_99_t[9][9];      /* Matrix of 9x9 real values */
 
-typedef cs_real_t  cs_real_34_t[3][4];  /* Matrix of 3x4 real values */
+typedef cs_real_t  cs_real_333_t[3][3][3];  /* tensor of 3x3x3 real values */
 
-typedef cs_real_t  cs_real_63_t[6][3];  /* Matrix of 6x3 real values */
+typedef cs_real_t  cs_real_34_t[3][4];      /* Matrix of 3x4 real values */
 
-typedef cs_real_33_t  cs_real_332_t[2];  /* vector of 2 3x3 matrices
-                                            of real values */
-typedef cs_real_66_t  cs_real_662_t[2];  /* vector of 2 6x6 matrices
-                                            of real values */
+typedef cs_real_t  cs_real_63_t[6][3];      /* Matrix of 6x3 real values */
+
+typedef cs_real_t  cs_real_96_t[9][6];      /* Matrix of 9x6 real values */
+
+typedef cs_real_33_t  cs_real_332_t[2];     /* vector of 2 3x3 matrices
+                                               of real values */
+typedef cs_real_66_t  cs_real_662_t[2];     /* vector of 2 6x6 matrices
+                                               of real values */
 
 typedef struct {
 

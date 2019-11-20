@@ -463,6 +463,10 @@ if (iilagr.gt.0) then
   call init_lagr_arrays(tslagr)
 endif
 
+if (i_les_balance.gt.0) then
+  call les_balance_create
+endif
+
 !===============================================================================
 ! Default initializations
 !===============================================================================
@@ -951,8 +955,15 @@ if (ntmabs.gt.ntpabs .and. itrale.gt.0) then
 
   endif
 
+  ! Update gradients needed in LES balance computation
+  !=============================================================================
+
+  if (i_les_balance.gt.0) then
+    call les_balance_update_gradients
+  endif
+
   ! Compute temporal means (accumulation)
-  !======================================
+  !=============================================================================
 
   call time_moment_update_all
 
@@ -988,6 +999,10 @@ if (itrale.gt.0) then
   call cs_f_user_extra_operations(nvar, nscal, dt)
 
   call user_extra_operations()
+
+  if (i_les_balance.gt.0) then
+    call les_balance_compute
+  endif
 
   call timer_stats_stop(post_stats_id)
 
@@ -1047,6 +1062,10 @@ if (iisuit.eq.1) then
 
   if (iirayo.gt.0) then
     call cs_rad_transfer_write
+  endif
+
+  if (i_les_balance.gt.0) then
+    call les_balance_write_restart
   endif
 
   call stusui
@@ -1249,6 +1268,10 @@ endif
 
 if (ivrtex.eq.1) then
   call finalize_vortex
+endif
+
+if (i_les_balance.gt.0) then
+  call les_balance_finalize
 endif
 
 write(nfecra,7000)

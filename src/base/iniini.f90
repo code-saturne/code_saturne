@@ -715,6 +715,9 @@ icdpar = -999
 ! --- Methode des vortex
 ivrtex = 0
 
+! --- LES balance
+i_les_balance = 0
+
 ! --- Ici tout optcal.f90 est initialise
 
 !===============================================================================

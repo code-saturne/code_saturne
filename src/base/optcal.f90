@@ -769,6 +769,12 @@ module optcal
   !>    original model: w_wall = 60*nu/(beta*d**2)
   integer, save :: ikwcln
 
+  !> Activates or not the LES balance module
+  !> - 0: false (default)
+  !> - 1: true
+  !> Useful if \ref iturb =40, 41 or 42\n
+  integer(c_int), pointer, save :: i_les_balance
+
   !> turbulent flux model for \f$ \overline{\varia^\prime \vect{u}^\prime} \f$
   !> for any scalar \f$ \varia \f$, iturt(isca)
   !>    - 0: SGDH
@@ -1409,6 +1415,15 @@ module optcal
       type(c_ptr), intent(out) :: idries, ivrtex
     end subroutine cs_f_turb_les_model_get_pointers
 
+    ! Interface to C function retrieving pointers to members of the
+    ! LES balance structure
+    subroutine cs_f_les_balance_get_pointer(i_les_balance) &
+      bind(C, name='cs_f_les_balance_get_pointer')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: i_les_balance
+    end subroutine cs_f_les_balance_get_pointer
+
     ! Interface to C function retrieving pointers to mesh quantity options
 
     subroutine cs_f_mesh_quantities_get_pointers(iporos)  &
@@ -1702,12 +1717,14 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_idries, c_ivrtex
+    type(c_ptr) :: c_idries, c_ivrtex, c_i_les_balance
 
-    call cs_f_turb_les_model_get_pointers( c_idries, c_ivrtex)
+    call cs_f_turb_les_model_get_pointers(c_idries, c_ivrtex)
+    call cs_f_les_balance_get_pointer(c_i_les_balance)
 
     call c_f_pointer(c_idries, idries)
     call c_f_pointer(c_ivrtex, ivrtex)
+    call c_f_pointer(c_i_les_balance, i_les_balance)
 
   end subroutine turb_les_model_init
 
