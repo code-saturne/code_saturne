@@ -514,6 +514,9 @@ _set_velocity_ksp(const cs_param_sles_t    slesp,
   KSPGetPC(u_ksp, &u_pc);
   PCType  pc_type = _petsc_get_pc_type(slesp);
 
+  /* Try to have "true" norm */
+  KSPSetNormType(u_ksp, KSP_NORM_UNPRECONDITIONED);
+
   /* Set the solver */
   switch (slesp.solver) {
 
