@@ -482,9 +482,16 @@ _petsc_get_pc_type(const cs_param_sles_t    slesp)
     } /* AMG as preconditioner */
     break;
 
+  case CS_PARAM_PRECOND_AMG_BLOCK:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Preconditioner not interfaced with PETSc.\n"
+              " Switch to a non block version", __func__);
+    break;
+
   default:
     bft_error(__FILE__, __LINE__, 0,
               " %s: Preconditioner not interfaced with PETSc.", __func__);
+    break;
   }
 
   return pc_type;
@@ -564,6 +571,19 @@ _set_velocity_ksp(const cs_param_sles_t    slesp,
 #if defined(PETSC_HAVE_HYPRE)
       PCHYPRESetType(u_pc, "boomeramg");
       _setup_velocity_boomeramg();
+
+#if 0 /* JB: TEST TO PERFORM IN 3D*/
+#if PETSC_VERSION_GE(3,7,0)
+  PetscOptionsSetValue(NULL,
+                  "-fieldsplit_velocity_pc_hypre_boomeramg_strong_threshold",
+                  "0.5");
+#else
+  PetscOptionsSetValue(
+                  "-fieldsplit_velocity_pc_hypre_boomeramg_strong_threshold",
+                  "0.5");
+#endif
+#endif  /* if 0 */
+
 #else
       PCGAMGSetType(u_pc, PCGAMGAGG);
       PCGAMGSetNSmooths(u_pc, 1);
@@ -655,7 +675,7 @@ _additive_amg_gmres_hook(void     *context,
 #endif
 
   /* Apply modifications to the KSP structure */
-  PC up_pc, u_pc, p_pc;
+  PC up_pc, p_pc;
 
   KSPGetPC(ksp, &up_pc);
   PCSetType(up_pc, PCFIELDSPLIT);
@@ -687,43 +707,8 @@ _additive_amg_gmres_hook(void     *context,
   PCSetUp(p_pc);
   KSPSetUp(p_ksp);
 
-  KSP  u_ksp = up_subksp[0];
-  KSPSetType(u_ksp, KSPPREONLY);
-  KSPGetPC(u_ksp, &u_pc);
-
-  switch(slesp.amg_type) {
-
-  case CS_PARAM_AMG_HYPRE_BOOMER:
-#if defined(PETSC_HAVE_HYPRE)
-    PCSetType(u_pc, PCHYPRE);
-    PCHYPRESetType(u_pc, "boomeramg");
-
-    _setup_velocity_boomeramg();
-#else
-    _setup_velocity_gamg();
-#endif
-    break;
-
-  case CS_PARAM_AMG_PETSC_PCMG:
-  case CS_PARAM_AMG_PETSC_GAMG:
-    PCSetType(u_pc, PCGAMG);
-    PCGAMGSetType(u_pc, PCGAMGAGG);
-    PCGAMGSetNSmooths(u_pc, 1);
-
-    _setup_velocity_gamg();
-    break;
-
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              "%s: Invalid choice of AMG type.\n", __func__);
-    break;
-  }
-
-  PCSetFromOptions(u_pc);
-  PCSetUp(u_pc);
-
-  KSPSetFromOptions(u_ksp);
-  KSPSetUp(u_ksp);
+  /* Set the velocity block */
+  _set_velocity_ksp(slesp, up_subksp[0]);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, a, ksp);
