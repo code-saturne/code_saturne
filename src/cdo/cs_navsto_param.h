@@ -187,9 +187,21 @@ typedef enum {
  * Available choice when a monolithic approach is used (i.e. with the parameter
  * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm) The Navier-Stokes
  * system of equations is solved an additive preconditioner (block diagonal
- * matrix where the block 00 is A_{00} preconditioned by one multigrid
- * iteration and the block 11 is set to the identity. This option is only
- * available with the support to the PETSc library up to now.
+ * matrix where the block 00 is A_{00}) and the block 11 is set to the identity.
+ * Preconditioner/solver for the block 00 is set using the momentum equation.
+ * This option is only available with the support to the PETSc library up to now.
+ *
+ *
+ * \var CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK
+ * Associated keyword: "multiplicative_gmres"
+ *
+ * Available choice when a monolithic approach is used (i.e. with the parameter
+ * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm) The Navier-Stokes
+ * system of equations is solved a multiplicative preconditioner (block diagonal
+ * matrix where the block 00 is A_{00}) and the block 11 is set to the identity.
+ * Block 01 is also considered in the block preconditioner.
+ * Preconditioner/solver for the block 00 is set using the momentum equation.
+ * This option is only available with the support to the PETSc library up to now.
  *
  *
  * \var CS_NAVSTO_SLES_DIAG_SCHUR_GMRES
@@ -271,6 +283,7 @@ typedef enum {
   CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK,
   CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG,
   CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK,
+  CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK,
   CS_NAVSTO_SLES_DIAG_SCHUR_GMRES,
   CS_NAVSTO_SLES_UPPER_SCHUR_GMRES,
   CS_NAVSTO_SLES_GKB,

@@ -555,6 +555,9 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     else if (strcmp(val, "additive_gmres") == 0) {
       nsp->sles_strategy = CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK;
     }
+    else if (strcmp(val, "multiplicative_gmres") == 0) {
+      nsp->sles_strategy = CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK;
+    }
     else if (strcmp(val, "diag_schur_gmres") == 0) {
       nsp->sles_strategy = CS_NAVSTO_SLES_DIAG_SCHUR_GMRES;
     }
