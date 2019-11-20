@@ -520,6 +520,9 @@ _set_velocity_ksp(const cs_param_sles_t    slesp,
   /* Set the solver */
   switch (slesp.solver) {
 
+  case CS_PARAM_ITSOL_NONE:
+    KSPSetType(u_ksp, KSPPREONLY);
+    break;
   case CS_PARAM_ITSOL_FCG:
   case CS_PARAM_ITSOL_CG:
     KSPSetType(u_ksp, KSPCG);

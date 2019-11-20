@@ -320,6 +320,10 @@ _petsc_set_krylov_solver(cs_param_sles_t   slesp,
   /* 1) Set the krylov solver */
   switch (slesp.solver) {
 
+  case CS_PARAM_ITSOL_NONE:
+    KSPSetType(ksp, KSPPREONLY);
+    break;
+
   case CS_PARAM_ITSOL_BICG:      /* Improved Bi-CG stab */
     KSPSetType(ksp, KSPIBCGS);
     break;
@@ -1314,6 +1318,8 @@ _set_key(const char            *label,
       eqp->sles_param.precond = CS_PARAM_PRECOND_NONE;
       eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
     }
+    else if (strcmp(keyval, "none") == 0)
+      eqp->sles_param.solver = CS_PARAM_ITSOL_NONE;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,

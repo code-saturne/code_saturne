@@ -517,6 +517,9 @@ typedef enum {
  *  Some of the mentionned solver are available only if the PETSc library is
  *  linked with code_saturne.
  *
+ * \var CS_PARAM_ITSOL_NONE
+ *  No iterative solver (equivalent to a "preonly" choice in PETSc)
+ *
  * \var CS_PARAM_ITSOL_AMG
  *  Algebraic multigrid solver (additional options may be set using
  *  \ref \cs_param_amg_type_t)
@@ -571,6 +574,8 @@ typedef enum {
  */
 
 typedef enum {
+
+  CS_PARAM_ITSOL_NONE,
 
   CS_PARAM_ITSOL_AMG,
   CS_PARAM_ITSOL_BICG,

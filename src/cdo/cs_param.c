@@ -229,6 +229,10 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver)
 {
   switch (solver) {
 
+  case CS_PARAM_ITSOL_NONE:
+    return "None (PreOnly)";
+    break;
+
   case CS_PARAM_ITSOL_AMG:
     return "Algebraic.Multigrid";
     break;
