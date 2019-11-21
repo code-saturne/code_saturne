@@ -156,13 +156,13 @@ _count_from_file(const cs_mesh_t *m,
   cs_real_t *restrict cell_f_vol = mq->cell_f_vol;
 
   /* Open file */
-  bft_printf(_(" Compute the porosity from a scan points file:\n    %s\n"),
+  bft_printf(_("\n\n  Compute the porosity from a scan points file:\n    %s\n\n"),
              _porosity_from_scan_opt.file_name);
 
   bft_printf(_("  Transformation       %12.5g %12.5g %12.5g %12.5g\n"
                "  matrix:              %12.5g %12.5g %12.5g %12.5g\n"
                "                       %12.5g %12.5g %12.5g %12.5g\n"
-               "    (last column is translation vector)\n"),
+               "    (last column is translation vector)\n\n"),
              _porosity_from_scan_opt.transformation_matrix[0][0],
              _porosity_from_scan_opt.transformation_matrix[0][1],
              _porosity_from_scan_opt.transformation_matrix[0][2],
@@ -182,11 +182,13 @@ _count_from_file(const cs_mesh_t *m,
 
   int n_points = 0;
   int n_read_points = 0;
+  cs_real_3_t min_vec_tot = { HUGE_VAL,  HUGE_VAL,  HUGE_VAL};
+  cs_real_3_t max_vec_tot = {-HUGE_VAL, -HUGE_VAL, -HUGE_VAL};
 
-  if (fscanf(file, "%d", &n_read_points) != 1)
+  if (fscanf(file, "%d\n", &n_read_points) != 1)
     bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Could not read the number of lines."));
 
-  bft_printf(_("Porosity from scan: %d points to be read.\n"), n_points);
+  bft_printf(_("  Porosity from scan: %d points to be read.\n\n"), n_read_points);
 
   /* Pointer to field */
   cs_field_t *f_nb_scan = cs_field_by_name_try("nb_scan_points");
@@ -271,6 +273,13 @@ _count_from_file(const cs_mesh_t *m,
     bft_printf(_("  Bounding box [%f, %f, %f], [%f, %f, %f].\n\n"),
         min_vec[0], min_vec[1], min_vec[2],
         max_vec[0], max_vec[1], max_vec[2]);
+
+    /* Update global bounding box */
+    for (int j = 0; j < 3; j++) {
+      min_vec_tot[j] = CS_MIN(min_vec[j], min_vec_tot[j]);
+      max_vec_tot[j] = CS_MAX(max_vec[j], max_vec_tot[j]);
+    }
+
 
     if (n_read_points > 0)
       bft_printf(_("  Porosity from scan: %d additional points to be read.\n\n"),
@@ -412,17 +421,22 @@ _count_from_file(const cs_mesh_t *m,
 
   } /* End loop on multiple scans */
 
+  /* Bounding box*/
+  bft_printf(_("  Global bounding box [%f, %f, %f], [%f, %f, %f].\n\n"),
+      min_vec_tot[0], min_vec_tot[1], min_vec_tot[2],
+      max_vec_tot[0], max_vec_tot[1], max_vec_tot[2]);
+
   if (fclose(file) != 0)
     bft_error(__FILE__,__LINE__, 0, _("Porosity from scan: Could not close the file."));
 
   /* Nodal mesh is not needed anymore */
   location_mesh = fvm_nodal_destroy(location_mesh);
 
-  int nb_points_thresholds = 10;
-  /* Synchronize nb_scan_points */
+  /* Solid cells should have enough points */
+  const cs_real_t _threshold = 10;
   for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
     cell_f_vol[cell_id] = mq->cell_vol[cell_id];
-    if (f_nb_scan->val[cell_id] > nb_points_thresholds) {
+    if (f_nb_scan->val[cell_id]/cell_f_vol[cell_id] > _threshold) {
       cell_f_vol[cell_id] = 0.;
       mq->c_disable_flag[cell_id] = 1;
     }
