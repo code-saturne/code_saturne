@@ -503,11 +503,15 @@ _petsc_get_pc_type(const cs_param_sles_t    slesp)
  *         Case of additive block preconditioner for a GMRES
  *
  * \param[in]      slesp     pointer to a set of SLES settings
+ * \param[in]      rtol      relative tolerance to set
+ * \param[in]      max_it    max number of iterations
  * \param[in, out] u_ksp     pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
 _set_velocity_ksp(const cs_param_sles_t    slesp,
+                  PetscReal                rtol,
+                  PetscInt                 max_it,
                   KSP                      u_ksp)
 {
   PC u_pc;
@@ -610,9 +614,8 @@ _set_velocity_ksp(const cs_param_sles_t    slesp,
   } /* Switch on preconditioner */
 
   /* Set tolerance and number of iterations */
-  PetscReal rtol, abstol, dtol;
-  PetscInt  maxit;
-  KSPGetTolerances(u_ksp, &rtol, &abstol, &dtol, &maxit);
+  PetscReal _rtol, abstol, dtol;
+  KSPGetTolerances(u_ksp, &_rtol, &abstol, &dtol, &max_it);
   rtol = fmin(1e-4, fmax(1e4*slesp.eps, 1e-5));
   KSPSetTolerances(u_ksp,
                    rtol,        /* relative convergence tolerance */
@@ -657,8 +660,8 @@ _additive_amg_gmres_hook(void     *context,
 
   /* Set KSP tolerances */
   PetscReal rtol, abstol, dtol;
-  PetscInt  maxit;
-  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
+  PetscInt  max_it;
+  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
   KSPSetTolerances(ksp,
                    slesp.eps,         /* relative convergence tolerance */
                    abstol,            /* absolute convergence tolerance */
@@ -702,7 +705,9 @@ _additive_amg_gmres_hook(void     *context,
   KSPSetUp(p_ksp);
 
   /* Set the velocity block */
-  _set_velocity_ksp(slesp, up_subksp[0]);
+  max_it = 500;
+  rtol = fmin(1e-4, fmax(1e4*slesp.eps, 1e-5));
+  _set_velocity_ksp(slesp, rtol, max_it, up_subksp[0]);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, a, ksp);
@@ -756,8 +761,8 @@ _multiplicative_gmres_hook(void     *context,
 
   /* Set KSP tolerances */
   PetscReal rtol, abstol, dtol;
-  PetscInt  maxit;
-  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
+  PetscInt  max_it;
+  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
   KSPSetTolerances(ksp,
                    slesp.eps,         /* relative convergence tolerance */
                    abstol,            /* absolute convergence tolerance */
@@ -801,8 +806,9 @@ _multiplicative_gmres_hook(void     *context,
   KSPSetUp(p_ksp);
 
   /* Set the velocity block */
-  _set_velocity_ksp(slesp, up_subksp[0]);
-  KSP  u_ksp = up_subksp[0];
+  max_it = 500;
+  rtol = fmin(1e-4, fmax(1e4*slesp.eps, 1e-5));
+  _set_velocity_ksp(slesp, rtol, max_it, up_subksp[0]);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, a, ksp);
@@ -856,8 +862,8 @@ _diag_schur_gmres_hook(void     *context,
 
   /* Set KSP tolerances */
   PetscReal rtol, abstol, dtol;
-  PetscInt  maxit;
-  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
+  PetscInt  max_it;
+  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
   KSPSetTolerances(ksp,
                    slesp.eps,         /* relative convergence tolerance */
                    abstol,            /* absolute convergence tolerance */
@@ -903,7 +909,9 @@ _diag_schur_gmres_hook(void     *context,
   KSPSetUp(p_ksp);
 
   /* Set the velocity block */
-  _set_velocity_ksp(slesp, up_subksp[0]);
+  max_it = 500;
+  rtol = fmin(1e-4, fmax(1e4*slesp.eps, 1e-5));
+  _set_velocity_ksp(slesp, rtol, max_it, up_subksp[0]);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, a, ksp);
@@ -956,8 +964,8 @@ _upper_schur_gmres_hook(void     *context,
 
   /* Set KSP tolerances */
   PetscReal rtol, abstol, dtol;
-  PetscInt  maxit;
-  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
+  PetscInt  max_it;
+  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
   KSPSetTolerances(ksp,
                    slesp.eps,         /* relative convergence tolerance */
                    abstol,            /* absolute convergence tolerance */
@@ -1003,7 +1011,9 @@ _upper_schur_gmres_hook(void     *context,
   KSPSetUp(p_ksp);
 
   /* Set the velocity block */
-  _set_velocity_ksp(slesp, up_subksp[0]);
+  max_it = 500;
+  rtol = fmin(1e-4, fmax(1e4*slesp.eps, 1e-5));
+  _set_velocity_ksp(slesp, rtol, max_it, up_subksp[0]);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, a, ksp);
@@ -1082,38 +1092,7 @@ _gkb_hook(void     *context,
   PCFieldSplitGetSubKSP(up_pc, &n_split, &up_subksp);
   assert(n_split == 2);
 
-  KSP  u_ksp = up_subksp[0];
-
-  /* Set KSP tolerances */
-  PetscReal rtol, abstol, dtol;
-  PetscInt  maxit;
-  KSPSetType(u_ksp, KSPFGMRES);
-  KSPGetPC(u_ksp, &u_pc);
-#if defined(PETSC_HAVE_HYPRE)
-  PCSetType(u_pc, PCHYPRE);
-  PCHYPRESetType(u_pc, "boomeramg");
-
-  _setup_velocity_boomeramg();
-#else
-  PCSetType(u_pc, PCGAMG);
-  PCGAMGSetType(u_pc, PCGAMGAGG);
-  PCGAMGSetNSmooths(u_pc, 1);
-
-  _setup_velocity_gamg();
-#endif
-
-  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
-  KSPSetTolerances(u_ksp,
-                   slesp.eps,   /* relative convergence tolerance */
-                   abstol,      /* absolute convergence tolerance */
-                   dtol,        /* divergence tolerance */
-                   slesp.n_max_iter); /* max number of iterations */
-
-  PCSetFromOptions(u_pc);
-  PCSetUp(u_pc);
-
-  KSPSetFromOptions(u_ksp);
-  KSPSetUp(u_ksp);
+  _set_velocity_ksp(slesp, slesp.eps, slesp.n_max_iter, up_subksp[0]);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, a, ksp);
@@ -1162,8 +1141,8 @@ _gkb_gmres_hook(void     *context,
   KSPSetType(ksp, KSPFGMRES);
 
   PetscReal rtol, abstol, dtol;
-  PetscInt  maxit;
-  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
+  PetscInt  max_it;
+  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
   KSPSetTolerances(ksp,
                    slesp.eps,         /* relative convergence tolerance */
                    abstol,            /* absolute convergence tolerance */
@@ -1202,33 +1181,9 @@ _gkb_gmres_hook(void     *context,
   KSP  u_ksp = up_subksp[0];
 
   /* Set KSP tolerances */
-  KSPSetType(u_ksp, KSPFGMRES);
-  KSPGetPC(u_ksp, &u_pc);
-#if defined(PETSC_HAVE_HYPRE)
-  PCSetType(u_pc, PCHYPRE);
-  PCHYPRESetType(u_pc, "boomeramg");
-
-  _setup_velocity_boomeramg();
-#else
-  PCSetType(u_pc, PCGAMG);
-  PCGAMGSetType(u_pc, PCGAMGAGG);
-  PCGAMGSetNSmooths(u_pc, 1);
-
-  _setup_velocity_gamg();
-#endif
-
-  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
-  KSPSetTolerances(u_ksp,
-                   1e-2,    /* relative convergence tolerance */
-                   abstol,  /* absolute convergence tolerance */
-                   dtol,    /* divergence tolerance */
-                   50);     /* max number of iterations */
-
-  PCSetFromOptions(u_pc);
-  PCSetUp(u_pc);
-
-  KSPSetFromOptions(u_ksp);
-  KSPSetUp(u_ksp);
+  max_it = 50;
+  rtol = 1e-2;
+  _set_velocity_ksp(slesp, rtol, max_it, up_subksp[0]);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, a, ksp);
@@ -1281,8 +1236,8 @@ _mumps_hook(void     *context,
   PCFactorSetMatSolverType(pc, MATSOLVERMUMPS);
 
   PetscReal rtol, abstol, dtol;
-  PetscInt  maxit;
-  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &maxit);
+  PetscInt  max_it;
+  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
   KSPSetTolerances(ksp,
                    slesp.eps,   /* relative convergence tolerance */
                    abstol,      /* absolute convergence tolerance */
