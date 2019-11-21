@@ -342,7 +342,7 @@ if (imode.eq.1) then
 7996 format(1x, f10.2)
   write(nfecra, '(a)', advance='no') 'zproc, '
   do ii = 1, nespgi
-    f_id = ivarfl(isca(isca_chem(ii)))
+    f_id = ivarfl(isca(isca_chem(idespgi(ii))))
     call field_get_label(f_id, label)
     if (ii .lt. nespgi) then
       write(nfecra, '(a)', advance='no') trim(label)//', '
