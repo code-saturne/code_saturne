@@ -217,8 +217,7 @@ struct _cs_grid_t {
                                           (size: merge_size + 1) */
 
   int               n_ranks;           /* Number of active ranks */
-  int               comm_id;           /* Associated communicator
-                                          (owner when merge_idx != NULL) */
+  MPI_Comm          comm;              /* Associated communicator */
 
 #endif
 };
@@ -251,14 +250,6 @@ cs_real_t _penalization_threshold = 1e4;
     a value of 5. */
 
 cs_real_t _dd_threshold_pw = 5;
-
-#if defined(HAVE_MPI)
-
-static int        _n_grid_comms = 0;
-static int       *_grid_ranks = NULL;
-static MPI_Comm  *_grid_comm = NULL;
-
-#endif /* defined(HAVE_MPI) */
 
 /* Names for coarsening options */
 
@@ -443,7 +434,7 @@ _create_grid(void)
   g->merge_cell_idx = NULL;
 
   g->n_ranks = cs_glob_n_ranks;
-  g->comm_id = -1;
+  g->comm = cs_glob_mpi_comm;
 
 #endif
   return g;
@@ -496,7 +487,7 @@ _coarse_init(const cs_grid_t *f)
   c->merge_stride = f->merge_stride;
   c->next_merge_stride = f->next_merge_stride;
   c->n_ranks = f->n_ranks;
-  c->comm_id = f->comm_id;
+  c->comm = f->comm;
 #endif
 
   return c;
@@ -538,16 +529,6 @@ _aggregation_stats_log(const cs_grid_t  *f,
   cs_lnum_t aggr_min = f->n_rows, aggr_max = 0;
   cs_gnum_t aggr_tot = 0;
 
-#if defined(HAVE_MPI)
-  MPI_Comm comm = cs_glob_mpi_comm;
-  if (_grid_ranks != NULL) {
-    if (f->comm_id >= 0)
-      comm = _grid_comm[f->comm_id];
-    else
-      comm = cs_glob_mpi_comm;
-  }
-#endif
-
   for (cs_lnum_t i = 0; i < c_n_rows; i++) {
     aggr_min = CS_MIN(aggr_min, c_aggr_count[i]);
     aggr_max = CS_MAX(aggr_max, c_aggr_count[i]);
@@ -555,12 +536,12 @@ _aggregation_stats_log(const cs_grid_t  *f,
   }
 
 #if defined(HAVE_MPI)
-  if (comm != MPI_COMM_NULL) {
+  if (f->comm != MPI_COMM_NULL) {
     cs_lnum_t _aggr_min = aggr_min, _aggr_max = aggr_max;
     cs_gnum_t _tot[2] = {aggr_tot, c_n_rows_g}, tot[2] = {0, 0};
-    MPI_Allreduce(&_aggr_min, &aggr_min, 1, CS_MPI_LNUM, MPI_MIN, comm);
-    MPI_Allreduce(&_aggr_max, &aggr_max, 1, CS_MPI_LNUM, MPI_MAX, comm);
-    MPI_Allreduce(&_tot, &tot, 2, CS_MPI_GNUM, MPI_SUM, comm);
+    MPI_Allreduce(&_aggr_min, &aggr_min, 1, CS_MPI_LNUM, MPI_MIN, f->comm);
+    MPI_Allreduce(&_aggr_max, &aggr_max, 1, CS_MPI_LNUM, MPI_MAX, f->comm);
+    MPI_Allreduce(&_tot, &tot, 2, CS_MPI_GNUM, MPI_SUM, f->comm);
     aggr_tot = tot[0];
     c_n_rows_g = tot[1];
   }
@@ -589,9 +570,9 @@ _aggregation_stats_log(const cs_grid_t  *f,
       }
     }
 #if defined(HAVE_MPI) && defined(HAVE_MPI_IN_PLACE)
-    if (comm != MPI_COMM_NULL)
+    if (f->comm != MPI_COMM_NULL)
       MPI_Allreduce(MPI_IN_PLACE, histogram, aggr_count, CS_MPI_LNUM, MPI_SUM,
-                    comm);
+                    f->comm);
 #endif
     for (cs_lnum_t i = 0; i < aggr_count; i++) {
       double epsp = 100. * histogram[i] / c_n_rows_g;
@@ -1241,13 +1222,10 @@ _coarsen(const cs_grid_t   *f,
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
-    MPI_Comm comm = cs_glob_mpi_comm;
-    if (f->comm_id >= 0)
-      comm = _grid_comm[f->comm_id];
-    if (comm != MPI_COMM_NULL) {
+    if (f->comm != MPI_COMM_NULL) {
       cs_gnum_t _c_n_rows = c_n_rows;
       MPI_Allreduce(&_c_n_rows, &(c->n_g_rows), 1, CS_MPI_GNUM, MPI_SUM,
-                    comm);
+                    f->comm);
     }
   }
 #endif
@@ -1283,91 +1261,6 @@ _coarsen(const cs_grid_t   *f,
 }
 
 #if defined(HAVE_MPI)
-
-/*----------------------------------------------------------------------------
- * Return a reduced communicator matching a number of ranks.
- *
- * This updates the number of reduced communicators if necessary.
- *
- * parameters:
- *   n_ranks <-- number of ranks of reduced communicator
- *----------------------------------------------------------------------------*/
-
-static int
-_get_reduced_comm_id(int  n_ranks)
-{
-  int comm_id = 0;
-  if (_n_grid_comms > 0) {
-    while (   _grid_ranks[comm_id] != n_ranks
-           && comm_id < _n_grid_comms)
-      comm_id++;
-  }
-
-  /* Add communicator if required */
-
-  if (comm_id >= _n_grid_comms) {
-
-    _n_grid_comms += 1;
-    BFT_REALLOC(_grid_comm, _n_grid_comms, MPI_Comm);
-    BFT_REALLOC(_grid_ranks, _n_grid_comms, cs_lnum_t);
-
-    _grid_ranks[comm_id] = n_ranks;
-
-    if (n_ranks == cs_glob_n_ranks)
-      _grid_comm[comm_id] = cs_glob_mpi_comm;
-
-    else if (n_ranks == 1)
-      _grid_comm[comm_id] = MPI_COMM_NULL;
-
-    else {
-
-      int ranges[1][3];
-      MPI_Group old_group, new_group;
-
-      MPI_Barrier(cs_glob_mpi_comm); /* For debugging */
-
-      MPI_Comm_size(cs_glob_mpi_comm, &n_ranks);
-      MPI_Comm_group(cs_glob_mpi_comm, &old_group);
-
-      ranges[0][0] = 0;
-      ranges[0][1] = n_ranks - 1;
-      ranges[0][2] = cs_glob_n_ranks / n_ranks;
-
-      MPI_Group_range_incl(old_group, 1, ranges, &new_group);
-      MPI_Comm_create(cs_glob_mpi_comm, new_group, &(_grid_comm[comm_id]));
-      MPI_Group_free(&new_group);
-
-      MPI_Group_free(&old_group);
-
-      MPI_Barrier(cs_glob_mpi_comm); /* For debugging */
-
-    }
-
-  }
-
-  return comm_id;
-}
-
-/*----------------------------------------------------------------------------
- * Destroy a set of reduced communicators
- *----------------------------------------------------------------------------*/
-
-static void
-_finalize_reduced_communicators(void)
-{
-  int comm_id;
-
-  for (comm_id = 1; comm_id < _n_grid_comms; comm_id++) {
-    if (   _grid_comm[comm_id] != MPI_COMM_NULL
-        && _grid_comm[comm_id] != cs_glob_mpi_comm)
-      MPI_Comm_free(&(_grid_comm[comm_id]));
-  }
-
-  BFT_FREE(_grid_comm);
-  BFT_FREE(_grid_ranks);
-
-  _n_grid_comms = 0;
-}
 
 /*----------------------------------------------------------------------------
  * Merge halo info after appending arrays.
@@ -2330,7 +2223,7 @@ _merge_grids(cs_grid_t  *g,
       g->n_ranks = (g->n_ranks/merge_stride) + 1;
     else
       g->n_ranks = (g->n_ranks/merge_stride);
-    g->comm_id = _get_reduced_comm_id(g->n_ranks);
+    g->comm = cs_base_get_rank_step_comm(g->next_merge_stride);
   }
 
   if (verbosity > 2) {
@@ -3696,8 +3589,8 @@ _verify_matrix(const cs_grid_t  *g)
 #if defined(HAVE_MPI)
   if (cs_glob_mpi_comm != MPI_COMM_NULL) {
     cs_real_t _vmin = vmin, _vmax = vmax;
-    MPI_Allreduce(&_vmin, &vmin, 1, CS_MPI_REAL, MPI_MIN, cs_glob_mpi_comm);
-    MPI_Allreduce(&_vmax, &vmax, 1, CS_MPI_REAL, MPI_MAX, cs_glob_mpi_comm);
+    MPI_Allreduce(&_vmin, &vmin, 1, CS_MPI_REAL, MPI_MIN, g->comm);
+    MPI_Allreduce(&_vmax, &vmax, 1, CS_MPI_REAL, MPI_MAX, g->comm);
   }
 #endif
 
@@ -3754,16 +3647,12 @@ _verify_coarse_quantities(const cs_grid_t  *fine_grid,
     isym = 1;
 
 #if defined(HAVE_MPI) && defined(HAVE_MPI_IN_PLACE)
-  MPI_Comm comm = cs_glob_mpi_comm;
-  if (fine_grid->n_ranks > 1) {
-    if (fine_grid->comm_id >= 0)
-      comm = _grid_comm[fine_grid->comm_id];
-    if (comm != MPI_COMM_NULL) {
-      cs_gnum_t n_clips[2] = {n_clips_min, n_clips_max};
-      MPI_Allreduce(MPI_IN_PLACE, n_clips, 2, CS_MPI_GNUM, MPI_SUM, comm);
-      n_clips_min = n_clips[0];
-      n_clips_max = n_clips[0];
-    }
+  MPI_Comm comm = fine_grid->comm;
+  if (comm != MPI_COMM_NULL) {
+    cs_gnum_t n_clips[2] = {n_clips_min, n_clips_max};
+    MPI_Allreduce(MPI_IN_PLACE, n_clips, 2, CS_MPI_GNUM, MPI_SUM, comm);
+    n_clips_min = n_clips[0];
+    n_clips_max = n_clips[0];
   }
 #endif
 
@@ -4966,6 +4855,43 @@ _project_coarse_row_to_parent(cs_grid_t  *c)
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Build locally empty matrix.
+ *
+ * parameters:
+ *   c           <-> coarse grid structure
+ *   matrix_type <-- matrix type
+ *----------------------------------------------------------------------------*/
+
+static void
+_build_coarse_matrix_null(cs_grid_t         *c,
+                          cs_matrix_type_t   matrix_type)
+{
+  cs_matrix_structure_t  *ms
+    = cs_matrix_structure_create(matrix_type,
+                                 true,
+                                 0,
+                                 0,
+                                 0,
+                                 NULL,
+                                 NULL,
+                                 NULL);
+
+  c->matrix_struct = ms;
+
+  c->_matrix = cs_matrix_create(c->matrix_struct);
+  c->matrix = c->_matrix;
+
+  cs_matrix_set_coefficients(c->_matrix,
+                             c->symmetric,
+                             c->db_size,
+                             c->eb_size,
+                             0,
+                             NULL,
+                             NULL,
+                             NULL);
+}
+
 /*============================================================================
  * Semi-private function definitions
  *
@@ -5166,23 +5092,16 @@ cs_grid_create_from_parent(const cs_matrix_t  *a,
   if (n_ranks > 1 || local) {
     g->matrix = a;
 #if defined(HAVE_MPI)
-    if (_grid_ranks != NULL) {
-      g->comm_id = _get_reduced_comm_id(n_ranks);
-      g->n_ranks = _grid_ranks[g->comm_id];
-    }
-    else {
-      g->comm_id = -1;
-      g->n_ranks = cs_glob_n_ranks;
-    }
+    g->comm = cs_base_get_rank_step_comm(g->merge_stride);
+    MPI_Comm_size(g->comm, &(g->n_ranks));
 #endif
   }
   else {
     g->_matrix = cs_matrix_create_by_local_restrict(a);
     g->matrix = g->_matrix;
 #if defined(HAVE_MPI)
-    g->comm_id = -1;
-    g->comm_id = _get_reduced_comm_id(1);
-    g->n_ranks = 1;
+    g->comm = cs_base_get_rank_step_comm(g->merge_stride);
+    MPI_Comm_size(g->comm, &(g->n_ranks));
 #endif
   }
 
@@ -5205,16 +5124,9 @@ cs_grid_create_from_parent(const cs_matrix_t  *a,
   g->n_g_rows = g->n_rows;
 
 #if defined(HAVE_MPI)
-  if (g->halo != NULL && g->comm_id >= 0) {
-    MPI_Comm comm;
-    if (g->comm_id >= 0)
-      comm = _grid_comm[g->comm_id];
-    else
-      comm = cs_glob_mpi_comm;
-    if (comm != MPI_COMM_NULL) {
-      cs_gnum_t _g_n_rows = g->n_rows;
-      MPI_Allreduce(&_g_n_rows, &(g->n_g_rows), 1, CS_MPI_GNUM, MPI_SUM, comm);
-    }
+  if (g->halo != NULL && g->comm != MPI_COMM_NULL) {
+    cs_gnum_t _g_n_rows = g->n_rows;
+    MPI_Allreduce(&_g_n_rows, &(g->n_g_rows), 1, CS_MPI_GNUM, MPI_SUM, g->comm);
   }
 #endif
 
@@ -5362,8 +5274,12 @@ cs_grid_get_info(const cs_grid_t  *g,
   if (n_cols_ext != NULL)
     *n_cols_ext = g->n_cols_ext;
   assert(g->n_rows <= g->n_cols_ext);
-  if (n_entries != NULL)
-    *n_entries = cs_matrix_get_n_entries(g->matrix);
+  if (n_entries != NULL) {
+    if (g->matrix != NULL)
+      *n_entries = cs_matrix_get_n_entries(g->matrix);
+    else
+      *n_entries = 0;
+  }
 
   if (n_g_rows != NULL)
     *n_g_rows = g->n_g_rows;
@@ -5485,18 +5401,7 @@ cs_grid_get_comm(const cs_grid_t  *g)
 {
   assert(g != NULL);
 
-  if (g->n_ranks != cs_glob_n_ranks) {
-    for (int grid_id = 0; grid_id < _n_grid_comms; grid_id++) {
-      if (_grid_ranks[grid_id] == g->n_ranks)
-        return _grid_comm[grid_id];
-    }
-    if (g->n_ranks <= 1)
-      return MPI_COMM_NULL;
-
-    assert(0);
-  }
-
-  return cs_glob_mpi_comm;
+  return g->comm;
 }
 
 /*----------------------------------------------------------------------------
@@ -5519,13 +5424,11 @@ cs_grid_get_comm_merge(MPI_Comm  parent,
   if (parent != MPI_COMM_NULL) {
     int size;
     MPI_Comm_size(parent, &size);
-    int merge_size = size / merge_stride;
-    if (size % merge_stride)
-      merge_size += 1;
-    if (merge_size > 1) {
-      int comm_id = _get_reduced_comm_id(merge_size);
-      comm = _grid_comm[comm_id];
-    }
+    int rank_step = cs_glob_n_ranks / size;
+    if (cs_glob_n_ranks %size > 0)
+      rank_step += 1;
+    rank_step *= merge_stride;
+    comm = cs_base_get_rank_step_comm(rank_step);
   }
 
   return comm;
@@ -5756,7 +5659,7 @@ cs_grid_coarsen(const cs_grid_t  *f,
     }
 #endif
 
-}
+  }
 
   else if (f->face_cell != NULL) {
 
@@ -5853,6 +5756,11 @@ cs_grid_coarsen(const cs_grid_t  *f,
 
     if (coarse_mv != NULL)
       cs_matrix_variant_apply(c->_matrix, coarse_mv);
+  }
+
+  if (c->matrix == NULL) {
+    assert(c->n_rows == 0);
+    _build_coarse_matrix_null(c, coarse_matrix_type);
   }
 
   /* Recurse if necessary */
@@ -6319,11 +6227,11 @@ cs_grid_project_row_num(const cs_grid_t  *g,
   /* Compute local base starting row number in parallel mode */
 
 #if defined(HAVE_MPI)
-  if (cs_glob_n_ranks > 1) {
+  if (g->comm != MPI_COMM_NULL) {
     cs_gnum_t local_shift = g->n_rows;
     cs_gnum_t global_shift = 0;
     MPI_Scan(&local_shift, &global_shift, 1, CS_MPI_GNUM, MPI_SUM,
-             cs_glob_mpi_comm);
+             g->comm);
     base_shift = 1 + global_shift - g->n_rows;
   }
 #endif
@@ -6556,10 +6464,6 @@ cs_grid_project_diag_dom(const cs_grid_t  *g,
 void
 cs_grid_finalize(void)
 {
-#if defined(HAVE_MPI)
-  _finalize_reduced_communicators();
-#endif
-
   if (_grid_tune_max_level > 0) {
 
     for (int i = 0; i < _grid_tune_max_level; i++) {

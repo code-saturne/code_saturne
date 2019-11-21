@@ -2127,6 +2127,13 @@ _setup_hierarchy(void             *context,
                      &n_entries,
                      &n_g_rows);
 
+#if defined(HAVE_MPI)
+    if ((n_coarse_ranks != mg->caller_n_ranks) && (mg->caller_n_ranks > 1)) {
+      cs_gnum_t _n_g_rows = n_g_rows;
+      MPI_Allreduce(&_n_g_rows, &n_g_rows, 1, CS_MPI_GNUM, MPI_MAX, mg->caller_comm);
+    }
+#endif
+
     assert((unsigned)grid_lv == mg->setup_data->n_levels);
 
     /* If too few rows were grouped, we stop at this level */

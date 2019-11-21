@@ -204,6 +204,14 @@ static bool   _cs_trace = false;
 
 static cs_base_atexit_t  * _cs_base_atexit = NULL;
 
+/* Additional MPI communicators */
+
+#if defined(HAVE_MPI)
+static int        _n_step_comms = 0;
+static int       *_step_ranks = NULL;
+static MPI_Comm  *_step_comm = NULL;
+#endif
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -819,7 +827,28 @@ _get_path(const char   *dir_path,
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- *  Finalisation MPI
+ * Destroy a set of reduced communicators
+ *----------------------------------------------------------------------------*/
+
+static void
+_finalize_reduced_communicators(void)
+{
+  int comm_id;
+
+  for (comm_id = 1; comm_id < _n_step_comms; comm_id++) {
+    if (   _step_comm[comm_id] != MPI_COMM_NULL
+        && _step_comm[comm_id] != cs_glob_mpi_comm)
+      MPI_Comm_free(&(_step_comm[comm_id]));
+  }
+
+  BFT_FREE(_step_comm);
+  BFT_FREE(_step_ranks);
+
+  _n_step_comms = 0;
+}
+
+/*----------------------------------------------------------------------------
+ *  MPI finalization
  *----------------------------------------------------------------------------*/
 
 static void
@@ -827,6 +856,8 @@ _cs_base_mpi_fin(void)
 {
   bft_error_handler_set(cs_glob_base_err_handler_save);
   ple_error_handler_set(cs_glob_base_err_handler_save);
+
+  _finalize_reduced_communicators();
 
   if (   cs_glob_mpi_comm != MPI_COMM_NULL
       && cs_glob_mpi_comm != MPI_COMM_WORLD)
@@ -1383,6 +1414,81 @@ cs_base_mpi_init(int    *argc,
   }
 
 #endif
+}
+
+/*----------------------------------------------------------------------------
+ * Return a reduced communicator matching a multiple of the total
+ * number of ranks.
+ *
+ * This updates the number of reduced communicators if necessary.
+ *
+ * parameters:
+ *   n_ranks <-- number of ranks of reduced communicator
+ *----------------------------------------------------------------------------*/
+
+MPI_Comm
+cs_base_get_rank_step_comm(int  rank_step)
+{
+  if (rank_step <= 1)
+    return cs_glob_mpi_comm;
+
+  int n_ranks = cs_glob_n_ranks / rank_step;
+  if (cs_glob_n_ranks % rank_step > 0)
+    n_ranks += 1;
+
+  if (n_ranks <= 1)
+    return MPI_COMM_NULL;
+
+  int comm_id = 0;
+  if (_n_step_comms > 0) {
+    while (   _step_ranks[comm_id] != n_ranks
+           && comm_id < _n_step_comms)
+      comm_id++;
+  }
+
+  /* Add communicator if required */
+
+  if (comm_id >= _n_step_comms) {
+
+    _n_step_comms += 1;
+    BFT_REALLOC(_step_comm, _n_step_comms, MPI_Comm);
+    BFT_REALLOC(_step_ranks, _n_step_comms, cs_lnum_t);
+
+    _step_ranks[comm_id] = n_ranks;
+
+    if (n_ranks == cs_glob_n_ranks)
+      _step_comm[comm_id] = cs_glob_mpi_comm;
+
+    else if (n_ranks == 1)
+      _step_comm[comm_id] = MPI_COMM_NULL;
+
+    else {
+
+      int ranges[1][3];
+      MPI_Group old_group, new_group;
+
+      MPI_Barrier(cs_glob_mpi_comm); /* For debugging */
+
+      MPI_Comm_size(cs_glob_mpi_comm, &n_ranks);
+      MPI_Comm_group(cs_glob_mpi_comm, &old_group);
+
+      ranges[0][0] = 0;
+      ranges[0][1] = n_ranks - 1;
+      ranges[0][2] = rank_step;
+
+      MPI_Group_range_incl(old_group, 1, ranges, &new_group);
+      MPI_Comm_create(cs_glob_mpi_comm, new_group, &(_step_comm[comm_id]));
+      MPI_Group_free(&new_group);
+
+      MPI_Group_free(&old_group);
+
+      MPI_Barrier(cs_glob_mpi_comm); /* For debugging */
+
+    }
+
+  }
+
+  return _step_comm[comm_id];
 }
 
 #endif /* HAVE_MPI */

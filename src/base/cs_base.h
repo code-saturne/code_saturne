@@ -163,6 +163,20 @@ void
 cs_base_mpi_init(int    *argc,
                  char  **argv[]);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Return a reduced communicator matching a multiple of the total
+ *        number of ranks.
+ *
+ * This updates the number of reduced communicators if necessary.
+ *
+ * \param[in]  n_ranks  number of ranks of reduced communicator
+ */
+/*----------------------------------------------------------------------------*/
+
+MPI_Comm
+cs_base_get_rank_step_comm(int  rank_step);
+
 #endif /* defined(HAVE_MPI) */
 
 /*----------------------------------------------------------------------------
