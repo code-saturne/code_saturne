@@ -2411,7 +2411,7 @@ class mei_to_c_interpreter:
             vlm = LocalizationModel('VolumicZone', self.case)
 
             for zone in vlm.getZones():
-                if zone.getNature()['initialization'] is 'on':
+                if zone.getNature()['initialization'] == 'on':
                     z_id = str(zone.getCodeNumber())
                     zone_name = zone.getLabel()
 
@@ -2423,7 +2423,7 @@ class mei_to_c_interpreter:
                     # Turbulence
                     tin = im.node_turb.xmlGetNode('initialization', zone_id=z_id)
                     if tin:
-                        if tin['choice'] is 'formula':
+                        if tin['choice'] == 'formula':
                             tmodel = im.node_turb['model']
                             exp, req, sym = im.getTurbFormulaComponents(z_id, tmodel)
                             self.init_block('ini', zone_name, 'turbulence',
@@ -2445,25 +2445,25 @@ class mei_to_c_interpreter:
 
                     if cpm.getCompressibleModel() != 'off':
                         # Pressure
-                        if im.getPressureStatus(z_id) is not 'off':
+                        if im.getPressureStatus(z_id) != 'off':
                             exp, req, sym = im.getPressureFormulaComponents(z_id)
                             self.init_block('ini', zone_name, 'pressure',
                                             exp, req, sym, [])
 
                         # Density
-                        if im.getDensityStatus(z_id) is not 'off':
+                        if im.getDensityStatus(z_id) != 'off':
                             exp, req, sym = im.getDensityFormulaComponents(z_id)
                             self.init_block('ini', zone_name, 'density',
                                             exp, req, sym, [])
 
                         # Temperature
-                        if im.getTemperatureStatus(z_id) is not 'off':
+                        if im.getTemperatureStatus(z_id) != 'off':
                             exp, req, sym = im.getTemperatureFormulaComponents(z_id)
                             self.init_block('ini', zone_name, 'temperature',
                                             exp, req ,sym, [])
 
                         # Energy
-                        if im.getEnergyStatus(z_id) is not 'off':
+                        if im.getEnergyStatus(z_id) != 'off':
                             exp, req, sym = im.getEnergyFormulaComponents(z_id)
                             self.init_block('ini', zone_name, 'energy',
                                             exp, req, sym, [])
