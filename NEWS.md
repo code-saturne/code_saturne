@@ -18,6 +18,10 @@ User changes:
   * With a high enough verbosity, the residual after each level's
     smoother or solver application is logged.
 
+- Add the possibility to compute each term of the balance equations of
+  the Reynolds tensor and/or the turbulent flux of an additional transported
+  variable when performing an LES simulation.
+
 Numerics and physical modelling:
 
 - LES: for dynamic Smagorinsky model, add a new filter for cases where
@@ -74,6 +78,9 @@ Default option changes:
   for hydro. pressure treatment at walls (disabled by default now).
 
 Bug fixes:
+
+- Fix reading of GUI setting of turbulent flux model for additional model
+  variables (specific physics).
 
 - Fix in turbulent isotropic diffusion (Shir model) with EB-RSM. The turbulent
   viscosity did not take into account the effect of the wall.
