@@ -786,6 +786,52 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
     break;
   }
 
+  /* Describe the strategy to inverse the linear system */
+  cs_log_printf(CS_LOG_SETUP, "  * NavSto | SLES strategy: ");
+  switch (nsp->sles_strategy) {
+
+  case CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK:
+    cs_log_printf(CS_LOG_SETUP, "No specific strategy. System as it is.\n");
+    break;
+  case CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG:
+    cs_log_printf(CS_LOG_SETUP, "Block AMG + CG\n");
+    break;
+  case CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK:
+    cs_log_printf(CS_LOG_SETUP, "Additive block preconditioner + GMRES\n");
+    break;
+  case CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK:
+    cs_log_printf(CS_LOG_SETUP, "Multiplicative block preconditioner + GMRES\n");
+    break;
+  case CS_NAVSTO_SLES_DIAG_SCHUR_GMRES:
+    cs_log_printf(CS_LOG_SETUP, "Diag. block preconditioner with Schur approx."
+                  " + GMRES\n");
+    break;
+  case CS_NAVSTO_SLES_UPPER_SCHUR_GMRES:
+    cs_log_printf(CS_LOG_SETUP, "Upper block preconditioner with Schur approx."
+                  " + GMRES\n");
+    break;
+  case CS_NAVSTO_SLES_GKB:
+    cs_log_printf(CS_LOG_SETUP, "GKB algorithm\n");
+    break;
+  case CS_NAVSTO_SLES_GKB_GMRES:
+    cs_log_printf(CS_LOG_SETUP, "GMRES with a GKB preconditioner\n");
+    break;
+  case CS_NAVSTO_SLES_GKB_SATURNE:
+    cs_log_printf(CS_LOG_SETUP, "In-house GKB algorithm\n");
+    break;
+  case CS_NAVSTO_SLES_MUMPS:
+    cs_log_printf(CS_LOG_SETUP, "LU factorization with MUMPS\n");
+    break;
+  case CS_NAVSTO_SLES_UZAWA_AL:
+    cs_log_printf(CS_LOG_SETUP, "Augmented Lagrangian-Uzawa\n");
+    break;
+
+  }
+  if (nsp->gd_scale_coef > 0)
+    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Grad-div scaling %e\n",
+                  nsp->gd_scale_coef);
+
+
   const char *space_scheme = cs_param_get_space_scheme_name(nsp->space_scheme);
   if (nsp->space_scheme < CS_SPACE_N_SCHEMES)
     cs_log_printf(CS_LOG_SETUP, "  * NavSto | Space scheme: %s\n",
