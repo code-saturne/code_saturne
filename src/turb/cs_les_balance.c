@@ -1000,9 +1000,9 @@ _les_balance_compute_uidjt(const void   *input,
 
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
 
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) 
-    for (int i = 0 ; i < 3 ; i++) 
-      for (int j = 0 ; j < 3 ; j++) 
+  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+    for (int i = 0 ; i < 3 ; i++)
+      for (int j = 0 ; j < 3 ; j++)
         tens[iel][i][j] = vel[iel][i]*grdt[iel][j];
 }
 
@@ -1273,9 +1273,9 @@ _les_balance_compute_nutuidjt(const void   *input,
 
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
 
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) 
-    for (int i = 0 ; i < 3 ; i++) 
-      for (int j = 0 ; j < 3 ; j++) 
+  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+    for (int i = 0 ; i < 3 ; i++)
+      for (int j = 0 ; j < 3 ; j++)
         tens[iel][i][j] = CS_F_(mu_t)->val[iel]*vel[iel][i]*grdt[iel][j];
 }
 
@@ -1456,14 +1456,14 @@ _les_balance_time_moment(void)
                                        -1,
                                        CS_TIME_MOMENT_RESTART_AUTO,
                                        NULL);
-   
+
   }
 
   {
     int moment_f_id[] = {CS_F_(vel)->id};
     int moment_c_id[] = {-1};
     int n_fields = 1;
-    
+
     /* vect(u) variance */
     cs_time_moment_define_by_field_ids("u_v",
                                        n_fields,
@@ -2296,10 +2296,10 @@ _les_balance_allocate_rij(void)
   BFT_MALLOC(brij->difflamij, n_cells, cs_real_6_t);
   BFT_MALLOC(brij->unstij, n_cells, cs_real_6_t);
 
-  if (_les_balance.type & CS_LES_BALANCE_RIJ_BASE) 
+  if (_les_balance.type & CS_LES_BALANCE_RIJ_BASE)
     BFT_MALLOC(brij->budsgsij, n_cells, cs_real_6_t);
 
-  if (_les_balance.type & CS_LES_BALANCE_RIJ_FULL) 
+  if (_les_balance.type & CS_LES_BALANCE_RIJ_FULL)
     BFT_MALLOC(brij->budsgsfullij, n_cells, cs_real_96_t);
 
   return brij;
@@ -2915,7 +2915,7 @@ cs_les_balance_compute_rij(void)
     nutdkuiuj[0] = cs_field_by_name("nutd1uiuj_m")->val;
     nutdkuiuj[1] = cs_field_by_name("nutd2uiuj_m")->val;
     nutdkuiuj[2] = cs_field_by_name("nutd3uiuj_m")->val;
-    
+
     uidujdxk[0] = cs_field_by_name("u1dkuj_m")->val;
     uidujdxk[1] = cs_field_by_name("u2dkuj_m")->val;
     uidujdxk[2] = cs_field_by_name("u3dkuj_m")->val;

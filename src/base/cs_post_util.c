@@ -1160,20 +1160,20 @@ cs_post_anisotropy_invariant(cs_lnum_t               n_cells,
   const cs_real_t d1s3 = 1./3.;
   for (cs_lnum_t iloc = 0; iloc < n_cells; iloc++) {
     cs_lnum_t iel = cell_ids[iloc];
-    
+
     cs_real_t xk = 0.5*(rij[iel][0]+rij[iel][1]+rij[iel][2]);
     cs_real_t bij[3][3];
     cs_real_t xeta, xksi ;
 
-    bij[0][0] = rij[iel][0]/(2.0*xk) - d1s3; 
-    bij[1][1] = rij[iel][1]/(2.0*xk) - d1s3; 
-    bij[2][2] = rij[iel][2]/(2.0*xk) - d1s3; 
-    bij[0][1] = rij[iel][3]/(2.0*xk) ; 
-    bij[1][2] = rij[iel][4]/(2.0*xk) ; 
-    bij[0][2] = rij[iel][5]/(2.0*xk) ; 
-    bij[1][0] = bij[0][1] ; 
-    bij[2][1] = bij[1][2] ; 
-    bij[2][0] = bij[0][2] ; 
+    bij[0][0] = rij[iel][0]/(2.0*xk) - d1s3;
+    bij[1][1] = rij[iel][1]/(2.0*xk) - d1s3;
+    bij[2][2] = rij[iel][2]/(2.0*xk) - d1s3;
+    bij[0][1] = rij[iel][3]/(2.0*xk) ;
+    bij[1][2] = rij[iel][4]/(2.0*xk) ;
+    bij[0][2] = rij[iel][5]/(2.0*xk) ;
+    bij[1][0] = bij[0][1] ;
+    bij[2][1] = bij[1][2] ;
+    bij[2][0] = bij[0][2] ;
 
     xeta = 0. ;
     xksi = 0. ;
