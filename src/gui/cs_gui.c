@@ -2345,17 +2345,15 @@ void CS_PROCF (csphys, CSPHYS) (double     *viscv0,
 }
 
 /*----------------------------------------------------------------------------
- * User scalar min and max values for clipping.
+ * Read minimum / maximum values (used in clipping) and turbulent flux model
+ * for additional user or model variables.
  *
  * Fortran Interface:
- *
- * subroutine cssca2 (iturt)
- * *****************
  *
  * integer          iturt    -->  turbulent flux model
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cssca2, CSSCA2) (int        *iturt)
+void CS_PROCF (cssca2, CSSCA2) (int *iturt)
 {
 #if _XML_DEBUG_
   bft_printf("==> %s\n", __func__);
@@ -2371,63 +2369,42 @@ void CS_PROCF (cssca2, CSSCA2) (int        *iturt)
   const int keysca = cs_field_key_id("scalar_id");
   const int kscavr = cs_field_key_id("first_moment_id");
 
-
   for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t  *f = cs_field_by_id(f_id);
-    if (   (f->type & CS_FIELD_VARIABLE)
-        && (f->type & CS_FIELD_USER)) {
+    if (f->type & CS_FIELD_VARIABLE) { /* variable ? */
       int i = cs_field_get_key_int(f, keysca) - 1;
-      if (i > -1) {
-        if (cs_field_get_key_int(f, kscavr) < 0) {
+      if (i > -1) { /* additional user or model variable ? */
+        if (cs_field_get_key_int(f, kscavr) < 0) { /* not a variance ? */
+
           double scal_min = cs_field_get_key_double(f, kscmin);
           double scal_max = cs_field_get_key_double(f, kscmax);
-          cs_tree_node_t *tn_v = _find_node_variable(f->name);
-          cs_gui_node_get_child_real(tn_v, "min_value", &scal_min);
-          cs_gui_node_get_child_real(tn_v, "max_value", &scal_max);
-          cs_field_set_key_double(f, kscmin, scal_min);
-          cs_field_set_key_double(f, kscmax, scal_max);
 
-          if (turb_model->order == CS_TURB_SECOND_ORDER) {
-            int turb_mdl;
-            _variable_turbulent_flux_model(tn_v, &turb_mdl);
-            iturt[i] = turb_mdl;
-          }
+          cs_tree_node_t *tn_v = _find_node_variable(f->name);
+          if (tn_v != NULL) { /* variable is in xml ? */
+            cs_gui_node_get_child_real(tn_v, "min_value", &scal_min);
+            cs_gui_node_get_child_real(tn_v, "max_value", &scal_max);
+            cs_field_set_key_double(f, kscmin, scal_min);
+            cs_field_set_key_double(f, kscmax, scal_max);
+
 #if _XML_DEBUG_
-          bft_printf("--min_scalar_clipping[%i] = %f\n", i, scal_min);
-          bft_printf("--max_scalar_clipping[%i] = %f\n", i, scal_max);
+            bft_printf("--min_scalar_clipping[%i] = %f\n", i, scal_min);
+            bft_printf("--max_scalar_clipping[%i] = %f\n", i, scal_max);
 #endif
+
+            if (turb_model->order == CS_TURB_SECOND_ORDER) {
+              int turb_mdl;
+              _variable_turbulent_flux_model(tn_v, &turb_mdl);
+              iturt[i] = turb_mdl;
+#if _XML_DEBUG_
+              bft_printf("--iturt[%i] = %d\n", i, iturt[i]);
+#endif
+            }
+
+          }
+
         }
       }
     }
-  }
-
-  /* thermal scalar */
-
-  const int itherm = cs_glob_thermal_model->itherm;
-
-  if (itherm > CS_THERMAL_MODEL_NONE) {
-
-    const char *t_names[] = {"temperature", "enthalpy", "total_energy"};
-
-    cs_field_t *f = cs_field_by_name(t_names[itherm-1]);
-
-    double scal_min = cs_field_get_key_double(f, kscmin);
-    double scal_max = cs_field_get_key_double(f, kscmax);
-
-    cs_tree_node_t *tn_v = _find_node_variable(f->name);
-    cs_gui_node_get_child_real(tn_v, "min_value", &scal_min);
-    cs_gui_node_get_child_real(tn_v, "max_value", &scal_max);
-    cs_field_set_key_double(f, kscmin, scal_min);
-    cs_field_set_key_double(f, kscmax, scal_max);
-    int i = cs_field_get_key_int(f, keysca) - 1;
-
-    if (turb_model->order == CS_TURB_SECOND_ORDER)
-      _variable_turbulent_flux_model(tn_v, &(iturt[i]));
-
-#if _XML_DEBUG_
-    bft_printf("--min_scalar_clipping[%i] = %f\n", i, scal_min);
-    bft_printf("--max_scalar_clipping[%i] = %f\n", i, scal_max);
-#endif
   }
 }
 
