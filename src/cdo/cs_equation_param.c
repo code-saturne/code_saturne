@@ -1378,7 +1378,8 @@ _set_key(const char            *label,
     }
     else if (strcmp(keyval, "jacobi") == 0)
       eqp->sles_param.precond = CS_PARAM_PRECOND_DIAG;
-    else if (strcmp(keyval, "block_jacobi") == 0)
+    else if (strcmp(keyval, "block_jacobi") == 0 ||
+             strcmp(keyval, "jacobi_block") == 0)
       eqp->sles_param.precond = CS_PARAM_PRECOND_BJACOB;
     else if (strcmp(keyval, "poly1") == 0)
       eqp->sles_param.precond = CS_PARAM_PRECOND_POLY1;
@@ -1401,7 +1402,8 @@ _set_key(const char            *label,
         eqp->sles_param.amg_type = CS_PARAM_AMG_PETSC_GAMG;
 
     }
-    else if (strcmp(keyval, "amg_block") == 0) {
+    else if (strcmp(keyval, "amg_block") == 0 ||
+             strcmp(keyval, "block_amg") == 0) {
       if (eqp->dim == 1) {  /* Switch to a classical AMG preconditioner */
 
         eqp->sles_param.precond = CS_PARAM_PRECOND_AMG;

@@ -576,7 +576,8 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     else if (strcmp(val, "mumps") == 0) {
       nsp->sles_strategy = CS_NAVSTO_SLES_MUMPS;
     }
-    else if (strcmp(val, "uzawa_al") == 0) {
+    else if (strcmp(val, "uzawa_al") == 0 ||
+             strcmp(val, "alu") == 0) {
       nsp->sles_strategy = CS_NAVSTO_SLES_UZAWA_AL;
     }
     else {
