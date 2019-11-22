@@ -344,6 +344,10 @@ _petsc_set_krylov_solver(cs_param_sles_t   slesp,
     KSPSetType(ksp, KSPFCG);
     break;
 
+  case CS_PARAM_ITSOL_FGMRES:     /* Preconditioned flexible GMRES */
+    KSPSetType(ksp, KSPFGMRES);
+    break;
+
   case CS_PARAM_ITSOL_GMRES:     /* Preconditioned GMRES */
     KSPSetType(ksp, KSPLGMRES);
     break;
@@ -1304,6 +1308,8 @@ _set_key(const char            *label,
       eqp->sles_param.solver = CS_PARAM_ITSOL_FCG;
     else if (strcmp(keyval, "gmres") == 0)
       eqp->sles_param.solver = CS_PARAM_ITSOL_GMRES;
+    else if (strcmp(keyval, "fgmres") == 0)
+      eqp->sles_param.solver = CS_PARAM_ITSOL_FGMRES;
     else if (strcmp(keyval, "jacobi") == 0)
       eqp->sles_param.solver = CS_PARAM_ITSOL_JACOBI;
     else if (strcmp(keyval, "minres") == 0)

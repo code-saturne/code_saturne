@@ -542,6 +542,9 @@ typedef enum {
  * may change from one iteration to another. For instance when using an AMG
  * as preconditioner)
  *
+ * \var CS_PARAM_ITSOL_FGMRES
+ * Flexible Generalized Minimal RESidual
+ *
  * \var CS_PARAM_ITSOL_GAUSS_SEIDEL
  * Gauss-Seidel
  *
@@ -583,6 +586,7 @@ typedef enum {
   CS_PARAM_ITSOL_CG,
   CS_PARAM_ITSOL_CR3,
   CS_PARAM_ITSOL_FCG,
+  CS_PARAM_ITSOL_FGMRES,           /*!< Only with PETsc */
   CS_PARAM_ITSOL_GAUSS_SEIDEL,
   CS_PARAM_ITSOL_GKB_CG,
   CS_PARAM_ITSOL_GKB_GMRES,

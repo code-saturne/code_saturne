@@ -551,6 +551,9 @@ _set_velocity_ksp(const cs_param_sles_t    slesp,
   case CS_PARAM_ITSOL_GMRES:
     KSPSetType(u_ksp, KSPGMRES);
     break;
+  case CS_PARAM_ITSOL_FGMRES:
+    KSPSetType(u_ksp, KSPFGMRES);
+    break;
 
   case CS_PARAM_ITSOL_MUMPS_LDLT:     /* Direct solver (factorization) */
     bft_error(__FILE__, __LINE__, 0, "%s: Invalid solver. Try mumps.",
