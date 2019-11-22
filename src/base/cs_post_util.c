@@ -559,8 +559,8 @@ cs_cell_polyline_intersect_select(void        *input,
       /* There is one intersection on the left of [OD)
        * and one on the right of [OD) which means that
        * O is inside the cell */
-      if (_in[cell_id] > 0 && _out[cell_id] > 0
-          || _cell_ids[cell_id] == s_id) {
+      if ((_in[cell_id] > 0 && _out[cell_id] > 0)
+          || (_cell_ids[cell_id] == s_id)) {
         _cell_ids[cell_id] = s_id;
         _seg_c_len[cell_id] += length;
       }
@@ -591,6 +591,7 @@ cs_cell_polyline_intersect_select(void        *input,
   *cell_ids = _cell_ids;
   *seg_c_len = _seg_c_len;
 }
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define probes based on the centers of cells intersected by
