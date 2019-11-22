@@ -38,6 +38,9 @@ Bug fixes:
 - Studymanager: fix reading of error bars in drawing and code/code coupling
   runs (recreate RUN_COUPLING directory at update stage if not present).
 
+- Fix reading of GUI setting of turbulent flux model for thermal scalar
+  if a specific physics is enabled.
+
 Release 6.0.0 (September 26 2019)
 ---------------------------------
 

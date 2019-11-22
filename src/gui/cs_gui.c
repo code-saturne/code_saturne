@@ -2371,8 +2371,6 @@ void CS_PROCF (cssca2, CSSCA2) (int        *iturt)
   bft_printf("==> %s\n", __func__);
 #endif
 
-  cs_var_t  *vars = cs_glob_var;
-
   const int kscmin = cs_field_key_id("min_scalar_clipping");
   const int kscmax = cs_field_key_id("max_scalar_clipping");
 
@@ -2409,12 +2407,11 @@ void CS_PROCF (cssca2, CSSCA2) (int        *iturt)
     }
   }
 
-  if (cs_gui_strcmp(vars->model, "thermal_scalar")) {
+  /* thermal scalar */
 
-    /* thermal model with no specific physics */
+  const int itherm = cs_glob_thermal_model->itherm;
 
-    const int itherm = cs_glob_thermal_model->itherm;
-    assert(itherm > CS_THERMAL_MODEL_NONE);
+  if (itherm > CS_THERMAL_MODEL_NONE) {
 
     const char *t_names[] = {"temperature", "enthalpy", "total_energy"};
 
@@ -2424,19 +2421,22 @@ void CS_PROCF (cssca2, CSSCA2) (int        *iturt)
     double scal_max = cs_field_get_key_double(f, kscmax);
 
     cs_tree_node_t *tn_v = _find_node_variable(f->name);
-    cs_gui_node_get_child_real(tn_v, "min_value", &scal_min);
-    cs_gui_node_get_child_real(tn_v, "max_value", &scal_max);
-    cs_field_set_key_double(f, kscmin, scal_min);
-    cs_field_set_key_double(f, kscmax, scal_max);
-    int i = cs_field_get_key_int(f, keysca) - 1;
 
-    if (cs_glob_turb_model->iturb/10 == 3) {
-      _variable_turbulent_flux_model(tn_v, &(iturt[i]));
-    }
+    if (tn_v != NULL) {
+      cs_gui_node_get_child_real(tn_v, "min_value", &scal_min);
+      cs_gui_node_get_child_real(tn_v, "max_value", &scal_max);
+      cs_field_set_key_double(f, kscmin, scal_min);
+      cs_field_set_key_double(f, kscmax, scal_max);
+      int i = cs_field_get_key_int(f, keysca) - 1;
+
+      if (cs_glob_turb_model->iturb/10 == 3) {
+        _variable_turbulent_flux_model(tn_v, &(iturt[i]));
+      }
 #if _XML_DEBUG_
-    bft_printf("--min_scalar_clipping[%i] = %f\n", i, scal_min);
-    bft_printf("--max_scalar_clipping[%i] = %f\n", i, scal_max);
+      bft_printf("--min_scalar_clipping[%i] = %f\n", i, scal_min);
+      bft_printf("--max_scalar_clipping[%i] = %f\n", i, scal_max);
 #endif
+    }
   }
 }
 
