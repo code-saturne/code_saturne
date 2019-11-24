@@ -849,7 +849,7 @@ cs_navsto_monolithic_get_momentum_eq(void       *context)
   if (context == NULL)
     return NULL;
 
-  cs_navsto_ac_t  *nsc = (cs_navsto_ac_t *)context;
+  cs_navsto_monolithic_t  *nsc = (cs_navsto_monolithic_t *)context;
 
   return nsc->momentum;
 }
