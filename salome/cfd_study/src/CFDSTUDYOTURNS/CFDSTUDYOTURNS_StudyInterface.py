@@ -155,17 +155,15 @@ class cfd_openturns_study:
         self.cs_launcher.launch(force_submit=False)
 
         if self.run_type == 'distant':
+            self.cs_launcher.sync_results()
             while True:
                 if self.cs_launcher.need_restart():
                     old_run = self.cs_launcher.run_id
 
-                    rst_dir = os.path.join(self.study_path,
-                                           self.case_id,
-                                           'RESU',
-                                           old_run)
+                    rst_dir = os.path.join('RESU', old_run)
                     self.__setRestartPath__(rst_dir)
-                    self.cs_launcher.__setRunId__()
 
+                    self.cs_launcher.__setRunId__()
                     self.cs_launcher.launch(force_submit=True)
 
                     if self.cs_launcher.job_failed:
@@ -196,7 +194,7 @@ class cfd_openturns_study:
         results = ()
         if os.path.exists(rspth):
             r = open(rspth, 'r').readlines()
-            d = r[-1].split()
+            d = r[-1].split(',')
             for ed in d:
                 results += (float(ed),)
 
