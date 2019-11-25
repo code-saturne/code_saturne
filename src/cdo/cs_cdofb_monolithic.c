@@ -1687,15 +1687,14 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
 
   /* Processing of the pressure boundary condition */
   sc->pressure_bc = cs_cdo_bc_face_define(CS_CDO_BC_HMG_NEUMANN, /* Default */
-                                          true, /* Steady BC up to now */
-                                          1,    /* Dimension */
+                                          true,      /* Steady BC up to now */
+                                          1,         /* Dimension */
                                           nsp->n_pressure_bc_defs,
                                           nsp->pressure_bc_defs,
                                           cs_shared_quant->n_b_faces);
 
   /* Set the way to enforce the Dirichlet BC on the velocity
-   * "fixed_wall" means a no-slip BC
-   */
+   * "fixed_wall" means a no-slip BC */
   mom_eqb->bd_msh_flag |= CS_FLAG_COMP_PFC;
 
   sc->apply_symmetry = cs_cdofb_symmetry;

@@ -618,13 +618,13 @@ _set_velocity_ksp(const cs_param_sles_t    slesp,
 
   /* Set tolerance and number of iterations */
   PetscReal _rtol, abstol, dtol;
-  KSPGetTolerances(u_ksp, &_rtol, &abstol, &dtol, &max_it);
-  rtol = fmin(1e-4, fmax(1e4*slesp.eps, 1e-5));
+  PetscInt  _max_it;
+  KSPGetTolerances(u_ksp, &_rtol, &abstol, &dtol, &_max_it);
   KSPSetTolerances(u_ksp,
                    rtol,        /* relative convergence tolerance */
                    abstol,      /* absolute convergence tolerance */
                    dtol,        /* divergence tolerance */
-                   500);        /* max number of iterations */
+                   max_it);     /* max number of iterations */
 
   PCSetFromOptions(u_pc);
   PCSetUp(u_pc);
@@ -650,7 +650,8 @@ _additive_amg_gmres_hook(void     *context,
 {
   IS  isv, isp;
 
-  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
+  cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
+  cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
   cs_param_sles_t  slesp = eqp->sles_param;
 
   const int  n_max_restart = 30;
@@ -666,10 +667,10 @@ _additive_amg_gmres_hook(void     *context,
   PetscInt  max_it;
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
   KSPSetTolerances(ksp,
-                   slesp.eps,         /* relative convergence tolerance */
-                   abstol,            /* absolute convergence tolerance */
-                   dtol,              /* divergence tolerance */
-                   slesp.n_max_iter); /* max number of iterations */
+                   nsp->residual_tolerance, /* relative convergence tolerance */
+                   abstol,                  /* absolute convergence tolerance */
+                   dtol,                    /* divergence tolerance */
+                   nsp->max_algo_iter);     /* max number of iterations */
 
   /* Try to have "true" norm */
   KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
@@ -708,9 +709,7 @@ _additive_amg_gmres_hook(void     *context,
   KSPSetUp(p_ksp);
 
   /* Set the velocity block */
-  max_it = 500;
-  rtol = fmin(1e-4, fmax(1e4*slesp.eps, 1e-5));
-  _set_velocity_ksp(slesp, rtol, max_it, up_subksp[0]);
+  _set_velocity_ksp(slesp, slesp.eps, slesp.n_max_iter, up_subksp[0]);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, a, ksp);
@@ -751,7 +750,8 @@ _multiplicative_gmres_hook(void     *context,
 {
   IS  isv, isp;
 
-  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
+  cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
+  cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
   cs_param_sles_t  slesp = eqp->sles_param;
 
   const int  n_max_restart = 30;
@@ -767,10 +767,10 @@ _multiplicative_gmres_hook(void     *context,
   PetscInt  max_it;
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
   KSPSetTolerances(ksp,
-                   slesp.eps,         /* relative convergence tolerance */
-                   abstol,            /* absolute convergence tolerance */
-                   dtol,              /* divergence tolerance */
-                   slesp.n_max_iter); /* max number of iterations */
+                   nsp->residual_tolerance, /* relative convergence tolerance */
+                   abstol,                  /* absolute convergence tolerance */
+                   dtol,                    /* divergence tolerance */
+                   nsp->max_algo_iter);     /* max number of iterations */
 
   /* Try to have "true" norm */
   KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
@@ -809,9 +809,7 @@ _multiplicative_gmres_hook(void     *context,
   KSPSetUp(p_ksp);
 
   /* Set the velocity block */
-  max_it = 500;
-  rtol = fmin(1e-4, fmax(1e4*slesp.eps, 1e-5));
-  _set_velocity_ksp(slesp, rtol, max_it, up_subksp[0]);
+  _set_velocity_ksp(slesp, slesp.eps, slesp.n_max_iter, up_subksp[0]);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, a, ksp);
@@ -852,7 +850,8 @@ _diag_schur_gmres_hook(void     *context,
 {
   IS  isv, isp;
 
-  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
+  cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
+  cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
   cs_param_sles_t  slesp = eqp->sles_param;
 
   const int  n_max_restart = 30;
@@ -868,10 +867,10 @@ _diag_schur_gmres_hook(void     *context,
   PetscInt  max_it;
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
   KSPSetTolerances(ksp,
-                   slesp.eps,         /* relative convergence tolerance */
-                   abstol,            /* absolute convergence tolerance */
-                   dtol,              /* divergence tolerance */
-                   slesp.n_max_iter); /* max number of iterations */
+                   nsp->residual_tolerance, /* relative convergence tolerance */
+                   abstol,                  /* absolute convergence tolerance */
+                   dtol,                    /* divergence tolerance */
+                   nsp->max_algo_iter);     /* max number of iterations */
 
   /* Try to have "true" norm */
   KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
@@ -912,9 +911,7 @@ _diag_schur_gmres_hook(void     *context,
   KSPSetUp(p_ksp);
 
   /* Set the velocity block */
-  max_it = 500;
-  rtol = fmin(1e-4, fmax(1e4*slesp.eps, 1e-5));
-  _set_velocity_ksp(slesp, rtol, max_it, up_subksp[0]);
+  _set_velocity_ksp(slesp, slesp.eps, slesp.n_max_iter, up_subksp[0]);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, a, ksp);
@@ -954,7 +951,8 @@ _upper_schur_gmres_hook(void     *context,
 {
   IS  isv, isp;
 
-  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
+  cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
+  cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
   cs_param_sles_t  slesp = eqp->sles_param;
 
   const int  n_max_restart = 30;
@@ -970,10 +968,10 @@ _upper_schur_gmres_hook(void     *context,
   PetscInt  max_it;
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
   KSPSetTolerances(ksp,
-                   slesp.eps,         /* relative convergence tolerance */
-                   abstol,            /* absolute convergence tolerance */
-                   dtol,              /* divergence tolerance */
-                   slesp.n_max_iter); /* max number of iterations */
+                   nsp->residual_tolerance, /* relative convergence tolerance */
+                   abstol,                  /* absolute convergence tolerance */
+                   dtol,                    /* divergence tolerance */
+                   nsp->max_algo_iter);     /* max number of iterations */
 
   /* Try to have "true" norm */
   KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
@@ -1014,9 +1012,7 @@ _upper_schur_gmres_hook(void     *context,
   KSPSetUp(p_ksp);
 
   /* Set the velocity block */
-  max_it = 500;
-  rtol = fmin(1e-4, fmax(1e4*slesp.eps, 1e-5));
-  _set_velocity_ksp(slesp, rtol, max_it, up_subksp[0]);
+  _set_velocity_ksp(slesp, slesp.eps, slesp.n_max_iter, up_subksp[0]);
 
   /* User function for additional settings */
   cs_user_sles_petsc_hook(context, a, ksp);
@@ -2046,7 +2042,7 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
                          NULL,
                          MATMPIAIJ,
                          _additive_amg_gmres_hook,
-                         (void *)mom_eqp);
+                         (void *)nsp);
     break;
 
   case CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK:
@@ -2055,7 +2051,7 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
                          NULL,
                          MATMPIAIJ,
                          _multiplicative_gmres_hook,
-                         (void *)mom_eqp);
+                         (void *)nsp);
     break;
 
   case CS_NAVSTO_SLES_DIAG_SCHUR_GMRES:
@@ -2064,7 +2060,7 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
                          NULL,
                          MATMPIAIJ,
                          _diag_schur_gmres_hook,
-                         (void *)mom_eqp);
+                         (void *)nsp);
     break;
 
   case CS_NAVSTO_SLES_UPPER_SCHUR_GMRES:
@@ -2073,7 +2069,7 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
                          NULL,
                          MATMPIAIJ,
                          _upper_schur_gmres_hook,
-                         (void *)mom_eqp);
+                         (void *)nsp);
     break;
 
   case CS_NAVSTO_SLES_MUMPS:
@@ -2141,8 +2137,6 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
                           const cs_equation_param_t     *eqp,
                           cs_cdofb_monolithic_sles_t    *msles)
 {
-  CS_UNUSED(nsp);
-
   const cs_matrix_t  *matrix = msles->matrix;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_faces = quant->n_faces;
@@ -2192,10 +2186,17 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
   const double  r_norm = 1.0; /* No renormalization by default (TODO) */
   const cs_param_sles_t  sles_param = eqp->sles_param;
 
+  cs_real_t  rtol = sles_param.eps;
+  if (nsp->sles_strategy == CS_NAVSTO_SLES_UPPER_SCHUR_GMRES             ||
+      nsp->sles_strategy == CS_NAVSTO_SLES_DIAG_SCHUR_GMRES              ||
+      nsp->sles_strategy == CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK ||
+      nsp->sles_strategy == CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK)
+    rtol = nsp->residual_tolerance;
+
   cs_sles_convergence_state_t  code = cs_sles_solve(msles->sles,
                                                     matrix,
                                                     CS_HALO_ROTATION_IGNORE,
-                                                    sles_param.eps,
+                                                    rtol,
                                                     r_norm,
                                                     &n_iters,
                                                     &residual,
