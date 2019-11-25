@@ -140,7 +140,7 @@ class CFDSTUDY_DistantLauncher:
         """
 
         test_name = os.path.join(self.job_params.result_directory,
-                                 "status.exceeded_time_limit")
+                                 "run_status.exceeded_time_limit")
 
         not_finished = os.path.isfile(test_name)
 
@@ -221,7 +221,7 @@ class CFDSTUDY_DistantLauncher:
 
         # ---------------------------------
         job_params.out_files = []
-        for f in (self.results_file, 'status.exceeded_time_limit'):
+        for f in (self.results_file, 'run_status.exceeded_time_limit'):
             df = os.path.join(job_params.work_directory,
                               'RESU',
                               self.run_id,
