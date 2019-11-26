@@ -194,7 +194,7 @@ if (itytur.eq.2) then
 
     ! Implicit part (no implicit part for epsilon because the source
     ! term is positive)
-    tinstk(iel) = tinstk(iel) + max(-rho*volume(iel)*cmu*ttke*gravke, 0.d0)
+    tinstk(iel) = tinstk(iel) + max(-rho*cell_f_vol(iel)*cmu*ttke*gravke, 0.d0)
 
     ! Explicit part
     smbre(iel) = smbrk(iel) + visct*max(gravke, zero)
@@ -338,7 +338,7 @@ do iel = 1, ncel
 
   ! Implicit part (no implicit part for epsilon because the source
   ! term is positive)
-  tinstk(iel) = tinstk(iel) + max(-rho*volume(iel)*cmu*ttke*gravke, 0.d0)
+  tinstk(iel) = tinstk(iel) + max(-rho*cell_f_vol(iel)*cmu*ttke*gravke, 0.d0)
 
   ! Explicit part
   smbre(iel) = smbrk(iel) + visct*max(gravke, zero)
