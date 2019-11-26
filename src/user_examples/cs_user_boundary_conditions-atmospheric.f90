@@ -51,6 +51,8 @@
 !>                                 \f$ \vect{u} \cdot \vect{n} = 0 \f$
 !>                               - 9 free inlet/outlet
 !>                                 (input mass flux blocked to 0)
+!>                               - 13 Dirichlet for the advection operator and
+!>                                    Neumann for the diffusion operator
 !> \param[in]     itrifb        indirection for boundary faces ordering
 !> \param[in,out] itypfb        boundary face types
 !> \param[out]    izfppp        boundary face zone number
@@ -98,11 +100,16 @@ use coincl
 use cpincl
 use ppincl
 use ppcpfu
+use atchem
 use atincl
+use atsoil
 use ctincl
 use cs_fuel_incl
 use mesh
 use field
+use turbomachinery
+use iso_c_binding
+use cs_c_bindings
 
 !===============================================================================
 
@@ -167,8 +174,9 @@ rugt = rugd
 !< [example_1]
 call getfbr('11',nlelt,lstelt)
 !==========
-!   - Zone number (from 1 to n)
-izone = 1
+
+! Get a new zone number (1 <= izone <= nozppm)
+izone = maxval(izfppp) + 1
 
 do ilelt = 1, nlelt
 
@@ -179,6 +187,9 @@ do ilelt = 1, nlelt
 
   ! - Boundary conditions are prescribed from the meteo profile
   iprofm(izone) = 1
+
+  ! - Chemical boundary conditions are prescribed from the chemistry profile
+  iprofc(izone) = 1
 
   ! - boundary condition type can be set to ientre or i_convective_inlet
 
@@ -200,8 +211,9 @@ enddo
 !< [example_2]
 call getfbr('21',nlelt,lstelt)
 !==========
-!   -  Zone number (from 1 to n)
-izone = 2
+
+! Get a new zone number (1 <= izone <= nozppm)
+izone = maxval(izfppp) + 1
 
 do ilelt = 1, nlelt
 
@@ -212,6 +224,9 @@ do ilelt = 1, nlelt
 
   ! - Boundary conditions are prescribed from the meteo profile
   iprofm(izone) = 1
+
+  ! - Chemical boundary conditions are prescribed from the chemistry profile
+  iprofc(izone) = 1
 
   ! - Assign inlet boundary conditions
   itypfb(ifac) = ientre
@@ -228,8 +243,8 @@ enddo
 call getfbr('31',nlelt,lstelt)
 !==========
 
-!   - Zone number (from 1 to n)
-izone = 3
+! Get a new zone number (1 <= izone <= nozppm)
+izone = maxval(izfppp) + 1
 
 do ilelt = 1, nlelt
 
@@ -240,6 +255,9 @@ do ilelt = 1, nlelt
 
   ! - Boundary conditions are prescribed from the meteo profile
   iprofm(izone) = 1
+
+  ! - Chemical boundary conditions are prescribed from the chemistry profile
+  iprofc(izone) = 1
 
   ! - Dynamical variables are prescribed with a rough log law
   zent=cdgfbo(3,ifac)
@@ -297,8 +315,8 @@ enddo
 call getfbr('12', nlelt, lstelt)
 !==========
 
-!   - Zone number (from 1 to n)
-izone = 4
+! Get a new zone number (1 <= izone <= nozppm)
+izone = maxval(izfppp) + 1
 
 do ilelt = 1, nlelt
 
@@ -320,8 +338,8 @@ enddo
 call getfbr('15', nlelt, lstelt)
 !==========
 
-!   - Zone number (from 1 to n)
-izone = 5
+! Get a new zone number (1 <= izone <= nozppm)
+izone = maxval(izfppp) + 1
 
 do ilelt = 1, nlelt
 
@@ -352,8 +370,8 @@ enddo
 call getfbr('4', nlelt, lstelt)
 !==========
 
-!   - Zone number (from 1 to n)
-izone = 6
+! Get a new zone number (1 <= izone <= nozppm)
+izone = maxval(izfppp) + 1
 
 do ilelt = 1, nlelt
 

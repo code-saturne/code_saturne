@@ -420,6 +420,7 @@ use coincl
 use cpincl
 use ppincl
 use ppcpfu
+use atchem
 use atincl
 use atsoil
 use ctincl
