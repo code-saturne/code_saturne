@@ -130,7 +130,8 @@ do iel = 1, ncel
   ! Adding source term to crvexp
   ! The first nespg user scalars are supposed to be chemical species
   ! TODO: try to implicit the ST
-  crvexp(iel) = crvexp(iel)+dchema(chempoint(iscal))*rom*volume(iel)
+  crvexp(iel) = crvexp(iel) + rom * cell_f_vol(iel) &
+              * dchema(chempoint(iscal-isca_chem(1)+1))
 
 enddo
 

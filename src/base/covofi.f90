@@ -459,9 +459,9 @@ endif
 ! Atmospheric chemistry
 ! In case of a semi-coupled resolution, computation of the explicit
 ! chemical source term to be considered during dynamical resolution
-! The first nespg user scalars are supposed to be chemical species
 if ((ichemistry.ge.1).and.(isepchemistry.eq.2)                    &
-     .and.(iscal.le.nespg).and.(ntcabs.gt.1)) then
+     .and.(isca_chem(1).le.iscal).and.(iscal.le.isca_chem(nespg)) &
+     .and.(ntcabs.gt.1)) then
   call chem_source_terms(iscal, smbrs, rovsdt)
 endif
 
