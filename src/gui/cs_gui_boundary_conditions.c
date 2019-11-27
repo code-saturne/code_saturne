@@ -1591,9 +1591,8 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
                                    "thermophysical_models",
                                    "atmospheric_flows");
             cs_xpath_add_element_num(&path_meteo, "variable", j +1);
-            cs_xpath_add_element(&path_meteo, "name");
-            cs_xpath_add_function_text(&path_meteo);
-            char *name = cs_gui_get_text_value(path_meteo);
+            cs_xpath_add_attribute(&path_meteo, "name");
+            char *name = cs_gui_get_attribute_value(path_meteo);
 
             cs_field_t *c = cs_field_by_name_try(name);
             BFT_FREE(path_meteo);

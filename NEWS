@@ -1,6 +1,12 @@
 Release 5.0.12 (Unreleased)
 ===========================
 
+Bug fixes
+---------
+
+- Fix bug in boundary condition of atmospheric scalars when using
+humide atmo.
+
 Documentation updates
 ---------------------
 
