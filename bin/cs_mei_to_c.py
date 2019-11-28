@@ -2593,9 +2593,9 @@ class mei_to_c_interpreter:
         out = open('comp.out', 'w')
         err = open('comp.err', 'w')
 
-        solver = "cs_solver" + self.package.config.exeext
+        solver = "cs_solver" + self.case['package'].config.exeext
         if self.case.module_name() == 'neptune_cfd':
-            solver = "nc_solver" + self.package.config.exeext
+            solver = "nc_solver" + self.case['package'].config.exeext
 
         compilation_test = cs_compile.compile_and_link(self.case['package'],
                                                        solver,
