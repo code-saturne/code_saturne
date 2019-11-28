@@ -1919,11 +1919,13 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
   msles->b_f = mom_rhs;
   msles->b_c = mass_rhs;
 
-  sc->solve(nsp, mom_eqp, msles);
+  int  cumulated_inner_iters = sc->solve(nsp, mom_eqp, msles);
 
   /* Compute the velocity divergence and retrieve its L2-norm */
   cs_real_t  div_l2 = _update_divergence(sc, mom_eqc);
-  cs_log_printf(CS_LOG_DEFAULT, " ||div(u)|| = %6.4e\n", sqrt(div_l2));
+  cs_log_printf(CS_LOG_DEFAULT,
+                " -cvg- cumulated_inner_iters: %d ||div(u)|| = %6.4e\n",
+                cumulated_inner_iters, sqrt(div_l2));
 
   /* Now compute/update the velocity and pressure fields */
   _update_fields(sc, mom_eqc);

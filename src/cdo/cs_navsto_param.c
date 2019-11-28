@@ -770,25 +770,13 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
                   " Boussinesq approximation activated");
 
   /* Describe the coupling algorithm */
-
-  cs_log_printf(CS_LOG_SETUP, "  * NavSto | Coupling: %s",
+  cs_log_printf(CS_LOG_SETUP, "  * NavSto | Coupling: %s\n",
                 cs_navsto_param_coupling_name[nsp->coupling]);
-  switch (nsp->coupling) {
-
-  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
-  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-  case CS_NAVSTO_COUPLING_UZAWA:
-    cs_log_printf(CS_LOG_SETUP, " Tolerance: %5.3e\n", nsp->residual_tolerance);
-    break;
-
-  default:
-    /* Nothing to print */
-    cs_log_printf(CS_LOG_SETUP, "\n");
-    break;
-  }
 
   /* Describe the strategy to inverse the linear system */
-  cs_log_printf(CS_LOG_SETUP, "  * NavSto | SLES strategy: ");
+  cs_log_printf(CS_LOG_SETUP, "  * NavSto | Algo.Residual: %5.3e\n",
+                nsp->residual_tolerance);
+  cs_log_printf(CS_LOG_SETUP, "  * NavSto | SLES.Strategy: ");
   switch (nsp->sles_strategy) {
 
   case CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK:
