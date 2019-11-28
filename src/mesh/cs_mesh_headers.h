@@ -57,6 +57,7 @@
 #include "cs_mesh_quality.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_refine.h"
+#include "cs_mesh_remove.h"
 #include "cs_mesh_save.h"
 #include "cs_mesh_thinwall.h"
 #include "cs_mesh_to_builder.h"

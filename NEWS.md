@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 User changes:
 
+- Add cs_mesh_remove_cells and cs_mesh_remove_cells_negative_volumes
+  functions to allow removal of selected or degenrate cells in preprocessing.
+
 - Add P1 interpolation function and associated example for probes output.
 
 - Correctly handle mixed code_saturne/neptune_cfd couplings in run script.
