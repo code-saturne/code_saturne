@@ -83,20 +83,18 @@ def define_domain_parameters(domain):
     # matching that checkoint if is not contained, so set:
     #  domain.restart_mesh_input = 'RESU/<run_id>/restart_mesh_input'
 
-    if domain.param == None:
-        domain.preprocess_on_restart = False
-        domain.mesh_input = None
-        domain.partition_input = None
-        domain.restart_input = None
-        domain.restart_mesh_input = None
+    domain.preprocess_on_restart = False
+    domain.mesh_input = None
+    domain.partition_input = None
+    domain.restart_input = None
+    domain.restart_mesh_input = None
 
     # Defining meshes to import (only if domain.mesh_input = None)
     #-------------------------------------------------------------
 
     # A case-specific mesh directory can be defined through domain.mesh_dir.
 
-    if domain.param == None:
-        domain.mesh_dir = None
+    domain.mesh_dir = None
 
     # Mesh names can be given as absolute path names; otherwise, file are
     # searched in the following directories, in the order:
@@ -114,8 +112,7 @@ def define_domain_parameters(domain):
     #                     '--num', '2', '--reorient'),
     #                    '~/meshdatabase/part3.unv']
 
-    if domain.param == None:
-        domain.meshes = None
+    domain.meshes = None
 
     # Logging arguments
     #------------------
@@ -124,8 +121,7 @@ def define_domain_parameters(domain):
     # type may be defined here, for example:
     #   domain.logging_args = '--logp'
 
-    if domain.param == None:
-        domain.logging_args = None
+    domain.logging_args = None
 
     # Solver options
     #---------------
@@ -143,9 +139,8 @@ def define_domain_parameters(domain):
     # and other modifications), use:
     #   domain.solver_args = '--preprocess'
 
-    if domain.param == None:
-        domain.exec_solver = True
-        domain.solver_args = None
+    domain.exec_solver = True
+    domain.solver_args = None
 
     # Compile and build options
     #--------------------------
@@ -158,11 +153,10 @@ def define_domain_parameters(domain):
     # this helps ensure added search paths have priority, but also implies
     # that user optimization options may be superceded by the default ones.
 
-    if domain.param == None:
-        domain.compile_cflags = None
-        domain.compile_cxxflags = None
-        domain.compile_fcflags = None
-        domain.compile_libs = None
+    domain.compile_cflags = None
+    domain.compile_cxxflags = None
+    domain.compile_fcflags = None
+    domain.compile_libs = None
 
     # Debugging options
     #------------------
@@ -175,8 +169,7 @@ def define_domain_parameters(domain):
     # or (for Valgrind and ddd):
     #   domain.debug = '--debugger=ddd valgrind --tool=memcheck --vgdb-error=1'
 
-    if domain.param == None:
-        domain.debug = None
+    domain.debug = None
 
     # import pprint
     # pprint.pprint(domain.__dict__)

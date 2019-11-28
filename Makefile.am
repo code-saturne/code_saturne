@@ -430,7 +430,8 @@ data/thch/dp_radiat_Planck_H2O \
 data/thch/dp_radiat_wave \
 data/thch/dp_transformers \
 data/thch/JANAF \
-data/thch/meteo
+data/thch/meteo \
+data/setup.xml
 
 # Install batch cards for cluster management
 

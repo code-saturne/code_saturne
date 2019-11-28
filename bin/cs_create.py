@@ -652,6 +652,10 @@ domains = [
 
         if not self.import_only:
             os.mkdir(data)
+            abs_setup_distpath = os.path.join(data_distpath, 'setup.xml')
+            if os.path.isfile(abs_setup_distpath):
+                shutil.copy(abs_setup_distpath, data)
+                unset_executable(data)
 
         if self.use_ref:
 
