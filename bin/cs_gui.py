@@ -108,7 +108,6 @@ def process_cmd_line(argv):
 
     (options, args) = parser.parse_args(argv)
 
-
     if options.new and options.file_name:
         parser.error("Options --new and --param are mutually exclusive")
 
@@ -120,6 +119,10 @@ def process_cmd_line(argv):
             parser.error("Multiple filenames are given")
         else:
             options.file_name = args[0]
+
+    has_setup = os.path.isfile(os.path.join(os.getcwd(), 'setup.xml'))
+    if not options.file_name and has_setup:
+        options.file_name = "setup.xml"
 
     return options.file_name, options.splash_screen
 
