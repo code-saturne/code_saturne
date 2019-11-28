@@ -1543,7 +1543,7 @@ _transform_gkb_system(const cs_matrix_t             *matrix,
   _eqp->sles_param.field_id = eqp->sles_param.field_id;
 
   cs_equation_param_update_from(eqp, _eqp);
-  _eqp->sles_param.eps = fmin(0.1*eqp->sles_param.eps, 1e-10);
+  _eqp->sles_param.eps = fmax(1e-2*eqp->sles_param.eps, 1e-10);
 
   bool  rhs_redux = true;
   if (gkb->gamma > 0) {
