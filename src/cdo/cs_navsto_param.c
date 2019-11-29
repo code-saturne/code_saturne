@@ -257,8 +257,10 @@ cs_navsto_param_create(const cs_boundary_t             *boundaries,
   param->theta = 1.0;
 
   /* Resolution parameters */
-  param->max_algo_iter = 25;
-  param->residual_tolerance = 1e-10;
+  param->max_algo_iter = 100;
+  param->residual_tolerance = 1e-08;
+  param->picard_tolerance = 1e-6;
+  param->picard_n_max_iter = 50;
 
   param->boundaries = boundaries; /* shared structure */
 
@@ -515,6 +517,10 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     nsp->max_algo_iter = atoi(val);
     break;
 
+  case CS_NSKEY_MAX_PICARD_ITER:
+    nsp->picard_n_max_iter = atoi(val);
+    break;
+
   case CS_NSKEY_QUADRATURE:
     {
       nsp->qtype = CS_QUADRATURE_NONE;
@@ -537,6 +543,13 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 
     }
     break; /* Quadrature */
+
+  case CS_NSKEY_PICARD_TOLERANCE:
+    nsp->picard_tolerance = atof(val);
+    if (nsp->picard_tolerance < 0)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid value for the Picard tolerance\n", __func__);
+    break;
 
   case CS_NSKEY_RESIDUAL_TOLERANCE:
     nsp->residual_tolerance = atof(val);
@@ -772,6 +785,14 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
   /* Describe the coupling algorithm */
   cs_log_printf(CS_LOG_SETUP, "  * NavSto | Coupling: %s\n",
                 cs_navsto_param_coupling_name[nsp->coupling]);
+
+  /* Describe if needed the SLES settings for the Picard algorithm */
+  if (nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES) {
+    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Picard.Residual:  %5.3e\n",
+                  nsp->picard_tolerance);
+    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Picard.Max.Iters: %d\n",
+                  nsp->picard_n_max_iter);
+  }
 
   /* Describe the strategy to inverse the linear system */
   cs_log_printf(CS_LOG_SETUP, "  * NavSto | Algo.Residual: %5.3e\n",

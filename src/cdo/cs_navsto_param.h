@@ -475,17 +475,28 @@ typedef struct {
   cs_navsto_param_sles_t        sles_strategy;
 
   /*! \var residual_tolerance
-   *  Tolerance at which the Navier--Stokes is resolved (apply to the residual
-   *  of the coupling algorithm chosen to solve the Navier--Stokes system)
+   *  Tolerance at which the Oseen/Stokes system is resolved (apply to the
+   *  residual of the coupling algorithm chosen to solve the Navier--Stokes
+   *  system)
    */
   cs_real_t                     residual_tolerance;
 
   /*! \var max_algo_iter
-   * Maximal number of iteration of the coupling algorithm. Not useful for a
-   * monolithic approach. In this case, only the maximal number of iterations
-   * for the iterative solver is taken into account
+   * Maximal number of iterations of the coupling algorithm.
    */
   int                           max_algo_iter;
+
+  /*! \var picard_tolerance
+   *  Tolerance at which the Picard algorithm is resolved. One handles the
+   *  non-linearity arising from the advection term with the algorithm.
+   */
+  cs_real_t                     picard_tolerance;
+
+  /*! \var picard_n_max_iter
+   * Maximal number of iterations for the Picard algorithm used to handle
+   * the non-linearity arising from the advection term.
+   */
+  int                           picard_n_max_iter;
 
   /*!
    * @}
@@ -639,17 +650,23 @@ typedef struct {
  * algorithm or an Uzawa - Augmented Lagrangian method is used
  *
  * \var CS_NSKEY_MAX_ALGO_ITER
- * Set the maximal number of iteration of the coupling algorithm. Not useful
- * for a monolithic approach. In this case, only the maximal number of
- * iterations for the iterative solver is taken into account
+ * Set the maximal number of iteration for solving the coupled system.
+ *
+ * \var CS_NSKEY_MAX_PICARD_ITER
+ * Set the maximal number of Picard iterations for solving the non-linearity
+ * arising from the advection form
  *
  * \var CS_NSKEY_QUADRATURE
  * Set the type to use in all routines involving quadrature (similar to \ref
  * CS_EQKEY_BC_QUADRATURE)
  *
+ * \var CS_NSKEY_PICARD_TOLERANCE
+ * Tolerance at which the non-linearity arising from the advection term is
+ * resolved
+ *
  * \var CS_NSKEY_RESIDUAL_TOLERANCE
- * Tolerance at which the Navier--Stokes is resolved (apply to the residual
- * of the coupling algorithm chosen to solve the Navier--Stokes system)
+ * Tolerance at which the Oseen or Stokes system is resolved (apply to the
+ * residual of the coupling algorithm chosen to solve the Navier--Stokes system)
  *
  * \var CS_NSKEY_SLES_STRATEGY
  * Strategy for solving the SLES arising from the discretization of the
@@ -679,7 +696,9 @@ typedef enum {
   CS_NSKEY_DOF_REDUCTION,
   CS_NSKEY_GD_SCALE_COEF,
   CS_NSKEY_MAX_ALGO_ITER,
+  CS_NSKEY_MAX_PICARD_ITER,
   CS_NSKEY_QUADRATURE,
+  CS_NSKEY_PICARD_TOLERANCE,
   CS_NSKEY_RESIDUAL_TOLERANCE,
   CS_NSKEY_SLES_STRATEGY,
   CS_NSKEY_SPACE_SCHEME,

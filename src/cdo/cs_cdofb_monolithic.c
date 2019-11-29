@@ -214,8 +214,8 @@ _picard_cvg_test(const cs_navsto_param_t      *nsp,
   ns_info->res = sqrt(ns_info->res);
 
   /* Set the convergence status */
-  if (ns_info->res < nsp->residual_tolerance &&
-      div_l2 < nsp->residual_tolerance) {
+  if (ns_info->res < nsp->picard_tolerance &&
+      div_l2 < nsp->picard_tolerance) {
     ns_info->cvg = CS_SLES_CONVERGED;
     return;
   }
@@ -225,7 +225,7 @@ _picard_cvg_test(const cs_navsto_param_t      *nsp,
     return;
   }
 
-  if (ns_info->n_algo_iter >= nsp->max_algo_iter) {
+  if (ns_info->n_algo_iter >= nsp->picard_n_max_iter) {
     ns_info->cvg = CS_SLES_MAX_ITERATION;
     return;
   }
