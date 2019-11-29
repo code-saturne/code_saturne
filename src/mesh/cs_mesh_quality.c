@@ -1442,7 +1442,9 @@ cs_mesh_quality(const cs_mesh_t             *mesh,
                                warp_error,
                                warp_error);
 
-    bft_printf(" L2-error norm induced by warping : %5.3e\n", sqrt(l2_error));
+    if (l2_error > 0) /* May be < 0 in case of negative volumes */
+      bft_printf(" L2-error norm induced by warping : %5.3e\n", sqrt(l2_error));
+
     BFT_FREE(warp_error);
 
   } /* End of cell volume treatment */
