@@ -1837,7 +1837,7 @@ _uza_cvg_test(const cs_navsto_param_t    *nsp,
   uza->info.res = sqrt(res_square);
 
   double  tau = (uza->gamma > 0) ?
-    nsp->residual_tolerance/uza->gamma : nsp->residual_tolerance;
+    nsp->residual_tolerance/sqrt(uza->gamma) : nsp->residual_tolerance;
 
   /* Set the convergence status */
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_SLES_DBG > 0
@@ -2456,6 +2456,15 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
   /* Main loop */
   /* ========= */
 
+  cs_equation_param_t  *_eqp = NULL;
+  BFT_MALLOC(_eqp, 1, cs_equation_param_t);
+  BFT_MALLOC(_eqp->name, strlen(eqp->name)+1, char);
+
+  cs_equation_param_update_from(eqp, _eqp);
+
+  sprintf(_eqp->name, "%s", eqp->name);
+  _eqp->sles_param.field_id = eqp->sles_param.field_id;
+
   while (uza->info.cvg == CS_SLES_ITERATING) {
 
     /* Compute the RHS for the Uzawa system: rhs = b_tilda - Dt.p_c */
@@ -2474,11 +2483,19 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
     }
 
     /* Solve AL.u_f = rhs */
-    cs_real_t  normalization = 1.; /* TODO */
+    cs_real_t  normalization = 1.; /* No need to change this */
+    if (_eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS) {
+      cs_real_t  eps = fmin(1e-2, 0.1*uza->info.res);
+      _eqp->sles_param.eps = fmax(eps, eqp->sles_param.eps);
+      if (_eqp->sles_param.verbosity > 1)
+        cs_log_printf(CS_LOG_DEFAULT, " UZA.It%02d-- eps=%5.3e\n",
+                      uza->info.n_algo_iter, _eqp->sles_param.eps);
+    }
+
     uza->info.n_inner_iter
       += (uza->info.last_inner_iter =
           cs_equation_solve_scalar_system(uza->n_u_dofs,
-                                          eqp,
+                                          _eqp,
                                           msles->matrix,
                                           cs_shared_range_set,
                                           normalization,
@@ -2504,6 +2521,7 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
   int n_inner_iter = uza->info.n_inner_iter;
 
   /* Last step: Free temporary memory */
+  _eqp = cs_equation_free_param(_eqp);
   _free_uza_builder(&uza);
 
   return  n_inner_iter;
