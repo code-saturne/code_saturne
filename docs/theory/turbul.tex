@@ -38,10 +38,10 @@ where $\mathcal{P}$ is the production term created by mean shear:
 \begin{equation}
 \begin{array}{rcl}
 \mathcal{P} & = & \displaystyle -\rho \tens{R} : \gradt \, \vect{u}
-= -\left[-2 \mu_t \deviator{\tens{S}}
+= -\left[-2 \mu_T \deviator{\tens{S}}
 + \frac{2}{3}\rho k \tens{1}\right] : \tens{S}, \\
 & = & \displaystyle
-2 \mu_t  \deviator{\tens{S}}: \deviator{\tens{S}}
+2 \mu_T  \deviator{\tens{S}}: \deviator{\tens{S}}
 -\dfrac{2}{3}
 \rho k \trace \left( \gradt \,\vect{u} \right),
 \end{array}
@@ -50,12 +50,12 @@ where $\mathcal{P}$ is the production term created by mean shear:
 and
 $\mathcal{G}$ is the production term created by gravity effects:
 \begin{equation}
-\displaystyle \mathcal{G}= \frac{1}{\rho}\frac{\mu_t}{\sigma_t} \grad \rho \cdot \vect{g}.
+\displaystyle \mathcal{G}= \frac{1}{\rho}\frac{\mu_T}{\sigma_t} \grad \rho \cdot \vect{g}.
 \end{equation}
 
 The dynamic turbulent viscosity reads:
 \begin{equation}
-\displaystyle \mu_t=\rho C_\mu\frac{k^2}{%
+\displaystyle \mu_T=\rho C_\mu\frac{k^2}{%
 \varepsilon}.
 \end{equation}
 \nomenclature[rstk]{$ST_{k}$}{additional turbulent kinetic energy source term \nomunit{$kg.m^{-1}.s^{-3}$}}
@@ -753,4 +753,128 @@ See the \doxygenfile{visdyn_8f90.html}{programmers reference of the dedicated su
 
 %-------------------------------------------------------------------------------
 %\subsection{WALE model}
+
+%-------------------------------------------------------------------------------
+\section{Turbulence models for velocity -- scalar correlations}
+
+\subsection{Simple Gradient Diffusion Hypothesis (SGDH)}
+The simplest models assume that turbulent fluxes $ \rans{\fluct{\varia} \fluct{\vect{u}}}$ is aligned with the mean gradient as for Fick diffusion law:
+\begin{equation}\label{eq:sgdh}
+  \rho \DP{\varia}=
+  \underbrace{\divs \left[\left( \dfrac{\mu}{Sc} + \dfrac{\mu_T}{Sc_T} \right) \grad{\varia} \right]}_{d_\varia}
+\end{equation}
+where $Sc$ and $Sc_T$ are respectively the molecular and the turbulent Schmidt numbers.
+
+
+%-------------------------------------------------------------------------------
+\subsection{Generalized Gradient Diffusion Hypothesis (GGDH)}
+
+With GGDH, Equation \eqref{eq:sgdh} becomes:
+\begin{equation}
+  \rho \DP{\varia}= \underbrace{\divs \left[\left( \dfrac{\mu}{Sc} \tens{1} + \rho C_{\theta}\dfrac{k}{\varepsilon} \tens{R}\right)\cdot \grad{\varia} \right]}_{d_\varia}
+\label{eq:ggdh}
+\end{equation}
+
+%-------------------------------------------------------------------------------
+\subsection{Scalar Variance}
+The variance transport equation is for a scalar $\varia$:
+
+\begin{equation}
+  \rho\frac{\dd \rans{\fluct{\varia}^2}}{\dd t} =
+  \underbrace{-2 \rho \grad{\rans{\varia}} \cdot \rans{\fluct{\varia} \fluct{\vect{u}}}
+  }_{P_{\theta \theta } }
+  + \dive{\left(\underbrace{ \dfrac{\mu}{Sc} \grad{\rans{\fluct{\varia}^2}}}_{D^{\nu}_{\theta \theta } } \underbrace{-\rho \rans{\fluct{\varia}^2 \fluct{\vect{u}} }}_{D^{t}_{\theta \theta } }\right)}
+  \underbrace{-2 \dfrac{\mu}{Sc} \rans{\grad{\fluct{\varia}}\cdot \grad{\fluct{\varia}}}}_{\varepsilon_{\theta \theta } }
+\end{equation}
+
+where $P_{\theta \theta}$, $D^{\nu}_{\theta \theta }$, $D^{t}_{\theta \theta }$ et $\varepsilon_{\theta \theta}$ are respectively the terms of production, molecular diffusion, turbulent diffusion and variance dissipation.
+The production and molecular diffusion terms are exact, only the turbulent diffusion and the dissipation need to be modelled.
+For the turbulent diffusion $D^{t}_{\theta \theta }$, a model GGDH can be used if the Reynolds stresses are solved.
+The variance transport equation becomes:
+
+\begin{equation}
+  \rho \frac{\dd \rans{\fluct{\varia}^2}}{\dd t} =\dive{ \left[ \left( \dfrac{\mu}{Sc} \tens{1}  + C_{\theta \theta}~ \rho \tens{R} \frac{k}{\varepsilon} \right)\cdot \grad{\rans{\fluct{\varia}^2}} \right]} + P_{\theta \theta}- \rho \varepsilon_{\theta \theta}
+ \label{eq:variance}
+\end{equation}
+
+Two methods exist to model $\varepsilon_{\theta \theta}$; one using a transport equation and one using the time scale ratio $R_f$, such as:
+\[
+R_f=\frac{\tau_\theta}{\tau_u}=\frac{\rans{\fluct{\varia}^2}}{\varepsilon_{\theta \theta} } \frac{\varepsilon }{k}
+\]
+thus,
+\begin{equation}
+\varepsilon_{\theta \theta}=\frac{\rans{\fluct{\varia}^2}}{R_f} \frac{\varepsilon }{k}
+\label{eq:eptt}
+\end{equation}
+
+By default, a SGDH equation is solved:
+
+\begin{equation}
+  \rho \frac{\dd \rans{\fluct{\varia}^2}}{\dd t}=\dive{ \left[ \left(  \dfrac{\mu}{Sc}   +\dfrac{\mu_T}{Sc_T}  \right)\grad{\rans{\fluct{\varia}^2}} \right]} + \underbrace{2 \dfrac{\mu_T}{Sc_T} \left|\grad{\rans{\varia}}\right|^2}_{P_{\theta \theta}}- \underbrace{\rho \frac{\varepsilon \rans{\fluct{\varia}^2}}{k R_f}}_{\varepsilon_{\theta \theta}} \label{eq:variance_CS}
+\end{equation}
+with $Sc_T=1$ and $R_f=0.8$, by default.
+
+With $R_{ij}$ models (SSG, LRR, EB-RSM), a Daly Harlow method is used for the turbulent diffusion term and $R_f=0.5$.
+
+%-------------------------------------------------------------------------------
+\subsection{Algebraic Flux Models (AFM)}
+
+This Algebraic model is defined by the following equation:
+\begin{equation}\label{eq:AFM}
+ \rans{\fluct{\varia}\fluct{\vect{u}}} = - C_\theta \tau \left[
+	\tens{R}\cdot\grad{\rans{\varia}}
+	+ \xi \rans{\fluct{\varia}\fluct{\vect{u}}}\cdot \gradt{\,\vect{u}}
+	+ \eta \beta \rans{\fluct{\varia}^2}\vect{g}
+	\right]
+\end{equation}
+%
+where $C_{\theta } = C_{\theta }^{'} / C_{1 \theta}$; $\xi =1-C_{2 \theta}$; $\eta =1-C_{3 \theta}$. With: $C_{\theta }=0.236$, $ C_{\theta }^{'}=0.98$, $C_{1 \theta}=4.15$, $C_{2 \theta}=0.3$ and $C_{3 \theta}=0.6$.
+
+For the part with the temperature gradient, it is treated like the GGDH. The other part with the velocity gradient and the gravity is treated in explicit.
+
+%-------------------------------------------------------------------------------
+\subsection{Differential Flux Model (DFM)}
+The mean turbulent heat flux transport equations are:
+
+\begin{align}
+\label{eq:DuitDt}
+&\DP{\rans{\fluct{\varia}\fluct{\vect{u}}}}=
+    \underbrace{- \gradt{\,\vect{\rans{u}}}\cdot \rans{\fluct{\varia}\fluct{\vect{u}}}}_{\displaystyle \vect{P}^U_\theta}
+    \underbrace{- \tens{R} \cdot \gradv{\rans{\varia}}}_{\displaystyle \vect{P}^\varia_\theta}
+    \underbrace{ -\beta \rans{\fluct{\varia}^2} \vect{g} }_{\displaystyle \vect{G}_\theta}
+    \underbrace{- \rans{\frac{\fluct{p}}{\rho} \gradv{\fluct{\varia}}}}_{\displaystyle \vect{\phi}_\theta}
+    - \underbrace{(\kappa + \nu) \rans{\gradt{\,\fluct{\vect{u}}}\cdot \gradv{\fluct{\varia}}}}_{\displaystyle \vect{\varepsilon}_\theta} \\
+    &+ \underbrace{\divv{\left( -\rans{\fluct{\varia} \fluct{\vect{u}} \otimes\fluct{\vect{u}}} \right)}}_{\displaystyle \vect{D}^t_\theta}      + \underbrace{\divv{\left( \kappa \rans{\fluct{\vect{u}}\otimes \gradv{\fluct{\varia}}} +
+      \nu \rans{\fluct{\varia} \gradt{\,\fluct{\vect{u}}}}\right)}}_{\displaystyle \vect{D}^\nu_\theta}
+      +\underbrace{\divv{\left(\frac{\rans{\fluct{\varia} \fluct{p}}}{\rho}\tens{1}\right)}}_{\displaystyle \vect{D}^p_\theta} \notag
+\end{align}
+
+Only the production terms are exact, the equation becomes with diffusion and scrambling models:
+
+\begin{equation}
+\DP{\rans{\fluct{\varia}\fluct{\vect{u}}}}=\vect{P}_{\,\theta}+ \vect{\phi}_{\,\theta} - \vect{\varepsilon}_{\,\theta} + \vect{\mathcal{D}}_{\,\theta}
+\end{equation}
+
+where $\vect{P}_{\,\theta}=\vect{P}_{\,\theta}^U+\vect{P}_{\,\theta}^\varia+\vect{G}_{\,\theta}$ et $\vect{\mathcal{D}}_{\,\theta}=\vect{\mathcal{D}}_{\,\theta}^{\nu}+\vect{\mathcal{D}}_{\,\theta}^{t}+ \vect{\mathcal{D}}_{\,\theta}^{p}$.
+
+\begin{equation}
+  \vect{\mathcal{D}}_{\,\theta}^{\nu} = \divv{\left(\frac{\nu + \kappa}{2} \gradt{\rans{\fluct{\varia}\fluct{\vect{u}}}}\right)}
+\end{equation}
+
+\begin{equation}
+  \vect{\mathcal{D}}_{\,\theta}^{t} + \vect{\mathcal{D}}_{\,\theta}^{p} = \divv{\left(C_{\theta} \tau  \gradt{\rans{\fluct{\varia} \fluct{\vect{u}}}}\tens{R} \right)}
+\end{equation}
+with $C_\theta=0.22$.
+
+\begin{equation}
+  \vect{\varepsilon}_{\,\theta}=0
+\end{equation}
+
+\begin{equation}
+  \vect{\phi}_{\,\theta}= -C_{1 \theta} \frac{1}{\tau} \rans{\fluct{\varia}\fluct{\vect{u}}} + C_{2 \theta} \gradt{\,\rans{\vect{u}}}\cdot \rans{\fluct{\varia}\fluct{\vect{u}}}  + C_{3 \theta} \beta \rans{\fluct{\varia}^2}\vect{g}  + C_{4 \theta} \gradv{\rans{\varia}}\cdot \tens{R}
+\label{eq:phi_lineaire}
+\end{equation}
+
+where $C_{1 \theta}=4.15$, $C_{2 \theta}=0.55$, $C_{3 \theta}=0.5$ and $C_{4 \theta}=0$.
+
 
