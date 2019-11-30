@@ -639,6 +639,28 @@ _orient_tetra(const ecs_coord_t  coord[],
 }
 
 /*----------------------------------------------------------------------------
+ *  Correction de l'orientation issue de Foam2VTK d'un tétraèdre
+ *   en connectivité nodale ; renvoie 1.
+ *----------------------------------------------------------------------------*/
+
+static ecs_int_t
+_orient_tetra_of(ecs_int_t          connect[])
+{
+  ecs_int_t   isom_tmp;
+
+#define ECS_LOC_PERMUTE(i, j) ( \
+  isom_tmp = connect[i-1],     \
+  connect[i-1] = connect[j-1], \
+  connect[j-1] = isom_tmp      )
+
+  ECS_LOC_PERMUTE(2, 3);
+
+  return 1;
+
+#undef ECS_LOC_PERMUTE
+}
+
+/*----------------------------------------------------------------------------
  *  Correction si nécessaire de l'orientation d'une pyramide en connectivité
  *   nodale ; renvoie -1 si l'on ne parvient pas à corriger l'orientation
  *   ou que l'on demande une simple vérification (i.e. correc = false),
@@ -738,6 +760,39 @@ _orient_pyram(const ecs_coord_t  coord[],
   }
 
   return retval;
+
+#undef ECS_LOC_INIT_VECT
+#undef ECS_LOC_PERMUTE
+}
+
+/*----------------------------------------------------------------------------
+ *  Correction de l'orientation issue de Foam2VTK d'une pyramide
+ *   en connectivité nodale ; renvoie 1.
+ *----------------------------------------------------------------------------*/
+
+static ecs_int_t
+_orient_pyram_of(ecs_int_t          connect[])
+{
+  ecs_int_t   isom;
+  ecs_int_t   isom_tmp;
+  ecs_int_t   connect_tmp[8];
+
+#define ECS_LOC_PERMUTE(i, j) ( \
+  isom_tmp = connect[i-1],             \
+  connect_tmp[i-1] = connect_tmp[j-1], \
+  connect_tmp[j-1] = isom_tmp         )
+
+  for (isom = 0; isom < 5; isom++)
+    connect_tmp[isom] = connect[isom];
+
+  /* Boucle sur les renumérotations possibles */
+
+  ECS_LOC_PERMUTE(2, 4);
+
+  for (isom = 0; isom < 5; isom++)
+    connect[isom] = connect_tmp[isom];
+
+  return 1;
 
 #undef ECS_LOC_INIT_VECT
 #undef ECS_LOC_PERMUTE
@@ -981,6 +1036,39 @@ _orient_hexa(const ecs_coord_t  coord[],
   return retval;
 
 #undef ECS_LOC_INIT_VECT
+#undef ECS_LOC_PERMUTE
+}
+
+/*----------------------------------------------------------------------------
+ *  Correction de l'orientation issue de Foam2VTK d'un hexaedre
+ *   en connectivité nodale ; renvoie 1.
+ *----------------------------------------------------------------------------*/
+
+static ecs_int_t
+_orient_hexa_of(ecs_int_t          connect[])
+{
+  ecs_int_t   isom;
+  ecs_int_t   isom_tmp;
+  ecs_int_t   connect_tmp[8];
+
+#define ECS_LOC_PERMUTE(i, j) ( \
+  isom_tmp = connect[i-1],             \
+  connect_tmp[i-1] = connect_tmp[j-1], \
+  connect_tmp[j-1] = isom_tmp         )
+
+  for (isom = 0; isom < 8; isom++)
+    connect_tmp[isom] = connect[isom];
+
+  /* Renumbering */
+
+  ECS_LOC_PERMUTE(2, 4);
+  ECS_LOC_PERMUTE(6, 8);
+
+  for (isom = 0; isom < 8; isom++)
+    connect[isom] = connect_tmp[isom];
+
+  return 1;
+
 #undef ECS_LOC_PERMUTE
 }
 
@@ -2499,6 +2587,11 @@ ecs_table_def__orient_nodal(ecs_coord_t     *vtx_coords,
   ecs_int_t   cpt_cel_erreur = 0;
   ecs_int_t   cpt_cel_correc = 0;
 
+  int  foam2vtk = 0;  /* tentative adaptation to meshes transformed with
+                         foam2vtk; solves most issues but a few remain */
+  if (getenv("CS_PREPROCESS_FOAM_2_VTK_SOURCE") != NULL)
+    foam2vtk = 1;
+
   /*xxxxxxxxxxxxxxxxxxxxxxxxxxx Instructions xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
 
   if (vtx_coords == NULL)
@@ -2578,34 +2671,46 @@ ecs_table_def__orient_nodal(ecs_coord_t     *vtx_coords,
 
       case ECS_ELT_TYP_CEL_TETRA:
 
-        ret_orient = _orient_tetra(vtx_coords,
-                                   &(table_def_cel->val[ipos_cel]));
+        if (foam2vtk)
+          ret_orient = _orient_tetra_of(&(table_def_cel->val[ipos_cel]));
+        else
+          ret_orient = _orient_tetra(vtx_coords,
+                                     &(table_def_cel->val[ipos_cel]));
         break;
 
       case ECS_ELT_TYP_CEL_PYRAM:
 
-        ret_orient
-          = _orient_pyram(vtx_coords,
-                          &(table_def_cel->val[ipos_cel]),
-                          correc_orient);
+        if (foam2vtk)
+          ret_orient
+            = _orient_pyram_of(&(table_def_cel->val[ipos_cel]));
+        else
+          ret_orient
+            = _orient_pyram(vtx_coords,
+                            &(table_def_cel->val[ipos_cel]),
+                            correc_orient);
         break;
 
       case ECS_ELT_TYP_CEL_PRISM:
 
-        ret_orient
-          = _orient_prism(vtx_coords,
-                          &(table_def_cel->val[ipos_cel]),
-                          correc_orient);
-
+        if (foam2vtk)
+          ret_orient = 0;
+        else
+          ret_orient
+            = _orient_prism(vtx_coords,
+                            &(table_def_cel->val[ipos_cel]),
+                            correc_orient);
         break;
 
       case ECS_ELT_TYP_CEL_HEXA:
 
-        ret_orient
-          = _orient_hexa(vtx_coords,
-                         &(table_def_cel->val[ipos_cel]),
-                         correc_orient);
-
+        if (foam2vtk)
+          ret_orient
+            = _orient_hexa_of(&(table_def_cel->val[ipos_cel]));
+        else
+          ret_orient
+            = _orient_hexa(vtx_coords,
+                           &(table_def_cel->val[ipos_cel]),
+                           correc_orient);
         break;
 
       default: /* ECS_ELT_TYP_CEL_POLY */
