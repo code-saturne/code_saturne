@@ -3082,7 +3082,7 @@ ecs_table_def__typ_fac_cel(ecs_table_t  *table_def_cel,
       else {
         if (num_fac > 0 && (typ_fac.val[ifac] & 1) == 1)
           typ_fac.val[ifac] = typ_fac.val[ifac] | 4;
-        else if (num_fac < 0 && (typ_fac.val[ifac] & 2) == 1)
+        else if (num_fac < 0 && (typ_fac.val[ifac] & 2) == 2)
           typ_fac.val[ifac] = typ_fac.val[ifac] | 8;
       }
 
