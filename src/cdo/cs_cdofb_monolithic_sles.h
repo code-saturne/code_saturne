@@ -169,8 +169,8 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Use the Uzawa algorithm with an Augmented Lagrangian technique to
- *         solve the saddle-point problem arisinfg from CDO-Fb schemes for
- *         Stokes and Navier-Stokes with a monolithic coupling
+ *         solve the saddle-point problem arising from CDO-Fb schemes for
+ *         Stokes, Oseen and Navier-Stokes with a monolithic coupling
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
@@ -184,6 +184,26 @@ int
 cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
                                    const cs_equation_param_t     *eqp,
                                    cs_cdofb_monolithic_sles_t    *msles);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Use the Uzawa algorithm with an Augmented Lagrangian technique in an
+ *         incremental way to solve the saddle-point problem arising from
+ *         CDO-Fb schemes for Stokes, Oseen and Navier-Stokes with a monolithic
+ *         coupling
+ *
+ * \param[in]      nsp      pointer to a cs_navsto_param_t structure
+ * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
+ *
+ * \return the cumulated number of iterations of the solver
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
+                                        const cs_equation_param_t     *eqp,
+                                        cs_cdofb_monolithic_sles_t    *msles);
 
 /*----------------------------------------------------------------------------*/
 

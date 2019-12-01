@@ -58,6 +58,7 @@
 #include "cs_dbg.h"
 #endif
 #include "cs_equation.h"
+#include "cs_evaluate.h"
 #include "cs_fp_exception.h"
 #include "cs_navsto_coupling.h"
 #include "cs_parall.h"
@@ -1825,7 +1826,7 @@ _uza_cvg_test(const cs_navsto_param_t    *nsp,
 {
   const cs_real_t  diverg_factor = 100;
 
-  /* Increment the number of Picard iterations */
+  /* Increment the number of algo. iterations */
   uza->info.n_algo_iter += 1;
 
   /* Compute the new residual based on the norm of the divergence constraint */
@@ -1862,6 +1863,67 @@ _uza_cvg_test(const cs_navsto_param_t    *nsp,
                   uza->info.last_inner_iter, uza->info.n_inner_iter,
                   uza->info.cvg);
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Test if one needs one more Uzawa iteration in case of an incremental
+ *         formulation
+ *
+ * \param[in]      nsp        pointer to a set of parameters for Navier-Stokes
+ * \param[in]      delta_u_l2 value of the weighted L2 norm of delta_u
+ * \param[in, out] uza        pointer to a Uzawa builder structure
+ *
+ * \return true if one more iteration is needed otherwise false
+ */
+/*----------------------------------------------------------------------------*/
+
+static bool
+_uza_incr_cvg_test(const cs_navsto_param_t    *nsp,
+                   cs_real_t                   delta_u_l2,
+                   cs_uza_builder_t           *uza)
+{
+  const cs_real_t  diverg_factor = 1e3;
+
+  /* Increment the number of algo. iterations */
+  uza->info.n_algo_iter += 1;
+
+  /* Compute the new residual based on the norm of the divergence constraint */
+  const cs_real_t  prev_res = uza->info.res;
+
+  cs_real_t  res_square = cs_dot_wxx(uza->n_p_dofs, uza->inv_mp, uza->d__v);
+  cs_parall_sum(1, CS_DOUBLE, &res_square);
+  assert(res_square > -DBL_MIN);
+  cs_real_t  divu_l2 = sqrt(res_square);
+  uza->info.res = fmax(delta_u_l2, divu_l2);
+
+  /* Set the convergence status */
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_SLES_DBG > 0
+  cs_log_printf(CS_LOG_DEFAULT,
+                "\nUZAi.It%02d-- res = %6.4e ?<? eps %6.4e\n",
+                uza->info.n_algo_iter, uza->info.res, nsp->residual_tolerance);
+#endif
+
+  if (uza->info.res < nsp->residual_tolerance)
+    uza->info.cvg = CS_SLES_CONVERGED;
+  else if (uza->info.n_algo_iter >= nsp->max_algo_iter)
+    uza->info.cvg = CS_SLES_MAX_ITERATION;
+  else if (uza->info.res > diverg_factor * prev_res)
+    uza->info.cvg = CS_SLES_DIVERGED;
+  else
+    uza->info.cvg = CS_SLES_ITERATING;
+
+  if (nsp->verbosity > 2)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "UZAi.It%02d-- %5.3e %5d %6d cvg:%d (div:%5.3e, du:%5.3e)\n",
+                  uza->info.n_algo_iter, uza->info.res,
+                  uza->info.last_inner_iter, uza->info.n_inner_iter,
+                  uza->info.cvg, divu_l2, delta_u_l2);
+
+  if (uza->info.cvg == CS_SLES_ITERATING)
+    return true;
+  else
+    return false;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -2397,8 +2459,8 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Use the Uzawa algorithm with an Augmented Lagrangian technique to
- *         solve the saddle-point problem arisinfg from CDO-Fb schemes for
- *         Stokes and Navier-Stokes with a monolithic coupling
+ *         solve the saddle-point problem arising from CDO-Fb schemes for
+ *         Stokes, Oseen and Navier-Stokes with a monolithic coupling
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
@@ -2522,6 +2584,196 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
 
   /* Last step: Free temporary memory */
   _eqp = cs_equation_free_param(_eqp);
+  _free_uza_builder(&uza);
+
+  return  n_inner_iter;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Use the Uzawa algorithm with an Augmented Lagrangian technique in an
+ *         incremental way to solve the saddle-point problem arising from
+ *         CDO-Fb schemes for Stokes, Oseen and Navier-Stokes with a monolithic
+ *         coupling
+ *
+ * \param[in]      nsp      pointer to a cs_navsto_param_t structure
+ * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in, out] msles    pointer to a cs_cdofb_monolithic_sles_t structure
+ *
+ * \return the cumulated number of iterations of the solver
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
+                                        const cs_equation_param_t     *eqp,
+                                        cs_cdofb_monolithic_sles_t    *msles)
+{
+  /* Sanity checks */
+  assert(nsp != NULL && nsp->sles_strategy == CS_NAVSTO_SLES_UZAWA_AL);
+  assert(cs_shared_range_set != NULL);
+
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_adjacency_t  *c2f = cs_shared_connect->c2f;
+
+  const cs_real_t  gamma = msles->graddiv_coef;
+  const cs_real_t  *div_op = msles->div_op;
+
+  cs_real_t  *u_f = msles->u_f;
+  cs_real_t  *p_c = msles->p_c;
+  cs_real_t  *b_f = msles->b_f;
+  cs_real_t  *b_c = msles->b_c;
+
+  /* Allocate and initialize the GKB builder structure */
+  cs_uza_builder_t  *uza = _init_uzawa_builder(gamma,
+                                               3*quant->n_faces,
+                                               quant->n_cells,
+                                               quant);
+
+  /* Transformation of the initial right-hand side */
+  cs_real_t  *btilda_c = uza->d__v;
+# pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
+  for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++)
+    btilda_c[ip] = uza->inv_mp[ip]*b_c[ip];
+
+  _apply_div_op_transpose(div_op, btilda_c, uza->b_tilda);
+
+  if (cs_glob_n_ranks > 1)
+    cs_interface_set_sum(cs_shared_range_set->ifs,
+                         uza->n_u_dofs,
+                         1, false, CS_REAL_TYPE, /* stride, interlaced */
+                         uza->b_tilda);
+
+  /* Update the modify right-hand side: b_tilda = b_f + gamma*Dt.W^-1.b_c */
+# pragma omp parallel for if (uza->n_u_dofs > CS_THR_MIN)
+  for (cs_lnum_t iu = 0; iu < uza->n_u_dofs; iu++) {
+    uza->b_tilda[iu] *= gamma;
+    uza->b_tilda[iu] += b_f[iu];
+  }
+
+  /* Initialization */
+  /* ============== */
+
+  /* Compute the RHS for the Uzawa system: rhs = b_tilda - Dt.p_c */
+  _apply_div_op_transpose(div_op, p_c, uza->rhs);
+
+  if (cs_glob_n_ranks > 1)
+    cs_interface_set_sum(cs_shared_range_set->ifs,
+                         uza->n_u_dofs,
+                         1, false, CS_REAL_TYPE, /* stride, interlaced */
+                         uza->rhs);
+
+#   pragma omp parallel for if (uza->n_u_dofs > CS_THR_MIN)
+  for (cs_lnum_t iu = 0; iu < uza->n_u_dofs; iu++) {
+    uza->rhs[iu] *= -1;
+    uza->rhs[iu] += uza->b_tilda[iu];
+  }
+
+  /* Solve AL.u_f = rhs */
+  /* Modifiy the tolerance in order to be more accurate on this step */
+  cs_equation_param_t  *_eqp = NULL;
+
+  BFT_MALLOC(_eqp, 1, cs_equation_param_t);
+  BFT_MALLOC(_eqp->name, strlen(eqp->name) + strlen(":alu0") + 1, char);
+  sprintf(_eqp->name, "%s:alu0", eqp->name);
+  _eqp->sles_param.field_id = eqp->sles_param.field_id;
+
+  cs_equation_param_update_from(eqp, _eqp);
+  _eqp->sles_param.eps = fmax(fmin(1e-7, 1e-4*eqp->sles_param.eps), 1e-12);
+
+  cs_real_t  normalization = cs_evaluate_3_square_wc2x_norm(uza->rhs,
+                                                            c2f,
+                                                            quant->pvol_fc);
+  if (fabs(normalization) > 0)
+    normalization = sqrt(normalization);
+  else
+    normalization = 1.0;
+
+  uza->info.n_inner_iter
+    += (uza->info.last_inner_iter =
+        cs_equation_solve_scalar_system(uza->n_u_dofs,
+                                        _eqp,
+                                        msles->matrix,
+                                        cs_shared_range_set,
+                                        normalization,
+                                        false, /* rhs_redux */
+                                        msles->sles,
+                                        u_f,
+                                        uza->rhs));
+
+  cs_equation_free_param(_eqp);
+
+  /* Main loop */
+  /* ========= */
+
+  cs_real_t  *delta_u = uza->b_tilda;
+
+  /* Compute the divergence of u since this a stopping criteria */
+  _apply_div_op(div_op, u_f, uza->d__v);
+
+  while (_uza_incr_cvg_test(nsp, normalization, uza)) {
+
+    /* Update p_c = p_c - gamma * (D.u_f - b_c). Recall that B = -div
+     * Compute the RHS for the Uzawa system: rhs = -gamma*B^T.W^-1.(B.u - g) */
+#   pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
+    for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++) {
+      uza->d__v[ip] -= b_c[ip];
+      uza->res_p[ip] = uza->inv_mp[ip] * uza->d__v[ip];
+      p_c[ip] += gamma * uza->res_p[ip];
+    }
+
+    _apply_div_op_transpose(div_op, uza->res_p, uza->rhs);
+
+    if (cs_glob_n_ranks > 1)
+      cs_interface_set_sum(cs_shared_range_set->ifs,
+                           uza->n_u_dofs,
+                           1, false, CS_REAL_TYPE, /* stride, interlaced */
+                           uza->rhs);
+
+#   pragma omp parallel for if (uza->n_u_dofs > CS_THR_MIN)
+    for (cs_lnum_t iu = 0; iu < uza->n_u_dofs; iu++)
+      uza->rhs[iu] *= -gamma;
+
+    /* Solve AL.u_f = rhs */
+    normalization = cs_evaluate_3_square_wc2x_norm(delta_u,
+                                                   c2f, quant->pvol_fc);
+    if (fabs(normalization) > 0)
+      normalization = sqrt(normalization);
+    else
+      normalization = 1.0;
+
+    memset(delta_u, 0, sizeof(cs_real_t)*uza->n_u_dofs);
+
+    uza->info.n_inner_iter
+      += (uza->info.last_inner_iter =
+          cs_equation_solve_scalar_system(uza->n_u_dofs,
+                                          eqp,
+                                          msles->matrix,
+                                          cs_shared_range_set,
+                                          normalization,
+                                          false, /* rhs_redux */
+                                          msles->sles,
+                                          delta_u,
+                                          uza->rhs));
+
+    /* Update the velocity */
+#   pragma omp parallel for if (uza->n_u_dofs > CS_THR_MIN)
+    for (cs_lnum_t iu = 0; iu < uza->n_u_dofs; iu++)
+      u_f[iu] += delta_u[iu];
+
+    /* Update the divergence */
+    _apply_div_op(div_op, u_f, uza->d__v);
+
+  } /* End of Uzawa iterations */
+
+  /* Update the pressure before returning the value */
+# pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
+  for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++)
+    p_c[ip] += gamma * uza->inv_mp[ip] * uza->d__v[ip];
+
+  int n_inner_iter = uza->info.n_inner_iter;
+
+  /* Last step: Free temporary memory */
   _free_uza_builder(&uza);
 
   return  n_inner_iter;

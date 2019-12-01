@@ -1769,7 +1769,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
   case CS_NAVSTO_SLES_UZAWA_AL:
     /* GKB solver if need */
     sc->assemble = _assemble_gkb;
-    sc->solve = cs_cdofb_monolithic_uzawa_al_solve;
+    sc->solve = cs_cdofb_monolithic_uzawa_al_incr_solve;
     sc->msles->graddiv_coef = nsp->gd_scale_coef;
 
     BFT_MALLOC(sc->msles->div_op,
