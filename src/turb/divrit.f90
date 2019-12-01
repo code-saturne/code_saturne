@@ -369,7 +369,10 @@ if (ityturt(iscal).ne.3) then
           ! Only the i.ne.j  components are added.
           if (ii.ne.jj) then
             temp(ii) = temp(ii)                                              &
-                     - ctheta(iscal)*xtt*xiafm*gradv(jj,ii,iel)*xut(jj,iel)
+                     - ctheta(iscal)*xtt*xiafm*xut(jj,iel)*gradv(jj,ii,iel)
+          else
+            temp(ii) = temp(ii)                                              &
+                     - min(ctheta(iscal)*xtt*xiafm*xut(jj,iel)*gradv(jj,ii,iel), 0.d0)
           endif
         enddo
       endif
@@ -389,6 +392,12 @@ if (ityturt(iscal).ne.3) then
             temp(ii) = temp(ii)                                                 &
                      - ctheta(iscal)*xtt*xi_ebafm*gradv(jj,ii,iel)*xut(jj,iel)  &
                      - ctheta(iscal)*gamma_ebafm*xnal(ii)*xnal(jj)*xut(jj,iel)
+          else
+            temp(ii) = temp(ii)                                                 &
+                     - ctheta(iscal)                                            &
+                     * min(xtt*xi_ebafm*gradv(jj,ii,iel)*xut(jj,iel)            &
+                          +gamma_ebafm*xnal(ii)*xnal(jj)*xut(jj,iel), 0.d0)
+
           endif
         enddo
       end if
@@ -419,11 +428,12 @@ if (ityturt(iscal).ne.3) then
 
       ! Partial implicitation of "-C_theta*k/eps*( xi* uT'.Grad u )" for
       ! EB-GGDH & (EB)-AFM
+      ! if positive
       ! X_i = C*Y_ij*X_j -> X_i = Coeff_imp * Y_ij * X_j for i.ne.j
       ! with Coeff_imp = C/(1+C*Y_ii)
       if (iturt(iscal).eq.20) then
         ! AFM
-        coeff_imp = 1.d0+ctheta(iscal)*xtt*xiafm*gradv(ii,ii,iel)
+        coeff_imp = 1.d0 + max(ctheta(iscal)*xtt*xiafm*gradv(ii,ii,iel), 0.d0)
 
         xut(ii,iel) = xut(ii,iel)/ coeff_imp
         temp(ii)    = temp(ii)   / coeff_imp
@@ -433,8 +443,8 @@ if (ityturt(iscal).ne.3) then
 
       else if(iturt(iscal).eq.21) then
         ! EB-AFM
-        coeff_imp = 1.d0 + ctheta(iscal)*xtt*xi_ebafm*gradv(ii,ii,iel) &
-                         + ctheta(iscal)*gamma_ebafm*xnal(ii)*xnal(ii)
+        coeff_imp = 1.d0 + max(ctheta(iscal)*xtt*xi_ebafm*gradv(ii,ii,iel) &
+                             + ctheta(iscal)*gamma_ebafm*xnal(ii)*xnal(ii), 0.d0)
 
         xut(ii,iel) = xut(ii,iel)/ coeff_imp
         temp(ii)    = temp(ii)   / coeff_imp
