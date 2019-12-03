@@ -279,9 +279,7 @@ if (iihmpr.eq.1) then
 
      !     Options numériques globales
      relaxp = -1.d0
-     extrap = 0.d0
-     call csnum2 (relaxp, extrap, imrgra)
-     vcopt%extrag = extrap
+     call csnum2 (relaxp, imrgra)
      if (idtvar.ge.0) vcopt%relaxv = relaxp
 
      call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)

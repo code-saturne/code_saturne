@@ -27,8 +27,11 @@ User changes:
 
 Numerics and physical modelling:
 
+- Wall pressure extrapolation is now considered advanced/deprecated,
+  and is not set through the GUI anymore.
+
 - LES: for dynamic Smagorinsky model, add a new filter for cases where
-  the full extended cell neighborhood is not availble.
+  the full extended cell neighborhood is not available.
 
 - Add tensor gradient clipping.
 

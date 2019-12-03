@@ -205,13 +205,11 @@ void CS_PROCF (uinum1, UINUM1) (double *cdtvar);
  * *****************
  *
  * INTEGER          RELAXP  -->   pressure relaxation
- * INTEGER          EXTRAG  -->   wall pressure extrapolation
  * INTEGER          IMRGRA  -->   gradient reconstruction
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csnum2, CSNUM2) (double *relaxp,
-                                double *extrag,
-                                   int *imrgra);
+void CS_PROCF (csnum2, CSNUM2) (double  *relaxp,
+                                int     *imrgra);
 
 void CS_PROCF (csphys, CSPHYS) (
                                 double       *viscv0,

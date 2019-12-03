@@ -1806,6 +1806,11 @@ class XMLinit(BaseXmlInit):
                     else:
                         node['choice'] = 'non_ortho_max'
 
+        # Remove "extrag" setting
+
+        node = node_np.xmlGetNode('wall_pressure_extrapolation')
+        if node:
+            node.xmlRemoveNode()
 
 #-------------------------------------------------------------------------------
 # End of XMLinit

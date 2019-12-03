@@ -2110,15 +2110,13 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
  *
  * Fortran Interface:
  *
- * SUBROUTINE CSNUM2 (RELAXP, EXTRAG, IMRGRA)
+ * SUBROUTINE CSNUM2 (RELAXP, IMRGRA)
  * *****************
  * DOUBLE PRECISION RELAXP  -->   pressure relaxation
- * DOUBLE PRECISION EXTRAG  -->   wall pressure extrapolation
  * INTEGER          IMRGRA  -->   gradient reconstruction
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (csnum2, CSNUM2)(double  *relaxp,
-                               double  *extrag,
                                int     *imrgra)
 {
   cs_piso_t *piso = cs_get_glob_piso();
@@ -2179,7 +2177,6 @@ void CS_PROCF (csnum2, CSNUM2)(double  *relaxp,
   _numerical_int_parameters("gradient_transposed", &(stokes->ivisse));
   _numerical_int_parameters("velocity_pressure_coupling", &(stokes->ipucou));
   _numerical_int_parameters("piso_sweep_number", &(piso->nterup));
-  _numerical_double_parameters("wall_pressure_extrapolation", extrag);
   _numerical_double_parameters("pressure_relaxation", relaxp);
 
 #if _XML_DEBUG_
@@ -2188,7 +2185,6 @@ void CS_PROCF (csnum2, CSNUM2)(double  *relaxp,
   bft_printf("--ipucou = %i\n", stokes->ipucou);
   bft_printf("--imrgra = %i\n", *imrgra);
   bft_printf("--nterup = %i\n", piso->nterup);
-  bft_printf("--extrag = %f\n", *extrag);
   bft_printf("--relaxp = %f\n", *relaxp);
 #endif
 }

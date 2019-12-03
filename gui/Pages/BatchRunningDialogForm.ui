@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>756</width>
-    <height>0</height>
+    <height>669</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -717,7 +717,7 @@
           <item row="0" column="0">
            <widget class="QCheckBox" name="checkBoxInitOnly">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Prepare for execution, but do not start computation.&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;This is useful so as to manually run the code and debug from the prepare run directory.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Prepare for execution, but do not start computation.&lt;/p&gt;&lt;p&gt;This is useful so as to manually run the code and debug from the prepare run directory.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>Initialize only</string>
@@ -789,7 +789,7 @@
      </property>
      <property name="sizeHint" stdset="0">
       <size>
-       <width>354</width>
+       <width>367</width>
        <height>64</height>
       </size>
      </property>

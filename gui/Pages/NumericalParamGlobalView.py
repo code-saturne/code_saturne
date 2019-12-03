@@ -111,7 +111,6 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.checkBoxIPUCOU.clicked.connect(self.slotIPUCOU)
         self.checkBoxImprovedPressure.clicked.connect(self.slotImprovedPressure)
         self.checkBoxICFGRP.clicked.connect(self.slotICFGRP)
-        self.checkBoxEXTRAG.clicked.connect(self.slotEXTRAG)
         self.lineEditRELAXP.textChanged[str].connect(self.slotRELAXP)
         self.comboBoxGradientType.activated[str].connect(self.slotGradientType)
         self.comboBoxExtNeighbors.activated[str].connect(self.slotExtNeighbors)
@@ -144,9 +143,6 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.checkBoxImprovedPressure.setChecked(True)
         else:
             self.checkBoxImprovedPressure.setChecked(False)
-
-        extrag = str(self.model.getWallPressureExtrapolation())
-        self.checkBoxEXTRAG.setChecked(extrag == "extrapolation")
 
         self.lineEditRELAXP.setText(str(self.model.getPressureRelaxation()))
         self.modelGradientType.setItem(str_model=str(self.model.getGradientReconstruction()))
@@ -226,17 +222,6 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.model.setHydrostaticPressure("on")
         else:
             self.model.setHydrostaticPressure("off")
-
-
-    @pyqtSlot()
-    def slotEXTRAG(self):
-        """
-        Set value for parameter EXTRAG
-        """
-        if self.checkBoxEXTRAG.isChecked():
-            self.model.setWallPressureExtrapolation("extrapolation")
-        else:
-            self.model.setWallPressureExtrapolation("neumann")
 
 
     @pyqtSlot(str)

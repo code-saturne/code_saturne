@@ -77,7 +77,6 @@ class NumericalParamGlobalModel(Model):
         if HgnModel(self.case).getHgnModel() == 'no_mass_transfer':
             self.default['hydrostatic_pressure'] ='on'
         self.default['hydrostatic_equilibrium'] ='off'
-        self.default['wall_pressure_extrapolation'] = 'neumann'
         self.default['time_scheme_order'] = 1
         self.default['gradient_reconstruction'] = 'default'
         self.default['extended_neighborhood'] = 'default'
@@ -135,24 +134,6 @@ class NumericalParamGlobalModel(Model):
             status = self._defaultValues()['hydrostatic_pressure']
             self.setHydrostaticPressure(status)
         return status
-
-
-    @Variables.noUndo
-    def getWallPressureExtrapolation(self):
-        """
-        Return EXTRAG value
-        """
-        value = self.node_np.xmlGetString('wall_pressure_extrapolation')
-        if not value:
-            value = self._defaultValues()['wall_pressure_extrapolation']
-            self.setWallPressureExtrapolation(value)
-        else:
-            if value == '0':
-                value = 'neumann'
-            else:
-                value = 'extrapolation'
-
-        return value
 
 
     @Variables.noUndo
@@ -277,19 +258,6 @@ class NumericalParamGlobalModel(Model):
 
 
     @Variables.undoLocal
-    def setWallPressureExtrapolation(self, value):
-        """
-        Put value of wall pressure extrapolation
-        """
-        self.isInList(value, ('neumann', 'extrapolation'))
-        if value == 'neumann':
-            value = '0'
-        else:
-            value = '1'
-        self.node_np.xmlSetData('wall_pressure_extrapolation', value)
-
-
-    @Variables.undoLocal
     def setGradientReconstruction(self, value):
         """
         Put value of gradient_reconstruction
@@ -399,23 +367,6 @@ class NumericalParamGlobalTestCase(ModelTest):
                 'Could not set velocity_pressure_coupling in NumericalParamGlobalModel'
         assert model.getVelocityPressureCoupling() == 'on',\
                 'Could not get velocity_pressure_coupling in NumericalParamGlobalModel'
-
-    def checkSetandGetWallPressureExtrapolation(self):
-        """
-        Check whether the NumericalParamEquatModel class could be set
-        and get wall pressure extrapolation
-        """
-        model = None
-        model = NumericalParamGlobalModel(self.case)
-        model.setWallPressureExtrapolation('extrapolation')
-
-        doc = '''<numerical_parameters>
-                    <wall_pressure_extrapolation>1</wall_pressure_extrapolation>
-                 </numerical_parameters>'''
-        assert model.node_np == self.xmlNodeFromString(doc),\
-                'Could not set wall pressure extrapolation in NumericalParamGlobalModel'
-        assert model.getWallPressureExtrapolation() == 'extrapolation',\
-                'Could not get wall pressure extrapolation in NumericalParamGlobalModel'
 
     def checkGetandSetHydrostaticPressure(self):
         """

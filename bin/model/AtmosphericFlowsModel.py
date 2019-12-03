@@ -91,7 +91,6 @@ class AtmosphericFlowsModel(Model):
         self.__updateScalarAndProperty()
         if (model == "humid" or model == "dry"):
             NumericalParamGlobalModel(self.case).setHydrostaticPressure("on")
-            NumericalParamGlobalModel(self.case).setWallPressureExtrapolation("extrapolation")
             if (model == "dry"):
                 ThermalScalarModel(self.case).setThermalModel('potential_temperature')
             else:
@@ -99,7 +98,6 @@ class AtmosphericFlowsModel(Model):
         else:
             ThermalScalarModel(self.case).setThermalModel('off')
             NumericalParamGlobalModel(self.case).setHydrostaticPressure("off")
-            NumericalParamGlobalModel(self.case).setWallPressureExtrapolation("neumann")
 
 
     @Variables.noUndo
