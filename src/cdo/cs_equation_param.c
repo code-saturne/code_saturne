@@ -1306,6 +1306,9 @@ _set_key(const char            *label,
       eqp->sles_param.solver = CS_PARAM_ITSOL_CR3;
     else if (strcmp(keyval, "fcg") == 0)
       eqp->sles_param.solver = CS_PARAM_ITSOL_FCG;
+    else if (strcmp(keyval, "gauss_seidel") == 0 ||
+             strcmp(keyval, "gs") == 0)
+      eqp->sles_param.solver = CS_PARAM_ITSOL_GAUSS_SEIDEL;
     else if (strcmp(keyval, "gmres") == 0)
       eqp->sles_param.solver = CS_PARAM_ITSOL_GMRES;
     else if (strcmp(keyval, "fgmres") == 0)
