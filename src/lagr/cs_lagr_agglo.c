@@ -607,6 +607,8 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
 
         cs_lnum_t inserted_parts = p_set->n_particles + newpart;
 
+        cs_lagr_particle_set_resize(inserted_parts);
+
         cs_lagr_part_copy(inserted_parts-1, p1+start_particle);
 
         cs_lagr_particles_set_real(p_set, inserted_parts-1,
