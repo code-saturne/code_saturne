@@ -59,10 +59,6 @@ typedef enum {
   CS_EXT_NEIGHBORHOOD_CELL_CENTER_OPPOSITE,  /* Cell centers best aligned
                                                 opposite to adjacent
                                                 cell centers */
-  CS_EXT_NEIGHBORHOOD_FACE_CENTER_OPPOSITE,  /* Cell centers best aligned
-                                                opposite to face centers */
-  CS_EXT_NEIGHBORHOOD_FACE_CENTER_ALIGNED,   /* Cell centers best aligned
-                                                with face centers */
   CS_EXT_NEIGHBORHOOD_NON_ORTHO_MAX          /* Cells adjacent to faces
                                                 whose non-orthogonality exceeds
                                                 a given threshold */

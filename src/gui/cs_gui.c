@@ -2155,14 +2155,6 @@ void CS_PROCF (csnum2, CSNUM2)(double  *relaxp,
       enh_type = CS_EXT_NEIGHBORHOOD_CELL_CENTER_OPPOSITE;
       _imrgra += 2;
     }
-    else if (cs_gui_strcmp(choice, "face_center_opposite")) {
-      enh_type = CS_EXT_NEIGHBORHOOD_FACE_CENTER_OPPOSITE;
-      _imrgra += 2;
-    }
-    else if (cs_gui_strcmp(choice, "face_center_aligned")) {
-      enh_type = CS_EXT_NEIGHBORHOOD_FACE_CENTER_ALIGNED;
-      _imrgra += 2;
-    }
     else if (cs_gui_strcmp(choice, "non_ortho_max")) {
       enh_type = CS_EXT_NEIGHBORHOOD_NON_ORTHO_MAX;
       _imrgra += 2;

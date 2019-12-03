@@ -100,8 +100,6 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.modelExtNeighbors.addItem(self.tr("Full (all vertex adjacent)"), 'complete')
         self.modelExtNeighbors.addItem(self.tr("Opposite adjacent cell centers"),
                                        'cell_center_opposite')
-        self.modelExtNeighbors.addItem(self.tr("Opposite face centers"), 'face_center_opposite')
-        self.modelExtNeighbors.addItem(self.tr("Aligned with face centers"), 'face_center_aligned')
         self.modelExtNeighbors.addItem(self.tr("Non-orthogonal faces threshold (legacy)"),
                                        'non_ortho_max')
 

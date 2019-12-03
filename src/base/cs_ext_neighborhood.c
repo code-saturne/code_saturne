@@ -109,26 +109,6 @@ BEGIN_C_DECLS
        additional cells in the extended neighborhood is at most equal to the
        number of cell faces.
 
-  \var CS_EXT_NEIGHBORHOOD_FACE_CENTER_OPPOSITE
-       Cells with centers best aligned opposite to face centers
-
-       \image html ext_neighborhood_face_center_opposite.svg "Opposite face centers"
-
-       Add cells whose centers are closest to the half-line prolonging
-       the [face center, cell center segment]. The number of additional
-       cells in the extended neighborhood is at most equal to the number of
-       cell faces.
-
-  \var CS_EXT_NEIGHBORHOOD_FACE_CENTER_ALIGNED
-       Cells with centers best aligned with face centers
-
-       \image html ext_neighborhood_face_center_aligned.svg "Aligned with face centers"
-
-       Add cells whose centers are closest to the line including
-       the [face center, cell center segment] on each side of the cell.
-       The number of additional cells in the extended neighborhood is at most
-       equal to twice the number of cell faces.
-
   \var CS_EXT_NEIGHBORHOOD_NON_ORTHO_MAX
        Cells adjacent to faces whose non-orthogonality exceeds
        a given threshold (45 degrees by default)
@@ -173,8 +153,6 @@ const char *cs_ext_neighborhood_type_name[]
 = {N_("none"),
    N_("complete"),
    N_("opposite cell centers"),
-   N_("opposite face centers"),
-   N_("aligned with face centers"),
    N_("non-orthogonality threshold")};
 
 static cs_ext_neighborhood_type_t _ext_nbh_type
@@ -1536,278 +1514,6 @@ _neighborhood_reduce_cell_center_opposite(cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Reduce extended neighborhood based on face center opposite.
- *
- * \param[in, out]  mesh            pointer to a mesh structure
- * \param[in]       mq              associated mesh quantities
- * \param[in]       align           select aligned on both sides
- * \param[in, out]  cell_cells_tag  tag adjacencies to retain
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_neighborhood_reduce_face_center_opposite(cs_mesh_t             *mesh,
-                                          cs_mesh_quantities_t  *mq,
-                                          bool                   align,
-                                          char                  cell_cells_tag[])
-{
-  cs_lnum_t  *cell_i_faces_idx = NULL, *cell_i_faces_lst = NULL;
-  cs_lnum_t  *cell_b_faces_idx = NULL, *cell_b_faces_lst = NULL;
-
-  const cs_lnum_t  *cell_cells_lst = mesh->cell_cells_lst;
-  const cs_lnum_t  *cell_cells_idx = mesh->cell_cells_idx;
-
-  const cs_lnum_t n_cells = mesh->n_cells;
-
-  const cs_real_3_t  *cell_cen = (const cs_real_3_t *)mq->cell_cen;
-  const cs_lnum_2_t  *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
-  const cs_real_3_t  *i_face_cog = (const cs_real_3_t *)mq->i_face_cog;
-  const cs_real_3_t  *b_face_cog = (const cs_real_3_t *)mq->b_face_cog;
-
-  /* Get "cell -> faces" connectivity for the local mesh */
-
-  _get_cell_i_faces_connectivity(mesh,
-                                 &cell_i_faces_idx,
-                                 &cell_i_faces_lst);
-
-  _get_cell_b_faces_connectivity(mesh,
-                                 &cell_b_faces_idx,
-                                 &cell_b_faces_lst);
-
-# pragma omp parallel if (n_cells > CS_THR_MIN)
-  {
-    cs_lnum_t t_s_id, t_e_id;
-    _thread_range(n_cells, &t_s_id, &t_e_id);
-
-    cs_real_3_t  *n_c_s = NULL;
-
-    cs_lnum_t n_max_c = 0;
-
-    /* Loop on cells */
-
-    for (cs_lnum_t c_id = t_s_id; c_id < t_e_id; c_id++) {
-
-      /* Build cache for extended neighbors */
-
-      cs_lnum_t c_s_id = cell_cells_idx[c_id];
-      cs_lnum_t c_e_id = cell_cells_idx[c_id+1];
-      cs_lnum_t n_c = c_e_id - c_s_id;
-
-      if (n_c > n_max_c) {
-        n_max_c = n_c*2;
-        BFT_REALLOC(n_c_s, n_max_c, cs_real_3_t);
-      }
-
-      for (cs_lnum_t i = 0; i < n_c; i++) {
-        cs_lnum_t c_id_n = cell_cells_lst[c_s_id + i];
-        for (cs_lnum_t j = 0; j < 3; j++)
-          n_c_s[i][j] = cell_cen[c_id_n][j] - cell_cen[c_id][j];
-      }
-
-      /* Loop on interior cell faces */
-
-      cs_lnum_t i_f_s_id = cell_i_faces_idx[c_id];
-      cs_lnum_t i_f_e_id = cell_i_faces_idx[c_id+1];
-
-      cs_lnum_t b_f_s_id = cell_b_faces_idx[c_id];
-      cs_lnum_t b_f_e_id = cell_b_faces_idx[c_id+1];
-
-      for (cs_lnum_t i = i_f_s_id; i < i_f_e_id; i++) {
-
-        cs_real_t i_dist_align_min[2] = {HUGE_VAL, HUGE_VAL};
-
-        cs_lnum_t f_id_0 = cell_i_faces_lst[i];
-
-        cs_real_t seg_0[3];
-        for (cs_lnum_t k = 0; k < 3; k++)
-          seg_0[k] = cell_cen[c_id][k] - i_face_cog[f_id_0][k];
-
-        /* Initialize using base (face->cells) connectivity) */
-
-        for (cs_lnum_t j = i_f_s_id; j < i_f_e_id; j++) {
-
-          cs_real_t seg_1[3];
-
-          cs_lnum_t f_id_1 = cell_i_faces_lst[j];
-          cs_lnum_t c_id_1 = i_face_cells[f_id_1][0];
-          if (c_id_1 == c_id)
-            c_id_1 = i_face_cells[f_id_1][1];
-          for (cs_lnum_t k = 0; k < 3; k++)
-            seg_1[k] = cell_cen[c_id_1][k] - cell_cen[c_id][k];
-
-          int orient = 0;
-          if (cs_math_3_dot_product(seg_0, seg_1) <= 0) {
-            if (align)
-              orient = 1;
-            else
-              continue;
-          }
-
-          cs_real_t d2 = _cross_product_sq_norm(seg_0, seg_1);
-
-          if (d2 < i_dist_align_min[orient])
-            i_dist_align_min[orient] = d2;
-
-        }
-
-        for (cs_lnum_t j = b_f_s_id; j < b_f_e_id; j++) {
-
-          cs_real_t seg_1[3];
-
-          cs_lnum_t f_id_1 = cell_b_faces_lst[j];
-          for (cs_lnum_t k = 0; k < 3; k++)
-            seg_1[k] = b_face_cog[f_id_1][k] - cell_cen[c_id][k];
-
-          int orient = 0;
-          if (cs_math_3_dot_product(seg_0, seg_1) <= 0) {
-            if (align)
-              orient = 1;
-            else
-              continue;
-          }
-
-          cs_real_t d2 = _cross_product_sq_norm(seg_0, seg_1);
-
-          if (d2 < i_dist_align_min[orient])
-            i_dist_align_min[orient] = d2;
-
-        }
-
-        /* Compare with cells in extended neighborhood */
-
-        cs_lnum_t i_cell_align_min[2] = {-1, -1};
-        for (cs_lnum_t j = 0; j < n_c; j++) {
-
-          int orient = 0;
-          if (cs_math_3_dot_product(seg_0, n_c_s[j]) <= 0) {
-            if (align)
-              orient = 1;
-            else
-              continue;
-          }
-
-          cs_real_t d2 = _cross_product_sq_norm(seg_0, n_c_s[j]);
-
-          if (d2 < i_dist_align_min[orient]) {
-            i_cell_align_min[orient] = j;
-            i_dist_align_min[orient] = d2;
-          }
-
-        }
-
-        if (i_cell_align_min[0] > -1)
-          cell_cells_tag[c_s_id + i_cell_align_min[0]] = 1;
-        if (align && i_cell_align_min[1] > -1)
-          cell_cells_tag[c_s_id + i_cell_align_min[1]] = 1;
-
-      } /* End of loop on interior cell faces */
-
-      /* Loop on boundary cell faces */
-
-      for (cs_lnum_t i = b_f_s_id; i < b_f_e_id; i++) {
-
-        cs_real_t i_dist_align_min[2] = {HUGE_VAL, HUGE_VAL};
-
-        cs_lnum_t f_id_0 = cell_b_faces_lst[i];
-
-        cs_real_t seg_0[3];
-        for (cs_lnum_t k = 0; k < 3; k++)
-          seg_0[k] = cell_cen[c_id][k] - b_face_cog[f_id_0][k];
-
-        /* Initialize using base (face->cells) connectivity) */
-
-        for (cs_lnum_t j = i_f_s_id; j < i_f_e_id; j++) {
-
-          cs_real_t seg_1[3];
-
-          cs_lnum_t f_id_1 = cell_i_faces_lst[j];
-          for (cs_lnum_t k = 0; k < 3; k++)
-            seg_1[k] = i_face_cog[f_id_1][k] - cell_cen[c_id][k];
-
-          int orient = 0;
-          if (cs_math_3_dot_product(seg_0, seg_1) <= 0) {
-            if (align)
-              orient = 1;
-            else
-              continue;
-          }
-
-          cs_real_t d2 = _cross_product_sq_norm(seg_0, seg_1);
-
-          if (d2 < i_dist_align_min[orient])
-            i_dist_align_min[orient] = d2;
-
-        }
-
-        for (cs_lnum_t j = b_f_s_id; j < b_f_e_id; j++) {
-
-          if (i == j) continue;
-
-          cs_real_t seg_1[3];
-
-          cs_lnum_t f_id_1 = cell_b_faces_lst[j];
-          for (cs_lnum_t k = 0; k < 3; k++)
-            seg_1[k] = b_face_cog[f_id_1][k] - cell_cen[c_id][k];
-
-          int orient = 0;
-          if (cs_math_3_dot_product(seg_0, seg_1) <= 0) {
-            if (align)
-              orient = 1;
-            else
-              continue;
-          }
-
-          cs_real_t d2 = _cross_product_sq_norm(seg_0, seg_1);
-
-          if (d2 < i_dist_align_min[orient])
-            i_dist_align_min[orient] = d2;
-
-        }
-
-        /* Compare with cells in extended neighborhood */
-
-        cs_lnum_t i_cell_align_min[2] = {-1, -1};
-        for (cs_lnum_t j = 0; j < n_c; j++) {
-
-          int orient = 0;
-          if (cs_math_3_dot_product(seg_0, n_c_s[j]) <= 0) {
-            if (align)
-              orient = 1;
-            else
-              continue;
-          }
-
-          cs_real_t d2 = _cross_product_sq_norm(seg_0, n_c_s[j]);
-
-          if (d2 < i_dist_align_min[orient]) {
-            i_cell_align_min[orient] = j;
-            i_dist_align_min[orient] = d2;
-          }
-
-        }
-
-        if (i_cell_align_min[0] > -1)
-          cell_cells_tag[c_s_id + i_cell_align_min[0]] = 1;
-        if (align && i_cell_align_min[1] > -1)
-          cell_cells_tag[c_s_id + i_cell_align_min[1]] = 1;
-
-
-      } /* End of loop on boundary cell faces */
-
-    } /* End of loop on cells */
-
-    BFT_FREE(n_c_s);
-
-  } /* End of Open MP block */
-
-  BFT_FREE(cell_i_faces_idx);
-  BFT_FREE(cell_i_faces_lst);
-  BFT_FREE(cell_b_faces_idx);
-  BFT_FREE(cell_b_faces_lst);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Reduce extended neighborhood based on proximity to boundary
  *
  * \param[in, out]  mesh            pointer to a mesh structure
@@ -1819,7 +1525,6 @@ static void
 _neighborhood_reduce_full_boundary(cs_mesh_t             *mesh,
                                    char                   cell_cells_tag[])
 {
-  const cs_lnum_t  *cell_cells_lst = mesh->cell_cells_lst;
   const cs_lnum_t  *cell_cells_idx = mesh->cell_cells_idx;
 
   const cs_lnum_t n_b_cells = mesh->n_b_cells;
@@ -1967,18 +1672,6 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
   case CS_EXT_NEIGHBORHOOD_CELL_CENTER_OPPOSITE:
     _neighborhood_reduce_cell_center_opposite(mesh,
                                               mesh_quantities,
-                                              cell_cells_tag);
-    break;
-  case CS_EXT_NEIGHBORHOOD_FACE_CENTER_OPPOSITE:
-    _neighborhood_reduce_face_center_opposite(mesh,
-                                              mesh_quantities,
-                                              false,
-                                              cell_cells_tag);
-    break;
-  case CS_EXT_NEIGHBORHOOD_FACE_CENTER_ALIGNED:
-    _neighborhood_reduce_face_center_opposite(mesh,
-                                              mesh_quantities,
-                                              true,
                                               cell_cells_tag);
     break;
   default:
