@@ -931,26 +931,27 @@ void CS_PROCF (uistr2, UISTR2) (double *const  xmstru,
 {
   int istru   = 0;
 
-  cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
-
-  cs_tree_node_t *tn_b0 = cs_tree_node_get_child(tn, "boundary");
-  cs_tree_node_t *tn_w0 = cs_tree_node_get_child(tn, "boundary");//FIXME
+  cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
 
   /* At each time-step, loop on boundary faces */
 
-  for (tn = tn_b0; tn != NULL; tn = cs_tree_node_get_next_of_name(tn)) {
+  for (cs_tree_node_t *tn_bndy = cs_tree_node_get_child(tn_b0, "boundary");
+       tn_bndy != NULL;
+       tn_bndy = cs_tree_node_get_next_of_name(tn_bndy)) {
 
-    const char *label = cs_tree_node_get_tag(tn, "label");
+    const char *label = cs_tree_node_get_tag(tn_bndy, "label");
 
-    cs_tree_node_t *tn_w
-      = cs_tree_node_get_sibling_with_tag(tn_w0, "label", label);
-
-    enum ale_boundary_nature nature =_get_ale_boundary_nature(tn_w);
+    enum ale_boundary_nature nature =_get_ale_boundary_nature(tn_bndy);
 
     /* Keep only internal coupling */
     if (nature == ale_boundary_nature_internal_coupling) {
 
-      cs_tree_node_t *tn_ic = cs_tree_get_node(tn_w, "ale");
+      /* get the matching BC node */
+      const char *nat_bndy = cs_tree_node_get_tag(tn_bndy, "nature");
+      cs_tree_node_t *tn_bc = cs_tree_node_get_child(tn_bndy->parent, nat_bndy);
+      tn_bc = cs_tree_node_get_sibling_with_tag(tn_bc, "label", label);
+
+      cs_tree_node_t *tn_ic = cs_tree_get_node(tn_bc, "ale");
       tn_ic = cs_tree_node_get_sibling_with_tag(tn_ic,
                                                 "choice",
                                                 "internal_coupling");

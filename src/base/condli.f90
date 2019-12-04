@@ -642,7 +642,7 @@ endif
 
 if (iale.ge.1) then
   call altycl &
- ( itypfb , ialtyb , icodcl , impale ,                            &
+ ( itypfb , ialtyb , icodcl , impale , .false. ,                  &
    dt     ,                                                       &
    rcodcl , xyzno0 )
 endif
@@ -5246,7 +5246,7 @@ call cs_internal_coupling_bcs(itypfb)
 
 if (iale.ge.1) then
   call altycl &
- ( itypfb , ialtyb , icodcl , impale ,                            &
+ ( itypfb , ialtyb , icodcl , impale , .true. ,                   &
    dt     ,                                                       &
    rcodcl , xyzno0 )
 endif

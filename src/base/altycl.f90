@@ -47,6 +47,7 @@
 !>                               - 13 Dirichlet for the advection operator and
 !>                                    Neumann for the diffusion operator
 !> \param[in,out] impale        imposed displacement indicator
+!> \param[in]     init          partial treatment (before time loop) if true
 !> \param[in]     dt            time step (per cell)
 !> \param[in,out] rcodcl        boundary condition values:
 !>                               - rcodcl(1) value of the dirichlet
@@ -66,7 +67,7 @@
 !______________________________________________________________________________
 
 subroutine altycl &
- ( itypfb , ialtyb , icodcl , impale ,                            &
+ ( itypfb , ialtyb , icodcl , impale , init ,                    &
    dt     ,                                                      &
    rcodcl , xyzno0)
 
@@ -96,6 +97,8 @@ implicit none
 integer          itypfb(nfabor)
 integer          ialtyb(nfabor), icodcl(nfabor,nvar)
 integer          impale(nnod)
+
+logical          init
 
 double precision dt(ncelet)
 double precision rcodcl(nfabor,nvar,3)
@@ -297,6 +300,9 @@ enddo
 !===============================================================================
 ! 4. Check ICODCL consistency
 !===============================================================================
+
+! When called before time loop, some values are not yet available.
+if (init .eqv. .true.) return
 
 do ifac = 1, nfabor
 

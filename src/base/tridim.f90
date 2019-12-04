@@ -826,8 +826,14 @@ else
   xprale => null()
 endif
 
+icodcl => null()
+rcodcl => null()
+
 300 continue
 
+hbord => null()
+theipb => null()
+visvdr => null()
 
 ! --- Boucle sur navstv pour couplage vitesse/pression
 !     on s'arrete a NTERUP ou quand on a converge
@@ -844,12 +850,6 @@ endif
 if (nterup.gt.1.or.isno2t.gt.0) then
   if (nbccou.gt.0 .or. nfpt1t.gt.0 .or. iirayo.gt.0) itrfup = 0
 endif
-
-icodcl => null()
-rcodcl => null()
-hbord => null()
-theipb => null()
-visvdr => null()
 
 ! Allocate temporary arrays for boundary conditions
 if (italim .eq. 1) then
