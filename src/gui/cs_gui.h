@@ -535,7 +535,7 @@ cs_gui_fluid_properties_value(const char  *param,
  * Get thermal scalar model.
  *
  * return:
- *   value of itherm
+ *   value of itherm*10 + (temperature variant flag), or -1 if not defined
  *----------------------------------------------------------------------------*/
 
 int

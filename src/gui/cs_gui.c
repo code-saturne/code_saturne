@@ -3075,7 +3075,7 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
         }
 
         /* Thermal scalar initialization */
-        if (cs_gui_thermal_model()) {
+        if (cs_gui_thermal_model() > 0) {
 
           const char *formula_sca    = NULL;
           cs_tree_node_t *tn_sca
@@ -3297,7 +3297,10 @@ void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
   cs_var_t  *vars = cs_glob_var;
   const int iscalt = cs_glob_thermal_model->iscalt;
 
-  const cs_zone_t *z_all = cs_volume_zone_by_name("all_cells");
+  const cs_zone_t *z_all = cs_volume_zone_by_name_try("all_cells");
+
+  if (z_all == NULL)
+    z_all = cs_volume_zone_by_id(0);
 
   /* law for density (built-in for all current integrated physical models) */
   if (cs_glob_fluid_properties->irovar == 1) {
@@ -4746,15 +4749,18 @@ cs_gui_fluid_properties_value(const char  *param,
  * Get thermal scalar model.
  *
  * return:
- *   value of itherm*10 + (temperature variant flag)
+ *   value of itherm*10 + (temperature variant flag), or -1 if not defined
  *----------------------------------------------------------------------------*/
 
 int
 cs_gui_thermal_model(void)
 {
-  int   test = 0;
+  int   test = -1;
 
   const char *model = cs_gui_get_thermophysical_model("thermal_scalar");
+
+  if (model == NULL)
+    return test;
 
   if (cs_gui_strcmp(model, "off"))
     test = 0;
