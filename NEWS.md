@@ -85,6 +85,8 @@ Default option changes:
 
 Bug fixes:
 
+- Fix crash in ALE using internal structures coupling.
+
 - Fix reading of GUI setting of turbulent flux model for additional model
   variables (specific physics).
 
