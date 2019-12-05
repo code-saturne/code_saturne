@@ -1803,11 +1803,11 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         open the user manual
         """
         if self.package.name == 'neptune_cfd':
-            self.displayManual(self.package, 'doxygen')
+            self.displayManual(self.package, 'Doxygen')
         else:
             from neptune_cfd.nc_package import package as nc_package
             pkg = nc_package()
-            self.displayManual(pkg, 'doxygen')
+            self.displayManual(pkg, 'Doxygen')
 
 
     def slotUndo(self):
