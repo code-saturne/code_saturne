@@ -2680,7 +2680,7 @@ class mei_to_c_interpreter:
 
             except:
                 # Cant save the function. xml file will still be saved
-                return -1
+                return 2
 
         # Return 0 if nothing is written for robustness
         else:
