@@ -1726,9 +1726,6 @@ class cathare_domain(domain):
         # within its GUI and paramfile
 
         nept_paramfile = os.path.join(self.data_dir,
-                                      '../../',
-                                      self.neptune_cfd_dom,
-                                      'DATA',
                                       param)
 
         ofile = open(nept_paramfile,'r').readlines()

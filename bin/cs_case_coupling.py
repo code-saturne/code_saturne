@@ -188,26 +188,15 @@ def coupling(package,
 
             if script[-4:] == '.xml':
                 param = script
-
             else:
-                runcase_path = os.path.join(os.getcwd(),
-                                            d.get('domain'),
-                                            'SCRIPTS',
-                                            script)
-                try:
-                    runcase = cs_runcase.runcase(runcase_path)
-                    param = runcase.get_parameters()
+                d['script'] = d['paramfile']
+                param = d['script']
 
-                except Exception:
-                    err_str = 'Cannot read ' + d.get('solver') \
-                              + ' script: ' + runcase_path
-                    raise RunCaseError(err_str)
-                d['script'] = param
 
             dom = cathare_domain(package,
                                  package_compute = package_compute,
                                  name = d.get('domain'),
-                                 param = d.get('paramfile'),
+                                 param = d.get('script'),
                                  n_procs_weight = d.get('n_procs_weight'),
                                  n_procs_min = d.get('n_procs_min'),
                                  n_procs_max = d.get('n_procs_max'),
@@ -258,7 +247,8 @@ domains = [
         k_first = True
         for k in ('solver', 'domain', 'script', 'n_procs_weight', 'n_procs_min',
                   'coupler', 'max_time_steps', 'n_sub_iterations', 'time_step',
-                  'start_time', 'epsilon'):
+                  'start_time', 'epsilon', 'cathare_case_file',
+                  'neptune_cfd_domain'):
             v = d.get(k)
             if v:
                 if type(v) == str:

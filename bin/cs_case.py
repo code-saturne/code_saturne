@@ -1315,6 +1315,17 @@ $appli/salome kill `cat $port_log`
                                                    'LD_LIBRARY_PATH',
                                                    salome_libdir)
 
+        # HANDLE CATHARE COUPLING
+        if self.domains:
+            for d in self.domains:
+                if hasattr(d, "cathare_case_file"):
+                    config = configparser.ConfigParser()
+                    config.read(self.package.get_configfiles())
+                    icoco_libdir = os.path.join(config.get('install', 'cathare'),
+                                                'ICoCo/lib')
+                    cs_exec_environment.write_prepend_path(s,
+                                                           "LD_LIBRARY_PATH",
+                                                           icoco_libdir)
         # Handle environment modules if used
 
         if self.package_compute.config.env_modules != "no":
