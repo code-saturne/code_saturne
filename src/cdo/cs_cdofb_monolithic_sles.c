@@ -2502,11 +2502,19 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
 
   _apply_div_op_transpose(div_op, btilda_c, uza->b_tilda);
 
-  if (cs_glob_n_ranks > 1)
+  if (cs_glob_n_ranks > 1) {
+
     cs_interface_set_sum(cs_shared_range_set->ifs,
                          uza->n_u_dofs,
                          1, false, CS_REAL_TYPE, /* stride, interlaced */
                          uza->b_tilda);
+
+    cs_interface_set_sum(cs_shared_range_set->ifs,
+                         uza->n_u_dofs,
+                         1, false, CS_REAL_TYPE, /* stride, interlaced */
+                         b_f);
+
+  }
 
   /* Update the modify right-hand side: b_tilda = b_f + gamma*Dt.W^-1.b_c */
 # pragma omp parallel for if (uza->n_u_dofs > CS_THR_MIN)
@@ -2638,11 +2646,19 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
 
   _apply_div_op_transpose(div_op, btilda_c, uza->b_tilda);
 
-  if (cs_glob_n_ranks > 1)
+  if (cs_glob_n_ranks > 1) {
+
     cs_interface_set_sum(cs_shared_range_set->ifs,
                          uza->n_u_dofs,
                          1, false, CS_REAL_TYPE, /* stride, interlaced */
                          uza->b_tilda);
+
+    cs_interface_set_sum(cs_shared_range_set->ifs,
+                         uza->n_u_dofs,
+                         1, false, CS_REAL_TYPE, /* stride, interlaced */
+                         b_f);
+
+  }
 
   /* Update the modify right-hand side: b_tilda = b_f + gamma*Dt.W^-1.b_c */
 # pragma omp parallel for if (uza->n_u_dofs > CS_THR_MIN)
