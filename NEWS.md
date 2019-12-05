@@ -21,6 +21,8 @@ User changes:
 
 Bug fixes:
 
+- Fix launching of ncfd doxygen from GUI (help menu).
+
 - Fix crash in ALE using internal structures coupling.
 
 - Radiative transfers: fix handling of radiative restart file when
