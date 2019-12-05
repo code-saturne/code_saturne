@@ -85,6 +85,8 @@ Default option changes:
 
 Bug fixes:
 
+- Fix launching of ncfd doxygen from GUI (help menu).
+
 - Fix crash in ALE using internal structures coupling.
 
 - Fix reading of GUI setting of turbulent flux model for additional model
