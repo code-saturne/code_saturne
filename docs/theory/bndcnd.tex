@@ -478,9 +478,9 @@ turbulence models must be selected (\emph{e.g.} $v^2-f$ or elliptic blending mod
 case one must make sure the mesh is fine enough.
 
 To allow use of standard high Reynolds models whatever the mesh density,
-"scalable wall functions" can be activated. This consist in shifting slightly the
+"scalable wall functions" can be activated. This consists in shifting slightly the
 wall outside of the mesh if the first cell lies in the viscous sub-layer. "Scalable wall function"
-only work with the "two friction velocity scales" version.
+only works with the "two friction velocity scales" version.
 
 The wall functions are usually derived from Eddy Viscosity Models such as $k-\varepsilon$, thus the coming sections
 assume that $\tens{R} = \dfrac{2}{3}k \tens{1} - 2\nu_T \deviator{\tens{S}}$.
@@ -528,7 +528,7 @@ where $C_{log}=5.2$.
 \eqref{eq:bndcnd:linear_profile} is valid for $y^+<5$ and \eqref{eq:bndcnd:log_profile} for $y^+>30$ so there is a gap (corresponding to the so called buffer
 layer) which more sophisticated models can cover, but they are not detailed here. Instead we
 introduce a dimensionless
- limit distance which crudely separates the viscous sub-layer from the logarithmic region writes $y^+_{lim}$. Its value is $1/ \kappa$ in general (to ensure the continuity of the velocity gradient) and $10.88$ in LES (to ensure the continuity of the velocity).
+ limit distance which crudely separates the viscous sub-layer from the logarithmic region and writes $y^+_{lim}$. Its value is $1/ \kappa$ in general (to ensure the continuity of the velocity gradient) and $10.88$ in LES (to ensure the continuity of the velocity).
 
 The $u^\star$ is computed by iteratively solving\eqref{eq:bndcnd:linear_profile} or \eqref{eq:bndcnd:log_profile}:
 
@@ -617,9 +617,9 @@ The previous sections can be summarized as follows:
 \tens{\tau} \cdot \vect{n} = \dfrac{\mu}{\overline{\centip \centf} } \dfrac{y^+}{u^+} \left(\tens{1} - \vect{n} \otimes \vect{n} \right) \cdot \left(\vect{u}_\centip - \vect{u}_{wall} \right)
 \end{equation}
 %
-where the rescaling factor $\frac{y^+}{u^+}$ depends on the wall function is given in \eqref{eq:bndcnd:ypup_1scale} or \eqref{eq:bndcnd:ypup_2scale}. Note that the wall shear stress is therefore parallel to the wall and fully implicit if the $\theta$-scheme on the velocity is implicit.
+where the rescaling factor $\frac{y^+}{u^+}$ depends on the wall function and is given in \eqref{eq:bndcnd:ypup_1scale} or \eqref{eq:bndcnd:ypup_2scale}. Note that the wall shear stress is therefore parallel to the wall and fully implicit if the $\theta$-scheme on the velocity is implicit.
 
-The internal pair of boundary condition coefficient for the diffusive term for the velocity are
+The internal pair of boundary condition coefficients for the diffusive term for the velocity are
 \begin{equation}\label{eq:bndcnd:boundary_condition_wall_function}
 \left\lbrace
 \begin{array}{r c l}
@@ -691,7 +691,7 @@ If the value obtained for $y^+$ at the wall is lower than $y^+_{lim}$,
 a no-slip condition is prescribed. Finally, one can also
 make explicit the velocity of the wall in the final expression:
 %
-The internal pair of boundary condition coefficient for the diffusive term for the velocity are
+The internal pair of boundary condition coefficients for the diffusive term for the velocity are
 \begin{equation}
 \left\lbrace
 \begin{array}{r c l}
@@ -918,7 +918,7 @@ The previous sections can be summarized as follows:
 q_\ib = -\dfrac{C \mu}{\overline{\centip \centf} } \dfrac{y^+}{\varia^+} \left(\varia_\centip - \varia_{wall} \right)
 \end{equation}
 %
-where the rescaling factor $\frac{y^+}{\varia^+}$ depends on the wall function is given in \eqref{eq:bndcnd:wallfunctions_t_3layers} if $\sigma >0.1$ or \eqref{eq:bndcnd:wallfunctions_t_2layers} if $\sigma \leq 0.1$.
+where the rescaling factor $\frac{y^+}{\varia^+}$ depends on the wall function and is given in \eqref{eq:bndcnd:wallfunctions_t_3layers} if $\sigma >0.1$ or \eqref{eq:bndcnd:wallfunctions_t_2layers} if $\sigma \leq 0.1$.
 
 The internal pair of boundary condition coefficient for the diffusive term for the variable $\varia $ are
 \begin{equation}
@@ -1022,7 +1022,7 @@ the pressure increment $ \delta P = P^{\star, n+1} - P^{\star, n}$ at the face i
 \end{equation}
 
 
-Neglecting the tangencial velocity component at the entering faces ($\left(\rho \vect{u} \right)^n_\face \simeq \left(\rho \vect{u} \right)^n_\face \cdot \vect{n} \, \vect{n} = \dfrac{ \dot{m}_\face }{\norm{S}_\face} \vect{n} $) and approximating $P^{\star, n}_\face$ with its cell-center value, Equation \ref{eq:bndcnd:pressure_increment} reads:
+Neglecting the tangential velocity component at the entering faces ($\left(\rho \vect{u} \right)^n_\face \simeq \left(\rho \vect{u} \right)^n_\face \cdot \vect{n} \, \vect{n} = \dfrac{ \dot{m}_\face }{\norm{S}_\face} \vect{n} $) and approximating $P^{\star, n}_\face$ with its cell-center value, Equation \ref{eq:bndcnd:pressure_increment} reads:
 %
  \begin{equation}\label{eq:bndcnd:pressure_increment_simple}
 \delta P_\face = -P^{\star, n}_\celli - \dfrac{1+K}{2} \dfrac{ \dot{m}_\face }{\norm{S}_\face}

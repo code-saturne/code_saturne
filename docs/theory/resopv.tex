@@ -36,10 +36,10 @@ The velocity projection (or pressure correction) step is effected in this subrou
 \item The strengthened velocity-pressure coupling algorithm (option \var{IPUCOU  = 1}). This algorithm couples the velocity and pressure through all of the terms (convection, diffusion and implicit source terms) of the equation of motion, though it is still approximate. In practice, the advantage of this algorithm is that it allows large time steps without entirely decoupling the velocity and the pressure.
 \end{enumerate}
 
-Taking $\delta p$ as the pressure increment ({\it i.e.} $p^{n+1} = p^n+\delta p$) and $\widetilde{u}$ the velocity field resulting from the prediction step, from a continuous point of view the projection step essentially comes down to solving a Poisson equation for the pressure:
+Taking $\delta p$ as the pressure increment ({\it i.e.} $p^{n+1} = p^n+\delta p$) and $\widetilde{\vect{u}}$ the velocity field resulting from the prediction step, from a continuous point of view the projection step essentially comes down to solving a Poisson equation for the pressure:
 
 \begin{equation}
-\dive(\,{\tens{T}^n\ \grad{\delta p}}) = \dive(\,{\rho \,\widetilde{u}})
+  \dive(\,{\tens{T}^n\ \grad{\delta p}}) = \dive(\,{\rho \,\widetilde{\vect{u}}})
 \end{equation}
 
 and then correcting the velocity:
@@ -57,7 +57,7 @@ See the \doxygenfile{resopv_8f90.html}{programmers reference of the dedicated su
 \section*{Discretization}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-The velocity description step is described in \fort{predvv}. An operator notation is adopted here to provide a simplified explanation of the code-based algorithms.
+The velocity prediction step is described in \fort{predvv}. An operator notation is adopted here to provide a simplified explanation of the code-based algorithms.
 The discrete equation of motion at an intermediate point in time of solution is written, in each direction of space $\alpha$ ($\alpha \in \{1,2,3\}$)in the form:
 
 \begin{equation}
@@ -146,7 +146,7 @@ we can thus write the simplified equation as:
 \label{Base_Resopv_eqn3}
 \end{equation}
 
-With the fractional step method, ??? is decomposed into a sequence of two steps:
+With the fractional step method, (\ref{eq:continuousnavstv}) is decomposed into a sequence of two steps:
 \begin{enumerate}
 \item solution of the equation (\ref{Base_Resopv_QDM}) (this equation yields equation(\ref{Base_Resopv_eqn3})), namely:
 \begin{equation}
@@ -192,7 +192,7 @@ By combining the equations of continuity and motion and postulating that $ \delt
 
 We still need to invert the system (\ref{Base_Resopv_eqn5bis}) in order to determine $\delta p$ (and thus $p^{\,n+1}$) and correct the projected velocity field so as to obtain $\vect{u}^{\,n+1}$. The velocity correction is handled in \fort{navstv}, by incrementing the velocity by the calculated magnitude of the gradient of the pressure increment $\delta p$.
 
-The problem initially arises with the calculation of $\tens{B}^{-1}$. It has already been judged too expensive computationally to calculate the inverse de $\tens{B}$. The solutions computed by the "weak velocity-pressure coupling" and the "strengthened velocity-pressure coupling" algorithms correspond to an approximation of this operator.
+The problem initially arises with the calculation of $\tens{B}^{-1}$. It has already been judged too expensive computationally to calculate the inverse of $\tens{B}$. The solutions computed by the "weak velocity-pressure coupling" and the "strengthened velocity-pressure coupling" algorithms correspond to an approximation of this operator.
 
 In the case of the "weak velocity-pressure coupling" algorithm, we assume $\tens{B}_{\,\alpha}^{-1} = \tens{M}_{\,\alpha}^{-1}$ (we could also include the diagonal terms of the convection, diffusion and implicit source terms).
 
@@ -263,7 +263,7 @@ $$ \left[(\vect{\widetilde{G}}\ a )_{\,f}\right]_{\,ij}\,.\,\vect{S}_{\,ij} \ove
 \\
 
 We need to calculate $\vect{\widetilde{G}}\ (\delta p)\,.\,\vect{S}$ at the face.\\
-This is relatively simple with a cell gradient as all the components of the latter perfectly calculable.\\
+This is relatively simple with a cell gradient as all the components of the latter are perfectly calculable.\\
 The difficulty lies, on the contrary, with a facet gradient because the only exploitable options is the decomposition of the face normal gradient\footnote{According to the formula $ \displaystyle\frac { p_{\,J'} - p_{\,I'}}{\overline{I'J'}} S_{\,ij}$.}. We need the quantities $\displaystyle \frac{\partial (\delta p)}{\partial x}$, $\displaystyle \frac{\partial (\delta p)}{\partial y}$ and $\displaystyle \frac{\partial (\delta p)}{\partial z}$ both explicitly and separately, which makes it difficult to use the normal pressure increment gradient.\\
 We therefore make an approximation of the gradient of the pressure increment by assuming it to be equal to its normal component\footnote{{\it i.e.} no account is taken of the tangential component $((\grad{(\delta p)})_{\,f}\,.\,\vect{\tau}).\vect{\tau}$, $\vect{\tau}$ denoting the tangential unit vector.}, which is:
 \begin{equation}
@@ -356,11 +356,11 @@ The facet gradients, denoted $(\grad{(\delta{p})^k})_{\,f_{\,ij}}$ and $(\grad{(
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 We present hereafter the algorithm as it is written in \fort{resopv}.
 
-$\vect{T}^n$ designates an array of dimension $3$ containing the local time steps in each direction (for use with  "strengthened velocity-pressure coupling). We keep the same notation for the "weak velocity-pressure coupling" algorithm although in this case the time steps are equal in the three spatial directions.
+$\vect{T}^n$ designates an array of dimension $3$ containing the local time steps in each direction (for use with ''strengthened velocity-pressure coupling"). We keep the same notation for the ''weak velocity-pressure coupling" algorithm although in this case the time steps are equal in the three spatial directions.
 
 \etape {Computation of the matrix of the equation system to be solved}
 \begin{itemize}
-\item calculation of the diffusion coefficient at the cell faces for use in the Laplacian of pressure (the diffusion coefficient uses the calculation time step or that of the "strengthened velocity-pressure coupling" algorithm). One of two cases will apply, depending on the algorithm selected by the user for the velocity-pressure coupling:
+\item calculation of the diffusion coefficient at the cell faces for use in the Laplacian of pressure (the diffusion coefficient uses the calculation time step or that of the ''strengthened velocity-pressure coupling" algorithm). One of two cases will apply, depending on the algorithm selected by the user for the velocity-pressure coupling:
 
 \begin{enumerate}
 \item Call to \fort{viscfa} with a total viscosity equal to the time step $\Delta t_I^n$ for the "weak velocity-pressure coupling" algorithm (\var{IPUCOU} = 0),
@@ -410,7 +410,7 @@ $$m_{\,ij} = \left[\rho \widetilde{\vect{u}}+ \displaystyle \alpha_{\,Arak}\ \te
 
 \item Call to \fort{clmlga} to compute the inversion of the pressure matrix with the algebraic multigrid algorithm.
 
-\item initialisation of $\delta p$, $\delta(\delta p)$ and \var{SMBR} to 0. \var{SMBR} will serve to store the second member. In the code, $\delta p$ and $\delta(\delta p) are contained respectively in $\var{RTP(*,IPRIPH)} and \var{DRTP}.
+\item initialisation of $\delta p$, $\delta(\delta p)$ and \var{SMBR} to 0. \var{SMBR} will serve to store the second member. In the code, $\delta p$ and $\delta(\delta p)$ are contained respectively in \var{RTP(*,IPRIPH)} and \var{DRTP}.
 \item Call to \fort{divmas} for calculation of the divergence of the mass flux resulting from the last call to \fort{itrmas}. This divergence is stored in the working array \var{W7}.
 \item Addition of the contributions of the mass source terms\footnote{The array \var{W7} contains the second member without the gradient of $\delta p$. It therefore remains invariant at each sweep. On the other hand, \var{SMBR} contains the entire second member and consequently varies at each sweep.} to \var{W7}.
 \begin{equation}

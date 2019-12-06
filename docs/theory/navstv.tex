@@ -55,6 +55,7 @@ a null divergence velocity field.
 
 The continuous equations are thus:
 \begin{equation}
+  \label{eq:continuousnavstv}
 \left\{
 \begin{array}{l}
 \displaystyle \der{}{t} \left( \rho \vect{u} \right) + \divv \left( \rho  \vect{u} \otimes \vect{u} \right)
@@ -316,7 +317,7 @@ with:
 \vect{u}_{\,f,ij}= &
 \vect{u}_{\celli} +  (\gradt\vect{u})_{\centi} \cdot \vect{\centi \centf} \text{ if } (\rho
 \vect{u})_{\fij} \cdot \vect{S}_{\ij} \geqslant 0, \\
-\vect{u}_{\cellj} + (\gradt \vect{u})_{\cellj} \cdot \vect{\centj \centf} \text{ if } (\rho
+& \vect{u}_{\cellj} + (\gradt \vect{u})_{\cellj} \cdot \vect{\centj \centf} \text{ if } (\rho
 \vect{u})_{\,ij}.\vect{S}_{\,ij}\,< 0.
 \end{array}
 \end{equation}

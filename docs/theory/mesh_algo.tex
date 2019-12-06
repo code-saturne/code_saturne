@@ -87,7 +87,7 @@ and practical (implementation and computing cost wise) definition of a
 polygon's surface when its edges do not all lie in a same plane.
 
 So as to limit errors due to warped faces, we compare the contribution
-of a given face to the the neighboring cell volumes (through
+of a given face to the neighboring cell volumes (through
 Stoke's formula) with the contribution obtained from the separate
 triangles $\{P_a, P_i, P_{i+1}\}$, and we translate the initial center
 of gravity along the face normal axis so as to obtain the same contribution.
@@ -101,7 +101,7 @@ center, as any point inside the cell could be chosen.
 In practice, precision (spatial order) depends on a good choice of
 the cell's center, as this point is used for the computation of values
 and gradients at mesh faces.
-We do not compute the center a the circumscribed sphere as
+We do not compute the center of the circumscribed sphere as
 a cell center, as this notion is usually linked to tetrahedral meshes,
 and is not easily defined and calculated for general polyhedra.
 
@@ -561,7 +561,7 @@ figure \ref{fig:algo.rc_perio}:
 
 It is thus not necessary to use periodic boundary conditions
 that the periodic surfaces be meshed in a periodic manner,
-though it is always best not to make to much use of the
+though it is always best not to make too much use of the
 comfort provided by conforming joinings, as it can lower
 mesh quality (and as a consequence, quality of computational
 results).
@@ -604,7 +604,7 @@ Its principle is illustrated figure \ref{fig:algo.ear_splitting}.
 We start by checking if the triangle defined by the first vertices
 of the polygon, $(P_0, P_1, P_2)$ is an ``ear'', that is if it is
 interior to the polygon and does not intersect it. As this is the case
-on this example, we obtain a first triangle, ad we must then process
+on this example, we obtain a first triangle, and we must then process
 the remaining part of the polygon. At the next stage triangle
 $(P_0, P_2, P_3)$ is also an ear, and may be removed.
 

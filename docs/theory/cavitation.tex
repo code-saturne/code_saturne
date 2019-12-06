@@ -46,7 +46,7 @@ term, appearing with an opposite sign in the liquid part of the
 density budget.
 
 Using the fact that the reference densities $\rho_v$ and $\rho_l$ are
-constant, Eqs.~\eqref{eq:cavit:eq_vf0} and \eqref{eq:cavit:eq_lf0} can be easilly
+constant, Eqs.~\eqref{eq:cavit:eq_vf0} and \eqref{eq:cavit:eq_lf0} can be easily
 written in the form:
 \begin{equation}
 \label{eq:cavit:eq_vf1}
@@ -58,7 +58,7 @@ written in the form:
 \label{eq:cavit:eq_lf1}
 \divs(\vect{u})=\Gamma_V\left(\frac{1}{\rho_v}-\frac{1}{\rho_l}\right).
 \end{equation}
-It is seen that the mass equation of the mixture Eq.~\eqref{eq:cavit:eq_rho}
+It is seen that the mass equation of the mixture Eq.~\eqref{eq:cavit:mass}
 has been splitted into two equations: one simple convection equation
 which can be used to solve the void fraction and one equation
 structurally similar to the one solved at the correction step of the
@@ -71,7 +71,7 @@ following:
 \item Correction of the velocity using Eq.~\eqref{eq:cavit:eq_lf1} (see
 \appendixname~\ref{ap:resopv}).
 \item Resolution of the void fraction using Eq.~\eqref{eq:cavit:eq_vf1}.
-\item Update physcal properties of the mixture using
+\item Update physical properties of the mixture using
 Eqs.~\eqref{eq:cavit:eq_rho} and \eqref{eq:cavit:eq_mu}.
 \end{enumerate}
 %
@@ -140,7 +140,7 @@ The time discretization of Eq.~\eqref{eq:cavit:eq_lf1} is:
 In this equation, the cavitation source term is discretized with the
 time scheme as the one used at the correction step in order to
 ensure the exact mass conservation (it is recalled that the void
-faction transport equation and correction step are two part of the
+faction transport equation and correction step are two parts of the
 mixture mass conservation equation, Eq.~\eqref{eq:cavit:mass}.
 
 See the \doxygenfile{classcavitation.html}{programmers reference of the dedicated subroutine}

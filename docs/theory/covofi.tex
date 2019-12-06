@@ -248,20 +248,20 @@ $\bullet$ Sinon, un vecteur suppl\'{e}mentaire est n\'{e}cessaire afin de stocke
 contributions du pas de temps pr\'{e}cedent (\var{PROPCE}). Dans ce cas :
 \begin{itemize}
 \item [-] le vecteur \var{PROPCE} sert \`{a} stocker les contributions explicites du
-second menbre au temps $n-1$ (pour l'extrapolation en $n+\theta_S$).
+second membre au temps $n-1$ (pour l'extrapolation en $n+\theta_S$).
 \item [-] le vecteur \var{SMBRS} est compl\'{e}t\'{e} au fur et \`{a} mesure.
 \\
 \end{itemize}
 L'algorithme de ce sous-programme est le suivant :
 \begin{itemize}
-\item mise \`{a} z\'{e}ro des vecteurs repr\'{e}sentants le second membre (\var{SMBRS}) et
+\item mise \`{a} z\'{e}ro des vecteurs repr\'{e}sentant le second membre (\var{SMBRS}) et
 de la diagonale de la matrice (\var{ROVSDT}).
 \item calcul des termes sources du scalaire d\'{e}finis par l'utilisateur en
 appelant le sous-programme \fort{ustssc}.
 \\\\
 $\star$ Si les termes sources sont extrapol\'{e}s, \var{SMBRS} reçoit $-\theta_S$
 fois la contribution au temps $n-1$ des termes sources qui sont extrapol\'{e}s
-(stock\'{e}s dans \var{PROPCE}). La contribution des termes sources utisateurs (au
+(stock\'{e}s dans \var{PROPCE}). La contribution des termes sources utilisateurs (au
 pas temps courant) est r\'{e}partie entre \var{PROPCE} (pour la partie $T_s^{exp}$
 qui est \`{a} stocker en vue de l'extrapolation) et \var{SMBRS} (pour la partie
 explicite provenant de l'utilisation du $\theta$ sch\'{e}ma pour $T_s^{imp}$). La
@@ -315,7 +315,7 @@ $\displaystyle \frac{\rho \varepsilon}{R_f k}$ apr\`{e}s multiplication par
 $\star$ Sinon, la production va dans \var{SMBRS}, et la dissipation est r\'{e}partie
 de la m\^eme mani\`{e}re que pr\'{e}c\'{e}demment avec \var{THETAP} = 1.
 \\
-\item une fois la contribution de tous les termes sources calcul\'{e}s, le second
+\item une fois la contribution de tous les termes sources calcul\'{e}e, le second
 membre est assembl\'{e}, et le vecteur \var{PROPCE} ajout\'{e} apr\`{e}s multiplication par
 $1+\theta_S$ \`{a} \var{SMBRS}, dans le cas o\`{u} les termes sources sont extrapol\'{e}s.
 
