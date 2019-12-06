@@ -662,7 +662,7 @@ cs_hho_stokes_compute_source(const cs_equation_param_t  *eqp,
   /* TODO */
 
   cs_timer_t  t1 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tcs), &t0, &t1);
+  cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 }
 
 /*----------------------------------------------------------------------------*/

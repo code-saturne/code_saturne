@@ -340,10 +340,7 @@ cs_equation_init_builder(const cs_equation_param_t   *eqp,
 
   /* Monitoring */
   CS_TIMER_COUNTER_INIT(eqb->tcb); /* build system */
-  CS_TIMER_COUNTER_INIT(eqb->tcd); /* build diffusion terms */
-  CS_TIMER_COUNTER_INIT(eqb->tca); /* build advection terms */
-  CS_TIMER_COUNTER_INIT(eqb->tcr); /* build reaction terms */
-  CS_TIMER_COUNTER_INIT(eqb->tcs); /* build source terms */
+  CS_TIMER_COUNTER_INIT(eqb->tcs); /* solve system */
   CS_TIMER_COUNTER_INIT(eqb->tce); /* extra operations */
 
   return eqb;
@@ -757,25 +754,23 @@ void
 cs_equation_write_monitoring(const char                    *eqname,
                              const cs_equation_builder_t   *eqb)
 {
-  double t[6] = {eqb->tcb.wall_nsec, eqb->tcd.wall_nsec,
-                 eqb->tca.wall_nsec, eqb->tcr.wall_nsec,
-                 eqb->tcs.wall_nsec, eqb->tce.wall_nsec};
-  for (int i = 0; i < 6; i++) t[i] *= 1e-9;
+  double t[3] = {eqb->tcb.wall_nsec, eqb->tcs.wall_nsec, eqb->tce.wall_nsec};
+  for (int i = 0; i < 3; i++) t[i] *= 1e-9;
 
   if (eqname == NULL)
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  " %-35s %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f seconds\n",
-                  "<CDO/Equation> Monitoring",
-                  t[0], t[1], t[2], t[3], t[4], t[5]);
+    cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %10.4f %10.4f %10.4f (seconds)\n",
+                  "<CDO/Equation> Monitoring", t[0], t[1], t[2]);
   else {
+
     char *msg = NULL;
     int len = 1 + strlen("<CDO/> Monitoring") + strlen(eqname);
+
     BFT_MALLOC(msg, len, char);
     sprintf(msg, "<CDO/%s> Monitoring", eqname);
-    cs_log_printf(CS_LOG_PERFORMANCE,
-                  " %-35s %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f seconds\n",
-                  msg, t[0], t[1], t[2], t[3], t[4], t[5]);
+    cs_log_printf(CS_LOG_PERFORMANCE, " %-35s %10.4f %10.4f %10.4f (seconds)\n",
+                  msg, t[0], t[1], t[2]);
     BFT_FREE(msg);
+
   }
 }
 

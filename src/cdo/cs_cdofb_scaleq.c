@@ -1470,6 +1470,8 @@ cs_cdofb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
                                    cs_equation_builder_t      *eqb,
                                    void                       *context)
 {
+  cs_timer_t  t0 = cs_timer_time();
+
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
@@ -1479,8 +1481,6 @@ cs_cdofb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
-
-  cs_timer_t  t0 = cs_timer_time();
 
   /* Build an array storing the Dirichlet values at faces */
   cs_real_t  *dir_values = NULL;
@@ -1635,6 +1635,9 @@ cs_cdofb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
                                   eqc->face_values,
                                   rhs);
 
+  cs_timer_t  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
+
   /* Update field */
   _update_fields(&(eqb->tce), fld, eqc);
 
@@ -1666,6 +1669,8 @@ cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
                                cs_equation_builder_t      *eqb,
                                void                       *context)
 {
+  cs_timer_t  t0 = cs_timer_time();
+
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
@@ -1682,8 +1687,6 @@ cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
   /* Sanity checks */
   assert(cs_equation_param_has_time(eqp) == true);
   assert(eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
-
-  cs_timer_t  t0 = cs_timer_time();
 
   /* Store the current face values as previous */
   memcpy(eqc->face_values_pre, eqc->face_values,
@@ -1878,6 +1881,9 @@ cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
                                   eqc->face_values,
                                   rhs);
 
+  cs_timer_t  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
+
   /* Update field */
   _update_fields(&(eqb->tce), fld, eqc);
 
@@ -1909,6 +1915,8 @@ cs_cdofb_scaleq_solve_theta(const cs_mesh_t            *mesh,
                             cs_equation_builder_t      *eqb,
                             void                       *context)
 {
+  cs_timer_t  t0 = cs_timer_time();
+
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_SP0];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
@@ -1931,8 +1939,6 @@ cs_cdofb_scaleq_solve_theta(const cs_mesh_t            *mesh,
   assert(cs_equation_param_has_time(eqp) == true);
   assert(eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO ||
          eqp->time_scheme == CS_TIME_SCHEME_THETA);
-
-  cs_timer_t  t0 = cs_timer_time();
 
   /* Store the current face values as previous */
   memcpy(eqc->face_values_pre, eqc->face_values,
@@ -2168,6 +2174,9 @@ cs_cdofb_scaleq_solve_theta(const cs_mesh_t            *mesh,
                                   sles,
                                   eqc->face_values,
                                   rhs);
+
+  cs_timer_t  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
 
   /* Update field */
   _update_fields(&(eqb->tce), fld, eqc);

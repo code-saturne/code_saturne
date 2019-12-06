@@ -1262,10 +1262,8 @@ cs_equation_needs_steady_state_solve(void)
 void
 cs_equation_log_monitoring(void)
 {
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                "%-36s %9s %9s %9s %9s %9s %9s\n",
-                " ", "SysBuild", "Diffusion", "Advection", "Reaction",
-                "Source", "Extra");
+  cs_log_printf(CS_LOG_PERFORMANCE, "%-36s %9s %9s %9s\n",
+                " ", "Build", "Solve", "Extra");
 
   for (int i = 0; i < _n_equations; i++) {
 

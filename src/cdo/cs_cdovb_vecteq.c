@@ -1120,14 +1120,14 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
                                    cs_equation_builder_t      *eqb,
                                    void                       *context)
 {
+  cs_timer_t  t0 = cs_timer_time();
+
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_VTX_VECT];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_vertices = quant->n_vertices;
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
-
-  cs_timer_t  t0 = cs_timer_time();
 
   cs_cdovb_vecteq_t  *eqc = (cs_cdovb_vecteq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
@@ -1280,12 +1280,12 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
                                      rhs,
                                      &rhs_norm);
 
+  /* Copy current field values to previous values */
+  cs_field_current_to_previous(fld);
+
   /* End of the system building */
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
-
-  /* Copy current field values to previous values */
-  cs_field_current_to_previous(fld);
 
   /* Solve the linear system (treated as a scalar-valued system
      with 3 times more DoFs) */
@@ -1300,6 +1300,9 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
                                   sles,
                                   fld->val,
                                   rhs);
+
+  cs_timer_t  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
 
   /* Free remaining buffers */
   BFT_FREE(rhs);

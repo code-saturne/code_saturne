@@ -150,15 +150,9 @@ typedef struct {
    */
 
   cs_timer_counter_t     tcb; /*!< Cumulated elapsed time for building the
-                               *   current system: tcb >= tcd+tca+tcr+tcs+tcs */
-  cs_timer_counter_t     tcd; /*!< Cumulated elapsed time for building
-                               *   diffusion terms */
-  cs_timer_counter_t     tca; /*!< Cumulated elapsed time for building
-                               *   advection terms */
-  cs_timer_counter_t     tcr; /*!< Cumulated elapsed time for building
-                               *   reaction terms */
-  cs_timer_counter_t     tcs; /*!< Cumulated elapsed time for building
-                               *   source terms */
+                               *   current system */
+  cs_timer_counter_t     tcs; /*!< Cumulated elapsed time for solving the
+                               *   current system */
   cs_timer_counter_t     tce; /*!< Cumulated elapsed time for computing
                                *   all extra operations (post, balance,
                                *   fluxes...) */

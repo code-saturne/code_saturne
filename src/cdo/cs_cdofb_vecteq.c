@@ -613,6 +613,8 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
                                    cs_equation_builder_t      *eqb,
                                    void                       *context)
 {
+  cs_timer_t  t0 = cs_timer_time();
+
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
@@ -622,8 +624,6 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 
   cs_cdofb_vecteq_t  *eqc = (cs_cdofb_vecteq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id);
-
-  cs_timer_t  t0 = cs_timer_time();
 
   /* Build an array storing the Dirichlet values at faces and ids of DoFs if
    * an enforcement of (internal) DoFs is requested */
@@ -780,6 +780,7 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 
   /* Update field */
   cs_timer_t  t3 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcs), &t2, &t3);
 
   /* Compute values at cells pc from values at faces pf
      pc = acc^-1*(RHS - Acf*pf) */
@@ -817,6 +818,8 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
                                cs_equation_builder_t      *eqb,
                                void                       *context)
 {
+  cs_timer_t  t0 = cs_timer_time();
+
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
@@ -832,8 +835,6 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
   /* Sanity checks */
   assert(cs_equation_param_has_time(eqp) == true);
   assert(eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
-
-  cs_timer_t  t0 = cs_timer_time();
 
   /* Build an array storing the Dirichlet values at faces and ids of DoFs if
    * an enforcement of (internal) DoFs is requested */
@@ -1010,6 +1011,7 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
                                   rhs);
 
   cs_timer_t  t3 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcs), &t2, &t3);
 
   /* Update field.
    * Compute values at cells pc from values at faces pf
@@ -1048,6 +1050,8 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
                             cs_equation_builder_t      *eqb,
                             void                       *context)
 {
+  cs_timer_t  t0 = cs_timer_time();
+
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
@@ -1070,8 +1074,6 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
   assert(cs_equation_param_has_time(eqp) == true);
   assert(eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO ||
          eqp->time_scheme == CS_TIME_SCHEME_THETA);
-
-  cs_timer_t  t0 = cs_timer_time();
 
   /* Detect the first call (in this case, we compute the initial source term)*/
   bool  compute_initial_source = false;
@@ -1281,6 +1283,7 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
                                   rhs);
 
   cs_timer_t  t3 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcs), &t2, &t3);
 
   /* Update field
    * Compute values at cells pc from values at faces pf

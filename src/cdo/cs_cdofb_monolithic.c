@@ -1910,6 +1910,7 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
   _fields_to_previous(sc);
 
   /* Solve the linear system */
+  cs_timer_t  t_solve_start = cs_timer_time();
   cs_cdofb_monolithic_sles_t  *msles = sc->msles;
 
   msles->sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
@@ -1920,6 +1921,9 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
   msles->b_c = mass_rhs;
 
   int  cumulated_inner_iters = sc->solve(nsp, mom_eqp, msles);
+
+  cs_timer_t  t_solve_end = cs_timer_time();
+  cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
 
   /* Compute the velocity divergence and retrieve its L2-norm */
   cs_real_t  div_l2 = _update_divergence(sc, mom_eqc);
@@ -1999,8 +2003,8 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
                    sc, matrix, mom_rhs, mass_rhs);
 
   /* End of the system building */
-  cs_timer_t  t_bld_end = cs_timer_time();
-  cs_timer_counter_add_diff(&(mom_eqb->tcb), &t_start, &t_bld_end);
+  cs_timer_t  t_build_end = cs_timer_time();
+  cs_timer_counter_add_diff(&(mom_eqb->tcb), &t_start, &t_build_end);
 
   /*--------------------------------------------------------------------------
    *                   INITIAL BUILD: END
@@ -2010,6 +2014,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   _fields_to_previous(sc);
 
   /* Solve the linear system */
+  cs_timer_t  t_solve_start = cs_timer_time();
   cs_navsto_algo_info_t  ns_info;
   cs_navsto_algo_info_init(&ns_info);
 
@@ -2026,6 +2031,9 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
     (ns_info.last_inner_iter = sc->solve(nsp, mom_eqp, msles));
   ns_info.n_algo_iter += 1;
 
+  cs_timer_t  t_solve_end = cs_timer_time();
+  cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
+
   /* Compute the velocity divergence and retrieve its L2-norm */
   cs_real_t  div_l2 = _update_divergence(sc, mom_eqc);
 
@@ -2041,9 +2049,15 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   while (ns_info.cvg == CS_SLES_ITERATING) {
 
     /* Main loop on cells to define the linear system to solve */
+    cs_timer_t  t_build_start = cs_timer_time();
+
     sc->steady_build(nsp,
                      dir_values, enforced_ids,
                      sc, matrix, mom_rhs, mass_rhs);
+
+    /* End of the system building */
+    t_build_end = cs_timer_time();
+    cs_timer_counter_add_diff(&(mom_eqb->tcb), &t_build_start, &t_build_end);
 
     /* Current to previous */
     memcpy(mom_eqc->face_values_pre, mom_eqc->face_values,
@@ -2051,11 +2065,15 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
     /* Free the SLES structure in order to redo the setup since the matrix
      * should be modified */
+    t_solve_start = cs_timer_time();
     cs_sles_free(msles->sles);
 
     /* Solve the new system */
     ns_info.n_inner_iter +=
       (ns_info.last_inner_iter = sc->solve(nsp, mom_eqp, msles));
+
+    t_solve_end = cs_timer_time();
+    cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
 
     /* Compute the velocity divergence and retrieve its L2-norm */
     div_l2 = _update_divergence(sc, mom_eqc);
@@ -2160,6 +2178,7 @@ cs_cdofb_monolithic(const cs_mesh_t          *mesh,
   _fields_to_previous(sc);
 
   /* Solve the linear system */
+  cs_timer_t  t_solve_start = cs_timer_time();
   cs_cdofb_monolithic_sles_t  *msles = sc->msles;
 
   msles->sles = cs_sles_find_or_add(mom_eq->field_id, NULL);
@@ -2170,6 +2189,9 @@ cs_cdofb_monolithic(const cs_mesh_t          *mesh,
   msles->b_c = mass_rhs;
 
   sc->solve(nsp, mom_eqp, msles);
+
+  cs_timer_t  t_solve_end = cs_timer_time();
+  cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
 
   /* Compute the velocity divergence and retrieve its L2-norm */
   cs_real_t  div_l2 = _update_divergence(sc, mom_eqc);
@@ -2248,8 +2270,8 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   sc->build(nsp, dir_values, enforced_ids, sc, matrix, mom_rhs, mass_rhs);
 
   /* End of the system building */
-  cs_timer_t  t_bld_end = cs_timer_time();
-  cs_timer_counter_add_diff(&(mom_eqb->tcb), &t_start, &t_bld_end);
+  cs_timer_t  t_build_end = cs_timer_time();
+  cs_timer_counter_add_diff(&(mom_eqb->tcb), &t_start, &t_build_end);
 
   /*--------------------------------------------------------------------------
    *                   INITIAL BUILD: END
@@ -2259,6 +2281,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   _fields_to_previous(sc);
 
   /* Solve the linear system */
+  cs_timer_t  t_solve_start = cs_timer_time();
   cs_navsto_algo_info_t  ns_info;
   cs_navsto_algo_info_init(&ns_info);
 
@@ -2275,6 +2298,9 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
     (ns_info.last_inner_iter = sc->solve(nsp, mom_eqp, msles));
   ns_info.n_algo_iter += 1;
 
+  cs_timer_t  t_solve_end = cs_timer_time();
+  cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
+
   /* Compute the velocity divergence and retrieve its L2-norm */
   cs_real_t  div_l2 = _update_divergence(sc, mom_eqc);
 
@@ -2289,8 +2315,15 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   while (ns_info.cvg == CS_SLES_ITERATING) {
 
+    /* Start of the system building */
+    cs_timer_t  t_build_start = cs_timer_time();
+
     /* Main loop on cells to define the linear system to solve */
     sc->build(nsp, dir_values, enforced_ids, sc, matrix, mom_rhs, mass_rhs);
+
+    /* End of the system building */
+    t_build_end = cs_timer_time();
+    cs_timer_counter_add_diff(&(mom_eqb->tcb), &t_build_start, &t_build_end);
 
     /* Current to previous */
     memcpy(mom_eqc->face_values_pre, mom_eqc->face_values,
@@ -2298,11 +2331,15 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
     /* Free the SLES structure in order to redo the setup since the matrix
      * should be modified */
+    t_solve_start = cs_timer_time();
     cs_sles_free(msles->sles);
 
     /* Solve the new system */
     ns_info.n_inner_iter +=
       (ns_info.last_inner_iter = sc->solve(nsp, mom_eqp, msles));
+
+    t_solve_end = cs_timer_time();
+    cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
 
     /* Compute the velocity divergence and retrieve its L2-norm */
     div_l2 = _update_divergence(sc, mom_eqc);

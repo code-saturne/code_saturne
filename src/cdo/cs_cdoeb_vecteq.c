@@ -847,14 +847,14 @@ cs_cdoeb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
                                    cs_equation_builder_t      *eqb,
                                    void                       *context)
 {
+  cs_timer_t  t0 = cs_timer_time();
+
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_EDGE_SCAL];
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_lnum_t  n_edges = quant->n_edges;
   const cs_time_step_t  *ts = cs_shared_time_step;
   const cs_real_t  time_eval = ts->t_cur + ts->dt[0];
-
-  cs_timer_t  t0 = cs_timer_time();
 
   cs_cdoeb_vecteq_t  *eqc = (cs_cdoeb_vecteq_t *)context;
   cs_field_t  *fld = cs_field_by_id(field_id); /* vector-valued cell-based */
@@ -1017,6 +1017,9 @@ cs_cdoeb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
                                   sles,
                                   eqc->edge_values,
                                   rhs);
+
+  cs_timer_t  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
 
   /* Copy current field values to previous values and update the related
      field values */
