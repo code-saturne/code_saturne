@@ -54,6 +54,12 @@ Numerics and physical modelling:
 - Add the resolution of Oseen and Navier-Stokes equations with CDO
   face-based schemes (based on the work of Milani's PhD).
 
+- Add several new features for solving linear systems arising from a
+  discretization of (Navier--)Stokes with CDO face-based schemes:
+  Golub--Kahan biorthogonalization, Augmented Lagrangian--Uzawa
+  algorithm (in incremental form), MUMPS with the PETSc interface,
+  block preconditioning through PETSc
+
 - Add the first pieces of a thermal module based on CDO schemes.
 
 - Add new Hodge operators for vertex-based and face-based schemes based on a
