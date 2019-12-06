@@ -188,7 +188,7 @@ _fields_to_previous(cs_cdofb_monolithic_t   *sc)
  *
  * \param[in]      nsp           pointer to a \ref cs_navsto_param_t structure
  * \param[in]      mom_eqc       scheme context for the momentum equation
- * \param[in]      div_l2        L2 norm of the velocity divergence
+ * \param[in]      div_l2_norm   L2 norm of the velocity divergence
  * \param[in, out] ns_info       pointer to a cs_navsto_algo_info_t struct.
  */
 /*----------------------------------------------------------------------------*/
@@ -196,7 +196,7 @@ _fields_to_previous(cs_cdofb_monolithic_t   *sc)
 static void
 _picard_cvg_test(const cs_navsto_param_t      *nsp,
                  const cs_cdofb_vecteq_t      *mom_eqc,
-                 cs_real_t                     div_l2,
+                 cs_real_t                     div_l2_norm,
                  cs_navsto_algo_info_t        *ns_info)
 {
   const cs_real_t  diverg_factor = 100;
@@ -217,7 +217,7 @@ _picard_cvg_test(const cs_navsto_param_t      *nsp,
 
   /* Set the convergence status */
   if (ns_info->res < nslesp.picard_tolerance &&
-      div_l2 < nslesp.picard_tolerance) {
+      div_l2_norm < nslesp.picard_tolerance) {
     ns_info->cvg = CS_SLES_CONVERGED;
     return;
   }
@@ -1517,7 +1517,7 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
  * \param[in, out]  sc       scheme context
  * \param[in, out]  mom_eqc  context of the momentum equation
  *
- * \return the square L2-norm of the divergence
+ * \return the L2-norm of the divergence
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1548,6 +1548,9 @@ _update_divergence(cs_cdofb_monolithic_t         *sc,
   /* Parallel treatment */
   if (cs_glob_n_ranks > 1)
     cs_parall_sum(1, CS_REAL_TYPE, &norm2);
+
+  if (norm2 > 0)
+    norm2 = sqrt(norm2);
 
   return norm2;
 }
@@ -1932,10 +1935,12 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
 
   /* Compute the velocity divergence and retrieve its L2-norm */
-  cs_real_t  div_l2 = _update_divergence(sc, mom_eqc);
-  cs_log_printf(CS_LOG_DEFAULT,
-                " -cvg- cumulated_inner_iters: %d ||div(u)|| = %6.4e\n",
-                cumulated_inner_iters, sqrt(div_l2));
+  cs_real_t  div_l2_norm = _update_divergence(sc, mom_eqc);
+
+  if (nsp->verbosity > 1)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  " -cvg- cumulated_inner_iters: %d ||div(u)|| = %6.4e\n",
+                  cumulated_inner_iters, div_l2_norm);
 
   /* Now compute/update the velocity and pressure fields */
   _update_fields(sc, mom_eqc);
@@ -2041,7 +2046,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
 
   /* Compute the velocity divergence and retrieve its L2-norm */
-  cs_real_t  div_l2 = _update_divergence(sc, mom_eqc);
+  cs_real_t  div_l2_norm = _update_divergence(sc, mom_eqc);
 
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: START
@@ -2049,7 +2054,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
   if (nsp->verbosity > 1) {
     cs_navsto_algo_info_header("Picard");
-    cs_navsto_algo_info_printf("Picard", ns_info, sqrt(div_l2));
+    cs_navsto_algo_info_printf("Picard", ns_info, div_l2_norm);
   }
 
   while (ns_info.cvg == CS_SLES_ITERATING) {
@@ -2082,13 +2087,13 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
     cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
 
     /* Compute the velocity divergence and retrieve its L2-norm */
-    div_l2 = _update_divergence(sc, mom_eqc);
+    div_l2_norm = _update_divergence(sc, mom_eqc);
 
     /* Check convergence status and update ns_info following the convergence */
-    _picard_cvg_test(nsp, mom_eqc, div_l2, &ns_info);
+    _picard_cvg_test(nsp, mom_eqc, div_l2_norm, &ns_info);
 
     if (nsp->verbosity > 1)
-      cs_navsto_algo_info_printf("Picard", ns_info, sqrt(div_l2));
+      cs_navsto_algo_info_printf("Picard", ns_info, div_l2_norm);
 
   } /* Loop on Picard iterations */
 
@@ -2200,8 +2205,10 @@ cs_cdofb_monolithic(const cs_mesh_t          *mesh,
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
 
   /* Compute the velocity divergence and retrieve its L2-norm */
-  cs_real_t  div_l2 = _update_divergence(sc, mom_eqc);
-  cs_log_printf(CS_LOG_DEFAULT, " ||div(u)|| = %6.4e\n", sqrt(div_l2));
+  cs_real_t  div_l2_norm = _update_divergence(sc, mom_eqc);
+
+  if (nsp->verbosity > 1)
+    cs_log_printf(CS_LOG_DEFAULT, " ||div(u)|| = %6.4e\n", div_l2_norm);
 
   /* Now compute/update the velocity and pressure fields */
   _update_fields(sc, mom_eqc);
@@ -2308,7 +2315,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
 
   /* Compute the velocity divergence and retrieve its L2-norm */
-  cs_real_t  div_l2 = _update_divergence(sc, mom_eqc);
+  cs_real_t  div_l2_norm = _update_divergence(sc, mom_eqc);
 
   /*--------------------------------------------------------------------------
    *                   PICARD ITERATIONS: START
@@ -2316,7 +2323,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   if (nsp->verbosity > 1) {
     cs_navsto_algo_info_header("Picard");
-    cs_navsto_algo_info_printf("Picard", ns_info, sqrt(div_l2));
+    cs_navsto_algo_info_printf("Picard", ns_info, div_l2_norm);
   }
 
   while (ns_info.cvg == CS_SLES_ITERATING) {
@@ -2348,13 +2355,13 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
     cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
 
     /* Compute the velocity divergence and retrieve its L2-norm */
-    div_l2 = _update_divergence(sc, mom_eqc);
+    div_l2_norm = _update_divergence(sc, mom_eqc);
 
     /* Check convergence status and update ns_info following the convergence */
-    _picard_cvg_test(nsp, mom_eqc, div_l2, &ns_info);
+    _picard_cvg_test(nsp, mom_eqc, div_l2_norm, &ns_info);
 
     if (nsp->verbosity > 1)
-      cs_navsto_algo_info_printf("Picard", ns_info, sqrt(div_l2));
+      cs_navsto_algo_info_printf("Picard", ns_info, div_l2_norm);
 
   } /* Loop on Picard iterations */
 
