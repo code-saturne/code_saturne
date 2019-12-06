@@ -1903,6 +1903,15 @@ cs_evaluate_delta_3_square_wc2x_norm(const cs_real_t        *array,
 
   } /* OpenMP block */
 
+  /* Parallel treatment */
+  if (cs_glob_n_ranks > 1) {
+
+    cs_real_t  sums[2] = {num, denum};
+    cs_parall_sum(2, CS_REAL_TYPE, sums);
+    num = sums[0], denum = sums[1];
+
+  }
+
   if (fabs(denum) > cs_math_zero_threshold)
     num /= denum;
 
