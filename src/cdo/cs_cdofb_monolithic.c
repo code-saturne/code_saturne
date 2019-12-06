@@ -70,6 +70,7 @@
 #include "cs_evaluate.h"
 #include "cs_log.h"
 #include "cs_navsto_coupling.h"
+#include "cs_parall.h"
 #include "cs_param.h"
 #include "cs_post.h"
 #include "cs_source_term.h"
@@ -1543,6 +1544,10 @@ _update_divergence(cs_cdofb_monolithic_t         *sc,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
   cs_dbg_darray_to_listing("VELOCITY_DIV", quant->n_cells, div, 9);
 #endif
+
+  /* Parallel treatment */
+  if (cs_glob_n_ranks > 1)
+    cs_parall_sum(1, CS_REAL_TYPE, &norm2);
 
   return norm2;
 }
