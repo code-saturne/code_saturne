@@ -303,22 +303,22 @@ typedef enum {
 
 typedef struct {
 
-  /*! \var sles_strategy
-   * Choice of strategy for solving the SLES system
+  /*! \var strategy
+   * Choice of strategy for solving the Navier--Stokes system
    */
-  cs_navsto_sles_t              sles_strategy;
+  cs_navsto_sles_t              strategy;
 
-  /*! \var residual_tolerance
+  /*! \var algo_tolerance
    *  Tolerance at which the Oseen/Stokes system is resolved (apply to the
    *  residual of the coupling algorithm chosen to solve the Navier--Stokes
    *  system)
    */
-  cs_real_t                     residual_tolerance;
+  cs_real_t                     algo_tolerance;
 
-  /*! \var max_algo_iter
+  /*! \var algo_n_max_iter
    * Maximal number of iterations of the coupling algorithm.
    */
-  int                           max_algo_iter;
+  int                           algo_n_max_iter;
 
   /*! \var picard_tolerance
    *  Tolerance at which the Picard algorithm is resolved. One handles the

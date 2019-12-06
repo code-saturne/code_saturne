@@ -873,7 +873,7 @@ _check_cvg_code(const cs_navsto_param_t         *nsp,
 {
   const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
 
-  if (sc->residual > nslesp.residual_tolerance) {
+  if (sc->residual > nslesp.algo_tolerance) {
     if (*cvg_code == 2)
       *cvg_code = -1;
   }
@@ -1087,7 +1087,7 @@ cs_cdofb_uzawa_set_sles(const cs_navsto_param_t    *nsp,
 
   mom_eqp->sles_param.field_id = field_id;
 
-  switch (nslesp.sles_strategy) {
+  switch (nslesp.strategy) {
 
   case CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK: /* "Classical" way to set SLES */
     cs_equation_param_set_sles(mom_eqp);
@@ -1446,7 +1446,7 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
 
   const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
 
-  if (res > nslesp.residual_tolerance) { /* Iterate one more time */
+  if (res > nslesp.algo_tolerance) { /* Iterate one more time */
 
     /* Resetting local cell-defined rhs:
      * In the cell part of the rhs, we have only the source term and/or the
@@ -1467,7 +1467,7 @@ cs_cdofb_uzawa_compute_steady(const cs_mesh_t              *mesh,
     memset(delta_vel_c, 0, 3*n_cells*rsize);
     /* Initialization of delta_vel_f inside the loop */
 
-    while (res > nslesp.residual_tolerance && iter < nslesp.max_algo_iter) {
+    while (res > nslesp.algo_tolerance && iter < nslesp.algo_n_max_iter) {
 
       iter++;
 
@@ -1929,7 +1929,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
 
   const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
 
-  if (res > nslesp.residual_tolerance) { /* Iterate one more time */
+  if (res > nslesp.algo_tolerance) { /* Iterate one more time */
 
     /* Resetting local cell-defined rhs:
      * In the cell part of the rhs, we have only the source term and/or the
@@ -1950,7 +1950,7 @@ cs_cdofb_uzawa_compute_implicit(const cs_mesh_t              *mesh,
     memset(delta_vel_c, 0, 3*n_cells*rsize);
     /* Initialization of delta_vel_f inside the loop */
 
-    while (res > nslesp.residual_tolerance && iter < nslesp.max_algo_iter) {
+    while (res > nslesp.algo_tolerance && iter < nslesp.algo_n_max_iter) {
 
       iter++;
 
@@ -2453,7 +2453,7 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
 
   const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
 
-  if (res > nslesp.residual_tolerance) { /* Iterate one more time */
+  if (res > nslesp.algo_tolerance) { /* Iterate one more time */
 
     /* Resetting local cell-defined rhs:
      * In the cell part of the rhs, we have only the source term and/or the
@@ -2474,7 +2474,7 @@ cs_cdofb_uzawa_compute_theta(const cs_mesh_t              *mesh,
     memset(delta_vel_c, 0, 3*n_cells*rsize);
     /* Initialization of delta_vel_f inside the loop */
 
-    while (res > nslesp.residual_tolerance && iter < nslesp.max_algo_iter) {
+    while (res > nslesp.algo_tolerance && iter < nslesp.algo_n_max_iter) {
 
       iter++;
 
@@ -2727,9 +2727,9 @@ cs_cdofb_uzawa_compute_steady_rebuild(const cs_mesh_t         *mesh,
 
   const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
 
-  if (res > nslesp.residual_tolerance) { /* Iterate one more time */
+  if (res > nslesp.algo_tolerance) { /* Iterate one more time */
 
-    while (res > nslesp.residual_tolerance && iter < nslesp.max_algo_iter) {
+    while (res > nslesp.algo_tolerance && iter < nslesp.algo_n_max_iter) {
 
       iter++;
 

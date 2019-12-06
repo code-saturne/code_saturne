@@ -1616,7 +1616,7 @@ cs_cdofb_monolithic_init_common(const cs_navsto_param_t       *nsp,
   cs_shared_time_step = time_step;
 
   /* Need to build special range set and interfaces ? */
-  switch (nsp->sles_param.sles_strategy) {
+  switch (nsp->sles_param.strategy) {
 
   case CS_NAVSTO_SLES_GKB_SATURNE:
   case CS_NAVSTO_SLES_UZAWA_AL:
@@ -1755,7 +1755,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
   sc->msles = cs_cdofb_monolithic_sles_create();
 
   /* Set the solve and assemble functions */
-  switch (nsp->sles_param.sles_strategy) {
+  switch (nsp->sles_param.strategy) {
 
   case CS_NAVSTO_SLES_GKB_SATURNE:    /* GKB solver if need */
     sc->assemble = _assemble_gkb;
