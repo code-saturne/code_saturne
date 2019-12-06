@@ -1539,17 +1539,14 @@ _transform_gkb_system(const cs_matrix_t             *matrix,
   cs_equation_param_t  *_eqp = NULL;
 
   BFT_MALLOC(_eqp, 1, cs_equation_param_t);
-  BFT_MALLOC(_eqp->name, strlen(eqp->name) + strlen(":gkb0") + 1, char);
-  sprintf(_eqp->name, "%s:gkb0", eqp->name);
+  BFT_MALLOC(_eqp->name, strlen(eqp->name) + strlen(":gkb_transfo") + 1, char);
+  sprintf(_eqp->name, "%s:gkb_transfo", eqp->name);
   _eqp->sles_param.field_id = eqp->sles_param.field_id;
 
   cs_equation_param_update_from(eqp, _eqp);
   _eqp->sles_param.eps = fmax(1e-2*eqp->sles_param.eps, 1e-10);
 
-  bool  rhs_redux = true;
   if (gkb->gamma > 0) {
-
-    rhs_redux = false;
 
 #   pragma omp parallel for if (gkb->n_p_dofs > CS_THR_MIN)
     for (cs_lnum_t ip = 0; ip < gkb->n_p_dofs; ip++)
@@ -1561,12 +1558,6 @@ _transform_gkb_system(const cs_matrix_t             *matrix,
 #   pragma omp parallel for if (gkb->n_u_dofs > CS_THR_MIN)
     for (cs_lnum_t iu = 0; iu < gkb->n_u_dofs; iu++)
       gkb->b_tilda[iu] = b_f[iu] + gkb->dt_q[iu];
-
-    if (cs_glob_n_ranks > 1)
-      cs_interface_set_sum(cs_shared_range_set->ifs,
-                           gkb->n_u_dofs,
-                           1, false, CS_REAL_TYPE, /* stride, interlaced */
-                           gkb->b_tilda);
 
   }
   else
@@ -1580,7 +1571,7 @@ _transform_gkb_system(const cs_matrix_t             *matrix,
                                           matrix,
                                           cs_shared_range_set,
                                           normalization,
-                                          rhs_redux,
+                                          true, /* rhs_redux, */
                                           sles,
                                           gkb->v,
                                           gkb->b_tilda));
@@ -2679,7 +2670,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
                          1, false, CS_REAL_TYPE, /* stride, interlaced */
                          uza->rhs);
 
-#   pragma omp parallel for if (uza->n_u_dofs > CS_THR_MIN)
+# pragma omp parallel for if (uza->n_u_dofs > CS_THR_MIN)
   for (cs_lnum_t iu = 0; iu < uza->n_u_dofs; iu++) {
     uza->rhs[iu] *= -1;
     uza->rhs[iu] += uza->b_tilda[iu];
