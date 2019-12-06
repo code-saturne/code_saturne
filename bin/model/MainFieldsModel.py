@@ -232,10 +232,10 @@ class MainFieldsModel(Variables, Model):
         Variables(self.case).setNewVariableProperty("variable", "", self.XMLNodeVariable, fieldNumber, "enthalpy", "enthalpy_"+field_name, post = True)
 
         # Physical properties are set by default to "constant" to avoid uninitialized states with the GUI
-        Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, fieldNumber, "density", "density_"+field_name)
-        Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, fieldNumber, "molecular_viscosity", "molecular_viscosity_"+field_name)
-        Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, fieldNumber, "specific_heat", "specific_heat_"+field_name)
-        Variables(self.case).setNewVariableProperty("property", "constant", self.XMLNodeproperty, fieldNumber, "thermal_conductivity", "thermal_conductivity_"+field_name)
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "density", "density_"+field_name)
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "molecular_viscosity", "molecular_viscosity_"+field_name)
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "specific_heat", "specific_heat_"+field_name)
+        Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "thermal_conductivity", "thermal_conductivity_"+field_name)
 
         Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "mass_trans", "mass_trans_"+field_name)
         Variables(self.case).setNewVariableProperty("property", "", self.XMLNodeproperty, fieldNumber, "wall_distance", "y_plus_"+field_name, support = "boundary")
