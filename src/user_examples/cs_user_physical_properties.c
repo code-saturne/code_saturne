@@ -85,6 +85,7 @@ BEGIN_C_DECLS
 void
 cs_user_physical_properties(cs_domain_t *domain)
 {
+  CS_UNUSED(domain);
 
   /* Check fields exists */
   if (CS_F_(lambda) == NULL)

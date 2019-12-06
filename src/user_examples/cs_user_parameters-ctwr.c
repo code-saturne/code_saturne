@@ -111,6 +111,8 @@ cs_user_model(void)
 void
 cs_user_parameters(cs_domain_t   *domain)
 {
+  CS_UNUSED(domain);
+
   /*
    * We define a cooling tower zone
    */

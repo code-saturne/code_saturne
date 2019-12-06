@@ -95,6 +95,8 @@ BEGIN_C_DECLS
 void
 cs_user_parameters(cs_domain_t   *domain)
 {
+  CS_UNUSED(domain);
+
   /*
    * We define a fan, which will be handled as an automatic
    * explicit source term. See cs_fan_define() prototype
