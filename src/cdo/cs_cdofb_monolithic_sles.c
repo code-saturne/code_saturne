@@ -652,6 +652,7 @@ _additive_amg_gmres_hook(void     *context,
   IS  isv, isp;
 
   cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
+  cs_navsto_param_sles_t  nslesp = nsp->sles_param;
   cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
   cs_param_sles_t  slesp = eqp->sles_param;
 
@@ -668,10 +669,10 @@ _additive_amg_gmres_hook(void     *context,
   PetscInt  max_it;
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
   KSPSetTolerances(ksp,
-                   nsp->residual_tolerance, /* relative convergence tolerance */
-                   abstol,                  /* absolute convergence tolerance */
-                   dtol,                    /* divergence tolerance */
-                   nsp->max_algo_iter);     /* max number of iterations */
+                   nslesp.residual_tolerance, /* relative cvg tolerance */
+                   abstol,                    /* absolute cvg tolerance */
+                   dtol,                      /* divergence tolerance */
+                   nslesp.max_algo_iter);     /* max number of iterations */
 
   /* Try to have "true" norm */
   KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
@@ -690,7 +691,7 @@ _additive_amg_gmres_hook(void     *context,
   PCFieldSplitSetIS(up_pc, "pressure", isp);
 
   /* Need to call PCSetUp before configuring the second level (Thanks to
-     Natacha Bereux) */
+   * Natacha Bereux) */
   PCSetFromOptions(up_pc);
   PCSetUp(up_pc);
   KSPSetUp(ksp);
@@ -752,6 +753,7 @@ _multiplicative_gmres_hook(void     *context,
   IS  isv, isp;
 
   cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
+  cs_navsto_param_sles_t  nslesp = nsp->sles_param;
   cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
   cs_param_sles_t  slesp = eqp->sles_param;
 
@@ -768,10 +770,10 @@ _multiplicative_gmres_hook(void     *context,
   PetscInt  max_it;
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
   KSPSetTolerances(ksp,
-                   nsp->residual_tolerance, /* relative convergence tolerance */
-                   abstol,                  /* absolute convergence tolerance */
-                   dtol,                    /* divergence tolerance */
-                   nsp->max_algo_iter);     /* max number of iterations */
+                   nslesp.residual_tolerance, /* relative cvg tolerance */
+                   abstol,                    /* absolute cvg tolerance */
+                   dtol,                      /* divergence tolerance */
+                   nslesp.max_algo_iter);     /* max number of iterations */
 
   /* Try to have "true" norm */
   KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
@@ -852,6 +854,7 @@ _diag_schur_gmres_hook(void     *context,
   IS  isv, isp;
 
   cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
+  cs_navsto_param_sles_t  nslesp = nsp->sles_param;
   cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
   cs_param_sles_t  slesp = eqp->sles_param;
 
@@ -868,10 +871,10 @@ _diag_schur_gmres_hook(void     *context,
   PetscInt  max_it;
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
   KSPSetTolerances(ksp,
-                   nsp->residual_tolerance, /* relative convergence tolerance */
-                   abstol,                  /* absolute convergence tolerance */
-                   dtol,                    /* divergence tolerance */
-                   nsp->max_algo_iter);     /* max number of iterations */
+                   nslesp.residual_tolerance, /* relative cvg tolerance */
+                   abstol,                    /* absolute cvg tolerance */
+                   dtol,                      /* divergence tolerance */
+                   nslesp.max_algo_iter);     /* max number of iterations */
 
   /* Try to have "true" norm */
   KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
@@ -953,6 +956,7 @@ _upper_schur_gmres_hook(void     *context,
   IS  isv, isp;
 
   cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
+  cs_navsto_param_sles_t  nslesp = nsp->sles_param;
   cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
   cs_param_sles_t  slesp = eqp->sles_param;
 
@@ -969,10 +973,10 @@ _upper_schur_gmres_hook(void     *context,
   PetscInt  max_it;
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
   KSPSetTolerances(ksp,
-                   nsp->residual_tolerance, /* relative convergence tolerance */
-                   abstol,                  /* absolute convergence tolerance */
-                   dtol,                    /* divergence tolerance */
-                   nsp->max_algo_iter);     /* max number of iterations */
+                   nslesp.residual_tolerance, /* relative cvg tolerance */
+                   abstol,                    /* absolute cvg tolerance */
+                   dtol,                      /* divergence tolerance */
+                   nslesp.max_algo_iter);     /* max number of iterations */
 
   /* Try to have "true" norm */
   KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
@@ -1055,7 +1059,9 @@ _gkb_hook(void     *context,
 {
   IS  isv, isp;
 
-  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
+  cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
+  cs_navsto_param_sles_t  nslesp = nsp->sles_param;
+  cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
   cs_param_sles_t  slesp = eqp->sles_param;
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
@@ -1070,10 +1076,10 @@ _gkb_hook(void     *context,
   PCSetType(up_pc, PCFIELDSPLIT);
   PCFieldSplitSetType(up_pc, PC_COMPOSITE_GKB);
 
-  PCFieldSplitSetGKBTol(up_pc, 10*slesp.eps);
-  PCFieldSplitSetGKBMaxit(up_pc, slesp.n_max_iter);
+  PCFieldSplitSetGKBTol(up_pc, 10*nslesp.residual_tolerance);
+  PCFieldSplitSetGKBMaxit(up_pc, nslesp.max_algo_iter);
   PCFieldSplitSetGKBNu(up_pc, 0);
-  PCFieldSplitSetGKBDelay(up_pc, 5);
+  PCFieldSplitSetGKBDelay(up_pc, CS_GKB_TRUNCATION_THRESHOLD);
 
   _build_is_for_fieldsplit(&isp, &isv);
 
@@ -1132,7 +1138,9 @@ _gkb_gmres_hook(void     *context,
 {
   IS  isv, isp;
 
-  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
+  cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
+  cs_navsto_param_sles_t  nslesp = nsp->sles_param;
+  cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
   cs_param_sles_t  slesp = eqp->sles_param;
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
@@ -1144,10 +1152,10 @@ _gkb_gmres_hook(void     *context,
   PetscInt  max_it;
   KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
   KSPSetTolerances(ksp,
-                   slesp.eps,         /* relative convergence tolerance */
-                   abstol,            /* absolute convergence tolerance */
-                   dtol,              /* divergence tolerance */
-                   slesp.n_max_iter); /* max number of iterations */
+                   nslesp.residual_tolerance, /* relative cvg tolerance */
+                   abstol,                    /* absolute cvg tolerance */
+                   dtol,                      /* divergence tolerance */
+                   nslesp.max_algo_iter);     /* max number of iterations */
 
   /* Apply modifications to the KSP structure */
   PC up_pc, u_pc;
@@ -1156,10 +1164,10 @@ _gkb_gmres_hook(void     *context,
   PCSetType(up_pc, PCFIELDSPLIT);
   PCFieldSplitSetType(up_pc, PC_COMPOSITE_GKB);
 
-  PCFieldSplitSetGKBTol(up_pc, 1e-1);
-  PCFieldSplitSetGKBMaxit(up_pc, 100);
+  PCFieldSplitSetGKBTol(up_pc,  slesp.eps);
+  PCFieldSplitSetGKBMaxit(up_pc, slesp.n_max_iter);
   PCFieldSplitSetGKBNu(up_pc, 0);
-  PCFieldSplitSetGKBDelay(up_pc, 5);
+  PCFieldSplitSetGKBDelay(up_pc, CS_GKB_TRUNCATION_THRESHOLD);
 
   _build_is_for_fieldsplit(&isp, &isv);
 
@@ -1750,6 +1758,7 @@ _gkb_cvg_test(const cs_navsto_param_t    *nsp,
               cs_gkb_builder_t           *gkb)
 {
   const cs_real_t  diverg_factor = 100;
+  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
 
   /* Update the sum of square of zeta values (used for renormalization) */
   cs_real_t  z2 = gkb->zeta*gkb->zeta;
@@ -1773,7 +1782,7 @@ _gkb_cvg_test(const cs_navsto_param_t    *nsp,
     err2_energy += gkb->zeta_array[i];
 
   double  tau = (gkb->gamma > 0) ?
-    gkb->gamma*nsp->residual_tolerance : nsp->residual_tolerance;
+    gkb->gamma*nslesp.residual_tolerance : nslesp.residual_tolerance;
 
   gkb->info.res = sqrt(err2_energy);
 
@@ -1786,7 +1795,7 @@ _gkb_cvg_test(const cs_navsto_param_t    *nsp,
 
   if (err2_energy < tau * gkb->zeta_square_sum)
     gkb->info.cvg = CS_SLES_CONVERGED;
-  else if (gkb->info.n_algo_iter >= nsp->max_algo_iter)
+  else if (gkb->info.n_algo_iter >= nslesp.max_algo_iter)
     gkb->info.cvg = CS_SLES_MAX_ITERATION;
   else if (gkb->info.res > diverg_factor * prev_res)
     gkb->info.cvg = CS_SLES_DIVERGED;
@@ -1816,6 +1825,7 @@ _uza_cvg_test(const cs_navsto_param_t    *nsp,
               cs_uza_builder_t           *uza)
 {
   const cs_real_t  diverg_factor = 100;
+  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
 
   /* Increment the number of algo. iterations */
   uza->info.n_algo_iter += 1;
@@ -1829,18 +1839,18 @@ _uza_cvg_test(const cs_navsto_param_t    *nsp,
   uza->info.res = sqrt(res_square);
 
   double  tau = (uza->gamma > 0) ?
-    nsp->residual_tolerance/sqrt(uza->gamma) : nsp->residual_tolerance;
+    nslesp.residual_tolerance/sqrt(uza->gamma) : nslesp.residual_tolerance;
 
   /* Set the convergence status */
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_SLES_DBG > 0
   cs_log_printf(CS_LOG_DEFAULT,
                 "\nUZA.It%02d-- res = %6.4e ?<? eps %6.4e\n",
-                uza->info.n_algo_iter, uza->info.res, nsp->residual_tolerance);
+                uza->info.n_algo_iter, uza->info.res, nslesp.residual_tolerance);
 #endif
 
   if (uza->info.res < tau)
     uza->info.cvg = CS_SLES_CONVERGED;
-  else if (uza->info.n_algo_iter >= nsp->max_algo_iter)
+  else if (uza->info.n_algo_iter >= nslesp.max_algo_iter)
     uza->info.cvg = CS_SLES_MAX_ITERATION;
   else if (uza->info.res > diverg_factor * prev_res)
     uza->info.cvg = CS_SLES_DIVERGED;
@@ -1875,6 +1885,7 @@ _uza_incr_cvg_test(const cs_navsto_param_t    *nsp,
                    cs_uza_builder_t           *uza)
 {
   const cs_real_t  diverg_factor = 1e3;
+  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
 
   /* Increment the number of algo. iterations */
   uza->info.n_algo_iter += 1;
@@ -1892,12 +1903,12 @@ _uza_incr_cvg_test(const cs_navsto_param_t    *nsp,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_SLES_DBG > 0
   cs_log_printf(CS_LOG_DEFAULT,
                 "\nUZAi.It%02d-- res = %6.4e ?<? eps %6.4e\n",
-                uza->info.n_algo_iter, uza->info.res, nsp->residual_tolerance);
+                uza->info.n_algo_iter, uza->info.res, nslesp.residual_tolerance);
 #endif
 
-  if (uza->info.res < nsp->residual_tolerance)
+  if (uza->info.res < nslesp.residual_tolerance)
     uza->info.cvg = CS_SLES_CONVERGED;
-  else if (uza->info.n_algo_iter >= nsp->max_algo_iter)
+  else if (uza->info.n_algo_iter >= nslesp.max_algo_iter)
     uza->info.cvg = CS_SLES_MAX_ITERATION;
   else if (uza->info.res > diverg_factor * prev_res)
     uza->info.cvg = CS_SLES_DIVERGED;
@@ -2018,6 +2029,7 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
 
   assert(nsp != NULL && nsc != NULL);
 
+  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
   cs_param_sles_t  *mom_slesp = &(mom_eqp->sles_param);
   int  field_id = cs_equation_get_field_id(nsc->momentum);
@@ -2030,7 +2042,7 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
      it does not need to be called before calling
      cs_sles_petsc_define(), as this is handled automatically. */
 
-  switch (nsp->sles_strategy) {
+  switch (nslesp.sles_strategy) {
 
   case CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK: /* "Classical" way to set SLES */
     cs_equation_param_set_sles(mom_eqp);
@@ -2056,7 +2068,7 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
                          NULL,
                          MATMPIAIJ,
                          _gkb_hook,
-                         (void *)mom_eqp);
+                         (void *)nsp);
     break;
 
   case CS_NAVSTO_SLES_GKB_GMRES:
@@ -2065,7 +2077,7 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
                          NULL,
                          MATMPIAIJ,
                          _gkb_gmres_hook,
-                         (void *)mom_eqp);
+                         (void *)nsp);
     break;
 #else
   case CS_NAVSTO_SLES_GKB:
@@ -2240,11 +2252,13 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
   const cs_param_sles_t  sles_param = eqp->sles_param;
 
   cs_real_t  rtol = sles_param.eps;
-  if (nsp->sles_strategy == CS_NAVSTO_SLES_UPPER_SCHUR_GMRES             ||
-      nsp->sles_strategy == CS_NAVSTO_SLES_DIAG_SCHUR_GMRES              ||
-      nsp->sles_strategy == CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK ||
-      nsp->sles_strategy == CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK)
-    rtol = nsp->residual_tolerance;
+  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
+
+  if (nslesp.sles_strategy == CS_NAVSTO_SLES_UPPER_SCHUR_GMRES             ||
+      nslesp.sles_strategy == CS_NAVSTO_SLES_DIAG_SCHUR_GMRES              ||
+      nslesp.sles_strategy == CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK ||
+      nslesp.sles_strategy == CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK)
+    rtol = nslesp.residual_tolerance;
 
   cs_sles_convergence_state_t  code = cs_sles_solve(msles->sles,
                                                     matrix,
@@ -2321,7 +2335,8 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
                               cs_cdofb_monolithic_sles_t    *msles)
 {
   /* Sanity checks */
-  assert(nsp != NULL && nsp->sles_strategy == CS_NAVSTO_SLES_GKB_SATURNE);
+  assert(nsp != NULL &&
+         nsp->sles_param.sles_strategy == CS_NAVSTO_SLES_GKB_SATURNE);
   assert(cs_shared_range_set != NULL);
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
@@ -2467,7 +2482,8 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
                                    cs_cdofb_monolithic_sles_t    *msles)
 {
   /* Sanity checks */
-  assert(nsp != NULL && nsp->sles_strategy == CS_NAVSTO_SLES_UZAWA_AL);
+  assert(nsp != NULL &&
+         nsp->sles_param.sles_strategy == CS_NAVSTO_SLES_UZAWA_AL);
   assert(cs_shared_range_set != NULL);
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
@@ -2609,7 +2625,8 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
                                         cs_cdofb_monolithic_sles_t    *msles)
 {
   /* Sanity checks */
-  assert(nsp != NULL && nsp->sles_strategy == CS_NAVSTO_SLES_UZAWA_AL);
+  assert(nsp != NULL &&
+         nsp->sles_param.sles_strategy == CS_NAVSTO_SLES_UZAWA_AL);
   assert(cs_shared_range_set != NULL);
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;

@@ -257,10 +257,11 @@ cs_navsto_param_create(const cs_boundary_t             *boundaries,
   param->theta = 1.0;
 
   /* Resolution parameters */
-  param->max_algo_iter = 100;
-  param->residual_tolerance = 1e-08;
-  param->picard_tolerance = 1e-6;
-  param->picard_n_max_iter = 50;
+  param->sles_param.max_algo_iter = 100;
+  param->sles_param.residual_tolerance = 1e-08;
+  param->sles_param.picard_tolerance = 1e-6;
+  param->sles_param.picard_n_max_iter = 50;
+  param->sles_param.sles_strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
 
   param->boundaries = boundaries; /* shared structure */
 
@@ -273,7 +274,6 @@ cs_navsto_param_create(const cs_boundary_t             *boundaries,
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
   case CS_NAVSTO_COUPLING_UZAWA:
-    param->sles_strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
     param->gd_scale_coef = 1.0;    /* Default value if not set by the user */
 
     param->velocity_ic_is_owner = false;
@@ -283,7 +283,7 @@ cs_navsto_param_create(const cs_boundary_t             *boundaries,
     break;
 
   case CS_NAVSTO_COUPLING_MONOLITHIC:
-    param->sles_strategy = CS_NAVSTO_SLES_GKB_SATURNE;
+    param->sles_param.sles_strategy = CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK;
     param->gd_scale_coef = 0.0;    /* Default value if not set by the user */
 
     param->velocity_ic_is_owner = false;
@@ -293,7 +293,6 @@ cs_navsto_param_create(const cs_boundary_t             *boundaries,
     break;
 
   case CS_NAVSTO_COUPLING_PROJECTION:
-    param->sles_strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
     param->gd_scale_coef = 0.0;    /* Default value if not set by the user */
 
     param->velocity_ic_is_owner = false;
@@ -514,11 +513,11 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     break;
 
   case CS_NSKEY_MAX_ALGO_ITER:
-    nsp->max_algo_iter = atoi(val);
+    nsp->sles_param.max_algo_iter = atoi(val);
     break;
 
   case CS_NSKEY_MAX_PICARD_ITER:
-    nsp->picard_n_max_iter = atoi(val);
+    nsp->sles_param.picard_n_max_iter = atoi(val);
     break;
 
   case CS_NSKEY_QUADRATURE:
@@ -545,53 +544,53 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     break; /* Quadrature */
 
   case CS_NSKEY_PICARD_TOLERANCE:
-    nsp->picard_tolerance = atof(val);
-    if (nsp->picard_tolerance < 0)
+    nsp->sles_param.picard_tolerance = atof(val);
+    if (nsp->sles_param.picard_tolerance < 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value for the Picard tolerance\n", __func__);
     break;
 
   case CS_NSKEY_RESIDUAL_TOLERANCE:
-    nsp->residual_tolerance = atof(val);
-    if (nsp->residual_tolerance < 0)
+    nsp->sles_param.residual_tolerance = atof(val);
+    if (nsp->sles_param.residual_tolerance < 0)
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid value for the residual tolerance\n", __func__);
     break;
 
   case CS_NSKEY_SLES_STRATEGY:
     if (strcmp(val, "no_block") == 0) {
-      nsp->sles_strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
+      nsp->sles_param.sles_strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
     }
     else if (strcmp(val, "block_amg_cg") == 0) {
-      nsp->sles_strategy = CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG;
+      nsp->sles_param.sles_strategy = CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG;
     }
     else if (strcmp(val, "additive_gmres") == 0) {
-      nsp->sles_strategy = CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK;
+      nsp->sles_param.sles_strategy = CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK;
     }
     else if (strcmp(val, "multiplicative_gmres") == 0) {
-      nsp->sles_strategy = CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK;
+      nsp->sles_param.sles_strategy = CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK;
     }
     else if (strcmp(val, "diag_schur_gmres") == 0) {
-      nsp->sles_strategy = CS_NAVSTO_SLES_DIAG_SCHUR_GMRES;
+      nsp->sles_param.sles_strategy = CS_NAVSTO_SLES_DIAG_SCHUR_GMRES;
     }
     else if (strcmp(val, "upper_schur_gmres") == 0) {
-      nsp->sles_strategy = CS_NAVSTO_SLES_UPPER_SCHUR_GMRES;
+      nsp->sles_param.sles_strategy = CS_NAVSTO_SLES_UPPER_SCHUR_GMRES;
     }
     else if (strcmp(val, "gkb_gmres") == 0) {
-      nsp->sles_strategy = CS_NAVSTO_SLES_GKB_GMRES;
+      nsp->sles_param.sles_strategy = CS_NAVSTO_SLES_GKB_GMRES;
     }
     else if (strcmp(val, "gkb") == 0) {
-      nsp->sles_strategy = CS_NAVSTO_SLES_GKB;
+      nsp->sles_param.sles_strategy = CS_NAVSTO_SLES_GKB;
     }
     else if (strcmp(val, "gkb_saturne") == 0) {
-      nsp->sles_strategy = CS_NAVSTO_SLES_GKB_SATURNE;
+      nsp->sles_param.sles_strategy = CS_NAVSTO_SLES_GKB_SATURNE;
     }
     else if (strcmp(val, "mumps") == 0) {
-      nsp->sles_strategy = CS_NAVSTO_SLES_MUMPS;
+      nsp->sles_param.sles_strategy = CS_NAVSTO_SLES_MUMPS;
     }
     else if (strcmp(val, "uzawa_al") == 0 ||
              strcmp(val, "alu") == 0) {
-      nsp->sles_strategy = CS_NAVSTO_SLES_UZAWA_AL;
+      nsp->sles_param.sles_strategy = CS_NAVSTO_SLES_UZAWA_AL;
     }
     else {
       const char *_val = val;
@@ -789,16 +788,18 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
   /* Describe if needed the SLES settings for the Picard algorithm */
   if (nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES) {
     cs_log_printf(CS_LOG_SETUP, "  * NavSto | Picard.Residual:  %5.3e\n",
-                  nsp->picard_tolerance);
+                  nsp->sles_param.picard_tolerance);
     cs_log_printf(CS_LOG_SETUP, "  * NavSto | Picard.Max.Iters: %d\n",
-                  nsp->picard_n_max_iter);
+                  nsp->sles_param.picard_n_max_iter);
   }
 
   /* Describe the strategy to inverse the linear system */
+  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
+
   cs_log_printf(CS_LOG_SETUP, "  * NavSto | Algo.Residual: %5.3e\n",
-                nsp->residual_tolerance);
+                nslesp.residual_tolerance);
   cs_log_printf(CS_LOG_SETUP, "  * NavSto | SLES.Strategy: ");
-  switch (nsp->sles_strategy) {
+  switch (nslesp.sles_strategy) {
 
   case CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK:
     cs_log_printf(CS_LOG_SETUP, "No specific strategy. System as it is.\n");
@@ -836,7 +837,11 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
     cs_log_printf(CS_LOG_SETUP, "Augmented Lagrangian-Uzawa\n");
     break;
 
+  default:
+    cs_log_printf(CS_LOG_SETUP, "Not set\n");
+    break;
   }
+
   if (nsp->gd_scale_coef > 0)
     cs_log_printf(CS_LOG_SETUP, "  * NavSto | Grad-div scaling %e\n",
                   nsp->gd_scale_coef);

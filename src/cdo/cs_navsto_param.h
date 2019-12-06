@@ -149,7 +149,7 @@ typedef enum {
 
 } cs_navsto_param_model_bit_t;
 
-/*! \enum cs_navsto_param_sles_t
+/*! \enum cs_navsto_sles_t
  *
  *  \brief High-level information about the way of settings the SLES for solving
  *  the Navier-Stokes system. When the system is treated as a saddle-point
@@ -294,7 +294,46 @@ typedef enum {
 
   CS_NAVSTO_SLES_N_TYPES
 
+} cs_navsto_sles_t;
+
+
+/*! \struct cs_navsto_param_sles_t
+ *  \brief Structure storing the parameters for solving the Navier-Stokes system
+ */
+
+typedef struct {
+
+  /*! \var sles_strategy
+   * Choice of strategy for solving the SLES system
+   */
+  cs_navsto_sles_t              sles_strategy;
+
+  /*! \var residual_tolerance
+   *  Tolerance at which the Oseen/Stokes system is resolved (apply to the
+   *  residual of the coupling algorithm chosen to solve the Navier--Stokes
+   *  system)
+   */
+  cs_real_t                     residual_tolerance;
+
+  /*! \var max_algo_iter
+   * Maximal number of iterations of the coupling algorithm.
+   */
+  int                           max_algo_iter;
+
+  /*! \var picard_tolerance
+   *  Tolerance at which the Picard algorithm is resolved. One handles the
+   *  non-linearity arising from the advection term with the algorithm.
+   */
+  cs_real_t                     picard_tolerance;
+
+  /*! \var picard_n_max_iter
+   * Maximal number of iterations for the Picard algorithm used to handle
+   * the non-linearity arising from the advection term.
+   */
+  int                           picard_n_max_iter;
+
 } cs_navsto_param_sles_t;
+
 
 /*! \enum cs_navsto_param_coupling_t
  *  \brief Choice of algorithm for solving the system
@@ -469,34 +508,11 @@ typedef struct {
    */
   cs_quadrature_type_t          qtype;
 
-  /*! \var sles_strategy
-   * Choice of strategy for solving the SLES system
-   */
-  cs_navsto_param_sles_t        sles_strategy;
 
-  /*! \var residual_tolerance
-   *  Tolerance at which the Oseen/Stokes system is resolved (apply to the
-   *  residual of the coupling algorithm chosen to solve the Navier--Stokes
-   *  system)
+  /*! \var sles_param
+   * Set of choices to control the resolution of the Navier--Stokes system
    */
-  cs_real_t                     residual_tolerance;
-
-  /*! \var max_algo_iter
-   * Maximal number of iterations of the coupling algorithm.
-   */
-  int                           max_algo_iter;
-
-  /*! \var picard_tolerance
-   *  Tolerance at which the Picard algorithm is resolved. One handles the
-   *  non-linearity arising from the advection term with the algorithm.
-   */
-  cs_real_t                     picard_tolerance;
-
-  /*! \var picard_n_max_iter
-   * Maximal number of iterations for the Picard algorithm used to handle
-   * the non-linearity arising from the advection term.
-   */
-  int                           picard_n_max_iter;
+  cs_navsto_param_sles_t        sles_param;
 
   /*!
    * @}

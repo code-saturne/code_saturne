@@ -199,6 +199,7 @@ _picard_cvg_test(const cs_navsto_param_t      *nsp,
                  cs_navsto_algo_info_t        *ns_info)
 {
   const cs_real_t  diverg_factor = 100;
+  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
 
   cs_real_t  previous_picard_res = ns_info->res;
 
@@ -214,8 +215,8 @@ _picard_cvg_test(const cs_navsto_param_t      *nsp,
   ns_info->res = sqrt(ns_info->res);
 
   /* Set the convergence status */
-  if (ns_info->res < nsp->picard_tolerance &&
-      div_l2 < nsp->picard_tolerance) {
+  if (ns_info->res < nslesp.picard_tolerance &&
+      div_l2 < nslesp.picard_tolerance) {
     ns_info->cvg = CS_SLES_CONVERGED;
     return;
   }
@@ -225,7 +226,7 @@ _picard_cvg_test(const cs_navsto_param_t      *nsp,
     return;
   }
 
-  if (ns_info->n_algo_iter >= nsp->picard_n_max_iter) {
+  if (ns_info->n_algo_iter >= nslesp.picard_n_max_iter) {
     ns_info->cvg = CS_SLES_MAX_ITERATION;
     return;
   }
@@ -1615,7 +1616,7 @@ cs_cdofb_monolithic_init_common(const cs_navsto_param_t       *nsp,
   cs_shared_time_step = time_step;
 
   /* Need to build special range set and interfaces ? */
-  switch (nsp->sles_strategy) {
+  switch (nsp->sles_param.sles_strategy) {
 
   case CS_NAVSTO_SLES_GKB_SATURNE:
   case CS_NAVSTO_SLES_UZAWA_AL:
@@ -1754,7 +1755,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
   sc->msles = cs_cdofb_monolithic_sles_create();
 
   /* Set the solve and assemble functions */
-  switch (nsp->sles_strategy) {
+  switch (nsp->sles_param.sles_strategy) {
 
   case CS_NAVSTO_SLES_GKB_SATURNE:    /* GKB solver if need */
     sc->assemble = _assemble_gkb;

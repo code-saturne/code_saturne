@@ -637,12 +637,13 @@ cs_cdofb_ac_set_sles(const cs_navsto_param_t    *nsp,
 
   assert(nsp != NULL && nsc != NULL);
 
+  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
   int  field_id = cs_equation_get_field_id(nsc->momentum);
 
   mom_eqp->sles_param.field_id = field_id;
 
-  switch (nsp->sles_strategy) {
+  switch (nslesp.sles_strategy) {
 
   case CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK: /* "Classical" way to set SLES */
     cs_equation_param_set_sles(mom_eqp);
