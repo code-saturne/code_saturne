@@ -134,8 +134,9 @@ velocity[2] = 0.;"""
         self.isInList(turb_model,self.turb.turbulenceModels())
         if turb_model in ('k-epsilon', 'k-epsilon-PL'):
             formula = """cmu = 0.09;
-k = 1.5*(0.02*uref)^2;
-epsilon = k^1.5*cmu/almax;"""
+_k = 1.5*(0.02*uref)^2;
+k = _k;
+epsilon = _k^1.5*cmu/almax;"""
         elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
             formula = """trii   = (0.02*uref)^2;
 cmu = 0.09;
@@ -145,8 +146,9 @@ r33 = trii;
 r12 = 0.;
 r13 = 0.;
 r23 = 0.;
-k = 0.5*(r11+r22+r33);
-epsilon = k^1.5*cmu/almax;"""
+_k = 0.5*(r11+r22+r33);
+k = _k;
+epsilon = _k^1.5*cmu/almax;"""
         elif turb_model == 'Rij-EBRSM':
             formula = """trii   = (0.02*uref)^2;
 cmu = 0.09;
@@ -156,13 +158,15 @@ r33 = trii;
 r12 = 0.;
 r13 = 0.;
 r23 = 0.;
-k = 0.5*(r11+r22+r33);
-epsilon = k^1.5*cmu/almax;
+_k = 0.5*(r11+r22+r33);
+k = _k;
+epsilon = _k^1.5*cmu/almax;
 alpha = 1.;"""
         elif turb_model == 'v2f-BL-v2/k':
             formula = """cmu = 0.22;
-k = 1.5*(0.02*uref)^2;
-epsilon = k^1.5*cmu/almax;
+_k = 1.5*(0.02*uref)^2;
+k = _k;
+epsilon = _k^1.5*cmu/almax;
 phi = 2./3.;
 alpha = 1.;"""
         elif turb_model == 'k-omega-SST':
