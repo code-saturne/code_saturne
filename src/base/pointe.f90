@@ -314,7 +314,6 @@ contains
     use ppincl
     use lagran
     use albase
-    use ihmpre
     use field
     use cs_c_bindings
 

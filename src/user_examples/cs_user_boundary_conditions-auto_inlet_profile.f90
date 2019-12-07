@@ -94,7 +94,6 @@ use cstnum
 use entsor
 use parall
 use period
-use ihmpre
 use ppppar
 use ppthch
 use coincl

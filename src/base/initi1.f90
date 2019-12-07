@@ -34,7 +34,6 @@ subroutine initi1
 use paramx
 use optcal
 use entsor
-use ihmpre
 use ppincl, only: ippmod, nmodmx, iatmos
 use post
 use cs_c_bindings
@@ -140,9 +139,7 @@ call cs_user_time_moments
 
 ! Postprocessing and logging
 
-if (iihmpr.eq.1) then
-  call gui_output
-endif
+call gui_output
 
 ! Restart
 

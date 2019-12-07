@@ -59,7 +59,6 @@ use pointe
 use albase
 use parall
 use period
-use ihmpre
 use ppppar
 use ppthch
 use ppincl

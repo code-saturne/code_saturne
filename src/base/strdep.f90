@@ -62,7 +62,6 @@ subroutine strdep &
 !===============================================================================
 
 use paramx
-use ihmpre
 use cstphy
 use numvar
 use optcal
@@ -192,21 +191,12 @@ deallocate(forast)
 
 if (nbstru.gt.0) then
 
-  ! - Interface Code_Saturne
-  !   ======================
-
-  if (iihmpr.eq.1) then
-
     call uistr2 &
-    !==========
  ( xmstru, xcstru, xkstru,     &
    forstp,                     &
    dtref , ttcabs, ntcabs   )
 
-  endif
-
   call usstr2                                                     &
-  !==========
  ( nbstru ,                                                       &
    idfstr ,                                                       &
    dt     ,                                                       &

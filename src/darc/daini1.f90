@@ -58,7 +58,6 @@ use cstnum
 use ppppar
 use ppthch
 use ppincl
-use ihmpre
 use darcy_module
 use cs_c_bindings
 
@@ -137,13 +136,11 @@ darcy_unsaturated = 1
 ! Definition of sorption parameters
 call cs_gwf_parameters_define_field_keys
 
-if (iihmpr.eq.1) then
-  call uidai1(darcy_anisotropic_permeability,     &
-              darcy_anisotropic_dispersion,       &
-              darcy_unsteady,                     &
-              darcy_gravity,                      &
-              darcy_unsaturated)
-endif
+call uidai1(darcy_anisotropic_permeability,     &
+            darcy_anisotropic_dispersion,       &
+            darcy_unsteady,                     &
+            darcy_gravity,                      &
+            darcy_unsaturated)
 
 !===============================================================================
 ! 2. Define user settings

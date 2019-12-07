@@ -64,7 +64,6 @@ use ppthch
 use ppincl
 use cfpoin
 use lagran
-use ihmpre
 use radiat
 use cplsat
 use mesh

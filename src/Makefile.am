@@ -61,7 +61,6 @@ base/cstphy.f90 \
 base/cstnum.f90 \
 base/dimens.f90 \
 base/entsor.f90 \
-base/ihmpre.f90 \
 base/cs_nz_condensation.f90 \
 base/cs_nz_tagmr.f90 \
 base/cs_tagmr.f90 \
@@ -130,7 +129,7 @@ base/optcal.lo: base/paramx.lo base/field.lo base/numvar.lo base/cstphy.lo \
  base/cs_c_bindings.lo base/cdomod.lo
 base/pointe.lo: base/paramx.lo base/numvar.lo base/mesh.lo base/parall.lo \
  base/period.lo base/optcal.lo base/entsor.lo lagr/lagran.lo rayt/radiat.lo \
- pprt/ppincl.lo base/ihmpre.lo base/albase.lo base/cstnum.lo base/cs_c_bindings.lo
+ pprt/ppincl.lo base/albase.lo base/cstnum.lo base/cs_c_bindings.lo
 base/ptrglo.lo: base/paramx.lo base/dimens.lo base/mesh.lo base/numvar.lo \
  base/optcal.lo base/parall.lo base/period.lo base/mesh.lo base/field.lo
 base/rotation.lo: base/paramx.lo

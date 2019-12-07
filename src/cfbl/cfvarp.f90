@@ -48,7 +48,6 @@ use cstnum
 use ppppar
 use ppthch
 use ppincl
-use ihmpre
 use field
 use cs_c_bindings
 use cs_cf_bindings

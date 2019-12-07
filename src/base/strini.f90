@@ -59,7 +59,6 @@ use pointe
 use albase
 use alstru
 use alaste
-use ihmpre
 use parall
 use period
 use mesh
@@ -128,15 +127,11 @@ enddo
 
 ! Internal structures
 
-if (iihmpr.eq.1) then
-
-  call uistr1 &
+call uistr1 &
 ( idfstr, mbstru,          &
   aexxst, bexxst, cfopre,  &
   ihistr,                  &
   xstp, xstreq, xpstr )
-
-endif
 
 call usstr1                                                       &
  ( idfstr ,                                                       &

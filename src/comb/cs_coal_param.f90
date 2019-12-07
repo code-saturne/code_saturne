@@ -60,7 +60,6 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
-use ihmpre
 use ppcpfu
 use cs_coal_incl
 use field
@@ -125,34 +124,15 @@ do isc = 1, nscapp
 !   - Interface Code_Saturne:
 !     ======================
 
-  if (iihmpr.ne.1) then
+  ii = isca(iscapp(isc))
 
-    ii = isca(iscapp(isc))
+  call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
 
-    call field_get_key_struct_var_cal_opt(ivarfl(ii), vcopt)
+  if (vcopt%isstpc == -999) then
 
-    ! ------ Informations relatives a la resolution des scalaires
-
-    ! - Facteur multiplicatif du pas de temps
-    cdtvar(ii) = 1.d0
-
-!         - Schema convectif % schema 2ieme ordre
-!           = 0 : upwind
-!           = 1 : second ordre
     vcopt%blencv = 0.d0
-
-!         - Type de schema convetif second ordre (utile si BLENCV > 0)
-!           = 0 : Second Order Linear Upwind
-!           = 1 : Centre
     vcopt%ischcv = 1
-
-!         - Test de pente pour basculer d'un schema centre vers l'upwind
-!           = 0 : utilisation automatique du test de pente
-!           = 1 : calcul sans test de pente
     vcopt%isstpc = 0
-
-!         - Reconstruction des flux de convetion et de diffusion aux faces
-!           = 0 : pas de reconstruction
     vcopt%ircflu = 0
 
     call field_set_key_struct_var_cal_opt(ivarfl(ii), vcopt)
@@ -206,17 +186,9 @@ ivivar = 0
 ! 3. ON REDONNE LA MAIN A L'UTLISATEUR
 !===============================================================================
 
-!   - Interface Code_Saturne
-!     ======================
+call uicpi1(srrom, diftl0)
 
-if (iihmpr.eq.1) then
-
-  call uicpi1(srrom, diftl0)
-  !==========
-
-  diftl0 = 4.25d-5
-
-endif
+diftl0 = 4.25d-5
 
 call cs_user_combustion
 
@@ -226,12 +198,10 @@ call cs_user_combustion
 
 iok = 0
 call cs_coal_verify (iok)
-!=====================
 
 if (iok.gt.0) then
   write(nfecra,9999)iok
   call csexit (1)
-  !==========
 else
   write(nfecra,9998)
 endif

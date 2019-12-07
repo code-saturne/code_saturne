@@ -183,7 +183,6 @@ use cstphy
 use entsor
 use parall
 use period
-use ihmpre
 use albase
 use ppppar
 use ppthch
@@ -314,7 +313,6 @@ subroutine user_darcy_ini1
 ! Module files
 !===============================================================================
 
-use ihmpre, only: iihmpr
 use entsor
 use darcy_module
 use cs_c_bindings

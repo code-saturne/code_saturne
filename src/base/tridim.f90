@@ -68,7 +68,6 @@ use ctincl
 use atsoil
 use lagran
 use vorinc
-use ihmpre
 use radiat
 use cplsat
 use ppcpfu
@@ -1139,14 +1138,12 @@ do while (iterns.le.nterup)
 
       call richards (icvrge, dt)
 
-      if (iihmpr.eq.1) then
-        call uidapp                                                    &
-         ( darcy_anisotropic_permeability,                             &
-           darcy_anisotropic_dispersion,                               &
-           darcy_gravity,                                              &
-           darcy_gravity_x, darcy_gravity_y, darcy_gravity_z,          &
-           darcy_unsaturated)
-      endif
+      call uidapp                                                    &
+       ( darcy_anisotropic_permeability,                             &
+         darcy_anisotropic_dispersion,                               &
+         darcy_gravity,                                              &
+         darcy_gravity_x, darcy_gravity_y, darcy_gravity_z,          &
+         darcy_unsaturated)
 
       ! Darcy : update data specific to underground flow
       mbrom = 0

@@ -98,7 +98,6 @@ use cstnum
 use entsor
 use parall
 use period
-use ihmpre
 use mesh
 
 !===============================================================================

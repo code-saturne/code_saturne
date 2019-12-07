@@ -97,7 +97,6 @@ void CS_PROCF (uiati1, UIATI1) (int           *imeteo,
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uisofu, UISOFU) (const int    *iirayo,
-                                const int    *iihmpr,
                                 const int    *ncharm,
                                 int          *ncharb,
                                 int          *nclpch,

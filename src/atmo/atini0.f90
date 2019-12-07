@@ -29,7 +29,6 @@ subroutine atini0
 !===============================================================================
 use paramx
 use dimens
-use ihmpre
 use numvar
 use optcal
 use cstphy

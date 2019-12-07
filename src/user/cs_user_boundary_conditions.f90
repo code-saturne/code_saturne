@@ -413,7 +413,6 @@ use cstnum
 use entsor
 use parall
 use period
-use ihmpre
 use ppppar
 use ppthch
 use coincl
@@ -453,38 +452,6 @@ double precision rcodcl(nfabor,nvar,3)
 integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-
-!===============================================================================
-! 0.  This test allows the user to ensure that the version of this subroutine
-!       used is that from his case definition, and not that from the library.
-!     If a file from the GUI is used, this subroutine may not be mandatory,
-!       thus the default (library reference) version returns immediately.
-!===============================================================================
-
-if (iihmpr.eq.1) then
-  return
-else if (nfabor.gt.0) then
-  write(nfecra,9000)
-  call csexit (1)
-endif
-
- 9000 format(                                                     &
-'@',/,                                                            &
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/,                                                            &
-'@ @@ WARNING:    stop in definition of boundary conditions',   /,&
-'@    =======',/,                                                 &
-'@  The user subroutine ''cs_f_user_boundary_conditions'       ,/,&
-'@  must be completed.'                                        ,/,&
-'@'                                                            ,/,&
-'@  The calculation will not be run.'                          ,/,&
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@',/)
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
 
 !===============================================================================
 ! Initialization

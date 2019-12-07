@@ -60,7 +60,6 @@ use ppthch
 use ppincl
 use cfpoin
 use lagran
-use ihmpre
 use cplsat
 use mesh
 use field

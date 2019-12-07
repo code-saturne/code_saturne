@@ -60,7 +60,6 @@ use entsor
 use albase
 use parall
 use period
-use ihmpre
 use ppppar
 use ppthch
 use coincl
@@ -84,7 +83,7 @@ implicit none
 
 integer          nmodpp
 integer          nscmax
-integer          iihmpu, l_size
+integer          l_size
 double precision relaxp, extrap, l_cp(1), l_xmasm(1), l_cv(1)
 
 type(var_cal_opt) :: vcopt
@@ -92,13 +91,6 @@ type(var_cal_opt) :: vcopt
 !===============================================================================
 
 interface
-
-  function cs_gui_file_is_loaded() result(iihmpr)  &
-       bind(C, name='cs_gui_file_is_loaded')
-    use, intrinsic :: iso_c_binding
-    implicit none
-    integer(c_int) :: iihmpr
-  end function cs_gui_file_is_loaded
 
   subroutine cs_gui_porous_model()  &
        bind(C, name='cs_gui_porous_model')
@@ -120,10 +112,6 @@ end interface
 
 call parameters_read_restart_info
 
-! Check whether a parameters file has been read
-
-iihmpr = cs_gui_file_is_loaded()
-
 !===============================================================================
 ! 1. Initialize model settings
 !===============================================================================
@@ -134,31 +122,25 @@ call cs_gui_physical_model_select
 
 ! Flow model selection through user Fortran subroutine
 
-iihmpu = iihmpr
-call usppmo(iihmpu)
+call usppmo(1)
 
 ! Other models selection through GUI
 
-if (iihmpr.eq.1) then
+! ALE parameters
+call uialin (nalinf, nalimx, epalim)
 
-  ! ALE parameters
-  call uialin (nalinf, nalimx, epalim)
+! thermal model
+call csther
 
-  ! thermal model
-  call csther
+! turbulence model choice
+call cs_gui_turb_model
 
-  ! turbulence model choice
-  call cs_gui_turb_model
-
-  ! constant or variable specific heat
-  call cscpva
-
-endif
+! constant or variable specific heat
+call cscpva
 
 ! Other models selection through user Fortran subroutine
 
-iihmpu = iihmpr
-call usipph(iihmpu, iturb, itherm, iale)
+call usipph(1, iturb, itherm, iale)
 
 ! Flow and other models selection through user C function
 call cs_user_model
@@ -170,18 +152,14 @@ endif
 
 ! Other model parameters, including user-defined scalars
 
-if (iihmpr.eq.1) then
-  call cs_gui_user_variables
-  call cs_gui_user_arrays
-endif
+call cs_gui_user_variables
+call cs_gui_user_arrays
 
 !===============================================================================
 ! 2. Initialize parameters for specific physics
 !===============================================================================
 
-if (iihmpr.eq.1) then
-  call cfnmtd(ficfpp, len(ficfpp))
-endif
+call cfnmtd(ficfpp, len(ficfpp))
 
 ! --- Activation du module transferts radiatifs
 
@@ -200,12 +178,10 @@ if (icdo.lt.2) then
    call fldvar(nmodpp)
 endif
 
-if (iihmpr.eq.1) then
-  if (iale.ge.1) then
-    call uialvm
-  endif
-  call csivis
+if (iale.ge.1) then
+  call uialvm
 endif
+call csivis
 
 nscmax = nscamx
 
@@ -230,17 +206,13 @@ endif
 !   - Interface Code_Saturne
 !     ======================
 
-if (iihmpr.eq.1) then
+call csidtv()
 
-  call csidtv()
+call csiphy()
 
-  call csiphy()
+! Postprocessing
 
-  ! Postprocessing
-
-  call cspstb(ipstdv)
-
-endif
+call cspstb(ipstdv)
 
 ! Define main properties (pointers, checks, ipp) if not in CDO mode only
 if (icdo.lt.2) then
@@ -259,58 +231,54 @@ endif
 !   - Interface Code_Saturne
 !     ======================
 
-if (iihmpr.eq.1) then
+! Restart, read auxiliary file, frozen velocity field
 
-  ! Restart, read auxiliary file, frozen velocity field
+call csisui(ntsuit, ileaux, iccvfg)
 
-  call csisui(ntsuit, ileaux, iccvfg)
+! Time step (only ntmabs, dtref)
+call cstime()
 
-  ! Time step (only ntmabs, dtref)
-  call cstime()
+! Local numerical options
 
-  ! Local numerical options
+call uinum1(cdtvar)
 
-  call uinum1(cdtvar)
+! If CDO mode only, no pressure is defined at this stage
+if (icdo.lt.2) then
 
-  ! If CDO mode only, no pressure is defined at this stage
-  if (icdo.lt.2) then
+  call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
-     call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
+  ! Global numeric options
+  relaxp = -1.d0
+  call csnum2 (relaxp, imrgra)
+  if (idtvar.ge.0) vcopt%relaxv = relaxp
 
-     !     Options numériques globales
-     relaxp = -1.d0
-     call csnum2 (relaxp, imrgra)
-     if (idtvar.ge.0) vcopt%relaxv = relaxp
-
-     call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
-
-  endif
-
-  ! Gravity, physical properties
-  call csphys(viscv0, visls0, itempk)
-
-  ! Turbulence reference values (uref, almax)
-  call cs_gui_turb_ref_values
-
-  ! Scamin, scamax, turbulent flux model
-  call cssca2(iturt)
-
-  ! Diffusivities
-  call cssca3(visls0)
-
-  ! Porosity model
-  call cs_gui_porous_model()
-
-  ! Init fan
-  call uifans()
-
-  ! Init error estimator
-  call uieres(iescal, iespre, iesder, iescor, iestot)
+  call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
 endif
 
-!   - Sous-programme utilisateur
-!     ==========================
+! Gravity, physical properties
+call csphys(viscv0, visls0, itempk)
+
+! Turbulence reference values (uref, almax)
+call cs_gui_turb_ref_values
+
+! Scamin, scamax, turbulent flux model
+call cssca2(iturt)
+
+! Diffusivities
+call cssca3(visls0)
+
+! Porosity model
+call cs_gui_porous_model()
+
+! Init fan
+call uifans()
+
+! Init error estimator
+call uieres(iescal, iespre, iesder, iescor, iestot)
+
+!   - User functions
+!     ==============
 
 call usipsu(nmodpp)
 call user_parameters

@@ -123,7 +123,6 @@ use ppppar
 use ppthch
 use ppincl
 use cplsat
-use ihmpre, only: iihmpr
 use mesh
 use rotation
 use turbomachinery
@@ -429,9 +428,7 @@ enddo
 ! The computation of explicit and implicit source terms is performed
 ! at the first iteration only.
 ! If iphydr=1 or if we have buoyant scalars then we need to update source terms
-if (iihmpr.eq.1) then
-  call uitsnv (vel, tsexp, tsimp)
-endif
+call uitsnv (vel, tsexp, tsimp)
 
 call ustsnv &
   ( nvar   , nscal  , ncepdp , ncesmp ,                            &

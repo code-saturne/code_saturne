@@ -433,7 +433,6 @@ use cstphy
 use entsor
 use parall
 use period
-use ihmpre
 use albase
 use ppppar
 use ppthch
@@ -739,7 +738,6 @@ use entsor
 use field
 use parall
 use period
-use ihmpre
 use post
 use ppppar
 use ppthch
@@ -1046,7 +1044,6 @@ use cstphy
 use entsor
 use cstnum
 use parall
-use ihmpre
 use period
 use ppppar
 use ppthch
@@ -1150,7 +1147,6 @@ subroutine uscfx1
 !===============================================================================
 
 use paramx
-use ihmpre
 use dimens
 use numvar
 use optcal
@@ -1187,22 +1183,18 @@ double precision :: cv(2), gamma(2), pinf(2), qprim(2)
 ! 1. Properties options
 !===============================================================================
 
-if (iihmpr.eq.0) then   !  Remove test to set values here when also using GUI.
+! --> Molecular thermal conductivity
+!       constant  : ifcvsl = -1
+!       variable  : ifcvsl = 0
 
-  ! --> Molecular thermal conductivity
-  !       constant  : ifcvsl = -1
-  !       variable  : ifcvsl = 0
+ifcvsl = -1
+call field_set_key_int(ivarfl(isca(itempk)), kivisl, ifcvsl)
 
-  ifcvsl = -1
-  call field_set_key_int(ivarfl(isca(itempk)), kivisl, ifcvsl)
+! --> Volumetric molecular viscosity
+!       iviscv = -1 : uniform  in space and constant in time
+!              =  0 : variable in space and time
 
-  ! --> Volumetric molecular viscosity
-  !       iviscv = -1 : uniform  in space and constant in time
-  !              =  0 : variable in space and time
-
-  iviscv = -1
-
-endif
+iviscv = -1
 
 !< [uscfx1]
 
@@ -1212,7 +1204,6 @@ endif
 
 return
 end subroutine uscfx1
-
 
 !===============================================================================
 
@@ -1243,7 +1234,6 @@ subroutine uscfx2
 !===============================================================================
 
 use paramx
-use ihmpre
 use dimens
 use numvar
 use optcal
@@ -1268,13 +1258,11 @@ implicit none
 ! 1. Physical properties
 !===============================================================================
 
-if (iihmpr.eq.0) then   !  Remove test to set values here when also using GUI.
-
 ! --> Molecular viscosity
 !       constant  : ivivar = 0
 !       variable  : ivivar = 1
 
-  ivivar = 0
+ivivar = 0
 
 ! --> Reference molecular thermal conductivity
 !       visls0 = lambda0  (molecular thermal conductivity, W/(m K))
@@ -1282,7 +1270,7 @@ if (iihmpr.eq.0) then   !  Remove test to set values here when also using GUI.
 !       WARNING: visls0 must be strictly positive
 !         (set a realistic value here even if conductivity is variable)
 
-  visls0(itempk) = 3.d-2
+visls0(itempk) = 3.d-2
 
 !       If the molecular thermal conductivity is variable, its values
 !         must be provided in the user subroutine 'cs_user_physical_properties'
@@ -1293,7 +1281,7 @@ if (iihmpr.eq.0) then   !  Remove test to set values here when also using GUI.
 
 !       viscv0 = kappa0  (volumetric molecular viscosity, kg/(m s))
 
-  viscv0 = 0.d0
+viscv0 = 0.d0
 
 !       If the volumetric molecular viscosity is variable, its values
 !         must be provided in the user subroutine 'cs_user_physical_properties'
@@ -1302,16 +1290,14 @@ if (iihmpr.eq.0) then   !  Remove test to set values here when also using GUI.
 
 !       For example with dry air, xmasml is around 28.8d-3 kg/mol
 
-  xmasmr = 0.028966
+xmasmr = 0.028966
 
 ! --> Hydrostatic equilibrium
 
 !       Specify if the hydrostatic equilibrium must be accounted for
 !         (yes = 1 , no = 0)
 
-  icfgrp = 1
-
-endif
+icfgrp = 1
 
 !< [uscfx2]
 
@@ -1321,7 +1307,6 @@ endif
 
 return
 end subroutine uscfx2
-
 
 !===============================================================================
 
@@ -1383,7 +1368,6 @@ droplet_diam = 0.005d0
 return
 end subroutine cs_user_cooling_towers
 
-
 !===============================================================================
 
 !> \brief User routine for definition of computation parameters dealing
@@ -1401,7 +1385,6 @@ subroutine user_darcy_ini1
 ! Module files
 !===============================================================================
 
-use ihmpre, only: iihmpr
 use entsor
 use darcy_module
 
@@ -1419,7 +1402,8 @@ darcy_anisotropic_dispersion = 0 ! dispersion : 0 isotrop, 1 anisotrop
 
 darcy_unsteady = 0 ! 0 steady flow, 1 unsteady flow
 
-darcy_convergence_criterion = 0 ! convergence criterion of Newton scheme : 0, over pressure, 1, over velocity
+darcy_convergence_criterion = 0 ! convergence criterion of Newton scheme:
+                                ! 0, over pressure, 1, over velocity
 
 darcy_gravity = 0 ! gravity is taken into account : 0 no, 1 yes
 

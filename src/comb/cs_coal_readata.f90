@@ -58,7 +58,6 @@ use cpincl
 use ppincl
 use ppcpfu
 use cs_coal_incl
-use ihmpre
 
 !===============================================================================
 

@@ -347,7 +347,6 @@ use cstnum
 use entsor
 use parall
 use period
-use ihmpre
 use mesh
 
 !===============================================================================
@@ -368,38 +367,6 @@ double precision rcodcl(nfabor,nvar,3)
 double precision disale(3,nnod), xyzno0(3,nnod)
 
 !===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-!===============================================================================
-! 0.  This test allows the user to ensure that the version of this subroutine
-!       used is that from his case definition, and not that from the library.
-!     If a file from the GUI is used, this subroutine may not be mandatory,
-!       thus the default (library reference) version returns immediately.
-!===============================================================================
-if(iihmpr.eq.1) then
-  return
-else
-  write(nfecra,9000)
-  call csexit (1)
-endif
-
- 9000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : stop in definition of boundary conditions   ',/,&
-'@    =========                                               ',/,&
-'@     ALE Method has been activated                          ',/,&
-'@     User subroutine ''usalcl'' must be completed           ',/,&
-'@                                                            ',/,&
-'@  The calculation will not be run                           ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
 
 !--------
 ! Formats

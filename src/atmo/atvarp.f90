@@ -54,7 +54,6 @@ use cstnum
 use ppppar
 use ppthch
 use ppincl
-use ihmpre
 use atincl
 use atchem
 use field
@@ -104,9 +103,7 @@ call field_get_key_id("max_scalar_clipping", kscmax)
 ! 1. GUI and model information
 !===============================================================================
 
-if (iihmpr.eq.1) then
-  call uiati1 (imeteo, ficmet, len(ficmet))
-endif
+call uiati1 (imeteo, ficmet, len(ficmet))
 
 ! Set base default model parameters and call usati1
 

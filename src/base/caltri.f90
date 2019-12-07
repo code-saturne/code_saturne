@@ -56,7 +56,6 @@ use coincl
 use cpincl
 use lagran
 use vorinc
-use ihmpre
 use radiat
 use cplsat
 use atincl
@@ -491,9 +490,7 @@ if (iporos.ge.1) then
     call cs_compute_porosity_from_scan()
   endif
 
-  if (iihmpr.eq.1) then
-    call uiporo
-  endif
+  call uiporo
   call usporo
 
   ! C version
@@ -991,10 +988,8 @@ if (itrale.gt.0) then
 
   ! 1D profiles postprocessing output
 
-  if (iihmpr.eq.1) then
-    call cs_gui_profile_output()
-    call uiexop()
-  endif
+  call cs_gui_profile_output()
+  call uiexop()
 
   call cs_f_user_extra_operations(nvar, nscal, dt)
 

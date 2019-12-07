@@ -50,7 +50,6 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
-use ihmpre
 use cs_coal_incl
 use ppcpfu
 use radiat
@@ -77,7 +76,7 @@ endif
 ! ---> Pulverized coal combustion
 
 if (ippmod(iccoal).ge.0 .or. ippmod(icpl3c).ge.0) then
-  call uisofu(iirayo, iihmpr, ncharm, ncharb, nclpch, nclacp,         &
+  call uisofu(iirayo, ncharm, ncharb, nclpch, nclacp,                 &
               ncpcmx, ichcor, diam20, cch,                            &
               hch, och, nch, sch, ipci, pcich, cp2ch, rho0ch,         &
               thcdch , cck, hck, ock, nck, sck, xashch,               &

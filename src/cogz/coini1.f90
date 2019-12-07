@@ -63,7 +63,6 @@ use coincl
 use cpincl
 use ppincl
 use radiat
-use ihmpre
 use cs_c_bindings
 
 !===============================================================================
@@ -215,19 +214,13 @@ ivivar = 0
 
 ! GUI
 if (ippmod(icoebu).ge.0) then
-  if (iihmpr.eq.1) then
-    call uicpi1 (srrom, diftl0)
-    cebu   = 2.5d0
-  endif
+  call uicpi1 (srrom, diftl0)
+  cebu   = 2.5d0
 else if (ippmod(icod3p).ge.0) then
-  if (iihmpr.eq.1) then
-    call uicpi1 (srrom, diftl0)
-    call uicpi2 (tinoxy, tinfue)
-  endif
-else if (ippmod(icolwc).ge.0) then
-  if (iihmpr.eq.1) then
-    !TODO no GUI yet
-  endif
+  call uicpi1 (srrom, diftl0)
+  call uicpi2 (tinoxy, tinfue)
+! else if (ippmod(icolwc).ge.0) then
+  !TODO no GUI yet
 endif
 
 ! User subroutines

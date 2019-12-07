@@ -59,7 +59,6 @@ use cs_coal_incl
 use cs_fuel_incl
 use ppcpfu
 use atincl
-use ihmpre
 use field
 use cs_c_bindings
 

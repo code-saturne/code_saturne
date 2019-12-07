@@ -59,7 +59,6 @@ use coincl
 use cpincl
 use ppincl
 use radiat
-use ihmpre
 
 !===============================================================================
 

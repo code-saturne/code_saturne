@@ -109,7 +109,6 @@ use lagran
 use radiat
 use field
 use field_operator
-use ihmpre, only: iihmpr
 use mesh
 use parall
 use period
@@ -394,18 +393,13 @@ do iel = 1, ncel
   smbrs(iel) = 0.d0
 enddo
 
-if (iihmpr.eq.1) then
-  if (iscal.ne.iscalt) then
-    call uitssc &
-    ( ippmod(idarcy), iflid  , cvar_var , smbrs  , rovsdt )
-  else
-    call uitsth &
-    ( iflid  , cvar_var , smbrs  , rovsdt )
-  endif
+if (iscal.ne.iscalt) then
+  call uitssc(ippmod(idarcy), iflid, cvar_var, smbrs, rovsdt)
+else
+  call uitsth(iflid, cvar_var, smbrs, rovsdt)
 endif
 
 call ustssc &
-!==========
 ( nvar   , nscal  , ncepdp , ncesmp ,                            &
   iscal  ,                                                       &
   icepdc , icetsm , itypsm ,                                     &

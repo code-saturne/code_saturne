@@ -161,7 +161,6 @@ use alaste
 use alstru
 use atincl, only: iautom, iprofm
 use coincl, only: fment, ientfu, ientgb, ientgf, ientox, tkent, qimp
-use ihmpre, only: iihmpr
 use ppcpfu, only: inmoxy
 use cstphy
 use cstnum
@@ -336,33 +335,28 @@ call precli(nvar, icodcl, rcodcl)
 !     - Interface Code_Saturne
 !       ======================
 
-if (iihmpr.eq.1) then
+! N.B. Zones de face de bord : on utilise provisoirement les zones des
+!    physiques particulieres, meme sans physique particuliere
+!    -> sera modifie lors de la restructuration des zones de bord
 
-  ! N.B. Zones de face de bord : on utilise provisoirement les zones des
-  !    physiques particulieres, meme sans physique particuliere
-  !    -> sera modifie lors de la restructuration des zones de bord
+call uiclim &
+  ( ippmod(idarcy),                                                &
+    nozppm, ncharm, ncharb, nclpch,                                &
+    iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
+    ientfu, ientgb, ientgf, iprofm, iautom,                        &
+    itypfb, izfppp, icodcl,                                        &
+    qimp,   qimpat, qimpcp, dh,     xintur,                        &
+    timpat, timpcp, tkent ,  fment, distch, nvar, rcodcl)
 
-  call uiclim &
-    ( ippmod(idarcy),                                                &
-      nozppm, ncharm, ncharb, nclpch,                                &
-      iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
-      ientfu, ientgb, ientgf, iprofm, iautom,                        &
-      itypfb, izfppp, icodcl,                                        &
-      qimp,   qimpat, qimpcp, dh,     xintur,                        &
-      timpat, timpcp, tkent ,  fment, distch, nvar, rcodcl)
+if (ippmod(iphpar).eq.0.or.ippmod(igmix).ge.0.or.ippmod(icompf).ge.0) then
 
-  if (ippmod(iphpar).eq.0.or.ippmod(igmix).ge.0.or.ippmod(icompf).ge.0) then
+  ! ON NE FAIT PAS DE LA PHYSIQUE PARTICULIERE
 
-    ! ON NE FAIT PAS DE LA PHYSIQUE PARTICULIERE
-
-    call stdtcl &
-      ( nbzppm , nozppm ,                                              &
-        iqimp  , icalke , qimp   , dh , xintur,                        &
-        itypfb , izfppp ,                                              &
-        rcodcl )
-
-
-  endif
+  call stdtcl &
+    ( nbzppm , nozppm ,                                              &
+      iqimp  , icalke , qimp   , dh , xintur,                        &
+      itypfb , izfppp ,                                              &
+      rcodcl )
 
 endif
 
@@ -380,11 +374,7 @@ call user_boundary_conditions(nvar, itypfb, icodcl, rcodcl)
 !     - Interface Code_Saturne
 !       ======================
 
-if (iihmpr.eq.1) then
-
-  call uiclve(nozppm, itypfb, izfppp)
-
-endif
+call uiclve(nozppm, itypfb, izfppp)
 
 ! -- Methode des vortex en L.E.S. :
 !    (Transfert des vortex dans les tableaux RCODCL)
@@ -429,17 +419,13 @@ if (iale.ge.1) then
   ! - Interface Code_Saturne
   !   ======================
 
-  if (iihmpr.eq.1) then
-
-    call uialcl &
-      ( ibfixe, igliss, ivimpo, ifresf,    &
+  call uialcl &
+    ( ibfixe, igliss, ivimpo, ifresf,    &
       ialtyb,                            &
       impale,                            &
       disale,                            &
       iuma, ivma, iwma,                  &
       rcodcl)
-
-  endif
 
   call usalcl &
     ( itrale ,                                                       &
@@ -5104,7 +5090,6 @@ use alaste
 use alstru
 use atincl, only: iautom, iprofm
 use coincl, only: fment, ientfu, ientgb, ientgf, ientox, tkent, qimp
-use ihmpre, only: iihmpr
 use ppcpfu, only: inmoxy
 use cstphy
 use cstnum
@@ -5156,22 +5141,18 @@ call precli(nvar, icodcl, rcodcl)
 !     - Interface Code_Saturne
 !       ======================
 
-if (iihmpr.eq.1) then
+! N.B. Zones de face de bord : on utilise provisoirement les zones des
+!    physiques particulieres, meme sans physique particuliere
+!    -> sera modifie lors de la restructuration des zones de bord
 
-  ! N.B. Zones de face de bord : on utilise provisoirement les zones des
-  !    physiques particulieres, meme sans physique particuliere
-  !    -> sera modifie lors de la restructuration des zones de bord
-
-  call uiclim &
-    ( ippmod(idarcy),                                                &
-      nozppm, ncharm, ncharb, nclpch,                                &
-      iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
-      ientfu, ientgb, ientgf, iprofm, iautom,                        &
-      itypfb, izfppp, icodcl,                                        &
-      qimp,   qimpat, qimpcp, dh,     xintur,                        &
-      timpat, timpcp, tkent ,  fment, distch, nvar, rcodcl)
-
-endif
+call uiclim &
+  ( ippmod(idarcy),                                                &
+    nozppm, ncharm, ncharb, nclpch,                                &
+    iqimp,  icalke, ientat, ientcp, inmoxy, ientox,                &
+    ientfu, ientgb, ientgf, iprofm, iautom,                        &
+    itypfb, izfppp, icodcl,                                        &
+    qimp,   qimpat, qimpcp, dh,     xintur,                        &
+    timpat, timpcp, tkent ,  fment, distch, nvar, rcodcl)
 
 !     - Sous-programme utilisateur
 !       ==========================
@@ -5197,17 +5178,13 @@ if (iale.ge.1) then
   ! - Interface Code_Saturne
   !   ======================
 
-  if (iihmpr.eq.1) then
-
-    call uialcl &
-      ( ibfixe, igliss, ivimpo, ifresf,    &
+  call uialcl &
+    ( ibfixe, igliss, ivimpo, ifresf,    &
       ialtyb,                            &
       impale,                            &
       disale,                            &
       iuma, ivma, iwma,                  &
       rcodcl)
-
-  endif
 
   call usalcl &
     ( itrale ,                                                       &

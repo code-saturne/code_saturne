@@ -46,7 +46,6 @@ use alstru
 use alaste
 use parall
 use period
-use ihmpre
 use cplsat
 use ppincl
 use ppcpfu
@@ -721,7 +720,7 @@ i_les_balance = 0
 ! --- Ici tout optcal.f90 est initialise
 
 !===============================================================================
-! 7. TABLEAUX DE cstphy.f90
+! TABLEAUX DE cstphy.f90
 !===============================================================================
 
 ! --- Gravite
@@ -928,13 +927,7 @@ rhebdfm = 0.5d0
 ! --- Ici tout cstphy a ete initialise
 
 !===============================================================================
-! 9. INITIALISATION DES PARAMETRES DE IHM de ihmpre.f90
-!===============================================================================
-
-iihmpr = 0
-
-!===============================================================================
-! 10. INITIALISATION DES PARAMETRES ALE de albase.f90 et alstru.f90
+! INITIALISATION DES PARAMETRES ALE de albase.f90 et alstru.f90
 !===============================================================================
 
 ! --- Iterations d'initialisation fluide seul
@@ -992,7 +985,7 @@ betnmk = -grand
 gamnmk = -grand
 
 !===============================================================================
-! 11. INITIALISATION DES PARAMETRES DE COUPLAGE CS/CS
+! INITIALISATION DES PARAMETRES DE COUPLAGE CS/CS
 !===============================================================================
 
 ! --- Nombre de couplage
@@ -1002,14 +995,10 @@ nbrcpl = 0
 ifaccp = 0
 
 !===============================================================================
-! 12. Lagrangian arrays
+! Lagrangian arrays
 !===============================================================================
 
 tslagr => rvoid2
-
-!===============================================================================
-! 14. Exit
-!===============================================================================
 
 return
 end subroutine

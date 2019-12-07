@@ -59,7 +59,6 @@ use cstnum
 use ppppar
 use ppthch
 use ppincl
-use ihmpre
 use field
 use cs_c_bindings
 
@@ -159,9 +158,7 @@ irovar = 1
 ! 4. ON REDONNE LA MAIN A L'UTLISATEUR
 !===============================================================================
 
-if (iihmpr.eq.1) then
-  call cscfgp(icfgrp)
-endif
+call cscfgp(icfgrp)
 
 call uscfx2
 !==========

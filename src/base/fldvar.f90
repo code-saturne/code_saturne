@@ -55,7 +55,6 @@ use coincl
 use cpincl
 use ppincl
 use radiat
-use ihmpre
 use mesh
 use field
 use cs_c_bindings
@@ -344,7 +343,7 @@ if (nmodpp.eq.0) then
     iscalt = ihm
   endif
 
-  if (itherm.ne.0 .and. iihmpr.eq.1) then
+  if (itherm.ne.0) then
     call uithsc
   endif
 

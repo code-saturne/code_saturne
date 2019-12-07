@@ -56,7 +56,6 @@ use coincl
 use cpincl
 use ppincl
 use ppcpfu
-use ihmpre
 use cs_coal_incl
 use field
 

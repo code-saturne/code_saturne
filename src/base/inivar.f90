@@ -52,7 +52,6 @@ use pointe
 use entsor
 use parall
 use period
-use ihmpre
 use ppppar
 use ppthch
 use ppincl
@@ -180,11 +179,7 @@ enddo
 ! - Interface Code_Saturne
 !   ======================
 
-if (iihmpr.eq.1) then
-
-  call uiiniv (isuite, ippmod(idarcy), ithvar)
-
-endif
+call uiiniv (isuite, ippmod(idarcy), ithvar)
 
 !   - Sous-programme utilisateur
 !     ==========================
@@ -195,7 +190,7 @@ if (ippmod(iphpar).eq.0) then
 
   !     Avec l'interface, il peut y avoir eu initialisation,
   !       meme si usiniv n'est pas utilise.
-  if (isuite.eq.0 .and. iihmpr.eq.1) then
+  if (isuite.eq.0) then
     iusini = 1
   endif
 
