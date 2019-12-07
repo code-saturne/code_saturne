@@ -161,7 +161,8 @@ _pkg_fluid_prop_dict['neptune_cfd'] = {'rho0':'ro0',
 _pkg_glob_struct = {'code_saturne':'cs_glob_fluid_properties',
                     'neptune_cfd':'nc_phases->p_ini[PHASE_ID]'}
 
-_ref_turb_values = {'uref', 'almax'}
+_ref_turb_values = {'uref':'uref',
+                    'almax':'almax'}
 
 #===============================================================================
 # Utility functions
