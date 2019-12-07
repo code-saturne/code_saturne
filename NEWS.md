@@ -30,6 +30,8 @@ Bug fixes:
 
 - Lagrangian: fix set flag function for particles (flags were not set).
 
+- GUI: fix MEG generation for reference turbulence values.
+
 - GUI: fix loss of "--initialize-only" runcase setting after first run.
 
 - GUI: fix formulae using time step or time (generated code did not compile).
