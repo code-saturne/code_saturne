@@ -1,7 +1,7 @@
 !-------------------------------------------------------------------------------
 
-!                      Code_Saturne version 3.0.0-betaR4048
-!                      --------------------------
+!VERS
+
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
 ! Copyright (C) 1998-2019 EDF S.A.
