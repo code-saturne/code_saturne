@@ -1867,9 +1867,13 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
                     + (b_face_cog[f_id][1]-cell_cen[c_id][1]) * grad[c_id][1]
                     + (b_face_cog[f_id][2]-cell_cen[c_id][2]) * grad[c_id][2];
 
-              cs_real_t pfac =          coefbp[f_id] * (       extrap *pfac1
-                                                        + (1.0-extrap)*pfac0)
-                               + (1.0 - coefbp[f_id]) * pfac0;
+              cs_real_t pfac;
+
+              /* Only apply extrap for homogeneous Neumann */
+              if (fabs(1.0 - coefbp[f_id]) + fabs(coefap[f_id]) < 1e-15)
+                pfac = extrap*pfac1 + (1.0-extrap)*pfac0;
+              else
+                pfac = pfac0;
 
               pfac -= pvar[c_id];
 
@@ -2031,9 +2035,13 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
                     + (b_face_cog[f_id][1]-cell_cen[c_id][1]) * grad[c_id][1]
                     + (b_face_cog[f_id][2]-cell_cen[c_id][2]) * grad[c_id][2];
 
-                cs_real_t pfac =          coefbp[f_id] * (       extrap *pfac1
-                                                          + (1.0-extrap)*pfac0)
-                                 + (1.0 - coefbp[f_id]) * pfac0;
+                cs_real_t pfac;
+
+                /* Only apply extrap for homogeneous Neumann */
+                if (fabs(1.0 - coefbp[f_id]) + fabs(coefap[f_id]) < 1e-15)
+                  pfac = extrap*pfac1 + (1.0-extrap)*pfac0;
+                else
+                  pfac = pfac0;
 
                 pfac -= pvar[c_id];
 
@@ -2542,7 +2550,16 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
             cs_lnum_t ii = b_face_cells[f_id];
 
-            extrab = 1. - isympa[f_id]*extrap*coefbp[f_id];
+            if (extrap <= 0)
+              extrab = 1.;
+
+            else {
+              /* Only apply extrap for homogeneous Neumann */
+              if (fabs(1.0 - coefbp[f_id]) + fabs(coefap[f_id]) < 1e-15)
+                extrab = 1. - isympa[f_id];
+              else
+                extrab = 1.;
+            }
 
             umcbdd = extrab * (1. - coefbp[f_id]) / b_dist[f_id];
             udbfs = extrab / b_face_surf[f_id];
@@ -2685,42 +2702,98 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
     /* Contribution from boundary faces */
 
-    for (g_id = 0; g_id < n_b_groups; g_id++) {
+    if (extrap <= 0) {
 
-#     pragma omp parallel for private(extrab, \
-                                      unddij, udbfs, umcbdd, pfac, dsij)
-      for (t_id = 0; t_id < n_b_threads; t_id++) {
+      for (g_id = 0; g_id < n_b_groups; g_id++) {
 
-        for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-             f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-             f_id++) {
+#       pragma omp parallel for private(unddij, udbfs, umcbdd, pfac, dsij)
+        for (t_id = 0; t_id < n_b_threads; t_id++) {
 
-          if (cpl == NULL || !coupled_faces[f_id]) {
+          for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+               f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+               f_id++) {
 
-            cs_lnum_t ii = b_face_cells[f_id];
+            if (cpl == NULL || !coupled_faces[f_id]) {
 
-            extrab = pow((1. - isympa[f_id]*extrap*coefbp[f_id]), 2.0);
-            unddij = 1. / b_dist[f_id];
-            udbfs = 1. / b_face_surf[f_id];
-            umcbdd = (1. - coefbp[f_id]) * unddij;
+              cs_lnum_t ii = b_face_cells[f_id];
 
-            for (cs_lnum_t ll = 0; ll < 3; ll++)
-              dsij[ll] =   udbfs * b_face_normal[f_id][ll]
-                       + umcbdd*diipb[f_id][ll];
+              unddij = 1. / b_dist[f_id];
+              udbfs = 1. / b_face_surf[f_id];
+              umcbdd = (1. - coefbp[f_id]) * unddij;
 
-            pfac =   (coefap[f_id]*inc + (coefbp[f_id] -1.)*rhsv[ii][3])
-                 * unddij * extrab;
+              for (cs_lnum_t ll = 0; ll < 3; ll++)
+                dsij[ll] =   udbfs * b_face_normal[f_id][ll]
+                           + umcbdd*diipb[f_id][ll];
 
-            for (cs_lnum_t ll = 0; ll < 3; ll++)
-              rhsv[ii][ll] += dsij[ll] * pfac;
+              pfac =   (coefap[f_id]*inc + (coefbp[f_id] -1.)*rhsv[ii][3])
+                     * unddij;
 
-          } /* face without internal coupling */
+              for (cs_lnum_t ll = 0; ll < 3; ll++)
+                rhsv[ii][ll] += dsij[ll] * pfac;
 
-        } /* loop on faces */
+            } /* face without internal coupling */
 
-      } /* loop on threads */
+          } /* loop on faces */
 
-    } /* loop on thread groups */
+        } /* loop on threads */
+
+      } /* loop on thread groups */
+
+    }
+    else {
+
+      for (g_id = 0; g_id < n_b_groups; g_id++) {
+
+#       pragma omp parallel for private(extrab, \
+                                        unddij, udbfs, umcbdd, pfac, dsij)
+        for (t_id = 0; t_id < n_b_threads; t_id++) {
+
+          for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+               f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+               f_id++) {
+
+            if (cpl == NULL || !coupled_faces[f_id]) {
+
+              cs_lnum_t ii = b_face_cells[f_id];
+
+              /* Only apply extrap for homogeneous Neumann */
+              if (fabs(1.0 - coefbp[f_id]) + fabs(coefap[f_id]) < 1e-15) {
+
+                unddij = 1. / b_dist[f_id];
+                udbfs = 1. / b_face_surf[f_id];
+
+                for (cs_lnum_t ll = 0; ll < 3; ll++)
+                  dsij[ll] = udbfs * b_face_normal[f_id][ll];
+
+                pfac = coefap[f_id]*inc * unddij;
+
+              }
+              else {
+
+                unddij = 1. / b_dist[f_id];
+                udbfs = 1. / b_face_surf[f_id];
+                umcbdd = (1. - coefbp[f_id]) * unddij;
+
+                for (cs_lnum_t ll = 0; ll < 3; ll++)
+                  dsij[ll] =   udbfs * b_face_normal[f_id][ll]
+                             + umcbdd*diipb[f_id][ll];
+
+                pfac =   (coefap[f_id]*inc + (coefbp[f_id] -1.)*rhsv[ii][3])
+                       * unddij;
+              }
+
+              for (cs_lnum_t ll = 0; ll < 3; ll++)
+                rhsv[ii][ll] += dsij[ll] * pfac;
+
+            } /* face without internal coupling */
+
+          } /* loop on faces */
+
+        } /* loop on threads */
+
+      } /* loop on thread groups */
+
+    }
 
   }
 
@@ -2839,47 +2912,112 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
     /* Contribution from boundary faces */
 
-    for (g_id = 0; g_id < n_b_groups; g_id++) {
+    if (extrap <= 0) {
 
-#     pragma omp parallel for private(extrab, \
-                                      unddij, udbfs, umcbdd, pfac, dsij)
-      for (t_id = 0; t_id < n_b_threads; t_id++) {
+      for (g_id = 0; g_id < n_b_groups; g_id++) {
 
-        for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
-             f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
-             f_id++) {
+#       pragma omp parallel for private(unddij, udbfs, umcbdd, pfac, dsij)
+        for (t_id = 0; t_id < n_b_threads; t_id++) {
 
-          cs_lnum_t ii = b_face_cells[f_id];
+          for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+               f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+               f_id++) {
 
-          cs_real_t poro = b_poro_duq[is_porous*f_id];
+            cs_lnum_t ii = b_face_cells[f_id];
 
-          extrab = pow((1. - isympa[f_id]*extrap*coefbp[f_id]), 2.0);
-          unddij = 1. / b_dist[f_id];
-          udbfs = 1. / b_face_surf[f_id];
-          umcbdd = (1. - coefbp[f_id]) * unddij;
+            cs_real_t poro = b_poro_duq[is_porous*f_id];
 
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            dsij[ll] =   udbfs * b_face_normal[f_id][ll]
-                       + umcbdd*diipb[f_id][ll];
+            unddij = 1. / b_dist[f_id];
+            udbfs = 1. / b_face_surf[f_id];
+            umcbdd = (1. - coefbp[f_id]) * unddij;
 
-          pfac
-            =   (coefap[f_id]*inc
-              + (  (coefbp[f_id] -1.)
-                 * (  rhsv[ii][3]
-                    + (b_face_cog[f_id][0] - cell_cen[ii][0]) * f_ext[ii][0]
-                    + (b_face_cog[f_id][1] - cell_cen[ii][1]) * f_ext[ii][1]
-                    + (b_face_cog[f_id][2] - cell_cen[ii][2]) * f_ext[ii][2]
-                    + poro)))
-              * unddij * extrab;
+            for (cs_lnum_t ll = 0; ll < 3; ll++)
+              dsij[ll] =   udbfs * b_face_normal[f_id][ll]
+                         + umcbdd*diipb[f_id][ll];
 
-          for (cs_lnum_t ll = 0; ll < 3; ll++)
-            rhsv[ii][ll] += dsij[ll] * pfac;
+            pfac
+              =   (coefap[f_id]*inc
+                + (  (coefbp[f_id] -1.)
+                   * (  rhsv[ii][3]
+                      + (b_face_cog[f_id][0] - cell_cen[ii][0]) * f_ext[ii][0]
+                      + (b_face_cog[f_id][1] - cell_cen[ii][1]) * f_ext[ii][1]
+                      + (b_face_cog[f_id][2] - cell_cen[ii][2]) * f_ext[ii][2]
+                      + poro)))
+                * unddij;
 
-        } /* loop on faces */
+            for (cs_lnum_t ll = 0; ll < 3; ll++)
+              rhsv[ii][ll] += dsij[ll] * pfac;
 
-      } /* loop on threads */
+          } /* loop on faces */
 
-    } /* loop on thread groups */
+        } /* loop on threads */
+
+      } /* loop on thread groups */
+
+    }
+    else {
+
+      for (g_id = 0; g_id < n_b_groups; g_id++) {
+
+#       pragma omp parallel for private(extrab, \
+                                        unddij, udbfs, umcbdd, pfac, dsij)
+        for (t_id = 0; t_id < n_b_threads; t_id++) {
+
+          for (cs_lnum_t f_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+               f_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+               f_id++) {
+
+            cs_lnum_t ii = b_face_cells[f_id];
+
+            cs_real_t poro = b_poro_duq[is_porous*f_id];
+
+            unddij = 1. / b_dist[f_id];
+            udbfs = 1. / b_face_surf[f_id];
+
+            /* Only apply extrap for homogeneous Neumann */
+            if (fabs(1.0 - coefbp[f_id]) + fabs(coefap[f_id]) < 1e-15) {
+
+              extrab = 1. - isympa[f_id];
+
+              for (cs_lnum_t ll = 0; ll < 3; ll++)
+                dsij[ll] = udbfs * b_face_normal[f_id][ll];
+
+              pfac =   (coefap[f_id]*inc) * unddij * extrab;
+
+              for (cs_lnum_t ll = 0; ll < 3; ll++)
+                rhsv[ii][ll] += dsij[ll] * pfac;
+
+            }
+            else {
+
+              umcbdd = (1. - coefbp[f_id]) * unddij;
+
+              for (cs_lnum_t ll = 0; ll < 3; ll++)
+                dsij[ll] =   udbfs * b_face_normal[f_id][ll]
+                           + umcbdd*diipb[f_id][ll];
+
+              pfac
+                =   (coefap[f_id]*inc
+                  + (  (coefbp[f_id] -1.)
+                     * (  rhsv[ii][3]
+                        + (b_face_cog[f_id][0] - cell_cen[ii][0]) * f_ext[ii][0]
+                        + (b_face_cog[f_id][1] - cell_cen[ii][1]) * f_ext[ii][1]
+                        + (b_face_cog[f_id][2] - cell_cen[ii][2]) * f_ext[ii][2]
+                        + poro)))
+                  * unddij;
+
+              for (cs_lnum_t ll = 0; ll < 3; ll++)
+                rhsv[ii][ll] += dsij[ll] * pfac;
+
+            }
+
+          } /* loop on faces */
+
+        } /* loop on threads */
+
+      } /* loop on thread groups */
+
+    }
 
   } /* End of test on hydrostatic pressure */
 
@@ -2944,7 +3082,6 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
  *                      1 for velocity, 2 for Reynolds stress
  *   w_stride       <-- stride for weighting coefficient
  *   inc            <-- if 0, solve on increment; 1 otherwise
- *   extrap         <-- gradient extrapolation coefficient
  *   coefap         <-- B.C. coefficients for boundary face normals
  *   coefbp         <-- B.C. coefficients for boundary face normals
  *   pvar           <-- variable
@@ -2960,7 +3097,6 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
                          const cs_internal_coupling_t  *cpl,
                          int                            idimtr,
                          cs_real_t                      inc,
-                         cs_real_t                      extrap,
                          const cs_real_t                coefap[],
                          const cs_real_t                coefbp[],
                          const cs_real_t                pvar[],
@@ -2991,20 +3127,10 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
     = (const cs_real_t *restrict)fvq->b_dist;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
-  const cs_int_t *isympa = fvq->b_sym_flag;
   const cs_real_t *restrict weight = fvq->weight;
 
   bool  *coupled_faces = (cpl == NULL) ?
     NULL : (bool *)cpl->coupled_faces;
-
-  /* Remark:
-
-     for 2D calculations, if we extrapolate the pressure gradient,
-     we obtain a non-invertible cocg matrix, because of the third
-     direction.
-
-     To avoid this, we multiply extrap by isympa which is zero for
-     symmetries: the gradient is thus not extrapolated on those faces. */
 
   cs_real_4_t  *restrict rhsv;
   BFT_MALLOC(rhsv, n_cells_ext, cs_real_4_t);
@@ -3117,10 +3243,8 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
 
           cs_lnum_t ii = b_face_cells[f_id];
 
-          cs_real_t extrab = 1. - isympa[f_id]*extrap*coefbp[f_id];
-
-          cs_real_t umcbdd = extrab * (1. - coefbp[f_id]) / b_dist[f_id];
-          cs_real_t udbfs = extrab / b_face_surf[f_id];
+          cs_real_t umcbdd = (1. - coefbp[f_id]) / b_dist[f_id];
+          cs_real_t udbfs = 1. / b_face_surf[f_id];
 
           cs_real_t unddij = 1. / b_dist[f_id];
 
@@ -3138,7 +3262,7 @@ _lsq_scalar_gradient_ani(const cs_mesh_t               *m,
           /* RHS contribution */
 
           cs_real_t pfac =   (coefap[f_id]*inc + (coefbp[f_id] -1.)*rhsv[ii][3])
-                           * unddij * extrab;
+                           * unddij;
 
           for (cs_lnum_t ll = 0; ll < 3; ll++)
             rhsv[ii][ll] += dsij[ll] * pfac;
@@ -3521,10 +3645,10 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
               rfac =   coefbp[f_id]
                      * (  diipb[f_id][0] * r_grad[c_id][0]
                         + diipb[f_id][1] * r_grad[c_id][1]
-                        + diipb[f_id][2] * r_grad[c_id][2] );
+                        + diipb[f_id][2] * r_grad[c_id][2]);
 
             for (cs_lnum_t j = 0; j < 3; j++) {
-              grad[c_id][j] +=(pfac + rfac) * b_f_face_normal[f_id][j];
+              grad[c_id][j] += (pfac + rfac) * b_f_face_normal[f_id][j];
             }
 
           }
@@ -7462,7 +7586,6 @@ _gradient_scalar(const char                    *var_name,
                                cpl,
                                tr_dim,
                                inc,
-                               extrap,
                                bc_coeff_a,
                                bc_coeff_b,
                                var,
@@ -7505,7 +7628,6 @@ _gradient_scalar(const char                    *var_name,
                                  cpl,
                                  tr_dim,
                                  inc,
-                                 extrap,
                                  bc_coeff_a,
                                  bc_coeff_b,
                                  var,
