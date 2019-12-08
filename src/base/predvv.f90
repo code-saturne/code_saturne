@@ -76,9 +76,6 @@
 !> \param[in]     trava         working array for the velocity-pressure coupling
 !> \param[in]     dfrcxt        variation of the external forces
 !                               making the hydrostatic pressure
-!> \param[in]     grdphd        hydrostatic pressure gradient to handle the
-!>                              imbalance between the pressure gradient and
-!>                              gravity source term
 !> \param[in]     tpucou        non scalar time step in case of
 !>                              velocity pressure coupling
 !> \param[in]     trav          right hand side for the normalizing
@@ -99,7 +96,7 @@ subroutine predvv &
    icepdc , icetsm , itypsm ,                                     &
    dt     , vel    , vela   , velk   ,                            &
    tslagr , coefav , coefbv , cofafv , cofbfv ,                   &
-   ckupdc , smacel , frcxt  , grdphd ,                            &
+   ckupdc , smacel , frcxt  ,                                     &
    trava  ,                   dfrcxt , tpucou , trav   ,          &
    viscf  , viscb  , viscfi , viscbi , secvif , secvib ,          &
    w1     )
@@ -152,7 +149,6 @@ double precision dt(ncelet)
 double precision tslagr(ncelet,*)
 double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
 double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
-double precision grdphd(3, ncelet)
 double precision trava(ndim,ncelet)
 double precision tpucou(6, ncelet)
 double precision trav(3,ncelet)
@@ -611,13 +607,6 @@ if (iphydr.eq.1) then
     trav(1,iel) = trav(1,iel)+(frcxt(1 ,iel) - cpro_gradp(1,iel)) * cell_f_vol(iel)
     trav(2,iel) = trav(2,iel)+(frcxt(2 ,iel) - cpro_gradp(2,iel)) * cell_f_vol(iel)
     trav(3,iel) = trav(3,iel)+(frcxt(3 ,iel) - cpro_gradp(3,iel)) * cell_f_vol(iel)
-  enddo
-else if (iphydr.eq.2) then
-  do iel = 1, ncel
-    rom = crom(iel)
-    trav(1,iel) = trav(1,iel)+(rom*gx - grdphd(1,iel) - cpro_gradp(1,iel)) * cell_f_vol(iel)
-    trav(2,iel) = trav(2,iel)+(rom*gy - grdphd(2,iel) - cpro_gradp(2,iel)) * cell_f_vol(iel)
-    trav(3,iel) = trav(3,iel)+(rom*gz - grdphd(3,iel) - cpro_gradp(3,iel)) * cell_f_vol(iel)
   enddo
 else if (ippmod(icompf).ge.0) then
   do iel = 1, ncel

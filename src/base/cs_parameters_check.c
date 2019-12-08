@@ -1705,7 +1705,7 @@ cs_parameters_check(void)
                                 _("while reading input data"),
                                 "cs_glob_stokes_model->iphydr",
                                 cs_glob_stokes_model->iphydr,
-                                0, 3);
+                                0, 2);
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("while reading input data"),

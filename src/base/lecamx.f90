@@ -717,20 +717,6 @@ if (iphydr.eq.1) then
 endif
 
 !===============================================================================
-! 11. PRESSION HYDROSTATIQUE PREDITE
-!===============================================================================
-
-if (iphydr.eq.2) then
-
-  itysup = 1
-  nbval  = 1
-
-  call field_get_id('hydrostatic_pressure_prd', f_id)
-  call restart_read_field_vals(rp, f_id, 0, ierror)
-
-endif
-
-!===============================================================================
 ! 12.  Wall temperature associated to the condensation model
 !      with or wihtout the 1D thermal model tag1D
 !===============================================================================

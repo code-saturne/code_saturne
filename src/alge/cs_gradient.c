@@ -2589,7 +2589,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
   /* Standard case, without hydrostatic pressure */
   /*---------------------------------------------*/
 
-  if (hyd_p_flag == 0 || hyd_p_flag == 2) {
+  if (hyd_p_flag == 0) {
 
     /* Contribution from interior faces */
 

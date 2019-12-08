@@ -152,9 +152,6 @@ _sles_default_native(int                f_id,
       sles_it_type = CS_SLES_PCG;
       multigrid = 1;
     }
-    else if (!strcmp(name, "Prhydro")) { /* prehyd.f90 */
-      sles_it_type = CS_SLES_PCG;
-    }
     else if (!strcmp(name, "Pr compress")) { /* resopv.f90 */
       sles_it_type = CS_SLES_P_SYM_GAUSS_SEIDEL;
     }

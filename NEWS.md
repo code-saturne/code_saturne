@@ -27,6 +27,8 @@ User changes:
 
 Numerics and physical modelling:
 
+- Remove hydrostatic pressure gradient computation (iphydr = 2).
+
 - Wall pressure extrapolation is now considered advanced/deprecated,
   and is not set through the GUI anymore.
 

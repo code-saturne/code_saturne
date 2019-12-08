@@ -535,13 +535,6 @@ if (iecaux.eq.1) then
     call restart_write_field_vals(rp, f_id, 0)
   endif
 
-! ---> Pression hydrostatique predite
-
-  if (iphydr.eq.2) then
-    call field_get_id('hydrostatic_pressure_prd', f_id)
-    call restart_write_field_vals(rp, f_id, 0)
-  endif
-
 !----------------------------------------------------------------
 ! ---> Wall temperature associated to the condensation model
 !      with or without the 1D thermal model tag1D
