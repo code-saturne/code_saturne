@@ -708,7 +708,7 @@ endif
 !     CALCUL DU PAS DE TEMPS SI VARIABLE
 !===============================================================================
 
-if(vcopt_u%iwarni.ge.1) then
+if (vcopt_u%iwarni.ge.1) then
   write(nfecra,1020)
 endif
 
@@ -721,7 +721,7 @@ call dttvar &
 
 if (nbaste.gt.0.and.itrale.gt.nalinf) then
   ntrela = ntcabs - ntpabs
-  call astpdt(dt, ncelet, ntrela)
+  call astpdt(dt, ntrela)
 endif
 
 ! Compute the pseudo tensorial time step if needed for the pressure solving

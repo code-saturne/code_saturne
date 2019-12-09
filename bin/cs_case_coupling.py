@@ -67,7 +67,6 @@ def coupling(package,
     nep_domains = []
     cat_domains = []
     ast_domain = []
-    fsi_coupler = None
     py_domains = []
 
     if domains == None:
@@ -75,8 +74,7 @@ def coupling(package,
 
     for d in domains:
 
-        if ((d.get('script') == None or d.get('domain') == None) \
-            and d.get('coupler') == None):
+        if (d.get('script') == None or d.get('domain') == None):
             msg = 'Check your coupling definition.\n'
             msg += 'script or domain key is missing.'
             raise RunCaseError(msg)
@@ -158,28 +156,6 @@ def coupling(package,
 
             ast_domain.append(dom)
 
-        elif (d.get('coupler') == 'FSI_coupler'):
-
-            if fsi_coupler:
-                err_str = 'Only 1 FSI coupler is currently handled\n'
-                raise RunCaseError(err_str)
-
-            try:
-                fsi_coupler = {'max_time_steps' : d.get('max_time_steps'),
-                               'n_sub_iterations' : d.get('n_sub_iterations'),
-                               'time_step' : d.get('time_step'),
-                               'start_time' : d.get('start_time'),
-                               'epsilon' : d.get('epsilon')}
-
-            except Exception:
-                err_str = 'Cannot create FSI coupler\n'
-                err_str += '  max_time_steps = ' + d.get('max_time_steps') + '\n'
-                err_str += '  n_sub_iterations = ' + d.get('n_sub_iterations' + '\n')
-                err_str += '  time_step = ' + d.get('time_step') + '\n'
-                err_str += '  start_time = ' + d.get('start_time') + '\n'
-                err_str += '  epsilon = ' + d.get('epsilon') + '\n'
-                raise RunCaseError(err_str)
-
         elif (d.get('solver') == 'CATHARE'):
             # Current version using Cathare2: the cathare case is converted to a
             # .so library which is opened and launched by a NEPTUNE_CFD executable
@@ -246,9 +222,7 @@ domains = [
         d_first = False
         k_first = True
         for k in ('solver', 'domain', 'script', 'n_procs_weight', 'n_procs_min',
-                  'coupler', 'max_time_steps', 'n_sub_iterations', 'time_step',
-                  'start_time', 'epsilon', 'cathare_case_file',
-                  'neptune_cfd_domain'):
+                  'cathare_case_file', 'neptune_cfd_domain'):
             v = d.get(k)
             if v:
                 if type(v) == str:
@@ -272,7 +246,6 @@ domains = [
              domains = sat_domains + nep_domains + cat_domains,
              syr_domains = syr_domains,
              ast_domain = ast_domain,
-             fsi_coupler = fsi_coupler,
              py_domains = py_domains)
 
     if verbose:
@@ -283,9 +256,8 @@ domains = [
             msg += '   o SYRTHES      [' + str(len(syr_domains)) + ' domain(s)];\n'
         if use_neptune == True:
             msg += '   o NEPTUNE_CFD  [' + str(len(nep_domains)) + ' domain(s)];\n'
-        if ast_domain or fsi_coupler:
+        if ast_domain:
             msg += '   o Code_Aster   [1 domain(s)];\n'
-            msg += '                  [1 coupler(s)];\n'
         if use_cathare == True:
             msg += '   o CATHARE2     [' + str(len(cat_domains)) + ' domain(s)];\n'
         if use_py_code == True:

@@ -522,18 +522,6 @@ domains = [
             template = re.sub(e_dom, self.ast_case_name, template)
             dict_str += template
 
-            template = \
-"""
-    ,
-    {'coupler': 'FSI_coupler',
-     'max_time_steps': 10,
-     'n_sub_iterations': 1,
-     'time_step': 0.0001,
-     'start_time': 0.0,
-     'epsilon': 0.00001}
-"""
-            dict_str += template
-
         if self.cat_case_name is not None:
 
             c = os.path.normpath(self.cat_case_name)

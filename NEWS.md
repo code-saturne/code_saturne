@@ -69,6 +69,9 @@ Numerics and physical modelling:
 
 Architectural changes:
 
+- code_aster coupling: remove the "milieu" module and move its functionnality
+  into the main cs_ast_coupling.c code.
+
 - Simplify handling of SpMV tuning, as various contraints on the type
   of matrix used for a given solver limited to use of the cross-type
   tuning, while that tuning added significant complexity.

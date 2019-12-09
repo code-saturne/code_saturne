@@ -114,6 +114,28 @@ type(var_cal_opt) :: vcopt
 !===============================================================================
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  function cs_ast_coupling_get_ext_cvg() result (icvext) &
+    bind(C, name='cs_ast_coupling_get_ext_cvg')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int) :: icvext
+  end function cs_ast_coupling_get_ext_cvg
+
+  subroutine cs_ast_coupling_send_cvg(icv) &
+    bind(C, name='cs_ast_coupling_send_cvg')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: icv
+  end subroutine cs_ast_coupling_send_cvg
+
+end interface
+
+!===============================================================================
 ! 1. Initialization
 !===============================================================================
 
@@ -246,14 +268,14 @@ if (nbstru.gt.0) then
   if (delta.lt.epalim) icvint = 1
 endif
 
-if (nbaste.gt.0) call astcv1(ntcast, icvext)
+if (nbaste.gt.0) icvext = cs_ast_coupling_get_ext_cvg()
 
 if (nbstru.gt.0.and.nbaste.gt.0) then
-   icved = icvext*icvint
+  icved = icvext*icvint
 elseif (nbstru.gt.0.and.nbaste.eq.0) then
-   icved = icvint
+  icved = icvint
 elseif (nbaste.gt.0.and.nbstru.eq.0) then
-   icved = icvext
+  icved = icvext
 endif
 
 if (vcopt%iwarni.ge.2) write(nfecra,1000) italim, delta
@@ -281,8 +303,8 @@ elseif (italim.eq.nalimx) then
   icved = 1
 endif
 
-! Return the final covnergence indicator to code_aster
-call astcv2(ntcast, icved)
+! Return the final convergence indicator to code_aster
+call cs_ast_coupling_send_cvg(icved)
 
 !===============================================================================
 ! 6. Re set previous values if required

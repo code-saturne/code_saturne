@@ -47,16 +47,6 @@ module FSI_ORB
              out long retval) raises (SALOME::SALOME_Exception);
   };
 
-  interface FSI_MILIEU: Engines::Superv_Component
-  {
-    void inter_run(in long NBPDTM,
-                   in long NBSSIT,
-                   in long ISYNCP,
-                   in long NTCHR,
-                   in double DTREF,
-                   in double TTINIT,
-                   in double EPSILO) raises (SALOME::SALOME_Exception);
-  };
 };
 
 #endif

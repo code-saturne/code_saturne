@@ -52,7 +52,7 @@ BEGIN_C_DECLS
 typedef struct _cs_ast_coupling_t  cs_ast_coupling_t;
 
 /*============================================================================
- * Global variables definition
+ * Global variable definitions
  *============================================================================*/
 
 /*============================================================================
@@ -112,25 +112,6 @@ void CS_PROCF(astcin, ASTCIN)
 );
 
 /*----------------------------------------------------------------------------
- * Receive coupling parameters
- *
- * Fortran Interface:
- *
- * SUBROUTINE ASTPAR
- * *****************
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(astpar, ASTPAR)
-(
- cs_int_t  *nbpdt,
- cs_int_t  *nbsspdt,
- cs_real_t *delta,
- cs_real_t *tt,
- cs_real_t *dt
-);
-
-/*----------------------------------------------------------------------------
  * Exchange time step
  *
  * Fortran Interface:
@@ -143,53 +124,59 @@ void CS_PROCF(astpar, ASTPAR)
 void CS_PROCF(astpdt, ASTPDT)
 (
  cs_real_t *dttab,
- cs_int_t  *ncelet,
  cs_int_t  *nbpdt
-);
-
-/*----------------------------------------------------------------------------
- * Receive convergence value of Code_Saturne/Code_Aster coupling
- *
- * Fortran Interface:
- *
- * SUBROUTINE ASTCV1
- * *****************
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(astcv1, ASTCV1)
-(
- cs_int_t  *ntcast,
- cs_int_t  *icv
-);
-
-/*-----------------------------------------------------------------------------
- * Send global convergence value of IFS calculations
- * (Internal and external structures)
- *
- * Fortran Interface:
- *
- * SUBROUTINE ASTCV2
- * *****************
- *
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(astcv2, ASTCV2)
-(
- cs_int_t  *ntcast,
- cs_int_t  *icv
 );
 
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Free coupling structure.
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initial exchange with code_aster
+ *
+ * \param[in]  nalimx  maximum number of implicitation iterations of
+ *                     the structure displacement
+ * \param[in]  epalim  relative precision of implicitation of
+ *                     the structure displacement
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ast_coupling_initialize(int        nalimx,
+                           cs_real_t  epalim);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize exchange with code_aster
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_ast_coupling_finalize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Receive convergence value of code_saturne/code_aster coupling
+ *
+ * \return  convergence indicator computed by coupling scheme
+ *          (1: converged, 0: not converged)
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_ast_coupling_get_ext_cvg(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Send global convergence value of FSI calculations
+ *
+ * \param[in]  icved  convergence indicator (1: converged, 0: not converged)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ast_coupling_send_cvg(int  icved);
 
 /*----------------------------------------------------------------------------*/
 
