@@ -78,29 +78,6 @@ type(var_cal_opt) :: vcopt
 ! 1. VARIABLES TRANSPORTEES
 !===============================================================================
 
-! 1.1 Definition des scamin et des scamax des variables transportees
-! ==================================================================
-
-! Key id for scamin and scamax
-call field_get_key_id("min_scalar_clipping", kscmin)
-call field_get_key_id("max_scalar_clipping", kscmax)
-
-call field_get_key_double(ivarfl(isca(ienerg)), kscmin, scaclp(1))
-call field_get_key_double(ivarfl(isca(itempk)), kscmin, scaclp(2))
-call field_get_key_double(ivarfl(isca(ienerg)), kscmax, scaclp(3))
-call field_get_key_double(ivarfl(isca(itempk)), kscmax, scaclp(4))
-
-if ( (abs(scaclp(1)+grand).gt.epzero).or.           &
-     (abs(scaclp(2)+grand).gt.epzero).or.           &
-     (abs(scaclp(3)-grand).gt.epzero).or.           &
-     (abs(scaclp(4)-grand).gt.epzero) ) then
-  write(nfecra,2000) scaclp(1), scaclp(3), scaclp(2), scaclp(4)
-  call csexit (1)
-endif
-
-! 1.2 Nature des scalaires transportes
-! ====================================
-
 ! Does scalar itempk behave like a temperature ?
 ! TODO check this; should be 1 for temperature unless handled in
 !      another manner
