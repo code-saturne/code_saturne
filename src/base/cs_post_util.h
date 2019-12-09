@@ -321,6 +321,27 @@ cs_post_boundary_flux(const char       *scalar_name,
                       cs_real_t         b_face_flux[]);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute values at a selection of boundary faces of a given field
+ *        located on cells.
+ *
+ * Field BCs are taken into account and boundary cell values are reconstructed
+ * using the cell gradient.
+ *
+ * \param[in]   f              field pointer
+ * \param[in]   n_loc_b_faces  number of selected boundary faces
+ * \param[in]   b_face_ids     ids of selected boundary faces
+ * \param[out]  b_val          values on boundary faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_field_cell_to_b_face_values(cs_field_t       *f,
+                                    cs_lnum_t         n_loc_b_faces,
+                                    const cs_lnum_t   b_face_ids[],
+                                    cs_real_t        *b_val);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
