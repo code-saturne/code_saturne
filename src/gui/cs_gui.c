@@ -2469,11 +2469,7 @@ void CS_PROCF (cssca3, CSSCA3) (double     *visls0)
                       result / (8.31446 *(cs_glob_fluid_properties->t0));
           }
           else
-            cs_gui_properties_value("density", &density);
-
-          if (density <= 0)
-            bft_error(__FILE__, __LINE__, 0,
-                      _("Density value is zero or not found in the xml file.\n"));
+            density = cs_glob_fluid_properties->ro0;
 
           coeff = visls0[i] / density ;
           _scalar_diffusion_value(i+1, &coeff);
