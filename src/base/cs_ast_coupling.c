@@ -56,6 +56,7 @@
 
 #include "cs_calcium.h"
 #include "cs_interface.h"
+#include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_connect.h"
@@ -947,6 +948,13 @@ CS_PROCF(astpdt, ASTPDT)
 {
   cs_ast_coupling_t  *ast_cpl = cs_glob_ast_coupling;
 
+  /* Update verbosity */
+
+  if (cs_glob_time_step->nt_cur % cs_glob_log_frequency == 0)
+    ast_cpl->verbosity = 1;
+  else
+    ast_cpl->verbosity = 0;
+
   if (ast_cpl->iteration < 0)
     return;
 
@@ -1021,13 +1029,14 @@ CS_PROCF(astpdt, ASTPDT)
 
   ast_cpl->dt = dttmp;
 
-  bft_printf("----------------------------------\n"
-             "reference time step:     %4.21e\n"
-             "code_saturne time step:  %4.2le\n"
-             "code_aster time step:    %4.2le\n"
-             "selected time step:      %4.2le \n"
-             "----------------------------------\n\n",
-             ast_cpl->dtref, dttab[0], dt_ast, ast_cpl->dt);
+  if (ast_cpl->verbosity > 0)
+    bft_printf("----------------------------------\n"
+               "reference time step:     %4.21e\n"
+               "code_saturne time step:  %4.2le\n"
+               "code_aster time step:    %4.2le\n"
+               "selected time step:      %4.2le \n"
+               "----------------------------------\n\n",
+               ast_cpl->dtref, dttab[0], dt_ast, ast_cpl->dt);
 
   /* Reset sub-iteration count */
   ast_cpl->s_it_id = 0;
@@ -1063,7 +1072,7 @@ cs_ast_coupling_initialize(int        nalimx,
 
   BFT_MALLOC(ast_cpl, 1, cs_ast_coupling_t);
 
-  ast_cpl->verbosity = 1; /* TODO: add setting for this */
+  ast_cpl->verbosity = 1;
   ast_cpl->iteration = 0; /* < 0 for disconnect */
 
   ast_cpl->nbssit = nalimx; /* number of sub-iterations */
