@@ -174,6 +174,12 @@ def process_cmd_line(argv, pkg):
 
     param = options.param
 
+    # If no parameter file passed, and a setup.xml is present in DATA, run it
+    if param is None:
+        has_setup = os.path.isfile(os.path.join(casedir, 'DATA', 'setup.xml'))
+        if has_setup:
+            param = "setup.xml"
+
     # Stages to run (if no filter given, all are done).
 
     compute_build = options.compute_build
