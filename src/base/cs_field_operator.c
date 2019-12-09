@@ -213,7 +213,7 @@ _field_interpolate_by_gradient(const cs_field_t   *f,
                 " not implemented for fields on location %s."),
               f->name, cs_mesh_location_type_name[f->location_id]);
 
-  /* Get the calculation option from the field */
+  /* Compute field cell gradient */
 
   cs_real_t *grad;
   BFT_MALLOC(grad, 3*dim*n_cells_ext, cs_real_t);
@@ -234,7 +234,7 @@ _field_interpolate_by_gradient(const cs_field_t   *f,
     bft_error(__FILE__, __LINE__, 0,
               _("Field gradient interpolation for field %s of dimension %d:\n"
                 " not implemented."),
-              f->name, f->dim);
+              f->name, dim);
 
   /* Now interpolated values */
 
@@ -246,7 +246,7 @@ _field_interpolate_by_gradient(const cs_field_t   *f,
                      point_coords[i][1] - cell_cen[cell_id][1],
                      point_coords[i][2] - cell_cen[cell_id][2]};
 
-    for (cs_lnum_t j = 0; j < f->dim; j++) {
+    for (int j = 0; j < dim; j++) {
       cs_lnum_t k = (cell_id*dim + j)*3;
       val[i*dim + j] =   f->val[cell_id*dim + j]
                        + d[0] * grad[k]
