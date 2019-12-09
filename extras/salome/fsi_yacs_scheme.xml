@@ -16,10 +16,6 @@
     <property name="workingdir" value= "@AST_WORKINGDIR@"/>
   </container>
 
-  <container name="FSI_MILIEU">
-    <property name="workingdir" value= "@COCAS_WORKINGDIR@"/>
-  </container>
-
   <container name="FSI_SATURNE">
     <property name="workingdir" value= "@CFD_WORKINGDIR@"/>
   </container>
@@ -27,45 +23,6 @@
   <!-- =========================================================== -->
   <!-- Service creation for the supervisor                         -->
   <!-- =========================================================== -->
-
-  <service name="inter_service" >
-    <component>FSI_MILIEU</component>
-    <method>inter_run</method>
-    <load container="FSI_MILIEU"/>
-
-    <!-- Declare input parameters -->
-    <inport name="NBPDTM" type="int"/>    <!-- maximum iteration number -->
-    <inport name="NBSSIT" type="int"/>    <!-- number of sub-iterations -->
-    <inport name="ISYNCP" type="int"/>    <!-- fluid-structure post-treatment synchronisation -->
-    <inport name="NTCHR" type="int"/>     <!-- output frequency -->
-    <inport name="DTREF" type="double"/>  <!-- reference time-step -->
-    <inport name="TTINIT" type="double"/> <!-- initial time -->
-    <inport name="EPSILO" type="double"/> <!-- convergence threshold -->
-
-    <!-- Declare I/O -->
-    <outstream name="DTCALC" type="CALCIUM_double"/>  <!-- current time-step (given by supervisor) -->
-    <outstream name="EPSILO" type="CALCIUM_double"/>  <!-- convergence threshold -->
-    <outstream name="TTINIT" type="CALCIUM_double"/>  <!-- initial time -->
-    <outstream name="PDTREF" type="CALCIUM_double"/>  <!-- reference time-step -->
-    <outstream name="DEPSAT" type="CALCIUM_double"/>  <!-- structure displacement (supervisor->Saturne) -->
-    <outstream name="FORAST" type="CALCIUM_double"/>  <!-- structure load (supervisor->Aster) -->
-    <outstream name="NBPDTM" type="CALCIUM_integer"/> <!-- maximum iteration number -->
-    <outstream name="NBSSIT" type="CALCIUM_integer"/> <!-- number of sub-iterations -->
-    <outstream name="ISYNCP" type="CALCIUM_integer"/> <!-- fluid-structure post-treatment synchronisation -->
-    <outstream name="NTCHRO" type="CALCIUM_integer"/> <!-- output frequency -->
-    <outstream name="ICVEXT" type="CALCIUM_integer"/> <!-- convergence indicator send to Saturne -->
-    <outstream name="ICVAST" type="CALCIUM_integer"/> <!-- convergence indicator send to Aster -->
-
-    <instream name="NB_DYN" type="CALCIUM_integer"/> <!-- number of coupled nodes (Aster->supervisor) -->
-    <instream name="NB_FOR" type="CALCIUM_integer"/> <!-- number of coupled faces (Aster->supervisor) -->
-    <instream name="ALMAXI" type="CALCIUM_double"/>  <!-- characteristic length (given by Saturne) -->
-    <instream name="DTSAT" type="CALCIUM_double"/>   <!-- Saturne time step -->
-    <instream name="DTAST" type="CALCIUM_double"/>   <!-- Aster time step -->
-    <instream name="DEPAST" type="CALCIUM_double"/>  <!-- structure displacement (Aster->supervisor) -->
-    <instream name="VITAST" type="CALCIUM_double"/>  <!-- structure velocity (Aster->supervisor) -->
-    <instream name="FORSAT" type="CALCIUM_double"/>  <!-- structure load (Saturne->supervisor) -->
-    <instream name="ICV" type="CALCIUM_integer"/>    <!-- convergence indicator received from Saturne -->
-  </service>
 
   <!-- =========================================================== -->
   <!-- Service creation for Code_Saturne                           -->
@@ -79,28 +36,31 @@
     <!-- Declare input parameters -->
     <inport name="app_name" type="string"/>
     <inport name="verbosity" type='long' />
-    <outport name="retval" type='long' />            <!-- return value -->
+    <outport name="retval" type='long' />             <!-- return value -->
+
+    <!-- output parameters -->
+    <outstream name="NBPDTM" type="CALCIUM_integer"/> <!-- maximum iteration number -->
+    <outstream name="NBSSIT" type="CALCIUM_integer"/> <!-- number of sub-iterations -->
+    <outstream name="ISYNCP" type="CALCIUM_integer"/> <!-- post-processing syncronization (removed) -->
+    <outstream name="NTCHRO" type="CALCIUM_integer"/> <!-- output frequency (ignored) -->
+    <outstream name="PDTREF" type="CALCIUM_double"/>  <!-- reference time step -->
+    <outstream name="TTINIT" type="CALCIUM_double"/>  <!-- initial time -->
+    <outstream name="EPSILO" type="CALCIUM_double"/>  <!-- convergence threshold -->
 
     <!-- Declare I/O -->
-    <outstream name="DTSAT" type="CALCIUM_double"/>   <!-- Saturne time step -->
-    <outstream name="FORSAT" type="CALCIUM_double"/>  <!-- structure load (Saturne->supervisor) -->
-    <outstream name="ALMAXI" type="CALCIUM_double"/>  <!-- characteristic length (given by Saturne) -->
-    <outstream name="COONOD" type="CALCIUM_double"/>  <!-- coupled node coordinates -->
-    <outstream name="COOFAC" type="CALCIUM_double"/>  <!-- coupled face coordinates -->
-    <outstream name="ICV" type="CALCIUM_integer"/>    <!-- convergence indicator received from Saturne -->
-    <outstream name="NB_DYN" type="CALCIUM_integer"/> <!-- number of coupled nodes (Aster->supervisor) -->
-    <outstream name="NB_FOR" type="CALCIUM_integer"/> <!-- number of coupled faces (Aster->supervisor) -->
+    <outstream name="DTCALC" type="CALCIUM_double"/>  <!-- current time-step -->
+    <outstream name="NB_DYN" type="CALCIUM_integer"/> <!-- number of coupled vertices -->
+    <outstream name="NB_FOR" type="CALCIUM_integer"/> <!-- number of coupled faces -->
     <outstream name="COLNOD" type="CALCIUM_integer"/> <!-- coupled node colors -->
     <outstream name="COLFAC" type="CALCIUM_integer"/> <!-- coupled face colors -->
+    <outstream name="COONOD" type="CALCIUM_double"/>  <!-- coupled node coordinates -->
+    <outstream name="COOFAC" type="CALCIUM_double"/>  <!-- coupled face coordinates -->
+    <outstream name="FORAST" type="CALCIUM_double"/>  <!-- structure load -->
+    <outstream name="ICVAST" type="CALCIUM_integer"/> <!-- convergence indicator send to Aster -->
 
-    <instream name="DEPSAT" type="CALCIUM_double"/>  <!-- structure displacement (supervisor->Saturne) -->
-    <instream name="EPSILO" type="CALCIUM_double"/>  <!-- convergence threshold -->
-    <instream name="DTCALC" type="CALCIUM_double"/>  <!-- current time-step (given by supervisor) -->
-    <instream name="TTINIT" type="CALCIUM_double"/>  <!-- initial time -->
-    <instream name="PDTREF" type="CALCIUM_double"/>  <!-- reference time-step -->
-    <instream name="NBPDTM" type="CALCIUM_integer"/> <!-- maximum iteration number -->
-    <instream name="NBSSIT" type="CALCIUM_integer"/> <!-- number of sub-iterations -->
-    <instream name="ICVEXT" type="CALCIUM_integer"/> <!-- convergence indicator send to supervisor -->
+    <instream name="DTAST" type="CALCIUM_double"/>   <!-- code_aster time step -->
+    <instream name="DEPAST" type="CALCIUM_double"/>  <!-- structure displacement -->
+    <instream name="VITAST" type="CALCIUM_double"/>  <!-- structure velocity -->
   </service>
 
   <!-- ====================================================== -->
@@ -121,27 +81,30 @@
     <inport name="jdc" type="string"/>   <!-- command file -->
     <inport name="fort:20" type="file"/> <!-- mesh file -->
 
-    <!-- Declare I/O -->
-    <outstream name="DEPAST" type="CALCIUM_double"/> <!-- structure displacement (Aster->supervisor) -->
-    <outstream name="VITAST" type="CALCIUM_double"/> <!-- structure velocity (Aster->supervisor) -->
-    <outstream name="DTAST" type="CALCIUM_double"/>  <!-- Aster time step -->
+    <instream name="NBPDTM" type="CALCIUM_integer"/> <!-- maximum iteration number -->
+    <instream name="NBSSIT" type="CALCIUM_integer"/> <!-- number of sub-iterations -->
+    <instream name="ISYNCP" type="CALCIUM_integer"/> <!-- fluid-structure post-treatment synchronisation -->
+    <instream name="NTCHRO" type="CALCIUM_integer"/> <!-- output frequency -->
+    <instream name="PDTREF" type="CALCIUM_double"/>  <!-- reference time-step -->
+    <instream name="TTINIT" type="CALCIUM_double"/>  <!-- initial time -->
+    <instream name="EPSILO" type="CALCIUM_double"/>  <!-- convergence threshold -->
 
+    <!-- Declare I/O -->
     <instream name="DTCALC" type="CALCIUM_double"/>  <!-- current time-step (given by supervisor) -->
     <instream name="NB_DYN" type="CALCIUM_integer"/> <!-- number of coupled nodes (Aster->supervisor) -->
     <instream name="NB_FOR" type="CALCIUM_integer"/> <!-- number of coupled faces (Aster->supervisor) -->
-    <instream name="COONOD" type="CALCIUM_double"/>  <!-- coupled node coordinates -->
-    <instream name="COOFAC" type="CALCIUM_double"/>  <!-- coupled face coordinates -->
+
     <instream name="COLNOD" type="CALCIUM_integer"/> <!-- coupled node colors -->
     <instream name="COLFAC" type="CALCIUM_integer"/> <!-- coupled face colors -->
-    <instream name="NBPDTM" type="CALCIUM_integer"/> <!-- maximum iteration number -->
-    <instream name="NBSSIT" type="CALCIUM_integer"/> <!-- number of sub-iterations -->
-    <instream name="EPSILO" type="CALCIUM_double"/>  <!-- convergence threshold -->
-    <instream name="ISYNCP" type="CALCIUM_integer"/> <!-- fluid-structure post-treatment synchronisation -->
-    <instream name="NTCHRO" type="CALCIUM_integer"/> <!-- output frequency -->
-    <instream name="TTINIT" type="CALCIUM_double"/>  <!-- initial time -->
-    <instream name="PDTREF" type="CALCIUM_double"/>  <!-- reference time-step -->
+    <instream name="COONOD" type="CALCIUM_double"/>  <!-- coupled node coordinates -->
+    <instream name="COOFAC" type="CALCIUM_double"/>  <!-- coupled face coordinates -->
     <instream name="FORAST" type="CALCIUM_double"/>  <!-- structure load (supervisor->Aster) -->
-    <instream name="ICVAST" type="CALCIUM_integer"/> <!-- convergence indicator send to supervisor -->
+    <instream name="ICVAST" type="CALCIUM_integer"/> <!-- convergence indicator sent to supervisor -->
+
+    <outstream name="DTAST" type="CALCIUM_double"/>  <!-- Aster time step -->
+    <outstream name="DEPAST" type="CALCIUM_double"/> <!-- structure displacement (Aster->supervisor) -->
+    <outstream name="VITAST" type="CALCIUM_double"/> <!-- structure velocity (Aster->supervisor) -->
+
   </service>
 
   <!-- =========================================================== -->
@@ -167,153 +130,65 @@
   <!-- Declare the connections between the components              -->
   <!-- =========================================================== -->
 
-  <!-- Supervisor -->
-  <stream>
-    <fromnode>inter_service</fromnode><fromport>DTCALC</fromport>
-    <tonode>solid_service</tonode><toport>DTCALC</toport>
-    <property name="StorageLevel" value="10"/>
-  </stream>
+  <!-- Code_Saturne -->
 
   <stream>
-    <fromnode>inter_service</fromnode><fromport>DTCALC</fromport>
-    <tonode>fluid_service</tonode><toport>DTCALC</toport>
-    <property name="StorageLevel" value="10"/>
-  </stream>
-
-  <stream>
-    <fromnode>inter_service</fromnode><fromport>EPSILO</fromport>
-    <tonode>solid_service</tonode><toport>EPSILO</toport>
-    <property name="StorageLevel" value="10"/>
-  </stream>
-
-  <stream>
-    <fromnode>inter_service</fromnode><fromport>EPSILO</fromport>
-    <tonode>fluid_service</tonode><toport>EPSILO</toport>
-    <property name="StorageLevel" value="10"/>
-  </stream>
-
-  <stream>
-    <fromnode>inter_service</fromnode><fromport>TTINIT</fromport>
-    <tonode>solid_service</tonode><toport>TTINIT</toport>
-    <property name="StorageLevel" value="10"/>
-  </stream>
-
-  <stream>
-    <fromnode>inter_service</fromnode><fromport>TTINIT</fromport>
-    <tonode>fluid_service</tonode><toport>TTINIT</toport>
-    <property name="StorageLevel" value="10"/>
-  </stream>
-
-  <stream>
-    <fromnode>inter_service</fromnode><fromport>PDTREF</fromport>
-    <tonode>solid_service</tonode><toport>PDTREF</toport>
-    <property name="StorageLevel" value="10"/>
-  </stream>
-
-  <stream>
-    <fromnode>inter_service</fromnode><fromport>PDTREF</fromport>
-    <tonode>fluid_service</tonode><toport>PDTREF</toport>
-    <property name="StorageLevel" value="10"/>
-  </stream>
-
-  <stream>
-    <fromnode>inter_service</fromnode><fromport>DEPSAT</fromport>
-    <tonode>fluid_service</tonode><toport>DEPSAT</toport>
-    <property name="StorageLevel" value="10"/>
-  </stream>
-
-  <stream>
-    <fromnode>inter_service</fromnode><fromport>FORAST</fromport>
-    <tonode>solid_service</tonode><toport>FORAST</toport>
-    <property name="StorageLevel" value="10"/>
-  </stream>
-
-  <stream>
-    <fromnode>inter_service</fromnode><fromport>NBPDTM</fromport>
+    <fromnode>fluid_service</fromnode><fromport>NBPDTM</fromport>
     <tonode>solid_service</tonode><toport>NBPDTM</toport>
     <property name="StorageLevel" value="10"/>
   </stream>
-  <stream>
-    <fromnode>inter_service</fromnode><fromport>NBPDTM</fromport>
-    <tonode>fluid_service</tonode><toport>NBPDTM</toport>
-    <property name="StorageLevel" value="10"/>
-  </stream>
 
   <stream>
-    <fromnode>inter_service</fromnode><fromport>NBSSIT</fromport>
+    <fromnode>fluid_service</fromnode><fromport>NBSSIT</fromport>
     <tonode>solid_service</tonode><toport>NBSSIT</toport>
     <property name="StorageLevel" value="10"/>
   </stream>
-  <stream>
-    <fromnode>inter_service</fromnode><fromport>NBSSIT</fromport>
-    <tonode>fluid_service</tonode><toport>NBSSIT</toport>
-    <property name="StorageLevel" value="10"/>
-  </stream>
 
   <stream>
-    <fromnode>inter_service</fromnode><fromport>ISYNCP</fromport>
+    <fromnode>fluid_service</fromnode><fromport>ISYNCP</fromport>
     <tonode>solid_service</tonode><toport>ISYNCP</toport>
     <property name="StorageLevel" value="10"/>
   </stream>
 
   <stream>
-    <fromnode>inter_service</fromnode><fromport>NTCHRO</fromport>
+    <fromnode>fluid_service</fromnode><fromport>NTCHRO</fromport>
     <tonode>solid_service</tonode><toport>NTCHRO</toport>
     <property name="StorageLevel" value="10"/>
   </stream>
 
   <stream>
-    <fromnode>inter_service</fromnode><fromport>ICVEXT</fromport>
-    <tonode>fluid_service</tonode><toport>ICVEXT</toport>
+    <fromnode>fluid_service</fromnode><fromport>PDTREF</fromport>
+    <tonode>solid_service</tonode><toport>PDTREF</toport>
     <property name="StorageLevel" value="10"/>
   </stream>
 
   <stream>
-    <fromnode>inter_service</fromnode><fromport>ICVAST</fromport>
-    <tonode>solid_service</tonode><toport>ICVAST</toport>
-    <property name="StorageLevel" value="10"/>
-  </stream>
-
-  <!-- Code_Saturne -->
-   <stream>
-    <fromnode>fluid_service</fromnode><fromport>DTSAT</fromport>
-    <tonode>inter_service</tonode><toport>DTSAT</toport>
+    <fromnode>fluid_service</fromnode><fromport>TTINIT</fromport>
+    <tonode>solid_service</tonode><toport>TTINIT</toport>
     <property name="StorageLevel" value="10"/>
   </stream>
 
   <stream>
-    <fromnode>fluid_service</fromnode><fromport>FORSAT</fromport>
-    <tonode>inter_service</tonode><toport>FORSAT</toport>
+    <fromnode>fluid_service</fromnode><fromport>EPSILO</fromport>
+    <tonode>solid_service</tonode><toport>EPSILO</toport>
     <property name="StorageLevel" value="10"/>
   </stream>
 
   <stream>
-    <fromnode>fluid_service</fromnode><fromport>ALMAXI</fromport>
-    <tonode>inter_service</tonode><toport>ALMAXI</toport>
+    <fromnode>fluid_service</fromnode><fromport>COLNOD</fromport>
+    <tonode>solid_service</tonode><toport>COLNOD</toport>
     <property name="StorageLevel" value="10"/>
   </stream>
 
   <stream>
-    <fromnode>fluid_service</fromnode><fromport>NB_DYN</fromport>
-    <tonode>solid_service</tonode><toport>NB_DYN</toport>
+    <fromnode>fluid_service</fromnode><fromport>COLFAC</fromport>
+    <tonode>solid_service</tonode><toport>COLFAC</toport>
     <property name="StorageLevel" value="10"/>
   </stream>
 
   <stream>
-    <fromnode>fluid_service</fromnode><fromport>NB_FOR</fromport>
-    <tonode>solid_service</tonode><toport>NB_FOR</toport>
-    <property name="StorageLevel" value="10"/>
-  </stream>
-
-  <stream>
-    <fromnode>fluid_service</fromnode><fromport>NB_DYN</fromport>
-    <tonode>inter_service</tonode><toport>NB_DYN</toport>
-    <property name="StorageLevel" value="10"/>
-  </stream>
-
-  <stream>
-    <fromnode>fluid_service</fromnode><fromport>NB_FOR</fromport>
-    <tonode>inter_service</tonode><toport>NB_FOR</toport>
+    <fromnode>fluid_service</fromnode><fromport>DTCALC</fromport>
+    <tonode>solid_service</tonode><toport>DTCALC</toport>
     <property name="StorageLevel" value="10"/>
   </stream>
 
@@ -330,39 +205,45 @@
   </stream>
 
   <stream>
-    <fromnode>fluid_service</fromnode><fromport>ICV</fromport>
-    <tonode>inter_service</tonode><toport>ICV</toport>
+    <fromnode>fluid_service</fromnode><fromport>FORAST</fromport>
+    <tonode>solid_service</tonode><toport>FORAST</toport>
     <property name="StorageLevel" value="10"/>
   </stream>
 
   <stream>
-    <fromnode>fluid_service</fromnode><fromport>COLNOD</fromport>
-    <tonode>solid_service</tonode><toport>COLNOD</toport>
+    <fromnode>fluid_service</fromnode><fromport>NB_DYN</fromport>
+    <tonode>solid_service</tonode><toport>NB_DYN</toport>
     <property name="StorageLevel" value="10"/>
   </stream>
 
   <stream>
-    <fromnode>fluid_service</fromnode><fromport>COLFAC</fromport>
-    <tonode>solid_service</tonode><toport>COLFAC</toport>
+    <fromnode>fluid_service</fromnode><fromport>NB_FOR</fromport>
+    <tonode>solid_service</tonode><toport>NB_FOR</toport>
+    <property name="StorageLevel" value="10"/>
+  </stream>
+
+  <stream>
+    <fromnode>fluid_service</fromnode><fromport>ICVAST</fromport>
+    <tonode>solid_service</tonode><toport>ICVAST</toport>
     <property name="StorageLevel" value="10"/>
   </stream>
 
   <!-- Code_Aster -->
    <stream>
     <fromnode>solid_service</fromnode><fromport>DEPAST</fromport>
-    <tonode>inter_service</tonode><toport>DEPAST</toport>
+    <tonode>fluid_service</tonode><toport>DEPAST</toport>
     <property name="StorageLevel" value="10"/>
   </stream>
 
   <stream>
     <fromnode>solid_service</fromnode><fromport>VITAST</fromport>
-    <tonode>inter_service</tonode><toport>VITAST</toport>
+    <tonode>fluid_service</tonode><toport>VITAST</toport>
     <property name="StorageLevel" value="10"/>
   </stream>
 
   <stream>
     <fromnode>solid_service</fromnode><fromport>DTAST</fromport>
-    <tonode>inter_service</tonode><toport>DTAST</toport>
+    <tonode>fluid_service</tonode><toport>DTAST</toport>
     <property name="StorageLevel" value="10"/>
   </stream>
 
@@ -376,13 +257,13 @@
   <!-- Define the various parameters of the coupling scheme        -->
   <!-- =========================================================== -->
 
-  <!-- Code_Aster parameters -->
+  <!-- code_aster parameters -->
   <parameter>
     <tonode>solid_service</tonode> <toport>fort:20</toport>
     <value><objref>@AST_MAIL@</objref> </value>
   </parameter>
 
-  <!-- Code_Saturne parameters -->
+  <!-- code_saturne parameters -->
   <parameter>
     <tonode>fluid_service</tonode> <toport>app_name</toport>
     <value><string>Fluid Domain</string></value>
@@ -392,37 +273,7 @@
     <value><int>2</int></value>
   </parameter>
 
-  <!-- Supervisor parameters -->
-  <parameter>
-    <tonode>inter_service</tonode> <toport>NBPDTM</toport>
-    <value><int>@NBPDTM@</int></value>
-  </parameter>
-  <parameter>
-    <tonode>inter_service</tonode> <toport>NBSSIT</toport>
-    <value><int>@NBSSIT@</int></value>
-  </parameter>
-  <parameter>
-    <tonode>inter_service</tonode> <toport>ISYNCP</toport>
-    <value><int>0</int></value>
-  </parameter>
-  <parameter>
-    <tonode>inter_service</tonode> <toport>NTCHR</toport>
-    <value><int>-1</int></value>
-  </parameter>
-  <parameter>
-    <tonode>inter_service</tonode> <toport>DTREF</toport>
-    <value><double>@DTREF@</double></value>
-  </parameter>
-  <parameter>
-    <tonode>inter_service</tonode> <toport>TTINIT</toport>
-    <value><double>@TTINIT@</double></value>
-  </parameter>
-  <parameter>
-    <tonode>inter_service</tonode> <toport>EPSILO</toport>
-    <value><double>@EPSILO@</double></value>
-  </parameter>
-
-  <!-- Code_Aster command file loader parameters -->
+  <!-- code_aster command file loader parameters -->
   <parameter>
     <tonode>ljdc</tonode><toport>comm</toport>
     <value><string>@COMM_FNAME@</string> </value>

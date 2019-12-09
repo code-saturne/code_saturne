@@ -22,4 +22,4 @@
 
 #-------------------------------------------------------------------------------
 
-SUBDIRS = FSI_ASTER FSI_SATURNE FSI_MILIEU
+SUBDIRS = FSI_ASTER FSI_SATURNE

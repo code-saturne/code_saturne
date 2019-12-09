@@ -116,6 +116,28 @@ type(var_cal_opt) :: vcopt
 !===============================================================================
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  function cs_ast_coupling_get_ext_cvg() result (icvext) &
+    bind(C, name='cs_ast_coupling_get_ext_cvg')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int) :: icvext
+  end function cs_ast_coupling_get_ext_cvg
+
+  subroutine cs_ast_coupling_send_cvg(icv) &
+    bind(C, name='cs_ast_coupling_send_cvg')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: icv
+  end subroutine cs_ast_coupling_send_cvg
+
+end interface
+
+!===============================================================================
 ! 1. Initialization
 !===============================================================================
 
@@ -180,7 +202,6 @@ enddo
 !     Envoi de l'effort applique aux structures externes
 if (nbaste.gt.0) then
   call astfor(ntcast, nbfast, forast)
-  !==========
 endif
 
 ! Free memory
@@ -198,7 +219,6 @@ if (nbstru.gt.0) then
   if (iihmpr.eq.1) then
 
     call uistr2 &
-    !==========
  ( xmstru, xcstru, xkstru,     &
    forstp,                     &
    dtref , ttcabs, ntcabs   )
@@ -206,7 +226,6 @@ if (nbstru.gt.0) then
   endif
 
   call usstr2                                                     &
-  !==========
  ( nbstru ,                                                       &
    idfstr ,                                                       &
    dt     ,                                                       &
@@ -257,50 +276,49 @@ if (nbstru.gt.0) then
   if (delta.lt.epalim) icvint = 1
 endif
 
-if (nbaste.gt.0) call astcv1(ntcast, icvext)
+if (nbaste.gt.0) icvext = cs_ast_coupling_get_ext_cvg()
 
 if (nbstru.gt.0.and.nbaste.gt.0) then
-   icved = icvext*icvint
+  icved = icvext*icvint
 elseif (nbstru.gt.0.and.nbaste.eq.0) then
-   icved = icvint
+  icved = icvint
 elseif (nbaste.gt.0.and.nbstru.eq.0) then
-   icved = icvext
+  icved = icvext
 endif
 
 if (vcopt%iwarni.ge.2) write(nfecra,1000) italim, delta
 
-!     si convergence
+! if converged
 if (icved.eq.1) then
   if (itrfin.eq.1) then
-!       si ITRFIN=1 on sort
+    ! si itrfin=1 on sort
     if (vcopt%iwarni.ge.1) write(nfecra,1001) italim, delta
     itrfin = -1
   else
-!       sinon on refait une derniere iteration pour SYRTHES/T1D/rayonnement
-!        et on remet ICVED a 0 pour que Code_Aster refasse une iteration aussi
+    ! otherwise one last iteration for SYRTHES/T1D/radiation
+    ! and reset icved to 0 so code_aster also runs an iteration.
     itrfin = 1
     icved = 0
   endif
 elseif (itrfin.eq.0 .and. italim.eq.nalimx-1) then
-!       ce sera la derniere iteration
+  ! this will be the lst iteration
   itrfin = 1
 elseif (italim.eq.nalimx) then
-!       on a forcement ITRFIN=1 et on sort
+  ! we have itrfin=1 and are finished
   if (nalimx.gt.1) write(nfecra,1100) italim, delta
   itrfin = -1
-!       On met ICVED a 1 pour que Code_Aster s'arrete lui aussi
+  ! Set icved to 1 so code_aster also stops
   icved = 1
 endif
 
-!     On renvoie l'indicateur de convergence final a Code_Aster
-call astcv2(ntcast, icved)
-!==========
+! Return the final convergence indicator to code_aster
+call cs_ast_coupling_send_cvg(icved)
 
 !===============================================================================
 ! 6. Re set previous values if required
 !===============================================================================
 
-! If NTERUP .GT. 1, values at previous time step have been modified after NAVSTO
+! If nterup .gt. 1, values at previous time step have been modified after navstv
 ! We must then go back to a previous value
 if (itrfin.ne.-1) then
   do ii = 1, nvar
@@ -376,16 +394,16 @@ endif
 #else
 
  1000 format (                                                          &
- '            IMPLICIT ALE: ITER=',I5,' DERIVE=',E12.5     )
+ '            IMPLICIT ALE: ITER=',I5,' DRIFT=',E12.5     )
  1001 format (                                                          &
- 'CONVERGENCE IMPLICIT ALE: ITER=',I5,' DERIVE=',E12.5     )
+ 'CONVERGENCE IMPLICIT ALE: ITER=',I5,' DRIFT=',E12.5     )
  1100 format (                                                          &
-'@                                                            ',/,&
-'@ @@ WARNING: IMPLICIT ALE                                   ',/,&
-'@    ========                                                ',/,&
-'@  Maximum number of iterations ',I10   ,' reached           ',/,&
-'@  Normed derive :',E12.5                                     ,/,&
-'@                                                            '  )
+'@'                                                            ,/,&
+'@ @@ WARNING: IMPLICIT ALE'                                   ,/,&
+'@    ========'                                                ,/,&
+'@  Maximum number of iterations ',I10   ,' reached'           ,/,&
+'@  Normed drift:',E12.5                                     ,/,&
+'@'                                                              )
 
 #endif
 

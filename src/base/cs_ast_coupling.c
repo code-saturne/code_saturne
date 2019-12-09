@@ -56,6 +56,7 @@
 
 #include "cs_calcium.h"
 #include "cs_interface.h"
+#include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_connect.h"
@@ -97,6 +98,31 @@ struct _cs_ast_coupling_t {
 
 #endif
 
+  int  verbosity;  /* verbosity */
+  int  iteration;  /* 0 for initialization, < 0 for disconnect,
+                      iteration from (re)start otherwise */
+
+  int  nbssit;     /* number of sub-iterations */
+
+  double  dt;
+  double  dtref;   /* reference time step */
+  double  epsilo;  /* scheme convergence threshold */
+
+  int     icv1;
+  int     icv2;
+  double  lref;
+
+  int     s_it_id; /* Sub-iteration id */
+
+  double  *xast;
+  double  *xvast;
+  double  *xvasa;
+  double  *xastp;
+
+  double  *foras;
+  double  *foaas;
+  double  *fopas;
+
 };
 
 /*============================================================================
@@ -107,15 +133,307 @@ cs_ast_coupling_t  *cs_glob_ast_coupling = NULL;
 
 static int  comp_id = 0;
 
-static double  cur_time = 0.;
-static double  min_time = 0.;
-static double  max_time = 0.;
-
 static cs_calcium_timedep_t  time_dep = CALCIUM_iteration;
 
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Allocate and initialize dynamic vectors (double) based on the 'nb_dyn'
+ * number of points.
+ *----------------------------------------------------------------------------*/
+
+static void
+_allocate_arrays(cs_ast_coupling_t  *ast_cpl)
+{
+  const cs_lnum_t  nb_dyn = ast_cpl->n_vertices;
+  const cs_lnum_t  nb_for = ast_cpl->n_faces;
+
+  BFT_MALLOC(ast_cpl->xast, 3*nb_dyn, double);
+  BFT_MALLOC(ast_cpl->xvast, 3*nb_dyn, double);
+  BFT_MALLOC(ast_cpl->xvasa, 3*nb_dyn, double);
+  BFT_MALLOC(ast_cpl->xastp, 3*nb_dyn, double);
+
+  for (cs_lnum_t k = 0; k < nb_dyn; k++) {
+
+    ast_cpl->xast[3*k]   = 0.;
+    ast_cpl->xast[3*k+1] = 0.;
+    ast_cpl->xast[3*k+2] = 0.;
+
+    ast_cpl->xvast[3*k]   = 0.;
+    ast_cpl->xvast[3*k+1] = 0.;
+    ast_cpl->xvast[3*k+2] = 0.;
+
+    ast_cpl->xvasa[3*k]   = 0.;
+    ast_cpl->xvasa[3*k+1] = 0.;
+    ast_cpl->xvasa[3*k+2] = 0.;
+
+    ast_cpl->xastp[3*k]   = 0.;
+    ast_cpl->xastp[3*k+1] = 0.;
+    ast_cpl->xastp[3*k+2] = 0.;
+  }
+
+  BFT_MALLOC(ast_cpl->foras, 3*nb_for, double);
+  BFT_MALLOC(ast_cpl->foaas, 3*nb_for, double);
+  BFT_MALLOC(ast_cpl->fopas, 3*nb_for, double);
+
+  for (cs_lnum_t k = 0; k < nb_for; k++) {
+
+    ast_cpl->foras[3*k]   = 0.;
+    ast_cpl->foras[3*k+1] = 0.;
+    ast_cpl->foras[3*k+2] = 0.;
+
+    ast_cpl->foaas[3*k]   = 0.;
+    ast_cpl->foaas[3*k+1] = 0.;
+    ast_cpl->foaas[3*k+2] = 0.;
+
+    ast_cpl->fopas[3*k]   = 0.;
+    ast_cpl->fopas[3*k+1] = 0.;
+    ast_cpl->fopas[3*k+2] = 0.;
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Receives displacements and velocities from code_aster at current time step
+ *----------------------------------------------------------------------------*/
+
+static void
+_recv_dyn(cs_ast_coupling_t  *ast_cpl)
+{
+  double  min_time = 0., max_time = 0.;
+
+  int n_val_read = 0;
+
+  double *buffer = NULL;
+
+  if (cs_glob_n_ranks <= 1)
+    buffer = ast_cpl->xast;
+
+  else if (cs_glob_rank_id <= 0)
+    BFT_MALLOC(buffer, 3*ast_cpl->n_g_vertices, double);
+
+  /* Read displacements */
+
+  if (cs_glob_rank_id <= 0) {
+    cs_calcium_read_double(comp_id, time_dep, &min_time, &max_time,
+                           &(ast_cpl->iteration),
+                           "DEPAST", 3*ast_cpl->n_g_vertices,
+                           &n_val_read, buffer);
+
+    assert((cs_gnum_t)n_val_read == 3*ast_cpl->n_g_vertices);
+  }
+
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1)
+    cs_block_to_part_copy_array(ast_cpl->vtx_b2p,
+                                CS_DOUBLE,
+                                3,
+                                buffer,
+                                ast_cpl->xast);
+
+#endif
+
+  /* Read velocities */
+
+  if (cs_glob_n_ranks <= 1)
+    buffer = ast_cpl->xvast;
+
+  if (cs_glob_rank_id <= 0) {
+    cs_calcium_read_double(comp_id, time_dep, &min_time, &max_time,
+                           &(ast_cpl->iteration),
+                           "VITAST", 3*ast_cpl->n_g_vertices,
+                           &n_val_read, buffer);
+
+    assert((cs_gnum_t)n_val_read == 3*ast_cpl->n_g_vertices);
+  }
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1)
+    cs_block_to_part_copy_array(ast_cpl->vtx_b2p,
+                                CS_DOUBLE,
+                                3,
+                                buffer,
+                                ast_cpl->xvast);
+
+#endif
+
+  if (cs_glob_n_ranks > 1)
+    BFT_FREE(buffer);
+}
+
+/*----------------------------------------------------------------------------
+ * Send convergence indicator to code_aster
+ *----------------------------------------------------------------------------*/
+
+static void
+_send_icv2(cs_ast_coupling_t  *ast_cpl,
+           int                 icv)
+{
+  if (cs_glob_rank_id > 0)
+    return;
+
+  double cur_time = 0.;
+
+  cs_calcium_write_int(comp_id, time_dep, cur_time, ast_cpl->iteration,
+                       "ICVAST", 1, &icv);
+}
+
+/*----------------------------------------------------------------------------
+ * Predict displacement or forces based on values of the current and
+ * previous time step(s)
+ *
+ * valpre = c1 * val1 + c2 * val2 + c3 * val3
+ *----------------------------------------------------------------------------*/
+
+static void
+_pred(double    *valpre,
+      double    *val1,
+      double    *val2,
+      double    *val3,
+      double     c1,
+      double     c2,
+      double     c3,
+      cs_lnum_t  n)
+{
+  if (n < 1)
+    return;
+
+  /* Update prediction array */
+  for (cs_lnum_t i = 0; i < n; i++) {
+    valpre[3*i]     = c1*val1[3*i]     + c2*val2[3*i]     + c3*val3[3*i];
+    valpre[(3*i)+1] = c1*val1[(3*i)+1] + c2*val2[(3*i)+1] + c3*val3[(3*i)+1];
+    valpre[(3*i)+2] = c1*val1[(3*i)+2] + c2*val2[(3*i)+2] + c3*val3[(3*i)+2];
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Compute the L2 norm of the difference between vectors vect1 and vect2
+ *
+ * dinorm = sqrt(sum on nbpts i
+ *                 (sum on component j
+ *                    ((vect1[i,j]-vect2[i,j])^2)))
+ *----------------------------------------------------------------------------*/
+
+static double
+_dinorm(double  *vect1,
+        double  *vect2,
+        double   nbpts)
+{
+  /* Compute the norm of the difference */
+  double norm = 0.;
+  for (cs_lnum_t i = 0; i < nbpts; i++) {
+    norm += (vect1[3*i]-vect2[3*i])*(vect1[3*i]-vect2[3*i]);
+    norm += (vect1[3*i+1]-vect2[3*i+1])*(vect1[3*i+1]-vect2[3*i+1]);
+    norm += (vect1[3*i+2]-vect2[3*i+2])*(vect1[3*i+2]-vect2[3*i+2]);
+  }
+
+  /* Note that for vertices, vertices at shared parallel boundaries
+     will appear multiple tiles, so have a higher "weight" than
+     others, but the effect on the global norm should be minor,
+     so we avoid a more complex test here */
+
+#if defined(HAVE_MPI)
+  if (cs_glob_n_ranks > 1) {
+    double _norm = norm;
+    int    _nbpts = nbpts;
+    MPI_Allreduce(&_norm, &norm, 1, MPI_DOUBLE, MPI_SUM,
+                  cs_glob_mpi_comm);
+    MPI_Allreduce(&_nbpts, &nbpts, 1, MPI_DOUBLE, MPI_SUM,
+                  cs_glob_mpi_comm);
+  }
+#endif
+
+  norm = sqrt(norm/nbpts);
+  return norm;
+}
+
+/*----------------------------------------------------------------------------
+ * Convergence test for implicit calculation case
+ *
+ * returns:
+ *   0 if not converged
+ *   1 if     converged
+ *----------------------------------------------------------------------------*/
+
+static int
+_conv(cs_ast_coupling_t  *ast_cpl,
+      int                *icv)
+{
+  const cs_lnum_t  nb_dyn = ast_cpl->n_vertices;
+
+  /* Local variables */
+  int iret;
+  double delast = 0.;
+
+  if (ast_cpl->lref > 0.) {
+
+    delast = _dinorm(ast_cpl->xast, ast_cpl->xastp, nb_dyn) / ast_cpl->lref;
+
+    if (ast_cpl->verbosity > 0)
+      bft_printf("--------------------------------\n"
+                 "convergence test:\n"
+                 "delast = %4.2le\n",
+                 delast);
+
+    if (delast <= ast_cpl->epsilo) {
+      *icv = 1;
+
+      if (ast_cpl->verbosity > 0)
+        bft_printf("icv = %d\n"
+                   "convergence of sub iteration\n"
+                   "----------------------------\n",
+                   *icv);
+    }
+    else {
+      if (ast_cpl->verbosity > 0)
+        bft_printf("icv = %i\n"
+                   "non convergence of sub iteration\n"
+                   "--------------------------------\n",
+                   *icv);
+    }
+
+    iret = 0;
+  }
+  else {
+    bft_printf("Value of lref is negative or zero\n"
+               "calculation is aborted\n"
+               "---------------------------------\n");
+    iret = -1;
+  }
+
+  return iret;
+}
+
+/*----------------------------------------------------------------------------
+ * Overwrites data from sub-iteration k-1 with data from sub-iteration k
+ * dynamic data: velocities
+ * efforts:      forces
+ *----------------------------------------------------------------------------*/
+
+static void
+_val_ant(cs_ast_coupling_t  *ast_cpl)
+{
+  const cs_lnum_t  nb_dyn = ast_cpl->n_vertices;
+  const cs_lnum_t  nb_for = ast_cpl->n_faces;
+
+  /* record efforts */
+  for (cs_lnum_t i = 0; i< nb_for; i++) {
+    ast_cpl->foaas[3*i]   = ast_cpl->foras[3*i];
+    ast_cpl->foaas[3*i+1] = ast_cpl->foras[3*i+1];
+    ast_cpl->foaas[3*i+2] = ast_cpl->foras[3*i+2];
+  }
+
+  /* record dynamic data */
+  for (cs_lnum_t i = 0; i< nb_dyn; i++) {
+    ast_cpl->xvasa[3*i]   = ast_cpl->xvast[3*i];
+    ast_cpl->xvasa[3*i+1] = ast_cpl->xvast[3*i+1];
+    ast_cpl->xvasa[3*i+2] = ast_cpl->xvast[3*i+2];
+  }
+}
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -124,7 +442,7 @@ static cs_calcium_timedep_t  time_dep = CALCIUM_iteration;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Send vertices coordinates and structure numbering of coupled mesh.
+ * Send vertex coordinates and structure numbering of coupled mesh.
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(astgeo, ASTGEO)
@@ -147,34 +465,32 @@ void CS_PROCF(astgeo, ASTGEO)
 
   cs_real_t *b_face_cog = cs_glob_mesh_quantities->b_face_cog;
 
-  cs_ast_coupling_t  *ast_coupling = NULL;
+  cs_ast_coupling_t  *ast_cpl = cs_glob_ast_coupling;
 
   n_faces = *(nbfast);
 
   fvm_nodal_t
     *fsi_mesh = cs_mesh_connect_faces_to_nodal(cs_glob_mesh,
-                                               "MaillageExtraitAster_1",
+                                               "FSI_mesh_1",
                                                false,
                                                0,
                                                n_faces,
                                                NULL,
                                                lstfac);
 
-  /* Creation of the information structure for Code_Saturne/Code_Aster
+  /* Creation of the information structure for code_saturne/code_aster
      coupling */
 
-  BFT_MALLOC(ast_coupling, 1, cs_ast_coupling_t);
-
   n_vertices = fvm_nodal_get_n_entities(fsi_mesh, 0);
-  ast_coupling->n_vertices = n_vertices;
-  ast_coupling->n_g_vertices = fvm_nodal_get_n_g_vertices(fsi_mesh);
+  ast_cpl->n_vertices = n_vertices;
+  ast_cpl->n_g_vertices = fvm_nodal_get_n_g_vertices(fsi_mesh);
 
-  ast_coupling->n_faces = n_faces;
-  ast_coupling->n_g_faces = n_faces;
+  ast_cpl->n_faces = n_faces;
+  ast_cpl->n_g_faces = n_faces;
 
-  BFT_MALLOC(ast_coupling->s_vtx_num, ast_coupling->n_vertices, cs_lnum_t);
+  BFT_MALLOC(ast_cpl->s_vtx_num, ast_cpl->n_vertices, cs_lnum_t);
 
-  fvm_nodal_get_parent_num(fsi_mesh, 0, ast_coupling->s_vtx_num);
+  fvm_nodal_get_parent_num(fsi_mesh, 0, ast_cpl->s_vtx_num);
 
   BFT_MALLOC(faces_color, n_faces, cs_lnum_t);
   BFT_MALLOC(vertices_color, n_vertices, cs_lnum_t);
@@ -207,8 +523,8 @@ void CS_PROCF(astgeo, ASTGEO)
 
 #if defined(HAVE_MPI)
 
-  ast_coupling->face_p2b = NULL;
-  ast_coupling->vtx_b2p = NULL;
+  ast_cpl->face_p2b = NULL;
+  ast_cpl->vtx_b2p = NULL;
 
   cs_gnum_t *s_vtx_gnum = NULL;
   cs_part_to_block_t *vtx_p2b = NULL;
@@ -219,7 +535,7 @@ void CS_PROCF(astgeo, ASTGEO)
        mesh access functions are either based on element type sections,
        or ordered by such. */
 
-    cs_parall_counter(&(ast_coupling->n_g_faces), 1);
+    cs_parall_counter(&(ast_cpl->n_g_faces), 1);
 
     fvm_io_num_t *face_gnum
       = fvm_io_num_create(lstfac,
@@ -227,7 +543,7 @@ void CS_PROCF(astgeo, ASTGEO)
                           n_faces,
                           0);
     cs_gnum_t *s_face_gnum = fvm_io_num_transfer_global_num(face_gnum);
-    assert(ast_coupling->n_g_faces == fvm_io_num_get_global_count(face_gnum));
+    assert(ast_cpl->n_g_faces == fvm_io_num_get_global_count(face_gnum));
 
     face_gnum = fvm_io_num_destroy(face_gnum);
 
@@ -237,19 +553,19 @@ void CS_PROCF(astgeo, ASTGEO)
                                           cs_glob_n_ranks,
                                           cs_glob_n_ranks, /* all on rank 0 */
                                           0,
-                                          ast_coupling->n_g_faces);
+                                          ast_cpl->n_g_faces);
 
-    ast_coupling->face_p2b
+    ast_cpl->face_p2b
       = cs_part_to_block_create_by_gnum(cs_glob_mpi_comm,
                                         face_bi,
-                                        ast_coupling->n_faces,
+                                        ast_cpl->n_faces,
                                         s_face_gnum);
-    cs_part_to_block_transfer_gnum(ast_coupling->face_p2b, s_face_gnum);
+    cs_part_to_block_transfer_gnum(ast_cpl->face_p2b, s_face_gnum);
 
     /* For vertices, which may be shared, copy global numbering
        associated with temporary mesh. */
 
-    BFT_MALLOC(s_vtx_gnum, ast_coupling->n_vertices, cs_gnum_t);
+    BFT_MALLOC(s_vtx_gnum, ast_cpl->n_vertices, cs_gnum_t);
     fvm_nodal_get_global_vertex_num(fsi_mesh, s_vtx_gnum);
 
     cs_block_dist_info_t  vtx_bi;
@@ -258,17 +574,17 @@ void CS_PROCF(astgeo, ASTGEO)
                                          cs_glob_n_ranks,
                                          cs_glob_n_ranks, /* all on rank 0 */
                                          0,
-                                         ast_coupling->n_g_vertices);
+                                         ast_cpl->n_g_vertices);
 
-    ast_coupling->vtx_b2p
+    ast_cpl->vtx_b2p
       = cs_block_to_part_create_by_gnum(cs_glob_mpi_comm,
                                         vtx_bi,
-                                        ast_coupling->n_vertices,
+                                        ast_cpl->n_vertices,
                                         s_vtx_gnum);
 
     vtx_p2b = cs_part_to_block_create_by_gnum(cs_glob_mpi_comm,
                                               vtx_bi,
-                                              ast_coupling->n_vertices,
+                                              ast_cpl->n_vertices,
                                               s_vtx_gnum);
 
   }
@@ -277,16 +593,28 @@ void CS_PROCF(astgeo, ASTGEO)
 
   fsi_mesh = fvm_nodal_destroy(fsi_mesh);
 
+  _allocate_arrays(ast_cpl);
+
   if (cs_glob_rank_id <= 0) {
 
-    int sizes[2] = {ast_coupling->n_g_faces, ast_coupling->n_g_vertices};
+    int sizes[2] = {ast_cpl->n_g_faces, ast_cpl->n_g_vertices};
 
-    /* For "milieu" */
+    ast_cpl->lref = *almax;
 
-    cs_calcium_write_double(comp_id, time_dep, cur_time, 0,
-                            "ALMAXI", 1, almax);
+    bft_printf("\n"
+               "----------------------------------\n"
+               " Geometric parameters\n"
+               "   number of coupled faces: %llu\n"
+               "   number of coupled nodes: %llu\n"
+               "   reference length (m): %4.2le\n"
+               "----------------------------------\n\n",
+               (unsigned long long)(ast_cpl->n_g_faces),
+               (unsigned long long)(ast_cpl->n_g_vertices),
+               ast_cpl->lref);
 
     /* Directly for code_aster */
+
+    double cur_time = 0.;
 
     cs_calcium_write_int(comp_id, time_dep, cur_time, 0,
                          "NB_DYN", 1, &(sizes[1]));
@@ -294,30 +622,31 @@ void CS_PROCF(astgeo, ASTGEO)
     cs_calcium_write_int(comp_id, time_dep, cur_time, 0,
                          "NB_FOR", 1, &(sizes[0]));
 
-
   }
 
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
 
+    double cur_time = 0.;
+
     cs_real_t *g_face_centers = NULL;
     if (cs_glob_rank_id == 0)
-      BFT_MALLOC(g_face_centers, 3*ast_coupling->n_g_faces, cs_real_t);
-    cs_part_to_block_copy_array(ast_coupling->face_p2b,
+      BFT_MALLOC(g_face_centers, 3*ast_cpl->n_g_faces, cs_real_t);
+    cs_part_to_block_copy_array(ast_cpl->face_p2b,
                                 CS_REAL_TYPE,
                                 3,
                                 face_centers,
                                 g_face_centers);
     if (cs_glob_rank_id == 0) {
       cs_calcium_write_double(comp_id, time_dep, cur_time, 0, "COOFAC",
-                              3*ast_coupling->n_g_faces, g_face_centers);
+                              3*ast_cpl->n_g_faces, g_face_centers);
       BFT_FREE(g_face_centers);
     }
 
     cs_real_t *g_vtx_coords = NULL;
     if (cs_glob_rank_id == 0)
-      BFT_MALLOC(g_vtx_coords, 3*ast_coupling->n_g_vertices, cs_real_t);
+      BFT_MALLOC(g_vtx_coords, 3*ast_cpl->n_g_vertices, cs_real_t);
     cs_part_to_block_copy_array(vtx_p2b,
                                 CS_REAL_TYPE,
                                 3,
@@ -325,27 +654,27 @@ void CS_PROCF(astgeo, ASTGEO)
                                 g_vtx_coords);
     if (cs_glob_rank_id == 0) {
       cs_calcium_write_double(comp_id, time_dep, cur_time, 0, "COONOD",
-                              3*ast_coupling->n_g_vertices, g_vtx_coords);
+                              3*ast_cpl->n_g_vertices, g_vtx_coords);
       BFT_FREE(g_vtx_coords);
     }
 
     int *g_face_color = NULL;
     if (cs_glob_rank_id == 0)
-      BFT_MALLOC(g_face_color, ast_coupling->n_g_faces, int);
-    cs_part_to_block_copy_array(ast_coupling->face_p2b,
+      BFT_MALLOC(g_face_color, ast_cpl->n_g_faces, int);
+    cs_part_to_block_copy_array(ast_cpl->face_p2b,
                                 CS_INT_TYPE,
                                 1,
                                 faces_color,
                                 g_face_color);
     if (cs_glob_rank_id == 0) {
       cs_calcium_write_int(comp_id, time_dep, cur_time, 0, "COLFAC",
-                           ast_coupling->n_g_faces, g_face_color);
+                           ast_cpl->n_g_faces, g_face_color);
       BFT_FREE(g_face_color);
     }
 
     int *g_vtx_color = NULL;
     if (cs_glob_rank_id == 0)
-      BFT_MALLOC(g_vtx_color, ast_coupling->n_g_vertices, int);
+      BFT_MALLOC(g_vtx_color, ast_cpl->n_g_vertices, int);
     cs_part_to_block_copy_array(vtx_p2b,
                                 CS_INT_TYPE,
                                 1,
@@ -353,7 +682,7 @@ void CS_PROCF(astgeo, ASTGEO)
                                 g_vtx_color);
     if (cs_glob_rank_id == 0) {
       cs_calcium_write_int(comp_id, time_dep, cur_time, 0, "COLNOD",
-                           ast_coupling->n_g_vertices, g_vtx_color);
+                           ast_cpl->n_g_vertices, g_vtx_color);
       BFT_FREE(g_vtx_color);
     }
 
@@ -365,6 +694,8 @@ void CS_PROCF(astgeo, ASTGEO)
 #endif
 
   if (cs_glob_n_ranks == 1) {
+
+    double cur_time = 0.;
 
     cs_calcium_write_double(comp_id, time_dep, cur_time, 0,
                             "COOFAC", 3*n_faces, face_centers);
@@ -379,8 +710,6 @@ void CS_PROCF(astgeo, ASTGEO)
                          "COLNOD", n_vertices, vertices_color);
 
   }
-
-  cs_glob_ast_coupling = ast_coupling;
 
   BFT_FREE(faces_color);
   BFT_FREE(vertices_color);
@@ -399,38 +728,125 @@ void CS_PROCF(astfor, ASTFOR)
  cs_real_t    *forast
 )
 {
-  cs_ast_coupling_t  *ast_coupling = cs_glob_ast_coupling;
+  cs_ast_coupling_t  *ast_cpl = cs_glob_ast_coupling;
+
+  if (ast_cpl->iteration < 0)
+    return;
 
   const cs_lnum_t n_faces = *nbfast;
-  const cs_gnum_t  n_g_faces = ast_coupling->n_g_faces;
 
-  cs_real_t  *g_forast = NULL;
+  const cs_lnum_t  nb_for = n_faces;
 
-  if (cs_glob_rank_id < 1)
-    BFT_MALLOC(g_forast, 3*n_g_faces, cs_real_t);
+  for (cs_lnum_t i = 0; i < 3*n_faces; i++)
+    ast_cpl->foras[i] = forast[i];
+
+  /* Send prediction
+     (no difference between explicit and implicit cases for forces) */
+
+  cs_real_t alpha = 2.0;
+  cs_real_t c1    = alpha;
+  cs_real_t c2    = 1-alpha;
+  cs_real_t c3    = 0.;
+
+  _pred(ast_cpl->fopas,
+        ast_cpl->foras,
+        ast_cpl->foaas,
+        ast_cpl->foaas,
+        c1,
+        c2,
+        c3,
+        nb_for);
+
+  if (ast_cpl->verbosity > 0)
+    bft_printf("--------------------------------------\n"
+               "Forces prediction coefficients\n"
+               " C1: %4.2le\n"
+               " C2: %4.2le\n"
+               " C3: %4.2le\n"
+               "--------------------------------------\n\n",
+               c1, c2, c3);
+
+  /* send forces */
 
 #if defined(HAVE_MPI)
 
-  if (cs_glob_n_ranks > 1)
-    cs_part_to_block_copy_array(ast_coupling->face_p2b,
-                                CS_REAL_TYPE,
+  if (cs_glob_n_ranks > 1) {
+
+    double  *fopas;
+    BFT_MALLOC(fopas, 3*ast_cpl->n_g_faces, double);
+
+    cs_part_to_block_copy_array(ast_cpl->face_p2b,
+                                CS_DOUBLE,
                                 3,
-                                forast,
-                                g_forast);
+                                ast_cpl->fopas,
+                                fopas);
+
+    if (cs_glob_rank_id <= 0) {
+      double cur_time = 0.;
+      cs_calcium_write_double(comp_id, time_dep, cur_time, ast_cpl->iteration,
+                              "FORAST", 3*ast_cpl->n_g_faces, fopas);
+    }
+
+    BFT_FREE(fopas);
+
+  }
 
 #endif
 
-  if (cs_glob_n_ranks == 1) {
-    assert((cs_gnum_t)n_faces == n_g_faces);
-    for (cs_lnum_t i = 0; i < 3*n_faces; i++)
-      g_forast[i] = forast[i];
+  if (cs_glob_n_ranks <= 1) {
+    double cur_time = 0.;
+    cs_calcium_write_double(comp_id, time_dep, cur_time, ast_cpl->iteration,
+                            "FORAST", 3*ast_cpl->n_g_faces, ast_cpl->fopas);
   }
 
-  if (cs_glob_rank_id < 1) {
-    cs_calcium_write_double(comp_id, time_dep, cur_time, *ntcast,
-                            "FORSAT", 3*n_g_faces, g_forast);
-    BFT_FREE(g_forast);
+  /* Second stage (TODO: place in another, better named function) */
+  /* ------------------------------------------------------------ */
+
+  /* explicit case: no need fo a convergence test */
+
+  int icv = 1;
+
+  if (ast_cpl->nbssit <= 1) {
+
+    /* handle convergence even when no test is done */
+    ast_cpl->icv1 = icv;
+    _send_icv2(ast_cpl, icv);
+
+    /* receive displacements from code_aster */
+    _recv_dyn(ast_cpl);
+
+    /* save previous values */
+    _val_ant(ast_cpl);
+
   }
+
+  /* implicit case: requires a convergence test */
+
+  else if (ast_cpl->nbssit > 1) {
+
+    /* compute icv */
+
+    int ierr = _conv(ast_cpl, &icv);
+    ast_cpl->icv1 = icv;
+    icv = ast_cpl->icv2;
+    _send_icv2(ast_cpl, icv);
+
+    if ((ast_cpl->s_it_id +1 >= ast_cpl->nbssit) || (icv == 1)) {
+      /* receive displacements  computed by code_aster */
+      if (ierr >= 0) _recv_dyn(ast_cpl);
+
+      /* then use with code_saturne ? the question remains open... */
+      /* if (ierr >= 0) _send2_dyn(); */
+
+      /* receive displacements from code_aster */
+      if (ierr >= 0)  _recv_dyn(ast_cpl);
+    }
+    else {
+      ast_cpl->s_it_id += 1;
+    }
+
+  }
+
 }
 
 /*----------------------------------------------------------------------------
@@ -443,191 +859,160 @@ void CS_PROCF(astcin, ASTCIN)
  cs_real_3_t *disale
 )
 {
-  cs_lnum_t  i;
+  cs_ast_coupling_t  *ast_cpl = cs_glob_ast_coupling;
 
-  cs_ast_coupling_t  *ast_coupling = cs_glob_ast_coupling;
+  if (ast_cpl->iteration < 0)
+    return;
 
-  const int  n_vertices = ast_coupling->n_vertices;
-  const int  n_g_vertices = ast_coupling->n_g_vertices;
+  const cs_lnum_t  nb_dyn = ast_cpl->n_vertices;
 
-  cs_real_t  *g_xast = NULL, *xast = NULL;
+  /* Predict displacements */
 
-  BFT_MALLOC(xast, 3*n_vertices, cs_real_t);
+  cs_real_t c1, c2, c3, alpha, beta;
 
-  if (cs_glob_rank_id <= 0) {
+  /* separate prediction for explicit/implicit cases */
+  if (ast_cpl->s_it_id == 0) {
+    alpha = 0.5;
+    beta  = 0.;
+    c1    = 1.;
+    c2    = (alpha + beta) * cs_glob_time_step->dt[0];
+    c3    = -beta * cs_glob_time_step->dt[1];
+    _pred(ast_cpl->xastp,
+          ast_cpl->xast,
+          ast_cpl->xvast,
+          ast_cpl->xvasa,
+          c1,
+          c2,
+          c3,
+          nb_dyn);
+  }
+  else if (ast_cpl->s_it_id > 0) {
+    alpha = 0.5;
+    c1    = alpha;
+    c2    = 1. - alpha;
+    c3    = 0.;
+    _pred(ast_cpl->xastp,
+          ast_cpl->xast,
+          ast_cpl->xastp,
+          ast_cpl->xast,
+          c1,
+          c2,
+          c3,
+          nb_dyn);
+  }
 
-    int  n_val_read = 0;
+  if (ast_cpl->verbosity > 0) {
 
-    BFT_MALLOC(g_xast, 3*n_g_vertices, cs_real_t);
+    bft_printf("*********************************\n"
+               "*     sub - iteration %i        *\n"
+               "*********************************\n\n",
+               ast_cpl->s_it_id);
 
-    cs_calcium_read_double(comp_id, time_dep, &min_time, &max_time,
-                           ntcast,
-                           "DEPSAT", 3*n_g_vertices,
-                           &n_val_read, g_xast);
-
-    assert(n_val_read == 3*n_g_vertices);
+    bft_printf("--------------------------------------------\n"
+               "Displacement prediction coefficients\n"
+               " C1: %4.2le\n"
+               " C2: %4.2le\n"
+               " C3: %4.2le\n"
+               "--------------------------------------------\n\n",
+               c1, c2, c3);
 
   }
 
-#if defined(HAVE_MPI)
+  /* Now set displacments */
 
-  if (cs_glob_n_ranks > 1)
-    cs_block_to_part_copy_array(ast_coupling->vtx_b2p,
-                                CS_REAL_TYPE,
-                                3,
-                                g_xast,
-                                xast);
+  const cs_lnum_t  n_vertices = ast_cpl->n_vertices;
 
-#endif
+  /* Set in disale the values of prescribed displacements */
 
-  if (cs_glob_n_ranks == 1) {
-    assert(n_vertices == n_g_vertices);
-    for (i = 0; i < 3*n_vertices; i++)
-      xast[i] = g_xast[i];
-  }
+  for (cs_lnum_t i = 0; i < n_vertices; i++) {
 
-  if (cs_glob_rank_id <= 0)
-    BFT_FREE(g_xast);
+    cs_lnum_t parent_vtx_id = ast_cpl->s_vtx_num[i] - 1;
 
-  /* On remplit dans DEPALE les valeurs de deplacement aux noeuds
-     couples a deplacement impose */
-
-  for (i = 0; i < n_vertices; i++) {
-
-    cs_lnum_t parent_vtx_id = ast_coupling->s_vtx_num[i] - 1;
-
-    disale[parent_vtx_id][0] = xast[3*i];
-    disale[parent_vtx_id][1] = xast[3*i + 1];
-    disale[parent_vtx_id][2] = xast[3*i + 2];
+    disale[parent_vtx_id][0] = ast_cpl->xastp[3*i];
+    disale[parent_vtx_id][1] = ast_cpl->xastp[3*i + 1];
+    disale[parent_vtx_id][2] = ast_cpl->xastp[3*i + 2];
 
   }
-
-  /* Liberation du(des) tableau(x) */
-  BFT_FREE(xast);
-}
-
-
-/*----------------------------------------------------------------------------
- * Receive coupling parameters
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(astpar, ASTPAR)
-(
- cs_int_t  *nbpdt,
- cs_int_t  *nbsspdt,
- cs_real_t *delta,
- cs_real_t *tt,
- cs_real_t *dt
-)
-{
-  /* Initialisation calcium */
-
-  if (cs_glob_rank_id <= 0) {
-
-    int  n_val_read = 0;
-    int  iteration = *nbpdt;
-
-    /* Initialization of communication with calcium */
-
-    double ttanc = 0.;
-
-    char instance[200];
-
-    cs_calcium_connect(comp_id, instance);
-
-    /* Reception des donnees */
-
-    iteration = 0;
-
-    /* commande reception nb iterations */
-    cs_calcium_read_int(comp_id, time_dep, &min_time, &max_time, &iteration,
-                        "NBPDTM", 1, &n_val_read, nbpdt);
-    /* commande reception nb sous-it.  */
-    cs_calcium_read_int(comp_id, time_dep, &min_time, &max_time, &iteration,
-                        "NBSSIT", 1, &n_val_read, nbsspdt);
-    /* commande reception de la variable epsilo */
-    cs_calcium_read_double(comp_id, time_dep, &min_time, &max_time, &iteration,
-                           "EPSILO", 1, &n_val_read, delta);
-    /* commande reception de la variable ttinit */
-    cs_calcium_read_double(comp_id, time_dep, &min_time, &max_time, &iteration,
-                           "TTINIT", 1, &n_val_read, &ttanc);
-    /* commande reception de la variable dtref */
-    cs_calcium_read_double(comp_id, time_dep, &min_time, &max_time, &iteration,
-                           "PDTREF", 1, &n_val_read, dt);
-
-    if (fabs(*tt - ttanc) > 1.e-16)
-      bft_error(__FILE__, __LINE__, 0,
-                "Arret du calcul: ttinit different de ttpabs \n");
-
-  }
-
-#if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1) {
-
-    MPI_Bcast(nbpdt,   1, CS_MPI_INT,  0, cs_glob_mpi_comm);
-    MPI_Bcast(nbsspdt, 1, CS_MPI_INT,  0, cs_glob_mpi_comm);
-    MPI_Bcast(delta,   1, CS_MPI_REAL, 0, cs_glob_mpi_comm);
-    MPI_Bcast(dt,      1, CS_MPI_REAL, 0, cs_glob_mpi_comm);
-
-  }
-
-#endif
-
-  /* Warning */
-
-  bft_printf("@                                                          \n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@                                                          \n"
-               "@ @@ ATTENTION: Change in user parameters                  \n"
-               "@    *********                                             \n"
-               "@                                                          \n"
-               "@    In presence of coupling with code_aster, values       \n"
-               "@    provided in the 'Milieu' tool overwrite those         \n"
-               "@    in the base setup                                     \n"
-               "@                                                          \n"
-               "@   New values:                                            \n"
-               "@      NTMABS = %i                                         \n"
-               "@      NALIMX = %i                                         \n"
-               "@      EPALIM = %f                                         \n"
-               "@      DTREF  = %f                                         \n"
-               "@                                                          \n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@                                                          \n",
-             *nbpdt, *nbsspdt, *delta, *dt);
 }
 
 /*----------------------------------------------------------------------------
  * Exchange time-step
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(astpdt, ASTPDT)
+void
+CS_PROCF(astpdt, ASTPDT)
 (
   cs_real_t *dttab,
-  cs_int_t  *ncelet,
   cs_int_t  *nbpdt
 )
 {
-  cs_real_t  dttmp = 0.;
+  cs_ast_coupling_t  *ast_cpl = cs_glob_ast_coupling;
+
+  /* Update verbosity */
+
+  if (cs_glob_time_step->nt_cur % cs_glob_log_frequency == 0)
+    ast_cpl->verbosity = 1;
+  else
+    ast_cpl->verbosity = 0;
+
+  if (ast_cpl->iteration < 0)
+    return;
+
+  cs_real_t  dttmp = ast_cpl->dtref;
+  double  dt_ast = dttmp;
+
+  if (ast_cpl->iteration < 0)
+    return;
+
+  int err_code = 0;
+
+  ast_cpl->iteration += 1;
 
   if (cs_glob_rank_id <= 0) {
 
+    double  dt_sat = dttab[0];
+    double  min_time = 0., max_time = 0.;
     int  n_val_read = 0;
-    double  dtloc = 0.;
 
-    dttmp = dttab[0];
+    /* Receive time step sent by code_aster */
 
-    /* Send time step (calculated in "ddtvar" Subroutine) to 'Milieu'*/
-    cs_calcium_write_double(comp_id, time_dep, 0.0, *nbpdt,
-                            "DTSAT", 1, &dttmp);
+    err_code = cs_calcium_read_double(comp_id, time_dep, &min_time, &max_time,
+                                      &(ast_cpl->iteration),
+                                      "DTAST", 1, &n_val_read, &dt_ast);
 
-    /* Receive time step sent by 'Milieu' */
-    cs_calcium_read_double(comp_id, time_dep, &min_time, &max_time, nbpdt,
-                           "DTCALC", 1, &n_val_read, &(dtloc));
+    if (err_code >= 0) {
 
-    assert(n_val_read == 1);
+      assert(n_val_read == 1);
 
-    dttmp = dtloc;
+      /* Choose smallest time step */
+
+      if (dt_ast < dttmp)
+        dttmp = dt_ast;
+      if (dt_sat < dttmp)
+        dttmp = dt_sat;
+
+      double cur_time = 0.;
+      err_code = cs_calcium_write_double(comp_id, time_dep, cur_time,
+                                         ast_cpl->iteration,
+                                         "DTCALC", 1, &dttmp);
+
+    }
+    else {
+
+      /* In case of error (probably disconnect) stop at next iteration */
+
+      const cs_time_step_t *ts = cs_glob_time_step;
+      if (ts->nt_cur < ts->nt_max + 1)
+        cs_time_step_define_nt_max(ts->nt_cur + 1);
+
+      ast_cpl->iteration = -1;
+
+      bft_printf("----------------------------------\n"
+                 "code_aster coupling: disconnected (finished) or error\n"
+                 "--> stop at end of next time step\n"
+                 "----------------------------------\n\n");
+
+    }
 
   }
 
@@ -638,109 +1023,189 @@ void CS_PROCF(astpdt, ASTPDT)
 
 #endif
 
-
-  for (cs_lnum_t i = 0; i < *ncelet; i++)
+  cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+  for (cs_lnum_t i = 0; i < n_cells_ext; i++)
     dttab[i] = dttmp;
 
-  bft_printf("@                                                          \n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@                                                          \n"
-               "@ @@ ATTENTION : MODIFICATION DE LA VALEUR DU PAS DE TEMPS \n"
-               "@    *********                                             \n"
-               "@                                                          \n"
-               "@  Presence du couplage Saturne/Aster:                     \n"
-               "@  les options :                                           \n"
-               "@  - pdt uniforme et constant (IDTVAR=0)                   \n"
-               "@  - pdt uniforme en espace et variable en temps (IDTVAR=1)\n"
-               "@  restent activables                                      \n"
-               "@                                                          \n"
-               "@  l' option :                                             \n"
-               "@  - pdt  variable en espace et en temps  (IDTVAR=2)       \n"
-               "@  est desactivee                                          \n"
-               "@                                                          \n"
-               "@  Valeur du pas de temps retenue pour le calcul couple:   \n"
-               "@  dt = %f                                                 \n"
-               "@                                                          \n"
-               "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-               "@                                                          \n",
-               dttmp);
-}
+  ast_cpl->dt = dttmp;
 
-/*----------------------------------------------------------------------------
- * Receive convergence value of Code_Saturne/Code_Aster coupling
- *----------------------------------------------------------------------------*/
+  if (ast_cpl->verbosity > 0)
+    bft_printf("----------------------------------\n"
+               "reference time step:     %4.21e\n"
+               "code_saturne time step:  %4.2le\n"
+               "code_aster time step:    %4.2le\n"
+               "selected time step:      %4.2le \n"
+               "----------------------------------\n\n",
+               ast_cpl->dtref, dttab[0], dt_ast, ast_cpl->dt);
 
-void CS_PROCF(astcv1, ASTCV1)
-(
- cs_int_t  *ntcast,
- cs_int_t  *icv
-)
-{
-  if (cs_glob_rank_id <= 0) {
-
-    int  n_val_read = 0;
-
-    cs_calcium_read_int(comp_id, time_dep, &min_time, &max_time, ntcast,
-                        "ICVEXT", 1, &n_val_read, icv);
-
-    assert(n_val_read == 1);
-
-  }
-
-#if defined(HAVE_MPI)
-
-  if (cs_glob_n_ranks > 1)
-    MPI_Bcast(icv, 1, CS_MPI_INT, 0, cs_glob_mpi_comm);
-
-#endif
-}
-
-/*----------------------------------------------------------------------------
- * Send global convergence value of FSI calculations
- * (internal and external structures)
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(astcv2, ASTCV2)
-(
- cs_int_t  *ntcast,
- cs_int_t  *icv
-)
-{
-  if (cs_glob_rank_id <= 0) {
-
-    cs_calcium_write_int(comp_id, time_dep, cur_time, *ntcast,
-                         "ICV", 1, icv);
-
-  }
+  /* Reset sub-iteration count */
+  ast_cpl->s_it_id = 0;
 }
 
 /*============================================================================
  * Public function definitions
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Free coupling structure.
- *----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Initial exchange with code_aster
+ *
+ * \param[in]  nalimx  maximum number of implicitation iterations of
+ *                     the structure displacement
+ * \param[in]  epalim  relative precision of implicitation of
+ *                     the structure displacement
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ast_coupling_initialize(int        nalimx,
+                           cs_real_t  epalim)
+{
+  const cs_time_step_t *ts = cs_glob_time_step;
+
+  int     nbpdtm = ts->nt_max;
+  double  ttinit = ts->t_prev;
+
+  /* Allocate global coupling structure */
+
+  cs_ast_coupling_t *ast_cpl;
+
+  BFT_MALLOC(ast_cpl, 1, cs_ast_coupling_t);
+
+  ast_cpl->verbosity = 1;
+  ast_cpl->iteration = 0; /* < 0 for disconnect */
+
+  ast_cpl->nbssit = nalimx; /* number of sub-iterations */
+
+  ast_cpl->dt = 0.;
+  ast_cpl->dtref = ts->dt_ref;  /* reference time step */
+
+  ast_cpl->epsilo = epalim;     /* scheme convergence threshold */
+
+  ast_cpl->icv1 = 0;
+  ast_cpl->icv2 = 0;
+  ast_cpl->lref = 0.;
+
+  ast_cpl->s_it_id = 0; /* Sub-iteration id */
+
+  ast_cpl->xast = NULL;
+  ast_cpl->xvast = NULL;
+  ast_cpl->xvasa = NULL;
+  ast_cpl->xastp = NULL;
+
+  ast_cpl->foras = NULL;
+  ast_cpl->foaas = NULL;
+  ast_cpl->fopas = NULL;
+
+  cs_glob_ast_coupling = ast_cpl;
+
+  /* Calcium  (communication) initialization */
+
+  if (cs_glob_rank_id <= 0) {
+
+    /* Initialization of communication with calcium */
+
+    char instance[200];
+
+    cs_calcium_connect(comp_id, instance);
+
+    bft_printf(" Send calculation parameters to code_aster\n");
+
+    /* Send data */
+
+    cs_calcium_write_int(comp_id, time_dep, 0, 0, "NBPDTM", 1, &nbpdtm);
+    cs_calcium_write_int(comp_id, time_dep, 0, 0, "NBSSIT", 1,
+                         &(ast_cpl->nbssit));
+
+    cs_calcium_write_double(comp_id, time_dep, 0, 0, "EPSILO", 1,
+                            &(ast_cpl->epsilo));
+
+    /* Send isyncp and ntchr (false, removed function) */
+    int isyncp = 0, ntchr = -1;
+    cs_calcium_write_int(comp_id, time_dep, 0, 0, "ISYNCP", 1, &(isyncp));
+    cs_calcium_write_int(comp_id, time_dep, 0, 0, "NTCHRO", 1, &(ntchr));
+
+    cs_calcium_write_double(comp_id, time_dep, 0, 0, "TTINIT", 1, &ttinit);
+    cs_calcium_write_double(comp_id, time_dep, 0, 0, "PDTREF", 1,
+                            &(ast_cpl->dtref));
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Finalize exchange with code_aster
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_ast_coupling_finalize(void)
 {
-  cs_ast_coupling_t  *ast_coupling = cs_glob_ast_coupling;
+  cs_ast_coupling_t  *ast_cpl = cs_glob_ast_coupling;
+
+  BFT_FREE(ast_cpl->xast);
+  BFT_FREE(ast_cpl->xvast);
+  BFT_FREE(ast_cpl->xvasa);
+  BFT_FREE(ast_cpl->xastp);
+
+  BFT_FREE(ast_cpl->foras);
+  BFT_FREE(ast_cpl->foaas);
+  BFT_FREE(ast_cpl->fopas);
 
 #if defined(HAVE_MPI)
 
-  if (ast_coupling->vtx_b2p != NULL)
-    cs_block_to_part_destroy(&(ast_coupling->vtx_b2p));
-  if (ast_coupling->face_p2b != NULL)
-    cs_part_to_block_destroy(&(ast_coupling->face_p2b));
+  if (ast_cpl->vtx_b2p != NULL)
+    cs_block_to_part_destroy(&(ast_cpl->vtx_b2p));
+  if (ast_cpl->face_p2b != NULL)
+    cs_part_to_block_destroy(&(ast_cpl->face_p2b));
 
 #endif
 
-  BFT_FREE(ast_coupling->s_vtx_num);
+  BFT_FREE(ast_cpl->s_vtx_num);
 
-  BFT_FREE(ast_coupling);
+  BFT_FREE(ast_cpl);
 
-  cs_glob_ast_coupling = ast_coupling;
+  cs_glob_ast_coupling = ast_cpl;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Receive convergence value of code_saturne/code_aster coupling
+ *
+ * \return  convergence indicator computed by coupling scheme
+ *          (1: converged, 0: not converged)
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_ast_coupling_get_ext_cvg(void)
+{
+  cs_ast_coupling_t  *ast_cpl = cs_glob_ast_coupling;
+
+#if defined(HAVE_MPI)
+
+  if (cs_glob_n_ranks > 1)
+    MPI_Bcast(&(ast_cpl->icv1), 1, CS_MPI_INT, 0, cs_glob_mpi_comm);
+
+#endif
+
+  return ast_cpl->icv1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Send global convergence value of FSI calculations
+ *
+ * \param[in]  icved  convergence indicator (1: converged, 0: not converged)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_ast_coupling_send_cvg(int  icved)
+{
+  cs_ast_coupling_t  *ast_cpl = cs_glob_ast_coupling;
+
+  ast_cpl->icv2 = icved;
 }
 
 /*----------------------------------------------------------------------------*/

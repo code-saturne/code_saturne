@@ -47,6 +47,11 @@ Bug fixes:
 - Fix reading of GUI setting of turbulent flux model for thermal scalar
   if a specific physics is enabled.
 
+Architectural changes:
+
+- code_aster coupling: remove the "milieu" module and move its functionnality
+  into the main cs_ast_coupling.c code.
+
 Release 6.0.0 (September 26 2019)
 ---------------------------------
 

@@ -45,7 +45,7 @@ module albase
   integer(c_int), pointer, save :: iale
   !> the number of sub-iterations of initialization of the fluid
   integer, save :: nalinf
-  !> maximum number of imlicitation iterations of of the structure displacement
+  !> maximum number of implicitation iterations of the structure displacement
   integer, save :: nalimx
   !> relative precision of implicitation of the structure displacement
   double precision, save :: epalim

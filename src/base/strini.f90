@@ -88,11 +88,25 @@ integer, allocatable, dimension(:) :: lstfac, idfloc, idnloc
 
 !===============================================================================
 
+!===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_ast_coupling_initialize(nalimx, epalim) &
+    bind(C, name='cs_ast_coupling_initialize')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: nalimx
+    real(kind=c_double), value :: epalim
+  end subroutine cs_ast_coupling_initialize
+
+end interface
 
 !===============================================================================
 ! 1. INITIALISATION
 !===============================================================================
-
 
 do istr = 1, nstrmx
   dtstr(istr) = dt(1)
@@ -259,12 +273,10 @@ if (nbaste.gt.0) then
   enddo
   nbnast = indast
 
-  ! Free memory
+  ! Exchange code_aster coupling parameters
+  call cs_ast_coupling_initialize(nalimx, epalim)
 
-!       Recuperation des parametres commun du couplage
-  call astpar(ntmabs, nalimx, epalim, ttpabs, dtref)
-
-!       Envoi des donnees geometriques a Code_Aster
+  ! Send geometric information to code_aster
   call astgeo(nbfast, lstfac, idfloc, idnloc, almax)
 
   ! Free memory

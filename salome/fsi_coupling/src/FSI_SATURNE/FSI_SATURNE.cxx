@@ -208,25 +208,28 @@ FSI_SATURNE_i::init_service(const char * service_name) {
       try
         {
           //initialization CALCIUM ports IN
-          create_calcium_port(this,(char *)"DEPSAT",(char *)"CALCIUM_double",(char *)"IN",(char *)"I");
-          create_calcium_port(this,(char *)"EPSILO",(char *)"CALCIUM_double",(char *)"IN",(char *)"I");
-          create_calcium_port(this,(char *)"DTCALC",(char *)"CALCIUM_double",(char *)"IN",(char *)"I");
-          create_calcium_port(this,(char *)"TTINIT",(char *)"CALCIUM_double",(char *)"IN",(char *)"I");
-          create_calcium_port(this,(char *)"PDTREF",(char *)"CALCIUM_double",(char *)"IN",(char *)"I");
-          create_calcium_port(this,(char *)"NBPDTM",(char *)"CALCIUM_integer",(char *)"IN",(char *)"I");
-          create_calcium_port(this,(char *)"NBSSIT",(char *)"CALCIUM_integer",(char *)"IN",(char *)"I");
-          create_calcium_port(this,(char *)"ICVEXT",(char *)"CALCIUM_integer",(char *)"IN",(char *)"I");
+          create_calcium_port(this,(char *)"NBPDTM",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
+          create_calcium_port(this,(char *)"NBSSIT",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
+          create_calcium_port(this,(char *)"ISYNCP",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
+          create_calcium_port(this,(char *)"NTCHRO",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
+          create_calcium_port(this,(char *)"PDTREF",(char *)"CALCIUM_double",(char *)"OUT",(char *)"I");
+          create_calcium_port(this,(char *)"TTINIT",(char *)"CALCIUM_double",(char *)"OUT",(char *)"I");
+          create_calcium_port(this,(char *)"EPSILO",(char *)"CALCIUM_double",(char *)"OUT",(char *)"I");
+
+          create_calcium_port(this,(char *)"DTAST",(char *)"CALCIUM_double",(char *)"IN",(char *)"I");
+          create_calcium_port(this,(char *)"DEPAST",(char *)"CALCIUM_double",(char *)"IN",(char *)"I");
+          create_calcium_port(this,(char *)"VITAST",(char *)"CALCIUM_double",(char *)"IN",(char *)"I");
+
           //initialization CALCIUM ports OUT
-          create_calcium_port(this,(char *)"DTSAT",(char *)"CALCIUM_double",(char *)"OUT",(char *)"I");
-          create_calcium_port(this,(char *)"FORSAT",(char *)"CALCIUM_double",(char *)"OUT",(char *)"I");
-          create_calcium_port(this,(char *)"ALMAXI",(char *)"CALCIUM_double",(char *)"OUT",(char *)"I");
-          create_calcium_port(this,(char *)"COONOD",(char *)"CALCIUM_double",(char *)"OUT",(char *)"I");
-          create_calcium_port(this,(char *)"COOFAC",(char *)"CALCIUM_double",(char *)"OUT",(char *)"I");
-          create_calcium_port(this,(char *)"COLNOD",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
-          create_calcium_port(this,(char *)"COLFAC",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
-          create_calcium_port(this,(char *)"ICV",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
+          create_calcium_port(this,(char *)"DTCALC",(char *)"CALCIUM_double",(char *)"OUT",(char *)"I");
           create_calcium_port(this,(char *)"NB_DYN",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
           create_calcium_port(this,(char *)"NB_FOR",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
+          create_calcium_port(this,(char *)"COLNOD",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
+          create_calcium_port(this,(char *)"COLFAC",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
+          create_calcium_port(this,(char *)"COONOD",(char *)"CALCIUM_double",(char *)"OUT",(char *)"I");
+          create_calcium_port(this,(char *)"COOFAC",(char *)"CALCIUM_double",(char *)"OUT",(char *)"I");
+          create_calcium_port(this,(char *)"FORAST",(char *)"CALCIUM_double",(char *)"OUT",(char *)"I");
+          create_calcium_port(this,(char *)"ICVAST",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
         }
       catch(const PortAlreadyDefined& ex)
         {

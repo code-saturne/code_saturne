@@ -166,7 +166,6 @@ class case:
                  domains = None,
                  syr_domains = None,
                  ast_domain = None,
-                 fsi_coupler = None,
                  py_domains = None):
 
         # Package specific information
@@ -212,8 +211,6 @@ class case:
         else:
             self.ast_domains = [ast_domain]
 
-        self.fsi_coupler = fsi_coupler
-
         if py_domains == None:
             self.py_domains = []
         elif type(py_domains) == tuple:
@@ -228,7 +225,7 @@ class case:
         # to better handle cases were only some domains are coupled.
         # For now, we assume that the first CFD domain is the coupled one.
 
-        if fsi_coupler:
+        if len(self.ast_domains) > 0:
             self.domains[0].fsi_aster = True
 
         # Check names in case of multiple domains (coupled by MPI)
@@ -389,8 +386,8 @@ class case:
         for d in (self.domains + self.syr_domains + self.py_domains):
             np_list.append(d.get_n_procs())
 
-        # Code_Aster is handled in a specific manner: processes are counted
-        # against the total, but the coupler is not, and processes will not by
+        # code_aster is handled in a specific manner: processes are counted
+        # against the total, and processes will not by
         # run by the same mpiexec instance (TODO: check/improve how this
         # interacts with resource managers, so that some nodes are not
         # oversubscribed while others are unused).
@@ -768,8 +765,6 @@ class case:
         ast_mesh_name = os.path.join(ast_dir_name, ast_d.mesh)
         ast_comm = os.path.join(ast_dir_name, ast_d.comm)
 
-        c = self.fsi_coupler
-
         pkgdatadir = self.package.get_dir('pkgdatadir')
         s_path = os.path.join(pkgdatadir, 'salome', 'fsi_yacs_scheme.xml')
         s = open(s_path, 'r')
@@ -781,29 +776,11 @@ class case:
         e_re = re.compile('@AST_WORKINGDIR@')
         template = re.sub(e_re, ast_d.exec_dir, template)
 
-        e_re = re.compile('@COCAS_WORKINGDIR@')
-        template = re.sub(e_re, self.exec_dir, template)
-
         e_re = re.compile('@CFD_WORKINGDIR@')
         template = re.sub(e_re, cfd_d.exec_dir, template)
 
         e_re = re.compile('@AST_MAIL@')
         template = re.sub(e_re, ast_mesh_name, template)
-
-        e_re = re.compile('@NBPDTM@')
-        template = re.sub(e_re, str(c['max_time_steps']), template)
-
-        e_re = re.compile('@NBSSIT@')
-        template = re.sub(e_re, str(c['n_sub_iterations']), template)
-
-        e_re = re.compile('@DTREF@')
-        template = re.sub(e_re, str(c['time_step']), template)
-
-        e_re = re.compile('@TTINIT@')
-        template = re.sub(e_re, str(c['start_time']), template)
-
-        e_re = re.compile('@EPSILO@')
-        template = re.sub(e_re, str(c['epsilon']), template)
 
         e_re = re.compile('@COMM_FNAME@')
         template = re.sub(e_re, ast_comm, template)
