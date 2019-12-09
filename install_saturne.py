@@ -1040,7 +1040,7 @@ Check the setup file and some utilities presence.
             if hdf5.install_dir:
                 config_opts = config_opts + " --with-hdf5=" + hdf5.install_dir
                 med.config_opts += " --with-hdf5=" + hdf5.install_dir
-                cgns.config_opts += "-DCMAKE_PREFIX_PATH=" + hdf5.install_dir \
+                cgns.config_opts += " -DCMAKE_PREFIX_PATH=" + hdf5.install_dir \
                     + " -DHDF5_INCLUDE_PATH=" + hdf5.install_dir + "/include"
 
         # CGNS
