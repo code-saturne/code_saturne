@@ -94,7 +94,7 @@ def define_domain_parameters(domain):
 
     # A case-specific mesh directory can be defined through domain.mesh_dir.
 
-    domain.mesh_dir = None
+    # domain.mesh_dir = None
 
     # Mesh names can be given as absolute path names; otherwise, file are
     # searched in the following directories, in the order:
@@ -112,7 +112,7 @@ def define_domain_parameters(domain):
     #                     '--num', '2', '--reorient'),
     #                    '~/meshdatabase/part3.unv']
 
-    domain.meshes = None
+    # domain.meshes = None
 
     # Logging arguments
     #------------------
@@ -121,7 +121,7 @@ def define_domain_parameters(domain):
     # type may be defined here, for example:
     #   domain.logging_args = '--logp'
 
-    domain.logging_args = None
+    # domain.logging_args = None
 
     # Solver options
     #---------------
@@ -139,8 +139,8 @@ def define_domain_parameters(domain):
     # and other modifications), use:
     #   domain.solver_args = '--preprocess'
 
-    domain.exec_solver = True
-    domain.solver_args = None
+    # domain.exec_solver = True
+    # domain.solver_args = None
 
     # Compile and build options
     #--------------------------
@@ -169,7 +169,7 @@ def define_domain_parameters(domain):
     # or (for Valgrind and ddd):
     #   domain.debug = '--debugger=ddd valgrind --tool=memcheck --vgdb-error=1'
 
-    domain.debug = None
+    # domain.debug = None
 
     # import pprint
     # pprint.pprint(domain.__dict__)
