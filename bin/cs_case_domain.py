@@ -1064,7 +1064,7 @@ class domain(base_domain):
         for f in [self.package.solver, self.package.runsolver]:
             if f in dir_files:
                 purge_list.append(f)
-        purge_list.extend(fnmatch.filter(dir_files, 'core*'))
+        purge_list.extend(fnmatch.filter(dir_files))
 
         for f in purge_list:
             dir_files.remove(f)

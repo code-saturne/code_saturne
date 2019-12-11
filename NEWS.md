@@ -49,6 +49,8 @@ Bug fixes:
 
 Architectural changes:
 
+- Do not remove "core" files anymore when cleaning execution directory.
+
 - code_aster coupling: remove the "milieu" module and move its functionnality
   into the main cs_ast_coupling.c code.
 
