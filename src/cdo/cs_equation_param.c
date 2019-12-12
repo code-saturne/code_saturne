@@ -259,6 +259,19 @@ _petsc_set_pc_options_from_command_line(cs_param_sles_t    slesp)
 
   switch (slesp.precond) {
 
+#if defined(PETSC_HAVE_HYPRE)
+  case CS_PARAM_PRECOND_ILU0:
+  case CS_PARAM_PRECOND_ICC0:
+    if (slesp.solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
+#if PETSC_VERSION_GE(3,7,0)
+      PetscOptionsSetValue(NULL, "-pc_euclid_level", "-help");
+#else
+      PetscOptionsSetValue("-pc_euclid_level", "0");
+#endif
+    }
+    break;
+#endif  /* PETSc with HYPRE */
+
   case CS_PARAM_PRECOND_AMG:
     {
       switch (slesp.amg_type) {
@@ -727,10 +740,19 @@ _petsc_block_jacobi_hook(void     *context,
     KSP  _ksp = xyz_subksp[id];
     KSPSetType(_ksp, KSPPREONLY);
     KSPGetPC(_ksp, &_pc);
-    PCSetType(_pc, PCBJACOBI);
-    PCFactorSetLevels(_pc, 0);
-    PCFactorSetReuseOrdering(_pc, PETSC_TRUE);
-    PCFactorSetMatOrderingType(_pc, MATORDERING1WD);
+    if (slesp.solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
+      PCSetType(_pc, PCHYPRE);
+      PCHYPRESetType(_pc, "euclid"); /* ILU(1) by default */
+    }
+    else {
+
+      PCSetType(_pc, PCBJACOBI); /* Default for the block is an ILU(0) */
+      PCFactorSetLevels(_pc, 0);
+      PCFactorSetReuseOrdering(_pc, PETSC_TRUE);
+      PCFactorSetMatOrderingType(_pc, MATORDERING1WD);
+
+    }
+
   }
 
   PCSetFromOptions(pc);
