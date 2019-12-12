@@ -27,7 +27,7 @@ AM_CPPFLAGS = $(MPI_CPPFLAGS)
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 AM_LDFLAGS = $(MPI_LDFLAGS)
 
-pkgpython_PYTHON = __init__.py Coupling.py Init.py
+pkgpython_PYTHON = __init__.py Coupling.py Init.py pyple_coupler.py
 pkgpyexec_LTLIBRARIES = libpyplecoupling.la
 libpyplecoupling_la_SOURCES = ple_coupling_wrapper.c
 libpyplecoupling_la_CFLAGS = $(MPI4PY_CFLAGS) $(PYTHON_CPPFLAGS) -I$(srcdir)/../src $(MPI_CPPFLAGS)
