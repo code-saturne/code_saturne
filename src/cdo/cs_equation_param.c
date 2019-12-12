@@ -1112,23 +1112,23 @@ _set_key(const char            *label,
       eqp->sles_param.amg_type = CS_PARAM_AMG_NONE;
     else if (strcmp(keyval, "v_cycle") == 0) {
       eqp->sles_param.amg_type = CS_PARAM_AMG_HOUSE_V;
-      assert(eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS);
+      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_CS;
     }
     else if (strcmp(keyval, "k_cycle") == 0) {
       eqp->sles_param.amg_type = CS_PARAM_AMG_HOUSE_K;
-      assert(eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS);
+      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_CS;
     }
     else if (strcmp(keyval, "boomer") == 0) {
       eqp->sles_param.amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
-      assert(eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC);
+      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_HYPRE;
     }
     else if (strcmp(keyval, "gamg") == 0) {
       eqp->sles_param.amg_type = CS_PARAM_AMG_PETSC_GAMG;
-      assert(eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC);
+      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
     }
     else if (strcmp(keyval, "pcmg") == 0) {
       eqp->sles_param.amg_type = CS_PARAM_AMG_PETSC_PCMG;
-      assert(eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC);
+      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
     }
     else {
       const char *_val = keyval;
@@ -1415,13 +1415,14 @@ _set_key(const char            *label,
       else {
 
         eqp->sles_param.precond = CS_PARAM_PRECOND_AMG_BLOCK;
-        eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
 
         /* Set the default choice */
 #if defined(PETSC_HAVE_HYPRE)
         eqp->sles_param.amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
+        eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_HYPRE;
 #else
         eqp->sles_param.amg_type = CS_PARAM_AMG_PETSC_GAMG;
+        eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
 #endif
 
       }
@@ -1444,6 +1445,8 @@ _set_key(const char            *label,
       eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_CS;
     else if (strcmp(keyval, "petsc") == 0)
       eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
+    else if (strcmp(keyval, "hypre") == 0)
+      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_HYPRE;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
@@ -1992,6 +1995,7 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp)
     break;
 
   case CS_PARAM_SLES_CLASS_PETSC: /* PETSc solvers */
+  case CS_PARAM_SLES_CLASS_HYPRE: /* HYPRE solvers through PETSc */
 #if defined(HAVE_PETSC)
 
     cs_sles_petsc_init();
@@ -2360,6 +2364,8 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
     cs_log_printf(CS_LOG_SETUP, "             Code_Saturne\n");
   else if (slesp.solver_class == CS_PARAM_SLES_CLASS_PETSC)
     cs_log_printf(CS_LOG_SETUP, "             PETSc\n");
+  else if (slesp.solver_class == CS_PARAM_SLES_CLASS_HYPRE)
+    cs_log_printf(CS_LOG_SETUP, "             HYPRE\n");
 
   cs_log_printf(CS_LOG_SETUP, "        SLES | Verbosity:          %d\n",
                 slesp.verbosity);

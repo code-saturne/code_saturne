@@ -400,7 +400,10 @@ typedef enum {
  * Iterative solvers available in Code_Saturne
  *
  * \var CS_PARAM_SLES_CLASS_PETSC
- * Solvers available in Code_Saturne
+ * Solvers available in PETSc
+ *
+ * \var CS_PARAM_SLES_CLASS_HYPRE
+ * Solvers available in HYPRE through the PETSc library
  *
  * \var CS_PARAM_SLES_N_CLASSES
  */
@@ -409,6 +412,7 @@ typedef enum {
 
   CS_PARAM_SLES_CLASS_CS,
   CS_PARAM_SLES_CLASS_PETSC,
+  CS_PARAM_SLES_CLASS_HYPRE,
   CS_PARAM_SLES_N_CLASSES
 
 } cs_param_sles_class_t;
