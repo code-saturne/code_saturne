@@ -3,6 +3,9 @@ Release 6.0.2 (Unreleased)
 
 Bug fixes:
 
+- SMGR: fix syrthes coupling configuration by re-inserting syrthes path at case
+  initialization.
+
 - GUI: fix removal of line break from formulas due to wrong test.
 
 - Fix bug in restart from RANS to LES (velocity fluctuations were incorrect).

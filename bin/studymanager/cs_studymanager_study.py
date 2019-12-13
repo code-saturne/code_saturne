@@ -195,13 +195,32 @@ class Case(object):
                 exec(compile(open(coupling).read(), '<string>', 'exec'))
             except Exception:
                 execfile(coupling)
+
             run_ref = os.path.join(self.__repo, self.label, "runcase")
             self.exe, self.pkg = self.__get_exe(pkg, run_ref)
             self.subdomains = []
             for d in locals()['domains']:
                 if d['solver'] == self.pkg.code_name:
                     self.subdomains.append(d['domain'])
+                elif d['solver'].lower() == "syrthes":
+                    syrthes = True
+
             self.resu = 'RESU_COUPLING'
+
+            # insert syrthes path
+            if syrthes:
+                syrthes_insert = cs_create.syrthes_path_line(pkg)
+                if syrthes_insert:
+                    fd = open(coupling)
+                    fd_lines = fd.readlines()
+                    fd.close()
+                    fd = open(coupling, 'w')
+                    for line in fd_lines:
+                        if "sys.path.insert" in line:
+                            fd.write(syrthes_insert)
+                        else:
+                            fd.write(line)
+                    fd.close()
 
         else:
             run_ref = os.path.join(self.__repo, self.label, "SCRIPTS", "runcase")
