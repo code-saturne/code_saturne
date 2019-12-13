@@ -103,7 +103,6 @@ if test x$with_salome != xno ; then
   if test "x$SALOMEENVCMD" != "x" ; then
     KERNEL_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $KERNEL_ROOT_DIR)
     GUI_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $GUI_ROOT_DIR)
-    YACS_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $YACS_ROOT_DIR)
     OMNIIDL=$(eval $SALOMEENVCMD ; which omniidl)
   fi
 
@@ -161,7 +160,6 @@ AC_SUBST([SALOMEPRE])
 
 CS_AC_TEST_SALOME_KERNEL
 CS_AC_TEST_SALOME_GUI
-CS_AC_TEST_SALOME_YACS
 
 AC_LANG_SAVE
 
@@ -209,10 +207,6 @@ if test "x$with_salome_kernel" != "xno" ; then
 
   cs_have_salome_kernel=yes
 
-  saved_CPPFLAGS="$CPPFLAGS"
-  saved_LDFLAGS="$LDFLAGS"
-  saved_LIBS="$LIBS"
-
   if test x"$with_salome_kernel" != xyes -a x"$with_salome_kernel" != xcheck ; then
     SALOME_KERNEL="$with_salome_kernel"
   else
@@ -222,31 +216,6 @@ if test "x$with_salome_kernel" != "xno" ; then
   SALOME_KERNEL_CPPFLAGS="-I$SALOME_KERNEL/include/salome"
   SALOME_KERNEL_IDL="-I$SALOME_KERNEL/idl/salome"
   SALOME_KERNEL_LDFLAGS="-L$SALOME_KERNEL/lib/salome"
-  CALCIUM_LIBS="-lCalciumC"
-
-  CPPFLAGS="${CPPFLAGS} ${SALOME_KERNEL_CPPFLAGS}"
-  LDFLAGS="${LDFLAGS} ${SALOME_KERNEL_LDFLAGS}"
-  LIBS="${CALCIUM_LIBS} ${LIBS}"
-
-  AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <calcium.h>]],
-  			             [[int iret = cp_fin(0, 0);]])],
-                    [cs_have_calcium=yes
-                     AC_MSG_RESULT([CALCIUM support])],
-                    [cs_have_calcium=no
-                     AC_MSG_WARN([no CALCIUM support])
-                    ])
-
-  if test "x$cs_have_salome_kernel" = "xno"; then
-    CALCIUM_LIBS=""
-  fi
-
-  CPPFLAGS="$saved_CPPFLAGS"
-  LDFLAGS="$saved_LDFLAGS"
-  LIBS="$saved_LIBS"
-
-  unset saved_CPPFLAGS
-  unset saved_LDFLAGS
-  unset saved_LIBS
 
 fi
 
@@ -256,11 +225,7 @@ AC_SUBST(SALOME_KERNEL_CPPFLAGS)
 AC_SUBST(SALOME_KERNEL_IDL)
 AC_SUBST(SALOME_KERNEL_LDFLAGS)
 
-AC_SUBST(cs_have_calcium)
-AC_SUBST(CALCIUM_LIBS)
-
 AM_CONDITIONAL(HAVE_SALOME_KERNEL, test x$cs_have_salome_kernel = xyes)
-AM_CONDITIONAL(HAVE_CALCIUM, test x$cs_have_calcium = xyes)
 
 ])dnl
 
@@ -319,55 +284,6 @@ AC_SUBST(SALOME_GUI_IDL)
 AC_SUBST(SALOME_GUI_LDFLAGS)
 
 AM_CONDITIONAL(HAVE_SALOME_GUI, test x$cs_have_salome_gui = xyes)
-
-])dnl
-
-
-# CS_AC_TEST_SALOME_YACS
-#----------------------
-# modifies or sets cs_have_salome_yacs
-# depending on libraries found
-
-AC_DEFUN([CS_AC_TEST_SALOME_YACS], [
-
-cs_have_salome_yacs=no
-
-AC_ARG_WITH(salome-yacs,
-            [AS_HELP_STRING([--with-salome-yacs=PATH],
-                            [specify prefix directory for SALOME YACS])],
-            [if test "x$withval" = "x"; then
-               if test -z "$YACS_ROOT_DIR"; then
-                 with_salome_yacs=yes
-               else
-                 with_salome_yacs=$YACS_ROOT_DIR
-               fi
-             fi],
-            [if test -z "$YACS_ROOT_DIR"; then
-               with_salome_yacs=check
-             else
-               with_salome_yacs=$YACS_ROOT_DIR
-             fi])
-
-#if test "x$with_salome_yacs" != "xno" ; then
-# We should add a couple of tests here...
-#fi
-
-if test x"$with_salome_yacs" != xno ; then
-
-  cs_have_salome_yacs=yes
-
-  if test x"$with_salome_yacs" != xyes -a x"$with_salome_yacs" != xcheck ; then
-    SALOME_YACS="$with_salome_yacs"
-  else
-    SALOME_YACS="/usr"
-  fi
-
-else
-  cs_have_salome_yacs=no
-fi
-
-AC_SUBST(cs_have_salome_yacs)
-AC_SUBST(SALOME_YACS)
 
 ])dnl
 

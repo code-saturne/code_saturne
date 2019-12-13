@@ -26,8 +26,4 @@ if HAVE_SALOME_GUI
 CFDSTUDY = cfd_study
 endif
 
-if HAVE_CALCIUM
-FSICOUPLING = fsi_coupling
-endif
-
-SUBDIRS = $(CFDSTUDY) $(FSICOUPLING)
+SUBDIRS = $(CFDSTUDY)

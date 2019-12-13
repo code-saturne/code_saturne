@@ -139,7 +139,7 @@ _code_saturne() {
                 --syrthes|--aster|--cathare) COMPREPLY=( ); return 0;;
                 --copy-from)   _filedir -d; return 0;;
                 *) cmdOpts="-s --study -c --case --noref --copy-from \
-                     --syrthes --aster --cathare --import-only -q --quiet -v --verbose";;
+                     --syrthes --cathare --import-only -q --quiet -v --verbose";;
             esac
             ;;
         gui)

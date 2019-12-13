@@ -73,10 +73,6 @@ typedef struct {
                                    1: timing (CPU + Walltime) mode
                                    2: MPI trace-friendly mode */
 
-  /* Connection with YACS */
-
-  char          *yacs_module;   /* Path to YACS module */
-
 } cs_opts_t;
 
 /*=============================================================================

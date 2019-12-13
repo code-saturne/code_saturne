@@ -155,7 +155,6 @@ cs_version.h
 DISTCLEANFILES = \
 bin/code_saturne \
 bin/cs_package.py \
-extras/salome/fsi_appli_config.xml \
 cs_config.h \
 cs_version.h \
 libtool_cuda
@@ -403,11 +402,6 @@ bin/model/XMLvariables.py
 
 salomesysconfdir = ${sysconfdir}/salome
 
-if HAVE_SALOME
-nodist_salomesysconf_DATA = \
-extras/salome/fsi_appli_config.xml
-endif
-
 dist_pkgdata_DATA = \
 bin/cs_user_scripts.py \
 COPYING
@@ -462,13 +456,6 @@ extras/bash_completion/code_saturne
 
 sysconf_DATA = \
 extras/code_saturne.cfg.template
-
-# Install SALOME related files
-
-salomedir = ${pkgdatadir}/salome
-dist_salome_DATA = \
-extras/salome/fsi_yacs_scheme.xml \
-extras/salome/fsi.export
 
 # Update gettext dictionnaries
 

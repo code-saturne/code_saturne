@@ -102,10 +102,6 @@ def process_cmd_line(argv, pkg):
                       metavar="<syr_cases>", action="append",
                       help="create new SYRTHES case(s).")
 
-    parser.add_option("--aster", dest="ast_case_name", type="string",
-                      metavar="<ast_case>",
-                      help="create a new Code_Aster case.")
-
     parser.add_option("--cathare", dest="cat_case_name", type="string",
                       metavar="<cat_case>",
                       help="create a new Cathare2 case.")
@@ -122,7 +118,6 @@ def process_cmd_line(argv, pkg):
     parser.set_defaults(import_only=False)
     parser.set_defaults(n_sat=1)
     parser.set_defaults(syr_case_names=[])
-    parser.set_defaults(ast_case_name=None)
     parser.set_defaults(cat_case_name=None)
     parser.set_defaults(py_case_name=None)
 
@@ -141,7 +136,6 @@ def process_cmd_line(argv, pkg):
                  options.study_name,
                  options.case_names,
                  options.syr_case_names,
-                 options.ast_case_name,
                  options.cat_case_name,
                  options.py_case_name,
                  options.copy,
@@ -222,7 +216,7 @@ def syrthes_path_line(pkg):
 
 class Study:
 
-    def __init__(self, package, name, cases, syr_case_names, ast_case_name,
+    def __init__(self, package, name, cases, syr_case_names,
                  cat_case_name, py_case_name,
                  copy, import_only, use_ref, verbose):
         """
@@ -249,8 +243,6 @@ class Study:
         self.syr_case_names = []
         for c in syr_case_names:
             self.syr_case_names.append(c)
-
-        self.ast_case_name = ast_case_name
 
         self.cat_case_name = cat_case_name
 
@@ -296,17 +288,6 @@ class Study:
         if len(self.syr_case_names) > 0:
             self.create_syrthes_cases(repbase)
 
-        # Creating Code_Aster case
-        if self.ast_case_name is not None:
-            config = configparser.ConfigParser()
-            config.read(self.package.get_configfiles())
-            if config.has_option('install', 'aster'):
-                self.create_aster_case(repbase)
-
-            else:
-                sys.stderr.write("Cannot locate Code_Aster installation.")
-                sys.exit(1)
-
         # Creating Cathare case
         if self.cat_case_name is not None:
             config = configparser.ConfigParser()
@@ -322,7 +303,7 @@ class Study:
             self.create_python_case(repbase)
 
         # Creating coupling structure
-        if len(self.cases) + len(self.syr_case_names) > 1 or self.ast_case_name \
+        if len(self.cases) + len(self.syr_case_names) > 1 \
            or self.cat_case_name or self.py_case_name:
             self.create_coupling(repbase)
 
@@ -348,30 +329,6 @@ class Study:
                 sys.exit(1)
 
         os_environ = os_env_save
-
-
-    def create_aster_case(self, repbase):
-        """
-        Create and initialize code_aster case directory.
-        """
-
-        if self.verbose > 0:
-            sys.stdout.write("  o Creating Code_Aster case  '%s'...\n" %
-                             self.ast_case_name)
-
-        c = os.path.join(repbase, self.ast_case_name)
-
-        if not self.import_only:
-            os.mkdir(c)
-
-        datadir = self.package.get_dir("pkgdatadir")
-        try:
-            shutil.copy(os.path.join(datadir, 'salome', 'fsi.export'),
-                        os.path.join(repbase, self.ast_case_name))
-        except:
-            sys.stderr.write("Cannot copy fsi.export file: " + \
-                             os.path.join(datadir, 'salome', 'fsi.export') + ".\n")
-            sys.exit(1)
 
 
     def create_cathare_case(self, repbase, cathare_path):
@@ -449,7 +406,7 @@ class Study:
 
 # A coupling case is defined by a dictionnary, containing the following:
 
-# Solver type ('Code_Saturne', 'SYRTHES', 'NEPTUNE_CFD' or 'Code_Aster')
+# Solver type ('Code_Saturne', 'SYRTHES', or 'NEPTUNE_CFD')
 # Domain directory name
 # Run parameter setting file
 # Number of processors (or None for automatic setting)
@@ -508,18 +465,6 @@ domains = [
                                # (ex.: postprocessing with '-v ens' or '-v med')
 """
             template = re.sub(e_dom, base_c, template)
-            dict_str += template
-
-        if self.ast_case_name is not None:
-
-            template = \
-"""
-    ,
-    {'solver': 'Code_Aster',
-     'domain': 'DOMAIN',
-     'script': 'fsi.export'}
-"""
-            template = re.sub(e_dom, self.ast_case_name, template)
             dict_str += template
 
         if self.cat_case_name is not None:
@@ -839,8 +784,6 @@ domains = [
             print("SYRTHES instances:")
             for c in self.syr_case_names:
                 print("  " + c)
-        if self.ast_case_name != None:
-            print("Code_Aster instance:", self.ast_case_name)
         if self.py_case_name != None:
             print("Python script instances:")
             for c in self.py_case_name:

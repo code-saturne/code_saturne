@@ -1,9 +1,0 @@
-<application>
-  <prerequisites path="@SALOMEPRE@"/>
-  <modules>
-    <module name="KERNEL" gui="no" path="@SALOME_KERNEL@"/>
-    <module name="GUI"    gui="no" path="@SALOME_GUI@"/>
-    <module name="YACS"   gui="no" path="@SALOME_YACS@"/>
-    <module name="FSI"    gui="no" path="@prefix@"/>
-  </modules>
-</application>

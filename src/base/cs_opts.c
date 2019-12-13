@@ -194,8 +194,6 @@ cs_opts_define(int         argc,
   const char *s;
   int arg_id = 0, argerr = 0;
 
-  const char moduleoptbase[] = "--yacs-module=";
-
   /* Default initialization */
 
   opts->app_name = NULL;
@@ -208,8 +206,6 @@ cs_opts_define(int         argc,
   opts->preprocess = false;
   opts->verif = false;
   opts->benchmark = 0;
-
-  opts->yacs_module = NULL;
 
   /* Parse command line arguments */
 
@@ -283,24 +279,6 @@ cs_opts_define(int         argc,
 
     else if (strcmp(s, "-q") == 0 || strcmp(s, "--quality") == 0)
       opts->verif = true;
-
-    /* Library loader options (do not appear in help as they
-       are not destined to be used directly by a user) */
-
-    else if (strncmp(s, moduleoptbase, strlen(moduleoptbase)) == 0) {
-      if (cs_glob_rank_id <= 0) {
-        const char *_s = s + strlen(moduleoptbase);
-#if defined(HAVE_DLOPEN)
-        BFT_MALLOC(opts->yacs_module, strlen(_s) + 1, char);
-        strcpy(opts->yacs_module, _s);
-#else
-        fprintf(stderr, _("%s was built without dynamic loader support,\n"
-                          "so module file \"%s\" may not be loaded.\n"),
-                argv[0], _s);
-        cs_exit(EXIT_FAILURE);
-#endif /* defined(HAVE_DLOPEN) */
-      }
-    }
 
     /* signal handling */
 

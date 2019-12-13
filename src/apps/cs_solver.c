@@ -129,23 +129,6 @@ BEGIN_C_DECLS
  * Public function prototypes
  *============================================================================*/
 
-/*----------------------------------------------------------------------------
- * Main function for Code_Saturne run.
- *
- * This function is called either by main() in the standard case, or by
- * a SALOME standalone module's yacsinit() function. As the latter cannot
- * return, almost all of the code's execution steps (except command-line
- * initialization, required to know if we are running in standard mode or
- * pluging a SALOME module) are done here.
- *
- * As yacsinit() can take no arguments, the command-line options must be
- * defined as a static global variable by main() so as to be usable
- * by run().
- *----------------------------------------------------------------------------*/
-
-void
-cs_run(void);
-
 /*============================================================================
  * Static global variables
  *============================================================================*/
@@ -165,19 +148,11 @@ static cs_opts_t  opts;
 /*----------------------------------------------------------------------------
  * Main function for Code_Saturne run.
  *
- * This function is called either by main() in the standard case, or by
- * a SALOME standalone module's yacsinit() function. As the latter cannot
- * return, almost all of the code's execution steps (except command-line
- * initialization, required to know if we are running in standard mode or
- * pluging a SALOME module) are done here.
- *
- * As yacsinit() can take no arguments, the command-line options must be
- * defined as a static global variable by main() so as to be usable
- * by run().
+ * This function is called by main().
  *----------------------------------------------------------------------------*/
 
-void
-cs_run(void)
+static void
+_run(void)
 {
   cs_int_t  ivoset = 0;
 
@@ -670,21 +645,9 @@ main(int    argc,
     cs_notebook_load_from_file();
   }
 
-  /* Running as a standalone SALOME component, load YACS component
-     library and run yacsinit() component initialization and event loop,
-     which should itself include the standard run routine */
+  /* Call main run() method */
 
-  if (opts.yacs_module != NULL) {
-    cs_calcium_load_yacs(opts.yacs_module);
-    BFT_FREE(opts.yacs_module);
-    cs_calcium_start_yacs(); /* Event-loop does not return as of this version */
-    cs_calcium_unload_yacs();
-  }
-
-  /* In standard case, simply call regular run() method */
-
-  else
-    cs_run();
+  _run();
 
   /* Return */
 

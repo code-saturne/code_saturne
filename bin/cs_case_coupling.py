@@ -66,7 +66,6 @@ def coupling(package,
     syr_domains = []
     nep_domains = []
     cat_domains = []
-    ast_domain = []
     py_domains = []
 
     if domains == None:
@@ -136,25 +135,6 @@ def coupling(package,
 
             use_syrthes = True
             syr_domains.append(dom)
-
-        elif (d.get('solver') in ('Code_Aster', 'code_aster', 'Aster')):
-
-            if len(ast_domain) > 0:
-                err_str = 'Only 1 code_aster domain is currently handled\n'
-                raise RunCaseError(err_str)
-
-            try:
-                dom = aster_domain(package,
-                                   name = d.get('domain'),
-                                   param = d.get('script'))
-
-            except Exception:
-                err_str = 'Cannot create code_aster domain.\n'
-                err_str += ' domain = ' + d.get('domain') + '\n'
-                err_str += ' script = ' + d.get('script') + '\n'
-                raise RunCaseError(err_str)
-
-            ast_domain.append(dom)
 
         elif (d.get('solver') == 'CATHARE'):
             # Current version using Cathare2: the cathare case is converted to a
@@ -245,7 +225,6 @@ domains = [
              coupling_parameters = coupling_parameters,
              domains = sat_domains + nep_domains + cat_domains,
              syr_domains = syr_domains,
-             ast_domain = ast_domain,
              py_domains = py_domains)
 
     if verbose:
@@ -256,8 +235,6 @@ domains = [
             msg += '   o SYRTHES      [' + str(len(syr_domains)) + ' domain(s)];\n'
         if use_neptune == True:
             msg += '   o NEPTUNE_CFD  [' + str(len(nep_domains)) + ' domain(s)];\n'
-        if ast_domain:
-            msg += '   o Code_Aster   [1 domain(s)];\n'
         if use_cathare == True:
             msg += '   o CATHARE2     [' + str(len(cat_domains)) + ' domain(s)];\n'
         if use_py_code == True:

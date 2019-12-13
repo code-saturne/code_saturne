@@ -1194,12 +1194,6 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  src/meg/Makefile
                  gui/Makefile gui/Base/Makefile gui/Pages/Makefile
                  gui/studymanager_gui/Makefile gui/trackcvg/Makefile
-                 salome/fsi_coupling/Makefile
-                 salome/fsi_coupling/idl/Makefile
-                 salome/fsi_coupling/resources/Makefile
-                 salome/fsi_coupling/src/Makefile
-                 salome/fsi_coupling/src/FSI_ASTER/Makefile
-                 salome/fsi_coupling/src/FSI_SATURNE/Makefile
                  salome/cfd_study/Makefile
                  salome/cfd_study/doc/Makefile
                  salome/cfd_study/idl/Makefile
@@ -1216,7 +1210,6 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  docs/theory/Makefile docs/theory/graphics/Makefile
                  docs/user/Makefile docs/user/graphics/Makefile
                  tests/Makefile
-                 extras/salome/fsi_appli_config.xml
                  extras/windows/innosetup/setup_mingw.iss
                  extras/windows/innosetup/setup_cygwin32.iss
                  extras/windows/innosetup/setup_cygwin64.iss

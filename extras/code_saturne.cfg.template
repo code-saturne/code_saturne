@@ -21,10 +21,6 @@
 ### (e.g. <syrthes_home>/syrthes4.3/syrthes4.3/arch/<arch>).
 # syrthes =
 ###
-### Set the location to the Code_Aster installation directory
-### (e.g. <salome_meca_home>/V2015_1/tools/Code_aster_testing_1230).
-# aster =
-###
 ### Set the location to the Cathare installation directory
 ### (e.g. <cathare_home>/mod5.1).
 # cathare =
