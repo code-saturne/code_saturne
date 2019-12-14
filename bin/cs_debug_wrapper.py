@@ -518,8 +518,11 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
 
     f = gen_cmd_file(cmds)
 
-    cmd.append('-x')
-    cmd.append(f)
+    if debugger_ui == 'gdbgui':
+        cmd.append('--gdb-args="-x ' + f + '"')
+    else:
+        cmd.append('-x')
+        cmd.append(f)
 
     if debugger_command_file:
         fp = open(debugger_command_file)
@@ -573,6 +576,7 @@ def run_gdb_debug(path, args=None, gdb_cmds=None,
         cmd[0] = 'gdb'
 
     if not debugger_ui in ("emacs", "emacs23"):
+        print(cmd)
         p = subprocess.Popen(cmd)
     else:
         cmd_line = cmd[0]
