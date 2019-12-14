@@ -29,7 +29,6 @@ This module defines the following functions:
 - process_cmd_line
 """
 
-
 #-------------------------------------------------------------------------------
 # Library modules import
 #-------------------------------------------------------------------------------
@@ -71,6 +70,26 @@ def main(argv, pkg):
     Main function.
     """
 
+    # Check for SALOME support
+
+    run_cmd = None
+
+    salome_env = pkg.config.salome_env
+
+    if not run_cmd:
+        kernel_root_dir = os.getenv('KERNEL_ROOT_DIR')
+        if kernel_root_dir:
+            if os.path.exists(os.path.join(kernel_root_dir, 'bin/salome/runSalome.py')):
+                run_cmd = kernel_root_dir + "/bin/salome/envSalome.py python " + kernel_root_dir + "/bin/salome/runSalome.py"
+
+    if not run_cmd:
+        if salome_env:
+            run_cmd = salome_env + "; ${KERNEL_ROOT_DIR}/bin/salome/envSalome.py python ${KERNEL_ROOT_DIR}/bin/salome/runSalome.py"
+
+    if not run_cmd:
+        sys.stderr.write("SALOME is not available in this installation.\n")
+        sys.exit(1)
+
     # Save PYTHONPATH as CS_SALOME_TOP_PYTHONPATH to avoid issues
     # with launch of code due to PYTHONPATH with extra (cumulative) entries
     # encountered with Python 3.6 (i.e. post Python 3.3, with current
@@ -88,15 +107,7 @@ export CFDSTUDY_ROOT_DIR PYTHONPATH
 %(runsalome)s --modules=%(modules)s
 """
 
-    if pkg.config.have_salome == "no":
-        sys.stderr.write("SALOME is not available in this installation.\n")
-        sys.exit(1)
-
     default_modules = "GEOM,SHAPER,SMESH,FIELDS,CFDSTUDY,PARAVIS,YACS,JOBMANAGER,HOMARD,OPENTURNS"
-
-    run_cmd = pkg.config.salome_run
-    if not run_cmd:
-        run_cmd = "${KERNEL_ROOT_DIR}/bin/salome/envSalome.py python ${KERNEL_ROOT_DIR}/bin/salome/runSalome.py"
 
     path = pkg.get_dir('pkgpythondir')
     path = path+":"+pkg.get_dir('pythondir')

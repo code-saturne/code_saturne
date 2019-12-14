@@ -1311,7 +1311,6 @@ echo " freesteam support: "$cs_have_freesteam""
 echo " CoolProp support: "$cs_have_coolprop""
 echo " PETSc support: "$cs_have_petsc""
 echo " SALOME GUI support: "$cs_have_salome_gui""
-echo " SALOME Kernel support: "$cs_have_salome_kernel""
 echo " Dynamic loader support: "$cs_have_dlloader""
 if (test "x$cs_env_modules" != "x") ; then
   echo " Auto load environment modules: "$cs_env_modules""

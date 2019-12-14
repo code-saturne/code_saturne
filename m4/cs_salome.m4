@@ -71,19 +71,56 @@ if test "x$with_salome" != "xno" ; then
       salome_pre=$(find $with_salome -maxdepth 1 -name salome_prerequisites.sh 2>/dev/null)
       if test "x$salome_pre" != "x"; then
         SALOMEENVCMD="source $salome_pre; export ROOT_SALOME=$with_salome; source $salome_env"
-        SALOMEPRE="$salome_pre"
       fi
-    fi
-  fi
-
-  if test "x$SALOMERUN" = "x"; then
-    if test -f "$ROOT_SALOME/runSalome"; then
-      SALOMERUN="$ROOT_SALOME/runSalome"
     fi
   fi
 
   unset salome_pre
   unset salome_env
+
+  # Paths for libraries provided by SALOME distibution, for automatic checks
+
+  if test -z "$MEDCOUPLING_ROOT_DIR" ; then
+    if test "x$SALOMEENVCMD" != "x" ; then
+      MEDCOUPLING_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $MEDCOUPLING_ROOT_DIR)
+    else
+      MEDCOUPLING_ROOT_DIR=$(echo $MEDCOUPLING_ROOT_DIR)
+    fi
+  fi
+
+  if test -z "$HDF5HOME" ; then
+    if test "x$SALOMEENVCMD" != "x" ; then
+      HDF5HOME=$(eval $SALOMEENVCMD ; echo $HDF5HOME)
+    else
+      HDF5HOME=$(echo $HDF5HOME)
+    fi
+  fi
+
+  if test -z "$MED3HOME" ; then
+    if test "x$SALOMEENVCMD" != "x" ; then
+      MED3HOME=$(eval $SALOMEENVCMD ; echo $MED3HOME)
+    else
+      MED3HOME=$(echo $MED3HOME)
+    fi
+  fi
+
+  if test -z "$CGNSHOME" ; then
+    if test "x$SALOMEENVCMD" != "x" ; then
+      CGNSHOME=$(eval $SALOMEENVCMD ; echo $CGNSHOME)
+    else
+      CGNSHOME=$(echo $CGNSHOME)
+    fi
+  fi
+
+  if test -z "$CATALYST_ROOT_DIR" ; then
+    if test "x$SALOMEENVCMD" != "x" ; then
+      CATALYST_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $CATALYST_ROOT_DIR)
+    else
+      CATALYST_ROOT_DIR=$(echo $CATALYST_ROOT_DIR)
+    fi
+  fi
+
+  AC_ARG_VAR([SALOMEENVCMD], [SALOME environment setting commands])
 
 fi
 
@@ -104,28 +141,6 @@ if test x$with_salome != xno ; then
     KERNEL_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $KERNEL_ROOT_DIR)
     GUI_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $GUI_ROOT_DIR)
     OMNIIDL=$(eval $SALOMEENVCMD ; which omniidl)
-  fi
-
-  # Paths for libraries provided by SALOME distibution, for automatic checks
-
-  if test -z "$MEDCOUPLING_ROOT_DIR" ; then
-    MEDCOUPLING_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $MEDCOUPLING_ROOT_DIR)
-  fi
-
-  if test -z "$HDF5HOME" ; then
-    HDF5HOME=$(eval $SALOMEENVCMD ; echo $HDF5HOME)
-  fi
-
-  if test -z "$MED3HOME" ; then
-    MED3HOME=$(eval $SALOMEENVCMD ; echo $MED3HOME)
-  fi
-
-  if test -z "$CGNSHOME" ; then
-    CGNSHOME=$(eval $SALOMEENVCMD ; echo $CGNSHOME)
-  fi
-
-  if test -z "$CATALYST_ROOT_DIR" ; then
-    CATALYST_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $CATALYST_ROOT_DIR)
   fi
 
   # Make sure omniidl will work by forcing PYTHONPATH
@@ -153,11 +168,6 @@ fi
 AC_SUBST(OMNIIDLPYTHONPATH)
 AC_SUBST(OMNIIDLLDLIBPATH)
 
-AC_ARG_VAR([SALOMEENVCMD], [SALOME environment setting commands])
-AC_ARG_VAR([SALOMERUN], [SALOME main script (usually runSalome or runAppli)])
-
-AC_SUBST([SALOMEPRE])
-
 CS_AC_TEST_SALOME_KERNEL
 CS_AC_TEST_SALOME_GUI
 
@@ -166,8 +176,7 @@ AC_LANG_SAVE
 omniORB_ok=no # in case following test is not called
 
 AS_IF([test $cs_have_salome_kernel = yes -o $cs_have_salome_gui = yes],
-      [CS_AC_TEST_OMNIORB
-       CS_AC_TEST_CORBA])
+      [CS_AC_TEST_OMNIORB])
 
 AC_LANG_RESTORE
 
@@ -219,7 +228,6 @@ if test "x$with_salome_kernel" != "xno" ; then
 
 fi
 
-AC_SUBST(cs_have_salome_kernel)
 AC_SUBST(SALOME_KERNEL)
 AC_SUBST(SALOME_KERNEL_CPPFLAGS)
 AC_SUBST(SALOME_KERNEL_IDL)
@@ -286,80 +294,3 @@ AC_SUBST(SALOME_GUI_LDFLAGS)
 AM_CONDITIONAL(HAVE_SALOME_GUI, test x$cs_have_salome_gui = xyes)
 
 ])dnl
-
-
-# CS_AC_ENABLE_PTHREAD
-#---------------------
-# Modify CFLAGS, CXXFLAGS and LIBS for compiling pthread-based programs.
-# Use acx_pthread.m4 from GNU Autoconf Macro Archive
-
-AC_DEFUN([CS_AC_ENABLE_PTHREADS],[
-AC_REQUIRE([ACX_PTHREAD])
-
-if test x"$cs_enable_pthreads_done" != xyes; then
-  if test x"$acx_pthread_ok" = xyes; then
-    CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
-    CXXFLAGS="$CXXFLAGS $PTHREAD_CFLAGS"
-    LIBS="$LIBS $PTHREAD_LIBS"
-    cs_threads_ok=yes
-  else
-    cs_threads_ok=no
-  fi
-  cs_enable_pthreads_done=yes
-fi
-])dnl
-dnl
-
-
-# CS_AC_TEST_CORBA
-#-----------------
-# Set CORBA-related variables according to omniORB detection.
-
-AC_DEFUN([CS_AC_TEST_CORBA],[
-
-if test x"$DEFAULT_ORB" = x"omniORB"
-then
-
-  #  Contient le nom de l'ORB
-  ORB=omniorb
-
-  AC_MSG_RESULT(default orb: omniORB)
-  IDL=$OMNIORB_IDL
-  AC_SUBST(IDL)
-
-  CORBA_ROOT=$OMNIORB_ROOT
-  CORBA_INCLUDES=$OMNIORB_INCLUDES
-  CORBA_CXXFLAGS=$OMNIORB_CXXFLAGS
-  CORBA_LIBS=$OMNIORB_LIBS
-  IDLCXXFLAGS=$OMNIORB_IDLCXXFLAGS
-  IDLPYFLAGS=$OMNIORB_IDLPYFLAGS
-
-  AC_SUBST(CORBA_ROOT)
-  AC_SUBST(CORBA_INCLUDES)
-  AC_SUBST(CORBA_CXXFLAGS)
-  AC_SUBST(CORBA_LIBS)
-  AC_SUBST(IDLCXXFLAGS)
-  AC_SUBST(IDLPYFLAGS)
-
-  IDL_CLN_H=$OMNIORB_IDL_CLN_H
-  IDL_CLN_CXX=$OMNIORB_IDL_CLN_CXX
-  IDL_CLN_OBJ=$OMNIORB_IDL_CLN_OBJ
-
-  AC_SUBST(IDL_CLN_H)
-  AC_SUBST(IDL_CLN_CXX)
-  AC_SUBST(IDL_CLN_OBJ)
-
-  IDL_SRV_H=$OMNIORB_IDL_SRV_H
-  IDL_SRV_CXX=$OMNIORB_IDL_SRV_CXX
-  IDL_SRV_OBJ=$OMNIORB_IDL_SRV_OBJ
-
-  AC_SUBST(IDL_SRV_H)
-  AC_SUBST(IDL_SRV_CXX)
-  AC_SUBST(IDL_SRV_OBJ)
-
-else
-  AC_MSG_RESULT($DEFAULT_ORB unknown orb)
-fi
-
-])dnl
-dnl
