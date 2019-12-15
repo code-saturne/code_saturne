@@ -42,19 +42,26 @@
 #endif
 
 /*----------------------------------------------------------------------------
+ * PLE library headers
+ *----------------------------------------------------------------------------*/
+
+#include <ple_defs.h>
+#include <ple_coupling.h>
+
+/*----------------------------------------------------------------------------
  * Local headers
  *----------------------------------------------------------------------------*/
 
 #include "bft_mem.h"
 #include "bft_error.h"
 #include "bft_printf.h"
-#include "bft_error.h"
 
 #include "fvm_io_num.h"
 #include "fvm_nodal.h"
 #include "fvm_nodal_extract.h"
 
 #include "cs_calcium.h"
+#include "cs_coupling.h"
 #include "cs_interface.h"
 #include "cs_log.h"
 #include "cs_mesh.h"
@@ -82,6 +89,8 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 struct _cs_ast_coupling_t {
+
+  int          root_rank;
 
   cs_gnum_t    n_g_faces;
   cs_gnum_t    n_g_vertices;
@@ -130,10 +139,6 @@ struct _cs_ast_coupling_t {
  *============================================================================*/
 
 cs_ast_coupling_t  *cs_glob_ast_coupling = NULL;
-
-static int  comp_id = 0;
-
-static cs_calcium_timedep_t  time_dep = CALCIUM_iteration;
 
 /*============================================================================
  * Private function definitions
@@ -201,8 +206,6 @@ _allocate_arrays(cs_ast_coupling_t  *ast_cpl)
 static void
 _recv_dyn(cs_ast_coupling_t  *ast_cpl)
 {
-  double  min_time = 0., max_time = 0.;
-
   int n_val_read = 0;
 
   double *buffer = NULL;
@@ -216,8 +219,7 @@ _recv_dyn(cs_ast_coupling_t  *ast_cpl)
   /* Read displacements */
 
   if (cs_glob_rank_id <= 0) {
-    cs_calcium_read_double(comp_id, time_dep, &min_time, &max_time,
-                           &(ast_cpl->iteration),
+    cs_calcium_read_double(ast_cpl->root_rank, &(ast_cpl->iteration),
                            "DEPAST", 3*ast_cpl->n_g_vertices,
                            &n_val_read, buffer);
 
@@ -242,8 +244,7 @@ _recv_dyn(cs_ast_coupling_t  *ast_cpl)
     buffer = ast_cpl->xvast;
 
   if (cs_glob_rank_id <= 0) {
-    cs_calcium_read_double(comp_id, time_dep, &min_time, &max_time,
-                           &(ast_cpl->iteration),
+    cs_calcium_read_double(ast_cpl->root_rank, &(ast_cpl->iteration),
                            "VITAST", 3*ast_cpl->n_g_vertices,
                            &n_val_read, buffer);
 
@@ -276,9 +277,7 @@ _send_icv2(cs_ast_coupling_t  *ast_cpl,
   if (cs_glob_rank_id > 0)
     return;
 
-  double cur_time = 0.;
-
-  cs_calcium_write_int(comp_id, time_dep, cur_time, ast_cpl->iteration,
+  cs_calcium_write_int(ast_cpl->root_rank, ast_cpl->iteration,
                        "ICVAST", 1, &icv);
 }
 
@@ -614,12 +613,10 @@ void CS_PROCF(astgeo, ASTGEO)
 
     /* Directly for code_aster */
 
-    double cur_time = 0.;
-
-    cs_calcium_write_int(comp_id, time_dep, cur_time, 0,
+    cs_calcium_write_int(ast_cpl->root_rank, 0,
                          "NB_DYN", 1, &(sizes[1]));
 
-    cs_calcium_write_int(comp_id, time_dep, cur_time, 0,
+    cs_calcium_write_int(ast_cpl->root_rank, 0,
                          "NB_FOR", 1, &(sizes[0]));
 
   }
@@ -627,8 +624,6 @@ void CS_PROCF(astgeo, ASTGEO)
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1) {
-
-    double cur_time = 0.;
 
     cs_real_t *g_face_centers = NULL;
     if (cs_glob_rank_id == 0)
@@ -639,8 +634,8 @@ void CS_PROCF(astgeo, ASTGEO)
                                 face_centers,
                                 g_face_centers);
     if (cs_glob_rank_id == 0) {
-      cs_calcium_write_double(comp_id, time_dep, cur_time, 0, "COOFAC",
-                              3*ast_cpl->n_g_faces, g_face_centers);
+      cs_calcium_write_double(ast_cpl->root_rank, 0,
+                              "COOFAC", 3*ast_cpl->n_g_faces, g_face_centers);
       BFT_FREE(g_face_centers);
     }
 
@@ -653,8 +648,8 @@ void CS_PROCF(astgeo, ASTGEO)
                                 vtx_coords,
                                 g_vtx_coords);
     if (cs_glob_rank_id == 0) {
-      cs_calcium_write_double(comp_id, time_dep, cur_time, 0, "COONOD",
-                              3*ast_cpl->n_g_vertices, g_vtx_coords);
+      cs_calcium_write_double(ast_cpl->root_rank, 0,
+                              "COONOD", 3*ast_cpl->n_g_vertices, g_vtx_coords);
       BFT_FREE(g_vtx_coords);
     }
 
@@ -667,8 +662,8 @@ void CS_PROCF(astgeo, ASTGEO)
                                 faces_color,
                                 g_face_color);
     if (cs_glob_rank_id == 0) {
-      cs_calcium_write_int(comp_id, time_dep, cur_time, 0, "COLFAC",
-                           ast_cpl->n_g_faces, g_face_color);
+      cs_calcium_write_int(ast_cpl->root_rank, 0,
+                           "COLFAC", ast_cpl->n_g_faces, g_face_color);
       BFT_FREE(g_face_color);
     }
 
@@ -681,8 +676,8 @@ void CS_PROCF(astgeo, ASTGEO)
                                 vertices_color,
                                 g_vtx_color);
     if (cs_glob_rank_id == 0) {
-      cs_calcium_write_int(comp_id, time_dep, cur_time, 0, "COLNOD",
-                           ast_cpl->n_g_vertices, g_vtx_color);
+      cs_calcium_write_int(ast_cpl->root_rank, 0,
+                           "COLNOD", ast_cpl->n_g_vertices, g_vtx_color);
       BFT_FREE(g_vtx_color);
     }
 
@@ -695,18 +690,16 @@ void CS_PROCF(astgeo, ASTGEO)
 
   if (cs_glob_n_ranks == 1) {
 
-    double cur_time = 0.;
-
-    cs_calcium_write_double(comp_id, time_dep, cur_time, 0,
+    cs_calcium_write_double(ast_cpl->root_rank, 0,
                             "COOFAC", 3*n_faces, face_centers);
 
-    cs_calcium_write_double(comp_id, time_dep, cur_time, 0,
+    cs_calcium_write_double(ast_cpl->root_rank, 0,
                             "COONOD", 3*n_vertices, vtx_coords);
 
-    cs_calcium_write_int(comp_id, time_dep, cur_time, 0,
+    cs_calcium_write_int(ast_cpl->root_rank, 0,
                          "COLFAC", n_faces, faces_color);
 
-    cs_calcium_write_int(comp_id, time_dep, cur_time, 0,
+    cs_calcium_write_int(ast_cpl->root_rank, 0,
                          "COLNOD", n_vertices, vertices_color);
 
   }
@@ -782,8 +775,7 @@ void CS_PROCF(astfor, ASTFOR)
                                 fopas);
 
     if (cs_glob_rank_id <= 0) {
-      double cur_time = 0.;
-      cs_calcium_write_double(comp_id, time_dep, cur_time, ast_cpl->iteration,
+      cs_calcium_write_double(ast_cpl->root_rank, ast_cpl->iteration,
                               "FORAST", 3*ast_cpl->n_g_faces, fopas);
     }
 
@@ -794,8 +786,7 @@ void CS_PROCF(astfor, ASTFOR)
 #endif
 
   if (cs_glob_n_ranks <= 1) {
-    double cur_time = 0.;
-    cs_calcium_write_double(comp_id, time_dep, cur_time, ast_cpl->iteration,
+    cs_calcium_write_double(ast_cpl->root_rank, ast_cpl->iteration,
                             "FORAST", 3*ast_cpl->n_g_faces, ast_cpl->fopas);
   }
 
@@ -971,13 +962,11 @@ CS_PROCF(astpdt, ASTPDT)
   if (cs_glob_rank_id <= 0) {
 
     double  dt_sat = dttab[0];
-    double  min_time = 0., max_time = 0.;
     int  n_val_read = 0;
 
     /* Receive time step sent by code_aster */
 
-    err_code = cs_calcium_read_double(comp_id, time_dep, &min_time, &max_time,
-                                      &(ast_cpl->iteration),
+    err_code = cs_calcium_read_double(ast_cpl->root_rank, &(ast_cpl->iteration),
                                       "DTAST", 1, &n_val_read, &dt_ast);
 
     if (err_code >= 0) {
@@ -991,9 +980,7 @@ CS_PROCF(astpdt, ASTPDT)
       if (dt_sat < dttmp)
         dttmp = dt_sat;
 
-      double cur_time = 0.;
-      err_code = cs_calcium_write_double(comp_id, time_dep, cur_time,
-                                         ast_cpl->iteration,
+      err_code = cs_calcium_write_double(ast_cpl->root_rank, ast_cpl->iteration,
                                          "DTCALC", 1, &dttmp);
 
     }
@@ -1072,6 +1059,8 @@ cs_ast_coupling_initialize(int        nalimx,
 
   BFT_MALLOC(ast_cpl, 1, cs_ast_coupling_t);
 
+  ast_cpl->root_rank = -1;
+
   ast_cpl->verbosity = 1;
   ast_cpl->iteration = 0; /* < 0 for disconnect */
 
@@ -1099,34 +1088,80 @@ cs_ast_coupling_initialize(int        nalimx,
 
   cs_glob_ast_coupling = ast_cpl;
 
+  /* Set Calcium verbosity based on environment variable */
+
+  const char *calcium_verbosity = getenv("CS_CALCIUM_VERBOSITY");
+  if (calcium_verbosity != NULL)
+    cs_calcium_set_verbosity(atoi(calcium_verbosity));
+
+  /* Find root rank of coupling */
+
+#if defined(PLE_HAVE_MPI)
+
+  const ple_coupling_mpi_set_t *mpi_apps = cs_coupling_get_mpi_apps();
+
+  if (mpi_apps != NULL) {
+
+    int n_apps = ple_coupling_mpi_set_n_apps(mpi_apps);
+    int n_ast_apps = 0;
+
+    /* First pass to count available code_aster couplings */
+
+    for (int i = 0; i < n_apps; i++) {
+      const ple_coupling_mpi_set_info_t
+        ai = ple_coupling_mpi_set_get_info(mpi_apps, i);
+      if (strncmp(ai.app_type, "code_aster", 10) == 0)
+        n_ast_apps += 1;
+    }
+
+    /* In single-coupling mode, no identification necessary */
+
+    if (n_ast_apps == 1) {
+
+      for (int i = 0; i < n_apps; i++) {
+        const ple_coupling_mpi_set_info_t
+          ai = ple_coupling_mpi_set_get_info(mpi_apps, i);
+        if (strncmp(ai.app_type, "code_aster", 10) == 0)
+          ast_cpl->root_rank = ai.root_rank;
+      }
+
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                "Detected %d code_aster instances; can handle exactly 1.",
+                n_ast_apps);
+
+  }
+
+#else
+
+  bft_error(__FILE__, __LINE__, 0,
+            "code_aster now requires MPI");
+
+#endif
+
   /* Calcium  (communication) initialization */
 
   if (cs_glob_rank_id <= 0) {
-
-    /* Initialization of communication with calcium */
-
-    char instance[200];
-
-    cs_calcium_connect(comp_id, instance);
 
     bft_printf(" Send calculation parameters to code_aster\n");
 
     /* Send data */
 
-    cs_calcium_write_int(comp_id, time_dep, 0, 0, "NBPDTM", 1, &nbpdtm);
-    cs_calcium_write_int(comp_id, time_dep, 0, 0, "NBSSIT", 1,
+    cs_calcium_write_int(ast_cpl->root_rank, 0, "NBPDTM", 1, &nbpdtm);
+    cs_calcium_write_int(ast_cpl->root_rank, 0, "NBSSIT", 1,
                          &(ast_cpl->nbssit));
 
-    cs_calcium_write_double(comp_id, time_dep, 0, 0, "EPSILO", 1,
+    cs_calcium_write_double(ast_cpl->root_rank, 0, "EPSILO", 1,
                             &(ast_cpl->epsilo));
 
     /* Send isyncp and ntchr (false, removed function) */
     int isyncp = 0, ntchr = -1;
-    cs_calcium_write_int(comp_id, time_dep, 0, 0, "ISYNCP", 1, &(isyncp));
-    cs_calcium_write_int(comp_id, time_dep, 0, 0, "NTCHRO", 1, &(ntchr));
+    cs_calcium_write_int(ast_cpl->root_rank, 0, "ISYNCP", 1, &(isyncp));
+    cs_calcium_write_int(ast_cpl->root_rank, 0, "NTCHRO", 1, &(ntchr));
 
-    cs_calcium_write_double(comp_id, time_dep, 0, 0, "TTINIT", 1, &ttinit);
-    cs_calcium_write_double(comp_id, time_dep, 0, 0, "PDTREF", 1,
+    cs_calcium_write_double(ast_cpl->root_rank, 0, "TTINIT", 1, &ttinit);
+    cs_calcium_write_double(ast_cpl->root_rank, 0, "PDTREF", 1,
                             &(ast_cpl->dtref));
 
   }

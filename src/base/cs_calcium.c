@@ -1,5 +1,5 @@
 /*============================================================================
- * Basic CALCIUM-mappable functions for code coupling using SALOME's YACS
+ * Basic CALCIUM-mappable functions for code coupling
  *============================================================================*/
 
 /*
@@ -62,102 +62,23 @@ BEGIN_C_DECLS
  * Local Macro Definitions
  *============================================================================*/
 
-/* Maximum string Lengths (based on CALCIUM's limits) */
+/* Maximum string Lengths */
 
-#define CS_CALCIUM_INSTANCE_LEN 72
-#define CS_CALCIUM_VARIABLE_LEN 144
+#define CS_CALCIUM_VARIABLE_LEN 127
+
+#if defined(HAVE_MPI)
+
+static MPI_Comm _comm = MPI_COMM_WORLD;
+
+/* MPI tag for file operations */
+
+#define CS_CALCIUM_MPI_TAG  0
+
+#endif
 
 /*=============================================================================
  * Local Type Definitions
  *============================================================================*/
-
-/* CALCIUM datatypes */
-
-typedef enum {
-
-  CALCIUM_integer,      /* Integer values */
-  CALCIUM_real,         /* Floating-point values */
-  CALCIUM_double,       /* Double-precision floating-point values */
-  CALCIUM_complex,      /* Complex values (not used by Code_Saturne) */
-  CALCIUM_string,       /* character string */
-  CALCIUM_logical       /* Logical values */
-
-} cs_calcium_datatype_t;
-
-/*----------------------------------------------------------------------------
- * Function pointer types
- *----------------------------------------------------------------------------*/
-
-typedef int
-(cs_calcium_yacsinit_t)(void);
-
-typedef int
-(cs_calcium_connect_t)(void  *component,
-                       char  *s);
-
-typedef int
-(cs_calcium_disconnect_t)(void  *component,
-                          int    cont);
-
-typedef int
-(cs_calcium_read_int_t)(void    *component,
-                        int      time_dep,
-                        float   *min_time,
-                        float   *max_time,
-                        int     *iteration,
-                        char    *var_name,
-                        int      n_val_max,
-                        int     *n_val_read,
-                        int      val[]);
-
-typedef int
-(cs_calcium_read_float_t)(void    *component,
-                          int      time_dep,
-                          float   *min_time,
-                          float   *max_time,
-                          int     *iteration,
-                          char    *var_name,
-                          int      n_val_max,
-                          int     *n_val_read,
-                          float    val[]);
-
-typedef int
-(cs_calcium_read_double_t)(void    *component,
-                           int      time_dep,
-                           double  *min_time,
-                           double  *max_time,
-                           int     *iteration,
-                           char    *var_name,
-                           int      n_val_max,
-                           int     *n_val_read,
-                           double   val[]);
-
-typedef int
-(cs_calcium_write_int_t)(void    *component,
-                         int      time_dep,
-                         float    cur_time,
-                         int      iteration,
-                         char    *var_name,
-                         int      n_val,
-                         int      val[]);
-
-typedef int
-(cs_calcium_write_float_t)(void    *component,
-                           int      time_dep,
-                           float    cur_time,
-                           int      iteration,
-                           char    *var_name,
-                           int      n_val,
-                           float    val[]);
-
-typedef int
-(cs_calcium_write_double_t)(void    *component,
-                            int      time_dep,
-                            double   cur_time,
-                            int      iteration,
-                            char    *var_name,
-                            int      n_val,
-                            double   val[]);
 
 /*=============================================================================
  * Static global variables
@@ -166,45 +87,7 @@ typedef int
 /* Verbosity (none if -1, headers if 0,
    headers + n first and last elements if > 0 */
 
-static int _cs_calcium_n_echo = -1;
-
-/* Pointer of type Superv_Component_i* to the supervisable SALOME component */
-
-static void *_cs_calcium_component[8] = {NULL, NULL, NULL, NULL,
-                                         NULL, NULL, NULL, NULL};
-
-/* Map from enumerated values to SALOME's Calcium API defined values */
-
-static int _cs_calcium_timedep_map[3] = {40,   /* CP_TEMPS      = 40 */
-                                         41,   /* CP_ITERATION  = 41 */
-                                         42};  /* CP_SEQUENTIAL = 42 */
-
-static int _cs_calcium_continuation_map[2] = {20,   /* CP_CONT   = 20 */
-                                              21};  /* CP_ARRET  = 21 */
-
-/* Calcium datatype names */
-
-static const char *cs_calcium_datatype_name[] = {"integer", "real", "double",
-                                                 "complex", "string",
-                                                 "logical"};
-static const char *cs_calcium_timedep_name[] = {"T", "I", "S"};
-
-/* YACS dynamic library, initialization, and specific error handling */
-
-static void  *_cs_calcium_yacslib = NULL;
-
-static cs_calcium_yacsinit_t  *_cs_calcium_yacsinit = NULL;
-
-/* Calcium function pointers */
-
-static cs_calcium_connect_t         *_cs_calcium_connect = NULL;
-static cs_calcium_disconnect_t      *_cs_calcium_disconnect = NULL;
-static cs_calcium_read_int_t        *_cs_calcium_read_int = NULL;
-static cs_calcium_read_float_t      *_cs_calcium_read_float = NULL;
-static cs_calcium_read_double_t     *_cs_calcium_read_double = NULL;
-static cs_calcium_write_int_t       *_cs_calcium_write_int = NULL;
-static cs_calcium_write_float_t     *_cs_calcium_write_float = NULL;
-static cs_calcium_write_double_t    *_cs_calcium_write_double = NULL;
+static int _cs_calcium_n_echo = 1;
 
 /*=============================================================================
  * Local function definitions
@@ -221,7 +104,7 @@ static cs_calcium_write_double_t    *_cs_calcium_write_double = NULL;
  *----------------------------------------------------------------------------*/
 
 static void
-_calcium_echo_body(cs_calcium_datatype_t   datatype,
+_calcium_echo_body(cs_datatype_t           datatype,
                    int                     n_echo,
                    int                     n_val,
                    const void             *val)
@@ -251,7 +134,7 @@ _calcium_echo_body(cs_calcium_datatype_t   datatype,
 
     switch(datatype) {
 
-    case CALCIUM_integer:
+    case CS_INT_TYPE:
       {
         const int *_val = val;
         for (id = start_id; id < end_id; id++)
@@ -259,38 +142,11 @@ _calcium_echo_body(cs_calcium_datatype_t   datatype,
       }
       break;
 
-    case CALCIUM_real:
-      {
-        const float *_val = val;
-        for (id = start_id; id < end_id; id++)
-          bft_printf("    %10d : %12.5e\n", id + 1,
-                     (double)(*(_val + id)));
-      }
-      break;
-
-    case CALCIUM_double:
+    case CS_DOUBLE:
       {
         const double *_val = val;
         for (id = start_id; id < end_id; id++)
           bft_printf("    %10d : %14.7e\n", id + 1, *(_val + id));
-      }
-      break;
-
-    case CALCIUM_complex:
-      {
-        const float *_val = val;
-        for (id = start_id; id < end_id; id++)
-          bft_printf("    %10d : (%12.5e, %12.5e)\n", id + 1,
-                     (double)(*(_val + 2*id)), (double)(*(_val + 2*id + 1)));
-
-      }
-      break;
-
-    case CALCIUM_string:
-      {
-        const char *const *_val = val;
-        for (id = start_id; id < end_id; id++)
-          bft_printf("    %10d : '%s\n", id + 1, _val[id]);
       }
       break;
 
@@ -324,24 +180,18 @@ _calcium_echo_body(cs_calcium_datatype_t   datatype,
  * Print message indicating that we are ready to read data
  *
  * parameters:
- *   comp_id    <-- coupled component id
+ *   rank_id    <-- communicating MPI rank id
  *   var_name   <-- variable name
- *   time_dep   <-- time dependency
- *   min_time   <-- time interval low
- *   max_time   <-- time interval high
  *   iteration  <-- iteration step
  *   datatype   <-- section data type
  *   n_max_vals <-- maximum number of values to read
  *----------------------------------------------------------------------------*/
 
 static void
-_calcium_echo_pre_read(int                     comp_id,
+_calcium_echo_pre_read(int                     rank_id,
                        const char             *var_name,
-                       cs_calcium_timedep_t    time_dep,
-                       double                  min_time,
-                       double                  max_time,
                        int                     iteration,
-                       cs_calcium_datatype_t   datatype,
+                       cs_datatype_t           datatype,
                        int                     n_max_vals)
 {
   if (_cs_calcium_n_echo < 0)
@@ -349,17 +199,11 @@ _calcium_echo_pre_read(int                     comp_id,
 
   assert(var_name != NULL);
 
-  if (_cs_calcium_component[comp_id] != NULL)
-    bft_printf(_("\nComponent %d [%p], port %s:\n"),
-               comp_id, _cs_calcium_component[comp_id], var_name);
-  else
-    bft_printf(_("\nComponent %d:\n"), comp_id);
+  bft_printf(_("\nRank %d, %s:\n"), rank_id, var_name);
 
-  bft_printf(_("Reading up to %d values of type %s, time_dependency %s\n"
-               "              (min/max time %f/%f, iteration %d) ..."),
-             n_max_vals, cs_calcium_datatype_name[datatype],
-             cs_calcium_timedep_name[time_dep],
-             min_time, max_time, iteration);
+  bft_printf(_("Reading up to %d values of type %s (iteration %d) ..."),
+             n_max_vals, cs_datatype_name[datatype],
+             iteration);
   bft_printf_flush();
 }
 
@@ -368,7 +212,6 @@ _calcium_echo_pre_read(int                     comp_id,
  * print a part of the corresponding data.
  *
  * parameters:
- *   min_time  <-- time interval low
  *   iteration <-- iteration step
  *   datatype  <-- section data type
  *   n_val     <-- number of values in array
@@ -376,9 +219,8 @@ _calcium_echo_pre_read(int                     comp_id,
  *----------------------------------------------------------------------------*/
 
 static void
-_calcium_echo_post_read(double                 min_time,
-                        int                    iteration,
-                        cs_calcium_datatype_t  datatype,
+_calcium_echo_post_read(int                    iteration,
+                        cs_datatype_t          datatype,
                         int                    n_val,
                         const void            *val)
 {
@@ -386,8 +228,8 @@ _calcium_echo_post_read(double                 min_time,
     return;
 
   bft_printf(_("[ok]\n"
-               "Read          %d values (min time %f, iteration %d).\n"),
-             n_val, min_time, iteration);
+               "Read          %d values (iteration %d).\n"),
+             n_val, iteration);
 
   _calcium_echo_body(datatype, _cs_calcium_n_echo, n_val, val);
 }
@@ -396,22 +238,18 @@ _calcium_echo_post_read(double                 min_time,
  * Print message indicating that we are ready to write data
  *
  * parameters:
- *   comp_id   <-- coupled component id
+ *   rank_id   <-- communicating MPI rank id
  *   var_name  <-- variable name
- *   time_dep  <-- time dependency
- *   cur_time  <-- current time
  *   iteration <-- iteration step
  *   datatype  <-- section data type
  *   n_vals    <-- number of values to read
  *----------------------------------------------------------------------------*/
 
 static void
-_calcium_echo_pre_write(int                     comp_id,
+_calcium_echo_pre_write(int                     rank_id,
                         const char             *var_name,
-                        cs_calcium_timedep_t    time_dep,
-                        double                  cur_time,
                         int                     iteration,
-                        cs_calcium_datatype_t   datatype,
+                        cs_datatype_t           datatype,
                         int                     n_vals)
 {
   if (_cs_calcium_n_echo < 0)
@@ -419,16 +257,11 @@ _calcium_echo_pre_write(int                     comp_id,
 
   assert(var_name != NULL);
 
-  if (_cs_calcium_component[comp_id] != NULL)
-    bft_printf(_("\nComponent %d [%p], port %s:\n"),
-               comp_id, _cs_calcium_component[comp_id], var_name);
-  else
-    bft_printf(_("\nComponent %d:\n"), comp_id);
+  bft_printf(_("\nRank %d, %s:\n"), rank_id, var_name);
 
-  bft_printf(_("Writing %d values of type %s, time_dependency %s\n"
-               "        (time %f, iteration %d) ..."),
-             n_vals, cs_calcium_datatype_name[datatype],
-             cs_calcium_timedep_name[time_dep], cur_time, iteration);
+  bft_printf(_("Writing %d values of type %s (iteration %d) ..."),
+             n_vals, cs_datatype_name[datatype],
+             iteration);
   bft_printf_flush();
 }
 
@@ -443,7 +276,7 @@ _calcium_echo_pre_write(int                     comp_id,
  *----------------------------------------------------------------------------*/
 
 static void
-_calcium_echo_post_write(cs_calcium_datatype_t  datatype,
+_calcium_echo_post_write(cs_datatype_t          datatype,
                          int                    n_val,
                          const void            *val)
 {
@@ -462,63 +295,10 @@ _calcium_echo_post_write(cs_calcium_datatype_t  datatype,
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Connection
- *
- * parameters:
- *   comp_id <-- id of component to connect (0 to n-1, Code_Saturne local)
- *   s       --> name of calling instance
- *               (CS_CALCIUM_INSTANCE_LEN chars max)
- *
- * returns:
- *   0 in case of success, error code otherwise
- *----------------------------------------------------------------------------*/
-
-int
-cs_calcium_connect(int   comp_id,
-                   char *s)
-{
-  int retval = 0;
-
-  if (_cs_calcium_connect != NULL)
-    retval = _cs_calcium_connect(_cs_calcium_component[comp_id],
-                                 s);
-
-  return retval;
-}
-
-/*----------------------------------------------------------------------------
- * Disconnection
- *
- * parameters:
- *   comp_id <-- id of component to connect (0 to n-1, Code_Saturne local)
- *   cont    --> continuation directive (continue with last values or stop)
- *
- * returns:
- *   0 in case of success, error code otherwise
- *----------------------------------------------------------------------------*/
-
-int
-cs_calcium_disconnect(int                       comp_id,
-                      cs_calcium_continuation_t cont)
-{
-  int _cont = _cs_calcium_continuation_map[cont];
-  int retval = 0;
-
-  if (_cs_calcium_disconnect != NULL)
-    retval = _cs_calcium_disconnect(_cs_calcium_component[comp_id],
-                                    _cont);
-
-  return retval;
-}
-
-/*----------------------------------------------------------------------------
  * Read integer values, blocking until they are available.
  *
  * parameters:
- *   comp_id    <-- id of component to connect (0 to n-1, Code_Saturne local)
- *   time_dep   <-- type of time dependency (time or iteration)
- *   min_time   <-> lower bound of read interval
- *   max_time   <-- upper bound of read interval
+ *   rank_id    <-- communicating MPI rank id
  *   iteration  <-> iteration number of read
  *   var_name   <-- name of the variable to read
  *   n_val_max  <-- maximum number of values to read
@@ -530,10 +310,7 @@ cs_calcium_disconnect(int                       comp_id,
  *----------------------------------------------------------------------------*/
 
 int
-cs_calcium_read_int(int                    comp_id,
-                    cs_calcium_timedep_t   time_dep,
-                    double                *min_time,
-                    double                *max_time,
+cs_calcium_read_int(int                    rank_id,
                     int                   *iteration,
                     const char            *var_name,
                     int                    n_val_max,
@@ -541,94 +318,51 @@ cs_calcium_read_int(int                    comp_id,
                     int                    val[])
 {
   char _var_name[CS_CALCIUM_VARIABLE_LEN + 1];
-  int  _time_dep = _cs_calcium_timedep_map[time_dep];
-  float _min_time = *min_time;
-  float _max_time = *max_time;
   int  _retval = 0;
 
   strncpy(_var_name, var_name, CS_CALCIUM_VARIABLE_LEN);
 
-  _calcium_echo_pre_read(comp_id,
-                         _var_name, time_dep, *min_time, *max_time, *iteration,
-                         CALCIUM_integer, n_val_max);
+  _calcium_echo_pre_read(rank_id,
+                         _var_name, *iteration,
+                         CS_INT_TYPE, n_val_max);
 
-  if (_cs_calcium_read_int != NULL) {
-    _retval = _cs_calcium_read_int(_cs_calcium_component[comp_id],
-                                   _time_dep,
-                                   &_min_time,
-                                   &_max_time,
-                                   iteration,
-                                   _var_name,
-                                   n_val_max,
-                                   n_val_read,
-                                   val);
-    *min_time = _min_time;
-    *max_time = _max_time;
+#if defined(HAVE_MPI)
+
+  char var_cmp[CS_CALCIUM_VARIABLE_LEN + 1];
+  int meta[3] = {0, 0, 0};
+
+  MPI_Status status;
+  MPI_Recv(var_cmp, CS_CALCIUM_VARIABLE_LEN + 1, MPI_CHAR, rank_id,
+           CS_CALCIUM_MPI_TAG, _comm, &status);
+
+  if (strncmp(var_cmp, _var_name, CS_CALCIUM_VARIABLE_LEN + 1) != 0) {
+    bft_printf("\n"
+               "Warning: received %s\n"
+               "         expected %s\n",
+               _var_name, var_cmp);
+    bft_printf_flush();
   }
 
-  _calcium_echo_post_read(*min_time, *iteration,
-                          CALCIUM_integer, *n_val_read, val);
+  MPI_Recv(meta, 3, MPI_INT, rank_id,
+           CS_CALCIUM_MPI_TAG, _comm, &status);
 
-  return _retval;
-}
-
-/*----------------------------------------------------------------------------
- * Read single-precision floating-point values,
- *
- * parameters:
- *   comp_id    <-- id of component to connect (0 to n-1, Code_Saturne local)
- *   time_dep   <-- type of time dependency (time or iteration)
- *   min_time   <-> lower bound of read interval
- *   max_time   <-- upper bound of read interval
- *   iteration  <-> iteration number of read
- *   var_name   <-- name of the variable to read
- *   n_val_max  <-- maximum number of values to read
- *   n_val_read <-- maximum number of values to read
- *   val        --> values read
- *
- * returns:
- *   0 in case of success, error code otherwise
- *----------------------------------------------------------------------------*/
-
-int
-cs_calcium_read_float(int                    comp_id,
-                      cs_calcium_timedep_t   time_dep,
-                      double                *min_time,
-                      double                *max_time,
-                      int                   *iteration,
-                      const char            *var_name,
-                      int                    n_val_max,
-                      int                   *n_val_read,
-                      float                  val[])
-{
-  char _var_name[CS_CALCIUM_VARIABLE_LEN + 1];
-  int  _time_dep = _cs_calcium_timedep_map[time_dep];
-  float _min_time = *min_time;
-  float _max_time = *max_time;
-  int  _retval = 0;
-
-  strncpy(_var_name, var_name, CS_CALCIUM_VARIABLE_LEN);
-
-  _calcium_echo_pre_read(comp_id,
-                         _var_name, time_dep, *min_time, *max_time, *iteration,
-                         CALCIUM_real, n_val_max);
-
-  if (_cs_calcium_read_float != NULL) {
-    _retval = _cs_calcium_read_float(_cs_calcium_component[comp_id],
-                                     _time_dep,
-                                     &_min_time,
-                                     &_max_time,
-                                     iteration,
-                                     _var_name,
-                                     n_val_max,
-                                     n_val_read,
-                                     val);
-    *min_time = _min_time;
-    *max_time = _max_time;
+  if (meta[0] != *iteration || meta[1] != n_val_max || meta[2] != 4) {
+    bft_printf("\n"
+               "Warning: received [%d, %d, %d] for %s\n"
+               "         expected [%d, %d, %d]\n",
+               meta[0], meta[1], meta[2], _var_name,
+               *iteration, n_val_max, 4);
+    bft_printf_flush();
   }
 
-  _calcium_echo_post_read(*min_time, *iteration,
-                          CALCIUM_real, *n_val_read, val);
+  MPI_Recv(meta, n_val_max, MPI_INT, rank_id,
+           CS_CALCIUM_MPI_TAG, _comm, &status);
+
+  MPI_Get_count(&status, MPI_INT, n_val_read);
+
+#endif
+
+  _calcium_echo_post_read(*iteration, CS_INT_TYPE, *n_val_read, val);
 
   return _retval;
 }
@@ -638,10 +372,7 @@ cs_calcium_read_float(int                    comp_id,
  * blocking until they are available.
  *
  * parameters:
- *   comp_id    <-- id of component to connect (0 to n-1, Code_Saturne local)
- *   time_dep   <-- type of time dependency (time or iteration)
- *   min_time   <-> lower bound of read interval
- *   max_time   <-- upper bound of read interval
+ *   rank_id    <-- communicating MPI rank id
  *   iteration  <-> iteration number of read
  *   var_name   <-- name of the variable to read
  *   n_val_max  <-- maximum number of values to read
@@ -653,10 +384,7 @@ cs_calcium_read_float(int                    comp_id,
  *----------------------------------------------------------------------------*/
 
 int
-cs_calcium_read_double(int                    comp_id,
-                       cs_calcium_timedep_t   time_dep,
-                       double                *min_time,
-                       double                *max_time,
+cs_calcium_read_double(int                    rank_id,
                        int                   *iteration,
                        const char            *var_name,
                        int                    n_val_max,
@@ -664,28 +392,50 @@ cs_calcium_read_double(int                    comp_id,
                        double                 val[])
 {
   char _var_name[CS_CALCIUM_VARIABLE_LEN + 1];
-  int  _time_dep = _cs_calcium_timedep_map[time_dep];
   int  _retval = 0;
 
   strncpy(_var_name, var_name, CS_CALCIUM_VARIABLE_LEN);
 
-  _calcium_echo_pre_read(comp_id,
-                         _var_name, time_dep, *min_time, *max_time, *iteration,
-                         CALCIUM_double, n_val_max);
+  _calcium_echo_pre_read(rank_id, _var_name, *iteration,
+                         CS_DOUBLE, n_val_max);
 
-  if (_cs_calcium_read_double != NULL)
-    _retval = _cs_calcium_read_double(_cs_calcium_component[comp_id],
-                                      _time_dep,
-                                      min_time,
-                                      max_time,
-                                      iteration,
-                                      _var_name,
-                                      n_val_max,
-                                      n_val_read,
-                                      val);
+#if defined(HAVE_MPI)
 
-  _calcium_echo_post_read(*min_time, *iteration,
-                          CALCIUM_double, *n_val_read, val);
+  char var_cmp[CS_CALCIUM_VARIABLE_LEN + 1];
+  int meta[3] = {0, 0, 0};
+
+  MPI_Status status;
+  MPI_Recv(var_cmp, CS_CALCIUM_VARIABLE_LEN + 1, MPI_CHAR, rank_id,
+           CS_CALCIUM_MPI_TAG, _comm, &status);
+
+  if (strncmp(var_cmp, _var_name, CS_CALCIUM_VARIABLE_LEN + 1) != 0) {
+    bft_printf("\n"
+               "Warning: received %s\n"
+               "         expected %s\n",
+               _var_name, var_cmp);
+    bft_printf_flush();
+  }
+
+  MPI_Recv(meta, 3, MPI_INT, rank_id,
+           CS_CALCIUM_MPI_TAG, _comm, &status);
+
+  if (meta[0] != *iteration || meta[1] != n_val_max || meta[2] != 8) {
+    bft_printf("\n"
+               "Warning: received [%d, %d, %d] for %s\n"
+               "         expected [%d, %d, %d]\n",
+               meta[0], meta[1], meta[2], _var_name,
+               *iteration, n_val_max, 8);
+    bft_printf_flush();
+  }
+
+  MPI_Recv(meta, n_val_max, MPI_DOUBLE, rank_id,
+           CS_CALCIUM_MPI_TAG, _comm, &status);
+
+  MPI_Get_count(&status, MPI_DOUBLE, n_val_read);
+
+#endif
+
+  _calcium_echo_post_read(*iteration, CS_DOUBLE, *n_val_read, val);
 
   return _retval;
 }
@@ -694,9 +444,7 @@ cs_calcium_read_double(int                    comp_id,
  * Write integer values.
  *
  * parameters:
- *   comp_id    <-- id of component to connect (0 to n-1, Code_Saturne local)
- *   time_dep   <-- type of time dependency (time or iteration)
- *   cur_time   <-- current time
+ *   rank_id    <-- communicating MPI rank id
  *   iteration  <-- iteration number
  *   var_name   <-- name of the variable to read
  *   n_val      <-- number of values to read
@@ -707,97 +455,41 @@ cs_calcium_read_double(int                    comp_id,
  *----------------------------------------------------------------------------*/
 
 int
-cs_calcium_write_int(int                    comp_id,
-                     cs_calcium_timedep_t   time_dep,
-                     double                 cur_time,
+cs_calcium_write_int(int                    rank_id,
                      int                    iteration,
                      const char            *var_name,
                      int                    n_val,
                      const int              val[])
 {
   char _var_name[CS_CALCIUM_VARIABLE_LEN + 1];
-  int  _time_dep = _cs_calcium_timedep_map[time_dep];
   int  *_val = NULL;
 
   int retval = 0;
 
+  memset(_var_name, 0, CS_CALCIUM_VARIABLE_LEN + 1);
   strncpy(_var_name, var_name, CS_CALCIUM_VARIABLE_LEN);
 
-  _calcium_echo_pre_write(comp_id,
-                          _var_name, time_dep, cur_time, iteration,
-                          CALCIUM_integer, n_val);
+  _calcium_echo_pre_write(rank_id,
+                          _var_name, iteration, CS_INT_TYPE, n_val);
 
   BFT_MALLOC(_val, n_val, int);
   memcpy(_val, val, n_val * sizeof(int));
 
-  if (_cs_calcium_write_int != NULL)
-    retval = _cs_calcium_write_int(_cs_calcium_component[comp_id],
-                                   _time_dep,
-                                   cur_time,
-                                   iteration,
-                                   _var_name,
-                                   n_val,
-                                   _val);
+#if defined(HAVE_MPI)
+
+  int meta[3] = {iteration, n_val, 4};
+
+  MPI_Send(_var_name, CS_CALCIUM_VARIABLE_LEN + 1, MPI_CHAR, rank_id,
+           CS_CALCIUM_MPI_TAG, _comm);
+  MPI_Send(meta, 3, MPI_INT, rank_id, CS_CALCIUM_MPI_TAG, _comm);
+
+  MPI_Send(_val, n_val, MPI_INT, rank_id, CS_CALCIUM_MPI_TAG, _comm);
+
+#endif
 
   BFT_FREE(_val);
 
-  _calcium_echo_post_write(CALCIUM_integer, n_val, val);
-
-  return retval;
-}
-
-/*----------------------------------------------------------------------------
- * Write float values.
- *
- * parameters:
- *   comp_id    <-- id of component to connect (0 to n-1, Code_Saturne local)
- *   time_dep   <-- type of time dependency (time or iteration)
- *   cur_time   <-- current time
- *   iteration  <-- iteration number
- *   var_name   <-- name of the variable to read
- *   n_val      <-- number of values to read
- *   val        <-- values written
- *
- * returns:
- *   0 in case of success, error code otherwise
- *----------------------------------------------------------------------------*/
-
-int
-cs_calcium_write_float(int                    comp_id,
-                       cs_calcium_timedep_t   time_dep,
-                       double                 cur_time,
-                       int                    iteration,
-                       const char            *var_name,
-                       int                    n_val,
-                       const float            val[])
-{
-  char  _var_name[CS_CALCIUM_VARIABLE_LEN + 1];
-  int   _time_dep = _cs_calcium_timedep_map[time_dep];
-  float *_val = NULL;
-
-  int retval = 0;
-
-  strncpy(_var_name, var_name, CS_CALCIUM_VARIABLE_LEN);
-
-  _calcium_echo_pre_write(comp_id,
-                          _var_name, time_dep,  cur_time, iteration,
-                          CALCIUM_real, n_val);
-
-  BFT_MALLOC(_val, n_val, float);
-  memcpy(_val, val, n_val * sizeof(float));
-
-  if (_cs_calcium_write_float != NULL)
-    retval = _cs_calcium_write_float(_cs_calcium_component[comp_id],
-                                     _time_dep,
-                                     cur_time,
-                                     iteration,
-                                     _var_name,
-                                     n_val,
-                                     _val);
-
-  BFT_FREE(_val);
-
-  _calcium_echo_post_write(CALCIUM_real, n_val, val);
+  _calcium_echo_post_write(CS_INT_TYPE, n_val, val);
 
   return retval;
 }
@@ -806,9 +498,7 @@ cs_calcium_write_float(int                    comp_id,
  * Write double-precision float values.
  *
  * parameters:
- *   comp_id    <-- id of component to connect (0 to n-1, Code_Saturne local)
- *   time_dep   <-- type of time dependency (time or iteration)
- *   cur_time   <-- current time
+ *   rank_id    <-- communicating MPI rank id
  *   iteration  <-- iteration number
  *   var_name   <-- name of the variable to read
  *   n_val      <-- number of values to read
@@ -819,60 +509,42 @@ cs_calcium_write_float(int                    comp_id,
  *----------------------------------------------------------------------------*/
 
 int
-cs_calcium_write_double(int                    comp_id,
-                        cs_calcium_timedep_t   time_dep,
-                        double                 cur_time,
+cs_calcium_write_double(int                    rank_id,
                         int                    iteration,
                         const char            *var_name,
                         int                    n_val,
                         const double           val[])
 {
   char   _var_name[CS_CALCIUM_VARIABLE_LEN + 1];
-  int    _time_dep = _cs_calcium_timedep_map[time_dep];
   double *_val = NULL;
 
   int retval = 0;
 
   strncpy(_var_name, var_name, CS_CALCIUM_VARIABLE_LEN);
 
-  _calcium_echo_pre_write(comp_id,
-                          _var_name, time_dep,  cur_time, iteration,
-                          CALCIUM_double, n_val);
+  _calcium_echo_pre_write(rank_id,
+                          _var_name, iteration, CS_DOUBLE, n_val);
 
   BFT_MALLOC(_val, n_val, double);
   memcpy(_val, val, n_val * sizeof(double));
 
-  if (_cs_calcium_write_double != NULL)
-    retval = _cs_calcium_write_double(_cs_calcium_component[comp_id],
-                                      _time_dep,
-                                      cur_time,
-                                      iteration,
-                                      _var_name,
-                                      n_val,
-                                      _val);
+#if defined(HAVE_MPI)
+
+  int meta[3] = {iteration, n_val, 8};
+
+  MPI_Send(_var_name, CS_CALCIUM_VARIABLE_LEN + 1, MPI_CHAR, rank_id,
+           CS_CALCIUM_MPI_TAG, _comm);
+  MPI_Send(meta, 3, MPI_INT, rank_id, CS_CALCIUM_MPI_TAG, _comm);
+
+  MPI_Send(_val, n_val, MPI_DOUBLE, rank_id, CS_CALCIUM_MPI_TAG, _comm);
+
+#endif
 
   BFT_FREE(_val);
 
-  _calcium_echo_post_write(CALCIUM_double, n_val, val);
+  _calcium_echo_post_write(CS_DOUBLE, n_val, val);
 
   return retval;
-}
-
-/*----------------------------------------------------------------------------
- * Assign a component and its id
- *
- * parameters:
- *   comp_id <-- id of component (0 to n-1, Code_Saturne local)
- *   comp    <-- pointer to component
- *----------------------------------------------------------------------------*/
-
-void
-cs_calcium_set_component(int    comp_id,
-                         void  *comp)
-{
-  assert(comp_id > -1 && comp_id < 8); /* Current limit, easily made dynamic */
-
-  _cs_calcium_component[comp_id] = comp;
 }
 
 /*----------------------------------------------------------------------------
@@ -887,113 +559,6 @@ void
 cs_calcium_set_verbosity(int  n_echo)
 {
   _cs_calcium_n_echo = n_echo;
-}
-
-/*----------------------------------------------------------------------------
- * Load YACS and corresponding Calcium functions.
- *
- * parameters:
- *   lib_path <-- path to shared library containing the yacsinit() function.
- *----------------------------------------------------------------------------*/
-
-void
-cs_calcium_load_yacs(const char *lib_path)
-{
-#if defined(HAVE_DLOPEN)
-
-  /* Load symbols from shared library */
-
-  _cs_calcium_yacslib = cs_base_dlopen(lib_path);
-
-  /* Function pointers need to be double-casted so as to first convert
-     a (void *) type to a memory address and then convert it back to the
-     original type. Otherwise, the compiler may issue a warning.
-     This is a valid ISO C construction. */
-
-  _cs_calcium_yacsinit = (cs_calcium_yacsinit_t *) (intptr_t)
-    cs_base_get_dl_function_pointer(_cs_calcium_yacslib, "yacsinit", true);
-
-  _cs_calcium_read_int = (cs_calcium_read_int_t *) (intptr_t)
-    cs_base_get_dl_function_pointer(_cs_calcium_yacslib, "cp_len", true);
-
-  _cs_calcium_write_int = (cs_calcium_write_int_t *) (intptr_t)
-    cs_base_get_dl_function_pointer(_cs_calcium_yacslib, "cp_een", true);
-
-  _cs_calcium_read_float = (cs_calcium_read_float_t *) (intptr_t)
-    cs_base_get_dl_function_pointer(_cs_calcium_yacslib, "cp_lre", true);
-
-  _cs_calcium_write_float = (cs_calcium_write_float_t *) (intptr_t)
-    cs_base_get_dl_function_pointer(_cs_calcium_yacslib, "cp_ere", true);
-
-  _cs_calcium_read_double = (cs_calcium_read_double_t *) (intptr_t)
-    cs_base_get_dl_function_pointer(_cs_calcium_yacslib, "cp_ldb", true);
-
-  _cs_calcium_write_double = (cs_calcium_write_double_t *) (intptr_t)
-    cs_base_get_dl_function_pointer(_cs_calcium_yacslib, "cp_edb", true);
-
-  if (   _cs_calcium_yacsinit == NULL
-      || _cs_calcium_read_int == NULL
-      || _cs_calcium_write_int == NULL
-      || _cs_calcium_read_float == NULL
-      || _cs_calcium_write_float == NULL
-      || _cs_calcium_read_double== NULL
-      || _cs_calcium_write_double == NULL) {
-    cs_base_dlclose(lib_path, _cs_calcium_yacslib);
-    _cs_calcium_yacslib = NULL;
-  }
-
-#else
-
-  bft_error(__FILE__, __LINE__, 0,
-            _("Shared library support not available.\n"
-              "Unable to load: %s\n"), lib_path);
-
-#endif
-}
-
-/*----------------------------------------------------------------------------
- * Unload YACS and corresponding Calcium functions
- *----------------------------------------------------------------------------*/
-
-void
-cs_calcium_unload_yacs(void)
-{
-#if defined(HAVE_DLOPEN)
-
-  if (_cs_calcium_yacslib != NULL)
-    cs_base_dlclose(NULL, _cs_calcium_yacslib);
-
-  /* Reset function pointers to NULL */
-
-  _cs_calcium_yacslib = NULL;
-
-  _cs_calcium_yacsinit = NULL;
-
-  _cs_calcium_read_int = NULL;
-  _cs_calcium_write_int = NULL;
-  _cs_calcium_read_float = NULL;
-  _cs_calcium_write_float = NULL;
-  _cs_calcium_read_double = NULL;
-  _cs_calcium_write_double = NULL;
-
-#endif
-}
-
-/*----------------------------------------------------------------------------
- * Initialize YACS component and enter event loop.
- *
- * This must be called after cs_calcium_load_yacs().
- *
- * Note that the YACS event loop does not return, sot the YACS component
- * description should ensure that the code's main run() method (or similar)
- * is called in the component body.
- *----------------------------------------------------------------------------*/
-
-void
-cs_calcium_start_yacs(void)
-{
-  if (_cs_calcium_yacslib != NULL)
-    _cs_calcium_yacsinit();
 }
 
 /*----------------------------------------------------------------------------*/
