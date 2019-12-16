@@ -1,0 +1,209 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+#-------------------------------------------------------------------------------
+
+# This file is part of Code_Saturne, a general-purpose CFD tool.
+#
+# Copyright (C) 1998-2019 EDF S.A.
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 2 of the License, or (at your option) any later
+# version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+# Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+#-------------------------------------------------------------------------------
+
+"""
+This module describes the script used to launch SALOME with the CFDSTUDY module.
+
+This module defines the following functions:
+- process_cmd_line
+"""
+
+#-------------------------------------------------------------------------------
+# Library modules import
+#-------------------------------------------------------------------------------
+
+import os, sys, subprocess
+
+from optparse import OptionParser
+
+#-------------------------------------------------------------------------------
+# Configuration
+#-------------------------------------------------------------------------------
+
+class config:
+
+    def __init__(self):
+
+        # SALOME-related information
+
+        self.env_modules = "@salome_env_modules@"
+        self.salome_env = "@SALOMEENVCMD@"
+
+        # Installation directories
+
+        self.relocatable = "@relocatable@"
+        self.dirs = {'prefix': ("", "@prefix@"),
+                     'pythondir': (os.path.join("lib",
+                                                "python" + sys.version[:3],
+                                                "site-packages"),
+                                   "@pythondir@"),
+                     'pkgpythondir': (os.path.join("lib",
+                                                   "python" + sys.version[:3],
+                                                   "site-packages",
+                                                   "code_saturne"),
+                                      "@pkgpythondir@"),
+                     'docdir': (os.path.join("share", "doc", "code_saturne"),
+                                "@docdir@")}
+
+#-------------------------------------------------------------------------------
+
+    def get_dir(self, installdir):
+
+        # First, handle the standard "non relocatable" case
+        if self.relocatable == "no":
+            return self.dirs[installdir][1]
+
+        # Second, check if CS_ROOT_DIR is set
+        prefix = os.getenv('CS_ROOT_DIR')
+
+        # Third, assume that SALOME is being used
+        if prefix == None:
+            prefix = os.getenv('CFDMODULE_ROOT_DIR')
+
+        # Finally, assume that the standard tree structure is used
+        if prefix == None:
+            prefix = os.path.dirname(os.path.realpath(__file__))
+            i = prefix.find(self.dirs['pythondir'][0])
+            if i > -1:
+                prefix = os.path.dirname(prefix[:i+1])
+
+        return os.path.join(prefix, self.dirs[installdir][0])
+
+#-------------------------------------------------------------------------------
+
+    def load_env_modules(self):
+
+        if not self.env_modules:
+            return
+
+        modulecmd = os.getenv('LMOD_CMD')
+        if not modulecmd:
+            modulecmd = os.getenv('MODULECMD')
+
+        if not modulecmd:
+            return
+
+        cmds = ['purge']
+        for m in self.env_modules.strip().split():
+            cmds.append('load ' + m)
+        for cmd in cmds:
+            (output, error) = subprocess.Popen([modulecmd, 'python'] + cmd.split(),
+                                               universal_newlines=True,
+                                               stdout=subprocess.PIPE).communicate()
+            exec(output)
+
+#-------------------------------------------------------------------------------
+# Processes the passed command line arguments
+#-------------------------------------------------------------------------------
+
+def process_cmd_line(argv):
+    """
+    Processes the passed command line arguments.
+    """
+
+    if sys.argv[0][-3:] == '.py':
+        usage = "usage: %prog [options]"
+    else:
+        usage = "usage: %prog salome [options]"
+
+    parser = OptionParser(usage=usage)
+
+    (options, args) = parser.parse_args(argv)
+
+    return
+
+#-------------------------------------------------------------------------------
+# Launch SALOME platform with CFDSTUDY module
+#-------------------------------------------------------------------------------
+
+def main(argv):
+    """
+    Main function.
+    """
+
+    process_cmd_line(argv)
+
+    # Check for SALOME support
+
+    cfg = config()
+
+    # Load environment modules if needed
+
+    cfg.load_env_modules()
+
+    # Now load main Salome environment
+
+    salome_env = cfg.salome_env
+
+    run_cmd = "${KERNEL_ROOT_DIR}/bin/salome/envSalome.py python ${KERNEL_ROOT_DIR}/bin/salome/runSalome.py"
+
+    # Save PYTHONPATH as CS_SALOME_TOP_PYTHONPATH to avoid issues
+    # with launch of code due to PYTHONPATH with extra (cumulative) entries
+    # encountered with Python 3.6 (i.e. post Python 3.3, with current
+    # import logic).
+    pythonpath = os.getenv('PYTHONPATH')
+    if not pythonpath:
+        pythonpath = ""
+    os.environ['CS_SALOME_TOP_PYTHONPATH'] = pythonpath
+
+    template = """\
+%(salomeenv)s
+CFDSTUDY_ROOT_DIR=%(prefix)s
+PYTHONPATH=%(pythondir)s/salome:%(pkgpythondir)s${PYTHONPATH:+:$PYTHONPATH}
+export CFDSTUDY_ROOT_DIR PYTHONPATH
+%(runsalome)s --modules=%(modules)s
+"""
+
+    default_modules = "GEOM,SHAPER,SMESH,FIELDS,CFDSTUDY,PARAVIS,YACS,JOBMANAGER,HOMARD,OPENTURNS"
+
+    path = cfg.get_dir('pkgpythondir')
+    path = path+":"+cfg.get_dir('pythondir')
+
+    prefix = cfg.get_dir('prefix')
+    pythondir = cfg.get_dir('pythondir')
+    cmd = template % {'salomeenv': salome_env,
+                      'prefix': prefix,
+                      'pythondir': pythondir,
+                      'pkgpythondir': path,
+                      'runsalome': run_cmd,
+                      'modules': default_modules}
+
+
+    proc = subprocess.Popen(cmd,
+                            shell=True,
+                            executable='/bin/sh',
+                            universal_newlines=True,
+                            close_fds=True)
+
+    out, err = proc.communicate()
+    sys.exit(proc.returncode)
+
+
+if __name__ == "__main__":
+    main(sys.argv[1:])
+
+#-------------------------------------------------------------------------------
+# End
+#-------------------------------------------------------------------------------

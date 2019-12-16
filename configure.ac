@@ -674,7 +674,10 @@ if test "x$cs_have_internal_ple" = xyes; then
   AC_CONFIG_SUBDIRS([libple])
 fi
 
-CS_AC_TEST_SALOME
+AM_CONDITIONAL(HAVE_SALOME, test x$with-salome != xno)
+if test "x$with-salome" != xno; then
+  AC_CONFIG_SUBDIRS([salome])
+fi
 
 CS_AC_TEST_BLAS([$cs_have_openmp])
 CS_AC_TEST_MPI
@@ -894,19 +897,9 @@ sys.stdout.write(path)]"
     AC_PATH_PROG([PYRCC4], [pyrcc4], [],           [${PYPATH}:$PATH])
   fi
 
-  if test "x$LRELEASE" = "x" ; then
-    AC_PATH_PROGS([LRELEASE], [lrelease-qt4 lrelease])
-  fi
-
-  # lrelease only used for CFDSTUDY, so not an issue in most cases if missing
-
   if test "x$PYUIC4" = "x" -o "x$PYRCC4" = "x" ; then
     AC_MSG_FAILURE([cannot find PyQt4 dev tools, Graphical User Interface cannot be installed])
     cs_have_gui=no
-  fi
-
-  if test "x$LRELEASE" = "x" -a "$cs_have_salome_gui" =  "yes" ; then
-    AC_MSG_ERROR([cannot find lrelease, required for CFDSTUDY (Salome) GUI])
   fi
 
 fi
@@ -956,7 +949,8 @@ sys.stdout.write(path)]"
     AC_PATH_PROGS([LRELEASE], [lrelease-qt5 lrelease])
   fi
 
-  # lrelease not currently used, so not an issue if missing
+  # lrelease not currently used (except in SALOME CFD extension, with a separate
+  # configure, so not an issue here
 
   if test "x$PYUIC5" = "x" -o "x$PYRCC5" = "x" ; then
     AC_MSG_FAILURE([cannot find PyQt5 dev tools, Graphical User Interface cannot be installed])
@@ -1182,7 +1176,6 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  preprocessor/Makefile
                  preprocessor/appli/Makefile preprocessor/base/Makefile
                  preprocessor/pre-post/Makefile preprocessor/util/Makefile
-                 salome/Makefile
                  src/Makefile      src/apps/Makefile src/gui/Makefile
                  src/bft/Makefile  src/fvm/Makefile  src/mei/Makefile
                  src/base/Makefile src/atmo/Makefile src/cdo/Makefile
@@ -1194,14 +1187,6 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  src/meg/Makefile
                  gui/Makefile gui/Base/Makefile gui/Pages/Makefile
                  gui/studymanager_gui/Makefile gui/trackcvg/Makefile
-                 salome/cfd_study/Makefile
-                 salome/cfd_study/doc/Makefile
-                 salome/cfd_study/idl/Makefile
-                 salome/cfd_study/resources/Makefile
-                 salome/cfd_study/src/Makefile
-                 salome/cfd_study/src/CFDSTUDY/Makefile
-                 salome/cfd_study/src/CFDSTUDYGUI/Makefile
-                 salome/cfd_study/src/CFDSTUDYOTURNS/Makefile
                  docs/Makefile docs/doxygen/Makefile docs/style/csvers.tex
                  docs/studymanager/Makefile docs/studymanager/graphics/Makefile
                  docs/developer/Makefile docs/developer/graphics/Makefile
@@ -1310,7 +1295,6 @@ echo " EOS support: "$cs_have_eos""
 echo " freesteam support: "$cs_have_freesteam""
 echo " CoolProp support: "$cs_have_coolprop""
 echo " PETSc support: "$cs_have_petsc""
-echo " SALOME GUI support: "$cs_have_salome_gui""
 echo " Dynamic loader support: "$cs_have_dlloader""
 if (test "x$cs_env_modules" != "x") ; then
   echo " Auto load environment modules: "$cs_env_modules""

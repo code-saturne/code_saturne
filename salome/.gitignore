@@ -1,0 +1,57 @@
+# Patterns which git should ignore
+
+# git ls-files --others --exclude-from=.gitignore
+# Lines that start with '#' are comments.
+# For a project mostly in C, the following would be a good set of
+# exclude patterns (uncomment them if you want to use them):
+# *.[oa]
+# *~
+
+#-------------------------------------------------------------------------------
+
+# This file is part of Code_Saturne, a general-purpose CFD tool.
+#
+# Copyright (C) 1998-2019 EDF S.A.
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 2 of the License, or (at your option) any later
+# version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+# Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+#-------------------------------------------------------------------------------
+
+Makefile.in
+.gitignore
+
+# /
+/ABOUT-NLS
+/aclocal.m4
+/autom4te.cache
+/salome_cfd_config.h.in
+/configure
+
+# /m4/
+/build-aux/compile
+/build-aux/config.guess
+/build-aux/config.rpath
+/build-aux/config.sub
+/build-aux/depcomp
+/build-aux/install-sh
+/build-aux/ltmain.sh
+/build-aux/missing
+/build-aux/py-compile
+/m4/libtool.m4
+/m4/lt~obsolete.m4
+/m4/ltoptions.m4
+/m4/ltsugar.m4
+/m4/ltversion.m4
+

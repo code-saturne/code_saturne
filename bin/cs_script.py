@@ -117,7 +117,6 @@ Topics:
   up
   info
   run
-  salome
   submit
 
 Options:
@@ -170,8 +169,15 @@ Options:
         return cs_run.main(options, self.package)
 
     def salome(self, options = None):
-        from code_saturne import cs_salome
-        return cs_salome.main(options, self.package)
+        salome_cfd = \
+            """%(prog)s salome
+
+Command has been replaced by:
+  salome_cfd
+command"""
+
+        print(salome_cfd % {'prog':sys.argv[0]})
+        return 1
 
     def submit(self, options = None):
         from code_saturne import cs_submit

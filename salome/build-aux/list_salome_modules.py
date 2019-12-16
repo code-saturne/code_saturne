@@ -90,12 +90,17 @@ if __name__ == '__main__':
 
     root = doc.documentElement
 
-    env_modules_node = getChildNode(root, 'env_modules')
-    nodeList = childNodeList(env_modules_node, 'env_module')
+    nodeList = []
 
+    env_modules_node = getChildNode(root, 'env_modules')
+    if env_modules_node != None:
+        nodeList = childNodeList(env_modules_node, 'env_module')
+
+    names = ""
     for node in nodeList:
-        name = str(node.getAttribute('name'))
-        print(name)
+        names += " " + str(node.getAttribute('name'))
+    names = names.lstrip()
+    print(names)
 
     sys.exit(0)
 

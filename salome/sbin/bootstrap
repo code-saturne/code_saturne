@@ -1,0 +1,47 @@
+#!/bin/sh
+
+if [ ! -d sbin ]; then
+  echo "$0 must be called from top directory (../$0)"
+  exit 1
+fi
+
+# Remove unversioned files added by previous bootstrap
+
+rm -rf aclocal.m4 ld.m4 m4/lib-link.m4 \
+       m4/lib-prefix.m4 m4/libtool.m4 m4/lt~obsolete.m4 m4/ltoptions.m4 \
+       m4/ltsugar.m4 m4/ltversion.m4 m4/nls.m4 m4/printf-posix.m4 m4/po.m4 \
+       m4/progtest.m4 m4/size_max.m4 m4/stdint_h.m4 m4/threadlib.m4 \
+       m4/uintmax_t.m4 m4/visibility.m4 m4/wchar_t.m4 m4/wint_t.m4 m4/xsize.m4
+
+# Simply run autoreconf.
+
+# Prefer autoreconf to separate stages when possible
+
+type autopoint > /dev/null 2>&1
+
+if test $? = 0 ; then
+
+  autoreconf -vif $@
+
+else
+
+  # To add gettext support, use :
+  # gettextize -f -c --no-changelog --intl
+  # rm -f config/gettext.m4
+
+  # To use an external gettext version, do not use --intl
+  # To use a link instead of copy, do not use -c
+
+  echo "running aclocal"
+  aclocal -I config
+
+  echo "running autoconf"
+  autoconf
+
+  echo "running automake"
+  automake -a -c
+
+fi
+
+# Remove cache directory
+\rm -rf autom4te.cache

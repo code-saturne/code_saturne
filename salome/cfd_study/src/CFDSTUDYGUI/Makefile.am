@@ -79,11 +79,10 @@ CFDSTUDY_msg_fr.ts
 
 if HAVE_QT5
   PYUIC=$(PYUIC5)
-else
-  PYUIC=$(PYUIC4)
 endif
 
 ui_%.py: %.ui
+	$(SALOMEENVCMD); \
 	$(PYUIC) $< -x -o $@
 
 install-exec-local: $(PYUI_FILES)
@@ -97,6 +96,7 @@ install-exec-local: $(PYUI_FILES)
 
 ## translation (*.qm) files generation (lrelease)
 %.qm: %.ts
+	$(SALOMEENVCMD); \
 	$(LRELEASE) $< -qm $@
 
 mostlyclean-local:

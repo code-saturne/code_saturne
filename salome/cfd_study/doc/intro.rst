@@ -46,13 +46,7 @@ loaded, several hooks are available:
 
         - Update Object Browser: refresh the directories list in the Object Browser.
 
-        - CFDSTUDY information: display information about the code.
-
-            .. image:: images/CFDSTUDY_info.png
-              :align: center
-
-
-        - Tools: display the file of parameter, open an xterm.
+        - Tools: display the file of parameter, open a terminal.
 
     - **Help** menu:
 

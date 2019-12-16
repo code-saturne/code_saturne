@@ -136,7 +136,6 @@ m4/cs_melissa.m4 \
 m4/cs_metis.m4 \
 m4/cs_modules.m4 \
 m4/cs_mpi.m4 \
-m4/cs_omniorb.m4 \
 m4/cs_petsc.m4 \
 m4/cs_ple.m4 \
 m4/cs_salome.m4 \
@@ -298,7 +297,6 @@ bin/cs_gui.py \
 bin/cs_info.py \
 bin/cs_run.py \
 bin/cs_runcase.py \
-bin/cs_salome.py \
 bin/cs_script.py \
 bin/cs_submit.py \
 bin/cs_mei_to_c.py \
