@@ -166,63 +166,102 @@ _petsc_pchypre_hook(void)
  * \brief Set command line options for PC according to the kind of
  *        preconditionner
  *
- * \param[in]   slesp      set of parameters for the linear algebra
- * \param[in]   eqname     name of the equation to handle
+ * \param[in]      slesp    set of parameters for the linear algebra
+ * \param[in]      eqname   name of the equation to handle
+ * \param[in, out] pc       PETSc preconditioner structure
  */
 /*----------------------------------------------------------------------------*/
 
-static PCType
-_petsc_get_pc_type(cs_param_sles_t    slesp,
-                   const char        *eqname)
+static void
+_petsc_set_pc_type(cs_param_sles_t    slesp,
+                   const char        *eqname,
+                   PC                 pc)
 {
-  PCType  pc_type = PCNONE;
+  if (slesp.solver == CS_PARAM_ITSOL_MUMPS ||
+      slesp.solver == CS_PARAM_ITSOL_MUMPS_LDLT)
+    return; /* Direct solver: Nothing to do at this stage */
 
   switch (slesp.precond) {
 
   case CS_PARAM_PRECOND_NONE:
-    return PCNONE;
+    PCSetType(pc, PCNONE);
+    break;
 
   case CS_PARAM_PRECOND_DIAG:
-    return PCJACOBI;
+    PCSetType(pc, PCJACOBI);
+    break;
 
   case CS_PARAM_PRECOND_BJACOB:
-    return PCBJACOBI;
+    PCSetType(pc, PCBJACOBI);
+    break;
 
   case CS_PARAM_PRECOND_SSOR:
-    return PCSOR;
+    PCSetType(pc, PCSOR);
+    PCSORSetSymmetric(pc, SOR_SYMMETRIC_SWEEP);
+    break;
 
   case CS_PARAM_PRECOND_ICC0:
-    return PCICC;
+#if defined(PETSC_HAVE_HYPRE)
+    if (slesp.solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
+      PCSetType(pc, PCHYPRE);
+      PCHYPRESetType(pc, "euclid");
+    }
+    else {
+      PCSetType(pc, PCICC);
+      PCFactorSetLevels(pc, 0);
+    }
+#else
+    PCSetType(pc, PCICC);
+    PCFactorSetLevels(pc, 0);
+#endif
+    break;
 
   case CS_PARAM_PRECOND_ILU0:
-    return PCILU;
+#if defined(PETSC_HAVE_HYPRE)
+    if (slesp.solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
+      PCSetType(pc, PCHYPRE);
+      PCHYPRESetType(pc, "euclid");
+    }
+    else {
+      PCSetType(pc, PCILU);
+      PCFactorSetLevels(pc, 0);
+    }
+#else
+    PCSetType(pc, PCILU);
+    PCFactorSetLevels(pc, 0);
+#endif
+    break;
 
   case CS_PARAM_PRECOND_AS:
-    return PCASM;
+    PCSetType(pc, PCASM);
+    break;
 
   case CS_PARAM_PRECOND_AMG:
     {
       switch (slesp.amg_type) {
 
       case CS_PARAM_AMG_PETSC_GAMG:
-        return PCGAMG;
+        PCSetType(pc, PCGAMG);
+        PCGAMGSetType(pc, PCGAMGAGG);
+        PCGAMGSetNSmooths(pc, 1);
         break;
 
       case CS_PARAM_AMG_PETSC_PCMG:
-        return PCMG;
+        PCSetType(pc, PCMG);
         break;
 
       case CS_PARAM_AMG_HYPRE_BOOMER:
 #if defined(PETSC_HAVE_HYPRE)
-        return PCHYPRE;
+        PCSetType(pc, PCHYPRE);
+        PCHYPRESetType(pc, "boomer");
 #else
         cs_base_warn(__FILE__, __LINE__);
         cs_log_printf(CS_LOG_DEFAULT,
                       "%s: Eq. %s: Switch to MG since BoomerAMG is not"
                       " available.\n",
                       __func__, eqname);
-        return PCMG;
 #endif
+        break;
 
       default:
         bft_error(__FILE__, __LINE__, 0,
@@ -241,7 +280,6 @@ _petsc_get_pc_type(cs_param_sles_t    slesp,
               __func__, eqname);
   }
 
-  return pc_type;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -481,18 +519,13 @@ _petsc_setup_hook(void   *context,
   /* 1) Set the solver */
   _petsc_set_krylov_solver(slesp, a, ksp);
 
-  /* 2) Set the preconditioner */
-  PCType  pc_type = _petsc_get_pc_type(slesp, eqp->name);
-  PC  pc;
-  KSPGetPC(ksp, &pc);
-
   /* Sanity checks */
-  if (cs_glob_n_ranks > 1) {
+  if (cs_glob_n_ranks > 1 && slesp.solver_class == CS_PARAM_SLES_CLASS_PETSC) {
 
     if (slesp.precond == CS_PARAM_PRECOND_ILU0 ||
         slesp.precond == CS_PARAM_PRECOND_ICC0) {
 #if defined(PETSC_HAVE_HYPRE)
-      PCHYPRESetType(pc, "euclid");
+      slesp.solver_class = CS_PARAM_SLES_CLASS_HYPRE;
 #else
       slesp.precond = CS_PARAM_PRECOND_BJACOB;
       cs_base_warn(__FILE__, __LINE__);
@@ -517,9 +550,10 @@ _petsc_setup_hook(void   *context,
 
   } /* Advanced check for parallel run */
 
-  if (slesp.solver != CS_PARAM_ITSOL_MUMPS &&
-      slesp.solver != CS_PARAM_ITSOL_MUMPS_LDLT)
-    PCSetType(pc, pc_type);
+  /* 2) Set the preconditioner */
+  PC  pc;
+  KSPGetPC(ksp, &pc);
+  _petsc_set_pc_type(slesp, eqp->name, pc);
 
   /* 3) Set PC options from command line */
   _petsc_set_pc_options_from_command_line(slesp);
@@ -530,40 +564,7 @@ _petsc_setup_hook(void   *context,
    * To get the last word use cs_user_sles_petsc_hook()  */
   PCSetFromOptions(pc);
 
-  /* 4) Additional settings not using command lines */
-  switch (slesp.precond) {
-
-  case CS_PARAM_PRECOND_SSOR:
-    PCSORSetSymmetric(pc, SOR_SYMMETRIC_SWEEP);
-    break;
-
-  case CS_PARAM_PRECOND_ICC0:
-  case CS_PARAM_PRECOND_ILU0:
-    PCFactorSetLevels(pc, 0);
-    break;
-
-  case CS_PARAM_PRECOND_AMG:
-    {
-      switch (slesp.amg_type) {
-
-      case CS_PARAM_AMG_PETSC_GAMG:
-        PCGAMGSetType(pc, PCGAMGAGG);
-        PCGAMGSetNSmooths(pc, 1);
-        break;
-
-      default:
-        break;
-
-      } /* End of switch on the AMG type */
-
-    } /* AMG as preconditioner */
-    break;
-
-  default:
-    break; /* Nothing else to set-up */
-  }
-
-  /* User function for additional settings */
+  /* 4) User function for additional settings */
   cs_user_sles_petsc_hook((void *)eqp, a, ksp);
 
   /* Dump the setup related to PETSc in a specific file */
