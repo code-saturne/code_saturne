@@ -199,7 +199,7 @@ class pyple_coupler():
 
 
     # ----------------------------------
-    def sync_coupling_status(self, end_coupling=False):
+    def sync_coupling_status(self, end_coupling=False, app_dt=100000000.0):
         """
         Sync with the other codes/apps using PLE.
         Returns exit_status which tells us if the coupling needs to stop.
@@ -217,7 +217,7 @@ class pyple_coupler():
         if end_coupling:
             sync_flags = sync_flags | ple_coupling.PLE_COUPLING_FLAGS['STOP']
 
-        self.ple_set.synchronize(sync_flags, 1000000000.0)
+        self.ple_set.synchronize(sync_flags, app_dt)
 
         exit_status = 0
 

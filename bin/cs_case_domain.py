@@ -1685,7 +1685,7 @@ class python_domain(base_domain):
 
         self.data_file = None
 
-        self.solver_path = 'python'
+        self.solver_path = self.package.config.python
         self.exec_solver = True
         self.nthreads = n_threads
 
@@ -1698,7 +1698,7 @@ class python_domain(base_domain):
         base_domain.set_case_dir(self, case_dir, staging_dir)
 
         self.data_dir = os.path.join(self.case_dir, "DATA")
-        self.src_dir  = os.path.join(self.case_dir, "SRC")
+        self.src_dir  = None
         self.result_dir = os.path.join(self.case_dir, "RESU")
 
     #---------------------------------------------------------------------------
