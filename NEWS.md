@@ -3,6 +3,8 @@ Release 6.0.1 (Unreleased)
 
 User changes:
 
+- Add C version of user source terms routine.
+
 - Allow user to define "rad_transfer_parames->ifinfe" type radiative BCs
   ("at infinity" conditions for non-wall faces).
 
