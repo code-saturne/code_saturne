@@ -175,7 +175,7 @@ call cs_gui_radiative_transfer_parameters
 ! Define fields for variables, check and build iscapp
 ! and computes the number of user scalars (nscaus)
 if (icdo.lt.2) then
-   call fldvar(nmodpp)
+  call fldvar(nmodpp)
 endif
 
 if (iale.ge.1) then
