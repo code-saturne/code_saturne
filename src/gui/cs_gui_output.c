@@ -283,9 +283,6 @@ _init_mei_tree(const char      *formula,
 
 void CS_PROCF (cspstb, CSPSTB) (cs_int_t        *ipstdv)
 {
-  if (!cs_gui_file_is_loaded())
-    return;
-
   /* Surfacic variables output */
 
   for (int i = 0; i < 5; i++)
@@ -392,9 +389,6 @@ cs_gui_output(void)
 void
 cs_gui_postprocess_meshes(void)
 {
-  if (!cs_gui_file_is_loaded())
-    return;
-
   const int *v_i = NULL;
   const cs_real_t *v_r = NULL;
 

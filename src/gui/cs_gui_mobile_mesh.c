@@ -951,9 +951,6 @@ void
 CS_PROCF(uiaste, UIASTE)(int       *idfstr,
                          cs_int_t  *asddlf)
 {
-  if (!cs_gui_file_is_loaded())
-    return;
-
   int istruct     = 0;
 
   cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
@@ -1030,9 +1027,6 @@ cs_gui_get_ale_viscosity_type(int  *type)
 void
 cs_gui_mesh_viscosity(void)
 {
-  if (!cs_gui_file_is_loaded())
-    return;
-
   cs_tree_node_t *tn0
     = cs_tree_get_node(cs_glob_tree, "thermophysical_models/ale_method");
 

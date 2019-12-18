@@ -99,9 +99,6 @@ BEGIN_C_DECLS
 void
 cs_gui_syrthes_coupling(void)
 {
-  if (!cs_gui_file_is_loaded())
-    return;
-
   const int *v_i = NULL;
   const cs_real_t *v_r = NULL;
 

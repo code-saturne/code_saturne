@@ -255,9 +255,6 @@ cs_gui_radiative_transfers_finalize(void)
 void
 cs_gui_radiative_transfer_parameters(void)
 {
-  if (!cs_gui_file_is_loaded())
-    return;
-
   const char *model = cs_gui_get_thermophysical_model("radiative_transfer");
 
   int ac_type = 0;
@@ -362,9 +359,6 @@ cs_gui_rad_transfer_absorption(cs_real_t  ck[])
 void
 cs_gui_radiative_transfer_postprocess(void)
 {
-  if (!cs_gui_file_is_loaded())
-    return;
-
   const int n_rad_b_f = 8;
 
   const char  *b_rad_names[8] = {
@@ -451,9 +445,6 @@ cs_gui_radiative_transfer_bcs(const    int   itypfb[],
                               double        *xlamp,
                               double        *rcodcl)
 {
-  if (!cs_gui_file_is_loaded())
-    return;
-
   const cs_lnum_t  n_b_faces = cs_glob_mesh->n_b_faces;
 
   cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree,

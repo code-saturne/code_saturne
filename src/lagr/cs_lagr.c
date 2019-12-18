@@ -1869,7 +1869,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
   /* User initialization by set and boundary */
 
-  if (cs_gui_file_is_loaded() && ts->nt_cur == ts->nt_prev +1)
+  if (ts->nt_cur == ts->nt_prev +1)
     cs_gui_particles_bcs();
 
   /* User initialization by set and zone */

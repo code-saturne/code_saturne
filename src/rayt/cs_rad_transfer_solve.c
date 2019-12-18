@@ -1212,20 +1212,16 @@ cs_rad_transfer_solve(int               verbosity,
       ckg[cell_id] = -cs_math_big_r;
 
     /* Data from GUI */
+    /* FIXME for ADF */
 
-    if (cs_gui_file_is_loaded()) {
+    cs_gui_rad_transfer_absorption(ckg);
 
-      /* FIXME for ADF */
+    if (   rt_params->type == CS_RAD_TRANSFER_P1
+        && cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] <= 1
+        && ipadom <= 3)
 
-      cs_gui_rad_transfer_absorption(ckg);
+      cs_rad_transfer_absorption_check_p1(ckg);
 
-      if (   rt_params->type == CS_RAD_TRANSFER_P1
-          && cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] <= 1
-          && ipadom <= 3)
-
-        cs_rad_transfer_absorption_check_p1(ckg);
-
-    }
 
     /* Only necessary when grey gas radiation properties are applied.
        In case of the ADF model this test does not make sense. */

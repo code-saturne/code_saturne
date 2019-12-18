@@ -1195,9 +1195,6 @@ _turbomachinery_model(cs_turbomachinery_model_t  *model_type,
 
   const char *model = NULL;
 
-  if (!cs_gui_file_is_loaded())
-    return;
-
   cs_tree_node_t *tn
     = cs_tree_get_node(cs_glob_tree,
                        "thermophysical_models/turbomachinery/model");
@@ -3873,9 +3870,6 @@ void CS_PROCF (uieres, UIERES) (int *iescal,
 void
 cs_gui_init(void)
 {
-  if (!cs_gui_file_is_loaded())
-    return;
-
   assert(cs_glob_var == NULL);
 
   BFT_MALLOC(cs_glob_var, 1, cs_var_t);
@@ -3891,9 +3885,6 @@ cs_gui_init(void)
 void
 cs_gui_finalize(void)
 {
-  if (!cs_gui_file_is_loaded())
-    return;
-
   cs_gui_boundary_conditions_free_memory();
 
   /* clean memory for global private structure vars */
@@ -3955,9 +3946,6 @@ cs_gui_head_losses(const cs_zone_t   *zone,
                    const cs_real_3_t *cvara_vel,
                    cs_real_t          cku[][6])
 {
-  if (!cs_gui_file_is_loaded())
-    return;
-
   if (! (zone->type & CS_VOLUME_ZONE_HEAD_LOSS))
     return;
 
@@ -4026,9 +4014,6 @@ cs_gui_head_losses(const cs_zone_t   *zone,
 void
 cs_gui_linear_solvers(void)
 {
-  if (!cs_gui_file_is_loaded())
-    return;
-
   bool multigrid = false;
   cs_sles_it_type_t sles_it_type = CS_SLES_N_IT_TYPES;
   cs_multigrid_type_t mg_type = CS_MULTIGRID_N_TYPES;
@@ -4181,9 +4166,6 @@ cs_gui_parallel_io(void)
   cs_file_mode_t op_mode[2] = {CS_FILE_MODE_READ, CS_FILE_MODE_WRITE};
   const char *op_name[2] = {"read_method", "write_method"};
 
-  if (!cs_gui_file_is_loaded())
-    return;
-
   cs_tree_node_t *tn_bio = cs_tree_get_node(cs_glob_tree,
                                             "calculation_management/block_io");
   /* Block IO read and write method */
@@ -4249,9 +4231,6 @@ cs_gui_partition(void)
   int  write_level = 1;
   int  n_add_parts = 0;
   int  *add_parts = NULL;
-
-  if (!cs_gui_file_is_loaded())
-    return;
 
   cs_tree_node_t *tn_p
     = cs_tree_get_node(cs_glob_tree, "calculation_management/partitioning");
@@ -4780,9 +4759,6 @@ cs_gui_thermal_model(void)
 void
 cs_gui_time_moments(void)
 {
-  if (!cs_gui_file_is_loaded())
-    return;
-
   int imom = 1;
   int restart = cs_restart_present();
 
@@ -4920,9 +4896,6 @@ cs_gui_turbomachinery(void)
 void
 cs_gui_turbomachinery_rotor(void)
 {
-  if (!cs_gui_file_is_loaded())
-    return;
-
   cs_turbomachinery_model_t  model_type;
   bool coupled;
 
@@ -5139,9 +5112,6 @@ cs_gui_user_arrays(void)
 void
 cs_gui_zones(void)
 {
-  if (!cs_gui_file_is_loaded())
-    return;
-
   /* Ensure zones ordering for safety (should be removed in the future)*/
 
   _ensure_zones_order();
@@ -5329,9 +5299,6 @@ cs_gui_pressure_drop_by_zone(void)
 void
 cs_gui_define_fans(void)
 {
-  if (!cs_gui_file_is_loaded())
-    return;
-
   const char path0[] = "thermophysical_models/fans/fan";
 
   for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);

@@ -303,8 +303,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   /* User setup
      ---------- */
 
-  if (cs_gui_file_is_loaded())
-    cs_gui_particles_model();
+  cs_gui_particles_model();
 
   cs_user_lagr_model();
 

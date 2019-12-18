@@ -1252,9 +1252,6 @@ void CS_PROCF (uidai1, UIDAI1) (int  *permeability,
 void
 cs_gui_physical_model_select(void)
 {
-  if (!cs_gui_file_is_loaded())
-    return;
-
   int isactiv = 0;
 
   cs_var_t  *vars = cs_glob_var;

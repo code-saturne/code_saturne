@@ -91,23 +91,6 @@ static bool _setup_read = false;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Indicate if an XML file has been loaded.
- *
- * \return  1 if an XML file has been loaded, 0 otherwise
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_gui_file_is_loaded(void)
-{
-  int retval = 0;
-  if (_setup_read)
-    retval = 1;
-  return retval;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Load the XML file in memory.
  *
  * \param[in]  filename  XML file containing the parameters

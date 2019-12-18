@@ -88,13 +88,6 @@ BEGIN_C_DECLS
 void
 cs_user_model(void)
 {
-  /* If the GUI is used, user fields should preferably be defined with the GUI,
-     so that associated numerical options, boundary conditions, initializations,
-     and such may also be defined using the GUI. */
-
-  if (cs_gui_file_is_loaded())
-    return;
-
   /*--------------------------------------------------------------------------*/
 
   /*! [turbulence_model_choice] */

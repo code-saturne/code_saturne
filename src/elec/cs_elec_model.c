@@ -738,11 +738,9 @@ cs_electrical_model_specific_initialization(cs_real_t  *visls0,
     }
   }
 
-  if (cs_gui_file_is_loaded()) {
-    CS_PROCF(uicpi1,UICPI1) (&(_elec_option.srrom), diftl0);
-    cs_gui_elec_model();
-    _elec_option.pot_diff = 1000.;//FIXME
-  }
+  CS_PROCF(uicpi1,UICPI1) (&(_elec_option.srrom), diftl0);
+  cs_gui_elec_model();
+  _elec_option.pot_diff = 1000.;//FIXME
 
   _cs_electrical_model_verify();
 

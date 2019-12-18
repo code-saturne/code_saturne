@@ -755,14 +755,11 @@ cs_boundary_conditions_create(void)
   /* boundary conditions zone by boundary face */
   /* only for specific physics */
 
-  if (   cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0
-      || cs_gui_file_is_loaded()) {
-    BFT_MALLOC(_bc_face_zone, n_b_faces, int);
-    for (cs_lnum_t ii = 0 ; ii < n_b_faces ; ii++) {
-      _bc_face_zone[ii] = 0;
-    }
-    cs_glob_bc_face_zone = _bc_face_zone;
+  BFT_MALLOC(_bc_face_zone, n_b_faces, int);
+  for (cs_lnum_t ii = 0 ; ii < n_b_faces ; ii++) {
+    _bc_face_zone[ii] = 0;
   }
+  cs_glob_bc_face_zone = _bc_face_zone;
 }
 
 /*----------------------------------------------------------------------------
@@ -773,11 +770,7 @@ void
 cs_boundary_conditions_free(void)
 {
   BFT_FREE(_bc_type);
-
-  if (   cs_glob_physical_model_flag[CS_PHYSICAL_MODEL_FLAG] > 0
-      || cs_gui_file_is_loaded()) {
-    BFT_FREE(_bc_face_zone);
-  }
+  BFT_FREE(_bc_face_zone);
 }
 
 /*----------------------------------------------------------------------------*/
