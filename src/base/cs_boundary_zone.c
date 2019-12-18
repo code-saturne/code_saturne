@@ -312,6 +312,7 @@ _boundary_zone_compute_metadata(bool       mesh_modified,
   /* We recompute values only if mesh is modified or zone is time varying.
    * FIXME: For the moment, the boundary measure is not computed, but set to -1.
    * to be improved in the future.
+   * Not thta boundary measure of a (2D) surface should be the length of the perimeter
    */
   if (z->time_varying || mesh_modified) {
     cs_real_t *b_face_surf   = cs_glob_mesh_quantities->b_face_surf;
@@ -1032,23 +1033,36 @@ cs_boundary_zone_print_info(void)
 
   bft_printf("\n");
   bft_printf(" --- Information on boundary zones\n");
+  cs_real_t *b_face_surf   = cs_glob_mesh_quantities->b_face_surf;
+  cs_real_t *b_f_face_surf = cs_glob_mesh_quantities->b_f_face_surf;
 
   for (int i = 0; i < _n_zones; i++) {
     cs_zone_t *z = _zones[i];
     bft_printf(_("  Boundary zone \"%s\"\n"
                  "    id              = %d\n"
                  "    Number of faces = %llu\n"
-                 "    Surface         = %14.7e\n"
-                 "    Fluid surface   = %14.7e\n"),
+                 "    Surface         = %14.7e\n"),
                z->name, z->id, (unsigned long long)z->n_g_elts,
-               z->measure, z->f_measure);
-    if (z->boundary_measure < 0.)
-      bft_printf(_("    Perimeter       = -1 (not computed)\n"
-                   "    Fluid perimeter = -1 (not computed)\n"));
-    else
-      bft_printf(_("    Perimeter       = %14.7e\n"
-                   "    Fluid perimeter = %14.7e\n"),
-                 z->boundary_measure, z->f_boundary_measure);
+               z->measure);
+    /* Only log fluid fluid when different to surface */
+    if (b_f_face_surf != b_face_surf && b_f_face_surf != NULL)
+      bft_printf(_("    Fluid surface   = %14.7e\n"),
+                 z->f_measure);
+
+    if (z->boundary_measure < 0.) {
+      bft_printf(_("    Perimeter       = -1 (not computed)\n"));
+      /* Only log fluid fluid when different to surface */
+      if (b_f_face_surf != b_face_surf && b_f_face_surf != NULL)
+        bft_printf(_("    Fluid perimeter = -1 (not computed)\n"));
+    }
+    else {
+      bft_printf(_("    Perimeter       = %14.7e\n"),
+                 z->boundary_measure);
+      /* Only log fluid fluid when different to surface */
+      if (b_f_face_surf != b_face_surf && b_f_face_surf != NULL)
+        bft_printf(_("    Fluid perimeter = %14.7e\n"),
+                   z->f_boundary_measure);
+    }
   }
 
   bft_printf_flush();

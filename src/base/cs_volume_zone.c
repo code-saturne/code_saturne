@@ -326,21 +326,15 @@ _volume_zone_compute_metadata(bool       mesh_modified,
     cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
 
     z->measure = 0.;
-    z->f_measure = -1.;
+    z->f_measure = 0.;
     z->boundary_measure = -1.;
     z->f_boundary_measure = -1.;
 
     for (cs_lnum_t e_id = 0; e_id < z->n_elts; e_id++) {
       cs_lnum_t c_id = z->elt_ids[e_id];
       z->measure   += cell_vol[c_id];
+      z->f_measure += cell_f_vol[c_id];
     }
-
-    /* only update if fluid cell volumes are not cell volumes */
-    if (cell_f_vol != cell_vol && cell_f_vol != NULL)
-      for (cs_lnum_t e_id = 0; e_id < z->n_elts; e_id++) {
-        cs_lnum_t c_id = z->elt_ids[e_id];
-        z->f_measure += cell_f_vol[c_id];
-      }
 
     cs_real_t measures[4] = {z->measure, z->f_measure,
                              z->boundary_measure, z->f_boundary_measure};
@@ -959,32 +953,39 @@ cs_volume_zone_print_info(void)
   bft_printf("\n");
   bft_printf(" --- Information on volume zones\n");
 
+  /* Cell volumes and fluid cell volume */
+  cs_real_t *cell_vol   = cs_glob_mesh_quantities->cell_vol;
+  cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+  cs_real_t *b_face_surf   = cs_glob_mesh_quantities->b_face_surf;
+  cs_real_t *b_f_face_surf = cs_glob_mesh_quantities->b_f_face_surf;
+
   for (int i = 0; i < _n_zones; i++) {
     cs_zone_t *z = _zones[i];
+    bft_printf(_("  Volume zone \"%s\"\n"
+                 "    id              = %d\n"
+                 "    Number of cells = %llu\n"
+                 "    Volume          = %14.7e\n"),
+               z->name, z->id, (unsigned long long)z->n_g_elts,
+               z->measure);
+    /* Only log fluid volumes when different to volumes */
+    if (cell_f_vol != cell_vol && cell_f_vol != NULL)
+      bft_printf(_("    Fluid volume    = %14.7e\n"),
+                 z->f_measure);
 
-    if (z->f_measure < 0.)
-      bft_printf(_("  Volume zone \"%s\"\n"
-                   "    id              = %d\n"
-                   "    Number of cells = %llu\n"
-                   "    Volume          = %14.7e\n"),
-                 z->name, z->id, (unsigned long long)z->n_g_elts,
-                 z->measure);
-    else
-      bft_printf(_("  Volume zone \"%s\"\n"
-                   "    id              = %d\n"
-                   "    Number of cells = %llu\n"
-                   "    Volume          = %14.7e\n"
-                   "    Fluid volume    = %14.7e\n"),
-                 z->name, z->id, (unsigned long long)z->n_g_elts,
-                 z->measure, z->f_measure);
-
-    if (z->boundary_measure < 0.)
-      bft_printf(_("    Surface         = -1 (not computed)\n"
-                   "    Fluid surface   = -1 (not computed)\n"));
-    else
-      bft_printf(_("    Surface         = %14.7e\n"
-                   "    Fluid surface   = %14.7e\n"),
-                 z->boundary_measure, z->f_boundary_measure);
+    if (z->boundary_measure < 0.) {
+      bft_printf(_("    Surface         = -1 (not computed)\n"));
+      /* Only log fluid fluid when different to surface */
+      if (b_f_face_surf != b_face_surf && b_f_face_surf != NULL)
+        bft_printf(_("    Fluid surface   = -1 (not computed)\n"));
+    }
+    else {
+      bft_printf(_("    Surface         = %14.7e\n"),
+                 z->f_boundary_measure);
+      /* Only log fluid fluid when different to surface */
+      if (b_f_face_surf != b_face_surf && b_f_face_surf != NULL)
+        bft_printf(_("    Fluid surface   = %14.7e\n"),
+                   z->f_boundary_measure);
+    }
   }
 
   bft_printf_flush();
