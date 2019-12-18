@@ -86,7 +86,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         # Combo models
         self.modelGradientType = ComboModel(self.comboBoxGradientType, 5, 1)
         self.modelGradientType.addItem(self.tr("Automatic"), 'default')
-        self.modelGradientType.addItem(self.tr("Iterative handling of non-orthogonalities"),
+        self.modelGradientType.addItem(self.tr("Green-Gauss with iterative handling of non-orthogonalities"),
                                        'green_iter')
         self.modelGradientType.addItem(self.tr("Least squares"), 'lsq')
         self.modelGradientType.addItem(self.tr("Green-Gauss with least squares gradient face values"),

@@ -80,7 +80,7 @@
       <item row="0" column="0" colspan="2">
        <widget class="QLabel" name="labelGradientType">
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate the gradient reconstruction method (one method for all the variables):&lt;br/&gt;- Iterative handling of the non-orthogonalities,&lt;br/&gt;- Least squares method based on the first neighbour cells (which share a face with the treated cell),&lt;br/&gt;- Least squares method based on the extended neighbourhood (cells which share a node with the treated cell),&lt;br/&gt;- Least squares method based on a partial extended neighbourhood (all first neighbours plus the extended neighbourhood cells that are connected to a face where the non-orthogonality angle is larger than a certain parameter),&lt;br/&gt;- Iterative method with least squares initialization on the first neighbours&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate the global gradient reconstruction method (one method for all the variables):&lt;br/&gt;- Green's theorem with iterative handling of the non-orthogonalities,&lt;br/&gt;- Least squares method&lt;br/&gt;- Green's theorem using face values based on least-squares gradient&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>Gradient reconstruction type</string>
