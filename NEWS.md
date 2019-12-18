@@ -23,6 +23,8 @@ User changes:
 
 Bug fixes:
 
+- Fix computation of fluid volume zone.
+
 - Fix launching of ncfd doxygen from GUI (help menu).
 
 - Fix crash in ALE using internal structures coupling.
