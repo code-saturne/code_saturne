@@ -387,6 +387,8 @@ cs_navsto_system_destroy(void)
   case CS_NAVSTO_COUPLING_MONOLITHIC:
     navsto->coupling_context =
       cs_navsto_monolithic_free_context(nsp, navsto->coupling_context);
+    if (nsp->space_scheme == CS_SPACE_SCHEME_CDOFB)
+      cs_cdofb_monolithic_finalize_common(nsp);
     break;
   case CS_NAVSTO_COUPLING_PROJECTION:
     navsto->coupling_context =

@@ -561,6 +561,9 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     if (strcmp(val, "no_block") == 0) {
       nsp->sles_param.strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
     }
+    else if (strcmp(val, "by_blocks") == 0) {
+      nsp->sles_param.strategy = CS_NAVSTO_SLES_BY_BLOCKS;
+    }
     else if (strcmp(val, "block_amg_cg") == 0) {
       nsp->sles_param.strategy = CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG;
     }
@@ -596,7 +599,7 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid val %s related to key CS_NSKEY_SLES_STRATEGY\n"
-                " Choice between no_block, block_amg_cg,\n"
+                " Choice between: no_block, by_locks, block_amg_cg,\n"
                 " {additive,multiplicative}_gmres, {diag,upper}_schur_gmres,\n"
                 " gkb, gkb_gmres, gkb_saturne,\n"
                 " mumps, uzawa_al or alu", __func__, _val);

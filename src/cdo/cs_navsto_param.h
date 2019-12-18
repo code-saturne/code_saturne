@@ -170,6 +170,13 @@ typedef enum {
  * This option is only available with the support to the PETSc library up to now.
  *
  *
+ * \var CS_NAVSTO_SLES_BY_BLOCKS
+ * Associated keyword: "blocks"
+ *
+ * The Navier-Stokes system is split into a 3x3 block matrix for the velocity unknows
+ * and in a non-assembly way for the divergence/pressure gradient operators.
+ *
+ *
  * \var CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG
  * Associated keyword: "block_amg_cg"
  *
@@ -286,6 +293,7 @@ typedef enum {
 
   CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK,
   CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG,
+  CS_NAVSTO_SLES_BY_BLOCKS,
   CS_NAVSTO_SLES_DIAG_SCHUR_GMRES,
   CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK,
   CS_NAVSTO_SLES_GKB,

@@ -106,6 +106,17 @@ cs_cdofb_monolithic_init_common(const cs_navsto_param_t       *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Free shared pointers with lifecycle dedicated to this file
+ *
+ * \param[in]  nsp         pointer to NavSto parameter settings
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_monolithic_finalize_common(const cs_navsto_param_t       *nsp);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Initialize a \ref cs_cdofb_monolithic_t structure
  *
  * \param[in] nsp        pointer to a \ref cs_navsto_param_t structure

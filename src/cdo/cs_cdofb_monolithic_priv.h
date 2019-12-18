@@ -77,6 +77,18 @@ typedef struct _cdofb_monolithic_t  cs_cdofb_monolithic_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Initialize a matrix and its related structures needed during the
+ *         assembly step.
+ *
+ * \param[in, out]  sc           pointer to scheme context structure
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_cdofb_monolithic_init_matrix_t)(cs_cdofb_monolithic_t     *sc);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Perform the assembly stage for a vector-valued system obtained
  *         with CDO-Fb schemes
  *
@@ -87,8 +99,6 @@ typedef struct _cdofb_monolithic_t  cs_cdofb_monolithic_t;
  * \param[in, out]  sc                pointer to scheme context structure
  * \param[in, out]  eqc               context structure for a vector-valued Fb
  * \param[in, out]  eqa               pointer to cs_equation_assemble_t
- * \param[in, out]  mav               pointer to cs_matrix_assembler_values_t
- * \param[in, out]  rhs               right-end side of the system
  */
 /*----------------------------------------------------------------------------*/
 
@@ -99,9 +109,7 @@ typedef void
                                  const bool                      has_sourceterm,
                                  cs_cdofb_monolithic_t          *sc,
                                  cs_cdofb_vecteq_t              *eqc,
-                                 cs_equation_assemble_t         *eqa,
-                                 cs_matrix_assembler_values_t   *mav,
-                                 cs_real_t                       rhs[]);
+                                 cs_equation_assemble_t         *eqa);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -113,9 +121,6 @@ typedef void
  * \param[in]      dir_values    array storing the Dirichlet values
  * \param[in]      forced_ids    indirection in case of internal enforcement
  * \param[in, out] sc            pointer to the scheme context
- * \param[in, out] matrix        pointer to a \ref cs_matrix_t structure
- * \param[in, out] mom_rhs       rhs array related to the momentum eq.
- * \param[in, out] mass_rhs      rhs array related to the mass eq.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -123,10 +128,7 @@ typedef void
 (cs_cdofb_monolithic_build_t)(const cs_navsto_param_t      *nsp,
                               const cs_real_t              *dir_values,
                               const cs_lnum_t               forced_ids[],
-                              cs_cdofb_monolithic_t        *sc,
-                              cs_matrix_t                  *matrix,
-                              cs_real_t                    *mom_rhs,
-                              cs_real_t                    *mass_rhs);
+                              cs_cdofb_monolithic_t        *sc);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -242,9 +244,10 @@ struct _cdofb_monolithic_t {
    * @{
    */
 
-  cs_cdofb_monolithic_build_t      *steady_build;
-  cs_cdofb_monolithic_build_t      *build;
-  cs_cdofb_monolithic_assemble_t   *assemble;
+  cs_cdofb_monolithic_init_matrix_t   *init_system;
+  cs_cdofb_monolithic_build_t         *steady_build;
+  cs_cdofb_monolithic_build_t         *build;
+  cs_cdofb_monolithic_assemble_t      *assemble;
 
   /*!
    * @}
@@ -264,6 +267,20 @@ struct _cdofb_monolithic_t {
    */
 
   cs_cdofb_monolithic_sles_t       *msles;
+
+  /*!
+   * @}
+   * @name Assembly stage
+   * Additional members which may be used to assemble the system
+   * @{
+   */
+
+  /* \var mav_structures
+   * Set of pointers to the matrix assembler structures for matrix values
+   * Size = 1 or 9
+   */
+
+  cs_matrix_assembler_values_t     **mav_structures;
 
   /*!
    * @}
