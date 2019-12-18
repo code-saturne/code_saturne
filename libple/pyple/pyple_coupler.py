@@ -37,32 +37,47 @@ class pyple_coupler():
     """
 
     # ----------------------------------
-    def __init__(self, name, verbosity=1):
+    def __init__(self,
+                 run_dir=None,
+                 verbosity=1,
+                 logfile = None,
+                 output_mode="master",):
         """
         Init method.
         :param name: string
                      name of the app
-        :param verbosity: int, optional
-                          log verbosity level
-                          default value is 1
+        :param verbosity:   int, optional
+                            log verbosity level
+                            default value is 1
+                            If negative value, no output
+        :param logfile:     string, optional
+                            User defined name for the logfile.
+                            Default is None, leading to the default value of
+                            init_log method
+        :param output_mode: string, optional
+                            Log output mode. Options are "all" or "master"
+                            default is "master"
         """
 
-        self.name      = name
-        self.log_name  = "saturne_%s_pycoupler_run.log" % name
+        self.name = None
+
+        if run_dir:
+            import os
+            os.chdir(run_dir)
+
+        self.user_options = {'rundir':run_dir,
+                             'verbos':verbosity,
+                             'logfile':logfile,
+                             'output':output_mode}
+
         self.verbosity = verbosity
-        if self.verbosity < 0:
-            self.verbosity = 0
+        self.print_info = False
 
         self.last_cpl_iter = False
-
-        self.init_log()
 
         self.has_ple = False
         # Check for MPI and PLE presence
         self.check_mpi_status()
-
-        # Launch PLE parallel initialization
-        self.coupling_init()
     # ----------------------------------
 
 
@@ -70,12 +85,26 @@ class pyple_coupler():
     def init_log(self):
         """
         Init the log file
+        default logfile name is:
+        <app_name>_<rank>_pyple_coupler.log'
         """
-        f = open(self.log_name, "w")
-        f.write(" ===================================== \n")
-        f.write("  Code_Saturne/%s pycoupler log \n" % self.name)
-        f.write(" ===================================== \n\n")
-        f.close()
+        if self.verbosity > 0:
+            if self.user_options['output'] == "all":
+                self.print_info = True
+            elif self.local_rank == 0:
+                self.print_info = True
+
+            if self.user_options['logfile'] != None:
+                self.log_name = self.user_options['logfile']
+            else:
+                self.log_name = "%s_r%05d_pyple_coupler.log" % (self.name, self.local_rank)
+
+        if self.print_info:
+            f = open(self.log_name, "w")
+            f.write(" ===================================== \n")
+            f.write("  '%s' pycoupler usage log \n" % self.name)
+            f.write(" ===================================== \n\n")
+            f.close()
     # ----------------------------------
 
 
@@ -107,55 +136,59 @@ class pyple_coupler():
         Check that MPI and PLE are available and initialized.
         """
 
-        self.log("MPI INIT AND CHECK FOR PLE PRESENCE")
-
         init_msg = ""
 
         if _ple_avail:
                 self.has_ple = ple_init.mpi_initialized()
                 if self.has_ple:
-                    init_msg="Code %s was launched with PLE using MPI support" % name
+                    init_msg="Code was launched with PLE using MPI support"
                 else:
-                    init_msg="Code %s was launched, but without MPI..." % name
+                    init_msg="Code was launched, but without MPI..."
         else:
             self.has_ple = False
-            init_msg="Code %s was launched, but could not import PLE..." % name
+            init_msg="Code was launched, but could not import PLE..."
 
-        self.log(init_msg)
         if not self.has_ple:
             raise Exception(init_msg)
 
-        self.base_comm = ple_init.get_comm_world()
+        self.base_comm  = ple_init.get_comm_world()
+        self.world_rank = self.base_comm.rank
     # ----------------------------------
 
 
     # ----------------------------------
-    def coupling_init(self):
+    def init_coupling(self, app_name=None, app_type="PYTHON"):
         """
         Start the coupling communicator based on the PLE coupling library
         of Code_Saturne
         """
         # Names to be used by PLE
-        self.app_type = 'PYTHON'
+        self.app_type = app_type
 
         if self.name == None:
-            self.name = 'PYCODE'
+            if app_name == None:
+                self.name = 'PYCODE'
+            else:
+                self.name = app_name
 
         # PLE calls to create the subcommunicator
         self.app_num = ple_coupling.name_to_id(self.base_comm, self.name)
 
-        world_rank = self.base_comm.rank
 
         if self.app_num > -1:
-            self.my_comm = self.base_comm.Split(self.app_num, world_rank)
+            self.my_comm = self.base_comm.Split(self.app_num, self.world_rank)
         else:
             self.my_comm = self.base_comm.Dup()
+
+        self.local_rank = self.my_comm.rank
+
+        self.init_log()
 
         _sync_flag = 0
 
         self.ple_set = ple_coupling.ple_mpi_set(_sync_flag,
                                                 self.app_type,
-                                                self.app_name,
+                                                self.name,
                                                 self.base_comm,
                                                 self.my_comm)
 

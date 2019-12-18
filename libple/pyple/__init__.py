@@ -19,4 +19,12 @@
 #  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 # ==============================================================================
 
+# Ensure that all correct paths are available in python
+import sys, os
+
+_p = os.path.split(os.path.abspath(__file__))[0]
+if _p not in sys.path:
+    sys.path.insert(0, _p)
+
+del _p
 __all__ = []
