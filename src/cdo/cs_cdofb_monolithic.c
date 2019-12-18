@@ -1776,7 +1776,6 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
     break;
 
   case CS_NAVSTO_SLES_UZAWA_AL:
-    /* GKB solver if need */
     sc->assemble = _assemble_gkb;
     sc->solve = cs_cdofb_monolithic_uzawa_al_incr_solve;
     sc->msles->graddiv_coef = nsp->gd_scale_coef;
@@ -1937,10 +1936,12 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
   /* Compute the velocity divergence and retrieve its L2-norm */
   cs_real_t  div_l2_norm = _update_divergence(sc, mom_eqc);
 
-  if (nsp->verbosity > 1)
+  if (nsp->verbosity > 1) {
     cs_log_printf(CS_LOG_DEFAULT,
                   " -cvg- cumulated_inner_iters: %d ||div(u)|| = %6.4e\n",
                   cumulated_inner_iters, div_l2_norm);
+    cs_log_printf_flush(CS_LOG_DEFAULT);
+  }
 
   /* Now compute/update the velocity and pressure fields */
   _update_fields(sc, mom_eqc);

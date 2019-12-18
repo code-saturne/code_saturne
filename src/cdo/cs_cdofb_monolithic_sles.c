@@ -1070,7 +1070,7 @@ _gkb_hook(void     *context,
   KSPSetType(ksp, KSPPREONLY);
 
   /* Apply modifications to the KSP structure */
-  PC up_pc, u_pc;
+  PC up_pc;
 
   KSPGetPC(ksp, &up_pc);
   PCSetType(up_pc, PCFIELDSPLIT);
@@ -1158,7 +1158,7 @@ _gkb_gmres_hook(void     *context,
                    nslesp.algo_n_max_iter); /* max number of iterations */
 
   /* Apply modifications to the KSP structure */
-  PC up_pc, u_pc;
+  PC up_pc;
 
   KSPGetPC(ksp, &up_pc);
   PCSetType(up_pc, PCFIELDSPLIT);
@@ -1185,8 +1185,6 @@ _gkb_gmres_hook(void     *context,
   KSP  *up_subksp;
   PCFieldSplitGetSubKSP(up_pc, &n_split, &up_subksp);
   assert(n_split == 2);
-
-  KSP  u_ksp = up_subksp[0];
 
   /* Set KSP tolerances */
   max_it = 50;
@@ -1966,7 +1964,7 @@ cs_cdofb_monolithic_sles_create(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create an empty cs_cdofb_monolithic_sles_t structure
+ * \brief  Free memory related to cs_cdofb_monolithic_sles_t structure
  *
  * \param[in, out]  p_msles  double pointer to the structure to free
  */
@@ -2187,7 +2185,9 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve a linear system arising from a scalar-valued CDO-Fb scheme
+ * \brief  Solve a linear system arising from the discretization of the
+ *         Navier-Stokes equation with a CDO face-based approach.
+ *         The full system is treated as one block and then sent to PETSc
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
@@ -2217,7 +2217,7 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
   BFT_MALLOC(b, n_scatter_elts, cs_real_t);
 
 # pragma omp parallel for if (CS_THR_MIN > n_faces)     \
-  shared(msles, xsol, b)                             \
+  shared(msles, xsol, b)                                \
   firstprivate(n_faces)
   for (cs_lnum_t f = 0; f < n_faces; f++) {
 

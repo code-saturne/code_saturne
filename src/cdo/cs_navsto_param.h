@@ -158,14 +158,16 @@ typedef enum {
  *  preconditioner may have entries for the approximation of the inverse of the
  *  Schur complement).
  *
- * \var CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK
- * Associated keyword: "no_block"
  *
- * Use the same mechanism as for a stand-alone equation. In this case, the
- * setting relies on the function \ref cs_equation_set_sles and the different
- * options for solving a linear system such as the choice of the iterative
- * solver or the choice of the preconditioner or the type of residual
- * normalization
+ * \var CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK
+ * Associated keyword: "additive_gmres"
+ *
+ * Available choice when a monolithic approach is used (i.e. with the parameter
+ * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm) The Navier-Stokes
+ * system of equations is solved an additive preconditioner (block diagonal
+ * matrix where the block 00 is A_{00}) and the block 11 is set to the identity.
+ * Preconditioner/solver for the block 00 is set using the momentum equation.
+ * This option is only available with the support to the PETSc library up to now.
  *
  *
  * \var CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG
@@ -181,29 +183,6 @@ typedef enum {
  * only available with the support to the PETSc library up to now.
  *
  *
- * \var CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK
- * Associated keyword: "additive_gmres"
- *
- * Available choice when a monolithic approach is used (i.e. with the parameter
- * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm) The Navier-Stokes
- * system of equations is solved an additive preconditioner (block diagonal
- * matrix where the block 00 is A_{00}) and the block 11 is set to the identity.
- * Preconditioner/solver for the block 00 is set using the momentum equation.
- * This option is only available with the support to the PETSc library up to now.
- *
- *
- * \var CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK
- * Associated keyword: "multiplicative_gmres"
- *
- * Available choice when a monolithic approach is used (i.e. with the parameter
- * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm) The Navier-Stokes
- * system of equations is solved a multiplicative preconditioner (block diagonal
- * matrix where the block 00 is A_{00}) and the block 11 is set to the identity.
- * Block 01 is also considered in the block preconditioner.
- * Preconditioner/solver for the block 00 is set using the momentum equation.
- * This option is only available with the support to the PETSc library up to now.
- *
- *
  * \var CS_NAVSTO_SLES_DIAG_SCHUR_GMRES
  * Associated keyword: "diag_schur_gmres"
  *
@@ -217,17 +196,15 @@ typedef enum {
  * library up to now.
  *
  *
- * \var CS_NAVSTO_SLES_UPPER_SCHUR_GMRES
- * Associated keyword: "upper_schur_gmres"
+ * \var CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK
+ * Associated keyword: "no_block"
  *
- * Available choice when a monolithic approach is used (i.e. with the parameter
- * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm). The
- * Navier-Stokes system of equations is solved using a upper triangular block
- * preconditioner where the block 00 is A_{00} preconditioned with one multigrid
- * iteration and the block 11 is an approximation of the Schur complement
- * preconditioned with a minres. The main iterative solver is a flexible
- * GMRES. This option is only available with the support to the PETSc
- * library up to now.
+ * Use the same mechanism as for a stand-alone equation. In this case, the
+ * setting relies on the function \ref cs_equation_set_sles and the different
+ * options for solving a linear system such as the choice of the iterative
+ * solver or the choice of the preconditioner or the type of residual
+ * normalization
+ *
  *
  * \var CS_NAVSTO_SLES_GKB
  * Associated keyword: "gkb"
@@ -267,11 +244,38 @@ typedef enum {
  * with a multigrid for Stokes for instance.
  * The residual is computed in the energy norm.
  *
+ *
+ * \var CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK
+ * Associated keyword: "multiplicative_gmres"
+ *
+ * Available choice when a monolithic approach is used (i.e. with the parameter
+ * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm) The Navier-Stokes
+ * system of equations is solved a multiplicative preconditioner (block diagonal
+ * matrix where the block 00 is A_{00}) and the block 11 is set to the identity.
+ * Block 01 is also considered in the block preconditioner.
+ * Preconditioner/solver for the block 00 is set using the momentum equation.
+ * This option is only available with the support to the PETSc library up to now.
+ *
+ *
  * \var CS_NAVSTO_SLES_MUMPS
  * Associated keyword: "mumps"
  *
  * Direct solver to solve systems arising from the discretization of the
  * Navier-Stokes equations
+ *
+ *
+ * \var CS_NAVSTO_SLES_UPPER_SCHUR_GMRES
+ * Associated keyword: "upper_schur_gmres"
+ *
+ * Available choice when a monolithic approach is used (i.e. with the parameter
+ * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm). The
+ * Navier-Stokes system of equations is solved using a upper triangular block
+ * preconditioner where the block 00 is A_{00} preconditioned with one multigrid
+ * iteration and the block 11 is an approximation of the Schur complement
+ * preconditioned with a minres. The main iterative solver is a flexible
+ * GMRES. This option is only available with the support to the PETSc
+ * library up to now.
+ *
  *
  * \var CS_NAVSTO_SLES_UZAWA_AL
  * Associated keyword: "uzawa_al"
@@ -280,16 +284,16 @@ typedef enum {
 
 typedef enum {
 
-  CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK,
-  CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG,
   CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK,
-  CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK,
+  CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG,
   CS_NAVSTO_SLES_DIAG_SCHUR_GMRES,
-  CS_NAVSTO_SLES_UPPER_SCHUR_GMRES,
+  CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK,
   CS_NAVSTO_SLES_GKB,
   CS_NAVSTO_SLES_GKB_GMRES,
   CS_NAVSTO_SLES_GKB_SATURNE,
+  CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK,
   CS_NAVSTO_SLES_MUMPS,
+  CS_NAVSTO_SLES_UPPER_SCHUR_GMRES,
   CS_NAVSTO_SLES_UZAWA_AL,
 
   CS_NAVSTO_SLES_N_TYPES
@@ -765,7 +769,9 @@ cs_navsto_algo_info_header(const char   *algo_name)
 {
   assert(algo_name != NULL);
   cs_log_printf(CS_LOG_DEFAULT,
-                "%8s.It  -- Algo.Res   Inner    Cumul  ||div(u)||\n", algo_name);
+                "%8s.It  -- Algo.Res   Inner    Cumul  ||div(u)||\n",
+                algo_name);
+  cs_log_printf_flush(CS_LOG_DEFAULT);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -795,6 +801,7 @@ cs_navsto_algo_info_printf(const char                    *algo_name,
                   "%8s.It%02d-- %5.3e  %5d  %6d  %6.4e\n",
                   algo_name, ns_info.n_algo_iter, ns_info.res,
                   ns_info.last_inner_iter, ns_info.n_inner_iter, div_l2);
+  cs_log_printf_flush(CS_LOG_DEFAULT);
 }
 
 /*----------------------------------------------------------------------------*/

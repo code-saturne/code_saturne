@@ -596,9 +596,10 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid val %s related to key CS_NSKEY_SLES_STRATEGY\n"
-                " Choice between no_block, block_amg_cg, additive_gmres\n"
-                " {diag,upper}_schur_gmres, gkb, gkb_saturne, mumps, or\n"
-                "uzawa_al", __func__, _val);
+                " Choice between no_block, block_amg_cg,\n"
+                " {additive,multiplicative}_gmres, {diag,upper}_schur_gmres,\n"
+                " gkb, gkb_gmres, gkb_saturne,\n"
+                " mumps, uzawa_al or alu", __func__, _val);
     }
     break;
 

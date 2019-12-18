@@ -60,7 +60,8 @@ typedef struct {
   cs_matrix_t   *matrix;    /* Block related to the velocity momentum */
   cs_real_t     *div_op;    /* Block related to the -divergence (block A_{10} */
 
-  /* Arrays split according to the block shape */
+  /* Arrays split according to the block shape. U is interlaced or not
+   * according to the SLES strategy */
   cs_real_t     *u_f;           /* velocity values at faces */
   cs_real_t     *p_c;           /* pressure values at cells */
 
@@ -91,7 +92,7 @@ cs_cdofb_monolithic_sles_create(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Create an empty cs_cdofb_monolithic_sles_t structure
+ * \brief  Free memory related to cs_cdofb_monolithic_sles_t structure
  *
  * \param[in, out]  p_msles  double pointer to the structure to free
  */
@@ -132,7 +133,9 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Solve a linear system arising from a scalar-valued CDO-Fb scheme
+ * \brief  Solve a linear system arising from the discretization of the
+ *         Navier-Stokes equation with a CDO face-based approach.
+ *         The full system is treated as one block and then sent to PETSc
  *
  * \param[in]      nsp      pointer to a cs_navsto_param_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
