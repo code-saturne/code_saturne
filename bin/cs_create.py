@@ -502,7 +502,7 @@ domains = [
     ,
     {'solver': 'PYTHON_CODE',
      'domain': 'DOMAIN',
-     'py_code': 'pycode.py',
+     'script': 'pycode.py',
      'command_line': '',
      'n_procs_weight': None,
      'n_procs_min': 1,

@@ -61,9 +61,22 @@ class pyple_coupler():
 
         self.name = None
 
+        # Check if we need to change directory
         if run_dir:
+            # user imposed directly
             import os
             os.chdir(run_dir)
+
+        else:
+            # imposed from arguments (mpmd like launch)
+            import sys
+            if len(sys.argv) > 1:
+                for i, arg in enumerate(sys.argv):
+                    if arg == "-wdir" and i+1 <= len(sys.argv) - 1:
+                        import os
+                        run_dir = sys.argv[i+1]
+                        os.chdir(run_dir)
+                        break
 
         self.user_options = {'rundir':run_dir,
                              'verbos':verbosity,

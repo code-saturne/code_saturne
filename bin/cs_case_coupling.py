@@ -170,7 +170,7 @@ def coupling(package,
                 dom = python_domain(package,
                                     name = d.get('domain'),
                                     cmd_line = d.get('command_line'),
-                                    script_name = d.get('py_code'))
+                                    script_name = d.get('script'))
 
             except Exception:
                 err_str = 'Cannot create Python code domain.\n'

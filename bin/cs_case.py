@@ -806,7 +806,7 @@ class case:
 
         rank_id = 0
 
-        for d in (self.syr_domains + self.domains + self.py_domains):
+        for d in (self.syr_domains + self.domains):
             s_args = d.solver_command()
             if s_args[1][0:2] == './':
                 s_path = os.path.join(s_args[0], s_args[1])
@@ -816,6 +816,19 @@ class case:
             cmd = '%d-%d\t' % (rank_id, rank_id + d.n_procs - 1) \
                    + s_path + s_args[2] \
                    + ' -wdir ' + os.path.basename(s_args[0]) + '\n'
+            e.write(cmd)
+            rank_id += d.n_procs
+
+        for d in self.py_domains:
+            s_args = d.solver_command()
+            _pypath, _pyscript = a_args[1].split(" ")
+            _rundir = os.path.basename(s_args[0])
+
+            cmd  = '%d-%d\t' % (rank_id, rank_id + d.n_procs - 1)
+            cmd += '%s %s/%s\t' % (_pypath, _rundir, _pyscript)
+            cmd += s_args[2]
+            cmd += ' -wdir %s' % _rundir
+
             e.write(cmd)
             rank_id += d.n_procs
 
