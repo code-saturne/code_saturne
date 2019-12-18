@@ -274,7 +274,6 @@ if (iale.ge.1) then
   endif
 
   call cs_gui_mesh_viscosity
-  call usvima
 
 endif
 
