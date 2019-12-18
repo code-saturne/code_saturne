@@ -914,7 +914,6 @@ class Study(object):
                                        self.label,
                                        [],   # cases
                                        [],   # syrthes cases
-                                       None, # aster cases
                                        None, # cathare case
                                        None, # python case
                                        None, # copy
