@@ -375,6 +375,10 @@ cs_user_parameters(cs_domain_t *domain)
    *                   - 0: no treatment
    *                   - 1: take user momemtum source terms in the
    *                     static pressure treatment IF iphydr=1 (default)
+   *  fluid_solid: Has a solid zone where dynamics must be killed?
+   *                   - false (default)
+   *                   - true
+   *
    */
 
   /*! [param_stokes_model] */
