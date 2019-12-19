@@ -1196,7 +1196,6 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  docs/user/Makefile docs/user/graphics/Makefile
                  tests/Makefile
                  extras/windows/innosetup/setup_mingw.iss
-                 extras/windows/innosetup/setup_cygwin32.iss
                  extras/windows/innosetup/setup_cygwin64.iss
                  bin/cs_config.py])
 
