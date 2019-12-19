@@ -445,6 +445,54 @@ cs_sdm_block33_init(cs_sdm_t     *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Convert a matrix with each entry is a 3x3 block into a matrix
+ *          with a block for each component x,y,z.
+ *
+ * \param[in]      mb33        pointer to a matrix
+ * \param[in, out] mbxyz       pointer to a matrix to build (but allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_block_33_to_xyz(const cs_sdm_t   *mb33,
+                       cs_sdm_t         *mbxyz)
+{
+  if (mb33 == NULL)
+    return;
+
+  assert(mb33->flag & CS_SDM_BY_BLOCK);
+  assert(mb33->block_desc != NULL);
+
+  const cs_sdm_block_t  *mb33_desc = mb33->block_desc;
+  const int  n_cols = mb33_desc->n_col_blocks;
+  assert(n_cols == mb33_desc->n_row_blocks);
+
+  /* Reshape the block matrix to fit the shape requested by mb33 */
+  int block_sizes[3];
+  for (int i = 0; i < 3; i++) block_sizes[i] = n_cols;
+  cs_sdm_block_init(mbxyz, 3, 3, block_sizes, block_sizes);
+
+  cs_sdm_t  *mxyz[3][3];
+  for (int i = 0; i < 3; i++)
+    for (int j = 0; j < 3; j++)
+      mxyz[i][j] = cs_sdm_get_block(mbxyz, i, j);
+
+  for (int bi = 0; bi < n_cols; bi++) {
+    for (int bj = 0; bj < n_cols; bj++) {
+
+      cs_sdm_t  *m33_ij = cs_sdm_get_block(mb33, bi, bj);
+
+      for (int _i = 0; _i < 3; _i++)
+        for (int _j = 0; _j < 3; _j++)
+          mxyz[_i][_j]->val[bi*n_cols+bj] = m33_ij->val[3*_i+_j];
+
+    } /* Loop on column blocks */
+  } /* Loop on row blocks */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Allocate and initialize a cs_sdm_t structure w.r.t. to a given
  *          matrix
  *

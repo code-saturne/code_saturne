@@ -447,6 +447,21 @@ cs_sdm_block33_init(cs_sdm_t     *m,
                     int           n_row_blocks,
                     int           n_col_blocks);
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Convert a matrix with each entry is a 3x3 block into a matrix
+ *          with a block for each component x,y,z.
+ *
+ * \param[in]      mb33        pointer to a matrix
+ * \param[in, out] mbxyz       pointer to a matrix to build (but allocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_sdm_block_33_to_xyz(const cs_sdm_t   *mb33,
+                       cs_sdm_t         *mbxyz);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Copy a cs_sdm_t structure into another cs_sdm_t structure
