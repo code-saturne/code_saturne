@@ -83,7 +83,12 @@ typedef struct _cs_mesh_location_t cs_mesh_location_t;
  * (using BFT_MALLOC) and defined by this function when called.
  * This list's lifecycle is then managed by the mesh location object.
  *
+ * Note: if the input pointer is non-NULL, it must point to valid data
+ * when the selection function is called, so that value or structure should
+ * not be temporary (i.e. local);
+ *
  * parameters:
+ *   input       <-- pointer to optional (untyped) value or structure.
  *   m           <-- pointer to associated mesh structure.
  *   location_id <-- id of associated location.
  *   n_elts      --> number of selected elements
