@@ -6288,9 +6288,9 @@ keyword list (\S~\ref{sec:prg_motscles_lagr}).%FIXME
 
 
 %==================================
-\subsubsection{Prescribing particle boundary conditions (GUI and/or \texttt{uslag2})}
+\subsubsection{Prescribing particle boundary conditions (GUI and/or \texttt{cs\_user\_lagr\_boundary\_conditions.c})}
 %==================================
-In the framework of the multiphase Lagrangian modelling, the management of the boundary conditions concerns the particle behaviour when there is an interaction between its trajectory and a boundary face. These boundary conditions may be imposed independently of those concerning the Eulerian fluid phase (but they are of course generally consistent). The boundary condition zones are actually redefined by the Lagrangian module (cf. \S\ref{sec:fvm_selector}), and a type of particle behaviour is associated with each one. The boundary conditions related to particles can be defined in the Graphical User Interface (GUI) or in the subroutine \texttt{uslag2}. More advanced user-defined boundary conditions can be prescribed in the user-subroutine \texttt{uslain}.
+In the framework of the multiphase Lagrangian modelling, the management of the boundary conditions concerns the particle behaviour when there is an interaction between its trajectory and a boundary face. These boundary conditions may be imposed independently of those concerning the Eulerian fluid phase (but they are of course generally consistent). The boundary condition zones are actually redefined by the Lagrangian module (cf. \S\ref{sec:fvm_selector}), and a type of particle behaviour is associated with each one. The boundary conditions related to particles can be defined in the Graphical User Interface (GUI) or in the \texttt{cs\_user\_lagr\_boundary\_conditions.c} file. More advanced user-defined boundary conditions can be prescribed in the \texttt{cs\_user\_lagr\_in function} from \texttt{cs\_user\_lagr\_particle.c}.
 
 \minititre{Use of the GUI}
 
@@ -6340,22 +6340,21 @@ particulate variables. \\
 In order to do the integration of this equation, the following
 parameters must be provided:
 \begin{list}{-}{}
-\item $\tau_\phi$, equation characteristic time, in the array \texttt{auxl1} for
+\item $\tau_\phi$, equation characteristic time
       every particle,
-\item $\Pi$ , equation coefficient, in the array \texttt{auxl2}. If the
+\item $\Pi$ , equation coefficient. If the
       integration scheme is a first-order, then $\Pi$ is expressed as a
       function of the particulate variables at the previous iteration,
       stored in the array \texttt{eptpa}. If the chosen scheme is a second-order,
-      then $\Pi$ is expressed at the first call of the subroutine
-      (prediction step \texttt{nor} = 1) as a function of the variables at the
-      previous iteration (stored in \texttt{eptpa}), then at the second call
-      (correction step \texttt{nor} = 2) as a function of the predicted variables
-      stored in the array \texttt{eptp}.
+      then $\Pi$ is expressed at the first call of the function
+      (prediction step) as a function of the variables at the
+      previous iteration, then at the second call
+      (correction step) as a function of the predicted variables.
 \end{list}
 
 \noindent
 If necessary, the thermal characteristic time $\tau_c$, whose calculation can be modified by the user in the function
-\texttt{cs\_user\_lagr\_rt\_t}, is stored for each particle in the first part of the array \texttt{tempct}.
+\texttt{cs\_user\_lagr\_rt}.
 
 \minititre{User-defined particle relaxation time}
 %-------------------------------------------------
@@ -6367,8 +6366,8 @@ The particle relaxation time may be modified in the \texttt{cs\_user\_lagr\_rt} 
 %-------------------------------------------
 
 \noindent
-The particle thermal characteristic time may be modified in the subroutine \texttt{uslatc} according to the chosen correlation for the calculation of the
-Nusselt number. This subroutine is called at each Lagrangian sub-step. The thermal characteristic time, modified or not by the user, is available in the zone \texttt{tempct(nbpmax,1)} of the array \texttt{tempct}.
+The particle thermal characteristic time may be modified in the \texttt{cs\_user\_lagr\_rt\_t} function according to the chosen correlation for the calculation of the
+Nusselt number. This function is called at each Lagrangian sub-step.
 
 
 %==================================
