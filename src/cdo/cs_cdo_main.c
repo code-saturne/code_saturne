@@ -593,6 +593,17 @@ cs_cdo_finalize(cs_domain_t    *domain)
   /* Free memory related to equations */
   cs_equation_destroy_all();
 
+  /* Free common structures relatated to equations */
+  cs_equation_unset_shared_structures(domain->cdo_context->vb_scheme_flag,
+                                      domain->cdo_context->vcb_scheme_flag,
+                                      domain->cdo_context->eb_scheme_flag,
+                                      domain->cdo_context->fb_scheme_flag,
+                                      domain->cdo_context->hho_scheme_flag);
+
+  cs_equation_assemble_finalize();
+
+  cs_equation_common_finalize();
+
   /* Free memory related to advection fields */
   cs_advection_field_destroy_all();
 
@@ -613,17 +624,6 @@ cs_cdo_finalize(cs_domain_t    *domain)
 
   /* ALE */
   cs_ale_destroy_all();
-
-  /* Free common structures relatated to equations */
-  cs_equation_unset_shared_structures(domain->cdo_context->vb_scheme_flag,
-                                      domain->cdo_context->vcb_scheme_flag,
-                                      domain->cdo_context->eb_scheme_flag,
-                                      domain->cdo_context->fb_scheme_flag,
-                                      domain->cdo_context->hho_scheme_flag);
-
-  cs_equation_assemble_finalize();
-
-  cs_equation_common_finalize();
 
   /* Set flag to OFF */
   cs_domain_set_cdo_mode(domain, CS_DOMAIN_CDO_MODE_OFF);
