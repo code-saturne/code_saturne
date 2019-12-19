@@ -73,6 +73,7 @@
 #include "cs_parall.h"
 #include "cs_param.h"
 #include "cs_post.h"
+#include "cs_sdm.h"
 #include "cs_source_term.h"
 #include "cs_static_condensation.h"
 #include "cs_timer.h"
@@ -125,10 +126,10 @@ static cs_interface_set_t     *_shared_interface_set = NULL;
 static cs_matrix_structure_t  *_shared_matrix_structure = NULL;
 static cs_matrix_assembler_t  *_shared_matrix_assembler = NULL;
 
-static cs_range_set_t         *cs_shared_range_set = NULL;
-static cs_interface_set_t     *cs_shared_interface_set = NULL;
-static cs_matrix_structure_t  *cs_shared_matrix_structure = NULL;
-static cs_matrix_assembler_t  *cs_shared_matrix_assembler = NULL;
+static const cs_range_set_t         *cs_shared_range_set;
+static const cs_interface_set_t     *cs_shared_interface_set;
+static const cs_matrix_structure_t  *cs_shared_matrix_structure;
+static const cs_matrix_assembler_t  *cs_shared_matrix_assembler;
 
 static cs_sdm_t **cs_cdofb_monolithic_cw_mat = NULL;
 
@@ -692,23 +693,58 @@ _assembly_by_blocks(const cs_cell_sys_t            *csys,
                     cs_cdofb_vecteq_t              *eqc,
                     cs_equation_assemble_t         *eqa)
 {
+  const cs_range_set_t  *rs = cs_shared_range_set;
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+
   int  t_id = 0;
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
   t_id = omp_get_thread_num();
 #endif
 
-  cs_sdm_t  *cw_mat = cs_cdofb_monolithic_cw_mat[t_id];
   cs_cdofb_monolithic_sles_t  *msles = sc->msles;
+  cs_sdm_t  *cw_mat = cs_cdofb_monolithic_cw_mat[t_id];
 
   /* Convert csys->mat into a block view by component */
+  cs_sdm_block_33_to_xyz(csys->mat, cw_mat);
 
   /* Assembly is performed block by block */
-  for (int i = 0; i < msles->n_row_blocks*msles->n_row_blocks; i++) {
+  for (int i = 0; i < msles->n_row_blocks; i++) {
+    for (int j = 0; j < msles->n_row_blocks; j++) {
 
-    cs_matrix_assembler_values_t   *mav = sc->mav_structures[i];
+      cs_matrix_assembler_values_t   *mav = sc->mav_structures[3*i+j];
+      cs_sdm_t  *m_ij = cs_sdm_get_block(cw_mat, i, j);
 
+      sc->elemental_assembly(m_ij, cm->f_ids, rs, eqa, mav);
 
-  } /* Loop on blocks */
+    } /* Loop on blocks (j) */
+  } /* Loop on blocks (i) */
+
+  /* RHS assembly */
+  cs_real_t  *rhs_x = msles->b_f, *rhs_y = rhs_x + msles->n_faces;
+  cs_real_t  *rhs_z = rhs_y + msles->n_faces;
+
+# pragma omp critical
+  {
+    for (short int f = 0; f < cm->n_fc; f++) {
+      rhs_x[cm->f_ids[f]] += csys->rhs[3*f];
+      rhs_y[cm->f_ids[f]] += csys->rhs[3*f+1];
+      rhs_z[cm->f_ids[f]] += csys->rhs[3*f+2];
+    }
+  }
+
+  /* Reset the value of the source term for the cell DoF
+     Source term is only hold by the cell DoF in face-based schemes */
+  if (has_sourceterm) {
+    cs_real_t  *st = eqc->source_terms + 3*cm->c_id;
+    for (int k = 0; k < 3; k++)
+      st[k] = csys->source[3*cm->n_fc + k];
+  }
+
+  /* 2. Store divergence operator in non assembly
+   * ============================================ */
+
+  cs_real_t  *_div = msles->div_op + 3*connect->c2f->idx[cm->c_id];
+  memcpy(_div, div_op, 3*cm->n_fc*sizeof(cs_real_t));
 
 }
 
@@ -1677,7 +1713,7 @@ cs_cdofb_monolithic_init_common(const cs_navsto_param_t       *nsp,
       int  block_sizes[3] =
         {connect->n_max_fbyc, connect->n_max_fbyc, connect->n_max_fbyc};
 
-      BFT_MALLOC(cs_cdofb_monolithic_cw_mat, cs_glob_n_threads, cs_sdm_t **);
+      BFT_MALLOC(cs_cdofb_monolithic_cw_mat, cs_glob_n_threads, cs_sdm_t *);
       for (int i = 0; i < cs_glob_n_threads; i++)
         cs_cdofb_monolithic_cw_mat[i] = NULL;
 
@@ -1877,8 +1913,10 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
 
   case CS_NAVSTO_SLES_BY_BLOCKS:
     sc->init_system = _init_system_by_blocks;
-    sc->assemble = _assembly_by_blocks;
     sc->solve = cs_cdofb_monolithic_by_blocks_solve;
+    sc->assemble = _assembly_by_blocks;
+    sc->elemental_assembly = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,
+                                                      CS_CDO_CONNECT_FACE_SP0);
 
     BFT_MALLOC(sc->mav_structures, 9, cs_matrix_assembler_values_t *);
 
@@ -1892,8 +1930,10 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
 
   case CS_NAVSTO_SLES_GKB_SATURNE:
     sc->init_system = _init_system_default;
-    sc->assemble = _velocity_full_assembly;
     sc->solve = cs_cdofb_monolithic_gkb_solve;
+    sc->assemble = _velocity_full_assembly;
+    sc->elemental_assembly = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,
+                                                      CS_CDO_CONNECT_FACE_VP0);
 
     BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
 
@@ -1907,8 +1947,10 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
 
   case CS_NAVSTO_SLES_UZAWA_AL:
     sc->init_system = _init_system_default;
-    sc->assemble = _velocity_full_assembly;
     sc->solve = cs_cdofb_monolithic_uzawa_al_incr_solve;
+    sc->assemble = _velocity_full_assembly;
+    sc->elemental_assembly = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,
+                                                      CS_CDO_CONNECT_FACE_VP0);
 
     BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
 
@@ -1922,8 +1964,9 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
 
   default:
     sc->init_system = _init_system_default;
-    sc->assemble = _full_assembly;
     sc->solve = cs_cdofb_monolithic_solve;
+    sc->assemble = _full_assembly;
+    sc->elemental_assembly = NULL;
 
     BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
 

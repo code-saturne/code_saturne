@@ -247,7 +247,33 @@ struct _cdofb_monolithic_t {
   cs_cdofb_monolithic_init_matrix_t   *init_system;
   cs_cdofb_monolithic_build_t         *steady_build;
   cs_cdofb_monolithic_build_t         *build;
+
+  /*!
+   * @}
+   * @name Assembly stage
+   * Additional members which may be used to assemble the system
+   * @{
+   */
+
+  /* \var assemble
+   * Function pointer to manage the assembly process for the Navier-Stokes
+   * system of equation
+   */
+
   cs_cdofb_monolithic_assemble_t      *assemble;
+
+  /* \var elemental_assembly
+   * Function pointer to manage the assembly process at low-level
+   */
+
+  cs_equation_assembly_t              *elemental_assembly;
+
+  /* \var mav_structures
+   * Set of pointers to the matrix assembler structures for matrix values
+   * Size = 1 or 9
+   */
+
+  cs_matrix_assembler_values_t       **mav_structures;
 
   /*!
    * @}
@@ -267,20 +293,6 @@ struct _cdofb_monolithic_t {
    */
 
   cs_cdofb_monolithic_sles_t       *msles;
-
-  /*!
-   * @}
-   * @name Assembly stage
-   * Additional members which may be used to assemble the system
-   * @{
-   */
-
-  /* \var mav_structures
-   * Set of pointers to the matrix assembler structures for matrix values
-   * Size = 1 or 9
-   */
-
-  cs_matrix_assembler_values_t     **mav_structures;
 
   /*!
    * @}

@@ -35,6 +35,7 @@
 #include "cs_matrix_assembler.h"
 #include "cs_param.h"
 #include "cs_param_cdo.h"
+#include "cs_sdm.h"
 
 /*----------------------------------------------------------------------------*/
 
