@@ -541,7 +541,7 @@ _assemble(const cs_cdofb_scaleq_t           *eqc,
           cs_real_t                         *rhs)
 {
   /* Matrix assembly */
-  eqc->assemble(csys, rs, eqa, mav);
+  eqc->assemble(csys->mat, csys->dof_ids, rs, eqa, mav);
 
   /* RHS assembly */
 # pragma omp critical

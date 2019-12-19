@@ -684,7 +684,7 @@ _init_system_by_blocks(cs_cdofb_monolithic_t        *sc)
 /*----------------------------------------------------------------------------*/
 
 static void
-_assemble_by_blocks(const cs_cell_sys_t            *csys,
+_assembly_by_blocks(const cs_cell_sys_t            *csys,
                     const cs_cell_mesh_t           *cm,
                     const cs_real_t                *div_op,
                     const bool                      has_sourceterm,
@@ -729,13 +729,13 @@ _assemble_by_blocks(const cs_cell_sys_t            *csys,
 /*----------------------------------------------------------------------------*/
 
 static void
-_assemble_gkb(const cs_cell_sys_t            *csys,
-              const cs_cell_mesh_t           *cm,
-              const cs_real_t                *div_op,
-              const bool                      has_sourceterm,
-              cs_cdofb_monolithic_t          *sc,
-              cs_cdofb_vecteq_t              *eqc,
-              cs_equation_assemble_t         *eqa)
+_velocity_full_assembly(const cs_cell_sys_t            *csys,
+                        const cs_cell_mesh_t           *cm,
+                        const cs_real_t                *div_op,
+                        const bool                      has_sourceterm,
+                        cs_cdofb_monolithic_t          *sc,
+                        cs_cdofb_vecteq_t              *eqc,
+                        cs_equation_assemble_t         *eqa)
 {
   const short int  n_f = cm->n_fc;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
@@ -779,13 +779,13 @@ _assemble_gkb(const cs_cell_sys_t            *csys,
 /*----------------------------------------------------------------------------*/
 
 static void
-_assemble(const cs_cell_sys_t            *csys,
-          const cs_cell_mesh_t           *cm,
-          const cs_real_t                *div_op,
-          const bool                      has_sourceterm,
-          cs_cdofb_monolithic_t          *sc,
-          cs_cdofb_vecteq_t              *eqc,
-          cs_equation_assemble_t         *eqa)
+_full_assembly(const cs_cell_sys_t            *csys,
+               const cs_cell_mesh_t           *cm,
+               const cs_real_t                *div_op,
+               const bool                      has_sourceterm,
+               cs_cdofb_monolithic_t          *sc,
+               cs_cdofb_vecteq_t              *eqc,
+               cs_equation_assemble_t         *eqa)
 {
   CS_UNUSED(eqa);
 
@@ -1877,7 +1877,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
 
   case CS_NAVSTO_SLES_BY_BLOCKS:
     sc->init_system = _init_system_by_blocks;
-    sc->assemble = _assemble_by_blocks;
+    sc->assemble = _assembly_by_blocks;
     sc->solve = cs_cdofb_monolithic_by_blocks_solve;
 
     BFT_MALLOC(sc->mav_structures, 9, cs_matrix_assembler_values_t *);
@@ -1892,7 +1892,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
 
   case CS_NAVSTO_SLES_GKB_SATURNE:
     sc->init_system = _init_system_default;
-    sc->assemble = _assemble_gkb;
+    sc->assemble = _velocity_full_assembly;
     sc->solve = cs_cdofb_monolithic_gkb_solve;
 
     BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
@@ -1907,7 +1907,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
 
   case CS_NAVSTO_SLES_UZAWA_AL:
     sc->init_system = _init_system_default;
-    sc->assemble = _assemble_gkb;
+    sc->assemble = _velocity_full_assembly;
     sc->solve = cs_cdofb_monolithic_uzawa_al_incr_solve;
 
     BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);
@@ -1922,7 +1922,7 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
 
   default:
     sc->init_system = _init_system_default;
-    sc->assemble = _assemble;
+    sc->assemble = _full_assembly;
     sc->solve = cs_cdofb_monolithic_solve;
 
     BFT_MALLOC(sc->mav_structures, 1, cs_matrix_assembler_values_t *);

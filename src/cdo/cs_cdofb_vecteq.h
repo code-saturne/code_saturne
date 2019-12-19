@@ -367,7 +367,7 @@ cs_cdofb_vecteq_assembly(const cs_cell_sys_t            *csys,
   const short int n_f_dofs = 3*cm->n_fc;
 
   /* Matrix assembly */
-  eqc->assemble(csys, rs, eqa, mav);
+  eqc->assemble(csys->mat, csys->dof_ids, rs, eqa, mav);
 
   /* RHS assembly */
 # pragma omp critical

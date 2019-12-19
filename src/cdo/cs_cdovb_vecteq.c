@@ -1252,7 +1252,7 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
       /* ASSEMBLY PROCESS
        * ================ */
 
-      eqc->assemble(csys, rs, eqa, mav);               /* Matrix assembly */
+      eqc->assemble(csys->mat, csys->dof_ids, rs, eqa, mav);
 
 #     pragma omp critical
       {

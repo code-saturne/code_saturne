@@ -387,7 +387,7 @@ _assemble(const cs_cdoeb_vecteq_t           *eqc,
           cs_real_t                         *rhs)
 {
   /* Matrix assembly */
-  eqc->assemble(csys, rs, eqa, mav);
+  eqc->assemble(csys->mat, csys->dof_ids, rs, eqa, mav);
 
   /* RHS assembly */
 #if CS_CDO_OMP_SYNC_SECTIONS > 0

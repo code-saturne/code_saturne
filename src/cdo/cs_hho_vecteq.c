@@ -1378,7 +1378,7 @@ cs_hho_vecteq_build_system(const cs_mesh_t            *mesh,
       /* ======== */
 
       /* Matrix assembly */
-      eqc->assemble(csys, eqc->rs, eqa, mav);
+      eqc->assemble(csys->mat, csys->dof_ids, eqc->rs, eqa, mav);
 
       /* RHS assembly */
       for (short int i = 0; i < eqc->n_face_dofs*cm->n_fc; i++) {
