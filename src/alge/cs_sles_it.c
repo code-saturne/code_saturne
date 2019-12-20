@@ -3287,21 +3287,17 @@ _bicgstab2(cs_sles_it_t              *c,
 
 static void
 _givens_rot_update(cs_real_t    *restrict a,
-                   int                    a_size,
+                   cs_lnum_t              a_size,
                    cs_real_t    *restrict b,
                    cs_real_t    *restrict givens_coeff,
-                   int                    update_rank,
-                   int                    end_update)
+                   cs_lnum_t              update_rank,
+                   cs_lnum_t              end_update)
 {
-  int i, j;
-  cs_real_t _aux;
-  cs_real_t norm;
+  for (cs_lnum_t i = 0; i < update_rank; ++i) {
+    for (cs_lnum_t j = update_rank; j < end_update; ++j) {
 
-  for (i = 0; i < update_rank; ++i) {
-    for (j = update_rank; j < end_update; ++j) {
-
-      _aux =   givens_coeff[i]*a[j*a_size + i]
-             + givens_coeff[i + a_size] * a[j*a_size + i+1];
+      cs_real_t _aux =   givens_coeff[i]*a[j*a_size + i]
+                       + givens_coeff[i + a_size] * a[j*a_size + i+1];
 
       a[j*a_size + i+1] =   givens_coeff[i] * a[i+1 + j*a_size]
                           - givens_coeff[i + a_size] * a[j*a_size + i];
@@ -3310,10 +3306,10 @@ _givens_rot_update(cs_real_t    *restrict a,
     }
   }
 
-  for (i = update_rank; i < end_update; ++i) {
+  for (cs_lnum_t i = update_rank; i < end_update; ++i) {
 
-    norm = sqrt(  a[i*a_size + i]   * a[i*a_size + i]
-                + a[i*a_size + i+1] * a[i*a_size + i+1]);
+    cs_real_t norm = sqrt(  a[i*a_size + i]   * a[i*a_size + i]
+                          + a[i*a_size + i+1] * a[i*a_size + i+1]);
 
     givens_coeff[a_size + i] = a[i*a_size + i+1]/norm;
     givens_coeff[i] = a[i*a_size + i]/norm;
@@ -3321,15 +3317,21 @@ _givens_rot_update(cs_real_t    *restrict a,
     b[i+1] = -b[i]*givens_coeff[a_size + i];
     b[i] = b[i]*givens_coeff[i];
 
-    for (j = i; j < end_update; j++) {
+    /* i == j */
+    {
+      cs_real_t _aux =   givens_coeff[i] * a[i*a_size + i]
+                       + givens_coeff[a_size+i] * a[i*a_size + i+1];
+      a[i*a_size+i+1] = 0;
+      a[i*a_size + i] = _aux;
+    }
 
-      _aux =   givens_coeff[i] * a[j*a_size + i]
-             + givens_coeff[a_size+i] * a[j*a_size + i+1];
-      if (j == i)
-        a[j*a_size+i+1] = 0;
-      else
-        a[i+1 + j*a_size] =   givens_coeff[i]*a[i+1 + j*a_size]
-                            - givens_coeff[a_size + i]*a[i + j*a_size];
+    for (cs_lnum_t j = i+1; j < end_update; j++) {
+
+      cs_real_t _aux =   givens_coeff[i] * a[j*a_size + i]
+                       + givens_coeff[a_size+i] * a[j*a_size + i+1];
+
+      a[i+1 + j*a_size] =   givens_coeff[i]*a[i+1 + j*a_size]
+                          - givens_coeff[a_size + i]*a[i + j*a_size];
 
       a[j*a_size + i] = _aux;
     }
@@ -3363,18 +3365,16 @@ _givens_rot_update(cs_real_t    *restrict a,
 
 static int
 _solve_diag_sup_halo(cs_real_t  *restrict a,
-                     int                  a_size,
-                     int                  alloc_size,
+                     cs_lnum_t            a_size,
+                     cs_lnum_t            alloc_size,
                      cs_real_t  *restrict b,
                      cs_real_t  *restrict x)
 {
-  int i, j;
-
-  for (i = a_size - 1; i > -1; i--) {
+  for (cs_lnum_t i = a_size - 1; i > -1; i--) {
 
     x[i] = b[i];
 
-    for (j = i + 1; j < a_size; j++)
+    for (cs_lnum_t j = i + 1; j < a_size; j++)
       x[i] = x[i] - a[j*alloc_size + i]*x[j];
 
     x[i] /= a[i*alloc_size + i];
@@ -3406,7 +3406,7 @@ _solve_diag_sup_halo(cs_real_t  *restrict a,
 static cs_sles_convergence_state_t
 _gmres(cs_sles_it_t              *c,
        const cs_matrix_t         *a,
-       int                        diag_block_size,
+       cs_lnum_t                  diag_block_size,
        cs_halo_rotation_t         rotation_mode,
        cs_sles_it_convergence_t  *convergence,
        const cs_real_t           *rhs,
@@ -3416,20 +3416,16 @@ _gmres(cs_sles_it_t              *c,
 {
   CS_UNUSED(diag_block_size);
 
-  assert(diag_block_size == 1);
-
-  cs_sles_convergence_state_t cvg;
-  int check_freq, l_iter, l_old_iter, scaltest;
-  int krylov_size, _krylov_size;
-  cs_lnum_t  ii, kk, jj;
-  double    beta, dot_prod, residue, epsi;
+  cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
+  int l_iter, l_old_iter;
+  double    beta, dot_prod, residue;
   cs_real_t  *_aux_vectors;
   cs_real_t *restrict _krylov_vectors, *restrict _h_matrix;
   cs_real_t *restrict _givens_coeff, *restrict _beta;
   cs_real_t *restrict dk, *restrict gk;
   cs_real_t *restrict bk, *restrict fk, *restrict krk;
 
-  int krylov_size_max = 75;
+  cs_lnum_t krylov_size_max = 40;
   unsigned n_iter = 0;
 
   /* Allocate or map work arrays */
@@ -3441,31 +3437,32 @@ _gmres(cs_sles_it_t              *c,
 
   /* Allocate work arrays */
 
-  krylov_size =  (krylov_size_max < (int)sqrt(n_rows)*1.5) ?
-                  krylov_size_max : (int)sqrt(n_rows)*1.5 + 1;
+  int krylov_size = sqrt(n_rows*diag_block_size)*1.5 + 1;
+  if (krylov_size > krylov_size_max)
+    krylov_size = krylov_size_max;
 
 #if defined(HAVE_MPI)
   if (c->comm != MPI_COMM_NULL) {
-    MPI_Allreduce(&krylov_size,
-                  &_krylov_size,
+    int _krylov_size = krylov_size;
+    MPI_Allreduce(&_krylov_size,
+                  &krylov_size,
                   1,
                   MPI_INT,
                   MPI_MIN,
                   c->comm);
-    krylov_size = _krylov_size;
   }
 #endif
 
-  check_freq = (int)(krylov_size/10) + 1;
-  epsi = 1.e-15;
-  scaltest = 0;
+  int     check_freq = (int)(krylov_size/10) + 1;
+  double  epsi = 1.e-15;
+  int scaltest = 0;
 
   {
     const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * diag_block_size;
 
     size_t _aux_r_size;
     size_t  n_wa = 4;
-    size_t  wa_size = n_cols < krylov_size? krylov_size:n_cols;
+    size_t  wa_size = n_cols < krylov_size? krylov_size : n_cols;
 
     wa_size = CS_SIMD_SIZE(wa_size);
     _aux_r_size =   wa_size*n_wa
@@ -3488,7 +3485,7 @@ _gmres(cs_sles_it_t              *c,
             + (krylov_size - 1)*(n_rows + krylov_size) + 2*krylov_size;
   }
 
-  for (ii = 0; ii < krylov_size*(krylov_size - 1); ii++)
+  for (cs_lnum_t ii = 0; ii < krylov_size*(krylov_size - 1); ii++)
     _h_matrix[ii] = 0.;
 
   cvg = CS_SLES_ITERATING;
@@ -3502,7 +3499,7 @@ _gmres(cs_sles_it_t              *c,
     /* compute  rk <- rhs - rk (r0 = b-A*x0) */
 
 #   pragma omp parallel for if(n_rows > CS_THR_MIN)
-    for (ii = 0; ii < n_rows; ii++)
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
       dk[ii] = rhs[ii] - dk[ii];
 
     if (n_iter == 0) {
@@ -3518,7 +3515,7 @@ _gmres(cs_sles_it_t              *c,
     dot_prod = beta;
 
     _beta[0] = beta;
-    for (ii = 1; ii < krylov_size; ii++)
+    for (cs_lnum_t ii = 1; ii < krylov_size; ii++)
       _beta[ii] = 0.;
 
     /* Lap */
@@ -3526,13 +3523,13 @@ _gmres(cs_sles_it_t              *c,
     l_iter = 0;
     l_old_iter = 0;
 
-    for (ii = 0; ii < krylov_size - 1; ii++) {
+    for (cs_lnum_t ii = 0; ii < krylov_size - 1; ii++) {
 
       /* krk = k-ieth col of _krylov_vector = vi */
       krk = _krylov_vectors + ii*n_rows;
 
 #     pragma omp parallel for if(n_rows > CS_THR_MIN)
-      for (jj = 0; jj < n_rows; jj++)
+      for (cs_lnum_t jj = 0; jj < n_rows; jj++)
         krk[jj] = dk[jj]/dot_prod;
 
       c->setup_data->pc_apply(c->setup_data->pc_context,
@@ -3544,7 +3541,7 @@ _gmres(cs_sles_it_t              *c,
 
       cs_matrix_vector_multiply(rotation_mode, a, gk, dk);
 
-      for (jj = 0; jj < ii + 1; jj++) {
+      for (cs_lnum_t jj = 0; jj < ii + 1; jj++) {
 
         /* compute h(k,i) = <w,vi> = <dk,vi> */
         _h_matrix[ii*krylov_size + jj]
@@ -3583,10 +3580,10 @@ _gmres(cs_sles_it_t              *c,
         /* solve diag sup system */
         _solve_diag_sup_halo(_h_matrix, l_iter + 1, krylov_size, _beta, gk);
 
-#       pragma omp parallel for private(kk) if(n_rows > CS_THR_MIN)
-        for (jj = 0; jj < n_rows; jj++) {
+#       pragma omp parallel for if(n_rows > CS_THR_MIN)
+        for (cs_lnum_t jj = 0; jj < n_rows; jj++) {
           fk[jj] = 0.0;
-          for (kk = 0; kk <= l_iter; kk++)
+          for (cs_lnum_t kk = 0; kk <= l_iter; kk++)
             fk[jj] += _krylov_vectors[kk*n_rows + jj] * gk[kk];
         }
 
@@ -3596,7 +3593,7 @@ _gmres(cs_sles_it_t              *c,
                                 gk);
 
 #       pragma omp parallel for if(n_rows > CS_THR_MIN)
-        for (jj = 0; jj < n_rows; jj++)
+        for (cs_lnum_t jj = 0; jj < n_rows; jj++)
           fk[jj] = vx[jj] + gk[jj];
 
         cs_matrix_vector_multiply(rotation_mode, a, fk, bk);
@@ -3604,7 +3601,7 @@ _gmres(cs_sles_it_t              *c,
         /* compute residue = | Ax - b |_1 */
 
 #       pragma omp parallel for if(n_rows > CS_THR_MIN)
-        for (jj = 0; jj < n_rows; jj++)
+        for (cs_lnum_t jj = 0; jj < n_rows; jj++)
           bk[jj] -= rhs[jj];
 
         residue = sqrt(_dot_product_xx(c, bk));
@@ -3619,7 +3616,7 @@ _gmres(cs_sles_it_t              *c,
       if (cvg == CS_SLES_CONVERGED || cvg == CS_SLES_MAX_ITERATION ||
           l_iter == krylov_size - 1   || scaltest == 1) {
 #       pragma omp parallel for if (n_rows > CS_THR_MIN)
-        for (jj = 0; jj < n_rows; jj++)
+        for (cs_lnum_t jj = 0; jj < n_rows; jj++)
           vx[jj] = fk[jj];
         break;
       }
@@ -5067,12 +5064,7 @@ cs_sles_it_setup(void               *context,
     break;
 
   case CS_SLES_GMRES:
-    if (diag_block_size == 1)
-      c->solve = _gmres;
-    else
-      bft_error
-        (__FILE__, __LINE__, 0,
-         _("GMRES not supported with block_size > 1 (%s)."), name);
+    c->solve = _gmres;
     break;
 
   case CS_SLES_P_GAUSS_SEIDEL:
@@ -5242,7 +5234,7 @@ cs_sles_it_solve(void                *context,
   *residue = convergence.residue;
 
   cs_sles_it_type_t fallback_type = CS_SLES_N_IT_TYPES;
-  if (cvg < c->fallback_cvg && _diag_block_size == 1)
+  if (cvg < c->fallback_cvg)
     fallback_type = CS_SLES_GMRES;
 
   if (c->update_stats == true) {

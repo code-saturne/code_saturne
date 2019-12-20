@@ -51,6 +51,12 @@ Bug fixes:
 - Fix reading of GUI setting of turbulent flux model for thermal scalar
   if a specific physics is enabled.
 
+Numerics and physical modelling:
+
+- The GMRES solver may now also be used for vector or tensor fields.
+  The maximum number of restarts is set at 40 instead of 75
+  (which is still quite high compared to most of the litterature).
+
 Architectural changes:
 
 - Do not remove "core" files anymore when cleaning execution directory.
