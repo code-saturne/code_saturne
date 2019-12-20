@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-10-04 16:20+0200\n"
+"POT-Creation-Date: 2019-12-20 15:21+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3225,9 +3225,6 @@ msgstr "Reconstruction itérative"
 msgid "Least-squares"
 msgstr "Moindres carrés"
 
-msgid "Least-squares, then iterative (old))"
-msgstr "Moindres carrés puis itérative (ancienne)"
-
 msgid "conservative, reconstruction with Least-squares"
 msgstr "conservatif, reconstruction par Moindres carrés"
 
@@ -4248,10 +4245,6 @@ msgid ""
 msgstr ""
 "\n"
 " Préparation du solveur pour le système linéaire \"%s\"\n"
-
-#, c-format
-msgid "GMRES not supported with block_size > 1 (%s)."
-msgstr ""
 
 #, c-format
 msgid ""
@@ -5370,19 +5363,29 @@ msgid ""
 "    id              = %d\n"
 "    Number of faces = %llu\n"
 "    Surface         = %14.7e\n"
-"    Fluid surface   = %14.7e\n"
+msgstr ""
+"  Zone de bord \"%s\"\n"
+"    id              = %d\n"
+"    Nombre de faces = %llu\n"
+"    Surface         = %14.7e\n"
+
+#, c-format
+msgid "    Fluid surface   = %14.7e\n"
 msgstr ""
 
-msgid ""
-"    Perimeter       = -1 (not computed)\n"
-"    Fluid perimeter = -1 (not computed)\n"
+msgid "    Perimeter       = -1 (not computed)\n"
+msgstr ""
+
+msgid "    Fluid perimeter = -1 (not computed)\n"
 msgstr ""
 
 #, c-format
-msgid ""
-"    Perimeter       = %14.7e\n"
-"    Fluid perimeter = %14.7e\n"
-msgstr ""
+msgid "    Perimeter       = %14.7e\n"
+msgstr "    valeur minimale =       %10.5e\n"
+
+#, c-format
+msgid "    Fluid perimeter = %14.7e\n"
+msgstr "    Périmètre fluide = %14.7e\n"
 
 #, c-format
 msgid "    %d first and last elements:\n"
@@ -9834,24 +9837,18 @@ msgid ""
 msgstr ""
 
 #, c-format
-msgid ""
-"  Volume zone \"%s\"\n"
-"    id              = %d\n"
-"    Number of cells = %llu\n"
-"    Volume          = %14.7e\n"
-"    Fluid volume    = %14.7e\n"
+msgid "    Fluid volume    = %14.7e\n"
+msgstr "    Volume fluide   = %14.7e\n"
+
+msgid "    Surface         = -1 (not computed)\n"
 msgstr ""
 
-msgid ""
-"    Surface         = -1 (not computed)\n"
-"    Fluid surface   = -1 (not computed)\n"
+msgid "    Fluid surface   = -1 (not computed)\n"
 msgstr ""
 
 #, c-format
-msgid ""
-"    Surface         = %14.7e\n"
-"    Fluid surface   = %14.7e\n"
-msgstr ""
+msgid "    Surface         = %14.7e\n"
+msgstr "    Surface         = %14.7e\n"
 
 msgid "bft_mem_init() has already been called"
 msgstr ""
