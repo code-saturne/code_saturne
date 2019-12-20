@@ -582,9 +582,8 @@ _petsc_setup_hook(void   *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Function pointer: setup hook for setting PETSc solver and
- *         preconditioner.
- *         Case of multiplicative AMG block preconditioner for a CG
+ * \brief  Common settings for block preconditioning (when a system is split
+ *         according to the vector component x,y,z)
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
  * \param[in, out] a        pointer to PETSc Matrix context
@@ -593,21 +592,11 @@ _petsc_setup_hook(void   *context,
 /*----------------------------------------------------------------------------*/
 
 static void
-_petsc_amg_block_hook(void     *context,
-                      Mat       a,
-                      KSP       ksp)
+_petsc_common_block_hook(cs_param_sles_t    slesp,
+                         KSP                ksp,
+                         PC                 pc,
+                         KSP              **xyz_subksp)
 {
-  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
-  cs_param_sles_t  slesp = eqp->sles_param;
-
-  assert(eqp->dim == 3);        /* This designed for this case */
-
-  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
-                                     SIGFPE detection */
-
-  /* Set the solver */
-  _petsc_set_krylov_solver(slesp, a, ksp);
-
   /* Set KSP tolerances */
   PetscReal rtol, abstol, dtol;
   PetscInt  maxit;
@@ -621,14 +610,11 @@ _petsc_amg_block_hook(void     *context,
   /* Try to have "true" norm */
   KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
 
-  PC  pc;
-  KSPGetPC(ksp, &pc);
   PCSetType(pc, PCFIELDSPLIT);
   PCFieldSplitSetType(pc, PC_COMPOSITE_ADDITIVE);
 
   /* Apply modifications to the KSP structure */
   PetscInt  id, n_split;
-  KSP  *xyz_subksp;
 
   PCFieldSplitSetBlockSize(pc, 3);
   id = 0;
@@ -638,28 +624,60 @@ _petsc_amg_block_hook(void     *context,
   id = 2;
   PCFieldSplitSetFields(pc, "z", 1, &id, &id);
 
-  PCFieldSplitGetSubKSP(pc, &n_split, &xyz_subksp);
+  PCFieldSplitGetSubKSP(pc, &n_split, xyz_subksp);
   assert(n_split == 3);
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer: setup hook for setting PETSc solver and
+ *         preconditioner.
+ *         Case of multiplicative AMG block preconditioner for a CG with GAMG
+ *         as AMG type
+ *
+ * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] a        pointer to PETSc Matrix context
+ * \param[in, out] ksp      pointer to PETSc KSP context
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_petsc_amg_block_gamg_hook(void     *context,
+                           Mat       a,
+                           KSP       ksp)
+{
+  PC  pc;
+  KSP  *xyz_subksp;
+
+  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
+  cs_param_sles_t  slesp = eqp->sles_param;
+
+  assert(eqp->dim == 3);        /* This designed for this case */
+
+  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
+
+  /* Set the solver */
+  _petsc_set_krylov_solver(slesp, a, ksp);
+
+  /* Common settings to block preconditionner */
+  KSPGetPC(ksp, &pc);
+  _petsc_common_block_hook(slesp,
+                           ksp,
+                           pc,
+                           &xyz_subksp);
+
   /* Predefined settings when using AMG as a preconditioner */
-#if defined(PETSC_HAVE_HYPRE)
-  _petsc_pchypre_hook();
-#else
   _petsc_pcgamg_hook();
-#endif
 
   PC  _pc;
-  for (id = 0; id < 3; id++) {
+  for (PetscInt id = 0; id < 3; id++) {
 
     KSP  _ksp = xyz_subksp[id];
     KSPSetType(_ksp, KSPPREONLY);
     KSPGetPC(_ksp, &_pc);
-#if defined(PETSC_HAVE_HYPRE)
-    PCSetType(_pc, PCHYPRE);
-    PCHYPRESetType(_pc, "boomeramg");
-#else
     PCSetType(_pc, PCGAMG);
-#endif
 
   }
 
@@ -672,7 +690,78 @@ _petsc_amg_block_hook(void     *context,
 
   /* Dump the setup related to PETSc in a specific file */
   if (!slesp.setup_done) {
+    cs_sles_petsc_log_setup(ksp);
+    slesp.setup_done = true;
+  }
 
+  PetscFree(xyz_subksp);
+
+  cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer: setup hook for setting PETSc solver and
+ *         preconditioner.
+ *         Case of multiplicative AMG block preconditioner for a CG with boomer
+ *         as AMG type
+ *
+ * \param[in, out] context  pointer to optional (untyped) value or structure
+ * \param[in, out] a        pointer to PETSc Matrix context
+ * \param[in, out] ksp      pointer to PETSc KSP context
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_petsc_amg_block_boomer_hook(void     *context,
+                             Mat       a,
+                             KSP       ksp)
+{
+  PC  pc;
+  KSP  *xyz_subksp;
+
+  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
+  cs_param_sles_t  slesp = eqp->sles_param;
+
+  assert(eqp->dim == 3);        /* This designed for this case */
+
+  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
+                                     SIGFPE detection */
+
+  /* Set the solver */
+  _petsc_set_krylov_solver(slesp, a, ksp);
+
+  /* Common settings to block preconditionner */
+  KSPGetPC(ksp, &pc);
+  _petsc_common_block_hook(slesp,
+                           ksp,
+                           pc,
+                           &xyz_subksp);
+
+  /* Predefined settings when using AMG as a preconditioner */
+  _petsc_pchypre_hook();
+
+  PC  _pc;
+  for (PetscInt id = 0; id < 3; id++) {
+
+    KSP  _ksp = xyz_subksp[id];
+    KSPSetType(_ksp, KSPPREONLY);
+    KSPGetPC(_ksp, &_pc);
+    PCSetType(_pc, PCHYPRE);
+    PCHYPRESetType(_pc, "boomeramg");
+
+  }
+
+  /* User function for additional settings */
+  cs_user_sles_petsc_hook(context, a, ksp);
+
+  PCSetFromOptions(pc);
+  KSPSetFromOptions(ksp);
+  KSPSetUp(ksp);
+
+  /* Dump the setup related to PETSc in a specific file */
+  if (!slesp.setup_done) {
     cs_sles_petsc_log_setup(ksp);
     slesp.setup_done = true;
   }
@@ -700,6 +789,8 @@ _petsc_block_jacobi_hook(void     *context,
                          Mat       a,
                          KSP       ksp)
 {
+  PC  pc;
+  KSP  *xyz_subksp;
   cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
   cs_param_sles_t  slesp = eqp->sles_param;
 
@@ -711,32 +802,16 @@ _petsc_block_jacobi_hook(void     *context,
   /* Set the solver (tolerance and max_it too) */
   _petsc_set_krylov_solver(slesp, a, ksp);
 
-  /* Try to have "true" norm */
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-
-  PC  pc;
+  /* Common settings to block preconditionner */
   KSPGetPC(ksp, &pc);
-  PCSetType(pc, PCFIELDSPLIT);
-  PCFieldSplitSetType(pc, PC_COMPOSITE_ADDITIVE);
+  _petsc_common_block_hook(slesp,
+                           ksp,
+                           pc,
+                           &xyz_subksp);
 
-  /* Apply modifications to the KSP structure */
-  PetscInt  id, n_split;
-  KSP  *xyz_subksp;
-
-  PCFieldSplitSetBlockSize(pc, 3);
-  id = 0;
-  PCFieldSplitSetFields(pc, "x", 1, &id, &id);
-  id = 1;
-  PCFieldSplitSetFields(pc, "y", 1, &id, &id);
-  id = 2;
-  PCFieldSplitSetFields(pc, "z", 1, &id, &id);
-
-  PCFieldSplitGetSubKSP(pc, &n_split, &xyz_subksp);
-  assert(n_split == 3);
-
-  /* Predefined settings when using AMG as a preconditioner */
+  /* Predefined settings when using block-ILU as a preconditioner */
   PC  _pc;
-  for (id = 0; id < 3; id++) {
+  for (PetscInt id = 0; id < 3; id++) {
 
     KSP  _ksp = xyz_subksp[id];
     KSPSetType(_ksp, KSPPREONLY);
@@ -2023,12 +2098,33 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp)
 
     cs_sles_petsc_init();
 
-    if (slesp.precond == CS_PARAM_PRECOND_AMG_BLOCK)
-      cs_sles_petsc_define(slesp.field_id,
-                           NULL,
-                           MATMPIAIJ,
-                           _petsc_amg_block_hook,
-                           (void *)eqp);
+    if (slesp.precond == CS_PARAM_PRECOND_AMG_BLOCK) {
+
+      if (slesp.amg_type == CS_PARAM_AMG_PETSC_GAMG) {
+        cs_sles_petsc_define(slesp.field_id,
+                             NULL,
+                             MATMPIAIJ,
+                             _petsc_amg_block_gamg_hook,
+                             (void *)eqp);
+      }
+      else if (slesp.amg_type == CS_PARAM_AMG_HYPRE_BOOMER) {
+#if defined(PETSC_HAVE_HYPRE)
+        cs_sles_petsc_define(slesp.field_id,
+                             NULL,
+                             MATMPIAIJ,
+                             _petsc_amg_block_boomer_hook,
+                             (void *)eqp);
+#else
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Boomer is not available. Switch to another AMG.",
+                  __func__);
+#endif
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid amg type for an AMG by block.", __func__);
+
+    }
     else if (slesp.precond == CS_PARAM_PRECOND_BJACOB && eqp->dim > 1)
       cs_sles_petsc_define(slesp.field_id,
                            NULL,
