@@ -185,6 +185,7 @@ double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6
 double precision rxx, rxy, rxz, ryy, ryz, rzz, rnnb
 double precision rttb, alpha_rnn
 double precision roughness
+double precision sigmak, sigmae
 
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr, ustar
@@ -319,6 +320,7 @@ if (ik.gt.0) then
   call field_get_coefb_s(ivarfl(ik), coefb_k)
   call field_get_coefaf_s(ivarfl(ik), coefaf_k)
   call field_get_coefbf_s(ivarfl(ik), coefbf_k)
+  call field_get_key_double(ivarfl(ik), ksigmas, sigmak)
 else
   coefa_k => null()
   coefb_k => null()
@@ -331,6 +333,7 @@ if (iep.gt.0) then
   call field_get_coefb_s(ivarfl(iep), coefb_ep)
   call field_get_coefaf_s(ivarfl(iep), coefaf_ep)
   call field_get_coefbf_s(ivarfl(iep), coefbf_ep)
+  call field_get_key_double(ivarfl(iep), ksigmas, sigmae)
 else
   coefa_ep => null()
   coefb_ep => null()

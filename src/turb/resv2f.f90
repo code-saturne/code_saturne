@@ -112,6 +112,7 @@ double precision fhomog
 double precision hint
 double precision l2, time_scale
 double precision normp
+double precision sigmak
 
 double precision rvoid(1)
 
@@ -159,6 +160,7 @@ call field_get_val_s(iflmas, imasfl)
 call field_get_val_s(iflmab, bmasfl)
 
 call field_get_val_prev_s(ivarfl(ik), cvara_k)
+call field_get_key_double(ivarfl(ik), ksigmas, sigmak)
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
 call field_get_val_prev_s(ivarfl(iphi), cvara_phi)
 if (iturb.eq.50) then

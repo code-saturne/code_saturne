@@ -474,19 +474,6 @@ const double cs_turb_ce2 = 1.92;
 const double cs_turb_ce4 = 1.20;
 
 /*!
- * Prandtl number for \f$k\f$ with \f$k-\varepsilon\f$ and v2f models.
- * Useful if and only if \ref iturb=20, 21 or 50 (\f$k-\varepsilon\f$ or v2f).
- */
-const double cs_turb_sigmak = 1.0;
-
-/*!
- * Prandtl number for \f$\varepsilon\f$.
- * Useful if and only if \ref iturb= 20, 21, 30, 31 or 50
- * (\f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$ or v2f).
- */
-double cs_turb_sigmae = -1.;
-
-/*!
  * Constant \f$C_1\f$ for the \f$R_{ij}-\varepsilon\f$ LRR model.
  * Useful if and only if \ref iturb=30 (\f$R_{ij}-\varepsilon\f$ LRR).
  */
@@ -616,9 +603,6 @@ const double cs_turb_cpale3 = 2.3;
 
 /*! Specific constant of v2f "BL-v2k" (or phi-alpha). */
 const double cs_turb_cpale4 = 0.4;
-
-/*! Specific constant of v2f "BL-v2k" (or phi-alpha). */
-const double cs_turb_cpalse = 1.5;
 
 /*! Specific constant of v2f "BL-v2k" (or phi-alpha). */
 const double cs_turb_cpalmu = 0.22;
@@ -1031,8 +1015,7 @@ cs_f_turb_reference_values(double  **almax,
                            double  **xlomlg);
 
 void
-cs_f_turb_model_constants_get_pointers(double  **sigmae,
-                                       double  **cmu,
+cs_f_turb_model_constants_get_pointers(double  **cmu,
                                        double  **cmu025,
                                        double **crij1,
                                        double **crij2);
@@ -1173,19 +1156,18 @@ cs_f_turb_reference_values(double  **almax,
  * enables mapping to Fortran global pointers.
  *
  * parameters:
- *   sigmae --> pointer to cs_turb_sigmae
  *   cmu    --> pointer to cs_turb_cmu
  *   cmu025 --> pointer to cs_turb_cmu025
+ *   crij1  --> pointer to cs_turb_crij1
+ *   crij2  --> pointer to cs_turb_crij2
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_turb_model_constants_get_pointers(double  **sigmae,
-                                       double  **cmu,
+cs_f_turb_model_constants_get_pointers(double  **cmu,
                                        double  **cmu025,
                                        double **crij1,
                                        double **crij2)
 {
-  *sigmae = &cs_turb_sigmae;
   *cmu    = &cs_turb_cmu;
   *cmu025 = &cs_turb_cmu025;
   *crij1 = &cs_turb_crij1;
@@ -1440,13 +1422,21 @@ cs_turb_compute_constants(void)
   cs_turb_cstlog_alpha = exp(-cs_turb_xkappa
                              * (cs_turb_cstlog_rough - cs_turb_cstlog));
 
+  if (CS_F_(k) != NULL)
+    cs_field_set_key_double(CS_F_(k), cs_field_key_id("turbulent_schmidt"), 1.);
+
+  if (CS_F_(phi) != NULL)
+    cs_field_set_key_double(CS_F_(phi), cs_field_key_id("turbulent_schmidt"), 1.);
+
   if (   cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR
       || cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG)
-    cs_turb_sigmae = 1.22;
+    cs_field_set_key_double(CS_F_(eps), cs_field_key_id("turbulent_schmidt"), 1.22);
   else if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
-    cs_turb_sigmae = 1.15;
+    cs_field_set_key_double(CS_F_(eps), cs_field_key_id("turbulent_schmidt"), 1.15);
+  else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K)
+    cs_field_set_key_double(CS_F_(eps), cs_field_key_id("turbulent_schmidt"), 1.5);
   else
-    cs_turb_sigmae = 1.30;
+    cs_field_set_key_double(CS_F_(eps), cs_field_key_id("turbulent_schmidt"), 1.30);
 
   if (cs_glob_turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM)
     cs_turb_csrij = 0.21;
@@ -1849,11 +1839,8 @@ cs_turb_constants_log_setup(void)
       (CS_LOG_SETUP,
        _("    ce1:         %14.5e (Cepsilon 1: production coef.)\n"
          "    ce2:         %14.5e (Cepsilon 2: dissipat.  coef.)\n"
-         "    sigmak:      %14.5e (Prandtl relative to k)\n"
-         "    sigmae:      %14.5e (Prandtl relative to epsilon )\n"
          "    cmu:         %14.5e (Cmu constant)\n"),
-       cs_turb_ce1, cs_turb_ce2, cs_turb_sigmak,
-       cs_turb_sigmae, cs_turb_cmu);
+         cs_turb_ce1, cs_turb_ce2, cs_turb_cmu);
 
   else if (turb_model->iturb == CS_TURB_RIJ_EPSILON_LRR)
     cs_log_printf
@@ -1863,14 +1850,13 @@ cs_turb_constants_log_setup(void)
          "    crij1:       %14.5e (Slow term coefficient)\n"
          "    crij2:       %14.5e (Fast term coefficient)\n"
          "    crij3:       %14.5e (Gravity term coefficient)\n"
-         "    sigmae:      %14.5e (sigma_eps coeff.)\n"
          "    csrij:       %14.5e (Rij diffusion coeff.)\n"
          "    crijp1:      %14.5e (Slow coeff. for wall echo)\n"
          "    crijp2:      %14.5e (Fast coeff. for wall echo)\n"
          "    cmu:         %14.5e (Cmu constant)\n"),
-       cs_turb_ce1, cs_turb_ce2, cs_turb_crij1, cs_turb_crij2,
-       cs_turb_crij3, cs_turb_sigmae, cs_turb_csrij, cs_turb_crijp1,
-       cs_turb_crijp2, cs_turb_cmu);
+         cs_turb_ce1, cs_turb_ce2, cs_turb_crij1, cs_turb_crij2,
+         cs_turb_crij3, cs_turb_csrij, cs_turb_crijp1,
+         cs_turb_crijp2, cs_turb_cmu);
 
   else if (turb_model->iturb == CS_TURB_RIJ_EPSILON_SSG)
     cs_log_printf
@@ -1886,13 +1872,12 @@ cs_turb_constants_log_setup(void)
          "    crij3:       %14.5e (Gravity term coeff.)\n"
          "    ce1:         %14.5e (Ceps1 coeff.)\n"
          "    cssge2:      %14.5e (Ceps2 coeff.)\n"
-         "    sigmae:      %14.5e (sigma_eps coeff.)\n"
          "    cmu:         %14.5e (Cmu constant)\n"),
-       cs_turb_cssgs1, cs_turb_cssgs2, cs_turb_cssgr1,
-       cs_turb_cssgr2, cs_turb_cssgr3, cs_turb_cssgr4,
-       cs_turb_cssgr5, cs_turb_csrij, cs_turb_crij3,
-       cs_turb_ce1, cs_turb_cssge2, cs_turb_sigmae,
-       cs_turb_cmu);
+         cs_turb_cssgs1, cs_turb_cssgs2, cs_turb_cssgr1,
+         cs_turb_cssgr2, cs_turb_cssgr3, cs_turb_cssgr4,
+         cs_turb_cssgr5, cs_turb_csrij, cs_turb_crij3,
+         cs_turb_ce1, cs_turb_cssge2,
+         cs_turb_cmu);
 
   else if (turb_model->iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
     cs_turb_crij3 = 0.6;
@@ -1908,16 +1893,15 @@ cs_turb_constants_log_setup(void)
          "    crij3:       %14.5e (Gravity term coeff.)\n"
          "    cebme2:      %14.5e (Coef Ceps2)\n"
          "    ce1:         %14.5e (Coef Ceps1)\n"
-         "    sigmae:      %14.5e (Coef sigma_eps)\n"
          "    xa1:         %14.5e (Coef A1)\n"
-         "    sigmak:      %14.5e (Coef sigma_k)\n"
          "    xceta:       %14.5e (Coef Ceta)\n"
          "    xct:         %14.5e (Coef CT)\n"),
-       cs_turb_cebms1, cs_turb_cebmr1, cs_turb_cebmr2,
-       cs_turb_cebmr3, cs_turb_cebmr4, cs_turb_cebmr5,
-       cs_turb_csrij, cs_turb_crij3,  cs_turb_cebme2,
-       cs_turb_ce1, cs_turb_sigmae, cs_turb_xa1,
-       cs_turb_sigmak, cs_turb_xceta, cs_turb_xct);
+         cs_turb_cebms1, cs_turb_cebmr1, cs_turb_cebmr2,
+         cs_turb_cebmr3, cs_turb_cebmr4, cs_turb_cebmr5,
+         cs_turb_csrij, cs_turb_crij3,  cs_turb_cebme2,
+         cs_turb_ce1, cs_turb_xa1,
+         cs_turb_xceta, cs_turb_xct);
+
   }
 
   else if (turb_model->iturb == CS_TURB_V2F_PHI)
@@ -1925,18 +1909,16 @@ cs_turb_constants_log_setup(void)
       (CS_LOG_SETUP,
        _("    cv2fa1:      %14.5e (a1 to calculate Cepsilon1)\n"
          "    cv2fe2:      %14.5e (Cepsilon 2: dissip. coeff.)\n"
-         "    sigmak:      %14.5e (Prandtl relative to k)\n"
-         "    sigmae:      %14.5e (Prandtl relative to epsilon)\n"
          "    cv2fmu:      %14.5e (Cmu constant)\n"
          "    cv2fct:      %14.5e (CT constant)\n"
          "    cv2fcl:      %14.5e (CL constant)\n"
          "    cv2fet:      %14.5e (C_eta constant)\n"
          "    cv2fc1:      %14.5e (C1 constant)\n"
          "    cv2fc2:      %14.5e (C2 constant)\n"),
-       cs_turb_cv2fa1, cs_turb_cv2fe2, cs_turb_sigmak,
-       cs_turb_sigmae, cs_turb_cv2fmu, cs_turb_cv2fct,
-       cs_turb_cv2fcl, cs_turb_cv2fet, cs_turb_cv2fc1,
-       cs_turb_cv2fc2);
+         cs_turb_cv2fa1, cs_turb_cv2fe2,
+         cs_turb_cv2fmu, cs_turb_cv2fct,
+         cs_turb_cv2fcl, cs_turb_cv2fet, cs_turb_cv2fc1,
+         cs_turb_cv2fc2);
 
   else if (turb_model->iturb == CS_TURB_V2F_BL_V2K)
     cs_log_printf
@@ -1945,18 +1927,16 @@ cs_turb_constants_log_setup(void)
          "    cpale2:      %14.5e (Cepsilon 2 : Diss. coeff.)\n"
          "    cpale3:      %14.5e (Cepsilon 3 : E term coeff.)\n"
          "    cpale4:      %14.5e (Cepsilon 4 : Mod Diss. coef.)\n"
-         "    sigmak:      %14.5e (Prandtl relative to k)\n"
-         "    cpalse:      %14.5e (Prandtl relative to epsilon)\n"
          "    cpalmu:      %14.5e (Cmu constant)\n"
          "    cpalct:      %14.5e (CT constant)\n"
          "    cpalcl:      %14.5e (CL constant)\n"
          "    cpalet:      %14.5e (C_eta constant)\n"
          "    cpalc1:      %14.5e (C1 constant)\n"
          "    cpalc2:      %14.5e (C2 constant)\n"),
-       cs_turb_cpale1, cs_turb_cpale2, cs_turb_cpale3,
-       cs_turb_cpale4, cs_turb_sigmak, cs_turb_cpalse,
-       cs_turb_cpalmu, cs_turb_cpalct, cs_turb_cpalcl,
-       cs_turb_cpalet, cs_turb_cpalc1, cs_turb_cpalc2);
+         cs_turb_cpale1, cs_turb_cpale2, cs_turb_cpale3,
+         cs_turb_cpale4,
+         cs_turb_cpalmu, cs_turb_cpalct, cs_turb_cpalcl,
+         cs_turb_cpalet, cs_turb_cpalc1, cs_turb_cpalc2);
 
   else if (turb_model->iturb == CS_TURB_K_OMEGA)
     cs_log_printf

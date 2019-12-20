@@ -228,6 +228,7 @@ double precision temp, exchange_coef
 double precision turb_schmidt
 double precision, allocatable, dimension(:) :: pimpts, hextts, qimpts, cflts
 double precision, allocatable, dimension(:) :: tb_save
+double precision sigmae
 
 character(len=80) :: fname
 
@@ -1615,13 +1616,13 @@ if (itytur.eq.2.or.iturb.eq.60) then
     !     nul)
     if (ii.eq.1.and.itytur.eq.2) then
       ivar   = ik
-      sigma  = sigmak
+      call field_get_key_double(ivarfl(ik), ksigmas, sigma)
     elseif (ii.eq.1.and.iturb.eq.60) then
       ivar   = ik
       sigma  = ckwsk2 !fixme it is not consistent with the model
     elseif (itytur.eq.2) then
       ivar   = iep
-      sigma  = sigmae
+      call field_get_key_double(ivarfl(iep), ksigmas, sigma)
     else
       ivar   = iomg
       sigma  = ckwsw2 !fixme it is not consistent with the model
@@ -2034,6 +2035,7 @@ elseif (itytur.eq.3) then
   call field_get_coefb_s(ivarfl(ivar), coefbp)
   call field_get_coefaf_s(ivarfl(ivar), cofafp)
   call field_get_coefbf_s(ivarfl(ivar), cofbfp)
+  call field_get_key_double(ivarfl(iep), ksigmas, sigmae)
 
   call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
@@ -2247,13 +2249,13 @@ elseif (itytur.eq.5) then
 
     if (ii.eq.1) then
       ivar   = ik
-      sigma  = sigmak
+      call field_get_key_double(ivarfl(ik), ksigmas, sigma)
     elseif (ii.eq.2) then
       ivar   = iep
-      sigma  = sigmae
+      call field_get_key_double(ivarfl(iep), ksigmas, sigma)
     else
       ivar   = iphi
-      sigma  = sigmak
+      call field_get_key_double(ivarfl(iphi), ksigmas, sigma)
     endif
 
     call field_get_coefa_s(ivarfl(ivar), coefap)

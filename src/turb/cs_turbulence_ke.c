@@ -299,6 +299,28 @@ cs_turbulence_ke(int              nvar,
   cs_field_t  *f_k = CS_F_(k);
   cs_field_t  *f_eps = CS_F_(eps);
 
+  cs_real_t sigmak = cs_field_get_key_double(f_k,
+                                             cs_field_key_id("turbulent_schmidt"));
+
+  /* If turbulent Schmidt is variable, id of the corresponding field */
+  int sigmak_id = cs_field_get_key_int(f_k,
+                                       cs_field_key_id("turbulent_schmidt_id"));
+
+  cs_real_t *cpro_sigmak = NULL;
+  if (sigmak_id >= 0)
+    cpro_sigmak = cs_field_by_id(sigmak_id)->val;
+
+  cs_real_t sigmae = cs_field_get_key_double(f_eps,
+                                             cs_field_key_id("turbulent_schmidt"));
+
+  /* If turbulent Schmidt is variable, id of the corresponding field */
+  int sigmae_id = cs_field_get_key_int(f_eps,
+                                       cs_field_key_id("turbulent_schmidt_id"));
+
+  cs_real_t *cpro_sigmae = NULL;
+  if (sigmae_id >= 0)
+    cpro_sigmae = cs_field_by_id(sigmae_id)->val;
+
   /* Initialilization
      ================ */
 
@@ -976,7 +998,7 @@ cs_turbulence_ke(int              nvar,
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       visct    = cpro_pcvto[c_id];
       rho      = cromo[c_id];
-      w3[c_id] = visct/rho/cs_turb_sigmak;
+      w3[c_id] = visct/rho/sigmak;
     }
 
     cs_face_viscosity(m,
@@ -1553,7 +1575,7 @@ cs_turbulence_ke(int              nvar,
     if (vcopt_k.idiff >=  1) {
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        w4[c_id] = viscl[c_id] + vcopt_k.idifft*cvisct[c_id]/cs_turb_sigmak;
+        w4[c_id] = viscl[c_id] + vcopt_k.idifft*cvisct[c_id]/sigmak;
       }
 
       cs_face_viscosity(m,
@@ -1621,7 +1643,7 @@ cs_turbulence_ke(int              nvar,
     if (vcopt_eps.idiff >=  1) {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
         w4[c_id] = viscl[c_id]
-                 + vcopt_eps.idifft*cvisct[c_id]/cs_turb_sigmae;
+                 + vcopt_eps.idifft*cvisct[c_id]/sigmae;
       }
 
       cs_face_viscosity(m,
@@ -1778,14 +1800,24 @@ cs_turbulence_ke(int              nvar,
   /* Face viscosity */
   if (vcopt_k.idiff >= 1) {
 
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
-        w1[c_id] = viscl[c_id]/2.
-          + vcopt_k.idifft*cvisct[c_id]/cs_turb_sigmak;
-      } else {
-        w1[c_id] = viscl[c_id]
-          + vcopt_k.idifft*cvisct[c_id]/cs_turb_sigmak;
-      }
+    if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        w1[c_id] = viscl[c_id]/2.;
+    } else {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        w1[c_id] = viscl[c_id];
+    }
+
+    /* Variable Schmidt number */
+    if (sigmak_id >= 0) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        w1[c_id] += vcopt_k.idifft*cvisct[c_id]/cpro_sigmak[c_id];
+
+    }
+    else {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        w1[c_id] += vcopt_k.idifft*cvisct[c_id]/sigmak;
+
     }
 
     cs_face_viscosity(m,
@@ -1850,14 +1882,22 @@ cs_turbulence_ke(int              nvar,
 
   /* Face viscosity */
   if (vcopt_eps.idiff >= 1) {
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
-        w1[c_id] = viscl[c_id]/2.
-          + vcopt_eps.idifft*cvisct[c_id]/cs_turb_cpalse;
-      } else {
-        w1[c_id] = viscl[c_id]
-          + vcopt_eps.idifft*cvisct[c_id]/cs_turb_sigmae;
-      }
+    if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        w1[c_id] = viscl[c_id]/2.;
+    } else {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        w1[c_id] = viscl[c_id];
+    }
+
+    /* Variable Schmidt number */
+    if (sigmae_id >= 0) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        w1[c_id] += vcopt_eps.idifft*cvisct[c_id]/cpro_sigmae[c_id];
+    }
+    else {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        w1[c_id] += vcopt_eps.idifft*cvisct[c_id]/sigmae;
     }
 
     cs_face_viscosity(m,

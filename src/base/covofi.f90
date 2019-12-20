@@ -163,6 +163,8 @@ integer          icrom_scal
 integer          key_buoyant_id, is_buoyant_fld
 integer          key_t_ext_id
 integer          iviext
+integer          key_turb_schmidt
+integer          t_scd_id
 
 integer          ivoid(1)
 
@@ -204,6 +206,7 @@ double precision, dimension(:,:), pointer :: cvara_rij
 double precision, dimension(:), pointer :: cvar_al
 double precision, dimension(:), pointer :: visct, viscl, cpro_cp, cproa_scal_st
 double precision, dimension(:), pointer :: cpro_scal_st
+double precision, dimension(:), pointer :: cpro_turb_schmidt
 double precision, dimension(:), pointer :: cpro_viscls, cpro_visct
 double precision, dimension(:), pointer :: cpro_tsscal
 double precision, dimension(:), pointer :: cpro_x2icla
@@ -399,6 +402,12 @@ endif
 
 ! Retrieve turbulent Schmidt value for current scalar
 call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
+! If turbulent Schmidt is variable, id of the corresponding field
+call field_get_key_id("turbulent_schmidt_id", key_turb_schmidt)
+call field_get_key_int(ivarfl(isca(iscal)), key_turb_schmidt, t_scd_id)
+if (t_scd_id.ge.0) then
+  call field_get_val_s(t_scd_id, cpro_turb_schmidt)
+endif
 
 !===============================================================================
 ! 2. Source terms
@@ -823,12 +832,22 @@ if (itspdv.eq.1) then
         enddo
       ! SGDH model
       else
-        do iel = 1, ncel
-          cproa_scal_st(iel) = cproa_scal_st(iel)                             &
-               + 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)                     &
-               *cell_f_vol(iel)/turb_schmidt                                 &
-               *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
-        enddo
+        ! Variable Schmidt number
+        if (t_scd_id.ge.0) then
+          do iel = 1, ncel
+            cproa_scal_st(iel) = cproa_scal_st(iel)                             &
+                 + 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)                     &
+                 *cell_f_vol(iel)/cpro_turb_schmidt(iel)                        &
+                 *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
+          enddo
+        else
+          do iel = 1, ncel
+            cproa_scal_st(iel) = cproa_scal_st(iel)                             &
+                 + 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)                     &
+                 *cell_f_vol(iel)/turb_schmidt                                 &
+                 *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
+          enddo
+        endif
       endif
 
     ! If not time extrapolation...
@@ -869,22 +888,42 @@ if (itspdv.eq.1) then
 
       ! SGDH model
       else
-        do iel = 1, ncel
-          smbrs(iel) = smbrs(iel)                                            &
-                     + 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)           &
-                     * cell_f_vol(iel)/turb_schmidt                       &
-                     * (grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
-        enddo
+        ! Variable Schmidt number
+        if (t_scd_id.ge.0) then
+          do iel = 1, ncel
+            smbrs(iel) = smbrs(iel)                                         &
+                       + 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)           &
+                       * cell_f_vol(iel)/cpro_turb_schmidt(iel)             &
+                       * (grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
+          enddo
+        else
+          do iel = 1, ncel
+            smbrs(iel) = smbrs(iel)                                         &
+                       + 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)           &
+                       * cell_f_vol(iel)/turb_schmidt                       &
+                       * (grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
+          enddo
+        endif
       endif
 
       ! Production term for a variance  TODO compute ustdy when isso2t >0
       if (idilat.ge.4) then
-        do iel = 1, ncel
-          cpro_tsscal(iel) = cpro_tsscal(iel) +                   &
-               2.d0*xcpp(iel)*max(cpro_visct(iel),zero)        &
-             *cell_f_vol(iel)/turb_schmidt                     &
-             *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
-        enddo
+        ! Variable Schmidt number
+        if (t_scd_id.ge.0) then
+          do iel = 1, ncel
+            cpro_tsscal(iel) = cpro_tsscal(iel) +                &
+                 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)        &
+               *cell_f_vol(iel)/cpro_turb_schmidt(iel)           &
+               *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
+          enddo
+        else
+          do iel = 1, ncel
+            cpro_tsscal(iel) = cpro_tsscal(iel) +                &
+                 2.d0*xcpp(iel)*max(cpro_visct(iel),zero)        &
+               *cell_f_vol(iel)/turb_schmidt                     &
+               *(grad(1,iel)**2 + grad(2,iel)**2 + grad(3,iel)**2)
+          enddo
+        endif
       endif
     endif
 
@@ -1044,14 +1083,26 @@ if (vcopt%idiff.ge.1) then
 
     if (ifcvsl.lt.0) then
       do iel = 1, ncel
-        w1(iel) = visls0(iscal)                                     &
-           + idifftp*xcpp(iel)*max(visct(iel),zero)/turb_schmidt
+        w1(iel) = visls0(iscal)
       enddo
     else
       do iel = 1, ncel
-        w1(iel) = cpro_viscls(iel)                                &
-           + idifftp*xcpp(iel)*max(visct(iel),zero)/turb_schmidt
+        w1(iel) = cpro_viscls(iel)
       enddo
+    endif
+    if (idifftp.ge.1) then
+      ! Variable Schmidt number
+      if (t_scd_id.ge.0) then
+        do iel = 1, ncel
+          w1(iel) = w1(iel)                                &
+             + idifftp*xcpp(iel)*max(visct(iel),zero)/cpro_turb_schmidt(iel)
+        enddo
+      else
+        do iel = 1, ncel
+          w1(iel) = w1(iel)                                &
+             + idifftp*xcpp(iel)*max(visct(iel),zero)/turb_schmidt
+        enddo
+      endif
     endif
 
     if (vcopt%iwgrec.eq.1) then

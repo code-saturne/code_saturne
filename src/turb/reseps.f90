@@ -130,6 +130,7 @@ double precision tseps , kseps , ceps2
 double precision tuexpe, thets , thetv , thetap, thetp1
 double precision prdeps, xttdrb, xttke , xttkmg
 double precision normp
+double precision sigmae
 
 double precision rvoid(1)
 
@@ -187,6 +188,7 @@ call field_get_val_s(ivisct, visct)
 
 call field_get_val_s(ivarfl(iep), cvar_ep)
 call field_get_val_prev_s(ivarfl(iep), cvara_ep)
+call field_get_key_double(ivarfl(iep), ksigmas, sigmae)
 if (iturb.eq.32) call field_get_val_s(ivarfl(ial), cvar_al)
 if(irijco.eq.1) then
   call field_get_val_prev_v(ivarfl(irij), cvara_rij)

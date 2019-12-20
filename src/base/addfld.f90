@@ -95,6 +95,8 @@ integer          nfld
 integer          n_prev
 integer          t_ext
 integer          kclipp
+integer          key_turb_schmidt, kscavr
+integer          var_f_id
 
 character(len=80) :: name, f_name, f_label, s_label, s_name
 type(var_cal_opt) :: vcopt_dfm, vcopt_alpha, vcopt
@@ -134,6 +136,7 @@ call field_get_key_id('turbulent_flux_model', kturt)
 call field_get_key_id('turbulent_flux_id', kfturt)
 call field_get_key_id('alpha_turbulent_flux_id', kfturt_alpha)
 call field_get_key_id('coupled', keycpl)
+call field_get_key_id("first_moment_id", kscavr)
 
 ! Key id for drift scalar
 call field_get_key_id("drift_scalar_model", keydri)
@@ -235,7 +238,8 @@ enddo
 do ii = 1, nscal
   f_id = ivarfl(isca(ii))
   call field_get_key_int(f_id, kivisl, ifcvsl)
-  if (ifcvsl.eq.0 .and. iscavr(ii).le.0) then
+  call field_get_key_int(f_id, kscavr, var_f_id)
+  if (ifcvsl.eq.0 .and. var_f_id.lt.0) then
     ! Build name and label, using a general rule, with a
     ! fixed name for temperature or enthalpy
     call field_get_name(f_id, s_name)
@@ -300,7 +304,8 @@ enddo
 do ii = 1, nscal
   f_id = ivarfl(isca(ii))
   call field_get_key_int(f_id, kromsl, ifcvsl)
-  if (ifcvsl.eq.0 .and. iscavr(ii).le.0) then
+  call field_get_key_int(f_id, kscavr, var_f_id)
+  if (ifcvsl.eq.0 .and.var_f_id.lt.0) then
     ! Build name and label, using a general rule, with a
     ! fixed name for temperature or enthalpy
     call field_get_name(f_id, s_name)
@@ -314,7 +319,7 @@ do ii = 1, nscal
   endif
 enddo
 
-! For variances, the diffusivity is that of the associated scalar,
+! For variances, the density is that of the associated scalar,
 ! and must not be initialized first.
 
 do ii = 1, nscal
@@ -326,6 +331,42 @@ do ii = 1, nscal
       write(nfecra,7040) f_id, ivarfl(isca(iscavr(ii))), ifcvsl
     else
       call field_set_key_int(f_id, kromsl, ifcvsl)
+    endif
+  endif
+enddo
+
+! Add a scalar turbulent Schmidt field
+call field_get_key_id("turbulent_schmidt_id", key_turb_schmidt)
+
+do ii = 1, nvar
+  f_id = ivarfl(ii)
+  call field_get_key_int(f_id, key_turb_schmidt, ifcvsl)
+  call field_get_key_int(f_id, kscavr, var_f_id)
+  if (ifcvsl.ge.0 .and. var_f_id.lt.0) then
+    ! Build name and label, using a general rule, with a
+    ! fixed name for temperature or enthalpy
+    call field_get_name(f_id, s_name)
+    call field_get_label(f_id, s_label)
+    f_name  = trim(s_name) // '_turb_schmidt'
+    f_label = trim(s_label) // ' ScT'
+
+    ! Now create matching property
+    call add_property_field(f_name, f_label, 1, .false., ifcvsl)
+    call field_set_key_int(ivarfl(ii), key_turb_schmidt, ifcvsl)
+  endif
+enddo
+
+! For variances, the Schmidt is that of the associated scalar,
+! and must not be initialized first.
+do ii = 1, nscal
+  if (iscavr(ii).gt.0) then
+    f_id = ivarfl(isca(ii))
+    call field_get_key_int(ivarfl(isca(iscavr(ii))), key_turb_schmidt, ifcvsl)
+    call field_is_key_set(f_id, key_turb_schmidt, is_set)
+    if (is_set.eqv..true.) then
+      write(nfecra,7040) f_id, ivarfl(isca(iscavr(ii))), ifcvsl
+    else
+      call field_set_key_int(f_id, key_turb_schmidt, ifcvsl)
     endif
   endif
 enddo
