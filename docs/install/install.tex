@@ -159,9 +159,8 @@ The SALOME platform V9 and above requires Python 3, older versions Python 2,
 and a matching version should be used when building with SALOME support.
 
 In practice, the code is known to build and function properly at least with the
-GNU compilers 4.4 and above (up to 8.x at this date), Intel compilers 11 and
-above (up to 18 at this date), IBM XL Fortran 14 and C 12 compilers, and Clang
-(tested with 3.7 or above).
+GNU compilers 4.4 and above (up to 9.x at this date), Intel compilers 11 and
+above (up to 2019 at this date), andd Clang (tested with 3.7 or above).
 
 Note also that while \CS makes heavy use of Python, this is for scripts and
 for the GUI only; The solver only uses compiled code, so we could for example use
@@ -377,7 +376,7 @@ and the matching Python bindings must be available. On most modern
 Linux distributions, this is available through the package manager,
 which is by far the preferred solution.
 
-On systems on which both PyQt4 and Pyqt5 are available, PyQt4 will be selected
+On systems on which both PyQt4 and Pyqt5 are available, PyQt5 will be selected
 by default, but the selection may be forced by defining
 \texttt{QT\_SELECT=4} or \texttt{QT\_SELECT=5}.
 
@@ -1007,8 +1006,6 @@ and the \textit{code\_aster} coupling adapter should be available.
 Note that the CFDSTUDY module will only be usable with a PyQt
 version similar to that used in SALOME. PyQt5 is used by SALOME
 versions 8 and above, while PyQt4 is used for older versions.
-Other aspects of SALOME integration should not be impacted by an incompatible
-PyQt version.
 
 Also, SALOME expects a specific directory tree when loading modules,
 so the CFDSTUDY and \textit{code\_aster} coupling adapter my be
@@ -1069,12 +1066,12 @@ build on a cluster named \texttt{athos}, using the Intel compilers
 
 \fbox{\begin{minipage}{\textwidth}\texttt{\\
 \$ \textcolor{Magenta}{module purge} \\
-\$ \textcolor{Magenta}{module load} intel\_compilers/2016.0.047 \\
-\$ \textcolor{Magenta}{module load} open\_mpi/gcc/2.0.1 \\
+\$ \textcolor{Magenta}{module load} intel\_compilers/2019.0.045 \\
+\$ \textcolor{Magenta}{module load} open\_mpi/gcc/4.0.1 \\
 \$ \textcolor{OliveGreen}{\$SRC\_PATH}/code\_saturne-\verscs/configure \textbackslash \\
 \textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/athos\_ompi
 \textbackslash \\
-\textcolor{Violet}{--with-blas}=/opt/mkl-2016.0.047/mkl \textbackslash \\
+\textcolor{Violet}{--with-blas}=/opt/mkl-2019.0.045/mkl \textbackslash \\
 \textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.10/arch/athos
 \textbackslash \\
 \textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-4.0/arch/athos
@@ -1109,8 +1106,8 @@ data to the same location for each build.
 \subsection{Cross-compiling}
 
 On machines with different front-end and compute node architectures,
-such as IBM Blue Gene/Q, cross-compiling is necessary.
-To install and run \CS, 2 builds are required:
+cross-compiling may be necessary.
+To install and run \CS, 2 builds are then required:
 
 \begin{itemize}
 \item a ``front-end'' build, based on front-end node's architecture. This is
@@ -1147,106 +1144,6 @@ either for the front-end, for the compute nodes, or both:
 \item \ptscotch or \parmetis may be used by the main solver on the
       compute nodes.
 \end{itemize}
-
-\subsubsection{Cross-compiling configuration for Blue Gene/Q}
-
-In our example, the front-end node is based on an IBM Power architecture,
-runnning under Red Hat Enterprise Linux 6, on which the Python/Qt4
-environment should be available as an RPM package, and installed by the
-administrators.
-
-On the compute nodes, the IBM XL compilers produce static object files
-by default, so specifying the \texttt{--disable-shared} option is not necessary
-for libraries using Autotools-based installs when using those compilers,
-though using \texttt{--build=ppc64 --host=bluegeneq} in this case ensures
-the cross-compiling environment is detected. This environment
-is the suggested default, and prevents shared library builds.
-To allow building with shared libraries while still ensuring the
-cross-compiling environment is detected,
-use \texttt{--host=powerpc64-bgq-linux} instead.
-
-For the compute nodes, the following remarks may be mode for prerequisites:
-
-\begin{itemize}
-\item HDF5: building this library with its \texttt{configure} script
-is a pain\footnote{It requires running a \texttt{yodconfigure}
-script and adapting other scripts (see documentation), then running
-this as a submitted job (or under a SLURM allocation if you are lucky
-enough to use this resource manager).}, but installing HDF5 1.8.9 or above
-using CMake is as simple as on a workstation, and simply requires
-choosing the correct compilers and possibly a few other options (in
-the EDF \CS build, the GCC compilers were chosen to reduce risks, and
-the Fortran wrappers were not needed, so not built).
-\item CGNS: building CGNS is preferentially based on CMake,
-and no specific problems have been observed.
-\item MED: building MED 3.0.5 or above for \CS is easier than previous versions,
-as a new \\ \texttt{--disable-fortan} option is available for the
-\texttt{configure} script. Both the C and C++ compiler wrappers
-must be specified, and the link may fail with the GNU compilers, due
-to some shared library issue (trying to force \texttt{--disable-shared}).
-With the IBM XL compilers, the same build works fine, as long as the
-\texttt{CXXFLAGS=-qlanglvl=redefmac}) option is passed. Adding
-the HDF5 tools path to the \texttt{\$PATH} environment variable for
-the  configuration stage may also be required.
-\item CoolProp: the GNU (not XL) C++ compiler must be used, and the additional
-\texttt{-DCMAKE\_CXX\_FLAGS=-U\_\_powerpc\_\_} option must be passed to
-the \texttt{cmake} command.
-\end{itemize}
-
-For an example, let us start with the front-end build:
-
-\fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/code\_saturne-\verscs/configure \textbackslash \\
-\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/frontend
-\textbackslash \\
-\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.10.3/arch/frontend
-\textbackslash \\
-\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-4.0/arch/frontend
-\textbackslash \\
-\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.4/arch/frontend \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/frontend \\
-}\end{minipage}}
-
-For the compute node, we use the same version of Python (which
-is used only for the GUI and scripts, which only run on the front-end
-or service nodes), but the compilers are cross-compilers for the
-compute nodes:
-
-\fbox{\begin{minipage}{\textwidth}\texttt{\\
-\$ \textcolor{OliveGreen}{\$SRC\_PATH}/code\_saturne-\verscs/configure \textbackslash \\
-\textcolor{Violet}{--prefix}=\textcolor{OliveGreen}{\$INSTALL\_PATH}/arch/bgq
-\textbackslash \\
-\textcolor{Violet}{--without-blas} \\
-\textcolor{Violet}{--with-hdf5}=\textcolor{OliveGreen}{\$CS\_OPT}/hdf5-1.10/arch/bgq \textbackslash \\
-\textcolor{Violet}{--with-med}=\textcolor{OliveGreen}{\$CS\_OPT}/med-4.0/arch/bgq \textbackslash \\
-\textcolor{Violet}{--with-cgns}=\textcolor{OliveGreen}{\$CS\_OPT}/cgns-3.4/arch/bgq \textbackslash \\
-\textcolor{Violet}{--with-scotch}=\textcolor{OliveGreen}{\$CS\_OPT}/scotch-6.0/arch/bgq \textbackslash \\
-\textcolor{Violet}{
---disable-sockets --disable-dlloader -disable-nls \textbackslash \\
---disable-frontend --enable-long-gnum \textbackslash
-} \\
-\textcolor{Magenta}{--build}=ppc64
-\textcolor{Magenta}{--host}=bluegeneq \textbackslash \\
-\textcolor{red}{CC}=/bgsys/drivers/ppcfloor/comm/xl/bin/mpixlc\_r \textbackslash \\
-\textcolor{red}{CXX}=/bgsys/drivers/ppcfloor/comm/xl/bin/mpixlcxx\_r \textbackslash \\
-\textcolor{red}{FC}=bgxlf95\_r \\
-}\end{minipage}}
-
-The C++ compiler is specified, as it will be needed for
-the link stage due to C++ dependencies in the MED library,
-which is a static library in this example (see \S\ref{sec:ext:med}).
-
-Note that in the above examples, we specified an install of the \scotch
-partitioning library both for the front-end and for the compute nodes.
-The implies a serial build of \scotch on the front-end node, and a parallel
-build (\ptscotch) on the compute nodes. Both are optional, and the
-serial partitioning on the front-end nodes should only be used as a
-backup or as a reference for parallel partitioning. Unless robustness
-or quality issues are encountered with parallel partitioning, it
-should supercede serial partitioning, as it allows for a simpler
-toolchain even for large meshes.
-Similarly, \metis could be used on the front-end node, and \parmetis
-on the compute nodes.
 
 \subsubsection{Compiling for Cray X series}
 
@@ -1330,8 +1227,8 @@ or \texttt{/usr/local}, some Linux systems may require running
 
 Once the code is installed, a post-install step may
 be necessary for computing environments using a batch system,
-for separate front-end and compute systems (such as Blue Gene
-systems), or for coupling with \syrthes 4 or code\_aster.
+for separate front-end and compute systems, for coupling with \syrthes 4,
+or simply to call a debug build from a main (production) build.
 The global default MPI execution commands and options may also be overridden.
 
 Copy or rename the \texttt{<install-prefix>/etc/code\_saturne.cfg.template} to \\
@@ -1349,15 +1246,10 @@ batch template to match the local setup may be necessary.}
 
 Also, the \texttt{compute\_versions} section allows the administrator
 to define one or several alternate builds which will be used for
-compute stages. This is especially useful for installation
-on BlueGene type machines, where 2 separate builds are required
-(one for the front-end nodes and one for the compute nodes).
-The compute-node build may be configured using the
-\texttt{--disable-frontend} option so as only to build and install
-the components required to run on compute-nodes,
-while the front-end build may be configured without MPI support.
-The front-end build's post-install step allows definition of
-the associated compute build.
+compute stages. All specified builds are then available from the GUI,
+which is useful to switch from a production to a debug build.
+In this case the secondary builds do not need to contain the
+full fromt-end (GUI, documentation, ...).
 
 All default MPI execution commands and options may be overriden using the
 \texttt{mpi} section. Note that only the options defined in this section
