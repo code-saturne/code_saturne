@@ -27,6 +27,10 @@ User changes:
 
 Numerics and physical modelling:
 
+- The GMRES solver may now also be used for vector or tensor fields.
+  The maximum number of restarts is set at 40 instead of 75
+  (which is still quite high compared to most of the litterature).
+
 - Remove hydrostatic pressure gradient computation (iphydr = 2).
 
 - Wall pressure extrapolation is now considered advanced/deprecated,
