@@ -90,7 +90,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.modelEXTRAG.addItem(self.tr("Neumann 1st order"), 'neumann')
         self.modelEXTRAG.addItem(self.tr("Extrapolation"), 'extrapolation')
 
-        self.modelIMRGRA.addItem(self.tr("Iterative handling of non-orthogonalities"),'0')
+        self.modelIMRGRA.addItem(self.tr("Green-Gauss with iterative handling of non-orthogonalities"),'0')
         self.modelIMRGRA.addItem(self.tr("Least squares method over neighboring cells"),'1')
         self.modelIMRGRA.addItem(self.tr("Least squares method over extended cell neighborhood"),'2')
         self.modelIMRGRA.addItem(self.tr("Least squares method over partial extended cell neighborhood"),'3')
