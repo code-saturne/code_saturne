@@ -84,7 +84,7 @@ implicit none
 integer          nmodpp
 integer          nscmax
 integer          l_size
-double precision relaxp, extrap, l_cp(1), l_xmasm(1), l_cv(1)
+double precision relaxp, l_cp(1), l_xmasm(1), l_cv(1)
 
 type(var_cal_opt) :: vcopt
 
