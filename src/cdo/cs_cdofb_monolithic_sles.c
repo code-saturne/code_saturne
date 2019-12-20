@@ -1518,6 +1518,7 @@ _apply_div_op_transpose(const cs_real_t   *div_op,
  *
  * \param[in]      matrix   pointer to a cs_matrix_t structure
  * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      nslesp   pointer to SLES settings for NavSto
  * \param[in]      div_op   pointer to the values of divergence operator
  * \param[in, out] gkb      pointer to a GKB builder structure
  * \param[in, out] sles     pointer to a cs_sles_t structure
@@ -1530,6 +1531,7 @@ _apply_div_op_transpose(const cs_real_t   *div_op,
 static void
 _transform_gkb_system(const cs_matrix_t             *matrix,
                       const cs_equation_param_t     *eqp,
+                      const cs_navsto_param_sles_t   nslesp,
                       const cs_real_t               *div_op,
                       cs_gkb_builder_t              *gkb,
                       cs_sles_t                     *sles,
@@ -1550,7 +1552,7 @@ _transform_gkb_system(const cs_matrix_t             *matrix,
   _eqp->sles_param.field_id = eqp->sles_param.field_id;
 
   cs_equation_param_update_from(eqp, _eqp);
-  _eqp->sles_param.eps = fmax(fmin(1e-7, 1e-2*eqp->sles_param.eps), 1e-10);
+  _eqp->sles_param.eps = nslesp.algo_tolerance;
 
   if (gkb->gamma > 0) {
 
@@ -2448,8 +2450,11 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
                               const cs_equation_param_t     *eqp,
                               cs_cdofb_monolithic_sles_t    *msles)
 {
+  assert(nsp != NULL);
+  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
+
   /* Sanity checks */
-  assert(nsp != NULL && nsp->sles_param.strategy == CS_NAVSTO_SLES_GKB_SATURNE);
+  assert(nslesp.strategy == CS_NAVSTO_SLES_GKB_SATURNE);
   assert(cs_shared_range_set != NULL);
 
   const cs_real_t  *vol = cs_shared_quant->cell_vol;
@@ -2468,7 +2473,8 @@ cs_cdofb_monolithic_gkb_solve(const cs_navsto_param_t       *nsp,
                                              msles->n_cells);
 
   /* Transformation of the initial saddle-point system */
-  _transform_gkb_system(matrix, eqp, div_op, gkb, msles->sles, u_f, b_f, b_c);
+  _transform_gkb_system(matrix, eqp, nslesp, div_op, gkb, msles->sles,
+                        u_f, b_f, b_c);
 
   /* Initialization */
   _init_gkb_algo(matrix, eqp, div_op, gkb, msles->sles, p_c);
@@ -2605,7 +2611,7 @@ cs_cdofb_monolithic_uzawa_al_solve(const cs_navsto_param_t       *nsp,
   cs_real_t  *b_f = msles->b_f;
   cs_real_t  *b_c = msles->b_c;
 
-  /* Allocate and initialize the GKB builder structure */
+  /* Allocate and initialize the ALU builder structure */
   cs_uza_builder_t  *uza = _init_uzawa_builder(gamma,
                                                3*msles->n_faces,
                                                msles->n_cells,
@@ -2749,7 +2755,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   cs_real_t  *b_f = msles->b_f;
   cs_real_t  *b_c = msles->b_c;
 
-  /* Allocate and initialize the GKB builder structure */
+  /* Allocate and initialize the ALU builder structure */
   cs_uza_builder_t  *uza = _init_uzawa_builder(gamma,
                                                3*msles->n_faces,
                                                msles->n_cells,
@@ -2812,7 +2818,7 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   _eqp->sles_param.field_id = eqp->sles_param.field_id;
 
   cs_equation_param_update_from(eqp, _eqp);
-  _eqp->sles_param.eps = fmax(fmin(1e-7, 1e-4*eqp->sles_param.eps), 1e-12);
+  _eqp->sles_param.eps = nsp->sles_param.algo_tolerance;
 
   cs_real_t  normalization = cs_evaluate_3_square_wc2x_norm(uza->rhs,
                                                             c2f,
