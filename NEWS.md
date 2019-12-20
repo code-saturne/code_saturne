@@ -23,6 +23,9 @@ User changes:
 
 Bug fixes:
 
+- Ensure improved velocity-pressure coupling (ipucou option) is
+  de-activated when using the steady algorithm.
+
 - Fix computation of fluid volume zone.
 
 - Fix launching of ncfd doxygen from GUI (help menu).

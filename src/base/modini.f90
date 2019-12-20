@@ -802,8 +802,9 @@ else
   enddo
 endif
 
-! ---> SPECIFIQUE STATIONNAIRE
+! Options specific to steady case
 if (idtvar.lt.0) then
+  ipucou = 0
   dtref = 1.d0
   dtmin = 1.d0
   dtmax = 1.d0
