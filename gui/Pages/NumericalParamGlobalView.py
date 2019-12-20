@@ -150,6 +150,9 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.labelExtNeighbors.hide()
             self.comboBoxExtNeighbors.hide()
 
+        from code_saturne.model.TimeStepModel import TimeStepModel
+        idtvar = TimeStepModel(self.case).getTimePassing()
+
         if modl_joul != 'off' or modl_gas != 'off' or modl_coal != 'off':
             self.labelSRROM.show()
             self.lineEditSRROM.show()
@@ -167,7 +170,10 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
             self.checkBoxImprovedPressure.hide()
         else:
             self.checkBoxICFGRP.hide()
-            self.checkBoxIPUCOU.show()
+            if idtvar == -1:
+                self.checkBoxIPUCOU.setEnabled(False)
+            else:
+                self.checkBoxIPUCOU.show()
             self.lineEditRELAXP.show()
             self.labelRELAXP.show()
             self.checkBoxImprovedPressure.show()
