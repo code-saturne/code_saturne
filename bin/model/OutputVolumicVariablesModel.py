@@ -76,6 +76,13 @@ class OutputVolumicVariablesModel(Variables, Model):
         else:
             elf.node_probe     = None
 
+        self.node_lagr_vstats = None
+        node_lagr  = self.case.xmlGetNode('lagrangian', 'model')
+        if node_lagr:
+            node_stat = node_lagr.xmlGetChildNode('statistics')
+            if node_stat:
+                self.node_lagr_vstats = node_stat.xmlGetChildNode('volume')
+
         self.updateList()
 
 
@@ -113,14 +120,15 @@ class OutputVolumicVariablesModel(Variables, Model):
                         choice = node['choice']
                         if choice and choice == 'constant':
                             continue
-                l.append(node)
+                if node.xmlGetAttribute('status', default='on') == 'on':
+                    l.append(node)
 
         return l
 
 
     def getVolumeFieldsNodeList(self, constant=False, time_averages=True):
         """
-        Returns the list of active volume fields (variables, propeties,
+        Returns the list of active volume fields (variables, properties,
         and possibly postprocessing fields).
         """
 
@@ -204,6 +212,8 @@ class OutputVolumicVariablesModel(Variables, Model):
             if node['support']:
                 if node['support'] == 'boundary':
                     continue
+            elif node.xmlGetAttribute('status', default='on') == 'off':
+                continue
             name = self.__nodeName__(node)
             label = node['label']
             if not label:
@@ -261,6 +271,8 @@ class OutputVolumicVariablesModel(Variables, Model):
                                 'Other', list_remain)
         self.__updateListFilter(self.__getListOfTimeAverage__(),
                                 'Time moments', list_remain)
+        self.__updateListFilter(self.__getListOfLagrVolumeStats__(),
+                                'Lagrangian statistics', list_remain)
         self.__updateListFilter(self.__getListOfAleMethod__(),
                                 'Other', list_remain)
         self.__updateListFilter(self.__getListOfEstimator__(),
@@ -605,6 +617,18 @@ class OutputVolumicVariablesModel(Variables, Model):
         nodeList = []
         if self.node_means:
             for node in self.node_means.xmlGetNodeList('time_average'):
+                nodeList.append(node)
+
+        return nodeList
+
+
+    def __getListOfLagrVolumeStats__(self):
+        """
+        Private method: return node of properties of weight matrix
+        """
+        nodeList = []
+        if self.node_lagr_vstats:
+            for node in self.node_lagr_vstats.xmlGetNodeList('property'):
                 nodeList.append(node)
 
         return nodeList

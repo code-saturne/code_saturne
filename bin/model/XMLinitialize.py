@@ -1812,6 +1812,40 @@ class XMLinit(BaseXmlInit):
         if node:
             node.xmlRemoveNode()
 
+        # Fix some Lagrangian names
+
+        XMLLagrangianNode = self.case.xmlGetNode('lagrangian')
+        if XMLLagrangianNode:
+            stats_node = XMLLagrangianNode.xmlGetNode('statistics')
+            if stats_node:
+                vol_node = stats_node.xmlGetNode('volume')
+                if vol_node:
+                    rename = {"Part_statis_weight": "particle_cumulative_weight",
+                              "Part_vol_frac": "mean_particle_volume_fraction",
+                              "Part_velocity": "mean_particle_velocity",
+                              "Part_resid_time": "mean_particle_residence_time"}
+                    for attr in list(rename.keys()):
+                        node = vol_node.xmlGetNode('property', name=attr)
+                        if node:
+                            node['name'] = rename[attr]
+
+                bdy_node = stats_node.xmlGetNode('boundary')
+                if bdy_node:
+                    rename = {"Part_bndy_mass_flux": "particle_mass_flux",
+                              "Part_impact_number": "particle_events_weight",
+                              "Part_impact_angle": "mean_particle_impact_angle",
+                              "Part_impact_velocity": "mean_particle_impact_velocity",
+                              "Part_fouled_impact_number": "particle_fouling_events_weight",
+                              "Part_fouled_mass_flux": "particle_fouling_mass_flux",
+                              "Part_fouled_diam": "mean_particle_fouling_diameter",
+                              "Part_fouled_Xck": "mean_particle_fouling_coke_fraction"}
+                    for attr in list(rename.keys()):
+                        node = bdy_node.xmlGetNode('property', name=attr)
+                        if node:
+                            node['name'] = rename[attr]
+                            node['support'] = 'boundary'
+
+
 #-------------------------------------------------------------------------------
 # End of XMLinit
 #-------------------------------------------------------------------------------

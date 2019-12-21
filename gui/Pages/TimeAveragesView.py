@@ -355,6 +355,9 @@ class StandardItemModelAverage(QStandardItemModel):
         """
         imom = row
 
+        if ttdmom == None:
+            ttdmom = -1
+
         if ttdmom < 0:
             stype = 'time step'
             sval = ntdmom

@@ -123,7 +123,7 @@ cs_lagr_gradients(int            time_id,
         grad_pr[iel][id] = cpro_pgradlagr[3*iel + id];
 
     cs_real_33_t *cpro_vgradlagr
-      = cs_field_by_name("lagr_velocity_gradient")->val;
+      = (cs_real_33_t *)(cs_field_by_name("lagr_velocity_gradient")->val);
 
     if (cpro_vgradlagr != NULL) {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
