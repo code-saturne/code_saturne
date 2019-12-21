@@ -552,6 +552,19 @@ cs_lagr_stat_type_to_attr_id(int  stat_type);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Determine a basic statistic type by its base name.
+ *
+ * \param[in]  name  particle statistics base name (without class id)
+ *
+ * \return  matching stat type id, or -1 if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_lagr_stat_type_by_name(const char  *name);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Map time step values array for Lagrangian statistics.
  *
  * If this function is not called, the field referenced by field pointer

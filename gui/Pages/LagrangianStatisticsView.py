@@ -78,7 +78,7 @@ class StandardItemModelVolumicNames(QStandardItemModel):
 
         self.headers = [self.tr("Variable Name (Mean value)"),
                         self.tr("Variable Name (Variance)"),
-                        self.tr("Post-processing")]
+                        self.tr("Active")]
         self.setColumnCount(len(self.headers))
         self.model = model
         self.initData()
@@ -89,14 +89,17 @@ class StandardItemModelVolumicNames(QStandardItemModel):
         self.dataVolumicNames = []
         vnames = self.model.getVariablesNamesVolume()
         for vname in vnames:
-            if vname == "Part_statis_weight":
-                labelv = ""
-                postprocessing = self.model.getPostprocessingVolStatusFromName(vname)
-                line = [vname, labelv, postprocessing]
+            if vname[0:5] == "mean_":
+                labelv = "var_" + vname[5:]
+                compute = self.model.getComputeVolStatusFromName(vname)
+                line = [vname, labelv, compute]
+            elif vname[0:4] == "var_":
+                compute = self.model.getComputeVolStatusFromName(vname)
+                continue # group with mean
             else:
-                labelv = "var_" + vname
-                postprocessing = self.model.getPostprocessingVolStatusFromName(vname)
-                line = [vname, labelv, postprocessing]
+                labelv = ""
+                compute = self.model.getComputeVolStatusFromName(vname)
+                line = [vname, labelv, compute]
 
             row = self.rowCount()
             self.setRowCount(row+1)
@@ -166,7 +169,10 @@ class StandardItemModelVolumicNames(QStandardItemModel):
                 self.dataVolumicNames[index.row()][index.column()] = "on"
 
             vname = self.dataVolumicNames[index.row()][0]
-            self.model.setPostprocessingVolStatusFromName(vname, status)
+            self.model.setComputeVolStatusFromName(vname, status)
+            vname = self.dataVolumicNames[index.row()][1]
+            if vname:
+                self.model.setComputeVolStatusFromName(vname, status)
 
         self.dataChanged.emit(index, index)
         return True
@@ -183,8 +189,9 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
         """
         QStandardItemModel.__init__(self)
 
-        self.headers = [self.tr("Variable Name"),
-                        self.tr("Post-processing")]
+        self.headers = [self.tr("Variable Name (Mean value)"),
+                        self.tr("Variable Name (Variance)"),
+                        self.tr("Active")]
         self.setColumnCount(len(self.headers))
         self.model = model
         self.initData()
@@ -195,8 +202,17 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
         self.dataBoundariesNames = []
         vnames = self.model.getVariablesNamesBoundary()
         for vname in vnames:
-            postprocessing = self.model.getPostprocessingStatusFromName(vname)
-            line = [vname, postprocessing]
+            if vname[0:5] == "mean_":
+                labelv = "var_" + vname[5:]
+                compute = self.model.getComputeBoundaryStatusFromName(vname)
+                line = [vname, labelv, compute]
+            elif vname[0:4] == "var_":
+                compute = self.model.getComputeBoundaryStatusFromName(vname)
+                continue # group with mean
+            else:
+                labelv = ""
+                compute = self.model.getComputeBoundaryStatusFromName(vname)
+                line = [vname, labelv, compute]
 
             row = self.rowCount()
             self.setRowCount(row+1)
@@ -205,26 +221,22 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
 
     def data(self, index, role):
 
-        self.kwords = [ "IFLMBD",   "INBRBD",   "IANGBD",   "IVITBD",
-                        "IENCNBBD", "IENCMABD", "IENCDIBD", "IENCCKBD"]
         if not index.isValid():
             return
 
         # ToolTips
         if role == Qt.ToolTipRole:
-            if index.column() == 0:
-                return self.tr("Code_Saturne key word: NOMBRD")
-            elif index.column() == 1:
-                return self.tr("Code_Saturne key word: " + self.kwords[index.row()])
+            if index.column() in [0, 1]:
+                return self.tr("field label base")
 
         # Display
         if role == Qt.DisplayRole:
-            if index.column() == 0:
+            if index.column() in [0,1]:
                 return self.dataBoundariesNames[index.row()][index.column()]
 
         # CheckState
         elif role == Qt.CheckStateRole:
-            if index.column() ==1:
+            if index.column() ==2:
                 if self.dataBoundariesNames[index.row()][index.column()] == 'on':
                     return Qt.Checked
                 else:
@@ -260,7 +272,10 @@ class StandardItemModelBoundariesNames(QStandardItemModel):
                 self.dataBoundariesNames[index.row()][index.column()] = "on"
 
             vname = self.dataBoundariesNames[index.row()][0]
-            self.model.setPostprocessingStatusFromName(vname, status)
+            self.model.setComputeBoundaryStatusFromName(vname, status)
+            vname = self.dataBoundariesNames[index.row()][1]
+            if vname:
+                self.model.setComputeVolStatusFromName(vname, status)
 
 
         self.dataChanged.emit(index, index)

@@ -149,18 +149,14 @@ _attr_post_status(cs_tree_node_t       *tn_o,
 }
 
 /*-----------------------------------------------------------------------------
- * Activate statistics and postprocessing for volume or boundary statistics
+ * Activate statistics
  *
  * parameters:
  *   tn_s     <--  parent tree node ("volume" or "boundary")
- *   name     <--  name of statistics in tree
- *   status   <->  associated postprocessing status
  *----------------------------------------------------------------------------*/
 
 static void
-_get_stats_post(cs_tree_node_t  *tn_s,
-                const char      *name,
-                int             *status)
+_get_stats_post(cs_tree_node_t  *tn_s)
 {
   cs_tree_node_t *tn = NULL;
 
@@ -169,12 +165,14 @@ _get_stats_post(cs_tree_node_t  *tn_s,
        tn = cs_tree_node_get_next_of_name(tn)) {
     const char *_name = cs_tree_node_get_tag(tn, "name");
     if (_name != NULL) {
-      if (! strcmp(_name, name)) {
-        *status = 1; /* default if active */
-        cs_gui_node_get_status_int
-          (cs_tree_node_get_child(tn, "postprocessing_recording"),
-           status);
-        break;
+      int stat_type = cs_lagr_stat_type_by_name(_name);
+      if (stat_type > -1) {
+        int status = 1; /* default if active */
+        cs_gui_node_get_status_int(tn, &status);
+        if (status < 1)
+          cs_lagr_stat_deactivate(stat_type);
+        else
+          cs_lagr_stat_activate(stat_type);
       }
     }
   }
@@ -382,76 +380,16 @@ cs_gui_particles_model(void)
 
     cs_gui_node_get_status_bool(tn_vs, &volume_stats);
 
-    if (volume_stats) {
-
-      int flag = 0;
-      _get_stats_post(tn_vs, "Part_vol_frac", &flag);
-      if (flag)
-        cs_lagr_stat_activate(CS_LAGR_STAT_VOLUME_FRACTION);
-
-      flag = 0;
-      _get_stats_post(tn_vs, "Part_velocity", &flag);
-      if (flag)
-        cs_lagr_stat_activate_attr(CS_LAGR_VELOCITY);
-
-      flag = 0;
-      _get_stats_post(tn_vs, "Part_resid_time", &flag);
-      if (flag)
-        cs_lagr_stat_activate_attr(CS_LAGR_RESIDENCE_TIME);
-
-      flag = 0;
-      _get_stats_post(tn_vs, "Part_statis_weight", &flag);
-      if (flag)
-        cs_lagr_stat_activate(CS_LAGR_STAT_CUMULATIVE_WEIGHT);
-
-    }
+    if (volume_stats)
+      _get_stats_post(tn_vs);
 
     cs_tree_node_t *tn_bs = cs_tree_node_get_child(tn_s, "boundary");
 
     cs_gui_node_get_status_bool(tn_bs, &boundary_stats);
 
-    if (boundary_stats) {
+    if (boundary_stats)
+      _get_stats_post(tn_bs);
 
-      int flag = 0;
-      _get_stats_post(tn_bs, "Part_impact_number", &flag);
-      if (flag)
-        cs_lagr_stat_activate(CS_LAGR_STAT_E_CUMULATIVE_WEIGHT);
-
-      flag = 0;
-      _get_stats_post(tn_bs, "Part_bndy_mass_flux", &flag);
-      if (flag)
-        cs_lagr_stat_activate(CS_LAGR_STAT_MASS_FLUX);
-
-      flag = 0;
-      _get_stats_post(tn_bs, "Part_impact_angle", &flag);
-      if (flag)
-        cs_lagr_stat_activate(CS_LAGR_STAT_IMPACT_ANGLE);
-
-      flag = 0;
-      _get_stats_post(tn_bs, "Part_impact_velocity", &flag);
-      if (flag)
-        cs_lagr_stat_activate(CS_LAGR_STAT_IMPACT_VELOCITY);
-
-      /* Coal fouling statistics*/
-
-      flag = 0;
-      _get_stats_post(tn_bs, "Part_fouled_impact_number", &flag);
-      cs_lagr_stat_activate(CS_LAGR_STAT_FOULING_CUMULATIVE_WEIGHT);
-
-      flag = 0;
-      _get_stats_post(tn_bs, "Part_fouled_mass_flux", &flag);
-      if (flag)
-        cs_lagr_stat_activate(CS_LAGR_STAT_FOULING_MASS_FLUX);
-
-      _get_stats_post(tn_bs, "Part_fouled_diam", &flag);
-      if (flag)
-        cs_lagr_stat_activate(CS_LAGR_STAT_FOULING_DIAMETER);
-
-      _get_stats_post(tn_bs, "Part_fouled_Xck", &flag);
-      if (flag)
-        cs_lagr_stat_activate(CS_LAGR_STAT_FOULING_COKE_FRACTION);
-
-    }
   }
 
 #if _XML_DEBUG_

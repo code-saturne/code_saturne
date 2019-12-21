@@ -67,6 +67,12 @@ class LagrangianStatisticsModel(Model):
         self.case = case
         self.node_lagr = self.case.root().xmlInitNode('lagrangian', 'model')
         self.node_stat = self.node_lagr.xmlInitChildNode('statistics')
+        self.coal = False
+        self.coal_fouling = False
+        if LagrangianModel(self.case).getParticlesModel() == 'coal':
+            self.coal = True
+        if LagrangianModel(self.case).getCoalFouling() == 'on':
+            self.coal_fouling = True
 
 
     def _defaultLagrangianStatisticsValues(self):
@@ -99,31 +105,61 @@ class LagrangianStatisticsModel(Model):
         names = self.getVariablesNamesVolume()
         volume_names = []
         for name in names:
-            if name == "Part_statis_weight":
+            if name[0:5] == 'mean_':
                 volume_names.append(name)
+                volume_names.append("var_" + name[5:])
             else:
                 volume_names.append(name)
-                volume_names.append("var_" + name)
         return volume_names
 
 
     @Variables.noUndo
     def getVariablesNamesVolume(self):
 
-        names = ["Part_vol_frac", "Part_velocity",
-                 "Part_resid_time", "Part_statis_weight"]
+        names = ["particle_cumulative_weight",
+                 "mean_particle_volume_fraction",
+                 "var_particle_volume_fraction",
+                 "mean_particle_residence_time",
+                 "var_particle_residence_time",
+                 "mean_particle_diameter",
+                 "var_particle_diameter",
+                 "mean_particle_mass",
+                 "var_particle_mass",
+                 "mean_particle_velocity",
+                 "var_particle_velocity"]
+
+        if LagrangianModel(self.case).getHeating() == 'on':
+            names += ["mean_particle_temperature"]
+        elif self.coal:
+            names += ["mean_particle_water_mass",
+                      "var_particle_water_mass",
+                      "mean_particle_temperature",
+                      "var_particle_temperature",
+                      "mean_particle_coal_mass",
+                      "var_particle_coal_mass",
+                      "mean_particle_coke_mass",
+                      "var_particle_coke_mass",
+                      "mean_particle_coal_density",
+                      "var_particle_coal_density"]
+
         return names
 
 
     @Variables.noUndo
     def getVariablesNamesBoundary(self):
-        names = ["Part_bndy_mass_flux","Part_impact_number",
-                 "Part_impact_angle", "Part_impact_velocity"]
-        if LagrangianModel(self.case).getCoalFouling() == 'on':
-            names = ["Part_bndy_mass_flux"      ,"Part_impact_number",
-                     "Part_impact_angle"        , "Part_impact_velocity",
-                     "Part_fouled_impact_number", "Part_fouled_mass_flux",
-                     "Part_fouled_diam"         , "Part_fouled_Xck"]
+        names = ["particle_events_weight",
+                 "particle_mass_flux",
+                 "mean_particle_impact_angle",
+                 "var_particle_impact_angle",
+                 "mean_particle_impact_velocity",
+                 "var_particle_impact_velocity"]
+        if self.coal_fouling:
+            names += ["particle_fouling_events_weight",
+                      "particle_fouling_mass_flux",
+                      "mean_particle_fouling_diameter",
+                      "var_particle_fouling_diameter",
+                      "mean_particle_fouling_coke_fraction",
+                      "var_particle_fouling_coke_fraction"]
         return names
 
 
@@ -181,6 +217,9 @@ class LagrangianStatisticsModel(Model):
         self.isOnOff(status)
         self.node_volume['status'] = status
 
+        if status == 'off':
+            for node in self.node_volume.xmlGetNodeList('property'):
+                node.xmlRemoveNode()
 
     @Variables.noUndo
     def getVolumeStatisticsStatus(self):
@@ -261,24 +300,53 @@ class LagrangianStatisticsModel(Model):
 
 
     @Variables.noUndo
-    def getPostprocessingVolStatusFromName(self, name):
-        node = self.node_volume.xmlInitChildNode('property', name=name)
-        node2 = node.xmlGetChildNode('postprocessing_recording', 'status')
-        if not node2:
-            return "on"
-        else:
-            return "off"
+    def getComputeVolStatusFromName(self, name):
+        retval = "on"
+        names = [name]
+        if self.coal:
+            if name in ("mean_particle_temperature",
+                        "var_particle_temperature",
+                        "mean_particle_coal_mass",
+                        "var_particle_coal_mass",
+                        "mean_particle_coke_mass",
+                        "var_particle_coke_mass",
+                        "mean_particle_coal_density",
+                        "var_particle_coal_density"):
+                names = [name+'_l0', name+'_l1', name+'_l2',
+                         name+'_l3', name+'_l4']
+
+        for _name in names:
+            node = self.node_volume.xmlInitChildNode('property', name=_name)
+            if node:
+                status = node.xmlGetAttribute('status', default='on')
+                if status == 'off':
+                    retval = 'off'
+
+        return retval
 
 
     @Variables.undoLocal
-    def setPostprocessingVolStatusFromName(self, name, status):
+    def setComputeVolStatusFromName(self, name, status):
         self.isOnOff(status)
-        node = self.node_volume.xmlInitChildNode('property', name=name)
-        node2 = node.xmlInitChildNode('postprocessing_recording', 'status')
-        if status == "on":
-            node.xmlRemoveChild('postprocessing_recording')
-        elif status == "off":
-            node2['status'] = status
+        names = [name]
+        if self.coal:
+            if name in ("mean_particle_temperature",
+                        "var_particle_temperature",
+                        "mean_particle_coal_mass",
+                        "var_particle_coal_mass",
+                        "mean_particle_coke_mass",
+                        "var_particle_coke_mass",
+                        "mean_particle_coal_density",
+                        "var_particle_coal_density"):
+                names = [name+'_l0', name+'_l1', name+'_l2',
+                         name+'_l3', name+'_l4']
+        for _name in names:
+            node = self.node_volume.xmlInitChildNode('property', name=_name)
+            if status == 'off':
+                node.xmlSetAttribute(status=status)
+                node.xmlRemoveChildren()
+            else:
+                node.xmlDelAttribute('status')
 
 
     # Boundary functions
@@ -289,6 +357,10 @@ class LagrangianStatisticsModel(Model):
         """
         self.isOnOff(status)
         self.node_boundary['status'] = status
+
+        if status == 'off':
+            for node in self.node_volume.xmlGetNodeList('property'):
+                node.xmlRemoveNode()
 
 
     @Variables.noUndo
@@ -305,7 +377,7 @@ class LagrangianStatisticsModel(Model):
 
     @Variables.noUndo
     def getPropertyLabelFromNameBoundary(self, name):
-        node = self.node_boundary.xmlInitChildNode('property', name=name)
+        node = self.node_boundary.xmlInitChildNode('property', name=name, support='boundary')
         label = node['label']
         if not label:
             label = self._defaultLagrangianStatisticsValues()[name]
@@ -315,50 +387,28 @@ class LagrangianStatisticsModel(Model):
 
     @Variables.undoLocal
     def setPropertyLabelFromNameBoundary(self, name, label):
-        node = self.node_boundary.xmlInitChildNode('property', name=name)
+        node = self.node_boundary.xmlInitChildNode('property', name=name, support='boundary')
         node['label'] = label
 
 
     @Variables.noUndo
-    def getListingPrintingStatusFromName(self, name):
+    def getComputeBoundaryStatusFromName(self, name):
+        status = "on"
         node = self.node_boundary.xmlInitChildNode('property', name=name)
-        node2 = node.xmlGetChildNode('listing_printing', 'status')
-        if not node2:
-            return "on"
-        else:
-            return "off" # node2['status']
+        status = node.xmlGetAttribute('status', default='on')
+        return status
 
 
     @Variables.undoLocal
-    def setListingPrintingStatusFromName(self, name, status):
+    def setComputeBoundaryStatusFromName(self, name, status):
         self.isOnOff(status)
         node = self.node_boundary.xmlInitChildNode('property', name=name)
-        node2 = node.xmlInitChildNode('listing_printing', 'status')
-        if status == "on":
-            node.xmlRemoveChild('listing_printing')
-        elif status == "off":
-            node2['status'] = status
-
-
-    @Variables.noUndo
-    def getPostprocessingStatusFromName(self, name):
-        node = self.node_boundary.xmlInitChildNode('property', name=name)
-        node2 = node.xmlGetChildNode('postprocessing_recording', 'status')
-        if not node2:
-            return "on"
+        if status == 'off':
+            node.xmlSetAttribute(status=status)
+            node.xmlRemoveChildren()
         else:
-            return "off" # node2['status']
+            node.xmlDelAttribute('status')
 
-
-    @Variables.undoLocal
-    def setPostprocessingStatusFromName(self, name, status):
-        self.isOnOff(status)
-        node = self.node_boundary.xmlInitChildNode('property', name=name)
-        node2 = node.xmlInitChildNode('postprocessing_recording', 'status')
-        if status == "on":
-            node.xmlRemoveChild('postprocessing_recording')
-        elif status == "off":
-            node2['status'] = status
 
 #-------------------------------------------------------------------------------
 # LagrangianStatistics test case
@@ -403,20 +453,6 @@ class LagrangianStatisticsTestCase(unittest.TestCase):
 
         assert model.node_output == self.xmlNodeFromString(doc),\
                'Could not get default values for model'
-
-
-#    def checkGetandSetLagrangianStatisticsModel(self):
-#        """
-#        Check whether the LagrangianStatisticsModel could be set/get
-#        """
-#        mdl = LagrangianStatisticsModel(self.case)
-#        lagrangianStatus = mdl.lagrangianStatus()
-#        assert lagrangianStatus == ('off','one_way','two_way','frozen')
-#        for name in lagrangianStatus:
-#            mdl.setLagrangianStatisticsModel(name)
-#            name2 = mdl.getLagrangianStatisticsModel()
-#            assert name == name2 ,\
-#                   'Could not use the get/setLagrangianStatisticsModel method for model name %s '%name
 
 
     def checkSetandGetRestart(self):

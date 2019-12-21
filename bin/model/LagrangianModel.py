@@ -81,7 +81,6 @@ class LagrangianModel(Model):
         default['carrier_field_stationary']            = "off"
         default['deposition_submodel']                 = "off"
         default['particles_models']                    = "off"
-        default['thermal']                             = "off"
         default['evaporation']                         = "off"
         default['break_up']                            = "off"
         default['coal_fouling']                        = "off"

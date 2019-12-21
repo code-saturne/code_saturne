@@ -23,6 +23,9 @@ User changes:
 
 Bug fixes:
 
+- Fix missing update of Lagragian statistics name fields, and handling
+  of those fields in postprocessing output.
+
 - Ensure improved velocity-pressure coupling (ipucou option) is
   de-activated when using the steady algorithm.
 

@@ -287,6 +287,19 @@ static const cs_real_t *_p_dt = NULL; /* Mapped cell time step */
 const char  *cs_lagr_moment_type_name[] = {N_("MEAN"),
                                            N_("VARIANCE")};
 
+static const char *_lagr_stat_names[] = {"particle_cumulative_weight",
+                                         "particle_volume_fraction",
+                                         "particle_events_weight",
+                                         "particle_resuspension_events_weight",
+                                         "particle_fouling_events_weight",
+                                         "particle_mass_flux",
+                                         "particle_resusp_mass_flux",
+                                         "particle_fouling_mass_flux",
+                                         "particle_impact_angle",
+                                         "particle_impact_velocity",
+                                         "particle_fouling_diameter",
+                                         "particle_fouling_coke_fraction"};
+
 /* lagr statistics structure and associated pointer */
 
 static cs_lagr_stat_options_t _lagr_stat_options
@@ -1115,12 +1128,12 @@ _statistical_weight_name(cs_lagr_stat_group_t  stat_group,
     case CS_LAGR_STAT_GROUP_PARTICLE:
       snprintf(name,
                63 - l0,
-               "particle_cumulative_weight");
+               _lagr_stat_names[CS_LAGR_STAT_CUMULATIVE_WEIGHT]);
       break;
   case CS_LAGR_STAT_GROUP_TRACKING_EVENT:
       snprintf(name,
                63 - l0,
-               "particle_events_weight");
+               _lagr_stat_names[CS_LAGR_STAT_E_CUMULATIVE_WEIGHT]);
       break;
     default:
     assert(0);
@@ -3495,7 +3508,8 @@ _event_stat_initialize(void)
   int n_b_stat_types = 0;
 
   if (_base_stat_activate[CS_LAGR_STAT_MASS_FLUX] > 0) {
-    strncpy(b_stat_name[n_b_stat_types], "particle_mass_flux", 63);
+    strncpy(b_stat_name[n_b_stat_types],
+            _lagr_stat_names[CS_LAGR_STAT_MASS_FLUX], 63);
     b_stat_type[n_b_stat_types] = CS_LAGR_STAT_MASS_FLUX;
     b_stat_u_func[n_b_stat_types] = _bdy_mass_flux_update;
     b_stat_tm_func[n_b_stat_types] = _bdy_mass_flux;
@@ -3505,7 +3519,8 @@ _event_stat_initialize(void)
   }
 
   if (_base_stat_activate[CS_LAGR_STAT_RESUSPENSION_MASS_FLUX] > 0) {
-    strncpy(b_stat_name[n_b_stat_types], "particle_resusp_mass_flux", 63);
+    strncpy(b_stat_name[n_b_stat_types],
+            _lagr_stat_names[CS_LAGR_STAT_RESUSPENSION_MASS_FLUX], 63);
     b_stat_type[n_b_stat_types] = CS_LAGR_STAT_RESUSPENSION_MASS_FLUX;
     b_stat_u_func[n_b_stat_types] = _bdy_mass_flux_update;
     b_stat_tm_func[n_b_stat_types] = _bdy_mass_flux;
@@ -3515,7 +3530,8 @@ _event_stat_initialize(void)
   }
 
   if (_base_stat_activate[CS_LAGR_STAT_FOULING_MASS_FLUX] > 0) {
-    strncpy(b_stat_name[n_b_stat_types], "particle_fouling_mass_flux", 63);
+    strncpy(b_stat_name[n_b_stat_types],
+            _lagr_stat_names[CS_LAGR_STAT_FOULING_MASS_FLUX], 63);
     b_stat_type[n_b_stat_types] = CS_LAGR_STAT_FOULING_MASS_FLUX;
     b_stat_u_func[n_b_stat_types] = _bdy_mass_flux_update;
     b_stat_tm_func[n_b_stat_types] = _bdy_mass_flux;
@@ -3531,7 +3547,7 @@ _event_stat_initialize(void)
     /* Particle events count */
 
     if (_base_stat_activate[CS_LAGR_STAT_E_CUMULATIVE_WEIGHT] > 0) {
-      _class_name("particle_events_weight", class, name);
+      _class_name(_lagr_stat_names[CS_LAGR_STAT_E_CUMULATIVE_WEIGHT], class, name);
       cs_lagr_stat_accumulator_define(name,
                                       CS_MESH_LOCATION_BOUNDARY_FACES,
                                       stat_group,
@@ -3544,7 +3560,8 @@ _event_stat_initialize(void)
                                       restart_mode);
     }
     if (_base_stat_activate[CS_LAGR_STAT_RESUSPENSION_CUMULATIVE_WEIGHT] > 0) {
-      _class_name("particle_resuspension_events_weight", class, name);
+      _class_name(_lagr_stat_names[CS_LAGR_STAT_RESUSPENSION_CUMULATIVE_WEIGHT],
+                  class, name);
       cs_lagr_stat_accumulator_define(name,
                                       CS_MESH_LOCATION_BOUNDARY_FACES,
                                       stat_group,
@@ -3557,7 +3574,8 @@ _event_stat_initialize(void)
                                       restart_mode);
     }
     if (_base_stat_activate[CS_LAGR_STAT_FOULING_CUMULATIVE_WEIGHT] > 0) {
-      _class_name("particle_fouling_events_weight", class, name);
+      _class_name(_lagr_stat_names[CS_LAGR_STAT_FOULING_CUMULATIVE_WEIGHT],
+                  class, name);
       cs_lagr_stat_accumulator_define(name,
                                       CS_MESH_LOCATION_BOUNDARY_FACES,
                                       stat_group,
@@ -3641,23 +3659,23 @@ _event_stat_initialize(void)
 
         switch(stat_type) {
         case CS_LAGR_STAT_IMPACT_ANGLE:
-          strncpy(name, "particle_impact_angle", 63);
+          strncpy(name, _lagr_stat_names[stat_type], 63);
           stat_type_def = -1;
           data_func = _boundary_impact_angle;
           break;
         case CS_LAGR_STAT_IMPACT_VELOCITY:
-          strncpy(name, "particle_impact_velocity", 63);
+          strncpy(name, _lagr_stat_names[stat_type], 63);
           stat_type_def = -1;
           data_func = _boundary_impact_velocity;
           break;
         case CS_LAGR_STAT_FOULING_DIAMETER:
-          strncpy(name, "particle_fouling_diameter", 63);
+          strncpy(name, _lagr_stat_names[stat_type], 63);
           stat_type_def = -1;
           data_func = _boundary_fouling_diameter;
           w_data_func = _boundary_fouling_weight;
           break;
         case CS_LAGR_STAT_FOULING_COKE_FRACTION:
-          strncpy(name, "particle_fouling_coke_fraction", 63);
+          strncpy(name, _lagr_stat_names[stat_type], 63);
           stat_type_def = -1;
           data_func = _boundary_fouling_coke_fraction;
           w_data_func = _boundary_fouling_weight;
@@ -4280,6 +4298,65 @@ cs_lagr_stat_type_to_attr_id(int  stat_type)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Determine a basic statistic type by its base name.
+ *
+ * \param[in]  name  particle statistics base name (without class id)
+ *
+ * \return  matching stat type id, or -1 if not found
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_lagr_stat_type_by_name(const char  *name)
+{
+  if (name == NULL)
+    return -1;
+
+  int attr;
+
+  const char *_name = name;
+
+  if (strncmp(name, "mean_", 5) == 0)
+    _name = name + 5;
+  else if (strncmp(name, "var_", 4) == 0)
+    _name = name + 4;
+
+  /* Check for specific statistical attributes first */
+
+  for (attr = 0; attr < CS_LAGR_STAT_ATTR; attr++) {
+    if (strcmp(_name, _lagr_stat_names[attr]) == 0)
+      return attr;
+  }
+
+  /* Check for particle attributes second */
+
+  if (strncmp(_name, "particle_", 9) != 0)
+    return -1;
+
+  _name += 9;
+
+  for (attr = 0; attr < CS_LAGR_N_ATTRIBUTES; attr++) {
+    if (strcmp(_name, cs_lagr_attribute_name[attr]) == 0)
+      return CS_LAGR_STAT_ATTR + attr;
+  }
+
+  /* Special case for multi-layer attributes */
+
+  cs_lagr_attribute_t attrs[] = {CS_LAGR_TEMPERATURE, CS_LAGR_COAL_MASS,
+                                 CS_LAGR_COKE_MASS, CS_LAGR_COAL_DENSITY};
+  for (int i = 0; i < 4; i++) {
+    attr = attrs[i];
+    if (strncmp(_name,
+                cs_lagr_attribute_name[attr],
+                strlen(cs_lagr_attribute_name[attr]) == 0))
+      return CS_LAGR_STAT_ATTR + attr;
+  }
+
+  return -1;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Map time step values array for Lagrangian statistics.
  *
  * If this function is not called, the field referenced by field pointer
@@ -4390,7 +4467,7 @@ cs_lagr_stat_initialize(void)
           if (stat_type == CS_LAGR_STAT_VOLUME_FRACTION) {
 
             cs_lagr_stat_time_moment_define
-              ("particle_volume_fraction",
+              (_lagr_stat_names[stat_type],
                CS_MESH_LOCATION_CELLS,
                stat_type,
                m_type,

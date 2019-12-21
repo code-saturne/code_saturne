@@ -329,22 +329,24 @@ class XMLElement:
         return d
 
 
-    def xmlGetAttribute(self, attr):
+    def xmlGetAttribute(self, attr, default=None):
         """
         Return the value of the XMLElement node attribute.
-        Crash if the searched attribute does not exist.
+        Crash if the searched attribute does not exist and no default is provided.
         """
         if not self.el.hasAttribute(attr):
-            node = self.__str__()
-            attr = attr.encode(sys.stdout.encoding,'replace')
-            msg = "There is an error in with the elementNode: \n\n" \
-                  + node + "\n\nand the searching attribute: \n\n" \
-                  + attr + "\n\nThe application will finish."
-            self.__errorExit(msg)
+            if default == None:
+                node = self.__str__()
+                attr = attr.encode(sys.stdout.encoding,'replace')
+                msg = "ElementNode: \n\n" \
+                      + node + "\n\nis missing attribute: \n\n" \
+                      + attr + "\n\nThe application will finish."
+                self.__errorExit(msg)
+            return default
+
         else:
             a = self.el.getAttributeNode(attr)
-
-        return _encode(a.value)
+            return _encode(a.value)
 
 
     def xmlSetAttribute(self, **kwargs):
@@ -1042,6 +1044,18 @@ class XMLElement:
             self._inst(node).xmlRemoveNode()
 
         log.debug("xmlRemoveChild-> %s %s" % (tag, self.__xmlLog()))
+
+
+    def xmlRemoveChildren(self):
+        """
+        Remove all chldren.
+        Each element of the returned list is an instance of the XMLElement
+        class.
+        """
+        childNodeList = []
+        while self.el.hasChildNodes():
+            oldChild = self.el.removeChild(self.el.firstChild)
+            oldChild.unlink()
 
 
     def xmlNormalizeWhitespace(self, text):

@@ -4930,10 +4930,16 @@ cs_gui_time_moments(void)
         m_c_id[j] = 0;
       }
 
-      else {
+      else if (f != NULL) {
         m_f_id[j] = f->id;
         m_c_id[j] = idim;
       }
+
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  _("Time moment \"%s\"\n"
+                    "requires undefined field \"%s\"."),
+                  m_name, f_name);
 
     }
 
