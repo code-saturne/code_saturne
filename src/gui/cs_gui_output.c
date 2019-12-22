@@ -304,11 +304,13 @@ void CS_PROCF (cspstb, CSPSTB) (cs_int_t        *ipstdv)
       ipstdv[3] = 1;
     bool post_b_temp = _surfacic_variable_post("boundary_temperature", true);
     /* activate by default using GUI; ignore for non-temperature variable
-       when preperties not present in GUI, as this implies the GUI was not used
+       when properties not present in GUI, or the thermal model is not
+       set in the GUI, as this implies the GUI was probably not used
        and we cannot determine easily whether enthalpy to temperature
        conversion is available */
     if (cs_glob_thermal_model->itherm != CS_THERMAL_MODEL_TEMPERATURE) {
-      if (cs_tree_find_node_simple(cs_glob_tree, "property") == NULL)
+      if (   cs_tree_find_node_simple(cs_glob_tree, "property") == NULL
+          || cs_gui_thermal_model() <= 0)
         post_b_temp = false;
     }
     if (post_b_temp) {
