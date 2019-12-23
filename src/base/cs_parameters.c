@@ -109,11 +109,14 @@ BEGIN_C_DECLS
         - 0: arithmetic (default)
   \var  cs_space_disc_t::imrgra
         type of gradient reconstruction
-        - 0: iterative process
+        - 0: Green-Gauss with iterative handling of non-orthogonalities
         - 1: standard least squares method
         - 2: least squares method with extended neighborhood
         - 3: least squares method with reduced extended neighborhood
-        - 4: iterative process initialized by the least squares method
+        - 5: Green-Gauss with least squares gradient face values
+        - 6: Green-Gauss with least squares gradient over extended neighborhood face values
+        - 7: Green-Gauss with face values based on cell to vertex interpolation
+
   \var  cs_space_disc_t::iflxmw
         method to compute interior mass flux due to ALE mesh velocity
         - 0: based on nodes displacement
@@ -361,7 +364,7 @@ BEGIN_C_DECLS
   \var  cs_var_cal_opt_t::epsrgr
         \anchor epsrgr
         For each unknown variable, relative precision for the iterative gradient
-        reconstruction.\n Useful for all the unknowns when \ref imrgra = 0 or 4.
+        reconstruction.\n Useful for all the unknowns when \ref imrgra = 0.
 
   \var  cs_var_cal_opt_t::climgr
         \anchor climgr
@@ -481,7 +484,7 @@ static cs_var_cal_opt_t _var_cal_opt =
   .isstpc = 1,
   .nswrgr = 100,
   .nswrsm = 1,
-  .imrgra = 0,
+  .imrgra = 4,
   .imligr = -1,
   .ircflu = 1,
   .iwgrec = 0,
@@ -502,7 +505,7 @@ static cs_var_cal_opt_t _var_cal_opt =
 static cs_space_disc_t  _space_disc =
 {
   .imvisf = 0,
-  .imrgra = 0,
+  .imrgra = 4,
   .iflxmw = 0
 };
 
