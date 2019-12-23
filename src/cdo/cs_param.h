@@ -444,8 +444,12 @@ typedef enum {
  * \var CS_PARAM_PRECOND_NONE
  * No preconditioner
  *
- * \var CS_PARAM_PRECOND_BJACOB
- * Block Jacobi
+ * \var CS_PARAM_PRECOND_BJACOB_ILU0
+ * Block Jacobi with an ILU zero fill-in in each block
+ *
+ * \var CS_PARAM_PRECOND_BJACOB_SGS
+ * Block Jacobi with a symmetric Gauss-Seidel in each block (rely on
+ * Eisenstat's trick with PETsc)
  *
  * \var CS_PARAM_PRECOND_AMG
  * Algebraic multigrid preconditioner (additional options may be set using
@@ -498,7 +502,8 @@ typedef enum {
 
   CS_PARAM_PRECOND_NONE,
 
-  CS_PARAM_PRECOND_BJACOB,
+  CS_PARAM_PRECOND_BJACOB_ILU0,
+  CS_PARAM_PRECOND_BJACOB_SGS,
   CS_PARAM_PRECOND_AMG,
   CS_PARAM_PRECOND_AMG_BLOCK,
   CS_PARAM_PRECOND_AS,          /*!< Only with PETSc */

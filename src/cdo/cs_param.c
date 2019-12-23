@@ -309,8 +309,11 @@ cs_param_get_precond_name(cs_param_precond_type_t  precond)
     return  "None";
     break;
 
-  case CS_PARAM_PRECOND_BJACOB:
-    return  "Block-Jacobi";
+  case CS_PARAM_PRECOND_BJACOB_ILU0:
+    return  "Block-Jacobi with ILU0 in each block";
+    break;
+  case CS_PARAM_PRECOND_BJACOB_SGS:
+    return  "Block-Jacobi with symmetric Gauss-Seidel in each block";
     break;
   case CS_PARAM_PRECOND_AMG:
     return  "Algebraic.MultiGrid";

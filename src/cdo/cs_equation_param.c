@@ -191,7 +191,8 @@ _petsc_set_pc_type(cs_param_sles_t    slesp,
     PCSetType(pc, PCJACOBI);
     break;
 
-  case CS_PARAM_PRECOND_BJACOB:
+  case CS_PARAM_PRECOND_BJACOB_ILU0:
+  case CS_PARAM_PRECOND_BJACOB_SGS:
     PCSetType(pc, PCBJACOBI);
     break;
 
@@ -527,7 +528,7 @@ _petsc_setup_hook(void   *context,
 #if defined(PETSC_HAVE_HYPRE)
       slesp.solver_class = CS_PARAM_SLES_CLASS_HYPRE;
 #else
-      slesp.precond = CS_PARAM_PRECOND_BJACOB;
+      slesp.precond = CS_PARAM_PRECOND_BJACOB_ILU0;
       cs_base_warn(__FILE__, __LINE__);
       cs_log_printf(CS_LOG_DEFAULT,
                     " %s: Eq. %s: Modify the requested preconditioner to"
@@ -538,7 +539,7 @@ _petsc_setup_hook(void   *context,
     }
     else if (slesp.precond == CS_PARAM_PRECOND_SSOR) {
 
-      slesp.precond = CS_PARAM_PRECOND_BJACOB;
+      slesp.precond = CS_PARAM_PRECOND_BJACOB_SGS;
       cs_base_warn(__FILE__, __LINE__);
       cs_log_printf(CS_LOG_DEFAULT,
                     " %s: Eq. %s: Modify the requested preconditioner to"
@@ -809,6 +810,8 @@ _petsc_block_jacobi_hook(void     *context,
                            pc,
                            &xyz_subksp);
 
+  KSPSetUp(ksp);
+
   /* Predefined settings when using block-ILU as a preconditioner */
   PC  _pc;
   for (PetscInt id = 0; id < 3; id++) {
@@ -822,10 +825,25 @@ _petsc_block_jacobi_hook(void     *context,
     }
     else {
 
+      PC  _subpc;
+      KSP *_subksp;
+
       PCSetType(_pc, PCBJACOBI); /* Default for the block is an ILU(0) */
-      PCFactorSetLevels(_pc, 0);
-      PCFactorSetReuseOrdering(_pc, PETSC_TRUE);
-      PCFactorSetMatOrderingType(_pc, MATORDERING1WD);
+      KSPSetUp(_ksp);
+      PCBJacobiGetSubKSP(_pc, NULL, NULL, &_subksp);
+      KSPSetType(_subksp[0], KSPPREONLY);
+      KSPGetPC(_subksp[0], &_subpc);
+
+      if (slesp.precond == CS_PARAM_PRECOND_BJACOB_SGS)
+        PCSetType(_subpc, PCEISENSTAT);
+      else if (slesp.precond == CS_PARAM_PRECOND_BJACOB_ILU0) {
+        PCFactorSetLevels(_pc, 0);
+        PCFactorSetReuseOrdering(_pc, PETSC_TRUE);
+        PCFactorSetMatOrderingType(_pc, MATORDERING1WD);
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid preconditioner.",__func__);
 
     }
 
@@ -1474,8 +1492,12 @@ _set_key(const char            *label,
     else if (strcmp(keyval, "jacobi") == 0)
       eqp->sles_param.precond = CS_PARAM_PRECOND_DIAG;
     else if (strcmp(keyval, "block_jacobi") == 0 ||
+             strcmp(keyval, "block_jacobi_ilu0") == 0 ||
              strcmp(keyval, "jacobi_block") == 0)
-      eqp->sles_param.precond = CS_PARAM_PRECOND_BJACOB;
+      eqp->sles_param.precond = CS_PARAM_PRECOND_BJACOB_ILU0;
+    else if (strcmp(keyval, "block_jacobi_sgs") == 0 ||
+             strcmp(keyval, "block_jacobi_ssor") == 0)
+      eqp->sles_param.precond = CS_PARAM_PRECOND_BJACOB_SGS;
     else if (strcmp(keyval, "poly1") == 0)
       eqp->sles_param.precond = CS_PARAM_PRECOND_POLY1;
     else if (strcmp(keyval, "poly2") == 0)
@@ -2125,7 +2147,8 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp)
                   "%s: Invalid amg type for an AMG by block.", __func__);
 
     }
-    else if (slesp.precond == CS_PARAM_PRECOND_BJACOB && eqp->dim > 1)
+    else if ((slesp.precond == CS_PARAM_PRECOND_BJACOB_ILU0 ||
+              slesp.precond == CS_PARAM_PRECOND_BJACOB_SGS) && eqp->dim > 1)
       cs_sles_petsc_define(slesp.field_id,
                            NULL,
                            MATMPIAIJ,

@@ -435,7 +435,8 @@ _petsc_get_pc_type(const cs_param_sles_t    slesp)
   case CS_PARAM_PRECOND_DIAG:
     return PCJACOBI;
 
-  case CS_PARAM_PRECOND_BJACOB:
+  case CS_PARAM_PRECOND_BJACOB_ILU0:
+  case CS_PARAM_PRECOND_BJACOB_SGS:
     return PCBJACOBI;
 
   case CS_PARAM_PRECOND_SSOR:
