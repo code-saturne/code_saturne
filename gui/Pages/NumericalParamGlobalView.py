@@ -94,7 +94,7 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         self.modelGradientType.addItem(self.tr("Green-Gauss with vertex interpolated face values"),
                                        'green_vtx')
 
-        self.modelExtNeighbors = ComboModel(self.comboBoxExtNeighbors, 7, 1)
+        self.modelExtNeighbors = ComboModel(self.comboBoxExtNeighbors, 5, 1)
         self.modelExtNeighbors.addItem(self.tr("Automatic"), 'default')
         self.modelExtNeighbors.addItem(self.tr("None (face adjacent only)"), 'none')
         self.modelExtNeighbors.addItem(self.tr("Full (all vertex adjacent)"), 'complete')
