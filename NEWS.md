@@ -1,5 +1,5 @@
-Release 6.0.1 (Unreleased)
---------------------------
+Release 6.0.1 (December 23 2019)
+--------------------------------
 
 User changes:
 
