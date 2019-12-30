@@ -774,7 +774,7 @@ subroutine mo_phim_s (z,dlmo,coef)
   b=2.5d0
   x=z * dlmo
 
-  coef=1.d0+a*(x+(x**b)*((1.d0+x**b)**((1.d0-b)/b)))/(x+(1.d0+x**b)**(1./b))
+  coef=1.d0+a*(x+(x**b)*((1.d0+x**b)**((1.d0-b)/b)))/(x+(1.d0+x**b)**(1.d0/b))
 
 end subroutine mo_phim_s
 
@@ -1074,6 +1074,7 @@ subroutine mo_compute_from_thermal_flux(z,z0,du,flux,tm,gredu,dlmo,ustar)
   double precision coef_mom
   double precision prec_lmo,prec_ustar,prec_tstar,arr_lmo
   double precision num, denom
+  double precision :: dlmoclip = 0.05d0
   integer icompt
 
   ! Precision initialisation
@@ -1117,9 +1118,9 @@ subroutine mo_compute_from_thermal_flux(z,z0,du,flux,tm,gredu,dlmo,ustar)
   endif
 
   ! Clipping dlmo (|LMO| < 20m  ie 1/|LMO| > 0.05 m^-1)
-  if (abs(dlmo).ge.0.05d0) then
-    if (dlmo.ge.0.d0) dlmo=0.05d0
-    if (dlmo.le.0.d0) dlmo=-0.05d0
+  if (abs(dlmo).ge.dlmoclip) then
+    if (dlmo.ge.0.d0) dlmo =   dlmoclip
+    if (dlmo.le.0.d0) dlmo = - dlmoclip
   endif
 
   ! Evaluate universal functions
@@ -1176,6 +1177,7 @@ subroutine mo_compute_from_thermal_diff(z,z0,du,dt,tm,gredu,dlmo,ustar)
   double precision coef_mom,coef_moh
   double precision prec_lmo,prec_ustar,prec_tstar,arr_lmo
   double precision num, denom
+  double precision :: dlmoclip = 0.05d0
   integer icompt
 
   ! Precision initialisation
@@ -1224,10 +1226,10 @@ subroutine mo_compute_from_thermal_diff(z,z0,du,dt,tm,gredu,dlmo,ustar)
     dlmo = 0.d0 !FIXME
   endif
 
-  ! Clipping LMO
-  if (abs(dlmo).ge.0.05d0) then
-    if (dlmo.ge.0.d0) dlmo= 0.05d0
-    if (dlmo.le.0.d0) dlmo=-0.05d0
+  ! Clipping dlmo (|LMO| < 20m  ie 1/|LMO| > 0.05 m^-1)
+  if (abs(dlmo).ge.dlmoclip) then
+    if (dlmo.ge.0.d0) dlmo =   dlmoclip
+    if (dlmo.le.0.d0) dlmo = - dlmoclip
   endif
 
   ! Evaluate universal functions

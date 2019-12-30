@@ -500,7 +500,6 @@ hybrid_turb  = 0
 !        IGRHOK = 1
 igrhok = 0
 igrake = 1
-iwallt = 0
 iclkep = 0
 irijnu = 0
 irijrb = 0

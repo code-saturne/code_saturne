@@ -371,13 +371,14 @@ do ii = 1, nscal
   endif
 enddo
 
-! Boundary roughness
+! Boundary roughness (may be already created by the atmospheric module)
 if (iwallf.eq.5.or.iwallf.eq.6) then
-  call add_boundary_property_field_owner('boundary_roughness', &
-                                         'Boundary Roughness', &
-                                         iflid)
-endif
+  idim1  = 1
+  itycat = FIELD_INTENSIVE + FIELD_PROPERTY
+  ityloc = 3 ! boundary faces
 
+  call field_find_or_create('boundary_roughness', itycat, ityloc, idim1, iflid)
+endif
 
 ! Van Driest damping
 if (idries.eq.-1) then

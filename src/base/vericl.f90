@@ -120,6 +120,7 @@ integer          nstrij, nsurij, nstov2
 integer          nstuv2, nstokw, nstukw
 integer          nstunu, nstonu
 integer          nstusc
+integer          f_id_rough, f_id_t_rough
 integer          iis, icodcu, icodcv, icodcw, icodck, icodce
 integer          icodcn
 integer          icodcp, icodcf, icodca, icodom
@@ -128,10 +129,13 @@ integer          ipp, iokcod, iok
 integer          icodni(2), icodvi(3), icodpp(2), icodtb(8), icodsc(2)
 integer          icodvf(2), icoduv(3), icodct(11), icodus(4)
 
+double precision, dimension(:), pointer :: bpro_roughness
+double precision, dimension(:), pointer :: bpro_roughness_t
+
 !===============================================================================
 
 !===============================================================================
-! 1.  INITIALISATIONS
+! 1. Initialisations
 !===============================================================================
 
 ! Initialize variables to avoid compiler warnings
@@ -156,6 +160,10 @@ do ipp = 1, 4
   icodus(ipp) = -1
 enddo
 
+call field_get_id_try("boundary_roughness", f_id_rough)
+if (f_id_rough.ge.0) call field_get_val_s(f_id_rough, bpro_roughness)
+call field_get_id_try("boundary_thermal_roughness", f_id_t_rough)
+if (f_id_t_rough.ge.0) call field_get_val_s(f_id_t_rough, bpro_roughness_t)
 
 !===============================================================================
 ! 2.  VERIFICATION DE LA CONSISTANCE DES CL
@@ -285,15 +293,24 @@ do ifac = 1, nfabor
     nstvit = nstvit + 1
   endif
 
-  ! --- verification que la rugosite est initialisee si icodl=6
-  if(icodcu.eq.6 .and. rcodcl(ifac,iu,3).lt.epzero)then
-    if (itypfb(ifac).gt.0) then
-      itypfb(ifac) = -itypfb(ifac)
+  ! --- Check roughness if rough wall function
+  if (icodcu.eq.6) then
+
+    iok = 0
+    if ((f_id_rough.eq.-1)) then
+      iok = 1
+    else if (bpro_roughness(ifac).le.0.d0) then
+      iok = 1
     endif
-    icodvi(1) = -6
-    icodvi(2) = icodcl(ifac,iw)
-    icodvi(3) = -1
-    nstvit = nstvit + 1
+    if (iok .ge. 1) then
+      if (itypfb(ifac).gt.0) then
+        itypfb(ifac) = -itypfb(ifac)
+      endif
+      icodvi(1) = -6
+      icodvi(2) = icodcl(ifac,iw)
+      icodvi(3) = -1
+      nstvit = nstvit + 1
+    endif
   endif
 
 enddo
@@ -622,77 +639,66 @@ elseif (iturb.eq.70) then
 
 endif
 
-! --- Conditions admissibles pour les scalaires
-if(nscal.ge.1) then
+! Admissible conditions for additional transporter variables
+! (scalars or vectors)
+if (nscal.ge.1) then
   do iis = 1,nscal
     ivar = isca(iis)
     call field_get_dim(ivarfl(ivar), f_dim)
-    if (f_dim.eq.1) then
-      do ifac = 1, nfabor
-        if(icodcl(ifac,ivar).ne. 1.and.                             &
-           icodcl(ifac,ivar).ne. 2.and.                             &
-           icodcl(ifac,ivar).ne. 3.and.                             &
-           icodcl(ifac,ivar).ne. 5.and.                             &
-           icodcl(ifac,ivar).ne.12.and.                             &
-           icodcl(ifac,ivar).ne.13.and.                             &
-           icodcl(ifac,ivar).ne. 6 ) then
-          if (itypfb(ifac).gt.0) then
-            itypfb(ifac) = -itypfb(ifac)
-          endif
-          icodsc(1) = ivar
-          icodsc(2) = icodcl(ifac,ivar)
-          nstosc = nstosc + 1
-        endif
-        if(icodcl(ifac,ivar).eq. 5.and.                             &
-           iscavr(iis).gt.0        ) then
-          if (itypfb(ifac).gt.0) then
-            itypfb(ifac) = -itypfb(ifac)
-          endif
-          icodvf(1) = ivar
-          icodvf(2) = icodcl(ifac,ivar)
-          nstovf = nstovf + 1
-        endif
-        if(icodcl(ifac,ivar).eq. 6.and.                             &
-           iscavr(iis).gt.0        ) then
-          if (itypfb(ifac).gt.0) then
-            itypfb(ifac) = -itypfb(ifac)
-          endif
-          icodvf(1) = ivar
-          icodvf(2) = icodcl(ifac,ivar)
-          nstovf = nstovf + 1
-        endif
-  ! --- verification que la rugosite scalaire est initialisee si icodl=6
-        if(icodcl(ifac,ivar).eq.6.and.                              &
-           rcodcl(ifac,iv,3).lt.epzero)then
-          if (itypfb(ifac).gt.0) then
-            itypfb(ifac) = -itypfb(ifac)
-          endif
-          icodsc(1) = -6
-          icodsc(2) = icodcl(ifac,ivar)
-          nstosc = nstosc + 1
-        endif
-      enddo
-    else ! additional vector variables
-      do ifac = 1, nfabor
-        if(icodcl(ifac,ivar).ne. 1.and.                             &
+    do ifac = 1, nfabor
+      if ((icodcl(ifac,ivar).ne. 1.and.                             &
            icodcl(ifac,ivar).ne. 2.and.                             &
            icodcl(ifac,ivar).ne. 3.and.                             &
            icodcl(ifac,ivar).ne. 4.and.                             &
            icodcl(ifac,ivar).ne. 5.and.                             &
+           icodcl(ifac,ivar).ne. 6.and.                             &
            icodcl(ifac,ivar).ne.11.and.                             &
+           icodcl(ifac,ivar).ne.12.and.                             &
            icodcl(ifac,ivar).ne.13.and.                             &
-           icodcl(ifac,ivar).ne.14.and.                             &
-           icodcl(ifac,ivar).ne. 6 ) then
-          if (itypfb(ifac).gt.0) then
-            itypfb(ifac) = -itypfb(ifac)
-          endif
-          icodsc(1) = ivar
-          icodsc(2) = icodcl(ifac,ivar)
-          nstosc = nstosc + 1
+           icodcl(ifac,ivar).ne.14)                                 &
+           ! Only for scalars
+           .or. ( icodcl(ifac,ivar).eq.12.and. f_dim.gt.1)          &
+           ! Only for vectors
+           .or. ( icodcl(ifac,ivar).eq. 4.and. f_dim.eq.1)          &
+           .or. ( icodcl(ifac,ivar).eq.11.and. f_dim.eq.1)          &
+           .or. ( icodcl(ifac,ivar).eq.14.and. f_dim.eq.1)) then
+        if (itypfb(ifac).gt.0) then
+          itypfb(ifac) = -itypfb(ifac)
         endif
-  ! --- verification que la rugosite scalaire est initialisee si icodl=6
-        if(icodcl(ifac,ivar).eq.6.and.                              &
-           rcodcl(ifac,iv,3).lt.epzero)then
+        icodsc(1) = ivar
+        icodsc(2) = icodcl(ifac,ivar)
+        nstosc = nstosc + 1
+      endif
+      if(icodcl(ifac,ivar).eq. 5.and.                             &
+         iscavr(iis).gt.0        ) then
+        if (itypfb(ifac).gt.0) then
+          itypfb(ifac) = -itypfb(ifac)
+        endif
+        icodvf(1) = ivar
+        icodvf(2) = icodcl(ifac,ivar)
+        nstovf = nstovf + 1
+      endif
+      if(icodcl(ifac,ivar).eq. 6.and.                             &
+         iscavr(iis).gt.0        ) then
+        if (itypfb(ifac).gt.0) then
+          itypfb(ifac) = -itypfb(ifac)
+        endif
+        icodvf(1) = ivar
+        icodvf(2) = icodcl(ifac,ivar)
+        nstovf = nstovf + 1
+      endif
+
+      ! --- Check roughness if rough wall function
+      if(icodcl(ifac,ivar).eq.6)then
+
+        iok = 0
+        if ((f_id_t_rough.eq.-1)) then
+          iok = 1
+        else if (bpro_roughness_t(ifac).le.0.d0) then
+          iok = 1
+        endif
+        if (iok .ge. 1) then
+
           if (itypfb(ifac).gt.0) then
             itypfb(ifac) = -itypfb(ifac)
           endif
@@ -700,8 +706,8 @@ if(nscal.ge.1) then
           icodsc(2) = icodcl(ifac,ivar)
           nstosc = nstosc + 1
         endif
-      enddo
-    endif ! dim
+      endif
+    enddo
   enddo
 endif
 
@@ -1282,7 +1288,7 @@ if(iok.ne.0) then
   call sync_bc_err(nstvit, 3, icodvi)
   if (nstvit.ne.0) then
     if (icodvi(1) .eq. -6) then
-      chaine = 'rugosity'
+      chaine = 'roughness'
     else
       call field_get_label(ivarfl(icodvi(1)), chaine)
     endif
@@ -1349,7 +1355,7 @@ if(iok.ne.0) then
   call sync_bc_err(nstosc, 2, icodsc)
   if (nstosc.ne.0) then
     if (icodsc(1) .eq. -6) then
-      chaine = 'rugosity'
+      chaine = 'roughness'
     else
       call field_get_label(ivarfl (icodsc(1)), chaine)
     endif

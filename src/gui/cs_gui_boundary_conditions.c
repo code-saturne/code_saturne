@@ -1474,7 +1474,7 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
                                                  bz->elt_ids);
     else if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
       if (boundaries->rough[izone] >= 0.0)
-        wall_type = 6;
+        wall_type = 6;//TODO remove and use all roughness wall function
       else
         wall_type = 5;
     }
@@ -2237,20 +2237,19 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
         int ivarv = cs_field_get_key_int(fv, var_key_id) -1;
 
         iwall = CS_ROUGHWALL;
+        cs_field_t *f_roughness = cs_field_by_name_try("boundary_roughness");
+        cs_field_t *f_roughness_t = cs_field_by_name_try("boundary_thermal_roughness");
 
-        /* Roughness value is stored in Velocity_U (z0) */
-        /* Remember: rcodcl(elt_id, ivar, 1) -> rcodcl[k][j][i]
-           = rcodcl[ k*dim1*dim2 + j*dim1 + i] */
+        /* Roughness value (z0) */
         for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
           cs_lnum_t face_id = bz->elt_ids[elt_id];
-          cs_lnum_t idx = 2 * n_b_faces * (*nvar) + ivarv * n_b_faces + face_id;
-          rcodcl[idx] = boundaries->rough[izone];
+          assert(f_roughness != NULL);
+          f_roughness->val[face_id] = boundaries->rough[izone];
 
-          /* Roughness value is also stored in Velocity_V for eventual scalar
-           * (even if there is no scalar). In this case rugd = rugt. */
-          cs_lnum_t idx2 = 2 * n_b_faces * (*nvar)
-                         + (ivarv + 1) * n_b_faces + face_id;
-          rcodcl[idx2] = boundaries->rough[izone];
+          /* Thermal Roughness value.
+           * In this case thermal roughness is equal to the roughness. */
+          if (f_roughness_t != NULL)
+            f_roughness_t->val[face_id] = boundaries->rough[izone];
         }
       }
 

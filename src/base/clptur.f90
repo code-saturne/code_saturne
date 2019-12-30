@@ -86,8 +86,7 @@
 !>                               - rcodcl(2) value of the exterior exchange
 !>                                 coefficient (infinite if no exchange)
 !>                               - rcodcl(3) value flux density
-!>                                 (negative if gain) in w/m2 or roughness
-!>                                 in m if icodcl=6
+!>                                 (negative if gain) in w/m2
 !>                                 -# for the velocity \f$ (\mu+\mu_T)
 !>                                    \gradv \vect{u} \cdot \vect{n}  \f$
 !>                                 -# for the pressure \f$ \Delta t
@@ -137,6 +136,7 @@ use field
 use lagran
 use turbomachinery
 use cs_c_bindings
+use atincl
 
 !===============================================================================
 
@@ -161,6 +161,7 @@ integer          modntl
 integer          iuntur, f_dim
 integer          nlogla, nsubla, iuiptn
 integer          f_id_rough, f_id, iustar
+integer          f_id_uet, f_id_uk
 
 double precision rnx, rny, rnz
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
@@ -168,7 +169,9 @@ double precision utau, upx, upy, upz, usn
 double precision uiptn, uiptmn, uiptmx
 double precision uetmax, uetmin, ukmax, ukmin, yplumx, yplumn
 double precision tetmax, tetmin, tplumx, tplumn
-double precision uk, uet, nusury, yplus, dplus
+double precision uk, uet, nusury, yplus, dplus, yk
+double precision gredu, temp
+double precision cfnnu, cfnns, cfnnk, cfnne
 double precision sqrcmu, ek
 double precision xnuii, xnuit, xmutlm, mut_lm_dmut
 double precision rcprod
@@ -184,18 +187,29 @@ double precision visci(3,3), fikis, viscis, distfi
 double precision fcoefa(6), fcoefb(6), fcofaf(6), fcofbf(6), fcofad(6), fcofbd(6)
 double precision rxx, rxy, rxz, ryy, ryz, rzz, rnnb
 double precision rttb, alpha_rnn
-double precision roughness
+double precision cpp
 double precision sigmak, sigmae
+double precision liqwt, totwt
+double precision rough_d, duplus, uplus
+double precision rough_t
+double precision dtplus, yplus_t
+double precision coef_mom
+double precision one_minus_ri
+double precision dlmo,dt,tm,flux
 
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr, ustar
-double precision, dimension(:), pointer :: bfpro_roughness
+double precision, dimension(:), pointer :: bpro_rough_d
+double precision, dimension(:), pointer :: bpro_rough_t
+double precision, dimension(:), pointer :: f_uet, f_uk
 double precision, dimension(:), allocatable :: byplus, bdplus, buk
-double precision, dimension(:), pointer :: cvar_k, cvar_ep
+double precision, dimension(:), allocatable, target :: buet, bcfnns_loc
+double precision, dimension(:), pointer :: cvar_k, cvar_ep, bcfnns
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
 double precision, dimension(:), pointer :: cvar_r12, cvar_r13, cvar_r23
 double precision, dimension(:,:), pointer :: cvar_rij
 
+double precision, dimension(:), pointer :: cvar_totwt, cvar_t, cpro_liqwt
 double precision, dimension(:,:), pointer :: coefau, cofafu, visten
 double precision, dimension(:,:,:), pointer :: coefbu, cofbfu
 double precision, dimension(:), pointer :: coefa_k, coefb_k, coefaf_k, coefbf_k
@@ -241,15 +255,18 @@ type(var_cal_opt) :: vcopt_u, vcopt_rij, vcopt_ep
 
 interface
 
-  subroutine clptur_scalar(iscal, isvhb, icodcl, rcodcl,        &
-                           byplus, bdplus, buk, hbord, theipb,  &
-                           tetmax , tetmin , tplumx , tplumn)
+  subroutine clptur_scalar(iscal  , isvhb   , icodcl  , rcodcl  ,     &
+                           byplus , bdplus  , buk     , buet    ,     &
+                           ustar  , bcfnns  ,                         &
+                           hbord  , theipb  ,                         &
+                           tetmax , tetmin  , tplumx  , tplumn  )
 
     implicit none
     integer          iscal, isvhb
     integer, pointer, dimension(:,:) :: icodcl
     double precision, pointer, dimension(:,:,:) :: rcodcl
     double precision, dimension(:) :: byplus, bdplus, buk
+    double precision, dimension(:) :: buet, ustar, bcfnns
     double precision, pointer, dimension(:) :: hbord, theipb
     double precision tetmax, tetmin, tplumx, tplumn
 
@@ -290,13 +307,40 @@ utau = 1.d0
 ! --- Constants
 sqrcmu = sqrt(cmu)
 
-yplbr => null()
-bfpro_roughness => null()
+! --- Correction factors for stratification (used in atmospheric models)
+cfnns = 1.d0
+cfnnk = 1.d0
+cfnne = 1.d0
+
+bpro_rough_d => null()
+bpro_rough_t => null()
 
 call field_get_id_try("boundary_roughness", f_id_rough)
-if (f_id_rough.ge.0) call field_get_val_s(f_id_rough, bfpro_roughness)
+if (f_id_rough.ge.0) then
+  call field_get_val_s(f_id_rough, bpro_rough_d)
 
+  ! same thermal roughness if not specified
+  call field_get_val_s(f_id_rough, bpro_rough_t)
+endif
+
+call field_get_id_try("boundary_thermal_roughness", f_id_rough)
+if (f_id_rough.ge.0) then
+  call field_get_val_s(f_id_rough, bpro_rough_t)
+endif
+
+f_uet => null()
+f_uk => null()
+
+call field_get_id_try("boundary_ustar", f_id_uet)
+if (f_id_uet.ge.0) call field_get_val_s(f_id_uet, f_uet)
+call field_get_id_try("boundary_uk", f_id_uk)
+if (f_id_uk.ge.0) call field_get_val_s(f_id_uk, f_uk)
+
+
+! pointers to y+ if saved
+yplbr => null()
 if (iyplbr.ge.0) call field_get_val_s(iyplbr, yplbr)
+
 if (itytur.eq.3 .and. idirsm.eq.1) call field_get_val_v(ivsten, visten)
 
 ustar => null()
@@ -306,6 +350,9 @@ ustar => null()
 call field_get_id_try('ustar', iustar)
 if (iustar.ge.0) then
   call field_get_val_s(iustar, ustar)
+else
+  allocate(buet(nfabor))
+  ustar => buet
 endif
 
 ! --- Gradient and flux boundary conditions
@@ -578,6 +625,29 @@ allocate(byplus(nfabor))
 allocate(bdplus(nfabor))
 allocate(buk(nfabor))
 
+!Anas : Adaptation pour l'atmospherique
+call field_get_id_try("non_neutral_scalar_correction", f_id)
+if (f_id.ge.0) then
+  call field_get_val_s(f_id, bcfnns)
+else
+  allocate(bcfnns_loc(nfabor))
+  bcfnns => bcfnns_loc
+endif
+
+cvar_t => null()
+cvar_totwt => null()
+cpro_liqwt => null()
+
+if (ippmod(iatmos).ge.1) then
+  call field_get_val_s(ivarfl(isca(iscalt)), cvar_t)
+  if (ippmod(iatmos).eq.2) then
+    call field_get_val_s(ivarfl(isca(iymw)), cvar_totwt)
+    call field_get_val_s(iliqwt, cpro_liqwt)
+  endif
+endif
+
+
+
 ! --- Loop on boundary faces
 do ifac = 1, nfabor
 
@@ -706,6 +776,9 @@ do ifac = 1, nfabor
     !      in 1 or 2 velocity scales
     !      and uk based on ek
 
+
+    if (abs(utau).le.epzero) utau = epzero
+
     nusury = visclc/(distbf*romc)
     xnuii = visclc/romc
     xnuit = visctc/romc
@@ -742,23 +815,152 @@ do ifac = 1, nfabor
     endif
 
     if (f_id_rough.ge.0) then
-      roughness = bfpro_roughness(ifac)
+      rough_d = bpro_rough_d(ifac)
     else
-      roughness = 0.d0
+      rough_d = 0.d0
     endif
 
     call wallfunctions &
   ( iwallf, ifac  ,                                        &
-    xnuii , xnuit , utau  , distbf, roughness, rnnb, ek,   &
+    xnuii , xnuit , utau  , distbf, rough_d, rnnb, ek,     &
     iuntur, nsubla, nlogla,                                &
     uet   , uk    , yplus , ypup  , cofimp, dplus )
+
+    ! Louis or Monin Obukhov wall function for atmospheric flows
+    if (ippmod(iatmos).ge.1) then
+      ! Louis
+      if (iwalfs.ne.3) then
+
+        ! Compute reduced gravity for non horizontal walls :
+        gredu = gx*rnx + gy*rny + gz*rnz
+
+        temp = cvar_t(iel)
+        totwt = 0.d0
+        liqwt = 0.d0
+
+        if (ippmod(iatmos).eq.2) then
+          totwt = cvar_totwt(iel)
+          liqwt = cpro_liqwt(iel)
+        endif
+
+        yk = distbf * uk / xnuii
+        ! 1/U+ for neutral
+        duplus = ypup / yk
+
+        rough_t = bpro_rough_t(ifac)
+        ! 1/T+
+        ! "y+_t" tends to "y/rough_t" for rough regime and to "y+k"
+        ! times a shift for smooth regime
+        !
+        ! Rough regime reads:
+        !   T+ = 1/kappa ln(y/rough_t) = 1/kappa ln(y/zeta) + 8.5
+        !                              = 1/kappa ln[y/zeta * exp(8.5 kappa)]
+        !
+        ! Note zeta_t = rough_t * exp(8.5 kappa)
+        !
+        ! Smooth regime reads:
+        !   T+ = 1/kappa ln(y uk/nu) + 5.2 = 1/kappa ln[y uk*exp(5.2 kappa) / nu]
+        !
+        ! Mixed regime reads:
+        !   T+ = 1/kappa ln[y uk*exp(5.2 kappa)/(nu + alpha uk zeta)]
+        !      = 1/kappa ln[y uk*exp(5.2 kappa)/(nu + alpha uk rough_t * exp(8.5 kappa))]
+        !      = 1/kappa ln[y uk*exp(5.2 kappa)/(nu + alpha uk rough_t * exp(8.5 kappa))]
+        ! with
+        !   alpha * exp(8.5 kappa) / exp(5.2 kappa) = 1
+        ! ie
+        !   alpha = exp(-(8.5-5.2) kappa) = 0.25
+        ! so
+        !   T+ = 1/kappa ln[y uk*exp(5.2 kappa)/(nu + uk rough_t * exp(5.2 kappa))]
+        !      = 1/kappa ln[y+k / (exp(-5.2 kappa) + uk rough_t/nu)]
+        !
+
+        ! shifted y+
+        yplus_t = yk / (exp(-xkappa * 5.2d0) + uk *rough_t / xnuii)! FIXME use log constant
+        ! 1/T+ for neutral
+        dtplus =  xkappa / log(yplus_t)
+
+        call atmcls &
+        !==========
+      ( ifac   ,                                                       &
+        utau   , rough_d, duplus , dtplus ,                            &
+        yplus_t,                                                       &
+        uet    ,                                                       &
+        gredu  ,                                                       &
+        cfnns  , cfnnk  , cfnne  ,                                     &
+        dlmo   ,                                                       &
+        temp   , totwt  , liqwt  ,                                     &
+        icodcl , rcodcl )
+
+      ! Monin Obukhov wall function
+      else
+
+        ! Compute local LMO
+        if (ippmod(iatmos).ge.1) then
+          gredu = gx*rnx + gy*rny + gz*rnz
+
+          ! TODO should be preproc_theta0
+          tm = theipb(ifac)
+
+          if (icodcl(ifac,isca(iscalt)).eq.6) then
+
+            dt = theipb(ifac)-rcodcl(ifac,isca(iscalt),1)
+            call mo_compute_from_thermal_diff(distbf,rough_d,utau,dt,tm,gredu, &
+                                              dlmo,uet)
+
+          elseif (icodcl(ifac,isca(iscalt)).eq.3) then
+            if (icp.ge.0) then
+              cpp = cpro_cp(iel)
+            else
+              cpp = cp0
+            endif
+
+            flux = rcodcl(ifac, isca(iscalt),3)/romc/cpp
+            call mo_compute_from_thermal_flux(distbf,rough_d,utau,flux,tm,gredu, &
+                                              dlmo,uet)
+
+          endif
+
+        else
+
+          ! No temperature delta: neutral
+          call mo_compute_from_thermal_diff(distbf,rough_d,utau,0.d0,0.d0,0.d0, &
+                                            dlmo,uet)
+
+        endif
+      endif
+      ! Dimensionless velocity, recomputed and therefore may take stability
+      ! into account
+      uplus = utau / uet
+      ! y+/U+ for non neutral is recomputed
+      ypup = yk / max(uplus, epzero)
+
+      ! Take stability into account for the turbulent velocity scale
+      call mo_phim (distbf+rough_d,dlmo,coef_mom)
+      one_minus_ri = 1.d0-(distbf+rough_d) * dlmo/coef_mom
+      if (one_minus_ri.gt.0) then
+        uk = uk / one_minus_ri**0.25d0
+
+        ! Epsilon should be modified as well to get P+G = P(1-Ri) = epsilon
+        ! P = -R_tn dU/dn = uk^2 uet Phi_m / (kappa z)
+        cfnne = one_minus_ri * coef_mom
+        ! Nothing done for the moment for really high stability
+      else
+        cfnne = 1.d0
+      endif
+
+    endif
+    ! Store u_star and uk if needed
+    if(f_id_uet.ge.0) then
+      f_uet(ifac) = uet
+      f_uk(ifac) = uk
+    endif
 
     uetmax = max(uet,uetmax)
     uetmin = min(uet,uetmin)
     ukmax  = max(uk,ukmax)
     ukmin  = min(uk,ukmin)
-    yplumx = max(yplus-dplus,yplumx)
-    yplumn = min(yplus-dplus,yplumn)
+    yplumx = max(yplus,yplumx)
+    yplumn = min(yplus,yplumn)
 
     if (iustar.ge.0) then
       ustar(ifac) = uet !TODO remove, this information is in cofaf cofbf
@@ -769,7 +971,7 @@ do ifac = 1, nfabor
     ! one boundary face
     if (itytur.eq.4.and.idries.eq.1) then
       if (visvdr(iel).lt.-900.d0) then
-        visct(iel) = visct(iel)*(1.d0-exp(-(yplus-dplus)/cdries))**2
+        visct(iel) = visct(iel)*(1.d0-exp(-(yplus)/cdries))**2
         visvdr(iel) = visct(iel)
         visctc      = visct(iel)
       endif
@@ -777,7 +979,7 @@ do ifac = 1, nfabor
 
     ! Save yplus if post-processed or condensation modelling
     if (iyplbr.ge.0) then
-      yplbr(ifac) = yplus-dplus
+      yplbr(ifac) = yplus
     endif
 
     !===========================================================================
@@ -798,7 +1000,7 @@ do ifac = 1, nfabor
       !--------------------------
       if (itytur.eq.2.or.iturb.eq.60) then
 
-        xmutlm = xkappa*visclc*yplus
+        xmutlm = xkappa*visclc*(yplus + dplus)!FIXME should be efvisc...
         if (cell_is_active(iel).eq.1) then
           mut_lm_dmut = xmutlm/visctc
         else
@@ -808,10 +1010,10 @@ do ifac = 1, nfabor
         ! If yplus=0, uiptn is set to 0 to avoid division by 0.
         ! By the way, in this case: iuntur=0
         if (yplus.gt.epzero) then !TODO use iuntur.eq.1
-          rcprod = min(xkappa , max(1.0d0,sqrt(mut_lm_dmut))/yplus)
+          rcprod = min(xkappa , max(1.0d0,sqrt(mut_lm_dmut))/(yplus+dplus))!FIXME not valid for rough
 
-          uiptn  = utau + distbf*uet*uk*romc/xkappa/visclc*(       &
-               1.0d0/(2.0d0*yplus-dplus) - 2.0d0*rcprod )
+          uiptn  = utau - distbf*uet*uk*romc/xkappa/visclc*(       &
+               2.0d0*rcprod - 1.0d0/(2.0d0*yplus+dplus))
         else
           uiptn = 0.d0
         endif
@@ -833,7 +1035,7 @@ do ifac = 1, nfabor
           ! By the way, in this case: iuntur=0
           if (yplus.gt.epzero) then !FIXME use iuntur
             uiptn = utau - distbf*romc*uet*uk/xkappa/visclc                    &
-                                 *(2.0d0/yplus - 1.0d0/(2.0d0*yplus-dplus))
+              *(2.0d0/(yplus+dplus) - 1.0d0/(2.0d0*yplus+dplus))
           else
             uiptn = 0.d0
           endif
@@ -847,11 +1049,10 @@ do ifac = 1, nfabor
         uiptn  = utau - uet/xkappa*1.5d0
 
         ! If (mu+mut) becomes zero (dynamic models), an arbitrary value is set
-        ! (nul flux) but without any problems because the flux
+        ! (zero flux) but without any problems because the flux
         ! is really zero at this face.
         if (visctc+visclc.le.0) then
-          hflui = 0.d0 !FIXME
-
+          hflui = 0.d0
         endif
 
       ! --> v2f
@@ -958,7 +1159,7 @@ do ifac = 1, nfabor
             pimp = 0.d0
           endif
         endif
-
+        pimp = pimp * cfnnk
         hint = (visclc+visctc/sigmak)/distbf
 
         call set_dirichlet_scalar &
@@ -977,15 +1178,15 @@ do ifac = 1, nfabor
           pimp = pimp_lam
         else
           ! Use of wall functions
-          if (yplus > epzero) then
+          if (yplus .gt. epzero) then
             pimp_turb = 5.d0*uk**4*romc/  &
-                        (xkappa*visclc*(yplus+dplus))
+                        (xkappa*visclc*yplus)
 
             ! Blending function, from JF Wald PhD (2016)
-            fct_bl    = exp(-0.674d-3*(yplus+dplus)**3.d0)
+            fct_bl    = exp(-0.674d-3*yplus**3.d0)
             pimp      = pimp_lam*fct_bl + pimp_turb*(1.d0-fct_bl)
-            fep = exp(-(yplus/4.d0)**1.5d0)
-            dep = 1.d0- exp(-(yplus/9.d0)**2.1d0)
+            fep = exp(-((yplus+dplus)/4.d0)**1.5d0)
+            dep = 1.d0- exp(-((yplus+dplus)/9.d0)**2.1d0)
             pimp      = fep*pimp_lam + (1.d0-fep)*dep*pimp_turb
           else
             pimp = pimp_lam
@@ -993,7 +1194,7 @@ do ifac = 1, nfabor
         endif
 
         hint = (visclc+visctc/sigmae)/distbf
-
+        pimp = pimp * cfnne
         call set_dirichlet_scalar &
                !====================
            ( coefa_ep(ifac), coefaf_ep(ifac),             &
@@ -1021,7 +1222,7 @@ do ifac = 1, nfabor
         endif
 
         hint = (visclc+visctc/sigmak)/distbf
-
+        pimp = pimp * cfnnk
         call set_dirichlet_scalar &
              !====================
            ( coefa_k(ifac), coefaf_k(ifac),             &
@@ -1034,13 +1235,13 @@ do ifac = 1, nfabor
 
           pimp_lam = 2.0d0*visclc/romc*cvar_k(iel)/distbf**2
 
-          if (yplus > epzero) then
+          if (yplus.gt.epzero) then
             pimp_turb = 5.d0*uk**4*romc/        &
-                        (xkappa*visclc*(yplus+dplus))
+                        (xkappa*visclc*yplus)
 
             ! Blending between wall and homogeneous layer
-            fep       = exp(-(yplus/4.d0)**1.5d0)
-            dep       = 1.d0- exp(-(yplus/9.d0)**2.1d0)
+            fep       = exp(-((yplus+dplus)/4.d0)**1.5d0)
+            dep       = 1.d0- exp(-((yplus+dplus)/9.d0)**2.1d0)
             pimp      = fep*pimp_lam + (1.d0-fep)*dep*pimp_turb
           else
             pimp = pimp_lam
@@ -1050,7 +1251,7 @@ do ifac = 1, nfabor
 
           pimp = 2.0d0*visclc/romc*cvar_k(iel)/distbf**2
         end if
-
+        pimp = pimp * cfnne
         call set_dirichlet_scalar &
              !====================
            ( coefa_ep(ifac), coefaf_ep(ifac),             &
@@ -1071,7 +1272,7 @@ do ifac = 1, nfabor
           pimp = 0.d0
         endif
         hint = (visclc+visctc/sigmak)/distbf
-
+        pimp = pimp * cfnnk
         call set_dirichlet_scalar &
              !====================
            ( coefa_k(ifac), coefaf_k(ifac),             &
@@ -1087,15 +1288,15 @@ do ifac = 1, nfabor
         ! If yplus=0, uiptn is set to 0 to avoid division by 0.
         ! By the way, in this case: iuntur=0
         if (yplus.gt.epzero.and.iuntur.eq.1) then !FIXME use only iuntur
-          efvisc = visclc/romc + exp(-xkappa*(8.5-5.2)) * roughness * uk
+          xnuii = visclc/romc
           pimp = distbf*4.d0*uk**5/           &
-              (xkappa*efvisc**2*(yplus+dplus)**2)
+              (xkappa*xnuii**2*(yplus+2.d0*dplus)**2)
 
           qimp = -pimp*hint !TODO transform it, it is only to be fully equivalent
         else
           qimp = 0.d0
         endif
-
+        pimp = pimp * cfnne
         call set_neumann_scalar &
              !==================
            ( coefa_ep(ifac), coefaf_ep(ifac),             &
@@ -1205,7 +1406,7 @@ do ifac = 1, nfabor
           if (irijco.eq.1) then
             coefa_rij(isou, ifac) = - (  eloglo(jj,1)*eloglo(kk,2)         &
                                        + eloglo(jj,2)*eloglo(kk,1))        &
-                                      * alpha_rnn * sqrt(rnnb * rttb)
+                                      * alpha_rnn * sqrt(rnnb * rttb)*cfnnk
             coefaf_rij(isou, ifac)      = -hint * coefa_rij(isou, ifac)
             coefad_rij(isou, ifac)      = 0.d0
             do ii = 1, 6
@@ -1239,7 +1440,7 @@ do ifac = 1, nfabor
 
           fcoefa(isou) = fcoefa(isou)                                   &
                          - (  eloglo(jj,1)*eloglo(kk,2)                 &
-                            + eloglo(jj,2)*eloglo(kk,1))*bldr12*uet*uk
+                            + eloglo(jj,2)*eloglo(kk,1))*bldr12*uet*uk*cfnnk
 
         ! In the viscous sublayer or for EBRSM: zero Reynolds' stresses
         else
@@ -1379,9 +1580,9 @@ do ifac = 1, nfabor
         ! Si yplus=0, on met coefa a 0 directement pour eviter une division
         ! par 0.
         if (yplus.gt.epzero.and.iuntur.eq.1) then
-          efvisc = visclc/romc + exp(-xkappa*(8.5-5.2)) * roughness * uk
+          xnuii = visclc/romc
           pimp = distbf*4.d0*uk**5/           &
-                (xkappa*efvisc**2*(yplus+dplus)**2)
+                (xkappa*xnuii**2*(yplus+2.d0*dplus)**2)
         else
           pimp = 0.d0
         endif
@@ -1392,7 +1593,7 @@ do ifac = 1, nfabor
         if (iclptr.eq.1) then !TODO not available for k-eps
 
           qimp = -pimp*hint !TODO transform it, it is only to be fully equivalent
-
+          pimp = pimp * cfnne
            call set_neumann_scalar &
            !==================
          ( coefa_ep(ifac), coefaf_ep(ifac),             &
@@ -1405,7 +1606,7 @@ do ifac = 1, nfabor
         else
 
           pimp = pimp + cvar_ep(iel)
-
+          pimp = pimp * cfnne
           call set_dirichlet_scalar &
                !====================
              ( coefa_ep(ifac), coefaf_ep(ifac),             &
@@ -1422,14 +1623,14 @@ do ifac = 1, nfabor
 
           pimp_lam = 2.d0*visclc*xkip/(distbf**2*romc)
 
-          if (yplus > epzero) then
+          if (yplus.gt.epzero) then
             pimp_turb = 5.d0*uk**4*romc/        &
-                        (xkappa*visclc*(yplus+dplus))
+                        (xkappa*visclc*(yplus+2.d0*dplus))
 
             ! Blending between wall and homogeneous layer
             ! from JF Wald PhD (2016)
-            fep       = exp(-(yplus/4.d0)**1.5d0)
-            dep       = 1.d0- exp(-(yplus/9.d0)**2.1d0)
+            fep       = exp(-((yplus+dplus)/4.d0)**1.5d0)
+            dep       = 1.d0- exp(-((yplus+dplus)/9.d0)**2.1d0)
             pimp      = fep*pimp_lam + (1.d0-fep)*dep*pimp_turb
           else
             pimp = pimp_lam
@@ -1440,7 +1641,7 @@ do ifac = 1, nfabor
           xkip = 0.5d0*(rijipb(ifac,1)+rijipb(ifac,2)+rijipb(ifac,3))
           pimp = 2.d0*visclc*xkip/(distbf**2*romc)
         end if
-
+        pimp = pimp * cfnne
         call set_dirichlet_scalar &
              !====================
            ( coefa_ep(ifac), coefaf_ep(ifac),             &
@@ -1453,11 +1654,11 @@ do ifac = 1, nfabor
         !-----------------------------
         if(iwallf.ne.0) then
 
-          if(yplus > epzero) then
-            ypsd  = yplus /2.d0
+          if(yplus.gt.epzero) then
+            ypsd  = (yplus+dplus)/2.d0
             falpg = 16.d0 /(16.d0+4.d-2*ypsd)**2 * exp(- ypsd / (16.d0 + 4.d-2*ypsd) )
-            falpv = 1.d0 - exp(- yplus / (16.d0 + 4.d-2*yplus) )
-            pimp  = falpv - yplus*falpg
+            falpv = 1.d0 - exp(- (yplus+dplus) / (16.d0 + 4.d-2*(yplus+dplus)) )
+            pimp  = falpv - (yplus+dplus)*falpg
           else
             pimp = 0.d0
           end if
@@ -1466,7 +1667,7 @@ do ifac = 1, nfabor
         end if
 
         hint = 1.d0/distbf
-
+        pimp = pimp * cfnne
         call set_dirichlet_scalar &
              !====================
            ( coefa_al(ifac), coefaf_al(ifac),             &
@@ -1627,18 +1828,18 @@ do ifac = 1, nfabor
         ! If we are outside the viscous sub-layer (either naturally, or
         ! artificialy using scalable wall functions)
 
-        if (yplus > epzero) then
+        if (yplus.gt.epzero) then
           pimp_turb = 5.d0*uk**2*romc/           &
-                     (sqrcmu*xkappa*visclc*(yplus+dplus))
+                     (sqrcmu*xkappa*visclc*(yplus+2.d0*dplus))
 
           ! Use gamma function of Kader to weight
           !between high and low Reynolds meshes
 
-          gammap    = -0.01d0*(yplus+dplus)**4.d0/(1.d0+5.d0*(yplus+dplus))
+          gammap = -0.01d0*(yplus+2.d0*dplus)**4.d0/(1.d0+5.d0*(yplus+2.d0*dplus))
 
-          pimp      = pimp_lam*exp(gammap) + exp(1.d0/gammap)*pimp_turb
+          pimp = pimp_lam*exp(gammap) + exp(1.d0/gammap)*pimp_turb
         else
-          pimp      = pimp_lam
+          pimp = pimp_lam
         endif
 
         call set_dirichlet_scalar &
@@ -1657,14 +1858,15 @@ do ifac = 1, nfabor
         ! If we are outside the viscous sub-layer (either naturally, or
         ! artificialy using scalable wall functions)
 
-        if (yplus > epzero) then
+        if (yplus.gt.epzero) then
           pimp_turb = distbf*4.d0*uk**3*romc**2/           &
-                     (sqrcmu*xkappa*visclc**2*(yplus+dplus)**2)
+                     (sqrcmu*xkappa*visclc**2*(yplus+2.d0*dplus)**2)
 
           ! Use gamma function of Kader to weight
           !between high and low Reynolds meshes
 
-          gammap    = -0.01d0*(yplus+dplus)**4.d0/(1.d0+5.d0*(yplus+dplus))
+          gammap    = -0.01d0*(yplus+2.d0*dplus)**4.d0 &
+            / (1.d0+5.d0*(yplus+2.d0*dplus))
 
           pimp      = pimp_lam*exp(gammap) + exp(1.d0/gammap)*pimp_turb
         else
@@ -1704,6 +1906,8 @@ do ifac = 1, nfabor
     byplus(ifac) = yplus
     bdplus(ifac) = dplus
     buk(ifac) = uk
+    ustar(ifac) = uet
+    bcfnns(ifac) = cfnns
 
   endif
   ! Test on the presence of a smooth wall (End)
@@ -1728,10 +1932,11 @@ do iscal = 1, nscal
 
     if (f_dim.eq.1) then
 
-      call clptur_scalar(iscal, isvhb, icodcl, rcodcl,              &
-                         byplus, bdplus, buk,                       &
-                         hbord, theipb,                             &
-                         tetmax, tetmin, tplumx, tplumn)
+      call clptur_scalar(iscal  , isvhb , icodcl  , rcodcl  ,       &
+                         byplus , bdplus, buk     , buet    ,       &
+                         ustar  , bcfnns          ,                 &
+                         hbord  , theipb          ,                 &
+                         tetmax , tetmin, tplumx  , tplumn  )
 
     ! Vector field
     else
@@ -1764,6 +1969,9 @@ if (irangp.ge.0) then
     call parmax (tplumx)
   endif
 endif
+
+if (allocated(buet)) deallocate(buet)
+if (allocated(bcfnns_loc)) deallocate(bcfnns_loc)
 
 !===============================================================================
 ! 9. Writings
@@ -1981,8 +2189,7 @@ end subroutine
 !>                               - rcodcl(2) value of the exterior exchange
 !>                                 coefficient (infinite if no exchange)
 !>                               - rcodcl(3) value flux density
-!>                                 (negative if gain) in w/m2 or roughness
-!>                                 in m if icodcl=6
+!>                                 (negative if gain) in w/m2
 !>                                 -# for the velocity \f$ (\mu+\mu_T)
 !>                                    \gradv \vect{u} \cdot \vect{n}  \f$
 !>                                 -# for the pressure \f$ \Delta t
@@ -2004,9 +2211,9 @@ end subroutine
 !_______________________________________________________________________________
 
 subroutine clptur_scalar &
- ( iscal  , isvhb  , icodcl ,                                     &
-   rcodcl ,                                                       &
-   byplus , bdplus , buk    ,                                     &
+ ( iscal  , isvhb  , icodcl , rcodcl  ,                           &
+   byplus , bdplus , buk    , buet    ,                           &
+   ustar  , bcfnns ,                                              &
    hbord  , theipb ,                                              &
    tetmax , tetmin , tplumx , tplumn )
 
@@ -2044,7 +2251,8 @@ integer          iscal, isvhb
 integer, pointer, dimension(:,:) :: icodcl
 
 double precision, pointer, dimension(:,:,:) :: rcodcl
-double precision, dimension(:) :: byplus, bdplus, buk
+double precision, dimension(:) :: byplus, bdplus, buk, buet
+double precision, dimension(:) :: ustar , bcfnns
 double precision, pointer, dimension(:) :: hbord, theipb
 double precision tetmax, tetmin, tplumx, tplumn
 
@@ -2054,6 +2262,7 @@ integer          ivar, f_id, b_f_id, isvhbl
 integer          f_id_ut, f_id_al
 integer          ifac, iel, isou, jsou
 integer          iscacp, ifcvsl, itplus, itstar
+integer          f_id_rough
 
 double precision cpp, rkl, prdtl, visclc, romc, tplus, cofimp, cpscv
 double precision distfi, distbf, fikis, hint_al, heq, hflui, hext
@@ -2063,12 +2272,15 @@ double precision rinfiv(3), pimpv(3)
 double precision visci(3,3), hintt(6)
 double precision turb_schmidt, exchange_coef
 double precision mut_lm_dmut
+double precision rough_t
+double precision efvisc
 
 character(len=80) :: fname
 
 double precision, dimension(:), pointer :: val_s, bvar_s, crom, viscls
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cpro_cv
 
+double precision, dimension(:), pointer :: bpro_rough_t
 double precision, dimension(:), pointer :: bfconv, bhconv
 double precision, dimension(:), pointer :: tplusp, tstarp, dist_theipb
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp, hextp
@@ -2215,6 +2427,19 @@ if (iscal.eq.iscalt) then
     allocate(dist_theipb(nfabor))
     call cs_ic_field_dist_data_by_face_id(f_id, 1, theipb, dist_theipb)
   endif
+endif
+
+bpro_rough_t => null()
+
+call field_get_id_try("boundary_roughness", f_id_rough)
+if (f_id_rough.ge.0) then
+  ! same thermal roughness if not specified
+  call field_get_val_s(f_id_rough, bpro_rough_t)
+endif
+
+call field_get_id_try("boundary_thermal_roughness", f_id_rough)
+if (f_id_rough.ge.0) then
+  call field_get_val_s(f_id_rough, bpro_rough_t)
 endif
 
 if (vcopt%icoupl.gt.0) then
@@ -2391,14 +2616,27 @@ do ifac = 1, nfabor
 
       hint(ifac) = viscis/surfbn(ifac)/fikis
     endif
+    if (f_id_rough.ge.0) then
+      rough_t = bpro_rough_t(ifac)
+    else
+      rough_t = 0.d0
+    endif
 
     ! wall function and Dirichlet or Neumann on the scalar
     if (iturb.ne.0.and.(icodcl(ifac,ivar).eq.5.or.icodcl(ifac,ivar).eq.3)) then
+      ! Note: to make things clearer yplus is always
+      ! "y uk /nu" even for rough modelling. And the roughness correction is
+      ! multiplied afterwards where needed.
+      call hturbp(iwalfs,xnuii,prdtl,turb_schmidt,distbf,rough_t,uk,yplus,dplus,hflui,ypth)
 
-      call hturbp(iwalfs,prdtl,turb_schmidt,yplus,dplus,hflui,ypth)
-      ! Compute (y+-d+)/T+ *PrT
+      ! Correction for non-neutral condition in atmospheric flows
+      hflui = hflui * bcfnns(ifac)
+
+      ! Compute yk/T+ *PrT, take stability into account
       yptp(ifac) = hflui/prdtl
-      ! Compute lambda/y * (y+-d+)/T+
+      ! Compute
+      ! lambda/y * Pr_l *yk/T+ = lambda / nu * Pr_l * uk / T+ = rho cp uk / T+
+      ! so "Pr_l * yk/T+" is the correction factor compared to a laminar profile
       hflui = rkl/distbf *hflui
 
     else
@@ -2493,10 +2731,10 @@ do ifac = 1, nfabor
             mut_lm_dmut = 0.d0
           endif
 
-          rcprod = min(xkappa , max(1.0d0,sqrt(mut_lm_dmut))/yplus)
+          rcprod = min(xkappa , max(1.0d0,sqrt(mut_lm_dmut))/(yplus+dplus))
 
           cofimp = 1.d0 - yptp(ifac)*turb_schmidt/xkappa*                   &
-                          (2.0d0*rcprod - 1.0d0/(2.0d0*yplus-dplus))
+                          (2.0d0*rcprod - 1.0d0/(2.0d0*yplus+dplus))
 
           ! In the viscous sub-layer
         else
@@ -2663,9 +2901,15 @@ do ifac = 1, nfabor
         endif
       endif
 
-      tet = phit/(romc*cpp*max(yplus-dplus, epzero)*xnuii/distbf)
+      if (f_id_rough.ge.0) then
+        rough_t = bpro_rough_t(ifac)
+      else
+        rough_t = 0.d0
+      endif
+
+      tet = phit/(romc*cpp*max(uk, epzero))
       ! T+ = (T_I - T_w) / Tet
-      tplus = max((yplus-dplus), epzero)/yptp(ifac)
+      tplus = max(yplus, epzero)/yptp(ifac)
 
       if (b_f_id.ge.0) bvar_s(ifac) = bvar_s(ifac) - tplus*tet
 
@@ -2725,8 +2969,7 @@ end subroutine
 !>                               - rcodcl(2) value of the exterior exchange
 !>                                 coefficient (infinite if no exchange)
 !>                               - rcodcl(3) value flux density
-!>                                 (negative if gain) in w/m2 or roughness
-!>                                 in m if icodcl=6
+!>                                 (negative if gain) in w/m2
 !>                                 -# for the velocity \f$ (\mu+\mu_T)
 !>                                    \gradv \vect{u} \cdot \vect{n}  \f$
 !>                                 -# for the pressure \f$ \Delta t
@@ -2770,6 +3013,7 @@ use field_operator
 use lagran
 use turbomachinery
 use cs_c_bindings
+use atincl
 
 !===============================================================================
 
@@ -2788,6 +3032,7 @@ double precision, dimension(:) :: byplus, bdplus, buk
 integer          ivar, f_id, isvhbl
 integer          ifac, iel
 integer          iscacp, ifcvsl
+integer          f_id_rough
 
 double precision cpp, rkl, prdtl, visclc, romc, cofimp
 double precision distbf, heq, yptp, hflui, hext
@@ -2795,7 +3040,9 @@ double precision yplus, dplus, rcprod, uk
 double precision visctc, xmutlm, ypth, xnuii, srfbnf
 double precision rcodcx, rcodcy, rcodcz, rcodcn, rnx, rny, rnz
 double precision turb_schmidt
+double precision rough_t
 
+double precision, dimension(:), pointer :: bpro_rough_t
 double precision, dimension(:), pointer :: crom, viscls
 double precision, dimension(:,:), pointer :: val_p_v
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, hextp
@@ -2849,6 +3096,20 @@ if (iscal.eq.isvhb) then
 endif
 
 ypth = 0.d0
+
+bpro_rough_t => null()
+
+call field_get_id_try("boundary_roughness", f_id_rough)
+if (f_id_rough.ge.0) then
+  ! same thermal roughness if not specified
+  call field_get_val_s(f_id_rough, bpro_rough_t)
+endif
+
+call field_get_id_try("boundary_thermal_roughness", f_id_rough)
+if (f_id_rough.ge.0) then
+  call field_get_val_s(f_id_rough, bpro_rough_t)
+endif
+
 
 if (vcopt%icoupl.gt.0) then
   call field_get_coupled_faces(f_id, cpl_faces)
@@ -2907,7 +3168,14 @@ do ifac = 1, nfabor
     ! wall function and Dirichlet or Neumann on the scalar
     if (iturb.ne.0.and.(icodcl(ifac,ivar).eq.5.or.icodcl(ifac,ivar).eq.3)) then
 
-      call hturbp(iwalfs,prdtl,turb_schmidt,yplus,dplus,hflui,ypth)
+      if (f_id_rough.ge.0) then
+        rough_t = bpro_rough_t(ifac)
+      else
+        rough_t = 0.d0
+      endif
+
+      !FIXME use Re* = rough_t * uk / nu ? * PrT ?
+      call hturbp(iwalfs,xnuii,prdtl,turb_schmidt,distbf,rough_t,uk,yplus,dplus,hflui,ypth)
       ! Compute (y+-d+)/T+ *PrT
       yptp = hflui/prdtl
       ! Compute lambda/y * (y+-d+)/T+
@@ -2999,11 +3267,11 @@ do ifac = 1, nfabor
       if (ityturt(iscal).ge.1) then
         ! In the log layer
         if (yplus.ge.ypth.and.iturb.ne.0) then
-          xmutlm = xkappa*visclc*yplus
-          rcprod = min(xkappa , max(1.0d0,sqrt(xmutlm/visctc))/yplus)
+          xmutlm = xkappa*visclc*(yplus+dplus)
+          rcprod = min(xkappa , max(1.0d0,sqrt(xmutlm/visctc))/(yplus+dplus))
 
           cofimp = 1.d0 - yptp*turb_schmidt/xkappa*                        &
-                  (2.0d0*rcprod - 1.0d0/(2.0d0*yplus-dplus))
+                  (2.0d0*rcprod - 1.0d0/(2.0d0*yplus+dplus))
 
           ! In the viscous sub-layer
         else

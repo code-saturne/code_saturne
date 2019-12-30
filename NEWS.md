@@ -178,6 +178,12 @@ User changes:
   the Reynolds tensor and/or the turbulent flux of an additional transported
   variable when performing an LES simulation.
 
+- Merge rough and smooth wall functions.
+  User setting of roughness is now using the dedicated fields
+  ("boundary_roughness" and "boundary_thermal_roughness").
+  Buoyancy modification for atmospheric flows (Louis) are also available for
+  dry and humid atmosphere for rough-smooth wall functions.
+
 Numerics and physical modelling:
 
 - Remove former slope test option for vector variable (component by component,

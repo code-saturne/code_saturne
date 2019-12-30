@@ -160,6 +160,7 @@ integer          iscal, clsyme
 integer          modntl
 integer          iuntur, iuiptn, f_id, iustar
 integer          kdflim
+integer          f_id_rough
 
 double precision rnx, rny, rnz
 double precision tx, ty, tz, txn, txn0, t2x, t2y, t2z
@@ -167,19 +168,21 @@ double precision utau, upx, upy, upz, usn
 double precision uiptn, uiptmn, uiptmx
 double precision uetmax, uetmin, ukmax, ukmin, yplumx, yplumn
 double precision tetmax, tetmin, tplumx, tplumn
+double precision dlmomax, dlmomin
 double precision uk, uet, yplus, uplus, phit
 double precision gredu, temp
-double precision cfnnu, cfnns, cfnnk, cfnne
+double precision cfnns, cfnnk, cfnne
 double precision sqrcmu, ek
 double precision xmutlm
 double precision rcprod, rcflux
 double precision hflui, hint, pimp, qimp
-double precision und0, deuxd0
 double precision eloglo(3,3), alpha(6,6)
 double precision rcodcx, rcodcy, rcodcz, rcodcn
 double precision visclc, visctc, romc  , distbf, srfbnf
 double precision cofimp
-double precision distb0, rugd  , ydep
+double precision distb0, rough_d  , ydep
+double precision duplus
+double precision dtplus, rough_t, yplus_t
 double precision dsa0
 double precision rinfiv(3)
 double precision visci(3,3), fikis, viscis, distfi
@@ -190,11 +193,15 @@ double precision rxx, rxy, rxz, ryy, ryz, rzz, rnnb
 double precision rttb, alpha_rnn, liqwt, totwt
 double precision cpp
 double precision sigmak, sigmae
+double precision coef_mom,coef_momm
+double precision one_minus_ri
+double precision dlmo,dt,tm,dist2,flux
 
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, yplbr, ustar
 double precision, dimension(:), allocatable :: byplus, buk
 double precision, dimension(:), allocatable, target :: buet, bcfnns_loc
+double precision, dimension(:), allocatable :: bdlmo
 
 double precision, dimension(:), pointer :: cvar_k, bcfnns
 double precision, dimension(:), pointer :: cvar_r11, cvar_r22, cvar_r33
@@ -203,7 +210,8 @@ double precision, dimension(:,:), pointer :: cvar_rij
 double precision, dimension(:), pointer :: cvara_nusa
 
 double precision, dimension(:), pointer :: cvar_totwt, cvar_t, cpro_liqwt
-double precision, dimension(:), pointer :: cpro_rugd, cpro_rugt
+double precision, dimension(:), pointer :: bpro_rough_d
+double precision, dimension(:), pointer :: bpro_rough_t
 double precision, dimension(:), pointer :: cpro_diff_lim_k
 double precision, dimension(:), pointer :: cpro_diff_lim_eps
 double precision, dimension(:), pointer :: cpro_diff_lim_rij
@@ -245,11 +253,6 @@ save             ntlast , iaff
 type(var_cal_opt) :: vcopt
 type(var_cal_opt) :: vcopt_rij, vcopt_ep
 
-double precision coef_mom,coef_momm
-double precision one_minus_ri
-double precision dlmo_loc,dt,tm,dist2,flux
-double precision, dimension(:), allocatable :: bdlmo_loc
-
 !===============================================================================
 ! Interfaces
 !===============================================================================
@@ -259,7 +262,7 @@ interface
   subroutine clptrg_scalar(iscal, isvhb, icodcl, rcodcl,              &
                            byplus, buk, buet, bcfnns, hbord, theipb,  &
                            tetmax , tetmin , tplumx , tplumn,         &
-                           bdlmo_loc)
+                           bdlmo)
 
     implicit none
     integer          iscal, isvhb
@@ -268,7 +271,7 @@ interface
     double precision, dimension(:) :: byplus, buk, buet, bcfnns
     double precision, pointer, dimension(:) :: hbord, theipb
     double precision tetmax, tetmin, tplumx, tplumn
-    double precision, dimension(:) :: bdlmo_loc
+    double precision, dimension(:) :: bdlmo
 
   end subroutine clptrg_scalar
 
@@ -294,14 +297,10 @@ utau = 1.d0
 sqrcmu = sqrt(cmu)
 
 ! --- Correction factors for stratification (used in atmospheric models)
-cfnnu=1.d0
-cfnns=1.d0
-cfnnk=1.d0
-cfnne=1.d0
-dlmo_loc=0.d0
-
-und0   = 1.d0
-deuxd0 = 2.d0
+cfnns = 1.d0
+cfnnk = 1.d0
+cfnne = 1.d0
+dlmo = 0.d0
 
 ! Alpha constant for a realisable BC for R12 with the SSG model
 alpha_rnn = 0.47d0
@@ -318,7 +317,7 @@ if (itytur.eq.3 .and. idirsm.eq.1) call field_get_val_v(ivsten, visten)
 ! Diffusion limiter
 call field_get_key_id("diffusion_limiter_id", kdflim)
 
-! --- Store wall friction velocity
+! --- Save wall friction velocity
 
 call field_get_id_try('ustar', iustar)
 if (iustar.ge.0) then !TODO remove, this information is in cofaf cofbf
@@ -328,7 +327,7 @@ else
   ustar => buet
 endif
 
-! --- Gradient and flux Boundary Conditions
+! --- Gradient and flux boundary conditions
 
 call field_get_coefa_v(ivarfl(iu), coefau)
 call field_get_coefb_v(ivarfl(iu), coefbu)
@@ -597,6 +596,11 @@ yplumn =  grand
 tetmax = -grand
 tetmin =  grand
 
+! min. and max. of inverse of MO length
+dlmomax = -grand
+dlmomin =  grand
+
+
 ! min. and max. of T+
 tplumx = -grand
 tplumn =  grand
@@ -615,7 +619,7 @@ endif
 ! Pointers to specific fields
 allocate(byplus(nfabor))
 allocate(buk(nfabor))
-allocate(bdlmo_loc(nfabor))
+allocate(bdlmo(nfabor))
 
 call field_get_id_try("non_neutral_scalar_correction", f_id)
 if (f_id.ge.0) then
@@ -628,18 +632,28 @@ endif
 cvar_t => null()
 cvar_totwt => null()
 cpro_liqwt => null()
-cpro_rugt => null()
+bpro_rough_d => null()
+bpro_rough_t => null()
+
+call field_get_id_try("boundary_roughness", f_id_rough)
+if (f_id_rough.ge.0) then
+  call field_get_val_s(f_id_rough, bpro_rough_d)
+
+  ! same thermal roughness if not specified
+  call field_get_val_s(f_id_rough, bpro_rough_t)
+endif
+
+call field_get_id_try("boundary_thermal_roughness", f_id_rough)
+if (f_id_rough.ge.0) then
+  call field_get_val_s(f_id_rough, bpro_rough_t)
+endif
+
 
 if (ippmod(iatmos).ge.1) then
   call field_get_val_s(ivarfl(isca(iscalt)), cvar_t)
   if (ippmod(iatmos).eq.2) then
     call field_get_val_s(ivarfl(isca(iymw)), cvar_totwt)
     call field_get_val_s(iliqwt, cpro_liqwt)
-
-    if (modsedi.eq.1.and.moddep.gt.0) then
-      call field_get_val_s_by_name('boundary_roughness', cpro_rugd)
-      call field_get_val_s_by_name('boundary_thermal_roughness', cpro_rugt)
-    endif
   endif
 endif
 
@@ -774,66 +788,13 @@ do ifac = 1, nfabor
 
     if (abs(utau).le.epzero) utau = epzero
 
-    ! rugd: rugosite de paroi pour les variables dynamiques
-    !       seule la valeur stockee pour iu est utilisee
-    rugd = rcodcl(ifac,iu,3)
-
-    ! FIXME This is only used for sedimentation velocity computation
-    if (ippmod(iatmos).eq.2) then
-      if (modsedi.eq.1.and.moddep.gt.0) then
-        cpro_rugd(ifac) = rugd
-      endif
-    endif
+    ! rough_d: roughness length scale for dynamics
+    rough_d = bpro_rough_d(ifac)
 
     ! NB: for rough walls, yplus is computed from the roughness and not uk.
-    yplus = distbf/rugd
+    yplus = distbf/rough_d
 
-    ! Pseudo shift of wall by rugd ((distbf+rugd)/rugd)
-    if (iwalfs.ne.3) then
-      uet = utau/log(yplus+1.d0)*xkappa
-      ! Dimensionless velocity
-      uplus = log(yplus+1.d0)/xkappa
-
-      ! Monin Obukhov wall function
-    else
-
-      ! Compute local LMO
-      if (ippmod(iatmos).ge.1) then
-        gredu = gx*rnx + gy*rny + gz*rnz
-
-        ! TODO should be preproc_theta0
-        tm = theipb(ifac)
-
-        if (icodcl(ifac,isca(iscalt)).eq.6) then
-
-          dt = theipb(ifac)-rcodcl(ifac,isca(iscalt),1)
-          call mo_compute_from_thermal_diff(distbf,rugd,utau,dt,tm,gredu, &
-                                            dlmo_loc,uet)
-
-        elseif (icodcl(ifac,isca(iscalt)).eq.3) then
-          if (icp.ge.0) then
-            cpp = cpro_cp(iel)
-          else
-            cpp = cp0
-          endif
-
-          flux = rcodcl(ifac, isca(iscalt),3)/romc/cpp
-          call mo_compute_from_thermal_flux(distbf,rugd,utau,flux,tm,gredu, &
-                                            dlmo_loc,uet)
-
-        endif
-
-      else
-
-        ! No temperature delta: neutral
-        call mo_compute_from_thermal_diff(distbf,rugd,utau,0.d0,0.d0,0.d0, &
-                                          dlmo_loc,uet)
-
-      endif
-      ! Dimensionless velocity
-      uplus = utau / uet
-    endif
-
+    ! Compute turbulent velocity scale
     if (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) then
       ek = cvar_k(iel)
     else if(itytur.eq.3) then
@@ -855,66 +816,120 @@ do ifac = 1, nfabor
         rzz = cvar_r33(iel)
       endif
       rnnb =   rnx * (rxx * rnx + rxy * rny + rxz * rnz) &
-        + rny * (rxy * rnx + ryy * rny + ryz * rnz) &
-        + rnz * (rxz * rnx + ryz * rny + rzz * rnz)
+             + rny * (rxy * rnx + ryy * rny + ryz * rnz) &
+             + rnz * (rxz * rnx + ryz * rny + rzz * rnz)
 
       rttb =   tx * (rxx * tx + rxy * ty + rxz * tz) &
-        + ty * (rxy * tx + ryy * ty + ryz * tz) &
-        + tz * (rxz * tx + ryz * ty + rzz * tz)
+             + ty * (rxy * tx + ryy * ty + ryz * tz) &
+             + tz * (rxz * tx + ryz * ty + rzz * tz)
     endif
 
-    if (iwallf.le.2) then
-      uk = uet
+    ! Neutral value, might be overwritten after
+    uk = cmu025*sqrt(ek)
 
-    ! Si iwallf= 3, 4 ou 5 on calcule uk et uet
+    ! Pseudo shift of wall by rough_d ((distbf+rough_d)/rough_d)
+    if (iwalfs.ne.3) then
+      ! ustar for neutral, may be modified after
+      uet = utau/log(yplus+1.d0)*xkappa
+      ! Dimensionless velocity, neutral wall function, may be modified after
+      uplus = log(yplus+1.d0)/xkappa
+
+      ! Atmospheric Louis wall functions
+      if (ippmod(iatmos).ge.1) then
+
+        ! Compute reduced gravity for non horizontal walls :
+        gredu = gx*rnx + gy*rny + gz*rnz
+
+        temp = cvar_t(iel)
+        totwt = 0.d0
+        liqwt = 0.d0
+
+        if (ippmod(iatmos).eq.2) then
+          totwt = cvar_totwt(iel)
+          liqwt = cpro_liqwt(iel)
+        endif
+
+        ! 1/U+ for neutral
+        duplus = 1.d0 / uplus
+
+        rough_t = bpro_rough_t(ifac)
+        yplus_t = distbf/rough_t
+        ! 1/T+
+        dtplus = xkappa/log((distbf+rough_t)/rough_t)
+
+        call atmcls &
+        !==========
+      ( ifac   ,                                                       &
+        utau   , rough_d, duplus , dtplus ,                            &
+        yplus_t,                                                       &
+        uet    ,                                                       &
+        gredu  ,                                                       &
+        cfnns  , cfnnk  , cfnne  ,                                     &
+        dlmo   ,                                                       &
+        temp   , totwt  , liqwt  ,                                     &
+        icodcl , rcodcl )
+
+      endif
+
+      ! Monin Obukhov wall function
     else
 
-      ! Neutral
-      uk = cmu025*sqrt(ek)
+      ! Compute local LMO
+      if (ippmod(iatmos).ge.1) then
+        gredu = gx*rnx + gy*rny + gz*rnz
 
-      ! Monin Obukhov
-      if (iwalfs.eq.3) then
-        call mo_phim (distbf+rugd,dlmo_loc,coef_mom)
-        one_minus_ri = 1.d0-(distbf+rugd) * dlmo_loc/coef_mom
-        if (one_minus_ri.gt.0) then
-          uk = uk / one_minus_ri**0.25d0
-        else
-          ! Nothing done for the moment for really high stability
+        ! TODO should be preproc_theta0
+        tm = theipb(ifac)
+
+        if (icodcl(ifac,isca(iscalt)).eq.6) then
+
+          dt = theipb(ifac)-rcodcl(ifac,isca(iscalt),1)
+          call mo_compute_from_thermal_diff(distbf,rough_d,utau,dt,tm,gredu, &
+                                            dlmo,uet)
+
+        elseif (icodcl(ifac,isca(iscalt)).eq.3) then
+          if (icp.ge.0) then
+            cpp = cpro_cp(iel)
+          else
+            cpp = cp0
+          endif
+
+          flux = rcodcl(ifac, isca(iscalt),3)/romc/cpp
+          call mo_compute_from_thermal_flux(distbf,rough_d,utau,flux,tm,gredu, &
+                                            dlmo,uet)
+
         endif
+
+      else
+
+        ! No temperature delta: neutral
+        call mo_compute_from_thermal_diff(distbf,rough_d,utau,0.d0,0.d0,0.d0, &
+                                          dlmo,uet)
+
+      endif
+
+      ! Take stability into account for the turbulent velocity scale
+      call mo_phim (distbf+rough_d,dlmo,coef_mom)
+      ! Ri = z/L / Phim
+      one_minus_ri = 1.d0-(distbf+rough_d) * dlmo/coef_mom
+      if (one_minus_ri.gt.0) then
+        uk = uk / one_minus_ri**0.25d0
+
+        ! Epsilon should be modified as well to get P+G = P(1-Ri) = epsilon
+        ! P = -R_tn dU/dn = uk^2 uet Phi_m / (kappa z)
+        cfnne = one_minus_ri * coef_mom
+        ! Nothing done for the moment for really high stability
+      else
+        cfnne = 1.d0
       endif
 
     endif
+    ! Dimensionless velocity, recomputed and therefore may take stability
+    ! into account
+    uplus = utau / uet
 
-    if (iwalfs.ne.3.and.ippmod(iatmos).ge.1) then
 
-      ! Compute reduced gravity for non horizontal walls :
-      gredu = gx*rnx + gy*rny + gz*rnz
-
-      temp = cvar_t(iel)
-      totwt = 0.d0
-      liqwt = 0.d0
-
-      if (ippmod(iatmos).eq.2) then
-        totwt = cvar_totwt(iel)
-        liqwt = cpro_liqwt(iel)
-
-        if (modsedi.eq.1.and.moddep.gt.0) then
-          cpro_rugt(ifac) = rcodcl(ifac,iv,3)
-        endif
-      endif
-
-      call atmcls &
-      !==========
-    ( ifac   ,                                                       &
-      utau   , yplus  ,                                              &
-      uet    ,                                                       &
-      gredu  ,                                                       &
-      cfnnu  , cfnns  , cfnnk  , cfnne  ,                            &
-      temp   , totwt  , liqwt  ,                                     &
-      icodcl , rcodcl )
-
-    endif
-
+    ! One velocity scale: set uk to uet
     if (iwallf.le.2) then
       uk = uet
     endif
@@ -925,6 +940,8 @@ do ifac = 1, nfabor
     ukmin  = min(uk,ukmin)
     yplumx = max(yplus,yplumx)
     yplumn = min(yplus,yplumn)
+    dlmomin= min(dlmo, dlmomin)
+    dlmomax= max(dlmo, dlmomax)
 
     ! save turbulent subgrid viscosity after van Driest damping in LES
     ! care is taken to not dampen it twice at boundary cells having more
@@ -960,43 +977,43 @@ do ifac = 1, nfabor
 
       if (visctc.gt.epzero) then
 
-        ! Pseudo decalage de la paroi de la distance rugd :
-        distb0=distbf+rugd
+        ! Pseudo shift of wall by rough_d ((distbf+rough_d)/rough_d)
+        distb0=distbf+rough_d
+        ! FIXME uk not modified for Louis yet....
         xmutlm = xkappa*uk*distb0*romc
 
         if (iwalfs.ne.3) then
           rcprod = distbf/distb0*max(1.d0,                                &
-                       2.d0*sqrt(xmutlm/visctc) - distb0/distbf/(2.d0+rugd/distb0))
+                       2.d0*sqrt(xmutlm/visctc) - distb0/distbf/(2.d0+rough_d/distb0))
 
-          rcflux = max(xmutlm,visctc)/(visclc+visctc)*distbf/distb0
-
-          ! modified for non neutral boundary layer (cfnnu)
-          ! FIXME: it should be uet/xkappa and not uk!
-          uiptn  = min(utau,max(utau - uk/xkappa*rcprod*cfnnu,0.d0))
+          ! Ground apparent velocity (for log only)
+          uiptn  = max(utau - uet/xkappa*rcprod,0.d0)
           iuntur = 1
 
           ! Coupled solving of the velocity components
           ! The boundary term for velocity gradient is implicit
-          cofimp  = max(1.d0 - 1.d0/(xkappa*uplus)*rcprod*cfnnu, 0.d0)
+          ! modified for non neutral boundary layer (in uplus)
+          cofimp  = max(1.d0 - 1.d0/(xkappa*uplus)*rcprod, 0.d0)
           ! The term (rho*uet*uk) is implicit
-          hflui = (visclc+visctc)/distbf/(xkappa*uplus)*rcflux*cfnnu
-
+          rcflux = max(xmutlm,visctc)/distb0 ! TODO merge with MO without this max
+          hflui = rcflux/(xkappa*uplus)
 
           !Monin Obukhov
         else
           ! Boundary condition on the velocity to have approximately the good
           ! turbulence production
-          call mo_phim(distbf+rugd,dlmo_loc,coef_mom)
-          call mo_phim(2.d0*distbf+rugd,dlmo_loc,coef_momm)
+          call mo_phim(distbf+rough_d,dlmo,coef_mom)
+          call mo_phim(2.d0*distbf+rough_d,dlmo,coef_momm)
           rcprod = 2.d0*distbf*sqrt(xkappa*uk*romc*coef_mom/visctc/distb0) &
-            - coef_momm/(2.d0+rugd/distbf)
+            - coef_momm/(2.d0+rough_d/distbf)
 
           ! Ground apparent velocity (for log only)
-          uiptn  = min(utau,max(utau - uet/xkappa*rcprod,0.d0))
+          uiptn  = max(utau - uet/xkappa*rcprod,0.d0)
           iuntur = 1
 
           ! Coupled solving of the velocity components
           ! The boundary term for velocity gradient is implicit
+          ! modified for non neutral boundary layer (in uplus)
           cofimp  = min(max(1.d0 - 1.d0/(xkappa*uplus)*rcprod,0.d0),1.d0)
           ! The term (rho*uet*uk) is implicit
           hflui = romc * uk / uplus
@@ -1104,7 +1121,7 @@ do ifac = 1, nfabor
     ! 4. Boundary conditions on k and epsilon
     !===========================================================================
 
-    ydep = distbf*0.5d0+rugd
+    ydep = distbf*0.5d0+rough_d
 
     if (itytur.eq.2) then
 
@@ -1552,7 +1569,7 @@ do ifac = 1, nfabor
 
     elseif (iturb.eq.70) then
 
-      dsa0 = rugd
+      dsa0 = rough_d ! FIXME is it the sand grain roughness or the length scale as here?
       hint = (visclc + vcopt%idifft*cvara_nusa(iel)*romc*dsa0/(distbf+dsa0) ) &
             / distbf / csasig
 
@@ -1571,7 +1588,7 @@ do ifac = 1, nfabor
     buk(ifac) = uk
     ustar(ifac) = uet
     bcfnns(ifac) = cfnns
-    bdlmo_loc(ifac) = dlmo_loc
+    bdlmo(ifac) = dlmo
 
   endif
   ! Test on the presence of a rough wall (End)
@@ -1592,7 +1609,7 @@ do iscal = 1, nscal
     call clptrg_scalar(iscal, isvhb, icodcl, rcodcl,              &
                        byplus, buk, ustar, bcfnns,                &
                        hbord, theipb,                             &
-                       tetmax, tetmin, tplumx, tplumn, bdlmo_loc)
+                       tetmax, tetmin, tplumx, tplumn, bdlmo)
   endif
 
 enddo
@@ -1619,7 +1636,7 @@ deallocate(byplus)
 deallocate(buk)
 if (allocated(buet)) deallocate(buet)
 if (allocated(bcfnns_loc)) deallocate(bcfnns_loc)
-deallocate(bdlmo_loc)
+deallocate(bdlmo)
 
 !===============================================================================
 ! 9. Writings
@@ -1643,7 +1660,13 @@ if (vcopt%iwarni.ge.0) then
     modntl = 1
   endif
 
-  if ((modntl.eq.0 .or. vcopt%iwarni.ge.2).and.iscalt.gt.0) then
+  if ((modntl.eq.0 .or. vcopt%iwarni.ge.2).and.iscalt.gt.0 &
+    .and.ippmod(iatmos).ge.1) then
+    write(nfecra,2012) &
+      uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,   &
+      tetmin, tetmax, tplumn, tplumx, dlmomin, dlmomax,        &
+      iuiptn,nsubla,nsubla+nlogla
+  else if ((modntl.eq.0 .or. vcopt%iwarni.ge.2).and.iscalt.gt.0) then
     write(nfecra,2011) &
          uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,   &
          tetmin, tetmax, tplumn, tplumx, iuiptn
@@ -1690,6 +1713,27 @@ endif
  '   Nb of reversal of the velocity at the wall   : ',I10      ,/,&
  '------------------------------------------------------------',  &
  /,/)
+
+ 2012 format(/,                                                   &
+ 3X,'** BOUNDARY CONDITIONS FOR ROUGH WALLS',/,             &
+ '   --------------------------------------',/,             &
+ '------------------------------------------------------------',/,&
+ '                                         Minimum     Maximum',/,&
+ '------------------------------------------------------------',/,&
+ '   Rel velocity at the wall uiptn : ',2E12.5                 ,/,&
+ '   Friction velocity        uet   : ',2E12.5                 ,/,&
+ '   Friction velocity        uk    : ',2E12.5                 ,/,&
+ '   Rough dimensionless dist yplus : ',2E12.5                 ,/,&
+ '   Friction thermal sca.    tstar : ',2E12.5                 ,/,&
+ '   Rough dim-less th. sca.  tplus : ',2E12.5                 ,/,&
+ '   Inverse Monin-Ob. length dlmo  : ',2E12.5                 ,/,&
+ '   ------------------------------------------------------'   ,/,&
+ '   Nb of reversal of the velocity at the wall   : ',I10      ,/,&
+ '   Nb of faces within the viscous sub-layer     : ',I10      ,/,&
+ '   Total number of wall faces                   : ',I10      ,/,&
+ '------------------------------------------------------------',  &
+ /,/)
+
 
 !----
 ! End
@@ -1752,7 +1796,7 @@ subroutine clptrg_scalar &
    rcodcl ,                                                       &
    byplus , buk    , buet   , bcfnns ,                            &
    hbord  , theipb ,                                              &
-   tetmax , tetmin , tplumx , tplumn, bdlmo_loc)
+   tetmax , tetmin , tplumx , tplumn, bdlmo)
 
 !===============================================================================
 ! Module files
@@ -1792,29 +1836,32 @@ double precision, pointer, dimension(:,:,:) :: rcodcl
 double precision, dimension(:) :: byplus, buk, buet, bcfnns
 double precision, pointer, dimension(:) :: hbord, theipb
 double precision tetmax, tetmin, tplumx, tplumn
-double precision, dimension(:) :: bdlmo_loc
+double precision, dimension(:) :: bdlmo
 
 ! Local variables
 
 integer          ivar, f_id, b_f_id, isvhbl
 integer          ifac, iel, isou, jsou
 integer          iscacp, ifcvsl, itplus, itstar
+integer          f_id_rough
 
 double precision cpp, rkl, prdtl, visclc, romc, tplus, cpscv
 double precision distfi, distbf, fikis, hint, heq, hflui, hext
 double precision yplus, phit, pimp, temp, tet, uk
 double precision viscis, visctc, cofimp
-double precision act, rugt
+double precision dtplus, rough_t
+double precision yplus_t
 double precision rinfiv(3), pimpv(3)
 double precision visci(3,3), hintt(6)
 double precision turb_schmidt, exchange_coef
 double precision rcprod
-double precision coef_mom,coef_moh,coef_mohh,dlmo_loc
+double precision coef_mom,coef_moh,coef_mohh,dlmo
 
 character(len=80) :: fname
 
 double precision, dimension(:), pointer :: val_s, bval_s, crom, viscls
 double precision, dimension(:), pointer :: viscl, visct, cpro_cp, cpro_cv
+double precision, dimension(:), pointer :: bpro_rough_t
 
 double precision, dimension(:), pointer :: bfconv, bhconv
 double precision, dimension(:), pointer :: tplusp, tstarp
@@ -1843,6 +1890,19 @@ if (ifcvsl .ge. 0) then
 endif
 
 call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+
+bpro_rough_t => null()
+
+call field_get_id_try("boundary_roughness", f_id_rough)
+if (f_id_rough.ge.0) then
+  ! same thermal roughness if not specified
+  call field_get_val_s(f_id_rough, bpro_rough_t)
+endif
+
+call field_get_id_try("boundary_thermal_roughness", f_id_rough)
+if (f_id_rough.ge.0) then
+  call field_get_val_s(f_id_rough, bpro_rough_t)
+endif
 
 ! If we have no diffusion, no boundary face should have a wall BC type
 ! (this is ensured in typecl)
@@ -1966,7 +2026,7 @@ do ifac = 1, nfabor
 
   yplus = byplus(ifac)
   uk = buk(ifac)
-  dlmo_loc = bdlmo_loc(ifac)
+  dlmo = bdlmo(ifac)
 
   ! Test on the presence of a rough wall condition (start)
   if (icodcl(ifac,iu).eq.6) then
@@ -2101,16 +2161,16 @@ do ifac = 1, nfabor
     endif
 
     ! Note: for Neumann, Tplus is chosen for post-processing
-    rugt = rcodcl(ifac,iv,3)
+    rough_t = bpro_rough_t(ifac)
 
     ! Modified wall function from Louis
     if (iwalfs.ne.3) then
 
       ! T+ = (T_I - T_w) / Tet
-      tplus = log((distbf+rugt)/rugt)/ (xkappa * bcfnns(ifac))
+      tplus = log((distbf+rough_t)/rough_t)/ (xkappa * bcfnns(ifac))
     else
       ! Dry atmosphere, Monin Obukhov
-      call mo_psih(distbf+rugt,rugt,dlmo_loc,coef_moh)
+      call mo_psih(distbf+rough_t,rough_t,dlmo,coef_moh)
       ! T+
       tplus = coef_moh / xkappa
     endif
@@ -2118,9 +2178,11 @@ do ifac = 1, nfabor
     ! Dirichlet on the scalar, with wall function
     if (iturb.ne.0.and.icodcl(ifac,ivar).eq.6) then
       ! 1/T+
-      act = 1.d0 / tplus
-      hflui = romc*cpp*buet(ifac)*act
+      dtplus = 1.d0 / tplus
+      !FIXME apparently buet should be buk
+      hflui = romc*cpp*buet(ifac) * dtplus
 
+      ! Neumann on the scalar, with wall function (for post-processing)
     else
       hflui = hint
     endif
@@ -2148,16 +2210,14 @@ do ifac = 1, nfabor
         ! Monin obukhov
       else
 
-        rugt = rcodcl(ifac,iv,3)
-
         ! To approximately respect thermal turbulent production with 2 hypothesis
-        call mo_phim (distbf+rugt,dlmo_loc,coef_mom)
-        call mo_phih (2.0*distbf+rugt,dlmo_loc,coef_mohh)
+        call mo_phim (distbf+rough_t,dlmo,coef_mom)
+        call mo_phih (2.0*distbf+rough_t,dlmo,coef_mohh)
         ! Gradient BCs
         coefap(ifac) = 0.d0
 
         rcprod = 2.d0*romc/visctc*distbf*uk*tplus/coef_mom &
-          - coef_mohh/(2.d0+rugt/distbf)
+          - coef_mohh/(2.d0+rough_t/distbf)
 
         cofimp = 1.d0 - rcprod / (xkappa*tplus)
       endif
@@ -2268,6 +2328,8 @@ do ifac = 1, nfabor
       else
         phit = 0.d0
       endif
+
+      tet = phit/(romc*cpp*max(buk(ifac)*bcfnns(ifac),epzero))
       !FIXME Should be uk rather than ustar?
       tet = phit/(romc*cpp*max(buet(ifac),epzero))
 

@@ -20,26 +20,26 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine ppprop
-!================
-
 !===============================================================================
-!  FONCTION  :
-!  ---------
+! Purpose:
+! --------
 
-! INIT DES POSITIONS DES VARIABLES D'ETAT SELON
-!   LE TYPE DE PHYSIQUE PARTICULIERE
+!> \file addfld.f90
+!>
+!> \brief Add additional property fields for dedicated modules
+!>
+!-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
 ! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-!__________________!____!_____!________________________________________________!
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!_______________________________________________________________________________
 
-!     Type: i (integer), r (real), s (string), a (array), l (logical),
-!           and composite types (ex: ra real array)
-!     mode: <-- input, --> output, <-> modifies data, --- work array
+
+subroutine ppprop
+
 !===============================================================================
 
 !===============================================================================
@@ -129,17 +129,16 @@ if (ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1) then
   call cs_elec_add_property_fields
 endif
 
-! ---> Physique particuliere : Atmospherique
-! Momentum source terms
-if (ippmod(iatmos).ge.0 .and. iatmst.ge.1) then
-  call add_property_field('momentum_source_terms', 'MomentumSourceTerms', 3, .false., imomst)
-  call field_set_key_int(imomst, keylog, 1)
-  call field_set_key_int(imomst, keyvis, 1)
-endif
-
 ! ---> Atmospheric modules:
-!      dry and humid atmosphere (ippmod(iatmos) = 1,2)
-if (ippmod(iatmos).ge.1) then
+if (ippmod(iatmos).ge.0) then
+
+  ! Momentum source terms
+  if (iatmst.ge.1) then
+    call add_property_field('momentum_source_terms', 'MomentumSourceTerms', 3, .false., imomst)
+    call field_set_key_int(imomst, keylog, 1)
+    call field_set_key_int(imomst, keyvis, 1)
+  endif
+
   call atprop
 endif
 
