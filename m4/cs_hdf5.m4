@@ -198,7 +198,7 @@ if test "x$with_hdf5" != "xno" ; then
   unset saved_LIBS
 
   case $host_os in
-    mingw32)
+    mingw64)
       hdf5_prefix=`cygpath --path --windows "$with_hdf5"`;;
     *)
       ;;

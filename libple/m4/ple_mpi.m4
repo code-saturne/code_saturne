@@ -238,7 +238,7 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
         AC_MSG_CHECKING([for MPICH-3 or MPICH2])
         # First try (with ROMIO)
         case $host_os in
-          mingw32)
+          mingw64)
             MPI_LIBS="-lmpi";;
           freebsd*)
             MPI_LIBS="-lmpich -lopa -lmpl -lrt $PTHREAD_LIBS";;
@@ -272,7 +272,7 @@ if test "x$ple_have_mpi_header" = "xyes" -a  "x$ple_have_mpi" = "xno" ; then
       MSMPI)
         AC_MSG_CHECKING([for MSMPI])
         case $host_os in
-          mingw32)
+          mingw64)
             MPI_LIBS="-lmsmpi";;
         esac
         LIBS="$MPI_LIBS $saved_LIBS"

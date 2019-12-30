@@ -288,7 +288,7 @@ fi
 # take effect whether the result is true or not (maybe due to a bug),
 # so we directly use autoconf's enable_shared variable.
 
-if test "$host_os" = mingw32 ; then
+if test "$host_os" = mingw64 ; then
    enable_shared=no
 fi
 AC_SUBST(enable_shared)

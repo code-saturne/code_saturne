@@ -78,7 +78,7 @@ fi
 
 dnl So as to correctly set TEXINPUTS environment variable, one needs to use
 dnl the system dependant path separator
-if test "$host_os" = mingw32 ; then
+if test "$host_os" = mingw64 ; then
   cs_tex_path_end=
   cs_tex_path_sep=';'
 else

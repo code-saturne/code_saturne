@@ -324,7 +324,7 @@ fi
 # take effect whether the result is true or not (maybe due to a bug),
 # so we directly use autoconf's enable_shared variable.
 
-if test "$host_os" = mingw32 ; then
+if test "$host_os" = mingw64 ; then
    enable_shared=no
 fi
 AC_SUBST(enable_shared)
@@ -344,7 +344,7 @@ LT_INIT([disable-static, win32-dll])
 cs_special_user_link=
 if test "x$enable_shared" = "xno" ; then
   case "$host_os" in
-    linux* | *bsd* | cnk* | mingw32 | cygwin* )
+    linux* | *bsd* | cnk* | mingw64 | cygwin* )
       if test "x$auto_flags" = "xyes" ; then
         LDFLAGS="${LDFLAGS} -Wl,--allow-multiple-definition"
       fi
@@ -561,7 +561,7 @@ AM_PATH_PYTHON(["2.6"])
 # as it is on Unix systems (whichever is chosen, Python modules will be
 # frozen by cx_freeze for Windows packaging).
 # So, we choose to override some Python paths.
-if test "$host_os" = mingw32 ; then
+if test "$host_os" = mingw64 ; then
 
   AC_MSG_NOTICE([Overriding Python paths on MinGW hosts])
 
@@ -580,7 +580,7 @@ if test "$host_os" = mingw32 ; then
 fi
 
 win_prefix=""
-if test "$host_os" = mingw32 ; then
+if test "$host_os" = mingw64 ; then
   win_prefix=`cygpath --path --windows "${prefix}"`
   AC_SUBST(win_prefix, [${win_prefix}])
 fi
@@ -882,8 +882,8 @@ sys.stdout.write(path)]"
   # To bypass this issue, we launch pyuic4 through cmd.exe
   # with a "standard" PATH.
   # pyrcc4 does not need this trick as it is a standard executable.
-  if test "$host_os" = mingw32 ; then
-    if test "$build_os" = mingw32 ; then
+  if test "$host_os" = mingw64 ; then
+    if test "$build_os" = mingw64 ; then
       CMDPYUIC4="cmd //C $PYPATH/Lib/site-packages/PyQt4/pyuic4"
     elif test "$build_os" = cygwin ; then
       CMDPYUIC4="cmd /C $PYPATH/Lib/site-packages/PyQt4/pyuic4"
@@ -924,19 +924,6 @@ sys.stdout.write(path)]"
   AC_ARG_VAR([PYUIC5], [PyQt5 user interfaces compiler])
   AC_ARG_VAR([PYRCC5], [PyQt5 resources compiler])
   AC_ARG_VAR([LRELEASE], [Qt message files generator])
-
-  ## On MinGW (MSYS) or Cygwin (BASH) build systems, and for MinGW hosts,
-  ## pyuic5 is a batch file and cannot be run from the shell.
-  ## To bypass this issue, we launch pyuic5 through cmd.exe
-  ## with a "standard" PATH.
-  ## pyrcc5 does not need this trick as it is a standard executable.
-  #if test "$host_os" = mingw32 ; then
-  #  if test "$build_os" = mingw32 ; then
-  #    CMDPYUIC4="cmd //C $PYPATH/Lib/site-packages/PyQt4/pyuic4"
-  #  elif test "$build_os" = cygwin ; then
-  #    CMDPYUIC4="cmd /C $PYPATH/Lib/site-packages/PyQt4/pyuic4"
-  #  fi
-  #fi
 
   if test "x$PYUIC5" = "x" ; then
     AC_PATH_PROG([PYUIC5], [pyuic5], [$CMDPYUIC5], [${PYPATH}:$PATH])
@@ -1195,8 +1182,6 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  docs/theory/Makefile docs/theory/graphics/Makefile
                  docs/user/Makefile docs/user/graphics/Makefile
                  tests/Makefile
-                 extras/windows/innosetup/setup_mingw.iss
-                 extras/windows/innosetup/setup_cygwin64.iss
                  bin/cs_config.py])
 
 #------------------------------------------------------------------------------

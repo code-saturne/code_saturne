@@ -243,7 +243,7 @@ class compile_install(cs_compile):
             # Strangely, on MinGW, Windows paths are not correctly handled here
             # So, assuming we always build on MinGW, here is a little trick!
             if sys.platform.startswith("win"):
-                if pkg.get_cross_compile() != 'cygwin': #mingw32 or mingw64
+                if pkg.get_cross_compile() != 'cygwin': # mingw64
                     libdir = os.path.normpath('C:\\MinGW\\msys\\1.0' + libdir)
             if self.destdir:
                 libdir = dest_subdir(self.destdir, libdir)
@@ -292,7 +292,7 @@ class compile_install(cs_compile):
             # handled here. So, assuming we always build on MinGW,
             # here is a little trick!
             if sys.platform.startswith("win"):
-                if pkg.get_cross_compile() != 'cygwin': #mingw32 or mingw64
+                if pkg.get_cross_compile() != 'cygwin': # mingw64
                     libdir = os.path.normpath('C:\\MinGW\\msys\\1.0' + libdir)
             if self.destdir:
                 libdir = dest_subdir(self.destdir, libdir)
@@ -332,7 +332,7 @@ def install_exec_name(pkg, exec_name, destdir=None):
     # Strangely, on MinGW, Windows paths are not correctly handled here...
     # So, assuming we always build on MinGW, here is a little trick!
     if sys.platform.startswith("win"):
-        if pkg.get_cross_compile() != 'cygwin': #mingw32 or mingw64
+        if pkg.get_cross_compile() != 'cygwin': # mingw64
             exec_name = os.path.normpath('C:\\MinGW\\msys\\1.0' + exec_name)
         else:
             exec_name = os.path.join(pkg.dirs['pkglibexecdir'][1],

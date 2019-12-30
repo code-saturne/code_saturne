@@ -225,7 +225,7 @@ Otherwise, you need to provide a MED 3.0 library and development headers.])
   unset saved_LIBS
 
   case $host_os in
-    mingw32)
+    mingw64)
       med_prefix=`cygpath --path --windows "$with_med"`;;
     *)
       ;;

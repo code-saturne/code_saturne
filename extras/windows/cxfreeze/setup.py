@@ -115,7 +115,7 @@ target_cli = Executable(script = "bin/code_saturne",
 # ------------------
 
 setup(name = "Code_Saturne",
-      version = "4.0-beta",
+      version = "6.1",
       description = "General purpose CFD software",
       author = "EDF",
       options = {"build_exe": options},

@@ -317,7 +317,7 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
         AC_MSG_CHECKING([for MPICH-3 or MPICH2])
         # First try (with ROMIO)
         case $host_os in
-          mingw32)
+          mingw64)
             MPI_LIBS="-lmpi";;
           freebsd*)
             MPI_LIBS="-lmpich -lopa -lmpl -lrt $PTHREAD_LIBS";;
@@ -351,7 +351,7 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
       MSMPI)
         AC_MSG_CHECKING([for MSMPI])
         case $host_os in
-          mingw32)
+          mingw64)
             MPI_LIBS="-lmsmpi";;
         esac
         LIBS="$MPI_LIBS $saved_LIBS"
@@ -444,7 +444,7 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
   unset saved_LIBS
 
   case $host_os in
-   mingw32)
+   mingw64)
       mpi_prefix=`cygpath --path --windows "$with_mpi"`;;
     *)
       ;;

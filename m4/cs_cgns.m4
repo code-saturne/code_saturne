@@ -90,9 +90,6 @@ if test "x$with_cgns" != "xno" ; then
   # Check that a header file exists and that the version is compatible
   #-------------------------------------------------------------------
 
-  # stdlib.h header is added for a correct definition of __int64 on MinGW
-  # due to the inclusion of cgnstypes.h in cgnslib.h (CG_LONG_T)
-
   AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
 [[#undef HAVE_MPI
 #include <stdio.h>
@@ -162,7 +159,7 @@ Otherwise, you need to provide a CGNS 3.1 library and development headers.])
   fi
 
   case $host_os in
-    mingw32)
+    mingw64)
       cgns_prefix=`cygpath --path --windows "$with_cgns"`;;
     *)
       ;;

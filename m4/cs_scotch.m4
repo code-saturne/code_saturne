@@ -241,7 +241,7 @@ if test "x$with_scotch" != "xno" ; then
   LIBS="$saved_LIBS"
 
   case $host_os in
-    mingw32)
+    mingw64)
       scotch_prefix=`cygpath --path --windows "$with_scotch"`;;
     *)
       ;;
