@@ -285,7 +285,7 @@ cs_les_filter(int        stride,
               cs_real_t  val[],
               cs_real_t  f_val[])
 {
-  if (cs_ext_neighborhood_get_type == CS_EXT_NEIGHBORHOOD_COMPLETE) {
+  if (cs_ext_neighborhood_get_type() == CS_EXT_NEIGHBORHOOD_COMPLETE) {
     _les_filter_ext_neighborhood(stride, val, f_val);
     return;
   }
