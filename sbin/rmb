@@ -12,9 +12,6 @@ cd $PREFIX
 for file in src/*/*.[ch] src/*/*.f90 src/*/*.[ch]xx tests/*.c build-aux/*.py \
             gui/*/*.py bin/*.py bin/studymanager/*py bin/*.in bin/runcase* \
             libple/*/*.[ch] preprocessor/*/*.[ch] \
-            salome/fsi_coupling/src/*/*.[ch]xx \
-            salome/fsi_coupling/src/*/*.py.in \
-            salome/fsi_coupling/src/*/*.py \
             salome/cfd_study/src/*/*.py \
             NEWS.md
 do

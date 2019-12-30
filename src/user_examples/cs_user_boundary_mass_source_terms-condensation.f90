@@ -268,7 +268,7 @@ if (iappel.eq.2) then
       tpar0 = 26.57d0
 
    endif
-   
+
   endif
 
 !< [model_settings]
