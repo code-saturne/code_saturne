@@ -102,7 +102,7 @@ double precision tpar
 
 !< [loc_var_dec]
 integer          ieltcd
-integer          ifac, iel, iesp, iscal
+integer          ifac, iel, iscal
 integer          ivarh
 integer          ilelt, nlelt
 integer          izone

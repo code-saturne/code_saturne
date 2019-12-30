@@ -724,11 +724,16 @@ integer function yo2j(year,ordinal)
 !
 implicit none
 integer year,ordinal
-! I am puzzled by the (1-14)/12 : why not writing -1?
-yo2j= ordinal + ((1461 * (year + 4800 + (1 - 14) / 12)) / 4 +   &
-        (367 * (1 - 2 - 12 * ((1 - 14) / 12))) / 12 -           &
-        (3 * ((year + 4900 + (1 - 14) / 12) / 100)) / 4         &
-        + 1 - 32075) - 1
+! I am puzzled by the (1-14)/12 : why not write -1?
+
+! yo2j= ordinal + ((1461 * (year + 4800 + (1 - 14) / 12)) / 4 +        &
+!                  (367 * (1 - 2 - 12 * ((1 - 14) / 12))) / 12 -       &
+!                  (3 * ((year + 4900 + (1 - 14) / 12) / 100)) / 4     &
+!                   + 1 - 32075) - 1
+
+yo2j= ordinal + ((1461 * (year + 4800)) / 4     &
+      -30 - (3 * ((year + 4900) / 100)) / 4     &
+      + 1 - 32075) - 1
 end function yo2j
 
 

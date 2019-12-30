@@ -1193,7 +1193,7 @@ _parse_control_buffer(const char         *name,
     /* Notebook options */
 
     else if (strncmp(s, "notebook_", 9) == 0)
-      _control_notebook(ts, cur_line, (const char **)&s);
+      _control_notebook(ts, cur_line, &s);
 
     /* Force flush of logs */
 

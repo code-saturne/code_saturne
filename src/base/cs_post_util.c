@@ -1105,12 +1105,11 @@ cs_post_evm_reynolds_stresses(cs_field_interpolate_t  interpolation_type,
 void
 cs_post_anisotropy_invariant(cs_lnum_t               n_cells,
                              const cs_lnum_t         cell_ids[],
-                             const cs_real_3_t      *coords,
-                             cs_real_2_t            *inv)
+                             const cs_real_t         coords[][3],
+                             cs_real_2_t             inv[])
 {
   const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
   const cs_turb_rans_model_t *turb_rans_mdl = cs_glob_turb_rans_model;
-  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
   if (   turb_model->itytur != 2
       && turb_model->itytur != 3

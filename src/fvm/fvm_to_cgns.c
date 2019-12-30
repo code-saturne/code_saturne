@@ -2217,7 +2217,10 @@ _write_block_connect_i_g(const fvm_writer_section_t  *current_section,
     block_start = block_end - _block_size;
 
     cgsize_t  s_start = *global_counter + 1;
+
+#if CGNS_VERSION >= 3400
     cgsize_t  g_offset = 0;
+#endif
 
     cgsize_t *_block_connect = NULL;
     cgsize_t *_block_offsets = NULL;
@@ -2241,7 +2244,7 @@ _write_block_connect_i_g(const fvm_writer_section_t  *current_section,
 
         cgsize_t connect_size = range[1] - range[0];
         cgsize_t  s_end  = s_start;
-        cs_lnum_t elt_count = 0, new_count = 0;
+        cs_lnum_t elt_count = 0;
 
 #if CGNS_VERSION >= 3400
 
@@ -2249,6 +2252,8 @@ _write_block_connect_i_g(const fvm_writer_section_t  *current_section,
           BFT_MALLOC(_block_offsets, block_size+1, cgsize_t);
           _block_offsets[0] = g_offset;
         }
+
+        cs_lnum_t new_count = 0;
 
         while (elt_count < connect_size) {
           cs_lnum_t elt_size = _block_connect[elt_count++];

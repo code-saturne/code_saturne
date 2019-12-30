@@ -361,7 +361,7 @@ endif
 !     Ordre 2 non pris en compte
 
 if (ippmod(iphpar).ge.1) then
-  call pptsvv(iscal, smbrv, fimp)
+  call pptsvv(iscal, smbrv)
 endif
 
 ! Mass source term

@@ -279,6 +279,25 @@ cs_post_evm_reynolds_stresses(cs_field_interpolate_t  interpolation_type,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Compute the invariant of the anisotropy tensor
+ *
+ * \param[in]  n_cells            number of points
+ * \param[in]  cell_ids           cell location of points
+ *                                (indexed from 0 to n-1)
+ * \param[in]  coords             point coordinates
+ * \param[out] inv                Anisotropy tensor invariant
+ *                                [xsi, eta]
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_anisotropy_invariant(cs_lnum_t               n_cells,
+                             const cs_lnum_t         cell_ids[],
+                             const cs_real_t         coords[][3],
+                             cs_real_t               inv[][2]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the Q-criterion from Hunt et. al over each cell of a specified
  *        volume region.
  *

@@ -29,20 +29,16 @@
 !> \brief This subroutine defines the source terms for vectors which are part of
 !> specific physics models. Source terms are defined over one time step.
 !>
-!> Warning: source terms are treated differently from the way they are in ustsvv.
-!> fimp*d(var) = smbrv is solved. rovsdt and smbrs already hold possible user
+!> Warning: rovsdt and smbrs already hold possible user
 !> source terms values and thus have to be incremented (and not overwritten).
 !>
 !> For stability reasons, only positive terms are added to rovsdt, while there
 !> are no such constrains on values to be added to smbrs.
 !>
-!> In the case of a source term of the form cexp + cimp*var, the source term
+!> In the case of a source term of the form cexp, the source term
 !> should be implemented as follows:
 !> \f[
 !>   smbrv(i)  = smbrv(i)  + cexp(i) + \sum_j cimp(i,j)*var(j)
-!> \f]
-!> \f[
-!>   fimp(i,j) = fimp(i,j) + max(-cimp(i,j),0)
 !> \f]
 !>
 !> rovsdt and smbrs are provided here respectively in kg/s and in kg/s*[scalar].
@@ -60,13 +56,10 @@
 !______________________________________________________________________________!
 !> \param[in]     iscal         number in list of additional variables
 !> \param[in,out] smbrv         explicit source term part
-!> \param[in,out] fimp          implicit source term part
 !______________________________________________________________________________!
 
 
-subroutine pptsvv &
- ( iscal  ,                                                       &
-   smbrv  , fimp )
+subroutine pptsvv(iscal, smbrv)
 
 !===============================================================================
 ! Module files
@@ -94,7 +87,7 @@ implicit none
 
 integer          iscal
 
-double precision smbrv(3,ncelet), fimp(3,3,ncelet)
+double precision smbrv(3,ncelet)
 
 ! Local variables
 
@@ -105,8 +98,7 @@ double precision smbrv(3,ncelet), fimp(3,3,ncelet)
 ! Electric arcs
 ! Ionic conduction
 
-if (ippmod(ieljou).ge.1 .or.                                      &
-    ippmod(ielarc).ge.1       ) then
+if (ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1) then
   call eltsvv(ivarfl(isca(iscal)), smbrv)
 endif
 
