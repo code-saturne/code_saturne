@@ -218,7 +218,7 @@ if test "x$cs_gcc" = "xgcc"; then
     gcc-4.[012345678]*)
       ;;
     *)
-      cflags_default="$cflags_default -fdiagnostics-color=auto"
+      cflags_default="$cflags_default -fdiagnostics-color=auto -Werror=format-security"
       ;;
   esac
 
