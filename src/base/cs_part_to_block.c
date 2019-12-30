@@ -84,7 +84,7 @@ struct _cs_part_to_block_t {
 
   size_t       n_block_ents;    /* Number of entities to receive (this block) */
   size_t       n_part_ents;     /* Number of entities to send (partition) */
-  size_t       recv_size;       /* Size of receive buffer for MPI_Alltoallv
+  size_t       recv_size;       /* Size of receive buffer for MPI_Gatherv
                                    (send_size not necessary, as send_size
                                    should always be equal to n_part_ents,
                                    though elements may be assembled in a
