@@ -1129,12 +1129,12 @@ _statistical_weight_name(cs_lagr_stat_group_t  stat_group,
     case CS_LAGR_STAT_GROUP_PARTICLE:
       snprintf(name,
                63 - l0,
-               _lagr_stat_names[CS_LAGR_STAT_CUMULATIVE_WEIGHT]);
+               "%s", _lagr_stat_names[CS_LAGR_STAT_CUMULATIVE_WEIGHT]);
       break;
   case CS_LAGR_STAT_GROUP_TRACKING_EVENT:
       snprintf(name,
                63 - l0,
-               _lagr_stat_names[CS_LAGR_STAT_E_CUMULATIVE_WEIGHT]);
+               "%s", _lagr_stat_names[CS_LAGR_STAT_E_CUMULATIVE_WEIGHT]);
       break;
     default:
     assert(0);
