@@ -152,7 +152,7 @@ call usstr1                                                       &
    aexxst , bexxst , cfopre ,                                     &
    xstp   , xpstr  , xstreq )
 
-! External structures: Code_Saturne / Code_Aster coupling
+! External structures: Code_Saturne / code_aster coupling
 
 call uiaste(idfstr, asddlf)
 call usaste(idfstr)
@@ -228,7 +228,7 @@ if (nbaste.gt.0) then
   nbfast = 0
   nbnast = 0
 
-!       Calcul du nombre de faces et noeuds couples avec Code_Aster
+!       Calcul du nombre de faces et noeuds couples avec code_aster
   do ifac = 1, nfabor
     istr = idfstr(ifac)
     if (istr.lt.0) then

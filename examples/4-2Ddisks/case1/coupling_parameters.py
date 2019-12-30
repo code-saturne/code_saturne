@@ -5,7 +5,7 @@
 
 # A coupling case is defined by a dictionnary, containing the following:
 
-# Solver type ('Code_Saturne', 'SYRTHES', 'NEPTUNE_CFD' or 'Code_Aster')
+# Solver type ('Code_Saturne', 'SYRTHES', 'NEPTUNE_CFD' or 'code_aster')
 # Domain directory name
 # Run parameter setting file
 # Number of processors (or None for automatic setting)

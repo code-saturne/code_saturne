@@ -204,7 +204,7 @@ if (nbaste.gt.0) then
   enddo
 
 ! Si ITRALE = 0, on ne fait rien pour l'instant, mais il faudrait
-! prevoir la reception de deplacement initiaux venant de Code_Aster
+! prevoir la reception de deplacement initiaux venant de code_aster
   if (itrale.gt.0) then
 
     ntcast = ntcast + 1

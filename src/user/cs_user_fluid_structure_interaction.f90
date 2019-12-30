@@ -44,7 +44,7 @@
 !>                     (considered to be potentially time dependent),
 !>                     i.e. Mass, Friction, Stiffness and Fluid Stresses.
 !>
-!>   \par Fluid-Structure coupling with Code_Aster:
+!>   \par Fluid-Structure coupling with code_aster:
 !>        the user subroutine \ref usaste has to be used.
 !>
 !>   \par Examples of data settings for fluid-structure interaction (FSI):
@@ -215,9 +215,9 @@ end subroutine usstr2
 ! -------
 
 !> \brief User subroutine dedicated the Fluid-Structure external coupling
-!>        with Code_Aster :
+!>        with code_aster :
 !>          Here one defines the boundary faces coupled
-!>          with Code_Aster and the fluid forces components
+!>          with code_aster and the fluid forces components
 !>          which are given to structural calculations.
 !
 

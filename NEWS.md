@@ -2565,7 +2565,7 @@ Changes:
 - Non-symmetric matrix coefficients are now interleaved.
   (the Fortran API still allows non-interleaved matrixes as an option).
 
-- Remove synchronization of postprocessing with Code_Aster.
+- Remove synchronization of postprocessing with code_aster.
 
 - Add a particle deposition model to the Lagrangian module.
 

@@ -180,7 +180,7 @@
 
   \snippet cs_user_fluid_structure_interaction.f90 usstr2_example_2
 
-  \section cs_user_fluid_structure_interaction_h_usaste Fluid Structure external coupling with Code_Aster
+  \section cs_user_fluid_structure_interaction_h_usaste Fluid Structure external coupling with code_aster
 
   \subsection cs_user_fluid_structure_interaction_h_usaste1_init Initialization
 
@@ -191,17 +191,17 @@
   \subsection cs_user_fluid_structure_interaction_h_usaste_example Example
 
   In the following example, two sets of boundary faces that will be coupled with
-  Code_Aster are defined as well as the fluid force components which are given
+  code_aster are defined as well as the fluid force components which are given
   to structural calculations.
 
   Here one fills array \c idfstr(\ref nfabor)
   For each boundary face \c ifac, \c idfstr(ifac) is the number of the structure
   the face belongs to (if \c idfstr(ifac) = 0, the face \c ifac doesn't
   belong to any structure.)
-  When using external coupling with Code_Aster, structure number necessarily
+  When using external coupling with code_aster, structure number necessarily
   needs to be negative (as shown in following examples).
 
-  The number of "external" structures with Code_Aster is automatically
+  The number of "external" structures with code_aster is automatically
   defined with the maximum absolute value of \c idfstr table, meaning that
   external structure numbers must be defined sequentially with negative
   values beginning with integer value -1.
@@ -210,7 +210,7 @@
   abscissa \f$ x < 2 \f$ belong to external structure -1.
   Boundary faces with color 2 and which abscissa \f$ x > 2 \f$ belong to external
   structure -2. The total number of external structures coupled with
-  Code_Aster equals 2.
+  code_aster equals 2.
 
   \snippet cs_user_fluid_structure_interaction.f90 usaste_example
 
