@@ -60,6 +60,7 @@
 #include "fvm_nodal.h"
 #include "fvm_nodal_extract.h"
 
+#include "cs_all_to_all.h"
 #include "cs_calcium.h"
 #include "cs_coupling.h"
 #include "cs_interface.h"
@@ -69,7 +70,6 @@
 #include "cs_mesh_connect.h"
 #include "cs_parall.h"
 #include "cs_part_to_block.h"
-#include "cs_block_to_part.h"
 #include "cs_post.h"
 
 /*----------------------------------------------------------------------------
@@ -103,7 +103,7 @@ struct _cs_ast_coupling_t {
 #if defined(HAVE_MPI)
 
   cs_part_to_block_t *face_p2b;
-  cs_block_to_part_t *vtx_b2p;
+  cs_all_to_all_t *vtx_b2p;
 
 #endif
 
@@ -230,11 +230,12 @@ _recv_dyn(cs_ast_coupling_t  *ast_cpl)
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1)
-    cs_block_to_part_copy_array(ast_cpl->vtx_b2p,
-                                CS_DOUBLE,
-                                3,
-                                buffer,
-                                ast_cpl->xast);
+    cs_all_to_all_copy_array(ast_cpl->vtx_b2p,
+                             CS_DOUBLE,
+                             3,
+                             true, /* reverse */
+                             buffer,
+                             ast_cpl->xast);
 
 #endif
 
@@ -254,11 +255,12 @@ _recv_dyn(cs_ast_coupling_t  *ast_cpl)
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1)
-    cs_block_to_part_copy_array(ast_cpl->vtx_b2p,
-                                CS_DOUBLE,
-                                3,
-                                buffer,
-                                ast_cpl->xvast);
+    cs_all_to_all_copy_array(ast_cpl->vtx_b2p,
+                             CS_DOUBLE,
+                             3,
+                             true, /* reverse */
+                             buffer,
+                             ast_cpl->xvast);
 
 #endif
 
@@ -576,10 +578,11 @@ void CS_PROCF(astgeo, ASTGEO)
                                          ast_cpl->n_g_vertices);
 
     ast_cpl->vtx_b2p
-      = cs_block_to_part_create_by_gnum(cs_glob_mpi_comm,
+      = cs_all_to_all_create_from_block(ast_cpl->n_vertices,
+                                        CS_ALL_TO_ALL_USE_DEST_ID,
+                                        s_vtx_gnum,
                                         vtx_bi,
-                                        ast_cpl->n_vertices,
-                                        s_vtx_gnum);
+                                        cs_glob_mpi_comm);
 
     vtx_p2b = cs_part_to_block_create_by_gnum(cs_glob_mpi_comm,
                                               vtx_bi,
@@ -1190,7 +1193,7 @@ cs_ast_coupling_finalize(void)
 #if defined(HAVE_MPI)
 
   if (ast_cpl->vtx_b2p != NULL)
-    cs_block_to_part_destroy(&(ast_cpl->vtx_b2p));
+    cs_all_to_all_destroy(&(ast_cpl->vtx_b2p));
   if (ast_cpl->face_p2b != NULL)
     cs_part_to_block_destroy(&(ast_cpl->face_p2b));
 

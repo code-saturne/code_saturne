@@ -125,26 +125,6 @@ cs_block_to_part_create_adj(MPI_Comm              comm,
                             const cs_gnum_t       adjacency[]);
 
 /*----------------------------------------------------------------------------
- * Initialize block to partition distributor based global element numbers
- * for partitioned data.
- *
- * arguments:
- *   comm           <-- communicator
- *   bi             <-- block size and range info
- *   n_ents         <-- number of elements in partition
- *   global_ent_num <-- global entity numbers (in partition)
- *
- * returns:
- *   initialized partition to block distributor
- *----------------------------------------------------------------------------*/
-
-cs_block_to_part_t *
-cs_block_to_part_create_by_gnum(MPI_Comm              comm,
-                                cs_block_dist_info_t  bi,
-                                cs_lnum_t             n_ents,
-                                const cs_gnum_t       global_ent_num[]);
-
-/*----------------------------------------------------------------------------
  * Destroy a block to partition distributor structure.
  *
  * arguments:

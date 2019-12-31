@@ -58,6 +58,7 @@
 
 #include "fvm_io_num.h"
 
+#include "cs_all_to_all.h"
 #include "cs_base.h"
 #include "cs_block_dist.h"
 #include "cs_block_to_part.h"
@@ -414,10 +415,6 @@ _read_ent_values(cs_restart_t           *r,
 
   size_t  nbr_byte_ent;
 
-  cs_block_dist_info_t bi;
-
-  cs_block_to_part_t *d = NULL;
-
   /* Initialization */
 
   switch (val_type) {
@@ -439,16 +436,19 @@ _read_ent_values(cs_restart_t           *r,
     assert(0);
   }
 
-  bi = cs_block_dist_compute_sizes(cs_glob_rank_id,
-                                   cs_glob_n_ranks,
-                                   r->rank_step,
-                                   r->min_block_size / nbr_byte_ent,
-                                   n_glob_ents);
+  cs_block_dist_info_t bi
+    = cs_block_dist_compute_sizes(cs_glob_rank_id,
+                                  cs_glob_n_ranks,
+                                  r->rank_step,
+                                  r->min_block_size / nbr_byte_ent,
+                                  n_glob_ents);
 
-  d = cs_block_to_part_create_by_gnum(cs_glob_mpi_comm,
+  cs_all_to_all_t *d
+    = cs_all_to_all_create_from_block(n_ents,
+                                      CS_ALL_TO_ALL_USE_DEST_ID,
+                                      ent_global_num,
                                       bi,
-                                      n_ents,
-                                      ent_global_num);
+                                      cs_glob_mpi_comm);
 
   /* Read blocks */
 
@@ -465,17 +465,18 @@ _read_ent_values(cs_restart_t           *r,
 
  /* Distribute blocks on ranks */
 
-  cs_block_to_part_copy_array(d,
-                              header->elt_type,
-                              n_location_vals,
-                              buffer,
-                              vals);
+  cs_all_to_all_copy_array(d,
+                           header->elt_type,
+                           n_location_vals,
+                           true,  /* reverse */
+                           buffer,
+                           vals);
 
   /* Free buffer */
 
   BFT_FREE(buffer);
 
-  cs_block_to_part_destroy(&d);
+  cs_all_to_all_destroy(&d);
 }
 
 /*----------------------------------------------------------------------------
