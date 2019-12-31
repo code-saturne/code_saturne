@@ -434,6 +434,7 @@ _alltoall_caller_update_meta(_mpi_all_to_all_caller_t  *dc,
                              int                        stride)
 {
   size_t elt_size = cs_datatype_size[datatype]*stride;
+  size_t align_size = sizeof(cs_lnum_t);
 
   /* Free previous associated datatype if needed */
 
@@ -447,30 +448,24 @@ _alltoall_caller_update_meta(_mpi_all_to_all_caller_t  *dc,
 
   /* Recompute data size and alignment */
 
-  if (stride > 0) {
+  if (dc->dest_id_datatype == CS_LNUM_TYPE)
+    dc->elt_shift = sizeof(cs_lnum_t);
+  else
+    dc->elt_shift = 0;
 
-    size_t align_size = sizeof(cs_lnum_t);
+  if (dc->elt_shift % align_size)
+    dc->elt_shift += align_size - (dc->elt_shift % align_size);
+
+  if (stride > 0) {
     if (cs_datatype_size[datatype] > align_size)
       align_size = cs_datatype_size[datatype];
-
-    if (dc->dest_id_datatype == CS_LNUM_TYPE)
-      dc->elt_shift = sizeof(cs_lnum_t);
-    else
-      dc->elt_shift = 0;
-
-    if (dc->elt_shift % align_size)
-      dc->elt_shift += align_size - (dc->elt_shift % align_size);
-
     dc->comp_size = dc->elt_shift + elt_size;
-
-    if (elt_size % align_size)
-      dc->comp_size += align_size - (elt_size % align_size);
-
   }
-  else {
-    dc->elt_shift = 0;
-    dc->comp_size = cs_datatype_size[datatype];
-  }
+  else
+    dc->comp_size = dc->elt_shift + cs_datatype_size[datatype];
+
+  if (elt_size % align_size)
+    dc->comp_size += align_size - (elt_size % align_size);
 
   /* Update associated MPI datatype */
 
