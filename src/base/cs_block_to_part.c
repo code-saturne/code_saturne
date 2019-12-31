@@ -322,67 +322,6 @@ _block_to_part_create(MPI_Comm comm)
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- * Create block to partition distributor using entity destination rank array.
- *
- * arguments:
- *   comm     <-- communicator
- *   block    <-- block to partition range and size info
- *   ent_rank <-- destination rank for each entity
- *                (size: block.gnum_range[1] - block.gnum_range[0])
- *
- * returns:
- *   initialized block to partition distributor
- *----------------------------------------------------------------------------*/
-
-cs_block_to_part_t *
-cs_block_to_part_create_by_rank(MPI_Comm              comm,
-                                cs_block_dist_info_t  block,
-                                int                   ent_rank[])
-{
-  int i;
-  size_t j;
-
-  cs_block_to_part_t *d = _block_to_part_create(comm);
-
-  const int n_ranks = d->n_ranks;
-
-  d->n_block_ents = block.gnum_range[1] - block.gnum_range[0];
-
-  /* Count values to send and receive */
-
-  for (j = 0; j < d->n_block_ents; j++)
-    d->send_count[ent_rank[j]] += 1;
-
-  MPI_Alltoall(d->send_count, 1, MPI_INT, d->recv_count, 1, MPI_INT, comm);
-
-  d->send_size = _compute_displ(n_ranks, d->send_count, d->send_displ);
-  d->n_part_ents = _compute_displ(n_ranks, d->recv_count, d->recv_displ);
-
-  /* Prepare send list (using send_displ for insertion positions) */
-
-  BFT_MALLOC(d->send_list, d->send_size, cs_lnum_t);
-
-  for (j = 0; j < d->send_size; j++) {
-    int send_rank = ent_rank[j];
-    d->send_list[d->send_displ[send_rank]] = j;
-    d->send_displ[send_rank] += 1;
-  }
-
-  /* Reset send_displ */
-
-  for (i = 0; i < n_ranks; i++)
-    d->send_displ[i] -= d->send_count[i];
-
-  /* Build global numbering and retrieval index */
-
-  _init_global_num(d, block);
-
-  /* Return initialized structure */
-
-  return d;
-}
-
-/*----------------------------------------------------------------------------
  * Initialize block to partition distributor with block data using
  * strided adjacency array.
  *

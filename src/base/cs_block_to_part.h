@@ -65,24 +65,6 @@ typedef struct _cs_block_to_part_t  cs_block_to_part_t;
 #if defined(HAVE_MPI)
 
 /*----------------------------------------------------------------------------
- * Create block to partition distributor using entity destination rank array.
- *
- * arguments:
- *   comm     <-- communicator
- *   block    <-- block to partition range and size info
- *   ent_rank <-- destination rank for each entity
- *                (size: block.gnum_range[1] - block.gnum_range[0])
- *
- * returns:
- *   initialized block to partition distributor
- *----------------------------------------------------------------------------*/
-
-cs_block_to_part_t *
-cs_block_to_part_create_by_rank(MPI_Comm              comm,
-                                cs_block_dist_info_t  block,
-                                int                   ent_rank[]);
-
-/*----------------------------------------------------------------------------
  * Initialize block to partition distributor with block data using
  * strided adjacency array.
  *
