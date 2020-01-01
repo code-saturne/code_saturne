@@ -359,40 +359,6 @@ cs_join_gset_merge_elts(cs_join_gset_t  *set,
 
 /*----------------------------------------------------------------------------
  * Synchronize a cs_join_gset_t structure and distribute the resulting set
- * over the rank thanks to a round-robin distribution. Elements in sync_set
- * are ordered and there is no redundancy but list may have redundancies.
- * Use cs_join_gset_clean() to remove redundancies in g_list.
- *
- * parameters:
- *   loc_set  <-> pointer to the local structure to work with
- *   comm     <-- mpi_comm on which synchro. and distribution take place
- *
- * returns:
- *   a synchronized and distributed cs_join_gset_t structure.
- *---------------------------------------------------------------------------*/
-
-cs_join_gset_t *
-cs_join_gset_robin_sync(cs_join_gset_t   *loc_set,
-                        MPI_Comm          comm);
-
-/*----------------------------------------------------------------------------
- * Update a local cs_join_gset_t structure from a distributed and
- * synchronized cs_join_gset_t structure. Round-robin distribution is used
- * to store synchronized elements.
- *
- * parameters:
- *   sync_set <-- pointer to the structure which holds a synchronized block
- *   loc_set  <-> pointer to a local structure holding elements to update
- *   comm     <-- comm on which synchronization and distribution take place
- *---------------------------------------------------------------------------*/
-
-void
-cs_join_gset_robin_update(const cs_join_gset_t   *sync_set,
-                          cs_join_gset_t         *loc_set,
-                          MPI_Comm                comm);
-
-/*----------------------------------------------------------------------------
- * Synchronize a cs_join_gset_t structure and distribute the resulting set
  * over the rank by block
  *
  * parameters:
