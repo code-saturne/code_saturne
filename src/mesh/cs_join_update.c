@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2019 EDF S.A.
+  Copyright (C) 1998-2020 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -47,6 +47,7 @@
 #include "fvm_io_num.h"
 #include "fvm_periodicity.h"
 
+#include "cs_all_to_all.h"
 #include "cs_order.h"
 #include "cs_search.h"
 #include "cs_sort.h"
@@ -2191,15 +2192,12 @@ _exchange_cell_gnum_and_family(const cs_join_gset_t     *n2o_hist,
                                cs_gnum_t                 cell_gnum[],
                                cs_lnum_t                 face_family[])
 {
-  int  rank;
-  cs_lnum_t  i, j, fid, shift;
+  cs_lnum_t  fid;
   cs_gnum_t  compact_fgnum;
 
-  int  reduce_size = 0;
-  int  *reduce_ids = NULL, *parent = NULL;
-  int  *send_count = NULL, *recv_count = NULL;
-  int  *send_shift = NULL, *recv_shift = NULL;
-  cs_gnum_t  *recv_gbuf = NULL, *send_gbuf = NULL, *reduce_index = NULL;
+  cs_lnum_t  reduce_size = 0;
+  cs_lnum_t  *reduce_ids = NULL;
+  cs_gnum_t  *reduce_index = NULL;
 
   MPI_Comm  mpi_comm = cs_glob_mpi_comm;
 
@@ -2215,220 +2213,160 @@ _exchange_cell_gnum_and_family(const cs_join_gset_t     *n2o_hist,
   assert(n2o_hist != NULL);
   assert(n_ranks > 1);
 
-  BFT_MALLOC(send_count, n_ranks, int);
-  BFT_MALLOC(send_shift, n_ranks + 1, int);
-
-  send_shift[0] = 0;
-  for (i = 0; i < n_ranks; i++) {
-    send_count[i] = 0;
-    send_shift[i+1] = 0;
-  }
-
   /* Compact init. global face distribution. Remove ranks without face
      at the begining */
 
-  for (i = 0; i < n_ranks; i++)
+  for (cs_lnum_t i = 0; i < n_ranks; i++) {
     if (gnum_rank_index[i] < gnum_rank_index[i+1])
       reduce_size++;
+  }
 
   BFT_MALLOC(reduce_index, reduce_size+1, cs_gnum_t);
-  BFT_MALLOC(reduce_ids, reduce_size, int);
+  BFT_MALLOC(reduce_ids, reduce_size, cs_lnum_t);
 
   reduce_size = 0;
 
   /* Add +1 to gnum_rank_index because it's an id and we work on numbers */
 
   reduce_index[0] = gnum_rank_index[0] + 1;
-  for (i = 0; i < n_ranks; i++) {
+  for (cs_lnum_t i = 0; i < n_ranks; i++) {
     if (gnum_rank_index[i] < gnum_rank_index[i+1]) {
       reduce_index[reduce_size+1] = gnum_rank_index[i+1] + 1;
       reduce_ids[reduce_size++] = i;
     }
   }
 
+  cs_lnum_t  n2o_hist_size = n2o_hist->index[n2o_hist->n_elts];
+
+  int  *dest_rank;
+  BFT_MALLOC(dest_rank, n2o_hist_size, int);
+
   /* Count number of ranks associated to each new face */
 
-  for (i = 0; i < n2o_hist->n_elts; i++) {
+  for (cs_lnum_t i = 0; i < n2o_hist_size; i++) {
 
-    for (j = n2o_hist->index[i]; j < n2o_hist->index[i+1]; j++) {
+    int  reduce_rank = cs_search_gindex_binary(reduce_size,
+                                               n2o_hist->g_list[i],
+                                               reduce_index);
 
-      int  reduce_rank = cs_search_gindex_binary(reduce_size,
-                                                 n2o_hist->g_list[j],
-                                                 reduce_index);
+    assert(reduce_rank < reduce_size);
+    assert(reduce_rank != -1);
 
-      assert(reduce_rank < reduce_size);
-      assert(reduce_rank != -1);
-
-      rank = reduce_ids[reduce_rank];
-      send_shift[rank+1] += 1;
-
-    } /* End of loop on old faces */
+    dest_rank[i] = reduce_ids[reduce_rank];
 
   } /* End of loop on new faces */
 
-  for (i = 0; i < n_ranks; i++)
-    send_shift[i+1] += send_shift[i];
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  if (cs_glob_join_log != NULL) {
+    fprintf(cs_glob_join_log,
+            "\n Exchange to update mesh after the face split operation:\n");
+    for (cs_lnum_t i = 0; i < n2o_hist_size; i++) {
+      fprintf(cs_glob_join_log, " Send to rank %5d: %llu\n",
+              dest_rank[i],
+              (unsigned long long)(n2o_hist->g_list[i]));
+    }
+  }
+#endif
 
-  assert(send_shift[n_ranks] == n2o_hist->index[n2o_hist->n_elts]);
+  cs_all_to_all_t *d
+    = cs_all_to_all_create(n2o_hist_size,
+                           0,      /* flags */
+                           NULL,   /* dest_id */
+                           dest_rank,
+                           mpi_comm);
 
-  BFT_MALLOC(send_gbuf, send_shift[n_ranks]*2, cs_gnum_t);
-  BFT_MALLOC(parent, send_shift[n_ranks], int);
+  cs_all_to_all_transfer_dest_rank(d, &dest_rank);
 
-  /* Fill the list of ranks */
-
-  for (i = 0; i < n2o_hist->n_elts; i++) {
-
-    for (j = n2o_hist->index[i]; j < n2o_hist->index[i+1]; j++) {
-
-      int  reduce_rank = cs_search_gindex_binary(reduce_size,
-                                                 n2o_hist->g_list[j],
-                                                 reduce_index);
-
-      assert(reduce_rank < reduce_size);
-      assert(reduce_rank != -1);
-
-      rank = reduce_ids[reduce_rank];
-      shift = send_shift[rank] + send_count[rank];
-      parent[shift] = j;
-      send_gbuf[shift] = n2o_hist->g_list[j];
-      send_count[rank] += 1;
-
-    } /* End of loop on old faces */
-
-  } /* End of loop on new faces */
+  cs_gnum_t *b_gbuf = cs_all_to_all_copy_array(d,
+                                               CS_GNUM_TYPE,
+                                               1,
+                                               false,  /* reverse */
+                                               n2o_hist->g_list,
+                                               NULL);
 
   /* Free memory */
 
   BFT_FREE(reduce_ids);
   BFT_FREE(reduce_index);
 
-#if 0 && defined(DEBUG) && !defined(NDEBUG)
-  if (cs_glob_join_log != NULL) {
-    fprintf(cs_glob_join_log,
-           "\n Exchange to update mesh after the face split operation:\n");
-    for (i = 0; i < n_ranks; i++) {
-      int start = send_shift[i], end = send_shift[i+1];
-      fprintf(cs_glob_join_log, " Send to rank %5d (n = %10d):", i, end - start);
-      for (j = start; j < end; j++)
-        fprintf(cs_glob_join_log, " %llu ", (unsigned long long)send_gbuf[j]);
-      fprintf(cs_glob_join_log, "\n");
-    }
-  }
-#endif
-
-  /* Count the number of faces to recv */
-
-  BFT_MALLOC(recv_count, n_ranks, int);
-  BFT_MALLOC(recv_shift, n_ranks + 1, int);
-
-  /* Exchange number of elements to send */
-
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, mpi_comm);
-
-  /* Build index arrays */
-
-  recv_shift[0] = 0;
-  for (rank = 0; rank < n_ranks; rank++)
-    recv_shift[rank+1] = recv_shift[rank] + recv_count[rank];
-
-  BFT_MALLOC(recv_gbuf, recv_shift[n_ranks]*2, cs_gnum_t);
-
-  MPI_Alltoallv(send_gbuf, send_count, send_shift, CS_MPI_GNUM,
-                recv_gbuf, recv_count, recv_shift, CS_MPI_GNUM, mpi_comm);
+  cs_lnum_t  n_b_ents = cs_all_to_all_n_elts_dest(d);
 
   /* Now switch from 1 to 2 entries in send and receive buffers */
 
-  for (i = recv_shift[n_ranks] - 1; i > -1; i--)
-    recv_gbuf[i*2] = recv_gbuf[i];
+  BFT_REALLOC(b_gbuf, n_b_ents*2, cs_gnum_t);
+
+  for (cs_lnum_t i = n_b_ents - 1; i > -1; i--)
+    b_gbuf[i*2] = b_gbuf[i];
 
   /* Get the related global cell number for each received face */
 
   if (join_param.perio_type != FVM_PERIODICITY_NULL) {
 
-    for (rank = 0; rank < n_ranks; rank++) {
+    for (cs_lnum_t i = 0; i < n_b_ents; i++) {
 
-      for (i = recv_shift[rank]; i < recv_shift[rank+1]; i++) {
+      compact_fgnum = b_gbuf[i*2];
 
-        compact_fgnum = recv_gbuf[i*2];
+      assert(loc_rank_s < compact_fgnum);
+      assert(compact_fgnum <= loc_rank_e);
 
-        assert(loc_rank_s < compact_fgnum);
-        assert(compact_fgnum <= loc_rank_e);
+      /* Get the id in the original face selection */
 
-        /* Get the id in the original face selection */
-
-        if (compact_fgnum % 2 == 0) { /* Periodic face */
-          fid = join_select->faces[(compact_fgnum - loc_rank_s)/2 - 1] - 1;
-          recv_gbuf[i*2] = mesh->global_cell_num[mesh->b_face_cells[fid]];
-          recv_gbuf[i*2+1] = 0;
-        }
-        else { /* Original face */
-          fid = join_select->faces[(compact_fgnum - loc_rank_s)/2] - 1;
-          recv_gbuf[i*2] = mesh->global_cell_num[mesh->b_face_cells[fid]];
-          recv_gbuf[i*2+1] = mesh->b_face_family[fid];
-        }
-
+      if (compact_fgnum % 2 == 0) { /* Periodic face */
+        fid = join_select->faces[(compact_fgnum - loc_rank_s)/2 - 1] - 1;
+        b_gbuf[i*2] = mesh->global_cell_num[mesh->b_face_cells[fid]];
+        b_gbuf[i*2+1] = 0;
+      }
+      else { /* Original face */
+        fid = join_select->faces[(compact_fgnum - loc_rank_s)/2] - 1;
+        b_gbuf[i*2] = mesh->global_cell_num[mesh->b_face_cells[fid]];
+        b_gbuf[i*2+1] = mesh->b_face_family[fid];
       }
 
-    } /* End of loop on ranks */
+    }
 
   }
   else { /* Not a periodic case */
 
-    for (rank = 0; rank < n_ranks; rank++) {
+    for (cs_lnum_t i = 0; i < n_b_ents; i++) {
 
-      for (i = recv_shift[rank]; i < recv_shift[rank+1]; i++) {
+      compact_fgnum = b_gbuf[i*2];
 
-        compact_fgnum = recv_gbuf[i*2];
+      assert(loc_rank_s < compact_fgnum);
+      assert(compact_fgnum <= loc_rank_e);
 
-        assert(loc_rank_s < compact_fgnum);
-        assert(compact_fgnum <= loc_rank_e);
+      fid = join_select->faces[compact_fgnum - 1 - loc_rank_s] - 1;
+      if (mesh->b_face_cells[fid] > -1)
+        b_gbuf[i*2] = mesh->global_cell_num[mesh->b_face_cells[fid]];
+      else
+        b_gbuf[i*2] = 0;
+      b_gbuf[i*2+1] = mesh->b_face_family[fid];
 
-        fid = join_select->faces[compact_fgnum - 1 - loc_rank_s] - 1;
-        if (mesh->b_face_cells[fid] > -1)
-          recv_gbuf[i*2] = mesh->global_cell_num[mesh->b_face_cells[fid]];
-        else
-          recv_gbuf[i*2] = 0;
-        recv_gbuf[i*2+1] = mesh->b_face_family[fid];
-
-      }
-
-    } /* End of loop on ranks */
+    }
 
   } /* End if not a periodic case */
 
-  /* Update shifts */
-
-  for (rank = 0; rank < n_ranks; rank++) {
-    send_count[rank] *= 2;
-    recv_count[rank] *= 2;
-    send_shift[rank] *= 2;
-    recv_shift[rank] *= 2;
-  }
-  send_shift[n_ranks] *= 2;
-  recv_shift[n_ranks] *= 2;
-
   /* Return values to send ranks */
 
-  MPI_Alltoallv(recv_gbuf, recv_count, recv_shift, CS_MPI_GNUM,
-                send_gbuf, send_count, send_shift, CS_MPI_GNUM, mpi_comm);
+  cs_gnum_t *p_gbuf = cs_all_to_all_copy_array(d,
+                                               CS_GNUM_TYPE,
+                                               2,
+                                               true,  /* reverse */
+                                               b_gbuf,
+                                               NULL);
 
   /* Define cell_gnum */
 
-  for (i = 0; i < send_shift[n_ranks] / 2; i++) {
-    cell_gnum[parent[i]] = send_gbuf[i*2];
-    face_family[parent[i]] = send_gbuf[i*2+1];
+  for (cs_lnum_t i = 0; i < n2o_hist_size; i++) {
+    cell_gnum[i] = p_gbuf[i*2];
+    face_family[i] = p_gbuf[i*2+1];
   }
 
   /* Free memory */
 
-  BFT_FREE(send_count);
-  BFT_FREE(send_shift);
-  BFT_FREE(send_gbuf);
-  BFT_FREE(recv_count);
-  BFT_FREE(recv_shift);
-  BFT_FREE(recv_gbuf);
-  BFT_FREE(parent);
+  BFT_FREE(p_gbuf);
+  BFT_FREE(b_gbuf);
 
+  cs_all_to_all_destroy(&d);
 }
 
 #endif /* HAVE_MPI */
