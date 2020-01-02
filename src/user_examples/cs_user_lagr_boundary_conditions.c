@@ -41,27 +41,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
-
-#include "cs_base.h"
-#include "cs_boundary_zone.h"
-#include "cs_math.h"
-#include "cs_notebook.h"
-#include "cs_parall.h"
-#include "cs_parameters.h"
-#include "cs_prototypes.h"
-#include "cs_random.h"
-
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_log.h"
-
-#include "cs_lagr.h"
-#include "cs_lagr_new.h"
-#include "cs_lagr_tracking.h"
-#include "cs_lagr_prototypes.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 

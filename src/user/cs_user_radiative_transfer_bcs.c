@@ -41,51 +41,10 @@
 #endif
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_mem.h"
-#include "bft_error.h"
-#include "bft_printf.h"
-
-#include "cs_1d_wall_thermal.h"
-#include "cs_base.h"
-#include "cs_boundary_zone.h"
-#include "cs_fan.h"
-#include "cs_field.h"
-#include "cs_gui_util.h"
-#include "cs_field_pointer.h"
-#include "cs_field_operator.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_location.h"
-#include "cs_mesh_quantities.h"
-#include "cs_halo.h"
-#include "cs_halo_perio.h"
-#include "cs_log.h"
-#include "cs_multigrid.h"
-#include "cs_notebook.h"
-#include "cs_parameters.h"
-#include "cs_physical_constants.h"
-#include "cs_physical_properties.h"
-#include "cs_prototypes.h"
-#include "cs_rotation.h"
-#include "cs_sles.h"
-#include "cs_sles_it.h"
-#include "cs_time_moment.h"
-#include "cs_time_step.h"
-#include "cs_turbomachinery.h"
-#include "cs_selector.h"
-#include "cs_rad_transfer.h"
-#include "cs_thermal_model.h"
-
-#include "cs_post.h"
-
-/*----------------------------------------------------------------------------
- *  Header for the current file
- *----------------------------------------------------------------------------*/
-
-#include "cs_prototypes.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -35,16 +35,10 @@
 #include <stdio.h>
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_lagr.h"
-#include "cs_lagr_post.h"
-#include "cs_lagr_stat.h"
-#include "cs_lagr_particle.h"
-#include "cs_lagr_prototypes.h"
-#include "cs_notebook.h"
-#include "cs_prototypes.h"
+#include "cs_headers.h"
 
 /*---------------------------------------------------------------------------*/
 /*

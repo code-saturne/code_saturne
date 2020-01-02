@@ -43,45 +43,10 @@
 #include <assert.h>
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ * Local headers
  *----------------------------------------------------------------------------*/
 
-#include "bft_printf.h"
-#include "bft_error.h"
-#include "bft_mem.h"
-
-#include "fvm_periodicity.h"
-
-#include "cs_base.h"
-#include "cs_halo.h"
-#include "cs_interface.h"
-#include "cs_math.h"
-#include "cs_mesh.h"
-#include "cs_mesh_quantities.h"
-#include "cs_notebook.h"
-#include "cs_order.h"
-#include "cs_parall.h"
-#include "cs_prototypes.h"
-#include "cs_random.h"
-#include "cs_search.h"
-#include "cs_time_step.h"
-#include "cs_timer_stats.h"
-#include "cs_thermal_model.h"
-
-#include "cs_field.h"
-#include "cs_field_pointer.h"
-
-#include "cs_lagr.h"
-#include "cs_lagr_new.h"
-#include "cs_lagr_particle.h"
-#include "cs_lagr_stat.h"
-#include "cs_lagr_sde.h"
-
-/*----------------------------------------------------------------------------
- *  Header for the current file
- *----------------------------------------------------------------------------*/
-
-#include "cs_lagr_prototypes.h"
+#include "cs_headers.h"
 
 /*----------------------------------------------------------------------------*/
 
