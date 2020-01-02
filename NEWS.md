@@ -1,3 +1,11 @@
+Release 6.0.2 (Unreleased)
+--------------------------
+
+Bug fixes:
+
+- Fix compilation of user-defined sources in example cases.
+
+
 Release 6.0.1 (December 23 2019)
 --------------------------------
 

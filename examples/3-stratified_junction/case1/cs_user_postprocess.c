@@ -55,6 +55,7 @@
 #include "cs_time_plot.h"
 
 #include "cs_field_pointer.h"
+#include "cs_notebook.h"
 #include "cs_parameters.h"
 #include "cs_physical_constants.h"
 #include "cs_turbulence_model.h"

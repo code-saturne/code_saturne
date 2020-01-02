@@ -413,13 +413,13 @@ use cstnum
 use entsor
 use parall
 use period
-use ihmpre
 use ppppar
 use ppthch
 use coincl
 use cpincl
 use ppincl
 use ppcpfu
+use atchem
 use atincl
 use atsoil
 use ctincl
@@ -452,7 +452,6 @@ integer, allocatable, dimension(:) :: lstelt
 integer          ielt, nlelt, ifac
 
 !===============================================================================
-
 
 !===============================================================================
 ! Initialization
