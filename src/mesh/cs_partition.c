@@ -1058,11 +1058,11 @@ _cell_rank_by_sfc(cs_gnum_t                 n_g_cells,
 
   if (sfc_type < FVM_IO_NUM_SFC_HILBERT_BOX)
     cs_log_printf(CS_LOG_PERFORMANCE,
-                  _("  Morton (Z) curve:           %.3g s \n"),
+                  _("  Morton (Z) curve:           %.3g s\n"),
                   (double)(dt.wall_nsec)/1.e9);
   else
     cs_log_printf(CS_LOG_PERFORMANCE,
-                  _("  Peano-Hilbert curve:        %.3g s \n"),
+                  _("  Peano-Hilbert curve:        %.3g s\n"),
                   (double)(dt.wall_nsec)/1.e9);
 }
 

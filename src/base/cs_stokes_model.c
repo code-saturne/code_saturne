@@ -426,10 +426,7 @@ cs_stokes_model_log_setup(void)
        "    iphydr:      %14d (1: account for explicit\n"
        "                                    balance between pressure\n"
        "                                    gradient, gravity source\n"
-       "                                    terms, and head losses\n"
-       "                                  2: compute a hydrostatic\n"
-       "                                     pressure which is\n"
-       "                                     in balance with buoyancy)\n"),
+       "                                    terms, and head losses)\n"),
      cs_glob_stokes_model->idilat,
      cs_glob_porous_model,
      cs_glob_stokes_model->iphydr);
