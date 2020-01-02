@@ -5,7 +5,7 @@
 /*
   This file is part of the PLE (Parallel Location and Exchange) library.
 
-  Copyright (C) 2010-2019 EDF S.A.
+  Copyright (C) 2010-2020 EDF S.A.
 
   The PLE library is free software; you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by the

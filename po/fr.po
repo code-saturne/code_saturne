@@ -1,6 +1,6 @@
 # translation of fr.po to
 # French translations for code_saturne package.
-# Copyright (C) 2008-2019 EDF S.A.
+# Copyright (C) 2008-2020 EDF S.A.
 # This file is distributed under the same license as Code_Saturne.
 #
 msgid ""
