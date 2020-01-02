@@ -1279,16 +1279,6 @@ _log_vertex(cs_join_vertex_t  vertex)
              _print_state(vertex.state));
 }
 
-#endif /* HAVE_MPI */
-
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public function definitions
- *===========================================================================*/
-
-#if defined(HAVE_MPI)
-
 /*----------------------------------------------------------------------------
  * Create a MPI_Datatype for the cs_join_vertex_t structure.
  *
@@ -1296,8 +1286,8 @@ _log_vertex(cs_join_vertex_t  vertex)
  *   a MPI_Datatype associated to the cs_join_vertex_t structure
  *---------------------------------------------------------------------------*/
 
-MPI_Datatype
-cs_join_mesh_create_vtx_datatype(void)
+static MPI_Datatype
+_create_vtx_datatype(void)
 {
   int  j;
   cs_join_vertex_t  v_data;
@@ -1357,11 +1347,11 @@ cs_join_mesh_create_vtx_datatype(void)
  *   datatype  <--  MPI_datatype associated to cs_join_vertex_t
  *---------------------------------------------------------------------------*/
 
-void
-cs_join_mesh_mpi_vertex_min(cs_join_vertex_t   *in,
-                            cs_join_vertex_t   *inout,
-                            int                *len,
-                            MPI_Datatype       *datatype)
+static void
+_mpi_vertex_min(cs_join_vertex_t   *in,
+                cs_join_vertex_t   *inout,
+                int                *len,
+                MPI_Datatype       *datatype)
 {
   CS_UNUSED(datatype);
 
@@ -1410,11 +1400,11 @@ cs_join_mesh_mpi_vertex_min(cs_join_vertex_t   *in,
  *   datatype  <--  MPI_datatype associated to cs_join_vertex_t
  *---------------------------------------------------------------------------*/
 
-void
-cs_join_mesh_mpi_vertex_max(cs_join_vertex_t   *in,
-                            cs_join_vertex_t   *inout,
-                            int                *len,
-                            MPI_Datatype       *datatype)
+static void
+_mpi_vertex_max(cs_join_vertex_t   *in,
+                cs_join_vertex_t   *inout,
+                int                *len,
+                MPI_Datatype       *datatype)
 {
   CS_UNUSED(datatype);
 
@@ -1455,6 +1445,12 @@ cs_join_mesh_mpi_vertex_max(cs_join_vertex_t   *in,
 }
 
 #endif /* HAVE_MPI */
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
+/*============================================================================
+ * Public function definitions
+ *===========================================================================*/
 
 /*----------------------------------------------------------------------------
  * Allocate and initialize a new cs_join_mesh_t structure.
@@ -2033,12 +2029,12 @@ cs_join_mesh_minmax_tol(cs_join_param_t    param,
 #if !defined(_WIN32)
   if (n_ranks > 1) {
 
-    MPI_Datatype  MPI_JOIN_VERTEX = cs_join_mesh_create_vtx_datatype();
+    MPI_Datatype  MPI_JOIN_VERTEX = _create_vtx_datatype();
     MPI_Op   MPI_Vertex_min, MPI_Vertex_max;
 
-    MPI_Op_create((MPI_User_function  *)cs_join_mesh_mpi_vertex_min,
+    MPI_Op_create((MPI_User_function  *)_mpi_vertex_min,
                   true, &MPI_Vertex_min);
-    MPI_Op_create((MPI_User_function  *)cs_join_mesh_mpi_vertex_max,
+    MPI_Op_create((MPI_User_function  *)_mpi_vertex_max,
                   false, &MPI_Vertex_max);
 
     MPI_Allreduce(&_min, &g_min, 1, MPI_JOIN_VERTEX, MPI_Vertex_min,
@@ -2088,17 +2084,24 @@ cs_join_mesh_exchange(cs_lnum_t              n_send,
   assert(send_mesh != NULL);
   assert(recv_mesh != NULL);
 
-  int  i, j, rank, shift, start, end, face_id, vtx_id;
-  int  local_rank, n_ranks;
+  /* Try to use datatype larger than char if for join vertex type
+     to reduce risk of reaching maximum index size with cs_lnum_t
+     (with current size of 48 bytes, it would take more than
+     40 million vertices in the connectvity to approach
+     the 2 Gb limit, but a safety factor of 4 or 8 is still better).
+  */
 
-  cs_lnum_t  n_face_to_recv = 0, n_vertices = 0, vtx_tag_size = 0;
-  cs_lnum_t  *vtx_shift = NULL, *vtx_tag = NULL;
-  cs_lnum_t  *send_count = NULL, *recv_count = NULL;
-  cs_lnum_t  *send_shift = NULL, *recv_shift = NULL;
-  cs_gnum_t  *send_gbuf = NULL, *recv_gbuf = NULL;
-  cs_join_vertex_t  *send_vtx_buf = NULL, *recv_vtx_buf = NULL;
+  size_t         vtx_t_size = sizeof(cs_join_vertex_t);
+  cs_datatype_t  vtx_type = CS_CHAR;
 
-  MPI_Datatype  MPI_JOIN_VERTEX = cs_join_mesh_create_vtx_datatype();
+  if (vtx_t_size % 8 == 0) {
+    vtx_t_size /= 8;
+    vtx_type = CS_UINT64;
+  }
+  else if (vtx_t_size % 4 == 0) {
+    vtx_t_size /= 4;
+    vtx_type = CS_UINT32;
+  }
 
   /* Sanity checks */
 
@@ -2106,33 +2109,12 @@ cs_join_mesh_exchange(cs_lnum_t              n_send,
   assert(recv_mesh != NULL);
   assert(send_rank != NULL || n_send == 0);
 
-  MPI_Comm_size(comm, &n_ranks);
-  MPI_Comm_rank(comm, &local_rank);
-
-  /* Count the number of faces to recv */
-
-  BFT_MALLOC(send_count, n_ranks, cs_lnum_t);
-  BFT_MALLOC(recv_count, n_ranks, cs_lnum_t);
-
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
-
-  for (i = 0; i < n_send; i++)
-    send_count[send_rank[i]] += 1;
-
-  /* Exchange number of elements to send */
-
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
-
-  for (i = 0; i < n_ranks; i++)
-    n_face_to_recv += recv_count[i];
-
-  /* Update cs_join_mesh_t structure */
-
-  recv_mesh->n_faces = n_face_to_recv;
-
-  BFT_MALLOC(recv_mesh->face_gnum, n_face_to_recv, cs_gnum_t);
-  BFT_MALLOC(recv_mesh->face_vtx_idx, n_face_to_recv + 1, cs_lnum_t);
+  cs_all_to_all_t *d
+    = cs_all_to_all_create(n_send,
+                           CS_ALL_TO_ALL_ORDER_BY_SRC_RANK,  /* needed ? */
+                           NULL,                             /* dest_id */
+                           send_rank,
+                           comm);
 
   /* The mesh doesn't change from a global point of view.
      It's only a redistribution of the elements according to the send_faces
@@ -2143,270 +2125,111 @@ cs_join_mesh_exchange(cs_lnum_t              n_send,
 
   /* Exchange face connect. count */
 
-  BFT_MALLOC(vtx_tag, send_mesh->n_vertices, cs_lnum_t);
-  BFT_MALLOC(vtx_shift, n_ranks+1, cs_lnum_t);
+  cs_lnum_t *send_index;
+  BFT_MALLOC(send_index, n_send+1, cs_lnum_t);
+  send_index[0] = 0;
 
-  vtx_shift[0] = 0;
+  cs_gnum_t *send_gbuf;
+  BFT_MALLOC(send_gbuf, n_send*2, cs_gnum_t);
 
-  for (i = 0; i < n_ranks; i++) {
-    vtx_shift[i+1] = 0;
-    send_count[i] = 0;
-  }
+  for (cs_lnum_t i = 0; i < n_send; i++) {
 
-  for (i = 0; i < send_mesh->n_vertices; i++)
-    vtx_tag[i] = -1;
+    cs_lnum_t face_id = send_faces[i];
+    cs_lnum_t n_f_vtx =   send_mesh->face_vtx_idx[face_id+1]
+                        - send_mesh->face_vtx_idx[face_id];
 
-  for (i = 0; i < n_send; i++) {
+    send_gbuf[i*2] = send_mesh->face_gnum[face_id];
+    send_gbuf[i*2+1] = n_f_vtx;
 
-    rank = send_rank[i];
-    face_id = send_faces[i];
-    start = send_mesh->face_vtx_idx[face_id];
-    end = send_mesh->face_vtx_idx[face_id+1];
-    n_vertices = end - start;
-
-    for (j = start; j < end; j++) {
-
-      vtx_id = send_mesh->face_vtx_lst[j];
-
-      if (vtx_tag[vtx_id] < i) {
-        vtx_tag[vtx_id] = i;
-        vtx_shift[rank+1] += 1;
-      }
-
-    }
-
-    send_count[rank] +=   2            /* face_gnum and n_vertices */
-                        + n_vertices;  /* face connect. */
+    send_index[i+1] = send_index[i] + n_f_vtx;
 
   } /* End of loop on elements to send */
 
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
-
-  BFT_MALLOC(send_shift, n_ranks + 1, cs_lnum_t);
-  BFT_MALLOC(recv_shift, n_ranks + 1, cs_lnum_t);
-
-  /* Build index arrays */
-
-  send_shift[0] = 0;
-  recv_shift[0] = 0;
-
-  for (rank = 0; rank < n_ranks; rank++) {
-
-    recv_shift[rank+1] = recv_shift[rank] + recv_count[rank];
-    send_shift[rank+1] = send_shift[rank] + send_count[rank];
-    vtx_shift[rank+1] += vtx_shift[rank];
-
-  }
-
-  /* Build send_gbuf to exchange face connectivity */
-
-  BFT_MALLOC(send_gbuf, send_shift[n_ranks], cs_gnum_t);
-  BFT_MALLOC(recv_gbuf, recv_shift[n_ranks], cs_gnum_t);
-
-  cs_lnum_t *r_vtx_count;
-  BFT_MALLOC(r_vtx_count, n_ranks, cs_lnum_t);
-
-  for (i = 0; i < n_ranks; i++) {
-    send_count[i] = 0;
-    r_vtx_count[i] = 0;
-  }
-
-  for (i = 0; i < n_send; i++) {
-
-    rank = send_rank[i];
-    face_id = send_faces[i];
-
-    start = send_mesh->face_vtx_idx[face_id];
-    end = send_mesh->face_vtx_idx[face_id+1];
-    n_vertices = end - start;
-
-    shift = send_shift[rank] + send_count[rank];
-    send_gbuf[shift++] = send_mesh->face_gnum[face_id];
-    send_gbuf[shift++] = n_vertices;
-
-    for (j = start; j < end; j++) {
-      vtx_id = send_mesh->face_vtx_lst[j];
-      vtx_tag[vtx_id] = -1;
-    }
-
-    for (j = start; j < end; j++) {
-
-      vtx_id = send_mesh->face_vtx_lst[j];
-
-      if (vtx_tag[vtx_id] < 0) {
-        vtx_tag[vtx_id] = r_vtx_count[rank];
-        r_vtx_count[rank] +=1;
-      }
-
-      send_gbuf[shift++] = vtx_tag[vtx_id];
-
-    }
-
-    send_count[rank] +=   2            /* face_gnum and n_vertices */
-                        + n_vertices;  /* face connect. */
-
-  } /* End of loop on elements to send */
-
-  BFT_FREE(r_vtx_count);
-
-  MPI_Alltoallv(send_gbuf, send_count, send_shift, CS_MPI_GNUM,
-                recv_gbuf, recv_count, recv_shift, CS_MPI_GNUM, comm);
+  cs_gnum_t  *recv_gbuf
+    = cs_all_to_all_copy_array(d,
+                               CS_GNUM_TYPE,
+                               2,
+                               false,  /* reverse */
+                               send_gbuf,
+                               NULL);
 
   BFT_FREE(send_gbuf);
 
+  /* Update cs_join_mesh_t structure */
+
+  cs_lnum_t n_recv = cs_all_to_all_n_elts_dest(d);
+
+  recv_mesh->n_faces = n_recv;
+
+  BFT_MALLOC(recv_mesh->face_gnum, n_recv, cs_gnum_t);
+  BFT_MALLOC(recv_mesh->face_vtx_idx, n_recv + 1, cs_lnum_t);
+
   /* Scan recv_gbuf to build face->vertex connect. index */
 
-  shift = 0;
-  face_id = 0;
-
-  while (shift < recv_shift[n_ranks]) {
-
-    recv_mesh->face_gnum[face_id] = recv_gbuf[shift++];
-    n_vertices = recv_gbuf[shift++];
-    recv_mesh->face_vtx_idx[face_id+1] = n_vertices;
-
-    face_id++;
-    shift += n_vertices;
-
-  }
-
-  assert(n_face_to_recv == face_id);
-  assert(shift == recv_shift[n_ranks]);
-
   recv_mesh->face_vtx_idx[0] = 0;
-  for (i = 0; i < recv_mesh->n_faces; i++)
-    recv_mesh->face_vtx_idx[i+1] += recv_mesh->face_vtx_idx[i];
 
-  /* Scan recv_gbuf to build face->vertex connectivity list */
+  for (cs_lnum_t i = 0; i < n_recv; i++) {
 
-  BFT_MALLOC(recv_mesh->face_vtx_lst,
-             recv_mesh->face_vtx_idx[n_face_to_recv], cs_lnum_t);
+    recv_mesh->face_gnum[i] = recv_gbuf[i*2];
+    recv_mesh->face_vtx_idx[i+1] =   recv_mesh->face_vtx_idx[i]
+                                   + recv_gbuf[i*2+1];
 
-  vtx_tag_size = send_mesh->n_vertices;
+  } /* End of loop on received elements */
 
-  if (recv_mesh->face_vtx_idx[n_face_to_recv] > send_mesh->n_vertices) {
-
-    vtx_tag_size = recv_mesh->face_vtx_idx[n_face_to_recv];
-    BFT_REALLOC(vtx_tag, recv_mesh->face_vtx_idx[n_face_to_recv], cs_lnum_t);
-
-  }
+  BFT_FREE(recv_gbuf);
 
   /* Store vtx_shift data into send_count in order to re-use it */
 
-  for (rank = 0; rank < n_ranks; rank++)
-    send_count[rank] = vtx_shift[rank+1] - vtx_shift[rank];
-
-  for (rank = 0; rank < n_ranks + 1; rank++)
-    vtx_shift[rank] = 0;
-
-  shift = 0;
-  face_id = 0;
-
-  for (rank = 0; rank < n_ranks; rank++) {
-
-    cs_lnum_t vtx_count = 0;
-
-    for (i = 0; i < vtx_tag_size; i++)
-      vtx_tag[i] = -1;
-
-    while (shift < recv_shift[rank + 1]) {
-
-      shift += 1; /* skip face_gnum */
-      n_vertices = recv_gbuf[shift++];
-      start = recv_mesh->face_vtx_idx[face_id];
-
-      for (j = 0; j < n_vertices; j++) {
-
-        vtx_id = recv_gbuf[shift++];
-
-        if (vtx_tag[vtx_id] < 0) {
-          vtx_count++;
-          vtx_tag[vtx_id] = vtx_shift[rank] + vtx_count;
-        }
-
-        recv_mesh->face_vtx_lst[start + j] = vtx_tag[vtx_id] - 1;
-
-      }
-
-      face_id++;
-
-    } /* Scan recv_gbuf for the current rank */
-
-    vtx_shift[rank+1] = vtx_shift[rank] + vtx_count;
-
-  } /* End of loop on ranks */
-
-  /* Exchange number of vertices to communicate */
-
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
-
-  send_shift[0] = 0;
-  recv_shift[0] = 0;
-
-  for (rank = 0; rank < n_ranks; rank++) {
-    send_shift[rank+1] = send_shift[rank] + send_count[rank];
-    recv_shift[rank+1] = recv_shift[rank] + recv_count[rank];
-  }
-
-  /* Partial memory management */
-
-  BFT_FREE(vtx_shift);
-  BFT_FREE(recv_gbuf);
-
-  BFT_MALLOC(send_vtx_buf, send_shift[n_ranks], cs_join_vertex_t);
-  BFT_MALLOC(recv_vtx_buf, recv_shift[n_ranks], cs_join_vertex_t);
+  cs_join_vertex_t *send_vbuf;
+  BFT_MALLOC(send_vbuf, send_index[n_send], cs_join_vertex_t);
 
   /* Exchange vertex buffers */
 
-  for (i = 0; i < send_mesh->n_vertices; i++)
-    vtx_tag[i] = -1;
+  for (cs_lnum_t i = 0; i < n_send; i++) {
 
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
+    cs_lnum_t face_id = send_faces[i];
 
-  for (i = 0; i < n_send; i++) {
+    cs_lnum_t s_id = send_mesh->face_vtx_idx[face_id];
+    cs_lnum_t e_id = send_mesh->face_vtx_idx[face_id+1];
 
-    rank = send_rank[i];
-    face_id = send_faces[i];
+    size_t shift = send_index[i];
 
-    start = send_mesh->face_vtx_idx[face_id];
-    end = send_mesh->face_vtx_idx[face_id+1];
-    n_vertices = end - start;
-
-    for (j = start; j < end; j++) {
-
-      vtx_id = send_mesh->face_vtx_lst[j];
-
-      if (vtx_tag[vtx_id] < i) { /* add the vertex to send_vtx_buf */
-
-        shift = send_shift[rank] + send_count[rank];
-        send_count[rank] += 1;
-        send_vtx_buf[shift] = send_mesh->vertices[vtx_id];
-        vtx_tag[vtx_id] = i;
-
-      }
-
-    } /* End of loop on the face connectivity */
+    for (cs_lnum_t j = s_id; j < e_id; j++) {
+      cs_lnum_t vtx_id = send_mesh->face_vtx_lst[j];
+      send_vbuf[shift++] = send_mesh->vertices[vtx_id];
+    }
 
   }
 
-  for (rank = 0; rank < n_ranks; rank++)
-    assert(send_shift[rank+1] == send_shift[rank] + send_count[rank]);
+  for (cs_lnum_t i = 0; i < n_send; i++)
+    send_index[i+1] *= vtx_t_size;
+  for (cs_lnum_t i = 0; i < n_recv; i++)
+    recv_mesh->face_vtx_idx[i+1] *= vtx_t_size;
 
-  MPI_Alltoallv(send_vtx_buf, send_count, send_shift, MPI_JOIN_VERTEX,
-                recv_vtx_buf, recv_count, recv_shift, MPI_JOIN_VERTEX,
-                comm);
+  recv_mesh->vertices
+    = cs_all_to_all_copy_indexed(d,
+                                 vtx_type,
+                                 false,  /* reverse */
+                                 send_index,
+                                 send_vbuf,
+                                 recv_mesh->face_vtx_idx,
+                                 NULL);
+
+  for (cs_lnum_t i = 0; i < n_recv; i++)
+    recv_mesh->face_vtx_idx[i+1] /= vtx_t_size;
+
+  BFT_FREE(send_vbuf);
+  BFT_FREE(send_index);
 
   /* Update cs_join_mesh_t structure */
 
-  recv_mesh->n_vertices = recv_shift[n_ranks];
+  recv_mesh->n_vertices = recv_mesh->face_vtx_idx[n_recv];
 
-  BFT_MALLOC(recv_mesh->vertices, recv_shift[n_ranks], cs_join_vertex_t);
+  cs_lnum_t recv_lst_size = recv_mesh->face_vtx_idx[n_recv];
+  BFT_MALLOC(recv_mesh->face_vtx_lst, recv_lst_size, cs_lnum_t);
 
-  if (recv_shift[n_ranks] > 0)
-    memcpy(recv_mesh->vertices,
-           recv_vtx_buf,
-           recv_shift[n_ranks]*sizeof(cs_join_vertex_t));
+  for (cs_lnum_t i = 0; i < recv_lst_size; i++)
+    recv_mesh->face_vtx_lst[i] = i;
 
   /* Delete vertices which appear several times */
 
@@ -2414,14 +2237,7 @@ cs_join_mesh_exchange(cs_lnum_t              n_send,
 
   /* Free memory */
 
-  MPI_Type_free(&MPI_JOIN_VERTEX);
-  BFT_FREE(vtx_tag);
-  BFT_FREE(send_count);
-  BFT_FREE(recv_count);
-  BFT_FREE(send_shift);
-  BFT_FREE(recv_shift);
-  BFT_FREE(send_vtx_buf);
-  BFT_FREE(recv_vtx_buf);
+  cs_all_to_all_destroy(&d);
 }
 
 #endif /* HAVE_MPI */

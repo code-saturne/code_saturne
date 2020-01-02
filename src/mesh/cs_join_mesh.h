@@ -129,52 +129,6 @@ typedef struct {
  * Public function prototypes
  *===========================================================================*/
 
-#if defined(HAVE_MPI)
-
-/*----------------------------------------------------------------------------
- * Create a MPI_Datatype for the cs_join_vertex_t structure.
- *
- * returns:
- *   an MPI_Datatype associated to the cs_join_vertex_t structure.
- *---------------------------------------------------------------------------*/
-
-MPI_Datatype
-cs_join_mesh_create_vtx_datatype(void);
-
-/*----------------------------------------------------------------------------
- * Create a function to define an operator for MPI reduction operation
- *
- * parameters:
- *   in        <--  input vertices
- *   inout     <->  in/out vertices (vertex with the min. toelrance)
- *   len       <--  size of input array
- *   datatype  <--  MPI_datatype associated to cs_join_vertex_t
- *---------------------------------------------------------------------------*/
-
-void
-cs_join_mesh_mpi_vertex_min(cs_join_vertex_t   *in,
-                            cs_join_vertex_t   *inout,
-                            int                *len,
-                            MPI_Datatype       *datatype);
-
-/*----------------------------------------------------------------------------
- * Create a function to define an operator for MPI reduction operation
- *
- * parameters:
- *   in        <--  input vertices
- *   inout     <->  in/out vertices (vertex with the max. toelrance)
- *   len       <--  size of input array
- *   datatype  <--  MPI_datatype associated to cs_join_vertex_t
- *---------------------------------------------------------------------------*/
-
-void
-cs_join_mesh_mpi_vertex_max(cs_join_vertex_t   *in,
-                            cs_join_vertex_t   *inout,
-                            int                *len,
-                            MPI_Datatype       *datatype);
-
-#endif /* HAVE_MPI */
-
 /*----------------------------------------------------------------------------
  * Allocate and initialize a new cs_join_mesh_t structure.
  *
