@@ -166,6 +166,10 @@ struct _cs_all_to_all_t {
   cs_lnum_t                  n_elts_src;   /* Number of source elements */
   cs_lnum_t                  n_elts_dest;  /* Number of destination elements
                                               (-1 before metadata available) */
+  cs_lnum_t                  n_elts_dest_e; /* Number of destination elements
+                                               exchanged, independently of
+                                                dest_id (-1 before metadata
+                                                available) */
 
   int                        flags;        /* option flags */
 
@@ -275,6 +279,7 @@ _all_to_all_create_base(size_t    n_elts,
 
   d->n_elts_src = n_elts;
   d->n_elts_dest = -1; /* undetermined as yet */
+  d->n_elts_dest_e = -1;
 
   d->flags = flags;
 
@@ -675,12 +680,20 @@ _alltoall_caller_prepare_i(_mpi_all_to_all_caller_t  *dc,
 
   /* Allocate send buffer */
 
-  if (reverse) {
+  if (reverse && recv_id == NULL) {
     BFT_FREE(dc->_send_buffer);
     dc->send_buffer = data;
   }
   else {
-    size_t n_sub_elts = src_index[n_elts];
+    size_t n_sub_elts = 0;
+    if (reverse == false || recv_id == NULL)
+      n_sub_elts = src_index[n_elts];
+    else {
+      for (size_t j = 0; j < dc->send_size; j++) {
+        cs_lnum_t k = recv_id[j];
+        n_sub_elts += src_index[k+1] - src_index[k];
+      }
+    }
     BFT_REALLOC(dc->_send_buffer, n_sub_elts*dc->comp_size, unsigned char);
     dc->send_buffer = dc->_send_buffer;
   }
@@ -766,20 +779,22 @@ _alltoall_caller_prepare_i(_mpi_all_to_all_caller_t  *dc,
       dc->send_displ[i] -= dc->send_count[i];
   }
   else if (recv_id != NULL) { /* reverse here */
-    for (i = 0; i < dc->n_ranks; i++) {
-      size_t i_s = dc->recv_displ[i];
-      size_t i_e = dc->recv_displ[i+1];
-      size_t w_displ = dc->send_displ[i]*elt_size;
-      for (size_t j = i_s; j < i_e; j++) {
-        cs_lnum_t k = recv_id[j];
-        cs_lnum_t n_sub_send = src_index[k+1] - src_index[k];
-        size_t r_displ = src_index[k]*elt_size;
-        size_t sub_size = elt_size*n_sub_send;
-        for (size_t l = 0; l < sub_size; l++)
-          dc->_send_buffer[w_displ + l] = _data[r_displ + l];
-        w_displ += sub_size;
-      }
+    size_t w_displ = 0;
+    for (size_t j = 0; j < dc->send_size; j++) {
+      cs_lnum_t k = recv_id[j];
+      cs_lnum_t n_sub_send = src_index[k+1] - src_index[k];
+      size_t r_displ = src_index[k]*elt_size;
+      size_t sub_size = elt_size*n_sub_send;
+      for (size_t l = 0; l < sub_size; l++)
+        dc->_send_buffer[w_displ + l] = _data[r_displ + l];
+      w_displ += sub_size;
     }
+
+    /* Recompute associated displacements */
+    _compute_displ(dc->n_ranks, dc->send_count, dc->send_displ);
+    _compute_displ(dc->n_ranks, dc->recv_count, dc->recv_displ);
+
+
   }
   else { /* If revert and no recv_id */
     assert(dc->send_buffer == data);
@@ -895,6 +910,7 @@ _alltoall_caller_exchange_s(cs_all_to_all_t           *d,
         dest_id_max = d->recv_id[i];
       d->n_elts_dest = dest_id_max + 1;
     }
+    d->n_elts_dest_e = d->dc->recv_size;
   }
 
   /* Now handle main data buffer (reverse implies reordering data) */
@@ -974,15 +990,8 @@ _alltoall_caller_exchange_i(cs_all_to_all_t           *d,
   /* Data buffer for MPI exchange (may merge data and metadata) */
 
   if (d->recv_id != NULL || reverse) {
-    size_t _n_dest_buf = _n_dest_sub;
-    if (d->recv_id != NULL) {
-      _n_dest_buf = 0;
-      for (size_t i = 0; i < d->dc->recv_size; i++) {
-        cs_lnum_t j = d->recv_id[i];
-        _n_dest_buf += dest_index[j+1] - dest_index[j];
-      }
-    }
-    BFT_MALLOC(_recv_data, _n_dest_buf*elt_size, unsigned char);
+    size_t _n_dest_buf = dc->recv_displ[dc->n_ranks] * dc->comp_size;
+    BFT_MALLOC(_recv_data, _n_dest_buf, unsigned char);
   }
   else
     _recv_data = _dest_data;
@@ -1172,7 +1181,7 @@ _cr_recv_id_by_src_rank(cs_all_to_all_t      *d,
   assert(d->recv_id == NULL);
 
   int *src_rank;
-  BFT_MALLOC(src_rank, d->n_elts_dest, int);
+  BFT_MALLOC(src_rank, d->n_elts_dest_e, int);
 
   cs_crystal_router_get_data(cr,
                              &src_rank,
@@ -1540,8 +1549,10 @@ cs_all_to_all_n_elts_dest(cs_all_to_all_t  *d)
                                    false,
                                    NULL,
                                    NULL);
-        else
+        else {
           d->n_elts_dest = d->dc->recv_size;
+          d->n_elts_dest_e = d->dc->recv_size;
+        }
       }
       break;
 
@@ -1554,6 +1565,7 @@ cs_all_to_all_n_elts_dest(cs_all_to_all_t  *d)
                                         _cr_flags(d, false),
                                        NULL,
                                        NULL,
+                                       d->dest_id,
                                        d->dest_rank,
                                        d->comm);
 
@@ -1567,6 +1579,7 @@ cs_all_to_all_n_elts_dest(cs_all_to_all_t  *d)
         _all_to_all_calls[CS_ALL_TO_ALL_TIME_METADATA] += 1;
 
         d->n_elts_dest = cs_crystal_router_n_elts(cr);
+        d->n_elts_dest_e = cs_crystal_router_n_recv_elts(cr);
 
         if (d->flags & CS_ALL_TO_ALL_ORDER_BY_SRC_RANK)
           _cr_recv_id_by_src_rank(d, cr);
@@ -1664,6 +1677,7 @@ cs_all_to_all_copy_array(cs_all_to_all_t   *d,
                                        d->n_elts_src,
                                        d->dest_rank);
         d->n_elts_dest = d->dc->recv_size;
+        d->n_elts_dest_e = d->dc->recv_size;
       }
       size_t n_elts = (reverse) ? d->n_elts_dest : d->n_elts_src;
       if (reverse)
@@ -1701,14 +1715,15 @@ cs_all_to_all_copy_array(cs_all_to_all_t   *d,
                                         datatype,
                                         _cr_flags(d, reverse),
                                         src_data,
+                                        NULL,
                                         d->dest_id,
                                         d->dest_rank,
                                         d->comm);
         tcr0 = cs_timer_time();
         cs_crystal_router_exchange(cr);
         tcr1 = cs_timer_time();
-        if (d->n_elts_dest < 0) {
-          d->n_elts_dest = cs_crystal_router_n_elts(cr);
+        if (d->n_elts_dest_e < 0) {
+          d->n_elts_dest_e = cs_crystal_router_n_recv_elts(cr);
           if (d->flags & CS_ALL_TO_ALL_ORDER_BY_SRC_RANK)
             _cr_recv_id_by_src_rank(d, cr);
         }
@@ -1719,13 +1734,18 @@ cs_all_to_all_copy_array(cs_all_to_all_t   *d,
                                    &(d->src_id),
                                    NULL, /* dest_index */
                                    &_dest_data);
+        if (d->n_elts_dest < 0)
+          d->n_elts_dest = cs_crystal_router_n_elts(cr);
       }
       else {
-        cr = cs_crystal_router_create_s(d->n_elts_dest,
+        const cs_lnum_t *elt_id
+          = (d->n_elts_dest < d->n_elts_dest_e) ? d->recv_id : NULL;
+        cr = cs_crystal_router_create_s(d->n_elts_dest_e,
                                         stride,
                                         datatype,
                                         _cr_flags(d, reverse),
                                         src_data,
+                                        elt_id,
                                         d->src_id,
                                         d->src_rank,
                                         d->comm);
@@ -1795,11 +1815,14 @@ cs_all_to_all_copy_index(cs_all_to_all_t  *d,
   cs_lnum_t *src_count = NULL;
   cs_lnum_t *_dest_index = dest_index;
 
+  cs_all_to_all_n_elts_dest(d); /* force sync. if needed */
+
   cs_lnum_t n_src = (reverse) ? d->n_elts_dest : d->n_elts_src;
   cs_lnum_t n_dest = -1;
 
-  if (dest_index == NULL)
-    n_dest = (reverse) ? d->n_elts_src : cs_all_to_all_n_elts_dest(d);
+  if (dest_index == NULL) {
+    n_dest = (reverse) ? d->n_elts_src : d->n_elts_dest;
+  }
 
   t0 = cs_timer_time();
 
@@ -1953,14 +1976,17 @@ cs_all_to_all_copy_indexed(cs_all_to_all_t  *d,
                                         _cr_flags(d, reverse),
                                         src_index,
                                         src_data,
+                                        NULL,
                                         d->dest_id,
                                         d->dest_rank,
                                         d->comm);
         tcr0 = cs_timer_time();
         cs_crystal_router_exchange(cr);
         tcr1 = cs_timer_time();
-        if (d->n_elts_dest < 0)
+        if (d->n_elts_dest < 0) {
           d->n_elts_dest = cs_crystal_router_n_elts(cr);
+          d->n_elts_dest_e = cs_crystal_router_n_recv_elts(cr);
+        }
         int **p_src_rank = (d->src_rank == NULL) ? &(d->src_rank) : NULL;
         cs_crystal_router_get_data(cr,
                                    p_src_rank,
@@ -1970,11 +1996,14 @@ cs_all_to_all_copy_indexed(cs_all_to_all_t  *d,
                                    &_dest_data);
       }
       else {
-        cr = cs_crystal_router_create_i(d->n_elts_dest,
+        const cs_lnum_t *elt_id
+          = (d->n_elts_dest < d->n_elts_dest_e) ? d->recv_id : NULL;
+        cr = cs_crystal_router_create_i(d->n_elts_dest_e,
                                         datatype,
                                         _cr_flags(d, reverse),
                                         src_index,
                                         src_data,
+                                        elt_id,
                                         d->src_id,
                                         d->src_rank,
                                         d->comm);

@@ -92,6 +92,8 @@ typedef struct _cs_crystal_router_t  cs_crystal_router_t;
  * \param[in]  datatype          type of data considered
  * \param[in]  flags             add destination id ?
  * \param[in]  elt               element values
+ * \param[in]  src_id            optional parent element id (indirection
+ *                               for elt array), or NULL
  * \param[in]  dest_id           element destination id, or NULL
  * \param[in]  dest_rank         destination rank for each element
  * \param[in]  comm              associated MPI communicator
@@ -106,6 +108,7 @@ cs_crystal_router_create_s(size_t            n_elts,
                            cs_datatype_t     datatype,
                            int               flags,
                            const void       *elt,
+                           const cs_lnum_t  *src_id,
                            const cs_lnum_t  *dest_id,
                            const int         dest_rank[],
                            MPI_Comm          comm);
@@ -129,6 +132,8 @@ cs_crystal_router_create_s(size_t            n_elts,
  * \param[in]  flags             add destination id ?
  * \param[in]  elt_idx           element values start and past-the-last index
  * \param[in]  elt               element values
+ * \param[in]  src_id            optional parent element id (indirection
+ *                               for elt and elt_idx arrays), or NULL
  * \param[in]  dest_id           element destination id, or NULL
  * \param[in]  dest_rank         destination rank for each element
  * \param[in]  comm              associated MPI communicator
@@ -143,6 +148,7 @@ cs_crystal_router_create_i(size_t            n_elts,
                            int               flags,
                            const cs_lnum_t  *eld_idx,
                            const void       *elt,
+                           const cs_lnum_t  *src_id,
                            const cs_lnum_t  *dest_id,
                            const int         dest_rank[],
                            MPI_Comm          comm);
@@ -188,6 +194,26 @@ cs_crystal_router_n_elts(const cs_crystal_router_t  *cr);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Get number of elements received with Crystal Router.
+ *
+ * The number of elements is the number of elements received in the exchange.
+ * In most cases this is the same as that returned using
+ * \ref cs_crystal_router_n_elts, but may be larger when a destination id is
+ * used and multiple elements point to a same destination (for example when
+ * distributing from partitioned data with elements duplicated on
+ * partition boundaries to blocks with a single occurence of elements).
+ *
+ * \param[in]  cr  pointer to associated Crystal Router
+ *
+ * \return  number of elements associated with distributor.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lnum_t
+cs_crystal_router_n_recv_elts(const cs_crystal_router_t  *cr);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Get data elements associated with a Crystal Router.
  *
  * Depending on the creation options, some elements may be available or not.
@@ -200,13 +226,24 @@ cs_crystal_router_n_elts(const cs_crystal_router_t  *cr);
  * to the caller (who is responsible for freeing it when no longer needed).
  *
  * Note also that if the destination id is provided in the Crystal Router,
- * it will be applied automatically to all extracted arrays, except the
- * dest_id array itself, which is always in receive order. If the Crystal
+ * it will be applied automatically to the data and data_index arrays. The
+ * dest_id array itself is always in receive order. If the Crystal
  * Router does not contain destination id info but the \c dest_id
  * argument points to a non-NULL value, the provided id will be used to
  * order extracted data. This allows saving the destination id on the receive
  * side, and not re-sending it (saving bandwidth) for subsequent calls
  * with a similar Crystal Router.
+ *
+ * If all destination ids appear only once, or the
+ * CS_CRYSTAL_ROUTER_USE_DEST_ID is not set, dest_id is also applied to
+ * src_rank and src_id. Otherwise, those arrays are kept in buffer order.
+ * This can be checked by comparing the output of
+ * \ref cs_crystal_router_n_elts and \ref cs_crystal_router_n_recv_elts.
+ *
+ * With this behavior, for reverse exchange, src_id and src_rank can be
+ * used as dest_id and dest_rank respectively in the call to
+ * \ref cs_crystal_router_create_s, while NULL is passed to elt_id
+ * with single ids, and dest_id passed in case of duplicate ids.
  *
  * \param[in]       cr          pointer to associated Crystal Router
  * \param[out]      src_rank    pointer to (pointer to) source rank array,

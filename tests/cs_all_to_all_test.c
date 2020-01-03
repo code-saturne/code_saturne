@@ -37,6 +37,8 @@
 #include <bft_printf.h>
 
 #include "cs_base.h"
+#include "cs_block_dist.h"
+
 #include "cs_all_to_all.h"
 
 /*---------------------------------------------------------------------------*/
@@ -130,66 +132,119 @@ main (int argc, char *argv[])
   sprintf(mem_trace_name, "cs_all_to_all_test_mem.%d", rank);
   bft_mem_init(mem_trace_name);
 
-  cs_all_to_all_type_t a2at[3] = {CS_ALL_TO_ALL_MPI_DEFAULT,
+  cs_all_to_all_type_t a2at[5] = {CS_ALL_TO_ALL_MPI_DEFAULT,
                                   CS_ALL_TO_ALL_CRYSTAL_ROUTER,
+                                  CS_ALL_TO_ALL_CRYSTAL_ROUTER,
+                                  CS_ALL_TO_ALL_MPI_DEFAULT,
                                   CS_ALL_TO_ALL_CRYSTAL_ROUTER};
 
-  int a2a_flags[3] = {0, 0, CS_ALL_TO_ALL_ORDER_BY_SRC_RANK};
+  int a2a_flags[5] = {0, 0, CS_ALL_TO_ALL_ORDER_BY_SRC_RANK,
+                      CS_ALL_TO_ALL_USE_DEST_ID,
+                      CS_ALL_TO_ALL_USE_DEST_ID};
 
-  for (int test_id = 0; test_id < 3; test_id++) {
+  for (int test_id = 0; test_id < 5; test_id++) {
 
     cs_all_to_all_set_type(a2at[test_id]);
 
     int flags = a2a_flags[test_id];
 
     bft_printf("\n"
-               "Using all-to-all type %d (flags %d)\n"
-               "---------------------\n\n",
-               (int)a2at[test_id], flags);
+               "%d - Using all-to-all type %d (flags %d)\n"
+               "---------------------------\n\n",
+               test_id, (int)a2at[test_id], flags);
 
     /* Build test array */
 
-    cs_lnum_t n_elts = 3 + rank%3;
-
-    BFT_MALLOC(dest_rank, n_elts, int);
-
-    for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
-      int _rank = rank + ii%5 - 2;
-      if (_rank < 0) _rank = 0;
-      if (_rank >= size) _rank = size-1;
-      dest_rank[ii] = _rank;
-    }
-
+    cs_lnum_t n_elts = 0;
     cs_lnum_t *src_index = NULL;
-    BFT_MALLOC(src_index, n_elts + 1, cs_lnum_t);
-
-    src_index[0] = 0;
-    for (cs_lnum_t ii = 0; ii < n_elts; ii++)
-      src_index[ii+1] = src_index[ii] + 2 + ii%2;
-
     cs_gnum_t *src_val = NULL;
-    BFT_MALLOC(src_val, src_index[n_elts], cs_gnum_t);
-    for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
-      bft_printf("%d -> rank %d :", ii, dest_rank[ii]);
-      src_val[src_index[ii]] = ii;
-      src_val[src_index[ii]+1] = rank;
-      for (cs_lnum_t jj = src_index[ii] + 2;
-           jj < src_index[ii+1];
-           jj++)
-        src_val[jj] = jj;
-      for (cs_lnum_t jj = src_index[ii];
-           jj < src_index[ii+1];
-           jj++)
-        bft_printf(" %llu", (unsigned long long)src_val[jj]);
-      bft_printf("\n");
+    cs_gnum_t *part_gnum = NULL;
+    cs_all_to_all_t *d = NULL;
+
+    if (test_id < 3) {
+
+      n_elts = 3 + rank%3;
+
+      BFT_MALLOC(dest_rank, n_elts, int);
+
+      for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
+        int _rank = rank + ii%5 - 2;
+        if (_rank < 0) _rank = 0;
+        if (_rank >= size) _rank = size-1;
+        dest_rank[ii] = _rank;
+      }
+
+      BFT_MALLOC(src_index, n_elts + 1, cs_lnum_t);
+      src_index[0] = 0;
+      for (cs_lnum_t ii = 0; ii < n_elts; ii++)
+        src_index[ii+1] = src_index[ii] + 2 + ii%2;
+
+      BFT_MALLOC(src_val, src_index[n_elts], cs_gnum_t);
+      for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
+        bft_printf("%d -> rank %d :", ii, dest_rank[ii]);
+        src_val[src_index[ii]] = ii;
+        src_val[src_index[ii]+1] = rank;
+        for (cs_lnum_t jj = src_index[ii] + 2;
+             jj < src_index[ii+1];
+             jj++)
+          src_val[jj] = jj;
+        for (cs_lnum_t jj = src_index[ii];
+             jj < src_index[ii+1];
+             jj++)
+          bft_printf(" %llu", (unsigned long long)src_val[jj]);
+        bft_printf("\n");
+      }
+
+      d = cs_all_to_all_create(n_elts,
+                               flags,
+                               NULL, /* dest_id */
+                               dest_rank,
+                               cs_glob_mpi_comm);
+
     }
+    else {
 
-    cs_all_to_all_t *d = cs_all_to_all_create(n_elts,
-                                              flags,
-                                              NULL, /* dest_id */
-                                              dest_rank,
-                                              cs_glob_mpi_comm);
+      n_elts = 7;
+      cs_gnum_t n_g_elts = n_elts + (size-1)*(n_elts-2);
 
+      const cs_block_dist_info_t  bi = cs_block_dist_compute_sizes(rank,
+                                                                   size,
+                                                                   1,
+                                                                   0,
+                                                                   n_g_elts);
+
+      BFT_MALLOC(part_gnum, n_elts, cs_gnum_t);
+
+      for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
+        part_gnum[ii] = ii+1 + rank*(n_elts-2);
+      }
+
+      d = cs_all_to_all_create_from_block(n_elts,
+                                          flags,
+                                          part_gnum,
+                                          bi,
+                                          cs_glob_mpi_comm);
+
+      BFT_MALLOC(src_index, n_elts + 1, cs_lnum_t);
+      src_index[0] = 0;
+      for (cs_lnum_t ii = 0; ii < n_elts; ii++)
+        src_index[ii+1] = src_index[ii] + 2 + part_gnum[ii]%2;
+
+      BFT_MALLOC(src_val, src_index[n_elts], cs_gnum_t);
+      for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
+        bft_printf("%d -> gnum %d :", ii, (int)part_gnum[ii]);
+        for (cs_lnum_t jj = src_index[ii];
+             jj < src_index[ii+1];
+             jj++)
+          src_val[jj] = part_gnum[ii] + jj - src_index[ii];
+        for (cs_lnum_t jj = src_index[ii];
+             jj < src_index[ii+1];
+             jj++)
+          bft_printf(" %llu", (unsigned long long)src_val[jj]);
+        bft_printf("\n");
+      }
+
+    }
 
     cs_lnum_t *dest_index = cs_all_to_all_copy_index(d,
                                                      false, /* reverse */
@@ -205,6 +260,8 @@ main (int argc, char *argv[])
                                                      NULL);
 
     cs_lnum_t n_elts_dest = cs_all_to_all_n_elts_dest(d);
+
+    bft_printf("\n");
 
     for (cs_lnum_t ii = 0; ii < n_elts_dest; ii++) {
       bft_printf("r %d -> (%d - %d) :", ii, dest_index[ii], dest_index[ii+1]);
@@ -224,9 +281,12 @@ main (int argc, char *argv[])
     cs_lnum_t s_id = 0;
     for (cs_lnum_t ii = 0; ii < n_elts_dest; ii++) {
       cs_lnum_t n_sub = dest_index[ii+1] - s_id;
-      for (cs_lnum_t jj = 0; jj < n_sub; jj++)
+      cs_gnum_t s = 0;
+      for (cs_lnum_t jj = 0; jj < n_sub; jj++) {
+        s += dest_val[s_id + jj];
         reverse_val[dest_index[ii] + jj] = dest_val[s_id + jj];
-      reverse_val[dest_index[ii] + n_sub] = ii+1;
+      }
+      reverse_val[dest_index[ii] + n_sub] = s + 100;
       s_id = dest_index[ii+1];
       dest_index[ii+1] += ii+1;
       bft_printf("%d -> (%d - %d) :", ii, dest_index[ii], dest_index[ii+1]);
@@ -254,7 +314,10 @@ main (int argc, char *argv[])
 
     cs_all_to_all_destroy(&d);
 
+    BFT_FREE(part_gnum);
     BFT_FREE(reverse_val);
+
+    bft_printf("\n");
 
     for (cs_lnum_t ii = 0; ii < n_elts; ii++) {
       bft_printf("r %d -> (%d - %d) :", ii, src_index[ii], src_index[ii+1]);
