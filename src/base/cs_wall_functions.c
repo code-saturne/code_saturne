@@ -97,6 +97,8 @@ BEGIN_C_DECLS
         - CS_WALL_F_2SCALES_LOG: two scales of friction velocities (log law)
         - CS_WALL_F_SCALABLE_2SCALES_LOG: two scales of friction velocities (log law) (scalable wall functions)
         - CS_WALL_F_2SCALES_VDRIEST: two scales of friction velocities (mixing length based on V. Driest analysis)
+        - CS_WALL_F_2SCALES_SMOOTH_ROUGH: wall function unifying rough and smooth friction regimes
+        - CS_WALL_F_2SCALES_CONTINUOUS: All \f$ y^+ \f$  for low Reynolds models\n
         \ref iwallf is initialised to CS_WALL_F_1SCALE_LOG for \ref iturb = 10, 40, 41 or 70
         (mixing length, LES and Spalart Allmaras).\n
         \ref iwallf is initialised to CS_WALL_F_DISABLED for \ref iturb = 0, 32, 50 or 51\n

@@ -123,15 +123,19 @@ cs_user_model(void)
   /*--------------------------------------------------------------------------*/
 
   /* Advanced choice of Wall function:
-   *  CS_WALL_F_DISABLED: Disabled,
-   *  CS_WALL_F_1SCALE_POWER: One scale power law, forbidden for k-eps,
-   *  CS_WALL_F_1SCALE_LOG: One scale log law,
-   *  CS_WALL_F_2SCALES_LOG: Two scales log law,
-   *  CS_WALL_F_SCALABLE_2SCALES_LOG: Scalable wall function,
-   *  CS_WALL_F_2SCALES_VDRIEST: Two scales Van Driest,
-   *  CS_WALL_F_2SCALES_SMOOTH_ROUGH: Two scales smooth/rough,
-   *  CS_WALL_F_2SCALES_CONTINUOUS: All y+
-   * */
+   *  Wall function for the dynamic, iwallf can be:
+   *   CS_WALL_F_DISABLED: no wall function
+   *   CS_WALL_F_1SCALE_POWER: deprecated 1 velocity scale power law
+   *   CS_WALL_F_1SCALE_LOG: 1 velocity scale log law
+   *   CS_WALL_F_2SCALES_LOG: 2 velocity scales log law (default for many models)
+   *   CS_WALL_F_SCALABLE_2SCALES_LOG: Scalable log wll function with two
+   *                                   velocity scales
+   *   CS_WALL_F_2SCALES_VDRIEST: 2 velocity scales with Van Driest damping
+   *   CS_WALL_F_2SCALES_SMOOTH_ROUGH: 2 velocity scales valid for smooth and
+   *                                   rough regimes
+   *   CS_WALL_F_2SCALES_CONTINUOUS: 2 velcoity scales (all y+), default for
+   *                                 low Reynolds turbulence models.
+   */
   {
     cs_wall_functions_t *wf = cs_get_glob_wall_functions();
      wf->iwallf = CS_WALL_F_2SCALES_VDRIEST;
@@ -140,10 +144,12 @@ cs_user_model(void)
   /*--------------------------------------------------------------------------*/
 
   /* Advanced choice of scalars wall function:
-   *  CS_WALL_F_S_ARPACI_LARSEN
-   *  CS_WALL_F_S_VDRIEST
-   *  CS_WALL_F_S_LOUIS
-   *  CS_WALL_F_S_MONIN_OBUKHOV
+   *   CS_WALL_F_S_ARPACI_LARSEN: 3 layer Arpaci and Larsen wall function
+   *                              (default for most of the models)
+   *   CS_WALL_F_S_VDRIEST: Van Driest wall function
+   *   CS_WALL_F_S_LOUIS: Atmospheric Louis wall function
+   *   CS_WALL_F_S_MONIN_OBUKHOV: Monin Obukhov atmospheric wall function
+   *   CS_WALL_F_S_SMOOTH_ROUGH: smooth rough wall function
    * */
   {
     cs_wall_functions_t *wf = cs_get_glob_wall_functions();

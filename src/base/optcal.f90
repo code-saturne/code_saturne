@@ -554,7 +554,9 @@ module optcal
   !>  - 2: one scale of friction velocities (log law)
   !>  - 3: two scales of friction velocities (log law)
   !>  - 4: two scales of friction velocities (log law) (scalable wall functions)
-  !>  - 5: two scales of friction velocities (mixing length based on V. Driest analysis)\n
+  !>  - 5: two scales of friction velocities (mixing length based on V. Driest analysis)
+  !>  - 6: wall function unifying rough and smooth friction regimes
+  !>  - 7: All \f$ y^+ \f$  for low Reynolds models\n
   !>  \ref iwallf is initialised to 2 for \ref iturb = 10, 40, 41 or 70
   !>  (mixing length, LES and Spalart Allmaras).\n
   !>  \ref iwallf is initialised to 0 for \ref iturb = 0, 32, 50 or 51\n
