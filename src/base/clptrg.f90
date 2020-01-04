@@ -158,7 +158,8 @@ double precision, pointer, dimension(:) :: visvdr, hbord, theipb
 integer          ifac, iel, isou, ii, jj, kk
 integer          iscal, clsyme
 integer          modntl
-integer          iuntur, iuiptn, f_id, iustar
+integer          iuntur, f_id, iustar
+integer          nlogla, nsubla, iuiptn
 integer          kdflim
 integer          f_id_rough
 
@@ -605,7 +606,9 @@ dlmomin =  grand
 tplumx = -grand
 tplumn =  grand
 
-! Counter (reversal)
+! Counters (turbulent, laminar, reversal, scale correction)
+nlogla = 0
+nsubla = 0
 iuiptn = 0
 
 
@@ -989,6 +992,7 @@ do ifac = 1, nfabor
           ! Ground apparent velocity (for log only)
           uiptn  = max(utau - uet/xkappa*rcprod,0.d0)
           iuntur = 1
+          nlogla = nlogla + 1
 
           ! Coupled solving of the velocity components
           ! The boundary term for velocity gradient is implicit
@@ -1010,6 +1014,7 @@ do ifac = 1, nfabor
           ! Ground apparent velocity (for log only)
           uiptn  = max(utau - uet/xkappa*rcprod,0.d0)
           iuntur = 1
+          nlogla = nlogla + 1
 
           ! Coupled solving of the velocity components
           ! The boundary term for velocity gradient is implicit
@@ -1023,6 +1028,7 @@ do ifac = 1, nfabor
       else
         uiptn  = 0.d0
         iuntur = 0
+        nsubla = nsubla + 1
 
         ! Coupled solving of the velocity components
         cofimp  = 0.d0
@@ -1623,6 +1629,8 @@ if (irangp.ge.0) then
   call parmax (ukmax)
   call parmin (yplumn)
   call parmax (yplumx)
+  call parcpt (nlogla)
+  call parcpt (nsubla)
   call parcpt (iuiptn)
   if (iscalt.gt.0) then
     call parmin (tetmin)
@@ -1669,11 +1677,11 @@ if (vcopt%iwarni.ge.0) then
   else if ((modntl.eq.0 .or. vcopt%iwarni.ge.2).and.iscalt.gt.0) then
     write(nfecra,2011) &
          uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,   &
-         tetmin, tetmax, tplumn, tplumx, iuiptn
+         tetmin, tetmax, tplumn, tplumx, iuiptn,nsubla,nsubla+nlogla
   elseif (modntl.eq.0 .or. vcopt%iwarni.ge.2) then
     write(nfecra,2010) &
          uiptmn,uiptmx,uetmin,uetmax,ukmin,ukmax,yplumn,yplumx,   &
-         iuiptn
+         iuiptn, nsubla,nsubla+nlogla
   endif
 
 endif
@@ -1692,8 +1700,10 @@ endif
  '   Friction velocity        uet   : ',2E12.5                 ,/,&
  '   Friction velocity        uk    : ',2E12.5                 ,/,&
  '   Rough dimensionless dist yplus : ',2E12.5                 ,/,&
- '   ------------------------------------------------------   ',/,&
+ '   ------------------------------------------------------'   ,/,&
  '   Nb of reversal of the velocity at the wall   : ',I10      ,/,&
+ '   Nb of faces within the viscous sub-layer     : ',I10      ,/,&
+ '   Total number of wall faces                   : ',I10      ,/,&
  '------------------------------------------------------------',  &
  /,/)
 
@@ -1709,8 +1719,10 @@ endif
  '   Rough dimensionless dist yplus : ',2E12.5                 ,/,&
  '   Friction thermal sca.    tstar : ',2E12.5                 ,/,&
  '   Rough dim-less th. sca.  tplus : ',2E12.5                 ,/,&
- '   ------------------------------------------------------   ',/,&
+ '   ------------------------------------------------------'   ,/,&
  '   Nb of reversal of the velocity at the wall   : ',I10      ,/,&
+ '   Nb of faces within the viscous sub-layer     : ',I10      ,/,&
+ '   Total number of wall faces                   : ',I10      ,/,&
  '------------------------------------------------------------',  &
  /,/)
 
