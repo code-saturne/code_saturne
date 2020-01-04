@@ -1865,7 +1865,7 @@ endif
  '   Friction velocity        uk    : ',2E12.5                 ,/,&
  '   Dimensionless distance   yplus : ',2E12.5                 ,/,&
  '   Friction thermal sca.    tstar : ',2E12.5                 ,/,&
- '   Rough dim-less th. sca.  tplus : ',2E12.5                 ,/,&
+ '   Dim-less thermal sca.    tplus : ',2E12.5                 ,/,&
  '   ------------------------------------------------------'   ,/,&
  '   Nb of reversal of the velocity at the wall   : ',I10      ,/,&
  '   Nb of faces within the viscous sub-layer     : ',I10      ,/,&
