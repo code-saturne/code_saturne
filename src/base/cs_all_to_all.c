@@ -1190,6 +1190,9 @@ _cr_recv_id_by_src_rank(cs_all_to_all_t      *d,
                              NULL, /* dest_index */
                              NULL);
 
+  if (d->n_elts_dest < 0)
+    d->n_elts_dest = cs_crystal_router_n_elts(cr);
+
   _recv_id_by_src_rank_order(d, src_rank);
 
   BFT_FREE(src_rank);
