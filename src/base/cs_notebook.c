@@ -350,22 +350,35 @@ cs_notebook_load_from_file(void)
       d = na;
 
     int uncertain = -1;
+    const char *uncertain_c = "No";
     if (oturns != NULL) {
-      if (strcmp(oturns, "Yes: Input") == 0)
+      if (strcmp(oturns, "Yes: Input") == 0) {
         uncertain = 0;
-      else if (strcmp(oturns, "Yes: Output") == 0)
+        uncertain_c = "Input";
+      } else if (strcmp(oturns, "Yes: Output") == 0) {
         uncertain = 1;
+        uncertain_c = "Output";
+      }
     }
     bool editable = false;
     if (c_edit != NULL)
       if (strcmp(c_edit, "Yes") == 0)
         editable = true;
 
-    /* If the variable is an uncertain output, it has to be modified
-     * by the code, hence editable=true
+    /* If the variable is uncertain then :
+     * - an input cannot be modifed, hence editable = false
+     * - an output has to be modified by the code, hence editable=true
+     *
+     * If the user specified a different status, a warning is printed
      */
-    if (uncertain == 1)
-      editable = true;
+    if (uncertain > -1) {
+      if (editable != uncertain)
+        bft_printf(_(" Warning: You defined the parameter %s as an uncertain "
+                     "of type %s with an incompatbile editable state of %d.\n"
+                     " Editable state is set to %d\n"),
+                   name, uncertain_c, editable, uncertain);
+      editable = uncertain;
+    }
 
     _cs_notebook_entry_t *e = _entry_create(name, uncertain, editable);
 
