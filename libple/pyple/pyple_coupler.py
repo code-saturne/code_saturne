@@ -61,6 +61,10 @@ class pyple_coupler():
 
         self.name = None
 
+        # Read command line arguments
+        import sys
+        self._parse_cmd_line(sys.argv)
+
         # Check if we need to change directory
         if run_dir:
             # user imposed directly
@@ -68,15 +72,11 @@ class pyple_coupler():
             os.chdir(run_dir)
 
         else:
-            # imposed from arguments (mpmd like launch)
-            import sys
-            if len(sys.argv) > 1:
-                for i, arg in enumerate(sys.argv):
-                    if arg == "-wdir" and i+1 <= len(sys.argv) - 1:
-                        import os
-                        run_dir = sys.argv[i+1]
-                        os.chdir(run_dir)
-                        break
+            # imposed from from command line arguments (mpmd like launch)
+            if self.cmd_line_options.wdir:
+                run_dir = self.cmd_line_options.wdir
+                import os
+                os.chdir(run_dir)
 
         self.user_options = {'rundir':run_dir,
                              'verbos':verbosity,
@@ -91,6 +91,39 @@ class pyple_coupler():
         self.has_ple = False
         # Check for MPI and PLE presence
         self.check_mpi_status()
+    # ----------------------------------
+
+
+    # ----------------------------------
+    def _parse_cmd_line(self, argv):
+        """
+        Parse the command line in launch script
+        :param argv: list
+                     list of command line input arguments
+        """
+        from argparse import ArgumentParser
+
+        parser = ArgumentParser()
+
+        parser.add_argument("--app-type", "--type", "-t", dest="app_type",
+                            metavar="<apptype>",
+                            help="Application type")
+
+        parser.add_argument("--app-name", "--name", dest="app_name",
+                            metavar="<appname>",
+                            help="Name of the application")
+
+        parser.add_argument("--wdir", "-wdir", dest="wdir",
+                            metavar="<wdir>",
+                            help="Working directory for the application")
+
+        parser.set_defaults(app_type=None)
+        parser.set_defaults(app_name=None)
+        parser.set_defaults(wdir=None)
+
+        (options, args) = parser.parse_known_args(argv)
+
+        self.cmd_line_options = options
     # ----------------------------------
 
 
@@ -132,7 +165,7 @@ class pyple_coupler():
                           default is 0
         """
 
-        if self.verbosity >= verbosity:
+        if self.verbosity >= verbosity and self.print_info:
             f = open(self.log_name, "a")
             f.write(" ===================================== \n")
             msg_lines = msg.split('\n')
@@ -170,19 +203,31 @@ class pyple_coupler():
 
 
     # ----------------------------------
-    def init_coupling(self, app_name=None, app_type="PYTHON"):
+    def init_coupling(self, app_name=None, app_type=None):
         """
         Start the coupling communicator based on the PLE coupling library
         of Code_Saturne
         """
-        # Names to be used by PLE
-        self.app_type = app_type
+
+        # Define app name and type to be used by PLE.
+        # First we check if the user provided a name and type to this method.
+        # If not, we check for command line values.
+        # If neither is provided, defaults are used: name=PYCODE and type=PYTHON
+
+        if app_type != None:
+            self.app_type = app_type
+        elif self.cmd_line_options.app_type != None:
+            self.app_type = self.cmd_line_options.app_type
+        else:
+            self.app_type = "PYTHON"
 
         if self.name == None:
-            if app_name == None:
-                self.name = 'PYCODE'
-            else:
+            if app_name != None:
                 self.name = app_name
+            elif self.cmd_line_options.app_name != None:
+                self.name = self.cmd_line_options.app_name
+            else:
+                self.name = 'PYCODE'
 
         # PLE calls to create the subcommunicator
         self.app_num = ple_coupling.name_to_id(self.base_comm, self.name)
