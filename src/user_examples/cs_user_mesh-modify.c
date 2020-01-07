@@ -211,6 +211,71 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
   }
   /*! [mesh_modify_extrude_2] */
 
+  /* Extrude mesh at boundary faces of group "walls".
+   * The resulting extruded cells are added to a new
+   * group of cells called "solid" */
+  
+  /*! [mesh_modify_extrude_3] */
+  {
+    int n_layers = 2;
+    double thickness = 1.0;
+    double expansion_factor = 1.5;
+
+    const char criteria[] = "walls";
+
+    /* Save the initial number of cells */
+
+    cs_lnum_t n_prev_cells = mesh->n_cells ;
+    
+    /* Select boudary faces */
+
+    cs_lnum_t   n_selected_faces = 0;
+    cs_lnum_t  *selected_faces = NULL;
+
+    BFT_MALLOC(selected_faces, mesh->n_b_faces, cs_lnum_t);
+
+    cs_selector_get_b_face_list(criteria,
+                                &n_selected_faces,
+                                selected_faces);
+
+    /* Extrude selected boundary */
+
+    cs_mesh_extrude_constant(mesh,
+                             false, /* Maintain groups on interio faces? */
+                             n_layers,
+                             thickness,
+                             expansion_factor,
+                             n_selected_faces,
+                             selected_faces);
+
+    /* Free temporary memory */
+
+    BFT_FREE(selected_faces);
+
+    /* Compute the number of extruded cells */
+
+    cs_lnum_t n_selected_elts = mesh->n_cells - n_prev_cells ;
+
+    /* Among all the cells, only select the cells above 
+     * the initial number of cells (before extrusion). */
+    
+    cs_lnum_t  *selected_elts = NULL;
+    BFT_MALLOC(selected_elts, mesh->n_cells, cs_lnum_t);
+    
+    for(int i=0; i<n_selected_elts; i++)
+      selected_elts[i] = n_prev_cells + i;
+
+    /* Add slected cells to a new group called "solid" */
+    cs_mesh_group_cells_add(mesh,
+                            "solid",
+                            n_selected_elts,
+                            selected_elts);
+
+    BFT_FREE(selected_elts);
+  }
+  /*! [mesh_modify_extrude_3] */
+
+  
   /* Add a group to cells in a given region */
 
   /*! [mesh_modify_groups_1] */
