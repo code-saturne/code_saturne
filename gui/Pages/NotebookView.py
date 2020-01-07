@@ -394,7 +394,13 @@ class VariableStandardItemModel(QAbstractItemModel):
             return Qt.ItemIsEnabled
 
         itm = index.internalPointer()
-        return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+        if index.column() == 3:
+            if "Yes" in self.mdl.getVariableOt(index.row()):
+                return Qt.NoItemFlags
+            else:
+                return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
+        else:
+            return Qt.ItemIsEnabled | Qt.ItemIsSelectable | Qt.ItemIsEditable
 
 
     def headerData(self, section, orientation, role):
@@ -560,7 +566,26 @@ class NotebookView(QWidget, Ui_NotebookForm):
         self.toolButtonDelete.clicked.connect(self.slotDeleteVariable)
         self.toolButtonImport.clicked.connect(self.slotImportVariable)
 
+        self.modelVar.dataChanged.connect(self.dataChanged)
+
         self.case.undoStartGlobal()
+
+
+    def dataChanged(self):
+        row = self.treeViewNotebook.currentIndex().row()
+        col = self.treeViewNotebook.currentIndex().column()
+        next_item = self.treeViewNotebook.model().index(row, col+1)
+        # Check for updates
+        ot_status = self.mdl.getVariableOt(row)
+        edit_status = self.mdl.getVariableEditable(row)
+        if ot_status == "Yes: Input" and edit_status == "Yes":
+            self.mdl.setVariableEditable(row, "No")
+            self.modelVar.setData(next_item, "No")
+        elif ot_status == "Yes: Output" and edit_status == "No":
+            self.mdl.setVariableEditable(row, "Yes")
+            self.modelVar.setData(next_item, "Yes")
+
+        self.update()
 
 
     @pyqtSlot()
