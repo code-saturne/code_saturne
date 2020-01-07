@@ -1159,65 +1159,36 @@ _get_data_s_with_dest_id(cs_crystal_router_t   *cr,
      not be applied to src id and src rank, to avoid losing
      information necessary for reverse exchanges */
 
-  int reverse_flags =   CS_CRYSTAL_ROUTER_USE_DEST_ID
-                      | CS_CRYSTAL_ROUTER_ADD_SRC_ID
-                      | CS_CRYSTAL_ROUTER_ADD_SRC_RANK;
+  int  reverse_flags =   CS_CRYSTAL_ROUTER_USE_DEST_ID
+                       | CS_CRYSTAL_ROUTER_ADD_SRC_ID
+                       | CS_CRYSTAL_ROUTER_ADD_SRC_RANK;
 
-  if ((cr->flags & reverse_flags) && cr->dest_id_end < n_elts
-      && dest_id != NULL && src_id != NULL && src_rank != NULL) {
+  bool reverse_multiple = (   (cr->flags & reverse_flags == reverse_flags)
+                           && cr->dest_id_end < n_elts
+                           && dest_id != NULL
+                           && src_id != NULL
+                           && src_rank != NULL);
 
-    for (size_t c_id = 0; c_id < n_chunks; c_id++) {
+  for (size_t c_id = 0; c_id < n_chunks; c_id++) {
 
-      size_t i0 = c_id*chunk_size;
-      size_t i1 = (c_id+1)*chunk_size;
-      if (i1 > n_elts)
-        i1 = n_elts;
+    size_t i0 = c_id*chunk_size;
+    size_t i1 = (c_id+1)*chunk_size;
+    if (i1 > n_elts)
+      i1 = n_elts;
 
-      /* Optional source rank */
+    /* Optional source rank */
 
-      for (size_t i = i0; i < i1; i++) {
-        const int *cr_src_rank_p
-          = (const cs_lnum_t *)(  cr->buffer[0] + i*cr->comp_size
-                                + sizeof(int));
-        src_rank[i] = *cr_src_rank_p;
-      }
+    if (src_rank != NULL) {
 
-      /* Optional source id */
-
-      for (size_t i = i0; i < i1; i++) {
-        const cs_lnum_t *cr_src_id_p
-          = (const cs_lnum_t *)(  cr->buffer[0] + i*cr->comp_size
-                                + cr->src_id_shift);
-        src_id[i] = *cr_src_id_p;
-      }
-
-      /* data */
-
-      if (data != NULL) {
+      if (reverse_multiple) {
         for (size_t i = i0; i < i1; i++) {
-          cs_lnum_t e_id = _dest_id[i];
-          for (size_t j = 0; j < cr->elt_size; j++)
-            data_p[e_id*cr->elt_size + j]
-              = cr_data_p[i*cr->comp_size + j];
+          const int *cr_src_rank_p
+            = (const cs_lnum_t *)(  cr->buffer[0] + i*cr->comp_size
+                                  + sizeof(int));
+          src_rank[i] = *cr_src_rank_p;
         }
       }
-
-    }
-
-  }
-
-  else {
-
-    for (size_t c_id = 0; c_id < n_chunks; c_id++) {
-
-      size_t i0 = c_id*chunk_size;
-      size_t i1 = (c_id+1)*chunk_size;
-      if (i1 > n_elts)
-        i1 = n_elts;
-
-      /* Optional source rank */
-
-      if (src_rank != NULL) {
+      else {
         for (size_t i = i0; i < i1; i++) {
           const int *cr_src_rank_p
             = (const cs_lnum_t *)(  cr->buffer[0] + i*cr->comp_size
@@ -1226,9 +1197,21 @@ _get_data_s_with_dest_id(cs_crystal_router_t   *cr,
         }
       }
 
-      /* Optional source id */
+    }
 
-      if (src_id != NULL) {
+    /* Optional source id */
+
+    if (src_id != NULL) {
+
+      if (reverse_multiple) {
+        for (size_t i = i0; i < i1; i++) {
+          const cs_lnum_t *cr_src_id_p
+            = (const cs_lnum_t *)(  cr->buffer[0] + i*cr->comp_size
+                                  + cr->src_id_shift);
+          src_id[i] = *cr_src_id_p;
+        }
+      }
+      else {
         for (size_t i = i0; i < i1; i++) {
           const cs_lnum_t *cr_src_id_p
             = (const cs_lnum_t *)(  cr->buffer[0] + i*cr->comp_size
@@ -1237,17 +1220,17 @@ _get_data_s_with_dest_id(cs_crystal_router_t   *cr,
         }
       }
 
-      /* data */
+    }
 
-      if (data != NULL) {
-        for (size_t i = i0; i < i1; i++) {
-          cs_lnum_t e_id = _dest_id[i];
-          for (size_t j = 0; j < cr->elt_size; j++)
-            data_p[e_id*cr->elt_size + j]
-              = cr_data_p[i*cr->comp_size + j];
-        }
+    /* data */
+
+    if (data != NULL) {
+      for (size_t i = i0; i < i1; i++) {
+        cs_lnum_t e_id = _dest_id[i];
+        for (size_t j = 0; j < cr->elt_size; j++)
+          data_p[e_id*cr->elt_size + j]
+            = cr_data_p[i*cr->comp_size + j];
       }
-
     }
 
   }
