@@ -55,6 +55,8 @@
 
 #include "fvm_neighborhood.h"
 
+#include "cs_all_to_all.h"
+
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -455,20 +457,14 @@ static void
 _sync_by_block(fvm_neighborhood_t  *n,
                cs_gnum_t            n_g_elts)
 {
-  cs_lnum_t   i, j;
-  int  rank_id, n_ranks, n_recv_elts, n_sub_elts, shift;
-
-  int  *send_count = NULL, *recv_count = NULL;
-  int  *send_shift = NULL, *recv_shift = NULL;
-  cs_lnum_t   *counter = NULL;
-  cs_gnum_t   *send_buf = NULL, *recv_buf = NULL;
-
   assert(n != NULL);
 
   if (n_g_elts == 0 || n->comm == MPI_COMM_NULL)
     return;
 
   /* Initialization */
+
+  int  rank_id, n_ranks;
 
   MPI_Comm_rank(n->comm, &rank_id);
   MPI_Comm_size(n->comm, &n_ranks);
@@ -479,73 +475,54 @@ _sync_by_block(fvm_neighborhood_t  *n,
                                                         0,
                                                         n_g_elts);
 
-  /* Allocate buffers */
+  cs_all_to_all_t *d
+    = cs_all_to_all_create_from_block(n->n_elts,
+                                      0, /* flags */
+                                      n->elt_num,
+                                      bi,
+                                      n->comm);
 
-  BFT_MALLOC(send_count, n_ranks, int);
-  BFT_MALLOC(recv_count, n_ranks, int);
-  BFT_MALLOC(send_shift, n_ranks + 1, int);
-  BFT_MALLOC(recv_shift, n_ranks + 1, int);
+  cs_gnum_t *send_meta;
+  BFT_MALLOC(send_meta, n->n_elts*2, cs_gnum_t);
 
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
-
-  /* Synchronize definition for each global element */
-
-  for (i = 0; i < n->n_elts; i++) {
-    long int g_ent_id = n->elt_num[i] -1;
-    int send_rank = (g_ent_id/bi.block_size)*bi.rank_step;
-    n_sub_elts = n->neighbor_index[i+1] - n->neighbor_index[i];
-    send_count[send_rank] += 2 + n_sub_elts;
+  for (cs_lnum_t i = 0; i < n->n_elts; i++) {
+    send_meta[i*2] = n->elt_num[i];
+    send_meta[i*2+1] = n->neighbor_index[i+1] - n->neighbor_index[i];
   }
 
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, n->comm);
+  cs_gnum_t *recv_meta
+    = cs_all_to_all_copy_array(d,
+                               CS_GNUM_TYPE,
+                               2,
+                               false, /* reverse */
+                               send_meta,
+                               NULL);
 
-  send_shift[0] = 0;
-  recv_shift[0] = 0;
+  BFT_FREE(send_meta);
 
-  for (i = 0; i < n_ranks; i++) {
-    send_shift[i + 1] = send_shift[i] + send_count[i];
-    recv_shift[i + 1] = recv_shift[i] + recv_count[i];
+  cs_lnum_t n_recv = cs_all_to_all_n_elts_dest(d);
+
+  cs_gnum_t *recv_gnum;
+  BFT_MALLOC(recv_gnum, n_recv, cs_gnum_t);
+  cs_lnum_t *recv_index;
+  BFT_MALLOC(recv_index, n_recv+1, cs_lnum_t);
+
+  recv_index[0] = 0;
+  for (cs_lnum_t i = 0; i < n_recv; i++) {
+    recv_gnum[i] = recv_meta[i*2];
+    recv_index[i+1] = recv_index[i] + recv_meta[i*2+1];
   }
 
-  /* Fill send_buf: global number and number of elements in index */
+  BFT_FREE(recv_meta);
 
-  BFT_MALLOC(send_buf, send_shift[n_ranks], cs_gnum_t);
-  BFT_MALLOC(recv_buf, recv_shift[n_ranks], cs_gnum_t);
-
-  for (i = 0; i < n_ranks; i++)
-    send_count[i] = 0;
-
-  for (i = 0; i < n->n_elts; i++) {
-
-    long int g_ent_num = n->elt_num[i];
-    int send_rank = ((g_ent_num - 1)/bi.block_size)*bi.rank_step;
-
-    shift = send_shift[send_rank] + send_count[send_rank];
-    n_sub_elts = n->neighbor_index[i+1] - n->neighbor_index[i];
-
-    send_buf[shift++] = g_ent_num;
-    send_buf[shift++] = n_sub_elts;
-
-    for (j = 0; j < n_sub_elts; j++)
-      send_buf[shift + j] = n->neighbor_num[n->neighbor_index[i] + j];
-
-    send_count[send_rank] += 2 + n_sub_elts;
-  }
-
-  MPI_Alltoallv(send_buf, send_count, send_shift, CS_MPI_GNUM,
-                recv_buf, recv_count, recv_shift, CS_MPI_GNUM,
-                n->comm);
-
-  n_recv_elts = recv_shift[n_ranks];
-
-  /* Free what we may */
-
-  BFT_FREE(send_buf);
-  BFT_FREE(send_count);
-  BFT_FREE(send_shift);
-  BFT_FREE(recv_count);
-  BFT_FREE(recv_shift);
+  cs_gnum_t *recv_neighbor
+    = cs_all_to_all_copy_indexed(d,
+                                 CS_GNUM_TYPE,
+                                 false, /* reverse */
+                                 n->neighbor_index,
+                                 n->neighbor_num,
+                                 recv_index,
+                                 NULL);
 
   /* Build arrays corresponding to block distribution of neighborhood */
 
@@ -558,7 +535,7 @@ _sync_by_block(fvm_neighborhood_t  *n,
   BFT_MALLOC(n->elt_num, n->n_elts, cs_gnum_t);
   BFT_MALLOC(n->neighbor_index, n->n_elts + 1, cs_lnum_t);
 
-  for (i = 0; i < n->n_elts; i++) {
+  for (cs_lnum_t i = 0; i < n->n_elts; i++) {
     n->elt_num[i] = bi.gnum_range[0] + i;
     n->neighbor_index[i] = 0;
   }
@@ -566,53 +543,48 @@ _sync_by_block(fvm_neighborhood_t  *n,
 
   /* Count element neighbors in block distribution */
 
-  i = 0; /* start position in recv_buf */
-
-  while (i < n_recv_elts) {
-
-    cs_lnum_t elt_id = recv_buf[i++] - bi.gnum_range[0];
-
-    assert(n->elt_num[elt_id] == recv_buf[i-1]);
-
-    n_sub_elts = recv_buf[i++];
-    n->neighbor_index[elt_id + 1] += n_sub_elts;
-    i += n_sub_elts;
+  for (cs_lnum_t i = 0; i < n_recv; i++) {
+    cs_lnum_t elt_id = recv_gnum[i] - bi.gnum_range[0];
+    n->neighbor_index[elt_id + 1] += recv_index[i+1] - recv_index[i];
   }
 
   /* Transform element neighbor count to index */
 
   n->neighbor_index[0] = 0;
-  for (i = 0; i < n->n_elts; i++)
+  for (cs_lnum_t i = 0; i < n->n_elts; i++)
     n->neighbor_index[i+1] += n->neighbor_index[i];
 
   BFT_MALLOC(n->neighbor_num, n->neighbor_index[n->n_elts], cs_gnum_t);
 
   /* Fill element neighbors in block distribution */
 
+  cs_lnum_t *counter;
   BFT_MALLOC(counter, n->n_elts, cs_lnum_t);
 
-  for (i = 0; i < n->n_elts; i++)
+  for (cs_lnum_t i = 0; i < n->n_elts; i++)
     counter[i] = 0;
 
-  i = 0; /* start position in recv_buf */
+  for (cs_lnum_t i = 0; i < n_recv; i++) {
 
-  while (i < n_recv_elts) {
+    cs_lnum_t elt_id = recv_gnum[i] - bi.gnum_range[0];
 
-    cs_lnum_t elt_id = recv_buf[i++] - bi.gnum_range[0];
+    cs_lnum_t s_id = recv_index[i];
+    cs_lnum_t e_id = recv_index[i+1];
 
-    n_sub_elts = recv_buf[i++];
+    cs_lnum_t shift = n->neighbor_index[elt_id] + counter[elt_id];
 
-    shift = n->neighbor_index[elt_id] + counter[elt_id];
+    for (cs_lnum_t j = s_id; j < e_id; j++)
+      n->neighbor_num[shift++] = recv_neighbor[j];
 
-    for (j = 0; j < n_sub_elts; j++)
-      n->neighbor_num[j + shift] = recv_buf[i++];
-
-    counter[elt_id] += n_sub_elts;
+    counter[elt_id] += e_id - s_id;
 
   } /* End of loop on ranks */
 
-  BFT_FREE(recv_buf);
   BFT_FREE(counter);
+  BFT_FREE(recv_neighbor);
+  BFT_FREE(recv_index);
+
+  cs_all_to_all_destroy(&d);
 
   /* Remove redundant data */
 
