@@ -600,10 +600,8 @@ fvm_box_set_redistribute(const fvm_box_distrib_t  *distrib,
   BFT_FREE(boxes->g_num);
   BFT_FREE(boxes->extents);
 
-  int flags = CS_ALL_TO_ALL_ORDER_BY_SRC_RANK;
-
   cs_all_to_all_t *d = cs_all_to_all_create(n_send,
-                                            flags,
+                                            0, /* flags */
                                             NULL,
                                             dest_rank,
                                             boxes->comm);
