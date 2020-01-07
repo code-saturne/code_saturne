@@ -1163,7 +1163,7 @@ _get_data_s_with_dest_id(cs_crystal_router_t   *cr,
                        | CS_CRYSTAL_ROUTER_ADD_SRC_ID
                        | CS_CRYSTAL_ROUTER_ADD_SRC_RANK;
 
-  bool reverse_multiple = (   (cr->flags & reverse_flags == reverse_flags)
+  bool reverse_multiple = (   ((cr->flags & reverse_flags) == reverse_flags)
                            && cr->dest_id_end < n_elts
                            && dest_id != NULL
                            && src_id != NULL
