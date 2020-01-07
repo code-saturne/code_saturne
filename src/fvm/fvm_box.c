@@ -51,6 +51,8 @@
 #include "fvm_box.h"
 #include "fvm_box_priv.h"
 
+#include "cs_all_to_all.h"
+
 /*---------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -565,110 +567,76 @@ fvm_box_set_redistribute(const fvm_box_distrib_t  *distrib,
 {
 #if defined(HAVE_MPI)
 
-  int  rank_id;
-
-  cs_lnum_t   i, j;
-  int  *send_count = NULL, *send_shift = NULL;
-  int  *recv_count = NULL, *recv_shift = NULL;
-  cs_gnum_t  *send_g_num = NULL;
-  cs_coord_t  *send_extents = NULL;
-
-  const int stride = boxes->dim * 2;
-
   /* Sanity checks */
 
   assert(distrib != NULL);
   assert(boxes != NULL);
   assert(distrib->n_ranks > 1);
 
-  /* Build send_buf, send_count and send_shift
-     to build a rank to boxes indexed list */
+  const cs_lnum_t stride = boxes->dim * 2;
 
-  BFT_MALLOC(send_count, distrib->n_ranks, int);
-  BFT_MALLOC(recv_count, distrib->n_ranks, int);
-  BFT_MALLOC(send_shift, distrib->n_ranks + 1, int);
-  BFT_MALLOC(recv_shift, distrib->n_ranks + 1, int);
+  size_t n_send = distrib->index[distrib->n_ranks];
 
-  for (rank_id = 0; rank_id < distrib->n_ranks; rank_id++)
-    send_count[rank_id]
-      = distrib->index[rank_id+1] - distrib->index[rank_id];
+  int *dest_rank;
+  BFT_MALLOC(dest_rank, n_send, int);
 
-  /* Exchange number of boxes to send to each process */
+  cs_gnum_t *send_g_num;
+  BFT_MALLOC(send_g_num, n_send, cs_gnum_t);
+  cs_coord_t *send_extents;
+  BFT_MALLOC(send_extents, n_send*stride, cs_coord_t);
 
-  MPI_Alltoall(send_count, 1, MPI_INT,
-               recv_count, 1, MPI_INT, boxes->comm);
-
-  for (i = 0; i < distrib->n_ranks; i++)
-    send_shift[i] = distrib->index[i];
-
-  recv_shift[0] = 0;
-  for (rank_id = 0; rank_id < distrib->n_ranks; rank_id++)
-    recv_shift[rank_id + 1] = recv_shift[rank_id] + recv_count[rank_id];
-
-  /* Build send_buffers */
-
-  BFT_MALLOC(send_g_num, distrib->index[distrib->n_ranks], cs_gnum_t);
-  BFT_MALLOC(send_extents,
-             distrib->index[distrib->n_ranks] * boxes->dim * 2,
-             cs_coord_t);
-
-  for (rank_id = 0; rank_id < distrib->n_ranks; rank_id++)
-    send_count[rank_id] = 0;
-
-  for (rank_id = 0; rank_id < distrib->n_ranks; rank_id++) {
-
-    for (i = distrib->index[rank_id];
-         i < distrib->index[rank_id+1];
-         i++) {
-
+  for (int rank_id = 0; rank_id < distrib->n_ranks; rank_id++) {
+    cs_lnum_t s_id = distrib->index[rank_id];
+    cs_lnum_t e_id = distrib->index[rank_id+1];
+    for (cs_lnum_t i = s_id; i < e_id; i++) {
       cs_lnum_t   box_id = distrib->list[i];
-      cs_lnum_t   shift = distrib->index[rank_id] + send_count[rank_id];
-
-      send_g_num[shift] = boxes->g_num[box_id];
-
-      for (j = 0; j < stride; j++)
-        send_extents[shift*stride + j] = boxes->extents[box_id*stride + j];
-
-      send_count[rank_id] += 1;
-
+      dest_rank[i] = rank_id;
+      send_g_num[i] = boxes->g_num[box_id];
+      for (cs_lnum_t j = 0; j < stride; j++)
+        send_extents[i*stride + j] = boxes->extents[box_id*stride + j];
     }
+  }
 
-  } /* End of loop on ranks */
-
-  /* Prepare to replace the local arrays */
-
-  boxes->n_boxes = recv_shift[distrib->n_ranks];
   BFT_FREE(boxes->g_num);
   BFT_FREE(boxes->extents);
 
-  BFT_MALLOC(boxes->g_num, boxes->n_boxes, cs_gnum_t);
-  BFT_MALLOC(boxes->extents, boxes->n_boxes*stride, cs_coord_t);
+  int flags = CS_ALL_TO_ALL_ORDER_BY_SRC_RANK;
 
-  /* Exchange boxes between processes */
+  cs_all_to_all_t *d = cs_all_to_all_create(n_send,
+                                            flags,
+                                            NULL,
+                                            dest_rank,
+                                            boxes->comm);
 
-  MPI_Alltoallv(send_g_num, send_count, send_shift, CS_MPI_GNUM,
-                boxes->g_num, recv_count, recv_shift, CS_MPI_GNUM,
-                boxes->comm);
+  /* Exchange global numbers and extents */
 
-  for (rank_id = 0; rank_id < distrib->n_ranks; rank_id++) {
-    send_count[rank_id] *= stride;
-    send_shift[rank_id] *= stride;
-    recv_count[rank_id] *= stride;
-    recv_shift[rank_id] *= stride;
-  }
+  boxes->g_num
+    = cs_all_to_all_copy_array(d,
+                               CS_GNUM_TYPE,
+                               1,
+                               false,  /* reverse */
+                               send_g_num,
+                               NULL);
 
-  MPI_Alltoallv(send_extents, send_count, send_shift, CS_MPI_COORD,
-                boxes->extents, recv_count, recv_shift, CS_MPI_COORD,
-                boxes->comm);
+  boxes->extents
+    = cs_all_to_all_copy_array(d,
+                               CS_COORD_TYPE,
+                               boxes->dim * 2,
+                               false,  /* reverse */
+                               send_extents,
+                               NULL);
+
+  /* Update dimensions */
+
+  boxes->n_boxes = cs_all_to_all_n_elts_dest(d);
 
   /* Free buffers */
 
-  BFT_FREE(send_g_num);
   BFT_FREE(send_extents);
-  BFT_FREE(send_count);
-  BFT_FREE(send_shift);
-  BFT_FREE(recv_count);
-  BFT_FREE(recv_shift);
+  BFT_FREE(send_g_num);
+  BFT_FREE(dest_rank);
+
+  cs_all_to_all_destroy(&d);
 
 #endif /* HAVE_MPI */
 }
