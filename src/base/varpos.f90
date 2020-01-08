@@ -1083,21 +1083,19 @@ integer, intent(in) :: f_id
 character(len=64) :: f_name
 
 integer :: type_flag, location_id, st_id, f_dim
-logical :: has_previous
 
 !===============================================================================
 
 type_flag = FIELD_EXTENSIVE + FIELD_PROPERTY
 location_id = 1 ! variables defined on cells
-has_previous = .false.
 
 ! Define asscociated field
 
 call field_get_dim(f_id, f_dim)
 call field_get_name (f_id, f_name)
 
-call field_create(trim(f_name)//'_st', type_flag,               &
-                  location_id, f_dim, has_previous, st_id)
+call field_find_or_create(trim(f_name)//'_st', type_flag,       &
+                            location_id, f_dim, st_id)
 
 call field_set_key_int(f_id, kst, st_id)
 
