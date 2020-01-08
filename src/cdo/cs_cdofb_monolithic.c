@@ -2228,8 +2228,8 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
     /* Main loop on cells to define the linear system to solve */
     cs_timer_t  t_build_start = cs_timer_time();
 
-    /* rhs set to zero and cs_sles_t structure is freed in oredr to do
-     * the setup once again since the matrix * should be modified */
+    /* rhs set to zero and cs_sles_t structure is freed in order to do
+     * the setup once again since the matrix should be modified */
     cs_cdofb_monolithic_sles_reset(msles);
 
     sc->steady_build(nsp, dir_values, enforced_ids, sc);
@@ -2472,8 +2472,8 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
     /* Start of the system building */
     cs_timer_t  t_build_start = cs_timer_time();
 
-    /* rhs set to zero and cs_sles_t structure is freed in oredr to do
-     * the setup once again since the matrix * should be modified */
+    /* rhs set to zero and cs_sles_t structure is freed in order to do
+     * the setup once again since the matrix should be modified */
     cs_cdofb_monolithic_sles_reset(msles);
 
     /* Main loop on cells to define the linear system to solve */

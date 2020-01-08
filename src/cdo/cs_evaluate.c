@@ -1703,8 +1703,7 @@ cs_evaluate_3_square_wc2x_norm(const cs_real_t        *array,
   } /* OpenMP block */
 
   /* Parallel treatment */
-  if (cs_glob_n_ranks > 1)
-    cs_parall_sum(1, CS_REAL_TYPE, &l2norm);
+  cs_parall_sum(1, CS_REAL_TYPE, &l2norm);
 
   return (cs_real_t)l2norm;
 }

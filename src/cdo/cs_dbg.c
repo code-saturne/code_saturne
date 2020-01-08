@@ -126,10 +126,10 @@ cs_dbg_cw_test(const cs_equation_param_t   *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Print a cs_sdm_t structure which is defined by block
+ * \brief   Print an array.
  *          Print into the file f if given otherwise open a new file named
  *          fname if given otherwise print into the standard output
- *          The usage of threshold allows one to compare more easier matrices
+ *          The usage of threshold allows one to compare more easier arrays
  *          without taking into account numerical roundoff.
  *
  * \param[in]  fp         pointer to a file structure or NULL
@@ -239,9 +239,9 @@ cs_dbg_fprintf_system(const char        *eqname,
 
 void
 cs_dbg_darray_to_listing(const char        *header,
-                        const cs_lnum_t    size,
-                        const cs_real_t    array[],
-                        int                n_cols)
+                         const cs_lnum_t    size,
+                         const cs_real_t    array[],
+                         int                n_cols)
 {
   cs_log_printf(CS_LOG_DEFAULT, "\nDUMP>> %s\n", header);
 
