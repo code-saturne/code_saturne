@@ -1021,6 +1021,9 @@ do while (iterns.le.nterup)
   ! Compute y+ if needed
   ! and Van Driest "amortissement"
   if (itytur.eq.4 .and. idries.eq.1) then
+    ! Disable solid cells in fluid_solid mode
+    if (fluid_solid) call cs_mesh_quantities_set_has_disable_flag(1)
+
     call distyp(itypfb, visvdr)
   endif
 
