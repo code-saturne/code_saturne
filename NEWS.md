@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 User changes:
 
+- Modify the GUI mathematical expressions syntax to allow only for C syntax for
+  if loops.
+
 - Add cs_mesh_remove_cells and cs_mesh_remove_cells_negative_volumes
   functions to allow removal of selected or degenrate cells in preprocessing.
 
