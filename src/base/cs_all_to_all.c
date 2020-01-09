@@ -736,24 +736,32 @@ _alltoall_caller_prepare_i(_mpi_all_to_all_caller_t  *dc,
     }
   }
 
-  if (!reverse && recv_id != NULL) {
-    for (i = 0; i < dc->n_ranks; i++) {
-      size_t i_s = dc->recv_displ[i];
-      size_t i_e = dc->recv_displ[i+1];
-      for (size_t j = i_s; j < i_e; j++) {
-        cs_lnum_t k = recv_id[j];
-        cs_lnum_t n_sub_recv = dest_index[k+1] - dest_index[k];
-        dc->recv_count[i] += n_sub_recv;
-      }
+  if (reverse) {
+    for (size_t j = 0; j < dc->recv_size; j++) {
+      cs_lnum_t n_sub_recv = dest_index[j+1] - dest_index[j];
+      dc->recv_count[dest_rank[j]] += n_sub_recv;
     }
   }
-  else { /* reverse || recv_id == NULL */
-    for (i = 0; i < dc->n_ranks; i++) {
-      size_t i_s = dc->recv_displ[i];
-      size_t i_e = dc->recv_displ[i+1];
-      for (size_t j = i_s; j < i_e; j++) {
-        cs_lnum_t n_sub_recv = dest_index[j+1] - dest_index[j];
-        dc->recv_count[i] += n_sub_recv;
+  else {
+    if (recv_id != NULL) {
+      for (i = 0; i < dc->n_ranks; i++) {
+        size_t i_s = dc->recv_displ[i];
+        size_t i_e = dc->recv_displ[i+1];
+        for (size_t j = i_s; j < i_e; j++) {
+          cs_lnum_t k = recv_id[j];
+          cs_lnum_t n_sub_recv = dest_index[k+1] - dest_index[k];
+          dc->recv_count[i] += n_sub_recv;
+        }
+      }
+    }
+    else {
+      for (i = 0; i < dc->n_ranks; i++) {
+        size_t i_s = dc->recv_displ[i];
+        size_t i_e = dc->recv_displ[i+1];
+        for (size_t j = i_s; j < i_e; j++) {
+          cs_lnum_t n_sub_recv = dest_index[j+1] - dest_index[j];
+          dc->recv_count[i] += n_sub_recv;
+        }
       }
     }
   }
