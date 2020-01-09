@@ -27,11 +27,12 @@
 !> \file distyp.f90
 !>
 !> \brief This subroutine computes the dimensionless distance to the wall
-!> solving a transport equation.
+!> solving a steady transport equation.
 !>
-!> This function solves the following transport equation on \f$ \varia \f$:
+!> This function solves the following steady pure convection equation on
+!> \f$ \varia \f$:
 !> \f[
-!> \dfrac{\partial \varia}{\partial t} + \divs \left( \varia \vect{V} \right)
+!> \divs \left( \varia \vect{V} \right)
 !>     - \divs \left( \vect{V} \right) \varia = 0
 !> \f]
 !> where the vector field \f$ \vect{V} \f$ is defined by:
@@ -51,9 +52,6 @@
 !>  y^+ = y \varia
 !> \f]
 !>
-!>
-!> Remarks:
-!> - a steady state is looked for.
 !>
 !> Then, Imposition of an amortization of Van Driest type for the LES.
 !>        \f$ \nu_T \f$ is absorbed by \f$ (1-\exp(\dfrac{-y^+}{d^+}))^2 \f$
