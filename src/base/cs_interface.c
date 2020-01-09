@@ -979,11 +979,8 @@ _add_global_equiv(cs_interface_set_t  *ifs,
   BFT_FREE(recv_global_num);
 
   /* Now that equivalences are marked, count for each rank; for each
-     equivalence, we will need to send the local element number,
-     the number of equivalent elements (e.multiple[...] - 1),
-     and the corresponding element numbers and ranks,
-     for a total of 1 + 1 + 2*(e.multiple[...] - 1)
-     = 2*(e.multiple[...]) values. */
+     equivalence, we will need to send the corresponding element
+     numbers and ranks, for a total of 2*(e.multiple[...] - 1) values. */
 
   cs_lnum_t  *block_index;
   BFT_MALLOC(block_index, n_elts_recv+1, cs_lnum_t);
@@ -1013,8 +1010,8 @@ _add_global_equiv(cs_interface_set_t  *ifs,
 
       cs_lnum_t *block_equiv_p = block_equiv + block_index[i];
 
-      cs_lnum_t   e_id = equiv_id[i];
-      cs_lnum_t   k = 2;
+      cs_lnum_t        e_id = equiv_id[i];
+      cs_lnum_t        k = 2;
       const int        multiple = e.shift[e_id+1] - e.shift[e_id];
       const int       *rank_p = e.rank + e.shift[e_id];
       const cs_lnum_t *num_p  = e.num  + e.shift[e_id];
@@ -1056,7 +1053,7 @@ _add_global_equiv(cs_interface_set_t  *ifs,
                                  part_index,
                                  NULL);
 
-  cs_lnum_t n_vals_part = part_index[n_elts] / 2;
+  cs_lnum_t n_vals_part = part_index[n_elts];
 
   /* At this stage, MPI operations are finished; we may release
      the corresponding counts and indexes */
@@ -1071,7 +1068,7 @@ _add_global_equiv(cs_interface_set_t  *ifs,
 
   _interfaces_from_flat_equiv(ifs,
                               1,
-                              n_vals_part*2,
+                              n_vals_part,
                               part_equiv);
 
   BFT_FREE(part_equiv);
@@ -1622,10 +1619,6 @@ _count_periodic_equiv_exchange(size_t                     block_size,
  *                        {global number of local element,
  *                         global number of periodic element,
  *                         transform id}
- *   send_count       <-> local number of values to send to each rank
- *   recv_count       <-> local number of values to receive from each rank
- *   send_shift       --- local index of values to send to each rank
- *                        (re-used work array, size n_ranks + 1)
  *   comm             <-- associated MPI communicator
  *
  * returns:
@@ -1642,9 +1635,6 @@ _exchange_periodic_equiv(size_t                     block_size,
                          const fvm_periodicity_t   *periodicity,
                          cs_lnum_t                  n_block_couples,
                          const cs_gnum_t            block_couples[],
-                         int                        send_count[],
-                         int                        recv_count[],
-                         int                        send_shift[],
                          MPI_Comm                   comm)
 {
   int          tr_id;
@@ -1656,7 +1646,6 @@ _exchange_periodic_equiv(size_t                     block_size,
   size_t  recv_size = 0;
   int *couple_block_id = NULL;
   int *reverse_tr_id = NULL;
-  int *recv_shift = NULL;
   cs_lnum_t *order = NULL;
   cs_gnum_t *equiv_send = NULL, *equiv_recv = NULL;
   cs_gnum_t *block_recv_num = NULL;
@@ -1697,7 +1686,11 @@ _exchange_periodic_equiv(size_t                     block_size,
                              block_couples,
                              couple_block_id);
 
-  /* build count and shift arrays for MPI_Alltoallv */
+  /* build count and shift arrays for parallel exchange */
+
+  int  *send_count, *recv_count;
+  BFT_MALLOC(send_count, size, int);
+  BFT_MALLOC(recv_count, size, int);
 
   _count_periodic_equiv_exchange(block_size,
                                  equiv_id,
@@ -1709,11 +1702,12 @@ _exchange_periodic_equiv(size_t                     block_size,
                                  recv_count,
                                  comm);
 
+  int  *send_shift, *recv_shift;
+  BFT_MALLOC(send_shift, size + 1, int);
   BFT_MALLOC(recv_shift, size + 1, int);
 
   send_shift[0] = 0;
   recv_shift[0] = 0;
-
   for (rank = 0; rank < size; rank++) {
     send_shift[rank + 1] = send_shift[rank] + send_count[rank];
     recv_shift[rank + 1] = recv_shift[rank] + recv_count[rank];
@@ -1823,7 +1817,11 @@ _exchange_periodic_equiv(size_t                     block_size,
 
   /* Free memory */
 
+  BFT_FREE(send_count);
+  BFT_FREE(recv_count);
+  BFT_FREE(send_shift);
   BFT_FREE(recv_shift);
+
   BFT_FREE(equiv_send);
 
   /* Build return structure */
@@ -2131,11 +2129,8 @@ _add_global_equiv_periodic(cs_interface_set_t       *ifs,
                            const cs_gnum_t    *const periodic_couples[],
                            MPI_Comm                  comm)
 {
-  int         tr_index_size;
-
   cs_lnum_t   n_block_couples = 0;
   cs_lnum_t   *equiv_id = NULL, *couple_equiv_id = NULL;
-  cs_lnum_t   *equiv_send = NULL, *equiv_recv = NULL;
   cs_gnum_t   *block_couples = NULL;
 
   /* Initialization */
@@ -2143,8 +2138,6 @@ _add_global_equiv_periodic(cs_interface_set_t       *ifs,
   int  size, local_rank;
   MPI_Comm_size(comm, &size);
   MPI_Comm_rank(comm, &local_rank);
-
-  tr_index_size = fvm_periodicity_get_n_transforms(periodicity) + 2;
 
   /* Get temporary maximum global number value */
 
@@ -2199,8 +2192,6 @@ _add_global_equiv_periodic(cs_interface_set_t       *ifs,
 
   int *src_rank = cs_all_to_all_get_src_rank(d);
 
-  cs_all_to_all_destroy(&d);
-
   /* Exchange periodicity information */
 
   _exchange_periodic_tuples(bi.block_size,
@@ -2238,40 +2229,22 @@ _add_global_equiv_periodic(cs_interface_set_t       *ifs,
 
   /* Count number of values to send to each process */
 
-  size_t block_size = bi.block_size;
-
-  int  *send_count, *recv_count, *send_shift, *recv_shift;
-  BFT_MALLOC(send_count, size, int);
-  BFT_MALLOC(recv_count, size, int);
-  BFT_MALLOC(send_shift, size + 1, int);
+  int  *recv_shift;
   BFT_MALLOC(recv_shift, size + 1, int);
 
-  for (int rank = 0; rank < size; rank++)
-    send_count[rank] = 0;
-  for (cs_lnum_t i = 0; i < n_elts; i++) {
-    int rank = (global_num[i] - 1) / block_size;
-    send_count[rank] += 1;
-  }
+  for (int i = 0; i < size+1; i++)
+    recv_shift[i] = 0;
 
-  send_shift[0] = 0;
-  for (int rank = 0; rank < size; rank++)
-    send_shift[rank + 1] = send_shift[rank] + send_count[rank];
-
-  for (int i = 0; i < size; i++)
-    recv_count[i] = 0;
   for (cs_lnum_t i = 0; i < n_elts_recv; i++) {
     int j = src_rank[i];
-    recv_count[j] = recv_count[j] + 1 ;
+    recv_shift[j+1] += 1;
   }
 
-  recv_shift[0] = 0;
   for (int i = 0; i < size; i++)
-    recv_shift[i + 1] = recv_shift[i] + recv_count[i];
-
-  BFT_FREE(src_rank);
+    recv_shift[i + 1] += recv_shift[i];
 
   _per_block_period_t
-    pe = _exchange_periodic_equiv(block_size,
+    pe = _exchange_periodic_equiv(bi.block_size,
                                   recv_shift,
                                   recv_global_num,
                                   recv_num,
@@ -2280,9 +2253,6 @@ _add_global_equiv_periodic(cs_interface_set_t       *ifs,
                                   periodicity,
                                   n_block_couples,
                                   block_couples,
-                                  send_count,
-                                  recv_count,
-                                  send_shift,
                                   comm);
 
   BFT_FREE(recv_global_num);
@@ -2296,6 +2266,7 @@ _add_global_equiv_periodic(cs_interface_set_t       *ifs,
 
   /* Free all arrays not needed anymore */
 
+  BFT_FREE(recv_shift);
   BFT_FREE(recv_num);
 
   BFT_FREE(couple_equiv_id);
@@ -2303,69 +2274,59 @@ _add_global_equiv_periodic(cs_interface_set_t       *ifs,
   n_block_couples = 0;
 
   /* Now that equivalences are marked, count for each rank; for each
-     equivalence, we will need to send the local element number,
-     the number of equivalent elements (e.multiple[...] - 1),
-     and the corresponding element numbers, ranks, and transform ids,
-     for a total number of  1 + 1 + 3*(e.multiple[...] - 1)
-     = 2 + 3*(e.multiple[...]) values */
+     equivalence, we will need to send the corresponding element
+     numbers, ranks, and transform ids,
+     for a total of 2 + 3*(e.multiple[...] - 1)
+     = (3*e.multiple[...]) - 1 values. */
 
-  for (int rank = 0; rank < size; rank++) {
-    send_count[rank] = 0;
-    for (cs_lnum_t i = recv_shift[rank]; i < recv_shift[rank+1]; i++) {
-      if (equiv_id[i] > -1) {
-        const int e_id = equiv_id[i];
-        const int e_multiple = e.shift[e_id+1] - e.shift[e_id];
-        send_count[rank] += 2 + (3*(e_multiple - 1));
-      }
+  cs_lnum_t  *block_index;
+  BFT_MALLOC(block_index, n_elts_recv+1, cs_lnum_t);
+
+  block_index[0] = 0;
+  for (cs_lnum_t i = 0; i < n_elts_recv; i++) {
+    cs_lnum_t n_eq = 0;
+    if (equiv_id[i] > -1) {
+      size_t e_id = equiv_id[i];
+      n_eq = 3*(e.shift[e_id+1] - e.shift[e_id]) - 1;
     }
+    block_index[i+1] = block_index[i] + n_eq;
   }
 
-  for (int rank = 0; rank < size; rank++)
-    send_shift[rank + 1] = send_shift[rank] + send_count[rank];
+  cs_lnum_t *part_index = cs_all_to_all_copy_index(d,
+                                                   true, /* reverse */
+                                                   block_index,
+                                                   NULL);
 
   /* Now prepare new send buffer */
 
-  cs_lnum_t n_elts_send = send_shift[size];
-  BFT_MALLOC(equiv_send, n_elts_send, cs_lnum_t);
+  cs_lnum_t  *block_equiv;
+  BFT_MALLOC(block_equiv, block_index[n_elts_recv], cs_lnum_t);
 
-  for (int rank = 0; rank < size; rank++) {
+  for (cs_lnum_t i = 0; i < n_elts_recv; i++) {
+    if (equiv_id[i] > -1) {
 
-    send_count[rank] = 0; /* reset, will be re-incremented */
+      cs_lnum_t *block_equiv_p = block_equiv + block_index[i];
 
-    for (cs_lnum_t i = recv_shift[rank]; i < recv_shift[rank+1]; i++) {
+      cs_lnum_t        e_id = equiv_id[i];
+      cs_lnum_t        k = 2;
+      const int        multiple = e.shift[e_id+1] - e.shift[e_id];
+      const int       *rank_p = e.rank + e.shift[e_id];
+      const int       *tr_id_p = e.tr_id + e.shift[e_id];
+      const cs_lnum_t *num_p  = e.num  + e.shift[e_id];
 
-      if (equiv_id[i] > -1) {
-
-        cs_lnum_t *equiv_send_p
-          = equiv_send + send_shift[rank] + send_count[rank];
-        cs_lnum_t   k = 2;
-
-        const int         e_id = equiv_id[i];
-        const int         e_multiple = e.shift[e_id+1] - e.shift[e_id];
-        const int        *rank_p = e.rank + e.shift[e_id];
-        const int        *tr_id_p = e.tr_id + e.shift[e_id];
-        const cs_lnum_t *num_p = e.num  + e.shift[e_id];
-
-        send_count[rank] += 2 + (3*(e_multiple - 1));
-
-        for (cs_lnum_t j = 0; j < e_multiple; j++) {
-
-          if (rank_p[j] == rank && tr_id_p[j] == 0) {
-            equiv_send_p[0] = num_p[j];
-            equiv_send_p[1] = e_multiple - 1;
-          }
-          else {
-            equiv_send_p[k++] = num_p[j];
-            equiv_send_p[k++] = tr_id_p[j];
-            equiv_send_p[k++] = rank_p[j];
-          }
+      for (cs_lnum_t j = 0; j < multiple; j++) {
+        if (rank_p[j] == src_rank[i] && tr_id_p[j] == 0) {
+          block_equiv_p[0] = num_p[j];
+          block_equiv_p[1] = multiple - 1;
         }
-
+        else {
+          block_equiv_p[k++] = num_p[j];
+          block_equiv_p[k++] = tr_id_p[j];
+          block_equiv_p[k++] = rank_p[j];
+        }
       }
+
     }
-
-    assert(send_count[rank] == send_shift[rank+1] - send_shift[rank]);
-
   }
 
   /* Free temporary (block) equivalence info */
@@ -2376,45 +2337,39 @@ _add_global_equiv_periodic(cs_interface_set_t       *ifs,
   BFT_FREE(e.tr_id);
   BFT_FREE(e.num);
 
+  BFT_FREE(src_rank);
   BFT_FREE(equiv_id);
 
-  /* Send prepared block data to destination rank */
+  cs_lnum_t *part_equiv
+    = cs_all_to_all_copy_indexed(d,
+                                 CS_LNUM_TYPE,
+                                 true, /* reverse */
+                                 block_index,
+                                 block_equiv,
+                                 part_index,
+                                 NULL);
 
-  MPI_Alltoall(send_count, 1, MPI_INT, recv_count, 1, MPI_INT, comm);
-
-  send_shift[0] = 0;
-  recv_shift[0] = 0;
-
-  for (int rank = 0; rank < size; rank++) {
-    send_shift[rank + 1] = send_shift[rank] + send_count[rank];
-    recv_shift[rank + 1] = recv_shift[rank] + recv_count[rank];
-  }
-
-  n_elts_recv = recv_shift[size];
-
-  BFT_MALLOC(equiv_recv, n_elts_recv, cs_lnum_t);
-
-  MPI_Alltoallv(equiv_send, send_count, send_shift, CS_MPI_LNUM,
-                equiv_recv, recv_count, recv_shift, CS_MPI_LNUM, comm);
+  cs_lnum_t n_vals_part = part_index[n_elts];
 
   /* At this stage, MPI operations are finished; we may release
      the corresponding counts and indexes */
 
-  BFT_FREE(equiv_send);
+  BFT_FREE(block_equiv);
+  BFT_FREE(part_index);
+  BFT_FREE(block_index);
 
-  BFT_FREE(send_count);
-  BFT_FREE(recv_count);
-  BFT_FREE(send_shift);
-  BFT_FREE(recv_shift);
+  cs_all_to_all_destroy(&d);
 
   /* Add interface */
 
+  int tr_index_size = fvm_periodicity_get_n_transforms(periodicity) + 2;
+
   _interfaces_from_flat_equiv(ifs,
                               tr_index_size,
-                              n_elts_recv,
-                              equiv_recv);
+                              n_vals_part,
+                              part_equiv);
 
-  BFT_FREE(equiv_recv);
+  BFT_FREE(part_equiv);
 }
 
 #endif /* defined(HAVE_MPI) */
