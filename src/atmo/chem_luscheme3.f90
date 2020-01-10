@@ -1873,7 +1873,7 @@ do i=1,ns
  chem(i)=0.d0
 enddo
 
-!     Conversion mug/m3 to molecules/cm3.
+!     Conversion mg/kg to molecules/cm3.
 
 do i = 1, ns
    conc(i) = y(i) * convers_factor(i)
@@ -2565,7 +2565,7 @@ chem( 49) = chem( 49) + w(155)
 chem( 50) = chem( 50) +  0.8000000000000000d+00 * w(155)
 chem( 52) = chem( 52) - w(155)
 
-!    Conversion molecules/cm3 to mug/m3.
+!    Conversion molecules/cm3/sec to mg/kg/sec.
 
 do i = 1, ns
    chem(i) = chem(i) / convers_factor(i)
@@ -2627,7 +2627,7 @@ do j=1,ns
  enddo
 enddo
 
-!     Conversion mug/m3 to molecules/cm3.
+!     Conversion mg/kg to molecules/cm3.
 
 do i = 1, ns
    conc(i) = y(i) * convers_factor(i)
