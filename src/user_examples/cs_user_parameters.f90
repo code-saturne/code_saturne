@@ -73,8 +73,7 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     ixmlpu        indicates if the XML file from the GUI is used
-!>                              (1 : yes, 0 : no)
+!> \param[in]     ixmlpu        indicates if an XML file from the GUI is used  !
 !______________________________________________________________________________!
 
 subroutine usppmo &
@@ -116,11 +115,7 @@ integer ixmlpu
 !        if =  0   adiabatic model
 !        if =  1   extended model with enthalpy source term
 
-if (ixmlpu.eq.0) then
-
-  ippmod(icod3p) = -1
-
-endif
+ippmod(icod3p) = -1
 
 ! --- coebu: Eddy-Break Up pre-mixed flame
 ! ==========
@@ -135,11 +130,7 @@ endif
 !        if =  3   extended model with enthalpy and mixture fraction transport
 !                   (dilution, thermal losses, etc.)
 
-if (ixmlpu.eq.0) then
-
-  ippmod(icoebu) = -1
-
-endif
+ippmod(icoebu) = -1
 
 ! --- colwc: Libby-Williams pre-mixed flame
 ! ==========
@@ -152,11 +143,7 @@ endif
 !        if =  4   extended four-peak model, adiabatic
 !        if =  5   extended four-peak model with enthalpy source terms
 
-if (ixmlpu.eq.0) then
-
-  ippmod(icolwc) = -1
-
-endif
+ippmod(icolwc) = -1
 
 
 ! --- Soot model
@@ -181,11 +168,7 @@ rosoot = 2000.d0 ! kg/m3
 !        if = -1   module not activated
 !        if = 0    module activated
 
-if (ixmlpu.eq.0) then
-
-  ippmod(icfuel) = -1
-
-endif
+ippmod(icfuel) = -1
 
 ! --- coal :
 ! ==========
@@ -203,11 +186,7 @@ endif
 !        if = 0    module activated
 !        if = 1    with drying
 
-if (ixmlpu.eq.0) then
-
-  ippmod(iccoal) = -1
-
-endif
+ippmod(iccoal) = -1
 
 ! Activate the drift: 0 (no activation),
 !                     1 (transported particle velocity)
@@ -225,11 +204,7 @@ i_comb_drift = 1
 !        if = 0    module activated
 !        if = 1    with drying (NOT functional)
 
-if (ixmlpu.eq.0) then
-
-  ippmod(icpl3c) = -1
-
-endif
+ippmod(icpl3c) = -1
 
 ! --- compf: Compressible flows
 ! ==========
@@ -240,11 +215,7 @@ endif
 !        if =  2   homogeneous two phase model
 !        if =  3   in pressure increment
 
-if (ixmlpu.eq.0) then
-
-  ippmod(icompf) = -1
-
-endif
+ippmod(icompf) = -1
 
 ! --- eljou: Joule effect
 ! ==========
@@ -255,11 +226,7 @@ endif
 !        if = 3    Potentiel reel     + CDL Transfo
 !        if = 4    Potentiel complexe + CDL Transfo
 
-if (ixmlpu.eq.0) then
-
-  ippmod(ieljou) = -1
-
-endif
+ippmod(ieljou) = -1
 
 ! --- elarc: Electric arcs
 ! ==========
@@ -268,11 +235,7 @@ endif
 !        if = 1    electric potential
 !        if = 2    electric potential and vector potential (hence 3D modelling)
 
-if (ixmlpu.eq.0) then
-
-  ippmod(ielarc) = -1
-
-endif
+ippmod(ielarc) = -1
 
 ! --- atmos: Atmospheric flows
 ! ==========
@@ -282,11 +245,7 @@ endif
 !        if = 1    dry atmosphere
 !        if = 2    humid atmosphere (experimental)
 
-if (ixmlpu.eq.0) then
-
-  ippmod(iatmos) = -1
-
-endif
+ippmod(iatmos) = -1
 
 ! --- aeros: Cooling towers
 ! ==========
@@ -296,11 +255,7 @@ endif
 !        if = 1    Poppe's model
 !        if = 2    Merkel's model
 
-if (ixmlpu.eq.0) then
-
-  ippmod(iaeros) = -1
-
-endif
+ippmod(iaeros) = -1
 
 ! --- igmix: Gas mixtures modelling
 ! ==========
@@ -342,58 +297,50 @@ ippmod(idarcy) = -1
 !       if = 0   user-specified
 !       if = 1   tabulated by JANAF (default)
 
-if (ixmlpu.eq.0) then
-
-  indjon = 1
-
-endif
+indjon = 1
 
 !===============================================================================
 ! 2.  Data file related to modules above
 !===============================================================================
 
-if (ixmlpu.eq.0) then
+! Combustion
 
-  ! Combustion
+if (     ippmod(icod3p).ge.0                                          &
+    .or. ippmod(icoebu).ge.0 .or. ippmod(icolwc).ge.0) then
 
-  if (     ippmod(icod3p).ge.0                                          &
-      .or. ippmod(icoebu).ge.0 .or. ippmod(icolwc).ge.0) then
-
-    if (indjon.eq.1) then
-      ficfpp = 'dp_C3P'
-    else
-      ficfpp = 'dp_C3PSJ'
-    endif
-
+  if (indjon.eq.1) then
+    ficfpp = 'dp_C3P'
+  else
+    ficfpp = 'dp_C3PSJ'
   endif
 
-  ! Fuel combustion
+endif
 
-  if (ippmod(icfuel).ge.0) then
-    ficfpp = 'dp_FUE'
-  endif
+! Fuel combustion
 
-  ! Atmospheric flows
+if (ippmod(icfuel).ge.0) then
+  ficfpp = 'dp_FUE'
+endif
 
-  if (ippmod(iatmos).ge.0) then
-    ficmet = 'meteo'
-  endif
+! Atmospheric flows
 
- if (ippmod(igmix).ge.0) then
-   ! Specific condensation modelling
+if (ippmod(iatmos).ge.0) then
+  ficmet = 'meteo'
+endif
 
-   ! wall condensation
-   !      if = -1 module not activated
-   !      if =  0 condensation source terms activated
-   icondb = -1
+if (ippmod(igmix).ge.0) then
+  ! Specific condensation modelling
 
-   ! internal condensation
-   !      if = -1 module not activated
-   !      if =  0 condensation source terms with metal
-   !                               structures activate
-   icondv = -1
- endif
+  ! wall condensation
+  !      if = -1 module not activated
+  !      if =  0 condensation source terms activated
+  icondb = -1
 
+  ! internal condensation
+  !      if = -1 module not activated
+  !      if =  0 condensation source terms with metal
+  !                               structures activate
+  icondv = -1
 endif
 
 !< [usppmo]

@@ -71,8 +71,7 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     ixmlpu        indicates if the XML file from the GUI is used
-!>                              (1 : yes, 0 : no)
+!> \param[in]     ixmlpu        indicates if an XML file from the GUI is used  !
 !______________________________________________________________________________!
 
 subroutine usppmo &
