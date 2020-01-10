@@ -151,6 +151,10 @@ void
 cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
                                    cs_real_t **molar_mass,
                                    int       **chempoint);
+
+void
+cs_f_atmo_chem_initialize_species_to_fid(int *species_fid);
+
 void
 cs_f_atmo_chem_finalize(void);
 
@@ -206,6 +210,17 @@ cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
   *species_to_scalar_id = (_atmo_chem.species_to_scalar_id);
   *molar_mass = (_atmo_chem.molar_mass);
   *chempoint = (_atmo_chem.chempoint);
+}
+
+void
+cs_f_atmo_chem_initialize_species_to_fid(int *species_fid)
+{
+  assert(species_fid != NULL);
+  assert(_atmo_chem.species_to_field_id != NULL);
+
+  for (int i = 0; i < _atmo_chem.n_species; i++)
+    _atmo_chem.species_to_field_id[i] = species_fid[i];
+
 }
 
 void

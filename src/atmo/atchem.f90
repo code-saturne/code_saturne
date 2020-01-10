@@ -144,6 +144,27 @@ allocate(ychem(nbchim))
 end subroutine init_chemistry
 
 !=============================================================================
+!> \brief Initialize species_to_field_id
+subroutine cs_atmo_chem_init_c_chemistry
+
+use numvar, only : ivarfl, isca
+use cs_c_bindings
+
+implicit none
+
+! Local variables
+integer i
+integer(c_int), dimension(nespg) :: c_species_to_fid
+
+do i = 1, nespg
+  c_species_to_fid(i) = ivarfl(isca(isca_chem(i)))
+enddo
+
+call cs_f_atmo_chem_initialize_species_to_fid(c_species_to_fid)
+
+end subroutine cs_atmo_chem_init_c_chemistry
+
+!=============================================================================
 
 subroutine init_chemistry_pointers
 

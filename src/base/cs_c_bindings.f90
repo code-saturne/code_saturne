@@ -2336,6 +2336,17 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief Initialize C chemistry structure from Fortran
+
+    subroutine cs_f_atmo_chem_initialize_species_to_fid(species_fid) &
+      bind(C, name='cs_f_atmo_chem_initialize_species_to_fid')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), dimension(*), intent(in) :: species_fid
+    end subroutine cs_f_atmo_chem_initialize_species_to_fid
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C user function for cooling tower
 
     subroutine cs_ctwr_field_pointer_map()  &

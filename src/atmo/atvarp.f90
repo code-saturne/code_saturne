@@ -187,6 +187,7 @@ if (ifilechemistry.ge.1) then
     dmmk(3)=48.d0  ! Molar mass (g/mol) O3
     dmmk(4)=16.d0  ! Molar mass (g/mol) O3P
     chempoint = (/ 4, 3, 2, 1 /)
+
   ! scheme with 20 species and 34 reactions! Note pas de COV
   else if (ifilechemistry.eq.2) then
     nrg = 34
@@ -237,6 +238,7 @@ if (ifilechemistry.ge.1) then
     dmmk(20)=98.08d0   ! Molar mass (g/mol) H2SO4
     chempoint = (/ 20, 19, 16, 17, 2, 15, 14, 3, 18, 7, 8, 9, 4, &
                    10, 1, 12, 11, 13, 5, 6 /)
+
   ! scheme CB05 with 52 species and 155 reactions
   else if (ifilechemistry.eq.3) then
     if (iaerosol.eq.1) then
@@ -399,6 +401,7 @@ if (ifilechemistry.ge.1) then
                      19, 20, 4, 21, 36, 22, 34, 16, 23, 24, 25, 31, 32, 26,&
                      5, 6, 27, 12, 28, 30, 29, 7, 8, 18 /)
     endif
+
   ! User defined chemistry using SPACK file and routines
   else if (ifilechemistry.eq.4) then
 
@@ -418,6 +421,11 @@ if (ifilechemistry.ge.1) then
     ! Map isca_chem, dmmk, chempoint and allocate it if needed
     call init_chemistry_pointers()
 
+  endif
+
+  ! Finish initialization of C chemistry when SPACK was not used
+  if (ifilechemistry.ne.4) then
+    call cs_atmo_chem_init_c_chemistry()
   endif
 
 endif
