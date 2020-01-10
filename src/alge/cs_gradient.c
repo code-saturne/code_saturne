@@ -156,9 +156,9 @@ static cs_gradient_info_t **cs_glob_gradient_systems = NULL;
 /* Short names for gradient computation types */
 
 const char *cs_gradient_type_name[]
-  = {N_("Iterative reconstruction"),
+  = {N_("Green-Gauss, iterative handling of non-orthogonalities"),
      N_("Least-squares"),
-     N_("Reconstruction with Least-squares"),
+     N_("Green-Gauss, least-squares gradient face values"),
      N_("Green-Gauss, vertex-based face interpolation")};
 
 /* Timer statistics */

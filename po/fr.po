@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2020-01-02 14:31+0100\n"
+"POT-Creation-Date: 2020-01-10 11:20+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3063,17 +3063,17 @@ msgstr "valeur invalide pour isstpc"
 msgid "invalid value of init"
 msgstr "valeur invalide pour init"
 
-msgid "Iterative reconstruction"
-msgstr "Reconstruction itérative"
+msgid "Green-Gauss, iterative handling of non-orthogonalities"
+msgstr "Green-Gauss, traitement itératif des non-orthogonalités"
 
 msgid "Least-squares"
 msgstr "Moindres carrés"
 
-msgid "Reconstruction with Least-squares"
-msgstr "Reconstruction Green-Gauss avec Moindres carrés"
+msgid "Green-Gauss, least-squares gradient face values"
+msgstr "Green-Gauss, valeurs aux faces par moindres carrés"
 
 msgid "Green-Gauss, vertex-based face interpolation"
-msgstr ""
+msgstr "Green-Gauss, valeurs aux faces par interpolation aux sommets"
 
 #, c-format
 msgid ""
@@ -6074,12 +6074,6 @@ msgid ""
 " not implemented."
 msgstr ""
 
-#, c-format
-msgid ""
-"%s: field enum %d is already mapped as non-indexed\n"
-"to field id %d (%s), so it cannot be mapped as indexed."
-msgstr ""
-
 msgid "standard input and output, serial access"
 msgstr "entrées/sorties standard, accès série"
 
@@ -6652,6 +6646,13 @@ msgstr ""
 "    incertaine :  %d\n"
 "    éditable :    %d\n"
 "    valeur :      %f\n"
+
+#, c-format
+msgid ""
+" Warning: You defined the parameter %s as an uncertain of type %s with an "
+"incompatbile editable state of %d.\n"
+" Editable state is set to %d\n"
+msgstr ""
 
 #, c-format
 msgid "Entry \"%s\" was defined as not editable in the notebook.\n"
