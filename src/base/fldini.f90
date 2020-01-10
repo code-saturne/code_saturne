@@ -640,7 +640,7 @@ do f_id = 0, nfld - 1
   ! Is the field of type FIELD_VARIABLE?
   if (iand(f_type, FIELD_VARIABLE).eq.FIELD_VARIABLE) then
     call field_get_key_struct_var_cal_opt(f_id, vcopt)
-    vcopt%imrgra= imrgra
+    if (vcopt%imrgra .lt. 0) vcopt%imrgra= imrgra
     call field_set_key_struct_var_cal_opt(f_id, vcopt)
   endif
 enddo
