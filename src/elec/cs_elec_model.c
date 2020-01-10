@@ -1121,7 +1121,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
     cs_real_t *cpro_absco = NULL;
 
     if (cs_glob_elec_option->ixkabe == 1) {
-      if (cs_glob_field_pointers[CS_ENUMF_(rad_cak)].a != NULL)
+      if (CS_FI_(rad_cak, 0) != NULL)
         cpro_absco = CS_FI_(rad_cak, 0)->val;
     }
 

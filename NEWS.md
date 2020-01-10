@@ -73,6 +73,8 @@ Numerics and physical modelling:
 
 Architectural changes:
 
+- In field pointer API, CS_F_(e) and CS_FI_(e, 0) are now equivalent.
+
 - code_aster coupling: remove the "milieu" module and move its functionnality
   into the main cs_ast_coupling.c code.
 

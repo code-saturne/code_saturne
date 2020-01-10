@@ -112,12 +112,12 @@ BEGIN_C_DECLS
 /* Number of pointers (initially fixed, but extensible in case
    user fields should be added after the model fields) */
 
-static cs_field_pointer_id_t _n_pointers = 0;
-static union cs_field_pointer_val_t  *_field_pointer = NULL;
+static cs_field_pointer_id_t             _n_pointers = 0;
+static struct cs_field_pointer_array_t  *_field_pointer = NULL;
 
 /* Handling of sublists */
 
-static bool  *_is_sublist = NULL;
+static short int  *_sublist_size = NULL;
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
@@ -127,7 +127,7 @@ static bool  *_is_sublist = NULL;
 
 /* Pointers */
 
-union cs_field_pointer_val_t  *cs_glob_field_pointers = NULL;
+struct cs_field_pointer_array_t  *cs_glob_field_pointers = NULL;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -145,12 +145,13 @@ _init_pointers(void)
   assert(_field_pointer == NULL);
 
   _n_pointers = CS_FIELD_N_POINTERS;
-  BFT_MALLOC(_field_pointer, _n_pointers, union cs_field_pointer_val_t);
-  BFT_MALLOC(_is_sublist, _n_pointers, bool);
+  BFT_MALLOC(_field_pointer, _n_pointers, struct cs_field_pointer_array_t);
+  BFT_MALLOC(_sublist_size, _n_pointers, short int);
 
   for (cs_field_pointer_id_t i = 0; i < _n_pointers; i++) {
     _field_pointer[i].f = NULL;
-    _is_sublist[i] = false;
+    _field_pointer[i].p = &(_field_pointer[i].f);
+    _sublist_size[i] = 0;
   }
 
   cs_glob_field_pointers = _field_pointer;
@@ -172,11 +173,11 @@ void
 cs_field_pointer_destroy_all(void)
 {
   for (cs_field_pointer_id_t i = 0; i < _n_pointers; i++) {
-    if (_is_sublist[i])
-      BFT_FREE(_field_pointer[i].a);
+    if (_sublist_size[i] > 1)
+      BFT_FREE(_field_pointer[i].p);
   }
   BFT_FREE(_field_pointer);
-  BFT_FREE(_is_sublist);
+  BFT_FREE(_sublist_size);
 
   cs_glob_field_pointers = NULL;
 }
@@ -196,14 +197,7 @@ void
 cs_field_pointer_map(cs_field_pointer_id_t   e,
                      cs_field_t             *f)
 {
-  if (_field_pointer == NULL)
-    _init_pointers();
-
-  assert(e < _n_pointers);
-
-  union cs_field_pointer_val_t v;
-  v.f = f;
-  _field_pointer[e] = v;
+  cs_field_pointer_map_indexed(e, 0, f);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -231,52 +225,33 @@ cs_field_pointer_map_indexed(cs_field_pointer_id_t   e,
   if (_field_pointer == NULL)
     _init_pointers();
 
-  struct cs_field_pointer_array_t *a;
-  union cs_field_pointer_val_t v;
-
-  int i;
-  int _sub_size = index + 1;
-  int _sub_size_prev = 0;
-
-  /* Check for previous size */
-
   assert(e < _n_pointers);
 
-  v = _field_pointer[e];
-
-  /* Check also that we did not already use in incompatible mapping */
-
-  if (v.f != NULL && ! _is_sublist[e]) {
-    cs_field_t *_f = v.f;
-    bft_error(__FILE__, __LINE__, 0,
-              _("%s: field enum %d is already mapped as non-indexed\n"
-                "to field id %d (%s), so it cannot be mapped as indexed."),
-              __func__, (int)e, _f->id, _f->name);
+  if (index == 0 && _sublist_size[e] <= 1) {
+    _field_pointer[e].f = f;
+    _sublist_size[e] = 1;
   }
 
-  a = v.a;
+  else {
+    if (_sublist_size[e] <= index) {
 
-  if (a != NULL)
-    _sub_size_prev = a->n;
+      int n_sub = index+1;
 
-  if (_sub_size_prev < _sub_size) {
-    /* BFT_MALLOC does not directly handle C flexible array members,
-       (which we use here to minimize type width), so use bytes */
-    void *p = a;
-    size_t _s =   sizeof(struct cs_field_pointer_array_t)
-                + sizeof(cs_field_t *) * _sub_size;
-    BFT_REALLOC(p, _s, unsigned char);
-    a = p;
-    a->n = _sub_size;
-    for (i = _sub_size_prev; i < index; i++)
-      a->p[i] = NULL;
-    v.a = a;
+      if (_field_pointer[e].p == &(_field_pointer[e].f))
+        BFT_MALLOC(_field_pointer[e].p, n_sub, cs_field_t *);
+      else
+        BFT_REALLOC(_field_pointer[e].p, n_sub, cs_field_t *);
+      _field_pointer[e].p[0] = _field_pointer[e].f;
+
+      for (int i = _sublist_size[e]; i < n_sub; i++)
+        _field_pointer[e].p[i] = NULL;
+
+      _sublist_size[e] = n_sub;
+
+    }
+
+    _field_pointer[e].p[index] = f;
   }
-
-  _is_sublist[e] = true;
-
-  v.a->p[index] = f;
-  _field_pointer[e] = v;
 }
 
 /*----------------------------------------------------------------------------*/
