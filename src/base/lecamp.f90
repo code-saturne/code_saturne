@@ -340,6 +340,7 @@ if (ichemistry.gt.0.or.iaerosol.gt.0) then
   rubriq = 'atmospheric_chem'
   itysup = 0
   nbval  = 1
+  ival(1) = 1
   call restart_read_section_int_t(rp,rubriq,itysup,nbval,ival,ierror)
   init_at_chem = ival(1)
   if (ierror.eq.0.and.init_at_chem.gt.0) then
