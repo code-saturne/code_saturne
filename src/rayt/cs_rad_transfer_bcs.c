@@ -1105,6 +1105,7 @@ cs_rad_transfer_bcs(int         nvar,
       }
     }
 
+    BFT_FREE(lstfac);
     BFT_FREE(hext);
     BFT_FREE(hwall);
   }
