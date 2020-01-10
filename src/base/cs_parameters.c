@@ -113,8 +113,11 @@ BEGIN_C_DECLS
         - 1: standard least squares method
         - 2: least squares method with extended neighborhood
         - 3: least squares method with reduced extended neighborhood
-        - 5: Green-Gauss with least squares gradient face values
-        - 6: Green-Gauss with least squares gradient over extended neighborhood face values
+        - 4: Green-Gauss with least squares gradient face values
+        - 5: Green-Gauss with least squares gradient over extended
+             neighborhood face values
+        - 6: Green-Gauss with least squares gradient over reduced
+             extended neighborhood face values
         - 7: Green-Gauss with face values based on cell to vertex interpolation
 
   \var  cs_space_disc_t::iflxmw
@@ -484,7 +487,7 @@ static cs_var_cal_opt_t _var_cal_opt =
   .isstpc = 1,
   .nswrgr = 100,
   .nswrsm = 1,
-  .imrgra = 4,
+  .imrgra = 0,
   .imligr = -1,
   .ircflu = 1,
   .iwgrec = 0,
@@ -505,7 +508,7 @@ static cs_var_cal_opt_t _var_cal_opt =
 static cs_space_disc_t  _space_disc =
 {
   .imvisf = 0,
-  .imrgra = 4,
+  .imrgra = 0,
   .iflxmw = 0
 };
 
