@@ -163,7 +163,7 @@ _radiative_transfer_type(cs_tree_node_t  *tn_rt,
                          int             *keyword)
 {
   cs_tree_node_t *tn = cs_tree_get_node(tn_rt, param);
-  const char *type = cs_gui_node_get_tag(tn, "type");
+  const char *type = (tn != NULL) ? cs_gui_node_get_tag(tn, "type") : NULL;
 
   if (type != NULL) {
     if (cs_gui_strcmp(type, "constant"))

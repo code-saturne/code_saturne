@@ -257,7 +257,6 @@ class XMLinit(BaseXmlInit):
             CoalCombustionModel(self.case).getCoalCombustionModel()
             GasCombustionModel(self.case).getGasCombustionModel()
             ElectricalModel(self.case).getElectricalModel()
-            ThermalRadiationModel(self.case).getRadiativeModel()
             AtmosphericFlowsModel(self.case).getAtmosphericFlowsModel()
             LagrangianModel(self.case).getLagrangianModel()
 
