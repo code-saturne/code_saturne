@@ -118,7 +118,7 @@ do iel = 1, ncel
     source(ii) = 0.0d0
   enddo
 
-  if ((isepchemistry.eq.1).or.(ntcabs.eq.1)) then
+  if ((isepchemistry.eq.1).or.(ntcabs.lt.ntinit)) then
     ! -----------------------------
     ! -- splitted Rosenbrock solver
     ! -----------------------------
