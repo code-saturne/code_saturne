@@ -580,6 +580,7 @@ _sync_by_block(fvm_neighborhood_t  *n,
 
   } /* End of loop on ranks */
 
+  BFT_FREE(recv_gnum);
   BFT_FREE(counter);
   BFT_FREE(recv_neighbor);
   BFT_FREE(recv_index);
