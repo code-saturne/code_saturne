@@ -346,7 +346,7 @@ if test "x$with_blas" != "xno" ; then
     if test "x$with_blas_libs" != "x" ; then
       BLAS_LIBS="$with_blas_libs"
     else
-      BLAS_LIBS="-lblas"
+      BLAS_LIBS="-lcblas -lblas"
     fi
 
     CPPFLAGS="${saved_CPPFLAGS} ${BLAS_CPPFLAGS}"
