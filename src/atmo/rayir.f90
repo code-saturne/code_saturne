@@ -551,13 +551,6 @@ else
 
        ! upward fluxes estimation (sum of direct part and reflected part)
        if (i.gt.k1) then
-        if (fn.lt.1.d-3) then
-          fn = 0.d0
-          taul = 0.d0
-        else
-          taul = exp(-kliq(k)*qqql(i)/fn)
-        endif
-
         call rayive(tauv, dtauv, qqqv(i), qv0(k1), qqqc(i), qc(k1), romray(k1))
 
         ufir(i) = sig*ufir(i)+emis*sig*t41+(1.-emis)*foirs
