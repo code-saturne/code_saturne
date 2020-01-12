@@ -122,7 +122,7 @@ moddis = 1
 !  modnuc = 0 : without nucleation
 !  modnuc = 1 : Pruppacher and Klett 1997
 !  modnuc = 2 : Cohard et al. 1998,1999
-!  modnuc = 3 : Abdul-Razzak et al. 1998,2000 NOT IMPLEMENTED YET
+!  modnuc = 3 : Abdul-Razzak et al. 1998,2000
 modnuc = 0
 
 ! sedimentation flag

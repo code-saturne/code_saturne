@@ -74,7 +74,7 @@ if (ippmod(iatmos).eq.2) then
   call add_property_field_1d('liquid_water', 'LiqWater', iliqwt)
 
   ! sedimentation and deposition model enabled
-  if (modsedi.eq.1.and.moddep.gt.0) then
+  if (modsedi.ge.1.and.moddep.gt.0) then
     idim1  = 1
     itycat = FIELD_INTENSIVE + FIELD_PROPERTY
     ityloc = 3 ! boundary faces
