@@ -134,14 +134,14 @@ else if (modnuc.eq.2) then
 endif
 
 ! ===============================================================================
-! 1.  Computation new nc field
+! 1.  Computation new Nc field (in cm^-3)
 ! ===============================================================================
 
 do iel = 1, ncel
 
   if (qldia(iel).le.epzero) then
 
-     nc(iel) = 0.d0
+    nc(iel) = 0.d0
 
   else ! qldia(iel) > epzero
 
@@ -218,7 +218,7 @@ do iel = 1, ncel
          rayonm3  = 0.40d-6
          sigaero3 = 1.3d0
 
-         ! surface tension water-steam [n/m], tempk [k]
+         ! surface tension water-steam [N/m], tempk [K]
          tempk = tempc(iel)+tkelvi
          tauvw = 0.075d0
 
@@ -270,7 +270,7 @@ do iel = 1, ncel
          coefa = 2.d0*tauvw/(rhowater*rvap*tempk)
 
          ! FIXME
-         ! cf pruppacher and klett 1997 (reprinted correction 2000) (6-28)
+         ! cf Pruppacher and Klett 1997 (reprinted correction 2000) (6-28)
          ! coefa = 3.3d-7 / tempk
 
          ! coefficient for Raoult effect: coefb [-]
@@ -354,9 +354,8 @@ do iel = 1, ncel
          nuc1   = 0.5d0 * ntotal1 * (1.d0-ferf(ugauss1))
          nuc2   = 0.5d0 * ntotal2 * (1.d0-ferf(ugauss2))
          nuc3   = 0.5d0 * ntotal3 * (1.d0-ferf(ugauss3))
-         ! nuc=nuc1+nuc2
+
          nuc=nuc1+nuc2+nuc3
-         ! nuc=nuc3
 
          nuc1snc = nuc1/ntotal1
          nuc2snc = nuc2/ntotal2
@@ -376,11 +375,11 @@ do iel = 1, ncel
      ! 3. if qc > 0, w <= 0 and nc = 0,
      ! we impose nc > 0 so that the mean volume radius = 10 microns
 
-   elseif (nc(iel).lt.epzero) then
+    elseif (nc(iel).lt.epzero) then
 
-     nc(iel) = 1.d-6*(3.d0*rom(iel)*qldia(iel))/(4.d0*pi*rhowater*(10.d-6)**3)
+      nc(iel) = 1.d-6*(3.d0*rom(iel)*qldia(iel))/(4.d0*pi*rhowater*(10.d-6)**3)
 
-   endif ! end w > 0
+    endif ! end w > 0
 
   endif ! end qldia > 0
 enddo

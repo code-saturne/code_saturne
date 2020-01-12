@@ -250,8 +250,7 @@ if (ippmod(iatmos).eq.2.and.modsedi.eq.1) then ! for humid atmo. physics only
     elseif (ivar.eq.isca(iymw)) then
 
       do iel = 1, ncel
-        crvexp(iel) = crvexp(iel) - cell_f_vol(iel)*grad1(3,iel)          &
-                    / crom(iel)
+        crvexp(iel) = crvexp(iel) - cell_f_vol(iel)*grad1(3,iel) / crom(iel)
       enddo
 
       treated_scalars = treated_scalars + 1
