@@ -56,6 +56,18 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Atmospheric nucleation models
+ *----------------------------------------------------------------------------*/
+
+enum {
+  CS_ATMO_NUC_OFF = 0,
+  CS_ATMO_NUC_PRUPPACHER_KLETT = 1,
+  CS_ATMO_NUC_COHARD = 2,
+  CS_ATMO_NUC_ABDUL_RAZZAK = 3
+};
+
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
@@ -87,6 +99,9 @@ typedef struct {
 
   /* Model options */
   bool compute_z_ground;
+  int sedimentation_model;
+  int deposition_model;
+  int nucleation_model;
 } cs_atmo_option_t;
 
 /*----------------------------------------------------------------------------

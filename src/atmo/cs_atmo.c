@@ -107,7 +107,10 @@ static cs_atmo_option_t  _atmo_option = {
   .ssec = -1.,
   .longitute = 1e12, // TODO use cs_math_big_r
   .latitude = 1e12,
-  .compute_z_ground = false
+  .compute_z_ground = false,
+  .sedimentation_model = 0,
+  .deposition_model = 0,
+  .nucleation_model = 0,
 };
 
 /* atmo chemistry options structure */
@@ -143,6 +146,9 @@ cs_f_atmo_get_pointers(int       **syear,
                        cs_real_t **longitute,
                        cs_real_t **latitude,
                        bool      **compute_z_ground,
+                       int       **sedimentation_model,
+                       int       **deposition_model,
+                       int       **nucleation_model,
                        int       **model,
                        int       **n_species,
                        int       **n_reactions);
@@ -175,6 +181,9 @@ cs_f_atmo_get_pointers(int       **syear,
                        cs_real_t **longitute,
                        cs_real_t **latitude,
                        bool      **compute_z_ground,
+                       int       **sedimentation_model,
+                       int       **deposition_model,
+                       int       **nucleation_model,
                        int       **model,
                        int       **n_species,
                        int       **n_reactions)
@@ -187,6 +196,9 @@ cs_f_atmo_get_pointers(int       **syear,
   *longitute = &(_atmo_option.longitute);
   *latitude  = &(_atmo_option.latitude);
   *compute_z_ground = &(_atmo_option.compute_z_ground);
+  *sedimentation_model = &(_atmo_option.sedimentation_model);
+  *deposition_model = &(_atmo_option.deposition_model);
+  *nucleation_model = &(_atmo_option.nucleation_model);
   *model = &(_atmo_chem.model);
   *n_species = &(_atmo_chem.n_species);
   *n_reactions = &(_atmo_chem.n_reactions);

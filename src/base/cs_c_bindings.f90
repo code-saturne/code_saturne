@@ -2265,18 +2265,17 @@ module cs_c_bindings
 
     !> \brief Return pointers to atmo includes
 
-    !> \param[out]   compute_z_ground     Pointer to compute_z_ground
-    !> \param[out]   nespg
-    !> \param[out]   nrg
-
     subroutine cs_f_atmo_get_pointers(syear, squant, shour, smin, ssec, &
         longitude, latitude,                                            &
         compute_z_ground,                                               &
+        sedimentation_model, deposition_model, nucleation_model,        &
         ichemistry, nespg, nrg) &
       bind(C, name='cs_f_atmo_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
       type(c_ptr), intent(out) :: compute_z_ground, ichemistry, nespg, nrg
+      type(c_ptr), intent(out) :: sedimentation_model, deposition_model
+      type(c_ptr), intent(out) :: nucleation_model
       type(c_ptr), intent(out) :: syear, squant, shour, smin, ssec
       type(c_ptr), intent(out) :: longitude, latitude
     end subroutine cs_f_atmo_get_pointers

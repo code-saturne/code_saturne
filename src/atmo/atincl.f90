@@ -368,13 +368,13 @@ integer, save::  moddis
 !>  - modnuc = 2 : Cohard et al. 1998,1999
 !>  - modnuc = 3 : Abdul-Razzak et al. 1998,2000
 !>  logaritmic standard deviation of the log-normal law of the droplet spectrum
-integer, save::  modnuc
+integer(c_int), pointer, save:: modnuc
 
 !> sedimentation flag
-integer, save::  modsedi
+integer(c_int), pointer, save:: modsedi
 
 !> deposition flag
-integer, save:: moddep
+integer(c_int), pointer, save:: moddep
 
 !> adimensional :  sigc=0.53 other referenced values are 0.28, 0.15
 double precision, save:: sigc
@@ -519,6 +519,7 @@ contains
 
     ! Local variables
     type(c_ptr) :: c_compute_z_ground, c_model, c_nrg, c_nespg
+    type(c_ptr) :: c_sedimentation_model, c_deposition_model, c_nucleation_model
     type(c_ptr) :: c_syear, c_squant, c_shour, c_smin, c_ssec
     type(c_ptr) :: c_longitude, c_latitude
 
@@ -526,6 +527,7 @@ contains
       c_syear, c_squant, c_shour, c_smin, c_ssec, &
       c_longitude, c_latitude,                    &
       c_compute_z_ground,                         &
+      c_sedimentation_model, c_deposition_model, c_nucleation_model, &
       c_model, c_nespg, c_nrg)
 
     call c_f_pointer(c_syear, syear)
@@ -536,6 +538,9 @@ contains
     call c_f_pointer(c_longitude, xlon)
     call c_f_pointer(c_latitude, xlat)
     call c_f_pointer(c_compute_z_ground, compute_z_ground)
+    call c_f_pointer(c_sedimentation_model, modsedi)
+    call c_f_pointer(c_deposition_model, moddep)
+    call c_f_pointer(c_nucleation_model, modnuc)
     call c_f_pointer(c_model, ichemistry)
     call c_f_pointer(c_nespg, nespg)
     call c_f_pointer(c_nrg, nrg)

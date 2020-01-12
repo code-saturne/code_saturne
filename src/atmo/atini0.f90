@@ -119,15 +119,6 @@ modsub = 0
 !  moddis = 2 : Gaussian distribution
 moddis = 1
 
-!  modnuc = 0 : without nucleation
-!  modnuc = 1 : Pruppacher and Klett 1997
-!  modnuc = 2 : Cohard et al. 1998,1999
-!  modnuc = 3 : Abdul-Razzak et al. 1998,2000
-modnuc = 0
-
-! sedimentation flag
-modsedi = 0
-
 ! logaritmic standard deviation of the log-normal law of the droplet spectrum
 ! adimensional
 sigc = 0.53 ! other referenced values are 0.28, 0.15
