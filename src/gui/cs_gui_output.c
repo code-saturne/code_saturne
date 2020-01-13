@@ -488,6 +488,11 @@ cs_gui_postprocess_meshes(void)
 
   if (n_probes > 0) {
 
+    char **probe_labels;
+    BFT_MALLOC(probe_labels, n_probes, char *);
+    for (int ii = 0; ii < n_probes; ii++)
+      BFT_MALLOC(probe_labels[ii], 128, char);
+
     const char *coord_node_name[] = {"probe_x", "probe_y", "probe_z"};
 
     cs_real_3_t *p_coords;
@@ -498,18 +503,27 @@ cs_gui_postprocess_meshes(void)
          tn != NULL;
          tn = cs_tree_node_get_next_of_name(tn), i++) {
 
+      /* Probe coordinates */
       for (int j = 0; j < 3; j++) {
         v_r = cs_tree_node_get_child_values_real(tn, coord_node_name[j]);
         p_coords[i][j] = (v_r != NULL) ? v_r[0] : 0;
       }
+
+      /* Probe name */
+      const char *pn = cs_tree_node_get_child_value_str(tn, "name");
+      strcpy(probe_labels[i], pn);
     }
 
     cs_probe_set_create_from_array("probes",
                                    n_probes,
                                    (const cs_real_3_t *)p_coords,
-                                   NULL);
+                                   probe_labels);
 
     BFT_FREE(p_coords);
+
+    for (int ii = 0; ii < n_probes; ii++)
+      BFT_FREE(probe_labels[ii]);
+    BFT_FREE(probe_labels);
 
   }
 

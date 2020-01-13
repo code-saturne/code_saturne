@@ -1115,7 +1115,7 @@ class StandardItemModelMonitoring(QStandardItemModel):
         """
         QStandardItemModel.__init__(self)
 
-        self.setColumnCount(4)
+        self.setColumnCount(5)
         self.dataMonitoring = []
 
 
@@ -1131,10 +1131,12 @@ class StandardItemModelMonitoring(QStandardItemModel):
             if index.column() == 0:
                 return dico['n']
             elif index.column() == 1:
-                return dico['X']
+                return dico['name']
             elif index.column() == 2:
-                return dico['Y']
+                return dico['X']
             elif index.column() == 3:
+                return dico['Y']
+            elif index.column() == 4:
                 return dico['Z']
             else:
                 return None
@@ -1159,10 +1161,12 @@ class StandardItemModelMonitoring(QStandardItemModel):
             if section == 0:
                 return self.tr("n")
             elif section == 1:
-                return self.tr("X")
+                return self.tr("name")
             elif section == 2:
-                return self.tr("Y")
+                return self.tr("X")
             elif section == 3:
+                return self.tr("Y")
+            elif section == 4:
                 return self.tr("Z")
         return None
 
@@ -1173,12 +1177,15 @@ class StandardItemModelMonitoring(QStandardItemModel):
             n = from_qvariant(value, int)
             self.dataMonitoring[row]['n'] = n
         elif index.column() == 1:
+            name = from_qvariant(value, str)
+            self.dataMonitoring[row]['name'] = name
+        elif index.column() == 2:
             X = from_qvariant(value, float)
             self.dataMonitoring[row]['X'] = X
-        elif index.column() == 2:
+        elif index.column() == 3:
             Y = from_qvariant(value, float)
             self.dataMonitoring[row]['Y'] = Y
-        elif index.column() == 3:
+        elif index.column() == 4:
             Z = from_qvariant(value, float)
             self.dataMonitoring[row]['Z'] = Z
 
@@ -1186,29 +1193,31 @@ class StandardItemModelMonitoring(QStandardItemModel):
         return True
 
 
-    def insertData(self, num, X, Y, Z):
+    def insertData(self, num, name, X, Y, Z):
         """
         Add a new 'item' into the table.
         """
         dico = {}
-        dico['n'] = num
-        dico['X'] = X
-        dico['Y'] = Y
-        dico['Z'] = Z
+        dico['n']    = num
+        dico['name'] = name
+        dico['X']    = X
+        dico['Y']    = Y
+        dico['Z']    = Z
         self.dataMonitoring.append(dico)
 
         row = self.rowCount()
         self.setRowCount(row + 1)
 
 
-    def replaceData(self, row, label, X, Y, Z):
+    def replaceData(self, row, label, name, X, Y, Z):
         """
         Replace value in an existing 'item' into the table.
         """
-        self.dataMonitoring[row]['n'] = label
-        self.dataMonitoring[row]['X'] = X
-        self.dataMonitoring[row]['Y'] = Y
-        self.dataMonitoring[row]['Z'] = Z
+        self.dataMonitoring[row]['n']    = label
+        self.dataMonitoring[row]['name'] = name
+        self.dataMonitoring[row]['X']    = X
+        self.dataMonitoring[row]['Y']    = Y
+        self.dataMonitoring[row]['Z']    = Z
 
         row = self.rowCount()
         self.setRowCount(row)
@@ -1216,6 +1225,10 @@ class StandardItemModelMonitoring(QStandardItemModel):
 
     def getLabel(self, index):
         return self.getData(index)['n']
+
+
+    def getName(self, index):
+        return self.getData(index)['name']
 
 
     def getData(self, index):
@@ -1244,8 +1257,8 @@ class MonitoringPointDelegate(QItemDelegate):
         """
         super(MonitoringPointDelegate, self).__init__(parent)
         self.table = parent
-        self.case = case
-        self.mdl = model
+        self.case  = case
+        self.mdl   = model
 
 
     def createEditor(self, parent, option, index):
@@ -1253,7 +1266,11 @@ class MonitoringPointDelegate(QItemDelegate):
             editor = QFrame(parent)
         else:
             editor = QLineEdit(parent)
-            editor.setValidator(DoubleValidator(editor))
+            if index.column() > 1:
+                editor.setValidator(DoubleValidator(editor))
+            else:
+                rx = "[_A-Za-z0-9\(\)]{1," + str(LABEL_LENGTH_MAX-1) + "}"
+                editor.setValidator(RegExpValidator(editor, QRegExp(rx)))
             editor.setFrame(False)
             editor.returnPressed.connect(self.commitAndCloseEditor)
             editor.setCursorPosition(0)
@@ -1288,7 +1305,9 @@ class MonitoringPointDelegate(QItemDelegate):
                 y = float(dico['Y'])
                 z = float(dico['Z'])
                 label = str(dico['n'])
+                name  = str(dico['name'])
                 self.mdl.replaceMonitoringPointCoordinates(label, x, y, z)
+                self.mdl.setMonitoringPointName(label, name)
                 if self.case['probes']:
                     self.case['probes'].updateLocation(label, [x, y, z])
 
@@ -1635,9 +1654,10 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.toolButtonDuplicate.setEnabled(True)
 
         for n in range(self.mdl.getNumberOfMonitoringPoints()):
-            name = str(n+1)
-            X, Y, Z = self.mdl.getMonitoringPointCoordinates(name)
-            self.__insertMonitoringPoint(name, X, Y, Z)
+            num = str(n+1)
+            name = self.mdl.getMonitoringPointName(num)
+            X, Y, Z = self.mdl.getMonitoringPointCoordinates(num)
+            self.__insertMonitoringPoint(num, name, X, Y, Z)
             if self.case['salome']:
                 self.__salomeHandlerAddMonitoringPoint(name, X, Y, Z)
 
@@ -2689,11 +2709,11 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.mdl.setMonitoringPointFrequency(n)
 
 
-    def __insertMonitoringPoint(self, num, X, Y, Z):
+    def __insertMonitoringPoint(self, num, name, X, Y, Z):
         """
         Add a new 'item' into the Hlist.
         """
-        self.modelMonitoring.insertData(num, X, Y, Z)
+        self.modelMonitoring.insertData(num, name, X, Y, Z)
 
 
     @pyqtSlot()

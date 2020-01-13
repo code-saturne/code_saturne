@@ -78,22 +78,22 @@ class OutputControlModel(Model):
         return default
 
 
-    def __getCoordinates(self, name, coord):
+    def __getCoordinates(self, num, coord):
         """
-        Private method: return coordinate 'coord' for probe named 'name'
+        Private method: return coordinate 'coord' for probe number 'num'
         """
-        val = self.node_out.xmlGetNode('probe', name = name).xmlGetDouble(coord)
+        val = self.node_out.xmlGetNode('probe', id = num).xmlGetDouble(coord)
         if val == None:
             val = self.defaultInitialValues()['coordinate']
             self.__setCoordinates(name, coord, val)
         return val
 
 
-    def __setCoordinates(self, name, coord, val):
+    def __setCoordinates(self, num, coord, val):
         """
-        Private method: put value of coordinate 'coord' for probe named 'name'
+        Private method: put value of coordinate 'coord' for probe number 'num'
         """
-        self.node_out.xmlGetNode('probe', name=name).xmlSetData(coord, val)
+        self.node_out.xmlGetNode('probe', id=num).xmlSetData(coord, val)
 
 
     @Variables.noUndo
@@ -1093,7 +1093,7 @@ class OutputControlModel(Model):
         self.isFloat(z)
         num = str(self.getNumberOfMonitoringPoints() + 1)
         status="on"
-        node = self.node_out.xmlInitNode('probe', name=num, status=status)
+        node = self.node_out.xmlInitNode('probe', id=num, name=num, status=status)
         for coord, val in [('probe_x', x), ('probe_y', y), ('probe_z', z)]:
             self.__setCoordinates(num, coord, val)
 
@@ -1125,13 +1125,13 @@ class OutputControlModel(Model):
         self.isFloat(z)
         num = str(self.getNumberOfMonitoringPoints() + 1)
         status="on"
-        node = self.node_out.xmlInitNode('probe', name=num, status=status)
+        node = self.node_out.xmlInitNode('probe', id=num, name=num, status=status)
         for coord, val in [('probe_x', x), ('probe_y', y), ('probe_z', z)]:
             self.__setCoordinates(num, coord, val)
 
 
     @Variables.undoLocal
-    def replaceMonitoringPointCoordinates(self, name, x=0.0, y=0.0, z=0.0):
+    def replaceMonitoringPointCoordinates(self, num, x=0.0, y=0.0, z=0.0):
         """
         Public method.
         Change the coordinates of a monitoring point.
@@ -1147,12 +1147,12 @@ class OutputControlModel(Model):
         self.isFloat(x)
         self.isFloat(y)
         self.isFloat(z)
-        self.isStr(name)
-        self.isGreater(float(name), 0.0)
-        self.isLowerOrEqual(float(name), self.getNumberOfMonitoringPoints())
+        self.isStr(num)
+        self.isGreater(float(num), 0.0)
+        self.isLowerOrEqual(float(num), self.getNumberOfMonitoringPoints())
 
         for coord, val in [('probe_x', x), ('probe_y', y), ('probe_z', z)]:
-            self.__setCoordinates(name, coord, val)
+            self.__setCoordinates(num, coord, val)
 
 
     def deleteMonitoringPoints(self, lst):
@@ -1165,8 +1165,8 @@ class OutputControlModel(Model):
         lst.sort()
         r = len(lst)
         for n in range(r):
-            name = str(lst[n])
-            self.deleteMonitoringPoint(name)
+            num = str(lst[n])
+            self.deleteMonitoringPoint(num)
             for i in range(n, r):
                 lst[i] = lst[i] - 1
 
@@ -1185,21 +1185,23 @@ class OutputControlModel(Model):
 
         # delete the node of the monitoring point
 
-        node = self.node_out.xmlGetNode('probe', name=num)
+        node = self.node_out.xmlGetNode('probe', id=num)
         if node:
             node.xmlRemoveNode()
-            self.case.xmlRemoveChild('probe_recording', name=num)
+            self.case.xmlRemoveChild('probe_recording', id=num)
 
             # renumbering of all monitoring points
 
             for p in range(int(num)+1, self.getNumberOfMonitoringPoints()+2):
-                probe = self.node_out.xmlGetNode('probe', name=p)
-                probe['name'] = p - 1
-                for probe_recording in self.case.xmlGetNodeList('probe_recording', name=p):
-                    probe_recording['name'] = p - 1
+                probe = self.node_out.xmlGetNode('probe', id=p)
+                if probe['name'] == probe['id']:
+                    probe['name'] = p - 1
+                probe['id'] = p - 1
+                for probe_recording in self.case.xmlGetNodeList('probe_recording', num=p):
+                    probe_recording['num'] = p - 1
 
     @Variables.noUndo
-    def getMonitoringPointCoordinates(self, name):
+    def getMonitoringPointCoordinates(self, num):
         """
         Public method.
         @type name: C{String}
@@ -1207,13 +1209,38 @@ class OutputControlModel(Model):
         @return: coordinates X, Y, Z for the monitoring point I{name}
         @rtype: C{List} of C{Float}
         """
-        self.isStr(name)
-        self.isGreater(float(name), 0.0)
-        self.isLowerOrEqual(float(name), self.getNumberOfMonitoringPoints())
-        X = self.__getCoordinates(name, 'probe_x')
-        Y = self.__getCoordinates(name, 'probe_y')
-        Z = self.__getCoordinates(name, 'probe_z')
+        self.isStr(num)
+        self.isGreater(float(num), 0.0)
+        self.isLowerOrEqual(float(num), self.getNumberOfMonitoringPoints())
+        X = self.__getCoordinates(num, 'probe_x')
+        Y = self.__getCoordinates(num, 'probe_y')
+        Z = self.__getCoordinates(num, 'probe_z')
         return X, Y, Z
+
+
+    @Variables.undoLocal
+    def setMonitoringPointName(self, num, name):
+
+        self.isStr(num)
+        self.isGreater(float(num), 0.0)
+        self.isLowerOrEqual(float(num), self.getNumberOfMonitoringPoints())
+
+        node = self.node_out.xmlGetNode('probe', id=num)
+        node['name'] = name
+
+
+    @Variables.noUndo
+    def getMonitoringPointName(self, num):
+
+        self.isStr(num)
+        self.isGreater(float(num), 0.0)
+        self.isLowerOrEqual(float(num), self.getNumberOfMonitoringPoints())
+        val = self.node_out.xmlGetNode('probe', id=num)['name']
+        if val == None:
+            val = num
+            self.setMonitoringPointName(self, num, name)
+
+        return val
 
 
     @Variables.noUndo
@@ -1272,7 +1299,7 @@ class OutputControlModelTestCase(ModelTest):
         model = OutputControlModel(self.case)
         model.addMonitoringPoint(11.1, 22.2, 33.3)
         doc = '''<output>
-                    <probe name="1" status="on">
+                    <probe id="1" name="1" status="on">
                         <probe_x>11.1</probe_x>
                         <probe_y>22.2</probe_y>
                         <probe_z>33.3</probe_z>
@@ -1292,12 +1319,12 @@ class OutputControlModelTestCase(ModelTest):
         model.addMonitoringPoint(5, 5.1, 5.21)
         model.replaceMonitoringPointCoordinates("2",5., 6, 7.)
         doc = '''<output>
-                    <probe name="1" status="on">
+                    <probe id="1" name="1" status="on">
                         <probe_x>11.1</probe_x>
                         <probe_y>22.2</probe_y>
                         <probe_z>33.3</probe_z>
                     </probe>
-                    <probe name="2" status="on">
+                    <probe id="2" name="2" status="on">
                         <probe_x>5</probe_x>
                         <probe_y>6</probe_y>
                         <probe_z>7</probe_z>
@@ -1316,12 +1343,12 @@ class OutputControlModelTestCase(ModelTest):
         model.addMonitoringPoint(9.,8.,7.)
         model.deleteMonitoringPoint("2")
         doc = '''<output>
-                    <probe name="1" status="on">
+                    <probe id="1" name="1" status="on">
                         <probe_x>11.1</probe_x>
                         <probe_y>22.2</probe_y>
                         <probe_z>33.3</probe_z>
                     </probe>
-                    <probe name="2" status="on">
+                    <probe id="2" name="2" status="on">
                         <probe_x>9</probe_x>
                         <probe_y>8</probe_y>
                         <probe_z>7</probe_z>
