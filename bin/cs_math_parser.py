@@ -464,23 +464,18 @@ class cs_math_parser:
                         valid = False
                         new_exp.append(x) # replace after pop() above
                     if valid:
-                        sub_exp = ""
-#                        sub_exp = []
+                        sub_exp = []
                         li, ci = self.get_start_lc(x)
-                        sub_exp += "(" + x[0]
-#                        sub_exp.append(('(', li, ci))
-#                        sub_exp.append(x)
+                        sub_exp.append(('(', li, ci))
+                        sub_exp.append(x)
                         if y[0] in ('2', '3', '4'):
-                            sub_exp = 'cs_math_pow'+y[0]+sub_exp
-#                            new_exp.append(('cs_math_pow'+y[0], li, ci))
+                            new_exp.append(('cs_math_pow'+y[0], li, ci))
                         else:
-                            sub_exp = "pow(" + x[0] + ', ' + y[0]
-#                            new_exp.append(('pow', li, ci))
-#                            sub_exp.append((',', li, ci))
-#                            li, ci = self.get_start_lc(x)
-#                            sub_exp.append(y)
-#                        sub_exp.append((')', li, ci))
-                        sub_exp += ")"
+                            new_exp.append(('pow', li, ci))
+                            sub_exp.append((',', li, ci))
+                            li, ci = self.get_start_lc(x)
+                            sub_exp.append(y)
+                        sub_exp.append((')', li, ci))
                         new_exp.append((sub_exp, li, ci))
                         skip_to = i+2
 
@@ -539,7 +534,7 @@ class cs_math_parser:
 
             # Recursive handling of code
 
-            if isinstance(e, (list,)):
+            if isinstance(e, list):
                 sub_text, comments, e_line, e_col \
                     = self.rebuild_text(e, comments, level+1,
                                         s_line, s_col, t_prev)
@@ -550,7 +545,17 @@ class cs_math_parser:
                 else:
                     s_col = e_col
                 s_line = e_line
-
+            elif isinstance(e[0], list):
+                sub_text, comments, e_line, e_col \
+                    = self.rebuild_text(e[0], comments, level+1,
+                                        s_line, s_col, t_prev)
+                text += sub_text
+                t_prev = sub_text[-1:]
+                if e_line > s_line:
+                    s_col = 0
+                else:
+                    s_col = e_col
+                s_line = e_line
             else:
 
                 if s_line < li:
@@ -841,33 +846,16 @@ class cs_math_parser:
         #-------------------------
 
         #-------------------------
+        tokens = self.build_expressions(exp_lines, tokens)
         tokens = self.update_expressions_syntax(tokens)
         tokens = self.recurse_expressions_syntax(tokens)
         #-------------------------
 
         #-------------------------
         # Rebuild lines
-        l_i = -1
-        first_token = True
-        for t_i, t in enumerate(tokens):
-            if t[1] != l_i:
-                if len(usr_code) != 0:
-                    usr_code[-1] += "\n"
-
-                usr_code.append("")
-                first_token = True
-                l_i = t[1]
-
-            if first_token:
-                first_token = False
-                nsp = t[2]
-            else:
-                nsp = t[2] - tokens[t_i-1][2] - len(tokens[t_i-1][0])
-                nsp = max(0,nsp)
-
-            usr_code[-1] += nsp*" " + t[0]
-
-        usr_code += "\n"
+        new_text = self.rebuild_text(tokens, comments)
+        for line in new_text[0].split('\n'):
+            usr_code.append(line + '\n')
         #-------------------------
 
         return usr_code, usr_defs
