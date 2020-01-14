@@ -674,8 +674,8 @@ if test "x$cs_have_internal_ple" = xyes; then
   AC_CONFIG_SUBDIRS([libple])
 fi
 
-AM_CONDITIONAL(HAVE_SALOME, test x$with-salome != xno)
-if test "x$with-salome" != xno; then
+AM_CONDITIONAL(HAVE_SALOME, test x$with_salome != xno)
+if test "x$with_salome" != xno; then
   AC_CONFIG_SUBDIRS([salome])
 fi
 
