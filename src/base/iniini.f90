@@ -153,6 +153,7 @@ call physical_constants_init
 call porosity_from_scan_init
 call fluid_properties_init
 call space_disc_options_init
+call time_scheme_options_init
 call piso_options_init
 call turb_reference_values_init
 call listing_writing_period_init
@@ -408,23 +409,6 @@ thetfl =-999.d0
 !       (il suit bilsc2)
 isno2t = -999
 thetsn =-999.d0
-!   -- Termes sources Grandeurs turbulentes
-!     Pour les termes sources explicites en std, I..EXT definit
-!       l'extrapolation -theta ancien + (1+theta) nouveau
-!     = 0 explicite
-!     = 1 extrapolation avec theta = 1/2
-!     = 2 extrapolation avec theta = 1
-!       0 implique pas de reservation de tableaux
-!       1 et 2 sont deux options equivalentes, la difference etant faite
-!       uniquement au moment de fixer theta
-!     Pour les termes sources implicites en std, I..EXT definit
-!       la mise a l'ordre 2 ou non avec le thetav de la variable associee
-!     = 0 implicite (std)
-!     > 0 utilisation du thetav
-!     Noter cpdt que le TS d'acc. masse n'est pas regi par I..EXT
-!       (il suit bilsc2)
-isto2t = -999
-thetst = -999.d0
 
 !    -- Proprietes physiques
 !     I..EXT definit l'extrapolation -theta ancien + (1+theta) nouveau

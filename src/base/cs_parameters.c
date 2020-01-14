@@ -413,6 +413,59 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 /*!
+  \struct cs_time_scheme_t
+
+  \brief Time scheme descriptor.
+
+  Members of the time scheme structure are publicly accessible, to allow for
+  concise  syntax, as they are expected to be used in many places.
+
+  \var  cs_time_scheme_t::isto2t
+        \anchor isto2t
+        Specifies the time scheme activated for
+        the source terms of the turbulence equations i.e. related to
+        \f$k\f$, \f$R_{ij}\f$, \f$\varepsilon\f$, \f$\omega\f$, \f$\varphi\f$,
+        \f$\overline{f}\f$), apart from convection and diffusion.
+        - 0: standard first-order: the terms which are linear
+             functions of the solved variable are implicit and the others
+              are explicit
+        - 1: second-order: the terms of the form \f$S_i\phi\f$ which are
+             linear functions of the solved variable \f$\phi\f$ are
+             expressed as second-order terms by interpolation (according to
+             the formula
+             \f$(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]\f$,
+             \f$\theta\f$ being given by the value of \ref thetav associated
+             with the variable \f$\phi\f$); the other terms \f$S_e\f$ are
+             expressed as second-order terms by extrapolation (according to
+             the formula
+             \f$(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]\f$,
+             \f$\theta\f$ being given by the value of \ref thetst = 0.5)
+        - 2: the linear terms \f$S_i\phi\f$ are treated in the same
+             \ref isto2t = 1; the other terms \f$S_e\f$ are way as when
+             extrapolated according to the same formula as when
+             \ref isto2t = 1, but with \f$\theta\f$= \ref thetst = 1.\n
+             Due to certain specific couplings between the turbulence equations,
+             \ref isto2t is allowed the value 1 or 2 only for the
+             \f$R_{ij}\f$ models (\ref iturb = 30 or 31);
+             hence, it is always initialised to 0.
+
+  \var  cs_time_scheme_t::thetst
+        \anchor thetst
+        \f$ \theta \f$-scheme for the extrapolation of the nonlinear
+        explicit source terms $S_e$ of the turbulence equations when the
+        source term extrapolation has been activated (see \ref isto2t),
+        following the formula
+        \f$(S_e)^{n+\theta}=(1+\theta)S_e^n-\theta S_e^{n-1}\f$.\n
+        The value of \f$theta\f$ is deduced from the value chosen for
+        \ref isto2t. Generally, only the value 0.5 is used.
+        -  0 : explicit
+        - 1/2: extrapolated in n+1/2
+        -  1 : extrapolated in n+1
+*/
+
+/*----------------------------------------------------------------------------*/
+
+/*!
   \struct cs_piso_t
 
   \brief PISO options descriptor.
@@ -514,6 +567,16 @@ static cs_space_disc_t  _space_disc =
 
 const cs_space_disc_t  *cs_glob_space_disc = &_space_disc;
 
+/* Time scheme options structure and associated pointer */
+
+static cs_time_scheme_t  _time_scheme =
+{
+  .isto2t = -999,
+  .thetst = -999.0,
+};
+
+const cs_time_scheme_t  *cs_glob_time_scheme = &_time_scheme;
+
 /* PISO structure and associated pointer */
 
 static cs_piso_t  _piso =
@@ -577,6 +640,10 @@ void
 cs_f_space_disc_get_pointers(int     **imvisf,
                              int     **imrgra,
                              int     **iflxmw);
+
+void
+cs_f_time_scheme_get_pointers(int     **isto2t,
+                              double  **thetst);
 
 void
 cs_f_piso_get_pointers(int     **nterup,
@@ -792,6 +859,21 @@ cs_f_space_disc_get_pointers(int     **imvisf,
 }
 
 /*----------------------------------------------------------------------------
+ * Get pointers to members of the global time scheme structure.
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_time_scheme_get_pointers(int     **isto2t,
+                              double  **thetst)
+{
+  *isto2t = &(_time_scheme.isto2t);
+  *thetst = &(_time_scheme.thetst);
+}
+
+/*----------------------------------------------------------------------------
  * Get pointers to members of the global piso structure.
  *
  * This function is intended for use by Fortran wrappers, and
@@ -839,6 +921,22 @@ cs_space_disc_t *
 cs_get_glob_space_disc(void)
 {
   return &_space_disc;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Provide access to cs_glob_time_scheme
+ *
+ * needed to initialize structure with GUI and user C functions.
+ *
+ * \return  time scheme information structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_time_scheme_t *
+cs_get_glob_time_scheme(void)
+{
+  return &_time_scheme;
 }
 
 /*----------------------------------------------------------------------------

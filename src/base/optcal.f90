@@ -102,29 +102,9 @@ module optcal
   !> is second-order (\ref ischtp = 2), otherwise to 0.
   integer, save ::          isno2t
 
-  !> \ref isto2t specifies the time scheme activated for
-  !> the source terms of the turbulence equations i.e. related
-  !> to \f$k\f$, \f$R_{ij}\f$, \f$\varepsilon\f$, \f$\omega\f$, \f$\varphi\f$,
-  !> \f$\overline{f}\f$), apart from convection and diffusion.
-  !> - 0: standard first-order: the terms which are linear
-  !> functions of the solved variable are implicit and the others are explicit
-  !> - 1: second-order: the terms of the form \f$S_i\phi\f$ which are linear functions
-  !> of the solved variable \f$\phi\f$ are expressed as second-order terms
-  !> by interpolation (according to the formula
-  !> \f$(S_i\phi)^{n+\theta}=S_i^n[(1-\theta)\phi^n+\theta\phi^{n+1}]\f$,
-  !> \f$\theta\f$ being given by the value of \ref thetav associated with the
-  !> variable \f$\phi\f$); the other terms \f$S_e\f$ are expressed as second-order
-  !> terms by extrapolation (according to the formula
-  !> \f$(S_e)^{n+\theta}=[(1+\theta)S_e^n-\theta S_e^{n-1}]\f$, \f$\theta\f$ being
-  !> given by the value of \ref thetst = 0.5)
-  !> - 2: the linear terms \f$S_i\phi\f$ are treated in the same
-  !> way as when \ref isto2t = 1; the other terms \f$S_e\f$ are
-  !> extrapolated according to the same formula as when \ref isto2t = 1,
-  !> but with \f$\theta\f$= \ref thetst = 1.\n
-  !> Due to certain specific couplings between the turbulence equations,
-  !> \ref isto2t is allowed the value 1 or 2 only for the \f$R_{ij}\f$ models
-  !> (\ref iturb = 30 or 31); hence, it is always initialised to 0.
-  integer, save ::          isto2t
+  !> Time scheme for source terms of turbulence equations
+  !> (see \ref isto2t in cs_time_scheme_t).
+  integer(c_int), pointer, save :: isto2t
 
   !> for each scalar, \ref isso2t specifies the time scheme activated
   !> for the source terms of the equation for the scalar, apart from convection and
@@ -172,16 +152,8 @@ module optcal
   !>    -  1 : second viscosity extrapolated in n+1
   double precision, save :: thetsn
 
-  !> \f$ \theta \f$-scheme for the extrapolation of the nonlinear
-  !> explicit source terms $S_e$ of the turbulence equations when the
-  !> source term extrapolation has been activated (see \ref isto2t),
-  !> following the formula \f$(S_e)^{n+\theta}=(1+\theta)S_e^n-\theta S_e^{n-1}\f$.\n
-  !> The value of \f$theta\f$ is deduced from the value chosen for
-  !> \ref isto2t. Generally, only the value 0.5 is used.
-  !>    -  0 : explicit
-  !>    - 1/2: extrapolated in n+1/2
-  !>    -  1 : extrapolated in n+1
-  double precision, save :: thetst
+  !> The value of \f$theta\f$ (see \ref thetst in cs_time_scheme_t).
+  real(c_double), pointer, save :: thetst
 
   !> \f$ \theta \f$-scheme for the extrapolation of the nonlinear
   !> explicit source term \f$S_e\f$ of the scalar transport equation
@@ -1461,6 +1433,16 @@ module optcal
     end subroutine cs_f_space_disc_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
+    ! global time schemeoptions structure
+
+    subroutine cs_f_time_scheme_get_pointers(isto2t, thetst)                &
+      bind(C, name='cs_f_time_scheme_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: isto2t, thetst
+    end subroutine cs_f_time_scheme_get_pointers
+
+    ! Interface to C function retrieving pointers to members of the
     ! global PISO options structure
 
     subroutine cs_f_piso_get_pointers(nterup, epsup, xnrmu, xnrmu0,         &
@@ -1790,6 +1772,25 @@ contains
     call c_f_pointer(c_iflxmw, iflxmw)
 
   end subroutine space_disc_options_init
+
+  !> \brief Initialize Fortran time scheme options API.
+  !> This maps Fortran pointers to global C structure members.
+
+  subroutine time_scheme_options_init
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Local variables
+
+    type(c_ptr) :: c_isto2t, c_thetst
+
+    call cs_f_time_scheme_get_pointers(c_isto2t, c_thetst)
+
+    call c_f_pointer(c_isto2t, isto2t)
+    call c_f_pointer(c_thetst, thetst)
+
+  end subroutine time_scheme_options_init
 
   !> \brief Initialize Fortran PISO options API.
   !> This maps Fortran pointers to global C structure members.

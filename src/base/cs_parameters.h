@@ -194,6 +194,19 @@ typedef struct {
 } cs_space_disc_t;
 
 /*----------------------------------------------------------------------------
+ * Time scheme descriptor
+ *----------------------------------------------------------------------------*/
+
+typedef struct {
+
+  int           isto2t;       /* time scheme activated for the source
+                                 terms of turbulent equations */
+
+  double        thetst;       /* value of \f$theta\$f for turbulence */
+
+} cs_time_scheme_t;
+
+/*----------------------------------------------------------------------------
  * PISO descriptor
  *----------------------------------------------------------------------------*/
 
@@ -226,9 +239,13 @@ typedef struct {
 
 extern const cs_space_disc_t  *cs_glob_space_disc;
 
+/* Pointer to time scheme  options structure */
+
+extern const cs_time_scheme_t  *cs_glob_time_scheme;
+
 /* Pointer to PISO options structure */
 
-extern const cs_piso_t        *cs_glob_piso;
+extern const cs_piso_t  *cs_glob_piso;
 
 /*============================================================================
  * Global variables
@@ -277,7 +294,7 @@ cs_parameters_iscavr(cs_field_t *f)
  *
  * needed to initialize structure in GUI and user C functions.
  *
- * \return   space discretization description structure
+ * \return  space discretization description structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -286,11 +303,24 @@ cs_get_glob_space_disc(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Provide access to cs_glob_time_scheme
+ *
+ * needed to initialize structure with GUI and user C functions.
+ *
+ * \return  time scheme information structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_time_scheme_t *
+cs_get_glob_time_scheme(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Provide access to cs_glob_piso
  *
  * needed to initialize structure with GUI and user C functions.
  *
- * \return   piso information structure
+ * \return  piso information structure
  */
 /*----------------------------------------------------------------------------*/
 
