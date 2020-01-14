@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2019 EDF S.A.
+  Copyright (C) 1998-2020 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -416,16 +416,16 @@ cs_user_physical_properties(cs_domain_t  *domain);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_source_terms(cs_domain_t *domain,
-                     int         f_id,
-                     cs_real_t   *st_exp,
-                     cs_real_t   *st_imp);
+cs_user_source_terms(cs_domain_t  *domain,
+                     int           f_id,
+                     cs_real_t    *st_exp,
+                     cs_real_t    *st_imp);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the porosity (volume factor \f$ \epsilon \f$
- *        when the porosity model is activated
- *        (iporos greater than 1 in cs_user_parameters.f90).
+ *        when the porosity model is activated.
+ *        (\ref cs_glob_porous_model > 0).
  *
  * This function is called at the begin of the simulation only.
  */
