@@ -64,9 +64,10 @@ BEGIN_C_DECLS
  *
  *  Usage
  *  -----
- *  The routine is called for each variable. It is
+ *  The function is called for each variable. It is
  *  therefore necessary to test the value of the field id to separate
- *  the treatments of the different variables (if (f_id.eq.CS_F(p)->id) then ....).
+ *  the treatments of the different variables (if (f_id.eq.CS_F(p)->id)
+ *   then ....).
  *
  *  The additional source term is decomposed into an explicit part (st_exp) and
  *  an implicit part (st_imp) that must be provided here.
@@ -74,45 +75,37 @@ BEGIN_C_DECLS
  *
  *    \f[ \rho*volume*\frac{df}{dt} + .... = st\_imp*f + st\_exp \f]
  *
- *
  *  Note that st_exp and st_imp are defined after the Finite Volume integration
  *  over the cells, so they include the "volume" term. More precisely:
- *    - st_exp is expressed in kg.[var]/s, where [var] is the unit of the variable.
+ *    - st_exp is expressed in kg.[var]/s, where [var] is the unit of the
+ *      variable.
  *      Its dimension is the one of the variable (3 for vectors)
  *    - st_imp is expressed in kg/s.
  *      Its dimension is 1 for scalars, 3x3 for vectors.
  *
- *  The st_exp and st_imp arrays are already initialized to 0 before entering the
- *  the routine. It is not needed to do it in the routine (waste of CPU time).
+ *  The st_exp and st_imp arrays are already initialized to 0 before entering
+ *  the function. It is not useful to do it here (waste of CPU time).
  *
  *  For stability reasons, Code_Saturne will not add -st_imp directly to the
  *  diagonal of the matrix, but Max(-st_imp,0). This way, the st_imp term is
  *  treated implicitely only if it strengthens the diagonal of the matrix.
  *  However, when using the second-order in time scheme, this limitation cannot
- *  be done anymore and -st_imp is added directly. The user should therefore test
- *  the negativity of st_imp by himself.
+ *  be done anymore and -st_imp is added directly. The user should therefore
+ *  test the negativity of st_imp by himself.
  *
  *  When using the second-order in time scheme, one should supply:
  *    - st_exp at time n
  *    - st_imp at time n+1/2
- *
- *
- *  The selection of cells where to apply the source terms is based on a getcel
- *  command. For more info on the syntax of the getcel command, refer to the
- *  user manual or to the comments on the similar command \ref getfbr in the routine
- *  \ref cs_user_boundary_conditions.
  *
  *  WARNING: If variable is the temperature, the resulting equation
  *           solved by the code is:
  *
  *   rho*Cp*volume*dT/dt + .... = st_imp*T + st_exp
  *
- *
  *  Note that st_exp and st_imp are defined after the Finite Volume integration
  *  over the cells, so they include the "volume" term. More precisely:
  *    - st_exp is expressed in W
  *    - st_imp is expressed in W/K
- *
  *
  *  STEP SOURCE TERMS
  * ===================
@@ -135,7 +128,6 @@ BEGIN_C_DECLS
  *  This yields:
  *    st_exp = volume*( F(f(n)) - dF/df*f(n) )
  *    st_imp = volume*dF/df
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -145,7 +137,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Function called at each time step to define physical properties.
+ * \brief Function called at each time step to define source terms.
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
  * \param[in]       f_id     field id of the variable
@@ -155,10 +147,10 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_source_terms(cs_domain_t *domain,
-                     int         f_id,
-                     cs_real_t   *st_exp,
-                     cs_real_t   *st_imp)
+cs_user_source_terms(cs_domain_t  *domain,
+                     int           f_id,
+                     cs_real_t    *st_exp,
+                     cs_real_t    *st_imp)
 {
 
 }

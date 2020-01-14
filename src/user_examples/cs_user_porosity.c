@@ -67,7 +67,8 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the porosity (volume factor \f$ \epsilon \f$
- *        when porosity model is activated.
+ *        when the porosity model is activated.
+ *        (\ref cs_glob_porous_model > 0).
  *
  * This function is called at the beginning of the simulation only.
  *
@@ -76,7 +77,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_porosity(cs_domain_t   *domain)
+cs_user_porosity(cs_domain_t  *domain)
 {
   /*!< [init_poro_mq] */
   cs_mesh_t *m = domain->mesh;
