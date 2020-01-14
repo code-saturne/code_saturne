@@ -312,7 +312,9 @@ elseif (italim.eq.nalimx) then
 endif
 
 ! Return the final convergence indicator to code_aster
-call cs_ast_coupling_send_cvg(icved)
+if (nbaste.gt.0) then
+  call cs_ast_coupling_send_cvg(icved)
+endif
 
 !===============================================================================
 ! 6. Re set previous values if required
