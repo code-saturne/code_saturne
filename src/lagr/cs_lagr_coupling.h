@@ -51,45 +51,32 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- *     CALCUL DES TERMES SOURCES DU COUPLAGE RETOUR
- *     Remarque : les termes sources sont calcules pour
- *                la cellule de depart de la particule
- *                lors de l'iteration courante. Attention, meme
- *                si la particule est sortante du domaine de
- *                calcul (peu importe la maniere) on doit calculer
- *                un terme source qui correspond a ce qu'echange le
- *                fluide porteur et la particule au debut du pas de
- *                temps. Si NORDRE = 2 et que la particule est en
- *                interaction avec la frontiere, alors les termes
- *                source sont calcules comme si NORDRE=1
- *                (on oublie le pre-remplissage de TSFEXT dans
- * ONFC                 LAGES2).
- * --------------------------------------------------------------------
- * Arguments
+ * \brief  Compute source terms for Lagrangian 2-way coupling.
  *
- *   ntersl            <--  nbr termes sources de couplage retour
+ * \remark  Source terms are computed for the starting cell of a particle
+ *          during a given iteration. Even if particle exits the domain,
+ *          it s necessary to compute a source term matching the exchange
+ *          between the carrier fluid and the particle at the beginning
+ *          of the time step. If cs_glob_lagr_time_step->nor == 2 and the
+ *          particle interacts with a boundary, then the source terms
+ *          are computed as if nor == 1.
  *
- *   taup(nbpart)      <--  temps caracteristique dynamique
- *   tsfext(nbpart)    <--  forces externes
- *   tempct            <--  temps caracteristique thermique
- *    (nbpart,2)
- *   cpgd1,cpgd2,      <--  termes de devolatilisation 1 et 2 et
- *    cpght(nbpart)           de combusion heterogene (charbon
- *                            avec couplage retour thermique)
- *   volp(ncelet)      ---  fraction volumique des particules
- *   volm(ncelet)      ---  fraction massique des particules
+ * \param[in]   taup    dynamic characteristic time
+ * \param[in]   tempct  thermal charactersitic time
+ * \param[out]  tsfext  external forces
+ * \param[in]   cpgd1   devolatization term 1 for heterogeneous coal
+ * \param[in]   cpgd2   devolatization term 2 for heterogeneous coal
+ * \param[in]   cpght   combustion term for heterogeneous coal
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_coupling(cs_real_t taup[],
-                 cs_real_t tempct[],
-                 cs_real_t tsfext[],
-                 cs_real_t cpgd1[],
-                 cs_real_t cpgd2[],
-                 cs_real_t cpght[],
-                 cs_real_t volp[],
-                 cs_real_t volm[]);
+cs_lagr_coupling(const cs_real_t  taup[],
+                 const cs_real_t  tempct[],
+                 cs_real_t        tsfext[],
+                 const cs_real_t  cpgd1[],
+                 const cs_real_t  cpgd2[],
+                 const cs_real_t  cpght[]);
 
 /*----------------------------------------------------------------------------*/
 

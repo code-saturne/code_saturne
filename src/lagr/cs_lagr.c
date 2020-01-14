@@ -1178,7 +1178,6 @@ cs_lagr_finalize(void)
   BFT_FREE(extra->grad_pr);
   if (extra->grad_vel != NULL)
     BFT_FREE(extra->grad_vel);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1757,12 +1756,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
   cs_real_t *surfbo = cs_glob_mesh_quantities->b_face_surf;
   cs_real_t *surfbn = cs_glob_mesh_quantities->b_face_normal;
 
-  /* Allocate temporary arrays */
-  cs_real_t *w1, *w2;
-  BFT_MALLOC(w1, ncelet, cs_real_t);
-  BFT_MALLOC(w2, ncelet, cs_real_t);
-
-  /* Allocate other arrays depending on user options    */
+  /* Allocate arrays depending on user options */
 
   cs_real_t *tempp = NULL;
   if (   lagr_model->clogging == 1
@@ -2183,9 +2177,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
                   bx,
                   tempct,
                   extra->grad_pr,
-                  extra->grad_vel,
-                  w1,
-                  w2);
+                  extra->grad_vel);
 
       /* Integration of SDEs: position, fluid and particle velocity */
 
@@ -2403,7 +2395,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
           && cs_glob_lagr_time_step->nor == cs_glob_lagr_time_scheme->t_order)
-        cs_lagr_coupling(taup, tempct, tsfext, cpgd1, cpgd2, cpght, w1, w2);
+        cs_lagr_coupling(taup, tempct, tsfext, cpgd1, cpgd2, cpght);
 
       /* Deallocate arrays whose size is based on p_set->n_particles
          (which may change next) */
@@ -2644,8 +2636,6 @@ cs_lagr_solve_time_step(const int         itypfb[],
     cs_lagr_print(ts->t_cur);
 
   /* Free memory */
-  BFT_FREE(w1);
-  BFT_FREE(w2);
 
   if (   lagr_model->deposition == 1
       && ts->nt_cur == ts->nt_max)

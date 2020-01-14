@@ -85,48 +85,37 @@ static const cs_real_t  _c_stephan = 5.6703e-8;
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Public function definitions for Fortran API
+ * Public function definitions
  *============================================================================*/
 
-/* --------------------------------------------------------------------
- *     CALCUL DES TERMES SOURCES DU COUPLAGE RETOUR
- *     Remarque : les termes sources sont calcules pour
- *                la cellule de depart de la particule
- *                lors de l'iteration courante. Attention, meme
- *                si la particule est sortante du domaine de
- *                calcul (peu importe la maniere) on doit calculer
- *                un terme source qui correspond a ce qu'echange le
- *                fluide porteur et la particule au debut du pas de
- *                temps. Si NORDRE = 2 et que la particule est en
- *                interaction avec la frontiere, alors les termes
- *                source sont calcules comme si NORDRE=1
- *                (on oublie le pre-remplissage de TSFEXT dans
- * ONFC                 LAGES2).
- * --------------------------------------------------------------------
- * Arguments
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute source terms for Lagrangian 2-way coupling.
  *
- *   ntersl            <--  nbr termes sources de couplage retour
+ * \remark  Source terms are computed for the starting cell of a particle
+ *          during a given iteration. Even if particle exits the domain,
+ *          it s necessary to compute a source term matching the exchange
+ *          between the carrier fluid and the particle at the beginning
+ *          of the time step. If cs_glob_lagr_time_step->nor == 2 and the
+ *          particle interacts with a boundary, then the source terms
+ *          are computed as if nor == 1.
  *
- *   taup(nbpart)      <--  temps caracteristique dynamique
- *   tsfext(nbpart)    <--  forces externes
- *   tempct            <--  temps caracteristique thermique
- *    (nbpart,2)
- *   cpgd1,cpgd2,      <--  termes de devolatilisation 1 et 2 et
- *    cpght(nbpart)           de combusion heterogene (charbon
- *                            avec couplage retour thermique)
- *   volp(ncelet)      ---  fraction volumique des particules
- *   volm(ncelet)      ---  fraction massique des particules
- * --------------------------------------------------------------------   */
+ * \param[in]   taup    dynamic characteristic time
+ * \param[in]   tempct  thermal charactersitic time
+ * \param[out]  tsfext  external forces
+ * \param[in]   cpgd1   devolatization term 1 for heterogeneous coal
+ * \param[in]   cpgd2   devolatization term 2 for heterogeneous coal
+ * \param[in]   cpght   combustion term for heterogeneous coal
+ */
+/*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_coupling(cs_real_t taup[],
-                 cs_real_t tempct[],
-                 cs_real_t tsfext[],
-                 cs_real_t cpgd1[],
-                 cs_real_t cpgd2[],
-                 cs_real_t cpght[],
-                 cs_real_t volp[],
-                 cs_real_t volm[])
+cs_lagr_coupling(const cs_real_t  taup[],
+                 const cs_real_t  tempct[],
+                 cs_real_t        tsfext[],
+                 const cs_real_t  cpgd1[],
+                 const cs_real_t  cpgd2[],
+                 const cs_real_t  cpght[])
 {
   cs_real_3_t *st_vel = NULL, *t_st_vel = NULL;
   cs_real_6_t *st_rij = NULL, *t_st_rij = NULL;
@@ -164,12 +153,12 @@ cs_lagr_coupling(cs_real_t taup[],
   cs_lnum_t ntersl = cs_glob_lagr_dim->ntersl;
 
   cs_real_t *tslag, *auxl1, *auxl2, *auxl3;
-  BFT_MALLOC (tslag, ncelet * ntersl, cs_real_t);
-  BFT_MALLOC (auxl1, nbpart, cs_real_t);
-  BFT_MALLOC (auxl2, nbpart, cs_real_t);
-  BFT_MALLOC (auxl3, nbpart, cs_real_t);
+  BFT_MALLOC(tslag, ncelet * ntersl, cs_real_t);
+  BFT_MALLOC(auxl1, nbpart, cs_real_t);
+  BFT_MALLOC(auxl2, nbpart, cs_real_t);
+  BFT_MALLOC(auxl3, nbpart, cs_real_t);
 
-  /*   Nombre de passage pour les termes sources en stationnaire  */
+  /* Number of passes for steady source terms */
   if (   cs_glob_lagr_time_scheme->isttio == 1
       && cs_glob_time_step->nt_cur >= cs_glob_lagr_source_terms->nstits)
     lag_st->npts += 1;
@@ -178,9 +167,12 @@ cs_lagr_coupling(cs_real_t taup[],
   cs_glob_lagr_source_terms->vmax = 0.0;
   cs_glob_lagr_source_terms->tmamax = 0.0;
 
+  cs_real_t *volp = NULL, *volm = NULL;
+  BFT_MALLOC(volp, ncel, cs_real_t);
+  BFT_MALLOC(volm, ncel, cs_real_t);
   for (cs_lnum_t iel = 0; iel < ncel; iel++) {
-    volp[iel]      = 0.0;
-    volm[iel]      = 0.0;
+    volp[iel] = 0.0;
+    volm[iel] = 0.0;
   }
 
   for (cs_lnum_t ivar = 0; ivar < ntersl; ivar++) {
@@ -193,8 +185,8 @@ cs_lagr_coupling(cs_real_t taup[],
   /* Preliminary computations
      ======================== */
 
-  /* Finalisation des forces externes (Si la particule a interagit avec     */
-  /* une frontiere du domaine de calcul, on degenere a l'ordre 1).     */
+  /* Finalization of external forces (if the particle interacts with a
+     domain boundary, revert to order 1). */
 
   for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
 
@@ -213,12 +205,15 @@ cs_lagr_coupling(cs_real_t taup[],
 
   for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
 
-    cs_real_t  p_stat_w = cs_lagr_particles_get_real(p_set, npt, CS_LAGR_STAT_WEIGHT);
+    cs_real_t  p_stat_w = cs_lagr_particles_get_real(p_set, npt,
+                                                     CS_LAGR_STAT_WEIGHT);
     cs_real_t  p_mass   = cs_lagr_particles_get_real(p_set, npt, CS_LAGR_MASS);
     cs_real_t *p_vel    = cs_lagr_particles_attr(p_set, npt, CS_LAGR_VELOCITY);
 
-    cs_real_t  prev_p_mass = cs_lagr_particles_get_real_n(p_set, npt, 1, CS_LAGR_MASS);
-    cs_real_t *prev_p_vel  = cs_lagr_particles_attr_n(p_set, npt, 1, CS_LAGR_VELOCITY);
+    cs_real_t  prev_p_mass = cs_lagr_particles_get_real_n(p_set, npt, 1,
+                                                          CS_LAGR_MASS);
+    cs_real_t *prev_p_vel  = cs_lagr_particles_attr_n(p_set, npt, 1,
+                                                      CS_LAGR_VELOCITY);
 
     auxl1[npt] = p_stat_w * (p_mass * p_vel[0] - prev_p_mass * prev_p_vel[0]
                                                - grav[0] * tsfext[npt]) / dtp;
@@ -248,23 +243,28 @@ cs_lagr_coupling(cs_real_t taup[],
 
       unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
 
-      cs_real_t  p_stat_w = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT);
+      cs_real_t  p_stat_w = cs_lagr_particle_get_real(particle, p_am,
+                                                      CS_LAGR_STAT_WEIGHT);
 
-      cs_real_t  prev_p_diam = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_DIAMETER);
-      cs_real_t  prev_p_mass = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_MASS);
-      cs_real_t  p_mass = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_MASS);
+      cs_real_t  prev_p_diam = cs_lagr_particle_get_real_n(particle, p_am, 1,
+                                                           CS_LAGR_DIAMETER);
+      cs_real_t  prev_p_mass = cs_lagr_particle_get_real_n(particle, p_am, 1,
+                                                           CS_LAGR_MASS);
+      cs_real_t  p_mass = cs_lagr_particle_get_real(particle, p_am,
+                                                    CS_LAGR_MASS);
 
       cs_lnum_t iel = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
 
-      /* Volume et masse des particules dans la maille */
+      /* Volume and mass of particles in cell */
       volp[iel] += p_stat_w * cs_math_pi * pow(prev_p_diam, 3) / 6.0;
       volm[iel] += p_stat_w * prev_p_mass;
 
-      /* TS de QM   */
+      /* Momentum source term */
       t_st_vel[iel][0] += - auxl1[npt];
       t_st_vel[iel][1] += - auxl2[npt];
       t_st_vel[iel][2] += - auxl3[npt];
-      tslag[iel + (lag_st->itsli-1) * ncelet] += - 2.0 * p_stat_w * p_mass / taup[npt];
+      tslag[iel + (lag_st->itsli-1) * ncelet]
+        += - 2.0 * p_stat_w * p_mass / taup[npt];
 
     }
 
@@ -273,9 +273,9 @@ cs_lagr_coupling(cs_real_t taup[],
 
     if (extra->itytur == 2 || extra->iturb == 50 || extra->iturb == 60) {
 
-      /* En v2f (ITURB=50) les TS lagrangiens influent uniquement sur k et eps  */
-      /* (difficile d'ecrire quoi que ce soit sur v2, qui perd son sens de */
-      /*  "composante de Rij")     */
+      /* In v2f (ITURB=50) the Lagrangian STs only influence k and epsilon
+         (difficult to write something for v2, which loses its meaning as
+         "Rij comonent") */
 
       for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
 
@@ -407,18 +407,28 @@ cs_lagr_coupling(cs_real_t taup[],
       for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
 
         unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
-        cs_lnum_t  iel = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
-        cs_real_t  p_mass = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_MASS);
-        cs_real_t  prev_p_mass = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_MASS);
-        cs_real_t  p_cp = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_CP);
-        cs_real_t  prev_p_cp = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_CP);
-        cs_real_t  p_tmp = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_TEMPERATURE);
-        cs_real_t  prev_p_tmp = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_TEMPERATURE);
-        cs_real_t  p_stat_w = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT);
+        cs_lnum_t  iel = cs_lagr_particle_get_lnum(particle, p_am,
+                                                   CS_LAGR_CELL_ID);
+        cs_real_t  p_mass = cs_lagr_particle_get_real_n(particle, p_am, 0,
+                                                        CS_LAGR_MASS);
+        cs_real_t  prev_p_mass = cs_lagr_particle_get_real_n(particle, p_am, 1,
+                                                             CS_LAGR_MASS);
+        cs_real_t  p_cp = cs_lagr_particle_get_real_n(particle, p_am, 0,
+                                                      CS_LAGR_CP);
+        cs_real_t  prev_p_cp = cs_lagr_particle_get_real_n(particle, p_am, 1,
+                                                           CS_LAGR_CP);
+        cs_real_t  p_tmp = cs_lagr_particle_get_real_n(particle, p_am, 0,
+                                                       CS_LAGR_TEMPERATURE);
+        cs_real_t  prev_p_tmp = cs_lagr_particle_get_real_n(particle, p_am, 1,
+                                                            CS_LAGR_TEMPERATURE);
+        cs_real_t  p_stat_w = cs_lagr_particle_get_real(particle, p_am,
+                                                        CS_LAGR_STAT_WEIGHT);
 
-        tslag[iel + (lag_st->itste-1) * ncelet] += - (p_mass * p_tmp * p_cp
-                                - prev_p_mass * prev_p_tmp * prev_p_cp) / dtp * p_stat_w;
-        tslag[iel + (lag_st->itsti-1) * ncelet] += tempct[nbpart + npt] * p_stat_w;
+        tslag[iel + (lag_st->itste-1) * ncelet]
+          += - (p_mass * p_tmp * p_cp
+             - prev_p_mass * prev_p_tmp * prev_p_cp) / dtp * p_stat_w;
+        tslag[iel + (lag_st->itsti-1) * ncelet]
+          += tempct[nbpart + npt] * p_stat_w;
 
       }
       if (extra->radiative_model > 0) {
@@ -426,14 +436,20 @@ cs_lagr_coupling(cs_real_t taup[],
         for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
 
           unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
-          cs_lnum_t  iel = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
-          cs_real_t  p_diam = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_DIAMETER);
-          cs_real_t  p_eps = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_EMISSIVITY);
-          cs_real_t  p_tmp = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_TEMPERATURE);
-          cs_real_t  p_stat_w = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT);
+          cs_lnum_t  iel = cs_lagr_particle_get_lnum(particle, p_am,
+                                                     CS_LAGR_CELL_ID);
+          cs_real_t  p_diam = cs_lagr_particle_get_real_n(particle, p_am, 0,
+                                                          CS_LAGR_DIAMETER);
+          cs_real_t  p_eps = cs_lagr_particle_get_real_n(particle, p_am, 0,
+                                                         CS_LAGR_EMISSIVITY);
+          cs_real_t  p_tmp = cs_lagr_particle_get_real_n(particle, p_am, 0,
+                                                         CS_LAGR_TEMPERATURE);
+          cs_real_t  p_stat_w = cs_lagr_particle_get_real(particle, p_am,
+                                                          CS_LAGR_STAT_WEIGHT);
 
           cs_real_t aux1 = cs_math_pi * p_diam * p_diam * p_eps
-                          * (extra->luminance->val[iel] - 4.0 * _c_stephan * pow (p_tmp, 4));
+                          * (extra->luminance->val[iel]
+                             - 4.0 * _c_stephan * cs_math_pow4(p_tmp));
 
           tslag[iel + (lag_st->itste-1) * ncelet] += aux1 * p_stat_w;
 
@@ -453,25 +469,39 @@ cs_lagr_coupling(cs_real_t taup[],
 
           unsigned char *particle = p_set->p_buffer + p_am->extents * npt;
 
-          cs_lnum_t  iel = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_CELL_ID);
-          cs_lnum_t icha = cs_lagr_particle_get_lnum(particle, p_am, CS_LAGR_COAL_ID);
+          cs_lnum_t  iel = cs_lagr_particle_get_lnum(particle, p_am,
+                                                     CS_LAGR_CELL_ID);
+          cs_lnum_t icha = cs_lagr_particle_get_lnum(particle, p_am,
+                                                     CS_LAGR_COAL_ID);
 
-          cs_real_t  p_mass = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_MASS);
-          cs_real_t  p_tmp = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_TEMPERATURE);
-          cs_real_t  p_cp = cs_lagr_particle_get_real_n(particle, p_am, 0, CS_LAGR_CP);
+          cs_real_t  p_mass = cs_lagr_particle_get_real_n(particle, p_am, 0,
+                                                          CS_LAGR_MASS);
+          cs_real_t  p_tmp = cs_lagr_particle_get_real(particle, p_am,
+                                                       CS_LAGR_TEMPERATURE);
+          cs_real_t  p_cp = cs_lagr_particle_get_real_n(particle, p_am, 0,
+                                                        CS_LAGR_CP);
 
-          cs_real_t  prev_p_mass = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_MASS);
-          cs_real_t  prev_p_tmp  = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_TEMPERATURE);
-          cs_real_t  prev_p_cp   = cs_lagr_particle_get_real_n(particle, p_am, 1, CS_LAGR_CP);
+          cs_real_t  prev_p_mass = cs_lagr_particle_get_real_n
+                                     (particle, p_am, 1, CS_LAGR_MASS);
+          cs_real_t  prev_p_tmp  = cs_lagr_particle_get_real_n
+                                     (particle, p_am, 1, CS_LAGR_TEMPERATURE);
+          cs_real_t  prev_p_cp   = cs_lagr_particle_get_real_n
+                                     (particle, p_am, 1, CS_LAGR_CP);
 
-          cs_real_t  p_stat_w = cs_lagr_particle_get_real(particle, p_am, CS_LAGR_STAT_WEIGHT);
+          cs_real_t  p_stat_w = cs_lagr_particle_get_real
+                                  (particle, p_am, CS_LAGR_STAT_WEIGHT);
 
-          tslag[iel + (lag_st->itste-1) * ncelet]  += - (  p_mass * p_tmp * p_cp
-                                             - prev_p_mass * prev_p_tmp * prev_p_cp) / dtp * p_stat_w;
-          tslag[iel + (lag_st->itsti-1) * ncelet] += tempct[nbpart + npt] * p_stat_w;
-          tslag[iel + (lag_st->itsmv1[icha]-1) * ncelet] += p_stat_w * cpgd1[npt];
-          tslag[iel + (lag_st->itsmv2[icha]-1) * ncelet] += p_stat_w * cpgd2[npt];
-          tslag[iel + (lag_st->itsco-1) * ncelet] += p_stat_w * cpght[npt];
+          tslag[iel + (lag_st->itste-1) * ncelet]
+            += - (  p_mass * p_tmp * p_cp
+               - prev_p_mass * prev_p_tmp * prev_p_cp) / dtp * p_stat_w;
+          tslag[iel + (lag_st->itsti-1) * ncelet]
+            += tempct[nbpart + npt] * p_stat_w;
+          tslag[iel + (lag_st->itsmv1[icha]-1) * ncelet]
+            += p_stat_w * cpgd1[npt];
+          tslag[iel + (lag_st->itsmv2[icha]-1) * ncelet]
+            += p_stat_w * cpgd2[npt];
+          tslag[iel + (lag_st->itsco-1) * ncelet]
+            += p_stat_w * cpght[npt];
           tslag[iel + (lag_st->itsfp4-1) * ncelet] = 0.0;
 
         }
@@ -573,6 +603,9 @@ cs_lagr_coupling(cs_real_t taup[],
 
   if (t_st_rij != st_rij)
     BFT_FREE(t_st_rij);
+
+  BFT_FREE(volp);
+  BFT_FREE(volm);
 
   BFT_FREE(auxl1);
   BFT_FREE(auxl2);

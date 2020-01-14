@@ -108,8 +108,6 @@
  * \param[out] tempct   thermal charactersitic time
  * \param[in]  gradpr   pressure gradient
  * \param[in]  gradvf   fluid velocity gradient
- * \param[in]  energi   work array
- * \param[in]  dissip   work array
  */
 /*----------------------------------------------------------------------------*/
 
@@ -122,9 +120,7 @@ cs_lagr_car(int              iprev,
             cs_real_33_t     bx[],
             cs_real_t        tempct[],
             cs_real_3_t      gradpr[],
-            cs_real_33_t     gradvf[],
-            cs_real_t        energi[],
-            cs_real_t        dissip[])
+            cs_real_33_t     gradvf[])
 {
   /* Particles management */
 
@@ -261,6 +257,10 @@ cs_lagr_car(int              iprev,
      based on turbulence model */
 
   if (cs_glob_lagr_time_scheme->idistu == 1) {
+
+    cs_real_t  *energi = NULL, * dissip = NULL;
+    BFT_MALLOC(energi, ncel, cs_real_t);
+    BFT_MALLOC(dissip, ncel, cs_real_t);
 
     if (extra->itytur == 2 || extra->iturb == 50) {
 
@@ -551,6 +551,8 @@ cs_lagr_car(int              iprev,
 
     }
 
+    BFT_FREE(energi);
+    BFT_FREE(dissip);
   }
 
   else {
