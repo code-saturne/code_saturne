@@ -1844,6 +1844,15 @@ class XMLinit(BaseXmlInit):
                             node['name'] = rename[attr]
                             node['support'] = 'boundary'
 
+        # Probes update to allow renaming
+        XMLAnaControl = self.case.xmlGetNode('analysis_control')
+        XMLOutput     = XMLAnaControl.xmlGetNode('output')
+
+        if XMLOutput.xmlGetNodeList('probe') != None:
+            for node in XMLOutput.xmlGetNodeList('probe'):
+                if node['id'] == None:
+                    node['id'] = node['name']
+
 
 #-------------------------------------------------------------------------------
 # End of XMLinit
