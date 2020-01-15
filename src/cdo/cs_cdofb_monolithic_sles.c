@@ -2847,11 +2847,12 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   /* ========= */
 
   cs_real_t  *delta_u = uza->b_tilda;
+  cs_real_t  delta_u_l2 = normalization;
 
   /* Compute the divergence of u since this a stopping criteria */
   _apply_div_op(div_op, u_f, uza->d__v);
 
-  while (_uza_incr_cvg_test(nsp, normalization, uza)) {
+  while (_uza_incr_cvg_test(nsp, delta_u_l2, uza)) {
 
     /* Update p_c = p_c - gamma * (D.u_f - b_c). Recall that B = -div
      * Compute the RHS for the Uzawa system: rhs = -gamma*B^T.W^-1.(B.u - g) */
@@ -2875,13 +2876,6 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
       uza->rhs[iu] *= -gamma;
 
     /* Solve AL.u_f = rhs */
-    normalization = cs_evaluate_3_square_wc2x_norm(delta_u,
-                                                   c2f, quant->pvol_fc);
-    if (fabs(normalization) > 0)
-      normalization = sqrt(normalization);
-    else
-      normalization = 1.0;
-
     memset(delta_u, 0, sizeof(cs_real_t)*uza->n_u_dofs);
 
     uza->info.n_inner_iter
@@ -2890,11 +2884,18 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
                                           eqp,
                                           msles->block_matrices[0],
                                           cs_shared_range_set,
-                                          normalization,
+                                          delta_u_l2, /* normalization */
                                           false, /* rhs_redux */
                                           msles->sles,
                                           delta_u,
                                           uza->rhs));
+
+    delta_u_l2 = cs_evaluate_3_square_wc2x_norm(delta_u,
+                                                c2f, quant->pvol_fc);
+    if (fabs(delta_u_l2) > 0)
+      delta_u_l2 = sqrt(delta_u_l2);
+    else
+      delta_u_l2 = 1.0;
 
     /* Update the velocity */
 #   pragma omp parallel for if (uza->n_u_dofs > CS_THR_MIN)
