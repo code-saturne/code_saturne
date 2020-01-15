@@ -1127,7 +1127,7 @@ if (ikecou.eq.1) then
 
   ! Take into account, if necessary, the Spalart-Shur rotation/curvature
   ! correction of the production term
-  if (irccor.eq.2) then
+  if (irccor.eq.1) then
     do iel = 1, ncel
       w1(iel) = rotfct(iel)
     enddo
