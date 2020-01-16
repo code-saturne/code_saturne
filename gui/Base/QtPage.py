@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2019 EDF S.A.
+# Copyright (C) 1998-2020 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -483,8 +483,14 @@ class ComboModel:
             self.combo.setCurrentIndex(index)
 
         elif str_model:
-            index = self.items.index(str_model)
-            self.combo.setCurrentIndex(index)
+            try:
+                index = self.items.index(str_model)
+                self.combo.setCurrentIndex(index)
+            except Exception:
+                print(str_model, " is not in list: ", str(self.items))
+                print("Value reset to ", str(self.items[0]),
+                      " but should be checked.")
+                index = 0
 
         elif str_view:
             str_model = self.dicoV2M[str_view]
