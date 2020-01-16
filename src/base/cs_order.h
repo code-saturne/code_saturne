@@ -315,6 +315,30 @@ cs_order_reorder_data(cs_lnum_t         n_elts,
                       void             *data);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Build a sorted array containing a single occurence of each global
+ *        number in a given array.
+ *
+ * Global numbers under a given "base" value are extruded.
+ *
+ * The caller is responsible for freeing the returned array.
+ *
+ * \param[in]   n_ent     size of input array
+ * \param[in]   base      base id; numbers lower than this are dropped
+ * \param[in]   number    array containing of all referenced entity numbers
+ * \param[out]  n_single  array number of single occurences >= base
+ * \param[out]  single    sorted array of unique numbers >= base
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_order_single_gnum(size_t            n_ent,
+                     const cs_gnum_t   base,
+                     const cs_gnum_t   number[],
+                     size_t           *n_single,
+                     cs_gnum_t        *single[]);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

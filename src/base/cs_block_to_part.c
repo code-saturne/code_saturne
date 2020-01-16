@@ -43,6 +43,7 @@
 #include "bft_mem.h"
 #include "bft_error.h"
 
+#include "cs_all_to_all.h"
 #include "cs_block_dist.h"
 #include "cs_order.h"
 
@@ -557,133 +558,6 @@ cs_block_to_part_create_by_adj_s(MPI_Comm              comm,
 }
 
 /*----------------------------------------------------------------------------
- * Initialize block to partition distributor for entities adjacent to
- * already distributed entities.
- *
- * arguments:
- *   comm           <-- communicator
- *   block          <-- block size and range info
- *   adjacent_block <-- block info for adjacent entities
- *   adjacency      <-- entity adjacency (1 to n numbering)
- *
- * returns:
- *   initialized block to partition distributor
- *----------------------------------------------------------------------------*/
-
-cs_block_to_part_t *
-cs_block_to_part_create_adj(MPI_Comm              comm,
-                            cs_block_dist_info_t  adjacent_block,
-                            size_t                adjacency_size,
-                            const cs_gnum_t       adjacency[])
-{
-  int i;
-  size_t j;
-
-  size_t recv_size = 0;
-  cs_lnum_t *adj_list = NULL, *_adj_list = NULL;
-  cs_gnum_t *send_num = NULL, *recv_num = NULL;
-
-  cs_block_to_part_t *d = _block_to_part_create(comm);
-
-  const int n_ranks = d->n_ranks;
-
-  /* Sort adjacency list so as to remove duplicates */
-
-  _ordered_list(adjacency_size,
-                adjacency,
-                &d->n_part_ents,
-                &_adj_list);
-
-  /* Use adjacent global number to determine to which ranks they will
-     be sent. Send and receive counts are exchanged here, as ranks
-     requesting (i.e receiving entities) are determined first */
-
-  for (i = 0; i < d->n_ranks; i++)
-    d->recv_count[i] = 0;
-
- /* Ignore possible 0 values in global numbering */
-
-  if (d->n_part_ents > 0) {
-    if (adjacency[_adj_list[0]] == 0) {
-      d->n_part_ents -= 1;
-      adj_list = _adj_list + 1;
-    }
-    else
-      adj_list = _adj_list;
-  }
-
-  for (j = 0; j < d->n_part_ents; j++) {
-    cs_gnum_t adj_g_id = adjacency[adj_list[j]] - 1;
-    int adj_ent_rank =   (adj_g_id / adjacent_block.block_size)
-                       * adjacent_block.rank_step;
-    d->recv_count[adj_ent_rank] += 1;
-  }
-
-  MPI_Alltoall(d->recv_count, 1, MPI_INT, d->send_count, 1, MPI_INT, comm);
-
-  d->send_size = _compute_displ(n_ranks, d->send_count, d->send_displ);
-  recv_size = _compute_displ(n_ranks, d->recv_count, d->recv_displ);
-
-  if (d->n_part_ents != recv_size)
-    bft_error
-      (__FILE__, __LINE__, 0,
-       _("inconsistent sizes computed for a block to partition distributor\n"
-         "(%llu expected, %llu determined)."),
-       (unsigned long long)(d->n_part_ents), (unsigned long long)recv_size);
-
-  /* Allocate distributor arrays */
-
-  BFT_MALLOC(d->send_list, d->send_size, cs_lnum_t);
-  BFT_MALLOC(d->recv_order, d->n_part_ents, cs_lnum_t);
-
-  BFT_MALLOC(d->_recv_global_num, d->n_part_ents, cs_gnum_t);
-  d->recv_global_num = d->_recv_global_num;
-
-  /* We already have all the necessary info to build the global numbering */
-
-  for (j = 0; j < d->n_part_ents; j++)
-    d->_recv_global_num[j] = adjacency[adj_list[j]];
-
-  /* Prepare destination rank request and receive_order at the same time
-     (temporarily modifying d->recv_displ) */
-
-  BFT_MALLOC(send_num, d->send_size, cs_gnum_t);
-  BFT_MALLOC(recv_num, d->n_part_ents, cs_gnum_t);
-
-  for (j = 0; j < d->n_part_ents; j++) {
-    cs_gnum_t adj_g_num = adjacency[adj_list[j]];
-    int adj_ent_rank =   ((adj_g_num-1) / adjacent_block.block_size)
-                       * adjacent_block.rank_step;
-    recv_num[d->recv_displ[adj_ent_rank]] = adj_g_num;
-    d->recv_order[j] = d->recv_displ[adj_ent_rank];
-    d->recv_displ[adj_ent_rank] += 1;
-  }
-
-  for (i = 0; i < n_ranks; i++)
-    d->recv_displ[i] -= d->recv_count[i];
-
-  BFT_FREE(_adj_list);
-  adj_list = NULL;
-
-  MPI_Alltoallv(recv_num, d->recv_count, d->recv_displ, CS_MPI_GNUM,
-                send_num, d->send_count, d->send_displ, CS_MPI_GNUM,
-                d->comm);
-
-  BFT_FREE(recv_num);
-
-  /* Now prepare send list */
-
-  for (j = 0; j < d->send_size; j++)
-    d->send_list[j] = send_num[j] - adjacent_block.gnum_range[0];
-
-  BFT_FREE(send_num);
-
-  /* Return initialized structure */
-
-  return d;
-}
-
-/*----------------------------------------------------------------------------
  * Destroy a block to partition distributor structure.
  *
  * arguments:
@@ -1059,8 +933,9 @@ cs_block_to_part_copy_indexed(cs_block_to_part_t  *d,
 
 #endif /* defined(HAVE_MPI) */
 
-/*----------------------------------------------------------------------------
- * Determine local references from references to global numbers.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Determine local references from references to global numbers.
  *
  * This is based on finding the local id of a given global number
  * using a binary search.
@@ -1074,18 +949,16 @@ cs_block_to_part_copy_indexed(cs_block_to_part_t  *d,
  * global number (i.e not necessarily the smallest one) may be
  * assigned to the corresponding local_number[] entry.
  *
- * arguments:
- *   n_ents                <-- number of entities
- *   base                  <-- base numbering (typically 0 or 1)
- *   global_list_size      <-- size of global entity list
- *   global_list_is_sorted <-- true if global entity list is guaranteed
- *                             to be sorted
- *   global_list           <-- global entity list
- *   global_number         <-- entity global numbers
- *                             (size: n_ents)
- *   local_number          --> entity local numbers
- *                             (size: n_ents)
- *----------------------------------------------------------------------------*/
+ * \param[in]   n_ents                 number of entities
+ * \param[in]   base                   base numbering (typically 0 or 1)
+ * \param[in]   global_list_size       size of global entity list
+ * \param[in]   global_list_is_sorted  true if global entity list is
+ *                                     guaranteed to be sorted
+ * \param[in]   global_list            global entity list
+ * \param[in]   global_number          entity global numbers (size: n_ents)
+ * \param[out]  local_number           entity local numbers (size: n_ents)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_block_to_part_global_to_local(cs_lnum_t        n_ents,

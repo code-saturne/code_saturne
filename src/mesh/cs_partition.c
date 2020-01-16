@@ -97,6 +97,7 @@ extern "C" {
 #include "cs_log.h"
 #include "cs_mesh.h"
 #include "cs_mesh_builder.h"
+#include "cs_order.h"
 #include "cs_part_to_block.h"
 #include "cs_timer.h"
 
@@ -597,19 +598,15 @@ _precompute_cell_center_g(const cs_mesh_builder_t  *mb,
 
   cs_lnum_t _n_cells = 0;
   cs_lnum_t _n_faces = 0;
-  cs_lnum_t _n_vertices = 0;
 
   cs_gnum_t *_cell_num = NULL;
   cs_gnum_t *_face_num = NULL;
-  cs_gnum_t *_vtx_num = NULL;
   cs_gnum_t *_face_gcells = NULL;
   cs_gnum_t *_face_gvertices = NULL;
 
   cs_lnum_t *_face_cells = NULL;
   cs_lnum_t *_face_vertices_idx = NULL;
   cs_lnum_t *_face_vertices = NULL;
-
-  cs_real_t *_vtx_coord = NULL;
 
   cs_block_to_part_t *d = NULL;
 
@@ -687,24 +684,31 @@ _precompute_cell_center_g(const cs_mesh_builder_t  *mb,
 
   /* Vertices */
 
-  d = cs_block_to_part_create_adj(comm,
-                                  mb->vertex_bi,
-                                  _face_vertices_idx[_n_faces],
-                                  _face_gvertices);
+  size_t     _n_vertices = 0;
+  cs_gnum_t *_vtx_num = NULL;
 
-  _n_vertices = cs_block_to_part_get_n_part_ents(d);
+  cs_order_single_gnum(_face_vertices_idx[_n_faces],
+                       1, /* base */
+                       _face_gvertices,
+                       &_n_vertices,
+                       &_vtx_num);
 
-  BFT_MALLOC(_vtx_coord, _n_vertices*3, cs_real_t);
+  cs_all_to_all_t *dv
+    = cs_all_to_all_create_from_block(_n_vertices,
+                                      CS_ALL_TO_ALL_USE_DEST_ID,
+                                      _vtx_num,
+                                      mb->vertex_bi,
+                                      comm);
 
-  cs_block_to_part_copy_array(d,
-                              real_type,
-                              3,
-                              mb->vertex_coords,
-                              _vtx_coord);
+  cs_real_t *_vtx_coord
+    = cs_all_to_all_copy_array(dv,
+                               real_type,
+                               3,
+                               true, /* reverse */
+                               mb->vertex_coords,
+                               NULL);
 
-  _vtx_num = cs_block_to_part_transfer_gnum(d);
-
-  cs_block_to_part_destroy(&d);
+  cs_all_to_all_destroy(&dv);
 
   /* Now convert face -> vertex connectivity to local vertex numbers */
 

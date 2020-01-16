@@ -105,26 +105,6 @@ cs_block_to_part_create_by_adj_s(MPI_Comm              comm,
                                  int                   default_rank[]);
 
 /*----------------------------------------------------------------------------
- * Initialize block to partition distributor for entities adjacent to
- * already distributed entities.
- *
- * arguments:
- *   comm      <-- communicator
- *   bi        <-- block size and range info
- *   adj_bi    <-- block info for adjacent entities
- *   adjacency <-- entity adjacency (1 to n numbering)
- *
- * returns:
- *   initialized block to partition distributor
- *----------------------------------------------------------------------------*/
-
-cs_block_to_part_t *
-cs_block_to_part_create_adj(MPI_Comm              comm,
-                            cs_block_dist_info_t  adj_bi,
-                            size_t                adjacency_size,
-                            const cs_gnum_t       adjacency[]);
-
-/*----------------------------------------------------------------------------
  * Destroy a block to partition distributor structure.
  *
  * arguments:
@@ -223,8 +203,9 @@ cs_block_to_part_copy_indexed(cs_block_to_part_t  *d,
 
 #endif /* defined(HAVE_MPI) */
 
-/*----------------------------------------------------------------------------
- * Determine local references from references to global numbers.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Determine local references from references to global numbers.
  *
  * This is based on finding the local id of a given global number
  * using a binary search.
@@ -238,18 +219,16 @@ cs_block_to_part_copy_indexed(cs_block_to_part_t  *d,
  * global number (i.e not necessarily the smallest one) may be
  * assigned to the corresponding local_number[] entry.
  *
- * arguments:
- *   n_ents                <-- number of entities
- *   base                  <-- base numbering (typically 0 or 1)
- *   global_list_size      <-- size of global entity list
- *   global_list_is_sorted <-- true if global entity list is guaranteed
- *                             to be sorted
- *   global_list           <-- global entity list
- *   global_number         <-- entity global numbers
- *                             (size: n_ents)
- *   local_number          --> entity local numbers
- *                             (size: n_ents)
- *----------------------------------------------------------------------------*/
+ * \param[in]   n_ents                 number of entities
+ * \param[in]   base                   base numbering (typically 0 or 1)
+ * \param[in]   global_list_size       size of global entity list
+ * \param[in]   global_list_is_sorted  true if global entity list is
+ *                                     guaranteed to be sorted
+ * \param[in]   global_list            global entity list
+ * \param[in]   global_number          entity global numbers (size: n_ents)
+ * \param[out]  local_number           entity local numbers (size: n_ents)
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_block_to_part_global_to_local(cs_lnum_t        n_ents,
