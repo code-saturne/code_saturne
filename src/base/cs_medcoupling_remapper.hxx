@@ -127,6 +127,27 @@ cs_medcoupling_remapper_set_iteration(cs_medcoupling_remapper_t  *r,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief set non-default options for a remapper
+ *
+ * \param[in] r      pointer to the cs_medcoupling_remapper_t struct
+ * \param[in] key    pointer to string representing key
+ *                   currently handled: one of {Precision, IntersectionType}
+ * \param[in] value  pointer to string representing value:
+ *                   - for Precision: floating-point value (default: 1e-12)
+ *                   - for IntersectionType: one of {Triangulation, Convex,
+ *                     Geometric2D, PointLocator, Barycentric,
+ *                     BarycentricGeo2D, MappedBarycentric}
+ *                     (see MEDCoupling INTERP_KERNEL documentation)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_medcoupling_remapper_set_options(cs_medcoupling_remapper_t  *r,
+                                    const char                  key[],
+                                    const char                  value[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief update the interpolation matrix of the remapper
  *
  * \param[in] r            pointer to the cs_medcoupling_remapper_t struct

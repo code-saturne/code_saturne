@@ -69,6 +69,7 @@
    - \subpage user_initialization_pulverized_coal
    - \subpage user_initialization_time_step
    - \subpage user_initialization_unified_combustion
+   - \subpage user_initialization_remapper_3d
 
 */
 // __________________________________________________________________________________
@@ -376,6 +377,7 @@
 /*!
 
   \page user_initialization_unified_combustion Unified combustion coal example
+
   One can get any field using \ref field_get_val_s_by_name function.
   \c cvar_*(iel) is the value of this variable in cell number \c iel.
   ONLY done if there is no restart computation
@@ -406,3 +408,60 @@
   like in basic example.
 
 */
+// __________________________________________________________________________________
+/*!
+
+  \page user_initialization_remapper_3d Initialization from a 3D post-processing output using MEDCoupling
+
+  \section use_case Use Case
+
+  When CFD results from another tool are available, they may be used to
+  initialize a \c Code_Saturne computation using the MEDCoupling remapper tools.
+  For more information on MEDCoupling features, see
+  https://docs.salome-platform.org/latest/dev/MEDCoupling/tutorial/index.html#english-toc
+
+  This requires that:
+  - \c Code_Saturne is installed with MEDCoupling
+  - MEDCoupling is installed with MED file support (which is the default
+    configuration).
+  - The provided data is in MED format or at least in a format
+    supported by ParaView.
+
+  If the previous results are provided in another format than MED,
+  they can be converted using the SALOME platform's PARAVIS
+  module, which is an extension to ParaView including several
+  plugins, especially a MED reader and writer. All that is required is
+  to read the results in PARAVIS, then save them to MED format
+  them using the "Save Data" option from ParaView's "File" menu.
+  This can also be done using ParaView scripts if preferred.
+
+  \section example_code Example code
+
+  The following example shows how to read fields from a MED file
+  using MEDCoupling remapper features.
+
+  The \c field_names array here contains the list of fields we
+  plan to read and their matching names in the MED file.
+
+  The \c file_name should reference a file relative to the
+  run directory, using either a proper relative path or
+  an absolute path (as usual, if the file is placed in a case's
+  DATA directory, it will automatically be copied to the execution
+  directory, but this leads to additional copies of possibly
+  large data).
+
+  In this example, we also force the remapper option to
+  PointLocator (see INTERP_KERNEL::PointLocator in MEDCoupling
+  documentation). By default, \c Code_Saturne uses
+  INTERP_KERNEL::Triangulation, which allows for better conservation
+  of quantities, but is slower.
+
+  \snippet cs_user_initialization-medcoupling_remapper_3d.c  remapper_init
+
+  Note that we do not need to specify the field dimensions here,
+  but they should match, so mapping a vector field to a scalar
+  will produce a crash.
+
+*/
+
+
