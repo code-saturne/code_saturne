@@ -58,6 +58,16 @@
 
   \snippet cs_user_mesh-modify.c mesh_modify_extrude_1
 
+  The example which follows illustrates the use of the advanced function to impose
+  the vector of extrusion.
+
+  \snippet cs_user_mesh-modify.c mesh_modify_extrude_2
+
+  The example which follows illustrates how to tag the extruded cells with a
+  user defined criteria.
+
+  \snippet cs_user_mesh-modify.c mesh_modify_extrude_3
+
   \subsection cs_user_mesh_h_cs_user_mesh_modifiy_boundary_layer_1 Boundary layer insertion
 
   Boundary faces extrusion can also be used to insert boundary layer cells,

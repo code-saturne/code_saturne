@@ -151,6 +151,137 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
   }
   /*! [mesh_modify_extrude_1] */
 
+  /* Advanced mesh extrusion: impose a direction
+   *
+   */
+
+  /*! [mesh_modify_extrude_2] */
+  {
+    /* Define extrusion parameters for each face */
+
+    int n_zones = 2;
+    const char *sel_criteria[] = {"wall_1", "wall_2"};
+    const int zone_layers[] = {2, 4};
+    const double zone_thickness[] = {0.1, 0.3};
+    const float zone_expansion[] = {0.8, 0.7};
+
+    cs_mesh_extrude_face_info_t *efi = cs_mesh_extrude_face_info_create(mesh);
+
+    cs_lnum_t n_faces;
+    cs_lnum_t *face_list;
+
+    BFT_MALLOC(face_list, mesh->n_b_faces, cs_lnum_t);
+
+    for (int z_id = 0; z_id < n_zones; z_id++) {
+
+      cs_selector_get_b_face_list(sel_criteria[z_id], &n_faces, face_list);
+
+      cs_mesh_extrude_set_info_by_zone(efi,
+                                       zone_layers[z_id],
+                                       zone_thickness[z_id],
+                                       zone_expansion[z_id],
+                                       n_faces,
+                                       face_list);
+
+    }
+
+    BFT_FREE(face_list);
+
+    /* Determine vertex values for extrusion */
+
+    cs_mesh_extrude_vectors_t *e = cs_mesh_extrude_vectors_create(efi);
+
+    /* Overwrite the total coord_shift */
+    cs_real_3_t *vtx_coords = (cs_real_3_t *)mesh->vtx_coord;
+
+    for (cs_lnum_t id = 0; id < e->n_vertices; id++) {
+
+      cs_lnum_t v_id = e->vertex_ids[id];
+
+      e->coord_shift[id][0] = 0.;
+      e->coord_shift[id][1] = 0.;
+      /* Percentage of the original z coordinate */
+      e->coord_shift[id][2] = 0.01 * vtx_coords[v_id][2];
+    }
+
+    /* Extrude mesh with this  */
+
+    cs_mesh_extrude_face_info_destroy(&efi);
+
+    cs_mesh_extrude(mesh,
+                    e,
+                    /* Maintain group classes of  interior faces previously on boundary */
+                    true);
+
+    cs_mesh_extrude_vectors_destroy(&e);
+  }
+  /*! [mesh_modify_extrude_2] */
+
+  /* Extrude mesh at boundary faces of group "walls".
+   * The resulting extruded cells are added to a new
+   * group of cells called "solid" */
+  
+  /*! [mesh_modify_extrude_3] */
+  {
+    int n_layers = 2;
+    double thickness = 1.0;
+    double expansion_factor = 1.5;
+
+    const char criteria[] = "walls";
+
+    /* Save the initial number of cells */
+
+    cs_lnum_t n_prev_cells = mesh->n_cells ;
+    
+    /* Select boudary faces */
+
+    cs_lnum_t   n_selected_faces = 0;
+    cs_lnum_t  *selected_faces = NULL;
+
+    BFT_MALLOC(selected_faces, mesh->n_b_faces, cs_lnum_t);
+
+    cs_selector_get_b_face_list(criteria,
+                                &n_selected_faces,
+                                selected_faces);
+
+    /* Extrude selected boundary */
+
+    cs_mesh_extrude_constant(mesh,
+                             false, /* Maintain groups on interio faces? */
+                             n_layers,
+                             thickness,
+                             expansion_factor,
+                             n_selected_faces,
+                             selected_faces);
+
+    /* Free temporary memory */
+
+    BFT_FREE(selected_faces);
+
+    /* Compute the number of extruded cells */
+
+    cs_lnum_t n_selected_elts = mesh->n_cells - n_prev_cells ;
+
+    /* Among all the cells, only select the cells above 
+     * the initial number of cells (before extrusion). */
+    
+    cs_lnum_t  *selected_elts = NULL;
+    BFT_MALLOC(selected_elts, mesh->n_cells, cs_lnum_t);
+    
+    for(int i=0; i<n_selected_elts; i++)
+      selected_elts[i] = n_prev_cells + i;
+
+    /* Add slected cells to a new group called "solid" */
+    cs_mesh_group_cells_add(mesh,
+                            "solid",
+                            n_selected_elts,
+                            selected_elts);
+
+    BFT_FREE(selected_elts);
+  }
+  /*! [mesh_modify_extrude_3] */
+
+  
   /* Add a group to cells in a given region */
 
   /*! [mesh_modify_groups_1] */
