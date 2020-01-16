@@ -2017,6 +2017,9 @@ cs_cdofb_monolithic_sles_reset(cs_cdofb_monolithic_sles_t   *msles)
   if (msles == NULL)
     return;
 
+  for (int i = 0; i < msles->n_row_blocks*msles->n_row_blocks; i++)
+    cs_matrix_destroy(&(msles->block_matrices[i]));
+
   cs_sles_free(msles->sles);
 
   cs_lnum_t  full_size = 3*msles->n_faces + msles->n_cells;
