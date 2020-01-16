@@ -472,7 +472,9 @@ class ComboModel:
                 #      print(l.rstrip())
                 # del exc_info
                 print(str_model, " is not in list: ", str(self.items))
-                index = self.items.index(str_model)
+                print("Value reset to ", str(self.items[0]),
+                      " but should be checked.")
+                index = 0
 
         elif str_view:
             str_model = self.dicoV2M[str_view]
