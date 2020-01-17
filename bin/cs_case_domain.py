@@ -1652,6 +1652,19 @@ class cathare_domain(domain):
                     self.symlink(partition_input,
                                  os.path.join(self.exec_dir, 'partition_input'))
 
+    #---------------------------------------------------------------------------
+
+    def solver_command(self, **kw):
+        """
+        Returns a tuple indicating the script's working directory,
+        executable path, and associated command-line arguments.
+        """
+
+        wd, exec_path, args = super(cathare_domain, self).solver_command(kw)
+        args += " --c2-wrapper"
+
+        return wd, exec_path, args
+
 #-------------------------------------------------------------------------------
 
 # Coupling with a general Python-based code
