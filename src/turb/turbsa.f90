@@ -99,7 +99,7 @@ double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
 
 integer          iel   , ifac  , inc   , iccocg, iprev, ivar
 integer          iiun
-integer          nswrgp, imligp
+integer          imrgrp, nswrgp, imligp
 integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          iflmas, iflmab
@@ -232,8 +232,7 @@ allocate(gradv(3, 3, ncelet))
 inc = 1
 iprev = 1
 
-call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,       &
-                           gradv)
+call field_gradient_vector(ivarfl(iu), iprev, 0, inc, gradv)
 
 ! vort = omega**2 = dudy**2 + dvdx**2 + dudz**2 + dwdx**2 + dvdz**2 + dwdy**2
 !                - 2*dudy*dvdx - 2*dudz*dwdx - 2*dvdz*dwdy
@@ -258,9 +257,7 @@ allocate(grad(3,ncelet))
 
 iccocg = 1
 
-call field_gradient_scalar(ivarfl(inusa), iprev, imrgra, inc,       &
-                           iccocg,                                  &
-                           grad)
+call field_gradient_scalar(ivarfl(inusa), iprev, 0, inc, iccocg, grad)
 
 ! trgrdn = GRAD(nusa)**2
 do iel = 1, ncel
@@ -563,6 +560,7 @@ iconvp = vcopt_nusa%iconv
 idiffp = vcopt_nusa%idiff
 ndircp = vcopt_nusa%ndircl
 nswrsp = vcopt_nusa%nswrsm
+imrgrp = vcopt_nusa%imrgra
 nswrgp = vcopt_nusa%nswrgr
 imligp = vcopt_nusa%imligr
 ircflp = vcopt_nusa%ircflu
@@ -588,7 +586,7 @@ init   = 1
 
 call codits &
  ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
-   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
+   imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &

@@ -486,9 +486,7 @@ if (numtyp.eq.-1) then
       iprev = 0
       iccocg = 1
 
-      call field_gradient_scalar(f_id, iprev, imrgra, inc,                   &
-                                 iccocg,                                     &
-                                 grad)
+      call field_gradient_scalar(f_id, iprev, 0, inc, iccocg, grad)
 
       idimt  = 3
       ientla = .true.
@@ -512,9 +510,7 @@ if (numtyp.eq.-1) then
       iprev = 0
       iccocg = 1
 
-      call field_gradient_scalar(f_id, iprev, imrgra, inc,                   &
-                                 iccocg,                                     &
-                                 grad)
+      call field_gradient_scalar(f_id, iprev, 0, inc, iccocg, grad)
 
       call field_get_key_int (f_id, kivisl, ifcsii)
       if (ifcsii .ge. 0) then

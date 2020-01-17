@@ -109,7 +109,7 @@ integer          iphydp
 integer          ifac  , iel   , init
 integer          inc   , iccocg, isweep
 integer          imucpp, idftnp
-integer          nswrgp, nswrsp
+integer          imrgrp, nswrgp, nswrsp
 integer          icvflb, iescap, imligp, ircflp, iswdyp, isstpp, ischcp, iwarnp
 integer          iflmas, iflmab
 
@@ -321,6 +321,7 @@ inc    = 1
 iccocg = 1
 iphydp = 0
 
+imrgrp = vcopt%imrgra
 epsrgp = vcopt%epsrgr
 extrap = vcopt%extrag
 climgp = vcopt%climgr
@@ -347,7 +348,7 @@ endif
 ! Compute convective mass flux
 ! here -div(1 grad(y))
 call itrmas &
- ( f_id   , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp ,     &
+ ( f_id   , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydp ,     &
    0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    rvoid  ,                                                                    &
@@ -471,6 +472,7 @@ iconvp = vcopt%iconv
 idiffp = vcopt%idiff
 idftnp = vcopt%idften
 nswrsp = vcopt%nswrsm
+imrgrp = vcopt%imrgra
 nswrgp = vcopt%nswrgr
 imligp = vcopt%imligr
 ircflp = vcopt%ircflu
@@ -504,7 +506,7 @@ isweep = -1
 
 call codits &
  ( idtva0 , isweep , f_id_yplus, iconvp , idiffp , ndircp ,       &
-   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
+   imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp , xnorm0 ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &

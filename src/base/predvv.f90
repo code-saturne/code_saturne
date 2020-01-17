@@ -169,7 +169,7 @@ double precision vela  (3, ncelet)
 
 integer          f_id  , iel   , ielpdc, ifac  , isou  , itypfl, n_fans
 integer          iccocg, inc   , iprev , init  , ii    , jj
-integer          nswrgp, imligp, iwarnp
+integer          imrgrp, nswrgp, imligp, iwarnp
 integer          iswdyp, idftnp
 integer          iconvp, idiffp, ndircp, nswrsp
 integer          ircflp, ischcp, isstpp, iescap
@@ -530,7 +530,8 @@ if (vcopt_p%iwgrec.eq.1) then
   if (f_dim.gt.1) then
     call field_get_val_v(iflwgr, cpro_wgrec_v)
     do iel = 1, ncel
-      ! FIXME should take headlosses into account, not compatible neither with ipucou=1...
+      ! FIXME should take head losses into account,
+      ! not compatible either with ipucou=1...
       cpro_wgrec_v(1,iel) = dt(iel) / wgrec_crom(iel)
       cpro_wgrec_v(2,iel) = dt(iel) / wgrec_crom(iel)
       cpro_wgrec_v(3,iel) = dt(iel) / wgrec_crom(iel)
@@ -553,7 +554,7 @@ endif
 call grdpor(inc)
 
 ! Pressure gradient
-call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,    &
+call field_gradient_potential(ivarfl(ipr), iprev, 0, inc,         &
                               iccocg, iphydr,                     &
                               frcxt, cpro_gradp)
 
@@ -570,12 +571,14 @@ if (iforbr.ge.0 .and. iterns.eq.1) then
     diipbx = diipb(1,ifac)
     diipby = diipb(2,ifac)
     diipbz = diipb(3,ifac)
-    pip = cvar_pr(iel) &
-        + diipbx*cpro_gradp(1,iel) + diipby*cpro_gradp(2,iel) + diipbz*cpro_gradp(3,iel)
+    pip = cvar_pr(iel)                          &
+          + diipbx*cpro_gradp(1,iel)            &
+          + diipby*cpro_gradp(2,iel)            &
+          + diipbz*cpro_gradp(3,iel)
     pfac = coefa_p(ifac) +coefb_p(ifac)*pip
     pfac1= cvar_pr(iel)                                              &
-         +(cdgfbo(1,ifac)-xyzcen(1,iel))*cpro_gradp(1,iel)              &
-         +(cdgfbo(2,ifac)-xyzcen(2,iel))*cpro_gradp(2,iel)              &
+         +(cdgfbo(1,ifac)-xyzcen(1,iel))*cpro_gradp(1,iel)           &
+         +(cdgfbo(2,ifac)-xyzcen(2,iel))*cpro_gradp(2,iel)           &
          +(cdgfbo(3,ifac)-xyzcen(3,iel))*cpro_gradp(3,iel)
     pfac = coefb_p(ifac)*(vcopt_p%extrag*pfac1                       &
          +(1.d0-vcopt_p%extrag)*pfac)                                &
@@ -754,9 +757,7 @@ if(     (itytur.eq.2 .or. itytur.eq.5 .or. iturb.eq.60) &
   iprev  = 1
   inc    = 1
 
-  call field_gradient_scalar(ivarfl(ik), iprev, imrgra, inc,      &
-                             iccocg,                              &
-                             grad)
+  call field_gradient_scalar(ivarfl(ik), iprev, 0, inc, iccocg, grad)
 
   d2s3 = 2.d0/3.d0
 
@@ -1083,6 +1084,7 @@ if((itytur.eq.3.or.iturb.eq.23).and.iterns.eq.1) then
   else
     call field_get_key_struct_var_cal_opt(ivarfl(ik), vcopt)
   end if
+  imrgrp = vcopt%imrgra
   nswrgp = vcopt%nswrgr
   imligp = vcopt%imligr
   iwarnp = vcopt%iwarni
@@ -1095,7 +1097,7 @@ if((itytur.eq.3.or.iturb.eq.23).and.iterns.eq.1) then
 
   call divrij &
  ( f_id   , itypfl ,                                              &
-   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+   iflmb0 , init   , inc    , imrgrp , nswrgp , imligp ,          &
    iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
    crom   , brom   ,                                              &
@@ -1628,6 +1630,7 @@ idiffp = vcopt_u%idiff
 ndircp = vcopt_u%ndircl
 nswrsp = vcopt_u%nswrsm
 nswrgp = vcopt_u%nswrgr
+imrgrp = vcopt_u%imrgra
 imligp = vcopt_u%imligr
 ircflp = vcopt_u%ircflu
 ischcp = vcopt_u%ischcv
@@ -1659,7 +1662,7 @@ if (iappel.eq.1) then
   ! of the predicted velocity
   call coditv &
  ( idtvar , iterns , ivarfl(iu)      , iconvp , idiffp , ndircp , &
-   imrgra , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
+   imrgrp , nswrsp , nswrgp , imligp , ircflp , ivisse ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
@@ -1703,7 +1706,7 @@ if (iappel.eq.1) then
 
     call coditv &
  ( idtvar , iterns , ivarfl(iu)      , iconvp , idiffp , ndircp , &
-   imrgra , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
+   imrgrp , nswrsp , nswrgp , imligp , ircflp , ivisep ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp ,                   &
@@ -1756,7 +1759,7 @@ else if (iappel.eq.2) then
 
   call bilscv &
  ( idtva0 , ivarfl(iu)      , iconvp , idiffp , nswrgp , imligp , ircflp , &
-   ischcp , isstpp , inc    , imrgra , ivisse ,                            &
+   ischcp , isstpp , inc    , imrgrp , ivisse ,                            &
    iwarnp , idftnp , imasac ,                                              &
    blencp , epsrgp , climgp , relaxp , thetap ,                            &
    vel    , vel    ,                                                       &

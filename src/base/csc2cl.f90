@@ -180,13 +180,13 @@ do ivar = 1, nvcp
   if (ivar.ne.iu .and. ivar.ne.iv .and. ivar.ne.iw) then
 
     call field_get_val_s(ivarfl(ivar), cvar_var)
-    call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,   &
-                               iccocg,                             &
+    call field_gradient_scalar(ivarfl(ivar), iprev, 0, inc,   &
+                               iccocg,                        &
                                grad)
 
   else if (ivar.eq.iu) then
 
-    call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,  &
+    call field_gradient_vector(ivarfl(iu), iprev, 0, inc,  &
                                gradv)
 
   endif

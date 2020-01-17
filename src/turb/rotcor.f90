@@ -90,7 +90,7 @@ double precision rotfct(ncel), ce2rc(ncel)
 ! Local variables
 
 integer          iel, ivar, ifac, isou, f_id
-integer          iccocg, inc, nswrgp, imligp, iwarnp
+integer          iccocg, inc, imrgrp, nswrgp, imligp, iwarnp
 integer          istrai(3,3), ivorab(3,3)
 integer          ii, jj, kk, iprev
 
@@ -171,8 +171,7 @@ allocate(gradv(3, 3, ncelet))
 inc = 1
 iprev = 1
 
-call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
-                           gradv)
+call field_gradient_vector(ivarfl(iu), iprev, 0, inc, gradv)
 
 ! Compute the strain rate tensor (symmetric)
 !          S_ij = 0.5(dU_i/dx_j+dU_j/dx_i)
@@ -291,6 +290,7 @@ do ii = 1, 3
 
     call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
+    imrgrp = vcopt%imrgra
     nswrgp = vcopt%nswrgr
     imligp = vcopt%imligr
     iwarnp = vcopt%iwarni
@@ -301,7 +301,7 @@ do ii = 1, 3
     f_id = -1
 
     call gradient_s                                                &
-  ( f_id   , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+  ( f_id   , imrgrp , inc    , iccocg , nswrgp , imligp ,          &
     iwarnp , epsrgp , climgp , extrap ,                            &
     strain(1,istrai(ii,jj))  , coeas  , coebs ,                    &
     grdsij )

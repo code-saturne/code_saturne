@@ -738,8 +738,8 @@ do ii = 1, nscal
       iprev = 1
       iccocg = 1
 
-      call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,  &
-                                 iccocg,                            &
+      call field_gradient_scalar(ivarfl(ivar), iprev, 0, inc,  &
+                                 iccocg,                       &
                                  grad)
 
       call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
@@ -812,7 +812,7 @@ do ii = 1, nscal
 
       inc = 1
       iprev = 1
-      call field_gradient_vector(ivarfl(ivar), iprev, imrgra, inc, gradv)
+      call field_gradient_vector(ivarfl(ivar), iprev, 0, inc, gradv)
 
       do ifac = 1 , nfabor
         iel = ifabor(ifac)
@@ -879,8 +879,7 @@ if (iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0.or.iforbr.ge.0) then
     inc = 1
     iprev = 1
 
-    call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
-                               gradv)
+    call field_gradient_vector(ivarfl(iu), iprev, 0, inc, gradv)
 
     call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt)
 
@@ -936,8 +935,7 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.itytur.eq.3) then
       ! allocate a temporary array
       allocate(gradts(6,3,ncelet))
 
-      call field_gradient_tensor(ivarfl(irij), iprev, imrgra, inc,  &
-                                 gradts)
+      call field_gradient_tensor(ivarfl(irij), iprev, 0, inc, gradts)
 
       do ifac = 1 , nfabor
         iel = ifabor(ifac)
@@ -986,9 +984,7 @@ if ((iclsym.ne.0.or.ipatur.ne.0.or.ipatrg.ne.0).and.itytur.eq.3) then
         iprev = 1
         iccocg = 1
 
-        call field_gradient_scalar(ivarfl(ivar), iprev, imrgra, inc,  &
-                                   iccocg,                            &
-                                   grad)
+        call field_gradient_scalar(ivarfl(ivar), iprev, 0, inc, iccocg, grad)
 
         do ifac = 1 , nfabor
           iel = ifabor(ifac)

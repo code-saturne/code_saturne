@@ -242,9 +242,7 @@ if (ivar.eq.isca(icoyfp)) then
   inc = 1
   iccocg = 1
 
-  call field_gradient_scalar(ivarfl(ii), iprev, imrgra, inc,              &
-                             iccocg,                                      &
-                             gradf)
+  call field_gradient_scalar(ivarfl(ii), iprev, 0, inc, iccocg, gradf)
 
 ! --- Calcul du gradient de Yfuel
 !     ===========================
@@ -258,9 +256,7 @@ if (ivar.eq.isca(icoyfp)) then
   inc = 1
   iccocg = 1
 
-  call field_gradient_scalar(ivarfl(ii), iprev, imrgra, inc,              &
-                             iccocg,                                      &
-                             grady)
+  call field_gradient_scalar(ivarfl(ii), iprev, 0, inc, iccocg, grady)
 
 ! --- Calcul du terme source
 !     ======================

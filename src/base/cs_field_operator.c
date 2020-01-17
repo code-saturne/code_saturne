@@ -112,7 +112,7 @@ BEGIN_C_DECLS
 void
 cs_f_field_gradient_scalar(int                    f_id,
                            int                    use_previous_t,
-                           int                    imrgra,
+                           int                    imrgr0,
                            int                    inc,
                            int                    recompute_cocg,
                            cs_real_3_t  *restrict grad);
@@ -120,7 +120,7 @@ cs_f_field_gradient_scalar(int                    f_id,
 void
 cs_f_field_gradient_potential(int                    f_id,
                               int                    use_previous_t,
-                              int                    imrgra,
+                              int                    imrgr0,
                               int                    inc,
                               int                    recompute_cocg,
                               int                    hyd_p_flag,
@@ -130,14 +130,14 @@ cs_f_field_gradient_potential(int                    f_id,
 void
 cs_f_field_gradient_vector(int                     f_id,
                            int                     use_previous_t,
-                           int                     imrgra,
+                           int                     imrgr0,
                            int                     inc,
                            cs_real_33_t  *restrict grad);
 
 void
 cs_f_field_gradient_tensor(int                     f_id,
                            int                     use_previous_t,
-                           int                     imrgra,
+                           int                     imrgr0,
                            int                     inc,
                            cs_real_63_t  *restrict grad);
 
@@ -365,7 +365,7 @@ _local_extrema_scalar(const cs_real_t *restrict pvar,
  * parameters:
  *   f_id           <-- field id
  *   use_previous_t <-- should we use values from the previous time step ?
- *   imrgra         <-- gradient reconstruction mode
+ *   imrgr0         <-- ignored
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   recompute_cocg <-- should COCG FV quantities be recomputed ?
  *   grad           --> gradient
@@ -374,7 +374,7 @@ _local_extrema_scalar(const cs_real_t *restrict pvar,
 void
 cs_f_field_gradient_scalar(int                    f_id,
                            int                    use_previous_t,
-                           int                    imrgra,
+                           int                    imrgr0,
                            int                    inc,
                            int                    recompute_cocg,
                            cs_real_3_t  *restrict grad)
@@ -398,7 +398,7 @@ cs_f_field_gradient_scalar(int                    f_id,
  * parameters:
  *   f_id           <-- field id
  *   use_previous_t <-- should we use values from the previous time step ?
- *   imrgra         <-- gradient reconstruction mode
+ *   imrgr0         <-- ignored
  *   halo_type      <-- halo type
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   recompute_cocg <-- should COCG FV quantities be recomputed ?
@@ -410,7 +410,7 @@ cs_f_field_gradient_scalar(int                    f_id,
 void
 cs_f_field_gradient_potential(int                    f_id,
                               int                    use_previous_t,
-                              int                    imrgra,
+                              int                    imrgr0,
                               int                    inc,
                               int                    recompute_cocg,
                               int                    hyd_p_flag,
@@ -419,9 +419,6 @@ cs_f_field_gradient_potential(int                    f_id,
 {
   bool _use_previous_t = use_previous_t ? true : false;
   bool _recompute_cocg = recompute_cocg ? true : false;
-
-  if (imrgra < 0)
-    imrgra = 0;
 
   const cs_field_t *f = cs_field_by_id(f_id);
 
@@ -441,7 +438,7 @@ cs_f_field_gradient_potential(int                    f_id,
  * parameters:
  *   f_id           <-- field id
  *   use_previous_t <-- should we use values from the previous time step ?
- *   imrgra         <-- gradient reconstruction mode
+ *   imrgr0         <-- ignored
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   recompute_cocg <-- should COCG FV quantities be recomputed ?
  *   grad           --> gradient
@@ -450,7 +447,7 @@ cs_f_field_gradient_potential(int                    f_id,
 void
 cs_f_field_gradient_vector(int                     f_id,
                            int                     use_previous_t,
-                           int                     imrgra,
+                           int                     imrgr0,
                            int                     inc,
                            cs_real_33_t  *restrict grad)
 {
@@ -471,7 +468,7 @@ cs_f_field_gradient_vector(int                     f_id,
  * parameters:
  *   f_id           <-- field id
  *   use_previous_t <-- should we use values from the previous time step ?
- *   imrgra         <-- gradient reconstruction mode
+ *   imrgr0         <-- ignored
  *   inc            <-- if 0, solve on increment; 1 otherwise
  *   recompute_cocg <-- should COCG FV quantities be recomputed ?
  *   grad           --> gradient
@@ -480,7 +477,7 @@ cs_f_field_gradient_vector(int                     f_id,
 void
 cs_f_field_gradient_tensor(int                     f_id,
                            int                     use_previous_t,
-                           int                     imrgra,
+                           int                     imrgr0,
                            int                     inc,
                            cs_real_63_t  *restrict grad)
 {

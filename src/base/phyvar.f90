@@ -140,7 +140,7 @@ ipass = ipass + 1
 
 if (iperot.gt.0 .and. itytur.eq.3) then
   call field_get_key_struct_var_cal_opt(ivarfl(ir11), vcopt)
-  call perinr(imrgra, vcopt%iwarni, vcopt%epsrgr, vcopt%extrag)
+  call perinr(vcopt%imrgra, vcopt%iwarni, vcopt%epsrgr, vcopt%extrag)
 endif
 
 !===============================================================================
@@ -356,9 +356,7 @@ elseif (itytur.eq.3) then
     inc    = 1
     iccocg = 1
 
-    call field_gradient_scalar(ivarfl(ial), iprev, imrgra, inc,     &
-                               iccocg,                              &
-                               grad)
+    call field_gradient_scalar(ivarfl(ial), iprev, 0, inc, iccocg, grad)
   endif
 
   do iel = 1, ncel

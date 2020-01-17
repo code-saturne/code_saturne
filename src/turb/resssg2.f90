@@ -133,7 +133,7 @@ integer          ii    , jj    , kk    , iiun  , iii   , jjj
 integer          iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
-integer          nswrsp, ircflp, ischcp, isstpp
+integer          imrgrp, nswrsp, ircflp, ischcp, isstpp
 integer          st_prv_id
 integer          iprev , inc, iccocg, ll
 integer          idftnp, iswdyp
@@ -431,9 +431,7 @@ if (iturb.eq.32) then
   inc    = 1
   iccocg = 1
 
-  call field_gradient_scalar(ivarfl(ial), iprev, imrgra, inc,     &
-                             iccocg,                              &
-                             grad)
+  call field_gradient_scalar(ivarfl(ial), iprev, 0, inc, iccocg, grad)
 
 endif
 
@@ -1030,6 +1028,7 @@ endif
 iconvp = vcopt%iconv
 idiffp = vcopt%idiff
 ndircp = vcopt%ndircl
+imrgrp = vcopt%imrgra
 nswrsp = vcopt%nswrsm
 nswrgp = vcopt%nswrgr
 imligp = vcopt%imligr
@@ -1056,7 +1055,7 @@ call field_get_coefbf_v(ivarfl(ivar), cofbfp)
 
 call coditts &
  ( idtvar , ivarfl(ivar)    , iconvp , idiffp , ndircp ,          &
-   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
+   imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , idftnp , iswdyp ,                            &
    iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp ,                   &

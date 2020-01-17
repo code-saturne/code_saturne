@@ -101,8 +101,7 @@ allocate(gradv(3, 3, ncelet))
 inc = 1
 iprev = 1
 
-call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
-                           gradv)
+call field_gradient_vector(ivarfl(iu), iprev, 0, inc, gradv)
 
 d1s2 = .5d0
 d2s3 = 2.d0/3.d0

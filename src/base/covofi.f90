@@ -153,7 +153,7 @@ integer          iiscav
 integer          ifcvsl, iflmas, iflmab, f_oi_id
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
-integer          nswrsp, ircflp, ischcp, isstpp, iescap
+integer          imrgrp, nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imucpp, idftnp, iswdyp
 integer          iflid , f_id, st_prv_id, st_id,  keydri, iscdri
 integer          f_id_al
@@ -758,6 +758,7 @@ if (itspdv.eq.1) then
 
     call field_get_key_struct_var_cal_opt(ivarfl(ivarsc), vcopt_varsc)
 
+    imrgrp = vcopt_varsc%imrgra
     nswrgp = vcopt_varsc%nswrgr
     imligp = vcopt_varsc%imligr
     iwarnp = vcopt_varsc%iwarni
@@ -766,7 +767,7 @@ if (itspdv.eq.1) then
     extrap = vcopt_varsc%extrag
 
     call gradient_s                                                          &
-     ( ivarfl(ivarsc)  , imrgra , inc    , iccocg , nswrgp , imligp ,        &
+     ( ivarfl(ivarsc)  , imrgrp , inc    , iccocg , nswrgp , imligp ,        &
        iwarnp          , epsrgp , climgp , extrap ,                          &
        cvara_varsca    , coefa_p, coefb_p,                                   &
        grad )
@@ -1265,6 +1266,7 @@ idiffp = vcopt%idiff
 idftnp = vcopt%idften
 ndircp = vcopt%ndircl
 nswrsp = vcopt%nswrsm
+imrgrp = vcopt%imrgra
 nswrgp = vcopt%nswrgr
 imligp = vcopt%imligr
 ircflp = vcopt%ircflu
@@ -1292,7 +1294,7 @@ call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 call codits &
 !==========
  ( idtvar , iterns , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
-   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
+   imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &

@@ -124,7 +124,7 @@ integer          iiscav
 integer          ifcvsl, iflmas, iflmab
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
-integer          nswrsp, ircflp, ischcp, isstpp, iescap, ivissv
+integer          imrgrp, nswrsp, ircflp, ischcp, isstpp, iescap, ivissv
 integer          idftnp, iswdyp
 integer          iflid , st_prv_id, st_id,  keydri, iscdri
 integer          icvflb, f_dim, iflwgr
@@ -637,6 +637,7 @@ idftnp = vcopt%idften
 ndircp = vcopt%ndircl
 nswrsp = vcopt%nswrsm
 nswrgp = vcopt%nswrgr
+imrgrp = vcopt%imrgra
 imligp = vcopt%imligr
 ircflp = vcopt%ircflu
 ischcp = vcopt%ischcv
@@ -663,7 +664,7 @@ call field_get_coefbf_v(iflid, cofbfp)
 call coditv &
 !==========
  ( idtvar , iterns , iflid  , iconvp , idiffp , ndircp ,          &
-   imrgra , nswrsp , nswrgp , imligp , ircflp , ivissv ,          &
+   imrgrp , nswrsp , nswrgp , imligp , ircflp , ivissv ,          &
    ischcp , isstpp , iescap , idftnp , iswdyp ,                   &
    iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp ,                   &

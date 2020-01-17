@@ -79,7 +79,7 @@ integer          iel   , ifac
 integer          inc   , iccocg, f_id
 integer          mmprpl, nswrsp
 integer          imucpp, idftnp
-integer          nswrgp
+integer          imrgrp, nswrgp
 integer          icvflb, iescap, imligp, ircflp, iswdyp, isstpp, ischcp, iwarnp
 integer          ivoid(1)
 integer          init, counter
@@ -231,6 +231,7 @@ iconvp = vcopt%iconv
 idiffp = vcopt%idiff
 idftnp = vcopt%idften
 nswrsp = vcopt%nswrsm
+imrgrp = vcopt%imrgra
 nswrgp = vcopt%nswrgr
 imligp = vcopt%imligr
 ircflp = vcopt%ircflu
@@ -268,7 +269,7 @@ enddo
 
 call codits &
  ( idtvar , init, f_id   , iconvp , idiffp , ndircp ,             &
-   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
+   imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
@@ -339,7 +340,7 @@ allocate(grad(3,ncelet))
 inc    = 1
 iccocg = 1
 
-call field_gradient_scalar(f_id, 0, imrgra, inc, iccocg, grad)
+call field_gradient_scalar(f_id, 0, 0, inc, iccocg, grad)
 
 counter = 0
 do iel = 1, ncel

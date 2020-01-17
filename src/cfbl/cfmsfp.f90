@@ -107,7 +107,7 @@ double precision vela  (3  ,ncelet)
 
 integer          ifac  , iel, ischcp, idftnp, ircflp
 integer          init  , inc   , iccocg, isstpp
-integer          nswrgp, imligp, iwarnp, iconvp, idiffp
+integer          imrgrp, nswrgp, imligp, iwarnp, iconvp, idiffp
 integer          icvflb, f_id0
 integer          isou  , jsou
 integer          iflmb0, itypfl
@@ -238,6 +238,7 @@ if (itsqdm.ne.0) then
   inc    = 1
   iccocg = 1
   iflmb0 = 1
+  imrgrp = vcopt_u%imrgra
   nswrgp = vcopt_u%nswrgr
   imligp = vcopt_u%imligr
   iwarnp = vcopt_u%iwarni
@@ -253,7 +254,7 @@ if (itsqdm.ne.0) then
   call inimav                                                   &
   !==========
 ( ivarfl(iu)      , itypfl ,                                     &
-  iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+  iflmb0 , init   , inc    , imrgrp , nswrgp , imligp ,          &
   iwarnp ,                                                       &
   epsrgp , climgp ,                                              &
   crom, brom,                                                    &
@@ -338,7 +339,7 @@ if (itsqdm.ne.0) then
   call bilscv &
   !==========
 ( idtvar , ivarfl(iu)      , iconvp , idiffp , nswrgp , imligp , ircflp , &
-  ischcp , isstpp , inc    , imrgra , ivisse ,                            &
+  ischcp , isstpp , inc    , imrgrp , ivisse ,                            &
   iwarnp , idftnp , imasac ,                                              &
   blencp , epsrgp , climgp , relaxp , thetap ,                            &
   vela   , vela   ,                                                       &
@@ -409,6 +410,7 @@ iccocg = 1
 iflmb0 = 1
 ! Reconstruction is useless here
 nswrgp = 0 ! FIXME
+imrgrp = vcopt_p%imrgra
 imligp = vcopt_p%imligr
 iwarnp = vcopt_p%iwarni
 epsrgp = vcopt_p%epsrgr
@@ -430,7 +432,7 @@ enddo
 call inimav                                                      &
 !==========
 ( f_id0  , itypfl ,                                              &
-  iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+  iflmb0 , init   , inc    , imrgrp , nswrgp , imligp ,          &
   iwarnp ,                                                       &
   epsrgp , climgp ,                                              &
   crom, brom,                                                    &
@@ -446,7 +448,7 @@ inc    = 1
 call inimav                                                      &
 !==========
 ( ivarfl(iu)      , itypfl ,                                     &
-  iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+  iflmb0 , init   , inc    , imrgrp , nswrgp , imligp ,          &
   iwarnp ,                                                       &
   epsrgp , climgp ,                                              &
   crom, brom,                                                    &

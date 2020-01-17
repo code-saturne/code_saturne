@@ -167,9 +167,7 @@ iivar = itpp
 ! computes the turbulent production/destruction terms:
 ! dry atmo: (1/turb_schmidt*theta)*(dtheta/dz)*gz
 
-call field_gradient_scalar(ivarfl(iivar), 1, imrgra, inc,           &
-                           iccocg,                                  &
-                           grad)
+call field_gradient_scalar(ivarfl(iivar), 1, 0, inc, iccocg, grad)
 
 ! Production and gravity terms
 ! TINSTK=P+G et TINSTE = P + (1-CE3)*G
@@ -264,9 +262,7 @@ iivar = itpp
 ! computes the turbulent production/destruction terms:
 ! humid atmo: (1/turb_schmidt*theta_v)*(dtheta_l/dz)*gz
 
-call field_gradient_scalar(ivarfl(iivar), 1, imrgra, inc,           &
-                           iccocg,                                  &
-                           grad)
+call field_gradient_scalar(ivarfl(iivar), 1, 0, inc, iccocg, grad)
 
 ! Production and gravity terms
 ! TINSTK = P + G et TINSTE = P + (1-CE3)*G
@@ -299,9 +295,7 @@ iivar = iqw
 ! computes the turbulent production/destruction terms:
 ! humid atmo: (1/turb_schmidt*theta_v)*(dtheta_l/dz)*gz
 
-call field_gradient_scalar(ivarfl(iivar), 1, imrgra, inc,           &
-                           iccocg,                                  &
-                           grad)
+call field_gradient_scalar(ivarfl(iivar), 1, 0, inc, iccocg, grad)
 
 ! Production and gravity terms
 ! TINSTK = P + G et TINSTE = P + (1-CE3)*G

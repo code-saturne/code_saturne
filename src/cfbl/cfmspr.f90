@@ -102,7 +102,7 @@ integer          ifac  , iel
 integer          init  , inc   , iccocg, ii, jj
 integer          iflmas, iflmab
 integer          iphydp, icvflb
-integer          nswrgp, imligp, iwarnp
+integer          imrgrp, nswrgp, imligp, iwarnp
 integer          istatp, iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          ivoid(1)
@@ -328,6 +328,7 @@ iconvp = vcopt_p%iconv
 idiffp = vcopt_p%idiff
 ndircp = vcopt_p%ndircl
 nswrsp = vcopt_p%nswrsm
+imrgrp = vcopt_p%imrgra
 nswrgp = vcopt_p%nswrgr
 imligp = vcopt_p%imligr
 ircflp = vcopt_p%ircflu
@@ -351,7 +352,7 @@ normp = -1.d0
 
 call codits                                                                    &
 ( idtvar , init   , ivarfl(ipr)     , iconvp , idiffp , ndircp ,               &
-  imrgra , nswrsp , nswrgp , imligp , ircflp ,                                 &
+  imrgrp , nswrsp , nswrgp , imligp , ircflp ,                                 &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,                        &
   iwarnp , normp  ,                                                            &
   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,                        &
@@ -413,7 +414,7 @@ iphydp = 0
 ! This flux is stored as the mass flux of the energy
 
 call itrmas                                                                    &
-( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp ,               &
+( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp ,               &
   iphydp , 0      , iwarnp ,                                                   &
   epsrgp , climgp , extrap ,                                                   &
   rvoid  ,                                                                     &

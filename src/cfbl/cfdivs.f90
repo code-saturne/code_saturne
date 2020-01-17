@@ -142,8 +142,7 @@ endif
 inc = 1
 iprev = 1
 
-call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
-                           gradv)
+call field_gradient_vector(ivarfl(iu), iprev, 0, inc, gradv)
 
 ! --- Compute the vector \tens{\sigma}.\vect{v}
 !     i.e. sigma_ij v_j e_i

@@ -105,7 +105,7 @@ integer          ifac  , iel
 integer          init  , iii
 integer          ifcvsl, iflmas, iflmab
 integer          icvflb
-integer          nswrgp, imligp, iwarnp
+integer          imrgrp, nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 double precision epsrgp, climgp, extrap, blencp, epsilp
@@ -447,6 +447,7 @@ if (vcopt_e%idiff.ge. 1) then
   iii = iu
   inc = 1
   iccocg = 1
+  imrgrp = vcopt_u%imrgra
   nswrgp = vcopt_u%nswrgr
   imligp = vcopt_u%imligr
   iwarnp = vcopt_u%iwarni
@@ -468,7 +469,7 @@ if (vcopt_e%idiff.ge. 1) then
   f_id0 = -1
   call gradient_s                                                   &
   !==========
-   ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+   ( f_id0  , imrgrp , inc    , iccocg , nswrgp , imligp ,          &
      iwarnp , epsrgp , climgp , extrap ,                            &
      w7     , coefap , coefbp ,                                     &
      grad   )
@@ -540,7 +541,7 @@ if (vcopt_e%idiff.ge. 1) then
       cvk = cpk - cs_physical_constants_r/mk
 
       use_previous = 0
-      call field_gradient_scalar(ivarfl(ivarsp), use_previous, imrgra, inc, &
+      call field_gradient_scalar(ivarfl(ivarsp), use_previous, 0, inc, &
                                  iccocg, grad)
 
       do ifac = 1, nfac
@@ -652,7 +653,7 @@ if (vcopt_e%idiff.ge. 1) then
     allocate(grad_dd(nfabor), btemp(nfabor))
 
     use_previous = 0
-    call field_gradient_scalar(ivarfl(isca(itempk)), use_previous, imrgra, inc,&
+    call field_gradient_scalar(ivarfl(isca(itempk)), use_previous, 0, inc,&
                                iccocg, grad)
 
     do ifac = 1, nfabor
@@ -676,7 +677,7 @@ if (vcopt_e%idiff.ge. 1) then
       cvk = cpk - cs_physical_constants_r/mk
 
       use_previous = 0
-      call field_gradient_scalar(ivarfl(ivarsp), use_previous, imrgra, inc, &
+      call field_gradient_scalar(ivarfl(ivarsp), use_previous, 0, inc, &
                                  iccocg, grad)
 
       do ifac = 1, nfabor
@@ -738,6 +739,7 @@ endif
 iconvp = vcopt_e%iconv
 idiffp = vcopt_e%idiff
 ndircp = vcopt_e%ndircl
+imrgrp = vcopt_e%imrgra
 nswrsp = vcopt_e%nswrsm
 nswrgp = vcopt_e%nswrgr
 imligp = vcopt_e%imligr
@@ -772,7 +774,7 @@ call field_get_coefbf_s(ivarfl(ivar), cofbfp)
 call codits                                                      &
 !==========
 ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
-  imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
+  imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
   ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
   iwarnp , normp  ,                                              &
   blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &

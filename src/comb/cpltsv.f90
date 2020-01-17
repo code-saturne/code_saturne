@@ -100,7 +100,7 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 integer          ivar   , ivarsc , ivarut, f_id0
 integer          iel, ifac
 integer          icha
-integer          inc , iccocg , nswrgp , imligp , iwarnp
+integer          inc , iccocg , imrgrp , nswrgp , imligp , iwarnp
 
 double precision xk , xe , rhovst
 double precision epsrgp , climgp , extrap
@@ -180,6 +180,7 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
     ivarut = isca(if3m)
   endif
   call field_get_key_struct_var_cal_opt(ivarfl(ivarut), vcopt)
+  imrgrp = vcopt%imrgra
   nswrgp = vcopt%nswrgr
   imligp = vcopt%imligr
   iwarnp = vcopt%iwarni
@@ -245,7 +246,7 @@ if ( itytur.eq.2 .or. itytur.eq.3                   &
   f_id0 = -1
 
   call gradient_s                                                 &
- ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( f_id0  , imrgrp , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , epsrgp , climgp , extrap ,                            &
    w7     , coefap , coefbp ,                                     &
    grad   )

@@ -71,7 +71,7 @@ double precision c_durbin_l
 integer          iel
 integer          ii    , jj    , ifac
 integer          iflmas, iflmab
-integer          nswrgp, imligp, iwarnp
+integer          imrgrp, nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          imucpp, idftnp, iswdyp
@@ -229,6 +229,7 @@ idiffp = vcopt%idiff
 ndircp = vcopt%ndircl ! Diagonal reinforcement: same as dynamic Alpha
 nswrsp = vcopt%nswrsm
 nswrgp = vcopt%nswrgr
+imrgrp = vcopt%imrgra
 imligp = vcopt%imligr
 ircflp = vcopt%ircflu
 ischcp = vcopt%ischcv
@@ -254,7 +255,7 @@ init   = 1
 
 call codits &
  ( idtvar , init   , f_id   , iconvp , idiffp , ndircp ,          &
-   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
+   imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &

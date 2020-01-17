@@ -89,7 +89,7 @@ integer          ivar
 integer          ifac  , iel
 integer          init  , inc   , iccocg
 integer          ifcvsl, iflmas, iflmab
-integer          nswrgp, imligp, iwarnp
+integer          imrgrp, nswrgp, imligp, iwarnp
 integer          iconvp, idiffp
 integer          ircflp, ischcp, isstpp
 integer          isou  , jsou
@@ -394,6 +394,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
     iphydp = 0
     inc    = 1
     iccocg = 1
+    imrgrp = vcopt%imrgra
     nswrgp = vcopt%nswrgr
     imligp = vcopt%imligr
     iwarnp = vcopt%iwarni
@@ -429,7 +430,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
     ! The computed convective flux has the dimension of rho*velocity
     call itrmas &
-   ( f_id0  , init , inc , imrgra , iccocg , nswrgp , imligp , iphydp ,      &
+   ( f_id0  , init , inc , imrgrp , iccocg , nswrgp , imligp , iphydp ,      &
      0      , iwarnp ,                                                       &
      epsrgp , climgp , extrap ,                                              &
      rvoid  ,                                                                &
@@ -460,6 +461,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
     iconvp = 1
     idiffp = 0
+    imrgrp = vcopt_u%imrgra
     nswrgp = vcopt_u%nswrgr
     imligp = vcopt_u%imligr
     ircflp = vcopt_u%ircflu
@@ -500,7 +502,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
     ! Warning: bilsc adds "-( grad(u) . rho u)"
     call bilscv &
    ( idtvar , ivarfl(iu)      , iconvp , idiffp , nswrgp , imligp , ircflp , &
-     ischcp , isstpp , inc    , imrgra , ivisep ,                            &
+     ischcp , isstpp , inc    , imrgrp , ivisep ,                            &
      iwarnp , idftnp , imasac ,                                              &
      blencp , epsrgp , climgp , relaxp , thetap ,                            &
      vel    , vel    ,                                                       &
@@ -567,6 +569,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
     inc    = 1
     iflmb0 = 0
     itypfl = 0 ! drift has already been multiplied by rho
+    imrgrp = vcopt%imrgra
     nswrgp = vcopt%nswrgr
     imligp = vcopt%imligr
     iwarnp = vcopt%iwarni
@@ -576,7 +579,7 @@ if (btest(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)) then
 
     call inimav &
      ( f_id0  , itypfl ,                                              &
-       iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+       iflmb0 , init   , inc    , imrgrp , nswrgp , imligp ,          &
        iwarnp ,                                                       &
        epsrgp , climgp ,                                              &
        crom   , brom   ,                                              &

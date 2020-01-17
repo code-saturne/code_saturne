@@ -83,7 +83,7 @@ double precision smbrs(ncelet)
 
 integer          ifac, init, inc, iprev
 integer          iccocg,iflmb0
-integer          nswrgp, imligp, iwarnp
+integer          imrgrp, nswrgp, imligp, iwarnp
 integer          itypfl
 integer          ivar , iel, ii, jj
 integer          itt
@@ -160,10 +160,7 @@ iprev = 1
 iccocg = 1
 inc = 1
 
-call field_gradient_scalar( &
-  ivarfl(ivar)    , iprev, imrgra, inc    , &
-  iccocg ,                                  &
-  gradt  )
+call field_gradient_scalar(ivarfl(ivar), iprev, 0, inc, iccocg, gradt)
 
 ! Name of the scalar ivar
 call field_get_name(ivarfl(ivar), fname)
@@ -185,10 +182,7 @@ if (iturt(iscal).eq.11 .or. iturt(iscal).eq.21 .or. iturt(iscal).eq.31) then
 
   allocate(grad_al(3,ncelet))
 
-  call field_gradient_scalar( &
-    f_id_al , iprev, imrgra, inc    , &
-    iccocg ,                          &
-    grad_al)
+  call field_gradient_scalar(f_id_al, iprev, 0, inc, iccocg, grad_al)
 
 endif
 
@@ -198,8 +192,7 @@ inc    = 1
 
 ! WARNING: gradv(xyz, uvw, iel)
 
-call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,  &
-                           gradv)
+call field_gradient_vector(ivarfl(iu), iprev, 0, inc, gradv)
 
 ! Find the variance of the thermal scalar
 itt = -1
@@ -484,6 +477,7 @@ if (ityturt(iscal).ne.3) then
   iflmb0 = 1
   init   = 1
   inc    = 1
+  imrgrp = vcopt%imrgra
   nswrgp = vcopt%nswrgr
   imligp = vcopt%imligr
   iwarnp = vcopt%iwarni
@@ -509,7 +503,7 @@ if (ityturt(iscal).ne.3) then
 
   call inimav &
   ( f_id0  , itypfl ,                                     &
-    iflmb0 , init   , inc    , imrgra , nswrgp  , imligp, &
+    iflmb0 , init   , inc    , imrgrp , nswrgp  , imligp, &
     iwarnp ,                                              &
     epsrgp , climgp ,                                     &
     crom   , brom   ,                                     &
@@ -540,6 +534,7 @@ else
   iflmb0 = 1
   init   = 1
   inc    = 1
+  imrgrp = vcopt%imrgra
   nswrgp = vcopt%nswrgr
   imligp = vcopt%imligr
   iwarnp = vcopt%iwarni
@@ -562,7 +557,7 @@ else
 
   call inimav &
   ( f_id0  , itypfl ,                                     &
-    iflmb0 , init   , inc    , imrgra , nswrgp  , imligp, &
+    iflmb0 , init   , inc    , imrgrp , nswrgp  , imligp, &
     iwarnp ,                                              &
     epsrgp , climgp ,                                     &
     crom   , brom   ,                                     &

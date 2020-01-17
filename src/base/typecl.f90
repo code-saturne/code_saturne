@@ -757,8 +757,8 @@ if (itbslb.gt.0.and.iilagr.ne.3) then
 
   call grdpor(inc)
 
-  call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,      &
-                                iccocg, iphydr,                       &
+  call field_gradient_potential(ivarfl(ipr), iprev, 0, inc,      &
+                                iccocg, iphydr,                  &
                                 frcxt, grad)
 
   ! Put in pripb the value at I' or F (depending on iphydr) of the

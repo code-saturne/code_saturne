@@ -255,14 +255,10 @@ iccocg = 1
 inc = 1
 
 ! computation of grad(theta_l)
-call field_gradient_scalar(ivarfl(isca(iscalt)), 1, imrgra, inc,    &
-                           iccocg,                                  &
-                           dtlsd)
+call field_gradient_scalar(ivarfl(isca(iscalt)), 1, 0, inc, iccocg, dtlsd)
 
 ! computation of grad(qw)
-call field_gradient_scalar(ivarfl(isca(iymw)), 1, imrgra, inc,      &
-                           iccocg,                                  &
-                           dqsd)
+call field_gradient_scalar(ivarfl(isca(iymw)), 1, 0, inc, iccocg, dqsd)
 
 
 call field_get_val_s(ivarfl(ik), cvar_k)

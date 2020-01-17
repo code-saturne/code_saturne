@@ -106,7 +106,7 @@ character(len=80) :: chaine
 integer          iel   , ifac  , init  , inc   , iccocg, ivar
 integer          f_id0 , iiun  , f_id
 integer          iclip
-integer          nswrgp, imligp
+integer          imrgrp, nswrgp, imligp
 integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          iflmas, iflmab
@@ -332,9 +332,7 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.51) then
   inc    = 1
   iccocg = 1
 
-  call field_gradient_scalar(ivarfl(ial), iprev, imrgra, inc,     &
-                             iccocg,                              &
-                             grad)
+  call field_gradient_scalar(ivarfl(ial), iprev, 0, inc, iccocg, grad)
 
   call field_get_val_s(ivarfl(iep), cvar_ep)
   call field_get_val_v(ivarfl(iu), vel)
@@ -416,8 +414,7 @@ allocate(gradv(3, 3, ncelet))
 inc = 1
 iprev = 1
 
-call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
-                           gradv)
+call field_gradient_vector(ivarfl(iu), iprev, 0, inc, gradv)
 
 ! strain = Stain rate of the deviatoric part of the strain tensor
 !        = 2 (Sij^D).(Sij^D)
@@ -669,8 +666,7 @@ else if (igrake.eq.1) then
     iccocg = 1
     inc = 1
 
-    call field_gradient_scalar(ivarfl(isca(iscalt)), 1, imrgra, inc, iccocg, &
-                               grad)
+    call field_gradient_scalar(ivarfl(isca(iscalt)), 1, 0, inc, iccocg, grad)
 
     !FIXME make it dependant on the scalar and use is_buoyant field
     call field_get_val_s(ibeta, cpro_beta)
@@ -684,6 +680,7 @@ else if (igrake.eq.1) then
   else
     iccocg = 1
     inc = 1
+    imrgrp = vcopt_k%imrgra
     nswrgp = vcopt_k%nswrgr
     epsrgp = vcopt_k%epsrgr
     imligp = vcopt_k%imligr
@@ -699,7 +696,7 @@ else if (igrake.eq.1) then
     f_id0 = -1
 
     call gradient_s                                                 &
-   ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+   ( f_id0  , imrgrp , inc    , iccocg , nswrgp , imligp ,          &
      iwarnp , epsrgp , climgp , extrap ,                            &
      cromo  , bromo  , viscb  ,                                     &
      grad   )
@@ -792,6 +789,7 @@ if (iturb.eq.51) then
   inc = 1
   init = 1
 
+  imrgrp = vcopt_k%imrgra
   nswrgp = vcopt_k%nswrgr
   imligp = vcopt_k%imligr
   iwarnp = vcopt_k%iwarni
@@ -801,7 +799,7 @@ if (iturb.eq.51) then
   iphydp = 0
 
   call itrgrp &
-( ivarfl(ivar), init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp , &
+( ivarfl(ivar), init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydp , &
   iwarnp ,                                                                     &
   epsrgp , climgp , extrap ,                                                   &
   rvoid  ,                                                                     &
@@ -870,6 +868,7 @@ if (iturb.eq.22) then
 
   iccocg = 1
   inc = 1
+  imrgrp = vcopt_k%imrgra
   nswrgp = vcopt_k%nswrgr
   epsrgp = vcopt_k%epsrgr
   imligp = vcopt_k%imligr
@@ -892,7 +891,7 @@ if (iturb.eq.22) then
 
   f_id0 = -1
   call gradient_s                                               &
-( f_id0   , imrgra     , inc       , iccocg , nswrgp , imligp , &
+( f_id0   , imrgrp     , inc       , iccocg , nswrgp , imligp , &
   iwarnp  , epsrgp     , climgp    , extrap ,                   &
   sqrt_k  , coefa_sqk  , coefb_sqk ,                            &
   grad_sqk   )
@@ -903,6 +902,7 @@ if (iturb.eq.22) then
 
   iccocg = 1
   inc = 1
+  imrgrp = vcopt_k%imrgra
   nswrgp = vcopt_k%nswrgr
   epsrgp = vcopt_k%epsrgr
   imligp = vcopt_k%imligr
@@ -917,7 +917,7 @@ if (iturb.eq.22) then
 
   f_id0 = - 1
   call gradient_s                                                  &
-( f_id0       , imrgra    , inc       , iccocg , nswrgp , imligp , &
+( f_id0       , imrgrp    , inc       , iccocg , nswrgp , imligp , &
   iwarnp      , epsrgp    , climgp    , extrap ,                   &
   sqrt_strain , coefa_sqs , coefb_sqs ,                            &
   grad_sqs   )
@@ -1303,6 +1303,7 @@ if (ikecou.eq.1) then
   iconvp = vcopt_k%iconv
   imasac = 1
   idiffp = vcopt_k%idiff
+  imrgrp = vcopt_k%imrgra
   nswrgp = vcopt_k%nswrgr
   imligp = vcopt_k%imligr
   ircflp = vcopt_k%ircflu
@@ -1322,7 +1323,7 @@ if (ikecou.eq.1) then
 
   call bilsca &
  ( idtvar , ivarfl(ivar)    , iconvp , idiffp , nswrgp , imligp , ircflp , &
-   ischcp , isstpp , inc    , imrgra , iccocg ,                            &
+   ischcp , isstpp , inc    , imrgrp , iccocg ,                            &
    iwarnp , imucpp , idftnp , imasac ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,                   &
    cvara_k         , cvara_k         ,                                     &
@@ -1372,6 +1373,7 @@ if (ikecou.eq.1) then
   iconvp = vcopt_e%iconv
   imasac = 1
   idiffp = vcopt_e%idiff
+  imrgrp = vcopt_e%imrgra
   nswrgp = vcopt_e%nswrgr
   imligp = vcopt_e%imligr
   ircflp = vcopt_e%ircflu
@@ -1391,7 +1393,7 @@ if (ikecou.eq.1) then
 
   call bilsca &
  ( idtvar , ivarfl(ivar)    , iconvp , idiffp , nswrgp , imligp , ircflp , &
-   ischcp , isstpp , inc    , imrgra , iccocg ,                            &
+   ischcp , isstpp , inc    , imrgrp , iccocg ,                            &
    iwarnp , imucpp , idftnp , imasac ,                                     &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,                   &
    cvara_ep        , cvara_ep        ,                                     &
@@ -1541,6 +1543,7 @@ isstpp = vcopt_k%isstpc
 iescap = 0
 imucpp = 0
 idftnp = vcopt_k%idften
+imrgrp = vcopt_k%imrgra
 iswdyp = vcopt_k%iswdyn
 iwarnp = vcopt_k%iwarni
 blencp = vcopt_k%blencv
@@ -1558,7 +1561,7 @@ init   = 1
 
 call codits &
  ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
-   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
+   imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
@@ -1618,6 +1621,7 @@ isstpp = vcopt_e%isstpc
 iescap = 0
 imucpp = 0
 idftnp = vcopt_e%idften
+imrgrp = vcopt_e%imrgra
 iswdyp = vcopt_e%iswdyn
 iwarnp = vcopt_e%iwarni
 blencp = vcopt_e%blencv
@@ -1634,7 +1638,7 @@ normp = -1.d0
 
 call codits &
  ( idtvar , init   , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
-   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
+   imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
    iwarnp , normp  ,                                              &
    blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &

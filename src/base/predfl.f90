@@ -105,7 +105,7 @@ integer          iccocg, inc   , init  , isym
 integer          ii, iel   , ifac
 integer          nswmpr
 integer          isweep, niterf
-integer          nswrgp, imligp, iwarnp
+integer          imrgrp, nswrgp, imligp, iwarnp
 integer          iflmas, iflmab
 integer          idiffp, iconvp, ndircp
 integer          ibsize, iesize, iphydp
@@ -336,6 +336,7 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
     iccocg = 1
     init = 1
     inc  = 0
+    imrgrp = vcopt%imrgra
     nswrgp = vcopt%nswrgr
     imligp = vcopt%imligr
     iwarnp = vcopt%iwarni
@@ -347,7 +348,7 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
 
     call itrgrp &
     !==========
-   ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp ,   &
+   ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydp ,   &
      iwarnp ,                                                                  &
      epsrgp , climgp , extrap ,                                                &
      rvoid  ,                                                                  &
@@ -389,6 +390,7 @@ iccocg = 1
 init = 0
 inc  = 0
 iphydp = 0
+imrgrp = vcopt%imrgra
 nswrgp = vcopt%nswrgr
 imligp = vcopt%imligr
 iwarnp = vcopt%iwarni
@@ -397,7 +399,7 @@ climgp = vcopt%climgr
 extrap = vcopt%extrag
 
 call itrmas &
- ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp ,     &
+ ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydp ,     &
    0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    rvoid  ,                                                                    &
@@ -416,7 +418,7 @@ nswrgp = 0
 inc = 0
 
 call itrmas &
- ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydp ,     &
+ ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydp ,     &
    0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    rvoid  ,                                                                    &

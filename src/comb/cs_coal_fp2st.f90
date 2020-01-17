@@ -86,7 +86,7 @@ double precision smbrs(ncelet), rovsdt(ncelet)
 
 integer           iel    , ifac   , f_id0
 integer           icla   , icha
-integer           inc    , iccocg , nswrgp , imligp , iwarnp
+integer           inc    , iccocg , imrgrp , nswrgp , imligp , iwarnp
 integer           iold
 
 double precision xk     , xe     , rhovst
@@ -160,6 +160,7 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
   iccocg = 1
 ! A defaut de savoir pour F1M+F2M on prend comme pour F1M(1)
   call field_get_key_struct_var_cal_opt(ivarfl(isca(if1m(1))), vcopt)
+  imrgrp = vcopt%imrgra
   nswrgp = vcopt%nswrgr
   imligp = vcopt%imligr
   iwarnp = vcopt%iwarni
@@ -224,7 +225,7 @@ if ( itytur.eq.2 .or. iturb.eq.50 .or.             &
 !              n'est pas Rij)
   f_id0  = -1
   call gradient_s                                                 &
- ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,          &
+ ( f_id0  , imrgrp , inc    , iccocg , nswrgp , imligp ,          &
    iwarnp , epsrgp , climgp , extrap ,                            &
    f1f2   , coefap , coefbp ,                                     &
    grad   )

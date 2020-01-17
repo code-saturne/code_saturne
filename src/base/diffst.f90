@@ -78,7 +78,7 @@ integer          nscal , iterns
 
 integer          ivar  , iel   , ifac  , iscal, f_id0
 integer          nswrgp, imligp, iwarnp
-integer          iccocg, inc
+integer          iccocg, inc, imrgrp
 integer          iconvp, idiffp, ircflp
 integer          ischcp, isstpp
 integer          ifcvsl, iflmas, iflmab
@@ -169,6 +169,7 @@ do iscal = 1, nscal
   blencp = 0.d0
   imasac = 0
   idiffp = 1
+  imrgrp = vcopt%imrgra
   nswrgp = vcopt%nswrgr
   imligp = vcopt%imligr
   ircflp = vcopt%ircflu
@@ -251,7 +252,7 @@ do iscal = 1, nscal
   call bilsca &
   !==========
   ( idtvar , f_id0  , iconvp , idiffp , nswrgp , imligp , ircflp , &
-    ischcp , isstpp , inc    , imrgra , iccocg ,                   &
+    ischcp , isstpp , inc    , imrgrp , iccocg ,                   &
     iwarnp , imucpp , idftnp , imasac ,                            &
     blencp , epsrgp , climgp , extrap , relaxp , thetex ,          &
     cvar_scal       , cvar_scal       ,                            &

@@ -123,7 +123,7 @@ integer          iel
 integer          isou, jsou
 integer          ii    , jj    , kk    , iiun
 integer          iflmas, iflmab
-integer          nswrgp, imligp, iwarnp
+integer          imrgrp, nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp
 integer          st_prv_id
@@ -679,6 +679,7 @@ iconvp = vcopt_rij%iconv
 idiffp = vcopt_rij%idiff
 ndircp = vcopt_rij%ndircl
 nswrsp = vcopt_rij%nswrsm
+imrgrp = vcopt_rij%imrgra
 nswrgp = vcopt_rij%nswrgr
 imligp = vcopt_rij%imligr
 ircflp = vcopt_rij%ircflu
@@ -699,7 +700,7 @@ icvflb = 0
 
 call coditts &
  ( idtvar , ivarfl(irij)    , iconvp , idiffp , ndircp ,          &
-   imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
+   imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
    ischcp , isstpp , idftnp , iswdyp ,                            &
    iwarnp ,                                                       &
    blencp , epsilp , epsrsp , epsrgp , climgp ,                   &

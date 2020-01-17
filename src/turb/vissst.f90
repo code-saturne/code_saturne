@@ -130,8 +130,7 @@ allocate(gradv(3,3,ncelet))
 inc = 1
 iprev = 0
 
-call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
-                           gradv)
+call field_gradient_vector(ivarfl(iu), iprev, 0, inc, gradv)
 
 ! s2kw = Stain rate of the deviatoric part of the s2kw tensor
 !      = 2 (Sij^D).(Sij^D)

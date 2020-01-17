@@ -109,7 +109,7 @@ double precision, dimension(:), pointer :: bromo, cromo
 integer          ifac  , iel   , ivar  , isou
 integer          inc   , iccocg
 integer          iwarnp, iclip
-integer          nswrgp, imligp
+integer          imrgrp, nswrgp, imligp
 integer          f_id0 , f_id
 integer          iprev
 integer          key_t_ext_id
@@ -226,9 +226,7 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1.and.iturb.eq.32) then
   inc    = 1
   iccocg = 1
 
-  call field_gradient_scalar(ivarfl(ial), iprev, imrgra, inc,     &
-                             iccocg,                              &
-                             grad)
+  call field_gradient_scalar(ivarfl(ial), iprev, 0, inc, iccocg, grad)
 
   if (irijco.eq.1) then
     call field_get_val_v(ivarfl(irij), cvar_rij)
@@ -347,8 +345,7 @@ endif
 inc = 1
 iprev = 1
 
-call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
-                           gradv)
+call field_gradient_vector(ivarfl(iu), iprev, 0, inc, gradv)
 
 !===============================================================================
 ! 2.2 Compute the production term for Rij
@@ -467,9 +464,7 @@ if (igrari.eq.1 .and. ippmod(iatmos).ge.1) then
   inc = 1
   iccocg = 1
 
-  call field_gradient_scalar(ivarfl(isca(iscalt)), 1, imrgra, inc, &
-                             iccocg,                               &
-                             gradro)
+  call field_gradient_scalar(ivarfl(isca(iscalt)), 1, 0, inc, iccocg, gradro)
 
   ! gradro stores: - rho grad(theta)/theta
   ! grad(rho) and grad(theta) have opposite signs
@@ -491,8 +486,7 @@ else if (igrari.eq.1) then
     inc = 1
 
     ! Use the current value...
-    call field_gradient_scalar(ivarfl(isca(iscalt)), 0, imrgra, inc, iccocg, &
-                               gradro)
+    call field_gradient_scalar(ivarfl(isca(iscalt)), 0, 0, inc, iccocg, gradro)
 
     !FIXME make it dependant on the scalar and use is_buoyant field
     call field_get_val_s(ibeta, cpro_beta)
@@ -518,6 +512,7 @@ else if (igrari.eq.1) then
     ! The choice below has the advantage to be simple
     call field_get_key_struct_var_cal_opt(ivarfl(irij), vcopt)
 
+    imrgrp = vcopt%imrgra
     nswrgp = vcopt%nswrgr
     imligp = vcopt%imligr
     iwarnp = vcopt%iwarni
@@ -539,7 +534,7 @@ else if (igrari.eq.1) then
     endif
 
     call gradient_s                                                 &
-      ( f_id0  , imrgra , inc    , iccocg , nswrgp , imligp ,       &
+      ( f_id0  , imrgrp , inc    , iccocg , nswrgp , imligp ,       &
       iwarnp , epsrgp , climgp , extrap ,                           &
       cromo  , bromo  , viscb           ,                           &
       gradro )

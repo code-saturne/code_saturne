@@ -98,8 +98,7 @@ call field_get_val_s(icrom, crom)
 inc = 1
 iprev = 0
 
-call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,    &
-                           gradv)
+call field_gradient_vector(ivarfl(iu), iprev, 0, inc, gradv)
 
 do iel = 1, ncel
   visct(iel) = &

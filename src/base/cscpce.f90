@@ -86,7 +86,7 @@ double precision vela(3,ncelet)
 
 integer          ipt    , iel    , isou   , f_id
 integer          inc    , iccocg , nswrgp
-integer          iwarnp , imligp
+integer          iwarnp , imrgrp, imligp
 
 double precision epsrgp , climgp
 double precision dx     , dy     , dz
@@ -104,6 +104,7 @@ call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 
 inc    = 1
 iccocg = 1
+imrgrp = vcopt%imrgra
 nswrgp = vcopt%nswrgr
 imligp = vcopt%imligr
 iwarnp = vcopt%iwarni
@@ -117,7 +118,7 @@ else
 endif
 
 call cgdvec &
-( f_id   , imrgra , inc    , nswrgp , iwarnp , imligp ,          &
+( f_id   , imrgrp , inc    , nswrgp , iwarnp , imligp ,          &
   epsrgp , climgp ,                                              &
   coefav , coefbv , vela   ,                                     &
   gradv)

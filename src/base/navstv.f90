@@ -117,7 +117,7 @@ integer          isou, ivar, iitsm
 integer          init, iautof
 integer          iflmas, iflmab
 integer          iflmb0
-integer          nswrgp, imligp, iwarnp
+integer          imrgrp, nswrgp, imligp, iwarnp
 integer          nbrval, iappel
 integer          ndircp, icpt
 integer          numcpl
@@ -494,6 +494,7 @@ if (iprco.le.0) then
   inc    = 1
   iflmb0 = 1
   if (iale.ge.1) iflmb0 = 0
+  imrgrp = vcopt_u%imrgra
   nswrgp = vcopt_u%nswrgr
   imligp = vcopt_u%imligr
   iwarnp = vcopt_u%iwarni
@@ -502,7 +503,7 @@ if (iprco.le.0) then
 
   call inimav                                                     &
  ( ivarfl(iu)      , itypfl ,                                     &
-   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+   iflmb0 , init   , inc    , imrgrp , nswrgp , imligp ,          &
    iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
    crom   , brom   ,                                              &
@@ -527,6 +528,7 @@ if (iprco.le.0) then
       inc    = 1
       iflmb0 = 1
       call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
+      imrgrp = vcopt%imrgra
       nswrgp = vcopt%nswrgr
       imligp = vcopt%imligr
       iwarnp = vcopt%iwarni
@@ -538,7 +540,7 @@ if (iprco.le.0) then
 
       call inimav &
     ( ivarfl(iuma)    , itypfl ,                                     &
-      iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+      iflmb0 , init   , inc    , imrgrp , nswrgp , imligp ,          &
       iwarnp ,                                                       &
       epsrgp , climgp ,                                              &
       crom, brom,                                                    &
@@ -906,6 +908,7 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
     call grdpor(inc)
 
     if (iphydr.eq.1.or.iifren.eq.1) inc = 1
+    imrgrp = vcopt_p%imrgra
     nswrgp = vcopt_p%nswrgr
     imligp = vcopt_p%imligr
     iwarnp = vcopt_p%iwarni
@@ -918,7 +921,7 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
 
     if (ivofmt.eq.0) then
       call gradient_potential_s &
-       (ivarfl(ipr)     , imrgra , inc    , iccocg , nswrgp , imligp , &
+       (ivarfl(ipr)     , imrgrp , inc    , iccocg , nswrgp , imligp , &
         iphydr , iwarnp , epsrgp , climgp , extrap ,                   &
         dfrcxt ,                                                       &
         phi    , coefa_dp        , coefb_dp        ,                   &
@@ -930,7 +933,7 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
       enddo
 
       call gradient_weighted_s &
-      ( ivarfl(ipr)     , imrgra , inc    , iccocg , nswrgp , imligp , &
+      ( ivarfl(ipr)     , imrgrp , inc    , iccocg , nswrgp , imligp , &
         iphydr, iwarnp  , epsrgp , climgp , extrap , dfrcxt ,          &
         phi    , xinvro , coefa_dp , coefb_dp ,                        &
         gradp  )
@@ -1211,6 +1214,7 @@ if (iale.ge.1) then
     inc    = 1
     iflmb0 = 1
     call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
+    imrgrp = vcopt%imrgra
     nswrgp = vcopt%nswrgr
     imligp = vcopt%imligr
     iwarnp = vcopt%iwarni
@@ -1222,7 +1226,7 @@ if (iale.ge.1) then
 
     call inimav &
   ( ivarfl(iuma)    , itypfl ,                                     &
-    iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+    iflmb0 , init   , inc    , imrgrp , nswrgp , imligp ,          &
     iwarnp ,                                                       &
     epsrgp , climgp ,                                              &
     crom, brom,                                                    &
@@ -1421,6 +1425,7 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
   inc    = 1
   iflmb0 = 1
   if (iale.ge.1) iflmb0 = 0
+  imrgrp = vcopt_u%imrgra
   nswrgp = vcopt_u%nswrgr
   imligp = vcopt_u%imligr
   iwarnp = vcopt_u%iwarni
@@ -1429,7 +1434,7 @@ if (iestim(iescor).ge.0.or.iestim(iestot).ge.0) then
 
   call inimav                                                     &
  ( ivarfl(iu)      , itypfl ,                                     &
-   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+   iflmb0 , init   , inc    , imrgrp , nswrgp , imligp ,          &
    iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
    crom, brom,                                                    &

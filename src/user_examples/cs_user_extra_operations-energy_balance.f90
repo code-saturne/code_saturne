@@ -238,10 +238,7 @@ if (ntcabs.eq.ntpabs) then
     inc = 1
     iccocg = 1
 
-    call field_gradient_scalar &
-    !=========================
-      (ivarfl(ivar), 0, imrgra, inc, iccocg,                               &
-       grad)
+    call field_gradient_scalar(ivarfl(ivar), 0, 0, inc, iccocg, grad)
 
     ! - Compute reconstructed value in boundary cells
 

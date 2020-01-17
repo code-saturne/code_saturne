@@ -181,7 +181,7 @@ integer          itypfl
 integer          isou  , ibsize, iesize
 integer          imucpp, idftnp, iswdyp
 integer          iescap, ircflp, ischcp, isstpp, ivar, f_id0
-integer          nswrsp
+integer          imrgrp, nswrsp
 integer          imvisp, i_vof_mass_transfer
 integer          iflid, iflwgr, f_dim, imasac
 integer          f_id
@@ -801,8 +801,8 @@ call grdpor(inc)
 ! Pressure gradient
 ! NB: for the VOF algo. the weighting is automatically done
 ! thank to the iwgrec variable calculation option.
-call field_gradient_potential(ivarfl(ipr), iprev, imrgra, inc,    &
-                              iccocg, iphydr,                     &
+call field_gradient_potential(ivarfl(ipr), iprev, 0, inc,    &
+                              iccocg, iphydr,                &
                               frcxt, gradp)
 
 if (iphydr.eq.1.and.iporos.eq.3) then
@@ -922,6 +922,7 @@ inc    = 1
 if (idilat.ge.4) inc = 0
 iflmb0 = 1
 if (iale.ge.1) iflmb0 = 0
+imrgrp = vcopt_u%imrgra
 nswrgp = vcopt_u%nswrgr
 imligp = vcopt_u%imligr
 iwarnp = vcopt_p%iwarni
@@ -933,7 +934,7 @@ if (ivofmt.gt.0.or.idilat.eq.4) itypfl = 0
 call inimav &
 !==========
  ( f_id0  , itypfl ,                                              &
-   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+   iflmb0 , init   , inc    , imrgrp , nswrgp , imligp ,          &
    iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
    crom   , brom   ,                                              &
@@ -1028,6 +1029,7 @@ if (arak.gt.0.d0) then
       cpro_visc(iel) = arak*viscap(iel)
     enddo
 
+    imrgrp = vcopt_p%imrgra
     nswrgp = vcopt_p%nswrgr
     imligp = vcopt_p%imligr
     iwarnp = vcopt_p%iwarni
@@ -1036,7 +1038,7 @@ if (arak.gt.0.d0) then
     extrap = vcopt_p%extrag
 
     call itrmas &
- ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
+ ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydr ,     &
    0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    frcxt  ,                                                                    &
@@ -1093,6 +1095,7 @@ if (arak.gt.0.d0) then
       cpro_vitenp(6,iel) = arak*vitenp(6,iel)
     enddo
 
+    imrgrp = vcopt_p%imrgra
     nswrgp = vcopt_p%nswrgr
     imligp = vcopt_p%imligr
     iwarnp = vcopt_p%iwarni
@@ -1103,7 +1106,7 @@ if (arak.gt.0.d0) then
 
     call itrmav &
     !==========
- ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+ ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , ircflp , &
    iphydr , 0      , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                              &
    frcxt  ,                                                                &
@@ -1195,6 +1198,7 @@ if (idilat.ge.4) then
   inc    = 1
   iflmb0 = 1
   if (iale.ge.1) iflmb0 = 0
+  imrgrp = vcopt_u%imrgra
   nswrgp = vcopt_u%nswrgr
   imligp = vcopt_u%imligr
   iwarnp = vcopt_p%iwarni
@@ -1206,7 +1210,7 @@ if (idilat.ge.4) then
   call inimav &
   !==========
  ( ivarfl(iu)      , itypfl ,                                     &
-   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+   iflmb0 , init   , inc    , imrgrp , nswrgp , imligp ,          &
    iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
    crom, brom   ,                                                 &
@@ -1244,6 +1248,7 @@ if (idilat.ge.4) then
   inc    = 1
   iflmb0 = 1
   if (iale.ge.1) iflmb0 = 0
+  imrgrp = vcopt_u%imrgra
   nswrgp = vcopt_u%nswrgr
   imligp = vcopt_u%imligr
   iwarnp = vcopt_p%iwarni
@@ -1256,7 +1261,7 @@ if (idilat.ge.4) then
   call inimav &
   !==========
  ( ivarfl(iu)      , itypfl ,                                     &
-   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+   iflmb0 , init   , inc    , imrgrp , nswrgp , imligp ,          &
    iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
    crom, brom   ,                                                 &
@@ -1359,6 +1364,7 @@ inc    = 1
 iflmb0 = 1
 if (iale.ge.1) iflmb0 = 0
 nswrgp = 1
+imrgrp = vcopt_p%imrgra
 imligp = vcopt_u%imligr
 iwarnp = vcopt_p%iwarni
 epsrgp = vcopt_u%epsrgr
@@ -1370,7 +1376,7 @@ if (idilat.ge.4.or.ivofmt.gt.0) itypfl = 0
 
 call inimav &
 (f_id0  , itypfl ,                                              &
- iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+ iflmb0 , init   , inc    , imrgrp , nswrgp , imligp ,          &
  iwarnp ,                                                       &
  epsrgp , climgp ,                                              &
  crom   , brom   ,                                              &
@@ -1439,6 +1445,7 @@ if (iswdyp.ge.1) then
   init = 1
   inc  = 0
   if (iphydr.eq.1.or.iifren.eq.1) inc = 1
+  imrgrp = vcopt_p%imrgra
   nswrgp = vcopt_p%nswrgr
   imligp = vcopt_p%imligr
   iwarnp = vcopt_p%iwarni
@@ -1451,7 +1458,7 @@ if (iswdyp.ge.1) then
 
     call itrgrp &
     !==========
- ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
+ ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydr ,     &
    iwarnp ,                                                                    &
    epsrgp , climgp , extrap ,                                                  &
    dfrcxt ,                                                                    &
@@ -1466,7 +1473,7 @@ if (iswdyp.ge.1) then
 
     call itrgrv &
     !==========
- ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+ ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , ircflp , &
    iphydr , iwarnp ,                                                       &
    epsrgp , climgp , extrap ,                                              &
    dfrcxt ,                                                                &
@@ -1526,6 +1533,7 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
     init = 0
     inc  = 0
     if (iphydr.eq.1.or.iifren.eq.1) inc = 1
+    imrgrp = vcopt_p%imrgra
     nswrgp = vcopt_p%nswrgr
     imligp = vcopt_p%imligr
     iwarnp = vcopt_p%iwarni
@@ -1537,7 +1545,7 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
 
       call itrgrp &
       !==========
-   ( f_id0           , init   , inc    , imrgra ,              &
+   ( f_id0           , init   , inc    , imrgrp ,              &
      iccocg , nswrgp , imligp , iphydr ,                       &
      iwarnp ,                                                  &
      epsrgp , climgp , extrap ,                                &
@@ -1551,11 +1559,12 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
 
     else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
+      imrgrp = vcopt_p%imrgra
       ircflp = vcopt_p%ircflu
 
       call itrgrv &
       !==========
-   ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+   ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , ircflp , &
      iphydr , iwarnp ,                                                       &
      epsrgp , climgp , extrap ,                                              &
      dfrcxt ,                                                                &
@@ -1660,6 +1669,7 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
   init = 1
   inc  = 0
   if (iphydr.eq.1.or.iifren.eq.1) inc = 1
+  imrgrp = vcopt_p%imrgra
   nswrgp = vcopt_p%nswrgr
   imligp = vcopt_p%imligr
   iwarnp = vcopt_p%iwarni
@@ -1671,7 +1681,7 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
 
     call itrgrp &
     !==========
- ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
+ ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydr ,     &
    iwarnp ,                                                                    &
    epsrgp , climgp , extrap ,                                                  &
    dfrcxt ,                                                                    &
@@ -1688,7 +1698,7 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
 
     call itrgrv &
     !==========
- ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+ ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , ircflp , &
    iphydr , iwarnp ,                                                       &
    epsrgp , climgp , extrap ,                                              &
    dfrcxt ,                                                                &
@@ -1778,6 +1788,7 @@ inc  = 0
 ! In case of hydrostatic pressure, inc is set to 1 to take explicit
 ! boundary conditions on the pressure (coefa)
 if (iphydr.eq.1.or.iifren.eq.1) inc = 1
+imrgrp = vcopt_p%imrgra
 nswrgp = vcopt_p%nswrgr
 imligp = vcopt_p%imligr
 iwarnp = vcopt_p%iwarni
@@ -1788,7 +1799,7 @@ extrap = vcopt_p%extrag
 if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
 
   call itrmas &
- ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
+ ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydr ,     &
    0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    dfrcxt ,                                                                    &
@@ -1806,7 +1817,7 @@ if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
   inc = 0
 
   call itrmas &
- ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
+ ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydr ,     &
    0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    dfrcxt ,                                                                    &
@@ -1823,7 +1834,7 @@ else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
   call itrmav &
   !==========
- ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+ ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , ircflp , &
    iphydr , 0      , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                              &
    dfrcxt ,                                                                &
@@ -1844,7 +1855,7 @@ else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
   call itrmav &
   !==========
- ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+ ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , ircflp , &
    iphydr , 0      , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                              &
    dfrcxt ,                                                                &
@@ -1890,6 +1901,7 @@ if (idilat.eq.5) then
   ! --- Convective flux: dt/rho grad(rho)
   inc = 1
   iccocg = 1
+  imrgrp = vcopt_u%imrgra
   nswrgp = vcopt_u%nswrgr
   imligp = vcopt_u%imligr
   iwarnp = vcopt_p%iwarni
@@ -1908,7 +1920,7 @@ if (idilat.eq.5) then
   enddo
 
   call gradient_s                                                 &
-  (f_id0  , imrgra , inc    , iccocg , nswrgp , imligp , iwarnp , &
+  (f_id0  , imrgrp , inc    , iccocg , nswrgp , imligp , iwarnp , &
    epsrgp , climgp , extrap ,                                     &
    crom   ,                                                       &
    coefa_rho       , coefb_rho       ,                            &
@@ -1929,6 +1941,7 @@ if (idilat.eq.5) then
   inc    = 1
   iflmb0 = 1
   if (iale.ge.1) iflmb0 = 0
+  imrgrp = vcopt_u%imrgra
   nswrgp = vcopt_u%nswrgr
   imligp = vcopt_u%imligr
   iwarnp = vcopt_p%iwarni
@@ -2015,7 +2028,7 @@ if (idilat.eq.5) then
   call inimav &
   !==========
  ( f_id0  , itypfl ,                                              &
-   iflmb0 , init   , inc    , imrgra , nswrgp , imligp ,          &
+   iflmb0 , init   , inc    , imrgrp , nswrgp , imligp ,          &
    iwarnp ,                                                       &
    epsrgp , climgp ,                                              &
    crom, brom   ,                                                 &
@@ -2043,6 +2056,7 @@ if (idilat.eq.5) then
   imasac = 1
   idiffp = 0
   nswrsp = 1
+  imrgrp = vcopt_p%imrgra
   imligp = vcopt_p%imligr
   ircflp = vcopt_p%ircflu
   ischcp = vcopt_p%ischcv
@@ -2064,7 +2078,7 @@ if (idilat.eq.5) then
   call bilsca &
   !==========
  ( idtvar , f_id0  , iconvp , idiffp , nswrgp , imligp , ircflp , &
-   ischcp , isstpp , inc    , imrgra , iccocg ,                   &
+   ischcp , isstpp , inc    , imrgrp , iccocg ,                   &
    iwarnp , imucpp , idftnp , imasac ,                            &
    blencp , epsrgp , climgp , extrap , relaxp , thetap ,          &
    phi    , phi    ,                                              &
@@ -2088,6 +2102,7 @@ if (idilat.eq.5) then
   ! To reinforce the diagonal
   ndircp = 0
   nswrsp = vcopt_p%nswrsm
+  imrgrp = vcopt_p%imrgra
   nswrgp = vcopt_p%nswrgr
   imligp = vcopt_p%imligr
   ircflp = vcopt_p%ircflu
@@ -2119,7 +2134,7 @@ if (idilat.eq.5) then
   call codits &
   !==========
    ( idtvar , iterns , ivarfl(ivar)    , iconvp , idiffp , ndircp , &
-     imrgra , nswrsp , nswrgp , imligp , ircflp ,                   &
+     imrgrp , nswrsp , nswrgp , imligp , ircflp ,                   &
      ischcp , isstpp , iescap , imucpp , idftnp , iswdyp ,          &
      iwarnp , normp  ,                                              &
      blencp , epsilp , epsrsp , epsrgp , climgp , extrap ,          &
@@ -2148,6 +2163,7 @@ if (idilat.eq.5) then
   init   = 0
   inc    = 1
   iccocg = 1
+  imrgrp = vcopt_p%imrgra
   nswrgp = vcopt_p%nswrgr
   imligp = vcopt_p%imligr
   iwarnp = vcopt_p%iwarni
@@ -2157,7 +2173,7 @@ if (idilat.eq.5) then
 
   if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
     call itrmas &
- ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
+ ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydr ,     &
    0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    dfrcxt ,                                                                    &
@@ -2174,7 +2190,7 @@ if (idilat.eq.5) then
     inc = 0
 
     call itrmas &
- ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
+ ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydr ,     &
    0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    dfrcxt ,                                                                    &
@@ -2187,7 +2203,7 @@ if (idilat.eq.5) then
   else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
 
     call itrmav &
-   ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+   ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , ircflp , &
      iphydr , 0      , iwarnp ,                                              &
      epsrgp , climgp , extrap ,                                              &
      dfrcxt ,                                                                &
@@ -2205,7 +2221,7 @@ if (idilat.eq.5) then
     inc = 0
 
     call itrmav &
-   ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , ircflp , &
+   ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , ircflp , &
      iphydr , 0      , iwarnp ,                                              &
      epsrgp , climgp , extrap ,                                              &
      dfrcxt ,                                                                &
