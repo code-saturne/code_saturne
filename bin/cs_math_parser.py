@@ -392,7 +392,7 @@ class cs_math_parser:
                         j = 1
                         new_sub = []
                         x = sub_expr[j]
-                        li, ci = get_start_lc(x)
+                        li, ci = self.get_start_lc(x)
                         new_sub.append(('((int)', li, ci))
                         if ic > 2:
                             sub_sub = []
@@ -401,7 +401,7 @@ class cs_math_parser:
                                 x = sub_expr[j]
                                 sub_sub.append(x)
                                 j += 1
-                            li, ci = get_start_lc(x)
+                            li, ci = self.get_start_lc(x)
                             sub_sub.append((')', li, ci))
                             new_sub.append(sub_sub)
                         else:
@@ -411,18 +411,18 @@ class cs_math_parser:
                         x = sub_expr[j]
                         if pc - j > 1:
                             sub_sub = []
-                            li, ci = get_start_lc(x)
+                            li, ci = self.get_start_lc(x)
                             sub_sub.append(('(', li, ci))
                             while j < pc:
                                 x = sub_expr[j]
                                 sub_sub.append(x)
                                 j += 1
-                            li, ci = get_start_lc(x)
+                            li, ci = self.get_start_lc(x)
                             sub_sub.append((')', li, ci))
                             new_sub.append(sub_sub)
                         else:
                             new_sub.append(x)
-                        li, ci = get_start_lc(x)
+                        li, ci = self.get_start_lc(x)
                         new_sub.append((')', li, ci))
                         new_exp.append(new_sub)
                     else:
