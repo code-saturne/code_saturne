@@ -561,7 +561,7 @@ static cs_var_cal_opt_t _var_cal_opt =
 static cs_space_disc_t  _space_disc =
 {
   .imvisf = 0,
-  .imrgra = 0,
+  .imrgra = 4,
   .iflxmw = 0
 };
 
