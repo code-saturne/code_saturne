@@ -2361,7 +2361,8 @@ _get_cell_cocg_lsq(const cs_mesh_t               *m,
 
   cs_real_33_t *_cocg = NULL;
 
-  bool extended = (halo_type == CS_HALO_EXTENDED) ? true : false;
+  bool extended = (   halo_type == CS_HALO_EXTENDED
+                   && m->cell_cells_idx) ? true : false;
 
   if (extended)
     _cocg = gq->cocg_lsq_ext;
@@ -2667,7 +2668,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
 
     /* Contribution from extended neighborhood */
 
-    if (halo_type == CS_HALO_EXTENDED) {
+    if (halo_type == CS_HALO_EXTENDED && cell_cells_idx != NULL) {
 
 #     pragma omp parallel for private(dc, fctb, pfac)
       for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
@@ -2867,7 +2868,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
        We assume that the middle of the segment joining cell centers
        may replace the center of gravity of a fictitious face. */
 
-    if (halo_type == CS_HALO_EXTENDED) {
+    if (halo_type == CS_HALO_EXTENDED && cell_cells_idx != NULL) {
 
 #     pragma omp parallel for private(dc, fctb, pfac)
       for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
