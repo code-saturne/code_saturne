@@ -608,7 +608,7 @@ _precompute_cell_center_g(const cs_mesh_builder_t  *mb,
   cs_lnum_t *_face_vertices_idx = NULL;
   cs_lnum_t *_face_vertices = NULL;
 
-  cs_block_to_part_t *d = NULL;
+  cs_all_to_all_t *d = NULL;
 
   /* Initialization */
 
@@ -632,19 +632,20 @@ _precompute_cell_center_g(const cs_mesh_builder_t  *mb,
                                        2,
                                        mb->face_cells,
                                        NULL,
-                                       NULL);
-
-  _n_faces = cs_block_to_part_get_n_part_ents(d);
+                                       NULL,
+                                       &_n_faces,
+                                       &_face_num);
 
   BFT_MALLOC(_face_gcells, _n_faces*2, cs_gnum_t);
 
   /* Face -> cell connectivity */
 
-  cs_block_to_part_copy_array(d,
-                              gnum_type,
-                              2,
-                              mb->face_cells,
-                              _face_gcells);
+  cs_all_to_all_copy_array(d,
+                           gnum_type,
+                           2,
+                           true,  /* reverse */
+                           mb->face_cells,
+                           _face_gcells);
 
   /* Now convert face -> cell connectivity to local cell numbers */
 
@@ -665,22 +666,22 @@ _precompute_cell_center_g(const cs_mesh_builder_t  *mb,
 
   BFT_MALLOC(_face_vertices_idx, _n_faces + 1, cs_lnum_t);
 
-  cs_block_to_part_copy_index(d,
-                              mb->face_vertices_idx,
-                              _face_vertices_idx);
+  cs_all_to_all_copy_index(d,
+                           true,  /* reverse */
+                           mb->face_vertices_idx,
+                           _face_vertices_idx);
 
   BFT_MALLOC(_face_gvertices, _face_vertices_idx[_n_faces], cs_gnum_t);
 
-  cs_block_to_part_copy_indexed(d,
-                                gnum_type,
-                                mb->face_vertices_idx,
-                                mb->face_vertices,
-                                _face_vertices_idx,
-                                _face_gvertices);
+  cs_all_to_all_copy_indexed(d,
+                             gnum_type,
+                             true,  /* reverse */
+                             mb->face_vertices_idx,
+                             mb->face_vertices,
+                             _face_vertices_idx,
+                             _face_gvertices);
 
-  _face_num = cs_block_to_part_transfer_gnum(d);
-
-  cs_block_to_part_destroy(&d);
+  cs_all_to_all_destroy(&d);
 
   /* Vertices */
 
@@ -2097,10 +2098,6 @@ _prepare_input(const cs_mesh_t           *mesh,
 
   cs_gnum_t *_g_face_cells = NULL;
 
-#if defined(HAVE_MPI)
-  cs_block_to_part_t *d = NULL;
-#endif
-
   cs_block_dist_info_t cell_bi =  cs_block_dist_compute_sizes(rank_id,
                                                               n_ranks,
                                                               rank_step,
@@ -2200,32 +2197,34 @@ _prepare_input(const cs_mesh_t           *mesh,
       = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
     cs_gnum_t *g_face_cells_tmp = NULL;
 
-    d = cs_block_to_part_create_by_adj_s(cs_glob_mpi_comm,
-                                         mb->face_bi,
-                                         cell_bi,
-                                         2,
-                                         *g_face_cells,
-                                         NULL,
-                                         NULL);
-
-    *n_faces = cs_block_to_part_get_n_part_ents(d);
+    cs_all_to_all_t
+      *d = cs_block_to_part_create_by_adj_s(cs_glob_mpi_comm,
+                                            mb->face_bi,
+                                            cell_bi,
+                                            2,
+                                            *g_face_cells,
+                                            NULL,
+                                            NULL,
+                                            n_faces,
+                                            NULL);
 
     BFT_MALLOC(g_face_cells_tmp, (*n_faces)*2, cs_gnum_t);
 
     /* Face -> cell connectivity */
 
-    cs_block_to_part_copy_array(d,
-                                gnum_type,
-                                2,
-                                *g_face_cells,
-                                g_face_cells_tmp);
+    cs_all_to_all_copy_array(d,
+                             gnum_type,
+                             2,
+                             true,  /* reverse */
+                             *g_face_cells,
+                             g_face_cells_tmp);
 
     if (_g_face_cells != NULL) /* in case of periodicity */
       BFT_FREE(_g_face_cells);
 
     *g_face_cells = g_face_cells_tmp;
 
-    cs_block_to_part_destroy(&d);
+    cs_all_to_all_destroy(&d);
   }
 
 #endif /* defined(HAVE_MPI) */

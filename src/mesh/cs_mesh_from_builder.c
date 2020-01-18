@@ -1143,31 +1143,32 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   default_face_rank = _default_face_rank(mb, comm);
 
-  cs_block_to_part_t *d
+  cs_all_to_all_t *d
     = cs_block_to_part_create_by_adj_s(comm,
                                        mb->face_bi,
                                        mb->cell_bi,
                                        2,
                                        mb->face_cells,
                                        mb->cell_rank,
-                                       default_face_rank);
+                                       default_face_rank,
+                                       &_n_faces,
+                                       &_face_num);
 
   if (default_face_rank != NULL)
     BFT_FREE(default_face_rank);
 
   BFT_FREE(mb->cell_rank); /* Not needed anymore */
 
-  _n_faces = cs_block_to_part_get_n_part_ents(d);
-
   BFT_MALLOC(_face_gcells, _n_faces*2, cs_gnum_t);
 
   /* Face -> cell connectivity */
 
-  cs_block_to_part_copy_array(d,
-                              CS_GNUM_TYPE,
-                              2,
-                              mb->face_cells,
-                              _face_gcells);
+  cs_all_to_all_copy_array(d,
+                           CS_GNUM_TYPE,
+                           2,
+                           true,  /* reverse */
+                           mb->face_cells,
+                           _face_gcells);
 
   BFT_FREE(mb->face_cells);
 
@@ -1178,7 +1179,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
   cs_block_to_part_global_to_local(_n_faces*2,
                                    0,
                                    mesh->n_cells,
-                                   true,
+                                   true,  /* reverse */
                                    mesh->global_cell_num,
                                    _face_gcells,
                                    (cs_lnum_t *)_face_cells);
@@ -1189,11 +1190,12 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   BFT_MALLOC(_face_gc_id, _n_faces, cs_lnum_t);
 
-  cs_block_to_part_copy_array(d,
-                              CS_LNUM_TYPE,
-                              1,
-                              mb->face_gc_id,
-                              _face_gc_id);
+  cs_all_to_all_copy_array(d,
+                           CS_LNUM_TYPE,
+                           1,
+                           true,  /* reverse */
+                           mb->face_gc_id,
+                           _face_gc_id);
 
   BFT_FREE(mb->face_gc_id);
 
@@ -1202,11 +1204,12 @@ _decompose_data_g(cs_mesh_t          *mesh,
   BFT_MALLOC(_face_r_gen, _n_faces, char);
 
   if (mb->have_face_r_gen)
-    cs_block_to_part_copy_array(d,
-                                CS_CHAR,
-                                1,
-                                mb->face_r_gen,
-                                _face_r_gen);
+    cs_all_to_all_copy_array(d,
+                             CS_CHAR,
+                             1,
+                             true,  /* reverse */
+                             mb->face_r_gen,
+                             _face_r_gen);
   else {
     for (cs_lnum_t i = 0; i < _n_faces; i++)
       _face_r_gen[i] = 0;
@@ -1218,25 +1221,25 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   BFT_MALLOC(_face_vertices_idx, _n_faces + 1, cs_lnum_t);
 
-  cs_block_to_part_copy_index(d,
-                              mb->face_vertices_idx,
-                              _face_vertices_idx);
+  cs_all_to_all_copy_index(d,
+                           true,  /* reverse */
+                           mb->face_vertices_idx,
+                           _face_vertices_idx);
 
   BFT_MALLOC(_face_gvertices, _face_vertices_idx[_n_faces], cs_gnum_t);
 
-  cs_block_to_part_copy_indexed(d,
-                                CS_GNUM_TYPE,
-                                mb->face_vertices_idx,
-                                mb->face_vertices,
-                                _face_vertices_idx,
-                                _face_gvertices);
+  cs_all_to_all_copy_indexed(d,
+                             CS_GNUM_TYPE,
+                             true,  /* reverse */
+                             mb->face_vertices_idx,
+                             mb->face_vertices,
+                             _face_vertices_idx,
+                             _face_gvertices);
 
   BFT_FREE(mb->face_vertices_idx);
   BFT_FREE(mb->face_vertices);
 
-  _face_num = cs_block_to_part_transfer_gnum(d);
-
-  cs_block_to_part_destroy(&d);
+  cs_all_to_all_destroy(&d);
 
   /* Vertices */
 

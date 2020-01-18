@@ -90,8 +90,8 @@ struct _cs_part_to_block_t {
                                    though elements may be assembled in a
                                    different order) */
 
-  int         *recv_count;      /* Receive counts for MPI_Alltoall */
-  int         *recv_displ;      /* Receive displs for MPI_Alltoall */
+  int         *recv_count;      /* Receive counts for MPI_Gatherv */
+  int         *recv_displ;      /* Receive displs for MPI_Gatherv */
 
   int         *block_rank_id;   /* Block id for each part entity
                                    (NULL if based on global_ent_num) */

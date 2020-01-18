@@ -76,6 +76,9 @@ Numerics and physical modelling:
 
 Architectural changes:
 
+- All to all operation now all use the cs_all_to_all API, allowing better
+  instrumentation and choice of underlying all to all algorithm.
+
 - In field pointer API, CS_F_(e) and CS_FI_(e, 0) are now equivalent.
 
 - code_aster coupling: remove the "milieu" module and move its functionnality

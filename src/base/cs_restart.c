@@ -2671,7 +2671,7 @@ cs_restart_read_particles_info(cs_restart_t  *restart,
     int  *b_cell_rank, *p_cell_rank;
     cs_gnum_t  *part_cell_num = NULL;
     cs_part_to_block_t *pbd = NULL;
-    cs_block_to_part_t *d = NULL;
+    cs_all_to_all_t *d = NULL;
 
     /* Now read matching cell_num to an arbitrary block distribution */
 
@@ -2738,28 +2738,32 @@ cs_restart_read_particles_info(cs_restart_t  *restart,
                                      part_cell_num,
                                      cs_glob_mpi_comm);
 
+    cs_lnum_t  n_part_ents = 0;
+    cs_gnum_t  *ent_global_num = NULL;
+
     d = cs_block_to_part_create_by_adj_s(cs_glob_mpi_comm,
                                          part_bi,
                                          cell_bi,
                                          1,
                                          part_cell_num,
                                          b_cell_rank,
-                                         default_p_rank);
+                                         default_p_rank,
+                                         &n_part_ents,
+                                         &ent_global_num);
 
     if (default_p_rank != NULL)
       BFT_FREE(default_p_rank);
 
     BFT_FREE(b_cell_rank);
 
-    (restart->location[loc_id])._ent_global_num
-      = cs_block_to_part_transfer_gnum(d);
+    (restart->location[loc_id])._ent_global_num = ent_global_num;
     (restart->location[loc_id]).ent_global_num
       = (restart->location[loc_id])._ent_global_num;
 
     (restart->location[loc_id]).n_glob_ents = n_glob_particles;
-    (restart->location[loc_id]).n_ents = cs_block_to_part_get_n_part_ents(d);
+    (restart->location[loc_id]).n_ents = n_part_ents;
 
-    cs_block_to_part_destroy(&d);
+    cs_all_to_all_destroy(&d);
 
     BFT_FREE(part_cell_num);
 
