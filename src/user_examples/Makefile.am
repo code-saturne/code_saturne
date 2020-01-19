@@ -83,6 +83,7 @@ cs_user_coupling-saturne.c \
 cs_user_coupling-syrthes.c \
 cs_user_coupling.c \
 cs_user_electric_scaling.c \
+cs_user_extra_operations-vorticity_field.c \
 cs_user_extra_operations-balance_by_zone.c \
 cs_user_extra_operations-boundary_forces.c \
 cs_user_extra_operations-scalar_balance.c \
