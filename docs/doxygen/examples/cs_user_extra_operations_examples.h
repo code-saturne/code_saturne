@@ -37,6 +37,7 @@
   \section cs_user_extra_operations_examples_cs_user_extra_op_examples Extra operations examples
   Here is the list of examples dedicated to different physics:
 
+  - \subpage cs_user_extra_operations_examples_vorticity_field_p
   - \subpage cs_user_extra_operations_examples_balance_by_zone_p
   - \subpage cs_user_extra_operations_examples_scalar_balance_p
   - \subpage cs_user_extra_operations_examples_energy_balance_p
@@ -330,6 +331,49 @@
   Here is the corresponding code:
 
   \snippet cs_user_extra_operations-force_temperature.f90 example_1
+
+*/
+// __________________________________________________________________________________
+/*!
+
+  \page cs_user_extra_operations_examples_vorticity_field_p Compute vorticity field values
+
+  \section cs_user_extra_operations_examples_vorticity_field Compute vorticity field values
+
+  This is an example of \ref cs_user_extra_operations
+  which computes the vorticity field values over the whole domain.
+
+  First number of cells in the current sub-domain (or the whole domain for a sequential calculation)
+  is retrieved. The number of cells with ghosts (i.e. including halo cells) is retrieved first, then
+  the number of standard cells. The array that will host the velocity gradient values is finally
+  declared, as a 3x3 real matrix array per cell.
+
+  \snippet cs_user_extra_operations-vorticity_field.c vorticity_d
+
+  The array hosting the gradient values has to be allocated consistantly with his type.
+
+  \snippet cs_user_extra_operations-vorticity_field.c vorticity_a
+
+  Then the gradient of the velocity is computed. This is done as follows, by calling the appropriate
+  field operator:
+
+  \snippet cs_user_extra_operations-vorticity_field.c vorticity_g
+
+  The vorticity field has to be retrieved as follows below. Note that if it doesn't exist the pointer
+  will be set to NULL (this is the behavior of the "_try" variant of the field accesser).
+  The vorticity field can have been added through the GUI (menu postprocessing > additional user
+  arrays) or in \ref cs_user_model.
+
+  \snippet cs_user_extra_operations-vorticity_field.c vorticity_f
+
+  Finally the vorticity values are computed in each standard cell if the field "vorticity" has been
+  well retrieved previously only. Notice the way the gradient values are accessed.
+
+  \snippet cs_user_extra_operations-vorticity_field.c vorticity_cv
+
+  The array holding the gradient values has to be deallocated at the end.
+
+  \snippet cs_user_extra_operations-vorticity_field.c vorticity_da
 
 */
 // __________________________________________________________________________________
