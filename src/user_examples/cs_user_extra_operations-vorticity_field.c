@@ -9,7 +9,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2020 EDF S.A.
+  Copyright (C) 1998-2017 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -36,7 +36,6 @@
 
 #include <assert.h>
 #include <math.h>
-#include <stdio.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -49,10 +48,40 @@
 #include <ple_coupling.h>
 
 /*----------------------------------------------------------------------------
- * Local headers
+ *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_headers.h"
+#include "bft_mem.h"
+#include "bft_error.h"
+#include "bft_printf.h"
+
+#include "cs_base.h"
+#include "cs_field.h"
+#include "cs_field_pointer.h"
+#include "cs_field_operator.h"
+#include "cs_geom.h"
+#include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
+#include "cs_halo.h"
+#include "cs_halo_perio.h"
+#include "cs_log.h"
+#include "cs_parall.h"
+#include "cs_parameters.h"
+#include "cs_physical_constants.h"
+#include "cs_prototypes.h"
+#include "cs_rotation.h"
+#include "cs_time_moment.h"
+#include "cs_time_step.h"
+#include "cs_turbomachinery.h"
+#include "cs_selector.h"
+
+#include "cs_post.h"
+
+/*----------------------------------------------------------------------------
+ *  Header for the current file
+ *----------------------------------------------------------------------------*/
+
+#include "cs_prototypes.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -78,106 +107,47 @@ BEGIN_C_DECLS
  *
  * It has a very general purpose, although it is recommended to handle
  * mainly postprocessing or data-extraction type operations.
- *
- * \param[in, out]  domain   pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_user_extra_operations(cs_domain_t     *domain)
 {
-  //!< [example_1]
+  /* ! [vorticity_d] */
+  const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
 
-  cs_balance_by_zone("all[]",
-                     "temperature");
+  cs_real_33_t *gradv;
+  /* ! [vorticity_d] */
 
-  //!< [example_1]
+  /* ! [vorticity_a] */
+  BFT_MALLOC(gradv, n_cells_ext, cs_real_33_t);
+  /* ! [vorticity_a] */
 
-  //!< [example_2]
+  /* ! [vorticity_g] */
+  bool use_previous_t = false;
+  int inc = 1;
+  cs_field_gradient_vector(CS_F_(vel),
+                           use_previous_t,
+                           inc,
+                           gradv);
+  /* ! [vorticity_g] */
 
-  cs_balance_by_zone("box[-0.5, 1.3, 0.0, 1.0, 1.9, 1.0]",
-                     "scalar1");
+  /* ! [vorticity_f] */
+  cs_field_t *vort = cs_field_by_name_try("vorticity");
+  /* ! [vorticity_f] */
 
-  //!< [example_2]
-
-  //!< [example_3]
-  cs_real_t normal[3] = {0., 0., 1.,};
-
-  cs_surface_balance("selection_criterion", "scalar1", normal);
-  //!< [example_3]
-
-  /* More advanced usage for pressure drop */
-
-  {
-    /* ! [example_4] */
-    const char criteria[] = "zone_group";
-
-    cs_lnum_t   n_selected_cells = 0;
-    cs_lnum_t  *selected_cells = NULL;
-
-    cs_real_t balance[CS_BALANCE_P_N_TERMS];
-
-    BFT_MALLOC(selected_cells, domain->mesh->n_cells, cs_lnum_t);
-
-    cs_selector_get_cell_list(criteria,
-                              &n_selected_cells,
-                              selected_cells);
-
-    cs_balance_by_zone_compute("scalar1",
-                               n_selected_cells,
-                               selected_cells,
-                               balance);
-
-    BFT_FREE(selected_cells);
-
-    cs_balance_term_t  mass_in_idx = CS_BALANCE_MASS_IN;
-    cs_balance_term_t  mass_out_idx = CS_BALANCE_MASS_OUT;
-
-    bft_printf("inlet mass flow  (scalar 1): %g\n"
-               "outlet mass flow (scalar 1): %g\n",
-               balance[mass_in_idx],
-               balance[mass_out_idx]);
-    /* ! [example_4] */
+  /* ! [vorticity_cv] */
+  if (vort != NULL) {
+    for (cs_lnum_t i = 0; i < n_cells; i++) {
+      vort->val[i] = gradv[i][1][0] - gradv[i][0][1];
+    }
   }
+  /* ! [vorticity_cv] */
 
-  // !< [example_5]
-
-  cs_pressure_drop_by_zone("zone_group");
-
-  // !< [example_5]
-
-  /* More advanced usage for pressure drop */
-
-  // !< [example_6]
-  {
-    const char criteria[] = "zone_group";
-
-    cs_lnum_t   n_selected_cells = 0;
-    cs_lnum_t  *selected_cells = NULL;
-
-    cs_real_t balance[CS_BALANCE_P_N_TERMS];
-
-    BFT_MALLOC(selected_cells, domain->mesh->n_cells, cs_lnum_t);
-
-    cs_selector_get_cell_list(criteria,
-                              &n_selected_cells,
-                              selected_cells);
-
-    cs_pressure_drop_by_zone_compute(n_selected_cells,
-                                     selected_cells,
-                                     balance);
-
-    BFT_FREE(selected_cells);
-
-    cs_balance_p_term_t  rhou_in_idx = CS_BALANCE_P_RHOU_IN;
-    cs_balance_p_term_t  rhou_out_idx = CS_BALANCE_P_RHOU_OUT;
-
-    bft_printf("inlet mass flow  (rho.u): %g\n"
-               "outlet mass flow (rho.u): %g\n",
-               balance[rhou_in_idx],
-               balance[rhou_out_idx]);
-  }
-  //!< [example_6]
+  /* ! [vorticity_da] */
+  BFT_FREE(gradv);
+  /* ! [vorticity_da] */
 }
 
 /*----------------------------------------------------------------------------*/
