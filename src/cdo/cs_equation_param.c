@@ -443,8 +443,19 @@ _petsc_set_krylov_solver(cs_param_sles_t   slesp,
 
   KSPSetFromOptions(ksp);
 
-  /* Try to have "true" norm */
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+  switch (slesp.resnorm_type) {
+
+  case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
+    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+    break;
+  case CS_PARAM_RESNORM_NONE:
+    KSPSetNormType(ksp, KSP_NORM_NONE);
+    break;
+  default:
+    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+    break;
+
+  }
 
   /* Apply settings from the cs_param_sles_t structure */
   switch (slesp.solver) {
@@ -608,8 +619,19 @@ _petsc_common_block_hook(cs_param_sles_t    slesp,
                    dtol,              /* divergence tolerance */
                    slesp.n_max_iter); /* max number of iterations */
 
-  /* Try to have "true" norm */
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+  switch (slesp.resnorm_type) {
+
+  case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
+    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+    break;
+  case CS_PARAM_RESNORM_NONE:
+    KSPSetNormType(ksp, KSP_NORM_NONE);
+    break;
+  default:
+    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+    break;
+
+  }
 
   PCSetType(pc, PCFIELDSPLIT);
   PCFieldSplitSetType(pc, PC_COMPOSITE_ADDITIVE);

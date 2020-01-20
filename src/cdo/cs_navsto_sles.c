@@ -227,8 +227,19 @@ cs_navsto_sles_amg_block_hook(void     *context,
                    dtol,              /* divergence tolerance */
                    slesp.n_max_iter); /* max number of iterations */
 
-  /* Try to have "true" norm */
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+  switch (slesp.resnorm_type) {
+
+  case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
+    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+    break;
+  case CS_PARAM_RESNORM_NONE:
+    KSPSetNormType(ksp, KSP_NORM_NONE);
+    break;
+  default:
+    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+    break;
+
+  }
 
   PC  pc;
   KSPGetPC(ksp, &pc);

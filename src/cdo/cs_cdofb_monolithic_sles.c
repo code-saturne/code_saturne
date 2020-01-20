@@ -520,8 +520,19 @@ _set_velocity_ksp(const cs_param_sles_t    slesp,
   KSPGetPC(u_ksp, &u_pc);
   PCType  pc_type = _petsc_get_pc_type(slesp);
 
-  /* Try to have "true" norm */
-  KSPSetNormType(u_ksp, KSP_NORM_UNPRECONDITIONED);
+  switch (slesp.resnorm_type) {
+
+  case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
+    KSPSetNormType(u_ksp, KSP_NORM_UNPRECONDITIONED);
+    break;
+  case CS_PARAM_RESNORM_NONE:
+    KSPSetNormType(u_ksp, KSP_NORM_NONE);
+    break;
+  default:
+    KSPSetNormType(u_ksp, KSP_NORM_UNPRECONDITIONED);
+    break;
+
+  }
 
   /* Set the solver */
   switch (slesp.solver) {
@@ -675,8 +686,19 @@ _additive_amg_gmres_hook(void     *context,
                    dtol,                    /* divergence tolerance */
                    nslesp.algo_n_max_iter); /* max number of iterations */
 
-  /* Try to have "true" norm */
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+  switch (slesp.resnorm_type) {
+
+  case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
+    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+    break;
+  case CS_PARAM_RESNORM_NONE:
+    KSPSetNormType(ksp, KSP_NORM_NONE);
+    break;
+  default:
+    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+    break;
+
+  }
 
   /* Apply modifications to the KSP structure */
   PC up_pc, p_pc;
@@ -776,8 +798,19 @@ _multiplicative_gmres_hook(void     *context,
                    dtol,                    /* divergence tolerance */
                    nslesp.algo_n_max_iter); /* max number of iterations */
 
-  /* Try to have "true" norm */
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+  switch (slesp.resnorm_type) {
+
+  case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
+    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+    break;
+  case CS_PARAM_RESNORM_NONE:
+    KSPSetNormType(ksp, KSP_NORM_NONE);
+    break;
+  default:
+    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+    break;
+
+  }
 
   /* Apply modifications to the KSP structure */
   PC up_pc, p_pc;
@@ -877,8 +910,19 @@ _diag_schur_gmres_hook(void     *context,
                    dtol,                    /* divergence tolerance */
                    nslesp.algo_n_max_iter); /* max number of iterations */
 
-  /* Try to have "true" norm */
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+  switch (slesp.resnorm_type) {
+
+  case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
+    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+    break;
+  case CS_PARAM_RESNORM_NONE:
+    KSPSetNormType(ksp, KSP_NORM_NONE);
+    break;
+  default:
+    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+    break;
+
+  }
 
   /* Apply modifications to the KSP structure */
   PC up_pc, p_pc;
@@ -979,8 +1023,19 @@ _upper_schur_gmres_hook(void     *context,
                    dtol,                    /* divergence tolerance */
                    nslesp.algo_n_max_iter); /* max number of iterations */
 
-  /* Try to have "true" norm */
-  KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+  switch (slesp.resnorm_type) {
+
+  case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
+    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+    break;
+  case CS_PARAM_RESNORM_NONE:
+    KSPSetNormType(ksp, KSP_NORM_NONE);
+    break;
+  default:
+    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+    break;
+
+  }
 
   /* Apply modifications to the KSP structure */
   PC up_pc, p_pc;
