@@ -806,8 +806,10 @@ class cs_math_parser:
             tk = t[0]
             # Check for assignments:
             if tk == "=" and t_i > 0:
-                if tokens[t_i-1][0] not in known_symbols:
-                    usr_defs.append('cs_real_t %s = -1.;\n' % tokens[t_i-1][0])
+                tk0 = tokens[t_i-1][0]
+                if tk0 not in known_symbols:
+                    usr_defs.append('cs_real_t %s = -1.;\n' % tk0)
+                    known_symbols.append(tk0)
 
         #-------------------------
         for t_i, t in enumerate(tokens):
