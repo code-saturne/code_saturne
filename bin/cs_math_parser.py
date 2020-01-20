@@ -486,6 +486,35 @@ class cs_math_parser:
     #-------------------------
 
     #-------------------------
+    def rename_math_functions(self, expressions):
+        """
+        Rename mathematical functions using the internal functions of
+        Code_Saturne.
+        """
+        _cs_math_internal_name = {'abs':'cs_math_fabs',
+                                  'min':'cs_math_fmin',
+                                  'max':'cs_math_fmax'}
+
+        new_exp = []
+
+        for e in expressions:
+
+            if isinstance(e, (list, )):
+                new_exp.append(self.rename_math_functions(e))
+
+            else:
+                if e[0] in _cs_math_internal_name.keys():
+                    li, ci = self.get_start_lc(e)
+                    en = _cs_math_internal_name[e[0]]
+                    new_exp.append((en, li, ci))
+
+                else:
+                    new_exp.append(e)
+
+        return new_exp
+    #-------------------------
+
+    #-------------------------
     def rebuild_text(self, expressions, comments,
                      level=0, s_line=0, s_col=0, t_prev=''):
         """
@@ -780,7 +809,8 @@ class cs_math_parser:
 
     #-------------------------
     def parse_expression(self, expression, req, known_symbols,
-                         func_type, need_for_loop):
+                         func_type, glob_tokens, loop_tokens,
+                         need_for_loop):
         """
         Parse an expression and return the corresponding C code, as well as
         the initialization block which needs to be used.
@@ -801,6 +831,31 @@ class cs_math_parser:
         tokens, comments = self.tokenize(segments)
         #-------------------------
 
+        #-------------------------
+        for t in tokens:
+            tk = t[0]
+            if tk not in known_symbols:
+                # We use a double if and not if/else because some symbols
+                # may be present in both lists
+                if tk in glob_tokens.keys():
+                    usr_defs.append(glob_tokens[tk] + '\n')
+                    known_symbols.append(tk)
+                if tk in loop_tokens.keys():
+                    usr_code.append(loop_tokens[tk] + '\n')
+                    if tk not in known_symbols:
+                        known_symbols.append(tk)
+
+                    # If a local coordiante is used, we need to define the
+                    # global coordinates pointer
+                    if tk in ['x', 'y', 'z'] and 'xyz' not in known_symbols:
+                        known_symbols.append('xyz')
+                        usr_defs.append(glob_tokens['xyz'])
+
+        if len(usr_defs) > 0:
+            usr_defs.append('\n')
+
+        if len(usr_code) > 0:
+            usr_code.append('\n')
         #-------------------------
         for t_i, t in enumerate(tokens):
             tk = t[0]
@@ -848,6 +903,7 @@ class cs_math_parser:
         #-------------------------
 
         #-------------------------
+        tokens = self.rename_math_functions(tokens)
         tokens = self.build_expressions(exp_lines, tokens)
         tokens = self.update_expressions_syntax(tokens)
         tokens = self.recurse_expressions_syntax(tokens)

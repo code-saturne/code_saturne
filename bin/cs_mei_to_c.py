@@ -144,11 +144,6 @@ _func_short_to_long = {'vol':'volume zone',
                        'ibm':'Immersed boundaries'}
 
 #-------------------------------------------------------------------------------
-
-_cs_math_internal_name = {'abs':'cs_math_fabs',
-                          'min':'cs_math_fmin',
-                          'max':'cs_math_fmax'}
-
 _pkg_fluid_prop_dict = {}
 _pkg_fluid_prop_dict['code_saturne'] = {'rho0':'ro0',
                                         'mu0':'viscl0',
@@ -163,8 +158,16 @@ _pkg_fluid_prop_dict['neptune_cfd'] = {'rho0':'ro0',
 _pkg_glob_struct = {'code_saturne':'cs_glob_fluid_properties',
                     'neptune_cfd':'nc_phases->p_ini[PHASE_ID]'}
 
-_ref_turb_values = {'uref':'uref',
-                    'almax':'almax'}
+#---------------------------------------------------------------------------
+
+_base_tokens = {'dt':'const cs_real_t dt = cs_glob_time_step->dt[0];',
+                't':'const cs_real_t t = cs_glob_time_step->t_cur;',
+                'iter':'const int iter = cs_glob_time_step->nt_cur;',
+                'volume':'const cs_real_t volume = zone->measure;',
+                'surface':'const cs_real_t volume = zone->measure;',
+                'pi':'const cs_real_t pi = cs_math_pi;',
+                'uref':'const cs_real_t uref = cs_glob_turb_ref_values->uref;',
+                'almax':'const cs_real_t almax = cs_glob_turb_ref_values->almax;'}
 
 #---------------------------------------------------------------------------
 
@@ -172,6 +175,8 @@ def parse_gui_expression(expression,
                          req,
                          known_symbols,
                          func_type,
+                         glob_tokens,
+                         loop_tokens,
                          need_for_loop = False):
 
     usr_code = ''
@@ -189,6 +194,8 @@ def parse_gui_expression(expression,
                                                    req,
                                                    known_symbols,
                                                    func_type,
+                                                   glob_tokens,
+                                                   loop_tokens,
                                                    need_for_loop)
 
     for exp in expr_user:
@@ -338,102 +345,56 @@ class mei_to_c_interpreter:
         coords = ['x', 'y', 'z']
         need_coords = False
 
-        # Add to definitions useful arrays or scalars
-        for line_comp in exp_lines_comp:
-            for s in symbols:
-                if type(s) == tuple:
-                    sn = s[0]
-                else:
-                    sn = s
-                if sn in line_comp and sn not in known_symbols:
-                    if sn == 'dt':
-                        usr_defs += ntabs*tab
-                        usr_defs += 'const cs_real_t dt = cs_glob_time_step->dt[0];\n'
-                        known_symbols.append(sn)
-                    elif sn == 't':
-                        usr_defs += ntabs*tab
-                        usr_defs += 'const cs_real_t t = cs_glob_time_step->t_cur;\n'
-                        known_symbols.append(sn)
-                    elif sn == 'iter':
-                        usr_defs += ntabs*tab
-                        usr_defs += 'const int iter = cs_glob_time_step->nt_cur;\n'
-                        known_symbols.append(sn)
-                    elif sn in coords:
-                        ic = coords.index(sn)
-                        lxyz = 'const cs_real_t %s = xyz[c_id][%s];\n' % (sn, str(ic))
-                        usr_code += (ntabs+1)*tab + lxyz
-                        known_symbols.append(sn)
-                        need_coords = True
-                    elif sn == "volume":
-                        usr_defs += ntabs*tab
-                        usr_defs += 'const cs_real_t volume = zone->measure;\n'
-                        known_symbols.append(sn)
-                    elif sn in self.notebook.keys():
-                        l = 'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
-                                % (sn, sn)
-                        usr_defs += ntabs*tab + l
-                        known_symbols.append(sn)
 
-                    elif sn in _ref_turb_values:
-                        l = 'const cs_real_t %s = cs_glob_turb_ref_values->%s;\n' % (sn, sn)
-                        usr_defs += ntabs*tab + l
-                        known_symbols.append(sn)
+        # ------------------------
+        # Deal with tokens which require a definition
+        glob_tokens = {}
+        loop_tokens = {}
+        glob_tokens.update(_base_tokens)
 
-                    elif sn in _pkg_fluid_prop_dict[self.module_name].keys():
-                        if len(name.split("_")) > 1:
-                            try:
-                                phase_id = int(name.split('_')[-1])-1
-                            except:
-                                phase_id = -1
-                        else:
-                            phase_id = -1
-                        gs = _pkg_glob_struct[self.module_name].replace('PHASE_ID',
-                                                                     str(phase_id))
-                        pn = _pkg_fluid_prop_dict[self.module_name][sn]
-                        ms = 'const cs_real_t %s = %s->%s;\n' %(sn, gs, pn)
-                        usr_defs += ntabs*tab + ms
-                        known_symbols.append(sn)
+        # Coordinates
+        for kc in coords:
+            ic = coords.index(kc)
+            loop_tokens[kc] = 'const cs_real_t %s = xyz[c_id][%s];' % (kc, str(ic))
 
-                    elif s not in known_fields:
-                        if len(s[1].split('=')) > 1:
-                            sval = s[1].split('=')[-1]
-                            usr_defs += ntabs*tab + 'const cs_real_t '+sn+' = '+str(sval)+';\n'
-                            known_symbols.append(sn)
+        glob_tokens['xyz'] = \
+        'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;'
 
-        if need_coords:
-            usr_defs = ntabs*tab \
-                     + 'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;' \
-                     + '\n\n' \
-                     + usr_defs
+        # Notebook variables
+        for kn in self.notebook.keys():
+            glob_tokens[kn] = \
+            'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");' % (kn, kn)
 
-        # List of fields where we need to use the label instead of the name:
+        # fluid properties
+        for kp in _pkg_fluid_prop_dict[self.module_name].keys():
+            if len(name.split("_")) > 1:
+                try:
+                    phase_id = int(name.split('_')[-1])-1
+                except:
+                    phase_id = -1
+            else:
+                phase_id = -1
+            gs = _pkg_glob_struct[self.module_name].replace('PHASE_ID',
+                                                         str(phase_id))
+            pn = _pkg_fluid_prop_dict[self.module_name][kp]
+            glob_tokens[kp] = 'const cs_real_t %s = %s->%s;' %(kp, gs, pn)
+
+
+        # Fields
         label_not_name = ['Additional scalar', 'Thermal scalar', 'Pressure']
         for f in known_fields:
             (fl, fn) = f
-            for line in exp_lines_comp:
-                if fl in line:
-                    for lnn in label_not_name:
-                        if lnn in fn:
-                            fn = fl
-                    l = 'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n' \
-                            % (fl, fn)
-                    usr_defs += ntabs*tab + l
-                    known_symbols.append(fl)
-                    usr_code += (ntabs+1)*tab + 'const cs_real_t %s = %s_vals[c_id];\n'\
-                            % (fl, fl)
+            for lnn in label_not_name:
+                if lnn in fn:
+                    fn = fl
 
-                    break
+                glob_tokens[fl] = \
+                    'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;' \
+                    % (fl, fn)
 
-        # Internal names of mathematical functions
-        for key in _cs_math_internal_name.keys():
-            if key in expression:
-                expression = expression.replace(key+'(',
-                                                _cs_math_internal_name[key]+'(')
-
-        for line in exp_lines_comp:
-            if 'pi' in line and 'pi' not in known_symbols:
-                usr_defs += ntabs*tab + 'const cs_real_t pi = cs_math_pi;\n'
-                known_symbols.append('pi')
+                loop_tokens[fl] = 'const cs_real_t %s = %s_vals[c_id];' \
+                        % (fl, fl)
+        # ------------------------
 
         for s in required:
             known_symbols.append(s);
@@ -441,13 +402,14 @@ class mei_to_c_interpreter:
         known_symbols.append('#')
 
         ntabs += 1
-        if_loop = False
 
         # Parse the user expresion
         parsed_exp = parse_gui_expression(expression,
                                           required,
                                           known_symbols,
-                                          'vol')
+                                          'vol',
+                                          glob_tokens,
+                                          loop_tokens)
         usr_code += parsed_exp[0]
         if parsed_exp[1] != '':
             usr_defs += parsed_exp[1]
@@ -460,12 +422,13 @@ class mei_to_c_interpreter:
 
         usr_blck += tab + '    strcmp(zone->name, "%s") == 0) {\n' % (zone)
 
-        usr_blck += usr_defs + '\n'
+        usr_blck += usr_defs
 
         usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < zone->n_elts; e_id++) {\n'
         usr_blck += 3*tab + 'cs_lnum_t c_id = zone->elt_ids[e_id];\n'
 
         usr_blck += usr_code
+
         usr_blck += 2*tab + '}\n'
         usr_blck += tab + '}\n'
 
@@ -510,6 +473,7 @@ class mei_to_c_interpreter:
         known_symbols = []
         for req in required:
             known_symbols.append(req)
+
         coords = ['x', 'y', 'z']
         need_coords = False
 
@@ -522,76 +486,32 @@ class mei_to_c_interpreter:
         usr_defs += ntabs*tab + 'BFT_MALLOC(new_vals, vals_size, cs_real_t);\n'
         usr_defs += '\n'
 
-        # Add to definitions useful arrays or scalars
-        for line_comp in exp_lines_comp:
-            for s in symbols:
-                if type(s) == tuple:
-                    sn = s[0]
-                else:
-                    sn = s
-                if sn in line_comp and sn not in known_symbols:
-                    if sn == 'dt':
-                        usr_defs += ntabs*tab
-                        usr_defs += 'const cs_real_t dt = cs_glob_time_step->dt[0];\n'
-                        known_symbols.append(sn)
-                    elif sn == 't':
-                        usr_defs += ntabs*tab
-                        usr_defs += 'const cs_real_t t = cs_glob_time_step->t_cur;\n'
-                        known_symbols.append(sn)
-                    elif sn == 'iter':
-                        usr_defs += ntabs*tab
-                        usr_defs += 'const int iter = cs_glob_time_step->nt_cur;\n'
-                        known_symbols.append(sn)
-                    elif sn in coords:
-                        ic = coords.index(sn)
-                        lxyz = 'const cs_real_t %s = xyz[f_id][%s];\n' % (sn, str(ic))
-                        usr_code += (ntabs+1)*tab + lxyz
-                        known_symbols.append(sn)
-                        need_coords = True
-                    elif sn == "surface":
-                        usr_defs += ntabs*tab
-                        usr_defs += 'const cs_real_t surface = zone->measure;\n'
-                        known_symbols.append(sn)
-                    elif sn in _ref_turb_values:
-                        l = 'const cs_real_t %s = cs_glob_turb_ref_values->%s;\n' % (sn, sn)
-                        usr_defs += ntabs*tab + l
-                        known_symbols.append(sn)
+        # ------------------------
+        # Deal with tokens which require a definition
+        glob_tokens = {}
+        loop_tokens = {}
+        glob_tokens.update(_base_tokens)
 
-            for sn in self.notebook.keys():
-                if sn in line_comp and sn not in known_symbols:
-                        l = 'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
-                                % (sn, sn)
-                        usr_defs += ntabs*tab + l
-                        known_symbols.append(sn)
+        # Coordinates
+        for kc in coords:
+            ic = coords.index(kc)
+            loop_tokens[kc] = 'const cs_real_t %s = xyz[f_id][%s];' % (kc, str(ic))
 
-        if need_coords:
-            usr_defs = ntabs*tab \
-                     + 'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;' \
-                     + '\n\n' \
-                     + usr_defs
+        glob_tokens['xyz'] = \
+        'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cocg;'
+
+        # Notebook variables
+        for kn in self.notebook.keys():
+            glob_tokens[kn] = \
+            'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");' % (kn, kn)
 
         # Fields
         for f in known_fields:
-            for line in exp_lines_comp:
-                if f[0] in line:
-                    l = 'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n' \
-                            % (f[0], f[1])
-                    usr_defs += ntabs*tab + l
-                    known_symbols.append(f[0])
-                    usr_code += (ntabs+1)*tab + 'const cs_real_t %s = %s_vals[c_id];\n'\
-                            % (f[0], f[0])
-                    break
-
-        # Internal names of mathematical functions
-        for key in _cs_math_internal_name.keys():
-            if key in expression:
-                expression = expression.replace(key+'(',
-                                                _cs_math_internal_name[key]+'(')
-
-        for line in exp_lines_comp:
-            if 'pi' in line and 'pi' not in known_symbols:
-                usr_defs += ntabs*tab + 'const cs_real_t pi = cs_math_pi;\n'
-                known_symbols.append('pi')
+            glob_tokens[f[0]] = \
+            'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;' % (f[0], f[1])
+            loop_tokens[f[0]] = \
+            'const cs_real_t %s = %s_vals[f_id];' % (f[0], f[0])
+        # ------------------------
 
         if need_for_loop:
             ntabs += 1
@@ -601,6 +521,8 @@ class mei_to_c_interpreter:
                                           required,
                                           known_symbols,
                                           'bnd',
+                                          glob_tokens,
+                                          loop_tokens,
                                           need_for_loop)
 
         usr_code += parsed_exp[0]
@@ -613,7 +535,7 @@ class mei_to_c_interpreter:
         block_cond += tab + '    strcmp(zone->name, "%s") == 0) {\n' % (zone)
         usr_blck = block_cond + '\n'
 
-        usr_blck += usr_defs + '\n'
+        usr_blck += usr_defs
 
         if need_for_loop:
             usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < zone->n_elts; e_id++) {\n'
@@ -660,78 +582,40 @@ class mei_to_c_interpreter:
         tab   = '  '
         ntabs = 2
 
-        known_symbols = []
-        coords = ['x', 'y', 'z']
-        need_coords = False
-
         usr_defs += ntabs*tab + 'const int vals_size = zone->n_elts * %d;\n' % (len(required))
         usr_defs += ntabs*tab + 'BFT_MALLOC(new_vals, vals_size, cs_real_t);\n'
         usr_defs += '\n'
 
-        # Add to definitions useful arrays or scalars
-        for line_comp in exp_lines_comp:
-            for s in symbols:
-                if type(s) == tuple:
-                    sn = s[0]
-                else:
-                    sn = s
-                if sn in line_comp and sn not in known_symbols:
-                    if sn == 'dt':
-                        usr_defs += ntabs*tab
-                        usr_defs += 'const cs_real_t dt = cs_glob_time_step->dt[0];\n'
-                        known_symbols.append(sn)
-                    elif sn == 't':
-                        usr_defs += ntabs*tab
-                        usr_defs += 'const cs_real_t t = cs_glob_time_step->t_cur;\n'
-                        known_symbols.append(sn)
-                    elif sn == 'iter':
-                        usr_defs += ntabs*tab
-                        usr_defs += 'const int iter = cs_glob_time_step->nt_cur;\n'
-                        known_symbols.append(sn)
-                    elif sn in coords:
-                        ic = coords.index(sn)
-                        lxyz = 'const cs_real_t %s = xyz[c_id][%s];\n' % (sn, str(ic))
-                        usr_code += (ntabs+1)*tab + lxyz
-                        known_symbols.append(sn)
-                        need_coords = True
-                    elif sn == "volume":
-                        usr_defs += ntabs*tab
-                        usr_defs += 'const cs_real_t volume = zone->measure;\n'
-                        known_symbols.append(sn)
-                    elif sn in self.notebook.keys():
-                        l = 'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
-                                % (sn, sn)
-                        usr_defs += ntabs*tab + l
-                        known_symbols.append(sn)
-                    elif sn in _ref_turb_values:
-                        l = 'const cs_real_t %s = cs_glob_turb_ref_values->%s;\n' % (sn, sn)
-                        usr_defs += ntabs*tab + l
-                        known_symbols.append(sn)
+        known_symbols = []
+        coords = ['x', 'y', 'z']
 
-                    elif sn in known_fields.keys():
-                        l = 'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n'
-                        l = l % (sn, known_fields[sn])
-                        usr_defs += ntabs*tab + l
-                        known_symbols.append(sn)
-                        usr_code += (ntabs+1)*tab + 'const cs_real_t %s = %s_vals[c_id];\n'\
-                                % (sn, sn)
+        # ------------------------
+        # Deal with tokens which require a definition
+        glob_tokens = {}
+        loop_tokens = {}
+        glob_tokens.update(_base_tokens)
 
-        if need_coords:
-            usr_defs = ntabs*tab \
-                     + 'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;' \
-                     + '\n\n' \
-                     + usr_defs
+        # Coordinates
+        for kc in coords:
+            ic = coords.index(kc)
+            loop_tokens[kc] = 'const cs_real_t %s = xyz[c_id][%s];' % (kc, str(ic))
 
-        # Internal names of mathematical functions
-        for key in _cs_math_internal_name.keys():
-            if key in expression:
-                expression = expression.replace(key+'(',
-                                                _cs_math_internal_name[key]+'(')
+        glob_tokens['xyz'] = \
+        'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;'
 
-        for line in exp_lines_comp:
-            if 'pi' in line and 'pi' not in known_symbols:
-                usr_defs += ntabs*tab + 'const cs_real_t pi = cs_math_pi;\n'
-                known_symbols.append('pi')
+        # Notebook variables
+        for kn in self.notebook.keys():
+            glob_tokens[kn] = \
+            'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");' % (kn, kn)
+
+        for f in known_fields.keys():
+            glob_tokens[f] = \
+            'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;' \
+            % (f, known_fields[f])
+
+            loop_tokens[f] = 'const cs_real_t %s = %s_vals[c_id];' % (f, f)
+        # ------------------------
+
 
         for r in required:
             known_symbols.append(r)
@@ -740,7 +624,9 @@ class mei_to_c_interpreter:
         parsed_exp = parse_gui_expression(expression,
                                           required,
                                           known_symbols,
-                                          'src')
+                                          'src',
+                                          glob_tokens,
+                                          loop_tokens)
 
         usr_code += parsed_exp[0]
         if parsed_exp[1] != '':
@@ -752,7 +638,7 @@ class mei_to_c_interpreter:
         block_cond += tab + '    strcmp(source_type, "%s") == 0 ) {\n' % (source_type)
         usr_blck = block_cond + '\n'
 
-        usr_blck += usr_defs + '\n'
+        usr_blck += usr_defs
 
         usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < zone->n_elts; e_id++) {\n'
         usr_blck += 3*tab + 'cs_lnum_t c_id = zone->elt_ids[e_id];\n'
@@ -793,91 +679,55 @@ class mei_to_c_interpreter:
         tab   = '  '
         ntabs = 2
 
-        known_symbols = []
-        coords = ['x', 'y', 'z']
-        need_coords = False
-
         usr_defs += ntabs*tab + 'const int vals_size = zone->n_elts * %d;\n' % (len(required))
         usr_defs += ntabs*tab + 'BFT_MALLOC(new_vals, vals_size, cs_real_t);\n'
         usr_defs += '\n'
 
-        # Add to definitions useful arrays or scalars
-        for line_comp in exp_lines_comp:
-            for s in symbols:
-                if type(s) == tuple:
-                    sn = s[0]
-                else:
-                    sn = s
-                if sn in line_comp and sn not in known_symbols:
-                    if sn in coords:
-                        ic = coords.index(sn)
-                        lxyz = 'const cs_real_t %s = xyz[c_id][%s];\n' % (sn, str(ic))
-                        usr_code += (ntabs+1)*tab + lxyz
-                        known_symbols.append(sn)
-                        need_coords = True
+        known_symbols = []
+        coords = ['x', 'y', 'z']
 
-                    elif sn == "volume":
-                        usr_defs += ntabs*tab
-                        usr_defs += 'const cs_real_t volume = zone->measure;\n'
-                        known_symbols.append(sn)
+        # ------------------------
+        # Deal with tokens which require a definition
+        glob_tokens = {}
+        loop_tokens = {}
+        glob_tokens.update(_base_tokens)
 
-                    elif sn in self.notebook.keys():
-                        l = 'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
-                                % (sn, sn)
-                        usr_defs += ntabs*tab + l
-                        known_symbols.append(sn)
+        # Coordinates
+        for kc in coords:
+            ic = coords.index(kc)
+            loop_tokens[kc] = 'const cs_real_t %s = xyz[c_id][%s];' % (kc, str(ic))
 
-                    elif sn in _ref_turb_values:
-                        l = 'const cs_real_t %s = cs_glob_turb_ref_values->%s;\n' % (sn, sn)
-                        usr_defs += ntabs*tab + l
-                        known_symbols.append(sn)
+        glob_tokens['xyz'] = \
+        'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;'
 
-                    elif sn in _pkg_fluid_prop_dict[self.module_name].keys():
-                        if len(name.split("_")) > 1:
-                            try:
-                                phase_id = int(name.split('_')[-1])-1
-                            except:
-                                phase_id = -1
-                        else:
-                            phase_id = -1
+        # Notebook variables
+        for kn in self.notebook.keys():
+            glob_tokens[kn] = \
+            'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");' % (kn, kn)
 
-                        gs = _pkg_glob_struct[self.module_name].replace('PHASE_ID',
-                                                                     str(phase_id))
-                        pn = _pkg_fluid_prop_dict[self.module_name][sn]
-                        ms = 'const cs_real_t %s = %s->%s;\n' %(sn, gs, pn)
-                        usr_defs += ntabs*tab + ms
-                        known_symbols.append(sn)
+        # fluid properties
+        for kp in _pkg_fluid_prop_dict[self.module_name].keys():
+            if len(name.split("_")) > 1:
+                try:
+                    phase_id = int(name.split('_')[-1])-1
+                except:
+                    phase_id = -1
+            else:
+                phase_id = -1
+            gs = _pkg_glob_struct[self.module_name].replace('PHASE_ID',
+                                                         str(phase_id))
+            pn = _pkg_fluid_prop_dict[self.module_name][kp]
+            glob_tokens[kp] = 'const cs_real_t %s = %s->%s;' %(kp, gs, pn)
 
-
-        if need_coords:
-            usr_defs = ntabs*tab \
-                     + 'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;' \
-                     + '\n\n' \
-                     + usr_defs
 
         # known fields
         for f in known_fields:
-            for line in exp_lines_comp:
-                if f[0] in line:
-                    l = 'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;\n' \
-                            % (f[0], f[1])
-                    usr_defs += ntabs*tab + l
-                    known_symbols.append(f[0])
-                    usr_code += (ntabs+1)*tab + 'const cs_real_t %s = %s_vals[c_id];\n'\
-                            % (f[0], f[0])
+            glob_tokens[f[0]] = \
+            'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;' % (f[0], f[1])
+            loop_tokens[f[0]] = \
+            'const cs_real_t %s = %s_vals[c_id];' % (f[0], f[0])
+        # ------------------------
 
-                    break
-
-        # Internal names of mathematical functions
-        for key in _cs_math_internal_name.keys():
-            if key in expression:
-                expression = expression.replace(key+'(',
-                                                _cs_math_internal_name[key]+'(')
-
-        for line in exp_lines_comp:
-            if 'pi' in line and 'pi' not in known_symbols:
-                usr_defs += ntabs*tab + 'const cs_real_t pi = cs_math_pi;\n'
-                known_symbols.append('pi')
 
         for r in required:
             known_symbols.append(r)
@@ -886,7 +736,9 @@ class mei_to_c_interpreter:
         parsed_exp = parse_gui_expression(expression,
                                           required,
                                           known_symbols,
-                                          'ini')
+                                          'ini',
+                                          glob_tokens,
+                                          loop_tokens)
 
         usr_code += parsed_exp[0]
         if parsed_exp[1] != '':
@@ -897,7 +749,7 @@ class mei_to_c_interpreter:
         block_cond += tab + '    strcmp(field_name, "%s") == 0 ) {\n' % (name)
         usr_blck = block_cond + '\n'
 
-        usr_blck += usr_defs + '\n'
+        usr_blck += usr_defs
 
         usr_blck += 2*tab + 'for (cs_lnum_t e_id = 0; e_id < zone->n_elts; e_id++) {\n'
         usr_blck += 3*tab + 'cs_lnum_t c_id = zone->elt_ids[e_id];\n'
@@ -937,67 +789,27 @@ class mei_to_c_interpreter:
 
         known_symbols = []
         coords = ['x', 'y', 'z']
-        need_coords = False
 
-        # Add to definitions useful arrays or scalars
-        for line_comp in exp_lines_comp:
-            for s in symbols:
-                if type(s) == tuple:
-                    sn = s[0]
-                else:
-                    sn = s
-                if sn in line_comp and sn not in known_symbols:
-                    if sn == 'dt':
-                        usr_defs += ntabs*tab
-                        usr_defs += 'const cs_real_t dt = cs_glob_time_step->dt[0];\n'
-                        known_symbols.append(sn)
-                    elif sn == 't':
-                        usr_defs += ntabs*tab
-                        usr_defs += 'const cs_real_t t = cs_glob_time_step->t_cur;\n'
-                        known_symbols.append(sn)
-                    elif sn == 'iter':
-                        usr_defs += ntabs*tab
-                        usr_defs += 'const int iter = cs_glob_time_step->nt_cur;\n'
-                        known_symbols.append(sn)
-                    elif sn in coords:
-                        ic = coords.index(sn)
-                        lxyz = 'const cs_real_t %s = xyz[c_id][%s];\n' % (sn, str(ic))
-                        usr_code += (ntabs+1)*tab + lxyz
-                        known_symbols.append(sn)
-                        need_coords = True
-                    elif sn in self.notebook.keys():
-                        l = 'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");\n' \
-                                % (sn, sn)
-                        usr_defs += ntabs*tab + l
-                        known_symbols.append(sn)
+        # ------------------------
+        # Deal with tokens which require a definition
+        glob_tokens = {}
+        loop_tokens = {}
+        glob_tokens.update(_base_tokens)
 
-                    elif sn in _ref_turb_values:
-                        l = 'const cs_real_t %s = cs_glob_turb_ref_values->%s;\n' % (sn, sn)
-                        usr_defs += ntabs*tab + l
-                        known_symbols.append(sn)
+        # Coordinates
+        for kc in coords:
+            ic = coords.index(kc)
+            loop_tokens[kc] = 'const cs_real_t %s = xyz[c_id][%s];' % (kc, str(ic))
 
-                    elif s not in known_fields:
-                        if len(s[1].split('=')) > 1:
-                            sval = s[1].split('=')[-1]
-                            usr_defs += ntabs*tab + 'const cs_real_t '+sn+' = '+str(sval)+';\n'
-                            known_symbols.append(sn)
+        glob_tokens['xyz'] = \
+        'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;'
 
-        if need_coords:
-            usr_defs = ntabs*tab \
-                     + 'const cs_real_3_t xyz = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;' \
-                     + '\n\n' \
-                     + usr_defs
+        # Notebook variables
+        for kn in self.notebook.keys():
+            glob_tokens[kn] = \
+            'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");' % (kn, kn)
+        # ------------------------
 
-        # Internal names of mathematical functions
-        for key in _cs_math_internal_name.keys():
-            if key in expression:
-                expression = expression.replace(key+'(',
-                                                _cs_math_internal_name[key]+'(')
-
-        for line in exp_lines_comp:
-            if 'pi' in line and 'pi' not in known_symbols:
-                usr_defs += ntabs*tab + 'const cs_real_t pi = cs_math_pi;\n'
-                known_symbols.append('pi')
 
         for s in required:
             known_symbols.append(s);
@@ -1011,12 +823,16 @@ class mei_to_c_interpreter:
         parsed_exp = parse_gui_expression(expression,
                                           required,
                                           known_symbols,
-                                          'ibm')
+                                          'ibm',
+                                          glob_tokens,
+                                          loop_tokens)
         usr_code += parsed_exp[0]
         if parsed_exp[1] != '':
             usr_defs += parsed_exp[1]
 
         usr_blck = tab + 'if (strcmp(object_name, "%s") == 0) {' % (name)
+        if usr_defs != '':
+            usr_blck += usr_defs + '\n'
         usr_blck += usr_code
         usr_blck += tab + '}\n'
 
