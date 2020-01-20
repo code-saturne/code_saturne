@@ -50,6 +50,7 @@
 
 #include "mei_evaluate.h"
 
+#include "cs_all_to_all.h"
 #include "cs_base.h"
 #include "cs_boundary.h"
 #include "cs_boundary_zone.h"
@@ -4311,6 +4312,36 @@ cs_gui_partition(void)
   if (n_add_parts > 0) {
     cs_partition_add_partitions(n_add_parts, add_parts);
     BFT_FREE(add_parts);
+  }
+}
+
+/*-----------------------------------------------------------------------------
+ * Set MPI related algorithm options
+ *----------------------------------------------------------------------------*/
+
+void
+cs_gui_mpi_algorithms(void)
+{
+  cs_all_to_all_type_t a = CS_ALL_TO_ALL_MPI_DEFAULT;
+  bool ignore_perio = false;
+  int  rank_step = 1;
+  int  write_level = 1;
+  int  n_add_parts = 0;
+  int  *add_parts = NULL;
+
+  cs_tree_node_t *tn_cm
+    = cs_tree_get_node(cs_glob_tree, "calculation_management");
+
+  /* Partitioning type */
+  const char  *all_to_all_name
+    = cs_tree_node_get_child_value_str(tn_cm, "all_to_all");
+
+  if (all_to_all_name != NULL) {
+    if (!strcmp(all_to_all_name, "default"))
+      a = CS_ALL_TO_ALL_MPI_DEFAULT;
+    else if (!strcmp(all_to_all_name, "crystal router"))
+      a = CS_ALL_TO_ALL_CRYSTAL_ROUTER;
+    cs_all_to_all_set_type(a);
   }
 }
 

@@ -104,7 +104,6 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         if cfg.libs['metis'].have == "no":
             self.comboBox_PartType.setItemData(2, QColor(Qt.red), Qt.TextColorRole);
 
-
         self.modelPartOut.addItem(self.tr("No"), 'no')
         self.modelPartOut.addItem(self.tr("For graph-based partitioning"), 'default')
         self.modelPartOut.addItem(self.tr("Yes"), 'yes')
@@ -123,6 +122,11 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.modelBlockIOWrite.addItem(self.tr("Standard I/O, serial"), 'stdio serial')
         self.modelBlockIOWrite.addItem(self.tr("MPI I/O, non-collective"), 'mpi noncollective')
         self.modelBlockIOWrite.addItem(self.tr("MPI I/O, collective"), 'mpi collective')
+
+        self.modelAllToAll = ComboModel(self.comboBox_AllToAll, 2, 1)
+
+        self.modelAllToAll.addItem(self.tr("Default (MPI_Alltoall/MPI_Alltoallv)"), 'default')
+        self.modelAllToAll.addItem(self.tr("Crystal Router"), 'crystal router')
 
         # Validators
 
@@ -147,6 +151,8 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
 
         self.spinBoxIORankStep.valueChanged[int].connect(self.slotBlockIORankStep)
         self.spinBoxIOMinBlockSize.valueChanged[int].connect(self.slotBlockIOMinSize)
+
+        self.comboBox_AllToAll.activated[str].connect(self.slotAllToAll)
 
         self.tabWidget.currentChanged[int].connect(self.slotchanged)
 
@@ -200,6 +206,9 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
 
         self.blockio_min_size = self.mdl.getBlockIOMinSize()
         self.spinBoxIOMinBlockSize.setValue(int(self.blockio_min_size))
+
+        self.all_to_all = str(self.mdl.getAllToAll())
+        self.modelAllToAll.setItem(str_model=self.all_to_all)
 
         self.tabWidget.setCurrentIndex(self.case['current_tab'])
 
@@ -368,6 +377,15 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         """
         self.blockio_min_size = self.spinBoxIOMinBlockSize.value()
         self.mdl.setBlockIOMinSize(self.blockio_min_size)
+
+
+    @pyqtSlot(str)
+    def slotAllToAll(self, text):
+        """
+        All to all data exchange option.
+        """
+        self.all_to_all = self.modelAllToAll.dicoV2M[str(text)]
+        self.mdl.setAllToAll(self.all_to_all)
 
 
     @pyqtSlot(int)

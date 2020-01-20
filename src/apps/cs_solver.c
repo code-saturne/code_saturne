@@ -177,6 +177,8 @@ _run(void)
   cs_user_parallel_io();
   cs_file_defaults_info();
 
+  cs_gui_mpi_algorithms();
+
   cs_partition_external_library_info();
 
   bft_printf("\n");
