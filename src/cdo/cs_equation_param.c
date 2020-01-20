@@ -254,7 +254,7 @@ _petsc_set_pc_type(cs_param_sles_t    slesp,
       case CS_PARAM_AMG_HYPRE_BOOMER:
 #if defined(PETSC_HAVE_HYPRE)
         PCSetType(pc, PCHYPRE);
-        PCHYPRESetType(pc, "boomer");
+        PCHYPRESetType(pc, "boomeramg");
 #else
         cs_base_warn(__FILE__, __LINE__);
         cs_log_printf(CS_LOG_DEFAULT,
