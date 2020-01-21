@@ -3,6 +3,9 @@ Release 6.0.2 (Unreleased)
 
 Bug fixes:
 
+- Fix cs_gradient_vector* and cs_gradient_tensor* computation when
+  boundary coefficient arrays are passed as NULL.
+
 - Correctly handle mixed code_saturne/neptune_cfd couplings in run script.
 
 - Fix crash in ALE with internal structures.

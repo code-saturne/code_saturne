@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2019 EDF S.A.
+  Copyright (C) 1998-2020 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -106,7 +106,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Basic per gradient computation options and logging */
-/*---------------------------------------------------*/
+/*----------------------------------------------------*/
 
 typedef struct _cs_gradient_info_t {
 
@@ -137,9 +137,9 @@ static cs_gradient_info_t **cs_glob_gradient_systems = NULL;
 /* Short names for gradient computation types */
 
 const char *cs_gradient_type_name[]
-  = {N_("Iterative reconstruction"),
+  = {N_("Green-Gauss, iterative handling of non-orthogonalities"),
      N_("Least-squares"),
-     N_("conservative, reconstruction with Least-squares"),
+     N_("Green-Gauss, least-squares gradient face values"),
      N_("Iterative (old)")};
 
 /* Timer statistics */
@@ -6678,7 +6678,8 @@ _gradient_vector(const char                    *var_name,
     for (cs_lnum_t i = 0; i < n_b_faces; i++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
         for (cs_lnum_t k = 0; k < 3; k++)
-          _bc_coeff_b[i][j][j] = 1;
+          _bc_coeff_b[i][j][k] = 0;
+        _bc_coeff_b[i][j][j] = 1;
       }
     }
     bc_coeff_b = (const cs_real_33_t *)_bc_coeff_b;
@@ -6863,7 +6864,8 @@ _gradient_tensor(const char                *var_name,
     for (cs_lnum_t i = 0; i < n_b_faces; i++) {
       for (cs_lnum_t j = 0; j < 6; j++) {
         for (cs_lnum_t k = 0; k < 6; k++)
-          _bc_coeff_b[i][j][j] = 1;
+          _bc_coeff_b[i][j][k] = 0;
+        _bc_coeff_b[i][j][j] = 1;
       }
     }
     bc_coeff_b = (const cs_real_66_t *)_bc_coeff_b;
