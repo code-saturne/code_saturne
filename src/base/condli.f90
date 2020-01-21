@@ -3333,6 +3333,8 @@ if (iale.eq.1) then
   call field_get_coefaf_v(ivarfl(iuma), cfaale)
   call field_get_coefbf_v(ivarfl(iuma), cfbale)
 
+  call field_get_key_struct_var_cal_opt(ivarfl(iuma), vcopt)
+
   if (iand(vcopt%idften, ISOTROPIC_DIFFUSION).ne.0) then
     call field_get_val_s(ivisma, cpro_visma_s)
   elseif (iand(vcopt%idften, ANISOTROPIC_DIFFUSION).ne.0) then
