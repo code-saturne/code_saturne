@@ -7769,7 +7769,8 @@ _gradient_vector(const char                     *var_name,
     for (cs_lnum_t i = 0; i < n_b_faces; i++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
         for (cs_lnum_t k = 0; k < 3; k++)
-          _bc_coeff_b[i][j][j] = 1;
+          _bc_coeff_b[i][j][k] = 0;
+        _bc_coeff_b[i][j][j] = 1;
       }
     }
     bc_coeff_b = (const cs_real_33_t *)_bc_coeff_b;
@@ -8447,7 +8448,8 @@ _gradient_tensor(const char                *var_name,
     for (cs_lnum_t i = 0; i < n_b_faces; i++) {
       for (cs_lnum_t j = 0; j < 6; j++) {
         for (cs_lnum_t k = 0; k < 6; k++)
-          _bc_coeff_b[i][j][j] = 1;
+          _bc_coeff_b[i][j][k] = 0;
+        _bc_coeff_b[i][j][j] = 1;
       }
     }
     bc_coeff_b = (const cs_real_66_t *)_bc_coeff_b;
