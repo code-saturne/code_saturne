@@ -10,6 +10,8 @@ Bug fixes:
 
 - Correctly handle mixed code_saturne/neptune_cfd couplings in run script.
 
+- Fix incorrect test on ALE mesh viscosity dimension in boundary conditions.
+
 - Fix crash in ALE with internal structures.
 
 - Fix compilation of user-defined sources in example cases.
