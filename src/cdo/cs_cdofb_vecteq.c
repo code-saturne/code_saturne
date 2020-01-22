@@ -1617,7 +1617,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
         break;
       case CS_PARAM_ADVECTION_SCHEME_CENTERED:
         if (cs_equation_param_has_diffusion(eqp)) {
-          eqc->adv_func = cs_cdo_advection_fb_cennoc_di;
+          eqc->adv_func = cs_cdo_advection_fb_cencsv_di;
           eqc->adv_func_bc = cs_cdo_advection_fb_bc_cen_wdi_v;
         }
         else {
@@ -1629,7 +1629,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
                       " discretization and steady pure convection.", __func__);
           }
           else {
-            eqc->adv_func = cs_cdo_advection_fb_cennoc;
+            eqc->adv_func = cs_cdo_advection_fb_cencsv;
             eqc->adv_func_bc = cs_cdo_advection_fb_bc_cen;
           } /* else has time */
         } /* else has diffusion */
@@ -1658,7 +1658,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
         break;
       case CS_PARAM_ADVECTION_SCHEME_CENTERED:
         if (cs_equation_param_has_diffusion(eqp)) {
-          eqc->adv_func = cs_cdo_advection_fb_cencsv_di;
+          eqc->adv_func = cs_cdo_advection_fb_cennoc_di;
           eqc->adv_func_bc = cs_cdo_advection_fb_bc_cen_wdi;
         }
         else {
@@ -1670,7 +1670,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
                       " discretization and steady pure convection.", __func__);
           }
           else {
-            eqc->adv_func = cs_cdo_advection_fb_cencsv;
+            eqc->adv_func = cs_cdo_advection_fb_cennoc;
             eqc->adv_func_bc = cs_cdo_advection_fb_bc_cen_v;
           } /* else has time */
         } /* else has diffusion */
