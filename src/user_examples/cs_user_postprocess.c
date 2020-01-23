@@ -644,21 +644,22 @@ cs_user_postprocess_values(const char            *mesh_name,
 
       }
 
+      cs_post_write_var(mesh_id,
+                        CS_POST_WRITER_ALL_ASSOCIATED,  /* writer id filter */
+                        "Turb energy",                  /* var_name */
+                        1,                              /* var_dim */
+                        true,                           /* interlace, */
+                        false,                          /* use_parent */
+                        CS_POST_TYPE_cs_real_t,         /* var_type */
+                        s_cell,                         /* cel_vals */
+                        NULL,                           /* i_face_vals */
+                        NULL,                           /* b_face_vals */
+                        ts);
+
+      BFT_FREE(s_cell);
+
     }
 
-    cs_post_write_var(mesh_id,
-                      CS_POST_WRITER_ALL_ASSOCIATED,  /* writer id filter */
-                      "Turb energy",                  /* var_name */
-                      1,                              /* var_dim */
-                      true,                           /* interlace, */
-                      false,                          /* use_parent */
-                      CS_POST_TYPE_cs_real_t,         /* var_type */
-                      s_cell,                         /* cel_vals */
-                      NULL,                           /* i_face_vals */
-                      NULL,                           /* b_face_vals */
-                      ts);
-
-    BFT_FREE(s_cell);
   }
   /*< [postprocess_values_ex_1] */
 
