@@ -3,7 +3,9 @@ Release 6.0.2 (Unreleased)
 
 Bug fixes:
 
-- Fix bug in restart from RANS to LES (velocity fluctuations where incorrect).
+- GUI: fix removal of line break from formulas due to wrong test.
+
+- Fix bug in restart from RANS to LES (velocity fluctuations were incorrect).
 
 - Fix cs_gradient_vector* and cs_gradient_tensor* computation when
   boundary coefficient arrays are passed as NULL.
