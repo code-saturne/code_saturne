@@ -2910,17 +2910,18 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
   /* Compute the divergence of u since this a stopping criteria */
   _apply_div_op(div_op, u_f, uza->d__v);
 
+  /* Update p_c = p_c - gamma * (D.u_f - b_c). Recall that B = -div
+   * Compute the RHS for the Uzawa system: rhs = -gamma*B^T.W^-1.(B.u - g) */
+# pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
+  for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++) {
+    uza->d__v[ip] -= b_c[ip];
+    uza->res_p[ip] = uza->inv_mp[ip] * uza->d__v[ip];
+    p_c[ip] += gamma * uza->res_p[ip];
+  }
+
   while (_uza_incr_cvg_test(nsp, delta_u_l2, uza)) {
 
-    /* Update p_c = p_c - gamma * (D.u_f - b_c). Recall that B = -div
-     * Compute the RHS for the Uzawa system: rhs = -gamma*B^T.W^-1.(B.u - g) */
-#   pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
-    for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++) {
-      uza->d__v[ip] -= b_c[ip];
-      uza->res_p[ip] = uza->inv_mp[ip] * uza->d__v[ip];
-      p_c[ip] += gamma * uza->res_p[ip];
-    }
-
+    /* Continue building the RHS */
     _apply_div_op_transpose(div_op, uza->res_p, uza->rhs);
 
     if (cs_glob_n_ranks > 1)
@@ -2963,12 +2964,17 @@ cs_cdofb_monolithic_uzawa_al_incr_solve(const cs_navsto_param_t       *nsp,
     /* Update the divergence */
     _apply_div_op(div_op, u_f, uza->d__v);
 
-  } /* End of Uzawa iterations */
-
-  /* Update the pressure before returning the value */
+    /* Update p_c = p_c - gamma * (D.u_f - b_c). Recall that B = -div
+     * Prepare the computation of the RHS for the Uzawa system:
+     * rhs = -gamma*B^T.W^-1.(B.u - g) */
 # pragma omp parallel for if (uza->n_p_dofs > CS_THR_MIN)
-  for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++)
-    p_c[ip] += gamma * uza->inv_mp[ip] * uza->d__v[ip];
+    for (cs_lnum_t ip = 0; ip < uza->n_p_dofs; ip++) {
+      uza->d__v[ip] -= b_c[ip];
+      uza->res_p[ip] = uza->inv_mp[ip] * uza->d__v[ip];
+      p_c[ip] += gamma * uza->res_p[ip];
+    }
+
+  } /* End of Uzawa iterations */
 
   int n_inner_iter = uza->info.n_inner_iter;
 
