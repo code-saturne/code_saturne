@@ -171,7 +171,7 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
         #self.lineEditEmissivity.show()
         self.lineEditEmissivity.setText(str(self.__boundary.getEmissivity()))
 
-        #self.labelIntTemperature.hide()
+        self.labelIntTemperature.setText("Interior temperature")
         #self.lineEditIntTemperature.hide()
         #self.labelIntTemperatureUnit.hide()
         self.lineEditIntTemperature.setText(str(self.__boundary.getInternalTemperatureProfile()))
@@ -197,6 +197,9 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
         self.lineEditConductionFlux.setText(str(self.__boundary.getFlux()))
 
         if cond == 'ipgrno':
+
+            self.labelIntTemperature.setText("Initial temperature")
+
             self.labelConductivity.show()
             self.lineEditConductivity.show()
             self.labelConductivityUnit.show()

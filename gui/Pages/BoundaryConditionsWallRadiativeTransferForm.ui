@@ -68,7 +68,7 @@
         <item row="2" column="0">
          <widget class="QLabel" name="labelConductivity">
           <property name="text">
-           <string>Conductivty</string>
+           <string>Conductivity</string>
           </property>
          </widget>
         </item>
