@@ -1521,10 +1521,11 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
 
       /* Now add sqrt(2/3 k) as noise on the velocity */
 
-      cs_real_t rand[3];
-      cs_random_normal(3, rand);
-
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+
+        cs_real_t rand[3];
+        cs_random_normal(3, rand);
+
         for (int i = 0; i < 3; i++)
           v_vel[cell_id][i] += rand[i] * sqrt(2./3.*v_k[cell_id]);
       }
