@@ -498,7 +498,7 @@ class mei_to_c_interpreter:
             loop_tokens[kc] = 'const cs_real_t %s = xyz[f_id][%s];' % (kc, str(ic))
 
         glob_tokens['xyz'] = \
-        'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cocg;'
+        'const cs_real_3_t *xyz = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;'
 
         # Notebook variables
         for kn in self.notebook.keys():
