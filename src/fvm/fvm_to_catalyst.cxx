@@ -400,9 +400,6 @@ _init_coprocessor(bool      private_comm,
 _init_coprocessor(void)
 #endif
 {
-  if (_processor == NULL)
-    _processor = vtkCPProcessor::New();
-
   int mpi_flag = 0;
 
 #if defined(HAVE_MPI)
@@ -410,20 +407,28 @@ _init_coprocessor(void)
   MPI_Initialized(&mpi_flag);
 
   if (mpi_flag) {
-
     if (comm != _reference_comm) {
-
-      if (comm != MPI_COMM_NULL && _reference_comm != MPI_COMM_NULL) {
+      if (comm != MPI_COMM_NULL && _reference_comm != MPI_COMM_NULL)
         bft_error(__FILE__, __LINE__, 0,
                   _("All Catalyst writers must use the same MPI communicator"));
-      }
-      else {
-        _reference_comm = comm;
-        if (private_comm && comm != MPI_COMM_NULL)
-          MPI_Comm_dup(comm, &(_comm));
-        else
-          _comm = comm;
-      }
+    }
+  }
+
+#endif
+
+  if (_processor == NULL) {
+
+    _processor = vtkCPProcessor::New();
+
+#if defined(HAVE_MPI)
+
+    if (mpi_flag) {
+
+      _reference_comm = comm;
+      if (private_comm && comm != MPI_COMM_NULL)
+        MPI_Comm_dup(comm, &(_comm));
+      else
+        _comm = comm;
 
       vtkMPICommunicatorOpaqueComm vtk_comm
         = vtkMPICommunicatorOpaqueComm(&_comm);
@@ -431,12 +436,12 @@ _init_coprocessor(void)
 
     }
 
-  }
-
 #endif
 
-  if (!mpi_flag)
-    _processor->Initialize();
+    if (!mpi_flag)
+      _processor->Initialize();
+
+  }
 }
 
 /*----------------------------------------------------------------------------
@@ -607,7 +612,6 @@ _get_norm_elt_type(const fvm_element_t fvm_elt_type)
  * parameters:
  *   norm_elt_type  <-- Catalyst element type.
  *   vertex_order  --> Pointer to vertex order array (0 to n-1).
- *
  *----------------------------------------------------------------------------*/
 
 static void
