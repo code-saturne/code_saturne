@@ -579,6 +579,11 @@ domains = [
 
         os.chdir(casedirname)
 
+        if self.copy is not None:
+            if not (os.path.exists(os.path.join(self.copy, 'DATA', 'REFERENCE')) \
+                    or os.path.exists(os.path.join(self.copy, 'SRC', 'REFERENCE'))):
+                self.use_ref = False
+
         # Data directory
 
         data = 'DATA'
@@ -586,7 +591,7 @@ domains = [
         if not self.import_only:
             os.mkdir(data)
             abs_setup_distpath = os.path.join(data_distpath, 'setup.xml')
-            if os.path.isfile(abs_setup_distpath):
+            if os.path.isfile(abs_setup_distpath) and not self.copy:
                 shutil.copy(abs_setup_distpath, data)
                 unset_executable(data)
 
@@ -596,7 +601,7 @@ domains = [
             ref           = os.path.join(data, 'REFERENCE')
             os.mkdir(ref)
             for f in ['dp_C3P', 'dp_C3PSJ', 'dp_C4P', 'dp_ELE',
-                      'dp_FUE', 'dp_transfo', 'meteo']:
+                      'dp_FUE', 'dp_transformers', 'meteo']:
                 abs_f = os.path.join(thch_distpath, f)
                 if os.path.isfile(abs_f):
                     shutil.copy(abs_f, ref)

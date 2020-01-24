@@ -52,6 +52,7 @@ except Exception:
 
 from code_saturne import cs_exec_environment
 from code_saturne import cs_runcase
+from code_saturne.cs_create import set_executable, unset_executable
 
 #-------------------------------------------------------------------------------
 # Process the passed command line arguments
@@ -89,61 +90,25 @@ def process_cmd_line(argv, pkg):
     return (options, args)
 
 #-------------------------------------------------------------------------------
-# Assign executable mode (chmod +x) to a file
-#-------------------------------------------------------------------------------
-
-def set_executable(filename):
-    """
-    Give executable permission to a given file.
-    Equivalent to `chmod +x` shell function.
-    """
-
-    st   = os.stat(filename)
-    mode = st[stat.ST_MODE] | stat.S_IXUSR
-    if mode & stat.S_IRGRP:
-        mode = mode | stat.S_IXGRP
-    if mode & stat.S_IROTH:
-        mode = mode | stat.S_IXOTH
-    os.chmod(filename, mode)
-
-    return
-
-#-------------------------------------------------------------------------------
-# Remove executable mode (chmod -x) from a file or files inside a directory
-#-------------------------------------------------------------------------------
-
-def unset_executable(path):
-    """
-    Remove executable permission from a given file or files inside a directory.
-    Equivalent to `chmod -x` shell function.
-    """
-
-    if os.path.isfile(path):
-        try:
-            st   = os.stat(path)
-            mode = st[stat.ST_MODE] | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH
-            mode = mode ^ (stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
-            os.chmod(path, mode)
-        except Exception:
-            pass
-
-    elif os.path.isdir(path):
-        l = os.listdir(path)
-        for p in l:
-            unset_executable(p)
-
-    return
-
-#-------------------------------------------------------------------------------
 # Copy a directory without raising an error if the destination allready exists
+#
+# If ref is set to true, ignore the directory if the destination does not
+# exist, so that if the case was created with a "--noref" option, we  can
+# avoid adding references or examples in an update.
+# In this case, previous files are also removed, as they may be obsolete.
 #-------------------------------------------------------------------------------
 
-def copy_directory(src, dest):
+def copy_directory(src, dest, ref=False):
 
     if not os.path.isdir(dest):
-        shutil.copytree(src, dest)
+        if ref == False:
+            shutil.copytree(src, dest)
 
     else:
+        if ref:
+            for itm in os.listdir(dest):
+                os.remove(os.path.join(dest, itm))
+
         for itm in os.listdir(src):
             shutil.copy2(os.path.join(src, itm), os.path.join(dest, itm))
 
@@ -177,6 +142,17 @@ def update_case(options, pkg):
         if not os.path.isdir(data):
             os.mkdir(data)
 
+        dataref_distpath = os.path.join(datadir, 'user')
+        user = os.path.join(data, 'REFERENCE')
+
+        # Only update user_scripts reference, not data
+        # (we should try to deprecate the copying of reference data
+        # or use the GUI to align it with the active options)
+        if os.path.exists(user):
+            abs_f = os.path.join(datadir, 'cs_user_scripts.py')
+            shutil.copy(abs_f, user)
+            unset_executable(user)
+
         guiscript = os.path.join(data, pkg.guiname)
 
         fd = open(guiscript, 'w')
@@ -208,8 +184,8 @@ def update_case(options, pkg):
         user = os.path.join(src, 'REFERENCE')
         user_examples = os.path.join(src, 'EXAMPLES')
 
-        copy_directory(user_distpath, user)
-        copy_directory(user_examples_distpath, user_examples)
+        copy_directory(user_distpath, user, True)
+        copy_directory(user_examples_distpath, user_examples, True)
 
         add_datadirs = []
         if pkg.name == 'neptune_cfd' :
@@ -219,12 +195,11 @@ def update_case(options, pkg):
         for d in add_datadirs:
             user_distpath = os.path.join(d, 'user')
             if os.path.isdir(user_distpath):
-                copy_directory(user_distpath, user)
+                copy_directory(user_distpath, user, True)
 
             user_examples_distpath = os.path.join(d, 'user_examples')
             if os.path.isdir(user_examples_distpath):
-                copy_directory(user_examples_distpath, user_examples)
-
+                copy_directory(user_examples_distpath, user_examples, True)
 
         unset_executable(user)
         unset_executable(user_examples)
@@ -253,7 +228,6 @@ def update_case(options, pkg):
                                      study_name=study_name,
                                      case_name=case)
         runcase.save()
-
 
 
 #-------------------------------------------------------------------------------
