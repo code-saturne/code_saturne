@@ -284,6 +284,23 @@ cs_boundary_def_wall_zones(cs_boundary_t   *boundaries);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Check if one needs to perform a pressure rescaling (in case of a
+ *         Dirichlet on the velocity for the whole boundary)
+ *         Use in CDO schemes for Navier--Stokes
+ *
+ * \param[in] n_b_faces    number of border faces
+ * \param[in] bf_type      array of types of boundary for each boudary face
+ *
+ * \return 1 if a pressure rescaling is needed otherwise 0
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_boundary_need_pressure_rescaling(cs_lnum_t                  n_b_faces,
+                                    const cs_boundary_type_t   bf_type[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build a boundary type description
  *
  * \param[in]   b_type         type flag

@@ -1663,7 +1663,9 @@ _update_fields(cs_cdofb_monolithic_t         *sc,
                                         vel_f, vel_fld->val);
 
   /* Rescale pressure */
-  cs_cdofb_navsto_set_zero_mean_pressure(quant, pr_fld->val);
+  if (sc->need_pressure_rescaling) {
+    cs_cdofb_navsto_set_zero_mean_pressure(quant, pr_fld->val);
+  }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 2
   cs_dbg_darray_to_listing("VELOCITY", 3*quant->n_faces, vel_f, 9);
@@ -1847,6 +1849,9 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
                                           nsp->n_pressure_bc_defs,
                                           nsp->pressure_bc_defs,
                                           cs_shared_quant->n_b_faces);
+
+  sc->need_pressure_rescaling =
+    cs_boundary_need_pressure_rescaling(cs_shared_quant->n_b_faces, bf_type);
 
   /* Set the way to enforce the Dirichlet BC on the velocity
    * "fixed_wall" means a no-slip BC */

@@ -214,6 +214,7 @@ struct _cdofb_monolithic_t {
    */
 
   cs_cdo_bc_face_t               *pressure_bc;
+  int                             need_pressure_rescaling;
 
   /*! \var apply_fixed_wall
    *  \ref cs_cdo_apply_boundary_t function pointer defining how to apply a
