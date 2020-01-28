@@ -430,6 +430,7 @@ _build_shared_structures(void)
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      bf_type     type of boundary for the boundary face
+ * \param[in, out] mom_eqc     context structure for the momentum equation
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
  */
@@ -440,6 +441,7 @@ _apply_bc_partly(const cs_cdofb_monolithic_t   *sc,
                  const cs_equation_param_t     *eqp,
                  const cs_cell_mesh_t          *cm,
                  const cs_boundary_type_t      *bf_type,
+                 cs_cdofb_vecteq_t             *mom_eqc,
                  cs_cell_sys_t                 *csys,
                  cs_cell_builder_t             *cb)
 {
@@ -454,6 +456,9 @@ _apply_bc_partly(const cs_cdofb_monolithic_t   *sc,
     if (csys->has_nhmg_neumann)
       for (short int f  = 0; f < 3*cm->n_fc; f++)
         csys->rhs[f] += csys->neu_values[f];
+
+    if (cs_equation_param_has_convection(eqp)) /* Always weakly enforced */
+      mom_eqc->adv_func_bc(eqp, cm, cb, csys);
 
     for (short int i = 0; i < csys->n_bc_faces; i++) {
 
@@ -1083,7 +1088,7 @@ _steady_build(const cs_navsto_param_t      *nsp,
        *                   ===================
        * Apply a part of BC before the time scheme */
 
-      _apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, csys, cb);
+      _apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, mom_eqc, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_MONOLITHIC_DBG > 1
       if (cs_dbg_cw_test(mom_eqp, cm, csys))
@@ -1272,7 +1277,7 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
        *                   ===================
        * Apply a part of BC before the time scheme */
 
-      _apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, csys, cb);
+      _apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, mom_eqc, csys, cb);
 
       /* 4- TIME CONTRIBUTION (mass lumping or vaornoï) */
       /* ==================== */
@@ -1505,7 +1510,7 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
        *                   ===================
        * Apply a part of BC before the time scheme */
 
-      _apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, csys, cb);
+      _apply_bc_partly(sc, mom_eqp, cm, nsb.bf_type, mom_eqc, csys, cb);
 
       /* 4- UNSTEADY TERM + TIME SCHEME
        * ============================== */

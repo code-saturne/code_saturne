@@ -183,6 +183,9 @@ _apply_bc_partly(const cs_equation_param_t     *eqp,
 
     }
 
+    if (cs_equation_param_has_convection(eqp)) /* Always weakly enforced */
+      eqc->adv_func_bc(eqp, cm, cb, csys);
+
     if (csys->has_sliding)
       eqc->enforce_sliding(eqp, cm, fm, cb, csys);
 
