@@ -3066,7 +3066,7 @@ ple_locator_extend_search(ple_locator_t               *this_locator,
     int globflag[6];
     int locflag[6] = {-1,
                       -1,
-                      _LOCATE_BB_SENDRECV,
+                      1, /* equivalent to _LOCATE_BB_SENDRECV */
                       -_LOCATE_BB_SENDRECV_ORDERED,
                       _LOCATE_BB_SENDRECV_ORDERED,
                       0};
@@ -3109,10 +3109,11 @@ ple_locator_extend_search(ple_locator_t               *this_locator,
 
     globflag[3] = -globflag[3];
 
-    /* Compatibility with older versions,
-       which initialized locflag[3] to -1 */
-    if (globflag[3] == 1)
-      globflag[3] = _LOCATE_BB_SENDRECV;
+    /* Compatibility with older versions */
+    for (i = 2; i < 5; i++) {
+      if (globflag[i] == 1)
+        globflag[i] = _LOCATE_BB_SENDRECV;
+    }
 
     if (globflag[2] > globflag[3])
       ple_error(__FILE__, __LINE__, 0,
