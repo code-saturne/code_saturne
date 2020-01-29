@@ -97,6 +97,16 @@ cs_user_lagr_volume_conditions(void)
 
     zis->fouling_index = 100.0;
 
+    /* Activation of agglomeration */
+    if (cs_glob_lagr_model->agglomeration == 1 ||
+        cs_glob_lagr_model->fragmentation == 1 ) {
+      zis->aggregat_class_id = 1;
+      zis->aggregat_fractal_dim = 3.;
+      zis->diameter = cs_glob_lagr_agglomeration_model->base_diameter
+                      * pow((cs_real_t)zis->aggregat_class_id,
+                            1./zis->aggregat_fractal_dim);
+    }
+
   }
   /*! [lagr_vol_define_injection_1] */
 

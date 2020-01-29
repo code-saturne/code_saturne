@@ -49,8 +49,21 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_orientation_wright_fisher_approx(cs_real_t  radial,
-                                         cs_real_t  dtp);
+wright_fisher_approx(cs_real_t radial,
+                     cs_real_t dtp   );
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Renormalization of the spheroid orientation
+ *
+ * Principle: ensure that the length of the spheroid (norm) stays equal to 1
+ *
+ * \param[in]  orient             Rod orientation (vector)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+renormalize_spheroid(cs_real_3_t orient);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -67,9 +80,9 @@ cs_lagr_orientation_wright_fisher_approx(cs_real_t  radial,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_orientation_dyn_spheroids(int              iprev,
-                                  cs_real_t        dt_p,
-                                  const cs_real_t  gradvf[][3][3]);
+cs_lagr_orientation_dyn_spheroids(int                iprev,
+                                  cs_real_t          dt_p,
+                                  const cs_real_33_t gradvf[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -84,11 +97,9 @@ cs_lagr_orientation_dyn_spheroids(int              iprev,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_orientation_dyn_ellipsoids(int              iprev,
-                                   cs_real_t        dt_p,
-                                   const cs_real_t  gradvf[][3][3]);
-
-/*----------------------------------------------------------------------------*/
+cs_lagr_orientation_dyn_jeffery(int       iprev,
+                                cs_real_t dt_p,
+                                const cs_real_33_t gradvf[]);
 
 END_C_DECLS
 

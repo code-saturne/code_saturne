@@ -976,6 +976,204 @@ cs_math_33_transform_a_to_r(const cs_real_t  m[3][3],
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Extract from the given matrix its symmetric
+ * and anti-symmetric part
+ *
+ * \param[in]     m            matrix of 3x3 real values
+ * \param[out]    m_sym        matrix of 3x3 real values (symmetric part)
+ * \param[out]    m_ant        matrix of 3x3 real values (anti-symmetric part)
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_math_33_extract_sym_ant(const cs_real_t  m[3][3],
+                           cs_real_33_t     m_sym,
+                           cs_real_33_t     m_ant)
+{
+  /* sym = 0.5 (m + m_transpose) */
+  m_sym[0][0] = 0.5 * (m[0][0] + m[0][0]);
+  m_sym[0][1] = 0.5 * (m[0][1] + m[1][0]);
+  m_sym[0][2] = 0.5 * (m[0][2] + m[2][0]);
+  m_sym[1][0] = 0.5 * (m[1][0] + m[0][1]);
+  m_sym[1][1] = 0.5 * (m[1][1] + m[1][1]);
+  m_sym[1][2] = 0.5 * (m[1][2] + m[2][1]);
+  m_sym[2][0] = 0.5 * (m[2][0] + m[0][2]);
+  m_sym[2][1] = 0.5 * (m[2][1] + m[1][2]);
+  m_sym[2][2] = 0.5 * (m[2][2] + m[2][2]);
+
+  /* ant = 0.5 (m - m_transpose) */
+  m_ant[0][0] = 0.5 * (m[0][0] - m[0][0]);
+  m_ant[0][1] = 0.5 * (m[0][1] - m[1][0]);
+  m_ant[0][2] = 0.5 * (m[0][2] - m[2][0]);
+  m_ant[1][0] = 0.5 * (m[1][0] - m[0][1]);
+  m_ant[1][1] = 0.5 * (m[1][1] - m[1][1]);
+  m_ant[1][2] = 0.5 * (m[1][2] - m[2][1]);
+  m_ant[2][0] = 0.5 * (m[2][0] - m[0][2]);
+  m_ant[2][1] = 0.5 * (m[2][1] - m[1][2]);
+  m_ant[2][2] = 0.5 * (m[2][2] - m[2][2]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute a rotation of the elements in a 3x3 real values matrix
+ *
+ * \param[in]     m             matrix of 3x3 real values
+ * \param[in]     i             1st indice
+ * \param[in]     j             2nd indice
+ * \param[in]     k             3rd indice
+ * \param[in]     l             4th indice
+ * \param[in]     s             rate
+ * \param[in]     t             rate
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_math_33_rotate_ind(      cs_real_t  m[3][3],
+                      const cs_lnum_t  i,
+                      const cs_lnum_t  j,
+                      const cs_lnum_t  k,
+                      const cs_lnum_t  l,
+                      const cs_real_t  s,
+                      const cs_real_t  t)
+{
+  // Save values of m[i][j] and m[k][l]
+  cs_real_t m_ij = m[i][j];
+  cs_real_t m_kl = m[k][l];
+  // Modify the values of (i,j) and (k,l)
+  m[i][j] = m_ij - s*(m_kl + m_ij*t);
+  m[k][l] = m_kl + s*(m_ij - m_kl*t);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Evaluate eigenvalues and eigenvectors
+ * of a real symmetric matrix m1[3,3]: m1*m2 = lambda*m2
+ * Use of Jacoby method for symmetric matrices
+ * (adapted from the book Numerical Recipies in C, Chapter 11.1)
+ *
+ * \param[in]     m_in         matrix of 3x3 real values (initial)
+ * \param[in]     tol_err      absolute tolerance (sum of off-diagonal elements)
+ * \param[out]    eig_val      vector of 3 real values (eigenvalues)
+ * \param[out]    eig_vec      matrix of 3x3 real values (eigenvectors)
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_math_33_eig_val_vec(const cs_real_t  m_in[3][3],
+                       const cs_real_t  tol_err,
+                       cs_real_3_t      eig_val,
+                       cs_real_33_t     eig_vec)
+{
+  /* Declaration of local variables
+   * vec1, vec2:  vectors of 3 real values (copies of diagonal values)
+   * m:           matrix of 3x3 real values (copy of m_in)
+   * epsilon:     error (like machine epsilon for floats) */
+  cs_real_3_t vec1, vec2;
+  cs_real_33_t m = { m_in[0][0], m_in[0][1], m_in[0][2],
+                     m_in[1][0], m_in[1][1], m_in[1][2],
+                     m_in[2][0], m_in[2][1], m_in[2][2] };
+  cs_real_t epsilon = 1.0e-16;
+
+  for (int id = 0; id < 3; id++) {
+    eig_val[id] = m_in[id][id];
+    vec1[id] = eig_val[id];
+    vec2[id] = 0.0;
+  }
+
+  /* The strategy here is to adopt a cyclic Jacobi method
+   * where the diagonalisation is carried out by several sweeps
+   * (each sweep to increase the precision of the result)
+   * Here, we perform up to 50 sweeps (the algorithm stops when
+   * reaching the given tolerance) */
+
+  // sweep number starts at 1
+  cs_lnum_t i_sweep = 0;
+  // Error = sum off-diagonal elements
+  cs_real_t error = cs_math_fabs(m[0][1]) + cs_math_fabs(m[0][2]) + cs_math_fabs(m[1][2]);
+  // Loop on sweeps
+  while ((i_sweep < 50) && (error > tol_err)) {
+    cs_real_t thresh;    // Define a threshold
+    if (i_sweep < 4)
+      thresh = 0.2 * error / 9; // Different threshold for the first 3 sweeps
+    else
+      thresh = 0.0;             // Threshold for later sweeps
+    // Start loop on off-diagonal elements
+    for (int id1 = 0; id1 < 2; id1 ++) {
+      for (int id2 = id1+1; id2 < 3; id2 ++) {
+        // After 4 sweeps, skip rotation if off-diagonal element is small
+        if (i_sweep > 4 & cs_math_fabs(m[id1][id2]) < epsilon)
+          m[id1][id2] = 0.0;
+        // Otherwise, ...
+        else if (cs_math_fabs(m[id1][id2]) >= epsilon) {
+          cs_real_t val1, val2, val3, val4, val5;     // Declare five variables val.
+          // Get val1
+          cs_real_t diff = eig_val[id2] - eig_val[id1];
+          if ( cs_math_fabs(m[id1][id2]) < epsilon )
+            val1 = m[id1][id2] / diff;
+          else {
+            cs_real_t theta = 0.5 * diff / m[id1][id2];
+            val1 = 1.0 / ( cs_math_fabs(theta)+sqrt(1.0+cs_math_pow2(theta)) );
+            if ( theta < 0 )
+              val1 = -val1;
+          }
+          // Get val2, val3 and val4
+          val3 = 1.0 / sqrt(1.0+cs_math_pow2(val1));
+          val2 = val1*val3;
+          val4 = val2 / (1.0 + val3);
+          val5 = val1 * m[id1][id2];
+          // Accumulate correction to diagonal elements
+          vec2[id1] -= val5;
+          vec2[id2] += val5;
+          eig_val[id1] -= val5;
+          eig_val[id2] += val5;
+
+          m[id1][id2] = 0.0;
+          // Rotate
+          for (int id3 = 0; id3 <= id1-1; id3++) // Rotations 0 <= j < p
+            cs_math_33_rotate_ind(m, id3, id1, id3, id2, val2, val4);
+          for (int id3 = id1+1; id3 <= id2-1; id3++) // Rotations p < j < q
+            cs_math_33_rotate_ind(m, id1, id3, id3, id2, val2, val4);
+          for (int id3 = id2+1; id3 < 3; id3++) // Rotations q < j <= n
+            cs_math_33_rotate_ind(m, id1, id3, id2, id3, val2, val4);
+          for (int id3 = 0; id3 < 3; id3++)
+            cs_math_33_rotate_ind(eig_vec, id3, id1, id3, id2, val2, val4);
+        }
+      }
+    }
+    // Update d and reinitialize z
+    for (int id = 0; id < 3; id++ ) {
+      vec1[id] += vec2[id];
+      eig_val[id] = vec1[id];
+      vec2[id] = 0.0;
+    }
+    // Update the error
+    error = cs_math_fabs(m[0][1]) + cs_math_fabs(m[0][2]) + cs_math_fabs(m[1][2]);
+    // Update i_sweep
+    i_sweep += 1;
+  }
+
+  /* Sort eigenvalues and eigenvectors with ascending order */
+  for (int id1 = 0; id1 < 2; id1++) {
+    cs_lnum_t ind_min = id1;
+    for (int id2 = id1+1; id2 < 3; id2++) {
+      if ( eig_val[id2] < eig_val[id1] )
+        ind_min = id2;
+    }
+    if ( ind_min != id1 ) {
+      cs_real_t temp = eig_val[ind_min];
+      eig_val[ind_min] = eig_val[id1];
+      eig_val[id1] = temp;
+      for (int id2 = 0; id2 < 3; id2++) {
+        temp = eig_vec[id2][ind_min];
+        eig_vec[id2][ind_min] = eig_vec[id2][id1];
+        eig_vec[id2][id1] = temp;
+      }
+    }
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Compute the product of a matrix of 3x3 real values by a matrix of 3x3
  * real values and add.
  *

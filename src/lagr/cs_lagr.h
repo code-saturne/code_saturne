@@ -294,9 +294,6 @@ typedef struct {
 
   int  n_stat_classes;
 
-  /*! number of aggregates that form the particle */
-  int n_particle_aggregates;
-
   int  n_user_variables;
 
 } cs_lagr_model_t;
@@ -470,9 +467,11 @@ typedef struct {
 
 typedef struct {
 
+  cs_lnum_t          max_nb_class;
+  cs_real_t          min_stat_weight;
+  cs_real_t          max_stat_weight;
   cs_real_t          scalar_kernel;
   cs_real_t          base_diameter;
-  cs_real_t          (*function_kernel)(cs_lnum_t, cs_lnum_t);
 
 } cs_lagr_agglomeration_model_t;
 
@@ -552,7 +551,8 @@ typedef struct {
 
   int         cluster;              /*!< statistical cluster id */
 
-  int         particle_aggregate;
+  int         aggregat_class_id;    /*!< aggregate class id */
+  cs_real_t   aggregat_fractal_dim; /*!< aggregate fractal dimension */
 
   cs_real_t   velocity_magnitude;   /*!< particle velocity magnitude */
   cs_real_t   velocity[3];          /*!< particle velocity components */

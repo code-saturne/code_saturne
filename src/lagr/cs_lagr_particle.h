@@ -167,7 +167,9 @@ typedef enum {
 
   CS_LAGR_STAT_CLASS,
 
-  CS_LAGR_PARTICLE_AGGREGATE,
+  /* Agglomeration/fragmentation model parameters */
+  CS_LAGR_AGGLO_CLASS_ID,
+  CS_LAGR_AGGLO_FRACTAL_DIM,
 
   /* User attributes */
 

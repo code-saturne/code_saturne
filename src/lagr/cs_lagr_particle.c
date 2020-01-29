@@ -895,9 +895,13 @@ cs_lagr_particle_attr_initialize(void)
     attr_keys[CS_LAGR_STAT_CLASS][1] = ++loc_count;
   }
 
-  if (lagr_model->n_particle_aggregates > 0) {
-    attr_keys[CS_LAGR_PARTICLE_AGGREGATE][0] = CS_LAGR_P_IPRP;
-    attr_keys[CS_LAGR_PARTICLE_AGGREGATE][1] = ++loc_count;
+  if (lagr_model->agglomeration == 1 ||
+      lagr_model->fragmentation == 1 ) {
+    attr_keys[CS_LAGR_AGGLO_CLASS_ID][0] = CS_LAGR_P_IPRP;
+    attr_keys[CS_LAGR_AGGLO_CLASS_ID][1] = ++loc_count;
+
+    attr_keys[CS_LAGR_AGGLO_FRACTAL_DIM][0] = CS_LAGR_P_RPRP;
+    attr_keys[CS_LAGR_AGGLO_FRACTAL_DIM][1] = ++loc_count;
   }
 
   if (lagr_model->n_user_variables > 0) {

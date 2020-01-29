@@ -100,46 +100,54 @@ static const double _k_boltz = 1.38e-23;
  * Principle: exact exponential scheme
  *
  * \param[in]  dtp           time step
- * \param[in]  cell_id       cell where the spheroid is
  * \param[in]  orientation   spheroid orientation (vector)
- * \param[in]  gradvf        fluid velocity gradient (tensor)
+ * \param[in]  Lambda        spheroid shape parameter
+ * \param[in]  beta          coefficient to be added to diagonal elements (if needed)
+ * \param[in]  gradvf_sym    symetric part of the fluid velocity gradient (tensor)
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_mean_stretching_phase_spheroid(cs_real_t        dtp,
-                                cs_lnum_t        cell_id,
-                                cs_real_t        orientation[3],
-                                const cs_real_t  gradvf[][3][3])
+_mean_stretching_phase_spheroid(const cs_real_t dtp,
+                                      cs_real_t orientation[3],
+                                const cs_real_t Lambda,
+                                const cs_real_t beta,
+                                const cs_real_t gradvf_sym[3][3])
 {
-  /* Calculate stretching */
-  //TODO : add the analylitcal algorithm
+  /* Get the eigenvalues and eigenvectors of gradvf_sym */
+  cs_real_3_t eig_val;
+  // Initialize eig_vec to identity
+  cs_real_33_t eig_vec = { 1.0, 0.0, 0.0,
+                           0.0, 1.0, 0.0,
+                           0.0, 0.0, 1.0 };
+  cs_real_t tol_err = 1.0e-12;
+  cs_real_33_t mat_loc ;
+  mat_loc[0][0] = Lambda * (gradvf_sym[0][0] + beta);
+  mat_loc[0][1] = Lambda *  gradvf_sym[0][1] ;
+  mat_loc[0][2] = Lambda *  gradvf_sym[0][2] ;
+  mat_loc[1][0] = Lambda *  gradvf_sym[1][0] ;
+  mat_loc[1][1] = Lambda * (gradvf_sym[1][1] + beta);
+  mat_loc[1][2] = Lambda *  gradvf_sym[1][2] ;
+  mat_loc[2][0] = Lambda *  gradvf_sym[2][0] ;
+  mat_loc[2][1] = Lambda *  gradvf_sym[2][1] ;
+  mat_loc[2][2] = Lambda * (gradvf_sym[2][2] + beta);
+  cs_math_33_eig_val_vec(mat_loc, tol_err, eig_val, eig_vec);
+
+  /* Get the orientation in the local frame of reference */
+  cs_real_3_t orient_new;
+  cs_math_33t_3_product(eig_vec, orientation, orient_new);
+
+  /* Update the orientation*/
   for (int id = 0; id < 3; id++) {
-    // orientation[id] = orientation[id] * exp( gradvf[cell_id][id][id] * dtp);
-    orientation[id] = orientation[id] + 1 -1;
+    orient_new[id] = orient_new[id] * exp( eig_val[id] * dtp);
   }
-}
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Renormalization of the spheroid orientation
- *
- * Principle: ensure that the length of the spheroid (norm) stays equal to 1
- *
- * \param[in]  orientation             Rod orientation (vector)
- */
-/*----------------------------------------------------------------------------*/
+  /* Get the orient_new on the global frame of reference */
+  cs_math_33_3_product(eig_vec, orient_new, orientation);
 
-static void
-_renormalize_spheroid(cs_real_t  orientation[3])
-{
-  /* Calculate the norm of the spheroid */
-  cs_real_t norm_orient = cs_math_3_norm(orientation);
+  /* Renormalize the orientation (for security) */
+  cs_math_3_normalise(orientation, orientation);
 
-  /* Renormalise the spheroid */
-  for (int id = 0; id < 3; id++) {
-    orientation[id] = orientation[id] / norm_orient;
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -147,33 +155,32 @@ _renormalize_spheroid(cs_real_t  orientation[3])
  * \brief Treatment of spheroid rotation increment by antisymetric mean
  *        velocity gradient
  *
- * Principle: exact matrix rotation (Rodriges' formula)
+ * Principle: exact matrix rotation (Rodrigues' formula)
  *
  * TODO: use directly the antisymetric mean velocity gradient matrix Omega
  *
- * \param[in]  dtp                time step
- * \param[in]  cell_id            cell where the spheroid is
- * \param[in]  orientation        spheroid orientation (vector)
- * \param[in]  gradvf             fluid velocity gradient (tensor)
+ * \param[in]  dtp           time step
+ * \param[in]  orientation   spheroid orientation (vector)
+ * \param[in]  gradvf_ant    antisymetric part of the fluid velocity gradient (tensor)
  */
 /*----------------------------------------------------------------------------*/
+// TODO: use directly the antisymetric mean velocity gradient matrix Omega
 
 static void
-_mean_rotation_phase_spheroid(cs_real_t        dtp,
-                              cs_lnum_t        cell_id,
-                              cs_real_t        orientation[3],
-                              const cs_real_t  gradvf[][3][3])
+_mean_rotation_phase_spheroid(const cs_real_t  dtp,
+                                    cs_real_t  orientation[3],
+                              const cs_real_t  gradvf_ant[3][3])
 {
   /* Calculate the vector n and its norm */
   cs_real_t n_norm
-    = sqrt(  cs_math_pow2(gradvf[cell_id][0][1] - gradvf[cell_id][1][0])
-           + cs_math_pow2(gradvf[cell_id][1][2] - gradvf[cell_id][2][1])
-           + cs_math_pow2(gradvf[cell_id][0][2] - gradvf[cell_id][2][0]));
+    = sqrt(  cs_math_pow2( gradvf_ant[0][1] )
+           + cs_math_pow2( gradvf_ant[0][2] )
+           + cs_math_pow2( gradvf_ant[1][2] ) );
 
   cs_real_t n[3];
-  n[0] = (gradvf[cell_id][0][1] - gradvf[cell_id][1][0]) / n_norm;
-  n[1] = (gradvf[cell_id][2][0] - gradvf[cell_id][0][2]) / n_norm;
-  n[2] = (gradvf[cell_id][1][2] - gradvf[cell_id][2][1]) / n_norm;
+  n[0] = - gradvf_ant[1][2] / n_norm;
+  n[1] =   gradvf_ant[0][2] / n_norm;
+  n[2] = - gradvf_ant[0][1] / n_norm;
 
   /* Calculate the rotation of the spheroid */
   cs_real_t orientation_new[3];
@@ -181,22 +188,26 @@ _mean_rotation_phase_spheroid(cs_real_t        dtp,
 
   // TODO: use multiplication of matrix and vector (to simplify)
   orientation_new[0]
-    =    (cos(t_n) + n[0]*n[0]*(1-cos(t_n)))      * orientation[0]
-       + (n[0]*n[1]*(1-cos(t_n)) - n[2]*sin(t_n)) * orientation[1]
-       + (n[0]*n[2]*(1-cos(t_n)) + n[1]*sin(t_n)) * orientation[2];
+    =    ( cos(t_n) + n[0]*n[0]*(1-cos(t_n))      ) * orientation[0]
+       + ( n[0]*n[1]*(1-cos(t_n)) - n[2]*sin(t_n) ) * orientation[1]
+       + ( n[0]*n[2]*(1-cos(t_n)) + n[1]*sin(t_n) ) * orientation[2];
   orientation_new[1]
-    =    (n[0]*n[1]*(1-cos(t_n)) + n[2]*sin(t_n)) * orientation[0]
-       + (cos(t_n) + n[1]*n[1]*(1-cos(t_n)))      * orientation[1]
-       + (n[1]*n[2]*(1-cos(t_n)) + n[0]*sin(t_n)) * orientation[2];
+    =    ( n[0]*n[1]*(1-cos(t_n)) + n[2]*sin(t_n) ) * orientation[0]
+       + ( cos(t_n) + n[1]*n[1]*(1-cos(t_n))      ) * orientation[1]
+       + ( n[1]*n[2]*(1-cos(t_n)) - n[0]*sin(t_n) ) * orientation[2];
   orientation_new[2]
-    =    (n[0]*n[2]*(1-cos(t_n)) - n[1]*sin(t_n)) * orientation[0]
-       + (n[1]*n[2]*(1-cos(t_n)) + n[1]*sin(t_n)) * orientation[1]
-       + (cos(t_n) + n[2]*n[2]*(1-cos(t_n)))      * orientation[2];
+    =    ( n[0]*n[2]*(1-cos(t_n)) - n[1]*sin(t_n) ) * orientation[0]
+       + ( n[1]*n[2]*(1-cos(t_n)) + n[0]*sin(t_n) ) * orientation[1]
+       + ( cos(t_n) + n[2]*n[2]*(1-cos(t_n))      ) * orientation[2];
 
   /* Update values */
   for (int i = 0; i < 3; i++)
-    orientation = orientation_new;
+    orientation[i] = orientation_new[i];
+
+  /* Renormalize the orientation (for security) */
+  cs_math_3_normalise(orientation, orientation);
 }
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -206,28 +217,27 @@ _mean_rotation_phase_spheroid(cs_real_t        dtp,
  *
  * \param[in]  ip           particle number
  * \param[in]  dtp          time step
- * \param[in]  d_s          parameter for symmetric part
+ * \param[in]  d_prime      reduced parameter for the (isotropic) fluctuation tensor
  * \param[in]  orientation  spheroid orientation (vector)
+ * \param[in]  Lambda       spheroid shape parameter
  * \param[in]  brown        normal random number (9 values by particles)
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_bm_stretching_phase_spheroid(cs_lnum_t        ip,
-                              cs_real_t        dtp,
-                              cs_real_t        d_s,
-                              cs_real_t        orientation[3],
-                              const cs_real_t  brown[])
+_bm_stretching_phase_spheroid(const cs_lnum_t ip,
+                              const cs_real_t dtp,
+                              const cs_real_t d_prime,
+                                    cs_real_t orientation[3],
+                              const cs_real_t Lambda,
+                              const cs_real_t brown[])
 {
-  /* Time factor b_prime*/
-  cs_real_t b_prime = sqrt(d_s / 5.0);
-
   /* Auxiliary parameters for calculation */
-  cs_real_t aux1 = b_prime * orientation[0] * orientation[1] * orientation[2];
+  cs_real_t aux1 = orientation[0] * orientation[1] * orientation[2];
   cs_real_t r1_w2 = cs_math_pow2(orientation[0]);
   cs_real_t r2_w2 = cs_math_pow2(orientation[1]);
   cs_real_t r3_w2 = cs_math_pow2(orientation[2]);
-  cs_real_t aux5 = 1. / (1. + 0.5 * cs_math_pow2(b_prime) * dtp);
+  cs_real_t aux5 = Lambda * d_prime / (1. + 0.5 * cs_math_pow2(Lambda*d_prime) * dtp);
 
   /* W11 W12 W13 W21 W22 W23 W31 W32 W33 */
   cs_real_t  dw11 = sqrt(dtp) * brown[ip*9+0];
@@ -242,25 +252,28 @@ _bm_stretching_phase_spheroid(cs_lnum_t        ip,
 
   cs_real_3_t orientation_new;
 
-  orientation_new[0] = aux5 * ( orientation[0] - aux1 * (dw23+dw32)
-      + orientation[0] * b_prime * ( (1. - r1_w2)*dw11 - r2_w2*dw22 - r3_w2*dw33 )
-      + 0.5*b_prime*(1.-2.*r1_w2)*(orientation[1]*(dw12+dw21)+orientation[2]*(dw13+dw31)));
+  /* solve the orientation dynamics produced by Brownian stretching */
+  orientation_new[0] =  orientation[0] +
+    aux5 * ( - aux1 * (dw23+dw32)
+             + orientation[0] * ( (1. - r1_w2)*dw11 - r2_w2*dw22 - r3_w2*dw33 )
+             + 0.5 * (1.-2.*r1_w2)*(orientation[1]*(dw12+dw21)+orientation[2]*(dw13+dw31)) );
 
-  orientation_new[1] = aux5 * ( orientation[1] - aux1 * (dw13+dw31)
-      + orientation[1] * b_prime * ( (1. - r2_w2)*dw22 - r1_w2*dw11 - r3_w2*dw33 )
-      + 0.5*b_prime*(1.-2.*r2_w2)*(orientation[0]*(dw12+dw21)+orientation[2]*(dw23+dw32)));
+  orientation_new[1] =  orientation[1] +
+    aux5 * ( - aux1 * (dw13+dw31)
+             + orientation[1] * ( (1. - r2_w2)*dw22 - r1_w2*dw11 - r3_w2*dw33 )
+             + 0.5 * (1.-2.*r2_w2)*(orientation[0]*(dw12+dw21)+orientation[2]*(dw23+dw32)) );
 
-  orientation_new[2] = aux5 * ( orientation[2] - aux1 * (dw12+dw21)
-      + orientation[2] * b_prime * ( (1. - r3_w2)*dw33 - r1_w2*dw11 - r2_w2*dw22 )
-      + 0.5*b_prime*(1.-2.*r3_w2)*(orientation[1]*(dw23+dw32)+orientation[0]*(dw13+dw31)));
+  orientation_new[2] =  orientation[2] +
+    aux5 * ( - aux1 * (dw12+dw21)
+             + orientation[2] * ( (1. - r3_w2)*dw33 - r1_w2*dw11 - r2_w2*dw22 )
+             + 0.5 * (1.-2.*r3_w2)*(orientation[1]*(dw23+dw32)+orientation[0]*(dw13+dw31)) );
 
   /* Renormalise for security */
-  _renormalize_spheroid(orientation_new);
+  cs_math_3_normalise(orientation_new, orientation);
 
-  /* Update spheroid orientation */
-  for (int i = 0; i < 3; i++)
-    orientation  = orientation_new;
 }
+
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -273,103 +286,158 @@ _bm_stretching_phase_spheroid(cs_lnum_t        ip,
  *
  * \param[in]  ip                 particle number
  * \param[in]  dtp                time step
- * \param[in]  D_s                Parameter for symmetric part
+ * \param[in]  d_prime            reduced parameter for the (isotropic) fluctuation tensor
  * \param[in]  orientation        spheroid orientation (vector)
  * \param[in]  brown              normal random number (9 values by particles)
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_bm_rotation_phase_spheroid_by_spherical_coordinates(cs_lnum_t        ip,
-                                                     cs_real_t        dtp,
-                                                     cs_real_t        d_s,
-                                                     cs_real_t        orient_loc[3],
-                                                     const cs_real_t  brown[])
+_bm_rotation_phase_spheroid_by_spherical_coordinates(const cs_lnum_t ip,
+                                                     const cs_real_t dtp,
+                                                     const cs_real_t d_prime,
+                                                           cs_real_t orient_loc[3],
+                                                     const cs_real_t brown[])
 {
-  /* Time factor b_prime*/
-  cs_real_t half_b_prime = 0.5 * sqrt(d_s / 5.0);
 
-  /* W11 W12 W13 W21 W22 W23 W31 W32 W33 */
-  cs_real_t  dw11 = brown[ip*9+0];
-  cs_real_t  dw12 = brown[ip*9+1];
-  cs_real_t  dw13 = brown[ip*9+2];
-  cs_real_t  dw21 = brown[ip*9+3];
-  cs_real_t  dw22 = brown[ip*9+4];
-  cs_real_t  dw23 = brown[ip*9+5];
-  cs_real_t  dw31 = brown[ip*9+6];
-  cs_real_t  dw32 = brown[ip*9+7];
-  cs_real_t  dw33 = brown[ip*9+8];
+  /* Time factor d_prime*/
+  cs_real_t half_d_prime = 0.5 * d_prime;
 
-  cs_real_t theta0;
-  cs_real_t phi0;
-  cs_random_uniform(1, &theta0);
-  cs_random_uniform(1, &phi0);
-  theta0   = acos(0.8*(2.0*theta0-1.0));
-  phi0     = phi0*2.0*cs_math_pi;
-  cs_real_t axe0[3];
-  axe0[0] = sin(theta0)*cos(phi0);
-  axe0[1] = sin(theta0)*sin(phi0);
-  axe0[2] = cos(theta0);
+  /* Define the nine Brownian increments W11 W12 W13 W21 W22 W23 W31 W32 W33 */
+  //cs_real_t  dw11 = sqrt(dtp) * brown[ip*9+0];
+  cs_real_t  dw12 = sqrt(dtp) * brown[ip*9+1];
+  cs_real_t  dw13 = sqrt(dtp) * brown[ip*9+2];
+  cs_real_t  dw21 = sqrt(dtp) * brown[ip*9+3];
+  //cs_real_t  dw22 = sqrt(dtp) * brown[ip*9+4];
+  cs_real_t  dw23 = sqrt(dtp) * brown[ip*9+5];
+  cs_real_t  dw31 = sqrt(dtp) * brown[ip*9+6];
+  cs_real_t  dw32 = sqrt(dtp) * brown[ip*9+7];
+  //cs_real_t  dw33 = sqrt(dtp) * brown[ip*9+8];
 
-  cs_real_t brown_old[3];
-  brown_old[0] = sqrt(dtp) * dw23-dw32;
-  brown_old[1] = sqrt(dtp) * dw31-dw13;
-  brown_old[2] = sqrt(dtp) * dw12-dw21;
+  /* Define the angles theta and phi (3d case) */
+  cs_real_t theta;
+  cs_real_t phi;
 
-  cs_real_t n_rot[3];
-  n_rot[0] = orient_loc[1]*axe0[2] -orient_loc[2]*axe0[1];
-  n_rot[1] = orient_loc[2]*axe0[0] -orient_loc[0]*axe0[2];
-  n_rot[2] = orient_loc[0]*axe0[1] -orient_loc[1]*axe0[0];
-  cs_real_t norm_rot = cs_math_3_norm(n_rot);
-  n_rot[0] = n_rot[0] / norm_rot;
-  n_rot[1] = n_rot[1] / norm_rot;
-  n_rot[2] = n_rot[2] / norm_rot;
+  /* Define the Brownian rotation in global frame */
+  cs_real_t dW_glob_frame[3];
+  dW_glob_frame[0] =  dw23-dw32;
+  dW_glob_frame[1] =  dw31-dw13;
+  dW_glob_frame[2] =  dw12-dw21;
 
-  cs_real_t rot_angle = acos(  orient_loc[0]*axe0[0]
-                             + orient_loc[1]*axe0[1]
-                             + orient_loc[2]*axe0[2]);
+  /* Detect singularity to be handled
+   * (division by 0 when the fiber is aligned with z direction) */
+  cs_real_t singularity_threshold = 1.0e-6 ;
+  cs_real_t singularity_value = 1.0 - cs_math_pow2(orient_loc[2]);
 
-  double rot_m[3][3];
-  rot_m[0][0] = cos(rot_angle)+ cs_math_pow2(n_rot[0])*(1.0 -cos(rot_angle));
-  rot_m[1][0] = n_rot[0]*n_rot[1]*(1.0 -cos(rot_angle)) +n_rot[2]*sin(rot_angle);
-  rot_m[2][0] = n_rot[0]*n_rot[2]*(1.0 -cos(rot_angle)) -n_rot[1]*sin(rot_angle);
-  rot_m[0][1] = n_rot[0]*n_rot[1]*(1.0 -cos(rot_angle)) -n_rot[2]*sin(rot_angle);
-  rot_m[1][1] = cos(rot_angle)+ cs_math_pow2(n_rot[1])*(1.0 -cos(rot_angle));
-  rot_m[2][1] = n_rot[1]*n_rot[2]*(1.0 -cos(rot_angle)) +n_rot[0]*sin(rot_angle);
-  rot_m[0][2] = n_rot[0]*n_rot[2]*(1.0 -cos(rot_angle)) +n_rot[1]*sin(rot_angle);
-  rot_m[1][2] = n_rot[1]*n_rot[2]*(1.0 -cos(rot_angle)) -n_rot[0]*sin(rot_angle);
-  rot_m[2][2] = cos(rot_angle)+ cs_math_pow2(n_rot[2])*(1.0 -cos(rot_angle));
+  if (singularity_value < singularity_threshold) {// Handle the case where the orientation is nearly aligned with z (division by 0)
+    // Define the reference to singularity
+    cs_real_t axe_singularity[3] = { 1.0, 0.0, 0.0 };
+    // Get vector for rotation
+    cs_real_t n_rot[3];
+    n_rot[0] = orient_loc[1]*axe_singularity[2] -orient_loc[2]*axe_singularity[1];
+    n_rot[1] = orient_loc[2]*axe_singularity[0] -orient_loc[0]*axe_singularity[2];
+    n_rot[2] = orient_loc[0]*axe_singularity[1] -orient_loc[1]*axe_singularity[0];
+    cs_math_3_normalise(n_rot, n_rot);
+    // Compute rotation angle
+    cs_real_t rot_angle = acos( orient_loc[0]*axe_singularity[0]
+                              + orient_loc[1]*axe_singularity[1]
+                              + orient_loc[2]*axe_singularity[2]);
+    // Compute the rotation matrix
+    cs_real_33_t rot_m = {
+      cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle)),     // [0][0]
+      n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) + n_rot[2]*sin(rot_angle), // [0][1]
+      n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[1]*sin(rot_angle), // [0][2]
+      n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) - n_rot[2]*sin(rot_angle), // [1][0]
+      cos(rot_angle) + cs_math_pow2(n_rot[1])*(1.0 - cos(rot_angle)),     // [1][1]
+      n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[0]*sin(rot_angle), // [1][2]
+      n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[1]*sin(rot_angle), // [2][0]
+      n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[0]*sin(rot_angle), // [2][1]
+      cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle)) };   // [2][2]
 
-  cs_real_t brown_rot[3];
-  brown_rot[0] =  rot_m[0][0]*brown_old[0] + rot_m[0][1]*brown_old[1]
-                + rot_m[0][2]*brown_old[2];
-  brown_rot[1] =  rot_m[1][0]*brown_old[0] + rot_m[1][1]*brown_old[1]
-                + rot_m[1][2]*brown_old[2];
-  brown_rot[2] =  rot_m[2][0]*brown_old[0] + rot_m[2][1]*brown_old[1]
-                + rot_m[2][2]*brown_old[2];
+    // Compute the Brownian rotation in local frame
+    cs_real_t dW_loc_frame[3];
+    cs_math_33_3_product(rot_m, dW_glob_frame, dW_loc_frame);
 
-  cs_real_t theta  = theta0 + (cs_math_pow2(half_b_prime)*axe0[2]*dtp
-                               + half_b_prime*(axe0[1]*brown_rot[0] -axe0[0]*brown_rot[0]))
-                     /(sqrt(1.0 -cs_math_pow2(axe0[2])));
-  cs_real_t phi    = phi0  + half_b_prime*(axe0[2]*(axe0[1]*brown_rot[1]
-                      - axe0[0]*brown_rot[0])/(1.0 -cs_math_pow2(axe0[2])) -brown_rot[2]);
+    // Compute the angles theta and phi
+    theta = acos(axe_singularity[2])
+            + (cs_math_pow2(half_d_prime)*axe_singularity[2]*dtp
+               + half_d_prime*(axe_singularity[1]*dW_loc_frame[0]
+                             - axe_singularity[0]*dW_loc_frame[1]))
+            / sqrt(1.0 - cs_math_pow2(axe_singularity[2]));
+    phi   = atan2(axe_singularity[1],axe_singularity[0])
+            + half_d_prime * (axe_singularity[2] * (axe_singularity[1]*dW_loc_frame[1]
+            + axe_singularity[0]*dW_loc_frame[0]) / (1.0 - cs_math_pow2(axe_singularity[2]))
+            - dW_loc_frame[2]);
 
-  cs_real_t orient_new[3];
-  orient_new[0] = sin(theta)*cos(phi);
-  orient_new[1] = sin(theta)*sin(phi);
-  orient_new[2] = cos(theta);
+    /* From spherical to cartesian coordinates theta in [0,pi], phi in [0,2pi) */
 
-  /* Update orientation */
-  orient_loc[0] =   rot_m[0][0]*orient_new[0]
-                  + rot_m[1][0]*orient_new[1]
-                  + rot_m[2][0]*orient_new[2];
-  orient_loc[1] =   rot_m[0][1]*orient_new[0]
-                  + rot_m[1][1]*orient_new[1]
-                  + rot_m[2][1]*orient_new[2];
-  orient_loc[2] =   rot_m[0][2]*orient_new[0]
-                  + rot_m[1][2]*orient_new[1]
-                  + rot_m[2][2]*orient_new[2];
+    // Start by a modulo operation (to have theta and phi in [-2pi,2pi]
+    theta = fmod(theta, 2.0*cs_math_pi) ;
+    phi = fmod(phi, 2.0*cs_math_pi) ;
+
+    // Handle cases where theta is not in [0,pi]
+    if (theta > cs_math_pi) {
+         theta = 2.0*cs_math_pi - theta ;
+         phi   = fmod(phi + cs_math_pi, 2.0*cs_math_pi) ;
+    }
+    else if ( (-cs_math_pi < theta) & (theta < 0.0) ){
+         theta = -theta ;
+         phi   = fmod(phi + cs_math_pi, 2.0*cs_math_pi) ;
+    }
+    else if ( (-2.0*cs_math_pi < theta) & (theta < -cs_math_pi) ){
+         theta = 2.0*cs_math_pi - cs_math_fabs(theta) ;
+    }
+    if (phi < 0.0)
+      phi = 2*cs_math_pi + phi;
+
+    /* Compute the orientation from angles (theta and phi) */
+    cs_real_3_t orient_new;
+    orient_new[0] = sin(theta)*cos(phi);
+    orient_new[1] = sin(theta)*sin(phi);
+    orient_new[2] = cos(theta);
+    // Project on the global coordinate frame
+    cs_math_33t_3_product(rot_m, orient_new, orient_loc);
+
+  }
+  else{ // Handle the general case
+    theta = acos(orient_loc[2])
+        + (cs_math_pow2(half_d_prime)*orient_loc[2]*dtp
+        + half_d_prime*(orient_loc[1]*dW_glob_frame[0] - orient_loc[0]*dW_glob_frame[1]))
+        / sqrt(singularity_value);
+
+    phi = atan2(orient_loc[1],orient_loc[0])
+        + half_d_prime*(orient_loc[2]*(orient_loc[1]*dW_glob_frame[1] + orient_loc[0]*dW_glob_frame[0])/ singularity_value
+        - dW_glob_frame[2]);
+
+    /* From spherical to cartesian coordinates theta in [0,pi], phi in [0,2pi) */
+
+    // Start by a modulo operation (to have theta and phi in [-2pi,2pi]
+    theta = fmod(theta, 2.0*cs_math_pi) ;
+    phi = fmod(phi, 2.0*cs_math_pi) ;
+
+    // Handle cases where theta is not in [0,pi]
+    if (theta > cs_math_pi) {
+         theta = 2*cs_math_pi - theta ;
+         phi   = fmod(phi + cs_math_pi, 2.0*cs_math_pi);
+    }
+    else if ( (-cs_math_pi < theta) & (theta < 0.0) ){
+         theta = -theta ;
+         phi   = fmod(phi + cs_math_pi, 2.0*cs_math_pi);
+    }
+    else if ( (-2.0*cs_math_pi < theta) & (theta < -cs_math_pi) ){
+         theta = 2.0*cs_math_pi - cs_math_fabs(theta) ;
+    }
+    if (phi < 0.0)
+      phi = 2*cs_math_pi + phi;
+
+    /* Compute the orientation from angles (theta and phi) */
+    orient_loc[0] = sin(theta)*cos(phi);
+    orient_loc[1] = sin(theta)*sin(phi);
+    orient_loc[2] = cos(theta);
+  }
+
 }
+
 
 /*============================================================================
  * Public function definitions
@@ -390,8 +458,8 @@ _bm_rotation_phase_spheroid_by_spherical_coordinates(cs_lnum_t        ip,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_orientation_dyn_spheroids(int       iprev,
-                                  cs_real_t dt_p,
+cs_lagr_orientation_dyn_spheroids(int iprev,
+                                  const cs_real_t  dt_p,
                                   const cs_real_33_t gradvf[])
 {
   /* ==============================================================================*/
@@ -404,9 +472,7 @@ cs_lagr_orientation_dyn_spheroids(int       iprev,
   cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
 
   cs_real_t *brown = NULL;
-  cs_real_t *unif = NULL;
   BFT_MALLOC(brown, p_set->n_particles*9, cs_real_t);
-  BFT_MALLOC(unif, p_set->n_particles, cs_real_t);
 
   /* =============================================================================
    * 2. Integration of the (S)DE on the orientation
@@ -421,7 +487,6 @@ cs_lagr_orientation_dyn_spheroids(int       iprev,
     /* 9 gaussian increments numered as 3x3 tensor */
     /* W11 W12 W13 W21 W22 W23 W31 W32 W33 */
     cs_random_normal(9, &(brown[9 * p_id]));
-    cs_random_uniform(1, &(unif[p_id]));
 
     /* Get local flow properties
        cell_id :    id of the cell
@@ -460,67 +525,79 @@ cs_lagr_orientation_dyn_spheroids(int       iprev,
       cs_exit(1);
     }
 
-    cs_real_t tau_eta = sqrt(visccf / epsilon) + 1.0;
-
-    /* Parameters for the correlated noise
-       D_s:        symmetric part for the forcing
-       D_a:        antisymmetric part for the forcing
-       b1, b2, b3: diagonal terms for the tensor
+    cs_real_t tau_eta = sqrt(visccf / epsilon);
+    /*
+      Parameters for the (isotropic) fluctuation tensor (d_1,....,d_9)
+      Assuming isotropy, the only non zero components are :
+      d_1 = -1.0 / (sqrt(3.0 * tau_eta);
+      d_2 = 0.5 * (sqrt(3.0/tau_eta) + sqrt(5.0/tau_eta));
+      d_3 = 0.5 * (sqrt(3.0/tau_eta) - sqrt(5.0/tau_eta));
+      Only this reduced information is needed :
+      d_prime = d_2 + d_3
     */
+    cs_real_t d_1 = -1.0 / sqrt(3.0 * tau_eta);
+    cs_real_t d_2 = 0.5 * (sqrt(3.0/tau_eta) + sqrt(5.0/tau_eta));
+    cs_real_t d_3 = 0.5 * (sqrt(3.0/tau_eta) - sqrt(5.0/tau_eta));
 
-    cs_real_t d_s = 15.0 / tau_eta;
-    cs_real_t d_a = 15.0 / tau_eta;
-
-    cs_real_t b_1 = (-1.0 / 3.0) * sqrt(d_s / 5.0);
-    cs_real_t b_2 = 0.5 * (sqrt(d_s/5.0) + sqrt(d_a/3.0));
-    cs_real_t b_3 = 0.5 * (sqrt(d_s/5.0) - sqrt(d_a/3.0));
+    cs_real_t d_prime = sqrt(3.0/tau_eta);
 
     /* Get particle orientation*/
     cs_real_t *orientation  = cs_lagr_particles_attr(p_set, p_id,
                                                      CS_LAGR_ORIENTATION);
 
+    /* Get particle shape_param*/
+    cs_real_t *radii = cs_lagr_particles_attr(p_set, p_id,
+                                              CS_LAGR_RADII);
+    cs_real_t Lambda = (cs_math_pow2(radii[2]/radii[1]) - 1.0)
+                     / (cs_math_pow2(radii[2]/radii[1]) + 1.0);
+
+    /* Extract symmetric and anti-symmetric parts
+     * of the velocity gradients (matrix) */
+    cs_real_t gradvf_sym[3][3];
+    cs_real_t gradvf_ant[3][3];
+    cs_math_33_extract_sym_ant(gradvf[cell_id], gradvf_sym, gradvf_ant);
+
     /* First step:
-       Stretching of spheroids by the mean velocity gradient
+       Stretching of spheroids by the mean velocity gradient */
+    // Add a value to the diagonal elements (if needed)
+    cs_real_t beta = 0.5 * ( cs_math_pow2(d_1+d_2+d_3) +
+                             2.0*cs_math_pow2(d_1) + cs_math_pow2(d_prime) );
 
     _mean_stretching_phase_spheroid(dt_p,
-                                    cell_id,
                                     orientation,
-                                    gradvf);
-    */
+                                    Lambda,
+                                    beta,
+                                    gradvf_sym);
 
     /* Second step:
-       Rotation of spheroids by the mean velocity gradient
+       Rotation of spheroids by the mean velocity gradient */
     _mean_rotation_phase_spheroid(dt_p,
-                                  cell_id,
                                   orientation,
-                                  gradvf); */
+                                  gradvf_ant);
 
     /* Third step:
-       Stretching of spheroids by Brownian motion
-
+       Stretching of spheroids by Brownian motion */
     _bm_stretching_phase_spheroid(p_id,
                                   dt_p,
-                                  d_s,
+                                  d_prime,
                                   orientation,
+                                  Lambda,
                                   brown);
-    */
 
     /* Fourth step:
-       Rotation of spheroids by Brownian motion and renormalisation
-    */
-
+       Rotation of spheroids by Brownian motion and renormalisation */
     _bm_rotation_phase_spheroid_by_spherical_coordinates(p_id,
                                                          dt_p,
-                                                         d_s,
+                                                         d_prime,
                                                          orientation,
                                                          brown);
 
-    _renormalize_spheroid(orientation);
+    cs_math_3_normalise(orientation, orientation);
   }
 
   /* Free memory */
   BFT_FREE(brown);
-  BFT_FREE(unif);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -536,9 +613,9 @@ cs_lagr_orientation_dyn_spheroids(int       iprev,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_orientation_dyn_ellipsoids(int              iprev,
-                                   cs_real_t        dt_p,
-                                   const cs_real_t  gradvf[][3][3])
+cs_lagr_orientation_dyn_jeffery(int              iprev,
+                                cs_real_t        dt_p,
+                                const cs_real_t  gradvf[][3][3])
 {
   /* 1. Initializations
      ================== */
@@ -598,7 +675,7 @@ cs_lagr_orientation_dyn_ellipsoids(int              iprev,
                                            CS_LAGR_SHAPE_PARAM);
 
     /* Tau_p */
-    cs_real_t taup = dt_p;
+    cs_real_t taup = dt_p; //FIXME: need of small time steps !! (e-8 in dns)
 
     /* Inverse of a time scale for angular velocity
      * in the relative reference frame */
@@ -637,6 +714,14 @@ cs_lagr_orientation_dyn_ellipsoids(int              iprev,
 
     for (int dim = 0; dim < 4; dim++)
       euler[dim] += dt_p * d_euler[dim];
+
+    cs_real_t euler_norm = sqrt( cs_math_pow2(euler[0])
+                               + cs_math_pow2(euler[1])
+                               + cs_math_pow2(euler[2])
+                               + cs_math_pow2(euler[3]) );
+
+    for (int dim = 0; dim < 4; dim++)
+      euler[dim] = euler[dim] / euler_norm;
 
     /* Time integration for the angular velocity
      * (correspond to equation (9) of C. Siewert et al 2013) */

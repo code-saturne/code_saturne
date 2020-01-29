@@ -182,7 +182,8 @@ static cs_lagr_model_t  _lagr_model
      .precipitation = 0,
      .fouling = 0,
      .n_stat_classes = 0,
-     .n_particle_aggregates = 0,
+     .agglomeration = 0,
+     .fragmentation = 0,
      .n_user_variables = 0};
 
 /* particle counter structure and associated pointer */
@@ -242,7 +243,7 @@ cs_lagr_shape_model_t *cs_glob_lagr_shape_model
 
 /* lagr agglomeration model structure and associated pointer */
 static cs_lagr_agglomeration_model_t _cs_glob_lagr_agglomeration_model
-  = {0, 0, NULL};
+  = { 0, 0., 0., 0., 0. };
 cs_lagr_agglomeration_model_t *cs_glob_lagr_agglomeration_model
   = &_cs_glob_lagr_agglomeration_model;
 
@@ -436,6 +437,13 @@ void
 cs_f_lagr_shape_model_pointers(cs_real_t **param_chmb);
 
 void
+cs_f_lagr_agglomeration_model_pointers( cs_lnum_t **max_nb_class,
+                                        cs_real_t **min_stat_weight,
+                                        cs_real_t **max_stat_weight,
+                                        cs_real_t **scalar_kernel,
+                                        cs_real_t **base_diameter );
+
+void
 cs_f_lagr_consolidation_model_pointers(cs_lnum_t **iconsol,
                                        cs_real_t **rate_consol,
                                        cs_real_t **slope_consol,
@@ -549,6 +557,21 @@ cs_f_lagr_shape_model_pointers(cs_real_t **param_chmb)
 {
   *param_chmb = &cs_glob_lagr_shape_model->param_chmb;
 }
+
+void
+cs_f_lagr_agglomeration_model_pointers(cs_lnum_t **max_nb_class,
+                                       cs_real_t **min_stat_weight,
+                                       cs_real_t **max_stat_weight,
+                                       cs_real_t **scalar_kernel,
+                                       cs_real_t **base_diameter )
+{
+  *max_nb_class    = &cs_glob_lagr_agglomeration_model->max_nb_class;
+  *min_stat_weight = &cs_glob_lagr_agglomeration_model->min_stat_weight;
+  *max_stat_weight = &cs_glob_lagr_agglomeration_model->max_stat_weight;
+  *scalar_kernel   = &cs_glob_lagr_agglomeration_model->scalar_kernel;
+  *base_diameter   = &cs_glob_lagr_agglomeration_model->base_diameter;
+}
+
 
 void
 cs_f_lagr_consolidation_model_pointers(cs_lnum_t **iconsol,
@@ -1243,7 +1266,9 @@ cs_lagr_injection_set_default(cs_lagr_injection_set_t  *zis)
 
   zis->cluster              =  0;
 
-  zis->particle_aggregate = 1;
+  /* Agglomeration/fragmentation default*/
+  zis->aggregat_class_id = 1;
+  zis->aggregat_fractal_dim = 3;
 
   zis->velocity_magnitude   = - cs_math_big_r;
 
@@ -1266,27 +1291,11 @@ cs_lagr_injection_set_default(cs_lagr_injection_set_t  *zis)
   for (int i = 0; i < 4; i++)
     zis->shape_param[i] = 0.;
 
-  /* For ellipsoids */
-  /* Default shape: sphere */
-  zis->shape = 0.;
-
-  /* Angular velocity */
-  for (int i = 0; i < 3; i++)
-    zis->angular_vel[i] = 0.;
-
-  /* Ellispoid radii a b c */
-  for (int i = 0; i < 3; i++)
-    zis->radii[i] = 0.;
-
   /* First three Euler parameters */
   for (int i = 0; i < 3; i++)
     zis->euler[i] = 0.;
 
   zis->euler[3] = 1.;
-
-  /* Shape parameters */
-  for (int i = 0; i < 4; i++)
-    zis->shape_param[i] = 0.;
 
   zis->stat_weight          = - cs_math_big_r;
   zis->diameter             = - cs_math_big_r;
@@ -1436,6 +1445,18 @@ cs_lagr_shape_model_t *
 cs_get_lagr_shape_model(void)
 {
   return &_cs_glob_lagr_shape_model;
+}
+
+/*----------------------------------------------------------------------------
+ * Provide access to cs_lagr_agglomeration_model_t
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_lagr_agglomeration_model_t *
+cs_get_lagr_agglomeration_model(void)
+{
+  return &_cs_glob_lagr_agglomeration_model;
 }
 
 /*----------------------------------------------------------------------------
@@ -2026,10 +2047,10 @@ cs_lagr_solve_time_step(const int         itypfb[],
   /* Evaluation of the minimum diameter */
   cs_real_t minimum_particle_diam = 0.;
 
-  if (cs_glob_lagr_model->agglomeration)
+  if (cs_glob_lagr_model->agglomeration == 1)
     minimum_particle_diam = cs_glob_lagr_agglomeration_model->base_diameter;
 
-  if (cs_glob_lagr_model->fragmentation)
+  if (cs_glob_lagr_model->fragmentation == 1)
     minimum_particle_diam = cs_glob_lagr_fragmentation_model->base_diameter;
 
   /* Management of advancing time
@@ -2201,9 +2222,9 @@ cs_lagr_solve_time_step(const int         itypfb[],
       }
       /* Integration of Jeffrey equations for ellispoids */
       else if (lagr_model->shape == 2) {
-        cs_lagr_orientation_dyn_ellipsoids(iprev,
-                                           cs_glob_lagr_time_step->dtp,
-                                           (const cs_real_33_t *)extra->grad_vel);
+        cs_lagr_orientation_dyn_jeffery(iprev,
+                                        cs_glob_lagr_time_step->dtp,
+                                        (const cs_real_33_t *)extra->grad_vel);
       }
 
 
@@ -2259,8 +2280,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
       cs_lnum_t *occupied_cell_ids = NULL;
       cs_lnum_t *particle_list = NULL;
 
-      if (   cs_glob_lagr_model->agglomeration
-          || cs_glob_lagr_model->fragmentation) {
+      if (   cs_glob_lagr_model->agglomeration == 1
+          || cs_glob_lagr_model->fragmentation == 1 ) {
 
         n_occupied_cells
           = _get_n_occupied_cells(p_set, 0, p_set->n_particles);
@@ -2279,7 +2300,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
          (avoid second pass if second order scheme is used) */
       if (   cs_glob_lagr_time_step->nor == 1
           && ((cs_glob_lagr_model->agglomeration == 1) ||
-             (cs_glob_lagr_model->fragmentation == 1))) {
+              (cs_glob_lagr_model->fragmentation == 1))) {
 
         /* Initialize lists (ids of cells and particles) */
         cs_lnum_t *cell_particle_idx;
@@ -2290,18 +2311,17 @@ cs_lagr_solve_time_step(const int         itypfb[],
         cs_lnum_t enter_parts = p_set->n_particles;
 
         /* Loop on all cells that contain at least one particle */
-        for (cs_lnum_t iep = 0; iep < n_occupied_cells; ++iep) {
+        for (cs_lnum_t icell = 0; icell < n_occupied_cells; ++icell) {
 
-          cs_lnum_t cell_id = occupied_cell_ids[iep];
+          cs_lnum_t cell_id = occupied_cell_ids[icell];
           cs_real_t mass_part
             = cs_lagr_particles_get_real(p_set, cell_id, CS_LAGR_MASS);
           cs_real_t diam_part
             = cs_lagr_particles_get_real(p_set, cell_id, CS_LAGR_DIAMETER);
-          cs_real_t rho = 6. * mass_part / (cs_math_pi * cs_math_pow3(diam_part));
 
           /* Particle indices: between start_part and end_part (list) */
-          cs_lnum_t start_part = particle_list[iep];
-          cs_lnum_t end_part = particle_list[iep+1];
+          cs_lnum_t start_part = particle_list[icell];
+          cs_lnum_t end_part = particle_list[icell+1];
 
           cs_lnum_t init_particles = p_set->n_particles;
 
@@ -2311,7 +2331,6 @@ cs_lagr_solve_time_step(const int         itypfb[],
             cs_lagr_agglomeration(cell_id,
                                   dt[0],
                                   minimum_particle_diam,
-                                  rho,
                                   start_part,
                                   end_part);
           }
@@ -2365,13 +2384,15 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
           if (cs_glob_lagr_model->fragmentation == 1) {
             cs_lagr_fragmentation(dt[0],
-                                  minimum_particle_diam, rho,
-                                  start_part, end_part - deleted_parts,
-                                  init_particles, p_set->n_particles);
+                                  minimum_particle_diam,
+                                  start_part,
+                                  end_part - deleted_parts,
+                                  init_particles,
+                                  p_set->n_particles);
           }
           cs_lnum_t inserted_parts_frag = p_set->n_particles - init_particles;
 
-          cell_particle_idx[iep+1] =   cell_particle_idx[iep]
+          cell_particle_idx[icell+1] =   cell_particle_idx[icell]
                                      + inserted_parts_agglo + inserted_parts_frag;
         }
 

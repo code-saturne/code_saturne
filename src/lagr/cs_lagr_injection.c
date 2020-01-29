@@ -349,16 +349,28 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
                 set_id);
   }
 
-  if (cs_glob_lagr_model->n_particle_aggregates > 0) {
-    if (zis->particle_aggregate < 1)
+  if (cs_glob_lagr_model->agglomeration == 1) {
+    if (zis->aggregat_class_id < 1)
       bft_error(__FILE__, __LINE__, 0,
                 _("Lagrangian module: \n"
-                  "  number of particles = %d is either not defined (negative)\n"
-                  "  or smaller than 1 than \n"
+                  "  id of the class of aggregates = %d is \n"
+                  " either not defined (negative)\n"
+                  "  or smaller than 1 \n"
                   "  for zone %d and set %d."),
-                (int)zis->particle_aggregate,
+                (int)zis->aggregat_class_id,
                 z_id,
                 set_id);
+    if (zis->aggregat_fractal_dim > 3.)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Lagrangian module: \n"
+                  "  value of fractal dimension = %d for aggregates \n"
+                  " is either not defined (negative) \n"
+                  "  or greater than 3 \n"
+                  "  for zone %d and set %d."),
+                (int)zis->aggregat_fractal_dim,
+                z_id,
+                set_id);
+
   }
 
   /* temperature */
@@ -733,74 +745,23 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
                                 zis->diameter);
 
       /* Shape for spheroids without inertia */
-      if (cs_glob_lagr_model->shape == 1) {
+      if (cs_glob_lagr_model->shape == 1 ||
+          cs_glob_lagr_model->shape == 2 ) {
 
-        /* Spherical radii a b 0 */
+        /* Spherical radii a b c */
         cs_real_t *radii = cs_lagr_particle_attr(particle, p_am,
                                                         CS_LAGR_RADII);
-        /* Shape lambda, gamma , 0 , 0 */
-        cs_real_t *shape_param = cs_lagr_particle_attr(particle, p_am,
-                                                        CS_LAGR_SHAPE_PARAM);
-        /* Orientation */
-        cs_real_t *orientation = cs_lagr_particle_attr(particle, p_am,
-                                                        CS_LAGR_ORIENTATION);
+
         for (cs_lnum_t i = 0; i < 3; i++) {
           radii[i] = zis->radii[i];
-          orientation[i] = zis->orientation[i];
         }
 
-        /* Compute shape parameters from radii */
-        //FIXME do note divide by 0...
-        //shape_param[0] = 1 - radii[2] / radii[1] ;  /* lambda */
-        //shape_param[1] =  (cs_math_pow2(shape_param[0]) -1)/
-        //                      (cs_math_pow2(shape_param[0]) +1)  ;  /* gamma */
-        //Let start with the rod case
-        shape_param[0] = 1000000. ; /* lambda is infinity */
-        shape_param[1] = 1.; /* gamma is one */
-        shape_param[2] = 0;
-        shape_param[3] = 0;
-
-        /* Compute orientation from uniform orientation on a unit-sphere */
-        cs_real_t theta0 ;
-        cs_real_t phi0 ;
-        cs_random_uniform(1, &theta0) ;
-        cs_random_uniform(1, &phi0) ;
-        theta0   = acos(2.0*theta0-1.0) ;
-        phi0     = phi0*2.0*cs_math_pi ;
-        orientation[0] = sin(theta0)*cos(phi0) ;
-        orientation[1] = sin(theta0)*sin(phi0) ;
-        orientation[2] = cos(theta0) ;
-        /* TODO initialize other things */
-
-        }
-
-      /* Shape general ellipsoid with inertia */
-      if (cs_glob_lagr_model->shape == 2) {
-
-        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_SHAPE,
-                                  zis->shape);
-
-        /* Ellipsoid radii a b c */
-        cs_real_t *radii = cs_lagr_particle_attr(particle, p_am,
-                                                     CS_LAGR_RADII);
-
+        /* Shape parameters */
         cs_real_t *shape_param = cs_lagr_particle_attr(particle, p_am,
-                                                       CS_LAGR_SHAPE_PARAM);
-        /* Euler parameters */
-        cs_real_t *euler = cs_lagr_particle_attr(particle, p_am,
-                                                 CS_LAGR_EULER);
-
-        for (cs_lnum_t i = 0; i < 3; i++)
-          radii[i] = zis->radii[i];
-
-        for (cs_lnum_t i = 0; i < 4; i++)
-          euler[i] = zis->euler[i];
-
-
-        /* TODO initialize other things */
+                                                        CS_LAGR_SHAPE_PARAM);
 
         /* Compute shape parameters from radii */
-        // FIXME is it valid for all ellispoids or for spheroids only?
+        // FIXME valid for all spheroids only (a = b, c > a,b )
         cs_real_t lamb = radii[2] / radii[1];//FIXME do note divide by 0...
         cs_real_t lamb_m1 = (radii[2] - radii[1]) / radii[1];
         cs_real_t lamb_p1 = (radii[2] + radii[1]) / radii[1];
@@ -831,84 +792,115 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
           shape_param[3] = 2. * _a2;
         }
 
-        /* Compute Euler angles
-           (random orientation with a uniform distribution in [-1;1]) */
-        cs_real_33_t trans_m;
-        // Generate the first two vectors
-        for (cs_lnum_t id = 0; id < 3; id++) {
-          cs_random_uniform(1, &trans_m[id][0]); /* (?,0) */
-          cs_random_uniform(1, &trans_m[id][1]); /* (?,1) */
-          cs_random_uniform(1, &trans_m[id][2]); /* (?,2) */
-          cs_real_3_t loc_vector =  {-1.+2*trans_m[id][0],
-            -1.+2*trans_m[id][1],
-            -1.+2*trans_m[id][2]};
-          cs_real_t norm_trans_m = cs_math_3_norm( loc_vector );
-          while ( norm_trans_m > 1 )
-          {
+        if (cs_glob_lagr_model->shape ==1) {
+          /* Orientation */
+          cs_real_t *orientation = cs_lagr_particle_attr(particle, p_am,
+                                                          CS_LAGR_ORIENTATION);
+          for (cs_lnum_t i = 0; i < 3; i++) {
+            orientation[i] = zis->orientation[i];
+          }
+
+          /* Compute orientation from uniform orientation on a unit-sphere */
+          cs_real_t theta0 ;
+          cs_real_t phi0 ;
+          cs_random_uniform(1, &theta0) ;
+          cs_random_uniform(1, &phi0) ;
+          theta0   = acos(2.0*theta0-1.0) ;
+          phi0     = phi0*2.0*cs_math_pi ;
+          orientation[0] = sin(theta0)*cos(phi0) ;
+          orientation[1] = sin(theta0)*sin(phi0) ;
+          orientation[2] = cos(theta0) ;
+          /* TODO initialize other things */
+        }
+
+        if (cs_glob_lagr_model->shape == 2) {
+
+          /* Euler parameters */
+          cs_real_t *euler = cs_lagr_particle_attr(particle, p_am,
+                                                   CS_LAGR_EULER);
+
+          for (cs_lnum_t i = 0; i < 4; i++)
+            euler[i] = zis->euler[i];
+
+          /* Compute Euler angles
+             (random orientation with a uniform distribution in [-1;1]) */
+          cs_real_33_t trans_m;
+          // Generate the first two vectors
+          for (cs_lnum_t id = 0; id < 3; id++) {
             cs_random_uniform(1, &trans_m[id][0]); /* (?,0) */
             cs_random_uniform(1, &trans_m[id][1]); /* (?,1) */
             cs_random_uniform(1, &trans_m[id][2]); /* (?,2) */
-            loc_vector[0] = -1.+2*trans_m[id][0];
-            loc_vector[1] = -1.+2*trans_m[id][1];
-            loc_vector[2] = -1.+2*trans_m[id][2];
-            norm_trans_m = cs_math_3_norm( loc_vector );
+            cs_real_3_t loc_vector =  {-1.+2*trans_m[id][0],
+              -1.+2*trans_m[id][1],
+              -1.+2*trans_m[id][2]};
+            cs_real_t norm_trans_m = cs_math_3_norm( loc_vector );
+            while ( norm_trans_m > 1 )
+            {
+              cs_random_uniform(1, &trans_m[id][0]); /* (?,0) */
+              cs_random_uniform(1, &trans_m[id][1]); /* (?,1) */
+              cs_random_uniform(1, &trans_m[id][2]); /* (?,2) */
+              loc_vector[0] = -1.+2*trans_m[id][0];
+              loc_vector[1] = -1.+2*trans_m[id][1];
+              loc_vector[2] = -1.+2*trans_m[id][2];
+              norm_trans_m = cs_math_3_norm( loc_vector );
+            }
+            for (cs_lnum_t id1 = 0; id1 < 3; id1++)
+              trans_m[id][id1] = (-1.+2*trans_m[id][id1]) / norm_trans_m;
           }
-          for (cs_lnum_t id1 = 0; id1 < 3; id1++)
-            trans_m[id][id1] = (-1.+2*trans_m[id][id1]) / norm_trans_m;
+          // Correct 2nd vector (for perpendicularity to the 1st)
+          cs_real_3_t loc_vector0 =  {trans_m[0][0],
+            trans_m[0][1],
+            trans_m[0][2]};
+          cs_real_3_t loc_vector1 =  {trans_m[1][0],
+            trans_m[1][1],
+            trans_m[1][2]};
+          cs_real_t scal_prod = cs_math_3_dot_product(loc_vector0, loc_vector1);
+          for (cs_lnum_t id = 0; id < 3; id++)
+            trans_m[1][id] -= scal_prod * trans_m[0][id];
+          // Re-normalize
+          loc_vector1[0] = trans_m[1][0];
+          loc_vector1[1] = trans_m[1][1];
+          loc_vector1[2] = trans_m[1][2];
+          cs_real_t norm_trans_m = cs_math_3_norm( loc_vector1 );
+          for (cs_lnum_t id = 0; id < 3; id++)
+            trans_m[1][id] /= norm_trans_m;
+
+          // Compute last vector (cross product of the two others)
+          loc_vector1[0] = trans_m[1][0];
+          loc_vector1[1] = trans_m[1][1];
+          loc_vector1[2] = trans_m[1][2];
+          cs_real_3_t loc_vector2 =  {trans_m[2][0],
+            trans_m[2][1],
+            trans_m[2][2]};
+          cs_math_3_cross_product( loc_vector0, loc_vector1, loc_vector2);
+          for (cs_lnum_t id = 0; id < 3; id++)
+            trans_m[2][id] = loc_vector2[id];
+
+          // Write Euler angles
+          cs_real_t random;
+          cs_random_uniform(1, &random);
+          if (random >= 0.5)
+            euler[0] = pow( 0.25*(trans_m[0][0]+trans_m[1][1]+trans_m[2][2]+1.) ,0.5);
+          else
+            euler[0] = -pow( 0.25*(trans_m[0][0]+trans_m[1][1]+trans_m[2][2]+1.) ,0.5);
+          euler[1] = 0.25 * (trans_m[2][1] - trans_m[1][2]) / euler[0];
+          euler[2] = 0.25 * (trans_m[0][2] - trans_m[2][0]) / euler[0];
+          euler[3] = 0.25 * (trans_m[1][0] - trans_m[0][1]) / euler[0];
+
+          /* Compute initial angular velocity */
+          // Get velocity gradient
+          cs_lagr_gradients(0, extra->grad_pr, extra->grad_vel);
+          // Local reference frame
+          cs_real_33_t grad_vf_r;
+          cs_math_33_transform_a_to_r(extra->grad_vel[cell_id], trans_m, grad_vf_r);
+
+          cs_real_t *ang_vel = cs_lagr_particle_attr(particle, p_am,
+              CS_LAGR_ANGULAR_VEL);
+
+          ang_vel[0] = 0.5*(grad_vf_r[2][1] - grad_vf_r[1][2]);
+          ang_vel[1] = 0.5*(grad_vf_r[0][2] - grad_vf_r[2][0]);
+          ang_vel[2] = 0.5*(grad_vf_r[0][1] - grad_vf_r[1][0]);
         }
-        // Correct 2nd vector (for perpendicularity to the 1st)
-        cs_real_3_t loc_vector0 =  {trans_m[0][0],
-          trans_m[0][1],
-          trans_m[0][2]};
-        cs_real_3_t loc_vector1 =  {trans_m[1][0],
-          trans_m[1][1],
-          trans_m[1][2]};
-        cs_real_t scal_prod = cs_math_3_dot_product(loc_vector0, loc_vector1);
-        for (cs_lnum_t id = 0; id < 3; id++)
-          trans_m[1][id] -= scal_prod * trans_m[0][id];
-        // Re-normalize
-        loc_vector1[0] = trans_m[1][0];
-        loc_vector1[1] = trans_m[1][1];
-        loc_vector1[2] = trans_m[1][2];
-        cs_real_t norm_trans_m = cs_math_3_norm( loc_vector1 );
-        for (cs_lnum_t id = 0; id < 3; id++)
-          trans_m[1][id] /= norm_trans_m;
-
-        // Compute last vector (cross product of the two others)
-        loc_vector1[0] = trans_m[1][0];
-        loc_vector1[1] = trans_m[1][1];
-        loc_vector1[2] = trans_m[1][2];
-        cs_real_3_t loc_vector2 =  {trans_m[2][0],
-          trans_m[2][1],
-          trans_m[2][2]};
-        cs_math_3_cross_product( loc_vector0, loc_vector1, loc_vector2);
-        for (cs_lnum_t id = 0; id < 3; id++)
-          trans_m[2][id] = loc_vector2[id];
-
-        // Write Euler angles
-        cs_real_t random;
-        cs_random_uniform(1, &random);
-        if (random >= 0.5)
-          euler[0] = pow( 0.25*(trans_m[0][0]+trans_m[1][1]+trans_m[2][2]+1.) ,0.5);
-        else
-          euler[0] = -pow( 0.25*(trans_m[0][0]+trans_m[1][1]+trans_m[2][2]+1.) ,0.5);
-        euler[1] = 0.25 * (trans_m[2][1] - trans_m[1][2]) / euler[0];
-        euler[2] = 0.25 * (trans_m[0][2] - trans_m[2][0]) / euler[0];
-        euler[3] = 0.25 * (trans_m[1][0] - trans_m[0][1]) / euler[0];
-
-        /* Compute initial angular velocity */
-        // Get velocity gradient
-        cs_lagr_gradients(0, extra->grad_pr, extra->grad_vel);
-        // Local reference frame
-        cs_real_33_t grad_vf_r;
-        cs_math_33_transform_a_to_r(extra->grad_vel[cell_id], trans_m, grad_vf_r);
-
-        cs_real_t *ang_vel = cs_lagr_particle_attr(particle, p_am,
-            CS_LAGR_ANGULAR_VEL);
-
-        ang_vel[0] = 0.5*(grad_vf_r[2][1] - grad_vf_r[1][2]);
-        ang_vel[1] = 0.5*(grad_vf_r[0][2] - grad_vf_r[2][0]);
-        ang_vel[2] = 0.5*(grad_vf_r[0][1] - grad_vf_r[1][0]);
 
       }
 
@@ -954,9 +946,12 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
         cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_STAT_CLASS,
                                   zis->cluster);
 
-      if (cs_glob_lagr_model->n_particle_aggregates > 0)
-        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_PARTICLE_AGGREGATE,
-                                  zis->particle_aggregate);
+      if (cs_glob_lagr_model->agglomeration == 1) {
+        cs_lagr_particle_set_lnum(particle, p_am, CS_LAGR_AGGLO_CLASS_ID,
+                                  zis->aggregat_class_id);
+        cs_lagr_particle_set_real(particle, p_am, CS_LAGR_AGGLO_FRACTAL_DIM,
+                                  zis->aggregat_fractal_dim);
+      }
 
       /* used for 2nd order only */
       if (p_am->displ[0][CS_LAGR_TAUP_AUX] > 0)

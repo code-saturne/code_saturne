@@ -99,7 +99,7 @@ BEGIN_C_DECLS
  * \param[in]  minimum_particle_diam   diameter of the monomere
  * \param[in]  idx                     index of the particle local to the
  *                                     current cell
- * \param[in]  rho                     mass density of the particles
+ * \param[in]  mass                    mass of the particles
  *
  */
 /*----------------------------------------------------------------------------*/
@@ -111,7 +111,7 @@ _insert_particles(cs_lnum_t   newpart,
                   cs_lnum_t   idx,
                   cs_lnum_t   newclass,
                   cs_real_t   minimum_particle_diam,
-                  cs_real_t   rho)
+                  cs_real_t   mass)
 {
   /* Create new particles (indices > n_particles) */
   cs_lagr_particle_set_t *p_set = cs_glob_lagr_particle_set;
@@ -124,12 +124,12 @@ _insert_particles(cs_lnum_t   newpart,
    * (diameter, statistical weight, mass, velocity, velocity seen, cell id) */
   cs_lagr_particles_set_real(p_set, inserted_parts-1, CS_LAGR_STAT_WEIGHT, vp);
 
-  cs_lnum_t dims = cs_glob_mesh->dim;
+  cs_real_t fractal_dim = cs_lagr_particles_get_real(p_set, inserted_parts-1,
+                                                     CS_LAGR_AGGLO_FRACTAL_DIM);
   cs_real_t diam = minimum_particle_diam * pow((cs_real_t)newclass,
-                                               1./((cs_real_t)dims));
+                                               1./fractal_dim);
 
   cs_lagr_particles_set_real(p_set, inserted_parts-1, CS_LAGR_DIAMETER, diam);
-  cs_real_t mass = rho * cs_math_pi * diam * diam * diam / 6.;
 
   cs_lagr_particles_set_real(p_set, inserted_parts-1, CS_LAGR_MASS, mass);
 
@@ -152,7 +152,7 @@ _insert_particles(cs_lnum_t   newpart,
   cs_lnum_t iep = cs_lagr_particles_get_lnum(p_set, corr[idx], CS_LAGR_CELL_ID);
   cs_lagr_particles_set_lnum(p_set, inserted_parts-1, CS_LAGR_CELL_ID, iep);
   cs_lagr_particles_set_lnum(p_set, inserted_parts-1,
-                             CS_LAGR_PARTICLE_AGGREGATE,  newclass);
+                             CS_LAGR_AGGLO_CLASS_ID,  newclass);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -208,8 +208,8 @@ _find_class(cs_lnum_t  array[][2],
  *                                     to add to the particle set
  * \param[in]  newclass                class of the new fragment
  * \param[in]  minimum_particle_diam   minumum diameter (monomere diameter)
- * \param[in]  rho                     density of the particles
- * \param[in]  parcmax                 maximum statistical weight that a
+ * \param[in]  mass                    mass of the particles
+ * \param[in]  agglo_max_weight                 maximum statistical weight that a
  *                                     particle can have
  */
 /*----------------------------------------------------------------------------*/
@@ -222,8 +222,8 @@ _add_particle(cs_lnum_t   lnum_particles,
               cs_lnum_t   frag_idx,
               cs_lnum_t   newclass,
               cs_real_t   minimum_particle_diam,
-              cs_real_t   rho,
-              cs_real_t   parcmax,
+              cs_real_t   mass,
+              cs_real_t   agglo_max_weight,
               cs_lnum_t   interf[][2])
 {
   /* Get information on the new fragment*/
@@ -237,7 +237,7 @@ _add_particle(cs_lnum_t   lnum_particles,
     cs_lnum_t found_idx = interf[position][1];
     cs_real_t stat_weight = cs_lagr_particles_get_real(p_set, found_idx,
                                                        CS_LAGR_STAT_WEIGHT);
-    if (stat_weight + vp <= parcmax) {
+    if (stat_weight + vp <= agglo_max_weight) {
       long long int auxx = round(stat_weight);
       cs_lagr_particles_set_real(p_set, found_idx, CS_LAGR_STAT_WEIGHT, auxx+vp);
       return;
@@ -250,11 +250,11 @@ _add_particle(cs_lnum_t   lnum_particles,
        indx < p_set->n_particles + *newpart;
        indx++) {
     int stat_class = cs_lagr_particles_get_lnum(p_set, indx,
-                                                CS_LAGR_PARTICLE_AGGREGATE);
+                                                CS_LAGR_AGGLO_CLASS_ID);
     cs_real_t stat_weight = cs_lagr_particles_get_real(p_set, indx,
                                                        CS_LAGR_STAT_WEIGHT);
     if ((stat_class == newclass)
-       && (stat_weight + vp <= parcmax)) {
+       && (stat_weight + vp <= agglo_max_weight)) {
       long long int auxx = round(stat_weight);
       cs_lagr_particles_set_real(p_set, indx, CS_LAGR_STAT_WEIGHT, auxx+vp);
 
@@ -266,7 +266,7 @@ _add_particle(cs_lnum_t   lnum_particles,
   if (add_to_end) {
     (*newpart)++;
     _insert_particles(*newpart, vp, corr, frag_idx, newclass,
-                      minimum_particle_diam, rho);
+                      minimum_particle_diam, mass);
   }
 }
 
@@ -405,7 +405,6 @@ _compare_interface(const void  *a,
  * \param[in]  cell_id                current cell id
  * \param[in]  dt                     time step
  * \param[in]  minimum_particle_diam  minumum diameter (monomere diameter)
- * \param[in]  rho                    particles density
  * \param[in]  main_start             index of the first particle in cell
  *                                    present before the agglomeration
  * \param[in]  main_end               index after the last particle in cell,
@@ -423,7 +422,6 @@ _compare_interface(const void  *a,
 cs_lnum_t
 cs_lagr_fragmentation(cs_real_t  dt,
                       cs_real_t  minimum_particle_diam,
-                      cs_real_t  rho,
                       cs_lnum_t  main_start,
                       cs_lnum_t  main_end,
                       cs_lnum_t  agglo_start,
@@ -431,10 +429,8 @@ cs_lagr_fragmentation(cs_real_t  dt,
 {
   /* Initialization */
   cs_lnum_t ret_val = 0;
-  // FIXME: put these two parameters as global quantities
-  // (which can be changed by users?)
-  cs_real_t parcmin = 0.5e1;      /* Minimum parcel size */
-  cs_real_t parcmax = 1.035e9;    /* Maximum parcel size */
+  cs_real_t agglo_min_weight = cs_glob_lagr_agglomeration_model->min_stat_weight; // Minimum parcel size
+  cs_real_t agglo_max_weight = cs_glob_lagr_agglomeration_model->max_stat_weight; // Maximum parcel size
 
   cs_lnum_t newpart = 0;
 
@@ -463,7 +459,7 @@ cs_lagr_fragmentation(cs_real_t  dt,
     corr[idx - main_start] = idx;
 
     cs_lnum_t curr_cls = cs_lagr_particles_get_lnum(p_set, idx,
-                                                    CS_LAGR_PARTICLE_AGGREGATE);
+                                                    CS_LAGR_AGGLO_CLASS_ID);
     interf[idx-main_start][0] = curr_cls;
     interf[idx-main_start][1] = idx;
   }
@@ -473,7 +469,7 @@ cs_lagr_fragmentation(cs_real_t  dt,
     corr[idx - agglo_start + (main_end-main_start)] = idx;
 
     cs_lnum_t curr_cls = cs_lagr_particles_get_lnum(p_set, idx,
-                                                    CS_LAGR_PARTICLE_AGGREGATE);
+                                                    CS_LAGR_AGGLO_CLASS_ID);
     interf[idx - agglo_start + main_end - main_start][0] = curr_cls;
     interf[idx - agglo_start + main_end - main_start][1] = idx;
   }
@@ -495,7 +491,7 @@ cs_lagr_fragmentation(cs_real_t  dt,
     cs_real_t rand;
 
     cs_lnum_t class_nb = cs_lagr_particles_get_lnum(p_set, corr[i],
-                                                    CS_LAGR_PARTICLE_AGGREGATE);
+                                                    CS_LAGR_AGGLO_CLASS_ID);
     if (class_nb > 1) {
       cs_real_t stat_weight = cs_lagr_particles_get_real(p_set, corr[i],
                                                          CS_LAGR_STAT_WEIGHT);
@@ -518,22 +514,23 @@ cs_lagr_fragmentation(cs_real_t  dt,
         cs_real_t new_stat_weight = stat_weight - vp;
         cs_lagr_particles_set_real(p_set, corr[i],
                                    CS_LAGR_STAT_WEIGHT, new_stat_weight);
+        cs_real_t mass = cs_lagr_particles_get_real(p_set, corr[i], CS_LAGR_MASS);
         /* Binary fragmentation (fragments with the same size) */
         if (class_nb%2 != 0) {
           cs_lnum_t class_nb_1 = class_nb / 2;
           cs_lnum_t class_nb_2 = class_nb - class_nb_1;
 
           _add_particle(lnum_particles, &newpart, vp, corr, i, class_nb_1,
-                        minimum_particle_diam, rho, parcmax,
-                        interf);
+                        minimum_particle_diam, mass*class_nb_1/class_nb,
+                        agglo_max_weight, interf);
           _add_particle(lnum_particles, &newpart, vp, corr, i, class_nb_2,
-                        minimum_particle_diam, rho, parcmax,
-                        interf);
+                        minimum_particle_diam, mass*class_nb_2/class_nb,
+                        agglo_max_weight, interf);
         }
         else {
           cs_lnum_t class_nb_even = class_nb / 2;
           _add_particle(lnum_particles, &newpart, 2*vp, corr, i, class_nb_even,
-                        minimum_particle_diam, rho, parcmax,
+                        minimum_particle_diam, mass*0.5, agglo_max_weight,
                         interf);
         }
       }
@@ -547,7 +544,7 @@ cs_lagr_fragmentation(cs_real_t  dt,
   for (cs_lnum_t i=0; i<newpart; ++i) {
     cs_lnum_t curr_class
       = cs_lagr_particles_get_lnum(p_set, p_set->n_particles+i,
-                                   CS_LAGR_PARTICLE_AGGREGATE);
+                                   CS_LAGR_AGGLO_CLASS_ID);
     interf_frag[i][0] = curr_class;
     interf_frag[i][1] = p_set->n_particles+i;
   }
@@ -593,7 +590,7 @@ cs_lagr_fragmentation(cs_real_t  dt,
       /* Eliminate if statistical particle 0 */
       if (weight <= 0.) {
         cs_lagr_particles_set_lnum(p_set, part_idx,
-                                   CS_LAGR_PARTICLE_AGGREGATE, 0);
+                                   CS_LAGR_AGGLO_CLASS_ID, 0);
         cs_lagr_particles_set_real(p_set, part_idx,
                                    CS_LAGR_STAT_WEIGHT, 0);
         cs_lagr_particles_set_flag(p_set, part_idx, CS_LAGR_PART_TO_DELETE);
@@ -612,7 +609,7 @@ cs_lagr_fragmentation(cs_real_t  dt,
       cs_real_t weight = cs_lagr_particles_get_real(p_set, part_idx,
                                                     CS_LAGR_STAT_WEIGHT);
 
-      if (weight > 0. && weight < parcmin) {
+      if (weight > 0. && weight < agglo_min_weight) {
         last_small = idx;
         sum += weight;
         found_small = 1;
@@ -627,7 +624,7 @@ cs_lagr_fragmentation(cs_real_t  dt,
         cs_real_t weight = cs_lagr_particles_get_real(p_set, part_idx,
                                                       CS_LAGR_STAT_WEIGHT);
 
-        if (weight >= parcmin && sum + weight < parcmax) {
+        if (weight >= agglo_min_weight && sum + weight < agglo_max_weight) {
           put_in_large = 1;
           cs_lagr_particles_set_real(p_set, part_idx, CS_LAGR_STAT_WEIGHT,
                                      sum+weight);
@@ -650,9 +647,9 @@ cs_lagr_fragmentation(cs_real_t  dt,
         cs_real_t weight = cs_lagr_particles_get_real(p_set, part_idx,
                                                       CS_LAGR_STAT_WEIGHT);
 
-        if (weight > 0. && weight < parcmin && idx != last_small) {
+        if (weight > 0. && weight < agglo_min_weight && idx != last_small) {
           cs_lagr_particles_set_lnum(p_set, part_idx,
-                                     CS_LAGR_PARTICLE_AGGREGATE, 0);
+                                     CS_LAGR_AGGLO_CLASS_ID, 0);
           cs_lagr_particles_set_real(p_set, part_idx,
                                      CS_LAGR_STAT_WEIGHT, 0);
           cs_lagr_particles_set_flag(p_set, part_idx, CS_LAGR_PART_TO_DELETE);
@@ -668,7 +665,7 @@ cs_lagr_fragmentation(cs_real_t  dt,
                                                     CS_LAGR_STAT_WEIGHT);
       if (weight <= 0.) {
         cs_lagr_particles_set_lnum(p_set, part_idx,
-                                   CS_LAGR_PARTICLE_AGGREGATE, 0);
+                                   CS_LAGR_AGGLO_CLASS_ID, 0);
         cs_lagr_particles_set_real(p_set, part_idx,
                                    CS_LAGR_STAT_WEIGHT, 0);
         cs_lagr_particles_set_flag(p_set, part_idx, CS_LAGR_PART_TO_DELETE);

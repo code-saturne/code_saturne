@@ -42,6 +42,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "bft_mem.h"
+#include "bft_printf.h"
 
 #include "cs_math.h"
 #include "cs_mesh.h"
@@ -235,7 +236,7 @@ _lages1(cs_real_t           dtp,
       cs_real_t displ_r[3];
 
 
-      if (cs_glob_lagr_model->shape == 2) {
+      if (cs_glob_lagr_model->shape == 2 || cs_glob_lagr_model->shape == 1) {
         /* ===========================================================================
          * 1bis. Reference frame change:
          * --------------------------
@@ -243,22 +244,48 @@ _lages1(cs_real_t           dtp,
          * ======================================================================== */
 
         /* 1.0 - get rotation matrix */
+        cs_real_33_t trans_m;
+        if (cs_glob_lagr_model->shape == 2 ) {
+          // Use euler angles for spheroids (jeffery)
+          cs_real_t *euler = cs_lagr_particle_attr(particle, p_am,
+              CS_LAGR_EULER);
 
-        cs_real_t *euler = cs_lagr_particle_attr(particle, p_am,
-            CS_LAGR_EULER);
-
-        cs_real_33_t trans_m = {
-          2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5),/* (0,0) */
-          2.*(euler[1]*euler[2]-euler[0]*euler[3]),    /* (0,1) */
-          2.*(euler[1]*euler[3]+euler[0]*euler[2]),    /* (0,2) */
-          2.*(euler[1]*euler[2]+euler[0]*euler[3]),    /* (1,0) */
-          2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5),/* (1,1) */
-          2.*(euler[2]*euler[3]-euler[0]*euler[1]),    /* (1,2) */
-          2.*(euler[1]*euler[3]-euler[0]*euler[2]),    /* (2,0) */
-          2.*(euler[2]*euler[3]+euler[0]*euler[1]),    /* (2,1) */
-          2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5) /* (2,2) */
-        };
-
+          trans_m[0][0] = 2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5);/* (0,0) */
+          trans_m[0][1] = 2.*(euler[1]*euler[2]-euler[0]*euler[3]);    /* (0,1) */
+          trans_m[0][2] = 2.*(euler[1]*euler[3]+euler[0]*euler[2]);    /* (0,2) */
+          trans_m[1][0] = 2.*(euler[1]*euler[2]+euler[0]*euler[3]);    /* (1,0) */
+          trans_m[1][1] = 2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5);/* (1,1) */
+          trans_m[1][2] = 2.*(euler[2]*euler[3]-euler[0]*euler[1]);    /* (1,2) */
+          trans_m[2][0] = 2.*(euler[1]*euler[3]-euler[0]*euler[2]);    /* (2,0) */
+          trans_m[2][1] = 2.*(euler[2]*euler[3]+euler[0]*euler[1]);    /* (2,1) */
+          trans_m[2][2] = 2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5); /* (2,2) */
+        }
+        else if (cs_glob_lagr_model->shape == 1 ) {
+          // Use rotation matrix for stochastic model
+          cs_real_t *orient_loc  = cs_lagr_particle_attr(particle, p_am,
+                                                         CS_LAGR_ORIENTATION);
+          cs_real_t axe_singularity[3] = { 1.0, 0.0, 0.0 };
+          // Get vector for rotation
+          cs_real_t n_rot[3];
+          n_rot[0] = orient_loc[1]*axe_singularity[2] -orient_loc[2]*axe_singularity[1];
+          n_rot[1] = orient_loc[2]*axe_singularity[0] -orient_loc[0]*axe_singularity[2];
+          n_rot[2] = orient_loc[0]*axe_singularity[1] -orient_loc[1]*axe_singularity[0];
+          cs_math_3_normalise(n_rot, n_rot);
+          // Compute rotation angle
+          cs_real_t rot_angle = acos( orient_loc[0]*axe_singularity[0]
+                                    + orient_loc[1]*axe_singularity[1]
+                                    + orient_loc[2]*axe_singularity[2]);
+          // Compute the rotation matrix
+          trans_m[0][0] = cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle));     // [0][0]
+          trans_m[0][1] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) + n_rot[2]*sin(rot_angle); // [0][1]
+          trans_m[0][2] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[1]*sin(rot_angle); // [0][2]
+          trans_m[1][0] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) - n_rot[2]*sin(rot_angle); // [1][0]
+          trans_m[1][1] = cos(rot_angle) + cs_math_pow2(n_rot[1])*(1.0 - cos(rot_angle));     // [1][1]
+          trans_m[1][2] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[0]*sin(rot_angle); // [1][2]
+          trans_m[2][0] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[1]*sin(rot_angle); // [2][0]
+          trans_m[2][1] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[0]*sin(rot_angle); // [2][1]
+          trans_m[2][2] = cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle));     // [2][2]
+        }
         /* 1.1 - particle velocity */
 
         cs_math_33_3_product(trans_m, old_part_vel, old_part_vel_r);
@@ -520,24 +547,51 @@ _lages1(cs_real_t           dtp,
         }
       }
 
-      else if (cs_glob_lagr_model->shape == 2 ) {
+      else if (cs_glob_lagr_model->shape == 2 || cs_glob_lagr_model->shape == 1) {
 
         /* 3.0 - get rotation matrix */
+        cs_real_33_t trans_m;
+        if (cs_glob_lagr_model->shape == 2) {
+          cs_real_t *euler = cs_lagr_particle_attr(particle, p_am,
+                                                   CS_LAGR_EULER);
+          trans_m[0][0] = 2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5);/* (0,0) */
+          trans_m[0][1] = 2.*(euler[1]*euler[2]-euler[0]*euler[3]);    /* (0,1) */
+          trans_m[0][2] = 2.*(euler[1]*euler[3]+euler[0]*euler[2]);    /* (0,2) */
+          trans_m[1][0] = 2.*(euler[1]*euler[2]+euler[0]*euler[3]);    /* (1,0) */
+          trans_m[1][1] = 2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5);/* (1,1) */
+          trans_m[1][2] = 2.*(euler[2]*euler[3]-euler[0]*euler[1]);    /* (1,2) */
+          trans_m[2][0] = 2.*(euler[1]*euler[3]-euler[0]*euler[2]);    /* (2,0) */
+          trans_m[2][1] = 2.*(euler[2]*euler[3]+euler[0]*euler[1]);    /* (2,1) */
+          trans_m[2][2] = 2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5); /* (2,2) */
 
-        cs_real_t *euler = cs_lagr_particle_attr(particle, p_am,
-                                                 CS_LAGR_EULER);
+        }
+        else if (cs_glob_lagr_model->shape == 1) {
+          // Use rotation matrix for stochastic model
+          cs_real_t *orient_loc  = cs_lagr_particle_attr(particle, p_am,
+                                                         CS_LAGR_ORIENTATION);
+          cs_real_t axe_singularity[3] = { 1.0, 0.0, 0.0 };
+          // Get vector for rotation
+          cs_real_t n_rot[3];
+          n_rot[0] = orient_loc[1]*axe_singularity[2] -orient_loc[2]*axe_singularity[1];
+          n_rot[1] = orient_loc[2]*axe_singularity[0] -orient_loc[0]*axe_singularity[2];
+          n_rot[2] = orient_loc[0]*axe_singularity[1] -orient_loc[1]*axe_singularity[0];
+          cs_math_3_normalise(n_rot, n_rot);
+          // Compute rotation angle
+          cs_real_t rot_angle = acos( orient_loc[0]*axe_singularity[0]
+                                    + orient_loc[1]*axe_singularity[1]
+                                    + orient_loc[2]*axe_singularity[2]);
+          // Compute the rotation matrix
+          trans_m[0][0] = cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle));     // [0][0]
+          trans_m[0][1] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) + n_rot[2]*sin(rot_angle); // [0][1]
+          trans_m[0][2] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[1]*sin(rot_angle); // [0][2]
+          trans_m[1][0] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) - n_rot[2]*sin(rot_angle); // [1][0]
+          trans_m[1][1] = cos(rot_angle) + cs_math_pow2(n_rot[1])*(1.0 - cos(rot_angle));     // [1][1]
+          trans_m[1][2] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[0]*sin(rot_angle); // [1][2]
+          trans_m[2][0] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[1]*sin(rot_angle); // [2][0]
+          trans_m[2][1] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[0]*sin(rot_angle); // [2][1]
+          trans_m[2][2] = cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle));     // [2][2]
 
-        cs_real_33_t trans_m = {
-          2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5),/* (0,0) */
-          2.*(euler[1]*euler[2]-euler[0]*euler[3]),    /* (0,1) */
-          2.*(euler[1]*euler[3]+euler[0]*euler[2]),    /* (0,2) */
-          2.*(euler[1]*euler[2]+euler[0]*euler[3]),    /* (1,0) */
-          2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5),/* (1,1) */
-          2.*(euler[2]*euler[3]-euler[0]*euler[1]),    /* (1,2) */
-          2.*(euler[1]*euler[3]-euler[0]*euler[2]),    /* (2,0) */
-          2.*(euler[2]*euler[3]+euler[0]*euler[1]),    /* (2,1) */
-          2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5) /* (2,2) */
-        };
+        }
 
         /* 3.1 - Displacement   */
 
