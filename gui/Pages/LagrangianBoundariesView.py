@@ -202,7 +202,7 @@ class StandardItemModelBoundaries(QStandardItemModel):
             label = zone.getLabel()
             nature = zone.getNature()
             interaction = self.model.getBoundaryChoice(nature, label)
-            if interaction not in self.dicoV2M.keys():
+            if interaction not in self.dicoM2V[nature].keys():
                 print("error: BC '" + label + "' (" + nature + ") type '"
                       + interaction + "' requested\n"
                       "       but model is not active: set to rebound")
