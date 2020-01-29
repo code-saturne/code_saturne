@@ -16,7 +16,7 @@
    <item row="0" column="0" >
     <widget class="QTreeView" name="treeView" >
      <property name="statusTip" >
-      <string>Click right for context menu</string>
+      <string>Right-click for context menu</string>
      </property>
     </widget>
    </item>

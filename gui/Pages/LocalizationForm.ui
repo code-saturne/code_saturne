@@ -35,7 +35,7 @@
          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Add volume or boundary regions manually or automatically from a preprocessor.log file or from Salome.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="statusTip">
-         <string>Click right for context menu</string>
+         <string>Right-click for context menu</string>
         </property>
         <property name="alternatingRowColors">
          <bool>true</bool>
