@@ -1187,9 +1187,9 @@ class XMLDocument(XMLElement):
         else:
             for n in node.childNodes:
                 if n.nodeType == Node.TEXT_NODE:
-                    while n.data[0] in (" ", "\n", "\t"):
+                    while n.data[:1] in (" ", "\n", "\t"):
                         n.data = n.data[1:]
-                    while n.data[-1] in (" ", "\n", "\t"):
+                    while n.data[-1:] in (" ", "\n", "\t"):
                         n.data = n.data[:-1]
 
         node.normalize()
