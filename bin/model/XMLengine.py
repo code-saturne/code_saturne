@@ -1180,13 +1180,11 @@ class XMLDocument(XMLElement):
         if isinstance(node, XMLElement):
             node = node.el
 
-        if node.tagName[-7:] != 'formula':
-            for n in node.childNodes:
-                if n.nodeType == Node.TEXT_NODE:
+        for n in node.childNodes:
+            if n.nodeType == Node.TEXT_NODE:
+                if node.tagName[-7:] != 'formula':
                     n.data = self.xmlNormalizeWhitespace(n.data)
-        else:
-            for n in node.childNodes:
-                if n.nodeType == Node.TEXT_NODE:
+                else:
                     while n.data[:1] in (" ", "\n", "\t"):
                         n.data = n.data[1:]
                     while n.data[-1:] in (" ", "\n", "\t"):
