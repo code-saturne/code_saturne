@@ -788,30 +788,36 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       ns->init_pressure = cs_cdofb_navsto_init_pressure;
       ns->compute_steady = NULL;
 
-      switch (nsp->time_scheme) {
+      if (_handle_non_linearities(nsp)) {
+        /* Same function. The difference will be taken care of by mean of a
+         * build sub-function */
+        if (nsp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT)
+          ns->compute = cs_cdofb_ac_compute_implicit_nl;
+        else
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Invalid time scheme for the AC and Navier-Stokes",
+                    __func__);
+      }
+      else {
+        switch (nsp->time_scheme) {
 
-      case CS_TIME_SCHEME_STEADY:
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: The Artificial Compressibility "
-                  "can be used only in unsteady problems", __func__);
-        break;
+        case CS_TIME_SCHEME_EULER_IMPLICIT:
+          ns->compute = cs_cdofb_ac_compute_implicit;
+          break;
 
-      case CS_TIME_SCHEME_EULER_IMPLICIT:
-        ns->compute = cs_cdofb_ac_compute_implicit;
-        break;
+        case CS_TIME_SCHEME_THETA:
+        case CS_TIME_SCHEME_CRANKNICO:
+          ns->compute = cs_cdofb_ac_compute_theta;
+          break;
 
-      case CS_TIME_SCHEME_THETA:
-      case CS_TIME_SCHEME_CRANKNICO:
-        ns->compute = cs_cdofb_ac_compute_theta;
-        break;
+        case CS_TIME_SCHEME_STEADY:
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Invalid time scheme for the AC coupling", __func__);
+          break;
 
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Invalid time scheme for the "
-                  " Artificial Compressibility coupling", __func__);
-        break;
-
-      } /* Switch */
+        } /* Switch */
+      } /* If nonlinear */
 
       cs_cdofb_ac_init_common(quant, connect, time_step);
       break;

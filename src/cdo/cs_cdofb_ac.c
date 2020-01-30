@@ -47,6 +47,7 @@
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
+#include <bft_printf.h>
 
 #include "cs_blas.h"
 #include "cs_cdo_bc.h"
@@ -64,6 +65,7 @@
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_navsto_sles.h"
+#include "cs_parall.h"
 #include "cs_param.h"
 #include "cs_post.h"
 #include "cs_sles.h"
@@ -236,6 +238,98 @@ static const cs_matrix_structure_t  *cs_shared_ms;
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Performs the updates of the divergence after the resolution of the
+ *         momentum equation and compute its L^2 norm
+ *
+ * \param[in]      vel_f     velocity DoFs on faces
+ * \param[in, out] div       divergence operator
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+_update_div(const cs_real_t               vel_f[],
+            cs_real_t                     div[])
+{
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_adjacency_t  *c2f = cs_shared_connect->c2f;
+
+  cs_real_t  norm2 = 0.;
+
+# pragma omp parallel for if (quant->n_cells > CS_THR_MIN) reduction(+:norm2)
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+    div[c_id] = cs_cdofb_navsto_cell_divergence(c_id, quant, c2f, vel_f);
+    norm2 += quant->cell_vol[c_id] * div[c_id] * div[c_id];
+  }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 2
+  cs_dbg_darray_to_listing("VELOCITY_DIV", quant->n_cells, div, 9);
+#endif
+
+  /* Parallel treatment */
+  cs_parall_sum(1, CS_REAL_TYPE, &norm2);
+
+  if (norm2 > 0)
+    norm2 = sqrt(norm2);
+
+  return norm2;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Performs the update of the pressure after the resolution of the
+ *         momentum equation
+ *
+ * \param[in]      zeta      scaling of the div operator
+ * \param[in]      eqp       pointer to a \ref cs_equation_param_t structure
+ * \param[in]      eqb       pointer to a \ref cs_equation_builder_t structure
+ * \param[in]      time_eval time at which the property/functions are evaluated
+ * \param[in]      dt_cur    current value of the time step
+ * \param[in]      div       divergence operator
+ * \param[in, out] pr        pressure DoFs (on cells)
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_update_pr(const cs_property_t          *zeta,
+           const cs_equation_param_t    *eqp,
+           const cs_equation_builder_t  *eqb,
+           const cs_real_t               time_eval,
+           const cs_real_t               dt_cur,
+           const cs_real_t               div[],
+           cs_real_t                     pr[])
+{
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const bool  zt_n_unif = !(cs_property_is_uniform(zeta));
+
+  cs_real_t  o_zeta_c  = 1. / cs_property_get_cell_value(0, time_eval, zeta),
+             t_pty     = cs_property_get_cell_value(0, time_eval,
+                                                    eqp->time_property);
+
+  if (!zt_n_unif && eqb->time_pty_uniform) {
+    /* Best case scenario: everything is uniform */
+#   pragma omp parallel for if (quant->n_cells > CS_THR_MIN) CS_CDO_OMP_SCHEDULE
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
+      pr[c_id] -= t_pty * dt_cur * o_zeta_c * div[c_id];
+  }
+  else {
+    /* ...otherwise */
+#   pragma omp parallel for if (quant->n_cells > CS_THR_MIN) CS_CDO_OMP_SCHEDULE
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+      if (zt_n_unif)
+        o_zeta_c = 1. /cs_property_get_cell_value(c_id, time_eval, zeta);
+      if (!eqb->time_pty_uniform)
+        t_pty = cs_property_get_cell_value(c_id, time_eval, eqp->time_property);
+
+      pr[c_id] -= t_pty * dt_cur * o_zeta_c * div[c_id];;
+
+    } /* Loop on cells */
+  }
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -455,6 +549,365 @@ _ac_apply_remaining_bc(const cs_cdofb_ac_t           *sc,
     } /* Loop on boundary faces */
 
   } /* Boundary cell */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Build a linear system for Stokes, Oseen or Navier-Stokes - Implicit
+ *         case
+ *
+ * \param[in]      nsp         pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      t_eval      time at which properties are evaluated
+ * \param[in]      vel_c_pre   velocity cell DoFs of previous time step
+ * \param[in]      prs_c_pre   pressure cell DoFs of previous time step
+ * \param[in]      forced_ids  indirection in case of internal enforcement
+ * \param[in, out] context     void cast into to a \ref cs_cdofb_monolithic_t
+ * \param[in, out] matrix      pointer to a \ref cs_matrix_t structure
+ * \param[in, out] rhs         rhs array related to the momentum eq.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_implicit_euler_build(const cs_navsto_param_t  *nsp,
+                      const cs_real_t           t_eval,
+                      const cs_real_t           vel_c_pre[],
+                      const cs_real_t           prs_c_pre[],
+                      const cs_lnum_t           forced_ids[],
+                      void                     *context,
+                      const cs_real_t          *dir_values,
+                      cs_matrix_t              *matrix,
+                      cs_real_t                *rhs)
+{
+  /* Sanity check */
+  assert(matrix != NULL);
+
+  /* Retrieve high-level structures */
+  cs_cdofb_ac_t  *sc = (cs_cdofb_ac_t *)context;
+  cs_navsto_ac_t *cc = (cs_navsto_ac_t *)sc->coupling_context;
+  cs_equation_t  *mom_eq = cc->momentum;
+  cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
+  cs_equation_param_t *mom_eqp = mom_eq->param;
+  cs_equation_builder_t *mom_eqb = mom_eq->builder;
+
+  /* Retrieve shared structures */
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_time_step_t *ts = cs_shared_time_step;
+  const cs_real_t  dt_cur = ts->dt[0];
+  const cs_real_t  inv_dtcur = 1./dt_cur;
+
+  const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
+  const cs_property_t  *zeta = cc->zeta;
+
+  const cs_real_t  *vel_f = mom_eq->get_face_values(mom_eq->scheme_context);
+
+  /* Initialize the structure to assemble values */
+  cs_matrix_assembler_values_t  *mav =
+    cs_matrix_assembler_values_init(matrix, NULL, NULL);
+
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                      \
+  shared(quant, connect, mom_eq, mom_eqp, mom_eqb, mom_eqc, rhs, matrix,    \
+         nsp, mav, rs, dir_values, zeta, vel_c_pre, vel_f, prs_c_pre, sc,   \
+         forced_ids)                                                        \
+  firstprivate(t_eval, inv_dtcur)
+  {
+#if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
+    int  t_id = omp_get_thread_num();
+#else
+    int  t_id = 0;
+#endif
+
+    /* Each thread get back its related structures:
+       Get the cell-wise view of the mesh and the algebraic system */
+    cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
+    cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
+    cs_cell_sys_t  *csys = NULL;
+    cs_cell_builder_t  *cb = NULL;
+
+    cs_cdofb_vecteq_get(&csys, &cb);
+
+    cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(connect);
+
+    /* Initialization of the values of properties */
+    cs_equation_init_properties(mom_eqp, mom_eqb, t_eval, cb);
+
+    cs_real_t  o_zeta_c = 1. / cs_property_get_cell_value(0, t_eval, zeta);
+
+    /* --------------------------------------------- */
+    /* Main loop on cells to build the linear system */
+    /* --------------------------------------------- */
+
+#   pragma omp for CS_CDO_OMP_SCHEDULE
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+      const cs_flag_t  cell_flag = connect->cell_flag[c_id];
+
+      /* Set the local mesh structure for the current cell */
+      cs_cell_mesh_build(c_id,
+                         cs_equation_cell_mesh_flag(cell_flag, mom_eqb),
+                         connect, quant, cm);
+
+      /* For the stationary Stokes problem:
+       *
+       *     |        |         |
+       *     |   A    |    Bt   |  B is the divergence (Bt the gradient)
+       *     |        |         |  A is csys->mat in what follows
+       *     |--------|---------|  The viscous part arising from the CDO-Fb
+       *     |        |         |  schemes for vector-valued variables
+       *     |   B    |    0    |
+       *     |        |         |
+       */
+
+      /* Set the local (i.e. cellwise) structures for the current cell */
+      cs_cdofb_vecteq_init_cell_system(cell_flag, cm, mom_eqp, mom_eqb, mom_eqc,
+                                       dir_values, forced_ids, vel_c_pre,
+                                       t_eval, csys, cb);
+
+      const short int  n_fc = cm->n_fc, f_dofs = 3*n_fc;
+      const cs_real_t  ovol = 1./cm->vol_c;
+
+      /* 1- SETUP THE NAVSTO LOCAL BUILDER *
+       * ================================= *
+       * - Set the type of boundary
+       * - Set the pressure boundary conditions (if required)
+       * - Define  the divergence operator used in the linear system
+       */
+      cs_cdofb_navsto_define_builder(t_eval, nsp, cm, csys,
+                                     sc->pressure_bc, sc->bf_type,
+                                     &nsb);
+
+      /* 2- VELOCITY (VECTORIAL) EQUATION */
+      /* ================================ */
+
+      cs_cdofb_vecteq_conv_diff_reac(t_eval, mom_eqp, mom_eqc, cm, csys, cb);
+
+      /* Update the property */
+      if ( !(sc->is_zeta_uniform) )
+        o_zeta_c = 1. / cs_property_value_in_cell(cm, zeta, t_eval);
+
+      cs_cdofb_navsto_add_grad_div(n_fc,
+                                   cb->tpty_val * dt_cur * o_zeta_c * ovol,
+                                   nsb.div_op, csys->mat);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 1
+      if (cs_dbg_cw_test(mom_eqp, cm, csys))
+        cs_cell_sys_dump(">> Local system after conv/diff/reac and grad-div"
+                         " terms", csys);
+#endif
+
+      /* 3- SOURCE TERM COMPUTATION (for the momentum equation) */
+      /* ====================================================== */
+      const bool has_sourceterm = cs_equation_param_has_sourceterm(mom_eqp);
+      if (has_sourceterm) {
+
+        cs_cdofb_vecteq_sourceterm(cm, mom_eqp,
+                                   t_eval, 1., /* time, scaling */
+                                   cb, mom_eqb, csys);
+
+      } /* End of term source */
+
+      /* 3b- OTHER RHS CONTRIBUTIONS
+       * ===========================
+       * Apply the operator gradient to the pressure field and add it to the
+       * rhs */
+      cs_sdm_add_scalvect(f_dofs, -prs_c_pre[c_id], nsb.div_op, csys->rhs);
+
+      /* First part of the BOUNDARY CONDITIONS
+       *                   ===================
+       * Apply a part of BC before the time scheme */
+      _apply_bc_partly(sc, mom_eqp, mom_eqc, cm, nsb.bf_type, prs_c_pre[c_id],
+                       csys, cb);
+
+      /* 4- TIME CONTRIBUTION */
+      /* ==================== */
+
+      if (mom_eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping
+                                                          or Hodge-Voronoi */
+
+        const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
+
+        /* Get cell-cell block */
+        cs_sdm_t *acc = cs_sdm_get_block(csys->mat, n_fc, n_fc);
+
+        for (short int k = 0; k < 3; k++) {
+          csys->rhs[3*n_fc + k] += ptyc * csys->val_n[3*n_fc+k];
+          /* Simply add an entry in mat[cell, cell] */
+          acc->val[4*k] += ptyc;
+        } /* Loop on k */
+
+      }
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  "Only diagonal time treatment available so far.");
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 1
+      if (cs_dbg_cw_test(mom_eqp, cm, csys))
+        cs_cell_sys_dump(">> Local system matrix before condensation", csys);
+#endif
+
+      /* 5- STATIC CONDENSATION
+       * ======================
+       * Static condensation of the local system matrix of size n_fc + 1 into
+       * a matrix of size n_fc.
+       * Store data in rc_tilda and acf_tilda to compute the values at cell
+       * centers after solving the system */
+      cs_static_condensation_vector_eq(connect->c2f,
+                                       mom_eqc->rc_tilda,
+                                       mom_eqc->acf_tilda,
+                                       cb, csys);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 1
+      if (cs_dbg_cw_test(mom_eqp, cm, csys))
+        cs_cell_sys_dump(">> Local system matrix after static condensation",
+                         csys);
+#endif
+
+      /* 6- Remaining part of BOUNDARY CONDITIONS
+       * ======================================== */
+      _apply_remaining_bc(sc, mom_eqp, cm, nsb.bf_type, csys, cb);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 0
+      if (cs_dbg_cw_test(mom_eqp, cm, csys))
+        cs_cell_sys_dump(">> (FINAL) Local system matrix", csys);
+#endif
+
+      /* ASSEMBLY PROCESS */
+      /* ================ */
+
+      cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm,
+                               mom_eqc, eqa, mav, rhs);
+
+    } /* Main loop on cells */
+
+    /* Free temporary buffer */
+    cs_cdofb_navsto_free_builder(&nsb);
+
+  } /* End of the OpenMP Block */
+
+  cs_matrix_assembler_values_done(mav); /* optional */
+  cs_matrix_assembler_values_finalize(&mav);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Test if one has to do one more Picard iteration
+ *
+ * \param[in]      nsp           pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] ns_info       pointer to a cs_navsto_algo_info_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_picard_cvg_test(const cs_navsto_param_t      *nsp,
+                 const cs_real_t              *new_vel,
+                 cs_real_t                    *old_vel,
+                 cs_navsto_algo_info_t        *ns_info)
+{
+  const cs_real_t  diverg_factor = 100;
+  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
+
+  cs_real_t  previous_picard_res = ns_info->res;
+
+  /* Increment the number of Picard iterations */
+  ns_info->n_algo_iter += 1;
+
+  cs_real_t res = 0., ref = 0.;
+  const cs_lnum_t  nc = cs_shared_quant->n_cells;
+  const cs_real_t *w  = cs_shared_quant->cell_vol;
+
+#if 0
+  Function inspired by cs_dot_wxx in alge/cs_blas.c
+#endif
+
+#pragma omp parallel reduction(+:res,ref) if (nc > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+# if defined(HAVE_OPENMP)
+    int t_id = omp_get_thread_num();
+    int n_t = omp_get_num_threads();
+    cs_lnum_t t_n = (nc + n_t - 1) / n_t;
+    s_id =  t_id    * t_n;
+    e_id = (t_id+1) * t_n;
+    s_id = cs_align(s_id, CS_CL_SIZE/8);
+    e_id = cs_align(e_id, CS_CL_SIZE/8);
+    if (e_id > nc) e_id = nc;
+# else
+    *s_id = 0;
+    *e_id = nc;
+# endif
+
+    const cs_lnum_t _n = e_id - s_id;
+    const cs_real_t *_w = w + s_id;
+    const cs_real_t *_nx = new_vel + 3*s_id;
+    cs_real_t *_ox = old_vel + 3*s_id;
+
+    const cs_lnum_t block_size = 60;
+    cs_lnum_t n_sblocks, blocks_in_sblocks;
+
+    cs_lnum_t n_blocks = (nc + block_size - 1) / block_size;
+    n_sblocks = (n_blocks > 1) ? sqrt(n_blocks) : 1;
+
+    cs_lnum_t n_b = block_size * n_sblocks;
+    blocks_in_sblocks = (nc + n_b - 1) / n_b;
+
+    for (cs_lnum_t sid = 0; sid < n_sblocks; sid++) {
+
+      double sres = 0.0, sref = 0.0;
+
+      for (cs_lnum_t bid = 0; bid < blocks_in_sblocks; bid++) {
+        cs_lnum_t start_id = block_size * (blocks_in_sblocks*sid + bid);
+        cs_lnum_t end_id = block_size * (blocks_in_sblocks*sid + bid + 1);
+        if (end_id > _n)
+          end_id = _n;
+        double cres = 0.0, cref = 0.0;
+        for (cs_lnum_t i = start_id; i < end_id; i++) {
+          const cs_real_t *_nxi = _nx + 3*i;
+          cs_real_t *_oxi = _ox + 3*i;
+          cs_real_t abs = 0.;
+          for (short int k = 0; k < 3; k++) {
+            /* Computing norm */
+            abs += cs_math_sq(_oxi[k] - _nxi[k]);
+            /* Storing result */
+            _oxi[k] = _nxi[k];
+          } /* Loop on k */
+          cres += _w[i]*abs;
+          cref += _w[i]*cs_math_3_square_norm(_oxi);
+        } /* Loop on i */
+        sres += cres;
+        sref += cref;
+      } /* Loop on bid */
+
+      res += sres;
+      ref += sref;
+
+    } /* Loop on sid */
+
+  } /* OpenMP parallel zone */
+
+
+  double tmp_re[2] = {res, ref};
+  cs_parall_sum(2, CS_REAL_TYPE, tmp_re);
+  res = tmp_re[0], ref = tmp_re[1];
+
+  ns_info->res = sqrt(res/ref);
+
+  /* Set the convergence status */
+  if (ns_info->res < nslesp.picard_tolerance) {
+    ns_info->cvg = CS_SLES_CONVERGED;
+    return;
+  }
+
+  if (ns_info->res >  diverg_factor * previous_picard_res) {
+    ns_info->cvg = CS_SLES_DIVERGED;
+    return;
+  }
+
+  if (ns_info->n_algo_iter >= nslesp.picard_n_max_iter) {
+    ns_info->cvg = CS_SLES_MAX_ITERATION;
+    return;
+  }
+
+  ns_info->cvg = CS_SLES_ITERATING;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1012,6 +1465,279 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 
   /* Frees */
   BFT_FREE(rhs);
+  cs_sles_free(sles);
+  cs_matrix_destroy(&matrix);
+
+  t_tmp = cs_timer_time();
+  cs_timer_counter_add_diff(&(sc->timer), &t_cmpt, &t_tmp);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Solve the unsteady Navier-Stokes system with a CDO face-based scheme
+ *         using a Artificial Compressibility approach and an implicit Euler
+ *         time scheme
+ *         For Picard - Navier--Stokes problems
+ *
+ * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
+ * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
+ * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
+                                const cs_navsto_param_t      *nsp,
+                                void                         *scheme_context)
+{
+  CS_UNUSED(nsp);
+
+  cs_timer_t  t_cmpt = cs_timer_time();
+
+  /* Retrieve high-level structures */
+  cs_cdofb_ac_t  *sc = (cs_cdofb_ac_t *)scheme_context;
+  cs_navsto_ac_t *cc = sc->coupling_context;
+  cs_equation_t  *mom_eq = cc->momentum;
+  cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
+  cs_equation_param_t *mom_eqp = mom_eq->param;
+  cs_equation_builder_t *mom_eqb = mom_eq->builder;
+
+  /*--------------------------------------------------------------------------
+   *                    INITIAL BUILD: START
+   *--------------------------------------------------------------------------*/
+
+  const cs_cdo_connect_t  *connect = cs_shared_connect;
+  const cs_range_set_t  *rs = connect->range_sets[CS_CDO_CONNECT_FACE_VP0];
+  const cs_cdo_quantities_t  *quant = cs_shared_quant;
+  const cs_lnum_t  n_faces = quant->n_faces;
+  const cs_lnum_t  n_cells = quant->n_cells;
+  const cs_property_t  *zeta = cc->zeta;
+
+  cs_real_t  *pr = sc->pressure->val;
+  cs_field_t  *vel_fld = sc->velocity;
+  cs_real_t  *vel_c = vel_fld->val;
+  cs_real_t  *div = sc->divergence->val;
+
+  /*--------------------------------------------------------------------------
+   *                      BUILD: START
+   *--------------------------------------------------------------------------*/
+
+  const cs_time_step_t *ts = cs_shared_time_step;
+  const cs_real_t  t_cur = ts->t_cur;
+  const cs_real_t  dt_cur = ts->dt[0];
+  const cs_real_t  time_eval = t_cur + dt_cur;
+
+  /* Sanity checks */
+  assert(cs_equation_param_has_time(mom_eqp) == true);
+  assert(mom_eqp->time_scheme == CS_TIME_SCHEME_EULER_IMPLICIT);
+
+  cs_timer_t  t_bld = cs_timer_time();
+
+  /* Build an array storing the Dirichlet values at faces.
+     Evaluation should be performed at t_cur + dt_cur */
+  cs_real_t  *dir_values = NULL;
+  cs_lnum_t  *enforced_ids = NULL;
+
+  cs_cdofb_vecteq_setup(t_cur + dt_cur, mesh, mom_eqp, mom_eqb,
+                        &dir_values, &enforced_ids);
+
+  /* Initialize the local system: matrix and rhs */
+  cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
+  cs_real_t  *rhs = NULL;
+  BFT_MALLOC(rhs, 3*n_faces, cs_real_t);
+  /* Initializing linear system */
+#if defined(HAVE_OPENMP)
+# pragma omp parallel for if (3*n_faces > CS_THR_MIN) shared(rhs) \
+  firstprivate(n_faces)
+  for (cs_lnum_t i = 0; i < 3*n_faces; i++) rhs[i] = 0.0;
+#else
+  memset(rhs, 0, 3*n_faces*sizeof(cs_real_t));
+#endif
+
+  _implicit_euler_build(nsp, time_eval, vel_c, pr, enforced_ids,
+                        scheme_context, dir_values, matrix, rhs);
+
+  /* End of the system building */
+  cs_timer_t  t_tmp = cs_timer_time();
+  cs_timer_counter_add_diff(&(mom_eqb->tcb), &t_bld, &t_tmp);
+
+  /*--------------------------------------------------------------------------
+   *                      BUILD: END
+   *--------------------------------------------------------------------------*/
+
+  /* Copy current field values to previous values */
+  cs_timer_t t_upd = cs_timer_time();
+
+  /* Updating fields values: pushing back previous time step ones */
+  cs_field_current_to_previous(vel_fld);
+  cs_field_current_to_previous(sc->divergence);
+  /* Update of pressure and divergence postponed to end of Picard procedure.
+   * However, one might want to do them here in order to have a look at their
+   * evolution */
+
+  t_tmp = cs_timer_time();
+  cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);
+
+  /* Solve the linear system */
+  cs_timer_t  t_solve_start = cs_timer_time();
+  cs_navsto_algo_info_t  ns_info;
+  cs_navsto_algo_info_init(&ns_info);
+
+  /* Solve the linear system (treated as a scalar-valued system
+   * with 3 times more DoFs) */
+  cs_real_t  *vel_f = mom_eqc->face_values;
+  cs_real_t  normalization = 1.0; /* TODO */
+  cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param.field_id, NULL);
+  ns_info.n_inner_iter =
+    (ns_info.last_inner_iter = cs_equation_solve_scalar_system(3*n_faces,
+                                                          mom_eqp,
+                                                          matrix,
+                                                          rs,
+                                                          normalization,
+                                                          true, /* rhs_redux */
+                                                          sles,
+                                                          vel_f,
+                                                          rhs));
+  ns_info.n_algo_iter += 1;
+
+  cs_timer_t  t_solve_end = cs_timer_time();
+  cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
+
+  t_upd = cs_timer_time();
+  /* Compute values at cells pc from values at faces pf
+     pc = acc^-1*(RHS - Acf*pf) */
+  cs_static_condensation_recover_vector(connect->c2f,
+                                        mom_eqc->rc_tilda,
+                                        mom_eqc->acf_tilda,
+                                        vel_f, vel_c);
+
+  /* Compute the velocity divergence and retrieve its L2-norm */
+  /*  the divergence: div = B.u_f */
+  cs_real_t  div_l2_norm = _update_div(vel_f, div);
+
+  t_tmp = cs_timer_time();
+  cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);
+
+  const cs_real_t *vel_c_pre = sc->velocity->val_pre;
+  assert(vel_c_pre != NULL);
+  cs_real_t *old_vel_c = NULL; /* New array in order not to overwrite previous
+                                * time_step */
+  BFT_MALLOC(old_vel_c, 3*n_cells, cs_real_t);
+  memcpy(old_vel_c, vel_c, 3*n_cells*sizeof(cs_real_t));
+
+  /*--------------------------------------------------------------------------
+   *                   PICARD ITERATIONS: START
+   *--------------------------------------------------------------------------*/
+
+  if (nsp->verbosity > 1) {
+    cs_navsto_algo_info_header("Picard");
+    cs_navsto_algo_info_printf("Picard", ns_info, div_l2_norm);
+  }
+
+  ns_info.cvg = (nsp->sles_param.picard_n_max_iter > 1) ?
+    CS_SLES_ITERATING : CS_SLES_MAX_ITERATION;
+
+  while (ns_info.cvg == CS_SLES_ITERATING) {
+
+    /* Start of the system building */
+    cs_timer_t  t_build_start = cs_timer_time();
+
+    /* rhs set to zero and cs_sles_t structure is freed in order to do
+     * the setup once again since the matrix should be modified */
+#if defined(HAVE_OPENMP)
+# pragma omp parallel for if (3*n_faces > CS_THR_MIN) shared(rhs) \
+    firstprivate(n_faces)
+    for (cs_lnum_t i = 0; i < 3*n_faces; i++) rhs[i] = 0.0;
+#else
+    memset(rhs, 0, 3*n_faces*sizeof(cs_real_t));
+#endif
+    cs_sles_free(sles); sles = NULL;
+
+
+    /* Main loop on cells to define the linear system to solve */
+    _implicit_euler_build(nsp, time_eval, vel_c_pre, pr, enforced_ids,
+                          scheme_context, dir_values, matrix, rhs);
+
+    /* End of the system building */
+    cs_timer_t t_build_end = cs_timer_time();
+    cs_timer_counter_add_diff(&(mom_eqb->tcb), &t_build_start, &t_build_end);
+
+    /* Solve the new system */
+    t_solve_start = cs_timer_time();
+
+    /* Redo the setup since the matrix is modified */
+    sles = cs_sles_find_or_add(mom_eqp->sles_param.field_id, NULL);
+    cs_sles_setup(sles, matrix);
+
+    ns_info.n_inner_iter =
+      (ns_info.last_inner_iter = cs_equation_solve_scalar_system(3*n_faces,
+                                                            mom_eqp,
+                                                            matrix,
+                                                            rs,
+                                                            normalization,
+                                                            true, /* rhs_redux */
+                                                            sles,
+                                                            vel_f,
+                                                            rhs));
+
+    t_solve_end = cs_timer_time();
+    cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
+
+    /* Compute values at cells pc from values at faces pf
+       pc = acc^-1*(RHS - Acf*pf) */
+    cs_static_condensation_recover_vector(connect->c2f,
+                                          mom_eqc->rc_tilda,
+                                          mom_eqc->acf_tilda,
+                                          vel_f, vel_c);
+
+    /* Compute the velocity divergence and retrieve its L2-norm */
+    cs_real_t  div_l2_norm = _update_div(vel_f, div);
+
+    /* Check convergence status and update ns_info following the convergence */
+    _picard_cvg_test(nsp, vel_c, old_vel_c, &ns_info);
+
+    if (nsp->verbosity > 1)
+      cs_navsto_algo_info_printf("Picard", ns_info, div_l2_norm);
+
+  } /* Loop on Picard iterations */
+
+  /*--------------------------------------------------------------------------
+   *                   PICARD ITERATIONS: END
+   *--------------------------------------------------------------------------*/
+
+  if (ns_info.cvg == CS_SLES_DIVERGED)
+    bft_error(__FILE__, __LINE__, 0,
+              "Picard iteration for equation \"%s\" diverged.\n", mom_eqp->name);
+  else if (ns_info.cvg == CS_SLES_MAX_ITERATION) {
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "%8s.ItXXX-- %5.3e  Picard algorithm DID NOT CONVERGE "
+                  "prescribed iterations.\n",
+                  "Picard", ns_info.res);
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf( " Picard algorithm failed.");
+  }
+
+  /* Update pressure, velocity and divergence fields */
+  t_upd = cs_timer_time();
+
+  /* Updates after the resolution:
+   *  the pressure field: pr -= dt / zeta * div(u_f)
+   */
+  cs_field_current_to_previous(sc->pressure);
+  _update_pr(zeta, mom_eqp, mom_eqb, time_eval, dt_cur, div, pr);
+
+  t_tmp = cs_timer_time();
+  cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_AC_DBG > 2
+  cs_dbg_darray_to_listing("PRESSURE", quant->n_cells, pr, 9);
+  cs_dbg_darray_to_listing("VELOCITY_DIV", quant->n_cells, div, 9);
+#endif
+
+  /* Frees */
+  BFT_FREE(dir_values);
+  BFT_FREE(rhs);
+  BFT_FREE(old_vel_c);
   cs_sles_free(sles);
   cs_matrix_destroy(&matrix);
 
