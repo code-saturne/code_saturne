@@ -1101,7 +1101,7 @@ cs_math_33_eig_val_vec(const cs_real_t  m_in[3][3],
     for (int id1 = 0; id1 < 2; id1 ++) {
       for (int id2 = id1+1; id2 < 3; id2 ++) {
         // After 4 sweeps, skip rotation if off-diagonal element is small
-        if (i_sweep > 4 & cs_math_fabs(m[id1][id2]) < epsilon)
+        if (i_sweep > 4 && cs_math_fabs(m[id1][id2]) < epsilon)
           m[id1][id2] = 0.0;
         // Otherwise, ...
         else if (cs_math_fabs(m[id1][id2]) >= epsilon) {
