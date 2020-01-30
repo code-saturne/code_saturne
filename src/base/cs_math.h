@@ -1069,9 +1069,9 @@ cs_math_33_eig_val_vec(const cs_real_t  m_in[3][3],
    * m:           matrix of 3x3 real values (copy of m_in)
    * epsilon:     error (like machine epsilon for floats) */
   cs_real_3_t vec1, vec2;
-  cs_real_33_t m = { m_in[0][0], m_in[0][1], m_in[0][2],
-                     m_in[1][0], m_in[1][1], m_in[1][2],
-                     m_in[2][0], m_in[2][1], m_in[2][2] };
+  cs_real_33_t m = {{ m_in[0][0], m_in[0][1], m_in[0][2] },
+                    { m_in[1][0], m_in[1][1], m_in[1][2] },
+                    { m_in[2][0], m_in[2][1], m_in[2][2] }};
   cs_real_t epsilon = 1.0e-16;
 
   for (int id = 0; id < 3; id++) {
