@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2019 EDF S.A.
+# Copyright (C) 1998-2020 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -1180,16 +1180,14 @@ class XMLDocument(XMLElement):
         if isinstance(node, XMLElement):
             node = node.el
 
-        if node.tagName[-7:] != 'formula':
-            for n in node.childNodes:
-                if n.nodeType == Node.TEXT_NODE:
+        for n in node.childNodes:
+            if n.nodeType == Node.TEXT_NODE:
+                if node.tagName[-7:] != 'formula':
                     n.data = self.xmlNormalizeWhitespace(n.data)
-        else:
-            for n in node.childNodes:
-                if n.nodeType == Node.TEXT_NODE:
-                    while n.data[0] in (" ", "\n", "\t"):
+                else:
+                    while n.data[:1] in (" ", "\n", "\t"):
                         n.data = n.data[1:]
-                    while n.data[-1] in (" ", "\n", "\t"):
+                    while n.data[-1:] in (" ", "\n", "\t"):
                         n.data = n.data[:-1]
 
         node.normalize()
