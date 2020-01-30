@@ -1537,8 +1537,17 @@ _set_key(const char            *label,
       /* Set the default choice */
       if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS)
         eqp->sles_param.amg_type = CS_PARAM_AMG_HOUSE_K;
-      if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC)
+      else if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC)
         eqp->sles_param.amg_type = CS_PARAM_AMG_PETSC_GAMG;
+#if defined(PETSC_HAVE_HYPRE)
+      /* Up to now HYPRE is available only through the PETSc interface */
+      else if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_HYPRE)
+        eqp->sles_param.amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
+#endif
+      else
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid choice of AMG type. Please modify your settings",
+                  __func__);
 
     }
     else if (strcmp(keyval, "amg_block") == 0 ||
