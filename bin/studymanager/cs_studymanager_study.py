@@ -887,6 +887,8 @@ class Study(object):
                     shutil.copytree(ref, node, symlinks=True)
                 else:
                     shutil.copy2(ref, node)
+                    if node == 'coupling_parameters.py':
+                        os.mkdir('RESU_COUPLING')
             c.update_runcase_path(c.label, destdir=self.__dest)
             os.chdir(self.__dest)
         else:
