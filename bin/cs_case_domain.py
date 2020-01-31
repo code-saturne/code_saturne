@@ -401,6 +401,7 @@ class domain(base_domain):
 
         self.restart_input = None
         self.restart_mesh_input = None
+        self.mesh_input = None
         self.partition_input = None
 
         # Default executable
