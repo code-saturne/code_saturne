@@ -437,7 +437,7 @@ void
 cs_f_lagr_shape_model_pointers(cs_real_t **param_chmb);
 
 void
-cs_f_lagr_agglomeration_model_pointers( cs_lnum_t **max_nb_class,
+cs_f_lagr_agglomeration_model_pointers( cs_lnum_t **n_max_classes,
                                         cs_real_t **min_stat_weight,
                                         cs_real_t **max_stat_weight,
                                         cs_real_t **scalar_kernel,
@@ -559,13 +559,13 @@ cs_f_lagr_shape_model_pointers(cs_real_t **param_chmb)
 }
 
 void
-cs_f_lagr_agglomeration_model_pointers(cs_lnum_t **max_nb_class,
+cs_f_lagr_agglomeration_model_pointers(cs_lnum_t **n_max_classes,
                                        cs_real_t **min_stat_weight,
                                        cs_real_t **max_stat_weight,
                                        cs_real_t **scalar_kernel,
                                        cs_real_t **base_diameter )
 {
-  *max_nb_class    = &cs_glob_lagr_agglomeration_model->max_nb_class;
+  *n_max_classes    = &cs_glob_lagr_agglomeration_model->n_max_classes;
   *min_stat_weight = &cs_glob_lagr_agglomeration_model->min_stat_weight;
   *max_stat_weight = &cs_glob_lagr_agglomeration_model->max_stat_weight;
   *scalar_kernel   = &cs_glob_lagr_agglomeration_model->scalar_kernel;
@@ -1770,7 +1770,6 @@ cs_lagr_solve_time_step(const int         itypfb[],
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
   cs_lagr_particle_counter_t *part_c = cs_lagr_get_particle_counter();
 
-  cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
   cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 
   cs_lnum_t *ifabor = cs_glob_mesh->b_face_cells;
@@ -2314,10 +2313,6 @@ cs_lagr_solve_time_step(const int         itypfb[],
         for (cs_lnum_t icell = 0; icell < n_occupied_cells; ++icell) {
 
           cs_lnum_t cell_id = occupied_cell_ids[icell];
-          cs_real_t mass_part
-            = cs_lagr_particles_get_real(p_set, cell_id, CS_LAGR_MASS);
-          cs_real_t diam_part
-            = cs_lagr_particles_get_real(p_set, cell_id, CS_LAGR_DIAMETER);
 
           /* Particle indices: between start_part and end_part (list) */
           cs_lnum_t start_part = particle_list[icell];

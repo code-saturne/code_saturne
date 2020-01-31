@@ -764,7 +764,6 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
         // FIXME valid for all spheroids only (a = b, c > a,b )
         cs_real_t lamb = radii[2] / radii[1];//FIXME do note divide by 0...
         cs_real_t lamb_m1 = (radii[2] - radii[1]) / radii[1];
-        cs_real_t lamb_p1 = (radii[2] + radii[1]) / radii[1];
         cs_real_t _a2 = radii[0] * radii[0];
         //TODO MF shape_param check development in series
         cs_real_t aux1 = lamb * lamb;
@@ -824,7 +823,7 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
 
           /* Compute Euler angles
              (random orientation with a uniform distribution in [-1;1]) */
-          cs_real_33_t trans_m;
+          cs_real_t trans_m[3][3];
           // Generate the first two vectors
           for (cs_lnum_t id = 0; id < 3; id++) {
             cs_random_uniform(1, &trans_m[id][0]); /* (?,0) */
@@ -880,9 +879,11 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
           cs_real_t random;
           cs_random_uniform(1, &random);
           if (random >= 0.5)
-            euler[0] = pow( 0.25*(trans_m[0][0]+trans_m[1][1]+trans_m[2][2]+1.) ,0.5);
+            euler[0] = pow(0.25*(trans_m[0][0]+trans_m[1][1]+trans_m[2][2]+1.),
+                           0.5);
           else
-            euler[0] = -pow( 0.25*(trans_m[0][0]+trans_m[1][1]+trans_m[2][2]+1.) ,0.5);
+            euler[0] = -pow(0.25*(trans_m[0][0]+trans_m[1][1]+trans_m[2][2]+1.),
+                            0.5);
           euler[1] = 0.25 * (trans_m[2][1] - trans_m[1][2]) / euler[0];
           euler[2] = 0.25 * (trans_m[0][2] - trans_m[2][0]) / euler[0];
           euler[3] = 0.25 * (trans_m[1][0] - trans_m[0][1]) / euler[0];
@@ -891,8 +892,10 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
           // Get velocity gradient
           cs_lagr_gradients(0, extra->grad_pr, extra->grad_vel);
           // Local reference frame
-          cs_real_33_t grad_vf_r;
-          cs_math_33_transform_a_to_r(extra->grad_vel[cell_id], trans_m, grad_vf_r);
+          cs_real_t grad_vf_r[3][3];
+          cs_math_33_transform_a_to_r(extra->grad_vel[cell_id],
+                                      trans_m,
+                                      grad_vf_r);
 
           cs_real_t *ang_vel = cs_lagr_particle_attr(particle, p_am,
               CS_LAGR_ANGULAR_VEL);

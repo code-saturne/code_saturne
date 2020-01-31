@@ -688,7 +688,7 @@ cs_user_lagr_model(void)
     cs_glob_lagr_agglomeration_model->base_diameter = 2.17e-6;
     cs_glob_lagr_agglomeration_model->min_stat_weight = 5;
     cs_glob_lagr_agglomeration_model->max_stat_weight = 1.035e9;
-    cs_glob_lagr_agglomeration_model->max_nb_class = 100000000;
+    cs_glob_lagr_agglomeration_model->n_max_classes = 100000000;
   }
 
   /*! [boundary_statistics] */

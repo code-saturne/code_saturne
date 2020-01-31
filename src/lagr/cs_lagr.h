@@ -467,7 +467,7 @@ typedef struct {
 
 typedef struct {
 
-  cs_lnum_t          max_nb_class;
+  cs_lnum_t          n_max_classes;
   cs_real_t          min_stat_weight;
   cs_real_t          max_stat_weight;
   cs_real_t          scalar_kernel;
@@ -1154,6 +1154,15 @@ cs_get_lagr_clogging_model(void);
 
 cs_lagr_shape_model_t *
 cs_get_lagr_shape_model(void);
+
+/*----------------------------------------------------------------------------
+ * Provide access to cs_lagr_agglomeration_model_t
+ *
+ * needed to initialize structure with GUI
+ *----------------------------------------------------------------------------*/
+
+cs_lagr_agglomeration_model_t *
+cs_get_lagr_agglomeration_model(void);
 
 /*----------------------------------------------------------------------------
  * Provide access to cs_lagr_consolidation_model_t

@@ -4323,11 +4323,6 @@ void
 cs_gui_mpi_algorithms(void)
 {
   cs_all_to_all_type_t a = CS_ALL_TO_ALL_MPI_DEFAULT;
-  bool ignore_perio = false;
-  int  rank_step = 1;
-  int  write_level = 1;
-  int  n_add_parts = 0;
-  int  *add_parts = NULL;
 
   cs_tree_node_t *tn_cm
     = cs_tree_get_node(cs_glob_tree, "calculation_management");

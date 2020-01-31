@@ -395,8 +395,10 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
   // FIXME: call DLVO routine
   cs_real_t alp = 1.;                    /* Efficiency of agglomeration */
 
-  cs_real_t agglo_min_weight = cs_glob_lagr_agglomeration_model->min_stat_weight; // Minimum parcel size
-  cs_real_t agglo_max_weight = cs_glob_lagr_agglomeration_model->max_stat_weight; // Maximum parcel size
+  cs_real_t agglo_min_weight
+    = cs_glob_lagr_agglomeration_model->min_stat_weight; // Minimum parcel size
+  cs_real_t agglo_max_weight
+    = cs_glob_lagr_agglomeration_model->max_stat_weight; // Maximum parcel size
   cs_lnum_t newpart = 0;
 
   /* Get fluid and particle properties */
@@ -445,7 +447,7 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
 
   kk = selected_val - 1;
   long long int vp = 0;
-  cs_lnum_t new_class_nb = 0;
+  cs_lnum_t n_classes_new = 0;
 
   /* Treat agglomeration between pairs*/
   while (kk >= 0) {
@@ -524,33 +526,30 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
                                  CS_LAGR_STAT_WEIGHT, round(stat_weights[1]) - vp);
 
       /* Add elements for parcel (p1+p2)
- *       --> either add to an existing parcel (if it exists and is not too big)
- *       --> or create a new parcel (otherwise) */
-      new_class_nb =   cs_lagr_particles_get_lnum
-                         (p_set, p1+start_particle, CS_LAGR_AGGLO_CLASS_ID)
+       * --> either add to an existing parcel (if it exists and is not too big)
+       * --> or create a new parcel (otherwise) */
+      n_classes_new =   cs_lagr_particles_get_lnum
+                          (p_set, p1+start_particle, CS_LAGR_AGGLO_CLASS_ID)
                      + cs_lagr_particles_get_lnum(p_set, p2+start_particle,
                                                   CS_LAGR_AGGLO_CLASS_ID);
 
-      cs_lnum_t max_class_nb = 0;
+      cs_lnum_t n_max_classes = 0;
 
-      if (new_class_nb > cs_glob_lagr_agglomeration_model->max_nb_class) {
+      if (n_classes_new > cs_glob_lagr_agglomeration_model->n_max_classes) {
         bft_error(__FILE__, __LINE__, 0,
-                  _( "   ** LAGRANGIAN MODULE:\n"
-                   "   ** Error in cs_lagr_agglo.c: \n"
-                   "        number of classes > max_nb_class ! \n"
-                   "---------------------------------------------\n\n\n"
-                   "** To fix this, increase the value of the parameter \n "
-                   "** cs_glob_lagr_agglomeration_model->max_nb_class \n "
-                   "** Current value:  %e11.4. \n"
-                   "-------------------------------------------------\n"),
-                   cs_glob_lagr_agglomeration_model->max_nb_class );
+                  _(" ** Lagrangian module:\n"
+                    "    number of classes > n_max_classes (%d)\n"
+                    "    --------------------------------\n\n"
+                    " To fix this, increase "
+                    " cs_glob_lagr_agglomeration_model->n_max_classes"),
+                  cs_glob_lagr_agglomeration_model->n_max_classes);
       }
-      if (new_class_nb > max_class_nb) {
-        max_class_nb = new_class_nb;
+      if (n_classes_new > n_max_classes) {
+        n_max_classes = n_classes_new;
       }
 
       /* Find one existing parcel with the same class (to merge with it) */
-      cs_lnum_t position = _find_class(interf, lnum_particles, new_class_nb);
+      cs_lnum_t position = _find_class(interf, lnum_particles, n_classes_new);
 
       if (position >= 0) {
         cs_lnum_t found_idx = interf[position][1];
@@ -578,9 +577,10 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
           = cs_lagr_particles_get_lnum(p_set, indx, CS_LAGR_AGGLO_CLASS_ID);
         cs_real_t stat_weight
           = cs_lagr_particles_get_real(p_set, indx, CS_LAGR_STAT_WEIGHT);
-        if (   (stat_class == new_class_nb)
+        if (   (stat_class == n_classes_new)
             && (stat_weight + vp <= agglo_max_weight)) {
-          cs_lagr_particles_set_real(p_set, indx, CS_LAGR_STAT_WEIGHT, round(stat_weight)+vp);
+          cs_lagr_particles_set_real(p_set, indx, CS_LAGR_STAT_WEIGHT,
+                                     round(stat_weight)+vp);
 
           add_to_end = 0;
           break;
@@ -588,7 +588,7 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
       }
 
       /* Else, create a new parcel at the end
- *       Principle: copy parcel p1 and modify its properties */
+         Principle: copy parcel p1 and modify its properties */
       if ( add_to_end == 1 ) {
         newpart++;
 
@@ -604,25 +604,29 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
                                    CS_LAGR_STAT_WEIGHT, vp);
 
         /* Set diameter (using a law based on fractal dimension of aggregates) */
-        cs_real_t fractal_dim = cs_lagr_particles_get_real(p_set, inserted_parts-1,
-                                                           CS_LAGR_AGGLO_FRACTAL_DIM);
-        cs_real_t diam = minimum_particle_diam * pow((cs_real_t)new_class_nb,
+        cs_real_t fractal_dim
+          = cs_lagr_particles_get_real(p_set, inserted_parts-1,
+                                       CS_LAGR_AGGLO_FRACTAL_DIM);
+        cs_real_t diam = minimum_particle_diam * pow((cs_real_t)n_classes_new,
                                                      1./fractal_dim);
         cs_lagr_particles_set_real(p_set, inserted_parts-1,
                                    CS_LAGR_DIAMETER, diam);
 
         /* Set mass (equal to the sum of the two mass) */
-        cs_real_t mass1 = cs_lagr_particles_get_real(p_set, p1+start_particle, CS_LAGR_MASS);
-        cs_real_t mass2 = cs_lagr_particles_get_real(p_set, p2+start_particle, CS_LAGR_MASS);
+        cs_real_t mass1
+          = cs_lagr_particles_get_real(p_set, p1+start_particle, CS_LAGR_MASS);
+        cs_real_t mass2
+          = cs_lagr_particles_get_real(p_set, p2+start_particle, CS_LAGR_MASS);
 
-        cs_lagr_particles_set_real(p_set, inserted_parts-1, CS_LAGR_MASS, mass1 +mass2 );
+        cs_lagr_particles_set_real(p_set, inserted_parts-1, CS_LAGR_MASS,
+                                   mass1 +mass2);
 
         /* Set cell_id and Class_id */
         cs_lagr_particles_set_lnum(p_set, inserted_parts-1,
                                    CS_LAGR_CELL_ID, cell_id);
 
         cs_lagr_particles_set_lnum(p_set, inserted_parts-1,
-                                   CS_LAGR_AGGLO_CLASS_ID, new_class_nb);
+                                   CS_LAGR_AGGLO_CLASS_ID, n_classes_new);
 
         /* Set particle velocity */
 
@@ -639,8 +643,9 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
         cs_real_t * inserted_vel_seen
           = cs_lagr_particles_attr(p_set, inserted_parts-1,
                                    CS_LAGR_VELOCITY_SEEN);
-        cs_real_t * p1_vel_seen = cs_lagr_particles_attr(p_set, p1+start_particle,
-                                                      CS_LAGR_VELOCITY_SEEN);
+        cs_real_t * p1_vel_seen
+          = cs_lagr_particles_attr(p_set, p1+start_particle,
+                                   CS_LAGR_VELOCITY_SEEN);
         inserted_vel_seen[0] = p1_vel_seen[0];
         inserted_vel_seen[1] = p1_vel_seen[1];
         inserted_vel_seen[2] = p1_vel_seen[2];
@@ -747,8 +752,8 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
         }
       }
 
-      /* if small particles put in a large one, then all small particles removed,
-         else put all small particles in the last one */
+      /* if small particles put in a large one, then all small particles
+         removed, else put all small particles in the last one */
       if (put_in_large) {
         last_small = -1;
       }
