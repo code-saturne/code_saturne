@@ -1444,7 +1444,8 @@ cs_order_single_gnum(size_t            n_ent,
   while (s_id < n_ent && _n_single == 0) {
     if (number[order[s_id]] >= base)
       _n_single = 1;
-    s_id++;
+    else
+      s_id++;
   }
 
   for (size_t i = s_id+1; i < n_ent; i++) {
@@ -1461,7 +1462,7 @@ cs_order_single_gnum(size_t            n_ent,
     size_t j = 0;
     cs_gnum_t num_c = number[order[s_id]];
 
-    _single[j++] = number[order[s_id]];
+    _single[j++] = num_c;
 
     cs_gnum_t num_p = num_c;
     for (size_t i = s_id+1; i < n_ent; i++) {
