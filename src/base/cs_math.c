@@ -105,6 +105,38 @@ const cs_real_t cs_math_pi = 3.14159265358979323846;
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute a rotation of the elements in a 3x3 real values matrix
+ *
+ * \param[in, out]  m   matrix of 3x3 real values
+ * \param[in]       i   1st index
+ * \param[in]       j   2nd index
+ * \param[in]       k   3rd index
+ * \param[in]       l   4th index
+ * \param[in]       s   rate
+ * \param[in]       t   rate
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_rotate_ind_33(cs_real_t  m[3][3],
+               cs_lnum_t  i,
+               cs_lnum_t  j,
+               cs_lnum_t  k,
+               cs_lnum_t  l,
+               cs_real_t  s,
+               cs_real_t  t)
+{
+  /* Save values of m[i][j] and m[k][l] */
+  cs_real_t m_ij = m[i][j];
+  cs_real_t m_kl = m[k][l];
+
+  /* Modify the values of (i,j) and (k,l) */
+  m[i][j] = m_ij - s*(m_kl + m_ij*t);
+  m[k][l] = m_kl + s*(m_ij - m_kl*t);
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -465,6 +497,133 @@ cs_math_voltet(const cs_real_t   xv[3],
   cs_math_3_cross_product(uev, uef, ucp);
 
   return  cs_math_1ov6 *lev*lef*lec* fabs(cs_math_3_dot_product(ucp, uec));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Evaluate eigenvalues and eigenvectors
+ *         of a real symmetric matrix m1[3,3]: m1*m2 = lambda*m2
+ *
+ * Use of Jacobi method for symmetric matrices
+ * (adapted from the book Numerical Recipies in C, Chapter 11.1)
+ *
+ * \param[in]     m_in         matrix of 3x3 real values (initial)
+ * \param[in]     tol_err      absolute tolerance (sum of off-diagonal elements)
+ * \param[out]    eig_val      vector of 3 real values (eigenvalues)
+ * \param[out]    eig_vec      matrix of 3x3 real values (eigenvectors)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_math_33_eig_val_vec(const cs_real_t  m_in[3][3],
+                       const cs_real_t  tol_err,
+                       cs_real_t        eig_val[restrict 3],
+                       cs_real_t        eig_vec[restrict 3][3])
+{
+  /* Declaration of local variables
+   * vec1, vec2:  vectors of 3 real values (copies of diagonal values)
+   * m:           matrix of 3x3 real values (copy of m_in)
+   * epsilon:     error (like machine epsilon for floats) */
+  cs_real_t vec1[3], vec2[3];
+  cs_real_t m[3][3] = {{m_in[0][0], m_in[0][1], m_in[0][2]},
+                       {m_in[1][0], m_in[1][1], m_in[1][2]},
+                       {m_in[2][0], m_in[2][1], m_in[2][2]}};
+  cs_real_t epsilon = 1.0e-16;
+
+  for (int id = 0; id < 3; id++) {
+    eig_val[id] = m_in[id][id];
+    vec1[id] = eig_val[id];
+    vec2[id] = 0.0;
+  }
+
+  /* The strategy here is to adopt a cyclic Jacobi method
+   * where the diagonalisation is carried out by several sweeps
+   * (each sweep to increase the precision of the result)
+   * Here, we perform up to 50 sweeps (the algorithm stops when
+   * reaching the given tolerance) */
+
+  // Error = sum off-diagonal elements
+  cs_real_t error
+    = cs_math_fabs(m[0][1]) + cs_math_fabs(m[0][2]) + cs_math_fabs(m[1][2]);
+
+  // Iterative solution
+  for (int i_sweep = 0; (i_sweep < 50) && (error > tol_err); i_sweep++) {
+
+    // Start loop on off-diagonal elements
+    for (int id1 = 0; id1 < 2; id1 ++) {
+      for (int id2 = id1+1; id2 < 3; id2 ++) {
+        // After 4 sweeps, skip rotation if off-diagonal element is small
+        if (cs_math_fabs(m[id1][id2]) < epsilon) {
+          if (i_sweep > 4)
+            m[id1][id2] = 0.0;
+        }
+        // Otherwise, ...
+        else { // if (abs(m[id1][id2]) >= epsilon)
+          cs_real_t val1, val2, val3, val4, val5;    // Declare five variables val.
+          // Get val1
+          cs_real_t diff = eig_val[id2] - eig_val[id1];
+          if (cs_math_fabs(m[id1][id2]) < epsilon)
+            val1 = m[id1][id2] / diff;
+          else {
+            cs_real_t theta = 0.5 * diff / m[id1][id2];
+            val1 = 1.0 / (cs_math_fabs(theta)+sqrt(1.0+cs_math_pow2(theta)));
+            if ( theta < 0 )
+              val1 = -val1;
+          }
+          // Get val2, val3 and val4
+          val3 = 1.0 / sqrt(1.0+cs_math_pow2(val1));
+          val2 = val1*val3;
+          val4 = val2 / (1.0 + val3);
+          val5 = val1 * m[id1][id2];
+          // Accumulate correction to diagonal elements
+          vec2[id1] -= val5;
+          vec2[id2] += val5;
+          eig_val[id1] -= val5;
+          eig_val[id2] += val5;
+
+          m[id1][id2] = 0.0;
+          // Rotate
+          for (int id3 = 0; id3 <= id1-1; id3++) // Rotations 0 <= j < p
+            _rotate_ind_33(m, id3, id1, id3, id2, val2, val4);
+          for (int id3 = id1+1; id3 <= id2-1; id3++) // Rotations p < j < q
+            _rotate_ind_33(m, id1, id3, id3, id2, val2, val4);
+          for (int id3 = id2+1; id3 < 3; id3++) // Rotations q < j <= n
+            _rotate_ind_33(m, id1, id3, id2, id3, val2, val4);
+          for (int id3 = 0; id3 < 3; id3++)
+            _rotate_ind_33(eig_vec, id3, id1, id3, id2, val2, val4);
+        }
+      }
+    }
+
+    // Update d and reinitialize z
+    for (int id = 0; id < 3; id++ ) {
+      vec1[id] += vec2[id];
+      eig_val[id] = vec1[id];
+      vec2[id] = 0.0;
+    }
+
+    // Update the error
+    error = cs_math_fabs(m[0][1]) + cs_math_fabs(m[0][2]) + cs_math_fabs(m[1][2]);
+  }
+
+  /* Sort eigenvalues and eigenvectors with ascending order */
+  for (int id1 = 0; id1 < 2; id1++) {
+    cs_lnum_t ind_min = id1;
+    for (int id2 = id1+1; id2 < 3; id2++) {
+      if ( eig_val[id2] < eig_val[id1] )
+        ind_min = id2;
+    }
+    if ( ind_min != id1 ) {
+      cs_real_t temp = eig_val[ind_min];
+      eig_val[ind_min] = eig_val[id1];
+      eig_val[id1] = temp;
+      for (int id2 = 0; id2 < 3; id2++) {
+        temp = eig_vec[id2][ind_min];
+        eig_vec[id2][ind_min] = eig_vec[id2][id1];
+        eig_vec[id2][id1] = temp;
+      }
+    }
+  }
 }
 
 /*----------------------------------------------------------------------------*/
