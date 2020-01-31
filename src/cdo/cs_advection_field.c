@@ -1482,6 +1482,7 @@ cs_advection_field_at_vertices(const cs_adv_field_t  *adv,
         /* If not the field associated to the advection field */
         if (field->id != adv->vtx_field_id)
           memcpy(vtx_values, field->val, 3*cdoq->n_vertices*sizeof(cs_real_t));
+        break;
 
       default:
         bft_error(__FILE__, __LINE__, 0,

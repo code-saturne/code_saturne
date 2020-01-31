@@ -1084,6 +1084,7 @@ _set_saturne_sles(cs_equation_param_t   *eqp)
                            CS_SLES_IPCG, /* Flexible CG */
                            poly_degree,
                            slesp.n_max_iter);
+    break;
 
   case CS_PARAM_ITSOL_GKB_GMRES:
     it = cs_sles_it_define(slesp.field_id,
@@ -1091,6 +1092,7 @@ _set_saturne_sles(cs_equation_param_t   *eqp)
                            CS_SLES_GMRES, /* Should a flexible GMRES */
                            poly_degree,
                            slesp.n_max_iter);
+    break;
 
   case CS_PARAM_ITSOL_GMRES:
     it = cs_sles_it_define(slesp.field_id,
