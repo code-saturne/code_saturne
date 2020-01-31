@@ -35,11 +35,10 @@
 !______________________________________________________________________________.
 !  mode           name          role                                           !
 !______________________________________________________________________________!
-!> \param[in]     use_atmo      Also use atmospherique module if greater than 0
 !_______________________________________________________________________________
 
 
-subroutine ctvarp(use_atmo)
+subroutine ctvarp
 
 !===============================================================================
 ! Module files
@@ -64,8 +63,6 @@ use atincl, only : iymw
 implicit none
 
 ! Arguments
-
-integer          use_atmo
 
 ! Local variables
 

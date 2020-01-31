@@ -35,7 +35,6 @@
 !   mode          name          role
 !------------------------------------------------------------------------------
 !> \param[in]     ncelet        number of extended (real + ghost) cells
-!> \param[in]     ncel          number of cells
 !> \param[in]     iscal         scalar number
 !> \param[in]     nfbpcd        number of faces with condensation source terms
 !> \param[in]     ifbpcd        index of faces with condensation source terms
@@ -57,7 +56,7 @@
 !______________________________________________________________________________
 
 subroutine condensation_source_terms &
-  (ncelet  , ncel    ,                                   &
+  (ncelet  ,                                             &
    iscal   ,                                             &
    nfbpcd  , ifbpcd  , itypcd ,                          &
    ncmast  , ltmast  , itypst ,                          &

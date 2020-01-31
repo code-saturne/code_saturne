@@ -68,8 +68,6 @@ implicit none
 ! Local variables
 
 type(var_cal_opt) :: vcopt
-integer iscal, key_decay
-double precision decay_rate
 
 !=============================================================================
 

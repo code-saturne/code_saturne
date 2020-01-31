@@ -631,7 +631,7 @@ if (iturbo.ne.0) then
 endif
 
 call typecl &
- ( nvar   , nscal  , iterns , .false. ,                           &
+ ( nvar   , nscal  , .false. ,                                    &
    itypfb , itrifb , icodcl , isostd ,                            &
    rcodcl )
 
@@ -810,6 +810,8 @@ do ii = 1, nscal
     if (itbrrb.eq.1 .and. vcopt%ircflu.eq.1) then
       call field_get_val_v(ivarfl(ivar), cvar_v)
 
+      allocate(gradv(3,3,ncelet))
+
       inc = 1
       iprev = 1
       call field_gradient_vector(ivarfl(ivar), iprev, 0, inc, gradv)
@@ -823,6 +825,9 @@ do ii = 1, nscal
                              + gradv(3,isou,iel)*diipb(3,ifac)
         enddo
       enddo
+
+      deallocate(gradv)
+
     else
       call field_get_val_prev_v(ivarfl(ivar), cvara_v)
 
@@ -5242,7 +5247,7 @@ if (     ippmod(iphpar).ge.1.and.ippmod(igmix).eq.-1               &
 endif
 
 call typecl &
- ( nvar   , nscal  , iterns , .true. ,                            &
+ ( nvar   , nscal  , .true. ,                                     &
    itypfb , itrifb , icodcl , isostd ,                            &
    rcodcl )
 

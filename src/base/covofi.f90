@@ -670,8 +670,7 @@ if (nfbpcd.gt.0) then
   enddo
 
   call condensation_source_terms &
-  !=============================
-  (ncelet , ncel ,                                       &
+  (ncelet ,                                              &
    iscal  ,                                              &
    nfbpcd , ifbpcd  , itypcd(1,ivar) ,                   &
    0      , ivoid   , ivoid          ,                   &
@@ -703,8 +702,7 @@ if (icondv.eq.0) then
   enddo
 
   call condensation_source_terms &
-  !=============================
-  (ncelet , ncel ,                                       &
+  (ncelet ,                                              &
    iscal  ,                                              &
    0      , ivoid   , ivoid          ,                   &
    ncmast , ltmast  , itypst(1,ivar) ,                   &

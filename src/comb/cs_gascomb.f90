@@ -21,8 +21,7 @@
 !-------------------------------------------------------------------------------
 
 subroutine cs_gascomb &
-!====================
- ( ncelet , ncel   , icb1 , icb2 ,                                        &
+ ( ncel   , icb1 , icb2 ,                                                 &
    indpdf ,                                                               &
    f1m    , f2m    , f3m      , f4m    , f5m  , f6m , f7m , f8m , f9m ,   &
    pdfm1  , pdfm2  , doxyd    , dfuel  , hrec ,                           &
@@ -104,7 +103,7 @@ implicit none
 
 ! Arguments
 
-integer          ncelet , ncel
+integer          ncel
 integer          icb1   , icb2
 integer          indpdf(ncel)
 

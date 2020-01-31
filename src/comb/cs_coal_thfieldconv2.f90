@@ -33,12 +33,10 @@
 !______________________________________________________________________________.
 !   mode          name          role
 !______________________________________________________________________________!
-!> \param[in]     ncelet        number of extended (real + ghost) cells
 !> \param[in]     ncel          number of cells
 !______________________________________________________________________________!
 
-subroutine cs_coal_thfieldconv2 &
- ( ncelet , ncel )
+subroutine cs_coal_thfieldconv2(ncel)
 
 !==============================================================================
 ! Module files

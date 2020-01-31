@@ -361,8 +361,7 @@ enddo
 deallocate(cvar_f1m, cvar_f2m)
 
 call cs_gascomb &
-!==============
- ( ncelet , ncel   , ichx1 , ichx2 ,                              &
+ ( ncel   , ichx1 , ichx2 ,                                       &
    intpdf ,                                                       &
    f1m    , f2m , f3m , f4m , f5m , f6m , f7m , f8m , f9m ,       &
    pdfm1  , pdfm2  , doxyd    , dfuel  , hrec ,                   &
@@ -441,8 +440,7 @@ if ( ieqnox .eq. 1 .and. ipass .gt. 1 ) then
 
   call cs_coal_noxst &
 
- ( ncelet , ncel   ,                                              &
-   intpdf ,                                                       &
+ ( ncel   , intpdf ,                                              &
    pdfm1  , pdfm2  , doxyd  , dfuel  , hrec ,                     &
    f3m    , f4m    , f5m    , f6m    , f7m  , f8m , f9m ,         &
    fs3no  , fs4no  , yfs4no , enthox )

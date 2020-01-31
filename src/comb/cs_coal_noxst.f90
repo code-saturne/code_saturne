@@ -21,9 +21,7 @@
 !-------------------------------------------------------------------------------
 
 subroutine cs_coal_noxst &
-!=======================
-
- ( ncelet , ncel   ,                                                      &
+ ( ncel   ,                                                               &
    indpdf ,                                                               &
    pdfm1  , pdfm2  , doxyd  , dfuel  , hrec ,                             &
    f3m    , f4m    , f5m    , f6m    , f7m  , f8m , f9m ,                 &

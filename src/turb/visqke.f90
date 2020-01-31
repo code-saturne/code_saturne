@@ -77,7 +77,7 @@ double precision, dimension(:,:,:), allocatable :: gradv
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: viscl, visct
 double precision, dimension(:), pointer :: w_dist
-double precision, dimension(:), pointer :: cvar_k, cvar_ep, cvar_phi
+double precision, dimension(:), pointer :: cvar_k, cvar_ep
 
 !===============================================================================
 

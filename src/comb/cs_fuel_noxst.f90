@@ -21,9 +21,7 @@
 !-------------------------------------------------------------------------------
 
 subroutine cs_fuel_noxst &
-!=======================
-
- ( ncelet , ncel   ,                                                      &
+ ( ncel   ,                                                               &
    indpdf ,                                                               &
    pdfm1  , pdfm2  , doxyd  , dfuel  , hrec ,                             &
    f3m    , f4m    , f5m    , f6m    , f7m  , f8m , f9m ,                 &
@@ -43,7 +41,6 @@ subroutine cs_fuel_noxst &
 !__________________.____._____.________________________________________________.
 ! name             !type!mode ! role                                           !
 !__________________!____!_____!________________________________________________!
-! ncelet           ! i  ! <-- ! number of extended (real + ghost) cells        !
 ! ncel             ! i  ! <-- ! number of cells                                !
 ! indpdf           ! te ! <-- ! passage par les pdf                            !
 !__________________!____!_____!________________________________________________!

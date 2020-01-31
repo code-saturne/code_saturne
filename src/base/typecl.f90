@@ -32,7 +32,6 @@
 !------------------------------------------------------------------------------
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     iterns        iteration number on Navier-Stokes equations
 !> \param[in]     init          partial treatment (before time loop) if true
 !> \param[in,out] itypfb        boundary face types
 !> \param[out]    itrifb        tab d'indirection pour tri des faces
@@ -69,7 +68,7 @@
 !______________________________________________________________________________
 
 subroutine typecl &
- ( nvar   , nscal  , iterns , init   ,                            &
+ ( nvar   , nscal  , init   ,                                     &
    itypfb , itrifb , icodcl , isostd ,                            &
    rcodcl )
 
@@ -102,7 +101,7 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal, iterns
+integer          nvar   , nscal
 logical          init
 
 integer          icodcl(ndimfb,nvar)

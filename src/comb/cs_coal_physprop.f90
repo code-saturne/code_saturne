@@ -189,8 +189,7 @@ endif
 !    Mass density
 !===============================================================================
 
-call cs_coal_physprop2 ( ncelet , ncel )
-!=====================
+call cs_coal_physprop2(ncel)
 
 !===============================================================================
 ! 3. Calculation of the physical properties of the gaseous phase
@@ -338,7 +337,6 @@ enddo
 call field_get_val_s(irom1, cpro_rom1)
 
 call cs_coal_physprop1 &
-!=====================
  ( ncelet , ncel   ,                                      &
    f1m    , f2m    , f3m    , f4m    , f5m    ,           &
    f6m    , f7m    , f8m    , f9m    , fvp2m  ,           &
@@ -354,8 +352,7 @@ call cs_coal_physprop1 &
 
 ! --- Transport of H2
 
-call  cs_coal_thfieldconv2 ( ncelet , ncel )
-!=========================
+call  cs_coal_thfieldconv2(ncel)
 
 !===============================================================================
 ! 5. Calculation of the physical properties of the mixture

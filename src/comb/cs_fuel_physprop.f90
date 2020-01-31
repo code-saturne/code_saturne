@@ -191,8 +191,7 @@ endif
 !    Mass density
 !===============================================================================
 
-call cs_fuel_physprop2 ( ncelet , ncel )
-!=====================
+call cs_fuel_physprop2(ncel)
 
 !===============================================================================
 ! 3. Calculation of the physical properties of the gaseous phase
@@ -361,8 +360,7 @@ call cs_fuel_physprop1 &
 
 ! --- Transport of H2
 
-call  cs_fuel_thfieldconv2 ( ncelet , ncel )
-!=========================
+call  cs_fuel_thfieldconv2(ncel)
 
 !===============================================================================
 ! 5. Calculation of the physical properties of the mixture

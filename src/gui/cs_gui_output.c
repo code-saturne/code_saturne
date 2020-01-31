@@ -517,7 +517,7 @@ cs_gui_postprocess_meshes(void)
     cs_probe_set_create_from_array("probes",
                                    n_probes,
                                    (const cs_real_3_t *)p_coords,
-                                   probe_labels);
+                                   (const char **)probe_labels);
 
     BFT_FREE(p_coords);
 

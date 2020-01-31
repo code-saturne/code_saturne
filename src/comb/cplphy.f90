@@ -137,7 +137,7 @@ double precision srrom1
 double precision wmolme
 
 double precision, allocatable, dimension(:) :: w1, w2, w3
-double precision, allocatable, dimension(:) :: w4, w5, w6
+double precision, allocatable, dimension(:) :: w4, w5
 double precision, allocatable, dimension(:) :: w7, w8
 double precision, dimension(:), pointer :: brom,  crom
 double precision, dimension(:), pointer :: cvar_scalt
@@ -162,7 +162,7 @@ ipass = ipass + 1
 
 ! Allocate work arrays
 allocate(w1(ncelet), w2(ncelet), w3(ncelet))
-allocate(w4(ncelet), w5(ncelet), w6(ncelet))
+allocate(w4(ncelet), w5(ncelet))
 allocate(w7(ncelet), w8(ncelet))
 
 ! --- Initialisation memoire
@@ -176,7 +176,6 @@ do iel = 1, ncel
   w3(iel) = zero
   w4(iel) = zero
   w5(iel) = zero
-  w6(iel) = zero
   w7(iel) = zero
   w8(iel) = zero
 enddo
@@ -243,13 +242,12 @@ ntbwoi = 1
 ntbwor = 4
 
 call cplph1                                                       &
-!==========
  ( ncelet , ncel   ,                                              &
    ntbcpi , ntbcpr , ntbmci , ntbmcr , ntbwoi , ntbwor ,          &
-   w2     , w3     , w4     , w5     , w6     , w7     ,          &
-!         F1M      F2M      F3M      F4M      F3P2M    F4P2M
+   w2     , w3     , w4     , w5     , w7     ,                   &
+!  f1m      f2m      f3m      f4m      f4p2m
    w8     ,                                                       &
-!         ENTH
+!  enth
    w1    )
 !                          ----
 !                 ATTENTION W1 contient RHO1
@@ -315,7 +313,7 @@ endif
 
 ! Free memory
 deallocate(w1, w2, w3)
-deallocate(w4, w5, w6)
+deallocate(w4, w5)
 deallocate(w7, w8)
 
 !----

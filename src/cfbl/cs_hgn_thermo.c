@@ -773,7 +773,7 @@ cs_hgn_thermo_eq(cs_real_t  e,
   cs_real_t pb = 0.5*(pmin+pctau);
 
   cs_real_t alpha1, y1, z1;
-  cs_real_t p1 = _dicho_eq(e, v, pa, pb, &alpha1, &y1, &z1);
+  _dicho_eq(e, v, pa, pb, &alpha1, &y1, &z1);
 
   /* root not found in [pmin,0.5(pmin+pctau)] */
   if (   (alpha1 < 0. || alpha1 > 1.)
@@ -784,7 +784,7 @@ cs_hgn_thermo_eq(cs_real_t  e,
     pa = 0.5*(pmin+pctau);
     pb = pctau;
     cs_real_t alpha2, y2, z2;
-    cs_real_t p2 = _dicho_eq(e, v, pa, pb, &alpha2, &y2, &z2);
+    _dicho_eq(e, v, pa, pb, &alpha2, &y2, &z2);
 
     /* root not found neither in [0.5(pmin+pctau),pctau] */
     if (   (alpha2 < 0. || alpha2 > 1.)
