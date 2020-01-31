@@ -187,7 +187,14 @@ cs_preprocess_mesh_is_needed(void)
   int needed = 1;
 
   if (cs_glob_rank_id < 1) {
-    if (cs_file_isreg("restart/mesh_input")) {
+    /* Check first for file with extension */
+    if (cs_file_isreg("restart/mesh_input.csm")) {
+      const char path[] = "mesh_input.csm";
+      if (! (cs_file_isreg(path) || cs_file_isdir(path)))
+        needed = 0;
+
+    }
+    else if (cs_file_isreg("restart/mesh_input")) {
       const char path[] = "mesh_input";
       if (! (cs_file_isreg(path) || cs_file_isdir(path)))
         needed = 0;
@@ -352,7 +359,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   if (cs_glob_mesh->modified > 0 || partition_preprocess) {
     if (partition_preprocess) {
       if (need_save) {
-        cs_mesh_save(cs_glob_mesh, cs_glob_mesh_builder, NULL, "mesh_output");
+        cs_mesh_save(cs_glob_mesh, cs_glob_mesh_builder, NULL, "mesh_output.csm");
         need_save = false;
       }
       else
@@ -365,7 +372,7 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   }
 
   if (need_save)
-    cs_mesh_save(cs_glob_mesh, NULL, NULL, "mesh_output");
+    cs_mesh_save(cs_glob_mesh, NULL, NULL, "mesh_output.csm");
 
   /* Destroy the temporary structure used to build the main mesh */
 

@@ -639,7 +639,7 @@ if (isuite.eq.1) then
   endif
 
   if (isuisy.eq.1) then
-    call lecsyn('les_inflow'//c_null_char)
+    call lecsyn('les_inflow.csc'//c_null_char)
   endif
 
   ! TODO
@@ -1048,7 +1048,7 @@ if (iisuit.eq.1) then
   endif
 
   if (nent.gt.0) then
-    call ecrsyn('les_inflow'//c_null_char)
+    call ecrsyn('les_inflow.csc'//c_null_char)
   endif
 
   if (iilagr.gt.0) then

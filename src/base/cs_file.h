@@ -831,6 +831,21 @@ cs_file_size(const char  *path);
 int
 cs_file_remove(const char  *path);
 
+/*----------------------------------------------------------------------------
+ * Check if a file name ends with a specific string (extension)
+ *
+ * parameters
+ *   path <-- file path.
+ *   end  <-- string to compare
+ *
+ * returns:
+ *   1 in case of success, 0 otherwise.
+ *----------------------------------------------------------------------------*/
+
+int
+cs_file_endswith(const char *path,
+                 const char *end);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

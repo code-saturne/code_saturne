@@ -175,7 +175,7 @@ cs_restart_lagrangian_checkpoint_read(void)
        "-------------------------------------\n"
        "   Read restart file for statistics and return coupling source terms\n");
 
-    const char ficsui[] = "lagrangian_stats";
+    const char ficsui[] = "lagrangian_stats.csc";
     cs_restart_t
       *lag_stat_restart = cs_restart_create(ficsui, NULL,
                                             CS_RESTART_MODE_READ);
@@ -743,7 +743,7 @@ cs_lagr_restart_read_p(void)
                   "      -------------------------------------\n"
                   "    Read restart file for particle values\n"));
 
-  const char ficsui[] = "lagrangian";
+  const char ficsui[] = "lagrangian.csc";
   cs_restart_t *lag_stat_restart
     = cs_restart_create(ficsui, NULL, CS_RESTART_MODE_READ);
 
@@ -1122,7 +1122,7 @@ cs_restart_lagrangian_checkpoint_write(void)
   /* Output restart file: variables related to particles */
   /*-----------------------------------------------------*/
 
-  const char ficsui[] = "lagrangian";
+  const char ficsui[] = "lagrangian.csc";
   cs_restart_t *lag_stat_restart
     = cs_restart_create(ficsui, NULL, CS_RESTART_MODE_WRITE);
 
@@ -1239,7 +1239,7 @@ cs_restart_lagrangian_checkpoint_write(void)
                     "    return coupling source terms\n"));
 
     /* Open restart file */
-    char const *ficsuist = "lagrangian_stats";
+    char const *ficsuist = "lagrangian_stats.csc";
     lag_stat_restart = cs_restart_create(ficsuist, NULL, CS_RESTART_MODE_WRITE);
 
     cs_log_printf(CS_LOG_DEFAULT,

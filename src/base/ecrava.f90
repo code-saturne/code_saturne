@@ -178,7 +178,7 @@ write(nfecra,1000)
 
 ilecec = 2
 
-ficsui = 'main'
+ficsui = 'main.csc'
 call restart_create(ficsui, '', 1, rp)
 
 !===============================================================================
@@ -305,7 +305,7 @@ if (iecaux.eq.1) then
   write(nfecra,2000)
 
   ilecec = 2
-  ficsui = 'auxiliary'
+  ficsui = 'auxiliary.csc'
   call restart_create(ficsui, '', 1, rp)
 
   write(nfecra,1100)

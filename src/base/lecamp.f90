@@ -121,7 +121,7 @@ cindfp='YY'
 ! 1. OUVERTURE DU FICHIER OU STOP
 !===============================================================================
 
-ficsui = 'main'
+ficsui = 'main.csc'
 call restart_create(ficsui, '', 0, rp)
 
 ! ---> Debut de la lecture

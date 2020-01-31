@@ -171,24 +171,37 @@ _align_size(size_t  min_size)
 static void
 _set_default_input_if_needed(void)
 {
-  const char input_default[] = "mesh_input";
-  const char cp_input_default[] = "restart/mesh_input";
+  const char input_default[] = "mesh_input.csm";
+  const char cp_input_default[] = "restart/mesh_input.csm";
+
+  const char input_default_noext[] = "mesh_input.csm";
+  const char cp_input_default_noext[] = "restart/mesh_input.csm";
+
+  const char input_default_folder[] = "mesh_input_folder";
 
   if (_n_mesh_files == 0) {
 
+    /* First check for mesh_input.csm file */
     if (cs_file_isreg(input_default))
       cs_preprocessor_data_add_file(input_default, 0, NULL, NULL);
 
-    else if (cs_file_isdir(input_default)) {
+    else if (cs_file_isreg(cp_input_default))
+      cs_preprocessor_data_add_file(cp_input_default, 0, NULL, NULL);
+
+    /* If not present, check without extension */
+    else if (cs_file_isreg(input_default_noext))
+      cs_preprocessor_data_add_file(input_default_noext, 0, NULL, NULL);
+
+    else if (cs_file_isdir(input_default_folder)) {
       int i;
-      char **dir_files = cs_file_listdir(input_default);
+      char **dir_files = cs_file_listdir(input_default_folder);
       for (i = 0; dir_files[i] != NULL; i++) {
         char *tmp_name = NULL;
         BFT_MALLOC(tmp_name,
-                   strlen(input_default) + 1 + strlen(dir_files[i]) + 1,
+                   strlen(input_default_noext) + 1 + strlen(dir_files[i]) + 1,
                    char);
         sprintf(tmp_name, "%s%c%s",
-                input_default, _dir_separator, dir_files[i]);
+                input_default_folder, _dir_separator, dir_files[i]);
         if (cs_file_isreg(tmp_name))
           cs_preprocessor_data_add_file(tmp_name, 0, NULL, NULL);
         BFT_FREE(tmp_name);
@@ -197,8 +210,8 @@ _set_default_input_if_needed(void)
       BFT_FREE(dir_files);
     }
 
-    else if (cs_file_isreg(cp_input_default))
-      cs_preprocessor_data_add_file(cp_input_default, 0, NULL, NULL);
+    else if (cs_file_isreg(cp_input_default_noext))
+      cs_preprocessor_data_add_file(cp_input_default_noext, 0, NULL, NULL);
 
     else
       bft_error(__FILE__, __LINE__, 0,

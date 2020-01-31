@@ -1533,9 +1533,9 @@ _update_mesh_checkpoint(void)
 
     /* Move mesh_output if present */
 
-    const char opath_i[] = "mesh_input";
-    const char opath_o[] = "mesh_output";
-    const char npath[] = "checkpoint/mesh_input";
+    const char opath_i[] = "mesh_input.csm";
+    const char opath_o[] = "mesh_output.csm";
+    const char npath[] = "checkpoint/mesh_input.csm";
 
     if (cs_file_isreg(opath_o)) {
       int retval = rename(opath_o, npath);
@@ -1945,11 +1945,12 @@ cs_restart_create(const char         *name,
   double timing[2];
 
   char *_name = NULL;
-  size_t  ldir, lname;
+  size_t  ldir, lname, lext;
 
   const char  *_path = path;
   const char _restart[] = "restart";
   const char _checkpoint[] = "checkpoint";
+  const char _extension[]  = ".csc";
 
   const cs_mesh_t  *mesh = cs_glob_mesh;
 
@@ -2001,6 +2002,24 @@ cs_restart_create(const char         *name,
   strcat(_name, name);
   _name[ldir+lname+1] = '\0';
 
+  /* Following the addition of an extension, we check for READ mode
+   * if a file exists without the extension
+   */
+  if (mode == CS_RESTART_MODE_READ) {
+    if (cs_file_isreg(_name) == 0 && cs_file_endswith(name, _extension)) {
+      BFT_FREE(_name);
+
+      lext  = strlen(_extension);
+      BFT_MALLOC(_name, ldir + lname + 2 - lext, char);
+      strcpy(_name, _path);
+      _name[ldir] = _dir_separator;
+      _name[ldir+1] = '\0';
+      strncat(_name, name, lname-lext);
+      _name[ldir+lname-lext+1] = '\0';
+    }
+  }
+
+  int name_has_extension = cs_file_endswith(name, _extension);
   /* Allocate and initialize base structure */
 
   BFT_MALLOC(restart, 1, cs_restart_t);

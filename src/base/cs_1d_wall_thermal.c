@@ -596,7 +596,7 @@ cs_1d_wall_thermal_read(void)
   cs_lnum_t           ii, jj, ifac, indfac, ierror;
   cs_lnum_t           n_b_faces = cs_glob_mesh->n_b_faces;
 
-  char nomsui[] = "1dwall_module";
+  char nomsui[] = "1dwall_module.csc";
 
   cs_restart_t             *suite;
   cs_mesh_location_type_t   support;
@@ -982,7 +982,7 @@ cs_1d_wall_thermal_write(void)
   cs_lnum_t            nbvent;
   cs_lnum_t            ii, jj, ifac;
 
-  char nomsui[] = "1dwall_module";
+  char nomsui[] = "1dwall_module.csc";
 
   cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
 

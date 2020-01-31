@@ -146,7 +146,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
   /* Restart */
   /* ------- */
 
-  restart = cs_restart_create("main",                 /* file name */
+  restart = cs_restart_create("main.csc",             /* file name */
                               NULL,                   /* force directory */
                               CS_RESTART_MODE_READ);  /* read mode */
 
@@ -227,7 +227,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
   /* Chekpoint */
   /* --------- */
 
-  checkpoint = cs_restart_create("main",                  /* file name */
+  checkpoint = cs_restart_create("main.csc",              /* file name */
                                  NULL,                    /* force directory */
                                  CS_RESTART_MODE_WRITE);  /* write mode */
 

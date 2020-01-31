@@ -438,7 +438,7 @@ _restart_info_read(void)
   /* Read previous time step if not already done */
 
   if (ts->nt_prev < 1) {
-    r = cs_restart_create("main", "restart", CS_RESTART_MODE_READ);
+    r = cs_restart_create("main.csc", "restart", CS_RESTART_MODE_READ);
     cs_restart_read_time_step_info(r);
     if (_restart_uses_main == false)
       cs_restart_destroy(&r);
@@ -448,9 +448,9 @@ _restart_info_read(void)
 
   if (r == NULL) {
     if (_restart_uses_main)
-      r = cs_restart_create("main", NULL, CS_RESTART_MODE_READ);
+      r = cs_restart_create("main.csc", NULL, CS_RESTART_MODE_READ);
     else
-      r = cs_restart_create("auxiliary", NULL, CS_RESTART_MODE_READ);
+      r = cs_restart_create("auxiliary.csc", NULL, CS_RESTART_MODE_READ);
   }
 
   _restart_info_read_auxiliary(r);

@@ -401,7 +401,6 @@ class domain(base_domain):
 
         self.restart_input = None
         self.restart_mesh_input = None
-        self.mesh_input = None
         self.partition_input = None
 
         # Default executable
@@ -783,7 +782,7 @@ class domain(base_domain):
 
         restart_input_mesh = None
         if self.restart_input:
-            restart_input_mesh = os.path.join(self.exec_dir, 'restart', 'mesh_input')
+            restart_input_mesh = os.path.join(self.exec_dir, 'restart', 'mesh_input.csm')
             if not os.path.exists(restart_input_mesh):
                 restart_input_mesh = None
 
@@ -793,7 +792,14 @@ class domain(base_domain):
                 mesh_input = os.path.expanduser(self.mesh_input)
                 if not os.path.isabs(mesh_input):
                     mesh_input = os.path.join(self.case_dir, mesh_input)
-                link_path = os.path.join(self.exec_dir, 'mesh_input')
+
+                # Differentiate between a folder and file, since we now
+                # have a file extension
+                if os.path.isdir(mesh_input):
+                    link_path = os.path.join(self.exec_dir, 'mesh_input_folder')
+                else:
+                    link_path = os.path.join(self.exec_dir, 'mesh_input.csm')
+
                 self.purge_result(link_path) # in case of previous run here
                 self.symlink(mesh_input, link_path)
         else:
@@ -889,7 +895,7 @@ class domain(base_domain):
 
         if len(self.meshes) > 1:
             mesh_id = 0
-            destdir = 'mesh_input'
+            destdir = 'mesh_input_folder'
             make_clean_dir(destdir)
 
         # Set environment
@@ -946,11 +952,11 @@ class domain(base_domain):
                 mesh_id += 1
                 cmd = cmd + ['--log', 'preprocessor_%02d.log' % (mesh_id)]
                 cmd = cmd + ['--out', os.path.join('mesh_input',
-                                                   'mesh_%02d' % (mesh_id))]
+                                                   'mesh_%02d.csm' % (mesh_id))]
                 cmd = cmd + ['--case', 'preprocessor_%02d' % (mesh_id)]
             else:
                 cmd = cmd + ['--log']
-                cmd = cmd + ['--out', 'mesh_input']
+                cmd = cmd + ['--out', 'mesh_input.csm']
 
             cmd.append(mesh_path)
 
@@ -1048,10 +1054,10 @@ class domain(base_domain):
 
         purge_list = []
 
-        f = 'mesh_input'
         if not self.mesh_input and self.exec_solver:
-            if f in dir_files:
-                purge_list.append(f)
+            for f in ['mesh_input', 'mesh_input.csm', 'mesh_input_folder']:
+                if f in dir_files:
+                    purge_list.append(f)
 
         for f in ['restart', 'partition_input']:
             if f in dir_files:
@@ -1585,7 +1591,14 @@ class cathare_domain(domain):
             mesh_input = os.path.expanduser(self.mesh_input)
             if not os.path.isabs(mesh_input):
                 mesh_input = os.path.join(self.case_dir, mesh_input)
-            link_path = os.path.join(self.exec_dir, 'mesh_input')
+
+            # Differentiate between a folder and file, since we now
+            # have a file extension
+            if os.path.isdir(mesh_input):
+                link_path = os.path.join(self.exec_dir, 'mesh_input_folder')
+            else:
+                link_path = os.path.join(self.exec_dir, 'mesh_input.csm')
+
             self.purge_result(link_path) # in case of previous run here
             self.symlink(mesh_input, link_path)
 

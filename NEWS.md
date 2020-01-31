@@ -76,6 +76,13 @@ Numerics and physical modelling:
 
 Architectural changes:
 
+- Addition of file extensions for both checkpoint (.csc) and mesh_input
+  files (.csm). Code_Saturne still accepts old files
+  (mesh_input/mesh_output/main/auxiliary/...) without the extensions.
+  The GUI now also accepts "mesh_input_folder" as a folder containing
+  multiple mesh_input files, while waiting for a full integration of
+  the Code_Saturne mesh file format into the GUI mesh handling page.
+
 - All to all operation now all use the cs_all_to_all API, allowing better
   instrumentation and choice of underlying all to all algorithm.
 

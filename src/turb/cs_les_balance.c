@@ -2407,7 +2407,7 @@ _check_restart_type(void)
 {
   int ierror;
 
-  char const *ficsui = "les_balance";
+  char const *ficsui = "les_balance.csc";
   cs_restart_t *suite = cs_restart_create(ficsui, NULL, CS_RESTART_MODE_READ);
 
   {
@@ -3740,7 +3740,7 @@ cs_les_balance_compute_tui(void)
 void
 cs_les_balance_write_restart(void)
 {
-  char const *ficsui = "les_balance";
+  char const *ficsui = "les_balance.csc";
   cs_restart_t *suite = cs_restart_create(ficsui, NULL, CS_RESTART_MODE_WRITE);
 
   if (suite == NULL)

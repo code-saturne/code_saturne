@@ -386,7 +386,7 @@ _print_help(void)
   _fct_prt("-o", _("<file>"),
            _(": output file name"));
   sprintf(opt_str, _("  (default file: \"%s\")"),
-          "mesh_input");
+          "mesh_input.csm");
   _fct_prt("", "", opt_str);
 
   _fct_prt("--out", _("<file>"), _(": same"));
@@ -1004,7 +1004,7 @@ ecs_cmd__lit_arg(int    argc,
       if (argc - 1 > iarg && strncmp(argv[iarg + 1], "-", 1))
         outfic = argv[++iarg];
       else
-        outfic = "mesh_input";
+        outfic = "mesh_input.csm";
 
       ECS_MALLOC(cmd->nom_out, strlen(outfic) + 1, char);
 
@@ -1135,9 +1135,9 @@ ecs_cmd__lit_arg(int    argc,
 
   if (cmd->nom_out == NULL && bool_no_write == false) {
     ECS_MALLOC(cmd->nom_out,
-               strlen("mesh_input") + 1,
+               strlen("mesh_input.csm") + 1,
                char);
-    strcpy(cmd->nom_out, "mesh_input");
+    strcpy(cmd->nom_out, "mesh_input.csm");
   }
 
   /*-----------------------------------------*/

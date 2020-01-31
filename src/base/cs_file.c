@@ -3889,4 +3889,51 @@ cs_file_remove(const char  *path)
 
 /*----------------------------------------------------------------------------*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if file name/path ends with a specific string
+ *
+ * The function returns an int: 1 if the file name ends with the
+ * given string, 0 otherwise.
+ *
+ * \param[in]  path name of file
+ * \param[in]  end  end string to test
+ *
+ * \return an int. 1 if the path ends with the given string, 0 otherwise.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_file_endswith(const char *path,
+                 const char *end)
+{
+
+  int retval = 0;
+
+  /* If either pointers is NULL, return 0 */
+  if (path == NULL || end == NULL)
+    retval = 0;
+
+  else {
+
+    const int lpath = strlen(path);
+    const int lext  = strlen(end);
+
+    /* If either strings is empty, or if the path is shorter than the end
+     * string, return 0
+     */
+    if (lpath == 0 || lext == 0)
+      retval = 0;
+
+    else if (lext > lpath)
+      retval = 0;
+
+    else
+      retval = (strcmp(path + (lpath-lext), end) == 0);
+  }
+
+  return retval;
+
+}
+/*----------------------------------------------------------------------------*/
 END_C_DECLS

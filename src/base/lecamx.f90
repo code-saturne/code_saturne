@@ -161,7 +161,7 @@ call field_get_key_id("time_extrapolated", key_t_ext_id)
 ! 1. OUVERTURE DU FICHIER SUITE AUXILIAIRE
 !===============================================================================
 
-ficsui = 'auxiliary'
+ficsui = 'auxiliary.csc'
 call restart_create(ficsui, '', 0, rp)
 
 ! ---> Debut de la lecture

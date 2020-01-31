@@ -538,7 +538,7 @@ cs_domain_read_restart(cs_domain_t  *domain)
     return;
   }
 
-  cs_restart_t  *restart = cs_restart_create("main", /* restart file name */
+  cs_restart_t  *restart = cs_restart_create("main.csc", /* restart file name */
                                              NULL,   /* directory name */
                                              CS_RESTART_MODE_READ);
 
@@ -742,7 +742,7 @@ cs_domain_write_restart(const cs_domain_t  *domain)
   if (cs_restart_checkpoint_required(domain->time_step) == false)
     return;
 
-  cs_restart_t  *restart = cs_restart_create("main", /* restart file name */
+  cs_restart_t  *restart = cs_restart_create("main.csc", /* restart file name */
                                              NULL,   /* directory name */
                                              CS_RESTART_MODE_WRITE);
 

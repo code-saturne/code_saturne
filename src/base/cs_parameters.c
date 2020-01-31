@@ -1137,7 +1137,7 @@ cs_parameters_read_restart_info(void)
 {
   if (cs_restart_present()) {
     cs_restart_t *r
-      = cs_restart_create("main", "restart", CS_RESTART_MODE_READ);
+      = cs_restart_create("main.csc", "restart", CS_RESTART_MODE_READ);
     cs_restart_read_time_step_info(r);
     cs_restart_destroy(&r);
   }

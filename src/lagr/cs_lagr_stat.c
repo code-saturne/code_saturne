@@ -1836,7 +1836,8 @@ _restart_info_read(void)
 {
   const cs_time_step_t  *ts = cs_glob_time_step;
 
-  if (   !cs_file_isreg("restart/lagrangian_stats")
+  if ((!cs_file_isreg("restart/lagrangian_stats") &&
+       !cs_file_isreg("restart/lagrangian_stats.csc"))
       || cs_glob_lagr_stat_options->isuist < 1) {
     _restart_info_checked = true;
     return;
@@ -1847,14 +1848,14 @@ _restart_info_read(void)
   /* Read previous time step if not already done */
 
   if (ts->nt_prev < 1) {
-    r = cs_restart_create("main", "restart", CS_RESTART_MODE_READ);
+    r = cs_restart_create("main.csc", "restart", CS_RESTART_MODE_READ);
     cs_restart_read_time_step_info(r);
     cs_restart_destroy(&r);
   }
 
   /* Now read lagr-moment specific data */
 
-  r = cs_restart_create("lagrangian_stats", NULL, CS_RESTART_MODE_READ);
+  r = cs_restart_create("lagrangian_stats.csc", NULL, CS_RESTART_MODE_READ);
 
   _restart_info_read_auxiliary(r);
 
@@ -1916,7 +1917,7 @@ _cs_lagr_moment_restart_read(void)
 
   static cs_restart_t  *cs_lag_stat_restart = NULL;
 
-  char const *ficsui = "lagrangian_stats";
+  char const *ficsui = "lagrangian_stats.csc";
   cs_lag_stat_restart = cs_restart_create(ficsui, NULL, CS_RESTART_MODE_READ);
   if (cs_lag_stat_restart == NULL)
     bft_error(__FILE__, __LINE__, 0,
