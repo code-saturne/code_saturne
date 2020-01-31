@@ -952,7 +952,7 @@ class domain(base_domain):
             if (mesh_id != None):
                 mesh_id += 1
                 cmd = cmd + ['--log', 'preprocessor_%02d.log' % (mesh_id)]
-                cmd = cmd + ['--out', os.path.join('mesh_input',
+                cmd = cmd + ['--out', os.path.join('mesh_input_folder',
                                                    'mesh_%02d.csm' % (mesh_id))]
                 cmd = cmd + ['--case', 'preprocessor_%02d' % (mesh_id)]
             else:
