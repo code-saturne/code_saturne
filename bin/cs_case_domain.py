@@ -797,7 +797,7 @@ class domain(base_domain):
                 # Differentiate between a folder and file, since we now
                 # have a file extension
                 if os.path.isdir(mesh_input):
-                    link_path = os.path.join(self.exec_dir, 'mesh_input_folder')
+                    link_path = os.path.join(self.exec_dir, 'mesh_input')
                 else:
                     link_path = os.path.join(self.exec_dir, 'mesh_input.csm')
 
@@ -896,7 +896,7 @@ class domain(base_domain):
 
         if len(self.meshes) > 1:
             mesh_id = 0
-            destdir = 'mesh_input_folder'
+            destdir = 'mesh_input'
             make_clean_dir(destdir)
 
         # Set environment
@@ -952,7 +952,7 @@ class domain(base_domain):
             if (mesh_id != None):
                 mesh_id += 1
                 cmd = cmd + ['--log', 'preprocessor_%02d.log' % (mesh_id)]
-                cmd = cmd + ['--out', os.path.join('mesh_input_folder',
+                cmd = cmd + ['--out', os.path.join('mesh_input',
                                                    'mesh_%02d.csm' % (mesh_id))]
                 cmd = cmd + ['--case', 'preprocessor_%02d' % (mesh_id)]
             else:
@@ -1056,7 +1056,7 @@ class domain(base_domain):
         purge_list = []
 
         if not self.mesh_input and self.exec_solver:
-            for f in ['mesh_input', 'mesh_input.csm', 'mesh_input_folder']:
+            for f in ['mesh_input', 'mesh_input.csm']:
                 if f in dir_files:
                     purge_list.append(f)
 
@@ -1596,7 +1596,7 @@ class cathare_domain(domain):
             # Differentiate between a folder and file, since we now
             # have a file extension
             if os.path.isdir(mesh_input):
-                link_path = os.path.join(self.exec_dir, 'mesh_input_folder')
+                link_path = os.path.join(self.exec_dir, 'mesh_input')
             else:
                 link_path = os.path.join(self.exec_dir, 'mesh_input.csm')
 

@@ -174,10 +174,10 @@ _set_default_input_if_needed(void)
   const char input_default[] = "mesh_input.csm";
   const char cp_input_default[] = "restart/mesh_input.csm";
 
-  const char input_default_noext[] = "mesh_input.csm";
-  const char cp_input_default_noext[] = "restart/mesh_input.csm";
+  const char input_default_noext[] = "mesh_input";
+  const char cp_input_default_noext[] = "restart/mesh_input";
 
-  const char input_default_folder[] = "mesh_input_folder";
+  const char input_default_folder[] = "mesh_input";
 
   if (_n_mesh_files == 0) {
 
