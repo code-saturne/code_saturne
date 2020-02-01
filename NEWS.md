@@ -23,6 +23,10 @@ Bug fixes:
 
 User changes:
 
+- Logging of ParaView Catalyst messages (when present) is now redirected
+  to a postprocessing/catalyst.log file instead of the standard output.
+  Only output from rank 0 is logged (as the others should be identical).
+
 - GUI: try to avoid crash when handling XML files from more recent versions.
   Some values may be reset, and the display may not be updated before
   reloading a page (i.e. switching to another an back), so a warning is
