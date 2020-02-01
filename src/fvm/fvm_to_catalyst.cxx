@@ -82,6 +82,8 @@
 #include <vtkGenericDataObjectWriter.h>
 #include <vtkDoubleArray.h>
 
+#include <vtkFileOutputWindow.h>
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -401,6 +403,7 @@ _init_coprocessor(void)
 #endif
 {
   int mpi_flag = 0;
+  int mpi_rank = -1;
 
 #if defined(HAVE_MPI)
 
@@ -430,6 +433,9 @@ _init_coprocessor(void)
       else
         _comm = comm;
 
+      if (comm != MPI_COMM_NULL)
+        MPI_Comm_rank(_comm, &mpi_rank);
+
       vtkMPICommunicatorOpaqueComm vtk_comm
         = vtkMPICommunicatorOpaqueComm(&_comm);
       _processor->Initialize(vtk_comm);
@@ -440,6 +446,13 @@ _init_coprocessor(void)
 
     if (!mpi_flag)
       _processor->Initialize();
+
+    vtkFileOutputWindow *log_output = vtkFileOutputWindow::New();
+    if (mpi_rank < 1)
+      log_output->SetFileName("./catalyst.log");
+    else
+      log_output->SetFileName("/dev/null");
+    vtkFileOutputWindow::SetInstance(log_output);
 
   }
 }
