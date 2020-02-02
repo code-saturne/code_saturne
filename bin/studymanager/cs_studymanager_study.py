@@ -888,7 +888,9 @@ class Study(object):
                 else:
                     shutil.copy2(ref, node)
                     if node == 'coupling_parameters.py':
-                        os.mkdir('RESU_COUPLING')
+                        resu_coupling = 'RESU_COUPLING'
+                        if not os.path.isdir(resu_coupling):
+                            os.mkdir(resu_coupling)
             c.update_runcase_path(c.label, destdir=self.__dest)
             os.chdir(self.__dest)
         else:
