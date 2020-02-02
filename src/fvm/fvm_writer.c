@@ -280,7 +280,7 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
     (  FVM_WRITER_FORMAT_USE_EXTERNAL
      | FVM_WRITER_FORMAT_HAS_POLYGON
      | FVM_WRITER_FORMAT_HAS_POLYHEDRON),
-    FVM_WRITER_TRANSIENT_CONNECT,
+    FVM_WRITER_TRANSIENT_COORDS,
 #if !defined(HAVE_MELISSA) || defined(HAVE_PLUGIN_MELISSA)
     0,                                 /* dynamic library count */
     NULL,                              /* dynamic library */

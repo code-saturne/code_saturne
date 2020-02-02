@@ -123,9 +123,9 @@ typedef void
  *
  * parameters:
  *   mesh                 <-- pointer to nodal mesh structure
+ *   min_export_dim       <-- minimum dimension of sections to export
  *   group_by_type        <-- if true, group sections of same type
  *   group_all            <-- if true, all sections continue previous ones
- *   min_export_dim       <-- minimum dimension of sections to export
  *   discard_polygons     <-- ignore polygonal sections
  *   discard_polyhedra    <-- ignore polyhedral sections
  *   divide_polygons      <-- tesselate polygonal sections
