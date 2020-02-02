@@ -220,7 +220,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
   /* Extrude mesh at boundary faces of group "walls".
    * The resulting extruded cells are added to a new
    * group of cells called "solid" */
-  
+
   /*! [mesh_modify_extrude_3] */
   {
     int n_layers = 2;
@@ -232,7 +232,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
     /* Save the initial number of cells */
 
     cs_lnum_t n_prev_cells = mesh->n_cells ;
-    
+
     /* Select boudary faces */
 
     cs_lnum_t   n_selected_faces = 0;
@@ -262,12 +262,12 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 
     cs_lnum_t n_selected_elts = mesh->n_cells - n_prev_cells ;
 
-    /* Among all the cells, only select the cells above 
+    /* Among all the cells, only select the cells above
      * the initial number of cells (before extrusion). */
-    
+
     cs_lnum_t  *selected_elts = NULL;
     BFT_MALLOC(selected_elts, mesh->n_cells, cs_lnum_t);
-    
+
     for(int i=0; i<n_selected_elts; i++)
       selected_elts[i] = n_prev_cells + i;
 
@@ -281,7 +281,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
   }
   /*! [mesh_modify_extrude_3] */
 
-  
+
   /* Add a group to cells in a given region */
 
   /*! [mesh_modify_groups_1] */
