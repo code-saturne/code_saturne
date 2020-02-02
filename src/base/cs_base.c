@@ -857,8 +857,6 @@ _cs_base_mpi_fin(void)
   bft_error_handler_set(cs_glob_base_err_handler_save);
   ple_error_handler_set(cs_glob_base_err_handler_save);
 
-  _finalize_reduced_communicators();
-
   if (   cs_glob_mpi_comm != MPI_COMM_NULL
       && cs_glob_mpi_comm != MPI_COMM_WORLD)
     MPI_Comm_free(&cs_glob_mpi_comm);
@@ -1777,6 +1775,13 @@ cs_base_mem_finalize(void)
 
   cs_log_printf(CS_LOG_PERFORMANCE, "\n");
   cs_log_separator(CS_LOG_PERFORMANCE);
+
+  /* Finalize extra communicators now as they use memory allocated through
+     bft_mem_* API */
+
+#if defined(HAVE_MPI)
+  _finalize_reduced_communicators();
+#endif
 
   /* Finalize memory handling */
 
