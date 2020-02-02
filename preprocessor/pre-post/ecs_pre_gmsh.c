@@ -620,15 +620,15 @@ _read_physical_names(ecs_file_t       *mesh_file,
  *----------------------------------------------------------------------------*/
 
 static void
-_read_entities(int             n_phys_names_max,
-               const int       phys_name_id[],
-               const char    **phys_name,
-               ecs_file_t     *mesh_file,
-               int            *line_num,
-               int             version_fmt_gmsh,
-               int             type_fmt_gmsh,
-               int             fam_shift[ECS_N_ENTMAIL],
-               ecs_famille_t  *vect_famille_tete[ECS_N_ENTMAIL])
+_read_entities(int                 n_phys_names_max,
+               const int           phys_name_id[],
+               const char  *const *phys_name,
+               ecs_file_t         *mesh_file,
+               int                *line_num,
+               int                 version_fmt_gmsh,
+               int                 type_fmt_gmsh,
+               int                 fam_shift[ECS_N_ENTMAIL],
+               ecs_famille_t      *vect_famille_tete[ECS_N_ENTMAIL])
 {
   char   line[ECS_LOC_LNG_MAX_CHAINE_GMSH];
   int    retval;
@@ -2183,7 +2183,7 @@ ecs_pre_gmsh__lit_maillage(const char  *nom_fic_maillage)
       ecs_famille_t  *vect_famille[ECS_N_ENTMAIL];
       _read_entities(n_phys_names_max,
                      phys_name_id,
-                     (const char**)phys_name,
+                     (const char *const *)phys_name,
                      fic_maillage,
                      &num_ligne,
                      version_fmt_gmsh,

@@ -117,9 +117,9 @@ _mean_stretching_phase_spheroid(const cs_real_t dtp,
   /* Get the eigenvalues and eigenvectors of gradvf_sym */
   cs_real_3_t eig_val;
   // Initialize eig_vec to identity
-  cs_real_33_t eig_vec = { 1.0, 0.0, 0.0,
-                           0.0, 1.0, 0.0,
-                           0.0, 0.0, 1.0 };
+  cs_real_33_t eig_vec = {{1.0, 0.0, 0.0},
+                          {0.0, 1.0, 0.0},
+                          {0.0, 0.0, 1.0}};
   cs_real_t tol_err = 1.0e-12;
   cs_real_33_t mat_loc ;
   mat_loc[0][0] = Lambda * (gradvf_sym[0][0] + beta);
@@ -343,16 +343,20 @@ _bm_rotation_phase_spheroid_by_spherical_coordinates(const cs_lnum_t ip,
                               + orient_loc[1]*axe_singularity[1]
                               + orient_loc[2]*axe_singularity[2]);
     // Compute the rotation matrix
-    cs_real_33_t rot_m = {
-      cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle)),     // [0][0]
-      n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) + n_rot[2]*sin(rot_angle), // [0][1]
-      n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[1]*sin(rot_angle), // [0][2]
-      n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) - n_rot[2]*sin(rot_angle), // [1][0]
-      cos(rot_angle) + cs_math_pow2(n_rot[1])*(1.0 - cos(rot_angle)),     // [1][1]
-      n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[0]*sin(rot_angle), // [1][2]
-      n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[1]*sin(rot_angle), // [2][0]
-      n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[0]*sin(rot_angle), // [2][1]
-      cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle)) };   // [2][2]
+    cs_real_33_t rot_m =
+      {
+       {cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle)),
+        n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) + n_rot[2]*sin(rot_angle),
+        n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[1]*sin(rot_angle)},
+
+       {n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) - n_rot[2]*sin(rot_angle),
+        cos(rot_angle) + cs_math_pow2(n_rot[1])*(1.0 - cos(rot_angle)),
+        n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[0]*sin(rot_angle)},
+
+       {n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[1]*sin(rot_angle),
+        n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[0]*sin(rot_angle),
+        cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle))}
+      };
 
     // Compute the Brownian rotation in local frame
     cs_real_t dW_loc_frame[3];
