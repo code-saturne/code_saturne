@@ -205,12 +205,41 @@ _field_c_output(void           *context,
               c_name, c->time_step);
 
     if (w->dry_run == false) {
+
 #if defined(HAVE_MELISSA_MPI)
-      if (use_melissa_mpi == true)
+      if (use_melissa_mpi == true) {
+#if defined(MELISSA_MAJOR_NUM)
         melissa_init(c_name, n_values, w->block_comm);
+#else
+        {
+          int rank, n_ranks;
+          int simu_id = 0;
+          char* simu_id_s = getenv("MELISSA_SIMU_ID");
+          if (simu_id_s != NULL)
+            simu_id = atoi(simu_id_s);
+          MPI_Comm_rank(w->block_comm, &rank);
+          MPI_Comm_size(w->block_comm, &n_ranks);
+          melissa_init(c_name, n_values, n_ranks, rank, simu_id,
+                       w->block_comm, 1);
+        }
+#endif /* defined(MELISSA_MAJOR_NUM) */
+      }
 #endif
-      if (use_melissa_mpi == false)
+
+      if (use_melissa_mpi == false) {
+#if defined(MELISSA_MAJOR_NUM)
         melissa_init_no_mpi(c_name, n_values);
+#else
+        {
+          int simu_id = 0;
+          char* simu_id_s = getenv("MELISSA_SIMU_ID");
+          if (simu_id_s != NULL)
+            simu_id = atoi(simu_id_s);
+          melissa_init_no_mpi(c_name, n_values, simu_id, 1);
+        }
+#endif /* defined(MELISSA_MAJOR_NUM) */
+      }
+
     }
 
   }

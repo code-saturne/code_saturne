@@ -42,6 +42,18 @@ AC_ARG_WITH(zeromq,
              fi],
             [with_zeromq=check])
 
+AC_ARG_WITH(zeromq-include,
+            [AS_HELP_STRING([--with-zeromq-include=DIR],
+                            [specify directory for ZeroMQ include files])],
+            [if test "x$with_zeromq" = "xcheck"; then
+               with_zeromq=yes
+             fi
+             ZEROMQ_CPPFLAGS="-I$with_zeromq_include"],
+            [if test "x$with_zeromq" != "xno" -a "x$with_zeromq" != "xyes" \
+	          -a "x$with_zeromq" != "xcheck"; then
+               ZEROMQ_CPPFLAGS="-I$with_zeromq/include"
+             fi])
+
 AC_ARG_WITH(zeromq-lib,
             [AS_HELP_STRING([--with-zeromq-lib=DIR],
                             [specify directory for ZeroMQ library])],
@@ -122,6 +134,7 @@ if test "x$with_zeromq" != "xno" -a "x$with_melissa" != "xno"; then
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
 
+  MELISSA_CPPFLAGS="${MELISSA_CPPFLAGS} ${ZEROMQ_CPPFLAGS}"
   MELISSA_LIBS="-lmelissa_api -lzmq"
   MELISSA_LDFLAGS="${MELISSA_LDFLAGS} ${ZEROMQ_LDFLAGS}"
 
@@ -136,7 +149,11 @@ if test "x$with_zeromq" != "xno" -a "x$with_melissa" != "xno"; then
     AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <mpi.h>
 #include <melissa_api.h>]],
-[[(void)melissa_init("name", 1, MPI_COMM_SELF); ]])],
+[[#if defined(MELISSA_MAJOR_NUM)
+(void)melissa_init("name", 1, MPI_COMM_SELF);
+#else
+(void)melissa_init("name", 1, 1, 0, 0, MPI_COMM_SELF, 1);
+#endif ]])],
                    [cs_have_melissa_mpi=yes],
                    [cs_have_melissa_mpi=no])
 
@@ -159,7 +176,11 @@ if test "x$with_zeromq" != "xno" -a "x$with_melissa" != "xno"; then
 
     AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <melissa_api_no_mpi.h>]],
-[[(void)melissa_init_no_mpi("name", 1); ]])],
+[[#if defined(MELISSA_MAJOR_NUM)
+(void)melissa_init_no_mpi("name", 1);
+#else
+(void)melissa_init_no_mpi("name", 1, 0, 1);
+#endif ]])],
                    [cs_have_melissa=yes],
                    [cs_have_melissa=no])
 
