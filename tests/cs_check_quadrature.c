@@ -1131,10 +1131,13 @@ _test_cdofb_source(FILE                     *out,
   const short int  totdof =  dim*(cm->n_fc + 1);
 
   cs_real_t  teval = time_step->t_cur;
-  cs_flag_t  state_flag = CS_FLAG_STATE_DENSITY;
-  cs_flag_t  meta_flag = cs_source_term_set_default_flag(CS_SPACE_SCHEME_CDOFB);
+  cs_flag_t  state_flag = 0, meta_flag = 0;
   cs_cell_builder_t  *cb = NULL;
   cs_cell_sys_t  *csys = NULL;
+
+  cs_source_term_set_default_flag(CS_SPACE_SCHEME_CDOFB,
+                                  &state_flag,
+                                  &meta_flag);
 
   if (dim == 1)
     cs_cdofb_scaleq_get(&csys, &cb);
@@ -1335,8 +1338,11 @@ _test_cdovb_source(FILE                     *out,
   const double  tcur = 0.;
 
   cs_real_t  st0[8], st1[8], st2[8], st3[8];
-  cs_flag_t  state_flag = CS_FLAG_STATE_DENSITY;
-  cs_flag_t  meta_flag = cs_source_term_set_default_flag(CS_SPACE_SCHEME_CDOVB);
+  cs_flag_t  state_flag = 0, meta_flag = 0;
+
+  cs_source_term_set_default_flag(CS_SPACE_SCHEME_CDOVB,
+                                  &state_flag,
+                                  &meta_flag);
 
   cs_cell_builder_t  *cb = NULL;
   cs_cell_sys_t  *csys = NULL;

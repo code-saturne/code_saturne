@@ -10285,9 +10285,6 @@ msgstr ""
 msgid "highest"
 msgstr ""
 
-msgid " Invalid numerical scheme to set a source term."
-msgstr ""
-
 #, c-format
 msgid "%s: Invalid type of description."
 msgstr "%s : Type de description invalide."

@@ -3204,8 +3204,9 @@ cs_equation_add_source_term_by_val(cs_equation_param_t    *eqp,
   int z_id = cs_get_vol_zone_id(z_name);
 
   /* Define a flag according to the kind of space discretization */
-  cs_flag_t  state_flag = CS_FLAG_STATE_DENSITY | CS_FLAG_STATE_UNIFORM;
-  cs_flag_t  meta_flag = cs_source_term_set_default_flag(eqp->space_scheme);
+  cs_flag_t  state_flag = 0, meta_flag = 0;
+  cs_source_term_set_default_flag(eqp->space_scheme, &state_flag, &meta_flag);
+  state_flag |= CS_FLAG_STATE_UNIFORM;
 
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
@@ -3253,8 +3254,8 @@ cs_equation_add_source_term_by_analytic(cs_equation_param_t    *eqp,
   int z_id = cs_get_vol_zone_id(z_name);
 
   /* Define a flag according to the kind of space discretization */
-  cs_flag_t  state_flag = CS_FLAG_STATE_DENSITY;
-  cs_flag_t  meta_flag = cs_source_term_set_default_flag(eqp->space_scheme);
+  cs_flag_t  state_flag = 0, meta_flag = 0;
+  cs_source_term_set_default_flag(eqp->space_scheme, &state_flag, &meta_flag);
 
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
@@ -3308,8 +3309,8 @@ cs_equation_add_source_term_by_dof_func(cs_equation_param_t    *eqp,
   int z_id = cs_get_vol_zone_id(z_name);
 
   /* Define a flag according to the kind of space discretization */
-  cs_flag_t  state_flag = CS_FLAG_STATE_DENSITY;
-  cs_flag_t  meta_flag = cs_source_term_set_default_flag(eqp->space_scheme);
+  cs_flag_t  state_flag = 0, meta_flag = 0;
+  cs_source_term_set_default_flag(eqp->space_scheme, &state_flag, &meta_flag);
 
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;
@@ -3369,11 +3370,13 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
   int z_id = cs_get_vol_zone_id(z_name);
 
   /* Define a flag according to the kind of space discretization */
-  cs_flag_t  state_flag = CS_FLAG_STATE_DENSITY;
-  if (cs_flag_test(loc, cs_flag_primal_cell) == true)
-    state_flag |= CS_FLAG_STATE_CELLWISE;
+  cs_flag_t  state_flag = 0, meta_flag = 0;
+  cs_source_term_set_default_flag(eqp->space_scheme, &state_flag, &meta_flag);
 
-  cs_flag_t  meta_flag = cs_source_term_set_default_flag(eqp->space_scheme);
+  if (cs_flag_test(loc, cs_flag_primal_vtx) == true)
+    state_flag = CS_FLAG_STATE_POTENTIAL; /* erase predefined settings */
+  else if (cs_flag_test(loc, cs_flag_primal_cell) == true)
+    state_flag |= CS_FLAG_STATE_CELLWISE;
 
   if (z_id == 0)
     meta_flag |= CS_FLAG_FULL_LOC;

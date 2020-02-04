@@ -353,40 +353,48 @@ cs_source_term_set_shared_pointers(const cs_cdo_quantities_t    *quant,
  * \brief  Set the default flag related to a source term according to the
  *         numerical scheme chosen for discretizing an equation
  *
- * \param[in]       scheme    numerical scheme used for the discretization
- *
- * \return a default flag
+ * \param[in]   scheme      numerical scheme used for the discretization
+ * \param[out]  state_flag  flag describing the status of the source term
+ * \param[out]  meta_flag   additional flags associated to a source term
  */
 /*----------------------------------------------------------------------------*/
 
-cs_flag_t
-cs_source_term_set_default_flag(cs_param_space_scheme_t   scheme)
+void
+cs_source_term_set_default_flag(cs_param_space_scheme_t    scheme,
+                                cs_flag_t                 *state_flag,
+                                cs_flag_t                 *meta_flag)
 {
-  cs_flag_t  meta_flag = 0;
-
   switch (scheme) {
+
   case CS_SPACE_SCHEME_CDOVB:
-    meta_flag = cs_flag_dual_cell; /* Predefined mask */
+    *state_flag = CS_FLAG_STATE_DENSITY;
+    *meta_flag = cs_flag_dual_cell; /* Predefined mask */
+    break;
+
+  case CS_SPACE_SCHEME_CDOEB:
+    *state_flag = CS_FLAG_STATE_FLUX;
+    *meta_flag = cs_flag_dual_face; /* Predefined mask */
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
-    meta_flag = cs_flag_primal_cell; /* Predefined mask */
+    *state_flag = CS_FLAG_STATE_DENSITY;
+    *meta_flag = cs_flag_primal_cell; /* Predefined mask */
     break;
 
   case CS_SPACE_SCHEME_CDOVCB:
   case CS_SPACE_SCHEME_HHO_P0:
   case CS_SPACE_SCHEME_HHO_P1:
   case CS_SPACE_SCHEME_HHO_P2:
-    meta_flag = CS_FLAG_PRIMAL;
+    *state_flag = CS_FLAG_STATE_DENSITY;
+    *meta_flag = CS_FLAG_PRIMAL;
     break;
 
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _(" Invalid numerical scheme to set a source term."));
+              " %s: Invalid numerical scheme to set a source term.",
+              __func__);
 
   }
-
-  return meta_flag;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -511,6 +519,10 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
           space_scheme == CS_SPACE_SCHEME_CDOVCB) {
         msh_flag |= CS_FLAG_COMP_PVQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ |
           CS_FLAG_COMP_EV  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ;
+        *sys_flag |= CS_FLAG_SYS_MASS_MATRIX | CS_FLAG_SYS_SOURCES_HLOC;
+      }
+      else if (space_scheme == CS_SPACE_SCHEME_CDOEB) {
+        msh_flag |= CS_FLAG_COMP_DFQ | CS_FLAG_COMP_EV;
         *sys_flag |= CS_FLAG_SYS_MASS_MATRIX | CS_FLAG_SYS_SOURCES_HLOC;
       }
     }
@@ -664,6 +676,21 @@ cs_source_term_init(cs_param_space_scheme_t       space_scheme,
 
       }
       break; /* CDOVCB */
+
+    case CS_SPACE_SCHEME_CDOEB:
+      switch (st_def->type) {
+
+      case CS_XDEF_BY_VALUE:
+        compute_source[st_id] = cs_source_term_dfsf_by_value;
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid type of definition for a source term in CDOEB",
+                  __func__);
+        break;
+      }
+      break; /* CDOEB */
 
     case CS_SPACE_SCHEME_CDOFB:
     case CS_SPACE_SCHEME_HHO_P0:
@@ -2725,7 +2752,48 @@ cs_source_term_hhovd_by_analytic(const cs_xdef_t           *source,
   } /* End of switch on the cell-type */
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it to the given array of values.
+ *         Case of a scalar flux defined at dual faces by a constant value.
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
 
+void
+cs_source_term_dfsf_by_value(const cs_xdef_t           *source,
+                             const cs_cell_mesh_t      *cm,
+                             cs_real_t                  time_eval,
+                             cs_cell_builder_t         *cb,
+                             void                      *input,
+                             double                    *values)
+{
+  if (source == NULL)
+    return;
+
+  CS_UNUSED(input);
+  CS_UNUSED(cb);
+  CS_UNUSED(time_eval);
+
+  /* Sanity checks */
+  assert(values != NULL && cm != NULL);
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_DFQ));
+
+  const cs_real_t *vector = (const cs_real_t *)source->input;
+
+  /* Retrieve the values of the normal flux for each dual face */
+  for (short int e = 0; e < cm->n_ec; e++)
+    values[e] = cm->dface[e].meas *
+      cs_math_3_dot_product(vector, cm->dface[e].unitv);
+
+}
 
 /*----------------------------------------------------------------------------*/
 

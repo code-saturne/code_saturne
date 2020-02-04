@@ -112,14 +112,16 @@ cs_source_term_set_shared_pointers(const cs_cdo_quantities_t    *quant,
  * \brief  Set the default flag related to a source term according to the
  *         numerical scheme chosen for discretizing an equation
  *
- * \param[in]       scheme    numerical scheme used for the discretization
- *
- * \return a default flag
+ * \param[in]   scheme      numerical scheme used for the discretization
+ * \param[out]  state_flag  flag describing the status of the source term
+ * \param[out]  meta_flag   additional flags associated to a source term
  */
 /*----------------------------------------------------------------------------*/
 
-cs_flag_t
-cs_source_term_set_default_flag(cs_param_space_scheme_t  scheme);
+void
+cs_source_term_set_default_flag(cs_param_space_scheme_t    scheme,
+                                cs_flag_t                 *state_flag,
+                                cs_flag_t                 *meta_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -820,6 +822,29 @@ cs_source_term_hhovd_by_analytic(const cs_xdef_t           *source,
                                  cs_cell_builder_t         *cb,
                                  void                      *input,
                                  double                    *values);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the contribution for a cell related to a source term and
+ *         add it to the given array of values.
+ *         Case of a scalar flux defined at dual faces by a constant value.
+ *
+ * \param[in]      source     pointer to a cs_xdef_t structure
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      time_eval  physical time at which one evaluates the term
+ * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in, out] input      pointer to an element cast on-the-fly (or NULL)
+ * \param[in, out] values     pointer to the computed values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_source_term_dfsf_by_value(const cs_xdef_t           *source,
+                             const cs_cell_mesh_t      *cm,
+                             cs_real_t                  time_eval,
+                             cs_cell_builder_t         *cb,
+                             void                      *input,
+                             double                    *values);
 
 /*----------------------------------------------------------------------------*/
 
