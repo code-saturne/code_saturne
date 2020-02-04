@@ -224,12 +224,10 @@ _petsc_set_pc_type(cs_param_sles_t    slesp,
       PCHYPRESetType(pc, "euclid");
     }
     else {
-      PCSetType(pc, PCILU);
-      PCFactorSetLevels(pc, 0);
+      PCSetType(pc, PCBJACOBI);
     }
 #else
-    PCSetType(pc, PCILU);
-    PCFactorSetLevels(pc, 0);
+    PCSetType(pc, PCBJACOBI);
 #endif
     break;
 
