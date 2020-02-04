@@ -246,18 +246,28 @@
 
   \section richards_source Source terms
 
-  Source terms can be added to scalar transport equation in \ref ustsns routine
-  of \ref cs_user_source_terms.f90 file.
+  Source terms can be added to scalar transport equation in \ref cs_user_source_terms
+  function of the \ref cs_user_source_terms.c file.
 
   \subsection richards_phys_prop_chem_rel Chemicals release
 
   Substances can be gradually released within the soil.
 
-  \snippet cs_user_source_terms-richards.f90 richards_leaching
+  To define progressive leaching, the following local variables initialization
+  can be used:
+  \snippet cs_user_source_terms-richards.c richards_leaching_init
 
-  \section richards_init Initialisation
+  Additional logging based on the field's general verbosity can be done in the
+  usual manner if desired:
+  \snippet cs_user_source_terms-richards.c richards_leaching_log
 
-  The initialisation of the variables required for the flow part (hydraulic
+  Then, define the source terms for leaching from a volume zone named
+  "LEACHING_ZONE":
+  \snippet cs_user_source_terms-richards.c richards_leaching
+
+  \section richards_init Initialization
+
+  The initialization of the variables required for the flow part (hydraulic
   head H) and transport part (concentration c) can be done globally:
 
   \snippet cs_user_initialization-richards.f90 richards_init_cell
@@ -278,7 +288,7 @@
   \section richards_bound_cond Boundary conditions
 
   For groundwater flows of water and solutes, the undefined type face \ref
-  iindef is used to impose Dirichlet, Neumann and mixte boundary conditions
+  iindef is used to impose Dirichlet, Neumann and mixed boundary conditions
   on hydraulic head H (here pressure) and solutes. Several examples can be
   found in \ref cs_user_boundary_conditions-richards.f90.
 
@@ -303,11 +313,11 @@
   only be used for boundary surface with outward or null normal flow.
   In both cases, the prescribed flux is the diffusive flux.
 
-  \subsection richards_bound_cond_mixte Mixte boundary conditions
+  \subsection richards_bound_cond_mixed Mixed boundary conditions
 
-  The mixte boundary conditions (Robin) can be used to impose a concentration
+  The mixed boundary conditions (Robin) can be used to impose a concentration
   flux at an entrance (inward normal flow at a boundary face). The following
-  example explains how to determine the two parameters of the mixte boundary
+  example explains how to determine the two parameters of the mixed boundary
   in order to impose a total flux:
 
   \snippet cs_user_boundary_conditions-richards.f90 richards_BC_ex4

@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2019 EDF S.A.
+  Copyright (C) 1998-2020 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -59,7 +59,7 @@ Here is a list of user examples. Thoroughly documented snippets are provided.
    - \subpage cs_user_boundary_conditions_ale "User boundary condition definition for the ALE model"
    - \subpage les_inflow "Inflow Boundary conditions for LES"
    - \subpage cs_head_losses "Define head losses zones"
-   - \subpage cs_user_source_terms "Define additional source terms for transport equations (momentum and species)"
+   - \subpage user_source_terms "Define additional source terms for transport equations (momentum and species)"
    - \subpage cs_user_mass_source_terms "Define mass source termes"
    - \subpage condens "Define condensation"
 

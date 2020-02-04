@@ -1,5 +1,5 @@
 /*============================================================================
- * User definition of physical properties.
+ * User source terms for a scalar in a channel example.
  *============================================================================*/
 
 /* VERS */
@@ -34,11 +34,6 @@
 
 #include <assert.h>
 #include <math.h>
-#include <string.h>
-
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#endif
 
 /*----------------------------------------------------------------------------
  * PLE library headers
@@ -58,9 +53,11 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_physical_properties.c
+ * \file cs_user_source_terms-scalar_in_a_channel.c
  *
- * \brief User definition of physical properties.
+ * \brief User source terms for a scalar in a channel example.
+ *
+ * See the reference \ref cs_user_source_terms.c for documentation.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -70,18 +67,66 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Function called at each time step to define physical properties.
+ * \brief Function called at each time step to define source terms.
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
+ * \param[in]       f_id     field id of the variable
+ * \param[out]      st_exp   explicit source term
+ * \param[out]      st_imp   implicit part of the source term
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_physical_properties(cs_domain_t  *domain)
+cs_user_source_terms(cs_domain_t  *domain,
+                     int           f_id,
+                     cs_real_t    *st_exp,
+                     cs_real_t    *st_imp)
 {
+  CS_NO_WARN_IF_UNUSED(domain);
 
+  /*! [st_meta] */
+  /* field structure */
+  const cs_field_t  *f = cs_field_by_id(f_id);
+
+  /* local number of mesh cells */
+  const cs_lnum_t  n_cells = cs_glob_mesh->n_cells;
+
+  /* mesh quantities */
+  const cs_real_t  *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
+  /*! [st_meta] */
+
+  /*! [thermal_scalar_only] */
+  /* scalar id */
+  const int  key_sca = cs_field_key_id("scalar_id");
+  const int  scalar_id = cs_field_get_key_int(f, key_sca);
+
+  if (scalar_id < 0 || scalar_id != cs_glob_thermal_model->iscalt)
+    return;
+  /*! [thermal_scalar_only] */
+
+  /*! [map_fields] */
+  /* velocity */
+  const cs_real_3_t  *cvar_vel = (const cs_real_3_t *)(CS_F_(vel)->val);
+  /*! [map_fields] */
+
+  /*! [bulk_mean_velocity] */
+  /* bulk mean velocity (x component) */
+  cs_real_t  ubulk = 0;
+  for (cs_lnum_t i = 0; i < n_cells; i++)
+    ubulk += cvar_vel[i][0] * cell_f_vol[i];
+
+  cs_parall_sum(1, CS_DOUBLE, &ubulk);  /* sum across processes if needed */
+
+  ubulk /= cs_glob_mesh_quantities->tot_vol;
+  /*! [bulk_mean_velocity] */
+
+  /*! [scalar_st] */
+  /* Flux x Total surface / (rho Cp) */
+  cs_real_t tot_flux = 1.;
+
+  for (cs_lnum_t i = 0; i < n_cells; i++) {
+    st_imp[i] = 0.;
+    st_exp[i] = cell_f_vol[i] * cvar_vel[i][0] * tot_flux / ubulk;
+  }
+  /*! [scalar_st] */
 }
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS

@@ -33,6 +33,9 @@ User changes:
   issued. It is still recommended to avoid this, as true forward
   compatibility is not ensured.
 
+- Minor Documentation (Doxygen) and user example improvements.
+  * examples for user source terms moved to C.
+
 Architectural changes:
 
 - Update Melissa output driver to current Melissa API (c8608e1a6, January 2020)
