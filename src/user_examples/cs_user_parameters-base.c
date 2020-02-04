@@ -294,14 +294,14 @@ cs_user_parameters(cs_domain_t *domain)
 
   /*! [time_stepping_options] */
 
-  /* Time stepping  (0 : uniform and constant
-                     1 : variable in time, uniform in space
-                     2 : variable in time and space
-                    -1 : steady algorithm) */
+  /* Time stepping  (CS_CONSTANT_TIME_STEP: uniform and constant
+                     CS_ADAPTATIVE_TIME_STEP: variable in time, uniform in space
+                     CS_LOCAL_TIME_STEP: variable in time and space
+                     CS_STEADY: steady algorithm) */
 
 
   cs_time_step_options_t *time_opt = cs_get_glob_time_step_options();
-  time_opt->idtvar = 0;
+  time_opt->idtvar = CS_CONSTANT_TIME_STEP;
 
   /*! [time_stepping_options] */
 

@@ -113,10 +113,11 @@ BEGIN_C_DECLS
         For the restart calculations, \ref t_cur takes
         into account the physical time of the previous calculations.\n
         If the time step is uniform (\ref cs_time_step_options_t::idtvar "idtvar"
-        = 0 or 1), \ref t_cur increases of \ref dt (value of the time step)
+        = CS_CONSTANT_TIME_STEP or CS_ADAPTATIVE_TIME_STEP),
+        \ref t_cur increases of \ref dt (value of the time step)
         at each iteration.
         If the time step is non-uniform (\ref cs_time_step_options_t::idtvar
-        "idtvar"=2),
+        "idtvar"=CS_LOCAL_TIME_STEP),
         \ref t_cur increases of \ref cs_time_step_t::dt_ref "dt_ref" at each
         time step.\n
         \ref t_cur is initialised and updated automatically by the code,
@@ -143,55 +144,61 @@ BEGIN_C_DECLS
         When \ref iptlro=1, the log shows the number of cells where the
         time step has been clipped due to the thermal criterion, as well as
         the maximum ratio between the time step and the maximum thermal time
-        step. If \ref idtvar=0, since the time step is fixed and cannot be
-        clipped, this ratio can be greater than 1. When \ref idtvar > 0, this
+        step. If \ref idtvar=CS_CONSTANT_TIME_STEP, since the time step is fixed and cannot be
+        clipped, this ratio can be greater than 1. When \ref idtvar > CS_CONSTANT_TIME_STEP, this
         ratio will be less than 1, except if the constraint \ref dtmin has
         prevented the code from reaching a sufficiently low value for \ref dt.
         Useful when density gradients and gravity are present.
 
   \var  cs_time_step_options_t::idtvar
         Option for a variable time step
-        - -1: steady algorithm
-        -  0: constant time step
-        -  1: time step constant in space but variable in time
-        -  2: variable time step in space and in time.
+        - CS_STEADY: steady algorithm
+        - CS_CONSTANT_TIME_STEP: constant time step
+        - CS_ADAPTATIVE_TIME_STEP: time step constant in space but variable in time
+        - CS_LOCAL_TIME_STEP: variable time step in space and in time.
         If the numerical scheme is a second-order in time, only the
-        option 0 is allowed.
+        option CS_CONSTANT_TIME_STEP is allowed.
 
   \var  cs_time_step_t::dt_ref
         Reference time step.\n
 
         This is the time step value used in the case of a calculation run with a
-        uniform and constant time step, i.e. \ref idtvar =0 (restart calculation
-        or not). It is the value used to initialize the time step in the case of
-        an initial calculation run with a non-constant time step(\ref idtvar=1 or
-        2). It is also the value used to initialise the time step in the case of
+        uniform and constant time step, i.e. \ref idtvar =CS_CONSTANT_TIME_STEP
+        (restart calculation or not). It is the value used to initialize the
+        time step in the case of an initial calculation run with a non-constant
+        time step(\ref idtvar=CS_ADAPTATIVE_TIME_STEP or CS_LOCAL_TIME_STEP).
+        It is also the value used to initialise the time step in the case of
         a restart calculation in which the type of time step has been changed
-        (for instance, \ref idtvar=1 in the new calculation and \ref idtvar = 0
-        or 2 in the previous calculation).\n
+        (for instance, \ref idtvar=CS_ADAPTATIVE_TIME_STEP in the new calculation
+        and \ref idtvar = CS_CONSTANT_TIME_STEP or CS_LOCAL_TIME_STEP in the
+        previous calculation).\n
         See \ref user_initialization_time_step for examples.
 
   \var  cs_time_step_options_t::coumax
-        Maximum Courant number (when \ref idtvar is different from 0).
+        Maximum Courant number (when \ref idtvar is different
+        from CS_CONSTANT_TIME_STEP).
 
   \var  cs_time_step_options_t::cflmmx
         Max. Courant number for the continuity equation in compressible model.
 
   \var  cs_time_step_options_t::foumax
-        Maximum Fourier number (when \ref idtvar is different from 0).
+        Maximum Fourier number (when \ref idtvar is different from
+        CS_CONSTANT_TIME_STEP).
 
   \var  cs_time_step_options_t::varrdt
         Maximum allowed relative increase in the calculated time step value
         between two successive time steps (to ensure stability, any decrease
         in the time step is immediate and without limit).\n
-        Useful when idtvar is different from 0.
+        Useful when idtvar is different from CS_CONSTANT_TIME_STEP.
 
   \var  cs_time_step_options_t::dtmin
-        Lower limit for the calculated time step when idtvar is different from 0.
+        Lower limit for the calculated time step when idtvar is different from
+        CS_CONSTANT_TIME_STEP.
         Take \ref dtmin = min (ld/ud, sqrt(lt/(gdelta rho/rho)), ...).
 
   \var  cs_time_step_options_t::dtmax
-        Upper limit for the calculated time step when idtvar is different from 0.
+        Upper limit for the calculated time step when idtvar is different from
+        CS_CONSTANT_TIME_STEP.
         Take \ref dtmax = max (ld/ud, sqrt(lt/(gdelta rho/rho)), ...).
 
   \var  cs_time_step_options_t::relxst
@@ -233,7 +240,7 @@ static cs_time_step_t  _time_step = {
 
 static cs_time_step_options_t  _time_step_options = {
   .iptlro = 0,
-  .idtvar = 0, /* constant time step by default */
+  .idtvar = CS_CONSTANT_TIME_STEP, /* constant time step by default */
   .coumax = 1.,
   .cflmmx = 0.99,
   .foumax = 10.,
@@ -564,13 +571,13 @@ cs_time_step_log_setup(void)
        "---------------------\n\n"));
 
   /* Steady (SIMPLE) */
-  if (cs_glob_time_step_options->idtvar < 0) {
+  if (cs_glob_time_step_options->idtvar == CS_STEADY) {
     /* Relaxation parameters */
     cs_log_printf
       (CS_LOG_SETUP,
        _("  Steady (SIMPLE) algorithm\n\n"
          "   Global parameters\n\n"
-         "    idtvar:     %14d (-1: steady algorithm)\n"
+         "    idtvar:     %14d (-1: CS_STEADY)\n"
          "    relxst:     %14.5e (Reference relaxation coefficient)\n\n"),
          cs_glob_time_step_options->idtvar,
          cs_glob_time_step_options->relxst);
@@ -579,13 +586,15 @@ cs_time_step_log_setup(void)
   else { /* (SIMPLEC) */
 
     /* Unsteady constant time step */
-    if (cs_glob_time_step_options->idtvar == 0) {
+    if (cs_glob_time_step_options->idtvar == CS_CONSTANT_TIME_STEP) {
 
       cs_log_printf
         (CS_LOG_SETUP,
          _("  Constant time step algorithm (unsteady)\n\n"
            "   Time step parameters\n\n"
-           "    idtvar:      %14d (0 cst; 1,2 var (t, t-space)\n"
+           "    idtvar:      %14d (0: CS_CONSTANT_TIME_STEP;"
+           "                       1: CS_ADAPTATIVE_TIME_STEP;"
+           "                       2: CS_LOCAL_TIME_STEP\n"
            "    dtref:       %14.5e (Reference time step)\n\n"),
            cs_glob_time_step_options->idtvar,
            cs_glob_time_step->dt_ref);
@@ -593,12 +602,12 @@ cs_time_step_log_setup(void)
     /* Unsteady time varying time step */
     } else {
 
-      if (cs_glob_time_step_options->idtvar == 1) {
+      if (cs_glob_time_step_options->idtvar == CS_ADAPTATIVE_TIME_STEP) {
         cs_log_printf
           (CS_LOG_SETUP,
            _("  Time varying time step algorithm (unsteady)\n\n"));
         /* Unsteady space & time varying time step */
-      } else if (cs_glob_time_step_options->idtvar == 2) {
+      } else if (cs_glob_time_step_options->idtvar == CS_LOCAL_TIME_STEP) {
         cs_log_printf
           (CS_LOG_SETUP,
            _("  Space & time varying time step algorithm (pseudo-steady)\n\n"));

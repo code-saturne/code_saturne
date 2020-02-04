@@ -45,6 +45,17 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------
+ * Time stepping algorithme
+ *----------------------------------------------------------------------------*/
+
+enum {
+  CS_STEADY = -1,
+  CS_CONSTANT_TIME_STEP = 0,
+  CS_ADAPTATIVE_TIME_STEP = 1,
+  CS_LOCAL_TIME_STEP = 2
+};
+
 /* time step descriptor */
 /*----------------------*/
 
@@ -84,10 +95,10 @@ typedef struct {
                        - 1: true. */
 
   int       idtvar; /* Option for a variable time step
-                       - -1: steady algorithm
-                       -  0: constant time step
-                       -  1: time step constant in space but variable in time
-                       -  2: variable time step in space and in time. */
+                       - CS_STEADY: steady algorithm
+                       - CS_CONSTANT_TIME_STEP: constant time step
+                       - CS_ADAPTATIVE_TIME_STEP: time step constant in space but variable in time
+                       - CS_LOCAL_TIME_STEP: variable time step in space and in time. */
 
   double    coumax; /* Maximum Courant number (when idtvar is
                        different from 0). */
@@ -95,16 +106,19 @@ typedef struct {
   double    cflmmx; /* Maximum Courant number for the continuity equation
                        in compressible model. */
 
-  double    foumax; /* Maximum Fourier number (when idtvar is different from 0). */
+  double    foumax; /* Maximum Fourier number
+                       (when idtvar is different from CS_CONSTANT_TIME_STEP). */
 
   double    varrdt; /* Relative allowed variation of dt (when idtvar is
-                       different from 0). */
+                       different from CS_CONSTANT_TIME_STEP). */
 
-  double    dtmin;  /* Minimum value of dt (when idtvar is different from 0).
+  double    dtmin;  /* Minimum value of dt (when idtvar is different
+                       from CS_CONSTANT_TIME_STEP).
                        Take
                        dtmin = min(ld/ud, sqrt(lt/(gdelta rho/rho)), ...). */
 
-  double    dtmax;  /* Maximum value of dt (when idtvar is different from 0).
+  double    dtmax;  /* Maximum value of dt (when idtvar is different
+                       from CS_CONSTANT_TIME_STEP).
                        Take
                        dtmax = max(ld/ud, sqrt(lt/(gdelta rho/rho)), ...). */
 
