@@ -61,7 +61,7 @@ Here is a list of user examples. Thoroughly documented snippets are provided.
    - \subpage cs_lagrangian_particle_tracking_bc "User boundary condition definition for the Lagrangian model"
    - \subpage les_inflow "Inflow Boundary conditions for LES"
    - \subpage cs_head_losses "Define head losses zones"
-   - \subpage cs_user_source_terms "Define additional source terms for transport equations (momentum and species)"
+   - \subpage user_source_terms "Define additional source terms for transport equations (momentum and species)"
    - \subpage cs_user_mass_source_terms "Define mass source terms"
    - \subpage condens "Define condensation"
 

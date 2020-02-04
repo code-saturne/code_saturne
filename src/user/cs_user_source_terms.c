@@ -59,8 +59,22 @@ BEGIN_C_DECLS
 /*!
  * \file cs_user_source_terms.c
  *
- * \brief Additional right-hand side source terms for variable equations
+ * \brief Additional source terms for variable equations.
+ *
+ * See \subpage user_source_terms for examples.
+ */
+/*----------------------------------------------------------------------------*/
+
+/*============================================================================
+ * User function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Additional source terms for variable equations
  *   (momentum, user scalars and specific physics scalars, turbulence...).
+ *
+ * This function is called at each time step, for each relevant field.
  *
  *  Usage
  *  -----
@@ -83,8 +97,9 @@ BEGIN_C_DECLS
  *    - st_imp is expressed in kg/s.
  *      Its dimension is 1 for scalars, 3x3 for vectors.
  *
- *  The st_exp and st_imp arrays are already initialized to 0 before entering
- *  the function. It is not useful to do it here (waste of CPU time).
+ *  The st_exp and st_imp arrays are already initialized to 0 (or a value
+ *  defined through the GUI or defined by a model) before entering
+ *  the function. It is generally not useful to do it here.
  *
  *  For stability reasons, Code_Saturne will not add -st_imp directly to the
  *  diagonal of the matrix, but Max(-st_imp,0). This way, the st_imp term is
@@ -107,8 +122,8 @@ BEGIN_C_DECLS
  *    - st_exp is expressed in W
  *    - st_imp is expressed in W/K
  *
- *  STEP SOURCE TERMS
- * ===================
+ *  STEEP SOURCE TERMS
+ *  ==================
  *  In case of a complex, non-linear source term, say F(f), for variable f, the
  *  easiest method is to implement the source term explicitely.
  *
@@ -128,16 +143,6 @@ BEGIN_C_DECLS
  *  This yields:
  *    st_exp = volume*( F(f(n)) - dF/df*f(n) )
  *    st_imp = volume*dF/df
- */
-/*----------------------------------------------------------------------------*/
-
-/*============================================================================
- * User function definitions
- *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Function called at each time step to define source terms.
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
  * \param[in]       f_id     field id of the variable
