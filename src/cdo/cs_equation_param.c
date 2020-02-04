@@ -361,7 +361,22 @@ _petsc_set_krylov_solver(cs_param_sles_t   slesp,
                          Mat               a,
                          KSP               ksp)
 {
-  /* 1) Set the krylov solver */
+  /* 1) Set the type of normalization for the residual */
+  switch (slesp.resnorm_type) {
+
+  case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
+    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+    break;
+  case CS_PARAM_RESNORM_NONE:
+    KSPSetNormType(ksp, KSP_NORM_NONE);
+    break;
+  default:
+    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+    break;
+
+  }
+
+  /* 2) Set the krylov solver */
   switch (slesp.solver) {
 
   case CS_PARAM_ITSOL_NONE:
@@ -370,6 +385,8 @@ _petsc_set_krylov_solver(cs_param_sles_t   slesp,
 
   case CS_PARAM_ITSOL_BICG:      /* Improved Bi-CG stab */
     KSPSetType(ksp, KSPIBCGS);
+    /* No choice otherwise PETSc yields an error */
+    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
     break;
 
   case CS_PARAM_ITSOL_BICGSTAB2: /* Preconditioned BiCGstab2 */
@@ -416,7 +433,7 @@ _petsc_set_krylov_solver(cs_param_sles_t   slesp,
               " %s: Iterative solver not interfaced with PETSc.", __func__);
   }
 
-  /* 2) Additional settings arising from command lines */
+  /* 3) Additional settings arising from command lines */
   switch (slesp.solver) {
 
   case CS_PARAM_ITSOL_GMRES: /* Preconditioned GMRES */
@@ -442,20 +459,6 @@ _petsc_set_krylov_solver(cs_param_sles_t   slesp,
    */
 
   KSPSetFromOptions(ksp);
-
-  switch (slesp.resnorm_type) {
-
-  case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
-    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-  case CS_PARAM_RESNORM_NONE:
-    KSPSetNormType(ksp, KSP_NORM_NONE);
-    break;
-  default:
-    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-
-  }
 
   /* Apply settings from the cs_param_sles_t structure */
   switch (slesp.solver) {
