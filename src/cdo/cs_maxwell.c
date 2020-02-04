@@ -373,6 +373,16 @@ cs_maxwell_activate(cs_flag_t     model,
 
     cs_equation_add_diffusion(eqp, mxl->e_permeability);
 
+    /* Should be symmetric */
+    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
+    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "bubble");
+    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "frac23");
+    cs_equation_set_param(eqp, CS_EQKEY_SOLVER_FAMILY, "cs");
+    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_EPS, "1e-8");
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "rhs");
+
   }
 
   if (model & CS_MAXWELL_MODEL_MAGNETOSTATIC) {
@@ -391,6 +401,16 @@ cs_maxwell_activate(cs_flag_t     model,
     cs_property_def_iso_by_value(mxl->m_permittivity, NULL, mxl->m_perm_ref);
 
     cs_equation_add_curlcurl(eqp, mxl->m_permittivity);
+
+    /* Should be symmetric */
+    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_eb");
+    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "cost");
+    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "dga");
+    cs_equation_set_param(eqp, CS_EQKEY_SOLVER_FAMILY, "cs");
+    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_EPS, "1e-8");
+    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "rhs");
 
   }
 
@@ -468,19 +488,6 @@ cs_maxwell_init_setup(void)
     cs_field_set_key_int(mxl->d_field, log_key, 1);
     cs_field_set_key_int(mxl->d_field, post_key, 1);
 
-    cs_equation_param_t  *eqp
-      = cs_equation_param_by_name(CS_MAXWELL_ESTATIC_EQNAME);
-
-    /* Should be symmetric */
-    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
-    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "bubble");
-    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "frac23");
-    cs_equation_set_param(eqp, CS_EQKEY_SOLVER_FAMILY, "cs");
-    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_EPS, "1e-8");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "rhs");
-
   }
 
   if (mxl->model & CS_MAXWELL_MODEL_MAGNETOSTATIC) {
@@ -502,19 +509,6 @@ cs_maxwell_init_setup(void)
 
     cs_field_set_key_int(mxl->h_field, log_key, 1);
     cs_field_set_key_int(mxl->h_field, post_key, 1);
-
-    cs_equation_param_t  *eqp
-      = cs_equation_param_by_name(CS_MAXWELL_MSTATIC_EQNAME);
-
-    /* Should be symmetric */
-    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_eb");
-    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "cost");
-    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "dga");
-    cs_equation_set_param(eqp, CS_EQKEY_SOLVER_FAMILY, "cs");
-    cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_EPS, "1e-8");
-    cs_equation_set_param(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "rhs");
 
   }
 
