@@ -3036,12 +3036,14 @@ cs_equation_add_diffusion(cs_equation_param_t   *eqp,
  *
  * \param[in, out] eqp        pointer to a cs_equation_param_t structure
  * \param[in]      property   pointer to a cs_property_t structure
+ * \param[in]      inversion  > 0: true, false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_add_curlcurl(cs_equation_param_t   *eqp,
-                         cs_property_t         *property)
+                         cs_property_t         *property,
+                         int                    inversion)
 {
   if (eqp == NULL)
     bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
@@ -3058,6 +3060,11 @@ cs_equation_add_curlcurl(cs_equation_param_t   *eqp,
     eqp->curlcurl_hodge.is_iso = true;
   else
     eqp->curlcurl_hodge.is_iso = false;
+
+  if (inversion > 0)
+    eqp->curlcurl_hodge.inv_pty = true;
+  else
+    eqp->curlcurl_hodge.inv_pty = false;
 }
 
 /*----------------------------------------------------------------------------*/

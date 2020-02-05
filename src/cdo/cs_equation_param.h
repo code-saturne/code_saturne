@@ -1284,12 +1284,14 @@ cs_equation_add_diffusion(cs_equation_param_t   *eqp,
  *
  * \param[in, out] eqp        pointer to a cs_equation_param_t structure
  * \param[in]      property   pointer to a cs_property_t structure
+ * \param[in]      inversion  1: true, false otherwise
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_add_curlcurl(cs_equation_param_t   *eqp,
-                         cs_property_t         *property);
+                         cs_property_t         *property,
+                         int                    inversion);
 
 /*----------------------------------------------------------------------------*/
 /*!

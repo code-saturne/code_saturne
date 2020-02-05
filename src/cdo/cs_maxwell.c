@@ -401,7 +401,8 @@ cs_maxwell_activate(cs_flag_t     model,
     /* By default, set the reference permeability */
     cs_property_def_iso_by_value(mxl->m_permittivity, NULL, mxl->m_perm_ref);
 
-    cs_equation_add_curlcurl(eqp, mxl->m_permittivity);
+    cs_equation_add_curlcurl(eqp, mxl->m_permittivity,
+                             1); /* Inverse of the property is requested */
 
     /* Should be symmetric */
     cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_eb");
