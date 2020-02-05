@@ -406,7 +406,8 @@ cs_user_physical_properties(cs_domain_t  *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Function called at each time step to define physical properties.
+ * \brief Additional user-defined source terms for variable equations
+ *   (momentum, scalars, turbulence...).
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
  * \param[in]       f_id     field id of the variable
