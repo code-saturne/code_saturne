@@ -795,7 +795,7 @@ cs_maxwell_update(const cs_mesh_t             *mesh,
                                     mxl->b_field->val,
                                     mxl->h_field->val);
 
-  } /* Electrostatic updates */
+  } /* Magnetostatic updates */
 
 }
 

@@ -131,8 +131,8 @@ typedef enum {
 
 typedef struct {
 
-  bool   is_unity; /* No associated property. Property is equalt to the unity */
-  bool   is_iso;   /* Associated property is isotroopic ? */
+  bool   is_unity; /* No associated property. Property is equal to the unity */
+  bool   is_iso;   /* Associated property is isotropic ? */
   bool   inv_pty;  /* Definition based on the property or its inverse */
 
   cs_param_hodge_type_t   type;  /* type of discrete Hodge operator */
