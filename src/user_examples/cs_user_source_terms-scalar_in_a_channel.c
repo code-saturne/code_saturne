@@ -53,10 +53,9 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_source_terms-turbulence.c
+ * \file cs_user_source_terms-scalar_in_a_channel.c
  *
- * \brief Examples for additional turbulence source terms for
- *   variable equations.
+ * \brief User source terms for a scalar in a channel example.
  *
  * See the reference \ref cs_user_source_terms.c for documentation.
  */
@@ -86,57 +85,48 @@ cs_user_source_terms(cs_domain_t  *domain,
   CS_NO_WARN_IF_UNUSED(domain);
 
   /*! [st_meta] */
-  /* mesh quantities */
+  /* field structure */
+  const cs_field_t  *f = cs_field_by_id(f_id);
+
+  /* local number of mesh cells */
   const cs_lnum_t  n_cells = cs_glob_mesh->n_cells;
+
+  /* mesh quantities */
   const cs_real_t  *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
   /*! [st_meta] */
 
-  /* Define a cpro_rom pointer to the density */
-  /*! [dens_array_3] */
-  const cs_real_t  *cpro_rom = CS_F_(rho)->val;
-  /*! [dens_array_3] */
+  /*! [thermal_scalar_only] */
+  /* scalar id */
+  const int  key_sca = cs_field_key_id("scalar_id");
+  const int  scalar_id = cs_field_get_key_int(f, key_sca);
 
-  /*! [current_turb_3] */
-  /* Define pointer f to the current turbulent variable field */
-  const cs_field_t  *f = cs_field_by_id(f_id);
+  if (scalar_id < 0 || scalar_id != cs_glob_thermal_model->iscalt)
+    return;
+  /*! [thermal_scalar_only] */
 
-  const cs_var_cal_opt_t  *var_cal_opt
-    = cs_field_get_key_struct_const_ptr(f,
-                                        cs_field_key_id("var_cal_opt"));
-  /*! [current_turb_3] */
+  /*! [map_fields] */
+  /* velocity */
+  const cs_real_3_t  *cvar_vel = (const cs_real_3_t *)(CS_F_(vel)->val);
+  /*! [map_fields] */
 
-  /* Example of arbitrary source term for turbulence models
-   * (Source term on the TKE 'k' here)
-   *
-   *  Source term for cvar_var:
-   *  rho cell_f_vol d(cvar_var)/dt       = ...
-   *                 ... - rho*cell_f_vol*ff - rho*cell_f_vol*cvar_var/tau
-   *
-   *  With ff=3.0 and tau = 4.0
-   */
+  /*! [bulk_mean_velocity] */
+  /* bulk mean velocity (x component) */
+  cs_real_t  ubulk = 0;
+  for (cs_lnum_t i = 0; i < n_cells; i++)
+    ubulk += cvar_vel[i][0] * cell_f_vol[i];
 
-  /*! [rem_code_3] */
-  if (f == CS_F_(k)) {
+  cs_parall_sum(1, CS_DOUBLE, &ubulk);  /* sum across processes if needed */
 
-    if (var_cal_opt->iwarni >= 1)
-      bft_printf(" User source terms for turbulence variable %s\n",
-                 cs_field_get_label(f));
+  ubulk /= cs_glob_mesh_quantities->tot_vol;
+  /*! [bulk_mean_velocity] */
 
-    const cs_real_t ff  = 3.0;
-    const cs_real_t tau = 4.0;
+  /*! [scalar_st] */
+  /* Flux x Total surface / (rho Cp) */
+  cs_real_t tot_flux = 1.;
 
-    for (cs_lnum_t i = 0; i < n_cells; i++) {
-
-      /* explicit source terms */
-      st_exp[i] = -cpro_rom[i] * cell_f_vol[i] * ff;
-
-      /* implicit source terms */
-      st_imp[i] = -cpro_rom[i] * cell_f_vol[i] / tau;
-    }
+  for (cs_lnum_t i = 0; i < n_cells; i++) {
+    st_imp[i] = 0.;
+    st_exp[i] = cell_f_vol[i] * cvar_vel[i][0] * tot_flux / ubulk;
   }
-  /*! [rem_code_3] */
+  /*! [scalar_st] */
 }
-
-/*----------------------------------------------------------------------------*/
-
-END_C_DECLS

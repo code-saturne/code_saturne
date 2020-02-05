@@ -25,88 +25,39 @@
 /*-----------------------------------------------------------------------------*/
 
 
-
 /*!
 
   \page user_source_terms Examples of data settings for source terms (cs_user_source_terms.c)
 
    See also the \ref cs_user_source_terms reference documentation.
 
-
   \brief Additional right-hand side source terms
 
-
-   - \subpage subroutine_ustsnv
+   - \subpage function_cs_user_source_terms_momentum
    - \subpage function_cs_user_source_terms_scalar
    - \subpage function_cs_user_turbulence_source_terms
    - \subpage cs_user_source_terms-scalar_in_a_channel
-
-
 */
+
 //________________________________________________________________________________________________
 /*!
 
-   \page subroutine_ustsnv For velocity components equation (Navier-Stokes): ustsnv subroutine
+ \page function_cs_user_source_terms_momentum For velocity components equation (Navier-Stokes)
 
  \brief Additional right-hand side source terms for velocity components equation
  (Navier-Stokes)
 
-  \section use_src1  Usage
+   \section loc_var1 Local variables and initialization
 
-  The additional source term is decomposed into an explicit part \f$(\vect{crvexp})\f$ and
-  an implicit part \f$(\tens{crvimp})\f$ that must be provided here.
-  The resulting equation solved by the code for a velocity is:
-  \f[
-  \rho \norm{\vol{\celli}} \DP{\vect{u}} + ....
-   = \tens{crvimp}\cdot  \vect{u} + \vect{crvexp}
-  \f]
-
-  Note that \f$\vect{crvexp}\f$ and \f$\tens{crvimp}\f$ are defined after the Finite Volume integration
-  over the cells, so they include the \f$\norm{\vol{\celli}}\f$ term. More precisely:
-   - \f$\vect{crvexp}\f$ is expressed in \f$ kg\cdot ms^{-2} \f$
-   - \f$\tens{crvimp}\f$ is expressed in \f$ kg\cdot s^{-1} \f$
-
-  The \f$\vect{crvexp}\f$ and \f$\tens{crvimp}\f$ arrays are already initialized to 0
-  before entering the
-  the routine. It is not needed to do it in the routine (waste of CPU time).
-
-  For stability reasons, \c Code_Saturne will not add \c -crvimp directly to the
-  diagonal of the matrix, but \c Max(-crvimp,0). This way, the \f$ \tens{crvimp}\f$ term  is
-  treated implicitely only if it strengthens the diagonal of the matrix.
-  However, when using the second-order in time scheme, this limitation cannot
-  be done anymore and \c -crvimp is added directly. The user should therefore test
-  the negativity of \c crvimp by himself.
-
-  When using the second-order in time scheme, one should supply:
-   - \f$\vect{crvexp}\f$ at time n
-   - \f$\tens{crvimp}\f$ at time n+1/2
-
-  The selection of cells where to apply the source terms is based on a
-  \ref getcel command. For more info on the syntax of the \ref getcel command,
-  refer to the user manual or to the comments on the similar command
-  \ref getfbr in the routine \ref cs_user_boundary_conditions.
-
-   \section loc_var1 Local variables
-
-   \snippet cs_user_source_terms.f90 loc_var_dec_1
-
-   \section init_and_finit_1 Initialization and finalization
-
-The following initialization block needs to be added for the following examples:
-   \snippet cs_user_source_terms.f90 allocate_1
-
-At the end of the subroutine, it is recommended to deallocate the work array:
-   \snippet cs_user_source_terms.f90 deallocate_1
-
-In theory Fortran 95 deallocates locally-allocated arrays automatically, but deallocating arrays in a symetric manner to their alloacation is good pratice, and avoids using a different logic C and Fortran.
+   \snippet cs_user_source_terms-momentum.c st_meta
 
    \section example_source_terms_1  Example
+
 Example of arbitrary source term for component \f$\vect{u}\f$:
 
    \f$ \vect{S} = \tens{A} \cdot \vect{u} + \vect{B} \f$ appearing in the equation under the form:
 
    \f$ \rho \dfrac{d\vect{u}}{dt} = \vect{S} \: (+ \text{standard Navier-Stokes terms})\f$
-
 
 In the following example:
   \f[  \tens{A} = -\rho \cdot \tens{CKP} \f]
@@ -117,21 +68,22 @@ with:
  - <tt> MMT = 100.0 </tt>(in \f$kg \cdot m^{-2} \cdot s^{-2}\f$) (momentum production by volume and time unit)
 
 which yields:
- - <tt>  crvimp(1, 1, iel) = volume(iel)* A = - volume(iel)*(rho*CKP )</tt> \n
- - <tt>  crvexp(1, iel) = volume(iel)* B = volume(iel)*(XMMT) </tt>
+ - <tt>  st_imp[i][0][0] = volume[i] * A = - volume[i]*(rho*CKP)</tt> \n
+ - <tt>  st_exp[i][0]    = volume[i] * B =   volume[i]*(XMMT) </tt>
 
  \section body1 Body
 
-   \snippet cs_user_source_terms.f90 remaining_1
+ \snippet cs_user_source_terms-momentum.c st_momentum_e_1
 
-   \section example_source_terms_2 Example of a boussinesq momentum source term
-   Example to add Boussinesq source to the z component of \f$\vect{u}\f$:
+ \section example_source_terms_2 Example of a boussinesq momentum source term
+
+ Example to add Boussinesq source to the z component of \f$\vect{u}\f$:
 
  \section body2 Body
 
-   \snippet cs_user_source_terms.f90 boussinesq_st
-
+ \snippet cs_user_source_terms-momentum.c boussinesq_st
 */
+
 //_________________________________________________________________________________________________
 /*!
    \page function_cs_user_source_terms_scalar Transported scalar source terms
@@ -141,7 +93,8 @@ user-defined function.
 
  \subsection field_meta Field access and information
 
-The following initialization block or portions thereof needs to be added for the following examples:
+The following initialization block or portions thereof needs to be added for the
+following examples:
    \snippet cs_user_source_terms-base.c st_meta
 
  Indicator of variance scalars:

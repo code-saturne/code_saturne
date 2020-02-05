@@ -229,6 +229,8 @@ if (itsqdm.ne.0) then
    dt     ,                                                       &
    ckupdc , smacel , tsexp  , tsimp )
 
+  ! C version
+  call user_source_terms(ivarfl(iu), tsexp, tsimp)
 
   ! Convective of the momentum equation
   ! in upwind and without reconstruction

@@ -53,11 +53,10 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_source_terms-base.c
+ * \file cs_user_source_terms-momentum.c
  *
  * \brief Base examples for additional right-hand side source terms for
- *   variable equations
- *   (momentum, user scalars and specific physics scalars, turbulence...).
+ *   momentum equations.
  *
  * See the reference \ref cs_user_source_terms.c for documentation.
  */
@@ -93,120 +92,75 @@ cs_user_source_terms(cs_domain_t  *domain,
   /* mesh quantities */
   const cs_lnum_t  n_cells = cs_glob_mesh->n_cells;
   const cs_real_t  *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
+
+  /* density */
+  const cs_real_t  *cpro_rom = CS_F_(rho)->val;
   /*! [st_meta] */
 
-  /* Scalar variance indicator: if var_f_id > -1, the field
-     is a variance of field var_f_id */
-
-  /*! [field_is_variance] */
-  int var_f_id = cs_field_get_key_int(f, cs_field_key_id("first_moment_id"));
-  /*! [field_is_variance] */
-
-  /* Density */
-
-  /*! [density_2] */
-  const cs_real_t  *cpro_rom = CS_F_(rho)->val;
-  /*! [density_2] */
-
-  /* Example of arbitrary source term for the scalar f, name "scalar_2"
+  /* Example of arbitrary source term for component u:
    *
-   *                       S = A * f + B
+   *                       S = A * u + B
    *
    *        appearing in the equation under the form
    *
-   *                  rho*df/dt = S (+ regular terms in the equation)
+   *                  rho*du/dt = S (+ standard Navier-Stokes terms)
    *
    * In the following example:
-   *   A = - rho / tauf
-   *   B =   rho * prodf
+   *   A = - rho * CKP
+   *   B =   XMMT
    *
-   * with
-   *   tauf   = 10.0   [ s  ] (dissipation time for f)
-   *   prodf  = 100.0  [ [f]/s ] (production of f by unit of time)
+   * with:
+   *  CKP = 1.0   [1/s]      (return term on velocity)
+   *  MMT = 100.0 [kg/m2/s2] (momentum production by volume and time unit)
    *
-   * which yields
-   *   st_imp[i] = cell_f_vol[i]* A = - cell_f_vol[i]*rho/tauf
-   *   st_exp[i] = cell_f_vol[i]* B =   cell_f_vol[i]*rho*prodf
+   * which yields:
+   *  st_imp[i][0][0] = cell_f_vol[i] * A = - cell_f_vol[i]*(rho*CKP)
+   *  st_exp[i][0]    = cell_f_vol[i] * B =   cell_f_vol[i]*(XMMT)
    */
 
-  /*! [src_term_applied] */
-  if (strcmp(f->name, "scalar_2") == 0) {
+  /*! [st_momentum_e_1] */
+  if (f == CS_F_(vel)) { /* velocity */
 
-    /* logging */
+    /* cast to 3D vectors for readability */
+    cs_real_3_t    *_st_exp = (cs_real_3_t *)st_exp;
+    cs_real_33_t   *_st_imp = (cs_real_33_t *)st_imp;
 
-    const cs_var_cal_opt_t  *var_cal_opt
-      = cs_field_get_key_struct_const_ptr(f,
-                                          cs_field_key_id("var_cal_opt"));
-    if (var_cal_opt->iwarni >= 1)
-      bft_printf(" User source terms for variable %s\n",
-                 cs_field_get_label(f));
+    /* Density */
 
-    /* apply source terms to all cells */
-
-    const cs_real_t tauf  = 10.0;
-    const cs_real_t prodf = 100.0;
+    const cs_real_t ckp = 10.0;
+    const cs_real_t xmmt = 100.0;
 
     for (cs_lnum_t i = 0; i < n_cells; i++) {
-      st_imp[i] = - cell_f_vol[i]*cpro_rom[i]/tauf;
-      st_exp[i] =   cell_f_vol[i]*cpro_rom[i]*prodf;
+      _st_imp[i][0][0] = - cell_f_vol[i] * cpro_rom[i] * ckp;
+      _st_exp[i][0]    =   cell_f_vol[i] * cpro_rom[i] * xmmt;
     }
 
   }
-  /* [src_term_applied] */
+  /*! [st_momentum_e_1] */
 
-  /* Example of arbitrary volumic heat term in the equation for enthalpy h.
-   *
-   * In the considered example, a uniform volumic source of heating is imposed
-   * in the cells of a volume zone named "heater".
-   *
-   * The global heating power if Pwatt (in W); the total fluid volume of the
-   * selected zone is available in the zone structure, and copied to
-   * a local value voltf (in m^3).
-   *
-   * This yields
-   *    st_imp[i] = 0
-   *    st_exp[i] = cell_f_vol[i]*pwatt/voltf;
-   */
+  /* Example of boussinesq source term. */
 
-  /* Warning :
-   * It is assumed here that the thermal scalar is an enthalpy.
-   * If the scalar is a temperature, PWatt does not need to be divided
-   * by Cp because Cp is put outside the diffusion term and multiplied
-   * in the temperature equation as follows:
-   *
-   * rho*Cp*cell_f_vol*dT/dt + .... =  cell_f_vol[i]* Pwatt/voltf
-   */
+  /*! [boussinesq_st] */
+  if (f == CS_F_(vel) && CS_F_(t) != NULL) { /* velocity and temperature */
 
-  /*! [ex_3_apply] */
-  if (f == CS_F_(h)) { /* enthalpy */
+    /* expansion coefficient and reference density */
 
-    /* logging */
+    const cs_real_t beta = 1.;
+    const cs_real_t ro0  = cs_glob_fluid_properties->ro0;
+    const cs_real_t t0  = cs_glob_fluid_properties->t0;
 
-    const cs_var_cal_opt_t  *var_cal_opt
-      = cs_field_get_key_struct_const_ptr(f,
-                                          cs_field_key_id("var_cal_opt"));
-    if (var_cal_opt->iwarni >= 1)
-      bft_printf(" User source terms for variable %s\n",
-                 cs_field_get_label(f));
+    /* get temperature */
 
-    /* apply source terms in zone cells */
+    const cs_real_t *cvar_temperature = CS_F_(t)->val;
 
-    const cs_zone_t *z = cs_volume_zone_by_name_try("heater");
+    cs_real_3_t  *_st_exp = (cs_real_3_t *)st_exp;
 
-    if (z != NULL) {
-
-      cs_real_t pwatt = 100.0;
-      cs_real_t voltf = z->f_measure;
-
-      for (cs_lnum_t i = 0; i < z->n_elts; i++) {
-        cs_lnum_t c_id = z->elt_ids[i];
-        st_exp[c_id] = cell_f_vol[c_id]*pwatt/voltf;
-      }
-
+    for (cs_lnum_t i = 0; i < n_cells; i++) {
+      _st_exp[c_id] = cell_f_vol[c_id] * rh0 * beta * (cvar_temperature[i]-t0);
     }
 
   }
-  /*! [ex_3_apply] */
+  /*! [boussinesq_st] */
 }
 
 /*----------------------------------------------------------------------------*/

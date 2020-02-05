@@ -1,5 +1,5 @@
 /*============================================================================
- * This function is called each time step to define physical properties
+ * User-defined source terms
  *============================================================================*/
 
 /* VERS */
@@ -53,10 +53,9 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_source_terms-turbulence.c
+ * \file cs_user_source_terms-richards.c
  *
- * \brief Examples for additional turbulence source terms for
- *   variable equations.
+ * \brief User source terms example for the Richards equation
  *
  * See the reference \ref cs_user_source_terms.c for documentation.
  */
@@ -84,57 +83,57 @@ cs_user_source_terms(cs_domain_t  *domain,
                      cs_real_t    *st_imp)
 {
   CS_NO_WARN_IF_UNUSED(domain);
+  CS_NO_WARN_IF_UNUSED(st_imp);
 
-  /*! [st_meta] */
-  /* mesh quantities */
-  const cs_lnum_t  n_cells = cs_glob_mesh->n_cells;
-  const cs_real_t  *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
-  /*! [st_meta] */
+  /*! [richards_leaching_init] */
+  /* local variables */
 
-  /* Define a cpro_rom pointer to the density */
-  /*! [dens_array_3] */
-  const cs_real_t  *cpro_rom = CS_F_(rho)->val;
-  /*! [dens_array_3] */
-
-  /*! [current_turb_3] */
-  /* Define pointer f to the current turbulent variable field */
   const cs_field_t  *f = cs_field_by_id(f_id);
+  const cs_real_t  t = cs_glob_time_step->t_cur;
 
+  const cs_real_t  *cell_f_vol = cs_glob_mesh_quantities->cell_vol;
+
+  /* Map saturation and delay */
+
+  char f_name[64];
+  snprintf(f_name, 63, "%s_delay", f->name); f_name[63] = '\0';
+  const cs_real_t  *delay = cs_field_by_name(f_name)->val;
+
+  const cs_real_t  *saturation = cs_field_by_name("saturation")->val;
+  /*! [richards_leaching_init] */
+
+  /* logging */
+  /*! [richards_leaching_log] */
   const cs_var_cal_opt_t  *var_cal_opt
     = cs_field_get_key_struct_const_ptr(f,
                                         cs_field_key_id("var_cal_opt"));
-  /*! [current_turb_3] */
+  if (var_cal_opt->iwarni >= 1)
+    bft_printf(" User source terms for variable %s\n",
+               cs_field_get_label(f));
+  /*! [richards_leaching_log] */
 
-  /* Example of arbitrary source term for turbulence models
-   * (Source term on the TKE 'k' here)
-   *
-   *  Source term for cvar_var:
-   *  rho cell_f_vol d(cvar_var)/dt       = ...
-   *                 ... - rho*cell_f_vol*ff - rho*cell_f_vol*cvar_var/tau
-   *
-   *  With ff=3.0 and tau = 4.0
-   */
+  /* Leaching from volume zone labeled as "LEACHING_ZONE" */
 
-  /*! [rem_code_3] */
-  if (f == CS_F_(k)) {
+  /*! [richards_leaching] */
+  cs_real_t lambda = 1.e-2;        /* first order decay coefficient */
+  cs_real_t leaching_time = 1.e2;  /* leaching duration */
 
-    if (var_cal_opt->iwarni >= 1)
-      bft_printf(" User source terms for turbulence variable %s\n",
-                 cs_field_get_label(f));
+  const cs_zone_t *z = cs_volume_zone_by_name_try("LEACHING_ZONE");
 
-    const cs_real_t ff  = 3.0;
-    const cs_real_t tau = 4.0;
+  /* progressive leaching */
 
-    for (cs_lnum_t i = 0; i < n_cells; i++) {
+  if (z != NULL && t < leaching_time) {
+    cs_real_t leaching_volume = z->f_measure;
 
-      /* explicit source terms */
-      st_exp[i] = -cpro_rom[i] * cell_f_vol[i] * ff;
+    for (cs_lnum_t i = 0; i < z->n_elts; i++) {
+      cs_lnum_t c_id = z->elt_ids[i];
 
-      /* implicit source terms */
-      st_imp[i] = -cpro_rom[i] * cell_f_vol[i] / tau;
+      st_exp[c_id] =   cell_f_vol[i] * exp(-lambda*t)
+                     / (  leaching_time * leaching_volume
+                        * saturation[i] * delay[i]);
     }
   }
-  /*! [rem_code_3] */
+  /*! [richards_leaching] */
 }
 
 /*----------------------------------------------------------------------------*/
