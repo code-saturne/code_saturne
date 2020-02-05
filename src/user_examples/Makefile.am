@@ -214,4 +214,5 @@ install-data-hook:
 	for file in $${c_user_examples}; do \
 	  $(SED) -e "N;s/$${stubvers}/$${version}/" < "$${file}" > "$${file}.tmp" && \
 	  mv "$${file}.tmp" "$${file}"; \
+	  $(SED) -i "/\/\*! \[.*\] \*\//d" "$${file}"; \
 	done
