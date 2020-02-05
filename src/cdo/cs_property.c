@@ -159,7 +159,7 @@ _invert_tensor(cs_real_3_t          *tens,
 
   if (type & CS_PROPERTY_ISO || type & CS_PROPERTY_ORTHO)
     for (int k = 0; k < 3; k++)
-      tens[k][k] /= 1.0;
+      tens[k][k] = 1.0/tens[k][k];
 
   else { /* anisotropic */
 
