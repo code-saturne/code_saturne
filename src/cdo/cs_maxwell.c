@@ -125,11 +125,11 @@ static const char _err_empty_maxwell[] =
 
 static cs_maxwell_t  *cs_maxwell_structure = NULL;
 
-/* Vacuum magnetic permeability constant (H/m). (= 1.2566e-6) */
-static const cs_real_t  cs_maxwell_vacuum_m_permeability = 1.2566e-6;
+/* Vacuum magnetic permeability constant (H/m) */
+static const cs_real_t  cs_maxwell_vacuum_m_permeability = 1.25663706143591e-6;
 
-/* Vacuum permittivity constant (F/m). (= 8.854e-12) */
-static const cs_real_t  cs_maxwell_vacuum_e_permittivity = 8.854e-12;
+/* Vacuum permittivity constant (F/m) */
+static const cs_real_t  cs_maxwell_vacuum_e_permittivity = 8.85418782e-12;
 
 /*============================================================================
  * Private static inline function prototypes
