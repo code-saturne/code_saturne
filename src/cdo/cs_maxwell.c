@@ -391,7 +391,8 @@ cs_maxwell_activate(cs_flag_t     model,
                                                "magnetic_potential",
                                                CS_EQUATION_TYPE_MAXWELL,
                                                3,
-                                               CS_PARAM_BC_HMG_NEUMANN);
+                                               CS_PARAM_BC_HMG_DIRICHLET);
+
     cs_equation_param_t  *eqp = cs_equation_get_param(m_static);
 
     mxl->m_permittivity = cs_property_add("magnetic_permittivity",
