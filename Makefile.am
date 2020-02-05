@@ -46,14 +46,6 @@ endif
 SUBDIRS = . $(PLE) $(PREPRO) src $(SALOME) po $(DOCS) $(GUI) $(TSTS) $(NEPTUNE_CFD)
 
 AUX_DIST = \
-build-aux/catalyst \
-build-aux/catalyst-5.6 \
-build-aux/cs_compile_build.py \
-build-aux/cs_config_test.py \
-build-aux/cs_version.py \
-build-aux/list_modules.sh \
-build-aux/petsc-petscvariables.makefile \
-build-aux/petsc-variables.makefile \
 m4/codeset.m4 \
 m4/fcntl-o.m4 \
 m4/gettext.m4 \
@@ -112,6 +104,14 @@ install_saturne.py \
 NEWS.md \
 README.md \
 QUALITY_ASSURANCE \
+build-aux/catalyst \
+build-aux/catalyst-5.6 \
+build-aux/cs_compile_build.py \
+build-aux/cs_config_test.py \
+build-aux/cs_version.py \
+build-aux/list_modules.sh \
+build-aux/petsc-petscvariables.makefile \
+build-aux/petsc-variables.makefile \
 po/Makevars.template \
 po/Rules-install \
 sbin/backup \

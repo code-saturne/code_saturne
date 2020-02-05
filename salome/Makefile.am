@@ -31,7 +31,6 @@ endif
 SUBDIRS = $(CFDSTUDY)
 
 AUX_DIST = \
-build-aux/list_salome_modules.sh \
 build-aux/compile \
 build-aux/config.guess \
 build-aux/config.sub \
@@ -61,14 +60,14 @@ build-aux/py-compile
 
 EXTRA_DIST = \
 $(AUX_DIST) \
+build-aux/list_salome_modules.py \
 m4/cs_omniorb.m4 \
 m4/cs_salome.m4 \
 README.md \
-sbin/backup \
 sbin/bootstrap \
 sbin/clean \
 sbin/rmb \
-config/cs_config_test/py\
+config/cs_config_test.py\
 config/salome_module.mk
 
 DISTCLEANFILES = \
