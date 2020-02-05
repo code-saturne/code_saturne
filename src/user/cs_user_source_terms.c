@@ -70,14 +70,10 @@ BEGIN_C_DECLS
  * \brief Additional user-defined source terms for variable equations
  *   (momentum, scalars, turbulence...).
  *
- * This function is called at each time step, for each relevant field.
- *
- *  Usage
- *  -----
- *  The function is called for each variable. It is therefore necessary to
- *  test the value of the field id or the name of the field to separate
- *  the treatments of the different variables (if (f_id.eq.CS_F(x)->id),
- *   is (strcmp(f->name, "my_name") == 0, ....).
+ *  This function is called at each time step, for each relevant field.
+ *  It is therefore necessary to
+ *  test the value of the field id or name to separate
+ *  the treatments of the different variables.
  *
  *  The additional source term is decomposed into an explicit part (st_exp) and
  *  an implicit part (st_imp) that must be provided here.
@@ -108,18 +104,23 @@ BEGIN_C_DECLS
  *    - st_exp at time n
  *    - st_imp at time n+1/2
  *
- *  WARNING: If variable is the temperature, the resulting equation
- *           solved by the code is:
+ *  \warning
+ *  \parblock
+ *
+ *   If the variable is a temperature, the resulting equation solved is:
  *
  *   rho*Cp*volume*dT/dt + .... = st_imp*T + st_exp
+ *
+ *  \endparblock
  *
  *  Note that st_exp and st_imp are defined after the Finite Volume integration
  *  over the cells, so they include the "volume" term. More precisely:
  *    - st_exp is expressed in W
  *    - st_imp is expressed in W/K
  *
- *  STEEP SOURCE TERMS
- *  ------------------
+ *  \par Steep source terms
+ *  \parblock
+ *
  *  In case of a complex, non-linear source term, say F(f), for variable f, the
  *  easiest method is to implement the source term explicitly.
  *
@@ -139,6 +140,8 @@ BEGIN_C_DECLS
  *  This yields:
  *    st_exp = volume*( F(f(n)) - dF/df*f(n) )
  *    st_imp = volume*dF/df
+ *
+ *  \endparblock
  *
  * \param[in, out]  domain   pointer to a cs_domain_t structure
  * \param[in]       f_id     field id of the variable
