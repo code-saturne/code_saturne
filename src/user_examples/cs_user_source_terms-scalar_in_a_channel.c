@@ -1,5 +1,5 @@
 /*============================================================================
- * This function is called each time step to define physical properties
+ * User source terms for a scalar in a channel example.
  *============================================================================*/
 
 /* VERS */

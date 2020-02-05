@@ -1,5 +1,5 @@
 /*============================================================================
- * This function is called each time step to define physical properties
+ * Additional user-defined source terms for variable equations.
  *============================================================================*/
 
 /* VERS */
@@ -67,17 +67,17 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Additional source terms for variable equations
- *   (momentum, user scalars and specific physics scalars, turbulence...).
+ * \brief Additional user-defined source terms for variable equations
+ *   (momentum, scalars, turbulence...).
  *
  * This function is called at each time step, for each relevant field.
  *
  *  Usage
  *  -----
- *  The function is called for each variable. It is
- *  therefore necessary to test the value of the field id to separate
- *  the treatments of the different variables (if (f_id.eq.CS_F(p)->id)
- *   then ....).
+ *  The function is called for each variable. It is therefore necessary to
+ *  test the value of the field id or the name of the field to separate
+ *  the treatments of the different variables (if (f_id.eq.CS_F(x)->id),
+ *   is (strcmp(f->name, "my_name") == 0, ....).
  *
  *  The additional source term is decomposed into an explicit part (st_exp) and
  *  an implicit part (st_imp) that must be provided here.
@@ -95,14 +95,14 @@ BEGIN_C_DECLS
  *
  *  The st_exp and st_imp arrays are already initialized to 0 (or a value
  *  defined through the GUI or defined by a model) before entering
- *  the function. It is generally not useful to do it here.
+ *  the function. It is generally not useful to reset them here.
  *
  *  For stability reasons, Code_Saturne will not add -st_imp directly to the
  *  diagonal of the matrix, but Max(-st_imp,0). This way, the st_imp term is
  *  treated implicitely only if it strengthens the diagonal of the matrix.
  *  However, when using the second-order in time scheme, this limitation cannot
  *  be done anymore and -st_imp is added directly. The user should therefore
- *  test the negativity of st_imp by himself.
+ *  check for the negativity of st_imp.
  *
  *  When using the second-order in time scheme, one should supply:
  *    - st_exp at time n
@@ -119,14 +119,14 @@ BEGIN_C_DECLS
  *    - st_imp is expressed in W/K
  *
  *  STEEP SOURCE TERMS
- *  ==================
+ *  ------------------
  *  In case of a complex, non-linear source term, say F(f), for variable f, the
- *  easiest method is to implement the source term explicitely.
+ *  easiest method is to implement the source term explicitly.
  *
  *    df/dt = .... + F(f(n))
  *    where f(n) is the value of f at time tn, the beginning of the time step.
  *
- *  This yields :
+ *  This yields:
  *    st_exp = volume*F(f(n))
  *    st_imp = 0
  *

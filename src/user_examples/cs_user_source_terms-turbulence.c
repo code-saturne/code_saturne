@@ -1,5 +1,5 @@
 /*============================================================================
- * This function is called each time step to define physical properties
+ * Examples for additional turbulence source terms for variable equations.
  *============================================================================*/
 
 /* VERS */

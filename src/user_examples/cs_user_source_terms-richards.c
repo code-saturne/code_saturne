@@ -1,5 +1,5 @@
 /*============================================================================
- * User-defined source terms
+ * User source terms example for the Richards equation.
  *============================================================================*/
 
 /* VERS */
@@ -55,7 +55,7 @@ BEGIN_C_DECLS
 /*!
  * \file cs_user_source_terms-richards.c
  *
- * \brief User source terms example for the Richards equation
+ * \brief User source terms example for the Richards equation.
  *
  * See the reference \ref cs_user_source_terms.c for documentation.
  */

@@ -1,5 +1,6 @@
 /*============================================================================
- * This function is called each time step to define physical properties
+ * Base examples for additional right-hand side source terms for
+ * variable equations (momentum, scalars, turbulence...).
  *============================================================================*/
 
 /* VERS */
@@ -56,8 +57,7 @@ BEGIN_C_DECLS
  * \file cs_user_source_terms-base.c
  *
  * \brief Base examples for additional right-hand side source terms for
- *   variable equations
- *   (momentum, user scalars and specific physics scalars, turbulence...).
+ *   variable equations (momentum, scalars, turbulence...).
  *
  * See the reference \ref cs_user_source_terms.c for documentation.
  */

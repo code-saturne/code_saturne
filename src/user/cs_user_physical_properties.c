@@ -1,5 +1,5 @@
 /*============================================================================
- * This function is called each time step to define physical properties
+ * User definition of physical properties.
  *============================================================================*/
 
 /* VERS */
@@ -79,7 +79,7 @@ BEGIN_C_DECLS
 void
 cs_user_physical_properties(cs_domain_t   *domain)
 {
-  CS_UNUSED(domain);
+  CS_NO_WARN_IF_UNUSED(domain);
 }
 
 /*----------------------------------------------------------------------------*/
