@@ -152,7 +152,7 @@ cs_user_source_terms(cs_domain_t  *domain,
     }
 
   }
-  /* [src_term_applied] */
+  /*! [src_term_applied] */
 
   /* Example of arbitrary volumic heat term in the equation for enthalpy h.
    *
