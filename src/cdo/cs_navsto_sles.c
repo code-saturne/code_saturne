@@ -200,13 +200,11 @@ _setup_velocity_gamg(void)
  *         Case of multiplicative block preconditioner for a CG
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] a        pointer to PETSc Matrix context
  * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 void
 cs_navsto_sles_amg_block_hook(void     *context,
-                              Mat       a,
                               KSP       ksp)
 {
   cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
@@ -321,7 +319,7 @@ cs_navsto_sles_amg_block_hook(void     *context,
   }
 
   /* User function for additional settings */
-  cs_user_sles_petsc_hook(context, a, ksp);
+  cs_user_sles_petsc_hook(context, ksp);
 
   KSPSetFromOptions(ksp);
   KSPSetUp(ksp);

@@ -104,9 +104,10 @@ BEGIN_C_DECLS
 
 /*! [sles_petsc_hook_1] */
 static void
-_petsc_p_setup_hook(const void  *context,
-                    KSP          ksp)
+_petsc_p_setup_hook(void   *context,
+                    KSP     ksp)
 {
+  CS_UNUSED(context);
   PC pc;
 
   KSPSetType(ksp, KSPCG);   /* Preconditioned Conjugate Gradient */
@@ -123,9 +124,10 @@ _petsc_p_setup_hook(const void  *context,
 
 /*! [sles_petsc_hook_gamg] */
 static void
-_petsc_p_setup_hook_gamg(const void  *context,
+_petsc_p_setup_hook_gamg(void        *context,
                          KSP          ksp)
 {
+  CS_UNUSED(context);
   PC pc;
 
   KSPSetType(ksp, KSPCG);   /* Preconditioned Conjugate Gradient */
@@ -141,9 +143,10 @@ _petsc_p_setup_hook_gamg(const void  *context,
 
 /*! [sles_petsc_hook_bamg] */
 static void
-_petsc_p_setup_hook_bamg(const void  *context,
+_petsc_p_setup_hook_bamg(void        *context,
                          KSP          ksp)
 {
+  CS_UNUSED(context);
   PC pc;
 
   KSPSetType(ksp, KSPCG);   /* Preconditioned Conjugate Gradient */
@@ -172,14 +175,15 @@ _petsc_p_setup_hook_bamg(const void  *context,
 
 /*! [sles_petsc_hook_view] */
 static void
-_petsc_p_setup_hook_view(const void  *context,
+_petsc_p_setup_hook_view(void        *context,
                          KSP          ksp)
 {
+  CS_UNUSED(context);
   const char *p = getenv("CS_USER_PETSC_MAT_VIEW");
 
   if (p != NULL) {
 
-    /* Get system and preconditioner matrixes */
+    /* Get system and preconditioner matrices */
 
     Mat a, pa;
     KSPGetOperators(ksp, &a, &pa);
@@ -227,16 +231,14 @@ _petsc_p_setup_hook_view(const void  *context,
  *
  * parameters:
  *   context <-> pointer to optional (untyped) value or structure
- *   a       <-> PETSc matrix context
  *   ksp     <-> pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 void
 cs_user_sles_petsc_hook(void               *context,
-                        Mat                 a,
                         KSP                 ksp)
 {
-  CS_UNUSED(a);
+  CS_UNUSED(ksp);
 
   /*! [sles_petsc_cdo_hook] */
   cs_equation_param_t  *eqp = (cs_equation_param_t *)context;

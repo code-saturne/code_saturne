@@ -652,13 +652,11 @@ _set_velocity_ksp(const cs_param_sles_t    slesp,
  *         Case of additive block preconditioner for a GMRES
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] a        pointer to PETSc Matrix context
  * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
 _additive_amg_gmres_hook(void     *context,
-                         Mat       a,
                          KSP       ksp)
 {
   IS  isv, isp;
@@ -737,7 +735,7 @@ _additive_amg_gmres_hook(void     *context,
   _set_velocity_ksp(slesp, slesp.eps, slesp.n_max_iter, up_subksp[0]);
 
   /* User function for additional settings */
-  cs_user_sles_petsc_hook(context, a, ksp);
+  cs_user_sles_petsc_hook(context, ksp);
 
   /* Apply modifications to the KSP structure */
   KSPSetFromOptions(ksp);
@@ -764,13 +762,11 @@ _additive_amg_gmres_hook(void     *context,
  *         Case of multiplicative block preconditioner for a GMRES
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] a        pointer to PETSc Matrix context
  * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
 _multiplicative_gmres_hook(void     *context,
-                           Mat       a,
                            KSP       ksp)
 {
   IS  isv, isp;
@@ -849,7 +845,7 @@ _multiplicative_gmres_hook(void     *context,
   _set_velocity_ksp(slesp, slesp.eps, slesp.n_max_iter, up_subksp[0]);
 
   /* User function for additional settings */
-  cs_user_sles_petsc_hook(context, a, ksp);
+  cs_user_sles_petsc_hook(context, ksp);
 
   /* Apply modifications to the KSP structure */
   KSPSetFromOptions(ksp);
@@ -876,13 +872,11 @@ _multiplicative_gmres_hook(void     *context,
  *         Case of diagonal Schur preconditioner by block for a GMRES
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] a        pointer to PETSc Matrix context
  * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
 _diag_schur_gmres_hook(void     *context,
-                       Mat       a,
                        KSP       ksp)
 {
   IS  isv, isp;
@@ -963,7 +957,7 @@ _diag_schur_gmres_hook(void     *context,
   _set_velocity_ksp(slesp, slesp.eps, slesp.n_max_iter, up_subksp[0]);
 
   /* User function for additional settings */
-  cs_user_sles_petsc_hook(context, a, ksp);
+  cs_user_sles_petsc_hook(context, ksp);
 
   /* Apply modifications to the KSP structure */
   KSPSetFromOptions(ksp);
@@ -989,13 +983,11 @@ _diag_schur_gmres_hook(void     *context,
  *         Case of upper Schur preconditioner by block for a GMRES
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] a        pointer to PETSc Matrix context
  * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
 _upper_schur_gmres_hook(void     *context,
-                        Mat       a,
                         KSP       ksp)
 {
   IS  isv, isp;
@@ -1076,7 +1068,7 @@ _upper_schur_gmres_hook(void     *context,
   _set_velocity_ksp(slesp, slesp.eps, slesp.n_max_iter, up_subksp[0]);
 
   /* User function for additional settings */
-  cs_user_sles_petsc_hook(context, a, ksp);
+  cs_user_sles_petsc_hook(context, ksp);
 
   /* Apply modifications to the KSP structure */
   KSPSetFromOptions(ksp);
@@ -1104,13 +1096,11 @@ _upper_schur_gmres_hook(void     *context,
  *         velocity block.
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] a        pointer to PETSc Matrix context
  * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
 _gkb_hook(void     *context,
-          Mat       a,
           KSP       ksp)
 {
   IS  isv, isp;
@@ -1157,7 +1147,7 @@ _gkb_hook(void     *context,
   _set_velocity_ksp(slesp, slesp.eps, slesp.n_max_iter, up_subksp[0]);
 
   /* User function for additional settings */
-  cs_user_sles_petsc_hook(context, a, ksp);
+  cs_user_sles_petsc_hook(context, ksp);
 
   /* Apply modifications to the KSP structure */
   KSPSetFromOptions(ksp);
@@ -1183,13 +1173,11 @@ _gkb_hook(void     *context,
  *         Case of GKB preconditioner. by block for a GMRES
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] a        pointer to PETSc Matrix context
  * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
 _gkb_gmres_hook(void     *context,
-                Mat       a,
                 KSP       ksp)
 {
   IS  isv, isp;
@@ -1248,7 +1236,7 @@ _gkb_gmres_hook(void     *context,
   _set_velocity_ksp(slesp, rtol, max_it, up_subksp[0]);
 
   /* User function for additional settings */
-  cs_user_sles_petsc_hook(context, a, ksp);
+  cs_user_sles_petsc_hook(context, ksp);
 
   /* Apply modifications to the KSP structure */
   KSPSetFromOptions(ksp);
@@ -1276,13 +1264,11 @@ _gkb_gmres_hook(void     *context,
  *         Case of MUMPS via PETSc
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] a        pointer to PETSc Matrix context
  * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
 _mumps_hook(void     *context,
-            Mat       a,
             KSP       ksp)
 {
   cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
@@ -1307,7 +1293,7 @@ _mumps_hook(void     *context,
                    slesp.n_max_iter); /* max number of iterations */
 
   /* User function for additional settings */
-  cs_user_sles_petsc_hook(context, a, ksp);
+  cs_user_sles_petsc_hook(context, ksp);
 
   /* Dump the setup related to PETSc in a specific file */
   if (!slesp.setup_done) {

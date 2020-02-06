@@ -349,14 +349,12 @@ _petsc_set_pc_options_from_command_line(cs_param_sles_t    slesp)
  * \brief Set PETSc solver
  *
  * \param[in]      slesp    pointer to SLES parameters
- * \param[in, out] a        pointer to PETSc matrix
  * \param[in, out] ksp      pointer to PETSc KSP context
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _petsc_set_krylov_solver(cs_param_sles_t   slesp,
-                         Mat               a,
                          KSP               ksp)
 {
   /* 1) Set the type of normalization for the residual */
@@ -483,6 +481,11 @@ _petsc_set_krylov_solver(cs_param_sles_t   slesp,
     {
       PC  pc;
       KSPGetPC(ksp, &pc);
+
+      /* Retrieve the matrices related to this KSP */
+      Mat a, pa;
+      KSPGetOperators(ksp, &a, &pa);
+
       MatSetOption(a, MAT_SPD, PETSC_TRUE); /* set MUMPS id%SYM=1 */
       PCSetType(pc, PCCHOLESKY);
 
@@ -513,14 +516,12 @@ _petsc_set_krylov_solver(cs_param_sles_t   slesp,
  * \brief Set PETSc solver and preconditioner
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] a        pointer to PETSc Matrix context
  * \param[in, out] ksp      pointer to PETSc KSP context
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _petsc_setup_hook(void   *context,
-                  Mat     a,
                   KSP     ksp)
 {
   cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
@@ -530,7 +531,7 @@ _petsc_setup_hook(void   *context,
                                      SIGFPE detection */
 
   /* 1) Set the solver */
-  _petsc_set_krylov_solver(slesp, a, ksp);
+  _petsc_set_krylov_solver(slesp, ksp);
 
   /* Sanity checks */
   if (cs_glob_n_ranks > 1 && slesp.solver_class == CS_PARAM_SLES_CLASS_PETSC) {
@@ -578,7 +579,7 @@ _petsc_setup_hook(void   *context,
   PCSetFromOptions(pc);
 
   /* 4) User function for additional settings */
-  cs_user_sles_petsc_hook((void *)eqp, a, ksp);
+  cs_user_sles_petsc_hook((void *)eqp, ksp);
 
   /* Dump the setup related to PETSc in a specific file */
   if (!slesp.setup_done) {
@@ -661,14 +662,12 @@ _petsc_common_block_hook(cs_param_sles_t    slesp,
  *         as AMG type
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] a        pointer to PETSc Matrix context
  * \param[in, out] ksp      pointer to PETSc KSP context
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _petsc_amg_block_gamg_hook(void     *context,
-                           Mat       a,
                            KSP       ksp)
 {
   PC  pc;
@@ -683,7 +682,7 @@ _petsc_amg_block_gamg_hook(void     *context,
                                      SIGFPE detection */
 
   /* Set the solver */
-  _petsc_set_krylov_solver(slesp, a, ksp);
+  _petsc_set_krylov_solver(slesp, ksp);
 
   /* Common settings to block preconditionner */
   KSPGetPC(ksp, &pc);
@@ -706,7 +705,7 @@ _petsc_amg_block_gamg_hook(void     *context,
   }
 
   /* User function for additional settings */
-  cs_user_sles_petsc_hook(context, a, ksp);
+  cs_user_sles_petsc_hook(context, ksp);
 
   PCSetFromOptions(pc);
   KSPSetFromOptions(ksp);
@@ -732,14 +731,12 @@ _petsc_amg_block_gamg_hook(void     *context,
  *         as AMG type
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] a        pointer to PETSc Matrix context
  * \param[in, out] ksp      pointer to PETSc KSP context
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _petsc_amg_block_boomer_hook(void     *context,
-                             Mat       a,
                              KSP       ksp)
 {
   PC  pc;
@@ -754,7 +751,7 @@ _petsc_amg_block_boomer_hook(void     *context,
                                      SIGFPE detection */
 
   /* Set the solver */
-  _petsc_set_krylov_solver(slesp, a, ksp);
+  _petsc_set_krylov_solver(slesp, ksp);
 
   /* Common settings to block preconditionner */
   KSPGetPC(ksp, &pc);
@@ -778,7 +775,7 @@ _petsc_amg_block_boomer_hook(void     *context,
   }
 
   /* User function for additional settings */
-  cs_user_sles_petsc_hook(context, a, ksp);
+  cs_user_sles_petsc_hook(context, ksp);
 
   PCSetFromOptions(pc);
   KSPSetFromOptions(ksp);
@@ -803,14 +800,12 @@ _petsc_amg_block_boomer_hook(void     *context,
  *         Case of block Jacobi preconditioner
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] a        pointer to PETSc Matrix context
  * \param[in, out] ksp      pointer to PETSc KSP context
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _petsc_block_jacobi_hook(void     *context,
-                         Mat       a,
                          KSP       ksp)
 {
   PC  pc;
@@ -824,7 +819,7 @@ _petsc_block_jacobi_hook(void     *context,
                                      SIGFPE detection */
 
   /* Set the solver (tolerance and max_it too) */
-  _petsc_set_krylov_solver(slesp, a, ksp);
+  _petsc_set_krylov_solver(slesp, ksp);
 
   /* Common settings to block preconditionner */
   KSPGetPC(ksp, &pc);
@@ -876,7 +871,7 @@ _petsc_block_jacobi_hook(void     *context,
   PCSetUp(pc);
 
   /* User function for additional settings */
-  cs_user_sles_petsc_hook(context, a, ksp);
+  cs_user_sles_petsc_hook(context, ksp);
 
   KSPSetFromOptions(ksp);
 

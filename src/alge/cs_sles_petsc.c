@@ -482,17 +482,14 @@ _cs_ksp_converged(KSP                  ksp,
  *
  * parameters:
  *   context <-> pointer to optional (untyped) value or structure
- *   a       <-> PETSc matrix context
  *   ksp     <-> PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 void
 cs_user_sles_petsc_hook(void               *context,
-                        Mat                 a,
                         KSP                 ksp)
 {
   CS_UNUSED(context);
-  CS_UNUSED(a);
   CS_UNUSED(ksp);
 }
 
@@ -1229,7 +1226,7 @@ cs_sles_petsc_setup(void               *context,
                         NULL);
 
   if (c->setup_hook != NULL)
-    c->setup_hook(c->hook_context, sd->a, sd->ksp);
+    c->setup_hook(c->hook_context, sd->ksp);
 
   /* KSPSetup could be called here for better separation of setup/solve
      logging, but calling it systematically seems to cause issues
