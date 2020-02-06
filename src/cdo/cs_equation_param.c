@@ -1513,11 +1513,17 @@ _set_key(const char            *label,
       eqp->sles_param.precond = CS_PARAM_PRECOND_DIAG;
     else if (strcmp(keyval, "block_jacobi") == 0 ||
              strcmp(keyval, "block_jacobi_ilu0") == 0 ||
-             strcmp(keyval, "jacobi_block") == 0)
+             strcmp(keyval, "jacobi_block") == 0) {
       eqp->sles_param.precond = CS_PARAM_PRECOND_BJACOB_ILU0;
+      /* Default when using PETSc */
+      eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
+    }
     else if (strcmp(keyval, "block_jacobi_sgs") == 0 ||
-             strcmp(keyval, "block_jacobi_ssor") == 0)
+             strcmp(keyval, "block_jacobi_ssor") == 0) {
       eqp->sles_param.precond = CS_PARAM_PRECOND_BJACOB_SGS;
+      /* Default when using PETSc */
+      eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
+    }
     else if (strcmp(keyval, "poly1") == 0)
       eqp->sles_param.precond = CS_PARAM_PRECOND_POLY1;
     else if (strcmp(keyval, "poly2") == 0)
@@ -1563,8 +1569,11 @@ _set_key(const char            *label,
         /* Set the default choice */
         if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS)
           eqp->sles_param.amg_type = CS_PARAM_AMG_HOUSE_K;
-        if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC)
+        if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC) {
           eqp->sles_param.amg_type = CS_PARAM_AMG_PETSC_GAMG;
+          /* Default when using PETSc */
+          eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
+        }
 
       }
       else {
@@ -1579,6 +1588,9 @@ _set_key(const char            *label,
         eqp->sles_param.amg_type = CS_PARAM_AMG_PETSC_GAMG;
         eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
 #endif
+
+        /* Default when using PETSc */
+        eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
 
       }
     }
