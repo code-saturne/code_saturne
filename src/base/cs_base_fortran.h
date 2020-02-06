@@ -228,7 +228,7 @@ void
 cs_base_fortran_bft_printf_to_f(void);
 
 /*----------------------------------------------------------------------------
- * Wrappers for Fortran C
+ * Wrappers for C functions
  *----------------------------------------------------------------------------*/
 
 void
@@ -237,10 +237,10 @@ cs_user_extra_operations_initialize_wrapper(void);
 void
 cs_user_physical_properties_wrapper(void);
 
-  void
-cs_user_source_terms_wrapper(int       f_id,
-                             cs_real_t *st_exp,
-                             cs_real_t *st_imp);
+void
+cs_user_source_terms_wrapper(int         f_id,
+                             cs_real_t  *st_exp,
+                             cs_real_t  *st_imp);
 
 void
 cs_user_extra_operations_wrapper(void);
