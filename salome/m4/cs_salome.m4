@@ -59,6 +59,10 @@ if test "x$with_salome" != "xno" ; then
   #-------------------------
 
   salome_env_modules=`${srcdir}/build-aux/list_salome_modules.py ${ROOT_SALOME}`
+  if test $? != 0 ; then
+    salome_env_modules=""
+  fi
+
   AC_SUBST(salome_env_modules)
 
   if test "$xsalome_env_modules" != "x" ; then
