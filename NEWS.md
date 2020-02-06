@@ -3,6 +3,8 @@ Master (not on release branches yet)
 
 User changes:
 
+- Add the possibility to keep more than just the last checkpoint file.
+
 - Modify the GUI mathematical expressions syntax to allow only for C syntax for
   if loops.
 
@@ -75,6 +77,12 @@ Numerics and physical modelling:
   bubble stabilization or a sub-stabilization.
 
 Architectural changes:
+
+- Change the writing process of checkpoint files.
+  When a checkpoint file allready exists, the previous one is renamed
+  before the writing of the new one. The old file is then removed
+  if the writing of the new file is successful, thus avoiding
+  possible corrupted files.
 
 - Update Melissa output driver to current Melissa API (c8608e1a6, January 2020)
   * Ensure components of multidimensional arrays are named distinctly, as

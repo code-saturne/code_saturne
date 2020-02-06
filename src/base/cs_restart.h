@@ -956,6 +956,34 @@ int
 cs_restart_is_from_ncfd(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the number of checkpoint files to keep.
+ *
+ * This function sets the number of checkpoint files to keep.
+ * If value is set to -1, all checkpoints are kept.
+ * If more than one file is kept, last one is always named "<prefix>.csc",
+ * while others are names "<prefix_%04d.csc".
+ * %04 provides an id using 4 digits (0 padding), and value is the order
+ * of writing, starting with 0. Hence : prefix_0000.csc, prefix_0001.csc, ...
+ *
+ * \param[in]   nfiles_to_keep  number of checkpoint files to save.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_keep_n_checkpoints(const int nfiles_to_keep);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy the multiwriter structure at the end of the computation.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_multiwriters_destroy_all(void);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

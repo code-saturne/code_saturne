@@ -130,6 +130,20 @@ struct _cs_restart_t {
 
 };
 
+
+typedef struct {
+
+  int    id;           /* Id of the writer */
+
+  char  *name;         /* Name of the checkpoint file */
+  char  *path;         /* Full path to the checkpoint file */
+
+  int    nprev_files;  /* Number of times this file has allready
+                          been written */
+  char **prev_files;   /* Names of the previous versions */
+
+} _cs_restart_multiwriter_t;
+
 /*============================================================================
  * Prototypes for private functions
  *============================================================================*/
@@ -204,6 +218,13 @@ static cs_restart_write_section_t  *_write_section_f = _write_section;
 
 static size_t        _n_locations_ref;    /* Number of locations */
 static _location_t  *_location_ref;       /* Location definition array */
+
+
+/* Restart multi writer */
+static int                          _n_restart_files_to_write = 1;
+static int                          _n_restart_multiwriters   = 0;
+static _cs_restart_multiwriter_t  **_restart_multiwriter      = NULL;
+
 
 /*============================================================================
  * Private function definitions
@@ -1575,6 +1596,218 @@ _update_mesh_checkpoint(void)
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Create and allocate a new multiwriter structure.
+ *
+ * \return  pointer to the allocated object.
+ */
+/*----------------------------------------------------------------------------*/
+static _cs_restart_multiwriter_t *
+_cs_restart_multiwriter_create(void)
+{
+
+  _cs_restart_multiwriter_t *new_writer = NULL;
+  BFT_MALLOC(new_writer, 1, _cs_restart_multiwriter_t);
+
+  new_writer->id          = -1;
+  new_writer->name        = NULL;
+  new_writer->path        = NULL;
+  new_writer->nprev_files = 0;
+  new_writer->prev_files  = NULL;
+
+  return new_writer;
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get a multiwriter using the name of the restart file.
+ *
+ * Returns a pointer to the writer object. If no writer has that name,
+ * a NULL pointer is returned.
+ *
+ * \param[in] name  name of the restart file (char *)
+ *
+ * \return  pointer to the multiwriter object.
+ */
+/*----------------------------------------------------------------------------*/
+static _cs_restart_multiwriter_t *
+_cs_restart_multiwriter_by_name(const char name[])
+{
+
+  _cs_restart_multiwriter_t *writer = NULL;
+  if (_restart_multiwriter != NULL && _n_restart_multiwriters != 0) {
+    for (int i = 0; i < _n_restart_multiwriters; i++) {
+      if (strcmp(_restart_multiwriter[i]->name, name) == 0) {
+        writer = _restart_multiwriter[i];
+        break;
+      }
+    }
+  }
+
+  return writer;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get a multiwriter using the path of the restart file.
+ *
+ * Returns a pointer to the writer object. If no writer has that path,
+ * a NULL pointer is returned.
+ *
+ * \param[in] path  path to the restart file (char *)
+ *
+ * \return  pointer to the multiwriter object.
+ */
+/*----------------------------------------------------------------------------*/
+static _cs_restart_multiwriter_t *
+_cs_restart_multiwriter_by_path(const char path[])
+{
+
+  _cs_restart_multiwriter_t *writer = NULL;
+  if (_restart_multiwriter != NULL && _n_restart_multiwriters != 0) {
+    for (int i = 0; i < _n_restart_multiwriters; i++) {
+      if (strcmp(_restart_multiwriter[i]->path, path) == 0) {
+        writer = _restart_multiwriter[i];
+        break;
+      }
+    }
+  }
+
+  return writer;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Get a multiwriter using its id.
+ *
+ * Returns a pointer to the writer object. If no writer has that id,
+ * a NULL pointer is returned.
+ *
+ * \param[in] id  id of the multiwriter (int)
+ *
+ * \return  pointer to the multiwriter object.
+ */
+/*----------------------------------------------------------------------------*/
+static _cs_restart_multiwriter_t *
+_cs_restart_multiwriter_by_id(const int id)
+{
+
+  _cs_restart_multiwriter_t *writer = NULL;
+  if (id >= 0 && id < _n_restart_multiwriters)
+    writer = _restart_multiwriter[id];
+
+  return writer;
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Add a multiwriter based on a file name and path.
+ *
+ * Returns the id of the multiwriter.
+ *
+ * \param[in] name  name of the restart file (char *)
+ * \param[in] path  path to the restart file (char *)
+ *
+ * \return  id of the newly added multiwriter
+ */
+/*----------------------------------------------------------------------------*/
+static int
+_add_cs_restart_multiwriter(const char name[],
+                            const char path[])
+
+{
+  /* Check if the writer allready exists */
+  for (int i = 0; i < _n_restart_multiwriters; i++) {
+    if (strcmp(_restart_multiwriter[i]->name, name) == 0)
+      return i;
+  }
+
+  /* Check that the file name is neither NULL or empty ("") */
+  if (name == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Null pointer provided as file name.\n"));
+  else if (strlen(name) == 0)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Empty file name was provided.\n"));
+
+  /* Allocate or reallocate the array */
+  if (_n_restart_multiwriters == 0)
+    BFT_MALLOC(_restart_multiwriter,
+               _n_restart_multiwriters + 1,
+               _cs_restart_multiwriter_t *);
+  else
+    BFT_REALLOC(_restart_multiwriter,
+               _n_restart_multiwriters + 1,
+               _cs_restart_multiwriter_t *);
+
+  /* Create the empty structure */
+  _cs_restart_multiwriter_t *new_writer = _cs_restart_multiwriter_create();
+
+  /* Set id */
+  new_writer->id = _n_restart_multiwriters;
+
+  /* Set name */
+  size_t lname = strlen(name) + 1;
+  BFT_MALLOC(new_writer->name, lname, char);
+  strcpy(new_writer->name, name);
+
+  /* Set path to subdir, which can be NULL */
+  const char *_path = path;
+  if (_path != NULL) {
+    if (strlen(_path) == 0)
+      _path = NULL;
+  }
+
+  if (_path != NULL) {
+    size_t lpath = strlen(_path) + 1;
+    BFT_MALLOC(new_writer->path, lpath, char);
+    strcpy(new_writer->path, _path);
+
+  }
+
+  _restart_multiwriter[_n_restart_multiwriters] = new_writer;
+
+  /* Increment the number of writers, and return the newly created
+   * writer index
+   */
+  _n_restart_multiwriters++;
+
+  return new_writer->id;
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Increment the multiwriter previous files list.
+ *
+ * \param[in] mw     pointer to the multiwriter object.
+ * \param[in] fname  name of the file to add to the old files list
+ *
+ */
+/*----------------------------------------------------------------------------*/
+static void
+_cs_restart_multiwriter_increment(_cs_restart_multiwriter_t *mw,
+                                  const char                 fname[])
+{
+
+  mw->nprev_files++;
+
+  if (mw->prev_files == NULL)
+    BFT_MALLOC(mw->prev_files, mw->nprev_files, char *);
+  else
+    BFT_REALLOC(mw->prev_files, mw->nprev_files, char *);
+
+  mw->prev_files[mw->nprev_files - 1] = NULL;
+  size_t lenf = strlen(fname) + 1;
+  BFT_MALLOC(mw->prev_files[mw->nprev_files - 1], lenf, char);
+  strcpy(mw->prev_files[mw->nprev_files - 1], fname);
+
+  return;
+}
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -2017,6 +2250,38 @@ cs_restart_create(const char         *name,
       strncat(_name, name, lname-lext);
       _name[ldir+lname-lext+1] = '\0';
     }
+
+  } else if (mode == CS_RESTART_MODE_WRITE) {
+    /* Check if file allready exists, and if so rename and delete if needed */
+    int writer_id = _add_cs_restart_multiwriter(name, _name);
+    _cs_restart_multiwriter_t *mw = _cs_restart_multiwriter_by_id(writer_id);
+    /* Rename an allready existing file */
+    if (cs_file_isreg(_name)) {
+      char *_re_name = NULL;
+      BFT_MALLOC(_re_name, ldir + lname + 2 + 5, char);
+      strcpy(_re_name, _path);
+      _re_name[ldir] = _dir_separator;
+      _re_name[ldir+1] = '\0';
+
+      char _file_number[6];
+      sprintf(_file_number, "_%04d", mw->nprev_files);
+      if ( cs_file_endswith(name, _extension)) {
+        lext = strlen(_extension);
+        strncat(_re_name, name, lname - lext);
+        strncat(_re_name, _file_number, 5);
+        strncat(_re_name, _extension, lext);
+      } else {
+        strncat(_re_name, name, lname);
+        strncat(_re_name, _file_number, 5);
+      }
+      _re_name[ldir + lname + 1 + 5] = '\0';
+
+      rename(_name, _re_name);
+
+      _cs_restart_multiwriter_increment(mw, _re_name);
+
+      BFT_FREE(_re_name);
+    }
   }
 
   int name_has_extension = cs_file_endswith(name, _extension);
@@ -2094,6 +2359,20 @@ cs_restart_destroy(cs_restart_t  **restart)
 
   if (r->fh != NULL)
     cs_io_finalize(&(r->fh));
+
+  /* Remove previous files if needed */
+  if (mode == CS_RESTART_MODE_WRITE) {
+    _cs_restart_multiwriter_t *mw = _cs_restart_multiwriter_by_path(r->name);
+    if (mw != NULL) {
+      if (_n_restart_files_to_write != -1) {
+        int nfiles_to_remove = mw->nprev_files - _n_restart_files_to_write + 1;
+        if (nfiles_to_remove > 0) {
+          for (int ii = 0; ii < nfiles_to_remove; ii++)
+            cs_file_remove(mw->prev_files[ii]);
+        }
+      }
+    }
+  }
 
   /* Free locations array */
 
@@ -3791,6 +4070,60 @@ cs_restart_is_from_ncfd(void)
   return _restart_from_ncfd;
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set the number of checkpoint files to keep.
+ *
+ * This function sets the number of checkpoint files to keep.
+ * If value is set to -1, all checkpoints are kept.
+ * If more than one file is kept, last one is always named "<prefix>.csc",
+ * while others are names "<prefix_%04d.csc".
+ * %04 provides an id using 4 digits (0 padding), and value is the order
+ * of writing, starting with 0. Hence : prefix_0000.csc, prefix_0001.csc, ...
+ *
+ * \param[in]   nfiles_to_keep  number of checkpoint files to save.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_keep_n_checkpoints(const int nfiles_to_keep)
+{
+  _n_restart_files_to_write = nfiles_to_keep;
+
+  return;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Destroy the multiwriter structure at the end of the computation.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_restart_multiwriters_destroy_all(void)
+{
+
+  if (_restart_multiwriter != NULL) {
+    for (int i = 0; i < _n_restart_multiwriters; i++) {
+      _cs_restart_multiwriter_t *w = _restart_multiwriter[i];
+
+      BFT_FREE(w->name);
+      BFT_FREE(w->path);
+
+      for (int j = 0; j < w->nprev_files; j++)
+        BFT_FREE(w->prev_files[j]);
+      BFT_FREE(w->prev_files);
+
+      BFT_FREE(w);
+
+    }
+    BFT_FREE(_restart_multiwriter);
+  }
+
+  return;
+
+}
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

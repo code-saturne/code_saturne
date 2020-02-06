@@ -1084,6 +1084,19 @@ cs_user_parameters(cs_domain_t *domain)
   /*! [reboud_activ] */
   cavit_param->icvevm = 1;
   /*! [reboud_activ] */
+
+  /* Example: Change the number of checkpoint files which are saved. */
+  /*-----------------------------------------------------------------*/
+
+  /* By default, only one checkpoint file (last, end of run) is kept.
+   * If it is wished to keep more (debugging purposes for example),
+   * it can be chaned.
+   * Herebelow is an example showing how to keep the last two files:
+   */
+
+  /*! [change_nsave_checkpoint_files] */
+  cs_restart_keep_n_checkpoints(2);
+  /*! [change_nsave_checkpoint_files] */
 }
 
 /*----------------------------------------------------------------------------*/

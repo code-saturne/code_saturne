@@ -484,6 +484,9 @@ _run(void)
 
   cs_control_finalize();
 
+  /* Free the checkpoint multiwriter structure */
+  cs_restart_multiwriters_destroy_all();
+
   /* Print some mesh statistics */
 
   cs_gui_usage_log();
