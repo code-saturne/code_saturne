@@ -60,13 +60,11 @@ BEGIN_C_DECLS
  *         Case of multiplicative block preconditioner for a CG
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
- * \param[in, out] a        pointer to PETSc Matrix context
  * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 void
 cs_navsto_sles_amg_block_hook(void     *context,
-                              Mat       a,
                               KSP       ksp);
 #endif
 

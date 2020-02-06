@@ -296,6 +296,60 @@ _face_gdot(cs_lnum_t    size,
 }
 
 #if defined(HAVE_PETSC)
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Setup the main iterative solver for the velocity block
+ *
+ * \param[in]      model    type of model related to the Navsto system
+ * \param[in]      nslesp   set of parameter for the monolithic SLES
+ * \param[in]      slesp    set of parameters for the velocity SLES
+ * \param[in, out] ksp      pointer to PETSc KSP context
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_set_petsc_main_solver(const cs_navsto_param_model_t   model,
+                       const cs_navsto_param_sles_t    nslesp,
+                       const cs_param_sles_t           slesp,
+                       KSP                             ksp)
+{
+  if (model & CS_NAVSTO_MODEL_STOKES)
+    KSPSetType(ksp, KSPFCG);
+
+  else { /* Advection is present, so one needs a more genric iterative solver */
+
+    const int  n_max_restart = 30;
+
+    KSPSetType(ksp, KSPFGMRES);
+    KSPGMRESSetRestart(ksp, n_max_restart);
+  }
+
+  /* Set KSP tolerances */
+  PetscReal rtol, abstol, dtol;
+  PetscInt  max_it;
+  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
+  KSPSetTolerances(ksp,
+                   nslesp.algo_tolerance,   /* relative convergence tolerance */
+                   abstol,                  /* absolute convergence tolerance */
+                   dtol,                    /* divergence tolerance */
+                   nslesp.algo_n_max_iter); /* max number of iterations */
+
+  switch (slesp.resnorm_type) {
+
+  case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
+    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+    break;
+  case CS_PARAM_RESNORM_NONE:
+    KSPSetNormType(ksp, KSP_NORM_NONE);
+    break;
+
+  default:
+    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
+    break;
+  }
+
+}
+
 #if defined(PETSC_HAVE_HYPRE)
 /*----------------------------------------------------------------------------*/
 /*!
@@ -649,15 +703,15 @@ _set_velocity_ksp(const cs_param_sles_t    slesp,
 /*----------------------------------------------------------------------------
  * \brief  Function pointer: setup hook for setting PETSc solver and
  *         preconditioner.
- *         Case of additive block preconditioner for a GMRES
+ *         Case of additive block preconditioner
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
  * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
-_additive_amg_gmres_hook(void     *context,
-                         KSP       ksp)
+_additive_amg_hook(void     *context,
+                   KSP       ksp)
 {
   IS  isv, isp;
 
@@ -666,37 +720,11 @@ _additive_amg_gmres_hook(void     *context,
   cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
   cs_param_sles_t  slesp = eqp->sles_param;
 
-  const int  n_max_restart = 30;
-
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
 
-  KSPSetType(ksp, KSPFGMRES);
-  KSPGMRESSetRestart(ksp, n_max_restart);
-
-  /* Set KSP tolerances */
-  PetscReal rtol, abstol, dtol;
-  PetscInt  max_it;
-  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
-  KSPSetTolerances(ksp,
-                   nslesp.algo_tolerance,   /* relative convergence tolerance */
-                   abstol,                  /* absolute convergence tolerance */
-                   dtol,                    /* divergence tolerance */
-                   nslesp.algo_n_max_iter); /* max number of iterations */
-
-  switch (slesp.resnorm_type) {
-
-  case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
-    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-  case CS_PARAM_RESNORM_NONE:
-    KSPSetNormType(ksp, KSP_NORM_NONE);
-    break;
-  default:
-    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-
-  }
+  /* Set the main iterative solver for the velocity block */
+  _set_petsc_main_solver(nsp->model, nslesp, slesp, ksp);
 
   /* Apply modifications to the KSP structure */
   PC up_pc, p_pc;
@@ -731,7 +759,7 @@ _additive_amg_gmres_hook(void     *context,
   PCSetUp(p_pc);
   KSPSetUp(p_ksp);
 
-  /* Set the velocity block */
+  /* Set the KSP used as preconditioner for the velocity block */
   _set_velocity_ksp(slesp, slesp.eps, slesp.n_max_iter, up_subksp[0]);
 
   /* User function for additional settings */
@@ -759,15 +787,15 @@ _additive_amg_gmres_hook(void     *context,
 /*----------------------------------------------------------------------------
  * \brief  Function pointer: setup hook for setting PETSc solver and
  *         preconditioner.
- *         Case of multiplicative block preconditioner for a GMRES
+ *         Case of multiplicative block preconditioner
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
  * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
-_multiplicative_gmres_hook(void     *context,
-                           KSP       ksp)
+_multiplicative_hook(void     *context,
+                     KSP       ksp)
 {
   IS  isv, isp;
 
@@ -776,37 +804,8 @@ _multiplicative_gmres_hook(void     *context,
   cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
   cs_param_sles_t  slesp = eqp->sles_param;
 
-  const int  n_max_restart = 30;
-
-  cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
-                                     SIGFPE detection */
-
-  KSPSetType(ksp, KSPFGMRES);
-  KSPGMRESSetRestart(ksp, n_max_restart);
-
-  /* Set KSP tolerances */
-  PetscReal rtol, abstol, dtol;
-  PetscInt  max_it;
-  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
-  KSPSetTolerances(ksp,
-                   nslesp.algo_tolerance,   /* relative convergence tolerance */
-                   abstol,                  /* absolute convergence tolerance */
-                   dtol,                    /* divergence tolerance */
-                   nslesp.algo_n_max_iter); /* max number of iterations */
-
-  switch (slesp.resnorm_type) {
-
-  case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
-    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-  case CS_PARAM_RESNORM_NONE:
-    KSPSetNormType(ksp, KSP_NORM_NONE);
-    break;
-  default:
-    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-
-  }
+  /* Set the main iterative solver for the velocity block */
+  _set_petsc_main_solver(nsp->model, nslesp, slesp, ksp);
 
   /* Apply modifications to the KSP structure */
   PC up_pc, p_pc;
@@ -869,15 +868,15 @@ _multiplicative_gmres_hook(void     *context,
 /*----------------------------------------------------------------------------
  * \brief  Function pointer: setup hook for setting PETSc solver and
  *         preconditioner.
- *         Case of diagonal Schur preconditioner by block for a GMRES
+ *         Case of diagonal Schur preconditioner by block
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
  * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
-_diag_schur_gmres_hook(void     *context,
-                       KSP       ksp)
+_diag_schur_hook(void     *context,
+                 KSP       ksp)
 {
   IS  isv, isp;
 
@@ -886,37 +885,11 @@ _diag_schur_gmres_hook(void     *context,
   cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
   cs_param_sles_t  slesp = eqp->sles_param;
 
-  const int  n_max_restart = 30;
-
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
 
-  KSPSetType(ksp, KSPFGMRES);
-  KSPGMRESSetRestart(ksp, n_max_restart);
-
-  /* Set KSP tolerances */
-  PetscReal rtol, abstol, dtol;
-  PetscInt  max_it;
-  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
-  KSPSetTolerances(ksp,
-                   nslesp.algo_tolerance,   /* relative convergence tolerance */
-                   abstol,                  /* absolute convergence tolerance */
-                   dtol,                    /* divergence tolerance */
-                   nslesp.algo_n_max_iter); /* max number of iterations */
-
-  switch (slesp.resnorm_type) {
-
-  case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
-    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-  case CS_PARAM_RESNORM_NONE:
-    KSPSetNormType(ksp, KSP_NORM_NONE);
-    break;
-  default:
-    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-
-  }
+  /* Set the main iterative solver for the velocity block */
+  _set_petsc_main_solver(nsp->model, nslesp, slesp, ksp);
 
   /* Apply modifications to the KSP structure */
   PC up_pc, p_pc;
@@ -980,15 +953,15 @@ _diag_schur_gmres_hook(void     *context,
 /*----------------------------------------------------------------------------
  * \brief  Function pointer: setup hook for setting PETSc solver and
  *         preconditioner.
- *         Case of upper Schur preconditioner by block for a GMRES
+ *         Case of upper Schur preconditioner by block
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
  * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
-_upper_schur_gmres_hook(void     *context,
-                        KSP       ksp)
+_upper_schur_hook(void     *context,
+                  KSP       ksp)
 {
   IS  isv, isp;
 
@@ -997,37 +970,11 @@ _upper_schur_gmres_hook(void     *context,
   cs_equation_param_t  *eqp = cs_equation_param_by_name("momentum");
   cs_param_sles_t  slesp = eqp->sles_param;
 
-  const int  n_max_restart = 30;
-
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
 
-  KSPSetType(ksp, KSPFGMRES);
-  KSPGMRESSetRestart(ksp, n_max_restart);
-
-  /* Set KSP tolerances */
-  PetscReal rtol, abstol, dtol;
-  PetscInt  max_it;
-  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
-  KSPSetTolerances(ksp,
-                   nslesp.algo_tolerance,   /* relative convergence tolerance */
-                   abstol,                  /* absolute convergence tolerance */
-                   dtol,                    /* divergence tolerance */
-                   nslesp.algo_n_max_iter); /* max number of iterations */
-
-  switch (slesp.resnorm_type) {
-
-  case CS_PARAM_RESNORM_NORM2_RHS: /* Try to have "true" norm */
-    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-  case CS_PARAM_RESNORM_NONE:
-    KSPSetNormType(ksp, KSP_NORM_NONE);
-    break;
-  default:
-    KSPSetNormType(ksp, KSP_NORM_UNPRECONDITIONED);
-    break;
-
-  }
+  /* Set the main iterative solver for the velocity block */
+  _set_petsc_main_solver(nsp->model, nslesp, slesp, ksp);
 
   /* Apply modifications to the KSP structure */
   PC up_pc, p_pc;
@@ -1092,8 +1039,7 @@ _upper_schur_gmres_hook(void     *context,
 /*----------------------------------------------------------------------------
  * \brief  Function pointer: setup hook for setting PETSc solver and
  *         preconditioner.
- *         Case of GKB as a solver with CG(Boomer) as inner solver for the
- *         velocity block.
+ *         Case of GKB as a solver.
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
  * \param[in, out] ksp      pointer to PETSc KSP context
@@ -1170,15 +1116,15 @@ _gkb_hook(void     *context,
 /*----------------------------------------------------------------------------
  * \brief  Function pointer: setup hook for setting PETSc solver and
  *         preconditioner.
- *         Case of GKB preconditioner. by block for a GMRES
+ *         Case of GKB as a preconditioner.
  *
  * \param[in, out] context  pointer to optional (untyped) value or structure
  * \param[in, out] ksp      pointer to PETSc KSP context
  *----------------------------------------------------------------------------*/
 
 static void
-_gkb_gmres_hook(void     *context,
-                KSP       ksp)
+_gkb_precond_hook(void     *context,
+                  KSP       ksp)
 {
   IS  isv, isp;
 
@@ -1190,16 +1136,8 @@ _gkb_gmres_hook(void     *context,
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
 
-  KSPSetType(ksp, KSPFGMRES);
-
-  PetscReal rtol, abstol, dtol;
-  PetscInt  max_it;
-  KSPGetTolerances(ksp, &rtol, &abstol, &dtol, &max_it);
-  KSPSetTolerances(ksp,
-                   nslesp.algo_tolerance,   /* relative convergence tolerance */
-                   abstol,                  /* absolute convergence tolerance */
-                   dtol,                    /* divergence tolerance */
-                   nslesp.algo_n_max_iter); /* max number of iterations */
+  /* Set the main iterative solver for the velocity block */
+  _set_petsc_main_solver(nsp->model, nslesp, slesp, ksp);
 
   /* Apply modifications to the KSP structure */
   PC up_pc;
@@ -1231,8 +1169,8 @@ _gkb_gmres_hook(void     *context,
   assert(n_split == 2);
 
   /* Set KSP tolerances */
-  max_it = 50;
-  rtol = 1e-2;
+  PetscInt  max_it = 50;
+  PetscReal  rtol = 1e-2;
   _set_velocity_ksp(slesp, rtol, max_it, up_subksp[0]);
 
   /* User function for additional settings */
@@ -2211,7 +2149,7 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
     cs_sles_petsc_define(field_id,
                          NULL,
                          MATMPIAIJ,
-                         _gkb_gmres_hook,
+                         _gkb_precond_hook,
                          (void *)nsp);
     break;
 #else
@@ -2241,7 +2179,7 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
     cs_sles_petsc_define(field_id,
                          NULL,
                          MATMPIAIJ,
-                         _additive_amg_gmres_hook,
+                         _additive_amg_hook,
                          (void *)nsp);
     break;
 
@@ -2250,7 +2188,7 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
     cs_sles_petsc_define(field_id,
                          NULL,
                          MATMPIAIJ,
-                         _multiplicative_gmres_hook,
+                         _multiplicative_hook,
                          (void *)nsp);
     break;
 
@@ -2259,7 +2197,7 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
     cs_sles_petsc_define(field_id,
                          NULL,
                          MATMPIAIJ,
-                         _diag_schur_gmres_hook,
+                         _diag_schur_hook,
                          (void *)nsp);
     break;
 
@@ -2268,7 +2206,7 @@ cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
     cs_sles_petsc_define(field_id,
                          NULL,
                          MATMPIAIJ,
-                         _upper_schur_gmres_hook,
+                         _upper_schur_hook,
                          (void *)nsp);
     break;
 

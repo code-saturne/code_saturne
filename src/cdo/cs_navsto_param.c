@@ -898,6 +898,45 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve the \ref cs_equation_param_t structure related to the
+ *         velocity equation (momentum equation in most of the cases)
+ *
+ * \param[in]  nsp    pointer to a cs_navsto_param_t structure
+ *
+ * \return a pointer to the set of parameters related to the momentum equation
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_param_t *
+cs_navsto_param_get_velocity_param(const cs_navsto_param_t    *nsp)
+{
+  cs_equation_param_t  *eqp = NULL;
+
+  switch (nsp->coupling) {
+
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+  case CS_NAVSTO_COUPLING_MONOLITHIC:
+  case CS_NAVSTO_COUPLING_UZAWA:
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
+    eqp = cs_equation_param_by_name("momentum");
+    break;
+
+  case CS_NAVSTO_COUPLING_PROJECTION:
+    eqp = cs_equation_param_by_name("velocity_prediction");
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid coupling algorithm", __func__);
+    break;
+
+  }
+
+  return eqp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Retrieve the name of the coupling algorithm
  *
  * \param[in]     coupling    a \ref cs_navsto_param_coupling_t

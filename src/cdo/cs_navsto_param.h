@@ -917,6 +917,20 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve the \ref cs_equation_param_t structure related to the
+ *         velocity equation (momentum equation in most of the cases)
+ *
+ * \param[in]  nsp    pointer to a cs_navsto_param_t structure
+ *
+ * \return a pointer to the set of parameters related to the momentum equation
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_param_t *
+cs_navsto_param_get_velocity_param(const cs_navsto_param_t    *nsp);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Retrieve the name of the coupling algorithm
  *
  * \param[in]     coupling    a \ref cs_navsto_param_coupling_t

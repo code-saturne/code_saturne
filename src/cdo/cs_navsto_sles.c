@@ -39,6 +39,7 @@
 #include <bft_error.h>
 
 #include "cs_fp_exception.h"
+#include "cs_navsto_param.h"
 
 #if defined(HAVE_PETSC)
 #include "cs_sles_petsc.h"
@@ -207,13 +208,19 @@ void
 cs_navsto_sles_amg_block_hook(void     *context,
                               KSP       ksp)
 {
-  cs_equation_param_t  *eqp = (cs_equation_param_t *)context;
+  const cs_navsto_param_t  *nsp = (cs_navsto_param_t *)context;
+
+  cs_equation_param_t  *eqp = cs_navsto_param_get_velocity_param(nsp);
   cs_param_sles_t  slesp = eqp->sles_param;
 
   cs_fp_exception_disable_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
 
-  KSPSetType(ksp, KSPFCG);
+  cs_navsto_param_model_t  model = nsp->model;
+  if (model & CS_NAVSTO_MODEL_STOKES)
+    KSPSetType(ksp, KSPFCG);
+  else
+    KSPSetType(ksp, KSPFGMRES);
 
   /* Set KSP tolerances */
   PetscReal rtol, abstol, dtol;
