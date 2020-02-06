@@ -148,6 +148,7 @@ _pkg_fluid_prop_dict = {}
 _pkg_fluid_prop_dict['code_saturne'] = {'rho0':'ro0',
                                         'mu0':'viscl0',
                                         'p0':'p0',
+                                        't0':'t0',
                                         'cp0':'cp0'}
 
 _pkg_fluid_prop_dict['neptune_cfd'] = {'rho0':'ro0',
