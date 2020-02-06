@@ -204,7 +204,6 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
 
       /* Local square dense matrices used during the construction of
          operators */
-      cb->hdg = cs_sdm_square_create(n_fc);
       cb->loc = cs_sdm_square_create(n_fc + 1);
       cb->aux = cs_sdm_square_create(n_fc + 1);
     }
@@ -240,9 +239,6 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
       const int g_size = 9;                   /* basis (P_(k+1)) - 1 */
       for (int i = 0; i < n_fc; i++) cb->ids[i] = 3;
       cb->ids[n_fc] = 4;
-
-      int  _sizes[3] = {1, 3, 6}; /* c0, cs-1, cs_kp1 - cs */
-      cb->hdg = cs_sdm_block_create(1, 3, &g_size, _sizes);
       cb->loc = cs_sdm_block_create(n_fc + 1, n_fc + 1, cb->ids, cb->ids);
       cb->aux = cs_sdm_block_create(n_fc + 1, 1, cb->ids, &g_size); /* R_g^T */
     }
@@ -278,9 +274,6 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
       const int g_size = 19; /* basis (P_(k+1)) - 1 */
       for (int i = 0; i < n_fc; i++) cb->ids[i] = 6;
       cb->ids[n_fc] = 10;
-
-      int  _sizes[3] = {1, 9, 10}; /* c0, cs-1, cs_kp1 - cs */
-      cb->hdg = cs_sdm_block_create(1, 3, &g_size, _sizes);
       cb->loc = cs_sdm_block_create(n_fc + 1, n_fc + 1, cb->ids, cb->ids);
       cb->aux = cs_sdm_block_create(n_fc + 1, 1, cb->ids, &g_size); /* R_g^T */
     }
@@ -296,14 +289,13 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Initialize the local structures for the current cell
+ * \brief   Initialize the localstructures for the current cell.
+ *          Case of scalar-valued HHO schemes
  *
- * \param[in]      cell_flag   flag related to the current cell
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
- * \param[in]      eqc         pointer to a cs_hho_scaleq_t structure
- * \param[in]      t_eval      time at which one performs the evaluation
+ * \param[in]      eqc         pointer to a cs_hho_vecteq_t structure
  * \param[in, out] hhob        pointer to a cs_hho_builder_t structure
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
@@ -311,15 +303,13 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
 /*----------------------------------------------------------------------------*/
 
 static void
-_init_cell_system(const cs_flag_t               cell_flag,
-                  const cs_cell_mesh_t         *cm,
-                  const cs_equation_param_t    *eqp,
-                  const cs_equation_builder_t  *eqb,
-                  const cs_hho_scaleq_t        *eqc,
-                  cs_real_t                     t_eval,
-                  cs_hho_builder_t             *hhob,
-                  cs_cell_sys_t                *csys,
-                  cs_cell_builder_t            *cb)
+_shho_init_cell_system(const cs_cell_mesh_t         *cm,
+                       const cs_equation_param_t    *eqp,
+                       const cs_equation_builder_t  *eqb,
+                       const cs_hho_scaleq_t        *eqc,
+                       cs_hho_builder_t             *hhob,
+                       cs_cell_sys_t                *csys,
+                       cs_cell_builder_t            *cb)
 {
   const int  n_dofs = eqc->n_cell_dofs + cm->n_fc*eqc->n_face_dofs;
   const int  n_blocks = cm->n_fc + 1;
@@ -331,7 +321,6 @@ _init_cell_system(const cs_flag_t               cell_flag,
 
   csys->c_id = cm->c_id;
   csys->n_dofs = n_dofs;
-  csys->cell_flag = cell_flag;
 
   /* Initialize the local system */
   cs_cell_sys_reset(cm->n_fc, csys);
@@ -360,7 +349,7 @@ _init_cell_system(const cs_flag_t               cell_flag,
 
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
-  if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
+  if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
     /* Identify which face is a boundary face */
     for (short int f = 0; f < cm->n_fc; f++) {
@@ -397,7 +386,7 @@ _init_cell_system(const cs_flag_t               cell_flag,
           cs_hho_builder_compute_dirichlet(eqp->bc_defs[def_id],
                                            f,
                                            cm,
-                                           t_eval,
+                                           cb->t_bc_eval,
                                            cb,
                                            hhob,
                                            dir_reduction);
@@ -1125,8 +1114,6 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
     int  t_id = 0;
 #endif
 
-    const cs_real_t  t_eval_pty = t_cur + 0.5*dt_cur;
-
     /* Set inside the OMP section so that each thread has its own value
      * Each thread get back its related structures:
      * Get the cell-wise view of the mesh and the algebraic system */
@@ -1136,8 +1123,28 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
     cs_cell_builder_t  *cb = cs_hho_cell_bld[t_id];
     cs_hho_builder_t  *hhob = cs_hho_builders[t_id];
 
+    cb->t_pty_eval = t_cur + eqp->theta*dt_cur;
+    cb->t_bc_eval = t_cur + dt_cur;
+
+    cs_property_data_t  *diff_pty = NULL;
+    BFT_MALLOC(diff_pty, 1, cs_property_data_t);
+    cs_property_data_init(true, true, eqp->diffusion_property, diff_pty);
+
     /* Initialization of the values of properties */
-    cs_equation_init_properties(eqp, eqb, t_eval_pty, cb);
+    cs_equation_init_properties(eqp, eqb, NULL, cb);
+
+    if (cs_equation_param_has_diffusion(eqp)) {
+
+      cs_property_get_cell_tensor(0,
+                                  cb->t_pty_eval,
+                                  eqp->diffusion_property,
+                                  eqp->diffusion_hodgep.inv_pty,
+                                  diff_pty->tensor);
+
+      if (diff_pty->is_iso)
+        diff_pty->value = diff_pty->tensor[0][0];
+
+    }
 
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
@@ -1146,19 +1153,17 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
 #   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
-      const cs_flag_t  cell_flag = connect->cell_flag[c_id];
-      const cs_eflag_t  msh_flag = cs_equation_cell_mesh_flag(cell_flag, eqb);
+      cb->cell_flag = connect->cell_flag[c_id];
 
       /* Set the local mesh structure for the current cell */
-      cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
+      cs_cell_mesh_build(c_id, cs_equation_cell_mesh_flag(cb->cell_flag, eqb),
+                         connect, quant, cm);
 
       /* Define set of basis functions for cell faces and the current cell */
       cs_hho_builder_cellwise_setup(cm, cb, hhob);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
-      _init_cell_system(cell_flag, cm, eqp, eqb, eqc,
-                        t_cur + dt_cur, /* For Dirichlet up to now */
-                        hhob, csys, cb);
+      _shho_init_cell_system(cm, eqp, eqb, eqc, hhob, csys, cb);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HHO_SCALEQ_DBG > 2
       if (cs_dbg_cw_test(eqp, cm, csys)) cs_cell_mesh_dump(cm);
@@ -1171,15 +1176,24 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
 
       if (cs_equation_param_has_diffusion(eqp)) {
 
-        /* Define the local stiffness matrix */
-        if (!(eqb->diff_pty_uniform))
-          cs_equation_set_diffusion_property_cw(eqp, cm, t_eval_pty, cell_flag,
-                                                cb);
+        if (!(eqb->diff_pty_uniform)) {
 
-        cs_hho_builder_compute_grad_reco(cm, cb, hhob);
+          cs_property_tensor_in_cell(cm,
+                                     eqp->diffusion_property,
+                                     cb->t_pty_eval,
+                                     eqp->diffusion_hodgep.inv_pty,
+                                     diff_pty->tensor);
+
+          if (diff_pty->is_iso)
+            diff_pty->value = diff_pty->tensor[0][0];
+
+        }
+
+        /* Define the local stiffness matrix */
+        cs_hho_builder_compute_grad_reco(cm, diff_pty, cb, hhob);
 
         /* Local matrix owned by the cellwise builder (store in cb->loc) */
-        cs_hho_builder_diffusion(cm, cb, hhob);
+        cs_hho_builder_diffusion(cm, diff_pty, cb, hhob);
 
         /* Add the local diffusion operator to the local system */
         cs_sdm_block_add(csys->mat, cb->loc);
@@ -1206,7 +1220,7 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
                                         cm,
                                         eqb->source_mask,
                                         eqb->compute_source,
-                                        t_eval_pty,
+                                        cb->t_bc_eval,
                                         hhob,   /* input structure */
                                         cb,     /* mass matrix is cb->hdg */
                                         csys->source);
@@ -1247,15 +1261,15 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
 
       /* TODO: Neumann boundary conditions */
 
-      if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
+      if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
         if (cs_equation_param_has_diffusion(eqp)) {
 
           /* Weakly enforced Dirichlet BCs for cells attached to the boundary
              csys is updated inside (matrix and rhs)
-             eqp->diffusion_hodge is a dummy parameter (not used)
+             fm = NULL, hodge = NULL (not useful in the current cntext)
           */
-          eqc->enforce_dirichlet(eqp, cm, NULL, cb, csys);
+          eqc->enforce_dirichlet(eqp, cm, NULL, NULL, cb, csys);
 
         } /* diffusion term */
 
@@ -1281,6 +1295,8 @@ cs_hho_scaleq_build_system(const cs_mesh_t            *mesh,
       }
 
     } /* Main loop on cells */
+
+    BFT_FREE(diff_pty);
 
   } /* OPENMP Block */
 
@@ -1353,8 +1369,6 @@ cs_hho_scaleq_update_field(const cs_real_t            *solu,
     cs_cell_builder_t  *cb = cs_hho_cell_bld[t_id];
     cs_hho_builder_t  *hhob = cs_hho_builders[t_id];
 
-    /* Set inside the OMP section so that each thread has its own value */
-
     /* ----------------------------------------------------------- */
     /* Main loop on cells to reconstruct the field at cell centers */
     /* ----------------------------------------------------------- */
@@ -1363,11 +1377,12 @@ cs_hho_scaleq_update_field(const cs_real_t            *solu,
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       const cs_lnum_t  c2f_shift = connect->c2f->idx[c_id];
-      const cs_flag_t  cell_flag = connect->cell_flag[c_id];
-      const cs_eflag_t  msh_flag = cs_equation_cell_mesh_flag(cell_flag, eqb);
+
+      cb->cell_flag = connect->cell_flag[c_id];
 
       /* Set the local mesh structure for the current cell */
-      cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
+      cs_cell_mesh_build(c_id, cs_equation_cell_mesh_flag(cb->cell_flag, eqb),
+                         connect, quant, cm);
 
       /* Define set of basis functions for cell faces and the current cell */
       cs_hho_builder_cellbasis_setup(cm, cb, hhob);
@@ -1401,9 +1416,9 @@ cs_hho_scaleq_update_field(const cs_real_t            *solu,
         field_val[c_id] += cphi_eval[i] * c_vals[i];
       }
 
-    } // Main loop on cells
+    } /* Main loop on cells */
 
-  } // OPENMP Block
+  } /* OPENMP Block */
 
   /* Set the computed solution in field array */
   memcpy(eqc->face_values, solu, sizeof(cs_real_t)*eqc->n_dofs);
@@ -1412,9 +1427,9 @@ cs_hho_scaleq_update_field(const cs_real_t            *solu,
   cs_dbg_darray_to_listing("FINAL FACE_VALUES",
                            eqc->n_dofs, eqc->face_values, eqc->n_face_dofs);
   cs_dbg_darray_to_listing("FINAL CELL_VALUES", quant->n_cells,
-                             eqc->cell_values, eqc->n_cell_dofs);
+                           eqc->cell_values, eqc->n_cell_dofs);
   cs_dbg_darray_to_listing("FINAL CELL_CENTER_VALUES", quant->n_cells,
-                             field_val, 1);
+                           field_val, 1);
 #endif
 
   cs_timer_t  t1 = cs_timer_time();

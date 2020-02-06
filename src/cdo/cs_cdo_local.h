@@ -52,28 +52,37 @@ BEGIN_C_DECLS
 /*! \struct cs_cell_builder_t
  *  \brief Set of local and temporary buffers useful for building the algebraic
  *  system with a cellwise process. This structure belongs to one thread.
+ *
+ * \var t_pty_val
+ * Time at which one evaluates the properties
+ *
+ * \var t_bc_eval
+ * Time at which one evaluates the boundary conditions
+ *
+ * \var t_st_eval
+ * Time at which one evaluates the source terms
+ *
+ * \var cell_flag
+ * Metadata related to the current cell
  */
+
 typedef struct {
 
-  /* Specific members for the weakly enforcement of Dirichlet BCs (diffusion) */
-  double     eig_ratio; /*!< ratio of the eigenvalues of the diffusion tensor */
-  double     eig_max;   /*!< max. value among eigenvalues */
+  cs_real_t     t_pty_eval;
+  cs_real_t     t_bc_eval;
+  cs_real_t     t_st_eval;
+  cs_flag_t     cell_flag;
 
-  /* Store the cellwise value for the diffusion, curl-curl, grad-div, time
-     and reaction properties */
-  cs_real_33_t  dpty_mat; /*!< Property tensor if not isotropic for diffusion */
-  double        dpty_val; /*!< Property value if isotropic for diffusion */
+  /* Store the cellwise value for the grad-div, the time and reaction properties
+   * since the associated Hodge operator is linked to the unity as related
+   * property */
 
-  cs_real_33_t  cpty_mat; /*!< Property tensor if not isotropic for curl-curl */
-  double        cpty_val; /*!< Property value if isotropic for curl-curl */
-
-  double        gpty_val; /*!< Property value if isotropic for grad-div */
-
-  double        tpty_val; /*!< Property value for time operator */
+  double        gpty_val;  /*!< Property value for the grad-div operator */
+  double        tpty_val;  /*!< Property value for the time operator */
 
   /*! Property values for the reaction operator */
   double        rpty_vals[CS_CDO_N_MAX_REACTIONS];
-  double        rpty_val; /*!< Sum of all reaction property values  */
+  double        rpty_val;  /*!< Sum of all reaction property values  */
 
   /* Advection-related values */
   double       *adv_fluxes;
@@ -85,7 +94,6 @@ typedef struct {
   cs_real_3_t  *vectors; /*!< local 3-dimensional vectors */
 
   /* Structures used to build specific terms composing the algebraic system */
-  cs_sdm_t     *hdg;   /*!< local hodge matrix for diffusion (may be NULL) */
   cs_sdm_t     *loc;   /*!< local square matrix of size n_cell_dofs */
   cs_sdm_t     *aux;   /*!< auxiliary local square matrix of size n_cell_dofs */
 
@@ -99,10 +107,8 @@ typedef struct {
 typedef struct {
 
   cs_lnum_t   c_id;       /*!< cell id  */
-  cs_flag_t   cell_flag;  /*!< matadata related to the cell */
 
   int         n_dofs;   /*!< Number of Degrees of Freedom (DoFs) in this cell */
-
   cs_lnum_t  *dof_ids;  /*!< DoF ids */
   cs_flag_t  *dof_flag; /*!< size = number of DoFs */
 

@@ -32,6 +32,7 @@
 
 #include <assert.h>
 #include <ctype.h>
+#include <float.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -424,6 +425,27 @@ cs_property_set_option(cs_property_t       *pty,
 
 }
 
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the reference value associated to a \ref cs_property_t structure
+ *         This is a real number even whatever the type of property is.
+ *
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       refval   value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_set_reference_value(cs_property_t    *pty,
+                                double            refval)
+{
+  if (pty == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
+
+  pty->ref_value = refval;
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Free all cs_property_t structures and the array storing all the
@@ -556,22 +578,63 @@ cs_property_finalize_setup(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the reference value associated to a \ref cs_property_t structure
- *         This is a real number even whatever the type of property is.
+ * \brief  Initialize a \ref cs_property_data_t structure. If property is NULL
+ *         then one considers that this is a unitary property
  *
- * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       refval   value to set
+ * \param[in]      need_tensor  true if one needs a tensor-valued evaluation
+ * \param[in]      need_eigen   true if one needs an evaluation of eigen values
+ * \param[in]      property     pointer to the \ref cs_property_t structure
+ * \param[in, out] data         structure to initialize (already allocated)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_set_reference_value(cs_property_t    *pty,
-                                double            refval)
+cs_property_data_init(bool                     need_tensor,
+                      bool                     need_eigen,
+                      const cs_property_t     *property,
+                      cs_property_data_t      *data)
 {
-  if (pty == NULL)
-    bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
+  if (data == NULL)
+    return;
 
-  pty->ref_value = refval;
+  data->property = property;
+
+  data->is_unity = false;
+  data->is_iso = false;
+
+  if (property == NULL) {
+    data->is_iso = true;
+    data->is_unity = true;
+  }
+  else {
+
+    if (property->type & CS_PROPERTY_ISO) {
+      data->is_iso = true;
+
+      if (property->n_definitions == 1) {
+        cs_xdef_t  *d = property->defs[0];
+        if (d->type == CS_XDEF_BY_VALUE) {
+          double  *dval = (double *)d->input;
+          if (fabs(dval[0] - 1) < FLT_MIN)
+            data->is_iso = true;
+        }
+      }
+    }
+
+  }
+
+  const cs_real_t  ref_val = (property == NULL) ? 1. : property->ref_value;
+
+  data->need_eigen = need_eigen;
+  data->eigen_max = ref_val;
+  data->eigen_ratio = 1.0;
+
+  data->need_tensor = need_tensor;
+
+  data->value = ref_val;
+  data->tensor[0][0] = ref_val, data->tensor[0][1] = 0, data->tensor[0][2] = 0;
+  data->tensor[1][0] = 0, data->tensor[1][1] = ref_val, data->tensor[1][2] = 0;
+  data->tensor[2][0] = 0, data->tensor[2][1] = 0, data->tensor[2][2] = ref_val;
 }
 
 /*----------------------------------------------------------------------------*/

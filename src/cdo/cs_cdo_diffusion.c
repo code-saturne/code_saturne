@@ -104,40 +104,35 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Pre-compute the product between the diffusion property and the
- *         face vector areas
+ * \brief  Pre-compute the product between a property and the face vector areas
  *
- * \param[in]       hodgep    \ref cs_param_hodge_t structure for diffusion
+ * \param[in]       pty       pointer to a \ref cs_property_data_t structure
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
- * \param[in]       cb        pointer to a \ref cs_cell_builder_t structure
- * \param[in, out]  kappa_f   diffusion property against face vector for all
- *                            faces
+ * \param[in, out]  kappa_f   property against face vector for all faces
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_compute_kappa_f(const cs_param_hodge_t     hodgep,
+_compute_kappa_f(const cs_property_data_t  *pty,
                  const cs_cell_mesh_t      *cm,
-                 cs_cell_builder_t         *cb,
                  cs_real_3_t               *kappa_f)
 {
-  if (hodgep.is_unity) {
+  if (pty->is_unity) {
     for (short int f = 0; f < cm->n_fc; f++) {
       for (short int k = 0; k < 3; k++)
         kappa_f[f][k] = cm->face[f].meas*cm->face[f].unitv[k];
     }
   }
-  else if (hodgep.is_iso) {
+  else if (pty->is_iso) {
     for (short int f = 0; f < cm->n_fc; f++) {
-      const cs_real_t  coef = cm->face[f].meas*cb->dpty_val;
+      const cs_real_t  coef = cm->face[f].meas*pty->value;
       for (short int k = 0; k < 3; k++)
         kappa_f[f][k] = coef * cm->face[f].unitv[k];
     }
   }
   else {
     for (short int f = 0; f < cm->n_fc; f++) {
-      cs_math_33_3_product((const cs_real_3_t *)cb->dpty_mat, cm->face[f].unitv,
-                           kappa_f[f]);
+      cs_math_33_3_product(pty->tensor, cm->face[f].unitv, kappa_f[f]);
       for (short int k = 0; k < 3; k++) kappa_f[f][k] *= cm->face[f].meas;
     }
   }
@@ -149,43 +144,38 @@ _compute_kappa_f(const cs_param_hodge_t     hodgep,
  *         is a boundary face (Co+St algorithm)
  *
  * \param[in]       fb       index of the boundary face on the local numbering
- * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
- * \param[in]       cb        pointer to a \ref cs_cell_builder_t structure
- * \param[in]       hodgep    \ref cs_param_hodge_t structure for diffusion
- * \param[in]       kappa_f   diffusion property against face vector for all
- *                            faces
- * \param[in, out]  ntrgrd    pointer to a local matrix structure
+ * \param[in]       cm       pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       hodgep   pointer to a \ref cs_hodge_param_t structure
+ * \param[in]       kappa_f  property against face vector for all faces
+ * \param[in, out]  ntrgrd   pointer to a local matrix structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _cdofb_normal_flux_reco(short int                  fb,
                         const cs_cell_mesh_t      *cm,
-                        const cs_cell_builder_t   *cb,
-                        const cs_param_hodge_t     hodgep,
+                        const cs_hodge_param_t    *hodgep,
                         const cs_real_3_t         *kappa_f,
                         cs_sdm_t                  *ntrgrd)
 {
-  CS_UNUSED(cb);
-
   /* Sanity check */
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_EDFP);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_COST);
-  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
-                       CS_FLAG_COMP_PFC));
+  assert(hodgep->type == CS_HODGE_TYPE_EDFP);
+  assert(hodgep->algo == CS_HODGE_ALGO_COST);
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFC));
   assert(cm->f_sgn[fb] == 1);  /* +1 because it's a boundary face */
 
-  const short int  nfc = cm->n_fc;
+  const short int  n_fc = cm->n_fc;
   const cs_quant_t  pfbq = cm->face[fb];
   const cs_nvec3_t  debq = cm->dedge[fb];
 
   /* |fb|^2 * nu_{fb}^T.kappa.nu_{fb} */
   const cs_real_t  fb_k_fb = pfbq.meas * _dp3(kappa_f[fb], pfbq.unitv);
-  const cs_real_t  beta_fbkfb_o_pfc = hodgep.coef * fb_k_fb / cm->pvol_f[fb];
+  const cs_real_t  beta_fbkfb_o_pfc = hodgep->coef * fb_k_fb / cm->pvol_f[fb];
 
-  cs_real_t  *ntrgrd_fb = ntrgrd->val + fb * (nfc + 1);
+  cs_real_t  *ntrgrd_fb = ntrgrd->val + fb * (n_fc + 1);
   cs_real_t  row_sum = 0.0;
-  for (short int f = 0; f < nfc; f++) {
+  for (short int f = 0; f < n_fc; f++) {
 
     const cs_real_t  if_ov = cm->f_sgn[f] / cm->vol_c;
     const cs_real_t  f_k_fb = pfbq.meas * _dp3(kappa_f[f], pfbq.unitv);
@@ -193,15 +183,15 @@ _cdofb_normal_flux_reco(short int                  fb,
     cs_real_t  stab = - pfq.meas*debq.meas * _dp3(debq.unitv, pfq.unitv);
     if (f == fb) stab += cm->vol_c;
     const cs_real_t  int_gradf_dot_f = if_ov *
-      ( f_k_fb                        /* Cons */
-        + beta_fbkfb_o_pfc * stab);   /* Stab */
+      ( f_k_fb                        /* Consistent part */
+        + beta_fbkfb_o_pfc * stab);   /* Stabilization part */
     ntrgrd_fb[f] -= int_gradf_dot_f;  /* Minus because -du/dn */
     row_sum      += int_gradf_dot_f;
 
   } /* Loop on f */
 
   /* Cell column */
-  ntrgrd_fb[nfc] += row_sum;
+  ntrgrd_fb[n_fc] += row_sum;
 
 }
 
@@ -830,10 +820,13 @@ _wbs_nitsche(const double              pcoef,
 /*!
  * \brief   Take into account Dirichlet BCs by a weak enforcement by a
  *          penalization technique with a huge value
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
  */
@@ -843,10 +836,12 @@ void
 cs_cdo_diffusion_pena_dirichlet(const cs_equation_param_t       *eqp,
                                 const cs_cell_mesh_t            *cm,
                                 cs_face_mesh_t                  *fm,
+                                cs_hodge_t                      *hodge,
                                 cs_cell_builder_t               *cb,
                                 cs_cell_sys_t                   *csys)
 {
   /* Prototype common to cs_cdo_enforce_bc_t. Hence the unused parameters */
+  CS_UNUSED(hodge);
   CS_UNUSED(fm);
   CS_UNUSED(cm);
   CS_UNUSED(cb);
@@ -876,10 +871,13 @@ cs_cdo_diffusion_pena_dirichlet(const cs_equation_param_t       *eqp,
  * \brief   Take into account Dirichlet BCs by a weak enforcement by a
  *          penalization technique with a huge value.
  *          Case of a cellwise system defined by block.
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
  */
@@ -889,10 +887,12 @@ void
 cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
                                       const cs_cell_mesh_t            *cm,
                                       cs_face_mesh_t                  *fm,
+                                      cs_hodge_t                      *hodge,
                                       cs_cell_builder_t               *cb,
                                       cs_cell_sys_t                   *csys)
 {
   /* Prototype common to cs_cdo_enforce_bc_t. Hence the unused parameters */
+  CS_UNUSED(hodge);
   CS_UNUSED(fm);
   CS_UNUSED(cm);
   CS_UNUSED(cb);
@@ -946,11 +946,14 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
  *          |      |     |     |      |     |     |  |     |          |
  *          | Adi  | Add |     |  0   |  Id |     |bd|     |    xd    |
  *
- * where xd is the value of the Dirichlet BC
+ *          where xd is the value of the Dirichlet BC
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
  */
@@ -960,6 +963,7 @@ void
 cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
                                 const cs_cell_mesh_t            *cm,
                                 cs_face_mesh_t                  *fm,
+                                cs_hodge_t                      *hodge,
                                 cs_cell_builder_t               *cb,
                                 cs_cell_sys_t                   *csys)
 {
@@ -967,6 +971,7 @@ cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
   CS_UNUSED(eqp);
   CS_UNUSED(fm);
   CS_UNUSED(cm);
+  CS_UNUSED(hodge);
   assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
@@ -1022,11 +1027,14 @@ cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
  *          |      |     |     |      |     |     |  |     |          |
  *          | Adi  | Add |     |  0   |  Id |     |bd|     |    xd    |
  *
- * where xd is the value of the Dirichlet BC
+ *          where xd is the value of the Dirichlet BC
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
  */
@@ -1036,6 +1044,7 @@ void
 cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
                                       const cs_cell_mesh_t            *cm,
                                       cs_face_mesh_t                  *fm,
+                                      cs_hodge_t                      *hodge,
                                       cs_cell_builder_t               *cb,
                                       cs_cell_sys_t                   *csys)
 {
@@ -1043,6 +1052,7 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
   CS_UNUSED(eqp);
   CS_UNUSED(fm);
   CS_UNUSED(cm);
+  CS_UNUSED(hodge);
   assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
@@ -1131,10 +1141,13 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique.
  *          Case of scalar-valued CDO Face-based schemes
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -1144,6 +1157,7 @@ void
 cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
                                     const cs_cell_mesh_t           *cm,
                                     cs_face_mesh_t                 *fm,
+                                    cs_hodge_t                     *hodge,
                                     cs_cell_builder_t              *cb,
                                     cs_cell_sys_t                  *csys)
 {
@@ -1155,19 +1169,19 @@ cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
     return;  /* Nothing to do */
 
   assert(cm != NULL && cb != NULL);
-  assert(cs_equation_param_has_diffusion(eqp));
 
-  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
-  const double chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
+  const cs_property_data_t  *pdata = hodge->pty_data;
+  const double chi =
+    eqp->weak_pena_bc_coeff * fabs(pdata->eigen_ratio)*pdata->eigen_max;
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
   cs_real_3_t  *kappa_f = cb->vectors;
-  _compute_kappa_f(hodgep, cm, cb, kappa_f);
+  _compute_kappa_f(pdata, cm, kappa_f);
 
-  /* Initialize the matrix related this flux reconstruction operator */
+  /* Initialize the matrix related to this flux reconstruction operator */
   const short int n_dofs = cm->n_fc + 1;
-  cs_sdm_t *bc_op = cb->loc;
+  cs_sdm_t  *bc_op = cb->loc;
   cs_sdm_square_init(n_dofs, bc_op);
 
   /* First pass: build the bc_op matrix */
@@ -1179,7 +1193,7 @@ cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute \int_f du/dn v and update the matrix */
-      _cdofb_normal_flux_reco(f, cm, cb, hodgep,
+      _cdofb_normal_flux_reco(f, cm, hodge->param,
                               (const cs_real_t (*)[3])kappa_f,
                               bc_op);
 
@@ -1223,10 +1237,13 @@ cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
  *          Case of vector-valued CDO Face-based schemes
  *          The idea is to compute the scalar version and dispatch it three
  *          times, one for each Cartesian components
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -1236,6 +1253,7 @@ void
 cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
                                     const cs_cell_mesh_t           *cm,
                                     cs_face_mesh_t                 *fm,
+                                    cs_hodge_t                     *hodge,
                                     cs_cell_builder_t              *cb,
                                     cs_cell_sys_t                  *csys)
 {
@@ -1246,16 +1264,16 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
-  assert(cm != NULL && cb != NULL && csys != NULL);
-  assert(cs_equation_param_has_diffusion(eqp));
+  assert(cm != NULL && cb != NULL && csys != NULL && hodge);
 
-  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
-  const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
+  const cs_property_data_t  *pty = hodge->pty_data;
+  const double  chi =
+    eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
   cs_real_3_t  *kappa_f = cb->vectors;
-  _compute_kappa_f(hodgep, cm, cb, kappa_f);
+  _compute_kappa_f(pty, cm, kappa_f);
 
   /* Initialize the matrix related this flux reconstruction operator */
   const short int  n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
@@ -1271,7 +1289,7 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute \int_f du/dn v and update the matrix */
-      _cdofb_normal_flux_reco(f, cm, cb, hodgep,
+      _cdofb_normal_flux_reco(f, cm, hodge->param,
                               (const cs_real_t (*)[3])kappa_f,
                               bc_op);
 
@@ -1304,7 +1322,7 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
 
   } /* Loop on boundary faces */
 
-  assert(hodgep.is_iso == true); /* if not the case something else TODO ? */
+  assert(pty->is_iso == true); /* if not the case something else TODO ? */
 
   /* Update the local system matrix */
   for (int bi = 0; bi < n_dofs; bi++) { /* n_(scalar)_dofs == n_blocks */
@@ -1330,10 +1348,13 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique plus a symmetric treatment
  *          Case of scalar-valued CDO Face-based schemes
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -1341,10 +1362,11 @@ cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
 
 void
 cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
-                                   const cs_cell_mesh_t           *cm,
-                                   cs_face_mesh_t                 *fm,
-                                   cs_cell_builder_t              *cb,
-                                   cs_cell_sys_t                  *csys)
+                                    const cs_cell_mesh_t           *cm,
+                                    cs_face_mesh_t                 *fm,
+                                    cs_hodge_t                     *hodge,
+                                    cs_cell_builder_t              *cb,
+                                    cs_cell_sys_t                  *csys)
 {
   CS_UNUSED(fm);
   assert(csys != NULL);  /* Sanity checks */
@@ -1354,15 +1376,15 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
     return;  /* Nothing to do */
 
   assert(cm != NULL && cb != NULL && csys != NULL);
-  assert(cs_equation_param_has_diffusion(eqp));
 
-  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
-  const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
+  const cs_property_data_t  *pty = hodge->pty_data;
+  const double  chi =
+    eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
   cs_real_3_t  *kappa_f = cb->vectors;
-  _compute_kappa_f(hodgep, cm, cb, kappa_f);
+  _compute_kappa_f(pty, cm, kappa_f);
 
   const short int n_dofs = cm->n_fc + 1, n_f = cm->n_fc;
   cs_sdm_t  *bc_op = cb->loc, *bc_op_t = cb->aux;
@@ -1377,7 +1399,7 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute \int_f du/dn v and update the matrix */
-      _cdofb_normal_flux_reco(f, cm, cb, hodgep,
+      _cdofb_normal_flux_reco(f, cm, hodge->param,
                               (const cs_real_t (*)[3])kappa_f,
                               bc_op);
 
@@ -1436,10 +1458,13 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
  *          Case of vector-valued CDO Face-based schemes
  *          The idea is to compute the scalar version and dispatch it three
  *          times, one for each Cartesian components
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -1449,6 +1474,7 @@ void
 cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
                                     const cs_cell_mesh_t           *cm,
                                     cs_face_mesh_t                 *fm,
+                                    cs_hodge_t                     *hodge,
                                     cs_cell_builder_t              *cb,
                                     cs_cell_sys_t                  *csys)
 {
@@ -1459,20 +1485,20 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
-  assert(cm != NULL && cb != NULL && csys != NULL);
-  assert(cs_equation_param_has_diffusion(eqp));
+  assert(cm != NULL && cb != NULL && csys != NULL && hodge != NULL);
 
-  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
-  const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
+  const cs_property_data_t  *pty = hodge->pty_data;
+  const double  chi =
+    eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
   const short int  n_dofs = cm->n_fc + 1; /* n_blocks or n_scalar_dofs */
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
   cs_real_3_t  *kappa_f = cb->vectors;
-  _compute_kappa_f(hodgep, cm, cb, kappa_f);
+  _compute_kappa_f(pty, cm, kappa_f);
 
   /* Initialize the matrix related this flux reconstruction operator */
-  cs_sdm_t *bc_op = cb->hdg, *bc_op_t = cb->aux;
+  cs_sdm_t *bc_op = cb->loc, *bc_op_t = cb->aux;
   cs_sdm_square_init(n_dofs, bc_op);
 
   /* First pass: build the bc_op matrix */
@@ -1484,7 +1510,7 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
     if (cs_cdo_bc_is_dirichlet(csys->bf_flag[f])) {
 
       /* Compute \int_f du/dn v and update the matrix */
-      _cdofb_normal_flux_reco(f, cm, cb, hodgep,
+      _cdofb_normal_flux_reco(f, cm, hodge->param,
                               (const cs_real_t (*)[3])kappa_f,
                               bc_op);
 
@@ -1519,7 +1545,7 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
     csys->rhs[3*i+2] += uz[i];
   }
 
-  /* Second pass: Update the cell system with the bc_op matrix and the Dirichlet
+  /* Third pass: Update the cell system with the bc_op matrix and the Dirichlet
      values. Avoid a truncation error if the arbitrary coefficient of the
      Nitsche algorithm is large
   */
@@ -1544,7 +1570,7 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
   } /* Loop on boundary faces */
 
-  assert(hodgep.is_iso == true); /* if not the case something else TODO ? */
+  assert(pty->is_iso == true); /* if not the case something else TODO ? */
 
   /* Update the local system matrix */
   for (int bi = 0; bi < n_dofs; bi++) { /* n_(scalar)_dofs == n_blocks */
@@ -1570,10 +1596,13 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
  * \brief   Take into account sliding BCs by a weak enforcement using Nitsche
  *          technique plus a symmetric treatment.
  *          Case of vector-valued CDO Face-based schemes
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -1583,6 +1612,7 @@ void
 cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
                                   const cs_cell_mesh_t           *cm,
                                   cs_face_mesh_t                 *fm,
+                                  cs_hodge_t                     *hodge,
                                   cs_cell_builder_t              *cb,
                                   cs_cell_sys_t                  *csys)
 {
@@ -1593,24 +1623,24 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
   if (csys->has_sliding == false)
     return;  /* Nothing to do */
 
-  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
+  const cs_property_data_t  *pty = hodge->pty_data;
 
   /* Sanity checks */
   assert(cm != NULL && cb != NULL);
-  assert(hodgep.is_iso == true); /* if not the case something else TODO ? */
-  assert(cs_equation_param_has_diffusion(eqp));
+  assert(pty->is_iso == true); /* if not the case something else TODO ? */
 
-  const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
+  const double  chi =
+    eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
   const short int  n_f = cm->n_fc;
   const short int  n_dofs = n_f + 1; /* n_blocks or n_scalar_dofs */
 
   /* First step: pre-compute the product between diffusion property and the
      face vector areas */
   cs_real_3_t  *kappa_f = cb->vectors;
-  _compute_kappa_f(hodgep, cm, cb, kappa_f);
+  _compute_kappa_f(pty, cm, kappa_f);
 
   /* Initialize the matrix related this flux reconstruction operator */
-  cs_sdm_t *bc_op = cb->hdg;
+  cs_sdm_t *bc_op = cb->loc;
   cs_sdm_square_init(n_dofs, bc_op);
 
   /* First pass: build the bc_op matrix */
@@ -1622,7 +1652,7 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
     if (csys->bf_flag[f] & CS_CDO_BC_SLIDING) {
 
       /* Compute \int_f du/dn v and update the matrix */
-      _cdofb_normal_flux_reco(f, cm, cb, hodgep,
+      _cdofb_normal_flux_reco(f, cm, hodge->param,
                               (const cs_real_t (*)[3])kappa_f,
                               bc_op);
 
@@ -1692,10 +1722,13 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
 /*!
  * \brief   Take into account Robin BCs.
  *          Case of scalar-valued CDO-Vb schemes with a CO+ST algorithm.
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -1705,10 +1738,12 @@ void
 cs_cdo_diffusion_svb_cost_robin(const cs_equation_param_t      *eqp,
                                 const cs_cell_mesh_t           *cm,
                                 cs_face_mesh_t                 *fm,
+                                cs_hodge_t                     *hodge,
                                 cs_cell_builder_t              *cb,
                                 cs_cell_sys_t                  *csys)
 {
   CS_UNUSED(eqp);
+  CS_UNUSED(hodge);
 
   /* Sanity checks */
   assert(cm != NULL && cb != NULL && csys != NULL);
@@ -1738,8 +1773,8 @@ cs_cdo_diffusion_svb_cost_robin(const cs_equation_param_t      *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
       if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_log_printf(CS_LOG_DEFAULT,
-                      ">> Cell Vb COST Robin (f_id: %d)", fm->f_id);
+        cs_log_printf(CS_LOG_DEFAULT, ">> Cell %d Vb COST Robin (f_id: %d)",
+                      cm->c_id, fm->f_id);
 #endif
 
       /* Robin BC expression: K du/dn + alpha*(u - u0) = g */
@@ -1768,7 +1803,8 @@ cs_cdo_diffusion_svb_cost_robin(const cs_equation_param_t      *eqp,
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
   if (cs_dbg_cw_test(eqp, cm, csys)) {
-    cs_log_printf(CS_LOG_DEFAULT, ">> Cell Vb COST Robin bc matrix");
+    cs_log_printf(CS_LOG_DEFAULT, ">> Cell %d Vb COST Robin bc matrix",
+                  cm->c_id);
     cs_sdm_dump(csys->c_id, csys->dof_ids, csys->dof_ids, bc_op);
   }
 #endif
@@ -1783,10 +1819,13 @@ cs_cdo_diffusion_svb_cost_robin(const cs_equation_param_t      *eqp,
  *          technique. According to the settings one can apply Neumann BCs if
  *          alpha = 0, Dirichlet BCs if alpha >> 1 or Robin BCs
  *          Case of scalar-valued CDO-Vb schemes with a CO+ST algorithm.
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -1796,18 +1835,26 @@ void
 cs_cdo_diffusion_svb_cost_generic(const cs_equation_param_t      *eqp,
                                   const cs_cell_mesh_t           *cm,
                                   cs_face_mesh_t                 *fm,
+                                  cs_hodge_t                     *hodge,
                                   cs_cell_builder_t              *cb,
                                   cs_cell_sys_t                  *csys)
 {
+  CS_UNUSED(eqp);
+
   /* Sanity checks */
-  assert(cm != NULL && cb != NULL && csys != NULL);
+  assert(csys != NULL);
 
   /* Enforcement of the Robin BCs */
   if (csys->has_robin == false)
     return;  /* Nothing to do */
 
+  assert(cm != NULL && cb != NULL && hodge != NULL);
+
   const double  cs_gamma_generic = 1e-2;
-  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
+  const cs_hodge_param_t  *hodgep = hodge->param;
+  const cs_property_data_t  *pty = hodge->pty_data;
+
+  assert(pty->need_tensor);
 
   /* Robin BC expression: K du/dn + alpha*(u - u0) = g
    * Store x = u0 + g/alpha
@@ -1829,13 +1876,11 @@ cs_cdo_diffusion_svb_cost_generic(const cs_equation_param_t      *eqp,
 
       /* Compute the product: matpty*face unit normal */
       cs_real_3_t  pty_nuf;
-      cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat,
-                           fm->face.unitv,
-                           pty_nuf);
+      cs_math_33_3_product(pty->tensor, fm->face.unitv, pty_nuf);
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
-      _vb_cost_full_flux_op(f, cm, pty_nuf, hodgep.coef, cb, bc_op, ntrgrd_tr);
+      _vb_cost_full_flux_op(f, cm, pty_nuf, hodgep->coef, cb, bc_op, ntrgrd_tr);
 
       /* Robin BC expression: K du/dn + alpha*(u - u0) = g */
       /* ------------------------------------------------- */
@@ -1907,10 +1952,13 @@ cs_cdo_diffusion_svb_cost_generic(const cs_equation_param_t      *eqp,
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique. Case of scalar-valued CDO-Vb schemes with an orthogonal
  *          splitting between the consistency/stabilization parts (OCS)
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -1920,6 +1968,7 @@ void
 cs_cdo_diffusion_svb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
                                         const cs_cell_mesh_t           *cm,
                                         cs_face_mesh_t                 *fm,
+                                        cs_hodge_t                     *hodge,
                                         cs_cell_builder_t              *cb,
                                         cs_cell_sys_t                  *csys)
 {
@@ -1929,13 +1978,16 @@ cs_cdo_diffusion_svb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
-  assert(cm != NULL && cb != NULL);
-  assert(cs_equation_param_has_diffusion(eqp));
+  assert(cm != NULL && cb != NULL && hodge != NULL);
 
-  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
-  const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
+  const cs_property_data_t  *pty = hodge->pty_data;
+  const cs_hodge_param_t  *hodgep = hodge->param;
+  const double  chi =
+    eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
   const cs_real_t  dbeta =
-    (hodgep.algo == CS_PARAM_HODGE_ALGO_BUBBLE) ? hodgep.coef : 3*hodgep.coef;
+    (hodgep->algo == CS_HODGE_ALGO_BUBBLE) ? hodgep->coef : 3*hodgep->coef;
+
+  assert(pty->need_tensor);
 
   cs_sdm_t  *ntrgrd = cb->loc;
 
@@ -1954,9 +2006,7 @@ cs_cdo_diffusion_svb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Compute the product: matpty*face unit normal */
       cs_real_3_t  pty_nuf;
-      cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat,
-                           fm->face.unitv,
-                           pty_nuf);
+      cs_math_33_3_product(pty->tensor, fm->face.unitv, pty_nuf);
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
@@ -1985,10 +2035,13 @@ cs_cdo_diffusion_svb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
  *          technique. A Dirichlet is set for the three components of the
  *          vector. Case of vector-valued CDO-Vb schemes with an orthogonal
  *          splitting between the consistency/stabilization parts (OCS)
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -1998,6 +2051,7 @@ void
 cs_cdo_diffusion_vvb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
                                         const cs_cell_mesh_t           *cm,
                                         cs_face_mesh_t                 *fm,
+                                        cs_hodge_t                     *hodge,
                                         cs_cell_builder_t              *cb,
                                         cs_cell_sys_t                  *csys)
 {
@@ -2006,13 +2060,17 @@ cs_cdo_diffusion_vvb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
   /* Enforcement of the Dirichlet BCs */
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
-  assert(cm != NULL && cb != NULL);
 
-  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
-  const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
+  assert(cm != NULL && cb != NULL && hodge != NULL);
+
+  const cs_property_data_t  *pty = hodge->pty_data;
+  const double  chi =
+    eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
+  const cs_hodge_param_t  *hodgep = hodge->param;
   const cs_real_t  dbeta =
-    (hodgep.algo == CS_PARAM_HODGE_ALGO_BUBBLE) ? hodgep.coef : 3*hodgep.coef;
+    (hodgep->algo == CS_HODGE_ALGO_BUBBLE) ? hodgep->coef : 3*hodgep->coef;
 
+  assert(pty->need_tensor);
   cs_sdm_t  *ntrgrd = cb->loc;
 
   /* Initialize the local operator */
@@ -2030,8 +2088,7 @@ cs_cdo_diffusion_vvb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Compute the product: matpty*face unit normal */
       cs_real_3_t  pty_nuf;
-      cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat, fm->face.unitv,
-                           pty_nuf);
+      cs_math_33_3_product(pty->tensor, fm->face.unitv, pty_nuf);
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
@@ -2065,7 +2122,7 @@ cs_cdo_diffusion_vvb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
 #endif
 
   /* Add contribution to the linear system */
-  assert(hodgep.is_iso == true); /* if not the case something else TODO ? */
+  assert(pty->is_iso == true); /* if not the case something else TODO ? */
 
   for (int bvi = 0; bvi < cm->n_vc; bvi++) {
     for (int bvj = 0; bvj < cm->n_vc; bvj++) {
@@ -2090,10 +2147,13 @@ cs_cdo_diffusion_vvb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
  * \brief   Take into account a sliding BCs.
  *          Case of vector-valued CDO-Vb schemes with a OCS algorithm.
  *          Orthogonal splitting between Consistency/Stabilization parts.
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -2103,19 +2163,21 @@ void
 cs_cdo_diffusion_vvb_ocs_sliding(const cs_equation_param_t      *eqp,
                                  const cs_cell_mesh_t           *cm,
                                  cs_face_mesh_t                 *fm,
+                                 cs_hodge_t                     *hodge,
                                  cs_cell_builder_t              *cb,
                                  cs_cell_sys_t                  *csys)
 {
-  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
-  const cs_real_t  dbeta =
-    (hodgep.algo == CS_PARAM_HODGE_ALGO_BUBBLE) ? hodgep.coef : 3*hodgep.coef;
-
   /* Enforcement of the sliding BCs */
   if (csys->has_sliding == false)
     return;  /* Nothing to do */
 
+  const cs_hodge_param_t  *hodgep = hodge->param;
+  const cs_real_t  dbeta =
+    (hodgep->algo == CS_HODGE_ALGO_BUBBLE) ? hodgep->coef : 3*hodgep->coef;
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity checks */
-  assert(hodgep.is_iso == true); /* if not the case something else TODO ? */
+  assert(pty->is_iso == true); /* if not the case something else TODO ? */
 
   cs_sdm_t  *ntrgrd = cb->loc;
 
@@ -2137,9 +2199,9 @@ cs_cdo_diffusion_vvb_ocs_sliding(const cs_equation_param_t      *eqp,
                                 fm->face.unitv[2]};
 
       /* Compute the product: matpty*face unit normal */
-      cs_real_t  pty_nuf[3] = {cb->dpty_val * nf[0],
-                               cb->dpty_val * nf[1],
-                               cb->dpty_val * nf[2]};
+      cs_real_t  pty_nuf[3] = {pty->value * nf[0],
+                               pty->value * nf[1],
+                               pty->value * nf[2]};
 
       /* Compute the flux operator related to the trace on the current face
        * of the normal gradient
@@ -2211,10 +2273,13 @@ cs_cdo_diffusion_vvb_ocs_sliding(const cs_equation_param_t      *eqp,
  *          technique plus a symmetric treatment. Case of CDO-Vb schemes with a
  *          COST/Bubble or Voronoi algorithm. One assumes an Orthogonal
  *          splitting between Consistency/Stabilization parts (OCS).
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -2224,21 +2289,26 @@ void
 cs_cdo_diffusion_svb_ocs_wsym_dirichlet(const cs_equation_param_t      *eqp,
                                         const cs_cell_mesh_t           *cm,
                                         cs_face_mesh_t                 *fm,
+                                        cs_hodge_t                     *hodge,
                                         cs_cell_builder_t              *cb,
                                         cs_cell_sys_t                  *csys)
 {
-  /* Sanity checks */
-  assert(cm != NULL && cb != NULL && csys != NULL);
+  assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Dirichlet BCs */
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
-  const cs_param_hodge_t  hodgep = eqp->diffusion_hodge;
-  const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
+  assert(cm != NULL && cb != NULL && hodge != NULL);
+
+  const cs_hodge_param_t  *hodgep = hodge->param;
+  const cs_property_data_t  *pty = hodge->pty_data;
+  const double  chi =
+    eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
+
+  assert(pty->need_tensor);
 
   cs_sdm_t  *ntrgrd = cb->loc;
-  cs_sdm_t  *ntrgrd_tr = cb->aux;
 
   for (short int i = 0; i < csys->n_bc_faces; i++) {
 
@@ -2252,17 +2322,17 @@ cs_cdo_diffusion_svb_ocs_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Compute the product: matpty*face unit normal */
       cs_real_3_t  pty_nuf;
-      cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat, fm->face.unitv,
-                           pty_nuf);
+      cs_math_33_3_product(pty->tensor, fm->face.unitv, pty_nuf);
 
       /* Initialize the local operator */
       cs_sdm_square_init(cm->n_vc, ntrgrd);
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
-      _vb_ocs_normal_flux_op(f, cm, pty_nuf, hodgep.coef, cb, ntrgrd);
+      _vb_ocs_normal_flux_op(f, cm, pty_nuf, hodgep->coef, cb, ntrgrd);
 
       /* Update ntrgrd = ntrgrd + transp and transp = transpose(ntrgrd) */
+      cs_sdm_t  *ntrgrd_tr = cb->aux;
       cs_sdm_square_add_transpose(ntrgrd, ntrgrd_tr);
 
      /* Update RHS according to the add of ntrgrd_tr (cb->aux) */
@@ -2292,10 +2362,13 @@ cs_cdo_diffusion_svb_ocs_wsym_dirichlet(const cs_equation_param_t      *eqp,
 /*!
  * \brief   Take into account Robin BCs.
  *          Case of scalar-valued CDO-Vb schemes with a WBS algorithm.
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -2305,10 +2378,13 @@ void
 cs_cdo_diffusion_svb_wbs_robin(const cs_equation_param_t      *eqp,
                                const cs_cell_mesh_t           *cm,
                                cs_face_mesh_t                 *fm,
+                               cs_hodge_t                     *hodge,
                                cs_cell_builder_t              *cb,
                                cs_cell_sys_t                  *csys)
 {
   CS_UNUSED(eqp);
+  CS_UNUSED(hodge);
+
   assert(csys != NULL);  /* Sanity checks */
 
   /* Enforcement of the Robin BCs */
@@ -2389,10 +2465,13 @@ cs_cdo_diffusion_svb_wbs_robin(const cs_equation_param_t      *eqp,
 /*!
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique. Case of CDO-Vb schemes with a WBS algorithm.
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -2402,6 +2481,7 @@ void
 cs_cdo_diffusion_svb_wbs_weak_dirichlet(const cs_equation_param_t      *eqp,
                                         const cs_cell_mesh_t           *cm,
                                         cs_face_mesh_t                 *fm,
+                                        cs_hodge_t                     *hodge,
                                         cs_cell_builder_t              *cb,
                                         cs_cell_sys_t                  *csys)
 {
@@ -2411,8 +2491,13 @@ cs_cdo_diffusion_svb_wbs_weak_dirichlet(const cs_equation_param_t      *eqp,
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
-  assert(cm != NULL && cb != NULL);
-  const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
+  assert(cm != NULL && cb != NULL && hodge != NULL);
+
+  const cs_property_data_t  *pty = hodge->pty_data;
+  const double  chi =
+    eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
+
+  assert(pty->need_tensor);
 
   cs_sdm_t  *ntrgrd = cb->loc;
 
@@ -2428,9 +2513,7 @@ cs_cdo_diffusion_svb_wbs_weak_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Compute the product: matpty*face unit normal */
       cs_real_3_t  pty_nuf;
-      cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat,
-                           fm->face.unitv,
-                           pty_nuf);
+      cs_math_33_3_product(pty->tensor, fm->face.unitv, pty_nuf);
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
@@ -2463,10 +2546,13 @@ cs_cdo_diffusion_svb_wbs_weak_dirichlet(const cs_equation_param_t      *eqp,
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique plus a symmetric treatment. Case of CDO-Vb schemes with a
  *          WBS algorithm
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -2476,6 +2562,7 @@ void
 cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t     *eqp,
                                         const cs_cell_mesh_t          *cm,
                                         cs_face_mesh_t                *fm,
+                                        cs_hodge_t                    *hodge,
                                         cs_cell_builder_t             *cb,
                                         cs_cell_sys_t                 *csys)
 {
@@ -2485,9 +2572,13 @@ cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t     *eqp,
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
-  assert(cm != NULL && cb != NULL);
+  assert(cm != NULL && cb != NULL && hodge != NULL);
 
-  const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
+  const cs_property_data_t  *pty = hodge->pty_data;
+  const double  chi =
+    eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
+
+  assert(pty->need_tensor);
 
   cs_sdm_t  *ntrgrd = cb->loc;
 
@@ -2503,9 +2594,10 @@ cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t     *eqp,
 
       /* Compute the product: matpty*face unit normal */
       cs_real_3_t  pty_nuf;
-      cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat,
-                           fm->face.unitv,
-                           pty_nuf);
+      cs_math_33_3_product(pty->tensor, fm->face.unitv, pty_nuf);
+
+      /* Initialize the local operator */
+      cs_sdm_square_init(cm->n_vc, ntrgrd);
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
@@ -2547,10 +2639,13 @@ cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t     *eqp,
 /*!
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique. Case of CDO-VCb schemes with a WBS algorithm.
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -2560,6 +2655,7 @@ void
 cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
                                     const cs_cell_mesh_t           *cm,
                                     cs_face_mesh_t                 *fm,
+                                    cs_hodge_t                     *hodge,
                                     cs_cell_builder_t              *cb,
                                     cs_cell_sys_t                  *csys)
 {
@@ -2569,8 +2665,13 @@ cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
-  assert(cm != NULL && cb != NULL);
-  const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
+  assert(cm != NULL && cb != NULL && hodge != NULL);
+
+  const cs_property_data_t  *pty = hodge->pty_data;
+  const double  chi =
+    eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
+
+  assert(pty->need_tensor);
 
   cs_sdm_t  *ntrgrd = cb->loc;
 
@@ -2586,9 +2687,7 @@ cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Compute the product: matpty*face unit normal */
       cs_real_3_t  pty_nuf;
-      cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat,
-                           fm->face.unitv,
-                           pty_nuf);
+      cs_math_33_3_product(pty->tensor, fm->face.unitv, pty_nuf);
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
@@ -2621,10 +2720,13 @@ cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique plus a symmetric treatment. Case of CDO-VCb schemes with
  *          a WBS algorithm
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -2634,6 +2736,7 @@ void
 cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
                                     const cs_cell_mesh_t           *cm,
                                     cs_face_mesh_t                 *fm,
+                                    cs_hodge_t                     *hodge,
                                     cs_cell_builder_t              *cb,
                                     cs_cell_sys_t                  *csys)
 {
@@ -2643,9 +2746,13 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
   if (csys->has_dirichlet == false)
     return;  /* Nothing to do */
 
-  assert(cm != NULL && cb != NULL);
+  assert(cm != NULL && cb != NULL && hodge != NULL);
 
-  const double  chi = eqp->weak_pena_bc_coeff * fabs(cb->eig_ratio)*cb->eig_max;
+  const cs_property_data_t  *pty = hodge->pty_data;
+  const double  chi =
+    eqp->weak_pena_bc_coeff * fabs(pty->eigen_ratio)*pty->eigen_max;
+
+  assert(pty->need_tensor);
 
   cs_sdm_t  *ntrgrd = cb->loc;
 
@@ -2661,9 +2768,7 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 
       /* Compute the product: matpty*face unit normal */
       cs_real_3_t  pty_nuf;
-      cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat,
-                           fm->face.unitv,
-                           pty_nuf);
+      cs_math_33_3_product(pty->tensor, fm->face.unitv, pty_nuf);
 
       /* Compute the flux operator related to the trace on the current face
          of the normal gradient */
@@ -2708,9 +2813,12 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
  *          for this computation.
  *          This function is dedicated to vertex-based schemes.
  *                       Flux = -Consistent(Hdg) * GRAD(pot)
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_diffusion_cw_flux_t
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      pot     values of the potential fields at specific locations
+ * \param[in]      hodge   pointer to a \ref cs_hodge_t structure
  * \param[in, out] cb      auxiliary structure for computing the flux
  * \param[in, out] flx     values of the flux across specific entities
  */
@@ -2719,9 +2827,13 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 void
 cs_cdo_diffusion_svb_get_dfbyc_flux(const cs_cell_mesh_t      *cm,
                                     const double              *pot,
+                                    const cs_hodge_t          *hodge,
                                     cs_cell_builder_t         *cb,
                                     double                    *flx)
 {
+  if (flx == NULL)
+    return;
+
   /* Sanity checks */
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_EV));
 
@@ -2736,8 +2848,8 @@ cs_cdo_diffusion_svb_get_dfbyc_flux(const cs_cell_mesh_t      *cm,
   }  /* Loop on cell edges */
 
   /* Store the local fluxes. flux = -Hdg * grd_c(pdi_c)
-     cb->hdg has been computed just before the call to this function */
-  cs_sdm_square_matvec(cb->hdg, gec, flx);
+   * hodge->matrix has been computed just before the call to this function */
+  cs_sdm_square_matvec(hodge->matrix, gec, flx);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2745,10 +2857,14 @@ cs_cdo_diffusion_svb_get_dfbyc_flux(const cs_cell_mesh_t      *cm,
  * \brief   Compute the constant approximation of the diffusive flux inside a
  *          (primal) cell. Use the same consistent approximation as in the
  *          discrete Hodge op. for this computation. This function is dedicated
- *          to vertex-based schemes. Flux = -Hdg * GRAD(pot)
+ *          to vertex-based schemes.
+ *          Flux = -Hdg * GRAD(pot)
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_diffusion_cw_flux_t
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      pot     values of the potential fields at specific locations
+ * \param[in]      hodge   pointer to a \ref cs_hodge_t structure
  * \param[in, out] cb      auxiliary structure for computing the flux
  * \param[in, out] flx     values of the flux inside the cell
  */
@@ -2757,10 +2873,19 @@ cs_cdo_diffusion_svb_get_dfbyc_flux(const cs_cell_mesh_t      *cm,
 void
 cs_cdo_diffusion_svb_get_cell_flux(const cs_cell_mesh_t      *cm,
                                    const double              *pot,
+                                   const cs_hodge_t          *hodge,
                                    cs_cell_builder_t         *cb,
                                    double                    *flx)
 {
+  CS_UNUSED(cb);
+
+  if (flx == NULL)
+    return;
+
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity checks */
+  assert(pty->need_tensor);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_EV | CS_FLAG_COMP_DFQ));
 
   cs_real_t  grd[3] = {0., 0., 0.};
@@ -2778,7 +2903,8 @@ cs_cdo_diffusion_svb_get_cell_flux(const cs_cell_mesh_t      *cm,
 
   }  /* Loop on cell edges */
 
-  cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat, grd, flx);
+  cs_math_33_3_product(pty->tensor, grd, flx);
+
   const double  invvol = 1/cm->vol_c;
   for (int k = 0; k < 3; k++) flx[k] *= invvol;
 }
@@ -2793,32 +2919,35 @@ cs_cdo_diffusion_svb_get_cell_flux(const cs_cell_mesh_t      *cm,
  *         each vertex of the face is then computed.
  *
  * \param[in]      f       face id in the cell mesh
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      pot     array of values of the potential (all the mesh)
- * \param[in, out] cb      auxiliary structure dedicated to diffusion
+ * \param[in]      hodge   pointer to a \ref cs_hodge_t structure
+ * \param[in, out] cb      auxiliary structure for building the flux
  * \param[in, out] flux    array of values to set (size: n_vc)
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_diffusion_svb_vbyf_flux(short int                   f,
-                               const cs_equation_param_t  *eqp,
                                const cs_cell_mesh_t       *cm,
                                const cs_real_t            *pot,
+                               const cs_hodge_t           *hodge,
                                cs_cell_builder_t          *cb,
                                cs_real_t                  *flux)
 {
   if (flux == NULL)
     return;
 
+  const cs_property_data_t  *pty = hodge->pty_data;
+  const cs_hodge_param_t  *hodgep = hodge->param;
+
+  assert(pty->need_tensor);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_EV |
                        CS_FLAG_COMP_DFQ | CS_FLAG_COMP_FE));
 
   const cs_real_t  beta =
-    (eqp->diffusion_hodge.algo == CS_PARAM_HODGE_ALGO_BUBBLE) ?
-    eqp->diffusion_hodge.coef : 3*eqp->diffusion_hodge.coef;
+    (hodgep->algo == CS_HODGE_ALGO_BUBBLE) ? hodgep->coef : 3*hodgep->coef;
   const cs_quant_t  pfq = cm->face[f];
 
   /* Reset the fluxes */
@@ -2826,8 +2955,7 @@ cs_cdo_diffusion_svb_vbyf_flux(short int                   f,
 
   /* Compute the product: matpty*face unit normal */
   cs_real_t  pty_nuf[3] = {0, 0, 0};;
-  cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat, pfq.unitv,
-                       pty_nuf);
+  cs_math_33_3_product(pty->tensor, pfq.unitv, pty_nuf);
 
   /* Cellwise constant and consistent gradient */
   cs_real_t  grd_cc[3] = {0, 0, 0};
@@ -2885,9 +3013,12 @@ cs_cdo_diffusion_svb_vbyf_flux(short int                   f,
  *          Use the WBS algo. for approximating the gradient
  *          The computation takes into account a subdivision into tetrahedra of
  *          the current cell based on p_{ef,c}
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_diffusion_cw_flux_t
  *
  * \param[in]      cm       pointer to a cs_cell_mesh_t structure
  * \param[in]      pot      values of the potential fields at vertices
+ * \param[in]      hodge    pointer to a \ref cs_hodge_t structure
  * \param[in, out] cb       auxiliary structure for computing the flux
  * \param[in, out] flx      flux across dual faces inside this cell
  */
@@ -2896,20 +3027,23 @@ cs_cdo_diffusion_svb_vbyf_flux(short int                   f,
 void
 cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
                                     const cs_real_t        *pot,
+                                    const cs_hodge_t       *hodge,
                                     cs_cell_builder_t      *cb,
                                     cs_real_t              *flx)
 {
-  /* Sanity checks */
-  assert(cs_eflag_test(cm->flag,
-                       CS_FLAG_COMP_PV  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
-                       CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  | CS_FLAG_COMP_SEF));
-
   /* Temporary buffers */
   cs_real_3_t  *u_vc = cb->vectors;
   double  *l_vc = cb->values;
 
   const double  *p_v = pot;
   const double  p_c = pot[cm->n_vc];
+  const cs_property_data_t  *pty = hodge->pty_data;
+
+  /* Sanity checks */
+  assert(cs_eflag_test(cm->flag,
+                       CS_FLAG_COMP_PV  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
+                       CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  | CS_FLAG_COMP_SEF));
+  assert(pty->need_tensor);
 
   /* Reset local fluxes */
   for (short int e = 0; e < cm->n_ec; e++) flx[e] = 0.;
@@ -2961,7 +3095,7 @@ cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
       for (int k = 0; k < 3; k++)
         grd_pef[k] = dp_cf*grd_c[k]  + dp1f*grd_v1[k] + dp2f*grd_v2[k];
 
-      cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat, grd_pef, mgrd);
+      cs_math_33_3_product(pty->tensor, grd_pef, mgrd);
 
       flx[e] -= cm->sefc[i].meas * _dp3(cm->sefc[i].unitv, mgrd);
 
@@ -2977,9 +3111,12 @@ cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
  *          Use the WBS algo. for approximating the gradient
  *          The computation takes into account a subdivision into tetrahedra of
  *          the current cell based on p_{ef,c}
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_diffusion_cw_flux_t
  *
  * \param[in]      cm       pointer to a cs_cell_mesh_t structure
  * \param[in]      pot      values of the potential fields at vertices
+ * \param[in]      hodge    pointer to a \ref cs_hodge_t structure
  * \param[in, out] cb       auxiliary structure for computing the flux
  * \param[in, out] flx      flux vector inside this cell
  */
@@ -2988,10 +3125,14 @@ cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
 void
 cs_cdo_diffusion_wbs_get_cell_flux(const cs_cell_mesh_t   *cm,
                                    const cs_real_t        *pot,
+                                   const cs_hodge_t       *hodge,
                                    cs_cell_builder_t      *cb,
                                    cs_real_t              *flx)
 {
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity checks */
+  assert(pty->need_tensor);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PV  | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ |
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV  | CS_FLAG_COMP_HFQ));
@@ -3001,7 +3142,7 @@ cs_cdo_diffusion_wbs_get_cell_flux(const cs_cell_mesh_t   *cm,
   /* Compute the mean-value of the cell gradient */
   cs_reco_cw_cgrd_wbs_from_pvc(cm, pot, cb, cgrd);
 
-  cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat, cgrd, flx);
+  cs_math_33_3_product(pty->tensor, cgrd, flx);
   for (int k = 0; k < 3; k++) flx[k] *= -1;  /* Flux = - tensor * grd */
 }
 
@@ -3012,10 +3153,10 @@ cs_cdo_diffusion_wbs_get_cell_flux(const cs_cell_mesh_t   *cm,
  *          WBS algorithm is used for reconstructing the normal flux from the
  *          degrees of freedom.
  *
- * \param[in]  f              face id in the cell mesh
- * \param[in]  eqp            pointer to a cs_equation_param_t structure
- * \param[in]  cm             pointer to a cs_cell_mesh_t structure
- * \param[in]  pot            array of values of the potential (all the mesh)
+ * \param[in]      f          face id in the cell mesh
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      pot        array of values of the potential (all the mesh)
+ * \param[in]      hodge      pointer to a \ref cs_hodge_t structure
  * \param[in, out] cb         auxiliary structure dedicated to diffusion
  * \param[in, out] vf_flux    array of values to set (size: n_vc)
  */
@@ -3023,18 +3164,20 @@ cs_cdo_diffusion_wbs_get_cell_flux(const cs_cell_mesh_t   *cm,
 
 void
 cs_cdo_diffusion_wbs_vbyf_flux(short int                   f,
-                               const cs_equation_param_t  *eqp,
                                const cs_cell_mesh_t       *cm,
                                const cs_real_t            *pot,
+                               const cs_hodge_t           *hodge,
                                cs_cell_builder_t          *cb,
                                cs_real_t                  *flux)
 {
-  CS_UNUSED(eqp);
-
   if (flux == NULL)
     return;
 
-  assert(eqp->diffusion_hodge.algo == CS_PARAM_HODGE_ALGO_WBS);
+  const cs_property_data_t  *pty = hodge->pty_data;
+
+  /* Sanity checks */
+  assert(pty->need_tensor);
+  assert(hodge->param->algo == CS_HODGE_ALGO_WBS);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_FV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_PFQ |
                        CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_FE));
@@ -3044,8 +3187,7 @@ cs_cdo_diffusion_wbs_vbyf_flux(short int                   f,
 
   /* Compute the product: matpty*face unit normal */
   cs_real_t  mnuf[3] = {0, 0, 0};
-  cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat, cm->face[f].unitv,
-                       mnuf);
+  cs_math_33_3_product(pty->tensor, cm->face[f].unitv, mnuf);
 
   /* Compute xc --> xv length and unit vector for all face vertices */
   double  *l_vc = cb->values;
@@ -3061,7 +3203,7 @@ cs_cdo_diffusion_wbs_vbyf_flux(short int                   f,
   cs_compute_grdfc_cw(f, cm, grd_c);
 
   const cs_real_t  *p_v = pot;
-  const cs_real_t   p_f = cs_reco_cw_scalar_pv_at_face_center(f, cm, p_v);
+  const cs_real_t  p_f = cs_reco_cw_scalar_pv_at_face_center(f, cm, p_v);
 
   /* Compute p_c - p_f (where p_c is the reconstructed values at the
      cell center */
@@ -3178,9 +3320,9 @@ cs_cdo_diffusion_wbs_face_flux(const cs_face_mesh_t      *fm,
  *          the degrees of freedom.
  *
  * \param[in]      f       face id in the cell mesh
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      pot     array of values of the potential (all the mesh)
+ * \param[in]      hodge   pointer to a \ref cs_hodge_t structure
  * \param[in, out] cb      auxiliary structure dedicated to diffusion
  * \param[out]     flux    pointer to the value to set
  */
@@ -3188,25 +3330,28 @@ cs_cdo_diffusion_wbs_face_flux(const cs_face_mesh_t      *fm,
 
 void
 cs_cdo_diffusion_sfb_cost_flux(short int                   f,
-                               const cs_equation_param_t  *eqp,
                                const cs_cell_mesh_t       *cm,
                                const cs_real_t            *pot,
+                               const cs_hodge_t           *hodge,
                                cs_cell_builder_t          *cb,
                                cs_real_t                  *flux)
 {
   if (flux == NULL)
     return;
 
-  assert(eqp->diffusion_hodge.algo == CS_PARAM_HODGE_ALGO_COST);
+  const cs_property_data_t  *pty = hodge->pty_data;
+
+  /* Sanity checks */
+  assert(pty->need_tensor);
+  assert(hodge->param->algo == CS_HODGE_ALGO_COST);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
-  const cs_real_t  beta = eqp->diffusion_hodge.coef;
+  const cs_real_t  beta = hodge->param->coef;
   const cs_quant_t  pfq = cm->face[f];
 
   /* Compute the product: matpty*face unit normal */
   cs_real_t  pty_nuf[3] = {0, 0, 0};
-  cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat, pfq.unitv,
-                       pty_nuf);
+  cs_math_33_3_product(pty->tensor, pfq.unitv, pty_nuf);
 
   /* Define a cellwise constant and consistent gradient */
   /* -------------------------------------------------- */
@@ -3261,7 +3406,7 @@ cs_cdo_diffusion_sfb_cost_flux(short int                   f,
 void
 cs_cdovb_diffusion_p0_face_flux(const short int           f,
                                 const cs_cell_mesh_t     *cm,
-                                const cs_real_3_t        *diff_tensor,
+                                const cs_real_t           diff_tensor[3][3],
                                 const cs_real_t          *pot_values,
                                 cs_real_t                *fluxes)
 {
@@ -3271,8 +3416,7 @@ cs_cdovb_diffusion_p0_face_flux(const short int           f,
   cs_real_3_t  mnuf;
   cs_real_3_t  gc = {0, 0, 0};
 
-  cs_math_33_3_product((const cs_real_t (*)[3])diff_tensor, cm->face[f].unitv,
-                       mnuf);
+  cs_math_33_3_product(diff_tensor, cm->face[f].unitv, mnuf);
 
   cs_reco_dfbyc_in_cell(cm, pot_values, gc);
 

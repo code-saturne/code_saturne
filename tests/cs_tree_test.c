@@ -63,7 +63,7 @@ main (int argc, char *argv[])
   cs_tree_node_t  *neq1 = cs_tree_add_child(neqs, "eq1");
   n = cs_tree_add_child_str(neq1, "space_scheme", "cdovb");
   n = cs_tree_add_child_bool(neq1, "do_diffusion", true);
-  n = cs_tree_add_child_str(neq1, "diffusion_hodge", "dga");
+  n = cs_tree_add_child_str(neq1, "diffusion_hodgep", "dga");
   cs_tree_node_t  *m = cs_tree_add_child_str(neq1, "iterative_solver", "cg");
   n = cs_tree_add_child_real(m, "epsilon", 1e-12);
   n = cs_tree_add_child_int(m, "n_max_iterations", 2500);

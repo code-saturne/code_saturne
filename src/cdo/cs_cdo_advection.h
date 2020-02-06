@@ -89,18 +89,18 @@ typedef void
  *          vertex-based scheme.
  *          The local matrix related to this operator is stored in cb->loc
  *
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in]      t_eval  time at which one evaluates the advection field
- * \param[in, out] fm      pointer to a cs_face_mesh_t structure
- * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ * \param[in]      eqp       pointer to a \ref cs_equation_param_t structure
+ * \param[in]      cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      diff_pty  pointer to a \ref cs_property_data_t structure
+ * \param[in, out] fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out] cb        pointer to a \ref cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
 (cs_cdovb_advection_t)(const cs_equation_param_t   *eqp,
                        const cs_cell_mesh_t        *cm,
-                       cs_real_t                    t_eval,
+                       const cs_property_data_t    *diff_pty,
                        cs_face_mesh_t              *fm,
                        cs_cell_builder_t           *cb);
 
@@ -163,7 +163,6 @@ cs_cdo_advection_get_cip_coef(void);
  *
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      cm          pointer to a cs_cell_mesh_t structure
- * \param[in]      t_eval      time at which one evaluates the advection field
  * \param[in]      build_func  pointer to the function building the system
  * \param[in, out] cb          pointer to a cs_cell_builder_t structure
  */
@@ -172,7 +171,6 @@ cs_cdo_advection_get_cip_coef(void);
 void
 cs_cdofb_advection_build(const cs_equation_param_t   *eqp,
                          const cs_cell_mesh_t        *cm,
-                         cs_real_t                    t_eval,
                          cs_cdofb_advection_t        *build_func,
                          cs_cell_builder_t           *cb);
 
@@ -662,24 +660,27 @@ cs_cdo_advection_fb_bc_skw_wdi_v(const cs_equation_param_t   *eqp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute the convection operator attached to a cell with a CDO
- *          vertex-based scheme when diffusion is activated and an upwind
- *          scheme and a conservative formulation is used
+ *          vertex-based scheme with an upwind scheme and a conservative
+ *          formulation. The portion of upwinding relies on an evaluation
+ *          of the weigth associated to the given property
  *          The local matrix related to this operator is stored in cb->loc
+ *          Predefined prototype to match the function pointer
+ *          cs_cdovb_advection_t
  *
- * \param[in]      eqp       pointer to a cs_equation_param_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      t_eval    time at which one evaluates the advection field
- * \param[in, out] fm        pointer to a cs_face_mesh_t structure
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      eqp       pointer to a \ref cs_equation_param_t structure
+ * \param[in]      cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      diff_pty  pointer to a \ref cs_property_data_t structure
+ * \param[in, out] fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out] cb        pointer to a \ref cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_vb_upwcsv_di(const cs_equation_param_t   *eqp,
-                              const cs_cell_mesh_t        *cm,
-                              cs_real_t                    t_eval,
-                              cs_face_mesh_t              *fm,
-                              cs_cell_builder_t           *cb);
+cs_cdo_advection_vb_upwcsv_wpty(const cs_equation_param_t   *eqp,
+                                const cs_cell_mesh_t        *cm,
+                                const cs_property_data_t    *diff_pty,
+                                cs_face_mesh_t              *fm,
+                                cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -687,19 +688,21 @@ cs_cdo_advection_vb_upwcsv_di(const cs_equation_param_t   *eqp,
  *          vertex-based scheme without diffusion and an upwind scheme and a
  *          conservative formulation is used.
  *          The local matrix related to this operator is stored in cb->loc
+ *          Predefined prototype to match the function pointer
+ *          cs_cdovb_advection_t
  *
- * \param[in]      eqp       pointer to a cs_equation_param_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      t_eval    time at which one evaluates the advection field
- * \param[in, out] fm        pointer to a cs_face_mesh_t structure
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      eqp       pointer to a \ref cs_equation_param_t structure
+ * \param[in]      cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      diff_pty  pointer to a \ref cs_property_data_t structure
+ * \param[in, out] fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out] cb        pointer to a \ref cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_advection_vb_upwcsv(const cs_equation_param_t   *eqp,
                            const cs_cell_mesh_t        *cm,
-                           cs_real_t                    t_eval,
+                           const cs_property_data_t    *diff_pty,
                            cs_face_mesh_t              *fm,
                            cs_cell_builder_t           *cb);
 
@@ -709,19 +712,21 @@ cs_cdo_advection_vb_upwcsv(const cs_equation_param_t   *eqp,
  *          vertex-based scheme when a centered scheme and a conservative
  *          formulation is used.
  *          The local matrix related to this operator is stored in cb->loc
+ *          Predefined prototype to match the function pointer
+ *          cs_cdovb_advection_t
  *
- * \param[in]      eqp       pointer to a cs_equation_param_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      t_eval    time at which one evaluates the advection field
- * \param[in, out] fm        pointer to a cs_face_mesh_t structure
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      eqp       pointer to a \ref cs_equation_param_t structure
+ * \param[in]      cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      diff_pty  pointer to a \ref cs_property_data_t structure
+ * \param[in, out] fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out] cb        pointer to a \ref cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_advection_vb_cencsv(const cs_equation_param_t   *eqp,
                            const cs_cell_mesh_t        *cm,
-                           cs_real_t                    t_eval,
+                           const cs_property_data_t    *diff_pty,
                            cs_face_mesh_t              *fm,
                            cs_cell_builder_t           *cb);
 
@@ -731,43 +736,48 @@ cs_cdo_advection_vb_cencsv(const cs_equation_param_t   *eqp,
  *          vertex-based scheme when a mixed centered/upwind scheme with
  *          a conservative formulation is used.
  *          The local matrix related to this operator is stored in cb->loc
+ *          Predefined prototype to match the function pointer
+ *          cs_cdovb_advection_t
  *
- * \param[in]      eqp       pointer to a cs_equation_param_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      t_eval    time at which one evaluates the advection field
- * \param[in, out] fm        pointer to a cs_face_mesh_t structure
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      eqp       pointer to a \ref cs_equation_param_t structure
+ * \param[in]      cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      diff_pty  pointer to a \ref cs_property_data_t structure
+ * \param[in, out] fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out] cb        pointer to a \ref cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_advection_vb_mcucsv(const cs_equation_param_t   *eqp,
                            const cs_cell_mesh_t        *cm,
-                           cs_real_t                    t_eval,
+                           const cs_property_data_t    *diff_pty,
                            cs_face_mesh_t              *fm,
                            cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Compute the convection operator attached to a cell with a CDO
- *          vertex-based scheme when diffusion is activated and an upwind
- *          scheme and a conservative formulation is used
+ *          vertex-based scheme with an upwind scheme and a conservative
+ *          formulation. The portion of upwinding relies on an evaluation
+ *          of the weigth associated to the given property.
  *          The local matrix related to this operator is stored in cb->loc
+ *          Predefined prototype to match the function pointer
+ *          cs_cdovb_advection_t
  *
- * \param[in]      eqp       pointer to a cs_equation_param_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      t_eval    time at which one evaluates the advection field
- * \param[in, out] fm        pointer to a cs_face_mesh_t structure
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      eqp       pointer to a \ref cs_equation_param_t structure
+ * \param[in]      cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      diff_pty  pointer to a \ref cs_property_data_t structure
+ * \param[in, out] fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out] cb        pointer to a \ref cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_advection_vb_upwnoc_di(const cs_equation_param_t   *eqp,
-                              const cs_cell_mesh_t        *cm,
-                              cs_real_t                    t_eval,
-                              cs_face_mesh_t              *fm,
-                              cs_cell_builder_t           *cb);
+cs_cdo_advection_vb_upwnoc_wpty(const cs_equation_param_t   *eqp,
+                                const cs_cell_mesh_t        *cm,
+                                const cs_property_data_t    *diff_pty,
+                                cs_face_mesh_t              *fm,
+                                cs_cell_builder_t           *cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -775,19 +785,21 @@ cs_cdo_advection_vb_upwnoc_di(const cs_equation_param_t   *eqp,
  *          vertex-based scheme without diffusion when an upwind scheme and a
  *          conservative formulation is used.
  *          The local matrix related to this operator is stored in cb->loc
+ *          Predefined prototype to match the function pointer
+ *          cs_cdovb_advection_t
  *
- * \param[in]      eqp       pointer to a cs_equation_param_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      t_eval    time at which one evaluates the advection field
- * \param[in, out] fm        pointer to a cs_face_mesh_t structure
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      eqp       pointer to a \ref cs_equation_param_t structure
+ * \param[in]      cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      diff_pty  pointer to a \ref cs_property_data_t structure
+ * \param[in, out] fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out] cb        pointer to a \ref cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_advection_vb_upwnoc(const cs_equation_param_t   *eqp,
                            const cs_cell_mesh_t        *cm,
-                           cs_real_t                    t_eval,
+                           const cs_property_data_t    *diff_pty,
                            cs_face_mesh_t              *fm,
                            cs_cell_builder_t           *cb);
 
@@ -797,19 +809,21 @@ cs_cdo_advection_vb_upwnoc(const cs_equation_param_t   *eqp,
  *          vertex-based scheme when a centered scheme and a non-conservative
  *          formulation is used.
  *          The local matrix related to this operator is stored in cb->loc
+ *          Predefined prototype to match the function pointer
+ *          cs_cdovb_advection_t
  *
- * \param[in]      eqp       pointer to a cs_equation_param_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      t_eval    time at which one evaluates the advection field
- * \param[in, out] fm        pointer to a cs_face_mesh_t structure
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      eqp       pointer to a \ref cs_equation_param_t structure
+ * \param[in]      cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      diff_pty  pointer to a \ref cs_property_data_t structure
+ * \param[in, out] fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out] cb        pointer to a \ref cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_advection_vb_cennoc(const cs_equation_param_t    *eqp,
                            const cs_cell_mesh_t         *cm,
-                           cs_real_t                     t_eval,
+                           const cs_property_data_t     *diff_pty,
                            cs_face_mesh_t               *fm,
                            cs_cell_builder_t            *cb);
 
@@ -821,7 +835,7 @@ cs_cdo_advection_vb_cennoc(const cs_equation_param_t    *eqp,
  *
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      t_eval    time at which one evaluates the advection field
+ * \param[in]      diff_pty  pointer to the property associated to diffusion
  * \param[in, out] fm        pointer to a cs_face_mesh_t structure
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
  */
@@ -830,7 +844,7 @@ cs_cdo_advection_vb_cennoc(const cs_equation_param_t    *eqp,
 void
 cs_cdo_advection_vcb_cw_cst(const cs_equation_param_t   *eqp,
                             const cs_cell_mesh_t        *cm,
-                            cs_real_t                    t_eval,
+                            const cs_property_data_t    *diff_pty,
                             cs_face_mesh_t              *fm,
                             cs_cell_builder_t           *cb);
 
@@ -841,7 +855,7 @@ cs_cdo_advection_vcb_cw_cst(const cs_equation_param_t   *eqp,
  *
  * \param[in]      eqp       pointer to a cs_equation_param_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t structure
- * \param[in]      t_eval    time at which one evaluates the advection field
+ * \param[in]      diff_pty  pointer to the property associated to diffusion
  * \param[in, out] fm        pointer to a cs_face_mesh_t structure
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
  */
@@ -850,7 +864,7 @@ cs_cdo_advection_vcb_cw_cst(const cs_equation_param_t   *eqp,
 void
 cs_cdo_advection_vcb(const cs_equation_param_t   *eqp,
                      const cs_cell_mesh_t        *cm,
-                     cs_real_t                    t_eval,
+                     const cs_property_data_t    *diff_pty,
                      cs_face_mesh_t              *fm,
                      cs_cell_builder_t           *cb);
 

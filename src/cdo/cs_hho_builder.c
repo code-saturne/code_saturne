@@ -435,7 +435,8 @@ _add_tria_to_reco_op(const cs_real_3_t         xv1,
  * \param[in]      xv2         second vertex
  * \param[in]      xv3         third vertex
  * \param[in]      xv4         fourth vertex
- * \param[in ]     vol         volume of the terahedron
+ * \param[in]      vol         volume of the tetrahedron
+ * \param[in]      diff_pty    pointer to a cs_property_data_t
  * \param[in, out] stiffness   stiffness matrix to compute
  * \param[in, out] gpts        coordinates of the Gauss points
  * \param[in, out] cb          pointer to a cs_cell_builder_structure_t
@@ -444,15 +445,16 @@ _add_tria_to_reco_op(const cs_real_3_t         xv1,
 /*----------------------------------------------------------------------------*/
 
 static void
-_add_tetra_to_reco_op(const cs_real_3_t         xv1,
-                      const cs_real_3_t         xv2,
-                      const cs_real_3_t         xv3,
-                      const cs_real_3_t         xv4,
-                      const double              vol,
-                      cs_sdm_t                 *stiffness,
-                      cs_real_3_t              *gpts,
-                      cs_cell_builder_t        *cb,
-                      cs_hho_builder_t         *hhob)
+_add_tetra_to_reco_op(const cs_real_3_t            xv1,
+                      const cs_real_3_t            xv2,
+                      const cs_real_3_t            xv3,
+                      const cs_real_3_t            xv4,
+                      const double                 vol,
+                      const cs_property_data_t    *diff_pty,
+                      cs_sdm_t                    *stiffness,
+                      cs_real_3_t                 *gpts,
+                      cs_cell_builder_t           *cb,
+                      cs_hho_builder_t            *hhob)
 {
   const cs_basis_func_t  *gbf = hhob->grad_basis;
   const short int gs = gbf->size - 1;
@@ -475,7 +477,7 @@ _add_tetra_to_reco_op(const cs_real_3_t         xv1,
 
     for (short int i = 0; i < gs; i++) {
 
-      _mv3((const cs_real_t (*)[3])cb->dpty_mat, g_phi + 3*(i+1), Kgrad_phi_i);
+      _mv3(diff_pty->tensor, g_phi + 3*(i+1), Kgrad_phi_i);
 
       cs_real_t  *mg_i = stiffness->val + i*gs;
       for (short int j = i; j < gs; j++)
@@ -649,7 +651,7 @@ _compute_mcg(const cs_cell_mesh_t    *cm,
 
   assert(gs + 1 == cbf_kp1->size);
 
-  cs_sdm_t  *mcg = cb->hdg;
+  cs_sdm_t  *mcg = hhob->hdg;
 
   /* Set values to zero */
   cs_sdm_init(cs, gs, mcg);
@@ -787,6 +789,23 @@ cs_hho_builder_create(int     order,
 
   BFT_FREE(block_size);
 
+  /* Additional matrix */
+  if (order == 0)
+    b->hdg = cs_sdm_square_create(n_fc);
+  else if (order == 1) {
+    int  g_size = 9;                   /* basis (P_(k+1)) - 1 */
+    int  _sizes[3] = {1, 3, 6}; /* c0, cs-1, cs_kp1 - cs */
+    b->hdg = cs_sdm_block_create(1, 3, &g_size, _sizes);
+  }
+  else if (order ==  2) {
+    int  g_size = 19; /* basis (P_(k+1)) - 1 */
+    int  _sizes[3] = {1, 9, 10}; /* c0, cs-1, cs_kp1 - cs */
+    b->hdg = cs_sdm_block_create(1, 3, &g_size, _sizes);
+  }
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Polynomial order handled up to order 2.\n", __func__);
+
   return b;
 }
 
@@ -883,15 +902,17 @@ cs_hho_builder_cellwise_setup(const cs_cell_mesh_t    *cm,
  *         Hence, grad_op a matrix grd_size * (n_fc*f_size + c_size)
  *
  * \param[in]       cm         pointer to a cs_cell_mesh_t structure
- * \param[in]       cb         pointer to a cell builder_t structure
+ * \param[in]       diff_pty   pointer to a cs_property_data_t structure
+ * \param[in, out]  cb         pointer to a cell builder_t structure
  * \param[in, out]  hhob       pointer to a cs_hho_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
-                                 cs_cell_builder_t       *cb,
-                                 cs_hho_builder_t        *hhob)
+cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t      *cm,
+                                 const cs_property_data_t  *diff_pty,
+                                 cs_cell_builder_t         *cb,
+                                 cs_hho_builder_t          *hhob)
 {
   if (hhob == NULL)
     return;
@@ -902,7 +923,7 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
                        CS_FLAG_COMP_FEQ | CS_FLAG_COMP_EV));
 
   const int  gs = hhob->grad_basis->size - 1;
-  cs_sdm_t  *stiffness = cb->hdg, *rhs_t = cb->aux;
+  cs_sdm_t  *stiffness = hhob->hdg, *rhs_t = cb->aux;
   cs_sdm_square_init(gs, stiffness);
 
   /* Initialize the matrix related to the gradient reconstruction operator.
@@ -928,7 +949,7 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
   cs_real_3_t  *kappa_nfc = cb->vectors;
   cs_real_3_t  *gpts = cb->vectors + cm->n_fc;
   for (int f = 0; f < cm->n_fc; f++) {
-    _mv3((const cs_real_t (*)[3])cb->dpty_mat, cm->face[f].unitv, kappa_nfc[f]);
+    _mv3(diff_pty->tensor, cm->face[f].unitv, kappa_nfc[f]);
     kappa_nfc[f][0] *= cm->f_sgn[f];
     kappa_nfc[f][1] *= cm->f_sgn[f];
     kappa_nfc[f][2] *= cm->f_sgn[f];
@@ -941,6 +962,7 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
     {
       assert(cm->n_fc == 4 && cm->n_vc == 4);
       _add_tetra_to_reco_op(cm->xv, cm->xv+3, cm->xv+6, cm->xv+9, cm->vol_c,
+                            diff_pty,
                             stiffness, gpts, cb, hhob);
       _fill_vol_reco_op(stiffness, rc, hhob);
 
@@ -997,6 +1019,7 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
           const double  *xv1 = cm->xv + 3*v1;
           const double  *xv2 = cm->xv + 3*v2;
           _add_tetra_to_reco_op(xv0, xv1, xv2, cm->xc, hf_coef * pfq.meas,
+                                diff_pty,
                                 stiffness, gpts, cb, hhob);
 
           _add_tria_to_reco_op(xv0, xv1, xv2, pfq.meas,
@@ -1018,6 +1041,7 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
             const double  *xv1 = cm->xv + 3*cm->e2v_ids[2*e0+1];
 
             _add_tetra_to_reco_op(xv0, xv1, pfq.center, cm->xc, hf_coef*tef[e],
+                                  diff_pty,
                                   stiffness, gpts, cb, hhob);
 
             _add_tria_to_reco_op(xv0, xv1, pfq.center, tef[e],
@@ -1119,15 +1143,17 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
  *         has to be built just before this call (cb->aux stores the rhs)
  *
  * \param[in]       cm         pointer to a cs_cell_mesh_t structure
- * \param[in]       cb         pointer to a cell builder_t structure
+ * \param[in]       diff_pty   pointer to a cs_property_data_t structure
+ * \param[in, out]  cb         pointer to a cell builder_t structure
  * \param[in, out]  hhob       pointer to a cs_hho_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
-                         cs_cell_builder_t       *cb,
-                         cs_hho_builder_t        *hhob)
+cs_hho_builder_diffusion(const cs_cell_mesh_t      *cm,
+                         const cs_property_data_t  *diff_pty,
+                         cs_cell_builder_t         *cb,
+                         cs_hho_builder_t          *hhob)
 {
   if (hhob == NULL)
     return;
@@ -1268,8 +1294,8 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
 
     cs_basis_func_t  *fbf = hhob->face_basis[f];
 
-    /* --1-- Build M_fc and M_fg (stored in cb->hdg) */
-    cs_sdm_t  *mf_cg = cb->hdg;
+    /* --1-- Build M_fc and M_fg */
+    cs_sdm_t  *mf_cg = hhob->hdg;
     const int  m_sizes[3] = {1, cs-1, cs_kp1 - cs};
     cs_sdm_block_init(mf_cg, 1, 3, &fs, m_sizes);
 
@@ -1395,7 +1421,7 @@ cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
 
     /* Determine the stabilization coefficient for this face */
     cs_real_3_t  k_nf;
-    _mv3((const cs_real_t (*)[3])cb->dpty_mat, cm->face[f].unitv, k_nf);
+    _mv3(diff_pty->tensor, cm->face[f].unitv, k_nf);
     const cs_real_t  f_coef = _dp3(k_nf, cm->face[f].unitv) / cm->f_diam[f];
 
     cs_sdm_block_add_mult(cb->loc, f_coef, hhob->jstab);

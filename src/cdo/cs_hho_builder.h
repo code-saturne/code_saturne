@@ -34,6 +34,7 @@
 #include "cs_base.h"
 #include "cs_basis_func.h"
 #include "cs_cdo_connect.h"
+#include "cs_property.h"
 #include "cs_sdm.h"
 #include "cs_xdef.h"
 
@@ -67,6 +68,7 @@ typedef struct {
   cs_sdm_t   *tmp;           /* Temporary block matrix (fs x ts) */
   cs_sdm_t   *bf_t;          /* Transposed  of Bf (used in stabilization) */
   cs_sdm_t   *jstab;         /* Stabilization part related to a face */
+  cs_sdm_t   *hdg;           /* Another temporary matrix */
 
 } cs_hho_builder_t;
 
@@ -153,15 +155,17 @@ cs_hho_builder_cellbasis_setup(const cs_cell_mesh_t    *cm,
  *         Hence, grad_op a matrix grd_size * (n_fc*f_size + c_size)
  *
  * \param[in]       cm         pointer to a cs_cell_mesh_t structure
- * \param[in]       cb         pointer to a cell builder_t structure
+ * \param[in]       diff_pty   pointer to a cs_property_data_t structure
+ * \param[in, out]  cb         pointer to a cell builder_t structure
  * \param[in, out]  hhob       pointer to a cs_hho_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
-                                 cs_cell_builder_t       *cb,
-                                 cs_hho_builder_t        *hhob);
+cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t      *cm,
+                                 const cs_property_data_t  *diff_pty,
+                                 cs_cell_builder_t         *cb,
+                                 cs_hho_builder_t          *hhob);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -169,15 +173,17 @@ cs_hho_builder_compute_grad_reco(const cs_cell_mesh_t    *cm,
  *         has to be built just before this call (cb->aux stores the rhs)
  *
  * \param[in]       cm         pointer to a cs_cell_mesh_t structure
- * \param[in]       cb         pointer to a cell builder_t structure
+ * \param[in]       diff_pty   pointer to a cs_property_data_t structure
+ * \param[in, out]  cb         pointer to a cell builder_t structure
  * \param[in, out]  hhob       pointer to a cs_hho_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_builder_diffusion(const cs_cell_mesh_t    *cm,
-                         cs_cell_builder_t       *cb,
-                         cs_hho_builder_t        *hhob);
+cs_hho_builder_diffusion(const cs_cell_mesh_t      *cm,
+                         const cs_property_data_t  *diff_pty,
+                         cs_cell_builder_t         *cb,
+                         cs_hho_builder_t          *hhob);
 
 /*----------------------------------------------------------------------------*/
 /*!

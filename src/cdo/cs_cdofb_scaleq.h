@@ -310,6 +310,7 @@ cs_cdofb_scaleq_balance(const cs_equation_param_t     *eqp,
  * \param[in]       pot_f     array of values at faces
  * \param[in]       pot_c     array of values at cells
  * \param[in, out]  eqb       pointer to a cs_equation_builder_t structure
+ * \param[in, out]  context   pointer to a scheme builder structure
  * \param[in, out]  bflux     pointer to the values of the diffusive flux
  */
 /*----------------------------------------------------------------------------*/
@@ -320,6 +321,7 @@ cs_cdofb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
                                    const cs_real_t             *pot_f,
                                    const cs_real_t             *pot_c,
                                    cs_equation_builder_t       *eqb,
+                                   void                        *context,
                                    cs_real_t                   *bflux);
 
 /*----------------------------------------------------------------------------*/

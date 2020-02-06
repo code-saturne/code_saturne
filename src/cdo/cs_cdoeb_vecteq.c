@@ -123,7 +123,6 @@ _ebs_create_cell_builder(const cs_cdo_connect_t   *connect)
 
   /* Local square dense matrices used during the construction of
      operators */
-  cb->hdg = cs_sdm_square_create(n_max);
   cb->aux = cs_sdm_square_create(n_max);
   cb->loc = cs_sdm_square_create(n_ec);
 
@@ -134,8 +133,6 @@ _ebs_create_cell_builder(const cs_cdo_connect_t   *connect)
 /*!
  * \brief   Initialize the local structure for the current cell
  *
- * \param[in]      t_eval          time at which one performs the evaluation
- * \param[in]      cell_flag       flag related to the current cell
  * \param[in]      cm              pointer to a cellwise view of the mesh
  * \param[in]      eqp             pointer to a cs_equation_param_t structure
  * \param[in]      eqb             pointer to a cs_equation_builder_t structure
@@ -148,9 +145,7 @@ _ebs_create_cell_builder(const cs_cdo_connect_t   *connect)
 /*----------------------------------------------------------------------------*/
 
 static void
-_eb_init_cell_system(cs_real_t                            t_eval,
-                     const cs_flag_t                      cell_flag,
-                     const cs_cell_mesh_t                *cm,
+_eb_init_cell_system(const cs_cell_mesh_t                *cm,
                      const cs_equation_param_t           *eqp,
                      const cs_equation_builder_t         *eqb,
                      const cs_cdoeb_vecteq_t             *eqc,
@@ -161,7 +156,6 @@ _eb_init_cell_system(cs_real_t                            t_eval,
 {
   /* Cell-wise view of the linear system to build */
   csys->c_id = cm->c_id;
-  csys->cell_flag = cell_flag;
   csys->n_dofs = cm->n_ec;
 
   /* Initialize the local system */
@@ -177,7 +171,7 @@ _eb_init_cell_system(cs_real_t                            t_eval,
 
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
-  if (cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
+  if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
     /* Set the bc (specific part) */
     cs_equation_eb_set_cell_bc(cm,
@@ -193,7 +187,7 @@ _eb_init_cell_system(cs_real_t                            t_eval,
    * This situation may happen with a tetrahedron with an edge
    * lying on the boundary (but no face)
    */
-  if ((cell_flag & CS_FLAG_BOUNDARY_CELL_BY_EDGE)) {
+  if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_EDGE) {
 
     for (short int e = 0; e < cm->n_ec; e++) {
       csys->dof_flag[e] = eqc->edge_bc_flag[cm->e_ids[e]];
@@ -227,9 +221,6 @@ _eb_init_cell_system(cs_real_t                            t_eval,
 
   }
 
-  /* Set the properties for this cell if not uniform */
-  cs_equation_init_properties_cw(eqp, eqb, t_eval, cell_flag, cm, cb);
-
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOEB_VECTEQ_DBG > 2
   if (cs_dbg_cw_test(eqp, cm, csys)) cs_cell_mesh_dump(cm);
 #endif
@@ -240,73 +231,73 @@ _eb_init_cell_system(cs_real_t                            t_eval,
  * \brief   Build the local matrices arising from the diffusion, advection,
  *          reaction terms in CDO-Eb schemes.
  *
- * \param[in]      time_eval   time at which analytic function are evaluated
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      eqc         context for this kind of discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in, out] hodge       pointer to a hodge operator structure
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_eb_curlcurl(double                         time_eval,
-             const cs_equation_param_t     *eqp,
+_eb_curlcurl(const cs_equation_param_t     *eqp,
              const cs_equation_builder_t   *eqb,
              const cs_cdoeb_vecteq_t       *eqc,
              const cs_cell_mesh_t          *cm,
+             cs_hodge_t                    *hodge,
              cs_cell_sys_t                 *csys,
              cs_cell_builder_t             *cb)
 {
-  CS_UNUSED(eqb);
-  CS_UNUSED(time_eval);
+  if (!cs_equation_param_has_curlcurl(eqp))
+    return;
 
-  if (cs_equation_param_has_curlcurl(eqp)) {   /* CURL-CURL TERM
-                                                * ============== */
+  /* Add the Curl-Curl term */
+  assert(cm->flag & CS_FLAG_COMP_FES);
 
-    assert(cm->flag & CS_FLAG_COMP_FES);
+  /* Set the properties for this cell if not uniform */
+  if (!eqb->curlcurl_pty_uniform)
+    cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag, hodge);
 
-    /* Define the local stiffness matrix: local matrix owned by the cellwise
-       builder (store in cb->hdg) */
-    eqc->get_curlcurl_hodge(eqp->curlcurl_hodge, cm, cb);
+  /* The first step is to build the hodge matrix associated to the curl-curl
+     operator (stored in hodge->matrix) */
+  eqc->get_curlcurl(cm, hodge, cb);
 
-    /* Build the curl-curl operator in cb->loc */
-    cs_sdm_square_init(cm->n_ec, cb->loc);
+  /* Build the curl-curl operator in cb->loc */
+  cs_sdm_square_init(cm->n_ec, cb->loc);
 
-    for (int fk = 0; fk < cm->n_fc; fk++) {
+  for (int fk = 0; fk < cm->n_fc; fk++) {
 
-      const cs_real_t  *h_row = cb->hdg->val + fk*cm->n_fc;
+    const cs_real_t  *h_row = hodge->matrix->val + fk*cm->n_fc;
 
-      for (int fl = 0; fl < cm->n_fc; fl++) {
+    for (int fl = 0; fl < cm->n_fc; fl++) {
 
-        const cs_real_t  h_kl = h_row[fl];
+      const cs_real_t  h_kl = h_row[fl];
 
-        for (int ik = cm->f2e_idx[fk]; ik < cm->f2e_idx[fk+1]; ik++) {
+      for (int ik = cm->f2e_idx[fk]; ik < cm->f2e_idx[fk+1]; ik++) {
 
-          cs_real_t  *loc_row = cb->loc->val + cm->f2e_ids[ik]*cm->n_ec;
-          const cs_real_t  ik_kl_coef = cm->f2e_sgn[ik] * h_kl;
+        cs_real_t  *loc_row = cb->loc->val + cm->f2e_ids[ik]*cm->n_ec;
+        const cs_real_t  ik_kl_coef = cm->f2e_sgn[ik] * h_kl;
 
-          for (int il = cm->f2e_idx[fl]; il < cm->f2e_idx[fl+1]; il++) {
+        for (int il = cm->f2e_idx[fl]; il < cm->f2e_idx[fl+1]; il++) {
 
-            loc_row[cm->f2e_ids[il]] += ik_kl_coef*cm->f2e_sgn[il];
+          loc_row[cm->f2e_ids[il]] += ik_kl_coef*cm->f2e_sgn[il];
 
-          } /* Loop on face edges (il) */
+        } /* Loop on face edges (il) */
 
-        } /* Loop on face edges (ik) */
+      } /* Loop on face edges (ik) */
 
-      } /* Loop on cell faces (l) */
-    } /* Loop on cell faces (k)  */
+    } /* Loop on cell faces (l) */
+  } /* Loop on cell faces (k)  */
 
-    /* Add the local diffusion operator to the local system */
-    cs_sdm_add(csys->mat, cb->loc);
+  /* Add the local curl-curl operator to the local system */
+  cs_sdm_add(csys->mat, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOEB_VECTEQ_DBG > 1
-    if (cs_dbg_cw_test(eqp, cm, csys))
-      cs_cell_sys_dump("\n>> Local system after curlcurl", csys);
+  if (cs_dbg_cw_test(eqp, cm, csys))
+    cs_cell_sys_dump("\n>> Cell system after curlcurl", csys);
 #endif
-  }
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -319,6 +310,7 @@ _eb_curlcurl(double                         time_eval,
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      eqc         context for this kind of discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in, out] hodge       pointer to a cs_hodge_t structure
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
  */
@@ -328,17 +320,18 @@ static void
 _eb_enforce_values(const cs_equation_param_t     *eqp,
                    const cs_cdoeb_vecteq_t       *eqc,
                    const cs_cell_mesh_t          *cm,
+                   cs_hodge_t                    *hodge,
                    cs_cell_sys_t                 *csys,
                    cs_cell_builder_t             *cb)
 {
-  if (csys->cell_flag > 0 && csys->has_dirichlet) {
+  if (cb->cell_flag > 0 && csys->has_dirichlet) {
 
     /* Boundary element (through either edges or faces) */
     if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC ||
         eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED) {
 
       /* csys is updated inside (matrix and rhs) */
-      eqc->enforce_essential_bc(eqp, cm, NULL, cb, csys);
+      eqc->enforce_essential_bc(eqp, cm, NULL, hodge, cb, csys);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOEB_VECTEQ_DBG > 1
       if (cs_dbg_cw_test(eqp, cm, csys))
@@ -620,32 +613,26 @@ cs_cdoeb_vecteq_init_context(const cs_equation_param_t   *eqp,
     for (cs_lnum_t i = 0; i < n_edges; i++) eqc->edge_values_pre[i] = 0;
   }
 
+  bool  need_eigen =
+    (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+     eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM) ? true : false;
+
+  eqc->curlcurl_hodge = NULL;
+  eqc->get_curlcurl = NULL;
+
   if (cs_equation_param_has_curlcurl(eqp)) {
 
     eqb->msh_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ;
 
-    switch (eqp->curlcurl_hodge.algo) {
+    eqc->curlcurl_hodge = cs_hodge_init_context(connect,
+                                                eqp->curlcurl_property,
+                                                &(eqp->curlcurl_hodgep),
+                                                true,        /* tensor ? */
+                                                need_eigen); /* eigen ? */
 
-    case CS_PARAM_HODGE_ALGO_COST:
-      eqc->get_curlcurl_hodge = cs_hodge_fped_cost_get;;
-      break;
+    eqc->get_curlcurl = cs_hodge_get_func(__func__, eqp->curlcurl_hodgep);
 
-    case CS_PARAM_HODGE_ALGO_BUBBLE:
-      eqc->get_curlcurl_hodge = cs_hodge_fped_bubble_get;;
-      break;
-
-    case CS_PARAM_HODGE_ALGO_VORONOI:
-      eqc->get_curlcurl_hodge = cs_hodge_fped_voro_get;;
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid type of algorithm to build the diffusion term.",
-                __func__);
-
-    } /* Switch on Hodge algo. */
-
-  } /* Diffusion */
+  } /* curl-curl term */
 
   /* Essential boundary condition enforcement. The circulation along boundary
    * edges has the same behavior as enforcing a Dirichlet BC */
@@ -675,27 +662,31 @@ cs_cdoeb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   } /* There is at least one source term */
 
-  /* Pre-defined a cs_hodge_builder_t structure */
-  eqc->hdg_mass.is_unity = true;
-  eqc->hdg_mass.is_iso   = true;
-  eqc->hdg_mass.inv_pty  = false;
-  eqc->hdg_mass.type = CS_PARAM_HODGE_TYPE_EPFD;
-  eqc->hdg_mass.coef = 1.0; /* not useful in this case */
+  /* Pre-defined structures for the discrete Hodge operator playing the role of
+     the mass matrix */
+  eqc->mass_hodgep.inv_pty  = false;
+  eqc->mass_hodgep.algo = CS_HODGE_ALGO_COST;
+  eqc->mass_hodgep.type = CS_HODGE_TYPE_EPFD;
+  eqc->mass_hodgep.coef = cs_math_1ov3;
 
+  /* Specify the algorithm */
   if (eqp->do_lumping ||
       eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG ||
-      eqb->sys_flag & CS_FLAG_SYS_REAC_DIAG) {
+      eqb->sys_flag & CS_FLAG_SYS_REAC_DIAG)
+    eqc->mass_hodgep.algo = CS_HODGE_ALGO_VORONOI;
 
-    eqc->hdg_mass.algo = CS_PARAM_HODGE_ALGO_VORONOI;
-    eqc->get_mass_matrix = cs_hodge_epfd_voro_get;
+  eqc->mass_hodge = NULL;
+  if (eqb->sys_flag & CS_FLAG_SYS_MASS_MATRIX) {
 
-  }
-  else { /* WBS algorithm */
+    eqc->mass_hodge = cs_hodge_init_context(connect,
+                                            NULL,
+                                            &(eqc->mass_hodgep),
+                                            false,  /* need tensor ? */
+                                            false); /* need eigen ? */
 
-    eqc->hdg_mass.algo = CS_PARAM_HODGE_ALGO_WBS;
-    eqc->get_mass_matrix = cs_hodge_vpcd_wbs_get;
+    eqc->get_mass = cs_hodge_get_func(__func__, eqc->mass_hodgep);
 
-  }
+  } /* Add a mass matrix */
 
   /* Assembly process */
   eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOEB,
@@ -727,6 +718,9 @@ cs_cdoeb_vecteq_free_context(void   *builder)
   BFT_FREE(eqc->edge_values);
   if (eqc->edge_values_pre != NULL)
     BFT_FREE(eqc->edge_values_pre);
+
+  cs_hodge_free_context(&(eqc->curlcurl_hodge));
+  cs_hodge_free_context(&(eqc->mass_hodge));
 
   BFT_FREE(eqc);
 
@@ -910,14 +904,22 @@ cs_cdoeb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 #else
     int  t_id = 0;
 #endif
+    assert(eqc->curlcurl_hodge != NULL);
 
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_cell_sys_t  *csys = cs_cdoeb_cell_system[t_id];
     cs_cell_builder_t  *cb = cs_cdoeb_cell_builder[t_id];
     cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
+    cs_hodge_t  *curlcurl_hodge = eqc->curlcurl_hodge[t_id];
 
-    /* Initialization of the values of properties */
-    cs_equation_init_properties(eqp, eqb, time_eval, cb);
+    cb->t_pty_eval = time_eval; /* Dummy parameter if really steady */
+    cb->t_bc_eval = time_eval;  /* Dummy parameter if really steady */
+    cb->t_st_eval = time_eval;  /* Dummy parameter if really steady */
+
+    /* Initialization of the curl-curl property value if uniform.
+     * One calls this function with the boundary tag to examine all tests */
+    cs_hodge_set_property_value(0, cb->t_pty_eval, CS_FLAG_BOUNDARY_CELL_BY_FACE,
+                                curlcurl_hodge);
 
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
@@ -926,21 +928,20 @@ cs_cdoeb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 #   pragma omp for CS_CDO_OMP_SCHEDULE reduction(+:res_normalization)
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
-      const cs_flag_t  cell_flag = connect->cell_flag[c_id];
+      cb->cell_flag = connect->cell_flag[c_id];
 
       /* Set the local mesh structure for the current cell */
       cs_cell_mesh_build(c_id,
-                         cs_equation_cell_mesh_flag(cell_flag, eqb),
+                         cs_equation_cell_mesh_flag(cb->cell_flag, eqb),
                          connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
-      _eb_init_cell_system(time_eval, cell_flag, cm, eqp, eqb, eqc,
-                           circ_bc_vals, enforced_ids,
+      _eb_init_cell_system(cm, eqp, eqb, eqc, circ_bc_vals, enforced_ids,
                            csys, cb);
 
       /* Build and add the diffusion term to the local system. A mass matrix is
-         also built if needed (stored it cb->hdg) */
-      _eb_curlcurl(time_eval, eqp, eqb, eqc, cm, csys, cb);
+         also built if needed (stored it curlcurl_hodge->matrix) */
+      _eb_curlcurl(eqp, eqb, eqc, cm, curlcurl_hodge, csys, cb);
 
       if (cs_equation_param_has_sourceterm(eqp)) { /* SOURCE TERM
                                                     * =========== */
@@ -953,9 +954,9 @@ cs_cdoeb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
                                         cm,
                                         eqb->source_mask,
                                         eqb->compute_source,
-                                        time_eval,
+                                        cb->t_st_eval,
                                         NULL,  /* No input structure */
-                                        cb,    /* mass matrix is cb->hdg */
+                                        cb,
                                         csys->source);
 
         /* Update the RHS */
@@ -971,7 +972,7 @@ cs_cdoeb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
                                             &res_normalization);
 
       /* Boundary conditions */
-      _eb_enforce_values(eqp, eqc, cm, csys, cb);
+      _eb_enforce_values(eqp, eqc, cm, curlcurl_hodge, csys, cb);
 
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOEB_VECTEQ_DBG > 0
@@ -981,7 +982,6 @@ cs_cdoeb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 
       /* ASSEMBLY PROCESS
        * ================ */
-
       _assemble(eqc, cm, csys, rs, eqa, mav, rhs);
 
     } /* Main loop on cells */

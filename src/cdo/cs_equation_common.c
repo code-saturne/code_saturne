@@ -410,9 +410,7 @@ cs_equation_cw_scal_res_normalization(cs_param_resnorm_type_t     type,
   else if (type == CS_PARAM_RESNORM_FILTERED_RHS) {
 
     cs_real_t  _rhs_norm = 0;
-    if ((csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE)   ||
-        (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_VERTEX) ||
-        csys->has_internal_enforcement) {
+    if (csys->has_dirichlet || csys->has_internal_enforcement) {
 
       for (short int i = 0; i < csys->n_dofs; i++) {
         if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET)
@@ -474,9 +472,7 @@ cs_equation_cw_vect_res_normalization(cs_param_resnorm_type_t     type,
   else if (type == CS_PARAM_RESNORM_FILTERED_RHS) {
 
     cs_real_t  _rhs_norm = 0;
-    if ((csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE)   ||
-        (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_VERTEX) ||
-        csys->has_internal_enforcement) {
+    if (csys->has_dirichlet|| csys->has_internal_enforcement) {
 
       for (short int i = 0; i < csys->n_dofs; i++) {
         if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET)
@@ -776,54 +772,110 @@ cs_equation_write_monitoring(const char                    *eqname,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize all properties for an algebraic system
+ * \brief  Initialize all reaction properties. This function is shared across
+ *         all CDO schemes. The \ref cs_cell_builder_t structure stores the
+ *         computed property values.
  *
- * \param[in]      eqp       pointer to a cs_equation_param_t structure
- * \param[in]      eqb       pointer to a cs_equation_builder_t structure
- * \param[in]      t_eval    time at which one performs the evaluation
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure (diffusion
- *                           property is stored inside)
+ * \param[in]      eqp              pointer to a cs_equation_param_t structure
+ * \param[in]      eqb              pointer to a cs_equation_builder_t structure
+ * \param[in]      t_eval           time at which one performs the evaluation
+ * \param[in, out] cb               pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_init_reaction_properties(const cs_equation_param_t     *eqp,
+                                     const cs_equation_builder_t   *eqb,
+                                     cs_real_t                      t_eval,
+                                     cs_cell_builder_t             *cb)
+{
+  assert(cs_equation_param_has_reaction(eqp));
+
+  /* Preparatory step for the reaction term(s) */
+  for (int i = 0; i < CS_CDO_N_MAX_REACTIONS; i++) cb->rpty_vals[i] = 1.0;
+
+  for (int r = 0; r < eqp->n_reaction_terms; r++)
+    if (eqb->reac_pty_uniform[r])
+      cb->rpty_vals[r] = cs_property_get_cell_value(0,
+                                                    t_eval,
+                                                    eqp->reaction_properties[r]);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Initialize all reaction properties. This function is shared across
+ *         all CDO schemes. The \ref cs_cell_builder_t structure stores the
+ *         computed property values.
+ *         If the property is uniform, a first call to the function
+ *         \ref cs_equation_init_reaction_properties or to the function
+ *         \ref cs_equation_init_properties has to be done before the
+ *         loop on cells
+ *
+ * \param[in]      eqp      pointer to a cs_equation_param_t structure
+ * \param[in]      eqb      pointer to a cs_equation_builder_t structure
+ * \param[in]      cm       pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out] cb       pointer to a \ref cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_set_reaction_properties_cw(const cs_equation_param_t     *eqp,
+                                       const cs_equation_builder_t   *eqb,
+                                       const cs_cell_mesh_t          *cm,
+                                       cs_cell_builder_t             *cb)
+{
+  assert(cs_equation_param_has_reaction(eqp));
+
+  /* Set the (linear) reaction property */
+  cb->rpty_val = 0;
+  for (int r = 0; r < eqp->n_reaction_terms; r++)
+    if (eqb->reac_pty_uniform[r])
+      cb->rpty_val += cb->rpty_vals[r];
+    else
+      cb->rpty_val += cs_property_value_in_cell(cm,
+                                                eqp->reaction_properties[r],
+                                                cb->t_pty_eval);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Initialize all properties potentially useful to build the algebraic
+ *         system. This function is shared across all CDO schemes.
+ *         The \ref cs_cell_builder_t structure stores property values related
+ *         to the reaction term, unsteady term and grad-div term.
+ *
+ * \param[in]      eqp              pointer to a cs_equation_param_t structure
+ * \param[in]      eqb              pointer to a cs_equation_builder_t structure
+ * \param[in, out] diffusion_hodge  pointer to the diffusion hodge structure
+ * \param[in, out] cb               pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_init_properties(const cs_equation_param_t     *eqp,
                             const cs_equation_builder_t   *eqb,
-                            cs_real_t                      t_eval,
+                            cs_hodge_t                    *diffusion_hodge,
                             cs_cell_builder_t             *cb)
 {
-  /* Preparatory step for diffusion term */
-  if (cs_equation_param_has_diffusion(eqp))
-    if (eqb->diff_pty_uniform)
-      /* One calls this function as if it's a boundary cell to scan all tests */
-      cs_equation_set_diffusion_property(eqp,
-                                         0, /* cell_id */
-                                         t_eval,
-                                         CS_FLAG_BOUNDARY_CELL_BY_FACE,
-                                         cb);
+  /* Preparatory step for diffusion term
+   * One calls this function with the boundary tag to examine all tests */
+  if (diffusion_hodge != NULL && eqb->diff_pty_uniform)
+    cs_hodge_set_property_value(0, /* cell_id */
+                                cb->t_pty_eval,
+                                CS_FLAG_BOUNDARY_CELL_BY_FACE,
+                                diffusion_hodge);
 
-  /* Preparatory step for curl-curl term */
-  if (cs_equation_param_has_curlcurl(eqp))
-    if (eqb->curlcurl_pty_uniform)
-      /* One calls this function as if it's a boundary cell to scan all tests */
-      cs_equation_set_curlcurl_property(eqp,
-                                        0, /* cell_id */
-                                        t_eval,
-                                        CS_FLAG_BOUNDARY_CELL_BY_FACE,
-                                        cb);
+  /* Preparatory step for the grad-div term */
+  if (cs_equation_param_has_graddiv(eqp) && eqb->graddiv_pty_uniform)
+    cb->gpty_val = cs_property_get_cell_value(0, cb->t_pty_eval,
+                                              eqp->graddiv_property);
 
-  /* Preparatory step for grad-div term */
-  if (cs_equation_param_has_graddiv(eqp))
-    if (eqb->graddiv_pty_uniform)
-      cb->gpty_val = cs_property_get_cell_value(0, t_eval,
-                                                eqp->graddiv_property);
+  /* Preparatory step for the unsteady term */
+  if (cs_equation_param_has_time(eqp) && eqb->time_pty_uniform)
+    cb->tpty_val = cs_property_get_cell_value(0, cb->t_pty_eval,
+                                              eqp->time_property);
 
-  /* Preparatory step for unsteady term */
-  if (cs_equation_param_has_time(eqp))
-    if (eqb->time_pty_uniform)
-      cb->tpty_val = cs_property_get_cell_value(0, t_eval, eqp->time_property);
-
-  /* Preparatory step for reaction term */
+  /* Preparatory step for the reaction term(s) */
   if (cs_equation_param_has_reaction(eqp)) {
 
     for (int i = 0; i < CS_CDO_N_MAX_REACTIONS; i++) cb->rpty_vals[i] = 1.0;
@@ -831,7 +883,8 @@ cs_equation_init_properties(const cs_equation_param_t     *eqp,
     for (int r = 0; r < eqp->n_reaction_terms; r++) {
       if (eqb->reac_pty_uniform[r]) {
         cb->rpty_vals[r] =
-          cs_property_get_cell_value(0, t_eval, eqp->reaction_properties[r]);
+          cs_property_get_cell_value(0, cb->t_pty_eval,
+                                     eqp->reaction_properties[r]);
       }
     } /* Loop on reaction properties */
 
@@ -839,41 +892,45 @@ cs_equation_init_properties(const cs_equation_param_t     *eqp,
 
 }
 
+#if 0 /* JB_TO_REMOVE */
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Initialize all properties for a given cell when building the
- *         algebraic system. If the property is uniform, a first call has to
- *         be done before the loop on cells
- *         Call \ref cs_eqution_init_properties for instance
+ * \brief  Initialize all properties potentially useful to build the algebraic
+ *         system. This function is shared across all CDO schemes.
+ *         The \ref cs_cell_builder_t structure stores property values related
+ *         to the reaction term, unsteady term and grad-div term.
+ *         If the property is uniform, a first call to the function
+ *         \ref cs_equation_init_properties has to be done before the loop on
+ *         cells
  *
- * \param[in]      eqp        pointer to a cs_equation_param_t structure
- * \param[in]      eqb        pointer to a cs_equation_builder_t structure
- * \param[in]      t_eval     time at which one performs the evaluation
- * \param[in]      cell_flag  flag related to the current cell
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb         pointer to a cs_cell_builder_t structure
- *                            (diffusion property is stored inside)
+ * \param[in]      eqp              pointer to a cs_equation_param_t structure
+ * \param[in]      eqb              pointer to a cs_equation_builder_t structure
+ * \param[in]      cm               pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]      t_eval           time at which one performs the evaluation
+ * \param[in]      cell_flag        metadata associated to the current cell
+ * \param[in, out] diffusion_hodge  pointer to the diffusion hodge structure
+ * \param[in, out] curlcurl_hodge   pointer to the curl-curl hodge structure
+ * \param[in, out] cb               pointer to a \ref cs_cell_builder_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_equation_init_properties_cw(const cs_equation_param_t     *eqp,
                                const cs_equation_builder_t   *eqb,
+                               const cs_cell_mesh_t          *cm,
                                const cs_real_t                t_eval,
                                const cs_flag_t                cell_flag,
-                               const cs_cell_mesh_t          *cm,
+                               cs_hodge_t                    *diffusion_hodge,
+                               cs_hodge_t                    *curlcurl_hodge,
                                cs_cell_builder_t             *cb)
 {
   /* Set the diffusion property */
-  if (cs_equation_param_has_diffusion(eqp))
-    if (!(eqb->diff_pty_uniform))
-      cs_equation_set_diffusion_property_cw(eqp, cm, t_eval, cell_flag, cb);
+  if (diffusion_hodge && !(eqb->diff_pty_uniform))
+    cs_hodge_set_property_value_cw(cm, t_eval, cell_flag, diffusion_hodge);
 
   /* Set the property related to the curl-curl operator */
-  if (cs_equation_param_has_curlcurl(eqp)) {
-    if (!(eqb->curlcurl_pty_uniform))
-      cs_equation_set_curlcurl_property_cw(eqp, cm, t_eval, cell_flag, cb);
-  }
+  if (curlcurl_hodge && !(eqb->curlcurl_pty_uniform))
+    cs_hodge_set_property_value_cw(cm, t_eval, cell_flag, curlcurl_hodge);
 
   /* Set the (linear) reaction property */
   if (cs_equation_param_has_reaction(eqp)) {
@@ -890,10 +947,10 @@ cs_equation_init_properties_cw(const cs_equation_param_t     *eqp,
 
   }
 
-  if (cs_equation_param_has_time(eqp))
-    if (!(eqb->time_pty_uniform))
-      cb->tpty_val = cs_property_value_in_cell(cm, eqp->time_property, t_eval);
+  if (cs_equation_param_has_time(eqp) && !(eqb->time_pty_uniform))
+    cb->tpty_val = cs_property_value_in_cell(cm, eqp->time_property, t_eval);
 }
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!

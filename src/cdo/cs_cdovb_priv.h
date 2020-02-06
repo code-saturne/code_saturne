@@ -83,18 +83,23 @@ struct _cs_cdovb_t {
   cs_flag_t                *vtx_bc_flag;
   cs_cdo_enforce_bc_t      *enforce_dirichlet;
   cs_cdo_enforce_bc_t      *enforce_robin_bc;
+
+  /* Only for vector-valued variables */
   cs_cdo_enforce_bc_t      *enforce_sliding;
 
   /* Pointer of function to build the diffusion term */
-  cs_hodge_t               *get_stiffness_matrix;
+  cs_hodge_t              **diffusion_hodge;
+  cs_hodge_compute_t       *get_stiffness_matrix;
 
   /* Pointer of function to build the advection term */
   cs_cdovb_advection_t     *get_advection_matrix;
   cs_cdovb_advection_bc_t  *add_advection_bc;
 
-  /* If one needs to build a local hodge op. for time and reaction */
-  cs_param_hodge_t          hdg_mass;
-  cs_hodge_t               *get_mass_matrix;
+  /* If one needs to build a local Hodge operator for the unsteady and/or the
+     reaction term(s) */
+  cs_hodge_param_t          mass_hodgep;
+  cs_hodge_t              **mass_hodge;
+  cs_hodge_compute_t       *get_mass_matrix;
 
 };
 

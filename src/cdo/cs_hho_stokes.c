@@ -188,7 +188,6 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
 
       /* Local square dense matrices used during the construction of
          operators */
-      cb->hdg = cs_sdm_square_create(n_fc);
       cb->loc = cs_sdm_square_create(n_fc + 1);
       cb->aux = cs_sdm_square_create(n_fc + 1);
     }
@@ -224,9 +223,6 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
       const int g_size = 9;                   /* basis (P_(k+1)) - 1 */
       for (int i = 0; i < n_fc; i++) cb->ids[i] = 3;
       cb->ids[n_fc] = 4;
-
-      int  _sizes[3] = {1, 3, 6}; /* c0, cs-1, cs_kp1 - cs */
-      cb->hdg = cs_sdm_block_create(1, 3, &g_size, _sizes);
       cb->loc = cs_sdm_block_create(n_fc + 1, n_fc + 1, cb->ids, cb->ids);
       cb->aux = cs_sdm_block_create(n_fc + 1, 1, cb->ids, &g_size); /* R_g^T */
     }
@@ -262,9 +258,6 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
       const int g_size = 19; /* basis (P_(k+1)) - 1 */
       for (int i = 0; i < n_fc; i++) cb->ids[i] = 6;
       cb->ids[n_fc] = 10;
-
-      int  _sizes[3] = {1, 9, 10}; /* c0, cs-1, cs_kp1 - cs */
-      cb->hdg = cs_sdm_block_create(1, 3, &g_size, _sizes);
       cb->loc = cs_sdm_block_create(n_fc + 1, n_fc + 1, cb->ids, cb->ids);
       cb->aux = cs_sdm_block_create(n_fc + 1, 1, cb->ids, &g_size); /* R_g^T */
     }

@@ -661,6 +661,12 @@ typedef struct {
  * Global variables
  *============================================================================*/
 
+/* Separation lines: header1, header2 (compatible with markdown), other */
+extern const char h1_sep[80];
+extern const char h2_sep[80];
+extern const char sepline[80];
+extern const char msepline[50];
+
 /*============================================================================
  * Public function prototypes
  *============================================================================*/

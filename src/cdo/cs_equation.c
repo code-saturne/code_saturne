@@ -2820,6 +2820,7 @@ cs_equation_compute_boundary_diff_flux(cs_real_t              t_eval,
                                          eqp,
                                          p_v,
                                          eq->builder,
+                                         eq->scheme_context,
                                          diff_flux);
     }
     break;
@@ -2834,6 +2835,7 @@ cs_equation_compute_boundary_diff_flux(cs_real_t              t_eval,
                                           p_v,
                                           p_c,
                                           eq->builder,
+                                          eq->scheme_context,
                                           diff_flux);
     }
     break;
@@ -2848,6 +2850,7 @@ cs_equation_compute_boundary_diff_flux(cs_real_t              t_eval,
                                          p_f,
                                          p_c,
                                          eq->builder,
+                                         eq->scheme_context,
                                          diff_flux);
     }
     break;

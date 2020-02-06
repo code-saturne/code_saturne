@@ -524,7 +524,6 @@ cs_equation_eb_set_cell_bc(const cs_cell_mesh_t         *cm,
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      face_bc     pointer to a cs_cdo_bc_face_t structure
  * \param[in]      dir_values  Dirichlet values associated to each vertex
- * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
  */
@@ -535,12 +534,9 @@ cs_equation_fb_set_cell_bc(const cs_cell_mesh_t         *cm,
                            const cs_equation_param_t    *eqp,
                            const cs_cdo_bc_face_t       *face_bc,
                            const cs_real_t               dir_values[],
-                           cs_real_t                     t_eval,
                            cs_cell_sys_t                *csys,
                            cs_cell_builder_t            *cb)
 {
-  CS_UNUSED(cb);
-
   /* Initialize the common part */
   _init_cell_sys_bc(face_bc, cm, csys);
 
@@ -571,7 +567,7 @@ cs_equation_fb_set_cell_bc(const cs_cell_mesh_t         *cm,
         for (int k = 0; k < d; k++)
           csys->dof_flag[d*f + k] |= CS_CDO_BC_NEUMANN;
 
-        cs_equation_compute_neumann_fb(t_eval,
+        cs_equation_compute_neumann_fb(cb->t_bc_eval,
                                        face_bc->def_ids[csys->bf_ids[f]],
                                        f,
                                        eqp,
@@ -584,7 +580,7 @@ cs_equation_fb_set_cell_bc(const cs_cell_mesh_t         *cm,
         for (int k = 0; k < d; k++)
           csys->dof_flag[d*f + k] |= CS_CDO_BC_ROBIN;
 
-        cs_equation_compute_robin(t_eval,
+        cs_equation_compute_robin(cb->t_bc_eval,
                                   face_bc->def_ids[csys->bf_ids[f]],
                                   f,
                                   eqp,

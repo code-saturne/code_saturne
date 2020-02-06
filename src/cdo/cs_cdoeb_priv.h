@@ -84,11 +84,13 @@ struct _cs_cdoeb_t {
   cs_cdo_enforce_bc_t      *enforce_essential_bc;
 
   /* Pointer of function to build the diffusion term */
-  cs_hodge_t               *get_curlcurl_hodge;
+  cs_hodge_t              **curlcurl_hodge;  /* one structure by thread */
+  cs_hodge_compute_t       *get_curlcurl;
 
   /* Mass matrix settings (useful for the unsteady and reaction terms) */
-  cs_param_hodge_t          hdg_mass;
-  cs_hodge_t               *get_mass_matrix;
+  cs_hodge_param_t          mass_hodgep;
+  cs_hodge_t              **mass_hodge;      /* one structure by thread */
+  cs_hodge_compute_t       *get_mass;
 
 };
 

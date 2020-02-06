@@ -96,6 +96,23 @@ BEGIN_C_DECLS
 
 static const double  cs_hodge_vc_coef = 3./20;
 
+static const char
+cs_hodge_type_desc[CS_HODGE_N_TYPES][CS_BASE_STRING_LEN] =
+  { N_("VpCd"),
+    N_("EpFd"),
+    N_("FpEd"),
+    N_("EdFp"),
+    N_("CpVd")  };
+
+static const char
+cs_hodge_algo_desc[CS_HODGE_N_ALGOS][CS_BASE_STRING_LEN] =
+  { N_("Voronoi"),
+    N_("Whitney on the Barycentric Subdivision (WBS)"),
+    N_("Orthogonal Consistency/Stabilization (OCS)"),
+    N_("Orthogonal Consistency/Sub-Stabilization (OCS2)"),
+    N_("Orthogonal Consistency/Bubble-Stabilization (BUBBLE)"),
+    N_("Automatic switch") };
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -149,8 +166,7 @@ _check_stiffness(cs_lnum_t             c_id,
  * \param[in]      c_id    current cell id
  * \param[in]      vec     vectors of quantities to test against a hodge
  * \param[in]      res     vectors of quantities to compare with
- * \param[in]      hdg     pointer to a cs_sdm_t structure
- * \param[in]      hodgep  parametrization of the discrete Hodge operator
+ * \param[in]      hodge   pointer to a discrete Hodge operator
  * \param[in, out] cb      pointer to a cell builder structure
  *                         buffers to store temporary values
  */
@@ -160,31 +176,35 @@ static void
 _check_vector_hodge(cs_lnum_t                c_id,
                     const cs_real_3_t       *vec,
                     const cs_real_3_t       *res,
-                    const cs_sdm_t          *hdg,
-                    const cs_param_hodge_t   hodgep,
+                    cs_hodge_t              *hodge,
                     cs_cell_builder_t       *cb)
 
 {
-  if (c_id % CS_HODGE_MODULO != 0 || hdg == NULL)
+  if (c_id % CS_HODGE_MODULO != 0 || hmat == NULL)
     return;
 
   cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-  cs_sdm_dump(c_id, NULL, NULL, hdg);
+  cs_sdm_dump(c_id, NULL, NULL, hodge->matrix);
+
+  const cs_hodge_param_t  *hodgep = hodge->param;
+  const cs_property_data_t  *pty = hodge->pty_data;
+  const cs_sdm_t  *hmat = hodge->matrix;
 
   cs_real_t  *in = cb->values;
-  cs_real_t  *h_in = cb->values + hdg->n_rows;
-  cs_real_t  *ref = cb->values + 2*hdg->n_rows;
+  cs_real_t  *h_in = cb->values + hmat->n_rows;
+  cs_real_t  *ref = cb->values + 2*hmat->n_rows;
   double  print_val = 0.;
 
-  if (hodgep.is_unity) {
-    cb->dpty_mat[0][0] = cb->dpty_mat[1][1] = cb->dpty_mat[2][2] = 1;
-    cb->dpty_mat[0][1] = cb->dpty_mat[1][0] = cb->dpty_mat[2][0] = 0;
-    cb->dpty_mat[0][2] = cb->dpty_mat[1][2] = cb->dpty_mat[2][1] = 0;
+  if (pty->is_unity) {
+    pty->tensor[0][0] = pty->tensor[1][1] = pty->tensor[2][2] = 1;
+    pty->tensor[0][1] = pty->tensor[1][0] = pty->tensor[2][0] = 0;
+    pty->tensor[0][2] = pty->tensor[1][2] = pty->tensor[2][1] = 0;
+
   }
-  else if (hodgep.is_iso) {
-    cb->dpty_mat[0][0] = cb->dpty_mat[1][1] = cb->dpty_mat[2][2] = cb->dpty_val;
-    cb->dpty_mat[0][1] = cb->dpty_mat[1][0] = cb->dpty_mat[2][0] = 0;
-    cb->dpty_mat[0][2] = cb->dpty_mat[1][2] = cb->dpty_mat[2][1] = 0;
+  else if (pty->is_iso) {
+    pty->tensor[0][0] = pty->tensor[1][1] = pty->tensor[2][2] = pty->value;
+    pty->tensor[0][1] = pty->tensor[1][0] = pty->tensor[2][0] = 0;
+    pty->tensor[0][2] = pty->tensor[1][2] = pty->tensor[2][1] = 0;
   }
 
   const cs_real_3_t  a[3] = { {1, 0, 0}, {0, 1, 0}, {0, 0, 1} };
@@ -192,17 +212,17 @@ _check_vector_hodge(cs_lnum_t                c_id,
   for (int dim = 0; dim < 3; dim++) {
 
     cs_real_3_t  pty_a;
-    cs_math_33_3_product((const cs_real_t (*)[3])cb->dpty_mat, a[dim], pty_a);
+    cs_math_33_3_product((const cs_real_t (*)[3])pty->tensor, a[dim], pty_a);
 
-    for (int i = 0; i < hdg->n_rows; i++) {
+    for (int i = 0; i < hmat->n_rows; i++) {
       in[i] = vec[i][dim];
       ref[i] = _dp3(pty_a, res[i]);
     }
 
-    cs_sdm_square_matvec(hdg, in, h_in);
+    cs_sdm_square_matvec(hmat, in, h_in);
 
     double  err = 0.;
-    for (int i = 0; i < hdg->n_rows; i++)
+    for (int i = 0; i < hmat->n_rows; i++)
       err += fabs(ref[i] - h_in[i]);
     print_val += err;
     if (err > 100 * cs_math_get_machine_epsilon()) {
@@ -343,8 +363,6 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
     size = 2*n_ec;
     BFT_MALLOC(cb->vectors, size, cs_real_3_t);
     memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
-
-    cb->hdg = cs_sdm_square_create(n_ec);
     break;
 
   case CS_SPACE_SCHEME_CDOVCB:
@@ -355,8 +373,6 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
     size = 2*n_ec + n_vc;
     BFT_MALLOC(cb->vectors, size, cs_real_3_t);
     memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
-
-    cb->hdg = cs_sdm_square_create(n_vc + 1);
     break;
 
   case CS_SPACE_SCHEME_CDOFB:
@@ -367,8 +383,6 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
     size = 2*n_fc;
     BFT_MALLOC(cb->vectors, size, cs_real_3_t);
     memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
-
-    cb->hdg = cs_sdm_square_create(n_fc);
     break;
 
   case CS_SPACE_SCHEME_CDOEB:
@@ -382,8 +396,6 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
       size = 2*n_ent;
       BFT_MALLOC(cb->vectors, size, cs_real_3_t);
       memset(cb->vectors, 0, size*sizeof(cs_real_3_t));
-
-      cb->hdg = cs_sdm_square_create(n_ent);
     }
     break;
 
@@ -402,14 +414,14 @@ _cell_builder_create(cs_param_space_scheme_t     space_scheme,
  *          Initialize the local discrete Hodge op. with the consistency part
  *
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in]      hloc       pointer to a local Hodge matrix
+ * \param[in]      hmat       pointer to a local Hodge matrix
  * \param[in, out] sloc       pointer to the local stiffness matrix
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _define_vb_stiffness(const cs_cell_mesh_t   *cm,
-                     const cs_sdm_t         *hloc,
+                     const cs_sdm_t         *hmat,
                      cs_sdm_t               *sloc)
 {
   /* Initialize the local stiffness matrix */
@@ -426,7 +438,7 @@ _define_vb_stiffness(const cs_cell_mesh_t   *cm,
     double  *si2 = sloc->val + i2*sloc->n_rows;
 
     /* Diagonal value: consistency part has already been computed */
-    const double  *hii = hloc->val + ei*(1 + cm->n_ec);
+    const double  *hii = hmat->val + ei*(1 + cm->n_ec);
     const double  dval = hii[0];
 
     si1[i1] += dval;
@@ -537,7 +549,7 @@ _define_vb_stiffness(const cs_cell_mesh_t   *cm,
  * \param[in]      dq         pointer to the second set of quantities
  * \param[in, out] alpha      geometrical quantity
  * \param[in, out] kappa      geometrical quantity
- * \param[in, out] hloc       pointer to a cs_sdm_t struct.
+ * \param[in, out] hmat       pointer to a cs_sdm_t struct.
  */
 /*----------------------------------------------------------------------------*/
 
@@ -549,7 +561,7 @@ _compute_cost_quant_iso(const int               n_ent,
                         const cs_real_3_t      *dq,
                         double                 *alpha,
                         double                 *kappa,
-                        cs_sdm_t               *hloc)
+                        cs_sdm_t               *hmat)
 {
   /* Compute several useful quantities
      alpha_ij = delta_ij - pq_j.Consist_i where Consist_i = 1/|c| dq_i
@@ -562,7 +574,7 @@ _compute_cost_quant_iso(const int               n_ent,
     const double  dsvol_i = _dp3(dq[i], pq[i]);
 
     double  *alpha_i = alpha + i*n_ent;
-    double  *mi = hloc->val + i*n_ent;
+    double  *mi = hmat->val + i*n_ent;
 
     alpha_i[i] = 1 - invcvol * dsvol_i;
 
@@ -573,7 +585,7 @@ _compute_cost_quant_iso(const int               n_ent,
 
     for (int j = i+1; j < n_ent; j++) {
 
-      /* Initialize the upper right part of hloc with the consistency part */
+      /* Initialize the upper right part of hmat with the consistency part */
       mi[j] = invcvol * ptyval * _dp3(dq[j], dq[i]);
 
       /* Compute the alpha matrix (not symmetric) */
@@ -599,19 +611,19 @@ _compute_cost_quant_iso(const int               n_ent,
  * \param[in]      dq       pointer to the second set of quantities
  * \param[in, out] alpha    geometrical quantity
  * \param[in, out] kappa    geometrical quantity
- * \param[in, out] hloc     pointer to a cs_sdm_t structure
+ * \param[in, out] hmat     pointer to a cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _compute_cost_quant(const int               n_ent,
                     const double            ovc,
-                    const cs_real_33_t      pty,
+                    const cs_real_t         pty[3][3],
                     const cs_real_3_t      *pq,
                     const cs_real_3_t      *dq,
                     double                 *alpha,
                     double                 *kappa,
-                    cs_sdm_t               *hloc)
+                    cs_sdm_t               *hmat)
 {
   /* Compute several useful quantities:
        alpha_ij = delta_ij - 1/|c|*pq_j.dq_i
@@ -625,7 +637,7 @@ _compute_cost_quant(const int               n_ent,
           pty[1][0] * dq[i][0] + pty[1][1] * dq[i][1] + pty[1][2] * dq[i][2],
           pty[2][0] * dq[i][0] + pty[2][1] * dq[i][1] + pty[2][2] * dq[i][2] };
 
-    double  *h_i = hloc->val + i*n_ent;
+    double  *h_i = hmat->val + i*n_ent;
 
     h_i[i] = _dp3(dq[i], mdq_i); /* Add the consistent part */
 
@@ -638,7 +650,7 @@ _compute_cost_quant(const int               n_ent,
 
     for (int j = i+1; j < n_ent; j++) {
 
-      /* Initialize the upper right part of hloc with the consistency part */
+      /* Initialize the upper right part of hmat with the consistency part */
       h_i[j] = ovc * _dp3(dq[j], mdq_i);
 
       /* Compute the alpha matrix (not symmetric) */
@@ -661,12 +673,12 @@ _compute_cost_quant(const int               n_ent,
  *
  * \param[in]      n_ent    number of local entities
  * \param[in]      dbeta2   space dim * squared value of the stabilization coef.
- * \param[in]      vol_c    cell volume
- * \param[in]      pty      values of the tensor related to the material pty
+ * \param[in]      ovc      reciprocal of the cell volume
+ * \param[in]      pty      values of the the material pty in this cell
  * \param[in]      pq       pointer to the first set of quantities
  * \param[in]      dq       pointer to the second set of quantities
  * \param[in, out] cb       temporary buffers
- * \param[in, out] hloc     pointer to a cs_sdm_t structure
+ * \param[in, out] hmat     pointer to a cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -674,12 +686,12 @@ static void
 _compute_iso_hodge_ur(const int               n_ent,
                       const double            dbeta2,
                       const double            ovc,
+                      const cs_real_t         pty,
                       const cs_real_3_t      *pq,
                       const cs_real_3_t      *dq,
                       cs_cell_builder_t      *cb,
-                      cs_sdm_t               *hloc)
+                      cs_sdm_t               *hmat)
 {
-  const double  pty = cb->dpty_val;
   const double  ptyc = pty*ovc;
 
   double  *kappa = cb->values;                /* size = n_ent */
@@ -706,7 +718,7 @@ _compute_iso_hodge_ur(const int               n_ent,
     const double  dqi_m_dqi = pty * _dp3(dqi, dqi);
     kappa[i] = dqi_m_dqi/dqi_pq[i];
 
-    double  *hi = hloc->val + i*n_ent;
+    double  *hi = hmat->val + i*n_ent;
 
     hi[i] = dqi_m_dqi*beta_coef + dbeta2*kappa[i];
     for (int j = i+1; j < n_ent; j++)
@@ -724,7 +736,7 @@ _compute_iso_hodge_ur(const int               n_ent,
 
     _partial_matvec(i, cb->aux, kappa_pq_dqi, stab);
 
-    double  *hi = hloc->val + i*n_ent;
+    double  *hi = hmat->val + i*n_ent;
 
     hi[i] += dbetac2 * stab[i];
 
@@ -752,7 +764,7 @@ _compute_iso_hodge_ur(const int               n_ent,
  * \param[in]      pq       pointer to the first set of quantities
  * \param[in]      dq       pointer to the second set of quantities
  * \param[in, out] cb       temporary buffers
- * \param[in, out] hloc     pointer to a cs_sdm_t structure
+ * \param[in, out] hmat     pointer to a cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -760,13 +772,12 @@ static void
 _compute_aniso_hodge_ur(const int               n_ent,
                         const double            dbeta2,
                         const double            ovc,
+                        const cs_real_t         pty[3][3],
                         const cs_real_3_t      *pq,
                         const cs_real_3_t      *dq,
                         cs_cell_builder_t      *cb,
-                        cs_sdm_t               *hloc)
+                        cs_sdm_t               *hmat)
 {
-  const cs_real_3_t  *pty = (const cs_real_3_t *)cb->dpty_mat;
-
   double  *kappa = cb->values;                /* size = n_ent */
   double  *kappa_pq_dqi = cb->values + n_ent; /* size = n_ent */
   double  *stab = cb->values + 2*n_ent;       /* size = n_ent */
@@ -797,7 +808,7 @@ _compute_aniso_hodge_ur(const int               n_ent,
 
     kappa[i] = dqi_m_dqi/dqi_pq[i];
 
-    double  *hi = hloc->val + i*n_ent;
+    double  *hi = hmat->val + i*n_ent;
 
     hi[i] = dqi_m_dqi*beta_coef + dbeta2*kappa[i];
     for (int j = i+1; j < n_ent; j++)
@@ -815,7 +826,7 @@ _compute_aniso_hodge_ur(const int               n_ent,
 
     _partial_matvec(i, cb->aux, kappa_pq_dqi, stab);
 
-    double  *hi = hloc->val + i*n_ent;
+    double  *hi = hmat->val + i*n_ent;
 
     hi[i] += dbetac2 * stab[i];
 
@@ -839,11 +850,12 @@ _compute_aniso_hodge_ur(const int               n_ent,
  *
  * \param[in]      n_ent    number of local entities
  * \param[in]      beta     the stabilization coef.
- * \param[in]      vol_c    cell volume
+ * \param[in]      ovc      reciprocal of the cell volume
+ * \param[in]      pty_val  value of the property inside this cell
  * \param[in]      pq       pointer to the first set of quantities
  * \param[in]      dq       pointer to the second set of quantities
  * \param[in, out] cb       temporary buffers
- * \param[in, out] hloc     pointer to a cs_sdm_t structure
+ * \param[in, out] hmat     pointer to a cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -851,13 +863,12 @@ static void
 _compute_iso_bubble_hodge_ur(const int               n_ent,
                              const double            beta,
                              const double            ovc,
+                             const cs_real_t         pty_val,
                              const cs_real_3_t      *pq,
                              const cs_real_3_t      *dq,
                              cs_cell_builder_t      *cb,
-                             cs_sdm_t               *hloc)
+                             cs_sdm_t               *hmat)
 {
-  const double  pty_val = cb->dpty_val;
-
   double  *kappa = cb->values;              /* size = n_ent */
   double  *dq_pq = cb->aux->val;            /* size = n_ent*n_ent */
 
@@ -879,7 +890,7 @@ _compute_iso_bubble_hodge_ur(const int               n_ent,
       dqi_pq[j] = _dp3(dqi, pq[j])*ovc;
 
     /* Consistent part */
-    double  *hi = hloc->val + i*n_ent;
+    double  *hi = hmat->val + i*n_ent;
     hi[i] = dqi_m_dqi*ovc;
     const double  coef = ovc * pty_val;
     for (int j = i+1; j < n_ent; j++)
@@ -896,7 +907,7 @@ _compute_iso_bubble_hodge_ur(const int               n_ent,
   for (int i = 0; i < n_ent; i++) {
 
     const double  *dqi_pq = dq_pq + n_ent*i;
-    double  *hi = hloc->val + i*n_ent;
+    double  *hi = hmat->val + i*n_ent;
 
     /* Diagonal term */
     double stab = 0;
@@ -933,11 +944,12 @@ _compute_iso_bubble_hodge_ur(const int               n_ent,
  *
  * \param[in]      n_ent    number of local entities
  * \param[in]      beta     the stabilization coef.
- * \param[in]      vol_c    cell volume
+ * \param[in]      ovc      reciprocal of the cell volume
+ * \param[in]      pty      value of the property inside this cell
  * \param[in]      pq       pointer to the first set of quantities
  * \param[in]      dq       pointer to the second set of quantities
  * \param[in, out] cb       temporary buffers
- * \param[in, out] hloc     pointer to a cs_sdm_t structure
+ * \param[in, out] hmat     pointer to a cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
@@ -945,13 +957,12 @@ static void
 _compute_aniso_bubble_hodge_ur(const int               n_ent,
                                const double            beta,
                                const double            ovc,
+                               const cs_real_t         pty[3][3],
                                const cs_real_3_t      *pq,
                                const cs_real_3_t      *dq,
                                cs_cell_builder_t      *cb,
-                               cs_sdm_t               *hloc)
+                               cs_sdm_t               *hmat)
 {
-  const cs_real_3_t  *pty = (const cs_real_3_t *)cb->dpty_mat;
-
   double  *kappa = cb->values;              /* size = n_ent */
   double  *dq_pq = cb->aux->val;            /* size = n_ent*n_ent */
 
@@ -977,7 +988,7 @@ _compute_aniso_bubble_hodge_ur(const int               n_ent,
       dqi_pq[j] = _dp3(dqi, pq[j])*ovc;
 
     /* Consistent part */
-    double  *hi = hloc->val + i*n_ent;
+    double  *hi = hmat->val + i*n_ent;
     hi[i] = dqi_m_dqi*ovc;
     for (int j = i+1; j < n_ent; j++)
       hi[j] = ovc * _dp3(dq[j], mdqi);
@@ -993,7 +1004,7 @@ _compute_aniso_bubble_hodge_ur(const int               n_ent,
   for (int i = 0; i < n_ent; i++) {
 
     const double  *dqi_pq = dq_pq + n_ent*i;
-    double  *hi = hloc->val + i*n_ent;
+    double  *hi = hmat->val + i*n_ent;
 
     /* Diagonal term */
     double stab = 0;
@@ -1034,17 +1045,17 @@ _compute_aniso_bubble_hodge_ur(const int               n_ent,
  * \param[in]      pty      values of the tensor related to the material pty
  * \param[in]      cm       pointer to a cs_cell_mesh_t structure
  * \param[in, out] cb       temporary buffers
- * \param[in, out] hloc     pointer to a cs_sdm_t structure
+ * \param[in, out] hmat     pointer to a cs_sdm_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _compute_aniso_hepfd_ocs2_ur(const double            dbeta2,
+                             const cs_real_t         pty[3][3],
                              const cs_cell_mesh_t   *cm,
                              cs_cell_builder_t      *cb,
-                             cs_sdm_t               *hloc)
+                             cs_sdm_t               *hmat)
 {
-  const cs_real_3_t  *pty = (const cs_real_3_t *)cb->dpty_mat;
   const double  ovc = 1./cm->vol_c;
   const int  n_ent = cm->n_ec;
 
@@ -1071,7 +1082,7 @@ _compute_aniso_hepfd_ocs2_ur(const double            dbeta2,
     for (int k = 0; k < 3; k++)
       pty_fd_i[k] *= cm->dface[i].meas;
 
-    double  *h_i = hloc->val + i*n_ent;
+    double  *h_i = hmat->val + i*n_ent;
     for (int j = i; j < n_ent; j++)
       h_i[j] = _dp3(consist[j], pty_fd_i);
 
@@ -1120,7 +1131,7 @@ _compute_aniso_hepfd_ocs2_ur(const double            dbeta2,
       if (i == k) contrib_i += 1;
       const double  contrib_ik = contrib_pek * contrib_i;
 
-      double  *h_i = hloc->val + i*n_ent;
+      double  *h_i = hmat->val + i*n_ent;
       h_i[i] += contrib_ik * contrib_i;
 
       for (int j = i+1; j < n_ent; j++) {
@@ -1202,6 +1213,334 @@ _compute_hodge_cost(const int       n_ent,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Create and initialize a pointer to a cs_hodge_t structure
+ *
+ * \param[in] connect        pointer to cs_cdo_connect_t structure
+ * \param[in] property       pointer to a property structure
+ * \param[in] hp             pointer to a cs_hodge_param_t structure
+ * \param[in] need_tensor    true if one needs a tensor otherwise false
+ * \param[in] need_eigen     true if one needs to compute eigen valuese
+ *
+ * \return a pointer to the new allocated cs_hodge_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_hodge_t *
+cs_hodge_create(const cs_cdo_connect_t   *connect,
+                const cs_property_t      *property,
+                const cs_hodge_param_t   *hp,
+                bool                      need_tensor,
+                bool                      need_eigen)
+{
+  cs_hodge_t  *hdg = NULL;
+
+  BFT_MALLOC(hdg, 1, cs_hodge_t);
+
+  hdg->param = hp;
+
+  switch (hp->type) {
+
+  case CS_HODGE_TYPE_VPCD:
+    hdg->matrix = cs_sdm_square_create(connect->n_max_vbyc);
+    break;
+  case CS_HODGE_TYPE_EPFD:
+    hdg->matrix = cs_sdm_square_create(connect->n_max_ebyc);
+    break;
+  case CS_HODGE_TYPE_FPED:
+  case CS_HODGE_TYPE_EDFP:
+    hdg->matrix = cs_sdm_square_create(connect->n_max_fbyc);
+    break;
+  case CS_HODGE_TYPE_CPVD:
+    hdg->matrix = cs_sdm_square_create(1);
+    break;
+  case CS_HODGE_TYPE_FB:
+    hdg->matrix = cs_sdm_square_create(connect->n_max_fbyc + 1);
+    break;
+  case CS_HODGE_TYPE_VC:
+    hdg->matrix = cs_sdm_square_create(connect->n_max_vbyc + 1);
+    break;
+
+  default:
+    hdg->matrix = NULL;
+    break;
+  }
+
+  BFT_MALLOC(hdg->pty_data, 1, cs_property_data_t);
+  cs_property_data_init(need_tensor, need_eigen, property, hdg->pty_data);
+  if (hdg->pty_data->is_unity == false && connect->n_cells > 0)
+    cs_hodge_set_property_value(0, 0, 0, hdg);
+
+  return hdg;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Create and initialize an array of pointers to a cs_hodge_t
+ *         structures. This array is of size the number of OpenMP threads.
+ *         Only the one associated to the current thread is set.
+ *
+ * \param[in] connect        pointer to cs_cdo_connect_t structure
+ * \param[in] property       pointer to a property structure
+ * \param[in] hp             pointer to a cs_hodge_param_t structure
+ * \param[in] need_tensor    true if one needs a tensor otherwise false
+ * \param[in] need_eigen     true if one needs to compute eigen valuese
+ *
+ * \return an array of pointers of cs_hodge_t structures
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_hodge_t **
+cs_hodge_init_context(const cs_cdo_connect_t   *connect,
+                      const cs_property_t      *property,
+                      const cs_hodge_param_t   *hp,
+                      bool                      need_tensor,
+                      bool                      need_eigen)
+{
+  cs_hodge_t  **hodge_array = NULL;
+
+  BFT_MALLOC(hodge_array, cs_glob_n_threads, cs_hodge_t *);
+  for (int i = 0; i < cs_glob_n_threads; i++)
+    hodge_array[i] = NULL;
+
+#if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
+#pragma omp parallel
+  {
+    int t_id = omp_get_thread_num();
+    assert(t_id < cs_glob_n_threads);
+
+    hodge_array[t_id] = cs_hodge_create(connect, property, hp,
+                                        need_tensor, need_eigen);
+  }
+#else
+  assert(cs_glob_n_threads == 1);
+  hodge_array[t_id] = cs_hodge_create(connect, property, hp,
+                                      need_tensor, need_eigen);
+#endif /* openMP */
+
+  return hodge_array;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a cs_hodge_t structure
+ *
+ * \param[in, out] p_hodge    double pointer to a cs_hodge_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_free(cs_hodge_t    **p_hodge)
+{
+  cs_hodge_t  *hdg = *p_hodge;
+
+  if (hdg == NULL)
+    return;
+
+  /* Other pointers are shared */
+  hdg->matrix = cs_sdm_free(hdg->matrix);
+
+  BFT_FREE(hdg->pty_data);
+
+  BFT_FREE(hdg);
+  *p_hodge = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a set of cs_hodge_t structures
+ *
+ * \param[in, out] p_hodges    triple pointer to cs_hodge_t structures
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_free_context(cs_hodge_t    ***p_hodges)
+{
+  cs_hodge_t  **hodge_array = *p_hodges;
+
+  if (hodge_array == NULL)
+    return;
+
+#if defined(HAVE_OPENMP)
+# pragma omp parallel
+  {
+    int t_id = omp_get_thread_num();
+    cs_hodge_free(&(hodge_array[t_id]));
+  }
+#else  /* No OpenMP */
+  cs_hodge_free(&(hodge_array[0]));
+#endif /* openMP */
+
+  BFT_FREE(hodge_array);
+  *p_hodges = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve a function pointer to compute a discrete Hodge operator
+ *
+ * \param[in] calling_func    name of the calling function
+ * \param[in] hp              a cs_hodge_param_t structure
+ *
+ * \return a pointer to the corresponding function
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_hodge_compute_t *
+cs_hodge_get_func(const char               *calling_func,
+                  const cs_hodge_param_t    hp)
+{
+  cs_hodge_compute_t  *hdg_func = NULL;
+
+  switch (hp.type) {
+
+  case CS_HODGE_TYPE_VPCD:
+    {
+      switch (hp.algo) {
+
+      case CS_HODGE_ALGO_COST:
+      case CS_HODGE_ALGO_OCS2:
+      case CS_HODGE_ALGO_BUBBLE:
+      case CS_HODGE_ALGO_VORONOI:
+        return cs_hodge_vpcd_voro_get;
+      case CS_HODGE_ALGO_WBS:
+        return cs_hodge_vpcd_wbs_get;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid algorithm to compute a Vp-Cd Hodge operator.\n"
+                  " The calling function is %s\n", __func__, calling_func);
+        break;
+      }
+    }
+    break;
+
+  case CS_HODGE_TYPE_EPFD:
+    {
+      switch (hp.algo) {
+
+      case CS_HODGE_ALGO_COST:
+        return cs_hodge_epfd_cost_get;
+      case CS_HODGE_ALGO_OCS2:
+        return cs_hodge_epfd_ocs2_get;
+      case CS_HODGE_ALGO_BUBBLE:
+      case CS_HODGE_ALGO_WBS:   /* By default, one should define a specific
+                                   algorithm for WBS */
+        return cs_hodge_epfd_bubble_get;
+      case CS_HODGE_ALGO_VORONOI:
+        return cs_hodge_epfd_voro_get;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid algorithm to compute a Ep-Fd Hodge operator.\n"
+                  " The calling function is %s\n", __func__, calling_func);
+        break;
+      }
+    }
+    break;
+
+  case CS_HODGE_TYPE_EDFP:
+    {
+      switch (hp.algo) {
+
+      case CS_HODGE_ALGO_COST:
+        return cs_hodge_edfp_cost_get_opt;
+      case CS_HODGE_ALGO_BUBBLE:
+      case CS_HODGE_ALGO_WBS:   /* By default, one should define a specific
+                                   algorithm for WBS */
+        return cs_hodge_edfp_bubble_get;
+      case CS_HODGE_ALGO_VORONOI:
+        return cs_hodge_edfp_voro_get;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid algorithm to compute a Ed-Fp Hodge operator.\n"
+                  " The calling function is %s\n", __func__, calling_func);
+        break;
+      }
+    }
+    break;
+
+  case CS_HODGE_TYPE_FPED:
+    {
+      switch (hp.algo) {
+
+      case CS_HODGE_ALGO_COST:
+        return cs_hodge_fped_cost_get;
+      case CS_HODGE_ALGO_BUBBLE:
+      case CS_HODGE_ALGO_WBS:   /* By default, one should define a specific
+                                   algorithm for WBS */
+        return cs_hodge_fped_bubble_get;
+      case CS_HODGE_ALGO_VORONOI:
+        return cs_hodge_fped_voro_get;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  "%s: Invalid algorithm to compute a Fp-Ed Hodge operator.\n"
+                  " The calling function is %s\n", __func__, calling_func);
+        break;
+      }
+    }
+    break;
+
+  case CS_HODGE_TYPE_FB:
+    return cs_hodge_fb_get;
+
+  case CS_HODGE_TYPE_VC:
+    return cs_hodge_vcb_wbs_get;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid type of Hodge operator called by %s\n",
+              __func__, calling_func);
+    break;
+
+  } /* Switch on the type of Hodge operator */
+
+  return hdg_func;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Output the settings related to a cs_hodge_param_t structure
+ *
+ * \param[in] prefix    optional string
+ * \param[in] property  optional pointer to a property structure
+ * \param[in] hp        a cs_hodge_param_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_param_log(const char               *prefix,
+                   const cs_property_t      *property,
+                   const cs_hodge_param_t    hp)
+{
+  const char  *_p;
+  const char _empty_prefix[2] = "";
+  if (prefix == NULL)
+    _p = _empty_prefix;
+  else
+    _p = prefix;
+
+  cs_log_printf(CS_LOG_SETUP, "%s | Type: %s\n",
+                _p, cs_hodge_type_desc[hp.type]);
+  cs_log_printf(CS_LOG_SETUP, "%s | Algo: %s\n",
+                _p, cs_hodge_algo_desc[hp.algo]);
+  if (hp.algo == CS_HODGE_ALGO_COST ||
+      hp.algo == CS_HODGE_ALGO_OCS2 ||
+      hp.algo == CS_HODGE_ALGO_BUBBLE)
+    cs_log_printf(CS_LOG_SETUP, "%s | Algo.Coef: %.3e\n",
+                  _p, hp.coef);
+
+  if (property != NULL)
+    cs_log_printf(CS_LOG_SETUP, "%s | Associated property: %s\n",
+                  _p, cs_property_get_name(property));
+  cs_log_printf(CS_LOG_SETUP, "%s | Property inversion: %s\n",
+                _p, cs_base_strtf(hp.inv_pty));
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Copy the set of parameters associated to a discrete Hodge operator
  *         to another one
  *
@@ -1211,14 +1550,12 @@ _compute_hodge_cost(const int       n_ent,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_copy_parameters(const cs_param_hodge_t   *h_ref,
-                         cs_param_hodge_t         *h_cpy)
+cs_hodge_copy_parameters(const cs_hodge_param_t   *h_ref,
+                         cs_hodge_param_t         *h_cpy)
 {
   if (h_ref == NULL || h_cpy == NULL)
     return;
 
-  h_cpy->is_unity = h_ref->is_unity;
-  h_cpy->is_iso = h_ref->is_iso;
   h_cpy->inv_pty = h_ref->inv_pty;
   h_cpy->type = h_ref->type;
   h_cpy->algo = h_ref->algo;
@@ -1227,44 +1564,205 @@ cs_hodge_copy_parameters(const cs_param_hodge_t   *h_ref,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local stiffness matrix using the generic COST algo.
- *          The computed matrix is stored in cb->loc
- *          Case of CDO face-based schemes
+ * \brief  Set the property value (scalar- or tensor-valued) related to a
+ *         discrete Hodge operator inside a cell and if needed ohter related
+ *         quantities
  *
- * \param[in]      hodgep     pointer to a cs_param_hodge_t structure
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in]      c_id    id of the cell to deal with
+ * \param[in]      t_eval  time at which one performs the evaluation
+ * \param[in]      c_flag  flag related to this cell
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_fb_cost_get_stiffness(const cs_param_hodge_t    hodgep,
-                               const cs_cell_mesh_t     *cm,
+cs_hodge_set_property_value(const cs_lnum_t       c_id,
+                            const cs_real_t       t_eval,
+                            const cs_flag_t       c_flag,
+                            cs_hodge_t           *hodge)
+{
+  assert(hodge != NULL);
+
+  cs_property_data_t  *pty = hodge->pty_data;
+
+  if (pty->property == NULL)
+    return;  /* The default initialization corresponds to what is needed */
+
+  if (pty->need_tensor) {
+
+    cs_property_get_cell_tensor(c_id,
+                                t_eval,
+                                pty->property,
+                                hodge->param->inv_pty,
+                                pty->tensor);
+
+    if (pty->is_iso)
+      pty->value = pty->tensor[0][0];
+
+  }
+  else {
+
+    if (pty->is_iso) {
+
+      pty->value = cs_property_get_cell_value(c_id,
+                                              t_eval,
+                                              pty->property);
+
+      if (hodge->param->inv_pty) {
+        assert(fabs(pty->value) > FLT_MIN);
+        pty->value = 1/pty->value;
+      }
+
+    }
+    else { /* Anisotropic so a tensor is needed */
+
+      pty->need_tensor = true;
+      cs_property_get_cell_tensor(c_id,
+                                  t_eval,
+                                  pty->property,
+                                  hodge->param->inv_pty,
+                                  pty->tensor);
+
+    }
+
+  } /* Tensor-valued evaluation of the property is not needed */
+
+  /* Set additional quantities in case of more advanced way of enforcing the
+     essential BCs */
+  if (c_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
+    if (pty->need_eigen) {
+
+      if (pty->need_tensor)
+        cs_math_33_eigen(pty->tensor, &(pty->eigen_ratio), &(pty->eigen_max));
+      else
+        pty->eigen_ratio = 1.0, pty->eigen_max = pty->value;
+
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the property value (scalar- or tensor-valued) related to a
+ *         discrete Hodge operator inside a cell and if needed ohter related
+ *         quantities.
+ *         Cell-wise variant (usage of cs_cell_mesh_t strcuture)
+ *
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in]      t_eval  time at which one performs the evaluation
+ * \param[in]      c_flag  flag related to this cell
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_set_property_value_cw(const cs_cell_mesh_t   *cm,
+                               const cs_real_t         t_eval,
+                               const cs_flag_t         c_flag,
+                               cs_hodge_t             *hodge)
+{
+  assert(hodge != NULL);
+
+  cs_property_data_t  *pty = hodge->pty_data;
+
+  if (pty->property == NULL)
+    return;  /* The default initialization corresponds to what is needed */
+
+  if (pty->need_tensor) {
+
+    cs_property_tensor_in_cell(cm,
+                               pty->property,
+                               t_eval,
+                               hodge->param->inv_pty,
+                               pty->tensor);
+
+    if (pty->is_iso)
+      pty->value = pty->tensor[0][0];
+
+  }
+  else {
+
+    if (pty->is_iso) {
+
+      pty->value = cs_property_value_in_cell(cm, pty->property, t_eval);
+
+      if (hodge->param->inv_pty) {
+        assert(fabs(pty->value) > FLT_MIN);
+        pty->value = 1/pty->value;
+      }
+
+    }
+    else { /* Anisotropic so a tensor is needed */
+
+      pty->need_tensor = true;
+      cs_property_tensor_in_cell(cm,
+                                 pty->property,
+                                 t_eval,
+                                 hodge->param->inv_pty,
+                                 pty->tensor);
+
+    }
+
+  } /* Tensor-valued evaluation of the property is not needed */
+
+  /* Set additional quantities in case of more advanced way of enforcing the
+     essential BCs */
+  if (c_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
+    if (pty->need_eigen) {
+
+      if (pty->need_tensor)
+        cs_math_33_eigen(pty->tensor, &(pty->eigen_ratio), &(pty->eigen_max));
+      else
+        pty->eigen_ratio = 1.0, pty->eigen_max = pty->value;
+
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Build a local stiffness matrix using the generic COST algo.
+ *          The computed matrix is stored in cb->loc and the related discrete
+ *          hodge operator in hodge->matrix
+ *          Case of CDO face-based schemes
+ *
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_fb_cost_get_stiffness(const cs_cell_mesh_t     *cm,
+                               cs_hodge_t               *hodge,
                                cs_cell_builder_t        *cb)
 {
   /* Sanity checks */
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
+  /* Compute the local discrete Hodge operator */
+  cs_hodge_edfp_cost_get_opt(cm, hodge, cb);
+
+  const cs_sdm_t  *hmat = hodge->matrix;
+
   /* Initialize the local stiffness matrix */
   cs_sdm_t  *sloc = cb->loc;
   cs_sdm_square_init(cm->n_fc + 1, sloc);
 
-  /* Compute the local discrete Hodge operator */
-  cs_hodge_edfp_cost_get_opt(hodgep, cm, cb);
-
-  cs_sdm_t  *hloc = cb->hdg;
   double  *sval_crow = sloc->val + cm->n_fc*sloc->n_rows;
   double  full_sum = 0.;
 
-  for (int i = 0; i < hloc->n_rows; i++) {
+  for (int i = 0; i < hmat->n_rows; i++) {
 
     const short int  fi_sgn = cm->f_sgn[i];
-    const double  *hval_i = hloc->val + i*hloc->n_rows;
+    const double  *hval_i = hmat->val + i*hmat->n_rows;
 
     double  *sval_i = sloc->val + i*sloc->n_rows;
     double  row_sum = 0.;
-    for (int j = 0; j < hloc->n_rows; j++) {
+    for (int j = 0; j < hmat->n_rows; j++) {
       const cs_real_t  hsgn_coef = fi_sgn * cm->f_sgn[j] * hval_i[j];
       row_sum += hsgn_coef;
       sval_i[j] = hsgn_coef;
@@ -1288,43 +1786,45 @@ cs_hodge_fb_cost_get_stiffness(const cs_param_hodge_t    hodgep,
 /*!
  * \brief   Build a local stiffness matrix using the generic COST algo.
  *          with the usage of bubble stabilization.
- *          The computed matrix is stored in cb->loc
+ *          The computed matrix is stored in cb->loc and the related discrete
+ *          hodge operator in hodge->matrix
  *          Case of CDO face-based schemes
  *
- * \param[in]      hodgep     pointer to a cs_param_hodge_t structure
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_fb_bubble_get_stiffness(const cs_param_hodge_t    hodgep,
-                                 const cs_cell_mesh_t     *cm,
-                                 cs_cell_builder_t        *cb)
+cs_hodge_fb_bubble_get_stiffness(const cs_cell_mesh_t    *cm,
+                                 cs_hodge_t              *hodge,
+                                 cs_cell_builder_t       *cb)
 {
   /* Sanity checks */
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
+  /* Compute the local discrete Hodge operator */
+  cs_hodge_edfp_bubble_get(cm, hodge, cb);
+
+  const cs_sdm_t  *hmat = hodge->matrix;
+
   /* Initialize the local stiffness matrix */
   cs_sdm_t  *sloc = cb->loc;
   cs_sdm_square_init(cm->n_fc + 1, sloc);
 
-  /* Compute the local discrete Hodge operator */
-  cs_hodge_edfp_bubble_get(hodgep, cm, cb);
-
-  cs_sdm_t  *hloc = cb->hdg;
   double  *sval_crow = sloc->val + cm->n_fc*sloc->n_rows;
   double  full_sum = 0.;
 
-  for (int i = 0; i < hloc->n_rows; i++) {
+  for (int i = 0; i < hmat->n_rows; i++) {
 
     const short int  fi_sgn = cm->f_sgn[i];
-    const double  *hval_i = hloc->val + i*hloc->n_rows;
+    const double  *hval_i = hmat->val + i*hmat->n_rows;
 
     double  *sval_i = sloc->val + i*sloc->n_rows;
     double  row_sum = 0.;
-    for (int j = 0; j < hloc->n_rows; j++) {
+    for (int j = 0; j < hmat->n_rows; j++) {
       const cs_real_t  hsgn_coef = fi_sgn * cm->f_sgn[j] * hval_i[j];
       row_sum += hsgn_coef;
       sval_i[j] = hsgn_coef;
@@ -1347,42 +1847,43 @@ cs_hodge_fb_bubble_get_stiffness(const cs_param_hodge_t    hodgep,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Build a local stiffness matrix using the Voronoi algorithm
- *          The computed matrix is stored in cb->loc
+ *          The computed matrix is stored in cb->loc and the related discrete
+ *          hodge operator in hodge->matrix
  *          Case of CDO face-based schemes
  *
- * \param[in]      hodgep     pointer to a cs_param_hodge_t structure
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_fb_voro_get_stiffness(const cs_param_hodge_t    hodgep,
-                               const cs_cell_mesh_t     *cm,
+cs_hodge_fb_voro_get_stiffness(const cs_cell_mesh_t     *cm,
+                               cs_hodge_t               *hodge,
                                cs_cell_builder_t        *cb)
 {
   /* Sanity checks */
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_EDFP);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_VORONOI);
+  assert(hodge->param->type == CS_HODGE_TYPE_EDFP);
+  assert(hodge->param->algo == CS_HODGE_ALGO_VORONOI);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PF | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
   /* Compute the local discrete Hodge operator */
-  cs_hodge_edfp_voro_get(hodgep, cm, cb);
+  cs_hodge_edfp_voro_get(cm, hodge, cb);
+
+  const cs_sdm_t  *hmat = hodge->matrix;
 
   /* Initialize the local stiffness matrix */
   cs_sdm_t  *sloc = cb->loc;
   cs_sdm_square_init(cm->n_fc + 1, sloc);
 
   double  full_sum = 0.;
-
-  cs_sdm_t  *hloc = cb->hdg;
   double  *sval_crow = sloc->val + cm->n_fc*sloc->n_rows;
 
-  for (int i = 0; i < hloc->n_rows; i++) {
+  for (int i = 0; i < hmat->n_rows; i++) {
 
     /* Hodge operator is diagonal */
-    const double  *hval_i = hloc->val + i*hloc->n_rows;
+    const double  *hval_i = hmat->val + i*hmat->n_rows;
     const double  row_sum = hval_i[i];
 
     double  *sval_i = sloc->val + i*sloc->n_rows;
@@ -1405,22 +1906,27 @@ cs_hodge_fb_voro_get_stiffness(const cs_param_hodge_t    hodgep,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Build a local stiffness matrix using the generic COST algo.
- *          Case of CDO vertex-based schemes and isotropic property
+ *          The computed matrix is stored in cb->loc and the related discrete
+ *          hodge operator in hodge->matrix
+ *          Case of CDO vertex-based schemes and an isotropic property
  *
- * \param[in]      hodgep     pointer to a cs_param_hodge_t structure
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_vb_cost_get_iso_stiffness(const cs_param_hodge_t    hodgep,
-                                   const cs_cell_mesh_t     *cm,
-                                   cs_cell_builder_t        *cb)
+cs_hodge_vb_cost_get_iso_stiffness(const cs_cell_mesh_t   *cm,
+                                   cs_hodge_t             *hodge,
+                                   cs_cell_builder_t      *cb)
 {
+  const cs_hodge_param_t  *hodgep = hodge->param;
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity checks */
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_EPFD);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_COST);
+  assert(hodgep->type == CS_HODGE_TYPE_EPFD);
+  assert(hodgep->algo == CS_HODGE_ALGO_COST);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ |
                        CS_FLAG_COMP_EV));
@@ -1434,43 +1940,47 @@ cs_hodge_vb_cost_get_iso_stiffness(const cs_param_hodge_t    hodgep,
   /* Compute the upper right part of the local Hodge matrix
    *  Rk: Switch arguments between discrete Hodge operator from PRIMAL->DUAL
    *  or DUAL->PRIMAL space */
-  cs_sdm_t  *hloc = cb->hdg;
-  cs_sdm_square_init(cm->n_ec, hloc);
+  cs_sdm_square_init(cm->n_ec, hodge->matrix);
 
   _compute_iso_hodge_ur(cm->n_ec,
-                        3*hodgep.coef*hodgep.coef,
+                        3*hodgep->coef*hodgep->coef,
                         1./cm->vol_c,
+                        pty->value,
                         (const cs_real_t (*)[3])pq,
                         (const cs_real_t (*)[3])dq,
-                        cb, hloc);
+                        cb, hodge->matrix);
 
-  cs_sdm_t  *sloc = cb->loc;
-  _define_vb_stiffness(cm, hloc, sloc);
+  _define_vb_stiffness(cm, hodge->matrix, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
-  _check_stiffness(cm->c_id, sloc);
+  _check_stiffness(cm->c_id, cb->loc);
 #endif
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Build a local stiffness matrix using the generic COST algo.
- *          Case of CDO vertex-based schemes
+ *          The computed matrix is stored in cb->loc and the related discrete
+ *          hodge operator in hodge->matrix
+ *          Case of CDO vertex-based schemes and an anistropic property
  *
- * \param[in]      hodgep     pointer to a cs_param_hodge_t structure
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in]      cm       pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge    pointer to a cs_hodge_t structure
+ * \param[in, out] cb       pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_vb_cost_get_aniso_stiffness(const cs_param_hodge_t    hodgep,
-                                     const cs_cell_mesh_t     *cm,
-                                     cs_cell_builder_t        *cb)
+cs_hodge_vb_cost_get_aniso_stiffness(const cs_cell_mesh_t    *cm,
+                                     cs_hodge_t              *hodge,
+                                     cs_cell_builder_t       *cb)
 {
+  const cs_hodge_param_t  *hodgep = hodge->param;
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity checks */
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_EPFD);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_COST);
+  assert(hodgep->type == CS_HODGE_TYPE_EPFD);
+  assert(hodgep->algo == CS_HODGE_ALGO_COST);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ |
                        CS_FLAG_COMP_EV));
@@ -1482,45 +1992,49 @@ cs_hodge_vb_cost_get_aniso_stiffness(const cs_param_hodge_t    hodgep,
   _init_vb_geom_quant(cm, pq, dq);
 
   /* Compute the upper right part of the local Hodge matrix
-   *  Rk: Switch arguments between discrete Hodge operator from PRIMAL->DUAL
-   *  or DUAL->PRIMAL space */
-  cs_sdm_t  *hloc = cb->hdg;
-  cs_sdm_square_init(cm->n_ec, hloc);
+   * Remark: Switch arguments between discrete Hodge operator from PRIMAL->DUAL
+   * or DUAL->PRIMAL space */
+  cs_sdm_square_init(cm->n_ec, hodge->matrix);
 
   _compute_aniso_hodge_ur(cm->n_ec,
-                          3*hodgep.coef*hodgep.coef,
+                          3*hodgep->coef*hodgep->coef,
                           1./cm->vol_c,
+                          pty->tensor,
                           (const cs_real_t (*)[3])pq,
                           (const cs_real_t (*)[3])dq,
-                          cb, hloc);
+                          cb, hodge->matrix);
 
-  cs_sdm_t  *sloc = cb->loc;
-  _define_vb_stiffness(cm, hloc, sloc);
+  _define_vb_stiffness(cm, hodge->matrix, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
-  _check_stiffness(cm->c_id, sloc);
+  _check_stiffness(cm->c_id, cb->loc);
 #endif
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Build a local stiffness matrix using the generic Bubble algo.
+ *          The computed matrix is stored in cb->loc and the related discrete
+ *          hodge operator in hodge->matrix
  *          Case of CDO vertex-based schemes and isotropic material property
  *
- * \param[in]      hodgep     pointer to a cs_param_hodge_t structure
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_vb_bubble_get_iso_stiffness(const cs_param_hodge_t    hodgep,
-                                     const cs_cell_mesh_t     *cm,
-                                     cs_cell_builder_t        *cb)
+cs_hodge_vb_bubble_get_iso_stiffness(const cs_cell_mesh_t    *cm,
+                                     cs_hodge_t              *hodge,
+                                     cs_cell_builder_t       *cb)
 {
+  const cs_hodge_param_t  *hodgep = hodge->param;
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity checks */
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_EPFD);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_BUBBLE);
+  assert(hodgep->type == CS_HODGE_TYPE_EPFD);
+  assert(hodgep->algo == CS_HODGE_ALGO_BUBBLE);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ |
                        CS_FLAG_COMP_EV));
@@ -1534,43 +2048,47 @@ cs_hodge_vb_bubble_get_iso_stiffness(const cs_param_hodge_t    hodgep,
   /* Compute the upper right part of the local Hodge matrix
    *  Rk: Switch arguments between discrete Hodge operator from PRIMAL->DUAL
    *  or DUAL->PRIMAL space */
-  cs_sdm_t  *hloc = cb->hdg;
-  cs_sdm_square_init(cm->n_ec, hloc);
+  cs_sdm_square_init(cm->n_ec, hodge->matrix);
 
   _compute_iso_bubble_hodge_ur(cm->n_ec,
-                               hodgep.coef,
+                               hodgep->coef,
                                1./cm->vol_c,
+                               pty->value,
                                (const cs_real_t (*)[3])pq,
                                (const cs_real_t (*)[3])dq,
-                               cb, hloc);
+                               cb, hodge->matrix);
 
-  cs_sdm_t  *sloc = cb->loc;
-  _define_vb_stiffness(cm, hloc, sloc);
+  _define_vb_stiffness(cm, hodge->matrix, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
-  _check_stiffness(cm->c_id, sloc);
+  _check_stiffness(cm->c_id, cb->loc);
 #endif
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Build a local stiffness matrix using the generic Bubble algo.
+ *          The computed matrix is stored in cb->loc and the related discrete
+ *          hodge operator in hodge->matrix
  *          Case of CDO vertex-based schemes and anisotropic material property
  *
- * \param[in]      hodgep     pointer to a cs_param_hodge_t structure
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_vb_bubble_get_aniso_stiffness(const cs_param_hodge_t    hodgep,
-                                       const cs_cell_mesh_t     *cm,
-                                       cs_cell_builder_t        *cb)
+cs_hodge_vb_bubble_get_aniso_stiffness(const cs_cell_mesh_t    *cm,
+                                       cs_hodge_t              *hodge,
+                                       cs_cell_builder_t       *cb)
 {
+  const cs_hodge_param_t  *hodgep = hodge->param;
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity checks */
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_EPFD);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_BUBBLE);
+  assert(hodgep->type == CS_HODGE_TYPE_EPFD);
+  assert(hodgep->algo == CS_HODGE_ALGO_BUBBLE);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ |
                        CS_FLAG_COMP_EV));
@@ -1584,21 +2102,20 @@ cs_hodge_vb_bubble_get_aniso_stiffness(const cs_param_hodge_t    hodgep,
   /* Compute the upper right part of the local Hodge matrix
    *  Rk: Switch arguments between discrete Hodge operator from PRIMAL->DUAL
    *  or DUAL->PRIMAL space */
-  cs_sdm_t  *hloc = cb->hdg;
-  cs_sdm_square_init(cm->n_ec, hloc);
+  cs_sdm_square_init(cm->n_ec, hodge->matrix);
 
   _compute_aniso_bubble_hodge_ur(cm->n_ec,
-                                 hodgep.coef,
+                                 hodgep->coef,
                                  1./cm->vol_c,
+                                 pty->tensor,
                                  (const cs_real_t (*)[3])pq,
                                  (const cs_real_t (*)[3])dq,
-                                 cb, hloc);
+                                 cb, hodge->matrix);
 
-  cs_sdm_t  *sloc = cb->loc;
-  _define_vb_stiffness(cm, hloc, sloc);
+  _define_vb_stiffness(cm, hodge->matrix, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
-  _check_stiffness(cm->c_id, sloc);
+  _check_stiffness(cm->c_id, cb->loc);
 #endif
 }
 
@@ -1607,62 +2124,71 @@ cs_hodge_vb_bubble_get_aniso_stiffness(const cs_param_hodge_t    hodgep,
  * \brief   Build a local stiffness matrix using the Orthogonal
  *          Consistent/Sub-Stabilization decomposition (OCS2) with a
  *          subdivision of pvol_{e,c}.
- *          Case of anisotropic material property
+ *          The computed matrix is stored in cb->loc and the related discrete
+ *          hodge operator in hodge->matrix
+ *          Case Vb schemes and an anisotropic material property
  *
- * \param[in]      hodgep     pointer to a cs_param_hodge_t structure
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_vb_ocs2_get_aniso_stiffness(const cs_param_hodge_t    hodgep,
-                                     const cs_cell_mesh_t     *cm,
+cs_hodge_vb_ocs2_get_aniso_stiffness(const cs_cell_mesh_t     *cm,
+                                     cs_hodge_t               *hodge,
                                      cs_cell_builder_t        *cb)
 {
+  const cs_hodge_param_t  *hodgep = hodge->param;
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity checks */
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_EPFD);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_OCS2);
+  assert(hodgep->type == CS_HODGE_TYPE_EPFD);
+  assert(hodgep->algo == CS_HODGE_ALGO_OCS2);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ |
                        CS_FLAG_COMP_EV | CS_FLAG_COMP_SEF));
 
   /* Initialize the hodge matrix */
-  cs_sdm_t  *hloc = cb->hdg;
-  cs_sdm_square_init(cm->n_ec, hloc);
+  cs_sdm_square_init(cm->n_ec, hodge->matrix);
 
   /* Compute the upper right part of the local Hodge matrix
    *  Rk: Switch arguments between discrete Hodge operator from PRIMAL->DUAL
    *  or DUAL->PRIMAL space */
-  _compute_aniso_hepfd_ocs2_ur(3*hodgep.coef*hodgep.coef, cm, cb, hloc);
+  _compute_aniso_hepfd_ocs2_ur(3*hodgep->coef*hodgep->coef, pty->tensor, cm,
+                               cb, hodge->matrix);
 
-  cs_sdm_t  *sloc = cb->loc;
-  _define_vb_stiffness(cm, hloc, sloc);
+  _define_vb_stiffness(cm, hodge->matrix, cb->loc);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
-  _check_stiffness(cm->c_id, sloc);
+  _check_stiffness(cm->c_id, cb->loc);
 #endif
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Build a local stiffness matrix using the generic COST algo.
+ *          The computed matrix is stored in cb->loc and the related discrete
+ *          hodge operator in hodge->matrix
  *          Case of CDO vertex-based schemes
  *
- * \param[in]      hodgep     pointer to a cs_param_hodge_t structure
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_vb_cost_get_stiffness(const cs_param_hodge_t    hodgep,
-                               const cs_cell_mesh_t     *cm,
+cs_hodge_vb_cost_get_stiffness(const cs_cell_mesh_t     *cm,
+                               cs_hodge_t               *hodge,
                                cs_cell_builder_t        *cb)
 {
+  const cs_hodge_param_t  *hodgep = hodge->param;
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity checks */
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_EPFD);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_COST);
+  assert(hodgep->type == CS_HODGE_TYPE_EPFD);
+  assert(hodgep->algo == CS_HODGE_ALGO_COST);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ |
                        CS_FLAG_COMP_EV));
@@ -1683,32 +2209,24 @@ cs_hodge_vb_cost_get_stiffness(const cs_param_hodge_t    hodgep,
   double  *alpha = cb->values + cm->n_ec;
 
   /* Initialize the hodge matrix */
-  cs_sdm_t  *hloc = cb->hdg;
-  cs_sdm_square_init(cm->n_ec, hloc);
+  cs_sdm_t  *hmat = hodge->matrix;
+  cs_sdm_square_init(cm->n_ec, hmat);
 
   const double  invcvol = 1/cm->vol_c;
-  const double  beta2 = hodgep.coef*hodgep.coef;
+  const double  beta2 = hodgep->coef*hodgep->coef;
 
-  if (hodgep.is_iso || hodgep.is_unity) {
-
-    double  dpty_val = 0.;
-    if (hodgep.is_unity)
-      dpty_val = 1.0;
-    else if (hodgep.is_iso)
-      dpty_val = cb->dpty_val;
-
-    _compute_cost_quant_iso(cm->n_ec, invcvol, dpty_val,
+  if (pty->is_iso || pty->is_unity) {
+    _compute_cost_quant_iso(cm->n_ec, invcvol, pty->value,
                             (const cs_real_t (*)[3])pq,
                             (const cs_real_t (*)[3])dq,
-                            alpha, kappa, hloc);
+                            alpha, kappa, hmat);
 
   }
   else
-    _compute_cost_quant(cm->n_ec, invcvol,
-                        (const cs_real_3_t *)cb->dpty_mat,
+    _compute_cost_quant(cm->n_ec, invcvol, pty->tensor,
                         (const cs_real_t (*)[3])pq,
                         (const cs_real_t (*)[3])dq,
-                        alpha, kappa, hloc);
+                        alpha, kappa, hmat);
 
   /* Initialize the local stiffness matrix */
   cs_sdm_t  *sloc = cb->loc;
@@ -1721,7 +2239,7 @@ cs_hodge_vb_cost_get_stiffness(const cs_param_hodge_t    hodgep,
     const short int  i1ei = cm->e2v_sgn[ei];
     const short int  i1 = cm->e2v_ids[2*ei];
     const short int  i2 = cm->e2v_ids[2*ei+1];
-    const double  *hi = hloc->val + shift_i;
+    const double  *hi = hmat->val + shift_i;
 
     assert(i1 < i2);
 
@@ -1853,23 +2371,26 @@ cs_hodge_vb_cost_get_stiffness(const cs_param_hodge_t    hodgep,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Build a local stiffness matrix using the Voronoi algorithm
- *          The computed matrix is stored in cb->loc
+ *          The computed matrix is stored in cb->loc and the related discrete
+ *          hodge operator in hodge->matrix
  *          Case of CDO vertex-based schemes
  *
- * \param[in]      hodgep     pointer to a cs_param_hodge_t structure
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    hodgep,
-                               const cs_cell_mesh_t     *cm,
+cs_hodge_vb_voro_get_stiffness(const cs_cell_mesh_t     *cm,
+                               cs_hodge_t               *hodge,
                                cs_cell_builder_t        *cb)
 {
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity checks */
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_EPFD);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_VORONOI);
+  assert(hodge->param->type == CS_HODGE_TYPE_EPFD);
+  assert(hodge->param->algo == CS_HODGE_ALGO_VORONOI);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ |
                        CS_FLAG_COMP_EV));
@@ -1878,11 +2399,11 @@ cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    hodgep,
   cs_sdm_t  *sloc = cb->loc;
   cs_sdm_square_init(cm->n_vc, sloc);
 
-  if (hodgep.is_iso || hodgep.is_unity) {
+  if (pty->is_iso || pty->is_unity) {
 
     double  dpty_val = 1.0;  /* is_unity */
-    if (hodgep.is_iso)
-      dpty_val = cb->dpty_val;
+    if (pty->is_iso)
+      dpty_val = pty->value;
 
     /* Loop on cell edges */
     for (int ii = 0; ii < cm->n_ec; ii++) {
@@ -1915,7 +2436,7 @@ cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    hodgep,
       cs_nvec3_t  dfq = cm->dface[ii];
       cs_quant_t  peq = cm->edge[ii];
 
-      cs_math_33_3_product((const cs_real_3_t *)cb->dpty_mat, dfq.unitv, mv);
+      cs_math_33_3_product((const cs_real_3_t *)pty->tensor, dfq.unitv, mv);
 
       /* Only a diagonal term */
       const double  dval = _dp3(mv, dfq.unitv) * dfq.meas/peq.meas;
@@ -1943,21 +2464,25 @@ cs_hodge_vb_voro_get_stiffness(const cs_param_hodge_t    hodgep,
  * \brief   Build a local stiffness matrix using the generic WBS algo.
  *          WBS standing for Whitney Barycentric Subdivision (WBS)
  *          algo.
+ *          The computed matrix is stored in cb->loc
  *
- * \param[in]      hodgep     pointer to a cs_param_hodge_t structure
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_vb_wbs_get_stiffness(const cs_param_hodge_t    hodgep,
-                              const cs_cell_mesh_t     *cm,
+cs_hodge_vb_wbs_get_stiffness(const cs_cell_mesh_t     *cm,
+                              cs_hodge_t               *hodge,
                               cs_cell_builder_t        *cb)
 {
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity checks */
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_EPFD);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_WBS);
+  assert(pty->need_tensor);
+  assert(hodge->param->type == CS_HODGE_TYPE_EPFD);
+  assert(hodge->param->algo == CS_HODGE_ALGO_WBS);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PVQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ |
                        CS_FLAG_COMP_EV  | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FEQ));
@@ -1969,18 +2494,6 @@ cs_hodge_vb_wbs_get_stiffness(const cs_param_hodge_t    hodgep,
   cs_real_t  *lvc = cb->values;
   cs_real_t  *wvf = cb->values + cm->n_vc;
   cs_real_t  *wef = cb->values + 2*cm->n_vc;
-
-  /* Set the diffusion tensor */
-  cs_real_33_t  tensor = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
-  if (hodgep.is_iso) {
-    if (!hodgep.is_unity)
-      tensor[0][0] = tensor[1][1] = tensor[2][2] = cb->dpty_val;
-  }
-  else {
-    for (int k = 0; k < 3; k++)
-      for (int l = 0; l < 3; l++)
-        tensor[k][l] = cb->dpty_mat[k][l];
-  }
 
   /* Initialize the local stiffness matrix */
   cs_sdm_t  *sloc = cb->loc;
@@ -2043,7 +2556,7 @@ cs_hodge_vb_wbs_get_stiffness(const cs_param_hodge_t    hodgep,
       /* Build the upper right part */
       for (int si = 0; si < sloc->n_rows; si++) {
 
-        cs_math_33_3_product((const cs_real_t (*)[3])tensor, glv[si], matg);
+        cs_math_33_3_product(pty->tensor, glv[si], matg);
 
         /* Diagonal contribution */
         double  *mi = sloc->val + si*sloc->n_rows;
@@ -2073,18 +2586,21 @@ cs_hodge_vb_wbs_get_stiffness(const cs_param_hodge_t    hodgep,
  *          WBS standing for Whitney Barycentric Subdivision (WBS) algo.
  *          The computed matrix is stored in cb->loc
  *
- * \param[in]      hodgep     pointer to a cs_param_hodge_t structure
- * \param[in]      cm         pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb         pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    hodgep,
-                           const cs_cell_mesh_t     *cm,
+cs_hodge_vcb_get_stiffness(const cs_cell_mesh_t     *cm,
+                           cs_hodge_t               *hodge,
                            cs_cell_builder_t        *cb)
 {
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity checks */
+  assert(pty->need_tensor);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PV | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ |
                        CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ));
@@ -2097,17 +2613,6 @@ cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    hodgep,
   cs_real_t  *wvf = cb->values + cm->n_vc;
   cs_real_t  *wef = cb->values + 2*cm->n_vc;
 
-  /* Set the diffusion tensor */
-  cs_real_33_t  tensor = {{1, 0, 0}, {0, 1, 0}, {0, 0, 1}};
-  if (hodgep.is_iso) {
-    if (!hodgep.is_unity)
-      tensor[0][0] = tensor[1][1] = tensor[2][2] = cb->dpty_val;
-  }
-  else {
-    for (int k = 0; k < 3; k++)
-      for (int l = 0; l < 3; l++)
-        tensor[k][l] = cb->dpty_mat[k][l];
-  }
 
   /* Initialize the local stiffness matrix */
   const int  nc_dofs = cm->n_vc + 1;
@@ -2135,7 +2640,7 @@ cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    hodgep,
     cs_compute_wef_wvf(f, cm, wvf, wef);
 
     /* Compute the contribution to the entry A(c,c) */
-    cs_math_33_3_product((const cs_real_t (*)[3])tensor, grd_c, matg_c);
+    cs_math_33_3_product(pty->tensor, grd_c, matg_c);
     sloc->val[cc] += cm->pvol_f[f] * _dp3(grd_c, matg_c);
 
     /* Loop on face edges to scan p_{e,f,c} subvolumes */
@@ -2188,7 +2693,7 @@ cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    hodgep,
         mi[cm->n_vc] += subvol * _dp3(matg_c, glv[si]);
 
         /* Add v-v contribution */
-        cs_math_33_3_product((const cs_real_t (*)[3])tensor, glv[si], matg);
+        cs_math_33_3_product(pty->tensor, glv[si], matg);
 
         /* Loop on vertices v_j (j >= i) */
         for (int sj = si; sj < cm->n_vc; sj++)
@@ -2213,35 +2718,37 @@ cs_hodge_vcb_get_stiffness(const cs_param_hodge_t    hodgep,
  * \brief  Build a local Hodge operator on a given cell which is equivalent of
  *         a mass matrix. It relies on a CO+ST algo. and is specific to CDO-Fb
  *         schemes.
+ *         The discrete Hodge operator is stored in hodge->matrix
  *
- * \param[in]      hodgep    pointer to a cs_param_hodge_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_fb_get_mass(const cs_param_hodge_t    hodgep,
-                     const cs_cell_mesh_t     *cm,
-                     cs_cell_builder_t        *cb)
+cs_hodge_fb_get(const cs_cell_mesh_t     *cm,
+                cs_hodge_t               *hodge,
+                cs_cell_builder_t        *cb)
 {
-  CS_UNUSED(hodgep);            /* Only in debug mode */
+  CS_UNUSED(cb);
 
   /* Sanity check */
-  assert(cb != NULL && cb->hdg != NULL);
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_FB);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_COST);
+  assert(hodge != NULL);
+  assert(hodge->param->type == CS_HODGE_TYPE_FB);
+  assert(hodge->param->algo == CS_HODGE_ALGO_COST);
+  assert(hodge->pty_data->is_unity);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ));
 
   const int n_cols = cm->n_fc + 1;
   const cs_real_t  over_cell = 1./(cm->vol_c*cm->vol_c);
 
   /* Initialize the local matrix related to this discrete Hodge operator */
-  cs_sdm_t  *hdg = cb->hdg;
-  cs_sdm_square_init(n_cols, hdg);
+  cs_sdm_t  *hmat = hodge->matrix;
+  cs_sdm_square_init(n_cols, hmat);
 
   /* cell-cell entry (cell-face and face-cell block are null) */
-  hdg->val[cm->n_fc*(n_cols + 1)] = cm->vol_c;
+  hmat->val[cm->n_fc*(n_cols + 1)] = cm->vol_c;
 
   /* Compute the inertia (useful for the face-face block) */
   cs_real_t  inertia_tensor[3][3];
@@ -2260,7 +2767,7 @@ cs_hodge_fb_get_mass(const cs_param_hodge_t    hodgep,
         dval += 2*pfq_i.unitv[k]*pfq_i.unitv[l]*inertia_tensor[k][l];
     }
 
-    hdg->val[fi*(n_cols+1)] = over_cell * pfq_i.meas*pfq_i.meas * dval;
+    hmat->val[fi*(n_cols+1)] = over_cell * pfq_i.meas*pfq_i.meas * dval;
 
     /* Extra-diag entry */
     for (short int fj = fi + 1; fj < cm->n_fc; fj++) {
@@ -2275,8 +2782,8 @@ cs_hodge_fb_get_mass(const cs_param_hodge_t    hodgep,
       eval *= over_cell * sgn_i*pfq_i.meas * cm->f_sgn[fj]*pfq_j.meas;
 
       /* Symmetric by construction */
-      hdg->val[fi*n_cols+fj] = eval;
-      hdg->val[fj*n_cols+fi] = eval;
+      hmat->val[fi*n_cols+fj] = eval;
+      hmat->val[fj*n_cols+fi] = eval;
 
     } /* Loop on cell faces (fj) */
 
@@ -2287,30 +2794,34 @@ cs_hodge_fb_get_mass(const cs_param_hodge_t    hodgep,
 /*!
  * \brief   Build a local Hodge operator for a given cell using the WBS algo.
  *          This function is specific for vertex+cell-based schemes
+ *          The discrete Hodge operator is stored in hodge->matrix
  *
- * \param[in]      hodgep    pointer to a cs_param_hodge_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_vcb_wbs_get(const cs_param_hodge_t    hodgep,
-                     const cs_cell_mesh_t     *cm,
+cs_hodge_vcb_wbs_get(const cs_cell_mesh_t     *cm,
+                     cs_hodge_t               *hodge,
                      cs_cell_builder_t        *cb)
 {
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity check */
-  assert(cb != NULL && cb->hdg != NULL);
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_VC);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_WBS);
+  assert(cb != NULL && hodge != NULL);
+  assert(hodge->param->type == CS_HODGE_TYPE_VC);
+  assert(hodge->param->algo == CS_HODGE_ALGO_WBS);
+  assert(pty->is_iso);
   assert(cs_eflag_test(cm->flag,
                       CS_FLAG_COMP_PVQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ |
                       CS_FLAG_COMP_EV  | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ));
 
-  cs_sdm_t  *hdg = cb->hdg;
+  cs_sdm_t  *hmat = hodge->matrix;
 
   /* Initialize the local matrix related to this discrete Hodge operator */
-  cs_sdm_square_init(cm->n_vc + 1, hdg);
+  cs_sdm_square_init(cm->n_vc + 1, hmat);
 
   double  *wvf = cb->values;
   double  *wef = cb->values + cm->n_vc;
@@ -2320,13 +2831,13 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    hodgep,
   const double  c_coef2 = cs_hodge_vc_coef * cm->vol_c;
 
   /* H(c,c) = 0.1*|c| */
-  hdg->val[msize*cm->n_vc + cm->n_vc] = 0.1*cm->vol_c;
+  hmat->val[msize*cm->n_vc + cm->n_vc] = 0.1*cm->vol_c;
 
   /* Initialize the upper part of the local Hodge matrix
      diagonal and cell column entries */
   for (short int vi = 0; vi < cm->n_vc; vi++) {
 
-    double  *mi = hdg->val + vi*msize;
+    double  *mi = hmat->val + vi*msize;
 
     mi[vi] = c_coef1 * cm->wvc[vi];       /* Diagonal entry */
     for (short int vj = vi+1; vj < cm->n_vc; vj++)
@@ -2350,7 +2861,7 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    hodgep,
     for (short int vi = 0; vi < cm->n_vc; vi++) {
 
       const double  coef_if = f_coef * wvf[vi];
-      double  *mi = hdg->val + vi*msize;
+      double  *mi = hmat->val + vi*msize;
 
       /* Diagonal and Extra-diagonal entries: Add face contribution */
       for (short int vj = vi; vj < cm->n_vc; vj++)
@@ -2370,75 +2881,79 @@ cs_hodge_vcb_wbs_get(const cs_param_hodge_t    hodgep,
       /* Sanity check */
       assert(v1 > -1 && v2 > -1);
       if (v1 < v2)
-        hdg->val[v1*msize+v2] += ef_coef * wef[i];
+        hmat->val[v1*msize+v2] += ef_coef * wef[i];
       else
-        hdg->val[v2*msize+v1] += ef_coef * wef[i];
+        hmat->val[v2*msize+v1] += ef_coef * wef[i];
 
     } /* Loop on face edges */
 
   } /* Loop on cell faces */
 
   /* Take into account the value of the associated property */
-  if (!hodgep.is_unity) {
+  if (!pty->is_unity) {
     for (short int vi = 0; vi < msize; vi++) {
-      double  *mi = hdg->val + vi*msize;
+      double  *mi = hmat->val + vi*msize;
       for (short int vj = vi; vj < msize; vj++)
-        mi[vj] *= cb->dpty_val;
+        mi[vj] *= pty->value;
     }
   }
 
   /* Local matrix is symmetric by construction. Set the lower part. */
   for (short int vj = 0; vj < msize; vj++) {
-    double  *mj = hdg->val + vj*msize;
+    double  *mj = hmat->val + vj*msize;
     for (short int vi = vj+1; vi < msize; vi++)
-      hdg->val[vi*msize + vj] = mj[vi];
+      hmat->val[vi*msize + vj] = mj[vi];
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
+    cs_sdm_dump(cm->c_id, NULL, NULL, hmat);
   }
 #endif
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local Hodge operator for a given cell using WBS algo.
- *          Hodge op. from primal vertices to dual cells.
- *          This function is specific for vertex-based schemes
+ * \brief  Build a local Hodge operator for a given cell using WBS algo.
+ *         Hodge op. from primal vertices to dual cells.
+ *         This function is specific for vertex-based schemes
+ *         The discrete Hodge operator is stored in hodge->matrix
  *
- * \param[in]      hodgep    pointer to a cs_param_hodge_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_vpcd_wbs_get(const cs_param_hodge_t    hodgep,
-                      const cs_cell_mesh_t     *cm,
-                      cs_cell_builder_t        *cb)
+cs_hodge_vpcd_wbs_get(const cs_cell_mesh_t    *cm,
+                      cs_hodge_t              *hodge,
+                      cs_cell_builder_t       *cb)
 {
-  /* Sanity check */
-  assert(cb != NULL && cb->hdg != NULL);
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_VPCD);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_WBS);
+  const cs_property_data_t  *pty = hodge->pty_data;
+
+  /* Sanity checks */
+  assert(cb != NULL);
+  assert(hodge->param->type == CS_HODGE_TYPE_VPCD);
+  assert(hodge->param->algo == CS_HODGE_ALGO_WBS);
+  assert(pty->is_iso);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PVQ |CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ |
-                       CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ));
+                       CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_PFC));
 
   double  *wvf = cb->values;
   double  *wef = cb->values + cm->n_vc;
 
-  cs_sdm_t  *hdg = cb->hdg;
-  cs_sdm_square_init(cm->n_vc, hdg);
+  cs_sdm_t  *hmat = hodge->matrix;
+  cs_sdm_square_init(cm->n_vc, hmat);
 
   const double  c_coef = 0.1*cm->vol_c;
 
   /* Initialize the upper part of the local Hodge matrix */
   for (short int vi = 0; vi < cm->n_vc; vi++) {
 
-    double  *mi = hdg->val + vi*cm->n_vc;
+    double  *mi = hmat->val + vi*cm->n_vc;
     const double  vi_coef = 4 * c_coef * cm->wvc[vi];
 
     /* Diag. entry has an additional contrib */
@@ -2462,7 +2977,7 @@ cs_hodge_vpcd_wbs_get(const cs_param_hodge_t    hodgep,
        Extra-diag. entry H(i,j) += 0.3*wjf*wif*pfc_vol */
     for (short int vi = 0; vi < cm->n_vc; vi++) {
 
-      double  *mi = hdg->val + vi*cm->n_vc;
+      double  *mi = hmat->val + vi*cm->n_vc;
 
       /* Diagonal and Extra-diagonal entries: Add face contribution */
       const double  coef_if = f_coef * wvf[vi];
@@ -2483,83 +2998,87 @@ cs_hodge_vpcd_wbs_get(const cs_param_hodge_t    hodgep,
       /* Sanity check */
       assert(v1 > -1 && v2 > -1);
       if (v1 < v2)
-        hdg->val[v1*cm->n_vc+v2] += ef_coef * wef[i];
+        hmat->val[v1*cm->n_vc+v2] += ef_coef * wef[i];
       else
-        hdg->val[v2*cm->n_vc+v1] += ef_coef * wef[i];
+        hmat->val[v2*cm->n_vc+v1] += ef_coef * wef[i];
 
     } /* Loop on face edges */
 
   } /* Loop on cell faces */
 
   /* Take into account the value of the associated property */
-  if (!hodgep.is_unity) {
+  if (!pty->is_unity) {
     for (short int vi = 0; vi < cm->n_vc; vi++) {
-      double  *mi = hdg->val + vi*cm->n_vc;
+      double  *mi = hmat->val + vi*cm->n_vc;
       for (short int vj = vi; vj < cm->n_vc; vj++)
-        mi[vj] *= cb->dpty_val;
+        mi[vj] *= pty->value;
     }
   }
 
   /* Local matrix is symmetric by construction. Set the lower part. */
   for (short int vj = 0; vj < cm->n_vc; vj++) {
-    double  *mj = hdg->val + vj*cm->n_vc;
+    double  *mj = hmat->val + vj*cm->n_vc;
     for (short int vi = vj+1; vi < cm->n_vc; vi++)
-      hdg->val[vi*cm->n_vc + vj] = mj[vi];
+      hmat->val[vi*cm->n_vc + vj] = mj[vi];
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
+    cs_sdm_dump(cm->c_id, NULL, NULL, hmat);
   }
 #endif
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Build a local Hodge operator for a given cell using VORONOI algo.
- *          Hodge op. from primal vertices to dual cells.
- *          This function is specific for vertex-based schemes
+ * \brief  Build a local Hodge operator for a given cell using VORONOI algo.
+ *         Hodge op. from primal vertices to dual cells.
+ *         This function is specific for vertex-based schemes
+ *         The discrete Hodge operator is stored in hodge->matrix
  *
- * \param[in]      hodgep    pointer to a cs_param_hodge_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_vpcd_voro_get(const cs_param_hodge_t    hodgep,
-                       const cs_cell_mesh_t     *cm,
+cs_hodge_vpcd_voro_get(const cs_cell_mesh_t     *cm,
+                       cs_hodge_t               *hodge,
                        cs_cell_builder_t        *cb)
 {
+  CS_UNUSED(cb);
+
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity check */
-  assert(cb != NULL && cb->hdg != NULL);
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_VPCD);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_VORONOI);
+  assert(hodge->param->type == CS_HODGE_TYPE_VPCD);
+  assert(hodge->param->algo == CS_HODGE_ALGO_VORONOI);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
 
-  cs_sdm_t  *hdg = cb->hdg;
-  cs_sdm_square_init(cm->n_vc, hdg);
+  cs_sdm_t  *hmat = hodge->matrix;
+  cs_sdm_square_init(cm->n_vc, hmat);
 
   const int stride = cm->n_vc + 1;
-  if (hodgep.is_unity) {
+  if (pty->is_unity) {
 
     for (int v = 0; v < cm->n_vc; v++)
-      hdg->val[v*stride] = cm->wvc[v] * cm->vol_c;
+      hmat->val[v*stride] = cm->wvc[v] * cm->vol_c;
 
   }
   else {
 
-    const cs_real_t  coef = cb->dpty_val * cm->vol_c;
+    const cs_real_t  coef = pty->value * cm->vol_c;
     for (int v = 0; v < cm->n_vc; v++)
-      hdg->val[v*stride] = coef * cm->wvc[v];
+      hmat->val[v*stride] = coef * cm->wvc[v];
 
   }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
+    cs_sdm_dump(cm->c_id, NULL, NULL, hmat);
   }
 #endif
 }
@@ -2568,59 +3087,63 @@ cs_hodge_vpcd_voro_get(const cs_param_hodge_t    hodgep,
 /*!
  * \brief   Build a local Hodge operator for a given cell using VORONOI algo.
  *          Hodge op. from primal edges to dual faces.
+ *          The discrete Hodge operator is stored in hodge->matrix
  *          This function is specific for vertex-based schemes
  *
- * \param[in]      hodgep    pointer to a cs_param_hodge_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_epfd_voro_get(const cs_param_hodge_t    hodgep,
-                       const cs_cell_mesh_t     *cm,
+cs_hodge_epfd_voro_get(const cs_cell_mesh_t     *cm,
+                       cs_hodge_t               *hodge,
                        cs_cell_builder_t        *cb)
 {
+  CS_UNUSED(cb);
+
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity check */
-  assert(cb != NULL && cb->hdg != NULL);
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_EPFD);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_VORONOI);
+  assert(hodge->param->type == CS_HODGE_TYPE_EPFD);
+  assert(hodge->param->algo == CS_HODGE_ALGO_VORONOI);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_SEF));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
-  cs_sdm_t  *hdg = cb->hdg;
-  cs_sdm_square_init(cm->n_ec, hdg);
+  cs_sdm_t  *hmat = hodge->matrix;
+  cs_sdm_square_init(cm->n_ec, hmat);
 
-  if (hodgep.is_iso) {
+  /* Set the diagonal entries */
+  if (pty->is_iso) {
 
     for (short int e = 0; e < cm->n_ec; e++)
-      hdg->val[e*cm->n_ec+e] = cb->dpty_val*cm->dface[e].meas/cm->edge[e].meas;
+      hmat->val[e*cm->n_ec+e] =
+        pty->value * cm->dface[e].meas/cm->edge[e].meas;
 
   }
   else {
-
-    const cs_real_3_t  *tens = (const cs_real_3_t *)cb->dpty_mat;
 
     cs_real_3_t  mv;
     for (short int f = 0; f < cm->n_fc; f++) {
       for (int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
         const short int  e = cm->f2e_ids[i];
         const cs_nvec3_t  *sefc = cm->sefc + i;
-        cs_math_33_3_product(tens, sefc->unitv, mv);
-        hdg->val[e*cm->n_ec+e] += sefc->meas * _dp3(mv, sefc->unitv);
+        cs_math_33_3_product(pty->tensor, sefc->unitv, mv);
+        hmat->val[e*cm->n_ec+e] += sefc->meas * _dp3(mv, sefc->unitv);
       }
     }
 
     for (short int e = 0; e < cm->n_ec; e++)
-      hdg->val[e*cm->n_ec+e] /= cm->edge[e].meas;
+      hmat->val[e*cm->n_ec+e] /= cm->edge[e].meas;
 
   } /* anisotropic */
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
+    cs_sdm_dump(cm->c_id, NULL, NULL, hmat);
   }
 #endif
 }
@@ -2629,28 +3152,32 @@ cs_hodge_epfd_voro_get(const cs_param_hodge_t    hodgep,
 /*!
  * \brief   Build a local Hodge operator for a given cell using the COST algo.
  *          Hodge op. from primal edges to dual faces.
+ *          The discrete Hodge operator is stored in hodge->matrix
  *          This function is specific for vertex-based schemes
  *
- * \param[in]      hodgep    pointer to a cs_param_hodge_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_epfd_cost_get(const cs_param_hodge_t    hodgep,
-                       const cs_cell_mesh_t     *cm,
+cs_hodge_epfd_cost_get(const cs_cell_mesh_t     *cm,
+                       cs_hodge_t               *hodge,
                        cs_cell_builder_t        *cb)
 {
+  const cs_hodge_param_t  *hodgep = hodge->param;
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity check */
-  assert(cb != NULL && cb->hdg != NULL);
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_EPFD);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_COST);
+  assert(cb != NULL && hodgep != NULL);
+  assert(hodgep->type == CS_HODGE_TYPE_EPFD);
+  assert(hodgep->algo == CS_HODGE_ALGO_COST);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
-  cs_sdm_t  *hdg = cb->hdg;
-  cs_sdm_square_init(cm->n_ec, hdg);
+  cs_sdm_t  *hmat = hodge->matrix;
+  cs_sdm_square_init(cm->n_ec, hmat);
 
   /* Set numbering and geometrical quantities Hodge builder */
   cs_real_3_t  *pq = cb->vectors;
@@ -2667,30 +3194,30 @@ cs_hodge_epfd_cost_get(const cs_param_hodge_t    hodgep,
   double  *kappa = cb->values;
   double  *alpha = cb->values + cm->n_ec;
 
-  if (hodgep.is_unity)
+  if (pty->is_unity)
     _compute_cost_quant_iso(cm->n_ec, 1/cm->vol_c, 1.0,
                             (const cs_real_t (*)[3])pq,
                             (const cs_real_t (*)[3])dq,
-                            alpha, kappa, hdg);
-  else if (hodgep.is_iso)
-    _compute_cost_quant_iso(cm->n_ec, 1/cm->vol_c, cb->dpty_val,
+                            alpha, kappa, hmat);
+  else if (pty->is_iso)
+    _compute_cost_quant_iso(cm->n_ec, 1/cm->vol_c, pty->value,
                             (const cs_real_t (*)[3])pq,
                             (const cs_real_t (*)[3])dq,
-                            alpha, kappa, hdg);
+                            alpha, kappa, hmat);
   else
     _compute_cost_quant(cm->n_ec, 1/cm->vol_c,
-                        (const cs_real_3_t *)cb->dpty_mat,
+                        (const cs_real_3_t *)pty->tensor,
                         (const cs_real_t (*)[3])pq,
                         (const cs_real_t (*)[3])dq,
-                        alpha, kappa, hdg);
+                        alpha, kappa, hmat);
 
-  double  beta2 = hodgep.coef*hodgep.coef;
-  _compute_hodge_cost(cm->n_ec, beta2, alpha, kappa, hdg->val);
+  double  beta2 = hodgep->coef*hodgep->coef;
+  _compute_hodge_cost(cm->n_ec, beta2, alpha, kappa, hmat->val);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_vector_hodge(cm->c_id,
                       (const cs_real_t (*)[3])pq, (const cs_real_t (*)[3])dq,
-                      hdg, hodgep, cb);
+                      hodge, cb);
 #endif
 }
 
@@ -2698,24 +3225,28 @@ cs_hodge_epfd_cost_get(const cs_param_hodge_t    hodgep,
 /*!
  * \brief   Build a local Hodge operator for a given cell using the COST algo.
  *          with a bubble stabilization.
+ *          The discrete Hodge operator is stored in hodge->matrix
  *          Hodge op. from primal edges to dual faces. This function is
  *          specific for vertex-based schemes
  *
- * \param[in]      hodgep    pointer to a cs_param_hodge_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_epfd_bubble_get(const cs_param_hodge_t    hodgep,
-                         const cs_cell_mesh_t     *cm,
+cs_hodge_epfd_bubble_get(const cs_cell_mesh_t     *cm,
+                         cs_hodge_t               *hodge,
                          cs_cell_builder_t        *cb)
 {
+  const cs_hodge_param_t  *hodgep = hodge->param;
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity check */
-  assert(cb != NULL && cb->hdg != NULL);
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_EPFD);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_BUBBLE);
+  assert(cb != NULL && hodgep != NULL && pty != NULL);
+  assert(hodgep->type == CS_HODGE_TYPE_EPFD);
+  assert(hodgep->algo == CS_HODGE_ALGO_BUBBLE);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ));
 
   /* Set numbering and geometrical quantities Hodge builder */
@@ -2727,31 +3258,33 @@ cs_hodge_epfd_bubble_get(const cs_param_hodge_t    hodgep,
   /* Compute the upper right part of the local Hodge matrix
    *  Rk: Switch arguments between discrete Hodge operator from PRIMAL->DUAL
    *  or DUAL->PRIMAL space */
-  cs_sdm_t  *hloc = cb->hdg;
-  cs_sdm_square_init(cm->n_ec, hloc);
+  cs_sdm_t  *hmat = hodge->matrix;
+  cs_sdm_square_init(cm->n_ec, hmat);
 
-  if (hodgep.is_iso || hodgep.is_unity)
+  if (pty->is_iso || pty->is_unity)
     _compute_iso_bubble_hodge_ur(cm->n_ec,
-                                 hodgep.coef,
+                                 hodgep->coef,
                                  1./cm->vol_c,
+                                 pty->value,
                                  (const cs_real_t (*)[3])pq,
                                  (const cs_real_t (*)[3])dq,
-                                 cb, hloc);
+                                 cb, hmat);
   else
     _compute_aniso_bubble_hodge_ur(cm->n_ec,
-                                   hodgep.coef,
+                                   hodgep->coef,
                                    1./cm->vol_c,
+                                   pty->tensor,
                                    (const cs_real_t (*)[3])pq,
                                    (const cs_real_t (*)[3])dq,
-                                   cb, hloc);
+                                   cb, hmat);
 
   /* Hodge matrix is symmetric by construction */
-  cs_sdm_symm_ur(hloc);
+  cs_sdm_symm_ur(hmat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_vector_hodge(cm->c_id,
                       (const cs_real_t (*)[3])pq, (const cs_real_t (*)[3])dq,
-                      hdg, hodgep, cb);
+                      hodge, cb);
 #endif
 }
 
@@ -2760,42 +3293,47 @@ cs_hodge_epfd_bubble_get(const cs_param_hodge_t    hodgep,
  * \brief   Build a local Hodge operator for a given cell using the Orthogonal
  *          Consistent/Sub-Stabilization decomposition (OCS2) with a
  *          subdivision of pvol_{e,c}.
+ *          The discrete Hodge operator is stored in hodge->matrix
  *          Hodge op. from primal edges to dual faces.
  *          This function is specific for vertex-based schemes
  *
- * \param[in]      hodgep    pointer to a cs_param_hodge_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_epfd_ocs2_get(const cs_param_hodge_t    hodgep,
-                       const cs_cell_mesh_t     *cm,
+cs_hodge_epfd_ocs2_get(const cs_cell_mesh_t     *cm,
+                       cs_hodge_t               *hodge,
                        cs_cell_builder_t        *cb)
 {
+  const cs_hodge_param_t  *hodgep = hodge->param;
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity check */
-  assert(cb != NULL && cb->hdg != NULL);
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_EPFD);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_OCS2);
+  assert(cb != NULL && hodgep != NULL);
+  assert(hodgep->type == CS_HODGE_TYPE_EPFD);
+  assert(hodgep->algo == CS_HODGE_ALGO_OCS2);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PV | CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ |
                        CS_FLAG_COMP_EV | CS_FLAG_COMP_SEF));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
-  cs_sdm_t  *hdg = cb->hdg;
-  cs_sdm_square_init(cm->n_ec, hdg);
+  cs_sdm_t  *hmat = hodge->matrix;
+  cs_sdm_square_init(cm->n_ec, hmat);
 
   /* Compute the upper right part of the local Hodge matrix */
-  _compute_aniso_hepfd_ocs2_ur(3*hodgep.coef*hodgep.coef, cm, cb, hdg);
+  _compute_aniso_hepfd_ocs2_ur(3*hodgep->coef*hodgep->coef, pty->tensor,
+                               cm, cb, hmat);
 
   /* Hodge operator leads to a symmetric matrix by construction */
-  cs_sdm_symm_ur(hdg);
+  cs_sdm_symm_ur(hmat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
+    cs_sdm_dump(cm->c_id, NULL, NULL, hmat);
   }
 #endif
 }
@@ -2804,45 +3342,49 @@ cs_hodge_epfd_ocs2_get(const cs_param_hodge_t    hodgep,
 /*!
  * \brief   Build a local Hodge operator for a given cell using VORONOI algo.
  *          Hodge op. from primal faces to dual edges.
+ *          The discrete Hodge operator is stored in hodge->matrix
  *          This function is related to cell-based schemes
  *
- * \param[in]      hodgep    pointer to a cs_param_hodge_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_fped_voro_get(const cs_param_hodge_t    hodgep,
-                       const cs_cell_mesh_t     *cm,
+cs_hodge_fped_voro_get(const cs_cell_mesh_t     *cm,
+                       cs_hodge_t               *hodge,
                        cs_cell_builder_t        *cb)
 {
+  CS_UNUSED(cb);
+
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity check */
-  assert(cb != NULL && cb->hdg != NULL);
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_FPED);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_VORONOI);
+  assert(pty != NULL);
+  assert(hodge->param->type == CS_HODGE_TYPE_FPED);
+  assert(hodge->param->algo == CS_HODGE_ALGO_VORONOI);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
-  cs_sdm_t  *hdg = cb->hdg;
-  cs_sdm_square_init(cm->n_fc, hdg);
+  cs_sdm_t  *hmat = hodge->matrix;
+  cs_sdm_square_init(cm->n_fc, hmat);
 
-  if (hodgep.is_iso) {
+  if (pty->is_iso) {
 
     for (short int f = 0; f < cm->n_fc; f++)
-      hdg->val[f*cm->n_fc+f] = cb->dpty_val*cm->face[f].meas/cm->dedge[f].meas;
+      hmat->val[f*cm->n_fc+f] =
+        pty->value*cm->face[f].meas/cm->dedge[f].meas;
 
   }
   else {
 
     cs_real_3_t  mv;
-    const cs_real_3_t *tens = (const cs_real_3_t *)cb->dpty_mat;
-
     for (short int f = 0; f < cm->n_fc; f++) {
 
       const cs_nvec3_t  deq = cm->dedge[f];
-      cs_math_33_3_product(tens, deq.unitv, mv);
-      hdg->val[f*cm->n_fc+f] = deq.meas * _dp3(mv, deq.unitv)/cm->face[f].meas;
+      cs_math_33_3_product(pty->tensor, deq.unitv, mv);
+      hmat->val[f*cm->n_fc+f] = deq.meas*_dp3(mv, deq.unitv)/cm->face[f].meas;
 
     } /* Loop on cell faces */
 
@@ -2851,7 +3393,7 @@ cs_hodge_fped_voro_get(const cs_param_hodge_t    hodgep,
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
   if (cm->c_id % CS_HODGE_MODULO == 0) {
     cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
-    cs_sdm_dump(cm->c_id, NULL, NULL, hdg);
+    cs_sdm_dump(cm->c_id, NULL, NULL, hodge->matrix);
   }
 #endif
 }
@@ -2860,23 +3402,27 @@ cs_hodge_fped_voro_get(const cs_param_hodge_t    hodgep,
 /*!
  * \brief   Build a local Hodge operator for a given cell using the COST algo.
  *          Hodge op. from primal faces to dual edges.
+ *          The discrete Hodge operator is stored in hodge->matrix
  *          This function is related to cell-based schemes
  *
- * \param[in]      hodgep    pointer to a cs_param_hodge_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_fped_cost_get(const cs_param_hodge_t    hodgep,
-                       const cs_cell_mesh_t     *cm,
+cs_hodge_fped_cost_get(const cs_cell_mesh_t     *cm,
+                       cs_hodge_t               *hodge,
                        cs_cell_builder_t        *cb)
 {
+  const cs_hodge_param_t  *hodgep = hodge->param;
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity check */
-  assert(cb != NULL && cb->hdg != NULL);
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_FPED);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_COST);
+  assert(cb != NULL && hodgep != NULL && pty != NULL);
+  assert(hodgep->type == CS_HODGE_TYPE_FPED);
+  assert(hodgep->algo == CS_HODGE_ALGO_COST);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
   cs_real_3_t  *pq = cb->vectors;
@@ -2894,33 +3440,33 @@ cs_hodge_fped_cost_get(const cs_param_hodge_t    hodgep,
   double  *alpha = cb->values + cm->n_fc;
 
   /* Initialize the local matrix related to this discrete Hodge operator */
-  cs_sdm_t  *hdg = cb->hdg;
-  cs_sdm_square_init(cm->n_fc, hdg);
+  cs_sdm_t  *hmat = hodge->matrix;
+  cs_sdm_square_init(cm->n_fc, hmat);
 
-  if (hodgep.is_unity)
+  if (pty->is_unity)
     _compute_cost_quant_iso(cm->n_fc, 1/cm->vol_c, 1.0,
                             (const cs_real_t (*)[3])pq,
                             (const cs_real_t (*)[3])dq,
-                            alpha, kappa, hdg);
-  else if (hodgep.is_iso)
-    _compute_cost_quant_iso(cm->n_fc, 1/cm->vol_c, cb->dpty_val,
+                            alpha, kappa, hmat);
+  else if (pty->is_iso)
+    _compute_cost_quant_iso(cm->n_fc, 1/cm->vol_c, pty->value,
                             (const cs_real_t (*)[3])pq,
                             (const cs_real_t (*)[3])dq,
-                            alpha, kappa, hdg);
+                            alpha, kappa, hmat);
   else
     _compute_cost_quant(cm->n_fc, 1/cm->vol_c,
-                        (const cs_real_3_t *)cb->dpty_mat,
+                        (const cs_real_3_t *)pty->tensor,
                         (const cs_real_t (*)[3])pq,
                         (const cs_real_t (*)[3])dq,
-                        alpha, kappa, hdg);
+                        alpha, kappa, hmat);
 
-  _compute_hodge_cost(cm->n_fc, hodgep.coef*hodgep.coef, alpha, kappa,
-                      hdg->val);
+  _compute_hodge_cost(cm->n_fc, hodgep->coef*hodgep->coef, alpha, kappa,
+                      hmat->val);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_vector_hodge(cm->c_id,
                       (const cs_real_t (*)[3])pq, (const cs_real_t (*)[3])dq,
-                      hdg, hodgep, cb);
+                      hodge, cb);
 #endif
 }
 
@@ -2928,23 +3474,27 @@ cs_hodge_fped_cost_get(const cs_param_hodge_t    hodgep,
 /*!
  * \brief   Build a local Hodge operator for a given cell using the Bubble algo.
  *          Hodge op. from primal faces to dual edges.
+ *          The discrete Hodge operator is stored in hodge->matrix
  *          This function is related to cell-based schemes
  *
- * \param[in]      hodgep    pointer to a cs_param_hodge_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_fped_bubble_get(const cs_param_hodge_t    hodgep,
-                         const cs_cell_mesh_t     *cm,
+cs_hodge_fped_bubble_get(const cs_cell_mesh_t     *cm,
+                         cs_hodge_t               *hodge,
                          cs_cell_builder_t        *cb)
 {
+  const cs_hodge_param_t  *hodgep = hodge->param;
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity check */
-  assert(cb != NULL && cb->hdg != NULL);
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_EDFP);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_BUBBLE);
+  assert(cb != NULL && hodgep != NULL && pty != NULL);
+  assert(hodgep->type == CS_HODGE_TYPE_EDFP);
+  assert(hodgep->algo == CS_HODGE_ALGO_BUBBLE);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
   /* Initialize the geometrical quantities related to this Hodge operator */
@@ -2958,31 +3508,33 @@ cs_hodge_fped_bubble_get(const cs_param_hodge_t    hodgep,
      constant over a cell.
      Switch arguments between discrete Hodge operator from PRIMAL->DUAL space
      and discrete Hodge operator from DUAL->PRIMAL space */
-  cs_sdm_t  *hdg = cb->hdg;
-  cs_sdm_square_init(cm->n_fc, hdg);
+  cs_sdm_t  *hmat = hodge->matrix;
+  cs_sdm_square_init(cm->n_fc, hmat);
 
-  if (hodgep.is_iso || hodgep.is_unity)
+  if (pty->is_iso || pty->is_unity)
     _compute_iso_bubble_hodge_ur(cm->n_fc,
-                                 hodgep.coef,
+                                 hodgep->coef,
                                  1./cm->vol_c,
+                                 pty->value,
                                  (const cs_real_t (*)[3])dq,
                                  (const cs_real_t (*)[3])pq,
-                                 cb, hdg);
+                                 cb, hmat);
   else
     _compute_aniso_bubble_hodge_ur(cm->n_fc,
-                                   hodgep.coef,
+                                   hodgep->coef,
                                    1./cm->vol_c,
+                                   pty->tensor,
                                    (const cs_real_t (*)[3])dq,
                                    (const cs_real_t (*)[3])pq,
-                                   cb, hdg);
+                                   cb, hmat);
 
   /* Hodge operator is symmetric */
-  cs_sdm_symm_ur(hdg);
+  cs_sdm_symm_ur(hmat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_vector_hodge(cm->c_id,
                       (const cs_real_t (*)[3])dq, (const cs_real_t (*)[3])pq,
-                      hdg, hodgep, cb);
+                      hodge, cb);
 #endif
 }
 
@@ -2990,45 +3542,49 @@ cs_hodge_fped_bubble_get(const cs_param_hodge_t    hodgep,
 /*!
  * \brief   Build a local Hodge operator for a given cell using VORONOI algo.
  *          Hodge op. from dual edges to primal faces.
+ *          The discrete Hodge operator is stored in hodge->matrix
  *          This function is related to face-based schemes
  *
- * \param[in]      hodgep    pointer to a cs_param_hodge_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_edfp_voro_get(const cs_param_hodge_t    hodgep,
-                       const cs_cell_mesh_t     *cm,
+cs_hodge_edfp_voro_get(const cs_cell_mesh_t     *cm,
+                       cs_hodge_t               *hodge,
                        cs_cell_builder_t        *cb)
 {
+  CS_UNUSED(cb);
+
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity check */
-  assert(cb != NULL && cb->hdg != NULL);
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_EDFP);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_VORONOI);
+  assert(pty != NULL);
+  assert(hodge->param->type == CS_HODGE_TYPE_EDFP);
+  assert(hodge->param->algo == CS_HODGE_ALGO_VORONOI);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ));
 
   /* Initialize the local matrix related to this discrete Hodge operator */
-  cs_sdm_t  *hdg = cb->hdg;
-  cs_sdm_square_init(cm->n_fc, hdg);
+  cs_sdm_t  *hmat = hodge->matrix;
+  cs_sdm_square_init(cm->n_fc, hmat);
 
-  if (hodgep.is_iso) {
+  if (pty->is_iso) {
 
     for (short int f = 0; f < cm->n_fc; f++)
-      hdg->val[f*cm->n_fc+f] = cb->dpty_val*cm->face[f].meas/cm->dedge[f].meas;
+      hmat->val[f*cm->n_fc+f] =
+        pty->value*cm->face[f].meas/cm->dedge[f].meas;
 
   }
   else {
 
-    const cs_real_3_t *tens = (const cs_real_3_t *)cb->dpty_mat;
     cs_real_3_t  mv;
-
     for (short int f = 0; f < cm->n_fc; f++) {
 
       const cs_quant_t  pfq = cm->face[f];
-      cs_math_33_3_product(tens, pfq.unitv, mv);
-      hdg->val[f*cm->n_fc+f] = pfq.meas * _dp3(mv, pfq.unitv)/cm->edge[f].meas;
+      cs_math_33_3_product(pty->tensor, pfq.unitv, mv);
+      hmat->val[f*cm->n_fc+f] = pfq.meas * _dp3(mv, pfq.unitv)/cm->edge[f].meas;
 
     } /* Loop on cell faces */
 
@@ -3046,23 +3602,27 @@ cs_hodge_edfp_voro_get(const cs_param_hodge_t    hodgep,
 /*!
  * \brief   Build a local Hodge operator for a given cell using the COST algo.
  *          Hodge op. from dual edges to primal faces.
+ *          The discrete Hodge operator is stored in hodge->matrix
  *          This function is related to face-based schemes
  *
- * \param[in]      hodgep    pointer to a cs_param_hodge_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_edfp_cost_get(const cs_param_hodge_t    hodgep,
-                       const cs_cell_mesh_t     *cm,
+cs_hodge_edfp_cost_get(const cs_cell_mesh_t     *cm,
+                       cs_hodge_t               *hodge,
                        cs_cell_builder_t        *cb)
 {
+  const cs_hodge_param_t  *hodgep = hodge->param;
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity check */
-  assert(cb != NULL && cb->hdg != NULL);
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_EDFP);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_COST);
+  assert(cb != NULL && hodgep != NULL && pty != NULL);
+  assert(hodgep->type == CS_HODGE_TYPE_EDFP);
+  assert(hodgep->algo == CS_HODGE_ALGO_COST);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
   /* Initialize the geometrical quantities related to this Hodge operator */
@@ -3080,33 +3640,33 @@ cs_hodge_edfp_cost_get(const cs_param_hodge_t    hodgep,
   double  *alpha = cb->values + cm->n_fc;
 
   /* Initialize the local matrix related to this discrete Hodge operator */
-  cs_sdm_t  *hdg = cb->hdg;
-  cs_sdm_square_init(cm->n_fc, hdg);
+  cs_sdm_t  *hmat = hodge->matrix;
+  cs_sdm_square_init(cm->n_fc, hmat);
 
-  if (hodgep.is_unity)
+  if (pty->is_unity)
     _compute_cost_quant_iso(cm->n_fc, 1/cm->vol_c, 1.0,
                             (const cs_real_t (*)[3])dq,
                             (const cs_real_t (*)[3])pq,
-                            alpha, kappa, hdg);
-  else if (hodgep.is_iso)
-    _compute_cost_quant_iso(cm->n_fc, 1/cm->vol_c, cb->dpty_val,
+                            alpha, kappa, hmat);
+  else if (pty->is_iso)
+    _compute_cost_quant_iso(cm->n_fc, 1/cm->vol_c, pty->value,
                             (const cs_real_t (*)[3])dq,
                             (const cs_real_t (*)[3])pq,
-                            alpha, kappa, hdg);
+                            alpha, kappa, hmat);
   else
     _compute_cost_quant(cm->n_fc, 1/cm->vol_c,
-                        (const cs_real_3_t *)cb->dpty_mat,
+                        (const cs_real_3_t *)pty->tensor,
                         (const cs_real_t (*)[3])dq,
                         (const cs_real_t (*)[3])pq,
-                        alpha, kappa, hdg);
+                        alpha, kappa, hmat);
 
-  _compute_hodge_cost(cm->n_fc, hodgep.coef*hodgep.coef, alpha, kappa,
-                      hdg->val);
+  _compute_hodge_cost(cm->n_fc, hodgep->coef*hodgep->coef, alpha, kappa,
+                      hmat->val);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_vector_hodge(cm->c_id,
                       (const cs_real_t (*)[3])dq, (const cs_real_t (*)[3])pq,
-                      hdg, hodgep, cb);
+                      hodge, cb);
 #endif
 }
 
@@ -3116,21 +3676,24 @@ cs_hodge_edfp_cost_get(const cs_param_hodge_t    hodgep,
  *          Hodge op. from dual edges to primal faces.
  *          This function is related to face-based schemes
  *
- * \param[in]      hodgep    pointer to a cs_param_hodge_t structure
  * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
+ * \param[in, out] hodge     pointer to a cs_hodge_t structure
  * \param[in, out] cb        pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_edfp_cost_get_opt(const cs_param_hodge_t    hodgep,
-                           const cs_cell_mesh_t     *cm,
+cs_hodge_edfp_cost_get_opt(const cs_cell_mesh_t     *cm,
+                           cs_hodge_t               *hodge,
                            cs_cell_builder_t        *cb)
 {
+  const cs_hodge_param_t  *hodgep = hodge->param;
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity check */
-  assert(cb != NULL && cb->hdg != NULL);
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_EDFP);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_COST);
+  assert(cb != NULL && hodge != NULL && pty != NULL);
+  assert(hodgep->type == CS_HODGE_TYPE_EDFP);
+  assert(hodgep->algo == CS_HODGE_ALGO_COST);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
   /* Initialize the geometrical quantities related to this Hodge operator */
@@ -3144,31 +3707,33 @@ cs_hodge_edfp_cost_get_opt(const cs_param_hodge_t    hodgep,
      constant over a cell.
      Switch arguments between discrete Hodge operator from PRIMAL->DUAL space
      and discrete Hodge operator from DUAL->PRIMAL space */
-  cs_sdm_t  *hdg = cb->hdg;
-  cs_sdm_square_init(cm->n_fc, hdg);
+  cs_sdm_t  *hmat = hodge->matrix;
+  cs_sdm_square_init(cm->n_fc, hmat);
 
-  if (hodgep.is_iso || hodgep.is_unity)
+  if (pty->is_iso || pty->is_unity)
     _compute_iso_hodge_ur(cm->n_fc,
-                          3*hodgep.coef*hodgep.coef,
+                          3*hodgep->coef*hodgep->coef,
                           1./cm->vol_c,
+                          pty->value,
                           (const cs_real_t (*)[3])dq,
                           (const cs_real_t (*)[3])pq,
-                          cb, hdg);
+                          cb, hmat);
   else
     _compute_aniso_hodge_ur(cm->n_fc,
-                            3*hodgep.coef*hodgep.coef,
+                            3*hodgep->coef*hodgep->coef,
                             1./cm->vol_c,
+                            pty->tensor,
                             (const cs_real_t (*)[3])dq,
                             (const cs_real_t (*)[3])pq,
-                            cb, hdg);
+                            cb, hmat);
 
   /* Hodge operator is symmetric */
-  cs_sdm_symm_ur(hdg);
+  cs_sdm_symm_ur(hmat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_vector_hodge(cm->c_id,
                       (const cs_real_t (*)[3])dq, (const cs_real_t (*)[3])pq,
-                      hdg, hodgep, cb);
+                      hodge, cb);
 #endif
 }
 
@@ -3176,23 +3741,27 @@ cs_hodge_edfp_cost_get_opt(const cs_param_hodge_t    hodgep,
 /*!
  * \brief   Build a local Hodge operator for a given cell using the Bubble algo.
  *          Hodge op. from dual edges to primal faces.
+ *          The discrete Hodge operator is stored in hodge->matrix
  *          This function is related to face-based schemes
  *
- * \param[in]      hodgep    pointer to a cs_param_hodge_t structure
- * \param[in]      cm        pointer to a cs_cell_mesh_t struct.
- * \param[in, out] cb        pointer to a cs_cell_builder_t structure
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hodge_edfp_bubble_get(const cs_param_hodge_t    hodgep,
-                         const cs_cell_mesh_t     *cm,
+cs_hodge_edfp_bubble_get(const cs_cell_mesh_t     *cm,
+                         cs_hodge_t               *hodge,
                          cs_cell_builder_t        *cb)
 {
+  const cs_hodge_param_t  *hodgep = hodge->param;
+  const cs_property_data_t  *pty = hodge->pty_data;
+
   /* Sanity check */
-  assert(cb != NULL && cb->hdg != NULL);
-  assert(hodgep.type == CS_PARAM_HODGE_TYPE_EDFP);
-  assert(hodgep.algo == CS_PARAM_HODGE_ALGO_BUBBLE);
+  assert(cb != NULL && hodgep != NULL && pty != NULL);
+  assert(hodgep->type == CS_HODGE_TYPE_EDFP);
+  assert(hodgep->algo == CS_HODGE_ALGO_BUBBLE);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ));
 
   /* Initialize the geometrical quantities related to this Hodge operator */
@@ -3206,31 +3775,33 @@ cs_hodge_edfp_bubble_get(const cs_param_hodge_t    hodgep,
      constant over a cell.
      Switch arguments between discrete Hodge operator from PRIMAL->DUAL space
      and discrete Hodge operator from DUAL->PRIMAL space */
-  cs_sdm_t  *hdg = cb->hdg;
-  cs_sdm_square_init(cm->n_fc, hdg);
+  cs_sdm_t  *hmat = hodge->matrix;
+  cs_sdm_square_init(cm->n_fc, hmat);
 
-  if (hodgep.is_iso || hodgep.is_unity)
+  if (pty->is_iso || pty->is_unity)
     _compute_iso_bubble_hodge_ur(cm->n_fc,
-                                 hodgep.coef,
+                                 hodgep->coef,
                                  1./cm->vol_c,
+                                 pty->value,
                                  (const cs_real_t (*)[3])dq,
                                  (const cs_real_t (*)[3])pq,
-                                 cb, hdg);
+                                 cb, hmat);
   else
     _compute_aniso_bubble_hodge_ur(cm->n_fc,
-                                   hodgep.coef,
+                                   hodgep->coef,
                                    1./cm->vol_c,
+                                   pty->tensor,
                                    (const cs_real_t (*)[3])dq,
                                    (const cs_real_t (*)[3])pq,
-                                   cb, hdg);
+                                   cb, hmat);
 
   /* Hodge operator is symmetric */
-  cs_sdm_symm_ur(hdg);
+  cs_sdm_symm_ur(hmat);
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 0
   _check_vector_hodge(cm->c_id,
                       (const cs_real_t (*)[3])dq, (const cs_real_t (*)[3])pq,
-                      hdg, hodgep, cb);
+                      hodge, cb);
 #endif
 }
 
@@ -3241,7 +3812,7 @@ cs_hodge_edfp_bubble_get(const cs_param_hodge_t    hodgep,
  *
  * \param[in]      connect   pointer to a cs_cdo_connect_t structure
  * \param[in]      quant     pointer to a cs_cdo_quantities_t structure
- * \param[in]      hodgep    cs_param_hodge_t structure
+ * \param[in]      hodgep    cs_hodge_param_t structure
  * \param[in]      pty       pointer to a cs_property_t structure or NULL
  * \param[in]      in_vals   vector to multiply with the discrete Hodge op.
  * \param[in]      t_eval    time at which one performs the evaluation
@@ -3252,7 +3823,7 @@ cs_hodge_edfp_bubble_get(const cs_param_hodge_t    hodgep,
 void
 cs_hodge_matvec(const cs_cdo_connect_t       *connect,
                 const cs_cdo_quantities_t    *quant,
-                const cs_param_hodge_t        hodgep,
+                const cs_hodge_param_t        hodgep,
                 const cs_property_t          *pty,
                 const cs_real_t               in_vals[],
                 cs_real_t                     t_eval,
@@ -3270,8 +3841,8 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
   }
   assert(connect != NULL && quant != NULL); /* Sanity checks */
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)                   \
-  shared(quant, connect, in_vals, t_eval, result, pty, func_name)       \
+#pragma omp parallel if (quant->n_cells > CS_THR_MIN)              \
+  shared(quant, connect, in_vals, t_eval, result, pty, func_name)  \
   firstprivate(hodgep)
   {
 #if defined(HAVE_OPENMP) /* Determine default number of OpenMP threads */
@@ -3282,14 +3853,17 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
     cs_eflag_t  msh_flag = 0;
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    bool pty_uniform = cs_property_is_uniform(pty);
-    cs_hodge_t  *compute = NULL;
     cs_cell_builder_t  *cb = NULL;
     double  *_in = NULL;
 
+    /* Each thread has its own pointer to a cs_hodge_t structure */
+    cs_hodge_t  *hodge = cs_hodge_create(connect, pty, &hodgep, true, false);
+    cs_hodge_compute_t  *compute = cs_hodge_get_func(func_name, hodgep);
+    bool  pty_uniform = cs_property_is_uniform(pty);
+
     switch (hodgep.type) {
 
-    case CS_PARAM_HODGE_TYPE_VPCD:
+    case CS_HODGE_TYPE_VPCD:
 
       msh_flag |= CS_FLAG_COMP_PVQ;
       cb = _cell_builder_create(CS_SPACE_SCHEME_CDOVB, connect);
@@ -3299,23 +3873,20 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
       for (cs_lnum_t i = 0; i < quant->n_vertices; i++) result[i] = 0;
 
       switch (hodgep.algo) {
-      case CS_PARAM_HODGE_ALGO_COST:
-      case CS_PARAM_HODGE_ALGO_VORONOI:
-        msh_flag |= CS_FLAG_COMP_PVQ;
-        compute = cs_hodge_vpcd_voro_get;
-        break;
-      case CS_PARAM_HODGE_ALGO_WBS:
+
+      case CS_HODGE_ALGO_WBS:
         msh_flag |= CS_FLAG_COMP_PVQ |CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ |
           CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ;
-        compute = cs_hodge_vpcd_wbs_get;
         break;
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid algorithm for Vp->Cd Hodge operator", func_name);
+
+      default: /* Minimal requirement for other Hodge algorithms */
+        msh_flag |= CS_FLAG_COMP_PVQ;
+        break;
+
       }
       break;
 
-    case CS_PARAM_HODGE_TYPE_EPFD:
+    case CS_HODGE_TYPE_EPFD:
 
       msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
       cb = _cell_builder_create(CS_SPACE_SCHEME_CDOVB, connect);
@@ -3325,27 +3896,21 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
       for (cs_lnum_t i = 0; i < quant->n_edges; i++) result[i] = 0;
 
       switch (hodgep.algo) {
-      case CS_PARAM_HODGE_ALGO_COST:
-        compute = cs_hodge_epfd_cost_get;
-        break;
-      case CS_PARAM_HODGE_ALGO_BUBBLE:
-        compute = cs_hodge_epfd_bubble_get;
-        break;
-      case CS_PARAM_HODGE_ALGO_OCS2:
+
+      case CS_HODGE_ALGO_OCS2:
         msh_flag |= CS_FLAG_COMP_EV | CS_FLAG_COMP_SEF;
-        compute = cs_hodge_epfd_ocs2_get;
         break;
-      case CS_PARAM_HODGE_ALGO_VORONOI:
+      case CS_HODGE_ALGO_VORONOI:
         msh_flag |= CS_FLAG_COMP_SEF;
-        compute = cs_hodge_epfd_voro_get;
         break;
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid algorithm for Ep->Fd Hodge operator", func_name);
+
+      default: /* Minimal requirement for other Hodge algorithms */
+        break;
+
       }
       break;
 
-    case CS_PARAM_HODGE_TYPE_EDFP:
+    case CS_HODGE_TYPE_EDFP:
 
       msh_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ;
       cb = _cell_builder_create(CS_SPACE_SCHEME_CDOFB, connect);
@@ -3354,23 +3919,9 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 #     pragma omp for
       for (cs_lnum_t i = 0; i < quant->n_faces; i++) result[i] = 0;
 
-      switch (hodgep.algo) {
-      case CS_PARAM_HODGE_ALGO_COST:
-        compute = cs_hodge_edfp_cost_get;
-        break;
-      case CS_PARAM_HODGE_ALGO_BUBBLE:
-        compute = cs_hodge_edfp_bubble_get;
-        break;
-      case CS_PARAM_HODGE_ALGO_VORONOI:
-        compute = cs_hodge_edfp_voro_get;
-        break;
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid algorithm for Ed->Fp Hodge operator", func_name);
-      }
       break;
 
-    case CS_PARAM_HODGE_TYPE_FPED:
+    case CS_HODGE_TYPE_FPED:
 
       msh_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ;
       cb = _cell_builder_create(CS_SPACE_SCHEME_CDOFB, connect);
@@ -3379,23 +3930,9 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 #     pragma omp for
       for (cs_lnum_t i = 0; i < quant->n_faces; i++) result[i] = 0;
 
-      switch (hodgep.algo) {
-      case CS_PARAM_HODGE_ALGO_COST:
-        compute = cs_hodge_fped_cost_get;
-        break;
-      case CS_PARAM_HODGE_ALGO_BUBBLE:
-        compute = cs_hodge_fped_bubble_get;
-        break;
-      case CS_PARAM_HODGE_ALGO_VORONOI:
-        compute = cs_hodge_fped_voro_get;
-        break;
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid algorithm for Fp->Ed Hodge operator", func_name);
-      }
       break;
 
-    case CS_PARAM_HODGE_TYPE_VC:
+    case CS_HODGE_TYPE_VC:
 
       msh_flag |= CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_HFQ |
          CS_FLAG_COMP_DEQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ;
@@ -3406,14 +3943,6 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
       for (cs_lnum_t i = 0; i < quant->n_vertices + quant->n_cells; i++)
         result[i] = 0;
 
-      switch (hodgep.algo) {
-      case CS_PARAM_HODGE_ALGO_WBS:
-        compute = cs_hodge_vcb_wbs_get;
-        break;
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid algorithm for Vp->Cd Hodge operator", func_name);
-      }
       break;
 
     default:
@@ -3421,18 +3950,9 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
                 " %s: Invalid type of discrete Hodge operator", func_name);
     }
 
-    if (pty == NULL) {
-      cb->dpty_val = 1;
-      cb->dpty_mat[0][0] = cb->dpty_mat[1][1] = cb->dpty_mat[2][2] = 1.0;
-      cb->dpty_mat[0][1] = cb->dpty_mat[1][0] = cb->dpty_mat[2][0] = 0.0;
-      cb->dpty_mat[0][2] = cb->dpty_mat[1][2] = cb->dpty_mat[2][1] = 0.0;
-    }
-
-    if (pty_uniform) { /* Get the value from the first cell */
-      cs_property_get_cell_tensor(0, t_eval, pty, hodgep.inv_pty, cb->dpty_mat);
-      if (hodgep.is_iso)
-        cb->dpty_val = cb->dpty_mat[0][0];
-    }
+    const cs_flag_t  cell_flag = 0;
+    if (pty_uniform) /* Get the value from the first cell */
+      cs_hodge_set_property_value(0, t_eval, cell_flag, hodge);
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
@@ -3441,26 +3961,21 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
       /* Retrieve the value of the property inside the current cell */
-      if (!pty_uniform) {
-        cs_property_tensor_in_cell(cm, pty, t_eval, hodgep.inv_pty,
-                                   cb->dpty_mat);
-        if (hodgep.is_iso)
-          cb->dpty_val = cb->dpty_mat[0][0];
-      }
+      if (!pty_uniform)
+        cs_hodge_set_property_value_cw(cm, t_eval, cell_flag, hodge);
 
       /* Build the local discrete Hodge operator */
-      compute(hodgep, cm, cb);
+      compute(cm, hodge, cb);
 
       /* Define a local vector to multiply for the current cell */
       switch (hodgep.type) {
 
-      case CS_PARAM_HODGE_TYPE_VPCD:
-
+      case CS_HODGE_TYPE_VPCD:
         for (short int v = 0; v < cm->n_vc; v++)
           _in[v] = in_vals[cm->v_ids[v]];
 
         /* Local matrix-vector operation */
-        cs_sdm_square_matvec(cb->hdg, _in, cb->values);
+        cs_sdm_square_matvec(hodge->matrix, _in, cb->values);
 
         /* Assemble the resulting vector */
         for (short int v = 0; v < cm->n_vc; v++)
@@ -3468,12 +3983,12 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
           result[cm->v_ids[v]] += cb->values[v];
         break;
 
-      case CS_PARAM_HODGE_TYPE_EPFD:
+      case CS_HODGE_TYPE_EPFD:
         for (short int e = 0; e < cm->n_ec; e++)
           _in[e] = in_vals[cm->e_ids[e]];
 
         /* Local matrix-vector operation */
-        cs_sdm_square_matvec(cb->hdg, _in, cb->values);
+        cs_sdm_square_matvec(hodge->matrix, _in, cb->values);
 
         /* Assemble the resulting vector */
         for (short int e = 0; e < cm->n_ec; e++)
@@ -3481,13 +3996,12 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
           result[cm->e_ids[e]] += cb->values[e];
         break;
 
-      case CS_PARAM_HODGE_TYPE_FPED:
-      case CS_PARAM_HODGE_TYPE_EDFP:
+      case CS_HODGE_TYPE_FPED:
         for (short int f = 0; f < cm->n_fc; f++)
           _in[f] = in_vals[cm->f_ids[f]];
 
         /* Local matrix-vector operation */
-        cs_sdm_square_matvec(cb->hdg, _in, cb->values);
+        cs_sdm_square_matvec(hodge->matrix, _in, cb->values);
 
         /* Assemble the resulting vector */
         for (short int f = 0; f < cm->n_fc; f++)
@@ -3505,6 +4019,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
 
     BFT_FREE(_in);
     cs_cell_builder_free(&cb);
+    cs_hodge_free(&hodge);
 
   } /* OpenMP Block */
 
@@ -3518,7 +4033,7 @@ cs_hodge_matvec(const cs_cdo_connect_t       *connect,
  * \param[in]      connect   pointer to a cs_cdo_connect_t structure
  * \param[in]      quant     pointer to a cs_cdo_quantities_t structure
  * \param[in]      t_eval    time at which one performs the evaluation
- * \param[in]      hodgep    cs_param_hodge_t structure
+ * \param[in]      hodgep    cs_hodge_param_t structure
  * \param[in]      pty       pointer to a cs_property_t structure or NULL
  * \param[in]      flux      vector to multiply with the discrete Hodge op.
  * \param[in, out] circul    array storing the resulting matrix-vector product
@@ -3529,7 +4044,7 @@ void
 cs_hodge_circulation_from_flux(const cs_cdo_connect_t       *connect,
                                const cs_cdo_quantities_t    *quant,
                                cs_real_t                     t_eval,
-                               const cs_param_hodge_t        hodgep,
+                               const cs_hodge_param_t        hodgep,
                                const cs_property_t          *pty,
                                const cs_real_t               flux[],
                                cs_real_t                     circul[])
@@ -3556,37 +4071,29 @@ cs_hodge_circulation_from_flux(const cs_cdo_connect_t       *connect,
     int  t_id = 0;
 #endif
 
+    const cs_adjacency_t  *c2f = connect->c2f;
+    const cs_flag_t  cell_flag = 0;
+
     cs_eflag_t  msh_flag = 0;
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    bool pty_uniform = cs_property_is_uniform(pty);
-    cs_hodge_t  *compute = NULL;
     cs_cell_builder_t  *cb = NULL;
     double  *_fluxes = NULL;
+
+    /* Each thread has its own pointer to a cs_hodge_t structure */
+    cs_hodge_t  *hodge = cs_hodge_create(connect, pty, &hodgep, true, false);
+    cs_hodge_compute_t  *compute = cs_hodge_get_func(func_name, hodgep);
+    bool  pty_uniform = cs_property_is_uniform(pty);
 
     switch (hodgep.type) {
 
     /* Only this type of discrete Hodge operator makes sense for this
        operation */
-    case CS_PARAM_HODGE_TYPE_FPED:
+    case CS_HODGE_TYPE_FPED:
 
       msh_flag |= CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ;
       cb = _cell_builder_create(CS_SPACE_SCHEME_CDOFB, connect);
       BFT_MALLOC(_fluxes, connect->n_max_fbyc, double);
 
-      switch (hodgep.algo) {
-      case CS_PARAM_HODGE_ALGO_COST:
-        compute = cs_hodge_fped_cost_get;
-        break;
-      case CS_PARAM_HODGE_ALGO_BUBBLE:
-        compute = cs_hodge_fped_bubble_get;
-        break;
-      case CS_PARAM_HODGE_ALGO_VORONOI:
-        compute = cs_hodge_fped_voro_get;
-        break;
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Invalid algorithm for Fp->Ed Hodge operator", func_name);
-      }
       break;
 
     default:
@@ -3594,20 +4101,8 @@ cs_hodge_circulation_from_flux(const cs_cdo_connect_t       *connect,
                 " %s: Invalid type of discrete Hodge operator", func_name);
     }
 
-    if (pty == NULL) {
-      cb->dpty_val = 1;
-      cb->dpty_mat[0][0] = cb->dpty_mat[1][1] = cb->dpty_mat[2][2] = 1.0;
-      cb->dpty_mat[0][1] = cb->dpty_mat[1][0] = cb->dpty_mat[2][0] = 0.0;
-      cb->dpty_mat[0][2] = cb->dpty_mat[1][2] = cb->dpty_mat[2][1] = 0.0;
-    }
-
-    if (pty_uniform) { /* Get the value from the first cell */
-      cs_property_get_cell_tensor(0, t_eval, pty, hodgep.inv_pty, cb->dpty_mat);
-      if (hodgep.is_iso)
-        cb->dpty_val = cb->dpty_mat[0][0];
-    }
-
-    const cs_adjacency_t  *c2f = connect->c2f;
+    if (pty_uniform) /* Get the value from the first cell */
+      cs_hodge_set_property_value(0, t_eval, cell_flag, hodge);
 
 #   pragma omp for CS_CDO_OMP_SCHEDULE
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
@@ -3616,15 +4111,11 @@ cs_hodge_circulation_from_flux(const cs_cdo_connect_t       *connect,
       cs_cell_mesh_build(c_id, msh_flag, connect, quant, cm);
 
       /* Retrieve the value of the property inside the current cell */
-      if (!pty_uniform) {
-        cs_property_tensor_in_cell(cm, pty, t_eval, hodgep.inv_pty,
-                                   cb->dpty_mat);
-        if (hodgep.is_iso)
-          cb->dpty_val = cb->dpty_mat[0][0];
-      }
+      if (!pty_uniform)
+        cs_hodge_set_property_value_cw(cm, t_eval, cell_flag, hodge);
 
       /* Build the local discrete Hodge operator */
-      compute(hodgep, cm, cb);
+      compute(cm, hodge, cb);
 
       /* Define a local vector to multiply for the current cell */
       for (short int f = 0; f < cm->n_fc; f++)
@@ -3632,12 +4123,13 @@ cs_hodge_circulation_from_flux(const cs_cdo_connect_t       *connect,
       cs_real_t  *_circ = circul + c2f->idx[c_id];
 
       /* Local matrix-vector operation */
-      cs_sdm_square_matvec(cb->hdg, _fluxes, _circ);
+      cs_sdm_square_matvec(hodge->matrix, _fluxes, _circ);
 
     } /* Main loop on cells */
 
     BFT_FREE(_fluxes);
     cs_cell_builder_free(&cb);
+    cs_hodge_free(&hodge);
 
   } /* OpenMP Block */
 

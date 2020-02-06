@@ -328,12 +328,12 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
  *         For instance for a velocity inlet boundary or a wall
  *         Handle the velocity-block in the global algebraic system in case of
  *         an algebraic technique.
- *         One assumes that static condensation has been performed and that
- *         the velocity-block has size 3*n_fc
+ *         This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
  * \param[in]       f         face id in the cell mesh numbering
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       pty       pointer to a \ref cs_property_data_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -343,6 +343,7 @@ void
 cs_cdofb_block_dirichlet_alge(short int                       f,
                               const cs_equation_param_t      *eqp,
                               const cs_cell_mesh_t           *cm,
+                              const cs_property_data_t       *pty,
                               cs_cell_builder_t              *cb,
                               cs_cell_sys_t                  *csys);
 
@@ -354,10 +355,12 @@ cs_cdofb_block_dirichlet_alge(short int                       f,
  *         a penalization technique (with a large coefficient).
  *         One assumes that static condensation has been performed and that
  *         the velocity-block has size 3*n_fc
+ *         This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
  * \param[in]       f         face id in the cell mesh numbering
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       pty       pointer to a \ref cs_property_data_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -367,6 +370,7 @@ void
 cs_cdofb_block_dirichlet_pena(short int                       f,
                               const cs_equation_param_t      *eqp,
                               const cs_cell_mesh_t           *cm,
+                              const cs_property_data_t       *pty,
                               cs_cell_builder_t              *cb,
                               cs_cell_sys_t                  *csys);
 
@@ -378,10 +382,12 @@ cs_cdofb_block_dirichlet_pena(short int                       f,
  *         a weak penalization technique (Nitsche).
  *         One assumes that static condensation has not been performed yet and
  *         that the velocity-block has size 3*(n_fc + 1)
+ *         This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
  * \param[in]       f         face id in the cell mesh numbering
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       pty       pointer to a \ref cs_property_data_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -391,6 +397,7 @@ void
 cs_cdofb_block_dirichlet_weak(short int                       f,
                               const cs_equation_param_t      *eqp,
                               const cs_cell_mesh_t           *cm,
+                              const cs_property_data_t       *pty,
                               cs_cell_builder_t              *cb,
                               cs_cell_sys_t                  *csys);
 
@@ -402,10 +409,12 @@ cs_cdofb_block_dirichlet_weak(short int                       f,
  *         a weak penalization technique (symmetrized Nitsche).
  *         One assumes that static condensation has not been performed yet and
  *         that the velocity-block has size 3*(n_fc + 1)
+ *         This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
  * \param[in]       f         face id in the cell mesh numbering
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       pty       pointer to a \ref cs_property_data_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -415,6 +424,7 @@ void
 cs_cdofb_block_dirichlet_wsym(short int                       f,
                               const cs_equation_param_t      *eqp,
                               const cs_cell_mesh_t           *cm,
+                              const cs_property_data_t       *pty,
                               cs_cell_builder_t              *cb,
                               cs_cell_sys_t                  *csys);
 
@@ -425,10 +435,12 @@ cs_cdofb_block_dirichlet_wsym(short int                       f,
  *         A weak penalization technique (symmetrized Nitsche) is used.
  *         One assumes that static condensation has not been performed yet and
  *         that the velocity-block has (n_fc + 1) blocks of size 3x3.
+ *         This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
  * \param[in]       f         face id in the cell mesh numbering
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       pty       pointer to a \ref cs_property_data_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -438,6 +450,7 @@ void
 cs_cdofb_symmetry(short int                       f,
                   const cs_equation_param_t      *eqp,
                   const cs_cell_mesh_t           *cm,
+                  const cs_property_data_t       *pty,
                   cs_cell_builder_t              *cb,
                   cs_cell_sys_t                  *csys);
 
@@ -446,10 +459,12 @@ cs_cdofb_symmetry(short int                       f,
  * \brief   Take into account a wall BCs by a weak enforcement using Nitsche
  *          technique plus a symmetric treatment.
  *          Case of vector-valued CDO Face-based schemes
+ *          This prototype matches the function pointer cs_cdo_apply_boundary_t
  *
  * \param[in]       f         face id in the cell mesh numbering
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       pty       pointer to a \ref cs_property_data_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -459,6 +474,7 @@ void
 cs_cdofb_fixed_wall(short int                       f,
                     const cs_equation_param_t      *eqp,
                     const cs_cell_mesh_t           *cm,
+                    const cs_property_data_t       *pty,
                     cs_cell_builder_t              *cb,
                     cs_cell_sys_t                  *csys);
 

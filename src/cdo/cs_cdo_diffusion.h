@@ -54,16 +54,18 @@ BEGIN_C_DECLS
 /*!
  * \brief   Cellwise computation of the diffusive flux
  *
- * \param[in]      cm       pointer to a cs_face_mesh_t structure
- * \param[in]      pot      values of the potential fields at vertices
- * \param[in, out] cb       auxiliary structure for computing the flux
- * \param[in, out] flx      flux across dual faces inside this cell
+ * \param[in]      cm      pointer to a cs_face_mesh_t structure
+ * \param[in]      pot     values of the potential fields at vertices
+ * \param[in]      hodge   pointer to a \ref cs_hodge_t structure
+ * \param[in, out] cb      auxiliary structure for computing the flux
+ * \param[in, out] flx     flux across dual faces inside this cell
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
 (cs_cdo_diffusion_cw_flux_t)(const cs_cell_mesh_t     *cm,
                              const cs_real_t          *pot,
+                             const cs_hodge_t         *hodge,
                              cs_cell_builder_t        *cb,
                              cs_real_t                *flx);
 
@@ -75,10 +77,13 @@ typedef void
 /*!
  * \brief   Take into account Dirichlet BCs by a weak enforcement by a
  *          penalization technique with a huge value
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
  */
@@ -88,6 +93,7 @@ void
 cs_cdo_diffusion_pena_dirichlet(const cs_equation_param_t       *eqp,
                                 const cs_cell_mesh_t            *cm,
                                 cs_face_mesh_t                  *fm,
+                                cs_hodge_t                      *hodge,
                                 cs_cell_builder_t               *cb,
                                 cs_cell_sys_t                   *csys);
 
@@ -96,10 +102,13 @@ cs_cdo_diffusion_pena_dirichlet(const cs_equation_param_t       *eqp,
  * \brief   Take into account Dirichlet BCs by a weak enforcement by a
  *          penalization technique with a huge value.
  *          Case of a cellwise system defined by block.
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
  */
@@ -109,6 +118,7 @@ void
 cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
                                       const cs_cell_mesh_t            *cm,
                                       cs_face_mesh_t                  *fm,
+                                      cs_hodge_t                      *hodge,
                                       cs_cell_builder_t               *cb,
                                       cs_cell_sys_t                   *csys);
 
@@ -124,11 +134,14 @@ cs_cdo_diffusion_pena_block_dirichlet(const cs_equation_param_t       *eqp,
  *          |      |     |     |      |     |     |  |     |          |
  *          | Adi  | Add |     |  0   |  Id |     |bd|     |    xd    |
  *
- * where xd is the value of the Dirichlet BC
+ *          where xd is the value of the Dirichlet BC
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
  */
@@ -138,6 +151,7 @@ void
 cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
                                 const cs_cell_mesh_t            *cm,
                                 cs_face_mesh_t                  *fm,
+                                cs_hodge_t                      *hodge,
                                 cs_cell_builder_t               *cb,
                                 cs_cell_sys_t                   *csys);
 
@@ -154,11 +168,14 @@ cs_cdo_diffusion_alge_dirichlet(const cs_equation_param_t       *eqp,
  *          |      |     |     |      |     |     |  |     |          |
  *          | Adi  | Add |     |  0   |  Id |     |bd|     |    xd    |
  *
- * where xd is the value of the Dirichlet BC
+ *          where xd is the value of the Dirichlet BC
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a cs_cell_mesh_t structure
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
  */
@@ -168,6 +185,7 @@ void
 cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
                                       const cs_cell_mesh_t            *cm,
                                       cs_face_mesh_t                  *fm,
+                                      cs_hodge_t                      *hodge,
                                       cs_cell_builder_t               *cb,
                                       cs_cell_sys_t                   *csys);
 
@@ -176,10 +194,13 @@ cs_cdo_diffusion_alge_block_dirichlet(const cs_equation_param_t       *eqp,
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique.
  *          Case of scalar-valued CDO Face-based schemes
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -189,6 +210,7 @@ void
 cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
                                     const cs_cell_mesh_t           *cm,
                                     cs_face_mesh_t                 *fm,
+                                    cs_hodge_t                     *hodge,
                                     cs_cell_builder_t              *cb,
                                     cs_cell_sys_t                  *csys);
 
@@ -199,10 +221,13 @@ cs_cdo_diffusion_sfb_weak_dirichlet(const cs_equation_param_t      *eqp,
  *          Case of vector-valued CDO Face-based schemes
  *          The idea is to compute the scalar version and dispatch it three
  *          times, one for each Cartesian components
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -212,18 +237,22 @@ void
 cs_cdo_diffusion_vfb_weak_dirichlet(const cs_equation_param_t      *eqp,
                                     const cs_cell_mesh_t           *cm,
                                     cs_face_mesh_t                 *fm,
+                                    cs_hodge_t                     *hodge,
                                     cs_cell_builder_t              *cb,
                                     cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
- *          technique plus a symmetric treatment - Face-based version
+ *          technique plus a symmetric treatment
  *          Case of scalar-valued CDO Face-based schemes
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -233,6 +262,7 @@ void
 cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
                                     const cs_cell_mesh_t           *cm,
                                     cs_face_mesh_t                 *fm,
+                                    cs_hodge_t                     *hodge,
                                     cs_cell_builder_t              *cb,
                                     cs_cell_sys_t                  *csys);
 
@@ -243,10 +273,13 @@ cs_cdo_diffusion_sfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
  *          Case of vector-valued CDO Face-based schemes
  *          The idea is to compute the scalar version and dispatch it three
  *          times, one for each Cartesian components
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -256,6 +289,7 @@ void
 cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
                                     const cs_cell_mesh_t           *cm,
                                     cs_face_mesh_t                 *fm,
+                                    cs_hodge_t                     *hodge,
                                     cs_cell_builder_t              *cb,
                                     cs_cell_sys_t                  *csys);
 
@@ -264,10 +298,13 @@ cs_cdo_diffusion_vfb_wsym_dirichlet(const cs_equation_param_t      *eqp,
  * \brief   Take into account sliding BCs by a weak enforcement using Nitsche
  *          technique plus a symmetric treatment.
  *          Case of vector-valued CDO Face-based schemes
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -277,6 +314,7 @@ void
 cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
                                   const cs_cell_mesh_t           *cm,
                                   cs_face_mesh_t                 *fm,
+                                  cs_hodge_t                     *hodge,
                                   cs_cell_builder_t              *cb,
                                   cs_cell_sys_t                  *csys);
 
@@ -284,10 +322,13 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
 /*!
  * \brief   Take into account Robin BCs.
  *          Case of scalar-valued CDO-Vb schemes with a CO+ST algorithm.
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -297,28 +338,9 @@ void
 cs_cdo_diffusion_svb_cost_robin(const cs_equation_param_t      *eqp,
                                 const cs_cell_mesh_t           *cm,
                                 cs_face_mesh_t                 *fm,
+                                cs_hodge_t                     *hodge,
                                 cs_cell_builder_t              *cb,
                                 cs_cell_sys_t                  *csys);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Take into account Robin BCs.
- *          Case of scalar-valued CDO-Vb schemes with a WBS algorithm.
- *
- * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
- * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
- * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
- * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
- * \param[in, out]  csys      structure storing the cellwise system
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdo_diffusion_svb_wbs_robin(const cs_equation_param_t      *eqp,
-                               const cs_cell_mesh_t           *cm,
-                               cs_face_mesh_t                 *fm,
-                               cs_cell_builder_t              *cb,
-                               cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -326,10 +348,13 @@ cs_cdo_diffusion_svb_wbs_robin(const cs_equation_param_t      *eqp,
  *          technique. According to the settings one can apply Neumann BCs if
  *          alpha = 0, Dirichlet BCs if alpha >> 1 or Robin BCs
  *          Case of scalar-valued CDO-Vb schemes with a CO+ST algorithm.
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -339,6 +364,7 @@ void
 cs_cdo_diffusion_svb_cost_generic(const cs_equation_param_t      *eqp,
                                   const cs_cell_mesh_t           *cm,
                                   cs_face_mesh_t                 *fm,
+                                  cs_hodge_t                     *hodge,
                                   cs_cell_builder_t              *cb,
                                   cs_cell_sys_t                  *csys);
 
@@ -347,10 +373,13 @@ cs_cdo_diffusion_svb_cost_generic(const cs_equation_param_t      *eqp,
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique. Case of scalar-valued CDO-Vb schemes with an orthogonal
  *          splitting between the consistency/stabilization parts (OCS)
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -360,6 +389,7 @@ void
 cs_cdo_diffusion_svb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
                                         const cs_cell_mesh_t           *cm,
                                         cs_face_mesh_t                 *fm,
+                                        cs_hodge_t                     *hodge,
                                         cs_cell_builder_t              *cb,
                                         cs_cell_sys_t                  *csys);
 
@@ -369,10 +399,13 @@ cs_cdo_diffusion_svb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
  *          technique. A Dirichlet is set for the three components of the
  *          vector. Case of vector-valued CDO-Vb schemes with an orthogonal
  *          splitting between the consistency/stabilization parts (OCS)
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -382,6 +415,7 @@ void
 cs_cdo_diffusion_vvb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
                                         const cs_cell_mesh_t           *cm,
                                         cs_face_mesh_t                 *fm,
+                                        cs_hodge_t                     *hodge,
                                         cs_cell_builder_t              *cb,
                                         cs_cell_sys_t                  *csys);
 
@@ -390,10 +424,13 @@ cs_cdo_diffusion_vvb_ocs_weak_dirichlet(const cs_equation_param_t      *eqp,
  * \brief   Take into account a sliding BCs.
  *          Case of vector-valued CDO-Vb schemes with a OCS algorithm.
  *          Orthogonal splitting between Consistency/Stabilization parts.
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -403,6 +440,7 @@ void
 cs_cdo_diffusion_vvb_ocs_sliding(const cs_equation_param_t      *eqp,
                                  const cs_cell_mesh_t           *cm,
                                  cs_face_mesh_t                 *fm,
+                                 cs_hodge_t                     *hodge,
                                  cs_cell_builder_t              *cb,
                                  cs_cell_sys_t                  *csys);
 
@@ -412,10 +450,13 @@ cs_cdo_diffusion_vvb_ocs_sliding(const cs_equation_param_t      *eqp,
  *          technique plus a symmetric treatment. Case of CDO-Vb schemes with a
  *          COST/Bubble or Voronoi algorithm. One assumes an Orthogonal
  *          splitting between Consistency/Stabilization parts (OCS).
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -425,17 +466,45 @@ void
 cs_cdo_diffusion_svb_ocs_wsym_dirichlet(const cs_equation_param_t      *eqp,
                                         const cs_cell_mesh_t           *cm,
                                         cs_face_mesh_t                 *fm,
+                                        cs_hodge_t                     *hodge,
                                         cs_cell_builder_t              *cb,
                                         cs_cell_sys_t                  *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
- *          technique. Case of CDO-Vb schemes with a WBS algorithm.
+ * \brief   Take into account Robin BCs.
+ *          Case of scalar-valued CDO-Vb schemes with a WBS algorithm.
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_svb_wbs_robin(const cs_equation_param_t      *eqp,
+                               const cs_cell_mesh_t           *cm,
+                               cs_face_mesh_t                 *fm,
+                               cs_hodge_t                     *hodge,
+                               cs_cell_builder_t              *cb,
+                               cs_cell_sys_t                  *csys);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
+ *          technique. Case of CDO-Vb schemes with a WBS algorithm.
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -445,6 +514,7 @@ void
 cs_cdo_diffusion_svb_wbs_weak_dirichlet(const cs_equation_param_t      *eqp,
                                         const cs_cell_mesh_t           *cm,
                                         cs_face_mesh_t                 *fm,
+                                        cs_hodge_t                     *hodge,
                                         cs_cell_builder_t              *cb,
                                         cs_cell_sys_t                  *csys);
 
@@ -453,30 +523,37 @@ cs_cdo_diffusion_svb_wbs_weak_dirichlet(const cs_equation_param_t      *eqp,
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique plus a symmetric treatment. Case of CDO-Vb schemes with a
  *          WBS algorithm
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t      *eqp,
-                                        const cs_cell_mesh_t           *cm,
-                                        cs_face_mesh_t                 *fm,
-                                        cs_cell_builder_t              *cb,
-                                        cs_cell_sys_t                  *csys);
+cs_cdo_diffusion_svb_wbs_wsym_dirichlet(const cs_equation_param_t     *eqp,
+                                        const cs_cell_mesh_t          *cm,
+                                        cs_face_mesh_t                *fm,
+                                        cs_hodge_t                    *hodge,
+                                        cs_cell_builder_t             *cb,
+                                        cs_cell_sys_t                 *csys);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique. Case of CDO-VCb schemes with a WBS algorithm.
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -486,6 +563,7 @@ void
 cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
                                     const cs_cell_mesh_t           *cm,
                                     cs_face_mesh_t                 *fm,
+                                    cs_hodge_t                     *hodge,
                                     cs_cell_builder_t              *cb,
                                     cs_cell_sys_t                  *csys);
 
@@ -494,10 +572,13 @@ cs_cdo_diffusion_vcb_weak_dirichlet(const cs_equation_param_t      *eqp,
  * \brief   Take into account Dirichlet BCs by a weak enforcement using Nitsche
  *          technique plus a symmetric treatment. Case of CDO-VCb schemes with
  *          a WBS algorithm
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
  *
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cellwise system
  */
@@ -507,6 +588,7 @@ void
 cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
                                     const cs_cell_mesh_t           *cm,
                                     cs_face_mesh_t                 *fm,
+                                    cs_hodge_t                     *hodge,
                                     cs_cell_builder_t              *cb,
                                     cs_cell_sys_t                  *csys);
 
@@ -517,9 +599,12 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
  *          for this computation.
  *          This function is dedicated to vertex-based schemes.
  *                       Flux = -Consistent(Hdg) * GRAD(pot)
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_diffusion_cw_flux_t
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      pot     values of the potential fields at specific locations
+ * \param[in]      hodge   pointer to a \ref cs_hodge_t structure
  * \param[in, out] cb      auxiliary structure for computing the flux
  * \param[in, out] flx     values of the flux across specific entities
  */
@@ -528,6 +613,7 @@ cs_cdo_diffusion_vcb_wsym_dirichlet(const cs_equation_param_t      *eqp,
 void
 cs_cdo_diffusion_svb_get_dfbyc_flux(const cs_cell_mesh_t      *cm,
                                     const double              *pot,
+                                    const cs_hodge_t          *hodge,
                                     cs_cell_builder_t         *cb,
                                     double                    *flx);
 
@@ -536,10 +622,14 @@ cs_cdo_diffusion_svb_get_dfbyc_flux(const cs_cell_mesh_t      *cm,
  * \brief   Compute the constant approximation of the diffusive flux inside a
  *          (primal) cell. Use the same consistent approximation as in the
  *          discrete Hodge op. for this computation. This function is dedicated
- *          to vertex-based schemes. Flux = -Hdg * GRAD(pot)
+ *          to vertex-based schemes.
+ *          Flux = -Hdg * GRAD(pot)
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_diffusion_cw_flux_t
  *
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      pot     values of the potential fields at specific locations
+ * \param[in]      hodge   pointer to a \ref cs_hodge_t structure
  * \param[in, out] cb      auxiliary structure for computing the flux
  * \param[in, out] flx     values of the flux inside the cell
  */
@@ -548,6 +638,7 @@ cs_cdo_diffusion_svb_get_dfbyc_flux(const cs_cell_mesh_t      *cm,
 void
 cs_cdo_diffusion_svb_get_cell_flux(const cs_cell_mesh_t      *cm,
                                    const double              *pot,
+                                   const cs_hodge_t          *hodge,
                                    cs_cell_builder_t         *cb,
                                    double                    *flx);
 
@@ -561,19 +652,19 @@ cs_cdo_diffusion_svb_get_cell_flux(const cs_cell_mesh_t      *cm,
  *         each vertex of the face is then computed.
  *
  * \param[in]      f       face id in the cell mesh
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      pot     array of values of the potential (all the mesh)
- * \param[in, out] cb      auxiliary structure dedicated to diffusion
+ * \param[in]      hodge   pointer to a \ref cs_hodge_t structure
+ * \param[in, out] cb      auxiliary structure for building the flux
  * \param[in, out] flux    array of values to set (size: n_vc)
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_cdo_diffusion_svb_vbyf_flux(short int                   f,
-                               const cs_equation_param_t  *eqp,
                                const cs_cell_mesh_t       *cm,
                                const cs_real_t            *pot,
+                               const cs_hodge_t           *hodge,
                                cs_cell_builder_t          *cb,
                                cs_real_t                  *flux);
 
@@ -583,9 +674,12 @@ cs_cdo_diffusion_svb_vbyf_flux(short int                   f,
  *          Use the WBS algo. for approximating the gradient
  *          The computation takes into account a subdivision into tetrahedra of
  *          the current cell based on p_{ef,c}
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_diffusion_cw_flux_t
  *
  * \param[in]      cm       pointer to a cs_cell_mesh_t structure
  * \param[in]      pot      values of the potential fields at vertices
+ * \param[in]      hodge    pointer to a \ref cs_hodge_t structure
  * \param[in, out] cb       auxiliary structure for computing the flux
  * \param[in, out] flx      flux across dual faces inside this cell
  */
@@ -594,6 +688,7 @@ cs_cdo_diffusion_svb_vbyf_flux(short int                   f,
 void
 cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
                                     const cs_real_t        *pot,
+                                    const cs_hodge_t       *hodge,
                                     cs_cell_builder_t      *cb,
                                     cs_real_t              *flx);
 
@@ -603,9 +698,12 @@ cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
  *          Use the WBS algo. for approximating the gradient
  *          The computation takes into account a subdivision into tetrahedra of
  *          the current cell based on p_{ef,c}
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_diffusion_cw_flux_t
  *
  * \param[in]      cm       pointer to a cs_cell_mesh_t structure
  * \param[in]      pot      values of the potential fields at vertices
+ * \param[in]      hodge    pointer to a \ref cs_hodge_t structure
  * \param[in, out] cb       auxiliary structure for computing the flux
  * \param[in, out] flx      flux vector inside this cell
  */
@@ -614,6 +712,7 @@ cs_cdo_diffusion_wbs_get_dfbyc_flux(const cs_cell_mesh_t   *cm,
 void
 cs_cdo_diffusion_wbs_get_cell_flux(const cs_cell_mesh_t   *cm,
                                    const cs_real_t        *pot,
+                                   const cs_hodge_t       *hodge,
                                    cs_cell_builder_t      *cb,
                                    cs_real_t              *flx);
 
@@ -624,10 +723,10 @@ cs_cdo_diffusion_wbs_get_cell_flux(const cs_cell_mesh_t   *cm,
  *          WBS algorithm is used for reconstructing the normal flux from the
  *          degrees of freedom.
  *
- * \param[in]  f              face id in the cell mesh
- * \param[in]  eqp            pointer to a cs_equation_param_t structure
- * \param[in]  cm             pointer to a cs_cell_mesh_t structure
- * \param[in]  pot            array of values of the potential (all the mesh)
+ * \param[in]      f          face id in the cell mesh
+ * \param[in]      cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]      pot        array of values of the potential (all the mesh)
+ * \param[in]      hodge      pointer to a \ref cs_hodge_t structure
  * \param[in, out] cb         auxiliary structure dedicated to diffusion
  * \param[in, out] vf_flux    array of values to set (size: n_vc)
  */
@@ -635,9 +734,9 @@ cs_cdo_diffusion_wbs_get_cell_flux(const cs_cell_mesh_t   *cm,
 
 void
 cs_cdo_diffusion_wbs_vbyf_flux(short int                   f,
-                               const cs_equation_param_t  *eqp,
                                const cs_cell_mesh_t       *cm,
                                const cs_real_t            *pot,
+                               const cs_hodge_t           *hodge,
                                cs_cell_builder_t          *cb,
                                cs_real_t                  *flux);
 
@@ -673,9 +772,9 @@ cs_cdo_diffusion_wbs_face_flux(const cs_face_mesh_t      *fm,
  *          the degrees of freedom.
  *
  * \param[in]      f       face id in the cell mesh
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
  * \param[in]      cm      pointer to a cs_cell_mesh_t structure
  * \param[in]      pot     array of values of the potential (all the mesh)
+ * \param[in]      hodge   pointer to a \ref cs_hodge_t structure
  * \param[in, out] cb      auxiliary structure dedicated to diffusion
  * \param[out]     flux    pointer to the value to set
  */
@@ -683,9 +782,9 @@ cs_cdo_diffusion_wbs_face_flux(const cs_face_mesh_t      *fm,
 
 void
 cs_cdo_diffusion_sfb_cost_flux(short int                   f,
-                               const cs_equation_param_t  *eqp,
                                const cs_cell_mesh_t       *cm,
                                const cs_real_t            *pot,
+                               const cs_hodge_t           *hodge,
                                cs_cell_builder_t          *cb,
                                cs_real_t                  *flux);
 
@@ -708,7 +807,7 @@ cs_cdo_diffusion_sfb_cost_flux(short int                   f,
 void
 cs_cdovb_diffusion_p0_face_flux(const short int           f,
                                 const cs_cell_mesh_t     *cm,
-                                const cs_real_3_t        *diff_tensor,
+                                const cs_real_t           diff_tensor[3][3],
                                 const cs_real_t          *pot_values,
                                 cs_real_t                *fluxes);
 

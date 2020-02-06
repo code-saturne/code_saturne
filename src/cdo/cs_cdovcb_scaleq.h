@@ -300,6 +300,7 @@ cs_cdovcb_scaleq_get_cell_values(void     *context);
  * \param[in]       pot_v      pointer to an array of field values at vertices
  * \param[in]       pot_c      pointer to an array of field values at cells
  * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out]  context    pointer to a scheme builder structure
  * \param[in, out]  vf_flux    pointer to the values of the diffusive flux
  */
 /*----------------------------------------------------------------------------*/
@@ -310,6 +311,7 @@ cs_cdovcb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
                                     const cs_real_t             *pot_v,
                                     const cs_real_t             *pot_c,
                                     cs_equation_builder_t       *eqb,
+                                    void                        *context,
                                     cs_real_t                   *vf_flux);
 
 /*----------------------------------------------------------------------------*/

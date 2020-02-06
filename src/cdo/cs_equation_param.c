@@ -1368,17 +1368,17 @@ _set_key(const char            *label,
 
   case CS_EQKEY_HODGE_DIFF_ALGO:
     if (strcmp(keyval,"cost") == 0 || strcmp(keyval,"ocs") == 0)
-      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
+      eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_COST;
     else if (strcmp(keyval, "ocs2") == 0)
-      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_OCS2;
+      eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_OCS2;
     else if (strcmp(keyval, "bubble") == 0)
-      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_BUBBLE;
+      eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_BUBBLE;
     else if (strcmp(keyval, "voronoi") == 0)
-      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+      eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_VORONOI;
     else if (strcmp(keyval, "wbs") == 0)
-      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
+      eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_WBS;
     else if (strcmp(keyval, "auto") == 0)
-      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_AUTO;
+      eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_AUTO;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
@@ -1388,22 +1388,22 @@ _set_key(const char            *label,
 
   case CS_EQKEY_HODGE_DIFF_COEF:
     if (strcmp(keyval, "dga") == 0)
-      eqp->diffusion_hodge.coef = 1./3.;
+      eqp->diffusion_hodgep.coef = 1./3.;
     else if (strcmp(keyval, "sushi") == 0)
-      eqp->diffusion_hodge.coef = 1./sqrt(3.);
+      eqp->diffusion_hodgep.coef = 1./sqrt(3.);
     else if (strcmp(keyval, "gcr") == 0)
-      eqp->diffusion_hodge.coef = 1.0;
+      eqp->diffusion_hodgep.coef = 1.0;
     else if (strcmp(keyval, "frac23") == 0 || strcmp(keyval, "2/3") == 0)
-      eqp->diffusion_hodge.coef = 2./3.;
+      eqp->diffusion_hodgep.coef = 2./3.;
     else
-      eqp->diffusion_hodge.coef = atof(keyval);
+      eqp->diffusion_hodgep.coef = atof(keyval);
     break;
 
   case CS_EQKEY_HODGE_TIME_ALGO:
     if (strcmp(keyval, "voronoi") == 0)
-      eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+      eqp->time_hodgep.algo = CS_HODGE_ALGO_VORONOI;
     else if (strcmp(keyval, "wbs") == 0)
-      eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
+      eqp->time_hodgep.algo = CS_HODGE_ALGO_WBS;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
@@ -1413,9 +1413,9 @@ _set_key(const char            *label,
 
   case CS_EQKEY_HODGE_REAC_ALGO:
     if (strcmp(keyval, "voronoi") == 0)
-      eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+      eqp->reaction_hodgep.algo = CS_HODGE_ALGO_VORONOI;
     else if (strcmp(keyval, "wbs") == 0)
-      eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
+      eqp->reaction_hodgep.algo = CS_HODGE_ALGO_WBS;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
@@ -1625,56 +1625,56 @@ _set_key(const char            *label,
     if (strcmp(keyval, "cdo_vb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
       eqp->space_poly_degree = 0;
-      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
-      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
-      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_BUBBLE;
-      eqp->diffusion_hodge.coef = 2*cs_math_1ov3;
-      eqp->reaction_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
-      eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
+      eqp->time_hodgep.type = CS_HODGE_TYPE_VPCD;
+      eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EPFD;
+      eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_BUBBLE;
+      eqp->diffusion_hodgep.coef = 2*cs_math_1ov3;
+      eqp->reaction_hodgep.type = CS_HODGE_TYPE_VPCD;
+      eqp->reaction_hodgep.algo = CS_HODGE_ALGO_WBS;
     }
     else if (strcmp(keyval, "cdo_vcb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOVCB;
       eqp->space_poly_degree = 0;
-      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
-      eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
-      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_VC;
-      eqp->reaction_hodge.type = CS_PARAM_HODGE_TYPE_VPCD;
-      eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
+      eqp->time_hodgep.type = CS_HODGE_TYPE_VPCD;
+      eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_WBS;
+      eqp->diffusion_hodgep.type = CS_HODGE_TYPE_VC;
+      eqp->reaction_hodgep.type = CS_HODGE_TYPE_VPCD;
+      eqp->reaction_hodgep.algo = CS_HODGE_ALGO_WBS;
     }
     else if (strcmp(keyval, "cdo_fb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOFB;
       eqp->space_poly_degree = 0;
-      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
-      eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
-      eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
-      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
+      eqp->time_hodgep.type = CS_HODGE_TYPE_CPVD;
+      eqp->time_hodgep.algo = CS_HODGE_ALGO_VORONOI;
+      eqp->reaction_hodgep.algo = CS_HODGE_ALGO_VORONOI;
+      eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EDFP;
     }
     else if (strcmp(keyval, "cdo_eb") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_CDOEB;
       eqp->space_poly_degree = 0;
-      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
-      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_FPED;
-      eqp->reaction_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
+      eqp->time_hodgep.type = CS_HODGE_TYPE_EPFD;
+      eqp->diffusion_hodgep.type = CS_HODGE_TYPE_FPED;
+      eqp->reaction_hodgep.type = CS_HODGE_TYPE_EPFD;
     }
 
     /* Only diffusion is implemented for HHO schemes up to now */
     else if (strcmp(keyval, "hho_p0") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_HHO_P0;
       eqp->space_poly_degree = 0;
-      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
-      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
+      eqp->time_hodgep.type = CS_HODGE_TYPE_CPVD;
+      eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EDFP;
     }
     else if (strcmp(keyval, "hho_p1") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_HHO_P1;
       eqp->space_poly_degree = 1;
-      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
-      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
+      eqp->time_hodgep.type = CS_HODGE_TYPE_CPVD;
+      eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EDFP;
     }
     else if (strcmp(keyval, "hho_p2") == 0) {
       eqp->space_scheme = CS_SPACE_SCHEME_HHO_P2;
       eqp->space_poly_degree = 2;
-      eqp->time_hodge.type = CS_PARAM_HODGE_TYPE_CPVD;
-      eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EDFP;
+      eqp->time_hodgep.type = CS_HODGE_TYPE_CPVD;
+      eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EDFP;
     }
     else {
       const char *_val = keyval;
@@ -1793,45 +1793,37 @@ cs_equation_create_param(const char            *name,
   eqp->time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT;
   eqp->theta = 1.0;
   eqp->do_lumping = false;
-  eqp->time_hodge = (cs_param_hodge_t) {
-    .is_unity = true,
-    .is_iso = true,
+  eqp->time_hodgep = (cs_hodge_param_t) {
     .inv_pty = false,
-    .algo = CS_PARAM_HODGE_ALGO_VORONOI,
-    .type = CS_PARAM_HODGE_TYPE_VPCD,
+    .algo = CS_HODGE_ALGO_VORONOI,
+    .type = CS_HODGE_TYPE_VPCD,
     .coef = 1.,
   };
 
   /* Description of the discetization of the diffusion term */
   eqp->diffusion_property = NULL;
-  eqp->diffusion_hodge = (cs_param_hodge_t) {
-    .is_unity = false,
-    .is_iso = true,
+  eqp->diffusion_hodgep = (cs_hodge_param_t) {
     .inv_pty = false,
-    .algo = CS_PARAM_HODGE_ALGO_COST,
-    .type = CS_PARAM_HODGE_TYPE_EPFD,
+    .algo = CS_HODGE_ALGO_COST,
+    .type = CS_HODGE_TYPE_EPFD,
     .coef = 1./3.,
   };
 
   /* Description of the discetization of the curl-curl term */
   eqp->curlcurl_property = NULL;
-  eqp->curlcurl_hodge = (cs_param_hodge_t) {
-    .is_unity = false,
-    .is_iso = true,
-    .inv_pty = false,
-    .algo = CS_PARAM_HODGE_ALGO_COST,
-    .type = CS_PARAM_HODGE_TYPE_FPED,
+  eqp->curlcurl_hodgep = (cs_hodge_param_t) {
+    .inv_pty = true,
+    .algo = CS_HODGE_ALGO_COST,
+    .type = CS_HODGE_TYPE_FPED,
     .coef = 1./3.,
   };
 
   /* Description of the discetization of the grad-div term */
   eqp->graddiv_property = NULL;
-  eqp->graddiv_hodge = (cs_param_hodge_t) {
-    .is_unity = true,
-    .is_iso = true,
+  eqp->graddiv_hodgep = (cs_hodge_param_t) {
     .inv_pty = false,
-    .algo = CS_PARAM_HODGE_ALGO_VORONOI,
-    .type = CS_PARAM_HODGE_TYPE_EPFD,
+    .algo = CS_HODGE_ALGO_VORONOI,
+    .type = CS_HODGE_TYPE_EPFD,
     .coef = 1./3.,
   };
 
@@ -1845,12 +1837,10 @@ cs_equation_create_param(const char            *name,
      No reaction term by default */
   eqp->n_reaction_terms = 0;
   eqp->reaction_properties = NULL;
-  eqp->reaction_hodge = (cs_param_hodge_t) {
-    .is_unity = false,
-    .is_iso = true,
+  eqp->reaction_hodgep = (cs_hodge_param_t) {
     .inv_pty = false,
-    .algo = CS_PARAM_HODGE_ALGO_WBS,
-    .type = CS_PARAM_HODGE_TYPE_VPCD,
+    .algo = CS_HODGE_ALGO_WBS,
+    .type = CS_HODGE_TYPE_VPCD,
   };
 
   /* Source term (always in the right-hand side)
@@ -1932,7 +1922,7 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
   dst->do_lumping = ref->do_lumping;
   dst->time_property = ref->time_property;
 
-  cs_hodge_copy_parameters(&(ref->time_hodge), &(dst->time_hodge));
+  cs_hodge_copy_parameters(&(ref->time_hodgep), &(dst->time_hodgep));
 
   /* Initial condition (zero value by default) */
   dst->n_ic_defs = ref->n_ic_defs;
@@ -1943,17 +1933,17 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
   /* Diffusion term */
   dst->diffusion_property = ref->diffusion_property;
 
-  cs_hodge_copy_parameters(&(ref->diffusion_hodge), &(dst->diffusion_hodge));
+  cs_hodge_copy_parameters(&(ref->diffusion_hodgep), &(dst->diffusion_hodgep));
 
   /* Curl-curl term */
   dst->curlcurl_property = ref->curlcurl_property;
 
-  cs_hodge_copy_parameters(&(ref->curlcurl_hodge), &(dst->curlcurl_hodge));
+  cs_hodge_copy_parameters(&(ref->curlcurl_hodgep), &(dst->curlcurl_hodgep));
 
   /* Grad-div term */
   dst->graddiv_property = ref->graddiv_property;
 
-  cs_hodge_copy_parameters(&(ref->graddiv_hodge), &(dst->graddiv_hodge));
+  cs_hodge_copy_parameters(&(ref->graddiv_hodgep), &(dst->graddiv_hodgep));
 
   /* Advection term */
   dst->adv_formulation = ref->adv_formulation;
@@ -1967,7 +1957,7 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
   for (int i = 0; i < ref->n_reaction_terms; i++)
     dst->reaction_properties[i] = ref->reaction_properties[i];
 
-  cs_hodge_copy_parameters(&(ref->reaction_hodge), &(dst->reaction_hodge));
+  cs_hodge_copy_parameters(&(ref->reaction_hodgep), &(dst->reaction_hodgep));
 
   /* Source term */
   dst->n_source_terms = ref->n_source_terms;
@@ -2259,8 +2249,8 @@ cs_equation_param_last_stage(cs_equation_param_t   *eqp)
 
   if (eqp->do_lumping) { /* Activate a set of options */
 
-    eqp->reaction_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
-    eqp->time_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+    eqp->reaction_hodgep.algo = CS_HODGE_ALGO_VORONOI;
+    eqp->time_hodgep.algo = CS_HODGE_ALGO_VORONOI;
 
     /* A simple barycentric quadrature rule is applied to all source terms */
     for (int i = 0; i < eqp->n_source_terms; i++)
@@ -2426,7 +2416,7 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
                   eqname, cs_property_get_name(eqp->time_property));
 
     sprintf(prefix, "        Time Hodge op. ");
-    cs_param_hodge_log(prefix, eqp->time_hodge);
+    cs_hodge_param_log(prefix, eqp->time_property, eqp->time_hodgep);
 
   } /* Unsteady term */
 
@@ -2437,7 +2427,7 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
                   eqname, cs_property_get_name(eqp->diffusion_property));
 
     sprintf(prefix, "        Diffusion Hodge op. ");
-    cs_param_hodge_log(prefix, eqp->diffusion_hodge);
+    cs_hodge_param_log(prefix, eqp->diffusion_property, eqp->diffusion_hodgep);
 
   } /* Diffusion term */
 
@@ -2448,7 +2438,7 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
                   eqname, cs_property_get_name(eqp->curlcurl_property));
 
     sprintf(prefix, "        Curl-curl Hodge op. ");
-    cs_param_hodge_log(prefix, eqp->curlcurl_hodge);
+    cs_hodge_param_log(prefix, eqp->curlcurl_property, eqp->curlcurl_hodgep);
 
   } /* Curl-curl term */
 
@@ -2459,7 +2449,7 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
                   eqname, cs_property_get_name(eqp->graddiv_property));
 
     sprintf(prefix, "        Grad-Div Hodge op. ");
-    cs_param_hodge_log(prefix, eqp->graddiv_hodge);
+    cs_hodge_param_log(prefix, eqp->graddiv_property, eqp->graddiv_hodgep);
 
   } /* Curl-curl term */
 
@@ -2526,7 +2516,7 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
                   eqname, eqp->n_reaction_terms);
 
     sprintf(prefix, "        Reaction Hodge op. ");
-    cs_param_hodge_log(prefix, eqp->reaction_hodge);
+    cs_hodge_param_log(prefix, NULL, eqp->reaction_hodgep);
 
   } /* Reaction terms */
 
@@ -3034,12 +3024,6 @@ cs_equation_add_diffusion(cs_equation_param_t   *eqp,
 
   eqp->flag |= CS_EQUATION_DIFFUSION;
   eqp->diffusion_property = property;
-
-  cs_property_type_t  type = cs_property_get_type(eqp->diffusion_property);
-  if (type & CS_PROPERTY_ISO)
-    eqp->diffusion_hodge.is_iso = true;
-  else
-    eqp->diffusion_hodge.is_iso = false;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3068,16 +3052,10 @@ cs_equation_add_curlcurl(cs_equation_param_t   *eqp,
   eqp->flag |= CS_EQUATION_CURLCURL;
   eqp->curlcurl_property = property;
 
-  cs_property_type_t  type = cs_property_get_type(eqp->curlcurl_property);
-  if (type & CS_PROPERTY_ISO)
-    eqp->curlcurl_hodge.is_iso = true;
-  else
-    eqp->curlcurl_hodge.is_iso = false;
-
   if (inversion > 0)
-    eqp->curlcurl_hodge.inv_pty = true;
+    eqp->curlcurl_hodgep.inv_pty = true;
   else
-    eqp->curlcurl_hodge.inv_pty = false;
+    eqp->curlcurl_hodgep.inv_pty = false;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3103,12 +3081,6 @@ cs_equation_add_graddiv(cs_equation_param_t   *eqp,
 
   eqp->flag |= CS_EQUATION_GRADDIV;
   eqp->graddiv_property = property;
-
-  cs_property_type_t  type = cs_property_get_type(eqp->graddiv_property);
-  if (type & CS_PROPERTY_ISO)
-    eqp->graddiv_hodge.is_iso = true;
-  else
-    eqp->graddiv_hodge.is_iso = false;
 }
 
 /*----------------------------------------------------------------------------*/

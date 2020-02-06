@@ -43,6 +43,7 @@
 #include "cs_basis_func.h"
 #include "cs_evaluate.h"
 #include "cs_hho_builder.h"
+#include "cs_hodge.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_scheme_geometry.h"
@@ -894,7 +895,7 @@ cs_source_term_compute_cellwise(const int                    n_source_terms,
  *         Case of a scalar potential defined at primal vertices by a constant
  *         value.
  *         A discrete Hodge operator has to be computed before this call and
- *         stored inside a cs_cell_builder_t structure
+ *         given as input parameter
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -913,16 +914,18 @@ cs_source_term_pvsp_by_value(const cs_xdef_t           *source,
                              void                      *input,
                              double                    *values)
 {
+  CS_UNUSED(time_eval);
+
   if (source == NULL)
     return;
 
-  CS_UNUSED(input);
-  CS_UNUSED(time_eval);
+  cs_hodge_t  *mass_hodge = (cs_hodge_t *)input;
 
   /* Sanity checks */
-  assert(values != NULL && cm != NULL);
-  assert(cb != NULL && cb->hdg != NULL);
+  assert(values != NULL && cm != NULL && cb != NULL);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PV));
+  assert(mass_hodge != NULL);
+  assert(mass_hodge->matrix != NULL);
 
   const cs_real_t *s_input = (const cs_real_t *)source->input;
   const cs_real_t  pot_value = s_input[0];
@@ -934,7 +937,7 @@ cs_source_term_pvsp_by_value(const cs_xdef_t           *source,
 
   /* Multiply these values by a cellwise Hodge operator previously computed */
   double  *hdg_eval = cb->values + cm->n_vc;
-  cs_sdm_square_matvec(cb->hdg, eval, hdg_eval);
+  cs_sdm_square_matvec(mass_hodge->matrix, eval, hdg_eval);
 
   for (short int v = 0; v < cm->n_vc; v++)
     values[v] += hdg_eval[v];
@@ -947,7 +950,7 @@ cs_source_term_pvsp_by_value(const cs_xdef_t           *source,
  *         Case of a scalar potential defined at primal vertices by an
  *         analytical function.
  *         A discrete Hodge operator has to be computed before this call and
- *         stored inside a cs_cell_builder_t structure
+ *         given as input parameter
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -969,12 +972,13 @@ cs_source_term_pvsp_by_analytic(const cs_xdef_t           *source,
   if (source == NULL)
     return;
 
-  CS_UNUSED(input);
+  cs_hodge_t  *mass_hodge = (cs_hodge_t *)input;
 
   /* Sanity checks */
-  assert(values != NULL && cm != NULL);
-  assert(cb != NULL && cb->hdg != NULL);
+  assert(values != NULL && cm != NULL && cb != NULL);
   assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PV));
+  assert(mass_hodge != NULL);
+  assert(mass_hodge->matrix != NULL);
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
@@ -987,7 +991,7 @@ cs_source_term_pvsp_by_analytic(const cs_xdef_t           *source,
 
   /* Multiply these values by a cellwise Hodge operator previously computed */
   double  *hdg_eval = cb->values + cm->n_vc;
-  cs_sdm_square_matvec(cb->hdg, eval, hdg_eval);
+  cs_sdm_square_matvec(mass_hodge->matrix, eval, hdg_eval);
 
   for (short int v = 0; v < cm->n_vc; v++)
     values[v] += hdg_eval[v];
@@ -1657,7 +1661,7 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
  *         Case of a scalar potential defined at primal vertices and cells
  *         by a constant value.
  *         A discrete Hodge operator has to be computed before this call and
- *         stored inside a cs_cell_builder_t structure
+ *         given as input parameter
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -1676,15 +1680,17 @@ cs_source_term_vcsp_by_value(const cs_xdef_t           *source,
                              void                      *input,
                              double                    *values)
 {
-  CS_UNUSED(input);
   CS_UNUSED(time_eval);
 
   if (source == NULL)
     return;
 
+  cs_hodge_t  *mass_hodge = (cs_hodge_t *)input;
+
   /* Sanity checks */
-  assert(values != NULL && cm != NULL);
-  assert(cb != NULL && cb->hdg != NULL);
+  assert(values != NULL && cm != NULL && cb != NULL);
+  assert(mass_hodge != NULL);
+  assert(mass_hodge->matrix != NULL);
 
   const cs_real_t *s_input = (const cs_real_t *)source->input;
   const cs_real_t  pot_value = s_input[0];
@@ -1697,7 +1703,7 @@ cs_source_term_vcsp_by_value(const cs_xdef_t           *source,
 
   /* Multiply these values by a cellwise Hodge operator previously computed */
   double  *hdg_eval = cb->values + cm->n_vc + 1;
-  cs_sdm_square_matvec(cb->hdg, eval, hdg_eval);
+  cs_sdm_square_matvec(mass_hodge->matrix, eval, hdg_eval);
 
   for (short int v = 0; v < cm->n_vc + 1; v++)
     values[v] += hdg_eval[v];
@@ -1710,7 +1716,7 @@ cs_source_term_vcsp_by_value(const cs_xdef_t           *source,
  *         Case of a scalar potential defined at primal vertices and cells by
  *         an analytical function.
  *         A discrete Hodge operator has to be computed before this call and
- *         stored inside a cs_cell_builder_t structure
+ *         given as input parameter
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -1729,14 +1735,15 @@ cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
                                 void                      *input,
                                 double                    *values)
 {
-  CS_UNUSED(input);
-
   if (source == NULL)
     return;
 
+  cs_hodge_t  *mass_hodge = (cs_hodge_t *)input;
+
   /* Sanity checks */
-  assert(values != NULL && cm != NULL);
-  assert(cb != NULL && cb->hdg != NULL);
+  assert(values != NULL && cm != NULL && cb != NULL);
+  assert(mass_hodge != NULL);
+  assert(mass_hodge->matrix != NULL);
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)source->input;
 
@@ -1755,7 +1762,7 @@ cs_source_term_vcsp_by_analytic(const cs_xdef_t           *source,
 
   /* Multiply these values by a cellwise Hodge operator previously computed */
   double  *hdg_eval = cb->values + cm->n_vc + 1;
-  cs_sdm_square_matvec(cb->hdg, eval, hdg_eval);
+  cs_sdm_square_matvec(mass_hodge->matrix, eval, hdg_eval);
 
   for (short int v = 0; v < cm->n_vc + 1; v++)
     values[v] += hdg_eval[v];

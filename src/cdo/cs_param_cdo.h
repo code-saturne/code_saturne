@@ -97,106 +97,13 @@ typedef enum {
 
 } cs_param_assemble_omp_strategy_t;
 
-/* DISCRETE HODGE OPERATORS */
-/* ======================== */
-
-typedef enum {
-
-  /* Hodge operator between dual spaces */
-  CS_PARAM_HODGE_TYPE_VPCD, /* from primal vertices to dual cells */
-  CS_PARAM_HODGE_TYPE_EPFD, /* from primal edges to dual faces */
-  CS_PARAM_HODGE_TYPE_FPED, /* from primal faces to dual edges */
-  CS_PARAM_HODGE_TYPE_EDFP, /* from dual edges to primal faces */
-  CS_PARAM_HODGE_TYPE_CPVD, /* from primal cells to dual vertices */
-
-  /* Hodge operator for hybrid spaces */
-  CS_PARAM_HODGE_TYPE_FB,   /* primal face + primal cells */
-  CS_PARAM_HODGE_TYPE_VC,   /* primal vertices + primal cells */
-  CS_PARAM_N_HODGE_TYPES
-
-} cs_param_hodge_type_t;
-
-typedef enum {
-
-  CS_PARAM_HODGE_ALGO_VORONOI, // Under othogonality condition gives a diag. op.
-  CS_PARAM_HODGE_ALGO_WBS,     // WBS: Whitney Barycentric Subdivision
-  CS_PARAM_HODGE_ALGO_COST,    // COST: COnsistency & STabilization splitting
-  CS_PARAM_HODGE_ALGO_OCS2,    // Orthogonal Consistancy/Sub-Stabilization
-  CS_PARAM_HODGE_ALGO_BUBBLE,  // Orthogonal Consistancy/Bubble-Stabilization
-  CS_PARAM_HODGE_ALGO_AUTO,    /* Switch between the previous algo. according to
-                                  the type of cell and its property */
-  CS_PARAM_N_HODGE_ALGOS
-
-} cs_param_hodge_algo_t;
-
-typedef struct {
-
-  bool   is_unity; /* No associated property. Property is equal to the unity */
-  bool   is_iso;   /* Associated property is isotropic ? */
-  bool   inv_pty;  /* Definition based on the property or its inverse */
-
-  cs_param_hodge_type_t   type;  /* type of discrete Hodge operator */
-  cs_param_hodge_algo_t   algo;  /* type of algorithm used to build this op. */
-  double                  coef;  /* Value of the stabilization parameter
-                                    if the COST algo. is used, otherwise 0. */
-
-} cs_param_hodge_t;
-
 /*============================================================================
  * Global variables
  *============================================================================*/
 
-/* Separation lines: header1, header2 (compatible with markdown), other */
-extern const char h1_sep[80];
-extern const char h2_sep[80];
-extern const char sepline[80];
-extern const char msepline[50];
-
-/* Activation of the CDO/HHO module */
-extern int  cs_param_cdo_mode;
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the name of algorithm related to a discrete Hdoge operator
- *
- * \param[in] hodgep     cs_param_hodge_t structure
- *
- * \return the name of the algorithm
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_hodge_get_algo_name(const cs_param_hodge_t   hodgep);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get the type of discrete Hodge operator
- *
- * \param[in] hodgep     cs_param_hodge_t structure
- *
- * \return the name of the type
- */
-/*----------------------------------------------------------------------------*/
-
-const char *
-cs_param_hodge_get_type_name(const cs_param_hodge_t   hodgep);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Output the settings related to a cs_param_hodge_t structure
- *
- * \param[in] prefix    optional string
- * \param[in] hp        a cs_param_hodge_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_param_hodge_log(const char               *prefix,
-                   const cs_param_hodge_t    hp);
 
 /*----------------------------------------------------------------------------*/
 

@@ -361,7 +361,7 @@ _define_cm_hexa_unif(double            a,
   cm->flag = CS_FLAG_COMP_PV |CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PEQ |
     CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ |
     CS_FLAG_COMP_DFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE | CS_FLAG_COMP_SEF |
-    CS_FLAG_COMP_DIAM;
+    CS_FLAG_COMP_DIAM | CS_FLAG_COMP_PFC | CS_FLAG_COMP_PEC;
   cm->xc[0] = cm->xc[1] = cm->xc[2] = ah;
   cm->vol_c = a*a*a;
 
@@ -483,6 +483,9 @@ _define_cm_hexa_unif(double            a,
     for (int k = 0; k < 3; k++) cm->dface[e].unitv[k] = cm->edge[e].unitv[k];
   }
 
+  for (short int e = 0; e < cm->n_ec; e++)
+    cm->pvol_e[e] = 1./12;
+
   /* FACES */
   cm->n_fc = 6;
   cm->f2e_idx[0] = 0;
@@ -540,6 +543,7 @@ _define_cm_hexa_unif(double            a,
     cm->face[f].meas = a*a;
     cm->dedge[f].meas = ah;
     cm->f_diam[f] = a * sqrt(2);
+    cm->pvol_f[f] = 1./6;
     for (int k = 0; k < 3; k++) cm->dedge[f].unitv[k] = cm->face[f].unitv[k];
   }
 
@@ -574,10 +578,10 @@ _define_cm_tetra_ref(double            a,
   cm->type = FVM_CELL_TETRA;
 
   /* Set all quantities */
-  cm->flag = CS_FLAG_COMP_PV |CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PEQ |
+  cm->flag = CS_FLAG_COMP_PV | CS_FLAG_COMP_PVQ | CS_FLAG_COMP_PEQ |
     CS_FLAG_COMP_PFQ | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ |
     CS_FLAG_COMP_DFQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_FE |CS_FLAG_COMP_SEF  |
-    CS_FLAG_COMP_DIAM;
+    CS_FLAG_COMP_DIAM | CS_FLAG_COMP_PFC | CS_FLAG_COMP_PEC;
 
   cm->vol_c = cs_math_1ov6*a*a*a;
   cm->xc[0] = cm->xc[1] = cm->xc[2] = 0.25*a;
@@ -771,6 +775,11 @@ _define_cm_tetra_ref(double            a,
 
   BFT_FREE(df);
 
+  for (short int f = 0; f < cm->n_fc; f++) {
+    cm->pvol_f[f] =  _dp3(cm->face[f].unitv, cm->dedge[f].unitv);
+    cm->pvol_f[f] *= cs_math_1ov3 * cm->face[f].meas * cm->dedge[f].meas;
+  }
+
   /* Compute dual cell volume */
   for (short int f = 0; f < cm->n_fc; f++) {
 
@@ -839,6 +848,11 @@ _define_cm_tetra_ref(double            a,
     }   /* Loop on vi */
 
   } /* Loop on cell faces */
+
+  for (short int e = 0; e < cm->n_ec; e++) {
+    const cs_real_t  coef = cs_math_1ov3*cm->dface[e].meas*cm->edge[e].meas;
+    cm->pvol_e[e] =  coef * _dp3(cm->dface[e].unitv, cm->edge[e].unitv);
+  }
 
   const double  invvol = 1/cm->vol_c;
   for (short int v = 0; v < cm->n_vc; v++) cm->wvc[v] *= invvol;
@@ -1026,56 +1040,53 @@ _test_cdovb_schemes(FILE                *out,
   for (short int v = 0; v < cm->n_vc; v++)
     csys->dof_ids[v] = cm->v_ids[v];
 
-  /* Handle anisotropic diffusion */
-  cb->dpty_mat[0][0] = 1.0, cb->dpty_mat[0][1] = 0.5, cb->dpty_mat[0][2] = 0.0;
-  cb->dpty_mat[1][0] = 0.5, cb->dpty_mat[1][1] = 1.0, cb->dpty_mat[1][2] = 0.5;
-  cb->dpty_mat[2][0] = 0.0, cb->dpty_mat[2][1] = 0.5, cb->dpty_mat[2][2] = 1.0;
-
-  /* Useful for a weak enforcement of the BC */
-  cs_math_33_eigen((const cs_real_t (*)[3])cb->dpty_mat,
-                   &(cb->eig_ratio),
-                   &(cb->eig_max));
+  cs_hodge_t  *hodge = NULL;
+  cs_property_t  *property = cs_property_by_name("conductivity");
 
   /* HODGE */
   /* ===== */
 
   /* WBS Hodge operator */
-
-  cs_param_hodge_t  hwbs_info = {.is_unity = true,
-                                 .is_iso = true,
-                                 .inv_pty = false,
-                                 .type = CS_PARAM_HODGE_TYPE_VPCD,
-                                 .algo = CS_PARAM_HODGE_ALGO_WBS,
+  cs_hodge_param_t  hwbs_info = {.inv_pty = false,
+                                 .type = CS_HODGE_TYPE_VPCD,
+                                 .algo = CS_HODGE_ALGO_WBS,
                                  .coef = 1.0};
 
-  cs_hodge_vpcd_wbs_get(hwbs_info, cm, cb);
-  _locmat_dump(out, "\nCDO.VB; HDG.VPCD.WBS; PERMEABILITY.ISO",
-               csys->dof_ids, cb->hdg);
-  _test_hodge_vb(out, cm, cb->hdg);
+  /* If property is set to NULL then unity is used as default */
+  hodge = cs_hodge_create(connect, NULL, &hwbs_info,
+                          true, true); /* tensor, eigen */
 
-  cs_hodge_compute_wbs_surfacic(fm, cb->hdg);
+  cs_hodge_vpcd_wbs_get(cm, hodge, cb);
+  _locmat_dump(out, "\nCDO.VB; HDG.VPCD.WBS; PERMEABILITY.ISO",
+               csys->dof_ids, hodge->matrix);
+  _test_hodge_vb(out, cm, hodge->matrix);
+
+  cs_hodge_compute_wbs_surfacic(fm, hodge->matrix);
   _locmat_dump(out, "\nCDO.VB; HDG.VPCD.WBS.FACE; UNITY",
-               csys->dof_ids, cb->hdg);
+               csys->dof_ids, hodge->matrix);
 
   for (int vi = 0; vi < fm->n_vf; vi++) {
     double  row_sum = 0.0;
-    double  *hi = cb->hdg->val + vi*fm->n_vf;
+    double  *hi = hodge->matrix->val + vi*fm->n_vf;
     for (int vj = 0; vj < fm->n_vf; vj++) row_sum += hi[vj];
     fprintf(out, "V%d = %6.4e |delta= %6.4e\n",
             vi, row_sum, row_sum - fm->face.meas/fm->n_vf);
   }
 
+  cs_hodge_free(&hodge);
+
   /* Voronoi Hodge operator */
-  cs_param_hodge_t  hvor_info = {.is_unity = true,
-                                 .is_iso = true,
-                                 .inv_pty = false,
-                                 .type = CS_PARAM_HODGE_TYPE_VPCD,
-                                 .algo = CS_PARAM_HODGE_ALGO_VORONOI,
+  cs_hodge_param_t  hvor_info = {.inv_pty = false,
+                                 .type = CS_HODGE_TYPE_VPCD,
+                                 .algo = CS_HODGE_ALGO_VORONOI,
                                  .coef = 1.0};
-  cs_hodge_vpcd_voro_get(hvor_info, cm, cb);
+
+  hodge = cs_hodge_create(connect, NULL, &hvor_info, true, true);
+  cs_hodge_vpcd_voro_get(cm, hodge, cb);
   _locmat_dump(out, "\nCDO.VB; HDG.VPCD.VORONOI; PERMEABILITY.ISO",
-               csys->dof_ids, cb->hdg);
-  _test_hodge_vb(out, cm, cb->hdg);
+               csys->dof_ids, hodge->matrix);
+  _test_hodge_vb(out, cm, hodge->matrix);
+  cs_hodge_free(&hodge);
 
   /* DIFFUSION (Stiffness matrix) */
   /* ============================ */
@@ -1088,24 +1099,26 @@ _test_cdovb_schemes(FILE                *out,
   eqp->space_scheme = CS_SPACE_SCHEME_CDOVB;
 
   /* Stiffness matrix arising from a Hodge EpFd built with COST algo. */
-  eqp->diffusion_hodge.is_unity = true;
-  eqp->diffusion_hodge.is_iso = true;
-  eqp->diffusion_hodge.inv_pty = false; /* inverse property ? */
-  eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
-  eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_COST;
-  eqp->diffusion_hodge.coef = 1./3.; /* DGA algo. */
+  eqp->diffusion_hodgep.inv_pty = false; /* inverse property ? */
+  eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EPFD;
+  eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_COST;
+  eqp->diffusion_hodgep.coef = 1./3.; /* DGA algo. */
 
   { /* Compute the stifness matrix (CO+ST -- DGA) */
-    cs_hodge_vb_cost_get_stiffness(eqp->diffusion_hodge, cm, cb);
+
+    hodge = cs_hodge_create(connect, NULL, &(eqp->diffusion_hodgep),
+                            true, true); /* tensor, eigen */
+
+    cs_hodge_vb_cost_get_stiffness(cm, hodge, cb);
     _locmat_dump(out,"\nCDO.VB; STIFFNESS WITH HDG.EPFD.DGA; PERMEABILITY.ISO",
                  csys->dof_ids, cb->loc);
     _test_stiffness_vb(out, cm, cb->loc);
+    cs_hodge_free(&hodge);
 
     /* Anisotropic case */
-    eqp->diffusion_hodge.is_unity = false;
-    eqp->diffusion_hodge.is_iso = false;
-
-    cs_hodge_vb_cost_get_stiffness(eqp->diffusion_hodge, cm, cb);
+    hodge = cs_hodge_create(connect, property, &(eqp->diffusion_hodgep),
+                            true, true); /* tensor, eigen */
+    cs_hodge_vb_cost_get_stiffness(cm, hodge, cb);
     _locmat_dump(out,
                  "\nCDO.VB; STIFFNESS WITH HDG.EPFD.DGA; PERMEABILITY.ANISO",
                  csys->dof_ids, cb->loc);
@@ -1113,7 +1126,7 @@ _test_cdovb_schemes(FILE                *out,
 
     /* Enforce Dirichlet BC */
     cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "penalization");
-    cs_cdo_diffusion_pena_dirichlet(eqp, cm, fm, cb, csys);
+    cs_cdo_diffusion_pena_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out, "\nCDO.VB; PENA.DGA.FLX.COST; PERMEABILITY.ANISO",
                  csys);
     for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
@@ -1121,7 +1134,7 @@ _test_cdovb_schemes(FILE                *out,
 
     /* Enforce Dirichlet BC */
     cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "weak");
-    cs_cdo_diffusion_svb_ocs_weak_dirichlet(eqp, cm, fm, cb, csys);
+    cs_cdo_diffusion_svb_ocs_weak_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out, "\nCDO.VB; WEAK.DGA.FLX.COST; PERMEABILITY.ANISO",
                  csys);
 
@@ -1130,24 +1143,27 @@ _test_cdovb_schemes(FILE                *out,
 
     /* Enforce Dirichlet BC */
     cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "weak_sym");
-    cs_cdo_diffusion_svb_ocs_wsym_dirichlet(eqp, cm, fm, cb, csys);
+    cs_cdo_diffusion_svb_ocs_wsym_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out, "\nCDO.VB; WSYM.DGA.FLX.COST; PERMEABILITY.ANISO",
                  csys);
     for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
     cs_sdm_square_init(cm->n_vc, csys->mat);
+
+    cs_hodge_free(&hodge);
   }
 
   /* ------------------------------------------------------------------------ */
 
   { /* Compute the stifness matrix (VORONOI) */
 
-    eqp->diffusion_hodge.is_unity = true;
-    eqp->diffusion_hodge.is_iso = true;
-    eqp->diffusion_hodge.inv_pty = false; /* inverse property ? */
-    eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
-    eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_VORONOI;
+    eqp->diffusion_hodgep.inv_pty = false; /* inverse property ? */
+    eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EPFD;
+    eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_VORONOI;
 
-    cs_hodge_vb_voro_get_stiffness(eqp->diffusion_hodge, cm, cb);
+    hodge = cs_hodge_create(connect, NULL, &(eqp->diffusion_hodgep),
+                            true, true); /* tensor, eigen */
+
+    cs_hodge_vb_voro_get_stiffness(cm, hodge, cb);
     _locmat_dump(out,
                  "\nCDO.VB; STIFFNESS WITH HDG.EPFD.VORO; PERMEABILITY.ISO",
                  csys->dof_ids, cb->loc);
@@ -1155,33 +1171,38 @@ _test_cdovb_schemes(FILE                *out,
 
     /* Enforce Dirichlet BC */
     cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "penalization");
-    cs_cdo_diffusion_pena_dirichlet(eqp, cm, fm, cb, csys);
+    cs_cdo_diffusion_pena_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out,
-                 "\nCDO.VB; PENA.VORO.FLX.COST; PERMEABILITY.ISO",
-                 csys);
+                 "\nCDO.VB; PENA.VORO.FLX.COST; PERMEABILITY.ISO", csys);
     for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
     cs_sdm_square_init(cm->n_vc, csys->mat);
+
+    cs_hodge_free(&hodge);
   }
 
   /* ------------------------------------------------------------------------ */
 
   { /* Stiffness matrix arising from a Hodge EpFd built with WBS algo. */
 
-    eqp->diffusion_hodge.is_unity = true;
-    eqp->diffusion_hodge.is_iso = true;
-    eqp->diffusion_hodge.inv_pty = false; /* inverse property ? */
-    eqp->diffusion_hodge.type = CS_PARAM_HODGE_TYPE_EPFD;
-    eqp->diffusion_hodge.algo = CS_PARAM_HODGE_ALGO_WBS;
+    eqp->diffusion_hodgep.inv_pty = false; /* inverse property ? */
+    eqp->diffusion_hodgep.type = CS_HODGE_TYPE_EPFD;
+    eqp->diffusion_hodgep.algo = CS_HODGE_ALGO_WBS;
 
-    cs_hodge_vb_wbs_get_stiffness(eqp->diffusion_hodge, cm, cb);
+    hodge = cs_hodge_create(connect, NULL, &(eqp->diffusion_hodgep),
+                            true, true); /* tensor, eigen */
+
+    cs_hodge_vb_wbs_get_stiffness(cm, hodge, cb);
     _locmat_dump(out,
                  "\nCDO.VB; STIFFNESS WITH HDG.EPFD.WBS; PERMEABILITY.ISO",
                  csys->dof_ids, cb->loc);
     _test_stiffness_vb(out, cm, cb->loc);
 
-    eqp->diffusion_hodge.is_unity = false;
-    eqp->diffusion_hodge.is_iso = false;
-    cs_hodge_vb_wbs_get_stiffness(eqp->diffusion_hodge, cm, cb);
+    cs_hodge_free(&hodge);
+
+    hodge = cs_hodge_create(connect, property, &(eqp->diffusion_hodgep),
+                            true, true); /* tensor, eigen */
+
+    cs_hodge_vb_wbs_get_stiffness(cm, hodge, cb);
     _locmat_dump(out,
                  "\nCDO.VB; STIFFNESS WITH HDG.EPFD.WBS; PERMEABILITY.ANISO",
                  csys->dof_ids, cb->loc);
@@ -1189,25 +1210,26 @@ _test_cdovb_schemes(FILE                *out,
 
     /* Enforce Dirichlet BC */
     cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "penalization");
-    cs_cdo_diffusion_pena_dirichlet(eqp, cm, fm, cb, csys);
-    _locsys_dump(out, "\nCDO.VB; PENA.WBS.FLX.WBS; PERMEABILITY.ANISO",
-                 csys);
+    cs_cdo_diffusion_pena_dirichlet(eqp, cm, fm, hodge, cb, csys);
+    _locsys_dump(out, "\nCDO.VB; PENA.WBS.FLX.WBS; PERMEABILITY.ANISO", csys);
     for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
     cs_sdm_square_init(cm->n_vc, csys->mat);
 
     /* Enforce Dirichlet BC */
     cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "weak");
-    cs_cdo_diffusion_svb_wbs_weak_dirichlet(eqp, cm, fm, cb, csys);
+    cs_cdo_diffusion_svb_wbs_weak_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out, "\nCDO.VB; WEAK.WBS.FLX.WBS; PERMEABILITY.ANISO", csys);
     for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
     cs_sdm_square_init(cm->n_vc, csys->mat);
 
-        /* Enforce Dirichlet BC */
+    /* Enforce Dirichlet BC */
     cs_equation_set_param(eqp, CS_EQKEY_BC_ENFORCEMENT, "weak_sym");
-    cs_cdo_diffusion_svb_wbs_wsym_dirichlet(eqp, cm,fm, cb, csys);
+    cs_cdo_diffusion_svb_wbs_wsym_dirichlet(eqp, cm, fm, hodge, cb, csys);
     _locsys_dump(out, "\nCDO.VB; WSYM.WBS.FLX.WBS; PERMEABILITY.ANISO", csys);
     for (int v = 0; v < cm->n_vc; v++) csys->rhs[v] = 0;
     cs_sdm_square_init(cm->n_vc, csys->mat);
+
+    cs_hodge_free(&hodge);
   }
 
   /* ADVECTION OPERATOR */
@@ -1573,6 +1595,10 @@ _test_hho_schemes(FILE                *out,
   CS_UNUSED(csys);
   const double  tcur = 0.;
 
+  cs_property_data_t  *diff_pty = NULL;
+  BFT_MALLOC(diff_pty, 1, cs_property_data_t);
+  cs_property_data_init(true, true, NULL, diff_pty);
+
   switch (scheme_order) {
 
   case 0:
@@ -1600,18 +1626,18 @@ _test_hho_schemes(FILE                *out,
       cs_sdm_fprintf(out, NULL, 1e-15, hhob->face_basis[f]->projector);
     }
 
-    cs_hho_builder_compute_grad_reco(cm, cb, hhob);
+    cs_hho_builder_compute_grad_reco(cm, diff_pty, cb, hhob);
 
     fprintf(out,  "\n RHS matrix\n");
     cs_sdm_block_fprintf(out, NULL, 1e-15, cb->aux);
 
     fprintf(out, "\n Stiffness matrix\n");
-    cs_sdm_fprintf(out, NULL, 1e-15, cb->hdg);
+    cs_sdm_fprintf(out, NULL, 1e-15, hhob->hdg);
 
     fprintf(out, "\n Gradient Reconstruction matrix\n");
     cs_sdm_block_fprintf(out, NULL, 1e-15, hhob->grad_reco_op);
 
-    cs_hho_builder_diffusion(cm, cb, hhob);
+    cs_hho_builder_diffusion(cm, diff_pty, cb, hhob);
     fprintf(out, "\n Diffusion matrix\n");
     cs_sdm_block_fprintf(out, NULL, 1e-15, cb->loc);
 
@@ -1746,6 +1772,7 @@ _test_hho_schemes(FILE                *out,
 
   }
 
+  BFT_FREE(diff_pty);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2053,18 +2080,19 @@ _main_cdofb_schemes(FILE             *out,
   /* ===== */
 
   /* COST Hodge operator */
-  cs_param_hodge_t  hcost_info = {.is_unity = true,
-                                  .is_iso = true,
-                                  .inv_pty = false,
-                                  .type = CS_PARAM_HODGE_TYPE_FB,
-                                  .algo = CS_PARAM_HODGE_ALGO_COST,
+  cs_hodge_param_t  hcost_info = {.inv_pty = false,
+                                  .type = CS_HODGE_TYPE_FB,
+                                  .algo = CS_HODGE_ALGO_COST,
                                   .coef = 1.0};
 
-  cs_hodge_fb_get_mass(hcost_info, cm, cb);
+  cs_hodge_t  *hodge = cs_hodge_create(connect, NULL, &hcost_info,
+                                       false, false); /* tensor, eigen */
+  cs_hodge_fb_get(cm, hodge, cb);
   _locmat_dump(out, "\nCDO.FB; HDG.FB.MASS; PERMEABILITY.ISO.UNITY",
-               csys->dof_ids, cb->hdg);
-  _test_hodge_fb(out, cm, cb->hdg);
+               csys->dof_ids, hodge->matrix);
+  _test_hodge_fb(out, cm, hodge->matrix);
 
+  cs_hodge_free(&hodge);
   cs_cdofb_scaleq_finalize_common();
 }
 
@@ -2111,6 +2139,11 @@ main(int    argc,
   tetra_hho1 = fopen("HHO1_Tetra_tests.log", "w");
   tetra_hho2 = fopen("HHO2_Tetra_tests.log", "w");
 
+  cs_real_t  tensor[3][3] = {{1, 0.5, 0}, {0.5, 1, 0.5}, {0, 0.5, 1}};
+  cs_property_t  *property = cs_property_add("conductivity", CS_PROPERTY_ANISO);
+
+  cs_property_def_aniso_by_value(property, NULL, tensor);
+
   /* =========================== */
   /* TEST DISCRETIZATION SCHEMES */
   /* =========================== */
@@ -2119,6 +2152,7 @@ main(int    argc,
 
   /* connectivity */
   BFT_MALLOC(connect, 1, cs_cdo_connect_t);
+  connect->n_cells = 1;
   connect->n_max_vbyc = 8;
   connect->n_max_ebyc = 12;
   connect->n_max_fbyc = 6;

@@ -58,7 +58,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Algebraic system for CDO edge-based discretization */
-typedef struct _cs_cdoeb_t cs_cdoeb_vecteq_t;
+typedef struct _cs_cdoeb_t  cs_cdoeb_vecteq_t;
 
 /*============================================================================
  * Public function prototypes

@@ -776,7 +776,7 @@ cs_maxwell_update(const cs_mesh_t             *mesh,
 
     /* Compute the magnetic field using Hodge operator */
     cs_hodge_circulation_from_flux(connect, quant, ts->t_cur,
-                                   ms_eqp->curlcurl_hodge,
+                                   ms_eqp->curlcurl_hodgep,
                                    ms_eqp->curlcurl_property,
                                    mxl->b_field_array,
                                    mxl->h_field_array);

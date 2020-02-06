@@ -76,8 +76,8 @@ struct  _cs_cdofb_t {
   cs_real_t                 *source_terms;
 
   /* Pointer of function to build the diffusion term */
-  cs_hodge_t                *get_stiffness_matrix;
-  cs_hodge_t                *get_diffusion_hodge;
+  cs_hodge_t               **diffusion_hodge;
+  cs_hodge_compute_t        *get_stiffness_matrix;
   cs_cdo_enforce_bc_t       *enforce_dirichlet;
   cs_cdo_enforce_bc_t       *enforce_sliding;
 
@@ -86,8 +86,9 @@ struct  _cs_cdofb_t {
   cs_cdofb_advection_bc_t   *adv_func_bc;
 
   /* If one needs to build a local hodge op. for time and reaction */
-  cs_param_hodge_t           hdg_mass;
-  cs_hodge_t                *get_mass_matrix;
+  cs_hodge_param_t           mass_hodgep;
+  cs_hodge_t               **mass_hodge;
+  cs_hodge_compute_t        *get_mass_matrix;
 };
 
 /*============================================================================

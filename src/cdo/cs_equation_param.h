@@ -32,6 +32,7 @@
 #include "cs_advection_field.h"
 #include "cs_param.h"
 #include "cs_param_cdo.h"
+#include "cs_hodge.h"
 #include "cs_property.h"
 #include "cs_xdef.h"
 
@@ -289,7 +290,7 @@ typedef struct {
   bool                          do_lumping;
 
   /*!
-   * \var time_hodge
+   * \var time_hodgep
    * Set of parameters for the discrete Hodge operator related to the unsteady
    * term
    *
@@ -304,7 +305,7 @@ typedef struct {
    *
    */
 
-  cs_param_hodge_t              time_hodge;
+  cs_hodge_param_t              time_hodgep;
   cs_property_t                *time_property;
   cs_param_time_scheme_t        time_scheme;
   cs_real_t                     theta;
@@ -314,14 +315,14 @@ typedef struct {
    * @name Numerical settings for the diffusion (Laplacian div-grad) term
    * @{
    *
-   * \var diffusion_hodge
+   * \var diffusion_hodgep
    * Set of parameters for the discrete Hodge operator related to the diffusion
    *
    * \var diffusion_property
    * Pointer to the property related to the diffusion term
    */
 
-  cs_param_hodge_t              diffusion_hodge;
+  cs_hodge_param_t              diffusion_hodgep;
   cs_property_t                *diffusion_property;
 
   /*!
@@ -329,7 +330,7 @@ typedef struct {
    * @name Numerical settings for the curl-curl term
    * @{
    *
-   * \var curlcurl_hodge
+   * \var curlcurl_hodgep
    * Set of parameters for the discrete Hodge operator related to the
    * curl-curl operator
    *
@@ -337,7 +338,7 @@ typedef struct {
    * Pointer to the property related to the curl-curl term
    */
 
-  cs_param_hodge_t              curlcurl_hodge;
+  cs_hodge_param_t              curlcurl_hodgep;
   cs_property_t                *curlcurl_property;
 
   /*!
@@ -345,7 +346,7 @@ typedef struct {
    * @name Numerical settings for the grad-div term
    * @{
    *
-   * \var graddiv_hodge
+   * \var graddiv_hodgep
    * Set of parameters for the discrete Hodge operator related to the grad-div
    * operator
    *
@@ -353,7 +354,7 @@ typedef struct {
    * Pointer to the property related to the grad-div term
    */
 
-  cs_param_hodge_t              graddiv_hodge;
+  cs_hodge_param_t              graddiv_hodgep;
   cs_property_t                *graddiv_property;
 
   /*!
@@ -391,7 +392,7 @@ typedef struct {
    * scheme
    * @{
    *
-   * \var reaction_hodge
+   * \var reaction_hodgep
    * Set of parameters for the discrete Hodge operator related to the reaction
    * terms
    *
@@ -402,7 +403,7 @@ typedef struct {
    * List of properties associated to each reaction term
    */
 
-  cs_param_hodge_t              reaction_hodge;
+  cs_hodge_param_t              reaction_hodgep;
   int                           n_reaction_terms;
   cs_property_t               **reaction_properties;
 

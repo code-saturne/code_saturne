@@ -108,6 +108,11 @@ typedef enum {
 /* Set of parameters attached to a property */
 /* ======================================== */
 
+/*!
+ * \struct cs_property_t
+ * \brief Structure associated to the definition of a property relying on the
+ * \ref cs_xdef_t structure
+ */
 typedef struct {
 
   char  *restrict      name;
@@ -144,9 +149,118 @@ typedef struct {
 
 } cs_property_t;
 
+/*!
+ * \struct cs_property_data_t
+ * \brief Structure storing the evaluation of a property and its related
+ *        data
+ */
+
+typedef struct {
+
+  const cs_property_t   *property; /* shared pointer */
+
+  bool                   is_iso;   /* Detect if this an easier case */
+  bool                   is_unity; /* Detect if this a simple case */
+
+  bool                   need_eigen;
+  cs_real_t              eigen_max;
+  cs_real_t              eigen_ratio;
+
+  bool                   need_tensor;
+  cs_real_t              tensor[3][3];
+  cs_real_t              value;
+
+} cs_property_data_t;
+
 /*============================================================================
  * Global variables
  *============================================================================*/
+
+/*============================================================================
+ * Static inline public function prototypes
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  returns true if the property is uniform, otherwise false
+ *
+ * \param[in]    pty    pointer to a property to test
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_property_is_uniform(const cs_property_t   *pty)
+{
+  if (pty == NULL)
+    return true; /* Treated as the "unity" property */
+
+  if (pty->state_flag & CS_FLAG_STATE_UNIFORM)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  returns true if the property is isotropic, otherwise false
+ *
+ * \param[in]    pty    pointer to a property to test
+ *
+ * \return  true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_property_is_isotropic(const cs_property_t   *pty)
+{
+  if (pty == NULL)
+    return false;
+
+  if (pty->type & CS_PROPERTY_ISO)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the name of a property
+ *
+ * \param[in]    pty    pointer to a property
+ *
+ * \return  the name of the related property
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline const char *
+cs_property_get_name(const cs_property_t   *pty)
+{
+  if (pty == NULL)
+    return NULL;
+
+  return pty->name;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the type of a property
+ *
+ * \param[in]    pty    pointer to a property
+ *
+ * \return  the type of the related property
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_property_type_t
+cs_property_get_type(const cs_property_t   *pty)
+{
+  if (pty == NULL)
+    return 0; /* means undefined */
+
+  return pty->type;
+}
 
 /*============================================================================
  * Public function prototypes
@@ -232,6 +346,20 @@ cs_property_set_option(cs_property_t       *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the reference value associated to a \ref cs_property_t structure
+ *         This is a real number even whatever the type of property is.
+ *
+ * \param[in, out]  pty      pointer to a cs_property_t structure
+ * \param[in]       refval   value to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_property_set_reference_value(cs_property_t    *pty,
+                                double            refval);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Free all cs_property_t structures and the array storing all the
  *         structures
  */
@@ -252,99 +380,21 @@ cs_property_finalize_setup(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  returns true if the property is uniform, otherwise false
+ * \brief  Initialize a \ref cs_property_data_t structure. If property is NULL
+ *         then one considers that this is a unitary property
  *
- * \param[in]    pty    pointer to a property to test
- *
- * \return  true or false
- */
-/*----------------------------------------------------------------------------*/
-
-static inline bool
-cs_property_is_uniform(const cs_property_t   *pty)
-{
-  if (pty == NULL)
-    return true; /* Treated as the "unity" property */
-
-  if (pty->state_flag & CS_FLAG_STATE_UNIFORM)
-    return true;
-  else
-    return false;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  returns true if the property is isotropic, otherwise false
- *
- * \param[in]    pty    pointer to a property to test
- *
- * \return  true or false
- */
-/*----------------------------------------------------------------------------*/
-
-static inline bool
-cs_property_is_isotropic(const cs_property_t   *pty)
-{
-  if (pty == NULL)
-    return false;
-
-  if (pty->type & CS_PROPERTY_ISO)
-    return true;
-  else
-    return false;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the name of a property
- *
- * \param[in]    pty    pointer to a property
- *
- * \return  the name of the related property
- */
-/*----------------------------------------------------------------------------*/
-
-static inline const char *
-cs_property_get_name(const cs_property_t   *pty)
-{
-  if (pty == NULL)
-    return NULL;
-
-  return pty->name;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the type of a property
- *
- * \param[in]    pty    pointer to a property
- *
- * \return  the type of the related property
- */
-/*----------------------------------------------------------------------------*/
-
-static inline cs_property_type_t
-cs_property_get_type(const cs_property_t   *pty)
-{
-  if (pty == NULL)
-    return 0; /* means undefined */
-
-  return pty->type;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the reference value associated to a \ref cs_property_t structure
- *         This is a real number even whatever the type of property is.
- *
- * \param[in, out]  pty      pointer to a cs_property_t structure
- * \param[in]       refval   value to set
+ * \param[in]      need_tensor  true if one needs a tensor-valued evaluation
+ * \param[in]      need_eigen   true if one needs an evaluation of eigen values
+ * \param[in]      property     pointer to the \ref cs_property_t structure
+ * \param[in, out] data         structure to initialize (already allocated)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_property_set_reference_value(cs_property_t    *pty,
-                                double            refval);
+cs_property_data_init(bool                     need_tensor,
+                      bool                     need_eigen,
+                      const cs_property_t     *property,
+                      cs_property_data_t      *data);
 
 /*----------------------------------------------------------------------------*/
 /*!

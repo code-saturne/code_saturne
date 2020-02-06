@@ -232,7 +232,6 @@ cs_cell_sys_create(int      n_max_dofbyc,
   BFT_MALLOC(csys, 1, cs_cell_sys_t);
 
   /* Metadata about DoFs */
-  csys->cell_flag = 0;
   csys->c_id = -1;
   csys->n_dofs = 0;
   csys->dof_ids = NULL;
@@ -355,9 +354,6 @@ cs_cell_sys_reset(int              n_fbyc,
   memset(csys->rhs, 0, s);
   memset(csys->source, 0, s);
 
-  csys->n_bc_faces = 0;
-  csys->has_dirichlet = csys->has_nhmg_neumann = csys->has_robin = false;
-
   csys->has_internal_enforcement = false;
   for (int i = 0; i < csys->n_dofs; i++)
     csys->intern_forced_ids[i] = -1; /* Not selected */
@@ -374,9 +370,8 @@ cs_cell_sys_reset(int              n_fbyc,
   memset(csys->rob_values, 0,
          CS_MAX(n_fbyc, csys->n_dofs)*sizeof(double)*n_robin_parameters);
 #else
-  if ((csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_VERTEX) ||
-      (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_EDGE)   ||
-      (csys->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE)) {
+  if (csys->n_bc_faces > 0 || csys->has_dirichlet ||
+      csys->has_sliding || csys->has_nhmg_neumann || csys->has_robin) {
 
     memset(csys->bf_flag , 0, sizeof(cs_flag_t)*n_fbyc);
     memset(csys->_f_ids  , 0, sizeof(short int)*n_fbyc);
@@ -389,6 +384,10 @@ cs_cell_sys_reset(int              n_fbyc,
 
   } /* Boundary cell -> reset BC-related members */
 #endif
+
+  csys->n_bc_faces = 0;
+  csys->has_dirichlet = csys->has_nhmg_neumann = false;
+  csys->has_robin = csys->has_sliding = false;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -446,21 +445,25 @@ cs_cell_sys_dump(const char             msg[],
   {
     bft_printf( "[rank:%d] %s\n", cs_glob_rank_id, msg);
 
-    if (csys->cell_flag > 0) {
-      bft_printf(">> dirichlet: %s, nhmg_neumann: %s, robin: %s,"
-                 " sliding: %s\n",
+    if (csys->has_dirichlet || csys->has_nhmg_neumann || csys->has_robin ||
+        csys->has_sliding) {
+
+      bft_printf(">> dirichlet:%s | nhmg_neumann:%s | robin:%s | sliding:%s\n",
                  cs_base_strtf(csys->has_dirichlet),
                  cs_base_strtf(csys->has_nhmg_neumann),
                  cs_base_strtf(csys->has_robin),
                  cs_base_strtf(csys->has_sliding));
-      bft_printf(">> Boundary faces\n"
-                 ">> %-8s | %-8s | %-6s\n", "_ID", "ID", "FLAG");
-      for (int i = 0; i < csys->n_bc_faces; i++) {
-        short int f = csys->_f_ids[i];
-        bft_printf(">> %8d | %8d | %6d\n",
-                   f, csys->bf_ids[f], csys->bf_flag[f]);
+      if (csys->n_bc_faces > 0) {
+        bft_printf(">> Boundary faces\n"
+                   ">> %-8s | %-8s | %-6s\n", "_ID", "ID", "FLAG");
+        for (int i = 0; i < csys->n_bc_faces; i++) {
+          short int f = csys->_f_ids[i];
+          bft_printf(">> %8d | %8d | %6d\n",
+                     f, csys->bf_ids[f], csys->bf_flag[f]);
+        }
       }
-    }
+
+    } /* At least one kind of boundary conditions */
 
     if (csys->mat->flag & CS_SDM_BY_BLOCK)
       cs_sdm_block_dump(csys->c_id, csys->mat);
@@ -496,21 +499,15 @@ cs_cell_builder_create(void)
   /* Common part to all discretization */
   BFT_MALLOC(cb, 1, cs_cell_builder_t);
 
-  /* Consider a unitary diffusion property by default */
-  cb->eig_ratio = 1;
-  cb->eig_max = 1;
+  cb->t_pty_eval = 0.;
+  cb->t_bc_eval = 0.;
+  cb->t_st_eval = 0.;
 
-  cb->dpty_mat[0][0] = cb->dpty_mat[1][1] = cb->dpty_mat[2][2] = 1;
-  cb->dpty_mat[0][1] = cb->dpty_mat[1][0] = cb->dpty_mat[2][0] = 0;
-  cb->dpty_mat[0][2] = cb->dpty_mat[1][2] = cb->dpty_mat[2][1] = 0;
-  cb->dpty_val = 1;
-  cb->cpty_mat[0][0] = cb->cpty_mat[1][1] = cb->cpty_mat[2][2] = 1;
-  cb->cpty_mat[0][1] = cb->cpty_mat[1][0] = cb->cpty_mat[2][0] = 0;
-  cb->cpty_mat[0][2] = cb->cpty_mat[1][2] = cb->cpty_mat[2][1] = 0;
-  cb->cpty_val = 1;
-  cb->gpty_val = 1;
-  cb->tpty_val = 1;
-  cb->rpty_val = 1;
+  cb->cell_flag = 0;
+
+  cb->gpty_val = 1;             /* grad-div property */
+  cb->tpty_val = 1;             /* time property */
+  cb->rpty_val = 1;             /* reaction property */
 
   for (int r = 0; r < CS_CDO_N_MAX_REACTIONS; r++) cb->rpty_vals[r] = 1;
 
@@ -519,7 +516,8 @@ cs_cell_builder_create(void)
   cb->values = NULL;
   cb->vectors = NULL;
 
-  cb->hdg = cb->loc = cb->aux = NULL;
+  /* Local matrices */
+  cb->loc = cb->aux = NULL;
 
   return cb;
 }
@@ -545,7 +543,6 @@ cs_cell_builder_free(cs_cell_builder_t     **p_cb)
   BFT_FREE(cb->values);
   BFT_FREE(cb->vectors);
 
-  cb->hdg = cs_sdm_free(cb->hdg);
   cb->loc = cs_sdm_free(cb->loc);
   cb->aux = cs_sdm_free(cb->aux);
 

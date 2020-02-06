@@ -118,14 +118,14 @@ cs_cdofb_vecteq_matrix_structure(void);
 /*!
  * \brief  Retrieve work buffers used for building a CDO system cellwise
  *
- * \param[out]  csys   pointer to a pointer on a cs_cell_sys_t structure
- * \param[out]  cb     pointer to a pointer on a cs_cell_builder_t structure
+ * \param[out]  csys   double pointer to a \ref cs_cell_sys_t structure
+ * \param[out]  cb     double pointer to a \ref cs_cell_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_vecteq_get(cs_cell_sys_t       **csys,
-                    cs_cell_builder_t   **cb);
+cs_cdofb_vecteq_get(cs_cell_sys_t            **csys,
+                    cs_cell_builder_t        **cb);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -197,7 +197,6 @@ cs_cdofb_vecteq_init_values(cs_real_t                     t_eval,
 /*!
  * \brief   Initialize the local structure for the current cell
  *
- * \param[in]      cell_flag   flag related to the current cell
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
@@ -205,22 +204,19 @@ cs_cdofb_vecteq_init_values(cs_real_t                     t_eval,
  * \param[in]      dir_values  Dirichlet values associated to each face
  * \param[in]      forced_ids  indirection in case of internal enforcement
  * \param[in]      field_tn    values of the field at the last computed time
- * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_vecteq_init_cell_system(const cs_flag_t               cell_flag,
-                                 const cs_cell_mesh_t         *cm,
+cs_cdofb_vecteq_init_cell_system(const cs_cell_mesh_t         *cm,
                                  const cs_equation_param_t    *eqp,
                                  const cs_equation_builder_t  *eqb,
                                  const cs_cdofb_vecteq_t      *eqc,
                                  const cs_real_t               dir_values[],
                                  const cs_lnum_t               forced_ids[],
                                  const cs_real_t               field_tn[],
-                                 cs_real_t                     t_eval,
                                  cs_cell_sys_t                *csys,
                                  cs_cell_builder_t            *cb);
 
@@ -252,20 +248,22 @@ cs_cdofb_vecteq_setup(cs_real_t                     t_eval,
  * \brief   Build the local matrices arising from the diffusion term in the
  *          vector-valued CDO-Fb schemes.
  *
- * \param[in]      time_eval   time at which analytic function are evaluated
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      eqc         context for this kind of discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in, out] diff_hodge  pointer to a cs_hodge_t structure for diffusion
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_vecteq_diffusion(double                         time_eval,
-                          const cs_equation_param_t     *eqp,
+cs_cdofb_vecteq_diffusion(const cs_equation_param_t     *eqp,
+                          const cs_equation_builder_t   *eqb,
                           const cs_cdofb_vecteq_t       *eqc,
                           const cs_cell_mesh_t          *cm,
+                          cs_hodge_t                    *diff_hodge,
                           cs_cell_sys_t                 *csys,
                           cs_cell_builder_t             *cb);
 
@@ -273,21 +271,27 @@ cs_cdofb_vecteq_diffusion(double                         time_eval,
 /*!
  * \brief   Build the local matrices arising from the convection, diffusion,
  *          reaction terms in vector-valued CDO-Fb schemes.
+ *          mass_hodge could be set to NULL if a Voronoi algo. is used.
+ *          Otherwise, the mass matrix should be pre-computed.
  *
- * \param[in]      time_eval   time at which analytic function are evaluated
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqb         pointer to a cs_equation_builder_t structure
  * \param[in]      eqc         context for this kind of discretization
  * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in, out] mass_hodge  pointer to a cs_hodge_t structure for reaction
+ * \param[in, out] diff_hodge  pointer to a cs_hodge_t structure for diffusion
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_vecteq_conv_diff_reac(double                         time_eval,
-                               const cs_equation_param_t     *eqp,
+cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t     *eqp,
+                               const cs_equation_builder_t   *eqb,
                                const cs_cdofb_vecteq_t       *eqc,
                                const cs_cell_mesh_t          *cm,
+                               cs_hodge_t                    *mass_hodge,
+                               cs_hodge_t                    *diff_hodge,
                                cs_cell_sys_t                 *csys,
                                cs_cell_builder_t             *cb);
 
@@ -295,11 +299,13 @@ cs_cdofb_vecteq_conv_diff_reac(double                         time_eval,
 /*!
  * \brief  Compute the source term for a vector-valued CDO-Fb scheme
  *         and add it to the local rhs
+ *         Mass matrix is optional. It can be set to NULL.
  *
  * \param[in]       cm      pointer to a \ref cs_cell_mesh_t structure
  * \param[in]       eqp     pointer to a \ref cs_equation_param_t structure
- * \param[in]       t_eval  time at which the term source is evaluated
  * \param[in]       coef    scaling of the time source (for theta schemes)
+ * \param[in]       t_eval  time at which the source term is evaluated
+ * \param[in, out]  hodge   pointer to a \ref cs_hodge_t structure (mass matrix)
  * \param[in, out]  cb      pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  eqb     pointer to a \ref cs_equation_builder_t structure
  * \param[in, out]  csys    pointer to a \ref cs_cell_sys_t structure
@@ -312,6 +318,7 @@ cs_cdofb_vecteq_sourceterm(const cs_cell_mesh_t         *cm,
                            const cs_equation_param_t    *eqp,
                            const cs_real_t               t_eval,
                            const cs_real_t               coef,
+                           cs_hodge_t                   *mass_hodge,
                            cs_cell_builder_t            *cb,
                            cs_equation_builder_t        *eqb,
                            cs_cell_sys_t                *csys)
@@ -325,8 +332,8 @@ cs_cdofb_vecteq_sourceterm(const cs_cell_mesh_t         *cm,
                                   eqb->source_mask,
                                   eqb->compute_source,
                                   t_eval,
-                                  NULL,  /* No input structure */
-                                  cb,    /* mass matrix is cb->hdg */
+                                  mass_hodge,  /* Mass matrix context */
+                                  cb,
                                   csys->source);
 
   /* Only cell-DoFs are involved */

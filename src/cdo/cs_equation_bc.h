@@ -58,6 +58,7 @@ BEGIN_C_DECLS
  * \param[in]       f       face id in the cell mesh numbering
  * \param[in]       eqp     pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm      pointer to a \ref cs_cell_mesh_t structure
+ * \param[in]       pty     pointer to a \ref cs_property_data_t structure
  * \param[in, out]  cb      pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys    structure storing the cell-wise system
  */
@@ -67,6 +68,7 @@ typedef void
 (cs_cdo_apply_boundary_t)(short int                     f,
                           const cs_equation_param_t    *eqp,
                           const cs_cell_mesh_t         *cm,
+                          const cs_property_data_t     *pty,
                           cs_cell_builder_t            *cb,
                           cs_cell_sys_t                *csys);
 
@@ -77,6 +79,7 @@ typedef void
  * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
  * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
  * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
  * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
  * \param[in, out]  csys      structure storing the cell-wise system
  */
@@ -86,6 +89,7 @@ typedef void
 (cs_cdo_enforce_bc_t)(const cs_equation_param_t      *eqp,
                       const cs_cell_mesh_t           *cm,
                       cs_face_mesh_t                 *fm,
+                      cs_hodge_t                     *hodge,
                       cs_cell_builder_t              *cb,
                       cs_cell_sys_t                  *csys);
 
@@ -169,7 +173,6 @@ cs_equation_eb_set_cell_bc(const cs_cell_mesh_t         *cm,
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      face_bc     pointer to a cs_cdo_bc_face_t structure
  * \param[in]      dir_values  Dirichlet values associated to each face
- * \param[in]      t_eval      time at which one performs the evaluation
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
  */
@@ -180,7 +183,6 @@ cs_equation_fb_set_cell_bc(const cs_cell_mesh_t         *cm,
                            const cs_equation_param_t    *eqp,
                            const cs_cdo_bc_face_t       *face_bc,
                            const cs_real_t               dir_values[],
-                           cs_real_t                     t_eval,
                            cs_cell_sys_t                *csys,
                            cs_cell_builder_t            *cb);
 

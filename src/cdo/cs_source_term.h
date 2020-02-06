@@ -209,7 +209,7 @@ cs_source_term_compute_cellwise(const int                    n_source_terms,
  *         Case of a scalar potential defined at primal vertices by a constant
  *         value.
  *         A discrete Hodge operator has to be computed before this call and
- *         stored inside a cs_cell_builder_t structure
+ *         given as input parameter
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -235,7 +235,7 @@ cs_source_term_pvsp_by_value(const cs_xdef_t           *source,
  *         Case of a scalar potential defined at primal vertices by an
  *         analytical function.
  *         A discrete Hodge operator has to be computed before this call and
- *         stored inside a cs_cell_builder_t structure
+ *         given as input parameter
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -459,7 +459,7 @@ cs_source_term_dcsd_q5o3_by_analytic(const cs_xdef_t           *source,
  *         Case of a scalar potential defined at primal vertices and cells
  *         by a constant value.
  *         A discrete Hodge operator has to be computed before this call and
- *         stored inside a cs_cell_builder_t structure
+ *         given as input parameter
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure
@@ -485,7 +485,7 @@ cs_source_term_vcsp_by_value(const cs_xdef_t           *source,
  *         Case of a scalar potential defined at primal vertices and cells by
  *         an analytical function.
  *         A discrete Hodge operator has to be computed before this call and
- *         stored inside a cs_cell_builder_t structure
+ *         given as input parameter
  *
  * \param[in]      source     pointer to a cs_xdef_t structure
  * \param[in]      cm         pointer to a cs_cell_mesh_t structure

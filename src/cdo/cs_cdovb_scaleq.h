@@ -293,6 +293,7 @@ cs_cdovb_scaleq_balance(const cs_equation_param_t     *eqp,
  * \param[in]       eqp        pointer to a cs_equation_param_t structure
  * \param[in]       pdi        pointer to an array of field values
  * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out]  context    pointer to a scheme builder structure
  * \param[in, out]  vf_flux    pointer to the values of the diffusive flux
  */
 /*----------------------------------------------------------------------------*/
@@ -302,6 +303,7 @@ cs_cdovb_scaleq_boundary_diff_flux(const cs_real_t              t_eval,
                                    const cs_equation_param_t   *eqp,
                                    const cs_real_t             *pdi,
                                    cs_equation_builder_t       *eqb,
+                                   void                        *context,
                                    cs_real_t                   *vf_flux);
 
 /*----------------------------------------------------------------------------*/
