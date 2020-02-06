@@ -1535,12 +1535,18 @@ _set_key(const char            *label,
       /* Set the default choice */
       if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS)
         eqp->sles_param.amg_type = CS_PARAM_AMG_HOUSE_K;
-      else if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC)
+      else if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_PETSC) {
         eqp->sles_param.amg_type = CS_PARAM_AMG_PETSC_GAMG;
+        /* Default when using PETSc */
+        eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
+      }
 #if defined(PETSC_HAVE_HYPRE)
       /* Up to now HYPRE is available only through the PETSc interface */
-      else if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_HYPRE)
+      else if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
         eqp->sles_param.amg_type = CS_PARAM_AMG_HYPRE_BOOMER;
+        /* Default when using PETSc */
+        eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
+      }
 #endif
       else
         bft_error(__FILE__, __LINE__, 0,
