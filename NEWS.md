@@ -3,6 +3,8 @@ Release 6.0.2 (Unreleased)
 
 Bug fixes:
 
+- Atmo: fix in soil model.
+
 - SMGR: fix syrthes coupling configuration by re-inserting syrthes path at case
   initialization.
 
