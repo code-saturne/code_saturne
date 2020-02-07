@@ -132,7 +132,6 @@ precip = 0.d0
 tseuil = 16.d0 + tkelvi
 
 do isol = 1, nfmodsol
-  ifac = indsol(isol)
 
   tssol = solution_sol(isol)%temp_sol + tkelvi
   qvsol = solution_sol(isol)%total_water
@@ -140,8 +139,8 @@ do isol = 1, nfmodsol
   w2    = solution_sol(isol)%w2
 
   z0t    = solution_sol(isol)%constantes%rugthe
-  emis   = solution_sol(ifac)%constantes%emissi
-  albedo = solution_sol(ifac)%constantes%albedo
+  emis   = solution_sol(isol)%constantes%emissi
+  albedo = solution_sol(isol)%constantes%albedo
   csol   = solution_sol(isol)%constantes%csol
   veg    = solution_sol(isol)%constantes%vegeta
   c1w    = solution_sol(isol)%constantes%c1w
@@ -157,6 +156,7 @@ do isol = 1, nfmodsol
   !     2) calcul du vecteur vitesse tangent (identique a celui fait ds fr
   !     ==================================================================
 
+  ifac = indsol(isol)
   ! ---> NORMALE UNITAIRE
 
   rnx = surfbo(1,ifac)/surfbn(ifac)
