@@ -1,4 +1,4 @@
-Release 5.0.12 (Unreleased)
+Release 5.0.12 (Feb 7 2020)
 ===========================
 
 Bug fixes
@@ -7,7 +7,7 @@ Bug fixes
 - GUI: fix removal of line break from formulas due to wrong test.
 
 - Fix bug in boundary condition of atmospheric scalars when using
-humide atmo.
+  humid atmosperic model.
 
 Documentation updates
 ---------------------
