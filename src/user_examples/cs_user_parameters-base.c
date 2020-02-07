@@ -1095,7 +1095,7 @@ cs_user_parameters(cs_domain_t *domain)
    */
 
   /*! [change_nsave_checkpoint_files] */
-  cs_restart_keep_n_checkpoints(2);
+  cs_restart_set_n_max_checkpoints(2);
   /*! [change_nsave_checkpoint_files] */
 }
 

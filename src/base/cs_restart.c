@@ -221,9 +221,9 @@ static _location_t  *_location_ref;       /* Location definition array */
 
 
 /* Restart multi writer */
-static int                          _n_restart_files_to_write = 1;
-static int                          _n_restart_multiwriters   = 0;
-static _cs_restart_multiwriter_t  **_restart_multiwriter      = NULL;
+static int                          _n_restart_directories_to_write = 1;
+static int                          _n_restart_multiwriters          = 0;
+static _cs_restart_multiwriter_t  **_restart_multiwriter             = NULL;
 
 
 /*============================================================================
@@ -2364,8 +2364,9 @@ cs_restart_destroy(cs_restart_t  **restart)
   if (mode == CS_RESTART_MODE_WRITE) {
     _cs_restart_multiwriter_t *mw = _cs_restart_multiwriter_by_path(r->name);
     if (mw != NULL) {
-      if (_n_restart_files_to_write != -1) {
-        int nfiles_to_remove = mw->nprev_files - _n_restart_files_to_write + 1;
+      if (_n_restart_directories_to_write != -1) {
+        int nfiles_to_remove
+          = mw->nprev_files - _n_restart_directories_to_write + 1;
         if (nfiles_to_remove > 0) {
           for (int ii = 0; ii < nfiles_to_remove; ii++)
             cs_file_remove(mw->prev_files[ii]);
@@ -4072,33 +4073,31 @@ cs_restart_is_from_ncfd(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set the number of checkpoint files to keep.
+ * \brief Set the number of checkpoints to keep.
  *
- * This function sets the number of checkpoint files to keep.
- * If value is set to -1, all checkpoints are kept.
+ * This function sets the maximum number of checkpoint files to keep.
+ * Beyond this maximum, the oldest checkpoints are deleted to limit the
+ * number of saved checkpoints. The default value is 1.
+ *
  * If more than one file is kept, last one is always named "<prefix>.csc",
  * while others are names "<prefix_%04d.csc".
- * %04 provides an id using 4 digits (0 padding), and value is the order
- * of writing, starting with 0. Hence : prefix_0000.csc, prefix_0001.csc, ...
  *
- * \param[in]   nfiles_to_keep  number of checkpoint files to save.
+ * %04 provides an id using 4 digits (0 padding), and value is the order
+ * of writing, starting with 0. Hence: prefix_0000.csc, prefix_0001.csc, ...
+ *
+ * \param[in]   n_checkpoints   number of checkpoints to save.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_restart_keep_n_checkpoints(const int nfiles_to_keep)
+cs_restart_set_n_max_checkpoints(int  n_checkpoints)
 {
-  if (nfiles_to_keep == 0)
-    bft_error(__FILE__, __LINE__, 0,
-              _("At least 1 checkpoint file needs to be written.\n"
-                "%d files we asked for."),
-              nfiles_to_keep);
-  else if (nfiles_to_keep < -1)
-    bft_error(__FILE__, __LINE__, 0,
-              _("A negative number of checkpoint files was asked for: %d"),
-              nfiles_to_keep);
-
-  _n_restart_files_to_write = nfiles_to_keep;
+  if (n_checkpoints <= 0) {
+    _checkpoint_nt_interval = -2;          /* deactivate checkpointing */
+    _n_restart_directories_to_write = 0;
+  }
+  else
+    _n_restart_directories_to_write = n_checkpoints;
 
   return;
 }

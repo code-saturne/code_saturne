@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2020-01-16 18:12+0100\n"
+"POT-Creation-Date: 2020-02-07 16:58+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -5018,12 +5018,6 @@ msgstr ""
 "Il est impossible de réouvrir le fichier de sortie par défaut :\n"
 "%s"
 
-#, c-format
-msgid ""
-"inconsistent sizes computed for a block to partition distributor\n"
-"(%llu expected, %llu determined)."
-msgstr ""
-
 msgid "flow conditions"
 msgstr "écoulement"
 
@@ -8361,6 +8355,13 @@ msgid ""
 "%s\n"
 msgstr ""
 
+msgid "Null pointer provided as file name.\n"
+msgstr ""
+
+#, fuzzy
+msgid "Empty file name was provided.\n"
+msgstr "Nom de fichier MED vide."
+
 #, c-format
 msgid "The %s directory cannot be found"
 msgstr "Le répertoire %s ne peut pas être trouvé"
@@ -9617,13 +9618,13 @@ msgstr ""
 "--------------------------\n"
 "\n"
 
-#, c-format
+#, fuzzy, c-format
 msgid ""
 "  Steady (SIMPLE) algorithm\n"
 "\n"
 "   Global parameters\n"
 "\n"
-"    idtvar:     %14d (-1: steady algorithm)\n"
+"    idtvar:     %14d (-1: CS_STEADY)\n"
 "    relxst:     %14.5e (Reference relaxation coefficient)\n"
 "\n"
 msgstr ""
@@ -9635,13 +9636,14 @@ msgstr ""
 "    relxst:     %14.5e (Coefficient de relaxation de référence)\n"
 "\n"
 
-#, c-format
+#, fuzzy, c-format
 msgid ""
 "  Constant time step algorithm (unsteady)\n"
 "\n"
 "   Time step parameters\n"
 "\n"
-"    idtvar:      %14d (0 cst; 1,2 var (t, t-space)\n"
+"    idtvar:      %14d (0: CS_CONSTANT_TIME_STEP;                       1: "
+"CS_ADAPTATIVE_TIME_STEP;                       2: CS_LOCAL_TIME_STEP\n"
 "    dtref:       %14.5e (Reference time step)\n"
 "\n"
 msgstr ""
@@ -11499,6 +11501,17 @@ msgstr ""
 
 #, c-format
 msgid ""
+"Error creating Melissa writer: \"%s\":\n"
+"only one Melissa server may be used, and is already used by\n"
+"writer: \"%s\"."
+msgstr ""
+
+#, fuzzy, c-format
+msgid "Error closing file: \"%s.log\""
+msgstr "Erreur à la fermeture du fichier \"%s\"."
+
+#, c-format
+msgid ""
 "Warning: inconsistent data size for plot \"%s\" between\n"
 "field \"%s\" and previous outputs; values dropped.\n"
 msgstr ""
@@ -11955,6 +11968,15 @@ msgstr ""
 msgid "File \"%s\" seems empty."
 msgstr ""
 
+#, c-format
+msgid ""
+" ** Lagrangian module:\n"
+"    number of classes > n_max_classes (%d)\n"
+"    --------------------------------\n"
+"\n"
+" To fix this, increase  cs_glob_lagr_agglomeration_model->n_max_classes"
+msgstr ""
+
 msgid "Lagrangian boundary type"
 msgstr ""
 
@@ -12018,8 +12040,18 @@ msgstr ""
 #, c-format
 msgid ""
 "Lagrangian module: \n"
-"  number of particles = %d is either not defined (negative)\n"
-"  or smaller than 1 than \n"
+"  id of the class of aggregates = %d is \n"
+" either not defined (negative)\n"
+"  or smaller than 1 \n"
+"  for zone %d and set %d."
+msgstr ""
+
+#, c-format
+msgid ""
+"Lagrangian module: \n"
+"  value of fractal dimension = %d for aggregates \n"
+" is either not defined (negative) \n"
+"  or greater than 3 \n"
 "  for zone %d and set %d."
 msgstr ""
 
