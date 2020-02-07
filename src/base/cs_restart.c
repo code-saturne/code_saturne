@@ -2366,7 +2366,6 @@ cs_restart_destroy(cs_restart_t  **restart)
     if (mw != NULL) {
       if (_n_restart_files_to_write != -1) {
         int nfiles_to_remove = mw->nprev_files - _n_restart_files_to_write + 1;
-        if (nfiles_to_remove
         if (nfiles_to_remove > 0) {
           for (int ii = 0; ii < nfiles_to_remove; ii++)
             cs_file_remove(mw->prev_files[ii]);
