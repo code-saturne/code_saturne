@@ -2922,7 +2922,7 @@ cs_lagr_sde_attr(cs_lagr_attribute_t   attr,
     for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
       if (   cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED)
-          || cs_lagr_particle_get_lnum(p_set, ip, CS_LAGR_REBOUND_ID) > 0)
+          || cs_lagr_particles_get_lnum(p_set, ip, CS_LAGR_REBOUND_ID) > 0)
       continue;
 
       unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
