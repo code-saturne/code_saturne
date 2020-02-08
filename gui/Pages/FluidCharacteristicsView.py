@@ -604,7 +604,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
                 if tag == 'volume_viscosity':
                     __combo.setEnabled(True)
                     c = self.mdl.getPropertyMode(tag)
-                    if c == 'predefined_law':
+                    if c == 'user_law':
                         __button.setEnabled(True)
                     else:
                         __button.setEnabled(False)
