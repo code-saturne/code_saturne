@@ -98,6 +98,7 @@ BEGIN_C_DECLS
 
   \var  cs_fluid_properties_t::ixyzp0
         filling \ref xyzp0 indicator
+
   \var  cs_fluid_properties_t::icp
         indicates if the isobaric specific heat \f$C_p\f$ is variable
         - -1: uniform, no property field is declared
@@ -114,9 +115,11 @@ BEGIN_C_DECLS
         1\f$\leqslant\f$N\f$\leqslant\f$\ref dimens::nscal "nscal" so that
         iscsth(n)=1 (there is a scalar temperature) or with the compressible
         module for non perfect gases.
+
   \var  cs_fluid_properties_t::icv
         property index of the isochoric specific heat
         - -1: uniform isochoric specific heat (no property field defined)
+
   \var  cs_fluid_properties_t::irovar
         variable density field \f$ \rho \f$:
         - 1: true, its variation law be given either
@@ -125,6 +128,7 @@ BEGIN_C_DECLS
         See \subpage physical_properties for more informations.
         - 0: false, its value is the reference density
         \ref ro0.
+
   \var  cs_fluid_properties_t::ivivar
         variable viscosity field \f$ \mu \f$:
            - 1: true, its variation law be given either
@@ -138,6 +142,7 @@ BEGIN_C_DECLS
         Only useful in gas mix (igmix) specific physics
         - 1: Sutherland law
         - 0: low temperature law (linear except for helium)
+
   \var  cs_fluid_properties_t::ro0
         reference density
 
@@ -164,6 +169,7 @@ BEGIN_C_DECLS
         P\f$ and \f$P^*\f$ appear in the log and the post-processing
         outputs with the compressible module, the calculation is made directly
         on the total pressure.
+
   \var  cs_fluid_properties_t::viscl0
         reference molecular dynamic viscosity
 
@@ -171,6 +177,16 @@ BEGIN_C_DECLS
 
         Always useful, it is the used value unless the user specifies the
         viscosity in the subroutine \ref cs_user_physical_properties.
+
+  \var  cs_fluid_properties_t::viscv0
+        reference volume viscosity
+
+        Noted \f$\kappa\f$ in the equation expressing \f$\tens{\sigma}\f$ in
+        the paragraph dedicated to \ref iviscv)
+
+        Used by the compressible model, unless the user specifies a variable
+        volume viscosity in the GUI or \ref cs_user_physical_properties.
+
   \var  cs_fluid_properties_t::p0
         reference pressure for the total pressure
 
@@ -180,6 +196,7 @@ BEGIN_C_DECLS
         \ref xyzp0).
         With the compressible module, the total pressure is solved directly.
         Always useful.
+
   \var  cs_fluid_properties_t::pred0
         reference value for the reduced pressure \f$P^*\f$ (see \ref ro0)
 
@@ -192,6 +209,7 @@ BEGIN_C_DECLS
         It is therefore initialized to \ref p0 and not \ref pred0 (see
         \ref ro0).
         Always useful, except with the compressible module.
+
   \var  cs_fluid_properties_t::xyzp0[3]
         coordinates of the reference point \f$\vect{x}_0\f$ for the total
         pressure
@@ -219,6 +237,7 @@ BEGIN_C_DECLS
         therefore not used.
 
         Always useful, except with the compressible module.
+
   \var  cs_fluid_properties_t::t0
         reference temperature
 
@@ -226,6 +245,7 @@ BEGIN_C_DECLS
         of the density), for the electricity modules to initialize the domain
         temperature and for the compressible module (initializations).
         It must be given in Kelvin.
+
   \var  cs_fluid_properties_t::cp0
         reference specific heat
 
@@ -241,30 +261,39 @@ BEGIN_C_DECLS
         calculate the diffusivity of the thermal scalars, based on their
         conductivity; it is therefore needed, unless the diffusivity is also
         specified in \ref cs_user_physical_properties.
+
   \var  cs_fluid_properties_t::cv0
         reference isochoric specific heat (J/kg/K)
 
-        Useful for the compressible module
+        Useful for the compressible module.
+
   \var  cs_fluid_properties_t::xmasmr
         molar mass of the perfect gas in \f$ kg/mol \f$
         (if \ref cstphy::ieos "ieos"=1)
 
         Always useful.
+
   \var  cs_fluid_properties_t::ipthrm
         uniform variable thermodynamic pressure:
         - 0: false (ie not variable)
         - 1: true
+
   \var  cs_fluid_properties_t::pther
         Thermodynamic pressure for the current time step.
+
   \var  cs_fluid_properties_t::pthera
         thermodynamic pressure for the previous time step
+
   \var  cs_fluid_properties_t::pthermax
         thermodynamic maximum pressure for user clipping, used to model a
         venting effect
+
   \var  cs_fluid_properties_t::sleak
         Leak surface
+
   \var  cs_fluid_properties_t::kleak
         Leak head loss (2.9 by default, from Idelcick)
+
   \var  cs_fluid_properties_t::roref
         Initial reference density
 */
@@ -302,6 +331,7 @@ static cs_fluid_properties_t  _fluid_properties = {
   .ivsuth   = 0,
   .ro0      = 1.17862,
   .viscl0   = 1.83337e-5,
+  .viscv0   = 0.,
   .p0       = 1.01325e5,
   .pred0    = 0.,
   .xyzp0    = {-1.e30, -1.e30, -1.e30},
@@ -387,6 +417,9 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
                                    double  **sleak,
                                    double  **kleak,
                                    double  **roref);
+
+void
+cs_f_fluid_properties_pp_get_pointers(double  **viscv0);
 
 /*============================================================================
  * Private function definitions
@@ -507,6 +540,22 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
   *sleak    = &(_fluid_properties.sleak);
   *kleak    = &(_fluid_properties.kleak);
   *roref    = &(_fluid_properties.roref);
+}
+
+/*----------------------------------------------------------------------------
+ * Get pointers to members of the global fluid properties structure.
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *
+ * parameters:
+ *   visv0   --> pointer to cs_glob_fluid_properties->viscv0
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_fluid_properties_pp_get_pointers(double  **viscv0)
+{
+  *viscv0   = &(_fluid_properties.viscl0);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

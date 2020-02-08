@@ -616,11 +616,8 @@ module ppincl
   !> alias for boundary conditions
   integer, save :: irunh
 
-  !> reference volume viscosity (noted \f$\kappa\f$ in the equation
-  !> expressing \f$\tens{\sigma}\f$ in the paragraph dedicated to \ref iviscv)
-  !> always useful, it is the used value, unless the user specifies the volume
-  !> viscosity in the user subroutine \ref cs_user_physical_properties
-  double precision, save :: viscv0
+  !> reference volume viscosity
+  real(c_double), pointer, save :: viscv0
 
   !> pressure predicion by an evolution equation
   integer, save :: ippred
@@ -783,6 +780,16 @@ module ppincl
 
     !> \cond DOXYGEN_SHOULD_SKIP_THIS
 
+    ! Interface to C function retrieving pointers to members of the
+    ! global fluid properties structure
+
+    subroutine cs_f_fluid_properties_pp_get_pointers(viscv0)   &
+      bind(C, name='cs_f_fluid_properties_pp_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: viscv0
+    end subroutine cs_f_fluid_properties_pp_get_pointers
+
     !---------------------------------------------------------------------------
 
     ! Interface to C function retrieving pointers to members of the
@@ -831,7 +838,10 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: p_ippmod, p_isoot
+    type(c_ptr) :: p_viscv0, p_ippmod, p_isoot
+
+    call cs_f_fluid_properties_pp_get_pointers(p_viscv0)
+    call c_f_pointer(p_viscv0, viscv0)
 
     call cs_f_physical_model_get_pointers(p_ippmod)
     call cs_f_combustion_model_get_pointers(p_isoot)

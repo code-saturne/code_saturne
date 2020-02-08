@@ -71,6 +71,8 @@ typedef struct {
                                  thermal conductivity in gas mix spec. phys. */
   double        ro0;          /* reference density */
   double        viscl0;       /* reference molecular dynamic viscosity */
+  double        viscv0;       /* reference volume viscosity
+                                 (for compressible model) */
   double        p0;           /* reference pressure for the total pressure */
   double        pred0;        /* reference value for the reduced pressure */
   double        xyzp0[3];     /* reference point coordinates for the total

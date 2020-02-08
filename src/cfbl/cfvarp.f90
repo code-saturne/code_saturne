@@ -90,10 +90,9 @@ if (ippmod(icompf).ge.0) then
   call field_set_key_int (ivarfl(isca(ienerg)), kivisl, -1)
   visls0(ienerg) = epzero
 
-  ! Pointer and reference value for volumetric molecular viscosity
+  ! Pointer for volumetric molecular viscosity
   ! (constant by default)
   iviscv = -1
-  viscv0 = 0.d0
 
   ! Mixture fractions (two-phase homogeneous flows)
   if (ippmod(icompf).eq.2) then
