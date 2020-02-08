@@ -39,7 +39,7 @@ import stat
 from code_saturne import cs_compile
 from code_saturne import cs_xml_reader
 
-from code_saturne.cs_exec_environment import run_command, source_shell_script
+from code_saturne.cs_exec_environment import run_command
 from code_saturne.cs_exec_environment import enquote_arg, separate_args
 from code_saturne.cs_exec_environment import get_ld_library_path_additions
 from code_saturne.cs_exec_environment import source_syrthes_env
