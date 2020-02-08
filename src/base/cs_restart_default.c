@@ -423,15 +423,15 @@ _read_field_vals_legacy(cs_restart_t  *r,
                         cs_field_t    *f)
 {
   char sec_name[128] = "";
-  char old_name_x[128] = "", old_name_y[128] = "", old_name_z[128] = "";
-  char old_name_xx[128] = "", old_name_yy[128] = "", old_name_zz[128] = "";
-  char old_name_xy[128] = "", old_name_yz[128] = "", old_name_xz[128] = "";
+  char old_name_x[96] = "", old_name_y[96] = "", old_name_z[96] = "";
+  char old_name_xx[96] = "", old_name_yy[96] = "", old_name_zz[96] = "";
+  char old_name_xy[96] = "", old_name_yz[96] = "", old_name_xz[96] = "";
 
   int retcode = CS_RESTART_SUCCESS;
 
   /* Check for renaming */
 
-  char old_name[128] = "";
+  char old_name[96] = "";
   int ks = cs_field_key_id_try("scalar_id");
   int scalar_id = cs_field_get_key_int(f, ks);
 
@@ -445,87 +445,87 @@ _read_field_vals_legacy(cs_restart_t  *r,
       scalar_id = atoi(name) - 1;
     }
     if (scalar_id > -1)
-      snprintf(old_name, 127, "%04d", scalar_id+1);
+      snprintf(old_name, 96, "%04d", scalar_id+1);
     else
-      snprintf(old_name, 127, "%s", r_name);
+      snprintf(old_name, 96, "%s", r_name);
   }
 
   /* Other fields may need specific renaming
      (old_name for partial section name, sec_name for direct section name) */
 
   else if (r_name == f->name) {
-    snprintf(old_name, 127, "%s", f->name);
+    snprintf(old_name, 96, "%s", f->name);
     if (f == CS_F_(vel)) {
       if (t_id == 0)
-        strncpy(old_name, "vitesse", 127);
+        strncpy(old_name, "vitesse", 96);
       else if (t_id == 1)
-        strncpy(sec_name, "velocity_prev", 127);
+        strncpy(sec_name, "velocity_prev", 96);
     }
     else if (f == CS_F_(p))
-      strncpy(old_name, "pression", 127);
+      strncpy(old_name, "pression", 96);
     else if (f == CS_F_(r11))
-      strncpy(old_name, "R11", 127);
+      strncpy(old_name, "R11", 96);
     else if (f == CS_F_(r22))
-      strncpy(old_name, "R22", 127);
+      strncpy(old_name, "R22", 96);
     else if (f == CS_F_(r33))
-      strncpy(old_name, "R33", 127);
+      strncpy(old_name, "R33", 96);
     else if (f == CS_F_(r12))
-      strncpy(old_name, "R12", 127);
+      strncpy(old_name, "R12", 96);
     else if (f == CS_F_(r13))
-      strncpy(old_name, "R13", 127);
+      strncpy(old_name, "R13", 96);
     else if (f == CS_F_(r23))
-      strncpy(old_name, "R23", 127);
+      strncpy(old_name, "R23", 96);
     else if (f == CS_F_(rij))
-      strncpy(old_name, "Rij", 127);
+      strncpy(old_name, "Rij", 96);
     else if (f == CS_F_(eps))
-      strncpy(old_name, "eps", 127);
+      strncpy(old_name, "eps", 96);
     else if (f == CS_F_(f_bar))
-      strncpy(old_name, "fb", 127);
+      strncpy(old_name, "fb", 96);
     else if (f == CS_F_(alp_bl)) {
       /* Special case: "al" also possible here, depending on turbulence model;
          check for either, with one test for main restart, the other for
          the auxilairy restart */
       int sec_code;
-      strncpy(old_name, "alp", 127);
+      strncpy(old_name, "alp", 96);
       sec_code = cs_restart_check_section(r, "al_ce_phase01",
                                           1, 1, CS_TYPE_cs_real_t);
       if (sec_code == CS_RESTART_SUCCESS)
-        strncpy(old_name, "al", 127);
+        strncpy(old_name, "al", 96);
       else
         sec_code = cs_restart_check_section(r, "fm_al_phase01",
                                             0, 1, CS_TYPE_cs_int_t);
       if (sec_code == CS_RESTART_SUCCESS)
-        strncpy(old_name, "al", 127);
+        strncpy(old_name, "al", 96);
     }
     else if (f == CS_F_(nusa))
-      strncpy(old_name, "nusa", 127);
+      strncpy(old_name, "nusa", 96);
     else if (f == CS_F_(mesh_u))
-      strncpy(old_name, "vit_maillage", 127);
+      strncpy(old_name, "vit_maillage", 96);
     else if (f == CS_F_(rho)) {
       if (t_id == 0)
-        strncpy(old_name, "rho", 127);
+        strncpy(old_name, "rho", 96);
       else if (t_id == 1)
-        strncpy(old_name, "rho_old", 127);
+        strncpy(old_name, "rho_old", 96);
     }
     else if (f == CS_F_(rho_b))
-      strncpy(sec_name, "rho_fb_phase01", 127);
+      strncpy(sec_name, "rho_fb_phase01", 96);
 
     else if (f == CS_F_(cp))
-      strncpy(old_name, "cp", 127);
+      strncpy(old_name, "cp", 96);
 
     else if (f == CS_F_(mu))
-      strncpy(old_name, "viscl", 127);
+      strncpy(old_name, "viscl", 96);
     else if (f == CS_F_(mu_t))
-      strncpy(old_name, "visct", 127);
+      strncpy(old_name, "visct", 96);
 
     else if (f == CS_F_(t_b))
-      strncpy(old_name, "tparoi_fb", 127);
+      strncpy(old_name, "tparoi_fb", 96);
     else if (f == CS_F_(qinci))
-      strncpy(old_name, "qincid_fb", 127);
+      strncpy(old_name, "qincid_fb", 96);
     else if (f == CS_F_(hconv))
-      strncpy(old_name, "hfconv_fb", 127);
+      strncpy(old_name, "hfconv_fb", 96);
     else if (f == CS_F_(fconv))
-      strncpy(old_name, "flconv_fb", 127);
+      strncpy(old_name, "flconv_fb", 96);
 
     else if (strcmp(f->name, "dt") == 0)
       strncpy(sec_name, "dt_variable_espace_ce", 127);
@@ -561,6 +561,8 @@ _read_field_vals_legacy(cs_restart_t  *r,
       snprintf(sec_name, 127, "%s", old_name);
   }
 
+  sec_name[127] = '\0';
+
   retcode = cs_restart_check_section(r,
                                      sec_name,
                                      f->location_id,
@@ -594,6 +596,10 @@ _read_field_vals_legacy(cs_restart_t  *r,
       snprintf(old_name_y, 127, "%s_v_ce_phase01", old_name);
       snprintf(old_name_z, 127, "%s_w_ce_phase01", old_name);
     }
+
+    old_name_x[127] = '\0';
+    old_name_y[127] = '\0';
+    old_name_z[127] = '\0';
 
     retcode = cs_restart_check_section(r,
                                        old_name_x,
