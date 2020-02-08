@@ -75,7 +75,7 @@ if __name__ == '__main__':
     n_args = len(sys.argv) - 1
 
     if n_args != 1:
-        print("Usage: %(prog) <salome_root_directory>" % {'prog':sys.argv[0]})
+        print("Usage: " + sys.argv[0] + "<salome_root_directory>")
         sys.exit(1)
 
     salome_root_dir = sys.argv[1]

@@ -157,7 +157,13 @@ def main(argv):
 
     salome_env = cfg.salome_env
 
-    run_cmd = "${KERNEL_ROOT_DIR}/bin/salome/envSalome.py python ${KERNEL_ROOT_DIR}/bin/salome/runSalome.py"
+    # Note: we used to run:
+    # run_cmd = "if test -f ${KERNEL_ROOT_DIR}/bin/salome/envSalome.py ; then python ${KERNEL_ROOT_DIR}/bin/salome/runSalome.py"
+    #
+    # but the first part did not work with CAS builds, and the following
+    # seems enough for both.
+
+    run_cmd = "${KERNEL_ROOT_DIR}/bin/salome/runSalome.py"
 
     # Save PYTHONPATH as CS_SALOME_TOP_PYTHONPATH to avoid issues
     # with launch of code due to PYTHONPATH with extra (cumulative) entries
@@ -190,10 +196,11 @@ export CFDSTUDY_ROOT_DIR PYTHONPATH
                       'runsalome': run_cmd,
                       'modules': default_modules}
 
+    # Note: both EDF and CAS type builds use bash, so force it here
 
     proc = subprocess.Popen(cmd,
                             shell=True,
-                            executable='/bin/sh',
+                            executable='/bin/bash',
                             universal_newlines=True,
                             close_fds=True)
 

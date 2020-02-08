@@ -91,6 +91,14 @@ if test "x$with_salome" != "xno" ; then
     fi
   fi
 
+  # Environment for CAS (salome-platform.org) builds for Salome
+  if test "x$SALOMEENVCMD" = "x"; then
+    salome_env="${with_salome}/env_launch.sh"
+    if test -f "$salome_env" ; then
+      SALOMEENVCMD=". $salome_env"
+    fi
+  fi
+
   unset salome_pre
   unset salome_env
 
@@ -114,7 +122,9 @@ if test x$with_salome != xno ; then
   if test "x$SALOMEENVCMD" != "x" ; then
     KERNEL_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $KERNEL_ROOT_DIR)
     GUI_ROOT_DIR=$(eval $SALOMEENVCMD ; echo $GUI_ROOT_DIR)
-    OMNIIDL=$(eval $SALOMEENVCMD ; which omniidl)
+    if test "x$OMNIIDL" == "x" ; then
+      OMNIIDL=$(eval $SALOMEENVCMD ; which omniidl)
+    fi
   fi
 
   # Make sure omniidl will work by forcing PYTHONPATH
