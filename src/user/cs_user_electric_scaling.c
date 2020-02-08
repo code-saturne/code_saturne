@@ -73,7 +73,7 @@ BEGIN_C_DECLS
 void
 cs_user_scaling_elec(const cs_mesh_t             *mesh,
                      const cs_mesh_quantities_t  *mesh_quantities,
-                           cs_real_t             *dt)
+                     cs_real_t                   *dt)
 {
 
 }

@@ -80,26 +80,22 @@ renormalize_spheroid(cs_real_3_t orient);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_orientation_dyn_spheroids(int                iprev,
-                                  cs_real_t          dt_p,
-                                  const cs_real_33_t gradvf[]);
+cs_lagr_orientation_dyn_spheroids(int                 iprev,
+                                  cs_real_t           dt_p,
+                                  const cs_real_33_t  gradvf[]);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Integration of the Jeffey equations in DNS mode
  *
- * \param[in] iprev     time step indicator for fields
- *                        0: use fields at current time step
- *                        1: use fields at previous time step
  * \param[in] dt_p      lagrangian time step
  * \param[in] gradvf    fluid velocity gradient
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_orientation_dyn_jeffery(int       iprev,
-                                cs_real_t dt_p,
-                                const cs_real_33_t gradvf[]);
+cs_lagr_orientation_dyn_jeffery(cs_real_t           dt_p,
+                                const cs_real_33_t  gradvf[]);
 
 END_C_DECLS
 

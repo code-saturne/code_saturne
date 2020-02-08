@@ -79,9 +79,6 @@ BEGIN_C_DECLS
  * Static global variables
  *============================================================================*/
 
-/* Boltzmann constant */
-static const double _k_boltz = 1.38e-23;
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -608,17 +605,13 @@ cs_lagr_orientation_dyn_spheroids(int iprev,
 /*!
  * \brief Integration of the Jeffey equations in DNS mode
  *
- * \param[in] iprev     time step indicator for fields
- *                        0: use fields at current time step
- *                        1: use fields at previous time step
  * \param[in] dt_p      lagrangian time step
  * \param[in] gradvf    fluid velocity gradient
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_orientation_dyn_jeffery(int              iprev,
-                                cs_real_t        dt_p,
+cs_lagr_orientation_dyn_jeffery(cs_real_t        dt_p,
                                 const cs_real_t  gradvf[][3][3])
 {
   /* 1. Initializations
@@ -626,8 +619,6 @@ cs_lagr_orientation_dyn_jeffery(int              iprev,
 
   cs_lagr_particle_set_t         *p_set = cs_glob_lagr_particle_set;
   const cs_lagr_attribute_map_t  *p_am = p_set->p_am;
-
-  cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
 
   /* 2. Integration of the (S)DE on the angular velocity
      =================================================== */
@@ -653,15 +644,15 @@ cs_lagr_orientation_dyn_jeffery(int              iprev,
                                              CS_LAGR_EULER);
 
     cs_real_33_t trans_m = {
-      2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5), /* (0,0) */
-      2.*(euler[1]*euler[2]-euler[0]*euler[3]),     /* (0,1) */
-      2.*(euler[1]*euler[3]+euler[0]*euler[2]),     /* (0,2) */
-      2.*(euler[1]*euler[2]+euler[0]*euler[3]),     /* (1,0) */
-      2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5), /* (1,1) */
-      2.*(euler[2]*euler[3]-euler[0]*euler[1]),     /* (1,2) */
-      2.*(euler[1]*euler[3]-euler[0]*euler[2]),     /* (2,0) */
-      2.*(euler[2]*euler[3]+euler[0]*euler[1]),     /* (2,1) */
-      2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5)  /* (2,2) */
+      {2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5),
+       2.*(euler[1]*euler[2]-euler[0]*euler[3]),
+       2.*(euler[1]*euler[3]+euler[0]*euler[2])},
+      {2.*(euler[1]*euler[2]+euler[0]*euler[3]),
+       2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5),
+       2.*(euler[2]*euler[3]-euler[0]*euler[1])},
+      {2.*(euler[1]*euler[3]-euler[0]*euler[2]),
+       2.*(euler[2]*euler[3]+euler[0]*euler[1]),
+       2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5)}
     };
 
     /* Fluid velocity gradient in the relative reference frame of the particle */
