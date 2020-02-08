@@ -833,7 +833,7 @@ void CS_PROCF (tpsini, TPSINI)
   char *file_prefix = cs_base_string_f_to_c_create(tplpre, *lpre);
   bool use_iteration = false;
 
-  if (*idtvar == CS_STEADY || *idtvar == CS_LOCAL_TIME_STEP)
+  if (*idtvar == CS_TIME_STEP_STEADY || *idtvar == CS_TIME_STEP_LOCAL)
     use_iteration = true;
 
   /* Main processing */

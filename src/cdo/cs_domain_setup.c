@@ -387,7 +387,7 @@ cs_domain_def_time_step_by_function(cs_domain_t        *domain,
   domain->time_step->is_variable = 1; /* not constant time step */
 
   /* Uniform in space but can change from one time step to the other */
-  domain->time_options.idtvar = CS_ADAPTATIVE_TIME_STEP;
+  domain->time_options.idtvar = CS_TIME_STEP_ADAPTIVE;
 
   cs_xdef_time_func_input_t  def = {.input = func_input,
                                     .func = func};
@@ -429,7 +429,7 @@ cs_domain_def_time_step_by_value(cs_domain_t   *domain,
   domain->time_step->is_variable = 0; /* constant time step */
 
   /* Constant time step by default */
-  domain->time_options.idtvar = CS_CONSTANT_TIME_STEP;
+  domain->time_options.idtvar = CS_TIME_STEP_CONSTANT;
 
   domain->time_step_def = cs_xdef_timestep_create(CS_XDEF_BY_VALUE,
                                                   0, /* state flag */
