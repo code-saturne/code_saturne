@@ -75,6 +75,14 @@ if test "x$with_salome" != "xno" ; then
     fi
   fi
 
+  # Environment for CAS (salome-platform.org) builds for Salome
+  if test "x$SALOMEENVCMD" = "x"; then
+    salome_env="${with_salome}/env_launch.sh"
+    if test -f "$salome_env" ; then
+      SALOMEENVCMD="source $salome_env"
+    fi
+  fi
+
   unset salome_pre
   unset salome_env
 
