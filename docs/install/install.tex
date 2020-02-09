@@ -155,7 +155,7 @@ and their role is given in \S\ref{sec:list_ext_lib}.
 For some external libraries, such as Catalyst (see \ref{sec:list_ext_lib}),
 a C++ compiler is also required.
 
-The SALOME platform V9 and above requires Python 3, older versions Python 2,
+The SALOME platform V9 and above requires Python 3,
 and a matching version should be used when building with SALOME support.
 
 In practice, the code is known to build and function properly at least with the
@@ -313,7 +313,7 @@ The list of third-party software usable with \CS is provided here:
       may be used for co-visualization or in-situ visualization.
       This requires ParaView 4.2 or above.
 
-\item \texttt{eos-1.2} may be used for thermodynamic properties of fluids.
+    \item \texttt{eos} 1.2 or above may be used for thermodynamic properties of fluids.
       it is not currently free, so usually available only to users at EDF,
       CEA, or organisms participating in projects with those entities.
 
@@ -360,6 +360,9 @@ The list of third-party software usable with \CS is provided here:
       which may be used by \CS for the resolution of linear equation systems.
       In addition to providing many solver options, it may be used as a bridge
       to other major solver libraries.
+      Currently, only PETSc using install structures based using the
+      \texttt{--prefix} configure option are correctly detected by the
+      \CS build scripts.
 
 \end{itemize}
 
@@ -659,7 +662,7 @@ to. A recommended cmake command for this build contains:
 \textbackslash \\
 \textcolor{Violet}{-DPARAVIEW\_USE\_MPI}=ON
 \textbackslash \\
-\textcolor{Violet}{-DPARAVIEW\_ENABLE\_PYTHON}=ON
+\textcolor{Violet}{-DPARAVIEW\_USE\_PYTHON}=ON
 \textbackslash \\
 \textcolor{Violet}{-DPARAVIEW\_INSTALL\_DEVELOPMENT\_FILES}=ON
 \textbackslash \\
@@ -1024,6 +1027,9 @@ as for Catalyst when available in a given Salome platform variant.
  \texttt{--with-med=salome}\\
  \texttt{--with-catalyst=salome}
 
+When those libraries are available as system packages and not
+inside the SALOME directory, these options may not be available.
+
 As CGNS and MED file formats are portable, MED or CGNS files produced
 by either \CS or SALOME remain interoperable.\footnote{At the least,
 files produced with a given version of CGNS or MED should be readable
@@ -1055,6 +1061,13 @@ and \texttt{<salome\_root\_directory>} with the actual directory names:
 \$ for m in `<top\_source\_dir>/salome/build-aux/list\_salome\_modules.py <salome\_root\_directory>`; do module load \$m; done
 }\end{minipage}}
 
+With some builds from the \url{http://www.salome-platform.org}
+downloads, building CFDSTUDY may fail due to the \texttt{omniidl} script containing
+non-existent paths. In this case, add:
+
+\texttt{OMNIIDL=<salome\_root\_directory>/INSTALL/omniORB/bin/omniidl}
+
+to the \CS \texttt{configure} options to work around this issue.
 
 \subsection{Example configuration commands\label{sec:config:examples}}
 
