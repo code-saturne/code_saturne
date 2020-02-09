@@ -201,7 +201,7 @@ do isol = 1, nfmodsol
     !     ====================================
 
     ! on impose t = tmer et hr = 100 %
-    esat = 610.78d0*exp(17.2694d0*tmer/(tmer + tkelvi-35.86d0))
+    esat  = cs_air_pwv_sat(tmer)
 
     if (imeteo.eq.0) then
       call atmstd(zreel,pres1,dum,dum)
@@ -284,12 +284,12 @@ do isol = 1, nfmodsol
     !     7) calcul de la pression de vapeur saturante esat et de d(qsat)/dt
     !     ==================================================================
 
-    esat = 610.78d0*exp(17.2694d0*(tssol - tkelvi)/(tssol - 35.86d0))
+    esat  = cs_air_pwv_sat(tssol-tkelvi)
     rapsat = rvsra*pres1+esat*(1.d0-rvsra)
     qsat = esat/rapsat
-    cstder = 17.2694d0*(tkelvi - 35.86d0)
+    cstder = 17.438d0*(239.78d0)!TODO code it in  cs_air_prop.c
     dqsat = pres1*rvsra/rapsat/rapsat*cstder*esat                     &
-         /(tssol - 35.86d0)/(tssol - 35.86d0)
+         /(tssol -tkelvi+ 239.78d0)/(tssol -tkelvi+ 239.78d0)!TODO code it in  cs_air_prop.c
 
     !     ===========================================================
     !     8) calcul du premier membre de l'equation d'evolution de tssol

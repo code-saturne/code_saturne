@@ -309,7 +309,7 @@ do iel = 1, ncel
   yw_liq = (sig_flu                                                               &
         /(1.d0 + qsl*clatev**2/(rvap*cp0*tliq**2)))                             &
         *(nebdia(iel)*q1 + exp(-q1**2/2.d0)/sqrt(2.d0*pi))
-  yw_liq = max(yw_liq, 1d-15)
+  yw_liq = max(yw_liq, 0.d0)
   nn(iel) = nebdia(iel) - (nebdia(iel)*q1                                       &
           + exp(-q1**2/2.d0)/sqrt(2.d0*pi))*exp(-q1**2/2.d0)/sqrt(2.d0*pi)
 
@@ -331,15 +331,15 @@ do iel = 1, ncel
     yw_liq = deltaq / (1.d0 + qsl*clatev**2/(rvap*cp0*tliq**2))
   endif ! qwt.lt.yw_liq
 
-  cpro_liqwt(iel) = yw_liq
   ! Celcius temperature of the air parcel
   cpro_tempc(iel) = tliq + (clatev/cp0)*yw_liq - tkelvi
-
-  !FIXME back to the previous formulation
-  call cs_rho_humidair(qwt, tliq, pp,   &
-                       cpro_liqwt(iel), &
-                       cpro_tempc(iel), &
-                       crom(iel))
+  lrhum = rair*(1.d0 - yw_liq + (rvsra - 1.d0)*(qwt - yw_liq))
+  ! liquid water content
+  cpro_liqwt(iel) = yw_liq
+  !Celcius temperature of the air parcel
+  cpro_tempc(iel) = tliq + (clatev/cp0)*yw_liq - tkelvi
+  !density
+  crom(iel) = pp/(lrhum*(tliq + (clatev/cp0)*yw_liq))
 
 enddo
 
