@@ -384,7 +384,6 @@ if (ippmod(iphpar).ge.1) then
 
   if (istop.ne.0) then
     write(nfecra,2146)
-    iok = iok + 1
   endif
 endif
 
@@ -1218,13 +1217,12 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES',               /,&
+'@ @@ ATTENTION :',                                             /,&
 '@    =========',                                               /,&
-'@    OPTIONS DE CALCUL INCOMPATIBLES AVEC LE SCHEMA EN TEMPS', /,&
+'@    OPTIONS DE CALCUL NON VALIDEE AVEC LE SCHEMA EN TEMPS',   /,&
 '@',                                                            /,&
-'@  Le calcul ne sera pas execute.',                            /,&
-'@',                                                            /,&
-'@  La version actuelle ne permet pas de modifier le schema en',/,&
+'@  La version actuelle ne garantie pas les résultats',         /,& 
+'@    avec ce schema en',/,&
 '@    temps lorsqu''une physique particuliere est activee',     /,&
 '@    (combustion, charbon, electrique).',                      /,&
 '@',                                                            /,&
@@ -2370,13 +2368,11 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
+'@ @@  WARNING:',                                               /,&
 '@    =========',                                               /,&
-'@    OPTIONS NOT COMPATIBLE WITH TIME DICRETISATION SCHEME',   /,&
+'@    OPTIONS NOT VALIDATED WITH TIME DICRETISATION SCHEME',    /,&
 '@',                                                            /,&
-'@  Computation CAN NOT run',                                   /,&
-'@',                                                            /,&
-'@  The current version does not allow changing the time',      /,&
+'@  The current version is not validated with this time',       /,&
 '@  discretisation scheme when a specific physics is active',   /,&
 '@    (combustion, coal, electrical, ...).',                    /,&
 '@',                                                            /,&
