@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2019-12-23 12:12+0100\n"
+"POT-Creation-Date: 2020-02-10 14:36+0100\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -3219,17 +3219,17 @@ msgstr "valeur invalide pour isstpc"
 msgid "invalid value of init"
 msgstr "valeur invalide pour init"
 
-msgid "Iterative reconstruction"
-msgstr "Reconstruction itérative"
+msgid "Green-Gauss, iterative handling of non-orthogonalities"
+msgstr "Green-Gauss, traitement itératif des non-orthogonalités"
 
 msgid "Least-squares"
 msgstr "Moindres carrés"
 
-msgid "conservative, reconstruction with Least-squares"
-msgstr "conservatif, reconstruction par Moindres carrés"
+msgid "Green-Gauss, least-squares gradient face values"
+msgstr "Green-Gauss, valeurs aux faces par moindres carrés"
 
 msgid "Iterative (old)"
-msgstr "Itérative (ancienne)"
+msgstr ""
 
 #, c-format
 msgid ""
@@ -11516,6 +11516,17 @@ msgid ""
 "\"%s\" and mesh \"%s\" with time discretization %d,\n"
 "but re-defined with time discretization %d."
 msgstr ""
+
+#, c-format
+msgid ""
+"Error creating Melissa writer: \"%s\":\n"
+"only one Melissa server may be used, and is already used by\n"
+"writer: \"%s\"."
+msgstr ""
+
+#, c-format
+msgid "Error closing file: \"%s.log\""
+msgstr "Erreur à la fermeture du fichier \"%s.log\""
 
 #, c-format
 msgid ""
