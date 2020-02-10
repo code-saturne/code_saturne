@@ -174,7 +174,7 @@ if (ippmod(iatmos).eq.2.and.modsedi.eq.1) then ! for humid atmo. physics only
 
   ! Test minimum liquid water to carry out drop sedimentation
   qliqmax = 0.d0
-  do iel = 1, ncelet
+  do iel = 1, ncel
     qliqmax = max(cpro_liqwt(iel),qliqmax)
   enddo
   if (irangp.ge.0) call parmax(qliqmax)
