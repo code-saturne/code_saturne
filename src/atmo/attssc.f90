@@ -446,7 +446,7 @@ contains
       call field_get_val_s_by_name('boundary_thermal_roughness', rugt)
 
       do ifac = 1, nfabor
-        if (itypfb(ifac).eq.iparug) then
+        if (itypfb(ifac).eq.iparug.or.itypfb(ifac).eq.iparoi) then
           iel  = ifabor(ifac)
           if (r3(iel).gt.0.d0) then
             if (rugd(ifac).gt.0.d0) then
