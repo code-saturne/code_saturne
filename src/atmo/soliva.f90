@@ -25,6 +25,7 @@
 !> \brief  Initialize soil model variables
 !>  NB : data structures are define in module atsoil.f90
 !-------------------------------------------------------------------------------
+
 subroutine soliva
 
 !===============================================================================

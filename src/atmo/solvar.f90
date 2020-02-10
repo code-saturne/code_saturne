@@ -39,6 +39,7 @@
 !> \param[in]   dt      ratio of the local time step to the reference one
 !> \param[in]   rcodcl  Boundary conditions type
 !-------------------------------------------------------------------------------
+
 subroutine solvar ( temp , qv ,rom , dt, rcodcl )
 
 !===============================================================================
@@ -62,13 +63,8 @@ use atsoil
 use mesh
 use field
 
-
 implicit none
 
-!===============================================================================
-
-integer idim2
-parameter ( idim2 = 26 )
 !==============================================================================
 
 

@@ -311,8 +311,6 @@ contains
 
     double precision rho_water
     parameter (rho_water=1.d+3) ! FIXME should be defined somewhere else
-    double precision a_const
-    parameter (a_const=0.620350490899d0 ) ! (3/4*PI)**(1/3)
     double precision conversion
     parameter (conversion=1d+6)! passing from 1/cm**3 to 1/m**3
     !===========================================================================
@@ -324,9 +322,7 @@ contains
       nc = cvar_ntdrp(iel)
       if(qliq.ge.1d-8)then
         nc = max(nc,1.d0)
-        ! FIXME a_const does not have to be hardcoded
-        r3(iel) = ((rho*qliq)/(rho_water*nc*conversion))**(1.d0/3.d0)
-        r3(iel) = r3(iel)*a_const
+        r3(iel) = (0.75d0/pi*(rho*qliq)/(rho_water*nc*conversion))**(1.d0/3.d0)
       else
         r3(iel) = 0.d0
       endif
