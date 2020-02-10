@@ -64,13 +64,6 @@ double precision turb_schmidt
 ! 0. VERIFICATIONS
 !===============================================================================
 
-if (ippmod(iatmos).ge.2) then
-  if (itytur.ne.2) then
-    write(nfecra, 1002)
-    call csexit(1)
-  endif
-endif
-
 if (ippmod(iatmos).le.1) then
   if (iatra1.eq.1.or.iatsoil.eq.1) then
     write(nfecra, 1003)
@@ -188,22 +181,6 @@ if (itytur.eq.3) irijnu = 1
 
 #if defined(_CS_LANG_FR)
 
- 1002 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    PHYSIQUE PARTICULIERE (ATMOSPHERIQUE) DEMANDEE          ',/,&
-'@                                                            ',/,&
-'@  Seul le modele de turbulence k-eps est disponible avec    ',/,&
-'@   le module atmosphere humide (ippmod(iatmos) = 2).        ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier usipsu (cs_user_parameters.f90)                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  1003 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -224,23 +201,6 @@ if (itytur.eq.3) irijnu = 1
 
 #else
 
- 1002 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@  WARNING:   STOP WHILE READING INPUT DATA               ',/,&
-'@    =========                                               ',/,&
-'@                ATMOSPHERIC  MODULE                         ',/,&
-'@                                                            ',/,&
-'@  Only k-eps turbulence model is available with humid       ',/,&
-'@   atmosphere module (ippmod(iatmos) = 2).                  ',/,&
-'@  Computation CAN NOT run.                                  ',/,&
-'@                                                            ',/,&
-'@  Check the input data given through the User Interface     ',/,&
-'@   or in cs_user_parameters.f90.                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
  1003 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
