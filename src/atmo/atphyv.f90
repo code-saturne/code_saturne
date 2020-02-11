@@ -113,7 +113,7 @@ endif
 ! Density
 call field_get_val_s(icrom, crom)
 
-call field_get_val_s(itempc,cpro_tempc)
+call field_get_val_s(itempc, cpro_tempc)
 call field_get_val_s(ivarfl(ivart), cvar_vart)
 if (ippmod(iatmos).ge.2) then
   call field_get_val_s(ivarfl(isca(iymw)), cvar_totwt)
@@ -259,7 +259,6 @@ call field_gradient_scalar(ivarfl(isca(iscalt)), 1, 0, inc, iccocg, dtlsd)
 
 ! computation of grad(qw)
 call field_gradient_scalar(ivarfl(isca(iymw)), 1, 0, inc, iccocg, dqsd)
-
 
 call field_get_val_s(ivarfl(ik), cvar_k)
 call field_get_val_s(ivarfl(iep), cvar_ep)
