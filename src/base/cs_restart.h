@@ -975,6 +975,16 @@ cs_restart_set_n_max_checkpoints(int  n_checkpoints);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Remove all previous dumps of checkpoint files which are not to be
+ *        saved.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+void
+cs_restart_clean_multiwriters_history(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Destroy the multiwriter structure at the end of the computation.
  */
 /*----------------------------------------------------------------------------*/

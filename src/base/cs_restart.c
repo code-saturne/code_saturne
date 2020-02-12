@@ -2257,24 +2257,29 @@ cs_restart_create(const char         *name,
     _cs_restart_multiwriter_t *mw = _cs_restart_multiwriter_by_id(writer_id);
     /* Rename an allready existing file */
     if (cs_file_isreg(_name)) {
+
+      char _subdir[19];
+      sprintf(_subdir, "previous_dump_%04d", mw->nprev_files);
+      size_t lsdir = strlen(_subdir);
+
       char *_re_name = NULL;
-      BFT_MALLOC(_re_name, ldir + lname + 2 + 5, char);
+      BFT_MALLOC(_re_name, ldir + lname + 2 + lsdir + 1, char);
+
       strcpy(_re_name, _path);
       _re_name[ldir] = _dir_separator;
       _re_name[ldir+1] = '\0';
 
-      char _file_number[6];
-      sprintf(_file_number, "_%04d", mw->nprev_files);
-      if ( cs_file_endswith(name, _extension)) {
-        lext = strlen(_extension);
-        strncat(_re_name, name, lname - lext);
-        strncat(_re_name, _file_number, 5);
-        strncat(_re_name, _extension, lext);
-      } else {
-        strncat(_re_name, name, lname);
-        strncat(_re_name, _file_number, 5);
-      }
-      _re_name[ldir + lname + 1 + 5] = '\0';
+      strcat(_re_name, _subdir);
+
+      /* Check that the sub-directory exists or that it can be created */
+      if (cs_file_mkdir_default(_re_name) != 0)
+        bft_error(__FILE__, __LINE__, 0,
+                  _("The %s directory cannot be created"), _re_name);
+
+      _re_name[ldir+1+lsdir] = _dir_separator;
+      _re_name[ldir+1+lsdir+1] = '\0';
+      strcat(_re_name, name);
+      _re_name[ldir+lname+lsdir+3] = '\0';
 
       rename(_name, _re_name);
 
@@ -2359,21 +2364,6 @@ cs_restart_destroy(cs_restart_t  **restart)
 
   if (r->fh != NULL)
     cs_io_finalize(&(r->fh));
-
-  /* Remove previous files if needed */
-  if (mode == CS_RESTART_MODE_WRITE) {
-    _cs_restart_multiwriter_t *mw = _cs_restart_multiwriter_by_path(r->name);
-    if (mw != NULL) {
-      if (_n_restart_directories_to_write != -1) {
-        int nfiles_to_remove
-          = mw->nprev_files - _n_restart_directories_to_write + 1;
-        if (nfiles_to_remove > 0) {
-          for (int ii = 0; ii < nfiles_to_remove; ii++)
-            cs_file_remove(mw->prev_files[ii]);
-        }
-      }
-    }
-  }
 
   /* Free locations array */
 
@@ -4100,6 +4090,37 @@ cs_restart_set_n_max_checkpoints(int  n_checkpoints)
     _n_restart_directories_to_write = n_checkpoints;
 
   return;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Remove all previous dumps of checkpoint files which are not to be
+ *        saved.
+ *
+ */
+/*----------------------------------------------------------------------------*/
+void
+cs_restart_clean_multiwriters_history(void)
+{
+
+  /* Check that the structure is allocated */
+  if (_restart_multiwriter == NULL || _n_restart_directories_to_write < 0)
+    return;
+
+  for (int i = 0; i < _n_restart_multiwriters; i++) {
+    _cs_restart_multiwriter_t *mw = _cs_restart_multiwriter_by_id(i);
+
+    int nfiles_to_remove
+      = mw->nprev_files - _n_restart_directories_to_write + 1;
+
+    if (nfiles_to_remove > 0) {
+      for (int ii = 0; ii < nfiles_to_remove; ii++)
+        cs_file_remove(mw->prev_files[ii]);
+    }
+  }
+
+  return;
+
 }
 
 /*----------------------------------------------------------------------------*/

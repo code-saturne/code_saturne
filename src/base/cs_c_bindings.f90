@@ -509,6 +509,17 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief Remove all previous dumps of checkpoint files which
+    !>        are not to be saved.
+
+    subroutine restart_clean_multiwriters_history() &
+        bind(C, name='cs_restart_clean_multiwriters_history')
+        use, intrinsic :: iso_c_binding
+        implicit none
+    end subroutine restart_clean_multiwriters_history
+
+    !---------------------------------------------------------------------------
+
     !> \brief  Return the number of temporal moments.
 
     !> \return number of defined moments

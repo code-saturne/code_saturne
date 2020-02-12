@@ -1065,6 +1065,9 @@ if (iisuit.eq.1) then
 
   call stusui
 
+  ! Remove all unnecessary previous dumps of checkpoint files
+  call restart_clean_multiwriters_history
+
   call timer_stats_stop(restart_stats_id)
 
 endif ! iisuit = 1

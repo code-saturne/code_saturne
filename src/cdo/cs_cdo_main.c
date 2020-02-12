@@ -587,6 +587,9 @@ cs_cdo_finalize(cs_domain_t    *domain)
   /* Write a restart file if needed */
   cs_domain_write_restart(domain);
 
+  /* Clean up for restart multiwriters */
+  cs_restart_clean_multiwriters_history();
+
   /* Print monitoring information */
   cs_equation_log_monitoring();
 
@@ -712,6 +715,9 @@ cs_cdo_main(cs_domain_t   *domain)
 
     /* Add a checkpoint if needed */
     cs_domain_write_restart(domain);
+
+    /* Clean up for restart multiwriters */
+    cs_restart_clean_multiwriters_history();
 
     cs_timer_stats_increment_time_step();
 
