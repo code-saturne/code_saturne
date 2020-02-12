@@ -487,7 +487,7 @@ class FluidCharacteristicsModel(Variables, Model):
                             'volume_viscosity'))
         node = self.__nodeFromTag(tag)
         c = node['choice']
-        self.isInList(c, ('constant', 'thermal_law', 'variable'))
+        self.isInList(c, ('constant', 'thermal_law', 'variable', 'predefined_law'))
         return c
 
 
