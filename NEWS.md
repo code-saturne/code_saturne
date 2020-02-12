@@ -1,3 +1,10 @@
+Release 6.0.3 (Unreleased)
+--------------------------
+
+Bug fixes:
+
+- GUI: fix crash when importing probe coordinates from an XML file.
+
 Release 6.0.2 (February 10 2020)
 --------------------------------
 

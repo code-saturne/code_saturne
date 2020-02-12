@@ -1110,13 +1110,20 @@ class OutputControlModel(Model):
         num = 0
 
         for line in lines:
-            tmp = line.split(',')
+            tmp = line.strip().split(',')
             if len(tmp) != 3:
-                pass
-            self.addMonitoringPoint(float(tmp[0]), float(tmp[1]), float(tmp[2]))
-            num = num + 1
-        return num
+                continue
+            try:
+               xp, yp, zp = float(tmp[0]), float(tmp[1]), float(tmp[2])
+               self.addMonitoringPoint(xp, yp, zp)
+               num = num + 1
+            except Exception:
+               if num != 0:
+                   print("Probes import error for line: " + str(line))
+                   print(tmp)
+                   print(len(tmp))
 
+        return num
 
         propFile.close()
 
