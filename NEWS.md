@@ -3,6 +3,9 @@ Release 6.0.6 (unreleased)
 
 Bug fixes:
 
+- GUI: ALE BCs must be given for all fluid BC types.
+  This fixes GitHub issue #51.
+
 - Fix construction of cs_range_t in the presence of periodicity.
   * This fixes an issue when logging vertex-based fields,
     such as the mesh displacement on periodic meshes.
