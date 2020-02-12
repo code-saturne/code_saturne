@@ -1239,13 +1239,12 @@ class OutputControlModel(Model):
     @Variables.noUndo
     def getMonitoringPointName(self, num):
 
-        self.isStr(num)
-        self.isGreater(float(num), 0.0)
-        self.isLowerOrEqual(float(num), self.getNumberOfMonitoringPoints())
+        self.isGreater(int(num), 0.0)
+        self.isLowerOrEqual(int(num), self.getNumberOfMonitoringPoints())
         val = self.node_out.xmlGetNode('probe', id=num)['name']
         if val == None:
-            val = num
-            self.setMonitoringPointName(self, num, name)
+            val = str(num)
+            self.setMonitoringPointName(self, num, val)
 
         return val
 

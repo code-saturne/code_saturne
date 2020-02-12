@@ -2785,7 +2785,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             num = str(index.row() + 1)
             X, Y, Z = self.mdl.getMonitoringPointCoordinates(num)
             new_num = str(probe_number + idx)
-            new_name = self.mdl.getMonitoringPointName(new_num)
+            new_name = str(new_num) + " (" + self.mdl.getMonitoringPointName(num) + ")"
             self.mdl.addMonitoringPoint(x=X, y=Y, z=Z)
             self.__insertMonitoringPoint(new_num, new_name, X, Y, Z)
 
