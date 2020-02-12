@@ -4094,17 +4094,16 @@ cs_restart_set_n_max_checkpoints(int  n_checkpoints)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Remove all previous dumps of checkpoint files which are not to be
- *        saved.
- *
+ * \brief Remove all previous checkpoints which are not to be retained.
  */
 /*----------------------------------------------------------------------------*/
+
 void
 cs_restart_clean_multiwriters_history(void)
 {
-
   /* Check that the structure is allocated */
-  if (_restart_multiwriter == NULL || _n_restart_directories_to_write < 0)
+  if (   _restart_multiwriter == NULL
+      || _n_restart_directories_to_write < 0)
     return;
 
   for (int i = 0; i < _n_restart_multiwriters; i++) {
@@ -4114,26 +4113,24 @@ cs_restart_clean_multiwriters_history(void)
       = mw->nprev_files - _n_restart_directories_to_write + 1;
 
     if (nfiles_to_remove > 0) {
-      for (int ii = 0; ii < nfiles_to_remove; ii++)
-        cs_file_remove(mw->prev_files[ii]);
+      for (int ii = 0; ii < nfiles_to_remove; ii++) {
+        if (cs_glob_rank_id <= 0)
+          cs_file_remove(mw->prev_files[ii]);
+      }
     }
+
   }
-
-  return;
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Destroy the multiwriter structure at the end of the computation.
- *
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_restart_multiwriters_destroy_all(void)
 {
-
   if (_restart_multiwriter != NULL) {
     for (int i = 0; i < _n_restart_multiwriters; i++) {
       _cs_restart_multiwriter_t *w = _restart_multiwriter[i];
@@ -4150,10 +4147,8 @@ cs_restart_multiwriters_destroy_all(void)
     }
     BFT_FREE(_restart_multiwriter);
   }
-
-  return;
-
 }
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
