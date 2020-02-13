@@ -2263,7 +2263,7 @@ cs_restart_create(const char         *name,
       size_t lsdir = strlen(_subdir);
 
       char *_re_name = NULL;
-      BFT_MALLOC(_re_name, ldir + lname + 2 + lsdir + 1, char);
+      BFT_MALLOC(_re_name, ldir + lsdir + lname + 3, char);
 
       strcpy(_re_name, _path);
       _re_name[ldir] = _dir_separator;
@@ -2276,10 +2276,10 @@ cs_restart_create(const char         *name,
         bft_error(__FILE__, __LINE__, 0,
                   _("The %s directory cannot be created"), _re_name);
 
-      _re_name[ldir+1+lsdir] = _dir_separator;
-      _re_name[ldir+1+lsdir+1] = '\0';
+      _re_name[ldir+lsdir+1] = _dir_separator;
+      _re_name[ldir+lsdir+2] = '\0';
       strcat(_re_name, name);
-      _re_name[ldir+lname+lsdir+3] = '\0';
+      _re_name[ldir+lsdir+lname+2] = '\0';
 
       rename(_name, _re_name);
 
