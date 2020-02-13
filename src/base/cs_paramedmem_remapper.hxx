@@ -35,8 +35,6 @@
 
 BEGIN_C_DECLS
 
-#if defined(HAVE_MEDCOUPLING_LOADER)
-
 typedef struct _cs_paramedmem_remapper_t cs_paramedmem_remapper_t;
 
 /*----------------------------------------------------------------------------*/
@@ -142,8 +140,6 @@ void
 cs_paramedmem_remapper_destroy_all(void);
 
 /*----------------------------------------------------------------------------*/
-
-#endif // HAVE_MEDCOUPLING_LOADER
 
 END_C_DECLS
 

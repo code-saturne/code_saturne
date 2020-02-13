@@ -44,10 +44,6 @@
 
 #include "cs_headers.h"
 
-#if defined(HAVE_MEDCOUPLING_LOADER)
-#include "cs_medcoupling_remapper.hxx"
-#endif
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
@@ -83,8 +79,6 @@ cs_user_boundary_conditions(int         nvar,
                             int         icodcl[],
                             cs_real_t   rcodcl[])
 {
-#if defined(HAVE_MEDCOUPLING_LOADER)
-
   /*! [loc_var_def] */
 
   /* Variables needed for boundary condition sub-selection */
@@ -214,8 +208,6 @@ cs_user_boundary_conditions(int         nvar,
 
   BFT_FREE(lstelt);
   /*! [dirichlet_condition] */
-
-#endif
 }
 
 /*----------------------------------------------------------------------------*/
