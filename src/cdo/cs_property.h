@@ -264,7 +264,7 @@ static inline bool
 cs_property_is_uniform(const cs_property_t   *pty)
 {
   if (pty == NULL)
-    return false;
+    return true; /* Treated as the "unity" property */
 
   if (pty->state_flag & CS_FLAG_STATE_UNIFORM)
     return true;
