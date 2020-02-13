@@ -433,7 +433,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
         dialog.setSidebarUrls(l_restart_dirs)
         dialog.setFileMode(QFileDialog.ExistingFile)
 
-        name_filter = str(self.tr("Imported or preprocessed meshes (mesh_input mesh_output)"))
+        name_filter = str(self.tr("Imported or preprocessed mesh (mesh_input mesh_output *.csm)"))
         dialog.setNameFilter(name_filter)
 
         dialog.setLabelText(QFileDialog.Accept, str(self.tr("Select")))
