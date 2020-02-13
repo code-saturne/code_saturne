@@ -460,6 +460,32 @@ cs_restart_map_free(void)
     cs_restart_clear_locations_ref();
   }
 
+  double location_wtime, exchange_wtime;
+  double location_comm_wtime, exchange_comm_wtime;
+
+  ple_locator_get_times(_locator,
+                        &location_wtime,
+                        NULL,
+                        &exchange_wtime,
+                        NULL);
+  ple_locator_get_comm_times(_locator,
+                             &location_comm_wtime,
+                             NULL,
+                             &exchange_comm_wtime,
+                             NULL);
+
+  cs_log_printf(CS_LOG_PERFORMANCE,
+                _("\n"
+		  "Restart mapping\n\n"
+                  "  location time:                 %12.3f\n"
+                  "    communication and wait:      %12.3f\n"
+                  "  variable exchange time:        %12.3f\n"
+                  "    communication and wait:      %12.3f\n\n"),
+                location_wtime, location_comm_wtime,
+                exchange_wtime, exchange_comm_wtime);
+  cs_log_separator(CS_LOG_PERFORMANCE);
+
+
   _locator = ple_locator_destroy(_locator);
 }
 
