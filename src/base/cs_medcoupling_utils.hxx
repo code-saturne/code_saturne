@@ -45,14 +45,11 @@
 /*----------------------------------------------------------------------------
  * MEDCOUPLING library headers
  *----------------------------------------------------------------------------*/
-#if defined(HAVE_MEDCOUPLING_LOADER)
-#include "MEDCoupling_version.h"
-#include "MEDCouplingUMesh.hxx"
+
+#include <MEDCoupling_version.h>
+#include <MEDCouplingUMesh.hxx>
 
 using namespace MEDCoupling;
-
-#endif
-
 
 BEGIN_C_DECLS
 
@@ -72,13 +69,9 @@ typedef struct {
   int                *new_to_old;     /* Connectivity used if only a section of
                                          the mesh is read */
 
-  cs_real_t          *bbox;           /* Bounding box to optimize search */
-
-#if defined(HAVE_MEDCOUPLING_LOADER)
   MEDCouplingUMesh   *med_mesh;       /* MED mesh structure */
-#else
-  void               *med_mesh;
-#endif
+
+  cs_real_t          *bbox;           /* Bounding box to optimize search */
 
 } cs_medcoupling_mesh_t;
 

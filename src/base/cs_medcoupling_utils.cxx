@@ -42,6 +42,17 @@
 #endif
 
 /*----------------------------------------------------------------------------
+ * MEDCOUPLING library headers
+ *----------------------------------------------------------------------------*/
+
+#include <MEDCoupling_version.h>
+
+#include <MEDCouplingUMesh.hxx>
+#include <MEDCouplingField.hxx>
+#include <MEDCouplingFieldDouble.hxx>
+#include "MEDCouplingRemapper.hxx"
+
+/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
@@ -63,22 +74,9 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-/*----------------------------------------------------------------------------
- * MEDCOUPLING library headers
- *----------------------------------------------------------------------------*/
-#if defined(HAVE_MEDCOUPLING_LOADER)
-#include <MEDCoupling_version.h>
-
-#include <MEDCouplingUMesh.hxx>
-#include <MEDCouplingField.hxx>
-#include <MEDCouplingFieldDouble.hxx>
-#include "MEDCouplingRemapper.hxx"
-
 #include "cs_medcoupling_utils.hxx"
 
 using namespace MEDCoupling;
-
-#endif
 
 BEGIN_C_DECLS
 
@@ -86,7 +84,6 @@ BEGIN_C_DECLS
  * Private function definitions
  *============================================================================*/
 
-#if defined(HAVE_MEDCOUPLING_LOADER)
 /* -------------------------------------------------------------------------- */
 /*!
  * \brief   Assign vertex coordinates to a MEDCoupling mesh structure
@@ -492,8 +489,6 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
   BFT_FREE(vtx_id);
 }
 
-#endif /* HAVE_MEDCOUPLING_LOADER - BEGINNING OF PRIVATE FUNCTIONS */
-
 /*=============================================================================
  * Public functions
  *============================================================================*/
@@ -519,12 +514,6 @@ cs_medcoupling_mesh_create(const char  *name,
 {
   cs_medcoupling_mesh_t *m = NULL;
 
-#if !defined(HAVE_MEDCOUPLING_LOADER)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: cs_medcoupling_mesh cannot be created without "
-              "MEDCoupling support\n"));
-#else
-
   BFT_MALLOC(m, 1, cs_medcoupling_mesh_t);
   BFT_MALLOC(m->sel_criteria, strlen(select_criteria)+1, char);
   strcpy(m->sel_criteria, select_criteria);
@@ -541,7 +530,6 @@ cs_medcoupling_mesh_create(const char  *name,
   m->bbox = NULL;
 
   m->new_to_old = NULL;
-#endif
 
   return m;
 }
@@ -565,11 +553,6 @@ cs_medcoupling_mesh_copy_from_base(cs_mesh_t              *csmesh,
                                    cs_medcoupling_mesh_t  *pmmesh,
                                    int                     use_bbox)
 {
-#if !defined(HAVE_MEDCOUPLING_LOADER)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: this funnction cannot be called without "
-              "MEDCoupling support\n"));
-#else
   if (pmmesh->elt_dim == 3) {
 
     /* Creation of a new nodal mesh from selected cells */
@@ -616,10 +599,6 @@ cs_medcoupling_mesh_copy_from_base(cs_mesh_t              *csmesh,
                       pmmesh->med_mesh);
 
   }
-#endif
-
-  return;
-
 }
 
 /* -------------------------------------------------------------------------- */
@@ -638,11 +617,8 @@ cs_medcoupling_mesh_destroy(cs_medcoupling_mesh_t *mesh)
   BFT_FREE(mesh->sel_criteria);
   BFT_FREE(mesh->elt_list);
   BFT_FREE(mesh->new_to_old);
-  BFT_FREE(mesh->bbox);
-
-#if defined(HAVE_MEDCOUPLING_LOADER)
   BFT_FREE(mesh->med_mesh);
-#endif
+  BFT_FREE(mesh->bbox);
 
   BFT_FREE(mesh);
 

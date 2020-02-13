@@ -42,6 +42,21 @@
 #endif
 
 /*----------------------------------------------------------------------------
+ * MEDCOUPLING library headers
+ *----------------------------------------------------------------------------*/
+
+#include <MEDCoupling_version.h>
+
+#include <MEDCouplingUMesh.hxx>
+#include <MEDCouplingField.hxx>
+#include <MEDCouplingFieldDouble.hxx>
+
+#if defined(HAVE_PARAMEDMEM)
+#include <ParaFIELD.hxx>
+#include <ParaMESH.hxx>
+#include <InterpKernelDEC.hxx>
+
+/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
@@ -63,21 +78,26 @@
  *  Header for the current file
  *----------------------------------------------------------------------------*/
 
-#if defined(HAVE_PARAMEDMEM)
 #include "cs_medcoupling_utils.hxx"
 #include "cs_paramedmem_coupling.hxx"
 
-#include <MEDCouplingField.hxx>
-#include <MEDCouplingFieldDouble.hxx>
-
-#include <ParaFIELD.hxx>
-#include <ParaMESH.hxx>
-#include <InterpKernelDEC.hxx>
+/*----------------------------------------------------------------------------*/
 
 using namespace MEDCoupling;
-#endif
 
-/*----------------------------------------------------------------------------*/
+/*=============================================================================
+ * Private global variables
+ *============================================================================*/
+
+static int                          _n_paramed_couplers = 0;
+static cs_paramedmem_coupling_t   **_paramed_couplers = NULL;
+
+const int cs_medcpl_cell_field = 0;
+const int cs_medcpl_vertex_field = 1;
+
+const int cs_medcpl_no_time = 0;
+const int cs_medcpl_one_time = 1;
+const int cs_medcpl_linear_time = 2;
 
 /*=============================================================================
  * Local Structure Definitions
@@ -92,16 +112,12 @@ typedef struct {
   int                       mesh_id;       /* Associated mesh structure id */
   int                       dim;           /* Field dimension */
 
-#if defined(HAVE_PARAMEDMEM)
   TypeOfTimeDiscretization  td;            /* NO_TIME, ONE_TIME, LINEAR_TIME,
                                               or CONST_ON_TIME_INTERVAL */
+
   MEDCouplingFieldDouble   *f;             /* Pointer to MED coupling field */
+
   ParaFIELD                *pf;            /* Pointer to ParaMEDMEM field */
-#else
-  void                      td;
-  void                     *f;
-  void                     *pf;
-#endif
 
 } _paramedmem_field_t;
 
@@ -114,9 +130,25 @@ typedef struct {
   cs_medcoupling_mesh_t *mesh;        /* The Code_Saturne stracture englobing
                                          the medcoupling mesh structure */
 
+  char               *sel_criteria;   /* Element selection criteria */
+
+  int                 elt_dim;        /* Element dimension */
+
+  cs_lnum_t           n_elts;         /* Number of coupled elements */
+  cs_lnum_t          *elt_list;       /* List of associated elements
+                                        (0 to n-1) */
+  int                *new_to_old;     /* Connectivity used if only a section of
+                                        the mesh is read */
+
+  MEDCouplingUMesh   *med_mesh;       /* MED mesh structure */
+
+  cs_real_t          *bbox;           /* Bounding box to optimize search */
+
   int                 direction;      /* 1: send, 2: receive, 3: both */
+
   ParaMESH           *para_mesh[2];   /* parallel MED mesh structures
                                          for send (0) and receive (1) */
+
 } _paramedmem_mesh_t;
 
 /*----------------------------------------------------------------------------
@@ -135,37 +167,20 @@ struct _cs_paramedmem_coupling_t {
   _paramedmem_field_t      **fields;         /* Array of field helper
                                                 structures */
 
-#if defined(HAVE_PARAMEDMEM)
   InterpKernelDEC           *send_dec;       /* Send data exchange channel */
   InterpKernelDEC           *recv_dec;       /* Receive data exchange channel */
-#else
-  void                      *send_dec;
-  void                      *recv_dec;
-#endif
 
   int                       send_synced;
   int                       recv_synced;
 };
 
-/*=============================================================================
- * Private global variables
- *============================================================================*/
-
-static int                          _n_paramed_couplers = 0;
-static cs_paramedmem_coupling_t   **_paramed_couplers = NULL;
-
-const int cs_medcpl_cell_field = 0;
-const int cs_medcpl_vertex_field = 1;
-
-const int cs_medcpl_no_time = 0;
-const int cs_medcpl_one_time = 1;
-const int cs_medcpl_linear_time = 2;
+/*----------------------------------------------------------------------------
+ * MEDCoupling parallel interpolation structure
+ *----------------------------------------------------------------------------*/
 
 /*============================================================================
  * Private function definitions
  *============================================================================*/
-
-#if defined(HAVE_PARAMEDMEM)
 
 /*----------------------------------------------------------------------------
  * Initialize mesh for ParaMEDMEM coupling.
@@ -177,22 +192,31 @@ const int cs_medcpl_linear_time = 2;
 
 static void
 _init_mesh_coupling(cs_paramedmem_coupling_t  *coupling,
-                    _paramedmem_mesh_t        *pmesh)
+                    _paramedmem_mesh_t        *mesh)
 {
   cs_mesh_t *parent_mesh = cs_glob_mesh;
 
   assert(mesh != NULL);
 
   /* Building the MED representation of the internal mesh */
-  cs_medcoupling_mesh_copy_from_base(parent_mesh, pmesh->mesh, 0);
+  cs_medcoupling_mesh_copy_from_base(parent_mesh, mesh->mesh, 0);
+
+  /* Linking the pointers in order to simplify the calls*/
+  mesh->sel_criteria = mesh->mesh->sel_criteria;
+  mesh->elt_dim      = mesh->mesh->elt_dim;
+  mesh->n_elts       = mesh->mesh->n_elts;
+  mesh->elt_list     = mesh->mesh->elt_list;
+  mesh->new_to_old   = mesh->mesh->new_to_old;
+  mesh->med_mesh     = mesh->mesh->med_mesh;
+  mesh->bbox         = mesh->mesh->bbox;
 
   /* Define associated ParaMESH */
-  pmesh->para_mesh[0] = new ParaMESH(pmesh->mesh->med_mesh,
-                                     *(coupling->send_dec->getSourceGrp()),
-                                     "source mesh");
-  pmesh->para_mesh[1] = new ParaMESH(pmesh->mesh->med_mesh,
-                                     *(coupling->recv_dec->getTargetGrp()),
-                                     "target mesh");
+  mesh->para_mesh[0] = new ParaMESH(mesh->med_mesh,
+                                    *(coupling->send_dec->getSourceGrp()),
+                                    "source mesh");
+  mesh->para_mesh[1] = new ParaMESH(mesh->med_mesh,
+                                    *(coupling->recv_dec->getTargetGrp()),
+                                    "target mesh");
 }
 
 /*----------------------------------------------------------------------------
@@ -205,17 +229,19 @@ _init_mesh_coupling(cs_paramedmem_coupling_t  *coupling,
 static void
 _destroy_mesh(_paramedmem_mesh_t  **mesh)
 {
-  _paramedmem_mesh_t *pm = *mesh;
+  _paramedmem_mesh_t *m = *mesh;
 
-  if (pm == NULL)
+  if (m == NULL)
     return;
 
   for (int i = 0; i < 2; i++) {
-    if (pm->para_mesh[i] != NULL)
-      delete pm->para_mesh[i];
+    if (m->para_mesh[i] != NULL)
+      delete m->para_mesh[i];
   }
-  if (pm->mesh != NULL)
-    cs_medcoupling_mesh_destroy(pm->mesh);
+  if (m->med_mesh != NULL)
+    m->med_mesh = NULL; // delete m->med_mesh by decreasing reference counter;
+
+  BFT_FREE(m->elt_list);
 
   BFT_FREE(*mesh);
 }
@@ -256,6 +282,49 @@ _cs_paramedmem_create_InterpKernelDEC(int  *grp1_global_ranks,
   InterpKernelDEC *NewDec = new InterpKernelDEC(grp1_ids, grp2_ids);
 
   return NewDec;
+}
+
+#if defined(HAVE_MEDCOUPLING_LOADER)
+
+#endif /* HAVE_MEDCOUPLING_LOADER */
+
+/*============================================================================
+ * Public function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Define new ParaMEDMEM coupling.
+ *
+ * arguments:
+ *   name     <-- name of coupling
+ *   send_dec <-- send Data Exchange Channel
+ *   recv_dec <-- receive Data Exchange Channel
+ *----------------------------------------------------------------------------*/
+
+cs_paramedmem_coupling_t *
+cs_paramedmem_create(const char       *name,
+                     InterpKernelDEC  *send_dec,
+                     InterpKernelDEC  *recv_dec)
+{
+  cs_paramedmem_coupling_t  *c = NULL;
+
+  /* Add corresponding coupling to temporary ICoCo couplings array */
+
+  BFT_MALLOC(c, 1, cs_paramedmem_coupling_t);
+
+  BFT_MALLOC(c->name, strlen(name) + 1, char);
+  strcpy(c->name, name);
+
+  c->n_meshes = 0;
+  c->meshes = NULL;
+
+  c->n_fields = 0;
+  c->fields = NULL;
+
+  c->send_dec = send_dec;
+  c->recv_dec = recv_dec;
+
+  return c;
 }
 
 /*----------------------------------------------------------------------------
@@ -359,25 +428,6 @@ cs_paramedmem_coupling_by_id(int  pc_id)
 
 }
 
-#endif /* HAVE_PARAMEDMEM */
-
-/*============================================================================
- * Public C functions
- *============================================================================*/
-
-BEGIN_C_DECLS
-
-/*----------------------------------------------------------------------------
- * Define new ParaMEDMEM coupling.
- *
- * arguments:
- *   name               <-- name of coupling
- *   grp1_global_ranks  <-- First group ranks in MPI_COMM_WORLD
- *   grp1_size          <-- Number of ranks in the first group
- *   grp2_global_ranks  <-- Second group ranks in MPI_COMM_WORLD
- *   grp2_size          <-- Number of ranks in the second group
- *----------------------------------------------------------------------------*/
-
 cs_paramedmem_coupling_t *
 cs_paramedmem_interpkernel_create(const char  *name,
                                   int         *grp1_global_ranks,
@@ -385,21 +435,13 @@ cs_paramedmem_interpkernel_create(const char  *name,
                                   int         *grp2_global_ranks,
                                   int          grp2_size)
 {
-  cs_paramedmem_coupling_t *c = NULL;
-
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
   _add_paramedmem_interpkernel(name,
                               grp1_global_ranks,
                               grp1_size,
                               grp2_global_ranks,
                               grp2_size);
 
-  c = _paramed_couplers[_n_paramed_couplers-1];
-#endif
+  cs_paramedmem_coupling_t *c = _paramed_couplers[_n_paramed_couplers-1];
 
   return c;
 }
@@ -416,12 +458,6 @@ cs_paramedmem_interpkernel_create(const char  *name,
 void
 cs_paramedmem_destroy(cs_paramedmem_coupling_t  **coupling)
 {
-
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
   cs_paramedmem_coupling_t  *c = *coupling;
 
   if (c != NULL) {
@@ -446,9 +482,6 @@ cs_paramedmem_destroy(cs_paramedmem_coupling_t  **coupling)
     c->recv_dec = NULL;
 
   }
-#endif
-
-  return;
 }
 
 /*----------------------------------------------------------------------------
@@ -474,13 +507,8 @@ cs_paramedmem_define_mesh(cs_paramedmem_coupling_t  *coupling,
                           bool                       is_source,
                           bool                       is_dest)
 {
-  int id = -1;
+  int id;
 
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
   _paramedmem_mesh_t *pmmesh = NULL;
   cs_medcoupling_mesh_t *mesh = NULL;
 
@@ -527,7 +555,6 @@ cs_paramedmem_define_mesh(cs_paramedmem_coupling_t  *coupling,
 
   pmmesh->mesh = mesh;
   coupling->meshes[id] = pmmesh;
-#endif
 
   return id;
 }
@@ -542,16 +569,8 @@ cs_paramedmem_define_mesh(cs_paramedmem_coupling_t  *coupling,
 void
 cs_paramedmem_init_meshes(cs_paramedmem_coupling_t  *coupling)
 {
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
   for (int i = 0; i < coupling->n_meshes; i++)
     _init_mesh_coupling(coupling, coupling->meshes[i]);
-#endif
-
-  return;
 }
 
 /*----------------------------------------------------------------------------
@@ -571,26 +590,19 @@ int
 cs_paramedmem_mesh_id(cs_paramedmem_coupling_t  *coupling,
                       const char                *mesh_name)
 {
+  int i;
   int retval = -1;
 
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
   assert(coupling != NULL);
 
-  for (int i = 0; i < coupling->n_meshes; i++) {
-    char mesh_name_i
-      = coupling->meshes[i]->mesh->mesh_mesh->getName().c_str();
-
-    if (strcmp(mesh_name, mesh_name_i) == 0) {
-      retval = i;
+  for (i = 0; i < coupling->n_meshes; i++) {
+    if (strcmp(mesh_name, coupling->meshes[i]->med_mesh->getName().c_str())
+        == 0)
       break;
-    }
   }
 
-#endif
+  if (i < coupling->n_meshes)
+    retval = i;
 
   return retval;
 }
@@ -612,14 +624,8 @@ cs_paramedmem_mesh_get_n_elts(const cs_paramedmem_coupling_t  *coupling,
 {
   cs_lnum_t retval = 0;
 
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
   if (mesh_id >= 0)
-    retval = coupling->meshes[mesh_id]->mesh->n_elts;
-#endif
+    retval = coupling->meshes[mesh_id]->n_elts;
 
   return retval;
 }
@@ -638,14 +644,8 @@ cs_paramedmem_mesh_get_elt_list(const cs_paramedmem_coupling_t  *coupling,
 {
   const cs_lnum_t *retval = NULL;
 
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
   if (mesh_id >= 0)
-    retval = coupling->meshes[mesh_id]->mesh->elt_list;
-#endif
+    retval = coupling->meshes[mesh_id]->elt_list;
 
   return retval;
 }
@@ -676,14 +676,7 @@ cs_paramedmem_field_add(cs_paramedmem_coupling_t  *coupling,
                         int                        dirflag)
 {
   int f_id = -1;
-
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-
-  _paramedmem_mesh_t *pmesh = coupling->meshes[mesh_id];
+  _paramedmem_mesh_t *mesh = coupling->meshes[mesh_id];
 
   /* Prepare coupling structure */
   TypeOfField type = ON_CELLS;
@@ -714,29 +707,29 @@ cs_paramedmem_field_add(cs_paramedmem_coupling_t  *coupling,
   MEDCouplingFieldDouble  *f = NULL;
 
   if (dirflag == 1 && coupling->send_dec != NULL) {
-    if (pmesh->para_mesh[0] == NULL) {
-      pmesh->para_mesh[0] = new ParaMESH(pmesh->mesh->med_mesh,
+    if (mesh->para_mesh[0] == NULL) {
+      mesh->para_mesh[0] = new ParaMESH(mesh->med_mesh,
                                         *(coupling->send_dec->getSourceGrp()),
                                         "source mesh");
     }
     ComponentTopology comp_topo(dim);
     coupling->fields[f_id]->pf = new ParaFIELD(type,
                                                td,
-                                               pmesh->para_mesh[0],
+                                               mesh->para_mesh[0],
                                                comp_topo);
     f = coupling->fields[f_id]->pf->getField();
     coupling->send_dec->attachLocalField(coupling->fields[f_id]->pf);
   }
   else if (dirflag == 2 && coupling->recv_dec != NULL) {
-    if (pmesh->para_mesh[1] == NULL) {
-      pmesh->para_mesh[1] = new ParaMESH(pmesh->mesh->med_mesh,
+    if (mesh->para_mesh[1] == NULL) {
+      mesh->para_mesh[1] = new ParaMESH(mesh->med_mesh,
                                         *(coupling->recv_dec->getTargetGrp()),
                                         "target mesh");
     }
     ComponentTopology comp_topo(dim);
     coupling->fields[f_id]->pf = new ParaFIELD(type,
                                                td,
-                                               pmesh->para_mesh[1],
+                                               mesh->para_mesh[1],
                                                comp_topo);
 
     f = coupling->fields[f_id]->pf->getField();
@@ -761,9 +754,9 @@ cs_paramedmem_field_add(cs_paramedmem_coupling_t  *coupling,
   DataArrayDouble *array = DataArrayDouble::New();
 
   if (type == ON_NODES)
-    n_locs = pmesh->mesh->med_mesh->getNumberOfNodes();
+    n_locs = mesh->med_mesh->getNumberOfNodes();
   else if (type == ON_CELLS)
-    n_locs = pmesh->mesh->med_mesh->getNumberOfCells();
+    n_locs = mesh->med_mesh->getNumberOfCells();
 
   array->alloc(n_locs, dim);
   f->setArray(array);
@@ -777,8 +770,6 @@ cs_paramedmem_field_add(cs_paramedmem_coupling_t  *coupling,
   coupling->fields[f_id]->f = f;
 
   coupling->n_fields++;
-
-#endif
 
   return f_id;
 }
@@ -801,26 +792,15 @@ cs_paramedmem_field_get_id(cs_paramedmem_coupling_t  *coupling,
                            int                        mesh_id,
                            const char                *name)
 {
-
-  int f_id = -1;
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-
   /* Loop on fields to know if field has already been created */
-  for (int i = 0; i < coupling->n_fields; i++) {
-    if (coupling->fields[i]->mesh_id == mesh_id &&
-        strcmp(name, coupling->fields[i]->f->getName().c_str()) == 0) {
-      f_id = i;
-      break;
-    }
+
+  for (int f_id = 0; f_id < coupling->n_fields; f_id++) {
+    if (   coupling->fields[f_id]->mesh_id == mesh_id
+        && strcmp(name, coupling->fields[f_id]->f->getName().c_str()) == 0)
+      return f_id;
   }
 
-#endif
-
-  return f_id;
+  return -1;
 }
 
 /*----------------------------------------------------------------------------
@@ -842,15 +822,8 @@ cs_paramedmem_field_export(cs_paramedmem_coupling_t  *coupling,
                            bool                       on_parent,
                            const double               field_values[])
 {
-
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-
   int mesh_id = coupling->fields[field_id]->mesh_id;
-  _paramedmem_mesh_t *pmesh = coupling->meshes[mesh_id];
+  _paramedmem_mesh_t *mesh = coupling->meshes[mesh_id];
 
   MEDCouplingFieldDouble *f = NULL;
 
@@ -861,28 +834,22 @@ cs_paramedmem_field_export(cs_paramedmem_coupling_t  *coupling,
 
   /* Assign element values */
   /*-----------------------*/
-  if (! on_parent) {
-    cs_lnum_t n_elts = pmesh->mesh->n_elts;
 
-    for (cs_lnum_t i = 0; i < dim*n_elts; i++)
+  if (! on_parent) {
+    for (cs_lnum_t i = 0; i < dim*mesh->n_elts; i++)
       val_ptr[i] = field_values[i];
   }
   else {
-    cs_lnum_t  n_elts   = pmesh->mesh->n_elts;
-    cs_lnum_t *elt_list = pmesh->mesh->elt_list;
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
+    for (cs_lnum_t i = 0; i < mesh->n_elts; i++) {
       for (int j = 0; j < dim; j++)
-        val_ptr[i*dim + j] = field_values[elt_list[i]*dim + j];
+        val_ptr[i*dim + j] = field_values[mesh->elt_list[i]*dim + j];
     }
   }
 
   /* Update field status */
   /*---------------------*/
+
   f->getArray()->declareAsNew();
-
-#endif
-
-  return;
 }
 
 /*----------------------------------------------------------------------------
@@ -906,14 +873,8 @@ cs_paramedmem_field_import(cs_paramedmem_coupling_t  *coupling,
                            bool                       on_parent,
                            double                     field_values[])
 {
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-
   int mesh_id = coupling->fields[field_id]->mesh_id;
-  _paramedmem_mesh_t *pmesh = coupling->meshes[mesh_id];
+  _paramedmem_mesh_t *mesh = coupling->meshes[mesh_id];
 
   MEDCouplingFieldDouble *f = coupling->fields[field_id]->f;
 
@@ -924,28 +885,18 @@ cs_paramedmem_field_import(cs_paramedmem_coupling_t  *coupling,
   /*-----------------------*/
 
   if (! on_parent) {
-    cs_lnum_t  n_elts = pmesh->mesh->n_elts;
-    cs_lnum_t *new_tol_old = pmesh->mesh->new_to_old;
-
-    for (cs_lnum_t i = 0; i < n_elts; i++)
+    for (cs_lnum_t i = 0; i < mesh->n_elts; i++)
       for (int j = 0; j < dim; j++) {
-        cs_lnum_t c_id = new_to_old[i];
+        cs_lnum_t c_id = mesh->new_to_old[i];
         field_values[dim*c_id+j] = val_ptr[i*dim + j];
       }
   }
   else {
-    cs_lnum_t  n_elts   = pmesh->mesh->n_elts;
-    cs_lnum_t *elt_list = pmesh->mesh->elt_list;
-
-    for (cs_lnum_t i = 0; i < n_elts; i++) {
+    for (cs_lnum_t i = 0; i < mesh->n_elts; i++) {
       for (int j = 0; j < dim; j++)
-        field_values[elt_list[i]*dim + j] = val_ptr[i*dim + j];
+        field_values[mesh->elt_list[i]*dim + j] = val_ptr[i*dim + j];
     }
   }
-
-#endif
-
-  return;
 }
 
 /*----------------------------------------------------------------------------
@@ -963,12 +914,6 @@ void
 cs_paramedmem_sync_dec(cs_paramedmem_coupling_t  *coupling,
                        int                        dec_to_sync)
 {
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-
   if (dec_to_sync == 1) {
     if (coupling->send_synced == 0) {
       coupling->send_dec->synchronize();
@@ -978,10 +923,6 @@ cs_paramedmem_sync_dec(cs_paramedmem_coupling_t  *coupling,
     coupling->recv_dec->synchronize();
     coupling->recv_synced = 1;
   }
-
-#endif
-
-  return;
 }
 
 /*----------------------------------------------------------------------------
@@ -994,17 +935,7 @@ cs_paramedmem_sync_dec(cs_paramedmem_coupling_t  *coupling,
 void
 cs_paramedmem_send_data(cs_paramedmem_coupling_t  *coupling)
 {
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-
   coupling->send_dec->sendData();
-
-#endif
-
-  return;
 }
 
 /*----------------------------------------------------------------------------
@@ -1017,17 +948,7 @@ cs_paramedmem_send_data(cs_paramedmem_coupling_t  *coupling)
 void
 cs_paramedmem_recv_data(cs_paramedmem_coupling_t  *coupling)
 {
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-
   coupling->recv_dec->recvData();
-
-#endif
-
-  return;
 }
 
 /*----------------------------------------------------------------------------
@@ -1042,24 +963,20 @@ void
 cs_paramedmem_reattach_field(cs_paramedmem_coupling_t  *coupling,
                              int                        field_id)
 {
-#if !defined(HAVE_PARAMEDMEM)
-  bft_error(__FILE__, __LINE__, 0,
-            _("Error: This function cannot be called without "
-              "MEDCoupling MPI support.\n"));
-#else
-
   int mesh_id = coupling->fields[field_id]->mesh_id;
-  _paramedmem_mesh_t *pmesh = coupling->meshes[mesh_id];
+  _paramedmem_mesh_t *mesh = coupling->meshes[mesh_id];
 
-  if (pmesh->direction == 1)
+  if (mesh->direction == 1)
     coupling->send_dec->attachLocalField(coupling->fields[field_id]->pf);
-  else if (pmesh->direction == 2)
+  else if (mesh->direction == 2)
     coupling->recv_dec->attachLocalField(coupling->fields[field_id]->pf);
-
-#endif
-
-  return;
 }
+
+/*============================================================================
+ * Public C functions
+ *============================================================================*/
+
+BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------
  * Map MPI ranks within cs_glob_mpi_comm to their values in MPI_COMM_WORLD.
@@ -1092,3 +1009,5 @@ cs_paramedmem_get_mpi_comm_world_ranks(void)
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
+
+#endif /* HAVE_PARAMEDMEM */
