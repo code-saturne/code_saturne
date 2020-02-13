@@ -62,6 +62,8 @@
 
 #include <MEDLoader.hxx>
 
+#endif // HAVE_MEDCOUPLING_LOADER
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -84,7 +86,9 @@
 #include "cs_medcoupling_utils.hxx"
 #include "cs_medcoupling_remapper.hxx"
 
+#if defined(HAVE_MEDCOUPLING_LOADER)
 using namespace MEDCoupling;
+#endif
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -104,16 +108,24 @@ struct _cs_medcoupling_remapper_t {
 
   cs_medcoupling_mesh_t    *target_mesh;
 
+#if defined(HAVE_MEDCOUPLING_LOADER)
   MEDCouplingUMesh         *bbox_source_mesh;
-
   MEDCouplingFieldDouble  **source_fields;
+#else
+  void                     *bbox_source_mesh;
+  void                    **source_fields;
+#endif
 
   /* Time step values in the file */
   int                       ntsteps;
   int                     **iter_order;
   cs_real_t                *time_steps;
 
+#if defined(HAVE_MEDCOUPLING_LOADER)
   MEDCouplingRemapper      *remapper;     /* MEDCoupling remapper */
+#else
+  void                     *remapper;
+#endif
 
 };
 
@@ -577,13 +589,19 @@ BEGIN_C_DECLS
 cs_medcoupling_remapper_t *
 cs_medcoupling_remapper_by_id(int  r_id)
 {
-  if (r_id < _n_remappers) {
-    cs_medcoupling_remapper_t *r = _remapper[r_id];
-    return r;
-  }
-  else {
-    return NULL;
-  }
+
+  cs_medcoupling_remapper_t *r = NULL;
+
+#if defined(HAVE_MEDCOUPLING_LOADER)
+  if (r_id < _n_remappers)
+    r = _remapper[r_id];
+#else
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without "
+              "MEDCoupling support.\n"));
+#endif
+
+  return r;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -599,15 +617,23 @@ cs_medcoupling_remapper_by_id(int  r_id)
 cs_medcoupling_remapper_t *
 cs_medcoupling_remapper_by_name_try(const char  *name)
 {
+  cs_medcoupling_remapper_t *r = NULL;
+
+#if defined(HAVE_MEDCOUPLING_LOADER)
   if (_n_remappers > 0) {
     for (int r_id = 0; r_id < _n_remappers; r_id++) {
       const char *r_name = _remapper[r_id]->name;
       if (strcmp(r_name, name) == 0)
-        return _remapper[r_id];
+        r = _remapper[r_id];
     }
   }
+#else
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without "
+              "MEDCoupling support.\n"));
+#endif
 
-  return NULL;
+  return r;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -637,6 +663,8 @@ cs_medcoupling_remapper_initialize(const char   *name,
                                    int           iteration,
                                    int           order)
 {
+
+#if defined(HAVE_MEDCOUPLING_LOADER)
   _add_remapper(name,
                 elt_dim,
                 select_criteria,
@@ -645,6 +673,11 @@ cs_medcoupling_remapper_initialize(const char   *name,
                 field_names,
                 iteration,
                 order);
+#else
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without "
+              "MEDCoupling support.\n"));
+#endif
 
   int r_id = _n_remappers - 1;
 
@@ -666,12 +699,20 @@ cs_medcoupling_remapper_set_iteration(cs_medcoupling_remapper_t  *r,
                                       int                         iteration,
                                       int                         order)
 {
+
+#if defined(HAVE_MEDCOUPLING_LOADER)
   for (int i = 0; i < r->n_fields; i++) {
     r->source_fields[i] = _cs_medcoupling_read_field_real(r->medfile_path,
                                                           r->field_names[i],
                                                           iteration,
                                                           order);
   }
+#else
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without "
+              "MEDCoupling support.\n"));
+#endif
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -695,6 +736,12 @@ cs_medcoupling_remapper_set_options(cs_medcoupling_remapper_t  *r,
                                     const char                  key[],
                                     const char                  value[])
 {
+
+#if !defined(HAVE_MEDCOUPLING_LOADER)
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without "
+              "MEDCoupling support.\n"));
+#else
   if (key == NULL || value == NULL)
     return;
 
@@ -736,6 +783,10 @@ cs_medcoupling_remapper_set_options(cs_medcoupling_remapper_t  *r,
       (_("\nWarning: unknown or unsupported MEDCoupling remapper option type\n"
          "           \"%s\" (ignored).\n"),
        key);
+#endif
+
+  return;
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -749,6 +800,12 @@ cs_medcoupling_remapper_set_options(cs_medcoupling_remapper_t  *r,
 void
 cs_medcoupling_remapper_setup(cs_medcoupling_remapper_t  *r)
 {
+
+#if !defined(HAVE_MEDCOUPLING_LOADER)
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without "
+              "MEDCoupling support.\n"));
+#else
   cs_lnum_t n_elts = r->target_mesh->n_elts;
 
   r->remapper->setPrecision(1.e-12);
@@ -766,6 +823,9 @@ cs_medcoupling_remapper_setup(cs_medcoupling_remapper_t  *r)
     }
 
   }
+#endif
+
+  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -789,11 +849,17 @@ cs_medcoupling_remapper_copy_values(cs_medcoupling_remapper_t  *r,
 
   cs_real_t *new_vals = NULL;
 
+#if !defined(HAVE_MEDCOUPLING_LOADER)
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without "
+              "MEDCoupling support.\n"));
+#else
   if (r->target_mesh->elt_dim == 2) {
     new_vals = _copy_values_no_bbox(r, field_id, default_val);
   } else if (r->target_mesh->elt_dim == 3) {
     new_vals = _copy_values_with_bbox(r, field_id, default_val);
   }
+#endif
 
   return new_vals;
 }
@@ -811,9 +877,17 @@ void
 cs_medcoupling_remapper_translate(cs_medcoupling_remapper_t  *r,
                                   cs_real_t                   translation[3])
 {
+#if !defined(HAVE_MEDCOUPLING_LOADER)
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without "
+              "MEDCoupling support.\n"));
+#else
   for (int i = 0; i < r->n_fields; i++) {
     r->source_fields[i]->getMesh()->translate(translation);
   }
+#endif
+
+  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -833,9 +907,17 @@ cs_medcoupling_remapper_rotate(cs_medcoupling_remapper_t  *r,
                                cs_real_t                   axis[3],
                                cs_real_t                   angle)
 {
+#if !defined(HAVE_MEDCOUPLING_LOADER)
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without "
+              "MEDCoupling support.\n"));
+#else
   for (int i = 0; i < r->n_fields; i++) {
     r->source_fields[i]->getMesh()->rotate(invariant, axis, angle);
   }
+#endif
+
+  return;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -860,6 +942,11 @@ cs_medcoupling_remapper_find_time_index(cs_medcoupling_remapper_t *r,
                                         int                       *id2)
 {
 
+#if !defined(HAVE_MEDCOUPLING_LOADER)
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without "
+              "MEDCoupling support.\n"));
+#else
   if (t < r->time_steps[0]) {
     *id1 = 0;
     *id2 = 0;
@@ -877,6 +964,7 @@ cs_medcoupling_remapper_find_time_index(cs_medcoupling_remapper_t *r,
       }
     }
   }
+#endif
 
   return;
 }
@@ -900,7 +988,14 @@ cs_medcoupling_remapper_get_time_from_index(cs_medcoupling_remapper_t *r,
                                             int                        id,
                                             cs_real_t                 *t)
 {
+#if !defined(HAVE_MEDCOUPLING_LOADER)
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without "
+              "MEDCoupling support.\n"));
+#else
   *t = r->time_steps[id];
+#endif
+
   return;
 }
 
@@ -926,8 +1021,14 @@ cs_medcoupling_remapper_get_iter_order_from_index(cs_medcoupling_remapper_t *r,
                                                   int                       *order)
 {
 
+#if !defined(HAVE_MEDCOUPLING_LOADER)
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without "
+              "MEDCoupling support.\n"));
+#else
   *it    = r->iter_order[id][0];
   *order = r->iter_order[id][1];
+#endif
 
   return;
 }
@@ -941,8 +1042,14 @@ void
 cs_medcoupling_remapper_destroy_all(void)
 {
 
+#if !defined(HAVE_MEDCOUPLING_LOADER)
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without "
+              "MEDCoupling support.\n"));
+#else
   for (int r_id = 0; r_id < _n_remappers; r_id++)
     _cs_medcoupling_remapper_destroy(_remapper[r_id]);
+#endif
 
   return;
 
@@ -960,6 +1067,11 @@ void
 cs_medcoupling_remapper_update_time_value(cs_medcoupling_remapper_t *r,
                                           int                        id)
 {
+#if !defined(HAVE_MEDCOUPLING_LOADER)
+  bft_error(__FILE__, __LINE__, 0,
+            _("Error: This function cannot be called without "
+              "MEDCoupling support.\n"));
+#else
   int it    = r->iter_order[id][0];
   int order = r->iter_order[id][1];
 
@@ -969,10 +1081,12 @@ cs_medcoupling_remapper_update_time_value(cs_medcoupling_remapper_t *r,
                                                            it,
                                                            order);
   }
+#endif
+
+  return;
 }
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif // HAVE_MEDCOUPLING_LOADER
