@@ -14,7 +14,7 @@ Release 6.0.2 (February 10 2020)
 
 Bug fixes:
 
-- Atmo: fix in soil model.
+- Atmo: fix in soil model and in nucleation model for humide atmosphere.
 
 - SMGR: fix syrthes coupling configuration by re-inserting syrthes path at case
   initialization.

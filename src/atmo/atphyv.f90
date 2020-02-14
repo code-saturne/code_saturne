@@ -373,7 +373,7 @@ do iel = 1, ncel
   qliq = (sig_flu                                                               &
         /(1.d0 + qsl*clatev**2/(rvap*cp0*tliq**2)))                             &
         *(nebdia(iel)*q1 + exp(-q1**2/2.d0)/sqrt(2.d0*pi))
-  qliq = max(qliq,1d-15)
+  qliq = max(qliq, 0.d0)
   nn(iel) = nebdia(iel) - (nebdia(iel)*q1                                       &
           + exp(-q1**2/2.d0)/sqrt(2.d0*pi))*exp(-q1**2/2.d0)/sqrt(2.d0*pi)
 
