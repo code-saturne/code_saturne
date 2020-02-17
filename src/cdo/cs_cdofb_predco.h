@@ -3,7 +3,7 @@
 
 /*============================================================================
  * Build an algebraic CDO face-based system for the Navier-Stokes equations
- * and solved it with an Augmented Lagrangian-Uzawa algorithm
+ * and solved it with a prediction-correction algorithm
  *============================================================================*/
 
 /*

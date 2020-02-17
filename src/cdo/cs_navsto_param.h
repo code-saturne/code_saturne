@@ -173,8 +173,9 @@ typedef enum {
  * \var CS_NAVSTO_SLES_BY_BLOCKS
  * Associated keyword: "blocks"
  *
- * The Navier-Stokes system is split into a 3x3 block matrix for the velocity unknows
- * and in a non-assembly way for the divergence/pressure gradient operators.
+ * The Navier-Stokes system is split into a 3x3 block matrix for the velocity
+ * unknows and in a non-assembly way for the divergence/pressure gradient
+ * operators.
  *
  *
  * \var CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG

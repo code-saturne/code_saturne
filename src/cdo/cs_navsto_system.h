@@ -70,7 +70,7 @@ BEGIN_C_DECLS
  * \param[in, out] nscc       Navier-Stokes coupling context: pointer to a
  *                            structure cast on-the-fly
  *
- * \return a pointer to a new allocated \ref cs_cdofb_uzawa_t structure
+ * \return a pointer to a new allocated scheme context structure
  */
 /*----------------------------------------------------------------------------*/
 

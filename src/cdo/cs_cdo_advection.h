@@ -70,9 +70,9 @@ typedef void
  * \brief   Add the contribution of the boundary conditions to the local system
  *          in CDO-Fb schemes
  *
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in, out] cb      pointer to a convection builder structure
+ * \param[in]      eqp     pointer to a \ref cs_equation_param_t structure
+ * \param[in]      cm      pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out] cb      pointer to a \ref cs_cell_builder_t structure
  * \param[in, out] csys    cell-wise structure storing the local system
  */
 /*----------------------------------------------------------------------------*/
@@ -113,7 +113,7 @@ typedef void
  * \param[in]      eqp     pointer to a cs_equation_param_t structure
  * \param[in]      t_eval  time at which one evaluates the advection field
  * \param[in, out] fm      pointer to a cs_face_mesh_t structure
- * \param[in, out] b       pointer to a convection builder structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
  * \param[in, out] csys    cell-wise structure storing the local system
  */
 /*----------------------------------------------------------------------------*/

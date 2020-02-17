@@ -2752,6 +2752,7 @@ cs_cdo_advection_vb_upwcsv_di(const cs_equation_param_t   *eqp,
                               cs_cell_builder_t           *cb)
 {
   CS_UNUSED(fm);
+
   /* Sanity checks */
   assert(eqp->space_scheme == CS_SPACE_SCHEME_CDOVB);
   assert(cs_eflag_test(cm->flag,
