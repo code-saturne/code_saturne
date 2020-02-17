@@ -1207,10 +1207,7 @@ _predefine_mesh(int        mesh_id,
   post_mesh->nt_last = -2;
 
   post_mesh->add_groups = false;
-  if (post_mesh->id == -1 || post_mesh->id == -2)
-    post_mesh->post_domain = true;
-  else
-    post_mesh->post_domain = false;
+  post_mesh->post_domain = false;
 
   post_mesh->time_varying = time_varying;
 
@@ -3549,6 +3546,9 @@ cs_post_define_volume_mesh(int          mesh_id,
   post_mesh->add_groups = (add_groups) ? true : false;
   if (auto_variables)
     post_mesh->cat_id = CS_POST_MESH_VOLUME;
+
+  if (post_mesh->cat_id == CS_POST_MESH_VOLUME)
+    post_mesh->post_domain = true;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3609,6 +3609,9 @@ cs_post_define_volume_mesh_by_func(int                    mesh_id,
   post_mesh->add_groups = (add_groups) ? true : false;
   if (auto_variables)
     post_mesh->cat_id = CS_POST_MESH_VOLUME;
+
+  if (post_mesh->cat_id == CS_POST_MESH_VOLUME)
+    post_mesh->post_domain = true;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3667,6 +3670,9 @@ cs_post_define_surface_mesh(int          mesh_id,
     else
       post_mesh->cat_id = CS_POST_MESH_SURFACE;
   }
+
+  if (post_mesh->cat_id == CS_POST_MESH_BOUNDARY)
+    post_mesh->post_domain = true;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -3741,6 +3747,9 @@ cs_post_define_surface_mesh_by_func(int                    mesh_id,
 
   if (auto_variables)
     post_mesh->cat_id = CS_POST_MESH_BOUNDARY;
+
+  if (post_mesh->cat_id == CS_POST_MESH_BOUNDARY)
+    post_mesh->post_domain = true;
 }
 
 /*----------------------------------------------------------------------------*/
