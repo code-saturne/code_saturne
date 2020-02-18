@@ -64,8 +64,6 @@ AC_CONFIG_MACRO_DIR(m4)
 AC_CANONICAL_TARGET
 AC_CONFIG_HEADERS([ple_config_priv.h:ple_config_priv.h.in])
 
-AM_GNU_GETTEXT_VERSION([0.19])
-
 # Initialize automake with the following options:
 # - foreign, so as to handle the possible absence of ChangeLog
 # - tar-pax, so as to handle long lines (> 99 characters) in tar archives
@@ -428,12 +426,6 @@ PLE_AC_CONFIG_PUBL_SET(PLE_HAVE_MPI, $ple_have_mpi,
                        [PLE library configured with MPI support ?])
 
 #------------------------------------------------------------------------------
-# Internationalization
-#------------------------------------------------------------------------------
-
-AM_GNU_GETTEXT([external])
-
-#------------------------------------------------------------------------------
 # Documentation
 #------------------------------------------------------------------------------
 
@@ -520,11 +512,8 @@ PLE_AC_CONFIG_INFO_FINALIZE
 
 #------------------------------------------------------------------------------
 
-# If we use GNU gettext, we need to add po/Makefile.
-
 AC_CONFIG_FILES([Makefile src/Makefile pyple/Makefile tests/Makefile
-                 doc/Makefile doc/doxygen/Makefile
-                 po/Makefile.in])
+                 doc/Makefile doc/doxygen/Makefile])
 
 #------------------------------------------------------------------------------
 

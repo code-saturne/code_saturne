@@ -26,6 +26,8 @@ AUX_DIST = build-aux/compile \
            build-aux/install-sh \
            build-aux/ltmain.sh \
            build-aux/missing \
+           m4/ax_python_devel.m4 \
+           m4/extern-inline.m4 \
            m4/libtool.m4 \
            m4/lt~obsolete.m4 \
            m4/ltoptions.m4 \
@@ -34,7 +36,7 @@ AUX_DIST = build-aux/compile \
 
 MAINTAINERCLEANFILES = aclocal.m4 configure $(AUX_DIST)
 
-SUBDIRS = src pyple tests doc po
+SUBDIRS = src pyple tests doc
 
 EXTRA_DIST = m4/ple_config_info.m4 \
              m4/ple_config_publ.m4 \
@@ -70,11 +72,6 @@ ACLOCAL_AMFLAGS = -I m4
 
 uninstall-local:
 	rmdir $(configincludedir) || exit 0
-
-# Update gettext dictionnaries
-
-update-po:
-	cd po && $(MAKE) $(AM_MAKEFLAGS) update-po
 
 # Generate and install documentation
 
