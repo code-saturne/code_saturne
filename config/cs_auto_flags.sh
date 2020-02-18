@@ -138,15 +138,13 @@ cs_gcc=no
 
 if test "x$GCC" = "xyes"; then
 
-  # Intel and Pathscale compilers may pass as GCC but
+  # Intel and LLVM compilers may pass as GCC but
   # may be recognized by version string
 
   if test -n "`$CC --version | grep icc`" ; then
     cs_gcc=icc
   elif test -n "`$CC --version | grep clang`" ; then
     cs_gcc=clang
-  elif test -n "`$CC --version 2>&1 | grep PathScale`" ; then
-    cs_gcc=pathcc
   else
     cs_gcc=gcc
   fi
@@ -299,31 +297,6 @@ elif test "x$cs_gcc" = "xclang"; then
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
   cflags_default_omp="-fopenmp=libomp"
-
-# Otherwise, are we using pathcc ?
-#---------------------------------
-
-elif test "x$cs_gcc" = "xpathcc"; then
-
-  $CC --version 2>&1 | grep 'PathScale' > /dev/null
-  if test "$?" = "0" ; then
-
-    echo "compiler '$CC' is PathScale C compiler"
-
-    # Version strings for logging purposes and known compiler flag
-    $CC --version > $outfile 2>&1
-    cs_ac_cc_version=`grep -i Compiler $outfile`
-    cs_cc_compiler_known=yes
-
-    # Default compiler flags
-    cflags_default="-c99 -noswitcherror"
-    cflags_default="-std=c99 -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wunused-value"
-    cflags_default_dbg="-g"
-    cflags_default_opt="-O2"
-    cflags_default_hot="-Ofast"
-    cflags_default_omp="-openmp"
-
-  fi
 
 fi
 
@@ -480,7 +453,7 @@ cs_gxx=no
 
 if test "x$GXX" = "xyes"; then
 
-  # Intel and Pathscale compilers may pass as GXX but
+  # Intel and LLVM compilers may pass as GXX but
   # may be recognized by version string
 
   if test -n "`$CXX --version | grep icpc`" ; then
@@ -489,8 +462,6 @@ if test "x$GXX" = "xyes"; then
     cs_gxx=icc
   elif test -n "`$CXX --version | grep clang`" ; then
     cs_gxx=clang
-  elif test -n "`$CXX --version 2>&1 | grep PathScale`" ; then
-    cs_gxx=pathCC
   else
     cs_gxx=g++
   fi
@@ -720,33 +691,6 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
     cxxflags_default_hot="-O3"
     cxxflags_default_dbg="-g"
     cfxxlags_default_omp="-h omp"              # default: use "-h noomp" to disable
-    cxxflags_default_std=""
-
-  fi
-
-fi
-
-# Otherwise, are we using pathcc ?
-#---------------------------------
-
-if test "x$cs_cxx_compiler_known" != "xyes" ; then
-
-  $CXX --version 2>&1 | grep 'PathScale' > /dev/null
-  if test "$?" = "0" ; then
-
-    echo "compiler '$CXX' is PathScale C++ compiler"
-
-    # Version strings for logging purposes and known compiler flag
-    $CXX --version > $outfile 2>&1
-    cs_ac_cxx_version=`grep -i Compiler $outfile`
-    cs_cxx_compiler_known=yes
-
-    # Default compiler flags
-    cxxflags_default="-W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wunused-value"
-    cxxflags_default_dbg="-g"
-    cxxflags_default_opt="-O2"
-    cxxflags_default_hot="-Ofast"
-    cxxflags_default_omp="-openmp"
     cxxflags_default_std=""
 
   fi
@@ -991,31 +935,6 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     fcflags_default_dbg="-g"
     fcflags_default_opt="-O2"
     fcflags_default_omp="-h omp"              # default: use "-h noomp" to disable
-
-  fi
-fi
-
-if test "x$cs_fc_compiler_known" != "xyes" ; then
-
-  # Are we using pathf95 ?
-  #---------------------
-
-  $FC --version 2>&1 | grep 'PathScale' > /dev/null
-
-  if test "$?" = "0" ; then
-
-    echo "compiler '$FC' is PathScale Fortran compiler"
-
-    # Version strings for logging purposes and known compiler flag
-    $FC --version > $outfile 2>&1
-    cs_ac_fc_version=`grep 'PathScale' $outfile`
-    cs_fc_compiler_known=yes
-
-    fcflags_default="-Wall -Wno-unused -cpp"
-    fcflags_default_dbg="-g -ffortran-bounds-check"
-    fcflags_default_opt="-O"
-    fcflags_default_hot="-fast"
-    fcflags_default_omp="-openmp"
 
   fi
 fi
