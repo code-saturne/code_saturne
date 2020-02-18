@@ -1221,8 +1221,8 @@ endif
 '@    =========',                                               /,&
 '@    OPTIONS DE CALCUL NON VALIDEE AVEC LE SCHEMA EN TEMPS',   /,&
 '@',                                                            /,&
-'@  La version actuelle ne garantie pas les résultats',         /,& 
-'@    avec ce schema en',/,&
+'@  La version actuelle ne garantit pas les résultats',         /,&
+'@    avec ce schema en',                                       /,&
 '@    temps lorsqu''une physique particuliere est activee',     /,&
 '@    (combustion, charbon, electrique).',                      /,&
 '@',                                                            /,&
