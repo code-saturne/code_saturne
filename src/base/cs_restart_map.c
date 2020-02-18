@@ -460,31 +460,64 @@ cs_restart_map_free(void)
     cs_restart_clear_locations_ref();
   }
 
-  double location_wtime, exchange_wtime;
-  double location_comm_wtime, exchange_comm_wtime;
+  double loc_times[4], max_times[4], min_times[4], mean_times[4];
 
   ple_locator_get_times(_locator,
-                        &location_wtime,
+                        loc_times,
                         NULL,
-                        &exchange_wtime,
+                        loc_times+1,
                         NULL);
   ple_locator_get_comm_times(_locator,
-                             &location_comm_wtime,
+                             loc_times+2,
                              NULL,
-                             &exchange_comm_wtime,
+                             loc_times+3,
                              NULL);
 
-  cs_log_printf(CS_LOG_PERFORMANCE,
-                _("\n"
-		  "Restart mapping\n\n"
-                  "  location time:                 %12.3f\n"
-                  "    communication and wait:      %12.3f\n"
-                  "  variable exchange time:        %12.3f\n"
-                  "    communication and wait:      %12.3f\n\n"),
-                location_wtime, location_comm_wtime,
-                exchange_wtime, exchange_comm_wtime);
-  cs_log_separator(CS_LOG_PERFORMANCE);
+  if (cs_glob_n_ranks < 2)
+    cs_log_printf
+      (CS_LOG_PERFORMANCE,
+       _("\n"
+         "Restart mapping\n"
+         "                                 "
+         "  location time:                 %12.3f\n"
+         "    communication and wait:      %12.3f\n"
+         "  variable exchange time:        %12.3f\n"
+         "    communication and wait:      %12.3f\n\n"),
+       loc_times[0], loc_times[2], loc_times[1], loc_times[3]);
 
+  else {
+
+    double max_times[4], min_times[4], mean_times[4];
+
+    for (int i = 0; i < 4; i++) {
+      max_times[i] = loc_times[i];
+      min_times[i] = loc_times[i];
+      mean_times[i] = loc_times[i];
+    }
+    cs_parall_min(4, CS_DOUBLE, min_times);
+    cs_parall_max(4, CS_DOUBLE, max_times);
+    cs_parall_sum(4, CS_DOUBLE, mean_times);
+    for (int i = 0; i < 4; i++)
+      mean_times[i] /= cs_glob_n_ranks;
+
+    cs_log_printf
+      (CS_LOG_PERFORMANCE,
+       _("\n"
+         "Restart mapping\n"
+         "                                 "
+         "        mean      minimum     maximum\n"
+         "  location time:                 %12.3f %12.3f %12.3f\n"
+         "    communication and wait:      %12.3f %12.3f %12.3f\n"
+         "  variable exchange time:        %12.3f %12.3f %12.3f\n"
+         "    communication and wait:      %12.3f %12.3f %12.3f\n\n"),
+       mean_times[0], min_times[0], max_times[0],
+       mean_times[2], min_times[2], max_times[2],
+       mean_times[1], min_times[1], max_times[1],
+       mean_times[3], min_times[3], max_times[3]);
+
+  }
+
+  cs_log_separator(CS_LOG_PERFORMANCE);
 
   _locator = ple_locator_destroy(_locator);
 }
