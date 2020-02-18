@@ -39,6 +39,7 @@
 
 #include "cs_base.h"
 #include "cs_rank_neighbors.h"
+#include "cs_timer.h"
 
 /*---------------------------------------------------------------------------*/
 
@@ -98,9 +99,10 @@ _bft_error_handler(const char  *filename,
  *----------------------------------------------------------------------------*/
 
 static cs_rank_neighbors_t *
-_build_rank_neighbors(int rank,
-                      int size,
-                      int test_to_index)
+_build_rank_neighbors(int  rank,
+                      int  size,
+                      int  test_to_index,
+                      bool verbose)
 {
   size_t n_elts = 10000;
   int *elt_rank;
@@ -127,11 +129,14 @@ _build_rank_neighbors(int rank,
                             n_elts,
                             elt_rank,
                             elt_rank_count);
-    bft_printf("Rank neighbors and counts on rank %d:\n", rank);
-    for (int i = 0; i < n->size; i++)
-      bft_printf("  %d: %d %d\n", i, n->rank[i], (int)(elt_rank_count[i]));
+    if (verbose) {
+      bft_printf("Rank neighbors and counts on rank %d:\n", rank);
+      for (int i = 0; i < n->size; i++)
+        bft_printf("  %d: %d %d\n", i, n->rank[i], (int)(elt_rank_count[i]));
+      bft_printf("\n");
+    }
+
     BFT_FREE(elt_rank_count);
-    bft_printf("\n");
   }
 
   BFT_FREE(elt_rank);
@@ -139,38 +144,24 @@ _build_rank_neighbors(int rank,
   return n;
 }
 
-#endif /* HAVE_MPI */
+/*----------------------------------------------------------------------------
+ * Functionnality test
+ *----------------------------------------------------------------------------*/
 
-/*---------------------------------------------------------------------------*/
-
-int
-main (int argc, char *argv[])
+static void
+_sanity_test(void)
 {
-  char mem_trace_name[32];
   int size = 1;
   int rank = 0;
 
-#if defined(HAVE_MPI)
-
   /* Initialization */
-
-  cs_base_mpi_init(&argc, &argv);
 
   if (cs_glob_mpi_comm != MPI_COMM_NULL) {
     MPI_Comm_rank(cs_glob_mpi_comm, &rank);
     MPI_Comm_size(cs_glob_mpi_comm, &size);
   }
 
-  bft_error_handler_set(_bft_error_handler);
-
-  if (size > 1)
-    sprintf(mem_trace_name, "cs_rank_neighbors_test_mem.%d", rank);
-  else
-    strcpy(mem_trace_name, "cs_rank_neighbors_test_mem");
-  bft_mem_init(mem_trace_name);
-  bft_printf_proxy_set(_bft_printf_proxy);
-
-  cs_rank_neighbors_t *n = _build_rank_neighbors(rank, size, 1);
+  cs_rank_neighbors_t *n = _build_rank_neighbors(rank, size, 1, true);
 
   bft_printf("Rank neighbors on rank %d:\n", rank);
   for (int i = 0; i < n->size; i++)
@@ -195,7 +186,7 @@ main (int argc, char *argv[])
       continue;
     }
 
-    cs_rank_neighbors_t *nc = _build_rank_neighbors(rank, size, 0);
+    cs_rank_neighbors_t *nc = _build_rank_neighbors(rank, size, 0, true);
 
     cs_rank_neighbors_symmetrize(nc, cs_glob_mpi_comm);
 
@@ -212,9 +203,9 @@ main (int argc, char *argv[])
 
   cs_rank_neighbors_set_exchange_type(CS_RANK_NEIGHBORS_PEX);
 
-  n = _build_rank_neighbors(rank, size, 0);
+  n = _build_rank_neighbors(rank, size, 0, true);
 
-  cs_rank_neighbors_t  *nr;
+  cs_rank_neighbors_t  *nr = NULL;
   cs_lnum_t            *send_count, *recv_count;
 
   BFT_MALLOC(send_count, n->size, cs_lnum_t);
@@ -263,15 +254,160 @@ main (int argc, char *argv[])
   BFT_FREE(recv_count);
   cs_rank_neighbors_destroy(&nr);
   cs_rank_neighbors_destroy(&n);
+}
+
+/*----------------------------------------------------------------------------
+ * Performance test
+ *----------------------------------------------------------------------------*/
+
+static void
+_performance_test(void)
+{
+  int size = 1;
+  int rank = 0;
+
+  double wt_min[3] = {0, 0, 0};
+  double wt_max[3] = {0, 0, 0};
+  double wt_sum[3] = {0, 0, 0};
+
+  /* Initialization */
+
+  if (cs_glob_mpi_comm != MPI_COMM_NULL) {
+    MPI_Comm_rank(cs_glob_mpi_comm, &rank);
+    MPI_Comm_size(cs_glob_mpi_comm, &size);
+  }
+
+  /* Loop on methods */
+
+  int n_passes = 100;
+
+  for (int pass_id = 0; pass_id < n_passes; pass_id++) {
+
+    for (cs_rank_neighbors_exchange_t t = CS_RANK_NEIGHBORS_PEX;
+         t <= CS_RANK_NEIGHBORS_CRYSTAL_ROUTER;
+         t++) {
+
+      cs_lnum_t            *send_count = NULL, *recv_count = NULL;
+
+      double wt[3] = {0, 0, 0};
+
+      cs_rank_neighbors_t  *nr;
+
+      cs_rank_neighbors_set_exchange_type(t);
+      if (cs_rank_neighbors_get_exchange_type() != t) {
+        continue;
+      }
+
+      cs_rank_neighbors_t *n = _build_rank_neighbors(rank, size, 1, false);
+
+      BFT_MALLOC(send_count, n->size, cs_lnum_t);
+
+      for (int i = 0; i < n->size; i++)
+        send_count[i] = 5 + i%4;
+
+      double wt0 = cs_timer_wtime();
+
+      cs_rank_neighbors_sync_count(n, &nr, send_count, &recv_count,
+                                   cs_glob_mpi_comm);
+
+      wt[t] = cs_timer_wtime() - wt0;
+
+      if (wt[t] < wt_min[t] || pass_id == 0)
+        wt_min[t] = wt[t];
+      if (wt[t] > wt_max[t])
+        wt_max[t] = wt[t];
+      wt_sum[t] += wt[t];
+
+      BFT_FREE(send_count);
+      BFT_FREE(recv_count);
+
+      cs_rank_neighbors_destroy(&n);
+      cs_rank_neighbors_destroy(&nr);
+
+    }
+
+  }
+
+  for (cs_rank_neighbors_exchange_t t = CS_RANK_NEIGHBORS_PEX;
+       t <= CS_RANK_NEIGHBORS_CRYSTAL_ROUTER;
+       t++)
+    wt_sum[t] /= (n_passes*size);
+
+  if (rank == 0)
+    printf("\n"
+           "Times for rank_neighbors with communicator size %d\n"
+           "  CS_RANK_NEIGHBORS_PEX             %8.2e (min %8.2e, max %8.2e)\n"
+           "  CS_RANK_NEIGHBORS_NBX             %8.2e (min %8.2e, max %8.2e)\n"
+           "  CS_RANK_NEIGHBORS_CRYSTAL_ROUTER  %8.2e (min %8.2e, max %8.2e)\n",
+           size,
+           wt_sum[0]/n_passes, wt_min[0], wt_max[0],
+           wt_sum[1]/n_passes, wt_min[1], wt_max[1],
+           wt_sum[2]/n_passes, wt_min[2], wt_max[2]);
+}
+
+#endif /* HAVE_MPI */
+
+/*---------------------------------------------------------------------------*/
+
+int
+main (int argc, char *argv[])
+{
+  char mem_trace_name[32];
+  int size = 1;
+  int rank = 0;
+
+  bool performance_test = false;
+
+  if (argc > 1) {
+    if (strcmp(argv[1], "--performance") == 0)
+      performance_test = true;
+    else
+      printf("usage: %s <options>\n\n"
+             "  options: --performance\n", argv[0]);
+  }
+
+#if defined(HAVE_MPI)
+
+  /* Initialization */
+
+  cs_base_mpi_init(&argc, &argv);
+
+  if (cs_glob_mpi_comm != MPI_COMM_NULL) {
+    MPI_Comm_rank(cs_glob_mpi_comm, &rank);
+    MPI_Comm_size(cs_glob_mpi_comm, &size);
+  }
+
+  bft_error_handler_set(_bft_error_handler);
+
+  if (performance_test == false) {
+    if (size > 1)
+      sprintf(mem_trace_name, "cs_rank_neighbors_test_mem.%d", rank);
+    else
+      strcpy(mem_trace_name, "cs_rank_neighbors_test_mem");
+    bft_mem_init(mem_trace_name);
+    bft_printf_proxy_set(_bft_printf_proxy);
+  }
+  else
+    bft_mem_init(NULL);
+
+  /* Performance test */
+
+  int mpi_flag;
+  MPI_Initialized(&mpi_flag);
+
+  if (mpi_flag != 0) {
+    if (performance_test)
+      _performance_test();
+    else
+      _sanity_test();
+  }
+  else
+    bft_printf("rank neighborhoods only make sense for MPI\n");
 
   bft_mem_end();
 
-  {
-    int mpi_flag;
-    MPI_Initialized(&mpi_flag);
-    if (mpi_flag != 0)
-      MPI_Finalize();
-  }
+  if (mpi_flag != 0)
+    MPI_Finalize();
 
 #else
 
