@@ -190,6 +190,38 @@ void
 cs_atmo_declare_chem_from_spack(void);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief 1D Radiative scheme - Solar data + zenithal angle)
+ * Compute:
+ *   - zenithal angle
+ *   - solar contant (with correction for earth - solar length)
+ *   - albedo if above the sea
+ *   (Use analytical formulae of Paltrige and Platt
+ *              dev.in atm. science no 5)
+ * \param[in]   xlat        latitude
+ * \param[in]   xlong       longitude
+ * \param[in]   jour        day in the year
+ * \param[in]   heurtu      Universal time (hour)
+ * \param[in]   imer        sea index
+ * \param[out]  albe        albedo
+ * \param[out]  muzero      cosin of zenithal angle
+ * \param[out]  omega       solar azimut angle
+ * \param[out]  fo          solar constant
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_compute_solar_angles(cs_real_t xlat,
+                             cs_real_t xlong,
+                             cs_real_t jour,
+                             cs_real_t heurtu,
+                             int       imer,
+                             cs_real_t *albe,
+                             cs_real_t *muzero,
+                             cs_real_t *omega,
+                             cs_real_t *fo);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

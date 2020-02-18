@@ -75,6 +75,7 @@ use period
 use ppppar
 use ppthch
 use ppincl
+use cs_c_bindings
 use atincl, only: kmx, cpvcpa, nbmett, sigc, squant, xlat, xlon, soldu, sold, &
                   solu
 use cstnum, only: epzero, pi
@@ -113,6 +114,7 @@ double precision waero,taua(kmx+1),tauatot
 double precision rabara,rabar2a,rbara,raero
 double precision niaer,nraer
 double precision s3,gama1,gama2,kt,gas,fas
+double precision omega
 
 double precision, allocatable:: fabsh2o(:),fabso3(:),tauc(:)
 double precision, allocatable:: tau(:,:),pic(:,:),ref(:,:)
@@ -243,7 +245,7 @@ k1p1 = k1+1
 !  ---------
 
 qureel = float(squant)
-call raysze(xlat, xlon, qureel, heuray, imer1, albe, muzero, fo)
+call raysze(xlat, xlon, qureel, heuray, imer1, albe, muzero, omega, fo)
 ! if muzero is negative, it is night and solar radiation is not
 ! computed
 

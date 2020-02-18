@@ -48,6 +48,7 @@ use field
 use atincl
 use atchem
 use siream
+use cs_c_bindings
 
 implicit none
 
@@ -66,6 +67,7 @@ double precision qureel              ! julian day
 double precision heurtu              ! yime (UTC)
 double precision albe                ! albedo, useless here
 double precision fo                  ! solar constant, useless here
+double precision omega
 
 double precision, dimension(:), pointer :: crom
 double precision, dimension(:), pointer :: cvar_totwt
@@ -94,7 +96,7 @@ endif
 qureel = float(squant)
 heurtu = float(shour) + float(smin)/60.d0+ssec/3600.d0
 if (idtvar.eq.0 .or. idtvar.eq.1) heurtu = heurtu + ttcabs/3600.d0
-call raysze(xlat,xlon,qureel,heurtu,0,albe,dlmuzero,fo)
+call raysze(xlat,xlon,qureel,heurtu,0,albe,dlmuzero, omega, fo)
 azi = dabs(dacos(dlmuzero)*180.d0/pi)
 
 ! To be sure to cut photolysis (SPACK does not) if azi>90

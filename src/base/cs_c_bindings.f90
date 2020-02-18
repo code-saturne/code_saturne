@@ -2346,6 +2346,19 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function for atmo
+
+    subroutine raysze(xlat, xlong, jour, heurtu, imer, albe, muzero, omega, fo)           &
+      bind(C, name='cs_atmo_compute_solar_angles')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), value :: xlat, xlong, jour, heurtu
+      integer(kind=c_int), value :: imer
+      real(kind=c_double), intent(inout) :: albe, muzero, omega, fo
+    end subroutine raysze
+
+    !---------------------------------------------------------------------------
+
     !> \brief Initialize C chemistry structure from Fortran
 
     subroutine cs_f_atmo_chem_initialize_species_to_fid(species_fid) &

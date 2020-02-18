@@ -104,7 +104,6 @@ rayigc.f90 \
 rayir.f90 \
 rayive.f90 \
 rayso.f90 \
-raysze.f90 \
 roschem.f90 \
 solcat.f90 \
 soliva.f90 \

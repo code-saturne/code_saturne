@@ -591,5 +591,109 @@ cs_atmo_declare_chem_from_spack(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief 1D Radiative scheme - Solar data + zenithal angle)
+ * Compute:
+ *   - zenithal angle
+ *   - solar contant (with correction for earth - solar length)
+ *   - albedo if above the sea
+ *   (Use analytical formulae of Paltrige and Platt
+ *              dev.in atm. science no 5)
+ * \param[in]   xlat        latitude
+ * \param[in]   xlong       longitude
+ * \param[in]   jour        day in the year
+ * \param[in]   heurtu      Universal time (hour)
+ * \param[in]   imer        sea index
+ * \param[out]  albe        albedo
+ * \param[out]  muzero      cosin of zenithal angle
+ * \param[out]  omega       solar azimut angle
+ * \param[out]  fo          solar constant
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_compute_solar_angles(cs_real_t xlat,
+                             cs_real_t xlong,
+                             cs_real_t jour,
+                             cs_real_t heurtu,
+                             int       imer,
+                             cs_real_t *albe,
+                             cs_real_t *muzero,
+                             cs_real_t *omega,
+                             cs_real_t *fo)
+{
+
+  /* 1 - initialisations */
+  *fo = 1370.;
+
+  /* conversions sexagesimal-decimal */
+
+  cs_real_t flat = xlat  *cs_math_pi/180.;
+  cs_real_t flong = xlong *4./60.;
+
+  cs_real_t t00 = 2.*cs_math_pi*jour/365.;
+
+  /* 2 - compute declinaison (maximum error < 3 mn) */
+
+  cs_real_t decl = 0.006918 - 0.399912*cos(t00) + 0.070257*sin(t00)
+    - 0.006758*cos(2.*t00) + 0.000907*sin(2.*t00) - 0.002697*cos(3.*t00)
+     + 0.001480*sin(3.*t00);
+
+  /* 3 - compute local solar hour
+   * equation du temps     erreur maxi    35 secondes
+   */
+
+  cs_real_t eqt = (0.000075 + 0.001868*cos(t00) - 0.032077*sin(t00)
+      - 0.014615*cos(2.*t00) - 0.040849*sin(2.*t00))*12./cs_math_pi;
+
+  cs_real_t heure = heurtu + flong + eqt;
+
+  /* Transformation heure-radians */
+
+  /* On retire cs_math_pi et on prend le modulo 2pi du resultat */
+  cs_real_t hr = (heure - 12.)*cs_math_pi/12.;
+  if (heure < 12.)
+    hr = (heure + 12.)*cs_math_pi/12.;
+
+  /* 4 - compute of cosinus of the zenitghal angle */
+
+  *muzero = sin(decl)*sin(flat) + cos(decl)*cos(flat)*cos(hr);
+
+  cs_real_t za = acos(*muzero);
+
+  /* 5 - compute solar azimut */
+  *omega = 0.;
+  if (CS_ABS(sin(za)) > cs_math_epzero) {
+    /* Cosinus of the zimut angle */
+    cs_real_t co = (sin(decl)*cos(flat)-cos(decl)*sin(flat)*cos(hr))/sin(za);
+    *omega = acos(co);
+    if (heure > 12.)
+      *omega = 2. * cs_math_pi - acos(co);
+  }
+
+  /* 5 - calcul de l'albedo sur mer qui depend de l'angle zenithal */
+
+  if (imer == 1) {
+    cs_real_t ho = acos(*muzero);
+    ho = 180.*(cs_math_pi/2. - ho)/cs_math_pi;
+    if (ho < 8.5)
+      ho = 8.5;
+    if (ho > 60.)
+      ho = 60.;
+    *albe = 3./ho;
+  }
+
+ /* 6 - Compute solar constant
+    distance correction earth-sun
+    corfo=(r0/r)**2
+    precision better than e-04 */
+
+  cs_real_t corfo = 1.000110 + 0.034221*cos(t00) + 0.001280*sin(t00)
+    + 0.000719*cos(2.*t00) + 0.000077*sin(2.*t00);
+  *fo *= corfo;
+
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
