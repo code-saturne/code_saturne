@@ -1127,7 +1127,7 @@ cs_rad_transfer_bcs(int         nvar,
       /* We use f_beps values as an indicator for open boundary types
        * (as this value si otherwise onlyused for wall conditons and we do not
        * yet have "revised" radiative boundary condition types */
-      if (   cs_glob_rad_transfer_params->atmo_ir_absorption
+      if (   cs_glob_rad_transfer_params->atmo_model & CS_RAD_ATMO_3D_INFRARED
           || isothm[face_id] == cs_glob_rad_transfer_params->ifinfe)
         f_beps->val[face_id] = 1.0;
     }
@@ -1167,27 +1167,29 @@ cs_rad_transfer_bcs(int         nvar,
  *
  * \param[in]  bc_type         boundary face types
  * \param[in]  vect_s          direction vector or NULL
+ * \param[in]  ckmel           Absoprtion coefficcient of the mixture
+ *                               gas-particules of coal or NULL
+ * \param[in]  bpro_eps        Boundary emissivity, or NULL for solar radiation
+ * \param[in]  w_gg            Weights of the i-th gray gas at boundaries
+ * \param[in]  gg_id           number of the i-th grey gas
  * \param[out] coefap          boundary conditions for intensity or P-1 model
  * \param[out] coefbp          boundary conditions for intensity or P-1 model
  * \param[out] cofafp          boundary conditions for intensity or P-1 model
  * \param[out] cofbfp          boundary conditions for intensity or P-1 model
- * \param[in]  ckmel           coeff d'absorption du melange
- *                               gaz-particules de charbon
- * \param[in]  w_gg            Weights of the i-th gray gas at boundaries
- * \param[in]  gg_id           number of the i-th grey gas
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_rad_transfer_bc_coeffs(int        bc_type[],
                           cs_real_t  vect_s[3],
+                          cs_real_t  ckmel[],
+                          cs_real_t  bpro_eps[],
+                          cs_real_t  w_gg[],
+                          int        gg_id,
                           cs_real_t  coefap[],
                           cs_real_t  coefbp[],
                           cs_real_t  cofafp[],
-                          cs_real_t  cofbfp[],
-                          cs_real_t  ckmel[],
-                          cs_real_t  w_gg[],
-                          int        gg_id)
+                          cs_real_t  cofbfp[])
 {
   cs_real_t stephn = cs_physical_constants_stephan;
   cs_real_t onedpi  = 1.0 / cs_math_pi;
@@ -1200,15 +1202,12 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
 
   /* Pointer to the spectral flux density field */
   cs_field_t *f_qinspe = NULL;
-  if (   cs_glob_rad_transfer_params->imoadf >= 1
-      || cs_glob_rad_transfer_params->imfsck == 1)
-    f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
+
+  /* For ADF model or FSCK model or Atmo */
+  f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
 
   /* Pointer to the radiative incident flux field */
   cs_field_t *f_qincid = cs_field_by_name("rad_incident_flux");
-
-  /* Pointer to the wall emissivity field */
-  cs_field_t *f_eps = cs_field_by_name("emissivity");
 
   /* Wall temperature */
   cs_field_t *f_tempb = CS_F_(t_b);
@@ -1238,9 +1237,8 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
 
       /* Copy the appropriate flux density to the local variable qpatmp*/
 
-      /* Value of the flux density at the boundary face     */
-      if (   cs_glob_rad_transfer_params->imoadf >= 1
-          || cs_glob_rad_transfer_params->imfsck == 1)
+      /* Value of the flux density at the boundary face */
+      if (f_qinspe != NULL)
         qpatmp = f_qinspe->val[face_id * f_qinspe->dim + gg_id];
       else
         qpatmp = f_qincid->val[face_id];
@@ -1276,7 +1274,9 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
           /* The two vectors are colinear */
           if (CS_ABS(vs_dot_n) > 0.99)
             neumann = false;
-          if (cs_glob_rad_transfer_params->atmo_ir_absorption) {
+
+          /* Top of the domain */
+          if (cs_glob_rad_transfer_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
             cs_real_t g_dot_n_norm = cs_math_3_dot_product(grav, normal) * d_g;
             if (g_dot_n_norm < -0.5)
               neumann = false;
@@ -1295,8 +1295,9 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
                                                     hint);
         }
         else {
-          //TODO imposed value at the top for atmospheric
-          cs_real_t pimp  = 0.;
+          /* Get boundary values:
+           * for atmospheric, get the one computed by the 1D model */
+          cs_real_t pimp = qpatmp * onedpi;
 
           cs_boundary_conditions_set_dirichlet_scalar(&coefap[face_id],
                                                       &cofafp[face_id],
@@ -1305,7 +1306,6 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
                                                       pimp,
                                                       hint,
                                                       cs_math_infinite_r);
-
 
         }
 
@@ -1317,9 +1317,16 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
         cs_real_t twall = f_tempb->val[face_id] + xptk;
         /* Remember: In case of the usage of the standard radiation
            models of Code_Saturne, w_gg=1  */
-        cs_real_t pimp = f_eps->val[face_id] * stephn * cs_math_pow4(twall)
-                       * onedpi * w_gg[face_id + gg_id * n_b_faces]
-                       + (1.0 - f_eps->val[face_id]) * qpatmp * onedpi;
+        cs_real_t pimp;
+        if (bpro_eps != NULL)
+          pimp = bpro_eps[face_id] * stephn * cs_math_pow4(twall)
+                 * onedpi * w_gg[face_id + gg_id * n_b_faces]
+               + (1.0 - bpro_eps[face_id]) * qpatmp * onedpi;
+        /* For solar radiation,
+         * Note that albedo is already taken into account
+         * in the incident flux */
+        else
+          pimp = qpatmp * onedpi;
 
         cs_boundary_conditions_set_dirichlet_scalar(&coefap[face_id],
                                                     &cofafp[face_id],
@@ -1351,7 +1358,7 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
       if (   bc_type[face_id] == CS_SYMMETRY
           || (   (   bc_type[face_id] == CS_SMOOTHWALL
                   || bc_type[face_id] == CS_ROUGHWALL)
-              && f_eps->val[face_id] <= 0.0) ) {
+              && bpro_eps[face_id] <= 0.0) ) {
         cs_real_t qimp = 0.;
         cs_boundary_conditions_set_neumann_scalar(&coefap[face_id],
                                                   &cofafp[face_id],
@@ -1382,7 +1389,7 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
         cs_real_t twall = f_tempb->val[face_id] + xptk;
         cs_real_t distbf  = cs_glob_mesh_quantities->b_dist[face_id];
         cs_real_t xit = 1.5 * distbf * ckmel[iel]
-                            * (2.0 / (2.0 - f_eps->val[face_id]) - 1.0);
+                            * (2.0 / (2.0 - bpro_eps[face_id]) - 1.0);
         cs_real_t cfl = 1.0 / xit;
         cs_real_t pimp = cs_math_pow4(twall) * w_gg[face_id + gg_id * n_b_faces];
         cs_boundary_conditions_set_convective_outlet_scalar(&coefap[face_id],

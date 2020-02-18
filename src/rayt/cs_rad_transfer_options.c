@@ -183,14 +183,12 @@ cs_rad_transfer_options(void)
 
   rt_params->iimpar       = 1;
 
-  /* -> Luminance resolution verbosity */
+  /* Radiance resolution verbosity */
 
-  rt_params->iimlum       = 0;
+  rt_params->verbosity = 0;
 
   /* -> Number of iterations used to solve the ETR.
    *    Must at least be one to make the standard models work. */
-
-  rt_params->nwsgg = 1;
 
   /* User parameters  */
 
@@ -348,20 +346,39 @@ cs_rad_transfer_log_setup(void)
      _("    idiver:                 %3d  (0, 1, or 2: method to compute radiative S.T.)\n"
        "    imodak:                 %3d  (1: Modak absorption coeff.; O none)\n"
        "    iimpar:                 %3d  (0, 1 or 2: log wall temperature)\n"
-       "    iimlum:                 %3d  (0, 1 or 2: log solver info)\n"
+       "    verbosity:              %3d  (0, 1 or 2: log solver info)\n"
        "    imoadf:                 %3d  (0, 1 or 2: none, ADF08, ADF50)\n"
        "    imfsck:                 %3d  (0 or 1: no FSCK, FSCK)\n"),
      cs_glob_rad_transfer_params->idiver,
      cs_glob_rad_transfer_params->imodak,
      cs_glob_rad_transfer_params->iimpar,
-     cs_glob_rad_transfer_params->iimlum,
+     cs_glob_rad_transfer_params->verbosity,
      cs_glob_rad_transfer_params->imoadf,
      cs_glob_rad_transfer_params->imfsck);
 
-  if (cs_glob_rad_transfer_params->atmo_ir_absorption)
+  if (cs_glob_rad_transfer_params->atmo_model
+      & CS_RAD_ATMO_3D_DIRECT_SOLAR)
     cs_log_printf
       (CS_LOG_SETUP,
-     _("    Infra-red atmospheric 3D model on\n"));
+     _("    Direct solar atmospheric 3D model on\n"
+       "      band id = %d\n"),
+     cs_glob_rad_transfer_params->atmo_dr_id);
+
+  if (cs_glob_rad_transfer_params->atmo_model
+      & CS_RAD_ATMO_3D_DIFFUSE_SOLAR)
+    cs_log_printf
+      (CS_LOG_SETUP,
+     _("    Diffuse solar atmospheric 3D model on\n"
+       "      band id = %d\n"),
+     cs_glob_rad_transfer_params->atmo_df_id);
+
+  if (cs_glob_rad_transfer_params->atmo_model
+      & CS_RAD_ATMO_3D_INFRARED)
+    cs_log_printf
+      (CS_LOG_SETUP,
+     _("    Infra-red atmospheric 3D model on\n"
+       "      band id = %d\n"),
+     cs_glob_rad_transfer_params->atmo_ir_id);
 
 }
 

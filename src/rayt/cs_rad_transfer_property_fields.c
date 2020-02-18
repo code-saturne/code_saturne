@@ -245,45 +245,107 @@ cs_rad_transfer_prp(void)
         cs_field_pointer_map_indexed(CS_ENUMF_(rad_cak), irphas, f);
       }
 
+      /* Add a band for Direct Solar, diFUse solar and InfraRed
+       * if activated */
+      if (cs_glob_rad_transfer_params->atmo_model
+          != CS_RAD_ATMO_3D_NONE)
+        cs_glob_rad_transfer_params->nwsgg = 0;
+
+
+      /* Fields for atmospheric Direct Solar (DR) model */
+      if (cs_glob_rad_transfer_params->atmo_model
+          & CS_RAD_ATMO_3D_DIRECT_SOLAR) {
+        cs_glob_rad_transfer_params->atmo_dr_id = cs_glob_rad_transfer_params->nwsgg;
+        cs_glob_rad_transfer_params->nwsgg++;
+      }
+
+      /* Fields for atmospheric diFfuse Solar (DF) model */
+      if (cs_glob_rad_transfer_params->atmo_model
+          & CS_RAD_ATMO_3D_DIFFUSE_SOLAR) {
+        cs_glob_rad_transfer_params->atmo_df_id = cs_glob_rad_transfer_params->nwsgg;
+        cs_glob_rad_transfer_params->nwsgg++;
+      }
+
       /* Fields for atmospheric infrared absorption model */
-
-      if (cs_glob_rad_transfer_params->atmo_ir_absorption) {
-
-        const char *name[4] = {"rad_flux_up",
-                               "rad_flux_down",
-                               "rad_absorption_coeff_up",
-                               "rad_absorption_coeff_down"};
-        const char *label[4] = {"Upwards radiative flux",
-                                "Downwards radiative flux",
-                                "",
-                                ""};
-        const bool hide[4] = {false, false, true, true};
-
-        for (int i = 0; i < 4; i++) {
-
-          f = cs_field_create(name[i],
-                              field_type,
-                              location_id,
-                              1,
-                              false);
-
-          /* show or hide property */
-          if (!hide[i])
-            cs_field_set_key_int(f, keyvis, 1);
-          cs_field_set_key_int(f, keylog, 1);
-
-          /* set label */
-          if (strlen(label[i]) > 0)
-            cs_field_set_key_str(f, keylbl, label[i]);
-
-        }
-
+      if (cs_glob_rad_transfer_params->atmo_model
+          & CS_RAD_ATMO_3D_INFRARED) {
+        cs_glob_rad_transfer_params->atmo_ir_id = cs_glob_rad_transfer_params->nwsgg;
+        cs_glob_rad_transfer_params->nwsgg++;
       }
 
     }
 
+    /* Atmospheric radiation: add cells field by band */
+    {
+      if (cs_glob_rad_transfer_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
+        /* Upward rad flux by band */
+        f = cs_field_create("rad_flux_up",
+                            field_type,
+                            location_id,
+                            cs_glob_rad_transfer_params->nwsgg,
+                            false);
+        cs_field_set_key_str(f, keylbl, "Upward radiative flux");
+        cs_field_pointer_map(CS_ENUMF_(fup), f);
+
+        cs_field_set_key_int(f, keyvis, 1);
+        cs_field_set_key_int(f, keylog, 1);
+
+        /* Downward rad flux by band */
+        // TODO sould be "class" fields as
+        // cs_field_pointer_map_indexed(CS_ENUMF_(rad_cak), irphas, f);
+        f = cs_field_create("rad_flux_down",
+                            field_type,
+                            location_id,
+                            cs_glob_rad_transfer_params->nwsgg,
+                            false);
+        cs_field_set_key_str(f, keylbl, "Downward radiative flux");
+        cs_field_pointer_map(CS_ENUMF_(fdown), f);
+
+        cs_field_set_key_int(f, keyvis, 1);
+        cs_field_set_key_int(f, keylog, 1);
+
+        /* Upward absorption coefficient by band */
+        f = cs_field_create("rad_absorption_coeff_up",
+                            field_type,
+                            location_id,
+                            cs_glob_rad_transfer_params->nwsgg,
+                            false);
+        cs_field_pointer_map(CS_ENUMF_(rad_ck_up), f);
+
+        cs_field_set_key_int(f, keyvis, 1);
+        cs_field_set_key_int(f, keylog, 1);
+
+        /* Upward absorption coefficient by band */
+        f = cs_field_create("rad_absorption_coeff_down",
+                            field_type,
+                            location_id,
+                            cs_glob_rad_transfer_params->nwsgg,
+                            false);
+        cs_field_pointer_map(CS_ENUMF_(rad_ck_down), f);
+
+        cs_field_set_key_int(f, keyvis, 1);
+        cs_field_set_key_int(f, keylog, 1);
+
+      }
+    }
+
+
     /* Boundary face fields */
     location_id = CS_MESH_LOCATION_BOUNDARY_FACES;
+
+    /* Albedo Fields for atmospheric diFfuse Solar (FS) model */
+    if (cs_glob_rad_transfer_params->atmo_model
+        & CS_RAD_ATMO_3D_DIFFUSE_SOLAR) {
+      f = cs_field_create("boundary_albedo",
+                          field_type,
+                          location_id,
+                          1,
+                          false);
+      cs_field_set_key_str(f, keylbl, "Albedo");
+
+      cs_field_set_key_int(f, keyvis, 1);
+      cs_field_set_key_int(f, keylog, 1);
+    }
 
     {
       f = cs_field_by_name_try("boundary_temperature");
@@ -317,6 +379,26 @@ cs_rad_transfer_prp(void)
                             false);
         cs_field_set_key_str(f, keylbl, "Spectral_incident_flux");
         cs_field_pointer_map(CS_ENUMF_(qinsp), f);
+      }
+    }
+
+    {
+      /* For atmospheric 3D radiation,
+       * - first band is direct solar
+       * - second band is diffuse solar
+       * - third band is infrared
+       */
+      if (cs_glob_rad_transfer_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
+        f = cs_field_create("spectral_rad_incident_flux",
+                            field_type,
+                            location_id,
+                            cs_glob_rad_transfer_params->nwsgg,
+                            false);
+        cs_field_set_key_str(f, keylbl, "Spectral_incident_flux");
+        cs_field_pointer_map(CS_ENUMF_(qinsp), f);
+
+        cs_field_set_key_int(f, keyvis, 1);
+        cs_field_set_key_int(f, keylog, 1);
       }
     }
 

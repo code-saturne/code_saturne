@@ -76,7 +76,7 @@ integer          ierreu
 
 integer iirugdy,iirugth,iialbed,iiemiss,iicsol,iiveget
 integer iic1w,iic2w,iir1,iir2
-integer ifac,n
+integer isol,n
 double precision codinv
 double precision rugdij,rugtij,albeij,emisij
 double precision vegeij,c1wij,c2wij,csolij
@@ -89,17 +89,17 @@ character(len=12) ::    solnom(10)
 !  ================================================================
 
 codinv = -999.d0
-do ifac = 1, nfmodsol
-  solution_sol(ifac)%constantes%rugdyn = codinv
-  solution_sol(ifac)%constantes%rugthe = codinv
-  solution_sol(ifac)%constantes%albedo = codinv
-  solution_sol(ifac)%constantes%emissi = codinv
-  solution_sol(ifac)%constantes%vegeta = codinv
-  solution_sol(ifac)%constantes%c1w    = codinv
-  solution_sol(ifac)%constantes%c2w    = codinv
-  solution_sol(ifac)%constantes%csol   = codinv
-  solution_sol(ifac)%constantes%r1     = codinv
-  solution_sol(ifac)%constantes%r2     = codinv
+do isol = 1, nfmodsol
+  solution_sol(isol)%constantes%rugdyn = codinv
+  solution_sol(isol)%constantes%rugthe = codinv
+  solution_sol(isol)%constantes%albedo = codinv
+  solution_sol(isol)%constantes%emissi = codinv
+  solution_sol(isol)%constantes%vegeta = codinv
+  solution_sol(isol)%constantes%c1w    = codinv
+  solution_sol(isol)%constantes%c2w    = codinv
+  solution_sol(isol)%constantes%csol   = codinv
+  solution_sol(isol)%constantes%r1     = codinv
+  solution_sol(isol)%constantes%r2     = codinv
 enddo
 
 iirugdy = 1
@@ -130,46 +130,46 @@ solnom(iir2   )='r2          '
 
 
 
-do ifac = 1, nfmodsol
-  rugdij = zero
-  rugtij = zero
-  albeij = zero
-  emisij = zero
-  csolij = zero
-  vegeij = zero
-  c1wij  = zero
-  c2wij  = zero
-  r1ij   = zero
-  r2ij   = zero
+do isol = 1, nfmodsol
+  rugdij = 0.d0
+  rugtij = 0.d0
+  albeij = 0.d0
+  emisij = 0.d0
+  csolij = 0.d0
+  vegeij = 0.d0
+  c1wij  = 0.d0
+  c2wij  = 0.d0
+  r1ij   = 0.d0
+  r2ij   = 0.d0
 
   !          zrrel = z(2)*(z(km)-CDGFBO(3,IFAC))/z(km)
 
   do n = 1, nbrsol
-    rugdij = rugdij + tab_sol(n)%rugdyn*float(pourcent_sol(ifac,n))/100.d0
-    rugtij = rugtij + tab_sol(n)%rugthe*float(pourcent_sol(ifac,n))/100.d0
-    albeij = albeij + tab_sol(n)%albedo*float(pourcent_sol(ifac,n))/100.d0
-    emisij = emisij + tab_sol(n)%emissi*float(pourcent_sol(ifac,n))/100.d0
-    csolij = csolij + tab_sol(n)%csol  *float(pourcent_sol(ifac,n))/100.d0
-    vegeij = vegeij + tab_sol(n)%vegeta*float(pourcent_sol(ifac,n))/100.d0
-    c1wij  = c1wij  + tab_sol(n)%c1w   *float(pourcent_sol(ifac,n))/100.d0
-    c2wij  = c2wij  + tab_sol(n)%c2w   *float(pourcent_sol(ifac,n))/100.d0
-    r1ij   = r1ij   + tab_sol(n)%r1    *float(pourcent_sol(ifac,n))/100.d0
-    r2ij   = r2ij   + tab_sol(n)%r2    *float(pourcent_sol(ifac,n))/100.d0
+    rugdij = rugdij + tab_sol(n)%rugdyn*float(pourcent_sol(isol,n))/100.d0
+    rugtij = rugtij + tab_sol(n)%rugthe*float(pourcent_sol(isol,n))/100.d0
+    albeij = albeij + tab_sol(n)%albedo*float(pourcent_sol(isol,n))/100.d0
+    emisij = emisij + tab_sol(n)%emissi*float(pourcent_sol(isol,n))/100.d0
+    csolij = csolij + tab_sol(n)%csol  *float(pourcent_sol(isol,n))/100.d0
+    vegeij = vegeij + tab_sol(n)%vegeta*float(pourcent_sol(isol,n))/100.d0
+    c1wij  = c1wij  + tab_sol(n)%c1w   *float(pourcent_sol(isol,n))/100.d0
+    c2wij  = c2wij  + tab_sol(n)%c2w   *float(pourcent_sol(isol,n))/100.d0
+    r1ij   = r1ij   + tab_sol(n)%r1    *float(pourcent_sol(isol,n))/100.d0
+    r2ij   = r2ij   + tab_sol(n)%r2    *float(pourcent_sol(isol,n))/100.d0
   enddo
 
-  solution_sol(ifac)%constantes%rugdyn = rugdij
-  solution_sol(ifac)%constantes%rugthe = rugtij
-  solution_sol(ifac)%constantes%albedo = albeij
-  solution_sol(ifac)%constantes%emissi = emisij
-  solution_sol(ifac)%constantes%csol   = csolij
-  solution_sol(ifac)%constantes%vegeta = vegeij
-  solution_sol(ifac)%constantes%c1w    = c1wij
-  solution_sol(ifac)%constantes%c2w    = c2wij
-  solution_sol(ifac)%constantes%r1     = r1ij
-  solution_sol(ifac)%constantes%r2     = r2ij
+  solution_sol(isol)%constantes%rugdyn = rugdij
+  solution_sol(isol)%constantes%rugthe = rugtij
+  solution_sol(isol)%constantes%albedo = albeij
+  solution_sol(isol)%constantes%emissi = emisij
+  solution_sol(isol)%constantes%csol   = csolij
+  solution_sol(isol)%constantes%vegeta = vegeij
+  solution_sol(isol)%constantes%c1w    = c1wij
+  solution_sol(isol)%constantes%c2w    = c2wij
+  solution_sol(isol)%constantes%r1     = r1ij
+  solution_sol(isol)%constantes%r2     = r2ij
 
   ! Pour temperatures profondes dans un premier temps on initialise a tprini
-  solution_sol(ifac)%constantes%tprof = tprini
+  solution_sol(isol)%constantes%tprof = tprini
 enddo
 
 !  ================================================================
@@ -177,17 +177,17 @@ enddo
 !  ================================================================
 
 ierreu = 0
-do ifac = 1, nfmodsol
-  if(solution_sol(ifac)%constantes%rugdyn .eq. codinv) ierreu = ierreu + 1
-  if(solution_sol(ifac)%constantes%rugthe .eq. codinv) ierreu = ierreu + 1
-  if(solution_sol(ifac)%constantes%albedo .eq. codinv) ierreu = ierreu + 1
-  if(solution_sol(ifac)%constantes%emissi .eq. codinv) ierreu = ierreu + 1
-  if(solution_sol(ifac)%constantes%csol   .eq. codinv) ierreu = ierreu + 1
-  if(solution_sol(ifac)%constantes%vegeta .eq. codinv) ierreu = ierreu + 1
-  if(solution_sol(ifac)%constantes%c1w    .eq. codinv) ierreu = ierreu + 1
-  if(solution_sol(ifac)%constantes%c2w    .eq. codinv) ierreu = ierreu + 1
-  if(solution_sol(ifac)%constantes%r1     .eq. codinv) ierreu = ierreu + 1
-  if(solution_sol(ifac)%constantes%r2     .eq. codinv) ierreu = ierreu + 1
+do isol = 1, nfmodsol
+  if(solution_sol(isol)%constantes%rugdyn .eq. codinv) ierreu = ierreu + 1
+  if(solution_sol(isol)%constantes%rugthe .eq. codinv) ierreu = ierreu + 1
+  if(solution_sol(isol)%constantes%albedo .eq. codinv) ierreu = ierreu + 1
+  if(solution_sol(isol)%constantes%emissi .eq. codinv) ierreu = ierreu + 1
+  if(solution_sol(isol)%constantes%csol   .eq. codinv) ierreu = ierreu + 1
+  if(solution_sol(isol)%constantes%vegeta .eq. codinv) ierreu = ierreu + 1
+  if(solution_sol(isol)%constantes%c1w    .eq. codinv) ierreu = ierreu + 1
+  if(solution_sol(isol)%constantes%c2w    .eq. codinv) ierreu = ierreu + 1
+  if(solution_sol(isol)%constantes%r1     .eq. codinv) ierreu = ierreu + 1
+  if(solution_sol(isol)%constantes%r2     .eq. codinv) ierreu = ierreu + 1
 enddo
 
 ! impression eventuelle d'un message d'erreur
@@ -204,57 +204,57 @@ else
     solmea(n) = 0.d0
     solmax(n) = -999999.d0
   enddo
-  do ifac = 1, nfmodsol, 1
-    if (solution_sol(ifac)%constantes%rugdyn .gt. solmax(1)) solmax(1) &
-         = solution_sol(ifac)%constantes%rugdyn
-    if (solution_sol(ifac)%constantes%rugthe .gt. solmax(2)) solmax(2) &
-         = solution_sol(ifac)%constantes%rugthe
-    if (solution_sol(ifac)%constantes%albedo .gt. solmax(3)) solmax(3) &
-         = solution_sol(ifac)%constantes%albedo
-    if (solution_sol(ifac)%constantes%emissi .gt. solmax(4)) solmax(4) &
-         = solution_sol(ifac)%constantes%emissi
-    if (solution_sol(ifac)%constantes%csol   .gt. solmax(5)) solmax(5) &
-         = solution_sol(ifac)%constantes%csol
-    if (solution_sol(ifac)%constantes%vegeta .gt. solmax(6)) solmax(6) &
-         = solution_sol(ifac)%constantes%vegeta
-    if (solution_sol(ifac)%constantes%c1w    .gt. solmax(7)) solmax(7) &
-         = solution_sol(ifac)%constantes%c1w
-    if (solution_sol(ifac)%constantes%c2w    .gt. solmax(8)) solmax(8) &
-         = solution_sol(ifac)%constantes%c2w
-    if (solution_sol(ifac)%constantes%r1     .gt. solmax(9)) solmax(9) &
-         = solution_sol(ifac)%constantes%r1
-    if (solution_sol(ifac)%constantes%r2     .gt. solmax(10))solmax(10)&
-         = solution_sol(ifac)%constantes%r2
-    if (solution_sol(ifac)%constantes%rugdyn .lt. solmin(1)) solmin(1) &
-         = solution_sol(ifac)%constantes%rugdyn
-    if (solution_sol(ifac)%constantes%rugthe .lt. solmin(2)) solmin(2) &
-         = solution_sol(ifac)%constantes%rugthe
-    if (solution_sol(ifac)%constantes%albedo .lt. solmin(3)) solmin(3) &
-         = solution_sol(ifac)%constantes%albedo
-    if (solution_sol(ifac)%constantes%emissi .lt. solmin(4)) solmin(4) &
-         = solution_sol(ifac)%constantes%emissi
-    if (solution_sol(ifac)%constantes%csol   .lt. solmin(5)) solmin(5) &
-         = solution_sol(ifac)%constantes%csol
-    if (solution_sol(ifac)%constantes%vegeta .lt. solmin(6)) solmin(6) &
-         = solution_sol(ifac)%constantes%vegeta
-    if (solution_sol(ifac)%constantes%c1w    .lt. solmin(7)) solmin(7) &
-         = solution_sol(ifac)%constantes%c1w
-    if (solution_sol(ifac)%constantes%c2w    .lt. solmin(8)) solmin(8) &
-         = solution_sol(ifac)%constantes%c2w
-    if (solution_sol(ifac)%constantes%r1     .lt. solmin(9)) solmin(9) &
-         = solution_sol(ifac)%constantes%r1
-    if (solution_sol(ifac)%constantes%r2     .lt. solmin(10))solmin(10)&
-         = solution_sol(ifac)%constantes%r2
-    solmea(1) = solmea(1) + solution_sol(ifac)%constantes%rugdyn
-    solmea(2) = solmea(2) + solution_sol(ifac)%constantes%rugthe
-    solmea(3) = solmea(3) + solution_sol(ifac)%constantes%albedo
-    solmea(4) = solmea(4) + solution_sol(ifac)%constantes%emissi
-    solmea(5) = solmea(5) + solution_sol(ifac)%constantes%csol
-    solmea(6) = solmea(6) + solution_sol(ifac)%constantes%vegeta
-    solmea(7) = solmea(7) + solution_sol(ifac)%constantes%c1w
-    solmea(8) = solmea(8) + solution_sol(ifac)%constantes%c2w
-    solmea(9) = solmea(9) + solution_sol(ifac)%constantes%r1
-    solmea(10)= solmea(10)+ solution_sol(ifac)%constantes%r2
+  do isol = 1, nfmodsol, 1
+    if (solution_sol(isol)%constantes%rugdyn .gt. solmax(1)) solmax(1) &
+         = solution_sol(isol)%constantes%rugdyn
+    if (solution_sol(isol)%constantes%rugthe .gt. solmax(2)) solmax(2) &
+         = solution_sol(isol)%constantes%rugthe
+    if (solution_sol(isol)%constantes%albedo .gt. solmax(3)) solmax(3) &
+         = solution_sol(isol)%constantes%albedo
+    if (solution_sol(isol)%constantes%emissi .gt. solmax(4)) solmax(4) &
+         = solution_sol(isol)%constantes%emissi
+    if (solution_sol(isol)%constantes%csol   .gt. solmax(5)) solmax(5) &
+         = solution_sol(isol)%constantes%csol
+    if (solution_sol(isol)%constantes%vegeta .gt. solmax(6)) solmax(6) &
+         = solution_sol(isol)%constantes%vegeta
+    if (solution_sol(isol)%constantes%c1w    .gt. solmax(7)) solmax(7) &
+         = solution_sol(isol)%constantes%c1w
+    if (solution_sol(isol)%constantes%c2w    .gt. solmax(8)) solmax(8) &
+         = solution_sol(isol)%constantes%c2w
+    if (solution_sol(isol)%constantes%r1     .gt. solmax(9)) solmax(9) &
+         = solution_sol(isol)%constantes%r1
+    if (solution_sol(isol)%constantes%r2     .gt. solmax(10))solmax(10)&
+         = solution_sol(isol)%constantes%r2
+    if (solution_sol(isol)%constantes%rugdyn .lt. solmin(1)) solmin(1) &
+         = solution_sol(isol)%constantes%rugdyn
+    if (solution_sol(isol)%constantes%rugthe .lt. solmin(2)) solmin(2) &
+         = solution_sol(isol)%constantes%rugthe
+    if (solution_sol(isol)%constantes%albedo .lt. solmin(3)) solmin(3) &
+         = solution_sol(isol)%constantes%albedo
+    if (solution_sol(isol)%constantes%emissi .lt. solmin(4)) solmin(4) &
+         = solution_sol(isol)%constantes%emissi
+    if (solution_sol(isol)%constantes%csol   .lt. solmin(5)) solmin(5) &
+         = solution_sol(isol)%constantes%csol
+    if (solution_sol(isol)%constantes%vegeta .lt. solmin(6)) solmin(6) &
+         = solution_sol(isol)%constantes%vegeta
+    if (solution_sol(isol)%constantes%c1w    .lt. solmin(7)) solmin(7) &
+         = solution_sol(isol)%constantes%c1w
+    if (solution_sol(isol)%constantes%c2w    .lt. solmin(8)) solmin(8) &
+         = solution_sol(isol)%constantes%c2w
+    if (solution_sol(isol)%constantes%r1     .lt. solmin(9)) solmin(9) &
+         = solution_sol(isol)%constantes%r1
+    if (solution_sol(isol)%constantes%r2     .lt. solmin(10))solmin(10)&
+         = solution_sol(isol)%constantes%r2
+    solmea(1) = solmea(1) + solution_sol(isol)%constantes%rugdyn
+    solmea(2) = solmea(2) + solution_sol(isol)%constantes%rugthe
+    solmea(3) = solmea(3) + solution_sol(isol)%constantes%albedo
+    solmea(4) = solmea(4) + solution_sol(isol)%constantes%emissi
+    solmea(5) = solmea(5) + solution_sol(isol)%constantes%csol
+    solmea(6) = solmea(6) + solution_sol(isol)%constantes%vegeta
+    solmea(7) = solmea(7) + solution_sol(isol)%constantes%c1w
+    solmea(8) = solmea(8) + solution_sol(isol)%constantes%c2w
+    solmea(9) = solmea(9) + solution_sol(isol)%constantes%r1
+    solmea(10)= solmea(10)+ solution_sol(isol)%constantes%r2
   enddo
   do n = 1, 10
     solmea(n)= solmea(n)/float(nfmodsol)

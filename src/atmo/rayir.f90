@@ -86,8 +86,12 @@ use period
 use ppppar
 use ppthch
 use ppincl
+use cs_c_bindings
+use mesh
+use field
 use atincl, only: kmx, cpvcpa, sigc, irdu, iru, ird
 use cstnum, only: epzero, pi
+use radiat
 
 !===============================================================================
 
@@ -111,6 +115,7 @@ double precision foir, rayi(kmx)
 ! Local variables
 
 integer k, kk, kp1, ineb, inua, iaer, i
+integer          ifac, iz1, iz2, f_id, c_id, iel
 double precision sig
 double precision qqcinf, cetyp, dzs8
 double precision xqqvinf, xqqcinf, xqqlinf, fo, t4zt
@@ -124,6 +129,10 @@ double precision beta, wh2ol
 double precision zbas
 double precision caero
 double precision rm, req
+double precision a3, tvsups, dtvsups
+double precision foirs, foirs1, foirs2
+double precision tlsups, fnss
+double precision omega, var, zent
 
 double precision, allocatable :: rov(:), roc(:), rol(:), qv0(:), qc(:)
 double precision, allocatable :: qqc(:), qql(:)
@@ -133,10 +142,10 @@ double precision, allocatable :: dz0(:)
 double precision, allocatable :: kliq(:)
 
 double precision, allocatable :: dfir(:), ufir(:)
-
-double precision a3, tvsups, dtvsups
-double precision foirs, foirs1, foirs2
-double precision tlsups, fnss
+double precision, allocatable :: ckup(:), ckdown(:)
+double precision, dimension(:,:), pointer :: bpro_rad_inc
+double precision, dimension(:,:), pointer :: cpro_ck_up
+double precision, dimension(:,:), pointer :: cpro_ck_down
 
 !===============================================================================
 
@@ -149,6 +158,7 @@ allocate(kliq(kmx+1))
 
 if (irdu.eq.1) then
   allocate(dfir(kmx), ufir(kmx))
+  allocate(ckup(kmx), ckdown(kmx))
 endif
 
 ! local initializations
@@ -771,12 +781,90 @@ else
 endif
 
 if (irdu.eq.1) then
-  do k = 1,kmray
+  do k = 1, kmray
     iru(k,ivertc) = ufir(k)
     ird(k,ivertc) = dfir(k)
+
+    ! Ck_up = depsg0 / (1 - epsg0)
+    ! With:
+    ! epsg0 = 1 - tv_infinity + acinfinity
+    ! depsg0 = - dtv_infinity + dacinfinity
+    ckup(k) = (dacinfe(k) - dtvinfe) / (tvinfe - acinfe(k))
+
+    ! Ck_down = -depsgz / (1 - epsgz)
+    ! With:
+    ! epsgz = 1 - tv_sup + acinfinity
+    ! depsgz = - dtv_infinity + dacinfinity
+    ckdown(k) = (dacsup(k) - dtvsup) / (tvsup - acsup(k))
   enddo
 
+endif
+
+! Compute Boundary conditions for the 3D InfraRed radiance
+! at the top of the CFD domain
+call field_get_id_try("spectral_rad_incident_flux", f_id)
+
+if (f_id.ge.0) then
+  call field_get_val_v(f_id, bpro_rad_inc)
+
+  call field_get_val_v_by_name("rad_absorption_coeff_up", cpro_ck_up)
+  call field_get_val_v_by_name("rad_absorption_coeff_down", cpro_ck_down)
+
+  ! First count if solar is activated
+  c_id = 0
+  ! Direct solar radiation incident
+  if (iand(rad_atmo_model, 1).eq.1) then
+    c_id = c_id + 1
+  endif
+
+  ! Diffuse solar radiation incident
+  if (iand(rad_atmo_model, 2).eq.2) then
+    c_id = c_id + 1
+  endif
+
+  ! Infra Red radiation incident
+  if (iand(rad_atmo_model, 4).eq.4) then
+
+    c_id = c_id + 1
+    do ifac = 1, nfabor
+
+      ! Interpolate at zent
+      zent = cdgfbo(3, ifac)
+
+      call intprz &
+          (kmray, zqq,                                               &
+          dfir, zent, iz1, iz2, var )
+
+      bpro_rad_inc(c_id, ifac) = pi * var
+    enddo
+
+    ! Store the (downward and upward) absortion coefficient of the 1D model
+    do iel = 1, ncel
+
+      ! Interpolate at zent
+      zent = xyzcen(3, iel)
+
+      call intprz &
+        (kmray, zqq,                                               &
+        ckdown, zent, iz1, iz2, var )
+
+      cpro_ck_down(c_id, iel) = var! FIXME factor 3/5 ?
+
+      call intprz &
+        (kmray, zqq,                                               &
+        ckup, zent, iz1, iz2, var )
+
+      cpro_ck_up(c_id, iel) = var! FIXME factor 3/5 ?
+
+    enddo
+
+  endif
+
+endif
+
+if (irdu.eq.1) then
   deallocate(ufir,dfir)
+  deallocate(ckup, ckdown)
 endif
 
 deallocate(rov,roc,rol,qv0,qc)

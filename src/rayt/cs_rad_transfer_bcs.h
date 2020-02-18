@@ -111,7 +111,7 @@ cs_rad_transfer_bcs(int         nvar,
  * 1. Boundary conditions for the radiative intensity (DO model)
  * --------------------------------------------------------------
  *      The array coefap stores the intensity for each boundary faces,
- *        depending of the natur of the boundary (Dirichlet condition).
+ *        depending of the nature of the boundary (Dirichlet condition).
  *      The intensity of radiation is defined as the rate of emitted
  *        energy from unit surface area through unit solid angle.
  *
@@ -126,30 +126,31 @@ cs_rad_transfer_bcs(int         nvar,
  *
  * 2. Boundary conditions for the P-1 model
  * ----------------------------------------
- *
  * \param[in]  bc_type         boundary face types
  * \param[in]  vect_s          direction vector or NULL
+ * \param[in]  ckmel           Absoprtion coefficcient of the mixture
+ *                               gas-particules of coal
+ * \param[in]  bpro_eps        Boundary emissivity, or NULL for solar radiation
+ * \param[in]  w_gg            Weights of the i-th gray gas at boundaries
+ * \param[in]  gg_id           number of the i-th grey gas
  * \param[out] coefap          boundary conditions for intensity or P-1 model
  * \param[out] coefbp          boundary conditions for intensity or P-1 model
  * \param[out] cofafp          boundary conditions for intensity or P-1 model
  * \param[out] cofbfp          boundary conditions for intensity or P-1 model
- * \param[in]  ckmel           coeff d'absorption du melange
- *                               gaz-particules de charbon
- * \param[in]  w_gg            Weights of the i-th gray gas at boundaries
- * \param[in]  gg_id           number of the i-th grey gas
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_rad_transfer_bc_coeffs(int        bc_type[],
                           cs_real_t  vect_s[3],
+                          cs_real_t  ckmel[],
+                          cs_real_t  bpro_eps[],
+                          cs_real_t  w_gg[],
+                          int        gg_id,
                           cs_real_t  coefap[],
                           cs_real_t  coefbp[],
                           cs_real_t  cofafp[],
-                          cs_real_t  cofbfp[],
-                          cs_real_t  ckmel[],
-                          cs_real_t  w_gg[],
-                          int        gg_id);
+                          cs_real_t  cofbfp[]);
 
 /*----------------------------------------------------------------------------*/
 

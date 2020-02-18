@@ -37,6 +37,13 @@ User changes:
 
 Numerics and physical modelling:
 
+- Atmo: add 3D radiative transfer for solar wave (shortwaves): direct and
+  diffuse.
+  The 1D atmospheric model is solved before to get boundary conditions at
+  the top of the CFD domain. It is also used for the absorption
+  coefficients.
+  This work is part of M. Millez PhD, Y. Qu PhD and Y. Maanane internship.
+
 - The GMRES solver may now also be used for vector or tensor fields.
   The maximum number of restarts is set at 40 instead of 75
   (which is still quite high compared to most of the litterature).

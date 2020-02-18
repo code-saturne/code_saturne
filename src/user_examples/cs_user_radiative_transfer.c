@@ -122,9 +122,9 @@ cs_user_radiative_transfer_parameters(void)
 
   cs_glob_rad_transfer_params->iimpar = 1;
 
-  /* Verbosity mode for the Luminance (0, 1 or 2) */
+  /* Verbosity mode for the radiance (0, 1 or 2) */
 
-  cs_glob_rad_transfer_params->iimlum = 0;
+  cs_glob_rad_transfer_params->verbosity = 1;
 
   /* Compute the absorption coefficient through Modak (if 1 or 2),
      or do not use Modak (if 0).
@@ -149,11 +149,15 @@ cs_user_radiative_transfer_parameters(void)
 
   cs_glob_rad_transfer_params->imfsck = 1;
 
-  /* Activate Infra Red absoption for atmospheric flows
-       atmo_ir_absorption = true: activated
-       atmo_ir_absorption = false: not activated */
+  /* Activate  3D radiative models for  atmospheric flows
+       atmo_model |=  CS_RAD_ATMO_3D_INFRARED: Infrared
+       atmo_model |=  CS_RAD_ATMO_3D_DIRECT_SOLAR: direct solar
+       atmo_model |=  CS_RAD_ATMO_3D_DIFFUSE_SOLAR: diffuse solar
+       */
 
-  cs_glob_rad_transfer_params->atmo_ir_absorption = true;
+  cs_glob_rad_transfer_params->atmo_model |= CS_RAD_ATMO_3D_INFRARED;
+  cs_glob_rad_transfer_params->atmo_model |= CS_RAD_ATMO_3D_DIRECT_SOLAR;
+  cs_glob_rad_transfer_params->atmo_model |= CS_RAD_ATMO_3D_DIFFUSE_SOLAR;
 
   /*! [cs_user_radiative_transfer_parameters] */
 }

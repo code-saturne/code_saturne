@@ -129,8 +129,6 @@ integer          ipass
 data             ipass /0/
 save             ipass
 
-integer :: verbosity
-
 integer, pointer, dimension(:,:) :: icodcl
 integer, allocatable, dimension(:) :: isostd
 
@@ -258,12 +256,6 @@ call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_p)
 !===============================================================================
 ! 1. Initialisation
 !===============================================================================
-
-if (cs_log_default_is_active()) then
-  verbosity = 1
-else
-  verbosity = 0
-endif
 
 allocate(isostd(nfabor+1))
 
@@ -1428,7 +1420,7 @@ if (nscal.ge.1 .and. iirayo.gt.0) then
     call atr1vf()
   endif
 
-  call cs_rad_transfer_solve(verbosity, itypfb, cp2fol, cp2ch, ichcor)
+  call cs_rad_transfer_solve(itypfb, cp2fol, cp2ch, ichcor)
 endif
 
 if (nscal.ge.1) then

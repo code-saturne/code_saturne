@@ -53,6 +53,12 @@ module radiat
   !> Useful if and only if the radiation module is activated}
   integer(c_int), pointer, save ::           nfreqr
 
+  !> Atmospheric radiation model:
+  !> - Direct Solar the first bit
+  !> - diFfuse Solar for the second bit
+  !> - InfraRed for the third bitPeriod of the radiation module.
+  integer(c_int), pointer, save :: rad_atmo_model
+
   !> \}
 
   !=============================================================================
@@ -71,12 +77,12 @@ module radiat
     !---------------------------------------------------------------------------
 
     ! Interface to C function to retrieve pointers
-    subroutine cs_rad_transfer_get_pointers(p_iirayo, p_nfreqr)  &
+    subroutine cs_rad_transfer_get_pointers(p_iirayo, p_nfreqr, p_rad_atmo_model)  &
       bind(C, name='cs_rad_transfer_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
 
-      type(c_ptr), intent(out) :: p_iirayo, p_nfreqr
+      type(c_ptr), intent(out) :: p_iirayo, p_nfreqr, p_rad_atmo_model
 
     end subroutine cs_rad_transfer_get_pointers
 
@@ -127,12 +133,11 @@ module radiat
 
     ! Interface to C function handling resolution
 
-    subroutine cs_rad_transfer_solve(verbosity, bc_type,     &
+    subroutine cs_rad_transfer_solve(bc_type,     &
                                      cp2fol, cp2ch, ichcor)  &
       bind(C, name='cs_rad_transfer_solve')
       use, intrinsic :: iso_c_binding
       implicit none
-      integer(kind=c_int), value :: verbosity
       integer(kind=c_int), dimension(*) :: bc_type, ichcor
       real(kind=c_double), value :: cp2fol
       real(kind=c_double), dimension(*) :: cp2ch
@@ -167,12 +172,13 @@ contains
     use ppcpfu
     use numvar
 
-    type(c_ptr) :: p_iirayo, p_nfreqr
+    type(c_ptr) :: p_iirayo, p_nfreqr, p_rad_atmo_model
 
-    call cs_rad_transfer_get_pointers(p_iirayo, p_nfreqr)
+    call cs_rad_transfer_get_pointers(p_iirayo, p_nfreqr, p_rad_atmo_model)
 
     call c_f_pointer(p_iirayo, iirayo)
     call c_f_pointer(p_nfreqr, nfreqr)
+    call c_f_pointer(p_rad_atmo_model, rad_atmo_model)
 
   end subroutine radiat_init
 

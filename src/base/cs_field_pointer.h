@@ -192,6 +192,10 @@ typedef enum {
   CS_ENUMF_(fnet),         /*!< Boundary radiative flux */
   CS_ENUMF_(fconv),        /*!< Boundary radiative convective flux */
   CS_ENUMF_(hconv),        /*!< radiative exchange coefficient */
+  CS_ENUMF_(fup),          /*!< Spectral upward radiative flux */
+  CS_ENUMF_(fdown),        /*!< Spectral downward radiative flux */
+  CS_ENUMF_(rad_ck_up),    /*!< Spectral upward Radiative absorption coefficient */
+  CS_ENUMF_(rad_ck_down),  /*!< Spectral downward Radiative absorption coefficient */
 
   CS_ENUMF_(mol_mass),     /*!< gas mix molar max */
 

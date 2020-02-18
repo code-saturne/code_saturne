@@ -93,7 +93,7 @@ BEGIN_C_DECLS
         - 0: no display
         - 1: standard
         - 2: complete
-  \var  cs_rad_transfer_params_t::iimlum
+  \var  cs_rad_transfer_params_t::verbosity
         Verbosity level in the log concerning the calculation of
         the radiative transfer equation:
         - 0: no display
@@ -225,7 +225,7 @@ const char *cs_rad_transfer_quadrature_name[] = {
 cs_rad_transfer_params_t _rt_params = {.type = CS_RAD_TRANSFER_NONE,
                                        .nrphas = 0,
                                        .iimpar = 0,
-                                       .iimlum = 0,
+                                       .verbosity = 0,
                                        .imodak = 0,
                                        .imoadf = 0,
                                        .iwrp1t = 0,
@@ -239,7 +239,7 @@ cs_rad_transfer_params_t _rt_params = {.type = CS_RAD_TRANSFER_NONE,
                                        .angsol = NULL,
                                        .restart = 0,
                                        .nfreqr = 0,
-                                       .nwsgg = 0,
+                                       .nwsgg = 1,
                                        .wq = NULL,
                                        .itpimp = 1,
                                        .ipgrno = 21,
@@ -248,7 +248,10 @@ cs_rad_transfer_params_t _rt_params = {.type = CS_RAD_TRANSFER_NONE,
                                        .ifrefl = 32,
                                        .itpt1d = 4,
                                        .ifinfe = 5,
-                                       .atmo_ir_absorption = false,
+                                       .atmo_model = CS_RAD_ATMO_3D_NONE,
+                                       .atmo_dr_id = -1,
+                                       .atmo_df_id = -1,
+                                       .atmo_ir_id = -1,
                                        .dispersion = false,
                                        .dispersion_coeff = 1.};
 
@@ -261,7 +264,8 @@ cs_rad_transfer_params_t *cs_glob_rad_transfer_params = &_rt_params;
 
 void
 cs_rad_transfer_get_pointers(int  **p_iirayo,
-                             int  **p_nfreqr);
+                             int  **p_nfreqr,
+                             int  **p_rad_atmo_model);
 
 /*============================================================================
  * Fortran wrapper function definitions
@@ -269,10 +273,12 @@ cs_rad_transfer_get_pointers(int  **p_iirayo,
 
 void
 cs_rad_transfer_get_pointers(int  **p_iirayo,
-                             int  **p_nfreqr)
+                             int  **p_nfreqr,
+                             int  **p_rad_atmo_model)
 {
   *p_iirayo = &_rt_params.type;
   *p_nfreqr = &_rt_params.nfreqr;
+  *p_rad_atmo_model = &_rt_params.atmo_model;
 }
 
 /*============================================================================

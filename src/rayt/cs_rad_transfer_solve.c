@@ -48,6 +48,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_atmo.h"
 #include "cs_blas.h"
 #include "cs_boundary_conditions.h"
 #include "cs_boundary_zone.h"
@@ -390,6 +391,10 @@ _cs_rad_transfer_sol(int                        gg_id,
   const cs_real_t c_stefan = cs_physical_constants_stephan;
   const cs_real_t onedpi  = 1.0 / cs_math_pi;
 
+  /* Shorter notation */
+  cs_rad_transfer_params_t *rt_params = cs_glob_rad_transfer_params;
+
+  /* Total incident radiative flux  */
   cs_field_t *f_qincid = cs_field_by_name("rad_incident_flux");
   cs_field_t *f_snplus = cs_field_by_name("rad_net_flux");
 
@@ -424,12 +429,9 @@ _cs_rad_transfer_sol(int                        gg_id,
   cs_field_t *f_up = NULL, *f_down = NULL;
   cs_real_t *ck_u = NULL, *ck_d = NULL;
 
-  if (cs_glob_rad_transfer_params->atmo_ir_absorption) {
-
-    f_up = cs_field_by_name_try("rad_flux_up"); //TODO distinguish IR with solar?
+  if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
+    f_up = cs_field_by_name_try("rad_flux_up");
     f_down = cs_field_by_name_try("rad_flux_down");
-    cs_field_set_values(f_up, 0.);
-    cs_field_set_values(f_down, 0.);
 
     BFT_MALLOC(ck_u_d,  n_cells_ext, cs_real_t);
     ck_u = cs_field_by_name("rad_absorption_coeff_up")->val;
@@ -437,16 +439,64 @@ _cs_rad_transfer_sol(int                        gg_id,
 
   }
 
+  cs_real_t vect_s[3];
+  cs_real_t domegat;
+  bool one_dir = false;
+  /* Compute the Angular direction for direct solar radiation */
+  if (gg_id == 0) {
+    if (rt_params->atmo_model & CS_RAD_ATMO_3D_DIRECT_SOLAR) {
+      one_dir = true;
+      domegat = cs_math_pi;
+
+      /* Computes universal time coordinate */
+      cs_real_t utc = (cs_real_t)cs_glob_atmo_option->shour
+        + (cs_real_t)cs_glob_atmo_option->smin / 60.
+        + (cs_real_t)cs_glob_atmo_option->ssec / 3600.;
+
+      if (cs_glob_time_step_options->idtvar == CS_TIME_STEP_CONSTANT
+          || cs_glob_time_step_options->idtvar == CS_TIME_STEP_ADAPTIVE)
+        utc += cs_glob_time_step->t_cur / 3600.;
+
+      cs_real_t albedo, muzero, omega, fo;
+      cs_atmo_compute_solar_angles(cs_glob_atmo_option->latitude,
+                                   cs_glob_atmo_option->longitude,
+                                   (cs_real_t)cs_glob_atmo_option->squant,
+                                   utc,
+                                   0, /* no Sea */
+                                   &albedo,
+                                   &muzero,
+                                   &omega,
+                                   &fo);
+
+      /* Zenital angle */
+      cs_real_t za = acos(muzero);
+      vect_s[0] = - sin(za) * sin(omega);
+      vect_s[1] = - sin(za) * cos(omega);
+      vect_s[2] = - muzero; /* cos(za) */
+
+      if (rt_params->verbosity > 0)
+        bft_printf("     Solar direction [%f, %f, %f] \n", vect_s[0], vect_s[1], vect_s[2]);
+
+    }
+  }
+
+
   /* Initialization */
 
-  cs_field_t *f_qinspe;
-  if (cs_glob_rad_transfer_params->imoadf >= 1)
-    /* Pointer to the spectral flux density field */
+  /* Number of bands (stride) */
+  cs_lnum_t stride = 1;
+  if (rt_params->nwsgg > 0)
+    stride = rt_params->nwsgg;
+
+  /* Pointer to the spectral flux density field */
+  cs_field_t *f_qinspe = NULL;
+  if (rt_params->imoadf >= 1 ||
+      rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
     f_qinspe = cs_field_by_name_try("spectral_rad_incident_flux");
 
   cs_var_cal_opt_t vcopt = cs_parameters_var_cal_opt_default();
 
-  vcopt.iwarni =  cs_glob_rad_transfer_params->iimlum;
+  vcopt.iwarni =  rt_params->verbosity;
   vcopt.iconv  =  1; /* Pure convection */
   vcopt.istat  = -1;
   vcopt.ndircl = 1;/* There are Dirichlet BCs */
@@ -458,7 +508,7 @@ _cs_rad_transfer_sol(int                        gg_id,
   vcopt.blencv =  0; /* Pure upwind...*/
   vcopt.epsrsm =  1e-08;  /* TODO: try with default (1e-07) */
 
-  if (cs_glob_rad_transfer_params->dispersion) {
+  if (rt_params->dispersion) {
     vcopt.idiff  =  1; /* Added face diffusion */
     vcopt.nswrgr = 20;
     vcopt.nswrsm =  2;
@@ -472,34 +522,35 @@ _cs_rad_transfer_sol(int                        gg_id,
    *                            /2PI
    */
 
-  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-    f_snplus->val[face_id] = 0.0;
+  cs_real_t aa;
+  if (!one_dir) {
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+      f_snplus->val[face_id] = 0.0;
 
-  cs_real_t vect_s[3];
-  cs_real_t domegat, aa;
-  for (int ii = -1; ii <= 1; ii+=2) {
-    for (int jj = -1; jj <= 1; jj+=2) {
-      for (int kk = -1; kk <= 1; kk+=2) {
+    for (int ii = -1; ii <= 1; ii+=2) {
+      for (int jj = -1; jj <= 1; jj+=2) {
+        for (int kk = -1; kk <= 1; kk+=2) {
 
-        for (int dir_id = 0; dir_id < cs_glob_rad_transfer_params->ndirs; dir_id++) {
-          vect_s[0] = ii * cs_glob_rad_transfer_params->vect_s[dir_id][0];
-          vect_s[1] = jj * cs_glob_rad_transfer_params->vect_s[dir_id][1];
-          vect_s[2] = kk * cs_glob_rad_transfer_params->vect_s[dir_id][2];
-          domegat = cs_glob_rad_transfer_params->angsol[dir_id];
-          for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-            aa = cs_math_3_dot_product(vect_s, b_face_normal[face_id]);
-            aa /= b_face_surf[face_id];
-            f_snplus->val[face_id] += 0.5 * (-aa + CS_ABS(aa)) * domegat;
+          for (int dir_id = 0; dir_id < rt_params->ndirs; dir_id++) {
+            vect_s[0] = ii * rt_params->vect_s[dir_id][0];
+            vect_s[1] = jj * rt_params->vect_s[dir_id][1];
+            vect_s[2] = kk * rt_params->vect_s[dir_id][2];
+            domegat = rt_params->angsol[dir_id];
+            for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+              aa = cs_math_3_dot_product(vect_s, b_face_normal[face_id]);
+              aa /= b_face_surf[face_id];
+              f_snplus->val[face_id] += 0.5 * (-aa + CS_ABS(aa)) * domegat;
+            }
           }
-        }
 
+        }
       }
     }
-  }
 
-  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
-    coefap[face_id] *= cs_math_pi / f_snplus->val[face_id];
-    cofafp[face_id] *= cs_math_pi / f_snplus->val[face_id];
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
+      coefap[face_id] *= cs_math_pi / f_snplus->val[face_id];
+      cofafp[face_id] *= cs_math_pi / f_snplus->val[face_id];
+    }
   }
 
   /* initialization for integration in following loops */
@@ -507,12 +558,6 @@ _cs_rad_transfer_sol(int                        gg_id,
   for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
     f_qincid->val[face_id] = 0.0;
     f_snplus->val[face_id] = 0.0;
-  }
-
-  if (cs_glob_rad_transfer_params->imoadf >= 1) {
-    const cs_lnum_t stride = cs_glob_rad_transfer_params->nwsgg;
-    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-      f_qinspe->val[face_id*stride + gg_id] = 0.0;
   }
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++) {
@@ -539,54 +584,77 @@ _cs_rad_transfer_sol(int                        gg_id,
 
   int kdir = 0;
 
-  for (int ii = -1; ii <= 1; ii+=2) {
-    for (int jj = -1; jj <= 1; jj+=2) {
-      for (int kk = -1; kk <= 1; kk+=2) {
+  /* When having only one direction, one pass is enough... */
+  bool finished = false;
+
+  for (int ii = -1; ii <= 1 && !finished; ii+=2) {
+    for (int jj = -1; jj <= 1 && !finished; jj+=2) {
+      for (int kk = -1; kk <= 1 && !finished; kk+=2) {
 
         for (int dir_id = 0;
-             dir_id < cs_glob_rad_transfer_params->ndirs;
+             dir_id < rt_params->ndirs && !finished;
              dir_id++) {
-          vect_s[0] = ii * cs_glob_rad_transfer_params->vect_s[dir_id][0];
-          vect_s[1] = jj * cs_glob_rad_transfer_params->vect_s[dir_id][1];
-          vect_s[2] = kk * cs_glob_rad_transfer_params->vect_s[dir_id][2];
-          domegat = cs_glob_rad_transfer_params->angsol[dir_id];
-          /* Gloal direction id */
-          kdir++;
-
-          /* Update boundary condition coefficients */
-          if (cs_glob_rad_transfer_params->atmo_ir_absorption)
-            cs_rad_transfer_bc_coeffs(bc_type,
-                                      vect_s,
-                                      coefap, coefbp,
-                                      cofafp, cofbfp,
-                                      NULL, /* only usefull for P1 */
-                                      w_gg,
-                                      gg_id);
-
 
           char    cname[80];
-          snprintf(cname, 79, "%s%03d", "radiation_", kdir);
+
+          if (one_dir) {
+            snprintf(cname, 79, "%s", "direct_radiation");
+            finished = true;
+          }
+          /* Many directions */
+          else {
+            vect_s[0] = ii * rt_params->vect_s[dir_id][0];
+            vect_s[1] = jj * rt_params->vect_s[dir_id][1];
+            vect_s[2] = kk * rt_params->vect_s[dir_id][2];
+            domegat = rt_params->angsol[dir_id];
+
+            /* Gloal direction id */
+            kdir++;
+            snprintf(cname, 79, "%s%03d", "radiation_", kdir);
+          }
+
+          /* Update boundary condition coefficients
+           * Note: In Atmo, emissivity is usefull only for InfraRed
+           * */
+          cs_real_t *bpro_eps = NULL;
+          if (   gg_id != rt_params->atmo_dr_id
+              && gg_id != rt_params->atmo_df_id)
+            bpro_eps = cs_field_by_name("emissivity")->val;
+
+          if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE)
+            cs_rad_transfer_bc_coeffs(bc_type,
+                                      vect_s,
+                                      NULL, /* only usefull for P1 */
+                                      bpro_eps,
+                                      w_gg,
+                                      gg_id,
+                                      coefap, coefbp,
+                                      cofafp, cofbfp);
 
           /* Spatial discretization */
 
           /* Explicit source term */
 
           /* Upwards/Downwards atmospheric integration */
-          if (cs_glob_rad_transfer_params->atmo_ir_absorption) {
+          if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
 
             const cs_real_t *grav = cs_glob_physical_constants->gravity;
 
             for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
               if (cs_math_3_dot_product(grav, vect_s) < 0.0)
-                ck_u_d[cell_id] = ck_u[cell_id] * 3./5.;
+                ck_u_d[cell_id] = ck_u[gg_id + cell_id * stride] * 3./5.;
               else
-                ck_u_d[cell_id] = ck_d[cell_id] * 3./5.;
+                ck_u_d[cell_id] = ck_d[gg_id + cell_id * stride] * 3./5.;
 
               rovsdt[cell_id] =  ck_u_d[cell_id] * cell_vol[cell_id];
 
-              rhs[cell_id] =   ck_u_d[cell_id] * cell_vol[cell_id]
+              /* No emission in solar bands
+               * TODO: transfer from direct to diffuse solar? */
+              if (gg_id == rt_params->atmo_ir_id)
+                rhs[cell_id] =   ck_u_d[cell_id] * cell_vol[cell_id]
                              * c_stefan * cs_math_pow4(tempk[cell_id]) * onedpi;
-
+              else
+                rhs[cell_id] = 0.;
             }
           }
           else {
@@ -596,10 +664,10 @@ _cs_rad_transfer_sol(int                        gg_id,
 
           /* Implicit source term (rovsdt seen above) */
 
-          if (cs_glob_rad_transfer_params->dispersion) {
+          if (rt_params->dispersion) {
             const cs_real_t disp_coeff
-              = cs_glob_rad_transfer_params->dispersion_coeff;
-            const cs_real_t pi = 4.0 * atan(1.);
+              = rt_params->dispersion_coeff;
+            const cs_real_t pi = cs_math_pi;
             const cs_real_t tan_alpha
               =    sqrt(domegat * (4.*pi - domegat))
                  / (2. * pi - domegat);
@@ -672,7 +740,7 @@ _cs_rad_transfer_sol(int                        gg_id,
           /* Integration of fluxes and source terms
            * Increment absorption and emission for Atmo on the fly */
 
-          if (cs_glob_rad_transfer_params->atmo_ir_absorption) {
+          if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
 
             for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
               aa = radiance[cell_id] * domegat;
@@ -686,7 +754,7 @@ _cs_rad_transfer_sol(int                        gg_id,
 
               int_rad_ist[cell_id] -= 4.0 * dcp[cell_id] * ck_u_d[cell_id]
                                           * c_stefan * domegat * onedpi
-                                          * cs_math_pow3(tempk[cell_id]);
+                                          * cs_math_pow3(tempk[cell_id]);//FIXME solar....
 
               q[cell_id][0] += aa * vect_s[0];
               q[cell_id][1] += aa * vect_s[1];
@@ -706,7 +774,7 @@ _cs_rad_transfer_sol(int                        gg_id,
 
           }
 
-          /* Flux incident to wall */
+          /* Flux incident to boundary */
 
           for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
             cs_lnum_t cell_id = cs_glob_mesh->b_face_cells[face_id];
@@ -714,33 +782,43 @@ _cs_rad_transfer_sol(int                        gg_id,
             aa /= b_face_surf[face_id];
             aa = 0.5 * (aa + CS_ABS(aa)) * domegat;
             f_snplus->val[face_id] += aa;
-            if (cs_glob_rad_transfer_params->imoadf >= 1)
-              f_qinspe->val[gg_id + face_id * cs_glob_rad_transfer_params->nwsgg]
-                += aa * radiance[cell_id];
-
-            else
-              f_qincid->val[face_id]
-                += aa * radiance[cell_id];
+            f_qincid->val[face_id] += aa * radiance[cell_id];
 
           }
 
+          /* Specific to Atmo (Direct Solar, diFfuse Solar, Infra Red) */
           if (cs_math_3_dot_product(cs_glob_physical_constants->gravity,
                                     vect_s) < 0.0 && f_up != NULL) {
             for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-              f_up->val[cell_id] += radiance[cell_id] * domegat * vect_s[2];//FIXME S.g/||g||
+              f_up->val[gg_id + cell_id * stride] += radiance[cell_id] * domegat * vect_s[2];//FIXME S.g/||g||
           }
           else if (cs_math_3_dot_product(cs_glob_physical_constants->gravity,
                                          vect_s) > 0.0 && f_down != NULL) {
             for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-              f_down->val[cell_id] += radiance[cell_id] * domegat * vect_s[2];
+              f_down->val[gg_id + cell_id * stride] += radiance[cell_id] * domegat * vect_s[2];
           }
         }
       }
     }
   } /* End of loop over directions */
 
+  /* Finalize spectral incident flux to boundary */
+  if (f_qinspe != NULL) {
+    for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+      f_qinspe->val[gg_id + face_id * stride] = f_qincid->val[face_id];
+    /* For atmospheric radiation, albedo times the incident
+     * direct solar radiation is given to the diffuse solar */
+    cs_field_t *f_albedo = cs_field_by_name_try("boundary_albedo");
+    if (gg_id == 0
+        && rt_params->atmo_model & CS_RAD_ATMO_3D_DIFFUSE_SOLAR) {
+      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
+        f_qinspe->val[gg_id+1 + face_id * stride] =
+          f_albedo->val[face_id] * f_qincid->val[face_id];
+    }
+  }
+
   /* Absorption and emission if not atmo */
-  if (!cs_glob_rad_transfer_params->atmo_ir_absorption) {
+  if (rt_params->atmo_model == CS_RAD_ATMO_3D_NONE) {
 
     /* Absorption */
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
@@ -891,7 +969,6 @@ _compute_net_flux(const int        itypfb[],
  *  - Discretes Ordinates Methods (DOM)
  *  - P-1 approximation (only recommended for pulverized coal)
  *
- *  \param[in]       verbosity     verbosity level
  *  \param[in, out]  bc_type       boundary face types
  *  \param[in]       cp2fol        fuel oil liquid CP
  *  \param[in]       cp2ch         pulverized coal CP's
@@ -900,8 +977,7 @@ _compute_net_flux(const int        itypfb[],
 /*----------------------------------------------------------------------------*/
 
 void
-cs_rad_transfer_solve(int               verbosity,
-                      int               bc_type[],
+cs_rad_transfer_solve(int               bc_type[],
                       cs_real_t         cp2fol,
                       const cs_real_t   cp2ch[],
                       const int         ichcor[])
@@ -1015,13 +1091,13 @@ cs_rad_transfer_solve(int               verbosity,
       twall[ifac]  = 0.0;
   }
 
-  cs_real_t *wq = cs_glob_rad_transfer_params->wq;
+  cs_real_t *wq = rt_params->wq;
 
   /* FSCK model parameters */
   if (wq == NULL) {
     /* Weight of the i-the gaussian quadrature  */
     BFT_MALLOC(wq, nwsgg, cs_real_t);
-    cs_glob_rad_transfer_params->wq = wq;
+    rt_params->wq = wq;
 
     /* Must be set to 1 in case of using the standard as well as */
     /* the ADF radiation models  */
@@ -1036,7 +1112,7 @@ cs_rad_transfer_solve(int               verbosity,
       && cs_glob_time_step->nt_cur%rt_params->nfreqr != 0)
     return;
 
-  if (verbosity > 0)
+  if (rt_params->verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT,
                   _("   ** Information on the radiative source term\n"
                     "      ----------------------------------------\n"));
@@ -1139,6 +1215,15 @@ cs_rad_transfer_solve(int               verbosity,
     }
   }
 
+  /* Upward/Downward atmospheric integration */
+  /* Postprocessing atmospheric upward and downward flux */
+  if (rt_params->atmo_model != CS_RAD_ATMO_3D_NONE) {
+    cs_field_t *f_up = cs_field_by_name_try("rad_flux_up");
+    cs_field_t *f_down = cs_field_by_name_try("rad_flux_down");
+    cs_field_set_values(f_up, 0.);
+    cs_field_set_values(f_down, 0.);
+  }
+
   /* Store temperature (in Kelvin) in tempk(cell_id, irphas) */
 
   /* --> Temperature transport */
@@ -1230,7 +1315,7 @@ cs_rad_transfer_solve(int               verbosity,
 
       cs_user_rad_transfer_absorption(bc_type, ckg);
 
-      if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_P1)
+      if (rt_params->type == CS_RAD_TRANSFER_P1)
         cs_rad_transfer_absorption_check_p1(ckg);
 
     }
@@ -1305,7 +1390,7 @@ cs_rad_transfer_solve(int               verbosity,
         ckg[cell_id] = kgi[n_cells*gg_id + cell_id];
 
     }
-    else if (!cs_glob_rad_transfer_params->atmo_ir_absorption) {
+    else if (rt_params->atmo_model == CS_RAD_ATMO_3D_NONE) {
       cs_real_t ckmax = 0.0;
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
@@ -1314,14 +1399,14 @@ cs_rad_transfer_solve(int               verbosity,
       cs_parall_max(1, CS_REAL_TYPE, &ckmax);
 
       if (ckmax <= cs_math_epzero) {
-        if (verbosity > 0)
+        if (rt_params->verbosity > 0)
           cs_log_printf(CS_LOG_DEFAULT,
                         _("      Radiative transfer with transparent medium."));
         idiver = -1;
       }
     }
 
-    /* Infra red atmospheric model */
+    /* atmospheric model (Direct Solar, diFuse Solar, Ifra Red) */
     else {
       cs_real_t *ck_u = cs_field_by_name("rad_absorption_coeff_up")->val;
       cs_real_t *ck_d = cs_field_by_name("rad_absorption_coeff_down")->val;
@@ -1329,28 +1414,28 @@ cs_rad_transfer_solve(int               verbosity,
       cs_real_t ckumax = 0.0;
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-        ckumax = CS_MAX(ckumax, ck_u[cell_id]);
+        ckumax = CS_MAX(ckumax, ck_u[gg_id + cell_id * nwsgg]);
 
       cs_parall_max(1, CS_REAL_TYPE, &ckumax);
 
-      if (verbosity > 0 && ckumax <= cs_math_epzero)
+      if (rt_params->verbosity > 0 && ckumax <= cs_math_epzero)
         cs_log_printf
           (CS_LOG_DEFAULT,
-           _("      Atmospheric radiative transfer with transparent medium %s\n"),
-           _("for upward directions."));
+           _("      Atmospheric radiative transfer with transparent medium %s for band %d\n"),
+           _("for upward directions."), _(gg_id));
 
       cs_real_t ckdmax = 0.0;
 
       for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++)
-        ckdmax = CS_MAX(ckdmax, ck_d[cell_id]);
+        ckdmax = CS_MAX(ckdmax, ck_d[gg_id + cell_id * nwsgg]);
 
       cs_parall_max(1, CS_REAL_TYPE, &ckdmax);
 
-      if (verbosity > 0 && ckdmax <= cs_math_epzero)
+      if (rt_params->verbosity > 0 && ckdmax <= cs_math_epzero)
         cs_log_printf
           (CS_LOG_DEFAULT,
-           _("      Atmospheric radiative transfer with transparent medium %s\n"),
-           _("for downward directions."));
+           _("      Atmospheric radiative transfer with transparent medium %s for band %d\n"),
+           _("for downward directions."), _(gg_id));
 
       if (ckumax <= cs_math_epzero && ckdmax <= cs_math_epzero)
         idiver = -1;
@@ -1438,13 +1523,14 @@ cs_rad_transfer_solve(int               verbosity,
       }
 
       /* Update Boundary condition coefficients */
+
       cs_rad_transfer_bc_coeffs(bc_type,
                                 NULL, /* No specific direction */
-                                coefap, coefbp,
-                                cofafp, cofbfp,
                                 ckmix,
-                                w_gg,   gg_id);
-
+                                cs_field_by_name("emissivity")->val,
+                                w_gg,   gg_id,
+                                coefap, coefbp,
+                                cofafp, cofbfp);
       /* Solving */
       cs_rad_transfer_pun(gg_id,
                           bc_type,
@@ -1561,10 +1647,11 @@ cs_rad_transfer_solve(int               verbosity,
        * afterwards */
       cs_rad_transfer_bc_coeffs(bc_type,
                                 NULL, /*no specific direction */
-                                coefap, coefbp,
-                                cofafp, cofbfp,
                                 ckmix,
-                                w_gg  , gg_id);
+                                cs_field_by_name("emissivity")->val,
+                                w_gg  , gg_id,
+                                coefap, coefbp,
+                                cofafp, cofbfp);
 
       /* Solving */
       _cs_rad_transfer_sol(gg_id,
@@ -1789,7 +1876,7 @@ cs_rad_transfer_solve(int               verbosity,
     cs_parall_max(n_zones, CS_INT_TYPE, iflux);
   }
 
-  if (verbosity > 0) {
+  if (rt_params->verbosity > 0) {
 
     cs_log_printf
       (CS_LOG_DEFAULT,
@@ -1810,7 +1897,7 @@ cs_rad_transfer_solve(int               verbosity,
   }
 
   /* -> Integrate net flux density at boundaries */
-  if (verbosity > 0) {
+  if (rt_params->verbosity > 0) {
     cs_real_t aa = cs_dot(n_b_faces, f_fnet->val, b_face_surf);
     cs_parall_sum(1, CS_REAL_TYPE, &aa);
 
@@ -1897,7 +1984,7 @@ cs_rad_transfer_solve(int               verbosity,
                        halo_type,
                        1,      /* inc */
                        100,    /* n_r_sweeps, */
-                       rt_params->iimlum,  /* iwarnp */
+                       rt_params->verbosity,  /* iwarnp */
                        -1,     /* imligp */
                        1e-8,   /* epsrgp */
                        1.5,    /* climgp */
@@ -1945,7 +2032,7 @@ cs_rad_transfer_solve(int               verbosity,
   }
 
   /* Log information */
-  if (verbosity > 0 && idiver >= 0) {
+  if (rt_params->verbosity > 0 && idiver >= 0) {
 
     /* Volume integration of the explicit source term.
      * The result of this integration MUST be the same as that of the surface
@@ -1971,7 +2058,7 @@ cs_rad_transfer_solve(int               verbosity,
 
   }
 
-  if (verbosity > 0)
+  if (rt_params->verbosity > 0)
     cs_log_printf
       (CS_LOG_DEFAULT,
        _("-------------------------------------------------------------------\n"));

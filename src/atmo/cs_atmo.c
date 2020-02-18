@@ -605,7 +605,7 @@ cs_atmo_declare_chem_from_spack(void)
  * \param[in]   squant      start day in the year
  * \param[in]   utc         Universal time (hour)
  * \param[in]   sea_id      sea index
- * \param[out]  albe        albedo
+ * \param[out]  albedo      albedo
  * \param[out]  muzero      cosin of zenithal angle
  * \param[out]  omega       solar azimut angle
  * \param[out]  fo          solar constant
@@ -618,7 +618,7 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
                              cs_real_t squant,
                              cs_real_t utc,
                              int       sea_id,
-                             cs_real_t *albe,
+                             cs_real_t *albedo,
                              cs_real_t *muzero,
                              cs_real_t *omega,
                              cs_real_t *fo)
@@ -682,7 +682,7 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
       ho = 8.5;
     if (ho > 60.)
       ho = 60.;
-    *albe = 3./ho;
+    *albedo = 3./ho;
   }
 
  /* 6 - Compute solar constant

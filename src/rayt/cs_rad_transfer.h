@@ -70,6 +70,17 @@ typedef enum {
 
 } cs_rad_quadrature_type_t;
 
+
+/* Radiative transfer model type for atmospheric module */
+
+enum {
+  CS_RAD_ATMO_3D_NONE = 0,
+  CS_RAD_ATMO_3D_INFRARED = 1 << 0,
+  CS_RAD_ATMO_3D_DIRECT_SOLAR = 1 << 1,
+  CS_RAD_ATMO_3D_DIFFUSE_SOLAR = 1 << 2
+};
+
+
 /*============================================================================
  *  Global variables
  *============================================================================*/
@@ -86,7 +97,7 @@ typedef struct {
 
   int           nrphas;
   int           iimpar;
-  int           iimlum;
+  int           verbosity;
   int           imodak;
   int           imoadf;
   int           iwrp1t;
@@ -111,8 +122,22 @@ typedef struct {
   int           itpt1d;
   int           ifinfe;
 
-  bool          atmo_ir_absorption;  /*!< infrared absorption model */
-
+  int           atmo_model;          /*!< Atmospheric radiation model:
+                                          - Direct Solar the first bit
+                                          - diFfuse Solar for the second bit
+                                          - InfraRed for the third bit */
+  int           atmo_dr_id;          /*!< Atmospheric radiation model:
+                                          id of the Direct Solar band
+                                          or -1 if not activated
+                                          (automatically computed) */
+  int           atmo_df_id;          /*!< Atmospheric radiation model:
+                                          id of the Diffuse Solar band
+                                          or -1 if not activated
+                                          (automatically computed) */
+  int           atmo_ir_id;          /*!< Atmospheric radiation model:
+                                          id of the InfraRed band
+                                          or -1 if not activated
+                                          (automatically computed) */
   bool          dispersion;          /*!< add dispersion (through diffusion) */
   cs_real_t     dispersion_coeff;    /*!< dispersion coefficient.
                                        The dispersion coefficient leading to the

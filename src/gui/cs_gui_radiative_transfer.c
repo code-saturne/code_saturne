@@ -290,7 +290,7 @@ cs_gui_radiative_transfer_parameters(void)
     cs_gui_node_get_child_int(tn0, "temperature_listing_printing",
                               &cs_glob_rad_transfer_params->iimpar);
     cs_gui_node_get_child_int(tn0, "intensity_resolution_listing_printing",
-                              &cs_glob_rad_transfer_params->iimlum);
+                              &cs_glob_rad_transfer_params->verbosity);
     if (!cs_gui_get_activ_thermophysical_model()) {
       _radiative_transfer_type(tn0, "absorption_coefficient", &ac_type);
       if (ac_type == 3)
@@ -308,7 +308,7 @@ cs_gui_radiative_transfer_parameters(void)
     bft_printf("--nfreqr = %d\n", cs_glob_rad_transfer_params->nfreqr);
     bft_printf("--idiver = %d\n", cs_glob_rad_transfer_params->idiver);
     bft_printf("--iimpar = %d\n", cs_glob_rad_transfer_params->iimpar);
-    bft_printf("--iimlum = %d\n", cs_glob_rad_transfer_params->iimlum);
+    bft_printf("--verbosity = %d\n", cs_glob_rad_transfer_params->verbosity);
     bft_printf("--absorption coefficient type: %d\n", ac_type);
     bft_printf("--absorption coefficient by modak: %i\n",
                cs_glob_rad_transfer_params->imodak);
