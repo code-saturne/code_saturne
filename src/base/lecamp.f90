@@ -368,39 +368,13 @@ return
 
 ! --- ETAPES
 
-#if defined(_CS_LANG_FR)
-
- 1000 format(/, 3x,'   LECTURE DU FICHIER SUITE PRINCIPAL',/)
- 1100 format(' Debut de la lecture')
- 1299 format(' Fin de la lecture des dimensions')
- 1499 format(' Fin de la lecture des options')
- 1799 format(' Fin de la lecture')
-
-#else
-
  1000 format(/, 3x,'   READING THE MAIN RESTART FILE',/)
  1100 format(' Start reading'  )
  1299 format(' Reading dimensions complete'  )
  1499 format(' Reading options complete')
  1799 format(' Reading complete')
 
-#endif
-
 ! --- INFORMATIONS
-
-#if defined(_CS_LANG_FR)
-
- 2410 format                                                            &
- ('  Lecture du pas de temps precedent (suite) ',                &
-                                                  'NTPABS = ',I10)
- 2411 format                                                            &
- ('  Lecture du pas de temps precedent (suite) ',                &
-                                                'TTPABS = ',E12.4)
- 2412 format                                                            &
- ('  Lecture du temps de maillage mobile precedent (suite) ',    &
-                                                'TTPMOB = ',E12.4)
-
-#else
 
  2410 format                                                            &
  ('  Reading the previous time step number ',                    &
@@ -412,210 +386,7 @@ return
  ('  Reading the previous moving mesh moment ',                  &
                       '(restarting computation)  TTPMOB = ',E12.4)
 
-#endif
-
 ! --- ERREURS
-
-#if defined(_CS_LANG_FR)
-
- 9200 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE         ',/,&
-'@    =========                                      PRINCIPAL',/,&
-'@      TYPE DE FICHIER INCORRECT                             ',/,&
-'@                                                            ',/,&
-'@    Le fichier ',A13      ,' ne semble pas etre un fichier  ',/,&
-'@      suite principal.                                      ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne peut etre execute.                         ',/,&
-'@                                                            ',/,&
-'@    Verifier que le fichier suite utilise correspond bien   ',/,&
-'@        a un fichier suite principal.                       ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9201 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE         ',/,&
-'@    =========                                      PRINCIPAL',/,&
-'@      DONNEES AMONT ET ACTUELLES INCOHERENTES               ',/,&
-'@                                                            ',/,&
-'@    Le nombre de cellules a ete modifie                     ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne peut etre execute.                         ',/,&
-'@                                                            ',/,&
-'@    Verifier que le fichier suite utilise correspond bien   ',/,&
-'@        au cas traite.                                      ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9400 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE         ',/,&
-'@    =========                                      PRINCIPAL',/,&
-'@                                                            ',/,&
-'@      ERREUR A LA LECTURE DES INFORMATIONS TEMPORELLES      ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne peut pas etre execute.                     ',/,&
-'@                                                            ',/,&
-'@    Verifier que le fichier suite utilise n''a pas ete      ',/,&
-'@        endommage.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9401 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ERREUR A LA LECTURE DU FICHIER SUITE        ',/,&
-'@    =========                                      PRINCIPAL',/,&
-'@                                                            ',/,&
-'@      ERREUR A LA LECTURE DE L''INDICATEUR DE METHODE ALE   ',/,&
-'@                                                            ',/,&
-'@    Il se peut que le fichier suite relu corresponde a une  ',/,&
-'@      version anterieure de Code_Saturne, sans methode ALE. ',/,&
-'@    Le calcul sera execute en reinitialisant toutes les     ',/,&
-'@      donnees ALE.                                          ',/,&
-'@    Verifier neanmoins que le fichier suite utilise n''a    ',/,&
-'@        pas ete endommage.                                  ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9402 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE         ',/,&
-'@    =========                                      PRINCIPAL',/,&
-'@      INDICATEUR IALE DU CALCUL PRECEDENT = ',I10            ,/,&
-'@      INDICATEUR IALE DU CALCUL ACTUEL    = ',I10            ,/,&
-'@                                                            ',/,&
-'@    Les coordonnees des noeuds du maillage doivent etre     ',/,&
-'@      relues. Elles sont stockees dans le fichier suite     ',/,&
-'@      auxiliaire.                                           ',/,&
-'@    L''indicateur ILEAUX doit donc etre positionne a 1.     ',/,&
-'@    Il vaut ici ILEAUX = ',I10                               ,/,&
-'@                                                            ',/,&
-'@    Le calcul ne peut pas etre execute.                     ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@    Verifier ILEAUX.                                        ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9403 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ERREUR A LA LECTURE DU FICHIER SUITE        ',/,&
-'@    =========                                      PRINCIPAL',/,&
-'@                                                            ',/,&
-'@      ERREUR A LA LECTURE DE L INSTANT DE MAILLAGE MOBILE  ',/,&
-'@                                                   PRECEDENT',/,&
-'@    Il se peut que le fichier suite relu corresponde a une  ',/,&
-'@      version anterieure de Code_Saturne, sans couplage     ',/,&
-'@      rotor/stator instationnaire.                          ',/,&
-'@    Le calcul sera execute en initialisant l instant de     ',/,&
-'@      maillage mobile precedent a TTCMOB = ',E12.4           ,/,&
-'@    Verifier neanmoins que le fichier suite utilise n''a    ',/,&
-'@        pas ete endommage.                                  ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9404 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ERREUR A LA LECTURE DU FICHIER SUITE        ',/,&
-'@    =========                                      PRINCIPAL',/,&
-'@                                                            ',/,&
-'@      ERREUR A LA LECTURE DE L''INDICATEUR DU MODELE DE     ',/,&
-'@                                                  CAVITATION',/,&
-'@                                                            ',/,&
-'@    Il se peut que le fichier suite relu corresponde a une  ',/,&
-'@      version anterieure de Code_Saturne, sans cavitation.  ',/,&
-'@    Le calcul sera execute en reinitialisant toutes les     ',/,&
-'@      donnees du modele de cavitation.                      ',/,&
-'@    Verifier neanmoins que le fichier suite utilise n''a    ',/,&
-'@        pas ete endommage.                                  ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9405 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ERREUR A LA LECTURE DU FICHIER SUITE        ',/,&
-'@    =========                                      PRINCIPAL',/,&
-'@                                                            ',/,&
-'@      ERREUR A LA LECTURE DE L''INDICATEUR DE LA METHODE    ',/,&
-'@                                             VOLUME of FLUID',/,&
-'@                                                            ',/,&
-'@    Il se peut que le fichier suite relu corresponde a une  ',/,&
-'@      version anterieure de Code_Saturne, sans methode      ',/,&
-'@      Volume of Fluid.                                      ',/,&
-'@    Le calcul sera execute en reinitialisant toutes les     ',/,&
-'@      donnees de la methode Volume of Fluid.                ',/,&
-'@    Verifier neanmoins que le fichier suite utilise n''a    ',/,&
-'@        pas ete endommage.                                  ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9410 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE         ',/,&
-'@    =========                                      PRINCIPAL',/,&
-'@      NUMERO DU PAS DE TEMPS PRECEDENT NTPABS = ',I10        ,/,&
-'@      NUMERO DU PAS DE TEMPS VISE      NTMABS = ',I10        ,/,&
-'@                                                            ',/,&
-'@    Le nombre de pas de temps (absolu) vise, NTMABS,        ',/,&
-'@      doit etre superieur ou egal au nombre de pas de temps ',/,&
-'@      (absolu) deja effectues, NTPABS.                      ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne peut etre execute.                         ',/,&
-'@                                                            ',/,&
-'@    Verifier (augmenter) NTMABS.                            ',/,&
-'@    Verifier que le fichier suite utilise correspond bien   ',/,&
-'@        au cas traite.                                      ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9411 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A LA LECTURE DU FICHIER SUITE         ',/,&
-'@    =========                                      PRINCIPAL',/,&
-'@      TEMPS PRECEDENT TTPABS = ',E12.4                      ,/,&
-'@      TEMPS VISE      TTMABS = ',E12.4                       ,/,&
-'@                                                            ',/,&
-'@    Le nombre de pas de temps (absolu) vise, NTMABS,        ',/,&
-'@      doit etre superieur ou egal au nombre de pas de temps ',/,&
-'@      (absolu) deja effectues, NTPABS.                      ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne peut etre execute.                         ',/,&
-'@                                                            ',/,&
-'@    Verifier (augmenter) NTMABS.                            ',/,&
-'@    Verifier que le fichier suite utilise correspond bien   ',/,&
-'@        au cas traite.                                      ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-! NFMTRU = 36 pour A36
-
-#else
 
  9200 format(                                                     &
 '@                                                            ',/,&
@@ -789,7 +560,5 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
-
-#endif
 
 end subroutine

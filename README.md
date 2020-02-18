@@ -68,8 +68,8 @@ properly. If this behaviour is not wanted, set the "download" variable
 to "no" in the setup script.
 
 Lastly, the possibility is given to compile _Code_Saturne_ with debugging symbols
-("debug" variable), to disable the Graphical User Interface ("disable_gui"
-variable), and to specify the language (between English and French).
+("debug" variable), and to disable the Graphical User Interface ("disable_gui"
+variable).
 
 * install_saturne.py:
   This python script will install the different elements of _Code_Saturne_ and

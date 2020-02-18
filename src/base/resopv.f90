@@ -2297,29 +2297,6 @@ if (allocated(bpro_rho_tc)) deallocate(bpro_rho_tc)
 ! Formats
 !--------
 
-#if defined(_CS_LANG_FR)
-
- 1200 format ( &
- 1X,A16,' Sweep: ',I5,' Dynamic relaxation: alpha = ',E12.5,' beta = ',E12.5,/,&
-'    < dI^k  ; R^k > = ',E12.5,' ||dI^k  ||^2 = ',E12.5                     ,/,&
-'    < dI^k-1; R^k > = ',E12.5,' ||dI^k-1||^2 = ',E12.5                     ,/,&
-'   < dI^k-1; dI^k > = ',E12.5)
- 1300 format(1X,A16,' : RESIDU DE NORMALISATION =', E14.6)
- 1400 format(1X,A16,' : SWEEP = ',I5,' NORME SECOND MEMBRE = ',E14.6,  &
-             ', RELAXP = ',E14.6)
- 1500 format ( &
- 1X,A16,' : Current reconstruction sweep = ',I5                     ,/,&
-'           sweep residual = ',E12.5,', norm = ',E12.5              ,/,&
-'           number of sweeps for solver = ',I5)
- 1600 format( &
-'@'                                                                 ,/,&
-'@ @@ ATTENTION : ', A16,' ETAPE DE PRESSION'                       ,/,&
-'@    ========='                                                    ,/,&
-'@  Nombre d''iterations maximal ',I10   ,' atteint'                ,/,&
-'@' )
-
-#else
-
  1200 format ( &
  1X,A16,' Sweep: ',I5,' Dynamic relaxation: alpha = ',E12.5,' beta = ',E12.5,/,&
 '    < dI^k  ; R^k > = ',E12.5,' ||dI^k  ||^2 = ',E12.5                     ,/,&
@@ -2338,8 +2315,6 @@ if (allocated(bpro_rho_tc)) deallocate(bpro_rho_tc)
 '@    ========'                                                     ,/,&
 '@  Maximum number of iterations ',I10   ,' reached'                ,/,&
 '@'                                                              )
-
-#endif
 
 !----
 ! End

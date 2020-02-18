@@ -745,20 +745,6 @@ deallocate(viscf, viscb)
 ! Formats
 !--------
 
-#if defined(_CS_LANG_FR)
- 1400 format(1X,A16,' : SWEEP = ',I5,' NORME SECOND MEMBRE = ',E14.6,  &
-             ', RELAXP = ',E14.6)
- 1500 format ( &
- 1X,A16,' : Current reconstruction sweep = ',I5                     ,/,&
-'           sweep residual = ',E12.5,', norm = ',E12.5              ,/,&
-'           number of sweeps for solver = ',I5)
- 1600 format( &
-'@'                                                                 ,/,&
-'@ @@ ATTENTION : ', A16,' RICHARDS'                                ,/,&
-'@    ========='                                                    ,/,&
-'@  Nombre d''iterations maximal ',I10   ,' atteint'                ,/,&
-'@' )
-#else
  1400 format(1X,A16,' : SWEEP = ',I5,' RIGHT HAND SIDE NORM = ',E14.6, &
              ', RELAXP = ',E14.6)
  1500 format ( &
@@ -771,7 +757,6 @@ deallocate(viscf, viscb)
 '@    ========'                                                     ,/,&
 '@  Maximum number of iterations ',I10   ,' reached'                ,/,&
 '@'                                                              )
-#endif
 
 !--------
 ! End

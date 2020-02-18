@@ -256,11 +256,7 @@ if (ichemistry.gt.0.or.iaerosol.gt.0) then
   call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
 endif
 
-#if defined(_CS_LANG_FR)
-car54 =' Fin de l''ecriture des options                       '
-#else
 car54 =' End writing the options                              '
-#endif
 write(nfecra,1110) car54
 
 ! 3.2 VARIABLES "PRINCIPALES"
@@ -342,11 +338,7 @@ if (iecaux.eq.1) then
   ival(1) = ivofmt
   call restart_write_section_int_t(rp,rubriq,itysup,nbval,ival)
 
-#if defined(_CS_LANG_FR)
-  car54 =' Fin de l''ecriture des dimensions et des options     '
-#else
   car54 =' End writing the dimensions and options               '
-#endif
   write(nfecra,1110)car54
 
 ! 5.3 ECRITURE DES VARIABLES
@@ -443,11 +435,7 @@ if (iecaux.eq.1) then
 
   call restart_write_linked_fields(rp, "diffusivity_id", iecr)
 
-#if defined(_CS_LANG_FR)
-  car54 =' Fin de l''ecriture des proprietes physiques          '
-#else
   car54 =' End writing the physical properties                  '
-#endif
   write(nfecra,1110)car54
 
 ! ---> Pas de temps
@@ -463,11 +451,7 @@ if (iecaux.eq.1) then
     call restart_write_section_real_t(rp,rubriq,itysup,nbval,dt_s)
   endif
 
-#if defined(_CS_LANG_FR)
-  car54 =' Fin de l''ecriture du pas de temps                   '
-#else
   car54 =' End writing the time step                            '
-#endif
   write(nfecra,1110)car54
 
   ! Mass fluxes
@@ -493,11 +477,7 @@ if (iecaux.eq.1) then
   call restart_write_linked_fields(rp, "source_term_prev_id", iecr)
 
   if (iecr.ne.0) then
-#if defined(_CS_LANG_FR)
-    car54=' Fin de l''ecriture des termes sources                '
-#else
     car54=' End writing the source terms                         '
-#endif
     write(nfecra,1110)car54
   endif
 
@@ -520,11 +500,7 @@ if (iecaux.eq.1) then
   endif
 
   if (iecr.ne.0) then
-#if defined(_CS_LANG_FR)
-    car54=' Fin de l''ecriture de la distance a la paroi         '
-#else
     car54=' End writing the wall distance                        '
-#endif
     write(nfecra,1110)car54
   endif
 
@@ -600,11 +576,7 @@ if (iecaux.eq.1) then
     rubriq = 'vertex_displacement'
     call restart_write_section_real_t(rp,rubriq,itysup,nbval,disale)
 
-#if defined(_CS_LANG_FR)
-    car54=' Fin de l''ecriture des donnees ALE    '
-#else
     car54=' End writing the ALE data              '
-#endif
     write(nfecra,1110)car54
 
     ngbstr(1) = nbstru
@@ -647,11 +619,7 @@ if (iecaux.eq.1) then
         call restart_write_section_real_t(rp,rubriq,itysup,nbval,tmpstr)
       enddo
 
-#if defined(_CS_LANG_FR)
-      car54=' Fin de l''ecriture des donnees des structures (ALE)'
-#else
       car54=' End writing the structures data (ALE)              '
-#endif
       write(nfecra,1110)car54
 
     endif
@@ -707,11 +675,7 @@ if (iecaux.eq.1) then
     rubriq = 'ientox_zone_bord_cod3p'
     call restart_write_section_int_t(rp,rubriq,itysup,nbval,ientox)
 
-#if defined(_CS_LANG_FR)
-    car54=' Fin de l''ecriture des informations combustion COD3P'
-#else
     car54=' End writing combustion information (COD3P)         '
-#endif
     write(nfecra,1110)car54
 
   endif
@@ -763,11 +727,7 @@ if (iecaux.eq.1) then
     rubriq = 'tkent_zone_bord_ebu'
     call restart_write_section_real_t(rp,rubriq,itysup,nbval,tkent)
 
-#if defined(_CS_LANG_FR)
-    car54=' Fin de l''ecriture des informations combustion EBU '
-#else
     car54=' End writing the combustion information (EBU)      '
-#endif
     write(nfecra,1110)car54
 
   endif
@@ -831,11 +791,7 @@ if (iecaux.eq.1) then
     rubriq = 'tkent_zone_bord_lwc'
     call restart_write_section_real_t(rp,rubriq,itysup,nbval,tkent)
 
-#if defined(_CS_LANG_FR)
-    car54=' Fin de l''ecriture des informations combustion LWC '
-#else
     car54=' End writing combustion information (LWC)          '
-#endif
     write(nfecra,1110)car54
 
   endif
@@ -915,11 +871,7 @@ if (iecaux.eq.1) then
     rubriq = 'timpat_zone_bord_charbon_pulverise'
     call restart_write_section_real_t(rp,rubriq,itysup,nbval,timpat)
 
-#if defined(_CS_LANG_FR)
-    car54=' Fin de l''ecriture des informations combustion CP    '
-#else
     car54=' End writing combustion information (CP)            '
-#endif
     write(nfecra,1110)car54
 
   endif
@@ -971,11 +923,7 @@ if (iecaux.eq.1) then
     rubriq = 'qimpfl_zone_bord_fuel'
     call restart_write_section_real_t(rp,rubriq,itysup,nbval,qimpfl)
 
-#if defined(_CS_LANG_FR)
-    car54=' Fin de l''ecriture des informations combustion FUEL  '
-#else
     car54=' End writing combustion information (FUEL)           '
-#endif
     write(nfecra,1110)car54
 
   endif
@@ -1039,11 +987,7 @@ if (iecaux.eq.1) then
   endif
 
   if (iecr.ne.0) then
-#if defined(_CS_LANG_FR)
-    car54=' Fin de l''ecriture des informations electriques      '
-#else
     car54=' End writing the electric information                '
-#endif
     write(nfecra,1110)car54
   endif
 
@@ -1063,105 +1007,6 @@ return
 !===============================================================================
 ! 6. FORMATS
 !===============================================================================
-
-#if defined(_CS_LANG_FR)
-
- 1000 format(3x,'** Ecriture du fichier suite principal',/,       &
-             3x,'   ----------------------------------- ',/)
- 1100 format(' Debut de l''ecriture')
- 1110 format('  ',A54)
- 1200 format(' Fin de l''ecriture')
- 2000 format(/,3x,'** Ecriture du fichier suite auxiliaire',/,    &
-               3x,'   ------------------------------------ ',/)
-
- 7001 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION :       A L''ECRITURE DU FICHIER SUITE        ',/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@      Le nombre de scalaires maximal NSCAMX supporte par le ',/,&
-'@        format d''ecriture du fichier suite est             ',/,&
-'@        NFMTSC = ',i10                                       ,/,&
-'@      On a ici un nombre de scalaires maximal superieur     ',/,&
-'@        NSCAMX = ',i10                                       ,/,&
-'@      On ne pourra pas relire les scalaires dont le numero  ',/,&
-'@        est superieur                                       ',/,&
-'@                                                            ',/,&
-'@    Le calcul sera execute.                                 ',/,&
-'@                                                            ',/,&
-'@    Voir le sous-programme ecrava.                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7002 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION :       A L''ECRITURE DU FICHIER SUITE        ',/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@      Le nombre de flux de masse max NVARMX supporte par le ',/,&
-'@        format d''ecriture du fichier suite est             ',/,&
-'@        NFMTFL = ',i10                                       ,/,&
-'@      On a ici un nombre de flux      maximal superieur     ',/,&
-'@        NVARMX = ',i10                                       ,/,&
-'@      On ne pourra pas relire les flux      dont le numero  ',/,&
-'@        est superieur                                       ',/,&
-'@                                                            ',/,&
-'@    Le calcul sera execute.                                 ',/,&
-'@                                                            ',/,&
-'@    Voir le sous-programme ecrava.                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7004 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION :       A L''ECRITURE DU FICHIER SUITE        ',/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@      Le nombre de charbons      max NCHARM supporte par le ',/,&
-'@        format d''ecriture du fichier suite est             ',/,&
-'@        NFMTCH = ',i10                                       ,/,&
-'@      On a ici un nombre de charbons  maximal superieur     ',/,&
-'@        NCHARM = ',i10                                       ,/,&
-'@      On ne pourra pas relire certaines informations        ',/,&
-'@        relatives aux charbons dont le numero               ',/,&
-'@        est superieur                                       ',/,&
-'@                                                            ',/,&
-'@    Le calcul sera execute.                                 ',/,&
-'@                                                            ',/,&
-'@    Voir le sous-programme ecrava.                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 7005 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION :       A L''ECRITURE DU FICHIER SUITE        ',/,&
-'@    =========                                               ',/,&
-'@                                                            ',/,&
-'@      Le nombre de classes par charbon max NCPCMX supporte  ',/,&
-'@        par le format d''ecriture du fichier suite est      ',/,&
-'@        NFMTCL = ',i10                                       ,/,&
-'@      On a ici un nombre de classes par charbon superieur   ',/,&
-'@        NCPCMX = ',i10                                       ,/,&
-'@      On ne pourra pas relire certaines informations        ',/,&
-'@        relatives aux classes  dont le numero               ',/,&
-'@        est superieur                                       ',/,&
-'@                                                            ',/,&
-'@    Le calcul sera execute.                                 ',/,&
-'@                                                            ',/,&
-'@    Voir le sous-programme ecrava.                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
-#else
 
  1000 format(3x,'** Writing the main restart file',/,             &
              3x,'   -----------------------------',/)
@@ -1253,8 +1098,5 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
-
-#endif
-
 
 end subroutine

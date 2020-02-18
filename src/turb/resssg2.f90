@@ -1078,15 +1078,7 @@ deallocate(weighf, weighb)
 ! Formats
 !--------
 
-#if defined(_CS_LANG_FR)
-
- 1000 format(/,'           Resolution pour la variable ',A8,/)
-
-#else
-
- 1000 format(/,'           Solving variable ',A8           ,/)
-
-#endif
+ 1000 format(/,'           Solving variable ', a8          ,/)
 
 !----
 ! End

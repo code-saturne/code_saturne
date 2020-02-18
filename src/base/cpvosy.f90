@@ -184,18 +184,6 @@ return
 
 ! Formats
 
-#if defined(_CS_LANG_FR)
-
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@ @@ ATTENTION : COUPLAGE VOLUMIQUE SYRTHES AVEC UN SCALAIRE ',/,&
-'@      QUI EST DIFFERENT DE LA TEMPERATURE                   ',/,&
-'@    =========                                               ',/,&
-'@      OPTION NON VALIDE                                     ',/,&
-'@                                                            ')
-
-#else
-
  1000 format(                                                     &
 '@                                                            ',/,&
 '@ @@ WARNING: SYRTHES VOLUME COUPLING WITH A SCALAR          ',/,&
@@ -203,7 +191,5 @@ return
 '@    ========                                                ',/,&
 '@      OPTION NOT POSSIBLE                                   ',/,&
 '@                                                            ')
-
-#endif
 
 end subroutine

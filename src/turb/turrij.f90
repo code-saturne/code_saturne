@@ -679,20 +679,6 @@ deallocate(gradv)
 ! Formats
 !--------
 
-#if defined(_CS_LANG_FR)
-
- 1000 format(/,                                      &
-'   ** Resolution du Rij-EPSILON LRR'                   ,/,&
-'      -----------------------------'             ,/)
- 1001 format(/,                                      &
-'   ** Resolution du Rij-EPSILON SSG'                   ,/,&
-'      -----------------------------'             ,/)
- 1002 format(/,                                      &
-'   ** Resolution du Rij-EPSILON EBRSM'                 ,/,&
-'      -------------------------------'           ,/)
-
-#else
-
  1000 format(/,                                      &
 '   ** Solving Rij-EPSILON LRR'                   ,/,&
 '      -----------------------'                   ,/)
@@ -702,8 +688,6 @@ deallocate(gradv)
  1002 format(/,                                      &
 '   ** Solving Rij-EPSILON EBRSM'                 ,/,&
 '      -------------------------'                 ,/)
-
-#endif
 
 !----
 ! End

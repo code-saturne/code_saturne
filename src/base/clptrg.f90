@@ -1571,43 +1571,6 @@ endif
 ! 10. Formats
 !===============================================================================
 
-#if defined(_CS_LANG_FR)
-
- 2010 format(/,                                                   &
- 3X,'** CONDITIONS AUX LIMITES EN PAROI RUGUEUSE',/,        &
- '   -------------------------------------------',/,        &
- '------------------------------------------------------------',/,&
- '                                         Minimum     Maximum',/,&
- '------------------------------------------------------------',/,&
- '   Vitesse rel. en paroi    uiptn : ',2E12.5                 ,/,&
- '   Vitesse de frottement    uet   : ',2E12.5                 ,/,&
- '   Vitesse de frottement    uk    : ',2E12.5                 ,/,&
- '   Distance adim. rugueuse  yplus : ',2E12.5                 ,/,&
- '   ------------------------------------------------------   ',/,&
- '   Nbre de retournements de la vitesse en paroi : ',I10      ,/,&
- '------------------------------------------------------------',  &
- /,/)
-
- 2011 format(/,                                                   &
- 3X,'** CONDITIONS AUX LIMITES EN PAROI RUGUEUSE',/,        &
- '   -------------------------------------------',/,        &
- '------------------------------------------------------------',/,&
- '                                         Minimum     Maximum',/,&
- '------------------------------------------------------------',/,&
- '   Vitesse rel. en paroi    uiptn : ',2E12.5                 ,/,&
- '   Vitesse de frottement    uet   : ',2E12.5                 ,/,&
- '   Vitesse de frottement    uk    : ',2E12.5                 ,/,&
- '   Distance adim. rugueuse  yplus : ',2E12.5                 ,/,&
- '   Sca. thermal de frott.   tstar : ',2E12.5                 ,/,&
- '   Sca. thermal adim. rug.  tplus : ',2E12.5                 ,/,&
- '   ------------------------------------------------------'   ,/,&
- '   Nbre de retournements de la vitesse en paroi : ',I10      ,/,&
- '------------------------------------------------------------',  &
- /,/)
-
-
-#else
-
  2010 format(/,                                                   &
  3X,'** BOUNDARY CONDITIONS FOR ROUGH WALLS',/,             &
  '   --------------------------------------',/,             &
@@ -1639,9 +1602,6 @@ endif
  '   Nb of reversal of the velocity at the wall   : ',I10      ,/,&
  '------------------------------------------------------------',  &
  /,/)
-
-
-#endif
 
 !----
 ! End

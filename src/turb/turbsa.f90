@@ -620,17 +620,9 @@ deallocate(dpvar)
 ! Formats
 !--------
 
-#if defined(_CS_LANG_FR)
-
- 1000 format(/,                                                   &
-'   ** Resolution de Spalart-Allmaras                         ',/,&
-'      ------------------------------------                   ',/)
-#else
-
  1000 format(/,                                                   &
 '   ** Solving Spalart-Allmaras      '                         ,/,&
 '      ------------------------------'                         ,/)
-#endif
 
 !----
 ! End

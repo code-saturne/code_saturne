@@ -582,23 +582,6 @@ deallocate(viscap)
 ! Formats
 !--------
 
-#if defined(_CS_LANG_FR)
-
- 1000 format( &
-''                                                             ,/,&
-' ** DISTANCE A LA PAROI ADIMENSIONNELLE'                      ,/,&
-'    ------------------------------------'                     ,/,&
-''                                                             ,/,&
-'  Distance+ min = ',E14.5    ,' Distance+ max = ',E14.5       ,/)
- 7000 format( &
-''                                                             ,/,&
-' ** DISTANCE A LA PAROI ADIMENSIONNELLE'                      ,/,&
-'    ------------------------------------'                     ,/,&
-''                                                             ,/,&
-'  Elle n''est pas calculee au premier pas de temps'           ,/)
-
-#else
-
  1000 format( &
 '                                                             ',/,&
 ' ** DIMENSIONLESS WALL DISTANCE                              ',/,&
@@ -613,8 +596,6 @@ deallocate(viscap)
 '    ---------------------------'                              ,/,&
 ''                                                             ,/,&
 '  It is not computed at the first time step'                  ,/)
-
-#endif
 
 !----
 ! End

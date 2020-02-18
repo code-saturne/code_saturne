@@ -150,47 +150,6 @@ endif
 
 
 
-#if defined(_CS_LANG_FR)
-
- 1000 format(                                                     &
-                                                                /,&
-' ===========================================================', /,&
-                                                                /,&
-'               RESUME DES PARAMETRES DE CALCUL',               /,&
-'               ===============================',               /,&
-                                                                /,&
-' -----------------------------------------------------------', /)
-
- 9900 format(                                                     &
-                                                                /,&
-' -----------------------------------------------------------', /)
- 1010 format(                                                     &
-                                                                /,&
-' ** PHYSIQUE PARTICULIERE :',                                  /,&
-'    ---------------------',                                    /)
- 1020 format(                                                     &
-' --- Flamme de diffusion : Chimie 3 points',                   /,&
-'       OPTION = ',4x,i10                                       /)
- 1030 format(                                                     &
-' --- Flamme premelangee : Modele EBU',                         /,&
-'       OPTION = ',4x,i10,                                      /,&
-'       CEBU   = ',e14.5                                        /)
- 1050 format(                                                     &
-' --- Fuel              : Modele Combustible moyen local',       /&
-'       OPTION = ',4x,i10                                       /)
- 1060 format(                                                     &
-' --- Janaf ou non (dans ce cas tabulation utilisateur)',       /,&
-'       INDJON = ',4x,i10,    ' (1: Janaf, 0: utilisateur)',    /)
- 1070 format(                                                     &
-' --- Caracteristiques du combustible',                         /,&
-'       Combustible : ',4x,a,                                   /,&
-'       PCI = ',4x,e14.5,  ' J/kg',                             /)
- 1080 format(                                                     &
-" --- Reaction chimique : ",                                    /,&
-"       ", a," + ",f6.3," (",a,") --> ",a,                      /)
-
-#else
-
  1000 format(                                                     &
                                                                 /,&
 ' ===========================================================', /,&
@@ -228,9 +187,6 @@ endif
 " --- Chemical reaction: ",                                     /,&
 "       ", a," + ",f6.3," (",a,") --> ",a,                      /)
 
-#endif
-
-
 !===============================================================================
 ! 2. DEFINITION GENERALE DU CAS
 !===============================================================================
@@ -242,21 +198,6 @@ write(nfecra,1520) nvar,nscal,nscaus,nscapp
 
 write(nfecra,9900)
 
-#if defined(_CS_LANG_FR)
-
- 1500 format(                                                     &
-                                                                /,&
-' ** DIMENSIONS',                                               /,&
-'    ----------',                                               /)
- 1520 format(                                                     &
-' --- Physique',                                                /,&
-'       NVAR   = ',4x,i10,    ' (Nb de variables             )',/,&
-'       NSCAL  = ',4x,i10,    ' (Nb de scalaires             )',/,&
-'       NSCAUS = ',4x,i10,    ' (Nb de scalaires utilisateur )',/,&
-'       NSCAPP = ',4x,i10,    ' (Nb de scalaires phys. part. )',/)
-
-#else
-
  1500 format(                                                     &
                                                                 /,&
 ' ** DIMENSIONS',                                               /,&
@@ -267,8 +208,6 @@ write(nfecra,9900)
 '       NSCAL  = ',4x,i10,    ' (Nb scalars                  )',/,&
 '       NSCAUS = ',4x,i10,    ' (Nb user scalars             )',/,&
 '       NSCAPP = ',4x,i10,    ' (Nb specific physics scalars )',/)
-
-#endif
 
 !===============================================================================
 ! 3. MODELISATION PHYSIQUE
@@ -305,44 +244,6 @@ endif
 write(nfecra,9900)
 
 
-#if defined(_CS_LANG_FR)
-
- 2100 format(                                                     &
-                                                                /,&
-' ** MODELE DE CAVITATION                    ',                 /,&
-'    ----------------------------------------',                 /)
- 2120 format(                                                     &
-'  -- Phase liquide : fluide 1',                                /)
- 2130 format(                                                     &
-'  -- Phase gaz : fluide 2',                                     /)
- 2140 format(                                                     &
-'  -- Modele de vaporisation/condensation (Merkle)',            /,&
-'       PRESAT = ', e14.5,    ' (Pression de saturation      )',/,&
-'       LINF   = ', e14.5,    ' (Longueur de reference       )',/,&
-'       UINF   = ', e14.5,    ' (Vitesse de reference        )',/)
- 2150 format(                                                     &
-'  -- Correction de viscosite turbulente de Reboud',            /,&
-'       ICVEVM = ',4x,i10,    ' (Active (1) ou non     (0)   )',/,&
-'       MCAV   = ', e14.5,    ' (Constante mcav              )',/)
-
- 2101 format(                                                     &
-                                                                /,&
-' ** MODELE DIPHASIQUE HOMOGENE VoF          ',                 /,&
-'    ----------------------------------------',                 /)
- 2111 format(                                                     &
-'       IVOFMT = ',4x,i10,    ' (  0  : inactif              )',/,&
-'                               (  >=0: actif                )',/)
- 2121 format(                                                     &
-'  -- Fluide 1 :',                                              /,&
-'       RHO1     = ', e14.5,  ' (Masse volumique     de ref.)', /,&
-'       MU1      = ', e14.5,  ' (Visc. molec. dynam. de ref.)', /)
- 2131 format(                                                     &
-'  -- Fluide 2 :',                                              /,&
-'       RHO2     = ', e14.5,  ' (Masse volumique     de ref.)', /,&
-'       MU2      = ', e14.5,  ' (Visc. molec. dynam. de ref.)', /)
-
-#else
-
  2100 format(                                                     &
                                                                 /,&
 ' ** CAVITATION MODEL                        ',                 /,&
@@ -377,8 +278,6 @@ write(nfecra,9900)
 '       RHO2   = ', e14.5,  ' (Reference density          )',   /,&
 '       MU2    = ', e14.5,  ' (Ref. molecular dyn. visc.  )',   /)
 
-#endif
-
 ! --- Compressible
 
 if (ippmod(icompf).ge.0) then
@@ -388,24 +287,6 @@ if (ippmod(icompf).ge.0) then
   write(nfecra,9900)
 
 endif
-
-#if defined(_CS_LANG_FR)
-
- 2700 format(                                                     &
-                                                                /,&
-' ** COMPRESSIBLE : donnees complementaires',                   /,&
-'    ------------',                                             /)
- 2710 format(                                                     &
-' --- Phase continue :',                                        /,&
-'       ICV    = ',4x,i10,    ' (0 : Cv cst ; 1 : variable   )',/,&
-'       IVISCV = ',4x,i10,    ' (0 : kappa cst ; 1 : variable', /,&
-'                                kappa : viscosite en volume',  /,&
-'                                en kg/(m s)                 )',/,&
-'       VISCV0 = ',e14.5,     ' (Valeur de kappa si cst      )',/,&
-'       ICFGRP = ',4x,i10,    ' (1 : C.L. pression avec effet', /,&
-'                                hydrostatique dominant      )',/)
-
-#else
 
  2700 format(                                                     &
                                                                 /,&
@@ -420,8 +301,6 @@ endif
 '       VISCV0 = ',e14.5,     ' (kappa value if constant     )',/,&
 '       ICFGRP = ',4x,i10,    ' (1: pressure BC with dominant', /,&
 '                                hydrostatic effect          )',/)
-
-#endif
 
 !===============================================================================
 ! 4. DISCRETISATION DES EQUATIONS
@@ -463,41 +342,6 @@ endif
 
 write(nfecra,9900)
 
-
-#if defined(_CS_LANG_FR)
-
- 3000 format(                                                     &
-                                                                /,&
-' ** MARCHE EN TEMPS',                                          /,&
-'    ---------------',                                          /)
- 3040 format(                                                     &
-' --- Proprietes par variable',                                 /,&
-                                                                /,&
-'------------------------------------',                         /,&
-' Variable          ISTAT      CDTVAR',                         /,&
-'------------------------------------'                            )
- 3041 format(                                                     &
- 1x,    a16,    i7,      e12.4                                    )
- 3042 format(                                                     &
-'----------------------------',                                 /,&
-                                                                /,&
-'       ISTAT  =  0 ou  1       (1 pour instationnaire       )',/,&
-'       CDTVAR >  0             (coeff mult. du pas de temps )',/)
-
- 3050 format(                                                     &
-'--- Coefficient de relaxation',                                /,&
-'    RHO(n+1)=SRROM*RHO(n)+(1-SRROM)*RHO(n+1)',                 /,&
-'       SRROM  = ',e14.5,                                       /)
-
- 3060 format(                                                     &
-' --- Ordre du schema en temps de base'                          )
- 3061 format(                                                     &
-'       ISCHTP = ',4x,i10,    ' (1 : ordre 1 ; 2 : ordre 2   )'  )
- 3062 format(                                                     &
-'                                                             '  )
-
-#else
-
  3000 format(                                                     &
                                                                 /,&
 ' ** TIME STEPPING',                                            /,&
@@ -528,8 +372,6 @@ write(nfecra,9900)
  3062 format(                                                     &
 '                                                             '  )
 
-#endif
-
 ! --- Stokes
 write(nfecra,4114)istmpf,thetfl,     &
      thetvi,                  &
@@ -538,34 +380,6 @@ write(nfecra,4114)istmpf,thetfl,     &
 
 write(nfecra,9900)
 
-
-#if defined(_CS_LANG_FR)
-
- 4114 format(                                                     &
-                                                                /,&
-' ** STOKES',                                                   /,&
-'    ------',                                                   /,&
-                                                                /,&
-'  -- Phase continue :',                                        /,&
-                                                                /,&
-'       ISTMPF = ',4x,i10,    ' (schema en temps pour le flux', /,&
-'                ',14x,       ' (0 : explicite (THETFL = 0   )',/,&
-'                ',14x,       ' (1 : schema std (Saturne 1.0 )',/,&
-'                ',14x,       ' (2 : ordre 2   (THETFL = 0.5 )',/,&
-'       THETFL = ', e14.5,    ' (theta pour flux de masse    )',/,&
-'       THETVI = ', e14.5,    ' (theta pour viscosite totale',  /,&
-'                               ((1+theta)nouveau-theta ancien',/,&
-'       THETCP = ', e14.5,    ' (theta schema chaleur spec',    /,&
-'                               ((1+theta)nouveau-theta ancien',/,&
-'       THETSN = ', e14.5,    ' (theta schema T.S. Nav-Stokes)',/,&
-'                               ((1+theta)nouveau-theta ancien',/,&
-'       THETST = ', e14.5,    ' (theta schema T.S. Turbulence)',/,&
-'                               ((1+theta)nouveau-theta ancien',/,&
-'       EPSUP  = ', e14.5,    ' (Test d''arret du couplage',    /,&
-'                ',14x,       '  vitesse/pression            )',/)
-
-
-#else
 
  4114 format(                                                     &
                                                                 /,&
@@ -589,8 +403,6 @@ write(nfecra,9900)
 '                               ((1+theta).new-theta.old',      /,&
 '       EPSUP  = ', e14.5,    ' (Velocity/pressure coupling',   /,&
 '                ',14x,       '  stop test                   )',/)
-
-#endif
 
 ! --- Estimateurs d'erreurs pour Navier-Stokes
 
@@ -621,78 +433,6 @@ if(ineedy.eq.1) then
 
 endif
 
-
-#if defined(_CS_LANG_FR)
-
- 4820 format(                                                     &
-                                                                /,&
-' ** ESTIMATEURS D''ERREUR POUR NAVIER-STOKES',                 /,&
-'    ----------------------------------------',                 /)
- 4821 format(                                                     &
-'----------------------------------------',                     /,&
-' Estimateur      IESCAL (mode de calcul)',                     /,&
-'----------------------------------------'                       )
- 4822 format(                                                     &
- 1x,     i10,2x,    i10                                          )
- 4823 format(                                                     &
-'----------------------------------------'                       )
- 4824 format(                                                     &
-                                                                /,&
-' Estimateurs possibles :',                                     /,&
-' ',i2,' =IESPRE : prediction',                                 /,&
-'            L''estimateur est base sur la grandeur',           /,&
-'            I = rho_n (u*-u_n)/dt + rho_n u_n grad u*',        /,&
-'              - rho_n div (mu+mu_t)_n grad u* + grad P_n',     /,&
-'              - reste du smb(u_n, P_n, autres variables_n)',   /,&
-' ',i2,' =IESDER : derive',                                     /,&
-'            L''estimateur est base sur la grandeur',           /,&
-'            I = div (flux de masse corrige apres etape',       /,&
-'                                               de pression)',  /,&
-'            Idealement nul quand l''equation de Poisson est',  /,&
-'              resolue exactement',                             /,&
-' ',i2,' =IESCOR : correction',                                 /,&
-'            L''estimateur est base sur la grandeur',           /,&
-'            I = div (rho_n u_(n+1))',                          /,&
-'            Idealement nul quand l''equation de Poisson est',  /,&
-'              resolue exactement et que le passage des flux',  /,&
-'              de masse aux faces vers les vitesses au centre', /,&
-'              se fait dans un espace de fonctions',            /,&
-'              a divergence nulle',                             /,&
-' ',i2,' =IESTOT : total',                                      /,&
-'            L''estimateur est base sur la grandeur',           /,&
-'            I = rho_n (u_(n+1)-u_n)/dt',                       /,&
-'                                 + rho_n u_(n+1) grad u_(n+1)',/,&
-'              - rho_n div (mu+mu_t)_n grad u_(n+1)',           /,&
-'                                               + gradP_(n+1)', /,&
-'              - reste du smb(u_(n+1), P_(n+1),',               /,&
-'                                          autres variables_n)',/,&
-'             Le flux du terme convectif est calcule a partir', /,&
-'               de u_(n+1) pris au centre des cellules (et',    /,&
-'               non pas a partir du flux de masse aux faces',   /,&
-'               actualise)',                                    /,&
-                                                                /,&
-' On evalue l''estimateur selon les valeurs de IESCAL :',       /,&
-'   IESCAL = 0 : l''estimateur n''est pas calcule',             /,&
-'   IESCAL = 1 : l''estimateur    est     calcule,',            /,&
-'               sans contribution du volume  (on prend abs(I))',/,&
-'   IESCAL = 2 : l''estimateur    est     calcule,',            /,&
-'               avec contribution du volume ("norme L2")',      /,&
-'               soit abs(I)*SQRT(Volume_cellule),',             /,&
-'               sauf pour IESCOR : on calcule',                 /,&
-'                 abs(I)*Volume_cellule pour mesurer',          /,&
-'                 un ecart en kg/s',                            /)
-
- 4950 format(                                                     &
-                                                                /,&
-' ** CALCUL DE LA DISTANCE A LA PAROI',                         /,&
-'    --------------------------------',                         /,&
-                                                                /,&
-'       ICDPAR = ',4x,i10,    ' ( 1: std et relu      si suite',/,&
-'                               (-1: std et recalcule si suite',/,&
-'                               ( 2: old et relu      si suite',/,&
-'                               (-2: old et recalcule si suite',/)
-
-#else
 
  4820 format(                                                     &
                                                                 /,&
@@ -759,8 +499,6 @@ endif
 '                               ( 2: old, reread if restart',   /,&
 '                               (-2: old, recomputed if restrt',/)
 
-#endif
-
 !===============================================================================
 ! 5. SCALAIRES
 !===============================================================================
@@ -808,72 +546,6 @@ if (nscal.ge.1) then
 
 endif
 
-
-#if defined(_CS_LANG_FR)
-
- 6000 format( &
-                                                                       /,&
-' ** SCALAIRES',                                                       /,&
-'    ---------',/)
- 6010 format(                                                            &
-'       ITBRRB = ',4x,i10,    ' (Reconstruction T ou H au brd)',/)
- 6011 format(                                                            &
-'-------------------------------------------------------------',       /,&
-' Variable         Numero ISCACP  ITURT     VISLS0      SIGMAS',       /,&
-'-------------------------------------------------------------'  )
- 6021 format( &
- 1x,    a16,    i7,    i7,    i7,      e12.4,      e12.4  )
- 6031 format( &
-'---------------------------------------------------------------------',/)
- 6012 format( &
-'------------------------------------',                         /,&
-' Variable         Number      RVARFL',                         /,&
-'------------------------------------' )
- 6022 format( &
- 1x,    a16,           i7,    e12.4 )
- 6032 format(                                                     &
-'-------------------------------------------',                   /)
- 6013 format(                                                     &
-'-------------------------------------------------------',      /,&
-' Variable         Numero ICLVFL      SCAMIN      SCAMAX',      /,&
-'-------------------------------------------------------'         )
- 6023 format(                                                     &
- 1x,    a16,    i7,    i7,      e12.4,      e12.4         )
- 6033 format(                                                     &
-'-------------------------------------------------------',       /)
- 6030 format(                                                     &
-'-------------------------------------------------------------',/,&
-                                                                /,&
-'       Le numero indique pour chaque scalaire le rang',        /,&
-'         dans la liste de tous les scalaires. Les scalaires',  /,&
-'         utilisateurs sont places en tete, de 1 a NSCAUS. Les',/,&
-'         scalaires physique particuliere sont a la fin, de',   /,&
-'         NSCAUS+1 a NSCAPP+NSCAUS=NSCAL.',                     /,&
-                                                                /,&
-'       ISCACP = 0 ou 1         (Utilisation de Cp ou non    )',/,&
-'       VISLS0 = >0             (Viscosite de reference      )',/,&
-'       SIGMAS = >0             (Schmidt                     )',/,&
-'       RVARFL = >0             (Rf, cf dissipation variance )',/,&
-'       ICLVFL = 0, 1 ou 2      (Mode de clipping variance   )',/,&
-'       SCAMIN =                (Valeur min autorisee        )',/,&
-'       SCAMAX =                (Valeur max autorisee        )',/,&
-'        Pour les variances, SCAMIN est ignore et SCAMAX n est',/,&
-'          pris en compte que si ICLVFL = 2',                   /)
- 6040 format(                                                     &
-'------------------------------------------------------',       /,&
-'   Scalaire      THETSS     THETVS',                /,&
-'------------------------------------------------------'         )
- 6041 format(                                                     &
- 1x,     i10,      e12.4,   e12.4                   )
- 6042 format(                                                     &
-'------------------------------------------------------',       /,&
-                                                                /,&
-'       THETSS =                (theta pour termes sources   )',/,&
-'                               ((1+theta)nouveau-theta ancien',/,&
-'       THETVS =                (theta pour diffusiv. scalaire',/,&
-'                               ((1+theta)nouveau-theta ancien',/)
-
-#else
 
  6000 format(                                                     &
                                                                 /,&
@@ -937,8 +609,6 @@ endif
 '       THETVS =                (theta for scalar diffusivity', /,&
 '                               ((1+theta).new-theta.old     )',/)
 
-#endif
-
 !===============================================================================
 ! 6. GESTION DU CALCUL
 !===============================================================================
@@ -956,29 +626,6 @@ write(nfecra,7010) isuite, ileaux, iecaux
 write(nfecra,7110) ntpabs, ntmabs
 
 write(nfecra,9900)
-
-#if defined(_CS_LANG_FR)
-
- 7000 format(                                                     &
-                                                                /,&
-' ** GESTION DU CALCUL',                                        /,&
-'    -----------------',                                        /)
- 7010 format(                                                     &
-' --- Suite de calcul',                                         /,&
-'       ISUITE = ',4x,i10,    ' (1 : suite de calcul         )',/,&
-'       ILEAUX = ',4x,i10,    ' (1 : lecture  de restart/auxiliary)',/,&
-'       IECAUX = ',4x,i10,    ' (1 : ecriture de checkpoint/auxiliary)',/,&
-                                                                /)
- 7110 format(                                                     &
-' --- Duree du calcul',                                         /,&
-'     La numerotation des pas de temps et la mesure du temps',  /,&
-'       physique simule sont des valeurs absolues',             /,&
-'       et non pas des valeurs relatives au calcul en cours.',  /,&
-                                                                /,&
-'       NTPABS = ',4x,i10,    ' (Pas de temps initial)',        /,&
-'       NTMABS = ',4x,i10,    ' (Pas de tps final demande)',    /)
-
-#else
 
  7000 format(                                                     &
                                                                 /,&
@@ -998,8 +645,6 @@ write(nfecra,9900)
                                                                 /,&
 '       NTPABS = ',4x,i10,    ' (Initial time step)',           /,&
 '       NTMABS = ',4x,i10,    ' (Final time step required)',    /)
-
-#endif
 
 !===============================================================================
 ! 7. ENTREES SORTIES
@@ -1032,36 +677,6 @@ write(nfecra,7550)   'ipstfo', ipstdv(ipstfo),                     &
 write(nfecra,9900)
 
 
-#if defined(_CS_LANG_FR)
-
- 7500 format(                                                     &
-                                                                /,&
-' ** ENTREES SORTIES',                                          /,&
-'    ---------------',                                          /)
- 7510 format(                                                     &
-' --- Fichier suite',                                           /,&
-'       NTSUIT = ',4x,i10,    ' (Periode de sauvegarde)',       /)
- 7530 format(                                                     &
-' --- Fichiers historiques',                                    /,&
-'       NTHIST = ',4x,i10,    ' (Periode de sortie    )',       /,&
-'       FRHIST = ',4x,e11.5,  ' (Periode de sortie (s))')
- 7532 format(                                                     &
-'         --           --                --',                   /)
- 7540 format(                                                     &
-' --- Fichiers run_solver.log',                                 /,&
-'       NTLIST = ',4x,i10,    ' (Periode de sortie    )',       /)
- 7550 format(                                                     &
-' --- Variables supplementaires en post-traitement (ipstdv)',   /,&
-'       ',a6,' = ',4x,i10,    ' (Force exercee par',            /,&
-'       ',6x,'   ',4x,10x,    '   le fluide sur le bord)',      /,&
-'       ',a6,' = ',4x,i10,    ' (y+ au bord)',                  /,&
-'       ',a6,' = ',4x,i10,    ' (T+ au bord)',                  /,&
-'       ',a6,' = ',4x,i10,    ' (Flux thermique au bord)',      /,&
-'       ',a6,' = ',4x,i10,    ' (Flux thermique',               /,&
-'       ',6x,'   ',4x,10x,    '  sans dimension au bord)',      /)
-
-#else
-
  7500 format(                                                     &
                                                                 /,&
 ' ** INPUT-OUTPUT',                                             /,&
@@ -1088,9 +703,6 @@ write(nfecra,9900)
 '       ',a6,' = ',4x,i10,    ' (Dimensionless thermal',        /,&
 '       ',6x,'   ',4x,10x,    '            flux at boundary)',  /)
 
-#endif
-
-
 !===============================================================================
 ! 8. COUPLAGES
 !===============================================================================
@@ -1108,22 +720,6 @@ write(nfecra,8220) iale, nalinf, iflxmw
 write(nfecra,9900)
 
 
-#if defined(_CS_LANG_FR)
-
- 8210 format(                                                     &
-                                                                /,&
-' ** METHODE ALE (MAILLAGE MOBILE)',                            /,&
-'    -----------',                                              /)
- 8220 format(                                                     &
-'       IALE   = ',4x,i10,    ' (1 : activee, 2 : CDO        )',/ &
-'       NALINF = ',4x,i10,    ' (Iterations d''initialisation', / &
-'                                                   du fluide)',/ &
-'       IFLXMW = ',4x,i10,    ' (Calcul du flux de masse ALE',  / &
-'                                0 : déplacement des sommets',  / &
-'                                1 : vitesse ALE)',/)
-
-#else
-
  8210 format(                                                     &
                                                                 /,&
 ' ** ALE METHOD (MOVING MESH)',                                 /,&
@@ -1135,8 +731,6 @@ write(nfecra,9900)
 '       IFLXMW = ',4x,i10,    ' (ALE mass flux computation',    / &
 '                                0: thanks to vertices',        / &
 '                                1: thanks to mesh velocity)',/)
-
-#endif
 
 return
 end subroutine

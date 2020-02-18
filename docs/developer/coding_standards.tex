@@ -307,41 +307,12 @@ The array below summarizes the replacements for usual functions:
 
 \subsection{Internationalization}
 
-Internationalization of messages uses the \texttt{gettext()} mechanism.
 Messages should always be defined in US English in the source
 code (which avoids using extended characters and the accompanying
-text encoding issues in source code), and a French translation
-is defined and maintained using a translation file \texttt{po/fr.po}.
-Translations to other languages are of course possible, and only
-require a volunteer.
+text encoding issues in source code).
 
-Using the \texttt{gettext()} mechanism has several advantages:
-
-\begin{itemize}
-
-\item accented or otherwise extended characters appear normally whether
-  using a Latin-1 (or Latin-9 or Latin-15) environment or whether
-  using a ``Unicode'' (or generally UTF-8) environment (assuming
-  that a terminal's encoding matches that of the {\tt LANG} environment
-  variable, usually {\tt LANG=fr\_FR} or {\tt LANG=fr\_FR.UTF-8}
-  for French;
-
-\item if a message is not translated, it simply appears in its
-  untranslated version;
-
-\item maintenance of the translations only requires editing a single
-  file, gettext related tools also make it easy to check that
-  translations are consistent (i.e. matching format descriptors
-  or line returns) without requiring complete code coverage tests.
-  In fact, translations could be maintained by a non-programmer.
-
-\item internationalization may be disabled using the
- {\tt --disable-nls} configure option, so possible comfort vs. speed
- trade-offs may be decided by the user;
-
-\end{itemize}
-
-To make internationalization possible, translatable strings should be
+To make future internationalization using a mechanism such as
+\texttt{gettext()} possible, translatable strings should be
 encased in a {\tt\_( )} macro (actually an abbreviation for a call
 to {\tt gettext()} if available, which reverts to an empty (identity)
 macro is internationalization is unavailable or disabled).
@@ -391,8 +362,8 @@ file.
       are recommended (using underscores as word separators), though
       the Fortran 95 standard requires those names be limited to 31
       characters.
-      Also, for routine names with underscores, the \texttt{CS\_PROCF}
-      macro must not be used. ISO C bindings must be used instead.
+      The \texttt{CS\_PROCF} macro must not be used for new code.
+      ISO C bindings must be used instead.
 
 \item at least 2 characters per variable names
       (banish variables \texttt{i}, \texttt{j}, or \texttt{k},
@@ -432,10 +403,10 @@ current Fortran compilers.
 
 \subsection{Python coding style}
 
-The GUI is not yet compatible with Python 3, due to differences in the
-usual PyQt4 API and strings/unicode handling, but the rest of the Python code
-should work both with Python 2 and Python 3.
-This compatibility should be maintained or improved upon, not broken...
+Code should work both using Python 2 or 3. Python 2 support will be
+removed at some future date, but since on many older systems, Python 2 only
+might be installed by default, compatibility should be ensured for
+a few more years.
 
 Details on the differences between major Python versions and associated
 recommendations may be found at:

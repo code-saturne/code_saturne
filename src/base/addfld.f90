@@ -657,30 +657,6 @@ call cs_field_pointer_map_boundary
 ! Formats
 !---
 
-#if defined(_CS_LANG_FR)
-
- 7040 format(                                                     &
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
-'@    ========='                                               ,/,&
-'@'                                                            ,/,&
-'@  Le champ ', i10, ' represente la variance'                 ,/,&
-'@    des fluctuations du champ ', i10                         ,/,&
-'@    d''apres la valeur du mot cle first_moment_id'           ,/,&
-'@'                                                            ,/,&
-'@  Le mot cle diffusivity_id'                                 ,/,&
-'@    ne doit pas etre renseigne.'                             ,/,&
-'@  Il sera pris automatiquement egal a celui du scalaire'     ,/,&
-'@    associe, soit ',i10                                      ,/,&
-'@'                                                            ,/,&
-'@  Le calcul ne sera pas execute.'                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/)
-
-#else
-
  7040 format(                                                     &
 '@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -699,8 +675,6 @@ call cs_field_pointer_map_boundary
 '@  The calculation cannot be executed.'                       ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@'                                                            ,/)
-
-#endif
 
 return
 end subroutine addfld

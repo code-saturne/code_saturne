@@ -161,25 +161,12 @@ contains
     ! Formats
     !--------
 
-#if defined(_CS_LANG_FR)
-
-1120 format (                                                     &
-'@                                                            ',/,&
-'@ @@ ERREUR : dans la fonction hypser                        ',/,&
-'@    ======                                                  ',/,&
-'@  Le parametre x doit verifier |x| < 1,  x = ',E12.5         ,/,&
-'@                                                            '  )
-
-#else
-
  1120 format (                                                    &
 '@                                                            ',/,&
 '@ @@ ERROR: in hypser function                               ',/,&
 '@    =====                                                   ',/,&
 '@  The x parameter should verify |x| < 1,  x = ', E12.5       ,/,&
 '@                                                            '  )
-
-#endif
 
   end function hypser
 

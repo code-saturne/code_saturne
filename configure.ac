@@ -63,8 +63,6 @@ AC_CONFIG_MACRO_DIR(m4)
 AC_CANONICAL_TARGET
 AC_CONFIG_HEADERS([cs_config.h])
 
-AM_GNU_GETTEXT_VERSION([0.19])
-
 # Initialize automake with the following options:
 # - foreign, so as to handle the absence of ChangeLog (automatically generated)
 # - tar-pax, so as to handle long lines (> 99 characters) in tar archives
@@ -179,20 +177,6 @@ AC_ARG_ENABLE(auto-flags,
   [ auto_flags=yes ]
 )
 
-# Optionally activate French translation of Fortran logs (compile-time)
-
-AC_ARG_ENABLE(french,
-  [AS_HELP_STRING([--enable-french], [enable French translation of Fortran logs])],
-  [
-    case "${enableval}" in
-      yes) french=yes ;;
-      no)  french=no ;;
-      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-french]) ;;
-    esac
-  ],
-  [ french=no ]
-)
-
 # Optionnaly install the code with relocatable features
 
 AC_ARG_ENABLE(relocatable,
@@ -303,16 +287,6 @@ if test "x$debug" = "xyes"; then
   CPPFLAGS="${CPPFLAGS} -DDEBUG"
 else
   CPPFLAGS="${CPPFLAGS} -DNDEBUG"
-fi
-
-# Fortran flags for French translation
-
-if test "x$french" = "xyes"; then
-  if test "x$cs_ibm_bg_type" != "x" ; then
-    FCFLAGS="${FCFLAGS} -WF,-D_CS_LANG_FR"
-  else
-    FCFLAGS="${FCFLAGS} -D_CS_LANG_FR"
-  fi
 fi
 
 # We may only turn on processing for libtool now that the basic compiler
@@ -1123,12 +1097,6 @@ AC_SUBST(cs_py_have_plugins)
 AM_CONDITIONAL(HAVE_PLUGINS, test x$cs_have_plugins = xyes)
 
 #------------------------------------------------------------------------------
-# Internationalization
-#------------------------------------------------------------------------------
-
-AM_GNU_GETTEXT([external])
-
-#------------------------------------------------------------------------------
 # Pass compiler options to automake files and cs_config.py
 #------------------------------------------------------------------------------
 
@@ -1159,7 +1127,7 @@ AC_SUBST(NEPTUNE_CFD)
 
 # Main configuration
 
-AC_CONFIG_FILES([Makefile po/Makefile.in
+AC_CONFIG_FILES([Makefile
                  preprocessor/Makefile
                  preprocessor/appli/Makefile preprocessor/base/Makefile
                  preprocessor/pre-post/Makefile preprocessor/util/Makefile

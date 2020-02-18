@@ -179,23 +179,6 @@ enddo
 ! Formats
 !----
 
-#if defined(_CS_LANG_FR)
-
- 1000 format (                                                    &
-'@                                                            ',/,&
-'@ @@ ATTENTION : DEPLACEMENT DE STRUCTURES INTERNES ALE      ',/,&
-'@    =========                                               ',/,&
-'@  Structure : ',I10                                          ,/,&
-'@  La valeur absolue du determinant de la matrice de         ',/,&
-'@    deplacement vaut : ',E14.5                               ,/,&
-'@  La matrice est consideree comme non inversible            ',/,&
-'@    (valeur limite fixee a ',E14.5     ,')                  ',/,&
-'@                                                            ',/,&
-'@  Arret du calcul                                           ',/,&
-'@                                                            '  )
-
-#else
-
  1000 format (                                                    &
 '@                                                            ',/,&
 '@ @@ WARNING: ALE DISPLACEMENT OF INTERNAL STRUCTURES        ',/,&
@@ -208,8 +191,6 @@ enddo
 '@                                                            ',/,&
 '@  Calculation abort                                         ',/,&
 '@                                                            '  )
-
-#endif
 
 !----
 ! End

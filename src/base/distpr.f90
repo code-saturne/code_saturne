@@ -392,39 +392,6 @@ deallocate(w1)
 ! 7. Formats
 !===============================================================================
 
-#if defined(_CS_LANG_FR)
-
- 1000 format(                                                           &
-'                                                             ',/,&
-' ** DISTANCE A LA PAROI                                      ',/,&
-'    -------------------                                      ',/,&
-'                                                             ',/,&
-'   Distance min = ',E14.5    ,'  Distance max = ',E14.5       ,/)
-
- 8000   format(                                                         &
-'@                                                            ',/,&
-'@ @@ ATTENTION : Calcul de la distance a la paroi            ',/,&
-'@    =========                                               ',/,&
-'@  La variable associee ne converge dans ',I10    ,' cellules',/)
-
- 9000   format(                                                         &
-'@'                                                            ,/,&
-'@ @@ ATTENTION : Calcul de la distance a la paroi'            ,/,&
-'@    ========='                                               ,/,&
-'@  La solution du laplacien ne respecte pas le principe du'   ,/,&
-'@  maximum en ', i10, ' cellules. On recalcule le laplacien'  ,/,&
-'@  sans les reconstructions.',/)
-
- 9001   format(                                                         &
-'@                                                            ',/,&
-'@ @@ ATTENTION : Calcul de la distance a la paroi            ',/,&
-'@    =========                                               ',/,&
-'@  La solution du laplacien ne respecte pas le principe du   ',/,&
-'@  maximum. (lapalcien negatif : ', E14.6,')                 ',/)
-
-
-#else
-
  1000 format(                                                           &
 '                                                             ',/,&
 ' ** WALL DISTANCE                                            ',/,&
@@ -452,8 +419,6 @@ deallocate(w1)
 '@    =========                                               ',/,&
 '@  The laplacian solution does not respect the maximum       ',/,&
 '@  principle. (laplacian solution is  negative :', E14.6,')    ',/)
-
-#endif
 
 return
 end subroutine

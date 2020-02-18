@@ -78,6 +78,9 @@ Numerics and physical modelling:
 
 Architectural changes:
 
+- Removed localization (French or English), as it was very incomplete
+  and limited to a log file.
+
 - Change the writing process of checkpoint files: when a checkpoint
   already exists, the previous one is renamed before writing the new one.
   The old one is then removed if the writing of the new file is

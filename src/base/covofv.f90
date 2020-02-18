@@ -712,28 +712,6 @@ if (allocated(diverg)) deallocate(diverg)
 ! Formats
 !--------
 
-#if defined(_CS_LANG_FR)
-
- 1000 format(/,                                                   &
-'   ** RESOLUTION POUR LA VARIABLE ',A16                       ,/,&
-'      ---------------------------                            ',/)
- 1200 format(1X,A16,' : BILAN EXPLICITE = ',E14.5)
-! 9000 format( &
-!'@                                                            ',/,&
-!'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-!'@                                                            ',/,&
-!'@ @@ ATTENTION : ERREUR DANS COVOFV                          ',/,&
-!'@    =========                                               ',/,&
-!'@    IVARSC DOIT ETRE UN ENTIER POSITIF STRICTEMENT          ',/,&
-!'@    IL VAUT ICI ',I10                                        ,/,&
-!'@                                                            ',/,&
-!'@  Le calcul ne peut etre execute.                           ',/,&
-!'@                                                            ',/,&
-!'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-!'@                                                            ',/)
-
-#else
-
  1000 format(/,                                                   &
 '   ** SOLVING VARIABLE ',A16                                  ,/,&
 '      ----------------'                                       ,/)
@@ -751,8 +729,6 @@ if (allocated(diverg)) deallocate(diverg)
 !'@'                                                            ,/,&
 !'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 !'@                                                            ',/)
-
-#endif
 
 !----
 ! End

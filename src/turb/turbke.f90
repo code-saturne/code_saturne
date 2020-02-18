@@ -1685,24 +1685,6 @@ end if
 ! Formats
 !--------
 
-#if defined(_CS_LANG_FR)
-
- 1000 format(/,                                      &
-'   ** Resolution du k-epsilon                   ',/,&
-'      -----------------------                   ',/)
- 1001 format(/,                                      &
-'   ** Resolution du k-epsilon a prod lineaire',/,&
-'      ---------------------------------------   ',/)
- 1002 format(/,                                      &
-'   ** Resolution du v2f (k et epsilon)               ',/,&
-'      --------------------------------          ',/)
- 1003 format(/,                                      &
-'   ** Resolution du k-epsilon Launder Sharma    ',/,&
-'      --------------------------------          ',/)
-1100 format(1X,A8,' : Bilan explicite = ',E14.5)
-
-#else
-
  1000 format(/,                                      &
 '   ** Solving k-epsilon'                         ,/,&
 '      -----------------'                         ,/)
@@ -1716,7 +1698,6 @@ end if
 '   ** Solving k-epsilon Launder Sharma          ',/,&
 '      --------------------------------          ',/)
  1100 format(1X,A8,' : Explicit balance = ',E14.5)
-#endif
 
 !----
 ! End

@@ -582,14 +582,7 @@ deallocate(w1)
 ! Formats
 !--------
 
-#if defined(_CS_LANG_FR)
-
- 1000 format(/,'           Resolution pour la variable ',A23,/)
-
-#else
-
  1000 format(/,'           Solving variable ',A23           ,/)
-#endif
 
 !----
 ! End

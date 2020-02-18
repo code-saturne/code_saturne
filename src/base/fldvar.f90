@@ -387,132 +387,6 @@ return
 ! 5. FORMATS
 !===============================================================================
 
-#if defined(_CS_LANG_FR)
- 6000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     PLUSIEURS MODELES DE PHYSIQUES PARTICULIERES           ',/,&
-'@     INCOMPATIBLES SONT ACTIVES                             ',/,&
-'@                                                            ',/,&
-'@  Seul les modeles de physiques particulieres compressible  ',/,&
-'@    et melange de gaz parfaits peuvent etre actives         ',/,&
-'@    simultanement.                                          ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Modifier les indicateurs de IPPMOD dans usppmo.           ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 6001 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     SELECTION INCORRECTE DU MODELE PHYSIQUE PARTICULIERE   ',/,&
-'@                                                            ',/,&
-'@  Les valeurs des indicateurs du tableau IPPMOD ne sont pas ',/,&
-'@    admissibles                                             ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Modifier les indicateurs de IPPMOD dans usppmo.           ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 6002 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION :  A L''ENTREE DES DONNEES                    ',/,&
-'@    =========                                               ',/,&
-'@     EQUATION D''ETAT INCOMPATIBLE AVEC LES PHYSIQUES       ',/,&
-'@     PARTICULIERES SELECTIONNEES                            ',/,&
-'@                                                            ',/,&
-'@  Les modeles de physiques particulieres compressible et    ',/,&
-'@    et melange de gaz parfaits sont actives simultanement   ',/,&
-'@    mais l''equation d''etat selectionnee n''est pas melange',/,&
-'@    de gas parfait (ieos different de 3).                   ',/,&
-'@                                                            ',/,&
-'@  L''indicateur ieos a ete repositionne a 3 et le calcul    ',/,&
-'@  sera execute.                                             ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 6010 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     NOMBRE DE SCALAIRES ERRONE                             ',/,&
-'@                                                            ',/,&
-'@  Le nombre de scalaires utilisateur doit etre un entier    ',/,&
-'@    positif ou nul. Il vaut ici   NSCAUS  = ',I10            ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres.                                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 6011 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     NOMBRE DE SCALAIRES TROP GRAND                         ',/,&
-'@                                                            ',/,&
-'@  Le nombre de scalaires utilisateurs                       ',/,&
-'@    demande                          est  NSCAUS = ',I10     ,/,&
-'@  Le nombre de scalaires total                              ',/,&
-'@    autorise   dans paramx           est  NSCAMX = ',I10     ,/,&
-'@                                                            ',/,&
-'@  La valeur maximale autorisee de NSCAUS                    ',/,&
-'@                          est donc  NSCAMX        = ',I10    ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier NSCAUS.                                          ',/,&
-'@                                                            ',/,&
-'@  NSCAMX doit valoir au moins ',I10                          ,/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 6012 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@     NOMBRE DE SCALAIRES TROP GRAND                         ',/,&
-'@                                                            ',/,&
-'@  Le nombre de scalaires utilisateurs                       ',/,&
-'@    demande                          est  NSCAUS = ',I10     ,/,&
-'@  Le nombre de scalaires pour les physiques particulieres   ',/,&
-'@    necessaire avec le modele choisi est  NSCAPP = ',I10     ,/,&
-'@  Le nombre de scalaires total                              ',/,&
-'@    autorise   dans paramx           est  NSCAMX = ',I10     ,/,&
-'@                                                            ',/,&
-'@  La valeur maximale autorisee de NSCAUS                    ',/,&
-'@    avec le modele choisi est donc NSCAMX-NSCAPP = ',I10     ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier NSCAUS.                                          ',/,&
-'@                                                            ',/,&
-'@  NSCAMX doit valoir au moins ',I10                          ,/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
-#else
-
  6000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -633,8 +507,6 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
-
-#endif
 
 !===============================================================================
 ! 5. FIN
@@ -1153,32 +1025,6 @@ return
 ! Formats
 !---
 
-#if defined(_CS_LANG_FR)
-
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ERREUR :    ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    ========                                                ',/,&
-'@     NOMBRE DE VARIABLES TROP GRAND                         ',/,&
-'@                                                            ',/,&
-'@  Le type de calcul defini                                  ',/,&
-'@    correspond a un nombre de variables NVAR   >= ', i10     ,/,&
-'@  Le nombre de variables maximal prevu                      ',/,&
-'@                      dans paramx   est NVARMX  = ', i10     ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres                                   ',/,&
-'@                                                            ',/,&
-'@  Si NVARMX est augmente, le code doit etre reinstalle.     ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
-#else
-
  1000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1200,8 +1046,6 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
-
-#endif
 
 end subroutine fldvar_check_nvar
 
@@ -1303,32 +1147,6 @@ return
 ! Formats
 !---
 
-#if defined(_CS_LANG_FR)
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ERREUR :    ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    ========                                                ',/,&
-'@     NOMBRE DE SCALAIRES TROP GRAND                         ',/,&
-'@                                                            ',/,&
-'@  Le nombre de scalaires utilisateurs                       ',/,&
-'@    demande                          est  NSCAUS = ', i10    ,/,&
-'@  Le nombre de scalaires total                              ',/,&
-'@    autorise   dans paramx           est  NSCAMX = ', i10    ,/,&
-'@                                                            ',/,&
-'@  La valeur maximale possible de NSCAUS                     ',/,&
-'@    avec le modele choisi est donc NSCAMX-NSCAUS = ', i10    ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier NSCAUS.                                          ',/,&
-'@                                                            ',/,&
-'@  Si NSCAMX est augmente, le code doit etre reinstalle.     ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-#else
  1000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -1353,8 +1171,6 @@ return
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
-
-#endif
 
 end subroutine fldvar_check_nscapp
 

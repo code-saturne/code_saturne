@@ -130,11 +130,7 @@ do i = ic, ic + max(0, max_name_width - 11)
 enddo
 ic = ic + max(0, max_name_width - 11)
 
-#if defined(_CS_LANG_FR)
-title(ic:max_line_width) = 'Norm 2nd mb.  Nbiter  Residu norme     Derive   Residu temps'
-#else
 title(ic:max_line_width) = 'Rhs norm      N_iter  Norm. residual   Drift   Time residual'
-#endif
 
 !===============================================================================
 ! 2. Write convergence criteria
@@ -387,17 +383,9 @@ deallocate(w1, w2)
 ! Formats
 !--------
 
-#if defined(_CS_LANG_FR)
-
- 1000 format (/,3X,'** INFORMATIONS SUR LA CONVERGENCE',/,        &
-          3X,'   -------------------------------')
-
-#else
-
  1000 format (/,3X,'** INFORMATION ON CONVERGENCE',/,             &
           3X,'   --------------------------')
 
-#endif
  3000 format (e12.5)
  4000 format (i7)
 

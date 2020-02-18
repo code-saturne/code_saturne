@@ -287,51 +287,27 @@ if(ipass.eq.0.or.vcopt%iwarni.ge.2) then
     ii = ientre
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-    write(nfecra,6020) 'Entree           ', ii, inb
-#else
     write(nfecra,6020) 'Inlet            ', ii, inb
-#endif
     ii = iparoi
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-    write(nfecra,6020) 'Paroi lisse      ', ii, inb
-#else
     write(nfecra,6020) 'Smooth wall      ', ii, inb
-#endif
     ii = iparug
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-    write(nfecra,6020) 'Paroi rugueuse   ', ii, inb
-#else
     write(nfecra,6020) 'Rough wall       ', ii, inb
-#endif
     ii = isymet
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-    write(nfecra,6020) 'Symetrie         ', ii, inb
-#else
     write(nfecra,6020) 'Symmetry         ', ii, inb
-#endif
     ii = isolib
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-    write(nfecra,6020) 'Sortie libre     ', ii, inb
-#else
     write(nfecra,6020) 'Free outlet      ', ii, inb
-#endif
     ii = ifrent
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-    write(nfecra,6020) 'Entree libre     ', ii, inb
-#else
     write(nfecra,6020) 'Free inlet       ', ii, inb
-#endif
 
     ! Presence of free entrance face(s)
     if (inb.gt.0) then
@@ -348,11 +324,7 @@ if(ipass.eq.0.or.vcopt%iwarni.ge.2) then
     ii = i_convective_inlet
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-    write(nfecra,6020) 'Entree convective', ii, inb
-#else
     write(nfecra,6020) 'Convective inlet ', ii, inb
-#endif
 
     if (nbrcpl.ge.1) then
       if (ifaccp.eq.0) then
@@ -362,30 +334,18 @@ if(ipass.eq.0.or.vcopt%iwarni.ge.2) then
       endif
       inb = ifinty(ii)-idebty(ii)+1
       if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-      write(nfecra,6020) 'Couplage sat/sat ', ii, inb
-#else
       write(nfecra,6020) 'Sat/Sat coupling ', ii, inb
-#endif
     endif
 
     ii = ifresf
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-    write(nfecra,6020) 'Surface libre    ', ii, inb
-#else
     write(nfecra,6020) 'Free surface     ', ii, inb
-#endif
 
     ii = iindef
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-    write(nfecra,6020) 'Indefini         ', ii, inb
-#else
     write(nfecra,6020) 'Undefined        ', ii, inb
-#endif
 
     do ii = 1, ntypmx
       if (ii.ne.ientre  .and. &
@@ -402,11 +362,7 @@ if(ipass.eq.0.or.vcopt%iwarni.ge.2) then
         inb = ifinty(ii)-idebty(ii)+1
         if (irangp.ge.0) call parcpt (inb)
         if(inb.gt.0) then
-#if defined(_CS_LANG_FR)
-          write(nfecra,6020) 'Type utilisateur ', ii, inb
-#else
           write(nfecra,6020) 'User type        ', ii, inb
-#endif
         endif
       endif
     enddo
@@ -416,83 +372,47 @@ if(ipass.eq.0.or.vcopt%iwarni.ge.2) then
     ii = ieqhcf
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-    write(nfecra,6020) 'Entree sub. enth.', ii, inb
-#else
     write(nfecra,6020) 'Sub. enth. inlet ', ii, inb
-#endif
 
     ii = iephcf
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
     write(nfecra,6020) 'Ptot, Htot       ', ii, inb
-#else
-    write(nfecra,6020) 'Ptot, Htot       ', ii, inb
-#endif
 
     ii = iesicf
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-    write(nfecra,6020) 'Entree/Sortie imp', ii, inb
-#else
     write(nfecra,6020) 'Imp inlet/outlet ', ii, inb
-#endif
 
     ii = isopcf
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-    write(nfecra,6020) 'Sortie subsonique', ii, inb
-#else
     write(nfecra,6020) 'Subsonic outlet  ', ii, inb
-#endif
 
     ii = isspcf
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-    write(nfecra,6020) 'Sortie supersoniq', ii, inb
-#else
     write(nfecra,6020) 'Supersonic outlet', ii, inb
-#endif
 
     ii = iparoi
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-    write(nfecra,6020) 'Paroi lisse      ', ii, inb
-#else
     write(nfecra,6020) 'Smooth wall      ', ii, inb
-#endif
 
     ii = iparug
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-    write(nfecra,6020) 'Paroi rugueuse   ', ii, inb
-#else
     write(nfecra,6020) 'Rough wall       ', ii, inb
-#endif
 
     ii = isymet
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-    write(nfecra,6020) 'Symetrie         ', ii, inb
-#else
     write(nfecra,6020) 'Symmetry         ', ii, inb
-#endif
 
     ii = iindef
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) call parcpt (inb)
-#if defined(_CS_LANG_FR)
-    write(nfecra,6020) 'Indefini         ', ii, inb
-#else
     write(nfecra,6020) 'Undefined        ', ii, inb
-#endif
 
     do ii = 1, ntypmx
       if (ii.ne.iesicf .and. &
@@ -507,11 +427,7 @@ if(ipass.eq.0.or.vcopt%iwarni.ge.2) then
         inb = ifinty(ii)-idebty(ii)+1
         if (irangp.ge.0) call parcpt (inb)
         if(inb.gt.0) then
-#if defined(_CS_LANG_FR)
-          write(nfecra,6020) 'Type utilisateur ',ii, inb
-#else
           write(nfecra,6020) 'User type        ',ii, inb
-#endif
         endif
       endif
     enddo
@@ -1727,44 +1643,28 @@ if (modntl.eq.0) then
       call parcpt (inb)
       call parsom (flumty(ii))
     endif
-#if defined(_CS_LANG_FR)
-    write(nfecra,7020) 'Entree           ',ii,inb,flumty(ii)
-#else
     write(nfecra,7020) 'Inlet            ',ii,inb,flumty(ii)
-#endif
     ii = iparoi
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) then
       call parcpt (inb)
       call parsom (flumty(ii))
     endif
-#if defined(_CS_LANG_FR)
-    write(nfecra,7020) 'Paroi lisse      ',ii,inb,flumty(ii)
-#else
     write(nfecra,7020) 'Smooth wall      ',ii,inb,flumty(ii)
-#endif
     ii = iparug
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) then
       call parcpt (inb)
       call parsom (flumty(ii))
     endif
-#if defined(_CS_LANG_FR)
-    write(nfecra,7020) 'Paroi rugueuse   ',ii,inb,flumty(ii)
-#else
     write(nfecra,7020) 'Rough wall       ',ii,inb,flumty(ii)
-#endif
     ii = isymet
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) then
       call parcpt (inb)
       call parsom (flumty(ii))
     endif
-#if defined(_CS_LANG_FR)
-    write(nfecra,7020) 'Symetrie         ',ii,inb,flumty(ii)
-#else
     write(nfecra,7020) 'Symmetry         ',ii,inb,flumty(ii)
-#endif
 
     ii = isolib
     inb = ifinty(ii)-idebty(ii)+1
@@ -1772,11 +1672,7 @@ if (modntl.eq.0) then
       call parcpt (inb)
       call parsom (flumty(ii))
     endif
-#if defined(_CS_LANG_FR)
-    write(nfecra,7020) 'Sortie libre     ',ii,inb,flumty(ii)
-#else
     write(nfecra,7020) 'Free outlet      ',ii,inb,flumty(ii)
-#endif
 
     ii = ifrent
     inb = ifinty(ii)-idebty(ii)+1
@@ -1784,22 +1680,14 @@ if (modntl.eq.0) then
       call parcpt (inb)
       call parsom (flumty(ii))
     endif
-#if defined(_CS_LANG_FR)
-    write(nfecra,7020) 'Entree libre     ',ii,inb,flumty(ii)
-#else
     write(nfecra,7020) 'Free inlet       ',ii,inb,flumty(ii)
-#endif
     ii = i_convective_inlet
     inb = ifinty(ii)-idebty(ii)+1
     if (irangp.ge.0) then
       call parcpt (inb)
       call parsom (flumty(ii))
     endif
-#if defined(_CS_LANG_FR)
-    write(nfecra,7020) 'Entree convective',ii,inb,flumty(ii)
-#else
     write(nfecra,7020) 'Convective inlet ',ii,inb,flumty(ii)
-#endif
 
     ii = ifresf
     inb = ifinty(ii)-idebty(ii)+1
@@ -1807,11 +1695,7 @@ if (modntl.eq.0) then
       call parcpt (inb)
       call parsom (flumty(ii))
     endif
-#if defined(_CS_LANG_FR)
-    write(nfecra,7020) 'Surface libre    ',ii,inb,flumty(ii)
-#else
     write(nfecra,7020) 'Free surface     ',ii,inb,flumty(ii)
-#endif
 
     if (nbrcpl.ge.1) then
       if (ifaccp.eq.0) then
@@ -1824,11 +1708,7 @@ if (modntl.eq.0) then
         call parcpt (inb)
         call parsom (flumty(ii))
       endif
-#if defined(_CS_LANG_FR)
-      write(nfecra,7020) 'Couplage sat/sat ',ii,inb,flumty(ii)
-#else
       write(nfecra,7020) 'Sat/Sat coupling ',ii,inb,flumty(ii)
-#endif
     endif
 
     ii = iindef
@@ -1837,11 +1717,7 @@ if (modntl.eq.0) then
       call parcpt (inb)
       call parsom (flumty(ii))
     endif
-#if defined(_CS_LANG_FR)
-    write(nfecra,7020) 'Indefini         ',ii,inb,flumty(ii)
-#else
     write(nfecra,7020) 'Undefined        ',ii,inb,flumty(ii)
-#endif
 
     do ii = 1, ntypmx
       if ( ii.ne.ientre  .and.                                    &
@@ -1861,11 +1737,7 @@ if (modntl.eq.0) then
           call parsom (flumty(ii))
         endif
         if(inb.gt.0) then
-#if defined(_CS_LANG_FR)
-          write(nfecra,7020) 'Type utilisateur ',ii,inb,flumty(ii)
-#else
           write(nfecra,7020) 'User type        ',ii,inb,flumty(ii)
-#endif
         endif
       endif
     enddo
@@ -1878,11 +1750,7 @@ if (modntl.eq.0) then
       call parcpt (inb)
       call parsom (flumty(ii))
     endif
-#if defined(_CS_LANG_FR)
-    write(nfecra,7020) 'Entree sub. enth.',ii,inb,flumty(ii)
-#else
     write(nfecra,7020) 'Sub. enth. inlet ',ii,inb,flumty(ii)
-#endif
 
     ii = iephcf
     inb = ifinty(ii)-idebty(ii)+1
@@ -1890,11 +1758,7 @@ if (modntl.eq.0) then
       call parcpt (inb)
       call parsom (flumty(ii))
     endif
-#if defined(_CS_LANG_FR)
     write(nfecra,7020) 'Ptot, Htot       ',ii,inb,flumty(ii)
-#else
-    write(nfecra,7020) 'Ptot, Htot       ',ii,inb,flumty(ii)
-#endif
 
     ii = iesicf
     inb = ifinty(ii)-idebty(ii)+1
@@ -1902,11 +1766,7 @@ if (modntl.eq.0) then
       call parcpt (inb)
       call parsom (flumty(ii))
     endif
-#if defined(_CS_LANG_FR)
-    write(nfecra,7020) 'Entree/Sortie imp',ii,inb,flumty(ii)
-#else
     write(nfecra,7020) 'Imp inlet/outlet ',ii,inb,flumty(ii)
-#endif
 
     ii = isopcf
     inb = ifinty(ii)-idebty(ii)+1
@@ -1914,11 +1774,7 @@ if (modntl.eq.0) then
       call parcpt (inb)
       call parsom (flumty(ii))
     endif
-#if defined(_CS_LANG_FR)
-    write(nfecra,7020) 'Sortie subsonique',ii,inb,flumty(ii)
-#else
     write(nfecra,7020) 'Subsonic outlet  ',ii,inb,flumty(ii)
-#endif
 
     ii = isspcf
     inb = ifinty(ii)-idebty(ii)+1
@@ -1926,11 +1782,7 @@ if (modntl.eq.0) then
       call parcpt (inb)
       call parsom (flumty(ii))
     endif
-#if defined(_CS_LANG_FR)
-    write(nfecra,7020) 'Sortie supersoniq',ii,inb,flumty(ii)
-#else
     write(nfecra,7020) 'Supersonic outlet',ii,inb,flumty(ii)
-#endif
 
     ii = iparoi
     inb = ifinty(ii)-idebty(ii)+1
@@ -1938,11 +1790,7 @@ if (modntl.eq.0) then
       call parcpt (inb)
       call parsom (flumty(ii))
     endif
-#if defined(_CS_LANG_FR)
-    write(nfecra,7020) 'Paroi            ',ii,inb,flumty(ii)
-#else
     write(nfecra,7020) 'Wall             ',ii,inb,flumty(ii)
-#endif
 
     ii = isymet
     inb = ifinty(ii)-idebty(ii)+1
@@ -1950,11 +1798,7 @@ if (modntl.eq.0) then
       call parcpt (inb)
       call parsom (flumty(ii))
     endif
-#if defined(_CS_LANG_FR)
-    write(nfecra,7020) 'Symetrie         ',ii,inb,flumty(ii)
-#else
     write(nfecra,7020) 'Symmetry         ',ii,inb,flumty(ii)
-#endif
 
     ii = iindef
     inb = ifinty(ii)-idebty(ii)+1
@@ -1962,11 +1806,7 @@ if (modntl.eq.0) then
       call parcpt (inb)
       call parsom (flumty(ii))
     endif
-#if defined(_CS_LANG_FR)
-    write(nfecra,7020) 'Indefini         ',ii,inb,flumty(ii)
-#else
     write(nfecra,7020) 'Undefined        ',ii,inb,flumty(ii)
-#endif
 
     do ii = 1, ntypmx
       if (ii.ne.iesicf .and. &
@@ -1983,11 +1823,7 @@ if (modntl.eq.0) then
           call parsom (flumty(ii))
         endif
         if(inb.gt.0) then
-#if defined(_CS_LANG_FR)
-          write(nfecra,7020) 'Type utilisateur ',ii,inb,flumty(ii)
-#else
           write(nfecra,7020) 'User type        ',ii,inb,flumty(ii)
-#endif
         endif
       endif
     enddo
@@ -2001,157 +1837,6 @@ endif
 !===============================================================================
 ! FORMATS
 !===============================================================================
-
-#if defined(_CS_LANG_FR)
-
- 2020 format(/,'   IFINTY : ',I10)
- 2030 format(/,'   IDEBTY : ',I10)
- 2040 format(/,'   ITYPFB : ',I10)
- 2098 format(/,                                                   &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DE LA VERIFICATION DES COND. LIM.',/,&
-'@    =========                                               ',/,&
-'@    PROBLEME DE TRI DES FACES DE BORD                       ',/,&
-'@                                                            ',/,&
-'@    IFINTY(',I10   ,') = ',I10                               ,/,&
-'@      est superieur a                                       ',/,&
-'@    IDEBTY(',I10   ,') = ',I10                               ,/,&
-'@                                                            ',/,&
-'@    Le calcul ne sera pas execute.                          ',/,&
-'@                                                            ',/,&
-'@    Contacter l''assistance.                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 2099 format(/,                                                   &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DE LA VERIFICATION DES COND. LIM.',/,&
-'@    =========                                               ',/,&
-'@    PROBLEME DE TRI DES FACES DE BORD SUR UN RANG DISTANT   ',/,&
-'@                                                            ',/,&
-'@    IFINTY(',I10   ,')                                      ',/,&
-'@      est superieur a                                       ',/,&
-'@    IDEBTY(',I10   ,')                                      ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne sera pas execute.                          ',/,&
-'@                                                            ',/,&
-'@    Contacter l''assistance.                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 3099 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DE LA VERIFICATION DES COND. LIM.',/,&
-'@    =========                                               ',/,&
-'@    PROBLEME DE TRI DES FACES DE BORD                       ',/,&
-'@                                                            ',/,&
-'@      nombre de faces classees par type = ',I10              ,/,&
-'@      nombre de faces de bord  NFABOR   = ',I10              ,/,&
-'@                                                            ',/,&
-'@    Le calcul ne sera pas execute.                          ',/,&
-'@                                                            ',/,&
-'@    Contacter l''assistance.                                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
-
- 6010 format ( /,/,                                               &
- '   ** INFORMATIONS SUR LE TYPE DE FACES DE BORD',/,             &
- '      -----------------------------------------',/)
- 6011 format (                                                    &
-'---------------------------------------------------------------',&
-'----------',                                                     &
-                                                                /,&
-'Type de bord           Code    Nb faces',                        &
-                                                                /,&
-'---------------------------------------------------------------',&
-'----------')
- 6020 format (                                                    &
- a17,i10,i12)
- 6030 format(                                                     &
-'---------------------------------------------------------------',&
-'----------'/)
-
- 6060 format(                                                     &
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DE LA VERIFICATION DES COND. LIM.',/,&
-'@    =========                                               ',/,&
-'@    CONDITIONS AUX LIMITES INCORRECTES OU INCOMPLETES       ',/,&
-'@                                                            ',/,&
-'@    Au moins une face de bord declaree en entree            ',/,&
-'@      (ou sortie) a vitesse imposee pour laquelle la valeur ',/,&
-'@      de la vitesse n''a pas ete fournie pour toutes les    ',/,&
-'@      composantes.                                          ',/,&
-'@    Le calcul ne sera pas execute.                          ',/,&
-'@                                                            ',/,&
-'@    Verifier les conditions aux limites dans l''Interface   ',/,&
-'@    ou dans le sous-programme utilisateur correspondant.    ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 6070 format(                                                           &
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DE LA VERIFICATION DES COND. LIM.',/,&
-'@    ========='                                               ,/,&
-'@    CONDITIONS AUX LIMITES INCORRECTES OU INCOMPLETES'       ,/,&
-'@'                                                            ,/,&
-'@    Au moins une face de bord declaree en entree'            ,/,&
-'@      (ou sortie) a vitesse imposee avec un flux rentrant'   ,/,&
-'@      pour laquelle la valeur de ', a,' n''a pas ete'        ,/,&
-'@      specifiee (condition de Dirichlet).'                   ,/,&
-'@    Le calcul ne sera pas execute'                           ,/,&
-'@'                                                            ,/,&
-'@    Verifier les conditions aux limites dans l''Interface'   ,/,&
-'@    ou dans le sous-programme utilisateur correspondant.'    ,/,&
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/)
-
-
- 7010 format ( /,/,                                               &
- '   ** INFORMATIONS SUR LE FLUX DE MASSE AU BORD',/,             &
- '      -----------------------------------------',/)
- 7011 format (                                                    &
-'---------------------------------------------------------------',&
-                                                                /,&
-'Type de bord           Code    Nb faces           Flux de masse',&
-                                                                /,&
-'---------------------------------------------------------------')
- 7020 format (                                                    &
- a17,i10,i12,6x,e18.9)
- 7030 format(                                                     &
-'---------------------------------------------------------------',&
-                                                                /)
-
- 8000 format(/,                                                   &
-'Faces de bord d''entree/sortie libre detectees               ',/,&
-'Mise a jour du point de reference pour la pression totale    ',/,&
-' XYZP0 = ',E14.5,E14.5,E14.5                  ,/)
- 8001 format(/,                                                   &
-'Faces de bord a Dirichlet de pression impose detectees       ',/,&
-'Mise a jour du point de reference pour la pression totale    ',/,&
-' XYZP0 = ',E14.5,E14.5,E14.5                  ,/)
-
-!-------------------------------------------------------------------------------
-
-#else
 
  2020 format(/,'   IFINTY : ',I10)
  2030 format(/,'   IDEBTY : ',I10)
@@ -2298,8 +1983,6 @@ endif
 'Boundary faces with pressure Dirichlet condition detected'    ,/,&
 'Update of reference point for total pressure'                 ,/,&
 ' XYZP0 = ',E14.5,E14.5,E14.5                  ,/)
-
-#endif
 
 
 return

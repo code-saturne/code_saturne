@@ -112,73 +112,6 @@ elseif(icas(ient).eq.4) then
   write(nfecra,9140) udebit(ient),kdebit(ient),edebit(ient)
 endif
 
-#if defined(_CS_LANG_FR)
-
- 9010 format(                                                           &
-'-------------                                                ',/,&
-'  -- Entree : ',I10                                            /,&
-'-------------                                                ',/,&
-'       NVORT  = ',4X,I10,    ' (Nombre de vortex            )',/,&
-'       ICVOR  = ',4X,I10,   ' (Nombre de faces a l''entree  )',/,&
-'       ICAS   = ',4X,I10,    ' (1 : conduite rectangulaire   ',/,&
-'                ',14X,       '  2 : conduite circulaire      ',/,&
-'                ',14X,       '  3 : sans CL mais avec fichier',/,&
-'                ',14X,       '  4 : sans CL ni fichier      )',/)
- 9020 format(                                                           &
-' --- Directions principales du repere local                  ',/,&
-'                  ---- X ----    ---- Y ----    ---- Z ----  ',/,&
-'       DIR1  = ', E14.5,' ',E14.5,' ',E14.5                    /,&
-'       DIR2  = ', E14.5,' ',E14.5,' ',E14.5                    /,&
-'       DIR3  = ', E14.5,' ',E14.5,' ',E14.5                    /,&
-'                                                             ',/,&
-' --- Coordonnees du centre de l''entree                      ',/,&
-'       CEN   = ', E14.5,' ',E14.5,' ',E14.5,                   /)
- 9030 format(                                                           &
-' --- Conditions aux limites dans le repere local             ',/,&
-' Plan y = -LLY/2 ',4X,I10,    ' (1 : paroi                   ',/,&
-' Plan z =  LLZ/2 ',4X,I10,    '  2 : symetrie                ',/,&
-' Plan y =  LLY/2 ',4X,I10,    '  3 : periodicite            )',/,&
-' Plan z = -LLZ/2 ',4X,I10,    '                              ',/)
- 9040 format(                                                           &
-' --- Dimensions de l''entree dans le repere local            ',/,&
-'                  ---- min ----    ---- max ----             ',/,&
-'       Y       = ',E14.5,'  ',E14.5,'                        ',/,&
-'       Z       = ',E14.5,'  ',E14.5,'                        ',/)
- 9050 format(                                                           &
-'       LLY     = ',E14.5,    ' (longueur de la conduite dans ',/,&
-'       LLZ     = ',E14.5,    '  les directions DIR1 et DIR2) ',/)
- 9060 format(                                                           &
-'       LLD     = ',E14.5,    ' (diametre de la conduite    ) ',/)
- 9070 format(                                                           &
-' --- Duree de vie des vortex                                 ',/,&
-'       ITLIVO  = ',4X,I10,   ' (1 : constante                ',/,&
-'                 ',14X,      '  2 : en k^(3/2).U/epsilon   ) ',/)
- 9080 format(                                                           &
-'       TLIMVO  = ',E14.5,    ' (1 : duree de vie imposee   ) ',/)
- 9090 format(                                                           &
-' --- Taille des vortex                                       ',/,&
-'       ISGMVO  = ',4X,I10,   ' (1 : taille constante         ',/,&
-'                 ',14X,      '  2 : en k^(3/2)/epsilon       ',/,&
-'                 ',14X,      '  2 : en max[nu.k/eps,200.Lk]) ',/)
- 9100 format(                                                           &
-'       XSGMVO  = ',E14.5,    ' (1 : taille imposee         ) ',/)
- 9110 format(                                                           &
-' --- Marche en temps                                         ',/,&
-'       IDEPVO  = ',4X,I10,   ' (1 : deplacement aleatoire    ',/,&
-'                 ',14X,      '  2 : convection des vortex    ',/)
- 9120 format(                                                           &
-'       UD      = ',E14.5,    ' (1 : vit. de deplacement max) ',/)
- 9130 format(                                                           &
-' --- Fichier de donnees                                      ',/,&
-'       NDAT    = ',4X,I10,   ' (Nombre de lignes du fichier )',/)
- 9140 format(                                                           &
-' --- Donnees a l''entree                                     ',/,&
-'       UDEBIT  = ',E14.5,    ' (vitesse debitante imposee)   ',/,&
-'       KDEBIT  = ',E14.5,    ' (energie cinetique imposee)   ',/,&
-'       EDEBIT  = ',E14.5,    ' (dissipation imposee)         ',/)
-
-#else
-
  9010 format(                                                           &
 '-----------                                                  ',/,&
 '  -- Inlet: ',I10                                              /,&
@@ -241,8 +174,6 @@ endif
 '       UDEBIT  = ',E14.5,    ' (given velocity      )        ',/,&
 '       KDEBIT  = ',E14.5,    ' (given kinetic energy)        ',/,&
 '       EDEBIT  = ',E14.5,    ' (given dissipation   )        ',/)
-
-#endif
 
 !===============================================================================
 ! 2. FIN

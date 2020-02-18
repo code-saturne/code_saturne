@@ -536,9 +536,6 @@ class Setup:
         # Download packages
         self.download = 'yes'
 
-        # Code_Saturne language (may be en/fr)
-        self.language = 'en'
-
         # Code_Saturne installation with debugging symbols
         self.debug = 'no'
 
@@ -760,7 +757,6 @@ to start the installation.
                     if not list[1] in ['default', 'auto']:
                         self.prefix = list[1]
                 elif key == 'debug': self.debug = list[1]
-                elif key == 'language': self.language = list[1]
                 elif key == 'use_arch': self.use_arch = list[1]
                 elif key == 'arch':
                     self.arch = list[1]
@@ -854,14 +850,6 @@ Check the setup file and some utilities presence.
             sys.stderr.write("\n*** Aborting installation:\n"
                              "\'disable_frontend\' option in the setup file "
                              "should be \'yes\' or \'no\'.\n"
-                             "Please check your setup file.\n\n")
-            sys.exit(1)
-
-        # Testing language option
-        if self.language not in ['en', 'fr']:
-            sys.stderr.write("\n*** Aborting installation:\n"
-                             "\'language\' option in the setup file "
-                             "should be \'en\' or \'fr'.\n"
                              "Please check your setup file.\n\n")
             sys.exit(1)
 
@@ -1083,11 +1071,6 @@ Check the setup file and some utilities presence.
         if self.salome:
             config_opts = config_opts + " --with-salome=" + self.salome
 
-        # Language
-
-        if self.language == 'fr':
-            config_opts = config_opts + " --enable-french"
-
         # Build type
 
         if self.shared:
@@ -1161,13 +1144,6 @@ Check the setup file and some utilities presence.
 # Download packages ?
 #--------------------------------------------------------
 download  %(download)s
-#
-#--------------------------------------------------------
-# Language
-#   default: "en" english
-#   others:  "fr" french
-#--------------------------------------------------------
-language  %(lang)s
 #
 #--------------------------------------------------------
 # Install Code_Saturne with debugging symbols
@@ -1299,7 +1275,7 @@ salome    %(salome)s
 
         sf.write(setupMain
                  % { 'download':self.download, 'prefix':prefix,
-                     'lang':self.language, 'debug':self.debug,
+                     'debug':self.debug,
                      'use_arch':self.use_arch, 'arch':arch,
                      'cc':cc, 'mpicc':mpicc,
                      'fc':fc,

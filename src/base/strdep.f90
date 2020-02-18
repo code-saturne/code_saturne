@@ -371,22 +371,6 @@ endif
 ! Formats
 !--------
 
-#if defined(_CS_LANG_FR)
-
- 1000 format (                                                          &
- '            ALE IMPLICITE : ITER=',I5,' DERIVE=',E12.5     )
- 1001 format (                                                          &
- 'CONVERGENCE ALE IMPLICITE : ITER=',I5,' DERIVE=',E12.5     )
- 1100 format (                                                          &
-'@                                                            ',/,&
-'@ @@ ATTENTION : COUPLAGE IMPLICITE ALE                      ',/,&
-'@    =========                                               ',/,&
-'@  Nombre d''iterations maximal ',I10   ,' atteint           ',/,&
-'@  Derive normee :',E12.5                                     ,/,&
-'@                                                            '  )
-
-#else
-
  1000 format (                                                          &
  '            IMPLICIT ALE: ITER=',I5,' DRIFT=',E12.5     )
  1001 format (                                                          &
@@ -398,8 +382,6 @@ endif
 '@  Maximum number of iterations ',I10   ,' reached'           ,/,&
 '@  Normed drift:',E12.5                                     ,/,&
 '@'                                                              )
-
-#endif
 
 !----
 ! End

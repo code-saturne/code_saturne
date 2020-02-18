@@ -197,18 +197,6 @@ return
 
 ! Formats
 
-#if defined(_CS_LANG_FR)
-
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@ @@ ATTENTION : COUPLAGE VOLUMIQUE SYRTHES :                ',/,&
-'@      LA TEMPERATURE N''EST PAS CONFIGUREE EN DEGRE C.      ',/,&
-'@    =========                                               ',/,&
-'@    Le calcul continue.                                     ',/,&
-'@                                                            ')
-
-#else
-
  1000 format(                                                     &
 '@                                                            ',/,&
 '@ @@ WARNING: SYRTHES VOLUME COUPLING:                       ',/,&
@@ -216,7 +204,5 @@ return
 '@    ========                                                ',/,&
 '@    The calculation continues.                              ',/,&
 '@                                                            ')
-
-#endif
 
 end subroutine

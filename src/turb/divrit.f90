@@ -600,31 +600,6 @@ deallocate(thflxb)
 ! Formats
 !--------
 
-#if defined(_CS_LANG_FR)
-
- 9999 format( &
-'@'                                                            ,/,&
-'@'                                                            ,/,&
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
-'@    ========='                                               ,/,&
-'@    LES PARAMETRES DE CALCUL SONT INCOHERENTS OU INCOMPLETS' ,/,&
-'@'                                                            ,/,&
-'@  Le calcul ne sera pas execute'                             ,/,&
-'@'                                                            ,/,&
-'@  Le modele de flux thermique turbulent choisi        '      ,/,&
-'@  necessite le calcul de la variance du scalaire thermique'  ,/,&
-'@'                                                            ,/,&
-'@  Verifier les donnees entrees dans l''interface'            ,/,&
-'@    et dans les sous-programmes utilisateur.'                ,/,&
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/)
-
-#else
-
  9999 format( &
 '@'                                                            ,/,&
 '@'                                                            ,/,&
@@ -645,7 +620,5 @@ deallocate(thflxb)
 '@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@'                                                            ,/)
-
-#endif
 
 end subroutine

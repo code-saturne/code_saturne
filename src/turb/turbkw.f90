@@ -1488,21 +1488,10 @@ if (allocated(rotfct))  deallocate(rotfct)
 ! Formats
 !--------
 
-#if defined(_CS_LANG_FR)
-
- 1000 format(/, &
-'   ** RESOLUTION DU K-OMEGA'                     ,/,&
-'      ---------------------'                     ,/)
- 1100 format(1X,A8,' : BILAN EXPLICITE = ',E14.5)
-
-#else
-
  1000 format(/, &
 '   ** SOLVING K-OMEGA'                           ,/,&
 '      ---------------'                           ,/)
  1100 format(1X,A8,' : EXPLICIT BALANCE = ',E14.5)
-
-#endif
 
 !----
 ! End

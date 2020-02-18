@@ -455,63 +455,6 @@ enddo
 ! Formats
 !========
 
-#if defined(_CS_LANG_FR)
-
- 1000 format(                                                     &
-'@'                                                            ,/,&
-'@ METHODE ALE'                                                ,/,&
-'@'                                                            ,/,&
-'@ Au moins une face de bord a un type de bord non reconnu.'   ,/,&
-'@    Le calcul ne sera pas execute.'                          ,/,&
-'@'                                                            ,/,&
-'@ Verifier les conditions aux limites dans l''Interface'      ,/,&
-'@    ou dans usalcl.f90.'                                     ,/,&
-'@'                                                              )
- 2000 format(                                                     &
-'@'                                                            ,/,&
-'@ METHODE ALE'                                                ,/,&
-'@'                                                            ,/,&
-'@ Au moins une face de bord a un type de condition a la'      ,/,&
-'@    limite (icodcl) non reconnu pour la vitesse de maillage' ,/,&
-'@    selon' ,a1,' (',a4,').'                                  ,/,&
-'@'                                                            ,/,&
-'@ Les seules valeurs autorisees pour icodcl sont'             ,/,&
-'@   1 : Dirichlet'                                            ,/,&
-'@   3 : Neumann'                                              ,/,&
-'@   4 : Glissement'                                           ,/,&
-'@'                                                              )
- 3000 format(                                                     &
-'@'                                                            ,/,&
-'@ METHODE ALE'                                                ,/,&
-'@'                                                            ,/,&
-'@ Incoherence dans les types de conditions a la limite'       ,/,&
-'@   pour la vitesse de maillage.'                              ,/,&
-'@'                                                            ,/,&
-'@ Au moins une face de bord a les conditions aux limites'     ,/,&
-'@   suivantes :'                                              ,/,&
-'@'                                                            ,/,&
-'@   itypcl : ',i10                                            ,/,&
-'@   icodcl(.,iuma) : ', i10                                   ,/,&
-'@   icodcl(.,ivma) : ', i10                                   ,/,&
-'@   icodcl(.,iwma) : ', i10                                   ,/,&
-'@'                                                            ,/,&
-'@ Si une composante est traitee en glissement (icodcl=4),'    ,/,&
-'@   toutes les composantes doivent etre traitees en'          ,/,&
-'@   glissement.'                                              ,/,&
-'@'                                                              )
- 4000 format(                                                     &
-'@'                                                            ,/,&
-'@ METHODE ALE'                                                ,/,&
-'@'                                                            ,/,&
-'@ Incoherence dans les conditions aux limites pour la vitesse',/,&
-'@   de maillage'                                              ,/,&
-'@   (cf. message(s) ci-dessus)'                               ,/,&
-'@'                                                            ,/,&
-'@ Verifier dans l''interface ou dans usalcl.f90'              ,/,&
-'@'                                                              )
-
-#else
-
  1000 format(                                                     &
 '@'                                                            ,/,&
 '@ ALE METHOD'                                                 ,/,&
@@ -563,8 +506,6 @@ enddo
 '@'                                                            ,/,&
 '@ Check boundary conditions in the GUI or in usalcl.f90.'     ,/,&
 '@'                                                              )
-
-#endif
 
 return
 end subroutine

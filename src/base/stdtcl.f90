@@ -159,33 +159,6 @@ if(irangp.ge.0) then
 endif
 nozapm = izonem
 
-#if defined(_CS_LANG_FR)
-
- 1001 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : PROBLEME DANS LES CONDITIONS AUX LIMITES    ',/,&
-'@    =========                                               ',/,&
-'@                ARRET DANS LE SOUS-PROGRAMME STDTCL         ',/,&
-'@                                                            ',/,&
-'@  Le nombre maximal de zones frontieres qui peuvent etre    ',/,&
-'@    definies par l''utilisateur est NBZPPM = ',I10           ,/,&
-'@    Il a ete depasse.                                       ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier les conditions aux limites.                      ',/,&
-'@                                                            ',/,&
-'@  Les NBZPPM premieres zones frontieres                     ',/,&
-'@    portent ici les numeros suivants :                      ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 1002 format(i10)
-
-#else
-
  1001 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -208,8 +181,6 @@ nozapm = izonem
 '@                                                            ',/)
  1002 format(i10)
 
-#endif
-
 !===============================================================================
 ! 2.  ECHANGES EN PARALLELE POUR LES DONNEES UTILISATEUR
 !===============================================================================
@@ -227,9 +198,7 @@ nozapm = izonem
 
 if (irangp.ge.0) then
   call parrmx(nozapm, qimp)
-  !==========
   call parimx(nozapm, iqimp)
-  !==========
 endif
 
 !===============================================================================
@@ -302,39 +271,6 @@ do ifac = 1, nfabor
   endif
 enddo
 
-#if defined(_CS_LANG_FR)
-
- 2001 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : PROBLEME DANS LES CONDITIONS AUX LIMITES    ',/,&
-'@    =========                                               ',/,&
-'@                ARRET DANS LE SOUS-PROGRAMME STDTCL         ',/,&
-'@                                                            ',/,&
-'@  Le debit est impose sur la zone IZONE = ', I10             ,/,&
-'@    puisque                IQIMP(IZONE) = ', I10             ,/,&
-'@  Or, sur cette zone, le produit RHO D S integre est nul :  ',/,&
-'@    il vaut                             = ',E14.5            ,/,&
-'@    (D est la direction selon laquelle est impose le debit).',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier les donnees dans l''interface et en particulier  ',/,&
-'@    - que le vecteur  RCODCL(IFAC,IU,1),             ',/,&
-'@                      RCODCL(IFAC,IV,1),             ',/,&
-'@                      RCODCL(IFAC,IW,1) qui determine',/,&
-'@      la direction de la vitesse est non nul et n''est pas  ',/,&
-'@      uniformement perpendiculaire aux face d''entree       ',/,&
-'@    - que la surface de l''entree n''est pas nulle (ou que  ',/,&
-'@      le nombre de faces de bord dans la zone est non nul)  ',/,&
-'@    - que la masse volumique n''est pas nulle               ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
-#else
-
  2001 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -363,8 +299,6 @@ enddo
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
-
-#endif
 
 !===============================================================================
 ! 4.  REMPLISSAGE DU TABLEAU DES CONDITIONS LIMITES

@@ -1849,23 +1849,12 @@ if (allocated(cproa_rho_tc)) deallocate(cproa_rho_tc)
 !--------
 ! Formats
 !--------
-#if defined(_CS_LANG_FR)
-
- 1100 format(/,                                                   &
- 1X,'Vitesse maximale apres prediction ',E12.4)
-
- 1200 format(/,                                                   &
- 1X,'Vitesse minimale apres prediction ',E12.4)
-
-#else
 
  1100 format(/,                                                   &
  1X,'Maximum velocity after prediction ',E12.4)
 
  1200 format(/,                                                   &
  1X,'Minimum velocity after prediction ',E12.4)
-
-#endif
 
 !----
 ! End

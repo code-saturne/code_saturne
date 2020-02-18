@@ -503,42 +503,6 @@ icp = -1
 ! Formats
 !----
 
-#if defined(_CS_LANG_FR)
-
- 1003 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    CHIMIE ATMOSPHERIQUE SPACK DEMANDEE                     ',/,&
-'@                                                            ',/,&
-'@  Le nombre de composés gaseux lu dans le fichier SPACK     ',/,&
-'@  differe de celui lu dans les sources SPACK                ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 1004 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    CHIMIE ATMOSPHERIQUE PARTICULAIRE DEMANDEE              ',/,&
-'@                                                            ',/,&
-'@  Lorsque le modele de chimie particulaire siream est utilise',/,&
-'@   un schema gazeux complet(CB05) est automatiquement utilise',/,&
-'@  L''utilisateur ne doit pas en specifier d''autre (ichemistry)',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier usati1 (cs_user_parameters.f90)                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
-#else
-
  1003 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -571,8 +535,6 @@ icp = -1
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
-
-#endif
 
 !----
 ! End

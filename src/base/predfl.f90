@@ -467,18 +467,6 @@ deallocate(viscf, viscb)
 ! Formats
 !--------
 
-#if defined(_CS_LANG_FR)
- 1400 format(1X,A16,' : sweep = ',I5,' norme second membre = ',E14.6,&
-             ', relaxp = ',E14.6)
- 1600 format(                                                     &
-'@                                                            ',/,&
-'@ @@ ATTENTION : ', A16,' Prediction du flux de masse        ',/,&
-'@    =========                                               ',/,&
-'@  Nombre d''iterations maximal ',I10   ,' atteint           ',/,&
-'@                                                            '  )
-
-#else
-
  1400 format(1X,A16,' : sweep = ',I5,' right hand side norm = ',E14.6,&
              ', relaxp = ',E14.6)
  1600 format(                                                     &
@@ -487,8 +475,6 @@ deallocate(viscf, viscb)
 '@    ========                                                ',/,&
 '@  Maximum number of iterations ',I10   ,' reached           ',/,&
 '@'                                                              )
-
-#endif
 
 !----
 ! End

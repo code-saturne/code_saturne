@@ -43,50 +43,21 @@ if HAVE_SALOME
 SALOME = salome
 endif
 
-SUBDIRS = . $(PLE) $(PREPRO) src $(SALOME) po $(DOCS) $(GUI) $(TSTS) $(NEPTUNE_CFD)
+SUBDIRS = . $(PLE) $(PREPRO) src $(SALOME) $(DOCS) $(GUI) $(TSTS) $(NEPTUNE_CFD)
 
 AUX_DIST = \
-m4/codeset.m4 \
-m4/fcntl-o.m4 \
-m4/gettext.m4 \
-m4/glibc21.m4 \
-m4/glibc2.m4 \
-m4/iconv.m4 \
-m4/intdiv0.m4 \
-m4/intldir.m4 \
-m4/intl.m4 \
-m4/intlmacosx.m4 \
-m4/intmax.m4 \
-m4/inttypes_h.m4 \
-m4/inttypes-pri.m4 \
-m4/lcmessage.m4 \
-m4/lib-ld.m4 \
-m4/lib-link.m4 \
-m4/lib-prefix.m4 \
+m4/extern-inline.m4 \
 m4/libtool.m4 \
-m4/lock.m4 \
-m4/longlong.m4 \
 m4/lt~obsolete.m4 \
 m4/ltoptions.m4 \
 m4/ltsugar.m4 \
-m4/ltversion.m4 \
-m4/nls.m4 \
-m4/po.m4 \
-m4/printf-posix.m4 \
-m4/progtest.m4 \
-m4/size_max.m4 \
-m4/stdint_h.m4 \
-m4/threadlib.m4 \
-m4/uintmax_t.m4 \
-m4/visibility.m4 \
-m4/wchar_t.m4 \
-m4/wint_t.m4 \
-m4/xsize.m4
+m4/ltversion.m4
 
 MAINTAINERCLEANFILES = \
 $(AUX_DIST) \
 aclocal.m4 \
 configure \
+build-aux/ar-lib \
 build-aux/compile \
 build-aux/config.guess \
 build-aux/config.rpath \
@@ -112,14 +83,11 @@ build-aux/cs_version.py \
 build-aux/list_modules.sh \
 build-aux/petsc-petscvariables.makefile \
 build-aux/petsc-variables.makefile \
-po/Makevars.template \
-po/Rules-install \
 sbin/backup \
 sbin/bootstrap \
 sbin/clean \
 sbin/rmb \
 config/cs_auto_flags.sh \
-m4/acx_pthread.m4 \
 m4/cs_blas.m4 \
 m4/cs_catalyst.m4 \
 m4/cs_ccm.m4 \
@@ -455,11 +423,6 @@ extras/bash_completion/code_saturne
 
 sysconf_DATA = \
 extras/code_saturne.cfg.template
-
-# Update gettext dictionnaries
-
-update-po:
-	cd po && $(MAKE) $(AM_MAKEFLAGS) update-po
 
 # Generate and install documentation
 

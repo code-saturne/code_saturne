@@ -174,19 +174,9 @@ endif
 
 if (mod(ntcabs,ntlist).eq.0.or.vcopt_u%iwarni.ge.0) write(nfecra,1000)
 
-#if defined(_CS_LANG_FR)
-
- 1000 format(                                                           &
-'  Calcul de la pression hydrostatique : ',/,               &
-'         mise a jour des Dirichlets en sortie (CALHYD)',/)
-
-#else
-
  1000 format(                                                           &
 '  Hydrostatic pressure computation: ',/,                   &
 '         updating the Dirichlets at the end (CALHYD)',/)
-
-#endif
 
 indhyd = 1
 
@@ -401,18 +391,6 @@ call sles_free_native(-1, chaine)
 ! Formats
 !--------
 
-#if defined(_CS_LANG_FR)
-
- 1400 format(1X,A16,' : SWEEP = ',I5,' NORME SECOND MEMBRE = ',E14.6)
- 1600 format(                                                           &
-'@                                                            ',/,&
-'@ @@ ATTENTION : ', A16,' ETAPE DE PRESSION HYDROSTATIQUE    ',/,&
-'@    =========                                               ',/,&
-'@  Nombre d''iterations maximal ',I10   ,' atteint           ',/,&
-'@                                                            '  )
-
-#else
-
  1400 format(1X,A16,' : SWEEP = ',I5,' RIGHT HAND SIDE NORM = ',E14.6)
  1600 format(                                                           &
 '@                                                            ',/,&
@@ -420,8 +398,6 @@ call sles_free_native(-1, chaine)
 '@    ========                                                ',/,&
 '@  Maximum number of iterations ',I10   ,' reached           ',/,&
 '@                                                            '  )
-
-#endif
 
 !----
 ! End

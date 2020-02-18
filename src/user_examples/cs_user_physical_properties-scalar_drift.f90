@@ -290,51 +290,6 @@ enddo
 ! Formats
 !--------
 
-#if defined(_CS_LANG_FR)
-
- 1010 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
-'@    =========                                               ',/,&
-'@    DONNEES DE CALCUL INCOHERENTES                          ',/,&
-'@                                                            ',/,&
-'@    Pour le scalaire ',I10                                   ,/,&
-'@      la diffusivite est uniforme alors que                 ',/,&
-'@      usphyv impose une diffusivite variable.               ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne sera pas execute.                          ',/,&
-'@                                                            ',/,&
-'@    Modifier usipsu ou usphyv.                              ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9010 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
-'@    =========                                               ',/,&
-'@    APPEL A csexit DANS LE SOUS PROGRAMME usphyv            ',/,&
-'@                                                            ',/,&
-'@    La variable dont dependent les proprietes physiques ne  ',/,&
-'@      semble pas etre une variable de calcul.               ',/,&
-'@    En effet, on cherche a utiliser la temperature alors que',/,&
-'@      ISCALT = ',I10                                         ,/,&
-'@    Le calcul ne sera pas execute.                          ',/,&
-'@                                                            ',/,&
-'@    Verifier le codage de usphyv (et le test lors de la     ',/,&
-'@      definition de IVART).                                 ',/,&
-'@    Verifier la definition des variables de calcul dans     ',/,&
-'@      usipsu. Si un scalaire doit jouer le role de la       ',/,&
-'@      temperature, verifier que ISCALT a ete renseigne.     ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
-#else
-
  1010 format(                                                     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -375,8 +330,6 @@ enddo
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
-
-#endif
 
 !----
 ! End

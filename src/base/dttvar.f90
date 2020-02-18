@@ -972,21 +972,10 @@ deallocate(w1, w2, w3)
 ! Formats
 !--------
 
-#if defined(_CS_LANG_FR)
-
- 1001 format (/,a8,' MAX= ',e11.4, ' EN ',e11.4,' ',e11.4,' ',e11.4)
- 1002 format (  a8,' MIN= ',E11.4, ' EN ',e11.4,' ',e11.4,' ',e11.4)
- 1003 format (/,'CLIPPINGS DE DT : ',                                  &
-                             i10,' A ',e11.4,', ',i10,' A ',e11.4)
-
-#else
-
  1001 format (/,a8,' MAX= ',e11.4, ' IN ',e11.4,' ',e11.4,' ',e11.4)
  1002 format (  a8,' MIN= ',e11.4, ' IN ',e11.4,' ',e11.4,' ',e11.4)
  1003 format (/,'DT CLIPPING : ',                                      &
                              i10,' A ',e11.4,', ',i10,' A ',e11.4)
-
-#endif
 
 !----
 ! End

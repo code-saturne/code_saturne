@@ -388,31 +388,6 @@ enddo
 ! Formats
 !--------
 
-#if defined(_CS_LANG_FR)
-
- 1100 format (                                                          &
-'@                                                            ',/,&
-'@ @@ ATTENTION : la surtaturation maximale n''a pas convergee',/,&
-'@    =========                                               ',/,&
-'@  Residu = ',E12.5                                           ,/,&
-'@                                                            '  )
-
- 1101 format (                                                          &
-'@                                                            ',/,&
-'@ @@ ERREUR : modele Cohard et Pindy (1998).                 ',/,&
-'@    ======                                                  ',/,&
-'@  La nucleation  est negative.                              ',/,&
-'@                                                            '  )
-
- 1102 format (                                                          &
-'@                                                            ',/,&
-'@ @@ ERREUR : modele Abdul-Razzak et al. (1998).             ',/,&
-'@    ======                                                  ',/,&
-'@  Sursaturation negative.                                   ',/,&
-'@                                                            '  )
-
-#else
-
  1100 format (                                                          &
 '@                                                            ',/,&
 '@ @@ WARNING: ',A8 ,' Maximum saturation has not converged   ',/,&
@@ -433,8 +408,6 @@ enddo
 '@    ======                                                  ',/,&
 '@  Negative sursaturation.                                   ',/,&
 '@                                                            '  )
-
-#endif
 
 ! ----
 !  End

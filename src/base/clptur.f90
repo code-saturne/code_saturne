@@ -1828,123 +1828,6 @@ endif
 ! 10. Formats
 !===============================================================================
 
-#if defined(_CS_LANG_FR)
-
- 2010 format(/,                                                   &
- 3X,'** CONDITIONS AUX LIMITES EN PAROI LISSE',/,                 &
- '   ----------------------------------------',/,                 &
- '------------------------------------------------------------',/,&
- '                                         Minimum     Maximum',/,&
- '------------------------------------------------------------',/,&
- '   Vitesse rel. en paroi    uiptn : ',2E12.5                 ,/,&
- '   Vitesse de frottement    uet   : ',2E12.5                 ,/,&
- '   Vitesse de frottement    uk    : ',2E12.5                 ,/,&
- '   Distance adimensionnelle yplus : ',2E12.5                 ,/,&
- '   ------------------------------------------------------   ',/,&
- '   Nbre de retournements de la vitesse en paroi : ',I10      ,/,&
- '   Nbre de faces en sous couche visqueuse       : ',I10      ,/,&
- '   Nbre de faces de paroi total                 : ',I10      ,/,&
- '------------------------------------------------------------',  &
- /,/)
-
- 2011 format(/,                                                   &
- 3X,'** CONDITIONS AUX LIMITES EN PAROI LISSE',/,                 &
- '   ----------------------------------------',/,                 &
- '------------------------------------------------------------',/,&
- '                                         Minimum     Maximum',/,&
- '------------------------------------------------------------',/,&
- '   Vitesse rel. en paroi    uiptn : ',2E12.5                 ,/,&
- '   Vitesse de frottement    uet   : ',2E12.5                 ,/,&
- '   Vitesse de frottement    uk    : ',2E12.5                 ,/,&
- '   Distance adimensionnelle yplus : ',2E12.5                 ,/,&
- '   Sca. thermal de frott.   tstar : ',2E12.5                 ,/,&
- '   Sca. thermal adim. rug.  tplus : ',2E12.5                 ,/,&
- '   ------------------------------------------------------'   ,/,&
- '   Nbre de retournements de la vitesse en paroi : ',I10      ,/,&
- '   Nbre de faces en sous couche visqueuse       : ',I10      ,/,&
- '   Nbre de faces de paroi total                 : ',I10      ,/,&
- '------------------------------------------------------------',  &
- /,/)
-
- 2020 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : RAFFINEMENT INSUFFISANT DU MAILLAGE EN PAROI',/,&
-'@    =========                                               ',/,&
-'@    Le maillage semble insuffisamment raffine en paroi      ',/,&
-'@      pour pouvoir realiser un calcul laminaire.            ',/,&
-'@                                                            ',/,&
-'@    Le dernier pas de temps auquel ont ete observees de trop',/,&
-'@      grandes valeurs de la distance adimensionnelle a la   ',/,&
-'@      paroi (yplus) est le pas de temps ',I10                ,/,&
-'@                                                            ',/,&
-'@    La valeur minimale de yplus doit etre inferieure a la   ',/,&
-'@      valeur limite YPLULI = ',E14.5                         ,/,&
-'@                                                            ',/,&
-'@    Observer la repartition de yplus en paroi (sous EnSight ',/,&
-'@      ou ParaView par exemple) pour determiner dans quelle  ',/,&
-'@      mesure la qualite des resultats est susceptible d etre',/,&
-'@      affectee.')
-
- 2030 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : RAFFINEMENT INSUFFISANT DU MAILLAGE EN PAROI',/,&
-'@    =========                                               ',/,&
-'@    Le maillage semble insuffisamment raffine en paroi      ',/,&
-'@      pour pouvoir realiser un calcul type v2f              ',/,&
-'@            (phi-fbar ou BL-v2/k)                           ',/,&
-'@                                                            ',/,&
-'@    Le dernier pas de temps auquel ont ete observees de trop',/,&
-'@      grandes valeurs de la distance adimensionnelle a la   ',/,&
-'@      paroi (yplus) est le pas de temps ',I10                ,/,&
-'@                                                            ',/,&
-'@    La valeur minimale de yplus doit etre inferieure a la   ',/,&
-'@      valeur limite YPLULI = ',E14.5                         ,/,&
-'@                                                            ',/,&
-'@    Observer la repartition de yplus en paroi (sous EnSight ',/,&
-'@      ou ParaView par exemple) pour determiner dans quelle  ',/,&
-'@      mesure la qualite des resultats est susceptible d etre',/,&
-'@      affectee.')
-
- 2040 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : MAILLAGE TROP FIN EN PAROI                  ',/,&
-'@    =========                                               ',/,&
-'@    Le maillage semble trop raffine en paroi pour utiliser  ',/,&
-'@      un modele de turbulence haut Reynolds.                ',/,&
-'@                                                            ',/,&
-'@    Le dernier pas de temps auquel ont ete observees des    ',/,&
-'@      valeurs trop faibles de la distance adimensionnelle a ',/,&
-'@      la paroi (yplus) est le pas de temps ',I10             ,/,&
-'@                                                            ',/,&
-'@    La valeur minimale de yplus doit etre superieure a la   ',/,&
-'@      valeur limite YPLULI = ',E14.5                         ,/,&
-'@                                                            ',/,&
-'@    Observer la repartition de yplus en paroi (sous EnSight ',/,&
-'@      ou ParaView par exemple) pour determiner dans quelle  ',/,&
-'@      mesure la qualite des resultats est susceptible d etre',/,&
-'@      affectee.')
- 2050 format(                                                     &
-'@                                                            ',/,&
-'@    Ce message ne s''affiche qu''aux deux premieres         ',/,&
-'@      occurences du probleme et aux deux derniers pas de    ',/,&
-'@      temps du calcul. La disparition du message ne signifie',/,&
-'@      pas forcement la disparition du probleme.             ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 2060 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
-#else
-
  2010 format(/,                                                   &
  3X,'** BOUNDARY CONDITIONS FOR SMOOTH WALLS',/,                  &
  '   ---------------------------------------',/,                  &
@@ -1980,7 +1863,6 @@ endif
  '   Total number of wall faces                   : ',I10      ,/,&
  '------------------------------------------------------------',  &
  /,/)
-
 
  2020 format(                                                     &
 '@                                                            ',/,&
@@ -2055,8 +1937,6 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
-
-#endif
 
 !----
 ! End

@@ -415,97 +415,6 @@ enddo
 
 ! FORMATS
 
-#if defined(_CS_LANG_FR)
-
- 1000 format(                                                           &
-'                                                             ',/,&
-' ** METHODE DES VORTEX                                       ',/,&
-'    ------------------                                       ',/,&
-'       NNENT  = ',4X,I10,    ' (Nombre d entrees            )',/,&
-'       ISUIVO = ',4X,I10,    ' (1 : suite de calcul         )'  )
-
- 2000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    LES DIMENSIONS MAX DE L''ENTREE SONT INCOMPATIBLES AVEC ',/,&
-'@    LES DONNEES A L''ENTREE ',I10                            ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier usvort.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 3000 format(                                                           &
-'                                                             ',/,&
-' --  Fin de la lecture du fichier de donnees                 ',/)
- 3100 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    U, K ET EPSILON SONT DES GRANDEURS QUI SONT DEFINIES    ',/,&
-'@    POSITIVES DANS LE REPERE LOCAL DE L''ENTREE             ',/,&
-'@                                                            ',/,&
-'@    VERIFIER LE FICHIER DE DONNEE DE L''ENTREE ',I10         ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Verifier usvort.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 3200 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION :       A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    LES DIMENSIONS MAX DE L''ENTREE SONT INCOMPATIBLES AVEC ',/,&
-'@    CELLES DU FICHIER DE DONNEES                            ',/,&
-'@                                                            ',/,&
-'@    VERIFIER LE FICHIER DE DONNEE DE L''ENTREE ',I10         ,/,&
-'@                                                            ',/,&
-'@  Le calcul sera execute.                                   ',/,&
-'@                                                            ',/,&
-'@  Verifier usvort.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 4000 format(                                                           &
-' --  Fin de la lecture du fichier suite                      ',/)
-
- 4500   format(                                                         &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION :      A L''ENTREE DES DONNEES                ',/,&
-'@    =========                                               ',/,&
-'@  LE NOMBRE DE VORTEX A CHANGE A L''ENTREE',I10              ,/,&
-'@    NVORT VALAIT PRECECEDEMENT ',I10                         ,/,&
-'@    A L''ENTREE ',I10                                        ,/,&
-'@    ET VAUT MAINTENANT  ',I10                                ,/,&
-'@                                                            ',/,&
-'@  LA METHODE EST REINITIALISE A CETTE ENTREE                ',/,&
-'@                                                            ',/,&
-'@  Le calcul sera execute                                    ',/,&
-'@                                                            ',/,&
-'@  Verifier usvort.                                          ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 100  format(i10)
- 200  format(5e13.5)
-
-#else
-
  1000 format(                                                           &
 '                                                             ',/,&
 ' ** VORTEX METHOD                                            ',/,&
@@ -592,8 +501,6 @@ enddo
 
  100  format(i10)
  200  format(5e13.5)
-
-#endif
 
 return
 end subroutine

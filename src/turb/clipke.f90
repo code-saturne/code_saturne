@@ -279,28 +279,6 @@ enddo
 ! ---> Formats
 !===============================================================================
 
-#if defined(_CS_LANG_FR)
-
- 1000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET DANS clipke                           ',/,&
-'@    =========                                               ',/,&
-'@     APPEL DE clipke              AVEC OPTION = ',I10        ,/,&
-'@                                                            ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut pas etre execute.                       ',/,&
-'@                                                            ',/,&
-'@  Contacter l''assistance.                                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 1010 format(                                                           &
- i10,' VALEURS DU K-EPS AU DELA DES ECHELLES BASEES SUR ALMAX')
-
-#else
-
  1000 format(                                                           &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -318,8 +296,6 @@ enddo
 '@                                                            ',/)
  1010 format(                                                           &
  i10,' K-EPS VALUES BEYOND THE SCALES BASED ON ALMAX')
-
-#endif
 
 return
 

@@ -860,21 +860,10 @@ deallocate(dpvar)
 ! Formats
 !--------
 
-#if defined(_CS_LANG_FR)
-
- 1000    format(/,                                         &
-'   ** Resolution pour V2F (phi et f_bar/alpha)               ',/,&
-'      ----------------------------------------        ',/)
- 1100    format(/,'           Resolution pour la variable ',A8,/)
-
-#else
-
  1000    format(/,                                         &
 '   ** Solving V2F (phi and f_bar/alpha)'               ,/,&
 '      ---------------------------------'               ,/)
  1100    format(/,'           Solving variable ',A8                  ,/)
-
-#endif
 
 !----
 ! End

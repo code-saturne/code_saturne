@@ -521,35 +521,6 @@ deallocate(viscf, viscb)
 ! 4.  FORMATS
 !===============================================================================
 
-#if defined(_CS_LANG_FR)
-
- 9000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A LA RESOLUTION DES SCALAIRES         ',/,&
-'@    =========                                               ',/,&
-'@    SCALAIRE NUMERO ',I10                                    ,/,&
-'@    iscavr(',I10   ,') DOIT ETRE UN ENTIER                  ',/,&
-'@      POSITIF OU NUL ET                                     ',/,&
-'@      INFERIEUR OU EGAL A NSCAL = ',I10                      ,/,&
-'@    IL VAUT ICI ',I10                                        ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne peut etre execute.                           ',/,&
-'@                                                            ',/,&
-'@  Si iscavr(I) est nul, le scalaire I n est pas une variance',/,&
-'@  Si iscavr(I) est positif, le scalaire I est une variance :',/,&
-'@    il s agit de la variance des fluctuations du scalaire J ',/,&
-'@    dont le numero est iscavr(I)                            ',/,&
-'@                                                            ',/,&
-'@  Verifier les parametres.                                  ',/,&
-'@  Contacter l''assistance.                                  ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
-#else
-
  9000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -573,8 +544,6 @@ deallocate(viscf, viscb)
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
-
-#endif
 
 !----
 ! End

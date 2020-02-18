@@ -193,7 +193,7 @@ class config:
                          have = "yes",
                          flags = {'cppflags': "@CPPFLAGS@",
                                   'ldflags': "@LDFLAGS@",
-                                  'libs': "@LIBINTL@ @LIBS@ @FCLIBS@"})
+                                  'libs': "@LIBS@ @FCLIBS@"})
 
         # Setup the optionnal libraries
 

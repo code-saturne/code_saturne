@@ -149,32 +149,6 @@ endif
 ! Formats
 !--------
 
-#if defined(_CS_LANG_FR)
-
- 1001 format(                                                     &
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES'               ,/,&
-'@    ========='                                               ,/,&
-'@'                                                            ,/,&
-'@  Les valeurs de ISCACP pour les scalaires de modele'        ,/,&
-'@  (i.e. non_utilisateur) sont renseignees automatiquement.'  ,/,&
-'@'                                                            ,/,&
-'@  L''utilisateur ne doit pas les renseigner, or'             ,/,&
-'@    pour le scalaire ', i10,' correspondant au scalaire'     ,/,&
-'@    de modele ', i10,' on a'                                 ,/,&
-'@    ISCACP(', i10,') = ', i10                                ,/,&
-'@'                                                            ,/,&
-'@  Le calcul ne sera pas execute.'                            ,/,&
-'@'                                                            ,/,&
-'@  Verifier les parametres.'                                  ,/,&
-'@'                                                            ,/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@'                                                            ,/)
-
-#else
-
  1001 format(                                                     &
 '@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -196,8 +170,6 @@ endif
 '@'                                                            ,/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@'                                                            ,/)
-
-#endif
 
 return
 end subroutine

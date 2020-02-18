@@ -75,20 +75,6 @@ if (almax.le.0.d0) then
   endif
 endif
 
-#if defined(_CS_LANG_FR)
-
- 1000 format(                                                           &
-'                                                             '  )
- 1100 format(                                                           &
-'       ALMAX  = ', E14.5,    ' (Longueur caracteristique    )'  )
- 1101 format(                                                           &
-'       ALMAX est la longueur utilisee pour initialiser       ',/,&
-'                                               la turbulence.'  )
- 1102 format(                                                           &
-'       ALMAX est la racine cubique du volume du domaine.     ',/)
-
-#else
-
  1000 format(                                                           &
 '                                                             '  )
  1100 format(                                                           &
@@ -97,8 +83,6 @@ endif
 '       ALMAX is the length used to initialize the turbulence.'  )
  1102 format(                                                           &
 '       ALMAX is the cubic root of the domain volume.'         ,/)
-
-#endif
 
 !===============================================================================
 ! 4. FIN

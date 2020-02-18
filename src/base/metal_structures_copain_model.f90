@@ -504,43 +504,6 @@ endif
 ! Formats
 !--------
 
-#if defined(_CS_LANG_FR)
- 1000 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
-'@    =========                                               ',/,&
-'@    DONNEES DE CALCUL INCOHERENTES                          ',/,&
-'@                                                            ',/,&
-'@      usipsu indique que la chaleur specifique est uniforme ',/,&
-'@        ICP = ',I10   ,' alors que                          ',/,&
-'@      copain model impose une chaleur specifique variable.  ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne sera pas execute.                          ',/,&
-'@                                                            ',/,&
-'@    Modifier usipsu ou copain model.                        ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 1010 format(                                                     &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET LORS DU CALCUL DES GRANDEURS PHYSIQUES',/,&
-'@    =========                                               ',/,&
-'@    DONNEES DE CALCUL INCOHERENTES                          ',/,&
-'@                                                            ',/,&
-'@    La diffusivite du scalaire ',i10,' est uniforme alors   ',/,&
-'@      que copain model impose une diffusivite variable.     ',/,&
-'@                                                            ',/,&
-'@    Le calcul ne sera pas execute.                          ',/,&
-'@                                                            ',/,&
-'@    Modifier usipsu ou copain model.                        ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-#else
  1000 format(                                                     &
 '@',/,                                                            &
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -578,7 +541,6 @@ endif
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',/)
-#endif
  1061 format(/,                                                   &
 ' ** Condensation source terms (Gamma) added:',E14.5           ,/,&
 '    ----------------------------------------',/)

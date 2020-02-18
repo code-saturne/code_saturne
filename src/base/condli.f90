@@ -3506,18 +3506,9 @@ endif
 ! 17. Formats
 !===============================================================================
 
-#if defined(_CS_LANG_FR)
-
- 3010 format(                                                           &
- 'Debit entrant retenu en ',I10   ,                  &
-                                      ' faces de sortie sur ',I10)
-#else
-
  3010 format(                                                           &
  'Incoming flow detained for ', I10   ,              &
                                           ' outlet faces on ',I10)
-
-#endif
 
 !----
 ! End

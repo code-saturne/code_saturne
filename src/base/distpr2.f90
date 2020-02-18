@@ -133,25 +133,12 @@ write(nfecra,1000) dismin, dismax
 ! Formats
 !===============================================================================
 
-#if defined(_CS_LANG_FR)
-
- 1000 format(                                                           &
-'                                                             ',/,&
-' ** DISTANCE A LA PAROI                                      ',/,&
-'    -------------------                                      ',/,&
-'                                                             ',/,&
-'   Distance min = ',E14.5    ,'  Distance max = ',E14.5      ,/)
-
-#else
-
  1000 format(                                                           &
 '                                                             ',/,&
 ' ** WALL DISTANCE                                            ',/,&
 '    -------------                                            ',/,&
 '                                                             ',/,&
 '  Min distance = ',E14.5    ,' Max distance = ',E14.5         ,/)
-
-#endif
 
 !----
 ! End

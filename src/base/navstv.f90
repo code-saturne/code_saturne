@@ -1744,47 +1744,6 @@ deallocate(coefa_dp, coefb_dp)
 !--------
 ! Formats
 !--------
-#if defined(_CS_LANG_FR)
-
- 1000 format(/,                                                   &
-'   ** RESOLUTION POUR LA VITESSE                             ',/,&
-'      --------------------------                             ',/)
- 1080 format(/,                                                   &
-'   ** RESOLUTION DE L''EQUATION DE MASSE                     ',/,&
-'      ----------------------------------                     ',/)
- 1200 format(/,                                                   &
-'   ** RESOLUTION POUR LA PRESSION CONTINUITE                 ',/,&
-'      --------------------------------------                 ',/)
- 2000 format(/,' APRES PRESSION CONTINUITE',/,                    &
-'-------------------------------------------------------------'  )
- 2100 format(                                                           &
-' Pression max.',E12.4   ,' (max. de la valeur absolue)       ',/)
- 2200 format(                                                           &
-' Vitesse  max.',E12.4   ,' en',3E11.3                         ,/)
- 2201 format(                                                           &
-' Vitesse  min.',E12.4   ,' en',3E11.3                         ,/)
- 2300 format(                                                           &
-' Vitesse  en face interne max.',E12.4   ,' ; min.',E12.4        )
- 2400 format(                                                           &
-' Vitesse  en face de bord max.',E12.4   ,' ; min.',E12.4        )
- 2500 format(                                                           &
-' Bilan de masse   au bord   ',E14.6                             )
- 2600 format(                                                           &
-' Informations Point fixe a l''iteration :',I10                ,/)
- 2601 format('norme = ',E12.4,' norme 0 = ',E12.4,' toler  = ',E12.4 ,/)
- 2602 format(                                                           &
-' Convergence du point fixe a l''iteration ',I10               ,/)
- 2603 format(                                                           &
-' Non convergence du couplage vitesse pression par point fixe  ' )
- 2001 format(                                                           &
-'-------------------------------------------------------------',/)
- 3000 format(/,                                                     &
-'   ** INFORMATION SUR LE TRAITEMENT ROTOR/STATOR INSTATIONNAIRE',/,&
-'      ---------------------------------------------------------',/,&
-' Temps dedie a la mise a jour du maillage (s) :',F12.4,          /,&
-' Temps total                              (s) :',F12.4,          /)
-
-#else
 
  1000 format(/,                                                   &
 '   ** SOLVING VELOCITY'                                       ,/,&
@@ -1823,8 +1782,6 @@ deallocate(coefa_dp, coefb_dp)
 '      ----------------------------------------------',/,&
 ' Time dedicated to mesh update (s):',F12.4,           /,&
 ' Global time                   (s):',F12.4,           /)
-
-#endif
 
 !----
 ! End

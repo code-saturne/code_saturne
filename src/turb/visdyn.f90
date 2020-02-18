@@ -447,22 +447,6 @@ deallocate(w1, w0)
 ! Formats
 !----
 
-#if defined(_CS_LANG_FR)
-
- 1000 format(                                                           &
-' Nb Clipping Constante  Smagorinsky par valeurs maximales',I10,/)
- 2001 format(                                                           &
-' --- Informations sur la constante de Smagorinsky^2             ',/,&
-' ----------------------------------                          ',/,&
-' Val. moy.      Val. min   Val. max                               ',/,&
-' ----------------------------------                          '  )
- 2002 format(                                                           &
- e12.4    ,      e12.4,      e12.4                               )
- 2003 format(                                                           &
-' ----------------------------------                          ',/)
-
-#else
-
  1000 format(                                                           &
 ' Nb of clipping of the Smagorinsky constant by max values',I10,/)
  2001 format(                                                           &
@@ -474,8 +458,6 @@ deallocate(w1, w0)
  e12.4    ,      e12.4,      e12.4                               )
  2003 format(                                                           &
 ' --------------------------------'                            ,/)
-
-#endif
 
 !----
 ! End

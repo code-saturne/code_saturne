@@ -392,98 +392,6 @@ call cs_user_f_initialization &
 ! FORMATS
 !----
 
-
-#if defined(_CS_LANG_FR)
-
- 1000 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    PHYSIQUE PARTICULIERE (ATMOSPHERIQUE) DEMANDEE          ',/,&
-'@    MODELE DE RAYONNEMENT (IATRA1) DEMANDE                  ',/,&
-'@                                                            ',/,&
-'@    Le temps de la simulation est mal defini                ',/,&
-'@    Revoir les variables syear, squant, shour, smin, ssec   ',/,&
-'@                                                            ',/,&
-'@    Par priorite decroissante ces variables peuvent        ',/,&
-'@    etre definies dans cs_user_parameters.f90 ou le fichier ',/,&
-'@    meteo ou le fichier chimie eventuel                     ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 1001 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    PHYSIQUE PARTICULIERE (ATMOSPHERIQUE) DEMANDEE          ',/,&
-'@    MODULE DE CHIMIE (ICHEMISTRY) DEMANDE                   ',/,&
-'@                                                            ',/,&
-'@    Le temps de la simulation est mal defini                ',/,&
-'@    Revoir les variables syear, squant, shour, smin, ssec   ',/,&
-'@                                                            ',/,&
-'@    Par priorite decroissante ces variables peuvent         ',/,&
-'@    etre definies dans cs_user_parameters.f90 ou le fichier ',/,&
-'@    meteo ou le fichier chimie                             ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 1002 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    PHYSIQUE PARTICULIERE (ATMOSPHERIQUE) DEMANDEE          ',/,&
-'@    MODELE DE RAYONNEMENT (IATRA1) DEMANDE                  ',/,&
-'@                                                            ',/,&
-'@    Les coordonnees xlat, xlon du domaine sont mal definies ',/,&
-'@                                                            ',/,&
-'@    Voir cs_user_parameters.f90                             ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 1003 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    PHYSIQUE PARTICULIERE (ATMOSPHERIQUE) DEMANDEE          ',/,&
-'@                                                            ',/,&
-'@    Les coordonnees xmet, ymet du profile meteo sont mal    ',/,&
-'@    definies.                                               ',/,&
-'@                                                            ',/,&
-'@    Voir cs_user_parameters.f90                             ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
- 1004 format(                                                           &
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES               ',/,&
-'@    =========                                               ',/,&
-'@    PHYSIQUE PARTICULIERE (ATMOSPHERIQUE) DEMANDEE          ',/,&
-'@    MODULE DE CHIMIE (ICHEMISTRY) DEMANDE                   ',/,&
-'@                                                            ',/,&
-'@    Les coordonnees xchem, ychem pour les profiles de       ',/,&
-'@    concentration (modèle de chimie) sont mal definies.     ',/,&
-'@                                                            ',/,&
-'@    Voir cs_user_parameters.f90                             ',/,&
-'@                                                            ',/,&
-'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
-
-#else
-
  1000 format(                                                     &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
@@ -567,8 +475,6 @@ call cs_user_f_initialization &
 '@                                                            ',/,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@                                                            ',/)
-
-#endif
 
 !----
 ! FIN
