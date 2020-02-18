@@ -93,7 +93,7 @@ typedef struct {
   /*! Starting second */
   cs_real_t ssec;
   /*! longitude of the domain origin */
-  cs_real_t longitute;
+  cs_real_t longitude;
   /*! latitude of the domain origin */
   cs_real_t latitude;
 
