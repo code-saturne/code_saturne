@@ -257,7 +257,7 @@ if (icdo.lt.2) then
 endif
 
 ! Gravity, physical properties
-call csphys(viscv0, visls0, itempk)
+call csphys(visls0, itempk)
 
 ! Turbulence reference values (uref, almax)
 call cs_gui_turb_ref_values

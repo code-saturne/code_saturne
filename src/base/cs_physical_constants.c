@@ -555,7 +555,7 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
 void
 cs_f_fluid_properties_pp_get_pointers(double  **viscv0)
 {
-  *viscv0   = &(_fluid_properties.viscl0);
+  *viscv0   = &(_fluid_properties.viscv0);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

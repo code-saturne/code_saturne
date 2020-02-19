@@ -211,9 +211,12 @@ void CS_PROCF (uinum1, UINUM1) (double *cdtvar);
 void CS_PROCF (csnum2, CSNUM2) (double  *relaxp,
                                 int     *imrgra);
 
-void CS_PROCF (csphys, CSPHYS) (
-                                double       *viscv0,
-                                double       *visls0,
+/*----------------------------------------------------------------------------
+ * Treatment of gravity and fluid physical properties
+ * Initialize reference pressure and temperature if present
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (csphys, CSPHYS) (double       *visls0,
                                 const    int *itempk);
 
 /*----------------------------------------------------------------------------

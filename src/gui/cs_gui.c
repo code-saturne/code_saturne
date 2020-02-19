@@ -2184,8 +2184,7 @@ void CS_PROCF (csnum2, CSNUM2)(double  *relaxp,
  * Initialize reference pressure and temperature if present
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (csphys, CSPHYS) (double     *viscv0,
-                                double     *visls0,
+void CS_PROCF (csphys, CSPHYS) (double     *visls0,
                                 const int  *itempk)
 {
   int choice;
@@ -2306,7 +2305,7 @@ void CS_PROCF (csphys, CSPHYS) (double     *viscv0,
                          &phys_pp->cp0);
 
   if (cs_gui_strcmp(vars->model, "compressible_model")) {
-    cs_gui_properties_value("volume_viscosity", viscv0);
+    cs_gui_properties_value("volume_viscosity", &phys_pp->viscv0);
     cs_gui_properties_value("thermal_conductivity", &visls0[*itempk -1]);
   }
 
