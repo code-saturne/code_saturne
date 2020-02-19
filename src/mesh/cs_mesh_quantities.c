@@ -2410,7 +2410,7 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *mesh,
                                       cs_mesh_quantities_t  *mesh_quantities)
 {
   cs_lnum_t  n_i_faces = mesh->n_i_faces;
-  cs_lnum_t  n_b_faces = mesh->n_b_faces;
+  cs_lnum_t  n_b_faces = CS_MAX(mesh->n_b_faces, mesh->n_b_faces_all);
   cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
 
   /* If this is not an update, allocate members of the structure */
