@@ -43,11 +43,6 @@
 #include <omp.h>
 #endif
 
-#if defined(HAVE_PETSC)
-#include <petscversion.h>
-#include <petscksp.h>
-#endif
-
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
