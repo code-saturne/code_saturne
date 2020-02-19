@@ -823,6 +823,7 @@ def source_syrthes_env(pkg):
             if p[-14:] == '/share/syrthes' or p[-14:] == '\share\syrthes':
                 syr_profile = os.path.join(p[:,-14], 'bin', 'syrthes.profile')
                 if os.path.isfile(syr_profile):
+                    print("Sourcing SYRTHES environment: " + syr_profile)
                     source_shell_script(syr_profile)
     except Exception:
         pass
@@ -846,6 +847,7 @@ def source_syrthes_env(pkg):
     if syrthes_home != env_syrthes_home:
         syr_profile = os.path.join(config.get('install', 'syrthes'),
                                    'bin', 'syrthes.profile')
+        print("Sourcing SYRTHES environment: " + syr_profile)
         source_shell_script(syr_profile)
 
     # Finally, ensure module can be imported
