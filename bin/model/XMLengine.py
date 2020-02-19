@@ -1476,7 +1476,7 @@ class Case(Dico, XMLDocument):
         # now write
         try:
             file = open(self['pythonfile'], 'w')
-            file.write("#automatic python script\n")
+            file.write("# automaticaly generated Python script\n\n")
             file.write('import os, sys\n')
             file.write('sys.path.insert(0, "' + self['package'].dirs['pythondir'][1] + '")\n')
             file.write('sys.path.insert(0, "' + os.path.join(self['package'].dirs['pythondir'][1], self['package'].name) + '")\n\n')
@@ -1493,7 +1493,7 @@ class Case(Dico, XMLDocument):
                 name = os.path.splitext(self['pythonfile'])[0] + ".xml"
                 file.write("fp = '" + name + "'\n")
 
-            file.write("case = Case(module=" + self.module_name + ")\n")
+            file.write("case = Case(module=" + self.module_name() + ")\n")
             file.write("case['xmlfile'] = fp\n")
             file.write("case.xmlCleanAllBlank(case.xmlRootNode())\n")
             file.write("XMLinit(case).initialize()\n")

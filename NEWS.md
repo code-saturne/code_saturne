@@ -3,6 +3,8 @@ Release 6.0.3 (Unreleased)
 
 Bug fixes:
 
+- GUI: fix Python dump, broken in v6.0.2.
+
 - GUI: fix behavior of volume viscosity formula button.
 
 - GUI: fix crash when importing probe coordinates from an XML file.
