@@ -51,7 +51,6 @@ BEGIN_C_DECLS
           - Its variant VVP (Vector Projection Penalty) algorithm
           - Monolithic algorithm
           - Projection algorithm
-          - Uzawa-Augmented Lagrangian algorithm
  */
 
 /*============================================================================
@@ -144,107 +143,9 @@ typedef struct {
 
 } cs_navsto_projection_t;
 
-/*! \struct cs_navsto_uzawa_t
- *  \brief Set of parameters specific for solving the Navier-Stokes system with
- *         a fully coupled algorithm using a Uzawa algorithm and an Augmented
- *         Lagrangian approach inside each sub-iteration.
- *
- *  All equations are not always created. It depends on the choice of the model.
- */
-
-typedef struct {
-
-  cs_equation_t  *momentum; /*!< Momentum balance equation (vector-valued) */
-  cs_equation_t  *energy;   /*!< Energy balance equation (scalar-valued) */
-
-  cs_property_t  *zeta;     /*!< Coefficient for the augmented Lagrangian
-                                 attached to the grad-div stabilzation term */
-
-} cs_navsto_uzawa_t;
-
 /*============================================================================
  * Public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate and initialize a context structure when the Navier-Stokes
- *         system is coupled using an Uzawa-Augmented Lagrangian approach
- *
- * \param[in]  nsp    pointer to a \ref cs_navsto_param_t structure
- * \param[in]  bc     default \ref cs_param_bc_type_t for the equation
- *
- * \return a pointer to the context structure
- */
-/*----------------------------------------------------------------------------*/
-
-void *
-cs_navsto_uzawa_create_context(cs_navsto_param_t    *nsp,
-                               cs_param_bc_type_t    bc);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free the context structure related to an Uzawa-Augmented Lagrangian
- *         approach
- *
- * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] context  pointer to a context structure cast on-the-fly
- *
- * \return a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-void *
-cs_navsto_uzawa_free_context(const cs_navsto_param_t    *nsp,
-                             void                       *context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Start setting-up the Navier-Stokes equations when a Uzawa
- *         Augmented Lagrangian algorithm is used to coupled the system
- *         No mesh information is available at this stage
- *
- * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] context  pointer to a context structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_navsto_uzawa_init_setup(const cs_navsto_param_t    *nsp,
-                           void                       *context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Finalize the setup for the Navier-Stokes equations when an Uzawa
- *         Augmented Lagrangian algorithm is used to coupled the system.
- *         Connectivity and geometric quantities are available at this stage.
- *
- * \param[in]      connect  pointer to a \ref cs_cdo_connect_t structure
- * \param[in]      quant    pointer to a \ref cs_cdo_quantities_t structure
- * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] context  pointer to a context structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_navsto_uzawa_last_setup(const cs_cdo_connect_t      *connect,
-                           const cs_cdo_quantities_t   *quant,
-                           const cs_navsto_param_t     *nsp,
-                           void                        *context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the pointer to the \ref cs_equation_t structure related to
- *         the momentum equation in case of Uzawa coupling
- *
- * \param[in] context  pointer to a context structure cast on-the-fly
- *
- * \return a pointer to a cs_equation_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_equation_t *
-cs_navsto_uzawa_get_momentum_eq(void       *context);
 
 /*----------------------------------------------------------------------------*/
 /*!

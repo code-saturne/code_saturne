@@ -41,7 +41,6 @@
 #include "cs_cdofb_navsto.h"
 #include "cs_cdofb_priv.h"
 #include "cs_cdofb_scaleq.h"
-#include "cs_cdofb_uzawa.h"
 #include "cs_cdofb_vecteq.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_main.h"

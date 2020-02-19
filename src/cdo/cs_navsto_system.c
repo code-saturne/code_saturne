@@ -49,7 +49,6 @@
 #include "cs_cdofb_monolithic_sles.h"
 #include "cs_cdofb_navsto.h"
 #include "cs_cdofb_predco.h"
-#include "cs_cdofb_uzawa.h"
 #include "cs_hho_stokes.h"
 #include "cs_evaluate.h"
 #include "cs_flag.h"
@@ -288,10 +287,6 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
     navsto->coupling_context =
       cs_navsto_projection_create_context(navsto->param, default_bc);
     break;
-  case CS_NAVSTO_COUPLING_UZAWA:
-    navsto->coupling_context = cs_navsto_uzawa_create_context(navsto->param,
-                                                              default_bc);
-    break;
 
   default:
     bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
@@ -394,10 +389,6 @@ cs_navsto_system_destroy(void)
     navsto->coupling_context =
       cs_navsto_projection_free_context(nsp, navsto->coupling_context);
     break;
-  case CS_NAVSTO_COUPLING_UZAWA:
-    navsto->coupling_context =
-      cs_navsto_uzawa_free_context(nsp, navsto->coupling_context);
-    break;
 
   default:
     bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
@@ -466,9 +457,6 @@ cs_navsto_system_get_momentum_eq(void)
     break;
   case CS_NAVSTO_COUPLING_PROJECTION:
     eq = cs_navsto_projection_get_momentum_eq(navsto->coupling_context);
-    break;
-  case CS_NAVSTO_COUPLING_UZAWA:
-    eq = cs_navsto_uzawa_get_momentum_eq(navsto->coupling_context);
     break;
 
   default:
@@ -657,9 +645,6 @@ cs_navsto_system_init_setup(void)
                                     has_previous,
                                     ns->coupling_context);
     break;
-  case CS_NAVSTO_COUPLING_UZAWA:
-    cs_navsto_uzawa_init_setup(nsp, ns->coupling_context);
-    break;
 
   default:
     bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
@@ -698,10 +683,6 @@ cs_navsto_system_set_sles(void)
 
     case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
       cs_cdofb_ac_set_sles(nsp, nscc);
-      break;
-
-    case CS_NAVSTO_COUPLING_UZAWA:
-      cs_cdofb_uzawa_set_sles(nsp, nscc);
       break;
 
     case CS_NAVSTO_COUPLING_PROJECTION:
@@ -794,9 +775,6 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
     break;
   case CS_NAVSTO_COUPLING_PROJECTION:
     cs_navsto_projection_last_setup(connect, quant, nsp, ns->coupling_context);
-    break;
-  case CS_NAVSTO_COUPLING_UZAWA:
-    cs_navsto_uzawa_last_setup(connect, quant, nsp, ns->coupling_context);
     break;
 
   default:
@@ -931,47 +909,6 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       cs_cdofb_predco_init_common(quant, connect, time_step);
       break;
 
-    case CS_NAVSTO_COUPLING_UZAWA:
-      /* ======================== */
-
-      ns->init_scheme_context = cs_cdofb_uzawa_init_scheme_context;
-      ns->free_scheme_context = cs_cdofb_uzawa_free_scheme_context;
-      ns->init_velocity = NULL;
-      ns->init_pressure = cs_cdofb_navsto_init_pressure;
-
-      if (_handle_non_linearities(nsp))
-        ns->compute_steady = cs_cdofb_uzawa_compute_steady_rebuild;
-      else
-        ns->compute_steady = cs_cdofb_uzawa_compute_steady;
-
-      switch (nsp->time_scheme) {
-
-      case CS_TIME_SCHEME_STEADY:
-        if (_handle_non_linearities(nsp))
-          ns->compute = cs_cdofb_uzawa_compute_steady_rebuild;
-        else
-          ns->compute = cs_cdofb_uzawa_compute_steady;
-        break;
-
-      case CS_TIME_SCHEME_EULER_IMPLICIT:
-        ns->compute = cs_cdofb_uzawa_compute_implicit;
-        break;
-
-      case CS_TIME_SCHEME_THETA:
-      case CS_TIME_SCHEME_CRANKNICO:
-        ns->compute = cs_cdofb_uzawa_compute_theta;
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  "%s: Invalid time scheme for the Uzawa coupling", __func__);
-        break;
-
-      } /* Switch */
-
-      cs_cdofb_uzawa_init_common(quant, connect, time_step);
-      break;
-
     default:
       bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
       break;
@@ -1099,7 +1036,6 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 
     case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
     case CS_NAVSTO_COUPLING_MONOLITHIC:
-    case CS_NAVSTO_COUPLING_UZAWA:
       {
         cs_equation_t  *mom_eq = cs_equation_by_name("momentum");
         face_vel = cs_equation_get_face_values(mom_eq);
@@ -1346,7 +1282,6 @@ cs_navsto_system_extra_post(void                      *input,
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
   case CS_NAVSTO_COUPLING_MONOLITHIC:
-  case CS_NAVSTO_COUPLING_UZAWA:
     /* Nothing to do up to now */
     break;
 

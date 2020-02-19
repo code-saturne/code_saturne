@@ -186,9 +186,9 @@ typedef enum {
  * solver. Use this strategy when the saddle-point problem has been reformulated
  * into a "classical" linear system. For instance when a Uzawa or an Artificial
  * Compressibility coupling algorithm is used. (i.e. with the parameter
- * \ref CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY or
- * \ref CS_NAVSTO_COUPLING_UZAWA is set as coupling algorithm). This option is
- * only available with the support to the PETSc library up to now.
+ * \ref CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY is set as coupling
+ * algorithm). This option is only available with the support to the PETSc
+ * library up to now.
  *
  *
  * \var CS_NAVSTO_SLES_DIAG_SCHUR_GMRES
@@ -366,10 +366,6 @@ typedef struct {
  *
  * \var CS_NAVSTO_COUPLING_PROJECTION
  * The system is solved using an incremental projection algorithm
- *
- * \var CS_NAVSTO_COUPLING_UZAWA
- * The system is solved without decoupling the equations using a Uzawa algorithm
- * and an Augmented Lagrangian approach inside each sub-iteration.
  */
 
 typedef enum {
@@ -378,7 +374,6 @@ typedef enum {
   CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP,
   CS_NAVSTO_COUPLING_MONOLITHIC,
   CS_NAVSTO_COUPLING_PROJECTION,
-  CS_NAVSTO_COUPLING_UZAWA,
 
   CS_NAVSTO_N_COUPLINGS
 
@@ -676,7 +671,7 @@ typedef struct {
  *
  * \var CS_NSKEY_GD_SCALE_COEF
  * Set the scaling of the grad-div term when an artificial compressibility
- * algorithm or an Uzawa - Augmented Lagrangian method is used
+ * algorithm or an Uzawa-Augmented Lagrangian method is used
  *
  * \var CS_NSKEY_MAX_ALGO_ITER
  * Set the maximal number of iteration for solving the coupled system.
