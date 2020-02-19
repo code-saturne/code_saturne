@@ -280,26 +280,28 @@ cs_wall_functions_1scale_log(cs_lnum_t    ifac,
 
 /*----------------------------------------------------------------------------
  * Compute du+/dy+ for a given yk+.
+ *
  * parameters:
  *   yplus     <--  dimensionless distance
+ *
  * returns:
  *   the resulting dimensionless velocity.
  *----------------------------------------------------------------------------*/
 
 inline static cs_real_t
-_uplus(cs_real_t yp  ,
-       cs_real_t ka  ,
-       cs_real_t B   ,
-       cs_real_t cuv ,
-       cs_real_t y0  ,
-       cs_real_t n   )
+_uplus(cs_real_t yp,
+       cs_real_t ka,
+       cs_real_t B,
+       cs_real_t cuv,
+       cs_real_t y0,
+       cs_real_t n)
 {
-  cs_real_t uplus, f_blend ;
+  cs_real_t uplus, f_blend;
 
-  f_blend = exp(-0.25*cuv*pow(yp,3)) ;
+  f_blend = exp(-0.25*cuv*pow(yp,3));
   uplus   = f_blend*yp + (log(yp)/ka +B)*(1.-exp(-pow(yp/y0,n)))*(1-f_blend);
 
-  return uplus ;
+  return uplus;
 }
 
 /*----------------------------------------------------------------------------
@@ -311,22 +313,24 @@ _uplus(cs_real_t yp  ,
  *----------------------------------------------------------------------------*/
 
 inline static cs_real_t
-_dupdyp(cs_real_t yp  ,
-        cs_real_t ka  ,
-        cs_real_t B   ,
-        cs_real_t cuv ,
-        cs_real_t y0  ,
-        cs_real_t n   )
+_dupdyp(cs_real_t yp,
+        cs_real_t ka,
+        cs_real_t B,
+        cs_real_t cuv,
+        cs_real_t y0,
+        cs_real_t n)
 {
-  cs_real_t dupdyp ;
+  cs_real_t dupdyp;
 
   dupdyp = exp(-0.25*cuv*pow(yp,3))
    - 0.75*cuv*pow(yp,3.)*exp(-0.25*cuv*pow(yp,3.))
-   + n*(1.-exp(-0.25*cuv*pow(yp,3.)))*(pow(yp,n-1.)/pow(y0,n))*exp(-pow(yp/y0,n))*((1./ka)*log(yp)+B)
-   + 0.75*cuv*pow(yp,2.)*exp(-0.25*cuv*pow(yp,3.))*(1.-exp(-pow(yp/y0,n)))*((1./ka)*log(yp)+B)
-   + (1./ka/yp)*(1.-exp(-pow(yp/y0,n)))*(1-exp(-0.25*cuv*pow(yp,3.))) ;
+   + n*(1.-exp(-0.25*cuv*pow(yp,3.)))*(pow(yp,n-1.)/pow(y0,n))
+      *exp(-pow(yp/y0,n))*((1./ka)*log(yp)+B)
+   + 0.75*cuv*pow(yp,2.)*exp(-0.25*cuv*pow(yp,3.))
+         *(1.-exp(-pow(yp/y0,n)))*((1./ka)*log(yp)+B)
+   + (1./ka/yp)*(1.-exp(-pow(yp/y0,n)))*(1-exp(-0.25*cuv*pow(yp,3.)));
 
-  return dupdyp ;
+  return dupdyp;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -372,8 +376,8 @@ cs_wall_functions_2scales_continuous(cs_real_t   rnnb,
 {
   const double ypluli = cs_glob_wall_functions->ypluli;
   double Re, g, t_visc_durb;
-  cs_real_t cstcuv, csty0, cstN ;
-  cs_real_t dup1, dup2, uplus ;
+  cs_real_t cstcuv, csty0, cstN;
+  cs_real_t dup1, dup2, uplus;
 
   /* Local constants */
   cstcuv = 1.0674e-3;
@@ -386,30 +390,33 @@ cs_wall_functions_2scales_continuous(cs_real_t   rnnb,
 
   /* Comutation of uk*/
   *uk = sqrt( (1.-g) * cs_turb_cmu025 * cs_turb_cmu025 * kinetic_en
-            + g * l_visc * vel / y);
+             + g * l_visc * vel/y);
 
   /* Local value of y+, estimated U+ */
   *yplus = *uk * y / l_visc;
   uplus  = _uplus( *yplus, cs_turb_xkappa, cs_turb_cstlog, cstcuv, csty0, cstN);
   /* Deduced velocity sclale uet*/
-  *ustar = vel / uplus ;
+  *ustar = vel / uplus;
 
   if( *yplus < 1.e-1 ) {
 
-    *ypup   = 1.0 ;
-    *cofimp = 0.0 ;
+    *ypup   = 1.0;
+    *cofimp = 0.0;
 
     *iuntur = 0;
     *nsubla += 1;
 
-  } else {
+  }
+  else {
 
     /* Dimensionless velocity gradient in y+ */
-    dup1 = _dupdyp(     *yplus, cs_turb_xkappa, cs_turb_cstlog, cstcuv, csty0, cstN);
+    dup1 = _dupdyp(*yplus, cs_turb_xkappa, cs_turb_cstlog,
+                   cstcuv, csty0, cstN);
     /* Dimensionless velocity gradient in 2 x y+ */
-    dup2 = _dupdyp(2.0 * *yplus , cs_turb_xkappa, cs_turb_cstlog, cstcuv, csty0, cstN);
+    dup2 = _dupdyp(2.0 * *yplus, cs_turb_xkappa,
+                   cs_turb_cstlog, cstcuv, csty0, cstN);
 
-    *ypup = *yplus / uplus ;
+    *ypup = *yplus / uplus;
 
     /* ------------------------------------------------------------
      * Cofimp = U,F/U,I is built so that the theoretical expression
@@ -429,7 +436,9 @@ cs_wall_functions_2scales_continuous(cs_real_t   rnnb,
     else
       t_visc_durb = t_visc;
 
-    *cofimp     = 1. - *ypup * (2.0 * sqrt( l_visc / t_visc_durb * dup1 * (1.0 - dup1) ) -  dup2) ;
+    *cofimp
+      = 1. - *ypup * (2. * sqrt(l_visc / t_visc_durb * dup1 * (1. - dup1))
+                      -  dup2);
 
     /* log layer */
     if (*yplus > ypluli) {
@@ -1024,13 +1033,9 @@ cs_wall_functions_s_arpaci_larsen(cs_real_t  prl,
 
   const double epzero = 1.e-12;
 
-  /*==========================================================================*/
-
   /*==========================================================================
     1. Initializations
     ==========================================================================*/
-
-  /*==========================================================================*/
 
   (*htur) = CS_MAX(yplus-dplus,epzero)/CS_MAX(yplus,epzero);
 
@@ -1195,22 +1200,14 @@ void CS_PROCF (hturbp, HTURBP)
 
 /*----------------------------------------------------------------------------
  *! \brief Provide access to cs_glob_wall_functions
- *
- * needed to initialize structure with GUI
  *----------------------------------------------------------------------------*/
 
 cs_wall_functions_t *
 cs_get_glob_wall_functions(void);
 
+/*----------------------------------------------------------------------------*/
 /*! \brief  Compute the friction velocity and \f$y^+\f$ / \f$u^+\f$.
 
-*/
-/*-------------------------------------------------------------------------------
-  Arguments
- ______________________________________________________________________________.
-   mode           name          role                                           !
- ______________________________________________________________________________*/
-/*!
  * \param[in]     iwallf        wall function type
  * \param[in]     ifac          face number
  * \param[in]     l_visc        kinematic viscosity
@@ -1235,7 +1232,7 @@ cs_get_glob_wall_functions(void);
  * \param[out]    dplus         dimensionless shift to the wall
  *                              for scalable wall functions
  */
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
@@ -1257,11 +1254,10 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                            cs_real_t        *cofimp,
                            cs_real_t        *dplus);
 
-/*-------------------------------------------------------------------------------*/
-
+/*----------------------------------------------------------------------------*/
 /*!
- *  \brief Compute the correction of the exchange coefficient between the fluid and
- *  the wall for a turbulent flow.
+ *  \brief Compute the correction of the exchange coefficient between the
+ *         fluid and the wall for a turbulent flow.
  *
  *  This is function of the dimensionless
  *  distance to the wall \f$ y^+ = \dfrac{\centip \centf u_\star}{\nu}\f$.
@@ -1271,13 +1267,6 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
  *  h_{tur} = Pr \dfrac{y^+}{T^+}
  *  \f]
  *
- */
-/*-------------------------------------------------------------------------------
-  Arguments
- ______________________________________________________________________________.
-   mode           name          role                                           !
- ______________________________________________________________________________*/
-/*!
  * \param[in]     iwalfs        type of wall functions for scalar
  * \param[in]     prl           laminar Prandtl number
  * \param[in]     prt           turbulent Prandtl number
@@ -1287,7 +1276,7 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
  * \param[out]    htur          corrected exchange coefficient
  * \param[out]    yplim         value of the limit for \f$ y^+ \f$
  */
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
