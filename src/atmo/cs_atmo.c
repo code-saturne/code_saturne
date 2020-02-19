@@ -599,11 +599,11 @@ cs_atmo_declare_chem_from_spack(void)
  *   - albedo if above the sea
  *   (Use analytical formulae of Paltrige and Platt
  *              dev.in atm. science no 5)
- * \param[in]   xlat        latitude
- * \param[in]   xlong       longitude
- * \param[in]   jour        day in the year
- * \param[in]   heurtu      Universal time (hour)
- * \param[in]   imer        sea index
+ * \param[in]   latitude    latitude
+ * \param[in]   longitude   longitude
+ * \param[in]   squant      start day in the year
+ * \param[in]   utc         Universal time (hour)
+ * \param[in]   sea_id      sea index
  * \param[out]  albe        albedo
  * \param[out]  muzero      cosin of zenithal angle
  * \param[out]  omega       solar azimut angle
@@ -612,11 +612,11 @@ cs_atmo_declare_chem_from_spack(void)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_atmo_compute_solar_angles(cs_real_t xlat,
-                             cs_real_t xlong,
-                             cs_real_t jour,
-                             cs_real_t heurtu,
-                             int       imer,
+cs_atmo_compute_solar_angles(cs_real_t latitude,
+                             cs_real_t longitude,
+                             cs_real_t squant,
+                             cs_real_t utc,
+                             int       sea_id,
                              cs_real_t *albe,
                              cs_real_t *muzero,
                              cs_real_t *omega,
@@ -628,10 +628,10 @@ cs_atmo_compute_solar_angles(cs_real_t xlat,
 
   /* conversions sexagesimal-decimal */
 
-  cs_real_t flat = xlat  *cs_math_pi/180.;
-  cs_real_t flong = xlong *4./60.;
+  cs_real_t flat = latitude  *cs_math_pi/180.;
+  cs_real_t flong = longitude * 4. / 60.;
 
-  cs_real_t t00 = 2.*cs_math_pi*jour/365.;
+  cs_real_t t00 = 2. * cs_math_pi * squant/365.;
 
   /* 2 - compute declinaison (maximum error < 3 mn) */
 
@@ -646,14 +646,14 @@ cs_atmo_compute_solar_angles(cs_real_t xlat,
   cs_real_t eqt = (0.000075 + 0.001868*cos(t00) - 0.032077*sin(t00)
       - 0.014615*cos(2.*t00) - 0.040849*sin(2.*t00))*12./cs_math_pi;
 
-  cs_real_t heure = heurtu + flong + eqt;
+  cs_real_t local_time = utc + flong + eqt;
 
-  /* Transformation heure-radians */
+  /* Transformation local_time-radians */
 
   /* On retire cs_math_pi et on prend le modulo 2pi du resultat */
-  cs_real_t hr = (heure - 12.)*cs_math_pi/12.;
-  if (heure < 12.)
-    hr = (heure + 12.)*cs_math_pi/12.;
+  cs_real_t hr = (local_time - 12.)*cs_math_pi/12.;
+  if (local_time < 12.)
+    hr = (local_time + 12.)*cs_math_pi/12.;
 
   /* 4 - compute of cosinus of the zenitghal angle */
 
@@ -667,13 +667,13 @@ cs_atmo_compute_solar_angles(cs_real_t xlat,
     /* Cosinus of the zimut angle */
     cs_real_t co = (sin(decl)*cos(flat)-cos(decl)*sin(flat)*cos(hr))/sin(za);
     *omega = acos(co);
-    if (heure > 12.)
+    if (local_time > 12.)
       *omega = 2. * cs_math_pi - acos(co);
   }
 
   /* 5 - calcul de l'albedo sur mer qui depend de l'angle zenithal */
 
-  if (imer == 1) {
+  if (sea_id == 1) {
     cs_real_t ho = acos(*muzero);
     ho = 180.*(cs_math_pi/2. - ho)/cs_math_pi;
     if (ho < 8.5)
