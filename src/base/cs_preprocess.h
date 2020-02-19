@@ -34,6 +34,8 @@
 #include "cs_defs.h"
 
 #include "cs_halo.h"
+#include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -82,6 +84,23 @@ cs_preprocess_mesh_define(void);
 
 void
 cs_preprocess_mesh(cs_halo_type_t   halo_type);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply numbering changes to ignore selected boundary faces.
+ *
+ * \param[in, out]  m         pointer to mesh structure
+ * \param[in, out]  mq        pointer to mesh quantities structure
+ * \param[in]       n_faces   number of selected faces
+ * \param[in]       face_ids  ids of selected faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_preprocess_mesh_selected_b_faces_ignore(cs_mesh_t             *m,
+                                           cs_mesh_quantities_t  *mq,
+                                           cs_lnum_t              n_faces,
+                                           const cs_lnum_t        face_ids[]);
 
 /*----------------------------------------------------------------------------
  * Update fortran arrays relative to the global mesh.

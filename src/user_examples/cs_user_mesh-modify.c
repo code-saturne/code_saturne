@@ -411,5 +411,40 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply partial modifications to the mesh after the preprocessing
+ *        and initial postprocessing mesh building stage.
+ *
+ * \param[in,out] mesh  pointer to a cs_mesh_t structure
+ * \param[in,out] mesh_quantities pointer to a cs_mesh_quantities_t structure
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_mesh_modify_partial(cs_mesh_t             *mesh,
+                            cs_mesh_quantities_t  *mesh_quantities)
+{
+  {
+    /*! [mesh_modify_ignore_symmetry_faces] */
+    cs_lnum_t   n_faces = 0;
+    cs_lnum_t  *face_ids = NULL;
+
+    BFT_MALLOC(face_ids, mesh->n_b_faces, cs_lnum_t);
+
+    cs_selector_get_b_face_list("symmetry",
+                                &n_faces,
+                                face_ids);
+
+    cs_preprocess_mesh_selected_b_faces_ignore(mesh,
+                                               mesh_quantities,
+                                               n_faces,
+                                               face_ids);
+
+    BFT_FREE(face_ids);
+    /*! [mesh_modify_ignore_symmetry_faces] */
+  }
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -322,6 +322,9 @@ _run(void)
 
   cs_post_init_meshes(check_mask);
 
+  cs_user_mesh_modify_partial(cs_glob_mesh,
+                              cs_glob_mesh_quantities);
+
   /* Compute iterations or quality criteria depending on verification options */
 
   if (opts.verif == true) {

@@ -3,6 +3,11 @@ Master (not on release branches yet)
 
 User changes:
 
+- Add the possibility of adding partial mesh modifications after the
+  main mesh preprocessing stage (cs_user_mesh_modify_partial).
+  This allows separating selected boundary faces (such as symmetry faces)
+  from others, so as to ignore them in the main finite volume scheme.
+
 - Add the possibility to keep more than just the last checkpoint file.
 
 - Modify the GUI mathematical expressions syntax to allow only for C syntax for

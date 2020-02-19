@@ -184,6 +184,12 @@ typedef struct {
 
   cs_gnum_t n_g_free_faces;        /*!< global number of boundary faces
                                      which are in fact isolated */
+
+  cs_gnum_t n_g_b_faces_all;       /*!< global number of boundary faces
+                                     inluding those ignored in FV schemes */
+  cs_lnum_t n_b_faces_all;         /*!< number of boundary faces including
+                                     faces ignored in FV schemes */
+
   int verbosity;                   /*!< current verbosity level */
   int modified;                    /*!< modification status */
   int save_if_modified;            /*!< flag for mesh saving behavior:

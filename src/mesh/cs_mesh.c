@@ -2249,6 +2249,10 @@ cs_mesh_create(void)
   /* Status flags */
 
   mesh->n_g_free_faces = 0;
+
+  mesh->n_g_b_faces_all = 0;
+  mesh->n_b_faces_all = 0;
+
   mesh->verbosity = 1;
   mesh->modified = 0;
   mesh->save_if_modified = 1;

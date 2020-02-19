@@ -524,6 +524,20 @@ cs_user_mesh_save(cs_mesh_t  *mesh);
 void
 cs_user_mesh_warping(void);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply partial modifications to the mesh after the preprocessing
+ *        and initial postprocessing mesh building stage.
+ *
+ * \param[in,out] mesh  pointer to a cs_mesh_t structure
+ * \param[in,out] mesh_quantities pointer to a cs_mesh_quantities_t structure
+*/
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_mesh_modify_partial(cs_mesh_t             *mesh,
+                            cs_mesh_quantities_t  *mesh_quantities);
+
 /*----------------------------------------------------------------------------
  * Select physical model options, including user fields.
  *

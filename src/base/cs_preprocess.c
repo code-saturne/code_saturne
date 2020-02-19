@@ -374,6 +374,9 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   if (need_save)
     cs_mesh_save(cs_glob_mesh, NULL, NULL, "mesh_output.csm");
 
+  cs_glob_mesh->n_b_faces_all = cs_glob_mesh->n_b_faces_all;
+  cs_glob_mesh->n_g_b_faces_all = cs_glob_mesh->n_g_b_faces_all;
+
   /* Destroy the temporary structure used to build the main mesh */
 
   cs_mesh_builder_destroy(&cs_glob_mesh_builder);
@@ -440,6 +443,81 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   /* Re-enable writers disabled when entering this stage */
 
   cs_post_enable_writer(0);
+
+  cs_timer_stats_switch(t_top_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Apply numbering changes to ignore selected boundary faces.
+ *
+ * \param[in, out]  m         pointer to mesh structure
+ * \param[in, out]  mq        pointer to mesh quantities structure
+ * \param[in]       n_faces   number of selected faces
+ * \param[in]       face_ids  ids of selected faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_preprocess_mesh_selected_b_faces_ignore(cs_mesh_t             *m,
+                                           cs_mesh_quantities_t  *mq,
+                                           cs_lnum_t              n_faces,
+                                           const cs_lnum_t        face_ids[])
+{
+  double  t1, t2;
+
+  int t_stat_id = cs_timer_stats_id_by_name("mesh_processing");
+
+  int t_top_id = cs_timer_stats_switch(t_stat_id);
+
+  cs_mesh_update_auxiliary(m);
+
+  /* Renumber mesh based on code options */
+
+  cs_renumber_b_faces_select_ignore(m,
+                                    n_faces,
+                                    face_ids);
+
+  /* Rebuild some structures */
+
+  cs_mesh_update_b_cells(m);
+  cs_mesh_init_group_classes(m);
+
+  /* Print info on mesh */
+
+  cs_mesh_print_info(m, _("Mesh"));
+
+  /* Second pass to define internal coupling locators */
+
+  cs_internal_coupling_map(m);
+
+  /* Compute geometric quantities related to the mesh */
+
+  bft_printf_flush();
+
+  t1 = cs_timer_wtime();
+
+  cs_mesh_quantities_compute(m, mq);
+
+  t2 = cs_timer_wtime();
+
+  bft_printf(_("\n Computing geometric quantities (%.3g s)\n"), t2-t1);
+
+  /* Initialize selectors and locations for the mesh */
+
+  cs_mesh_init_selectors();
+  cs_mesh_location_build(cs_glob_mesh, -1);
+  cs_volume_zone_build_all(true);
+  cs_volume_zone_print_info();
+  cs_boundary_zone_build_all(true);
+  cs_boundary_zone_print_info();
+
+  /* For debugging purposes */
+
+#if 0 && defined(DEBUG) && !defined(NDEBUG)
+  cs_mesh_dump(cs_glob_mesh);
+  cs_mesh_quantities_dump(cs_glob_mesh, cs_glob_mesh_quantities);
+#endif
 
   cs_timer_stats_switch(t_top_id);
 }

@@ -290,6 +290,26 @@ cs_renumber_b_faces_by_gnum(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Renumber boundary faces such that selected faces appear last
+ *        and will be ignored.
+ *
+ * Those faces will appear last, and the local number of boundary faces set
+ * to the number of remaining faces; The mesh's n_b_faces_all and
+ * n_g_b_faces_all allows accessing the full boundary faces list.
+ *
+ * \param[in, out]  mesh      pointer to global mesh structure
+ * \param[in]       n_faces   number of selected faces
+ * \param[in]       face_ids  number of selected faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_renumber_b_faces_select_ignore(cs_mesh_t        *mesh,
+                                  cs_lnum_t         n_faces,
+                                  const cs_lnum_t   face_ids[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Renumber vertices depending on code options and target machine.
  *
  * parameters:

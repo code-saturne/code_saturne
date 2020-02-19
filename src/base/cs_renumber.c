@@ -6117,10 +6117,137 @@ cs_renumber_b_faces_by_gnum(cs_mesh_t  *mesh)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Renumber vertices depending on code options and target machine.
+ * \brief Renumber boundary faces such that selected faces appear last
+ *        and will be ignored.
  *
- * parameters:
- *   mesh  <->  pointer to global mesh structure
+ * Those faces will appear last, and the local number of boundary faces set
+ * to the number of remaining faces; The mesh's n_b_faces_all and
+ * n_g_b_faces_all allows accessing the full boundary faces list.
+ *
+ * \param[in, out]  mesh      pointer to global mesh structure
+ * \param[in]       n_faces   number of selected faces
+ * \param[in]       face_ids  number of selected faces
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_renumber_b_faces_select_ignore(cs_mesh_t        *mesh,
+                                  cs_lnum_t         n_faces,
+                                  const cs_lnum_t   face_ids[])
+{
+  /* Try to ensure number of total boundary faces with symmetry is updated */
+
+  if (mesh->n_b_faces_all < mesh->n_b_faces) {
+    cs_glob_mesh->n_g_b_faces_all = cs_glob_mesh->n_g_b_faces;
+    mesh->n_b_faces_all = mesh->n_b_faces;
+  }
+
+  cs_glob_mesh->n_g_b_faces = cs_glob_mesh->n_g_b_faces_all;
+  mesh->n_b_faces = mesh->n_b_faces_all;
+
+  if (n_faces < 1)
+    return;
+
+  if (mesh->b_face_numbering != NULL)
+    cs_numbering_destroy(&(mesh->b_face_numbering));
+
+  /* Revert to initial numbering */
+
+  if (mesh->global_b_face_num != NULL) {
+    cs_lnum_t *new_to_old_b = cs_order_gnum(NULL,
+                                            mesh->global_b_face_num,
+                                            mesh->n_b_faces);
+    _cs_renumber_update_b_faces(mesh, new_to_old_b);
+
+    BFT_FREE(new_to_old_b);
+
+    if (mesh->n_domains < 2)
+      BFT_FREE(mesh->global_b_face_num);
+  }
+
+  cs_lnum_t *new_to_old = NULL;
+  {
+    const cs_lnum_t n = mesh->n_b_faces;
+    const cs_lnum_t n_s = n_faces;
+    const cs_lnum_t *s_id = face_ids;
+
+    char *sel_flag;
+    BFT_MALLOC(new_to_old, n, cs_lnum_t);
+    BFT_MALLOC(sel_flag, n, char);
+
+    for (cs_lnum_t i = 0; i < n; i++)
+      sel_flag[i] = 0;
+
+    for (cs_lnum_t i = 0; i < n_s; i++)
+      sel_flag[s_id[i]] = 1;
+
+    cs_lnum_t k = 0, l = n - n_s;
+
+    for (cs_lnum_t i = 0; i < n; i++) {
+      if (sel_flag[i] == 0) {
+        new_to_old[k] = i;
+        k++;
+      }
+      else {
+        new_to_old[l] = i;
+        l++;
+      }
+    }
+
+    BFT_FREE(sel_flag);
+  }
+
+  _cs_renumber_update_b_faces(mesh, new_to_old);
+  BFT_FREE(new_to_old);
+
+  /* Also modify global boundary faces so that the remaining faces can
+     be used in parallel operators requiring them in a consistent manner */
+
+  mesh->n_b_faces = mesh->n_b_faces_all - n_faces;
+
+  if (mesh->n_domains > 1 || mesh->global_b_face_num != NULL) {
+
+    cs_lnum_t n_b_faces = mesh->n_b_faces;
+    cs_lnum_t n_b_faces_ext = mesh->n_b_faces_all - mesh->n_b_faces;
+
+    fvm_io_num_t *n_io_num
+      = fvm_io_num_create_from_select(NULL,
+                                      mesh->global_b_face_num,
+                                      n_b_faces,
+                                      0);
+    fvm_io_num_t *n_io_num_end
+      = fvm_io_num_create_from_select(NULL,
+                                      mesh->global_b_face_num + mesh->n_b_faces,
+                                      n_b_faces_ext,
+                                      0);
+
+    const cs_gnum_t *b_gnum = fvm_io_num_get_global_num(n_io_num);
+    const cs_gnum_t *b_gnum_end = fvm_io_num_get_global_num(n_io_num_end);
+
+    cs_gnum_t n_g_b_faces = fvm_io_num_get_global_count(n_io_num);
+
+    for (cs_lnum_t i = 0; i < n_b_faces; i++)
+      mesh->global_b_face_num[i] = b_gnum[i];
+
+    for (cs_lnum_t i = 0; i < n_b_faces_ext; i++)
+      mesh->global_b_face_num[n_b_faces + i] = b_gnum_end[i] + n_g_b_faces;
+
+    n_io_num = fvm_io_num_destroy(n_io_num);
+    n_io_num_end = fvm_io_num_destroy(n_io_num);
+
+    mesh->n_g_b_faces = n_g_b_faces;
+
+  }
+  else
+    mesh->n_g_b_faces = mesh->n_b_faces;
+
+  mesh->b_face_numbering
+    = cs_numbering_create_default(mesh->n_b_faces);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Renumber vertices depending on code options and target machine.
  *
  * \param[in, out]  mesh  pointer to global mesh structure
  */
