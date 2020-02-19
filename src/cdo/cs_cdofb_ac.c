@@ -111,7 +111,7 @@ typedef struct {
   /*! \var coupling_context
    *  Pointer to a \ref cs_navsto_ac_t (owned by \ref cs_navsto_system_t)
    *  containing the settings related to an artificial compressibility (AC)
-   *  algorithm or vector penalty projection (VPP)
+   *  algorithm
    */
 
   cs_navsto_ac_t   *coupling_context;

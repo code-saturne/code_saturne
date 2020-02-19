@@ -48,7 +48,6 @@ BEGIN_C_DECLS
           Structures are cast on-the-fly according to the type of coupling.
           Routines to handle the settings of coupling algorithms
           - Artificial Compressibility algorithm
-          - Its variant VVP (Vector Projection Penalty) algorithm
           - Monolithic algorithm
           - Projection algorithm
  */
@@ -79,26 +78,6 @@ typedef struct {
                                  attached to the grad-div stabilization term */
 
 } cs_navsto_ac_t;
-
-/*! \struct cs_navsto_ac_vpp_t
- *  \brief Set of parameters specific for solving the Navier-Stokes system with
- *         the "artificial compressibility" solved by the VPP_eps algorithm
- *
- *  All equations are not always created. It depends on the choice of the model
- */
-
-typedef struct {
-
-  cs_equation_t  *momentum; /*!< Momentum balance equation (vector-valued) */
-  cs_equation_t  *graddiv;  /*!< Second equation of the VPP_eps method, that is
-                                 where the grad-div operator is used
-                                 (vector-valued) */
-
-  cs_property_t  *zeta;    /*!< Parameter (Artificial Compressibility) VPP
-                                algorithm attached to the grad-div stabilization
-                                term */
-
-} cs_navsto_ac_vpp_t;
 
 /*! \struct cs_navsto_monolithic_t
  *  \brief Set of parameters specific for solving the Navier-Stokes system with
@@ -226,87 +205,6 @@ cs_navsto_ac_last_setup(const cs_cdo_connect_t      *connect,
 
 cs_equation_t *
 cs_navsto_ac_get_momentum_eq(void       *context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Allocate and initialize a context structure when the Navier-Stokes
- *         system is coupled using an Artificial Compressibility - VPP approach
- *
- * \param[in]  nsp    pointer to a \ref cs_navsto_param_t structure
- * \param[in]  bc     default \ref cs_param_bc_type_t for the equation
- *
- * \return a pointer to the context structure
- */
-/*----------------------------------------------------------------------------*/
-
-void *
-cs_navsto_ac_vpp_create_context(cs_navsto_param_t    *nsp,
-                                cs_param_bc_type_t    bc);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Free the context structure related to an Artificial Compressibility
- *         with the VPP approach
- *
- * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] context  pointer to a context structure cast on-the-fly
- *
- * \return a NULL pointer
- */
-/*----------------------------------------------------------------------------*/
-
-void *
-cs_navsto_ac_vpp_free_context(const cs_navsto_param_t    *nsp,
-                              void                       *context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Start setting-up the Navier-Stokes equations when an Artificial
- *         Compressibility with VPP algorithm is used to coupled the system.
- *         No mesh information is available at this stage.
- *
- * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] context  pointer to a context structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_navsto_ac_vpp_init_setup(const cs_navsto_param_t    *nsp,
-                            void                       *context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Finalize the setup for the Navier-Stokes equations when an
- *         Artificial Compressibility algorithm is used to coupled the system.
- *         Connectivity and geometric quantities are available at this stage.
- *
- * \param[in]      connect  pointer to a \ref cs_cdo_connect_t structure
- * \param[in]      quant    pointer to a \ref cs_cdo_quantities_t structure
- * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] context  pointer to a context structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_navsto_ac_vpp_last_setup(const cs_cdo_connect_t      *connect,
-                            const cs_cdo_quantities_t   *quant,
-                            const cs_navsto_param_t     *nsp,
-                            void                        *context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve the pointer to the \ref cs_equation_t structure related to
- *         the momentum equation in case of artificial compressibility coupling
- *         with the VPP extension
- *
- * \param[in] context  pointer to a context structure cast on-the-fly
- *
- * \return a pointer to a cs_equation_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-cs_equation_t *
-cs_navsto_ac_vpp_get_momentum_eq(void       *context);
 
 /*----------------------------------------------------------------------------*/
 /*!

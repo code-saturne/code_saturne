@@ -355,12 +355,6 @@ typedef struct {
  * The system is solved using an artificial compressibility algorithm.
  * One vectorial equation is solved followed by a pressure update.
  *
- * \var CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP
- * The system is solved using an artificial compressibility algorithm with a
- * Vector Penalty Projection splitting.
- * Two vectorial equations are solved: a momentum-like one and another one
- * involving a grad-div operator.
- *
  * \var CS_NAVSTO_COUPLING_MONOLITHIC
  * The system is treated as a "monolithic" matrix
  *
@@ -371,7 +365,6 @@ typedef struct {
 typedef enum {
 
   CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY,
-  CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP,
   CS_NAVSTO_COUPLING_MONOLITHIC,
   CS_NAVSTO_COUPLING_PROJECTION,
 

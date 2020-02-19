@@ -275,10 +275,6 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
     navsto->coupling_context = cs_navsto_ac_create_context(navsto->param,
                                                            default_bc);
     break;
-  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
-    navsto->coupling_context = cs_navsto_ac_vpp_create_context(navsto->param,
-                                                               default_bc);
-    break;
   case CS_NAVSTO_COUPLING_MONOLITHIC:
     navsto->coupling_context
       = cs_navsto_monolithic_create_context(navsto->param, default_bc);
@@ -375,10 +371,6 @@ cs_navsto_system_destroy(void)
     navsto->coupling_context =
       cs_navsto_ac_free_context(nsp, navsto->coupling_context);
     break;
-  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
-    navsto->coupling_context =
-      cs_navsto_ac_vpp_free_context(nsp, navsto->coupling_context);
-    break;
   case CS_NAVSTO_COUPLING_MONOLITHIC:
     navsto->coupling_context =
       cs_navsto_monolithic_free_context(nsp, navsto->coupling_context);
@@ -448,9 +440,6 @@ cs_navsto_system_get_momentum_eq(void)
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
     eq = cs_navsto_ac_get_momentum_eq(navsto->coupling_context);
-    break;
-  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
-    eq = cs_navsto_ac_vpp_get_momentum_eq(navsto->coupling_context);
     break;
   case CS_NAVSTO_COUPLING_MONOLITHIC:
     eq = cs_navsto_monolithic_get_momentum_eq(navsto->coupling_context);
@@ -633,9 +622,6 @@ cs_navsto_system_init_setup(void)
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
     cs_navsto_ac_init_setup(nsp, ns->coupling_context);
     break;
-  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
-    cs_navsto_ac_vpp_init_setup(nsp, ns->coupling_context);
-    break;
   case CS_NAVSTO_COUPLING_MONOLITHIC:
     cs_navsto_monolithic_init_setup(nsp, ns->coupling_context);
     break;
@@ -766,9 +752,6 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
     cs_navsto_ac_last_setup(connect, quant, nsp, ns->coupling_context);
     break;
-  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
-    cs_navsto_ac_vpp_last_setup(connect, quant, nsp, ns->coupling_context);
-    break;
   case CS_NAVSTO_COUPLING_MONOLITHIC:
     cs_navsto_monolithic_last_setup(connect, quant, nsp, ns->coupling_context);
     break;
@@ -826,11 +809,6 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
       } /* Switch */
 
       cs_cdofb_ac_init_common(quant, connect, time_step);
-      break;
-
-    case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
-      /* ns->init = cs_cdofb_navsto_init_ac_vpp_context; */
-      /* ns->compute = cs_cdofb_navsto_ac_vpp_compute; */
       break;
 
     case CS_NAVSTO_COUPLING_MONOLITHIC:
@@ -1055,7 +1033,6 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
       }
       break;
 
-    case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
     default:
       bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
       break;
@@ -1279,7 +1256,6 @@ cs_navsto_system_extra_post(void                      *input,
   switch (nsp->coupling) {
 
   case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY_VPP:
   case CS_NAVSTO_COUPLING_MONOLITHIC:
     /* Nothing to do up to now */
     break;
