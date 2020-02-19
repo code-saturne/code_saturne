@@ -97,6 +97,10 @@ typedef struct {
   /*! latitude of the domain origin */
   cs_real_t latitude;
 
+  /*! Domain orientation (angle in degree between y direction and north),
+   * 0 by default */
+  cs_real_t domain_orientation;
+
   /* Model options */
   bool compute_z_ground;
   int sedimentation_model;

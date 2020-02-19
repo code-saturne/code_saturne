@@ -107,6 +107,7 @@ static cs_atmo_option_t  _atmo_option = {
   .ssec = -1.,
   .longitude = 1e12, // TODO use cs_math_big_r
   .latitude = 1e12,
+  .domain_orientation = 0.,
   .compute_z_ground = false,
   .sedimentation_model = 0,
   .deposition_model = 0,
@@ -670,6 +671,7 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
     if (local_time > 12.)
       *omega = 2. * cs_math_pi - acos(co);
   }
+  *omega -= cs_glob_atmo_option->domain_orientation * cs_math_pi / 180.;
 
   /* 5 - calcul de l'albedo sur mer qui depend de l'angle zenithal */
 
