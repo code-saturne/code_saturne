@@ -716,7 +716,6 @@ _define_cm_tetra_ref(double            a,
     /* Compute tef */
     for (short int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
 
-      cs_nvec3_t  sefc;
       cs_real_3_t  cp_efc, xexf, xexc;
 
       const short int  e = cm->f2e_ids[i], eshft = 2*e;
@@ -733,8 +732,6 @@ _define_cm_tetra_ref(double            a,
       cs_nvec3(cp_efc, cm->sefc + i);
 
       /* One should have (cp_efc, sefc) > 0 */
-      short int  _sgn = 1;
-
       cm->sefc[i].meas *= 0.5;
       if (_dp3(cm->sefc[i].unitv, peq.unitv) < 0) {
         for (int k = 0; k < 3; k++)
