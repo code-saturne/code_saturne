@@ -127,6 +127,8 @@ end subroutine intprf
 !> \param[in]   profz       z coordonate of measure points
 !> \param[in]   profv       measured values
 !> \param[in]   xz          interpolation elevation
+!> \param[out]  iz1         index of lower level
+!> \param[out]  iz2         index of upper level
 !> \param[out]  var         interpolation result
 !-------------------------------------------------------------------------------
 subroutine intprz ( nprofz, profz, profv, xz, iz1, iz2, var )
