@@ -1756,7 +1756,7 @@ cs_crystal_router_destroy(cs_crystal_router_t  **cr)
 
     cs_timer_t t0 = cs_timer_time();
 
-    if (cr != NULL) {
+    if (*cr != NULL) {
       cs_crystal_router_t *_cr = *cr;
       if (_cr->mpi_type != MPI_BYTE)
         MPI_Type_free(&(_cr->mpi_type));
