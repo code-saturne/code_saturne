@@ -1082,7 +1082,8 @@ cs_f_field_var_ptr_by_id(int          id,
     if (*p == NULL) /* Adjust dimensions to assist Fortran bounds-checking */
       _n_elts = 0;
 
-    if (f->dim == 1)
+    /* If dimension 1 is asked and field is of dimension one */
+    if (f->dim == 1 && pointer_rank == 1)
       dim[0] = _n_elts;
     else {
       dim[0] = f->dim;
