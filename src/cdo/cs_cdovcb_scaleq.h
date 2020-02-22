@@ -198,7 +198,7 @@ cs_cdovcb_scaleq_interpolate(const cs_mesh_t            *mesh,
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] context    pointer to cs_cdofb_scaleq_t structure
+ * \param[in, out] context    pointer to cs_cdovcb_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
