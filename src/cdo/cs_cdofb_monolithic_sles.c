@@ -2087,7 +2087,9 @@ cs_cdofb_monolithic_sles_set_shared(const cs_cdo_connect_t        *connect,
 /*!
  * \brief  Start setting-up the Navier-Stokes equations when a monolithic
  *         algorithm is used to couple the system.
- *         No mesh information is available at this stage
+ *         No mesh information is available at this stage.
+ *         nsp is not declared as cnost to avoid compilation warnings but
+ *         it should be modified at this stage.
  *
  * \param[in]      nsp      pointer to a \ref cs_navsto_param_t structure
  * \param[in, out] context  pointer to a context structure cast on-the-fly
@@ -2095,8 +2097,8 @@ cs_cdofb_monolithic_sles_set_shared(const cs_cdo_connect_t        *connect,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_monolithic_set_sles(const cs_navsto_param_t    *nsp,
-                             void                       *context)
+cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
+                             void                 *context)
 {
   cs_navsto_monolithic_t  *nsc = (cs_navsto_monolithic_t *)context;
 

@@ -668,8 +668,7 @@ cs_navsto_system_set_sles(void)
   if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
   void  *nscc = ns->coupling_context;
-
-  const cs_navsto_param_t *nsp = ns->param;
+  cs_navsto_param_t *nsp = ns->param;
 
   switch (nsp->space_scheme) {
 
