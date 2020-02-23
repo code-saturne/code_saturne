@@ -2125,9 +2125,6 @@ _prepare_input(const cs_mesh_t           *mesh,
     cs_gnum_t *_per_face_couples = NULL;
     const cs_gnum_t *per_face_couples = NULL;
 
-    bft_printf(_("\n"
-                 " Ignoring periodicity for graph-based partitioning.\n"));
-
     if (mb->face_bi.gnum_range[1] > mb->face_bi.gnum_range[0])
       _n_b_faces = mb->face_bi.gnum_range[1] - mb->face_bi.gnum_range[0];
 
@@ -2186,6 +2183,10 @@ _prepare_input(const cs_mesh_t           *mesh,
     if (_per_face_couples != NULL)
       BFT_FREE(_per_face_couples);
   }
+
+  else if (mb->n_perio > 0)
+    bft_printf(_("\n"
+                 " Ignoring periodicity for graph-based partitioning.\n"));
 
   /* Distribute faces if necessary */
 
