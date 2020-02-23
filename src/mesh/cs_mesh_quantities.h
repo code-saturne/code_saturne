@@ -446,6 +446,25 @@ cs_mesh_quantities_check_vol(const cs_mesh_t             *mesh,
                              const cs_mesh_quantities_t  *mesh_quantities,
                              int                          allow_error);
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the bounding box for cells.
+ *
+ * The corresponding array is allocated by this function, and it is the
+ * caller's responsability to free it when they are no longer needed.
+ *
+ * \param[in]   m          pointer to mesh structure
+ * \param[in]   tolerance  addition to local extents of each element:
+ *                         extent = base_extent * (1 + tolerance)
+ *
+ * \return  pointer to newly allocated cell volumes array
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_6_t *
+cs_mesh_quantities_cell_extents(const cs_mesh_t  *m,
+                                cs_real_t         tolerance);
+
 /*----------------------------------------------------------------------------
  * Return the number of times mesh quantities have been computed.
  *

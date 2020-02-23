@@ -3268,6 +3268,102 @@ cs_mesh_quantities_check_vol(const cs_mesh_t             *mesh,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the bounding box for cells.
+ *
+ * The corresponding array is allocated by this function, and it is the
+ * caller's responsability to free it when they are no longer needed.
+ *
+ * \param[in]   m          pointer to mesh structure
+ * \param[in]   tolerance  addition to local extents of each element:
+ *                         extent = base_extent * (1 + tolerance)
+ *
+ * \return  pointer to newly allocated cell volumes array
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_6_t *
+cs_mesh_quantities_cell_extents(const cs_mesh_t  *m,
+                                cs_real_t         tolerance)
+{
+  cs_real_6_t *bbox;
+
+  BFT_MALLOC(bbox, m->n_cells_with_ghosts, cs_real_6_t);
+
+  for (cs_lnum_t i = 0; i < m->n_cells_with_ghosts; i++) {
+    bbox[i][0] = HUGE_VAL;
+    bbox[i][1] = HUGE_VAL;
+    bbox[i][2] = HUGE_VAL;
+    bbox[i][3] = -HUGE_VAL;
+    bbox[i][4] = -HUGE_VAL;
+    bbox[i][5] = -HUGE_VAL;
+  }
+
+  const cs_lnum_t n_i_faces = m->n_i_faces;
+
+  for (cs_lnum_t i = 0; i < n_i_faces; i++) {
+    cs_lnum_t c_id_0 = m->i_face_cells[i][0];
+    cs_lnum_t c_id_1 = m->i_face_cells[i][1];
+    cs_lnum_t s_id = m->i_face_vtx_idx[i];
+    cs_lnum_t e_id = m->i_face_vtx_idx[i+1];
+    for (cs_lnum_t j = s_id; j < e_id; j++) {
+      cs_lnum_t vtx_id = m->i_face_vtx_lst[j];
+      const cs_real_t *coo = m->vtx_coord + vtx_id*3;
+      if (c_id_0 > -1) {
+        for (cs_lnum_t k = 0; k < 3; k++) {
+          bbox[c_id_0][k] = CS_MIN(bbox[c_id_0][k], coo[k]);
+          bbox[c_id_0][k+3] = CS_MAX(bbox[c_id_0][k+3], coo[k]);
+        }
+      }
+      if (c_id_1 > -1) {
+        for (cs_lnum_t k = 0; k < 3; k++) {
+          bbox[c_id_1][k] = CS_MIN(bbox[c_id_1][k], coo[k]);
+          bbox[c_id_1][k+3] = CS_MAX(bbox[c_id_1][k+3], coo[k]);
+        }
+      }
+    }
+  }
+
+  const cs_lnum_t n_b_faces = m->n_b_faces;
+
+  for (cs_lnum_t i = 0; i < n_b_faces; i++) {
+    cs_lnum_t c_id = m->b_face_cells[i];
+    cs_lnum_t s_id = m->b_face_vtx_idx[i];
+    cs_lnum_t e_id = m->b_face_vtx_idx[i+1];
+    for (cs_lnum_t j = s_id; j < e_id; j++) {
+      cs_lnum_t vtx_id = m->b_face_vtx_lst[j];
+      const cs_real_t *coo = m->vtx_coord + vtx_id*3;
+      if (c_id > -1) {
+        for (cs_lnum_t k = 0; k < 3; k++) {
+          bbox[c_id][k] = CS_MIN(bbox[c_id][k], coo[k]);
+          bbox[c_id][k+3] = CS_MAX(bbox[c_id][k+3], coo[k]);
+        }
+      }
+    }
+  }
+
+  {
+    const cs_lnum_t n_cells = m->n_cells;
+
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+
+      cs_real_t delta[3];
+
+      for (cs_lnum_t i = 0; i < 3; i++)
+        delta[i] = (bbox[c_id][3+i] - bbox[c_id][i]) * tolerance;
+
+      for (cs_lnum_t i = 0; i < 3; i++) {
+        bbox[c_id][i]   = bbox[c_id][i]   - delta[i];
+        bbox[c_id][3+i] = bbox[c_id][3+i] + delta[i];
+      }
+
+    }
+  }
+
+  return bbox;
+}
+
 /*----------------------------------------------------------------------------
  * Return the number of times mesh quantities have been computed.
  *
