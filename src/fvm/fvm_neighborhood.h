@@ -180,9 +180,8 @@ fvm_neighborhood_transfer_data(fvm_neighborhood_t   *n,
  *   box_gnum          <-- global numbering of boxes
  *   extents           <-- coordinate extents (size: n_boxes*dim*2, as
  *                         xmin1, ymin1, .. xmax1, ymax1, ..., xmin2, ...)
- *   box_gnum_transfer <-> as box_gnum, ownership transferred (NULL on return)
- *   extents_transfer  <-> as extents, ownership transferred (NULL on return)
- *   comm       <-- associated MPI communicator
+ *   box_gnum_assigned <-> as box_gnum, ownership transferred (NULL on return)
+ *   extents_assigned  <-> as extents, ownership transferred (NULL on return)
  *---------------------------------------------------------------------------*/
 
 void
@@ -232,7 +231,6 @@ fvm_neighborhood_prune(fvm_neighborhood_t  *n);
  *
  * parameters:
  *   n                  <-- pointer to neighborhood management structure
- *   dim                --> layout dimension (3, 2, or 1)
  *   depth              --> tree depth (max level used)
  *   n_leaves           --> number of leaves in the tree
  *   n_boxes            --> number of boxes in the tree
