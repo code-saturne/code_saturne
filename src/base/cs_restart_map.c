@@ -460,7 +460,7 @@ cs_restart_map_free(void)
     cs_restart_clear_locations_ref();
   }
 
-  double loc_times[4], max_times[4], min_times[4], mean_times[4];
+  double loc_times[4];
 
   ple_locator_get_times(_locator,
                         loc_times,
