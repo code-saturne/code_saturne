@@ -48,7 +48,7 @@ use ppppar
 use atincl
 use numvar
 use atchem
-use siream
+use sshaerosol
 use field
 
 implicit none
@@ -65,50 +65,81 @@ integer    jsp, jb
 character  label*80
 
 !================================================================================
+! ALLOCATE
+!================================================================================
+
+if (allocated(dlconc0)) deallocate(dlconc0)
+allocate(dlconc0(n_aer*(1+nlayer_aer)))
+
+!================================================================================
 ! READINGS
 !================================================================================
 
 write(nfecra,*) ''
 write(nfecra,*) 'reading of aerosols numbers and concentrations'
 
-open(impmea,file=ficmea,status='old')
-! Reading aerosol numbers
-do jb = 1, nbin_aer
-  read(impmea,*) dlconc0(nesp_aer*nbin_aer+jb)
-enddo
-! Reading aerosol concentrations
-do jb = 1, nbin_aer
-  do jsp = 1, nesp_aer
-    read(impmea,*) dlconc0(jb+(jsp-1)*nbin_aer)
+if (init_aero_with_lib) then
+
+  ! The external library provides the concentrations / numbers
+  call sshaerosol_get_aero(dlconc0)
+
+  ! Conversion from microg / m^3 to ppm
+  do jb = 1, n_aer * nlayer_aer
+    dlconc0(jb) = dlconc0(jb) / (1.d-3 * ro0)
   enddo
-enddo
-close(impmea)
+
+  ! Conversion from molecules / m^3 to molecules / kg
+  do jb = n_aer * nlayer_aer + 1, n_aer * nlayer_aer + n_aer
+    dlconc0(jb) = dlconc0(jb) / ro0
+  enddo
+
+else
+
+  ! Read from file
+  open(impmea,file=ficmea,status='old')
+  ! Reading aerosol numbers
+  do jb = 1, n_aer
+    read(impmea,*) dlconc0(nlayer_aer*n_aer+jb)
+  enddo
+  ! Reading aerosol concentrations
+  do jb = 1, n_aer
+    do jsp = 1, nlayer_aer
+      read(impmea,*) dlconc0(jb+(jsp-1)*n_aer)
+    enddo
+  enddo
+  ! Close
+  close(impmea)
+
+endif
 
 !================================================================================
 ! PRINTINGS
 !================================================================================
 
-write(nfecra, *)
+write(nfecra, *) ''
 write(nfecra, *) '==================================================='
 write(nfecra, *) 'printing aerosol numbers'
-do jb = 1, nbin_aer
-  write(nfecra,1000) jb, dlconc0(nesp_aer*nbin_aer+jb)
+do jb = 1, n_aer
+  isc = isca_chem(nespg + n_aer*nlayer_aer + jb)
+  f_id = ivarfl(isca(isc))
+  call field_get_label(f_id, label)
+  write(nfecra,1001) label, dlconc0(n_aer*nlayer_aer+jb)
 enddo
-1000 format("Bin ",I2," : ",ES10.2)
-write(nfecra, *)
+
+write(nfecra, *) ''
 write(nfecra, *) '==================================================='
 write(nfecra, *) 'printing aerosol concentrations'
 
-do jb = 1, nbin_aer
-  write(nfecra,*) "Bin ",jb
-  do jsp = 1, nesp_aer
-    isc = (isca_chem(1) - 1) + nespg_siream+jb+(jsp-1)*nbin_aer
+do jb = 1, n_aer
+  write(nfecra,*) "Aerosol number ",jb
+  do jsp = 1, nlayer_aer
+    isc = isca_chem(nespg + jb + (jsp-1)*n_aer)
     f_id = ivarfl(isca(isc))
     call field_get_label(f_id, label)
-    write(nfecra,1001) label, dlconc0(jb+(jsp-1)*nbin_aer)
+    write(nfecra,1001) label, dlconc0(jb + (jsp-1)*n_aer)
   enddo
 enddo
-1001 format(A10," : ",ES10.2)
+1001 format(A20," : ",ES10.2)
 
-end subroutine
+end subroutine atleca
 

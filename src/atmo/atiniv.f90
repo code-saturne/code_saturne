@@ -53,7 +53,7 @@ use ppincl
 use atincl
 use mesh
 use atchem
-use siream
+use sshaerosol
 use field
 
 !===============================================================================
@@ -151,17 +151,10 @@ if (ifilechemistry.ge.1) then
   !==========
   ( imode)
 
-  ! Computation of the conversion factor matrix used for
-  ! the reaction rates jaccobian matrix
-  do ii = 1, nespg
-    do k = 1, nespg
-      conv_factor_jac((chempoint(k)-1)*nespg+chempoint(ii)) = dmmk(ii)/dmmk(k)
-    enddo
-  enddo
-
   ! Volume initilization with profiles for species present
   ! in the chemical profiles file
   if (isuite.eq.0 .or. (isuite.ne.0.and.init_at_chem.eq.1)) then
+
     do k = 1, nespgi
       call field_get_val_s(ivarfl(isca(isca_chem(idespgi(k)))), cvar_despgi)
 
@@ -177,24 +170,41 @@ if (ifilechemistry.ge.1) then
 
     enddo
   endif
+
+endif
+
+! Atmospheric gaseous chemistry
+if (ichemistry.ge.1) then
+
+  ! Computation of the conversion factor matrix used for
+  ! the reaction rates jaccobian matrix
+  do ii = 1, nespg
+    do k = 1, nespg
+      conv_factor_jac((chempoint(k)-1)*nespg+chempoint(ii)) = dmmk(ii)/dmmk(k)
+    enddo
+  enddo
+
 endif
 
 ! Atmospheric aerosol chemistry
-if (iaerosol.eq.1) then
+if (iaerosol.ge.1) then
 
-  ! Reading intial concentrations and numbers
+  ! Reading intial concentrations and numbers from file
+  !   or from the aerosol library
   call atleca()
 
   ! Initialization
-  if (init_at_chem.eq.1) then
-    do ii = 1, nesp_aer*nbin_aer + nbin_aer
-      isc = (isca_chem(1) - 1) + nespg_siream + ii
+  if (isuite.eq.0 .or. (isuite.ne.0.and.init_at_chem.eq.1)) then
+    do ii = 1, nlayer_aer*n_aer + n_aer
+      isc = isca_chem(nespg + ii)
       call field_get_val_s(ivarfl(isca(isc)), cvar_sc)
       do iel = 1, ncel
         cvar_sc(iel) = dlconc0(ii)
       enddo
     enddo
   endif
+
+  ! Do not free memory allocated in atleca, dlconc0 is used in attycl
 
 endif
 

@@ -66,7 +66,6 @@ use field
 use post
 use atchem
 use atimbr
-use siream
 use ptrglo
 use turbomachinery
 use cs_c_bindings
@@ -403,10 +402,6 @@ if (ippmod(iatmos).ge.0) then
 
   if (ifilechemistry.ge.1) then
     call init_chemistry
-  endif
-
-  if (iaerosol.eq.1) then
-    call init_aerosols
   endif
 
 endif

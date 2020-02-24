@@ -45,7 +45,6 @@ subroutine solvlin (kindlu,dla,dlalu,dlx,dlb)
 !===============================================================================
 
 use atchem
-use siream
 
 implicit none
 
@@ -84,13 +83,8 @@ if (kindlu .eq. 0) then
     call lu_decompose_2(nespg,dlalu)
     call lu_solve_2(nespg,dlalu,dlx)
   else if (ichemistry.eq.3) then
-    if (iaerosol.eq.1) then
-      call lu_decompose_siream(nespg,dlalu)
-      call lu_solve_siream(nespg,dlalu,dlx)
-    else
-      call lu_decompose_3(nespg,dlalu)
-      call lu_solve_3(nespg,dlalu,dlx)
-    endif
+    call lu_decompose_3(nespg,dlalu)
+    call lu_solve_3(nespg,dlalu,dlx)
   else if (ichemistry.eq.4) then
     call lu_decompose(nespg,dlalu)
     call lu_solve(nespg,dlalu,dlx)
@@ -101,11 +95,7 @@ else
   else if (ichemistry.eq.2) then
     call lu_solve_2(nespg,dlalu,dlx)
   else if (ichemistry.eq.3) then
-    if (iaerosol.eq.1) then
-      call lu_solve_siream(nespg,dlalu,dlx)
-    else
-      call lu_solve_3(nespg,dlalu,dlx)
-    endif
+    call lu_solve_3(nespg,dlalu,dlx)
   else if (ichemistry.eq.4) then
     call lu_solve(nespg,dlalu,dlx)
   endif

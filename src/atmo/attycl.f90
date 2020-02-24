@@ -84,7 +84,7 @@ use field
 use atincl
 use atchem
 use atimbr
-use siream
+use sshaerosol
 use cs_c_bindings
 
 !===============================================================================
@@ -486,8 +486,8 @@ if (iaerosol.eq.1) then
      izone = izfppp(ifac)
 
       if (iprofa(izone).eq.1) then
-        do jsp = 1, nesp_aer*nbin_aer+nbin_aer
-          isc = (isca_chem(1) - 1)  + nespg_siream + jsp
+        do jsp = 1, nlayer_aer*n_aer+n_aer
+          isc = isca_chem(nespg + jsp)
           if (rcodcl(ifac,isca(isc),1).gt.0.5d0*rinfin) &
               rcodcl(ifac,isca(isc),1) = dlconc0(jsp)
         enddo
@@ -495,8 +495,8 @@ if (iaerosol.eq.1) then
 
       ! For other species zero dirichlet conditions are imposed,
       ! unless they have already been treated earlier (eg, in usatcl)
-      do ii = 1, nesp_aer*nbin_aer+nbin_aer
-        isc = (isca_chem(1) - 1)  + nespg_siream + ii
+      do ii = 1, nlayer_aer*n_aer+n_aer
+        isc = isca_chem(nespg + ii)
         if (rcodcl(ifac,isca(isc),1).gt.0.5d0*rinfin) &
             rcodcl(ifac,isca(isc),1) = 0.0d0
       enddo
@@ -505,8 +505,8 @@ if (iaerosol.eq.1) then
        ! (for example species not present in the third gaseous scheme,
        ! which can be treated in usatcl of with the file chemistry)
        ! zero dirichlet conditions are imposed
-       do ii = 1, nespg_siream
-        isc = (isca_chem(1) - 1)  + ii
+       do ii = 1, nespg
+        isc = isca_chem(ii)
         if (rcodcl(ifac,isca(isc),1).gt.0.5d0*rinfin) &
             rcodcl(ifac,isca(isc),1) = 0.0d0
        enddo

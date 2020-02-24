@@ -57,6 +57,7 @@ use ppppar
 use atincl
 use numvar
 use atchem
+use sshaerosol, only : init_gas_with_lib, sshaerosol_get_gas
 
 implicit none
 
@@ -207,122 +208,167 @@ else
   read(impmec,*,err=999,end=999) xchem(itp), ychem(itp)
 endif
 
-!===============================================================================
-! 4. reading the number of species initialized by the chemistry file
-!===============================================================================
+if (init_gas_with_lib) then
+
+  !===============================================================================
+  ! 4a. set the number of species initialized
+  !===============================================================================
+
+  if (imode.eq.0) then
+    nespgi = nespg
+  endif
+
+  !===============================================================================
+  ! 5a. read the values of the species initialized
+  !===============================================================================
+
+  if (imode.ne.0) then
+    do ii = 1, nespgi
+      idespgi(ii) = ii
+    enddo
+  endif
+
+  !===============================================================================
+  ! 6a. read the concentrations
+  !===============================================================================
+
+  if (imode.eq.0) then
+
+    nbchmz = 1
+    nbchim = 1
+    return
+
+  else
+
+    call sshaerosol_get_gas(espnum)
+
+    ! Conversion from microg / m^3 to ppm
+    do ii = 1, nespgi
+      espnum(ii) = espnum(ii) / (1.d-3 * ro0)
+    enddo
+
+  endif
+
+else
+
+  !===============================================================================
+  ! 4b. reading the number of species initialized by the chemistry file
+  !===============================================================================
 
  107  read (impmec,'(a80)',err=999,end=999) ccomnt
 
-if (ccomnt(1:1).eq.csaute) go to 107
-backspace(impmec)
+  if (ccomnt(1:1).eq.csaute) go to 107
+  backspace(impmec)
 
 
-if (imode.eq.0) then
-  read (impmec,*,err=999,end=999) nespgi
-  ! If nespgi < 0, we will read labels
-  ! If nepsgi > 0, we will read scalar ids (default)
-  if (nespgi < 0) then
-    nespgi = - nespgi
-    switch_to_labels = .true.
+  if (imode.eq.0) then
+    read (impmec,*,err=999,end=999) nespgi
+    ! If nespgi < 0, we will read labels
+    ! If nepsgi > 0, we will read scalar ids (default)
+    if (nespgi < 0) then
+      nespgi = - nespgi
+      switch_to_labels = .true.
+    else
+     switch_to_labels = .false.
+    endif
+    if (nespgi.gt.size(isca_chem)) then
+      write(nfecra,8002) size(isca_chem), nespgi
+      call csexit (1)
+      !==========
+    endif
   else
-   switch_to_labels = .false.
+    read (impmec,*,err=999,end=999)
   endif
-  if (nespgi.gt.size(isca_chem)) then
-    write(nfecra,8002) size(isca_chem), nespgi
-    call csexit (1)
-    !==========
-  endif
-else
-  read (impmec,*,err=999,end=999)
-endif
 
-!===============================================================================
-! 5. reading the species initialized by the chemistry file
-!===============================================================================
-if (nespgi.ge.1) then
+  if (nespgi.ge.1) then
+
+    !===============================================================================
+    ! 5b. reading the species initialized by the chemistry file, only if nespgi > 1
+    !===============================================================================
 
  108  read(impmec,'(a80)',err=999,end=999) ccomnt
 
-  if(ccomnt(1:1).eq.csaute) go to 108
-  backspace(impmec)
+    if(ccomnt(1:1).eq.csaute) go to 108
+    backspace(impmec)
 
-
-  if (imode.eq.0) then
-    read(impmec,*,err=999,end=999)
-  else
-    if (switch_to_labels) then
-       allocate(labels(nespgi))
-       read(impmec,*,err=999,end=999) labels
-
-       do ii = 1, nespgi
-
-         ! Initialize idespgi
-         idespgi(ii) = -1
-
-         ! Find the field matching the given label
-         ! Update idespgi and break innermost for loop
-         do k = 1, nespg
-           call field_get_label(ivarfl(isca(isca_chem(k))),fname)
-           if (trim(labels(ii)).eq.fname) then
-             idespgi(ii) = k
-             exit
-           endif
-         enddo
-
-         ! Verification
-         if (idespgi(ii).lt.1 .or. idespgi(ii).gt.size(isca_chem)) then
-           write(nfecra,8003) labels(ii)
-           call csexit (1)
-           !==========
-         endif
-
-       enddo
-
-       deallocate(labels)
-
+    if (imode.eq.0) then
+      read(impmec,*,err=999,end=999)
     else
-      read(impmec,*,err=999,end=999) idespgi(1:nespgi)
-    endif
-  endif
+      if (switch_to_labels) then
+        allocate(labels(nespgi))
+        read(impmec,*,err=999,end=999) labels
 
-!===============================================================================
-! 6. reading the concentration profiles
-!===============================================================================
+        do ii = 1, nespgi
+
+          ! Initialize idespgi
+          idespgi(ii) = -1
+
+          ! Find the field matching the given label
+          ! Update idespgi and break innermost for loop
+          do k = 1, nespg
+            call field_get_label(ivarfl(isca(isca_chem(k))),fname)
+            if (trim(labels(ii)).eq.fname) then
+              idespgi(ii) = k
+              exit
+            endif
+          enddo
+
+          ! Verification
+          if (idespgi(ii).lt.1 .or. idespgi(ii).gt.size(isca_chem)) then
+            write(nfecra,8003) labels(ii)
+            call csexit (1)
+            !==========
+          endif
+
+        enddo
+
+        deallocate(labels)
+
+      else
+        read(impmec,*,err=999,end=999) idespgi(1:nespgi)
+      endif
+    endif
+
+    !===============================================================================
+    ! 6b. reading the concentration profiles, only if nespgi >= 1
+    !===============================================================================
 
 109 read(impmec,'(a80)',err=999,end=999) ccomnt
 
-  if(ccomnt(1:1).eq.csaute) go to 109
-  backspace(impmec)
+    if(ccomnt(1:1).eq.csaute) go to 109
+    backspace(impmec)
 
-  if (imode.eq.0) then
-    read(impmec,*,err=999,end=999) nbchmz
-    if(nbchmz.le.1) then
-      write(nfecra,8001)
-      call csexit (1)
-    endif
+    if (imode.eq.0) then
+      read(impmec,*,err=999,end=999) nbchmz
+      if(nbchmz.le.1) then
+        write(nfecra,8001)
+        call csexit (1)
+      endif
 
-    do ii = 1, nbchmz
-      read (impmec,*,err=999,end=999)
-    enddo
-
-  else
-
-    read(impmec,*,err=999,end=999)
-
-    do ii = 1, nbchmz
-
-      !     Altitudes and concentrations of every nespgi scpecies
-      read (impmec,*,err=999,end=999) zconctemp
-
-      zproc(ii) = zconctemp(1)
-      do k = 2, nespgi+1
-        espnum(ii+(itp-1)*nbchmz+(k-2)*nbchmz*nbchim) = zconctemp(k)
+      do ii = 1, nbchmz
+        read (impmec,*,err=999,end=999)
       enddo
 
-    enddo
-  endif
+    else
 
-endif ! fin test nespgi
+      read(impmec,*,err=999,end=999)
+
+      do ii = 1, nbchmz
+
+        !     Altitudes and concentrations of every nespgi scpecies
+        read (impmec,*,err=999,end=999) zconctemp
+
+        zproc(ii) = zconctemp(1)
+        do k = 2, nespgi+1
+          espnum(ii+(itp-1)*nbchmz+(k-2)*nbchmz*nbchim) = zconctemp(k)
+        enddo
+
+      enddo
+    endif
+
+  endif ! fin test nespgi
+
+endif ! fin test init_gas_with_lib
 
 !===============================================================================
 ! 7. logging

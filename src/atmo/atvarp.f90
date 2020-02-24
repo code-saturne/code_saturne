@@ -57,7 +57,7 @@ use ppincl
 use atincl
 use atchem
 use field
-use siream
+use sshaerosol
 use cs_c_bindings
 
 !===============================================================================
@@ -68,9 +68,6 @@ implicit none
 
 integer        ii, jj, isc, f_id
 integer        kscmin, kscmax
-character(len=80) :: name, label
-character(len=2) :: nbin
-character(len=10), dimension(nesp_aer) :: f_esp_siream
 
 integer(c_int) :: n_chem_species
 integer(c_int), dimension(:), allocatable :: species_f_id
@@ -157,11 +154,11 @@ endif
 
 ! Atmospheric gaseous chemistry
 ! Do not change this order
-if (iaerosol.eq.1) ichemistry = 3
+if (iaerosol.ge.1) ichemistry = 4
 ! if a chemical scheme is solved, a concentration profiles
 ! file must be used
 if (ichemistry.ge.1) ifilechemistry = ichemistry
-if (inogaseouschemistry.eq.1) ichemistry = 0
+if (nogaseouschemistry .and. iaerosol.eq.0) ichemistry = 0
 
 if (ifilechemistry.ge.1) then
 
@@ -241,13 +238,8 @@ if (ifilechemistry.ge.1) then
 
   ! scheme CB05 with 52 species and 155 reactions
   else if (ifilechemistry.eq.3) then
-    if (iaerosol.eq.1) then
-      nrg = 162
-      nespg = 65
-    else
-      nrg = 155
-      nespg = 52
-    endif
+    nrg = 155
+    nespg = 52
 
     ! Map isca_chem, dmmk, chempoint and allocate it if needed
     call init_chemistry_pointers()
@@ -356,51 +348,10 @@ if (ifilechemistry.ge.1) then
     dmmk(50)=64.06d0   ! Molar mass (g/mol) SO2
     dmmk(51)=98.08d0   ! Molar mass (g/mol) H2SO4
     dmmk(52)=63.03d0   ! Molar mass (g/mol) HCO3
-    if (iaerosol.eq.1) then
-      call add_model_scalar_field('species_hc8',      'HC8',      isca_chem(53))
-      call add_model_scalar_field('species_api',      'API',      isca_chem(54))
-      call add_model_scalar_field('species_lim',      'LIM',      isca_chem(55))
-      call add_model_scalar_field('species_cvar01',   'CVARO1',   isca_chem(56))
-      call add_model_scalar_field('species_cvar02',   'CVARO2',   isca_chem(57))
-      call add_model_scalar_field('species_cvalk1',   'CVALK1',   isca_chem(58))
-      call add_model_scalar_field('species_cvole1',   'CVOLE1',   isca_chem(59))
-      call add_model_scalar_field('species_cvapi1',   'CVAPI1',   isca_chem(60))
-      call add_model_scalar_field('species_cvapi2',   'CVAPI2',   isca_chem(61))
-      call add_model_scalar_field('species_cvlim1',   'CVLIM1',   isca_chem(62))
-      call add_model_scalar_field('species_cvlim2',   'CVLIM2',   isca_chem(63))
-      call add_model_scalar_field('species_nh3',      'NH3',      isca_chem(64))
-      call add_model_scalar_field('species_hcl',      'HCL',      isca_chem(65))
-      call add_model_scalar_field('species_cvbibmp',  'CVBIBMP',  isc)
-      call add_model_scalar_field('species_cvanclp',  'CVANCLP',  isc)
-      call add_model_scalar_field('species_cvbiiso1', 'CVBIISO1', isc)
-      call add_model_scalar_field('species_cvbiiso2', 'CVBIISO2', isc)
-      dmmk(53)=114.0d0   ! Molar mass (g/mol) HC8
-      dmmk(54)=136.0d0   ! Molar mass (g/mol) API
-      dmmk(55)=136.0d0   ! Molar mass (g/mol) LIM
-      dmmk(56)=150.0d0   ! Molar mass (g/mol) CVARO1
-      dmmk(57)=150.0d0   ! Molar mass (g/mol) CVARO2
-      dmmk(58)=140.0d0   ! Molar mass (g/mol) CVALK1
-      dmmk(59)=140.0d0   ! Molar mass (g/mol) CVOLE1
-      dmmk(60)=184.0d0   ! Molar mass (g/mol) CVAPI1
-      dmmk(61)=184.0d0   ! Molar mass (g/mol) CVAPI2
-      dmmk(62)=200.0d0   ! Molar mass (g/mol) CVLIM1
-      dmmk(63)=200.0d0   ! Molar mass (g/mol) CVLIM2
-      dmmk(64)=17.0d0    ! Molar mass (g/mol) NH3
-      dmmk(65)=36.5d0    ! Molar mass (g/mol) HCL
-    endif
-    if (iaerosol.eq.1) then
-      chempoint = (/ 64, 65, 59, 57, 3, 55, 61, 20, 56, 16, 23, 50,&
-                     17, 51, 54, 60, 62, 13, 48, 58, 18, 63, 52, 46,&
-                     4, 5, 53, 14, 22, 35, 6, 32, 49, 33, 47, 19, 34,&
-                     36, 37, 44, 45, 39, 7, 8, 40, 15, 41, 43, 42, 9,&
-                     10, 21, 11, 24, 27, 30, 31, 12, 38, 25, 26, 28, 29,&
-                     1, 2 /)
-    else
-      chempoint = (/ 48, 52, 47, 43, 1, 42, 50, 17, 44, 9, 15, 38, 13, 37,&
-                     41, 45, 51, 10, 35, 46, 14, 49, 39, 33, 2, 3, 40, 11,&
-                     19, 20, 4, 21, 36, 22, 34, 16, 23, 24, 25, 31, 32, 26,&
-                     5, 6, 27, 12, 28, 30, 29, 7, 8, 18 /)
-    endif
+    chempoint = (/ 48, 52, 47, 43, 1, 42, 50, 17, 44, 9, 15, 38, 13, 37,&
+                   41, 45, 51, 10, 35, 46, 14, 49, 39, 33, 2, 3, 40, 11,&
+                   19, 20, 4, 21, 36, 22, 34, 16, 23, 24, 25, 31, 32, 26,&
+                   5, 6, 27, 12, 28, 30, 29, 7, 8, 18 /)
 
   ! User defined chemistry using SPACK file and routines
   else if (ifilechemistry.eq.4) then
@@ -431,50 +382,40 @@ if (ifilechemistry.ge.1) then
 endif
 
 ! Atmospheric aerosol chemistry
-if (iaerosol.eq.1) then
-
-  write (nfecra,*) "Atmospheric aerosol chemistry activated"
+if (iaerosol.ge.1) then
 
   ! logical unit and name of the chemical profiles file
   impmea=28
   ficmea='aerosols'
 
-  ! 4 species not followed in gaseous scheme 3 but necessary to siream
-  nespg_siream=nespg+4
-
   ! Verification
-  if (ifilechemistry.ne.3) then
+  if (ifilechemistry.ne.4) then
     write(nfecra,1004)
     call csexit (1)
   endif
 
-  ! Filling the names array
-  esp_siream=(/'MD    ', 'BC    ', 'NA    ', 'H2SO4 ', 'NH3   ', 'HNO3  ',&
- 'HCL   ','ARO1  ', 'ARO2  ', 'ALK1  ', 'OLE1  ', 'API1  ', 'API2  ',&
- 'LIM1  ', 'LIM2  ', 'ANCLP ', 'BIISO1', 'BIISO2',&
- 'BIBMP ', 'POA   ', 'H2O   '/)
+  ! Load shared library
+  ! Initialise external aerosol code
+  ! Create variables
+  call cs_atmo_aerosol_initialize()
 
-  f_esp_siream=(/'md    ', 'bc    ', 'na    ', 'h2so4 ', 'nh3   ', 'hno3  ',&
- 'hcl   ','aro1  ', 'aro2  ', 'alk1  ', 'ole1  ', 'api1  ', 'api2  ',&
- 'lim1  ', 'lim2  ', 'anclp ', 'biiso1', 'biiso2',&
- 'bibmp ', 'poa   ', 'h2o   '/)
+  ! Remap pointers following bft_realloc when initializing aerosols
+  call init_aerosol_pointers()
 
-  do jj = 1, nesp_aer
-    do ii = 1, nbin_aer
-      write(nbin,"(i2)") ii
-      name = 'species_'//trim(f_esp_siream(jj))//'_bin'//trim(adjustl(nbin))
-      label = trim(esp_siream(jj))//'_bin'//trim(adjustl(nbin))
-      call add_model_scalar_field(name, label,  isc)
-    enddo
+endif
+
+! Set clippings for gas and aerosol species
+if (ichemistry.ge.1) then
+  do ii = 1, nespg
+    f_id = ivarfl(isca(isca_chem(ii)))
+    call field_set_key_double(f_id, kscmin, 0.d0)
   enddo
-
-  do ii = 1, nbin_aer
-    write(nbin,"(i2)") ii
-    name = 'species_'//'naero_bin'//trim(adjustl(nbin))
-    label = 'Naero_bin'//trim(adjustl(nbin))
-    call add_model_scalar_field(name, label,  isc)
+endif
+if (iaerosol.ge.1) then
+  do ii = nespg + 1, nespg + n_aer * (nlayer_aer + 1)
+    f_id = ivarfl(isca(isca_chem(ii)))
+    call field_set_key_double(f_id, kscmin, 0.d0)
   enddo
-
 endif
 
 !===============================================================================

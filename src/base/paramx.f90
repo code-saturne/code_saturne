@@ -46,7 +46,7 @@ module paramx
   !> maximal number of variables = nscamx + 12 (u,v,w,P,Rij,e,alp)
   integer   nvarmx
 
-  parameter(nscamx=200)
+  parameter(nscamx=500)
   parameter(nvarmx=nscamx+12)
 
   !> Maximal possible boundary condition types

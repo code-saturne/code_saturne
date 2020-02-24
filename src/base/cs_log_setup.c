@@ -41,6 +41,7 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_atmo.h"
 #include "cs_base.h"
 #include "cs_boundary.h"
 #include "cs_boundary_zone.h"
@@ -135,6 +136,12 @@ _log_global_model_options(void)
 
   /* Stokes model*/
   cs_stokes_model_log_setup();
+
+  /* Atmospheric chemistry */
+  cs_atmo_chemistry_log_setup();
+
+  /* Atmospheric aerosols */
+  cs_atmo_aerosol_log_setup();
 
   /* TODO : Partie iroext etc... */
 

@@ -67,7 +67,7 @@ use cplsat
 use field
 use atincl, only: init_at_chem
 use atchem, only: ichemistry
-use siream, only: iaerosol
+use sshaerosol, only: iaerosol
 use mesh
 use cs_c_bindings
 use cs_nz_condensation, only:izzftcd, nztag1d, ztpar

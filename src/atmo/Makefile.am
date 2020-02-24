@@ -56,11 +56,12 @@ AM_LDFLAGS =
 
 pkginclude_HEADERS = \
 cs_air_props.h \
-cs_at_plugin.h \
 cs_at_opt_interp.h \
 cs_at_data_assim.h \
 cs_atmo.h \
-cs_atmo_headers.h
+cs_atmo_headers.h \
+cs_atmo_aerosol.h \
+cs_atmo_aerosol_ssh.h
 
 # Library source files
 
@@ -82,19 +83,18 @@ atr1vf.f90 \
 attssc.f90 \
 attycl.f90 \
 atvarp.f90 \
-chem_luscheme_siream.f90 \
 chem_luscheme1.f90 \
 chem_luscheme2.f90 \
 chem_luscheme3.f90 \
 chem_solvelu.f90 \
 chem_source_terms.f90 \
 compute_gaseous_chemistry.f90 \
-compute_siream.f90 \
 cs_air_props.c \
-cs_at_plugin.c \
 cs_at_opt_interp.c \
 cs_at_data_assim.c \
 cs_atmo.c \
+cs_atmo_aerosol.c \
+cs_atmo_aerosol_ssh.c \
 cs_at_source_terms.f90 \
 etheq.f90  \
 intprf.f90 \
@@ -104,7 +104,7 @@ rayigc.f90 \
 rayir.f90 \
 rayive.f90 \
 rayso.f90 \
-roschem.f90 \
+chem_roschem.f90 \
 solcat.f90 \
 soliva.f90 \
 solmoy.f90 \

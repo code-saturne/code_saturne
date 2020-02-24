@@ -39,6 +39,10 @@
 #include <mpi.h>
 #endif
 
+#if defined(HAVE_DLOPEN)
+#include <dlfcn.h>
+#endif
+
 /*----------------------------------------------------------------------------
  * PLE library headers
  *----------------------------------------------------------------------------*/
@@ -76,6 +80,7 @@
 #include "cs_post.h"
 #include "cs_restart.h"
 #include "cs_selector.h"
+#include "cs_thermal_model.h"
 #include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
@@ -83,6 +88,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_atmo.h"
+#include "cs_atmo_aerosol.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -119,11 +125,19 @@ static cs_atmo_chemistry_t _atmo_chem = {
   .model = 0,
   .n_species = 0,
   .n_reactions = 0,
+  .chemistry_with_photolysis = true,
+  .model_aerosol = CS_ATMO_AEROSOL_OFF,
+  .frozen_gas_chem = false,
+  .init_gas_with_lib = false,
+  .init_aero_with_lib = false,
+  .n_layer = 0,
+  .n_size = 0,
   .spack_file_name = NULL,
   .species_to_scalar_id = NULL,
   .species_to_field_id = NULL,
   .molar_mass = NULL,
-  .chempoint = NULL
+  .chempoint = NULL,
+  .aero_file_name = NULL
 };
 
 /*============================================================================
@@ -131,7 +145,16 @@ static cs_atmo_chemistry_t _atmo_chem = {
  *============================================================================*/
 
 cs_atmo_option_t *cs_glob_atmo_option = &_atmo_option;
+
 cs_atmo_chemistry_t *cs_glob_atmo_chemistry = &_atmo_chem;
+
+static const char *cs_atmo_aerosol_type_enum_name[]
+  = {"CS_ATMO_AEROSOL_OFF",
+     "CS_ATMO_AEROSOL_SSH"};
+
+static const char *cs_atmo_aerosol_type_name[]
+  = {N_("No atmospheric aerosol"),
+     N_("Atmospheric aerosol using external code SSH-aerosol")};
 
 /*============================================================================
  * Prototypes for functions intended for use only by Fortran wrappers.
@@ -152,7 +175,14 @@ cs_f_atmo_get_pointers(int       **syear,
                        int       **nucleation_model,
                        int       **model,
                        int       **n_species,
-                       int       **n_reactions);
+                       int       **n_reactions,
+                       bool      **chemistry_with_photolysis,
+                       int       **model_aerosol,
+                       bool      **frozen_gas_chem,
+                       bool      **init_gas_with_lib,
+                       bool      **init_aero_with_lib,
+                       int       **n_layer,
+                       int       **n_size);
 
 void
 cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
@@ -187,7 +217,14 @@ cs_f_atmo_get_pointers(int       **syear,
                        int       **nucleation_model,
                        int       **model,
                        int       **n_species,
-                       int       **n_reactions)
+                       int       **n_reactions,
+                       bool      **chemistry_with_photolysis,
+                       int       **model_aerosol,
+                       bool      **frozen_gas_chem,
+                       bool      **init_gas_with_lib,
+                       bool      **init_aero_with_lib,
+                       int       **n_layer,
+                       int       **n_size)
 {
   *syear     = &(_atmo_option.syear);
   *squant    = &(_atmo_option.squant);
@@ -203,6 +240,13 @@ cs_f_atmo_get_pointers(int       **syear,
   *model = &(_atmo_chem.model);
   *n_species = &(_atmo_chem.n_species);
   *n_reactions = &(_atmo_chem.n_reactions);
+  *chemistry_with_photolysis = &(_atmo_chem.chemistry_with_photolysis);
+  *model_aerosol = &(_atmo_chem.model_aerosol);
+  *frozen_gas_chem = &(_atmo_chem.frozen_gas_chem);
+  *init_gas_with_lib = &(_atmo_chem.init_gas_with_lib);
+  *init_aero_with_lib = &(_atmo_chem.init_aero_with_lib);
+  *n_layer = &(_atmo_chem.n_layer);
+  *n_size = &(_atmo_chem.n_size);
 }
 
 void
@@ -223,6 +267,7 @@ cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
   *species_to_scalar_id = (_atmo_chem.species_to_scalar_id);
   *molar_mass = (_atmo_chem.molar_mass);
   *chempoint = (_atmo_chem.chempoint);
+
 }
 
 void
@@ -239,11 +284,17 @@ cs_f_atmo_chem_initialize_species_to_fid(int *species_fid)
 void
 cs_f_atmo_chem_finalize(void)
 {
+
+  if (_atmo_chem.model_aerosol != CS_ATMO_AEROSOL_OFF)
+    cs_atmo_aerosol_finalize();
+
   BFT_FREE(_atmo_chem.species_to_scalar_id);
   BFT_FREE(_atmo_chem.species_to_field_id);
   BFT_FREE(_atmo_chem.molar_mass);
   BFT_FREE(_atmo_chem.chempoint);
   BFT_FREE(_atmo_chem.spack_file_name);
+  BFT_FREE(_atmo_chem.aero_file_name);
+
 }
 
 /*============================================================================
@@ -501,6 +552,32 @@ cs_atmo_chemistry_set_spack_file_name(const char *file_name)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief This function sets the file name to initialize the aerosol library.
+ *
+ * \param[in] file_name  name of the file.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_chemistry_set_aerosol_file_name(const char *file_name)
+{
+  if (file_name == NULL) {
+    _atmo_chem.model_aerosol = CS_ATMO_AEROSOL_OFF;
+    return;
+  }
+
+  _atmo_chem.model_aerosol = CS_ATMO_AEROSOL_SSH;
+
+  BFT_MALLOC(_atmo_chem.aero_file_name,
+             strlen(file_name) + 1,
+             char);
+
+  sprintf(_atmo_chem.aero_file_name, "%s", file_name);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief This function declares additional transported variables for
  *        atmospheric module for the chemistry defined from SPACK.
  */
@@ -694,6 +771,114 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
     + 0.000719*cos(2.*t00) + 0.000077*sin(2.*t00);
   *fo *= corfo;
 
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print the atmospheric chemistry options to setup.log.
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_atmo_chemistry_log_setup(void)
+{
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("\nAtmospheric chemistry options\n"
+       "---------------------\n\n"));
+
+  if (cs_glob_atmo_chemistry->model == 0) {
+
+    /* No atmospheric chemistry */
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("  No atmospheric chemistry\n\n"));
+
+  } else if (cs_glob_atmo_chemistry->model == 1
+             || cs_glob_atmo_chemistry->model == 2
+             || cs_glob_atmo_chemistry->model == 3) {
+
+    /* Pre-defined schemes */
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("  Atmospheric chemistry activated\n\n"
+         "    Pre-defined scheme %12d\n\n"
+         "      n_species: %18d (Number of species)\n"
+         "      n_reactions: %16d (Number of reactions)\n"
+         "      photolysis: %17s\n"
+         "      frozen_gas_chem: %12s\n\n"),
+       cs_glob_atmo_chemistry->model,
+       cs_glob_atmo_chemistry->n_species,
+       cs_glob_atmo_chemistry->n_reactions,
+       cs_glob_atmo_chemistry->chemistry_with_photolysis ? "Yes": "No",
+       cs_glob_atmo_chemistry->frozen_gas_chem ? "Yes": "No");
+
+  } else if (cs_glob_atmo_chemistry->model == 4) {
+
+    /* User defined SPACK chemistry */
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("  Atmospheric chemistry activated\n\n"
+         "    User-defined SPACK scheme\n\n"
+         "      n_species: %18d (Number of species)\n"
+         "      n_reactions: %16d (Number of reactions)\n"
+         "      photolysis: %17s\n"
+         "      frozen_gas_chem: %12s\n"
+         "      Spack file: %17s\n"),
+       cs_glob_atmo_chemistry->n_species,
+       cs_glob_atmo_chemistry->n_reactions,
+       cs_glob_atmo_chemistry->chemistry_with_photolysis ? "Yes": "No",
+       cs_glob_atmo_chemistry->frozen_gas_chem ? "Yes": "No",
+       cs_glob_atmo_chemistry->spack_file_name);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print the atmospheric aerosols options to setup.log.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_aerosol_log_setup(void)
+{
+  cs_log_printf
+    (CS_LOG_SETUP,
+     _("\nAtmospheric aerosols options\n"
+       "---------------------\n\n"));
+  cs_atmo_aerosol_type_t atm_aer_type = cs_glob_atmo_chemistry->model_aerosol;
+
+  if (atm_aer_type == CS_ATMO_AEROSOL_OFF) {
+
+    /* No atmospheric aerosols */
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("  %s\n\n"),
+       cs_atmo_aerosol_type_name[atm_aer_type]);
+
+  }
+
+  else if (atm_aer_type == CS_ATMO_AEROSOL_SSH) {
+
+    /* Atmospheric chemistry with SSH */
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("  Atmospheric aerosols activated\n\n"
+         "    Global parameters\n\n"
+         "      model: %22s (%s)\n"
+         "      n_layer: %20d (Number of layers inside aerosols)\n"
+         "      n_size:  %20d (Number of resolved aerosols)\n"
+         "      init_gas_with_lib: %10s\n"
+         "      init_aero_with_lib: %9s\n"
+         "      namelist: %s\n\n"),
+       cs_atmo_aerosol_type_enum_name[atm_aer_type],
+       cs_atmo_aerosol_type_name[atm_aer_type],
+       cs_glob_atmo_chemistry->n_layer,
+       cs_glob_atmo_chemistry->n_size,
+       cs_glob_atmo_chemistry->init_gas_with_lib ? "Yes": "No",
+       cs_glob_atmo_chemistry->init_aero_with_lib ? "Yes": "No",
+       cs_glob_atmo_chemistry->aero_file_name);
+  }
 }
 
 /*----------------------------------------------------------------------------*/

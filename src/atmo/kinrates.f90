@@ -47,7 +47,6 @@ use mesh
 use field
 use atincl
 use atchem
-use siream
 use cs_c_bindings
 
 implicit none
@@ -56,7 +55,7 @@ implicit none
 
 ! Local variables
 
-integer iel,ii
+integer iel,ii,iphotolysis
 double precision temp, dens          ! temperature, density
 double precision press, hspec        ! pressure, specific humidity (kg/kg)
 double precision rk(nrg)             ! kinetic rates
@@ -79,6 +78,12 @@ temp = t0
 dens = ro0
 press = dens*rair*temp ! ideal gas law
 hspec = 0.0d0
+
+if (photolysis) then
+  iphotolysis = 1
+else
+  iphotolysis = 2
+endif
 
 if (ippmod(iatmos).ge.1) then
   call field_get_val_s(icrom, crom)
@@ -154,11 +159,7 @@ do iel = 1, ncel
   else if (ichemistry.eq.2) then
     call kinetic_2(nrg,rk,temp,hspec,press,azi,1.0d0,iphotolysis)
   else if (ichemistry.eq.3) then
-    if (iaerosol.eq.1) then
-      call kinetic_siream(nrg,rk,temp,hspec,press,azi,1.0d0,iphotolysis)
-    else
-      call kinetic_3(nrg,rk,temp,hspec,press,azi,1.0d0,iphotolysis)
-    endif
+    call kinetic_3(nrg,rk,temp,hspec,press,azi,1.0d0,iphotolysis)
   else if (ichemistry.eq.4) then
     call kinetic_4(nrg,rk,temp,hspec,press,azi,1.0d0,iphotolysis)
   endif

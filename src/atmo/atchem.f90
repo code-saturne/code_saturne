@@ -57,8 +57,8 @@ integer, save :: ifilechemistry
 !> isepchemistry: splitted (=1) or semi-coupled (=2, pu-sun) resolution
 !> of chemistry
 integer, save :: isepchemistry
-!> iphotolysis: inclusion (=1) or not (=2) of photolysis reactions
-integer, save :: iphotolysis
+!> photolysis: inclusion (true) or not (false) of photolysis reactions
+logical(kind=c_bool), pointer, save :: photolysis
 !> Number of chemical species
 integer(c_int), pointer, save :: nespg
 !> Number of chemical reactions
@@ -165,7 +165,7 @@ call cs_f_atmo_chem_initialize_species_to_fid(c_species_to_fid)
 end subroutine cs_atmo_chem_init_c_chemistry
 
 !=============================================================================
-
+!> \brief Map pointers to arrays
 subroutine init_chemistry_pointers
 
   use, intrinsic :: iso_c_binding

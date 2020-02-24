@@ -60,7 +60,7 @@ use ppincl
 use ppcpfu
 use atincl
 use atchem
-use siream
+use sshaerosol
 
 !===============================================================================
 
@@ -654,6 +654,7 @@ enddo
 !===============================================================================
 
 !--> Initialisation for the meteo profile
+
 imeteo = 0
 nbmetd = 0
 nbmett = 0
@@ -679,10 +680,11 @@ iatsoil = 0
 init_at_chem = 1
 
 ! --> Initialisation for the gaseous chemistry model:
+
 ichemistry = 0
 ifilechemistry = 0
 isepchemistry = 2
-iphotolysis = 1
+photolysis = .true.
 nbchim = 0
 nbchmz = 0
 nespgi = 0
@@ -693,39 +695,13 @@ enddo
 
 
 ! --> Initialisation for the aerosol chemistry model:
+
 iaerosol = 0
-inogaseouschemistry = 0
-nespg_siream = 0
-! Number of iterations for time splitting
-ncycle_aer = 1
-! Flag to activate or not coagulation (1=yes, 0=no)
-icoag_siream = 1
-! Flag to activate or not condensation/evaporation (1=yes, 0=no)
-icond_siream = 1
-! Flag to activate or not nucleation (1=yes, 0=no)
-inucl_siream = 1
-! Flag to consider or not kelvin effect (1=yes, 0=no)
-ikelv_siream = 1
-! Cutting bin between equilibrium (1 to icut_siream)
-! and dynamic bins (icut_siream to nbin_aer)
-icut_siream = nbin_aer
-! Sulfate condensation computation method (1=dynamic, 0=equilibrium)
-isulfcond_siream = 1
-! Solver for dynamic condensation (1='etr', 2='ros2', 3='ebi')
-kdslv_siream = 2
-! Redistribution method of lagrangian bins
-! (1=number conserving, 2=interpolation)
-iredist_siream = 1
-! Nucleation model (0=binary, 1=ternary)
-itern_siream = 0
-! Method used for estimation of wet diameter (0=isoropia, 1=gerber)
-ithrm_siream = 1
-! m
-bin_bound_aer = (/0.01d-6, 0.0398d-6, 0.1585d-6, 0.6310d-6, 2.5119d-6, 10.d-6/)
-fixed_density_aer = 1400.0d0 ! kg/m3
-do iii = 1, nbin_aer
-  density_aer(iii) = fixed_density_aer
-enddo
+nogaseouschemistry = .false.
+init_gas_with_lib = .false.
+init_aero_with_lib = .false.
+nlayer_aer = 0
+n_aer = 0
 do izone = 1, nozppm
   iprofa(izone) = 0
 enddo

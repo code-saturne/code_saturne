@@ -2274,13 +2274,57 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief Initialize aerosol external code (shared library)
+
+    subroutine cs_atmo_aerosol_initialize() &
+      bind(C, name='cs_atmo_aerosol_initialize')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_atmo_aerosol_initialize
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Compute gas chemistry + aerosol dynamic with external code
+
+    subroutine cs_atmo_aerosol_time_advance() &
+      bind(C, name='cs_atmo_aerosol_time_advance')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_atmo_aerosol_time_advance
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Get the aerosols concentrations and numbers from aerosol code
+
+    subroutine cs_atmo_aerosol_get_aero(array) &
+      bind(C, name='cs_atmo_aerosol_get_aero')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*), intent(out) :: array
+    end subroutine cs_atmo_aerosol_get_aero
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Get the gas concentrations from aerosol code
+
+    subroutine cs_atmo_aerosol_get_gas(array) &
+      bind(C, name='cs_atmo_aerosol_get_gas')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*), intent(out) :: array
+    end subroutine cs_atmo_aerosol_get_gas
+
+    !---------------------------------------------------------------------------
+
     !> \brief Return pointers to atmo includes
 
     subroutine cs_f_atmo_get_pointers(syear, squant, shour, smin, ssec, &
         longitude, latitude,                                            &
         compute_z_ground,                                               &
         sedimentation_model, deposition_model, nucleation_model,        &
-        ichemistry, nespg, nrg) &
+        ichemistry, nespg, nrg, chem_with_photo,                        &
+        iaerosol, frozen_gas_chem, init_gas_with_lib,                   &
+        init_aero_with_lib, n_aero, n_sizebin)                          &
       bind(C, name='cs_f_atmo_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -2289,6 +2333,10 @@ module cs_c_bindings
       type(c_ptr), intent(out) :: nucleation_model
       type(c_ptr), intent(out) :: syear, squant, shour, smin, ssec
       type(c_ptr), intent(out) :: longitude, latitude
+      type(c_ptr), intent(out) :: iaerosol, frozen_gas_chem
+      type(c_ptr), intent(out) :: init_gas_with_lib, init_aero_with_lib
+      type(c_ptr), intent(out) :: n_aero, n_sizebin, chem_with_photo
+
     end subroutine cs_f_atmo_get_pointers
 
     !---------------------------------------------------------------------------
@@ -2306,7 +2354,8 @@ module cs_c_bindings
 
     !> \brief Return pointers to atmo chemistry arrays
 
-    subroutine cs_f_atmo_chem_arrays_get_pointers(isca_chem, dmmk, chempoint) &
+    subroutine cs_f_atmo_chem_arrays_get_pointers(isca_chem, dmmk, &
+        chempoint) &
       bind(C, name='cs_f_atmo_chem_arrays_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
@@ -2333,6 +2382,17 @@ module cs_c_bindings
       implicit none
       character(kind=c_char, len=1), dimension(*), intent(in) :: name
     end subroutine cs_atmo_chemistry_set_spack_file_name
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Sets the file name used to initialize the aerosol shared library
+
+    subroutine cs_atmo_chemistry_set_aerosol_file_name(name) &
+      bind(C, name='cs_atmo_chemistry_set_aerosol_file_name')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      character(kind=c_char, len=1), dimension(*), intent(in) :: name
+    end subroutine cs_atmo_chemistry_set_aerosol_file_name
 
     !---------------------------------------------------------------------------
 
@@ -5848,6 +5908,30 @@ contains
     call cs_atmo_chemistry_set_spack_file_name(c_name)
 
   end subroutine atmo_chemistry_set_spack_file_name
+
+  !=============================================================================
+
+  !> \brief Sets the file name used to initialize the aerosol shared library
+
+  !> \param[in]     name      name of the file
+
+  subroutine atmo_chemistry_set_aerosol_file_name(name)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    character(len=*), intent(in) :: name
+
+    ! Local variables
+
+    character(len=len_trim(name)+1, kind=c_char) :: c_name
+
+    c_name = trim(name)//c_null_char
+    call cs_atmo_chemistry_set_aerosol_file_name(c_name)
+
+  end subroutine atmo_chemistry_set_aerosol_file_name
 
   !=============================================================================
 

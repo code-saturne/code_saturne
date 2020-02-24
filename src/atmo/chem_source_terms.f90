@@ -49,6 +49,7 @@ subroutine chem_source_terms &
 ! Module files
 !===============================================================================
 
+!use, intrinsic :: iso_c_binding
 use paramx
 use pointe
 use numvar
@@ -60,7 +61,7 @@ use period
 use mesh
 use field
 use atchem
-use siream
+use sshaerosol
 
 implicit none
 
@@ -74,6 +75,8 @@ double precision crvexp(ncelet), crvimp(ncelet)
 ! Local variables
 
 !  Variables used for computation of the explicit chemical source term
+! integer(kind=c_int) :: c_iscal
+! real(kind=c_double) :: c_crvexp(ncelet)
 integer iel, ii
 double precision dlconc(nespg), source(nespg), dchema(nespg)
 double precision rk(nrg)
@@ -84,6 +87,22 @@ double precision, dimension(:), pointer :: crom
 type(pmapper_double_r1), dimension(:), allocatable :: cvara_espg
 
 !===============================================================================
+
+! If gaseous chemistry is computed with the external library SSH-aerosol
+! The source term was estimated at the beginning of scalai
+! We update the source term and return directly
+if (iaerosol.ge.1) then
+  ! This is not ready yet
+  write(nfecra,*) "Partially coupled chemistry combined with external aerosol library not implemented yet"
+  call csexit(1)
+  ! c_iscal = iscal - isca_chem(1)
+  ! call fexchem_sshaerosol(c_iscal, c_crvexp)
+  ! ! FIXME? The negative part could be put in crvimp
+  ! do iel = 1, ncel
+  !   crvexp(iel) = crvexp(iel) + c_crvexp(iel)
+  ! enddo
+  ! return
+endif
 
 allocate(cvara_espg(nespg))
 
@@ -118,11 +137,7 @@ do iel = 1, ncel
   else if (ichemistry.eq.2) then
     call fexchem_2 (nespg,nrg,dlconc,rk,source,conv_factor,dchema)
   else if (ichemistry.eq.3) then
-    if (iaerosol.eq.1) then
-      call fexchem_siream (nespg,nrg,dlconc,rk,source,conv_factor,dchema)
-    else
-      call fexchem_3 (nespg,nrg,dlconc,rk,source,conv_factor,dchema)
-    endif
+    call fexchem_3 (nespg,nrg,dlconc,rk,source,conv_factor,dchema)
   else if (ichemistry.eq.4) then
     call fexchem_4 (nespg,nrg,dlconc,rk,source,conv_factor,dchema)
   endif

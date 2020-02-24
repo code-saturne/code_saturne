@@ -2,7 +2,7 @@
 #define __CS_ATMO_H__
 
 /*============================================================================
- * Main for cooling towers related functions
+ * Main for atmospheric related functions
  *============================================================================*/
 
 /*
@@ -67,6 +67,14 @@ enum {
   CS_ATMO_NUC_ABDUL_RAZZAK = 3
 };
 
+/*----------------------------------------------------------------------------
+ * Atmospheric aerosol external library
+ *----------------------------------------------------------------------------*/
+
+typedef enum {
+  CS_ATMO_AEROSOL_OFF = 0,
+  CS_ATMO_AEROSOL_SSH = 1
+} cs_atmo_aerosol_type_t;
 
 /*============================================================================
  * Type definitions
@@ -122,12 +130,30 @@ typedef struct {
   int model;
   int n_species;
   int n_reactions;
+  /* Flag to deactivate photolysis */
+  bool chemistry_with_photolysis;
+  /*! Choice of the aerosol model
+       - CS_ATMO_AEROSOL_OFF ---> no aerosol model
+       - CS_ATMO_AEROSOL_SSH ---> external library SSH-aerosol */
+  cs_atmo_aerosol_type_t model_aerosol;
+  /*! Flag to deactivate gaseous chemistry when using aerosols */
+  bool frozen_gas_chem;
+  /*! Flag to initialize gaseous species with the aerosol library */
+  bool init_gas_with_lib;
+  /*! Flag to initialize aerosols species with the aerosol library */
+  bool init_aero_with_lib;
+  /*! Number of layers within each aerosol */
+  int n_layer;
+  /*! Number of aerosols */
+  int n_size;
   char *spack_file_name;
   int *species_to_scalar_id; // used only in fortran
   int *species_to_field_id;
   /*! Molar mass of the chemical species (g/mol) */
   cs_real_t *molar_mass;
   int *chempoint;
+  /*! Name of the file used to initialize the aerosol shared library */
+  char *aero_file_name;
 } cs_atmo_chemistry_t;
 
 /*============================================================================
@@ -154,6 +180,17 @@ extern cs_atmo_chemistry_t *cs_glob_atmo_chemistry;
 
 void
 cs_atmo_chemistry_set_spack_file_name(const char *file_name);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function sets the file name to initialize the aerosol library.
+ *
+ * \param[in] file_name  name of the file.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_chemistry_set_aerosol_file_name(const char *file_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -224,6 +261,24 @@ cs_atmo_compute_solar_angles(cs_real_t xlat,
                              cs_real_t *muzero,
                              cs_real_t *omega,
                              cs_real_t *fo);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print the atmospheric chemistry options to setup.log.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_chemistry_log_setup(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Print the atmospheric aerosols options to setup.log.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_atmo_aerosol_log_setup(void);
 
 /*----------------------------------------------------------------------------*/
 

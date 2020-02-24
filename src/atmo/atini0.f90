@@ -41,8 +41,8 @@ use atincl
 use atsoil
 use atchem
 use atimbr
-use siream
 use field
+use sshaerosol, only : iaerosol, nogaseouschemistry
 
 !===============================================================================
 
@@ -180,11 +180,11 @@ call usati1
 
 ! Atmospheric gaseous chemistry
 ! Do not change this order
-if (iaerosol.eq.1) ichemistry = 3
+if (iaerosol.ge.1) ichemistry = 4
 ! if a chemical scheme is solved, a concentration profiles
 ! file must be used
 if (ichemistry.ge.1) ifilechemistry = ichemistry
-if (inogaseouschemistry.eq.1) ichemistry = 0
+if (nogaseouschemistry .and. iaerosol.eq.0) ichemistry = 0
 
 !--------
 ! Formats

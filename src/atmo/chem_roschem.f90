@@ -20,7 +20,7 @@
 
 !-------------------------------------------------------------------------------
 
-!> \file roschem.f90
+!> \file chem_roschem.f90
 !> \brief Rosenbrock solver for atmospheric chemistry
 !>
 !------------------------------------------------------------------------------
@@ -39,15 +39,14 @@
 !> \param[in]     dlrkf         kinetic rates for second iteration
 !______________________________________________________________________________
 
-subroutine roschem (dlconc,zcsourc,zcsourcf,conv_factor,                      &
-                    dlstep,dlrki,dlrkf)
+subroutine chem_roschem (dlconc,zcsourc,zcsourcf,conv_factor,                 &
+                         dlstep,dlrki,dlrkf)
 
 !===============================================================================
 ! Module files
 !===============================================================================
 
 use atchem
-use siream
 
 implicit none
 
@@ -87,11 +86,7 @@ if (ichemistry.eq.1) then
 else if (ichemistry.eq.2) then
   call fexchem_2 (nespg,nrg,dlconc,dlrki,zcsourc,conv_factor,dlr)
 else if (ichemistry.eq.3) then
-  if (iaerosol.eq.1) then
-    call fexchem_siream (nespg,nrg,dlconc,dlrki,zcsourc,conv_factor,dlr)
-  else
-    call fexchem_3 (nespg,nrg,dlconc,dlrki,zcsourc,conv_factor,dlr)
-  endif
+  call fexchem_3 (nespg,nrg,dlconc,dlrki,zcsourc,conv_factor,dlr)
 else if (ichemistry.eq.4) then
   call fexchem_4 (nespg,nrg,dlconc,dlrki,zcsourc,conv_factor,dlr)
 endif
@@ -104,12 +99,7 @@ if (ichemistry.eq.1) then
 else if (ichemistry.eq.2) then
   call jacdchemdc_2 (nespg,nrg,dlconc,conv_factor,conv_factor_jac,dlrki,dldrdc)
 else if (ichemistry.eq.3) then
-  if (iaerosol.eq.1) then
-    call jacdchemdc_siream (nespg,nrg,dlconc,conv_factor,conv_factor_jac,       &
-                            dlrki,dldrdc)
-  else
-    call jacdchemdc_3 (nespg,nrg,dlconc,conv_factor,conv_factor_jac,dlrki,dldrdc)
-  endif
+  call jacdchemdc_3 (nespg,nrg,dlconc,conv_factor,conv_factor_jac,dlrki,dldrdc)
 else if (ichemistry.eq.4) then
   call jacdchemdc (nespg,nrg,dlconc,conv_factor,conv_factor_jac,dlrki,dldrdc)
 endif
@@ -143,11 +133,7 @@ if (ichemistry.eq.1) then
 else if (ichemistry.eq.2) then
   call fexchem_2 (nespg,nrg,dlconcbis,dlrkf,zcsourcf,conv_factor,dlr)
 else if (ichemistry.eq.3) then
-  if (iaerosol.eq.1) then
-    call fexchem_siream (nespg,nrg,dlconcbis,dlrkf,zcsourcf,conv_factor,dlr)
-  else
-    call fexchem_3 (nespg,nrg,dlconcbis,dlrkf,zcsourcf,conv_factor,dlr)
-  endif
+  call fexchem_3 (nespg,nrg,dlconcbis,dlrkf,zcsourcf,conv_factor,dlr)
 else if (ichemistry.eq.4) then
   call fexchem_4 (nespg,nrg,dlconcbis,dlrkf,zcsourcf,conv_factor,dlr)
 endif
@@ -171,4 +157,4 @@ do ji = 1, nespg
 enddo
 
 return
-end subroutine roschem
+end subroutine chem_roschem

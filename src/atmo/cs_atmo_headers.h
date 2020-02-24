@@ -2,7 +2,7 @@
 #define __CS_ATMO_HEADERS_H__
 
 /*============================================================================
- * Global Code_Saturne headers file for easier include
+ * Atmospheric Code_Saturne header file for easier include
  *============================================================================*/
 
 /*
@@ -34,7 +34,6 @@
 #include "cs_air_props.h"
 #include "cs_at_data_assim.h"
 #include "cs_at_opt_interp.h"
-#include "cs_at_plugin.h"
 #include "cs_atmo.h"
 
 /*----------------------------------------------------------------------------*/

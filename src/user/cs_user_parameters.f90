@@ -322,7 +322,7 @@ use atincl
 use atsoil
 use atchem
 use atimbr
-use siream
+use sshaerosol
 
 !===============================================================================
 

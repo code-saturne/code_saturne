@@ -63,7 +63,7 @@ use cplsat
 use field
 use atincl, only: init_at_chem
 use atchem, only: ichemistry
-use siream, only: iaerosol
+use sshaerosol, only: iaerosol
 use turbomachinery
 use cs_c_bindings
 

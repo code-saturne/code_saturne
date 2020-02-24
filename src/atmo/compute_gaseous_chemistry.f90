@@ -59,7 +59,6 @@ use mesh
 use field
 use dimens
 use atchem
-use siream
 
 implicit none
 
@@ -144,11 +143,7 @@ do iel = 1, ncel
     else if (ichemistry.eq.2) then
       call fexchem_2 (nespg,nrg,dlconc,rk,source,conv_factor,dchema)
     else if (ichemistry.eq.3) then
-      if (iaerosol.eq.1) then
-        call fexchem_siream (nespg,nrg,dlconc,rk,source,conv_factor,dchema)
-      else
-        call fexchem_3 (nespg,nrg,dlconc,rk,source,conv_factor,dchema)
-      endif
+      call fexchem_3 (nespg,nrg,dlconc,rk,source,conv_factor,dchema)
     else if (ichemistry.eq.4) then
       call fexchem_4 (nespg,nrg,dlconc,rk,source,conv_factor,dchema)
     endif
@@ -167,14 +162,14 @@ do iel = 1, ncel
 
   ! The maximum time step used for chemistry resolution is dtchemmax
   if (dtc.le.dtchemmax) then
-    call roschem (dlconc,source,source,conv_factor,dtc,rk,rk)
+    call chem_roschem (dlconc,source,source,conv_factor,dtc,rk,rk)
   else
     ncycle = int(dtc/dtchemmax)
     dtrest = mod(dtc,dtchemmax)
     do ii = 1, ncycle
-      call roschem (dlconc,source,source,conv_factor,dtchemmax,rk,rk)
+      call chem_roschem (dlconc,source,source,conv_factor,dtchemmax,rk,rk)
     enddo
-    call roschem (dlconc,source,source,conv_factor,dtrest,rk,rk)
+    call chem_roschem (dlconc,source,source,conv_factor,dtrest,rk,rk)
   endif
 
   ! Update of values at current time step

@@ -90,6 +90,11 @@ Numerics and physical modelling:
 
 Architectural changes:
 
+- Remove support for atmospheric aerosol library SIREAM. Replaced by the
+  aerosol library SSH-aerosol (EDF - ENPC - INRIA). The latter is released
+  under GNU GPL v3, see https://sshaerosol.wordpress.com/ and
+  https://github.com/sshaerosol/ssh-aerosol/
+
 - Removed localization (French or English), as it was very incomplete
   and limited to a log file.
 
@@ -138,6 +143,8 @@ Architectural changes:
   no compute kernels are added yet.
 
 Default option changes:
+
+- Set clipping at zero for atmospheric chemical species
 
 - Set k-epsilon turbulence models to uncoupled option by default
   (it was already uncoupled by default for all models except standard k-epsilon)

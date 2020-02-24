@@ -79,7 +79,7 @@ atmo/atincl.f90 \
 atmo/atsoil.f90 \
 atmo/atchem.f90 \
 atmo/atimbr.f90 \
-atmo/siream.f90 \
+atmo/sshaerosol.f90 \
 atmo/spefun.f90 \
 cfbl/cfpoin.f90 \
 cfbl/cs_cf_bindings.f90 \
@@ -136,11 +136,12 @@ base/ptrglo.lo: base/paramx.lo base/dimens.lo base/mesh.lo base/numvar.lo \
 base/rotation.lo: base/paramx.lo
 base/turbomachinery.lo:  base/mesh.lo base/cstphy.lo base/cplsat.lo
 atmo/atincl.lo: pprt/ppppar.lo pprt/ppincl.lo base/mesh.lo atmo/atsoil.lo \
- base/cs_c_bindings.lo atmo/atchem.lo
+ base/cs_c_bindings.lo atmo/atchem.lo atmo/sshaerosol.lo
 atmo/atchem.lo: pprt/ppppar.lo base/mesh.lo base/entsor.lo base/numvar.lo \
  base/cs_c_bindings.lo
 atmo/atimbr.lo: base/cstphy.lo base/entsor.lo atmo/atincl.lo
-atmo/siream.lo: pprt/ppppar.lo
+atmo/sshaerosol.lo: pprt/ppppar.lo base/cs_c_bindings.lo atmo/atchem.lo \
+ base/mesh.lo
 atmo/spefun.lo: base/entsor.lo
 cogz/coincl.lo: base/paramx.lo pprt/ppppar.lo pprt/ppincl.lo
 comb/cpincl.lo: pprt/ppppar.lo pprt/ppthch.lo
