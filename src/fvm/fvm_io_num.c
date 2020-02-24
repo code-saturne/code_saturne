@@ -2624,34 +2624,28 @@ fvm_io_num_create_from_scan(size_t  n_entities)
 {
   fvm_io_num_t  *this_io_num = NULL;
 
-  /* Initial checks */
+  /* Create structure */
 
-  if (cs_glob_n_ranks < 2)
-    return NULL;
+  BFT_MALLOC(this_io_num, 1, fvm_io_num_t);
+
+  BFT_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
+  this_io_num->global_num = this_io_num->_global_num;
+
+  this_io_num->global_num_size = n_entities;
 
 #if defined(HAVE_MPI)
-  {
-    size_t  i;
+  if (cs_glob_n_ranks > 1) {
     cs_gnum_t gnum_base = n_entities;
     cs_gnum_t gnum_sum = n_entities;
     cs_gnum_t gnum_shift = 0;
 
     MPI_Comm comm = cs_glob_mpi_comm;
 
-    /* Create structure */
-
-    BFT_MALLOC(this_io_num, 1, fvm_io_num_t);
-
-    BFT_MALLOC(this_io_num->_global_num, n_entities, cs_gnum_t);
-    this_io_num->global_num = this_io_num->_global_num;
-
-    this_io_num->global_num_size = n_entities;
-
     MPI_Scan(&gnum_base, &gnum_shift, 1, CS_MPI_GNUM, MPI_SUM, comm);
 
     gnum_base = gnum_shift - gnum_base + 1;
 
-    for (i = 0; i < n_entities; i++)
+    for (size_t i = 0; i < n_entities; i++)
       this_io_num->_global_num[i] = gnum_base + i;
 
     gnum_base = n_entities;
@@ -2661,6 +2655,13 @@ fvm_io_num_create_from_scan(size_t  n_entities)
     this_io_num->global_count = gnum_sum;
   }
 #endif
+
+  if (cs_glob_n_ranks < 2) {
+    for (size_t i = 0; i < n_entities; i++)
+      this_io_num->_global_num[i] = i+1;
+
+    this_io_num->global_count = n_entities;
+  }
 
   return this_io_num;
 }
