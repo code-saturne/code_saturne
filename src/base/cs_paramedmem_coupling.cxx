@@ -186,7 +186,7 @@ _init_mesh_coupling(cs_paramedmem_coupling_t  *coupling,
 {
   cs_mesh_t *parent_mesh = cs_glob_mesh;
 
-  assert(mesh != NULL);
+  assert(pmesh != NULL);
 
   /* Building the MED representation of the internal mesh */
   cs_medcoupling_mesh_copy_from_base(parent_mesh, pmesh->mesh, 0);
