@@ -156,7 +156,7 @@ cs_user_source_terms(cs_domain_t  *domain,
                      cs_real_t    *st_exp,
                      cs_real_t    *st_imp)
 {
-
+  CS_UNUSED(domain);
 }
 
 /*----------------------------------------------------------------------------*/

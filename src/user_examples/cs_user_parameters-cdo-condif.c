@@ -355,6 +355,8 @@ cs_user_model(void)
 void
 cs_user_parameters(cs_domain_t   *domain)
 {
+  CS_UNUSED(domain);
+
   /* ─────────────────────────────────────────────────────────────────────────
    *  Modify the setting of an equation using a generic process
    *  cf. the DOXYGEN documentation (website or in your installation path)

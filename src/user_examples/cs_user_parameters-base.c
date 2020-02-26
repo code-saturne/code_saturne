@@ -1150,6 +1150,7 @@ cs_user_internal_coupling(void)
 void
 cs_user_finalize_setup(cs_domain_t     *domain)
 {
+  CS_UNUSED(domain);
 
   /* Frequency of log output */
   /*! [setup_log] */

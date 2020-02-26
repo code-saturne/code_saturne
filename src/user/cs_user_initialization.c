@@ -86,7 +86,7 @@ BEGIN_C_DECLS
 void
 cs_user_initialization(cs_domain_t     *domain)
 {
-
+  CS_UNUSED(domain);
 }
 
 /*----------------------------------------------------------------------------*/
