@@ -35,7 +35,7 @@ analysis software [code_aster](https://code-aster.org), in particular in the
 [SALOME platform](https://www.salome-platform.org/). SYRTHES and
 code_aster are developed by EDF and distributed under a GNU GPL licence.
 The atmospheric model can include chemistry modeling based on the
-[SSH-aerosol] (https://sshaerosol.wordpress.com/) library.
+[SSH-aerosol](https://sshaerosol.wordpress.com/) library.
 
 Copying
 =======
