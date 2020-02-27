@@ -42,35 +42,6 @@
 #endif
 
 /*----------------------------------------------------------------------------
- * MEDCOUPLING library headers
- *----------------------------------------------------------------------------*/
-
-#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
-  #define HAVE_MEDCOUPLING_REMAPPER
-#else
-  #undef HAVE_MEDCOUPLING_REMAPPER
-#endif
-
-#if defined(HAVE_MEDCOUPLING_REMAPPER)
-
-#include <MEDCoupling_version.h>
-
-#include <MEDFileMesh.hxx>
-#include <MEDCouplingUMesh.hxx>
-
-#include <MEDFileField1TS.hxx>
-#include <MEDCouplingField.hxx>
-#include <MEDCouplingFieldFloat.hxx>
-#include <MEDCouplingFieldDouble.hxx>
-#include <MEDFileFieldMultiTS.hxx>
-
-#include <MEDCouplingRemapper.hxx>
-
-#include <MEDLoader.hxx>
-
-#endif // HAVE_MEDCOUPLING_REMPAPPER
-
-/*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
@@ -92,7 +63,27 @@
 #include "cs_medcoupling_utils.hxx"
 #include "cs_medcoupling_remapper.hxx"
 
-#if defined(HAVE_MEDCOUPLING_REMAPPER)
+/*----------------------------------------------------------------------------
+ * MEDCOUPLING library headers
+ *----------------------------------------------------------------------------*/
+
+#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
+
+#include <MEDCoupling_version.h>
+
+#include <MEDFileMesh.hxx>
+#include <MEDCouplingUMesh.hxx>
+
+#include <MEDFileField1TS.hxx>
+#include <MEDCouplingField.hxx>
+#include <MEDCouplingFieldFloat.hxx>
+#include <MEDCouplingFieldDouble.hxx>
+#include <MEDFileFieldMultiTS.hxx>
+
+#include <MEDCouplingRemapper.hxx>
+
+#include <MEDLoader.hxx>
+
 using namespace MEDCoupling;
 #endif
 
@@ -114,7 +105,7 @@ struct _cs_medcoupling_remapper_t {
 
   cs_medcoupling_mesh_t    *target_mesh;
 
-#if defined(HAVE_MEDCOUPLING_REMPAPPER)
+#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
   MEDCouplingUMesh         *bbox_source_mesh;
   MEDCouplingFieldDouble  **source_fields;
 #else
@@ -127,7 +118,7 @@ struct _cs_medcoupling_remapper_t {
   int                     **iter_order;
   cs_real_t                *time_steps;
 
-#if defined(HAVE_MEDCOUPLING_REMPAPPER)
+#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
   MEDCouplingRemapper      *remapper;     /* MEDCoupling remapper */
 #else
   void                     *remapper;
@@ -142,7 +133,7 @@ struct _cs_medcoupling_remapper_t {
 static int                          _n_remappers = 0;
 static cs_medcoupling_remapper_t  **_remapper = NULL;
 
-#if defined(HAVE_MEDCOUPLING_REMPAPPER)
+#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -602,7 +593,7 @@ cs_medcoupling_remapper_by_id(int  r_id)
 
   cs_medcoupling_remapper_t *r = NULL;
 
-#if defined(HAVE_MEDCOUPLING_REMPAPPER)
+#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
   if (r_id < _n_remappers)
     r = _remapper[r_id];
 #else
@@ -629,7 +620,7 @@ cs_medcoupling_remapper_by_name_try(const char  *name)
 {
   cs_medcoupling_remapper_t *r = NULL;
 
-#if defined(HAVE_MEDCOUPLING_REMPAPPER)
+#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
   if (_n_remappers > 0) {
     for (int r_id = 0; r_id < _n_remappers; r_id++) {
       const char *r_name = _remapper[r_id]->name;
@@ -674,7 +665,7 @@ cs_medcoupling_remapper_initialize(const char   *name,
                                    int           order)
 {
 
-#if defined(HAVE_MEDCOUPLING_REMPAPPER)
+#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
   _add_remapper(name,
                 elt_dim,
                 select_criteria,
@@ -710,7 +701,7 @@ cs_medcoupling_remapper_set_iteration(cs_medcoupling_remapper_t  *r,
                                       int                         order)
 {
 
-#if defined(HAVE_MEDCOUPLING_REMPAPPER)
+#if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
   for (int i = 0; i < r->n_fields; i++) {
     r->source_fields[i] = _cs_medcoupling_read_field_real(r->medfile_path,
                                                           r->field_names[i],
@@ -747,7 +738,7 @@ cs_medcoupling_remapper_set_options(cs_medcoupling_remapper_t  *r,
                                     const char                  value[])
 {
 
-#if !defined(HAVE_MEDCOUPLING_REMPAPPER)
+#if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,
             _("Error: This function cannot be called without "
               "MEDCoupling support.\n"));
@@ -811,7 +802,7 @@ void
 cs_medcoupling_remapper_setup(cs_medcoupling_remapper_t  *r)
 {
 
-#if !defined(HAVE_MEDCOUPLING_REMPAPPER)
+#if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,
             _("Error: This function cannot be called without "
               "MEDCoupling support.\n"));
@@ -859,7 +850,7 @@ cs_medcoupling_remapper_copy_values(cs_medcoupling_remapper_t  *r,
 
   cs_real_t *new_vals = NULL;
 
-#if !defined(HAVE_MEDCOUPLING_REMPAPPER)
+#if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,
             _("Error: This function cannot be called without "
               "MEDCoupling support.\n"));
@@ -887,7 +878,7 @@ void
 cs_medcoupling_remapper_translate(cs_medcoupling_remapper_t  *r,
                                   cs_real_t                   translation[3])
 {
-#if !defined(HAVE_MEDCOUPLING_REMPAPPER)
+#if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,
             _("Error: This function cannot be called without "
               "MEDCoupling support.\n"));
@@ -917,7 +908,7 @@ cs_medcoupling_remapper_rotate(cs_medcoupling_remapper_t  *r,
                                cs_real_t                   axis[3],
                                cs_real_t                   angle)
 {
-#if !defined(HAVE_MEDCOUPLING_REMPAPPER)
+#if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,
             _("Error: This function cannot be called without "
               "MEDCoupling support.\n"));
@@ -952,7 +943,7 @@ cs_medcoupling_remapper_find_time_index(cs_medcoupling_remapper_t *r,
                                         int                       *id2)
 {
 
-#if !defined(HAVE_MEDCOUPLING_REMPAPPER)
+#if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,
             _("Error: This function cannot be called without "
               "MEDCoupling support.\n"));
@@ -998,7 +989,7 @@ cs_medcoupling_remapper_get_time_from_index(cs_medcoupling_remapper_t *r,
                                             int                        id,
                                             cs_real_t                 *t)
 {
-#if !defined(HAVE_MEDCOUPLING_REMPAPPER)
+#if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,
             _("Error: This function cannot be called without "
               "MEDCoupling support.\n"));
@@ -1031,7 +1022,7 @@ cs_medcoupling_remapper_get_iter_order_from_index(cs_medcoupling_remapper_t *r,
                                                   int                       *order)
 {
 
-#if !defined(HAVE_MEDCOUPLING_REMPAPPER)
+#if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,
             _("Error: This function cannot be called without "
               "MEDCoupling support.\n"));
@@ -1052,7 +1043,7 @@ void
 cs_medcoupling_remapper_destroy_all(void)
 {
 
-#if !defined(HAVE_MEDCOUPLING_REMPAPPER)
+#if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,
             _("Error: This function cannot be called without "
               "MEDCoupling support.\n"));
@@ -1077,7 +1068,7 @@ void
 cs_medcoupling_remapper_update_time_value(cs_medcoupling_remapper_t *r,
                                           int                        id)
 {
-#if !defined(HAVE_MEDCOUPLING_REMPAPPER)
+#if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,
             _("Error: This function cannot be called without "
               "MEDCoupling support.\n"));

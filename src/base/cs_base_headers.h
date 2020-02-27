@@ -102,6 +102,7 @@
 #include "cs_zone.h"
 
 #include "cs_medcoupling_remapper.hxx"
+#include "cs_medcoupling_intersector.hxx"
 #include "cs_paramedmem_remapper.hxx"
 #include "cs_paramedmem_coupling.hxx"
 

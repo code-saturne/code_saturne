@@ -409,13 +409,11 @@ lib_LTLIBRARIES =
 pkglib_LTLIBRARIES =
 
 pkginclude_HEADERS += \
-cs_medcoupling_utils.hxx
-
-pkginclude_HEADERS += \
-cs_medcoupling_remapper.hxx
-
-pkginclude_HEADERS += cs_paramedmem_coupling.hxx
-pkginclude_HEADERS += cs_paramedmem_remapper.hxx
+cs_medcoupling_utils.hxx \
+cs_medcoupling_remapper.hxx \
+cs_medcoupling_intersector.hxx \
+cs_paramedmem_coupling.hxx \
+cs_paramedmem_remapper.hxx
 
 if HAVE_PLUGIN_MEDCOUPLING
 
@@ -435,6 +433,7 @@ pkglib_LTLIBRARIES += cs_medcoupling.la
 cs_medcoupling_la_SOURCES = \
 cs_medcoupling_utils.cxx \
 cs_medcoupling_remapper.cxx \
+cs_medcoupling_intersector.cxx \
 cs_paramedmem_coupling.cxx \
 cs_paramedmem_remapper.cxx
 
@@ -460,6 +459,7 @@ $(MPI_CPPFLAGS)
 libcs_medcoupling_la_SOURCES = \
 cs_medcoupling_utils.cxx \
 cs_medcoupling_remapper.cxx \
+cs_medcoupling_intersector.cxx \
 cs_paramedmem_coupling.cxx \
 cs_paramedmem_remapper.cxx
 
