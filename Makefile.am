@@ -400,13 +400,11 @@ batchdir = ${pkgdatadir}/batch
 batch_DATA = \
 extras/batch/batch.CCC \
 extras/batch/batch.LOADL \
-extras/batch/batch.LOADL_BG \
 extras/batch/batch.LSF \
 extras/batch/batch.OAR \
 extras/batch/batch.PBS \
 extras/batch/batch.SGE \
-extras/batch/batch.SLURM \
-extras/batch/batch.SLURM_BGQ
+extras/batch/batch.SLURM
 
 # Install man pages
 
