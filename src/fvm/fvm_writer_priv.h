@@ -51,14 +51,15 @@ BEGIN_C_DECLS
  * Writer format implementation and functionality info
  */
 
-#define FVM_WRITER_FORMAT_USE_EXTERNAL      (1 << 0)
+#define FVM_WRITER_FORMAT_USE_EXTERNAL         (1 << 0)
 
-#define FVM_WRITER_FORMAT_HAS_POLYGON       (1 << 1)
-#define FVM_WRITER_FORMAT_HAS_POLYHEDRON    (1 << 2)
+#define FVM_WRITER_FORMAT_HAS_POLYGON          (1 << 1)
+#define FVM_WRITER_FORMAT_HAS_POLYHEDRON       (1 << 2)
 
-#define FVM_WRITER_FORMAT_SEPARATE_MESHES   (1 << 3)
+#define FVM_WRITER_FORMAT_SEPARATE_MESHES      (1 << 3)
+#define FVM_WRITER_FORMAT_NO_SEPARATE_MESHES   (1 << 4)
 
-#define FVM_WRITER_FORMAT_NAME_IS_OPTIONAL  (1 << 4)
+#define FVM_WRITER_FORMAT_NAME_IS_OPTIONAL     (1 << 5)
 
 /*============================================================================
  * Type definitions

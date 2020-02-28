@@ -208,7 +208,8 @@ static fvm_writer_format_t _fvm_writer_format_list[10] = {
     "4.2 +",
     (  FVM_WRITER_FORMAT_USE_EXTERNAL
      | FVM_WRITER_FORMAT_HAS_POLYGON
-     | FVM_WRITER_FORMAT_HAS_POLYHEDRON),
+     | FVM_WRITER_FORMAT_HAS_POLYHEDRON
+     | FVM_WRITER_FORMAT_NO_SEPARATE_MESHES),
     FVM_WRITER_TRANSIENT_CONNECT,
 #if !defined(HAVE_CATALYST) || defined(HAVE_PLUGIN_CATALYST)
     0,                                 /* dynamic library count */
@@ -1192,9 +1193,12 @@ fvm_writer_init(const char             *name,
 
   if (this_writer->format->info_mask & FVM_WRITER_FORMAT_SEPARATE_MESHES)
     separate_meshes = true;
+  else if (  this_writer->format->info_mask
+           & FVM_WRITER_FORMAT_NO_SEPARATE_MESHES)
+    separate_meshes = false;
 
   if (separate_meshes)
-    this_writer->n_format_writers = 0; /* Delay contruction */
+    this_writer->n_format_writers = 0; /* Delay construction */
   else
     this_writer->n_format_writers = 1;
 

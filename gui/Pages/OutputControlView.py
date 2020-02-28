@@ -2314,6 +2314,11 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             self.modelFormatH.hide()
             self.labelFormatH.hide()
 
+        if format in ("catalyst", "histogram", "melissa"):
+            self.checkBoxSeparateMeshes.hide()
+        else:
+            self.checkBoxSeparateMeshes.show()
+
 
     def __insertMesh(self, name, mesh_id, mesh_type, selection):
         """
