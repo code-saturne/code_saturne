@@ -2218,7 +2218,7 @@ _write_block_connect_i_g(const fvm_writer_section_t  *current_section,
 
     cgsize_t  s_start = *global_counter + 1;
 
-#if CGNS_VERSION >= 3400
+#if (CGNS_VERSION == 3400 || CGNS_VERSION >= 4000)
     cgsize_t  g_offset = 0;
 #endif
 
@@ -2246,7 +2246,7 @@ _write_block_connect_i_g(const fvm_writer_section_t  *current_section,
         cgsize_t  s_end  = s_start;
         cs_lnum_t elt_count = 0;
 
-#if CGNS_VERSION >= 3400
+#if (CGNS_VERSION == 3400 || CGNS_VERSION >= 4000)
 
         if (range[0] == 1) { /* First pass */
           BFT_MALLOC(_block_offsets, block_size+1, cgsize_t);
@@ -2299,7 +2299,7 @@ _write_block_connect_i_g(const fvm_writer_section_t  *current_section,
                       writer->name, base->name, section_name, cg_get_error());
         }
 
-#if CGNS_VERSION >= 3400
+#if (CGNS_VERSION == 3400 || CGNS_VERSION >= 4000)
 
         if (retval == CG_OK)
           retval = cg_poly_elements_partial_write(writer->index,
@@ -2322,7 +2322,7 @@ _write_block_connect_i_g(const fvm_writer_section_t  *current_section,
                     (unsigned long long) s_end,
                     cg_get_error());
 
-#else /* CGNS_VERSION < 3400 */
+#else /* CGNS_VERSION < 4000 */
 
         if (retval == CG_OK)
           retval = cg_elements_partial_write(writer->index,
@@ -2344,7 +2344,7 @@ _write_block_connect_i_g(const fvm_writer_section_t  *current_section,
                     (unsigned long long) s_end,
                     cg_get_error());
 
-#endif /* CGNS_VERSION < 3400 */
+#endif /* CGNS_VERSION < 4000 */
 
         s_start = s_end + 1;
 
@@ -2529,7 +2529,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
   elt_start = *global_counter + 1;
   elt_end = *global_counter + section->n_elements;
 
-#if CGNS_VERSION >= 3400
+#if (CGNS_VERSION == 3400 || CGNS_VERSION >= 4000)
 
   cs_lnum_t connect_size = section->connectivity_size;
 
@@ -2573,7 +2573,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
 
   }
 
-#else /* CGNS_VERSION < 3400 */
+#else /* CGNS_VERSION < 4000 */
 
   cs_lnum_t connect_size = section->n_elements + section->connectivity_size;
 
@@ -2622,7 +2622,7 @@ _export_nodal_polygons_l(const fvm_writer_section_t  *export_section,
 
   }
 
-#endif /* CGNS_VERSION < 3400 */
+#endif /* CGNS_VERSION < 4000 */
 
   *global_counter += section->n_elements;
 

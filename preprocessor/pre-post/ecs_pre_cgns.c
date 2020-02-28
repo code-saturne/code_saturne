@@ -2110,7 +2110,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
         else
           parentdata = NULL;
 
-#if CGNS_VERSION >= 3400
+#if (CGNS_VERSION == 3400 || CGNS_VERSION >= 4000)
 
         if (   ptr_section->type == CS_CG_ENUM(MIXED)
             || ptr_section->type == CS_CG_ENUM(NFACE_n)
@@ -2265,7 +2265,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
         else if (ptr_section->type == CS_CG_ENUM(NGON_n)) {
 
-#if CGNS_VERSION >= 3400
+#if (CGNS_VERSION == 3400 || CGNS_VERSION >= 4000)
 
           cpt_elt_ent[ient] += nbr_elt_loc;
           cpt_val_ent[ient] += ptr_section->offsets[nbr_elt_loc];
@@ -2295,7 +2295,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
         else if (ptr_section->type == CS_CG_ENUM(NFACE_n)) {
 
-#if CGNS_VERSION >= 3400
+#if (CGNS_VERSION == 3400 || CGNS_VERSION >= 4000)
 
           cpt_elt_ent[ient] += nbr_elt_loc;
 
@@ -2512,7 +2512,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
           ient = ECS_ENTMAIL_CEL;
 
-#if CGNS_VERSION >= 3400
+#if (CGNS_VERSION == 3400 || CGNS_VERSION >= 4000)
           cgsize_t *elt_idx = ptr_section->offsets;
 #endif
           ptr_ele = ptr_section->elems;
@@ -2525,7 +2525,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
           for (ecs_int_t ielt = 0; ielt < n_elts_loc; ielt++) {
 
-#if CGNS_VERSION >= 3400
+#if (CGNS_VERSION == 3400 || CGNS_VERSION >= 4000)
             ecs_int_t nbr_fac_elt = elt_idx[ielt+1] - elt_idx[ielt];
 #else
             ecs_int_t nbr_fac_elt = *ptr_ele;
@@ -2645,7 +2645,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
           else if (ptr_section->type == CS_CG_ENUM(NGON_n)) {
 
-#if CGNS_VERSION >= 3400
+#if (CGNS_VERSION == 3400 || CGNS_VERSION >= 4000)
             nbr_som_elt = elt_idx[cpt_elt_loc + 1] - elt_idx[cpt_elt_loc];
 #else
             nbr_som_elt = *ptr_ele;
@@ -2670,7 +2670,7 @@ ecs_loc_pre_cgns__lit_ele(ecs_maillage_t             *maillage,
 
           else if (ptr_section->type == CS_CG_ENUM(NFACE_n)) {
 
-#if CGNS_VERSION >= 3400
+#if (CGNS_VERSION == 3400 || CGNS_VERSION >= 4000)
             ecs_int_t nbr_fac_elt =    elt_idx[cpt_elt_loc + 1]
                                      - elt_idx[cpt_elt_loc];
 #else
