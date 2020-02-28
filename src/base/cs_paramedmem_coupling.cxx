@@ -1078,6 +1078,12 @@ cs_paramedmem_reattach_field(cs_paramedmem_coupling_t  *coupling,
 int *
 cs_paramedmem_get_mpi_comm_world_ranks(void)
 {
+#if !defined(HAVE_PARAMEDMEM)
+
+  return NULL;
+
+#else
+
   /* Global rank of current rank */
   int my_rank;
   MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
@@ -1092,6 +1098,8 @@ cs_paramedmem_get_mpi_comm_world_ranks(void)
   MPI_Allgather(&my_rank, 1, MPI_INT, world_ranks, 1, MPI_INT, cs_glob_mpi_comm);
 
   return world_ranks;
+
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
