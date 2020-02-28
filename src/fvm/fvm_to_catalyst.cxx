@@ -1665,6 +1665,15 @@ fvm_to_catalyst_export_field(void                  *this_writer_p,
     fvm_to_catalyst_export_nodal(w, mesh);
   }
 
+  int _time_step = (time_step > -1) ? time_step : 0;
+  double _time_value = (time_value > 0.0) ? time_value : 0.0;
+  if (_time_step > w->time_step) {
+    w->time_step = _time_step;
+    assert(time_value >= w->time_value);
+    w->time_value = _time_value;
+    w->datadesc->SetTimeData(w->time_value, w->time_step);
+  }
+
   /* Get field id */
 
   field_id = _get_catalyst_field_id(w,
