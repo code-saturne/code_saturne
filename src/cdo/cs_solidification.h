@@ -137,11 +137,13 @@ cs_solidification_destroy_all(void);
 /*!
  * \brief  Set the main physical parameters dedicated to this module
  *
- * \param[in]  t_solidus        Solidus temperature (in K)
- * \param[in]  t_liquidus       Liquidus temperatur (in K)
- * \param[in]  latent_heat      latent heat
- * \param[in]  forcing_coef     (< 0) coefficient in the reaction term to
- *                              reduce the velocity
+ * \param[in]  t_solidus      solidus temperature (in K)
+ * \param[in]  t_liquidus     liquidus temperatur (in K)
+ * \param[in]  latent_heat    latent heat
+ * \param[in]  forcing_eps    epsilon used in penalization term to division by
+ *                            zero
+ * \param[in]  forcing_coef   (< 0) coefficient in the reaction term to reduce
+ *                            the velocity
  */
 /*----------------------------------------------------------------------------*/
 
@@ -149,6 +151,7 @@ void
 cs_solidification_set_parameters(cs_real_t          t_solidus,
                                  cs_real_t          t_liquidus,
                                  cs_real_t          latent_heat,
+                                 cs_real_t          forcing_eps,
                                  cs_real_t          forcing_coef);
 
 /*----------------------------------------------------------------------------*/

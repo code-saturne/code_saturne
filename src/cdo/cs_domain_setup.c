@@ -56,6 +56,7 @@
 #include "cs_navsto_system.h"
 #include "cs_parall.h"
 #include "cs_prototypes.h"
+#include "cs_solidification.h"
 #include "cs_source_term.h"
 #include "cs_thermal_system.h"
 #include "cs_time_step.h"
@@ -511,6 +512,9 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
 
   }
 
+  if (cs_solidification_is_activated())
+    cs_solidification_init_setup();
+
   /* Add variables related to user-defined and predefined equations */
   cs_equation_create_fields();
   cs_advection_field_create_fields();
@@ -702,6 +706,9 @@ cs_domain_finalize_setup(cs_domain_t         *domain)
 
   if (cs_ale_is_activated())
     cs_ale_finalize_setup(domain);
+
+  if (cs_solidification_is_activated())
+    cs_solidification_finalize_setup(domain->connect, domain->cdo_quantities);
 
   /* Last stage to define properties (when complex definition is requested) */
   cs_property_finalize_setup();
