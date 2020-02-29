@@ -730,22 +730,23 @@ cs_user_parameters(cs_domain_t *domain)
 
     /* Min/Max limiter or NVD/TVD limiters
      * then "limiter_choice" keyword must be set:
-     *   0: Gamma
-     *   1: SMART
-     *   2: CUBISTA
-     *   3: SUPERBEE
-     *   4: MUSCL
-     *   5: MINMOD
-     *   6: CLAM
-     *   7: STOIC
-     *   8: OSHER
-     *   9: WASEB
+     *   CS_NVD_Gamma
+     *   CS_NVD_SMART
+     *   CS_NVD_CUBISTA
+     *   CS_NVD_SUPERBEE
+     *   CS_NVD_MUSCL
+     *   CS_NVD_MINMOD
+     *   CS_NVD_CLAM
+     *   CS_NVD_STOIC
+     *   CS_NVD_OSHER
+     *   CS_NVD_WASEB
      *   --- VOF scheme ---
-     *   10: M-HRIC
-     *   11: M-CICSAM       */
+     *   CS_NVD_VOF_HRIC
+     *   CS_NVD_VOF_CICSAM
+     *   CS_NVD_VOF_STACS        */
 
     int key_lim_id = cs_field_key_id("limiter_choice");
-    cs_field_set_key_int(sca1, key_lim_id, CS_NVD_SUPERBEE);
+    cs_field_set_key_int(sca1, key_lim_id, CS_NVD_VOF_CICSAM);
 
     /* Get the Key for the Sup and Inf for the convective scheme */
     int kccmin = cs_field_key_id("min_scalar");
