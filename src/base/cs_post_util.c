@@ -954,7 +954,7 @@ cs_post_b_pressure(cs_lnum_t         n_b_faces,
 
   int hyd_p_flag = cs_glob_stokes_model->iphydr;
   cs_real_3_t *f_ext = (hyd_p_flag == 1) ?
-    (cs_real_3_t *)cs_field_by_name_try("volume_forces"):NULL;
+    (cs_real_3_t *)cs_field_by_name_try("volume_forces")->val:NULL;
 
   bool use_previous_t = false;
   int inc = 1;
