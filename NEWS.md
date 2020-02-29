@@ -3,6 +3,8 @@ Release 6.0.3 (Unreleased)
 
 Bug fixes:
 
+- Fix bug in cs_post_util when post-processing pressure with iphydr=1.
+
 - GUI: fix Python dump, broken in v6.0.2.
 
 - GUI: fix behavior of volume viscosity formula button.
