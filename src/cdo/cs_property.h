@@ -543,7 +543,7 @@ cs_property_def_by_array(cs_property_t    *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_property_t structure thanks to an array of values
+ * \brief  Define a cs_property_t structure thanks to a field structure
  *
  * \param[in, out]  pty       pointer to a cs_property_t structure
  * \param[in]       field     pointer to a cs_field_t structure
@@ -572,7 +572,7 @@ cs_property_eval_at_cells(cs_real_t               t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the value of the tensor attached a property at the cell
+ * \brief  Compute the value of the tensor attached to a property at the cell
  *         center
  *
  * \param[in]      c_id          id of the current cell
@@ -609,7 +609,7 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the value of the tensor attached a property at the cell
+ * \brief  Compute the value of the tensor attached to a property at the cell
  *         center
  *         Version using a cs_cell_mesh_t structure
  *
@@ -626,7 +626,7 @@ cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
                            const cs_property_t    *pty,
                            cs_real_t               t_eval,
                            bool                    do_inversion,
-                           cs_real_3_t            *tensor);
+                           cs_real_t               tensor[3][3]);
 
 /*----------------------------------------------------------------------------*/
 /*!

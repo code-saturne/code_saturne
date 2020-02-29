@@ -237,6 +237,13 @@ _create_property(const char           *name,
                 "Set to CS_PROPERTY_ORTHO and CS_PROPERTY_ANISO.",
                 __func__, name);
   }
+  else {
+    if ((type & CS_PROPERTY_ANISO) == 0)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: No type specified for property %s\n"
+                " Set one among CS_PROPERTY_ISO, CS_PROPERTY_ORTHO or"
+                " CS_PROPERTY_ANISO.", __func__, name);
+  }
 
   cs_property_t  *pty = NULL;
 
@@ -1016,7 +1023,7 @@ cs_property_def_by_array(cs_property_t    *pty,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_property_t structure thanks to an array of values
+ * \brief  Define a cs_property_t structure thanks to a field structure
  *
  * \param[in, out]  pty       pointer to a cs_property_t structure
  * \param[in]       field     pointer to a cs_field_t structure
@@ -1048,7 +1055,7 @@ cs_property_def_by_field(cs_property_t    *pty,
               " Property %s\n", pty->name);
   if (pty->n_definitions > 1)
     bft_error(__FILE__, __LINE__, 0,
-              " When a definition by array is requested, the max. number"
+              " When a definition by field is requested, the max. number"
               " of subdomains to consider should be equal to 1.\n"
               " Current value is %d for property %s.\n"
               " Please modify your settings.",
@@ -1250,7 +1257,7 @@ cs_property_get_cell_value(cs_lnum_t              c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the value of the tensor attached a property at the cell
+ * \brief  Compute the value of the tensor attached to a property at the cell
  *         center
  *         Version using a cs_cell_mesh_t structure
  *
@@ -1267,7 +1274,7 @@ cs_property_tensor_in_cell(const cs_cell_mesh_t   *cm,
                            const cs_property_t    *pty,
                            cs_real_t               t_eval,
                            bool                    do_inversion,
-                           cs_real_3_t            *tensor)
+                           cs_real_t               tensor[3][3])
 {
   if (pty == NULL)
     return;
@@ -1462,7 +1469,7 @@ cs_property_log_setup(void)
     cs_log_printf(CS_LOG_SETUP, "\n  * %s | Uniform %s Steady %s\n",
                   pty->name,
                   cs_base_strtf(is_uniform), cs_base_strtf(is_steady));
-    cs_log_printf(CS_LOG_SETUP, "\n  * %s | Reference value  % -8.4e\n",
+    cs_log_printf(CS_LOG_SETUP, "  * %s | Reference value  % -8.4e\n",
                   pty->name, pty->ref_value);
 
     if (pty->type & CS_PROPERTY_ISO)
