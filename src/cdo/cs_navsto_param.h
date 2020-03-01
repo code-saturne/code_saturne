@@ -414,12 +414,12 @@ typedef struct {
    */
   cs_physical_constants_t    *phys_constants;
 
-  /*! \var density
-   *  Density of the fluid, pointer to \ref cs_property_t used in several
-   *  terms in the Navier-Stokes equations
+  /*! \var mass_density
+   * Mass_density of the fluid, pointer to \ref cs_property_t used in several
+   * terms in the Navier-Stokes equations
    */
 
-  cs_property_t              *density;
+  cs_property_t              *mass_density;
 
   /*! \var lami_viscosity
    *  Laminar viscosity, pointer to \ref cs_property_t associated to the

@@ -225,10 +225,10 @@ cs_navsto_param_create(const cs_boundary_t             *boundaries,
   param->rans_modelling = cs_get_glob_turb_rans_model();
 
   /* Main set of properties */
-  param->density = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
-  if (param->density == NULL)
-    param->density = cs_property_add(CS_PROPERTY_MASS_DENSITY,
-                                     CS_PROPERTY_ISO);
+  param->mass_density = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
+  if (param->mass_density == NULL)
+    param->mass_density = cs_property_add(CS_PROPERTY_MASS_DENSITY,
+                                          CS_PROPERTY_ISO);
 
   param->lami_viscosity = cs_property_add(CS_NAVSTO_LAMINAR_VISCOSITY,
                                           CS_PROPERTY_ISO);

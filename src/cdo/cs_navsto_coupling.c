@@ -193,7 +193,7 @@ cs_navsto_ac_init_setup(const cs_navsto_param_t    *nsp,
 
   /* Link the time property to the momentum equation */
   if (!cs_navsto_param_is_steady(nsp))
-    cs_equation_add_time(mom_eqp, nsp->density);
+    cs_equation_add_time(mom_eqp, nsp->mass_density);
 
   /* Add advection term: It's in the cs_navsto_system_t structure, but it cannot
    * be seen from here */
@@ -374,7 +374,7 @@ cs_navsto_monolithic_init_setup(const cs_navsto_param_t    *nsp,
 
   /* Link the time property to the momentum equation */
   if (!cs_navsto_param_is_steady(nsp))
-    cs_equation_add_time(mom_eqp, nsp->density);
+    cs_equation_add_time(mom_eqp, nsp->mass_density);
 
   /* Add advection term: It's in the cs_navsto_system_t structure, but it cannot
    * be seen from here */
@@ -575,7 +575,8 @@ cs_navsto_projection_init_setup(const cs_navsto_param_t    *nsp,
 
   cs_navsto_param_transfer(nsp, u_eqp);
 
-  cs_equation_add_time(u_eqp, nsp->density);
+  /* There is always a time derivative with projection algorithm */
+  cs_equation_add_time(u_eqp, nsp->mass_density);
 
   /* All considered models needs a viscous term */
   cs_equation_add_diffusion(u_eqp, nsp->lami_viscosity);

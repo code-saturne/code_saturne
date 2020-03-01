@@ -817,13 +817,13 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 
     cs_field_current_to_previous(kinetic_energy);
 
-    if (cs_property_is_uniform(nsp->density)) {
+    if (cs_property_is_uniform(nsp->mass_density)) {
 
       /* This can be any cell but one assumes that there is at least one cell by
          MPI rank */
       const cs_real_t  rho = cs_property_get_cell_value(0, /* cell_id */
                                                         ts->t_cur,
-                                                        nsp->density);
+                                                        nsp->mass_density);
 
 #     pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
       for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
@@ -838,7 +838,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
 
         cs_real_t  rho_c = cs_property_get_cell_value(c_id,
                                                       ts->t_cur,
-                                                      nsp->density);
+                                                      nsp->mass_density);
         kinetic_energy->val[c_id] =
           0.5*rho_c*cs_math_3_square_norm(u_cell + 3*c_id);
 

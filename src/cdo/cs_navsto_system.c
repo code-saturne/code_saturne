@@ -726,8 +726,8 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
   /* Avoid an error if no definition is given for the mandatory physical
      properties */
   cs_real_t  one = 1.0;
-  if (nsp->density->n_definitions == 0) /* Not set by the user */
-    cs_property_def_iso_by_value(nsp->density,
+  if (nsp->mass_density->n_definitions == 0) /* Not set by the user */
+    cs_property_def_iso_by_value(nsp->mass_density,
                                  NULL, /* all cells */
                                  one);
 
@@ -915,10 +915,11 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
     cs_equation_t  *mom_eq = cs_navsto_system_get_momentum_eq();
     cs_equation_param_t  *mom_eqp = cs_equation_get_param(mom_eq);
 
-    const cs_real_t  *g_vector = nsp->phys_constants->gravity;
+    const cs_real_t  *gravity_vector = nsp->phys_constants->gravity;
+    const cs_real_t  rho0 = nsp->mass_density->ref_value;
+
     cs_source_term_boussinesq_t  *bq =
-      cs_thermal_system_add_boussinesq_source_term(g_vector,
-                                                   nsp->density->ref_value);
+      cs_thermal_system_add_boussinesq_source_term(gravity_vector, rho0);
 
     /* Up to now, only CDO Face-based schemes are considered */
     assert(nsp->space_scheme == CS_SPACE_SCHEME_CDOFB);
