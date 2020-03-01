@@ -54,7 +54,6 @@ BEGIN_C_DECLS
  *  rho    the volumetric mass (mass density)
  *  Cp     the heat capacity
  *  lambda the heat conductivity
- *  kappa  the thermal diffusivity (= lambda/(rho.Cp))
  */
 
 /*============================================================================
@@ -66,7 +65,6 @@ BEGIN_C_DECLS
 #define CS_THERMAL_EQNAME           "thermal_equation"
 #define CS_THERMAL_CP_NAME          "thermal_capacity"
 #define CS_THERMAL_LAMBDA_NAME      "thermal_conductivity"
-#define CS_THERMAL_DIFF_NAME        "thermal_diffusivity"
 
 /*!
  * @name Flags specifying automatic post-processing for the thermal module
@@ -89,8 +87,6 @@ BEGIN_C_DECLS
  * Structure and type definitions
  *============================================================================*/
 
-typedef struct _thermal_system_t  cs_thermal_system_t;
-
 typedef cs_flag_t  cs_thermal_model_type_t;
 
 /*! \enum cs_thermal_model_type_bit_t
@@ -103,28 +99,21 @@ typedef cs_flag_t  cs_thermal_model_type_t;
  * \brief Add an advection term arising from the velocity field solution
  *        of the Navier-Stokes equations
  *
- * \def CS_THERMAL_MODEL_WITH_ENTHALPY
+ * \def CS_THERMAL_MODEL_USE_TEMPERATURE
+ * \brief The thermal equation solved using the temperature variable
+ *        (the default choice)
+ *
+ * \def CS_THERMAL_MODEL_USE_ENTHALPY
  * \brief The thermal equation solved using the enthalpy variable
  *        instead of the temperature (the default choice)
  *
- * \def CS_THERMAL_MODEL_WITH_TOTAL_ENERGY
+ * \def CS_THERMAL_MODEL_USE_TOTAL_ENERGY
  * \brief The thermal equation solved using the total energy variable
  *        instead of the temperature (the default choice)
  *
  * \def CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY
  * \brief The thermal equation solved using an anisotropic conductivity
  *        instead of an isotropic one (the default choice)
- *
- * \def CS_THERMAL_MODEL_WITH_THERMAL_DIFFUSIVITY
- * \brief The heat equation considered writes in this case as follows:
- *
- *        \partial_t T + div(velocity.T) - div( lamda/(rho.Cp) T) = s/(rho.Cp)
- *
- * the thermal diffusivity is lambda/(rho.Cp). One assumes in this case that
- * Cp and rho are constants while lambda may be variable. According to the
- * modelling, the advection or the unsteady term may be dropped.
- * This formulation is typically used with a Boussinesq approximation for the
- * Navier-Stokes equations.
  *
  */
 
@@ -134,23 +123,67 @@ typedef enum {
   CS_THERMAL_MODEL_NAVSTO_VELOCITY            = 1<<1,  /* =  2 */
 
   /* Main variable to consider (by default the temperature in Kelvin)
-     ------------- */
+     ---------------------------------------------------------------- */
 
-  CS_THERMAL_MODEL_WITH_ENTHALPY              = 1<<2,  /* =  4 */
-  CS_THERMAL_MODEL_WITH_TOTAL_ENERGY          = 1<<3,  /* =  8 */
+  CS_THERMAL_MODEL_USE_TEMPERATURE            = 1<<2,  /* =  4 */
+  CS_THERMAL_MODEL_USE_ENTHALPY               = 1<<3,  /* =  8 */
+  CS_THERMAL_MODEL_USE_TOTAL_ENERGY           = 1<<4,  /* = 16 */
 
   /* Treatment of the diffusion term
      ------------------------------- */
 
-  CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY   = 1<<4,  /* = 16 */
-  CS_THERMAL_MODEL_WITH_THERMAL_DIFFUSIVITY   = 1<<5,  /* = 32 */
+  CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY   = 1<<5,  /* = 32 */
 
   /* Additional bit settings
      ----------------------- */
 
-  CS_THERMAL_MODEL_IN_CELSIUS                 = 1<<6   /* = 64 */
+  CS_THERMAL_MODEL_IN_CELSIUS                 = 1<<7   /* = 128 */
 
 } cs_thermal_model_type_bit_t;
+
+/* Set of parameters related to the thermal module */
+
+typedef struct {
+
+  cs_flag_t   model;                  /* Choice of modelling */
+  cs_flag_t   numeric;                /* General numerical options */
+  cs_flag_t   post;                   /* Post-processing options */
+
+  /* Equation associated to this module */
+  /* ---------------------------------- */
+
+  cs_equation_t  *thermal_eq;
+
+  /* Properties associated to this module */
+  /* ------------------------------------ */
+
+  cs_property_t  *unsteady_property; /* Property of the unsteady term: rho.cp */
+  cs_property_t  *lambda;            /* Thermal conductivity */
+  cs_property_t  *cp;                /* Heat capacity */
+  cs_property_t  *rho;               /* Mass density (may be shared) */
+  cs_property_t  *kappa;             /* lambda/cp may be NULL*/
+
+  /* value of lambda/cp in each cell (allocated if the related property kappa
+   * is not NULL and defined by array) */
+  cs_real_t      *kappa_array;
+
+  /* Fields associated to this module */
+  /* -------------------------------- */
+
+  cs_field_t     *temperature;
+  cs_field_t     *enthalpy;
+  cs_field_t     *total_energy;
+
+  /* Additional members */
+  /* ------------------ */
+
+  cs_real_t       ref_temperature;
+  cs_real_t       thermal_dilatation_coef;
+
+  /* N.B.: Other reference values for properties are stored within each
+   * property structure */
+
+} cs_thermal_system_t;
 
 /*============================================================================
  * Public function prototypes
@@ -195,25 +228,16 @@ cs_thermal_system_destroy(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set a reference temperature
+ * \brief Set the reference temperature and the thermal dilatation coefficient
  *
  * \param[in]  temp0     reference temperature
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_thermal_system_set_reference_temperature(cs_real_t  temp0);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the thermal dilatation coefficient
- *
  * \param[in]  beta0     reference value of the thermal dilatation coefficient
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_system_set_thermal_dilatation_coef(cs_real_t   beta0);
+cs_thermal_system_set_reference_parameters(cs_real_t    temp0,
+                                           cs_real_t    beta0);
 
 /*----------------------------------------------------------------------------*/
 /*!

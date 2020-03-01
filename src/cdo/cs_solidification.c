@@ -327,7 +327,14 @@ cs_solidification_activate(cs_solidification_model_t      model,
   solid->options = options;
   solid->post_flag = post_flag;
 
-  cs_navsto_param_model_t  ns_model = CS_NAVSTO_MODEL_BOUSSINESQ;
+  /* Activate the thermal module */
+  cs_flag_t  thm_num = 0, thm_post = 0;
+  cs_flag_t  thm_model = CS_THERMAL_MODEL_NAVSTO_VELOCITY;
+
+  cs_thermal_system_t  *thm = cs_thermal_system_activate(thm_model,
+                                                         thm_num,
+                                                         thm_post);
+  cs_navsto_param_model_t  ns_model = 0;
   if (model & CS_SOLIDIFICATION_MODEL_STOKES)
     ns_model |= CS_NAVSTO_MODEL_STOKES;
   else if (model & CS_SOLIDIFICATION_MODEL_NAVIER_STOKES)

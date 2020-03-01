@@ -71,50 +71,6 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* Set of parameters related to the thermal module */
-
-struct _thermal_system_t {
-
-  cs_flag_t   model;                  /* Choice of modelling */
-  cs_flag_t   numeric;                /* General numerical options */
-  cs_flag_t   post;                   /* Post-processing options */
-
-  /* Equation associated to this module */
-  /* ---------------------------------- */
-
-  cs_equation_t  *thermal_eq;
-
-  /* Properties associated to this module */
-  /* ------------------------------------ */
-
-  cs_property_t  *lambda;        /* Thermal conductivity */
-  cs_property_t  *cp;            /* Heat capacity */
-  cs_property_t  *rho;           /* Mass density */
-  cs_property_t  *kappa;         /* Thermal diffusivity */
-
-  /* value of the thermal diffusivity in each cell (allocated if the
-   * related property is defined by array) */
-
-  cs_real_t      *kappa_array;
-
-  /* Fields associated to this module */
-  /* -------------------------------- */
-
-  cs_field_t     *temperature;
-  cs_field_t     *enthalpy;
-  cs_field_t     *total_energy;
-
-  /* Additional members */
-  /* ------------------ */
-
-  cs_real_t       ref_temperature;
-  cs_real_t       thermal_dilatation_coef;
-
-  /* N.B.: Other reference values for properties are stored within each
-   * dedicated structure */
-
-};
-
 /*============================================================================
  * Private variables
  *============================================================================*/
@@ -136,21 +92,23 @@ static cs_thermal_system_t  *cs_thermal_system = NULL;
 /*----------------------------------------------------------------------------*/
 
 static inline bool
-_solve_with_temperature(void)
+_is_solved_with_temperature(void)
 {
   if (cs_thermal_system == NULL)
     return false;
 
   else {
 
-    if (cs_thermal_system->model & CS_THERMAL_MODEL_WITH_ENTHALPY)
+    if (cs_thermal_system->model & CS_THERMAL_MODEL_USE_TEMPERATURE)
+      return true;
+    if (cs_thermal_system->model & CS_THERMAL_MODEL_USE_ENTHALPY)
       return false;
-    if (cs_thermal_system->model & CS_THERMAL_MODEL_WITH_TOTAL_ENERGY)
+    if (cs_thermal_system->model & CS_THERMAL_MODEL_USE_TOTAL_ENERGY)
       return false;
 
   }
 
-  return true;
+  return true; /* This is the default choice */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -284,6 +242,7 @@ _init_thermal_system(void)
   thm->lambda = NULL;
   thm->cp = NULL;
   thm->rho = NULL;
+  thm->unsteady_property = NULL;
   thm->kappa = NULL;
   thm->kappa_array = NULL;
 
@@ -292,7 +251,7 @@ _init_thermal_system(void)
   thm->enthalpy = NULL;
   thm->total_energy = NULL;
 
-  /* Other members */
+  /* Reference coefficients */
   thm->ref_temperature = 0.;
   thm->thermal_dilatation_coef = 0.;
 
@@ -351,83 +310,82 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
   thm->numeric = numeric;
   thm->post = post;
 
-  /* Add equation related to this module */
+  bool has_time = true;
+  if (model & CS_THERMAL_MODEL_STEADY)
+    has_time = false;
+
+  /* Define or retrieve properties related to this module */
+  /* ---------------------------------------------------- */
+
+  /* Mass density */
+  thm->rho = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
+  if (thm->rho == NULL)
+    thm->rho = cs_property_add(CS_PROPERTY_MASS_DENSITY, CS_PROPERTY_ISO);
+
+  /* Thermal capacity */
+  thm->cp = cs_property_add(CS_THERMAL_CP_NAME, CS_PROPERTY_ISO);
+
+  /* Thermal conductivity */
+  cs_property_type_t  pty_type = CS_PROPERTY_ISO;
+  if (model & CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY)
+    pty_type = CS_PROPERTY_ANISO;
+  thm->lambda = cs_property_add(CS_THERMAL_LAMBDA_NAME, pty_type);
+
+  /* Add the associated equation related to this module with respect to
+   * the settings */
   cs_equation_t  *eq = NULL;
-  if (model & CS_THERMAL_MODEL_WITH_ENTHALPY)
+  cs_equation_param_t  *eqp = NULL;
+
+  if (model & CS_THERMAL_MODEL_USE_ENTHALPY) {
+
     eq = cs_equation_add(CS_THERMAL_EQNAME,
                          "enthalpy",
                          CS_EQUATION_TYPE_THERMAL,
                          1,
                          CS_PARAM_BC_HMG_NEUMANN);
-  else if (model & CS_THERMAL_MODEL_WITH_TOTAL_ENERGY)
+
+
+  }
+  else if (model & CS_THERMAL_MODEL_USE_TOTAL_ENERGY) {
+
     eq = cs_equation_add(CS_THERMAL_EQNAME,
                          "total_energy",
                          CS_EQUATION_TYPE_THERMAL,
                          1,
                          CS_PARAM_BC_HMG_NEUMANN);
-  else
+
+    /* TODO */
+    bft_error(__FILE__, __LINE__, 0, " %s: Not yet fully available.\n",
+              __func__);
+
+  }
+  else { /* Default settings: use temperature as variable */
+
+    thm->model |= CS_THERMAL_MODEL_USE_TEMPERATURE;
     eq = cs_equation_add(CS_THERMAL_EQNAME,
                          "temperature",
                          CS_EQUATION_TYPE_THERMAL,
                          1,
                          CS_PARAM_BC_HMG_NEUMANN);
+    eqp = cs_equation_get_param(eq);
 
-  thm->thermal_eq = eq;
+    /* Always add a diffusion term */
+    cs_equation_add_diffusion(eqp, thm->lambda);
+
+    if (has_time) {
+
+      thm->unsteady_property = cs_property_add_as_product("rho.cp",
+                                                          thm->rho, thm->cp);
+      cs_equation_add_time(eqp, thm->unsteady_property);
+
+    }
+
+  } /* Use temperature as variable */
 
   /* Default numerical settings */
   /* -------------------------- */
 
-  cs_equation_param_t  *eqp = cs_equation_get_param(eq);
-
-  /* Linear algebra default settings */
-  cs_equation_set_param(eqp, CS_EQKEY_SOLVER_FAMILY, "cs");
-  cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
-  cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
-  cs_equation_set_param(eqp, CS_EQKEY_ITSOL_EPS, "1e-8");
-  cs_equation_set_param(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "rhs");
-
-  /* Set a space discretization by default */
-  if (thm->model & CS_THERMAL_MODEL_NAVSTO_VELOCITY) {
-
-    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
-    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "ocs");
-    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
-
-  }
-  else {
-
-    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
-    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "bubble");
-    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "frac23");
-
-  }
-
-  /* Define properties */
-  cs_property_type_t  pty_type = CS_PROPERTY_ISO;
-
-  /* Mass density */
-  thm->rho = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
-  if (thm->rho == NULL)
-    thm->rho = cs_property_add(CS_PROPERTY_MASS_DENSITY, pty_type);
-
-  /* Thermal capacity */
-  thm->cp = cs_property_add(CS_THERMAL_CP_NAME, pty_type);
-
-  /* Thermal conductivity */
-  if (model & CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY)
-    pty_type = CS_PROPERTY_ANISO;
-  thm->lambda = cs_property_add(CS_THERMAL_LAMBDA_NAME, pty_type);
-
-  if (thm->model & CS_THERMAL_MODEL_WITH_THERMAL_DIFFUSIVITY) {
-
-    thm->kappa = cs_property_add(CS_THERMAL_DIFF_NAME, pty_type);
-
-    /* Link the conductivity to the diffusion term of this equation */
-    cs_equation_add_diffusion(eqp, thm->kappa);
-
-  }
-  else /* Link the conductivity to the diffusion term of this equation */
-    cs_equation_add_diffusion(eqp, thm->lambda);
+  thm->thermal_eq = eq;
 
   /* Add an advection term  */
   if (thm->model & CS_THERMAL_MODEL_NAVSTO_VELOCITY) {
@@ -435,10 +393,32 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
     cs_equation_add_advection(eqp,
                               cs_advection_field_by_name("velocity_field"));
 
+    if (thm->model & CS_THERMAL_MODEL_USE_TEMPERATURE)
+      cs_equation_add_advection_scaling_property(eqp, thm->cp);
+
     cs_equation_set_param(eqp, CS_EQKEY_ADV_FORMULATION, "non_conservative");
     cs_equation_set_param(eqp, CS_EQKEY_ADV_SCHEME, "upwind");
 
+    /* Set a space discretization by default */
+    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
+    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "ocs");
+    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
+
   }
+  else { /* Stand-alone i.e. not associated to the Navier--Stokes system */
+
+    cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_vb");
+    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "bubble");
+    cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "frac23");
+
+  }
+
+  /* Linear algebra default settings */
+  cs_equation_set_param(eqp, CS_EQKEY_SOLVER_FAMILY, "cs");
+  cs_equation_set_param(eqp, CS_EQKEY_PRECOND, "amg");
+  cs_equation_set_param(eqp, CS_EQKEY_ITSOL, "cg");
+  cs_equation_set_param(eqp, CS_EQKEY_ITSOL_EPS, "1e-8");
+  cs_equation_set_param(eqp, CS_EQKEY_ITSOL_RESNORM_TYPE, "rhs");
 
   /* Set and return pointer */
   cs_thermal_system = thm;
@@ -474,14 +454,16 @@ cs_thermal_system_destroy(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Set a reference temperature
+ * \brief Set the reference temperature and the thermal dilatation coefficient
  *
  * \param[in]  temp0     reference temperature
+ * \param[in]  beta0     reference value of the thermal dilatation coefficient
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_system_set_reference_temperature(cs_real_t  temp0)
+cs_thermal_system_set_reference_parameters(cs_real_t    temp0,
+                                           cs_real_t    beta0)
 {
   cs_thermal_system_t  *thm = NULL;
   if (cs_thermal_system == NULL)
@@ -491,26 +473,6 @@ cs_thermal_system_set_reference_temperature(cs_real_t  temp0)
                                    the thermal module for instance */
 
   thm->ref_temperature = temp0;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Set the thermal dilatation coefficient
- *
- * \param[in]  beta0     reference value of the thermal dilatation coefficient
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_thermal_system_set_thermal_dilatation_coef(cs_real_t   beta0)
-{
-  cs_thermal_system_t  *thm = NULL;
-  if (cs_thermal_system == NULL)
-    thm = _init_thermal_system();
-  else
-    thm = cs_thermal_system;    /* Previously allocated when activating
-                                   the thermal module for instance */
-
   thm->thermal_dilatation_coef = beta0;
 }
 
@@ -601,8 +563,8 @@ cs_thermal_system_init_setup(void)
   if (thm->model & CS_THERMAL_MODEL_STEADY)
     has_previous = false;
 
-  if ((thm->model & CS_THERMAL_MODEL_WITH_ENTHALPY) ||
-      (thm->model & CS_THERMAL_MODEL_WITH_TOTAL_ENERGY)) {
+  if ((thm->model & CS_THERMAL_MODEL_USE_ENTHALPY) ||
+      (thm->model & CS_THERMAL_MODEL_USE_TOTAL_ENERGY)) {
 
     /* Temperature field is always created. Since the variable solved is either
        the "enthalpy" or the "total_energy", one creates a field for the
@@ -649,98 +611,14 @@ cs_thermal_system_finalize_setup(const cs_cdo_connect_t     *connect,
                                  const cs_time_step_t       *time_step)
 {
   CS_UNUSED(connect);
+  CS_UNUSED(quant);
 
   cs_thermal_system_t  *thm = cs_thermal_system;
-  cs_real_t  t_cur = time_step->t_cur;
 
   if (thm == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_thm));
 
   if (thm->temperature == NULL)
     thm->temperature = cs_field_by_name("temperature");
-
-  if (thm->model & CS_THERMAL_MODEL_WITH_THERMAL_DIFFUSIVITY) {
-
-    /* The usage of thermal diffusivity relies on a constant mass density and
-       on a constant thermal capacity */
-    assert(thm->rho->n_definitions == 0 ||
-           (thm->rho->n_definitions = 1 &&
-            thm->rho->defs[0]->type == CS_XDEF_BY_VALUE));
-    assert(thm->cp->n_definitions == 0 ||
-           (thm->cp->n_definitions = 1 &&
-            thm->cp->defs[0]->type == CS_XDEF_BY_VALUE));
-
-    if (thm->model & CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY) {
-
-      if (cs_property_is_uniform(thm->lambda)) {
-
-        cs_real_t  tens[3][3];
-        /* c_id = 0, do_inversion = false */
-        cs_property_get_cell_tensor(0, t_cur, thm->lambda, false, tens);
-        cs_real_t  rho = cs_property_get_cell_value(0, t_cur, thm->rho);
-        cs_real_t  cp = cs_property_get_cell_value(0, t_cur, thm->cp);
-
-        const cs_real_t  inv_rhocp = 1./(rho*cp);
-        for (int ki = 0; ki < 3; ki++)
-          for (int kj = 0; kj < 3; kj++)
-            tens[ki][kj] *= inv_rhocp;
-
-        cs_property_def_aniso_by_value(thm->kappa, NULL, tens);
-
-      }
-      else
-        cs_property_def_by_func(thm->kappa,
-                                NULL, /* = all cells */
-                                thm,
-                                _eval_aniso_kappa,
-                                _eval_aniso_kappa_cw);
-
-    }
-    else {
-
-      /* Choose c_id = 0 since one assumes there is at least one cell */
-      cs_real_t  rho = cs_property_get_cell_value(0, t_cur, thm->rho);
-      cs_real_t  cp = cs_property_get_cell_value(0, t_cur, thm->cp);
-      const cs_real_t  inv_rhocp = 1./(rho*cp);
-
-      /* The thermal conductivity klambda is isotropic */
-      if (cs_property_is_uniform(thm->lambda)) {
-
-        /* c_id = 0 */
-        cs_real_t  lambda = cs_property_get_cell_value(0, t_cur, thm->lambda);
-
-        cs_property_def_iso_by_value(thm->kappa, NULL, lambda*inv_rhocp);
-
-      }
-      else {
-
-        BFT_MALLOC(thm->kappa_array, quant->n_cells, cs_real_t);
-
-        cs_property_eval_at_cells(t_cur, thm->lambda, thm->kappa_array);
-
-#       pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
-        for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++)
-          thm->kappa_array[c_id] *= inv_rhocp;
-
-        cs_property_def_by_array(thm->kappa,
-                                 cs_flag_primal_cell,
-                                 thm->kappa_array,
-                                 false, /* = not owner */
-                                 NULL); /* = no index */
-
-      } /* Lambda uniform ? */
-
-    } /* Anisotropic ? */
-
-  } /* Need to define a thermal diffusivity */
-
-  if (_solve_with_temperature() && fabs(thm->ref_temperature) > 0) {
-
-    cs_equation_param_t  *eqp = cs_equation_get_param(thm->thermal_eq);
-
-    if (eqp->n_ic_defs == 0)  /* Initialize with the reference temperature */
-      cs_equation_add_ic_by_value(eqp, NULL, &(thm->ref_temperature));
-
-  }
 
 }
 
@@ -833,7 +711,8 @@ cs_thermal_system_update(const cs_mesh_t             *mesh,
 
   cs_thermal_system_t  *thm = cs_thermal_system;
 
-  if (thm == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_thm));
+  if (thm == NULL)
+    return;
 
   /* Update the thermal diffusivity if requested */
 }
@@ -937,15 +816,23 @@ cs_thermal_system_log_setup(void)
     cs_log_printf(CS_LOG_SETUP, " Steady-state");
   if (thm->model & CS_THERMAL_MODEL_NAVSTO_VELOCITY)
     cs_log_printf(CS_LOG_SETUP, " + Navsto advection");
-  if (thm->model & CS_THERMAL_MODEL_WITH_ENTHALPY)
-    cs_log_printf(CS_LOG_SETUP, " + Enthalpy-based");
   if (thm->model & CS_THERMAL_MODEL_ANISOTROPIC_CONDUCTIVITY)
     cs_log_printf(CS_LOG_SETUP, " + Anistropic conductivity");
   cs_log_printf(CS_LOG_SETUP, "\n");
 
+  cs_log_printf(CS_LOG_SETUP,
+                "  * Thermal | Equation solved with the variable");
+  if (thm->model & CS_THERMAL_MODEL_USE_ENTHALPY)
+    cs_log_printf(CS_LOG_SETUP, " Enthalpy\n");
+  else if (thm->model & CS_THERMAL_MODEL_USE_TOTAL_ENERGY)
+    cs_log_printf(CS_LOG_SETUP, " Total energy\n");
+  else if (thm->model & CS_THERMAL_MODEL_USE_TEMPERATURE)
+    cs_log_printf(CS_LOG_SETUP, " Temperature (Kelvin)\n");
+  else
+    cs_log_printf(CS_LOG_SETUP, " Unknown variable!\n");
+
   if (thm->post & CS_THERMAL_POST_ENTHALPY)
     cs_log_printf(CS_LOG_SETUP, "  * Thermal | Post: Enthalpy\n");
-
 }
 
 /*----------------------------------------------------------------------------*/

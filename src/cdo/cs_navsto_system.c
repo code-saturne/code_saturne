@@ -294,8 +294,7 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
   if (navsto->param->model & CS_NAVSTO_MODEL_BOUSSINESQ) {
 
     cs_flag_t  thm_num = 0, thm_post = 0;
-    cs_flag_t  thm_model =
-      CS_THERMAL_MODEL_WITH_THERMAL_DIFFUSIVITY |
+    cs_flag_t  thm_model = CS_THERMAL_MODEL_USE_TEMPERATURE |
       CS_THERMAL_MODEL_NAVSTO_VELOCITY;
 
     if (navsto->param->option_flag & CS_NAVSTO_FLAG_STEADY)
