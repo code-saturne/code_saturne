@@ -82,6 +82,12 @@ BEGIN_C_DECLS
  *  behavior). */
 #define CS_PROPERTY_ANISO         (1 << 2)
 
+
+/*! \var CS_PROPERTY_BY_PRODUCT
+ *  8: The property is defined as the product of two other properties
+ */
+#define CS_PROPERTY_BY_PRODUCT    (1 << 3)
+
 /*! @} */
 
 /*============================================================================
@@ -113,7 +119,10 @@ typedef enum {
  * \brief Structure associated to the definition of a property relying on the
  * \ref cs_xdef_t structure
  */
-typedef struct {
+
+typedef struct _cs_property_t cs_property_t;
+
+struct _cs_property_t {
 
   char  *restrict      name;
   int                  id;
@@ -147,7 +156,13 @@ typedef struct {
      relying on a cs_cell_mesh_t structure */
   cs_xdef_cw_eval_t  **get_eval_at_cell_cw;
 
-} cs_property_t;
+  /* For properties relying on other properties for their definition, one
+   * stores the pointers to these related properties */
+  int                     n_related_properties;
+  const cs_property_t   **related_properties;
+
+};
+
 
 /*!
  * \struct cs_property_data_t
@@ -304,6 +319,27 @@ cs_property_get_n_properties(void);
 cs_property_t *
 cs_property_add(const char            *name,
                 cs_property_type_t     type);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Define a cs_property_t structure thanks to the product of two
+ *         properties
+ *         The type is infered from that of the related properties
+ *         The value of the property is given as:
+ *         value_ab = value_a * value_b
+ *
+ * \param[in]       name      name of the property
+ * \param[in]       pty_a     pointer to a cs_property_t structure
+ * \param[in]       pty_b     pointer to a cs_property_t structure
+ *
+ * \return a pointer to a new allocated cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_property_t *
+cs_property_add_as_product(const char             *name,
+                           const cs_property_t    *pty_a,
+                           const cs_property_t    *pty_b);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -588,7 +624,7 @@ cs_property_get_cell_tensor(cs_lnum_t               c_id,
                             cs_real_t               t_eval,
                             const cs_property_t    *pty,
                             bool                    do_inversion,
-                            cs_real_3_t            *tensor);
+                            cs_real_t               tensor[3][3]);
 
 /*----------------------------------------------------------------------------*/
 /*!
