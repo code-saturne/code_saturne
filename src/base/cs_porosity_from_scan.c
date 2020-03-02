@@ -521,7 +521,7 @@ cs_f_porosity_from_scan_get_pointer(bool **compute_porosity_from_scan)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_porosity_from_scan_set_file_name(const char *file_name)
+cs_porosity_from_scan_set_file_name(const char  *file_name)
 {
   if (file_name == NULL) {
     _porosity_from_scan_opt.compute_porosity_from_scan = false;
@@ -546,7 +546,7 @@ cs_porosity_from_scan_set_file_name(const char *file_name)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_porosity_from_scan_set_output_name(const char *output_name)
+cs_porosity_from_scan_set_output_name(const char  *output_name)
 {
   if (output_name == NULL) {
     _porosity_from_scan_opt.postprocess_points = false;
@@ -572,8 +572,8 @@ cs_porosity_from_scan_set_output_name(const char *output_name)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_porosity_from_scan_add_source(const cs_real_3_t source,
-                                 const bool transform)
+cs_porosity_from_scan_add_source(const cs_real_t  source[3],
+                                 bool             transform)
 {
   /* Add a source */
   const int s_id = _porosity_from_scan_opt.nb_sources;
@@ -599,7 +599,8 @@ cs_porosity_from_scan_add_source(const cs_real_3_t source,
       _porosity_from_scan_opt.sources[s_id][i] +=
         _porosity_from_scan_opt.transformation_matrix[i][3];
     }
-  } else {
+  }
+  else {
     for (int i = 0; i < 3; i++)
       _porosity_from_scan_opt.sources[s_id][i] = source[i];
   }
@@ -617,7 +618,8 @@ cs_porosity_from_scan_add_source(const cs_real_3_t source,
  *  \dfrac{\partial \varia}{\partial t} + \divs \left( \varia \vect{e}_r \right)
  *      - \divs \left( \vect{e}_r \right) \varia = 0
  *  \f]
- *  where \f$ \vect{e}_r = \dfrac{\vect{x} - \vect{x}_0}{\norm{\vect{x} - \vect{x}_0}} \f$
+ *  where \f$ \vect{e}_r
+ *          = \dfrac{\vect{x} - \vect{x}_0}{\norm{\vect{x} - \vect{x}_0}} \f$
  *  is the radial direction from the source \f$\vect{x}_0 \f$.
  *
  *  The boundary conditions on \f$ \varia \f$ is an homogeneous Neumann, and

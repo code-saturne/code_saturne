@@ -108,7 +108,7 @@ extern cs_porosity_from_scan_opt_t *cs_glob_porosity_from_scan_opt;
 /*----------------------------------------------------------------------------*/
 
 void
-cs_porosity_from_scan_set_file_name(const char *file_name);
+cs_porosity_from_scan_set_file_name(const char  *file_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -119,7 +119,7 @@ cs_porosity_from_scan_set_file_name(const char *file_name);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_porosity_from_scan_set_output_name(const char *output_name);
+cs_porosity_from_scan_set_output_name(const char  *output_name);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -131,8 +131,8 @@ cs_porosity_from_scan_set_output_name(const char *output_name);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_porosity_from_scan_add_source(const cs_real_3_t source,
-                                 const bool transform);
+cs_porosity_from_scan_add_source(const cs_real_t  source[3],
+                                 bool             transform);
 
 /*----------------------------------------------------------------------------*/
 /*!
