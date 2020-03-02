@@ -1140,6 +1140,36 @@ cs_user_internal_coupling(void)
   cs_internal_coupling_add_entity(f_id);  /* Field to be coupled */
 
   /*! [param_internal_coupling] */
+
+
+  /* Example: compute porosity from a scan of points
+   * ------------------------------------------------*/
+
+  cs_porosity_from_scan_set_file_name("chbre_chbre33.pts");
+
+  /* Add some sources to fill fluid space */
+  {
+    cs_real_3_t source = {4.295, 1.15326, 0.5};
+    cs_porosity_from_scan_add_source(source);
+  }
+  {
+    cs_real_3_t source = {4.295, 3.2, 0.5};
+    cs_porosity_from_scan_add_source(source);
+  }
+
+  /* Apply a transformation to the scanned points */
+  /* Translation part */
+  cs_glob_porosity_from_scan_opt->transformation_matrix[0][3] = 4.;
+  cs_glob_porosity_from_scan_opt->transformation_matrix[1][3] = 1.98;
+  cs_glob_porosity_from_scan_opt->transformation_matrix[2][3] = 37.5477;
+  /* Rotation part arround z axis */
+  cs_real_t angle = 15. /180. * cs_math_pi;
+  cs_glob_porosity_from_scan_opt->transformation_matrix[0][0] =  cos(angle);
+  cs_glob_porosity_from_scan_opt->transformation_matrix[0][1] =  sin(angle);
+  cs_glob_porosity_from_scan_opt->transformation_matrix[1][0] = -sin(angle);
+  cs_glob_porosity_from_scan_opt->transformation_matrix[1][1] =  cos(angle);
+  cs_glob_porosity_from_scan_opt->transformation_matrix[2][2] = 1.;
+
 }
 
 /*----------------------------------------------------------------------------*/
