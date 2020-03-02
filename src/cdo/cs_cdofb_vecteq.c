@@ -577,6 +577,20 @@ cs_cdofb_vecteq_conv_diff_reac(const cs_equation_param_t     *eqp,
        fluxes across primal faces */
     cs_cdofb_advection_build(eqp, cm, eqc->adv_func, cb);
 
+    /* Add it to the local system */
+    if (eqp->adv_scaling_property != NULL) {
+
+      if (cs_property_is_uniform(eqp->adv_scaling_property))
+        cs_sdm_scale(eqp->adv_scaling_property->ref_value, cb->loc);
+      else {
+        cs_real_t scaling = cs_property_value_in_cell(cm,
+                                                      eqp->adv_scaling_property,
+                                                      cb->t_pty_eval);
+        cs_sdm_scale(scaling, cb->loc);
+      }
+
+    }
+
     /* Add the local advection operator to the local system */
     const cs_real_t  *sval = cb->loc->val;
     for (int bi = 0; bi < cm->n_fc + 1; bi++) {

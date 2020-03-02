@@ -412,7 +412,22 @@ _svb_conv_diff_reac(const cs_equation_param_t     *eqp,
     eqc->get_advection_matrix(eqp, cm, diff_pty, fm, cb);
 
     /* Add it to the local system */
-    cs_sdm_add(csys->mat, cb->loc);
+    if (eqp->adv_scaling_property == NULL)
+      cs_sdm_add(csys->mat, cb->loc);
+
+    else {
+
+      if (cs_property_is_uniform(eqp->adv_scaling_property))
+        cs_sdm_add_mult(csys->mat,
+                        eqp->adv_scaling_property->ref_value, cb->loc);
+      else {
+        cs_real_t scaling = cs_property_value_in_cell(cm,
+                                                      eqp->adv_scaling_property,
+                                                      cb->t_pty_eval);
+        cs_sdm_add_mult(csys->mat, scaling, cb->loc);
+      }
+
+    }
 
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOVB_SCALEQ_DBG > 1
     if (cs_dbg_cw_test(eqp, cm, csys))

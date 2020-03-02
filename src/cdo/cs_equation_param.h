@@ -377,12 +377,20 @@ typedef struct {
    * \var adv_field
    * Pointer to the \ref cs_adv_field_t structure associated to the advection
    * term
+   *
+   * \var adv_scaling_property
+   * May be set to NULL even if the advection term is activated. The value of this
+   * property in each cell is multiplicative coefficient in front of the advection
+   * term (boundary terms are also considered)
+   * This is useful to treat the thermal module using the variable temperature
+   * instead of the enthalpy.
    */
 
   cs_param_advection_form_t     adv_formulation;
   cs_param_advection_scheme_t   adv_scheme;
   cs_real_t                     upwind_portion;
   cs_adv_field_t               *adv_field;
+  cs_property_t                *adv_scaling_property;
 
   /*!
    * @}
@@ -1336,6 +1344,19 @@ cs_equation_add_time(cs_equation_param_t   *eqp,
 void
 cs_equation_add_advection(cs_equation_param_t   *eqp,
                           cs_adv_field_t        *adv_field);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Associate a scaling property to the advection
+ *
+ * \param[in, out] eqp        pointer to a cs_equation_param_t structure
+ * \param[in]      property   pointer to a cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_advection_scaling_property(cs_equation_param_t   *eqp,
+                                           cs_property_t         *property);
 
 /*----------------------------------------------------------------------------*/
 /*!

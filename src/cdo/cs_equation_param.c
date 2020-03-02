@@ -1829,6 +1829,7 @@ cs_equation_create_param(const char            *name,
 
   /* Advection term */
   eqp->adv_field = NULL;
+  eqp->adv_scaling_property = NULL;
   eqp->adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV;
   eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
   eqp->upwind_portion = 0.15;
@@ -1950,6 +1951,7 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
   dst->adv_scheme = ref->adv_scheme;
   dst->upwind_portion = ref->upwind_portion;
   dst->adv_field = ref->adv_field;
+  dst->adv_scaling_property = ref->adv_scaling_property;
 
   /* Reaction term */
   dst->n_reaction_terms = ref->n_reaction_terms;
@@ -2458,6 +2460,9 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
     cs_log_printf(CS_LOG_SETUP, "\n### %s: Advection term settings\n", eqname);
     cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Field: %s\n",
                   eqname, cs_advection_field_get_name(eqp->adv_field));
+    if (eqp->adv_scaling_property != NULL)
+      cs_log_printf(CS_LOG_SETUP, "  * %s | Scaling.Property: %s\n",
+                    eqname, cs_property_get_name(eqp->adv_scaling_property));
 
     cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Formulation:", eqname);
     switch(eqp->adv_formulation) {
@@ -3132,6 +3137,29 @@ cs_equation_add_advection(cs_equation_param_t   *eqp,
 
   eqp->flag |= CS_EQUATION_CONVECTION;
   eqp->adv_field = adv_field;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Associate a scaling property to the advection
+ *
+ * \param[in, out] eqp        pointer to a cs_equation_param_t structure
+ * \param[in]      property   pointer to a cs_property_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_advection_scaling_property(cs_equation_param_t   *eqp,
+                                           cs_property_t         *property)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+  if (property == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Eq. %s: Stop adding an empty property.",
+              __func__, eqp->name);
+
+  eqp->adv_scaling_property = property;
 }
 
 /*----------------------------------------------------------------------------*/
