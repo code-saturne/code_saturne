@@ -1147,16 +1147,6 @@ cs_user_internal_coupling(void)
 
   cs_porosity_from_scan_set_file_name("chbre_chbre33.pts");
 
-  /* Add some sources to fill fluid space */
-  {
-    cs_real_3_t source = {4.295, 1.15326, 0.5};
-    cs_porosity_from_scan_add_source(source);
-  }
-  {
-    cs_real_3_t source = {4.295, 3.2, 0.5};
-    cs_porosity_from_scan_add_source(source);
-  }
-
   /* Apply a transformation to the scanned points */
   /* Translation part */
   cs_glob_porosity_from_scan_opt->transformation_matrix[0][3] = 4.;
@@ -1169,6 +1159,23 @@ cs_user_internal_coupling(void)
   cs_glob_porosity_from_scan_opt->transformation_matrix[1][0] = -sin(angle);
   cs_glob_porosity_from_scan_opt->transformation_matrix[1][1] =  cos(angle);
   cs_glob_porosity_from_scan_opt->transformation_matrix[2][2] = 1.;
+
+
+  /* Add some sources to fill fluid space */
+  {
+    cs_real_3_t source = {4.295, 1.15326, 0.5};
+    /* If a transformation matrix has been applied
+     * chose if if has to be applied to the source */
+    bool transform = true ;
+    cs_porosity_from_scan_add_source(source, transform);
+  }
+  {
+    cs_real_3_t source = {4.295, 3.2, 0.5};
+    /* If a transformation matrix has been applied
+     * chose if if has to be applied to the source */
+    bool transform = true ;
+    cs_porosity_from_scan_add_source(source, transform);
+  }
 
 }
 
