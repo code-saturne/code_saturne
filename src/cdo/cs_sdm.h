@@ -590,6 +590,26 @@ cs_sdm_copy_block(const cs_sdm_t       *m,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Multiply a matrix with the scaling factor given as parameter
+ *
+ * \param[in]      scaling
+ * \param[in, out] m      pointer to cs_sdm_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+cs_sdm_scale(cs_real_t       scaling,
+             cs_sdm_t       *m)
+{
+  /* Sanity checks */
+  assert(m != NULL);
+
+  for (int i = 0; i < m->n_rows*m->n_cols; i++)
+    m->val[i] *= scaling;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  transpose and copy a matrix into another one already shaped
  *         sub-matrix starting from (r_id, c_id)
  *
