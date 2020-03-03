@@ -78,10 +78,17 @@ typedef enum {
   CS_SOLIDIFICATION_MODEL_STOKES                  = 1<<0, /* =   1 */
   CS_SOLIDIFICATION_MODEL_NAVIER_STOKES           = 1<<1, /* =   2 */
 
+  /* Main modelling for the thermal system
+     ------------------------------------- */
+
+  CS_SOLIDIFICATION_MODEL_USE_TEMPERATURE         = 1<<2, /* =   4 */
+  CS_SOLIDIFICATION_MODEL_USE_ENTHALPY            = 1<<3, /* =   8 */
+
 
 } cs_solidification_model_bit_t;
 
 
+typedef struct _solidification_alloy_t  cs_solidification_alloy_t;
 typedef struct _solidification_t  cs_solidification_t;
 
 /*============================================================================
@@ -121,6 +128,28 @@ cs_solidification_activate(cs_solidification_model_t      model,
                            cs_navsto_param_coupling_t     algo_coupling,
                            cs_flag_t                      ns_option,
                            cs_flag_t                      ns_post_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add an alloy related to transport equation which will interact in
+ *         the dynamic of the flow during the solidification process.
+ *
+ * \param[in]  name             name of the alloy
+ * \param[in]  varname          name of the related unknown
+ * \param[in]  conc0            reference concentration
+ * \param[in]  beta             value of the dilatation coefficient
+ * \param[in]  kp               value of the distribution coefficient
+ *
+ * \return a pointer to a new allocated cs_solidification_alloy_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_solidification_alloy_t *
+cs_solidification_add_alloy(const char     *name,
+                            const char     *varname,
+                            cs_real_t       conc0,
+                            cs_real_t       beta,
+                            cs_real_t       kp);
 
 /*----------------------------------------------------------------------------*/
 /*!

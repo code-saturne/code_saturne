@@ -293,17 +293,25 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
   /* Create associated equation(s) */
   if (navsto->param->model & CS_NAVSTO_MODEL_BOUSSINESQ) {
 
-    cs_flag_t  thm_num = 0, thm_post = 0;
-    cs_flag_t  thm_model = CS_THERMAL_MODEL_USE_TEMPERATURE |
-      CS_THERMAL_MODEL_NAVSTO_VELOCITY;
+    if (navsto->param->model & CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Two kinds of Boussinesq approximations are switched on.\n"
+                " Please check your settings.", __func__);
 
-    if (navsto->param->option_flag & CS_NAVSTO_FLAG_STEADY)
-      thm_model |= CS_THERMAL_MODEL_STEADY;
+    if (!cs_thermal_system_is_activated()) { /* Not already activated */
 
-    cs_thermal_system_t  *thm = cs_thermal_system_activate(thm_model,
-                                                           thm_num,
-                                                           thm_post);
+      cs_flag_t  thm_num = 0, thm_post = 0;
+      cs_flag_t  thm_model = CS_THERMAL_MODEL_USE_TEMPERATURE |
+        CS_THERMAL_MODEL_NAVSTO_VELOCITY;
 
+      if (navsto->param->option_flag & CS_NAVSTO_FLAG_STEADY)
+        thm_model |= CS_THERMAL_MODEL_STEADY;
+
+      cs_thermal_system_t  *thm = cs_thermal_system_activate(thm_model,
+                                                             thm_num,
+                                                             thm_post);
+
+    }
   }
 
   if (post_flag & CS_NAVSTO_POST_STREAM_FUNCTION) {
@@ -917,6 +925,8 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
     const cs_real_t  *gravity_vector = nsp->phys_constants->gravity;
     const cs_real_t  rho0 = nsp->mass_density->ref_value;
 
+    /* This structure is allocated here but the lifecycle is managed by the
+       cs_thermal_system_t structure */
     cs_source_term_boussinesq_t  *bq =
       cs_thermal_system_add_boussinesq_source_term(gravity_vector, rho0);
 

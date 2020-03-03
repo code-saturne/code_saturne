@@ -522,9 +522,9 @@ cs_domain_initialize_setup(cs_domain_t    *domain)
   /* Set the scheme flag for the computational domain */
   _set_scheme_flags(domain);
 
-  /* Last step: Proceed to the settings of a cs_equation_t structure. Setup the
-     structure related to cs_sles_*
-  */
+  /* Last step: Proceed to the settings of a cs_equation_t structure.
+   * Setup the structure related to cs_sles_*
+   */
 
   /* Navier-Stokes system */
   if (cs_navsto_system_is_activated())

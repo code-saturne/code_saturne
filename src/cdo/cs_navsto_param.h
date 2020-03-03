@@ -129,6 +129,14 @@ typedef cs_flag_t  cs_navsto_param_model_t;
  * The gradient of temperature is assumed to have a small norm and the mass
  * density variates in a small range. In this case, an additional equation
  * related to the temperature is considered and momentum source term is added.
+ *
+ * \var CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ
+ * Gravity effects are taken into account as well as the effect of small
+ * variation of temperatures and that of alloy concentrations. The gradient of
+ * temperature/alloy concentrations is assumed to have a small norm and the mass
+ * density variates in a small range. In this case, additional equations related
+ * to the temperature/alloy concetrations are considered.
+ * A momentum source term is added wich is managed by the solidification module.
  */
 
 typedef enum {
@@ -145,7 +153,8 @@ typedef enum {
 
   CS_NAVSTO_MODEL_GRAVITY_EFFECTS                 = 1<<3, /* =   8 */
   CS_NAVSTO_MODEL_CORIOLIS_EFFECTS                = 1<<4, /* =  16 */
-  CS_NAVSTO_MODEL_BOUSSINESQ                      = 1<<5  /* =  32 */
+  CS_NAVSTO_MODEL_BOUSSINESQ                      = 1<<5, /* =  32 */
+  CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ       = 1<<6, /* =  64 */
 
 } cs_navsto_param_model_bit_t;
 

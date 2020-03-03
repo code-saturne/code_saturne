@@ -246,7 +246,7 @@ cs_navsto_param_create(const cs_boundary_t             *boundaries,
   param->adv_scheme = CS_PARAM_ADVECTION_SCHEME_UPWIND;
 
   /* Forcing steady state in order to avoid inconsistencies */
-  if (option_flag &  CS_NAVSTO_FLAG_STEADY)
+  if (option_flag & CS_NAVSTO_FLAG_STEADY)
     param->time_scheme = CS_TIME_SCHEME_STEADY;
   else
     param->time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT;
@@ -776,6 +776,9 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
   if (nsp->model & CS_NAVSTO_MODEL_BOUSSINESQ)
     cs_log_printf(CS_LOG_SETUP, "  * NavSto | Model: %s\n",
                   " Boussinesq approximation activated");
+  if (nsp->model & CS_NAVSTO_MODEL_SOLIDIFICATION_BOUSSINESQ)
+    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Model: %s\n",
+                  " Boussinesq approximation for solidification activated");
 
   /* Describe the coupling algorithm */
   cs_log_printf(CS_LOG_SETUP, "  * NavSto | Coupling: %s\n",

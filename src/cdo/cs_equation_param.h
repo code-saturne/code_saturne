@@ -147,9 +147,6 @@ BEGIN_C_DECLS
 /*! \enum cs_equation_type_t
  *  \brief Type of equations managed by the solver
  *
- * \var CS_EQUATION_TYPE_USER
- * User-defined equation
- *
  * \var CS_EQUATION_TYPE_GROUNDWATER
  * Equation related to the groundwater flow module
  *
@@ -160,22 +157,31 @@ BEGIN_C_DECLS
  * Equation related to the resolution of the Navier-Stokes system
  * - Example: momentum, prediction, correction, energy...
  *
- * \var CS_EQUATION_TYPE_THERMAL
- * Equation related to the heat transfer
- *
  * \var CS_EQUATION_TYPE_PREDEFINED
  * Predefined equation (most part of the setting is already done)
  * - Example: equation for the wall distance or ALE
+ *
+ * \var CS_EQUATION_TYPE_THERMAL
+ * Equation related to the heat transfer
+ *
+ * \var CS_EQUATION_TYPE_SOLIDIFICATION
+ * Equation related to the solidification module
+ *
+ * \var CS_EQUATION_TYPE_USER
+ * User-defined equation
+ *
  */
 
 typedef enum {
 
-  CS_EQUATION_TYPE_USER,
   CS_EQUATION_TYPE_GROUNDWATER,
   CS_EQUATION_TYPE_MAXWELL,
   CS_EQUATION_TYPE_NAVSTO,
-  CS_EQUATION_TYPE_THERMAL,
   CS_EQUATION_TYPE_PREDEFINED,
+  CS_EQUATION_TYPE_THERMAL,
+  CS_EQUATION_TYPE_SOLIDIFICATION,
+  CS_EQUATION_TYPE_USER,
+
   CS_EQUATION_N_TYPES
 
 } cs_equation_type_t;
