@@ -1181,13 +1181,6 @@ cs_base_logfile_head(int    argc,
 #else
   snprintf(mpi_lib, 31, "MPICH");
 #endif
-
-#elif defined(LAM_MPI)
-#if defined(LAM_VERSION)
-  snprintf(mpi_lib, 31, "LAM/MPI %s", LAM_VERSION);
-#else
-  snprintf(mpi_lib, 31, "LAM/MPI");
-#endif
 #endif
 
   mpi_lib[31] = '\0';
