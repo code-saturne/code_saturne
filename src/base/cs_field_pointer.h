@@ -242,6 +242,8 @@ typedef enum {
   CS_ENUMF_(vel_mean),       /*!< Mean velocity (for dispersed phases) */
   CS_ENUMF_(vel_rel),        /*!< Relative velocity (for dispersed phases) */
   CS_ENUMF_(dt_dp),          /*!< dtemp/dpress derivative */
+  CS_ENUMF_(kindiff),        /*!< Particles kinetic diffusivity */
+  CS_ENUMF_(coldiff),        /*!< Particles collisional diffusivity */
 
   /* Added variables (scalars) */
   CS_ENUMF_(add_var),        /*!< User added variables */
