@@ -131,10 +131,11 @@ typedef struct {
   int           itytur;       /* class of turbulence model (integer value
                                  iturb/10) */
   int           hybrid_turb;  /* Type of Hybrid Turbulence Model
-                                   - CS_HYBRID_NONE : No model
-                                   - CS_HYBRID_DES  : Detached Eddy Simulation
-                                   - CS_HYBRID_DDES : Delayed Detached Eddy Simulation
-                                   - CS_HYBRID_SAM  : Scale Adaptive Model */
+                                   - CS_HYBRID_NONE: No model
+                                   - CS_HYBRID_DES:  Detached Eddy Simulation
+                                   - CS_HYBRID_DDES: Delayed Detached Eddy
+                                                     Simulation
+                                   - CS_HYBRID_SAM:  Scale Adaptive Model */
   int           type;  /* Type of turbulence modelling:
                           - CS_TURB_NONE: No model
                           - CS_TURB_RANS: RANS modelling
@@ -142,8 +143,10 @@ typedef struct {
                           - CS_TURB_HYBRID: RANS -- LES modelling */
   int           order; /* Order of the turbulence model:
                           - CS_TURB_ALGEBRAIC: 0th order algebraik model
-                          - CS_TURB_FIRST_ORDER: 1st order Eddy Viscosity type models
-                          - CS_TURB_SECOND_ORDER: 2nd order Differential Reynolds Stress type models */
+                          - CS_TURB_FIRST_ORDER: 1st order Eddy Viscosity
+                                                 type models
+                          - CS_TURB_SECOND_ORDER: 2nd order Differential
+                                                  Reynolds Stress type models */
 } cs_turb_model_t;
 
 
@@ -322,6 +325,9 @@ extern double cs_turb_ckwgm1;
 extern double cs_turb_ckwgm2;
 extern const double cs_turb_ckwa1;
 extern const double cs_turb_ckwc1;
+extern double cs_turb_cddes;
+extern const double cs_turb_csas;
+extern const double cs_turb_csas_eta2;
 extern const double cs_turb_csab1;
 extern const double cs_turb_csab2;
 extern const double cs_turb_csasig;

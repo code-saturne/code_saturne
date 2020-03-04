@@ -89,9 +89,11 @@ BEGIN_C_DECLS
         - CS_TURB_NONE: no turbulence model (laminar flow)
         - CS_TURB_MIXING_LENGTH: mixing length model
         - CS_TURB_K_EPSILON: standard \f$ k-\varepsilon \f$ model
-        - CS_TURB_K_EPSILON_LIN_PROD: \f$ k-\varepsilon \f$ model with Linear Production (LP) correction
+        - CS_TURB_K_EPSILON_LIN_PROD: \f$ k-\varepsilon \f$ model with
+                                       Linear Production (LP) correction
         - CS_TURB_K_EPSILON_LS: Launder-Sharma \f$ k-\varepsilon \f$ model
-        - CS_TURB_K_EPSILON_QUAD: Baglietto et al. quadratic \f$ k-\varepsilon \f$ model
+        - CS_TURB_K_EPSILON_QUAD: Baglietto et al. quadratic
+                                   \f$ k-\varepsilon \f$ model
         - CS_TURB_RIJ_EPSILON_LRR: \f$ R_{ij}-\epsilon \f$ (LRR)
         - CS_TURB_RIJ_EPSILON_SSG: \f$ R_{ij}-\epsilon \f$ (SSG)
         - CS_TURB_RIJ_EPSILON_EBRSM: \f$ R_{ij}-\epsilon \f$ (EBRSM)
@@ -116,9 +118,8 @@ BEGIN_C_DECLS
         - CS_TURB_RANS: RANS
         - CS_TURB_LES: LES
         - CS_TURB_HYBRID: Hybrid RANS LES
-
-
 */
+
 /*----------------------------------------------------------------------------*/
 
 /*! \struct cs_turb_rans_model_t
@@ -420,7 +421,8 @@ const double cs_turb_cstlog = 5.2;
 const double cs_turb_cstlog_rough = 8.5;
 
 /*!
- * Constant \f$ \alpha \f$ for logarithmic law function switching from rough to smooth:
+ * Constant \f$ \alpha \f$ for logarithmic law function switching from rough
+ * to smooth:
  * \f$ \dfrac{1}{\kappa} \ln(y u_k/(\nu + \alpha \xi u_k)) + cstlog \f$
  * (\f$ \alpha = \exp \left( -\kappa (8.5 - 5.2) \right) \f$).
  *
@@ -711,6 +713,23 @@ const double cs_turb_ckwa1 = 0.31;
  * Specific constant of k-omega SST.
  */
 const double cs_turb_ckwc1 = 10.0;
+
+/*!
+ * Constant \f$ C_{DDES} \f$ for the \f$k-\omega\f$ SST model.
+ * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST) and hybrid_turb=1.
+ */
+double cs_turb_cddes = -1.;
+
+/*!
+ * Constant \f$ C_{SAS}\f$ for the hybrid \f$k-\omega\f$ SST model.
+ * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST) and hybrid_turb=3.
+ */
+const double cs_turb_csas = 0.11;
+
+/*! constant \f$ C_{DDES}\f$ for the hybrid \f$k-\omega\f$ SST model.
+ * Useful if and only if \ref iturb=60 (\f$k-\omega\f$ SST) and hybrid_turb=3.
+ */
+const double cs_turb_csas_eta2 = 3.51;
 
 /*!
  * Specific constant of Spalart-Allmaras.
@@ -1204,28 +1223,28 @@ cs_set_type_order_turbulence_model(void)
      _turb_model.type = CS_TURB_RANS;
      _turb_model.order = CS_TURB_ALGEBRAIC;
   }
-  else if (_turb_model.iturb == CS_TURB_K_EPSILON
-      ||   _turb_model.iturb == CS_TURB_K_EPSILON_LIN_PROD
-      ||   _turb_model.iturb == CS_TURB_K_EPSILON_LS
-      ||   _turb_model.iturb == CS_TURB_K_EPSILON_QUAD
-      ||   _turb_model.iturb == CS_TURB_V2F_PHI
-      ||   _turb_model.iturb == CS_TURB_V2F_BL_V2K
-      ||   _turb_model.iturb == CS_TURB_K_OMEGA
-      ||   _turb_model.iturb == CS_TURB_SPALART_ALLMARAS) {
-     _turb_model.type = CS_TURB_RANS;
-     _turb_model.order = CS_TURB_FIRST_ORDER;
+  else if (   _turb_model.iturb == CS_TURB_K_EPSILON
+           || _turb_model.iturb == CS_TURB_K_EPSILON_LIN_PROD
+           || _turb_model.iturb == CS_TURB_K_EPSILON_LS
+           || _turb_model.iturb == CS_TURB_K_EPSILON_QUAD
+           || _turb_model.iturb == CS_TURB_V2F_PHI
+           || _turb_model.iturb == CS_TURB_V2F_BL_V2K
+           || _turb_model.iturb == CS_TURB_K_OMEGA
+           || _turb_model.iturb == CS_TURB_SPALART_ALLMARAS) {
+    _turb_model.type = CS_TURB_RANS;
+    _turb_model.order = CS_TURB_FIRST_ORDER;
   }
-  else if (_turb_model.iturb == CS_TURB_RIJ_EPSILON_LRR
-      ||   _turb_model.iturb == CS_TURB_RIJ_EPSILON_SSG
-      ||   _turb_model.iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
-     _turb_model.type = CS_TURB_RANS;
-     _turb_model.order = CS_TURB_SECOND_ORDER;
+  else if (   _turb_model.iturb == CS_TURB_RIJ_EPSILON_LRR
+           || _turb_model.iturb == CS_TURB_RIJ_EPSILON_SSG
+           || _turb_model.iturb == CS_TURB_RIJ_EPSILON_EBRSM) {
+    _turb_model.type = CS_TURB_RANS;
+    _turb_model.order = CS_TURB_SECOND_ORDER;
   }
-  else if (_turb_model.iturb == CS_TURB_LES_SMAGO_CONST
-      ||   _turb_model.iturb == CS_TURB_LES_SMAGO_DYN
-      ||   _turb_model.iturb == CS_TURB_LES_WALE) {
-     _turb_model.type = CS_TURB_LES;
-     _turb_model.order = CS_TURB_ALGEBRAIC;
+  else if (   _turb_model.iturb == CS_TURB_LES_SMAGO_CONST
+           || _turb_model.iturb == CS_TURB_LES_SMAGO_DYN
+           || _turb_model.iturb == CS_TURB_LES_WALE) {
+    _turb_model.type = CS_TURB_LES;
+    _turb_model.order = CS_TURB_ALGEBRAIC;
   }
 }
 
@@ -1284,6 +1303,16 @@ cs_turb_compute_constants(void)
     cs_turb_csrij = 0.21;
   else
     cs_turb_csrij = 0.22;
+
+  if (cs_glob_turb_model->iturb == CS_TURB_K_OMEGA){
+    /* SST DDES */
+    if (cs_glob_turb_model->hybrid_turb == 2)
+      cs_turb_cddes = 0.65;
+    else if (cs_glob_turb_model->hybrid_turb == 1)
+      cs_turb_cddes = 0.61;
+  } else if (cs_glob_turb_model->iturb == CS_TURB_V2F_BL_V2K){
+    cs_turb_cddes = 0.60;
+  }
 
   double xkappa2 = cs_turb_xkappa*cs_turb_xkappa;
   cs_turb_ckwgm1 =   cs_turb_ckwbt1/cs_turb_cmu
