@@ -355,7 +355,7 @@ logical(c_bool), pointer, save :: compute_z_ground
 !>  - modsub = 2 : Bouzereau et al. 2004
 !>  - modsub = 3 : Cuijpers and Duynkerke 1993, Deardorff 1976, Sommeria and
 !>                Deardorff 1977
-integer, save::  modsub
+integer(c_int), pointer, save:: modsub
 
 !> Option for liquid water content distribution models
 !>  - moddis = 1 : all or nothing
@@ -521,17 +521,18 @@ contains
     ! Local variables
     type(c_ptr) :: c_compute_z_ground, c_model, c_nrg, c_nespg
     type(c_ptr) :: c_sedimentation_model, c_deposition_model, c_nucleation_model
+    type(c_ptr) :: c_subgrid_model
     type(c_ptr) :: c_syear, c_squant, c_shour, c_smin, c_ssec
     type(c_ptr) :: c_longitude, c_latitude
     type(c_ptr) :: c_modelaero, c_frozen_gas_chem, c_nlayer, c_nsize
     type(c_ptr) :: c_init_gas_with_lib, c_init_aero_with_lib, c_chem_with_photo
 
-    call cs_f_atmo_get_pointers( &
+    call cs_f_atmo_get_pointers(                  &
       c_syear, c_squant, c_shour, c_smin, c_ssec, &
       c_longitude, c_latitude,                    &
       c_compute_z_ground,                         &
       c_sedimentation_model, c_deposition_model,  &
-      c_nucleation_model,                         &
+      c_nucleation_model, c_subgrid_model,        &
       c_model, c_nespg, c_nrg, c_chem_with_photo, &
       c_modelaero, c_frozen_gas_chem,             &
       c_init_gas_with_lib,                        &
@@ -552,6 +553,7 @@ contains
     call c_f_pointer(c_sedimentation_model, modsedi)
     call c_f_pointer(c_deposition_model, moddep)
     call c_f_pointer(c_nucleation_model, modnuc)
+    call c_f_pointer(c_subgrid_model, modsub)
 
     call c_f_pointer(c_model, ichemistry)
     call c_f_pointer(c_nespg, nespg)

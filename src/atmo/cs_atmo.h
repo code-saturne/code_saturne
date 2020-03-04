@@ -114,6 +114,7 @@ typedef struct {
   int sedimentation_model;
   int deposition_model;
   int nucleation_model;
+  int subgrid_model;
 } cs_atmo_option_t;
 
 /*----------------------------------------------------------------------------

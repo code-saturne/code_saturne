@@ -2322,7 +2322,7 @@ module cs_c_bindings
         longitude, latitude,                                            &
         compute_z_ground,                                               &
         sedimentation_model, deposition_model, nucleation_model,        &
-        ichemistry, nespg, nrg, chem_with_photo,                        &
+        subgrid_model, ichemistry, nespg, nrg, chem_with_photo,         &
         iaerosol, frozen_gas_chem, init_gas_with_lib,                   &
         init_aero_with_lib, n_aero, n_sizebin)                          &
       bind(C, name='cs_f_atmo_get_pointers')
@@ -2331,6 +2331,7 @@ module cs_c_bindings
       type(c_ptr), intent(out) :: compute_z_ground, ichemistry, nespg, nrg
       type(c_ptr), intent(out) :: sedimentation_model, deposition_model
       type(c_ptr), intent(out) :: nucleation_model
+      type(c_ptr), intent(out) :: subgrid_model
       type(c_ptr), intent(out) :: syear, squant, shour, smin, ssec
       type(c_ptr), intent(out) :: longitude, latitude
       type(c_ptr), intent(out) :: iaerosol, frozen_gas_chem

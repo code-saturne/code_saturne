@@ -118,6 +118,7 @@ static cs_atmo_option_t  _atmo_option = {
   .sedimentation_model = 0,
   .deposition_model = 0,
   .nucleation_model = 0,
+  .subgrid_model = 0,
 };
 
 /* atmo chemistry options structure */
@@ -173,6 +174,7 @@ cs_f_atmo_get_pointers(int       **syear,
                        int       **sedimentation_model,
                        int       **deposition_model,
                        int       **nucleation_model,
+                       int       **subgrid_model,
                        int       **model,
                        int       **n_species,
                        int       **n_reactions,
@@ -215,6 +217,7 @@ cs_f_atmo_get_pointers(int       **syear,
                        int       **sedimentation_model,
                        int       **deposition_model,
                        int       **nucleation_model,
+                       int       **subgrid_model,
                        int       **model,
                        int       **n_species,
                        int       **n_reactions,
@@ -237,6 +240,7 @@ cs_f_atmo_get_pointers(int       **syear,
   *sedimentation_model = &(_atmo_option.sedimentation_model);
   *deposition_model = &(_atmo_option.deposition_model);
   *nucleation_model = &(_atmo_option.nucleation_model);
+  *subgrid_model = &(_atmo_option.subgrid_model);
   *model = &(_atmo_chem.model);
   *n_species = &(_atmo_chem.n_species);
   *n_reactions = &(_atmo_chem.n_reactions);
