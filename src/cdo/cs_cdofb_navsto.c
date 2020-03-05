@@ -1533,7 +1533,7 @@ cs_cdofb_navsto_boussinesq_source_term(cs_lnum_t            n_elts,
     cs_lnum_t  r_id = compact ? i : id;
     cs_real_t  *_r = retval + 3*r_id;
 
-    const cs_real_t  bq_coef = bq->rho0*bq->beta * (bq->var[id] - bq->var0);
+    const cs_real_t  bq_coef = -bq->rho0*bq->beta * (bq->var[id] - bq->var0);
     for (int k = 0; k < 3; k++)
       _r[k] = bq_coef * bq->g[k];
 
