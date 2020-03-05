@@ -615,6 +615,7 @@ cs_cdofb_navsto_init_face_pressure(const cs_navsto_param_t     *nsp,
 
   }  /* Loop on definitions */
 
+  BFT_FREE(def2f_idx);
 }
 
 /*----------------------------------------------------------------------------*/

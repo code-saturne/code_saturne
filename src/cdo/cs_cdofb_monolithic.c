@@ -2537,6 +2537,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   /* Frees */
   cs_cdofb_monolithic_sles_clean(msles);
   BFT_FREE(dir_values);
+  BFT_FREE(enforced_ids);
 
   cs_timer_t  t_end = cs_timer_time();
   cs_timer_counter_add_diff(&(sc->timer), &t_start, &t_end);

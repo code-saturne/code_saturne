@@ -834,6 +834,7 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 
   /* Free temporary buffers and structures */
   BFT_FREE(dir_values);
+  BFT_FREE(enforced_ids);
   cs_matrix_assembler_values_finalize(&mav);
 
   /* End of the system building */
