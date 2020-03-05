@@ -894,6 +894,14 @@ class mei_to_c_interpreter:
                         self.init_block('vol', 'all_cells', dname,
                                         exp, req, sym, sca)
 
+            # ALE mesh viscosity
+            from code_saturne.model.MobileMeshModel import MobileMeshModel
+            ale_model = MobileMeshModel(self.case)
+            exp, req, sca, sym = ale_model.getFormulaViscComponents()
+            self.init_block('vol', 'all_cells', 'mesh_viscosity',
+                            exp, req, sym, sca)
+
+
             # GroundWater Flows Law
             vlm = LocalizationModel('VolumicZone', self.case)
             glm = None

@@ -1853,6 +1853,24 @@ class XMLinit(BaseXmlInit):
                 if node['id'] == None:
                     node['id'] = node['name']
 
+        # Rename mesh viscosity for meg calls
+        ale_replace_dict = {'isotrop':{'mesh_viscosity_1':'mesh_viscosity'},
+                            'orthotrop':{'mesh_viscosity_1':'mesh_viscosity[X]',
+                                         'mesh_viscosity_2':'mesh_viscosity[Y]',
+                                         'mesh_viscosity_3':'mesh_viscosity[Z]'}}
+
+        XMLAleMethod = XMLThermoPhysicalNode.xmlGetNode("ale_method")
+        if XMLAleMethod != None and XMLAleMethod['status'] == 'on':
+            nat = XMLAleMethod.xmlGetNode('mesh_viscosity')
+            ale_type = nat['type']
+            d = ale_replace_dict[ale_type]
+            nf = XMLAleMethod.xmlGetNode('formula')
+            if nf != None:
+                f = XMLAleMethod.xmlGetString("formula")
+                for k in d.keys():
+                    f = f.replace(k, d[k])
+
+                nf.xmlSetTextNode(f)
 
 #-------------------------------------------------------------------------------
 # End of XMLinit

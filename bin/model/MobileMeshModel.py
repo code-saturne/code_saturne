@@ -46,6 +46,7 @@ from code_saturne.model.XMLmodel import ModelTest
 from code_saturne.model.OutputControlModel import OutputControlModel
 from code_saturne.model.Boundary import Boundary
 from code_saturne.model.LocalizationModel import LocalizationModel
+from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
 # Mobil Mesh model class
@@ -61,6 +62,9 @@ class MobileMeshModel(Model):
         """
         self.case = case
 
+        # Notebook
+        self.notebook = NotebookModel(self.case)
+
 
     def __defaultInitialValues(self):
         """
@@ -69,11 +73,31 @@ class MobileMeshModel(Model):
         default = {}
         default['nalinf' ]  = 0
         default['iortvm' ]  = 'isotrop'
-        default['formula_isotrop']  = 'mesh_viscosity_1 = 1;'
-        default['formula_orthotrop'] = 'mesh_viscosity_1 = 1;\nmesh_viscosity_2 = 1;\nmesh_viscosity_3 = 1;'
+        default['formula_isotrop']  = 'mesh_viscosity = 1;'
+        default['formula_orthotrop'] = 'mesh_viscosity[X] = 1;\nmesh_viscosity[Y] = 1;\nmesh_viscosity[Z] = 1;'
         default['ale_method']  = 'off'
 
         return default
+
+    def __getViscosityComponents(self, visc_type=None):
+        """
+        Return a dictionnary which contains the viscosity components
+        with name and labels.
+        """
+
+        viscosity_type = visc_type
+        if viscosity_type == None:
+            viscosity_type = self.getViscosity()
+
+        d = []
+        if viscosity_type == 'isotrop':
+            d.append({'name':'mesh_viscosity', 'label':'mesh_vi1'})
+        elif viscosity_type == 'orthotrop':
+            d.append({'name':'mesh_viscosity[X]', 'label':'mesh_vi1'})
+            d.append({'name':'mesh_viscosity[Y]', 'label':'mesh_vi2'})
+            d.append({'name':'mesh_viscosity[Z]', 'label':'mesh_vi3'})
+
+        return d
 
 
     def __getMobileMeshNode(self):
@@ -120,38 +144,40 @@ class MobileMeshModel(Model):
         """
         node_ale = self.__getMobileMeshNode()
         node_ale.xmlInitChildNode('variable', name='mesh_velocity', label='Mesh Velocity', dimension=3)
-        node_ale.xmlInitChildNode('property', name='mesh_viscosity_1', label='mesh_vi1')
+        mvc = self.__getViscosityComponents()
+        for d in mvc:
+            node_ale.xmlInitChildNode('property', name=d['name'], label=d['label'])
 
-        # find node for property / choice and set to default value if require
-        node = node_ale.xmlGetChildNode('property', name='mesh_viscosity_1')
+#        # find node for property / choice and set to default value if require
+#        node = node_ale.xmlGetChildNode('property', name='mesh_viscosity_1')
 
         self.__updateNodeViscosity()
 
 
-    def __updateNodeViscosity(self):
+    def __updateNodeViscosity(self, previous_visc = None):
         """
         Update properties beyond mesh visosity is isotrope or not.
+        Only used if previous viscosity type is modified.
         """
         node_ale = self.__getMobileMeshNode()
-        if self.getViscosity() == 'orthotrop':
-            node_ale.xmlInitChildNode('property', name='mesh_viscosity_2', label='mesh_vi2')
-            node_ale.xmlInitChildNode('property', name='mesh_viscosity_3', label='mesh_vi3')
+        if previous_visc:
+            dp = self.__getViscosityComponents(previous_visc)
+            d  = self.__getViscosityComponents()
 
-            # find choice for mesh_viscosity_1, create default value if require
-            node = node_ale.xmlGetChildNode('property', name='mesh_viscosity_1')
+            for e in dp:
+                n = node_ale.xmlGetChildNode('property', name=e['name'])
+                if n:
+                    n.xmlRemoveNode()
 
-            # Syncrhonize other properties
-            for n in ('mesh_viscosity_2', 'mesh_viscosity_3'):
-                node = node_ale.xmlGetChildNode('property', name=n)
+            for e in d:
+                node_ale.xmlInitChildNode('property',
+                                          name  = e['name'],
+                                          label = e['label'])
+                node = node_ale.xmlGetChildNode('property', name=e['name'])
 
-        else:
-            node1 = node_ale.xmlGetChildNode('property', name='mesh_viscosity_2')
-            node2 = node_ale.xmlGetChildNode('property', name='mesh_viscosity_3')
-
-            if node1:
-                node1.xmlRemoveNode()
-            if node2:
-                node2.xmlRemoveNode()
+            # Update formula
+            fd = self.getDefaultFormula()
+            self.setFormula(fd)
 
 
     def __removeVariablesandProperties(self):
@@ -241,10 +267,13 @@ class MobileMeshModel(Model):
         Set value of mesh viscosity into xml file.
         """
         self.isInList(value, ['isotrop', 'orthotrop'])
+        prev_val = None
+        if value != self.getViscosity():
+            prev_val = self.getViscosity()
         node_ale = self.__getMobileMeshNode()
         node = node_ale.xmlInitChildNode('mesh_viscosity')
         node['type'] = value
-        self.__updateNodeViscosity()
+        self.__updateNodeViscosity(prev_val)
 
 
     @Variables.noUndo
@@ -284,6 +313,32 @@ class MobileMeshModel(Model):
             formula = self.getDefaultFormula()
         return formula
 
+
+    @Variables.noUndo
+    def getFormulaViscComponents(self):
+        """
+        Get components of the mesh viscosity formula.
+        """
+
+        exp = self.getFormula()
+
+        req = []
+        mvc = self.__getViscosityComponents()
+        for d in mvc:
+            req.append((d['name'], d['name']))
+
+        symbols = [('x', "X cell's gravity center"),
+                   ('y', "Y cell's gravity center"),
+                   ('z', "Z cell's gravity center"),
+                   ('dt', 'time step'),
+                   ('t', 'current time'),
+                   ('iter', 'number of iteration')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            symbols.append((nme, 'value (notebook) = ' + str(val)))
+
+
+        return exp, req, [], symbols
 
     @Variables.noUndo
     def getDefaultFormula(self):

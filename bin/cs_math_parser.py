@@ -849,7 +849,7 @@ class cs_math_parser:
                     # global coordinates pointer
                     if tk in ['x', 'y', 'z'] and 'xyz' not in known_symbols:
                         known_symbols.append('xyz')
-                        usr_defs.append(glob_tokens['xyz'])
+                        usr_defs.append(glob_tokens['xyz']+'\n')
 
         if len(usr_defs) > 0:
             usr_defs.append('\n')

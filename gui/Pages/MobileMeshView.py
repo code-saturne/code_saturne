@@ -52,7 +52,7 @@ from code_saturne.Pages.MobileMeshForm  import Ui_MobileMeshForm
 from code_saturne.Base.QtPage    import IntValidator,  ComboModel, from_qvariant
 from code_saturne.model.MobileMeshModel import MobileMeshModel
 
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
@@ -86,8 +86,8 @@ xcen = 5.0;
 ycen = 0.;
 zcen = 6.0;
 xray2 = (x-xcen)^2 + (y-ycen)^2 + (z-zcen)^2;
-mesh_viscosity_1 = 1;
-if (xray2 < xr2) mesh_viscosity_1 = 1e10;
+mesh_viscosity = 1;
+if (xray2 < xr2) mesh_viscosity = 1e10;
 """
 
     viscosity_ortho = """# Viscosity of the mesh allows to control the deformation
@@ -105,13 +105,13 @@ xcen = 5.0;
 ycen = 0.;
 zcen = 6.0;
 xray2 = (x-xcen)^2 + (y-ycen)^2 + (z-zcen)^2;
-mesh_viscosity_1 = 1;
-mesh_viscosity_2 = 1;
-mesh_viscosity_3 = 1;
+mesh_viscosity[X] = 1;
+mesh_viscosity[Y] = 1;
+mesh_viscosity[Z] = 1;
 if (xray2 < xr2) {
-    mesh_viscosity_1 = 1e10;
-    mesh_viscosity_2 = 1e10;
-    mesh_viscosity_3 = 1e10;
+    mesh_viscosity[X] = 1e10;
+    mesh_viscosity[Y] = 1e10;
+    mesh_viscosity[Z] = 1e10;
 }
 """
 
@@ -194,35 +194,22 @@ if (xray2 < xr2) {
         """
         exp = self.mdl.getFormula()
 
+        exp, req, sca, symb = self.mdl.getFormulaViscComponents()
+
         if self.mdl.getViscosity() == 'isotrop':
-            if not exp:
-                exp = "mesh_viscosity_1 = 1;"
-            req = [('mesh_viscosity_1', 'mesh viscosity')]
             exa = MobileMeshView.viscosity_iso
         else:
-            if not exp:
-                exp = "mesh_viscosity_1 = 1;\nmesh_viscosity_2 = 1;\nmesh_viscosity_3 = 1;"
-            req = [('mesh_viscosity_1', 'mesh viscosity X'),
-                   ('mesh_viscosity_2', 'mesh viscosity Y'),
-                   ('mesh_viscosity_3', 'mesh viscosity Z')]
             exa = MobileMeshView.viscosity_ortho
 
-        symb = [('x', "X cell's gravity center"),
-                ('y', "Y cell's gravity center"),
-                ('z', "Z cell's gravity center"),
-                ('dt', 'time step'),
-                ('t', 'current time'),
-                ('iter', 'number of iteration')]
-
-        for (nme, val) in self.notebook.getNotebookList():
-            symb.append((nme, 'value (notebook) = ' + str(val)))
-
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
-                                expression = exp,
-                                required   = req,
-                                symbols    = symb,
-                                examples   = exa)
+        dialog = QMegEditorView(parent = self,
+                                function_type = 'vol',
+                                zone_name     = "all_cells",
+                                variable_name = "mesh_viscosity",
+                                expression    = exp,
+                                required      = req,
+                                symbols       = symb,
+                                known_fields  = [],
+                                examples      = exa)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaMobileMeshView -> %s" % str(result))
