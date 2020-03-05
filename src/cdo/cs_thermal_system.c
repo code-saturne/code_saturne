@@ -255,6 +255,8 @@ _init_thermal_system(void)
   thm->ref_temperature = 0.;
   thm->thermal_dilatation_coef = 0.;
 
+  thm->boussinesq = NULL;
+
   return thm;
 }
 
@@ -443,6 +445,8 @@ cs_thermal_system_destroy(void)
   if (thm->kappa_array != NULL)
     BFT_FREE(thm->kappa_array);
 
+  BFT_FREE(thm->boussinesq);
+
   /* Equations, fields and properties related to the thermal system are
    * destroyed elsewhere in a specific stage. The lifecycle of these structures
    * are not managed by cs_thermal_system_t
@@ -510,6 +514,8 @@ cs_thermal_system_add_boussinesq_source_term(const cs_real_t   *gravity,
   bq_st->beta = thm->thermal_dilatation_coef;
   bq_st->var0 = thm->ref_temperature;
   bq_st->var = thm->temperature->val;
+
+  thm->boussinesq = bq_st;
 
   return bq_st;
 }

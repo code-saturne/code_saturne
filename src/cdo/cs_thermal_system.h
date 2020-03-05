@@ -180,6 +180,9 @@ typedef struct {
   cs_real_t       ref_temperature;
   cs_real_t       thermal_dilatation_coef;
 
+  /* Structure used for the definition of the boussinesq source term */
+  cs_source_term_boussinesq_t    *boussinesq;
+
   /* N.B.: Other reference values for properties are stored within each
    * property structure */
 
