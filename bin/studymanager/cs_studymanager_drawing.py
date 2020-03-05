@@ -307,9 +307,23 @@ class Probes(object):
 
         f = open(file_name, 'r')
 
+        j = 0
+
         for line in f.readlines():
             line = line.lstrip()
             if line and line[0] != '#':
+                j += 1
+                line = line.replace(", ", " ") # compatibility with CSV
+                line = line.lstrip()
+
+                # for CSV files, try to detect a header to skip it
+                if j == 1:
+                    try:
+                        val = float(line.split()[0])
+                    # if it can not be converted to float
+                    except ValueError as not_float:
+                        continue
+
                 self.xspan.append(float(line.split()[xcol - 1]))
                 self.yspan.append(float(line.split()[ycol - 1]))
 
