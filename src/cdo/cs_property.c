@@ -1038,7 +1038,8 @@ cs_property_def_iso_by_value(cs_property_t    *pty,
 
   int  new_id = _add_new_def(pty);
   int  z_id = cs_get_vol_zone_id(zname);
-  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
+  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE |
+    CS_FLAG_STATE_STEADY;
   cs_flag_t  meta_flag = 0; /* metadata */
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
                                         1, /* dim */
@@ -1082,7 +1083,8 @@ cs_property_def_ortho_by_value(cs_property_t    *pty,
 
   int  new_id = _add_new_def(pty);
   int  z_id = cs_get_vol_zone_id(zname);
-  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
+  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE |
+        CS_FLAG_STATE_STEADY;
   cs_flag_t  meta_flag = 0; /* metadata */
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
                                         3, /* dim */
@@ -1134,7 +1136,8 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
 
   int  new_id = _add_new_def(pty);
   int  z_id = cs_get_vol_zone_id(zname);
-  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
+  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE |
+        CS_FLAG_STATE_STEADY;
   cs_flag_t  meta_flag = 0; /* metadata */
   cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
                                         9, /* dim */
@@ -1427,7 +1430,7 @@ cs_property_def_by_field(cs_property_t    *pty,
               " Please modify your settings.",
               pty->n_definitions, pty->name);
 
-  cs_flag_t  state_flag = CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_CELLWISE;
+  cs_flag_t  state_flag = CS_FLAG_STATE_CELLWISE;
   cs_flag_t  meta_flag = 0; /* metadata */
 
   pty->defs[id] = cs_xdef_volume_create(CS_XDEF_BY_FIELD,
