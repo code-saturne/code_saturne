@@ -4232,7 +4232,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
     cs_halo_type_t halo_type = m->halo_type;
     cs_mesh_builder_t *mb = (m == cs_glob_mesh) ? cs_glob_mesh_builder : NULL;
     cs_mesh_init_halo(m, mb, halo_type);
-    cs_mesh_update_auxiliary(cs_glob_mesh);
+    cs_mesh_update_auxiliary(m);
   }
 
   /* Free data that will be rebuilt */
@@ -4244,7 +4244,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   if (m->verbosity > 0) {
     cs_log_printf(CS_LOG_DEFAULT, "\n");
     cs_log_separator(CS_LOG_DEFAULT);
-    _print_mesh_counts(cs_glob_mesh, _("Mesh before refinement"));
+    _print_mesh_counts(m, _("Mesh before refinement"));
   }
 
   cs_timer_t t1 = cs_timer_time();
@@ -4618,12 +4618,11 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
   if (   m->n_domains > 1 || m->n_init_perio > 0
       || m->halo_type == CS_HALO_EXTENDED) {
     cs_halo_type_t halo_type = m->halo_type;
-    assert(m == cs_glob_mesh);
     cs_mesh_builder_t *mb = (m == cs_glob_mesh) ? cs_glob_mesh_builder : NULL;
     cs_mesh_init_halo(m, mb, halo_type);
   }
 
-  cs_mesh_update_auxiliary(cs_glob_mesh);
+  cs_mesh_update_auxiliary(m);
 
   m->verbosity = mv_save;
 
@@ -4635,7 +4634,7 @@ cs_mesh_refine_simple(cs_mesh_t  *m,
 
   if (m->verbosity > 0) {
 
-    _print_mesh_counts(cs_glob_mesh, _("Mesh after refinement"));
+    _print_mesh_counts(m, _("Mesh after refinement"));
     cs_log_printf(CS_LOG_DEFAULT, "\n");
     cs_log_separator(CS_LOG_DEFAULT);
 
