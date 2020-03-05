@@ -78,13 +78,24 @@ Numerics and physical modelling:
 - Add the resolution of Oseen and Navier-Stokes equations with CDO
   face-based schemes (based on the work of Milani's PhD).
 
+- Remove the files related to the Uzawa velocity-pressure coupling
+  algorithm as well as the ones related to the Vector Penalty
+  Projection (VPP) algorithm. The uzawa coupling is now merged to the
+  monolithic approach.
+
 - Add several new features for solving linear systems arising from a
   discretization of (Navier--)Stokes with CDO face-based schemes:
   Golub--Kahan biorthogonalization, Augmented Lagrangian--Uzawa
   algorithm (in incremental form), MUMPS with the PETSc interface,
   block preconditioning through PETSc
 
-- Add the first pieces of a thermal module based on CDO schemes.
+- Add a thermal module based on CDO schemes.
+
+- Add a solidification module relying on CDO schemes (this module
+  calls the thermal and the Navier-Stokes modules as well as the
+  enforcement of internal degrees of freedom). A specific treatment of
+  the phase changing is performed in this module which induces source
+  terms and reaction terms in the related equations.
 
 - Add new Hodge operators for vertex-based and face-based schemes based on a
   bubble stabilization or a sub-stabilization.
