@@ -210,7 +210,7 @@ _solve_steady_state_domain(cs_domain_t  *domain)
     if (!cs_equation_needs_steady_state_solve()) {
       cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
       cs_log_printf(CS_LOG_DEFAULT,
-                    "-ite- 0; >> Initial state");
+                    "# Iter: 0; >> Initial state");
       cs_log_printf(CS_LOG_DEFAULT, "\n%s\n", h1_sep);
 
       /* Extra operations and post-processing of the computed solutions */
@@ -235,7 +235,7 @@ _solve_steady_state_domain(cs_domain_t  *domain)
   else if (do_output) {
     cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
     cs_log_printf(CS_LOG_DEFAULT,
-                  "-ite- 0; >> Solve only requested steady-state equations");
+                  "# Iter: 0; >> Solve only requested steady-state equations");
     cs_log_printf(CS_LOG_DEFAULT, "\n%s\n", h1_sep);
   }
 
@@ -326,7 +326,7 @@ _solve_domain(cs_domain_t  *domain)
 
     cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
     cs_log_printf(CS_LOG_DEFAULT,
-                  "-ite- %d >> Solve domain from time=%6.4e to %6.4e; dt=%5.3e",
+                  "# Iter: %d >> Solve domain from time=%6.4e to %6.4e; dt=%5.3e",
                   nt_cur, t_cur, t_cur + dt_cur, dt_cur);
     cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
 

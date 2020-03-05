@@ -1940,7 +1940,7 @@ cs_property_log_setup(void)
                   pty->name, pty->n_definitions);
 
     for (int j = 0; j < pty->n_definitions; j++) {
-      sprintf(prefix, "        Definition %4d", j);
+      sprintf(prefix, "        Definition %3d", j);
       cs_xdef_log(prefix, pty->defs[j]);
     }
 

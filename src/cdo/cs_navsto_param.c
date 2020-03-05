@@ -874,7 +874,7 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
                 nsp->n_velocity_ic_defs);
 
   for (int i = 0; i < nsp->n_velocity_ic_defs; i++) {
-    sprintf(prefix, "  * NavSto | Velocity.Init.Cond | Definition %4d", i);
+    sprintf(prefix, "  * NavSto | Velocity.Init.Cond | Definition %2d", i);
     cs_xdef_log(prefix, nsp->velocity_ic_defs[i]);
   }
 
@@ -883,7 +883,7 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
                 "  * NavSto | Pressure.Init.Cond | Number of definitions: %d\n",
                 nsp->n_pressure_ic_defs);
   for (int i = 0; i < nsp->n_pressure_ic_defs; i++) {
-    sprintf(prefix, "  * NavSto | Pressure.Init.Cond | Definition %4d", i);
+    sprintf(prefix, "  * NavSto | Pressure.Init.Cond | Definition %2d", i);
     cs_xdef_log(prefix, nsp->pressure_ic_defs[i]);
   }
 }

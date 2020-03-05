@@ -528,10 +528,14 @@ cs_advection_field_log_setup(void)
     bool  at_ifaces =
       (adv->int_field_id > CS_ADVECTION_FIELD_ID_NOT_SET) ? true : false;
 
-    cs_log_printf(CS_LOG_SETUP, "  * %s | Fields defined at cells: %s;"
-                  " vertices: %s; boundary faces: %s; interior faces: %s\n\n",
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * %s | Fields defined at cells: %s; at vertices: %s\n",
                   adv->name, cs_base_strtf(at_cells),
-                  cs_base_strtf(at_vertices), cs_base_strtf(at_bfaces),
+                  cs_base_strtf(at_vertices));
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * %s | Fields defined at boundary faces: %s;"
+                  " at interior faces: %s\n\n",
+                  adv->name, cs_base_strtf(at_bfaces),
                   cs_base_strtf(at_ifaces));
 
     sprintf(prefix, "        Definition");
