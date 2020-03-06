@@ -99,18 +99,16 @@ BEGIN_C_DECLS
 
 typedef enum {
   DIRICHLET,
-  FLOW1,
-  HYDRAULIC_DIAMETER,
-  TURBULENT_INTENSITY,
-  NEUMANN,
-  EXCHANGE_COEFF,
-  COALFLOW,
-  WALL_FUNCTION,
   DIRICHLET_FORMULA,
   DIRICHLET_IMPLICIT,
+  EXCHANGE_COEFF,
+  EXCHANGE_COEFF_FORMULA,
+  FLOW1,
+  HYDRAULIC_DIAMETER,
+  NEUMANN,
   NEUMANN_FORMULA,
   NEUMANN_IMPLICIT,
-  EXCHANGE_COEFF_FORMULA
+  TURBULENT_INTENSITY
 } cs_boundary_value_t;
 
 typedef struct {
@@ -351,7 +349,7 @@ _sliding_wall(cs_tree_node_t  *tn_vp,
     if (strcmp("velocity", name) == 0 && c_id > -1 && c_id < f->dim) {
       const  cs_real_t *v = cs_tree_node_get_values_real(tn);
       if (v != NULL) {
-        boundaries->type_code[f->id][izone] = WALL_FUNCTION;
+        boundaries->type_code[f->id][izone] = DIRICHLET;
         boundaries->values[f->id][f->dim * izone + c_id].val1 = v[0];
       }
     }
@@ -430,12 +428,7 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
 
         const cs_real_t *v = cs_tree_node_get_child_values_real(tn_s, choice);
         if (v != NULL) {
-          if (cs_gui_strcmp(nature, "wall")) {
-            boundaries->type_code[f_id][izone] = WALL_FUNCTION;
-          }
-          else {
-            boundaries->type_code[f_id][izone] = DIRICHLET;
-          }
+          boundaries->type_code[f_id][izone] = DIRICHLET;
           boundaries->values[f_id][izone * dim + i].val1 = v[0];
         }
 
@@ -1468,6 +1461,8 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
     bft_printf("---zone %i number of faces: %i\n", zone_nbr, bz->n_elts);
 #endif
 
+    int wall_type = 1;
+
     /* Mapped inlet? */
 
     if (   cs_gui_strcmp(boundaries->nature[izone], "inlet")
@@ -1475,6 +1470,12 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
       boundaries->locator[izone] = _mapped_inlet(boundaries->label[izone],
                                                  bz->n_elts,
                                                  bz->elt_ids);
+    else if (cs_gui_strcmp(boundaries->nature[izone], "wall")) {
+      if (boundaries->rough[izone] >= 0.0)
+        wall_type = 6;
+      else
+        wall_type = 5;
+    }
 
     /* for each field */
     for (int f_id = 0; f_id < n_fields; f_id++) {
@@ -1496,29 +1497,34 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
             break;
 
           case DIRICHLET:
-            for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-              cs_lnum_t face_id = bz->elt_ids[elt_id];
-              /* if wall_function <-- icodcl[ivar *n_b_faces + face_id] = 1; */
-              for (cs_lnum_t i = 0; i < f->dim; i++) {
-                icodcl[(ivar + i) * n_b_faces + face_id] = 1;
-                rcodcl[0 * n_b_faces * (*nvar) + (ivar + i) * n_b_faces + face_id]
-                  = boundaries->values[f->id][izone * f->dim + i].val1;
+            {
+              for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+                cs_lnum_t face_id = bz->elt_ids[elt_id];
+                for (cs_lnum_t i = 0; i < f->dim; i++) {
+                  icodcl[(ivar + i) * n_b_faces + face_id] = wall_type;
+                  rcodcl[(ivar + i) * n_b_faces + face_id]
+                    = boundaries->values[f->id][izone * f->dim + i].val1;
+                }
               }
             }
             break;
 
-          case WALL_FUNCTION:
-            for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-              cs_lnum_t face_id = bz->elt_ids[elt_id];
-              for (cs_lnum_t i = 0; i < f->dim; i++) {
-                icodcl[(ivar + i) * n_b_faces + face_id] = 5;
-                if (boundaries->rough[izone] >= 0.0)
-                  icodcl[(ivar + i) * n_b_faces + face_id] = 6;
-                rcodcl[0 * n_b_faces * (*nvar) + (ivar + i) * n_b_faces + face_id]
-                  = boundaries->values[f->id][izone * f->dim + i].val1;
+          case DIRICHLET_FORMULA:
+            {
+              cs_real_t *new_vals =
+                cs_meg_boundary_function(bz, f->name, "dirichlet_formula");
+
+              for (cs_lnum_t ii = 0; ii < f->dim; ii++) {
+                for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
+                  cs_lnum_t face_id = bz->elt_ids[elt_id];
+                  icodcl[(ivar + ii) *n_b_faces + face_id] = wall_type;
+                  rcodcl[(ivar + ii) * n_b_faces + face_id]
+                    = new_vals[ii * bz->n_elts + elt_id];
+                }
               }
+              BFT_FREE(new_vals);
+              break;
             }
-            break;
 
           case EXCHANGE_COEFF:
             for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
@@ -1532,23 +1538,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
               }
             }
             break;
-
-          case DIRICHLET_FORMULA:
-            {
-              cs_real_t *new_vals =
-                cs_meg_boundary_function(bz, f->name, "dirichlet_formula");
-
-              for (cs_lnum_t ii = 0; ii < f->dim; ii++) {
-                for (cs_lnum_t elt_id = 0; elt_id < bz->n_elts; elt_id++) {
-                  cs_lnum_t face_id = bz->elt_ids[elt_id];
-                  icodcl[(ivar + ii) *n_b_faces + face_id] = 1;
-                  rcodcl[0 * n_b_faces * (*nvar) + (ivar + ii) * n_b_faces + face_id]
-                    = new_vals[ii * bz->n_elts + elt_id];
-                }
-              }
-              BFT_FREE(new_vals);
-              break;
-            }
 
           case NEUMANN_FORMULA:
             {
