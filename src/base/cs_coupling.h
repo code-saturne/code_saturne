@@ -157,7 +157,7 @@ cs_coupling_get_sync_flag(void);
  *
  * This flag is used by all couplings based on the PLE (Parallel Location
  * and Exchange) group synchronization mechanism, which include couplings
- * with SYRTHES 4, Code_Saturne, and NEPTUNE_CFD.
+ * with SYRTHES, code_saturne, and neptune_cfd.
  *
  * It is defined by a mask, so for example flags f1, f2, and f3 may be
  * combined using the "f1 | f2 | f2" syntax.
@@ -173,7 +173,7 @@ cs_coupling_get_sync_flag(void);
  *   PLE_COUPLING_UNSTEADY      Inform others that this instance is
  *                              using an unsteady solution approach
  *   PLE_COUPLING_STEADY        Inform others that this instance is
- *                              using a teady solution approach
+ *                              using a steady solution approach
  *   PLE_COUPLING_USER_1        User definable flag
  *   PLE_COUPLING_USER_2        User definable flag
  *   PLE_COUPLING_USER_3        User definable flag

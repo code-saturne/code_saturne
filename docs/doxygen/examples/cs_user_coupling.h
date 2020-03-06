@@ -37,10 +37,22 @@
   \section cs_user_coupling_h_cs_user_coupling  Global options for coupling
 
   One can define global options for coupling with the user function
-  \ref cs_user_coupling . These options allow defining the time step synchronization policy,
-  as well as a time step multiplier.
+  \ref cs_user_parameters. using \ref cs_coupling_set_sync_flag
+  allows defining the time step
+  synchronization policy:
 
-  \snippet cs_user_coupling.c coupling_1
+  \snippet cs_user_parameters-coupling.c coupling_ts
+
+  A time step multiplier between coupled tools may also be defined.
+  The apparent time step for the current instance times (as viewed by
+  coupled codes) is equal to the true time step times this multiplier.
+
+  When coupling with SYRTHES, it is recommended to use the same multiplier
+  here as for the thermal variable time step (this is not automated,
+  so as to allow for more advanced combinations if necessary, so the user
+  should ensure this when using a time step multiplier). For example:
+
+  \snippet cs_user_parameters-coupling.c coupling_1
 
   \section cs_user_coupling_h_cs_user_syrthes_coupling Code coupling with SYRTHES
 
