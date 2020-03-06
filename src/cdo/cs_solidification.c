@@ -1031,15 +1031,28 @@ cs_solidification_extra_post(void                      *input,
   CS_UNUSED(cell_ids);
   CS_UNUSED(i_face_ids);
   CS_UNUSED(b_face_ids);
-  CS_UNUSED(time_step);
 
   if (input == NULL)
     return;
 
   cs_solidification_t  *solid = (cs_solidification_t *)input;
 
-  /* TODO */
-  CS_UNUSED(solid);
+  if (solid->cell_state != NULL) {
+
+    cs_post_write_var(CS_POST_MESH_VOLUME,
+                      CS_POST_WRITER_DEFAULT,
+                      "cell_state",
+                      1,
+                      false,  // interlace
+                      true,   // true = original mesh
+                      CS_POST_TYPE_int,
+                      solid->cell_state,
+                      NULL,
+                      NULL,
+                      time_step);
+
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
