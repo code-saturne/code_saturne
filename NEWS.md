@@ -3,6 +3,9 @@ Release 6.0.3 (Unreleased)
 
 Bug fixes:
 
+- Move example settings from cs_user_coupling function, which is never
+  called, to cs_user_parameters.
+
 - Fix crash using Python3 in code_aster coupling.
 
 - Fix bug in studymanager when plotting probes in CSV format.

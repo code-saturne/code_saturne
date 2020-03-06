@@ -1,8 +1,5 @@
 /*============================================================================
- * Code couplings definition with SYRTHES and Code_Saturne.
- *
- * 1) Define conjuguate heat transfer couplings with the SYRTHES code
- * 2) Define couplings with other instances of Code_Saturne
+ * User functions for input of calculation parameters.
  *============================================================================*/
 
 /* VERS */
@@ -35,6 +32,14 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
+#include <math.h>
+#include <string.h>
+
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#endif
+
 /*----------------------------------------------------------------------------
  * PLE library headers
  *----------------------------------------------------------------------------*/
@@ -62,9 +67,9 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \file cs_user_coupling.c
+ * \file cs_user_parameters-coupling.c
  *
- * \brief Code couplings definition with SYRTHES and Code_Saturne.
+ * \brief Code coupling parameters examples.
  *
  * See \subpage user_coupling for examples.
  */
@@ -76,34 +81,49 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define global options for couplings.
+ * \brief Define or modify general numerical and physical user parameters.
  *
- * These options allow defining the time step synchronization policy,
- * as well as a time step multiplier.
+ * At the calling point of this function, most model-related most variables
+ * and other fields have been defined, so specific settings related to those
+ * fields may be set here.
+ *
+ * At this stage, the mesh is not built or read yet, so associated data
+ * such as field values are not accessible yet, though pending mesh
+ * operations and some fields may have been defined.
+ *
+ * \param[in, out]   domain    pointer to a cs_domain_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_coupling(void)
+cs_user_parameters(cs_domain_t  *domain)
 {
-  /*! [coupling_1] */
+  /*-------------------------------------------------------------------------
+   * Ensure coupled codes use the smallest of their defined time steps.
+   *-------------------------------------------------------------------------*/
+
+  /*! [coupling_ts] */
+  cs_coupling_set_sync_flag(PLE_COUPLING_TS_MIN);
+  /*! [coupling_ts] */
+
+  /*-------------------------------------------------------------------------
+   * Example time step multiplier for external couplings.
+   *
+   * The apparent time step for the current instance times (as viewed by
+   * coupled codes) is equal to the true time step times this multiplier.
+   *
+   * When coupling with SYRTHES, it is recommended to use the same multiplier
+   * here as for the thermal variable time step (this is not automated,
+   * to allow for more advanced combinations if necessary, so the user
+   * should ensure this when using a time step multiplier).
+   *-------------------------------------------------------------------------*/
   {
-    /*-------------------------------------------------------------------------
-     * Example for time step multiplier for external couplings.
-     *
-     * The apparent time step for the current instance times (as viewed by
-     * coupled codes) is equal to the true time step times this multiplier.
-     *
-     * When coupling with SYRTHES, it is recommended to use the same multiplier
-     * here as for the thermal variable time step (this is not automated,
-     * to allow for more advanced combinations if necessary, so the user
-     * should ensure this when using a time step multiplier).
-     *-------------------------------------------------------------------------*/
-
+    /*! [coupling_1] */
     cs_coupling_set_ts_multiplier(10.);
-
+    /*! [coupling_1] */
   }
-  /*! [coupling_1] */
 }
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

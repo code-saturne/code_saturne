@@ -81,7 +81,6 @@ cs_user_boundary_conditions-medcoupling_remapper_2d.c \
 cs_user_boundary_conditions-notebook.c \
 cs_user_coupling-saturne.c \
 cs_user_coupling-syrthes.c \
-cs_user_coupling.c \
 cs_user_electric_scaling.c \
 cs_user_extra_operations-vorticity_field.c \
 cs_user_extra_operations-balance_by_zone.c \
@@ -108,6 +107,7 @@ cs_user_mesh-quality.c \
 cs_user_parameters-base.c \
 cs_user_parameters-cdo-condif.c \
 cs_user_parameters-ctwr.c \
+cs_user_parameters-coupling.c \
 cs_user_parameters-fans.c \
 cs_user_parameters-cdo-gwf.c \
 cs_user_parameters-linear_solvers.c \

@@ -279,16 +279,6 @@ cs_user_1d_wall_thermal(int iappel,
                         int isuit1);
 
 /*----------------------------------------------------------------------------
- * Define global options for couplings.
- *
- * These options allow defining the time step synchronization policy,
- * as well as a time step multiplier.
- *----------------------------------------------------------------------------*/
-
-void
-cs_user_coupling(void);
-
-/*----------------------------------------------------------------------------
  * This function is called at each time step for boundary conditions.
  *----------------------------------------------------------------------------*/
 
