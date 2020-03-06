@@ -204,6 +204,9 @@ cs_mesh_builder_destroy(cs_mesh_builder_t  **mb)
 
     cs_mesh_builder_t  *_mb = *mb;
 
+    if (_mb == NULL)
+      return;
+
     /* Temporary mesh data */
 
     BFT_FREE(_mb->face_cells);

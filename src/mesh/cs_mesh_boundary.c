@@ -382,6 +382,7 @@ _get_list_c(cs_lnum_t        *list_c,
  * (realloc has to be done after).
  *
  * parameters:
+ *   n_cells        <-- number of cells
  *   i_face_cells   <-- interior faces -> cells connectivity
  *   i_face_vtx_idx <-- interior faces -> vertices list
  *   list           <-- interior faces list to check (1 to n)
@@ -392,27 +393,29 @@ _get_list_c(cs_lnum_t        *list_c,
  *----------------------------------------------------------------------------*/
 
 static void
-_count_b_faces_to_add(const cs_lnum_2_t  *i_face_cells,
+_count_b_faces_to_add(cs_lnum_t           n_cells,
+                      const cs_lnum_2_t  *i_face_cells,
                       const cs_lnum_t    *i_face_vtx_idx,
                       const cs_lnum_t    *list,
                       cs_lnum_t           list_size,
                       cs_lnum_t          *count)
 {
-  cs_lnum_t ii;
-
   cs_lnum_t n_bf = 0;
   cs_lnum_t n_bf_lst = 0;
 
-  for (ii = 0; ii < list_size; ii++) {
-    if (i_face_cells[list[ii]][0] > -1) {
+  for (cs_lnum_t ii = 0; ii < list_size; ii++) {
+    cs_lnum_t ll = list[ii];
+    cs_lnum_t i0 = i_face_cells[ll][0];
+    cs_lnum_t i1 = i_face_cells[ll][1];
+    if (i0 > -1 && i0 < n_cells) {
       n_bf++;
-      n_bf_lst +=   i_face_vtx_idx[list[ii] + 1]
-                  - i_face_vtx_idx[list[ii]];
+      n_bf_lst +=   i_face_vtx_idx[ll + 1]
+                  - i_face_vtx_idx[ll];
     }
-    if (i_face_cells[list[ii]][1] > -1) {
+    if (i1 > -1 && i1 < n_cells) {
       n_bf++;
-      n_bf_lst +=   i_face_vtx_idx[list[ii] + 1]
-                  - i_face_vtx_idx[list[ii]];
+      n_bf_lst +=   i_face_vtx_idx[ll + 1]
+                  - i_face_vtx_idx[ll];
     }
   }
 
@@ -454,24 +457,30 @@ _add_b_faces(cs_mesh_t        *mesh,
   cs_lnum_t *i_face_vtx_lst = mesh->i_face_vtx_lst;
   cs_lnum_2_t *i_face_cells = mesh->i_face_cells;
   int        *i_face_family = mesh->i_face_family;
+  cs_lnum_t n_cells = mesh->n_cells;
   cs_lnum_t n_b_faces = mesh->n_b_faces;
 
   for (ii = 0; ii < list_size; ii++) {
 
-    n_face_vertices = i_face_vtx_idx[list[ii] + 1] - i_face_vtx_idx[list[ii]];
+    cs_lnum_t ll = list[ii];
 
-    if (i_face_cells[list[ii]][0] > -1) {
+    n_face_vertices = i_face_vtx_idx[ll + 1] - i_face_vtx_idx[ll];
+
+    cs_lnum_t i0 = i_face_cells[ll][0];
+    cs_lnum_t i1 = i_face_cells[ll][1];
+
+    if (i0 > -1 && i0 < n_cells) {
 
       b_face_cells[n_b_faces + inc]
-        = i_face_cells[list[ii]][0];
+        = i_face_cells[ll][0];
       b_face_vtx_idx[n_b_faces + inc + 1]
         = b_face_vtx_idx[n_b_faces + inc] + n_face_vertices;
 
-      b_face_family[n_b_faces + inc] = i_face_family[list[ii]];
+      b_face_family[n_b_faces + inc] = i_face_family[ll];
 
       for (jj = 0; jj < n_face_vertices; jj++) {
         b_face_vtx_lst[b_face_vtx_connect_size + jj]
-          = i_face_vtx_lst[i_face_vtx_idx[list[ii]] + jj];
+          = i_face_vtx_lst[i_face_vtx_idx[ll] + jj];
       }
 
       inc++;
@@ -479,17 +488,17 @@ _add_b_faces(cs_mesh_t        *mesh,
 
     }
 
-    if (i_face_cells[list[ii]][1] > -1) {
+    if (i1 > -1 && i1 < n_cells) {
 
       b_face_cells[n_b_faces + inc]
-        = i_face_cells[list[ii]][1];
+        = i_face_cells[ll][1];
       b_face_vtx_idx[n_b_faces + inc + 1 ]
         = b_face_vtx_idx[n_b_faces + inc] + n_face_vertices;
 
-      b_face_family[n_b_faces + inc] = i_face_family[list[ii]];
+      b_face_family[n_b_faces + inc] = i_face_family[ll];
       for (jj = 0; jj < n_face_vertices; jj++) {
         b_face_vtx_lst[b_face_vtx_connect_size + jj]
-          = i_face_vtx_lst[   i_face_vtx_idx[list[ii]]
+          = i_face_vtx_lst[   i_face_vtx_idx[ll]
                            +  n_face_vertices - jj - 1];
       }
 
@@ -506,6 +515,7 @@ _add_b_faces(cs_mesh_t        *mesh,
  * parameters:
  *   i_face_cells  <-- interior faces -> cells connectivity
  *   n_g_b_faces   <-- old number of global boundary faces
+ *   n_cells       <-- number of cells
  *   n_b_faces     <-- old number of local boundary faces
  *   list          <-- list of boundary faces to add (with gost)
  *   list_size     <-- size of list
@@ -516,22 +526,28 @@ _add_b_faces(cs_mesh_t        *mesh,
 static void
 _refresh_b_glob_num(const cs_lnum_2_t  *i_face_cells,
                     cs_gnum_t           n_g_b_faces,
+                    cs_lnum_t           n_cells,
                     cs_lnum_t           n_b_faces,
                     const cs_lnum_t    *list,
                     cs_lnum_t           list_size,
                     const cs_gnum_t    *list_glob_num,
                     cs_gnum_t          *b_faces_glob_num)
 {
-  cs_lnum_t ii;
   cs_lnum_t inc = 0;
 
-  for (ii = 0; ii < list_size; ii++) {
-    if (i_face_cells[list[ii]][0] > -1) {
+  for (cs_lnum_t ii = 0; ii < list_size; ii++) {
+
+    cs_lnum_t ll = list[ii];
+
+    cs_lnum_t i0 = i_face_cells[ll][0];
+    cs_lnum_t i1 = i_face_cells[ll][1];
+
+    if (i0 > -1 && i0 < n_cells) {
       b_faces_glob_num[n_b_faces + inc]
         = n_g_b_faces + 2*(list_glob_num[ii] - 1) + 1;
       inc++;
     }
-    if (i_face_cells[list[ii]][1] > -1) {
+    if (i1 > -1 && i1 < n_cells) {
       b_faces_glob_num[n_b_faces + inc]
         = n_g_b_faces + 2*(list_glob_num[ii] - 1) + 2;
       inc++;
@@ -1468,15 +1484,17 @@ _destroy_faces_interface_set(const cs_mesh_t      *mesh,
  *
  * \param[in, out]  mesh            pointer to mesh structure to modify
  * \param[in, out]  face_ifs        pointer to interface set for faces
+ * \param[in]       perio_num       periodicity number for each face, or NULL
  * \param[in]       split_vertices  should we also split vertices ?
  * \param[in]       n_faces         number of selected (interior) faces
- * \param[in, out]  ids             list of selected (interior) faces (0 to n-1)
+ * \param[in, out]  face_id         list of selected (interior) faces (0 to n-1)
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _boundary_insert(cs_mesh_t           *mesh,
                  cs_interface_set_t  *face_ifs,
+                 const int           *perio_num,
                  bool                 split_vertices,
                  cs_lnum_t            n_faces,
                  cs_lnum_t            face_id[])
@@ -1500,6 +1518,8 @@ _boundary_insert(cs_mesh_t           *mesh,
   cs_lnum_t *face_id_c = NULL;
 
   _print_mesh_info(mesh, _("Before insertion of user-defined boundary"));
+
+  cs_mesh_free_rebuildable(mesh, false);
 
   qsort(face_id, n_faces, sizeof(cs_lnum_t), &_compare_nums);
 
@@ -1575,7 +1595,8 @@ _boundary_insert(cs_mesh_t           *mesh,
     global_number_b_faces = fvm_io_num_destroy(global_number_b_faces);
   }
 
-  _count_b_faces_to_add((const cs_lnum_2_t  *)mesh->i_face_cells,
+  _count_b_faces_to_add(mesh->n_cells,
+                        (const cs_lnum_2_t  *)mesh->i_face_cells,
                         mesh->i_face_vtx_idx,
                         face_id,
                         n_faces,
@@ -1606,19 +1627,38 @@ _boundary_insert(cs_mesh_t           *mesh,
 
   if (cs_glob_n_ranks > 1) {
 
-    cs_gnum_t _n_l_b_faces = mesh->n_b_faces;
-    MPI_Allreduce(&_n_l_b_faces, &_n_g_b_faces, 1, CS_MPI_GNUM, MPI_SUM,
-                  cs_glob_mpi_comm);
+    cs_gnum_t counter[2] = {mesh->n_b_faces, 0};
+    if (perio_num != NULL)
+      counter[1] = 1;
+    cs_parall_counter(counter, 1);
+
+    _n_g_b_faces = counter[0];
 
     BFT_REALLOC(mesh->global_b_face_num, mesh->n_b_faces, cs_gnum_t);
 
     _refresh_b_glob_num((const cs_lnum_2_t *)mesh->i_face_cells,
                         mesh->n_g_b_faces,
+                        mesh->n_cells,
                         n_b_faces,
                         face_id,
                         n_faces,
                         b_face_gnum,
                         mesh->global_b_face_num);
+
+    /* In case of periodicity we may need to re-filter (i.e. densify)
+       the global numbering array */
+
+    if (counter[1] > 0) {
+      fvm_io_num_t *bf_io_num = fvm_io_num_create(NULL,
+                                                  mesh->global_b_face_num,
+                                                  mesh->n_b_faces,
+                                                  0);
+      BFT_FREE(mesh->global_b_face_num);
+      mesh->global_b_face_num = fvm_io_num_transfer_global_num(bf_io_num);
+      mesh->n_g_b_faces = fvm_io_num_get_global_count(bf_io_num);
+
+      bf_io_num = fvm_io_num_destroy(bf_io_num);
+    }
 
     BFT_FREE(b_face_gnum);
 
@@ -1703,7 +1743,7 @@ _boundary_insert(cs_mesh_t           *mesh,
  *
  * Note that the ids of selected faces are sorted by this function.
  *
- * \param[in]       mesh     pointer to mesh structure to modify
+ * \param[in, out]  mesh     pointer to mesh structure to modify
  * \param[in]       n_faces  number of selected (interior) faces
  * \param[in, out]  face_id  list of selected (interior) faces (0 to n-1)
  */
@@ -1716,7 +1756,9 @@ cs_mesh_boundary_insert(cs_mesh_t  *mesh,
 {
   cs_interface_set_t *face_ifs = _build_faces_interface_set_if_needed(mesh);
 
-  _boundary_insert(mesh, NULL, true, n_faces, face_id);
+  const int *perio_num = NULL; /* TODO we should handle this */
+
+  _boundary_insert(mesh, NULL, perio_num, true, n_faces, face_id);
 
   _destroy_faces_interface_set(mesh, &face_ifs);
 }
@@ -1729,11 +1771,11 @@ cs_mesh_boundary_insert(cs_mesh_t  *mesh,
  *
  * Note that the ids of selected faces are sorted by this function.
  *
- * \deprecated Use of this function is not recommended, as sharing vertices
- *             may cause issues with vertex-based values, gradient extended
- *             neighborhoods, and some visualization operations.
-
- * \param[in]       mesh     pointer to mesh structure to modify
+ * This function should be used with caution, as sharing vertices
+ * may cause issues with vertex-based values, gradient extended
+ * neighborhoods, and some visualization operations.
+ *
+ * \param[in, out]  mesh     pointer to mesh structure to modify
  * \param[in]       n_faces  number of selected (interior) faces
  * \param[in, out]  face_id  list of selected (interior) faces (0 to n-1)
  */
@@ -1746,7 +1788,9 @@ cs_mesh_boundary_insert_with_shared_vertices(cs_mesh_t  *mesh,
 {
   cs_interface_set_t *face_ifs = _build_faces_interface_set_if_needed(mesh);
 
-  _boundary_insert(mesh, NULL, false, n_faces, face_id);
+  const int *perio_num = NULL; /* TODO we should handle this */
+
+  _boundary_insert(mesh, NULL, perio_num, false, n_faces, face_id);
 
   _destroy_faces_interface_set(mesh, &face_ifs);
 }
@@ -1762,11 +1806,11 @@ cs_mesh_boundary_insert_with_shared_vertices(cs_mesh_t  *mesh,
  *
  * Note that the list of selected faces is sorted by this function.
  *
- * \param[in]  mesh        pointer to mesh structure to modify
- * \param[in]  group_name  group name to assign to newly created boundary
- *                         faces, or NULL
- * \param[in]  n_cells     number of separated cells
- * \param[in]  cell_id     separated cell ids
+ * \param[in, out]  mesh         pointer to mesh structure to modify
+ * \param[in]       group_name  group name to assign to newly created boundary
+ *                              faces, or NULL
+ * \param[in]       n_cells     number of separated cells
+ * \param[in]       cell_id     separated cell ids
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1859,7 +1903,9 @@ cs_mesh_boundary_insert_separating_cells(cs_mesh_t        *mesh,
 
   BFT_REALLOC(face_tag, b_count, cs_lnum_t);
 
-  _boundary_insert(mesh, face_ifs, true, b_count, face_tag);
+  const int *perio_num = NULL; /* TODO we should handle this */
+
+  _boundary_insert(mesh, face_ifs, perio_num, true, b_count, face_tag);
 
   _destroy_faces_interface_set(mesh, &face_ifs);
 
@@ -1882,6 +1928,87 @@ cs_mesh_boundary_insert_separating_cells(cs_mesh_t        *mesh,
 
     BFT_FREE(sel_faces);
 
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Remove periodicity information from a mesh.
+ *
+ * Periodic interior faces are transformed into boundary faces.
+ *
+ * \param[in, out]  mesh  pointer to mesh structure to modify
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_boundary_remove_periodicity(cs_mesh_t  *mesh)
+{
+  if (mesh->n_init_perio == 0)
+    return;
+
+  cs_lnum_t n_i_faces = mesh->n_i_faces;
+
+  cs_lnum_t *face_id;
+  BFT_MALLOC(face_id, n_i_faces, cs_lnum_t);
+
+  int *perio_num;
+  BFT_MALLOC(perio_num, n_i_faces, int);
+
+  cs_mesh_get_face_perio_num(mesh, perio_num);
+
+  cs_lnum_t n_faces = 0;
+
+  for (cs_lnum_t i = 0; i < n_i_faces; i++) {
+    if (perio_num[i] != 0)
+      face_id[n_faces++] = i;
+  }
+
+  cs_interface_set_t *face_ifs = _build_faces_interface_set_if_needed(mesh);
+
+  _boundary_insert(mesh, NULL, perio_num, false, n_faces, face_id);
+
+  _destroy_faces_interface_set(mesh, &face_ifs);
+
+  BFT_FREE(perio_num);
+
+  mesh->periodicity = fvm_periodicity_destroy(mesh->periodicity);
+  mesh->n_init_perio = 0;
+  mesh->n_transforms = 0;
+
+  BFT_FREE(face_id);
+
+  /* Rebuild halo if present */
+
+  if (mesh->halo != NULL || mesh->halo_type == CS_HALO_EXTENDED) {
+    cs_lnum_t n_cells = mesh->n_cells;
+    n_i_faces = mesh->n_i_faces;
+    for (cs_lnum_t i = 0; i < n_i_faces; i++) {
+      if (mesh->i_face_cells[i][0] >= n_cells)
+        mesh->i_face_cells[i][0] = -1;
+      if (mesh->i_face_cells[i][1] >= n_cells)
+        mesh->i_face_cells[i][1] = -1;
+    }
+    cs_halo_destroy(&(mesh->halo));
+    cs_interface_set_destroy(&(mesh->vtx_interfaces));
+    cs_mesh_init_halo(mesh, NULL, mesh->halo_type);
+  }
+
+  cs_mesh_update_auxiliary(cs_glob_mesh);
+
+  /* Also remove information from mesh builder if present */
+
+  if (mesh == cs_glob_mesh && cs_glob_mesh_builder != NULL) {
+    cs_mesh_builder_t  *mb = cs_glob_mesh_builder;
+    BFT_FREE(mb->periodicity_num);
+    BFT_FREE(mb->n_per_face_couples);
+    BFT_FREE(mb->n_g_per_face_couples);
+    if (mb->per_face_couples != NULL) {
+      for (int i = 0; i < mb->n_perio; i++)
+        BFT_FREE(mb->per_face_couples[i]);
+      BFT_FREE(mb->per_face_couples);
+    }
+    mb->n_perio = 0;
   }
 }
 

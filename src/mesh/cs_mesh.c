@@ -2787,6 +2787,9 @@ cs_mesh_init_halo(cs_mesh_t          *mesh,
 
   mesh->halo_type = halo_type;
 
+  mesh->n_ghost_cells = 0;
+  mesh->n_cells_with_ghosts = mesh->n_cells + mesh->n_ghost_cells;
+
   if (mesh->n_domains > 1 || mesh->n_init_perio > 0) {
 
     t1 = cs_timer_wtime();

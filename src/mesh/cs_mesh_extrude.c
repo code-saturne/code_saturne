@@ -54,6 +54,7 @@
 
 #include "cs_math.h"
 #include "cs_mesh.h"
+#include "cs_mesh_boundary.h"
 #include "cs_mesh_quantities.h"
 #include "cs_order.h"
 #include "cs_parall.h"
@@ -1976,6 +1977,15 @@ cs_mesh_extrude(cs_mesh_t                        *m,
   if (n_g_sel_faces < 1)
     return;
 
+  if (m->n_init_perio > 0) {
+    cs_mesh_boundary_remove_periodicity(m);
+    bft_printf
+      (_("\n Warning:\n"
+         " --------\n"
+         "  Extruding a mesh removes periodicity information.\n"
+         "  Periodicity may need to be rebuild.\n"));
+  }
+
   cs_mesh_free_rebuildable(m, false);
 
   /* Local names for parameters */
@@ -2146,11 +2156,9 @@ cs_mesh_extrude(cs_mesh_t                        *m,
   /* Rebuild ghosts */
 
   if (m->halo != NULL || m->halo_type == CS_HALO_EXTENDED) {
-    cs_halo_type_t halo_type = m->halo_type;
     cs_halo_destroy(&(m->halo));
-    assert(m == cs_glob_mesh);
     cs_mesh_builder_t *mb = (m == cs_glob_mesh) ? cs_glob_mesh_builder : NULL;
-    cs_mesh_init_halo(m, mb, halo_type);
+    cs_mesh_init_halo(m, mb, m->halo_type);
   }
 
   cs_mesh_update_auxiliary(cs_glob_mesh);

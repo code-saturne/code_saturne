@@ -60,7 +60,7 @@ BEGIN_C_DECLS
  *
  * Note that the ids of selected faces are sorted by this function.
  *
- * \param[in]       mesh     pointer to mesh structure to modify
+ * \param[in, out]  mesh     pointer to mesh structure to modify
  * \param[in]       n_faces  number of selected (interior) faces
  * \param[in, out]  face_id  list of selected (interior) faces (0 to n-1)
  */
@@ -79,11 +79,11 @@ cs_mesh_boundary_insert(cs_mesh_t  *mesh,
  *
  * Note that the ids of selected faces are sorted by this function.
  *
- * \deprecated Use of this function is not recommended, as sharing vertices
- *             may cause issues with vertex-based values, gradient extended
- *             neighborhoods, and some visualization operations.
-
- * \param[in]       mesh     pointer to mesh structure to modify
+ * This function should be used with caution, as sharing vertices
+ * may cause issues with vertex-based values, gradient extended
+ * neighborhoods, and some visualization operations.
+ *
+ * \param[in, out]  mesh     pointer to mesh structure to modify
  * \param[in]       n_faces  number of selected (interior) faces
  * \param[in, out]  face_id  list of selected (interior) faces (0 to n-1)
  */
@@ -105,11 +105,11 @@ cs_mesh_boundary_insert_with_shared_vertices(cs_mesh_t  *mesh,
  *
  * Note that the list of selected faces is sorted by this function.
  *
- * \param[in]  mesh        pointer to mesh structure to modify
- * \param[in]  group_name  group name to assign to newly created boundary
- *                         faces, or NULL
- * \param[in]  n_cells     number of separated cells
- * \param[in]  cell_id     separated cell ids
+ * \param[in, out]  mesh         pointer to mesh structure to modify
+ * \param[in]       group_name  group name to assign to newly created boundary
+ *                              faces, or NULL
+ * \param[in]       n_cells     number of separated cells
+ * \param[in]       cell_id     separated cell ids
  */
 /*----------------------------------------------------------------------------*/
 
@@ -118,6 +118,19 @@ cs_mesh_boundary_insert_separating_cells(cs_mesh_t        *mesh,
                                          const char       *group_name,
                                          cs_lnum_t         n_cells,
                                          const cs_lnum_t   cell_id[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Remove periodicity information from a mesh.
+ *
+ * Periodic interior faces are transformed into boundary faces.
+ *
+ * \param[in, out]  mesh  pointer to mesh structure to modify
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_mesh_boundary_remove_periodicity(cs_mesh_t  *mesh);
 
 /*----------------------------------------------------------------------------*/
 
