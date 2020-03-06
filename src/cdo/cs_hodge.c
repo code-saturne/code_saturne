@@ -1313,7 +1313,7 @@ cs_hodge_init_context(const cs_cdo_connect_t   *connect,
   }
 #else
   assert(cs_glob_n_threads == 1);
-  hodge_array[t_id] = cs_hodge_create(connect, property, hp,
+  hodge_array[0] = cs_hodge_create(connect, property, hp,
                                       need_tensor, need_eigen);
 #endif /* openMP */
 
