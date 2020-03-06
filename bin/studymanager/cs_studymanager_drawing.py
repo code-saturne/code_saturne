@@ -611,12 +611,13 @@ class Plotter(object):
                                 break
 
                     if not iok:
-                        raise ValueError("\n\nThis file does not exist: %s\n (last call with path: %s)\n" % (file_name, f))
+                        print("\n\nThis file does not exist: %s\n (last call with path: %s)\n" % (file_name, f))
 
-                    for nn in plots:
-                        curve = Plot(nn, self.parser, f)
-                        curve.setMeasurement(False)
-                        self.curves.append(curve)
+                    else:
+                        for nn in plots:
+                            curve = Plot(nn, self.parser, f)
+                            curve.setMeasurement(False)
+                            self.curves.append(curve)
 
         # Read the files of results of postpro
         script, label, nodes, args = self.parser.getPostPro(study_label)
