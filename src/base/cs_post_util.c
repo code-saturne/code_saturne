@@ -637,8 +637,11 @@ cs_cell_segment_intersect_probes_define(void          *input,
 
   cs_lnum_t n_cells = 0;
   cs_lnum_t *cell_ids = NULL;
+  cs_real_t *seg_c_len = NULL;
 
-  cs_cell_segment_intersect_select(input, &n_cells, &cell_ids);
+  /* This version is better than cs_cell_segment_intersect_select because it gives the cell
+   * if the segment is included in this cell */
+  cs_cell_polyline_intersect_select(input, 2, &n_cells, &cell_ids, &seg_c_len);
 
   cs_real_3_t *_coords;
   cs_real_t *_s;
@@ -656,6 +659,7 @@ cs_cell_segment_intersect_probes_define(void          *input,
   }
 
   BFT_FREE(cell_ids);
+  BFT_FREE(seg_c_len);
 
   /* Set return values */
 
