@@ -252,6 +252,7 @@ cs_geom_segment_intersect_face(int               orient,
                             sx0[2] - face_cog[2]};
 
   int n_intersects = 0;
+  bool in_cog = true;
 
   /* Principle:
    *  - loop on sub-triangles of the face
@@ -286,7 +287,10 @@ cs_geom_segment_intersect_face(int               orient,
   cs_real_3_t e0, e1;
   int pip1, p0;
 
-  /* 1st vertex: vector e0, p0 = e0 ^ vgo  */
+  /* 1st vertex: test edge e0 with respect to (OD)
+   * in an orthogonal plane of (OD)
+   * vector e0 = [G, v0], p0 = e0 ^ OG
+   * return "p0 . OD > 0 ?" */
   cs_lnum_t vtx_id_0 = vertex_ids[0];
   const cs_real_t *vtx_0 = vtx_coord[vtx_id_0];
 
@@ -320,7 +324,7 @@ cs_geom_segment_intersect_face(int               orient,
      */
     int sign_od_p = (od_p > 0 ? 1 : -1);
 
-    /* 2nd edge: vector ei+1, pi+1 = ei+1 ^ vgo */
+    /* 2nd edge: vector ei+1, pi+1 = ei+1 ^ OG */
 
     int pi = pip1;
     if (i == n_vertices - 1)
@@ -328,10 +332,10 @@ cs_geom_segment_intersect_face(int               orient,
     else
       pip1 = _test_edge(sx0, sx1, face_cog, vtx_1);
 
-    const int u_sign = pip1 * sign_od_p;
+    int u_sign = pip1 * sign_od_p;
 
-    /* 1st edge: vector ei, pi = ei ^ vgo */
-    const int v_sign = - pi * sign_od_p;
+    /* 1st edge: vector ei, pi = ei ^ OG */
+    int v_sign = - pi * sign_od_p;
 
     /* 3rd edge: vector e_out */
 
@@ -352,6 +356,17 @@ cs_geom_segment_intersect_face(int               orient,
     int w_sign = _test_edge(sx0, sx1, vtx_0, vtx_1)
                  * reorient_edge * sign_od_p;
 
+    /* Special treatment if the intersection point is
+     * in G exactly (so w_sign is < 0 for all e_out)
+     */
+    if (w_sign > 0)
+      in_cog = false;
+    /* Last vertex */
+    if ((i == (n_vertices - 1)) && in_cog) {
+      u_sign = 1;
+      v_sign = 1;
+    }
+
     /* The projection of point O along displacement (OD) is outside of the
      * triangle then no intersection */
     if (w_sign > 0 || u_sign  < 0 || v_sign < 0)
@@ -360,6 +375,8 @@ cs_geom_segment_intersect_face(int               orient,
     /* Line (OD) intersects the triangle because
      * u_sign >= 0, v_sign >= 0 and w_sign <= 0
      */
+    /* No need to deal with the special case where the intersection is in G */
+    in_cog = false;
 
     double og_p = - cs_math_3_dot_product(vgo, pvec);
 
