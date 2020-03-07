@@ -2467,16 +2467,24 @@ fvm_io_num_create_from_real(const cs_real_t  val[],
   cs_parall_min(1, CS_DOUBLE, &v_min);
   cs_parall_max(1, CS_DOUBLE, &v_max);
 
-  if (v_max <= v_min)
-    bft_error(__FILE__, __LINE__, 0,
-              _("%s: point set is empty or contains identical values."),
-              __func__);
+  if (v_max <= v_min) {
+    cs_gnum_t n_g_entities = n_entities;
+    cs_parall_counter(&n_g_entities, 1);
+    if (n_g_entities > 1)
+      bft_error(__FILE__, __LINE__, 0,
+                _("%s: point set contains identical values."),
+                __func__);
+  }
 
 #if defined(HAVE_MPI)
 
   if (n_ranks > 1) {
 
-    double scale = (1.0 - 1.e12) / (v_max - v_min);
+    double scale;
+    if (v_max > v_min)
+      scale = (1.0 - 1.e12) / (v_max - v_min);
+    else
+      scale = 0;
 
     cs_real_t *s_val;
     BFT_MALLOC(s_val, n_entities, cs_real_t);

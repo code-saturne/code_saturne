@@ -3,6 +3,8 @@ Release 6.0.3 (Unreleased)
 
 Bug fixes:
 
+- Fix crash with empty or single-element probe set.
+
 - Move example settings from cs_user_coupling function, which is never
   called, to cs_user_parameters.
 
