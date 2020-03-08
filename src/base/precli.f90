@@ -137,11 +137,9 @@ if (iale.ge.1) then
   enddo
 endif
 
-! POUR LES PHYSIQUES PARTICULIERES
-
+! Physical module
 if (ippmod(iphpar).ge.1) then
   call ppprcl(nvar, izfppp, rcodcl)
-  !==========
 endif
 
 !----

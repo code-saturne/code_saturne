@@ -1261,7 +1261,7 @@ do ifac = 1, nfabor
          coefbu(:,:,ifac), cofbfu(:,:,ifac),             &
          pimpv           , qimpv           )
 
-  ! convective boundary for marangoni effects (generalized symmetry condition)
+  ! convective boundary for Marangoni effects (generalized symmetry condition)
   !---------------------------------------------------------------------------
 
   elseif (icodcl(ifac,iu).eq.14) then
