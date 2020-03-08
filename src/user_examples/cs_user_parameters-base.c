@@ -729,13 +729,14 @@ cs_user_parameters(cs_domain_t *domain)
     /* ischcv is the type of convective scheme:
        0: second order linear upwind
        1: centered
-       2: pure upwind gradient in SOLU */
+       2: pure upwind gradient in SOLU
+       3: blending SOLU and centered
+       4: NVD/TVD Scheme */
 
     /* isstpc:
       0: swich on the slope test
       1: swich off the slope test (default)
-      2: continuous limiter ensuring boundedness (beta limiter)
-      3: NVD/TVD Scheme */
+      2: continuous limiter ensuring boundedness (beta limiter)*/
 
     cs_var_cal_opt_t vcopt;
     int key_cal_opt_id = cs_field_key_id("var_cal_opt");

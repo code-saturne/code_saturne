@@ -38,6 +38,7 @@
 #include "cs_math.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parameters.h"
+#include "cs_field_pointer.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -1102,7 +1103,7 @@ cs_solu_f_val_tensor(const cs_real_3_t   cell_cen,
  * \brief Blend face values for a centered or SOLU scheme with face values for
  * an upwind scheme.
  *
- * \param[in]     blencp   proportion of centered or SOLU scheme,
+ * \param[in]     blencp   proportion of second order scheme,
  *                         (1-blencp) is the proportion of upwind.
  * \param[in]     p        (relaxed) value at cell
  * \param[out]    pf       face value
@@ -1122,7 +1123,7 @@ cs_blend_f_val(const double     blencp,
  * \brief Blend face values for a centered or SOLU scheme with face values for
  * an upwind scheme.
  *
- * \param[in]     blencp   proportion of centered or SOLU scheme,
+ * \param[in]     blencp   proportion of second order scheme,
  *                         (1-blencp) is the proportion of upwind.
  * \param[in]     p        (relaxed) value at cell
  * \param[in,out] pf       face value
@@ -1143,7 +1144,7 @@ cs_blend_f_val_vector(const double       blencp,
  * \brief Blend face values for a centered or SOLU scheme with face values for
  * an upwind scheme.
  *
- * \param[in]     blencp   proportion of centered or SOLU scheme,
+ * \param[in]     blencp   proportion of second order scheme,
  *                         (1-blencp) is the proportion of upwind.
  * \param[in]     p        (relaxed) value at cell
  * \param[out]    pf       face value
@@ -1804,7 +1805,7 @@ cs_i_cd_unsteady_upwind_tensor(const cs_real_t  bldfrp,
  * \param[in]     bldfrp       reconstruction blending factor
  * \param[in]     ischcp       second order convection scheme flag
  * \param[in]     relaxp       relaxation coefficient
- * \param[in]     blencp       proportion of centered or SOLU scheme,
+ * \param[in]     blencp       proportion of second order scheme,
  *                             (1-blencp) is the proportion of upwind.
  * \param[in]     weight       geometrical weight
  * \param[in]     cell_ceni    center of gravity coordinates of cell i
@@ -1987,7 +1988,7 @@ cs_i_cd_steady(const cs_real_t   bldfrp,
  * \param[in]     bldfrp       reconstruction blending factor
  * \param[in]     ischcp       second order convection scheme flag
  * \param[in]     relaxp       relaxation coefficient
- * \param[in]     blencp       proportion of centered or SOLU scheme,
+ * \param[in]     blencp       proportion of second order scheme,
  *                             (1-blencp) is the proportion of upwind.
  * \param[in]     weight       geometrical weight
  * \param[in]     cell_ceni    center of gravity coordinates of cell i
@@ -2140,7 +2141,7 @@ cs_i_cd_steady_vector(const cs_real_t     bldfrp,
  * \param[in]     bldfrp       reconstruction blending factor
  * \param[in]     ischcp       second order convection scheme flag
  * \param[in]     relaxp       relaxation coefficient
- * \param[in]     blencp       proportion of centered or SOLU scheme,
+ * \param[in]     blencp       proportion of second order scheme,
  *                             (1-blencp) is the proportion of upwind.
  * \param[in]     weight       geometrical weight
  * \param[in]     cell_ceni    center of gravity coordinates of cell i
@@ -2293,7 +2294,7 @@ cs_i_cd_steady_tensor(const cs_real_t     bldfrp,
  *
  * \param[in]     bldfrp         reconstruction blending factor
  * \param[in]     ischcp         second order convection scheme flag
- * \param[in]     blencp         proportion of centered or SOLU scheme,
+ * \param[in]     blencp         proportion of second order scheme,
  *                               (1-blencp) is the proportion of upwind.
  * \param[in]     weight         geometrical weight
  * \param[in]     cell_ceni      center of gravity coordinates of cell i
@@ -2457,7 +2458,7 @@ cs_i_cd_unsteady(const cs_real_t    bldfrp,
  *
  * \param[in]     bldfrp         reconstruction blending factor
  * \param[in]     ischcp         second order convection scheme flag
- * \param[in]     blencp         proportion of centered or SOLU scheme,
+ * \param[in]     blencp         proportion of second order scheme,
  *                               (1-blencp) is the proportion of upwind.
  * \param[in]     weight         geometrical weight
  * \param[in]     cell_ceni      center of gravity coordinates of cell i
@@ -2601,7 +2602,7 @@ cs_i_cd_unsteady_vector(const cs_real_t     bldfrp,
  *
  * \param[in]     bldfrp       reconstruction blending factor
  * \param[in]     ischcp       second order convection scheme flag
- * \param[in]     blencp       proportion of centered or SOLU scheme,
+ * \param[in]     blencp       proportion of second order scheme,
  *                             (1-blencp) is the proportion of upwind.
  * \param[in]     weight       geometrical weight
  * \param[in]     cell_ceni    center of gravity coordinates of cell i
@@ -2708,7 +2709,7 @@ cs_i_cd_unsteady_tensor(const cs_real_t     bldfrp,
  * \param[in]     bldfrp          reconstruction blending factor
  * \param[in]     ischcp          second order convection scheme flag
  * \param[in]     relaxp          relaxation coefficient
- * \param[in]     blencp          proportion of centered or SOLU scheme,
+ * \param[in]     blencp          proportion of second order scheme,
  *                                (1-blencp) is the proportion of upwind.
  * \param[in]     blend_st        proportion of centered or SOLU scheme,
  *                                when the slope test is activated
@@ -2965,7 +2966,7 @@ cs_i_cd_steady_slope_test(bool              *upwind_switch,
  * \param[in]     bldfrp          reconstruction blending factor
  * \param[in]     ischcp          second order convection scheme flag
  * \param[in]     relaxp          relaxation coefficient
- * \param[in]     blencp          proportion of centered or SOLU scheme,
+ * \param[in]     blencp          proportion of second order scheme,
  *                                (1-blencp) is the proportion of upwind.
  * \param[in]     blend_st        proportion of centered or SOLU scheme,
  *                                when the slope test is activated
@@ -3193,7 +3194,7 @@ cs_i_cd_steady_slope_test_vector(bool               *upwind_switch,
  * \param[in]     bldfrp          reconstruction blending factor
  * \param[in]     ischcp          second order convection scheme flag
  * \param[in]     relaxp          relaxation coefficient
- * \param[in]     blencp          proportion of centered or SOLU scheme,
+ * \param[in]     blencp          proportion of second order scheme,
  *                                (1-blencp) is the proportion of upwind.
  * \param[in]     blend_st        proportion of centered or SOLU scheme,
  *                                when the slope test is activated
@@ -3423,7 +3424,7 @@ cs_i_cd_steady_slope_test_tensor(bool               *upwind_switch,
  * \param[in]     iconvp          convection flag
  * \param[in]     bldfrp          reconstruction blending factor
  * \param[in]     ischcp          second order convection scheme flag
- * \param[in]     blencp          proportion of centered or SOLU scheme,
+ * \param[in]     blencp          proportion of second order scheme,
  *                                (1-blencp) is the proportion of upwind.
  * \param[in]     blend_st        proportion of centered or SOLU scheme,
  *                                when the slope test is activated
@@ -3636,6 +3637,8 @@ cs_central_downwind_cells(const cs_lnum_t    ii,
  *        computation in case of an unsteady algorithm and using NVD schemes.
  *
  * \param[in]     limiter         choice of the NVD scheme
+ * \param[in]     beta            proportion of second order scheme,
+ *                                (1-blencp) is the proportion of upwind.
  * \param[in]     cell_cen_c      center of gravity coordinates of central cell
  * \param[in]     cell_cen_d      center of gravity coordinates of downwind cell
  * \param[in]     i_face_normal   normal of face ij
@@ -3654,6 +3657,7 @@ cs_central_downwind_cells(const cs_lnum_t    ii,
 
 inline static void
 cs_i_cd_unsteady_nvd(const cs_nvd_type_t  limiter,
+                     const double         beta,
                      const cs_real_3_t    cell_cen_c,
                      const cs_real_3_t    cell_cen_d,
                      const cs_real_3_t    i_face_normal,
@@ -3731,6 +3735,11 @@ cs_i_cd_unsteady_nvd(const cs_nvd_type_t  limiter,
 
       *pif = p_u + nvf_p_f*(p_d - p_u);
       *pif = CS_MAX(CS_MIN(*pif, local_max_c), local_min_c);
+
+      cs_blend_f_val(beta,
+                     p_c,
+                     pif);
+
       *pjf = *pif;
     }
   }
@@ -3745,7 +3754,7 @@ cs_i_cd_unsteady_nvd(const cs_nvd_type_t  limiter,
  * \param[in]     iconvp          convection flag
  * \param[in]     bldfrp          reconstruction blending factor
  * \param[in]     ischcp          second order convection scheme flag
- * \param[in]     blencp          proportion of centered or SOLU scheme,
+ * \param[in]     blencp          proportion of second order scheme,
  *                                (1-blencp) is the proportion of upwind.
  * \param[in]     blend_st        proportion of centered or SOLU scheme,
  *                                when the slope test is activated
@@ -3915,7 +3924,7 @@ cs_i_cd_unsteady_slope_test_vector(bool               *upwind_switch,
  * \param[in]     iconvp          convection flag
  * \param[in]     bldfrp          reconstruction blending factor
  * \param[in]     ischcp          second order convection scheme flag
- * \param[in]     blencp          proportion of centered or SOLU scheme,
+ * \param[in]     blencp          proportion of second order scheme,
  *                                (1-blencp) is the proportion of upwind.
  * \param[in]     blend_st        proportion of centered or SOLU scheme,
  *                                when the slope test is activated
@@ -5166,8 +5175,8 @@ cs_slope_test_gradient_tensor(const int               inc,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute a coefficient for blending that ensures the positivity
- *  of the scalar.
+ * \brief Compute the beta blending coefficient of the
+ * beta limiter (ensuring preservation of a given min/max pair of values).
  *
  * \param[in]     f_id         field id
  * \param[in]     inc          "not an increment" flag
@@ -5176,9 +5185,9 @@ cs_slope_test_gradient_tensor(const int               inc,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_max_limiter_building(int              f_id,
-                        int              inc,
-                        const cs_real_t  rovsdt[]);
+cs_beta_limiter_building(int              f_id,
+                         int              inc,
+                         const cs_real_t  rovsdt[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

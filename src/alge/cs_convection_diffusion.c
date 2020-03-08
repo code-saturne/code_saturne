@@ -272,7 +272,8 @@ _cell_courant_number(const int  f_id,
 }
 
 /*----------------------------------------------------------------------------
- * Return the denominator to build the Min/max limiter.
+ * Return the denominator to build the beta blending coefficient of the
+ * beta limiter (ensuring preservation of a given min/max pair of values).
  *
  * parameters:
  *   f_id        <-- field id (or -1)
@@ -285,10 +286,10 @@ _cell_courant_number(const int  f_id,
  *----------------------------------------------------------------------------*/
 
 static void
-_max_limiter_denom(const int              f_id,
-                   const int              inc,
-                   cs_real_t    *restrict denom_inf,
-                   cs_real_t    *restrict denom_sup)
+_beta_limiter_denom(const int              f_id,
+                    const int              inc,
+                    cs_real_t    *restrict denom_inf,
+                    cs_real_t    *restrict denom_sup)
 {
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -303,6 +304,8 @@ _max_limiter_denom(const int              f_id,
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_3_t *restrict cell_cen
     = (const cs_real_3_t *restrict)fvq->cell_cen;
+  const cs_real_3_t *restrict i_face_normal
+    = (const cs_real_3_t *restrict)fvq->i_face_normal;
   const cs_real_3_t *restrict i_face_cog
     = (const cs_real_3_t *restrict)fvq->i_face_cog;
   const cs_real_3_t *restrict diipf
@@ -325,7 +328,9 @@ _max_limiter_denom(const int              f_id,
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
   const int ischcp = var_cal_opt.ischcv;
+  const int isstpp = var_cal_opt.isstpc;
   const int ircflp = var_cal_opt.ircflu;
+  const int imrgra = var_cal_opt.imrgra;
   const cs_real_t thetap = var_cal_opt.thetav;
   const cs_real_t blencp = var_cal_opt.blencv;
 
@@ -336,15 +341,52 @@ _max_limiter_denom(const int              f_id,
   const cs_real_t *restrict b_massflux =
     cs_field_by_id(cs_field_get_key_int(f, kbmasf))->val;
 
+  /* select halo type according to field gradient method */
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+
+  cs_gradient_type_by_imrgra(imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  /* for NVD / TVD schemes (including VoF schemes) */
+
+  const int key_lim_choice = cs_field_key_id("limiter_choice");
+  int limiter_choice = -1;
+
+  cs_real_t *local_min = NULL;
+  cs_real_t *local_max = NULL;
+  cs_real_t *courant = NULL;
+
+  if (ischcp == 4) {
+    /* get limiter choice */
+    limiter_choice = cs_field_get_key_int(f, key_lim_choice);
+
+    /* local extrema computation */
+    BFT_MALLOC(local_max, n_cells_ext, cs_real_t);
+    BFT_MALLOC(local_min, n_cells_ext, cs_real_t);
+    cs_field_local_extrema_scalar(f_id,
+                                  halo_type,
+                                  local_max,
+                                  local_min);
+
+    /* cell Courant number computation */
+    if (limiter_choice >= CS_NVD_VOF_HRIC) {
+      BFT_MALLOC(courant, n_cells_ext, cs_real_t);
+      _cell_courant_number(f_id, courant);
+    }
+  }
+
   cs_real_t *df_limiter = NULL;
   int df_limiter_id =
     cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
   if (df_limiter_id > -1)
     df_limiter = cs_field_by_id(df_limiter_id)->val;
 
-  //Step 1: Building of the upwind gradient if needed
-  cs_real_3_t *grdpa; // For the Implicit part
-  cs_real_3_t *grdpaa;// For the Explicit part
+  /* step 1: gradient computation */
+  cs_real_3_t *grdpa;  /* for the implicit part */
+  cs_real_3_t *grdpaa; /* for the explicit part */
 
   BFT_MALLOC(grdpa, n_cells_ext, cs_real_3_t);
   BFT_MALLOC(grdpaa, n_cells_ext, cs_real_3_t);
@@ -360,10 +402,8 @@ _max_limiter_denom(const int              f_id,
     grdpaa[cell_id][2] = 0.;
   }
 
-  cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  /* SOLU Scheme asked with standard gradient
-   *  or CENTERED scheme */
-  if (ischcp == 0 || ischcp == 1) {
+  /* legacy SOLU Scheme or centered scheme */
+  if (ischcp == 0 || ischcp == 1 || ischcp == 3) {
 
     cs_field_gradient_scalar(f,
                              false, /* use_previous_t */
@@ -378,7 +418,7 @@ _max_limiter_denom(const int              f_id,
                              grdpaa);
 
   }
-  /* pure SOLU scheme without using gradient_slope_test function*/
+  /* pure SOLU scheme (upwind gradient reconstruction) */
   else if (ischcp == 2) {
 
     cs_upwind_gradient(f_id,
@@ -444,54 +484,100 @@ _max_limiter_denom(const int              f_id,
         if (df_limiter != NULL && ircflp > 0)
           bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
 
-        /* Value at time n */
-        cs_i_cd_unsteady(bldfrp,
-                         ischcp,
-                         blencp,
-                         weight[face_id],
-                         cell_cen[ii],
-                         cell_cen[jj],
-                         i_face_cog[face_id],
-                         hybrid_coef_ii,
-                         hybrid_coef_jj,
-                         diipf[face_id],
-                         djjpf[face_id],
-                         grdpa[ii], /* Std gradient when needed */
-                         grdpa[jj], /* Std gradient when needed */
-                         grdpa[ii], /* Upwind gradient when needed */
-                         grdpa[jj], /* Upwind gradient when needed */
-                         pi,
-                         pj,
-                         &pif,
-                         &pjf,
-                         &pip,
-                         &pjp);
+        if (ischcp == 4) {
+          /* NVD/TVD family of high accuracy schemes */
 
-        /* Value at time n-1 */
-        cs_i_cd_unsteady(bldfrp,
-                         ischcp,
-                         blencp,
-                         weight[face_id],
-                         cell_cen[ii],
-                         cell_cen[jj],
-                         i_face_cog[face_id],
-                         hybrid_coef_ii, /* FIXME use previous values
-                                            of blending function */
-                         hybrid_coef_jj, /* FIXME use previous values
-                                            of blending function */
-                         diipf[face_id],
-                         djjpf[face_id],
-                         grdpaa[ii], /* Std gradient when needed */
-                         grdpaa[jj], /* Std gradient when needed */
-                         grdpaa[ii], /* Upwind gradient when needed */
-                         grdpaa[jj], /* Upwind gradient when needed */
-                         pia,
-                         pja,
-                         &pifa,
-                         &pjfa,
-                         &pipa,
-                         &pjpa);
+          cs_lnum_t ic, id;
 
+          /* Determine central and downwind sides w.r.t. current face */
+          cs_central_downwind_cells(ii,
+                                    jj,
+                                    i_massflux[face_id],
+                                    &ic,  /* central cell id */
+                                    &id); /* downwind cell id */
+
+          cs_real_t courant_c = -1.;
+          if (courant != NULL)
+            courant_c = courant[ic];
+
+          cs_i_cd_unsteady_nvd(limiter_choice,
+                               blencp,
+                               cell_cen[ic],
+                               cell_cen[id],
+                               i_face_normal[face_id],
+                               i_face_cog[face_id],
+                               grdpa[ic],
+                               pvar[ic],
+                               pvar[id],
+                               local_max[ic],
+                               local_min[ic],
+                               courant_c,
+                               &pif,
+                               &pjf);
+
+          cs_i_cd_unsteady_nvd(limiter_choice,
+                               blencp,
+                               cell_cen[ic],
+                               cell_cen[id],
+                               i_face_normal[face_id],
+                               i_face_cog[face_id],
+                               grdpaa[ic],
+                               pvara[ic],
+                               pvara[id],
+                               local_max[ic],
+                               local_min[ic],
+                               courant_c,
+                               &pifa,
+                               &pjfa);
+        } else {
+          /* Value at time n */
+          cs_i_cd_unsteady(bldfrp,
+                           ischcp,
+                           blencp,
+                           weight[face_id],
+                           cell_cen[ii],
+                           cell_cen[jj],
+                           i_face_cog[face_id],
+                           hybrid_coef_ii,
+                           hybrid_coef_jj,
+                           diipf[face_id],
+                           djjpf[face_id],
+                           grdpa[ii], /* Std gradient when needed */
+                           grdpa[jj], /* Std gradient when needed */
+                           grdpa[ii], /* Upwind gradient when needed */
+                           grdpa[jj], /* Upwind gradient when needed */
+                           pi,
+                           pj,
+                           &pif,
+                           &pjf,
+                           &pip,
+                           &pjp);
+
+          /* Value at time n-1 */
+          cs_i_cd_unsteady(bldfrp,
+                           ischcp,
+                           blencp,
+                           weight[face_id],
+                           cell_cen[ii],
+                           cell_cen[jj],
+                           i_face_cog[face_id],
+                           hybrid_coef_ii, /* FIXME use previous values
+                                              of blending function */
+                           hybrid_coef_jj, /* FIXME use previous values
+                                              of blending function */
+                           diipf[face_id],
+                           djjpf[face_id],
+                           grdpaa[ii], /* Std gradient when needed */
+                           grdpaa[jj], /* Std gradient when needed */
+                           grdpaa[ii], /* Upwind gradient when needed */
+                           grdpaa[jj], /* Upwind gradient when needed */
+                           pia,
+                           pja,
+                           &pifa,
+                           &pjfa,
+                           &pipa,
+                           &pjpa);
+        }
 
         cs_real_t flui = 0.5*(i_massflux[face_id] +fabs(i_massflux[face_id]));
         cs_real_t fluj = 0.5*(i_massflux[face_id] -fabs(i_massflux[face_id]));
@@ -521,6 +607,9 @@ _max_limiter_denom(const int              f_id,
   }
 
   //Free Gradient arrays
+  BFT_FREE(local_min);
+  BFT_FREE(local_max);
+  BFT_FREE(courant);
   BFT_FREE(grdpa);
   BFT_FREE(grdpaa);
 
@@ -538,11 +627,11 @@ _max_limiter_denom(const int              f_id,
  *----------------------------------------------------------------------------*/
 
 static void
-_max_limiter_num(const int           f_id,
-                 const int           inc,
-                 const cs_real_t     rovsdt[],
-                 cs_real_t          *num_inf,
-                 cs_real_t          *num_sup)
+_beta_limiter_num(const int           f_id,
+                  const int           inc,
+                  const cs_real_t     rovsdt[],
+                  cs_real_t          *num_inf,
+                  cs_real_t          *num_sup)
 {
   const cs_mesh_t  *m = cs_glob_mesh;
 
@@ -1071,8 +1160,8 @@ cs_slope_test_gradient(int                     f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the upwind gradient in order to cope with SOLU schemes
- *        observed in the litterature.
+ * \brief Compute the upwind gradient used in the pure SOLU schemes
+ *        (observed in the litterature).
  *
  * \param[in]     f_id         field index
  * \param[in]     inc          Not an increment flag
@@ -1512,8 +1601,8 @@ cs_slope_test_gradient_tensor(const int              inc,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute a coefficient for blending that ensures the positivity
- *  of the scalar.
+ * \brief Compute the beta blending coefficient of the
+ * beta limiter (ensuring preservation of a given min/max pair of values).
  *
  * \param[in]     f_id         field id
  * \param[in]     inc          "not an increment" flag
@@ -1522,9 +1611,9 @@ cs_slope_test_gradient_tensor(const int              inc,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_max_limiter_building(int              f_id,
-                        int              inc,
-                        const cs_real_t  rovsdt[])
+cs_beta_limiter_building(int              f_id,
+                         int              inc,
+                         const cs_real_t  rovsdt[])
 {
   const cs_mesh_t *m = cs_glob_mesh;
   const cs_halo_t *halo = m->halo;
@@ -1555,20 +1644,20 @@ cs_max_limiter_building(int              f_id,
   BFT_MALLOC(num_inf, n_cells_ext, cs_real_t);
   BFT_MALLOC(num_sup, n_cells_ext, cs_real_t);
 
-  /* First Step: Treatment of the denominator for the inferior and superior bound */
+  /* computation of the denominator for the inferior and superior bound */
 
-  _max_limiter_denom(f_id,
-                     inc,
-                     denom_inf,
-                     denom_sup);
+  _beta_limiter_denom(f_id,
+                      inc,
+                      denom_inf,
+                      denom_sup);
 
-  /* Second Step: Treatment of the numenator for the inferior and superior bound */
+  /* computation of the numerator for the inferior and superior bound */
 
-  _max_limiter_num(f_id,
-                   inc,
-                   rovsdt,
-                   num_inf,
-                   num_sup);
+  _beta_limiter_num(f_id,
+                    inc,
+                    rovsdt,
+                    num_inf,
+                    num_sup);
 
 # pragma omp parallel for
   for (cs_lnum_t ii = 0; ii < n_cells; ii++) {
@@ -1821,7 +1910,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
     cs_gradient_perio_init_rij(f, &tr_dim, grad);
 
     /* NVD/TVD limiters */
-    if (isstpp >= 3) {
+    if (ischcp == 4) {
       limiter_choice = cs_field_get_key_int(f, key_lim_choice);
       BFT_MALLOC(local_max, n_cells_ext, cs_real_t);
       BFT_MALLOC(local_min, n_cells_ext, cs_real_t);
@@ -1898,7 +1987,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
   if (  (idiffp != 0 && ircflp == 1)
      || (  iconvp != 0 && iupwin == 0
-        && (ischcp == 0 || ircflp == 1 || isstpp == 0 || isstpp == 3))) {
+        && (ischcp == 0 || ircflp == 1 || isstpp == 0 || ischcp == 3 || ischcp == 4))) {
 
     if (f_id != -1) {
       /* Get the calculation option from the field */
@@ -2174,7 +2263,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
   } else if (isstpp == 1 || isstpp == 2) {
 
-    if (ischcp < 0 || ischcp > 2) {
+    if (ischcp < 0 || ischcp > 4) {
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of ischcv"));
     }
@@ -2282,15 +2371,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
               beta = CS_MAX(CS_MIN(cv_limiter[ii], cv_limiter[jj]), 0.);
             }
 
-            cs_real_t hybrid_coef_ii, hybrid_coef_jj;
-            if (ischcp == 3) {
-              hybrid_coef_ii = CS_F_(hybrid_blend)->val[ii];
-              hybrid_coef_jj = CS_F_(hybrid_blend)->val[jj];
-            } else {
-              hybrid_coef_ii = 0.;
-              hybrid_coef_jj = 0.;
-            }
-
             cs_real_2_t fluxij = {0.,0.};
 
             cs_real_t bldfrp = (cs_real_t) ircflp;
@@ -2298,41 +2378,111 @@ cs_convection_diffusion_scalar(int                       idtvar,
             if (df_limiter != NULL && ircflp > 0)
               bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
 
-            cs_i_cd_unsteady(bldfrp,
-                             ischcp,
-                             beta,
-                             weight[face_id],
-                             cell_cen[ii],
-                             cell_cen[jj],
-                             i_face_cog[face_id],
-                             hybrid_coef_ii,
-                             hybrid_coef_jj,
-                             diipf[face_id],
-                             djjpf[face_id],
-                             grad[ii],
-                             grad[jj],
-                             gradup[ii],
-                             gradup[jj],
+            if (ischcp != 4) {
+              cs_real_t hybrid_coef_ii, hybrid_coef_jj;
+              if (ischcp == 3) {
+                hybrid_coef_ii = CS_F_(hybrid_blend)->val[ii];
+                hybrid_coef_jj = CS_F_(hybrid_blend)->val[jj];
+              } else {
+                hybrid_coef_ii = 0.;
+                hybrid_coef_jj = 0.;
+              }
+              cs_i_cd_unsteady(bldfrp,
+                              ischcp,
+                              beta,
+                              weight[face_id],
+                              cell_cen[ii],
+                              cell_cen[jj],
+                              i_face_cog[face_id],
+                              hybrid_coef_ii,
+                              hybrid_coef_jj,
+                              diipf[face_id],
+                              djjpf[face_id],
+                              grad[ii],
+                              grad[jj],
+                              gradup[ii],
+                              gradup[jj],
+                              _pvar[ii],
+                              _pvar[jj],
+                              &pif,
+                              &pjf,
+                              &pip,
+                              &pjp);
+
+              cs_i_conv_flux(iconvp,
+                             thetap,
+                             imasac,
                              _pvar[ii],
                              _pvar[jj],
-                             &pif,
-                             &pjf,
-                             &pip,
-                             &pjp);
+                             pif,
+                             pif, /* no relaxation */
+                             pjf,
+                             pjf, /* no relaxation */
+                             i_massflux[face_id],
+                             1., /* xcpp */
+                             1., /* xcpp */
+                             fluxij);
 
-            cs_i_conv_flux(iconvp,
-                           thetap,
-                           imasac,
-                           _pvar[ii],
-                           _pvar[jj],
-                           pif,
-                           pif, /* no relaxation */
-                           pjf,
-                           pjf, /* no relaxation */
-                           i_massflux[face_id],
-                           1., /* xcpp */
-                           1., /* xcpp */
-                           fluxij);
+            } else {
+              /* NVD/TVD family of high accuracy schemes */
+
+              cs_lnum_t ic, id;
+
+              /* Determine central and downwind sides w.r.t. current face */
+              cs_central_downwind_cells(ii,
+                                        jj,
+                                        i_massflux[face_id],
+                                        &ic,  /* central cell id */
+                                        &id); /* downwind cell id */
+
+              cs_real_t courant_c = -1.;
+              if (courant != NULL)
+                courant_c = courant[ic];
+
+              cs_i_cd_unsteady_nvd(limiter_choice,
+                                   beta,
+                                   cell_cen[ic],
+                                   cell_cen[id],
+                                   i_face_normal[face_id],
+                                   i_face_cog[face_id],
+                                   grad[ic],
+                                   _pvar[ic],
+                                   _pvar[id],
+                                   local_max[ic],
+                                   local_min[ic],
+                                   courant_c,
+                                   &pif,
+                                   &pjf);
+
+              cs_i_conv_flux(iconvp,
+                             thetap,
+                             imasac,
+                             _pvar[ii],
+                             _pvar[jj],
+                             pif,
+                             pif, /* no relaxation */
+                             pjf,
+                             pjf, /* no relaxation */
+                             i_massflux[face_id],
+                             1., /* xcpp */
+                             1., /* xcpp */
+                             fluxij);
+
+              /* Compute required quantities for diffusive flux */
+              cs_real_t recoi, recoj;
+
+              cs_i_compute_quantities(bldfrp,
+                                      diipf[face_id],
+                                      djjpf[face_id],
+                                      grad[ii],
+                                      grad[jj],
+                                      _pvar[ii],
+                                      _pvar[jj],
+                                      &recoi,
+                                      &recoj,
+                                      &pip,
+                                      &pjp);
+            }
 
             cs_i_diff_flux(idiffp,
                            thetap,
@@ -2352,10 +2502,10 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
     }
 
-  /* --> Flux with slope test or NVD/TVD limiter
+  /* --> Flux with slope test
     ============================================*/
 
-  } else { /* isstpp = 0 or isstpp = 3 */
+  } else { /* isstpp = 0 */
 
     if (ischcp < 0 || ischcp > 2) {
       bft_error(__FILE__, __LINE__, 0,
@@ -2489,9 +2639,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
             if (df_limiter != NULL && ircflp > 0)
               bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
 
-            /* Original slope test */
-            if (isstpp == 0) {
-
               cs_i_cd_unsteady_slope_test(&upwind_switch,
                                           iconvp,
                                           bldfrp,
@@ -2534,67 +2681,6 @@ cs_convection_diffusion_scalar(int                       idtvar,
                              1., /* xcpp */
                              1., /* xcpp */
                              fluxij);
-
-            } else { /* if (isstpp == 3) */
-              /* NVD/TVD family of high accuracy schemes */
-
-              cs_lnum_t ic, id;
-
-              /* Determine central and downwind sides w.r.t. current face */
-              cs_central_downwind_cells(ii,
-                                        jj,
-                                        i_massflux[face_id],
-                                        &ic,  /* central cell id */
-                                        &id); /* downwind cell id */
-
-              cs_real_t courant_c = -1.;
-              if (courant != NULL)
-                courant_c = courant[ic];
-
-              cs_i_cd_unsteady_nvd(limiter_choice,
-                                   cell_cen[ic],
-                                   cell_cen[id],
-                                   i_face_normal[face_id],
-                                   i_face_cog[face_id],
-                                   grad[ic],
-                                   _pvar[ic],
-                                   _pvar[id],
-                                   local_max[ic],
-                                   local_min[ic],
-                                   courant_c,
-                                   &pif,
-                                   &pjf);
-
-              cs_i_conv_flux(iconvp,
-                             thetap,
-                             imasac,
-                             _pvar[ii],
-                             _pvar[jj],
-                             pif,
-                             pif, /* no relaxation */
-                             pjf,
-                             pjf, /* no relaxation */
-                             i_massflux[face_id],
-                             1., /* xcpp */
-                             1., /* xcpp */
-                             fluxij);
-
-              /* Compute required quantities for diffusive flux */
-              cs_real_t recoi, recoj;
-
-              cs_i_compute_quantities(bldfrp,
-                                      diipf[face_id],
-                                      djjpf[face_id],
-                                      grad[ii],
-                                      grad[jj],
-                                      _pvar[ii],
-                                      _pvar[jj],
-                                      &recoi,
-                                      &recoj,
-                                      &pip,
-                                      &pjp);
-
-            } /* isstpp */
 
             cs_i_diff_flux(idiffp,
                            thetap,
@@ -3164,7 +3250,7 @@ cs_face_convection_scalar(int                       idtvar,
     cs_gradient_perio_init_rij(f, &tr_dim, grad);
 
     /* NVD/TVD limiters */
-    if (isstpp >= 3) {
+    if (ischcp == 4) {
       limiter_choice = cs_field_get_key_int(f, key_lim_choice);
       BFT_MALLOC(local_max, n_cells_ext, cs_real_t);
       BFT_MALLOC(local_min, n_cells_ext, cs_real_t);
@@ -3234,7 +3320,7 @@ cs_face_convection_scalar(int                       idtvar,
   */
 
   if (   iconvp != 0 && iupwin == 0
-      && (ischcp == 0 || ircflp == 1 || isstpp == 0 || isstpp == 3)) {
+      && (ischcp == 0 || ircflp == 1 || isstpp == 0 || ischcp == 4)) {
 
     if (f_id != -1) {
       /* Get the calculation option from the field */
@@ -3475,7 +3561,7 @@ cs_face_convection_scalar(int                       idtvar,
 
   } else if (isstpp == 1 || isstpp == 2) {
 
-    if (ischcp < 0 || ischcp > 2) {
+    if (ischcp < 0 || ischcp > 4) {
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of ischcv"));
     }
@@ -3569,55 +3655,100 @@ cs_face_convection_scalar(int                       idtvar,
               beta = CS_MAX(CS_MIN(cv_limiter[ii], cv_limiter[jj]), 0.);
             }
 
-            cs_real_t hybrid_coef_ii, hybrid_coef_jj;
-            if (ischcp == 3) {
-              hybrid_coef_ii = CS_F_(hybrid_blend)->val[ii];
-              hybrid_coef_jj = CS_F_(hybrid_blend)->val[jj];
-            } else {
-              hybrid_coef_ii = 0.;
-              hybrid_coef_jj = 0.;
-            }
-
             cs_real_t bldfrp = (cs_real_t) ircflp;
             /* Local limitation of the reconstruction */
             if (df_limiter != NULL && ircflp > 0)
               bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
 
-            cs_i_cd_unsteady(bldfrp,
-                             ischcp,
-                             beta,
-                             weight[face_id],
-                             cell_cen[ii],
-                             cell_cen[jj],
-                             i_face_cog[face_id],
-                             hybrid_coef_ii,
-                             hybrid_coef_jj,
-                             diipf[face_id],
-                             djjpf[face_id],
-                             grad[ii],
-                             grad[jj],
-                             gradup[ii],
-                             gradup[jj],
+            if (ischcp != 4) {
+              cs_real_t hybrid_coef_ii, hybrid_coef_jj;
+              if (ischcp == 3) {
+                hybrid_coef_ii = CS_F_(hybrid_blend)->val[ii];
+                hybrid_coef_jj = CS_F_(hybrid_blend)->val[jj];
+              } else {
+                hybrid_coef_ii = 0.;
+                hybrid_coef_jj = 0.;
+              }
+              cs_i_cd_unsteady(bldfrp,
+                               ischcp,
+                               beta,
+                               weight[face_id],
+                               cell_cen[ii],
+                               cell_cen[jj],
+                               i_face_cog[face_id],
+                               hybrid_coef_ii,
+                               hybrid_coef_jj,
+                               diipf[face_id],
+                               djjpf[face_id],
+                               grad[ii],
+                               grad[jj],
+                               gradup[ii],
+                               gradup[jj],
+                               _pvar[ii],
+                               _pvar[jj],
+                               &pif,
+                               &pjf,
+                               &pip,
+                               &pjp);
+
+              cs_i_conv_flux(iconvp,
+                             thetap,
+                             imasac,
                              _pvar[ii],
                              _pvar[jj],
-                             &pif,
-                             &pjf,
-                             &pip,
-                             &pjp);
+                             pif,
+                             pif, /* no relaxation */
+                             pjf,
+                             pjf, /* no relaxation */
+                             i_massflux[face_id],
+                             1., /* xcpp */
+                             1., /* xcpp */
+                             i_conv_flux[face_id]);
+            } else {
+              /* NVD/TVD family of high accuracy schemes */
 
-            cs_i_conv_flux(iconvp,
-                           thetap,
-                           imasac,
-                           _pvar[ii],
-                           _pvar[jj],
-                           pif,
-                           pif, /* no relaxation */
-                           pjf,
-                           pjf, /* no relaxation */
-                           i_massflux[face_id],
-                           1., /* xcpp */
-                           1., /* xcpp */
-                           i_conv_flux[face_id]);
+              cs_lnum_t ic, id;
+
+              /* Determine central and downwind sides w.r.t. current face */
+              cs_central_downwind_cells(ii,
+                                        jj,
+                                        i_massflux[face_id],
+                                        &ic,  /* central cell id */
+                                        &id); /* downwind cell id */
+
+              cs_real_t courant_c = -1.;
+              if (courant != NULL)
+                courant_c = courant[ic];
+
+              cs_i_cd_unsteady_nvd(limiter_choice,
+                                   beta,
+                                   cell_cen[ic],
+                                   cell_cen[id],
+                                   i_face_normal[face_id],
+                                   i_face_cog[face_id],
+                                   grad[ic],
+                                   _pvar[ic],
+                                   _pvar[id],
+                                   local_max[ic],
+                                   local_min[ic],
+                                   courant_c,
+                                   &pif,
+                                   &pjf);
+
+              cs_i_conv_flux(iconvp,
+                             thetap,
+                             imasac,
+                             _pvar[ii],
+                             _pvar[jj],
+                             pif,
+                             pif, /* no relaxation */
+                             pjf,
+                             pjf, /* no relaxation */
+                             i_massflux[face_id],
+                             1., /* xcpp */
+                             1., /* xcpp */
+                             i_conv_flux[face_id]);
+            }
 
           }
         }
@@ -3628,7 +3759,7 @@ cs_face_convection_scalar(int                       idtvar,
   /* --> Flux with slope test or NVD/TVD limiter
     ============================================*/
 
-  } else { /* isstpp = 0 or isstpp = 3 */
+  } else { /* isstpp = 0 */
 
     if (ischcp < 0 || ischcp > 2) {
       bft_error(__FILE__, __LINE__, 0,
@@ -3746,97 +3877,48 @@ cs_face_convection_scalar(int                       idtvar,
             if (df_limiter != NULL && ircflp > 0)
               bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
 
-            /* Original slope test */
-            if (isstpp == 0) {
-
-              cs_i_cd_unsteady_slope_test(&upwind_switch,
-                                          iconvp,
-                                          bldfrp,
-                                          ischcp,
-                                          blencp,
-                                          blend_st,
-                                          weight[face_id],
-                                          i_dist[face_id],
-                                          i_face_surf[face_id],
-                                          cell_cen[ii],
-                                          cell_cen[jj],
-                                          i_face_normal[face_id],
-                                          i_face_cog[face_id],
-                                          diipf[face_id],
-                                          djjpf[face_id],
-                                          i_massflux[face_id],
-                                          grad[ii],
-                                          grad[jj],
-                                          gradup[ii],
-                                          gradup[jj],
-                                          gradst[ii],
-                                          gradst[jj],
-                                          _pvar[ii],
-                                          _pvar[jj],
-                                          &pif,
-                                          &pjf,
-                                          &pip,
-                                          &pjp);
-
-              cs_i_conv_flux(iconvp,
-                             thetap,
-                             imasac,
-                             _pvar[ii],
-                             _pvar[jj],
-                             pif,
-                             pif, /* no relaxation */
-                             pjf,
-                             pjf, /* no relaxation */
-                             i_massflux[face_id],
-                             1., /* xcpp */
-                             1., /* xcpp */
-                             i_conv_flux[face_id]);
-
-            } else { /* if (isstpp == 3) */
-              /* NVD/TVD family of high accuracy schemes */
-
-              cs_lnum_t ic, id;
-
-              /* Determine central and downwind sides w.r.t. current face */
-              cs_central_downwind_cells(ii,
-                                        jj,
+            cs_i_cd_unsteady_slope_test(&upwind_switch,
+                                        iconvp,
+                                        bldfrp,
+                                        ischcp,
+                                        blencp,
+                                        blend_st,
+                                        weight[face_id],
+                                        i_dist[face_id],
+                                        i_face_surf[face_id],
+                                        cell_cen[ii],
+                                        cell_cen[jj],
+                                        i_face_normal[face_id],
+                                        i_face_cog[face_id],
+                                        diipf[face_id],
+                                        djjpf[face_id],
                                         i_massflux[face_id],
-                                        &ic,  /* central cell id */
-                                        &id); /* downwind cell id */
+                                        grad[ii],
+                                        grad[jj],
+                                        gradup[ii],
+                                        gradup[jj],
+                                        gradst[ii],
+                                        gradst[jj],
+                                        _pvar[ii],
+                                        _pvar[jj],
+                                        &pif,
+                                        &pjf,
+                                        &pip,
+                                        &pjp);
 
-              cs_real_t courant_c = -1.;
-              if (courant != NULL)
-                courant_c = courant[ic];
-
-              cs_i_cd_unsteady_nvd(limiter_choice,
-                                   cell_cen[ic],
-                                   cell_cen[id],
-                                   i_face_normal[face_id],
-                                   i_face_cog[face_id],
-                                   grad[ic],
-                                   _pvar[ic],
-                                   _pvar[id],
-                                   local_max[ic],
-                                   local_min[ic],
-                                   courant_c,
-                                   &pif,
-                                   &pjf);
-
-              cs_i_conv_flux(iconvp,
-                             thetap,
-                             imasac,
-                             _pvar[ii],
-                             _pvar[jj],
-                             pif,
-                             pif, /* no relaxation */
-                             pjf,
-                             pjf, /* no relaxation */
-                             i_massflux[face_id],
-                             1., /* xcpp */
-                             1., /* xcpp */
-                             i_conv_flux[face_id]);
-
-            } /* isstpp */
+            cs_i_conv_flux(iconvp,
+                           thetap,
+                           imasac,
+                           _pvar[ii],
+                           _pvar[jj],
+                           pif,
+                           pif, /* no relaxation */
+                           pjf,
+                           pjf, /* no relaxation */
+                           i_massflux[face_id],
+                           1., /* xcpp */
+                           1., /* xcpp */
+                           i_conv_flux[face_id]);
 
             if (upwind_switch) {
               /* in parallel, face will be counted by one and only one rank */
@@ -6826,7 +6908,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
   if (f_id != -1) {
     f = cs_field_by_id(f_id);
     /* Get option from the field */
-    if (isstpp >= 3) {
+    if (ischcp == 4) {
       const int key_limiter = cs_field_key_id("limiter_choice");
       limiter_choice = cs_field_get_key_int(f, key_limiter);
       BFT_MALLOC(local_max, n_cells_ext, cs_real_t);
@@ -6979,7 +7061,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
   /* Pure SOLU scheme without using gradient_slope_test function
      or NVD/TVD limiters */
-  if (iconvp > 0 && iupwin == 0 && (ischcp == 2 || isstpp == 3)) {
+  if (iconvp > 0 && iupwin == 0 && (ischcp == 2 || ischcp == 4)) {
 
     BFT_MALLOC(gradup, n_cells_ext, cs_real_3_t);
 
@@ -7281,15 +7363,6 @@ cs_convection_diffusion_thermal(int                       idtvar,
               beta = CS_MAX(CS_MIN(cv_limiter[ii], cv_limiter[jj]), 0.);
             }
 
-            cs_real_t hybrid_coef_ii, hybrid_coef_jj;
-            if (ischcp == 3) {
-              hybrid_coef_ii = CS_F_(hybrid_blend)->val[ii];
-              hybrid_coef_jj = CS_F_(hybrid_blend)->val[jj];
-            } else {
-              hybrid_coef_ii = 0.;
-              hybrid_coef_jj = 0.;
-            }
-
             cs_real_2_t fluxij = {0.,0.};
 
             cs_real_t bldfrp = (cs_real_t) ircflp;
@@ -7297,41 +7370,144 @@ cs_convection_diffusion_thermal(int                       idtvar,
             if (df_limiter != NULL && ircflp > 0)
               bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
 
-            cs_i_cd_unsteady(bldfrp,
-                             ischcp,
-                             beta,
-                             weight[face_id],
-                             cell_cen[ii],
-                             cell_cen[jj],
-                             i_face_cog[face_id],
-                             hybrid_coef_ii,
-                             hybrid_coef_jj,
-                             diipf[face_id],
-                             djjpf[face_id],
-                             grad[ii],
-                             grad[jj],
-                             gradup[ii],
-                             gradup[jj],
+            cs_real_t hybrid_coef_ii, hybrid_coef_jj;
+            if (ischcp == 3) {
+              hybrid_coef_ii = CS_F_(hybrid_blend)->val[ii];
+              hybrid_coef_jj = CS_F_(hybrid_blend)->val[jj];
+
+              cs_i_cd_unsteady(bldfrp,
+                               ischcp,
+                               beta,
+                               weight[face_id],
+                               cell_cen[ii],
+                               cell_cen[jj],
+                               i_face_cog[face_id],
+                               hybrid_coef_ii,
+                               hybrid_coef_jj,
+                               diipf[face_id],
+                               djjpf[face_id],
+                               grad[ii],
+                               grad[jj],
+                               gradup[ii],
+                               gradup[jj],
+                               _pvar[ii],
+                               _pvar[jj],
+                               &pif,
+                               &pjf,
+                               &pip,
+                               &pjp);
+
+              cs_i_conv_flux(iconvp,
+                             thetap,
+                             imasac,
                              _pvar[ii],
                              _pvar[jj],
-                             &pif,
-                             &pjf,
-                             &pip,
-                             &pjp);
+                             pif,
+                             pif, /* no relaxation */
+                             pjf,
+                             pjf, /* no relaxation */
+                             i_massflux[face_id],
+                             xcpp[ii],
+                             xcpp[jj],
+                             fluxij);
+            } else if (ischcp == 4) {
+              /* NVD/TVD family of high accuracy schemes */
 
-            cs_i_conv_flux(iconvp,
-                           thetap,
-                           imasac,
-                           _pvar[ii],
-                           _pvar[jj],
-                           pif,
-                           pif, /* no relaxation */
-                           pjf,
-                           pjf, /* no relaxation */
-                           i_massflux[face_id],
-                           xcpp[ii],
-                           xcpp[jj],
-                           fluxij);
+              cs_lnum_t ic, id;
+
+              /* Determine central and downwind sides w.r.t. current face */
+              cs_central_downwind_cells(ii,
+                                        jj,
+                                        i_massflux[face_id],
+                                        &ic,  /* central cell id */
+                                        &id); /* downwind cell id */
+
+              cs_i_cd_unsteady_nvd(limiter_choice,
+                                   beta,
+                                   cell_cen[ic],
+                                   cell_cen[id],
+                                   i_face_normal[face_id],
+                                   i_face_cog[face_id],
+                                   grad[ic],
+                                   _pvar[ic],
+                                   _pvar[id],
+                                   local_max[ic],
+                                   local_min[ic],
+                                   -1., /* courant */
+                                   &pif,
+                                   &pjf);
+
+              cs_i_conv_flux(iconvp,
+                             thetap,
+                             imasac,
+                             _pvar[ii],
+                             _pvar[jj],
+                             pif,
+                             pif, /* no relaxation */
+                             pjf,
+                             pjf, /* no relaxation */
+                             i_massflux[face_id],
+                             xcpp[ii],
+                             xcpp[jj],
+                             fluxij);
+
+
+              /* Compute required quantities for diffusive flux */
+              cs_real_t recoi, recoj;
+
+              cs_i_compute_quantities(bldfrp,
+                                      diipf[face_id],
+                                      djjpf[face_id],
+                                      grad[ii],
+                                      grad[jj],
+                                      _pvar[ii],
+                                      _pvar[jj],
+                                      &recoi,
+                                      &recoj,
+                                      &pip,
+                                      &pjp);
+
+            } else {
+              hybrid_coef_ii = 0.;
+              hybrid_coef_jj = 0.;
+
+              cs_i_cd_unsteady(bldfrp,
+                               ischcp,
+                               beta,
+                               weight[face_id],
+                               cell_cen[ii],
+                               cell_cen[jj],
+                               i_face_cog[face_id],
+                               hybrid_coef_ii,
+                               hybrid_coef_jj,
+                               diipf[face_id],
+                               djjpf[face_id],
+                               grad[ii],
+                               grad[jj],
+                               gradup[ii],
+                               gradup[jj],
+                               _pvar[ii],
+                               _pvar[jj],
+                               &pif,
+                               &pjf,
+                               &pip,
+                               &pjp);
+
+              cs_i_conv_flux(iconvp,
+                             thetap,
+                             imasac,
+                             _pvar[ii],
+                             _pvar[jj],
+                             pif,
+                             pif, /* no relaxation */
+                             pjf,
+                             pjf, /* no relaxation */
+                             i_massflux[face_id],
+                             xcpp[ii],
+                             xcpp[jj],
+                             fluxij);
+
+            }
 
             cs_i_diff_flux(idiffp,
                            thetap,
@@ -7351,7 +7527,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
     }
 
-  /* --> Flux with slope test or NVD/TVD limiter
+  /* --> Flux with slope test
     ============================================*/
 
   } else {
@@ -7360,7 +7536,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of ischcv"));
     }
-    if (isstpp != 0 && isstpp != 3) {
+    if (isstpp != 0) {
       bft_error(__FILE__, __LINE__, 0,
                 _("invalid value of isstpc"));
     }
@@ -7493,110 +7669,48 @@ cs_convection_diffusion_thermal(int                       idtvar,
             if (df_limiter != NULL && ircflp > 0)
               bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
 
-            /* Original slope test */
-            if (isstpp == 0) {
-
-              cs_i_cd_unsteady_slope_test(&upwind_switch,
-                                          iconvp,
-                                          bldfrp,
-                                          ischcp,
-                                          blencp,
-                                          blend_st,
-                                          weight[face_id],
-                                          i_dist[face_id],
-                                          i_face_surf[face_id],
-                                          cell_cen[ii],
-                                          cell_cen[jj],
-                                          i_face_normal[face_id],
-                                          i_face_cog[face_id],
-                                          diipf[face_id],
-                                          djjpf[face_id],
-                                          i_massflux[face_id],
-                                          grad[ii],
-                                          grad[jj],
-                                          gradup[ii],
-                                          gradup[jj],
-                                          gradst[ii],
-                                          gradst[jj],
-                                          _pvar[ii],
-                                          _pvar[jj],
-                                          &pif,
-                                          &pjf,
-                                          &pip,
-                                          &pjp);
-
-              cs_i_conv_flux(iconvp,
-                             thetap,
-                             imasac,
-                             _pvar[ii],
-                             _pvar[jj],
-                             pif,
-                             pif, /* no relaxation */
-                             pjf,
-                             pjf, /* no relaxation */
-                             i_massflux[face_id],
-                             xcpp[ii],
-                             xcpp[jj],
-                             fluxij);
-
-            }
-            else { /* if (isstpp == 3) */
-              /* NVD/TVD family of high accuracy schemes */
-
-              cs_lnum_t ic, id;
-
-              /* Determine central and downwind sides w.r.t. current face */
-              cs_central_downwind_cells(ii,
-                                        jj,
+            cs_i_cd_unsteady_slope_test(&upwind_switch,
+                                        iconvp,
+                                        bldfrp,
+                                        ischcp,
+                                        blencp,
+                                        blend_st,
+                                        weight[face_id],
+                                        i_dist[face_id],
+                                        i_face_surf[face_id],
+                                        cell_cen[ii],
+                                        cell_cen[jj],
+                                        i_face_normal[face_id],
+                                        i_face_cog[face_id],
+                                        diipf[face_id],
+                                        djjpf[face_id],
                                         i_massflux[face_id],
-                                        &ic,  /* central cell id */
-                                        &id); /* downwind cell id */
+                                        grad[ii],
+                                        grad[jj],
+                                        gradup[ii],
+                                        gradup[jj],
+                                        gradst[ii],
+                                        gradst[jj],
+                                        _pvar[ii],
+                                        _pvar[jj],
+                                        &pif,
+                                        &pjf,
+                                        &pip,
+                                        &pjp);
 
-              cs_i_cd_unsteady_nvd(limiter_choice,
-                                   cell_cen[ic],
-                                   cell_cen[id],
-                                   i_face_normal[face_id],
-                                   i_face_cog[face_id],
-                                   grad[ic],
-                                   _pvar[ic],
-                                   _pvar[id],
-                                   local_max[ic],
-                                   local_min[ic],
-                                   -1., /* courant */
-                                   &pif,
-                                   &pjf);
-
-              cs_i_conv_flux(iconvp,
-                             thetap,
-                             imasac,
-                             _pvar[ii],
-                             _pvar[jj],
-                             pif,
-                             pif, /* no relaxation */
-                             pjf,
-                             pjf, /* no relaxation */
-                             i_massflux[face_id],
-                             xcpp[ii],
-                             xcpp[jj],
-                             fluxij);
-
-
-              /* Compute required quantities for diffusive flux */
-              cs_real_t recoi, recoj;
-
-              cs_i_compute_quantities(bldfrp,
-                                      diipf[face_id],
-                                      djjpf[face_id],
-                                      grad[ii],
-                                      grad[jj],
-                                      _pvar[ii],
-                                      _pvar[jj],
-                                      &recoi,
-                                      &recoj,
-                                      &pip,
-                                      &pjp);
-
-            } /* isstpp */
+            cs_i_conv_flux(iconvp,
+                           thetap,
+                           imasac,
+                           _pvar[ii],
+                           _pvar[jj],
+                           pif,
+                           pif, /* no relaxation */
+                           pjf,
+                           pjf, /* no relaxation */
+                           i_massflux[face_id],
+                           xcpp[ii],
+                           xcpp[jj],
+                           fluxij);
 
             cs_i_diff_flux(idiffp,
                            thetap,

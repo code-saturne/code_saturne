@@ -153,14 +153,14 @@ module cs_c_bindings
 
   interface
 
-    subroutine max_limiter_building(f_id, inc, rovsdt) &
-    bind(C, name='cs_max_limiter_building')
+    subroutine beta_limiter_building(f_id, inc, rovsdt) &
+    bind(C, name='cs_beta_limiter_building')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: f_id
       integer(c_int), value :: inc
       real(c_double), dimension(*) , intent(in) :: rovsdt
-    end subroutine max_limiter_building
+    end subroutine beta_limiter_building
 
     !---------------------------------------------------------------------------
 
@@ -4885,11 +4885,15 @@ contains
   !>                               - 1 flux reconstruction,
   !>                               - 0 otherwise
   !> \param[in]     ischcp        indicator
+  !>                               - 0 SOLU
   !>                               - 1 centered
-  !>                               - 0 2nd order
+  !>                               - 2 SOLU with upwind gradient reconstruction
+  !>                               - 3 blending SOLU centered
+  !>                               - 4 NVD/TVD
   !> \param[in]     isstpp        indicator
-  !>                               - 1 without slope test
   !>                               - 0 with slope test
+  !>                               - 1 without slope test
+  !>                               - 2 with beta limiter
   !> \param[in]     iescap        compute the predictor indicator if 1
   !> \param[in]     imucpp        indicator
   !>                               - 0 do not multiply the convectiv term by Cp
@@ -5129,11 +5133,15 @@ contains
   !>                               - 1 take into account,
   !>                               - 0 otherwise
   !> \param[in]     ischcp        indicator
+  !>                               - 0 SOLU
   !>                               - 1 centered
-  !>                               - 0 2nd order
+  !>                               - 2 SOLU with upwind gradient reconstruction
+  !>                               - 3 blending SOLU centered
+  !>                               - 4 NVD/TVD
   !> \param[in]     isstpp        indicator
-  !>                               - 1 without slope test
   !>                               - 0 with slope test
+  !>                               - 1 without slope test
+  !>                               - 2 with beta limiter
   !> \param[in]     iescap        compute the predictor indicator if 1
   !> \param[in]     idftnp        indicator
   !>                               - 1 the diffusivity is scalar
@@ -5360,11 +5368,15 @@ contains
   !>                               - 1 flux reconstruction,
   !>                               - 0 otherwise
   !> \param[in]     ischcp        indicator
+  !>                               - 0 SOLU
   !>                               - 1 centered
-  !>                               - 0 2nd order
+  !>                               - 2 SOLU with upwind gradient reconstruction
+  !>                               - 3 blending SOLU centered
+  !>                               - 4 NVD/TVD
   !> \param[in]     isstpp        indicator
-  !>                               - 1 without slope test
   !>                               - 0 with slope test
+  !>                               - 1 without slope test
+  !>                               - 2 with beta limiter
   !> \param[in]     idftnp        indicator
   !>                               - 1 the diffusivity is scalar
   !>                               - 6 the diffusivity is a symmetric tensor
@@ -5537,8 +5549,11 @@ contains
   !> Options for the convective scheme:
   !> - blencp = 0: upwind scheme for the advection
   !> - blencp = 1: no upwind scheme except in the slope test
-  !> - ischcp = 0: second order
+  !> - ischcp = 0: SOLU
   !> - ischcp = 1: centered
+  !> - ischcp = 2  SOLU with upwind gradient reconstruction
+  !> - ischcp = 3: blending SOLU centered
+  !> - ischcp = 4: NVD/TVD
   !> - imucpp = 0: do not multiply the convective part by \f$ C_p \f$
   !> - imucpp = 1: multiply the convective part by \f$ C_p \f$
 
@@ -5560,11 +5575,15 @@ contains
   !>                               - 1 flux reconstruction,
   !>                               - 0 otherwise
   !> \param[in]     ischcp        indicator
+  !>                               - 0 SOLU
   !>                               - 1 centered
-  !>                               - 0 2nd order
+  !>                               - 2 SOLU with gradient reconstruction
+  !>                               - 3 blending SOLU centered
+  !>                               - 4 NVD/TVD
   !> \param[in]     isstpp        indicator
-  !>                               - 1 without slope test
   !>                               - 0 with slope test
+  !>                               - 1 without slope test
+  !>                               - 2 with beta limiter
   !> \param[in]     inc           indicator
   !>                               - 0 when solving an increment
   !>                               - 1 otherwise
@@ -5728,8 +5747,11 @@ contains
   !> Options for the convective scheme:
   !> - blencp = 0: upwind scheme for the advection
   !> - blencp = 1: no upwind scheme except in the slope test
-  !> - ischcp = 0: second order
+  !> - ischcp = 0: SOLU
   !> - ischcp = 1: centered
+  !> - ischcp = 2  SOLU with upwind gradient reconstruction
+  !> - ischcp = 3: blending SOLU centered
+  !> - ischcp = 4: NVD/TVD
 
   !> \param[in]     idtvar        indicator of the temporal scheme
   !> \param[in]     f_id          field id (or -1)
@@ -5749,11 +5771,15 @@ contains
   !>                               - 1 flux reconstruction,
   !>                               - 0 otherwise
   !> \param[in]     ischcp        indicator
+  !>                               - 0 SOLU
   !>                               - 1 centered
-  !>                               - 0 2nd order
+  !>                               - 2 SOLU with gradient reconstruction
+  !>                               - 3 blending SOLU centered
+  !>                               - 4 NVD/TVD
   !> \param[in]     isstpp        indicator
-  !>                               - 1 without slope test
   !>                               - 0 with slope test
+  !>                               - 1 without slope test
+  !>                               - 2 with beta limiter
   !> \param[in]     inc           indicator
   !>                               - 0 when solving an increment
   !>                               - 1 otherwise

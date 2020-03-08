@@ -477,7 +477,7 @@ do f_id = 0, nfld - 1
     call field_get_key_int(f_id, kcvlim, ifctsl)
 
     ! Beta limiter or Roe-Sweby limiter
-    if (vcopt%isstpc.eq.2 .or. vcopt%isstpc.eq.3.or.ifctsl.ne.-1) then
+    if (vcopt%isstpc.eq.2.or.ifctsl.ne.-1) then
       ! Now create matching field
       ! Build name and label
       call field_get_name(f_id, f_name)
@@ -485,11 +485,7 @@ do f_id = 0, nfld - 1
       call field_get_dim(f_id, f_dim)
       name = trim(f_name) // '_conv_lim'
 
-      if (vcopt%isstpc.eq.2.or.ifctsl.ne.-1) then
-        ityloc = 1 ! cells
-      else
-        ityloc = 2 ! Interior faces
-      endif
+      ityloc = 1 ! cells
 
       call field_create(name, itycat, ityloc, f_dim, inoprv, ifctsl)
       call field_set_key_int(ifctsl, keyvis, POST_ON_LOCATION)

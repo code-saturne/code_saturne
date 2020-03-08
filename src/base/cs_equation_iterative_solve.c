@@ -443,7 +443,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   inc = 1;
 
   if (f_id > -1)
-    cs_max_limiter_building(f_id, inc, rovsdt);
+    cs_beta_limiter_building(f_id, inc, rovsdt);
 
   /* Si THETEX=0, ce n'est pas la peine d'en rajouter */
   if (fabs(thetex) > cs_math_epzero) {
@@ -832,9 +832,9 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       }
     }
 
-    /* Compute the min/ max limiter */
+    /* Compute the beta (min/max) limiter */
     if (f_id > -1)
-      cs_max_limiter_building(f_id, inc, rovsdt);
+      cs_beta_limiter_building(f_id, inc, rovsdt);
 
     /* The added convective scalar mass flux is:
        (thetex*Y_\face-imasac*Y_\celli)*mf.

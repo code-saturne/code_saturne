@@ -211,6 +211,21 @@ BEGIN_C_DECLS
         - 1: Centered \n
         - 2: Second Order with upwind-gradient reconstruction (SOLU) \n
         - 3: Blending between Second Order Linear Upwind and Centered scheme \n
+        - 4: NVD/TVD Scheme
+             Then "limiter_choice" keyword must be set:
+             * 0: Gamma
+             * 1: SMART
+             * 2: CUBISTA
+             * 3: SUPERBEE
+             * 4: MUSCL
+             * 5: MINMOD
+             * 6: CLAM
+             * 7: STOIC
+             * 8: OSHER
+             * 9: WASEB
+             * --- VOF scheme ---
+             * 10: M-HRIC
+             * 11: M-CICSAM
         Useful for all the unknowns variables which are convected
         (\ref iconv = 1) and for which a second-order scheme is used
         (\ref blencv > 0).
@@ -229,21 +244,6 @@ BEGIN_C_DECLS
         - 0: slope test activated for the considered unknown
         - 1: slope test deactivated for the considered unknown
         - 2: continuous limiter ensuring boundedness (beta limiter)
-        - 3: NVD/TVD Scheme
-             Then "limiter_choice" keyword must be set:
-             * 0: Gamma
-             * 1: SMART
-             * 2: CUBISTA
-             * 3: SUPERBEE
-             * 4: MUSCL
-             * 5: MINMOD
-             * 6: CLAM
-             * 7: STOIC
-             * 8: OSHER
-             * 9: WASEB
-             * --- VOF scheme ---
-             * 10: M-HRIC
-             * 11: M-CICSAM
         Useful for all the unknowns variable which are convected (\ref iconv = 1)
         and for which a second-order scheme is used (\ref blencv > 0).
         The use of the slope test stabilises the calculation but may bring
@@ -727,10 +727,10 @@ _log_func_default_var_cal_opt(const void *t)
   cs_log_printf(CS_LOG_SETUP, fmt_i, "ischcv", _t->ischcv,
                 _("Type of convective scheme: 2nd order with centered-gradient "
                   "upwind reconstruction (0), centered (1), "
-                  "2nd order with upwind-gradient upwind-reconstruction (SOLU) (2)"));
-  cs_log_printf(CS_LOG_SETUP, fmt_i, "isstpc", _t->isstpc,
-                _("0 for slope test, 1 for no slope test, 2 for min/max limiter "
+                  "2nd order with upwind-gradient upwind-reconstruction (SOLU) (2)"
                   "and 3 for NVD/TVD scheme"));
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "isstpc", _t->isstpc,
+                _("0 for slope test, 1 for no slope test, 2 for min/max limiter "));
   cs_log_printf(CS_LOG_SETUP, fmt_r, "blencv", _t->blencv,
                 _("[0.;1.] (1-upwind proportion (0: upwind))"));
   cs_log_printf(CS_LOG_SETUP, fmt_r, "blend_st", _t->blend_st,

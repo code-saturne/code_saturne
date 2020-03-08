@@ -929,13 +929,13 @@ cs_parameters_check(void)
                                     "var_cal_opt.ischcv (2nd order scheme "
                                     "choice)",
                                     var_cal_opt.ischcv,
-                                    0, 4);
+                                    0, 5);
 
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _(f_desc),
                                     "var_cal_opt.isstpc (limiter type)",
                                     var_cal_opt.isstpc,
-                                    0, 4);
+                                    0, 3);
 
       BFT_FREE(f_desc);
     }
@@ -944,7 +944,7 @@ cs_parameters_check(void)
   /* check if NVD scheme for thermal scalar is not one of the VOF schemes */
   if (f_th != NULL) {
     cs_field_get_key_struct(f_th, key_cal_opt_id, &var_cal_opt);
-    if (var_cal_opt.isstpc >= 3) { /* NVD scheme on thermal scalar? */
+    if (var_cal_opt.ischcv >= 4) { /* NVD scheme on thermal scalar? */
       cs_nvd_type_t limiter_choice = cs_field_get_key_int(f_th, key_limiter);
 
       f_desc = _field_section_desc(f_th, "while reading numerical "
@@ -1102,6 +1102,12 @@ cs_parameters_check(void)
                                       "var_cal_opt.isstpc (limiter type)",
                                       var_cal_opt.isstpc,
                                       0, 2);
+
+        cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
+                                      _(f_desc),
+                                      "var_cal_opt.ischcv",
+                                      var_cal_opt.ischcv,
+                                      0, 3);
 
         const int kiflux = cs_field_key_id("inner_flux_id");
         const int kbflux = cs_field_key_id("boundary_flux_id");

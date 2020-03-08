@@ -530,7 +530,7 @@ _balance_internal_faces(const int         iupwin,
     /* --> Flux with slope test
        ======================== */
 
-  } else { /* isstpp = 0 (FIXME take into account isstpp = 3) */
+  } else { /* isstpp = 0 (FIXME take into account ischcv = 4) */
 
     /* Steady */
     if (idtvar < 0) {
@@ -947,7 +947,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   /* Pure SOLU scheme without using gradient_slope_test function
      or Roe and Sweby limiters */
   if (var_cal_opt.blencv > 0
-      && (var_cal_opt.ischcv==2 || var_cal_opt.isstpc==3)) {
+      && (var_cal_opt.ischcv==2 || var_cal_opt.ischcv==4)) {
     BFT_MALLOC(gradup, n_cells_ext, cs_real_3_t);
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
       gradup[c_id][0] = 0.;
@@ -2530,7 +2530,7 @@ cs_flux_through_surface(const char         *scalar_name,
   /* Pure SOLU scheme without using gradient_slope_test function
      or Roe and Sweby limiters */
   if (var_cal_opt.blencv > 0
-      && (var_cal_opt.ischcv==2 || var_cal_opt.isstpc==3)) {
+      && (var_cal_opt.ischcv==2 || var_cal_opt.ischcv==4)) {
     BFT_MALLOC(gradup, n_cells_ext, cs_real_3_t);
     for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
       gradup[c_id][0] = 0.;
