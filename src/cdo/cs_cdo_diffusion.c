@@ -1825,10 +1825,7 @@ cs_cdo_diffusion_svb_cost_robin(const cs_equation_param_t      *eqp,
   if (csys->has_robin == false)
     return;  /* Nothing to do */
 
-  /* Robin BC expression: K du/dn + alpha*(u - u0) = g
-   * Store x = alpha*u0 + g
-   */
-  cs_real_t  *x = cb->values;
+  /* Robin BC expression: K du/dn + alpha*(u - u0) = beta */
   cs_sdm_t  *bc_op = cb->loc;
 
   /* Reset local operator */
@@ -1850,25 +1847,23 @@ cs_cdo_diffusion_svb_cost_robin(const cs_equation_param_t      *eqp,
                       cm->c_id, fm->f_id);
 #endif
 
-      /* Robin BC expression: K du/dn + alpha*(u - u0) = g */
-      /* ------------------------------------------------- */
+      /* Robin BC expression: K du/dn + alpha*(u - u0) = beta */
+      /* ---------------------------------------------------- */
 
       const double  alpha = csys->rob_values[3*f];
       const double  u0 = csys->rob_values[3*f+1];
-      const double  g = csys->rob_values[3*f+2];
-
-      memset(x, 0, sizeof(cs_real_t)*cm->n_vc);
-      for (short int v = 0; v < fm->n_vf; v++) {
-        const short int  vi = fm->v_ids[v];
-        x[vi] = alpha*u0 + g;
-      }
+      const double  beta = csys->rob_values[3*f+2];
+      const double  g = beta + alpha*u0;
 
       /* Update the RHS and the local system */
-      for (short int v = 0; v < fm->n_vf; v++) {
-        const double  pcoef_v = fm->face.meas * fm->wvf[v];
-        const short int  vi = fm->v_ids[v];
-        csys->rhs[vi] += pcoef_v*x[vi];
-        bc_op->val[vi*(1 + bc_op->n_rows)] += alpha*pcoef_v;
+      for (short int vfi = 0; vfi < fm->n_vf; vfi++) {
+
+        const double  f_cap_dualv = fm->face.meas * fm->wvf[vfi];
+        const short int  vi = fm->v_ids[vfi];
+
+        csys->rhs[vi] += g*f_cap_dualv;
+        bc_op->val[vi*(1+cm->n_vc)] += alpha*f_cap_dualv;
+
       }
 
     }  /* Robin face */

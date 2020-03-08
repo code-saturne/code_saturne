@@ -831,8 +831,6 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* Diffusion term */
   eqc->diffusion_hodge = NULL;
   eqc->get_stiffness_matrix = NULL;
-  eqc->enforce_robin_bc = NULL;
-  eqc->enforce_sliding = NULL;  /* Only useful for vector-valued eq. */
 
   if (cs_equation_param_has_diffusion(eqp)) {
 
@@ -848,7 +846,6 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     case CS_HODGE_ALGO_COST:
       eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
       eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
-      eqc->enforce_robin_bc = cs_cdo_diffusion_svb_cost_robin;
       if (diff_pty->is_iso || diff_pty->is_unity)
         eqc->get_stiffness_matrix = cs_hodge_vb_cost_get_iso_stiffness;
       else
@@ -858,7 +855,6 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     case CS_HODGE_ALGO_BUBBLE:
       eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
       eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
-      eqc->enforce_robin_bc = cs_cdo_diffusion_svb_cost_robin;
       if (diff_pty->is_iso || diff_pty->is_unity)
         eqc->get_stiffness_matrix = cs_hodge_vb_bubble_get_iso_stiffness;
       else
@@ -868,14 +864,12 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
     case CS_HODGE_ALGO_OCS2:
       eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ | CS_FLAG_COMP_SEF;
       eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
-      eqc->enforce_robin_bc = cs_cdo_diffusion_svb_cost_robin;
       eqc->get_stiffness_matrix = cs_hodge_vb_ocs2_get_aniso_stiffness;
       break;
 
     case CS_HODGE_ALGO_VORONOI:
       eqb->msh_flag |= CS_FLAG_COMP_PEQ | CS_FLAG_COMP_DFQ;
       eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ;
-      eqc->enforce_robin_bc = cs_cdo_diffusion_svb_cost_robin;
       eqc->get_stiffness_matrix = cs_hodge_vb_voro_get_stiffness;
       break;
 
@@ -883,7 +877,6 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
       eqb->msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ
         | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ | CS_FLAG_COMP_PFC;
       eqc->get_stiffness_matrix = cs_hodge_vb_wbs_get_stiffness;
-      eqc->enforce_robin_bc = cs_cdo_diffusion_svb_wbs_robin;
       break;
 
     default:
@@ -899,6 +892,37 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   BFT_MALLOC(eqc->vtx_bc_flag, n_vertices, cs_flag_t);
   cs_equation_set_vertex_bc_flag(connect, eqb->face_bc, eqc->vtx_bc_flag);
 
+  eqc->enforce_sliding = NULL;  /* Only useful for vector-valued eq. */
+  eqc->enforce_robin_bc = NULL;
+  if (cs_equation_param_has_robin_bc(eqp)) {
+
+    assert(cs_equation_param_has_diffusion(eqp)); /* sanity check */
+
+    const cs_property_data_t  *diff_pty = eqc->diffusion_hodge[0]->pty_data;
+    switch (eqp->diffusion_hodgep.algo) {
+
+    case CS_HODGE_ALGO_WBS:
+      eqc->enforce_robin_bc = cs_cdo_diffusion_svb_wbs_robin;
+      break;
+
+    case CS_HODGE_ALGO_COST:
+    case CS_HODGE_ALGO_BUBBLE:
+    case CS_HODGE_ALGO_OCS2:
+    case CS_HODGE_ALGO_VORONOI:
+      eqb->bd_msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_HFQ;
+      eqc->enforce_robin_bc = cs_cdo_diffusion_svb_cost_robin;
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                (" %s: Invalid type of algorithm with Robin boundaries."),
+                __func__);
+
+    } /* Switch on Hodge algo. */
+
+  } /* Robin boundary conditions */
+
+  /* Treatment of the Dirichlet boundary conditions */
   eqc->enforce_dirichlet = NULL;
   switch (eqp->default_enforcement) {
 
