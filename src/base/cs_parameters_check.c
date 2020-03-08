@@ -935,7 +935,7 @@ cs_parameters_check(void)
                                     _(f_desc),
                                     "var_cal_opt.isstpc (limiter type)",
                                     var_cal_opt.isstpc,
-                                    -1, 4);
+                                    0, 4);
 
       BFT_FREE(f_desc);
     }
@@ -1101,7 +1101,7 @@ cs_parameters_check(void)
                                       _(f_desc),
                                       "var_cal_opt.isstpc (limiter type)",
                                       var_cal_opt.isstpc,
-                                      -1, 2);
+                                      0, 2);
 
         const int kiflux = cs_field_key_id("inner_flux_id");
         const int kbflux = cs_field_key_id("boundary_flux_id");
