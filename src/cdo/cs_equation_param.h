@@ -1107,6 +1107,20 @@ cs_equation_summary_param(const cs_equation_param_t  *eqp);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Ask if the parameter settings of the equation has requested the
+ *         treatment of Robin boundary conditions
+ *
+ * \param[in] eqp          pointer to a \ref cs_equation_param_t
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+bool
+cs_equation_param_has_robin_bc(const cs_equation_param_t     *eqp);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Define the initial condition for the unknown related to this equation
  *         This definition can be done on a specified mesh location.
  *         By default, the unknown is set to zero everywhere.
