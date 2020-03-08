@@ -460,9 +460,15 @@ _sfb_apply_bc_partly(const cs_equation_param_t     *eqp,
        csys is updated inside (matrix and rhs) */
     if (cs_equation_param_has_diffusion(eqp)) {
 
-      if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
-          eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
-        eqc->enforce_dirichlet(eqp, cm, fm, diff_hodge, cb, csys);
+      if (csys->has_robin) {
+        assert(eqc->enforce_robin_bc != NULL);
+        eqc->enforce_robin_bc(eqp, cm, fm, diff_hodge, cb, csys);
+      }
+
+      if (csys->has_dirichlet) /* csys is updated inside (matrix and rhs) */
+        if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_NITSCHE ||
+            eqp->default_enforcement == CS_PARAM_BC_ENFORCE_WEAK_SYM)
+          eqc->enforce_dirichlet(eqp, cm, fm, diff_hodge, cb, csys);
 
     }
 
@@ -873,10 +879,11 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   } /* Diffusion */
 
-  /* Dirichlet boundary condition enforcement */
-  eqc->enforce_dirichlet = NULL;
+  eqc->enforce_robin_bc = cs_cdo_diffusion_sfb_cost_robin;
   eqc->enforce_sliding = NULL;  /* Not useful in the scalar-valued case */
 
+  /* Dirichlet boundary condition enforcement */
+  eqc->enforce_dirichlet = NULL;
   switch (eqp->default_enforcement) {
 
   case CS_PARAM_BC_ENFORCE_ALGEBRAIC:

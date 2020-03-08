@@ -1721,6 +1721,79 @@ cs_cdo_diffusion_vfb_wsym_sliding(const cs_equation_param_t      *eqp,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Take into account Robin BCs.
+ *          Case of scalar-valued CDO-Fb schemes with a CO+ST algorithm.
+ *          Predefined prototype to match the function pointer
+ *          cs_cdo_enforce_bc_t
+ *
+ * \param[in]       eqp       pointer to a \ref cs_equation_param_t struct.
+ * \param[in]       cm        pointer to a \ref cs_cell_mesh_t structure
+ * \param[in, out]  fm        pointer to a \ref cs_face_mesh_t structure
+ * \param[in, out]  hodge     pointer to a \ref cs_hodge_t structure
+ * \param[in, out]  cb        pointer to a \ref cs_cell_builder_t structure
+ * \param[in, out]  csys      structure storing the cellwise system
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_diffusion_sfb_cost_robin(const cs_equation_param_t      *eqp,
+                                const cs_cell_mesh_t           *cm,
+                                cs_face_mesh_t                 *fm,
+                                cs_hodge_t                     *hodge,
+                                cs_cell_builder_t              *cb,
+                                cs_cell_sys_t                  *csys)
+{
+  CS_UNUSED(eqp);
+  CS_UNUSED(fm);
+  CS_UNUSED(hodge);
+
+  /* Sanity checks */
+  assert(cm != NULL && cb != NULL && csys != NULL);
+
+  /* Enforcement of the Robin BCs */
+  if (csys->has_robin == false)
+    return;  /* Nothing to do */
+
+  /* Robin BC expression: K du/dn + alpha*(u - u0) = g */
+  for (short int i = 0; i < csys->n_bc_faces; i++) {
+
+    /* Get the boundary face in the cell numbering */
+    const short int  f = csys->_f_ids[i];
+
+    if (csys->bf_flag[f] & CS_CDO_BC_ROBIN) {
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+      if (cs_dbg_cw_test(eqp, cm, csys))
+        cs_log_printf(CS_LOG_DEFAULT, ">> Cell %d Fb COST Robin (f_id: %d)",
+                      cm->c_id, fm->f_id);
+#endif
+
+      /* Robin BC expression: K du/dn + alpha*(u - u0) = g */
+      /* ------------------------------------------------- */
+
+      const double  alpha = csys->rob_values[3*f];
+      const double  u0 = csys->rob_values[3*f+1];
+      const double  g = csys->rob_values[3*f+2];
+      const cs_real_t  f_meas = cm->face[f].meas;
+
+      /* Update the RHS and the local system */
+      csys->rhs[f] += (alpha*u0 + g)*f_meas;
+
+      cs_real_t  *row_f_val = csys->mat->val + f*csys->n_dofs;
+      row_f_val[f] += alpha*f_meas;
+
+    }  /* Robin face */
+
+  } /* Loop on boundary faces */
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
+  if (cs_dbg_cw_test(eqp, cm, csys))
+    cs_cell_sys_dump(">> Cell %d, scalar Fb: After Robin", csys);
+#endif
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Take into account Robin BCs.
  *          Case of scalar-valued CDO-Vb schemes with a CO+ST algorithm.
  *          Predefined prototype to match the function pointer
  *          cs_cdo_enforce_bc_t

@@ -1690,6 +1690,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   /* Diffusion term */
   eqc->get_stiffness_matrix = NULL;
   eqc->diffusion_hodge = NULL;
+  eqc->enforce_robin_bc = NULL;
 
   if (cs_equation_param_has_diffusion(eqp)) {
 
