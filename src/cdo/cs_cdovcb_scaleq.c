@@ -2056,10 +2056,7 @@ cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
   /* Main OpenMP block on cell */
   /* ------------------------- */
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)                 \
-  shared(quant, connect, ts, eqp, eqb, eqc, rhs, matrix, mav,         \
-         dir_values, fld, rs, _vcbs_cell_system, tcoef,               \
-         _vcbs_cell_builder, compute_initial_source)
+#pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */

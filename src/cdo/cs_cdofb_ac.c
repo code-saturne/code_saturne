@@ -755,17 +755,14 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
   cs_real_t  *rhs = NULL;
 
   BFT_MALLOC(rhs, 3*n_faces, cs_real_t);
-# pragma omp parallel for if  (3*n_faces > CS_THR_MIN)
+# pragma omp parallel for  CS_CDO_OMP_SCHEDULE if (3*n_faces > CS_THR_MIN)
   for (cs_lnum_t i = 0; i < 3*n_faces; i++) rhs[i] = 0.0;
 
   /* Initialize the structure to assemble values */
   cs_matrix_assembler_values_t  *mav =
     cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
-  shared(quant, connect, ts, rs, mom_eqp, mom_eqb, mom_eqc, nsp, sc,    \
-         rhs, matrix, mav, dir_values, enforced_ids, zeta, vel_c, pr,   \
-         t_pty_eval, t_cur, dt_cur)
+# pragma omp parallel  if (quant->n_cells > CS_THR_MIN)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1104,10 +1101,7 @@ cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
   if (ts->nt_cur == ts->nt_prev || ts->nt_prev == 0)
     compute_initial_source = true;
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
-  shared(quant, connect, ts, mom_eqp, mom_eqb, mom_eqc, rs, nsp, sc,    \
-         mav, matrix, rhs, dir_values, enforced_ids, zeta, vel_c, pr,   \
-         t_pty_eval, t_cur, dt_cur, compute_initial_source)
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
