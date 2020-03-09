@@ -3,6 +3,8 @@ Release 6.0.3 (Unreleased)
 
 Bug fixes:
 
+- GUI/MEG: fix some turbulence formula examples.
+
 - GUI/MEG: fix parsing of generated expression compile errors when
   output does not contain "error:" strings.
 

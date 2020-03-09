@@ -140,25 +140,30 @@ epsilon = _k^1.5*cmu/almax;"""
         elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
             formula = """trii   = (0.02*uref)^2;
 cmu = 0.09;
-r11 = trii;
-r22 = trii;
-r33 = trii;
+_r11 = trii;
+_r22 = trii;
+_r33 = trii;
+r11 = _r11;
+r22 = _r22;
+r33 = _r33;
 r12 = 0.;
 r13 = 0.;
 r23 = 0.;
-_k = 0.5*(r11+r22+r33);
-k = _k;
+_k = 0.5*(_r11+_r22+_r33);
 epsilon = _k^1.5*cmu/almax;"""
         elif turb_model == 'Rij-EBRSM':
             formula = """trii   = (0.02*uref)^2;
 cmu = 0.09;
-r11 = trii;
-r22 = trii;
-r33 = trii;
+_r11 = trii;
+_r22 = trii;
+_r33 = trii;
+r11 = _r11;
+r22 = _r22;
+r33 = _r33;
 r12 = 0.;
 r13 = 0.;
 r23 = 0.;
-_k = 0.5*(r11+r22+r33);
+_k = 0.5*(_r11+_r22+_r33);
 k = _k;
 epsilon = _k^1.5*cmu/almax;
 alpha = 1.;"""
@@ -170,10 +175,11 @@ epsilon = _k^1.5*cmu/almax;
 phi = 2./3.;
 alpha = 1.;"""
         elif turb_model == 'k-omega-SST':
-            formula = """k = 1.5*(0.02*uref)^2;
-omega = k^0.5/almax;"""
+            formula = """_k = 1.5*(0.02*uref)^2;
+k = _k;
+omega = _k^0.5/almax;"""
         elif turb_model == 'Spalart-Allmaras':
-            formula = """nu_tilda = (cmu * k)/eps;"""
+            formula = """nu_tilda = sqrt(1.5d)*(0.02d*uref)*almax;"""
         return formula
 
 
