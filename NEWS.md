@@ -20,6 +20,11 @@ Bug fixes:
 
 - GUI: fix crash when importing probe coordinates from an XML file.
 
+Architectural changes:
+
+- Move some cs_cdofb_* functions from "static inline" to regular functions
+  to avoid issues when header is compiled with obslete (4.4) GCC version.
+
 Release 6.0.2 (February 10 2020)
 --------------------------------
 

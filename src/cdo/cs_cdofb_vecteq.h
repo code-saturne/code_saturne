@@ -369,7 +369,7 @@ cs_cdofb_vecteq_solve_system(cs_sles_t                    *sles,
  */
 /*----------------------------------------------------------------------------*/
 
-static inline void
+void
 cs_cdofb_vecteq_assembly(const cs_cell_sys_t            *csys,
                          const cs_range_set_t           *rs,
                          const cs_cell_mesh_t           *cm,
@@ -377,30 +377,7 @@ cs_cdofb_vecteq_assembly(const cs_cell_sys_t            *csys,
                          cs_cdofb_vecteq_t              *eqc,
                          cs_equation_assemble_t         *eqa,
                          cs_matrix_assembler_values_t   *mav,
-                         cs_real_t                       rhs[])
-{
-  assert(eqa != NULL); /* Sanity check */
-
-  const short int n_f_dofs = 3*cm->n_fc;
-
-  /* Matrix assembly */
-  eqc->assemble(csys, rs, eqa, mav);
-
-  /* RHS assembly */
-# pragma omp critical
-  {
-    for (short int f = 0; f < n_f_dofs; f++)
-      rhs[csys->dof_ids[f]] += csys->rhs[f];
-  }
-
-  /* Reset the value of the source term for the cell DoF
-     Source term is only hold by the cell DoF in face-based schemes */
-  if (has_sourceterm) {
-    cs_real_t  *st = eqc->source_terms + 3*cm->c_id;
-    for (int k = 0; k < 3; k++)
-      st[k] = csys->source[n_f_dofs + k];
-  }
-}
+                         cs_real_t                       rhs[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

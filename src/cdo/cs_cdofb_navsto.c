@@ -169,6 +169,51 @@ _normal_flux_reco(short int                  fb,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Create and allocate a local NavSto builder when Fb schemes are used
+ *
+ * \param[in] connect        pointer to a cs_cdo_connect_t structure
+ *
+ * \return a cs_cdofb_navsto_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_cdofb_navsto_builder_t
+cs_cdofb_navsto_create_builder(const cs_cdo_connect_t   *connect)
+{
+  cs_cdofb_navsto_builder_t  nsb = {.div_op = NULL,
+                                    .bf_type = NULL,
+                                    .pressure_bc_val = NULL};
+
+  if (connect == NULL)
+    return nsb;
+
+  BFT_MALLOC(nsb.div_op, 3*connect->n_max_fbyc, cs_real_t);
+  BFT_MALLOC(nsb.bf_type, connect->n_max_fbyc, cs_boundary_type_t);
+  BFT_MALLOC(nsb.pressure_bc_val, connect->n_max_fbyc, cs_real_t);
+
+  return nsb;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Destroy the given cs_cdofb_navsto_builder_t structure
+ *
+ * \param[in, out] nsb   pointer to the cs_cdofb_navsto_builder_t to free
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_free_builder(cs_cdofb_navsto_builder_t   *nsb)
+{
+  if (nsb != NULL) {
+    BFT_FREE(nsb->div_op);
+    BFT_FREE(nsb->bf_type);
+    BFT_FREE(nsb->pressure_bc_val);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set the members of the cs_cdofb_navsto_builder_t structure
  *
  * \param[in]      t_eval     time at which one evaluates the pressure BC
