@@ -5,7 +5,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2019 EDF S.A.
+# Copyright (C) 1998-2020 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -2429,11 +2429,13 @@ class mei_to_c_interpreter:
         if compilation_test != 0:
             errors = open('comp.err', 'r').readlines()
             for i in range(len(errors)):
-                if 'error:' in errors[i]:
-                    msg += errors[i].split('error:')[-1].strip()+'\n'
-                    msg += errors[i+1].strip() + '\n'
-
+                if ': ' in errors[i]:
+                    msg += errors[i].split(': ')[-1].strip()+'\n'
                     n_errors += 1
+            if n_errors == 0: # in case we cannot parse the output correctly
+                n_errors += 1
+                for i in range(len(errors)):
+                    msg += errors[i].strip()+'\n'
 
         os.chdir(self.data_path)
 

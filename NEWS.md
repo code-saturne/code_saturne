@@ -3,6 +3,9 @@ Release 6.0.3 (Unreleased)
 
 Bug fixes:
 
+- GUI/MEG: fix parsing of generated expression compile errors when
+  output does not contain "error:" strings.
+
 - Fix crash with empty or single-element probe set.
 
 - Move example settings from cs_user_coupling function, which is never
