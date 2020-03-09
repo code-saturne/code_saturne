@@ -37,7 +37,7 @@ User changes:
 
 Numerics and physical modelling:
 
-- Remove former slope test option for vector variable (component by component, 
+- Remove former slope test option for vector variable (component by component,
   isstpc = -1).
 
 - Atmospheric model: add 3D radiative transfer for solar wave (shortwaves),
