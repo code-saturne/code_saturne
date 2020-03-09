@@ -111,7 +111,7 @@ class FSI_ASTER(FSI_ORB__POA.FSI_ASTER,dsccalcium.PyDSCComponent,SUPERV):
       self.jdc.g_context.update(args)
       CONTEXT.set_current_step(self.jdc)
       linecache.cache['<string>']=0,None,string.split(text,'\n'),'<string>'
-      exec text in self.jdc.const_context,self.jdc.g_context
+      exec(text, self.jdc.const_context, self.jdc.g_context)
       CONTEXT.unset_current_step()
     except EOFError:
       CONTEXT.unset_current_step()

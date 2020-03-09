@@ -3,7 +3,9 @@ Release 6.0.3 (Unreleased)
 
 Bug fixes:
 
-- Fix bug in studymanger when proting probes with CSV format.
+- Fix crash using Python3 in code_aster coupling.
+
+- Fix bug in studymanager when plotting probes in CSV format.
 
 - Fix bug in cs_post_util when post-processing pressure with iphydr=1.
 
