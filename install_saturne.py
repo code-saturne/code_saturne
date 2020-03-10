@@ -594,9 +594,9 @@ class Setup:
             Package(name="HDF5",
                     description="Hierarchical Data Format",
                     package="hdf5",
-                    version="1.10.5",
-                    archive="hdf5-1.10.5.tar.gz",
-                    url="https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.5/src/%s")
+                    version="1.10.6",
+                    archive="hdf5-1.10.6.tar.gz",
+                    url="https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.6/src/%s")
 
         p = self.packages['hdf5']
         p.config_opts = "--enable-build-mode=production"
@@ -607,9 +607,9 @@ class Setup:
             Package(name="CGNS",
                     description="CFD General Notation System",
                     package="cgns",
-                    version="4.0.0",
-                    archive="CGNS-3.4.0.tar.gz",
-                    url="https://github.com/CGNS/CGNS/archive/v4.0.0.tar.gz")
+                    version="4.1.0",
+                    archive="CGNS-4.1.0.tar.gz",
+                    url="https://github.com/CGNS/CGNS/archive/v4.1.0.tar.gz")
 
         p = self.packages['cgns']
         p.config_opts = "-DCGNS_ENABLE_64BIT=ON -DCGNS_ENABLE_SCOPING=ON"
@@ -643,9 +643,9 @@ class Setup:
             Package(name="scotch",
                     description="PT-Scotch",
                     package="scotch",
-                    version="6.0.6",
-                    archive="scotch_6.0.6.tar.gz",
-                    url="https://gforge.inria.fr/frs/download.php/file/37622/%s")
+                    version="6.0.9",
+                    archive="scotch_6.0.9.tar.gz",
+                    url="https://gforge.inria.fr/frs/download.php/file/38187/%s")
 
     #---------------------------------------------------------------------------
 
