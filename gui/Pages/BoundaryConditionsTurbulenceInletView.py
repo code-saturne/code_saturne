@@ -215,51 +215,55 @@ class BoundaryConditionsTurbulenceInletView(QWidget, Ui_BoundaryConditionsTurbul
         """
         INPUT user formula
         """
+        sym = [('x','cell center coordinate'),
+               ('y','cell center coordinate'),
+               ('z','cell center coordinate'),
+               ('t','time'),
+               ('dt','time step'),
+               ('iter','number of time step'),
+               ('surface', 'Boundary zone surface')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        exa_base = """#example:
+uref2 = 10.;
+dh = 0.2;
+rho0 = 1.17862;
+mu0 = 1.83e-05;
+
+re = sqrt(uref2)*dh*rho0/mu0;
+
+if (re < 2000) {
+  # in this case u*^2 is directly calculated to
+  # avoid a problem with xlmbda=64/Re when Re->0
+  ustar2 = 8.*mu0*sqrt(uref2)/rho0/dh;
+}
+else if (re < 4000) {
+  xlmbda = 0.021377 + 5.3115e-6*re;
+  ustar2 = uref2*xlmbda/8.;
+}
+else {
+  xlmbda = 1/( 1.8*log(re)/log(10.)-1.64)^2;
+  ustar2 = uref2*xlmbda/8.;
+}
+cmu = 0.09;
+kappa = 0.42;
+"""
+
         turb_model = TurbulenceModel(self.case).getTurbulenceModel()
         if turb_model in ('k-epsilon', 'k-epsilon-PL'):
 
             exp = self.__boundary.getTurbFormula()
             if not exp:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
-            exa = """#example :
-uref2 = 10.;
-dh = 0.2;
-re = sqrt(uref2)*dh*rho0/mu0;
+            exa = exa_base + """
 
-if (re < 2000){
-#     in this case u*^2 is directly calculated to not have a problem with
-#     xlmbda=64/Re when Re->0
-
-  ustar2 = 8.*mu0*sqrt(uref2)/rho0/dh;}
-
-else if (re<4000){
-
-  xlmbda = 0.021377 + 5.3115e-6*re;
-  ustar2 = uref2*xlmbda/8.;}
-
-else {
-
-  xlmbda = 1/( 1.8*log(re)/log(10.)-1.64)^2;
-  ustar2 = uref2*xlmbda/8.;}
-
-cmu = 0.09;
-kappa = 0.42;
-k   = ustar2/sqrt(cmu);
+k = ustar2/sqrt(cmu);
 epsilon = ustar2^1.5/(kappa*dh*0.1);"""
 
             req = [('k', "turbulent energy"),
                    ('epsilon', "turbulent dissipation")]
-
-            sym = [('x','cell center coordinate'),
-                   ('y','cell center coordinate'),
-                   ('z','cell center coordinate'),
-                   ('t','time'),
-                   ('dt','time step'),
-                   ('iter','number of time step'),
-                   ('surface', 'Boundary zone surface')]
-
-            for (nme, val) in self.notebook.getNotebookList():
-                sym.append((nme, 'value (notebook) = ' + str(val)))
 
             dialog = QMegEditorView(parent        = self,
                                     function_type = 'bnd',
@@ -285,32 +289,11 @@ epsilon = ustar2^1.5/(kappa*dh*0.1);"""
             if not exp:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
 
-            exa = """#exemple :
-uref2 = 10.;
-dh = 0.2;
-re = sqrt(uref2)*dh*rho0/mu0;
-
-if (re < 2000){
-#     in this case u*^2 is directly calculated to not have a problem with
-#     xlmbda=64/Re when Re->0
-
-  ustar2 = 8.*mu0*sqrt(uref2)/rho0/dh;}
-
-else if (re<4000){
-
-  xlmbda = 0.021377 + 5.3115e-6*re;
-  ustar2 = uref2*xlmbda/8.;}
-
-else {
-
-  xlmbda = 1/( 1.8*log(re)/log(10.)-1.64)^2;
-  ustar2 = uref2*xlmbda/8.;}
-
-cmu = 0.09;
-kappa = 0.42;
-k   = ustar2/sqrt(cmu);
-epsilon = ustar2^1.5/(kappa*dh*0.1);
+            exa = exa_base + """
 d2s3 = 2/3;
+
+k = ustar2/sqrt(cmu);
+epsilon = ustar2^1.5/(kappa*dh*0.1);
 r11 = d2s3*k;
 r22 = d2s3*k;
 r33 = d2s3*k;
@@ -326,17 +309,6 @@ r23 = 0;
                    ('r23', "Reynolds stress R13"),
                    ('r13', "Reynolds stress R23"),
                    ('epsilon', "turbulent dissipation")]
-
-            sym = [('x','cell center coordinate'),
-                   ('y','cell center coordinate'),
-                   ('z','cell center coordinate'),
-                   ('t','time'),
-                   ('dt','time step'),
-                   ('iter','number of time step'),
-                   ('surface', 'Boundary zone surface')]
-
-            for (nme, val) in self.notebook.getNotebookList():
-                sym.append((nme, 'value (notebook) = ' + str(val)))
 
             dialog = QMegEditorView(parent        = self,
                                     function_type = 'bnd',
@@ -360,32 +332,11 @@ r23 = 0;
             if not exp:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
 
-            exa = """#exemple :
-uref2 = 10.;
-dh = 0.2;
-re = sqrt(uref2)*dh*rho0/mu0;
-
-if (re < 2000){
-#     in this case u*^2 is directly calculated to not have a problem with
-#     xlmbda=64/Re when Re->0
-
-  ustar2 = 8.*mu0*sqrt(uref2)/rho0/dh;}
-
-else if (re<4000){
-
-  xlmbda = 0.021377 + 5.3115e-6*re;
-  ustar2 = uref2*xlmbda/8.;}
-
-else {
-
-  xlmbda = 1/( 1.8*log(re)/log(10.)-1.64)^2;
-  ustar2 = uref2*xlmbda/8.;}
-
-cmu = 0.09;
-kappa = 0.42;
-k   = ustar2/sqrt(cmu);
-epsilon = ustar2^1.5/(kappa*dh*0.1);
+            exa = exa_base + """
 d2s3 = 2/3;
+
+k = ustar2/sqrt(cmu);
+epsilon = ustar2^1.5/(kappa*dh*0.1);
 r11 = d2s3*k;
 r22 = d2s3*k;
 r33 = d2s3*k;
@@ -403,17 +354,6 @@ alpha =  1.;
                    ('r13', "Reynolds stress R23"),
                    ('epsilon', "turbulent dissipation"),
                    ('alpha', "alpha")]
-
-            sym = [('x','cell center coordinate'),
-                   ('y','cell center coordinate'),
-                   ('z','cell center coordinate'),
-                   ('t','time'),
-                   ('dt','time step'),
-                   ('iter','number of time step'),
-                   ('surface', 'Boundary zone surface')]
-
-            for (nme, val) in self.notebook.getNotebookList():
-                sym.append((nme, 'value (notebook) = ' + str(val)))
 
             dialog = QMegEditorView(parent        = self,
                                     function_type = 'bnd',
@@ -437,30 +377,9 @@ alpha =  1.;
             if not exp:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
 
-            exa = """#exemple :
-uref2 = 10.;
-dh = 0.2;
-re = sqrt(uref2)*dh*rho0/mu0;
-
-if (re < 2000){
-#     in this case u*^2 is directly calculated to not have a problem with
-#     xlmbda=64/Re when Re->0
-
-  ustar2 = 8.*mu0*sqrt(uref2)/rho0/dh;}
-
-else if (re<4000){
-
-  xlmbda = 0.021377 + 5.3115e-6*re;
-  ustar2 = uref2*xlmbda/8.;}
-
-else {
-
-  xlmbda = 1/( 1.8*log(re)/log(10.)-1.64)^2;
-  ustar2 = uref2*xlmbda/8.;}
-
-cmu = 0.09;
-kappa = 0.42;
+            exa = exa_base + """
 d2s3 = 2/3;
+
 k   = ustar2/sqrt(cmu);
 epsilon = ustar2^1.5/(kappa*dh*0.1);
 phi = d2s3;
@@ -470,17 +389,6 @@ alpha = 0;"""
                    ('epsilon', "turbulent dissipation"),
                    ('phi', "variable phi in v2f model"),
                    ('alpha', "variable alpha in v2f model")]
-
-            sym = [('x','cell center coordinate'),
-                   ('y','cell center coordinate'),
-                   ('z','cell center coordinate'),
-                   ('t','time'),
-                   ('dt','time step'),
-                   ('iter','number of time step'),
-                   ('surface', 'Boundary zone surface')]
-
-            for (nme, val) in self.notebook.getNotebookList():
-                sym.append((nme, 'value (notebook) = ' + str(val)))
 
             dialog = QMegEditorView(parent = self,
                                     function_type = 'bnd',
@@ -505,47 +413,14 @@ alpha = 0;"""
             if not exp:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
 
-            exa = """#exemple :
-uref2 = 10.;
-dh = 0.2;
-re = sqrt(uref2)*dh*rho0/mu0;
+            exa = exa_base + """
 
-if (re < 2000){
-#     in this case u*^2 is directly calculated to not have a problem with
-#     xlmbda=64/Re when Re->0
-
-  ustar2 = 8.*mu0*sqrt(uref2)/rho0/dh;}
-
-else if (re<4000){
-
-  xlmbda = 0.021377 + 5.3115e-6*re;
-  ustar2 = uref2*xlmbda/8.;}
-
-else {
-
-  xlmbda = 1/( 1.8*log(re)/log(10.)-1.64)^2;
-  ustar2 = uref2*xlmbda/8.;}
-
-cmu = 0.09;
-kappa = 0.42;
-k   = ustar2/sqrt(cmu);
-eps = ustar2^1.5/(kappa*dh*0.1);
-omega = eps/(cmu * k);"""
+k = ustar2/sqrt(cmu);
+epsilon = ustar2^1.5/(kappa*dh*0.1);
+omega = epsilon/(cmu * k);"""
 
             req = [('k', "turbulent energy"),
                    ('omega', "specific dissipation rate")]
-
-            sym = [('x','cell center coordinate'),
-                   ('y','cell center coordinate'),
-                   ('z','cell center coordinate'),
-                   ('t','time'),
-                   ('dt','time step'),
-                   ('iter','number of time step'),
-                   ('surface', 'Boundary zone surface')]
-
-            for (nme, val) in self.notebook.getNotebookList():
-                sym.append((nme, 'value (notebook) = ' + str(val)))
-
 
             dialog = QMegEditorView(parent        = self,
                                     function_type = 'bnd',
@@ -570,45 +445,14 @@ omega = eps/(cmu * k);"""
             if not exp:
                 exp = self.__boundary.getDefaultTurbFormula(turb_model)
 
-            exa = """#exemple :
-uref2 = 10.;
-dh = 0.2;
-re = sqrt(uref2)*dh*rho0/mu0;
+            exa = exa_base + """
 
-if (re < 2000){
-#     in this case u*^2 is directly calculated to not have a problem with
-#     xlmbda=64/Re when Re->0
+k = ustar2/sqrt(cmu);
+epsilon = ustar2^1.5/(kappa*dh*0.1);
 
-  ustar2 = 8.*mu0*sqrt(uref2)/rho0/dh;}
-
-else if (re<4000){
-
-  xlmbda = 0.021377 + 5.3115e-6*re;
-  ustar2 = uref2*xlmbda/8.;}
-
-else {
-
-  xlmbda = 1/( 1.8*log(re)/log(10.)-1.64)^2;
-  ustar2 = uref2*xlmbda/8.;}
-
-cmu = 0.09;
-kappa = 0.42;
-k   = ustar2/sqrt(cmu);
-eps = ustar2^1.5/(kappa*dh*0.1);
-nu_tilda = eps/(cmu * k);"""
+nu_tilda = _epsilon/(cmu * _k);"""
 
             req = [('nu_tilda', "nu_tilda")]
-
-            sym = [('x','cell center coordinate'),
-                   ('y','cell center coordinate'),
-                   ('z','cell center coordinate'),
-                   ('t','time'),
-                   ('dt','time step'),
-                   ('iter','number of time step'),
-                   ('surface', 'Boundary zone surface')]
-
-            for (nme, val) in self.notebook.getNotebookList():
-                sym.append((nme, 'value (notebook) = ' + str(val)))
 
             dialog = QMegEditorView(parent        = self,
                                     function_type = 'bnd',
