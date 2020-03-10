@@ -68,7 +68,8 @@ cs_cf_model.h \
 cs_cf_thermo.h \
 cs_hgn_thermo.h \
 cs_hgn_phase_thermo.h \
-cs_hgn_source_terms_step.h
+cs_hgn_source_terms_step.h \
+cs_cfbl_headers.h
 
 # Library source files
 
