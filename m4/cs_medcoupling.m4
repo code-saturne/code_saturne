@@ -80,7 +80,7 @@ if test "x$with_medcoupling" != "xno" ; then
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
 
-  if test "x$with_medcoupling" != "x" ; then
+  if test "x$MEDCOUPLING" != "x" ; then
     MEDCOUPLING_CPPFLAGS="-I$MEDCOUPLING/include"
     MEDCOUPLING_LDFLAGS="-L$MEDCOUPLING/lib"
     # Add the libdir to the runpath as libtool does not do this for modules
