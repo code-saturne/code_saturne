@@ -5,7 +5,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2019 EDF S.A.
+  Copyright (C) 1998-2020 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -356,7 +356,7 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add an intersector
+ * \brief Add a MEDCoupling intersector.
  *
  * \param[in] name             name of the intersector
  * \param[in] medfile_path     path to the MED file
@@ -367,10 +367,10 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_intersector_add(const char *name,
-                               const char *medfile_path,
-                               const char *interp_method,
-                               const char *select_criteria)
+cs_medcoupling_intersector_add(const char  *name,
+                               const char  *medfile_path,
+                               const char  *interp_method,
+                               const char  *select_criteria)
 {
 
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
@@ -401,14 +401,14 @@ cs_medcoupling_intersector_add(const char *name,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief destroy a given intersector
+ * \brief Destroy a given MEDCoupling intersector.
  *
- * \param[in] mi            pointer to the cs_medcoupling_intersector_t struct
+ * \param[in]  mi  pointer to the cs_medcoupling_intersector_t struct
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_intersector_destroy(cs_medcoupling_intersector_t *mi)
+cs_medcoupling_intersector_destroy(cs_medcoupling_intersector_t  *mi)
 {
 
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
@@ -425,13 +425,12 @@ cs_medcoupling_intersector_destroy(cs_medcoupling_intersector_t *mi)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief free all allocated intersectors
- *
+ * \brief Free all allocated intersectors.
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_intersector_destroy_all()
+cs_medcoupling_intersector_destroy_all(void)
 {
 
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
@@ -451,7 +450,7 @@ cs_medcoupling_intersector_destroy_all()
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Get an intersector using its id
+ * \brief Get a MEDCoupling intersector using its id.
  *
  * \param[in] id  id of the intersector
  *
@@ -482,7 +481,7 @@ cs_medcoupling_intersector_by_id(int id)
 /*----------------------------------------------------------------------------*/
 
 cs_medcoupling_intersector_t *
-cs_medcoupling_intersector_by_name(const char *name)
+cs_medcoupling_intersector_by_name(const char  *name)
 {
   cs_medcoupling_intersector_t *mi = NULL;
 
@@ -510,7 +509,7 @@ cs_medcoupling_intersector_by_name(const char *name)
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_medcoupling_intersect_volumes(cs_medcoupling_intersector_t *mi)
+cs_medcoupling_intersect_volumes(cs_medcoupling_intersector_t  *mi)
 {
 
   cs_real_t *retval = NULL;
@@ -538,14 +537,14 @@ cs_medcoupling_intersect_volumes(cs_medcoupling_intersector_t *mi)
 /*!
  * \brief translate the mesh using a given vector
  *
- * \param[in] mi         pointer to the cs_medcoupling_intersector_t struct
+ * \param[in] mi           pointer to the cs_medcoupling_intersector_t struct
  * \param[in] translation  translation vector
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_intersector_translate(cs_medcoupling_intersector_t *mi,
-                                     cs_real_t                     translation[3])
+cs_medcoupling_intersector_translate(cs_medcoupling_intersector_t  *mi,
+                                     cs_real_t  translation[3])
 {
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,
@@ -572,10 +571,10 @@ cs_medcoupling_intersector_translate(cs_medcoupling_intersector_t *mi,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_intersector_rotate(cs_medcoupling_intersector_t *mi,
-                                  cs_real_t                     invariant[3],
-                                  cs_real_t                     axis[3],
-                                  cs_real_t                     angle)
+cs_medcoupling_intersector_rotate(cs_medcoupling_intersector_t  *mi,
+                                  cs_real_t                      invariant[3],
+                                  cs_real_t                      axis[3],
+                                  cs_real_t                      angle)
 {
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
   bft_error(__FILE__, __LINE__, 0,
@@ -599,8 +598,8 @@ cs_medcoupling_intersector_rotate(cs_medcoupling_intersector_t *mi,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_medcoupling_intersector_dump_mesh(cs_medcoupling_intersector_t *mi,
-                                     const char                   *prefix)
+cs_medcoupling_intersector_dump_mesh(cs_medcoupling_intersector_t  *mi,
+                                     const char                    *prefix)
 {
 
 #if !defined(HAVE_MEDCOUPLING) || !defined(HAVE_MEDCOUPLING_LOADER)
