@@ -2603,7 +2603,7 @@ cs_hodge_vcb_get_stiffness(const cs_cell_mesh_t     *cm,
   assert(pty->need_tensor);
   assert(cs_eflag_test(cm->flag,
                        CS_FLAG_COMP_PV | CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ |
-                       CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_HFQ));
+                       CS_FLAG_COMP_EV | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_PFC));
 
   cs_real_3_t  grd_c, grd_f, grd_v1, grd_v2, matg, matg_c;
 
