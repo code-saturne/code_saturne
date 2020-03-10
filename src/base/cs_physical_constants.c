@@ -267,6 +267,12 @@ BEGIN_C_DECLS
 
         Useful for the compressible module.
 
+  \var  cs_fluid_properties_t::lambda0
+        reference heat conductivity (W/m/K)
+
+        Always useful. This was previously only available through the GUI,
+        so in most cases, is set to 1.
+
   \var  cs_fluid_properties_t::xmasmr
         molar mass of the perfect gas in \f$ kg/mol \f$
         (if \ref cstphy::ieos "ieos"=1)
@@ -338,6 +344,7 @@ static cs_fluid_properties_t  _fluid_properties = {
   .t0       = 293.15,
   .cp0      = 1017.24,
   .cv0      = 0.,
+  .lambda0  = 1.,
   .r_pg_cnst = 287.058, /* dry air pperfect gas constant J/mol/K */
   .rvsra    = 1.607768, /* Note: Rv = 461.52272377 J/mol/K */
   .clatev   = 2.501e6,
@@ -406,6 +413,7 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
                                    double  **t0,
                                    double  **cp0,
                                    double  **cv0,
+                                   double  **lambda0,
                                    double  **rair,
                                    double  **rvsra,
                                    double  **clatev,
@@ -475,6 +483,7 @@ cs_f_physical_constants_get_pointers(double  **gx,
  *   t0       --> pointer to cs_glob_fluid_properties->t0
  *   cp0      --> pointer to cs_glob_fluid_properties->cp0
  *   cv0      --> pointer to cs_glob_fluid_properties->cv0
+ *   lambda0  --> pointer to cs_glob_fluid_properties->lambda0
  *   rair     --> pointer to cs_glob_fluid_properties->r_pg_cnst
  *   rvsra    --> pointer to cs_glob_fluid_properties->rvsra
  *   clatev   --> pointer to cs_glob_fluid_properties->clatev
@@ -503,6 +512,7 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
                                    double  **t0,
                                    double  **cp0,
                                    double  **cv0,
+                                   double  **lambda0,
                                    double  **rair,
                                    double  **rvsra,
                                    double  **clatev,
@@ -529,6 +539,7 @@ cs_f_fluid_properties_get_pointers(int     **ixyzp0,
   *t0       = &(_fluid_properties.t0);
   *cp0      = &(_fluid_properties.cp0);
   *cv0      = &(_fluid_properties.cv0);
+  *lambda0  = &(_fluid_properties.lambda0);
   *rair     = &(_fluid_properties.r_pg_cnst);
   *rvsra    = &(_fluid_properties.rvsra);
   *clatev   = &(_fluid_properties.clatev);

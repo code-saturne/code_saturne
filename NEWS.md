@@ -3,6 +3,12 @@ Master (not on release branches yet)
 
 User changes:
 
+- Add lambda0 field for thermal conductivity to the
+  cs_physical_properties structure. This is used by the GUI, but
+  not yet used for the general setup, where visls0 is still used
+  directly, and lambda0 left to 1. Usage of lambda0 instead of
+  direct usage of visls0 should be generalized.
+
 - Add the possibility of adding partial mesh modifications after the
   main mesh preprocessing stage (cs_user_mesh_modify_partial).
   This allows separating selected boundary faces (such as symmetry faces)

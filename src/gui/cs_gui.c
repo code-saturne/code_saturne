@@ -2411,13 +2411,16 @@ void CS_PROCF (cssca3, CSSCA3) (double     *visls0)
   const int itherm = cs_glob_thermal_model->itherm;
   const int iscalt = cs_glob_thermal_model->iscalt;
 
+  cs_fluid_properties_t *fprops
+    = cs_get_glob_fluid_properties();
+
   if (vars->model != NULL) {
 
     if (itherm != CS_THERMAL_MODEL_NONE) {
       int i = iscalt-1;
 
       if (_thermal_table_needed("thermal_conductivity") == 0)
-        cs_gui_properties_value("thermal_conductivity", &visls0[i]);
+        cs_gui_properties_value("thermal_conductivity", &(fprops->lambda0));
       else
         cs_phys_prop_compute(CS_PHYS_PROP_THERMAL_CONDUCTIVITY,
                              1,
@@ -2425,7 +2428,9 @@ void CS_PROCF (cssca3, CSSCA3) (double     *visls0)
                              0,
                              &(cs_glob_fluid_properties->p0),
                              &(cs_glob_fluid_properties->t0),
-                             &visls0[i]);
+                             &(fprops->lambda0));
+
+      visls0[i] = fprops->lambda0;
 
       /* for the Temperature, the diffusivity factor is not divided by Cp */
       if (itherm != CS_THERMAL_MODEL_TEMPERATURE)

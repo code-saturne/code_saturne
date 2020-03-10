@@ -78,8 +78,10 @@ typedef struct {
   double        xyzp0[3];     /* reference point coordinates for the total
                                  pressure */
   double        t0;           /* reference temperature */
-  double        cp0;          /* reference specific heat */
-  double        cv0;          /* reference specific heat */
+  double        cp0;          /* reference specific heat at constant pressure */
+  double        cv0;          /* reference specific heat at constant volume */
+  double        lambda0;      /* reference heat conductivity */
+
   double        r_pg_cnst;    /* Perfect Gas R constant */
   double        rvsra;        /* ratio gaz constant h2o/ dry air */
   double        clatev;       /* latent heat of evaporation: */
