@@ -641,6 +641,24 @@ cs_hodge_fb_get(const cs_cell_mesh_t     *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Build a local Hodge operator for a given cell using the Voronoi
+ *          algo. This leads to a diagonal operator.
+ *          This function is specific for vertex+cell-based schemes
+ *          The discrete Hodge operator is stored in hodge->matrix
+ *
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_vcb_voro_get(const cs_cell_mesh_t     *cm,
+                      cs_hodge_t               *hodge,
+                      cs_cell_builder_t        *cb);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Build a local Hodge operator for a given cell using the WBS algo.
  *          This function is specific for vertex+cell-based schemes
  *          The discrete Hodge operator is stored in hodge->matrix

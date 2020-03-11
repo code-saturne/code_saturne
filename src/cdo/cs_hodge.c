@@ -1487,7 +1487,19 @@ cs_hodge_get_func(const char               *calling_func,
     return cs_hodge_fb_get;
 
   case CS_HODGE_TYPE_VC:
-    return cs_hodge_vcb_wbs_get;
+    switch (hp.algo) {
+
+    case CS_HODGE_ALGO_VORONOI:
+      return cs_hodge_vcb_voro_get;
+    case CS_HODGE_ALGO_WBS:
+      return cs_hodge_vcb_wbs_get;
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid algorithm to compute a Fp-Ed Hodge operator.\n"
+                " The calling function is %s\n", __func__, calling_func);
+      break;
+    }
+    break;
 
   default:
     bft_error(__FILE__, __LINE__, 0,
@@ -2788,6 +2800,73 @@ cs_hodge_fb_get(const cs_cell_mesh_t     *cm,
     } /* Loop on cell faces (fj) */
 
   } /* Loop on cell faces (fi) */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Build a local Hodge operator for a given cell using the Voronoi
+ *          algo. This leads to a diagonal operator.
+ *          This function is specific for vertex+cell-based schemes
+ *          The discrete Hodge operator is stored in hodge->matrix
+ *
+ * \param[in]      cm      pointer to a cs_cell_mesh_t structure
+ * \param[in, out] hodge   pointer to a cs_hodge_t structure
+ * \param[in, out] cb      pointer to a cs_cell_builder_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_hodge_vcb_voro_get(const cs_cell_mesh_t     *cm,
+                      cs_hodge_t               *hodge,
+                      cs_cell_builder_t        *cb)
+{
+  CS_UNUSED(cb);
+
+  const cs_property_data_t  *pty = hodge->pty_data;
+
+  /* Sanity check */
+  assert(cm != NULL && hodge != NULL);
+  assert(hodge->param->type == CS_HODGE_TYPE_VC);
+  assert(hodge->param->algo == CS_HODGE_ALGO_VORONOI);
+  assert(pty->is_iso);
+  assert(cs_eflag_test(cm->flag, CS_FLAG_COMP_PVQ));
+
+  cs_sdm_t  *hmat = hodge->matrix;
+
+  /* Initialize the local matrix related to this discrete Hodge operator */
+  cs_sdm_square_init(cm->n_vc + 1, hmat);
+
+  const int  msize = cm->n_vc + 1;
+
+  if (pty->is_unity) {
+
+    /* H(c,c) = 0.25*|c| */
+    hmat->val[msize*(cm->n_vc + 1)] = 0.25*cm->vol_c;
+
+    /* H(c,c) = 0.75*|dcell(v) \cap c| */
+    const double  vol_coef = 0.75*cm->vol_c;
+    for (short int vi = 0; vi < cm->n_vc; vi++)
+      hmat->val[msize*(vi + 1)] = vol_coef*cm->wvc[vi];
+
+  }
+  else {
+
+    /* H(c,c) = 0.25*|c| */
+    hmat->val[msize*(cm->n_vc + 1)] = pty->value*0.25*cm->vol_c;
+
+    /* H(c,c) = 0.75*|dcell(v) \cap c| */
+    const double  vol_coef = 0.75*cm->vol_c*pty->value;
+    for (short int vi = 0; vi < cm->n_vc; vi++)
+      hmat->val[msize*(vi + 1)] = vol_coef*cm->wvc[vi];
+
+  }
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_HODGE_DBG > 1
+  if (cm->c_id % CS_HODGE_MODULO == 0) {
+    cs_log_printf(CS_LOG_DEFAULT, " Hodge op.   ");
+    cs_sdm_dump(cm->c_id, NULL, NULL, hmat);
+  }
+#endif
 }
 
 /*----------------------------------------------------------------------------*/
