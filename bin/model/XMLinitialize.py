@@ -1862,15 +1862,16 @@ class XMLinit(BaseXmlInit):
         XMLAleMethod = XMLThermoPhysicalNode.xmlGetNode("ale_method")
         if XMLAleMethod != None and XMLAleMethod['status'] == 'on':
             nat = XMLAleMethod.xmlGetNode('mesh_viscosity')
-            ale_type = nat['type']
-            d = ale_replace_dict[ale_type]
-            nf = XMLAleMethod.xmlGetNode('formula')
-            if nf != None:
-                f = XMLAleMethod.xmlGetString("formula")
-                for k in d.keys():
-                    f = f.replace(k, d[k])
+            if nat:
+                ale_type = nat['type']
+                d = ale_replace_dict[ale_type]
+                nf = XMLAleMethod.xmlGetNode('formula')
+                if nf != None:
+                    f = XMLAleMethod.xmlGetString("formula")
+                    for k in d.keys():
+                        f = f.replace(k, d[k])
 
-                nf.xmlSetTextNode(f)
+                    nf.xmlSetTextNode(f)
 
 #-------------------------------------------------------------------------------
 # End of XMLinit
