@@ -1048,7 +1048,9 @@ Performance settings
         self.setRowShow(self.tr('Particle boundary conditions'), m_lagr)
         self.setRowShow(self.tr('Fluid structure interaction'), m_ale)
         self.setRowShow(self.tr('Cathare Coupling'), is_ncfd)
-        self.setRowShow(self.tr('Immersed Boundaries'), is_ncfd)
+        # Immersed boundaries is deactivated for the moment. Will be
+        # reactivated following v6.1 once Page is updated in NCFD
+        self.setRowShow(self.tr('Immersed Boundaries'), False)
 
         # Time settings
 
