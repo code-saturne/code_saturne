@@ -1745,9 +1745,10 @@ cs_cdo_diffusion_sfb_cost_robin(const cs_equation_param_t      *eqp,
   CS_UNUSED(eqp);
   CS_UNUSED(fm);
   CS_UNUSED(hodge);
+  CS_UNUSED(cb);
 
   /* Sanity checks */
-  assert(cm != NULL && cb != NULL && csys != NULL);
+  assert(cm != NULL && csys != NULL);
 
   /* Enforcement of the Robin BCs */
   if (csys->has_robin == false)
@@ -1760,12 +1761,6 @@ cs_cdo_diffusion_sfb_cost_robin(const cs_equation_param_t      *eqp,
     const short int  f = csys->_f_ids[i];
 
     if (csys->bf_flag[f] & CS_CDO_BC_ROBIN) {
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
-      if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_log_printf(CS_LOG_DEFAULT, ">> Cell %d Fb COST Robin (f_id: %d)",
-                      cm->c_id, fm->f_id);
-#endif
 
       /* Robin BC expression: K du/dn + alpha*(u - u0) = g */
       /* ------------------------------------------------- */
@@ -1840,12 +1835,6 @@ cs_cdo_diffusion_svb_cost_robin(const cs_equation_param_t      *eqp,
 
       /* Compute the face-view of the mesh */
       cs_face_mesh_build_from_cell_mesh(cm, f, fm);
-
-#if defined(DEBUG) && !defined(NDEBUG) && CS_CDO_DIFFUSION_DBG > 0
-      if (cs_dbg_cw_test(eqp, cm, csys))
-        cs_log_printf(CS_LOG_DEFAULT, ">> Cell %d Vb COST Robin (f_id: %d)",
-                      cm->c_id, fm->f_id);
-#endif
 
       /* Robin BC expression: K du/dn + alpha*(u - u0) = beta */
       /* ---------------------------------------------------- */
