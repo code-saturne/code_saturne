@@ -1946,6 +1946,16 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
 
   }
 
+  /* Source term part */
+  eqc->source_terms = NULL;
+  if (cs_equation_param_has_sourceterm(eqp)) {
+
+    BFT_MALLOC(eqc->source_terms, 3*n_cells, cs_real_t);
+#   pragma omp parallel for if (3*n_cells > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < 3*n_cells; i++) eqc->source_terms[i] = 0;
+
+  } /* There is at least one source term */
+
   /* Mass matrix */
   eqc->mass_hodgep.inv_pty  = false;
   eqc->mass_hodgep.type = CS_HODGE_TYPE_FB;
@@ -1964,17 +1974,15 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
                                             false,  /* tensor ? */
                                             false); /* eigen ? */
 
+    if (eqp->verbosity > 1) {
+      cs_log_printf(CS_LOG_SETUP,
+                    "#### Parameters of the mass matrix of the equation %s\n",
+                    eqp->name);
+      cs_hodge_param_log("Mass matrix", NULL, eqc->mass_hodgep);
+    }
+
   }
 
-  /* Source term part */
-  eqc->source_terms = NULL;
-  if (cs_equation_param_has_sourceterm(eqp)) {
-
-    BFT_MALLOC(eqc->source_terms, 3*n_cells, cs_real_t);
-#   pragma omp parallel for if (3*n_cells > CS_THR_MIN)
-    for (cs_lnum_t i = 0; i < 3*n_cells; i++) eqc->source_terms[i] = 0;
-
-  } /* There is at least one source term */
 
   /* Assembly process */
   eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,

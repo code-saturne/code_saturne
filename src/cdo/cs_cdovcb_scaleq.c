@@ -892,7 +892,6 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
   /* Diffusion term */
   eqc->diffusion_hodge = NULL;
   eqc->get_stiffness_matrix = NULL;
-  eqc->enforce_robin_bc = NULL;
 
   if (cs_equation_param_has_diffusion(eqp)) {
 
@@ -903,7 +902,6 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
                                                  need_eigen); /* eigen ? */
 
     eqc->get_stiffness_matrix = cs_hodge_vcb_get_stiffness;
-    eqc->enforce_robin_bc = cs_cdo_diffusion_svb_wbs_robin;
 
   }
 
@@ -911,6 +909,8 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
   BFT_MALLOC(eqc->vtx_bc_flag, n_vertices, cs_flag_t);
   cs_equation_set_vertex_bc_flag(connect, eqb->face_bc, eqc->vtx_bc_flag);
 
+  /* Boundary conditions (no other choice for Robin boundary conditions */
+  eqc->enforce_robin_bc = cs_cdo_diffusion_svb_wbs_robin;
   eqc->enforce_dirichlet = NULL;
   switch (eqp->default_enforcement) {
 
@@ -935,9 +935,8 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
   }
 
   /* Non-homogeneous Neumann BCs */
-  if (eqb->face_bc->n_nhmg_neu_faces > 0) {
+  if (eqb->face_bc->n_nhmg_neu_faces > 0)
     eqb->bd_msh_flag = CS_FLAG_COMP_FV;
-  }
 
   /* Advection term */
   eqc->get_advection_matrix = NULL;
@@ -982,6 +981,10 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
   }
 
+  /* A mass matrix can be requested either for the reaction term, the unsteady
+     term or for the source term */
+  cs_hodge_algo_t  mass_matrix_algo = CS_HODGE_ALGO_VORONOI;
+
   /* Reaction term */
   if (cs_equation_param_has_reaction(eqp)) {
 
@@ -995,6 +998,7 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
         eqb->sys_flag |= CS_FLAG_SYS_REAC_DIAG;
         break;
       case CS_HODGE_ALGO_WBS:
+        mass_matrix_algo = CS_HODGE_ALGO_WBS;
         eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
         break;
       default:
@@ -1021,6 +1025,7 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
         eqb->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
         break;
       case CS_HODGE_ALGO_WBS:
+        mass_matrix_algo = CS_HODGE_ALGO_WBS;
         eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
         break;
       default:
@@ -1032,35 +1037,37 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     } /* Lumping or not lumping */
 
-  }
+  } /* Unsteady term requested */
 
   /* Source term */
-  bool needs_source_term_array = false;
-  if (cs_equation_param_has_time(eqp) &&
-      (eqp->time_scheme == CS_TIME_SCHEME_THETA ||
-       eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO))
-    needs_source_term_array = true;
-
   eqc->source_terms = NULL;
-  if (cs_equation_param_has_sourceterm(eqp) && needs_source_term_array) {
 
-    BFT_MALLOC(eqc->source_terms, eqc->n_dofs, cs_real_t);
-    memset(eqc->source_terms, 0, sizeof(cs_real_t)*eqc->n_dofs);
+  if (cs_equation_param_has_sourceterm(eqp)) {
+    if (cs_equation_param_has_time(eqp)) {
+
+      if (eqp->time_scheme == CS_TIME_SCHEME_THETA ||
+          eqp->time_scheme == CS_TIME_SCHEME_CRANKNICO) {
+
+        BFT_MALLOC(eqc->source_terms, eqc->n_dofs, cs_real_t);
+#       pragma omp parallel for if (eqc->n_dofs > CS_THR_MIN)
+        for (cs_lnum_t i = 0; i < eqc->n_dofs; i++)
+          eqc->source_terms[i] = 0;
+
+      } /* Theta scheme */
+    } /* Time-dependent equation */
 
   } /* There is at least one source term */
 
   /* Pre-defined a cs_hodge_builder_t struct. */
   eqc->mass_hodgep.inv_pty  = false;
   eqc->mass_hodgep.type = CS_HODGE_TYPE_VC;
-  eqc->mass_hodgep.algo = CS_HODGE_ALGO_WBS;
-  eqc->mass_hodgep.coef = 1.0; // not useful in this case
+  eqc->mass_hodgep.algo = mass_matrix_algo;
+  eqc->mass_hodgep.coef = 1.0; /* not useful in this case */
 
   if (eqp->do_lumping ||
       eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG ||
       eqb->sys_flag & CS_FLAG_SYS_REAC_DIAG)
     eqc->mass_hodgep.algo = CS_HODGE_ALGO_VORONOI;
-
-  eqc->get_mass_matrix = cs_hodge_vcb_wbs_get;
 
   /* Array of hodge structure for the mass matrix */
   eqc->mass_hodge = cs_hodge_init_context(connect,
@@ -1068,6 +1075,16 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
                                           &(eqc->mass_hodgep),
                                           false,  /* tensor ? */
                                           false); /* eigen ? */
+
+  if (eqp->verbosity > 1 && eqb->sys_flag & CS_FLAG_SYS_MASS_MATRIX) {
+    cs_log_printf(CS_LOG_SETUP,
+                  "#### Parameters of the mass matrix of the equation %s\n",
+                  eqp->name);
+    cs_hodge_param_log("Mass matrix", NULL, eqc->mass_hodgep);
+  }
+
+  /* Set the function pointer */
+  eqc->get_mass_matrix = cs_hodge_get_func(__func__, eqc->mass_hodgep);
 
   /* Assembly process */
   eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOVCB,

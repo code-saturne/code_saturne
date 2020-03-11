@@ -898,7 +898,6 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
 
     assert(cs_equation_param_has_diffusion(eqp)); /* sanity check */
 
-    const cs_property_data_t  *diff_pty = eqc->diffusion_hodge[0]->pty_data;
     switch (eqp->diffusion_hodgep.algo) {
 
     case CS_HODGE_ALGO_WBS:
@@ -1151,6 +1150,7 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
   eqc->source_terms = NULL;
 
   if (cs_equation_param_has_sourceterm(eqp)) {
+
     if (cs_equation_param_has_time(eqp)) {
 
       if (eqp->time_scheme == CS_TIME_SCHEME_THETA ||
@@ -1208,6 +1208,13 @@ cs_cdovb_scaleq_init_context(const cs_equation_param_t   *eqp,
                                           &(eqc->mass_hodgep),
                                           false,  /* tensor ? */
                                           false); /* eigen ? */
+
+  if (eqp->verbosity > 1 && eqb->sys_flag & CS_FLAG_SYS_MASS_MATRIX) {
+    cs_log_printf(CS_LOG_SETUP,
+                  "#### Parameters of the mass matrix of the equation %s\n",
+                  eqp->name);
+    cs_hodge_param_log("Mass matrix", NULL, eqc->mass_hodgep);
+  }
 
   /* Set the function pointer */
   eqc->get_mass_matrix = cs_hodge_get_func(__func__, eqc->mass_hodgep);

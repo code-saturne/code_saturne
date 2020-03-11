@@ -1113,6 +1113,13 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
                                             false,  /* tensor ? */
                                             false); /* eigen ? */
 
+    if (eqp->verbosity > 1) {
+      cs_log_printf(CS_LOG_SETUP,
+                    "#### Parameters of the mass matrix of the equation %s\n",
+                    eqp->name);
+      cs_hodge_param_log("Mass matrix", NULL, eqc->mass_hodgep);
+    }
+
   }
 
   /* Source term */

@@ -794,7 +794,6 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
   /* Diffusion term */
   eqc->get_stiffness_matrix = NULL;
   eqc->get_stiffness_matrix = NULL;
-  eqc->enforce_robin_bc = NULL;
 
   if (cs_equation_param_has_diffusion(eqp)) {
 
@@ -860,6 +859,12 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
   BFT_MALLOC(eqc->vtx_bc_flag, n_vertices, cs_flag_t);
   cs_equation_set_vertex_bc_flag(connect, eqb->face_bc, eqc->vtx_bc_flag);
 
+  eqc->enforce_robin_bc = NULL;
+  if (cs_equation_param_has_robin_bc(eqp))
+    bft_error(__FILE__, __LINE__, 0,
+              (" %s: Robin boundary conditions are not handled yet."),
+              __func__);
+
   eqc->enforce_dirichlet = NULL;
   switch (eqp->default_enforcement) {
 
@@ -894,6 +899,10 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
   eqc->get_advection_matrix = NULL;
   eqc->add_advection_bc = NULL;
 
+  /* A mass matrix can be requested either for the reaction term, the unsteady
+     term or for the source term */
+  cs_hodge_algo_t  mass_matrix_algo = CS_HODGE_ALGO_VORONOI;
+
   /* Reaction term */
   if (cs_equation_param_has_reaction(eqp)) {
 
@@ -907,8 +916,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
         eqb->sys_flag |= CS_FLAG_SYS_REAC_DIAG;
         break;
       case CS_HODGE_ALGO_WBS:
-        eqb->msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ
-          | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_PFC;
+        mass_matrix_algo = CS_HODGE_ALGO_WBS;
         eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
         break;
       default:
@@ -935,8 +943,7 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
         eqb->sys_flag |= CS_FLAG_SYS_TIME_DIAG;
         break;
       case CS_HODGE_ALGO_WBS:
-        eqb->msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ
-          | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_PFC;
+        mass_matrix_algo = CS_HODGE_ALGO_WBS;
         eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
         break;
       default:
@@ -965,20 +972,26 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
       } /* Theta scheme */
     } /* Time-dependent equation */
 
+    /* Need a mass matrix */
+    for (int st_id = 0; st_id < eqp->n_source_terms; st_id++) {
+      cs_xdef_t  *st = eqp->source_terms[st_id];
+      if (st->meta & CS_FLAG_PRIMAL) {
+        mass_matrix_algo = CS_HODGE_ALGO_WBS;
+        eqb->sys_flag |= CS_FLAG_SYS_MASS_MATRIX;
+      }
+    }
+
   } /* There is at least one source term */
 
   /* Pre-defined a cs_hodge_builder_t structure */
   eqc->mass_hodgep.inv_pty  = false;
   eqc->mass_hodgep.type = CS_HODGE_TYPE_VPCD;
-  eqc->mass_hodgep.algo = CS_HODGE_ALGO_WBS;
+  eqc->mass_hodgep.algo = mass_matrix_algo;
   eqc->mass_hodgep.coef = 1.0;  /* not useful in this case */
 
-  if (eqp->do_lumping ||
-      eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG ||
-      eqb->sys_flag & CS_FLAG_SYS_REAC_DIAG)
-    eqc->mass_hodgep.algo = CS_HODGE_ALGO_VORONOI;
-  else
-
+  if (mass_matrix_algo == CS_HODGE_ALGO_WBS)
+    eqb->msh_flag |= CS_FLAG_COMP_DEQ | CS_FLAG_COMP_PFQ | CS_FLAG_COMP_PEQ
+      | CS_FLAG_COMP_FEQ | CS_FLAG_COMP_PFC;
 
   /* Array of hodge structure for the mass matrix */
   eqc->mass_hodge = cs_hodge_init_context(connect,
@@ -986,6 +999,13 @@ cs_cdovb_vecteq_init_context(const cs_equation_param_t   *eqp,
                                           &(eqc->mass_hodgep),
                                           false,  /* tensor ? */
                                           false); /* eigen ? */
+
+  if (eqp->verbosity > 1 && eqb->sys_flag & CS_FLAG_SYS_MASS_MATRIX) {
+    cs_log_printf(CS_LOG_SETUP,
+                  "#### Parameters of the mass matrix of the equation %s\n",
+                  eqp->name);
+    cs_hodge_param_log("Mass matrix", NULL, eqc->mass_hodgep);
+  }
 
   /* Set the function pointer */
   eqc->get_mass_matrix = cs_hodge_get_func(__func__, eqc->mass_hodgep);
