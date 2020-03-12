@@ -68,6 +68,15 @@ typedef cs_flag_t  cs_solidification_model_t;
  * \var CS_SOLIDIFICATION_MODEL_NAVIER_STOKES
  * Navier-Stokes equations: mass and momentum with a constant mass density
  *
+ * \var CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87
+ * Modelling introduced in Voller and Prakash entitled:
+ * "A fixed grid numerical modelling methodology for convection-diffusion mushy
+ * region phase-change problems" Int. J. Heat Transfer, 30 (8), 1987.
+ * No tracer. Only physical constants describing the solidification process are
+ * used.
+ *
+ * \var CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
+ * The tracer is composed by an alloy with two chemical constituents
  */
 
 typedef enum {
@@ -84,11 +93,15 @@ typedef enum {
   CS_SOLIDIFICATION_MODEL_USE_TEMPERATURE         = 1<<2, /* =   4 */
   CS_SOLIDIFICATION_MODEL_USE_ENTHALPY            = 1<<3, /* =   8 */
 
+  /* Solidification modelling
+     ------------------------ */
+
+  CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87       = 1<<4, /* =  16 */
+  CS_SOLIDIFICATION_MODEL_BINARY_ALLOY            = 1<<5, /* =  32 */
 
 } cs_solidification_model_bit_t;
 
 
-typedef struct _solidification_alloy_t  cs_solidification_alloy_t;
 typedef struct _solidification_t  cs_solidification_t;
 
 /*============================================================================
@@ -131,25 +144,64 @@ cs_solidification_activate(cs_solidification_model_t      model,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add an alloy related to transport equation which will interact in
- *         the dynamic of the flow during the solidification process.
+ * \brief  Set the value of the epsilon parameter used in the forcing term
+ *         of the momemtum equation
  *
- * \param[in]  name             name of the alloy
- * \param[in]  varname          name of the related unknown
- * \param[in]  conc0            reference concentration
- * \param[in]  beta             value of the dilatation coefficient
- * \param[in]  kp               value of the distribution coefficient
- *
- * \return a pointer to a new allocated cs_solidification_alloy_t structure
+ * \param[in]  forcing_eps    epsilon used in the penalization term to avoid a
+ *                            division by zero
  */
 /*----------------------------------------------------------------------------*/
 
-cs_solidification_alloy_t *
-cs_solidification_add_alloy(const char     *name,
-                            const char     *varname,
-                            cs_real_t       conc0,
-                            cs_real_t       beta,
-                            cs_real_t       kp);
+void
+cs_solidification_set_forcing_eps(cs_real_t    forcing_eps);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the main physical parameters which described the Voller and
+ *         Prakash modelling
+ *
+ * \param[in]  t_solidus      solidus temperature (in K)
+ * \param[in]  t_liquidus     liquidus temperatur (in K)
+ * \param[in]  latent_heat    latent heat
+ * \param[in]  forcing_coef   (< 0) coefficient in the reaction term to reduce
+ *                            the velocity
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solidification_set_voller_model(cs_real_t    t_solidus,
+                                   cs_real_t    t_liquidus,
+                                   cs_real_t    latent_heat,
+                                   cs_real_t    forcing_coef);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the main physical parameters which described a solidification
+ *         process with a binary alloy
+ *         Add a tracer equation to simulation the conv/diffusion of the alloy
+ *         ratio between the two components of the alloy
+ *
+ * \param[in]  name          name of the binary alloy
+ * \param[in]  varname       name of the unknown related to the tracer eq.
+ * \param[in]  conc0         reference concentration
+ * \param[in]  beta          value of the dilatation coefficient w.r.t. concen
+ * \param[in]  kp            value of the distribution coefficient
+ * \param[in]  m_l           liquidus slope for the tracer
+ * \param[in]  latent_heat   latent heat
+ * \param[in]  forcing_coef  (< 0) coefficient in the reaction term to reduce
+ *                           the velocity
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solidification_set_binary_alloy_model(const char     *name,
+                                         const char     *varname,
+                                         cs_real_t       conc0,
+                                         cs_real_t       beta,
+                                         cs_real_t       kp,
+                                         cs_real_t       m_l,
+                                         cs_real_t       latent_heat,
+                                         cs_real_t       forcing_coef);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -232,26 +284,6 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
                           const cs_time_step_t         *time_step,
                           const cs_cdo_connect_t       *connect,
                           const cs_cdo_quantities_t    *quant);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update/initialize the solidification module according to the
- *         settings
- *
- * \param[in]  mesh       pointer to a cs_mesh_t structure
- * \param[in]  connect    pointer to a cs_cdo_connect_t structure
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]  ts         pointer to a cs_time_step_t structure
- * \param[in]  cur2prev   true or false
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_solidification_update(const cs_mesh_t             *mesh,
-                         const cs_cdo_connect_t      *connect,
-                         const cs_cdo_quantities_t   *quant,
-                         const cs_time_step_t        *ts,
-                         bool                         cur2prev);
 
 /*----------------------------------------------------------------------------*/
 /*!

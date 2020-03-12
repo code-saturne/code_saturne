@@ -66,14 +66,102 @@ BEGIN_C_DECLS
 #define CS_N_STATES      3
 
 /*============================================================================
+ * Static variables
+ *============================================================================*/
+
+static cs_real_t  cs_solidification_forcing_eps  = 1e-3;
+
+/*============================================================================
  * Type definitions
  *============================================================================*/
 
-/* Set of parameters related to an alloy. Each alloy is associated to a
-   transport equation. Moreover, each alloy contibutes to the Boussinesq
-   approximation */
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer associated to a solidification model aiming at
+ *         updating/initializing the solidification variables/properties
+ *         dedicated to the model
+ *
+ * \param[in]  mesh       pointer to a cs_mesh_t structure
+ * \param[in]  connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts         pointer to a cs_time_step_t structure
+ * \param[in]  cur2prev   true or false
+ */
+/*----------------------------------------------------------------------------*/
 
-struct  _solidification_alloy_t {
+typedef void
+(cs_solidification_update_t)(const cs_mesh_t             *mesh,
+                             const cs_cdo_connect_t      *connect,
+                             const cs_cdo_quantities_t   *quant,
+                             const cs_time_step_t        *ts,
+                             bool                         cur2prev);
+
+
+/* Structure storing physical parameters related to a choice of solidification
+   modelling */
+
+
+/* Voller and Prakash model "A fixed grid numerical modelling methodology for
+ * convection-diffusion mushy region phase-change problems" Int. J. Heat
+ * Transfer, 30 (8), 1987.
+ * No tracer. Only physical constants describing the solidification process are
+ * used.
+ */
+
+typedef struct {
+
+  /* Physical parameters to specify the law of variation of the liquid fraction
+   * with respect to the temperature
+   *
+   * gl(T) = 1 if T > t_liquidus and gl(T) = 0 if T < t_solidus
+   * Otherwise:
+   * gl(T) = (T - t_solidus)/(t_liquidus - t_solidus)
+   */
+
+  cs_real_t        t_solidus;
+  cs_real_t        t_liquidus;
+
+  /* Physical parameter for computing the source term in the energy equation
+   * Latent heat between the liquid and solid phase
+   */
+  cs_real_t        latent_heat;
+
+  /* Porous media like reaction term in the momentum equation:
+   * F(u) = forcing_coef * (1- gl)^2/(gl^3 + forcing_eps) * u
+   */
+  cs_real_t        forcing_coef;
+
+} cs_solidification_voller_t;
+
+typedef struct {
+
+  /* Parameters for the Boussinesq approximation in the momentum equation
+   * related to the variation of concentration alloy
+   */
+  cs_real_t        dilatation_coef;
+  cs_real_t        ref_concentration;
+
+  /* Physical parameter for computing the source term in the energy equation
+   * Latent heat between the liquid and solid phase
+   */
+  cs_real_t        latent_heat;
+
+  /* Porous media like reaction term in the momentum equation:
+   * F(u) = forcing_coef * (1- gl)^2/(gl^3 + forcing_eps) * u
+   */
+  cs_real_t        forcing_coef;
+
+  /* Phase diagram features */
+  /* ---------------------- */
+
+  /* Liquidus slope \frac{\partial g_l}{\partial C} */
+  cs_real_t        m_l;
+
+  /* Physical parameters */
+  cs_real_t        kp;          /* distribution coefficient */
+
+  /* Alloy features */
+  /* -------------- */
 
   /* The variable related to this equation in the concentration mixture C
    * C = gs*Cs + gl*Cl where gs + gl = 1
@@ -82,16 +170,12 @@ struct  _solidification_alloy_t {
    *
    * --> C = (gs*kp + gl)*Cl
    */
-  cs_equation_t   *equation;
+  cs_equation_t   *tracer_equation;
 
-  /* Physical parameters */
-  cs_real_t        kp;          /* distribution coefficient */
+  /* Tracer concentration in the liquid phase (only if */
+  cs_field_t      *c_l_field;
 
-  /* Parameters for the Boussinesq approximation */
-  cs_real_t        dilatation_coef;
-  cs_real_t        ref_concentration;
-
-};
+} cs_solidification_binary_alloy_t;
 
 
 /* Structure storing the set of parameters/structures related to the
@@ -111,23 +195,8 @@ struct _solidification_t {
   /* Advection field (velocity field arising from the Navier-Stokes system) */
   cs_adv_field_t  *adv_field;
 
-  /* Fields associated to this module */
-  cs_field_t      *temperature;
-
-  /* A reaction term and source term are introduced in the thermal model */
-  cs_property_t   *thermal_reaction_coef;
-  cs_real_t       *thermal_reaction_coef_array;
-  cs_real_t       *thermal_source_term_array;
-
-  /* Physical parameters to specify the law of variation of the liquid fraction
-   * with respect to the temperature
-   *
-   * gl(T) = 1 if T > t_liquidus and gl(T) = 0 if T < t_solidus
-   * Otherwise:
-   * gl(T) = (T - t_solidus)/(t_liquidus - t_solidus)
-   */
-  cs_real_t        t_solidus;
-  cs_real_t        t_liquidus;
+  /* Liquid fraction of the mixture */
+  /* ------------------------------ */
 
   cs_field_t      *gl_field;   /* field storing the values of the liquid at
                                   each cell */
@@ -136,29 +205,34 @@ struct _solidification_t {
   /* array storing the state (solid, mushy, liquid) for each cell */
   int             *cell_state;
 
-  /* Equations associated to this module: There are as many equations as the
-   * number of tracers to consider (in this case, a tracer is a component of an
-   * alloy)
-   */
+  /* Monitoring related to this module */
+  cs_real_t        state_ratio[CS_N_STATES];
+  cs_gnum_t        n_g_cells[CS_N_STATES];
 
-  int                          n_alloy_tracers;
-  cs_solidification_alloy_t  **alloys;
+  /* Quantities related to the energy equation */
+  /* ----------------------------------------- */
 
-  /* A reaction term is introduced in the momentum equation in order to penalize
-   * the velocity and tends to forcing_coef when the liquid fraction tends to 0
-   * F(u) = forcing_coef * (1- gl)^2/(gl^3 + forcing_eps) * u
+  /* Fields associated to this module */
+  cs_field_t      *temperature;
+
+  /* A reaction term and source term are introduced in the thermal model */
+  cs_property_t   *thermal_reaction_coef;
+  cs_real_t       *thermal_reaction_coef_array;
+  cs_real_t       *thermal_source_term_array;
+
+  /* Additional settings related to the choice of solidification modelling */
+  void             *model_context;
+
+  /* A reaction term is introduced in the momentum equation. This terms tends to
+   * a huge number when the liquid fraction tends to 0 in order to penalize
+   * the velocity to zero when the whole cell is solid
    */
-  cs_real_t        forcing_eps;       /* Set to 1e-3 by default */
-  cs_real_t        forcing_coef;      /* Set to 1600 by default */
   cs_real_t       *forcing_mom_array; /* values of the forcing reaction
                                          coefficient in each cell */
   cs_property_t   *forcing_mom;
 
-  cs_real_t        latent_heat;
-
-  /* Monitoring related to this module */
-  cs_real_t        state_ratio[CS_N_STATES];
-  cs_gnum_t        n_g_cells[CS_N_STATES];
+  /* Function pointer related to the way of updating the model */
+  cs_solidification_update_t    *update;
 
 };
 
@@ -199,10 +273,6 @@ _solidification_create(void)
 
   BFT_MALLOC(solid, 1, cs_solidification_t);
 
-  /* Related alloys equations */
-  solid->n_alloy_tracers = 0;
-  solid->alloys = NULL;
-
   /* Default initialization */
   solid->model = 0;
   solid->options = 0;
@@ -211,29 +281,12 @@ _solidification_create(void)
   /* Property */
   solid->mass_density = NULL;
 
-  /* Advection field */
+  /* Advection field arising from the (Navier-)Stokes model */
   solid->adv_field = NULL;
-
-  /* Structure related to the thermal system solved as asub-module */
-  solid->temperature = NULL;
-  solid->thermal_reaction_coef = NULL;
-  solid->thermal_reaction_coef_array = NULL;
-  solid->thermal_source_term_array = NULL;
 
   /* Quantities related to the liquid fraction */
   solid->gl = NULL;
   solid->gl_field = NULL;
-
-  solid->t_solidus = 0.;
-  solid->t_liquidus = 0.;
-  solid->latent_heat = 0.;
-
-  /* Quantities/structure related to the forcing term treated as a reaction term
-     in the momentum equation */
-  solid->forcing_mom = NULL;
-  solid->forcing_mom_array = NULL;
-  solid->forcing_coef = 1600.;
-  solid->forcing_eps = 1e-3;
 
   /* State related to each cell */
   solid->cell_state = NULL;
@@ -242,12 +295,79 @@ _solidification_create(void)
   for (int i = 0; i < CS_N_STATES; i++) solid->n_g_cells[i] = 0;
   for (int i = 0; i < CS_N_STATES; i++) solid->state_ratio[i] = 0;
 
+  /* Structure related to the thermal system solved as a sub-module */
+  solid->temperature = NULL;
+  solid->thermal_reaction_coef = NULL;
+  solid->thermal_reaction_coef_array = NULL;
+  solid->thermal_source_term_array = NULL;
+
+  /* Structure cast on-the-fly w.r.t. the modelling choice */
+  solid->model_context = NULL;
+
+  /* Quantities/structure related to the forcing term treated as a reaction term
+     in the momentum equation */
+  solid->forcing_mom = NULL;
+  solid->forcing_mom_array = NULL;
+
+  /* Function pointer to update the model */
+  solid->update = NULL;
+
   return solid;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Build the list of (local) solid cells and enforce a zero-velocity
+ *         for this selection
+ *
+ * \param[in]  connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_enforce_solid_cells(const cs_cdo_connect_t      *connect,
+                     const cs_cdo_quantities_t   *quant)
+{
+  cs_adjacency_t  *c2f = connect->c2f;
+  cs_equation_t  *mom_eq = cs_navsto_system_get_momentum_eq();
+  cs_equation_param_t  *mom_eqp = cs_equation_get_param(mom_eq);
+  cs_solidification_t  *solid = cs_solidification_structure;
+  cs_real_t  *face_velocity = cs_xdef_get_array(solid->adv_field->definition);
+
+  /* List of solid cells */
+  cs_lnum_t  *solid_cells = NULL;
+  BFT_MALLOC(solid_cells, solid->n_g_cells[CS_STATE_SOLID], cs_lnum_t);
+
+  cs_lnum_t  ii = 0;
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+    if (solid->cell_state[c_id] == CS_STATE_SOLID) {
+      solid_cells[ii++] = c_id;
+
+      /* Kill the advection field for each face attached to a solid cell */
+      for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+        cs_real_t  *_vel_f = face_velocity + 3*c2f->ids[j];
+        _vel_f[0] = _vel_f[1] = _vel_f[2] = 0.;
+        }
+
+    }
+  } /* Loop on cells */
+
+  assert((cs_gnum_t)ii == solid->n_g_cells[CS_STATE_SOLID]);
+  cs_real_t  zero_velocity[3] = {0, 0, 0};
+  cs_equation_enforce_by_cell_selection(mom_eqp,
+                                        solid->n_g_cells[CS_STATE_SOLID],
+                                        solid_cells,
+                                        zero_velocity,
+                                        NULL);
+
+  BFT_FREE(solid_cells);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Update/initialize the liquid fraction and its related quantities
+ *         This corresponds to the Voller and Prakash (87)
  *
  * \param[in]  mesh       pointer to a cs_mesh_t structure
  * \param[in]  connect    pointer to a cs_cdo_connect_t structure
@@ -258,16 +378,21 @@ _solidification_create(void)
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_liquid_fraction(const cs_mesh_t             *mesh,
-                        const cs_cdo_connect_t      *connect,
-                        const cs_cdo_quantities_t   *quant,
-                        const cs_time_step_t        *ts,
-                        bool                         cur2prev)
+_update_liquid_fraction_voller(const cs_mesh_t             *mesh,
+                               const cs_cdo_connect_t      *connect,
+                               const cs_cdo_quantities_t   *quant,
+                               const cs_time_step_t        *ts,
+                               bool                         cur2prev)
 {
   CS_UNUSED(mesh);
 
   cs_solidification_t  *solid = cs_solidification_structure;
+  cs_solidification_voller_t  *v_model
+    = (cs_solidification_voller_t *)solid->model_context;
+
+  /* Sanity checks */
   assert(solid->temperature != NULL);
+  assert(v_model != NULL);
 
   if (cur2prev)
     cs_field_current_to_previous(solid->gl_field);
@@ -277,8 +402,8 @@ _update_liquid_fraction(const cs_mesh_t             *mesh,
   assert(temp != NULL);
 
   /* 1./(t_liquidus - t_solidus) = \partial gl/\partial Temp */
-  const cs_real_t  dgl_ov_dtemp = 1./(solid->t_liquidus - solid->t_solidus);
-  const cs_real_t  inv_forcing_eps = 1./solid->forcing_eps;
+  const cs_real_t  dgl_ov_dtemp = 1./(v_model->t_liquidus - v_model->t_solidus);
+  const cs_real_t  inv_forcing_eps = 1./cs_solidification_forcing_eps;
 
   for (int i = 0; i < CS_N_STATES; i++) solid->n_g_cells[i] = 0;
 
@@ -287,14 +412,14 @@ _update_liquid_fraction(const cs_mesh_t             *mesh,
   const cs_real_t  cell_rho = cs_property_get_cell_value(0, ts->t_cur,
                                                          solid->mass_density);
   const cs_real_t  gl_steep =
-    cell_rho*solid->latent_heat*dgl_ov_dtemp/ts->dt[0];
+    cell_rho*v_model->latent_heat*dgl_ov_dtemp/ts->dt[0];
 
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
     /* Update the liquid fraction
      * Update the source term and the reaction coefficient for the thermal
      * system which are arrays */
-    if (temp[c_id] < solid->t_solidus) {
+    if (temp[c_id] < v_model->t_solidus) {
 
       g_l[c_id] = 0;
       solid->thermal_reaction_coef_array[c_id] = 0;
@@ -305,10 +430,10 @@ _update_liquid_fraction(const cs_mesh_t             *mesh,
 
       /* Update the forcing coefficient treated as a property for a reaction
          term in the momentum eq. */
-      solid->forcing_mom_array[c_id] = solid->forcing_coef*inv_forcing_eps;
+      solid->forcing_mom_array[c_id] = v_model->forcing_coef*inv_forcing_eps;
 
     }
-    else if (temp[c_id] > solid->t_liquidus) {
+    else if (temp[c_id] > v_model->t_liquidus) {
 
       g_l[c_id] = 1;
       solid->thermal_reaction_coef_array[c_id] = 0;
@@ -324,7 +449,7 @@ _update_liquid_fraction(const cs_mesh_t             *mesh,
     }
     else { /* Mushy zone */
 
-      const cs_real_t  glc = (temp[c_id]-solid->t_solidus)*dgl_ov_dtemp;
+      const cs_real_t  glc = (temp[c_id] - v_model->t_solidus) * dgl_ov_dtemp;
 
       g_l[c_id] = glc;
       solid->thermal_reaction_coef_array[c_id] = gl_steep;
@@ -337,49 +462,17 @@ _update_liquid_fraction(const cs_mesh_t             *mesh,
       /* Update the forcing coefficient treated as a property for a reaction
          term in the momentum eq. */
       const cs_real_t  glm1 = 1 - glc;
-      solid->forcing_mom_array[c_id] = solid->forcing_coef *
-        glm1*glm1/(glc*glc*glc + solid->forcing_eps);
+      solid->forcing_mom_array[c_id] = v_model->forcing_coef *
+        glm1*glm1/(glc*glc*glc + cs_solidification_forcing_eps);
 
     }
 
   } /* Loop on cells */
 
-  /* At this stage, the number of solid cells is a local count */
-  if (solid->n_g_cells[CS_STATE_SOLID] > 0) {
-
-    cs_adjacency_t  *c2f = connect->c2f;
-    cs_equation_t  *mom_eq = cs_navsto_system_get_momentum_eq();
-    cs_equation_param_t  *mom_eqp = cs_equation_get_param(mom_eq);
-    cs_real_t  *face_velocity = cs_xdef_get_array(solid->adv_field->definition);
-
-    cs_lnum_t  *solid_cells = NULL;
-    BFT_MALLOC(solid_cells, solid->n_g_cells[CS_STATE_SOLID], cs_lnum_t);
-
-    cs_lnum_t  ii = 0;
-    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-      if (solid->cell_state[c_id] == CS_STATE_SOLID) {
-        solid_cells[ii++] = c_id;
-
-        /* Kill the advection field for each face attached to a solid cell */
-        for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
-          cs_real_t  *_vel_f = face_velocity + 3*c2f->ids[j];
-          _vel_f[0] = _vel_f[1] = _vel_f[2] = 0.;
-        }
-
-      }
-    } /* Loop on cells */
-
-    assert((cs_gnum_t)ii == solid->n_g_cells[CS_STATE_SOLID]);
-    cs_real_t  zero_velocity[3] = {0, 0, 0};
-    cs_equation_enforce_by_cell_selection(mom_eqp,
-                                          solid->n_g_cells[CS_STATE_SOLID],
-                                          solid_cells,
-                                          zero_velocity,
-                                          NULL);
-
-    BFT_FREE(solid_cells);
-
-  } /* Set the enforcement of the velocity for solid cells */
+  /* At this stage, the number of solid cells is a local count
+   * Set the enforcement of the velocity for solid cells */
+  if (solid->n_g_cells[CS_STATE_SOLID] > 0)
+    _enforce_solid_cells(connect, quant);
 
   /* Parallel synchronization of the number of cells in each state */
   cs_parall_sum(CS_N_STATES, CS_GNUM_TYPE, solid->n_g_cells);
@@ -585,6 +678,26 @@ cs_solidification_activate(cs_solidification_model_t      model,
                                        CS_PROPERTY_ISO);
   solid->gl = cs_property_add("liquid_fraction", CS_PROPERTY_ISO);
 
+  /* Allocate the structure storing the modelling context/settings */
+
+  if (solid->model & CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87) {
+
+    cs_solidification_voller_t  *v_model = NULL;
+    BFT_MALLOC(v_model, 1, cs_solidification_voller_t);
+    solid->model_context = (void *)v_model;
+    solid->update = _update_liquid_fraction_voller;
+
+  }
+
+  else if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+
+    cs_solidification_binary_alloy_t  *b_model = NULL;
+    BFT_MALLOC(b_model, 1, cs_solidification_binary_alloy_t);
+    solid->model_context = (void *)b_model;
+    solid->update = NULL;       /* TODO */
+
+  }
+
   /* Set the global pointer */
   cs_solidification_structure = solid;
 
@@ -593,52 +706,116 @@ cs_solidification_activate(cs_solidification_model_t      model,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Add an alloy related to transport equation which will interact in
- *         the dynamic of the flow during the solidification process.
+ * \brief  Set the value of the epsilon parameter used in the forcing term
+ *         of the momemtum equation
  *
- * \param[in]  name             name of the alloy
- * \param[in]  varname          name of the related unknown
- * \param[in]  conc0            reference concentration
- * \param[in]  beta             value of the dilatation coefficient
- * \param[in]  kp               value of the distribution coefficient
- *
- * \return a pointer to a new allocated cs_solidification_alloy_t structure
+ * \param[in]  forcing_eps    epsilon used in the penalization term to avoid a
+ *                            division by zero
  */
 /*----------------------------------------------------------------------------*/
 
-cs_solidification_alloy_t *
-cs_solidification_add_alloy(const char     *name,
-                            const char     *varname,
-                            cs_real_t       conc0,
-                            cs_real_t       beta,
-                            cs_real_t       kp)
+void
+cs_solidification_set_forcing_eps(cs_real_t    forcing_eps)
+{
+  assert(forcing_eps > 0);
+  cs_solidification_forcing_eps = forcing_eps;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the main physical parameters which described the Voller and
+ *         Prakash modelling
+ *
+ * \param[in]  t_solidus      solidus temperature (in K)
+ * \param[in]  t_liquidus     liquidus temperatur (in K)
+ * \param[in]  latent_heat    latent heat
+ * \param[in]  forcing_coef   (< 0) coefficient in the reaction term to reduce
+ *                            the velocity
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solidification_set_voller_model(cs_real_t    t_solidus,
+                                   cs_real_t    t_liquidus,
+                                   cs_real_t    latent_heat,
+                                   cs_real_t    forcing_coef)
+{
+  cs_solidification_t  *solid = cs_solidification_structure;
+
+  /* Sanity checks */
+  if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
+
+  if ((solid->model & CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87) == 0)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Voller and Prakash model not declared during the"
+              " activation of the solidification module.\n"
+              " Please check your settings.", __func__);
+
+  cs_solidification_voller_t  *v_model
+    = (cs_solidification_voller_t *)solid->model_context;
+  assert(v_model != NULL);
+
+  /* Model parameters */
+  v_model->t_solidus = t_solidus;
+  v_model->t_liquidus = t_liquidus;
+  v_model->latent_heat = latent_heat;
+  v_model->forcing_coef = forcing_coef;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the main physical parameters which described a solidification
+ *         process with a binary alloy
+ *         Add a tracer equation to simulation the conv/diffusion of the alloy
+ *         ratio between the two components of the alloy
+ *
+ * \param[in]  name          name of the binary alloy
+ * \param[in]  varname       name of the unknown related to the tracer eq.
+ * \param[in]  conc0         reference concentration
+ * \param[in]  beta          value of the dilatation coefficient w.r.t. concen
+ * \param[in]  kp            value of the distribution coefficient
+ * \param[in]  m_l           liquidus slope for the tracer
+ * \param[in]  latent_heat   latent heat
+ * \param[in]  forcing_coef  (< 0) coefficient in the reaction term to reduce
+ *                           the velocity
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solidification_set_binary_alloy_model(const char     *name,
+                                         const char     *varname,
+                                         cs_real_t       conc0,
+                                         cs_real_t       beta,
+                                         cs_real_t       kp,
+                                         cs_real_t       m_l,
+                                         cs_real_t       latent_heat,
+                                         cs_real_t       forcing_coef)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
   if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
 
+  cs_solidification_binary_alloy_t  *b_model
+    = (cs_solidification_binary_alloy_t *)solid->model_context;
+
   /* Sanity checks */
   assert(name != NULL && varname != NULL);
+  assert(solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY);
+  assert(b_model != NULL);
 
-  int  alloy_id = solid->n_alloy_tracers;
+  b_model->tracer_equation = cs_equation_add(name, varname,
+                                             CS_EQUATION_TYPE_SOLIDIFICATION,
+                                             1,
+                                             CS_PARAM_BC_HMG_NEUMANN);
 
-  cs_solidification_alloy_t  *alloy = NULL;
-
-  BFT_MALLOC(alloy, 1, cs_solidification_alloy_t);
-
-  alloy->equation = cs_equation_add(name, varname,
-                                    CS_EQUATION_TYPE_SOLIDIFICATION,
-                                    1,
-                                    CS_PARAM_BC_HMG_NEUMANN);
+  b_model->c_l_field = NULL;
 
   /* Set the main physical parameters */
-  alloy->kp = kp;
-  alloy->dilatation_coef = beta;
-  alloy->ref_concentration = conc0;
-
-  /* Store the new alloy structure */
-  solid->alloys[alloy_id] = alloy;
-
-  return alloy;
+  b_model->dilatation_coef = beta;
+  b_model->ref_concentration = conc0;
+  b_model->kp = kp;
+  b_model->m_l = m_l;
+  b_model->latent_heat = latent_heat;
+  b_model->forcing_coef = forcing_coef;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -658,16 +835,24 @@ cs_solidification_destroy_all(void)
   cs_solidification_t  *solid = cs_solidification_structure;
 
   /* The lifecycle of properties, equations and fields is not managed by
-   * the current structure.
+   * the current structure and sub-structures.
    * Free only what is owned by this structure */
 
-  if (solid->n_alloy_tracers > 0) {
+  if (solid->model & CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87) {
+    cs_solidification_voller_t  *v_model
+      = (cs_solidification_voller_t *)solid->model_context;
 
-    for (int i = 0; i < solid->n_alloy_tracers; i++)
-      BFT_FREE(solid->alloys[i]);
-    BFT_FREE(solid->alloys);
+    BFT_FREE(v_model);
 
-  }
+  } /* Voller and Prakash modelling */
+
+  if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+    cs_solidification_binary_alloy_t  *b_model
+      = (cs_solidification_binary_alloy_t *)solid->model_context;
+
+    BFT_FREE(b_model);
+
+  } /* Binary alloy modelling */
 
   BFT_FREE(solid->thermal_reaction_coef_array);
   BFT_FREE(solid->thermal_source_term_array);
@@ -678,39 +863,6 @@ cs_solidification_destroy_all(void)
   BFT_FREE(solid);
 
   return NULL;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the main physical parameters dedicated to this module
- *
- * \param[in]  t_solidus      solidus temperature (in K)
- * \param[in]  t_liquidus     liquidus temperatur (in K)
- * \param[in]  latent_heat    latent heat
- * \param[in]  forcing_eps    epsilon used in penalization term to division by
- *                            zero
- * \param[in]  forcing_coef   (< 0) coefficient in the reaction term to reduce
- *                            the velocity
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_solidification_set_parameters(cs_real_t          t_solidus,
-                                 cs_real_t          t_liquidus,
-                                 cs_real_t          latent_heat,
-                                 cs_real_t          forcing_eps,
-                                 cs_real_t          forcing_coef)
-{
-  cs_solidification_t  *solid = cs_solidification_structure;
-
-  /* Sanity checks */
-  if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
-
-  solid->t_solidus = t_solidus;
-  solid->t_liquidus = t_liquidus;
-  solid->latent_heat = latent_heat;
-  solid->forcing_coef = forcing_coef;
-  solid->forcing_eps = forcing_eps;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -751,6 +903,25 @@ cs_solidification_init_setup(void)
 
   /* Add default post-processing related to the solidifcation module */
   cs_post_add_time_mesh_dep_output(cs_solidification_extra_post, solid);
+
+  /* Model-specific part */
+
+  if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+
+    cs_solidification_binary_alloy_t  *b_model
+      = (cs_solidification_binary_alloy_t *)solid->model_context;
+
+    b_model->c_l_field = cs_field_create("alloy_liquid_conc",
+                                         field_mask,
+                                         c_loc_id,
+                                         1,
+                                         true); /* has_previous */
+
+    cs_field_set_key_int(b_model->c_l_field, log_key, 1);
+    cs_field_set_key_int(b_model->c_l_field, post_key, 1);
+
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -795,7 +966,7 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
   cs_property_t  *mass_density = solid->mass_density;
   assert(mass_density != NULL && mom_eq != NULL);
 
-  if (solid->n_alloy_tracers == 0) {
+  if (solid->model & CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87) {
 
     /* Define the metadata to build a Boussinesq source term related to the
      * temperature. This structure is allocated here but the lifecycle is
@@ -812,9 +983,17 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
                                             thm_bq);
 
   }
+  else if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+
+    cs_solidification_binary_alloy_t  *b_model
+      = (cs_solidification_binary_alloy_t *)solid->model_context;
+
+    /* TODO */
+
+  }
   else
     bft_error(__FILE__, __LINE__, 0,
-              " %s: Case with alloy(s) is not handled yet.", __func__);
+              " %s: Case with tracer(s) is not handled yet.", __func__);
 
   /* Define the forcing term acting as a reaction term in the momentum equation
      This term is related to the liquid fraction */
@@ -875,21 +1054,49 @@ cs_solidification_log_setup(void)
   cs_log_printf(CS_LOG_SETUP, "%s\n", h1_sep);
 
   cs_log_printf(CS_LOG_SETUP, "  * Solidification | Model:");
+  if (solid->model & CS_SOLIDIFICATION_MODEL_STOKES)
+    cs_log_printf(CS_LOG_SETUP, "Stokes");
+  else if (solid->model & CS_SOLIDIFICATION_MODEL_NAVIER_STOKES)
+    cs_log_printf(CS_LOG_SETUP, "Navier-Stokes");
   cs_log_printf(CS_LOG_SETUP, "\n");
-  cs_log_printf(CS_LOG_SETUP, "  * Solidification | Number of alloys: %d",
-                solid->n_alloy_tracers);
-  if (solid->n_alloy_tracers > 0) {
 
-    cs_log_printf(CS_LOG_SETUP, "  * Solidification | Alloy equations:");
-    for (int  i = 0; i < solid->n_alloy_tracers; i++) {
-      cs_solidification_alloy_t  *alloy = solid->alloys[i];
-      const char  *eqname = cs_equation_get_name(alloy->equation);
-      if (eqname != NULL)
-        cs_log_printf(CS_LOG_SETUP, " %s;", eqname);
-    }
+  cs_log_printf(CS_LOG_SETUP, "  * Solidification | Model:");
+  if (solid->model & CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87) {
 
-  } /* n_alloy_tracers > 0 */
+    cs_solidification_voller_t  *v_model
+      = (cs_solidification_voller_t *)solid->model_context;
 
+    cs_log_printf(CS_LOG_SETUP, "Voller-Prakash (1987)\n");
+    cs_log_printf(CS_LOG_SETUP, "  * Solidification | Tliq: %5.3e; Tsol: %5.3e",
+                  v_model->t_liquidus, v_model->t_solidus);
+    cs_log_printf(CS_LOG_SETUP, "  * Solidification | Latent heat: %5.3e\n",
+                  v_model->latent_heat);
+    cs_log_printf(CS_LOG_SETUP, "  * Solidification | Forcing coeff: %5.3e\n",
+                  v_model->forcing_coef);
+
+  }
+  else if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+
+    cs_solidification_binary_alloy_t  *b_model
+      = (cs_solidification_binary_alloy_t *)solid->model_context;
+
+    cs_log_printf(CS_LOG_SETUP, "Binary alloy\n");
+    cs_log_printf(CS_LOG_SETUP, "  * Solidification | Alloy: %s",
+                  cs_equation_get_name(b_model->tracer_equation));
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * Solidification | Dilatation coef. concentration: %5.3e\n",
+                  b_model->dilatation_coef);
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * Solidification | Reference concentration: %5.3e\n",
+                  b_model->ref_concentration);
+    cs_log_printf(CS_LOG_SETUP, "  * Solidification | Latent heat: %5.3e\n",
+                  b_model->latent_heat);
+    cs_log_printf(CS_LOG_SETUP, "  * Solidification | Forcing coeff: %5.3e\n",
+                  b_model->forcing_coef);
+
+  }
+
+  cs_log_printf(CS_LOG_SETUP, "\n");
 }
 
 /*----------------------------------------------------------------------------*/
@@ -914,9 +1121,13 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
   /* Sanity checks */
   if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
 
-  /* Loop on alloys */
-  for (int i = 0; i < solid->n_alloy_tracers; i++)
-    cs_equation_solve(mesh, solid->alloys[i]->equation);
+  if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+
+    cs_solidification_binary_alloy_t  *b_model
+      = (cs_solidification_binary_alloy_t *)solid->model_context;
+
+    cs_equation_solve(mesh, b_model->tracer_equation);
+  }
 
   /* Add equations to be solved at each time step */
   cs_thermal_system_compute(mesh, time_step, connect, quant);
@@ -925,37 +1136,8 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
   cs_navsto_system_compute(mesh, time_step, connect, quant);
 
   /* Update fields and properties which are related to solved variables */
-  cs_solidification_update(mesh, connect, quant, time_step,
-                           true); /* operate current to previous ? */
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Update/initialize the solidification module according to the
- *         settings
- *
- * \param[in]  mesh       pointer to a cs_mesh_t structure
- * \param[in]  connect    pointer to a cs_cdo_connect_t structure
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
- * \param[in]  ts         pointer to a cs_time_step_t structure
- * \param[in]  cur2prev   true or false
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_solidification_update(const cs_mesh_t             *mesh,
-                         const cs_cdo_connect_t      *connect,
-                         const cs_cdo_quantities_t   *quant,
-                         const cs_time_step_t        *ts,
-                         bool                         cur2prev)
-{
-  cs_solidification_t  *solid = cs_solidification_structure;
-
-  /* Sanity checks */
-  if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
-
-  /* Compute the liquid fraction and the related momentum reaction term */
-  _update_liquid_fraction(mesh, connect, quant, ts, cur2prev);
+  solid->update(mesh, connect, quant, time_step,
+                true); /* operate current to previous ? */
 
   /* Perform the monitoring */
   _do_monitoring(quant);
