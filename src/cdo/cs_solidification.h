@@ -177,16 +177,20 @@ cs_solidification_set_voller_model(cs_real_t    t_solidus,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Set the main physical parameters which described a solidification
- *         process with a binary alloy
- *         Add a tracer equation to simulation the conv/diffusion of the alloy
- *         ratio between the two components of the alloy
+ *         process with a binary alloy (with component A and B)
+ *         Add a transport equation for the solute concentration to simulate
+ *         the conv/diffusion of the alloy ratio between the two components of
+ *         the alloy
  *
  * \param[in]  name          name of the binary alloy
  * \param[in]  varname       name of the unknown related to the tracer eq.
- * \param[in]  conc0         reference concentration
- * \param[in]  beta          value of the dilatation coefficient w.r.t. concen
+ * \param[in]  conc0         reference mixture concentration
+ * \param[in]  beta          solutal dilatation coefficient
  * \param[in]  kp            value of the distribution coefficient
- * \param[in]  m_l           liquidus slope for the tracer
+ * \param[in]  mliq          liquidus slope for the solute concentration
+ * \param[in]  t_eutec       temperature at the eutectic point
+ * \param[in]  t_melt        phase-change temperature for the pure material (A)
+ * \param[in]  solute_diff   solutal diffusion coefficient in the liquid
  * \param[in]  latent_heat   latent heat
  * \param[in]  forcing_coef  (< 0) coefficient in the reaction term to reduce
  *                           the velocity
@@ -199,7 +203,10 @@ cs_solidification_set_binary_alloy_model(const char     *name,
                                          cs_real_t       conc0,
                                          cs_real_t       beta,
                                          cs_real_t       kp,
-                                         cs_real_t       m_l,
+                                         cs_real_t       mliq,
+                                         cs_real_t       t_eutec,
+                                         cs_real_t       t_melt,
+                                         cs_real_t       solute_diff,
                                          cs_real_t       latent_heat,
                                          cs_real_t       forcing_coef);
 
