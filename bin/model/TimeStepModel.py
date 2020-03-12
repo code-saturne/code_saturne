@@ -156,7 +156,9 @@ class TimeStepModel(Model):
         if val == -1:
             algo = "simple"
         else:
-            algo = "simplec"
+            algo = self.getVelocityPressureAlgorithm()
+            if algo == "simple":
+                algo = "simplec"
         self.setVelocityPressureAlgorithm(algo)
 
         from code_saturne.model.GroundwaterModel import GroundwaterModel
