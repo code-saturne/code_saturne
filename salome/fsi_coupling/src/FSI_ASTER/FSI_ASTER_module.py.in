@@ -22,6 +22,13 @@
 
 #-------------------------------------------------------------------------------
 
+# Par rapport a la version precedente
+# Chaque service est complete par l'appel initial a Complement
+# Cette methode rajoute a l'appel du premier service de l'instance un prefixe au fichier de commande
+# Ce prefixe est fourni dans le fichier fort.99 via as_run et exeaster
+# Le fichier est lu a la creation du module
+# Interet: introduire DEBUT() dans ce prefixe pour ne plus avoir a s'en preoccuper (ex: boucle for each)
+
 import sys,traceback,os
 import string
 import FSI_ORB__POA
@@ -35,10 +42,15 @@ cspath = '@pkgpythondir@'
 if os.path.isdir(cspath) and not cspath in sys.path:
     sys.path.insert(0, cspath)
 
-import ConfigParser
+try:
+    import ConfigParser  # Python2
+    configparser = ConfigParser
+except Exception:
+    import configparser  # Python3
+
 from cs_package import package
 
-config = ConfigParser.ConfigParser()
+config = configparser.ConfigParser()
 pkg = package()
 config.read(pkg.get_configfiles())
 
@@ -50,10 +62,9 @@ else:
   aster_dir = config.get('install', 'aster')
 
 # Code_Aster Python library files
-aster_path = os.path.join(aster_dir, 'bibpyt')
+pypath = os.path.join(aster_dir, 'bibpyt')
 
-sys.path.insert(0, aster_path)
-
+sys.path.insert(0, pypath)
 from Execution.E_SUPERV import SUPERV
 
 
@@ -78,6 +89,12 @@ class FSI_ASTER(FSI_ORB__POA.FSI_ASTER,dsccalcium.PyDSCComponent,SUPERV):
   '''
   def __init__ ( self, orb, poa, contID, containerName, instanceName, interfaceName ):
     self.init=0
+    if os.path.isfile('fort.99'):
+      prefixFile = file("fort.99","r")
+      self.prefixJdc = prefixFile.read()
+      prefixFile.close()
+    else:
+      self.prefixJdc = ""
     dsccalcium.PyDSCComponent.__init__(self, orb, poa,contID,containerName,instanceName,interfaceName)
 
   def init_service(self,service):
@@ -106,12 +123,26 @@ class FSI_ASTER(FSI_ORB__POA.FSI_ASTER,dsccalcium.PyDSCComponent,SUPERV):
        return True
     return False
 
+  def insertPrefix(self,jdc):
+    if not self.init:
+      jdc = self.prefixJdc + jdc
+    return jdc
+
+  def insertPrePost(self,jdc,prepost):
+    if prepost != "":
+      exec(prepost)
+      try:
+        jdc = os.linesep + pre + os.linesep + jdc + os.linesep + post + os.linesep
+      except NameError:
+        pass
+    return jdc
+    
   def interpstring(self,text,args):
     try:
       self.jdc.g_context.update(args)
       CONTEXT.set_current_step(self.jdc)
       linecache.cache['<string>']=0,None,string.split(text,'\n'),'<string>'
-      exec(text, self.jdc.const_context, self.jdc.g_context)
+      exec(text in self.jdc.const_context,self.jdc.g_context)
       CONTEXT.unset_current_step()
     except EOFError:
       CONTEXT.unset_current_step()
@@ -124,11 +155,14 @@ class FSI_ASTER(FSI_ORB__POA.FSI_ASTER,dsccalcium.PyDSCComponent,SUPERV):
     self.beginService("FSI_ASTER.op0117")
     try:
       args={"jdc":jdc,"component":self.proxy.ptr()}
-      if not args.has_key("jdc"):
+      if "jdc" not in args:
         fcomm=open("jdc",'r')
         jdc=fcomm.read()
         fcomm.close()
         #args["jdc"]=jdc
+      prepost = ''''''
+      jdc = self.insertPrePost(jdc,prepost)
+      jdc = self.insertPrefix(jdc)
       if not self.init:
         self.init=1
         fcomm=open("fort.1",'w')

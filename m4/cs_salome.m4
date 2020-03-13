@@ -259,6 +259,8 @@ AC_SUBST(SALOME_KERNEL_LDFLAGS)
 AC_SUBST(cs_have_calcium)
 AC_SUBST(CALCIUM_LIBS)
 
+AC_ARG_VAR([SALOME_KERNEL_CXXFLAGS], [SALOME kernel C++ flags (for FSI coupling)])
+
 AM_CONDITIONAL(HAVE_SALOME_KERNEL, test x$cs_have_salome_kernel = xyes)
 AM_CONDITIONAL(HAVE_CALCIUM, test x$cs_have_calcium = xyes)
 

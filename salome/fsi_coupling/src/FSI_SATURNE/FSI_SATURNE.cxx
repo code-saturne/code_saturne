@@ -33,6 +33,8 @@
 #include <pthread.h>
 #include <execinfo.h>
 
+#define BUILD_EXE 1
+
 typedef void (*sighandler_t)(int);
 sighandler_t setsig(int sig, sighandler_t handler)
 {
@@ -64,8 +66,8 @@ static void AttachDebugger()
   if(getenv ("DEBUGGER"))
     {
       std::stringstream exec;
-#if 1
-      exec << "$DEBUGGER " << "./run_solver.sh " << getpid() << "&";
+#if BUILD_EXE
+      exec << "$DEBUGGER " << "./run_solver " << getpid() << "&";
 #else
       exec << "$DEBUGGER SALOME_Container " << getpid() << "&";
 #endif
@@ -152,7 +154,7 @@ FSI_SATURNE_i::FSI_SATURNE_i(CORBA::ORB_ptr orb,
                      const char *interfaceName)
           : Superv_Component_i(orb, poa, contId, instanceName, interfaceName)
 {
-#if 1
+#if BUILD_EXE
   setsig(SIGSEGV,&THandler);
   set_terminate(&terminateHandler);
   set_unexpected(&unexpectedHandler);
@@ -168,7 +170,7 @@ FSI_SATURNE_i::FSI_SATURNE_i(CORBA::ORB_ptr orb,
                      const char *interfaceName)
           : Superv_Component_i(orb, poa, container, instanceName, interfaceName)
 {
-#if 1
+#if BUILD_EXE
   setsig(SIGSEGV,&THandler);
   set_terminate(&terminateHandler);
   set_unexpected(&unexpectedHandler);
@@ -184,7 +186,7 @@ FSI_SATURNE_i::~FSI_SATURNE_i()
 
 void FSI_SATURNE_i::destroy()
 {
-#if 1
+#if BUILD_EXE
   _remove_ref();
   if(!CORBA::is_nil(_orb))
     _orb->shutdown(0);
@@ -208,6 +210,10 @@ FSI_SATURNE_i::init_service(const char * service_name) {
       try
         {
           //initialization CALCIUM ports IN
+          create_calcium_port(this,(char *)"DTAST",(char *)"CALCIUM_double",(char *)"IN",(char *)"I");
+          create_calcium_port(this,(char *)"DEPAST",(char *)"CALCIUM_double",(char *)"IN",(char *)"I");
+          create_calcium_port(this,(char *)"VITAST",(char *)"CALCIUM_double",(char *)"IN",(char *)"I");
+          //initialization CALCIUM ports OUT
           create_calcium_port(this,(char *)"NBPDTM",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
           create_calcium_port(this,(char *)"NBSSIT",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
           create_calcium_port(this,(char *)"ISYNCP",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
@@ -215,12 +221,6 @@ FSI_SATURNE_i::init_service(const char * service_name) {
           create_calcium_port(this,(char *)"PDTREF",(char *)"CALCIUM_double",(char *)"OUT",(char *)"I");
           create_calcium_port(this,(char *)"TTINIT",(char *)"CALCIUM_double",(char *)"OUT",(char *)"I");
           create_calcium_port(this,(char *)"EPSILO",(char *)"CALCIUM_double",(char *)"OUT",(char *)"I");
-
-          create_calcium_port(this,(char *)"DTAST",(char *)"CALCIUM_double",(char *)"IN",(char *)"I");
-          create_calcium_port(this,(char *)"DEPAST",(char *)"CALCIUM_double",(char *)"IN",(char *)"I");
-          create_calcium_port(this,(char *)"VITAST",(char *)"CALCIUM_double",(char *)"IN",(char *)"I");
-
-          //initialization CALCIUM ports OUT
           create_calcium_port(this,(char *)"DTCALC",(char *)"CALCIUM_double",(char *)"OUT",(char *)"I");
           create_calcium_port(this,(char *)"NB_DYN",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
           create_calcium_port(this,(char *)"NB_FOR",(char *)"CALCIUM_integer",(char *)"OUT",(char *)"I");
@@ -295,7 +295,7 @@ cs_run();
   catch (...)
     {
       std::cerr << "unknown exception" << std::endl;
-#if 1
+#if BUILD_EXE
       _exit(-1);
 #endif
       //cp_fin(component,CP_ARRET);

@@ -31,8 +31,8 @@ AM_CFLAGS = $(SALOME_INCLUDES) -fexceptions
 salomelib_LTLIBRARIES = libFSI_SATURNEExelib.la
 salomeinclude_HEADERS = FSI_SATURNE.hxx
 
-libFSI_SATURNEExelib_la_SOURCES = FSI_SATURNE.cxx 
+libFSI_SATURNEExelib_la_SOURCES = FSI_SATURNE.cxx
 nodist_libFSI_SATURNEExelib_la_SOURCES =
-libFSI_SATURNEExelib_la_CXXFLAGS = -I$(top_builddir)/salome/fsi_coupling/idl  $(SALOME_INCLUDES)
+libFSI_SATURNEExelib_la_CXXFLAGS = -I$(top_builddir)/salome/fsi_coupling/idl  $(SALOME_INCLUDES) $(SALOME_KERNEL_CXXFLAGS)
 libFSI_SATURNEExelib_la_LIBADD = $(top_builddir)/salome/fsi_coupling/idl/libSalomeIDLFSI.la $(SALOME_LIBS)
-libFSI_SATURNEExelib_la_LDFLAGS = 
+libFSI_SATURNEExelib_la_LDFLAGS =

@@ -1,7 +1,7 @@
 #-------------------------------------------------------------------------------
 #   This file is part of the Code_Saturne CFD tool.
 #
-#   Copyright (C) 2011-2019 EDF S.A.
+#   Copyright (C) 2011-2020 EDF S.A.
 #
 #   The Code_Saturne CFD tool is free software; you can redistribute it
 #   and/or modify it under the terms of the GNU General Public License
@@ -27,32 +27,39 @@ from module_generator import ASTERComponent, CPPComponent
 # Context definition
 # ------------------
 
-asterdir = os.path.expanduser("/home/aster/NEW11")
+salome_root=os.getenv("ROOT_SALOME")
+prerequisites_file=os.path.join(salome_root, "env.d", "envProducts.sh")
+config_file=os.path.join(salome_root, "env.d", "envProducts.cfg")
+
+asterdir = os.path.expanduser(os.path.join(salome_root,
+                                           "tools/Code_aster_stable-v144_smeca"))
 
 # SALOME environment be must loaded beforehand
 
-KERNEL_ROOT_DIR = os.getenv("KERNEL_ROOT_DIR")
-if KERNEL_ROOT_DIR is None:
+kernel_root_dir = os.getenv("KERNEL_ROOT_DIR")
+yacs_root_dir=os.getenv("YACS_ROOT_DIR")
+if kernel_root_dir is None:
     print("KERNEL_ROOT_DIR must be defined.\nPlease load SALOME environment.\n")
     sys.exit(1)
 
 context = {'update':1,
-           "prerequisites":os.path.join(os.path.dirname(KERNEL_ROOT_DIR),
-                                        'prerequis-V6.3.1.sh'),
-           "kernel":KERNEL_ROOT_DIR}
+           "prerequisites":prerequisites_file,
+           "kernel":kernel_root_dir}
 
 # Definition of all the in/out streams
 # ------------------------------------
 
 nbIter = ("NBPDTM", "CALCIUM_integer","I")
 nbSubIter = ("NBSSIT", "CALCIUM_integer","I")
-
 indSync =("ISYNCP", "CALCIUM_integer","I")
 frequency = ("NTCHRO", "CALCIUM_integer","I")
-
 timeStep = ("PDTREF", "CALCIUM_double","I")
 prevTime = ("TTINIT", "CALCIUM_double","I")
 epsilon = ("EPSILO", "CALCIUM_double","I")
+
+astTimeStep = ("DTAST", "CALCIUM_double","I")
+astDisplacement = ("DEPAST", "CALCIUM_double","I")
+astVelocity = ("VITAST", "CALCIUM_double","I")
 
 newTimeStep = ("DTCALC", "CALCIUM_double","I")
 nbDyn = ("NB_DYN", "CALCIUM_integer","I")
@@ -65,10 +72,6 @@ facesXYZ = ("COOFAC", "CALCIUM_double","I")
 
 astForces = ("FORAST", "CALCIUM_double","I")
 astConvergence = ("ICVAST", "CALCIUM_integer","I")
-
-astTimeStep = ("DTAST", "CALCIUM_double","I")
-astDisplacement = ("DEPAST", "CALCIUM_double","I")
-astVelocity = ("VITAST", "CALCIUM_double","I")
 
 # Code_Aster streams
 
@@ -85,16 +88,17 @@ aster_instream = [nbFor, nbDyn,
 
 # Code_Saturne streams
 
-saturne_instream = [astDisplacement, astVelocity, astTimeStep]
+saturne_instream = [astTimeStep, astDisplacement, astVelocity]
 
-saturne_outstream = [nbFor, nbDyn,
-                     nodesXYZ, facesXYZ,
-                     nodesColor, facesColor,
-                     astForces,
-                     nbIter, nbSubIter,
-                     epsilon, astConvergence,
+saturne_outstream = [nbIter, nbSubIter,
                      indSync, frequency,
-                     prevTime, timeStep, newTimeStep]
+                     timeStep, prevTime, epsilon,
+                     newTimeStep,
+                     nbDyn, nbFor,
+                     nodesColor, facesColor,
+                     nodesXYZ, facesXYZ,
+                     astForces,
+                     astConvergence]
 
 # Creation of the different components
 # ------------------------------------
@@ -140,7 +144,7 @@ c2 = CPPComponent("FSI_SATURNE",
 # Creation of the FSI module
 # --------------------------
 
-m = Module("FSI", components=[c1,c2,c3], prefix="fsi_arch")
+m = Module("FSI", components=[c1,c2], prefix="fsi_arch")
 g = Generator(m, context)
 
 g.generate()

@@ -28,17 +28,27 @@
 #ifndef _FSI_IDL_
 #define _FSI_IDL_
 
-#include "DSC_Engines.idl"
 #include "SALOME_Exception.idl"
 #include "SALOME_Component.idl"
 #include "SALOME_Comm.idl"
 
+
+#include "DSC_Engines.idl"
+#include "SALOME_Parametric.idl"
+
 module FSI_ORB
 {
+typedef sequence<string> stringvec;
+typedef sequence<double> dblevec;
+typedef sequence<long> intvec;
+typedef Engines::dataref dataref;
+
+
   interface FSI_ASTER: Engines::Superv_Component
   {
     void op0117(in string jdc) raises (SALOME::SALOME_Exception);
   };
+
 
   interface FSI_SATURNE: Engines::Superv_Component
   {
