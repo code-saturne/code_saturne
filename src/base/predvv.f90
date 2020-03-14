@@ -280,7 +280,7 @@ else
 endif
 
 ! Density at time (n-1) if needed
-if ((idilat.gt.1.or.ivofmt.gt.0).and.irovar.eq.1) then
+if ((idilat.gt.1.or.ivofmt.gt.0).or.irovar.eq.1) then
   call field_get_val_prev2_s(icrom, cromaa)
 endif
 
