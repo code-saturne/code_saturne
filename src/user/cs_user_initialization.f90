@@ -58,7 +58,7 @@
 !> functions as described \ref field "here".
 !>
 !> Example of field ids:
-!> - Density:                        \c irom
+!> - Density:                        \c icrom
 !> - Dynamic molecular viscosity:    \c iviscl
 !> - Turbulent viscosity:            \c ivisct
 !> - Specific heat:                  \c icp
