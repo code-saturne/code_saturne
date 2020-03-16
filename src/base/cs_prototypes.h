@@ -680,13 +680,6 @@ cs_user_postprocess_activate(int     nt_max_abs,
                              double  t_cur_abs);
 
 /*----------------------------------------------------------------------------
- * Define couplings with other instances of Code_Saturne.
- *----------------------------------------------------------------------------*/
-
-void
-cs_user_saturne_coupling(void);
-
-/*----------------------------------------------------------------------------
  * Set user solver.
  *----------------------------------------------------------------------------*/
 
@@ -700,6 +693,25 @@ cs_user_solver_set(void);
 void
 cs_user_solver(const cs_mesh_t             *mesh,
                const cs_mesh_quantities_t  *mesh_quantities);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define global options for couplings.
+ *
+ * These options allow defining the time step synchronization policy,
+ * as well as a time step multiplier.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_coupling(void);
+
+/*----------------------------------------------------------------------------
+ * Define couplings with other instances of Code_Saturne.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_user_saturne_coupling(void);
 
 /*----------------------------------------------------------------------------
  * Define couplings with SYRTHES code.
