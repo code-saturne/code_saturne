@@ -452,7 +452,7 @@ cs_interface_set_sum(const cs_interface_set_t  *ifs,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Update the sum of values for elements associated with an
- * interface set, allowing control over periodicity of rotation.
+ * interface set, allowing control over periodicity.
  *
  * On input, the variable array should contain local contributions. On output,
  * contributions from matching elements on parallel or periodic boundaries
@@ -465,7 +465,8 @@ cs_interface_set_sum(const cs_interface_set_t  *ifs,
  * \param[in]       stride     number of values (non interlaced) by entity
  * \param[in]       interlace  true if variable is interlaced (for stride > 1)
  * \param[in]       datatype   type of data considered
- * \param[in]       ignore_rotation  ignore rotation if present ?
+ * \param[in]       tr_ignore  if > 0, ignore periodicity with rotation;
+ *                             if > 1, ignore all periodic transforms
  * \param[in, out]  var        variable buffer
  */
 /*----------------------------------------------------------------------------*/
@@ -476,7 +477,7 @@ cs_interface_set_sum_tr(const cs_interface_set_t  *ifs,
                         cs_lnum_t                  stride,
                         bool                       interlace,
                         cs_datatype_t              datatype,
-                        bool                       ignore_rotation,
+                        int                        tr_ignore,
                         void                      *var);
 
 /*----------------------------------------------------------------------------

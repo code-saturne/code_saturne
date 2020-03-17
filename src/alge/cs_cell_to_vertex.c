@@ -179,20 +179,23 @@ _sym_44_factor_ldlt(cs_real_t  ldlt[10])
  *         For more reference, see for instance
  *   http://mathforcollege.com/nm/mws/gen/04sle/mws_gen_sle_txt_cholesky.pdf
  *
+ * Here we only need to use the last element of the solution vector,
+ * so we return that value only and simplify the computation.
+ *
  * \param[in, out]  ldlt  pointer to matrix coefficients:
  *                        (f00, l10, f11, l20, l21, f22, l30, l31, l32, f33)
  * \param[in]       rhs   right-hand side
- * \param[out]      x     solution
  */
 /*----------------------------------------------------------------------------*/
 
-static void
-_sym_44_solve_ldlt(const cs_real_t  ldlt[10],
-                   const cs_real_t  rhs[4],
-                   cs_real_t        x[4])
+static cs_real_t
+_sym_44_partial_solve_ldlt(const cs_real_t  ldlt[10],
+                           const cs_real_t  rhs[4])
 {
   /* f00, f11, f22, f33, l32, l31, l30, l21, l20, l10
      0    1    2    3    4    5    6    7    8    9   */
+
+  cs_real_t x[4]; /* solution */
 
   x[0] = rhs[0];
   x[1] = rhs[1] - x[0]*ldlt[1];
@@ -200,9 +203,14 @@ _sym_44_solve_ldlt(const cs_real_t  ldlt[10],
   x[3] = rhs[3] - x[0]*ldlt[6] - x[1]*ldlt[7] - x[2]*ldlt[8];
 
   x[3] = x[3]*ldlt[9];
-  x[2] = x[2]*ldlt[5] - ldlt[8]*x[3];
-  x[1] = x[1]*ldlt[2] - ldlt[7]*x[3] - ldlt[4]*x[2];
-  x[0] = x[0]*ldlt[0] - ldlt[6]*x[3] - ldlt[3]*x[2] - ldlt[1]*x[1];
+
+  return x[3];
+
+  /*
+    x[2] = x[2]*ldlt[5] - ldlt[8]*x[3];
+    x[1] = x[1]*ldlt[2] - ldlt[7]*x[3] - ldlt[4]*x[2];
+    x[0] = x[0]*ldlt[0] - ldlt[6]*x[3] - ldlt[3]*x[2] - ldlt[1]*x[1];
+  */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -211,12 +219,13 @@ _sym_44_solve_ldlt(const cs_real_t  ldlt[10],
  *
  * In this case the weights directly match the number of adjacent cells.
  *
- * \param[in]  ignore_r_tr  ignore periodicity with rotation if true
+ * \param[in]  tr_ignore  if > 0, ignore periodicity with rotation;
+ *                        if > 1, ignore all periodic transforms
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_cell_to_vertex_w_unweighted(bool  ignore_r_tr)
+_cell_to_vertex_w_unweighted(int tr_ignore)
 {
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_adjacency_t  *c2v = cs_glob_mesh_adjacencies->c2v;
@@ -257,7 +266,7 @@ _cell_to_vertex_w_unweighted(bool  ignore_r_tr)
                             1,
                             true,
                             CS_INT_TYPE,
-                            ignore_r_tr,
+                            tr_ignore,
                             w_sum);
 
 # pragma omp parallel for if(n_vertices > CS_THR_MIN)
@@ -271,12 +280,13 @@ _cell_to_vertex_w_unweighted(bool  ignore_r_tr)
 /*!
  * \brief  Compute weights based on inversed distance
  *
- * \param[in]  ignore_r_tr  ignore periodicity with rotation if true
+ * \param[in]  tr_ignore  if > 0, ignore periodicity with rotation;
+ *                        if > 1, ignore all periodic transforms
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_cell_to_vertex_w_inv_distance(bool  ignore_r_tr)
+_cell_to_vertex_w_inv_distance(int  tr_ignore)
 {
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -361,7 +371,7 @@ _cell_to_vertex_w_inv_distance(bool  ignore_r_tr)
                             1,
                             true,
                             CS_REAL_TYPE,
-                            ignore_r_tr,
+                            tr_ignore,
                             w_sum);
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -395,12 +405,13 @@ _cell_to_vertex_w_inv_distance(bool  ignore_r_tr)
 /*!
  * \brief  Compute factorization based on least squares
  *
- * \param[in]  ignore_r_tr  ignore periodicity with rotation if true
+ * \param[in]  tr_ignore  if > 0, ignore periodicity with rotation;
+ *                        if > 1, ignore all periodic transforms
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_cell_to_vertex_f_lsq(bool  ignore_r_tr)
+_cell_to_vertex_f_lsq(int  tr_ignore)
 {
   const cs_mesh_t  *m = cs_glob_mesh;
   const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
@@ -434,16 +445,19 @@ _cell_to_vertex_f_lsq(bool  ignore_r_tr)
     cs_lnum_t e_id = c2v_idx[c_id+1];
     for (cs_lnum_t j = s_id; j < e_id; j++) {
       cs_lnum_t v_id = c2v_ids[j];
+      const cs_real_t *v_coo = m->vtx_coord + v_id*3;
+      cs_real_t r_coo[3]
+        = {c_coo[0]-v_coo[0], c_coo[1]-v_coo[1], c_coo[2]-v_coo[2]};
       cs_real_t  *_a = w + v_id*10;
-      _a[0] += c_coo[0] * c_coo[0]; // a00
-      _a[1] += c_coo[1] * c_coo[0]; // a10
-      _a[2] += c_coo[1] * c_coo[1]; // a11
-      _a[3] += c_coo[2] * c_coo[0]; // a20
-      _a[4] += c_coo[2] * c_coo[1]; // a21
-      _a[5] += c_coo[2] * c_coo[2]; // a22
-      _a[6] += c_coo[0];            // a30
-      _a[7] += c_coo[1];            // a31
-      _a[8] += c_coo[2];            // a32
+      _a[0] += r_coo[0] * r_coo[0]; // a00
+      _a[1] += r_coo[1] * r_coo[0]; // a10
+      _a[2] += r_coo[1] * r_coo[1]; // a11
+      _a[3] += r_coo[2] * r_coo[0]; // a20
+      _a[4] += r_coo[2] * r_coo[1]; // a21
+      _a[5] += r_coo[2] * r_coo[2]; // a22
+      _a[6] += r_coo[0];            // a30
+      _a[7] += r_coo[1];            // a31
+      _a[8] += r_coo[2];            // a32
       _a[9] += 1;                   // a33
     }
   }
@@ -454,16 +468,19 @@ _cell_to_vertex_f_lsq(bool  ignore_r_tr)
     cs_lnum_t e_id = f2v_idx[f_id+1];
     for (cs_lnum_t j = s_id; j < e_id; j++) {
       cs_lnum_t v_id = f2v_ids[j];
+      const cs_real_t *v_coo = m->vtx_coord + v_id*3;
+      cs_real_t r_coo[3]
+        = {f_coo[0]-v_coo[0], f_coo[1]-v_coo[1], f_coo[2]-v_coo[2]};
       cs_real_t  *_a = w + v_id*10;
-      _a[0] += f_coo[0] * f_coo[0]; // a00
-      _a[1] += f_coo[1] * f_coo[0]; // a10
-      _a[2] += f_coo[1] * f_coo[1]; // a11
-      _a[3] += f_coo[2] * f_coo[0]; // a20
-      _a[4] += f_coo[2] * f_coo[1]; // a21
-      _a[5] += f_coo[2] * f_coo[2]; // a22
-      _a[6] += f_coo[0];            // a30
-      _a[7] += f_coo[1];            // a31
-      _a[8] += f_coo[2];            // a32
+      _a[0] += r_coo[0] * r_coo[0]; // a00
+      _a[1] += r_coo[1] * r_coo[0]; // a10
+      _a[2] += r_coo[1] * r_coo[1]; // a11
+      _a[3] += r_coo[2] * r_coo[0]; // a20
+      _a[4] += r_coo[2] * r_coo[1]; // a21
+      _a[5] += r_coo[2] * r_coo[2]; // a22
+      _a[6] += r_coo[0];            // a30
+      _a[7] += r_coo[1];            // a31
+      _a[8] += r_coo[2];            // a32
       _a[9] += 1;                   // a33
     }
   }
@@ -474,7 +491,7 @@ _cell_to_vertex_f_lsq(bool  ignore_r_tr)
                             10,
                             true,
                             CS_REAL_TYPE,
-                            ignore_r_tr,
+                            tr_ignore,
                             w);
 
 # pragma omp parallel for if(n_vertices > CS_THR_MIN)
@@ -488,7 +505,8 @@ _cell_to_vertex_f_lsq(bool  ignore_r_tr)
  *
  * \param[in]  method       interpolation method
  * \param[in]  verbosity    verbosity level
- * \param[in]  ignore_r_tr  ignore periodicity with rotation if true
+ * \param[in]  tr_ignore    if > 0, ignore periodicity with rotation;
+ *                          if > 1, ignore all periodic transforms
  * \param[in]  c_weight     cell weight, or NULL
  * \param[in]  c_var        base cell-based variable
  * \param[in]  b_var        base boundary-face values, or NULL
@@ -499,7 +517,7 @@ _cell_to_vertex_f_lsq(bool  ignore_r_tr)
 static void
 _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
                        int                        verbosity,
-                       bool                       ignore_r_tr,
+                       int                        tr_ignore,
                        const cs_real_t            c_weight[restrict],
                        const cs_real_t            c_var[restrict],
                        const cs_real_t            b_var[restrict],
@@ -545,11 +563,11 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
                                   1,
                                   true,
                                   CS_REAL_TYPE,
-                                  ignore_r_tr,
+                                  tr_ignore,
                                   v_var);
 
         if (! _set[CS_CELL_TO_VERTEX_UNWEIGHTED])
-          _cell_to_vertex_w_unweighted(ignore_r_tr);
+          _cell_to_vertex_w_unweighted(tr_ignore);
 
         const cs_weight_t *w = _weights[CS_CELL_TO_VERTEX_UNWEIGHTED][0];
         for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
@@ -576,14 +594,14 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
                                   1,
                                   true,
                                   CS_REAL_TYPE,
-                                  ignore_r_tr,
+                                  tr_ignore,
                                   v_var);
           cs_interface_set_sum_tr(m->vtx_interfaces,
                                   n_vertices,
                                   1,
                                   true,
                                   CS_REAL_TYPE,
-                                  ignore_r_tr,
+                                  tr_ignore,
                                   v_w);
         }
 
@@ -598,7 +616,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
   case CS_CELL_TO_VERTEX_SHEPARD:
     {
       if (! _set[CS_CELL_TO_VERTEX_SHEPARD])
-        _cell_to_vertex_w_inv_distance(ignore_r_tr);
+        _cell_to_vertex_w_inv_distance(tr_ignore);
 
       const cs_weight_t *w = _weights[CS_CELL_TO_VERTEX_SHEPARD][0];
 
@@ -694,7 +712,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
                                 1,
                                 true,
                                 CS_REAL_TYPE,
-                                ignore_r_tr,
+                                tr_ignore,
                                 v_var);
 
       if (c_weight != NULL) {
@@ -704,7 +722,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
                                   1,
                                   true,
                                   CS_REAL_TYPE,
-                                  ignore_r_tr,
+                                  tr_ignore,
                                   v_w);
         for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++)
           v_var[v_id] /= v_w[v_id];
@@ -717,7 +735,7 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
   case CS_CELL_TO_VERTEX_LR:
     {
       if (! _set[CS_CELL_TO_VERTEX_LR])
-        _cell_to_vertex_f_lsq(ignore_r_tr);
+        _cell_to_vertex_f_lsq(tr_ignore);
 
       cs_real_t  *rhs;
       cs_lnum_t  rhs_size = n_vertices*4;
@@ -732,10 +750,13 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
         cs_lnum_t e_id = c2v_idx[c_id+1];
         for (cs_lnum_t j = s_id; j < e_id; j++) {
           cs_lnum_t v_id = c2v_ids[j];
+          const cs_real_t *v_coo = m->vtx_coord + v_id*3;
+          cs_real_t r_coo[3]
+            = {c_coo[0]-v_coo[0], c_coo[1]-v_coo[1], c_coo[2]-v_coo[2]};
           cs_real_t  *_rhs = rhs + v_id*4;
-          _rhs[0] += c_coo[0] * _c_var;
-          _rhs[1] += c_coo[1] * _c_var;
-          _rhs[2] += c_coo[2] * _c_var;
+          _rhs[0] += r_coo[0] * _c_var;
+          _rhs[1] += r_coo[1] * _c_var;
+          _rhs[2] += r_coo[2] * _c_var;
           _rhs[3] += c_var[c_id];
         }
       }
@@ -749,10 +770,13 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
           cs_lnum_t e_id = f2v_idx[f_id+1];
           for (cs_lnum_t j = s_id; j < e_id; j++) {
             cs_lnum_t v_id = f2v_ids[j];
+            const cs_real_t *v_coo = m->vtx_coord + v_id*3;
+            cs_real_t r_coo[3]
+              = {f_coo[0]-v_coo[0], f_coo[1]-v_coo[1], f_coo[2]-v_coo[2]};
             cs_real_t  *_rhs = rhs + v_id*4;
-            _rhs[0] += f_coo[0] * _b_var;
-            _rhs[1] += f_coo[1] * _b_var;
-            _rhs[2] += f_coo[2] * _b_var;
+            _rhs[0] += r_coo[0] * _b_var;
+            _rhs[1] += r_coo[1] * _b_var;
+            _rhs[2] += r_coo[2] * _b_var;
             _rhs[3] += _b_var;
           }
         }
@@ -765,10 +789,13 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
           cs_lnum_t e_id = f2v_idx[f_id+1];
           for (cs_lnum_t j = s_id; j < e_id; j++) {
             cs_lnum_t v_id = f2v_ids[j];
+            const cs_real_t *v_coo = m->vtx_coord + v_id*3;
+            cs_real_t r_coo[3]
+              = {f_coo[0]-v_coo[0], f_coo[1]-v_coo[1], f_coo[2]-v_coo[2]};
             cs_real_t  *_rhs = rhs + v_id*4;
-            _rhs[0] += f_coo[0] * _b_var;
-            _rhs[1] += f_coo[1] * _b_var;
-            _rhs[2] += f_coo[2] * _b_var;
+            _rhs[0] += r_coo[0] * _b_var;
+            _rhs[1] += r_coo[1] * _b_var;
+            _rhs[2] += r_coo[2] * _b_var;
             _rhs[3] += _b_var;
           }
         }
@@ -780,22 +807,16 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
                                 4,
                                 true,
                                 CS_REAL_TYPE,
-                                ignore_r_tr,
+                                tr_ignore,
                                 rhs);
 
       const cs_weight_t *ldlt = _weights[CS_CELL_TO_VERTEX_LR][0];
 
 #     pragma omp parallel for if(n_vertices > CS_THR_MIN)
       for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
-        const cs_real_t *v_coo = m->vtx_coord + v_id*3;
         const cs_real_t  *_ldlt = ldlt + v_id*10;
         const cs_real_t  *_rhs = rhs + v_id*4;
-        cs_real_t x[4];
-        _sym_44_solve_ldlt(_ldlt, _rhs, x);
-        v_var[v_id] = (  x[0]*v_coo[0]
-                       + x[1]*v_coo[1]
-                       + x[2]*v_coo[2]
-                       + x[3]);
+        v_var[v_id] = _sym_44_partial_solve_ldlt(_ldlt, _rhs);
       }
 
       BFT_FREE(rhs);
@@ -813,7 +834,8 @@ _cell_to_vertex_scalar(cs_cell_to_vertex_type_t   method,
  * \param[in]   method      interpolation method
  * \param[in]   verbosity   verbosity level
  * \param[in]   var_dim     varible dimension
- * \param[in]   ignore_r_tr  ignore periodicity with rotation if true
+ * \param[in]   tr_ignore   if > 0, ignore periodicity with rotation;
+ *                          if > 1, ignore all periodic transforms
  * \param[in]   c_weight    cell weight, or NULL
  * \param[in]   c_var       base cell-based variable
  * \param[in]   b_var       base boundary-face values, or NULL
@@ -825,7 +847,7 @@ static void
 _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
                         int                        verbosity,
                         cs_lnum_t                  var_dim,
-                        bool                       ignore_r_tr,
+                        int                        tr_ignore,
                         const cs_real_t            c_weight[restrict],
                         const cs_real_t            c_var[restrict],
                         const cs_real_t            b_var[restrict],
@@ -874,11 +896,11 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
                                   var_dim,
                                   true,
                                   CS_REAL_TYPE,
-                                  ignore_r_tr,
+                                  tr_ignore,
                                   v_var);
 
         if (! _set[CS_CELL_TO_VERTEX_UNWEIGHTED])
-          _cell_to_vertex_w_unweighted(ignore_r_tr);
+          _cell_to_vertex_w_unweighted(tr_ignore);
 
         const cs_weight_t *w = _weights[CS_CELL_TO_VERTEX_UNWEIGHTED][0];
         for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
@@ -908,14 +930,14 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
                                   var_dim,
                                   true,
                                   CS_REAL_TYPE,
-                                  ignore_r_tr,
+                                  tr_ignore,
                                   v_var);
           cs_interface_set_sum_tr(m->vtx_interfaces,
                                   n_vertices,
                                   1,
                                   true,
                                   CS_REAL_TYPE,
-                                  ignore_r_tr,
+                                  tr_ignore,
                                   v_w);
         }
         for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
@@ -931,7 +953,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
   case CS_CELL_TO_VERTEX_SHEPARD:
     {
       if (! _set[CS_CELL_TO_VERTEX_SHEPARD])
-        _cell_to_vertex_w_inv_distance(ignore_r_tr);
+        _cell_to_vertex_w_inv_distance(tr_ignore);
 
       const cs_weight_t *w = _weights[CS_CELL_TO_VERTEX_SHEPARD][0];
 
@@ -1035,7 +1057,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
                                 var_dim,
                                 true,
                                 CS_REAL_TYPE,
-                                ignore_r_tr,
+                                tr_ignore,
                                 v_var);
 
       if (c_weight != NULL) {
@@ -1045,7 +1067,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
                                   1,
                                   true,
                                   CS_REAL_TYPE,
-                                  ignore_r_tr,
+                                  tr_ignore,
                                   v_w);
         for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
           for (cs_lnum_t k = 0; k < var_dim; k++)
@@ -1060,7 +1082,7 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
   case CS_CELL_TO_VERTEX_LR:
     {
       if (! _set[CS_CELL_TO_VERTEX_LR])
-        _cell_to_vertex_f_lsq(ignore_r_tr);
+        _cell_to_vertex_f_lsq(tr_ignore);
 
       cs_real_t  *rhs;
       cs_lnum_t  rhs_size = n_vertices*4*var_dim;
@@ -1075,11 +1097,14 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
         cs_lnum_t e_id = c2v_idx[c_id+1];
         for (cs_lnum_t j = s_id; j < e_id; j++) {
           cs_lnum_t v_id = c2v_ids[j];
+          const cs_real_t *v_coo = m->vtx_coord + v_id*3;
+          cs_real_t r_coo[3]
+            = {c_coo[0]-v_coo[0], c_coo[1]-v_coo[1], c_coo[2]-v_coo[2]};
           for (cs_lnum_t k = 0; k < var_dim; k++) {
             cs_real_t  *_rhs = rhs + v_id*4*var_dim + k*4;
-            _rhs[0] += c_coo[0] * _c_var[k];
-            _rhs[1] += c_coo[1] * _c_var[k];
-            _rhs[2] += c_coo[2] * _c_var[k];
+            _rhs[0] += r_coo[0] * _c_var[k];
+            _rhs[1] += r_coo[1] * _c_var[k];
+            _rhs[2] += r_coo[2] * _c_var[k];
             _rhs[3] += _c_var[k];
           }
         }
@@ -1094,11 +1119,14 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
           cs_lnum_t e_id = f2v_idx[f_id+1];
           for (cs_lnum_t j = s_id; j < e_id; j++) {
             cs_lnum_t v_id = f2v_ids[j];
+            const cs_real_t *v_coo = m->vtx_coord + v_id*3;
+            cs_real_t r_coo[3]
+              = {f_coo[0]-v_coo[0], f_coo[1]-v_coo[1], f_coo[2]-v_coo[2]};
             for (cs_lnum_t k = 0; k < var_dim; k++) {
               cs_real_t  *_rhs = rhs + v_id*4*var_dim + k*4;
-              _rhs[0] += f_coo[0] * _b_var[k];
-              _rhs[1] += f_coo[1] * _b_var[k];
-              _rhs[2] += f_coo[2] * _b_var[k];
+              _rhs[0] += r_coo[0] * _b_var[k];
+              _rhs[1] += r_coo[1] * _b_var[k];
+              _rhs[2] += r_coo[2] * _b_var[k];
               _rhs[3] += _b_var[k];
             }
           }
@@ -1112,11 +1140,14 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
           cs_lnum_t e_id = f2v_idx[f_id+1];
           for (cs_lnum_t j = s_id; j < e_id; j++) {
             cs_lnum_t v_id = f2v_ids[j];
+            const cs_real_t *v_coo = m->vtx_coord + v_id*3;
+            cs_real_t r_coo[3]
+              = {f_coo[0]-v_coo[0], f_coo[1]-v_coo[1], f_coo[2]-v_coo[2]};
             for (cs_lnum_t k = 0; k < var_dim; k++) {
               cs_real_t  *_rhs = rhs + v_id*4*var_dim + k*4;
-              _rhs[0] += f_coo[0] * _b_var[k];
-              _rhs[1] += f_coo[1] * _b_var[k];
-              _rhs[2] += f_coo[2] * _b_var[k];
+              _rhs[0] += r_coo[0] * _b_var[k];
+              _rhs[1] += r_coo[1] * _b_var[k];
+              _rhs[2] += r_coo[2] * _b_var[k];
               _rhs[3] += _b_var[k];
             }
           }
@@ -1129,23 +1160,17 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
                                 4*var_dim,
                                 true,
                                 CS_REAL_TYPE,
-                                ignore_r_tr,
+                                tr_ignore,
                                 rhs);
 
       const cs_weight_t *ldlt = _weights[CS_CELL_TO_VERTEX_LR][0];
 
 #     pragma omp parallel for if(n_vertices > CS_THR_MIN)
       for (cs_lnum_t v_id = 0; v_id < n_vertices; v_id++) {
-        const cs_real_t *v_coo = m->vtx_coord + v_id*3;
         const cs_real_t  *_ldlt = ldlt + v_id*10;
         for (cs_lnum_t k = 0; k < var_dim; k++) {
           const cs_real_t  *_rhs = rhs + v_id*4*var_dim + k*4;
-          cs_real_t x[4];
-          _sym_44_solve_ldlt(_ldlt, _rhs, x);
-          v_var[v_id*var_dim + k] = (  x[0]*v_coo[0]
-                                     + x[1]*v_coo[1]
-                                     + x[2]*v_coo[2]
-                                     + x[3]);
+          v_var[v_id*var_dim + k] = _sym_44_partial_solve_ldlt(_ldlt, _rhs);
         }
       }
 
@@ -1205,10 +1230,12 @@ cs_cell_to_vertex(cs_cell_to_vertex_type_t   method,
 {
   CS_UNUSED(verbosity);
 
+  int tr_ignore = (ignore_rot_perio) ? 1 : 0;
+
   if (var_dim == 1)
     _cell_to_vertex_scalar(method,
                            verbosity,
-                           ignore_rot_perio,
+                           tr_ignore,
                            c_weight,
                            c_var,
                            b_var,
@@ -1218,7 +1245,7 @@ cs_cell_to_vertex(cs_cell_to_vertex_type_t   method,
     _cell_to_vertex_strided(method,
                             verbosity,
                             var_dim,
-                            ignore_rot_perio,
+                            tr_ignore,
                             c_weight,
                             c_var,
                             b_var,

@@ -4512,7 +4512,7 @@ cs_interface_set_sum(const cs_interface_set_t  *ifs,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Update the sum of values for elements associated with an
- * interface set, allowing control over periodicity of rotation.
+ * interface set, allowing control over periodicity.
  *
  * On input, the variable array should contain local contributions. On output,
  * contributions from matching elements on parallel or periodic boundaries
@@ -4525,7 +4525,8 @@ cs_interface_set_sum(const cs_interface_set_t  *ifs,
  * \param[in]       stride     number of values (non interlaced) by entity
  * \param[in]       interlace  true if variable is interlaced (for stride > 1)
  * \param[in]       datatype   type of data considered
- * \param[in]       ignore_rotation  ignore rotation if present ?
+ * \param[in]       tr_ignore  if > 0, ignore periodicity with rotation;
+ *                             if > 1, ignore all periodic transforms
  * \param[in, out]  var        variable buffer
  */
 /*----------------------------------------------------------------------------*/
@@ -4536,26 +4537,27 @@ cs_interface_set_sum_tr(const cs_interface_set_t  *ifs,
                         cs_lnum_t                  stride,
                         bool                       interlace,
                         cs_datatype_t              datatype,
-                        bool                       ignore_rotation,
+                        int                        tr_ignore,
                         void                      *var)
 {
-  int i;
-  cs_lnum_t j, k, l;
   cs_lnum_t stride_size = cs_datatype_size[datatype]*stride;
   unsigned char *buf = NULL;
 
-  bool ignore_tr = false;
+  int n_tr = 0;
 
-  if (ignore_rotation && ifs->periodicity != NULL) {
-    int n_tr = fvm_periodicity_get_n_transforms(ifs->periodicity);
-    for (int tr_id = 0; tr_id < n_tr; tr_id++) {
-      if (fvm_periodicity_get_type(ifs->periodicity, tr_id)
-          > FVM_PERIODICITY_TRANSLATION)
-        ignore_tr = true;
+  if (tr_ignore > 0 && ifs->periodicity != NULL) {
+    if (tr_ignore < 2) {
+      int n_tr_max = fvm_periodicity_get_n_transforms(ifs->periodicity);
+      for (int tr_id = 0; tr_id < n_tr_max; tr_id++) {
+        if (fvm_periodicity_get_type(ifs->periodicity, tr_id)
+            < FVM_PERIODICITY_ROTATION)
+          n_tr = tr_id + 1;
+      }
     }
+    n_tr += 1; /* add base "identity" transform_id */
   }
 
-  if (ignore_tr == false) {
+  if (n_tr < 1) {
     cs_interface_set_sum(ifs,
                          n_elts,
                          stride,
@@ -4564,6 +4566,13 @@ cs_interface_set_sum_tr(const cs_interface_set_t  *ifs,
                          var);
     return;
   }
+
+  /* We can use a fixed max periodicity type here based on translation,
+     because when even translation is ignored, n_tr has been set to 1 above,
+     and the first transform is "no transform", so tests should always
+     return a correct value */
+
+  fvm_periodicity_type_t tr_threshold = FVM_PERIODICITY_ROTATION;
 
   BFT_MALLOC(buf, cs_interface_set_n_elts(ifs)*stride_size, unsigned char);
 
@@ -4585,50 +4594,36 @@ cs_interface_set_sum_tr(const cs_interface_set_t  *ifs,
 
   /* Now increment values */
 
+  cs_lnum_t j = 0;
+
   switch (datatype) {
 
-  case CS_CHAR:
-    for (i = 0, j = 0; i < ifs->size; i++) {
-      cs_interface_t *itf = ifs->interfaces[i];
-      cs_lnum_t itf_size = itf->tr_index[1];
-      char *v = var;
-      const char *p = (const char *)buf + j*stride;
-      if (stride < 2 || interlace) {
-        for (k = 0; k < itf_size; k++) {
-          cs_lnum_t elt_id = itf->elt_id[k];
-          for (l = 0; l < stride; l++)
-            v[elt_id*stride + l] += p[k*stride + l];
-        }
-      }
-      else {
-        for (k = 0; k < itf_size; k++) {
-          cs_lnum_t elt_id = itf->elt_id[k];
-          for (l = 0; l < stride; l++)
-            v[elt_id + l*n_elts] += p[k*stride + l];
-        }
-      }
-      j += itf->size;
-    }
-    break;
-
   case CS_FLOAT:
-    for (i = 0, j = 0; i < ifs->size; i++) {
+    for (int i = 0; i < ifs->size; i++) {
       cs_interface_t *itf = ifs->interfaces[i];
-      cs_lnum_t itf_size = itf->tr_index[1];
-      float *v = var;
-      const float *p = (const float *)buf + j*stride;
-      if (stride < 2 || interlace) {
-        for (k = 0; k < itf_size; k++) {
-          cs_lnum_t elt_id = itf->elt_id[k];
-          for (l = 0; l < stride; l++)
-            v[elt_id*stride + l] += p[k*stride + l];
+      for (int tr_id = 0; tr_id < n_tr; tr_id++) {
+        cs_lnum_t s_id = itf->tr_index[tr_id];
+        cs_lnum_t e_id = itf->tr_index[tr_id+1];
+        if (e_id > s_id && tr_id > 0) {
+          if (  fvm_periodicity_get_type(ifs->periodicity, tr_id-1)
+              >= tr_threshold)
+            continue;
         }
-      }
-      else {
-        for (k = 0; k < itf_size; k++) {
-          cs_lnum_t elt_id = itf->elt_id[k];
-          for (l = 0; l < stride; l++)
-            v[elt_id + l*n_elts] += p[k*stride + l];
+        float *v = var;
+        const float *p = (const float *)buf + j*stride;
+        if (stride < 2 || interlace) {
+          for (cs_lnum_t k = s_id; k < e_id; k++) {
+            cs_lnum_t elt_id = itf->elt_id[k];
+            for (cs_lnum_t l = 0; l < stride; l++)
+              v[elt_id*stride + l] += p[k*stride + l];
+          }
+        }
+        else {
+          for (cs_lnum_t k = s_id; k < e_id; k++) {
+            cs_lnum_t elt_id = itf->elt_id[k];
+            for (cs_lnum_t l = 0; l < stride; l++)
+              v[elt_id + l*n_elts] += p[k*stride + l];
+          }
         }
       }
       j += itf->size;
@@ -4636,143 +4631,31 @@ cs_interface_set_sum_tr(const cs_interface_set_t  *ifs,
     break;
 
   case CS_DOUBLE:
-    for (i = 0, j = 0; i < ifs->size; i++) {
+    for (int i = 0; i < ifs->size; i++) {
       cs_interface_t *itf = ifs->interfaces[i];
-      cs_lnum_t itf_size = itf->tr_index[1];
-      double *v = var;
-      const double *p = (const double *)buf + j*stride;
-      if (stride < 2 || interlace) {
-        for (k = 0; k < itf_size; k++) {
-          cs_lnum_t elt_id = itf->elt_id[k];
-          for (l = 0; l < stride; l++)
-            v[elt_id*stride + l] += p[k*stride + l];
+      for (int tr_id = 0; tr_id < n_tr; tr_id++) {
+        cs_lnum_t s_id = itf->tr_index[tr_id];
+        cs_lnum_t e_id = itf->tr_index[tr_id+1];
+        if (e_id > s_id && tr_id > 0) {
+          if (  fvm_periodicity_get_type(ifs->periodicity, tr_id-1)
+              >= tr_threshold)
+            continue;
         }
-      }
-      else {
-        for (k = 0; k < itf_size; k++) {
-          cs_lnum_t elt_id = itf->elt_id[k];
-          for (l = 0; l < stride; l++)
-            v[elt_id + l*n_elts] += p[k*stride + l];
+        double *v = var;
+        const double *p = (const double *)buf + j*stride;
+        if (stride < 2 || interlace) {
+          for (cs_lnum_t k = s_id; k < e_id; k++) {
+            cs_lnum_t elt_id = itf->elt_id[k];
+            for (cs_lnum_t l = 0; l < stride; l++)
+              v[elt_id*stride + l] += p[k*stride + l];
+          }
         }
-      }
-      j += itf->size;
-    }
-    break;
-
-  case CS_INT32:
-    for (i = 0, j = 0; i < ifs->size; i++) {
-      cs_interface_t *itf = ifs->interfaces[i];
-      cs_lnum_t itf_size = itf->tr_index[1];
-      int32_t *v = var;
-      const int32_t *p = (const int32_t *)buf + j*stride;
-      if (stride < 2 || interlace) {
-        for (k = 0; k < itf_size; k++) {
-          cs_lnum_t elt_id = itf->elt_id[k];
-          for (l = 0; l < stride; l++)
-            v[elt_id*stride + l] += p[k*stride + l];
-        }
-      }
-      else {
-        for (k = 0; k < itf_size; k++) {
-          cs_lnum_t elt_id = itf->elt_id[k];
-          for (l = 0; l < stride; l++)
-            v[elt_id + l*n_elts] += p[k*stride + l];
-        }
-      }
-      j += itf->size;
-    }
-    break;
-
-  case CS_INT64:
-    for (i = 0, j = 0; i < ifs->size; i++) {
-      cs_interface_t *itf = ifs->interfaces[i];
-      cs_lnum_t itf_size = itf->tr_index[1];
-      int64_t *v = var;
-      const int64_t *p = (const int64_t *)buf + j*stride;
-      if (stride < 2 || interlace) {
-        for (k = 0; k < itf_size; k++) {
-          cs_lnum_t elt_id = itf->elt_id[k];
-          for (l = 0; l < stride; l++)
-            v[elt_id*stride + l] += p[k*stride + l];
-        }
-      }
-      else {
-        for (k = 0; k < itf_size; k++) {
-          cs_lnum_t elt_id = itf->elt_id[k];
-          for (l = 0; l < stride; l++)
-            v[elt_id + l*n_elts] += p[k*stride + l];
-        }
-      }
-      j += itf->size;
-    }
-    break;
-
-  case CS_UINT16:
-    for (i = 0, j = 0; i < ifs->size; i++) {
-      cs_interface_t *itf = ifs->interfaces[i];
-      cs_lnum_t itf_size = itf->tr_index[1];
-      uint16_t *v = var;
-      const uint16_t *p = (const uint16_t *)buf + j*stride;
-      if (stride < 2 || interlace) {
-        for (k = 0; k < itf_size; k++) {
-          cs_lnum_t elt_id = itf->elt_id[k];
-          for (l = 0; l < stride; l++)
-            v[elt_id*stride + l] += p[k*stride + l];
-        }
-      }
-      else {
-        for (k = 0; k < itf_size; k++) {
-          cs_lnum_t elt_id = itf->elt_id[k];
-          for (l = 0; l < stride; l++)
-            v[elt_id + l*n_elts] += p[k*stride + l];
-        }
-      }
-      j += itf->size;
-    }
-    break;
-
-  case CS_UINT32:
-    for (i = 0, j = 0; i < ifs->size; i++) {
-      cs_interface_t *itf = ifs->interfaces[i];
-      cs_lnum_t itf_size = itf->tr_index[1];
-      uint32_t *v = var;
-      const uint32_t *p = (const uint32_t *)buf + j*stride;
-      if (stride < 2 || interlace) {
-        for (k = 0; k < itf_size; k++) {
-          cs_lnum_t elt_id = itf->elt_id[k];
-          for (l = 0; l < stride; l++)
-            v[elt_id*stride + l] += p[k*stride + l];
-        }
-      }
-      else {
-        for (k = 0; k < itf_size; k++) {
-          cs_lnum_t elt_id = itf->elt_id[k];
-          for (l = 0; l < stride; l++)
-            v[elt_id + l*n_elts] += p[k*stride + l];
-        }
-      }
-      j += itf->size;
-    }
-    break;
-
-  case CS_UINT64:
-    for (i = 0, j = 0; i < ifs->size; i++) {
-      cs_interface_t *itf = ifs->interfaces[i];
-      cs_lnum_t itf_size = itf->tr_index[1];
-      uint64_t *v = var;
-      const uint64_t *p = (const uint64_t *)buf + j*stride;
-      if (stride < 2 || interlace) {
-        for (k = 0; k < itf_size; k++) {
-          cs_lnum_t elt_id = itf->elt_id[k];
-          for (l = 0; l < stride; l++)
-            v[elt_id*stride + l] += p[k*stride + l];
-        }
-      }
-      else {
-        for (k = 0; k < itf_size; k++) {
-          cs_lnum_t elt_id = itf->elt_id[k];
-          for (l = 0; l < stride; l++)
-            v[elt_id + l*n_elts] += p[k*stride + l];
+        else {
+          for (cs_lnum_t k = s_id; k < e_id; k++) {
+            cs_lnum_t elt_id = itf->elt_id[k];
+            for (cs_lnum_t l = 0; l < stride; l++)
+              v[elt_id + l*n_elts] += p[k*stride + l];
+          }
         }
       }
       j += itf->size;
@@ -4780,9 +4663,41 @@ cs_interface_set_sum_tr(const cs_interface_set_t  *ifs,
     break;
 
   default:
-    bft_error(__FILE__, __LINE__, 0,
-              _("Called %s with unhandled datatype (%d)."),
-              __func__, (int)datatype);
+    for (int i = 0; i < ifs->size; i++) {
+      cs_interface_t *itf = ifs->interfaces[i];
+      for (int tr_id = 0; tr_id < n_tr; tr_id++) {
+        cs_lnum_t s_id = itf->tr_index[tr_id];
+        cs_lnum_t e_id = itf->tr_index[tr_id+1];
+        if (e_id > s_id && tr_id > 0) {
+          if (  fvm_periodicity_get_type(ifs->periodicity, tr_id-1)
+              >= tr_threshold)
+            continue;
+        }
+        char *v = var;
+        cs_lnum_t _stride = stride * cs_datatype_size[datatype];
+        const char *p = (const char *)buf + j*_stride;
+        if (stride < 2 || interlace) {
+          for (cs_lnum_t k = s_id; k < e_id; k++) {
+            cs_lnum_t elt_id = itf->elt_id[k];
+            for (cs_lnum_t l = 0; l < _stride; l++)
+              v[elt_id*_stride + l] += p[k*_stride + l];
+          }
+        }
+        else {
+          cs_lnum_t elt_size = cs_datatype_size[datatype];
+          for (cs_lnum_t k = s_id; k < e_id; k++) {
+            cs_lnum_t elt_id = itf->elt_id[k];
+            for (cs_lnum_t l = 0; l < stride; l++) {
+              for (cs_lnum_t q = 0; q < elt_size; q++)
+                v[elt_id*elt_size + l*n_elts + q]
+                  += p[k*_stride + l*elt_size + q];
+            }
+          }
+        }
+      }
+      j += itf->size;
+    }
+
   }
 
   BFT_FREE(buf);
