@@ -67,21 +67,6 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define global options for couplings.
- *
- * These options allow defining the time step synchronization policy,
- * as well as a time step multiplier.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_user_coupling(void)
-{
-
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Define couplings with SYRTHES code.
  *
  * This is done by calling the \ref cs_syr_coupling_define function for each
