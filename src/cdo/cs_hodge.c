@@ -1314,7 +1314,7 @@ cs_hodge_init_context(const cs_cdo_connect_t   *connect,
 #else
   assert(cs_glob_n_threads == 1);
   hodge_array[0] = cs_hodge_create(connect, property, hp,
-                                      need_tensor, need_eigen);
+                                   need_tensor, need_eigen);
 #endif /* openMP */
 
   return hodge_array;
@@ -2841,23 +2841,23 @@ cs_hodge_vcb_voro_get(const cs_cell_mesh_t     *cm,
   if (pty->is_unity) {
 
     /* H(c,c) = 0.25*|c| */
-    hmat->val[msize*(cm->n_vc + 1)] = 0.25*cm->vol_c;
+    hmat->val[msize*cm->n_vc] = 0.25*cm->vol_c;
 
     /* H(c,c) = 0.75*|dcell(v) \cap c| */
     const double  vol_coef = 0.75*cm->vol_c;
     for (short int vi = 0; vi < cm->n_vc; vi++)
-      hmat->val[msize*(vi + 1)] = vol_coef*cm->wvc[vi];
+      hmat->val[msize*vi] = vol_coef*cm->wvc[vi];
 
   }
   else {
 
     /* H(c,c) = 0.25*|c| */
-    hmat->val[msize*(cm->n_vc + 1)] = pty->value*0.25*cm->vol_c;
+    hmat->val[msize*cm->n_vc] = pty->value*0.25*cm->vol_c;
 
     /* H(c,c) = 0.75*|dcell(v) \cap c| */
     const double  vol_coef = 0.75*cm->vol_c*pty->value;
     for (short int vi = 0; vi < cm->n_vc; vi++)
-      hmat->val[msize*(vi + 1)] = vol_coef*cm->wvc[vi];
+      hmat->val[msize*vi] = vol_coef*cm->wvc[vi];
 
   }
 
