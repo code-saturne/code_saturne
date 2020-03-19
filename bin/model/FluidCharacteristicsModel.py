@@ -1077,9 +1077,10 @@ class FluidCharacteristicsModel(Variables, Model):
         name = self.m_sca.getScalarDiffusivityName(scalar)
         exp  = self.m_sca.getDiffFormula(scalar)
         req = [(str(name), str(scalar)+' diffusion coefficient')]
-        sym = [('x','cell center coordinate'),
-               ('y','cell center coordinate'),
-               ('z','cell center coordinate'),]
+        sym = [('x', 'cell center coordinate'),
+               ('y', 'cell center coordinate'),
+               ('z', 'cell center coordinate'),
+               ('volume', 'Zone volume')]
         sym.append((str(scalar),str(scalar)))
         diff0_value = self.m_sca.getScalarDiffusivityInitialValue(scalar)
         sym.append((str(name)+'_ref', str(scalar)+' diffusion coefficient (reference value, m^2/s) = '+str(diff0_value)))

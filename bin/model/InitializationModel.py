@@ -251,6 +251,7 @@ omega = k^0.5/almax;"""
                ('x','cell center coordinate'),
                ('y','cell center coordinate'),
                ('z','cell center coordinate'),
+               ('volume', 'Zone volume'),
                ('uref','reference velocity'),
                ('almax','reference length')]
 
@@ -302,7 +303,8 @@ omega = k^0.5/almax;"""
         sym = [('uref', 'reference velocity'),
                ('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
+               ('z', 'cell center coordinate'),
+               ('volume', 'Zone volume')]
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
@@ -348,7 +350,8 @@ omega = k^0.5/almax;"""
             req = [('temperature', 'temperature')]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
+               ('z', 'cell center coordinate'),
+               ('volume', 'Zone volume')]
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
@@ -497,7 +500,8 @@ pressure = p0 + g * ro * z;\n"""
         req = [('pressure', 'pressure')]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
+               ('z', 'cell center coordinate'),
+               ('volume', 'Zone volume')]
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
@@ -546,7 +550,8 @@ pressure = p0 + g * ro * z;\n"""
         req = [('H', 'hydraulic head')]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
+               ('z', 'cell center coordinate'),
+               ('volume', 'Zone volume')]
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
@@ -595,7 +600,8 @@ pressure = p0 + g * ro * z;\n"""
         req = [('density', 'density')]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
+               ('z', 'cell center coordinate'),
+               ('volume', 'Zone volume')]
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
@@ -643,7 +649,8 @@ pressure = p0 + g * ro * z;\n"""
         req = [('temperature', 'temperature')]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
+               ('z', 'cell center coordinate'),
+               ('volume', 'Zone volume')]
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
@@ -691,7 +698,8 @@ pressure = p0 + g * ro * z;\n"""
         req = [('total_energy', 'Energy')]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
+               ('z', 'cell center coordinate'),
+               ('volume', 'Zone volume')]
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
@@ -761,7 +769,8 @@ pressure = p0 + g * ro * z;\n"""
         req = [(str(name), str(name))]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
+               ('z', 'cell center coordinate'),
+               ('volume', 'Zone volume')]
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
@@ -810,7 +819,8 @@ pressure = p0 + g * ro * z;\n"""
         req = [(str(scalar), str(scalar))]
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
+               ('z', 'cell center coordinate'),
+               ('volume', 'Zone volume')]
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))

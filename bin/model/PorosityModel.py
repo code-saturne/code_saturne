@@ -208,7 +208,8 @@ tensorial_porosity[YZ]=0.;"""
 
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
+               ('z', 'cell center coordinate'),
+               ('volume', 'Zone volume')]
 
         sym.append(('volume', 'Zone volume'))
 
