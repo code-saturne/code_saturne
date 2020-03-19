@@ -208,9 +208,8 @@ tensorial_porosity[YZ]=0.;"""
 
         sym = [('x', 'cell center coordinate'),
                ('y', 'cell center coordinate'),
-               ('z', 'cell center coordinate')]
-
-        sym.append(('volume', 'Zone volume'))
+               ('z', 'cell center coordinate'),
+               ('volume', 'Zone volume')]
 
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))

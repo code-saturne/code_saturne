@@ -6,6 +6,9 @@ Bug fixes:
 - Fix bug when using PISO/nterup algorithm with second order time stepping,
   variable density and idilat = 1 algorithm.
 
+- GUI: add missing zone volume symbols for initialization and physical
+  property MEG expressions.
+
 - GUI: allow setting reference temperature for infinitely fast chemistry
   gas combustion in adiabatic case.
 
