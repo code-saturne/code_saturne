@@ -322,8 +322,11 @@ def process_cmd_line(argv, pkg):
 
     try:
         if cmds['debugger']:
+            idx_insert = 1
             for idx in range(idx_s, idx_e):
-                cmds['debugger'].insert(idx-idx_s + 1, argv[idx])
+                if argv[idx] not in cmds['debugger']:
+                    cmds['debugger'].insert(idx_insert, argv[idx])
+                    idx_insert += 1
     except Exception:
         pass
 
