@@ -1731,8 +1731,10 @@ cs_ext_neighborhood_reduce(cs_mesh_t             *mesh,
 
 #endif
 
-    double ratio = 100. * (init_cell_cells_connect_size - n_deleted_cells)
-                         / init_cell_cells_connect_size;
+    double ratio = 100;
+    if (init_cell_cells_connect_size)
+      ratio *=  (init_cell_cells_connect_size - n_deleted_cells)
+               / init_cell_cells_connect_size;
 
     bft_printf
       (_("\n"
