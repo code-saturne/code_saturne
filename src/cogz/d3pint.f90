@@ -274,7 +274,9 @@ if (idilat.ge.4) then
   call field_get_val_s(iustdy(itsrho), cpro_tsrho)
   call field_get_val_s(iustdy(ifm  ), cpro_tsfm)
   call field_get_val_s(iustdy(ifp2m  ), cpro_tsfp2m)
-  call field_get_val_s(iustdy(iscalt), cpro_tsscalt)
+  if (iscalt.ge.0) then
+    call field_get_val_s(iustdy(iscalt), cpro_tsscalt)
+  endif
   call field_get_val_s(iym(3), cpro_ym3)
 endif
 
