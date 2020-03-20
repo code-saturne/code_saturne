@@ -6,6 +6,9 @@ Bug fixes:
 - Fix bug when using PISO/nterup algorithm with second order time stepping,
   variable density and idilat = 1 algorithm.
 
+- GUI: allow setting reference temperature for infinitely fast chemistry
+  gas combustion in adiabatic case.
+
 - GUI: fix loss of PISO/nterup setting when LES is activated (GitLab issue #167).
 
 - GUI/MEG: fix some turbulence formula examples.
