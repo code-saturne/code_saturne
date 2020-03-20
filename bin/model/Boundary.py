@@ -225,7 +225,8 @@ class Boundary(object) :
 
         if not value:
             value = self._getDefaultFormula()
-            self.setFormula(value)
+            if value:
+                self.setFormula(value)
 
         return value
 

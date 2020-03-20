@@ -390,8 +390,10 @@ class DefineUserScalarsModel(Variables, Model):
                         n['name']  = new_name
 
         for node in self.case.xmlGetNodeList('formula'):
-            f = node.xmlGetTextNode().replace(old_name, new_name)
-            node.xmlSetTextNode(f)
+            text = f = node.xmlGetTextNode()
+            if text:
+                f = text.replace(old_name, new_name)
+                node.xmlSetTextNode(f)
 
         node_gw = self.node_models.xmlGetNode('groundwater_model')
         if node_gw:

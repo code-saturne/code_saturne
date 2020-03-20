@@ -6,6 +6,8 @@ Bug fixes:
 - Fix bug when using PISO/nterup algorithm with second order time stepping,
   variable density and idilat = 1 algorithm.
 
+- GUI: fix crash when changing a user scalar name with ALE (GitLab issue #165).
+
 - GUI: add missing zone volume symbols for initialization and physical
   property MEG expressions.
 
