@@ -382,7 +382,7 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.lineEditMassMolar.setText(str(m))
             self.groupBoxMassMolar.show()
 
-        if mdl_thermal != "off":
+        if mdl_thermal != "off" or mdl_gas == 'd3p':
             t = self.mdl.getTemperature()
             self.lineEditT0.setText(str(t))
             if mdl_thermal == "temperature_celsius":
