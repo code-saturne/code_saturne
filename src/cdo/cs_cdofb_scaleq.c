@@ -420,6 +420,19 @@ _sfb_conv_diff_reac(const cs_equation_param_t     *eqp,
 #endif
   }
 
+  /* Advanced user function: enable to add any user terms */
+  if (cs_equation_param_has_user_hook(eqp)) {
+
+    eqb->user_hook_function(eqp, eqb, eqc, cm, mass_hodge, diff_hodge,
+                            csys, cb);
+
+#if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
+    if (cs_dbg_cw_test(eqp, cm, csys))
+      cs_cell_sys_dump(">> Cell system matrix after user hook",
+                       csys);
+#endif
+  }
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1900,6 +1913,7 @@ cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
         cs_sdm_add_mult(csys->mat, tpty_coef, mass_mat);
 
       }
+
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_SCALEQ_DBG > 1
       if (cs_dbg_cw_test(eqp, cm, csys))
         cs_cell_sys_dump(">> Cell system matrix after time treatment",

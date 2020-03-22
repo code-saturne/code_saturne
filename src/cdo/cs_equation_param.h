@@ -82,6 +82,11 @@ BEGIN_C_DECLS
  * \brief Add an algebraic manipulation to set the value of a given set of
  *       interior degrees of freedom
  *
+ * \def CS_EQUATION_USER_HOOK
+ * \brief Activate a user hook to get a fine control of the discretization
+ *        process during the cellwise building of the linear system
+ *        Need to match the cs_equation_user_hook_t prototype
+ *
  */
 
 #define CS_EQUATION_LOCKED        (1 <<  0)  /*   1 */
@@ -92,6 +97,7 @@ BEGIN_C_DECLS
 #define CS_EQUATION_GRADDIV       (1 <<  5)  /*  32 */
 #define CS_EQUATION_REACTION      (1 <<  6)  /*  64 */
 #define CS_EQUATION_FORCE_VALUES  (1 <<  7)  /* 128 */
+#define CS_EQUATION_USER_HOOK     (1 <<  8)  /* 256 */
 
 /*!
  * @}
@@ -971,6 +977,27 @@ cs_equation_param_has_internal_enforcement(const cs_equation_param_t     *eqp)
 {
   assert(eqp != NULL);
   if (eqp->flag & CS_EQUATION_FORCE_VALUES)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Ask if the parameters of the equation has activated a user hook
+ *         to get a fine tuning of the cellwise system building
+ *
+ * \param[in] eqp          pointer to a \ref cs_equation_param_t
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_equation_param_has_user_hook(const cs_equation_param_t     *eqp)
+{
+  assert(eqp != NULL);
+  if (eqp->flag & CS_EQUATION_USER_HOOK)
     return true;
   else
     return false;

@@ -692,6 +692,49 @@ cs_equation_set_flag(cs_equation_t    *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Add a user hook to enable an advanced user to get a fine control of
+ *         the cellwise system building.
+ *         Only for an advanced usage. The context may be set to NULL if there
+ *         is no need to get additional information.
+ *
+ * \param[in, out] eq        pointer to the cs_equation_t stucture to update
+ * \param[in]      context   pointer to a structure for additional information
+ * \param[in]      func      pointer to the user function
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_user_hook(cs_equation_t              *eq,
+                          void                       *context,
+                          cs_equation_user_hook_t    *func)
+{
+  if (eq == NULL)
+    return;
+
+  cs_equation_param_t  *eqp = eq->param;
+  assert(eqp != NULL);
+
+  if (eq->builder == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Initialization of equation %s has not been done yet.\n"
+              " Please call this operation later in"
+              " cs_user_extra_operations_initialize() for instance.",
+              __func__, eqp->name);
+
+  cs_equation_builder_t   *eqb = eq->builder;
+
+  eqb->user_hook_context = context;
+  eqb->user_hook_function = func;
+  eqp->flag |= CS_EQUATION_USER_HOOK;
+
+  /* Add an entry in the setup log file (this is done after the main setup
+   * log but one needs to initialize equations before calling this function) */
+  cs_log_printf(CS_LOG_SETUP, " Equation %s: Add a user hook function\n",
+                eqp->name);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return the cs_equation_builder_t structure associated to a
  *         cs_equation_t structure. Only for an advanced usage.
  *

@@ -252,6 +252,24 @@ cs_equation_set_flag(cs_equation_t    *eq,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Add a user hook to enable an advanced user to get a fine control of
+ *         the cellwise system building.
+ *         Only for an advanced usage. The context may be set to NULL if there
+ *         is no need to get additional information.
+ *
+ * \param[in, out] eq        pointer to the cs_equation_t stucture to update
+ * \param[in]      context   pointer to a structure for additional information
+ * \param[in]      func      pointer to the user function
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_add_user_hook(cs_equation_t              *eq,
+                          void                       *context,
+                          cs_equation_user_hook_t    *func);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Return the cs_equation_builder_t structure associated to a
  *         cs_equation_t structure. Only for an advanced usage.
  *

@@ -69,12 +69,41 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
+typedef struct _equation_builder_t  cs_equation_builder_t;
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief   Generic function prototype for a hook during the cellwise building
+ *          of the linear system
+ *          Enable an advanced user to get a fine control of the discretization
+ *
+ * \param[in]      eqp         pointer to a cs_equation_param_t structure
+ * \param[in]      eqb         pointer to a cs_equation_builder_t structure
+ * \param[in]      eqc         context to cast for this discretization
+ * \param[in]      cm          pointer to a cellwise view of the mesh
+ * \param[in, out] mass_hodge  pointer to a cs_hodge_t structure (mass matrix)
+ * \param[in, out] diff_hodge  pointer to a cs_hodge_t structure (diffusion)
+ * \param[in, out] csys        pointer to a cellwise view of the system
+ * \param[in, out] cb          pointer to a cellwise builder
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_equation_user_hook_t)(const cs_equation_param_t     *eqp,
+                          const cs_equation_builder_t   *eqb,
+                          const void                    *eq_context,
+                          const cs_cell_mesh_t          *cm,
+                          cs_hodge_t                    *mass_hodge,
+                          cs_hodge_t                    *diff_hodge,
+                          cs_cell_sys_t                 *csys,
+                          cs_cell_builder_t             *cb);
+
 /*! \struct cs_equation_builder_t
  *  \brief Store common elements used when building an algebraic system
  *  related to an equation
  */
 
-typedef struct {
+struct _equation_builder_t {
 
   bool         init_step;    /*!< true if this is the initialization step */
 
@@ -126,6 +155,29 @@ typedef struct {
 
   /*!
    * @}
+   * @name User hook
+   * @{
+   *
+   * \var user_hook_context
+   * Pointer to a shared structure (the lifecycle of this structure is not
+   * managed by the current cs_equation_builder_t structure)
+   *
+   * \var user_hook_function
+   * Function pointer associated to a predefined prototype
+   * This function enables a user to modify the cellwise system (matrix and
+   * rhs) before applying the time scheme, the static condensation if needed or
+   * the strong/penalized enforcement of boundary conditions.
+   * This is useful to add a term in the equation like an advanced source term
+   * without the need to allocate an array and with an access to the local
+   * structure such as the local cell mesh, the cell builder and the high-level
+   * structures related to an equation
+   */
+
+  void                      *user_hook_context;
+  cs_equation_user_hook_t   *user_hook_function;
+
+  /*!
+   * @}
    * @name Boundary conditions
    * @{
    *
@@ -159,7 +211,7 @@ typedef struct {
 
   /*! @} */
 
-} cs_equation_builder_t;
+};
 
 /*
  * Structure used to store information generated during the analysis
