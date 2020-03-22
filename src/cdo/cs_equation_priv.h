@@ -335,7 +335,7 @@ struct _cs_equation_t {
   /* Algebraic system */
   /* ---------------- */
 
-  /* There are possibly two different sizes for the linear system to handle
+  /* There can be two different sizes for the linear system to handle
      - One for "scatter"-type operations based on the number of geometrical
        entities owned by the local instance of the mesh
      - One for "gather"-type operations based on a balance of the number of

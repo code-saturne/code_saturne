@@ -70,10 +70,12 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Interpolate an array defined at vertices from an array defined at
- *         cells
+ * \brief  Activate equation(s) used for the field interpolation
+ *         Two choices are available which can be combined:
+ *         CS_CDO_FIELD_INTERPOLATION_SCALAR_C2V
+ *         CS_CDO_FIELD_INTERPOLATION_SCALAR_C2F
  *
- * \param[in]     mode      activate which kind of interpolation operation
+ * \param[in]      mode            kind of interpolation to perform
  */
 /*----------------------------------------------------------------------------*/
 

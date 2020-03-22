@@ -729,8 +729,8 @@ cs_domain_finalize_setup(cs_domain_t         *domain)
 void
 cs_domain_initialize_systems(cs_domain_t   *domain)
 {
-  /* Initialize system before resolution for all equations
-   *   - create system builder
+  /* Initialize system before building the linear systems
+   *  - create system builder
    *  - initialize field according to initial conditions
    *  - initialize source term
    *  - set the initial condition to all variable fields

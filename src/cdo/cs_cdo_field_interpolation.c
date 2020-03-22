@@ -90,11 +90,12 @@ cs_equation_t  *_field_interpolation_scalar_c2f_eq = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Interpolate an array defined at vertices from an array defined at
- *         cells
+ * \brief  Activate equation(s) used for the field interpolation
+ *         Two choices are available which can be combined:
+ *         CS_CDO_FIELD_INTERPOLATION_SCALAR_C2V
+ *         CS_CDO_FIELD_INTERPOLATION_SCALAR_C2F
  *
- * \param[in]      cell_values     values at cells
- * \param[in, out] vtx_values      interpolated values at vertices
+ * \param[in]      mode            kind of interpolation to perform
  */
 /*----------------------------------------------------------------------------*/
 

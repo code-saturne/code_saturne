@@ -532,7 +532,7 @@ cs_cdo_initialize_structures(cs_domain_t           *domain,
   /* Last setup stage */
   cs_domain_finalize_setup(domain);
 
-  /* Initialization default post-processing for the computational domain */
+  /* Initialization of the default post-processing for the computational domain */
   cs_domain_post_init(domain);
 
   /* Summary of the settings */
