@@ -769,7 +769,14 @@ cs_domain_initialize_systems(cs_domain_t   *domain)
                       domain->time_step,
                       false); /* operate current to previous ? */
 
-  /* Set the initial state for the groundawater flow module */
+  /* Set the initial state for the Navier-Stokes system */
+  if (cs_solidification_is_activated())
+    cs_solidification_initialize(domain->mesh,
+                                 domain->connect,
+                                 domain->cdo_quantities,
+                                 domain->time_step);
+
+  /* Set the initial state for the groundwater flow module */
   if (cs_gwf_is_activated())
     cs_gwf_update(domain->mesh,
                   domain->connect,

@@ -1101,6 +1101,36 @@ cs_solidification_log_setup(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Initialize the context structure used to build the algebraic system
+ *         This is done after the setup step.
+ *
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  pointer to a cs_time_step_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solidification_initialize(const cs_mesh_t              *mesh,
+                             const cs_cdo_connect_t       *connect,
+                             const cs_cdo_quantities_t    *quant,
+                             const cs_time_step_t         *time_step)
+{
+  cs_solidification_t  *solid = cs_solidification_structure;
+
+  /* Sanity checks */
+  if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
+
+
+  /* Update fields and properties which are related to solved variables */
+  solid->update(mesh, connect, quant, time_step,
+                false); /* operate current to previous ? */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Solve equations related to the solidification module
  *
  * \param[in]      mesh       pointer to a cs_mesh_t structure
