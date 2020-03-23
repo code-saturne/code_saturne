@@ -80,6 +80,96 @@ else:
     TEXT_TYPES = (str,)
 
 #==============================================================================
+# Classes used to handle ComboBox subsections (groups)
+#==============================================================================
+
+# Qt Role used to differentiate whether a ComboBox entry is a group child
+# or not
+GroupRole = Qt.UserRole
+
+
+class GroupDelegate(QStyledItemDelegate):
+    """
+    Class used to create a group delegate which applies a tab to a combobox
+    entry if it is a group child. Only applied to the visual style!
+    """
+    def initStyleOption(self, option, index):
+        super(GroupDelegate, self).initStyleOption(option, index)
+        if not index.data(GroupRole):
+            option.text = "   " + option.text
+
+class GroupItem():
+    """
+    GroupItem class.
+    Handles the subsections in a ComboModel.
+    """
+
+    def __init__(self, name, index):
+        """
+        Init method. Inputs are:
+        name  : String with the name of the group
+        index : Position of the group name in the combobox list of elements
+        """
+        self._name  = name
+        self._index = index
+
+        self._children = []
+        self._number_of_children = 0
+
+
+    def addChild(self, name):
+        """
+        Method to add a child with the given name.
+        Returns the index of the child to be used if the 'insertRow' method.
+        """
+        self._children.append(name)
+        self._number_of_children += 1
+
+        child_index = self._index + self._number_of_children
+
+        return child_index
+
+    def getIndex(self):
+        """
+        Method which returns the index of the group
+        """
+        return self._index
+
+    def getChildIndex(self, childName):
+        """
+        Method to retrieve the index of a given child
+        """
+        if childName not in self._children:
+            msg = "%s is not part of group %s\n" % (childName, self._name)
+            raise Exception(msg)
+
+        child_index = self._children.index(childName) + self._index + 1
+        return child_index
+
+
+    def getNumberOfChildren(self):
+        """
+        Method which returns the number of children in the group
+        """
+        return self._number_of_children
+
+
+    def incrementIndex(self):
+
+        self._index += 1
+
+    def generateItem(self):
+
+        item  = QStandardItem(str(self._name))
+        item.setData(True, GroupRole)
+
+        font = item.font()
+        font.setBold(True)
+        item.setFont(font)
+        item.setFlags(item.flags() & ~Qt.ItemIsSelectable)
+
+        return item
+#==============================================================================
 # Strings
 #==============================================================================
 
@@ -320,11 +410,28 @@ class ComboModel:
         self.dicoV2M = {}
         self.dicoM2V = {}
 
+        self.item_groups = {}
+
         self.items   = []
         self.combo.setModel(self.model)
+        self.combo.setItemDelegate(GroupDelegate(self.combo))
 
 
-    def addItem(self, str_view, str_model="", warn=False):
+    def addItemGroup(self, group_name):
+
+        if group_name in self.item_groups.keys():
+            return
+
+        index = self.last
+        self.item_groups[group_name] = GroupItem(group_name, index)
+
+        item = self.item_groups[group_name].generateItem()
+        self.model.setItem(index, item)
+
+        self.last += 1
+
+
+    def addItem(self, str_view, str_model="", warn=False, groupName=None):
         """
         Insert an item in the model.
 
@@ -337,16 +444,35 @@ class ComboModel:
         warn: If True, entry is marked with a color.
         """
         item  = QStandardItem(str(str_view))
+        item.setData(True, GroupRole)
 
-        index = self.last
-        self.model.setItem(index, item)
+        if groupName in self.item_groups.keys():
+            # Insert the child after the group name in the ComboModel
+            item.setData(False, GroupRole)
+            index = self.item_groups[groupName].addChild(str(str_view))
+            self.model.setItem(index, item)
+
+            # In case groups were created before, update the index of
+            # the following groups in the list
+            for key in self.item_groups.keys():
+                gpe = self.item_groups[key]
+                if gpe.getIndex() >= index:
+                    gpe.incrementIndex()
+
+                    idx = gpe.getIndex()
+                    it  = gpe.generateItem()
+                    self.model.setItem(idx, it)
+
+        else:
+            index = self.last
+            self.model.setItem(index, item)
 
         if warn:
             self.combo.setItemData(index,
                                    QColor(Qt.red),
                                    Qt.TextColorRole)
 
-        self.last = index + 1
+        self.last += 1
 
         if not str_model: str_model = str_view
 
