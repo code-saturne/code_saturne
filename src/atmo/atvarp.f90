@@ -466,7 +466,7 @@ icp = -1
 '@    =========                                               ',/,&
 '@    ATMOSPHERIC AEROSOL CHEMISTRY MODULE                    ',/,&
 '@                                                            ',/,&
-'@  When aerosol chemistry model siream is used               ',/,&
+'@  When aerosol chemistry model is used                      ',/,&
 '@   a full gaseous scheme (CB05) is automatically used       ',/,&
 '@  The user cannot specify any other scheme (ichemistry)     ',/,&
 '@  Computation CAN NOT run.                                  ',/,&
