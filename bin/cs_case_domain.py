@@ -235,15 +235,6 @@ class base_domain:
             src = os.path.join(self.exec_dir, name)
             dest = os.path.join(self.result_dir, name)
 
-        # If checkpoint, clean empty subfolders
-        if name == "checkpoint" and purge:
-            cleanup_dirs = fnmatch.filter(os.listdir(src), "previous_dump_*")
-            for f in cleanup_dirs:
-                fp = os.path.join(src, f)
-                if os.path.isdir(fp):
-                    if os.listdir(fp) == []:
-                        shutil.rmtree(fp)
-
         # If source and destination are identical, return
         if src == dest:
             return

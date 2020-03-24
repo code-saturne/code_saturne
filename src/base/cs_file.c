@@ -3842,18 +3842,18 @@ cs_file_size(const char  *path)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Remove a file if it exists and is a regular file.
+ * \brief Remove a file if it exists and is a regular file or an empty
+ *        directory.
  *
  * \param[in]  path  file path.
  *
- * \return 0 in case of success or if file does not exist, 0 otherwise.
+ * \return 0 in case of success or if file does not exist,  not 0 otherwise.
  */
 /*----------------------------------------------------------------------------*/
 
 int
 cs_file_remove(const char  *path)
 {
-  int exists = 0;
   int retval = 0;
 
 #if defined(HAVE_SYS_TYPES_H) && defined(HAVE_SYS_STAT_H) \
@@ -3862,11 +3862,19 @@ cs_file_remove(const char  *path)
   struct stat s;
 
   if (stat(path, &s) == 0) {
-    if (S_ISREG(s.st_mode) != 0)
-      exists = 1;
+    if (S_ISREG(s.st_mode) != 0) {
+      retval = unlink(path);
+    }
+    else if (S_ISDIR(s.st_mode) != 0) {
+      retval = rmdir(path);
+      if (retval != 0) {
+        /* Some error types are accepted */
+        if (   errno == ENOTDIR || errno == EEXIST
+            || errno == ENOTEMPTY || errno == EBUSY)
+          retval = 0;
+      }
+    }
   }
-  if (exists)
-    retval = unlink(path);
 
 #else
 
@@ -3874,8 +3882,10 @@ cs_file_remove(const char  *path)
 
   FILE *f;
 
-  if ((f = fopen(path, "w")) != NULL)
-    retval = fclose(f);
+  if ((f = fopen(path, "w")) != NULL) {
+    fclose(f);
+    retval = remove(f);
+  }
 
 #endif
 
@@ -3888,26 +3898,23 @@ cs_file_remove(const char  *path)
 }
 
 /*----------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------*/
 /*!
  * \brief Check if file name/path ends with a specific string
  *
  * The function returns an int: 1 if the file name ends with the
  * given string, 0 otherwise.
  *
- * \param[in]  path name of file
- * \param[in]  end  end string to test
+ * \param[in]  path  name of file
+ * \param[in]  end   end string to test
  *
- * \return an int. 1 if the path ends with the given string, 0 otherwise.
+ * \return  1 if the path ends with the given string, 0 otherwise.
  */
 /*----------------------------------------------------------------------------*/
 
 int
-cs_file_endswith(const char *path,
-                 const char *end)
+cs_file_endswith(const char  *path,
+                 const char  *end)
 {
-
   int retval = 0;
 
   /* If either pointers is NULL, return 0 */
@@ -3933,7 +3940,7 @@ cs_file_endswith(const char *path,
   }
 
   return retval;
-
 }
+
 /*----------------------------------------------------------------------------*/
 END_C_DECLS

@@ -819,13 +819,13 @@ cs_file_off_t
 cs_file_size(const char  *path);
 
 /*----------------------------------------------------------------------------
- * Remove a file if it exists and is a regular file.
+ * Remove a file if it exists and is a regular file or an empty directory.
  *
  * parameters
  *   path <-- file path.
  *
  * returns:
- *   0 in case of success or if file does not exist, 0 otherwise.
+ *   0 in case of success or if file does not exist, not 0 otherwise.
  *----------------------------------------------------------------------------*/
 
 int
@@ -839,12 +839,12 @@ cs_file_remove(const char  *path);
  *   end  <-- string to compare
  *
  * returns:
- *   1 in case of success, 0 otherwise.
+ *   1 if the path ends with the given string, 0 otherwise.
  *----------------------------------------------------------------------------*/
 
 int
-cs_file_endswith(const char *path,
-                 const char *end);
+cs_file_endswith(const char  *path,
+                 const char  *end);
 
 /*----------------------------------------------------------------------------*/
 

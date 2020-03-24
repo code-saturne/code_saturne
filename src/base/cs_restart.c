@@ -130,17 +130,18 @@ struct _cs_restart_t {
 
 };
 
-
 typedef struct {
 
-  int    id;           /* Id of the writer */
+  int    id;                 /* Id of the writer */
 
-  char  *name;         /* Name of the checkpoint file */
-  char  *path;         /* Full path to the checkpoint file */
+  char  *name;              /* Name of the checkpoint file */
+  char  *path;              /* Full path to the checkpoint file */
 
-  int    nprev_files;  /* Number of times this file has allready
-                          been written */
-  char **prev_files;   /* Names of the previous versions */
+  int    n_prev_files;      /* Number of times this file has already
+                               been written */
+  int    n_prev_files_tot;  /* Total number of times this file has already
+                               been written */
+  char **prev_files;        /* Names of the previous versions */
 
 } _cs_restart_multiwriter_t;
 
@@ -207,6 +208,7 @@ static double _checkpoint_wt_next = -1.;     /* next forced wall-clock value */
 static double _checkpoint_wt_last = 0.;      /* wall-clock time of last
                                                 checkpointing */
 /* Are we restarting from a NCFD file ? */
+
 static int    _restart_from_ncfd = 0;
 
 /* Restart modification */
@@ -221,10 +223,10 @@ static _location_t  *_location_ref;       /* Location definition array */
 
 
 /* Restart multi writer */
+
 static int                          _n_restart_directories_to_write = 1;
 static int                          _n_restart_multiwriters          = 0;
 static _cs_restart_multiwriter_t  **_restart_multiwriter             = NULL;
-
 
 /*============================================================================
  * Private function definitions
@@ -1603,21 +1605,21 @@ _update_mesh_checkpoint(void)
  * \return  pointer to the allocated object.
  */
 /*----------------------------------------------------------------------------*/
+
 static _cs_restart_multiwriter_t *
 _cs_restart_multiwriter_create(void)
 {
-
   _cs_restart_multiwriter_t *new_writer = NULL;
   BFT_MALLOC(new_writer, 1, _cs_restart_multiwriter_t);
 
-  new_writer->id          = -1;
-  new_writer->name        = NULL;
-  new_writer->path        = NULL;
-  new_writer->nprev_files = 0;
-  new_writer->prev_files  = NULL;
+  new_writer->id = -1;
+  new_writer->name = NULL;
+  new_writer->path = NULL;
+  new_writer->n_prev_files = 0;
+  new_writer->n_prev_files_tot = 0;
+  new_writer->prev_files = NULL;
 
   return new_writer;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1632,11 +1634,12 @@ _cs_restart_multiwriter_create(void)
  * \return  pointer to the multiwriter object.
  */
 /*----------------------------------------------------------------------------*/
+
 static _cs_restart_multiwriter_t *
 _cs_restart_multiwriter_by_name(const char name[])
 {
-
   _cs_restart_multiwriter_t *writer = NULL;
+
   if (_restart_multiwriter != NULL && _n_restart_multiwriters != 0) {
     for (int i = 0; i < _n_restart_multiwriters; i++) {
       if (strcmp(_restart_multiwriter[i]->name, name) == 0) {
@@ -1661,10 +1664,10 @@ _cs_restart_multiwriter_by_name(const char name[])
  * \return  pointer to the multiwriter object.
  */
 /*----------------------------------------------------------------------------*/
+
 static _cs_restart_multiwriter_t *
 _cs_restart_multiwriter_by_path(const char path[])
 {
-
   _cs_restart_multiwriter_t *writer = NULL;
   if (_restart_multiwriter != NULL && _n_restart_multiwriters != 0) {
     for (int i = 0; i < _n_restart_multiwriters; i++) {
@@ -1674,7 +1677,6 @@ _cs_restart_multiwriter_by_path(const char path[])
       }
     }
   }
-
   return writer;
 }
 
@@ -1690,21 +1692,20 @@ _cs_restart_multiwriter_by_path(const char path[])
  * \return  pointer to the multiwriter object.
  */
 /*----------------------------------------------------------------------------*/
+
 static _cs_restart_multiwriter_t *
 _cs_restart_multiwriter_by_id(const int id)
 {
-
   _cs_restart_multiwriter_t *writer = NULL;
   if (id >= 0 && id < _n_restart_multiwriters)
     writer = _restart_multiwriter[id];
 
   return writer;
-
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Add a multiwriter based on a file name and path.
+ * \brief  Add a multiwriter based on a file name and path.
  *
  * Returns the id of the multiwriter.
  *
@@ -1714,12 +1715,12 @@ _cs_restart_multiwriter_by_id(const int id)
  * \return  id of the newly added multiwriter
  */
 /*----------------------------------------------------------------------------*/
-static int
-_add_cs_restart_multiwriter(const char name[],
-                            const char path[])
 
+static int
+_add_cs_restart_multiwriter(const char  name[],
+                            const char  path[])
 {
-  /* Check if the writer allready exists */
+  /* Check if the writer already exists */
   for (int i = 0; i < _n_restart_multiwriters; i++) {
     if (strcmp(_restart_multiwriter[i]->name, name) == 0)
       return i;
@@ -1765,18 +1766,16 @@ _add_cs_restart_multiwriter(const char name[],
     size_t lpath = strlen(_path) + 1;
     BFT_MALLOC(new_writer->path, lpath, char);
     strcpy(new_writer->path, _path);
-
   }
 
   _restart_multiwriter[_n_restart_multiwriters] = new_writer;
 
   /* Increment the number of writers, and return the newly created
-   * writer index
-   */
+   * writer index */
+
   _n_restart_multiwriters++;
 
   return new_writer->id;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1788,24 +1787,23 @@ _add_cs_restart_multiwriter(const char name[],
  *
  */
 /*----------------------------------------------------------------------------*/
-static void
-_cs_restart_multiwriter_increment(_cs_restart_multiwriter_t *mw,
-                                  const char                 fname[])
-{
 
-  mw->nprev_files++;
+static void
+_cs_restart_multiwriter_increment(_cs_restart_multiwriter_t  *mw,
+                                  const char                  fname[])
+{
+  mw->n_prev_files++;
+  mw->n_prev_files_tot++;
 
   if (mw->prev_files == NULL)
-    BFT_MALLOC(mw->prev_files, mw->nprev_files, char *);
+    BFT_MALLOC(mw->prev_files, mw->n_prev_files, char *);
   else
-    BFT_REALLOC(mw->prev_files, mw->nprev_files, char *);
+    BFT_REALLOC(mw->prev_files, mw->n_prev_files, char *);
 
-  mw->prev_files[mw->nprev_files - 1] = NULL;
+  mw->prev_files[mw->n_prev_files - 1] = NULL;
   size_t lenf = strlen(fname) + 1;
-  BFT_MALLOC(mw->prev_files[mw->nprev_files - 1], lenf, char);
-  strcpy(mw->prev_files[mw->nprev_files - 1], fname);
-
-  return;
+  BFT_MALLOC(mw->prev_files[mw->n_prev_files - 1], lenf, char);
+  strcpy(mw->prev_files[mw->n_prev_files - 1], fname);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -2236,9 +2234,10 @@ cs_restart_create(const char         *name,
   _name[ldir+lname+1] = '\0';
 
   /* Following the addition of an extension, we check for READ mode
-   * if a file exists without the extension
-   */
+   * if a file exists without the extension */
+
   if (mode == CS_RESTART_MODE_READ) {
+
     if (cs_file_isreg(_name) == 0 && cs_file_endswith(name, _extension)) {
       BFT_FREE(_name);
 
@@ -2252,14 +2251,16 @@ cs_restart_create(const char         *name,
     }
 
   } else if (mode == CS_RESTART_MODE_WRITE) {
-    /* Check if file allready exists, and if so rename and delete if needed */
+
+    /* Check if file already exists, and if so rename and delete if needed */
     int writer_id = _add_cs_restart_multiwriter(name, _name);
     _cs_restart_multiwriter_t *mw = _cs_restart_multiwriter_by_id(writer_id);
-    /* Rename an allready existing file */
+
+    /* Rename an already existing file */
     if (cs_file_isreg(_name)) {
 
       char _subdir[19];
-      sprintf(_subdir, "previous_dump_%04d", mw->nprev_files);
+      sprintf(_subdir, "previous_dump_%04d", mw->n_prev_files_tot);
       size_t lsdir = strlen(_subdir);
 
       char *_re_name = NULL;
@@ -2271,7 +2272,7 @@ cs_restart_create(const char         *name,
 
       strcat(_re_name, _subdir);
 
-      /* Check that the sub-directory exists or that it can be created */
+      /* Check that the sub-directory exists or can be created */
       if (cs_file_mkdir_default(_re_name) != 0)
         bft_error(__FILE__, __LINE__, 0,
                   _("The %s directory cannot be created"), _re_name);
@@ -4109,14 +4110,39 @@ cs_restart_clean_multiwriters_history(void)
   for (int i = 0; i < _n_restart_multiwriters; i++) {
     _cs_restart_multiwriter_t *mw = _cs_restart_multiwriter_by_id(i);
 
-    int nfiles_to_remove
-      = mw->nprev_files - _n_restart_directories_to_write + 1;
+    int n_files_to_remove
+      = mw->n_prev_files - _n_restart_directories_to_write + 1;
 
-    if (nfiles_to_remove > 0) {
-      for (int ii = 0; ii < nfiles_to_remove; ii++) {
-        if (cs_glob_rank_id <= 0)
-          cs_file_remove(mw->prev_files[ii]);
+    if (n_files_to_remove > 0) {
+      for (int ii = 0; ii < n_files_to_remove; ii++) {
+
+        if (cs_glob_rank_id <= 0) {
+          char *path = mw->prev_files[ii];
+          if (cs_glob_rank_id <= 0)
+            cs_file_remove(path);
+
+          /* Try to remove directory (if it is empty) */
+          for (int j = strlen(path)-1; j > -1; j--) {
+            if (path[j] == _dir_separator) {
+              if (j > 0) {
+                path[j] = '\0';
+                cs_file_remove(path);
+              }
+              break;
+            }
+          }
+        }
+
+        BFT_FREE(mw->prev_files[ii]);
+
+        /* Rotate available paths */
+        int jj = ii + n_files_to_remove;
+        mw->prev_files[ii] = mw->prev_files[jj];
+        mw->prev_files[jj] = NULL;
       }
+
+      mw->n_prev_files -= n_files_to_remove;
+      /* No need for extra reallocation of mw->prev_files */
     }
 
   }
@@ -4138,7 +4164,7 @@ cs_restart_multiwriters_destroy_all(void)
       BFT_FREE(w->name);
       BFT_FREE(w->path);
 
-      for (int j = 0; j < w->nprev_files; j++)
+      for (int j = 0; j < w->n_prev_files; j++)
         BFT_FREE(w->prev_files[j]);
       BFT_FREE(w->prev_files);
 
