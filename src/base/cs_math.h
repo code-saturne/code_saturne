@@ -336,7 +336,7 @@ cs_math_3_dot_product(const cs_real_t  u[3],
  * \brief Compute the dot product of a tensor t with two vectors, n1 and n2.
  *
  * \param[in]     n1    vector of 3 real values
- * \param[in]     t     vector of 3 real values
+ * \param[in]     t     tensor of 3x3 real values
  * \param[in]     n2    vector of 3 real values
  *
  * \return the resulting dot product n1.t.n2.
@@ -352,6 +352,34 @@ cs_math_3_33_3_dot_product(const cs_real_t  n1[3],
     = (  n1[0]*t[0][0]*n2[0] + n1[1]*t[1][0]*n2[0] + n1[2]*t[2][0]*n2[0]
        + n1[0]*t[0][1]*n2[1] + n1[1]*t[1][1]*n2[1] + n1[2]*t[2][1]*n2[1]
        + n1[0]*t[0][2]*n2[2] + n1[1]*t[1][2]*n2[2] + n1[2]*t[2][2]*n2[2]);
+  return n_t_n;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the dot product of a symmetric tensor t with two vectors,
+ *        n1 and n2.
+ *
+ * \param[in]     n1    vector of 3 real values
+ * \param[in]     t     tensor of 6 real values
+ *                      [ 0 3 5 ]
+ *                      [ 3 1 4 ]
+ *                      [ 5 4 2 ]
+ * \param[in]     n2    vector of 3 real values
+ *
+ * \return the resulting dot product n1.t.n2.
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_real_t
+cs_math_3_sym_33_3_dot_product(const cs_real_t  n1[3],
+                               const cs_real_t  t[6],
+                               const cs_real_t  n2[3])
+{
+  cs_real_t n_t_n
+    = (  n1[0]*t[0]*n2[0] + n1[1]*t[3]*n2[0] + n1[2]*t[5]*n2[0]
+       + n1[0]*t[3]*n2[1] + n1[1]*t[1]*n2[1] + n1[2]*t[4]*n2[1]
+       + n1[0]*t[5]*n2[2] + n1[1]*t[4]*n2[2] + n1[2]*t[2]*n2[2]);
   return n_t_n;
 }
 
