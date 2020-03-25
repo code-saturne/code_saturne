@@ -83,7 +83,7 @@ def get_case_dir(case=None, param=None, coupling=None, id=None):
 
         # Multiple domain case
 
-        if param and coupling:
+        if param:
             err_str = 'Error: coupling and param options are incompatible.\n'
             raise RunCaseError(err_str)
 
@@ -128,7 +128,10 @@ def get_case_dir(case=None, param=None, coupling=None, id=None):
                     staging_dir = cwd
 
         if case:
-            casedir = os.path.realpath(case)
+            if os.path.isabs(case):
+                casedir = os.path.realpath(case)
+            else:
+                casedir = os.path.realpath(os.path.join(cwd, case))
             data = os.path.join(casedir, 'DATA')
             src = os.path.join(casedir, 'SRC')
         else:
@@ -136,7 +139,9 @@ def get_case_dir(case=None, param=None, coupling=None, id=None):
             while os.path.basename(casedir):
                 data = os.path.join(casedir, 'DATA')
                 src = os.path.join(casedir, 'SRC')
-                if os.path.isdir(data) and os.path.isdir(src):
+                cfg = os.path.join(data, 'run.cfg')
+                if (os.path.isdir(data) and os.path.isdir(src)) \
+                   or os.path.isfile(cfg):
                     break
                 casedir = os.path.split(casedir)[0]
 
@@ -224,12 +229,9 @@ class case:
                     raise RunCaseError(err_str)
 
         # Names, directories, and files in case structure:
-        # test if we are using a master runcase or a single runcase,
         # associate case domains and set case directory
 
         self.case_dir = case_dir
-
-        self.script_dir = os.path.join(self.case_dir, 'SCRIPTS')
         self.result_dir = None
 
         if (os.path.isdir(os.path.join(case_dir, 'DATA')) and n_domains == 1):
@@ -246,7 +248,6 @@ class case:
             # Coupling or single domain run from coupling script
             self.study_dir = case_dir
             self.name = os.path.split(case_dir)[1]
-            self.script_dir = self.case_dir
 
         if staging_dir:
             staging_dir = check_exec_dir_stamp(staging_dir)
@@ -391,12 +392,12 @@ class case:
         elif n_procs < n_procs_min:
             err_str = ' Error:\n' \
                 '   The current calculation scheme requires at least ' \
-                + str(n_procs_min) + 'processes,\n' \
+                + str(n_procs_min) + ' processes,\n' \
                 + '   while the execution environment provides only ' \
                 + str(n_procs) + '.\n' \
                 + '   You may either allocate more processes or try to\n' \
-                + '   oversubscribe by forcing the number of processes\n' \
-                + '   in the toplevel script.'
+                + '   oversubscribe by changing the number of processes\n' \
+                + '   in the run.cfg configuration file.'
             raise RunCaseError(err_str)
 
         # Otherwise, rebalance process counts.
@@ -895,7 +896,7 @@ class case:
                 + ' to the executable files.\n\n')
 
         e.write('MPI_RANK=`'
-                + self.package.get_runcase_script('runcase_mpi_rank')
+                + self.package.pkgdatadir_script('runcase_mpi_rank')
                 + ' $@`\n')
 
         app_id = 0
@@ -1049,7 +1050,7 @@ class case:
 
     #---------------------------------------------------------------------------
 
-    def generate_solver_script(self, exec_env):
+    def generate_solver_script(self, exec_env, prologue=None, epilogue=None):
         """
         Generate localexec file.
         """
@@ -1191,6 +1192,13 @@ class case:
             cs_exec_environment.write_script_comment(s, 'Boot MPI daemons.\n')
             s.write(mpi_env.mpiboot + ' || exit $?\n\n')
 
+        # Add user-defined prologue if defined in run.cfg
+
+        if prologue:
+            s.write('\n')
+            s.write(prologue)
+            s.write('\n')
+
         # Generate script body
 
         self.solver_script_body(n_procs, mpi_env, s)
@@ -1199,6 +1207,13 @@ class case:
 
         cs_exec_environment.write_export_env(s, 'CS_RET',
                                              cs_exec_environment.get_script_return_code())
+
+        # Add user-defined epilogue if defined in run.cfg
+
+        if epilogue:
+            s.write('\n')
+            s.write(epilogue)
+            s.write('\n')
 
         # Halt MPI daemons if necessary
 
@@ -1712,7 +1727,9 @@ class case:
             scratchdir = None,
             run_id = None,
             force_id = False,
-            stages = None):
+            stages = None,
+            compute_prologue=None,
+            compute_epilogue=False):
 
         """
         Main script.
@@ -1736,12 +1753,7 @@ class case:
 
             # Read the possible config files
 
-            if sys.platform.startswith('win'):
-                username = os.getenv('USERNAME')
-            else:
-                username = os.getenv('USER')
-
-            config = configparser.ConfigParser({'user':username})
+            config = configparser.ConfigParser()
             config.read(self.package.get_configfiles())
 
             # Determine default execution directory if not forced;

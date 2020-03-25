@@ -265,6 +265,7 @@ bin/cs_gui.py \
 bin/cs_info.py \
 bin/cs_run.py \
 bin/cs_runcase.py \
+bin/cs_run_conf.py \
 bin/cs_script.py \
 bin/cs_submit.py \
 bin/cs_math_parser.py \

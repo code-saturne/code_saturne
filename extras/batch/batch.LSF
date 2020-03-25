@@ -16,7 +16,3 @@
 #  -J : job name
 #
 #-------------------------------------------------------------------------------
-
-# Change to submission directory
-if test -n "$LS_SUBCWD" ; then cd $LS_SUBCWD ; fi
-

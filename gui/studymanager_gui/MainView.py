@@ -63,7 +63,6 @@ from code_saturne.Base.QtWidgets import *
 from code_saturne import cs_info
 from code_saturne.cs_exec_environment import \
     separate_args, update_command_single_value, assemble_args, enquote_arg
-from code_saturne import cs_runcase
 
 try:
     from code_saturne.studymanager_gui.MainForm import Ui_MainForm

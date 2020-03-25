@@ -56,7 +56,6 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne import cs_case
 from code_saturne import cs_exec_environment
-from code_saturne import cs_runcase
 from code_saturne import cs_submit
 
 #-------------------------------------------------------------------------------
@@ -190,7 +189,7 @@ class ListingDialogView(CommandMgrDialogView):
     def __init__(self, parent, case, title, cmd):
         self.case = case
 
-        CommandMgrDialogView.__init__(self, parent, title, cmd, self.case['scripts_path'], self.case['salome'])
+        CommandMgrDialogView.__init__(self, parent, title, cmd, self.case['data_path'], self.case['salome'])
 
         self.pushButtonStop.clicked.connect(self.__slotStop)
         self.pushButtonStopAt.clicked.connect(self.__slotStopAt)
@@ -371,48 +370,38 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.case.undoStopGlobal()
 
         self.mdl = ScriptRunningModel(self.case)
+        self.jmdl = self.case['job_model']
 
-        # Check if the script file name is already defined
+        if self.jmdl == None:
+            if 'data_path' in self.case:
+                run_conf_path = os.path.join(self.case['data_path'], 'run.cfg')
+            else:
+                run_conf_path = None
+            self.jmdl = BatchRunningModel(path=run_conf_path,
+                                          pkg=self.case['package'])
 
-        if self.case['scripts_path']:
-            if not self.case['runcase']:
-                if self.case['package'].runcase in os.listdir(self.case['scripts_path']):
-                    runcase_path = os.path.join(self.case['scripts_path'],
-                                                self.case['package'].runcase)
-                    self.case['runcase'] = cs_runcase.runcase(runcase_path,
-                                                              package=self.case['package'])
+        self.jmdl.load()
 
-        self.jmdl = BatchRunningModel(parent, self.case)
+        self.run_dict = {}
+        for k in self.jmdl.run_dict:
+            self.run_dict[k] = self.jmdl.run_dict[k]
 
-        # Get MPI and OpenMP features
+        self.job_dict = {}
+        for k in self.jmdl.job_dict:
+            self.job_dict[k] = self.jmdl.job_dict[k]
 
-        self.have_mpi = False
-        self.have_openmp = False
-        config_features = self.case['package'].config.features
+        self.have_mpi = self.jmdl.have_mpi
+        self.have_openmp = self.jmdl.have_openmp
 
-        config = configparser.ConfigParser()
-        config.read(self.case['package'].get_configfiles())
-
-        compute_build_id = -1
-        self.compute_versions = None
-        if config.has_option('install', 'compute_versions'):
-            self.compute_versions = config.get('install', 'compute_versions').split(':')
-            compute_build_id = 0
-            if len(self.compute_versions) > 1:
-                run_build = self.jmdl.dictValues['run_build']
-                if self.compute_versions.count(run_build) > 0:
-                    compute_build_id = self.compute_versions.index(run_build)
-                elif run_build:
-                    compute_build_id = -1
-                    self.jmdl.dictValues['run_build'] = None
-
-        if compute_build_id >= 0:
-            pkg_compute = self.case['package'].get_alternate_version(self.compute_versions[compute_build_id])
-            config_features = pkg_compute.config.features
-        if config_features['mpi'] == 'yes':
-            self.have_mpi = True
-        if config_features['openmp'] == 'yes':
-            self.have_openmp = True
+        self.job_name = self.jmdl.batch.params['job_nodes']
+        self.job_nodes = self.jmdl.batch.params['job_nodes']
+        self.job_ppn  = self.jmdl.batch.params['job_ppn']
+        self.job_procs = self.jmdl.batch.params['job_procs']
+        self.job_threads = self.jmdl.batch.params['job_threads']
+        self.job_walltime = self.jmdl.batch.params['job_walltime']
+        self.job_class  = self.jmdl.batch.params['job_class']
+        self.job_account  = self.jmdl.batch.params['job_account']
+        self.job_wckey  = self.jmdl.batch.params['job_wckey']
 
         # Batch info
 
@@ -424,12 +413,20 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.labelNThreads.hide()
         self.spinBoxNThreads.hide()
 
+        compute_build_id = -1
+        if self.jmdl.compute_builds:
+            compute_build = self.run_dict['compute_build']
+            if compute_build in self.jmdl.compute_builds:
+                compute_build_id = self.jmdl.compute_builds.index(compute_build)
+            else:
+                compute_build_id = 0
+                self.run_dict['compute_build'] = self.jmdl.compute_builds[0]
         if compute_build_id < 0:
             self.labelBuildType.hide()
             self.comboBoxBuildType.hide()
         else:
             self.comboBoxBuildType.currentIndexChanged[int].connect(self.slotBuildType)
-            for b in self.compute_versions:
+            for b in self.jmdl.compute_builds:
                 build_type_label = os.path.basename(b)
                 if not build_type_label:
                     build_type_label = "[default]"
@@ -442,7 +439,6 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.__updateRunButton__(case_is_saved)
 
         if self.jmdl.batch.rm_type != None:
-
             validatorSimpleName = RegExpValidator(self.lineEditJobName,
                                                   QRegExp("[_A-Za-z0-9]*"))
             validatorAccountName = RegExpValidator(self.lineEditJobAccount,
@@ -450,18 +446,6 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
             self.lineEditJobName.setValidator(validatorSimpleName)
             self.lineEditJobAccount.setValidator(validatorAccountName)
             self.lineEditJobWCKey.setValidator(validatorAccountName)
-
-        else:
-
-            if self.jmdl.dictValues['run_nprocs'] == None:
-                try:
-                    # For backwards compatibility
-                    # (this is a specific case, as we move information from
-                    # the XML model to the batch script)
-                    self.jmdl.dictValues['run_nprocs'] = self.mdl.getString('n_procs')
-                    self.mdl.setString('n_procs', None)
-                except Exception:
-                    pass
 
         validatorRunId = RegExpValidator(self.lineEditRunId,
                                          QRegExp("[_A-Za-z0-9]*"))
@@ -501,16 +485,15 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.checkBoxTrace.stateChanged.connect(self.slotTrace)
         self.checkBoxLogParallel.stateChanged.connect(self.slotLogParallel)
 
-        if not self.case['scripts_path']:
+        if not self.case['data_path']:
             self.pushButtonRunSubmit.setEnabled(False)
 
         # initialize Widgets
 
-        if self.jmdl.batch.rm_type != None and self.case['runcase']:
+        if self.jmdl.batch.rm_type != None:
             self.displayBatchInfo()
 
-        #rm_type = self.jmdl.batch.rm_type
-        run_id = str(self.jmdl.dictValues['run_id'])
+        run_id = str(self.run_dict['id'])
 
         if run_id != 'None':
             self.lineEditRunId.setText(run_id)
@@ -531,11 +514,13 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         if self.log_parallel:
             self.checkBoxLogParallel.setChecked(True)
 
-        self.checkBoxInitOnly.setChecked(self.jmdl.dictValues['run_stage_init'])
+        self.checkBoxInitOnly.setChecked(self.run_dict['initialize'] == True)
 
         # Script info is based on the XML model
 
         self.displayScriptInfo()
+
+        # self.resize(self.minimumSizeHint())
 
         self.case.undoStartGlobal()
 
@@ -563,7 +548,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         Increment, decrement and colorize the input argument entry
         """
         if self.lineEditJobName.validator().state == QValidator.Acceptable:
-            self.jmdl.batch.params['job_name'] = str(v)
+            self.job_name = str(v)
 
 
     @pyqtSlot(int)
@@ -572,9 +557,9 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         Increment, decrement and colorize the input argument entry
         """
         n = int(self.spinBoxNodes.text())
-        self.jmdl.batch.params['job_nodes'] = str(self.spinBoxNodes.text())
+        self.job_nodes = str(self.spinBoxNodes.text())
         if self.job_ppn:
-            ppn = int(self.jmdl.batch.params['job_ppn'])
+            ppn = int(self.job_ppn)
             tot_ranks = n*ppn
             self.lineEditTotMPI.setText(str(tot_ranks))
 
@@ -585,13 +570,13 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         Increment, decrement and colorize the input argument entry
         """
         ppn = int(self.spinBoxPpn.text())
-        self.jmdl.batch.params['job_ppn']  = str(ppn)
+        self.job_ppn  = str(ppn)
         if self.job_nodes:
-            n = int(self.jmdl.batch.params['job_nodes'])
+            n = int(self.job_nodes)
             tot_ranks = n*ppn
             self.lineEditTotMPI.setText(str(tot_ranks))
         if self.job_threads:
-            n_threads = int(self.jmdl.batch.params['job_threads'])
+            n_threads = int(self.job_threads)
             node_threads = n_threads*ppn
             self.lineEditThreadsPerNode.setText(str(node_threads))
 
@@ -601,7 +586,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         """
         Increment, decrement and colorize the input argument entry
         """
-        self.jmdl.batch.params['job_procs']  = str(self.spinBoxProcs.text())
+        self.job_procs  = str(self.spinBoxProcs.text())
 
 
     @pyqtSlot(int)
@@ -610,9 +595,9 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         Increment, decrement and colorize the input argument entry
         """
         n_threads = int(self.spinBoxThreads.text())
-        self.jmdl.batch.params['job_threads']  = str(n_threads)
+        self.job_threads  = str(n_threads)
         if self.job_ppn:
-            ppn = int(self.jmdl.batch.params['job_ppn'])
+            ppn = int(self.job_ppn)
             node_threads = n_threads*ppn
             self.lineEditThreadsPerNode.setText(str(node_threads))
 
@@ -623,13 +608,13 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         h_cput = self.spinBoxDays.value()*24 + self.spinBoxHours.value()
         m_cput = self.spinBoxMinutes.value()
         s_cput = self.spinBoxSeconds.value()
-        self.jmdl.batch.params['job_walltime'] = h_cput*3600 + m_cput*60 + s_cput
+        self.job_walltime = h_cput*3600 + m_cput*60 + s_cput
 
 
     @pyqtSlot()
     def slotClass(self):
 
-        self.jmdl.batch.params['job_class'] = str(self.comboBoxClass.currentText())
+        self.job_class = str(self.comboBoxClass.currentText())
 
 
     @pyqtSlot(str)
@@ -638,7 +623,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         Increment, decrement and colorize the input argument entry
         """
         if self.lineEditJobAccount.validator().state == QValidator.Acceptable:
-            self.jmdl.batch.params['job_account'] = str(v)
+            self.job_account = str(v)
 
 
     @pyqtSlot(str)
@@ -647,7 +632,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         Increment, decrement and colorize the input argument entry
         """
         if self.lineEditJobWCKey.validator().state == QValidator.Acceptable:
-            self.jmdl.batch.params['job_wckey'] = str(v)
+            self.job_wckey = str(v)
 
 
     @pyqtSlot(int)
@@ -656,9 +641,9 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         Increment, decrement and colorize the input argument entry
         """
         if v > 1:
-            self.jmdl.dictValues['run_nprocs'] = str(v)
+            self.job_dict['n_procs'] = str(v)
         else:
-            self.jmdl.dictValues['run_nprocs'] = None
+            self.job_dict['n_procs'] = None
 
 
     @pyqtSlot(int)
@@ -667,35 +652,35 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         Increment, decrement and colorize the input argument entry
         """
         if v > 1:
-            self.jmdl.dictValues['run_nthreads'] = str(v)
+            self.job_dict['n_threads'] = str(v)
         else:
-            self.jmdl.dictValues['run_nthreads'] = None
+            self.job_dict['n_threads'] = None
 
 
     @pyqtSlot(int)
     def slotBuildType(self, v):
 
         if v == 0:
-            self.jmdl.dictValues['run_build'] = None
+            self.run_dict['compute_build'] = None
         else:
-            self.jmdl.dictValues['run_build'] = str(self.compute_versions[v])
+            self.run_dict['compute_build'] = str(self.jmdl.compute_builds[v])
         compute_build_id = v
 
-        pkg_compute = self.case['package'].get_alternate_version(self.compute_versions[compute_build_id])
+        pkg_compute = self.jmdl.pkg.get_alternate_version(self.jmdl.compute_builds[compute_build_id])
         config_features = pkg_compute.config.features
         if config_features['mpi'] == 'yes':
             self.have_mpi = True
         else:
             self.have_mpi = False
             self.spinBoxNProcs.setValue(1)
-            self.jmdl.dictValues['run_nprocs'] = None
+            self.jmdl.job_dict['n_procs'] = None
 
         if config_features['openmp'] == 'yes':
             self.have_openmp = True
         else:
             self.have_openmp = False
             self.spinBoxNThreads.setValue(1)
-            self.jmdl.dictValues['run_nthreads'] = None
+            self.jmdl.job_dict['n_threads'] = None
 
         self.displayScriptInfo()
 
@@ -705,7 +690,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         """
         """
         if self.lineEditRunId.validator().state == QValidator.Acceptable:
-            self.jmdl.dictValues['run_id'] = str(v)
+            self.run_dict['id'] = str(v)
 
 
     @pyqtSlot()
@@ -714,7 +699,6 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         Close dialog with no modifications
         """
 
-        self.case['runcase'] = None  # to force re-read
         QDialog.accept(self)
 
 
@@ -727,15 +711,24 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.mdl.setLogParallel(self.log_parallel)
         self.mdl.setString('debug', self.debug.strip())
 
-        if not self.case['scripts_path']:
-            return
+        # Apply state
 
-        self.jmdl.batch.update_lines(self.case['runcase'].lines)
+        for k in self.jmdl.run_dict:
+            self.jmdl.run_dict[k] = self.run_dict[k]
+        for k in self.jmdl.job_dict:
+            self.jmdl.job_dict[k] = self.job_dict[k]
 
-        for k in list(self.jmdl.dictValues.keys()):
-            self.jmdl.updateBatchFile(k)
+        self.jmdl.batch.params['job_nodes'] = self.job_name
+        self.jmdl.batch.params['job_nodes'] = self.job_nodes
+        self.jmdl.batch.params['job_ppn'] = self.job_ppn
+        self.jmdl.batch.params['job_procs'] = self.job_procs
+        self.jmdl.batch.params['job_threads'] = self.job_threads
+        self.jmdl.batch.params['job_walltime'] = self.job_walltime
+        self.jmdl.batch.params['job_class'] = self.job_class
+        self.jmdl.batch.params['job_account'] = self.job_account
+        self.jmdl.batch.params['job_wckey'] = self.job_wckey
 
-        self.parent.batchFileSave()
+        self.jmdl.updateComputeBuildInfo(compute_build=self.jmdl.run_dict['compute_build'])
 
 
     @pyqtSlot()
@@ -760,11 +753,13 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
 
         if self.case.isModified():
             self.parent.fileSave()
+        else:
+            self.jmdl.save(param=self.case['xmlfile'], force=False)
 
         # Ensure code is run from a case subdirectory
 
         prv_dir = os.getcwd()
-        os.chdir(self.case['scripts_path'])
+        os.chdir(self.case['data_path'])
 
         # Do we have a mesh ?
 
@@ -795,18 +790,15 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
 
         rm_type = self.jmdl.batch.rm_type
 
-        batch = self.case['runcase'].path
-
-        cmd = None
-        run_title = None
+        cmd = cs_exec_environment.enquote_arg(sys.argv[0])
+        run_title = self.case.module_name()
 
         if rm_type == None:
-            run_title = self.case.module_name() + ' - Job Run'
-            cmd = cs_exec_environment.enquote_arg(batch)
+            run_title += ' - Job Run'
+            cmd += ' run'
         else:
-            run_title = self.case.module_name() + ' - Job Submission'
-            cmd = cs_exec_environment.enquote_arg(sys.argv[0]) \
-                  + ' submit ' +  cs_exec_environment.enquote_arg(batch)
+            run_title += ' - Job Submission'
+            cmd += ' submit'
 
         dlg = ListingDialogView(self.parent, self.case, run_title, cmd)
         dlg.show()
@@ -835,9 +827,9 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
     @pyqtSlot()
     def slotInitOnly(self):
         """
-        Update runcase for initialization only
+        Set initialization only option
         """
-        self.jmdl.dictValues['run_stage_init'] = self.checkBoxInitOnly.isChecked()
+        self.run_dict['initialize'] = self.checkBoxInitOnly.isChecked()
 
 
     @pyqtSlot()
@@ -904,16 +896,6 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         """
         Layout of the second part of this page.
         """
-
-        self.job_name  = self.jmdl.batch.params['job_name']
-        self.job_nodes = self.jmdl.batch.params['job_nodes']
-        self.job_ppn  = self.jmdl.batch.params['job_ppn']
-        self.job_procs = self.jmdl.batch.params['job_procs']
-        self.job_threads = self.jmdl.batch.params['job_threads']
-        self.job_walltime = self.jmdl.batch.params['job_walltime']
-        self.job_class  = self.jmdl.batch.params['job_class']
-        self.job_account  = self.jmdl.batch.params['job_account']
-        self.job_wckey  = self.jmdl.batch.params['job_wckey']
 
         if self.job_name != None:
             self.labelJobName.show()
@@ -994,8 +976,8 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
             self.labelClass.show()
             self.comboBoxClass.show()
 
-            # update runcase
-            self.jmdl.batch.params['job_class'] = str(self.comboBoxClass.currentText())
+            # update job info
+            self.job_class = str(self.comboBoxClass.currentText())
 
         if self.job_account != None:
             self.labelJobAccount.show()
@@ -1026,10 +1008,6 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
 
         self.groupBoxJob.show()
 
-        # Update file
-
-        self.jmdl.batch.update_lines(self.case['runcase'].lines)
-
 
     def displayScriptInfo(self):
         """
@@ -1056,14 +1034,14 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
 
         if self.jmdl.batch.rm_type == None:
             if self.have_mpi:
-                n_procs_s = self.jmdl.dictValues['run_nprocs']
+                n_procs_s = self.jmdl.job_dict['n_procs']
                 if n_procs_s:
                     n_procs = int(n_procs_s)
                 else:
                     n_procs = 1
                 self.spinBoxNProcs.setValue(n_procs)
             if self.have_openmp:
-                n_threads_s = self.jmdl.dictValues['run_nthreads']
+                n_threads_s = self.jmdl.job_dict['n_threads']
                 if n_threads_s:
                     n_threads = int(n_threads_s)
                 else:

@@ -1,6 +1,6 @@
 #-------------------------------------------------------------------------------
 #
-# Batch options for IBM LoadLeveler (example: IVANOE IBM iDataPlex cluster)
+# Batch options for IBM LoadLeveler (deprecated)
 # =================================
 #
 # To obtain all available options, run the LoadLeveler GUI,
@@ -33,7 +33,4 @@
 #   class = <class_name>
 #
 #-------------------------------------------------------------------------------
-
-# Change to submission directory
-if test -n "$LOADL_STEP_INITDIR" ; then cd $LOADL_STEP_INITDIR ; fi
 

@@ -377,7 +377,7 @@ def append_shell_shebang(l):
         l.append('@echo off')
     else:
         user_shell = get_shell_type()
-        l.append('#!' + user_shell + '\n\n')
+        l.append('#!' + user_shell)
     l.append('')
 
 #-------------------------------------------------------------------------------

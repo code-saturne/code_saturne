@@ -64,7 +64,7 @@ from code_saturne.Base.QtWidgets import *
 from code_saturne import cs_info
 from code_saturne.cs_exec_environment import \
     separate_args, update_command_single_value, assemble_args, enquote_arg
-from code_saturne import cs_runcase
+from code_saturne import cs_run_conf
 
 try:
     from code_saturne.Base.MainForm import Ui_MainForm
@@ -91,6 +91,7 @@ except:
 from code_saturne.Pages.WelcomeView import WelcomeView
 from code_saturne.model.IdentityAndPathesModel import IdentityAndPathesModel
 from code_saturne.Pages.XMLEditorView import XMLEditorView
+from code_saturne.model.BatchRunningModel import BatchRunningModel
 from code_saturne.Pages.BatchRunningDialogView import BatchRunningDialogView
 from code_saturne.Pages.OpenTurnsDialogView import OpenTurnsDialogView
 from code_saturne.model.ScriptRunningModel import ScriptRunningModel
@@ -180,8 +181,7 @@ class NewCaseDialogView(QDialog, Ui_NewCaseDialogForm):
             base = os.path.abspath(os.path.join(self.currentPath, str(name)))
             for rep in ['DATA',
                         'RESU',
-                        'SRC',
-                        'SCRIPTS']:
+                        'SRC']:
                 directory = os.path.abspath(os.path.join(base, rep))
                 if not(os.path.isdir(directory)):
                     stud = False
@@ -790,6 +790,11 @@ class MainView(object):
 
         self.case['saved'] = "yes"
 
+        run_conf_path = os.path.join(self.case['data_path'], 'run.cfg')
+        self.case['job_model'] = BatchRunningModel(path=run_conf_path,
+                                                   pkg=self.package,
+                                                   import_legacy=True)
+
         # Update the Tree Navigator layout
 
         self.case.undo_signal.connect(self.slotUndoRedoView)
@@ -1130,7 +1135,7 @@ class MainView(object):
 
         self.updateTitleBar()
         self.case.xmlSaveDocument()
-        self.batchFileSave()
+        self.jobFileSave()
         meg_state = self.saveUserFormulaInC()
         if meg_state == -1:
             return
@@ -1170,7 +1175,7 @@ class MainView(object):
                 self.fileSave()
                 self.updateTitleBar()
                 self.case.xmlSaveDocument()
-                self.batchFileSave()
+                self.jobFileSave()
                 self.updateTitleBar()
 
                 # force to blank after save
@@ -1277,44 +1282,37 @@ class MainView(object):
 
         for p, rep in [('data_path',     'DATA'),
                        ('resu_path',     'RESU'),
-                       ('user_src_path', 'SRC'),
-                       ('scripts_path',  'SCRIPTS')]:
+                       ('user_src_path', 'SRC')]:
             self.IdPthMdl.setPathI(p, os.path.join(file_dir, rep))
         self.IdPthMdl.setRelevantSubdir("yes", "")
 
         self.IdPthMdl.setPathI('mesh_path',
                                os.path.join(os.path.abspath(os.path.split(file_dir)[0],
                                                             'MESH')))
-        self.case['runcase'] = cs_runcase.runcase(os.path.join(self.case['scripts_path'],
-                                                               self.batch_file),
-                                                  package=self.package)
         del IdentityAndPathesModel
 
         self.updateTitleBar()
 
 
     @pyqtSlot()
-    def batchFileSave(self):
+    def jobFileSave(self):
         """
         public slot
 
         save the current case
         """
-        log.debug("batchFileSave()")
+        log.debug("jobFileSave()")
 
         if not hasattr(self, 'case'):
             return
 
-        if not self.case['runcase']:
-            self.case['runcase'] \
-                = cs_runcase.runcase(os.path.join(self.case['scripts_path'],
-                                                  self.batch_file),
-                                     package=self.package)
+        if not self.case['job_model']:
+            return
 
+        run_conf_path = os.path.join(self.case['data_path'], 'run.cfg')
         parameters = os.path.basename(self.case['xmlfile'])
 
-        self.case['runcase'].set_parameters(parameters)
-        self.case['runcase'].save()
+        self.case['job_model'].save(run_conf_path, parameters)
 
 
     def runOrSubmit(self):
@@ -1426,7 +1424,6 @@ class MainView(object):
 
 
         return state
-
 
 
     def displayAbout(self):
@@ -1572,7 +1569,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         self.cmd_case    = cmd_case
         self.salome      = cmd_salome
-        self.batch_file  = cmd_package.runcase
         self.package     = cmd_package
 
         self.XML_DOC_VERSION = XML_DOC_VERSION

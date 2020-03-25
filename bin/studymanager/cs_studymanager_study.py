@@ -43,7 +43,6 @@ from code_saturne.cs_exec_environment import get_shell_type, enquote_arg
 from code_saturne.cs_compile import files_to_compile, compile_and_link
 from code_saturne import cs_create
 from code_saturne.cs_create import set_executable
-from code_saturne import cs_runcase
 
 from code_saturne.model import XMLengine
 from code_saturne.studymanager.cs_studymanager_pathes_model import PathesModel
@@ -166,6 +165,8 @@ class Case(object):
         self.__repo     = repo
         self.__dest     = dest
 
+        self.pkg = pkg
+
         self.node       = data['node']
         self.label      = data['label']
         self.compute    = data['compute']
@@ -187,10 +188,18 @@ class Case(object):
 
         self.resu = 'RESU'
 
-        # Specific case for coupling
+        # Check for coupling
+        # TODO: use run.cfg info, so as to allow another coupling parameters
+        #       path ('run.cfg' is fixed, 'coupling_parameters.py' is not).
 
         coupling = os.path.join(self.__repo, self.label, "coupling_parameters.py")
-        if os.path.isfile(coupling):
+        if not os.path.isfile(coupling):
+            coupling = None
+
+        if coupling != None:
+            self.resu = 'RESU_COUPLING'
+
+            # Apply coupling parameters information
 
             from code_saturne import cs_case_coupling
             try:
@@ -198,8 +207,6 @@ class Case(object):
             except Exception:
                 execfile(coupling)
 
-            run_ref = os.path.join(self.__repo, self.label, "runcase")
-            self.exe, self.pkg = self.__get_exe(pkg, run_ref)
             self.subdomains = []
             for d in locals()['domains']:
                 if d['solver'].lower() in ('code_saturne', 'neptune_cfd'):
@@ -207,9 +214,8 @@ class Case(object):
                 elif d['solver'].lower() == "syrthes":
                     syrthes = True
 
-            self.resu = 'RESU_COUPLING'
+            # Insert syrthes path in coupling parameters
 
-            # insert syrthes path
             if syrthes:
                 syrthes_insert = cs_create.syrthes_path_line(pkg)
                 if syrthes_insert:
@@ -224,29 +230,8 @@ class Case(object):
                             fd.write(line)
                     fd.close()
 
-        else:
-            run_ref = os.path.join(self.__repo, self.label, "SCRIPTS", "runcase")
-            self.exe, self.pkg = self.__get_exe(pkg, run_ref)
-
-    #---------------------------------------------------------------------------
-
-    def __get_exe(self, old_pkg, run_ref):
-        """
-        Return the name of the exe of the case, in order to mix
-        Code_Saturne and NEPTUNE_CFD test cases in the same study.
-        """
-
-        # Read the runcase script from the Repository
-
-        runcase = cs_runcase.runcase(run_ref)
-
-        if runcase.cmd_name == "code_saturne":
-            from code_saturne.cs_package import package
-        elif runcase.cmd_name == "neptune_cfd":
-            from neptune_cfd.nc_package import package
-        pkg = package()
-
-        return runcase.cmd_name, pkg
+        self.exe = os.path.join(pkg.get_dir('bindir'),
+                                pkg.name + pkg.config.shext)
 
     #---------------------------------------------------------------------------
 
@@ -259,11 +244,6 @@ class Case(object):
 
         from code_saturne.model.XMLengine import Case
 
-        if self.exe == "code_saturne":
-            from code_saturne.model.XMLinitialize import XMLinit as solver_xml_init
-        elif self.exe == "neptune_cfd":
-            from code_saturne.model.XMLinitializeNeptune import XMLinit as solver_xml_init
-
         for fn in os.listdir(os.path.join(self.__repo, subdir, "DATA")):
             fp = os.path.join(self.__repo, subdir, "DATA", fn)
             if os.path.isfile(fp):
@@ -271,19 +251,38 @@ class Case(object):
                 f = os.fdopen(fd)
                 l = f.readline()
                 f.close()
-                if l.startswith('''<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI''') or \
-                   l.startswith('''<?xml version="1.0" encoding="utf-8"?><NEPTUNE_CFD_GUI'''):
-                    try:
-                        case = Case(package = self.pkg, file_name = fp)
-                    except:
-                        print("Parameters file reading error.\n")
-                        print("This file is not in accordance with XML specifications.\n")
-                        sys.exit(1)
+                xml_type = None
+                if l.startswith('''<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI'''):
+                    xml_type = 'code_saturne'
+                elif l.startswith('''<?xml version="1.0" encoding="utf-8"?><NEPTUNE_CFD_GUI'''):
+                    xml_type = 'neptune_cfd'
+                else:
+                    continue
+                try:
+                    case = Case(package = self.pkg, file_name = fp)
+                except:
+                    print("Parameters file reading error.\n")
+                    print("This file is not in accordance with XML specifications.\n")
+                    sys.exit(1)
 
-                    case['xmlfile'] = fp
-                    case.xmlCleanAllBlank(case.xmlRootNode())
-                    solver_xml_init(case).initialize()
-                    case.xmlSaveDocument()
+                case['xmlfile'] = fp
+                case.xmlCleanAllBlank(case.xmlRootNode())
+
+                if xml_type == 'code_saturne':
+                    from code_saturne.model.XMLinitialize import XMLinit as cs_solver_xml_init
+                    cs_solver_xml_init(case).initialize()
+                elif xml_type == 'neptune_cfd':
+                    try:
+                        from code_saturne.model.XMLinitializeNeptune import XMLinit as nc_solver_xml_init
+                        nc_solver_xml_init(case).initialize()
+                    except ImportError:
+                        # Avoid completely failing an update of cases with
+                        # mixed solver types when neptune_cfd is not available
+                        # (will fail if really trying to run those cases)
+                        print("Failed updating a neptune_cfd XML file as neptune_cfd is not available.\n")
+                        pass
+
+                case.xmlSaveDocument()
 
 
         # 2) Recreate missing directories which are compulsory
@@ -297,15 +296,11 @@ class Case(object):
 
         # 3) Update the GUI script from the Repository
         data_subdir = os.path.join(self.__repo, subdir, "DATA")
-        self.update_gui_script_path(data_subdir, None, xmlonly)
-
-        # 4) Update the runcase script from the Repository
-        scripts_subdir = os.path.join(self.__repo, subdir, "SCRIPTS")
-        self.update_runcase_path(scripts_subdir, None, xmlonly)
+        self.update_launch_script_path(data_subdir, None, xmlonly)
 
     #---------------------------------------------------------------------------
 
-    def update_gui_script_path(self, subdir, destdir=None, xmlonly=False):
+    def update_launch_script_path(self, subdir, destdir=None, xmlonly=False):
         """
         Update path for the script in the Repository.
         """
@@ -340,42 +335,6 @@ class Case(object):
 
     #---------------------------------------------------------------------------
 
-    def update_runcase_path(self, subdir, destdir=None, xmlonly=False):
-        """
-        Update path for the script in the Repository.
-        """
-        if not destdir:
-            batch_file = os.path.join(self.__repo, subdir, "runcase")
-        else:
-            batch_file = os.path.join(destdir, subdir, "runcase")
-
-        try:
-            f = open(batch_file, mode = 'r')
-        except IOError:
-            print("Error: can not open %s\n" % batch_file)
-            sys.exit(1)
-
-        lines = f.readlines()
-        f.close()
-
-        for i in range(len(lines)):
-            if lines[i].strip()[0:1] == '#':
-                continue
-            if xmlonly:
-                if re.search(r'^export PATH=', lines[i]):
-                    lines[i] = 'export PATH="":$PATH\n'
-            else:
-                if re.search(r'^export PATH=', lines[i]):
-                    lines[i] = 'export PATH="' + self.pkg.get_dir('bindir') +'":$PATH\n'
-
-        f = open(batch_file, mode = 'w')
-        f.writelines(lines)
-        f.close()
-
-        set_executable(batch_file)
-
-    #---------------------------------------------------------------------------
-
     def update(self, xmlonly=False):
         """
         Update path for the script in the Repository.
@@ -393,16 +352,13 @@ class Case(object):
         for d in cdirs:
             self.__update_domain(d, xmlonly)
 
-        # Update the runcase script from the repository in case of coupling
-
         if self.subdomains:
             case_dir = os.path.join(self.__repo, self.label)
-            self.update_runcase_path(case_dir, None, xmlonly)
+            self.update_launch_script_path(case_dir, None, xmlonly)
             # recreate possibly missing but compulsory directory
             r = os.path.join(case_dir, "RESU_COUPLING")
             if not os.path.isdir(r):
                 os.makedirs(r)
-
 
     #---------------------------------------------------------------------------
 
@@ -444,7 +400,7 @@ class Case(object):
 
     def __suggest_run_id(self):
 
-        cmd = enquote_arg(os.path.join(self.pkg.get_dir('bindir'), self.exe)) + " run --suggest-id"
+        cmd = enquote_arg(self.exe) + " run --suggest-id"
         if self.subdomains:
             cmd += " --coupling=coupling_parameters.py"
         p = subprocess.Popen(cmd,
@@ -460,68 +416,13 @@ class Case(object):
 
     #---------------------------------------------------------------------------
 
-    def __updateRuncase(self, run_id):
-        """
-        Update the command line in the launcher C{runcase}.
-        """
-        from code_saturne.cs_exec_environment import separate_args, \
-            get_command_single_value
-
-        # Prepare runcase path
-        scripts_repo = os.path.join(self.__repo, self.label)
-        scripts_dest = os.path.join(self.__dest, self.label)
-        if not self.subdomains:
-            scripts_repo = os.path.join(scripts_repo, "SCRIPTS")
-            scripts_dest = os.path.join(scripts_dest, "SCRIPTS")
-
-        run_ref = os.path.join(scripts_repo, "runcase")
-        run_ref_win = os.path.join(scripts_repo, "runcase.bat")
-        run_new = os.path.join(scripts_dest, "runcase")
-
-        if sys.platform.startswith('win'):
-            run_new = os.path.join(scripts_dest, "runcase.bat")
-
-        # Read runcase from repo
-        path = run_ref
-        if not os.path.isfile(path):
-            path = run_ref_win
-        if not os.path.isfile(path):
-            print("Error: could not find %s (or %s)\n" % run_ref, run_ref_win)
-            sys.exit(1)
-
-        runcase_repo = cs_runcase.runcase(path, create_if_missing=False)
-
-        # Read runcase from dest
-        path = run_new
-        runcase_dest = cs_runcase.runcase(path, create_if_missing=False,
-                                          ignore_batch=True)
-
-        # Assign run command from repo in dest
-        runcase_dest.set_run_args(runcase_repo.get_run_args())
-
-        # set run_id in dest
-        runcase_dest.set_run_id(run_id=run_id)
-
-        # Set number of processors if provided
-        n_procs = self.__data['n_procs']
-        if n_procs:
-            runcase_dest.set_nprocs(n_procs)
-
-        # Write runcase
-        runcase_dest.save()
-
-    #---------------------------------------------------------------------------
-
     def run(self):
         """
         Check if a run with same result subdirectory name exists
         and launch run if not.
         """
         home = os.getcwd()
-        if self.subdomains:
-            os.chdir(os.path.join(self.__dest, self.label))
-        else:
-            os.chdir(os.path.join(self.__dest, self.label, 'SCRIPTS'))
+        os.chdir(os.path.join(self.__dest, self.label))
 
         if self.run_id:
             run_id = self.run_id
@@ -547,12 +448,8 @@ class Case(object):
         self.run_id  = run_id
         self.run_dir = run_dir
 
-        self.__updateRuncase(run_id)
-
-        if sys.platform.startswith('win'):
-            error, self.is_time = run_studymanager_command("runcase.bat", self.__log)
-        else:
-            error, self.is_time = run_studymanager_command("./runcase", self.__log)
+        run_cmd = enquote_arg(self.exe) + " run"
+        error, self.is_time = run_studymanager_command(run_cmd, self.__log)
 
         if not error:
             self.is_run = "OK"
@@ -775,7 +672,7 @@ class Study(object):
         Constructor.
           1. initialize attributes,
           2. build the list of the cases,
-          3. build the list of the keywords from the runcase.
+          3. build the list of the keywords from the case
         @type parser: C{Parser}
         @param parser: instance of the parser
         @type study: C{String}
@@ -874,6 +771,7 @@ class Study(object):
             os.chdir(c.label)
             refdir = os.path.join(self.__repo, c.label)
             retval = 1
+            coupling = None
             for node in os.listdir(refdir):
                 ref = os.path.join(self.__repo, c.label, node)
                 if node in c.subdomains:
@@ -888,10 +786,19 @@ class Study(object):
                 else:
                     shutil.copy2(ref, node)
                     if node == 'coupling_parameters.py':
+                        coupling = node
                         resu_coupling = 'RESU_COUPLING'
                         if not os.path.isdir(resu_coupling):
                             os.mkdir(resu_coupling)
-            c.update_runcase_path(c.label, destdir=self.__dest)
+                        run_conf_path = 'run.cfg'
+            if coupling and not os.path.isfile(run_conf_path):
+                from code_saturne import cs_run_conf
+                run_conf = cs_run_conf.run_conf('run.cfg',
+                                                package=self.__package,
+                                                create_if_missing=True)
+                run_conf.set('setup', 'coupling', coupling)
+                run_conf.save()
+            c.update_launch_script_path(c.label, destdir=self.__dest)
             os.chdir(self.__dest)
         else:
             cmd = e + " create --case " + c.label  \
@@ -914,16 +821,8 @@ class Study(object):
         # Create study if necessary
         if not os.path.isdir(self.__dest):
             # build instance of study class
-            cr_study = cs_create.Study(self.__package,
-                                       self.label,
-                                       [],   # cases
-                                       [],   # syrthes cases
-                                       None, # cathare case
-                                       None, # python case
-                                       None, # copy
-                                       False,# import_only
-                                       False,# use ref
-                                       0)    # quiet
+            cr_study = cs_create.study(self.__package,
+                                       self.label)    # quiet
 
             # TODO: copy-from for study. For now, an empty study
             # is created and cases are created one by one with
@@ -989,20 +888,15 @@ class Study(object):
                         print("Warning: case %s exists in the destination. "
                               "It won't be overwritten." % c.label)
 
-                # if overwrite option enabled, overwrite content of DATA, SRC, SCRIPTS
+                # if overwrite option enabled, overwrite content of DATA, SRC
                 if self.__force_ow:
-                    dirs_to_overwrite = ["DATA", "SRC", "SCRIPTS"]
+                    dirs_to_overwrite = ["DATA", "SRC"]
                     self.overwriteDirectories(dirs_to_overwrite,
                                               case_label=c.label)
-                    # update path in gui script
+                    # update path in gui/run script
                     data_subdir = os.path.join(c.label, "DATA")
-                    c.update_gui_script_path(data_subdir, self.__dest,
-                                             xmlonly=False)
-
-                    # update path in runcase script
-                    scripts_subdir = os.path.join(c.label, "SCRIPTS")
-                    c.update_runcase_path(scripts_subdir, self.__dest,
-                                          xmlonly=False)
+                    c.update_launch_script_path(data_subdir, self.__dest,
+                                                xmlonly=False)
 
         os.chdir(repbase)
 

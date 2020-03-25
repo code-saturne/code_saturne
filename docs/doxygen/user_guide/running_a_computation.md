@@ -216,7 +216,7 @@ is split into the following execution steps:
     - For Syrthes couplings, partition Syrthes mesh.
     - Generate `run_solver` mini-script for execution stage.
 
-* __execute__
+* __compute__
   - Execute `run_solver` mini-script:
     sets module or environment variables, runs MPI or serial command;
 
@@ -225,7 +225,7 @@ is split into the following execution steps:
     possibly other user-specified files.
 
 By default, all steps are executed. If some stages are specified, by adding
-`--stage`, `--initialize`, `--execute`, and/or `--finalize` to the
+`--stage`, `--initialize`, `--compute`, and/or `--finalize` to the
 `code_saturne run` options, only steps between the first and last one
 specified are executed.
 

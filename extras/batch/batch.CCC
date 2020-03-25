@@ -19,6 +19,3 @@
 #
 #-------------------------------------------------------------------------------
 
-# Change to submission directory
-if test -n "$BRIDGE_MSUB_PWD" ; then cd $BRIDGE_MSUB_PWD ; fi
-

@@ -34,6 +34,8 @@ This module defines the following functions:
 # Import required Python modules
 #===============================================================================
 
+from __future__ import print_function
+
 import os, sys
 import types, string, re, fnmatch
 from optparse import OptionParser
@@ -46,6 +48,53 @@ except Exception:
 from code_saturne import cs_exec_environment
 from code_saturne import cs_case_domain
 from code_saturne import cs_case
+from code_saturne import cs_run_conf
+
+#-------------------------------------------------------------------------------
+# Update run steps based on run_conf object
+#-------------------------------------------------------------------------------
+
+def update_run_steps(s_c, run_conf, final=False):
+    """
+    Process the passed command line arguments.
+    """
+
+    filter_stages = False
+    for k in s_c:
+        if s_c[k] != None:
+            filter_stages = True
+
+    if run_conf and not filter_stages:
+        if 'run' in run_conf.sections:
+            for kw in s_c:
+                s_c[kw] = run_conf.get_bool('run', kw)
+
+    filter_stages = False
+    for k in s_c:
+        if s_c[k] != None:
+            filter_stages = True
+
+    # Default if nothing provided, ensure range is filled otherwise
+
+    if filter_stages:
+        i_s = -1
+        i_f = -1
+        for i, k in enumerate(s_c):
+            if s_c[k] == True:
+                if i_s < 0:
+                    i_s = i
+                i_f = i + 1
+        for i, k in enumerate(s_c):
+            if i < i_s:
+                s_c[k] = False
+            elif i < i_f:
+                s_c[k] = True
+            else:
+                s_c[k] = False
+
+    elif final:
+        for i, k in enumerate(s_c):
+            s_c[k] = True
 
 #-------------------------------------------------------------------------------
 # Process the command line arguments
@@ -111,13 +160,13 @@ def process_cmd_line(argv, pkg):
                       action="store_true",
                       help="stage data prior to preparation and execution")
 
-    parser.add_option("--initialize", dest="initialize",
+    parser.add_option("--initialize", "--preprocess", dest="initialize",
                       action="store_true",
                       help="run the data preparation stage")
 
-    parser.add_option("--execute", dest="execute",
+    parser.add_option("--compute", "--execute", dest="compute",
                       action="store_true",
-                      help="run the execution stage")
+                      help="run the compute stage")
 
     parser.add_option("--finalize", dest="finalize",
                       action="store_true",
@@ -125,10 +174,10 @@ def process_cmd_line(argv, pkg):
 
     parser.set_defaults(compute_build=False)
     parser.set_defaults(suggest_id=False)
-    parser.set_defaults(stage=False)
-    parser.set_defaults(initialize=False)
-    parser.set_defaults(execute=False)
-    parser.set_defaults(finalize=False)
+    parser.set_defaults(stage=None)
+    parser.set_defaults(initialize=None)
+    parser.set_defaults(compute=None)
+    parser.set_defaults(finalize=None)
     parser.set_defaults(param=None)
     parser.set_defaults(coupling=None)
     parser.set_defaults(domain=None)
@@ -140,6 +189,18 @@ def process_cmd_line(argv, pkg):
     # which would allow pursuing the later calculation stages.
 
     (options, args) = parser.parse_args(argv)
+
+    # Stages to run (if no filter given, all are done).
+
+    s_c = {'stage': options.stage,
+           'initialize': options.initialize,
+           'compute': options.compute,
+           'finalize': options.finalize}
+
+    filter_stages = False
+    for k in s_c:
+        if s_c[k]:
+            filter_stages = True
 
     # Try to determine case directory
 
@@ -153,24 +214,44 @@ def process_cmd_line(argv, pkg):
         cmd_line = sys.argv[0]
         for arg in sys.argv[1:]:
             cmd_line += ' ' + arg
-        err_str = 'Error:\n' + cmd_line + '\n' \
-                  '--coupling and -p/--param options are incompatible.\n'
-        sys.stderr.write(err_str)
-        sys.exit(1)
+        err_str = 'Error:' + os.linesep
+        err_str += cmd_line + os.linesep
+        err_str += '--coupling and -p/--param options are incompatible.'
+        raise RunCaseError(err_str)
+
+    # Also check for possible settings file
+
+    coupling = options.coupling
+    run_id = options.id
+    run_conf = None
+
+    run_config_path = os.path.join(os.getcwd(), 'run.cfg')
+    if os.path.isfile(run_config_path):
+        run_conf = cs_run_conf.run_conf(run_config_path, package=pkg)
+        if not coupling:
+            if 'setup' in run_conf.sections:
+                if 'coupling' in run_conf.sections['setup']:
+                    coupling = run_conf.sections['setup']['coupling']
+        if not run_id and not filter_stages:
+            if 'run' in run_conf.sections and not filter_stages:
+                update_run_steps(s_c, run_conf)
+                if s_c['stage'] == False:
+                    if 'id' in run_conf.sections['run']:
+                        run_id = run_conf.sections['run']['id']
 
     casedir, staging_dir = cs_case.get_case_dir(case=options.case,
                                                 param=options.param,
-                                                coupling=options.coupling,
-                                                id=options.id)
+                                                coupling=coupling,
+                                                id=run_id)
 
     if casedir == None:
         cmd_line = sys.argv[0]
         for arg in sys.argv[1:]:
             cmd_line += ' ' + arg
-        err_str = 'Error:\n' + cmd_line + '\n' \
-                  'run from directory \"' + str(os.getcwd()) + '\",\n' \
-                  'which does not seem to be inside a case directory.\n'
-        sys.stderr.write(err_str)
+        print('Error:', file = sys.stderr)
+        print(cmd_line, file = sys.stderr)
+        print('run from directory \"' + str(os.getcwd()) + '\",', file = sys.stderr)
+        print('which does not seem to be inside a case directory.', file = sys.stderr)
 
     param = options.param
 
@@ -180,99 +261,247 @@ def process_cmd_line(argv, pkg):
         if has_setup:
             param = "setup.xml"
 
-    # Stages to run (if no filter given, all are done).
-
     compute_build = options.compute_build
-
-    stages = {'prepare_data':options.stage,
-              'initialize':options.initialize,
-              'run_solver':options.execute,
-              'save_results':options.finalize}
 
     if not options.force:
         force_id = False
     else:
         force_id = True
 
-    # Stages to run (if no filter given, all are run; specific stages
-    # are given, all stages in thar range are run).
+    # Return associated dictionary (also force number of ranks and threads)
 
-    ordered_stages = ['prepare_data',
-                      'initialize',
-                      'run_solver',
-                      'save_results']
+    r_c = {'casedir': casedir,
+           'staging_dir': staging_dir,
+           'run_id': run_id,
+           'param': param,
+           'coupling': coupling,
+           'id_prefix': options.id_prefix,
+           'id_suffix': options.id_suffix,
+           'suggest_id': options.suggest_id,
+           'force_id': force_id,
+           'n_procs': options.nprocs,
+           'n_threads': options.nthreads,
+           'compute_build': compute_build}
 
-    stages = {'prepare_data':options.stage,
-              'initialize':options.initialize,
-              'run_solver':options.execute,
-              'save_results':options.finalize}
+    return r_c, s_c, run_conf
 
-    stages_start = len(ordered_stages)
-    stages_end = -1
+#-------------------------------------------------------------------------------
+# Read the run configuration file
+#-------------------------------------------------------------------------------
 
-    i = 0
-    for k in ordered_stages:
-        if stages[k] == True and stages_start > i:
-            stages_start = i
-        if stages[k] and stages_end < i+1:
-            stages_end = i + 1
-        i += 1
+def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
+    """
+    Process the passed command line arguments.
+    """
 
-    # Default if nothing provided, ensure range is filled otherwise
+    casedir = r_c['casedir']
+    run_config_path = ""
+    setup_default_path = ""
 
-    if stages_end < 0:
-        for k in ordered_stages:
-            stages[k] = True
-
+    if r_c['coupling']:
+        run_config_path = os.path.join(casedir, 'run.cfg')
     else:
-        for i in range(stages_start + 1, stages_end -1):
-            stages[ordered_stages[i]] = True
+        run_config_path = os.path.join(casedir, 'DATA', 'run.cfg')
+        setup_default_path = os.path.join(casedir, 'DATA', 'setup.xml')
 
-    # Forced number of ranks and threads
+    if run_conf == None:
+        if not os.path.isfile(run_config_path):
+            print('Warning:', file = sys.stderr)
+            print('  \'run.cfg\' not found in case directory; case update recommended.',
+                  file = sys.stderr)
+            print('', file = sys.stderr)
+            return
 
-    n_procs = options.nprocs
-    n_threads = options.nthreads
+    # Only load run.cfg if not already done
 
-    return  (casedir, staging_dir, options.id, param, options.coupling,
-             options.id_prefix, options.id_suffix, options.suggest_id, force_id,
-             n_procs, n_threads, stages, compute_build)
+    if run_conf and s_c['stage'] != False:
+        if not run_conf.path == run_config_path:
+            run_conf = None
+
+    if not run_conf:
+        run_conf = cs_run_conf.run_conf(run_config_path, package=pkg)
+
+    # Parameters file
+
+    for kw in ('param',):
+        if not r_c[kw]:
+            r_c[kw] = run_conf.get('setup', kw)
+
+    if not r_c['param'] and setup_default_path:
+        if os.path.isfile(setup_default_path):
+            r_c['param'] = setup_default_path
+
+    # Run id
+
+    if not r_c['run_id']:
+        r_c['run_id'] = run_conf.get('run', 'id')
+
+    if not r_c['force_id']:
+        r_c['force_id'] = run_conf.get_bool('run', 'force_id')
+
+    # Compute stages
+
+    update_run_steps(s_c, run_conf)
+
+    # Resources: try to find a matching section, using
+    # resource_name, batch, and job_defaults in decreasing priority.
+
+    resource_name = i_c['resource_name']
+    if not resource_name or not resource_name in run_conf.sections:
+        resource_name = i_c['batch']
+        if resource_name:
+            resource_name = os.path.basename(resource_name).lower()
+    if not resource_name or not resource_name in run_conf.sections:
+        resource_name = 'job_defaults'
+
+    run_conf_r = None
+    if resource_name in run_conf.sections:
+        run_conf_r = run_conf.sections[resource_name]
+
+    if run_conf_r:
+        for kw in ('n_procs', 'n_threads', 'time_limit'):
+            if kw in r_c:
+                if r_c[kw] != None:
+                    continue
+            r_c[kw] = None
+            v = run_conf.get_int(resource_name, kw)
+            if v:
+                r_c[kw] = v
+
+    run_conf_kw= ('job_parameters', 'job_header',
+                  'run_prologue', 'run_epilogue',
+                  'compute_prologue', 'compute_epilogue')
+
+    for kw in run_conf_kw:
+        if not kw in r_c:
+            r_c[kw] = None
+
+    if run_conf_r:
+        for kw in run_conf_kw:
+            if r_c[kw] != None:
+                continue
+            if kw in run_conf_r:
+                r_c[kw] = run_conf_r[kw]
+
+    # Handle case where files are used
+
+    if not (r_c['job_parameters'] or r_c['job_header']):
+        kw = 'job_header_file'
+        f_path = None
+        if kw in run_conf_kw:
+            f_path = run_conf_kw[kw]
+            if f_path:
+                if not os.path.isabs(f_path):
+                    f_prefix = os.path.basename(run_config_path)
+                    f_path= os.path.join(f_prefix, f_path)
+                if os.path.isfile(f_path):
+                    f = file.open(f_path)
+                    r_c['job_header'] = f.read()
+                    f.close
+                else:
+                    err_str = """warning in run.cfg: [{0}] {1} = {2}
+  "{3}" not present (use defaults)"""
+                    print(err_str.format(resource_name, kw, r_c[kw], f_path),
+                          file = sys.stderr)
+                    r_c['job_header'] = None
+        elif 'jobmanager' in r_c:
+            err_str = 'warning in run.cfg: [{0}] {1} = {2}; not currently handled (ignored)'
+            print(err_str.format(resource_name, kw, r_c[kw]),
+                  file = sys.stderr)
+            r_c[kw] = None
+
+#-------------------------------------------------------------------------------
+# Generate the run configuration file for further steps
+#-------------------------------------------------------------------------------
+
+def generate_run_config_file(path, resource_name, r_c, s_c, pkg):
+    """
+    Generate a minimalist run configuration file in the execution directory
+    for successive run steps.
+
+    Returns job submission info dictionnary
+    """
+
+    sections = {}
+
+    if 'coupling' in r_c:
+        if r_c['coupling']:
+            sections['setup'] = {'coupling': r_c['coupling']}
+
+    sections['run'] = {'id': r_c['run_id'],
+                       'stage': False,
+                       'initialize': s_c['initialize'],
+                       'compute': s_c['run_solver'],
+                       'finalize': s_c['save_results']}
+
+    r_d = {}
+    for kw in ('n_procs', 'n_threads', 'time_limit'):
+        if r_c[kw]:
+            r_d[kw] = r_c[kw]
+
+    for kw in ('job_parameters', 'job_header',
+               'compute_prologue', 'compute_epilogue'):
+        if r_c[kw]:
+            r_d[kw] = r_c[kw]
+
+    sections[resource_name] = r_d
+
+    run_conf = cs_run_conf.run_conf(None)
+    run_conf.sections = sections
+    run_conf.save(path, new=True)
 
 #===============================================================================
 # Run the calculation
 #===============================================================================
 
-def run(argv, pkg):
+def run(argv=[], pkg=None, submit_args=None):
     """
     Run calculation;
     returns return code, run id, and results directory path when created.
     """
 
-    (casedir, staging_dir, run_id, param, coupling,
-     id_prefix, id_suffix, suggest_id, force, n_procs, n_threads,
-     stages, compute_build) = process_cmd_line(argv, pkg)
+    if not pkg:
+        from code_saturne.cs_package import package
+        pkg = package()
+
+    i_c = cs_run_conf.get_install_config_info(pkg)
+
+    r_c, s_c, run_conf = process_cmd_line(argv, pkg)
+
+    casedir = r_c['casedir']
 
     if not casedir:
         return 1, None, None
 
+    # Read run configuration
+
+    read_run_config_file(i_c, r_c, s_c, pkg, run_conf=run_conf)
+
+    # Determine compute stages
+
+    update_run_steps(s_c, None, final=True)
+
+    stages = {'prepare_data': s_c['stage'],
+              'initialize': s_c['initialize'],
+              'run_solver': s_c['compute'],
+              'save_results': s_c['finalize']}
+
     # Use alternate compute (back-end) package if defined
 
-    config = configparser.ConfigParser()
-    config.read(pkg.get_global_configfile())
-
     pkg_compute = None
-    if not compute_build:
-        if config.has_option('install', 'compute_versions'):
-            compute_versions = config.get('install', 'compute_versions').split(':')
-            if compute_versions[0]:
-                pkg_compute = pkg.get_alternate_version(compute_versions[0])
-    else:
-        pkg_compute = pkg.get_alternate_version(compute_build)
+    if not r_c['compute_build']:
+        if i_c['compute_builds']:
+            r_c['compute_build'] = i_c['compute_builds'][0]
+    if r_c['compute_build']:
+        pkg_compute = pkg.get_alternate_version(r_c['compute_build'])
 
-    if coupling:
+    # Specific case for coupling
 
-        # Specific case for coupling
+    if r_c['coupling']:
+
         from code_saturne import cs_case_coupling
 
+        coupling =r_c['coupling']
         if os.path.isfile(coupling):
             try:
                 c_locals = {}
@@ -284,45 +513,62 @@ def run(argv, pkg):
                 execfile(coupling)
 
         verbose = True
-        if suggest_id:
+        if r_c['suggest_id']:
             verbose = False
 
         c = cs_case_coupling.coupling(pkg,
                                       domains,
                                       casedir,
-                                      staging_dir=staging_dir,
+                                      staging_dir=r_c['staging_dir'],
                                       verbose=verbose,
                                       package_compute=pkg_compute)
 
     else:
         # Values in case and associated domain set from parameters
-        d = cs_case_domain.domain(pkg, package_compute=pkg_compute, param=param)
+        d = cs_case_domain.domain(pkg,
+                                  package_compute=pkg_compute,
+                                  param=r_c['param'])
 
         # Now handle case for the corresponding calculation domain(s).
         c = cs_case.case(pkg,
                          package_compute=pkg_compute,
                          case_dir=casedir,
-                         staging_dir=staging_dir,
+                         staging_dir=r_c['staging_dir'],
                          domains=d)
 
     # Determine run id if not forced
 
-    if not run_id or suggest_id:
-        run_id = c.suggest_id(id_prefix, id_suffix)
+    if not r_c['run_id']:
+        r_c['run_id'] = c.suggest_id(r_c['id_prefix'], r_c['id_suffix'])
 
-        if suggest_id:
-            print(run_id)
-            return 0, run_id, None
+    if r_c['suggest_id']:
+        print(r_c['run_id'])
+        return 0, r_c['run_id'], None
+
+    if submit_args != None:
+        submit_stages = {'prepare_data': False}
+        for s in ('initialize', 'run_solver', 'save_results'):
+            submit_stages[s] = stages[s]
+            stages[s] = False
 
     # Now run case
 
-    retval = c.run(n_procs=n_procs,
-                   n_threads=n_threads,
-                   run_id=run_id,
-                   force_id=force,
+    retval = c.run(n_procs=r_c['n_procs'],
+                   n_threads=r_c['n_threads'],
+                   run_id=r_c['run_id'],
+                   force_id=r_c['force_id'],
                    stages=stages)
 
-    return retval, c.run_id, c.result_dir
+    if submit_args != None:
+        resource_name = cs_run_conf.get_resource_name(i_c)
+        run_cfg_path = os.path.join(c.result_dir, 'run.cfg')
+        if len(submit_args) > 1:
+            job_parameters = cs_exec_environment.assemble_args(submit_args)
+            r_c['job_parameters'] = job_parameters
+        generate_run_config_file(run_cfg_path, resource_name,
+                                 r_c, submit_stages, pkg)
+
+    return retval, c.result_dir, r_c
 
 #===============================================================================
 # Main function
@@ -338,11 +584,7 @@ def main(argv, pkg):
 
 if __name__ == '__main__':
 
-    # Run package
-    from code_saturne.cs_package import package
-    pkg = package()
-
-    retval = main(sys.argv[1:], pkg)
+    retval = main(argv=sys.argv[1:])
 
     sys.exit(retval)
 

@@ -67,16 +67,11 @@ class cfd_openturns_local_launcher:
     # --------------------------------------------------------------------------
     def launch(self, force_submit=False):
 
-        script_dir = os.path.join(self.case_dir, 'SCRIPTS')
-        os.chdir(script_dir)
+        os.chdir(self.case_id)
 
         from code_saturne.cs_script import master_script
 
-        run_args = ['run',
-                    '-p',
-                    self.paramfile,
-                    '-n',
-                    str(self.nprocs)]
+        run_args = ['run']
 
         ms = master_script(run_args, self.pkg)
 

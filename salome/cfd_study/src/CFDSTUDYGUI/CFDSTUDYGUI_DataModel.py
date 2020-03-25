@@ -74,7 +74,6 @@ import subprocess
 
 from code_saturne.Base.QtCore    import *
 from code_saturne.Base.QtWidgets import *
-from code_saturne import cs_runcase
 
 from omniORB import CORBA
 
@@ -167,11 +166,6 @@ dict_object["POSTPROFolder"]  = 100041
 dict_object["RESENSIGHTFile"] = 100042
 dict_object["RESUPNGFile"]    = 100043
 
-dict_object["SCRPTFolder"]    = 100050
-dict_object["SCRPTLanceFile"] = 100051
-dict_object["SCRPTScriptFile"]= 100052
-dict_object["SCRPTFile"]      = 100053
-
 dict_object["MESHFolder"]     = 100070
 dict_object["MEDFile"]        = 100071
 dict_object["DESFile"]        = 100072
@@ -195,7 +189,7 @@ dict_object["RESU_COUPLINGFolder"]      = 100101
 dict_object["SYRCaseFolder"]            = 100102
 dict_object["SyrthesFile"]              = 100103
 dict_object["SyrthesSydFile"]           = 100104
-dict_object["CouplingRuncase"]          = 100105
+dict_object["CouplingLauncher"]         = 100105
 dict_object["RESU_COUPLINGSubFolder"]   = 100106
 dict_object["RESUSubFolderSYR"]         = 100107
 dict_object["SRCSYRFolder"]             = 100108
@@ -254,11 +248,6 @@ icon_collection[dict_object["POSTPROFolder"]]  = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["RESENSIGHTFile"]] = "VISU_OBJ_ICON"
 icon_collection[dict_object["RESUPNGFile"]]    = "VIEW_ACTION_ICON"
 
-icon_collection[dict_object["SCRPTFolder"]]    = "CFDSTUDY_FOLDER_OBJ_ICON"
-icon_collection[dict_object["SCRPTLanceFile"]] = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
-icon_collection[dict_object["SCRPTScriptFile"]]= "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
-icon_collection[dict_object["SCRPTFile"]]      = "CFDSTUDY_DOCUMENT_OBJ_ICON"
-
 icon_collection[dict_object["MESHFolder"]]     = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["MEDFile"]]        = "MESH_OBJ_ICON"
 icon_collection[dict_object["MESHFile"]]       = "CFDSTUDY_DOCUMENT_OBJ_ICON"
@@ -281,7 +270,7 @@ icon_collection[dict_object["SYRCaseFolder"]]         = "SYRTHES_CASE_ICON"
 icon_collection[dict_object["SyrthesFile"]]           = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["SyrthesSydFile"]]        = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["CouplingFilePy"]]        = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
-icon_collection[dict_object["CouplingRuncase"]]       = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
+icon_collection[dict_object["CouplingLauncher"]]      = "CFDSTUDY_EDIT_DOCUMENT_OBJ_ICON"
 icon_collection[dict_object["RESU_COUPLINGFolder"]]   = "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["RESU_COUPLINGSubFolder"]]= "CFDSTUDY_FOLDER_OBJ_ICON"
 icon_collection[dict_object["RESUSubFolderSYR"]]      = "CFDSTUDY_FOLDER_OBJ_ICON"
@@ -513,23 +502,7 @@ def _SetStudyLocation(theStudyPath, theCaseNames,theCreateOpt,
             # Update SYRTHES PATH into coupling_parameters.py file
             replaceOrInsertCouplingPath(os.path.join(theStudyPath,
                                                      "coupling_parameters.py"))
-        if "runcase" in os.listdir(theStudyPath) and theCreateOpt:
-            # Update the coupling study PATH into runcase file
-            runcase = cs_runcase.runcase(os.path.join(theStudyPath, "runcase"))
-            if theNprocs != "":
-                runcase.set_nprocs(theNprocs)
-            runcase.save()
 
-        if CFDSTUDYGUI_Commons.isaCFDStudy(theStudyPath):
-            theStudy = FindStudyByPath(theStudyPath)
-            theStudyCaseNameList = GetCaseNameList(theStudy)
-            if theStudyCaseNameList != [] or theStudyCaseNameList != None :
-                for theStudyCase in theStudyCaseNameList :
-                    runcasePath = os.path.join(theStudyPath, theStudyCase,
-                                               "SCRIPTS/runcase")
-                    if os.path.exists(runcasePath):
-                        runcase = cs_runcase.runcase(runcasePath)
-                        runcase.save()
     return iok
 
 
@@ -952,8 +925,8 @@ def _FillObject(theObject, theParent, theBuilder):
 
         if name == "coupling_parameters.py":
             objectId = dict_object["CouplingFilePy"]
-        elif name == "runcase":
-            objectId = dict_object["CouplingRuncase"]
+        elif name in ("code_saturne", "neptune_cfd", "runcase"):
+            objectId = dict_object["CouplingLauncher"]
         elif name == "RESU_COUPLING":
             objectId = dict_object["RESU_COUPLINGFolder"]
     #parent is Syrthes Case
@@ -979,8 +952,6 @@ def _FillObject(theObject, theParent, theBuilder):
                 objectId = dict_object["SRCFolder"]
             elif name == "RESU":
                 objectId = dict_object["RESUFolder"]
-            elif name == "SCRIPTS":
-                objectId = dict_object["SCRPTFolder"]
             else:
                 objectId = dict_object["OtherFolder"]
 
@@ -992,7 +963,7 @@ def _FillObject(theObject, theParent, theBuilder):
             if name == "DRAFT":
                 objectId = dict_object["DRAFTFolder"]
         else:
-            if name[0:10] == "SaturneGUI" or name[0:10] == "NeptuneGUI":
+            if name[0:10] == "code_saturne" or name[0:10] == "neptune_cfd":
                 objectId = dict_object["DATALaunch"]
             elif re.match("^dp_", name) or re.match("^meteo",name) or re.match("^cs_", name):
                 objectId = dict_object["DATAFile"]
@@ -1043,26 +1014,6 @@ def _FillObject(theObject, theParent, theBuilder):
                 objectId = dict_object["REFERENCEDATAFile"]
         elif os.path.isdir(path):
             objectId = dict_object["OtherFolder"]
-
-    # parent is SCRIPTS folder
-    elif parentId == dict_object["SCRPTFolder"]:
-        if os.path.isdir(path):
-            objectId = dict_object["OtherFolder"]
-        else:
-            if name[0:7] == "runcase":
-                objectId = dict_object["SCRPTLanceFile"]
-            else:
-                if os.path.isfile(path):
-                    fd = os.open(path , os.O_RDONLY)
-                    f = os.fdopen(fd)
-                    l = f.readline()
-                    f.close()
-                    if l[0:2] == "#!":
-                        objectId = dict_object["SCRPTScriptFile"]
-                    else:
-                        objectId = dict_object["SCRPTFile"]
-                else:
-                    objectId = dict_object["OtherFile"]
 
     # parent is MESH folder
     elif parentId == dict_object["MESHFolder"]:
@@ -1315,7 +1266,6 @@ def _FillObject(theObject, theParent, theBuilder):
 
     if objectId in (dict_object["OtherFile"],
                     dict_object["OtherFolder"],
-                    dict_object["SCRPTFile"],
                     dict_object["MESHFile"],
                     dict_object["DATFile"]):
         study   = _getStudy()
@@ -1898,62 +1848,21 @@ def checkCode(theCase):
 
     import sys
     if sys.platform.startswith("win"):
-        aChildList = ScanChildren(aDataObj, "^SaturneGUI.bat$")
+        aChildList = ScanChildren(aDataObj, "^code_saturne.bat$")
         if len(aChildList) == 1:
             return CFD_Saturne
-        aChildList = ScanChildren(aDataObj, "^NeptuneGUI.bat$")
+        aChildList = ScanChildren(aDataObj, "^neptune_cfd.bat$")
         if len(aChildList) == 1:
             return CFD_Neptune
     else:
-        aChildList = ScanChildren(aDataObj, "^SaturneGUI$")
+        aChildList = ScanChildren(aDataObj, "^code_saturne$")
         if len(aChildList) == 1:
             return CFD_Saturne
-        aChildList = ScanChildren(aDataObj, "^NeptuneGUI$")
+        aChildList = ScanChildren(aDataObj, "^neptune_cfd$")
         if len(aChildList) == 1:
             return CFD_Neptune
-    ### try in SCRIPTS
-    aChildList = ScanChildren(theCase, "^SCRIPTS$")
-    if not len(aChildList) == 1:
-        # no SCRIPTS folder
-        print("There is no scripts folder in selected case")
-        return CFD_Code()
 
-    aDataObj =  aChildList[0]
-    aDataPath = _GetPath(aDataObj)
-    aChildList = ScanChildren(aDataObj, "^runcase$")
-    if len(aChildList) == 1:
-        path = os.path.join(aDataPath, "runcase")
-        try:
-            f = open(path, mode = 'r')
-            lines = f.readlines()
-            f.close()
-
-            for i in range(len(lines) - 1, -1, -1):
-                line = lines[i]
-                # Skip comment and empty lines
-                if len(line) == 0:
-                    continue
-                if line[0] == '#' or line[0:4] == 'rem ':
-                    continue
-                j = line.find('#')
-                if j > -1:
-                    line = line[0:j]
-                args = separate_args(line)
-                if args.count('run') == 1:
-                    if args.index('run') == 1: # "<package_name> run"
-                        for name in ('code_saturne', 'neptune_cfd'):
-                            if not sys.platform.startswith('win'):
-                                test_name = '\\' + name
-                            else:
-                                test_name = name
-                            if args[0].find(test_name) == 0:
-                                if name == 'code_saturne':
-                                    return CFD_Saturne
-                                else:
-                                    return CFD_Neptune
-        except IOError:
-            print(("Error: can not open or read %s\n" % path))
-            return CFD_Code()
+    return CFD_Code()
 
 
 def isLinkPathObject(theObject):

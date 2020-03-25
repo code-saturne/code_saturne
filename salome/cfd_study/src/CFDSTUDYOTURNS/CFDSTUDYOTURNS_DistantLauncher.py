@@ -215,7 +215,6 @@ class CFDSTUDY_DistantLauncher:
         # ---------------------------------
         job_params.in_files = [ os.path.join(self.case_dir, 'DATA'),
                                 os.path.join(self.case_dir, 'SRC'),
-                                os.path.join(self.case_dir, 'SCRIPTS'),
                                 os.path.join(self.case_dir, 'RESU') ]
         # ---------------------------------
 
@@ -281,7 +280,6 @@ class CFDSTUDY_DistantLauncher:
                     '-p', self.paramfile]
         f = open('prepare_cs_case.sh', 'wt')
 
-        f.write('cd SCRIPTS\n\n')
         export_line = 'export PATH=' + self.host_bin_path + ':$PATH\n\n'
 
         f.write('# Ensure the correct command is found:\n')
@@ -304,7 +302,6 @@ class CFDSTUDY_DistantLauncher:
                     '--initialize', '--finalize', '--id', self.run_id]
 
         f = open('run_cs_case.sh', 'wt')
-        f.write('cd SCRIPTS\n\n')
 
         export_line = 'export PATH=' + self.host_bin_path + ':$PATH\n\n'
         f.write('# Ensure the correct command is found:\n')

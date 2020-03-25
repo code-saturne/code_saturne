@@ -30,15 +30,12 @@ This module modifies the parameters used by the script file
 # Standard modules import
 #-------------------------------------------------------------------------------
 
-import sys, unittest
-import os, os.path, shutil, sys, types, re
+import os, sys, types
 
 #-------------------------------------------------------------------------------
 # Library modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.model.SolutionDomainModel import MeshModel, SolutionDomainModel
-from code_saturne.model.AtmosphericFlowsModel import AtmosphericFlowsModel
 from code_saturne.model.XMLvariables import Variables, Model
 
 #-------------------------------------------------------------------------------
@@ -167,43 +164,6 @@ class ScriptRunningModel(Model):
                 node.xmlRemoveNode()
         else:
             self.node_mgt.xmlSetData(key, string)
-
-
-#-------------------------------------------------------------------------------
-# ScriptRunningModel test class
-#-------------------------------------------------------------------------------
-
-class ScriptRunningModelTestCase(unittest.TestCase):
-    """
-    """
-    def setUp(self):
-        """
-        This method is executed before all 'check' methods.
-        """
-        from code_saturne.model.XMLengine import Case
-        from code_saturne.model.XMLinitialize import XMLinit
-        from code_saturne.model.Common import GuiParam
-        GuiParam.lang = 'en'
-        self.case = Case(None)
-        XMLinit(self.case).initialize()
-
-        domain = SolutionDomainModel(self.case)
-        domain.addMesh('mail1.des', 'des')
-        domain.addMesh('mail2.des', 'des')
-        domain.addMesh('mail3.des', 'des')
-
-        self.case['xmlfile'] = 'NEW.xml'
-
-def suite():
-    testSuite = unittest.makeSuite(ScriptRunningModelTestCase, "check")
-    return testSuite
-
-
-def runTest():
-    print("ScriptRunningModelTestCase")
-    runner = unittest.TextTestRunner()
-    runner.run(suite())
-
 
 #-------------------------------------------------------------------------------
 # End of ScriptRunningModel

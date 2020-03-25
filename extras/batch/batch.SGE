@@ -21,7 +21,3 @@
 # wildcards are allowed. "qconf -spl" will return a list of valid pe's.
 #
 #-------------------------------------------------------------------------------
-
-# Change to submission directory
-if test -n "$SGE_O_WORKDIR" ; then cd $SGE_O_WORKDIR ; fi
-

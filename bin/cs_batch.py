@@ -69,6 +69,55 @@ def parse_wall_time_slurm(s):
 
     return t
 
+#-------------------------------------------------------------------------------
+
+def generate_header(batch_template=None, job_name=None, package=None):
+    """
+    Generate batch header lines based on batch template configuration
+    """
+
+    lines = []
+
+    if not package:
+        from code_saturne import cs_package
+        package = cs_package.package()
+
+    if not batch_template:
+        config = configparser.ConfigParser()
+        config.read(package.get_configfiles())
+        if config.has_option('install', 'batch'):
+            batch_template = config.get('install', 'batch')
+
+    if not batch_template:
+        return lines
+
+    if not job_name:
+        job_name = package.name + ':' + os.path.basename(os.getcwd())
+
+    # For some systems, name lengths may be limited.
+    # With SLURM 18.08, the max. length seems to be 37 characters.
+    job_name = job_name[:38]
+
+    if not os.path.isabs(batch_template):
+        batch_template = os.path.join(package.get_batchdir(),
+                                      'batch.' + batch_template)
+
+    fdt = open(batch_template, 'r')
+
+    import re, string
+    kwd1 = re.compile('nameandcase')
+
+    # Determine or build default names if required
+
+    for line in fdt:
+        line = line.rstrip()
+        line = re.sub(kwd1, job_name, line)
+        lines.append(line)
+
+    fdt.close()
+
+    return lines
+
 #===============================================================================
 # Class used to manage batch directives
 #===============================================================================
@@ -82,7 +131,7 @@ class batch:
 
     #---------------------------------------------------------------------------
 
-    def __init__(self, package):
+    def __init__(self, package, install_config=None):
         """
         Constructor.
         """
@@ -107,8 +156,14 @@ class batch:
 
         self.rm_type = None
         self.rm_template = None
+        self.submit_command = ''
 
-        if package:
+        submit_command = None
+
+        if install_config:
+            self.rm_template = install_config['batch']
+
+        elif package:
             config = configparser.ConfigParser()
             config.read(package.get_configfiles())
 
@@ -119,21 +174,41 @@ class batch:
                     if i > -1:
                         self.rm_template = self.rm_template[i+1:]
 
+            if config.has_option('install', 'submit_command'):
+                submit_command = config.get('install', 'submit_command')
+
         if self.rm_template:
             if self.rm_template[0:5] == 'SLURM':
                 self.rm_type = 'SLURM'
+                self.submit_command_prefix = 'sbatch'
+                for k in ('SBATCH_WCKEY', 'SLURM_WCKEY'):
+                    if k in os.environ:
+                        v = os.environ[k]
+                        if v:
+                            self.params['job_wckey'] = v
             elif self.rm_template[0:3] == 'CCC':
                 self.rm_type = 'CCC'
+                self.submit_command_prefix = 'ccc_msub'
             elif self.rm_template[0:5] == 'LOADL':
                 self.rm_type = 'LOADL'
+                self.submit_command_prefix = 'llsubmit'
             elif self.rm_template[0:3] == 'LSF':
                 self.rm_type = 'LSF'
+                self.submit_command_prefix = 'bsub'
+            elif self.rm_template[0:3] == 'OAR':
+                self.rm_type = 'OAR'
+                self.submit_command_prefix = 'oarsub'
             elif self.rm_template[0:3] == 'PBS':
                 self.rm_type = 'PBS'
+                self.submit_command_prefix = 'qsub'
             elif self.rm_template[0:3] == 'SGE':
                 self.rm_type = 'SGE'
+                self.submit_command_prefix = 'qsub'
             else:
                 self.rm_type = os.path.basename(rm_template)
+
+        if submit_command:
+            self.submit_command = submit_command
 
     #---------------------------------------------------------------------------
 
@@ -749,14 +824,12 @@ class batch:
         Update the batch file from reading dictionary self.params.
         If a keyword is given, its presence is checked.
         """
-        l = list(self.params.keys())
-        l.append(None) # Add 'None' when no keyword is specified in argument.
-        for k in list(self.params.keys()):
-            if self.params[k] == 'None':
-                self.params[k] = None
-        if keyword not in l:
-            msg = str(keyword) + " is not in list " + str(l) + "\n"
-            raise ValueError(msg)
+
+        if keyword != None:
+            if keyword not in self.params:
+                msg = str(keyword) + " is not in list " \
+                    + str(list(self.params.keys())) + os.linesep
+                raise ValueError(msg)
 
         if self.rm_type:
             if self.rm_type == 'SLURM':
@@ -781,26 +854,7 @@ class batch:
         Return the command prefix used to submit a job.
         """
 
-        cmd_prefix = ''
-
-        rm_type = self.rm_type
-
-        if rm_type == 'SLURM':
-            cmd_prefix = 'sbatch '
-        elif rm_type == 'CCC':
-            cmd_prefix = 'ccc_msub '
-        elif rm_type == 'LOADL':
-            cmd_prefix = 'llsubmit '
-        elif rm_type == 'LSF':
-            cmd_prefix = 'bsub '
-        elif rm_type == 'OAR':
-            cmd_prefix = 'oarsub'
-        elif rm_type == 'PBS' or rm_type == 'SGE':
-            cmd_prefix = 'qsub '
-        else:
-            pass
-
-        return cmd_prefix
+        return self.submit_command + ' '
 
     #---------------------------------------------------------------------------
 

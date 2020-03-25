@@ -150,13 +150,11 @@ class package:
 
     def get_global_configfile(self):
 
-        # Windows XP:         C:\Documents and Settings\All Users
-        # Windows Vista/7/8:  C:\ProgramData
-        # Linux and co:       /etc
+        # Windows:         C:\ProgramData
+        # Linux and co:    /etc
 
         if sys.platform.startswith("win"):
-            # One could use PROGRAMDATA but it is not available on Windows XP
-            configdir = os.path.join(os.getenv("ALLUSERSPROFILE"),
+            configdir = os.path.join(os.getenv("PROGRAMDATA"),
                                      self.code_name, self.version_short)
         else:
             configdir = self.get_dir("sysconfdir")
@@ -165,9 +163,8 @@ class package:
 
     def get_user_configfile(self):
 
-        # Windows XP:         C:\Documents and Settings\{user}\Application Data
-        # Windows Vista/7/8:  C:\Users\{user}\AppData\Roaming
-        # Linux and co:       /home/{user}   (or similar)
+        # Windows:         C:\Users\{user}\AppData\Roaming
+        # Linux and co:    /home/{user}   (or similar)
 
         if sys.platform.startswith("win"):
             configdir = os.path.join(os.getenv("APPDATA"),
@@ -189,7 +186,7 @@ class package:
         return os.path.join(self.get_dir("pkgdatadir"),
                             'batch')
 
-    def get_runcase_script(self, script):
+    def get_pkgdatadir_script(self, script):
 
         return os.path.join(self.get_dir("pkgdatadir"),
                             script)

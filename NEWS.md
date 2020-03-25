@@ -27,6 +27,13 @@ Numerics and physical modelling:
 
 Architectural changes:
 
+- Replace SCRIPTS/"runcase" with DATA/run.cfg logic.
+  * DATA/SaturneGUI is replaced by DATA/code_saturne, which can both launch
+    the GUI or run the code (using "./code_saturne" or "./code_saturne run").
+  * The new logic allows keeping sections specific to various batch systems
+    or named resource environments in the "run.cfg" file, as well as better
+    align the "run" and "submit" commands, and is more easily extensible.
+
 - Now require Python 3.4 or higher.
   Python 2 is still supported for the moment, but the configure checks
   require Python 3 to "strongly encourage" migration if not done yet.

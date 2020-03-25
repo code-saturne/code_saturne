@@ -23,238 +23,308 @@
 #-------------------------------------------------------------------------------
 
 """
-This module modify the batch file
+This module modifies the run_conf object.
 - BatchRunningModel
 """
 #-------------------------------------------------------------------------------
 # Standard modules import
 #-------------------------------------------------------------------------------
 
-from __future__ import print_function
-
-import sys, unittest
-import os, os.path, shutil, sys, types, re
-
-from code_saturne import cs_batch
+import os, sys, types
 
 #-------------------------------------------------------------------------------
 # Library modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.model.XMLvariables import Variables, Model
-
-from code_saturne import cs_exec_environment
+from code_saturne import cs_batch
+from code_saturne import cs_run_conf
 
 #-------------------------------------------------------------------------------
 # Class BatchRunningModel
 #-------------------------------------------------------------------------------
 
-class BatchRunningModel(Model):
+class BatchRunningModel(object):
     """
-    This class modifies the batch file (runcase)
+    This class modifies the job info (in run.cfg)
     """
-    def __init__(self, parent, case):
+    def __init__(self, path=None, pkg=None, import_legacy=False):
         """
         Constructor.
         """
-        self.parent = parent
-        self.case = case
 
-        if not self.case['runcase']:
-            self.case['runcase'] = None
+        self.pkg = pkg
+        if self.pkg == None:
+            from code_saturne.cs_package import package
+            pkg = package()
 
-        self.batch = cs_batch.batch(self.case['package'])
+        self.run_conf = None
+        self.path = path
 
-        self.dictValues = {}
+        # Configuration-based information
 
-        # Do we force a number of MPI ranks ?
+        i_c = cs_run_conf.get_install_config_info(self.pkg)
 
-        self.dictValues['run_nprocs'] = None
-        self.dictValues['run_nthreads'] = None
-        self.dictValues['run_id'] = None
-        self.dictValues['run_build'] = None
-        self.dictValues['run_stage_init'] = False
+        self.resource_name = cs_run_conf.get_resource_name(i_c)
+        self.compute_builds = i_c['compute_builds']
 
-        # Is a batch file present ?
+        self.batch = cs_batch.batch(self.pkg)
 
-        if self.case['runcase']:
-            self.parseBatchFile()
+        # Convert from legacy runcase if not updated yet
+        # (delaying application of file changes to save).
+        # in this case, the run_conf object is pre-loaded so that
+        # the "save" operation can apply the (conversion) changes
+        # even when the configuration file has not been loaded.
 
+        self.runcase_path = None
+        if self.path:
+            if import_legacy and not os.path.isfile(self.path):
+                dirname = os.path.dirname(self.path)
+                if os.path.basename(dirname) == 'DATA':
+                    dirname = os.path.join(os.path.basename(dirname), 'SCRIPTS')
+                runcase_path = os.path.join(dirname, 'runcase')
+                if os.path.isfile(runcase_path):
+                    self.runcase_path = runcase_path
 
-    def parseBatchRunOptions(self):
+        if self.runcase_path:
+            runcase = cs_runcase.runcase(runcase_path,
+                                         package=self.pkg)
+            sections = runcase.run_conf_sections(resource_name=self.resource_name,
+                                                 batch_template=i_c['batch'])
+
+            self.run_conf = cs_run_conf.run_conf(run_conf_path,
+                                                 package=self.pkg,
+                                                 create_if_missing=True)
+            for sn in sections:
+                if not sn in self.run_conf.sections:
+                    run_conf.sections[sn] = {}
+                for kw in sections[sn]:
+                    self.run_conf.sections[sn][kw] = sections[sn][kw]
+
+    #---------------------------------------------------------------------------
+
+    def __is_changed__(self):
         """
-        Get info from the run command
-        """
-
-        self.dictValues['run_nprocs'] = self.case['runcase'].get_nprocs()
-        self.dictValues['run_nthreads'] = self.case['runcase'].get_nthreads()
-        self.dictValues['run_id'] = self.case['runcase'].get_run_id()[0]
-        self.dictValues['run_build'] = self.case['runcase'].get_compute_build()
-        self.dictValues['run_stage_init'] = self.case['runcase'].get_run_stage('initialize')
-
-
-    def updateBatchRunOptions(self, keyword=None):
-        """
-        Update the run command
-        """
-
-        if (keyword == 'run_nprocs' or not keyword) and self.case['runcase']:
-            self.case['runcase'].set_nprocs(self.dictValues['run_nprocs'])
-        if (keyword == 'run_nthreads' or not keyword) and self.case['runcase']:
-            self.case['runcase'].set_nthreads(self.dictValues['run_nthreads'])
-        if (keyword == 'run_id' or not keyword) and self.case['runcase']:
-            self.case['runcase'].set_run_id(run_id = self.dictValues['run_id'])
-        if (keyword == 'run_build' or not keyword) and self.case['runcase']:
-            self.case['runcase'].set_compute_build(self.dictValues['run_build'])
-        if (keyword == 'run_stage_init' or not keyword) and self.case['runcase']:
-            self.case['runcase'].set_run_stage('initialize',
-                                               self.dictValues['run_stage_init'])
-
-
-    def parseBatchFile(self):
-        """
-        Fill self.dictValues reading the batch file.
+        Check if values have been changed relative to the initial load.
         """
 
-        # Parse lines depending on batch type
+        if not self.run_conf:
+            return False
 
-        self.parseBatchRunOptions()
+        changed = False
 
-        if self.batch.rm_type == None:
+        if self.job_header_lines_ini != self.job_header_lines:
+            changed = True
+
+        if not changed:
+            t = ('1', 't', 'true', 'y', 'yes')
+            f = ('0', 'f', 'false', 'n', 'no')
+            for k in self.run_dict:
+                s1 = str(self.run_dict_ini[k]).lower()
+                s2 = str(self.run_dict[k]).lower()
+                if s1 in f and s2 in f:
+                    continue
+                elif s1 in t and s2 in t:
+                    continue
+                elif s1 != s2:
+                    changed = True
+                    break
+
+        if not changed:
+            for k in self.job_dict:
+                if str(self.job_dict_ini[k]) != str(self.job_dict[k]):
+                    changed = True
+                    break
+
+        return changed
+
+    #---------------------------------------------------------------------------
+
+    def __update__(self):
+        """
+        Update the associated dictionnaries and run_conf object.
+        """
+
+        if not self.have_mpi:
+            self.job_dict['n_procs'] = None
+        if not self.have_openmp:
+            self.job_dict['n_threads'] = None
+
+        if not self.run_conf:
             return
 
-        self.batch.parse_lines(self.case['runcase'].lines)
+        # Run information
 
+        for k in self.run_dict:
+            # Special case for "initialize": if False, we mean we do not specify
+            # this stage (since the others are not specified either)
+            if k == 'initialize':
+                if self.run_dict[k] == False:
+                    self.run_conf.set('run', 'initialize', None)
+                else:
+                    self.run_conf.set('run', k, self.run_dict[k])
+            else:
+                self.run_conf.set('run', k, self.run_dict[k])
 
-    def updateBatchFile(self, keyword=None):
+        # Resource-related information
+
+        if self.job_header_lines != None:
+            self.batch.update_lines(self.job_header_lines)
+            self.run_conf.set(self.resource_name, 'job_header',
+                              os.linesep.join(self.job_header_lines))
+
+        for k in self.job_dict:
+            if self.job_dict[k] == None:
+                self.run_conf.set(self.resource_name, k, None)
+            else:
+                self.run_conf.set(self.resource_name, k, str(self.job_dict[k]))
+
+    #---------------------------------------------------------------------------
+
+    def load(self):
         """
-        Update the batch file from reading dictionary self.dictValues.
-        If keyword == None, all keywords are updated
-        If keyword == key, only key is updated.
+        Load or the associated run_conf object if not already done.
         """
 
-        k = str(keyword)[0:3]
+        if self.run_conf:
+            return
 
-        if k[0:3] == 'run':
-            l = list(self.dictValues.keys())
-            l.append(None) # Add 'None' when no keyword is specified in argument.
-            for k in list(self.dictValues.keys()):
-                if self.dictValues[k] == 'None':
-                    self.dictValues[k] = None
-            self.isInList(keyword, l)
+        # Load or build run configuration
 
-        if k[0:3] != 'job':
-            self.updateBatchRunOptions()
+        self.run_conf = cs_run_conf.run_conf(self.path,
+                                             package=self.pkg,
+                                             create_if_missing=True)
 
-        if k[0:3] != 'run':
-            self.batch.update_lines(self.case['runcase'].lines, keyword)
+        self.run_dict = {}
+        self.job_dict = {}
 
+        # Generic job running information (subset of possible "run" info)
 
-#-------------------------------------------------------------------------------
-# BatchRunningModel test class
-#-------------------------------------------------------------------------------
+        self.run_dict['id'] = self.run_conf.get('run', 'id')
+        self.run_dict['compute_build'] = self.run_conf.get('run', 'compute_build')
 
-class BatchRunningModelTestCase(unittest.TestCase):
-    """
-    """
-    def setUp(self):
+        self.run_dict['initialize'] = self.run_conf.get_bool('run', 'initialize')
+        self.run_dict['compute'] = None
+        self.run_dict['finalize'] = None
+
+        # Resource-specific info (subset of resource-based info, and batch)
+
+        self.job_dict['n_procs'] = self.run_conf.get_int(self.resource_name,
+                                                         'n_procs')
+        self.job_dict['n_threads'] = self.run_conf.get_int(self.resource_name,
+                                                           'n_threads')
+
+        self.job_header_lines = None
+
+        if self.batch.rm_type:
+            job_header = self.run_conf.get(self.resource_name, 'job_header')
+            if not job_header:
+                self.run_conf.rebuild_resource()
+                job_header = self.run_conf.get(self.resource_name, 'job_header')
+            if job_header != None:
+                self.job_header_lines = job_header.split(os.linesep)
+
+        if self.job_header_lines != None:
+            self.batch.parse_lines(self.job_header_lines)
+
+        # Save initial values (to determine which are changed)
+
+        self.setup_ini = self.run_dict.get('setup', 'param')
+
+        self.run_dict_ini = {}
+        for k in self.run_dict:
+            self.run_dict_ini[k] = self.run_dict[k]
+
+        self.job_dict_ini = {}
+        for k in self.job_dict:
+            self.job_dict_ini[k] = self.job_dict[k]
+
+        self.job_header_lines_ini = None
+        if self.job_header_lines:
+            self.job_header_lines_ini = list(self.job_header_lines)
+
+        # Query info related to compute build
+
+        self.updateComputeBuildInfo(self.run_dict['compute_build'])
+
+    #---------------------------------------------------------------------------
+
+    def updateComputeBuildInfo(self, compute_build=None):
         """
-        This method is executed before all 'check' methods.
+        Update relative to compute build
         """
-        from code_saturne.model.XMLengine import Case
-        from code_saturne.model.XMLinitialize import XMLinit
-        from code_saturne.model.Common import GuiParam
-        GuiParam.lang = 'en'
-        self.case = Case(None)
-        XMLinit(self.case).initialize()
 
-        self.case['scripts_path'] = os.getcwd()
-        self.case['runcase'] = cs_runcase.runcase('runcase')
+        pkg_compute = None
 
-        lance_PBS = '# test \n'\
-        '#\n'\
-        '#                  CARTES BATCH POUR CLUSTERS sous PBS\n'\
-        '#\n'\
-        '#PBS -l nodes=16:ppn=1,walltime=34:77:22\n'\
-        '#PBS -j eo -N super_toto\n'
+        if self.compute_builds != None:
+            if not compute_build:
+                if len(self.compute_builds) > 0:
+                    compute_build = self.compute_builds[0]
+            if compute_build in self.compute_builds:
+                pkg_compute = self.pkg.get_alternate_version(compute_build)
 
-        lance_LSF = '# test \n'\
-        '#\n'\
-        '#        CARTES BATCH POUR LE CCRT (Platine sous LSF)\n'\
-        '#\n'\
-        '#BSUB -n 2\n'\
-        '#BSUB -c 00:05\n'\
-        '#BSUB -o super_tataco.%J\n'\
-        '#BSUB -e super_tatace.%J\n'\
-        '#BSUB -J super_truc\n'
+        if pkg_compute == None:
+            pkg_compute = self.pkg
 
-        self.f = open('lance_PBS','w')
-        self.f.write(lance_PBS)
-        self.f.close()
-        self.f = open('lance_LSF','w')
-        self.f.write(lance_LSF)
-        self.f.close()
+        config_features = pkg_compute.config.features
+        if config_features['mpi'] == 'yes':
+            self.have_mpi = True
+        if config_features['openmp'] == 'yes':
+            self.have_openmp = True
 
+        if not self.have_mpi:
+            self.job_dict['n_procs'] = None
+        if not self.have_openmp:
+            self.job_dict['n_threads'] = None
 
-    def tearDown(self):
+    #---------------------------------------------------------------------------
+
+    def save(self, path=None, param=None, force=True):
         """
-        This method is executed after all 'check' methods.
+        Update the associated run_conf object and save file
         """
-        f = self.case['runcase'].path
-        if os.path.isfile(f): os.remove(f)
 
+        if not self.run_conf:
+            return
 
-    def checkReadBatchPBS(self):
-        """ Check whether the BatchRunningModel class could be read file"""
-        # TODO update: self.case['batch_type'] = 'PBS'
-        mdl = BatchRunningModel(self.case)
+        self.__update__()
 
-        dico_PBS = {\
-        'job_nodes': '16',
-        'job_name': 'super_toto',
-        'job_ppn': '1',
-        'job_walltime': '34:77:22'}
+        if param != None:
+            param = os.path.basename(param)
+        if param == 'setup.xml':
+            param = None
 
-        for k in list(dico_PBS.keys()):
-            if mdl.batch.params[k] != dico_PBS[k] :
-                print("\nwarning for key: ", k)
-                print("  read value in the batch description: ", mdl.batch.params[k])
-                print("  reference value: ", dico_PBS[k])
-            assert  mdl.batch.params[k] == dico_PBS[k], 'could not read the batch file'
+        self.run_conf.set('setup', 'param', param)
 
+        save_as = False
 
-    def checkUpdateBatchFile(self):
-        """ Check whether the BatchRunningModel class could update file"""
-        mdl = BatchRunningModel(self.case)
-        mdl.batch.params['job_procs']=48
-        dico_updated = mdl.batch.params
-        mdl.updateBatchFile()
-        dico_read = mdl.batch.params
+        if path != None:
+            if self.path != None:
+                if self.path != path:
+                    save_as = True
+                else:
+                    save_as = False
+        else:
+            path = self.path
 
-        assert dico_updated == dico_read, 'error on updating batch script file'
+        if save_as:
+            self.run_conf.save(path, new=True)
 
+        else:
 
-    def checkUpdateBatchPBS(self):
-        """ Check whether the BatchRunningModel class could update file"""
-        mdl = BatchRunningModel(self.case)
-        mdl.batch.params['job_walltime']='12:42:52'
-        dicojob_updated = mdl.batch.params
-        mdl.updateBatchFile()
-        dicojob_read = mdl.batch.params
+            if force == False:
+                force = self.__is_changed__()
 
-        assert dicojob_updated == dicojob_read, 'error on updating PBS batch script file'
+            if force:
+                self.run_conf.save(path)
 
+                if self.runcase_path != None:
+                    os.remove(self.runcase_path)
+                    try:
+                        os.remove(os.path.dirname(self.runcase_path))
+                    except Exception:
+                        pass
 
-def suite():
-    testSuite = unittest.makeSuite(BatchRunningModelTestCase, "check")
-    return testSuite
-
-
-def runTest():
-    print("BatchRunningModelTestCase")
-    runner = unittest.TextTestRunner()
-    runner.run(suite())
-
+        self.path = path
 
 #-------------------------------------------------------------------------------
 # End of BatchRunningModel

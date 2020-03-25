@@ -1,23 +1,21 @@
 #------------------------------------------------------------------------------
-#   This file is part of the Code_Saturne Kernel, element of the
-#   Code_Saturne CFD tool.
+# This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-#   Copyright (C) 2009-2019 EDF S.A., France
+# Copyright (C) 2009-2020 EDF S.A.
 #
-#   The Code_Saturne Kernel is free software; you can redistribute it
-#   and/or modify it under the terms of the GNU General Public License
-#   as published by the Free Software Foundation; either version 2 of
-#   the License, or (at your option) any later version.
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 2 of the License, or (at your option) any later
+# version.
 #
-#   The Code_Saturne Kernel is distributed in the hope that it will be
-#   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-#   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#   GNU General Public License for more details.
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
 #
-#   You should have received a copy of the GNU General Public Licence
-#   along with the Code_Saturne Kernel; if not, write to the
-#   Free Software Foundation, Inc.,
-#   51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+# Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #-------------------------------------------------------------------------------
 
 # Bash completion script for:
@@ -77,20 +75,6 @@ _code_saturne() {
                 *) return 0;;
             esac
             ;;
-        studymanager)
-            case ${prev} in
-                -f|--file) _filedir; return 0;;
-                -m|--mail) COMPREPLY=( ); return 0;;
-                *) cmdOpts="-q --quiet -r --run -c --compare -p --post";;
-            esac
-            ;;
-        smgr)
-            case ${prev} in
-                -f|--file) _filedir; return 0;;
-                -m|--mail) COMPREPLY=( ); return 0;;
-                *) cmdOpts="-q --quiet -r --run -c --compare -p --post";;
-            esac
-            ;;
         bdiff)
             case ${prev} in
                 --f-format)    COMPREPLY=( ); return 0;;
@@ -139,25 +123,13 @@ _code_saturne() {
                 --syrthes|--aster|--cathare) COMPREPLY=( ); return 0;;
                 --copy-from)   _filedir -d; return 0;;
                 *) cmdOpts="-s --study -c --case --noref --copy-from \
-                     --syrthes --cathare --import-only -q --quiet -v --verbose";;
+                     --syrthes --cathare --python -q --quiet -v --verbose";;
             esac
             ;;
         gui)
             case ${prev} in
                 -p|--param)  _filedir; return 0;;
                 *) cmdOpts="-p --param -n --new -z --no-splash";;
-            esac
-            ;;
-        studymanagergui)
-            case ${prev} in
-                -p|--param)  _filedir; return 0;;
-                *) cmdOpts="-p --param -n --new";;
-            esac
-            ;;
-	smgrgui)
-            case ${prev} in
-                -p|--param)  _filedir; return 0;;
-                *) cmdOpts="-p --param -n --new";;
             esac
             ;;
         info)
@@ -184,8 +156,21 @@ _code_saturne() {
                 --n|--nprocs)            COMPREPLY=( ); return 0;;
                 --nt|--threads-per-task) COMPREPLY=( ); return 0;;
                 *) cmdOpts="-p --param --case --id --id-prefix --id-suffix \
-                     --suggest-id --force --stage --initialize --execute \
+                     --suggest-id --force --stage --initialize --compute \
                      --finalize -n --nprocs --nt --threads-per-task";;
+            esac
+            ;;
+        studymanage | smgr)
+            case ${prev} in
+                -f|--file) _filedir; return 0;;
+                -m|--mail) COMPREPLY=( ); return 0;;
+                *) cmdOpts="-q --quiet -r --run -c --compare -p --post";;
+            esac
+            ;;
+        studymanagergui | smgrgui)
+            case ${prev} in
+                -p|--param)  _filedir; return 0;;
+                *) cmdOpts="-p --param -n --new";;
             esac
             ;;
         submit)
@@ -195,6 +180,12 @@ _code_saturne() {
             case ${prev} in
                 -r|--resu)               _filedir -d; return 0;;
                 *) cmdOpts="-r --resu"
+            esac
+            ;;
+        update)
+            case ${prev} in
+                -c|--case)     COMPREPLY=( ); return 0;;
+                *) cmdOpts="-q --quiet -v --verbose";;
             esac
             ;;
         *)

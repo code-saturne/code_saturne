@@ -44,11 +44,10 @@ class runcase(object):
     def __init__(self,
                  path,
                  package=None,
-                 create_if_missing=True,
-                 rebuild=False,
-                 study_name=None,
-                 case_name=None,
-                 ignore_batch=False):
+                 submit=False,
+                 job_header=None,
+                 prologue=None,
+                 epilogue=None):
         """
         Initialize runcase info object.
         """
@@ -56,40 +55,25 @@ class runcase(object):
         self.path = path
         self.package = package
 
-        try:
+        if submit:
+            self.build_template(job_header=job_header,
+                                prologue=prologue, epilogue=epilogue)
+        else:
             f = open(self.path, mode = 'r')
             self.lines = f.readlines()
             f.close()
-            if rebuild:
-                self.get_run_command()
-                command_line = self.lines[self.run_cmd_line_id]
-                self.build_template(package,
-                                    study_name,
-                                    case_name,
-                                    ignore_batch)
-                self.lines[self.run_cmd_line_id] = command_line
 
-        except IOError:
-            if create_if_missing or rebuild:
-                self.build_template(package, study_name, case_name, ignore_batch)
-            else:
-                print("Error: can not open or read %s\n" % self.path)
-                sys.exit(1)
+            for i in range(len(self.lines)):
+                self.lines[i] = self.lines[i].rstrip()
 
-        for i in range(len(self.lines)):
-            self.lines[i] = self.lines[i].rstrip()
-
-        self.get_run_command()
+            self.get_run_command()
 
     #---------------------------------------------------------------------------
 
-    def save(self, path=None):
+    def save(self):
         """
-        Save runcase, optionally to a different path.
+        Save runcase.
         """
-
-        if (path):
-            self.path = path
 
         f = open(self.path, mode = 'w')
         for line in self.lines:
@@ -163,17 +147,8 @@ class runcase(object):
 
     #---------------------------------------------------------------------------
 
-    def set_run_args(self, args):
-        """
-        Set the run command and arguments from a list
-        """
-
-        self.lines[self.run_cmd_line_id] = assemble_args(args)
-
-    #---------------------------------------------------------------------------
-
-    def build_template(self, package=None, study_name=None, case_name=None,
-                       ignore_batch=False):
+    def build_template(self, job_header=None,
+                       prologue=None, epilogue=None):
         """
         Build batch file template
         """
@@ -182,81 +157,52 @@ class runcase(object):
         from code_saturne.cs_exec_environment import append_shell_shebang, \
             append_script_comment, prepend_path_command
 
-        if not package:
+        if not self.package:
             from code_saturne import cs_package
-            package = cs_package.package()
+            self.package = cs_package.package()
 
         self.lines = []
 
         append_shell_shebang(self.lines)
 
-        # Add batch system info if necessary
+        # Add batch system info and user prologue if necessary
 
-        batch_template = None
-        config = configparser.ConfigParser()
-        config.read(package.get_configfiles())
-
-        if not ignore_batch and config.has_option('install', 'batch'):
-
-            batch_template = config.get('install', 'batch')
-
-            if not os.path.isabs(batch_template):
-                batch_template = os.path.join(package.get_batchdir(),
-                                             'batch.' + batch_template)
-
-            fdt = open(batch_template, 'r')
-
-            import re, string
-            kwd1 = re.compile('nameandcase')
-
-            # Determine or build default names if required
-
-            if not case_name or not study_name:
-
-                topdir, scriptdir = os.path.split(os.path.split(self.path)[0])
-                if scriptdir == 'SCRIPTS':
-                    studydir, casedir = os.path.split(topdir)
-                    studydir = os.path.split(studydir)[1]
-                else:
-                    casedir = ''
-                    studydir = scriptdir
-
-                if not case_name:
-                    if casedir:
-                        case_name = casedir
-                    else:
-                        case_name = ''
-                if not study_name:
-                    study_name = studydir
-
-            studycasename = study_name.lower() + case_name.lower()
-
-            # For some systems, names are limited to 15 caracters
-            studycasename = studycasename[:15]
-
-            for line in fdt:
-                line = line.rstrip()
-                line = re.sub(kwd1, studycasename, line)
+        if job_header:
+            for line in job_header.split(os.linesep):
                 self.lines.append(line)
+            self.lines.append('')
 
-            fdt.close()
+        # Ensure switch to script directory
+
+        append_script_comment(self.lines,
+                              'Set working directory:' + os.linesep)
+        self.lines.append('cd ' + enquote_arg(os.path.dirname(self.path)))
+        self.lines.append('')
+
+        if prologue:
+            append_script_comment(self.lines,
+                                  'User prologue:' + os.linesep)
+            for line in prologue.split(os.linesep):
+                self.lines.append(line)
+            self.lines.append('')
 
         # Add command to execute.
 
-        append_script_comment(self.lines, 'Ensure the correct command is found:')
+        append_script_comment(self.lines, 'Run command:' + os.linesep)
 
-        self.lines.append(prepend_path_command('PATH',
-                                               package.get_dir("bindir")))
-        self.lines.append('')
-        append_script_comment(self.lines, 'Run command:\n')
-        # On Linux systems, add a backslash to prevent aliases
-        if sys.platform.startswith('win'):
-            run_cmd = ''
-        else:
-            run_cmd = '\\'
-        run_cmd += package.name + ' run'
+        exec_path = os.path.join(self.package.get_dir("bindir"), self.package.name)
+        run_cmd = enquote_arg(exec_path) + ' run'
+        self.cmd_name = self.package.name
         self.run_cmd_line_id = len(self.lines)
         self.lines.append(run_cmd)
+        self.lines.append('')
+
+        if epilogue:
+            append_script_comment(self.lines,
+                                  'User epilogue:' + os.linesep)
+            for line in epilogue.split(os.linesep):
+                self.lines.append(line)
+            self.lines.append('')
 
         self.save()
 
@@ -279,22 +225,6 @@ class runcase(object):
 
     #---------------------------------------------------------------------------
 
-    def set_compute_build(self, parameters):
-        """
-        Set the compute-build option in the run command
-        """
-
-        line = self.lines[self.run_cmd_line_id]
-
-        args = update_command_single_value(separate_args(line),
-                                           ('--compute-build',
-                                            '--compute-build='),
-                                           enquote_arg(parameters))
-
-        self.lines[self.run_cmd_line_id] = assemble_args(args)
-
-    #---------------------------------------------------------------------------
-
     def get_coupling(self):
         """
         Get the coupling option in the run command
@@ -305,21 +235,6 @@ class runcase(object):
         return get_command_single_value(args,
                                         ('--coupling',
                                          '--coupling='))
-
-    #---------------------------------------------------------------------------
-
-    def set_coupling(self, coupling):
-        """
-        Set the coupling option in the run command
-        """
-
-        line = self.lines[self.run_cmd_line_id]
-
-        args = update_command_single_value(separate_args(line),
-                                           ('--coupling',),
-                                           enquote_arg(coupling))
-
-        self.lines[self.run_cmd_line_id] = assemble_args(args)
 
     #---------------------------------------------------------------------------
 
@@ -335,21 +250,6 @@ class runcase(object):
 
     #---------------------------------------------------------------------------
 
-    def set_parameters(self, parameters):
-        """
-        Set the parameters option in the run command
-        """
-
-        line = self.lines[self.run_cmd_line_id]
-
-        args = update_command_single_value(separate_args(line),
-                                           ('--param', '--param=', '-p'),
-                                           enquote_arg(parameters))
-
-        self.lines[self.run_cmd_line_id] = assemble_args(args)
-
-    #---------------------------------------------------------------------------
-
     def get_nprocs(self):
         """
         Get the nprocs option in the run command
@@ -359,21 +259,6 @@ class runcase(object):
 
         return get_command_single_value(args,
                                         ('--nprocs', '--nprocs=', '-n'))
-
-    #---------------------------------------------------------------------------
-
-    def set_nprocs(self, parameters):
-        """
-        Set the nprocs option in the run command
-        """
-
-        line = self.lines[self.run_cmd_line_id]
-
-        args = update_command_single_value(separate_args(line),
-                                           ('--nprocs', '--nprocs=', '-n'),
-                                           enquote_arg(parameters))
-
-        self.lines[self.run_cmd_line_id] = assemble_args(args)
 
     #---------------------------------------------------------------------------
 
@@ -388,23 +273,6 @@ class runcase(object):
                                         ('--threads-per-task',
                                          '--threads-per-task=',
                                          '-nt'))
-
-    #---------------------------------------------------------------------------
-
-    def set_nthreads(self, parameters):
-        """
-        Set the nthreads option in the run command
-        """
-
-        line = self.lines[self.run_cmd_line_id]
-
-        args = update_command_single_value(separate_args(line),
-                                           ('--threads-per-task',
-                                            '--threads-per-task=',
-                                            '-nt'),
-                                           enquote_arg(parameters))
-
-        self.lines[self.run_cmd_line_id] = assemble_args(args)
 
     #---------------------------------------------------------------------------
 
@@ -425,31 +293,6 @@ class runcase(object):
 
     #---------------------------------------------------------------------------
 
-    def set_run_id(self, run_id=None, run_id_prefix=None, run_id_suffix=None):
-        """
-        Set the run id, id_prefix, and id_suffix options in the run command
-        """
-
-        line = self.lines[self.run_cmd_line_id]
-
-        args = separate_args(line)
-        if run_id != None:
-            args = update_command_single_value(args,
-                                               ('--id', '--id='),
-                                               enquote_arg(run_id))
-        if run_id_prefix != None:
-            args = update_command_single_value(args,
-                                               ('--id-prefix', '--id-prefix='),
-                                               enquote_arg(run_id_prefix))
-        if run_id_suffix != None:
-            args = update_command_single_value(args,
-                                               ('--id-suffix', '--id-suffix='),
-                                               enquote_arg(run_id_suffix))
-
-        self.lines[self.run_cmd_line_id] = assemble_args(args)
-
-    #---------------------------------------------------------------------------
-
     def get_run_stage(self, stage):
         """
         Return True if a given stage is specified in the run command,
@@ -466,18 +309,95 @@ class runcase(object):
 
     #---------------------------------------------------------------------------
 
-    def set_run_stage(self, stage, present=False):
+    def run_conf_sections(self,
+                          resource_name='job_defaults',
+                          batch_template=None):
         """
-        Specify the given stage in the run command
+        Build "run_conf" sections from an existing runcase.
         """
 
-        line = self.lines[self.run_cmd_line_id]
+        sections = {}
 
-        args = update_command_no_value(separate_args(line),
-                                       ('--' + stage,),
-                                       present)
+        param = self.get_parameters()
 
-        self.lines[self.run_cmd_line_id] = assemble_args(args)
+        setup_dict = {}
+        if param != 'setup.xml':
+            setup_dict['param'] = param
+        coupling = self.get_coupling()
+        if coupling:
+            setup_dict['coupling'] = coupling
+        if len(setup_dict) > 0:
+            sections['setup'] = setup_dict
+
+        run_dict = {}
+        compute_build = self.get_compute_build()
+        if compute_build:
+            run_dict['compute_build'] = compute_build
+        run_id, run_id_prefix, run_id_suffix = self.get_run_id()
+        if run_id:
+            run_dict['id'] = run_id
+        if run_id_prefix:
+            run_dict['id_prefix'] = run_id_prefix
+        if run_id_suffix:
+            run_dict['id_suffix'] = run_id_suffix
+        stage_map = {'stage': 'stage',
+                     'initialize': 'preprocess',
+                     'execute': 'compute',
+                     'finalize': 'finalize'}
+        for stage in stage_map.keys():
+            if self.get_run_stage(stage):
+                run_dict[stage_map[stage]] = True
+        if len(run_dict) > 0:
+            sections['run'] = run_dict
+
+        resource_dict = {}
+        nprocs = self.get_nprocs()
+        if nprocs:
+            resource_dict['n_procs'] = nprocs
+        nthreads = self.get_nthreads()
+        if nthreads:
+            resource_dict['n_threads'] = nthreads
+
+        # Handle batch info
+        if batch_template:
+            from code_saturne import cs_batch
+            batch_src = cs_batch.batch(self.package)
+            batch_src.parse_lines(self.lines)
+
+            topdir, scriptdir = os.path.split(os.path.split(self.path)[0])
+            if scriptdir == 'SCRIPTS':
+                studydir, casedir = os.path.split(topdir)
+                studydir = os.path.split(studydir)[1]
+            else:
+                casedir = ''
+                studydir = scriptdir
+            job_name = studydir.lower() + casedir.lower()
+
+            dst_header = cs_batch.generate_header(batch_template=batch_template,
+                                                  job_name=job_name,
+                                                  package=self.package)
+            batch_dst = cs_batch.batch(self.package)
+            batch_dst.parse_lines(dst_header)
+            for k in batch_src.params.keys():
+                if batch_src.params[k] != None:
+                    batch_dst.params[k] = batch_src.params[k]
+            batch_dst.update_lines(dst_header)
+
+            br = os.linesep
+
+            job_header = ''
+            for i, l in enumerate(dst_header):
+                if i == 0:
+                    job_header = l
+                else:
+                    job_header += br + l
+
+            resource_dict['job_header'] = job_header
+
+        if len(resource_dict) > 0:
+            sections[resource_name] = resource_dict
+
+        return sections
 
 #-------------------------------------------------------------------------------
 # End

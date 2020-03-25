@@ -53,15 +53,10 @@ def print_help(submit_cmd, pkg):
 
     help_string = \
 """
-Usage: %s [batch options] <runcase_script> [script args]
+Usage: %s [batch options]
 
 Options:
-
-  Any option provided by the batch submission command (%s)
-
-Runcase script:
-
-  Shell script containing "%s run" command.
+   Any option provided by the batch submission command (%s)
 """
     print(help_string % (sys.argv[0], submit_cmd, pkg.name))
 
@@ -79,24 +74,14 @@ def process_cmd_line(argv, submit_cmd, pkg):
 
     if "-h" in argv or "--help" in argv:
         need_help = True
-    elif len(argv) < 1:
-        need_help = True
-    else:
-        for a in argv:
-            if os.path.isfile(a):
-                runcase_path = a
-                break
-
-    if not runcase_path:
-        need_help = True
 
     if need_help:
         print_help(submit_cmd, pkg)
 
-    return runcase_path
+    return
 
 #===============================================================================
-# Run the calculation
+# Sumbit the calculation
 #===============================================================================
 
 def main(argv, pkg):
@@ -108,31 +93,16 @@ def main(argv, pkg):
 
     batch = cs_batch.batch(pkg)
 
-    submit_cmd = batch.submit_command_prefix()
+    submit_cmd = batch.submit_command_prefix
 
     if not submit_cmd:
         submit_cmd = get_shell_type()
 
-    runcase_path = process_cmd_line(argv, submit_cmd, pkg)
+    submit_args = []
+    for a in argv:
+        submit_args.append(a)
 
-    if not runcase_path:
-        return 1
-
-    scripts_dir = os.path.abspath(os.path.dirname(runcase_path))
-
-    runcase = cs_runcase.runcase(runcase_path)
-
-    # Adjust run command for staging only
-
-    run_args = runcase.get_run_args()
-
-    for a in ['--stage', '--initialize', '--execute', '--finalize']:
-        while a in run_args:
-            run_args.remove(a)
-
-    run_args.append('--stage')
-
-    retcode, run_id, result_path = cs_run.run(run_args, pkg)
+    retcode, result_path, r_c = cs_run.run(pkg=pkg, submit_args=submit_args)
 
     # Now prepare runcase for submission
 
@@ -140,39 +110,22 @@ def main(argv, pkg):
         err_str = ' run not staged due to prior error.'
         raise Exception(err_str)
 
-    run_args = runcase.get_run_args()
-
-    while '--stage' in run_args:
-        run_args.remove(a)
-
-    stages = []
-    for a in ['--initialize', '--execute', '--finalize']:
-        if a in run_args:
-            stages.append(a)
-
-    if not stages:
-        run_args.append('--initialize')
-        run_args.append('--finalize')
-
-    runcase.set_run_args(run_args)
-    runcase.set_run_id(run_id=run_id)
-
-    runcase_path = os.path.join(result_path,
-                                os.path.basename(runcase_path))
-
-    runcase.save(runcase_path)
+    runcase_path = os.path.join(result_path, 'runcase')
+    runcase = cs_runcase.runcase(runcase_path,
+                                 package=pkg,
+                                 submit=True,
+                                 job_header = r_c['job_header'],
+                                 prologue = r_c['run_prologue'],
+                                 epilogue = r_c['run_epilogue'])
+    runcase.save()
 
     # Now submit case
 
     save_wd = os.getcwd()
     os.chdir(result_path)
 
-    for a in argv:
-        if os.path.isfile(a) and runcase_path:
-            submit_cmd += ' ' + enquote_arg(runcase_path)
-            runcase_path = None
-        else:
-            submit_cmd += ' ' + enquote_arg(a)
+    if r_c['job_parameters']:
+        submit_cmd += ' ' + r_c['job_parameters']
 
     return subprocess.call(submit_cmd, shell=True)
 

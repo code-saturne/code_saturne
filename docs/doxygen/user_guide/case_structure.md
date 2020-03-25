@@ -166,7 +166,8 @@ summary          | output file           | global execution and environment summ
 
 In special cases, it is possible to define a separate *scratch* execution directory,
 by setting a 'CS_SCRATCHDIR` environment variable or defining such a directory in the
-general `code_saturne.cfg` settings.
+general configuration ([code_saturne.cfg](@ref #cs_user_configuration_file}))` settings.
+
 In this case, results are copied from the scratch directory to
 the run output directory during the `finalize` stage of a computation.
 
@@ -225,3 +226,237 @@ the sub-directory named `EXAMPLES`  containing multiple examples are copied.
 As a rule of thumb, all files in `DATA` or `SRC` except for the
 `code_saturne` script are copied for use during code execution,
 but subdirectories are not.
+
+Run configuration file (run.cfg) {#sec_prg_runcfg}
+----------------------
+
+For a given case, various execution-related settings can be defined
+using a file named `run.cfg` in a case's `DATA` sub-directory (or in
+a coupling's main directory). This file uses a format similar to classical
+[`.ini`](https://docs.python.org/3/library/configparser.html#supported-ini-file-structure)
+style file format, with some special section types being handled differently
+
+A section named *section-name* is denoted by a line starting with `[section-name]`.
+Key-value pairs in a section are defined using simple `key = value` or `key: value`
+statements. Value definitions continuing over multiple lines must be indented by
+at least one character.
+
+Note that for key values that can take *true* or *false* values,
+either `true`, `yes`, and `1` can be used for *true*, and
+either `false`, `no`, and `0` can be used for *false*. Any case (capitalization)
+combination can be used for the key value.
+
+Also, as this file may be modified automatically by the code_saturne
+scripts and GUI, is is recommended to place matching commments before
+section and key definitions, so thet may be written in the correct
+place when the file is regenerated.
+
+As an extension of the common [`.ini`] file format, an alternative way of
+defining key-value pairs in a given section is to define a section named
+*section-name:key*. In this case, all lines inside that section are
+associated to the value (except for initial en final empty lines).
+This avoids indentation requirments using multiline entries and generally
+keeps things more readable. Such sections may optionally be closed by
+an empty `[]` section declaration. This is only useful if comments
+must be added before a following section, as they are implicitely closed
+when a following section declaration or the end of file is reached.
+
+The relevant sections and associated keywords are described below:
+
+### [setup]
+<!-- -->
+
+Optional section relative to associated setup. Allowed keywords are:
+
+* `parameters`
+
+  Name of the parameters file (default: setup.xml).
+
+* `coupling`
+
+  Name of the coupling_parameters file if present
+  (default: coupling_parameters.py).
+
+As the recommended `setup.xml` and coupling_parameters.py are used by default
+if not specified here but present in the directory structure, this section is
+optional, and useful only for compatibility with older cases containing multiple
+setup files (which is not recommended). An absolute path may also be used, but is
+usually not recommended as the case structure is then not self-contained.
+
+### [job_defaults]
+<!-- -->
+
+This section defines defaults when no associated
+[${resource_name}](@ref case_structure_run_conf_resource_options)
+or [${batch_type}] section is present. The same key-value
+pairs may be used.
+
+### [run]
+<!-- -->
+
+Optional (recommended) section relative to run stages and other aspects.
+
+In case of multiple available builds (such as when standard and debug builds
+are available, the compute build may be defined here:
+
+* `compute_build`
+
+   name or path of alternate compute build; if not set, the
+   install settings or defaults apply; <br/>
+
+The run *ids* (defining the results directory names in the `RESU` or
+`RESU_COUPLING` directory) can be specified using the following keys!
+
+* `id`
+
+  id assigned to run in results directory;
+
+* `id_prefix`
+
+  prefix to assign to automatically-generated run id's
+  (i.e. in absence of `id` value);
+
+* `id_suffix`
+
+  suffix to assign to automatically-generated run id's
+  (i.e. in absence of `id` value);
+
+* `force`
+
+  if *true*, the computation is allowed when a result directory with
+  the same id is already present and the stage step is required;
+  by default, (*false*), an error is returned and the computation is not run,
+  to avoid overwriting existing data; <br/>
+
+The following keywords allow determining which stages which should be run.
+By default, all steps are executed, unless some steps are specified, in which
+case the specified steps and those in between are run; if a single step
+is specified, all steps up to that one are assumed.
+
+* `stage`
+
+  *true* or *false* to indicate whether the staging step should be run; must
+  be *true* unless a result directory with the same id has already  been staged.
+
+* `initialize`
+
+  *true* or *false* to indicate whether the preprocessing step should be run;
+
+* `compute`
+
+  *true* or *false* to indicate whether the compute step should be run;
+
+* `finalize`
+
+  *true* or *false* to indicate whether the finalization step should be run.
+
+### [${resource_name}] {#case_structure_run_conf_resource_options}
+<!-- -->
+
+A section defining the requested options specific to compute environment
+(and associated resource) can be defined by using the resource's name
+which can be configured using the `resource_name` keyword in the
+`[install]` section of the global install or user
+[configuration](@ref cs_user_configuration_file) (with the system rather
+than user setting being recommended).
+
+In this documentation section, ${resource_name} should be replaced by
+the actual active resource name. If no resource name is specified
+in the main code_saturne (or user) install configuration, the name
+of the configured batch system type (in lowercase) is used instead.
+If this is not available either, `${resource_name}` finally defaults
+to `job_defaults`.
+
+Optional (recommended) section relative to job defaults. Allowed keywords are:
+
+* `n_procs`
+
+   Number of MPI processes for computation (default: 1).
+
+   This option overrides the values determined automatically through the resource
+   manager (batch system) when both are present. This may be useful in case of
+   an incorrect automatic determination of the number of MPI ranks on some
+   systems (or for advanced uses such as debugging a case on a number of MPI ranks
+   which is not a multiple of the number of processes per node available using the
+   batch system), but should otherwise only be defined in the absence of a
+   resource manager.
+
+* `n_threads`
+
+  Number of OpenMP threads for computation (default: 1).
+
+* `time_limit`
+
+  Time limit for computation, in seconds; unlimited if < 0 (default).
+  When running under a resource manager (batch system), the actual limit
+  will usually be lower.
+
+When a batch system is configured, associated batch settings may be given
+using one of several keywords:
+
+* `job_parameters`
+
+  List of parameters which should be passed to the resource manager-specific
+  command (for example `sbatch`, `llsubmit`, 'qsub`, ... depending on system);
+
+* `job_header`
+
+   Job jeader that should be inserted at the beginning of the generated and
+   submitted `runcase` or `run_solver` scripts.
+
+   Using the special [[${resource_name}:job_header]] section type instead
+   is recommended, as it avoids indentation requirements.
+
+* `job_header_file`
+
+   Defines the path to a file that contains the job header to insert
+   (ohtherwise as above). Either an  absolute or relative (to `run.cfg`)
+   path may be used.
+
+* `jobmanager`
+
+    This option is reserved for future use with the SALOME platform's
+    JOBMANAGER tool, but is not yet available.
+
+If more than one of these options are defined, the priority, from highest to
+lowest, is as follows: `job_parameters`, `job_header`, `job_header_file`.
+
+### [${resource_name}:${key}] {#case_structure_run_conf_section_key}
+<!-- -->
+
+Sections of this type are used to define key values associated to the
+*${resource_name}* section that may spread over multiple lines.
+All lines (except empty initial and final lines) are used as the key value.
+The main usage is to store batch job headers, with the following key:
+
+* `job_header`
+
+  The associated lines are inserted in the generated and submitted `runcase`
+  file.
+
+Additional resource:key combinations allow inserting additional snippets
+in the generated scripts, and may be useful mostly to define or modify
+additional environment variables. The associated key names are:
+
+* `run_prologue`
+
+  The associated entry is inserted before the active run steps are executed.
+
+* `run_epilogue`
+
+  The associated entry is inserted after the active run steps are executed.
+
+* `compute_prologue`
+
+  The associated entry is inserted in the generated `run_solver` script,
+  before the main solver execution, and is restricted to the computation
+  environment; it is thus usually preferred to `run_prologue` when both
+  could be used.
+
+* `compute_epilogue`
+
+  The associated entry is inserted in the generated `run_solver` script,
+  after the main solver execution, and is restricted to the computation
+  environment; it is thus usually preferred to `run_epilogue` when both
+  could be used.
+

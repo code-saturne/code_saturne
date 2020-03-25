@@ -124,7 +124,15 @@ class config:
             self.exeext = ""
             self.shext = ""
 
-        # Libraries to add for specific executable names
+        # Known module names (code_saturne always present; others may
+        # depend on availability, but names are reserved here);
+        # Must be all lowercase to simplify tests across scripts.
+
+        self.solver_modules = ('code_saturne', 'neptune_cfd')
+
+        # Headers and libraries to add for specific executable/module names
+
+        self.exec_include = {'nc_solver' + self.exeext: "neptune_cfd"}
 
         self.exec_libs = {'cs_solver' + self.exeext: "-lcs_solver",
                           'nc_solver' + self.exeext: "-lneptune"}

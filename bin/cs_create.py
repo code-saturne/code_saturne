@@ -52,6 +52,7 @@ except Exception:
     import configparser  # Python3
 
 from code_saturne import cs_exec_environment
+from code_saturne import cs_run_conf
 from code_saturne import cs_runcase
 
 #-------------------------------------------------------------------------------
@@ -82,10 +83,6 @@ def process_cmd_line(argv, pkg):
                       metavar="<case>",
                       help="create a case from another one")
 
-    parser.add_option("--import-only", dest="import_only",
-                      action="store_true",
-                      help="rebuild scripts of existing case")
-
     parser.add_option("--noref", dest="use_ref",
                       action="store_false",
                       help="don't copy references")
@@ -115,7 +112,6 @@ def process_cmd_line(argv, pkg):
     parser.set_defaults(case_names=[])
     parser.set_defaults(copy=None)
     parser.set_defaults(verbose=1)
-    parser.set_defaults(import_only=False)
     parser.set_defaults(n_sat=1)
     parser.set_defaults(syr_case_names=[])
     parser.set_defaults(cat_case_name=None)
@@ -127,21 +123,17 @@ def process_cmd_line(argv, pkg):
         if len(args) > 0:
             options.case_names = args
         else:
-            if not options.import_only:
-                options.case_names = ["CASE1"]
-            else:
-                options.case_names = [""]
+            options.case_names = ["CASE1"]
 
-    return Study(pkg,
+    return study(pkg,
                  options.study_name,
-                 options.case_names,
-                 options.syr_case_names,
-                 options.cat_case_name,
-                 options.py_case_name,
-                 options.copy,
-                 options.import_only,
-                 options.use_ref,
-                 options.verbose)
+                 cases=options.case_names,
+                 syr_case_names=options.syr_case_names,
+                 cat_case_name=options.cat_case_name,
+                 py_case_name=options.py_case_name,
+                 copy=options.copy,
+                 use_ref=options.use_ref,
+                 verbose=options.verbose)
 
 #-------------------------------------------------------------------------------
 # Assign executable mode (chmod +x) to a file
@@ -211,14 +203,71 @@ def syrthes_path_line(pkg):
     return line
 
 #-------------------------------------------------------------------------------
+# Create local launch script
+#-------------------------------------------------------------------------------
+
+def create_local_launcher(pkg, path=None):
+    """
+    Create a local launcher script.
+    """
+
+    local_script = pkg.name + pkg.config.exeext
+    if path:
+        local_script = os.path.join(path, local_script)
+
+    fd = open(local_script, 'w')
+    cs_exec_environment.write_shell_shebang(fd)
+
+    cs_exec_environment.write_script_comment(fd,
+                                             'Ensure the correct command is found:\n')
+    cs_exec_environment.write_prepend_path(fd, 'PATH',
+                                           pkg.get_dir("bindir"))
+
+    if sys.platform.startswith('win'):
+        fd.write('\n')
+        cs_exec_environment.write_script_comment(fd, 'Run command:\n')
+        fd.write(pkg.name + ' gui ' +
+                 cs_exec_environment.get_script_positional_args() + '\n')
+    else:
+        # On Linux or similar systems, add a backslash to prevent aliases
+        # Start "code_saturne gui by default
+        fd.write("""
+# Insert default command
+cs_cmd=""
+if test $# = 1; then
+  if test -f $1; then
+    cs_cmd=gui
+  fi
+elif test $# = 0; then
+  cs_cmd=gui
+fi
+
+# Run command
+"""
+        )
+        fd.write('\\')
+        fd.write(pkg.name + ' $cs_cmd ' +
+                 cs_exec_environment.get_script_positional_args() + '\n')
+
+    fd.close()
+    set_executable(local_script)
+
+#-------------------------------------------------------------------------------
 # Definition of a class for a study
 #-------------------------------------------------------------------------------
 
-class Study:
+class study:
 
-    def __init__(self, package, name, cases, syr_case_names,
-                 cat_case_name, py_case_name,
-                 copy, import_only, use_ref, verbose):
+    def __init__(self,
+                 package,
+                 name,
+                 cases=[],
+                 syr_case_names=[],
+                 cat_case_name=None,
+                 py_case_name=None,
+                 copy=None,
+                 use_ref=False,
+                 verbose=0):
         """
         Initialize the structure for a study.
         """
@@ -231,7 +280,6 @@ class Study:
         self.copy = copy
         if self.copy is not None:
             self.copy = os.path.abspath(self.copy)
-        self.import_only = import_only
         self.use_ref = use_ref
         self.verbose = verbose
 
@@ -248,15 +296,6 @@ class Study:
 
         self.py_case_name = py_case_name
 
-        if self.import_only:
-            self.use_ref = False
-            self.copy = None
-
-            # Options is now deprecated, print info
-            sys.stdout.write("  o '%s create --import-only' is deprecated.\n" % \
-                    self.package.name)
-            sys.stdout.write("  o Use '%s update' instead\n\n" % self.package.name)
-
 
     def create(self):
         """
@@ -265,18 +304,12 @@ class Study:
 
         if self.name != os.path.basename(os.getcwd()):
 
-            if not self.import_only:
-                if self.verbose > 0:
-                    sys.stdout.write("  o Creating study '%s'...\n" % self.name)
-                os.mkdir(self.name)
-                os.chdir(self.name)
-                os.mkdir('MESH')
-                os.mkdir('POST')
-
-            else:
-                if self.verbose > 0:
-                    sys.stdout.write("  o Importing study '%s'...\n" % self.name)
-                os.chdir(self.name)
+            if self.verbose > 0:
+                sys.stdout.write("  o Creating study '%s'...\n" % self.name)
+            os.mkdir(self.name)
+            os.chdir(self.name)
+            os.mkdir('MESH')
+            os.mkdir('POST')
 
         # Creating Code_Saturne cases
         repbase = os.getcwd()
@@ -307,6 +340,9 @@ class Study:
            or self.cat_case_name or self.py_case_name:
             self.create_coupling(repbase)
 
+        # Create launcher for code coupling
+        create_local_launcher(self.package, repbase)
+
 
     def create_syrthes_cases(self, repbase):
         """
@@ -320,10 +356,7 @@ class Study:
 
         for s in self.syr_case_names:
             os.chdir(repbase)
-            if not self.import_only:
-                retval = syrthes.create_syrcase(s)
-            else:
-                retval = 0
+            retval = syrthes.create_syrcase(s)
             if retval > 0:
                 sys.stderr.write("Cannot create SYRTHES case: '%s'\n" % s)
                 sys.exit(1)
@@ -431,7 +464,6 @@ domains = [
 """
     {'solver': 'PACKAGE',
      'domain': 'DOMAIN',
-     'script': 'runcase',
      'n_procs_weight': None,
      'n_procs_min': 1,
      'n_procs_max': None}
@@ -457,7 +489,7 @@ domains = [
     ,
     {'solver': 'SYRTHES',
      'domain': 'DOMAIN',
-     'script': 'syrthes_data.syd',
+     'param': 'syrthes_data.syd',
      'n_procs_weight': None,
      'n_procs_min': 1,
      'n_procs_max': None,
@@ -477,13 +509,8 @@ domains = [
     ,
     {'solver': 'CATHARE',
      'domain': 'DOMAIN',
-     'script': 'runcase',
-     'paramfile': 'setup.xml',
      'cathare_case_file': 'jdd_case.dat',
-     'neptune_cfd_domain': 'NEPTUNE',
-     'n_procs_weight': None,
-     'n_procs_min': 1,
-     'n_procs_max': 1}
+     'neptune_cfd_domain': 'NEPTUNE'}
 """
 
             template = re.sub(e_pkg, solver_name, template)
@@ -522,7 +549,8 @@ domains = [
         # Result directory for coupling execution
 
         resu = os.path.join(repbase, 'RESU_COUPLING')
-        if not self.import_only:
+        os.mkdir(resu)
+        if not os.path.isdir(resu):
             os.mkdir(resu)
 
         coupling_base = 'coupling_parameters.py'
@@ -546,10 +574,10 @@ domains = [
         else:
             cathare_libpath=None
 
-        self.build_batch_file(distrep = repbase,
-                              casename = 'coupling',
-                              coupling = coupling_base,
-                              cathare_path = cathare_libpath)
+        self.__build_run_cfg__(distrep = repbase,
+                               casename = 'coupling',
+                               coupling = coupling_base,
+                               cathare_path = cathare_libpath)
 
 
     def create_case(self, casename):
@@ -560,22 +588,15 @@ domains = [
         casedirname = casename
 
         if self.verbose > 0:
-            if not self.import_only:
-                sys.stdout.write("  o Creating case  '%s'...\n" % casename)
-            else:
-                if not casename:
-                    casedirname = "."
-                    casename = os.path.basename(os.getcwd())
-                sys.stdout.write("  o Importing case  '%s'...\n" % casename)
+            sys.stdout.write("  o Creating case  '%s'...\n" % casename)
 
         datadir = self.package.get_dir("pkgdatadir")
         data_distpath  = os.path.join(datadir, 'data')
 
-        if not self.import_only:
-            try:
-                os.mkdir(casedirname)
-            except:
-                sys.exit(1)
+        try:
+            os.mkdir(casedirname)
+        except:
+            sys.exit(1)
 
         os.chdir(casedirname)
 
@@ -588,12 +609,11 @@ domains = [
 
         data = 'DATA'
 
-        if not self.import_only:
-            os.mkdir(data)
-            abs_setup_distpath = os.path.join(data_distpath, 'setup.xml')
-            if os.path.isfile(abs_setup_distpath) and not self.copy:
-                shutil.copy(abs_setup_distpath, data)
-                unset_executable(data)
+        os.mkdir(data)
+        abs_setup_distpath = os.path.join(data_distpath, 'setup.xml')
+        if os.path.isfile(abs_setup_distpath) and not self.copy:
+            shutil.copy(abs_setup_distpath, data)
+            unset_executable(data)
 
         if self.use_ref:
 
@@ -610,33 +630,24 @@ domains = [
             shutil.copy(abs_f, ref)
             unset_executable(ref)
 
-        # Write a wrapper for GUI launching
+        # Write a wrapper for code and launching
 
-        guiscript = os.path.join(data, self.package.guiname)
+        create_local_launcher(self.package, data)
 
-        fd = open(guiscript, 'w')
-        cs_exec_environment.write_shell_shebang(fd)
+        # Generate run.cfg file or copy one
 
-        cs_exec_environment.write_script_comment(fd,
-            'Ensure the correct command is found:\n')
-        cs_exec_environment.write_prepend_path(fd, 'PATH',
-                                               self.package.get_dir("bindir"))
-        fd.write('\n')
-        cs_exec_environment.write_script_comment(fd, 'Run command:\n')
-        # On Linux systems, add a backslash to prevent aliases
-        if sys.platform.startswith('linux'): fd.write('\\')
-        fd.write(self.package.name + ' gui ' +
-                 cs_exec_environment.get_script_positional_args() + '\n')
+        run_conf = None
+        run_conf_path = os.path.join(data, 'run.cfg')
 
-        fd.close()
-
-        set_executable(guiscript)
+        if not self.copy:
+            run_conf = cs_run_conf.run_conf(run_conf_path,
+                                            package=self.package,
+                                            rebuild=True)
 
         # User source files directory
 
-        if not self.import_only:
-            src = 'SRC'
-            os.mkdir(src)
+        src = 'SRC'
+        os.mkdir(src)
 
         if self.use_ref:
 
@@ -665,7 +676,8 @@ domains = [
                 if os.path.isdir(user_examples_distpath):
                     s_files = os.listdir(user_examples_distpath)
                     for f in s_files:
-                        shutil.copy(os.path.join(user_examples_distpath, f), user_examples)
+                        shutil.copy(os.path.join(user_examples_distpath, f),
+                                    user_examples)
 
             unset_executable(user)
             unset_executable(user_examples)
@@ -683,8 +695,8 @@ domains = [
                 abs_f = os.path.join(ref_data, f)
                 if os.path.isfile(abs_f) and \
                        f not in [self.package.guiname,
-                                 'preprocessor_output']:
-                    shutil.copy(os.path.join(ref_data, abs_f), data)
+                                 self.package.name]:
+                    shutil.copy(abs_f, data)
                     unset_executable(os.path.join(data, f))
 
             # Source files
@@ -695,81 +707,92 @@ domains = [
             else:
                 src_files = []
 
-            c_files = fnmatch.filter(src_files, '*.c')
-            cxx_files = fnmatch.filter(src_files, '*.cxx')
-            cpp_files = fnmatch.filter(src_files, '*.cpp')
-            h_files = fnmatch.filter(src_files, '*.h')
-            hxx_files = fnmatch.filter(src_files, '*.hxx')
-            hpp_files = fnmatch.filter(src_files, '*.hpp')
-            f_files = fnmatch.filter(src_files, '*.[fF]90')
+            for f in src_files:
+                abs_f = os.path.join(ref_src, f)
+                if os.path.isfile(abs_f):
+                    shutil.copy(abs_f, src)
+                    unset_executable(os.path.join(src, f))
 
-            for f in c_files + h_files + f_files + \
-                    cxx_files + cpp_files + hxx_files + hpp_files:
-                shutil.copy(os.path.join(ref_src, f), src)
-                unset_executable(os.path.join(src, f))
+            # If run.cfg was not present in initial case, generate it
 
-        # Results directory (only one for all instances)
+            if not os.path.isfile(run_conf_path):
+
+                run_conf = cs_run_conf.run_conf(run_conf_path,
+                                                package=self.package,
+                                                rebuild=True)
+
+                # Runcase (for legacy structures)
+
+                runcase_path = os.path.join(self.copy, 'SCRIPTS', 'runcase')
+
+                if os.path.isfile(runcase_path):
+
+                    i_c = cs_run_conf.get_install_config_info(self.package)
+                    resource_name = cs_run_conf.get_resource_name(i_c)
+
+                    runcase = cs_runcase.runcase(runcase_path,
+                                                 package=self.package)
+                    sections = runcase.run_conf_sections(resource_name=resource_name,
+                                                         batch_template=i_c['batch'])
+                    for sn in sections:
+                        if not sn in run_conf.sections:
+                            run_conf.sections[sn] = {}
+                        for kw in sections[sn]:
+                            run_conf.sections[sn][kw] = sections[sn][kw]
+
+        # Now write run.cfg if not copied
+
+        if run_conf != None:
+            run_conf.save()
+
+        # Results directory
 
         resu = 'RESU'
         if not os.path.isdir(resu):
             os.mkdir(resu)
 
-        # Script directory (only one for all instances)
 
-        scripts = 'SCRIPTS'
-        if not os.path.isdir(scripts):
-            os.mkdir(scripts)
-
-        self.build_batch_file(distrep = os.path.join(os.getcwd(), scripts),
-                              casename = casename)
-
-
-    def build_batch_file(self, distrep, casename, coupling=None, cathare_path=None):
+    def __build_run_cfg__(self,
+                          distrep,
+                          casename,
+                          coupling=None,
+                          cathare_path=None):
         """
         Retrieve batch file for the current system
         Update batch file for the study
         """
 
-        batch_file = os.path.join(distrep, 'runcase')
-        if sys.platform.startswith('win'):
-            batch_file = batch_file + '.bat'
+        run_conf_path = os.path.join(distrep, 'run.cfg')
 
         if self.copy is not None:
-            ref_runcase_path = os.path.join(self.copy, 'SCRIPTS', 'runcase')
-            if sys.platform.startswith('win'):
-                ref_runcase_path += '.bat'
+            ref_run_conf_path = os.path.join(self.copy, 'DATA', 'run.cfg')
             try:
-                shutil.copy(ref_runcase_path, batch_file)
+                shutil.copy(ref_run_conf_path, run_conf_path)
             except Exception:
                 pass
 
         # Add info from parent in case of copy
 
-        runcase = cs_runcase.runcase(batch_file,
-                                     package=self.package,
-                                     rebuild=True,
-                                     study_name=self.name,
-                                     case_name=casename)
+        run_conf = cs_run_conf.run_conf(run_conf_path,
+                                        package=self.package,
+                                        create_if_missing=True)
 
         if coupling:
-            runcase.set_coupling(coupling)
+            run_conf.set('setup', 'coupling', coupling)
 
         # If a cathare LIBPATH is given, it is added to LD_LIBRARY_PATH.
         # This modification is needed for the dlopen of the cathare .so file
         if cathare_path:
+            i_c = run_conf.get_install_config_info()
+            resource_name = run_conf.get_resource_name(i_c)
             v25_3_line="export v25_3=%s" % cathare_path
-            new_line="export LD_LIBRARY_PATH=$v25_3/%s/"+":$LD_LIBRARY_PATH"
-            il=0
-            for line in runcase.lines:
-                il+=1
-                if 'export PATH' in line:
-                    runcase.lines.insert(il, new_line % ("ICoCo/lib"))
-                    runcase.lines.insert(il, new_line % ("lib"))
-                    runcase.lines.insert(il, v25_3_line)
-                    runcase.run_cmd_line_id += 3
-                    break
+            new_line="export LD_PATH_LIBRARY=$v25_3/%s/"+":$LD_LIBRARY_PATH\n"
+            add_lines = v25_3_line
+            add_lines += new_line % ("lib")
+            add_lines += new_line % ("lib/ICoCo")
+            run_conf.set(resource_name, 'compute_prologue', add_lines)
 
-        runcase.save()
+        run_conf.save()
 
 
     def dump(self):
@@ -797,7 +820,7 @@ domains = [
 
 
 #-------------------------------------------------------------------------------
-# Creation of the study directory
+# Creation of the case of study directory tree
 #-------------------------------------------------------------------------------
 
 def main(argv, pkg):
@@ -822,7 +845,6 @@ def main(argv, pkg):
 
 if __name__ == "__main__":
     main(sys.argv[1:], None)
-
 
 #-------------------------------------------------------------------------------
 # End

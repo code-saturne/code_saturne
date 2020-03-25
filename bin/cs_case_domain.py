@@ -489,6 +489,10 @@ class domain(base_domain):
         Parse the optional XML parameter file.
         """
 
+        if param == None:
+            if os.path.isfile(os.path.join(self.data_dir, 'setup.xml')):
+                param = 'setup.xml'
+
         if param != None:
             version_str = '2.0'
             P = cs_xml_reader.Parser(os.path.join(self.data_dir, param),
@@ -501,7 +505,7 @@ class domain(base_domain):
 
             if params['xml_root_name'] == 'NEPTUNE_CFD_GUI':
                 solver_dir = self.package_compute.get_dir("pkglibexecdir")
-                solver_name = "nc_solver" + self.package.config.exeext
+                solver_name = "nc_solver" + self.package_compute.config.exeext
                 self.solver_path = os.path.join(solver_dir, solver_name)
 
     #---------------------------------------------------------------------------
@@ -1510,7 +1514,7 @@ class cathare_domain(domain):
                  param = None,                # XML parameters file
                  prefix = None,               # installation prefix
                  cathare_case_file = None,    # Cathare case .dat file
-                 neptune_cfd_dom   = None,    # NEPTUNE_CFD domain
+                 neptune_cfd_dom   = None,    # neptune_cfd domain
                  adaptation = None):          # HOMARD adaptation script
 
         domain.__init__(self,
@@ -1527,7 +1531,6 @@ class cathare_domain(domain):
 
         self.cathare_case_file = cathare_case_file
         self.neptune_cfd_dom   = neptune_cfd_dom
-
 
     #---------------------------------------------------------------------------
 
@@ -1561,7 +1564,6 @@ class cathare_domain(domain):
                 self.__dict__[k] = params[k]
 
             self.param = param
-
 
     #---------------------------------------------------------------------------
 

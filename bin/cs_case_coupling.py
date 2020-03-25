@@ -34,6 +34,7 @@ import sys
 from code_saturne.cs_case_domain import *
 from code_saturne.cs_case import *
 from code_saturne import cs_exec_environment
+from code_saturne import cs_run_conf
 from code_saturne import cs_runcase
 
 #===============================================================================
@@ -73,54 +74,104 @@ def coupling(package,
 
     for d in domains:
 
-        if (d.get('script') == None or d.get('domain') == None):
+        domain_s = d.get('domain')
+        solver_s = d.get('solver').lower()
+        script_s = None
+        param_s = None
+
+        if (domain_s == None):
             msg = 'Check your coupling definition.\n'
-            msg += 'script or domain key is missing.'
+            msg += 'domain key is missing.'
             raise RunCaseError(msg)
 
-        if (d.get('solver') == 'Code_Saturne' or d.get('solver') == 'NEPTUNE_CFD'):
+        # First, determine parameter file to use for code_saturne
+        # or associated modules (ensuring backwards compatibiliy)
 
-            script = d.get('script')
+        if solver_s in package.config.solver_modules \
+           or solver_s == 'cathare':
 
-            if script[-4:] == '.xml':
-                param = script
+            param = None
 
+            script = d.get('script')          # v6.1 and older structure
+            if script != None:
+                if script[-4:] == '.xml':
+                    param = script
             else:
-                runcase_path = os.path.join(os.getcwd(),
-                                            d.get('domain'),
+                param = d.get('param')
+                if not param:
+                    param = d.get('paramfile') # older_name
+
+            s_dir = staging_dir
+            if not s_dir:
+                s_dir = casedir
+            if not s_dir:
+                s_dir = os.getcwd()
+
+            if param == None:
+                run_conf_path = os.path.join(s_dir,
+                                             domain_s,
+                                             'DATA',
+                                             'run.cfg')
+                if os.path.isfile(run_conf_path):
+                    run_conf = cs_run_conf.run_conf(run_conf_path)
+                    if 'setup' in run_conf.sections:
+                        if 'param' in run_conf.sections['setup']:
+                            param = run_conf.sections['setup']['param']
+
+            if script and not param: #  v6.1 and older case structure
+                runcase_path = os.path.join(s_dir,
+                                            domain_s,
                                             'SCRIPTS',
                                             script)
-                try:
-                    runcase = cs_runcase.runcase(runcase_path)
-                    param = runcase.get_parameters()
+                if os.path.isfile(runcase_path):
+                    try:
+                        runcase = cs_runcase.runcase(runcase_path)
+                        param = runcase.get_parameters()
+                    except Exception:
+                        err_str = 'Cannot read ' + d.get('solver') \
+                                  + ' script: ' + runcase_path
+                        raise RunCaseError(err_str)
 
-                except Exception:
-                    err_str = 'Cannot read ' + d.get('solver') \
-                              + ' script: ' + runcase_path
-                    raise RunCaseError(err_str)
-                d['script'] = param
+            # Remark: if param is undefined, the code_saturne domain will
+            # default to 'setup.xml' if present.
+
+            d['param'] = param
+
+        # Now build case domain for the different solvers:
+
+        if solver_s in package.config.solver_modules:
 
             dom = domain(package,
                          package_compute = package_compute,
-                         name = d.get('domain'),
-                         param = param,
+                         name = domain_s,
+                         param = d.get('param'),
                          n_procs_weight = d.get('n_procs_weight'),
                          n_procs_min = d.get('n_procs_min'),
                          n_procs_max = d.get('n_procs_max'))
 
-            if (d.get('solver')) == 'Code_Saturne':
+            if solver_s == 'code_saturne':
                 use_saturne = True
                 sat_domains.append(dom)
-            elif (d.get('solver')) == 'NEPTUNE_CFD':
+            elif solver_s == 'neptune_cfd':
                 use_neptune = True
                 nep_domains.append(dom)
 
-        elif (d.get('solver') == 'SYRTHES'):
+        elif solver_s == 'syrthes':
+
+            param_s = d.get('param')
+            if param_s == None:
+                param_s = d.get('script') # older name
+
+            if (param_s == None):
+                msg = 'Check your coupling definition.\n'
+                msg += 'parameters file selection is missing for domain: '
+                msg += domain_s + '.\n'
+                raise RunCaseError(msg)
 
             try:
                 dom = syrthes_domain(package,
                                      cmd_line = d.get('opt'),
-                                     name = d.get('domain'),
+                                     name = domain_s,
                                      param = d.get('script'),
                                      n_procs_weight = d.get('n_procs_weight'),
                                      n_procs_min = d.get('n_procs_min'),
@@ -128,7 +179,7 @@ def coupling(package,
 
             except Exception:
                 err_str = 'Cannot create SYRTHES domain. Opt = ' + d.get('opt') + '\n'
-                err_str += ' domain = ' + d.get('domain')
+                err_str += ' domain = ' + domain_s
                 err_str += ' script = ' + d.get('script') + '\n'
                 err_str += ' n_procs_weight = ' + str(d.get('n_procs_weight')) + '\n'
                 raise RunCaseError(err_str)
@@ -136,46 +187,46 @@ def coupling(package,
             use_syrthes = True
             syr_domains.append(dom)
 
-        elif (d.get('solver') == 'CATHARE'):
+        elif solver_s == 'cathare':
+
             # Current version using Cathare2: the cathare case is converted to a
-            # .so library which is opened and launched by a NEPTUNE_CFD executable
-
-            script = d.get('script')
-
-            if script[-4:] == '.xml':
-                param = script
-            else:
-                d['script'] = d['paramfile']
-                param = d['script']
-
+            # .so library which is opened and launched by a neptune_cfd executable
 
             dom = cathare_domain(package,
                                  package_compute = package_compute,
-                                 name = d.get('domain'),
-                                 param = d.get('script'),
-                                 n_procs_weight = d.get('n_procs_weight'),
-                                 n_procs_min = d.get('n_procs_min'),
-                                 n_procs_max = d.get('n_procs_max'),
-                                 cathare_case_file=d.get('cathare_case_file'),
-                                 neptune_cfd_dom=d.get('neptune_cfd_domain'))
+                                 name = domain_s,
+                                 param = d.get('param'),
+                                 n_procs_weight = None,
+                                 n_procs_min = 1,
+                                 n_procs_max = 1,
+                                 cathare_case_file = d.get('cathare_case_file'),
+                                 neptune_cfd_dom = d.get('neptune_cfd_domain'))
 
             use_cathare = True
             cat_domains.append(dom)
 
-        elif (d.get('solver') == 'PYTHON_CODE'):
+        elif solver_s == 'python_code':
+
+            script_s = d.get('script')
+            if (script_s == None):
+                msg = 'Check your coupling definition.\n'
+                msg += 'Python script file selection is missing for domain: '
+                msg += domain_s + '.\n'
+                raise RunCaseError(msg)
+
             # Generic Code_Saturne/Python Script coupling
-            # The python script can contain any MPI compatible code or supevisor
+            # The python script can contain any MPI compatible code or supervisor
 
             try:
                 dom = python_domain(package,
-                                    name = d.get('domain'),
+                                    name = domain_s,
                                     cmd_line = d.get('command_line'),
-                                    script_name = d.get('script'))
+                                    script_name = script_s)
 
             except Exception:
                 err_str = 'Cannot create Python code domain.\n'
-                err_str += ' domain = ' + d.get('domain') + '\n'
-                err_str += ' script = ' + d.get('script') + '\n'
+                err_str += ' domain = ' + domain_s + '\n'
+                err_str += ' script = ' + str(d.get('script')) + '\n'
                 raise RunCaseError(err_str)
 
             use_py_code = True
@@ -230,11 +281,11 @@ domains = [
     if verbose:
         msg = ' Coupling execution between: \n'
         if use_saturne == True:
-            msg += '   o Code_Saturne [' + str(len(sat_domains)) + ' domain(s)];\n'
+            msg += '   o code_saturne [' + str(len(sat_domains)) + ' domain(s)];\n'
         if use_syrthes == True:
             msg += '   o SYRTHES      [' + str(len(syr_domains)) + ' domain(s)];\n'
         if use_neptune == True:
-            msg += '   o NEPTUNE_CFD  [' + str(len(nep_domains)) + ' domain(s)];\n'
+            msg += '   o neptune_cfd  [' + str(len(nep_domains)) + ' domain(s)];\n'
         if use_cathare == True:
             msg += '   o CATHARE2     [' + str(len(cat_domains)) + ' domain(s)];\n'
         if use_py_code == True:

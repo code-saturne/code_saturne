@@ -62,7 +62,7 @@ log.setLevel(GuiParam.DEBUG)
 # Relevant directories label
 #-------------------------------------------------------------------------------
 
-sub_dir = ["DATA", "RESU", "SRC", "SCRIPTS"]
+sub_dir = ["DATA", "RESU", "SRC"]
 meshes_dir = "MESH"
 unknown_dir = "????????"
 
@@ -93,7 +93,6 @@ class IdentityAndPathesView(QWidget, Ui_IdentityAndPathesForm):
         self.path = ['data_path',
                      'resu_path',
                      'user_src_path',
-                     'scripts_path',
                      'mesh_path']
 
         self.mdl = IdentityAndPathesModel(self.case)
@@ -193,12 +192,11 @@ class IdentityAndPathesView(QWidget, Ui_IdentityAndPathesForm):
 
             msg = [self.tr("Warning: the DATA sub-directory DATA is required."),
                    self.tr("Warning: the RESU sub-directory RESU is required."),
-                   self.tr("Warning: the SRC sub-directory SRC is required."),
-                   self.tr("Warning: the SCRIPTS sub-directory SCRIPTS is required.")]
+                   self.tr("Warning: the SRC sub-directory SRC is required.")]
 
             msgError = self.tr("Associated sub-directory not found")
 
-            for i in range(0,4) :
+            for i in range(0, 3):
                 if sub_dir[i] in os.listdir(case_dir):
                     self.mdl.setPath(self.path[i], os.path.abspath(case_dir + '/' + sub_dir[i]))
                     line = getattr(self, "lineEdit"+line_name[i])  # line is self.lineEditXXX
@@ -220,14 +218,14 @@ class IdentityAndPathesView(QWidget, Ui_IdentityAndPathesForm):
             except Exception:
                 pass
             if set_subdir:
-                self.mdl.setPath(self.path[4], os.path.abspath(self.spath + '/' + meshes_dir))
-                self.mdl.setRelevantSubdir("yes", self.path[4])
+                self.mdl.setPath(self.path[3], os.path.abspath(self.spath + '/' + meshes_dir))
+                self.mdl.setRelevantSubdir("yes", self.path[3])
             else:
-                self.mdl.setPath(self.path[4], "")
-                self.mdl.setRelevantSubdir("no", self.path[4])
+                self.mdl.setPath(self.path[3], "")
+                self.mdl.setRelevantSubdir("no", self.path[3])
 
         else:
-            for i in range(0, 4):
+            for i in range(0, 3):
                 line = getattr(self, "lineEdit"+line_name[i])  # line is self.lineEditXXX
                 line.setText(unknown_dir)
 

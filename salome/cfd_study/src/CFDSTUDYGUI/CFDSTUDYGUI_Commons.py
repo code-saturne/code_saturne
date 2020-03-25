@@ -206,13 +206,9 @@ def isaCFDCase(theCasePath):
     iok = True
     dirList = []
     if os.path.isdir(theCasePath):
-        try:#python3
-            dirList = os.walk(theCasePath).__next__()[1]
-        except: #python27
-            dirList = os.walk(theCasePath).next()[1]
+        dirList = os.walk(theCasePath).__next__()[1]
         if (dirList.count("DATA") and \
-           dirList.count("SRC")  and \
-           dirList.count("SCRIPTS")):
+            dirList.count("SRC")):
             if not (dirList.count("RESU")):
                 subprocess.call(["mkdir","-p",os.path.join(theCasePath,"RESU")])
         else:
@@ -223,10 +219,7 @@ def isaCFDStudy(theStudyPath):
     log.debug("isaCFDStudy")
     dirList = []
     if os.path.isdir(theStudyPath):
-        try:#python3
-            dirList = os.walk(theStudyPath).__next__()[1]
-        except: #python27
-            dirList = os.walk(theStudyPath).next()[1]
+        dirList = os.walk(theStudyPath).__next__()[1]
         for i in dirList:
             if i not in ["MESH"] :
                 if isaCFDCase(os.path.join(theStudyPath,i)) :
@@ -253,7 +246,8 @@ def isaSaturneSyrthesCouplingStudy(theStudyPath):
         cfdstudyMess.criticalMessage(mess)
         return False
     dirList = os.listdir(theStudyPath)
-    if not (dirList.count("RESU_COUPLING") and dirList.count("coupling_parameters.py") and dirList.count("runcase")):
+    if not (dirList.count("RESU_COUPLING") and dirList.count("coupling_parameters.py") \
+            and (dirList.count("runcase") or dirList.count("code_saturne") or dirList.count("neptune_cfd"))):
         return False
     for i in dirList:
         ipath = os.path.join(theStudyPath,i)

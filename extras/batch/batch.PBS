@@ -17,7 +17,3 @@
 # -j eo        : to combine standard output and error
 #
 #-------------------------------------------------------------------------------
-
-# Change to submission directory
-if test -n "$PBS_O_WORKDIR" ; then cd $PBS_O_WORKDIR ; fi
-

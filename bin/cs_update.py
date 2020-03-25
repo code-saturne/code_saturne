@@ -52,7 +52,9 @@ except Exception:
 
 from code_saturne import cs_exec_environment
 from code_saturne import cs_runcase
+from code_saturne import cs_run_conf
 from code_saturne.cs_create import set_executable, unset_executable
+from code_saturne.cs_create import create_local_launcher
 
 #-------------------------------------------------------------------------------
 # Process the passed command line arguments
@@ -112,21 +114,23 @@ def copy_directory(src, dest, ref=False):
         for itm in os.listdir(src):
             shutil.copy2(os.path.join(src, itm), os.path.join(dest, itm))
 
-    return
-
 #-------------------------------------------------------------------------------
 # Update the case paths and examples/reference files
 #-------------------------------------------------------------------------------
 
 def update_case(options, pkg):
 
-    repbase = os.getcwd()
-    study_name=os.path.basename(os.getcwd())
+    topdir = os.getcwd()
+    study_name = os.path.basename(os.getcwd())
+
+    i_c = cs_run_conf.get_install_config_info(pkg)
+    resource_name = cs_run_conf.get_resource_name(i_c)
+
     for case in options.case_names:
-        os.chdir(repbase)
+        os.chdir(topdir)
 
         if case == ".":
-            casename = os.path.split(repbase)[-1]
+            casename = os.path.split(topdir)[-1]
         else:
             casename = case
 
@@ -137,7 +141,7 @@ def update_case(options, pkg):
 
         os.chdir(case)
 
-        # Write a wrapper for GUI launching
+        # Write a local wrapper to main command
         data = 'DATA'
         if not os.path.isdir(data):
             os.mkdir(data)
@@ -153,38 +157,25 @@ def update_case(options, pkg):
             shutil.copy(abs_f, user)
             unset_executable(user)
 
-        guiscript = os.path.join(data, pkg.guiname)
+        old_gui_script = os.path.join(data, pkg.guiname)
+        if os.path.isfile(old_gui_script):
+            os.remove(old_gui_script)
 
-        fd = open(guiscript, 'w')
-        cs_exec_environment.write_shell_shebang(fd)
-
-        cs_exec_environment.write_script_comment(fd,
-            'Ensure the correct command is found:\n')
-        cs_exec_environment.write_prepend_path(fd, 'PATH',
-                                               pkg.get_dir("bindir"))
-        fd.write('\n')
-        cs_exec_environment.write_script_comment(fd, 'Run command:\n')
-        # On Linux systems, add a backslash to prevent aliases
-        if sys.platform.startswith('linux'): fd.write('\\')
-        fd.write(pkg.name + ' gui ' +
-                 cs_exec_environment.get_script_positional_args() + '\n')
-
-        fd.close()
-
-        set_executable(guiscript)
+        # Rebuild launch script
+        create_local_launcher(pkg, data)
 
         # User source files directory
         src = 'SRC'
         if not os.path.isdir(src):
             os.mkdir(src)
 
-        user_distpath = os.path.join(datadir, 'user')
+        user_ref_distpath = os.path.join(datadir, 'user')
         user_examples_distpath = os.path.join(datadir, 'user_examples')
 
-        user = os.path.join(src, 'REFERENCE')
+        user_ref = os.path.join(src, 'REFERENCE')
         user_examples = os.path.join(src, 'EXAMPLES')
 
-        copy_directory(user_distpath, user, True)
+        copy_directory(user_ref_distpath, user_ref, True)
         copy_directory(user_examples_distpath, user_examples, True)
 
         add_datadirs = []
@@ -193,15 +184,15 @@ def update_case(options, pkg):
                                              pkg.name))
 
         for d in add_datadirs:
-            user_distpath = os.path.join(d, 'user')
-            if os.path.isdir(user_distpath):
-                copy_directory(user_distpath, user, True)
+            user_ref_distpath = os.path.join(d, 'user')
+            if os.path.isdir(user_ref_distpath):
+                copy_directory(user_ref_distpath, user, True)
 
             user_examples_distpath = os.path.join(d, 'user_examples')
             if os.path.isdir(user_examples_distpath):
                 copy_directory(user_examples_distpath, user_examples, True)
 
-        unset_executable(user)
+        unset_executable(user_ref)
         unset_executable(user_examples)
 
         # Results directory (only one for all instances)
@@ -212,23 +203,33 @@ def update_case(options, pkg):
 
         # Script directory (only one for all instances)
 
-        scripts = 'SCRIPTS'
-        if not os.path.isdir(scripts):
-            os.mkdir(scripts)
-
-        batch_file = os.path.join(repbase, case, scripts, 'runcase')
+        run_conf_file = os.path.join(topdir, case, 'DATA', 'run.cfg')
+        batch_file = os.path.join(topdir, case, 'SCRIPTS', 'runcase')
         if sys.platform.startswith('win'):
             batch_file = batch_file + '.bat'
 
-        # Add info from parent in case of copy
+        run_conf = cs_run_conf.run_conf(run_conf_file,
+                                        package=pkg,
+                                        rebuild=True)
 
-        runcase = cs_runcase.runcase(batch_file,
-                                     package=pkg,
-                                     rebuild=True,
-                                     study_name=study_name,
-                                     case_name=case)
-        runcase.save()
+        if os.path.isfile(batch_file):
+            runcase = cs_runcase.runcase(batch_file,
+                                         package=pkg)
+            sections = runcase.run_conf_sections(resource_name=resource_name,
+                                                 batch_template=i_c['batch'])
+            for sn in sections:
+                if not sn in run_conf.sections:
+                    run_conf.sections[sn] = {}
+                for kw in sections[sn]:
+                    run_conf.sections[sn][kw] = sections[sn][kw]
+            os.remove(batch_file)
+            scripts_dir = os.path.join(topdir, case, 'SCRIPTS')
+            try:
+                os.rmdir(scripts_dir)
+            except Exception:
+                pass
 
+        run_conf.save()
 
 #-------------------------------------------------------------------------------
 # Main function

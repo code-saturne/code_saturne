@@ -96,9 +96,9 @@ class IdentityAndPathesModel(Model):
         """
         self.isInList(val, ('yes', 'no'))
 
-        dirList = ["DATA", "RESU", "SRC", "SCRIPTS",
-                   'data_path','resu_path',
-                   'user_src_path','scripts_path','mesh_path']
+        dirList = ["DATA", "RESU", "SRC",
+                   'data_path', 'resu_path', 'user_src_path',
+                   'mesh_path']
         self.isInList(directory, dirList)
 
         self.case['relevant_subdir'] = val
@@ -109,9 +109,8 @@ class IdentityAndPathesModel(Model):
         """
         Put relevant_subdir value into xml file
         """
-        self.isInList(pathi, ('data_path','resu_path',
-                              'user_src_path',
-                              'scripts_path','mesh_path'))
+        self.isInList(pathi, ('data_path', 'resu_path', 'user_src_path',
+                              'mesh_path'))
         self.case[pathi] = tag
 
 #-------------------------------------------------------------------------------

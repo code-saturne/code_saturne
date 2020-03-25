@@ -214,11 +214,6 @@ class cs_compile(object):
             flags.insert(0, "-I" + pkgincludedir)
             if self.pkg.config.libs['ple'].variant == "internal":
                 flags.insert(0, "-I" + self.pkg.get_dir("includedir"))
-            if self.pkg.name != os.path.basename(pkgincludedir):
-                d = os.path.join(self.pkg.get_dir("includedir"),
-                                 self.pkg.name)
-                if os.path.isdir(d):
-                    flags.insert(0, "-I" + d)
 
         elif flag == 'ldflags':
             flags.insert(0, "-L" + self.pkg.get_dir("libdir"))
@@ -231,7 +226,7 @@ class cs_compile(object):
 
     #---------------------------------------------------------------------------
 
-    def get_flags(self, flag):
+    def get_flags(self, flag, base_name=None):
         """
         Determine compilation flags for a given flag type.
         """
@@ -243,6 +238,17 @@ class cs_compile(object):
             if (self.pkg.config.libs[lib].have == "yes"
                 and (not self.pkg.config.libs[lib].dynamic_load)):
                 cmd_line += separate_args(self.pkg.config.libs[lib].flags[flag])
+
+        if flag == 'cppflags' and base_name:
+            add_dirs = []
+            if base_name in self.pkg.config.exec_include:
+                add_dirs.append(self.pkg.config.exec_include[base_name])
+            for a_d in add_dirs:
+                d = os.path.join(self.pkg.get_dir("includedir"), a_d)
+                if os.path.isdir(d):
+                    add_flag = "-I" + d
+                    if add_flag not in cmd_line:
+                        cmd_line.insert(0, add_flag)
 
         # Specific handling of low-level libraries, which should come last,
         # such as -lm and -lpthread:
@@ -321,7 +327,7 @@ class cs_compile(object):
 
     #-------------------------------------------------------------------------------
 
-    def compile_src(self, src_list=None,
+    def compile_src(self, base_name=None, src_list=None,
                     opt_cflags=None, opt_cxxflags=None, opt_fcflags=None,
                     keep_going=False,
                     stdout=sys.stdout, stderr=sys.stderr):
@@ -374,7 +380,7 @@ class cs_compile(object):
             if os.path.basename(f) == 'cs_base.c':
                 cmd += ['-DLOCALEDIR=\\"' + pkg.get_dir('localedir') + '\\"', \
                         '-DPKGDATADIR=\\"' + pkg.get_dir('pkgdatadir') + '\\"']
-            cmd += self.get_flags('cppflags')
+            cmd += self.get_flags('cppflags', base_name=base_name)
             cmd += separate_args(pkg.config.flags['cflags'])
             cmd += ["-c", f]
             if run_command(cmd, pkg=pkg, echo=True,
@@ -393,7 +399,7 @@ class cs_compile(object):
             for d in c_include_dirs:
                 cmd += ["-I", d]
             cmd.append('-DHAVE_CONFIG_H')
-            cmd += self.get_flags('cppflags')
+            cmd += self.get_flags('cppflags', base_name=base_name)
             cmd += separate_args(pkg.config.flags['cxxflags'])
             cmd += ["-c", f]
             if run_command(cmd, pkg=pkg, echo=True,
@@ -589,7 +595,7 @@ class cs_compile(object):
         for f in dir_files:
             src_list.append(os.path.join(srcdir, f))
 
-        retval, obj_list = self.compile_src(src_list,
+        retval, obj_list = self.compile_src(base_name, src_list,
                                             opt_cflags, opt_cxxflags, opt_fcflags,
                                             keep_going, stdout, stderr)
 

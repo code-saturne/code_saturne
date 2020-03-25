@@ -5,7 +5,7 @@
 
 # A coupling case is defined by a dictionnary, containing the following:
 
-# Solver type ('Code_Saturne', 'SYRTHES', 'NEPTUNE_CFD' or 'code_aster')
+# Solver type ('Code_Saturne', 'SYRTHES', 'NEPTUNE_CFD' or 'PYTHON_CODE')
 # Domain directory name
 # Run parameter setting file
 # Number of processors (or None for automatic setting)
@@ -21,7 +21,6 @@ domains = [
 
     {'solver': 'Code_Saturne',
      'domain': 'fluid',
-     'script': 'runcase',
      'n_procs_weight': None,
      'n_procs_min': 1,
      'n_procs_max': None}

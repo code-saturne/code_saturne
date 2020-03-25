@@ -998,7 +998,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
              id == CFDSTUDYGUI_DataModel.dict_object["PRETFolder"]           or \
              id == CFDSTUDYGUI_DataModel.dict_object["SUITEFolder"]          or \
              id == CFDSTUDYGUI_DataModel.dict_object["POSTPROFolder"]        or \
-             id == CFDSTUDYGUI_DataModel.dict_object["SCRPTFolder"]          or \
              id == CFDSTUDYGUI_DataModel.dict_object["MESHFolder"]           or \
              id == CFDSTUDYGUI_DataModel.dict_object["POSTFolder"] :
             popup.addAction(self.commonAction(UpdateObjBrowserAction))
@@ -1016,6 +1015,8 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             popup.addAction(self.commonAction(CopyInDATAAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["DATALaunch"]:
             popup.addAction(self.commonAction(LaunchGUIAction))
+            popup.addAction(self.commonAction(RunScriptAction))
+            popup.addAction(self.commonAction(ViewAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["DATAfileXML"]:
             popup.addAction(self.commonAction(OpenGUIAction))
             popup.addAction(self.solverAction(SolverCloseAction))
@@ -1054,14 +1055,6 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
         elif id == CFDSTUDYGUI_DataModel.dict_object["RESMEDFile"] \
              or id == CFDSTUDYGUI_DataModel.dict_object["RESENSIGHTFile"]:
             popup.addAction(self.commonAction(ExportInParaViSAction))
-        elif id == CFDSTUDYGUI_DataModel.dict_object["SCRPTLanceFile"]:
-            popup.addAction(self.commonAction(ViewAction))
-            popup.addAction(self.commonAction(RunScriptAction))
-        elif id == CFDSTUDYGUI_DataModel.dict_object["SCRPTScriptFile"]:
-            popup.addAction(self.commonAction(EditAction))
-            popup.addAction(self.commonAction(RunScriptAction))
-        elif id == CFDSTUDYGUI_DataModel.dict_object["SCRPTFile"]:
-            popup.addAction(self.commonAction(ViewAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["DESFile"] \
              or id == CFDSTUDYGUI_DataModel.dict_object["CGNSFile"] \
              or id == CFDSTUDYGUI_DataModel.dict_object["CcmFile"] \
@@ -1090,7 +1083,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
             popup.addAction(self.commonAction(ExportSyrInSmesh))
         elif id == CFDSTUDYGUI_DataModel.dict_object["CouplingFilePy"]:
             popup.addAction(self.commonAction(EditAction))
-        elif id == CFDSTUDYGUI_DataModel.dict_object["CouplingRuncase"]:
+        elif id == CFDSTUDYGUI_DataModel.dict_object["CouplingLauncher"]:
             popup.addAction(self.commonAction(EditAction))
             popup.addAction(self.commonAction(RunScriptAction))
         elif id == CFDSTUDYGUI_DataModel.dict_object["USRSRCSYRFile"]:
@@ -1134,7 +1127,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
     def slotStudyLocation(self):
         """
         Loads the CFD study location. If the name of the CFD study
-        does not exists, the corresponding folder is created.
+        does not exist, the corresponding folder is created.
         dialog.CreateOption boolean indicates that Create study button is checked
         """
         log.debug("slotStudyLocation")
@@ -1837,7 +1830,7 @@ class CFDSTUDYGUI_ActionsHandler(QObject):
     def checkCFDCaseDir(self,filepath) :
         """
         Check if filepath is an XML file which belong to a CFD case directory
-        The structure of the case directory must include DATA RESU SCRIPTS SRC directory
+        The structure of the case directory must include DATA RESU SRC directory
         """
         log.debug("checkCFDCaseDir")
         boo = True

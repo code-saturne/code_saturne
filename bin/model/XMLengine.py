@@ -101,11 +101,9 @@ class Dico:
         self.data['user_src_path']    = ""
         self.data['data_path']        = ""
         self.data['resu_path']        = ""
-        self.data['scripts_path']     = ""
         self.data['relevant_subdir']  = "no"
         self.data['case_path']        = ""
-        self.data['runcase']          = False
-        self.data['batch']            = None
+        self.data['job_model']        = None
         self.data['no_boundary_conditions'] = False
         self.data['salome']           = False
         self.data['module']           = None

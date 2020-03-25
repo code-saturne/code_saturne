@@ -21,7 +21,3 @@
 #  -n, --name=<jobname>               : job name
 #
 #-------------------------------------------------------------------------------
-
-# Change to submission directory
-if test -n "$OAR_WORKING_DIRECTORY" ; then cd $OAR_WORKING_DIRECTORY ; fi
-

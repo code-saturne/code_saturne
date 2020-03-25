@@ -1,6 +1,6 @@
 #-------------------------------------------------------------------------------
 #
-# Batch options for SLURM (Simple Linux Utility for Resource Management) 
+# Batch options for SLURM (Simple Linux Utility for Resource Management)
 # =======================
 #
 #SBATCH --nodes=2
@@ -38,7 +38,3 @@
 #  -J<jobname>, --job-name=<jobname>  : job name
 #
 #-------------------------------------------------------------------------------
-
-# Change to submission directory
-if test -n "$SLURM_SUBMIT_DIR" ; then cd $SLURM_SUBMIT_DIR ; fi
-

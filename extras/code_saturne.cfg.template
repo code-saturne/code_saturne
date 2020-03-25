@@ -1,39 +1,48 @@
 ### This file configures various Code_Saturne options.
-###
+
 ### The commented-out examples below are intended to demonstrate
 ### how to use this file.
 
-
 ### Section for Code_Saturne installation customizations.
+### -----------------------------------------------------
 
 [install]
+
 ### Select the batch system type and job template.
 # batch =
-###
+
+### Define the command used for job submission
+###(if batch system unknown or a local command needs to be used instead)
+# submit_command =
+
+### Define the local resource name, to appear as a section in the run.cfg file.
+## If not defined, "resource_default" or "<batch>_default" will be used.
+# resource_name =
+
 ### Define installation prefixes of alternate builds for compute tasks.
 ### Either the absolute name or the base name of the installation prefix may
 ### be used (using the more concise base name assumes a consistent naming
 ### scheme, with builds installed side-by-side). Multiple builds are
 ### separated by colons (:).
 # compute_versions =
-###
+
 ### Set the location to the SYRTHES installation directory
 ### (e.g. <syrthes_home>/syrthes4.3/syrthes4.3/arch/<arch>).
 # syrthes =
-###
+
 ### Set the location to the Cathare installation directory
 ### (e.g. <cathare_home>/mod5.1).
 # cathare =
-###
+
 ### Optional path to sourcable shell environment initialization file
 ### (similar to .profile or .bashrc, specific to Code_Saturne).
 # rcfile =
 
-### End of section.
+### Information about remote installations.
+### ---------------------------------------
 
-### Section for Code_Saturne distant installations.
-#
 [distant_hosts]
+
 ### Define paths to the directory containing the different installations of the
 ### given version (opt, debug, etc...).
 ### Syntax is <batch_system>_<cluster url or name>=<path>
@@ -42,6 +51,7 @@
 ### End of section.
 
 ### Section for Code_Saturne run customizations.
+### ---------------------------------------
 
 [run]
 ### Set the temporary directory.
@@ -50,9 +60,8 @@
 ### Set the mesh database directory.
 # meshpath =
 
-### End of section.
-
-### Section for Code_Saturne MPI customizations.
+### Section for MPI parameters.
+### ---------------------------
 
 ### Due to the wide variety of MPI implementations and build options,
 ### the default configuration may not give correct values in some cases,
@@ -93,4 +102,3 @@
 ### 'configfile' (mpiexec -configfile syntax), or 'script'
 # mpmd = mpiexec
 
-### End of section.
