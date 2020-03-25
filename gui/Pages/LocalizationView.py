@@ -56,7 +56,7 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
+from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam, GuiLabelManager
 from code_saturne.Base.QtPage import IntValidator, RegExpValidator
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.LocalizationForm import Ui_LocalizationForm
@@ -563,19 +563,9 @@ class LocalizationSelectorDelegate(QItemDelegate):
         editor = QLineEdit(parent)
 
         # Autocompletion for selection criteria!
-        comp_list = ['all[]']
-        if self.mdl._typeZone == 'BoundaryZone':
-            comp_list += ['normal[x, y, z, epsilon]']
-        comp_list += ['plane[a, b, c, d, epsilon]',
-                      'plane[a, b, c, d, inside]',
-                      'plane[a, b, c, d, outside]',
-                      'plane[n_x, n_y, n_z, x0, y0, z0, epsilon]',
-                      'plane[n_x, n_y, n_z, x0, y0, z0, inside]',
-                      'plane[n_x, n_y, n_z, x0, y0, z0, outside]',
-                      'box[xmin, ymin, zmin, xmax, ymax, zmax]',
-                      'box[x0, y0, z0, dx1, dy1, dz1, dx2, dy2, dz2, dx3, dy3, dz3]',
-                      'cylinder[x0, y0, z0, x1, y1, z1, radius]',
-                      'sphere[x_c, y_c, z_c, radius]']
+        GuiLM = GuiLabelManager()
+        comp_list = GuiLM.getCompleter("mesh_selection")
+        comp_list += GuiLM.getCompleter("mesh_normal")
 
         completer = QCompleter()
         editor.setCompleter(completer)

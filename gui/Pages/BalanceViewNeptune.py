@@ -44,9 +44,10 @@ from code_saturne.Base.QtWidgets import *
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.model.Common import GuiParam
+from code_saturne.model.Common import GuiParam, GuiLabelManager
 from code_saturne.Base.QtPage import RegExpValidator, IntValidator
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
+from code_saturne.Base.QtPage import LabelDelegate, IntegerDelegate
 from code_saturne.Pages.BalanceForm import Ui_BalanceForm
 from code_saturne.model.BalanceModelNeptune import BalanceModelNeptune
 from code_saturne.Pages.FacesSelectionView import StandardItemModelFaces
@@ -58,64 +59,6 @@ from code_saturne.Pages.FacesSelectionView import StandardItemModelFaces
 logging.basicConfig()
 log = logging.getLogger("BalanceView")
 log.setLevel(GuiParam.DEBUG)
-
-
-#-------------------------------------------------------------------------------
-# Line edit delegate for selection
-#-------------------------------------------------------------------------------
-
-class LineEditDelegateSelector(QItemDelegate):
-    """
-    Use of a QLineEdit in the table.
-    """
-    def __init__(self, parent=None):
-        QItemDelegate.__init__(self, parent)
-
-
-    def createEditor(self, parent, option, index):
-        editor = QLineEdit(parent)
-        return editor
-
-
-    def setEditorData(self, editor, index):
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
-        editor.setText(value)
-
-
-    def setModelData(self, editor, model, index):
-        value = editor.text()
-        model.setData(index, value, Qt.DisplayRole)
-
-
-#-------------------------------------------------------------------------------
-# Line edit delegate for index
-#-------------------------------------------------------------------------------
-
-class LineEditDelegateIndex(QItemDelegate):
-    """
-    Use of a QLineEdit in the table.
-    """
-    def __init__(self, parent=None):
-        QItemDelegate.__init__(self, parent)
-
-
-    def createEditor(self, parent, option, index):
-        editor = QLineEdit(parent)
-        validator = IntValidator(editor, min=0)
-        editor.setValidator(validator)
-        editor.installEventFilter(self)
-        return editor
-
-
-    def setEditorData(self, editor, index):
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
-        editor.setText(value)
-
-
-    def setModelData(self, editor, model, index):
-        if editor.validator().state == QValidator.Acceptable:
-            value = from_qvariant(editor.text(), int)
-            model.setData(index, value, Qt.DisplayRole)
 
 
 #-------------------------------------------------------------------------------
@@ -340,6 +283,9 @@ class BalanceView(QWidget, Ui_BalanceForm):
         self.case.undoStopGlobal()
         self.mdl = BalanceModelNeptune(self.case)
 
+        # Autocompletion for selector
+        _comp_list=GuiLabelManager().getCompleter("mesh_selection")
+
         # tableView Pressure Drop
         self.pressureModel = StandardItemModelPressureDrop(self.mdl)
         self.tableViewPressureDrop.setModel(self.pressureModel)
@@ -347,10 +293,12 @@ class BalanceView(QWidget, Ui_BalanceForm):
         self.tableViewPressureDrop.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableViewPressureDrop.setSelectionMode(QAbstractItemView.SingleSelection)
 
-        delegateIdxPres = LineEditDelegateIndex(self.tableViewPressureDrop)
+        delegateIdxPres = IntegerDelegate(self.tableViewPressureDrop,
+                                          minVal=0)
         self.tableViewPressureDrop.setItemDelegateForColumn(0, delegateIdxPres)
 
-        delegateSelector = LineEditDelegateSelector(self.tableViewPressureDrop)
+        delegateSelector = LabelDelegate(self.tableViewPressureDrop,
+                                         auto_completion=_comp_list)
         self.tableViewPressureDrop.setItemDelegateForColumn(1, delegateSelector)
 
         self.tableViewPressureDrop.resizeColumnsToContents()
@@ -368,13 +316,15 @@ class BalanceView(QWidget, Ui_BalanceForm):
         self.tableViewScalarBalance.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableViewScalarBalance.setSelectionMode(QAbstractItemView.SingleSelection)
 
-        delegateIdxScalar = LineEditDelegateIndex(self.tableViewScalarBalance)
+        delegateIdxScalar = IntegerDelegate(self.tableViewScalarBalance,
+                                            minVal=0)
         self.tableViewScalarBalance.setItemDelegateForColumn(0, delegateIdxScalar)
 
-        delegateVariable = LineEditDelegateSelector(self.tableViewScalarBalance)
+        delegateVariable = LabelDelegate(self.tableViewScalarBalance)
         self.tableViewScalarBalance.setItemDelegateForColumn(1, delegateVariable)
 
-        delegateSelector = LineEditDelegateSelector(self.tableViewScalarBalance)
+        delegateSelector = LabelDelegate(self.tableViewScalarBalance,
+                                         auto_completion=_comp_list)
         self.tableViewScalarBalance.setItemDelegateForColumn(1, delegateSelector)
 
         self.tableViewScalarBalance.resizeColumnsToContents()

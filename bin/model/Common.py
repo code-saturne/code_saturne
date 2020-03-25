@@ -26,6 +26,7 @@
 This module defines global constant and the following class and function:
 - GuiParam
 - dicoLabel
+- GuiLabelManager
 """
 
 #-------------------------------------------------------------------------------
@@ -125,6 +126,57 @@ def dicoLabel(name):
                 label = labE
 
     return label
+
+#-------------------------------------------------------------------------------
+# Gui Parameters for autocompletion and forbidden labels
+#-------------------------------------------------------------------------------
+
+class GuiLabelManager(object):
+
+    def __init__(self):
+
+        self._completer = {}
+        self._completer['mesh_selection'] = ['all[]',
+                                            'plane[a, b, c, d, epsilon]',
+                                            'plane[a, b, c, d, inside]',
+                                            'plane[a, b, c, d, outside]',
+                                            'plane[n_x, n_y, n_z, x0, y0, z0, epsilon]',
+                                            'plane[n_x, n_y, n_z, x0, y0, z0, inside]',
+                                            'plane[n_x, n_y, n_z, x0, y0, z0, outside]',
+                                            'box[xmin, ymin, zmin, xmax, ymax, zmax]',
+                                            'box[x0, y0, z0, dx1, dy1, dz1, dx2, dy2, dz2, dx3, dy3, dz3]',
+                                            'cylinder[x0, y0, z0, x1, y1, z1, radius]',
+                                            'sphere[x_c, y_c, z_c, radius]']
+
+        self._completer['mesh_normal'] = ['normal[x, y, z, epsilon]']
+
+        self._forbidden = {}
+        self._forbidden['notebook'] = ['temperature',
+                                       'pressure',
+                                       'density',
+                                       'specific_heat',
+                                       'molecular_viscosty',
+                                       'thermal_conductivity',
+                                       'rho', 'rho0', 'ro0',
+                                       'mu', 'mu0', 'viscl0',
+                                       'p0', 'cp0', 'cp', 'lambda0',
+                                       'enthalpy', 'volume_fraction',
+                                       'vol_f', 'uref', 'almax']
+
+
+    def getCompleter(self, key):
+
+        if key not in self._completer.keys():
+            raise Exception("Uknown key: %s" % key)
+
+        return self._completer[key]
+
+    def getForbidden(self, key):
+
+        if key not in self._forbidden.keys():
+            raise Exception("Uknown key: %s" % key)
+
+        return self._forbidden[key]
 
 #-------------------------------------------------------------------------------
 # End of Common

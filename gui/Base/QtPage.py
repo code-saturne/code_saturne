@@ -1059,5 +1059,227 @@ class BufferSpinBoxWidget(QSpinBox):
             return QAbstractSpinBox.StepUpEnabled | QAbstractSpinBox.StepDownEnabled
 
 #-------------------------------------------------------------------------------
+# Delegates to use
+#-------------------------------------------------------------------------------
+
+class LabelDelegate(QItemDelegate):
+    """
+    Delegate for lines
+    """
+
+    def __init__(self, parent=None, xml_model=None,
+                 forbidden_labels=None,
+                 accepted_regex=None,
+                 auto_completion=[]):
+        super(LabelDelegate, self).__init__(parent)
+
+        self.parent = parent
+        self.mdl    = xml_model
+
+        self._forbidden_labels = forbidden_labels
+
+        # Regex
+        rx = accepted_regex
+        if rx == None:
+            rx = "[ -~]*"
+#            "[\-_A-Za-z0-9]{1," + str(LABEL_LENGTH_MAX) + "}"
+        self.regExp = QRegExp(rx)
+
+        # Auto completion
+        self._comp_list = auto_completion
+
+    def createEditor(self, parent, option, index):
+
+        editor = QLineEdit(parent)
+
+        v = RegExpValidator(editor, self.regExp, self._forbidden_labels)
+        editor.setValidator(v)
+
+        # Autocompletion if necessary:
+        if len(self._comp_list) > 0:
+            completer = QCompleter()
+            editor.setCompleter(completer)
+            mc = QStringListModel()
+            completer.setModel(mc)
+            mc.setStringList(self._comp_list)
+
+        # return editor
+        return editor
+
+    def setEditorData(self, editor, index):
+
+        editor.setAutoFillBackground(True)
+
+        v = from_qvariant(index.model().data(index, Qt.DisplayRole),
+                          to_text_string)
+        self.p_value = str(v)
+
+        editor.setText(v)
+
+    def setModelData(self, editor, model, index):
+
+        if not editor.isModified():
+            return
+
+        if editor.validator().state == QValidator.Acceptable:
+            p_value = str(editor.text())
+            model.setData(index, p_value, Qt.DisplayRole)
+
+class FloatDelegate(QItemDelegate):
+
+    def __init__(self, parent=None, xml_model=None,
+                 minVal=-1.e99, maxVal=+1.e99):
+
+        super(FloatDelegate, self).__init__(parent)
+
+        self.parent = parent
+        self.mdl    = xml_model
+
+        self._min   = minVal
+        if type(self._min) != float:
+            self._min = -1.e99
+
+        self._max   = maxVal
+        if type(self._max) != float:
+            self._max = +1.e99
+
+    def createEditor(self, parent, option, index):
+
+        editor = QLineEdit(parent)
+
+        validator = DoubleValidator(editor,
+                                    min=self._min,
+                                    max=self._max)
+
+        editor.setValidator(validator)
+
+        return editor
+
+    def setEditorData(self, editor, index):
+
+        editor.setAutoFillBackground(True)
+
+        value = from_qvariant(index.model().data(index, Qt.DisplayRole),
+                              to_text_string)
+        editor.setText(value)
+
+    def setModelData(self, editor, model, index):
+
+        if editor.validator().state == QValidator.Acceptable:
+            value = from_qvariant(editor.text(), float)
+            selectionModel = self.parent.selectionModel()
+
+            for idx in selectionModel.selectedIndexes():
+                if idx.column() == index.column():
+                    model.setData(idx, value, Qt.DisplayRole)
+
+class IntegerDelegate(QItemDelegate):
+
+    def __init__(self, parent=None, xml_model=None,
+                 minVal=-10000000000, maxVal=+10000000000):
+
+        super(IntegerDelegate, self).__init__(parent)
+
+        self.parent  = parent
+        self.mdl     = xml_model
+
+        self._min = minVal
+        if type(self._min) != int:
+            self._min = -10000000000
+        self._max = maxVal
+        if type(self._max) != int:
+            self._max = +10000000000
+
+
+    def createEditor(self, parent, option, index):
+
+        editor = QLineEdit(parent)
+
+        validator = IntValidator(editor,
+                                 min=self._min,
+                                 max=self._max)
+
+        editor.setValidator(validator)
+
+        return editor
+
+    def setEditorData(self, editor, index):
+
+        editor.setAutoFillBackground(True)
+
+        value = from_qvariant(index.model().data(index, Qt.DisplayRole),
+                              to_text_string)
+        editor.setText(value)
+
+    def setModelData(self, editor, model, index):
+
+        value = from_qvariant(editor.text(), int)
+
+        if editor.validator().state == QValidator.Acceptable:
+            selectionModel = self.parent.selectionModel()
+            for idx in selectionModel.selectedIndexes():
+                if idx.column() == index.column():
+                    model.setData(idx, value, Qt.DisplayRole)
+
+
+class ComboDelegate(QItemDelegate):
+
+    def __init__(self, parent=None, xml_model=None, OptsList={}):
+
+        super(ComboDelegate, self).__init__(parent)
+
+        self.parent       = parent
+        self.mdl          = xml_model
+
+        self.opts_list = []
+        for key in OptsList:
+            self.opts_list.append({'name':key,
+                                   'active':True,
+                                   'available':True})
+
+            if OptsList[key] == "na":
+                self.opts_list[-1]["available"] = False
+            if OptsList[key] == "off":
+                self.opts_list[-1]["available"] = False
+                self.opts_list[-1]["active"]    = False
+
+
+    def createEditor(self, parent, option, index):
+
+        editor = QComboBox(parent)
+        for opt in self.opts_list:
+            name     = opt['name']
+            isActive = opt['active']
+            isAvail  = opt['available']
+
+            editor.addItem(name)
+            idx = editor.findText(name)
+            editor.model().item(idx).setEnabled(isActive)
+            if not isAvail:
+                editor.setItemData(idx, QColor(Qt.red), Qt.TextColorRole)
+
+        editor.installEventFilter(self)
+
+        return editor
+
+
+    def setEditorData(self, comboBox, index):
+
+        string = from_qvariant(index.model().data(index, Qt.DisplayRole),
+                               to_text_string)
+        comboBox.setEditText(string)
+
+
+    def setModelData(self, comboBox, model, index):
+
+        value = comboBox.currentText()
+
+        selectionModel = self.parent.selectionModel()
+
+        for idx in selectionModel.selectedIndexes():
+            if idx.column() == index.column():
+                model.setData(idx, value, Qt.DisplayRole)
+
+#-------------------------------------------------------------------------------
 # End of QtPage
 #-------------------------------------------------------------------------------

@@ -25,7 +25,6 @@
 """
 This module contains the following classes:
 - BoundaryConditionsCoalInletView
-- ValueDelegate
 - StandardItemModelCoal
 - StandardItemModelCoalMass
 """
@@ -51,6 +50,7 @@ from code_saturne.Base.QtWidgets import *
 from code_saturne.model.Common import GuiParam
 from code_saturne.Base.QtPage import DoubleValidator, ComboModel
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
+from code_saturne.Base.QtPage import FloatDelegate
 
 from code_saturne.Pages.BoundaryConditionsCoalInletForm import Ui_BoundaryConditionsCoalInletForm
 import code_saturne.model.CoalCombustionModel as CoalCombustion
@@ -68,30 +68,6 @@ logging.basicConfig()
 log = logging.getLogger("BoundaryConditionsCoalInletView")
 log.setLevel(GuiParam.DEBUG)
 
-#-------------------------------------------------------------------------------
-# Line edit delegate with a Double validator (positive value)
-#-------------------------------------------------------------------------------
-
-class ValueDelegate(QItemDelegate):
-    def __init__(self, parent=None):
-        super(ValueDelegate, self).__init__(parent)
-        self.parent = parent
-
-    def createEditor(self, parent, option, index):
-        editor = QLineEdit(parent)
-        validator = DoubleValidator(editor, min=0.)
-        editor.setValidator(validator)
-        return editor
-
-    def setEditorData(self, editor, index):
-        editor.setAutoFillBackground(True)
-        value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
-        editor.setText(value)
-
-    def setModelData(self, editor, model, index):
-        if editor.validator().state == QValidator.Acceptable:
-            value = from_qvariant(editor.text(), float)
-            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # StandarItemModel class to display Coals in a QTableView
@@ -348,7 +324,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
 
         self.__modelCoal = StandardItemModelCoal(self.case)
         self.tableViewCoal.setModel(self.__modelCoal)
-        delegateValue = ValueDelegate(self.tableViewCoal)
+        delegateValue = FloatDelegate(self.tableViewCoal, minVal=0.)
         self.tableViewCoal.setItemDelegateForColumn(1, delegateValue)
         self.tableViewCoal.setItemDelegateForColumn(2, delegateValue)
 
@@ -359,7 +335,7 @@ class BoundaryConditionsCoalInletView(QWidget, Ui_BoundaryConditionsCoalInletFor
                                                          self.__coalClassesNumber)
         self.tableViewCoalMass.setModel(self.__modelCoalMass)
 
-        delegateValueMass = ValueDelegate(self.tableViewCoalMass)
+        delegateValueMass = FloatDelegate(self.tableViewCoalMass, minVal=0.)
         for c in range(self.__modelCoalMass.columnCount()):
             self.tableViewCoalMass.setItemDelegateForColumn(c, delegateValueMass)
 

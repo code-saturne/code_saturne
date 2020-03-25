@@ -50,7 +50,7 @@ from code_saturne.Base.QtWidgets import *
 
 from code_saturne.Base.QtPage import RegExpValidator, DoubleValidator
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
-from code_saturne.model.Common import GuiParam
+from code_saturne.model.Common import GuiParam, GuiLabelManager
 from code_saturne.Pages.FacesSelectionForm import Ui_FacesSelectionForm
 
 #-------------------------------------------------------------------------------
@@ -107,17 +107,7 @@ class LineEditDelegateSelector(QItemDelegate):
         editor.setValidator(validator)
 
         # Autocompletion for selection criteria!
-        comp_list = ['all[]']
-        comp_list += ['plane[a, b, c, d, epsilon]',
-                      'plane[a, b, c, d, inside]',
-                      'plane[a, b, c, d, outside]',
-                      'plane[n_x, n_y, n_z, x0, y0, z0, epsilon]',
-                      'plane[n_x, n_y, n_z, x0, y0, z0, inside]',
-                      'plane[n_x, n_y, n_z, x0, y0, z0, outside]',
-                      'box[xmin, ymin, zmin, xmax, ymax, zmax]',
-                      'box[x0, y0, z0, dx1, dy1, dz1, dx2, dy2, dz2, dx3, dy3, dz3]',
-                      'cylinder[x0, y0, z0, x1, y1, z1, radius]',
-                      'sphere[x_c, y_c, z_c, radius]']
+        comp_list = GuiLabelManager().getCompleter('mesh_selection')
 
         completer = QCompleter()
         editor.setCompleter(completer)

@@ -53,9 +53,11 @@ import code_saturne.Base.QtPage as QtPage
 # Application modules import
 #-------------------------------------------------------------------------------
 
-from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam
+from code_saturne.model.Common import LABEL_LENGTH_MAX, GuiParam, GuiLabelManager
 from code_saturne.Base.QtPage import IntValidator, DoubleValidator, RegExpValidator, ComboModel
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
+from code_saturne.Base.QtPage import LabelDelegate, IntegerDelegate
+from code_saturne.Base.QtPage import FloatDelegate, ComboDelegate
 from code_saturne.Pages.CathareCouplingForm import Ui_CathareCouplingForm
 from code_saturne.model.CathareCouplingModel import CathareCouplingModel
 from code_saturne.model.LocalizationModelNeptune import LocalizationModel
@@ -67,123 +69,6 @@ from code_saturne.model.LocalizationModelNeptune import LocalizationModel
 logging.basicConfig()
 log = logging.getLogger("CathareCouplingView")
 log.setLevel(GuiParam.DEBUG)
-
-#-------------------------------------------------------------------------------
-# QLineEdit delegate for the activation of the Cathare coupling
-#-------------------------------------------------------------------------------
-
-class CathareEltDelegate(QItemDelegate):
-    def __init__(self, parent = None):
-        super(CathareEltDelegate, self).__init__(parent)
-        self.parent = parent
-
-
-    def createEditor(self, parent, option, index):
-        editor = QLineEdit(parent)
-        return editor
-
-
-    def setEditorData(self, editor, index):
-        self.value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
-        editor.setText(self.value)
-
-
-    def setModelData(self, editor, model, index):
-        value = editor.text()
-
-        if str(value) != "" :
-            model.setData(index, value, Qt.DisplayRole)
-
-#-------------------------------------------------------------------------------
-# QComboBox delegate for Axis Projection in Conjugate Heat Transfer table
-#-------------------------------------------------------------------------------
-
-class NcfdBcDelegate(QItemDelegate):
-    """
-    Use of a combo box in the table.
-    """
-    def __init__(self, parent = None, case=None):
-        super(NcfdBcDelegate, self).__init__(parent)
-        self.parent = parent
-        self.case = case
-
-
-    def createEditor(self, parent, option, index):
-        editor = QComboBox(parent)
-
-        editor.addItem("off")
-
-        if self.case:
-            d = LocalizationModel('BoundaryZone', self.case)
-
-            for zone in d.getZones():
-                editor.addItem(zone.getLabel())
-
-        editor.installEventFilter(self)
-        return editor
-
-
-    def setEditorData(self, comboBox, index):
-        row = index.row()
-        col = index.column()
-        string = index.model().dataCathare[row][col]
-        comboBox.setEditText(string)
-
-
-    def setModelData(self, comboBox, model, index):
-        value = comboBox.currentText()
-        model.setData(index, value, Qt.DisplayRole)
-
-#-------------------------------------------------------------------------------
-# QLineEdit delegate for location
-#-------------------------------------------------------------------------------
-
-class SelectionCriteriaDelegate(QItemDelegate):
-    def __init__(self, parent, mdl):
-        super(SelectionCriteriaDelegate, self).__init__(parent)
-        self.parent = parent
-        self.__model = mdl
-
-
-    def createEditor(self, parent, option, index):
-        editor = QLineEdit(parent)
-
-        validator =  RegExpValidator(editor, QRegExp("[ -~]*"))
-        editor.setValidator(validator)
-
-        # Autocompletion for selection criteria!
-        comp_list = ['all[]']
-        comp_list += ['plane[a, b, c, d, epsilon]',
-                      'plane[a, b, c, d, inside]',
-                      'plane[a, b, c, d, outside]',
-                      'plane[n_x, n_y, n_z, x0, y0, z0, epsilon]',
-                      'plane[n_x, n_y, n_z, x0, y0, z0, inside]',
-                      'plane[n_x, n_y, n_z, x0, y0, z0, outside]',
-                      'box[xmin, ymin, zmin, xmax, ymax, zmax]',
-                      'box[x0, y0, z0, dx1, dy1, dz1, dx2, dy2, dz2, dx3, dy3, dz3]',
-                      'cylinder[x0, y0, z0, x1, y1, z1, radius]',
-                      'sphere[x_c, y_c, z_c, radius]']
-
-        completer = QCompleter()
-        editor.setCompleter(completer)
-        model = QStringListModel()
-        completer.setModel(model)
-        model.setStringList(comp_list)
-
-        return editor
-
-
-    def setEditorData(self, editor, index):
-        editor.setAutoFillBackground(True)
-        self.value = from_qvariant(index.model().data(index, Qt.DisplayRole), to_text_string)
-        editor.setText(self.value)
-
-
-    def setModelData(self, editor, model, index):
-        value = editor.text()
-
-        if str(value) != "" :
-            model.setData(index, value, Qt.DisplayRole)
 
 #-------------------------------------------------------------------------------
 # StandarItemModel class
@@ -262,8 +147,13 @@ class StandardItemModelCathare(QStandardItemModel):
                 bc_zone = zone.getLocalization()
                 bc_type = zone.getNature()
                 break
+
+        if bc_zone == None:
+            bc_zone = "off"
+        if bc_type == None:
+            bc_type = "off"
         self.__model.setNeptuneBc(num, self.dataCathare[row][3])
-        self.__model.setNeptune2dZone(num,bc_zone)
+        self.__model.setNeptune2dZone(num, bc_zone)
         self.__model.setNeptuneBcType(num, bc_type)
 
         self.__model.setNeptune1dZone(num, self.dataCathare[row][4])
@@ -336,20 +226,31 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
             self.tableViewCathare.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
             self.tableViewCathare.horizontalHeader().setSectionResizeMode(4, QHeaderView.Stretch)
 
-        delegateCathareElt = CathareEltDelegate(self.tableViewCathare)
+        delegateCathareElt = LabelDelegate(self.tableViewCathare)
         self.tableViewCathare.setItemDelegateForColumn(0, delegateCathareElt)
 
-        delegateCathareFCell = CathareEltDelegate(self.tableViewCathare)
+        delegateCathareFCell = LabelDelegate(self.tableViewCathare)
         self.tableViewCathare.setItemDelegateForColumn(1, delegateCathareFCell)
 
-        delegateCathareLCell = CathareEltDelegate(self.tableViewCathare)
+        delegateCathareLCell = LabelDelegate(self.tableViewCathare)
         self.tableViewCathare.setItemDelegateForColumn(2, delegateCathareLCell)
 
-        delegateNeptuneBc = NcfdBcDelegate(self.tableViewCathare, case=case)
+        ncfdBcList = {'off':'na'}
+        if self.case:
+            d = LocalizationModel('BoundaryZone', self.case)
+            for zone in d.getZones():
+                ncfdBcList[zone.getLabel()]="on"
+        delegateNeptuneBc = ComboDelegate(self.tableViewCathare,
+                                          OptsList=ncfdBcList)
         self.tableViewCathare.setItemDelegateForColumn(3, delegateNeptuneBc)
 
-        delegateNeptune1dZone = SelectionCriteriaDelegate(self.tableViewCathare,
-                                                          self.__model)
+        # Create a selection delegate with autocompletion for mesh
+        # selection examples
+        _comp_list = GuiLabelManager().getCompleter("mesh_selection")
+        delegateNeptune1dZone = LabelDelegate(self.tableViewCathare,
+                                              xml_model=self.__model,
+                                              accepted_regex="[ -~]*",
+                                              auto_completion=_comp_list)
         self.tableViewCathare.setItemDelegateForColumn(4, delegateNeptune1dZone)
 
         # Connections
