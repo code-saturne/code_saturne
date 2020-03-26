@@ -44,6 +44,9 @@ else
   echo "running libtoolize"
   libtoolize --force --copy
 
+  echo "running autoheader"
+  autoheader
+
   echo "running automake"
   automake -a -c
 
