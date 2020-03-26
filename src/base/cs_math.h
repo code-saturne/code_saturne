@@ -383,7 +383,6 @@ cs_math_3_sym_33_3_dot_product(const cs_real_t  n1[3],
   return n_t_n;
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the euclidean norm of a vector of dimension 3
