@@ -1108,11 +1108,12 @@ cs_equation_add(const char            *eqname,
     _n_user_equations++;
     break;
 
-  case CS_EQUATION_TYPE_PREDEFINED:
   case CS_EQUATION_TYPE_GROUNDWATER:
   case CS_EQUATION_TYPE_MAXWELL:
-  case CS_EQUATION_TYPE_THERMAL:
   case CS_EQUATION_TYPE_NAVSTO:
+  case CS_EQUATION_TYPE_PREDEFINED:
+  case CS_EQUATION_TYPE_SOLIDIFICATION:
+  case CS_EQUATION_TYPE_THERMAL:
     _n_predef_equations++;
     break;
 
