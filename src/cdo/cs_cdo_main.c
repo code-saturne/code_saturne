@@ -403,7 +403,10 @@ _log_setup(const cs_domain_t   *domain)
     /* Summary of the Navier-Stokes system */
     cs_navsto_system_log_setup();
 
-  } /* Domain->verbosity > 0 */
+    /* Summary of the solidification module */
+    cs_solidification_log_setup();
+
+  } /* domain->verbosity > 0 */
 
   /* Summary for each equation */
   cs_equation_log_setup();
