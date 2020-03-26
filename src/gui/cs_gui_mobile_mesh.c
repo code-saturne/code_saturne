@@ -409,10 +409,10 @@ _get_ale_boundary_type(cs_tree_node_t  *tn_bndy)
     /* get the matching BC node */
     cs_tree_node_t *tn = cs_tree_node_get_child(tn_bndy->parent, nat_bndy);
 
-    /* Now searh from siblings */
+    /* Now search from siblings */
     tn = cs_tree_node_get_sibling_with_tag(tn, "label", label);
 
-    /* Finaly get child node ALE */
+    /* Finally get child node ALE */
     tn = cs_tree_get_node(tn, "ale/choice");
     const char *nat = cs_tree_node_get_value_str(tn);
 
