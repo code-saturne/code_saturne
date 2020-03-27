@@ -1437,14 +1437,18 @@ _set_key(const char            *label,
     else if (strcmp(keyval, "fcg") == 0)
       eqp->sles_param.solver = CS_PARAM_ITSOL_FCG;
     else if (strcmp(keyval, "gauss_seidel") == 0 ||
-             strcmp(keyval, "gs") == 0)
+             strcmp(keyval, "gs") == 0) {
       eqp->sles_param.solver = CS_PARAM_ITSOL_GAUSS_SEIDEL;
+      eqp->sles_param.precond = CS_PARAM_PRECOND_NONE;
+    }
     else if (strcmp(keyval, "gmres") == 0)
       eqp->sles_param.solver = CS_PARAM_ITSOL_GMRES;
     else if (strcmp(keyval, "fgmres") == 0)
       eqp->sles_param.solver = CS_PARAM_ITSOL_FGMRES;
-    else if (strcmp(keyval, "jacobi") == 0)
+    else if (strcmp(keyval, "jacobi") == 0) {
       eqp->sles_param.solver = CS_PARAM_ITSOL_JACOBI;
+      eqp->sles_param.precond = CS_PARAM_PRECOND_NONE;
+    }
     else if (strcmp(keyval, "minres") == 0)
       eqp->sles_param.solver = CS_PARAM_ITSOL_MINRES;
     else if (strcmp(keyval, "mumps") == 0) {
