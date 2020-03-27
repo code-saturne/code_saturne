@@ -1156,7 +1156,7 @@ _parse_control_buffer(const char         *name,
     }
     else if (strncmp(s, "max_time_value ", 15) == 0) {
       double t_max;
-      if (_read_next_double(false, cur_line, (const char **)&s, &t_max) > 0)
+      if (_read_next_double(true, cur_line, (const char **)&s, &t_max) > 0)
         t_max = CS_MAX(t_max, ts->t_cur);
       cs_time_step_define_t_max(t_max);
       bft_printf("  %-32s %12.5g (%s %12.5g)\n",
@@ -1164,7 +1164,7 @@ _parse_control_buffer(const char         *name,
     }
     else if (strncmp(s, "max_wall_time ", 14) == 0) {
       double wt_max;
-      if (_read_next_double(false, cur_line, (const char **)&s, &wt_max) > 0)
+      if (_read_next_double(true, cur_line, (const char **)&s, &wt_max) > 0)
         wt_max = CS_MAX(wt_max, cs_timer_wtime());
       bft_printf("  %-32s %12.5g (%s %12.5g)\n",
                  "max_wall_time", wt_max, _("current:"),
@@ -1176,7 +1176,7 @@ _parse_control_buffer(const char         *name,
 
     else if (strncmp(s, "control_file_wtime_interval ", 28) == 0) {
       double wt;
-      if (_read_next_double(false, cur_line, (const char **)&s, &wt) > 0)
+      if (_read_next_double(true, cur_line, (const char **)&s, &wt) > 0)
         _control_file_wt_interval = wt;
     }
 
