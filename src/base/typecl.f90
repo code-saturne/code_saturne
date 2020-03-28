@@ -1605,7 +1605,7 @@ if (ntcabs - ntpabs.le.2.or.(ntcabs.ge.ntmabs-1).or.vcopt%iwarni.ge.1) then
 else if (ntlist.gt.0) then
   modntl = mod(ntcabs,ntlist)
 
-! No outpout
+! No output
 else
   modntl = 1
 endif
