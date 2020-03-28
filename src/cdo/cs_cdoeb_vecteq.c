@@ -1068,21 +1068,26 @@ cs_cdoeb_vecteq_extra_op(const char                 *eqname,
  *         The lifecycle of this array is managed by the code. So one does not
  *         have to free the return pointer.
  *
- * \param[in, out]  context     pointer to a data structure cast on-the-fly
+ * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
  *
- * \return  a pointer to an array of \ref cs_real_t
+ * \return  a pointer to an array of cs_real_t (size: n_edges)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdoeb_vecteq_get_edge_values(void      *context)
+cs_cdoeb_vecteq_get_edge_values(void      *context,
+                                bool       previous)
 {
   cs_cdoeb_vecteq_t  *eqc = (cs_cdoeb_vecteq_t *)context;
 
-  if (eqc != NULL)
-    return eqc->edge_values;
-  else
+  if (eqc == NULL)
     return NULL;
+
+  if (previous)
+    return eqc->edge_values_pre;
+  else
+    return eqc->edge_values;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1091,19 +1096,28 @@ cs_cdoeb_vecteq_get_edge_values(void      *context)
  *         The lifecycle of this array is managed by the code. So one does not
  *         have to free the return pointer.
  *
- * \param[in, out]  context     pointer to a data structure cast on-the-fly
+ * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
  *
- * \return  a pointer to an array of \ref cs_real_t
+ * \return a pointer to an array of cs_real_t (size: n_cells)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdoeb_vecteq_get_cell_values(void      *context)
+cs_cdoeb_vecteq_get_cell_values(void      *context,
+                                bool       previous)
 {
   cs_cdoeb_vecteq_t  *eqc = (cs_cdoeb_vecteq_t *)context;
+
+  if (eqc == NULL)
+    return NULL;
+
   cs_field_t  *c_field = cs_field_by_id(eqc->var_field_id);
 
-  return c_field->val;
+  if (previous)
+    return c_field->val_pre;
+  else
+    return c_field->val;
 }
 
 /*----------------------------------------------------------------------------*/

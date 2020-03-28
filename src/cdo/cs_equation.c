@@ -167,7 +167,7 @@ _prepare_fb_solving(void              *eq_to_cast,
 {
   cs_equation_t  *eq = (cs_equation_t  *)eq_to_cast;
 
-  const cs_real_t  *f_values = eq->get_face_values(eq->scheme_context);
+  const cs_real_t  *f_values = eq->get_face_values(eq->scheme_context, false);
   const int  stride = 1;  /* Since the global numbering is adapted in each
                              case (scalar-, vector-valued equations) */
 
@@ -2623,20 +2623,22 @@ cs_equation_get_cellwise_builders(const cs_equation_t    *eq,
  *         cell of the mesh for the unknowns
  *
  * \param[in]   eq        pointer to a \ref cs_equation_t structure
+ * \param[in]   previous  retrieve the previous state (true/false)
  *
  * \return a pointer to an array of cell values
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_equation_get_cell_values(const cs_equation_t    *eq)
+cs_equation_get_cell_values(const cs_equation_t    *eq,
+                            bool                    previous)
 {
   if (eq == NULL)
     return NULL;
 
   cs_real_t  *c_values = NULL;
   if (eq->get_cell_values != NULL)
-    c_values = eq->get_cell_values(eq->scheme_context);
+    c_values = eq->get_cell_values(eq->scheme_context, previous);
 
   return c_values;
 }
@@ -2647,20 +2649,22 @@ cs_equation_get_cell_values(const cs_equation_t    *eq)
  *         face of the mesh for the unknowns
  *
  * \param[in]   eq        pointer to a \ref cs_equation_t structure
+ * \param[in]   previous  retrieve the previous state (true/false)
  *
  * \return a pointer to an array of face values
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_equation_get_face_values(const cs_equation_t    *eq)
+cs_equation_get_face_values(const cs_equation_t    *eq,
+                            bool                    previous)
 {
   if (eq == NULL)
     return NULL;
 
   cs_real_t  *f_values = NULL;
   if (eq->get_face_values != NULL)
-    f_values = eq->get_face_values(eq->scheme_context);
+    f_values = eq->get_face_values(eq->scheme_context, previous);
 
   return f_values;
 }
@@ -2671,20 +2675,22 @@ cs_equation_get_face_values(const cs_equation_t    *eq)
  *         edge of the mesh for the unknowns
  *
  * \param[in]   eq        pointer to a \ref cs_equation_t structure
+ * \param[in]   previous  retrieve the previous state (true/false)
  *
  * \return a pointer to an array of edge values
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_equation_get_edge_values(const cs_equation_t    *eq)
+cs_equation_get_edge_values(const cs_equation_t    *eq,
+                            bool                    previous)
 {
   if (eq == NULL)
     return NULL;
 
   cs_real_t  *e_values = NULL;
   if (eq->get_edge_values != NULL)
-    e_values = eq->get_edge_values(eq->scheme_context);
+    e_values = eq->get_edge_values(eq->scheme_context, previous);
 
   return e_values;
 }
@@ -2695,27 +2701,29 @@ cs_equation_get_edge_values(const cs_equation_t    *eq)
  *         vertex of the mesh for the unknowns
  *
  * \param[in]   eq        pointer to a \ref cs_equation_t structure
+ * \param[in]   previous  retrieve the previous state (true/false)
  *
  * \return a pointer to an array of vertex values
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_equation_get_vertex_values(const cs_equation_t    *eq)
+cs_equation_get_vertex_values(const cs_equation_t    *eq,
+                              bool                    previous)
 {
   if (eq == NULL)
     return NULL;
 
   cs_real_t  *v_values = NULL;
   if (eq->get_vertex_values != NULL)
-    v_values = eq->get_vertex_values(eq->scheme_context);
+    v_values = eq->get_vertex_values(eq->scheme_context, previous);
 
   return v_values;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the integral over the domain of the variable field
+ * \brief  Compute the integral over the domain of the current variable field
  *         associated to the given equation.
  *
  * \param[in]      connect    pointer to a \ref cs_cdo_connect_t structure
@@ -2748,7 +2756,7 @@ cs_equation_integrate_variable(const cs_cdo_connect_t     *connect,
 
   case CS_SPACE_SCHEME_CDOVB:
     {
-      const cs_real_t  *p_v = cs_equation_get_vertex_values(eq);
+      const cs_real_t  *p_v = cs_equation_get_vertex_values(eq, false);
       const cs_adjacency_t  *c2v = connect->c2v;
 
       for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
@@ -2766,8 +2774,8 @@ cs_equation_integrate_variable(const cs_cdo_connect_t     *connect,
 
   case CS_SPACE_SCHEME_CDOVCB:
     {
-      const cs_real_t  *p_v = cs_equation_get_vertex_values(eq);
-      const cs_real_t  *p_c = cs_equation_get_cell_values(eq);
+      const cs_real_t  *p_v = cs_equation_get_vertex_values(eq, false);
+      const cs_real_t  *p_c = cs_equation_get_cell_values(eq, false);
       const cs_adjacency_t  *c2v = connect->c2v;
 
       for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
@@ -2789,8 +2797,8 @@ cs_equation_integrate_variable(const cs_cdo_connect_t     *connect,
 
   case CS_SPACE_SCHEME_CDOFB:
     {
-      const cs_real_t  *p_f = cs_equation_get_face_values(eq);
-      const cs_real_t  *p_c = cs_equation_get_cell_values(eq);
+      const cs_real_t  *p_f = cs_equation_get_face_values(eq, false);
+      const cs_real_t  *p_c = cs_equation_get_cell_values(eq, false);
       const cs_adjacency_t  *c2f = connect->c2f;
 
       assert(cdoq->pvol_fc != NULL); /* Sanity check */
@@ -2858,7 +2866,7 @@ cs_equation_compute_boundary_diff_flux(cs_real_t              t_eval,
 
   case CS_SPACE_SCHEME_CDOVB:
     {
-      const cs_real_t  *p_v = cs_equation_get_vertex_values(eq);
+      const cs_real_t  *p_v = cs_equation_get_vertex_values(eq, false);
 
       cs_cdovb_scaleq_boundary_diff_flux(t_eval,
                                          eqp,
@@ -2871,8 +2879,8 @@ cs_equation_compute_boundary_diff_flux(cs_real_t              t_eval,
 
   case CS_SPACE_SCHEME_CDOVCB:
     {
-      const cs_real_t  *p_v = cs_equation_get_vertex_values(eq);
-      const cs_real_t  *p_c = cs_equation_get_cell_values(eq);
+      const cs_real_t  *p_v = cs_equation_get_vertex_values(eq, false);
+      const cs_real_t  *p_c = cs_equation_get_cell_values(eq, false);
 
       cs_cdovcb_scaleq_boundary_diff_flux(t_eval,
                                           eqp,
@@ -2886,8 +2894,8 @@ cs_equation_compute_boundary_diff_flux(cs_real_t              t_eval,
 
   case CS_SPACE_SCHEME_CDOFB:
     {
-      const cs_real_t  *p_f = cs_equation_get_face_values(eq);
-      const cs_real_t  *p_c = cs_equation_get_cell_values(eq);
+      const cs_real_t  *p_f = cs_equation_get_face_values(eq, false);
+      const cs_real_t  *p_c = cs_equation_get_cell_values(eq, false);
 
       cs_cdofb_scaleq_boundary_diff_flux(t_eval,
                                          eqp,

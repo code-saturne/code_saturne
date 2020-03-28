@@ -2203,18 +2203,27 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
  *         have to free the return pointer.
  *
  * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
  *
- * \return  a pointer to an array of \ref cs_real_t
+ * \return  a pointer to an array of cs_real_t (size: n_vertices)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdovb_scaleq_get_vertex_values(void      *context)
+cs_cdovb_scaleq_get_vertex_values(void        *context,
+                                  bool         previous)
 {
   cs_cdovb_scaleq_t  *eqc = (cs_cdovb_scaleq_t *)context;
+
+  if (eqc == NULL)
+    return NULL;
+
   cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
 
-  return pot->val;
+  if (previous)
+    return pot->val_pre;
+  else
+    return pot->val;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2226,19 +2235,32 @@ cs_cdovb_scaleq_get_vertex_values(void      *context)
  *         have to free the return pointer.
  *
  * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
  *
- * \return  a pointer to an array of \ref cs_real_t
+ * \return  a pointer to an array of cs_real_t (size: n_cells)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdovb_scaleq_get_cell_values(void      *context)
+cs_cdovb_scaleq_get_cell_values(void      *context,
+                                bool       previous)
 {
   cs_cdovb_scaleq_t  *eqc = (cs_cdovb_scaleq_t *)context;
-  cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
+
+  if (eqc == NULL)
+    return NULL;
 
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_cdo_connect_t  *connect = cs_shared_connect;
+
+  cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
+
+  cs_real_t  *vtx_values = NULL;
+  if (previous)
+    vtx_values = pot->val_pre;
+  else
+    vtx_values = pot->val;
+  assert(vtx_values != NULL);
 
   /* Reset buffer of values */
   if (eqc->cell_values == NULL)
@@ -2247,8 +2269,7 @@ cs_cdovb_scaleq_get_cell_values(void      *context)
 
   /* Compute the values at cell centers from an interpolation of the field
      values defined at vertices */
-  cs_reco_pv_at_cell_centers(connect->c2v, quant, pot->val,
-                             eqc->cell_values);
+  cs_reco_pv_at_cell_centers(connect->c2v, quant, vtx_values, eqc->cell_values);
 
   return eqc->cell_values;
 }

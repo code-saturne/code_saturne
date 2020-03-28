@@ -220,14 +220,16 @@ cs_cdoeb_vecteq_extra_op(const char                 *eqname,
  *         The lifecycle of this array is managed by the code. So one does not
  *         have to free the return pointer.
  *
- * \param[in, out]  context     pointer to a data structure cast on-the-fly
+ * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
  *
- * \return  a pointer to an array of \ref cs_real_t
+ * \return  a pointer to an array of cs_real_t (size: n_edges)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdoeb_vecteq_get_edge_values(void      *context);
+cs_cdoeb_vecteq_get_edge_values(void      *context,
+                                bool       previous);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -235,14 +237,16 @@ cs_cdoeb_vecteq_get_edge_values(void      *context);
  *         The lifecycle of this array is managed by the code. So one does not
  *         have to free the return pointer.
  *
- * \param[in, out]  context     pointer to a data structure cast on-the-fly
+ * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
  *
- * \return  a pointer to an array of \ref cs_real_t
+ * \return a pointer to an array of cs_real_t (size: n_cells)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdoeb_vecteq_get_cell_values(void      *context);
+cs_cdoeb_vecteq_get_cell_values(void      *context,
+                                bool       previous);
 
 /*----------------------------------------------------------------------------*/
 /*!

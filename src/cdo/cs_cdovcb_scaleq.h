@@ -261,13 +261,15 @@ cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
  *         have to free the return pointer.
  *
  * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
  *
- * \return  a pointer to an array of \ref cs_real_t
+ * \return a pointer to an array of cs_real_t (size: n_vertices)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdovcb_scaleq_get_vertex_values(void      *context);
+cs_cdovcb_scaleq_get_vertex_values(void      *context,
+                                   bool       previous);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -279,13 +281,15 @@ cs_cdovcb_scaleq_get_vertex_values(void      *context);
  *         have to free the return pointer.
  *
  * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
  *
- * \return  a pointer to an array of \ref cs_real_t
+ * \return  a pointer to an array of cs_real_t (size: n_cells)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdovcb_scaleq_get_cell_values(void     *context);
+cs_cdovcb_scaleq_get_cell_values(void     *context,
+                                 bool      previous);
 
 /*----------------------------------------------------------------------------*/
 /*!

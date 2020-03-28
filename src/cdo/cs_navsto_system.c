@@ -1020,11 +1020,11 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
     switch (nsp->coupling) {
 
     case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+      face_vel = cs_cdofb_ac_get_face_velocity(false); /* current */
+      break;
+
     case CS_NAVSTO_COUPLING_MONOLITHIC:
-      {
-        cs_equation_t  *mom_eq = cs_equation_by_name("momentum");
-        face_vel = cs_equation_get_face_values(mom_eq);
-      }
+      face_vel = cs_cdofb_monolithic_get_face_velocity(false); /* current */
       break;
 
     case CS_NAVSTO_COUPLING_PROJECTION:
@@ -1037,7 +1037,7 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
         cs_cdofb_navsto_init_face_pressure(nsp, connect, ts, pr_f);
 
         cs_equation_t  *mom_eq = cs_equation_by_name("velocity_prediction");
-        face_vel = cs_equation_get_face_values(mom_eq);
+        face_vel = cs_equation_get_face_values(mom_eq, false);
       }
       break;
 
@@ -1191,7 +1191,7 @@ cs_navsto_system_extra_op(const cs_mesh_t             *mesh,
   case CS_SPACE_SCHEME_CDOFB:
     {
       cs_equation_t  *eq = cs_navsto_system_get_momentum_eq();
-      cs_real_t  *u_face = cs_equation_get_face_values(eq);
+      cs_real_t  *u_face = cs_equation_get_face_values(eq, false);
       cs_real_t  *u_cell = navsto->velocity->val;
 
       cs_cdofb_navsto_extra_op(nsp, mesh, cdoq, connect, ts,

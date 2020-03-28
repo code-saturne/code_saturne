@@ -2177,7 +2177,7 @@ cs_cdofb_vecteq_extra_op(const char                 *eqname,
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_lnum_t  n_i_faces = connect->n_faces[CS_INT_FACES];
-  const cs_real_t  *face_pdi = cs_cdofb_vecteq_get_face_values(data);
+  const cs_real_t  *face_pdi = cs_cdofb_vecteq_get_face_values(data, false);
 
   /* Field post-processing */
   int  len = strlen(field->name) + 8 + 1;
@@ -2212,18 +2212,27 @@ cs_cdofb_vecteq_extra_op(const char                 *eqname,
  *         have to free the return pointer.
  *
  * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
  *
- * \return  a pointer to an array of \ref cs_real_t
+ * \return  a pointer to an array of cs_real_t (size 3*n_cells)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdofb_vecteq_get_cell_values(void      *context)
+cs_cdofb_vecteq_get_cell_values(void      *context,
+                                bool       previous)
 {
   cs_cdofb_vecteq_t  *eqc = (cs_cdofb_vecteq_t *)context;
+
+  if (eqc == NULL)
+    return NULL;
+
   cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
 
-  return  pot->val;
+  if (previous)
+    return pot->val;
+  else
+    return pot->val_pre;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2233,44 +2242,27 @@ cs_cdofb_vecteq_get_cell_values(void      *context)
  *         have to free the return pointer.
  *
  * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
  *
- * \return  a pointer to an array of cs_real_t (size n_faces)
+ * \return  a pointer to an array of cs_real_t (size 3*n_faces)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdofb_vecteq_get_face_values(void    *context)
+cs_cdofb_vecteq_get_face_values(void    *context,
+                                bool     previous)
 {
   cs_cdofb_vecteq_t  *eqc = (cs_cdofb_vecteq_t *)context;
 
   if (eqc == NULL)
     return NULL;
+
+  if (previous) {
+    assert(eqc->face_values_pre != NULL);
+    return eqc->face_values_pre;
+  }
   else
-    return  eqc->face_values;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Retrieve an array of values at mesh faces for the current context.
- *         This are values at the previous state.
- *         The lifecycle of this array is managed by the code. So one does not
- *         have to free the return pointer.
- *
- * \param[in, out]  context    pointer to a data structure cast on-the-fly
- *
- * \return  a pointer to an array of cs_real_t (size n_faces)
- */
-/*----------------------------------------------------------------------------*/
-
-cs_real_t *
-cs_cdofb_vecteq_get_face_values_prev(void    *context)
-{
-  cs_cdofb_vecteq_t  *eqc = (cs_cdofb_vecteq_t *)context;
-
-  if (eqc == NULL)
-    return NULL;
-  else
-    return  eqc->face_values_pre;
+    return eqc->face_values;
 }
 
 /*----------------------------------------------------------------------------*/

@@ -287,13 +287,15 @@ typedef void
  *         have to free the return pointer.
  *
  * \param[in, out]  scheme_context  pointer to a data structure cast on-the-fly
+ * \param[in]       previous        retrieve the previous state (true/false)
  *
  * \return  a pointer to an array of \ref cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
 typedef cs_real_t *
-(cs_equation_get_values_t)(void      *scheme_context);
+(cs_equation_get_values_t)(void      *scheme_context,
+                           bool       previous);
 
 /*----------------------------------------------------------------------------*/
 /*!

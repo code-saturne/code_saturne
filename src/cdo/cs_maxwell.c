@@ -730,7 +730,7 @@ cs_maxwell_update(const cs_mesh_t             *mesh,
     cs_equation_t  *es_eq = cs_equation_by_name(CS_MAXWELL_ESTATIC_EQNAME);
 
     /* Retrieve the scalar electric potential */
-    const cs_real_t  *pot = cs_equation_get_vertex_values(es_eq);
+    const cs_real_t  *pot = cs_equation_get_vertex_values(es_eq, false);
 
     /* Compute the electric field: E = -grad(scal_pot) */
     const cs_adjacency_t  *e2v = connect->e2v;
@@ -769,7 +769,7 @@ cs_maxwell_update(const cs_mesh_t             *mesh,
     cs_equation_param_t  *ms_eqp = cs_equation_get_param(ms_eq);
 
     /* Retrieve the scalar electric potential */
-    const cs_real_t  *pot = cs_equation_get_edge_values(ms_eq);
+    const cs_real_t  *pot = cs_equation_get_edge_values(ms_eq, false);
 
     /* Compute the magnetic induction field: B = curl(vect_pot) */
     cs_cdo_connect_discrete_curl(connect, pot, &(mxl->b_field_array));

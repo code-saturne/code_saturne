@@ -550,8 +550,10 @@ _update_variables(cs_cdofb_predco_t           *sc)
   const cs_field_t  *velp_fld = cc->predicted_velocity;
   const cs_real_t *const  velp_c = velp_fld->val;
   const cs_real_t *const  velp_f = sc->predicted_velocity_f;
-  const cs_real_t *const  dp_f = cs_cdofb_scaleq_get_face_values(pre_eqc);
-  const cs_real_t *const  dp_c = cs_cdofb_scaleq_get_cell_values(pre_eqc);
+  const cs_real_t *const  dp_f = cs_cdofb_scaleq_get_face_values(pre_eqc,
+                                                                 false);
+  const cs_real_t *const  dp_c = cs_cdofb_scaleq_get_cell_values(pre_eqc,
+                                                                 false);
   const cs_real_t  dt_cur = cs_shared_time_step->dt[0];
 
   /* Variables to update */

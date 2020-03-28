@@ -367,7 +367,7 @@ _update_head(cs_gwf_t                    *gw,
 
         /* Update head_in_law */
         const cs_real_t  *hydraulic_head_cells =
-          cs_equation_get_cell_values(richards);
+          cs_equation_get_cell_values(richards, false); /* current values */
 
 #       pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
@@ -409,7 +409,7 @@ _update_head(cs_gwf_t                    *gw,
     case CS_SPACE_SCHEME_CDOVCB:
       {
         const cs_real_t  *hydraulic_head_cells =
-          cs_equation_get_cell_values(richards);
+          cs_equation_get_cell_values(richards, false); /* current values */
 
         memcpy(gw->head_in_law, hydraulic_head_cells,
                sizeof(cs_real_t)*cdoq->n_cells);
@@ -1533,7 +1533,8 @@ cs_gwf_integrate_tracer(const cs_cdo_connect_t     *connect,
 
   case CS_SPACE_SCHEME_CDOVB:
     {
-      const cs_real_t  *v_vals = cs_equation_get_vertex_values(tracer->eq);
+      const cs_real_t  *v_vals = cs_equation_get_vertex_values(tracer->eq,
+                                                               false);
       const cs_adjacency_t  *c2v = connect->c2v;
 
       for (cs_lnum_t i = 0; i < z->n_elts; i++) {
@@ -1555,8 +1556,10 @@ cs_gwf_integrate_tracer(const cs_cdo_connect_t     *connect,
 
   case CS_SPACE_SCHEME_CDOVCB:
     {
-      const cs_real_t  *v_vals = cs_equation_get_vertex_values(tracer->eq);
-      const cs_real_t  *c_vals = cs_equation_get_cell_values(tracer->eq);
+      const cs_real_t  *v_vals = cs_equation_get_vertex_values(tracer->eq,
+                                                               false);
+      const cs_real_t  *c_vals = cs_equation_get_cell_values(tracer->eq,
+                                                             false);
       const cs_adjacency_t  *c2v = connect->c2v;
 
       for (cs_lnum_t i = 0; i < z->n_elts; i++) {

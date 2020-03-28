@@ -219,13 +219,15 @@ cs_cdovb_vecteq_update_field(const cs_real_t            *solu,
  *         have to free the return pointer.
  *
  * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
  *
- * \return  a pointer to an array of \ref cs_real_t
+ * \return  a pointer to an array of cs_real_t (size: 3*n_vertices)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdovb_vecteq_get_vertex_values(void      *context);
+cs_cdovb_vecteq_get_vertex_values(void      *context,
+                                  bool       previous);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -236,13 +238,15 @@ cs_cdovb_vecteq_get_vertex_values(void      *context);
  *         have to free the return pointer.
  *
  * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
  *
- * \return  a pointer to an array of \ref cs_real_t
+ * \return  a pointer to an array of cs_real_t (size: 3*n_cells)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdovb_vecteq_get_cell_values(void      *context);
+cs_cdovb_vecteq_get_cell_values(void      *context,
+                                bool       previous);
 
 /*----------------------------------------------------------------------------*/
 /*!

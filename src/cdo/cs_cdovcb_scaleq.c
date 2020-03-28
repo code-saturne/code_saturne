@@ -115,6 +115,8 @@ struct _cs_cdovcb_scaleq_t {
      compute the cell values from the vertex values. No need to synchronize
      all these quantities since they are only cellwise quantities. */
   cs_real_t   *cell_values;
+  cs_real_t   *cell_values_pre;
+
   cs_real_t   *cell_rhs;   /* right-hand side related to cell dofs */
 
   /* Assembly process */
@@ -874,6 +876,7 @@ cs_cdovcb_scaleq_init_context(const cs_equation_param_t   *eqp,
   BFT_MALLOC(eqc->rc_tilda, n_cells, cs_real_t);
   BFT_MALLOC(eqc->acv_tilda, connect->c2v->idx[n_cells], cs_real_t);
 
+  eqc->cell_values_pre = NULL;  /* For a future usage */
   memset(eqc->cell_values, 0, sizeof(cs_real_t)*n_cells);
   memset(eqc->rc_tilda, 0, sizeof(cs_real_t)*n_cells);
   memset(eqc->acv_tilda, 0, sizeof(cs_real_t)*connect->c2v->idx[n_cells]);
@@ -2341,18 +2344,27 @@ cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
  *         have to free the return pointer.
  *
  * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
  *
- * \return  a pointer to an array of \ref cs_real_t
+ * \return a pointer to an array of cs_real_t (size: n_vertices)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdovcb_scaleq_get_vertex_values(void      *context)
+cs_cdovcb_scaleq_get_vertex_values(void      *context,
+                                   bool       previous)
 {
   cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t *)context;
+
+  if (eqc == NULL)
+    return NULL;
+
   cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
 
-  return pot->val;
+  if (previous)
+    return pot->val_pre;
+  else
+    return pot->val;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2365,18 +2377,23 @@ cs_cdovcb_scaleq_get_vertex_values(void      *context)
  *         have to free the return pointer.
  *
  * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
  *
- * \return  a pointer to an array of \ref cs_real_t
+ * \return  a pointer to an array of cs_real_t (size: n_cells)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdovcb_scaleq_get_cell_values(void     *context)
+cs_cdovcb_scaleq_get_cell_values(void     *context,
+                                 bool      previous)
 {
   cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t  *)context;
 
   if (eqc == NULL)
     return NULL;
+
+  if (previous)
+    return eqc->cell_values_pre;
   else
     return eqc->cell_values;
 }

@@ -68,18 +68,17 @@ BEGIN_C_DECLS
 /*!
  * \brief  Retrieve the values of the velocity on the faces
  *
- * \param[in] scheme_context  pointer to a structure cast on-the-fly
+ * \param[in]   previous  retrieve the previous state (true/false)
  *
- * \return a pointer to an array of \ref cs_real_t
+ * \return a pointer to an array of cs_real_t (size = 3*n_faces)
  */
 /*----------------------------------------------------------------------------*/
 
 inline static cs_real_t *
-cs_cdofb_ac_get_face_velocity(void    *scheme_context)
+cs_cdofb_ac_get_face_velocity(bool   previous)
 {
-  CS_UNUSED(scheme_context);
-
-  return cs_equation_get_face_values(cs_equation_by_name("momentum"));
+  return cs_equation_get_face_values(cs_equation_by_name("momentum"),
+                                     previous);
 }
 
 /*============================================================================

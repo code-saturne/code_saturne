@@ -760,7 +760,7 @@ _update_liquid_fraction_binary_alloy(const cs_mesh_t             *mesh,
   cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_GNUM_TYPE, solid->n_g_cells);
 
   /* Update c_l at face values */
-  const cs_real_t  *bulk_conc_f = cs_equation_get_face_values(tr_eq);
+  const cs_real_t  *bulk_conc_f = cs_equation_get_face_values(tr_eq, false);
   const cs_real_t  *bulk_temp_f = alloy->temp_faces;
 
   for (cs_lnum_t  f_id = 0; f_id < quant->n_faces; f_id++) {
@@ -1713,7 +1713,8 @@ cs_solidification_initialize(const cs_mesh_t              *mesh,
     cs_equation_t  *thm_eq = cs_equation_by_name(CS_THERMAL_EQNAME);
     assert(thm_eq != NULL);
 
-    alloy->temp_faces = cs_equation_get_face_values(thm_eq);
+    /* Store the pointer to the current face temperature values */
+    alloy->temp_faces = cs_equation_get_face_values(thm_eq, false);
 
   }
 

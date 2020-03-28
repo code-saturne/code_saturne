@@ -1040,7 +1040,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
       cs_equation_integrate_variable(connect, quant, eq, &mean_value);
       mean_value /= quant->vol_tot;
 
-      cs_real_t  *psi_v = cs_equation_get_vertex_values(eq);
+      cs_real_t  *psi_v = cs_equation_get_vertex_values(eq, false);
       for (cs_lnum_t i = 0; i < quant->n_vertices; i++)
         psi_v[i] -= mean_value;
 

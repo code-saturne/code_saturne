@@ -2755,7 +2755,7 @@ cs_cdofb_scaleq_extra_op(const char                 *eqname,
 
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_lnum_t  n_i_faces = connect->n_faces[CS_INT_FACES];
-  const cs_real_t  *face_pdi = cs_cdofb_scaleq_get_face_values(data);
+  const cs_real_t  *face_pdi = cs_cdofb_scaleq_get_face_values(data, false);
 
   /* Field post-processing */
   int  len = strlen(field->name) + 8 + 1;
@@ -2790,18 +2790,27 @@ cs_cdofb_scaleq_extra_op(const char                 *eqname,
  *         have to free the return pointer.
  *
  * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
  *
- * \return  a pointer to an array of \ref cs_real_t
+ * \return  a pointer to an array of cs_real_t (size n_cells)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdofb_scaleq_get_cell_values(void      *context)
+cs_cdofb_scaleq_get_cell_values(void      *context,
+                                bool       previous)
 {
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
+
+  if (eqc == NULL)
+    return NULL;
+
   cs_field_t  *pot = cs_field_by_id(eqc->var_field_id);
 
-  return pot->val;
+  if (previous)
+    return pot->val_pre;
+  else
+    return pot->val;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2811,18 +2820,25 @@ cs_cdofb_scaleq_get_cell_values(void      *context)
  *         have to free the return pointer.
  *
  * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
  *
  * \return  a pointer to an array of cs_real_t (size n_faces)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdofb_scaleq_get_face_values(void    *context)
+cs_cdofb_scaleq_get_face_values(void    *context,
+                                bool     previous)
 {
   cs_cdofb_scaleq_t  *eqc = (cs_cdofb_scaleq_t *)context;
 
   if (eqc == NULL)
     return NULL;
+
+  if (previous) {
+    assert(eqc->face_values_pre != NULL);
+    return eqc->face_values_pre;
+  }
   else
     return eqc->face_values;
 }

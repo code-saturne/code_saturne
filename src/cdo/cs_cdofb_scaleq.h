@@ -352,13 +352,15 @@ cs_cdofb_scaleq_extra_op(const char                 *eqname,
  *         have to free the return pointer.
  *
  * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
  *
- * \return  a pointer to an array of \ref cs_real_t
+ * \return  a pointer to an array of cs_real_t (size n_cells)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdofb_scaleq_get_cell_values(void      *context);
+cs_cdofb_scaleq_get_cell_values(void      *context,
+                                bool       previous);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -367,13 +369,15 @@ cs_cdofb_scaleq_get_cell_values(void      *context);
  *         have to free the return pointer.
  *
  * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
  *
  * \return  a pointer to an array of cs_real_t (size n_faces)
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_cdofb_scaleq_get_face_values(void    *context);
+cs_cdofb_scaleq_get_face_values(void    *context,
+                                bool     previous);
 
 /*----------------------------------------------------------------------------*/
 /*!

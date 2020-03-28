@@ -252,8 +252,9 @@ cs_cdo_field_interpolation_cell_to_faces(const cs_mesh_t    *mesh,
                               eq->builder,
                               eq->scheme_context);
 
-  /* Copy the computed solution into the given array at vertices */
-  cs_real_t *_face_values = cs_cdofb_scaleq_get_face_values(eq->scheme_context);
+  /* Copy the computed solution into the given array on faces */
+  cs_real_t *_face_values =
+    cs_cdofb_scaleq_get_face_values(eq->scheme_context, false);
   memcpy(face_values, _face_values,
          (mesh->n_i_faces + mesh->n_b_faces)*sizeof(cs_real_t));
 

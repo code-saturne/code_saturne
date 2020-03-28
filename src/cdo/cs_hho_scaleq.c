@@ -1441,21 +1441,26 @@ cs_hho_scaleq_update_field(const cs_real_t            *solu,
  * \brief  Get the computed values at faces (DoF used in the linear system are
  *         located at primal faces)
  *
- * \param[in, out]  data    pointer to a data structure cast on-the-fly
+ * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
  *
- * \return  a pointer to an array of \ref cs_real_t
+ * \return  a pointer to an array of cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_hho_scaleq_get_face_values(void          *data)
+cs_hho_scaleq_get_face_values(void          *context,
+                              bool           previous)
 {
-  cs_hho_scaleq_t  *eqc = (cs_hho_scaleq_t  *)data;
+  cs_hho_scaleq_t  *eqc = (cs_hho_scaleq_t  *)context;
 
   if (eqc == NULL)
     return NULL;
-  else
-    return eqc->face_values;
+
+  if (previous)
+    bft_error(__FILE__, __LINE__, 0, "%s:Case not handle.", __func__);
+
+  return eqc->face_values;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1463,21 +1468,26 @@ cs_hho_scaleq_get_face_values(void          *data)
  * \brief  Get the computed values at cells (DoF used in the linear system are
  *         located at primal faces)
  *
- * \param[in, out]  data    pointer to a data structure cast on the fly
+ * \param[in, out]  context    pointer to a data structure cast on-the-fly
+ * \param[in]       previous   retrieve the previous state (true/false)
  *
- * \return  a pointer to an array of \ref cs_real_t
+ * \return  a pointer to an array of cs_real_t
  */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
-cs_hho_scaleq_get_cell_values(void          *data)
+cs_hho_scaleq_get_cell_values(void          *context,
+                              bool           previous)
 {
-  cs_hho_scaleq_t  *eqc = (cs_hho_scaleq_t  *)data;
+  cs_hho_scaleq_t  *eqc = (cs_hho_scaleq_t  *)context;
 
   if (eqc == NULL)
     return NULL;
-  else
-    return eqc->cell_values;
+
+  if (previous)
+    bft_error(__FILE__, __LINE__, 0, "%s:Case not handle.", __func__);
+
+  return eqc->cell_values;
 }
 
 /*----------------------------------------------------------------------------*/

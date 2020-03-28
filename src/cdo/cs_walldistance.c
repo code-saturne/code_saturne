@@ -341,7 +341,7 @@ _compute_poisson_cdofb(const cs_cdo_connect_t     *connect,
   cs_lnum_t  i, k;
 
   const cs_real_t  *c_var = field->val;
-  const cs_real_t  *f_var = cs_equation_get_face_values(eq);
+  const cs_real_t  *f_var = cs_equation_get_face_values(eq, false);
 
   /* Loop on cells */
   for (cs_lnum_t c_id = 0; c_id < cdoq->n_cells; c_id++) {
