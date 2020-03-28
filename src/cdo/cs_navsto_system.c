@@ -307,9 +307,7 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
       if (navsto->param->option_flag & CS_NAVSTO_FLAG_STEADY)
         thm_model |= CS_THERMAL_MODEL_STEADY;
 
-      cs_thermal_system_t  *thm = cs_thermal_system_activate(thm_model,
-                                                             thm_num,
-                                                             thm_post);
+      cs_thermal_system_activate(thm_model, thm_num, thm_post);
 
     }
   }
@@ -1082,11 +1080,13 @@ cs_navsto_system_update(const cs_mesh_t             *mesh,
                         const cs_cdo_connect_t      *connect,
                         const cs_cdo_quantities_t   *cdoq)
 {
+  CS_UNUSED(mesh);
+  CS_UNUSED(connect);
+  CS_UNUSED(cdoq);
+
   cs_navsto_system_t  *ns = cs_navsto_system;
 
   if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
-
-  cs_navsto_param_t  *nsp = ns->param;
 
   /* Retrieve the boundary velocity flux (mass flux) and perform the update */
   cs_field_t  *nflx
@@ -1097,7 +1097,6 @@ cs_navsto_system_update(const cs_mesh_t             *mesh,
   cs_advection_field_across_boundary(ns->adv_field,
                                      time_step->t_cur,
                                      nflx->val);
-
 }
 
 /*----------------------------------------------------------------------------*/

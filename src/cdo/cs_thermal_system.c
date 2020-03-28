@@ -618,6 +618,7 @@ cs_thermal_system_finalize_setup(const cs_cdo_connect_t     *connect,
 {
   CS_UNUSED(connect);
   CS_UNUSED(quant);
+  CS_UNUSED(time_step);
 
   cs_thermal_system_t  *thm = cs_thermal_system;
 
@@ -625,7 +626,6 @@ cs_thermal_system_finalize_setup(const cs_cdo_connect_t     *connect,
 
   if (thm->temperature == NULL)
     thm->temperature = cs_field_by_name("temperature");
-
 }
 
 /*----------------------------------------------------------------------------*/
