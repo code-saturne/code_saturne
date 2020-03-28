@@ -2166,15 +2166,12 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
           || cs_gui_strcmp(choice_v, "flow1_formula")
           || cs_gui_strcmp(choice_v, "flow2_formula"))
         bft_printf("-----velocity: %s => %d \n",
-            choice_v, (boundaries->velocity_e[izone] ? : 1: 0));
+            choice_v, (boundaries->velocity_e[izone] ? 1: 0));
       if (   cs_gui_strcmp(choice_d, "coordinates")
           || cs_gui_strcmp(choice_d, "translation"))
-        bft_printf("-----direction: %s => %12.5e %12.5e %12.5e \n",
+        bft_printf("-----direction: %s => %12.5e %12.5e %12.5e\n",
                    choice_v, boundaries->dir[izone][0],
                    boundaries->dir[izone][1], boundaries->dir[izone][2]);
-      else if (cs_gui_strcmp(choice_d, "formula"))
-        bft_printf("-----direction: %s => %d \n", choice_d,
-                   (boundaries->direction[izone] ? 1 : 0));
 
       if (cs_gui_strcmp(vars->model, "solid_fuels")) {
         bft_printf("-----iqimp=%i, qimpat=%12.5e \n",
