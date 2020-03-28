@@ -151,8 +151,6 @@ double precision dt(ncelet)
 return
 end subroutine usphyv
 
-
-!===============================================================================
 !===============================================================================
 !> \brief Modify turbulent viscosity
 !>
@@ -249,7 +247,7 @@ end subroutine usvist
 !>
 !>              SMAGOR = Mij.Lij / Mij.Mij
 !>
-!> The local avergaes of the numerator and denominator are done before calling
+!> The local averages of the numerator and denominator are done before calling
 !> this subroutine, so
 !>
 !>              SMAGOR = < Mij.Lij > / < Mij.Mij >
@@ -332,58 +330,5 @@ call field_get_val_s(ismago, cpro_smago)
 return
 end subroutine ussmag
 
-
 !===============================================================================
 
-!===============================================================================
-! Purpose:
-! -------
-
-!> usatph
-!> \brief User subroutine dedicated to modifie physical properties of the
-!>        atmospheric module
-!>
-!> This subroutine is called at beginning of each time step at the end of
-!> atphyv.
-!
-!-------------------------------------------------------------------------------
-
-!-------------------------------------------------------------------------------
-! Arguments
-!______________________________________________________________________________.
-!  mode           name          role                                           !
-!______________________________________________________________________________!
-!_______________________________________________________________________________
-
-subroutine usatph
-
-!===============================================================================
-! Module files
-!===============================================================================
-
-use paramx
-use pointe
-use numvar
-use optcal
-use cstphy
-use entsor
-use parall
-use period
-use albase
-use field
-use mesh
-
-!===============================================================================
-
-implicit none
-
-!----
-! Formats
-!----
-
-!----
-! End
-!----
-
-return
-end subroutine usatph

@@ -27,8 +27,8 @@
 !> Remarques :
 !> This routine is called at the beginning of each time step
 !>
-
 !-------------------------------------------------------------------------------
+
 subroutine atphyv
 
 !===============================================================================
@@ -188,9 +188,6 @@ enddo
 if (ippmod(iatmos).ge.2.and. moddis.ge.2) then
   call gaussian()
 endif
-
-! User re-definition:
-call usatph ()
 
 !===============================================================================
 ! FORMATS
