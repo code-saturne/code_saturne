@@ -27,53 +27,6 @@
 %==================================
 %==================================
 
-\CS is an application designed to solve the Navier-Stokes
-equations in the cases of 2D, 2D axi-symmetric and 3D flows. Its main module is
-designed for the simulation of flows which may be steady or
-unsteady, laminar or turbulent, incompressible or potentially dilatable,
-isothermal or not. Scalars and turbulent fluctuations of scalars can be taken into
-account. The code includes specific modules, referred to as ``specific physics'',
-for the treatment of Lagrangian particle tracking, semi-transparent radiative transfer,
-gas combustion, pulverised coal combustion,
-electricity effects (Joule effect and electric arcs) and compressible flows.
-
-\CS is free software; you can redistribute it
-and/or modify it under the terms of the GNU General Public License
-as published by the Free Software Foundation; either version 2 of
-the License, or (at your option) any later version.
-\CS is distributed in the hope that it will be
-useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.\footnote{You should have
-received a copy of the GNU General Public License
-along with \CS; if not, write to the
-Free Software Foundation, Inc.,
-51 Franklin St, Fifth Floor,
-Boston, MA  02110-1301  USA}
-
-
-\CS relies on a finite volume discretisation and allows the use of
-various mesh types which may be hybrid (containing several kinds of
-elements) and may have structural non-conformities (hanging nodes).
-
-
-\CS is composed of two main elements and an optional GUI,
-as shown on \figurename~\ref{fig:elements}:
-\begin{itemize}
-\item the Solver module is the numerical solver
-\item the Preprocessor module is in charge of mesh import\\
-\end{itemize}
-
-\begin{figure}[!h]
-\centerline{
-\includegraphics*[width=14cm]{cs_components}}
-\caption{\CS elements}\label{fig:elements}
-\end{figure}
-
-\indent\CS also relies on the PLE (Parallel Location and Exchange) library (developed by
-the same team, under LGPL license) for the management of code coupling;
-this library can also be used independently.
-
 This document is a practical user guide for \CS version \verscs.
 It is the result of the joint effort of
 all the members in the development team.
@@ -88,8 +41,7 @@ The latest updated version of this document is available on-line with the versio
 and accessible through the command
 \texttt{code\_saturne info --guide theory}.
 
-This document first
-presents all the necessary elements to run a calculation
+This document presents some the necessary elements to run a calculation
 with \CS version \verscs. It then lists all the variables of the code
 which may be useful for more advanced users.
 The user subroutines of all the modules within the code are then documented.
@@ -99,17 +51,15 @@ These keywords and parameters are grouped under headings
 based on their function. An alphabetical index is also given at the end of
 the document for easier reference.
 
-%==================================
-\section{Quick start}
-%==================================
-
-%=================================================
-\subsection{How to use the Doxygen documentation?}
-%=================================================
-
 In addition to the present user guide, a complete
-\texttt{Doxygen} documentation automatically generated from the code is available with \CS. It can provide various informations about the implementation such as details on variables used throughout the code kernel and the user subroutines. It also provides an easily explorable set of user subroutine examples and Fortran-C naming references for quantities linked to the mesh or the physical fields.
+\texttt{Doxygen} documentation is available with \CS. It can provide
+information about the implementation such as details on variables used
+throughout the code kernel and the user subroutines. It also provides an easily
+explorable set of user subroutine examples and Fortran-C naming references for
+quantities linked to the mesh or the physical fields.
 
+The user documentation is in the process of migration from this pdf documentation
+to the Doxygen documentation, so the user should first lok there.
 One can access the \texttt{Doxygen} main page through \doxygenfile{index.html}{this link} or from a terminal by typing the following command:
 \texttt{code\_saturne info --guide theory}.
 
@@ -127,64 +77,6 @@ In any case, the \textbf{search bar} can be used to look for a specific keyword 
 be a function, a variable, a structure, a type, etc.
 
 %==================================
-\subsection{Running a calculation}
-%==================================
-We assume in this section that the user has at his disposal the calculation data file (calculation set up) or already prepared it following for instance the step-by-step guidance provided in \CS tutorial. The steps described below are intended to provide the user a way to run quickly on a workstation a calculation through the Graphical User Interface (GUI).
-
-The first thing to do before running \CS is to define an alias to the \texttt{code\_saturne} script
-(see \S\ref{sec:prg_environementCS}), for example:
-\begin{center}
-\texttt{alias cs='\$\{prefix\}/bin/code\_saturne'}.
-\end{center}
-When using the \emph{bash} shell, a completion file may be sourced so as to
-allow for syntax auto-completion:
-\begin{center}
-\texttt{source \$\{prefix\}/etc/bash\_completion.d/code\_saturne'}.
-\end{center}
-The second thing is to prepare the computation directories. For instance, the study directory \texttt{T\_JUNCTION}, containing a single calculation directory CASE1, will be created by typing the command (see \S\ref{sec:prg_cscreate}):\
-\begin{center}
-\texttt{code\_saturne create -s T\_JUNCTION}\
-\end{center}
-The mesh files should be copied in the directory \texttt{MESH} (though they may also be selected from another directory, see \S\ref{sec:prg_stepbystepcalculation}),
-and the Fortran user files necessary for the calculation in the directory \texttt{CASE1/SRC}.  Finally, the calculation data file \texttt{setup.xml} read by the GUI should be copied to the directory \texttt{CASE1/DATA}.
-Once these steps completed, the user should go in the directory \texttt{CASE1/DATA} and type de command line \texttt{./SaturneGUI setup.xml} to load the calculation file into the interface. A window similar to \figurename\ref{fig:3_e1} will appear. Click on the heading ``Calculation management'', select the heading ``Prepare batch calculation'', see \figurename~\ref{fig:43_e1}. After having chosen the number of processors, press ``start calculation'' to run the calculation.
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.9\textwidth]{gui_case_dir}
-\caption{Identity and paths}
-\label{fig:3_e1}
-\end{center}
-\end{figure}
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.9\textwidth]{gui_prepare_execution}
-\caption{Prepare execution}
-\label{fig:43_e1}
-\end{center}
-\end{figure}
-
-If no problem arises, the simulation results can be found in the directory \texttt{CASE1/RESU} and be read directly by {\em ParaView} or {\em EnSight} in \texttt{CASE1/RESU/<YYYYMMDD-hhmm>/postprocessing}. Calculation history can be found in the file \texttt{<YYYYMMDD-hhmm>/run\_solver.log}.
-
-%==================================
-\subsection{Troubleshooting}
-%==================================
-If the calculation does not run properly, the user is advised to check the
-following points in\\
-\texttt{CASE1/RESU/<YYYYMMDD-hhmm>}:
-\begin{list}{$\bullet$}{}
-\item  if the calculation stops in the pre-processor, the user should check for error messages in the file \texttt{preprocessor*.log}.
-\item if the problem is related to boundary conditions, the user should visualise the file \texttt{error.ensight} with {\em EnSight} or {\em ParaView},
-\item if the calculation stops in the \CS core, the user should look for messages at the end of the files \texttt{run\_solver.log} and \texttt{error*}. In addition, the user can track the following keywords in the log; these are specific error signals:
-  \begin{list}{-}{}
-  \item  \texttt{SIGFPE}: a floating point exception occurred. It happens when there is a division by 0, when the calculation did not converge, or when a real number reached a value over $10^{300}$. Depending on the architecture \CS is running
-on, this type of exception may be caught or ignored.
-  \item  \texttt{SIGSEGV}: a memory error such as a segmentation violation occurred. An array may have exceeded its allocated memory size and a memory location in use was overwritten.
-  \end{list}
-In order to easily find the problem, it is also advised to use a debug version of \CS (see the installation documentation) in combination with the use of the valgrind tool (if it is installed). The use of valgrind can be specified in the GUI in the advanced options of the item ``Prepare batch calculation'' under the heading ``Calculation management'' or without the GUI, in the \texttt{cs\_user\_scripts.py} file (this file can be found in \texttt{DATA/REFERENCE} and should be copied in \texttt{DATA}, see \S\ref{sec:prg_stepbystepcalculation}).
-\end{list}
-%==================================
 %==================================
 \section{Practical information about \CS}
 %==================================
@@ -193,185 +85,6 @@ In order to easily find the problem, it is also advised to use a debug version o
 %==================================
 \subsection{System Environment for \CS}
 %==================================
-
-%==================================
-\subsubsection{Preliminary settings}
-%==================================
-\label{sec:prg_environementCS}
-
-In order to use \CS, the user should define the following alias (in their \texttt{.bashrc},
-or equivalent, or \texttt{.alias} file, depending on the environment):
-\begin{center}
-\texttt{alias cs='\$\{install\_directory\}/bin/code\_saturne'}
-\end{center}
-where \texttt{install\_directory} is the base directory where
-\CS and its components have been installed\footnote{Without this step, using the absolute path is still possible}.
-
-This step may be skipped if \texttt{\$\{install\_directory\}} is in a standard location (such as \texttt{/usr} or \texttt{/usr/local}.
-
-
-%==================================
-\subsubsection{Configuration file}
-%==================================
-A configuration file for \CS is available in \texttt{\$\{install\_directory\}/etc}. This file can be useful as a post-install step
-for computing environments using a batch system, for separate front-end and compute systems (such as Blue Gene systems),
-or for coupling with \syrthes 4 or \CA (see the installation documentation for more details).\\
-
-A user may define a local configuration, by copying
-\texttt{\$\{install\_directory\}/etc/code\_saturne.cfg} (if present)
-or \texttt{\$\{install\_directory\}/etc/code\_saturne.cfg.template} to\\
-\texttt{\$HOME/.code\_saturne.cfg}, then uncomment and define the applicable sections.\\
-
-Note that this user configuration file's settings usually apply to all installed \CS versions.
-
-Two options in the \texttt{.code\_saturne.cfg} file could be useful for the user:
-\begin{list}{$\bullet$}{}
-\item Set the temporary directory (see \S\ref{sec:prg_temporarydirectory} for more details on the temporary execution directory).
-\item Set the mesh database directory: it is possible to indicate a path where meshes are stored.
-In this case, the GUI will propose this directory automatically for mesh selection. Without the GUI, it is
-then possible to fill in the \texttt{cs\_user\_scripts.py} file (see \S\ref{sec:prg_stepbystepcalculation})
-with the name of the desired mesh of the database directory and the code will
-find it automatically (be careful if you have the same name for a mesh in the database directory
-and in the \texttt{MESH} directory, the mesh in \texttt{MESH} will be used).
-\end{list}
-
-%==================================
-\subsubsection{Standard directory hierarchy}
-%==================================
-\label{sec:prg_architecture}%
-The standard architecture for the simulation studies is:
-
-\noindent
-An optional study directory containing:
-\begin{list}{$\bullet$}{}
-\item A directory \texttt{MESH} containing the mesh(es)
-      necessary for the study
-\item A directory \texttt{POST} for the potential post-processing scripts (not
-used directly by the code)
-\item One or several calculation directories
-\end{list}
-
-\noindent
-Every calculation directory contains:
-\begin{list}{$\bullet$}{}
-\item A directory \texttt{SRC} for the potential user subroutines
-      necessary for the calculation
-\item A directory \texttt{DATA} for the calculation data (data
-      file from the interface, input profiles, thermo-chemical data, ...), the user script and the XML file.
-\item A directory \texttt{SCRIPTS} for the launch script
-\item A directory \texttt{RESU} for the results\\
-To improve the calculation traceability, the files and directories
-sent to \texttt{RESU} after a calculation are  placed in a subdirectory
-named after that run's ``id'', which is by default based on the run date
-and time, using the format: \texttt{YYYYMMDD-hhmm}.
-It is also possible to force a specific run id, using the \texttt{--id}
-option of \texttt{code\_saturne run}.
-\end{list}
-
-\noindent
-In the standard cases, \texttt{RESU/<run\_id>} contains a
-\texttt{postprocessing} directory with the post-processing
-(visualization) files, a \texttt{restart} directory for the calculation
-restart files, a \texttt{monitoring} directory for the files of chronological
-record of the results at specific locations (probes),\\
-\texttt{preprocessor.log} and \texttt{run\_solver.log} files reporting the
-Preprocessor and the Solver execution. All files from the \texttt{DATA}
-directory not in subdirectories are also copied. For a tracing of
-the modifications in prior calculations, the user-subroutines used in
-a calculation are stored in a \texttt{src\_saturne} subdirectory. The data files
-(such as the XML Interface data file and thermo-chemical data files) and
-launch script are also copied into the results directory. \texttt{compil.log} and
-\texttt{summary} are respectively reports of the compilation stage and
-general information on the calculation (type of machine, user,
-version of the code, ...).
-
-\begin{table}[h!t]
-\begin{tabular}{lll}
-\multicolumn{3}{l}{Below are typical contents of a case directory CASE1 in a study STUDY} \\
-\multicolumn{2}{l}{\texttt{STUDY/CASE1/DATA:}}&{\bf \CS data}\\
-&        \texttt{SaturneGUI}        &Graphical User Interface launch script\\
-&        \texttt{setup.xml}         &Graphical User Interface parameter file\\
-&        \texttt{REFERENCE}         &Example of user scripts and meteorological\\
-&                                   &  or thermochemical date files (used with the\\
-&                                   & specific physics modules)\\
-\multicolumn{2}{l}{\texttt{STUDY/CASE1/SRC:}}&{\bf \CS user subroutines }\\
-&        \texttt{REFERENCE}         &  Available user subroutines\\
-&        \texttt{EXAMPLES}          &  Examples of user subroutines\\
-&        \texttt{cs\_user\_boundary\_conditions.f90}  &  User subroutines used for the present calculation\\
-&        \texttt{cs\_user\_parameters.f90} &\\
-\multicolumn{2}{l}{\texttt{STUDY/CASE1/RESU/}\emph{\texttt{YYYYMMDD-hhmm:}}}&{\bf Results} for the
-                                                             calculation YYYYMMDD-hhmm\\
-&        \texttt{postprocessing}    &Directory containing the \CS post-processing output\\
-&                                   &in the {\em EnSight}, \med, or CGNS format (both volume and boundary);\\
-&        \texttt{src\_saturne}      &copy of the \CS user subroutines used for the calculation\\
-&        \texttt{monitoring}        &Directory containing the chronological records for \CS\\
-&        \texttt{checkpoint}        &Directory containing the \CS restart files \\
-&        \texttt{compile.log}       &Compilation log\\
-&     \texttt{setup.xml}            &Graphical User Interface parameter file used for the\\
-&                                   &calculation\\
-&        \texttt{runcase}           &Copy of the launch script used for the calculation\\
-&        \texttt{preprocessor.log}  &Execution report for the \CS Preprocessor\\
-&        \texttt{run\_solver.log}   &Execution report for the Solver module of \CS\\
-&        \texttt{summary}           &General information (machine, user, version, ...)\\
-\multicolumn{2}{l}{\texttt{STUDY/CASE1/SCRIPTS:}}&{\bf Launch script}\\
-&        \texttt{runcase}           &Launch script (which may contain batch
-                                     system keywords)\\
-\end{tabular}
-\end{table}
-
-When running, the code
-may use additional files or directories inside its execution directory, set
-by the execution script, which include a \texttt{mesh\_input} file or directory,
-as well as a \texttt{restart} directory (which is a link or copy of a previous
-run's \texttt{checkpoint} directory), as well as a \texttt{run\_solver.sh}
-script.
-
-For coupled calculations, whether with \CS itself or \syrthes, each coupled
-calculation domain is defined by its own directory (bearing the same name
-as the domain), but results are placed in a \texttt{RESU\_COUPLING}
-directory, with a subdirectory for each run, itself containing one
-subdirectory per coupled domain. Coupled cases are run through
-the standard the {\texttt{code\_saturne run} command, but require a coupling
-parameters file (\texttt{coupling\_parameters.py}) specified using the
-{\texttt{--coupling option}. The run command must be called from the toplevel
-({\texttt{STUDY}) directory, so an additional {\texttt{STUDY/runcase} launch
-script is used in this case. Note that case-local scripts (such as
-{\texttt{STUDY/CASE1/SCRIPTS/runcase}) are still used by the master script to
-determine which parameter file to use.
-
-So in the coupled case, calculation results would not be placed in
-\texttt{STUDY/CASE1/RESU/}\emph{\texttt{YYYYMMDD-hhmm}}, but in
-\texttt{STUDY/RESU\_COUPLING/}\emph{\texttt{YYYYMMDD-hhmm}}\texttt{/CASE1}, with the \texttt{summary}
-file being directly placed in \texttt{STUDY/RESU\_COUPLING/}\emph{\texttt{YYYYMMDD-hhmm}}
-(as it references all coupled domains).
-
-\begin{table}[h!t]
-\begin{tabular}{lll}
-\multicolumn{3}{l}{Below are typical additional contents with a coupled \syrthes
-  case SOLID1 in a study STUDY} \\
-\multicolumn{2}{l}{\texttt{STUDY/runcase}}&{Coupled launch script}\\
-\multicolumn{2}{l}{\texttt{STUDY/coupling\_parameters.py}}&{Coupled launch parameters}\\
-\multicolumn{2}{l}{\texttt{STUDY/SOLID1/DATA:}}&{\bf \syrthes data}\\
-&        \texttt{syrthes\_data.syd}          &\syrthes data file \\
-&        \texttt{syrthes.py}                 &\syrthes script\\
-&        \texttt{usr\_examples}              &\syrthes user subroutine examples\\
-\multicolumn{2}{l}{\texttt{STUDY/RESU\_COUPLING/}\emph{\texttt{YYYYMMDD-hhmm}}\texttt{/SOLID1:}}&{\bf results
- (file names defined in \texttt{syrthes.env})}\\
-&        \texttt{src}                &\syrthes user subroutines
-                                     used in the calculation\\
-&        \texttt{compile.log}        &\syrthes compilation report\\
-&        \texttt{listsyr}            &Execution log\\
-&        \texttt{geoms}              &\syrthes \ solid geometry file\\
-&        \texttt{histos1}            &\syrthes chronological records at
-                                               specified monitoring points\\
-&        \texttt{resus1}             &\syrthes calculation restart file (1 time step)\\
-&        \texttt{resusc1}            &\syrthes chronological solid
-                                      post-processing file\\
-&                                    &(may be transformed into the {\em EnSight}\\
-&                                    & or {\em MED} format with the {\em syrthes4ensight}\\
-&                                    & or {\em syrthes4med30} utility)\\
-\end{tabular}
-\end{table}
 
 %==================================
 \subsubsection{\CS Solver library files}
@@ -655,118 +368,6 @@ A comprehensive list of the user subroutines and their instructions
 
 
 %==================================
-\subsubsection{Temporary execution directory}
-%==================================
-\label{sec:prg_temporarydirectory}%
-During a calculation, \CS may use a temporary directory for the compilation and
-the execution if such a ``scratch'' directory is defined in the GUI, by setting the
-\texttt{CS\_SCRATCHDIR} environment variable, or in the \texttt{code\_saturne.cfg} file.
-In this case, it is only at the end of the compilation that the result files are only copied at the end in the directory
-\texttt{RESU}. This is recommended if the compute environment includes different
-file-systems, some better suited to data storage, others to intensive I/O.
-If this is not the case, there is no point in running in a scratch directory
-rather than the results directory, as this incurs additional file copies.
-
-If the environment variable \texttt{CS\_SCRATCHDIR} is defined,
-its value has priority over that defined in the preference file
-so if necessary, it
-is possible to define a setting specific to a given run using this mechanism.
-
-\noindent
-{\em WARNING: in case of an error, the temporary directories are not deleted
-after a calculation, so that they may be used for debugging. They may then
-accumulate and may hinder the correct operation of the machine.\\
-\centerline{\bf It is therefore essential to remove them regularly.}}
-
-
-%==================================
-\subsubsection{Execution modes}
-%==================================
-\label{sec:prg_executionmodes}%
-As explained before, \CS is composed of two main modules, the Preprocessor and the
-Solver. The Preprocessor reads the meshes.
-The resulting data is transferred to the Solver through specific
-files, named \texttt{mesh\_input}, or placed in a directory of that name when
-multiple meshes are imported.
-
-Yet, the Preprocessor does not run in parallel and may require a
-large amount of memory. The launch scripts therefore allows specifically
-choosing which modules to run, either through the GUI or through the
-\texttt{cs\_user\_scripts.py} file:
-
-\hspace*{0.5cm} If a {mesh\_input} file or directory is defined (which may be
-either a {mesh\_input} from a previous Preprocessor run or a {mesh\_output}
-from a previous solver run), the script will copy or link it to
-the execution directory, and the Preprocessor will not be rerun.
-
-\hspace*{0.5cm} If \texttt{domain.exec\_kernel = False}, the Solver will not
-be run. This is useful when only the mesh import stage is required.
-
-In a similar manner, the Solver accepts several command-line options relative to execution mode, notably \texttt{domain.solver\_args = '--preprocess'} or \texttt{'--quality'}, restricting the run to the preprocessing stages, or preprocessing stages augmented by mesh quality criteria computation. Whenever the preprocessing stages defined lead to an effective mesh modification, a \texttt{mesh\_output} file is produced, which can be used directly as an input for a successive calculation.
-
-The GUI presents the range of options in the form of four execution modes (under the ``Mesh`` page):
-
-\begin{list}{$\bullet$}{}
-
-\item {\bf mesh import}: the Preprocessor is run to transform one or more meshes into an internal \texttt{mesh\_input} file (or directory in case of multiple meshes).
-
-\item {\bf mesh preprocessing}: the Solver is run in preprocessing mode, so as to handle all mesh modification operations, such as joining, periodicity, smoothing, \emph{etc.} If a \texttt{mesh\_input} file or directory is provided, it is used directly; otherwise, mesh import is run first.
-
-\item {\bf mesh quality criteria}: similar to preprocessing, with the addition of mesh quality criteria computation, and post-processing output of those criteria. Some additional mesh consistency checks are also run.
-
-\item {\bf standard}: this includes preprocessing, followed by a standard computation.
-
-\end{list}
-
-Note that to allow preprocessing in multiple passes, all defined preprocessing operations are run even on previously preprocessed meshes. In most cases, those will not produce additional changes (such as joining already joined meshes), but in the case of mesh smoothing, they might lead to small changes. So when using a previously preprocessed mesh it is recommended
-not to define any preprocessing operations, so as to skip the preprocessing stage.
-
-It is encouraged to separate the preprocessing and calculation runs, as
-this not only speeds up calculations, but also ensures that the mesh is identical, regardless of the architecture or number of processors it is run on. Indeed, when running the same pre-processing stages such as mesh joining on a different machine or a different number of processors, very minor floating-point truncation errors may lead to very slightly different preprocessed meshes.
-The GUI option to ``Use unmodified checkpoint mesh in case of restart`` encourages this usage.
-
-Note also that mesh partitioning is done directly by the Solver.
-Depending on the partitioning algorithm used, a partition map
-(\texttt{partition\_output/domain\_number\_*}) may be output,
-allowing the use of the same partitioning in future calculations.
-By default, this file is output when using graph-based partitioners, which may
-use randomization and do not guarantee a reproducible output, and is not output
-when using a deterministic space-filling curve based partitioning.
-
-If the code was built only with a serial partitioning library,
-graph-based partitioning may best be run in a serial pre-processing stage.
-In some cases, serial partitioning might also provide better partitioning
-quality than parallel partitioning, so if both are available, comparing
-the performance of the code may be worthwhile, at least for calculations
-expected to run for many iterations.
-
-%==================================
-\subsubsection{Environment variables\label{sec:envcs}}
-%==================================
-
-Setting a few environment variables specific to \CS allows modifying
-its default behaviour. The environment variables used by \CS
-are described here:
-
-\envvar{CS\_SCRATCHDIR}
-
-Allows defining the execution directory (see
-\S\ref{sec:prg_temporarydirectory}),
-overriding the default path or settings from the global
-or user \texttt{code\_saturne.cfg}.
-
-\envvar{CS\_MPIEXEC\_OPTIONS}
-
-This variable allows defining extra arguments to be passed to
-the MPI execution command by the run scripts.
-If this option is defined, it will have priority over the value defined
-in the preference file (or by computed defaults), so if necessary, it
-is possible to define a setting specific to a given run using this
-mechanism. This may be useful when tuning the installation to a given
-machine, for example experimenting MPI mapping and ``bind to core''
-features.
-
-%==================================
 \subsubsection{Interactive modification of selected parameters}
 %==================================
 \label{sec:prg_control_file}%
@@ -825,7 +426,7 @@ but not increasing it. Also, in the case of a restart, it refers to the
 number of additional time steps, not to the number of absolute time steps.
 
 Note that for the \texttt{postprocess\_time\_*} options, the last argument
-(\texttt{writer\_id}} is optional. If not defined, or 0, postprocessing
+(\texttt{writer\_id}) is optional. If not defined, or 0, postprocessing
 is activated for all writers; if specified, only the writer with the specified
 id is affected. Also, postprocessing output by one ore more writers at a
 future time step may be cancelled using the negative value of that time step.
@@ -3126,7 +2727,7 @@ selection of imported meshes read, reading files multiple times,
 applying geometric transformations, and renaming groups.
 
 The user function \texttt{cs\_user\_mesh\_modify} may be used
-for advanced modification of the main \texttt{cs\_mesh\_t}} structure.
+for advanced modification of the main \texttt{cs\_mesh\_t} structure.
 
 {\em WARNING: Caution must be exercised when using this function
 along with periodicity. Indeed, the periodicity parameters are not
@@ -6863,11 +6464,10 @@ words \texttt{ivimpo\index{ivimpo}}, \texttt{igliss\index{igliss}},
 
  \item if \texttt{ialtyb(ifac) = ifresf}: free-surface
 \begin{list}{$\rightarrow$}{}
-\item an imposed mesh velocity such that the fluid mass flux is equal to the mesh displacement in order to mimic the free-surface automatically. Note that the boundary condition on the fluid velocity must be set separately (homogeneous Neumann conditionfor instance).
+\item an imposed mesh velocity such that the fluid mass flux is equal to the mesh displacement in order to mimic the free-surface automatically. Note that the boundary condition on the fluid velocity must be set separately (homogeneous Neumann condition for instance).
 \end{list}
 
 \end{list}
-}
 
 %==================================
 \subsubsection{Modification of the mesh viscosity}

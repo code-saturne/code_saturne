@@ -25,28 +25,44 @@
 /*-----------------------------------------------------------------------------*/
 
 /*!
-  \mainpage Code_Saturne documentation
+  \mainpage Introduction
 
-  \section mainpage_intro Introduction
+  code_saturne is a general purpose Computational Fluid Dynamics (CFD)
+  software developed mostly by EDF.
 
-  Code_Saturne is EDF's general purpose Computational Fluid Dynamics (CFD)
-  software.
-
-  The basic capabilities of Code_Saturne enable the handling of either
+  The basic capabilities of code_saturne enable the handling of either
   incompressible or expandable flows with or without heat transfer and
   turbulence. Dedicated modules are available for specific physics such as
   radiative heat transfer, combustion (gas, coal, heavy fuel oil, ...),
   magneto-hydrodynamics, compressible flows, two-phase flows
   (Euler-Lagrange approach with two-way coupling), or atmospheric flows.
 
+  code_saturne relies on a finite volume discretisation and allows the use of
+  various mesh types which may be hybrid (containing several kinds of
+  elements) and may have structural non-conformities (hanging nodes).
+
+  \section mainpage_licence Licence
+
+  code_saturne is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the
+  Free Software Foundation; either version 2 of the License, or (at your option)
+  any later version. \CS is distributed in the hope that it will be
+  useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+  of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  GNU General Public License for more details.
+
   \section mainpage_install Installation
 
-  Code_Saturne may be configured and installed using the
+  code_saturne may be configured and installed using the
   \c configure shell script and \c make. Please read the \c INSTALL
   file in the toplevel source directory if you are not familiar
   with configuration scripts generated through GNU autoconf and automake.
 
   \section mainpage_sublibs Sub-libraries
+
+  code_saturne also relies on the PLE (Parallel Location and Exchange) library
+  (developed by the same team, under the LGPL license) for the management of
+  code coupling; this library can also be used independently.
 
   See \ref mainpage_ple "PLE" (Parallel Location and Exchange).
 
@@ -68,5 +84,16 @@
     - a <a href="../../studymanager.pdf"><b>guide of studymanager</b></a>,
     - an <a href="../../install.pdf"><b>installation guide</b></a>,
     - a <a href="../../refcard.pdf"><b>refcard</b></a>.
+
+  \section main_components Base architecture
+
+  code_saturne is composed of three main elements,
+  as shown on the following figure:
+
+  - the (optional) GUI allows defining computation settings
+  - the Solver module is the numerical solver
+  - the Preprocessor module is in charge of mesh import
+
+   \image html cs_components.svg "code_saturne elements"
 
 */

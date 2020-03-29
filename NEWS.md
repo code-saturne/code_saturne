@@ -111,6 +111,8 @@ Numerics and physical modelling:
 
 Architectural changes:
 
+- Move some parts of the user documentation to Doxygen.
+
 - Remove support for atmospheric aerosol library SIREAM. Replaced by the
   aerosol library SSH-aerosol (EDF - ENPC - INRIA). The latter is released
   under GNU GPL v3, see https://sshaerosol.wordpress.com/ and
