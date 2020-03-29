@@ -1828,10 +1828,6 @@ cs_solidification_extra_post(void                      *input,
                              const cs_lnum_t            b_face_ids[],
                              const cs_time_step_t      *time_step)
 {
-  CS_UNUSED(mesh_id);
-  CS_UNUSED(cat_id);
-  CS_UNUSED(ent_flag);
-  CS_UNUSED(n_cells);
   CS_UNUSED(n_i_faces);
   CS_UNUSED(n_b_faces);
   CS_UNUSED(cell_ids);
@@ -1843,22 +1839,138 @@ cs_solidification_extra_post(void                      *input,
 
   cs_solidification_t  *solid = (cs_solidification_t *)input;
 
-  if (solid->cell_state != NULL) {
+  if (cat_id == CS_POST_MESH_PROBES) {
 
-    cs_post_write_var(CS_POST_MESH_VOLUME,
-                      CS_POST_WRITER_DEFAULT,
-                      "cell_state",
-                      1,
-                      false,  // interlace
-                      true,   // true = original mesh
-                      CS_POST_TYPE_int,
-                      solid->cell_state,
-                      NULL,
-                      NULL,
-                      time_step);
+    cs_field_t  *fld = cs_field_by_name_try("liquid_fraction");
+    assert(fld != NULL);
 
-  }
+    cs_post_write_probe_values(mesh_id,
+                               CS_POST_WRITER_ALL_ASSOCIATED,
+                               "liquid_fraction",
+                               fld->dim,
+                               CS_POST_TYPE_cs_real_t,
+                               CS_MESH_LOCATION_CELLS,
+                               NULL,
+                               NULL,
+                               fld->val,
+                               time_step);
 
+    if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+
+      fld = cs_field_by_name_try("alloy_liquid_distrib");
+      if (fld != NULL) {
+        cs_post_write_probe_values(mesh_id,
+                                   CS_POST_WRITER_ALL_ASSOCIATED,
+                                   "C_l",
+                                   fld->dim,
+                                   CS_POST_TYPE_cs_real_t,
+                                   CS_MESH_LOCATION_CELLS,
+                                   NULL,
+                                   NULL,
+                                   fld->val,
+                                   time_step);
+      }
+
+    } /* Binary alloy model */
+
+  } /* Probes */
+
+  if ((cat_id == CS_POST_MESH_VOLUME) &&
+      (ent_flag[0] == 1)) {     /* ent_flag == 1 --> on cells */
+
+    if (solid->cell_state != NULL &&
+        (solid->post_flag & CS_SOLIDIFICATION_POST_CELL_STATE)) {
+
+      cs_post_write_var(CS_POST_MESH_VOLUME,
+                        CS_POST_WRITER_DEFAULT,
+                        "cell_state",
+                        1,
+                        false,  // interlace
+                        true,   // true = original mesh
+                        CS_POST_TYPE_int,
+                        solid->cell_state, NULL, NULL,
+                        time_step);
+
+    }
+
+    if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+
+      cs_solidification_binary_alloy_t  *alloy
+        = (cs_solidification_binary_alloy_t *)solid->model_context;
+
+      cs_real_t  *wb = cs_equation_get_tmpbuf();
+
+      if (solid->post_flag & CS_SOLIDIFICATION_POST_CBULK_ADIM) {
+
+        cs_field_t  *c_bulk_field =
+          cs_equation_get_field(alloy->solute_equation);
+        const cs_real_t  inv_cref = 1./alloy->ref_concentration;
+        assert(c_bulk_field != NULL);
+
+        const cs_real_t  *c_bulk = c_bulk_field->val;
+
+        for (cs_lnum_t i = 0; i < n_cells; i++)
+          wb[i] = (c_bulk[i] - alloy->ref_concentration)*inv_cref;
+
+        cs_post_write_var(CS_POST_MESH_VOLUME,
+                          CS_POST_WRITER_DEFAULT,
+                          "C_bulk_adim",
+                          1,
+                          false,  // interlace
+                          true,   // true = original mesh
+                          CS_POST_TYPE_cs_real_t,
+                          wb, NULL, NULL,
+                          time_step);
+
+      } /* CS_SOLIDIFICATION_POST_CBULK_ADIM */
+
+      if ((solid->post_flag & CS_SOLIDIFICATION_POST_CLIQ) ||
+          (solid->post_flag & CS_SOLIDIFICATION_POST_CLIQ_ADIM)) {
+
+        const cs_real_t  inv_cref = 1./alloy->ref_concentration;
+        const cs_real_t  *g_l = solid->g_l_field->val;
+        const cs_real_t  *c_l = alloy->c_l_field->val;
+
+        cs_real_t  *cliq = wb;
+        cs_real_t  *cliq_adim = wb + n_cells;
+
+        /* Compute C_liq = c_l*g_l */
+        for (cs_lnum_t i = 0; i < n_cells; i++)
+          cliq[i] = g_l[i]*c_l[i];
+
+        if (solid->post_flag & CS_SOLIDIFICATION_POST_CLIQ)
+          cs_post_write_var(CS_POST_MESH_VOLUME,
+                            CS_POST_WRITER_DEFAULT,
+                            "Cl_gl",
+                            1,
+                            false,  // interlace
+                            true,   // true = original mesh
+                            CS_POST_TYPE_cs_real_t,
+                            cliq, NULL, NULL,
+                            time_step);
+
+        if (solid->post_flag & CS_SOLIDIFICATION_POST_CLIQ_ADIM) {
+
+          for (cs_lnum_t i = 0; i < n_cells; i++)
+            cliq_adim[i] = (cliq[i] - alloy->ref_concentration)*inv_cref;
+
+          cs_post_write_var(CS_POST_MESH_VOLUME,
+                            CS_POST_WRITER_DEFAULT,
+                            "Cl_gl_adim",
+                            1,
+                            false,  // interlace
+                            true,   // true = original mesh
+                            CS_POST_TYPE_cs_real_t,
+                            cliq_adim, NULL, NULL,
+                            time_step);
+
+        }
+
+      } /* CS_SOLIDIFICATION_POST_CLIQ_ADIM or CS_SOLIDIFICATION_POST_CLIQ */
+
+    } /* Binary alloy model */
+
+  } /* VOLUME_MESH + on cells */
 }
 
 /*----------------------------------------------------------------------------*/

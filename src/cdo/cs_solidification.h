@@ -102,6 +102,39 @@ typedef enum {
 } cs_solidification_model_bit_t;
 
 
+/*!
+ * @name Flags specifying automatic post-processing for the solidification
+ *        module
+ * @{
+ *
+ * \def CS_SOLIDIFICATION_POST_CBULK_ADIM
+ *
+ * \brief Compute and post-process (C_bulk - C_0)/C_0
+ * Only available if the model \ref CS_SOLIDIFICATION_MODEL_BINARY_ALLOY is
+ * activated C_0 is the reference concentration
+ *
+ * \def CS_SOLIDIFICATION_POST_CLIQ
+ * \brief Compute and post-process Cliq = C_l*g_l
+ * Only available if the model \ref CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
+ * is activated.
+ * g_l is the liquid fraction and C_l is the solute distribution (wt %)
+ *
+ * \def CS_SOLIDIFICATION_POST_CLIQ_ADIM
+ * \brief Compute Cliq = C_l*g_l and post-process (Cliq - C_O)/C_0
+ * Only available if the model \ref CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
+ * is activated.
+ * g_l is the liquid fraction and C_l is the solute distribution (wt %)
+ * C_0 is the reference concentration
+ *
+ * \def CS_SOLIDIFICATION_POST_CELL_STATE
+ * \brief State related to each cell between (solid, mushy, liquid or eutectic)
+ */
+
+#define CS_SOLIDIFICATION_POST_CBULK_ADIM          (1 << 0) /* =  1 */
+#define CS_SOLIDIFICATION_POST_CLIQ                (1 << 1) /* =  2 */
+#define CS_SOLIDIFICATION_POST_CLIQ_ADIM           (1 << 2) /* =  4 */
+#define CS_SOLIDIFICATION_POST_CELL_STATE          (1 << 3) /* =  8 */
+
 typedef struct _solidification_t  cs_solidification_t;
 
 /*============================================================================
