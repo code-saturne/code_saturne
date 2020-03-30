@@ -58,6 +58,7 @@
 #include "cs_prototypes.h"
 #include "cs_restart.h"
 #include "cs_restart_default.h"
+#include "cs_solidification.h"
 #include "cs_walldistance.h"
 
 /*----------------------------------------------------------------------------
@@ -495,6 +496,10 @@ cs_domain_post(cs_domain_t  *domain)
                                 domain->connect,
                                 domain->cdo_quantities,
                                 domain->time_step);
+
+    /* 5.c Specific operations for the Solidification module */
+    if (cs_solidification_is_activated())
+      cs_solidification_extra_op(domain->connect, domain->cdo_quantities);
 
     /* Basic statistic related to variables */
     if (domain->cdo_context->mode == CS_DOMAIN_CDO_MODE_ONLY)
