@@ -512,6 +512,8 @@ cs_domain_post(cs_domain_t  *domain)
      - equations
      - groundwater flows
      - Maxwell module
+     - Navier-Stokes
+     - Solidification
      are also handled during the call of this function thanks to
      cs_post_add_time_mesh_dep_output() function pointer
   */

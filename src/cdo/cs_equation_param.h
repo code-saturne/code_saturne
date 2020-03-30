@@ -395,7 +395,7 @@ typedef struct {
    * property in each cell is multiplicative coefficient in front of the advection
    * term (boundary terms are also considered)
    * This is useful to treat the thermal module using the variable temperature
-   * instead of the enthalpy.
+   * instead of the enthalpy for instance or in the solidification module.
    */
 
   cs_param_advection_form_t     adv_formulation;
