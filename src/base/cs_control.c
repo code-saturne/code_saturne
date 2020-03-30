@@ -811,9 +811,10 @@ _read_next_opt_int(const char  **s,
  * Read next value, expecting double precision floating point value
  *
  * parameters:
- *   cur_line <-- pointer to line buffer
- *   s        <-> current string position
- *   val      --> value read
+ *   skip_prev <-- skip previous string ?
+ *   cur_line  <-- pointer to line buffer
+ *   s         <-> current string position
+ *   val       --> value read
  *
  * returns:
  *   number of values read (1 for success, 0 otherwise)
@@ -906,7 +907,7 @@ _control_checkpoint(const char   *cur_line,
   }
   else if (strncmp(*s, "time_value ", 11) == 0) {
     double t;
-    if (_read_next_double(false, cur_line, s, &t) > 0) {
+    if (_read_next_double(true, cur_line, s, &t) > 0) {
       cs_restart_checkpoint_set_next_tv(t);
       bft_printf("  %-32s %12.5g\n",
                  "checkpoint_time_value", t);
@@ -914,7 +915,7 @@ _control_checkpoint(const char   *cur_line,
   }
   else if (strncmp(*s, "wall_time ", 10) == 0) {
     double wt;
-    if (_read_next_double(false, cur_line, s, &wt) > 0) {
+    if (_read_next_double(true, cur_line, s, &wt) > 0) {
       cs_restart_checkpoint_set_next_wt(wt);
       bft_printf("  %-32s %12.5g\n",
                  "checkpoint_wall_time", wt);
@@ -930,7 +931,7 @@ _control_checkpoint(const char   *cur_line,
   }
   else if (strncmp(*s, "time_value_interval ", 20) == 0) {
     double t;
-    if (_read_next_double(false, cur_line, s, &t) > 0) {
+    if (_read_next_double(true, cur_line, s, &t) > 0) {
       if (t > 0) {
         cs_restart_checkpoint_set_defaults(-1, t, -1.);
         bft_printf("  %-32s %12.5g\n",
@@ -943,7 +944,7 @@ _control_checkpoint(const char   *cur_line,
   }
   else if (strncmp(*s, "wall_time_interval ", 19) == 0) {
     double wt;
-    if (_read_next_double(false, cur_line, s, &wt) > 0) {
+    if (_read_next_double(true, cur_line, s, &wt) > 0) {
       if (wt > 0) {
         cs_restart_checkpoint_set_defaults(-1, -1., wt);
         bft_printf("  %-32s %12.5g\n",
@@ -971,14 +972,14 @@ _control_notebook(const cs_time_step_t   *ts,
                   char                   *cur_line,
                   char                  **s)
 {
-  *s += 9; /* shift in string by length of "postprocess_" part */
+  *s += 9; /* shift in string by length of "notebook_" part */
 
   bool ignored = true;
   if (strncmp(*s, "set ", 4) == 0) {
     char *name;
     double val = 0.;
     _read_next_string(true, s, &name);
-    if (_read_next_double(true, cur_line, (const char **)s, &val) == 1) {
+    if (_read_next_double(false, cur_line, (const char **)s, &val) == 1) {
       int editable;
       int is_present = cs_notebook_parameter_is_present(name,
                                                         &editable);
@@ -1008,7 +1009,7 @@ _control_postprocess(const cs_time_step_t   *ts,
                      char                   *cur_line,
                      const char            **s)
 {
-  *s += 12; /* shift in string by lenght of "postprocess_" part */
+  *s += 12; /* shift in string by length of "postprocess_" part */
 
   if (strncmp(*s, "time_step ", 10) == 0) {
     int nt = 0, writer_id = 0;
@@ -1027,7 +1028,7 @@ _control_postprocess(const cs_time_step_t   *ts,
   else if (strncmp(*s, "time_value ", 11) == 0) {
     int writer_id = 0;
     double t = 0.;
-    if (_read_next_double(false, cur_line, s, &t) > 0) {
+    if (_read_next_double(true, cur_line, s, &t) > 0) {
       if (_read_next_opt_int(s, &writer_id) == 0)
         writer_id = 0;
       if (t >= 0)
