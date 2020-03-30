@@ -886,9 +886,9 @@ class XMLinit(BaseXmlInit):
                     ("Bilan_C",                      "x_carbone"),
                     ("Bilan_O",                      "x_oxygen"),
                     ("Bilan_H",                      "x_hydrogen"),
-                    ("PuisJoul",                     "joule_power"),
-                    ("Cour_re",                      "current_re"),
-                    ("CouImag",                      "current_im"),
+                    ("PowJoul",                      "joule_power"),
+                    ("CurrentReal",                  "current_re"),
+                    ("CurrentImag",                  "current_im"),
                     ("For_Lap",                      "laplace_force"),
                     ("Coef_Abso",                    "absorption_coeff"),
                     ("c_NO_HCN",                     "radiation_source"),
@@ -1497,7 +1497,6 @@ class XMLinit(BaseXmlInit):
                             var['name'] = 'rij'
                             var['component'] = rij_lbls.index(varName)
 
-
             # Lagrangian model setup renames and cleanup
             XMLBoundaryNode = self.case.xmlGetNode('boundary_conditions')
             XMLInletNodes = XMLBoundaryNode.xmlGetNodeList('inlet')
@@ -1716,7 +1715,6 @@ class XMLinit(BaseXmlInit):
                     ref_str = 'molar_mass'
                 nodeF.xmlSetData('reference_' + ref_str, value)
 
-
         # New distinction for physical properties:
         # Constant/user_law/predefined_law instead of Constant/variable, where
         # variable was used for both user_law and predefined_law
@@ -1843,6 +1841,32 @@ class XMLinit(BaseXmlInit):
                         if node:
                             node['name'] = rename[attr]
                             node['support'] = 'boundary'
+
+        # Fix some Combustion names
+
+        p_node = self.case.xmlGetNode('thermophysical_models')
+        if node:
+            p_node = node.xmlGetNode('solid_fuels')
+
+        if p_node:
+            rename = {"x_carbone": "x_carbon"}
+            for attr in list(rename.keys()):
+                node = p_node.xmlGetNode('property', name=attr)
+                if node:
+                    node['name'] = rename[attr]
+
+                    # Update Time Averages and profiles if needed !
+                    for n in self.case.xmlGetNodeList('time_average'):
+                        for var in n.xmlGetChildNodeList('var_prop'):
+                            varName = var['name']
+                            if varName == attr:
+                                var['name'] = rename[attr]
+
+                    for n in self.case.xmlGetNodeList('profile'):
+                        for var in n.xmlGetChildNodeList('var_prop'):
+                            varName = var['name']
+                            if varName == attr:
+                                var['name'] = rename[attr]
 
         # Probes update to allow renaming
         XMLAnaControl = self.case.xmlGetNode('analysis_control')

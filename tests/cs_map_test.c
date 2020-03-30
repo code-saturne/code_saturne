@@ -141,7 +141,7 @@ const char *f_base[] =
    "b_x_c",
    "x_h_c_exp_st",
    "x_h_c_imp_st",
-   "x_carbone",
+   "x_carbon",
    "x_oxygen",
    "x_hydrogen",
    "luminance",

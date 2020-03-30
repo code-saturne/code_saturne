@@ -1881,7 +1881,7 @@ cs_elec_add_property_fields(void)
                         has_previous);
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
-    cs_field_set_key_str(f, klbl, "PuisJoul");
+    cs_field_set_key_str(f, klbl, "PowJoul");
   }
 
   {
@@ -1915,7 +1915,7 @@ cs_elec_add_property_fields(void)
                         has_previous);
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
-    cs_field_set_key_str(f, klbl, "Curent_Imag");
+    cs_field_set_key_str(f, klbl, "Current_Imag");
   }
 
   /* specific for electric arcs */
@@ -1957,7 +1957,7 @@ cs_elec_add_property_fields(void)
                         has_previous);
     cs_field_set_key_int(f, keyvis, post_flag);
     cs_field_set_key_int(f, keylog, 1);
-    cs_field_set_key_str(f, klbl, "TS_radia");
+    cs_field_set_key_str(f, klbl, "ST_radia");
   }
 
 

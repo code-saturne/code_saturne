@@ -313,7 +313,7 @@ class CoalCombustionModel(Variables, Model):
                 lst.append(name)
 
         lst.append("intensity")
-        lst.append("x_carbone")
+        lst.append("x_carbon")
         lst.append("x_oxygen")
         lst.append("x_hydrogen")
 

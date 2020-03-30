@@ -309,7 +309,7 @@ call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
 !-----
 
 ! Mass fraction of elements: C,  O,  H (used in balances)
-call add_property_field_1d('x_carbone', 'Z_Carbone', ibcarbone)
+call add_property_field_1d('x_carbon', 'Z_Carbon', ibcarbone)
 call add_property_field_1d('x_oxygen', 'Z_Oxygen', iboxygen)
 call add_property_field_1d('x_hydrogen', 'Z_Hydrogen', ibhydrogen)
 
