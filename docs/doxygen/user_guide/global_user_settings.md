@@ -20,7 +20,7 @@
 
 \page cs_user_settings Setting up your environment
 
-Shortcuts and command completion
+Shortcuts and command completion  {#sec_prg_environment_cs}
 ================================
 
 It is recommended before running code_saturne to define an alias to the

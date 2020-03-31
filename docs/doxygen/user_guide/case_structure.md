@@ -20,6 +20,8 @@
 
 \page cs_case_structure Case directory structure
 
+[TOC]
+
 Introduction {#cs_case_structure_intro}
 ============
 
@@ -29,7 +31,8 @@ handle case data, model and numerical parameters, and run options.
 To create a case, either the GUI or the```code_saturne create``` command
 can be used. As usual for all code_saturne commands,
 the ```code_saturne create --help```
-will list the available options.
+will list the available options. More details are provided in the
+dedicated [case generator](@ref #sec_prg_cscreate) section.
 
 Organization and set-up of code_saturne computations is based on several concepts:
 
@@ -43,7 +46,7 @@ Standard directory hierarchy {#case_structure_standard_hierarchy}
 ----------------------------
 
 Studies, cases, and runs are usually organized in a standardized directory structure, allowing
-a good tracability of computations while trying to minimize duplication of larg files. While
+a good traceability of computations while trying to minimize duplication of large files. While
 the execution of the solver itself could uses a 'flat' structure, with prescribed file names,
 the GUI and high level `code_saturne` commands assume the standard structure is used.
 
@@ -63,7 +66,7 @@ Every calculation directory contains:
 * A `RESU` directory for the computation results
 
 To improve the calculation traceability, the files and directories
-sent to `RESU` after a calculation are  placed in a subdirectory
+sent to `RESU` after a calculation are  placed in a sub-directory
 named after that run's `id`, which is by default based on the run date
 and time, using the format: *YYYYMMDD-hhmm*.
 It is also possible to force a specific run id, using the `--id`
@@ -73,16 +76,16 @@ Below are typical contents of a case directory *Case1* in a study *Study*:
 
 ![Example study and case directory structure](cs_directory_structure.svg)
 
-### Coupled computation hierarchy {#case_structure_coupled_ierarchy}
+### Coupled computation hierarchy {#case_structure_coupled_hierarchy}
 
 For coupled calculations, whether with code_saturne itself or Syrthes, each coupled
 calculation domain is defined by its own directory (bearing the same name as the
-domain), but results are placed in a `RESU COUPLING` directory, with a subdirectory
-for each run, itself containing one subdirectory per coupled domain.
+domain), but results are placed in a `RESU COUPLING` directory, with a sub-directory
+for each run, itself containing one sub-directory per coupled domain.
 
-Coupled cases are run through the standard the code saturne run command, but
+Coupled cases are run through the standard the code_saturne run command, but
 require a coupling parameters file (`coupling parameters.py`) specified using
-the `--coupling` option. The run command must be called from the toplevel (`Study`)
+the `--coupling` option. The run command must be called from the top-level (`Study`)
 directory, so an additional `Study/run.cfg` file is also used in this case.
 Note that case-local scripts (such as `Study/Domain_1/DATA/run.cfg`)
 are still used by the master script to determine which parameter file to use.
@@ -94,7 +97,7 @@ with the summary file being directly placed in `Study/RESU_COUPLING/YYYYMMDD-hhm
 The following example illustrates a coupled case with one code_saturne domain (named *Fluid*)
 and one Syrthes domain (named *Solid*):
 
-![Example sudy directory structure with Syrthes coupling](cs_directory_structure_with_syrthes.svg)
+![Example study directory structure with Syrthes coupling](cs_directory_structure_with_syrthes.svg)
 
 Files Copied and referenced by a run {#case_structure_run_copy}
 ------------------------------------
@@ -114,11 +117,11 @@ files used, so the following rules apply when a computation run is prepared:
   if the currently active XML file is not named `setup.xml`, a symbolic link
   named `setup.xml` is added to that file, as the solver expects that name.
 * Files directly in `SRC` are copied to `RESU/src`
-* Subdirectories of `DATA` and `SRC` are ignored
+* Sub-directories of `DATA` and `SRC` are ignored
 * for large files or directories referenced in `setup.xml` or `user_scripts.py`, such
   as `mesh_input*`, `checkpoint`, or `partition_input`, symbolic links are used in
-  the run direcotory rather than a full copy. The link may have a different name: for
-  example, a `checkpoint` from a previous un is linked as `restart` for the new run.
+  the run directory rather than a full copy. The link may have a different name: for
+  example, a `checkpoint` from a previous run is linked as `restart` for the new run.
 
 In most cases, the solver is run using `RESU/<run_id>` as its work directory.
 For coupled cases, `RESU/<run_id>/<domain>` is used for each domain, so as to avoid
@@ -180,3 +183,45 @@ a setting specific to a given run using this mechanism.
 after a calculation, so that they may be used for debugging. They may then
 accumulate and lead to loss of usable disk space.
 It is therefore essential to remove them regularly.
+
+Case generator {#sec_prg_cscreate}
+--------------
+
+The `code_saturne create` case generation command  automatically creates
+a study or case directory according to the typical architecture and copies
+the required files.
+
+The syntax is briefly described here:
+
+```
+code_saturne create --study STUDY CASE_NAME1
+```
+creates a study directory `STUDY` with case sub-directory
+`CASE_NAME1`. If no case name is given, a default case directory called
+`CASE1` is created. While:
+
+```
+code_saturne create --case Flow3 --case Flow4
+```
+executed in the `STUDY` directory adds the case directories `Flow3` and `Flow4`.
+Whenever multiple cases are created simultaneously, it is assumed they may be
+coupled, so top-level `run.cfg` and `coupling_parameters.py` files and a
+`RESU_COUPLING` directory are also created.
+
+In each case's `DATA` directory, reference (minimal) `setup.xml` and
+`run.cfg` files are generated.
+
+Unless the `--noref` option is used, under `DATA`, a `REFERENCE` sub-directory
+containing a `cs_user_scripts.py` advanced settings template and
+examples of thermochemical data files used for pulverized coal combustion,
+gas combustion, electric arcs, or a meteorological profile.
+The files to be actually used for the calculation must be copied directly in
+the `DATA` directory and its name may either be unchanged, or be referenced using
+the GUI or using the [usppmo](@ref usppmo) user subroutine.
+In same manner, under the `SRC` directory, a sub-directory named `REFERENCE`
+containing all the available user-defined function templates and a
+the sub-directory named `EXAMPLES`  containing multiple examples are copied.
+
+As a rule of thumb, all files in `DATA` or `SRC` except for the
+`code_saturne` script are copied for use during code execution,
+but subdirectories are not.

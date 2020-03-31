@@ -82,7 +82,7 @@ Troubleshooting
 If the calculation does not run properly, the user is advised to check the
 following points in `CASE1/RESU/<YYYYMMDD-hhmm>`
 
-- if the calculation stops in the pre-processor, the user should check for
+- if the calculation stops in the preprocessor, the user should check for
   error messages in the `preprocessor*.log` file;
 - if the problem is related to boundary conditions, the user should visualize
   the `error.ensight` file with ParaView or EnSight;

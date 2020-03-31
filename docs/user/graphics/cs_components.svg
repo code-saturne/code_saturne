@@ -1,0 +1,335 @@
+<?xml version="1.0" standalone="no"?>
+<!-- Creator: fig2dev Version 3.2.7 -->
+<!-- CreationDate: 2020-03-26 12:57:03 -->
+<!-- Magnification: 2.1 -->
+<svg	xmlns="http://www.w3.org/2000/svg"
+	xmlns:xlink="http://www.w3.org/1999/xlink"
+	width="1497pt" height="686pt"
+	viewBox="768 -181 11877 5440">
+<g fill="none">
+<!-- Line -->
+<rect x="2670" y="1760" width="1575" height="315" fill="#b8bcb8"/>
+<!-- Line -->
+<rect x="2760" y="-175" width="1575" height="315" fill="#b8bcb8"/>
+<!-- Line -->
+<rect x="8250" y="-180" width="750" height="320" fill="#b8bcb8"/>
+<!-- Line -->
+<rect x="2535" y="140" width="2595" height="940" rx="105" fill="#d2be99"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<rect x="2445" y="2075" width="2634" height="1552" rx="105" fill="#d2be99"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<rect x="7875" y="135" width="2880" height="3330" rx="105" fill="#d2be99"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" 780,3470 780,2480"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" 6111,1028 6111,38"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" 11733,3304 11733,2314"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" 6058,3294 6058,2304"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" 10163,5115 10163,4125"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" 8946,5078 8946,4088"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" 7719,5093 7719,4103"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<rect x="8070" y="320" width="2505" height="895" rx="105" fill="#838083"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Text -->
+<text xml:space="preserve" x="8160" y="545" fill="#ffffff" font-family="Times" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">Mesh modification</text>
+<!-- Text -->
+<text xml:space="preserve" x="8145" y="1080" fill="#ffffff" font-family="Times" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">Mesh partitioning</text>
+<!-- Text -->
+<text xml:space="preserve" x="8145" y="810" fill="#ffffff" font-family="Times" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">Mesh and data setup</text>
+<!-- Line -->
+<rect x="8055" y="2700" width="2520" height="360" rx="105" fill="#838083"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Text -->
+<text xml:space="preserve" x="8145" y="2970" fill="#ffffff" font-family="Times" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">Post-processing output</text>
+<!-- Line -->
+<defs>
+<clipPath id="cp0">
+	<path clip-rule="evenodd" d="M 768,-181 H 12645 V 5259 H 768 z
+		M 2339,2940 2339,3000 2482,2977 2482,2963z"/>
+</clipPath>
+</defs>
+<polyline points=" 1710,2970 2475,2970" clip-path="url(#cp0)"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Forward arrow to point 2475,2970 -->
+<polygon points=" 2339,3000 2459,2970 2339,2940 2339,3000"
+	stroke="#000000" stroke-width="8px" stroke-miterlimit="8"/>
+<!-- Line -->
+<defs>
+<clipPath id="cp1">
+	<path clip-rule="evenodd" d="M 768,-181 H 12645 V 5259 H 768 z
+		M 5939,555 5939,615 6082,592 6082,578z"/>
+</clipPath>
+</defs>
+<polyline points=" 5130,585 6075,585" clip-path="url(#cp1)"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Forward arrow to point 6075,585 -->
+<polygon points=" 5939,615 6059,585 5939,555 5939,615"
+	stroke="#000000" stroke-width="8px" stroke-miterlimit="8"/>
+<!-- Line -->
+<defs>
+<clipPath id="cp2">
+	<path clip-rule="evenodd" d="M 768,-181 H 12645 V 5259 H 768 z
+		M 7694,555 7694,615 7837,592 7837,578z"/>
+</clipPath>
+</defs>
+<polyline points=" 7020,585 7830,585" clip-path="url(#cp2)"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Forward arrow to point 7830,585 -->
+<polygon points=" 7694,615 7814,585 7694,555 7694,615"
+	stroke="#000000" stroke-width="8px" stroke-miterlimit="8"/>
+<!-- Line -->
+<defs>
+<clipPath id="cp3">
+	<path clip-rule="evenodd" d="M 768,-181 H 12645 V 5259 H 768 z
+		M 10605,3824 10545,3824 10568,3967 10582,3967z
+		M 10545,3601 10605,3601 10582,3458 10568,3458z"/>
+</clipPath>
+</defs>
+<polyline points=" 10575,3465 10575,3960" clip-path="url(#cp3)"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Forward arrow to point 10575,3960 -->
+<polygon points=" 10545,3824 10575,3944 10605,3824 10545,3824"
+	stroke="#000000" stroke-width="8px" stroke-miterlimit="8"/>
+<!-- Backward arrow to point 10575,3465 -->
+<polygon points=" 10605,3601 10575,3481 10545,3601 10605,3601"
+	stroke="#000000" stroke-width="8px" stroke-miterlimit="8"/>
+<!-- Line -->
+<defs>
+<clipPath id="cp4">
+	<path clip-rule="evenodd" d="M 768,-181 H 12645 V 5259 H 768 z
+		M 9390,3824 9330,3824 9353,3967 9367,3967z
+		M 9330,3601 9390,3601 9367,3458 9353,3458z"/>
+</clipPath>
+</defs>
+<polyline points=" 9360,3465 9360,3960" clip-path="url(#cp4)"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Forward arrow to point 9360,3960 -->
+<polygon points=" 9330,3824 9360,3944 9390,3824 9330,3824"
+	stroke="#000000" stroke-width="8px" stroke-miterlimit="8"/>
+<!-- Backward arrow to point 9360,3465 -->
+<polygon points=" 9390,3601 9360,3481 9330,3601 9390,3601"
+	stroke="#000000" stroke-width="8px" stroke-miterlimit="8"/>
+<!-- Line -->
+<defs>
+<clipPath id="cp5">
+	<path clip-rule="evenodd" d="M 768,-181 H 12645 V 5259 H 768 z
+		M 8175,3824 8115,3824 8138,3967 8152,3967z
+		M 8115,3601 8175,3601 8152,3458 8138,3458z"/>
+</clipPath>
+</defs>
+<polyline points=" 8145,3465 8145,3960" clip-path="url(#cp5)"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Forward arrow to point 8145,3960 -->
+<polygon points=" 8115,3824 8145,3944 8175,3824 8115,3824"
+	stroke="#000000" stroke-width="8px" stroke-miterlimit="8"/>
+<!-- Backward arrow to point 8145,3465 -->
+<polygon points=" 8175,3601 8145,3481 8115,3601 8175,3601"
+	stroke="#000000" stroke-width="8px" stroke-miterlimit="8"/>
+<!-- Line -->
+<defs>
+<clipPath id="cp6">
+	<path clip-rule="evenodd" d="M 768,-181 H 12645 V 5259 H 768 z
+		M 11569,2850 11569,2910 11712,2887 11712,2873z
+		M 8115,3601 8175,3601 8152,3458 8138,3458z"/>
+</clipPath>
+</defs>
+<polyline points=" 10747,2880 11705,2880" clip-path="url(#cp6)"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Forward arrow to point 11705,2880 -->
+<polygon points=" 11569,2910 11689,2880 11569,2850 11569,2910"
+	stroke="#000000" stroke-width="8px" stroke-miterlimit="8"/>
+<!-- Line -->
+<defs>
+<clipPath id="cp7">
+	<path clip-rule="evenodd" d="M 768,-181 H 12645 V 5259 H 768 z
+		M 7559,4650 7559,4710 7702,4687 7702,4673z
+		M 8115,3601 8175,3601 8152,3458 8138,3458z"/>
+</clipPath>
+</defs>
+<polyline points=" 5130,3285 5535,3285 5535,4680 7695,4680" clip-path="url(#cp7)"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Forward arrow to point 7695,4680 -->
+<polygon points=" 7559,4710 7679,4680 7559,4650 7559,4710"
+	stroke="#000000" stroke-width="8px" stroke-miterlimit="8"/>
+<!-- Line -->
+<defs>
+<clipPath id="cp8">
+	<path clip-rule="evenodd" d="M 768,-181 H 12645 V 5259 H 768 z
+		M 5894,2850 5894,2910 6037,2887 6037,2873z
+		M 8115,3601 8175,3601 8152,3458 8138,3458z"/>
+</clipPath>
+</defs>
+<polyline points=" 5085,2880 6030,2880" clip-path="url(#cp8)"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Forward arrow to point 6030,2880 -->
+<polygon points=" 5894,2910 6014,2880 5894,2850 5894,2910"
+	stroke="#000000" stroke-width="8px" stroke-miterlimit="8"/>
+<!-- Line -->
+<rect x="2670" y="275" width="2325" height="670" rx="105" fill="#838083"/>
+<!-- Line -->
+<rect x="2625" y="2840" width="2319" height="630" rx="105" fill="#838083"/>
+<!-- Line -->
+<rect x="2625" y="2255" width="2325" height="400" rx="105" fill="#838083"/>
+<!-- Line -->
+<rect x="8070" y="1400" width="2505" height="1120" rx="105" fill="#4573a6"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Text -->
+<text xml:space="preserve" x="2715" y="1985" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="normal" font-size="168" text-anchor="start">Preprocessor</text>
+<!-- Text -->
+<text xml:space="preserve" x="2715" y="3065" fill="#ffffff" font-family="Times" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">Descending connectivity</text>
+<!-- Text -->
+<text xml:space="preserve" x="2700" y="2520" fill="#ffff00" font-family="Times" font-style="normal" font-weight="bold" font-size="144" text-anchor="start">Read meshes</text>
+<!-- Text -->
+<text xml:space="preserve" x="2713" y="3330" fill="#ffffff" font-family="Times" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">Verification output</text>
+<!-- Text -->
+<text xml:space="preserve" x="2805" y="50" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="normal" font-size="168" text-anchor="start">GUI</text>
+<!-- Text -->
+<text xml:space="preserve" x="2760" y="500" fill="#ffffff" font-family="Times" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">Configure run script</text>
+<!-- Text -->
+<text xml:space="preserve" x="2745" y="765" fill="#ffff00" font-family="Times" font-style="normal" font-weight="bold" font-size="144" text-anchor="start">Define simulation options</text>
+<!-- Text -->
+<text xml:space="preserve" x="8295" y="50" fill="#000000" font-family="Times" font-style="normal" font-weight="normal" font-size="168" text-anchor="start">Solver</text>
+<!-- Text -->
+<text xml:space="preserve" x="8505" y="3330" fill="#000000" font-family="Times" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">MPI communication</text>
+<!-- Text -->
+<text xml:space="preserve" x="8145" y="1575" fill="#ffff00" font-family="Times" font-style="normal" font-weight="bold" font-size="144" text-anchor="start">Navier-Stokes resolution</text>
+<!-- Text -->
+<text xml:space="preserve" x="8145" y="1845" fill="#ffffff" font-family="Times" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">User-defined functions</text>
+<!-- Text -->
+<text xml:space="preserve" x="8145" y="2115" fill="#ffffff" font-family="Times" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">Turbulence</text>
+<!-- Text -->
+<text xml:space="preserve" x="8145" y="2385" fill="#ffffff" font-family="Times" font-style="normal" font-weight="normal" font-size="144" text-anchor="start">Specific physics</text>
+<!-- Arc -->
+<path d="M 780,2615 A 818 818 0 0 0 1680 2615"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Arc -->
+<path d="M 780,3470 A 818 818 0 0 0 1680 3470"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Ellipse -->
+<ellipse cx="1230" cy="2480" rx="450" ry="135"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" 1680,2480 1680,3470"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Text -->
+<text xml:space="preserve" x="1230" y="3155" fill="#000000" font-family="Times" font-style="normal" font-weight="normal" font-size="144" text-anchor="middle">Meshes</text>
+<!-- Arc -->
+<path d="M 6111,173 A 818 818 0 0 0 7011 173"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Arc -->
+<path d="M 6111,1028 A 818 818 0 0 0 7011 1028"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Ellipse -->
+<ellipse cx="6561" cy="38" rx="450" ry="135"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" 7011,38 7011,1028"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Text -->
+<text xml:space="preserve" x="6566" y="536" fill="#000000" font-family="Times" font-style="normal" font-weight="normal" font-size="120" text-anchor="middle">Simulation</text>
+<!-- Text -->
+<text xml:space="preserve" x="6561" y="1028" fill="#000000" font-family="Times" font-style="normal" font-weight="normal" font-size="120" text-anchor="middle">(XML)</text>
+<!-- Text -->
+<text xml:space="preserve" x="6570" y="765" fill="#000000" font-family="Times" font-style="normal" font-weight="normal" font-size="120" text-anchor="middle">options</text>
+<!-- Arc -->
+<path d="M 11733,2449 A 818 818 0 0 0 12633 2449"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Arc -->
+<path d="M 11733,3304 A 818 818 0 0 0 12633 3304"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Ellipse -->
+<ellipse cx="12183" cy="2314" rx="450" ry="135"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" 12633,2314 12633,3304"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Text -->
+<text xml:space="preserve" x="12183" y="3124" fill="#000000" font-family="Times" font-style="normal" font-weight="normal" font-size="144" text-anchor="middle">processing</text>
+<!-- Text -->
+<text xml:space="preserve" x="12138" y="2899" fill="#000000" font-family="Times" font-style="normal" font-weight="normal" font-size="144" text-anchor="middle">Post</text>
+<!-- Arc -->
+<path d="M 6058,2439 A 818 818 0 0 0 6958 2439"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Arc -->
+<path d="M 6058,3294 A 818 818 0 0 0 6958 3294"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Ellipse -->
+<ellipse cx="6508" cy="2304" rx="450" ry="135"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" 6958,2304 6958,3294"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Text -->
+<text xml:space="preserve" x="6508" y="2874" fill="#000000" font-family="Times" font-style="normal" font-weight="normal" font-size="120" text-anchor="middle">Verification</text>
+<!-- Text -->
+<text xml:space="preserve" x="6508" y="3114" fill="#000000" font-family="Times" font-style="normal" font-weight="normal" font-size="120" text-anchor="middle">Visualization</text>
+<!-- Arc -->
+<path d="M 10163,4260 A 818 818 0 0 0 11063 4260"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Arc -->
+<path d="M 10163,5115 A 818 818 0 0 0 11063 5115"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Ellipse -->
+<ellipse cx="10613" cy="4125" rx="450" ry="135"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" 11063,4125 11063,5115"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Text -->
+<text xml:space="preserve" x="10613" y="4960" fill="#000000" font-family="Times" font-style="normal" font-weight="normal" font-size="132" text-anchor="middle">and restart</text>
+<!-- Text -->
+<text xml:space="preserve" x="10608" y="4733" fill="#000000" font-family="Times" font-style="normal" font-weight="normal" font-size="132" text-anchor="middle">Checkpoint</text>
+<!-- Arc -->
+<path d="M 8946,4223 A 818 818 0 0 0 9846 4223"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Arc -->
+<path d="M 8946,5078 A 818 818 0 0 0 9846 5078"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Ellipse -->
+<ellipse cx="9396" cy="4088" rx="450" ry="135"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" 9846,4088 9846,5078"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Text -->
+<text xml:space="preserve" x="9401" y="4586" fill="#000000" font-family="Times" font-style="normal" font-weight="normal" font-size="120" text-anchor="middle">Cell</text>
+<!-- Text -->
+<text xml:space="preserve" x="9396" y="4853" fill="#000000" font-family="Times" font-style="normal" font-weight="normal" font-size="120" text-anchor="middle">domain</text>
+<!-- Text -->
+<text xml:space="preserve" x="9396" y="5078" fill="#000000" font-family="Times" font-style="normal" font-weight="normal" font-size="120" text-anchor="middle">number</text>
+<!-- Arc -->
+<path d="M 7719,4238 A 818 818 0 0 0 8619 4238"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Arc -->
+<path d="M 7719,5093 A 818 818 0 0 0 8619 5093"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Ellipse -->
+<ellipse cx="8169" cy="4103" rx="450" ry="135"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" 8619,4103 8619,5093"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Text -->
+<text xml:space="preserve" x="8174" y="4601" fill="#000000" font-family="Times" font-style="normal" font-weight="normal" font-size="120" text-anchor="middle">Intermediate</text>
+<!-- Text -->
+<text xml:space="preserve" x="8169" y="4868" fill="#000000" font-family="Times" font-style="normal" font-weight="normal" font-size="120" text-anchor="middle">Mesh</text>
+<!-- Text -->
+<text xml:space="preserve" x="8169" y="5093" fill="#000000" font-family="Times" font-style="normal" font-weight="normal" font-size="120" text-anchor="middle">structure</text>
+</g>
+</svg>

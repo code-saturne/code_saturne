@@ -7,6 +7,7 @@
       <tab type="user" visible="yes" url="@ref cs_user_settings" title="Global user settings"/>
       <tab type="user" visible="yes" url="@ref cs_case_structure" title="Case directory structure"/>
       <tab type="user" visible="yes" url="@ref cs_run_computation" title="Running a calculation"/>
+      <tab type="user" visible="yes" url="@ref cs_file_formats" title="Supported file formats"/>
     </tab>
     <tab type="pages" visible="no" title=""/>
     <tab type="modules" visible="yes" title=""/>

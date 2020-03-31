@@ -24,6 +24,8 @@ This section contains a quick-start guide followed by more detailed information
 various user aspects, describing how code_saturne computations are organized
 and run.
 
+[TOC]
+
 \subpage cs_quick_start
 
 \subpage cs_user_settings

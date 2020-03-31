@@ -20,6 +20,85 @@
 
 \page cs_run_computation Running a calculation
 
+[TOC]
+
+Step by step preparation {#sec_prg_stepbystepcalculation}
+========================
+
+This paragraph summarizes the different steps which are necessary to
+prepare and run a standard case:
+
+* Check the version of code_saturne set for use in the environment variables
+  (`code_saturne info --version`). If it does not correspond to
+  the desired version, update the user environment or aliases to use the
+  required version, logging out of the session and in again if necessary
+  (cf. [setting up you environment](@ref sec_prg_environement_cs)).
+  <br/><br/>
+
+* Prepare the different directories using the GUI or
+  [`code_saturne create`](@ref sec_prg_cscreate) command .
+  <br/><br/>
+
+* It is recommended to place the mesh(es) in the `MESH` directory,
+  but they may be selected from other directories, either with the Graphical User
+  Interface (GUI) or the `cs_user_scripts.py` file (see below).
+  Make sure they are in a [supported format](@ref sec_prg_meshes). There can be
+  several meshes in case of mesh joining, code coupling, or simply parametric
+  studies.
+  <br/><br/>
+
+* Switch to the `DATA` directory and start the GUI using the following command:
+  `./code_saturne gui`
+  <br/><br/>
+
+* If not using the GUI or when requiring additional advanced settings, copy the
+  `DATA/REFERENCE/cs_user_scripts.py` file to `DATA` and edit it, so that the
+  correct run options and paths may be set.
+  Just as with user-defined functions described later, settings defined in this
+  file have priority over those defined through the GUI;
+  <br/><br/>
+
+* Before running a full simulation, it is recommended to check the mesh using
+  one of the mesh import or preprocessing [execution modes](@ref sec_prg_executionmodes);
+  <br/><br/>
+
+* Define the computation settings, preferably using the GUI.
+  <br/><br/>
+
+* If needed, place in the `DATA` directory the different external data
+  files which may be necessary;
+  <br/><br/>
+
+* Place the necessary user source files in the `SRC` directory
+  - those files can be copied from the references in `SRC/REFERENCE`, and are
+    documented in the *files* section of this documentation;
+  - it is recommended that only settings which cannot be defined through the GUI
+    be defined through these files; Note that GUI settings and user-defined
+    functions can be combined, with user-defined settings having priority.
+  - code snippets can often be cherry-picked and adapted from the many
+    available [user examples](@ref cs_user_examples);
+    avoid copying unneeded sections from examples, as they make the code harder
+    to read and maintain;
+  - all files with a .c, .f90, or. C++ extension in `SRC` will be compiled
+    and linked with the code at execution;
+  - avoid placing non-user files (modifed or not) from the main code_saturne source
+    tree in `SRC`, unless specifically provided by the core development team as a
+    temporary patch for an issue, as this can cause more or less subtle issues,
+    and removes any semblance of quality control.
+  <br/><br/>
+
+* Execution parameters for the current system may be defined either
+  using the GUI or editing the relevant [`run.cfg`](@ref sec_prg_run_cfg)
+  file sections;
+  <br/><br/>
+
+* Run the calculation and analyze the results
+  <br/><br/>
+
+* Remember to occasionally, purge temporary or unneded files (in `RESU/<run\_id>`)
+  (or in the `<scratch>/<run_id>`
+  [temporary execution directory](@ref case_structure_scratchdir) if set).
+
 Execution modes {#sec_prg_executionmodes}
 ===============
 
@@ -74,10 +153,10 @@ choosing which modules to run, either through the GUI or through the
   preprocessing in general is avoided, and the `mesh_input.csm` file
   from the previous checkpoint directory is used.
   This behavior can be modified in the GUI (under "Mesh/Execution mode",
-  unchecking "Use unmodified checkpoint mesh in case of restart",
+  un-checking "Use unmodified checkpoint mesh in case of restart",
   or setting `domain.preprocess_on_restart = True` in `cs_user_scripts.py`).
   This may be useful in 2 cases:
-  - when the preprocessed mesh has not been saved from a previous run
+  - when the pre-processed mesh has not been saved from a previous run
     (usually so as to save disk space)
   - when the computation restarted from used a different mesh than the
     current one (to which data will be interpolated).
@@ -98,7 +177,7 @@ above.
 It is encouraged to separate the preprocessing and calculation runs, as
 this not only speeds up calculations, but also ensures that the mesh is
 identical, regardless of the architecture or number of processors it is run
-on. Indeed, when running the same pre-processing stages such as mesh joining
+on. Indeed, when running the same preprocessing stages such as mesh joining
 on a different machine or a different number of processors, very minor
 floating-point truncation errors may lead to very slightly different
 preprocessed meshes. The GUI option to "Use unmodified checkpoint mesh
@@ -113,7 +192,7 @@ use randomization and do not guarantee a reproducible output, and is not output
 when using a deterministic space-filling curve based partitioning.
 
 If the code was built only with a serial partitioning library,
-graph-based partitioning may best be run in a serial pre-processing stage.
+graph-based partitioning may best be run in a serial preprocessing stage.
 In some cases, serial partitioning might also provide better partitioning
 quality than parallel partitioning, so if both are available, comparing
 the performance of the code may be worthwhile, at least for calculations
@@ -139,11 +218,11 @@ is split into the following execution steps:
 
 * __execute__
   - Execute `run_solver` mini-script:
-    sets module or environement variables, runs MPI or serial command;
+    sets module or environment variables, runs MPI or serial command;
 
 * __finalize__
   - Cleanup only when previous stages successful: remove executable and
-    possibly otther user-specified files.
+    possibly other user-specified files.
 
 By default, all steps are executed. If some stages are specified, by adding
 `--stage`, `--initialize`, `--execute`, and/or `--finalize` to the
@@ -152,7 +231,7 @@ specified are executed.
 
 ### Job submission on cluster {#sec_prg_exec_stages_hpc}
 
-The *initialize* step itself can be split into two substeps, so that when
+The *initialize* step itself can be split into two sub-steps, so that when
 submitting a run to a batch system (using the GUI or the `code_saturne submit`
 command), *stage* is run interactively, and the following steps are executed:
 
@@ -164,14 +243,82 @@ command), *stage* is run interactively, and the following steps are executed:
 * submit the `runcase` script
 
 This allows errors in data paths (such as incorrect restart paths) or user-defined
-sources to be detected immediately, before the job is sumbitted, and
-also modifying the base setup without impacting an already sumbitted job.
+sources to be detected immediately, before the job is submitted, and
+also modifying the base setup without impacting an already submitted job.
 On some HPC systems, the compilers may also be available only on the front-end nodes,
 so this also avoids possible issues related to trying to compile user-defined
 functions and re-link the code from a a compute node.
 
+Interactive modification of selected parameters {#sec_prg_control_file}
+===============================================
+
+During a calculation, it is possible to interactively modify the time step or time value
+limit defined in the setup. To do so, a file named `control_file` must be placed in the
+execution directory.
+The existence of this file is checked at the beginning of each time step.
+
+To change the maximum number of time steps, this file must contain a line
+indicating the value of the new limit number of time steps. If this new limit
+has already been reached, code_saturne will stop properly at the end of the current
+time step (the results and checkpoint/restart files will be written correctly).
+This procedure allows the user to stop a calculation in a clean and interactive
+way whenever needed.
+
+The `control_file` may also contain a few other commands, allowing the user to
+force checkpointing or postprocessing at a given time step or physical time, or
+to force an update of log files.
+The following commands are available (using the common notations "`< >`" to
+indicate a required argument, "`[ ]`" to indicate an optional argument).
+
+<table>
+<caption id="control_file_commands">control_file syntax</caption>
+<tr><th> command                          <th> arguments
+<tr><td> max_time_step                    <td> <time_step_number>
+<tr><td> max_time_value                   <td> <time_value>
+<tr><td> max_wall_time                    <td> <wall_time>
+<tr><td>                                  <td>
+<tr><td> checkpoint_time_step             <td> <time_step_number>
+<tr><td> checkpoint_time_value            <td> <time_value>
+<tr><td> checkpoint_wall_time             <td> <wall_clock_time>
+<tr><td>                                  <td>
+<tr><td> checkpoint_time_step_interval    <td> <time_step_interval>
+<tr><td> checkpoint_time_value_interval   <td> <time_interval>
+<tr><td> checkpoint_wall_time_interval    <td> <wall_time_interval>
+<tr><td>                                  <td>
+<tr><td> control_file_wtime_interval      <td> <wall_time_interval>
+<tr><td>                                  <td>
+<tr><td> flush                            <td> [time_step_number]
+<tr><td>                                  <td>
+<tr><td> notebook_set                     <td> <parameter_name> <value>
+<tr><td>                                  <td>
+<tr><td> postprocess_time_step            <td> <time_step_number> [writer_id]
+<tr><td> postprocess_time_value           <td> <time_step_value> [writer_id]
+<tr><td>                                  <td>
+<tr><td> time_step_limit                  <td> <time_step_count>
+</table>
+
+The `time_step_limit` differs from the `max_time_step` command,
+in the sense that it allows reducing the maximum number of time steps,
+but not increasing it. Also, in the case of a restart, it refers to the
+number of additional time steps, not to the number of absolute time steps.
+It is used mainly by the studymanager component.
+
+Note that for the `postprocess_time_*` options, the last argument
+(`writer_id`) is optional. If not defined, or 0, postprocessing
+is activated for all writers; if specified, only the writer with the specified
+id is affected. Also, postprocessing output by one ore more writers at a
+future time step may be cancelled using the negative value of that time step.
+
+For the `flush` option, the time step is also optional. If not
+specified, logs and time plots are updated at the beginning of the
+next time step. Also, if the `control_file` is empty (such as
+when created by the `touch control_file` command on Unix/Linux
+systems, a `flush` request for the next time step.
+
+Multiple entries may be defined in this file, with one line per entry.
+
 Environment variables {#sec_envcs}
----------------------
+=====================
 
 Setting a few environment variables specific to code_saturne allows modifying
 its default behavior. The environment variables used by code_saturne
@@ -179,5 +326,5 @@ are described here:
 
 Variable             | Role
 ---------------------|------------------------------------------------------------
-`CS_SCRATCHDIR`      | Allows defining the execution directory (see [temporary directory] (@ref sec_prg_temporarydirectory)),overriding the default path or settings from the global or user `code_saturne.cfg`.
+`CS_SCRATCHDIR`      | Allows defining the execution directory (see [temporary directory](@case_structure_scratchdir)),overriding the default path or settings from the global or user `code_saturne.cfg`.
 `CS_MPIEXEC_OPTIONS` | This variable allows defining extra arguments to be passed to the MPI execution command by the run scripts.  If this option is defined, it will have priority over the value defined in the preferences file (or by computed defaults), so if necessary, it is possible to define a setting specific to a given run using this mechanism.  This may be useful when tuning the installation to a given system, for example experimenting MPI mapping and "bind to core" type features.
