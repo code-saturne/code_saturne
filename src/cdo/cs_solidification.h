@@ -135,6 +135,25 @@ typedef enum {
 #define CS_SOLIDIFICATION_POST_CLIQ_ADIM           (1 << 2) /* =  4 */
 #define CS_SOLIDIFICATION_POST_CELL_STATE          (1 << 3) /* =  8 */
 
+/*!
+ * @name Flags specifying numerical options specific to the solidification
+ *       module
+ * @{
+ *
+ * \def CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM
+ * \brief The solute equation related to the transport of the bulk concentration
+ * is treated with a source term related to an explicit advection of the
+ * quantity (C - Cl). The default behavior is to add a weighting coefficient
+ * to the (implicit) advection term related to the liquid fraction
+ *
+ */
+
+#define CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM  (1 << 0) /* =  1 */
+
+/*!
+ * @}
+ */
+
 typedef struct _solidification_t  cs_solidification_t;
 
 /*============================================================================

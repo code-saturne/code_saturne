@@ -1045,54 +1045,67 @@ _update_liquid_fraction_binary_alloy(const cs_mesh_t             *mesh,
   /* Parallel synchronization of the number of cells in each state */
   cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_GNUM_TYPE, solid->n_g_cells);
 
-  /* Update c_l at face values */
-  const cs_real_t  *bulk_conc_f = cs_equation_get_face_values(tr_eq, false);
-  const cs_real_t  *bulk_temp_f = alloy->temp_faces;
+  /* Update the diffusion property related to the solute */
+  if (alloy->diff_pty != NULL) {
 
-  for (cs_lnum_t  f_id = 0; f_id < quant->n_faces; f_id++) {
+    const double  rho_D = cell_rho * alloy->diff_coef;
+#     pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < quant->n_cells; i++)
+      alloy->diff_pty_array[i] = rho_D * g_l[i];
 
-    const cs_real_t  conc = bulk_conc_f[f_id];
-    const cs_real_t  temp = bulk_temp_f[f_id];
+  }
 
-    /* Compute the solidus and liquidus temperature for the current cell and
-     * define the state related to this cell */
-    cs_real_t  t_liquidus, t_solidus;
-    cs_solidification_state_t  state;
+  if (solid->options & CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM) {
 
-    _get_alloy_state(alloy, temp, conc, &t_liquidus, &t_solidus, &state);
+    /* Update c_l at face values */
+    const cs_real_t  *bulk_conc_f = cs_equation_get_face_values(tr_eq, false);
+    const cs_real_t  *bulk_temp_f = alloy->temp_faces;
 
-    /* Knowing in which part of the phase diagram we are, we then update
-     * the value of the concentration of the liquid "solute" */
-    switch (state) {
+    for (cs_lnum_t  f_id = 0; f_id < quant->n_faces; f_id++) {
 
-    case CS_SOLIDIFICATION_STATE_SOLID:
-      if (conc >= alloy->c_eutec_a)
+      const cs_real_t  conc = bulk_conc_f[f_id];
+      const cs_real_t  temp = bulk_temp_f[f_id];
+
+      /* Compute the solidus and liquidus temperature for the current cell and
+       * define the state related to this cell */
+      cs_real_t  t_liquidus, t_solidus;
+      cs_solidification_state_t  state;
+
+      _get_alloy_state(alloy, temp, conc, &t_liquidus, &t_solidus, &state);
+
+      /* Knowing in which part of the phase diagram we are, we then update
+       * the value of the concentration of the liquid "solute" */
+      switch (state) {
+
+      case CS_SOLIDIFICATION_STATE_SOLID:
+        if (conc >= alloy->c_eutec_a)
+          alloy->c_l_faces[f_id] = alloy->c_eutec;
+        else
+          alloy->c_l_faces[f_id] = conc * alloy->inv_kp;
+        break;
+
+      case CS_SOLIDIFICATION_STATE_MUSHY:
+        alloy->c_l_faces[f_id] = (temp - alloy->t_melt) * alloy->inv_ml;
+        break;
+
+      case CS_SOLIDIFICATION_STATE_LIQUID:
+        alloy->c_l_faces[f_id] = conc;
+        break;
+
+      case CS_SOLIDIFICATION_STATE_EUTECTIC:
         alloy->c_l_faces[f_id] = alloy->c_eutec;
-      else
-        alloy->c_l_faces[f_id] = conc * alloy->inv_kp;
-      break;
+        break;
 
-    case CS_SOLIDIFICATION_STATE_MUSHY:
-      alloy->c_l_faces[f_id] = (temp - alloy->t_melt) * alloy->inv_ml;
-      break;
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid state for face %d\n", __func__, f_id);
+        break;
 
-    case CS_SOLIDIFICATION_STATE_LIQUID:
-      alloy->c_l_faces[f_id] = conc;
-      break;
+      } /* Switch on face state */
 
-    case CS_SOLIDIFICATION_STATE_EUTECTIC:
-      alloy->c_l_faces[f_id] = alloy->c_eutec;
-      break;
+    } /* Loop on faces */
 
-    default:
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid state for face %d\n", __func__, f_id);
-      break;
-
-    } /* Switch on face state */
-
-  } /* Loop on faces */
-
+  } /* CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1262,7 +1275,8 @@ _temp_conc_boussinesq_source_term(cs_lnum_t            n_elts,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief   Add a drift term to the alloy equation
+ * \brief   Add a source term to the solute equation derived from an explicit
+ *          use of the advective and diffusive operator
  *          Generic function prototype for a hook during the cellwise building
  *          of the linear system
  *          Fit the cs_equation_user_hook_t prototype. This function may be
@@ -1280,14 +1294,14 @@ _temp_conc_boussinesq_source_term(cs_lnum_t            n_elts,
 /*----------------------------------------------------------------------------*/
 
 static void
-_fb_drift_term(const cs_equation_param_t     *eqp,
-               const cs_equation_builder_t   *eqb,
-               const void                    *eq_context,
-               const cs_cell_mesh_t          *cm,
-               cs_hodge_t                    *mass_hodge,
-               cs_hodge_t                    *diff_hodge,
-               cs_cell_sys_t                 *csys,
-               cs_cell_builder_t             *cb)
+_fb_solute_source_term(const cs_equation_param_t     *eqp,
+                       const cs_equation_builder_t   *eqb,
+                       const void                    *eq_context,
+                       const cs_cell_mesh_t          *cm,
+                       cs_hodge_t                    *mass_hodge,
+                       cs_hodge_t                    *diff_hodge,
+                       cs_cell_sys_t                 *csys,
+                       cs_cell_builder_t             *cb)
 {
   CS_UNUSED(mass_hodge);
   CS_UNUSED(eqb);
@@ -1597,6 +1611,7 @@ cs_solidification_set_binary_alloy_model(const char     *name,
   alloy->ref_concentration = conc0;
 
   alloy->diff_coef = solute_diff;
+  alloy->diff_pty = NULL;
 
   if (solute_diff > 0) {
 
@@ -1610,8 +1625,6 @@ cs_solidification_set_binary_alloy_model(const char     *name,
     cs_equation_add_diffusion(eqp, alloy->diff_pty);
 
   }
-  else
-    alloy->diff_pty = NULL;
 
   alloy->latent_heat = latent_heat;
   alloy->forcing_coef = forcing_coef;
@@ -1670,7 +1683,9 @@ cs_solidification_destroy_all(void)
     cs_solidification_binary_alloy_t  *alloy
       = (cs_solidification_binary_alloy_t *)solid->model_context;
 
-    BFT_FREE(alloy->c_l_faces);
+    if (solid->options & CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM)
+      BFT_FREE(alloy->c_l_faces);
+
     BFT_FREE(alloy->diff_pty_array);
 
     BFT_FREE(alloy);
@@ -1863,10 +1878,12 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
     cs_solidification_binary_alloy_t  *alloy
       = (cs_solidification_binary_alloy_t *)solid->model_context;
 
-    BFT_MALLOC(alloy->c_l_faces, quant->n_faces, cs_real_t);
-    memset(alloy->c_l_faces, 0, sizeof(cs_real_t)*quant->n_faces);
+    if (solid->options & CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM) {
+      BFT_MALLOC(alloy->c_l_faces, quant->n_faces, cs_real_t);
+      memset(alloy->c_l_faces, 0, sizeof(cs_real_t)*quant->n_faces);
+    }
 
-    if (alloy->diff_coef > 0) {
+    if (alloy->diff_pty != NULL) {
 
       /* Estimate the reference value for the solutal diffusion property
        * One assumes that g_l (the liquid fraction is equal to 1) */
@@ -1957,6 +1974,13 @@ cs_solidification_log_setup(void)
   }
 
   cs_log_printf(CS_LOG_SETUP, "\n");
+
+  /* Display options */
+  cs_log_printf(CS_LOG_SETUP, "  * Solidification | Options:");
+  if (solid->options & CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM)
+    cs_log_printf(CS_LOG_SETUP,
+                  " Solute concentration with an advective source term");
+  cs_log_printf(CS_LOG_SETUP, "\n");
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1987,23 +2011,27 @@ cs_solidification_initialize(const cs_mesh_t              *mesh,
     cs_solidification_binary_alloy_t  *alloy
       = (cs_solidification_binary_alloy_t *)solid->model_context;
 
-    if (cs_equation_get_space_scheme(alloy->solute_equation) !=
-        CS_SPACE_SCHEME_CDOFB)
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid space scheme for equation %s\n",
-                __func__, cs_equation_get_name(alloy->solute_equation));
+    if (solid->options & CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM) {
 
-    cs_equation_add_user_hook(alloy->solute_equation,
-                              NULL,               /* hook context */
-                              _fb_drift_term);    /* hook function */
+      if (cs_equation_get_space_scheme(alloy->solute_equation) !=
+          CS_SPACE_SCHEME_CDOFB)
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid space scheme for equation %s\n",
+                  __func__, cs_equation_get_name(alloy->solute_equation));
 
-    cs_equation_t  *thm_eq = cs_equation_by_name(CS_THERMAL_EQNAME);
-    assert(thm_eq != NULL);
+      cs_equation_add_user_hook(alloy->solute_equation,
+                                NULL,                    /* hook context */
+                                _fb_solute_source_term); /* hook function */
 
-    /* Store the pointer to the current face temperature values */
-    alloy->temp_faces = cs_equation_get_face_values(thm_eq, false);
+      cs_equation_t  *thm_eq = cs_equation_by_name(CS_THERMAL_EQNAME);
+      assert(thm_eq != NULL);
 
-  }
+      /* Store the pointer to the current face temperature values */
+      alloy->temp_faces = cs_equation_get_face_values(thm_eq, false);
+
+    } /* CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM */
+
+  } /* CS_SOLIDIFICATION_MODEL_BINARY_ALLOY */
 
   /* Update fields and properties which are related to solved variables */
   solid->update(mesh, connect, quant, time_step,
