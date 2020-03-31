@@ -206,25 +206,14 @@ i_comb_drift = 1
 
 ippmod(icpl3c) = -1
 
-! --- compf: Compressible flows
-! ==========
-
-!        if = -1   module not activated
-!        if =  0   module activated
-!        if =  1   barotropic version
-!        if =  2   homogeneous two phase model
-!        if =  3   in pressure increment
-
-ippmod(icompf) = -1
-
 ! --- eljou: Joule effect
 ! ==========
 
 !        if = -1   module not activated
-!        if = 1    Potentiel reel
-!        if = 2    Potentiel complexe
-!        if = 3    Potentiel reel     + CDL Transfo
-!        if = 4    Potentiel complexe + CDL Transfo
+!        if = 1    real potential
+!        if = 2    complex potential
+!        if = 3    real potential + Transfo
+!        if = 4    complex potential + Transfo
 
 ippmod(ieljou) = -1
 

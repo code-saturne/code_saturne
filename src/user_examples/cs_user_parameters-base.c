@@ -84,6 +84,16 @@ cs_user_model(void)
 {
   /*--------------------------------------------------------------------------*/
 
+  /* Activate compressible model */
+
+  /*! [compressible_user_model_1] */
+  /* -1: not active, 0: activated, 1: barotropic version,
+     2: homogeneous two phase model, 3: by pressure increment */
+  cs_glob_physical_model_flag[CS_COMPRESSIBLE] = -1;
+  /*! [compressible_user_model_1] */
+
+  /*--------------------------------------------------------------------------*/
+
   /*! [turbulence_model_choice] */
 
   /* Example: Chose a turbulence model
@@ -117,7 +127,6 @@ cs_user_model(void)
     cs_wall_functions_t *wf = cs_get_glob_wall_functions();
      wf->iwallf = CS_WALL_F_2SCALES_VDRIEST;
   }
-
 
   /*--------------------------------------------------------------------------*/
 
@@ -388,106 +397,106 @@ cs_user_parameters(cs_domain_t *domain)
   {
     cs_fluid_properties_t *fp = cs_get_glob_fluid_properties();
 
-    /*      ro0        : density in kg/m3
-            viscl0     : dynamic viscosity in kg/(m s)
-            cp0        : specific heat in J/(Kelvin kg)
-            t0         : reference temperature in Kelvin
-            p0         : total reference pressure in Pascal
-                         the calculation is based on a
-                         reduced pressure P*=Ptot-ro0*g.(x-xref)
-                         (except in compressible case)
-            xyzp0(3)   : coordinates of the reference point for
-                         the total pressure (where it is equal to p0)
+    /*
+      ro0        : density in kg/m3
+      viscl0     : dynamic viscosity in kg/(m s)
+      cp0        : specific heat in J/(Kelvin kg)
+      t0         : reference temperature in Kelvin
+      p0         : total reference pressure in Pascal
+                   the calculation is based on a
+                   reduced pressure P*=Ptot-ro0*g.(x-xref)
+                   (except in compressible case)
+      xyzp0(3)   : coordinates of the reference point for
+                   the total pressure (where it is equal to p0)
 
-          In general, it is not necessary to furnish a reference point xyz0.
-            If there are outlets, the code will take the center of the
-            reference outlet face.
-            On the other hand, if we plan to explicitly fix Dirichlet conditions
-            for pressure, it is better to indicate to which reference the
-            values relate (for a better resolution of reduced pressure).
+      In general, it is not necessary to furnish a reference point xyz0.
+      If there are outlets, the code will take the center of the
+      reference outlet face.
+      On the other hand, if we plan to explicitly fix Dirichlet conditions
+      for pressure, it is better to indicate to which reference the
+      values relate (for a better resolution of reduced pressure).
 
 
-          Other properties are given by default in all cases.
+      Other properties are given by default in all cases.
 
-          Nonetheless, we may note that:
+      Nonetheless, we may note that:
 
-            In the standard case (no gas combustion, coal, electric arcs,
-                                  compressibility):
-            ---------------------
-              ro0, viscl0 and cp0
-                  are useful and represent either the fluid properties if they
-                  are constant, either simple mean values for the initialization
-                  if properties are variable and defined in cs_user_physical_properties.
-              t0  is not useful
-              p0  is useful but is not used in an equation of state. p0
-                  is a reference value for the incompressible solver
-                  which will serve to set the (possible) domain outlet pressure.
-                  We may also take it as 0 or as a physical value in Pascals.
+      In the standard case (no combustion, electric arcs, compressibility):
+      ---------------------
+      ro0, viscl0 and cp0
+          are useful and represent either the fluid properties if they
+          are constant, either simple mean values for the initialization
+          if properties are variable and defined in cs_user_physical_properties.
+      t0  is not useful
+      p0  is useful but is not used in an equation of state. p0
+          is a reference value for the incompressible solver
+          which will serve to set the (possible) domain outlet pressure.
+          We may also take it as 0 or as a physical value in Pascals.
 
-            With the electric module:
-            ------------------------
-              ro0, viscl0 and cp0
-                  are useful but simply represent mean initial values;
-                  the density, molecular dynamic viscosity, and specific
-                  heat are necessarily defined as fields (whether they are
-                  physically variable or not): see cs_user_physical_properties
-                  for the Joule effect
-                  module and the electric arcs dp_ELE data file.
-              t0  is useful an must be in Kelvin (> 0) but represents a simple
-                  initialization value.
-              p0  is useful bu is not used in the equation of state. p0
-                  is a reference value for the incompressible solver which
-                  will be used to calibrate the (possible) outlet pressure
-                  of the domain. We may take it as zero or as a physical
-                  value in Pascals.
+      With the electric module:
+      ------------------------
+      ro0, viscl0 and cp0
+          are useful but simply represent mean initial values;
+          the density, molecular dynamic viscosity, and specific
+          heat are necessarily defined as fields (whether they are
+          physically variable or not): see cs_user_physical_properties
+          for the Joule effect
+          module and the electric arcs dp_ELE data file.
+      t0  is useful an must be in Kelvin (> 0) but represents a simple
+          initialization value.
+      p0  is useful bu is not used in the equation of state. p0
+          is a reference value for the incompressible solver which
+          will be used to calibrate the (possible) outlet pressure
+          of the domain. We may take it as zero or as a physical
+          value in Pascals.
 
-            With gas combustion:
-            --------------------
-              ro0 is not useful (it is automatically recalculated by the
-                  law of ideal gases from t0 and p0).
-              viscl0 is indispensable: it is the molecular dynamic viscosity,
-                  assumed constant for the fluid.
-              cp0 is indispensable: it is the heat capacity, assumed constant,
-                  (modelization of source terms involving a local Nusselt in
-                  the Lagrangian module, reference value allowing the
-                  calculation of a radiative
-                  (temperature, exchange coefficient) couple).
-              t0  is indispensible and must be in Kelvin (> 0).
-              p0  is indispensable and must be in Pascal (> 0).
+      With gas combustion:
+      --------------------
+      ro0 is not useful (it is automatically recalculated by the
+          law of ideal gases from t0 and p0).
+      viscl0 is indispensable: it is the molecular dynamic viscosity,
+          assumed constant for the fluid.
+      cp0 is indispensable: it is the heat capacity, assumed constant,
+          (modelization of source terms involving a local Nusselt in
+          the Lagrangian module, reference value allowing the
+          calculation of a radiative
+          (temperature, exchange coefficient) couple).
+      t0  is indispensible and must be in Kelvin (> 0).
+      p0  is indispensable and must be in Pascal (> 0).
 
-            With pulverized coal:
-            ---------------------
-              ro0 is not useful (it is automatically recalculated by the
-                  law of ideal gases from t0 and p0).
-              viscl0 is indispensable: it is the molecular dynamic viscosity,
-                  assumed constant for the fluid (its effect is expected to
-                  be small compared to turbulent effects).
-              cp0 is indispensable: it is the heat capacity, assumed constant,
-                  (modelization of source terms involving a local Nusselt in
-                  the coal or Lagrangian module, reference value allowing the
-                  calculation of a radiative
-                  (temperature, exchange coefficient) couple).
-              t0  is indispensable and must be in Kelvin (> 0).
-              p0  is indispensable and must be in Pascal (> 0).
+      With pulverized coal:
+      ---------------------
+      ro0 is not useful (it is automatically recalculated by the
+          law of ideal gases from t0 and p0).
+      viscl0 is indispensable: it is the molecular dynamic viscosity,
+          assumed constant for the fluid (its effect is expected to
+          be small compared to turbulent effects).
+      cp0 is indispensable: it is the heat capacity, assumed constant,
+          (modelization of source terms involving a local Nusselt in
+          the coal or Lagrangian module, reference value allowing the
+          calculation of a radiative
+          (temperature, exchange coefficient) couple).
+      t0  is indispensable and must be in Kelvin (> 0).
+      p0  is indispensable and must be in Pascal (> 0).
 
-            With compressibility:
-            ---------------------
-              ro0 is not useful, stricto sensu; nonetheless, as experience
-                  shows that users often use this variable, it is required
-                  to assign to it a strictly positive value (for example,
-                  an initial value).
-              viscl0 is useful and represents the molecular dynamic viscosity,
-                  when it is constant, or a value which will be used during
-                  initializations (or in inlet turbulence conditions,
-                  depending on the user choice.
-              cp0 is indispensable: it is the heat capacity, assumed constant
-                  in the thermodynamics available by default
-              t0  is indispensable and must be in Kelvin (> 0).
-              p0  is indispensable and must be in Pascal (> 0).
-                  With the thermodynamic law available by default,
-                  t0 and p0 are used for the initialization of the density.
-              xyzp0 is not useful because the pressure variable directly
-                  represents the total pressure.
+      With compressibility:
+      ---------------------
+      ro0 is not useful, stricto sensu; nonetheless, as experience
+          shows that users often use this variable, it is required
+          to assign to it a strictly positive value (for example,
+          an initial value).
+      viscl0 is useful and represents the molecular dynamic viscosity,
+          when it is constant, or a value which will be used during
+          initializations (or in inlet turbulence conditions,
+          depending on the user choice.
+      cp0 is indispensable: it is the heat capacity, assumed constant
+          in the thermodynamics available by default
+      t0  is indispensable and must be in Kelvin (> 0).
+      p0  is indispensable and must be in Pascal (> 0).
+          With the thermodynamic law available by default,
+      t0 and p0 are used for the initialization of the density.
+      xyzp0 is not useful because the pressure variable directly
+          represents the total pressure.
     */
 
     fp->ro0    = 1.17862;
@@ -1176,7 +1185,6 @@ cs_user_internal_coupling(void)
     bool transform = true ;
     cs_porosity_from_scan_add_source(source, transform);
   }
-
 }
 
 /*----------------------------------------------------------------------------*/

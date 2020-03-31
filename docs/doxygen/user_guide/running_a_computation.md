@@ -81,7 +81,7 @@ prepare and run a standard case:
     to read and maintain;
   - all files with a .c, .f90, or. C++ extension in `SRC` will be compiled
     and linked with the code at execution;
-  - avoid placing non-user files (modifed or not) from the main code_saturne source
+  - avoid placing non-user files (modified or not) from the main code_saturne source
     tree in `SRC`, unless specifically provided by the core development team as a
     temporary patch for an issue, as this can cause more or less subtle issues,
     and removes any semblance of quality control.
@@ -95,7 +95,7 @@ prepare and run a standard case:
 * Run the calculation and analyze the results
   <br/><br/>
 
-* Remember to occasionally, purge temporary or unneded files (in `RESU/<run\_id>`)
+* Remember to occasionally, purge temporary or unneeded files (in `RESU/<run\_id>`)
   (or in the `<scratch>/<run_id>`
   [temporary execution directory](@ref case_structure_scratchdir) if set).
 
@@ -265,7 +265,7 @@ This procedure allows the user to stop a calculation in a clean and interactive
 way whenever needed.
 
 The `control_file` may also contain a few other commands, allowing the user to
-force checkpointing or postprocessing at a given time step or physical time, or
+force checkpointing or post-processing at a given time step or physical time, or
 to force an update of log files.
 The following commands are available (using the common notations "`< >`" to
 indicate a required argument, "`[ ]`" to indicate an optional argument).
@@ -301,7 +301,7 @@ The `time_step_limit` differs from the `max_time_step` command,
 in the sense that it allows reducing the maximum number of time steps,
 but not increasing it. Also, in the case of a restart, it refers to the
 number of additional time steps, not to the number of absolute time steps.
-It is used mainly by the studymanager component.
+It is used mainly by the Studymanager component.
 
 Note that for the `postprocess_time_*` options, the last argument
 (`writer_id`) is optional. If not defined, or 0, postprocessing
@@ -317,14 +317,54 @@ systems, a `flush` request for the next time step.
 
 Multiple entries may be defined in this file, with one line per entry.
 
-Environment variables {#sec_envcs}
+Environment variables {#sec_env_var}
 =====================
 
-Setting a few environment variables specific to code_saturne allows modifying
-its default behavior. The environment variables used by code_saturne
+Setting some environment variables allows modifying code_saturne's
+default behavior. The environment variables relevant to and specific to code_saturne
 are described here:
+
+General environment variables relevant to code_saturne {#sec_env_var_std}
+------------------------------------------------------
 
 Variable             | Role
 ---------------------|------------------------------------------------------------
-`CS_SCRATCHDIR`      | Allows defining the execution directory (see [temporary directory](@case_structure_scratchdir)),overriding the default path or settings from the global or user `code_saturne.cfg`.
-`CS_MPIEXEC_OPTIONS` | This variable allows defining extra arguments to be passed to the MPI execution command by the run scripts.  If this option is defined, it will have priority over the value defined in the preferences file (or by computed defaults), so if necessary, it is possible to define a setting specific to a given run using this mechanism.  This may be useful when tuning the installation to a given system, for example experimenting MPI mapping and "bind to core" type features.
+`OMP_NUM_THREADS`    | Set the number of OpenMP threads if supported (`OMP_NUM_THREADS=1` for single-threaded behavior). This variable is normally set by the run scripts and GUI when OpenMP support is available.
+`LD_LIBRARY_PATH`    | Search path for locate shared libraries. Needed in many cases to locate libraries outside the default system paths
+`LD_PRELOAD`         | List of dynamic libraries to load before all others. This allows experimenting with other versions of these libraries without recompiling the code, or to load debugging libraries. This may be risky in case of incompatible library versions.
+`PATH`               | Search path for executable
+
+Note that the path management variables may be modified by the code_saturne scripts, but also
+by other scripts, wrappers, and environment modules when present (which is the case
+on many HPC systems).
+
+To determine which shared libraries are used by an executable file (and whether they are found using the currently loaded environment), use
+the following command: `ldd <executable_path>`.
+
+Environment variables specific to the code_saturne environment {#sec_env_var_cs}
+--------------------------------------------------------------
+
+Variable               | Role
+-----------------------|------------------------------------------------------------
+`CS_SCRATCHDIR`        | Allows defining the execution directory (see [temporary directory](@case_structure_scratchdir)),overriding the default path or settings from the global or user `code_saturne.cfg`.
+`CS_MEM_LOG`           | Allows defining a file name in which memory management based on the [BFT_MALLOC](@ref BFT_MALLOC), [BFT_REALLOC](@ref BFT_REALLOC), and [BFT_FREE](@ref BFT_FREE) is logged (useful to check for some memory leaks).
+`CS_MPIEXEC_OPTIONS`   | This variable allows defining extra arguments to be passed to the MPI execution command by the run scripts.  If this option is defined, it will have priority over the value defined in the preferences file (or by computed defaults), so if necessary, it is possible to define a setting specific to a given run using this mechanism.  This may be useful when tuning the installation to a given system, for example experimenting MPI mapping and "bind to core" type features.
+`CS_RENUMBER`          | Deactivating mesh renumbering in the Solver is possible by setting `CS_RENUMBER=off`.
+`CATALYST_ROOT_DIR`    | Indicate where the ParaView Catalyst libraries are installed; the associated library path is added to `LD_LIBRARY_PATH` by the low-level Solver launch script, but does not otherwise interfere with the user's normal environment
+`CATALYST_LD_ADD_PATH` | Indicate where additional libraries needed by ParaView Catalyst may be found; this path is added to `LD_LIBRARY_PATH` by the low-level Solver launch script, but does not otherwise interfere with the user's normal environment
+`CATALYST_PLUGIN_PATH` | Indicate where additional libraries needed by ParaView Catalyst may be found; the low-level Solver launch script sets `PV_PLUGIN_PATH` to this value, which does not otherwise interfere with the user's normal environment
+
+Environment variables specific to the Preprocessor {#sec_env_var_pcs}
+--------------------------------------------------
+
+Note that in general, if a given behavior is modifiable through an environment
+variable rather than by a command-line option, it has little interest for a
+non-developer, or is expected to be needed only in exceptional cases.
+
+Variable             | Role
+---------------------|------------------------------------------------------------
+`CS_PREPROCESS_MEM_LOG`                  | Allows defining a file name in which memory allocation, reallocation, and freeing is logged.
+`CS_PREPROCESS_MIN_EDGE_LEN`             | Under the indicated length ( \f$10^{-15}\f$ by default), an edge is considered to be degenerate and its vertices will be merged after the transformation to descending connectivity. Degenerate edges and faces will thus be removed. Hence, the post-processed element does not change, but the Solver may handle a prism where the preprocessor input contained a hexahedron with two identical vertex couples (and thus a face of zero surface). If the Preprocessor does not print any information relative to this type of correction, it means that it has not been necessary. To completely deactivate this automatic correction, a negative value may be assigned to this environment variable.
+`CS_PREPROCESS_MEM_IGNORE_IDEAS_COO_SYS` | If this variable is defined and is a strictly positive integer, coordinate systems in [I-deas universal](@ref sec_fmtdesc_unv) format files will be ignored. The behavior of the Preprocessor will thus be the same as that of versions 1.0 and 1.1. Note that in any case, non Cartesian coordinate systems are not handled yet.
+
+

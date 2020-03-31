@@ -63,8 +63,10 @@ to the Doxygen documentation, so the user should first lok there.
 One can access the \texttt{Doxygen} main page through \doxygenfile{index.html}{this link} or from a terminal by typing the following command:
 \texttt{code\_saturne info --guide theory}.
 
-On the front page, several tabs are available :
+On the left panel, several leaves are available :
 \begin{list}{$\bullet$}{}
+\item \textbf{Introduction}: general introduction,
+\item \textbf{Running a computation}: general user guide sections,
 \item \textbf{Modules}: list of all the \CS modules,
 \item \textbf{Data structures}: list of all the \CS structures,
 \item \textbf{Files}: list of all the source files with a brief description of their purpose,
@@ -81,201 +83,6 @@ be a function, a variable, a structure, a type, etc.
 \section{Practical information about \CS}
 %==================================
 %==================================
-
-%==================================
-\subsection{Setting up and running a calculation}
-%==================================
-
-%==================================
-\subsubsection{User source files needed without the GUI}
-%==================================
-
-\begin{list}{}{}
-
-\item {\bf For all physics:}
-
-    \begin{list}{}{}
-        \item {\em  very useful without Graphical User Interface:}
-        \begin{list}{-}{}
-            \item \texttt{\texttt{cs\_user\_model.c}}
-              (in \texttt{cs\_user\_parameters.c}) to
-              define user scalars (species)
-
-            \item \texttt{usipes} (in \texttt{cs\_user\_parameters.f90}) to
-              define monitoring points and additional parameters for results outputs
-        \end{list}
-
-        \item {\em  very useful:}
-        \begin{list}{-}{}
-            \item \texttt{usphyv} (in
-              \texttt{cs\_user\_physical\_properties.f90}) to manage variable physical
-                  properties (fluid density, viscosity ...)
-
-            \item \texttt{cs\_user\_initialization} to manage the non-standard initialisations
-        \end{list}
-    \end{list}
-
-  \item{\bf For the ``gas combustion'' specific physics:}
-
-    \begin{list}{}{}
-        \item {\em compulsory without Graphical User Interface:}
-        \begin{list}{-}{}
-            \item \texttt{usppmo} (in \texttt{cs\_user\_parameters.f90})
-               to select a specific physics module and combustion model
-        \end{list}
-
-        \item {\em very useful:}
-        \begin{list}{-}{}
-            \item  \texttt{cs\_user\_combustion}
-                   (in \texttt{cs\_user\_parameters.f90}),
-                   depending on the selected combustion model,
-                   to specify the calculation options
-                   for the variables
-                   corresponding to combustion model
-        \end{list}
-    \end{list}
-
-  \item{\bf For the ``pulverized fuel combustion'' specific physics:}
-
-    \begin{list}{}{}
-        \item {\em compulsory without Graphical User Interface:}
-        \begin{list}{-}{}
-            \item \texttt{usppmo} (in \texttt{cs\_user\_parameters.f90})
-               to select the specific physics module
-        \end{list}
-
-        \item {\em very useful:}
-        \begin{list}{-}{}
-            \item  \texttt{cs\_user\_combustion}
-               (in \texttt{cs\_user\_parameters.f90})
-               to specify the calculation options
-                   for the variables
-                   corresponding to pulverized fuel combustion
-        \end{list}
-    \end{list}
-
-or \texttt{cs\_user\_combustion}
-  \item{\bf For the ``heavy fuel combustion'' specific physics:}
-
- (not accessible through the Graphical User Interface in version \verscs)
-    \begin{list}{}{}
-        \item {\em compulsory:}
-        \begin{list}{-}{}
-            \item \texttt{usppmo} (in \texttt{cs\_user\_parameters.f90})
-               to select the specific physics module
-            \item \texttt{cs\_user\_combustion}
-               (in \texttt{cs\_user\_parameters.f90})
-               to specify the calculation options
-                   for the variables
-                   corresponding to heavy fuel combustion
-        \end{list}
-    \end{list}
-
-
-     \item{\bf For the ``atmospheric module'' specific physics:}
-
-    \begin{list}{}{}
-       \item {\em compulsory without Graphical User Interface:}
-        \begin{list}{-}{}
-            \item \texttt{usppmo} (in \texttt{cs\_user\_parameters.f90})
-                  to select the specific physics module
-        \end{list}
-
-        \item {\em very useful:}
-        \begin{list}{-}{}
-            \item  \texttt{usati1} (in \texttt{cs\_user\_parameters.f90})
-                   to manage the reading of the meteo file
-           \item  \texttt{usadtv} or \texttt{usatsoil} (in \texttt{cs\_user\_atmospheric\_model.f90})
-                   to manage the options to the specific physics
-
-        \end{list}
-    \end{list}
-
-
-     \item{\bf For the ``electric module'' specific physics
-      (Joule effect and electric arcs):}
-
-    \begin{list}{}{}
-       \item {\em compulsory without Graphical User Interface:}
-        \begin{list}{-}{}
-            \item \texttt{usppmo} (in \texttt{cs\_user\_parameters.f90})
-                  to select the specific physics module
-
-            \item \texttt{cs\_user\_initialization} to initialise the enthalpy in
-                  case of Joule effect
-
-            \item \texttt{cs\_user\_physical\_properties.c}
-                  to define the physical
-                  properties in case of Joule effect
-        \end{list}
-
-        \item {\em very useful:}
-        \begin{list}{-}{}
-            \item  \texttt{cs\_user\_model} and \texttt{cs\_user\_parameters} (in \texttt{cs\_user\_parameters.c})
-                   to manage the options related
-                   to the variables corresponding to the electric module
-
-        \end{list}
-    \end{list}
-
-    \item{\bf For the ``Lagrangian module'' (dispersed phase):}
-
-(the continuous phase is managed in the same way as for a case of standard
-physics)
-    \begin{list}{}{}
-        \item {\em compulsory without Graphical User Interface:}
-        \begin{list}{-}{}
-            \item \texttt{cs\_user\_lagr\_model} to manage the calculation conditions
-
-            \item \texttt{cs\_user\_lagr\_boundary\_conditions} to manage the
-              boundary conditions for the dispersed phase
-
-        \end{list}
-
-    \end{list}
-
-   \item {\bf For the ``compressible module'':}
-
-    \begin{list}{}{}
-        \item {\em compulsory without Graphical User Interface:}
-        \begin{list}{-}{}
-            \item \texttt{usppmo} (in \texttt{cs\_user\_parameters.f90})
-                  to select the specific physics module
-        \end{list}
-        \item {\em very useful:}
-        \begin{list}{-}{}
-            \item \texttt{uscfx1} and \texttt{uscfx2} (in \texttt{cs\_user\_parameters.f90})
-                  to manage the calculation parameters
-
-%            \item \texttt{cs\_user\_boundary\_conditions} to manage the
-%                  boundary conditions
-
-           \item \texttt{usphyv} (in \texttt{cs\_user\_physical\_properties}
-                  to manage the variable physical properties
-
-        \end{list}
-    \end{list}
-
-\end{list}
-
-%==================================
-\subsection{Supported mesh and post-processing output formats
-\label{sec:formats}}
-%==================================
-
-%==================================
-\subsubsection{Meshing remarks}
-%==================================
-\label{sec:prg_meshes}%
-
-{\em WARNING: }
-Some turbulence models ($k-\varepsilon$, $R_{ij}-\varepsilon$ SSG, ...) used in
-\CS are ``High-Reynolds'' models. Therefore the size of the cells
-neighbouring the wall must be greater than the thickness of the viscous
-sub-layer (at the wall, $y^+>2.5$ is required, and $30<y^+<100$ is
-preferable). If the mesh does not match this constraint, the results may
-be false (particularly if thermal phenomena are involved). For more details
-on these constraints, see the keyword \texttt{iturb}.
 
 %==================================
 \subsection{Preprocessor command line options}
@@ -526,18 +333,146 @@ Prepare batch analysis), this option is set automatically.
 \subsubsection{Preliminary comments}
 %==================================
 
-The user can run the calculations with or without an interface, with or
- without the user subroutines. Without interface, some user subroutines
- are needed (see \S\ref{sec:prg_stepbystepcalculation}). With interface,
-all the user subroutines are optional.
+As a reminder, it is generally preferable to use the GUI for as many settings
+as possible, and resort to user-defined functions only for more complex
+settings which cannot be done through the GUI. This may also include
+settings with many elements that can be better defined using programmatic
+loops. As a general rule, the most concise and easily verifiable approach
+should be used.
 
-The parameters can be read in the interface and then in the user
-subroutines. In the case that a parameter is specified in the interface
- and in a user subroutine, it is the value in the user subroutine that
- is taken into account. For this reason, all the examples of
- user subroutines are placed in the \texttt{EXAMPLES} directory by the
- case setup \texttt{code\_saturne~create} (and available subroutines in the
- directory \texttt{REFERENCE}).
+Note that when upgrading to a new \CS version, the GUI can
+automatically update the XML file (and in case a few elements cannot be
+updated, a warning will be issued). Whereas although an effort is made
+so as not to break user-defined functions too often, user-defined functions
+are guaranteed to be "stable" only within a same release series
+(i.e. 6.1.*).
+
+In general, user functions and subroutines are called after GUI-defined
+settings are loaded, so that when a same parameter is specified both
+in the interface and in a user-defined function or subroutine,
+the value in the user function has priority, or rather has the last word.
+
+%==================================
+\subsubsection{User source files needed without the GUI}
+%==================================
+
+\begin{list}{}{}
+
+\item {\bf For all physical models:}
+
+    \begin{list}{}{}
+        \item {\em  very useful without Graphical User Interface:}
+        \begin{list}{-}{}
+            \item \texttt{\texttt{cs\_user\_model}}
+              (in \texttt{cs\_user\_parameters.c}) to
+              define user scalars (species)
+        \end{list}
+
+        \item {\em  very useful:}
+        \begin{list}{-}{}
+            \item \texttt{cs\_user\_physical\_properties.c} to manage variable physical
+                  properties (fluid density, viscosity ...)
+
+            \item \texttt{cs\_user\_initialization.c} to manage the non-standard initialisations
+        \end{list}
+    \end{list}
+
+  \item{\bf For the ``gas combustion'', ``pulverized fuel combustion'',
+        and ``heavy fuel combustion'' models:}
+
+    \begin{list}{}{}
+        \item {\em compulsory without Graphical User Interface:}
+        \begin{list}{-}{}
+            \item \texttt{usppmo} (in \texttt{cs\_user\_parameters.f90})
+               to select a specific physics module and combustion model
+        \end{list}
+
+        \item {\em very useful:}
+        \begin{list}{-}{}
+            \item  \texttt{cs\_user\_combustion}
+                   (in \texttt{cs\_user\_parameters.f90}),
+                   depending on the selected combustion model,
+                   to specify the calculation options
+                   for the variables
+                   corresponding to combustion model
+        \end{list}
+    \end{list}
+
+  \item{\bf For the ``atmospheric module'' models:}
+
+    \begin{list}{}{}
+       \item {\em compulsory without Graphical User Interface:}
+        \begin{list}{-}{}
+            \item \texttt{usppmo} (in \texttt{cs\_user\_parameters.f90})
+                  to select the atmospheric module
+        \end{list}
+
+        \item {\em very useful:}
+        \begin{list}{-}{}
+            \item  \texttt{usati1} (in \texttt{cs\_user\_parameters.f90})
+                   to manage the reading of the meteo file
+           \item  \texttt{usadtv} or \texttt{usatsoil} (in \texttt{cs\_user\_atmospheric\_model.f90})
+                   to manage the options to the specific physics
+
+        \end{list}
+    \end{list}
+
+
+     \item{\bf For the ``electric module'' (Joule effect and electric arcs):}
+
+    \begin{list}{}{}
+       \item {\em compulsory without Graphical User Interface:}
+        \begin{list}{-}{}
+            \item \texttt{usppmo} (in \texttt{cs\_user\_parameters.f90})
+                  to select the module
+
+            \item \texttt{cs\_user\_initialization} to initialise the enthalpy in
+                  case of Joule effect
+
+            \item \texttt{cs\_user\_physical\_properties.c}
+                  to define the physical
+                  properties in case of Joule effect
+        \end{list}
+
+        \item {\em very useful:}
+        \begin{list}{-}{}
+            \item  \texttt{cs\_user\_model} and \texttt{cs\_user\_parameters} (in \texttt{cs\_user\_parameters.c})
+                   to manage the related options
+                   to the variables corresponding to the electric module
+
+        \end{list}
+    \end{list}
+
+    \item{\bf For the ``Lagrangian module'' (dispersed phase):}
+
+      (the continuous phase is managed in the regular)
+    \begin{list}{}{}
+        \item {\em compulsory without Graphical User Interface:}
+        \begin{list}{-}{}
+            \item \texttt{cs\_user\_lagr\_model} to manage the calculation conditions
+
+            \item \texttt{cs\_user\_lagr\_boundary\_conditions} to manage the
+              boundary conditions for the dispersed phase
+        \end{list}
+
+    \end{list}
+
+   \item {\bf For the ``compressible module'':}
+
+    \begin{list}{}{}
+        \item {\em compulsory without Graphical User Interface:}
+        \begin{list}{-}{}
+            \item \texttt{cs\_user\_model} (in \texttt{cs\_user\_parameters.c})
+                  to select the compressible module
+        \end{list}
+        \item {\em very useful:}
+        \begin{list}{-}{}
+            \item \texttt{uscfx1} and \texttt{uscfx2} (in \texttt{cs\_user\_parameters.f90})
+                  to manage the calculation parameters
+        \end{list}
+    \end{list}
+
+\end{list}
 
 %==================================
 \subsubsection{Example routines}
@@ -1602,60 +1537,6 @@ or, \texttt{--post-volume},
 visualizable meshes of corrected elements as well as remaining
 badly oriented elements are generated.
 
-\subsection{Environment variables\label{sec:envvpcs}}
-
-Setting a few environment variables specific to the \pcs allows modifying
-its default behaviour. In general, if a given behaviour is modifiable
-through an environment variable rather than by a command-line option,
-it has little interest for a non-developer, or its modification is
-potentially hazardous. The environment variables used by the \pcs
-are described here:
-
-\envvar{OMP\_NUM\_THREADS}
-
-Deactivating OpenMP by setting \code{OMP\_NUM\_THREADS=1}.
-
-\envvar{CS\_PREPROCESS\_MEM\_LOG}
-
-Allows defining a file name in which memory allocation, reallocation,
-and freeing is logged.
-
-\envvar{CS\_PREPROCESS\_MIN\_EDGE\_LEN}
-
-Under the indicated length ($10^{-15}$ by default), an edge is considered
-to be degenerate and its vertices will be merged after the transformation
-to descending connectivity. Degenerate edges and faces will thus be
-removed. Hence, the post-processed element does not change, but the
-Solver may handle a prism where the preprocessor input contained a
-hexahedron with two identical vertex couples (and thus a face of zero
-surface). If the \pcs does not print any information relative to this
-type of correction, it means that it has not been necessary. To completely
-deactivate this automatic correction, a negative value may be assigned
-to this environment variable.
-
-\envvar{CS\_PREPROCESS\_IGNORE\_IDEAS\_COO\_SYS}
-
-If this variable is defined and is a strictly positive integer, coordinate
-systems in \ideas universal format files will be ignored. The behaviour
-of the \pcs will thus be the same as that of versions 1.0 and 1.1.
-Note that in any case, non Cartesian coordinate systems are not handled yet.
-
-\envvar{CS\_RENUMBER}
-
-Deactivating renumbering is possible by setting \code{CS\_RENUMBER=off}.
-
-
-\subsubsection{System environment variables\label{sec:envpcs:sys}}
-
-Some system environment variables may also modify the behaviour of
-the \pcs. For example, if the \pcs was compiled with \med support
-on an architecture allowing shared (dynamic) libraries, the
-\texttt {LD\_PRELOAD} environment variable may be used to define a
-``prioritary'' path to load \med or HDF5 libraries, thus allowing the user to experiment
-with other versions of these libraries without recompiling the \pcs.
-To determine which shared libraries are used by an executable file, use
-the following command: \texttt{ldd~\{executable\_path\}}.
-
 \subsection{Optional functionality\label{sec:pcs:lib_opt}}
 
 Some functions of the \pcs are based on external libraries,
@@ -1727,6 +1608,17 @@ avoid creating a \pcs output file.
 \subsection{Mesh preprocessing%
 \label{sec:prepro}}
 %==================================
+
+\subsubsection{Meshing remarks}\label{sec:prg_meshes}%
+
+{\em WARNING: }
+Some turbulence models ($k-\varepsilon$, $R_{ij}-\varepsilon$ SSG, ...) used in
+\CS are ``High-Reynolds'' models. Therefore the size of the cells
+neighbouring the wall must be greater than the thickness of the viscous
+sub-layer (at the wall, $y^+>2.5$ is required, and $30<y^+<100$ is
+preferable). If the mesh does not match this constraint, the results may
+be false (particularly if thermal phenomena are involved). For more details
+on these constraints, see the keyword \texttt{iturb}.
 
 \subsubsection{Joining of non-conforming meshes}\label{sec:optpcs:join}
 
@@ -3885,7 +3777,7 @@ The thermal balance example is particularly interesting.
 Specific physics such as dispersed phase, atmospheric flows, gas combustion,
 pulverised fuel combustion, electrical model and compressible model can be
 added by the user from the interface, or by using the subroutine \texttt{usppmo} of
-the \texttt{cs\_user\_parameters} file (called only during the calculation initialisation).
+the \texttt{cs\_user\_parameters.f90} file (called only during the calculation initialisation).
 With the interface, when a specific physics is activated in \figurename~\ref{fig:5_GUI},
 additional items or headings may appear (see for instance Sections \ref{sec:Ini-lag}
 and \ref{sec:Ini-coal}).
@@ -3899,12 +3791,12 @@ and \ref{sec:Ini-coal}).
 \end{figure}
 
 When the interface is not used, \texttt{usppmo} is one of the three subroutines
-which must be obligatory completed by the user in order to use a specific physics module
+which must be completed by the user in order to use a specific physics module
 (only heavy fuel combustion is not available with the GUI).
 At the moment, \CS allows to use two ``pulverised coal'' modules
 (with Lagrangian coupling or not) and one ``pulverised heavy fuel'' module,
 two ``gas combustion'' modules, two ``electrical'' modules,
-a ``compressible'' module and an ``atmospheric'' module. To activate one of
+a ``compressible'' module, and an ``atmospheric'' module. To activate one of
 these modules, the user must complete one (and only one) of the
 indicators \texttt{ippmod(i.....)\index{ippmod}} in the subroutine
 \texttt{usppmo}. By default, all the indicators \texttt{ippmod(i.....)} are
