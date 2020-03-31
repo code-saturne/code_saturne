@@ -83,9 +83,45 @@ using namespace MEDCoupling;
 
 BEGIN_C_DECLS
 
+static const int _perm_tri[3]  = {0, 2, 1};
+static const int _perm_quad[4] = {0, 3, 2, 1};
+static const int _perm_pent[5] = {0, 4, 3, 2, 1};
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/* -------------------------------------------------------------------------- */
+/*! \brief Get permutation array for a face given its number of vertices.
+ *
+ * \param[in] n_face_vertices number of vertices of the face
+ *
+ * \return    pointer to the permutation array
+/* -------------------------------------------------------------------------- */
+
+static const int *
+_get_face_vertices_permutation(int n_face_vertices)
+{
+
+  const int *perm = NULL;
+
+  switch (n_face_vertices) {
+    case 3:
+      perm = _perm_tri;
+      break;
+    case 4:
+      perm = _perm_quad;
+      break;
+    case 5:
+      perm = _perm_pent;
+      break;
+    default:
+      perm = NULL;
+      break;
+  }
+
+  return perm;
+}
 
 #if defined(HAVE_MEDCOUPLING)
 /* -------------------------------------------------------------------------- */
@@ -168,9 +204,6 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
   int *elt_buf = NULL;
   cs_lnum_t *vtx_id = NULL;
 
-  const int perm_tri[4] = {0, 2, 1};
-  const int perm_quad[4] = {0, 3, 2, 1};
-
   /* Mark and renumber vertices */
 
   BFT_MALLOC(vtx_id, mesh->n_vertices, cs_lnum_t);
@@ -232,24 +265,23 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
       BFT_REALLOC(elt_buf, elt_buf_size, int);
     }
 
+    const int _perm_face = _get_face_vertices_permutation(n_vtx);
+    if (_perm_face != NULL) {
+      for (j = 0; j < n_vtx; j++)
+        elt_buf = vtx_id[mesh->b_face_vtx_lst[connect_start + _perm_face[j]]];
+    } else {
+      for (j = 0; j < n_vtx; j++)
+        elt_buf[j] = vtx_id[mesh->b_face_vtx_lst[connect_start + n_vtx - 1 - j]];
+    }
     switch(n_vtx) {
     case 3:
       type = INTERP_KERNEL::NORM_TRI3;
-      for (j = 0; j < 3; j++)
-        elt_buf[j]
-          = vtx_id[mesh->b_face_vtx_lst[connect_start + perm_tri[j]]];
       break;
     case 4:
       type = INTERP_KERNEL::NORM_QUAD4;
-      for (j = 0; j < 4; j++)
-        elt_buf[j]
-          = vtx_id[mesh->b_face_vtx_lst[connect_start + perm_quad[j]]];
       break;
     default:
       type = INTERP_KERNEL::NORM_POLYGON;
-      for (j = 0; j < n_vtx; j++)
-        elt_buf[j]
-          = vtx_id[mesh->b_face_vtx_lst[connect_start + n_vtx - 1 - j]];
       break;
     }
 
@@ -301,17 +333,11 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
   for (i = 0; i < mesh->n_cells; i++)
     cell_id[i] = -1;
 
-  if (elts_list != NULL) {
-    for (i = 0; i < n_elts; i++){
-      cell_id[elts_list[i]] = cell_count++;
-    }
-    for (int ii = 0; ii < n_elts; ii++) {
-      new_to_old[ cell_id[elts_list[ii]] ] = elts_list[ii];
-    }
+  for (i = 0; i < n_elts; i++){
+    cell_id[elts_list[i]] = cell_count++;
   }
-  else {
-    for (i = 0; i < n_elts; i++)
-      cell_id[i] = cell_count++;
+  for (int ii = 0; ii < n_elts; ii++) {
+    new_to_old[ cell_id[elts_list[ii]] ] = elts_list[ii];
   }
 
   /* Mark and renumber vertices */
@@ -375,15 +401,18 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
                                             mesh->i_face_vtx_lst};
 
   BFT_MALLOC(elt_buf, elt_buf_size, int);
+  for (int ii = 0; ii < elt_buf_size; ii++)
+    elt_buf[ii] = -1;
 
   /* Allocate the cells array */
   med_mesh->allocateCells(n_elts);
 
-  for (i = 0; i < n_elts; i++) {
+  for (cs_lnum_t ic = 0; ic < n_elts; ic++) {
 
     int n_vtx;
     cs_lnum_t cell_vtx[8];
 
+    i = elts_list[ic];
     fvm_element_t fvm_type = fvm_nodal_from_desc_cell(i,
                                                       2,
                                                       face_num_shift,
@@ -445,45 +474,59 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
 
       n_vtx = 0;
 
-      for (j = cell_faces_idx[i]; j < cell_faces_idx[i]; j++) {
+      cs_lnum_t s_id = cell_faces_idx[i] - 1;
+      cs_lnum_t e_id = cell_faces_idx[i+1] -1;
 
-        face_id = CS_ABS(cell_faces_num[j-1]) - 1;
+      for (j = s_id; j < e_id; j++) {
+        int face_sgn = 0;
+        if (cell_faces_num[j] > 0) {
+          face_id  = cell_faces_num[j] - 1;
+          face_sgn = 1;
+        } else {
+          face_id  = -cell_faces_num[j] - 1;
+          face_sgn = -1;
+        }
 
         int fl = 1;
         if (face_id < face_num_shift[fl])
           fl = 0;
         face_id -= face_num_shift[fl];
 
-        cs_lnum_t v_id_start = face_vertices_idx[fl][face_id] - 1;
-        cs_lnum_t v_id_end   = face_vertices_idx[fl][face_id + 1] - 1;
-        int n_face_vertices = v_id_end - v_id_start;
+        cs_lnum_t v_id_start = face_vertices_idx[fl][face_id];
+        cs_lnum_t v_id_end   = face_vertices_idx[fl][face_id + 1];
+        int n_face_vertices  = v_id_end - v_id_start;
 
-        connect_size += n_face_vertices + 1;
-        if (connect_size > elt_buf_size) { /* reallocate buffer if required */
+        while (n_vtx + n_face_vertices + 1 > elt_buf_size) {
           elt_buf_size *= 2;
           BFT_REALLOC(elt_buf, elt_buf_size, int);
         }
 
         /* Add separator after first face */
-        if (j > cell_faces_idx[i])
+        if (j > s_id)
           elt_buf[n_vtx++] = -1;
 
-        /* Add face vertices */
-        if (cell_faces_num[j-1] > 0) {
-          for (k = v_id_start; k < v_id_end; k++)
-            elt_buf[n_vtx++] = vtx_id[face_vertices_num[fl][k] - 1];
+        const int        *_face_perm    = NULL;
+          _get_face_vertices_permutation(n_face_vertices);
+        if (_face_perm != NULL) {
+          for (int ik = 0; ik < n_face_vertices; ik++) {
+            int iik = _face_perm[ik];
+            int l = v_id_start
+                  + (n_face_vertices + (iik*face_sgn))%n_face_vertices;
+            int vid = face_vertices_num[fl][l];
+            elt_buf[n_vtx++] = vtx_id[vid];
+          }
+        } else {
+          for (int ik = 0; ik < n_face_vertices; ik++) {
+            int l = v_id_start
+                  + (n_face_vertices + (ik*face_sgn))%n_face_vertices;
+            int vid = face_vertices_num[fl][l];
+            elt_buf[n_vtx++] = vtx_id[vid];
+          }
         }
-        else {
-          for (k = v_id_end - 1; k >= v_id_start; k--)
-            elt_buf[n_vtx++] = vtx_id[face_vertices_num[fl][k] - 1];
-        }
-
-      }
-
-    }
-
+      } /* Loop on j (cell faces) */
+    } /* switch on cell_type */
     med_mesh->insertNextCell(type, n_vtx, elt_buf);
-  }
+  } /* Loop on cells */
 
   med_mesh->finishInsertingCells();
 
