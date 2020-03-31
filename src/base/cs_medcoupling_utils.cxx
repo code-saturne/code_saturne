@@ -265,10 +265,10 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
       BFT_REALLOC(elt_buf, elt_buf_size, int);
     }
 
-    const int _perm_face = _get_face_vertices_permutation(n_vtx);
+    const int *_perm_face = _get_face_vertices_permutation(n_vtx);
     if (_perm_face != NULL) {
       for (j = 0; j < n_vtx; j++)
-        elt_buf = vtx_id[mesh->b_face_vtx_lst[connect_start + _perm_face[j]]];
+        elt_buf[j] = vtx_id[mesh->b_face_vtx_lst[connect_start + _perm_face[j]]];
     } else {
       for (j = 0; j < n_vtx; j++)
         elt_buf[j] = vtx_id[mesh->b_face_vtx_lst[connect_start + n_vtx - 1 - j]];
