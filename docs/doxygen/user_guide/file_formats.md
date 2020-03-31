@@ -18,7 +18,7 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 -->
 
-\page cs_file_formats Supported input and output formats
+\page cs_ug_file_formats Supported input and output formats
 
 [TOC]
 
@@ -94,7 +94,7 @@ entities could lead to a high number of groups.
 <tr><td> File type         <td> text or binary file
 <tr><td> Surface elements  <td> triangles, quadrangles
 <tr><td> Volume elements   <td> tetrahedra, pyramids, prisms, hexahedra
-<tr><td> Zone selection    <td> physical entity numbers interpreted as numbered groups
+<tr><td> Zone selection    <td> physical entities interpreted as groups
 <tr><td> Compatibility     <td> all files of this type (current revision: 4.1)
 <tr><td> Documentation     <td> included documentation, also available at:
                                 [http://www.geuz.org/gmsh](http://www.geuz.org/gmsh)
@@ -401,7 +401,7 @@ and no groups are assigned.
 <tr><td> Parallel IO       <td> supported for binary output, using "direct" MPI-IO
 </table>
 
-### STAR CCM+ {#sec_fmtdesc_starccmp}
+### STAR CCM+ {#sec_fmtdesc_ccm}
 <!-- -->
 
 \deprecated Use of the CGNS format should be stronlgy preferred to this format when possible,
@@ -486,7 +486,7 @@ Some operations may work very well, while other,
 similar operations may fail.
 
 <table>
-<tr><td> Default extension <td> not applicable`
+<tr><td> Default extension <td> not applicable
 <tr><td> File type         <td> co-processing
 <tr><td> Surface elements  <td> triangles, quadrangles, simple polygons
 <tr><td> Volume elements   <td> tetrahedra, pyramids, prisms, hexahedra, simple polyhedra

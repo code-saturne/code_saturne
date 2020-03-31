@@ -126,89 +126,19 @@ cs_user_join(void)
      joining step or to get a better mesh quality. */
 
   /*! [mesh_add_advanced_joining] */
-
-  /* Merge tolerance factor:
-   * used to locally modify the tolerance associated to each
-   * vertex BEFORE the merge step.
-   *   = 0 => no vertex merge;
-   *   < 1 => vertex merge is more strict. It may increase the number
-   *          of tolerance reduction and so define smaller subset of
-   *          vertices to merge together but it can drive to loose
-   *          intersections;
-   *   = 1 => no change;
-   *   > 1 => vertex merge is less strict. The subset of vertices able
-   *          to be merged together is greater. */
-
-  double mtf = 1.00;
-
-   /* Pre-merge factor:
-    * this parameter is used to define a bound under which two vertices
-    * are merged before the merge step.
-    * Tolerance limit for the pre-merge = pmf * fraction. */
-
-  double pmf = 0.10;
-
-   /* Tolerance computation mode:
-    *
-    *   1: (default) tol = min. edge length related to a vertex * fraction
-    *   2: tolerance is computed like in mode 1 with in addition, the
-    *      multiplication by a coefficient equal to the max sin(e1, e2)
-    *      where e1 and e2 are two edges sharing the same vertex V for which
-    *      we want to compute the tolerance.
-    *  11: as 1 but taking into account only the selected faces
-    *  12: as 2 but taking into account only the selected faces */
-
-  int tcm = 1;
-
-    /* Intersection computation mode:
-     *  1: (default) Original algorithm.
-     *     Try to snap intersection to extremity.
-     *  2: New intersection algorithm.
-     *     Avoid snapping intersection to extremity. */
-
-  int icm = 1;
-
-   /* Maximum number of equivalence breaks which is
-    * enabled during the merge step. */
-
-  int max_break = 500;
-
-   /* Maximum number of sub-faces when splitting a selected face. */
-
-  int max_sub_face = 100;
-
-   /* tml, tmb and tmr are parameters of the searching algorithm for
-    * face intersections between selected faces (octree structure).
-    * Useful to adjust speed vs. memory consumption. */
-
-   /* Tree Max Level:
-    * deepest level reachable when building the tree */
-
-   int tml = 30;
-
-   /* Tree Max Boxes:
-    * max. number of bounding boxes which can be linked to a leaf of the tree
-    * (not necessary true for the deepest level) */
-
-  int tmb = 25;
-
-   /* Tree Max. Ratio:
-    * stop refining the tree structure when
-    * number of bounding boxes > tmr * number of faces to locate.
-    * In parallel, a separate (usually lower) value may be set for
-    * the initial coarse tree used to determine distribution.
-    * Reducing this will help reduce memory consumption. */
-
-  double tmr = 5.0;
-  double tmr_distrib = 2.0;
-
   /* Set advanced parameters */
 
   cs_join_set_advanced_param(join_num,
-                             mtf, pmf, tcm, icm,
-                             max_break, max_sub_face,
-                             tml, tmb, tmr, tmr_distrib);
-
+                             1.00,          /* merge tolerance factor */
+                             0.10,          /* pre-merge factor */:
+                             1,             /* tolerance computation mode */
+                             1,             /* intersection computation mode */
+                             500,           /* max. nb. of equivalence breaks */
+                             100,           /* maximum number of sub-faces */
+                             30,            /* tree max level */
+                             25,            /* tree max boxes per node */
+                             5.0,           /* tree max ratio */
+                             tmr_distrib);  /* distribution tree max ration */
   /*! [mesh_add_advanced_joining] */
 
 }

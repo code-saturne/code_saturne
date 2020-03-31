@@ -18,7 +18,7 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 -->
 
-\page cs_user_basics Running a Computation
+\page cs_ug_user_basics Running a Computation
 
 This section contains a quick-start guide followed by more detailed information
 various user aspects, describing how code_saturne computations are organized
@@ -26,11 +26,17 @@ and run.
 
 [TOC]
 
-\subpage cs_quick_start
+\subpage cs_ug_quick_start
 
-\subpage cs_user_settings
+\subpage cs_ug_user_settings
 
-\subpage cs_case_structure
+\subpage cs_ug_case_structure
 
-\subpage cs_run_computation
+\subpage cs_ug_run_computation
+
+\subpage cs_ug_file_formats
+
+\subpage cs_ug_mesh_prepare
+
+\subpage cs_ug_parallel
 

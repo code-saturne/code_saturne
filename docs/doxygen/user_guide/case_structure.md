@@ -18,7 +18,7 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 -->
 
-\page cs_case_structure Case directory structure
+\page cs_ug_case_structure Case directory structure
 
 [TOC]
 

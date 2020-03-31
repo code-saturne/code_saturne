@@ -2,12 +2,15 @@
   <!-- Navigation index tabs for HTML output -->
   <navindex>
     <tab type="mainpage" visible="yes" title=""/>
-    <tab type="usergroup" visible="yes" url="@ref cs_user_basics" title="Running a computation">
-      <tab type="user" visible="yes" url="@ref cs_quick_start" title="Quick start"/>
-      <tab type="user" visible="yes" url="@ref cs_user_settings" title="Global user settings"/>
-      <tab type="user" visible="yes" url="@ref cs_case_structure" title="Case directory structure"/>
-      <tab type="user" visible="yes" url="@ref cs_run_computation" title="Running a calculation"/>
-      <tab type="user" visible="yes" url="@ref cs_file_formats" title="Supported file formats"/>
+    <tab type="usergroup" visible="yes" url="@ref cs_ug_user_basics" title="Running a computation">
+      <tab type="user" visible="yes" url="@ref cs_ug_quick_start" title="Quick start"/>
+      <tab type="user" visible="yes" url="@ref cs_ug_user_settings" title="Global user settings"/>
+      <tab type="user" visible="yes" url="@ref cs_ug_case_structure" title="Case directory structure"/>
+      <tab type="user" visible="yes" url="@ref cs_ug_run_computation" title="Running a calculation"/>
+      <tab type="user" visible="yes" url="@ref cs_ug_file_formats" title="Supported file formats"/>
+      <tab type="usergroup" visible="yes" url="@ref cs_ug_mesh_prepare" title="Mesh import and preprocessing"/>
+      <tab type="user" visible="yes" url="@ref cs_ug_mesh_select_c" title="Mesh element set selection"/>
+      <tab type="user" visible="yes" url="@ref cs_ug_parallel" title="Parallelism and periodicity"/>
     </tab>
     <tab type="pages" visible="no" title=""/>
     <tab type="modules" visible="yes" title=""/>

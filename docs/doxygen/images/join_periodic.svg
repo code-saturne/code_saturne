@@ -1,0 +1,648 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Creator: fig2dev Version 3.2.6a -->
+
+<!-- CreationDate: 2020-04-01 14:11:11 -->
+
+<!-- Magnification: 1.05 -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="379.9501pt"
+   height="338.98346pt"
+   viewBox="480 504 6024.7818 5378.4062"
+   version="1.1"
+   id="svg181"
+   sodipodi:docname="join_periodic.svg"
+   inkscape:version="0.92.1 r15371">
+  <metadata
+     id="metadata187">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <defs
+     id="defs185" />
+  <sodipodi:namedview
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1"
+     objecttolerance="10"
+     gridtolerance="10"
+     guidetolerance="10"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:window-width="1166"
+     inkscape:window-height="765"
+     id="namedview183"
+     showgrid="false"
+     inkscape:zoom="1.0290698"
+     inkscape:cx="257.70948"
+     inkscape:cy="255.55365"
+     inkscape:window-x="280"
+     inkscape:window-y="82"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="g301" />
+  <g
+     id="g179"
+     style="fill:none"
+     transform="translate(-25.911962,-61.59375)">
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <defs
+       id="defs15">
+      <clipPath
+         id="cp0">
+        <path
+           d="M 480,504 H 6569 V 5962 H 480 Z m 5913,652 74,99 -112,-52 126,71 8,-10 z"
+           id="path12"
+           inkscape:connector-curvature="0"
+           style="clip-rule:evenodd" />
+      </clipPath>
+    </defs>
+    <!-- Forward arrow to point 6480,1265 -->
+    <!-- Line -->
+    <defs
+       id="defs24">
+      <clipPath
+         id="cp1">
+        <path
+           d="M 480,504 H 6569 V 5962 H 480 Z m 3960,876 -111,54 73,-100 -96,110 9,11 z"
+           id="path21"
+           inkscape:connector-curvature="0"
+           style="clip-rule:evenodd" />
+      </clipPath>
+    </defs>
+    <!-- Forward arrow to point 4316,1445 -->
+    <!-- Line -->
+    <defs
+       id="defs33">
+      <clipPath
+         id="cp2">
+        <path
+           d="M 480,504 H 6569 V 5962 H 480 Z m 1883,629 -102,70 57,-110 -78,123 11,9 z"
+           id="path30"
+           inkscape:connector-curvature="0"
+           style="clip-rule:evenodd" />
+      </clipPath>
+    </defs>
+    <!-- Forward arrow to point 2250,1215 -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <defs
+       id="defs46">
+      <clipPath
+         id="cp3">
+        <path
+           d="M 480,504 H 6569 V 5962 H 480 Z m 1817,1731 -120,-30 120,-30 -144,23 v 14 z"
+           id="path43"
+           inkscape:connector-curvature="0"
+           style="clip-rule:evenodd" />
+      </clipPath>
+    </defs>
+    <!-- Forward arrow to point 2160,2205 -->
+    <!-- Line -->
+    <defs
+       id="defs55">
+      <clipPath
+         id="cp4">
+        <path
+           d="M 480,504 H 6569 V 5962 H 480 Z m 1817,1731 -120,-30 120,-30 -144,23 v 14 z m 1931,-510 120,30 -120,30 144,-23 v -14 z"
+           id="path52"
+           inkscape:connector-curvature="0"
+           style="clip-rule:evenodd" />
+      </clipPath>
+    </defs>
+    <!-- Backward arrow to point 4365,1755 -->
+    <!-- Line -->
+    <defs
+       id="defs64">
+      <clipPath
+         id="cp5">
+        <path
+           d="M 480,504 H 6569 V 5962 H 480 Z m 3725,725 59,109 -103,-68 114,90 10,-10 z m 23,496 120,30 -120,30 144,-23 v -14 z"
+           id="path61"
+           inkscape:connector-curvature="0"
+           style="clip-rule:evenodd" />
+      </clipPath>
+    </defs>
+    <!-- Forward arrow to point 4275,1350 -->
+    <!-- Line -->
+    <defs
+       id="defs73">
+      <clipPath
+         id="cp6">
+        <path
+           d="M 480,504 H 6569 V 5962 H 480 Z m 3725,725 59,109 -103,-68 114,90 10,-10 z m 2138,361 120,30 -120,30 144,-23 v -14 z"
+           id="path70"
+           inkscape:connector-curvature="0"
+           style="clip-rule:evenodd" />
+      </clipPath>
+    </defs>
+    <!-- Backward arrow to point 6480,1620 -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <defs
+       id="defs86">
+      <clipPath
+         id="cp7">
+        <path
+           d="M 480,504 H 6569 V 5962 H 480 Z m 3611,5201 123,12 -115,47 139,-43 -2,-14 z m 2252,-4115 120,30 -120,30 144,-23 v -14 z"
+           id="path83"
+           inkscape:connector-curvature="0"
+           style="clip-rule:evenodd" />
+      </clipPath>
+    </defs>
+    <!-- Forward arrow to point 4230,5715 -->
+    <!-- Line -->
+    <defs
+       id="defs95">
+      <clipPath
+         id="cp8">
+        <path
+           d="M 480,504 H 6569 V 5962 H 480 Z m 3611,5201 123,12 -115,47 139,-43 -2,-14 z m 2207,-110 120,30 -120,30 144,-23 v -14 z"
+           id="path92"
+           inkscape:connector-curvature="0"
+           style="clip-rule:evenodd" />
+      </clipPath>
+    </defs>
+    <!-- Backward arrow to point 6435,5625 -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <!-- Line -->
+    <defs
+       id="defs110">
+      <clipPath
+         id="cp9">
+        <path
+           d="M 480,504 H 6569 V 5962 H 480 Z m 1842,3082 -101,-70 122,14 -142,-29 -5,13 z m 3976,2009 120,30 -120,30 144,-23 v -14 z"
+           id="path107"
+           inkscape:connector-curvature="0"
+           style="clip-rule:evenodd" />
+      </clipPath>
+    </defs>
+    <!-- Forward arrow to point 2205,3510 -->
+    <!-- Line -->
+    <defs
+       id="defs119">
+      <clipPath
+         id="cp10">
+        <path
+           d="M 480,504 H 6569 V 5962 H 480 Z m 3696,2772 85,90 -117,-39 133,57 7,-11 z m 2122,2319 120,30 -120,30 144,-23 v -14 z"
+           id="path116"
+           inkscape:connector-curvature="0"
+           style="clip-rule:evenodd" />
+      </clipPath>
+    </defs>
+    <!-- Forward arrow to point 4275,3375 -->
+    <!-- Line -->
+    <defs
+       id="defs128">
+      <clipPath
+         id="cp11">
+        <path
+           d="M 480,504 H 6569 V 5962 H 480 Z m 3696,2772 85,90 -117,-39 133,57 7,-11 z m 2122,339 120,30 -120,30 144,-23 v -14 z"
+           id="path125"
+           inkscape:connector-curvature="0"
+           style="clip-rule:evenodd" />
+      </clipPath>
+    </defs>
+    <!-- Backward arrow to point 6435,3645 -->
+    <!-- Line -->
+    <defs
+       id="defs137">
+      <clipPath
+         id="cp12">
+        <path
+           d="M 480,504 H 6569 V 5962 H 480 Z m 5818,4641 120,30 -120,30 144,-23 v -14 z m 0,-1530 120,30 -120,30 144,-23 v -14 z"
+           id="path134"
+           inkscape:connector-curvature="0"
+           style="clip-rule:evenodd" />
+      </clipPath>
+    </defs>
+    <!-- Forward arrow to point 6435,5175 -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <!-- Text -->
+    <g
+       id="g301">
+      <rect
+         style="fill:#dfdbd7;stroke:#000000;stroke-width:8px"
+         id="rect2"
+         height="1125"
+         width="2160"
+         y="945"
+         x="4365" />
+      <rect
+         style="fill:#dfdbd7;stroke:#000000;stroke-width:8px"
+         id="rect4"
+         height="1125"
+         width="2160"
+         y="4815"
+         x="4320" />
+      <rect
+         style="fill:#dfdbd7;stroke:#000000;stroke-width:8px"
+         id="rect6"
+         height="1125"
+         width="2160"
+         y="2835"
+         x="4320" />
+      <polyline
+         style="stroke:#ff0000;stroke-width:15px"
+         id="polyline8"
+         points=" 4365,945 4365,2070" />
+      <polyline
+         style="stroke:#ff0000;stroke-width:15px"
+         id="polyline10"
+         points=" 6525,945 6525,2070" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-dasharray:40, 40"
+         id="polyline17"
+         clip-path="url(#cp0)"
+         points=" 5805,720 6480,1265" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-miterlimit:8"
+         id="polyline19"
+         stroke-miterlimit="8"
+         points=" 6393,1156 6467,1255 6355,1203" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-dasharray:40, 40"
+         id="polyline26"
+         clip-path="url(#cp1)"
+         points=" 5130,765 4316,1445" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-miterlimit:8"
+         id="polyline28"
+         stroke-miterlimit="8"
+         points=" 4440,1380 4329,1434 4402,1334" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-dasharray:40, 40"
+         id="polyline35"
+         clip-path="url(#cp2)"
+         points=" 2610,810 2250,1215" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-miterlimit:8"
+         id="polyline37"
+         stroke-miterlimit="8"
+         points=" 2363,1133 2261,1203 2318,1093" />
+      <polyline
+         style="stroke:#0000ff;stroke-width:15px"
+         id="polyline39"
+         points=" 4320,945 4320,2070" />
+      <polyline
+         style="stroke:#0000ff;stroke-width:15px"
+         id="polyline41"
+         points=" 2160,945 2160,2070" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px"
+         id="polyline48"
+         clip-path="url(#cp3)"
+         points=" 4365,2205 2160,2205" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-miterlimit:8"
+         id="polyline50"
+         stroke-miterlimit="8"
+         points=" 2297,2235 2177,2205 2297,2175" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-dasharray:10, 30"
+         id="polyline57"
+         clip-path="url(#cp4)"
+         points=" 4365,1755 2160,1755" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-miterlimit:8"
+         id="polyline59"
+         stroke-miterlimit="8"
+         points=" 4228,1725 4348,1755 4228,1785" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-dasharray:40, 40"
+         id="polyline66"
+         clip-path="url(#cp5)"
+         points=" 3780,810 4275,1350" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-miterlimit:8"
+         id="polyline68"
+         stroke-miterlimit="8"
+         points=" 4205,1229 4264,1338 4161,1270" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-dasharray:10, 30"
+         id="polyline75"
+         clip-path="url(#cp6)"
+         points=" 6480,1620 4365,1620" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-miterlimit:8"
+         id="polyline77"
+         stroke-miterlimit="8"
+         points=" 6343,1590 6463,1620 6343,1650" />
+      <polyline
+         style="stroke:#8f008f;stroke-width:15px"
+         id="polyline79"
+         points=" 4320,4815 4320,5940" />
+      <polyline
+         style="stroke:#8f008f;stroke-width:15px"
+         id="polyline81"
+         points=" 6480,4815 6480,5940" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-dasharray:40, 40"
+         id="polyline88"
+         clip-path="url(#cp7)"
+         points=" 3600,5805 4230,5715" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-miterlimit:8"
+         id="polyline90"
+         stroke-miterlimit="8"
+         points=" 4091,5705 4214,5717 4099,5764" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-dasharray:10, 30"
+         id="polyline97"
+         clip-path="url(#cp8)"
+         points=" 6435,5625 4365,5625" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-miterlimit:8"
+         id="polyline99"
+         stroke-miterlimit="8"
+         points=" 6298,5595 6418,5625 6298,5655" />
+      <polyline
+         style="stroke:#0000ff;stroke-width:15px"
+         id="polyline101"
+         points=" 2160,2835 2160,3960" />
+      <polyline
+         style="stroke:#8f008f;stroke-width:15px"
+         id="polyline103"
+         points=" 4320,2835 4320,3960" />
+      <polyline
+         style="stroke:#ff0000;stroke-width:15px"
+         id="polyline105"
+         points=" 6480,2835 6480,3960" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-dasharray:40, 40"
+         id="polyline112"
+         clip-path="url(#cp9)"
+         points=" 2565,3645 2205,3510" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-miterlimit:8"
+         id="polyline114"
+         stroke-miterlimit="8"
+         points=" 2322,3586 2221,3516 2343,3530" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-dasharray:40, 40"
+         id="polyline121"
+         clip-path="url(#cp10)"
+         points=" 3780,3060 4275,3375" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-miterlimit:8"
+         id="polyline123"
+         stroke-miterlimit="8"
+         points=" 4176,3276 4261,3366 4144,3327" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-dasharray:10, 30"
+         id="polyline130"
+         clip-path="url(#cp11)"
+         points=" 6435,3645 4365,3645" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-miterlimit:8"
+         id="polyline132"
+         stroke-miterlimit="8"
+         points=" 6298,3615 6418,3645 6298,3675" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-dasharray:40, 40"
+         id="polyline139"
+         clip-path="url(#cp12)"
+         points=" 3960,5175 6435,5175" />
+      <polyline
+         style="stroke:#000000;stroke-width:8px;stroke-miterlimit:8"
+         id="polyline141"
+         stroke-miterlimit="8"
+         points=" 6298,5145 6418,5175 6298,5205" />
+      <text
+         style="font-style:normal;font-weight:normal;font-size:144px;font-family:Times;text-anchor:start;fill:#000000"
+         id="text143"
+         font-size="144"
+         font-weight="normal"
+         font-style="normal"
+         y="675"
+         x="2700"
+         xml:space="preserve"><tspan
+           id="tspan195"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:sans-serif;-inkscape-font-specification:sans-serif">duplicated and</tspan></text>
+      <text
+         style="font-style:normal;font-weight:normal;font-size:144px;font-family:Times;text-anchor:start;fill:#000000"
+         id="text145"
+         font-size="144"
+         font-weight="normal"
+         font-style="normal"
+         y="915"
+         x="2700"
+         xml:space="preserve"><tspan
+           id="tspan197"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:sans-serif;-inkscape-font-specification:sans-serif">translated faces</tspan></text>
+      <text
+         style="font-style:normal;font-weight:normal;font-size:144px;font-family:Times;text-anchor:start;fill:#000000"
+         id="text147"
+         font-size="144"
+         font-weight="normal"
+         font-style="normal"
+         y="675"
+         x="4815"
+         xml:space="preserve"><tspan
+           id="tspan201"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:sans-serif;-inkscape-font-specification:sans-serif">selected faces</tspan></text>
+      <text
+         style="font-style:normal;font-weight:normal;font-size:144px;font-family:Times;text-anchor:start;fill:#000000"
+         id="text149"
+         font-size="144"
+         font-weight="normal"
+         font-style="normal"
+         y="1710"
+         x="2655"
+         xml:space="preserve"><tspan
+           id="tspan199"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:sans-serif;-inkscape-font-specification:sans-serif">relation (origin)</tspan></text>
+      <text
+         style="font-style:normal;font-weight:normal;font-size:144px;font-family:Times;text-anchor:start;fill:#000000"
+         id="text151"
+         font-size="144"
+         font-weight="normal"
+         font-style="normal"
+         y="1789.1949"
+         x="4905"
+         xml:space="preserve"><tspan
+           id="tspan203"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:sans-serif;-inkscape-font-specification:sans-serif">relation (origin)</tspan></text>
+      <text
+         style="font-style:normal;font-weight:normal;font-size:144px;font-family:Times;text-anchor:start;fill:#000000"
+         id="text153"
+         font-size="144"
+         font-weight="normal"
+         font-style="normal"
+         y="2385"
+         x="2610"
+         xml:space="preserve"><tspan
+           id="tspan205"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:sans-serif;-inkscape-font-specification:sans-serif">periodic step</tspan></text>
+      <text
+         style="font-style:normal;font-weight:normal;font-size:144px;font-family:Times;text-anchor:start;fill:#000000"
+         id="text155"
+         font-size="144"
+         font-weight="normal"
+         font-style="normal"
+         y="5805"
+         x="4770"
+         xml:space="preserve"><tspan
+           id="tspan225"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:sans-serif;-inkscape-font-specification:sans-serif">relation (periodicity)</tspan></text>
+      <text
+         style="font-style:normal;font-weight:normal;font-size:144px;font-family:Times;text-anchor:start;fill:#000000"
+         id="text157"
+         font-size="144"
+         font-weight="normal"
+         font-style="normal"
+         y="5235"
+         x="2160"
+         xml:space="preserve"><tspan
+           id="tspan219"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:sans-serif;-inkscape-font-specification:sans-serif">based on their relation</tspan></text>
+      <text
+         style="font-style:normal;font-weight:normal;font-size:144px;font-family:Times;text-anchor:start;fill:#000000"
+         id="text159"
+         font-size="144"
+         font-weight="normal"
+         font-style="normal"
+         y="5475"
+         x="2160"
+         xml:space="preserve"><tspan
+           id="tspan221"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:sans-serif;-inkscape-font-specification:sans-serif">with joined faces</tspan></text>
+      <text
+         style="font-style:normal;font-weight:normal;font-size:144px;font-family:Times;text-anchor:start;fill:#000000"
+         id="text161"
+         font-size="144"
+         font-weight="normal"
+         font-style="normal"
+         y="4995"
+         x="2160"
+         xml:space="preserve"><tspan
+           id="tspan217"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:sans-serif;-inkscape-font-specification:sans-serif">faces subdivided</tspan></text>
+      <text
+         style="font-style:normal;font-weight:normal;font-size:144px;font-family:Times;text-anchor:start;fill:#000000"
+         id="text163"
+         font-size="144"
+         font-weight="normal"
+         font-style="normal"
+         y="5850"
+         x="2475"
+         xml:space="preserve"><tspan
+           id="tspan223"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:sans-serif;-inkscape-font-specification:sans-serif">joined faces</tspan></text>
+      <text
+         style="font-style:normal;font-weight:normal;font-size:168px;font-family:Times;text-anchor:start;fill:#000000"
+         id="text165"
+         font-size="168"
+         font-weight="normal"
+         font-style="normal"
+         y="1125"
+         x="495"
+         xml:space="preserve"><tspan
+           id="tspan189"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:sans-serif;-inkscape-font-specification:sans-serif">stage 1</tspan></text>
+      <text
+         style="font-style:normal;font-weight:normal;font-size:168px;font-family:Times;text-anchor:start;fill:#000000"
+         id="text167"
+         font-size="168"
+         font-weight="normal"
+         font-style="normal"
+         y="2970"
+         x="495"
+         xml:space="preserve"><tspan
+           id="tspan191"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:sans-serif;-inkscape-font-specification:sans-serif">stage 2</tspan></text>
+      <text
+         style="font-style:normal;font-weight:normal;font-size:168px;font-family:Times;text-anchor:start;fill:#000000"
+         id="text169"
+         font-size="168"
+         font-weight="normal"
+         font-style="normal"
+         y="4950"
+         x="495"
+         xml:space="preserve"><tspan
+           id="tspan193"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:sans-serif;-inkscape-font-specification:sans-serif">stage 3</tspan></text>
+      <text
+         style="font-style:normal;font-weight:normal;font-size:144px;font-family:Times;text-anchor:start;fill:#000000"
+         id="text171"
+         font-size="144"
+         font-weight="normal"
+         font-style="normal"
+         y="3825"
+         x="4770"
+         xml:space="preserve"><tspan
+           id="tspan213"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:sans-serif;-inkscape-font-specification:sans-serif">relation (origin)</tspan></text>
+      <text
+         style="font-style:normal;font-weight:normal;font-size:144px;font-family:Times;text-anchor:start;fill:#000000"
+         id="text173"
+         font-size="144"
+         font-weight="normal"
+         font-style="normal"
+         y="3600"
+         x="2610"
+         xml:space="preserve"><tspan
+           id="tspan209"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:sans-serif;-inkscape-font-specification:sans-serif">duplicated and</tspan></text>
+      <text
+         style="font-style:normal;font-weight:normal;font-size:144px;font-family:Times;text-anchor:start;fill:#000000"
+         id="text175"
+         font-size="144"
+         font-weight="normal"
+         font-style="normal"
+         y="3840"
+         x="2610"
+         xml:space="preserve"><tspan
+           id="tspan211"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:sans-serif;-inkscape-font-specification:sans-serif">non-joined faces</tspan></text>
+      <text
+         style="font-style:normal;font-weight:normal;font-size:144px;font-family:Times;text-anchor:start;fill:#000000"
+         id="text177"
+         font-size="144"
+         font-weight="normal"
+         font-style="normal"
+         y="2970"
+         x="2880"
+         xml:space="preserve"><tspan
+           id="tspan207"
+           style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:sans-serif;-inkscape-font-specification:sans-serif">joined faces</tspan></text>
+    </g>
+  </g>
+</svg>

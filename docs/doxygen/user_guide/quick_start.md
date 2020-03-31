@@ -18,7 +18,7 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 -->
 
-\page cs_quick_start Quick start
+\page cs_ug_quick_start Quick start
 
 We assume in this section that the users has the calculation data file
 (calculation set up) at his disposal, or has already prepared it following

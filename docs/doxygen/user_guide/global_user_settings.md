@@ -18,7 +18,7 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 -->
 
-\page cs_user_settings Setting up your environment
+\page cs_ug_user_settings Setting up your environment
 
 Shortcuts and command completion  {#sec_prg_environment_cs}
 ================================

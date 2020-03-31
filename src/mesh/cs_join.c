@@ -1573,19 +1573,19 @@ _join_performance_log(const cs_join_t  *this_join)
  * Public function definitions
  *===========================================================================*/
 
-/*----------------------------------------------------------------------------
+/*----------------------------------------------------------------------------*/
+/*!
  * Add a cs_join_t structure to the list of pending joinings.
  *
- * parameters:
- *   sel_criteria  <-- boundary face selection criteria
- *   fraction      <-- value of the fraction parameter
- *   plane         <-- value of the plane parameter
- *   verbosity     <-- level of verbosity required
- *   visualization <-- level of visualization required
+ * \param[in]  sel_criteria   boundary face selection criteria
+ * \param[in]  fraction       value of the fraction parameter
+ * \param[in]  plane          value of the plane parameter
+ * \param[in]  verbosity      level of verbosity required
+ * \param[in]  visualization  level of visualization required
  *
- * returns:
- *   number (1 to n) associated with new joining
- *---------------------------------------------------------------------------*/
+ * \return  number (1 to n) associated with new joining
+ */
+/*----------------------------------------------------------------------------*/
 
 int
 cs_join_add(const char  *sel_criteria,
@@ -1615,22 +1615,73 @@ cs_join_add(const char  *sel_criteria,
   return cs_glob_n_joinings;
 }
 
-/*----------------------------------------------------------------------------
- * Set advanced parameters for the joining algorithm.
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Set advanced parameters for the joining algorithm.
  *
- * parameters:
- *   join_num       <-> joining operation number
- *   mtf            <-- merge tolerance coefficient
- *   pmf            <-- pre-merge factor
- *   tcm            <-- tolerance computation mode
- *   icm            <-- intersection computation mode
- *   max_break      <-- max number of equivalences to break (merge step)
- *   max_sub_faces  <-- max. possible number of sub-faces by splitting a face
- *   tml            <-- tree max level
- *   tmb            <-- tree max boxes
- *   tmr            <-- tree max ratio
- *   tmr_distrib    <-- tree max ratio for distribution
- *---------------------------------------------------------------------------*/
+ * \param[in]  join_num       joining operation number
+ * \param[in]  mtf            merge tolerance factor
+ * \param[in]  pmf            pre-merge factor
+ * \param[in]  tcm            tolerance computation mode
+ * \param[in]  icm            intersection computation mode
+ * \param[in]  max_break      max number of equivalences to break
+ *                            (merge step)
+ * \param[in]  max_sub_faces  max. possible number of sub-faces by
+ *                            splitting a face
+ * \param[in]  tml            tree max level
+ * \param[in]  tmb            tree max boxes
+ * \param[in]  tmr            tree max ratio
+ * \param[in]  tmr_distrib    tree max ratio for distribution
+ *
+ * The first set of parameters allow modifing the intersection tolerance
+ * detection and interection merge behavior:
+ *
+ * * `mtf`: merge tolerance factor, locally modifies the tolerance associated
+ *    to each vertex __before__ the merge step. The following cases apply:
+ *    - if *mtf = 0*, no vertex merge
+ *    - if *mtf < 1*, the vertex merge is stricter. It may increase the number
+ *      of tolerance reductions and therefore define smaller subsets of
+ *      vertices to merge  together, possibly leading to more small edges.
+ *    - *mtf = 1* is the default
+ *    - if *mtf > 1*, the vertex merging is less strict. The subset of
+ *      vertices which can be merged is larger.
+ * * `pmf`: a pre-merge factor. This parameter is used to define a limit under
+ *    which two vertices are merged before the merge step
+ *   (tolerance limit for the pre-merge = pmf * fraction),
+ * * `tcm`: a tolerance computation mode. If its value is:
+ *    - `1` (default), the tolerance is the minimal edge length related to a
+ *      vertex, multiplied by a fraction.
+ *    - `2`, the tolerance is computed as in `1` with an additional
+ *      multiplication by a coefficient equal to *max(sin(e1), sin(e2)*,
+ *      where *e1* and *e2* are two edges sharing a same vertex *v* for
+ *      the tolerance is computed.
+ *    - `11`: similar to `1` but taking into account only the selected faces.
+ *    - `12`: similar to `2` but taking into account only the selected faces.
+ * * `icm`: the intersection computation mode. If its value is:
+ *    - `1` (default), the original algorithm is used. Care should be taken
+ *      to clip the intersection to an extremity.
+ *    - `2`, a new intersection algorithm is used. Caution should be used to
+ *      avoid clipping the intersection to an extremity.
+ * * `maxbrk`: defines the maximum number of equivalence breaks which is
+ *    enabled during the merge step,
+ * * `max_sub_faces`: defines the maximum number of sub-faces allowed when
+ *    splitting a selected face.
+ *
+ * The following parameters used in the search algorithm for face
+ * intersections between selected faces (octree-like structure). They allow
+ * modifying the memory/speed tradeoffs, and are useful in case of excess
+ * memory usage:
+ *
+ * * `tml`: the tree maximum level is the deepest level the tree can reach,
+ * * `tmb`: the tree maximum boxes is the maximum number of bounding boxes (BB)
+ *          which can be linked to a leaf of the tree (not necessary true for
+ *          the deepest level),
+ * * `tmr`: the tree maximum ratio. The building of the tree structure stops
+ *          when the number of bounding boxes is superior to the product of
+ *          `tmr` with the number of faces to locate. This is efficient
+ *          to reduce memory consumption.
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_join_set_advanced_param(int      join_num,

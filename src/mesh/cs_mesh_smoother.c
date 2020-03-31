@@ -775,14 +775,22 @@ _compute_vtx_normals(cs_mesh_t           *mesh,
  *
  * <a name="fix_by_feature"></a>
  *
+ * This function locks a vertex in place if one of its feature angles is
+ * less than the maximum feature angle (in degrees) defined by the user.
+ *
+ * Vertex normals are based on the average of the normals of the adjacent
+ * boundary faces.
+ * The feature angle between a vertex and one of its adjacent faces is defined
+ * as the angle between the vertex normal and the face normal.
+ *
  * Please refer to the
  * <a href="../../theory.pdf#fixbyfeature"><b>specific treatment for boundary faces</b></a>
- * section of the theory guide for more informations.
+ * section of the theory guide for more information.
  *
- * parameters:
  *  \param[in]  mesh           pointer to a cs_mesh_t structure
- *  \param[in]  feature_angle  feature angle (bounded between 0 and 90 degrees)
- *  \param[out] vtx_is_fixed   array to define vertices mobility (1: fixed, 0: free)
+ *  \param[in]  feature_angle  feature angle (between 0 and 90 degrees)
+ *  \param[out] vtx_is_fixed   array to define vertices mobility
+ *                             (1: fixed, 0: free)
  */
 /*----------------------------------------------------------------------------*/
 

@@ -114,7 +114,7 @@
   \subsection  cs_user_mesh_h_cs_user_mesh_input Mesh reading and modification
 
   The user function \ref cs_user_mesh_input allows a detailed selection of imported
-  meshes read, reading files multiple times, applying geometric transformations,
+  meshes, allows reading files multiple times, applying geometric transformations,
   and renaming groups.
 
   The following code shows an example of mesh reading with no transformation.
@@ -181,9 +181,10 @@
 
   \subsection cs_user_mesh_h_cs_user_mesh_add_advanced_joining Advanced mesh joining
 
-  For a more complex mesh, or a mesh with thin walls which we want to avoid
-  transforming into interior faces, the user can use the \ref cs_join_set_advanced_param
-  function to define a specific mesh joining.
+  For lower quality meshes or curved and anisotropically refined meshes
+  leading to joining difficulties, or to reduce memory usage, using the
+  the \ref cs_join_set_advanced_param function refering to a defined joning
+  allows finer control (see the function reference for parameter details).
 
   \snippet cs_user_mesh-joining.c mesh_add_advanced_joining
 

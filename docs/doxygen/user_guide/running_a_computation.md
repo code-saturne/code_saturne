@@ -18,7 +18,7 @@
   Street, Fifth Floor, Boston, MA 02110-1301, USA.
 -->
 
-\page cs_run_computation Running a calculation
+\page cs_ug_run_computation Running a calculation
 
 [TOC]
 
