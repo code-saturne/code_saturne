@@ -92,12 +92,10 @@ logical(kind=c_bool) :: mesh_modified, log_active
 
 integer          modhis, iappel, iisuit
 integer          iel
-
 integer          inod   , idim, ifac
 integer          itrale , ntmsav
-
 integer          nent
-
+integer          iterns
 integer          stats_id, restart_stats_id, lagr_stats_id, post_stats_id
 
 double precision titer1, titer2
@@ -645,6 +643,9 @@ call inivar(nvar, nscal)
 if (icdo.ge.1) then ! CDO mode
   call cs_f_initialize_cdo_systems
 endif
+
+iterns = -1
+call phyvar(nvar, nscal, iterns, dt)
 
 !===============================================================================
 ! Initializations for the 1D thermal wall module
