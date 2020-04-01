@@ -1402,6 +1402,8 @@ _set_key(const char            *label,
   case CS_EQKEY_HODGE_TIME_ALGO:
     if (strcmp(keyval, "voronoi") == 0)
       eqp->time_hodgep.algo = CS_HODGE_ALGO_VORONOI;
+    else if (strcmp(keyval,"cost") == 0 || strcmp(keyval,"ocs") == 0)
+      eqp->time_hodgep.algo = CS_HODGE_ALGO_COST;
     else if (strcmp(keyval, "wbs") == 0)
       eqp->time_hodgep.algo = CS_HODGE_ALGO_WBS;
     else {
