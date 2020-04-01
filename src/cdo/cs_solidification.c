@@ -77,6 +77,7 @@ typedef enum {
 
 static cs_real_t  cs_solidification_forcing_eps  = 1e-3;
 static cs_real_t  cs_solidification_eutectic_threshold  = 1e-4;
+static const double  cs_solidification_diffusion_eps = 1e-16;
 
 /*============================================================================
  * Type definitions
@@ -1046,13 +1047,12 @@ _update_liquid_fraction_binary_alloy(const cs_mesh_t             *mesh,
   cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_GNUM_TYPE, solid->n_g_cells);
 
   /* Update the diffusion property related to the solute */
-  if (alloy->diff_pty != NULL) {
-
+  if (alloy->diff_coef > cs_solidification_diffusion_eps) {
     const double  rho_D = cell_rho * alloy->diff_coef;
-#     pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+#   pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < quant->n_cells; i++)
-      alloy->diff_pty_array[i] = rho_D * g_l[i];
-
+      alloy->diff_pty_array[i] = (g_l[i] > 0) ?
+        rho_D * g_l[i] : cs_solidification_diffusion_eps;
   }
 
   if (solid->options & CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM) {
@@ -1315,25 +1315,21 @@ _fb_solute_source_term(const cs_equation_param_t     *eqp,
   cs_real_t  *c_l_c = alloy->c_l_field->val;
   cs_real_t  *c_l_f = alloy->c_l_faces;
 
-  if (alloy->diff_pty != NULL) {
+  /* Diffusion part of the source term to add */
+  cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag,
+                                 diff_hodge);
 
-    /* Diffusion part of the source term to add */
-    cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag,
-                                   diff_hodge);
+  /* Define the local stiffness matrix: local matrix owned by the cellwise
+     builder (store in cb->loc) */
+  eqc->get_stiffness_matrix(cm, diff_hodge, cb);
 
-    /* Define the local stiffness matrix: local matrix owned by the cellwise
-       builder (store in cb->loc) */
-    eqc->get_stiffness_matrix(cm, diff_hodge, cb);
+  /* Build the cellwise array: c - c_l  */
+  for (short int f = 0; f < cm->n_fc; f++)
+    cb->values[f] = csys->val_n[f] - c_l_f[cm->f_ids[f]];
+  cb->values[cm->n_fc] = csys->val_n[cm->n_fc] - c_l_c[cm->c_id];
 
-    /* Build the cellwise array: c - c_l  */
-    for (short int f = 0; f < cm->n_fc; f++)
-      cb->values[f] = csys->val_n[f] - c_l_f[cm->f_ids[f]];
-    cb->values[cm->n_fc] = csys->val_n[cm->n_fc] - c_l_c[cm->c_id];
-
-    /* Update the RHS with the diffusion contribution */
-    cs_sdm_update_matvec(cb->loc, cb->values, csys->rhs);
-
-  }
+  /* Update the RHS with the diffusion contribution */
+  cs_sdm_update_matvec(cb->loc, cb->values, csys->rhs);
 
   /* Define the local advection matrix */
   cs_cdofb_advection_build(eqp, cm, eqc->adv_func, cb);
@@ -1598,6 +1594,7 @@ cs_solidification_set_binary_alloy_model(const char     *name,
   cs_equation_param_t  *eqp = cs_equation_get_param(alloy->solute_equation);
 
   cs_equation_set_param(eqp, CS_EQKEY_SPACE_SCHEME, "cdo_fb");
+  cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_ALGO, "cost");
   cs_equation_set_param(eqp, CS_EQKEY_HODGE_DIFF_COEF, "sushi");
   cs_equation_set_param(eqp, CS_EQKEY_ADV_SCHEME, "upwind");
 
@@ -1610,21 +1607,21 @@ cs_solidification_set_binary_alloy_model(const char     *name,
   alloy->dilatation_coef = beta;
   alloy->ref_concentration = conc0;
 
-  alloy->diff_coef = solute_diff;
-  alloy->diff_pty = NULL;
+  /* Always add a diffusion term (to avoid a zero block face-face when there
+     is no more convection */
+  if (solute_diff > 0)
+    alloy->diff_coef = solute_diff;
+  else
+    alloy->diff_coef = cs_solidification_diffusion_eps;
 
-  if (solute_diff > 0) {
+  char  *pty_name = NULL;
+  int  len = strlen(varname) + strlen("_diff_pty") + 1;
+  BFT_MALLOC(pty_name, len, char);
+  sprintf(pty_name, "%s_diff_pty", varname);
+  alloy->diff_pty = cs_property_add(pty_name, CS_PROPERTY_ISO);
+  BFT_FREE(pty_name);
 
-    char  *pty_name = NULL;
-    int  len = strlen(varname) + strlen("_diff_pty") + 1;
-    BFT_MALLOC(pty_name, len, char);
-    sprintf(pty_name, "%s_diff_pty", varname);
-    alloy->diff_pty = cs_property_add(pty_name, CS_PROPERTY_ISO);
-    BFT_FREE(pty_name);
-
-    cs_equation_add_diffusion(eqp, alloy->diff_pty);
-
-  }
+  cs_equation_add_diffusion(eqp, alloy->diff_pty);
 
   alloy->latent_heat = latent_heat;
   alloy->forcing_coef = forcing_coef;
@@ -1883,27 +1880,23 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
       memset(alloy->c_l_faces, 0, sizeof(cs_real_t)*quant->n_faces);
     }
 
-    if (alloy->diff_pty != NULL) {
+    /* Estimate the reference value for the solutal diffusion property
+     * One assumes that g_l (the liquid fraction is equal to 1) */
+    const cs_real_t  pty_ref_value = mass_density->ref_value*alloy->diff_coef;
 
-      /* Estimate the reference value for the solutal diffusion property
-       * One assumes that g_l (the liquid fraction is equal to 1) */
-      const cs_real_t  pty_ref_value = mass_density->ref_value*alloy->diff_coef;
+    cs_property_set_reference_value(alloy->diff_pty, pty_ref_value);
 
-      cs_property_set_reference_value(alloy->diff_pty, pty_ref_value);
+    BFT_MALLOC(alloy->diff_pty_array, quant->n_cells, cs_real_t);
 
-      BFT_MALLOC(alloy->diff_pty_array, quant->n_cells, cs_real_t);
+#   pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
+    for (cs_lnum_t i = 0; i < quant->n_cells; i++)
+      alloy->diff_pty_array[i] = pty_ref_value;
 
-#     pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
-      for (cs_lnum_t i = 0; i < quant->n_cells; i++)
-        alloy->diff_pty_array[i] = pty_ref_value;
-
-      cs_property_def_by_array(alloy->diff_pty,
-                               cs_flag_primal_cell,
-                               alloy->diff_pty_array,
-                               false,
-                               NULL);
-
-    } /* There is a diffusion coefficient */
+    cs_property_def_by_array(alloy->diff_pty,
+                             cs_flag_primal_cell,
+                             alloy->diff_pty_array,
+                             false,
+                             NULL);
 
   } /* Binary alloy model */
 
