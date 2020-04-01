@@ -2091,9 +2091,9 @@ do ifac = 1, nfabor
       endif
 
       ! Storage of the thermal exchange coefficient
-      ! (conversion in case of energy or enthaly)
+      ! (conversion in case of energy or enthalpy)
       ! the exchange coefficient is in W/(m2 K)
-      ! Usefull for thermal coupling or radiative transfer
+      ! Useful for thermal coupling or radiative transfer
       if (iirayo.ge.1 .and. iscal.eq.iscalt.or.isvhbl.gt.0) then
         ! Enthalpy
         if (itherm.eq.2) then

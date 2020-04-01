@@ -1084,10 +1084,10 @@ if (iclsym.ne.0) then
 endif
 
 !===============================================================================
-! 9. velocity: outlet, dirichlet and neumann and convective outlet
+! 9. velocity: outlet, Dirichlet and Neumann and convective outlet
 !===============================================================================
 
-! ---> outlet: in case of incomming mass flux, the mass flux is set to zero.
+! ---> outlet: in case of incoming mass flux, the mass flux is set to zero.
 
 isoent = 0
 isorti = 0
@@ -1115,7 +1115,7 @@ do ifac = 1, nfabor
 
     if (flumbf.lt.-epzero) then
 
-      ! dirichlet boundary condition
+      ! Dirichlet boundary condition
       !-----------------------------
 
       ! coupled solving of the velocity components
@@ -1134,7 +1134,7 @@ do ifac = 1, nfabor
 
     else
 
-      ! neumann boundary conditions
+      ! Neumann boundary conditions
       !----------------------------
 
       dimp = 0.d0
@@ -1319,7 +1319,7 @@ do ifac = 1, nfabor
 enddo
 
 !===============================================================================
-! 10. pressure: dirichlet and neumann and convective outlet
+! 10. pressure: Dirichlet and Neumann and convective outlet
 !===============================================================================
 
 call field_get_coefa_s(ivarfl(ipr), coefap)
@@ -1329,7 +1329,7 @@ call field_get_coefbf_s(ivarfl(ipr), cofbfp)
 
 call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
 
-if (ivofmt.gt.0)  call field_get_val_s(icrom, crom) ! FIXME consistancy with correction step
+if (ivofmt.gt.0)  call field_get_val_s(icrom, crom) ! FIXME consistency with correction step
 
 do ifac = 1, nfabor
 
@@ -2238,7 +2238,7 @@ elseif (itytur.eq.5) then
 
       iel = ifabor(ifac)
 
-      ! --- Physical Propreties
+      ! --- Physical Properties
       visclc = viscl(iel)
       visctc = visct(iel)
 
@@ -2320,7 +2320,7 @@ elseif (itytur.eq.5) then
 
     do ifac = 1, nfabor
 
-      ! --- Physical Propreties
+      ! --- Physical Properties
       visclc = 1.d0
 
       ! --- Geometrical quantities
