@@ -594,10 +594,13 @@ endif
 ! If the wall function for the velocity is the two scales wall function using
 ! Van Driest mixing length (iwallf=5), then the corresponding wall function for
 ! scalar should be used (iwalfs=1).
+! For atmospheric Flows, it is by default Louis, or Monin-Obukhov
 ! Here iwalfs is set automatically only if it wasn't set in a user subroutine.
 
 if (iwalfs.eq.-999) then
-  if (iwallf.eq.5) then
+  if (ippmod(iatmos).ge.0) then
+    iwalfs = 2
+  else if (iwallf.eq.5) then
     iwalfs = 1
   else
     iwalfs = 0

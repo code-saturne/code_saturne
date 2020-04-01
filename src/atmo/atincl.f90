@@ -703,4 +703,509 @@ endif
 
 end subroutine finalize_meteo
 
+!---------------------------------------------------------------------------
+
+!> \brief Universal functions of Cheng and Brutsaert 2005, for stable
+!>        (derivative function)
+
+!> \param[in]  z             altitude
+!> \param[in]  dlmo          inverse Monin Obukhov length
+!> \param[out] coef          function
+
+subroutine mo_phim_s (z,dlmo,coef)
+
+  implicit none
+
+  double precision z,dlmo,coef
+
+  double precision a,b,x
+
+  a=6.1d0
+  b=2.5d0
+  x=z * dlmo
+
+  coef=1.d0+a*(x+(x**b)*((1.d0+x**b)**((1.d0-b)/b)))/(x+(1.d0+x**b)**(1./b))
+
+end subroutine mo_phim_s
+
+subroutine mo_phih_s (z,dlmo,coef)
+
+  implicit none
+
+  double precision z,dlmo,coef
+
+  double precision a,b,x
+
+  a=5.3d0
+  b=1.1d0
+  x=z * dlmo
+
+  coef=1.d0+a*(x+(x**b)*((1.d0+x**b)**((1.d0-b)/b)))/(x+(1.d0+x**b)**(1./b))
+
+end subroutine mo_phih_s
+
+! Integrated version from z0 to z
+
+subroutine mo_psim_s (z,z0,dlmo,coef)
+
+  implicit none
+
+  double precision z,z0,dlmo,coef
+
+  double precision a,b,x,x0
+
+  a=6.1d0
+  b=2.5d0
+  x=z * dlmo
+  x0=z0 * dlmo
+
+  coef=dlog(z/z0)+a*(dlog(x+(1.d0+x**b)**(1.d0/b))-dlog(x0+(1.d0+x0**b)**(1./b)))
+
+end subroutine mo_psim_s
+
+subroutine mo_psih_s (z,z0,dlmo,coef)
+
+  implicit none
+
+  double precision z,z0,dlmo,coef
+
+  double precision a,b,x,x0
+
+  a=5.3d0
+  b=1.1d0
+  x=z * dlmo
+  x0=z0 * dlmo
+
+  coef=dlog(z/z0)+a*(dlog(x+(1.d0+x**b)**(1.d0/b))-dlog(x0+(1.d0+x0**b)**(1.d0/b)))
+
+end subroutine mo_psih_s
+
+!---------------------------------------------------------------------------
+
+!> \brief Universal functions of Hogstrom 1988, for unstable
+!>        (derivative function)
+
+!> \param[in]  z             altitude
+!> \param[in]  dlmo             Monin Obukhov length
+!> \param[out] coef          function
+
+subroutine mo_phim_u (z,dlmo,coef)
+
+  implicit none
+
+  double precision z,dlmo,coef
+
+  double precision a,b,e,x
+
+  a=1.d0
+  b=19.3d0
+  e=-0.25d0
+  x=z * dlmo
+
+  coef=a*(1.d0-b*x)**e
+
+end subroutine mo_phim_u
+
+subroutine mo_phih_u (z,dlmo,coef)
+
+  implicit none
+
+  double precision z,dlmo,coef
+
+  double precision a,b,e,x
+
+  a=0.95d0
+  b=11.6d0
+  e=-0.5d0
+  x=z * dlmo
+
+  coef=a*(1.d0-b*x)**e
+
+end subroutine mo_phih_u
+
+! Integrated version from z0 to z
+
+subroutine mo_psim_u (z,z0,dlmo,coef)
+
+  implicit none
+
+  double precision z,z0,dlmo,coef
+
+  double precision a,b,e,x,x0,psi,psi0
+
+  a=1.d0
+  b=19.3d0
+  e=0.25d0
+  x=z * dlmo
+  x0=z0 * dlmo
+  psi=(1.d0-b*x)**e
+  psi0=(1.d0-b*x0)**e
+
+  coef=a*(dlog(z/z0)                                &
+          -2.d0*dlog((1.d0+psi)/(1.d0+psi0))        &
+          -dlog((1.d0+psi**2.d0)/(1.d0+psi0**2.d0)) &
+          +2.d0*(datan(psi)-datan(psi0)))
+
+end subroutine mo_psim_u
+
+subroutine mo_psih_u (z,z0,dlmo,coef)
+
+  implicit none
+
+  double precision z,z0,dlmo,coef
+
+  double precision a,b,e,x,x0,psi,psi0
+
+  a=0.95d0
+  b=11.6d0
+  e=0.5d0
+  x=z * dlmo
+  x0=z0 * dlmo
+  psi=(1.d0-b*x)**e
+  psi0=(1.d0-b*x0)**e
+
+  coef=a*(dlog(z/z0)                                &
+          -2.d0*dlog((1.d0+psi)/(1.d0+psi0)))
+end subroutine mo_psih_u
+
+!---------------------------------------------------------------------------
+
+!> \brief Universal functions, for neutral
+!>        (derivative function)
+
+!> \param[in]  z             altitude
+!> \param[in]  dlmo          Inverse Monin Obukhov length
+!> \param[out] coef          function
+
+subroutine mo_phim_n (z,dlmo,coef)
+
+  implicit none
+
+  double precision z,dlmo,coef
+
+  coef=1.d0
+
+end subroutine mo_phim_n
+
+subroutine mo_phih_n (z,dlmo,coef)
+
+  implicit none
+
+  double precision z,dlmo,coef
+
+  coef=1.d0
+
+end subroutine mo_phih_n
+
+! Integrated version from z0 to z
+
+subroutine mo_psim_n (z,z0,dlmo,coef)
+
+  implicit none
+
+  double precision z,z0,dlmo,coef
+
+  coef=dlog(z/z0)
+
+end subroutine mo_psim_n
+
+subroutine mo_psih_n (z,z0,dlmo,coef)
+
+  implicit none
+
+  double precision z,z0,dlmo,coef
+
+  coef=dlog(z/z0)
+
+end subroutine mo_psih_n
+
+! Switch universal functions
+
+! Derivative function
+
+subroutine mo_phim (z,dlmo,coef)
+
+  implicit none
+
+  double precision z,dlmo,coef
+  double precision :: dlmoneutral = 1.d-12
+
+  if (abs(dlmo).lt.dlmoneutral) then
+    call mo_phim_n(z,dlmo,coef)
+  elseif (dlmo.ge.0.d0) then
+    call mo_phim_s(z,dlmo,coef)
+  else
+    call mo_phim_u(z,dlmo,coef)
+  endif
+
+end subroutine mo_phim
+
+subroutine mo_phih (z,dlmo,coef)
+
+  implicit none
+
+  double precision z,dlmo,coef
+  double precision :: dlmoneutral = 1.d-12
+
+  if (abs(dlmo).lt.dlmoneutral) then
+    call mo_phih_n(z,dlmo,coef)
+  elseif (dlmo.ge.0.d0) then
+    call mo_phih_s(z,dlmo,coef)
+  else
+    call mo_phih_u(z,dlmo,coef)
+  endif
+
+end subroutine mo_phih
+
+! Integrated version from z0 to z
+
+subroutine mo_psim (z,z0,dlmo,coef)
+
+  implicit none
+
+  double precision z,z0,dlmo,coef
+  double precision :: dlmoneutral = 1.d-12
+
+  if (abs(dlmo).lt.dlmoneutral) then
+    call mo_psim_n(z,z0,dlmo,coef)
+  elseif (dlmo.ge.0.d0) then
+    call mo_psim_s(z,z0,dlmo,coef)
+  else
+    call mo_psim_u(z,z0,dlmo,coef)
+  endif
+
+end subroutine mo_psim
+
+subroutine mo_psih (z,z0,dlmo,coef)
+
+  implicit none
+
+  double precision z,z0,dlmo,coef
+  double precision :: dlmoneutral = 1.d-12
+
+  if (abs(dlmo).lt.dlmoneutral) then
+    call mo_psih_n(z,z0,dlmo,coef)
+  elseif (dlmo.ge.0.d0) then
+    call mo_psih_s(z,z0,dlmo,coef)
+  else
+    call mo_psih_u(z,z0,dlmo,coef)
+  endif
+
+end subroutine mo_psih
+
+!---------------------------------------------------------------------------
+
+!> \brief Compute LMO, friction velocity ustar, friction temperature
+!>        tstar from a thermal flux using Monin Obukhov
+
+!> \param[in]  z             altitude
+!> \param[in]  z0
+!> \param[in]  du            velocity difference
+!> \param[in]  flux          thermal flux
+!> \param[in]  tm
+!> \param[in]  gredu
+!> \param[out] dlmo          Inverse Monin Obukhov length
+!> \param[out] ustar         friction velocity
+
+subroutine mo_compute_from_thermal_flux(z,z0,du,flux,tm,gredu,dlmo,ustar)
+
+  use cstphy
+  use cstnum
+  use entsor
+
+  implicit none
+
+  ! Arguments
+  double precision z,z0,du,tm,gredu,dlmo,ustar,flux
+
+  ! Local variables
+  double precision tstar
+  double precision dlmo_old,ustar_old,tstar_old
+  double precision coef_mom,coef_moh
+  double precision prec_lmo,prec_ustar,prec_tstar,arr_lmo
+  double precision num, denom
+  integer icompt
+
+  ! Precision initialisation
+  prec_lmo=1.d-2
+  prec_ustar=1.d-2
+  prec_tstar=1.d-2
+  arr_lmo=1.d-2
+
+  icompt=0
+
+  ! Initial inverse LMO
+  if (flux.ge.0.d0) then
+    dlmo = 0.02d0
+  else
+    dlmo = -0.02d0
+  endif
+
+  ! Call universal functions
+  call mo_psim(z+z0,z0,dlmo,coef_mom)
+
+  ! Initial ustar and tstar
+  ustar = xkappa * du / coef_mom
+  tstar = flux / ustar
+
+123 continue
+
+  icompt=icompt+1
+
+  ! Storage previous values
+  dlmo_old = dlmo
+  ustar_old = ustar
+  tstar_old = tstar
+
+  ! Update LMO
+  num = coef_mom**3.d0 * gredu * flux
+  denom = du**3.d0 * xkappa**2.d0 * tm
+  if (abs(denom).gt.(epzero*num)) then
+    dlmo = num / denom
+  else
+    dlmo = 0.d0 !FIXME other clipping ?
+  endif
+
+  ! Clipping dlmo (|LMO| < 20m  ie 1/|LMO| > 0.05 m^-1)
+  if (abs(dlmo).ge.0.05d0) then
+    if (dlmo.ge.0.d0) dlmo=0.05d0
+    if (dlmo.le.0.d0) dlmo=-0.05d0
+  endif
+
+  ! Evaluate universal functions
+  call mo_psim (z+z0,z0,dlmo,coef_mom)
+
+  ! Update ustar,tstar
+  ustar = xkappa*du/coef_mom
+  tstar = flux/ustar
+
+  ! Convergence test
+  if (icompt.le.1000) then
+    if (abs(ustar_old).gt.epzero.and.abs((ustar-ustar_old)).ge.prec_ustar*ustar_old) go to 123
+    if (abs(tstar_old).gt.epzero.and.abs((tstar-tstar_old)).ge.prec_tstar*tstar_old) go to 123
+    if (abs(dlmo_old).gt.epzero.and.abs((dlmo-dlmo_old)).ge.prec_lmo*dlmo_old) go to 123
+
+    if (abs(ustar_old).le.epzero.and.abs(ustar).gt.epzero) go to 123
+    if (abs(tstar_old).le.epzero.and.abs(tstar).gt.epzero) go to 123
+    if (abs(dlmo_old).le.epzero.and.abs(dlmo).gt.epzero) go to 123
+  endif
+
+
+  return
+
+end subroutine mo_compute_from_thermal_flux
+
+!---------------------------------------------------------------------------
+
+!> \brief Compute LMO, friction velocity ustar, friction temperature
+!>        tstar from a thermal difference using Monin Obukhov
+
+!> \param[in]  z             altitude
+!> \param[in]  z0
+!> \param[in]  du            velocity difference
+!> \param[in]  dt            thermal difference
+!> \param[in]  tm
+!> \param[in]  gredu
+!> \param[out] dlmo          Inverse Monin Obukhov length
+!> \param[out] ustar         friction velocity
+
+subroutine mo_compute_from_thermal_diff(z,z0,du,dt,tm,gredu,dlmo,ustar)
+
+  use cstphy
+  use cstnum
+  use entsor
+
+  implicit none
+
+  ! Arguments
+  double precision z,z0,du,dt,tm,gredu,dlmo,ustar
+
+  ! Local variables
+  double precision tstar
+  double precision dlmo_old,ustar_old,tstar_old
+  double precision coef_mom,coef_moh
+  double precision prec_lmo,prec_ustar,prec_tstar,arr_lmo
+  double precision num, denom
+  integer icompt
+
+  ! Precision initialisation
+  prec_lmo=1.d-2
+  prec_ustar=1.d-2
+  prec_tstar=1.d-2
+  arr_lmo=1.d-2
+
+  icompt=0
+
+  ! Initial LMO
+  if (dt.ge.0.d0) then
+    dlmo = 0.02d0
+  else
+    dlmo=-0.02d0
+  endif
+
+  ! Call universal functions
+  call mo_psim(z+z0,z0,dlmo,coef_mom)
+  call mo_psih(z+z0,z0,dlmo,coef_moh)
+
+  ! Initial ustar and tstar
+  ustar = xkappa * du / coef_mom
+  if (abs(coef_moh).gt.epzero) then
+    tstar = xkappa*dt/coef_moh
+  else
+    tstar = 0.d0
+  endif
+
+
+123 continue
+
+  icompt=icompt+1
+
+  ! Storage previous values
+  dlmo_old = dlmo
+  ustar_old = ustar
+  tstar_old = tstar
+
+  ! Update LMO
+  num = coef_mom**2.d0 * gredu * dt
+  denom = (du**2.d0)*tm*coef_moh
+  if (abs(denom).gt.(epzero* abs(num))) then
+    dlmo = num / denom
+  else
+    dlmo = 0.d0 !FIXME
+  endif
+
+  ! Clipping LMO
+  if (abs(dlmo).ge.0.05d0) then
+    if (dlmo.ge.0.d0) dlmo= 0.05d0
+    if (dlmo.le.0.d0) dlmo=-0.05d0
+  endif
+
+  ! Evaluate universal functions
+  call mo_psim (z+z0,z0,dlmo,coef_mom)
+  call mo_psih (z+z0,z0,dlmo,coef_moh)
+
+  ! Update ustar,tstar
+  ustar = xkappa*du/coef_mom
+  if (abs(coef_moh).gt.epzero) then
+    tstar=xkappa*dt/coef_moh
+  else
+    tstar=0.d0
+  endif
+
+  ! Convergence test
+  if (icompt.le.1000) then !FIXME compteur max 1000 a mettre en param
+    if (abs(ustar_old).gt.epzero.and.abs((ustar-ustar_old)).ge.prec_ustar*ustar_old) go to 123
+    if (abs(tstar_old).gt.epzero.and.abs((tstar-tstar_old)).ge.prec_tstar*tstar_old) go to 123
+    if (abs(dlmo_old).gt.epzero.and.abs((dlmo-dlmo_old)).ge.prec_lmo*dlmo_old) go to 123
+
+    if (abs(ustar_old).le.epzero.and.abs(ustar).gt.epzero) go to 123
+    if (abs(tstar_old).le.epzero.and.abs(tstar).gt.epzero) go to 123
+    if (abs(dlmo_old).le.epzero.and.abs(dlmo).gt.epzero) go to 123
+  endif
+
+
+  return
+
+end subroutine mo_compute_from_thermal_diff
+
 end module atincl

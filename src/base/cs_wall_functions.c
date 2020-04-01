@@ -120,6 +120,11 @@ BEGIN_C_DECLS
              Prandtl number smaller than 0.1
         - CS_WALL_F_S_VDRIEST: consistant with the 2 scales wall function for velocity using Van
              Driest mixing length
+        - CS_WALL_F_S_LOUIS: default wall function for atmospheric flows for
+             potential temperature. This has influence on the dynamic.
+        - CS_WALL_F_S_MONIN_OBUKHOV: Monin Obukhov wall function for atmospheric flows for
+             potential temperature. This has influence on the dynamic.
+
   \var  cs_wall_functions_t::iwallt
         exchange coefficient correlation
         - 0: not use by default

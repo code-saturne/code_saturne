@@ -378,6 +378,26 @@ static cs_turb_les_model_t  _turb_les_model =
 
 const cs_turb_les_model_t  *cs_glob_turb_les_model = &_turb_les_model;
 
+/*============================================================================
+ *  Global variables
+ *============================================================================*/
+
+static const char *_wall_f_names[] = {N_("Disabled"),
+                                      N_("One scale power law, forbidden for k-eps"),
+                                      N_("One scale log law"),
+                                      N_("Two scales log law"),
+                                      N_("Scalable wall function"),
+                                      N_("Two scales Van Driest"),
+                                      N_("Two scales smooth/rough"),
+                                      N_("All y+")};
+
+
+static const char *_wall_f_s_names[] = {N_("Arparci and Larsen"),
+                                        N_("Van Driest"),
+                                        N_("Louis (atmo flows)"),
+                                        N_("Monin Obukhov (atmo flows)")};
+
+
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*!
@@ -393,7 +413,7 @@ const double cs_turb_xkappa = 0.42;
  * Van Driest constant. (= 25.6)
  *
  * Useful if and only if \ref cs_wall_functions_t::iwallf
- * "cs_glob_wall_functions::iwallf" = 5.
+ * "cs_glob_wall_functions::iwallf" = CS_WALL_F_2SCALES_VDRIEST.
  *  (Two scales log law at the wall using Van Driest mixing length expression).
  */
 const double cs_turb_vdriest = 25.6;
@@ -1408,23 +1428,23 @@ cs_turb_model_log_setup(void)
        _("   Second order model           (order = CS_TURB_SECOND_ORDER)\n"));
 
   cs_log_printf(CS_LOG_SETUP,
-     _("    iturb :      %14d (Turbulence model)\n"
-       "    iwallf:      %14d (wall function)\n"
-       "                                (0: disabled)\n"
-       "                                (1: one scale power law\n"
-       "                                (forbidden for k-epsilon))\n"
-       "                                (2: one scale log law)\n"
-       "                                (3: two scales log law)\n"
-       "                                (4: scalable wall function)\n"
-       "                                (5: two scales V. Driest)\n"
-       "                                (6: two scales smooth/rough)\n"
-       "    iwallt:      %14d (Exch. coeff. correlation)\n"
+     _("    iturb :      %14d (Turbulence model)\n"),
+       cs_glob_turb_model->iturb);
+
+  cs_log_printf(CS_LOG_SETUP,
+       _("    iwallf                      (wall function:\n"
+         "                                 %s)\n"
+         "    iwalfs                      (Scalar wall function:\n"
+         "                                 %s)\n"),
+       _wall_f_names[cs_glob_wall_functions->iwallf],
+       _wall_f_s_names[cs_glob_wall_functions->iwalfs]);
+
+  cs_log_printf(CS_LOG_SETUP,
+     _("    iwallt:      %14d (Exch. coeff. correlation)\n"
        "                                (0: not activated)\n"
        "                                (1: activated)\n"
        "    ypluli:      %14.5e (Limit Y+)\n"
        "    igrhok:      %14d (1: computed Grad(rho k)\n\n"),
-       cs_glob_turb_model->iturb,
-       cs_glob_wall_functions->iwallf,
        cs_glob_wall_functions->iwallt,
        cs_glob_wall_functions->ypluli,
        cs_glob_turb_rans_model->igrhok);

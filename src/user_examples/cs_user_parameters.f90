@@ -499,9 +499,6 @@ endif
 
 irccor = 1
 
-iwallf = 5
-
-
 ! --- rotation of the reference frame (omega in rad/s)
 
 !       If the rotation is not nul, then
