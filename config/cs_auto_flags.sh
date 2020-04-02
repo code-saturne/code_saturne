@@ -523,10 +523,20 @@ if test "x$cs_gxx" = "xg++"; then
   # may not handle all flags)
 
   case "$cs_cxx_vendor-$cs_cxx_version" in
+    g++-4.[012345678]*)
+      ;;
+    *)
+      cxxflags_default="$cxxflags_default -std=c++11"
+      ;;
+  esac
+
+  # Warning flags as are available by compiler version
+
+  case "$cs_cxx_vendor-$cs_cxx_version" in
     g++-[45]*)
       ;;
     *)
-      cxxflags_default="$cxxflags_default -std=c++11 -Wmisleading-indentation -Wduplicated-cond"
+      cxxflags_default="$cxxflags_default -Wmisleading-indentation -Wduplicated-cond"
       ;;
   esac
 
@@ -537,6 +547,8 @@ if test "x$cs_gxx" = "xg++"; then
       cxxflags_default="$cxxflags_default -fdiagnostics-color=auto"
       ;;
   esac
+
+  # No OpenMP in very old gcc versions
 
   case "$cs_cxx_vendor-$cs_cxx_version" in
     g++-2.*|g++-3*|g++-4.[012]*)
