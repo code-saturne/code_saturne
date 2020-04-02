@@ -412,7 +412,7 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
     int n_vtx;
     cs_lnum_t cell_vtx[8];
 
-    i = elts_list[ic];
+    i = ic;
     fvm_element_t fvm_type = fvm_nodal_from_desc_cell(i,
                                                       2,
                                                       face_num_shift,
