@@ -127,10 +127,11 @@ cs_user_join(void)
 
   /*! [mesh_add_advanced_joining] */
   /* Set advanced parameters */
+  double tmr_distrib = 2.0 ;
 
   cs_join_set_advanced_param(join_num,
                              1.00,          /* merge tolerance factor */
-                             0.10,          /* pre-merge factor */:
+                             0.10,          /* pre-merge factor */
                              1,             /* tolerance computation mode */
                              1,             /* intersection computation mode */
                              500,           /* max. nb. of equivalence breaks */
