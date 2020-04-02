@@ -128,12 +128,22 @@ typedef enum {
  *
  * \def CS_SOLIDIFICATION_POST_CELL_STATE
  * \brief State related to each cell between (solid, mushy, liquid or eutectic)
- */
+ *
+ * \def CS_SOLIDIFICATION_POST_LIQUIDUS_TEMPERATURE
+ * \brief Activate the (volumic) post-processing of the liquidus temperature
+ * in each cell
+ *
+ * \def CS_SOLIDIFICATION_ADVANCED_ANALYSIS
+ * \brief Activate a set of post-processing (Advanced usage. Only for the
+ * understanding of the solidification process)
+*/
 
-#define CS_SOLIDIFICATION_POST_CBULK_ADIM          (1 << 0) /* =  1 */
-#define CS_SOLIDIFICATION_POST_CLIQ                (1 << 1) /* =  2 */
-#define CS_SOLIDIFICATION_POST_CLIQ_ADIM           (1 << 2) /* =  4 */
-#define CS_SOLIDIFICATION_POST_CELL_STATE          (1 << 3) /* =  8 */
+#define CS_SOLIDIFICATION_POST_CBULK_ADIM            (1 << 0) /* =  1 */
+#define CS_SOLIDIFICATION_POST_CLIQ                  (1 << 1) /* =  2 */
+#define CS_SOLIDIFICATION_POST_CLIQ_ADIM             (1 << 2) /* =  4 */
+#define CS_SOLIDIFICATION_POST_CELL_STATE            (1 << 3) /* =  8 */
+#define CS_SOLIDIFICATION_POST_LIQUIDUS_TEMPERATURE  (1 << 4) /* = 16 */
+#define CS_SOLIDIFICATION_ADVANCED_ANALYSIS          (1 << 5) /* = 32 */
 
 /*!
  * @name Flags specifying numerical options specific to the solidification
@@ -146,9 +156,19 @@ typedef enum {
  * quantity (C - Cl). The default behavior is to add a weighting coefficient
  * to the (implicit) advection term related to the liquid fraction
  *
+ * \def CS_SOLIDIFICATION_UPDATE_GL_WITH_TAYLOR_EXPANSION
+ * \brief The update of the liquid fraction using a Taylor expansion in time
+ *   dgl/dt = dgl/dT*(dT/dt) + dgl/dC*(dC/dt)
+ *
+ * \def CS_SOLIDIFICATION_UPDATE_SOURCE_TERM_BY_STEP
+ * \brief Update the source term related to the thermal equation considering
+ * a path between the initial and final state. For each step, one considers to
+ * add or not a source term.
  */
 
 #define CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM  (1 << 0) /* =  1 */
+#define CS_SOLIDIFICATION_UPDATE_GL_WITH_TAYLOR_EXPANSION    (1 << 1) /* =  2 */
+#define CS_SOLIDIFICATION_UPDATE_SOURCE_TERM_BY_STEP         (1 << 2) /* =  4 */
 
 /*!
  * @}
