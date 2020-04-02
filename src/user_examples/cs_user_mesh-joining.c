@@ -126,22 +126,18 @@ cs_user_join(void)
      joining step or to get a better mesh quality. */
 
   /*! [mesh_add_advanced_joining] */
-  /* Set advanced parameters */
-  double tmr_distrib = 2.0 ;
-
   cs_join_set_advanced_param(join_num,
-                             1.00,          /* merge tolerance factor */
-                             0.10,          /* pre-merge factor */
-                             1,             /* tolerance computation mode */
-                             1,             /* intersection computation mode */
-                             500,           /* max. nb. of equivalence breaks */
-                             100,           /* maximum number of sub-faces */
-                             30,            /* tree max level */
-                             25,            /* tree max boxes per node */
-                             5.0,           /* tree max ratio */
-                             tmr_distrib);  /* distribution tree max ration */
+                             1.00,      /* merge tolerance factor */
+                             0.10,      /* pre-merge factor */
+                             1,         /* tolerance computation mode */
+                             1,         /* intersection computation mode */
+                             500,       /* max. nb. of equivalence breaks */
+                             100,       /* maximum number of sub-faces */
+                             30,        /* tree max level */
+                             25,        /* tree max boxes per node */
+                             5.0,       /* tree max ratio */
+                             2.0);      /* distribution tree max ratio */
   /*! [mesh_add_advanced_joining] */
-
 }
 
 /*----------------------------------------------------------------------------*/
