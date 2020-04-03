@@ -143,7 +143,7 @@ typedef struct {
                                been written */
   char **prev_files;        /* Names of the previous versions */
 
-} _cs_restart_multiwriter_t;
+} _restart_multiwriter_t;
 
 /*============================================================================
  * Prototypes for private functions
@@ -224,9 +224,9 @@ static _location_t  *_location_ref;       /* Location definition array */
 
 /* Restart multi writer */
 
-static int                          _n_restart_directories_to_write = 1;
-static int                          _n_restart_multiwriters          = 0;
-static _cs_restart_multiwriter_t  **_restart_multiwriter             = NULL;
+static int                       _n_restart_directories_to_write = 1;
+static int                       _n_restart_multiwriters          = 0;
+static _restart_multiwriter_t  **_restart_multiwriter             = NULL;
 
 /*============================================================================
  * Private function definitions
@@ -1606,78 +1606,20 @@ _update_mesh_checkpoint(void)
  */
 /*----------------------------------------------------------------------------*/
 
-static _cs_restart_multiwriter_t *
-_cs_restart_multiwriter_create(void)
+static _restart_multiwriter_t *
+_restart_multiwriter_create(void)
 {
-  _cs_restart_multiwriter_t *new_writer = NULL;
-  BFT_MALLOC(new_writer, 1, _cs_restart_multiwriter_t);
+  _restart_multiwriter_t *new_writer = NULL;
+  BFT_MALLOC(new_writer, 1, _restart_multiwriter_t);
 
   new_writer->id = -1;
   new_writer->name = NULL;
   new_writer->path = NULL;
-  new_writer->n_prev_files = 0;
+  new_writer->n_prev_files = -1;  /* set at 0 after first (single) output */
   new_writer->n_prev_files_tot = 0;
   new_writer->prev_files = NULL;
 
   return new_writer;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get a multiwriter using the name of the restart file.
- *
- * Returns a pointer to the writer object. If no writer has that name,
- * a NULL pointer is returned.
- *
- * \param[in] name  name of the restart file (char *)
- *
- * \return  pointer to the multiwriter object.
- */
-/*----------------------------------------------------------------------------*/
-
-static _cs_restart_multiwriter_t *
-_cs_restart_multiwriter_by_name(const char name[])
-{
-  _cs_restart_multiwriter_t *writer = NULL;
-
-  if (_restart_multiwriter != NULL && _n_restart_multiwriters != 0) {
-    for (int i = 0; i < _n_restart_multiwriters; i++) {
-      if (strcmp(_restart_multiwriter[i]->name, name) == 0) {
-        writer = _restart_multiwriter[i];
-        break;
-      }
-    }
-  }
-
-  return writer;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief   Get a multiwriter using the path of the restart file.
- *
- * Returns a pointer to the writer object. If no writer has that path,
- * a NULL pointer is returned.
- *
- * \param[in] path  path to the restart file (char *)
- *
- * \return  pointer to the multiwriter object.
- */
-/*----------------------------------------------------------------------------*/
-
-static _cs_restart_multiwriter_t *
-_cs_restart_multiwriter_by_path(const char path[])
-{
-  _cs_restart_multiwriter_t *writer = NULL;
-  if (_restart_multiwriter != NULL && _n_restart_multiwriters != 0) {
-    for (int i = 0; i < _n_restart_multiwriters; i++) {
-      if (strcmp(_restart_multiwriter[i]->path, path) == 0) {
-        writer = _restart_multiwriter[i];
-        break;
-      }
-    }
-  }
-  return writer;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1693,10 +1635,10 @@ _cs_restart_multiwriter_by_path(const char path[])
  */
 /*----------------------------------------------------------------------------*/
 
-static _cs_restart_multiwriter_t *
-_cs_restart_multiwriter_by_id(const int id)
+static _restart_multiwriter_t *
+_restart_multiwriter_by_id(const int id)
 {
-  _cs_restart_multiwriter_t *writer = NULL;
+  _restart_multiwriter_t *writer = NULL;
   if (id >= 0 && id < _n_restart_multiwriters)
     writer = _restart_multiwriter[id];
 
@@ -1717,8 +1659,8 @@ _cs_restart_multiwriter_by_id(const int id)
 /*----------------------------------------------------------------------------*/
 
 static int
-_add_cs_restart_multiwriter(const char  name[],
-                            const char  path[])
+_add_restart_multiwriter(const char  name[],
+                         const char  path[])
 {
   /* Check if the writer already exists */
   for (int i = 0; i < _n_restart_multiwriters; i++) {
@@ -1738,14 +1680,14 @@ _add_cs_restart_multiwriter(const char  name[],
   if (_n_restart_multiwriters == 0)
     BFT_MALLOC(_restart_multiwriter,
                _n_restart_multiwriters + 1,
-               _cs_restart_multiwriter_t *);
+               _restart_multiwriter_t *);
   else
     BFT_REALLOC(_restart_multiwriter,
                _n_restart_multiwriters + 1,
-               _cs_restart_multiwriter_t *);
+               _restart_multiwriter_t *);
 
   /* Create the empty structure */
-  _cs_restart_multiwriter_t *new_writer = _cs_restart_multiwriter_create();
+  _restart_multiwriter_t *new_writer = _restart_multiwriter_create();
 
   /* Set id */
   new_writer->id = _n_restart_multiwriters;
@@ -1789,8 +1731,8 @@ _add_cs_restart_multiwriter(const char  name[],
 /*----------------------------------------------------------------------------*/
 
 static void
-_cs_restart_multiwriter_increment(_cs_restart_multiwriter_t  *mw,
-                                  const char                  fname[])
+_restart_multiwriter_increment(_restart_multiwriter_t  *mw,
+                               const char               fname[])
 {
   mw->n_prev_files++;
   mw->n_prev_files_tot++;
@@ -2253,11 +2195,11 @@ cs_restart_create(const char         *name,
   } else if (mode == CS_RESTART_MODE_WRITE) {
 
     /* Check if file already exists, and if so rename and delete if needed */
-    int writer_id = _add_cs_restart_multiwriter(name, _name);
-    _cs_restart_multiwriter_t *mw = _cs_restart_multiwriter_by_id(writer_id);
+    int writer_id = _add_restart_multiwriter(name, _name);
+    _restart_multiwriter_t *mw = _restart_multiwriter_by_id(writer_id);
 
     /* Rename an already existing file */
-    if (cs_file_isreg(_name)) {
+    if (cs_file_isreg(_name) && mw->n_prev_files > -1) {
 
       char _subdir[19];
       sprintf(_subdir, "previous_dump_%04d", mw->n_prev_files_tot);
@@ -2284,13 +2226,14 @@ cs_restart_create(const char         *name,
 
       rename(_name, _re_name);
 
-      _cs_restart_multiwriter_increment(mw, _re_name);
+      _restart_multiwriter_increment(mw, _re_name);
 
       BFT_FREE(_re_name);
     }
+    else
+      mw->n_prev_files = 0;
   }
 
-  int name_has_extension = cs_file_endswith(name, _extension);
   /* Allocate and initialize base structure */
 
   BFT_MALLOC(restart, 1, cs_restart_t);
@@ -4108,7 +4051,7 @@ cs_restart_clean_multiwriters_history(void)
     return;
 
   for (int i = 0; i < _n_restart_multiwriters; i++) {
-    _cs_restart_multiwriter_t *mw = _cs_restart_multiwriter_by_id(i);
+    _restart_multiwriter_t *mw = _restart_multiwriter_by_id(i);
 
     int n_files_to_remove
       = mw->n_prev_files - _n_restart_directories_to_write + 1;
@@ -4135,8 +4078,12 @@ cs_restart_clean_multiwriters_history(void)
 
         BFT_FREE(mw->prev_files[ii]);
 
-        /* Rotate available paths */
-        int jj = ii + n_files_to_remove;
+      }
+
+      /* Rotate available paths */
+
+      int ii = 0;
+      for (int jj = n_files_to_remove; jj < mw->n_prev_files; jj++) {
         mw->prev_files[ii] = mw->prev_files[jj];
         mw->prev_files[jj] = NULL;
       }
@@ -4159,7 +4106,7 @@ cs_restart_multiwriters_destroy_all(void)
 {
   if (_restart_multiwriter != NULL) {
     for (int i = 0; i < _n_restart_multiwriters; i++) {
-      _cs_restart_multiwriter_t *w = _restart_multiwriter[i];
+      _restart_multiwriter_t *w = _restart_multiwriter[i];
 
       BFT_FREE(w->name);
       BFT_FREE(w->path);
