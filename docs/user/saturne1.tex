@@ -2,7 +2,7 @@
 
 % This file is part of Code_Saturne, a general-purpose CFD tool.
 %
-% Copyright (C) 1998-2019 EDF S.A.
+% Copyright (C) 1998-2020 EDF S.A.
 %
 % This program is free software; you can redistribute it and/or modify it under
 % the terms of the GNU General Public License as published by the Free Software
@@ -209,7 +209,6 @@ where \texttt{install\_directory} is the base directory where
 
 This step may be skipped if \texttt{\$\{install\_directory\}} is in a standard location (such as \texttt{/usr} or \texttt{/usr/local}.
 
-
 %==================================
 \subsubsection{Configuration file}
 %==================================
@@ -331,12 +330,12 @@ calculation domain is defined by its own directory (bearing the same name
 as the domain), but results are placed in a \texttt{RESU\_COUPLING}
 directory, with a subdirectory for each run, itself containing one
 subdirectory per coupled domain. Coupled cases are run through
-the standard the {\texttt{code\_saturne run} command, but require a coupling
+the standard the \texttt{code\_saturne run} command, but require a coupling
 parameters file (\texttt{coupling\_parameters.py}) specified using the
-{\texttt{--coupling option}. The run command must be called from the toplevel
-({\texttt{STUDY}) directory, so an additional {\texttt{STUDY/runcase} launch
+\texttt{--coupling option}. The run command must be called from the toplevel
+(\texttt{STUDY}) directory, so an additional \texttt{STUDY/runcase} launch
 script is used in this case. Note that case-local scripts (such as
-{\texttt{STUDY/CASE1/SCRIPTS/runcase}) are still used by the master script to
+\texttt{STUDY/CASE1/SCRIPTS/runcase}) are still used by the master script to
 determine which parameter file to use.
 
 So in the coupled case, calculation results would not be placed in
@@ -822,7 +821,7 @@ but not increasing it. Also, in the case of a restart, it refers to the
 number of additional time steps, not to the number of absolute time steps.
 
 Note that for the \texttt{postprocess\_time\_*} options, the last argument
-(\texttt{writer\_id}} is optional. If not defined, or 0, postprocessing
+(\texttt{writer\_id}) is optional. If not defined, or 0, postprocessing
 is activated for all writers; if specified, only the writer with the specified
 id is affected. Also, postprocessing output by one ore more writers at a
 future time step may be cancelled using the negative value of that time step.
@@ -3103,7 +3102,7 @@ selection of imported meshes read, reading files multiple times,
 applying geometric transformations, and renaming groups.
 
 The user function \texttt{cs\_user\_mesh\_modify} may be used
-for advanced modification of the main \texttt{cs\_mesh\_t}} structure.
+for advanced modification of the main \texttt{cs\_mesh\_t} structure.
 
 {\em WARNING: Caution must be exercised when using this function
 along with periodicity. Indeed, the periodicity parameters are not
@@ -6840,11 +6839,10 @@ words \texttt{ivimpo\index{ivimpo}}, \texttt{igliss\index{igliss}},
 
  \item if \texttt{ialtyb(ifac) = ifresf}: free-surface
 \begin{list}{$\rightarrow$}{}
-\item an imposed mesh velocity such that the fluid mass flux is equal to the mesh displacement in order to mimic the free-surface automatically. Note that the boundary condition on the fluid velocity must be set separately (homogeneous Neumann conditionfor instance).
+\item an imposed mesh velocity such that the fluid mass flux is equal to the mesh displacement in order to mimic the free-surface automatically. Note that the boundary condition on the fluid velocity must be set separately (homogeneous Neumann condition for instance).
 \end{list}
 
 \end{list}
-}
 
 %==================================
 \subsubsection{Modification of the mesh viscosity}
