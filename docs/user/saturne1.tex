@@ -1608,31 +1608,11 @@ execution directory.
 When not using the GUI, or if additional options must be accessed,
 the \texttt{cs\_user\_scripts.py} file may be copied from
 the \texttt{DATA/REFERENCE} to the \texttt{DATA} and edited.
-This file contains several Python functions:
-
-\begin{list}{$\bullet$}{}
-
-\item \texttt{define\_domain\_parameter\_file} allows defining
- the choice of a parameters file produced by the GUI. This is
- generally not useful, as the parameters file may be directly
- defined in \texttt{runcase}, or passed
- as an option to \texttt{code\_saturne run}, but could be useful
- when running more complex parametric scripts, and is provided for
- the sake of completeness.
-\item \texttt{define\_domain\_parameters} allows defining
- most parameters relative to case execution for the current
- domain, including advanced options not accessible
- through the GUI. This function is the most important one in the user
- scripts file, and contains descriptions of the various options.
- Note that in most examples, setting of options is preceded by
- a \texttt{if domain.param == None:} line, ensuring the settings
- are only active if no GUI-defined parameters file is present.
- This is used to prevent accidental override of parameters defined
- by the GUI: parameters defined through the user script have priority
- over the GUI parameters file, so if both are used, these tests
- may be removed for parameters which should be defined through
- user scripts.
-\end{list}
+This file contains several Python functions.
+The main function, \texttt{define\_domain\_parameters}, allows defining
+most parameters relative to case execution for the current
+domain, including advanced options not accessible
+through the GUI, or overriding options set through the GUI.
 
 %==================================
 \subsection{Graphical User Interface}
@@ -2201,8 +2181,8 @@ in the standard cases:
       defined through the GUI in a non-batch environment
       (so that studies defined on one environment may be migrated
       to larger compute resources easily), but it may be overridden
-      by the \texttt{define\_case\_parameters} function from
-      the \texttt{cs\_user\_scripts.py} file, or by setting the
+      by the \texttt{--nprocs} option for \texttt{code\_saturne~ run}
+      in the \texttt{runcase} file, or by setting the
       \texttt{n\_procs\_weight}, \texttt{n\_procs\_min}, and
       \texttt{n\_procs\_max} parameters for the different domains
       defined in \texttt{coupling\_parameters.py}.
