@@ -321,42 +321,88 @@ cs_lagr_log_setup(void)
                 _("\n"
                   "Lagrangian model options\n"
                   "------------------------\n"));
+  cs_log_printf(CS_LOG_SETUP,
+                ("  Continuous phase:\n"));
 
-  cs_log_printf
-    (CS_LOG_SETUP,
-     _("  Continuous phase:\n"
-       "    iilagr:                 %3d  (0: Lagrangian deactivated\n"
-       "                                  1: one way coupling\n"
-       "                                  2: two way coupling\n"
-       "                                  3: on frozen fields)\n"
-       "    restart: %s\n"
-       "    statistics/return source terms restart: %s\n\n"
-       "  Specific physics associated with particles\n"
-       "    physical_model:         %3d  (0: no additional equations\n"
-       "                                  1: equations on Dp Tp Mp\n"
-       "                                  2: coal particles)\n"),
-     cs_glob_lagr_time_scheme->iilagr,
-     _status(cs_glob_lagr_time_scheme->isuila),
-     _status(cs_glob_lagr_stat_options->isuist),
-     cs_glob_lagr_model->physical_model);
+  const char *iilagr_value_str[]
+    = {N_("  CS_LAGR_OFF (no Lagrangian model)"),
+       N_("  CS_LAGR_ONEWAY_COUPLING (one way coupling)"),
+       N_("  CS_LAGR_TOWAY_COUPLING (two way coupling)"),
+       N_("  CS_LAGR_FROZEN_CONTINUOUS_PHASE (on frozen fields)")};
 
-  if (cs_glob_lagr_model->physical_model == 1)
-    cs_log_printf
-      (CS_LOG_SETUP,
-       _("    idpvar:                 %3d  (1: eqn diameter Dp,    or 0)\n"
-         "    itpvar:                 %3d  (1: eqn temperature Tp, or 0)\n"
-         "    impvar:                 %3d  (1: eqn mass Mp,        or 0)\n"),
-       cs_glob_lagr_specific_physics->idpvar,
-       cs_glob_lagr_specific_physics->itpvar,
-       cs_glob_lagr_specific_physics->impvar);
+  const char *isuila_value_str[] = {N_("  off (restart not activated)"),
+                                    N_("  on (restart activated)")};
 
-  cs_log_printf
-    (CS_LOG_SETUP,
-     _("\n  Global parameters:\n"
-       "    user particle variables: %2d\n"
-       "    isttio:                 %3d  (1: steady carrier phase)\n"),
-     cs_glob_lagr_model->n_user_variables,
-     cs_glob_lagr_time_scheme->isttio);
+  const char *isuist_value_str[] = {N_("  off (reinitialized)"),
+                                    N_("  on (read from restart file)")};
+
+  const char *physical_model_value_str[]
+    = {N_("  0 (no additional equations)"),
+       N_("  1 (equations on Dp Tp Mp)"),
+       N_("  2 (coal particles)")};
+  cs_log_printf(CS_LOG_SETUP,
+                _("    iilagr:    %s\n"),
+                _(iilagr_value_str[cs_glob_lagr_time_scheme->iilagr]));
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("    Restart options\n"));
+  cs_log_printf(CS_LOG_SETUP,
+                _("    isuila:    %s\n"),
+                _(isuila_value_str[cs_glob_lagr_time_scheme->isuila]));
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("    Statistics/return source terms restart\n"));
+  cs_log_printf(CS_LOG_SETUP,
+                _("    isuist:    %s\n"),
+                _(isuist_value_str[cs_glob_lagr_stat_options->isuist]));
+
+  cs_log_printf(CS_LOG_SETUP,
+                ("    Additional models associated with particles\n"));
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("    physical_model:    %s\n"),
+                _(physical_model_value_str[cs_glob_lagr_model->physical_model]));
+
+  if (cs_glob_lagr_model->physical_model == 1) {
+    const char *idpvar_value_str[]
+      = {N_("    0 (no evolution equation on particle diameter)"),
+         N_("    1 (solve the particle diameter evolution)")};
+
+    const char *itpvar_value_str[]
+      = {N_("    0 (equation on the particle temperature)"),
+         N_("    1 (solve the particle temperature)")};
+
+    const char *impvar_value_str[]
+      = {N_("    0 (no evolution equation on particle mass)"),
+         N_("    1 (solve the particle mass)")};
+
+    cs_log_printf(CS_LOG_SETUP,
+                  _("    idpvar:    %s\n"),
+                  _(idpvar_value_str[cs_glob_lagr_specific_physics->idpvar]));
+
+    cs_log_printf(CS_LOG_SETUP,
+                  _("    itpvar:    %s\n"),
+                  _(itpvar_value_str[cs_glob_lagr_specific_physics->itpvar]));
+
+    cs_log_printf(CS_LOG_SETUP,
+                  _("    impvar:    %s\n"),
+                  _(impvar_value_str[cs_glob_lagr_specific_physics->impvar]));
+  }
+
+  const char *isttio_value_str[]
+    = {N_("  0 (unsteady the continuous phase flow)"),
+       N_("  1 (steady continuous phase flow)")};
+
+  cs_log_printf(CS_LOG_SETUP,
+                ("\n  Global parameters:\n"));
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("    user particle variables: %22d\n"),
+                cs_glob_lagr_model->n_user_variables);
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("    isttio:    %s\n"),
+                _(isttio_value_str[cs_glob_lagr_time_scheme->isttio]));
 
   if (cs_glob_lagr_model->physical_model == 2) {
 

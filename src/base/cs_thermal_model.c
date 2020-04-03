@@ -244,23 +244,42 @@ cs_get_glob_thermal_model(void)
 void
 cs_thermal_model_log_setup(void)
 {
+  int itherm = cs_glob_thermal_model->itherm;
+  int itpscl = cs_glob_thermal_model->itpscl;
+
+  cs_log_printf(CS_LOG_SETUP,
+                ("\n"
+                 "Thermal model options\n"
+                 "---------------------\n\n"
+                 "  Continuous phase:\n\n"));
+
+  const char *itherm_value_str[]
+    = {N_("no thermal model"),
+       N_("temperature)"),
+       N_("enthalpy"),
+       N_("total energy")};
+
+  const char *itpscl_value_str[]
+    = {N_("none"),
+       N_("temperature in Kelvin"),
+       N_("temperature in Celsius")};
+
+  cs_log_printf(CS_LOG_SETUP,
+                ("    Thermal model\n"));
+  cs_log_printf(CS_LOG_SETUP,
+                _("    itherm:    %d (%s)\n"),
+                itherm, _(itherm_value_str[itherm]));
+
+  cs_log_printf(CS_LOG_SETUP,
+                ("    Temperature scale\n"));
+  cs_log_printf(CS_LOG_SETUP,
+                _("    itpscl:    %d (%s)\n"),
+                itpscl, _(itpscl_value_str[itpscl]));
+
   cs_log_printf
     (CS_LOG_SETUP,
-     _("\n"
-       "Thermal model options\n"
-       "---------------------\n\n"
-       "  Continuous phase:\n\n"
-       "    itherm:      %14d (0: no thermal model)\n"
-       "                                (1: temperature)\n"
-       "                                (2: enthalpy)\n"
-       "                                (3: total energy)\n"
-       "    itpscl:      %14d (0: none)\n"
-       "                                (1: temperature in kelvin)\n"
-       "                                (2: temperature in celsius)\n"
-       "    iscalt:      %14d (thermal scalar number)\n"),
-       cs_glob_thermal_model->itherm,
-       cs_glob_thermal_model->itpscl,
-       cs_glob_thermal_model->iscalt);
+     _("    iscalt:    %5d (thermal scalar number)\n"),
+     cs_glob_thermal_model->iscalt);
 }
 
 /*----------------------------------------------------------------------------*/

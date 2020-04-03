@@ -619,14 +619,18 @@ cs_physical_constants_log_setup(void)
 
   cs_log_printf
     (CS_LOG_SETUP,
-     _("    gravity:    [%14.5e, (Gravity x component)\n"
-       "                 %14.5e, (Gravity y component)\n"
-       "                 %14.5e] (Gravity z component)\n"
-       "    icorio:      %14d (Coriolis source terms)\n\n"),
-       cs_glob_physical_constants->gravity[0],
-       cs_glob_physical_constants->gravity[1],
-       cs_glob_physical_constants->gravity[2],
-       cs_glob_physical_constants->icorio);
+     _("    gravity vector:    [%g, %g, %g]\n"),
+     cs_glob_physical_constants->gravity[0],
+     cs_glob_physical_constants->gravity[1],
+     cs_glob_physical_constants->gravity[2]);
+
+  const char *icorio_value_str[]
+    = {N_("    0 (ignore Coriolis source terms)"),
+       N_("    1 (apply Coriolis source terms)")};
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("    icorio:    %s\n"),
+                _(icorio_value_str[cs_glob_physical_constants->icorio]));
 }
 
 /*----------------------------------------------------------------------------
@@ -640,18 +644,17 @@ cs_fluid_properties_log_setup(void)
 {
   cs_log_printf
     (CS_LOG_SETUP,
-     _("   Continuous phase:\n"
+     _("\n"
+       "  Continuous phase:\n"
        "    ro0:         %14.5e (Reference density)\n"
        "    viscl0:      %14.5e (Ref. molecular dyn. visc.)\n"
        "    cp0:         %14.5e (Ref. specific heat)\n"
-       "    icp:         %14d (> 0: Variable cp (cs_user_physical_properties))\n"
+       "    icp:         %4d (> 0: Variable Cp (cs_user_physical_properties))\n"
        "    p0:          %14.5e (Ref. total pressure)\n"
        "    pred0:       %14.5e (Ref. reduced pressure)\n"
        "    t0:          %14.5e (Ref. temperature)\n\n"
-       "    irovar:      %14d (Density constant(0) or not(1))\n"
-       "    ivivar:      %14d (Molec. visc cst.(0) or not(1))\n\n"
        "    Initial reference point for pressure\n"
-       "    xyzp0:       %14.5e %14.5e %14.5e\n"),
+       "    xyzp0:       %14.5e %14.5e %14.5e\n\n"),
        cs_glob_fluid_properties->ro0,
        cs_glob_fluid_properties->viscl0,
        cs_glob_fluid_properties->cp0,
@@ -659,11 +662,22 @@ cs_fluid_properties_log_setup(void)
        cs_glob_fluid_properties->p0,
        cs_glob_fluid_properties->pred0,
        cs_glob_fluid_properties->t0,
-       cs_glob_fluid_properties->irovar,
-       cs_glob_fluid_properties->ivivar,
        cs_glob_fluid_properties->xyzp0[0],
        cs_glob_fluid_properties->xyzp0[1],
        cs_glob_fluid_properties->xyzp0[2]);
+
+  const char *irovar_value_str[] = {N_("0 (constant density)"),
+                                    N_("1 (variable density)")};
+  const char *ivivar_value_str[] = {N_("0 (constant molecular viscosity)"),
+                                    N_("1 (variable molecular viscosity)")};
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("    irovar:    %s\n"),
+                _(irovar_value_str[cs_glob_fluid_properties->irovar]));
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("    ivivar:    %s\n"),
+                _(ivivar_value_str[cs_glob_fluid_properties->ivivar]));
 }
 
 /*----------------------------------------------------------------------------*/

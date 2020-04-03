@@ -48,6 +48,7 @@
 
 #include "cs_convection_diffusion.h"
 #include "cs_field.h"
+#include "cs_gradient.h"
 #include "cs_log.h"
 #include "cs_map.h"
 #include "cs_post.h"
@@ -1624,32 +1625,49 @@ cs_parameters_var_cal_opt_default(void)
 void
 cs_space_disc_log_setup(void)
 {
-   cs_log_printf
-     (CS_LOG_SETUP,
-      _("\n"
-        "Space discretization options\n"
-        "----------------------------\n\n"
-        "    imvisf:      %d (face interpolation\n"
-        "                    0: arithmetic\n"
-        "                    1: harmonic)\n"
-        "\n"
-        "    imrgra:      %d (type of gradient reconstruction\n"
-        "                    0: iterative process\n"
-        "                    1: standard least squares method\n"
-        "                    2: least squares method with extended "
-        "neighborhood\n"
-        "                    3: standard least squares method with reduced"
-        " extended neighborhood\n"
-        "                    4: Green-Gauss using least squares face value"
-        " interpolation)\n"
-        "\n"
-        "    iflxmw:      %d (method to compute inner mass flux due to mesh "
-        "velocity in ALE\n"
-        "                    0: based on mesh velocity at cell centers\n"
-        "                    1: based on nodes displacement)\n"),
-        cs_glob_space_disc->imvisf,
-        cs_glob_space_disc->imrgra,
-        cs_glob_space_disc->iflxmw);
+
+  cs_log_printf(CS_LOG_SETUP,
+                ("\n"
+                 "Space discretization options\n"
+                 "----------------------------\n\n"));
+
+  const char *imvisf_value_str[] = {N_("arithmetic"),
+                                    N_("harmonic")};
+  const char *halo_type_str[] = {N_("face neighbors"),
+                                 N_("extended neighborhood")};
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("    imvisf:    %d (%s face viscosity field interpolation)\n"),
+                cs_glob_space_disc->imvisf,
+                _(imvisf_value_str[cs_glob_space_disc->imvisf]));
+
+  cs_gradient_type_t  gradient_type = CS_GRADIENT_GREEN_ITER;
+  cs_halo_type_t  halo_type = CS_HALO_STANDARD;
+
+  cs_gradient_type_by_imrgra(cs_glob_space_disc->imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("\n"
+                  "    imrgra:    %d (gradient reconstruction:\n"
+                  "                  %s,\n"
+                  "                  using %s)\n"),
+                cs_glob_space_disc->imrgra,
+                _(cs_gradient_type_name[gradient_type]),
+                _(halo_type_str[halo_type]));
+
+  const char *iflxmw_value_str[]
+    = {N_("0 (based on mesh velocity at cell centers)"),
+       N_("1 (based on nodes displacement)")};
+
+  cs_log_printf(CS_LOG_SETUP,
+                ("\n"
+                 "    Method to compute inner mass flux due to mesh"
+                 " velocity in ALE\n"));
+  cs_log_printf(CS_LOG_SETUP,
+                _("    iflxmw:    %s\n"),
+                _(iflxmw_value_str[cs_glob_space_disc->iflxmw]));
 }
 
 /*----------------------------------------------------------------------------*/

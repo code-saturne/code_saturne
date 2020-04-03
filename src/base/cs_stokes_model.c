@@ -376,6 +376,8 @@ cs_stokes_model_log_setup(void)
   if (cs_glob_field_pointers == NULL)
     return;
 
+  const cs_stokes_model_t *stokes_model = cs_glob_stokes_model;
+
   cs_var_cal_opt_t var_cal_opt;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
@@ -390,92 +392,147 @@ cs_stokes_model_log_setup(void)
 
   const char *f_pot_label = cs_field_get_label(f_pot);
 
-  cs_log_printf
-    (CS_LOG_SETUP,
-     _("\n"
-       "Secondary viscosity\n"
-       "-------------------\n\n"
-       "   Continuous phase:\n\n"
-       "    ivisse:      %14d (1: accounted for)\n\n"),
-     cs_glob_stokes_model->ivisse);
+  const char *ivisse_value_str[] = {N_("ignored"),
+                                    N_("taken into account")};
 
-  cs_log_printf
-    (CS_LOG_SETUP,
-     _("\n"
-       "Stokes model\n"
-       "------------\n\n"
-       "    idilat:      %14d (0: Boussinesq approximation\n"
-       "                                 1: without unsteady term\n"
-       "                                    in the continuity equation\n"
-       "                                 2: with unsteady term in\n"
-       "                                    the continuity equation\n"
-       "                                 3 : with unsteady term in\n"
-       "                                     the continuity equation\n"
-       "                                     and a thermo pressure\n"
-       "                                     constant in the domain\n"
-       "                                 4 : with unsteady term in\n"
-       "                                and  the continuity equation\n"
-       "                                 5   for fire modelling)\n"
+  cs_log_printf(CS_LOG_SETUP,
+                ("\n"
+                 "Secondary viscosity\n"
+                 "-------------------\n\n"
+                 "  Continuous phase:\n\n"));
 
-       "    iporos:      %14d (0: without porous media\n"
-       "                                 1: with porous media \n"
-       "                                 2: with tensorial porous media\n"
-       "                                 3: with integral formulation\n"
-       "                                    including fluid volumes and\n"
-       "                                    fluid surfaces)\n"
-       "    iphydr:      %14d (1: account for explicit\n"
-       "                                    balance between pressure\n"
-       "                                    gradient, gravity source\n"
-       "                                    terms, and head losses)\n"),
-     cs_glob_stokes_model->idilat,
-     cs_glob_porous_model,
-     cs_glob_stokes_model->iphydr);
+  cs_log_printf(CS_LOG_SETUP,
+                ("    Viscous term of transposed velocity gradient\n"));
+  cs_log_printf(CS_LOG_SETUP,
+                _("    ivisse:        %d (%s)\n"),
+                stokes_model->ivisse,
+                _(ivisse_value_str[stokes_model->ivisse]));
+
+
+  cs_log_printf(CS_LOG_SETUP,
+                ("\n"
+                 "Stokes model\n"
+                 "-------------------\n\n"));
+
+  const char *idilat_value_str[]
+    = {N_("0 (Boussinesq approximation)"),
+       N_("1 (without unsteady term in the continuity equation)"),
+       N_("2 (with unsteady term in the continuity equation)"),
+       N_("3 (with unsteady term in the continuity equationnn\n"
+          "                   "
+          "   and a thermo pressure constant in the domain)"),
+       N_("4 (with unsteady term in the continuity equation)"),
+       N_("5 (for fire modelling)")};
+  cs_log_printf(CS_LOG_SETUP,
+                _("    idilat:        %s\n"),
+                _(idilat_value_str[stokes_model->idilat]));
+
+  const char *iporos_value_str[]
+    = {N_("0 (without porous media)"),
+       N_("1 (with porous media)"),
+       N_("2 (with tensorial porous media)"),
+       N_("3 (with integral formulation\n"
+          "                   "
+          "   including fluid volumes and fluid surfaces)")};
+  cs_log_printf(CS_LOG_SETUP,
+                _("    iporos:        %s\n"),
+                _(iporos_value_str[cs_glob_porous_model]));
+
+  const char *iphydr_value_str[]
+    = {N_("0 (no treatment (default) for the improvement of\n"
+          "                   "
+          "   static pressure algorithm)"),
+       N_("1 (account for explicit balance between pressure\n"
+          "                   "
+          "   gradient, gravity source terms and head losses)"),
+       N_("2 (compute a hydrostatic pressure which is\n"
+          "                   "
+          "   in balance with buoyancy)")};
+  cs_log_printf(CS_LOG_SETUP,
+                _("    iphydr:        %s\n"),
+                _(iphydr_value_str[stokes_model->iphydr]));
 
   /* Sub options of "iphydr=1" */
-  if (cs_glob_stokes_model->iphydr == 1) {
-    cs_log_printf
-      (CS_LOG_SETUP,
-       _("      icalhy:    %14d (1: compute hydrostatic\n"
-         "                                    pressure for dirichlet\n"
-         "                                    conditions for pressure\n"
-         "                                    on outlet)\n"
-         "      igpust:    %14d (1: take user momentum source\n"
-         "                                    terms into account\n"
-         "                                    in the hydrostatic\n"
-         "                                    pressure computation)\n"),
-       cs_glob_stokes_model->icalhy,
-       cs_glob_stokes_model->igpust);
+  if (stokes_model->iphydr == 1) {
+
+    const char *icalhy_value_str[]
+      = {N_("0 ((default)\n"
+            "                   "
+            "   do not compute hydrostatic pressure for dirichlet\n"
+            "                   "
+            "   conditions for pressure on outlet)"),
+         N_("1 (compute hydrostatic pressure for dirichlet\n"
+            "                   "
+            "   conditions for pressure on outlet)")};
+
+    cs_log_printf(CS_LOG_SETUP,
+                  _("    icalhy:        %s\n"),
+                  _(icalhy_value_str[stokes_model->icalhy]));
+
+    const char *igpust_value_str[]
+      = {N_("0 (no treatment for the improvment of static\n"
+            "                   "
+            "   pressure algorithm)"),
+         N_("1 (take user momentum source terms into account\n"
+            "                   "
+            "   in the hydrostatic pressure computation)")};
+
+    cs_log_printf(CS_LOG_SETUP,
+                  _("    igpust:        %s\n"),
+                  _(igpust_value_str[stokes_model->igpust]));
 
     const cs_turb_model_t  *turb_model = cs_get_glob_turb_model();
     if (turb_model != NULL) {
-      if (turb_model->order == CS_TURB_SECOND_ORDER)
-        cs_log_printf(CS_LOG_SETUP,
-         _("      igprij:    %14d (1: take div(rho R)\n"
-           "                                    terms into account\n"
-           "                                    in the hydrostatic\n"
-           "                                    pressure computation)\n"),
-         cs_glob_stokes_model->igprij);
-    }
+      if (turb_model->order == CS_TURB_SECOND_ORDER){
+        const char *igprij_value_str[]
+          = {N_("0 (do not take into account div(rho R) terms in the\n"
+                "                   "
+                "   hydrostatic pressure computation)"),
+             N_("1 (take div(rho R) terms into account\n"
+                "                   "
+                "   in the hydrostatic pressure computation)")};
 
+      cs_log_printf(CS_LOG_SETUP,
+                    _("    igprij:        %s\n"),
+                    _(igprij_value_str[stokes_model->igprij]));
+      }
+    }
   }
+
+  const char *iprco_value_str[]
+    = {N_("0 (do not compute the pressure step\n"
+          "                   "
+          "   using the continuity equation)\n"),
+       N_("1 (compute the pressure step\n"
+          "                   "
+          "   using the continuity equation)")};
+
+  const char *ipucou_value_str[]
+    = {N_("0 (standard algorithm for velocity/pressure coupling)\n"),
+       N_("1 (reinforced velocity/pressure coupling\n"
+          "                   "
+          "   in case calculation with long time steps)")};
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("    iprco:         %s\n"),
+                _(iprco_value_str[stokes_model->iprco]));
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("    ipucou:        %s\n"),
+                _(ipucou_value_str[stokes_model->ipucou]));
 
   cs_log_printf
     (CS_LOG_SETUP,
-     _("    iprco :      %14d (1: pressure-continuity)\n"
-       "    ipucou:      %14d (1: reinforced u-p coupling)\n"
-       "    nterup:      %14d (n: n sweeps on navsto for\n"
-       "                                    velocity/pressure coupling)\n"),
-     cs_glob_stokes_model->iprco,
-     cs_glob_stokes_model->ipucou,
+     _("    nterup:        %d (n: n sweeps on navsto for\n"
+       "                      velocity/pressure coupling)\n"),
      cs_glob_piso->nterup);
-
 
   cs_log_printf
     (CS_LOG_SETUP,
      _("\n"
-       "   Continuous phase:\n\n"
-       "    irevmc:      %14d (Velocity reconstruction mode)\n"),
-     cs_glob_stokes_model->irevmc);
+       "  Continuous phase:\n\n"
+       "    irevmc:     %5d (Velocity reconstruction mode)\n"),
+     stokes_model->irevmc);
 
   if (cs_glob_time_step_options->idtvar >= 0) {
     cs_field_get_key_struct(f_pot, key_cal_opt_id, &var_cal_opt);
@@ -483,13 +540,13 @@ cs_stokes_model_log_setup(void)
       (CS_LOG_SETUP,
        _("    relaxv:      %14.5e for %s (relaxation)\n"
          "    arak:        %14.5e (Arakawa factor)\n"),
-       var_cal_opt.relaxv, f_pot_label, cs_glob_stokes_model->arak);
+       var_cal_opt.relaxv, f_pot_label, stokes_model->arak);
   } else {
     cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &var_cal_opt);
     cs_log_printf
       (CS_LOG_SETUP,
        _("    arak:        %14.5e (Arakawa factor)\n"),
-       var_cal_opt.relaxv * cs_glob_stokes_model->arak);
+       var_cal_opt.relaxv * stokes_model->arak);
   }
 }
 

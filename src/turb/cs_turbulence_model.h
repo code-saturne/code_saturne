@@ -49,7 +49,8 @@ BEGIN_C_DECLS
  * turbulence models
  *----------------------------------------------------------------------------*/
 
-enum {
+typedef enum {
+
   CS_TURB_NONE = 0,
   CS_TURB_MIXING_LENGTH = 10,
   CS_TURB_K_EPSILON = 20,
@@ -66,15 +67,15 @@ enum {
   CS_TURB_V2F_BL_V2K = 51,
   CS_TURB_K_OMEGA = 60,
   CS_TURB_SPALART_ALLMARAS = 70
-};
+
+} cs_turb_model_type_t;
 
 /*----------------------------------------------------------------------------
  * turbulence type of model
  *----------------------------------------------------------------------------*/
 
 enum {
-/* We also use
-  CS_TURB_NONE = 0, */
+  CS_TURB_TYPE_NONE = 0,
   CS_TURB_RANS = 1,
   CS_TURB_LES = 2,
   CS_TURB_HYBRID = 3
@@ -149,7 +150,6 @@ typedef struct {
                                                   Reynolds Stress type models */
 } cs_turb_model_t;
 
-
 /* Reference values for turbulence structure and associated pointer */
 /*------------------------------------------------------------------*/
 
@@ -159,8 +159,7 @@ typedef struct {
   double        uref;         /* characteristic flow velocity */
 } cs_turb_ref_values_t;
 
-
-/* rans turbulence model descriptor */
+/* RANS turbulence model descriptor */
 /*----------------------------------*/
 
 typedef struct {

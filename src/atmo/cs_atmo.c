@@ -850,17 +850,12 @@ cs_atmo_aerosol_log_setup(void)
     (CS_LOG_SETUP,
      _("\nAtmospheric aerosols options\n"
        "---------------------\n\n"));
+
   cs_atmo_aerosol_type_t atm_aer_type = cs_glob_atmo_chemistry->model_aerosol;
 
-  if (atm_aer_type == CS_ATMO_AEROSOL_OFF) {
-
-    /* No atmospheric aerosols */
-    cs_log_printf
-      (CS_LOG_SETUP,
-       _("  %s\n\n"),
-       cs_atmo_aerosol_type_name[atm_aer_type]);
-
-  }
+  if (atm_aer_type == CS_ATMO_AEROSOL_OFF)
+    cs_log_printf(CS_LOG_SETUP,_("  %s\n"),
+                  cs_atmo_aerosol_type_name[atm_aer_type]);
 
   else if (atm_aer_type == CS_ATMO_AEROSOL_SSH) {
 

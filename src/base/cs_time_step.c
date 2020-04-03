@@ -636,18 +636,18 @@ cs_time_step_log_setup(void)
 
       cs_log_printf
         (CS_LOG_SETUP,
-         _("    Time step parameters\n\n"
-           "      idtvar: %21s (%s)\n"
-           "      iptlro:     %17d (1: rho-related DT clipping)\n"
-           "      coumax:     %17.5g (Maximum target CFL)\n"
-           "      foumax:     %17.5g (Maximum target Fourier)\n"
-           "      varrdt:     %17.5g (For var. DT, max. increase)\n"
-           "      dtmin:      %17.5g (Minimum time step)\n"
-           "      dtmax:      %17.5g (Maximum time step)\n"
-           "      dtref:      %17.5g (Reference time step)\n\n"
-           "    When the value of coumax or foumax is negative\n"
-           "    or zero, the associated time step limitation\n"
-           "    (for CFL and Fourier respectively) is ignored.\n\n"),
+         _("  Time step parameters:\n\n"
+           "    idtvar: %21s (%s)\n"
+           "    iptlro:     %17d (1: rho-related DT clipping)\n"
+           "    coumax:     %17.5g (Maximum target CFL)\n"
+           "    foumax:     %17.5g (Maximum target Fourier)\n"
+           "    varrdt:     %17.5g (For var. DT, max. increase)\n"
+           "    dtmin:      %17.5g (Minimum time step)\n"
+           "    dtmax:      %17.5g (Maximum time step)\n"
+           "    dtref:      %17.5g (Reference time step)\n\n"
+           "  When the value of coumax or foumax is negative\n"
+           "  or zero, the associated time step limitation\n"
+           "  (for CFL and Fourier respectively) is ignored.\n\n"),
          cs_time_step_type_enum_name[ts_id],
          cs_time_step_type_name[ts_id],
          cs_glob_time_step_options->iptlro,
@@ -662,11 +662,10 @@ cs_time_step_log_setup(void)
   }
 
   /* Frozen velocity field */
-  cs_log_printf
-    (CS_LOG_SETUP,
-     _("   Frozen velocity field\n\n"
-       "    iccvfg:      %17d (1: Frozen velocity field)\n"),
-       cs_glob_stokes_model->iccvfg);
+  if (cs_glob_stokes_model->iccvfg)
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("  Frozen velocity field\n\n"));
 }
 
 /*----------------------------------------------------------------------------*/

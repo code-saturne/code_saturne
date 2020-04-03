@@ -321,12 +321,16 @@ cs_rad_transfer_log_setup(void)
        "    type:                     %s\n"),
      cs_rad_transfer_model_name[cs_glob_rad_transfer_params->type]);
 
-  cs_log_printf
-    (CS_LOG_SETUP,
-     _("    restart                 %3d  (0: no restart; 1: restart)\n"
-       "    nfreqr:                 %3d  (Radiation pass frequency)\n"),
-     cs_glob_rad_transfer_params->restart,
-     cs_glob_rad_transfer_params->nfreqr);
+  const char *restart_value_str[] = {N_("0 (no restart)"),
+                                     N_("1 (restart)")};
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("    restart:        %s\n"),
+                _(restart_value_str[cs_glob_rad_transfer_params->restart]));
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("    nrestart (Radiation pass frequency):    %d\n"),
+                cs_glob_rad_transfer_params->nfreqr);
 
   if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_DOM) {
     cs_log_printf
@@ -337,49 +341,99 @@ cs_rad_transfer_log_setup(void)
     if (cs_glob_rad_transfer_params->i_quadrature == 6)
       cs_log_printf
         (CS_LOG_SETUP,
-         _("    ndirec:                 %3d\n"),
+         _("    ndirec:                 %d\n"),
          cs_glob_rad_transfer_params->ndirec);
   }
 
-  cs_log_printf
-    (CS_LOG_SETUP,
-     _("    idiver:                 %3d  (0, 1, or 2: method to compute radiative S.T.)\n"
-       "    imodak:                 %3d  (1: Modak absorption coeff.; O none)\n"
-       "    iimpar:                 %3d  (0, 1 or 2: log wall temperature)\n"
-       "    verbosity:              %3d  (0, 1 or 2: log solver info)\n"
-       "    imoadf:                 %3d  (0, 1 or 2: none, ADF08, ADF50)\n"
-       "    imfsck:                 %3d  (0 or 1: no FSCK, FSCK)\n"),
-     cs_glob_rad_transfer_params->idiver,
-     cs_glob_rad_transfer_params->imodak,
-     cs_glob_rad_transfer_params->iimpar,
-     cs_glob_rad_transfer_params->verbosity,
-     cs_glob_rad_transfer_params->imoadf,
-     cs_glob_rad_transfer_params->imfsck);
+  const char *idiver_value_str[]
+    = {N_("0 (semi-analytic calculation\n"
+          "                   "
+          "       (compulsory with transparent media))"),
+       N_("1 (conservative calculation)"),
+       N_("2 (semi-analytic calculation corrected"
+          "                   "
+          "   in order to be globally conservative)")};
 
-  if (cs_glob_rad_transfer_params->atmo_model
-      & CS_RAD_ATMO_3D_DIRECT_SOLAR)
-    cs_log_printf
-      (CS_LOG_SETUP,
-     _("    Direct solar atmospheric 3D model on\n"
-       "      band id = %d\n"),
-     cs_glob_rad_transfer_params->atmo_dr_id);
+  const char *imodak_value_str[]
+    = {N_("0 (none)"),
+       N_("1 (Modak absorption coefficient)")};
 
-  if (cs_glob_rad_transfer_params->atmo_model
-      & CS_RAD_ATMO_3D_DIFFUSE_SOLAR)
-    cs_log_printf
-      (CS_LOG_SETUP,
-     _("    Diffuse solar atmospheric 3D model on\n"
-       "      band id = %d\n"),
-     cs_glob_rad_transfer_params->atmo_df_id);
+  const char *iimpar_value_str[]
+    = {N_("0 (no display)"),
+       N_("1 (standard)"),
+       N_("2 (complete)")};
 
-  if (cs_glob_rad_transfer_params->atmo_model
-      & CS_RAD_ATMO_3D_INFRARED)
-    cs_log_printf
-      (CS_LOG_SETUP,
-     _("    Infra-red atmospheric 3D model on\n"
-       "      band id = %d\n"),
-     cs_glob_rad_transfer_params->atmo_ir_id);
+  const char *iimlum_value_str[]
+    = {N_("0 (no display)"),
+       N_("1 (standard)"),
+       N_("2 (complete)")};
 
+  const char *imoadf_value_str[]
+    = {N_("0 (no AFD model)"),
+       N_("1 (ADF model with 8 wavelength intervals)"),
+       N_("2 (ADF model with 50 wavelength intervals)")};
+
+  const char *imfsck_value_str[]
+    = {N_("0 (no FSCK model)"),
+       N_("1 (FSCK model activated)")};
+
+  cs_log_printf(CS_LOG_SETUP,
+                _("    Method to compute radiative S.T.\n"));
+  cs_log_printf(CS_LOG_SETUP,
+                  _("    idiver:        %s\n"),
+                _(idiver_value_str[cs_glob_rad_transfer_params->idiver]));
+
+  cs_log_printf(CS_LOG_SETUP,
+                  _("    imodak:        %s\n"),
+                _(imodak_value_str[cs_glob_rad_transfer_params->imodak]));
+
+  cs_log_printf(CS_LOG_SETUP,
+                  _("    Log wall temperature\n"));
+  cs_log_printf(CS_LOG_SETUP,
+                  _("    iimpar:        %s\n"),
+                _(iimpar_value_str[cs_glob_rad_transfer_params->iimpar]));
+
+  cs_log_printf(CS_LOG_SETUP,
+                  _("    Log solver info\n"));
+  cs_log_printf(CS_LOG_SETUP,
+                  _("    iimlum:        %s\n"),
+                _(iimlum_value_str[cs_glob_rad_transfer_params->verbosity]));
+
+  cs_log_printf(CS_LOG_SETUP,
+                  _("    imoadf:        %s\n"),
+                _(imoadf_value_str[cs_glob_rad_transfer_params->imoadf]));
+
+  cs_log_printf(CS_LOG_SETUP,
+                  _("    imfsck:        %s\n"),
+                _(imfsck_value_str[cs_glob_rad_transfer_params->imfsck]));
+
+  if (cs_glob_rad_transfer_params->atmo_model) {
+
+    if (  cs_glob_rad_transfer_params->atmo_model
+        & CS_RAD_ATMO_3D_DIRECT_SOLAR)
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("    Direct solar atmospheric 3D model on\n"
+           "      band id = %d\n"),
+         cs_glob_rad_transfer_params->atmo_dr_id);
+
+    if (  cs_glob_rad_transfer_params->atmo_model
+        & CS_RAD_ATMO_3D_DIFFUSE_SOLAR)
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("    Diffuse solar atmospheric 3D model on\n"
+           "      band id = %d\n"),
+         cs_glob_rad_transfer_params->atmo_df_id);
+
+    if (  cs_glob_rad_transfer_params->atmo_model
+        & CS_RAD_ATMO_3D_INFRARED)
+      cs_log_printf
+        (CS_LOG_SETUP,
+         _("    Infra-red atmospheric 3D model on\n"
+           "      band id = %d\n"),
+         cs_glob_rad_transfer_params->atmo_ir_id);
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
