@@ -313,60 +313,41 @@ cs_rad_transfer_log_setup(void)
   cs_log_printf(CS_LOG_SETUP,
                 _("\n"
                   "Radiative thermal transfer options\n"
-                  "----------------------------------\n"));
+                  "----------------------------------\n\n"));
 
   cs_log_printf
     (CS_LOG_SETUP,
      _("  Continuous phase:\n"
-       "    type:                     %s\n"),
+       "    type:          %s\n"),
      cs_rad_transfer_model_name[cs_glob_rad_transfer_params->type]);
 
   const char *restart_value_str[] = {N_("0 (no restart)"),
                                      N_("1 (restart)")};
 
   cs_log_printf(CS_LOG_SETUP,
-                _("    restart:        %s\n"),
+                _("    restart:       %s\n"),
                 _(restart_value_str[cs_glob_rad_transfer_params->restart]));
 
   cs_log_printf(CS_LOG_SETUP,
-                _("    nrestart (Radiation pass frequency):    %d\n"),
+                _("    nrestart:      %d (Radiation pass frequency)\n"),
                 cs_glob_rad_transfer_params->nfreqr);
 
   if (cs_glob_rad_transfer_params->type == CS_RAD_TRANSFER_DOM) {
     cs_log_printf
       (CS_LOG_SETUP,
-       _("    i_quadrature:             %s\n"),
+       _("    i_quadrature:  %s\n"),
        _(cs_rad_transfer_quadrature_name
            [cs_glob_rad_transfer_params->i_quadrature]));
     if (cs_glob_rad_transfer_params->i_quadrature == 6)
       cs_log_printf
         (CS_LOG_SETUP,
-         _("    ndirec:                 %d\n"),
+         _("    ndirec:       %d\n"),
          cs_glob_rad_transfer_params->ndirec);
   }
 
-  const char *idiver_value_str[]
-    = {N_("0 (semi-analytic calculation\n"
-          "                   "
-          "       (compulsory with transparent media))"),
-       N_("1 (conservative calculation)"),
-       N_("2 (semi-analytic calculation corrected"
-          "                   "
-          "   in order to be globally conservative)")};
-
   const char *imodak_value_str[]
-    = {N_("0 (none)"),
+    = {N_("0 (do not use Modak)"),
        N_("1 (Modak absorption coefficient)")};
-
-  const char *iimpar_value_str[]
-    = {N_("0 (no display)"),
-       N_("1 (standard)"),
-       N_("2 (complete)")};
-
-  const char *iimlum_value_str[]
-    = {N_("0 (no display)"),
-       N_("1 (standard)"),
-       N_("2 (complete)")};
 
   const char *imoadf_value_str[]
     = {N_("0 (no AFD model)"),
@@ -377,8 +358,15 @@ cs_rad_transfer_log_setup(void)
     = {N_("0 (no FSCK model)"),
        N_("1 (FSCK model activated)")};
 
-  cs_log_printf(CS_LOG_SETUP,
-                _("    Method to compute radiative S.T.\n"));
+  const char *idiver_value_str[]
+    = {N_("0 (semi-analytic radiative S.T. calculation;\n"
+          "                   "
+          "   compulsory with transparent media)"),
+       N_("1 (conservative radiative S.T. calculation)"),
+       N_("2 (semi-analytic radiative S.T. calculation,"
+          "                   "
+          "   corrected for global conservation)")};
+
   cs_log_printf(CS_LOG_SETUP,
                   _("    idiver:        %s\n"),
                 _(idiver_value_str[cs_glob_rad_transfer_params->idiver]));
@@ -387,14 +375,20 @@ cs_rad_transfer_log_setup(void)
                   _("    imodak:        %s\n"),
                 _(imodak_value_str[cs_glob_rad_transfer_params->imodak]));
 
-  cs_log_printf(CS_LOG_SETUP,
-                  _("    Log wall temperature\n"));
+  const char *iimpar_value_str[]
+    = {N_("0 (do not log wall temperature)"),
+       N_("1 (standard wall temperature log)"),
+       N_("2 (detailed wall temperature compute log)")};
+
   cs_log_printf(CS_LOG_SETUP,
                   _("    iimpar:        %s\n"),
                 _(iimpar_value_str[cs_glob_rad_transfer_params->iimpar]));
 
-  cs_log_printf(CS_LOG_SETUP,
-                  _("    Log solver info\n"));
+  const char *iimlum_value_str[]
+    = {N_("0 (no solver logging)"),
+       N_("1 (standard solver log)"),
+       N_("2 (detailed solver logging)")};
+
   cs_log_printf(CS_LOG_SETUP,
                   _("    iimlum:        %s\n"),
                 _(iimlum_value_str[cs_glob_rad_transfer_params->verbosity]));
