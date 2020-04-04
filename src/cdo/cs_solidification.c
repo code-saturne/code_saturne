@@ -953,6 +953,7 @@ _temp_conc_boussinesq_source_term(cs_lnum_t            n_elts,
 
   /* input is a pointer to a structure */
   const cs_source_term_boussinesq_t  *bq = (cs_source_term_boussinesq_t *)input;
+  const cs_real_t  beta_c = alloy->dilatation_coef;
 
   for (cs_lnum_t i = 0; i < n_elts; i++) {
 
@@ -961,12 +962,12 @@ _temp_conc_boussinesq_source_term(cs_lnum_t            n_elts,
     cs_real_t  *_r = retval + 3*r_id;
 
     /* Thermal effect */
-    cs_real_t  coef = -bq->beta*(bq->var[id] - bq->var0);
+    const cs_real_t  coef_t = -bq->beta*(bq->var[id] - bq->var0);
 
     /* Concentration effect */
-    coef += -alloy->dilatation_coef*(c_l[id] - alloy->ref_concentration);
+    const cs_real_t  coef_c = -beta_c*(c_l[id] - alloy->ref_concentration);
 
-    coef *= bq->rho0;
+    const cs_real_t  coef = bq->rho0*(coef_t + coef_c);
     for (int k = 0; k < 3; k++)
       _r[k] = coef * bq->g[k];
 
