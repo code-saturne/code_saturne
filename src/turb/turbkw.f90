@@ -546,7 +546,7 @@ if (igrake.eq.1) then
     iccocg = 1
     inc = 1
 
-    nswrgp = vcopt_k%nswrgr
+    imrgrp = vcopt_k%imrgra
     nswrgp = vcopt_k%nswrgr
     epsrgp = vcopt_k%epsrgr
     imligp = vcopt_k%imligr
