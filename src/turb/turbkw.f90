@@ -436,7 +436,7 @@ enddo
 
 do iel = 1, ncel
   rho = crom(iel)
-  romvsd = rho*volume(iel)/dt(iel)
+  romvsd = rho*cell_f_vol(iel)/dt(iel)
   tinstk(iel) = vcopt_k%istat*romvsd
   tinstw(iel) = vcopt_w%istat*romvsd
 enddo
@@ -452,23 +452,29 @@ do iel = 1, ncel
   xw   = cvara_omg(iel)
   xeps = cmu*xw*xk
   visct = cpro_pcvto(iel)
+  ! k / (mu_T * omega) , clipped to 1 if mu_t is zero
+  if (visct*xw.le.epzero*xk) then
+    k_dmut_dom = 1.d0
+  else
+    k_dmut_dom = xk / (visct*xw)
+  endif
   rho = cromo(iel)
   prodw(iel) = visct*cpro_s2kw(iel)                    &
              - d2s3*rho*xk*cpro_divukw(iel)
 
-  ! The negative part is implicited
+  ! The negative part is implicit
   xxf1   = xf1(iel)
   xgamma = xxf1*ckwgm1 + (1.d0-xxf1)*ckwgm2
   tinstw(iel) = tinstw(iel)                                         &
-              + max( d2s3*rho*volume(iel)                           &
-                   *(rho*xgamma*xk/(visct*xw))*cpro_divukw(iel), 0.d0)
+              + max( d2s3*rho*cell_f_vol(iel)                           &
+                   *(rho*xgamma* k_dmut_dom)*cpro_divukw(iel), 0.d0)
 
   ! Take the min between prodw and the low Reynold one
   if (prodw(iel).gt.ckwc1*rho*xeps) then
     prodk(iel) = ckwc1*rho*xeps
   else
     prodk(iel) = prodw(iel)
-    tinstk(iel) = tinstk(iel) + max(d2s3*volume(iel)*rho*cpro_divukw(iel), 0.d0)
+    tinstk(iel) = tinstk(iel) + max(d2s3*cell_f_vol(iel)*rho*cpro_divukw(iel), 0.d0)
   endif
 enddo
 

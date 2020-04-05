@@ -377,13 +377,13 @@ do iel = 1, ncel
   gsa   = rsa + csaw2*(rsa**6-rsa)
   fw    = gsa*( (1.d0+csaw3**6)/(gsa**6+csaw3**6))**(1.d0/6.d0)
 
-  rhssa(iel) = volume(iel)*rom*(                                 &
+  rhssa(iel) = cell_f_vol(iel)*rom*(                                 &
      dsigma * csab2*trgrdn(iel)+csab1r(iel)*taussa*nusa-csaw1*fw*(nusa/distbf)**2)
 
   ! Implicitation of the negative source terms of the SA equation.
   ! NB: this term could be negative, and if so, then we explicit it.
   tinssa(iel) = (max(csaw1*fw*nusa/distbf**2-csab1r(iel)*taussa,0.d0)         &
-                      )*rom*volume(iel)
+                      )*rom*cell_f_vol(iel)
 
 enddo
 
@@ -457,7 +457,7 @@ endif
 !     Extrapolated or not in coherence with bilsc2
 do iel = 1, ncel
   rom = crom(iel)
-  romvsd = rom*volume(iel)/dt(iel)
+  romvsd = rom*cell_f_vol(iel)/dt(iel)
 
   ! tinssa already contains the negativ implicited source term
   tinssa(iel) = tinssa(iel)                                        &
@@ -490,7 +490,7 @@ if (ncesmp.gt.0) then
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
    isto2t ,                                                       &
    icetsm , itypsm(1,ivar) ,                                      &
-   volume , cvara_nusa     , smacel(1,ivar) , smacel(1,ipr) ,     &
+   cell_f_vol , cvara_nusa     , smacel(1,ivar) , smacel(1,ipr) ,     &
    rhssa  , tinssa , w1 )
 
   ! --- Explicit part: Gamma Pinj

@@ -323,7 +323,7 @@ if (ncesmp.gt.0) then
   call catsma &
  ( ncelet , ncel   , ncesmp , iiun   , isto2t ,                   &
    icetsm , itypsm(:,ivar)  ,                                     &
-   volume , cvara_ep        , smacel(:,ivar)   , smacel(:,ipr) ,  &
+   cell_f_vol , cvara_ep        , smacel(:,ivar)   , smacel(:,ipr) ,  &
    smbr   , rovsdt , w1 )
 
   ! If we extrapolate the source terms, we put Gamma Pinj in c_st_prv

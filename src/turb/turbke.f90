@@ -1218,7 +1218,7 @@ if (ncesmp.gt.0) then
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
    isto2t ,                                                       &
    icetsm , itypsm(:,ivar)  ,                                     &
-   volume , cvara_k         , smacel(:,ivar) , smacel(1,ipr) ,    &
+   cell_f_vol , cvara_k         , smacel(:,ivar) , smacel(1,ipr) ,    &
    smbrk  , w2     , w4 )
 
   ivar = iep
@@ -1227,7 +1227,7 @@ if (ncesmp.gt.0) then
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
    isto2t ,                                                       &
    icetsm , itypsm(:,ivar)  ,                                     &
-   volume , cvara_ep        , smacel(:,ivar) , smacel(1,ipr) ,    &
+   cell_f_vol , cvara_ep        , smacel(:,ivar) , smacel(1,ipr) ,    &
    smbre  , w3     , w5 )
 
   ! If we extrapolate the source terms we put Gamma Pinj in c_st
