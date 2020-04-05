@@ -489,6 +489,8 @@ if (vcopt_u%iwarni.ge.1) then
   write(nfecra,1010)
 endif
 
+! Disable solid cells in fluid_solid mode
+if (fluid_solid) call cs_mesh_quantities_set_has_disable_flag(1)
 iterns = -1
 call phyvar(nvar, nscal, iterns, dt)
 
@@ -1109,9 +1111,11 @@ do while (iterns.le.nterup)
         call diffst(nscal, iterns)
       endif
 
-      ! Update the density
-      !-------------------
+      ! Update the density and turbulent viscosity
+      !-------------------------------------------
 
+      ! Disable solid cells in fluid_solid mode
+      if (fluid_solid) call cs_mesh_quantities_set_has_disable_flag(1)
       call phyvar(nvar, nscal, iterns, dt)
 
     endif
@@ -1123,9 +1127,6 @@ do while (iterns.le.nterup)
     ! Coupled solving of the velocity components
 
     if (ippmod(idarcy).eq.-1) then
-
-      ! Disable solid cells in fluid_solid mode
-      if (fluid_solid) call cs_mesh_quantities_set_has_disable_flag(1)
 
       call navstv &
       ( nvar   , nscal  , iterns , icvrge , itrale ,                   &

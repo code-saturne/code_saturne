@@ -752,6 +752,7 @@ if (icdpar.eq.-1 .and. ikw.eq.1 .and. isuite.eq.1)                &
      write(nfecra,2001)
 
 ! ---> IKECOU
+
 !     En k-eps prod lin, v2f ou k-omega, on met IKECOU a 0 par defaut,
 !     sinon on le laisse a 1
 !     Dans verini on bloquera le v2f et le k-eps prod lin si IKECOU.NE.0
@@ -764,6 +765,14 @@ if (ikecou.eq.-999) then
     ikecou = 0
   else
     ikecou = 1
+  endif
+endif
+
+!      If the fluid_solid option is enabled, we force ikecou to 0. 
+if (fluid_solid) then
+  if (ikecou .eq. 1) then
+    ikecou = 0
+    write(nfecra,5000)
   endif
 endif
 
@@ -1414,6 +1423,25 @@ endif
 '@',                                                            /)
 
 #endif
+
+ 5000 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ WARNING:       IN THE DATA SPECIFICATION',                /,&
+'@    ========',                                                /,&
+'@',                                                            /,&
+'@  The pseudo coupling of turbulent dissipation and turbulent',/,&
+'@  kinetic energy (ikecou = 1) is not compatible with the use',/,&
+'@  of fluid/solid option to disable the dynamic in the solid ',/,&
+'@  cells (fluid_solid =1). ',                                  /,&
+'@',                                                            /,&
+'@  The parameter ikecou is forced to 0 (no coupling)',         /,&
+'@',                                                            /,&
+'@  The calculation will be run.',                              /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
 
 return
 end subroutine

@@ -1003,9 +1003,9 @@ if (ippmod(icompf).lt.0) then
       ! Update external forces for the computation of the gradients
       !$omp parallel do
       do iel=1,ncel
-        frcxt(1 ,iel) = frcxt(1 ,iel) * (1 - isolid(iporos, iel)) + dfrcxt(1 ,iel)
-        frcxt(2 ,iel) = frcxt(2 ,iel) * (1 - isolid(iporos, iel)) + dfrcxt(2 ,iel)
-        frcxt(3 ,iel) = frcxt(3 ,iel) * (1 - isolid(iporos, iel)) + dfrcxt(3 ,iel)
+        frcxt(1 ,iel) = frcxt(1 ,iel) * cell_is_active(iel) + dfrcxt(1 ,iel)
+        frcxt(2 ,iel) = frcxt(2 ,iel) * cell_is_active(iel) + dfrcxt(2 ,iel)
+        frcxt(3 ,iel) = frcxt(3 ,iel) * cell_is_active(iel) + dfrcxt(3 ,iel)
       enddo
       if (irangp.ge.0.or.iperio.eq.1) then
         call synvin(frcxt)
@@ -1094,13 +1094,13 @@ if (ippmod(icompf).lt.0) then
 
         mass_fl_drhovol1 = 0.d0
         ! If it is not a solid cell
-        if (isolid(iporos, iel1).eq.0) &
+        if (cell_is_active(iel1).eq.1) &
           mass_fl_drhovol1 = imasfl(ifac) / (crom(iel1) * cell_f_vol(iel1))
 
 
         mass_fl_drhovol2 = 0.d0
         ! If it is not a solid cell
-        if (isolid(iporos, iel2).eq.0) &
+        if (cell_is_active(iel2).eq.1) &
           mass_fl_drhovol2 = imasfl(ifac) / (crom(iel2) * cell_f_vol(iel2))
 
         vel(1, iel1) = vel(1, iel1) &
@@ -1124,7 +1124,7 @@ if (ippmod(icompf).lt.0) then
 
         mass_fl_drhovol1 = 0.d0
         ! If it is not a solid cell
-        if (isolid(iporos, iel1).eq.0) &
+        if (cell_is_active(iel1).eq.1) &
           mass_fl_drhovol1 = bmasfl(ifac) / (crom(iel1) * cell_f_vol(iel1))
 
         vel(1, iel1) = vel(1, iel1) &
@@ -1146,13 +1146,13 @@ if (ippmod(icompf).lt.0) then
 
         mass_fl_drhovol1 = 0.d0
         ! If it is not a solid cell
-        if (isolid(iporos, iel1).eq.0) &
+        if (cell_is_active(iel1).eq.1) &
           mass_fl_drhovol1 = imasfl(ifac) / cell_f_vol(iel1)
 
 
         mass_fl_drhovol2 = 0.d0
         ! If it is not a solid cell
-        if (isolid(iporos, iel2).eq.0) &
+        if (cell_is_active(iel2).eq.1) &
           mass_fl_drhovol2 = imasfl(ifac) / cell_f_vol(iel2)
 
         vel(1, iel1) = vel(1, iel1) &
@@ -1176,7 +1176,7 @@ if (ippmod(icompf).lt.0) then
 
         mass_fl_drhovol1 = 0.d0
         ! If it is not a solid cell
-        if (isolid(iporos, iel1).eq.0) &
+        if (cell_is_active(iel1).eq.1) &
           mass_fl_drhovol1 = bmasfl(ifac) / cell_f_vol(iel1)
 
         vel(1, iel1) = vel(1, iel1) &

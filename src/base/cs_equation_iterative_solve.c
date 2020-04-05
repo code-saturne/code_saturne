@@ -494,8 +494,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   {
 #   pragma omp for nowait
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      if (has_dc * mq->c_disable_flag[has_dc * cell_id] != 0)
-        smbrp[cell_id] = 0.;
       smbini[cell_id] = smbrp[cell_id];
       smbrp[cell_id] = 0.;
     }
@@ -1413,9 +1411,6 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 #   pragma omp for nowait
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (cs_lnum_t isou = 0; isou < 3; isou++) {
-        /* Overwrite disabled cells */
-        if (has_dc * mq->c_disable_flag[has_dc * cell_id] != 0)
-          smbrp[cell_id][isou] = 0.;
         smbini[cell_id][isou] = smbrp[cell_id][isou];
         smbrp[cell_id][isou] = 0.;
       }
@@ -2240,9 +2235,6 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 #   pragma omp for nowait
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (cs_lnum_t isou = 0; isou < 6; isou++) {
-        /* Overwrite disabled cells */
-        if (has_dc * mq->c_disable_flag[has_dc * cell_id] != 0)
-          smbrp[cell_id][isou] = 0.;
         smbini[cell_id][isou] = smbrp[cell_id][isou];
         smbrp[cell_id][isou] = 0.;
       }

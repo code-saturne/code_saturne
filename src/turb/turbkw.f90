@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2019 EDF S.A.
+! Copyright (C) 1998-2020 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -126,7 +126,8 @@ double precision xlt, xdelta, xrd, xfd, xs2pw2, xdist, xdiff, fddes
 double precision var, vrmin(2), vrmax(2)
 double precision utaurf,ut2,ypa,ya,xunorm, limiter, nu0
 double precision turb_schmidt
-double precision normp
+double precision normp, distf
+double precision prodw_dmut, k_dmut_dom
 
 double precision rvoid(1)
 
@@ -136,7 +137,7 @@ double precision, allocatable, dimension(:) :: tinstk, tinstw, xf1
 double precision, allocatable, dimension(:,:) :: gradk, grado, grad
 double precision, allocatable, dimension(:,:,:) :: gradv
 double precision, allocatable, dimension(:) :: s2pw2
-double precision, allocatable, dimension(:) :: w1, w2
+double precision, allocatable, dimension(:) :: w1
 double precision, allocatable, dimension(:) :: gdkgdw
 double precision, allocatable, dimension(:) :: w5, w6
 double precision, allocatable, dimension(:) :: prodk, prodw
@@ -178,7 +179,7 @@ allocate(smbrk(ncelet), smbrw(ncelet))
 allocate(tinstk(ncelet), tinstw(ncelet), xf1(ncelet))
 
 ! Allocate work arrays
-allocate(w1(ncelet), w2(ncelet))
+allocate(w1(ncelet))
 allocate(dpvar(ncelet))
 allocate(gdkgdw(ncelet))
 allocate(prodk(ncelet), prodw(ncelet))
@@ -279,19 +280,15 @@ iccocg = 1
 inc = 1
 iprev = 1
 
-call field_gradient_scalar(ivarfl(ik), iprev, imrgra, inc,          &
-                           iccocg,                                  &
-                           gradk)
+call field_gradient_scalar(ivarfl(ik), iprev, 0, inc, iccocg, gradk)
 
-call field_gradient_scalar(ivarfl(iomg), iprev, imrgra, inc,        &
-                           iccocg,                                  &
-                           grado)
+call field_gradient_scalar(ivarfl(iomg), iprev, 0, inc, iccocg, grado)
 
 if (iddes.eq.1) then
   call field_get_val_s_by_name("hybrid_blend", ddes_fd_coeff)
 
-  call field_gradient_vector(ivarfl(iu), iprev, imrgra, inc,        &
-                             gradv)
+  call field_gradient_vector(ivarfl(iu), iprev, 0, inc, gradv)
+
   do iel = 1, ncel
     s2pw2(iel) = gradv(1,1,iel)**2.d0 + gradv(2,1,iel)**2.d0 + gradv(3,1,iel)**2.d0 &
                + gradv(1,2,iel)**2.d0 + gradv(2,2,iel)**2.d0 + gradv(3,2,iel)**2.d0 &
@@ -312,10 +309,6 @@ deallocate(gradk, grado)
 ! 2.2. Compute the weight f1 (stored in xf1)
 !===============================================================================
 
-do iel = 1, ncel
-  w2(iel) = max(w_dist(iel),epzero)
-enddo
-
 ! En cas d'ordre 2 on utilise les valeurs en n car le terme en (1-f1)*gdkgdw
 ! sera une propriété. Du coup, on aura quand meme certaines "constantes"
 ! intervenant dans des termes en n+1/2 (ex sigma_k pour la diffusion) calcules
@@ -328,8 +321,9 @@ do iel = 1, ncel
   xw  = cvara_omg(iel)
   cdkw = 2*rho/ckwsw2/xw*gdkgdw(iel)
   cdkw = max(cdkw,1.d-20)
-  xarg1 = max(sqrt(xk)/cmu/xw/w2(iel), 500.d0*xnu/xw/w2(iel)**2)
-  xarg1 = min(xarg1, 4.d0*rho*xk/ckwsw2/cdkw/w2(iel)**2)
+  distf = max(w_dist(iel),epzero)
+  xarg1 = max(sqrt(xk)/cmu/xw/distf, 500.d0*xnu/xw/distf**2)
+  xarg1 = min(xarg1, 4.d0*rho*xk/ckwsw2/cdkw/distf**2)
   xf1(iel) = tanh(xarg1**4)
 enddo
 
@@ -355,23 +349,29 @@ do iel = 1, ncel
   xw   = cvara_omg(iel)
   xeps = cmu*xw*xk
   visct = cpro_pcvto(iel)
+  ! k / (mu_T * omega) , clipped to 1 if mu_t is zero
+  if (visct*xw.le.epzero*xk) then
+    k_dmut_dom = 1.d0
+  else
+    k_dmut_dom = xk / (visct*xw)
+  endif
   rho = cromo(iel)
   prodw(iel) = visct*cpro_s2kw(iel)                    &
              - d2s3*rho*xk*cpro_divukw(iel)
 
-  ! The negative part is implicited
+  ! The negative part is implicit
   xxf1   = xf1(iel)
   xgamma = xxf1*ckwgm1 + (1.d0-xxf1)*ckwgm2
   tinstw(iel) = tinstw(iel)                                         &
-              + max( d2s3*rho*volume(iel)                           &
-                   *(rho*xgamma*xk/(visct*xw))*cpro_divukw(iel), 0.d0)
+              + max( d2s3*rho*cell_f_vol(iel)                           &
+                   *(rho*xgamma* k_dmut_dom)*cpro_divukw(iel), 0.d0)
 
   ! Take the min between prodw and the low Reynold one
   if (prodw(iel).gt.ckwc1*rho*xeps) then
     prodk(iel) = ckwc1*rho*xeps
   else
     prodk(iel) = prodw(iel)
-    tinstk(iel) = tinstk(iel) + max(d2s3*volume(iel)*rho*cpro_divukw(iel), 0.d0)
+    tinstk(iel) = tinstk(iel) + max(d2s3*cell_f_vol(iel)*rho*cpro_divukw(iel), 0.d0)
   endif
 enddo
 
@@ -402,14 +402,15 @@ endif
 
 !===============================================================================
 ! 6. Compute buoyancy terms
-!     stored in: prodk, prodw, w2
+!     stored in: prodk, prodw, grad_dot_g
 !===============================================================================
+
+allocate(grad_dot_g(ncelet))
 
 if (igrake.eq.1) then
 
   ! Allocate a temporary array for the gradient calculation
   allocate(grad(3,ncelet))
-  allocate(grad_dot_g(ncelet))
 
   ! Buoyancy production
   !   prodk=min(P,c1*eps)+G
@@ -431,7 +432,7 @@ if (igrake.eq.1) then
     iccocg = 1
     inc = 1
 
-    call field_gradient_scalar(ivarfl(isca(iscalt)), 1, imrgra, inc, iccocg, &
+    call field_gradient_scalar(ivarfl(isca(iscalt)), 1, 0, inc, iccocg, &
                                grad)
 
     !FIXME make it dependant on the scalar and use is_buoyant field
@@ -471,6 +472,7 @@ if (igrake.eq.1) then
      grad   )
 
     do iel = 1, ncel
+      rho = cromo(iel)
       grad_dot_g(iel) = (grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz) &
         / (rho*prdtur)
     enddo
@@ -478,23 +480,23 @@ if (igrake.eq.1) then
   endif
 
   do iel = 1, ncel
-    rho = cromo(iel)
     visct = cpro_pcvto(iel)
 
-    w2(iel) = - grad_dot_g(iel)
+    prodw(iel) = prodw(iel)+visct*max(- grad_dot_g(iel), zero)
+    prodk(iel) = prodk(iel) - visct * grad_dot_g(iel)
 
-    prodw(iel) = prodw(iel)+visct*max(w2(iel),zero)
-    prodk(iel) = prodk(iel)+visct*w2(iel)
-
-    ! Implicit Buoyant terms when negativ
+    ! Implicit Buoyant terms when negative
     tinstk(iel) = tinstk(iel)                                        &
-                + max(-volume(iel)*visct/cvara_k(iel)*w2(iel), 0.d0)
+                + max(cell_f_vol(iel)*visct/cvara_k(iel)*grad_dot_g(iel), 0.d0)
   enddo
 
   ! Free memory
   deallocate(grad)
-  deallocate(grad_dot_g)
 
+else
+  do iel = 1, ncel
+    grad_dot_g(iel) = 0.d0
+  enddo
 endif
 
 !===============================================================================
@@ -592,18 +594,25 @@ if(iddes.ne.1) then
     xgamma = xxf1*ckwgm1 + (1.d0-xxf1)*ckwgm2
     xbeta  = xxf1*ckwbt1 + (1.d0-xxf1)*ckwbt2
 
-    smbrk(iel) = smbrk(iel) + volume(iel)*(                         &
+    smbrk(iel) = smbrk(iel) + cell_f_vol(iel)*(                         &
                                             prodk(iel)              &
                                           - cmu*rho*xw*xk )
 
+
+    if (visct.le.epzero*prodw(iel)) then
+      prodw_dmut = 0.d0
+    else
+      prodw_dmut = prodw(iel)/visct
+    endif
+
     smbrw(iel) = smbrw(iel)                                                &
-               + volume(iel)*(                                             &
-                               rho*xgamma/visct*prodw(iel)                 &
+               + cell_f_vol(iel)*(                                             &
+                               rho*xgamma*prodw_dmut                       &
                              - xbeta*rho*xw**2                             &
                              + 2.d0*rho/xw*(1.d0-xxf1)/ckwsw2*gdkgdw(iel)  &
                              )
 
-    tinstw(iel) = tinstw(iel) + volume(iel)*max(-2.d0*rho/xw**2*(1.d0-xxf1) &
+    tinstw(iel) = tinstw(iel) + cell_f_vol(iel)*max(-2.d0*rho/xw**2*(1.d0-xxf1) &
                                                 /ckwsw2*gdkgdw(iel), 0.d0)
   enddo
 ! DDES mode for k-w SST
@@ -622,8 +631,9 @@ else
     xdist  = max(w_dist(iel),epzero)
 
     xlt    = sqrt(xk)/(cmu*xw)
-    xdelta = volume(iel)**(1.d0/3.d0)
-    xrd    = (visct + xnu)/ ( xs2pw2 *(xkappa**2) *(xdist**2))
+
+    xdelta = cell_f_vol(iel)**(1.d0/3.d0)
+    xrd    = (visct + xnu)/ ( rho * xs2pw2 *(xkappa**2) *(xdist**2))
     xfd    = 1.d0 -tanh((8.d0*xrd)**3)
     xdiff  = max((xlt-(cddes*xdelta)),0.d0)
     fddes  = xlt/(xlt-xfd*xdiff)
@@ -637,18 +647,25 @@ else
       ddes_fd_coeff(iel) = 0.d0
     endif
 
-    smbrk(iel) = smbrk(iel) + volume(iel)*(                         &
+    smbrk(iel) = smbrk(iel) + cell_f_vol(iel)*(                         &
                                             prodk(iel)              &
                                           - cmu*rho*xw*xk*fddes)
 
+    ! Prod / mu_T
+    if (visct.le.epzero*prodw(iel)) then
+      prodw_dmut = 0.d0
+    else
+      prodw_dmut = prodw(iel)/visct
+    endif
+
     smbrw(iel) = smbrw(iel)                                                &
-               + volume(iel)*(                                             &
-                               rho*xgamma/visct*prodw(iel)                 &
+               + cell_f_vol(iel)*(                                             &
+                               rho*xgamma*prodw_dmut                       &
                              - xbeta*rho*xw**2                             &
                              + 2.d0*rho/xw*(1.d0-xxf1)/ckwsw2*gdkgdw(iel)  &
                              )
 
-    tinstw(iel) = tinstw(iel) + volume(iel)*max(-2.d0*rho/xw**2*(1.d0-xxf1) &
+    tinstw(iel) = tinstw(iel) + cell_f_vol(iel)*max(-2.d0*rho/xw**2*(1.d0-xxf1) &
                                                 /ckwsw2*gdkgdw(iel), 0.d0)
   enddo
 endif
@@ -660,8 +677,8 @@ if (ikecou.eq.0) then
     xxf1  = xf1(iel)
     xbeta = xxf1*ckwbt1 + (1.d0-xxf1)*ckwbt2
     rho = crom(iel)
-    tinstk(iel) = tinstk(iel) + volume(iel)*cmu*rho*xw
-    tinstw(iel) = tinstw(iel) + 2.d0*volume(iel)*xbeta*rho*xw
+    tinstk(iel) = tinstk(iel) + cell_f_vol(iel)*cmu*rho*xw
+    tinstw(iel) = tinstw(iel) + 2.d0*cell_f_vol(iel)*xbeta*rho*xw
   enddo
 endif
 
@@ -716,7 +733,7 @@ if (ncesmp.gt.0) then
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
    isto2t ,                                                       &
    icetsm , itypsm(1,ivar) ,                                      &
-   volume , cvara_k      , smacel(1,ivar) , smacel(1,ipr) ,       &
+   cell_f_vol , cvara_k      , smacel(1,ivar) , smacel(1,ipr) ,       &
    smbrk  , tinstk , gamk )
 
   ivar = iomg
@@ -725,7 +742,7 @@ if (ncesmp.gt.0) then
  ( ncelet , ncel   , ncesmp , iiun   ,                            &
    isto2t ,                                                       &
    icetsm , itypsm(1,ivar) ,                                      &
-   volume , cvara_omg    , smacel(1,ivar) , smacel(1,ipr) ,       &
+   cell_f_vol , cvara_omg    , smacel(1,ivar) , smacel(1,ipr) ,       &
    smbrw  , tinstw , gamw )
 
   ! Si on extrapole les TS on met Gamma Pinj dans c_st_k_p, c_st_omg_p
@@ -798,7 +815,7 @@ enddo
 
 !      Tableaux de travail              w7
 !      Les termes sont stockes dans     w5 ET w6, PUIS AJOUTES A smbrk, smbrw
-!      En sortie de l'etape on conserve w2-6,smbrk,smbrw,usimpk
+!      En sortie de l'etape on conserve w3-6,smbrk,smbrw,usimpk
 !===============================================================================
 
 if (ikecou.eq.1) then
@@ -985,7 +1002,7 @@ if (ikecou.eq.1) then
     smbrk(iel) = smbrk(iel)*romvsd
     smbrw(iel) = smbrw(iel)*romvsd
     divp23     = d2s3*max(cpro_divukw(iel),zero)
-    produc     = w1(iel)*cpro_s2kw(iel)+w2(iel)
+    produc     = w1(iel)*cpro_s2kw(iel) - grad_dot_g(iel)
     xk         = cvara_k(iel)
     xw         = cvara_omg(iel)
     xxf1       = xf1(iel)
@@ -1005,7 +1022,7 @@ if (ikecou.eq.1) then
 
     ! NOUVEAU TERME SOURCE POUR CODITS
 
-    romvsd = rho*volume(iel)/dt(iel)
+    romvsd = rho*cell_f_vol(iel)/dt(iel)
 
     smbrk(iel) = romvsd*deltk
     smbrw(iel) = romvsd*deltw
@@ -1274,6 +1291,9 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1) then
   nu0 = viscl0 / ro0
 
   do iel = 1, ncel
+
+    if (cell_is_active(iel).eq.0) cycle
+
     ! Compute the velocity magnitude
     xunorm = vel(1,iel)**2 + vel(2,iel)**2 + vel(3,iel)**2
     xunorm = sqrt(xunorm)
@@ -1311,7 +1331,7 @@ endif
 deallocate(viscf, viscb)
 deallocate(smbrk, smbrw)
 deallocate(tinstk, tinstw, xf1)
-deallocate(w1, w2, usimpk, usimpw)
+deallocate(w1, grad_dot_g, usimpk, usimpw)
 deallocate(dpvar)
 deallocate(prodk, prodw)
 if (allocated(gradv)) deallocate(gradv)
@@ -1335,7 +1355,7 @@ if (allocated(rotfct))  deallocate(rotfct)
  1000 format(/, &
 '   ** SOLVING K-OMEGA'                           ,/,&
 '      ---------------'                           ,/)
- 1100 format(1X,A8,' : EXPLICIT BALANCE = ',E14.5)
+ 1100 format(1X,A8,': EXPLICIT BALANCE = ',E14.5)
 
 #endif
 

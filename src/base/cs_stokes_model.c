@@ -466,6 +466,13 @@ cs_stokes_model_log_setup(void)
        _("    arak:        %14.5e (Arakawa factor)\n"),
        var_cal_opt.relaxv * cs_glob_stokes_model->arak);
   }
+  if (cs_glob_stokes_model->fluid_solid)
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("\n"
+         "  Fluid-solid mode (disable dynamics in the solid part)\n\n"));
+
+
 }
 
 /*----------------------------------------------------------------------------*/
