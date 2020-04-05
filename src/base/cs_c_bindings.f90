@@ -2865,6 +2865,18 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function returning 1 for active cells
+
+    function cs_f_mesh_quantities_cell_is_active(cell_id) result(is_active) &
+      bind(C, name='cs_f_mesh_quantities_cell_is_active')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: cell_id
+      integer(kind=c_int) :: is_active
+    end function cs_f_mesh_quantities_cell_is_active
+
+    !---------------------------------------------------------------------------
+
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------
@@ -5889,6 +5901,35 @@ contains
     val = c_val
 
   end function notebook_parameter_value_by_name
+
+  !=============================================================================
+
+  !> \brief Indicate of a cell is active fo the current variable
+
+  !> \param[in]     iel       cell number (cell_id + 1)
+  !> \result        is_active
+
+  function cell_is_active(iel) result(is_active)
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    ! Arguments
+
+    integer :: iel
+    integer :: is_active
+
+    ! Local variables
+
+    integer(kind=c_int) :: c_cell_id
+    integer(kind=c_int) :: c_is_active
+
+
+    c_cell_id = iel - 1
+    c_is_active = cs_f_mesh_quantities_cell_is_active(c_cell_id)
+    is_active = c_is_active
+
+  end function cell_is_active
 
   !=============================================================================
 

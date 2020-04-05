@@ -3,6 +3,10 @@ Release 6.1.1 (unreleased)
 
 Bug fixes:
 
+- Fix internal coupling: clip turbulent viscosity in solid zones.
+  This should also fix k-omega with the ikecou=1 option (not tested, and
+  deprecated) and with the porous approach (use cell_f_vol rather volume).
+
 - Fix crash in FSI with internal structures in builds using
   the Intel Fortran compilers (due to Fortran pointer handling).
 

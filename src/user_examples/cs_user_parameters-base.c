@@ -322,7 +322,6 @@ cs_user_model(void)
 void
 cs_user_parameters(cs_domain_t *domain)
 {
-
   /*! [time_stepping_options] */
 
   /* Time step type */
@@ -438,7 +437,6 @@ cs_user_parameters(cs_domain_t *domain)
       for pressure, it is better to indicate to which reference the
       values relate (for a better resolution of reduced pressure).
 
-
       Other properties are given by default in all cases.
 
       Nonetheless, we may note that:
@@ -535,7 +533,6 @@ cs_user_parameters(cs_domain_t *domain)
     fp->xyzp0[1] = 0.;
     fp->xyzp0[2] = 0.;
 
-
     /* irovar, ivivar, icp: constant or variable density,
                               viscosity/diffusivity, and specific heat
 
@@ -555,7 +552,6 @@ cs_user_parameters(cs_domain_t *domain)
            must be defined in cs_user_physical_properties
            (incs_user_physical_properties.f90);
            if they are constant, they take values ro0, viscl0, and cp0.
-
     */
 
     fp->irovar = 1;
@@ -574,7 +570,6 @@ cs_user_parameters(cs_domain_t *domain)
     pc->gravity[0] = 0.;
     pc->gravity[1] = 0.;
     pc->gravity[2] = -9.81; /* gravity  (m/s2) in the z direction */
-
   }
 
   /*! [param_physical_constants] */
@@ -699,7 +694,7 @@ cs_user_parameters(cs_domain_t *domain)
       - iswdyn = 2: means that the last two increments are used to
                          relax
      NB: when iswdyn is greater than 1, then the number of
-         non-orthogonality sweeps is increased to 20.*/
+         non-orthogonality sweeps is increased to 20. */
   {
 
     cs_var_cal_opt_t vcopt;
@@ -729,7 +724,6 @@ cs_user_parameters(cs_domain_t *domain)
     vcopt.ircflu = 0;
     cs_field_set_key_struct(CS_F_(eps), key_cal_opt_id, &vcopt);
   }
-
 
   /* Example: choose a convective scheme and
    * a limiter for a given variable (user and non-user) */
@@ -818,7 +812,6 @@ cs_user_parameters(cs_domain_t *domain)
 
   }
 
-
   /*-----------------------------------------------------------------------*/
 
   /*! [param_var_blend_st] */
@@ -840,7 +833,6 @@ cs_user_parameters(cs_domain_t *domain)
   }
   /*! [param_var_blend_st] */
 
-
   /* Example: declare a scalar as buoyant so that it is
    * included in the velocity pressure PISO loop  */
   /*----------------------------------------------*/
@@ -858,7 +850,8 @@ cs_user_parameters(cs_domain_t *domain)
   /*! [param_var_is_buoyant] */
 
 
-  /* Example: Scalar with a drift (key work "drift_scalar_model">0) or without drift
+  /* Example: Scalar with a drift (key work "drift_scalar_model">0)
+              or without drift
      ((key work "drift_scalar_model"=0, default option) for each USER scalar.
        - to specify that a scalar have a drift and need the drift computation:
          drift |= CS_DRIFT_SCALAR_ADD_DRIFT_FLUX
@@ -920,7 +913,6 @@ cs_user_parameters(cs_domain_t *domain)
 
   /*! [mesh_tag_bad_cells_correction] */
 
-
   /* Postprocessing-related fields
      ============================= */
 
@@ -929,9 +921,9 @@ cs_user_parameters(cs_domain_t *domain)
               the post_boundary_nusselt subroutine.
               When postprocessing of these quantities is activated, those fields
               are present, but if we need to compute them in the
-              cs_user_extra_operations user subroutine without postprocessing them,
-              forcing the definition of these fields to save the values computed
-              for the boundary layer is necessary. */
+              cs_user_extra_operations user subroutine without postprocessing
+              them, forcing the definition of these fields to save the
+              values computed for the boundary layer is necessary. */
 
   /*! [param_force_yplus] */
   {
@@ -970,6 +962,7 @@ cs_user_parameters(cs_domain_t *domain)
   cs_parameters_add_property("pressure_gradient",
                              3,
                              CS_MESH_LOCATION_CELLS);
+
   /*--------------------------------------------------------------------------*/
 
   /* Example: add field to post-process the Reynolds stress production tensor
@@ -1148,6 +1141,10 @@ cs_user_internal_coupling(void)
   cs_internal_coupling_add_volume(NULL,
                                   "x<.5"); /* Solid volume criterion */
 
+  /* Activate fluid-solid mode to kill dynamic in the solid */
+  cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
+  stokes->fluid_solid = true;
+
   /*! [param_internal_coupling_add_volume] */
 
   /* Example: define coupling along an existing mesh boundary.
@@ -1172,7 +1169,6 @@ cs_user_internal_coupling(void)
 
   /*! [param_internal_coupling] */
 
-
   /* Example: compute porosity from a scan of points
    * ------------------------------------------------*/
 
@@ -1190,7 +1186,6 @@ cs_user_internal_coupling(void)
   cs_glob_porosity_from_scan_opt->transformation_matrix[1][0] = -sin(angle);
   cs_glob_porosity_from_scan_opt->transformation_matrix[1][1] =  cos(angle);
   cs_glob_porosity_from_scan_opt->transformation_matrix[2][2] = 1.;
-
 
   /* Add some sources to fill fluid space */
   {
@@ -1256,7 +1251,6 @@ cs_user_finalize_setup(cs_domain_t     *domain)
                                cs_field_key_id("post_vis"),
                                CS_POST_MONITOR);
   /*! [setup_post_lum] */
-
 }
 
 /*----------------------------------------------------------------------------*/

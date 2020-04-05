@@ -494,8 +494,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   {
 #   pragma omp for nowait
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
-      if (has_dc * mq->c_disable_flag[has_dc * cell_id] != 0)
-        smbrp[cell_id] = 0.;
       smbini[cell_id] = smbrp[cell_id];
       smbrp[cell_id] = 0.;
     }
@@ -1408,14 +1406,12 @@ cs_equation_iterative_solve_vector(int                   idtvar,
   /* Before looping, the RHS without reconstruction is stored in smbini */
 
   int has_dc = mq->has_disable_flag;
+  bft_printf("CODITV, has_dc %d \n", has_dc);
 # pragma omp parallel if(n_cells > CS_THR_MIN)
   {
 #   pragma omp for nowait
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (cs_lnum_t isou = 0; isou < 3; isou++) {
-        /* Overwrite disabled cells */
-        if (has_dc * mq->c_disable_flag[has_dc * cell_id] != 0)
-          smbrp[cell_id][isou] = 0.;
         smbini[cell_id][isou] = smbrp[cell_id][isou];
         smbrp[cell_id][isou] = 0.;
       }
@@ -2240,9 +2236,6 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 #   pragma omp for nowait
     for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
       for (cs_lnum_t isou = 0; isou < 6; isou++) {
-        /* Overwrite disabled cells */
-        if (has_dc * mq->c_disable_flag[has_dc * cell_id] != 0)
-          smbrp[cell_id][isou] = 0.;
         smbini[cell_id][isou] = smbrp[cell_id][isou];
         smbrp[cell_id][isou] = 0.;
       }
