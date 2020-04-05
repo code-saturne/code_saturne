@@ -67,7 +67,7 @@ implicit none
 integer          iel, inc
 integer          iprev
 
-double precision coef, deux
+double precision coef
 
 double precision, dimension(:,:,:), allocatable :: gradv
 double precision, dimension(:,:), pointer :: coefau
@@ -115,8 +115,7 @@ deallocate(gradv)
 ! 3.  Calculation of (dynamic) velocity
 !===============================================================================
 
-deux = 2.d0
-coef = (xkappa*xlomlg)**2 * sqrt(deux)
+coef = (xkappa*xlomlg)**2 * sqrt(2.d0)
 
 do iel = 1, ncel
   visct(iel) = crom(iel) * coef * sqrt(visct(iel))
