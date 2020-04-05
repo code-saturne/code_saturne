@@ -322,7 +322,6 @@ cs_user_model(void)
 void
 cs_user_parameters(cs_domain_t *domain)
 {
-
   /*! [time_stepping_options] */
 
   /* Time step type */
@@ -573,7 +572,6 @@ cs_user_parameters(cs_domain_t *domain)
     pc->gravity[0] = 0.;
     pc->gravity[1] = 0.;
     pc->gravity[2] = -9.81; /* gravity  (m/s2) in the z direction */
-
   }
 
   /*! [param_physical_constants] */
@@ -837,7 +835,6 @@ cs_user_parameters(cs_domain_t *domain)
   }
   /*! [param_var_blend_st] */
 
-
   /* Example: declare a scalar as buoyant so that it is
    * included in the velocity pressure PISO loop  */
   /*----------------------------------------------*/
@@ -855,7 +852,8 @@ cs_user_parameters(cs_domain_t *domain)
   /*! [param_var_is_buoyant] */
 
 
-  /* Example: Scalar with a drift (key work "drift_scalar_model">0) or without drift
+  /* Example: Scalar with a drift (key work "drift_scalar_model">0)
+              or without drift
      ((key work "drift_scalar_model"=0, default option) for each USER scalar.
        - to specify that a scalar have a drift and need the drift computation:
          drift |= CS_DRIFT_SCALAR_ADD_DRIFT_FLUX
@@ -926,9 +924,9 @@ cs_user_parameters(cs_domain_t *domain)
               the post_boundary_nusselt subroutine.
               When postprocessing of these quantities is activated, those fields
               are present, but if we need to compute them in the
-              cs_user_extra_operations user subroutine without postprocessing them,
-              forcing the definition of these fields to save the values computed
-              for the boundary layer is necessary. */
+              cs_user_extra_operations user subroutine without postprocessing
+              them, forcing the definition of these fields to save the
+              values computed for the boundary layer is necessary. */
 
   /*! [param_force_yplus] */
   {
@@ -1144,6 +1142,11 @@ cs_user_internal_coupling(void)
 
   cs_internal_coupling_add_volume(NULL,
                                   "x<.5"); /* Solid volume criterion */
+
+
+  /* Activate fluid-solid mode to kill dynamic in the solid */
+  cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
+  stokes->fluid_solid = true;
 
   /*! [param_internal_coupling_add_volume] */
 

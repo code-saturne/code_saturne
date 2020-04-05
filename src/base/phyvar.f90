@@ -545,7 +545,7 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
           ! Durbin scale
           xttkmg = xct*sqrt(viscl(iel)/crom(iel)/cvar_ep(iel))
           xttdrb = max(ttke,xttkmg)
-          rottke  = csrij * crom(iel) * xttdrb
+          rottke  = csrij * crom(iel) * xttdrb * cell_is_active(iel)
 
           do isou = 1, 6
             visten(isou, iel) = rottke*cvar_rij(isou, iel)
@@ -558,7 +558,7 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
 
           do iel = 1, ncel
             trrij = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
-            rottke  = csrij * crom(iel) * trrij / cvar_ep(iel)
+            rottke  = csrij * crom(iel) * trrij / cvar_ep(iel) * cell_is_active(iel)
 
             do isou = 1, 6
               vistes(isou, iel) = rottke*cvar_rij(isou, iel)
@@ -571,7 +571,7 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
 
           do iel = 1, ncel
             trrij = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
-            rottke  = csrij * crom(iel) * trrij / cvar_ep(iel)
+            rottke  = csrij * crom(iel) * trrij / cvar_ep(iel) * cell_is_active(iel)
 
             do isou = 1, 6
               vistes(isou, iel) = rottke*cvar_rij(isou, iel)
@@ -583,7 +583,7 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
       else
         do iel = 1, ncel
           trrij = 0.5d0*(cvar_rij(1,iel)+cvar_rij(2,iel)+cvar_rij(3,iel))
-          rottke  = csrij * crom(iel) * trrij / cvar_ep(iel)
+          rottke  = csrij * crom(iel) * trrij / cvar_ep(iel) * cell_is_active(iel)
 
           do isou = 1, 6
             visten(isou, iel) = rottke*cvar_rij(isou, iel)
@@ -613,7 +613,7 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
           ! Durbin scale
           xttkmg = xct*sqrt(viscl(iel)/crom(iel)/cvar_ep(iel))
           xttdrb = max(ttke,xttkmg)
-          rottke  = csrij * crom(iel) * xttdrb
+          rottke  = csrij * crom(iel) * xttdrb * cell_is_active(iel)
 
           visten(1,iel) = rottke*cvar_r11(iel)
           visten(2,iel) = rottke*cvar_r22(iel)
@@ -634,7 +634,7 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
             xttkmg = xct*sqrt(viscl(iel)/crom(iel)/cvar_ep(iel))
             xttdrb = max(ttke,xttkmg)
             !FIXME xttdrbt = xttdrb*sqrt((1.d0-alpha3)*PR/XRH + alpha3)
-            rottke  = csrij * crom(iel) * xttdrb
+            rottke  = csrij * crom(iel) * xttdrb * cell_is_active(iel)
 
             vistes(1,iel) = rottke*cvar_r11(iel)
             vistes(2,iel) = rottke*cvar_r22(iel)
@@ -650,7 +650,7 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
 
           do iel = 1, ncel
             trrij = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
-            rottke  = csrij * crom(iel) * trrij / cvar_ep(iel)
+            rottke  = csrij * crom(iel) * trrij / cvar_ep(iel) * cell_is_active(iel)
 
             vistes(1,iel) = rottke*cvar_r11(iel)
             vistes(2,iel) = rottke*cvar_r22(iel)
@@ -666,7 +666,7 @@ if (idfm.eq.1 .or. itytur.eq.3 .and. idirsm.eq.1) then
       else
         do iel = 1, ncel
           trrij = 0.5d0*(cvar_r11(iel)+cvar_r22(iel)+cvar_r33(iel))
-          rottke  = csrij * crom(iel) * trrij / cvar_ep(iel)
+          rottke  = csrij * crom(iel) * trrij / cvar_ep(iel) * cell_is_active(iel)
 
           visten(1,iel) = rottke*cvar_r11(iel)
           visten(2,iel) = rottke*cvar_r22(iel)
@@ -750,7 +750,8 @@ if (iturb.eq.41) then
 endif
 
 !===============================================================================
-! 9. Checking of the user values
+! 9. Checking of the user values and put turbulent viscosity to 0 in
+!    disabled cells
 !===============================================================================
 
 ! ---> Calcul des bornes des variables et impressions
@@ -780,7 +781,13 @@ do ii = 1, nn
   else
     ivar = 1
     if (ii.eq.2) call field_get_val_s(iviscl, cpro_var)
-    if (ii.eq.3) call field_get_val_s(ivisct, cpro_var)
+    if (ii.eq.3) then
+      call field_get_val_s(ivisct, cpro_var)
+      ! Set turbulent viscosity to 0 in disabled cells
+      do iel = 1, ncel
+        cpro_var(iel) = cpro_var(iel) * cell_is_active(iel)
+      enddo
+    endif
     if (ii.eq.4) call field_get_val_s(icp, cpro_var)
     varmx(ii) = cpro_var(1)
     varmn(ii) = cpro_var(1)

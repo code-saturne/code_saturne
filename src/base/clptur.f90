@@ -170,7 +170,7 @@ double precision uetmax, uetmin, ukmax, ukmin, yplumx, yplumn
 double precision tetmax, tetmin, tplumx, tplumn
 double precision uk, uet, nusury, yplus, dplus
 double precision sqrcmu, ek
-double precision xnuii, xnuit, xmutlm
+double precision xnuii, xnuit, xmutlm, mut_lm_dmut
 double precision rcprod
 double precision hflui, hint, pimp, qimp
 double precision eloglo(3,3), alpha(6,6)
@@ -796,11 +796,16 @@ do ifac = 1, nfabor
       if (itytur.eq.2.or.iturb.eq.60) then
 
         xmutlm = xkappa*visclc*yplus
+        if (cell_is_active(iel).eq.0) then
+          mut_lm_dmut = xmutlm/visctc
+        else
+          mut_lm_dmut = 0.d0
+        endif
 
         ! If yplus=0, uiptn is set to 0 to avoid division by 0.
         ! By the way, in this case: iuntur=0
         if (yplus.gt.epzero) then !TODO use iuntur.eq.1
-          rcprod = min(xkappa , max(1.0d0,sqrt(xmutlm/visctc))/yplus)
+          rcprod = min(xkappa , max(1.0d0,sqrt(mut_lm_dmut))/yplus)
 
           uiptn  = utau + distbf*uet*uk*romc/xkappa/visclc*(       &
                1.0d0/(2.0d0*yplus-dplus) - 2.0d0*rcprod )
@@ -2053,6 +2058,7 @@ double precision viscis, visctc, xmutlm, ypth, xnuii
 double precision rinfiv(3), pimpv(3)
 double precision visci(3,3), hintt(6)
 double precision turb_schmidt, exchange_coef
+double precision mut_lm_dmut
 
 character(len=80) :: fname
 
@@ -2474,7 +2480,13 @@ do ifac = 1, nfabor
         ! In the log layer
         if (yplus.ge.ypth.and.iturb.ne.0) then
           xmutlm = xkappa*visclc*yplus
-          rcprod = min(xkappa , max(1.0d0,sqrt(xmutlm/visctc))/yplus)
+          if (cell_is_active(iel).eq.0) then
+            mut_lm_dmut = xmutlm/visctc
+          else
+            mut_lm_dmut = 0.d0
+          endif
+
+          rcprod = min(xkappa , max(1.0d0,sqrt(mut_lm_dmut))/yplus)
 
           cofimp = 1.d0 - yptp(ifac)*turb_schmidt/xkappa*                   &
                           (2.0d0*rcprod - 1.0d0/(2.0d0*yplus-dplus))
