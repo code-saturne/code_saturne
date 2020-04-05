@@ -208,7 +208,7 @@ module mesh
   !> for every boundary face, the three components of the vector
   !> \f$\vect{II'}\f$. I' is the orthogonal projection of I,
   !> center of the neighboring cell, on the
-  !> straight line perpendicular to the face and passign through its center
+  !> straight line perpendicular to the face and passing through its center
   double precision, dimension(:,:), pointer :: diipb
 
   !> \anchor dofij

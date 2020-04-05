@@ -267,7 +267,7 @@ if (muzero.gt.epzero) then
   m = 35.d0/sqrt(1224.d0*muzero*muzero + 1.d0)
   mbar = 1.9d0
 
-  !  3 -  albedoes for O3 and Rayleigh diffusion
+  !  3 -  albedos for O3 and Rayleigh diffusion
 
   rabar = 0.219d0/(1.d0 + 0.816d0*muzero)
   rabar2 = 0.144d0
@@ -369,7 +369,7 @@ if (muzero.gt.epzero) then
 
         ! direct radiationmod (sum of vapor water band and O3 band)
         drfs(k) = ddfsh2o(k)+ddfso3(k)
-        ! diffuse radiation (estmated by difference between global and direct)
+        ! diffuse radiation (estimated by difference between global and direct)
         dddsh2o(k) = dfsh2o(k)-ddfsh2o(k)
         dddso3(k) = dfso3(k)-ddfso3(k)
         ddfs(k) = dddsh2o(k)+dddso3(k)
@@ -412,7 +412,7 @@ if (muzero.gt.epzero) then
     itopp2 = itop +2
     ibasem1 = ibase -1
 
-    ! 6.2 calculation for optical parmaters of clouds
+    ! 6.2 calculation for optical parameters of clouds
     ! (single scattering albedo, optical depth)
 
     fnebmax(kmray+1) = 0.d0
@@ -449,8 +449,8 @@ if (muzero.gt.epzero) then
         tauc(i) = 0.d0
       endif
 
-      ! calculation for aerosol optical parameters treated as cloud layers but with
-      ! different optical properties
+      ! Calculation for aerosol optical parameters treated as cloud layers but with
+      ! Different optical properties
 
       fneba(i) = 0.d0
       if((iaer.eq.1).and.(zray(i).le.zaero)) then
@@ -464,22 +464,22 @@ if (muzero.gt.epzero) then
         tauatot = tauatot + taua(i)
       endif
 
-      ! estimation of the maw of the cloud fraction
+      ! Estimation of the maw of the cloud fraction
       fnebmax(i) = max(fnebmax(i+1),fneray(i))
     enddo
 
     fnebmax(k1) = fnebmax(k1p1)
 
-    ! single scattering albedo for all cloud layers
+    ! Single scattering albedo for all cloud layers
     !    (for pure water pioc=1)
     pioc = 0.9988d0
     tauc(kmray+1) = 0.d0
 
     ! 6.3 O3 absorption in presence of clouds
 
-    ! calculation of the different albedoes for O3 (Stephens, 74)
+    ! Calculation of the different albedos for O3 (Stephens, 74)
 
-    ! assymetric factor for liquid water
+    ! Asymmetric factor for liquid water
 
     gasym = 0.85d0
 

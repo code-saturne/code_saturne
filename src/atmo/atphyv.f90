@@ -125,7 +125,7 @@ endif
 ! - Density
 ! ----------------------
 
-! Computes the perfect gaz constants according to the physics
+! Computes the perfect gas constants according to the physics
 
 rhum = rair
 rscp = rair/cp0

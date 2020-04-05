@@ -136,7 +136,7 @@ enddo
 deallocate(gradv)
 
 !===============================================================================
-! 3.  Calcualtion of (dynamic) velocity
+! 3.  Calculation of (dynamic) velocity
 !===============================================================================
 
 coef = csmago**2 * sqrt(2.d0)

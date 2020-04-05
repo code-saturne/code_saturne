@@ -350,7 +350,6 @@ else if (hybrid_turb.eq.3) then
   enddo
 
   call viscfa &
-       !==========
      ( imvisf ,                                                       &
        w1     ,                                                       &
        viscf  , viscb  )
@@ -1491,7 +1490,7 @@ if (allocated(rotfct))  deallocate(rotfct)
  1000 format(/, &
 '   ** SOLVING K-OMEGA'                           ,/,&
 '      ---------------'                           ,/)
- 1100 format(1X,A8,' : EXPLICIT BALANCE = ',E14.5)
+ 1100 format(1X,A8,': EXPLICIT BALANCE = ',E14.5)
 
 !----
 ! End

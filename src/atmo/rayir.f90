@@ -239,7 +239,7 @@ enddo
 dz0(kmray) = 0.d0
 zbas = zray(k1)
 
-! 1. computation to estimate absorption for water vapor and its dimer
+! 1. Computation to estimate absorption for water vapor and its dimer
 
 do k = k1, kmray
   if(qlray(k).gt.1.d-8) inua = 1
