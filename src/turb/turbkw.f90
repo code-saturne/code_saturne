@@ -570,6 +570,7 @@ if (igrake.eq.1) then
      grad   )
 
     do iel = 1, ncel
+      rho = cromo(iel)
       grad_dot_g(iel) = (grad(1,iel)*gx + grad(2,iel)*gy + grad(3,iel)*gz) &
         / (rho*prdtur)
     enddo
@@ -577,7 +578,6 @@ if (igrake.eq.1) then
   endif
 
   do iel = 1, ncel
-    rho = cromo(iel)
     visct = cpro_pcvto(iel)
 
     w2(iel) = - grad_dot_g(iel)
