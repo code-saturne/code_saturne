@@ -128,8 +128,6 @@ do iel = 1, ncel
           + 0.5d0*(dudz+dwdx)**2      &
           + 0.5d0*(dvdz+dwdy)**2
 
-  s2(iel) = max(s2(iel),1.d-10)
-
 enddo
 
 ! Free memory
