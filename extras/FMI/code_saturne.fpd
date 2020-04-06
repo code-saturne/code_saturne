@@ -1,0 +1,52 @@
+[FMU]
+name: code_saturne
+description: Simulation model of code_saturne
+
+
+[Variable]
+name: run_id
+type: String
+causality: parameter
+variability: fixed
+initial: exact
+startValue: run
+
+[Variable]
+name: code_saturne
+type: String
+causality: parameter
+variability: fixed
+initial: exact
+startValue: path/opt/bin/code_saturne
+
+[Variable]
+name: casename
+type: String
+causality: parameter
+variability: fixed
+initial: exact
+startValue: path/16_SUPERNIMBUS/CASE1
+
+[Variable]
+name: cold_velocity
+type: Real
+causality: input
+variability: discrete
+initial: exact
+startValue: 0.03183
+
+[Variable]
+name: temp1
+type: Real
+causality: local
+variability: continuous
+initial: exact
+startValue: 27
+
+[Variable]
+name: temp2
+type: Real
+causality: local
+variability: continuous
+initial: exact
+startValue: 27

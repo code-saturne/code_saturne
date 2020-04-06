@@ -73,6 +73,7 @@ $(AUX_DIST) \
 install_saturne.py \
 NEWS.md \
 README.md \
+extras/FMI/README.md \
 QUALITY_ASSURANCE \
 build-aux/catalyst \
 build-aux/catalyst-5.6 \

@@ -3,6 +3,11 @@ Master (not on release branches yet)
 
 User changes:
 
+- Add a code_saturne FMU example with full implementation of the methods
+  allowing to operate with it from a master FMU. extras/FMI/README.md provides
+  brief indications on how to create a code_saturne FMU. The example is based
+  on the simulation of a stratified flow upstream and downstream a T-junction.
+
 - Add new features to control file API aiming at using code_saturne as an FMU
   through socket communications:
   * retrieve a notebook parameter value ("get")
