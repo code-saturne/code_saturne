@@ -2065,12 +2065,12 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
   /* Add equations to be solved at each time step */
   cs_thermal_system_compute(mesh, time_step, connect, quant);
 
-  /* Solve the Navier-Stokes system */
-  cs_navsto_system_compute(mesh, time_step, connect, quant);
-
   /* Update fields and properties which are related to solved variables */
   solid->update(mesh, connect, quant, time_step,
                 true); /* operate current to previous ? */
+
+  /* Solve the Navier-Stokes system */
+  cs_navsto_system_compute(mesh, time_step, connect, quant);
 
   /* Perform the monitoring */
   _do_monitoring(quant);
