@@ -990,6 +990,28 @@ _control_notebook(const cs_time_step_t   *ts,
       }
       ignored = false;
     }
+  } else if (strncmp(*s, "get ", 4) == 0) {
+    char *name;
+    double val = 0.;
+    _read_next_string(true, s, &name);
+    int editable;
+    int is_present = cs_notebook_parameter_is_present(name,
+                                                      &editable);
+    if (is_present > 0) {
+      val = cs_notebook_parameter_value_by_name(name);
+      bft_printf("  %-32s \"%s\" get : %12.5g\n",
+                 "notebook", name, val);
+      ignored = false;
+
+#if defined(HAVE_SOCKET)
+      if (_cs_glob_control_comm != NULL) {
+        char reply[20] = "\0";
+        sprintf(reply, "get: %.3f", val);
+        _comm_write_sock(_cs_glob_control_comm, reply, 1, strlen(reply) + 1);
+      }
+#endif
+
+    }
   }
 
   if (ignored)
@@ -1404,8 +1426,16 @@ cs_control_check_file(void)
 
   /* Test control queue and connection second */
 
-  if (_control_advance_steps > 0)
+  if (_control_advance_steps > 0) {
+
     _control_advance_steps -= 1;
+
+#if defined(HAVE_SOCKET)
+    char reply[13] = "Iteration OK";
+    if (_cs_glob_control_comm != NULL)
+      _comm_write_sock(_cs_glob_control_comm, reply, 1, strlen(reply)+1);
+#endif
+  }
 
   if (   _cs_glob_control_queue != NULL
       && _control_advance_steps < 1) {

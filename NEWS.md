@@ -1,6 +1,14 @@
 Master (not on release branches yet)
 ------------------------------------
 
+User changes:
+
+- Add new features to control file API aiming at using code_saturne as an FMU
+  through socket communications:
+  * retrieve a notebook parameter value ("get")
+  * send back a message if an iteration has been done subsequently
+    to an "advance" message to allow a finer control.
+
 Architectural changes:
 
 - Add the possibility to create a desktop shortcut on linux systems.
