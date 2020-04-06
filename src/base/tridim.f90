@@ -320,7 +320,7 @@ if (ippmod(idarcy).eq.-1) then
 !   hydrostatique, ni dans le cas du compressible
 
   if (      ntcabs.le.ntinit .and. isuite.eq.0               &
-      .and. (iphydr.eq.0.or.iphydr.eq.2)                     &
+      .and. (iphydr.eq.0)                                    &
       .and. ippmod(icompf).lt.0                              &
       .and. idilat.le.1) then
 

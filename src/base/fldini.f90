@@ -191,11 +191,6 @@ if (iphydr.eq.1) then
   call field_set_key_int(f_id, keyvis, POST_ON_LOCATION)
 endif
 
-if (iphydr.eq.2) then
-  call field_find_or_create('hydrostatic_pressure_prd', &
-                            itycat, ityloc, idim1, f_id)
-endif
-
 ! friction velocity at the wall, in the case of a LES calculation
 ! with van Driest-wall damping (delayed here rather than placed in
 ! addfld, as idries may be set in modini).

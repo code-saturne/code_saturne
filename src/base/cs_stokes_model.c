@@ -444,10 +444,7 @@ cs_stokes_model_log_setup(void)
           "   static pressure algorithm)"),
        N_("1 (account for explicit balance between pressure\n"
           "                   "
-          "   gradient, gravity source terms and head losses)"),
-       N_("2 (compute a hydrostatic pressure which is\n"
-          "                   "
-          "   in balance with buoyancy)")};
+          "   gradient, gravity source terms and head losses)")};
   cs_log_printf(CS_LOG_SETUP,
                 _("    iphydr:        %s\n"),
                 _(iphydr_value_str[stokes_model->iphydr]));
