@@ -466,7 +466,7 @@ _comm_read_sock_to_queue(cs_control_queue_t  *queue,
 
     /* Check for end of command (end of line if not escaped
        by continuation character such as "/" or "," */
-    size_t cut_id = start_id + ret;
+    size_t cut_id = start_id + ret - 1;
     bool escape = false;
     queue->buf_idx[2] = cut_id;
     while (cut_id > 0 && queue->buf[cut_id] != '\0') {
@@ -1224,6 +1224,7 @@ _parse_control_buffer(const char         *name,
 
     else if (strncmp(s, "disconnect ", 11) == 0) {
       cs_control_comm_finalize();
+      break;
     }
 
     /* Advance */
