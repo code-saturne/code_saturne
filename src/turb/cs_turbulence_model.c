@@ -382,22 +382,6 @@ const cs_turb_les_model_t  *cs_glob_turb_les_model = &_turb_les_model;
  *  Global variables
  *============================================================================*/
 
-static const char *_wall_f_names[]
-  = {N_("Disabled"),
-     N_("One scale power law, forbidden for k-eps"),
-     N_("One scale log law"),
-     N_("Two scales log law"),
-     N_("Scalable wall function"),
-     N_("Two scales Van Driest"),
-     N_("Two scales smooth/rough"),
-     N_("All y+")};
-
-static const char *_wall_f_s_names[]
-  = {N_("Arparci and Larsen"),
-     N_("Van Driest"),
-     N_("Louis (atmo flows)"),
-     N_("Monin Obukhov (atmo flows)")};
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*!
@@ -1580,15 +1564,6 @@ cs_turb_model_log_setup(void)
       (CS_LOG_SETUP,
        _("   Second order model (order = CS_TURB_SECOND_ORDER)\n"));
 
-  const char *iwallf_value_str[]
-    = {N_("0 (disabled)"),
-       N_("1 (one scale power law forbidden for k-epsilon)"),
-       N_("2 (one scale log law)"),
-       N_("3 (two scales log law)"),
-       N_("4 (scalable wall function)"),
-       N_("5 (two scales V. Driest)"),
-       N_("6 (two scales smooth/rough")};
-
   cs_log_printf
     (CS_LOG_SETUP,
      _("\n    %s\n"
@@ -1596,12 +1571,35 @@ cs_turb_model_log_setup(void)
      _turbulence_model_name(turb_model->iturb),
      _turbulence_model_enum_name(turb_model->iturb));
 
-  cs_log_printf
-    (CS_LOG_SETUP,
-     _("    iwallf:        %s (Wall function\n"
-       "    iwalfs:        %s (Scalar wall function)\n"),
-     _wall_f_names[cs_glob_wall_functions->iwallf],
-     _wall_f_s_names[cs_glob_wall_functions->iwalfs]);
+  const char *iwallf_value_str[]
+    = {N_("Disabled"),
+      N_("One scale power law, forbidden for k-epsilon"),
+      N_("One scale log law"),
+      N_("Two scales log law"),
+      N_("Scalable wall function"),
+      N_("Two scales Van Driest"),
+      N_("Two scales smooth/rough"),
+      N_("All y+")};
+
+  if (cs_glob_wall_functions->iwallf >= 0)
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("    iwallf                      (wall function:\n"
+         "                                 %s)\n"),
+       iwallf_value_str[cs_glob_wall_functions->iwallf]);
+
+  const char *iwalfs_value_str[]
+    = {N_("Arparci and Larsen"),
+      N_("Van Driest"),
+      N_("Louis (atmo flows)"),
+      N_("Monin Obukhov (atmo flows)")};
+
+  if (cs_glob_wall_functions->iwalfs >= 0)
+    cs_log_printf
+      (CS_LOG_SETUP,
+       _("    iwalfs                      (Scalar wall function:\n"
+         "                                 %s)\n"),
+       iwalfs_value_str[cs_glob_wall_functions->iwalfs]);
 
   const char *iwallt_value_str[]
     = {N_("0 (no exchange coefficient correlation)"),
