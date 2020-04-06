@@ -131,6 +131,7 @@ double precision var, vrmin(2), vrmax(2)
 double precision utaurf,ut2,ypa,ya,xunorm, limiter, nu0
 double precision turb_schmidt
 double precision normp
+double precision k_dmut_dom
 
 double precision rvoid(1)
 
