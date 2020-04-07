@@ -248,6 +248,23 @@ cs_solidification_set_voller_model(cs_real_t    t_solidus,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the main numerical parameters which described a solidification
+ *         process with a binary alloy (with component A and B)
+ *
+ * \param[in]  n_iter_max    max.number of iterations for the C/T equations
+ * \param[in]  g_l_eps       tolerance requested between two iterations
+ * \param[in]  forcing_coef  (< 0) coefficient in the reaction term to reduce
+ *                           the velocity
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solidification_set_binary_alloy_param(int             n_iter_max,
+                                         double          g_l_eps,
+                                         cs_real_t       forcing_coef);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set the main physical parameters which described a solidification
  *         process with a binary alloy (with component A and B)
  *         Add a transport equation for the solute concentration to simulate
@@ -264,8 +281,6 @@ cs_solidification_set_voller_model(cs_real_t    t_solidus,
  * \param[in]  t_melt        phase-change temperature for the pure material (A)
  * \param[in]  solute_diff   solutal diffusion coefficient in the liquid
  * \param[in]  latent_heat   latent heat
- * \param[in]  forcing_coef  (< 0) coefficient in the reaction term to reduce
- *                           the velocity
  */
 /*----------------------------------------------------------------------------*/
 
@@ -279,8 +294,7 @@ cs_solidification_set_binary_alloy_model(const char     *name,
                                          cs_real_t       t_eutec,
                                          cs_real_t       t_melt,
                                          cs_real_t       solute_diff,
-                                         cs_real_t       latent_heat,
-                                         cs_real_t       forcing_coef);
+                                         cs_real_t       latent_heat);
 
 /*----------------------------------------------------------------------------*/
 /*!

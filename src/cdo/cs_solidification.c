@@ -209,6 +209,11 @@ typedef struct {
    * --> c = (gs*kp + gl)*c_l
    */
 
+  /* Drive the convergence of the liquid fraction between the solutal
+     concentration and the thermal equation */
+  int      n_iter_max;
+  double   g_l_tolerance;
+
   /* Solute concentration in the liquid phase
    * 1) cs_field_t structure for values at cells
    * 2) array of values at faces (interior and border) */
@@ -393,6 +398,42 @@ _solidification_create(void)
   solid->update = NULL;
 
   return solid;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the normalized L2-norm of the delta of the liquid fraction
+ *         values between two sub-iterations
+ *
+ * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  g_l_ref    previous iterate
+ * \param[in]  g_l_new    new iterate
+ */
+/*----------------------------------------------------------------------------*/
+
+static double
+_compute_g_l_norm(const cs_cdo_quantities_t   *quant,
+                  const cs_real_t             *g_l_ref,
+                  const cs_real_t             *g_l_new)
+{
+  cs_real_t  sum[2] = {0., 0.};
+
+  for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
+
+    const cs_real_t  gnew = g_l_new[c_id], gref = g_l_ref[c_id];
+
+    sum[0] += gref*gref*quant->cell_vol[c_id];
+    sum[1] += (gnew - gref)*(gnew - gref)*quant->cell_vol[c_id];
+
+  } /* Loop on cells */
+
+  /* Parallel synchronization of the number of cells in each state */
+  cs_parall_sum(2, CS_REAL_TYPE, sum);
+
+  if (fabs(sum[0]) < FLT_MIN)
+    sum[0] = 1;
+
+  return sqrt(sum[1]/sum[0]);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1200,9 +1241,6 @@ _update_state_binary_alloy(const cs_mesh_t             *mesh,
      as the cell state */
   alloy->update_gl(mesh, connect, quant, ts, cur2prev);
 
-  /* Evaluate the evolution of the liquid fraction betwwen two time steps */
-  _g_l_drift(quant, ts);
-
   /* At this stage, the number of solid cells is a local count
    * Set the enforcement of the velocity for solid cells */
   if (solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID] > 0)
@@ -1746,6 +1784,40 @@ cs_solidification_set_voller_model(cs_real_t    t_solidus,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set the main numerical parameters which described a solidification
+ *         process with a binary alloy (with component A and B)
+ *
+ * \param[in]  n_iter_max    max.number of iterations for the C/T equations
+ * \param[in]  g_l_eps       tolerance requested between two iterations
+ * \param[in]  forcing_coef  (< 0) coefficient in the reaction term to reduce
+ *                           the velocity
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solidification_set_binary_alloy_param(int             n_iter_max,
+                                         double          g_l_eps,
+                                         cs_real_t       forcing_coef)
+{
+  cs_solidification_t  *solid = cs_solidification_structure;
+  if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
+
+  cs_solidification_binary_alloy_t  *alloy
+    = (cs_solidification_binary_alloy_t *)solid->model_context;
+
+  /* Sanity checks */
+  assert(n_iter_max > 0 && g_l_eps > 0);
+  assert(solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY);
+  assert(alloy != NULL);
+
+  /* Numerical parameters */
+  alloy->n_iter_max = n_iter_max;
+  alloy->g_l_tolerance = g_l_eps;
+  alloy->forcing_coef = forcing_coef;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set the main physical parameters which described a solidification
  *         process with a binary alloy (with component A and B)
  *         Add a transport equation for the solute concentration to simulate
@@ -1762,8 +1834,6 @@ cs_solidification_set_voller_model(cs_real_t    t_solidus,
  * \param[in]  t_melt        phase-change temperature for the pure material (A)
  * \param[in]  solute_diff   solutal diffusion coefficient in the liquid
  * \param[in]  latent_heat   latent heat
- * \param[in]  forcing_coef  (< 0) coefficient in the reaction term to reduce
- *                           the velocity
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1777,8 +1847,7 @@ cs_solidification_set_binary_alloy_model(const char     *name,
                                          cs_real_t       t_eutec,
                                          cs_real_t       t_melt,
                                          cs_real_t       solute_diff,
-                                         cs_real_t       latent_heat,
-                                         cs_real_t       forcing_coef)
+                                         cs_real_t       latent_heat)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
   if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
@@ -1835,8 +1904,13 @@ cs_solidification_set_binary_alloy_model(const char     *name,
 
   cs_equation_add_diffusion(eqp, alloy->diff_pty);
 
+  /* Numerical parameters (default values) */
+  alloy->n_iter_max = 1;
+  alloy->g_l_tolerance = 1e-3;
+  alloy->forcing_coef = 1600;
+
+  /* Physical constants */
   alloy->latent_heat = latent_heat;
-  alloy->forcing_coef = forcing_coef;
 
   /* Phase diagram parameters */
   alloy->kp = kp;
@@ -2334,16 +2408,63 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
 
     cs_solidification_binary_alloy_t  *alloy
       = (cs_solidification_binary_alloy_t *)solid->model_context;
+    cs_field_t  *g_l_fld = cs_field_by_name_try("liquid_fraction");
 
-    cs_equation_solve(true, mesh, alloy->solute_equation);
+    size_t  bsize = quant->n_cells*sizeof(cs_real_t);
+    int n_iter = 0;
+    double  delta_g_l_norm = FLT_MAX;
+
+    cs_real_t  *g_l_iterate = NULL;
+    BFT_MALLOC(g_l_iterate, quant->n_cells, cs_real_t);
+    memcpy(g_l_iterate, g_l_fld->val, bsize);
+
+    while (delta_g_l_norm < alloy->g_l_tolerance ||
+           n_iter < alloy->n_iter_max) {
+
+      /* Solve C_bulk  */
+      cs_equation_solve(false, mesh, alloy->solute_equation);
+
+      /* Solve the thermal system */
+      cs_thermal_system_compute(false, mesh, time_step, connect, quant);
+
+      /* Update fields and properties which are related to solved variables */
+      solid->update(mesh, connect, quant, time_step,
+                    false); /* operate current to previous ? */
+
+      /* Update g_lnorm */
+      delta_g_l_norm = _compute_g_l_norm(quant, g_l_iterate, g_l_fld->val);
+
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "### Solidification: k=%d delta_g_l_norm = %5.3e\n",
+                    n_iter, delta_g_l_norm);
+
+      memcpy(g_l_iterate, g_l_fld->val, bsize);
+      n_iter++;
+
+    } /* Loop on the thermodynamical systems */
+
+    /* Now perform the current to previous mechanism */
+    cs_field_current_to_previous(solid->g_l_field);
+    cs_field_current_to_previous(alloy->c_l_field);
+
+    /* Evaluate the evolution of the liquid fraction betwwen during this
+       time step */
+    _g_l_drift(quant, time_step);
+
+    /* Free memory */
+    BFT_FREE(g_l_iterate);
+
   }
+  else { /* Solidification process with a pure component */
 
-  /* Add equations to be solved at each time step */
-  cs_thermal_system_compute(true, mesh, time_step, connect, quant);
+    /* Add equations to be solved at each time step */
+    cs_thermal_system_compute(true, mesh, time_step, connect, quant);
 
-  /* Update fields and properties which are related to solved variables */
-  solid->update(mesh, connect, quant, time_step,
-                true); /* operate current to previous ? */
+    /* Update fields and properties which are related to solved variables */
+    solid->update(mesh, connect, quant, time_step,
+                  true); /* operate current to previous ? */
+
+  }
 
   /* Solve the Navier-Stokes system */
   cs_navsto_system_compute(mesh, time_step, connect, quant);
