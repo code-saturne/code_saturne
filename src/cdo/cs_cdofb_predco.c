@@ -518,7 +518,8 @@ _solve_pressure_correction(const cs_mesh_t              *mesh,
   cs_timer_counter_add_diff(&(pre_eqb->tcb), &t_bld, &t_tmp);
 
   /* Solve the equation related to the pressure increment */
-  cs_cdofb_scaleq_solve_steady_state(mesh,
+  cs_cdofb_scaleq_solve_steady_state(true, /* cur2prev */
+                                     mesh,
                                      pre_eq->field_id,
                                      pre_eqp,
                                      pre_eqb,

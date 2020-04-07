@@ -174,16 +174,18 @@ cs_cdovb_vecteq_init_values(cs_real_t                     t_eval,
  *         convection/diffusion/reaction equation with a CDO-Vb scheme.
  *         One works cellwise and then process to the assembly.
  *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
  * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] context    pointer to cs_cdovb_scaleq_t structure
+ * \param[in, out] context    pointer to cs_cdovb_vecteq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
+cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
+                                   const cs_mesh_t            *mesh,
                                    const int                   field_id,
                                    const cs_equation_param_t  *eqp,
                                    cs_equation_builder_t      *eqb,

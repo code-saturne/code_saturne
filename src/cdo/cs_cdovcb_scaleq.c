@@ -664,6 +664,42 @@ _assemble(const cs_cdovcb_scaleq_t          *eqc,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Update the variables related to CDO-VCb system after a resolution
+ *
+ * \param[in, out] tce       pointer to a timer counter
+ * \param[in, out] fld       pointer to a cs_field_t structure
+ * \param[in, out] eqc       pointer to a context structure
+ * \param[in]      cur2prev  true if one performs "current to previous" op.
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline void
+_update_cell_fields(cs_timer_counter_t      *tce,
+                    cs_field_t              *fld,
+                    cs_cdovcb_scaleq_t      *eqc,
+                    bool                     cur2prev)
+{
+  cs_timer_t  t0 = cs_timer_time();
+
+  /* Copy current field values to previous values */
+  if (cur2prev && eqc->cell_values_pre != NULL) {
+    size_t  bsize = cs_shared_connect->n_cells*sizeof(cs_real_t);
+    memcpy(eqc->cell_values_pre, eqc->cell_values, bsize);
+  }
+
+  /* Compute values at cells pc = acc^-1*(RHS - Acv*pv) */
+  cs_static_condensation_recover_scalar(cs_shared_connect->c2v,
+                                        eqc->rc_tilda,
+                                        eqc->acv_tilda,
+                                        fld->val,
+                                        eqc->cell_values);
+
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(tce, &t0, &t1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Update the value of stabilization coefficient in given situation
  *
  * \param[in]  eqp    pointer to a cs_equation_param_t  structure
@@ -1483,6 +1519,7 @@ cs_cdovcb_scaleq_interpolate(const cs_mesh_t            *mesh,
  *         convection/diffusion/reaction equation with a CDO-VCb scheme
  *         One works cellwise and then process to the assembly.
  *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -1492,7 +1529,8 @@ cs_cdovcb_scaleq_interpolate(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
+cs_cdovcb_scaleq_solve_steady_state(bool                        cur2prev,
+                                    const cs_mesh_t            *mesh,
                                     const int                   field_id,
                                     const cs_equation_param_t  *eqp,
                                     cs_equation_builder_t      *eqb,
@@ -1661,7 +1699,8 @@ cs_cdovcb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
   cs_matrix_assembler_values_finalize(&mav);
 
   /* Copy current field values to previous values */
-  cs_field_current_to_previous(fld);
+  if (cur2prev)
+    cs_field_current_to_previous(fld);
 
   /* End of the system building */
   cs_timer_t  t1 = cs_timer_time();
@@ -1684,15 +1723,8 @@ cs_cdovcb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
 
-  /* Compute values at cells pc = acc^-1*(RHS - Acv*pv) */
-  cs_static_condensation_recover_scalar(cs_shared_connect->c2v,
-                                        eqc->rc_tilda,
-                                        eqc->acv_tilda,
-                                        fld->val,
-                                        eqc->cell_values);
-
-  cs_timer_t  t3 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tce), &t2, &t3);
+  /* Update fields */
+  _update_cell_fields(&(eqb->tce), fld, eqc, cur2prev);
 
   /* Free remaining buffers */
   BFT_FREE(rhs);
@@ -1707,6 +1739,7 @@ cs_cdovcb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
  *         Time scheme is an implicit Euler
  *         One works cellwise and then process to the assembly.
  *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -1716,7 +1749,8 @@ cs_cdovcb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
+cs_cdovcb_scaleq_solve_implicit(bool                        cur2prev,
+                                const cs_mesh_t            *mesh,
                                 const int                   field_id,
                                 const cs_equation_param_t  *eqp,
                                 cs_equation_builder_t      *eqb,
@@ -1942,7 +1976,8 @@ cs_cdovcb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
   cs_matrix_assembler_values_finalize(&mav);
 
   /* Copy current field values to previous values */
-  cs_field_current_to_previous(fld);
+  if (cur2prev)
+    cs_field_current_to_previous(fld);
 
   /* End of the system building */
   cs_timer_t  t1 = cs_timer_time();
@@ -1965,15 +2000,8 @@ cs_cdovcb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
 
-  /* Compute values at cells pc = acc^-1*(RHS - Acv*pv) */
-  cs_static_condensation_recover_scalar(cs_shared_connect->c2v,
-                                        eqc->rc_tilda,
-                                        eqc->acv_tilda,
-                                        fld->val,
-                                        eqc->cell_values);
-
-  cs_timer_t  t3 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tce), &t2, &t3);
+  /* Update fields */
+  _update_cell_fields(&(eqb->tce), fld, eqc, cur2prev);
 
   /* Free remaining buffers */
   BFT_FREE(rhs);
@@ -1988,6 +2016,7 @@ cs_cdovcb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
  *         Time scheme is a theta scheme.
  *         One works cellwise and then process to the assembly.
  *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -1997,7 +2026,8 @@ cs_cdovcb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
+cs_cdovcb_scaleq_solve_theta(bool                        cur2prev,
+                             const cs_mesh_t            *mesh,
                              const int                   field_id,
                              const cs_equation_param_t  *eqp,
                              cs_equation_builder_t      *eqb,
@@ -2299,7 +2329,8 @@ cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
   cs_matrix_assembler_values_finalize(&mav);
 
   /* Copy current field values to previous values */
-  cs_field_current_to_previous(fld);
+  if (cur2prev)
+    cs_field_current_to_previous(fld);
 
   /* End of the system building */
   cs_timer_t  t1 = cs_timer_time();
@@ -2322,13 +2353,8 @@ cs_cdovcb_scaleq_solve_theta(const cs_mesh_t            *mesh,
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
 
-  /* Compute values at cells pc = acc^-1*(RHS - Acv*pv) */
-  cs_static_condensation_recover_scalar(cs_shared_connect->c2v,
-                                        eqc->rc_tilda, eqc->acv_tilda,
-                                        fld->val, eqc->cell_values);
-
-  cs_timer_t  t3 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tce), &t2, &t3);
+  /* Update fields */
+  _update_cell_fields(&(eqb->tce), fld, eqc, cur2prev);
 
   /* Free remaining buffers */
   BFT_FREE(rhs);

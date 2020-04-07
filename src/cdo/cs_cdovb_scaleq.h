@@ -170,6 +170,7 @@ cs_cdovb_scaleq_init_values(cs_real_t                     t_eval,
  *         convection/diffusion/reaction equation with a CDO-Vb scheme
  *         One works cellwise and then process to the assembly
  *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -179,11 +180,12 @@ cs_cdovb_scaleq_init_values(cs_real_t                     t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t             *mesh,
-                                   const int                    field_id,
-                                   const cs_equation_param_t   *eqp,
-                                   cs_equation_builder_t       *eqb,
-                                   void                        *context);
+cs_cdovb_scaleq_solve_steady_state(bool                        cur2prev,
+                                   const cs_mesh_t            *mesh,
+                                   const int                   field_id,
+                                   const cs_equation_param_t  *eqp,
+                                   cs_equation_builder_t      *eqb,
+                                   void                       *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -192,6 +194,7 @@ cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t             *mesh,
  *         Implicit time scheme is used to progress in time.
  *         One works cellwise and then process to the assembly
  *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -201,7 +204,8 @@ cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t             *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
+cs_cdovb_scaleq_solve_implicit(bool                        cur2prev,
+                               const cs_mesh_t            *mesh,
                                const int                   field_id,
                                const cs_equation_param_t  *eqp,
                                cs_equation_builder_t      *eqb,
@@ -214,6 +218,7 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
  *         Theta time scheme is used to progress in time.
  *         One works cellwise and then process to the assembly
  *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -223,7 +228,8 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
+cs_cdovb_scaleq_solve_theta(bool                        cur2prev,
+                            const cs_mesh_t            *mesh,
                             const int                   field_id,
                             const cs_equation_param_t  *eqp,
                             cs_equation_builder_t      *eqb,

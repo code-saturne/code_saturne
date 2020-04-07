@@ -171,7 +171,9 @@ _compute_unsteady_user_equations(cs_domain_t   *domain,
         if (type == CS_EQUATION_TYPE_USER) {
 
           if (cs_equation_uses_new_mechanism(eq))
-            cs_equation_solve(domain->mesh, eq);
+            /* By default, a current to previous operation is
+               performed */
+            cs_equation_solve(true, domain->mesh, eq);
 
           else { /* Deprecated */
 
@@ -313,8 +315,8 @@ _solve_domain(cs_domain_t  *domain)
     const double  dt_cur = ts->dt[0];
 
     cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "# Iter: %d >> Solve domain from time=%6.4e to %6.4e; dt=%5.3e",
+    cs_log_printf(CS_LOG_DEFAULT, "# Iter: %d >>"
+                  " Solve domain from time=%6.4e to %6.4e; dt=%5.3e",
                   nt_cur, t_cur, t_cur + dt_cur, dt_cur);
     cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
 
@@ -332,7 +334,8 @@ _solve_domain(cs_domain_t  *domain)
 
     /* 1. Thermal module */
     if (cs_thermal_system_is_activated())
-      cs_thermal_system_compute(domain->mesh,
+      cs_thermal_system_compute(true, /* current to previous */
+                                domain->mesh,
                                 domain->time_step,
                                 domain->connect,
                                 domain->cdo_quantities);

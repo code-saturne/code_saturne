@@ -1660,8 +1660,8 @@ _update_divergence(cs_cdofb_monolithic_t         *sc,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_fields(cs_cdofb_monolithic_t         *sc,
-               cs_cdofb_vecteq_t             *mom_eqc)
+_update_cell_fields(cs_cdofb_monolithic_t         *sc,
+                    cs_cdofb_vecteq_t             *mom_eqc)
 {
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
@@ -2143,7 +2143,7 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
   }
 
   /* Now compute/update the velocity and pressure fields */
-  _update_fields(sc, mom_eqc);
+  _update_cell_fields(sc, mom_eqc);
 
   /* Frees */
   cs_cdofb_monolithic_sles_clean(msles);
@@ -2287,7 +2287,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
    *--------------------------------------------------------------------------*/
 
   /* Now compute/update the velocity and pressure fields */
-  _update_fields(sc, mom_eqc);
+  _update_cell_fields(sc, mom_eqc);
 
   /* Frees */
   cs_cdofb_monolithic_sles_clean(msles);
@@ -2384,7 +2384,7 @@ cs_cdofb_monolithic(const cs_mesh_t          *mesh,
     cs_log_printf(CS_LOG_DEFAULT, " ||div(u)|| = %6.4e\n", div_l2_norm);
 
   /* Now compute/update the velocity and pressure fields */
-  _update_fields(sc, mom_eqc);
+  _update_cell_fields(sc, mom_eqc);
 
   /* Frees */
   cs_cdofb_monolithic_sles_clean(msles);
@@ -2532,7 +2532,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
    *--------------------------------------------------------------------------*/
 
   /* Now compute/update the velocity and pressure fields */
-  _update_fields(sc, mom_eqc);
+  _update_cell_fields(sc, mom_eqc);
 
   /* Frees */
   cs_cdofb_monolithic_sles_clean(msles);

@@ -826,6 +826,7 @@ cs_cdoeb_vecteq_init_values(cs_real_t                     t_eval,
  *         convection/diffusion/reaction equation with a CDO-Eb scheme.
  *         One works cellwise and then process to the assembly.
  *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -835,7 +836,8 @@ cs_cdoeb_vecteq_init_values(cs_real_t                     t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdoeb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
+cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
+                                   const cs_mesh_t            *mesh,
                                    const int                   field_id,
                                    const cs_equation_param_t  *eqp,
                                    cs_equation_builder_t      *eqb,
@@ -1008,6 +1010,10 @@ cs_cdoeb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
   /* Solve the linear system */
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
 
+  /* Update edge arrays */
+  if (cur2prev && eqc->edge_values_pre != NULL)
+    memcpy(eqc->edge_values_pre, eqc->edge_values, sizeof(cs_real_t)*n_edges);
+
   cs_equation_solve_scalar_system(eqc->n_dofs,
                                   eqp,
                                   matrix,
@@ -1021,14 +1027,15 @@ cs_cdoeb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
 
-  /* Copy current field values to previous values and update the related
-     field values */
-  cs_field_current_to_previous(fld);
+  /* Update fields associated to cells */
+  if (cur2prev)
+    cs_field_current_to_previous(fld);
 
   /* Update the vector-valued field associated to cells */
-  cs_reco_ccen_edge_dofs(connect, quant,
-                         eqc->edge_values,
-                         &(fld->val));
+  cs_reco_ccen_edge_dofs(connect, quant, eqc->edge_values, &(fld->val));
+
+  cs_timer_t  t3 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tce), &t2, &t3);
 
   /* Free remaining buffers */
   BFT_FREE(rhs);

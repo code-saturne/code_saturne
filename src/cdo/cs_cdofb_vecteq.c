@@ -717,10 +717,45 @@ cs_cdofb_vecteq_assembly(const cs_cell_sys_t            *csys,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Update the variables associated to cells in case of a CDO-Fb
+ *         scheme. This has to be done after a resolution.
+ *
+ * \param[in, out] tce       pointer to a timer counter
+ * \param[in, out] fld       pointer to a cs_field_t structure
+ * \param[in, out] eqc       pointer to a context structure
+ * \param[in]      cur2prev  true if one performs "current to previous" op.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_vecteq_update_cell_fields(cs_timer_counter_t      *tce,
+                                   cs_field_t              *fld,
+                                   cs_cdofb_vecteq_t       *eqc,
+                                   bool                     cur2prev)
+{
+  cs_timer_t  t0 = cs_timer_time();
+
+  /* Copy current field values to previous values */
+  if (cur2prev)
+    cs_field_current_to_previous(fld);
+
+  /* Compute values at cells pc from values at faces pf
+     pc = acc^-1*(RHS - Acf*pf) */
+  cs_static_condensation_recover_vector(cs_shared_connect->c2f,
+                                        eqc->rc_tilda, eqc->acf_tilda,
+                                        eqc->face_values, fld->val);
+
+  cs_timer_t  t1 = cs_timer_time();
+  cs_timer_counter_add_diff(tce, &t0, &t1);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build and solve the linear system arising from a vector steady-state
  *         diffusion equation with a CDO-Fb scheme
  *         One works cellwise and then process to the assembly
  *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -730,7 +765,8 @@ cs_cdofb_vecteq_assembly(const cs_cell_sys_t            *csys,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
+cs_cdofb_vecteq_solve_steady_state(bool                        cur2prev,
+                                   const cs_mesh_t            *mesh,
                                    const int                   field_id,
                                    const cs_equation_param_t  *eqp,
                                    cs_equation_builder_t      *eqb,
@@ -890,12 +926,8 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
-  /* Copy current field values to previous values
-   * Steady, but let us suppose we have an initial condition */
-  cs_field_current_to_previous(fld);
-
-  cs_timer_t  t2 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tce), &t1, &t2);
+  if (cur2prev && eqc->face_values_pre != NULL)
+    memcpy(eqc->face_values_pre, eqc->face_values, sizeof(cs_real_t)*3*n_faces);
 
   /* Solve the linear system (treated as a scalar-valued system
      with 3 times more DoFs) */
@@ -912,18 +944,11 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
                                   eqc->face_values,
                                   rhs);
 
-  /* Update field */
-  cs_timer_t  t3 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tcs), &t2, &t3);
+  cs_timer_t  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
 
-  /* Compute values at cells pc from values at faces pf
-     pc = acc^-1*(RHS - Acf*pf) */
-  cs_static_condensation_recover_vector(cs_shared_connect->c2f,
-                                        eqc->rc_tilda, eqc->acf_tilda,
-                                        eqc->face_values, fld->val);
-
-  cs_timer_t  t4 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tce), &t3, &t4);
+  /* Update fields */
+  cs_cdofb_vecteq_update_cell_fields(&(eqb->tce), fld, eqc, cur2prev);
 
   /* Free remaining buffers */
   BFT_FREE(rhs);
@@ -937,6 +962,7 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
  *         equation with a CDO-Fb scheme and an implicit Euler scheme.
  *         One works cellwise and then process to the assembly
  *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -946,7 +972,8 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
+cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
+                               const cs_mesh_t            *mesh,
                                const int                   field_id,
                                const cs_equation_param_t  *eqp,
                                cs_equation_builder_t      *eqb,
@@ -1134,11 +1161,8 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
-  /* Copy current field values to previous values */
-  cs_field_current_to_previous(fld);
-
-  cs_timer_t  t2 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tce), &t1, &t2);
+  if (cur2prev && eqc->face_values_pre != NULL)
+    memcpy(eqc->face_values_pre, eqc->face_values, sizeof(cs_real_t)*3*n_faces);
 
   /* Solve the linear system (treated as a scalar-valued system
      with 3 times more DoFs) */
@@ -1155,18 +1179,11 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
                                   eqc->face_values,
                                   rhs);
 
-  cs_timer_t  t3 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tcs), &t2, &t3);
+  cs_timer_t  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
 
-  /* Update field.
-   * Compute values at cells pc from values at faces pf
-   * pc = acc^-1*(RHS - Acf*pf) */
-  cs_static_condensation_recover_vector(cs_shared_connect->c2f,
-                                        eqc->rc_tilda, eqc->acf_tilda,
-                                        eqc->face_values, fld->val);
-
-  cs_timer_t  t4 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tce), &t3, &t4);
+  /* Update fields */
+  cs_cdofb_vecteq_update_cell_fields(&(eqb->tce), fld, eqc, cur2prev);
 
   /* Free remaining buffers */
   BFT_FREE(rhs);
@@ -1180,6 +1197,7 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
  *         equation with a CDO-Fb scheme and an implicit/explicit theta scheme.
  *         One works cellwise and then process to the assembly
  *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -1189,7 +1207,8 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
+cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
+                            const cs_mesh_t            *mesh,
                             const int                   field_id,
                             const cs_equation_param_t  *eqp,
                             cs_equation_builder_t      *eqb,
@@ -1419,11 +1438,8 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
-  /* Copy current field values to previous values */
-  cs_field_current_to_previous(fld);
-
-  cs_timer_t  t2 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tce), &t1, &t2);
+  if (cur2prev && eqc->face_values_pre != NULL)
+    memcpy(eqc->face_values_pre, eqc->face_values, sizeof(cs_real_t)*3*n_faces);
 
   /* Solve the linear system (treated as a scalar-valued system
      with 3 times more DoFs) */
@@ -1440,18 +1456,11 @@ cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
                                   eqc->face_values,
                                   rhs);
 
-  cs_timer_t  t3 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tcs), &t2, &t3);
+  cs_timer_t  t2 = cs_timer_time();
+  cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
 
-  /* Update field
-   * Compute values at cells pc from values at faces pf
-   * pc = acc^-1*(RHS - Acf*pf) */
-  cs_static_condensation_recover_vector(cs_shared_connect->c2f,
-                                        eqc->rc_tilda, eqc->acf_tilda,
-                                        eqc->face_values, fld->val);
-
-  cs_timer_t  t4 = cs_timer_time();
-  cs_timer_counter_add_diff(&(eqb->tce), &t3, &t4);
+  /* Update fields */
+  cs_cdofb_vecteq_update_cell_fields(&(eqb->tce), fld, eqc, cur2prev);
 
   /* Free remaining buffers */
   BFT_FREE(rhs);

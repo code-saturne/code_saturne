@@ -371,10 +371,29 @@ cs_cdofb_vecteq_assembly(const cs_cell_sys_t            *csys,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Update the variables associated to cells in case of a CDO-Fb
+ *         scheme. This has to be done after a resolution.
+ *
+ * \param[in, out] tce       pointer to a timer counter
+ * \param[in, out] fld       pointer to a cs_field_t structure
+ * \param[in, out] eqc       pointer to a context structure
+ * \param[in]      cur2prev  true if one performs "current to previous" op.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_vecteq_update_cell_fields(cs_timer_counter_t      *tce,
+                                   cs_field_t              *fld,
+                                   cs_cdofb_vecteq_t       *eqc,
+                                   bool                     cur2prev);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Build and solve the linear system arising from a vector steady-state
  *         diffusion equation with a CDO-Fb scheme
  *         One works cellwise and then process to the assembly
  *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -384,7 +403,8 @@ cs_cdofb_vecteq_assembly(const cs_cell_sys_t            *csys,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
+cs_cdofb_vecteq_solve_steady_state(bool                        cur2prev,
+                                   const cs_mesh_t            *mesh,
                                    const int                   field_id,
                                    const cs_equation_param_t  *eqp,
                                    cs_equation_builder_t      *eqb,
@@ -396,6 +416,7 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
  *         equation with a CDO-Fb scheme and an implicit Euler scheme.
  *         One works cellwise and then process to the assembly
  *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -405,7 +426,8 @@ cs_cdofb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
+cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
+                               const cs_mesh_t            *mesh,
                                const int                   field_id,
                                const cs_equation_param_t  *eqp,
                                cs_equation_builder_t      *eqb,
@@ -417,6 +439,7 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
  *         equation with a CDO-Fb scheme and an implicit/explicit theta scheme.
  *         One works cellwise and then process to the assembly
  *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -426,33 +449,12 @@ cs_cdofb_vecteq_solve_implicit(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_vecteq_solve_theta(const cs_mesh_t            *mesh,
+cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
+                            const cs_mesh_t            *mesh,
                             const int                   field_id,
                             const cs_equation_param_t  *eqp,
                             cs_equation_builder_t      *eqb,
                             void                       *context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Store solution(s) of the linear system into a field structure
- *         Update extra-field values if required (for hybrid discretization)
- *
- * \param[in]      solu       solution array
- * \param[in]      rhs        rhs associated to this solution array
- * \param[in]      eqp        pointer to a cs_equation_param_t structure
- * \param[in, out] eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out] data       pointer to cs_cdofb_vecteq_t structure
- * \param[in, out] field_val  pointer to the current value of the field
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_vecteq_update_field(const cs_real_t              *solu,
-                             const cs_real_t              *rhs,
-                             const cs_equation_param_t    *eqp,
-                             cs_equation_builder_t        *eqb,
-                             void                         *data,
-                             cs_real_t                    *field_val);
 
 /*----------------------------------------------------------------------------*/
 /*!

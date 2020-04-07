@@ -1374,6 +1374,7 @@ cs_cdovb_scaleq_init_values(cs_real_t                     t_eval,
  *         convection/diffusion/reaction equation with a CDO-Vb scheme
  *         One works cellwise and then process to the assembly
  *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -1383,7 +1384,8 @@ cs_cdovb_scaleq_init_values(cs_real_t                     t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
+cs_cdovb_scaleq_solve_steady_state(bool                        cur2prev,
+                                   const cs_mesh_t            *mesh,
                                    const int                   field_id,
                                    const cs_equation_param_t  *eqp,
                                    cs_equation_builder_t      *eqb,
@@ -1561,7 +1563,8 @@ cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
   /* Copy current field values to previous values */
-  cs_field_current_to_previous(fld);
+  if (cur2prev)
+    cs_field_current_to_previous(fld);
 
   /* Solve the linear system */
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
@@ -1592,6 +1595,7 @@ cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
  *         Implicit time scheme is used to progress in time.
  *         One works cellwise and then process to the assembly
  *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -1601,7 +1605,8 @@ cs_cdovb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
+cs_cdovb_scaleq_solve_implicit(bool                        cur2prev,
+                               const cs_mesh_t            *mesh,
                                const int                   field_id,
                                const cs_equation_param_t  *eqp,
                                cs_equation_builder_t      *eqb,
@@ -1825,7 +1830,8 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
                                      &res_normalization);
 
   /* Copy current field values to previous values */
-  cs_field_current_to_previous(fld);
+  if (cur2prev)
+    cs_field_current_to_previous(fld);
 
   /* End of the system building */
   cs_timer_t  t1 = cs_timer_time();
@@ -1860,6 +1866,7 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
  *         Theta time scheme is used to progress in time.
  *         One works cellwise and then process to the assembly
  *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -1869,7 +1876,8 @@ cs_cdovb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
+cs_cdovb_scaleq_solve_theta(bool                        cur2prev,
+                            const cs_mesh_t            *mesh,
                             const int                   field_id,
                             const cs_equation_param_t  *eqp,
                             cs_equation_builder_t      *eqb,
@@ -2167,7 +2175,8 @@ cs_cdovb_scaleq_solve_theta(const cs_mesh_t            *mesh,
                                      &res_normalization);
 
   /* Copy current field values to previous values */
-  cs_field_current_to_previous(fld);
+  if (cur2prev)
+    cs_field_current_to_previous(fld);
 
   /* End of the system building */
   cs_timer_t  t1 = cs_timer_time();

@@ -2548,7 +2548,8 @@ cs_equation_solve_steady_state(const cs_mesh_t            *mesh,
   /* Allocate, build and solve the algebraic system:
      The linear solver is called inside and the field value is updated inside
   */
-  eq->solve_steady_state(mesh,
+  eq->solve_steady_state(false, /* current ti previous */
+                         mesh,
                          eq->field_id,
                          eq->param,
                          eq->builder,
@@ -2563,13 +2564,15 @@ cs_equation_solve_steady_state(const cs_mesh_t            *mesh,
  * \brief  Build and then solve the linear system for an equation with an
  *         unsteady term
  *
- * \param[in]       mesh        pointer to a cs_mesh_t structure
- * \param[in, out]  eq          pointer to a cs_equation_t structure
+ * \param[in]      cur2prev   true="current to previous" operation is performed
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in, out] eq         pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve(const cs_mesh_t            *mesh,
+cs_equation_solve(bool                        cur2prev,
+                  const cs_mesh_t            *mesh,
                   cs_equation_t              *eq)
 {
   if (eq == NULL)
@@ -2581,7 +2584,8 @@ cs_equation_solve(const cs_mesh_t            *mesh,
   /* Allocate, build and solve the algebraic system:
      The linear solver is called inside and the field value is updated inside
   */
-  eq->solve(mesh,
+  eq->solve(cur2prev,
+            mesh,
             eq->field_id,
             eq->param,
             eq->builder,

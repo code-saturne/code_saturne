@@ -565,7 +565,7 @@ _sfb_apply_remaining_bc(const cs_equation_param_t     *eqp,
  */
 /*----------------------------------------------------------------------------*/
 
-inline static void
+static inline void
 _assemble(const cs_cdofb_scaleq_t           *eqc,
           const cs_cell_mesh_t              *cm,
           const cs_cell_sys_t               *csys,
@@ -597,21 +597,24 @@ _assemble(const cs_cdofb_scaleq_t           *eqc,
 /*!
  * \brief  Update the variables related to CDO-Fb system after a resolution
  *
- * \param[in, out] tce     pointer to a timer counter
- * \param[in, out] fld     pointer to a cs_field_t structure
- * \param[in, out] eqc     pointer to a context structure
+ * \param[in, out] tce       pointer to a timer counter
+ * \param[in, out] fld       pointer to a cs_field_t structure
+ * \param[in, out] eqc       pointer to a context structure
+ * \param[in]      cur2prev  true if one performs "current to previous" op.
  */
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_update_fields(cs_timer_counter_t      *tce,
-               cs_field_t              *fld,
-               cs_cdofb_scaleq_t       *eqc)
+_update_cell_fields(cs_timer_counter_t      *tce,
+                    cs_field_t              *fld,
+                    cs_cdofb_scaleq_t       *eqc,
+                    bool                     cur2prev)
 {
   cs_timer_t  t0 = cs_timer_time();
 
   /* Copy current field values to previous values */
-  cs_field_current_to_previous(fld);
+  if (cur2prev)
+    cs_field_current_to_previous(fld);
 
   /* Compute values at cells pc from values at faces pf
      pc = acc^-1*(RHS - Acf*pf) */
@@ -1533,6 +1536,7 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
  *         convection/diffusion/reaction equation with a CDO-Fb scheme
  *         One works cellwise and then process to the assembly
  *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -1542,7 +1546,8 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
+cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
+                                   const cs_mesh_t            *mesh,
                                    const int                   field_id,
                                    const cs_equation_param_t  *eqp,
                                    cs_equation_builder_t      *eqb,
@@ -1705,6 +1710,9 @@ cs_cdofb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
+  if (cur2prev && eqc->face_values_pre != NULL)
+    memcpy(eqc->face_values_pre, eqc->face_values, sizeof(cs_real_t)*n_faces);
+
   /* Solve the linear system */
   cs_real_t  normalization = 1.0; /* TODO */
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
@@ -1722,8 +1730,8 @@ cs_cdofb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
 
-  /* Update field */
-  _update_fields(&(eqb->tce), fld, eqc);
+  /* Update field associated to cells */
+  _update_cell_fields(&(eqb->tce), fld, eqc, cur2prev);
 
   /* Free remaining buffers */
   BFT_FREE(rhs);
@@ -1738,6 +1746,7 @@ cs_cdofb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
  *         implicit Euler scheme.
  *         One works cellwise and then process to the assembly
  *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -1747,7 +1756,8 @@ cs_cdofb_scaleq_solve_steady_state(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
+cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
+                               const cs_mesh_t            *mesh,
                                const int                   field_id,
                                const cs_equation_param_t  *eqp,
                                cs_equation_builder_t      *eqb,
@@ -1966,6 +1976,9 @@ cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
+  if (cur2prev && eqc->face_values_pre != NULL)
+    memcpy(eqc->face_values_pre, eqc->face_values, sizeof(cs_real_t)*n_faces);
+
   /* Solve the linear system */
   cs_real_t  normalization = 1.0; /* TODO */
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
@@ -1983,8 +1996,8 @@ cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
 
-  /* Update field */
-  _update_fields(&(eqb->tce), fld, eqc);
+  /* Update field associated to cells */
+  _update_cell_fields(&(eqb->tce), fld, eqc, cur2prev);
 
   /* Free remaining buffers */
   BFT_FREE(rhs);
@@ -1999,6 +2012,7 @@ cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
  *         implicit/explicit theta scheme.
  *         One works cellwise and then process to the assembly
  *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -2008,7 +2022,8 @@ cs_cdofb_scaleq_solve_implicit(const cs_mesh_t            *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_scaleq_solve_theta(const cs_mesh_t            *mesh,
+cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
+                            const cs_mesh_t            *mesh,
                             const int                   field_id,
                             const cs_equation_param_t  *eqp,
                             cs_equation_builder_t      *eqb,
@@ -2275,6 +2290,9 @@ cs_cdofb_scaleq_solve_theta(const cs_mesh_t            *mesh,
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
+  if (cur2prev && eqc->face_values_pre != NULL)
+    memcpy(eqc->face_values_pre, eqc->face_values, sizeof(cs_real_t)*n_faces);
+
   /* Solve the linear system */
   cs_real_t  normalization = 1.0; /* TODO */
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
@@ -2292,8 +2310,8 @@ cs_cdofb_scaleq_solve_theta(const cs_mesh_t            *mesh,
   cs_timer_t  t2 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tcs), &t1, &t2);
 
-  /* Update field */
-  _update_fields(&(eqb->tce), fld, eqc);
+  /* Update field associated to cells */
+  _update_cell_fields(&(eqb->tce), fld, eqc, cur2prev);
 
   /* Free remaining buffers */
   BFT_FREE(rhs);

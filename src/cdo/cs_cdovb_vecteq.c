@@ -1166,6 +1166,7 @@ cs_cdovb_vecteq_init_values(cs_real_t                     t_eval,
  *         convection/diffusion/reaction equation with a CDO-Vb scheme.
  *         One works cellwise and then process to the assembly.
  *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a cs_mesh_t structure
  * \param[in]      field_id   id of the variable field related to this equation
  * \param[in]      eqp        pointer to a cs_equation_param_t structure
@@ -1175,7 +1176,8 @@ cs_cdovb_vecteq_init_values(cs_real_t                     t_eval,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
+cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
+                                   const cs_mesh_t            *mesh,
                                    const int                   field_id,
                                    const cs_equation_param_t  *eqp,
                                    cs_equation_builder_t      *eqb,
@@ -1352,7 +1354,8 @@ cs_cdovb_vecteq_solve_steady_state(const cs_mesh_t            *mesh,
                                      &rhs_norm);
 
   /* Copy current field values to previous values */
-  cs_field_current_to_previous(fld);
+  if (cur2prev)
+    cs_field_current_to_previous(fld);
 
   /* End of the system building */
   cs_timer_t  t1 = cs_timer_time();

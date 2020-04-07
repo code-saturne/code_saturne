@@ -663,6 +663,7 @@ cs_thermal_system_compute_steady_state(const cs_mesh_t              *mesh,
 /*!
  * \brief  Build and solve the thermal system
  *
+ * \param[in]  cur2prev   true="current to previous" operation is performed
  * \param[in]  mesh       pointer to a cs_mesh_t structure
  * \param[in]  time_step  pointer to a cs_time_step_t structure
  * \param[in]  connect    pointer to a cs_cdo_connect_t structure
@@ -671,7 +672,8 @@ cs_thermal_system_compute_steady_state(const cs_mesh_t              *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_thermal_system_compute(const cs_mesh_t              *mesh,
+cs_thermal_system_compute(bool                          cur2prev,
+                          const cs_mesh_t              *mesh,
                           const cs_time_step_t         *time_step,
                           const cs_cdo_connect_t       *connect,
                           const cs_cdo_quantities_t    *quant)
@@ -682,12 +684,11 @@ cs_thermal_system_compute(const cs_mesh_t              *mesh,
   assert(cs_equation_uses_new_mechanism(thm->thermal_eq));
 
   if (!(thm->model & CS_THERMAL_MODEL_STEADY))
-    cs_equation_solve(mesh, thm->thermal_eq);
+    cs_equation_solve(cur2prev, mesh, thm->thermal_eq);
 
   /* Update fields and properties which are related to the evolution of the
      variable solved in thermal_eq */
-  cs_thermal_system_update(mesh, connect, quant, time_step,
-                           true); /* operate current to previous ? */
+  cs_thermal_system_update(mesh, connect, quant, time_step, cur2prev);
 }
 
 /*----------------------------------------------------------------------------*/

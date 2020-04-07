@@ -109,6 +109,7 @@ typedef void
 /*!
  * \brief  Build and solve a linear system within the CDO framework
  *
+ * \param[in]      cur2prev   true="current to previous" operation is performed
  * \param[in]      mesh       pointer to a \ref cs_mesh_t structure
  * \param[in]      field_id   id related to the variable field of this equation
  * \param[in]      eqp        pointer to a \ref cs_equation_param_t structure
@@ -118,7 +119,8 @@ typedef void
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_solve_t)(const cs_mesh_t            *mesh,
+(cs_equation_solve_t)(bool                        cur2prev,
+                      const cs_mesh_t            *mesh,
                       const int                   field_id,
                       const cs_equation_param_t  *eqp,
                       cs_equation_builder_t      *eqb,

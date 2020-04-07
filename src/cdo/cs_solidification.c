@@ -2333,11 +2333,11 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
     cs_solidification_binary_alloy_t  *alloy
       = (cs_solidification_binary_alloy_t *)solid->model_context;
 
-    cs_equation_solve(mesh, alloy->solute_equation);
+    cs_equation_solve(true, mesh, alloy->solute_equation);
   }
 
   /* Add equations to be solved at each time step */
-  cs_thermal_system_compute(mesh, time_step, connect, quant);
+  cs_thermal_system_compute(true, mesh, time_step, connect, quant);
 
   /* Update fields and properties which are related to solved variables */
   solid->update(mesh, connect, quant, time_step,

@@ -558,13 +558,15 @@ cs_equation_solve_steady_state(const cs_mesh_t            *mesh,
  * \brief  Build and then solve the linear system for an equation with an
  *         unsteady term
  *
- * \param[in]       mesh        pointer to a cs_mesh_t structure
- * \param[in, out]  eq          pointer to a cs_equation_t structure
+ * \param[in]      cur2prev   true="current to previous" operation is performed
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in, out] eq         pointer to a cs_equation_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_equation_solve(const cs_mesh_t            *mesh,
+cs_equation_solve(bool                        cur2prev,
+                  const cs_mesh_t            *mesh,
                   cs_equation_t              *eq);
 
 /*----------------------------------------------------------------------------*/

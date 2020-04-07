@@ -1444,12 +1444,15 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
   assert(richards != NULL);
   assert(cs_equation_get_type(richards) == CS_EQUATION_TYPE_GROUNDWATER);
 
+  bool cur2prev = true;
+
   /* Build and solve the linear system related to the Richards equations */
   if (!cs_equation_is_steady(richards) ||
       gw->flag & CS_GWF_FORCE_RICHARDS_ITERATIONS) {
 
     if (cs_equation_uses_new_mechanism(richards))
-      cs_equation_solve(mesh, richards);
+      /* By default, a current to previous operation is performed */
+      cs_equation_solve(cur2prev, mesh, richards);
 
     else { /* Deprecated */
 
@@ -1462,7 +1465,7 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
     }
 
     /* Update the variables related to the groundwater flow system */
-    cs_gwf_update(mesh, connect, cdoq, time_step, true);
+    cs_gwf_update(mesh, connect, cdoq, time_step, cur2prev);
 
   }
 
@@ -1473,7 +1476,8 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
     if (!cs_equation_is_steady(tracer->eq)) { /* unsteady ? */
 
       if (cs_equation_uses_new_mechanism(tracer->eq))
-        cs_equation_solve(mesh, tracer->eq);
+        /* By default, a current to previous operation is performed */
+        cs_equation_solve(cur2prev, mesh, tracer->eq);
 
       else { /* Deprecated */
 
