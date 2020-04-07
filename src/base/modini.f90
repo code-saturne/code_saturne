@@ -1190,8 +1190,8 @@ endif
 '@    ========',                                                /,&
 '@',                                                            /,&
 '@  The cavitation model requires an upwind convection scheme' ,/,&
-'@    for the void fraction (BLENCV(IVOIDF)=',e14.5,').',       /,&
-'@  The user has set BLENCV(IVOIDF)=',e14.5,                    /,&
+'@    for the void fraction (BLENCV(IVOLF2)=',e14.5,').',       /,&
+'@  The user has set BLENCV(IVOLF2)=',e14.5,                    /,&
 '@',                                                            /,&
 '@  The upwind scheme for the void fraction is forced.',        /,&
 '@',                                                            /,&
