@@ -164,11 +164,16 @@ typedef enum {
  * \brief Update the source term related to the thermal equation considering
  * a path between the initial and final state. For each step, one considers to
  * add or not a source term.
- */
+ *
+ * \def CS_SOLIDIFICATION_UPDATE_EUTECTIC_VOLLER
+ * \brief Update the liquid fraction according to the model introduced in
+ *  Voller & Prakash'89
+*/
 
 #define CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM  (1 << 0) /* =  1 */
 #define CS_SOLIDIFICATION_UPDATE_GL_WITH_TAYLOR_EXPANSION    (1 << 1) /* =  2 */
 #define CS_SOLIDIFICATION_UPDATE_SOURCE_TERM_BY_STEP         (1 << 2) /* =  4 */
+#define CS_SOLIDIFICATION_UPDATE_EUTECTIC_VOLLER             (1 << 3) /* =  8 */
 
 /*!
  * @}
