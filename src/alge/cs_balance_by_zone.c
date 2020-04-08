@@ -242,6 +242,7 @@ _balance_boundary_faces(const int          icvflf,
  *   ircflp         -->  recontruction flag
  *   ischcp         -->  second order convection scheme flag
  *   isstpp         -->  slope test flag
+ *   limiter_choice -->  choice of limiter
  *   relaxp         -->  relaxation coefficient
  *   blencp         -->  proportion of centered or SOLU scheme,
  *                       (1-blencp) is the proportion of upwind.
@@ -253,6 +254,8 @@ _balance_boundary_faces(const int          icvflf,
  *   i_face_surf    -->  face surface
  *   cell_ceni      -->  center of gravity coordinates of cell i
  *   cell_cenj      -->  center of gravity coordinates of cell j
+ *   cell_cenc      -->  center of gravity coordinates of central cell
+ *   cell_cend      -->  center of gravity coordinates of downwind cell
  *   i_face_normal  -->  face normal
  *   i_face_cog     -->  center of gravity coordinates of face ij
  *   hybrid_blend_i -->  blending factor between SOLU and centered
@@ -261,12 +264,15 @@ _balance_boundary_faces(const int          icvflf,
  *   djjpf          -->  distance J'J'
  *   gradi          -->  gradient at cell i
  *   gradj          -->  gradient at cell j
+ *   gradc          -->  gradient at central cell
  *   gradupi        -->  upwind gradient at cell i
  *   gradupj        -->  upwind gradient at cell j
  *   gradsti        -->  slope test gradient at cell i
  *   gradstj        -->  slope test gradient at cell j
  *   pi             -->  value at cell i
  *   pj             -->  value at cell j
+ *   pc             -->  value at central cell
+ *   pd             -->  value at downwind cell
  *   pia            -->  old value at cell i
  *   pja            -->  old value at cell j
  *   i_visc         -->  diffusion coefficient (divided by IJ) at face ij
@@ -275,6 +281,9 @@ _balance_boundary_faces(const int          icvflf,
  *                       1 otherwise at cell i
  *   xcppj          -->  specific heat value if the scalar is the temperature,
  *                       1 otherwise at cell j
+ *   local_max      -->  local maximum of variable
+ *   local_min      -->  local minimum of variable
+ *   courant_c      -->  central cell courant number
  *   bi_bterms      <->  flux contribution
  *----------------------------------------------------------------------------*/
 
@@ -286,6 +295,7 @@ _balance_internal_faces(const int         iupwin,
                         const int         ircflp,
                         const int         ischcp,
                         const int         isstpp,
+                        const int         limiter_choice,
                         const cs_real_t   relaxp,
                         const cs_real_t   blencp,
                         const cs_real_t   blend_st,
@@ -294,6 +304,8 @@ _balance_internal_faces(const int         iupwin,
                         const cs_real_t   i_face_surf,
                         const cs_real_3_t cell_ceni,
                         const cs_real_3_t cell_cenj,
+                        const cs_real_3_t cell_cenc,
+                        const cs_real_3_t cell_cend,
                         const cs_real_3_t i_face_normal,
                         const cs_real_3_t i_face_cog,
                         const cs_real_t   hybrid_blend_i,
@@ -302,18 +314,24 @@ _balance_internal_faces(const int         iupwin,
                         const cs_real_3_t djjpf,
                         const cs_real_3_t gradi,
                         const cs_real_3_t gradj,
+                        const cs_real_3_t gradc,
                         const cs_real_3_t gradupi,
                         const cs_real_3_t gradupj,
                         const cs_real_3_t gradsti,
                         const cs_real_3_t gradstj,
                         const cs_real_t   pi,
                         const cs_real_t   pj,
+                        const cs_real_t   pc,
+                        const cs_real_t   pd,
                         const cs_real_t   pia,
                         const cs_real_t   pja,
                         const cs_real_t   i_visc,
                         const cs_real_t   i_mass_flux,
                         const cs_real_t   xcppi,
                         const cs_real_t   xcppj,
+                        const cs_real_t   local_max,
+                        const cs_real_t   local_min,
+                        const cs_real_t   courant_c,
                         cs_real_2_t       bi_bterms)
 {
   if (iupwin == 1) {
@@ -416,7 +434,6 @@ _balance_internal_faces(const int         iupwin,
        ======================= */
 
   } else if (isstpp == 1 || isstpp == 2) {
-    /* FIXME take into account Min/Max Beta limiter, isstpp = 2 */
 
     /* Steady */
     if (idtvar < 0) {
@@ -480,41 +497,87 @@ _balance_internal_faces(const int         iupwin,
       cs_real_t pip, pjp;
       cs_real_t pif, pjf;
 
-      cs_i_cd_unsteady(ircflp,
-                       ischcp,
-                       blencp,
-                       weight,
-                       cell_ceni,
-                       cell_cenj,
-                       i_face_cog,
-                       hybrid_blend_i,
-                       hybrid_blend_j,
-                       diipf,
-                       djjpf,
-                       gradi,
-                       gradj,
-                       gradupi,
-                       gradupj,
+      if (ischcp == 4) {
+        cs_i_cd_unsteady_nvd(limiter_choice,
+                             blencp,
+                             cell_cenc,
+                             cell_cend,
+                             i_face_normal,
+                             i_face_cog,
+                             gradc,
+                             pc,
+                             pd,
+                             local_max,
+                             local_min,
+                             courant_c,
+                             &pif,
+                             &pjf);
+
+        cs_i_conv_flux(iconvp,
+                       1.,
+                       0,
                        pi,
                        pj,
-                       &pif,
-                       &pjf,
-                       &pip,
-                       &pjp);
+                       pif,
+                       pif, /* no relaxation */
+                       pjf,
+                       pjf, /* no relaxation */
+                       i_mass_flux,
+                       xcppi,
+                       xcppj,
+                       bi_bterms);
 
-      cs_i_conv_flux(iconvp,
-                     1.,
-                     0, /* Conservative formulation, no mass accumulation */
-                     pi,
-                     pj,
-                     pif,
-                     pif, /* no relaxation */
-                     pjf,
-                     pjf, /* no relaxation */
-                     i_mass_flux,
-                     xcppi,
-                     xcppj,
-                     bi_bterms);
+        /* Compute required quantities for diffusive flux */
+        cs_real_t recoi, recoj;
+
+        cs_i_compute_quantities(ircflp,
+                                diipf,
+                                djjpf,
+                                gradi,
+                                gradj,
+                                pi,
+                                pj,
+                                &recoi,
+                                &recoj,
+                                &pip,
+                                &pjp);
+      } else {
+        cs_i_cd_unsteady(ircflp,
+                         ischcp,
+                         blencp,
+                         weight,
+                         cell_ceni,
+                         cell_cenj,
+                         i_face_cog,
+                         hybrid_blend_i,
+                         hybrid_blend_j,
+                         diipf,
+                         djjpf,
+                         gradi,
+                         gradj,
+                         gradupi,
+                         gradupj,
+                         pi,
+                         pj,
+                         &pif,
+                         &pjf,
+                         &pip,
+                         &pjp);
+
+        cs_i_conv_flux(iconvp,
+                       1.,
+                       0, /* Conservative formulation, no mass accumulation */
+                       pi,
+                       pj,
+                       pif,
+                       pif, /* no relaxation */
+                       pjf,
+                       pjf, /* no relaxation */
+                       i_mass_flux,
+                       xcppi,
+                       xcppj,
+                       bi_bterms);
+      }
 
       cs_i_diff_flux(idiffp,
                      1.,
@@ -530,7 +593,7 @@ _balance_internal_faces(const int         iupwin,
     /* --> Flux with slope test
        ======================== */
 
-  } else { /* isstpp = 0 (FIXME take into account ischcv = 4) */
+  } else { /* isstpp = 0 */
 
     /* Steady */
     if (idtvar < 0) {
@@ -835,6 +898,19 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   cs_lnum_2_t *bi_face_cells = NULL;
   cs_lnum_t *cells_tag_ids = NULL;
 
+  cs_real_t *local_min = NULL;
+  cs_real_t *local_max = NULL;
+  cs_real_t *courant = NULL;
+
+  cs_real_t *cv_limiter = NULL;
+  cs_real_t *df_limiter = NULL;
+
+  cs_real_t *gweight = NULL;
+
+  const int key_lim_choice = cs_field_key_id("limiter_choice");
+
+  cs_real_t  *v_slope_test = cs_get_v_slope_test(field_id,  var_cal_opt);
+
   /* Initialize balance contributions
     ---------------------------------
 
@@ -885,6 +961,49 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   int iflmab = cs_field_get_key_int(f, cs_field_key_id("boundary_mass_flux_id"));
   const cs_real_t *b_mass_flux = cs_field_by_id(iflmab)->val;
 
+  /* Choose gradient type */
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+
+  const int imrgra = var_cal_opt.imrgra;
+  cs_gradient_type_by_imrgra(imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  /* Limiters */
+
+  int limiter_choice = -1;
+  int ischcp = var_cal_opt.ischcv;
+  if (field_id != -1) {
+    f = cs_field_by_id(field_id);
+
+    /* NVD/TVD limiters */
+    if (ischcp == 4) {
+      limiter_choice = cs_field_get_key_int(f, key_lim_choice);
+      BFT_MALLOC(local_max, n_cells_ext, cs_real_t);
+      BFT_MALLOC(local_min, n_cells_ext, cs_real_t);
+      cs_field_local_extrema_scalar(field_id,
+                                    halo_type,
+                                    local_max,
+                                    local_min);
+      if (limiter_choice >= CS_NVD_VOF_HRIC) {
+        BFT_MALLOC(courant, n_cells_ext, cs_real_t);
+        cs_cell_courant_number(field_id, courant);
+      }
+    }
+
+    int cv_limiter_id =
+      cs_field_get_key_int(f, cs_field_key_id("convection_limiter_id"));
+    if (cv_limiter_id > -1)
+      cv_limiter = cs_field_by_id(cv_limiter_id)->val;
+
+    int df_limiter_id =
+      cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
+    if (df_limiter_id > -1)
+      df_limiter = cs_field_by_id(df_limiter_id)->val;
+  }
+
   /* Allocate temporary array */
   cs_real_t *f_reconstructed;
   BFT_MALLOC(f_reconstructed, n_b_faces, cs_real_t);
@@ -893,7 +1012,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   cs_real_3_t *grad;
   BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
-  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  halo_type = CS_HALO_STANDARD;
   cs_field_gradient_scalar(f,
                            true, /* use_previous_t */
                            1, /* inc */
@@ -1322,7 +1441,6 @@ cs_balance_by_zone_compute(const char      *scalar_name,
      ---------------------------------------------- */
 
   int isstpp = var_cal_opt.isstpc;
-  int ischcp = var_cal_opt.ischcv;
   double blencp = var_cal_opt.blencv;
   double blend_st = var_cal_opt.blend_st;
   int iupwin = (blencp > 0.) ? 0 : 1;
@@ -1334,10 +1452,36 @@ cs_balance_by_zone_compute(const char      *scalar_name,
     cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
     cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
 
+    cs_real_t beta = blencp;
+    /* Beta blending coefficient ensuring positivity of the scalar */
+    if (isstpp == 2) {
+      beta = CS_MAX(CS_MIN(cv_limiter[c_id1], cv_limiter[c_id2]), 0.);
+    }
+
+    cs_real_t bldfrp = (cs_real_t) ircflp;
+    /* Local limitation of the reconstruction */
+    if (df_limiter != NULL && ircflp > 0)
+      bldfrp = CS_MAX(CS_MIN(df_limiter[c_id1], df_limiter[c_id2]), 0.);
+
     cs_real_t hybrid_coef_ii, hybrid_coef_jj;
+    cs_lnum_t ic, id;
+    cs_real_t courant_c = -1.;
     if (ischcp == 3) {
       hybrid_coef_ii = CS_F_(hybrid_blend)->val[c_id1];
       hybrid_coef_jj = CS_F_(hybrid_blend)->val[c_id2];
+    } else if ( ischcp == 4) {
+      hybrid_coef_ii = 0.;
+      hybrid_coef_jj = 0.;
+      /* Determine central and downwind sides w.r.t. current face */
+      cs_central_downwind_cells(c_id1,
+                                c_id2,
+                                i_mass_flux[f_id_sel],
+                                &ic,  /* central cell id */
+                                &id); /* downwind cell id */
+
+      if (courant != NULL)
+        courant_c = courant[ic];
+
     } else {
       hybrid_coef_ii = 0.;
       hybrid_coef_jj = 0.;
@@ -1349,17 +1493,20 @@ cs_balance_by_zone_compute(const char      *scalar_name,
                             idtvar,
                             iconvp,
                             idiffp,
-                            ircflp,
+                            bldfrp,
                             ischcp,
                             isstpp,
+                            limiter_choice,
                             relaxp,
-                            blencp,
+                            beta,
                             blend_st,
                             weight[f_id_sel],
                             i_dist[f_id_sel],
                             i_face_surf[f_id_sel],
                             cell_cen[c_id1],
                             cell_cen[c_id2],
+                            cell_cen[ic],
+                            cell_cen[id],
                             i_face_normal[f_id_sel],
                             i_face_cog[f_id_sel],
                             hybrid_coef_ii,
@@ -1368,18 +1515,24 @@ cs_balance_by_zone_compute(const char      *scalar_name,
                             djjpf[f_id_sel],
                             grad[c_id1],
                             grad[c_id2],
+                            grad[ic],
                             gradup[c_id1],
                             gradup[c_id2],
                             gradst[c_id1],
                             gradst[c_id2],
                             f->val[c_id1],
                             f->val[c_id2],
+                            f->val[ic],
+                            f->val[id],
                             f->val_pre[c_id1],
                             f->val_pre[c_id2],
                             i_visc[f_id_sel],
                             i_mass_flux[f_id_sel],
                             cpro_cp[c_id1],
                             cpro_cp[c_id2],
+                            local_max[ic],
+                            local_min[ic],
+                            courant_c,
                             bi_bterms);
 
     /* (The cell is counted only once in parallel by checking that
@@ -1411,6 +1564,9 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   BFT_FREE(gradup);
   BFT_FREE(gradst);
   BFT_FREE(f_reconstructed);
+  BFT_FREE(local_max);
+  BFT_FREE(local_min);
+  BFT_FREE(courant);
 
   if (!itemperature || icp == -1)
     BFT_FREE(cpro_cp);
@@ -2343,6 +2499,15 @@ cs_flux_through_surface(const char         *scalar_name,
   const cs_mesh_t *m = cs_glob_mesh;
   cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
 
+  cs_real_t *local_min = NULL;
+  cs_real_t *local_max = NULL;
+  cs_real_t *courant = NULL;
+
+  cs_real_t *cv_limiter = NULL;
+  cs_real_t *df_limiter = NULL;
+
+  cs_real_t *gweight = NULL;
+
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_i_faces = m->n_i_faces;
@@ -2371,10 +2536,15 @@ cs_flux_through_surface(const char         *scalar_name,
   const int *bc_type = cs_glob_bc_type;
 
   const cs_field_t *f = cs_field_by_name_try(scalar_name);
+  const int field_id = cs_field_id_by_name(scalar_name);
 
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   cs_var_cal_opt_t var_cal_opt;
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+
+  const int key_lim_choice = cs_field_key_id("limiter_choice");
+
+  cs_real_t  *v_slope_test = cs_get_v_slope_test(field_id,  var_cal_opt);
 
   /* initialize output */
 
@@ -2488,6 +2658,49 @@ cs_flux_through_surface(const char         *scalar_name,
                                        &faces_local,
                                        &n_distant,
                                        &faces_distant);
+  }
+
+  /* Choose gradient type */
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+
+  const int imrgra = var_cal_opt.imrgra;
+  cs_gradient_type_by_imrgra(imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  /* Limiters */
+
+  int limiter_choice = -1;
+  int ischcp = var_cal_opt.ischcv;
+  if (field_id != -1) {
+    f = cs_field_by_id(field_id);
+
+    /* NVD/TVD limiters */
+    if (ischcp == 4) {
+      limiter_choice = cs_field_get_key_int(f, key_lim_choice);
+      BFT_MALLOC(local_max, n_cells_ext, cs_real_t);
+      BFT_MALLOC(local_min, n_cells_ext, cs_real_t);
+      cs_field_local_extrema_scalar(field_id,
+                                    halo_type,
+                                    local_max,
+                                    local_min);
+      if (limiter_choice >= CS_NVD_VOF_HRIC) {
+        BFT_MALLOC(courant, n_cells_ext, cs_real_t);
+        cs_cell_courant_number(field_id, courant);
+      }
+    }
+
+    int cv_limiter_id =
+      cs_field_get_key_int(f, cs_field_key_id("convection_limiter_id"));
+    if (cv_limiter_id > -1)
+      cv_limiter = cs_field_by_id(cv_limiter_id)->val;
+
+    int df_limiter_id =
+      cs_field_get_key_int(f, cs_field_key_id("diffusion_limiter_id"));
+    if (df_limiter_id > -1)
+      df_limiter = cs_field_by_id(df_limiter_id)->val;
   }
 
   /* Gradient calculation
@@ -2759,7 +2972,6 @@ cs_flux_through_surface(const char         *scalar_name,
   /* Balance on selected interior faces */
 
   int isstpp = var_cal_opt.isstpc;
-  int ischcp = var_cal_opt.ischcv;
   double blencp = var_cal_opt.blencv;
   double blend_st = var_cal_opt.blend_st;
   int iupwin = (blencp > 0.) ? 0 : 1;
@@ -2771,10 +2983,36 @@ cs_flux_through_surface(const char         *scalar_name,
     cs_lnum_t c_id1 = i_face_cells[f_id_sel][0];
     cs_lnum_t c_id2 = i_face_cells[f_id_sel][1];
 
+    cs_real_t beta = blencp;
+    /* Beta blending coefficient ensuring positivity of the scalar */
+    if (isstpp == 2) {
+      beta = CS_MAX(CS_MIN(cv_limiter[c_id1], cv_limiter[c_id2]), 0.);
+    }
+
+    cs_real_t bldfrp = (cs_real_t) ircflp;
+    /* Local limitation of the reconstruction */
+    if (df_limiter != NULL && ircflp > 0)
+      bldfrp = CS_MAX(CS_MIN(df_limiter[c_id1], df_limiter[c_id2]), 0.);
+
     cs_real_t hybrid_coef_ii, hybrid_coef_jj;
+    cs_lnum_t ic, id;
+    cs_real_t courant_c = -1.;
     if (ischcp == 3) {
       hybrid_coef_ii = CS_F_(hybrid_blend)->val[c_id1];
       hybrid_coef_jj = CS_F_(hybrid_blend)->val[c_id2];
+    } else if ( ischcp == 4) {
+      hybrid_coef_ii = 0.;
+      hybrid_coef_jj = 0.;
+      /* Determine central and downwind sides w.r.t. current face */
+      cs_central_downwind_cells(c_id1,
+                                c_id2,
+                                i_mass_flux[f_id_sel],
+                                &ic,  /* central cell id */
+                                &id); /* downwind cell id */
+
+      if (courant != NULL)
+        courant_c = courant[ic];
+
     } else {
       hybrid_coef_ii = 0.;
       hybrid_coef_jj = 0.;
@@ -2786,17 +3024,20 @@ cs_flux_through_surface(const char         *scalar_name,
                             idtvar,
                             iconvp,
                             idiffp,
-                            ircflp,
+                            bldfrp,
                             ischcp,
                             isstpp,
+                            limiter_choice,
                             relaxp,
-                            blencp,
+                            beta,
                             blend_st,
                             weight[f_id_sel],
                             i_dist[f_id_sel],
                             i_face_surf[f_id_sel],
                             cell_cen[c_id1],
                             cell_cen[c_id2],
+                            cell_cen[ic],
+                            cell_cen[id],
                             i_face_normal[f_id_sel],
                             i_face_cog[f_id_sel],
                             hybrid_coef_ii,
@@ -2805,18 +3046,24 @@ cs_flux_through_surface(const char         *scalar_name,
                             djjpf[f_id_sel],
                             grad[c_id1],
                             grad[c_id2],
+                            grad[ic],
                             gradup[c_id1],
                             gradup[c_id2],
                             gradst[c_id1],
                             gradst[c_id2],
                             f->val[c_id1],
                             f->val[c_id2],
+                            f->val[ic],
+                            f->val[id],
                             f->val_pre[c_id1],
                             f->val_pre[c_id2],
                             i_visc[f_id_sel],
                             i_mass_flux[f_id_sel],
                             cpro_cp[c_id1],
                             cpro_cp[c_id2],
+                            local_max[ic],
+                            local_min[ic],
+                            courant_c,
                             bi_bterms);
 
     /* (The cell is counted only once in parallel by checking that
@@ -2864,6 +3111,9 @@ cs_flux_through_surface(const char         *scalar_name,
   BFT_FREE(grad);
   BFT_FREE(gradup);
   BFT_FREE(gradst);
+  BFT_FREE(local_max);
+  BFT_FREE(local_min);
+  BFT_FREE(courant);
 
   if (!itemperature || icp == -1)
     BFT_FREE(cpro_cp);

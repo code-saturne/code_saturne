@@ -135,6 +135,145 @@ cs_sync_scalar_halo(const cs_mesh_t  *m,
   }
 }
 
+/*----------------------------------------------------------------------------
+ * Return pointer to slope test indicator field values if active.
+ *
+ * parameters:
+ *   f_id        <-- field id (or -1)
+ *   var_cal_opt <-- variable calculation options
+ *
+ * return:
+ *   pointer to local values array, or NULL;
+ *----------------------------------------------------------------------------*/
+
+inline static cs_real_t *
+cs_get_v_slope_test(int                       f_id,
+                  const cs_var_cal_opt_t    var_cal_opt)
+{
+  const int iconvp = var_cal_opt.iconv;
+  const int isstpp = var_cal_opt.isstpc;
+  const double blencp = var_cal_opt.blencv;
+
+  cs_real_t  *v_slope_test = NULL;
+
+  if (f_id > -1 && iconvp > 0 && blencp > 0. && isstpp == 0) {
+
+    static int _k_slope_test_f_id = -1;
+
+    cs_field_t *f = cs_field_by_id(f_id);
+
+    int f_track_slope_test_id = -1;
+
+    if (_k_slope_test_f_id < 0)
+      _k_slope_test_f_id = cs_field_key_id_try("slope_test_upwind_id");
+    if (_k_slope_test_f_id > -1 && isstpp == 0)
+      f_track_slope_test_id = cs_field_get_key_int(f, _k_slope_test_f_id);
+
+    if (f_track_slope_test_id > -1)
+      v_slope_test = (cs_field_by_id(f_track_slope_test_id))->val;
+
+    if (v_slope_test != NULL) {
+      const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+#     pragma omp parallel for
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
+        v_slope_test[cell_id] = 0.;
+    }
+
+  }
+
+  return v_slope_test;
+}
+
+/*----------------------------------------------------------------------------
+ * Compute the local cell Courant number as the maximum of all cell face based
+ * Courant number at each cell.
+ *
+ * parameters:
+ *   f_id        <-- field id (or -1)
+ *   courant     --> cell Courant number
+ */
+/*----------------------------------------------------------------------------*/
+
+inline static void
+cs_cell_courant_number(const int  f_id,
+                     cs_real_t *courant)
+{
+  const cs_mesh_t  *m = cs_glob_mesh;
+  const cs_mesh_quantities_t *fvq = cs_glob_mesh_quantities;
+
+  const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+  const int n_i_groups = m->i_face_numbering->n_groups;
+  const int n_i_threads = m->i_face_numbering->n_threads;
+  const int n_b_groups = m->b_face_numbering->n_groups;
+  const int n_b_threads = m->b_face_numbering->n_threads;
+  const cs_lnum_t *restrict i_group_index = m->i_face_numbering->group_index;
+  const cs_lnum_t *restrict b_group_index = m->b_face_numbering->group_index;
+
+  const cs_lnum_2_t *restrict i_face_cells
+    = (const cs_lnum_2_t *restrict)m->i_face_cells;
+  const cs_lnum_t *restrict b_face_cells
+    = (const cs_lnum_t *restrict)m->b_face_cells;
+
+  const cs_real_t *restrict vol
+    = (cs_real_t *restrict)fvq->cell_vol;
+
+  cs_field_t *f = cs_field_by_id(f_id);
+  const int kimasf = cs_field_key_id("inner_mass_flux_id");
+  const int kbmasf = cs_field_key_id("boundary_mass_flux_id");
+  const cs_real_t *restrict i_massflux
+    = cs_field_by_id( cs_field_get_key_int(f, kimasf) )->val;
+  const cs_real_t *restrict b_massflux
+    = cs_field_by_id( cs_field_get_key_int(f, kbmasf) )->val;
+
+  const cs_real_t *restrict dt
+    = (const cs_real_t *restrict)CS_F_(dt)->val;
+
+  /* Initialisation */
+
+# pragma omp parallel for
+  for (cs_lnum_t ii = 0; ii < n_cells_ext; ii++) {
+    courant[ii] = 0.;
+  }
+
+  /* ---> Contribution from interior faces */
+
+  cs_real_t cnt;
+
+  for (int g_id = 0; g_id < n_i_groups; g_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_i_threads; t_id++) {
+      for (cs_lnum_t face_id = i_group_index[(t_id*n_i_groups + g_id)*2];
+          face_id < i_group_index[(t_id*n_i_groups + g_id)*2 + 1];
+          face_id++) {
+        cs_lnum_t ii = i_face_cells[face_id][0];
+        cs_lnum_t jj = i_face_cells[face_id][1];
+
+        cnt = CS_ABS(i_massflux[face_id])*dt[ii]/vol[ii];
+        courant[ii] = CS_MAX(courant[ii], cnt);
+
+        cnt = CS_ABS(i_massflux[face_id])*dt[jj]/vol[jj];
+        courant[jj] = CS_MAX(courant[jj], cnt);
+      }
+    }
+  }
+
+  /* ---> Contribution from boundary faces */
+
+  for (int g_id = 0; g_id < n_b_groups; g_id++) {
+#   pragma omp parallel for
+    for (int t_id = 0; t_id < n_b_threads; t_id++) {
+      for (cs_lnum_t face_id = b_group_index[(t_id*n_b_groups + g_id)*2];
+          face_id < b_group_index[(t_id*n_b_groups + g_id)*2 + 1];
+          face_id++) {
+        cs_lnum_t ii = b_face_cells[face_id];
+
+        cnt = CS_ABS(b_massflux[face_id])*dt[ii]/vol[ii];
+        courant[ii] = CS_MAX(courant[ii], cnt);
+      }
+    }
+  }
+}
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the normalised face scalar using the specified NVD scheme.
