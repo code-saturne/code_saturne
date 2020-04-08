@@ -237,7 +237,7 @@ typedef void
  *
  * \param[in]      eqp             pointer to a \ref cs_equation_param_t
  * \param[in, out] eqb             pointer to a \ref cs_equation_builder_t
- * \param[in, out] context         pointer to a scheme builder structure
+ * \param[in, out] context         pointer to a scheme context structure
  *
  * \return a pointer to a cs_equation_balance_t structure
  */
@@ -250,22 +250,18 @@ typedef cs_equation_balance_t *
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Extra-operation related to this equation
+ * \brief  Generic prototype for extra-operations related to an equation
  *
- * \param[in]       eqname     name of the equation
- * \param[in]       field      pointer to a field structure
  * \param[in]       eqp        pointer to a cs_equation_param_t structure
  * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  data       pointer to a generic data structure
+ * \param[in, out]  context    pointer to a generic data structure
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_equation_extra_op_t)(const char                 *eqname,
-                         const cs_field_t           *field,
-                         const cs_equation_param_t  *eqp,
+(cs_equation_extra_op_t)(const cs_equation_param_t  *eqp,
                          cs_equation_builder_t      *eqb,
-                         void                       *data);
+                         void                       *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -381,6 +377,8 @@ struct _cs_equation_t {
 
   cs_equation_get_balance_t        *compute_balance;
   cs_equation_extra_op_t           *postprocess;
+  cs_equation_extra_op_t           *current_to_previous;
+
   cs_equation_restart_t            *read_restart;
   cs_equation_restart_t            *write_restart;
 
@@ -392,6 +390,7 @@ struct _cs_equation_t {
   cs_equation_get_builders_t       *get_cw_build_structures;
 
   /* Deprecated functions --> use rather solve() and solve_steady_state() */
+  /* -------------------- */
   cs_equation_initialize_system_t  *initialize_system;
   cs_equation_set_dir_bc_t         *set_dir_bc;
   cs_equation_build_system_t       *build_system;

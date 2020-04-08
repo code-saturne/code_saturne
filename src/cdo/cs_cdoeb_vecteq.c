@@ -920,7 +920,8 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
 
     /* Initialization of the curl-curl property value if uniform.
      * One calls this function with the boundary tag to examine all tests */
-    cs_hodge_set_property_value(0, cb->t_pty_eval, CS_FLAG_BOUNDARY_CELL_BY_FACE,
+    cs_hodge_set_property_value(0, cb->t_pty_eval,
+                                CS_FLAG_BOUNDARY_CELL_BY_FACE,
                                 curlcurl_hodge);
 
     /* --------------------------------------------- */
@@ -1045,28 +1046,53 @@ cs_cdoeb_vecteq_solve_steady_state(bool                        cur2prev,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined extra-operations related to this equation
+ * \brief  Operate a current to previous operation for the field associated to
+ *         this equation and potentially for related fields/arrays.
  *
- * \param[in]       eqname     name of the equation
- * \param[in]       field      pointer to a field structure
  * \param[in]       eqp        pointer to a cs_equation_param_t structure
  * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  data       pointer to cs_cdoeb_vecteq_t structure
+ * \param[in, out]  context    pointer to cs_cdoeb_vecteq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdoeb_vecteq_extra_op(const char                 *eqname,
-                         const cs_field_t           *field,
-                         const cs_equation_param_t  *eqp,
-                         cs_equation_builder_t      *eqb,
-                         void                       *data)
+cs_cdoeb_vecteq_current_to_previous(const cs_equation_param_t  *eqp,
+                                    cs_equation_builder_t      *eqb,
+                                    void                       *context)
 {
-  CS_UNUSED(eqname);
-  CS_UNUSED(field);
   CS_UNUSED(eqp);
   CS_UNUSED(eqb);
-  CS_UNUSED(data);
+
+  cs_cdoeb_vecteq_t  *eqc = (cs_cdoeb_vecteq_t *)context;
+  cs_field_t  *fld = cs_field_by_id(eqc->var_field_id);
+
+  /* Edge values */
+  if (eqc->edge_values_pre != NULL)
+    memcpy(eqc->edge_values_pre, eqc->edge_values,
+           sizeof(cs_real_t)*eqc->n_dofs);
+
+  /* Cell values */
+  cs_field_current_to_previous(fld);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined extra-operations related to this equation
+ *
+ * \param[in]       eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out]  context    pointer to cs_cdoeb_vecteq_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdoeb_vecteq_extra_post(const cs_equation_param_t  *eqp,
+                           cs_equation_builder_t      *eqb,
+                           void                       *context)
+{
+  CS_UNUSED(eqp);
+  CS_UNUSED(eqb);
+  CS_UNUSED(context);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -1503,31 +1503,50 @@ cs_cdovb_vecteq_get_cell_values(void      *context,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined extra-operations related to this equation
+ * \brief  Operate a current to previous operation for the field associated to
+ *         this equation and potentially for related fields/arrays.
  *
- * \param[in]       eqname     name of the equation
- * \param[in]       field      pointer to a field structure
  * \param[in]       eqp        pointer to a cs_equation_param_t structure
  * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  data       pointer to cs_cdovb_vecteq_t structure
+ * \param[in, out]  context    pointer to cs_cdovb_vecteq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_vecteq_extra_op(const char                 *eqname,
-                         const cs_field_t           *field,
-                         const cs_equation_param_t  *eqp,
-                         cs_equation_builder_t      *eqb,
-                         void                       *data)
+cs_cdovb_vecteq_current_to_previous(const cs_equation_param_t  *eqp,
+                                    cs_equation_builder_t      *eqb,
+                                    void                       *context)
 {
-  CS_UNUSED(field);
-  CS_UNUSED(data);
+  CS_UNUSED(eqp);
+  CS_UNUSED(eqb);
+
+  cs_cdovb_vecteq_t  *eqc = (cs_cdovb_vecteq_t *)context;
+  cs_field_t  *fld = cs_field_by_id(eqc->var_field_id);
+
+  cs_field_current_to_previous(fld);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined extra-operations related to this equation
+ *
+ * \param[in]       eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out]  context    pointer to cs_cdovb_vecteq_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_vecteq_extra_post(const cs_equation_param_t  *eqp,
+                           cs_equation_builder_t      *eqb,
+                           void                       *context)
+{
+  CS_UNUSED(context);
+  CS_UNUSED(eqp);
 
   const cs_timer_t  t0 = cs_timer_time();
 
   /* TODO */
-  CS_UNUSED(eqname);
-  CS_UNUSED(eqp);
 
   cs_timer_t  t1 = cs_timer_time();
   cs_timer_counter_add_diff(&(eqb->tce), &t0, &t1);

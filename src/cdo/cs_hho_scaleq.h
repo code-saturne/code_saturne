@@ -305,20 +305,16 @@ cs_hho_scaleq_write_restart(cs_restart_t    *restart,
 /*!
  * \brief  Predefined extra-operations related to this equation
  *
- * \param[in]       eqname     name of the equation
- * \param[in]       field      pointer to a field structure
  * \param[in]       eqp        pointer to a cs_equation_param_t structure
  * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  data       pointer to cs_hho_scaleq_t structure
+ * \param[in, out]  context    pointer to cs_hho_scaleq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_scaleq_extra_op(const char                 *eqname,
-                       const cs_field_t           *field,
-                       const cs_equation_param_t  *eqp,
-                       cs_equation_builder_t      *eqb,
-                       void                       *data);
+cs_hho_scaleq_extra_post(const cs_equation_param_t  *eqp,
+                         cs_equation_builder_t      *eqb,
+                         void                       *context);
 
 /*----------------------------------------------------------------------------*/
 

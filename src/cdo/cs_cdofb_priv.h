@@ -55,6 +55,7 @@ struct  _cs_cdofb_t {
   int          bflux_field_id;
 
   /* System size (n_faces + n_cells) */
+  cs_lnum_t    n_faces;
   cs_lnum_t    n_dofs;
 
   /* Solution of the algebraic system DoF unknowns (x) + BCs */

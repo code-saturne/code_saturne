@@ -3222,10 +3222,9 @@ cs_cdovcb_scaleq_write_restart(cs_restart_t    *restart,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined extra-operations related to this equation
+ * \brief  Operate a current to previous operation for the field associated to
+ *         this equation and potentially for related fields/arrays.
  *
- * \param[in]       eqname     name of the equation
- * \param[in]       field      pointer to a field structure
  * \param[in]       eqp        pointer to a cs_equation_param_t structure
  * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
  * \param[in, out]  context    pointer to cs_cdovcb_scaleq_t structure
@@ -3233,17 +3232,43 @@ cs_cdovcb_scaleq_write_restart(cs_restart_t    *restart,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovcb_scaleq_extra_op(const char                 *eqname,
-                          const cs_field_t           *field,
-                          const cs_equation_param_t  *eqp,
-                          cs_equation_builder_t      *eqb,
-                          void                       *context)
+cs_cdovcb_scaleq_current_to_previous(const cs_equation_param_t  *eqp,
+                                     cs_equation_builder_t      *eqb,
+                                     void                       *context)
+{
+  CS_UNUSED(eqp);
+  CS_UNUSED(eqb);
+
+  cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t *)context;
+  cs_field_t  *fld = cs_field_by_id(eqc->var_field_id);
+
+  /* Cell values */
+  if (eqc->cell_values_pre != NULL)
+    memcpy(eqc->cell_values_pre, eqc->cell_values,
+           sizeof(cs_real_t)*cs_shared_quant->n_cells);
+
+  /* Vertex values */
+  cs_field_current_to_previous(fld);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined extra-operations related to this equation
+ *
+ * \param[in]       eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out]  context    pointer to cs_cdovcb_scaleq_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovcb_scaleq_extra_post(const cs_equation_param_t  *eqp,
+                            cs_equation_builder_t      *eqb,
+                            void                       *context)
 {
   cs_cdovcb_scaleq_t  *eqc = (cs_cdovcb_scaleq_t  *)context;
 
   // TODO
-  CS_UNUSED(field);
-  CS_UNUSED(eqname);
   CS_UNUSED(eqp);
   CS_UNUSED(eqb);
   CS_UNUSED(eqc);

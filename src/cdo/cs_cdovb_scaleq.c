@@ -3258,10 +3258,9 @@ cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined extra-operations related to this equation
+ * \brief  Operate a current to previous operation for the field associated to
+ *         this equation and potentially for related fields/arrays.
  *
- * \param[in]       eqname     name of the equation
- * \param[in]       field      pointer to a field structure
  * \param[in]       eqp        pointer to a cs_equation_param_t structure
  * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
  * \param[in, out]  context    pointer to cs_cdovb_scaleq_t structure
@@ -3269,13 +3268,34 @@ cs_cdovb_scaleq_diff_flux_dfaces(const cs_real_t             *values,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdovb_scaleq_extra_op(const char                 *eqname,
-                         const cs_field_t           *field,
-                         const cs_equation_param_t  *eqp,
-                         cs_equation_builder_t      *eqb,
-                         void                       *context)
+cs_cdovb_scaleq_current_to_previous(const cs_equation_param_t  *eqp,
+                                    cs_equation_builder_t      *eqb,
+                                    void                       *context)
 {
-  CS_UNUSED(field);
+  CS_UNUSED(eqp);
+  CS_UNUSED(eqb);
+
+  cs_cdovb_scaleq_t  *eqc = (cs_cdovb_scaleq_t *)context;
+  cs_field_t  *fld = cs_field_by_id(eqc->var_field_id);
+
+  cs_field_current_to_previous(fld);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined extra-operations related to this equation
+ *
+ * \param[in]       eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out]  context    pointer to cs_cdovb_scaleq_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdovb_scaleq_extra_post(const cs_equation_param_t  *eqp,
+                           cs_equation_builder_t      *eqb,
+                           void                       *context)
+{
   CS_UNUSED(context);
 
   const cs_timer_t  t0 = cs_timer_time();
@@ -3283,10 +3303,10 @@ cs_cdovb_scaleq_extra_op(const char                 *eqname,
   if (cs_equation_param_has_convection(eqp)) {
     if (eqp->process_flag & CS_EQUATION_POST_UPWIND_COEF) {
 
-      int  len = strlen(eqname) + 8 + 1;
+      int  len = strlen(eqp->name) + 8 + 1;
       char *postlabel = NULL;
       BFT_MALLOC(postlabel, len, char);
-      sprintf(postlabel, "%s.UpwCoef", eqname);
+      sprintf(postlabel, "%s.UpwCoef", eqp->name);
 
       /* Compute in each cell an evaluation of upwind weight value */
       cs_real_t  *work_c = cs_equation_get_tmpbuf();

@@ -260,7 +260,7 @@ _set_scal_hho_function_pointers(cs_equation_t  *eq)
   eq->solve = NULL;
   eq->solve_steady_state = NULL;
 
-  eq->postprocess = cs_hho_scaleq_extra_op;
+  eq->postprocess = cs_hho_scaleq_extra_post;
   eq->read_restart = cs_hho_scaleq_read_restart;
   eq->write_restart = cs_hho_scaleq_write_restart;
 
@@ -301,7 +301,7 @@ _set_vect_hho_function_pointers(cs_equation_t  *eq)
   eq->solve = NULL;
   eq->solve_steady_state = NULL;
 
-  eq->postprocess = cs_hho_vecteq_extra_op;
+  eq->postprocess = cs_hho_vecteq_extra_post;
   eq->read_restart = cs_hho_vecteq_read_restart;
   eq->write_restart = cs_hho_vecteq_write_restart;
 
@@ -1149,9 +1149,10 @@ cs_equation_add(const char            *eqname,
   eq->init_context = NULL;
   eq->free_context = NULL;
 
-  /* Postprocessing */
+  /* Extra-operations */
   eq->compute_balance = NULL;
   eq->postprocess = NULL;
+  eq->current_to_previous = NULL;
 
   /* Restart */
   eq->read_restart = NULL;
@@ -1901,7 +1902,8 @@ cs_equation_set_functions(void)
         }
 
         eq->compute_balance = cs_cdovb_scaleq_balance;
-        eq->postprocess = cs_cdovb_scaleq_extra_op;
+        eq->postprocess = cs_cdovb_scaleq_extra_post;
+        eq->current_to_previous = cs_cdovb_scaleq_current_to_previous;
 
         eq->read_restart = NULL;
         eq->write_restart = NULL;
@@ -1943,7 +1945,8 @@ cs_equation_set_functions(void)
                     __func__, eqp->name);
         }
 
-        eq->postprocess = cs_cdovb_vecteq_extra_op;
+        eq->postprocess = cs_cdovb_vecteq_extra_post;
+        eq->current_to_previous = cs_cdovb_vecteq_current_to_previous;
 
         eq->read_restart = NULL;
         eq->write_restart = NULL;
@@ -1998,7 +2001,9 @@ cs_equation_set_functions(void)
                     __func__, eqp->name);
         }
 
-        eq->postprocess = cs_cdovcb_scaleq_extra_op;
+        eq->postprocess = cs_cdovcb_scaleq_extra_post;
+        eq->current_to_previous = cs_cdovcb_scaleq_current_to_previous;
+
         eq->read_restart = cs_cdovcb_scaleq_read_restart;
         eq->write_restart = cs_cdovcb_scaleq_write_restart;
 
@@ -2053,7 +2058,8 @@ cs_equation_set_functions(void)
         }
 
         eq->compute_balance = cs_cdofb_scaleq_balance;
-        eq->postprocess = cs_cdofb_scaleq_extra_op;
+        eq->postprocess = cs_cdofb_scaleq_extra_post;
+        eq->current_to_previous = cs_cdofb_scaleq_current_to_previous;
 
         eq->read_restart = cs_cdofb_scaleq_read_restart;
         eq->write_restart = cs_cdofb_scaleq_write_restart;
@@ -2102,7 +2108,8 @@ cs_equation_set_functions(void)
                     __func__, eqp->name);
         }
 
-        eq->postprocess = cs_cdofb_vecteq_extra_op;
+        eq->postprocess = cs_cdofb_vecteq_extra_post;
+        eq->current_to_previous = cs_cdofb_vecteq_current_to_previous;
 
         eq->read_restart = cs_cdofb_vecteq_read_restart;
         eq->write_restart = cs_cdofb_vecteq_write_restart;
@@ -2149,7 +2156,9 @@ cs_equation_set_functions(void)
                     __func__, eqp->name);
         }
 
-        eq->postprocess = cs_cdoeb_vecteq_extra_op;
+        eq->postprocess = cs_cdoeb_vecteq_extra_post;
+        eq->current_to_previous = cs_cdoeb_vecteq_current_to_previous;
+
         eq->read_restart = cs_cdoeb_vecteq_read_restart;
         eq->write_restart = cs_cdoeb_vecteq_write_restart;
 
@@ -2548,7 +2557,7 @@ cs_equation_solve_steady_state(const cs_mesh_t            *mesh,
   /* Allocate, build and solve the algebraic system:
      The linear solver is called inside and the field value is updated inside
   */
-  eq->solve_steady_state(false, /* current ti previous */
+  eq->solve_steady_state(false, /* current to previous */
                          mesh,
                          eq->field_id,
                          eq->param,
@@ -2590,6 +2599,34 @@ cs_equation_solve(bool                        cur2prev,
             eq->param,
             eq->builder,
             eq->scheme_context);
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_stop(eq->main_ts_id);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Apply the current to previous to all fields (and potentially arrays)
+ *         related to an equation. This function fas to be called when a solve
+ *         step is called with the parameter: cur2prev = false
+ *
+ * \param[in]   eq       pointer to a \ref cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_current_to_previous(const cs_equation_t    *eq)
+{
+  if (eq == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: Empty equation structure", __func__);
+
+  if (eq->current_to_previous == NULL)
+    return;
+
+  if (eq->main_ts_id > -1)
+    cs_timer_stats_start(eq->main_ts_id);
+
+  eq->current_to_previous(eq->param, eq->builder, eq->scheme_context);
 
   if (eq->main_ts_id > -1)
     cs_timer_stats_stop(eq->main_ts_id);
@@ -3351,9 +3388,7 @@ cs_equation_extra_post(void)
     assert(eq->postprocess != NULL);
 
     /* Perform post-processing specific to a numerical scheme */
-    eq->postprocess(eqp->name,
-                    cs_field_by_id(eq->field_id),
-                    eqp,
+    eq->postprocess(eqp,
                     eq->builder,
                     eq->scheme_context);
 

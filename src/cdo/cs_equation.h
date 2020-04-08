@@ -724,6 +724,19 @@ cs_equation_get_type(const cs_equation_t    *eq);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Apply the current to previous to all fields (and potentially arrays)
+ *         related to an equation. This function fas to be called when a solve
+ *         step is called with the parameter: cur2prev = false
+ *
+ * \param[in]   eq       pointer to a \ref cs_equation_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_current_to_previous(const cs_equation_t    *eq);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  For a given equation, retrieve the related cellwise builder
  *         structures: cs_cell_builder_t and cs_cell_system_t structures
  *

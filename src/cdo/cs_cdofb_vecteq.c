@@ -1657,6 +1657,7 @@ cs_cdofb_vecteq_init_context(const cs_equation_param_t   *eqp,
   eqc->bflux_field_id = bflux_id;
 
   /* Dimensions of the algebraic system */
+  eqc->n_faces = n_faces;
   eqc->n_dofs = 3*(n_faces + n_cells);
 
   eqb->sys_flag = CS_FLAG_SYS_VECTOR;
@@ -2161,34 +2162,63 @@ cs_cdofb_vecteq_init_values(cs_real_t                     t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Predefined extra-operations related to this equation
+ * \brief  Operate a current to previous operation for the field associated to
+ *         this equation and potentially for related fields/arrays.
  *
- * \param[in]       eqname     name of the equation
- * \param[in]       field      pointer to a field structure
  * \param[in]       eqp        pointer to a cs_equation_param_t structure
  * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  data       pointer to cs_cdofb_vecteq_t structure
+ * \param[in, out]  context    pointer to cs_cdofb_vecteq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdofb_vecteq_extra_op(const char                 *eqname,
-                         const cs_field_t           *field,
-                         const cs_equation_param_t  *eqp,
-                         cs_equation_builder_t      *eqb,
-                         void                       *data)
+cs_cdofb_vecteq_current_to_previous(const cs_equation_param_t  *eqp,
+                                    cs_equation_builder_t      *eqb,
+                                    void                       *context)
 {
-  CS_UNUSED(eqname);    /* avoid a compilation warning */
+  CS_UNUSED(eqp);
+  CS_UNUSED(eqb);
+
+  cs_cdofb_vecteq_t  *eqc = (cs_cdofb_vecteq_t *)context;
+  cs_field_t  *fld = cs_field_by_id(eqc->var_field_id);
+
+  /* Face values */
+  if (eqc->face_values_pre != NULL)
+    memcpy(eqc->face_values_pre, eqc->face_values,
+           sizeof(cs_real_t)*3*eqc->n_faces);
+
+  /* Cell values */
+  cs_field_current_to_previous(fld);
+}
+
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Predefined extra-operations related to this equation
+ *
+ * \param[in]       eqp        pointer to a cs_equation_param_t structure
+ * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
+ * \param[in, out]  context    pointer to cs_cdofb_vecteq_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_vecteq_extra_post(const cs_equation_param_t  *eqp,
+                           cs_equation_builder_t      *eqb,
+                           void                       *context)
+{
   CS_UNUSED(eqp);
 
-  char *postlabel = NULL;
   cs_timer_t  t0 = cs_timer_time();
 
-  const cs_cdo_connect_t  *connect = cs_shared_connect;
-  const cs_lnum_t  n_i_faces = connect->n_faces[CS_INT_FACES];
-  const cs_real_t  *face_pdi = cs_cdofb_vecteq_get_face_values(data, false);
+  cs_cdofb_vecteq_t  *eqc = (cs_cdofb_vecteq_t *)context;
+
+  const cs_field_t  *field = cs_field_by_id(eqc->var_field_id);
+  const cs_lnum_t  n_i_faces = cs_shared_connect->n_faces[CS_INT_FACES];
+  const cs_real_t  *bface_values = eqc->face_values + 3*n_i_faces;
 
   /* Field post-processing */
+  char *postlabel = NULL;
   int  len = strlen(field->name) + 8 + 1;
   BFT_MALLOC(postlabel, len, char);
   sprintf(postlabel, "%s.Border", field->name);
@@ -2202,7 +2232,7 @@ cs_cdofb_vecteq_extra_op(const char                 *eqname,
                     CS_POST_TYPE_cs_real_t,
                     NULL,                  // values on cells
                     NULL,                  // values at internal faces
-                    face_pdi + n_i_faces,  // values at border faces
+                    bface_values,          // values at border faces
                     cs_shared_time_step);  // time step management structure
 
 

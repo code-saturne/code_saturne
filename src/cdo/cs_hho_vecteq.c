@@ -1756,29 +1756,23 @@ cs_hho_vecteq_write_restart(cs_restart_t    *restart,
 /*!
  * \brief  Predefined extra-operations related to this equation
  *
- * \param[in]       eqname     name of the equation
- * \param[in]       field      pointer to a field structure
  * \param[in]       eqp        pointer to a cs_equation_param_t structure
  * \param[in, out]  eqb        pointer to a cs_equation_builder_t structure
- * \param[in, out]  data       pointer to cs_hho_vecteq_t structure
+ * \param[in, out]  context    pointer to cs_hho_vecteq_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_hho_vecteq_extra_op(const char                 *eqname,
-                       const cs_field_t           *field,
-                       const cs_equation_param_t  *eqp,
-                       cs_equation_builder_t      *eqb,
-                       void                       *data)
+cs_hho_vecteq_extra_post(const cs_equation_param_t  *eqp,
+                         cs_equation_builder_t      *eqb,
+                         void                       *context)
 {
-  cs_hho_vecteq_t  *eqc = (cs_hho_vecteq_t  *)data;
+  cs_hho_vecteq_t  *eqc = (cs_hho_vecteq_t  *)context;
 
   // TODO
   CS_UNUSED(eqp);
   CS_UNUSED(eqb);
   CS_UNUSED(eqc);
-  CS_UNUSED(field);
-  CS_UNUSED(eqname);
 }
 
 /*----------------------------------------------------------------------------*/
