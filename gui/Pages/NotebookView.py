@@ -370,14 +370,14 @@ class NotebookView(QWidget, Ui_NotebookForm):
         valDelegate = FloatDelegate(self.treeViewNotebook, self.mdl)
         self.treeViewNotebook.setItemDelegateForColumn(1, valDelegate)
 
-        OTOptions = {"No":"on", "Yes: Input":"on", "Yes: Output":"on"}
+        OTOptions = ["No", "Yes: Input", "Yes: Output"]
         otvalDelegate = ComboDelegate(self.treeViewNotebook,
-                                      OptsList=OTOptions)
+                                      opts_list=OTOptions)
         self.treeViewNotebook.setItemDelegateForColumn(2, otvalDelegate)
 
-        EditableOptions = {"No":"on", "Yes":"on"}
+        EditableOptions = ["No","Yes"]
         editableDelegate = ComboDelegate(self.treeViewNotebook,
-                                         OptsList=EditableOptions)
+                                         opts_list=EditableOptions)
         self.treeViewNotebook.setItemDelegateForColumn(3, editableDelegate)
 
         descriptionDelegate = LabelDelegate(self.treeViewNotebook)

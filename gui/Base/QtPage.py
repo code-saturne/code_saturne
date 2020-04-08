@@ -1224,24 +1224,42 @@ class IntegerDelegate(QItemDelegate):
 
 class ComboDelegate(QItemDelegate):
 
-    def __init__(self, parent=None, xml_model=None, OptsList={}):
+    def __init__(self, parent=None, xml_model=None,
+                 opts_list=[], opts_state=None):
 
         super(ComboDelegate, self).__init__(parent)
 
         self.parent       = parent
         self.mdl          = xml_model
 
-        self.opts_list = []
-        for key in OptsList:
-            self.opts_list.append({'name':key,
-                                   'active':True,
-                                   'available':True})
+        if opts_state:
+            if type(opts_state) != list:
+                raise Exception("Wrong type for opts_state")
+            if len(opts_state) != len(opts_list):
+                raise Exception("Wrong length of opts_state")
+        else:
+            # To simplify the code which follows, we ensure that
+            # opts_state is a list with the correct length
+            opts_state = ["on"]*len(opts_list)
 
-            if OptsList[key] == "na":
-                self.opts_list[-1]["available"] = False
-            if OptsList[key] == "off":
-                self.opts_list[-1]["available"] = False
-                self.opts_list[-1]["active"]    = False
+        self.opts_list = []
+        for i, opt in enumerate(opts_list):
+
+            if opts_state[i] not in ["on", "na", "off"]:
+                msg="Wrong state for opts %s : %s" % (opt,opts_state[i])
+                raise Exception(msg)
+
+            ac = True
+            av = True
+            if opts_state[i] == "na":
+                av = False
+            elif opts_state[i] == "off":
+                ac = False
+                av = False
+
+            self.opts_list.append({'name':opt,
+                                   'active':ac,
+                                   'available':av})
 
 
     def createEditor(self, parent, option, index):

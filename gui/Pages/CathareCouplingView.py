@@ -235,13 +235,16 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
         delegateCathareLCell = LabelDelegate(self.tableViewCathare)
         self.tableViewCathare.setItemDelegateForColumn(2, delegateCathareLCell)
 
-        ncfdBcList = {'off':'na'}
+        ncfdBcList  = ['off']
+        ncfdBcState = ['na']
         if self.case:
             d = LocalizationModel('BoundaryZone', self.case)
             for zone in d.getZones():
-                ncfdBcList[zone.getLabel()]="on"
+                ncfdBcList.append(zone.getLabel())
+                ncfdBcState.append("on")
         delegateNeptuneBc = ComboDelegate(self.tableViewCathare,
-                                          OptsList=ncfdBcList)
+                                          opts_list=ncfdBcList,
+                                          opts_state=ncfdBcState)
         self.tableViewCathare.setItemDelegateForColumn(3, delegateNeptuneBc)
 
         # Create a selection delegate with autocompletion for mesh
