@@ -39,6 +39,12 @@ AC_ARG_WITH(medcoupling,
                             [specify directory for MEDCoupling and ParaMEDMEM])],
             [if test "x$withval" = "x"; then
                with_medcoupling=yes
+             elif test "x$withval" = "xsalome"; then
+               if test -z "$MEDCOUPLING_ROOT_DIR"; then
+                 AC_MSG_FAILURE([no SALOME path information for MED (needed by --with-medcoupling=salome)!])
+               else
+                 with_medcoupling=$MEDCOUPLING_ROOT_DIR
+               fi
              fi],
             [with_medcoupling=check])
 

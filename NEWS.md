@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 User changes:
 
+- Allow short path 'salome' for medcoupling, coolprop, metis and
+  scotch in installation script.
+
 - Add lambda0 field for thermal conductivity to the
   cs_physical_properties structure. This is used by the GUI, but
   not yet used for the general setup, where visls0 is still used

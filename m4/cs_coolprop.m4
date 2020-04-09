@@ -49,6 +49,12 @@ AC_ARG_WITH(coolprop,
                             [specify prefix directory for COOLPROP])],
             [if test "x$withval" = "x"; then
                with_coolprop=yes
+             elif test "x$withval" = "xsalome"; then
+               if test -z "$COOLPROPHOME"; then
+                 AC_MSG_FAILURE([no SALOME path information for COOLPROP (needed by --with-coolprop=salome)!])
+               else
+                 with_coolprop=$COOLPROPHOME
+               fi
              fi],
             [with_coolprop=check])
 

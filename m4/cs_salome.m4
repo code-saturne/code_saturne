@@ -128,6 +128,30 @@ if test "x$with_salome" != "xno" ; then
     fi
   fi
 
+  if test -z "$COOLPROPHOME" ; then
+    if test "x$SALOMEENVCMD" != "x" ; then
+      COOLPROPHOME=$(eval $SALOMEENVCMD ; echo $COOLPROPHOME)
+    else
+      COOLPROPHOME=$(echo $COOLPROPHOME)
+    fi
+  fi
+
+  if test -z "$METISDIR" ; then
+    if test "x$SALOMEENVCMD" != "x" ; then
+      METISDIR=$(eval $SALOMEENVCMD ; echo $METISDIR)
+    else
+      METISDIR=$(echo $METISDIR)
+    fi
+  fi
+
+  if test -z "$SCOTCHDIR" ; then
+    if test "x$SALOMEENVCMD" != "x" ; then
+      SCOTCHDIR=$(eval $SALOMEENVCMD ; echo $SCOTCHDIR)
+    else
+      SCOTCHDIR=$(echo $SCOTCHDIR)
+    fi
+  fi
+
   AC_ARG_VAR([SALOMEENVCMD], [SALOME environment setting commands])
 
 fi

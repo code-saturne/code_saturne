@@ -56,6 +56,12 @@ AC_ARG_WITH(scotch,
                             [specify prefix directory for SCOTCH])],
             [if test "x$withval" = "x"; then
                with_scotch=yes
+             elif test "x$withval" = "xsalome"; then
+               if test -z "$SCOTCHDIR"; then
+                 AC_MSG_FAILURE([no SALOME path information for SCOTCH (needed by --with-scotch=salome)!])
+               else
+                 with_scotch=$SCOTCHDIR
+               fi
              fi],
             [with_scotch=no])
 
