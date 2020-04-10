@@ -1534,6 +1534,8 @@ cs_turb_model_log_setup(void)
     return;
 
   const cs_turb_model_t *turb_model = cs_glob_turb_model;
+  const cs_wall_functions_t *wall_fns = cs_get_glob_wall_functions();
+
 
   cs_var_cal_opt_t var_cal_opt;
   int key_cal_opt_id = cs_field_key_id("var_cal_opt");
@@ -1581,12 +1583,12 @@ cs_turb_model_log_setup(void)
       N_("Two scales smooth/rough"),
       N_("All y+")};
 
-  if (cs_glob_wall_functions->iwallf >= 0)
+  if (wall_fns->iwallf >= 0)
     cs_log_printf
       (CS_LOG_SETUP,
        _("    iwallf                      (wall function:\n"
          "                                 %s)\n"),
-       iwallf_value_str[cs_glob_wall_functions->iwallf]);
+       iwallf_value_str[wall_fns->iwallf]);
 
   const char *iwalfs_value_str[]
     = {N_("Arparci and Larsen"),
@@ -1594,12 +1596,12 @@ cs_turb_model_log_setup(void)
       N_("Louis (atmo flows)"),
       N_("Monin Obukhov (atmo flows)")};
 
-  if (cs_glob_wall_functions->iwalfs >= 0)
+  if (wall_fns->iwalfs >= 0)
     cs_log_printf
       (CS_LOG_SETUP,
        _("    iwalfs                      (Scalar wall function:\n"
          "                                 %s)\n"),
-       iwalfs_value_str[cs_glob_wall_functions->iwalfs]);
+       iwalfs_value_str[wall_fns->iwalfs]);
 
   const char *iwallt_value_str[]
     = {N_("0 (no exchange coefficient correlation)"),
@@ -1607,11 +1609,11 @@ cs_turb_model_log_setup(void)
 
   cs_log_printf(CS_LOG_SETUP,
                 _("    iwallt:        %s\n"),
-                _(iwallt_value_str[cs_glob_wall_functions->iwallt]));
+                _(iwallt_value_str[wall_fns->iwallt]));
 
   cs_log_printf(CS_LOG_SETUP,
                 _("    ypluli:      %14.5e (Limit Y+)\n\n"),
-                cs_glob_wall_functions->ypluli);
+                wall_fns->ypluli);
 
   const char *igrhok_value_str[]
     = {N_("0 (ignore Grad(rho k) in velocity equation)"),
