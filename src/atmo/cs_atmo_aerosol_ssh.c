@@ -111,7 +111,7 @@ void *_aerosol_so = NULL;
 const char _lib_path[] = "libssh-aerosol.so";
 bool _allow_ssh_postprocess = false;
 bool _verbose = false;
-cs_real_t *_ssh_time_offset;
+cs_real_t _ssh_time_offset;
 
 /*============================================================================
  * Static global variables
@@ -214,17 +214,17 @@ _send_double(void               *handle,
  *
  *----------------------------------------------------------------------------*/
 
-static bool *
+static bool
 _recv_bool(void               *handle,
            const char         *name)
 {
 
-  typedef bool* (*_tmp_sshaerosol_t)(void);
+  typedef bool (*_tmp_sshaerosol_t)(void);
   _tmp_sshaerosol_t fct =
     (_tmp_sshaerosol_t) cs_base_get_dl_function_pointer(handle,
                                                         name,
                                                         true);
-  bool *res = fct();
+  bool res = fct();
 
   return res;
 }
@@ -240,17 +240,17 @@ _recv_bool(void               *handle,
  *
  *----------------------------------------------------------------------------*/
 
-static int *
+static int
 _recv_int(void               *handle,
           const char         *name)
 {
 
-  typedef int* (*_tmp_sshaerosol_t)(void);
+  typedef int (*_tmp_sshaerosol_t)(void);
   _tmp_sshaerosol_t fct =
     (_tmp_sshaerosol_t) cs_base_get_dl_function_pointer(handle,
                                                         name,
                                                         true);
-  int *res = fct();
+  int res = fct();
 
   return res;
 }
@@ -266,17 +266,17 @@ _recv_int(void               *handle,
  *
  *----------------------------------------------------------------------------*/
 
-static cs_real_t *
+static cs_real_t
 _recv_double(void               *handle,
              const char         *name)
 {
 
-  typedef double* (*_tmp_sshaerosol_t)(void);
+  typedef double (*_tmp_sshaerosol_t)(void);
   _tmp_sshaerosol_t fct =
     (_tmp_sshaerosol_t) cs_base_get_dl_function_pointer(handle,
                                                         name,
                                                         true);
-  cs_real_t *res = fct();
+  cs_real_t res = fct();
 
   return res;
 }
@@ -402,12 +402,12 @@ cs_atmo_aerosol_ssh_initialize(void)
     {
       _ssh_time_offset = _recv_double(_aerosol_so, "api_sshaerosol_get_initial_t_");
       if (_verbose)
-        bft_printf(" Initial time from SSH-aerosol : %f\n", *_ssh_time_offset);
+        bft_printf(" Initial time from SSH-aerosol : %f\n", _ssh_time_offset);
     }
 
     /* Grab initial time and time step from Code_Saturne */
     /* FIXME: this is not the initial time read in the meteo / chemistry file */
-    cs_real_t initial_time = cs_glob_time_step->t_cur + *_ssh_time_offset;
+    cs_real_t initial_time = cs_glob_time_step->t_cur + _ssh_time_offset;
     cs_real_t dt = (cs_glob_time_step_options->idtvar == CS_TIME_STEP_ADAPTIVE) ?
                     CS_F_(dt)->val[0] : cs_glob_time_step->dt_ref;
 
@@ -660,18 +660,17 @@ cs_atmo_aerosol_ssh_time_advance(void)
   const cs_domain_t *domain = cs_glob_domain;
   const cs_mesh_t *m = domain->mesh;
 
-  double initial_time, dt;
-
   /* If homogeneous time step => set current_time and set time step and update photolysis*/
   if (cs_glob_time_step_options->idtvar == CS_TIME_STEP_CONSTANT
       || cs_glob_time_step_options->idtvar == CS_TIME_STEP_ADAPTIVE) {
 
-    initial_time = cs_glob_time_step->t_cur + *_ssh_time_offset;
-    dt = (cs_glob_time_step_options->idtvar == CS_TIME_STEP_ADAPTIVE) ?
-          CS_F_(dt)->val[0] : cs_glob_time_step->dt_ref;
+    double current_time = cs_glob_time_step->t_cur + _ssh_time_offset;
+    double dt = (cs_glob_time_step_options->idtvar == CS_TIME_STEP_ADAPTIVE) ?
+                 CS_F_(dt)->val[0] : cs_glob_time_step->dt_ref;
+    current_time += dt;
 
     /* Set the current time */
-    _send_double(_aerosol_so, "api_sshaerosol_set_current_t_", initial_time);
+    _send_double(_aerosol_so, "api_sshaerosol_set_current_t_", current_time);
 
     /* Set the time step */
     _send_double(_aerosol_so, "api_sshaerosol_set_dt_", dt);
@@ -768,6 +767,9 @@ cs_atmo_aerosol_ssh_time_advance(void)
       }
       cs_atmo_aerosol_ssh_set_aero(data);
     }
+
+    /* Update concentration-dependent arrays in SSH-aerosol */
+    _call(_aerosol_so, "api_sshaerosol_init_again_");
 
     /* Call the gaseous chemistry */
     _call(_aerosol_so, "api_sshaerosol_gaschemistry_");
