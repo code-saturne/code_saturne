@@ -2322,14 +2322,14 @@ cs_solidification_log_setup(void)
   cs_log_printf(CS_LOG_SETUP, "%s\n", h1_sep);
 
   cs_log_printf(CS_LOG_SETUP, "  * Solidification | Model:");
-  if (solid->model & CS_SOLIDIFICATION_MODEL_STOKES)
+  if (cs_flag_test(solid->model, CS_SOLIDIFICATION_MODEL_STOKES))
     cs_log_printf(CS_LOG_SETUP, "Stokes");
-  else if (solid->model & CS_SOLIDIFICATION_MODEL_NAVIER_STOKES)
+  else if (cs_flag_test(solid->model, CS_SOLIDIFICATION_MODEL_NAVIER_STOKES))
     cs_log_printf(CS_LOG_SETUP, "Navier-Stokes");
   cs_log_printf(CS_LOG_SETUP, "\n");
 
   cs_log_printf(CS_LOG_SETUP, "  * Solidification | Model:");
-  if (solid->model & CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87) {
+  if (cs_flag_test(solid->model, CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87)) {
 
     cs_solidification_voller_t  *v_model
       = (cs_solidification_voller_t *)solid->model_context;
@@ -2343,13 +2343,13 @@ cs_solidification_log_setup(void)
                   v_model->forcing_coef);
 
   }
-  else if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+  else if (cs_flag_test(solid->model, CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)) {
 
     cs_solidification_binary_alloy_t  *alloy
       = (cs_solidification_binary_alloy_t *)solid->model_context;
 
     cs_log_printf(CS_LOG_SETUP, "Binary alloy\n");
-    cs_log_printf(CS_LOG_SETUP, "  * Solidification | Alloy: %s",
+    cs_log_printf(CS_LOG_SETUP, "  * Solidification | Alloy: %s\n",
                   cs_equation_get_name(alloy->solute_equation));
 
     cs_log_printf(CS_LOG_SETUP,
@@ -2367,7 +2367,8 @@ cs_solidification_log_setup(void)
 
     /* Display options */
     cs_log_printf(CS_LOG_SETUP, "  * Solidification | Options:");
-    if (solid->options & CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM)
+    if (cs_flag_test(solid->options,
+                     CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM))
       cs_log_printf(CS_LOG_SETUP,
                     " Solute concentration with an advective source term");
     else
@@ -2376,7 +2377,8 @@ cs_solidification_log_setup(void)
     cs_log_printf(CS_LOG_SETUP, "\n");
 
     cs_log_printf(CS_LOG_SETUP, "  * Solidification | Options:");
-    if (solid->options & CS_SOLIDIFICATION_UPDATE_SOURCE_TERM_BY_STEP)
+    if (cs_flag_test(solid->options,
+                     CS_SOLIDIFICATION_UPDATE_SOURCE_TERM_BY_STEP))
       cs_log_printf(CS_LOG_SETUP,
                     " Update the thermal source term by steps");
     else
@@ -2385,19 +2387,33 @@ cs_solidification_log_setup(void)
     cs_log_printf(CS_LOG_SETUP, "\n");
 
     cs_log_printf(CS_LOG_SETUP, "  * Solidification | Options:");
-    if (solid->options & CS_SOLIDIFICATION_UPDATE_GL_WITH_TAYLOR_EXPANSION)
+    if (cs_flag_test(solid->options,
+                     CS_SOLIDIFICATION_UPDATE_GL_WITH_TAYLOR_EXPANSION))
       cs_log_printf(CS_LOG_SETUP,
                     " Update the liquid fraction with a Taylor expansion");
     else
       cs_log_printf(CS_LOG_SETUP,
-                    " Update the liquid fraction as in the Lagacy");
+                    " Update the liquid fraction as in the Legacy");
     cs_log_printf(CS_LOG_SETUP, "\n");
 
-    cs_log_printf(CS_LOG_SETUP, "  * Solidification | Options:");
-    if (solid->options & CS_SOLIDIFICATION_UPDATE_EUTECTIC_VOLLER)
+    if (cs_flag_test(solid->options,
+                     CS_SOLIDIFICATION_UPDATE_EUTECTIC_VOLLER)) {
+      cs_log_printf(CS_LOG_SETUP, "  * Solidification | Options:");
       cs_log_printf(CS_LOG_SETUP,
                     " Update the Eutectic liquid fraction with Voller-Prakash");
-    cs_log_printf(CS_LOG_SETUP, "\n");
+      cs_log_printf(CS_LOG_SETUP, "\n");
+    }
+
+    if (alloy->n_iter_max > 1) {
+
+      cs_log_printf(CS_LOG_SETUP, "  * Solidification | Options:");
+      cs_log_printf(CS_LOG_SETUP,
+                    " Sub-iterations requested: "
+                    " n_iter_max %d; tolerance: %.3e",
+                    alloy->n_iter_max, alloy->g_l_tolerance);
+      cs_log_printf(CS_LOG_SETUP, "\n");
+
+    }
 
   } /* Binary alloy */
 
