@@ -190,10 +190,10 @@ typedef struct {
   cs_real_t    inv_ml;   /* reciprocal of ml */
 
   /* Function to update the g_l and the cell state */
-  cs_solidification_update_t     *update_g_l;
+  cs_solidification_update_t     *update_gl;
 
   /* Function to update the c_l and the source term for the thermal equation*/
-  cs_solidification_update_t     *update_c_l;
+  cs_solidification_update_t     *update_cl_st;
 
   /* Alloy features */
   /* -------------- */
@@ -1198,7 +1198,7 @@ _update_state_binary_alloy(const cs_mesh_t             *mesh,
 
   /* Update the liquid fraction in each cell, the liquidus temperature as well
      as the cell state */
-  alloy->update_g_l(mesh, connect, quant, ts, cur2prev);
+  alloy->update_gl(mesh, connect, quant, ts, cur2prev);
 
   /* Evaluate the evolution of the liquid fraction betwwen two time steps */
   _g_l_drift(quant, ts);
@@ -1248,19 +1248,19 @@ _update_state_binary_alloy(const cs_mesh_t             *mesh,
 
   /* Update the liquid concentration of the solute (c_l) and the source term
      for the thermal equation */
-  alloy->update_c_l(mesh, connect, quant, ts, cur2prev);
+  alloy->update_cl_st(mesh, connect, quant, ts, cur2prev);
 
   if (solid->options & CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM) {
 
     /* Update c_l at face values */
     const cs_equation_t  *tr_eq = alloy->solute_equation;
-    const cs_real_t  *bulk_conc_f = cs_equation_get_face_values(tr_eq, false);
-    const cs_real_t  *bulk_temp_f = alloy->temp_faces;
+    const cs_real_t  *c_bulk_f = cs_equation_get_face_values(tr_eq, false);
+    const cs_real_t  *t_bulk_f = alloy->temp_faces;
 
     for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++) {
 
-      const cs_real_t  conc = bulk_conc_f[f_id];
-      const cs_real_t  temp = bulk_temp_f[f_id];
+      const cs_real_t  conc = c_bulk_f[f_id];
+      const cs_real_t  temp = t_bulk_f[f_id];
 
       /* Compute the solidus and liquidus temperature for the current cell and
        * define the state related to this cell */
@@ -1516,8 +1516,8 @@ _fb_solute_source_term(const cs_equation_param_t     *eqp,
   cs_solidification_binary_alloy_t  *alloy
     = (cs_solidification_binary_alloy_t *)solid->model_context;
 
-  cs_real_t  *c_l_c = alloy->c_l_field->val;
-  cs_real_t  *c_l_f = alloy->c_l_faces;
+  cs_real_t  *cl_c = alloy->c_l_field->val;
+  cs_real_t  *cl_f = alloy->c_l_faces;
 
   /* Diffusion part of the source term to add */
   cs_hodge_set_property_value_cw(cm, cb->t_pty_eval, cb->cell_flag,
@@ -1527,10 +1527,11 @@ _fb_solute_source_term(const cs_equation_param_t     *eqp,
      builder (store in cb->loc) */
   eqc->get_stiffness_matrix(cm, diff_hodge, cb);
 
-  /* Build the cellwise array: c - c_l  */
+  /* Build the cellwise array: c - c_l
+     One should have c_l >= c. Therefore, one takes fmin(...,0) */
   for (short int f = 0; f < cm->n_fc; f++)
-    cb->values[f] = csys->val_n[f] - c_l_f[cm->f_ids[f]];
-  cb->values[cm->n_fc] = csys->val_n[cm->n_fc] - c_l_c[cm->c_id];
+    cb->values[f] = fmin(csys->val_n[f] - cl_f[cm->f_ids[f]], 0);
+  cb->values[cm->n_fc] = fmin(csys->val_n[cm->n_fc] - cl_c[cm->c_id], 0);
 
   /* Update the RHS with the diffusion contribution */
   cs_sdm_update_matvec(cb->loc, cb->values, csys->rhs);
@@ -1538,10 +1539,11 @@ _fb_solute_source_term(const cs_equation_param_t     *eqp,
   /* Define the local advection matrix */
   cs_cdofb_advection_build(eqp, cm, eqc->adv_func, cb);
 
-  /* Build the cellwise array: c - c_l  */
+  /* Build the cellwise array: c - c_l
+     One should have c_l >= c. Therefore, one takes fmin(...,0) */
   for (short int f = 0; f < cm->n_fc; f++)
-    cb->values[f] = csys->val_n[f] - c_l_f[cm->f_ids[f]];
-  cb->values[cm->n_fc] = csys->val_n[cm->n_fc] - c_l_c[cm->c_id];
+    cb->values[f] = fmin(csys->val_n[f] - cl_f[cm->f_ids[f]], 0);
+  cb->values[cm->n_fc] = fmin(csys->val_n[cm->n_fc] - cl_c[cm->c_id], 0);
 
   /* Update the RHS with the convection contribution */
   cs_sdm_update_matvec(cb->loc, cb->values, csys->rhs);
@@ -1857,14 +1859,14 @@ cs_solidification_set_binary_alloy_model(const char     *name,
 
   /* Set the default function pointers for updating properties */
   if (solid->options & CS_SOLIDIFICATION_UPDATE_GL_WITH_TAYLOR_EXPANSION)
-    alloy->update_g_l = _update_glc_taylor;
+    alloy->update_gl = _update_glc_taylor;
   else
-    alloy->update_g_l = _update_glc_legacy;
+    alloy->update_gl = _update_glc_legacy;
 
   if (solid->options & CS_SOLIDIFICATION_UPDATE_SOURCE_TERM_BY_STEP)
-    alloy->update_c_l = _update_cl_st_by_step;
+    alloy->update_cl_st = _update_cl_st_by_step;
   else
-    alloy->update_c_l = _update_cl_st_legacy;
+    alloy->update_cl_st = _update_cl_st_legacy;
 }
 
 /*----------------------------------------------------------------------------*/
