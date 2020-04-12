@@ -728,18 +728,6 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
   cs_navsto_param_t  *nsp = ns->param;
 
-  /* Avoid an error if no definition is given for the mandatory physical
-     properties */
-  cs_real_t  one = 1.0;
-  if (nsp->mass_density->n_definitions == 0) /* Not set by the user */
-    cs_property_def_iso_by_value(nsp->mass_density,
-                                 NULL, /* all cells */
-                                 one);
-
-  if (nsp->lami_viscosity->n_definitions == 0) /* Not set by the user */
-    cs_property_def_iso_by_value(nsp->lami_viscosity,
-                                 NULL, /* all cells */
-                                 one);
 
   /* Remaining boundary conditions:
    * 1. Walls
