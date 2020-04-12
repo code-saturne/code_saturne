@@ -1636,8 +1636,10 @@ cs_solidification_activate(cs_solidification_model_t      model,
     thm_model |= CS_THERMAL_MODEL_USE_TEMPERATURE;
   else if (model & CS_SOLIDIFICATION_MODEL_USE_ENTHALPY)
     thm_model |= CS_THERMAL_MODEL_USE_ENTHALPY;
-  else
-    thm_model |= CS_THERMAL_MODEL_USE_TEMPERATURE; /* by default */
+  else { /* Defined a default choice*/
+    thm_model |= CS_THERMAL_MODEL_USE_TEMPERATURE;
+    solid->model |= CS_THERMAL_MODEL_USE_TEMPERATURE;
+  }
 
   cs_thermal_system_activate(thm_model, thm_num, thm_post);
 
