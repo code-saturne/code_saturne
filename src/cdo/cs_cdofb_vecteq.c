@@ -312,14 +312,17 @@ cs_cdofb_vecteq_setup(cs_real_t                     t_eval,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief   Initialize the local structure for the current cell
+ *          The algebraic system for time t^{n+1} is going to be built knowing
+ *          previous field at time t^{n}. Make sure to be consistent between
+ *          the call to current_to_previous and the parameters vel_{f,c}_pre
  *
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
- * \param[in]      eqc         pointer to a cs_cdofb_vecteq_t structure
  * \param[in]      dir_values  Dirichlet values associated to each face
  * \param[in]      forced_ids  indirection in case of internal enforcement
- * \param[in]      field_tn    values of the field at the last computed time
+ * \param[in]      val_f_pre   face values used as the previous one
+ * \param[in]      val_c_pre   cell values used as the previous one
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
  */
@@ -329,10 +332,10 @@ void
 cs_cdofb_vecteq_init_cell_system(const cs_cell_mesh_t         *cm,
                                  const cs_equation_param_t    *eqp,
                                  const cs_equation_builder_t  *eqb,
-                                 const cs_cdofb_vecteq_t      *eqc,
                                  const cs_real_t               dir_values[],
                                  const cs_lnum_t               forced_ids[],
-                                 const cs_real_t               field_tn[],
+                                 const cs_real_t               val_f_pre[],
+                                 const cs_real_t               val_c_pre[],
                                  cs_cell_sys_t                *csys,
                                  cs_cell_builder_t            *cb)
 {
@@ -355,7 +358,7 @@ cs_cdofb_vecteq_init_cell_system(const cs_cell_mesh_t         *cm,
     const cs_lnum_t  f_id = cm->f_ids[f];
     for (int k = 0; k < 3; k++) {
       csys->dof_ids[3*f + k] = 3*f_id + k;
-      csys->val_n[3*f + k] = eqc->face_values[3*f_id + k];
+      csys->val_n[3*f + k] = val_f_pre[3*f_id + k];
     }
 
   }
@@ -366,7 +369,7 @@ cs_cdofb_vecteq_init_cell_system(const cs_cell_mesh_t         *cm,
     const cs_lnum_t  _shift = 3*cm->n_fc + k;
 
     csys->dof_ids[_shift] = dof_id;
-    csys->val_n[_shift] = field_tn[dof_id];
+    csys->val_n[_shift] = val_c_pre[dof_id];
 
   }
 
@@ -801,11 +804,7 @@ cs_cdofb_vecteq_solve_steady_state(bool                        cur2prev,
   cs_matrix_assembler_values_t  *mav
     = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
-  shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,           \
-         dir_values, enforced_ids, fld,                                 \
-         cs_cdofb_cell_sys, cs_cdofb_cell_bld)                          \
-  firstprivate(time_eval)
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -849,9 +848,8 @@ cs_cdofb_vecteq_solve_steady_state(bool                        cur2prev,
                          connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
-      cs_cdofb_vecteq_init_cell_system(cm, eqp, eqb, eqc,
-                                       dir_values, enforced_ids,
-                                       fld->val,
+      cs_cdofb_vecteq_init_cell_system(cm, eqp, eqb, dir_values, enforced_ids,
+                                       eqc->face_values, fld->val,
                                        csys, cb);
 
       /* Build and add the diffusion/advection/reaction terms to the local
@@ -1012,11 +1010,7 @@ cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
   cs_matrix_assembler_values_t  *mav
     = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
-  shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,           \
-         dir_values, enforced_ids, fld,                                 \
-         cs_cdofb_cell_sys, cs_cdofb_cell_bld)                          \
-  firstprivate(time_eval, inv_dtcur)
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1060,8 +1054,8 @@ cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
                          connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
-      cs_cdofb_vecteq_init_cell_system(cm, eqp, eqb, eqc,
-                                       dir_values, enforced_ids, fld->val,
+      cs_cdofb_vecteq_init_cell_system(cm, eqp, eqb, dir_values, enforced_ids,
+                                       eqc->face_values, fld->val,
                                        csys, cb);
 
       /* Build and add the diffusion/advection/reaction terms to the local
@@ -1088,13 +1082,12 @@ cs_cdofb_vecteq_solve_implicit(bool                        cur2prev,
       /* UNSTEADY TERM + TIME SCHEME
        * =========================== */
       if (!(eqb->time_pty_uniform))
-        cb->tpty_val = cs_property_value_in_cell(cm,
-                                                 eqp->time_property,
+        cb->tpty_val = cs_property_value_in_cell(cm, eqp->time_property,
                                                  cb->t_pty_eval);
 
-      if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping
-                                                      or Hodge-Voronoi */
+      if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) {
 
+        /* Mass lumping or Hodge-Voronoi */
         const double  ptyc = cb->tpty_val * cm->vol_c * inv_dtcur;
 
         /* Get cell-cell block */
@@ -1251,10 +1244,7 @@ cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
   cs_matrix_assembler_values_t  *mav
     = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
-  shared(quant, connect, ts, eqp, eqb, eqc, rhs, matrix, mav, rs,       \
-         dir_values, fld, cs_cdofb_cell_sys, cs_cdofb_cell_bld,         \
-         enforced_ids, compute_initial_source)
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1300,13 +1290,12 @@ cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
       cb->cell_flag = connect->cell_flag[c_id];
 
       /* Set the local mesh structure for the current cell */
-      cs_cell_mesh_build(c_id,
-                         cs_equation_cell_mesh_flag(cb->cell_flag, eqb),
+      cs_cell_mesh_build(c_id, cs_equation_cell_mesh_flag(cb->cell_flag, eqb),
                          connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
-      cs_cdofb_vecteq_init_cell_system(cm, eqp, eqb, eqc,
-                                       dir_values, enforced_ids, fld->val,
+      cs_cdofb_vecteq_init_cell_system(cm, eqp, eqb, dir_values, enforced_ids,
+                                       eqc->face_values, fld->val,
                                        csys, cb);
 
       /* Build and add the diffusion/advection/reaction terms to the local
@@ -1365,8 +1354,7 @@ cs_cdofb_vecteq_solve_theta(bool                        cur2prev,
        *  a) add to csys->mat
        *  b) add to rhs mass_mat * p_n */
       if (!(eqb->time_pty_uniform))
-        cb->tpty_val = cs_property_value_in_cell(cm,
-                                                 eqp->time_property,
+        cb->tpty_val = cs_property_value_in_cell(cm, eqp->time_property,
                                                  cb->t_pty_eval);
 
       if (eqb->sys_flag & CS_FLAG_SYS_TIME_DIAG) { /* Mass lumping */

@@ -117,15 +117,19 @@ typedef void
  *         steady-state case. Specific case: GKB algorithm is used to solve
  *         the saddle-point system.
  *
- * \param[in]      nsp           pointer to a \ref cs_navsto_param_t structure
- * \param[in]      dir_values    array storing the Dirichlet values
- * \param[in]      forced_ids    indirection in case of internal enforcement
- * \param[in, out] sc            pointer to the scheme context
+ * \param[in]      nsp          pointer to a \ref cs_navsto_param_t structure
+ * \param[in]      vel_f_pre    velocity face DoFs of the previous time step
+ * \param[in]      vel_c_pre    velocity cell DoFs of the previous time step
+ * \param[in]      dir_values   array storing the Dirichlet values
+ * \param[in]      forced_ids   indirection in case of internal enforcement
+ * \param[in, out] sc           pointer to the scheme context
  */
 /*----------------------------------------------------------------------------*/
 
 typedef void
 (cs_cdofb_monolithic_build_t)(const cs_navsto_param_t      *nsp,
+                              const cs_real_t               vel_f_pre[],
+                              const cs_real_t               vel_c_pre[],
                               const cs_real_t              *dir_values,
                               const cs_lnum_t               forced_ids[],
                               cs_cdofb_monolithic_t        *sc);

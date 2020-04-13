@@ -393,7 +393,7 @@ cs_thermal_system_activate(cs_thermal_model_type_t    model,
   if (thm->model & CS_THERMAL_MODEL_NAVSTO_VELOCITY) {
 
     cs_equation_add_advection(eqp,
-                              cs_advection_field_by_name("velocity_field"));
+                              cs_advection_field_by_name("mass_flux"));
 
     if (thm->model & CS_THERMAL_MODEL_USE_TEMPERATURE)
       cs_equation_add_advection_scaling_property(eqp, thm->cp);

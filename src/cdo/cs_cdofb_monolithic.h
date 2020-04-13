@@ -118,9 +118,9 @@ cs_cdofb_monolithic_finalize_common(const cs_navsto_param_t       *nsp);
 /*!
  * \brief  Initialize a \ref cs_cdofb_monolithic_t structure
  *
- * \param[in] nsp        pointer to a \ref cs_navsto_param_t structure
- * \param[in] fb_type    type of boundary for each boundary face
- * \param[in] nsc_input  pointer to a \ref cs_navsto_ac_t structure
+ * \param[in] nsp         pointer to a \ref cs_navsto_param_t structure
+ * \param[in] bf_type     type of boundary for each boundary face
+ * \param[in] cc_context  pointer to a \ref cs_navsto_monolithic_t structure
  *
  * \return a pointer to a new allocated \ref cs_cdofb_monolithic_t structure
  */
@@ -128,8 +128,8 @@ cs_cdofb_monolithic_finalize_common(const cs_navsto_param_t       *nsp);
 
 void *
 cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
-                                        cs_boundary_type_t        *fb_type,
-                                        void                      *nsc_input);
+                                        cs_boundary_type_t        *bf_type,
+                                        void                      *cc_context);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -164,7 +164,7 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
 /*!
  * \brief  Solve the steady Navier-Stokes system with a CDO face-based scheme
  *         using a monolithic approach and Picard iterations to solve the
- *         on-linearities arising from the advection term
+ *         non-linearities arising from the advection term
  *
  * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
  * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
@@ -201,7 +201,7 @@ cs_cdofb_monolithic(const cs_mesh_t          *mesh,
  *         using a monolithic approach.
  *         According to the settings, this function can handle either an
  *         implicit Euler time scheme or more generally a theta time scheme.
- *         Rely on Picard iterations to solve the on-linearities arising from
+ *         Rely on Picard iterations to solve the non-linearities arising from
  *         the advection term
  *
  * \param[in]      mesh            pointer to a \ref cs_mesh_t structure

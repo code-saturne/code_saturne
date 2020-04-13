@@ -167,6 +167,49 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Test if one has to do one more Picard iteration
+ *
+ * \param[in]      nsp               pointer to a cs_navsto_param_t structure
+ * \param[in]      connect           set of additional connectivities for CDO
+ * \param[in]      quant             set of additional geometrical quantities
+ * \param[in]      previous_iterate  previous state of the mass flux iterate
+ * \param[in]      current_iterate   current state of the mass flux iterate
+ * \param[in]      div_l2_norm       L2 norm of the velocity divergence
+ * \param[in, out] ns_info           pointer to a cs_navsto_algo_info_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_picard_cvg_test(const cs_navsto_param_t      *nsp,
+                                const cs_cdo_connect_t       *connect,
+                                const cs_cdo_quantities_t    *quant,
+                                const cs_real_t              *previous_iterate,
+                                const cs_real_t              *current_iterate,
+                                cs_real_t                     div_l2_norm,
+                                cs_navsto_algo_info_t        *ns_info);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the mass flux playing the role of the advection field in
+ *         the Navier-Stokes equations
+ *         One considers the mass flux across primal faces which relies on the
+ *         velocity vector defined on each face.
+ *
+ * \param[in]      nsp         set of parameters to define the NavSto system
+ * \param[in]      quant       set of additional geometrical quantities
+ * \param[in]      face_vel    velocity vectors for each face
+ * \param[in, out] adv         pointer to a \ref cs_adv_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_mass_flux(const cs_navsto_param_t     *nsp,
+                          const cs_cdo_quantities_t   *quant,
+                          const cs_real_t             *face_vel,
+                          cs_adv_field_t              *adv);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the divergence of a cell using the \ref cs_cdo_quantities_t
  *         structure
  *
@@ -286,6 +329,7 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
  * \param[in]  connect    pointer to a \ref cs_cdo_connect_t struct.
  * \param[in]  ts         pointer to a \ref cs_time_step_t struct.
  * \param[in]  adv_field  pointer to a \ref cs_adv_field_t struct.
+ * \param[in]  mass_flux  scalar-valued mass flux for each face
  * \param[in]  u_cell     vector-valued velocity in each cell
  * \param[in]  u_face     vector-valued velocity on each face
  */
@@ -298,6 +342,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
                          const cs_cdo_connect_t      *connect,
                          const cs_time_step_t        *ts,
                          const cs_adv_field_t        *adv_field,
+                         const cs_real_t             *mass_flux,
                          const cs_real_t             *u_cell,
                          const cs_real_t             *u_face);
 

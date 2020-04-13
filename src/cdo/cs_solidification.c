@@ -247,9 +247,6 @@ struct _solidification_t {
   /* Mass density of the liquid/solid media */
   cs_property_t   *mass_density;
 
-  /* Advection field (velocity field arising from the Navier-Stokes system) */
-  cs_adv_field_t  *adv_field;
-
   /* Liquid fraction of the mixture */
   /* ------------------------------ */
 
@@ -365,9 +362,6 @@ _solidification_create(void)
   /* Property */
   solid->mass_density = NULL;
 
-  /* Advection field arising from the (Navier-)Stokes model */
-  solid->adv_field = NULL;
-
   /* Quantities related to the liquid fraction */
   solid->g_l = NULL;
   solid->g_l_field = NULL;
@@ -454,11 +448,13 @@ static void
 _enforce_solid_cells(const cs_cdo_connect_t      *connect,
                      const cs_cdo_quantities_t   *quant)
 {
-  cs_adjacency_t  *c2f = connect->c2f;
+  cs_solidification_t  *solid = cs_solidification_structure;
   cs_equation_t  *mom_eq = cs_navsto_system_get_momentum_eq();
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(mom_eq);
-  cs_solidification_t  *solid = cs_solidification_structure;
-  cs_real_t  *face_velocity = cs_xdef_get_array(solid->adv_field->definition);
+  cs_real_t  *face_velocity = cs_equation_get_face_values(mom_eq, false);
+  cs_real_t  *mass_flux = cs_navsto_get_mass_flux(false); /* current values */
+
+  const cs_adjacency_t  *c2f = connect->c2f;
 
   /* List of solid cells */
   cs_lnum_t  *solid_cells = NULL;
@@ -470,13 +466,18 @@ _enforce_solid_cells(const cs_cdo_connect_t      *connect,
     if (solid->cell_state[c_id] == CS_SOLIDIFICATION_STATE_SOLID) {
       solid_cells[ii++] = c_id;
 
-      /* Kill the advection field for each face attached to a solid cell */
+      /* Kill the advection field and the face velocity for each face attached
+         to a solid cell */
       for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
-        cs_real_t  *_vel_f = face_velocity + 3*c2f->ids[j];
-        _vel_f[0] = _vel_f[1] = _vel_f[2] = 0.;
-        }
 
-    }
+        const cs_lnum_t f_id = c2f->ids[j];
+        mass_flux[f_id] = 0;
+        cs_real_t  *_vel_f = face_velocity + 3*f_id;
+        _vel_f[0] = _vel_f[1] = _vel_f[2] = 0.;
+
+      } /* Loop on cell faces */
+
+    } /* solid cell */
   } /* Loop on cells */
 
   assert((cs_gnum_t)ii == solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID]);
@@ -1614,16 +1615,14 @@ cs_solidification_activate(cs_solidification_model_t      model,
     ns_model |= CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES;
 
   /* Activate the Navier-Stokes module */
-  cs_navsto_system_t  *ns = cs_navsto_system_activate(boundaries,
-                                                      ns_model,
-                                                      algo_coupling,
-                                                      ns_option,
-                                                      ns_post_flag);
+  cs_navsto_system_activate(boundaries,
+                            ns_model,
+                            algo_coupling,
+                            ns_option,
+                            ns_post_flag);
 
   solid->mass_density = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
   assert(solid->mass_density != NULL);
-
-  solid->adv_field = ns->adv_field;
 
   /* Activate and default settings for the thermal module */
   /* ---------------------------------------------------- */
@@ -1992,9 +1991,8 @@ cs_solidification_init_setup(void)
     /* Add the unsteady term */
     cs_equation_add_time(eqp, cs_property_by_name(CS_PROPERTY_MASS_DENSITY));
 
-    /* Add an advection term to the solute concetration equation */
-    cs_equation_add_advection(eqp,
-                              cs_advection_field_by_name("velocity_field"));
+    /* Add an advection term to the solute concentration equation */
+    cs_equation_add_advection(eqp, cs_navsto_get_adv_field());
 
     if ((solid->options & CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM)
         == 0) {

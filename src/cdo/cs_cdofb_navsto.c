@@ -357,6 +357,109 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Test if one has to do one more Picard iteration
+ *
+ * \param[in]      nsp               pointer to a cs_navsto_param_t structure
+ * \param[in]      connect           set of additional connectivities for CDO
+ * \param[in]      quant             set of additional geometrical quantities
+ * \param[in]      previous_iterate  previous state of the mass flux iterate
+ * \param[in]      current_iterate   current state of the mass flux iterate
+ * \param[in]      div_l2_norm       L2 norm of the velocity divergence
+ * \param[in, out] ns_info           pointer to a cs_navsto_algo_info_t struct.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_picard_cvg_test(const cs_navsto_param_t      *nsp,
+                                const cs_cdo_connect_t       *connect,
+                                const cs_cdo_quantities_t    *quant,
+                                const cs_real_t              *previous_iterate,
+                                const cs_real_t              *current_iterate,
+                                cs_real_t                     div_l2_norm,
+                                cs_navsto_algo_info_t        *ns_info)
+{
+  const cs_real_t  diverg_factor = 1e3;
+  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
+
+  cs_real_t  previous_picard_res = ns_info->res;
+
+  /* Increment the number of Picard iterations */
+  ns_info->n_algo_iter += 1;
+
+  /* Compute the new residual: L2 norm of the mass flux increment */
+  ns_info->res = cs_evaluate_delta_square_wc2x_norm(previous_iterate,
+                                                    current_iterate,
+                                                    connect->c2f,
+                                                    quant->pvol_fc);
+  assert(ns_info->res > -DBL_MIN);
+  ns_info->res = sqrt(ns_info->res);
+
+  /* Set the convergence status */
+  if (ns_info->res < nslesp.picard_tolerance &&
+      div_l2_norm < nslesp.picard_tolerance) {
+    ns_info->cvg = CS_SLES_CONVERGED;
+  }
+  else if (ns_info->res >  diverg_factor * previous_picard_res) {
+    ns_info->cvg = CS_SLES_DIVERGED;
+  }
+  else if (ns_info->n_algo_iter >= nslesp.picard_n_max_iter) {
+    ns_info->cvg = CS_SLES_MAX_ITERATION;
+  }
+  else
+    ns_info->cvg = CS_SLES_ITERATING;
+
+  if (nsp->verbosity > 1) {
+    if (ns_info->n_algo_iter == 1)
+      cs_navsto_algo_info_header("Picard");
+    cs_navsto_algo_info_printf("Picard", *ns_info, div_l2_norm);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the mass flux playing the role of the advection field in
+ *         the Navier-Stokes equations
+ *         One considers the mass flux across primal faces which relies on the
+ *         velocity vector defined on each face.
+ *
+ * \param[in]      nsp         set of parameters to define the NavSto system
+ * \param[in]      quant       set of additional geometrical quantities
+ * \param[in]      face_vel    velocity vectors for each face
+ * \param[in, out] adv         pointer to a \ref cs_adv_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdofb_navsto_mass_flux(const cs_navsto_param_t     *nsp,
+                          const cs_cdo_quantities_t   *quant,
+                          const cs_real_t             *face_vel,
+                          cs_adv_field_t              *adv)
+{
+  /* Sanity checks */
+  assert(nsp->space_scheme == CS_SPACE_SCHEME_CDOFB);
+  assert(cs_property_is_uniform(nsp->mass_density));
+  assert(nsp->mass_density->n_definitions == 1);
+  assert(face_vel != NULL);
+
+  const cs_real_t  rho_val =
+    cs_xdef_get_scalar_value(nsp->mass_density->defs[0]);
+  cs_real_t  *mass_flux = cs_xdef_get_array(adv->definition);
+
+  if (mass_flux == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: Empty mass flux", __func__);
+
+  /* Define the mass flux. */
+# pragma omp parallel for if (quant->n_faces > CS_THR_MIN)
+  for (cs_lnum_t f_id = 0; f_id < quant->n_faces; f_id++) {
+
+    const cs_real_t  *fq = cs_quant_get_face_vector_area(f_id, quant);
+    mass_flux[f_id] = rho_val*cs_math_3_dot_product(face_vel + 3*f_id, fq);
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the divergence of a cell using the \ref cs_cdo_quantities_t
  *         structure
  *
@@ -766,6 +869,7 @@ cs_cdofb_navsto_set_zero_mean_pressure(const cs_cdo_quantities_t  *quant,
  * \param[in]  connect    pointer to a \ref cs_cdo_connect_t struct.
  * \param[in]  ts         pointer to a \ref cs_time_step_t struct.
  * \param[in]  adv_field  pointer to a \ref cs_adv_field_t struct.
+ * \param[in]  mass_flux  scalar-valued mass flux for each face
  * \param[in]  u_cell     vector-valued velocity in each cell
  * \param[in]  u_face     vector-valued velocity on each face
  */
@@ -778,15 +882,12 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
                          const cs_cdo_connect_t      *connect,
                          const cs_time_step_t        *ts,
                          const cs_adv_field_t        *adv_field,
+                         const cs_real_t             *mass_flux,
                          const cs_real_t             *u_cell,
                          const cs_real_t             *u_face)
 {
   const cs_boundary_t  *boundaries = nsp->boundaries;
-
-  /* Retrieve the boundary velocity flux (mass flux) */
-  cs_field_t  *nflx
-    = cs_advection_field_get_field(adv_field,
-                                   CS_MESH_LOCATION_BOUNDARY_FACES);
+  const cs_real_t  *bmass_flux = mass_flux + quant->n_i_faces;
 
   /* 1. Compute for each boundary the integrated flux */
   bool  *belong_to_default = NULL;
@@ -806,7 +907,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
     for (cs_lnum_t i = 0; i < z->n_elts; i++) {
       const cs_lnum_t  bf_id = z->elt_ids[i];
       belong_to_default[bf_id] = false;
-      boundary_fluxes[b_id] += nflx->val[bf_id];
+      boundary_fluxes[b_id] += bmass_flux[bf_id];
     }
 
   } /* Loop on domain boundaries */
@@ -814,7 +915,7 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
   /* Update the flux through the default boundary */
   for (cs_lnum_t i = 0; i < quant->n_b_faces; i++) {
     if (belong_to_default[i])
-      boundary_fluxes[boundaries->n_boundaries] += nflx->val[i];
+      boundary_fluxes[boundaries->n_boundaries] += bmass_flux[i];
   }
 
   /* Parallel synchronization if needed */

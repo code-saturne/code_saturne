@@ -1091,8 +1091,9 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
        */
 
       /* Set the local (i.e. cellwise) structures for the current cell */
-      cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb, mom_eqc,
-                                       dir_values, enforced_ids, vel_c,
+      cs_cdofb_vecteq_init_cell_system(cm, mom_eqp, mom_eqb,
+                                       dir_values, enforced_ids,
+                                       mom_eqc->face_values, vel_c,
                                        csys, cb);
 
       /* 1- SETUP THE NAVSTO LOCAL BUILDER *

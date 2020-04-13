@@ -158,12 +158,6 @@ typedef struct {
    * @{
    */
 
-  /*! \var adv_field
-   *  Advection field, pointer to \ref cs_adv_field_t
-   */
-
-  cs_adv_field_t             *adv_field;
-
   /*! \var velocity
    *  Velocity, vector-valued, pointer to \ref cs_field_t
    */
@@ -387,6 +381,32 @@ cs_navsto_system_get_param(void);
 
 cs_equation_t *
 cs_navsto_system_get_momentum_eq(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the advection field structure (the mass flux) related to
+ *         the Navier-Stokes system.
+ *
+ * \return a pointer to the advection field structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adv_field_t *
+cs_navsto_get_adv_field(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the mass flux array related to the Navier-Stokes system.
+ *
+ * \param[in]  previous    if true return the previous state otherwise the
+ *                         current state.
+ *
+ * \return a pointer to an array of cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_navsto_get_mass_flux(bool   previous);
 
 /*----------------------------------------------------------------------------*/
 /*!

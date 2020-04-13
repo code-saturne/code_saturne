@@ -165,22 +165,6 @@ cs_cdofb_ac_compute_implicit(const cs_mesh_t              *mesh,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Solve the unsteady Navier-Stokes system with a CDO face-based scheme
- *         using a Artificial Compressibility approach and a theta time scheme
- *
- * \param[in]      mesh            pointer to a \ref cs_mesh_t structure
- * \param[in]      nsp             pointer to a \ref cs_navsto_param_t structure
- * \param[in, out] scheme_context  pointer to a structure cast on-the-fly
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_ac_compute_theta(const cs_mesh_t              *mesh,
-                          const cs_navsto_param_t      *nsp,
-                          void                         *scheme_context);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Solve the unsteady Navier-Stokes system with a CDO face-based scheme
  *         using a Artificial Compressibility approach and an implicit Euler
  *         time scheme
  *         For Picard - Navier--Stokes problems

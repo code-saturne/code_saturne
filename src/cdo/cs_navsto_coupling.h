@@ -72,10 +72,29 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  cs_equation_t  *momentum; /*!< Momentum balance equation (vector-valued) */
+  cs_equation_t   *momentum; /*!< Momentum balance equation (vector-valued) */
 
-  cs_property_t  *zeta;     /*!< Coefficient for the artificial compressibility
-                                 attached to the grad-div stabilization term */
+  /*! \var zeta
+   *  Coefficient for the artificial compressibility attached to the grad-div
+   *  stabilization term
+   */
+  cs_property_t   *zeta;
+
+  /*! \var adv_field
+   *  Advection field, pointer to \ref cs_adv_field_t standing for the mass
+   *  flux
+   */
+
+  cs_adv_field_t  *adv_field;
+
+  /*! \var mass_flux_array
+   *  Current value of the mass flux
+   * \var mass_flux_array_pre
+   *  Previous value of the mass flux
+   */
+
+  cs_real_t       *mass_flux_array;
+  cs_real_t       *mass_flux_array_pre;
 
 } cs_navsto_ac_t;
 
@@ -86,7 +105,23 @@ typedef struct {
 
 typedef struct {
 
-  cs_equation_t  *momentum; /*!< Momentum equation (vector-valued) */
+  cs_equation_t   *momentum; /*!< Momentum equation (vector-valued) */
+
+  /*! \var adv_field
+   *  Advection field, pointer to \ref cs_adv_field_t standing for the mass
+   *  flux
+   */
+
+  cs_adv_field_t  *adv_field;
+
+  /*! \var mass_flux_array
+   *  Current value of the mass flux
+   * \var mass_flux_array_pre
+   *  Previous value of the mass flux
+   */
+
+  cs_real_t       *mass_flux_array;
+  cs_real_t       *mass_flux_array_pre;
 
 } cs_navsto_monolithic_t;
 
@@ -119,6 +154,22 @@ typedef struct {
    * prediction step). This values may not be divergence-free.
    */
   cs_field_t     *predicted_velocity;
+
+  /*! \var adv_field
+   *  Advection field, pointer to \ref cs_adv_field_t standing for the mass
+   *  flux
+   */
+
+  cs_adv_field_t  *adv_field;
+
+  /*! \var mass_flux_array
+   *  Current value of the mass flux
+   * \var mass_flux_array_pre
+   *  Previous value of the mass flux
+   */
+
+  cs_real_t       *mass_flux_array;
+  cs_real_t       *mass_flux_array_pre;
 
 } cs_navsto_projection_t;
 
@@ -208,6 +259,38 @@ cs_navsto_ac_get_momentum_eq(void       *context);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve the pointer to the advection field structure playing the
+ *         role of the mass flux
+ *         Case of artificial compressibility algorithm.
+ *
+ * \param[in] context  pointer to a context structure cast on-the-fly
+ *
+ * \return a pointer to a cs_adv_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adv_field_t *
+cs_navsto_ac_get_adv_field(void       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to the mass flux array (used as the advection
+ *         field).
+ *         Case of artificial compressibility algorithm.
+ *
+ * \param[in] context   pointer to a context structure cast on-the-fly
+ * \param[in] previous  true=previous state, false=current state
+ *
+ * \return a pointer to an array of cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_navsto_ac_get_mass_flux(void       *context,
+                           bool        previous);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Allocate and initialize a context structure when the Navier-Stokes
  *         system is coupled using a monolithic approach
  *
@@ -284,6 +367,38 @@ cs_navsto_monolithic_last_setup(const cs_cdo_connect_t      *connect,
 
 cs_equation_t *
 cs_navsto_monolithic_get_momentum_eq(void       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to the advection field structure playing the
+ *         role of the mass flux
+ *         Case of monolithic algorithm.
+ *
+ * \param[in] context  pointer to a context structure cast on-the-fly
+ *
+ * \return a pointer to a cs_adv_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adv_field_t *
+cs_navsto_monolithic_get_adv_field(void       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to the mass flux array (used as the advection
+ *         field).
+ *         Case of monolithic algorithm.
+ *
+ * \param[in] context   pointer to a context structure cast on-the-fly
+ * \param[in] previous  true=previous state, false=current state
+ *
+ * \return a pointer to an array of cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_navsto_monolithic_get_mass_flux(void       *context,
+                                   bool        previous);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -368,6 +483,38 @@ cs_navsto_projection_last_setup(const cs_cdo_connect_t     *connect,
 
 cs_equation_t *
 cs_navsto_projection_get_momentum_eq(void       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to the advection field structure playing the
+ *         role of the mass flux
+ *         Case of projection algorithm.
+ *
+ * \param[in] context  pointer to a context structure cast on-the-fly
+ *
+ * \return a pointer to a cs_adv_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adv_field_t *
+cs_navsto_projection_get_adv_field(void       *context);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to the mass flux array (used as the advection
+ *         field).
+ *         Case of projection algorithm.
+ *
+ * \param[in] context   pointer to a context structure cast on-the-fly
+ * \param[in] previous  true=previous state, false=current state
+ *
+ * \return a pointer to an array of cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_navsto_projection_get_mass_flux(void       *context,
+                                   bool        previous);
 
 /*----------------------------------------------------------------------------*/
 

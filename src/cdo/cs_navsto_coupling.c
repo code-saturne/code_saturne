@@ -137,6 +137,19 @@ cs_navsto_ac_create_context(cs_navsto_param_t    *nsp,
   /* Additional property */
   nsc->zeta = cs_property_add("graddiv_coef", CS_PROPERTY_ISO);
 
+  /* Advection field related to the resolved velocity */
+  cs_advection_field_status_t  adv_status =
+    CS_ADVECTION_FIELD_NAVSTO | CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
+
+  if (cs_navsto_param_is_steady(nsp))
+    adv_status |= CS_ADVECTION_FIELD_STEADY;
+
+  nsc->adv_field = cs_advection_field_add("mass_flux", adv_status);
+
+  /* Allocated during the last steup stage when the mesh has been read */
+  nsc->mass_flux_array = NULL;
+  nsc->mass_flux_array_pre = NULL;
+
   return nsc;
 }
 
@@ -160,6 +173,10 @@ cs_navsto_ac_free_context(const cs_navsto_param_t    *nsp,
   CS_UNUSED(nsp); /* Avoid warning when compiling with optimizations */
 
   cs_navsto_ac_t  *nsc = (cs_navsto_ac_t *)context;
+
+  BFT_FREE(nsc->mass_flux_array);
+  if (nsc->mass_flux_array_pre != NULL)
+    BFT_FREE(nsc->mass_flux_array_pre);
 
   BFT_FREE(nsc);
 
@@ -195,14 +212,11 @@ cs_navsto_ac_init_setup(const cs_navsto_param_t    *nsp,
   if (!cs_navsto_param_is_steady(nsp))
     cs_equation_add_time(mom_eqp, nsp->mass_density);
 
-  /* Add advection term: It's in the cs_navsto_system_t structure, but it cannot
-   * be seen from here */
-  if (nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES)
-    cs_equation_add_advection(mom_eqp,
-                              cs_advection_field_by_name("velocity_field"));
-
-  /* CS_NAVSTO_MODEL_OSEEN: Nothing to do since the Oseen field is set by the
+  /* Add advection term in case of CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES
+   * CS_NAVSTO_MODEL_OSEEN: Nothing to do since the Oseen field is set by the
    * user via cs_navsto_add_oseen_field() */
+  if (nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES)
+    cs_equation_add_advection(mom_eqp, nsc->adv_field);
 
   /* All considered models needs a viscous term */
   cs_equation_add_diffusion(mom_eqp, nsp->lami_viscosity);
@@ -228,7 +242,6 @@ cs_navsto_ac_last_setup(const cs_cdo_connect_t      *connect,
                         void                        *context)
 {
   CS_UNUSED(connect);
-  CS_UNUSED(quant);
 
   cs_navsto_ac_t  *nsc = (cs_navsto_ac_t *)context;
 
@@ -248,6 +261,37 @@ cs_navsto_ac_last_setup(const cs_cdo_connect_t      *connect,
       cs_xdef_set_quadrature(def, nsp->qtype);
 
   } /* Loop on BC definitions */
+
+  /* Settings with respect to the discretization scheme */
+  switch (nsp->space_scheme) {
+
+  case CS_SPACE_SCHEME_CDOFB:
+  case CS_SPACE_SCHEME_HHO_P0:
+    {
+      BFT_MALLOC(nsc->mass_flux_array, quant->n_faces, cs_real_t);
+      memset(nsc->mass_flux_array, 0, sizeof(cs_real_t)*quant->n_faces);
+
+      if (!cs_navsto_param_is_steady(nsp)) {
+        BFT_MALLOC(nsc->mass_flux_array_pre, quant->n_faces, cs_real_t);
+        memset(nsc->mass_flux_array_pre, 0, sizeof(cs_real_t)*quant->n_faces);
+      }
+
+      cs_flag_t loc_flag =
+        CS_FLAG_FULL_LOC | CS_FLAG_SCALAR | cs_flag_primal_face;
+
+      cs_advection_field_def_by_array(nsc->adv_field,
+                                      loc_flag,
+                                      nsc->mass_flux_array,
+                                      false, /* advection field is not owner */
+                                      NULL); /* index (not useful here) */
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid space discretization scheme.", __func__);
+
+  } /* End of switch on space_scheme */
 
 }
 
@@ -271,6 +315,57 @@ cs_navsto_ac_get_momentum_eq(void       *context)
   cs_navsto_ac_t  *nsc = (cs_navsto_ac_t *)context;
 
   return nsc->momentum;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to the advection field structure playing the
+ *         role of the mass flux
+ *         Case of artificial compressibility algorithm.
+ *
+ * \param[in] context  pointer to a context structure cast on-the-fly
+ *
+ * \return a pointer to a cs_adv_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adv_field_t *
+cs_navsto_ac_get_adv_field(void       *context)
+{
+  if (context == NULL)
+    return NULL;
+
+  cs_navsto_ac_t  *nsc = (cs_navsto_ac_t *)context;
+
+  return nsc->adv_field;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to the mass flux array (used as the advection
+ *         field).
+ *         Case of artificial compressibility algorithm.
+ *
+ * \param[in] context   pointer to a context structure cast on-the-fly
+ * \param[in] previous  true=previous state, false=current state
+ *
+ * \return a pointer to an array of cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_navsto_ac_get_mass_flux(void       *context,
+                           bool        previous)
+{
+  if (context == NULL)
+    return NULL;
+
+  cs_navsto_ac_t  *nsc = (cs_navsto_ac_t *)context;
+
+  if (previous)
+    return nsc->mass_flux_array_pre;
+  else
+    return nsc->mass_flux_array;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -320,6 +415,19 @@ cs_navsto_monolithic_create_context(cs_navsto_param_t    *nsp,
 
   }
 
+  /* Advection field related to the resolved velocity */
+  cs_advection_field_status_t  adv_status =
+    CS_ADVECTION_FIELD_NAVSTO | CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
+
+  if (cs_navsto_param_is_steady(nsp))
+    adv_status |= CS_ADVECTION_FIELD_STEADY;
+
+  nsc->adv_field = cs_advection_field_add("mass_flux", adv_status);
+
+  /* Allocated during the last steup stage when the mesh has been read */
+  nsc->mass_flux_array = NULL;
+  nsc->mass_flux_array_pre = NULL;
+
   return nsc;
 }
 
@@ -338,10 +446,13 @@ void *
 cs_navsto_monolithic_free_context(const cs_navsto_param_t    *nsp,
                                   void                       *context)
 {
-  assert(nsp != NULL);
   CS_UNUSED(nsp); /* Avoid a warning when compiling */
 
   cs_navsto_monolithic_t  *nsc = (cs_navsto_monolithic_t *)context;
+
+  BFT_FREE(nsc->mass_flux_array);
+  if (nsc->mass_flux_array_pre != NULL)
+    BFT_FREE(nsc->mass_flux_array_pre);
 
   BFT_FREE(nsc);
 
@@ -370,20 +481,19 @@ cs_navsto_monolithic_init_setup(const cs_navsto_param_t    *nsp,
   /* Handle the momentum equation */
   cs_equation_param_t  *mom_eqp = cs_equation_get_param(nsc->momentum);
 
+  /* Navier-Stokes parameters induce numerical settings for the related
+     equations */
   cs_navsto_param_transfer(nsp, mom_eqp);
 
   /* Link the time property to the momentum equation */
   if (!cs_navsto_param_is_steady(nsp))
     cs_equation_add_time(mom_eqp, nsp->mass_density);
 
-  /* Add advection term: It's in the cs_navsto_system_t structure, but it cannot
-   * be seen from here */
-  if (nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES)
-    cs_equation_add_advection(mom_eqp,
-                              cs_advection_field_by_name("velocity_field"));
-
-  /* CS_NAVSTO_MODEL_OSEEN: Nothing to do since the Oseen field is set by the
+  /* Add advection term in case of CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES
+   * CS_NAVSTO_MODEL_OSEEN: Nothing to do since the Oseen field is set by the
    * user via cs_navsto_add_oseen_field() */
+  if (nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES)
+    cs_equation_add_advection(mom_eqp, nsc->adv_field);
 
   /* All considered models needs a viscous term */
   cs_equation_add_diffusion(mom_eqp, nsp->lami_viscosity);
@@ -409,7 +519,6 @@ cs_navsto_monolithic_last_setup(const cs_cdo_connect_t      *connect,
                                 void                        *context)
 {
   CS_UNUSED(connect);
-  CS_UNUSED(quant);
 
   cs_navsto_monolithic_t  *nsc = (cs_navsto_monolithic_t *)context;
 
@@ -425,6 +534,39 @@ cs_navsto_monolithic_last_setup(const cs_cdo_connect_t      *connect,
       cs_xdef_set_quadrature(def, nsp->qtype);
 
   } /* Loop on BC definitions */
+
+  /* Settings with respect to the discretization scheme */
+  switch (nsp->space_scheme) {
+
+  case CS_SPACE_SCHEME_CDOFB:
+  case CS_SPACE_SCHEME_HHO_P0:
+    {
+      BFT_MALLOC(nsc->mass_flux_array, quant->n_faces, cs_real_t);
+      memset(nsc->mass_flux_array, 0, sizeof(cs_real_t)*quant->n_faces);
+
+      if (!cs_navsto_param_is_steady(nsp)) {
+        BFT_MALLOC(nsc->mass_flux_array_pre, quant->n_faces, cs_real_t);
+        memset(nsc->mass_flux_array_pre, 0, sizeof(cs_real_t)*quant->n_faces);
+      }
+
+      cs_flag_t loc_flag =
+        CS_FLAG_FULL_LOC | CS_FLAG_SCALAR | cs_flag_primal_face;
+
+      cs_advection_field_def_by_array(nsc->adv_field,
+                                      loc_flag,
+                                      nsc->mass_flux_array,
+                                      false, /* advection field is not owner */
+                                      NULL); /* index (not useful here) */
+
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid space discretization scheme.", __func__);
+
+  } /* End of switch on space_scheme */
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -448,6 +590,58 @@ cs_navsto_monolithic_get_momentum_eq(void       *context)
 
   return nsc->momentum;
 }
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to the advection field structure playing the
+ *         role of the mass flux
+ *         Case of monolithic algorithm.
+ *
+ * \param[in] context  pointer to a context structure cast on-the-fly
+ *
+ * \return a pointer to a cs_adv_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adv_field_t *
+cs_navsto_monolithic_get_adv_field(void       *context)
+{
+  if (context == NULL)
+    return NULL;
+
+  cs_navsto_monolithic_t  *nsc = (cs_navsto_monolithic_t *)context;
+
+  return nsc->adv_field;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to the mass flux array (used as the advection
+ *         field).
+ *         Case of monolithic algorithm.
+ *
+ * \param[in] context   pointer to a context structure cast on-the-fly
+ * \param[in] previous  true=previous state, false=current state
+ *
+ * \return a pointer to an array of cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_navsto_monolithic_get_mass_flux(void       *context,
+                                   bool        previous)
+{
+  if (context == NULL)
+    return NULL;
+
+  cs_navsto_monolithic_t  *nsc = (cs_navsto_monolithic_t *)context;
+
+  if (previous)
+    return nsc->mass_flux_array_pre;
+  else
+    return nsc->mass_flux_array;
+}
+
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -517,6 +711,19 @@ cs_navsto_projection_create_context(cs_navsto_param_t    *nsp,
   nsc->bdy_pressure_incr = NULL;
   nsc->predicted_velocity = NULL;
 
+  /* Advection field related to the resolved velocity */
+  cs_advection_field_status_t  adv_status =
+    CS_ADVECTION_FIELD_NAVSTO | CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
+
+  if (cs_navsto_param_is_steady(nsp))
+    adv_status |= CS_ADVECTION_FIELD_STEADY;
+
+  nsc->adv_field = cs_advection_field_add("mass_flux", adv_status);
+
+  /* Allocated during the last steup stage when the mesh has been read */
+  nsc->mass_flux_array = NULL;
+  nsc->mass_flux_array_pre = NULL;
+
   return nsc;
 }
 
@@ -541,6 +748,10 @@ cs_navsto_projection_free_context(const cs_navsto_param_t    *nsp,
 
   BFT_FREE(nsc->div_st);
   BFT_FREE(nsc->bdy_pressure_incr);
+
+  BFT_FREE(nsc->mass_flux_array);
+  if (nsc->mass_flux_array_pre != NULL)
+    BFT_FREE(nsc->mass_flux_array_pre);
 
   BFT_FREE(nsc);
 
@@ -580,6 +791,12 @@ cs_navsto_projection_init_setup(const cs_navsto_param_t    *nsp,
 
   /* All considered models needs a viscous term */
   cs_equation_add_diffusion(u_eqp, nsp->lami_viscosity);
+
+  /* Add advection term in case of CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES
+   * CS_NAVSTO_MODEL_OSEEN: Nothing to do since the Oseen field is set by the
+   * user via cs_navsto_add_oseen_field() */
+  if (nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES)
+    cs_equation_add_advection(u_eqp, nsc->adv_field);
 
   /* Correction step: Approximate the pressure */
   cs_equation_param_t *p_eqp = cs_equation_get_param(nsc->correction);
@@ -653,6 +870,37 @@ cs_navsto_projection_last_setup(const cs_cdo_connect_t     *connect,
                                 NULL); /* no index */
 
   } /* Loop on pressure definitions */
+
+  /* Settings with respect to the discretization scheme */
+  switch (nsp->space_scheme) {
+
+  case CS_SPACE_SCHEME_CDOFB:
+  case CS_SPACE_SCHEME_HHO_P0:
+    {
+      BFT_MALLOC(nsc->mass_flux_array, quant->n_faces, cs_real_t);
+      memset(nsc->mass_flux_array, 0, sizeof(cs_real_t)*quant->n_faces);
+
+      BFT_MALLOC(nsc->mass_flux_array_pre, quant->n_faces, cs_real_t);
+      memset(nsc->mass_flux_array_pre, 0, sizeof(cs_real_t)*quant->n_faces);
+
+      cs_flag_t loc_flag =
+        CS_FLAG_FULL_LOC | CS_FLAG_SCALAR | cs_flag_primal_face;
+
+      cs_advection_field_def_by_array(nsc->adv_field,
+                                      loc_flag,
+                                      nsc->mass_flux_array,
+                                      false, /* advection field is not owner */
+                                      NULL); /* index (not useful here) */
+
+    }
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid space discretization scheme.", __func__);
+
+  } /* End of switch on space_scheme */
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -675,6 +923,57 @@ cs_navsto_projection_get_momentum_eq(void       *context)
   cs_navsto_projection_t  *nsc = (cs_navsto_projection_t *)context;
 
   return nsc->prediction;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to the advection field structure playing the
+ *         role of the mass flux
+ *         Case of projection algorithm.
+ *
+ * \param[in] context  pointer to a context structure cast on-the-fly
+ *
+ * \return a pointer to a cs_adv_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adv_field_t *
+cs_navsto_projection_get_adv_field(void       *context)
+{
+  if (context == NULL)
+    return NULL;
+
+  cs_navsto_projection_t  *nsc = (cs_navsto_projection_t *)context;
+
+  return nsc->adv_field;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the pointer to the mass flux array (used as the advection
+ *         field).
+ *         Case of projection algorithm.
+ *
+ * \param[in] context   pointer to a context structure cast on-the-fly
+ * \param[in] previous  true=previous state, false=current state
+ *
+ * \return a pointer to an array of cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_navsto_projection_get_mass_flux(void       *context,
+                                   bool        previous)
+{
+  if (context == NULL)
+    return NULL;
+
+  cs_navsto_projection_t  *nsc = (cs_navsto_projection_t *)context;
+
+  if (previous)
+    return nsc->mass_flux_array_pre;
+  else
+    return nsc->mass_flux_array;
 }
 
 /*----------------------------------------------------------------------------*/

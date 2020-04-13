@@ -151,10 +151,6 @@ _allocate_navsto_system(void)
   /* Array of boundary type */
   navsto->bf_type = NULL;
 
-  /* Velocity in the case of Navier-Stokes or Stokes,
-     Wind or advection field in the case of the Oseen problem */
-  navsto->adv_field = NULL;
-
   /* Main set of variables */
   navsto->velocity = NULL;
   navsto->pressure = NULL;
@@ -243,12 +239,6 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
   navsto->param = cs_navsto_param_create(boundaries, model, algo_coupling,
                                          option_flag, post_flag);
 
-  /* Advection field related to the resolved velocity */
-  cs_advection_field_status_t  adv_status =
-    CS_ADVECTION_FIELD_NAVSTO | CS_ADVECTION_FIELD_DEFINE_AT_BOUNDARY_FACES;
-
-  navsto->adv_field = cs_advection_field_add("velocity_field", adv_status);
-
   /* Set the default boundary condition for the equations of the Navier-Stokes
      system according to the default domain boundary */
   cs_param_bc_type_t  default_bc = CS_PARAM_N_BC_TYPES;
@@ -301,7 +291,8 @@ cs_navsto_system_activate(const cs_boundary_t           *boundaries,
     if (!cs_thermal_system_is_activated()) { /* Not already activated */
 
       cs_flag_t  thm_num = 0, thm_post = 0;
-      cs_flag_t  thm_model = CS_THERMAL_MODEL_USE_TEMPERATURE |
+      cs_flag_t  thm_model =
+        CS_THERMAL_MODEL_USE_TEMPERATURE |
         CS_THERMAL_MODEL_NAVSTO_VELOCITY;
 
       if (navsto->param->option_flag & CS_NAVSTO_FLAG_STEADY)
@@ -464,6 +455,89 @@ cs_navsto_system_get_momentum_eq(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve the advection field structure (the mass flux) related to
+ *         the Navier-Stokes system.
+ *
+ * \return a pointer to the advection field structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_adv_field_t *
+cs_navsto_get_adv_field(void)
+{
+  cs_navsto_system_t  *ns = cs_navsto_system;
+
+  if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+
+  cs_adv_field_t  *adv = NULL;
+
+  switch (ns->param->coupling) {
+
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+    adv = cs_navsto_ac_get_adv_field(ns->coupling_context);
+    break;
+  case CS_NAVSTO_COUPLING_MONOLITHIC:
+    adv = cs_navsto_monolithic_get_adv_field(ns->coupling_context);
+    break;
+  case CS_NAVSTO_COUPLING_PROJECTION:
+    adv = cs_navsto_projection_get_adv_field(ns->coupling_context);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
+    break;
+
+  }
+
+  return adv;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the mass flux array related to the Navier-Stokes system.
+ *
+ * \param[in]  previous    if true return the previous state otherwise the
+ *                         current state.
+ *
+ * \return a pointer to an array of cs_real_t
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t *
+cs_navsto_get_mass_flux(bool   previous)
+{
+  cs_navsto_system_t  *ns = cs_navsto_system;
+
+  if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+
+  cs_real_t  *mass_flux = NULL;
+
+  switch (ns->param->coupling) {
+
+  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+    mass_flux = cs_navsto_ac_get_mass_flux(ns->coupling_context,
+                                           previous);
+    break;
+  case CS_NAVSTO_COUPLING_MONOLITHIC:
+    mass_flux = cs_navsto_monolithic_get_mass_flux(ns->coupling_context,
+                                                   previous);
+    break;
+  case CS_NAVSTO_COUPLING_PROJECTION:
+    mass_flux = cs_navsto_projection_get_mass_flux(ns->coupling_context,
+                                                   previous);
+    break;
+
+  default:
+    bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
+    break;
+
+  }
+
+  return mass_flux;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Start setting-up the Navier-Stokes system
  *         At this stage, numerical settings should be completely determined
  *         but connectivity and geometrical information is not yet available.
@@ -523,7 +597,7 @@ cs_navsto_system_init_setup(void)
                                          has_previous);
 
   /* Set default value for keys related to log and post-processing */
-  cs_field_set_key_int(ns->pressure, cs_field_key_id("log"), 1);
+  cs_field_set_key_int(ns->pressure, log_key, 1);
   cs_field_set_key_int(ns->pressure, post_key, field_post_flag);
 
   /* Handle the divergence of the velocity field.
@@ -723,11 +797,10 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 {
   cs_navsto_system_t  *ns = cs_navsto_system;
 
-  assert(connect != NULL && quant != NULL);
   if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
   cs_navsto_param_t  *nsp = ns->param;
-
+  assert(connect != NULL && quant != NULL && nsp != NULL);
 
   /* Remaining boundary conditions:
    * 1. Walls
@@ -758,13 +831,13 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
   }
 
-  /* Set functions according to the discretization scheme */
+  /* Settings with respect to the discretization scheme */
   switch (nsp->space_scheme) {
 
   case CS_SPACE_SCHEME_CDOFB:
   case CS_SPACE_SCHEME_HHO_P0:
 
-    /* Setup data according to the type of coupling */
+    /* Setup functions and data according to the type of coupling */
     switch (nsp->coupling) {
 
     case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
@@ -795,7 +868,9 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
 
         case CS_TIME_SCHEME_THETA:
         case CS_TIME_SCHEME_CRANKNICO:
-          ns->compute = cs_cdofb_ac_compute_theta;
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Time scheme not implemented for the AC coupling",
+                    __func__);
           break;
 
         case CS_TIME_SCHEME_STEADY:
@@ -1005,53 +1080,14 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 
   if (nsp->space_scheme == CS_SPACE_SCHEME_CDOFB) {
 
-    /* Define the advection field. Since one links the advection field to the
-       face velocity this is only available for Fb schemes and should be done
-       after initializing the context structure */
-    cs_real_t *face_vel = NULL;
-    cs_field_t  *bd_nflux = NULL;
+    if (nsp->coupling == CS_NAVSTO_COUPLING_PROJECTION) {
 
-    switch (nsp->coupling) {
+      /* The call to the initialization of the cell pressure should be done
+         before */
+      cs_real_t  *pr_f = cs_cdofb_predco_get_face_pressure(ns->scheme_context);
 
-    case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-      face_vel = cs_cdofb_ac_get_face_velocity(false); /* current */
-      break;
-
-    case CS_NAVSTO_COUPLING_MONOLITHIC:
-      face_vel = cs_cdofb_monolithic_get_face_velocity(false); /* current */
-      break;
-
-    case CS_NAVSTO_COUPLING_PROJECTION:
-      {
-        /* The call to the initialization of the cell pressure should be done
-           before */
-        cs_real_t  *pr_f
-          = cs_cdofb_predco_get_face_pressure(ns->scheme_context);
-
-        cs_cdofb_navsto_init_face_pressure(nsp, connect, ts, pr_f);
-
-        cs_equation_t  *mom_eq = cs_equation_by_name("velocity_prediction");
-        face_vel = cs_equation_get_face_values(mom_eq, false);
-      }
-      break;
-
-    default:
-      bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
-      break;
-
+      cs_cdofb_navsto_init_face_pressure(nsp, connect, ts, pr_f);
     }
-
-    const cs_flag_t loc_flag
-      = CS_FLAG_FULL_LOC | cs_flag_primal_face | CS_FLAG_VECTOR;
-
-    cs_advection_field_def_by_array(ns->adv_field, loc_flag, face_vel,
-                                    false, /* advection field is not owner */
-                                    NULL); /* index (not useful here) */
-
-    /* Assign the velocity boundary flux to the boundary flux for the advection
-       field*/
-    if (bd_nflux != NULL)
-      ns->adv_field->bdy_field_id = bd_nflux->id;
 
   } /* Face-based schemes */
 }
@@ -1075,6 +1111,7 @@ cs_navsto_system_update(const cs_mesh_t             *mesh,
                         const cs_cdo_quantities_t   *cdoq)
 {
   CS_UNUSED(mesh);
+  CS_UNUSED(time_step);
   CS_UNUSED(connect);
   CS_UNUSED(cdoq);
 
@@ -1082,15 +1119,7 @@ cs_navsto_system_update(const cs_mesh_t             *mesh,
 
   if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
-  /* Retrieve the boundary velocity flux (mass flux) and perform the update */
-  cs_field_t  *nflx
-    = cs_advection_field_get_field(ns->adv_field,
-                                   CS_MESH_LOCATION_BOUNDARY_FACES);
-
-  assert(nflx != NULL);
-  cs_advection_field_across_boundary(ns->adv_field,
-                                     time_step->t_cur,
-                                     nflx->val);
+  /* Nothing to do up to now */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1116,10 +1145,11 @@ cs_navsto_system_compute_steady_state(const cs_mesh_t             *mesh,
   if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
 
   cs_navsto_param_t  *nsp = ns->param;
+  if (!cs_navsto_param_is_steady(nsp))
+    return;
 
   /* Build and solve the Navier-Stokes system */
-  if (cs_navsto_param_is_steady(nsp))
-    ns->compute_steady(mesh, nsp, ns->scheme_context);
+  ns->compute_steady(mesh, nsp, ns->scheme_context);
 
   /* Update variable, properties according to the new computed variables */
   cs_navsto_system_update(mesh, time_step, connect, cdoq);
@@ -1184,12 +1214,15 @@ cs_navsto_system_extra_op(const cs_mesh_t             *mesh,
 
   case CS_SPACE_SCHEME_CDOFB:
     {
+      bool  need_prev = false;
       cs_equation_t  *eq = cs_navsto_system_get_momentum_eq();
-      cs_real_t  *u_face = cs_equation_get_face_values(eq, false);
-      cs_real_t  *u_cell = navsto->velocity->val;
+      const cs_real_t  *u_face = cs_equation_get_face_values(eq, need_prev);
+      const cs_real_t  *u_cell = navsto->velocity->val;
+      const cs_adv_field_t  *adv = cs_navsto_get_adv_field();
+      const cs_real_t  *mass_flux = cs_navsto_get_mass_flux(need_prev);
 
       cs_cdofb_navsto_extra_op(nsp, mesh, cdoq, connect, ts,
-                               navsto->adv_field,
+                               adv, mass_flux,
                                u_cell, u_face);
     }
     break;
@@ -1239,70 +1272,103 @@ cs_navsto_system_extra_post(void                      *input,
                             const cs_lnum_t            b_face_ids[],
                             const cs_time_step_t      *time_step)
 {
-  CS_UNUSED(mesh_id);
-  CS_UNUSED(cat_id);
-  CS_UNUSED(ent_flag);
   CS_UNUSED(n_cells);
-  CS_UNUSED(n_i_faces);
   CS_UNUSED(n_b_faces);
   CS_UNUSED(cell_ids);
   CS_UNUSED(i_face_ids);
   CS_UNUSED(b_face_ids);
-  CS_UNUSED(time_step);
 
   cs_navsto_system_t  *ns = (cs_navsto_system_t *)input;
   if (ns == NULL)
     return;
 
-  cs_navsto_param_t  *nsp = ns->param;
+  const cs_navsto_param_t  *nsp = ns->param;
 
-  switch (nsp->coupling) {
+  /* Post-processing of the boundary mass flux */
+  if (cat_id == CS_POST_MESH_BOUNDARY && ent_flag[2] > 0) {
 
-  case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
-  case CS_NAVSTO_COUPLING_MONOLITHIC:
-    /* Nothing to do up to now */
-    break;
+    switch (nsp->space_scheme) {
 
-  case CS_NAVSTO_COUPLING_PROJECTION:
-    {
-      cs_navsto_projection_t  *cc
-        = (cs_navsto_projection_t *)ns->coupling_context;
+    case CS_SPACE_SCHEME_CDOFB:
+    case CS_SPACE_SCHEME_HHO_P0:
+      {
+        const cs_real_t  *mass_flux = cs_navsto_get_mass_flux(false);
 
-      const cs_field_t  *velp = cc->predicted_velocity;
+        cs_post_write_var(mesh_id,
+                          CS_POST_WRITER_DEFAULT,
+                          "boundary_mass_flux",
+                          1,
+                          false,                  // interlace
+                          true,                   // true = original mesh
+                          CS_POST_TYPE_cs_real_t,
+                          NULL,                   // values on cells
+                          NULL,                   // values at internal faces
+                          mass_flux + n_i_faces,  // values at border faces
+                          time_step);             // time step management struct.
 
-      /* Post-process the predicted velocity */
-      cs_post_write_var(CS_POST_MESH_VOLUME,
-                        CS_POST_WRITER_DEFAULT,
-                        velp->name,
-                        3,
-                        true,             // interlace
-                        true,             // true = original mesh
-                        CS_POST_TYPE_cs_real_t,
-                        velp->val,      // values on cells
-                        NULL,           // values at internal faces
-                        NULL,           // values at border faces
-                        time_step);     // time step management struct.
+      }
+      break;
 
-      /* Post-process the source term of the correction equation on the pressure
-         increment (-div(velp_f) */
-      cs_post_write_var(CS_POST_MESH_VOLUME,
-                        CS_POST_WRITER_DEFAULT,
-                        "-DivVelPred",
-                        1,
-                        true,             // interlace
-                        true,             // true = original mesh
-                        CS_POST_TYPE_cs_real_t,
-                        cc->div_st, // values on cells
-                        NULL,       // values at internal faces
-                        NULL,       // values at border faces
-                        time_step); // time step management struct.
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Invalid space scheme\n", __func__);
+      break;
+
     }
-    break;
 
-  default:
-    bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
-    break;
-  }
+  } /* Boundary mesh type */
+
+  if (cat_id == CS_POST_MESH_VOLUME && ent_flag[0] > 0) {
+    /* Velocity-Pressure coupling algorithm */
+    switch (nsp->coupling) {
+
+    case CS_NAVSTO_COUPLING_ARTIFICIAL_COMPRESSIBILITY:
+    case CS_NAVSTO_COUPLING_MONOLITHIC:
+      /* Nothing to do up to now */
+      break;
+
+    case CS_NAVSTO_COUPLING_PROJECTION:
+      {
+        cs_navsto_projection_t  *cc
+          = (cs_navsto_projection_t *)ns->coupling_context;
+
+        const cs_field_t  *velp = cc->predicted_velocity;
+
+        /* Post-process the predicted velocity */
+        cs_post_write_var(mesh_id,
+                          CS_POST_WRITER_DEFAULT,
+                          velp->name,
+                          3,
+                          true,           // interlace
+                          true,           // true = original mesh
+                          CS_POST_TYPE_cs_real_t,
+                          velp->val,      // values on cells
+                          NULL,           // values at internal faces
+                          NULL,           // values at border faces
+                          time_step);     // time step management struct.
+
+        /* Post-process the source term of the correction equation on the
+           pressure increment (-div(velp_f) */
+        cs_post_write_var(mesh_id,
+                          CS_POST_WRITER_DEFAULT,
+                          "-DivVelPred",
+                          1,
+                          true,       // interlace
+                          true,       // true = original mesh
+                          CS_POST_TYPE_cs_real_t,
+                          cc->div_st, // values on cells
+                          NULL,       // values at internal faces
+                          NULL,       // values at border faces
+                          time_step); // time step management struct.
+      }
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0, _err_invalid_coupling, __func__);
+      break;
+    }
+
+  } /* cat_id == CS_POST_MESH_VOLUME */
 
 }
 
