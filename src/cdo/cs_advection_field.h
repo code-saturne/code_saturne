@@ -678,8 +678,8 @@ cs_advection_field_get_cell_vector(cs_lnum_t               c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the value of the advection field at a specific location
- *         inside a cell
+ * \brief  Compute the value of the vector-valued advection field at a specific
+ *         location inside a cell
  *
  * \param[in]      adv          pointer to a cs_adv_field_t structure
  * \param[in]      cm           pointer to a cs_cell_mesh_t structure
@@ -698,7 +698,8 @@ cs_advection_field_cw_eval_at_xyz(const cs_adv_field_t  *adv,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the mean-value of the advection field inside each cell
+ * \brief  Compute the mean-value of the vector-valued field related to the
+ *         advection field inside each cell
  *
  * \param[in]      adv           pointer to a cs_adv_field_t structure
  * \param[in]      time_eval     physical time at which one evaluates the term

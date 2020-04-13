@@ -157,7 +157,8 @@ typedef struct {
    * \var input
    * Pointer to a structure cast on-the-fly according to the type of description
    * May be set to NULL or \ref cs_xdef_array_input_t or
-   * \ref cs_xdef_analytic_input_t or \ref cs_xdef_time_func_input_t
+   * \ref cs_xdef_analytic_input_t or \ref cs_xdef_time_func_input_t or
+   * \ref cs_xdef_dof_input_t
    */
 
   int                    dim;

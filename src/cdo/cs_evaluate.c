@@ -116,7 +116,7 @@ _sanity_checks(const char              func_name[],
 
   if (w_c2x == NULL)
     bft_error(__FILE__, __LINE__, 0,
-              " %s: The array stroring weights is not allocated.\n",
+              " %s: The array storing weights is not allocated.\n",
               func_name);
 }
 
