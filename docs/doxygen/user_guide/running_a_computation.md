@@ -88,8 +88,7 @@ prepare and run a standard case:
   <br/><br/>
 
 * Execution parameters for the current system may be defined either
-  using the GUI or editing the relevant [`run.cfg`](@ref sec_prg_run_cfg)
-  file sections;
+  using the GUI or editing the `SCRIPTS/runcase` file;
   <br/><br/>
 
 * Run the calculation and analyze the results
@@ -237,7 +236,7 @@ command), *stage* is run interactively, and the following steps are executed:
 
 * run the __stage__ step immediately;
 * switch to `RESU/<run-id>` directory;
-* generate `runcase` script based on `run.cfg` parameters, containing
+* generate local `runcase` script based on `SCRIPTS/runcase` file, containing
   batch directives and a `code_sature run --id <run_id>` command removing the
   (already done) `--stage` step;
 * submit the `runcase` script

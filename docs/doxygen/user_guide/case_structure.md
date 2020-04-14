@@ -86,8 +86,8 @@ for each run, itself containing one sub-directory per coupled domain.
 Coupled cases are run through the standard the code_saturne run command, but
 require a coupling parameters file (`coupling parameters.py`) specified using
 the `--coupling` option. The run command must be called from the top-level (`Study`)
-directory, so an additional `Study/run.cfg` file is also used in this case.
-Note that case-local scripts (such as `Study/Domain_1/DATA/run.cfg`)
+directory, so an additional `Study/runcase` file is also used in this case.
+Note that case-local scripts (such as `Study/Domain_1/SCRIPTS/runcase`)
 are still used by the master script to determine which parameter file to use.
 So in the coupled case, calculation results would not be placed in
 `Study/Domain_1/RESU/YYYYMMDD-hhmm`, but in `Study/RESU_COUPLING/YYYYMMDD-hhmm/Domain_1`,
@@ -112,12 +112,14 @@ files in the case setup without interfering with the running or pending computat
 and for "quality control" considerations, it is often useful to keep a trace of
 files used, so the following rules apply when a computation run is prepared:
 
-* Files directly in `DATA` are copied to `RESU/<run_id>`, except for `run.cfg`
+* Files directly in `DATA` are copied to `RESU/<run_id>`, except for `SaturneGUI`
   (which is not copied directly but may be used to generate `runcase`)
   if the currently active XML file is not named `setup.xml`, a symbolic link
   named `setup.xml` is added to that file, as the solver expects that name.
-* Files directly in `SRC` are copied to `RESU/src`
-* Sub-directories of `DATA` and `SRC` are ignored
+* Files directly in `SRC` are copied to `RESU/src`.
+* The `SCRIPTS/runcase` file is copied to `RESU/<run_id>` and modified when the
+  `code_saturne submit` command is used. It is not copied if run directly.
+* Sub-directories of `DATA` and `SRC` are ignored.
 * for large files or directories referenced in `setup.xml` or `user_scripts.py`, such
   as `mesh_input*`, `checkpoint`, or `partition_input`, symbolic links are used in
   the run directory rather than a full copy. The link may have a different name: for
@@ -136,12 +138,11 @@ Name             |  Type                 | Role
 -----------------|-----------------------|----------------------------------------------------
 DATA             | base input directory  | data and setup definition files for the computation
 SRC              | base input directory  | user-defined sources for the computation
-run.cfg          | input file            | definition of run resources and job allocation
 setup.xml        | input file            | main computational setup
 user_scripts.py  | input file            | additional computational setup
 RESU             | output directory      | directory in which `<run_id>` run outputs are generated
 RESU_COUPLING    | output directory      | same as `RESU`, for coupled cases
-runcase          | generated script      | generated script for job submission
+runcase          | generated script      | generated script for job run and submission
 run_solver       | generated script      | generated low-level script for computation execution
 mesh_input       | input directory       | directory of imported meshes
 mesh_input.csm   | input file            | imported mesh
@@ -205,11 +206,11 @@ code_saturne create --case Flow3 --case Flow4
 ```
 executed in the `STUDY` directory adds the case directories `Flow3` and `Flow4`.
 Whenever multiple cases are created simultaneously, it is assumed they may be
-coupled, so top-level `run.cfg` and `coupling_parameters.py` files and a
+coupled, so top-level `runcase` and `coupling_parameters.py` files and a
 `RESU_COUPLING` directory are also created.
 
-In each case's `DATA` directory, reference (minimal) `setup.xml` and
-`run.cfg` files are generated.
+In each case, a reference (minimal) `DATA/setup.xml` and
+`SCRIPTS/runcase` files are generated.
 
 Unless the `--noref` option is used, under `DATA`, a `REFERENCE` sub-directory
 containing a `cs_user_scripts.py` advanced settings template and
