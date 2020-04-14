@@ -528,7 +528,7 @@ fi
 #------------------------------------------------------------------------------
 
 AC_ARG_VAR([PYTHON], [the Python interpreter])
-AM_PATH_PYTHON(["2.6"])
+AM_PATH_PYTHON(["3.4"])
 
 # On MinGW hosts, Automake/Python mixes Windows-style and GNU-style paths
 # It seems better to use the standard way of installing Python modules,

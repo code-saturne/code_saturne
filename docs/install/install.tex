@@ -142,7 +142,7 @@ For a minimal build of \CS on a Linux or Posix system, the requirements are:
 \item A C compiler, conforming at least to the C99 standard.
 \item A Fortran compiler, conforming at least to the Fortran 95 standard
       and supporting the ISO\_C\_BINDING Fortran 2003 module.
-\item A Python interpreter, with Python version 2.6 or above.
+\item A Python interpreter, with Python version 3.4 or above.
 \end{itemize}
 
 For parallel runs, an MPI library is also necessary (MPI-2 or MPI-3 conforming).
@@ -155,7 +155,7 @@ and their role is given in \S\ref{sec:list_ext_lib}.
 For some external libraries, such as Catalyst (see \ref{sec:list_ext_lib}),
 a C++ compiler is also required.
 
-The SALOME platform V9 and above requires Python 3,
+The SALOME platform V9 and above may require Python 3.6 at least,
 and a matching version should be used when building with SALOME support.
 
 In practice, the code is known to build and function properly at least with the
@@ -184,7 +184,7 @@ run first, loads the required environment, then calls Python with the
 
 For a minimal build of \CS, a Linux or Posix system with C and Fortran compilers
 (C99 and Fortran 95 with Fortran 2003 ISO C bindings conforming respectively),
-a Python (2.6 or later) interpreter and a {\tt make} tool should be sufficient.
+a Python (3.4 or later) interpreter and a {\tt make} tool should be sufficient.
 For parallel runs, an MPI library is also necessary (MPI-2 or MPI-3 conforming).
 To build and use the GUI, Qt 4 or 5 with PyQt 4 or 5 Python bindings
 (which in turn requires SIP) are required.
@@ -549,17 +549,8 @@ files use HDF5, so this issue is rarer on output.
 This library's build instructions mention bindings with ascend,
 but those are not necessary in the context of \CS, so building
 without them is simplest. Its build system is based on scons,
-and builds on relatively recent systems with Python 2.7 should
+and builds on relatively recent systems should
 be straightforward.
-
-With Python versions lower than 2.6, the command-line arguments
-allowing to choose the installation prefix (so as to place it
-in a user directory) are ignored, and its \texttt{SConstruct}
-file is not complete enough to allow setting flags for linking
-with an alternative, user-installed Python library outside
-the default linker search path. In this case, editing the
-\texttt{SConstruct} file to change the default paths is
-an ugly, but simple solution.
 
 \subsubsection{CoolProp\label{sec:ext:coolprop}}
 
