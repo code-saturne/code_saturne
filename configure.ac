@@ -687,7 +687,7 @@ CS_AC_TEST_PETSC
 
 CS_AC_TEST_DOCS
 
-cs_have_neptune=cfd=no
+cs_have_neptune_cfd=no
 if test -f ${srcdir}/neptune_cfd/configure; then
   cs_have_neptune_cfd=yes
 fi
