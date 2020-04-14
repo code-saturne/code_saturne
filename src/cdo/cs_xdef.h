@@ -342,8 +342,7 @@ cs_get_bdy_zone_id(const char   *z_name)
 inline static cs_real_t
 cs_xdef_get_scalar_value(cs_xdef_t     *def)
 {
-  if (def == NULL)
-    bft_error(__FILE__, __LINE__, 0, "%s: Empty definition.", __func__);
+  assert(def != NULL);
   assert(def->dim == 1);
   assert(def->type == CS_XDEF_BY_VALUE);
 
@@ -366,8 +365,7 @@ cs_xdef_get_scalar_value(cs_xdef_t     *def)
 inline static cs_real_t *
 cs_xdef_get_array(cs_xdef_t     *def)
 {
-  if (def == NULL)
-    bft_error(__FILE__, __LINE__, 0, "%s: Empty definition.", __func__);
+  assert(def != NULL);
   assert(def->type == CS_XDEF_BY_ARRAY);
 
   cs_xdef_array_input_t  *ai = (cs_xdef_array_input_t *)def->input;
