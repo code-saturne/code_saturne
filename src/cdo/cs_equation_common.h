@@ -529,47 +529,6 @@ cs_equation_init_properties(const cs_equation_param_t     *eqp,
                             cs_hodge_t                    *diffusion_hodge,
                             cs_cell_builder_t             *cb);
 
-#if 0 /* JB_TO_REMOVE */
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the diffusion property inside a cell and its related quantities
- *
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in]      c_id    id of the cell to deal with
- * \param[in]      t_eval  time at which one performs the evaluation
- * \param[in]      c_flag  flag related to this cell
- * \param[in, out] cb      pointer to a cs_cell_builder_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_set_diffusion_property(const cs_equation_param_t   *eqp,
-                                   cs_lnum_t                    c_id,
-                                   cs_real_t                    t_eval,
-                                   cs_flag_t                    c_flag,
-                                   cs_cell_builder_t           *cb);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the diffusion property inside a cell and its related quantities.
- *         Cellwise version using a cs_cell_mesh_t structure
- *
- * \param[in]      eqp     pointer to a cs_equation_param_t structure
- * \param[in]      cm      pointer to a cs_cell_mesh_t structure
- * \param[in]      t_eval  time at which one performs the evaluation
- * \param[in]      c_flag  flag related to this cell
- * \param[in, out] cb      pointer to a cs_cell_builder_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_set_diffusion_property_cw(const cs_equation_param_t     *eqp,
-                                      const cs_cell_mesh_t          *cm,
-                                      cs_real_t                      t_eval,
-                                      cs_flag_t                      c_flag,
-                                      cs_cell_builder_t             *cb);
-#endif /* JB_TO_REMOVE */
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Build the list of degrees of freedom (DoFs) related to an internal

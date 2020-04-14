@@ -418,11 +418,6 @@ cs_cdofb_vecteq_init_cell_system(const cs_cell_mesh_t         *cm,
 
   } /* Enforcement ? */
 
-#if 0  /* JB_TO_REMOVE */
-  /* Set the properties for this cell if not uniform */
-  cs_equation_init_properties_cw(eqp, eqb, t_eval, cell_flag, cm, cb);
-#endif
-
 #if defined(DEBUG) && !defined(NDEBUG) && CS_CDOFB_VECTEQ_DBG > 2
   if (cs_dbg_cw_test(eqp, cm, csys)) cs_cell_mesh_dump(cm);
 #endif

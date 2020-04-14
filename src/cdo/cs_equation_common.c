@@ -892,66 +892,6 @@ cs_equation_init_properties(const cs_equation_param_t     *eqp,
 
 }
 
-#if 0 /* JB_TO_REMOVE */
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initialize all properties potentially useful to build the algebraic
- *         system. This function is shared across all CDO schemes.
- *         The \ref cs_cell_builder_t structure stores property values related
- *         to the reaction term, unsteady term and grad-div term.
- *         If the property is uniform, a first call to the function
- *         \ref cs_equation_init_properties has to be done before the loop on
- *         cells
- *
- * \param[in]      eqp              pointer to a cs_equation_param_t structure
- * \param[in]      eqb              pointer to a cs_equation_builder_t structure
- * \param[in]      cm               pointer to a \ref cs_cell_mesh_t structure
- * \param[in]      t_eval           time at which one performs the evaluation
- * \param[in]      cell_flag        metadata associated to the current cell
- * \param[in, out] diffusion_hodge  pointer to the diffusion hodge structure
- * \param[in, out] curlcurl_hodge   pointer to the curl-curl hodge structure
- * \param[in, out] cb               pointer to a \ref cs_cell_builder_t struct.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_equation_init_properties_cw(const cs_equation_param_t     *eqp,
-                               const cs_equation_builder_t   *eqb,
-                               const cs_cell_mesh_t          *cm,
-                               const cs_real_t                t_eval,
-                               const cs_flag_t                cell_flag,
-                               cs_hodge_t                    *diffusion_hodge,
-                               cs_hodge_t                    *curlcurl_hodge,
-                               cs_cell_builder_t             *cb)
-{
-  /* Set the diffusion property */
-  if (diffusion_hodge && !(eqb->diff_pty_uniform))
-    cs_hodge_set_property_value_cw(cm, t_eval, cell_flag, diffusion_hodge);
-
-  /* Set the property related to the curl-curl operator */
-  if (curlcurl_hodge && !(eqb->curlcurl_pty_uniform))
-    cs_hodge_set_property_value_cw(cm, t_eval, cell_flag, curlcurl_hodge);
-
-  /* Set the (linear) reaction property */
-  if (cs_equation_param_has_reaction(eqp)) {
-
-    /* Define the local reaction property */
-    cb->rpty_val = 0;
-    for (int r = 0; r < eqp->n_reaction_terms; r++)
-      if (eqb->reac_pty_uniform[r])
-        cb->rpty_val += cb->rpty_vals[r];
-      else
-        cb->rpty_val += cs_property_value_in_cell(cm,
-                                                  eqp->reaction_properties[r],
-                                                  t_eval);
-
-  }
-
-  if (cs_equation_param_has_time(eqp) && !(eqb->time_pty_uniform))
-    cb->tpty_val = cs_property_value_in_cell(cm, eqp->time_property, t_eval);
-}
-#endif
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Build the list of degrees of freedom (DoFs) related to an internal
