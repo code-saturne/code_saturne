@@ -337,6 +337,8 @@ class XMLinit(BaseXmlInit):
         if from_vers[:3] < "7.0.0":
             if from_vers[:3] < "6.1.0":
                 self.__backwardCompatibilityFrom_6_0()
+            if from_vers[:3] < "6.2.0":
+                self.__backwardCompatibilityFrom_6_1()
 
 
     def __backwardCompatibilityBefore_3_0(self):
@@ -1681,7 +1683,7 @@ class XMLinit(BaseXmlInit):
                     node['name'] = "ym_water"
 
 
-    def _backwardCompatibilityCurrentVersion(self):
+    def __backwardCompatibilityFrom_6_1(self):
         """
         Change XML in order to ensure backward compatibility.
         """
@@ -1896,6 +1898,11 @@ class XMLinit(BaseXmlInit):
                         f = f.replace(k, d[k])
 
                     nf.xmlSetTextNode(f)
+
+    def _backwardCompatibilityCurrentVersion(self):
+        """
+        Change XML in order to ensure backward compatibility.
+        """
 
 #-------------------------------------------------------------------------------
 # End of XMLinit

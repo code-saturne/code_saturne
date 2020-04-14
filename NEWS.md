@@ -1,6 +1,9 @@
 Master (not on release branches yet)
 ------------------------------------
 
+Release 6.1.0 (unreleased)
+--------------------------
+
 User changes:
 
 - Allow short path 'salome' for medcoupling, coolprop, metis and
