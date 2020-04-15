@@ -1,13 +1,10 @@
 Master (not on release branches yet)
 ------------------------------------
 
-Release 6.1.0 (unreleased)
---------------------------
+Release 6.1.0 (April 15 2020)
+-----------------------------
 
 User changes:
-
-- Allow short path 'salome' for medcoupling, coolprop, metis and
-  scotch in installation script.
 
 - Add lambda0 field for thermal conductivity to the
   cs_physical_properties structure. This is used by the GUI, but
@@ -116,6 +113,9 @@ Numerics and physical modelling:
   bubble stabilization or a sub-stabilization.
 
 Architectural changes:
+
+- Allow short path 'salome' for medcoupling, coolprop, metis and
+  scotch in installation script.
 
 - Move some parts of the user documentation to Doxygen.
 
