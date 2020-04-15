@@ -116,6 +116,10 @@ cs_xdef_cw_eval.h \
 cs_xdef_eval.h \
 cs_cdo_headers.h
 
+noinst_HEADERS = \
+cs_cdoeb_priv.h \
+cs_cdofb_monolithic_priv.h
+
 # Library source files
 
 noinst_LTLIBRARIES = libcscdo.la

@@ -60,6 +60,7 @@ build-aux/py-compile
 
 EXTRA_DIST = \
 $(AUX_DIST) \
+bin/salome_cfd.in \
 build-aux/list_salome_modules.py \
 m4/cs_omniorb.m4 \
 m4/cs_salome.m4 \
