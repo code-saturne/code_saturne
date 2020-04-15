@@ -38,9 +38,7 @@ TEXINPUTFILES =
 
 # Distributed files
 
-EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES) \
-graphics/halo.pdf \
-graphics/sem_principle.pdf
+EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES)
 
 # Generated pdf document
 

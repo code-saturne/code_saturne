@@ -43,16 +43,16 @@ gui_atmospheric_user_s_guide_v97.png \
 gui_atmospheric_user_s_guide_v98.png \
 gui_bc_parameters.png \
 gui_bc_regions.png \
+gui_body_forces.png \
 gui_calculation_features.png \
-gui_case_dir.png \
 gui_coal_bc.png \
 gui_coal_classes.png \
 gui_coal_composition.png \
+gui_coal_model.png \
 gui_coal_oxydant.png \
 gui_coal_reaction.png \
 gui_coal_solution_control.png \
 gui_coal_time_average.png \
-gui_body_forces.png \
 gui_density_law.png \
 gui_fluid_props.png \
 gui_formula_button.png \
@@ -65,15 +65,13 @@ gui_lagr_global_advanced.png \
 gui_lagr_global_settings.png \
 gui_lagr_output.png \
 gui_lagr_statistics.png \
-gui_mesh_join.png \
-gui_mesh_periodicity.png \
+gui_mesh_select.png \
 gui_numerical_parameters.png \
 gui_output_log.png \
 gui_output_meshes.png \
 gui_output_profiles.png \
 gui_output_writers.png \
 gui_phys_prop_reference_values.png \
-gui_prepare_execution.png \
 gui_rad_transf_do_advanced.png \
 gui_rad_transf_do_params.png \
 gui_rad_transf_p1_advanced.png \
@@ -87,8 +85,7 @@ gui_time_averages.png \
 gui_time_step.png \
 gui_turbulence_models.png \
 gui_user_scal_def_init.png \
-halo.pdf \
-rota_perio_parall.jpg
+sem_principle.pdf
 
 # Distributed files
 
