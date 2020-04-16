@@ -3,6 +3,10 @@ Release 6.0.3 (Unreleased)
 
 Bug fixes:
 
+- Fix reconstruction gradient weightening in computation of face diffusion
+  fluxes from pressure increment in pressure correction step. Impacts,
+  for example, VoF calculation on non cartesian meshes.
+
 - Fix bug when using PISO/nterup algorithm with second order time stepping,
   variable density and idilat = 1 algorithm.
 
