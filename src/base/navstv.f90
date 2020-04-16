@@ -929,7 +929,7 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
     else
       allocate(xinvro(ncelet))
       do iel = 1, ncel
-        xinvro(iel) = 1.d0/crom(iel)
+        xinvro(iel) = dt(iel)/crom(iel)
       enddo
 
       call gradient_weighted_s &
