@@ -97,6 +97,7 @@ static const int _perm_pent[5] = {0, 4, 3, 2, 1};
  * \param[in] n_face_vertices number of vertices of the face
  *
  * \return    pointer to the permutation array
+ */
 /* -------------------------------------------------------------------------- */
 
 static const int *
