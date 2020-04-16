@@ -191,6 +191,10 @@ Default option changes:
 
 Bug fixes:
 
+- Fix reconstruction gradient weightening in computation of face diffusion
+  fluxes from pressure increment in pressure correction step. Impacts,
+  for example, VoF calculation on non cartesian meshes.
+
 - Fix launching of ncfd doxygen from GUI (help menu).
 
 - Fix crash in ALE using internal structures coupling.
