@@ -221,7 +221,8 @@ write(nfecra,2111) ivofmt
 if (ivofmt.gt.0) then
 
   write(nfecra,2121) rho1, mu1
-  write(nfecra,2131) rho2,  mu2
+  write(nfecra,2131) rho2, mu2
+  write(nfecra,2141) idrift, kdrift, cdrift
 
   ! --- cavitation model
 
@@ -271,12 +272,18 @@ write(nfecra,9900)
 '                               ( > 0: enabled               )',/)
  2121 format(                                                     &
 '  -- Fluid 1:',                                                /,&
-'       RHO1   = ', e14.5,  ' (Reference density          )',   /,&
-'       MU1    = ', e14.5,  ' (Ref. molecular dyn. visc.  )',   /)
+'       RHO1   = ', e14.5,    ' (Reference density           )',/,&
+'       MU1    = ', e14.5,    ' (Ref. molecular dyn. visc.   )',/)
  2131 format(                                                     &
 '  -- Fluid 2:',                                                /,&
-'       RHO2   = ', e14.5,  ' (Reference density          )',   /,&
-'       MU2    = ', e14.5,  ' (Ref. molecular dyn. visc.  )',   /)
+'       RHO2   = ', e14.5,    ' (Reference density           )',/,&
+'       MU2    = ', e14.5,    ' (Ref. molecular dyn. visc.   )',/)
+ 2141 format(                                                     &
+'  -- Drift velocity:',                                         /,&
+'       IDRIFT = ',4x,i10,    ' (0: disabled; > 0: enabled   )',/,&
+'       KDRIFT = ', e14.5,    ' (Diffusion effect coeff.     )',/,&
+'       CDRIFT = ', e14.5,    ' (Drift flux coeff.           )',/)
+
 
 ! --- Compressible
 

@@ -88,6 +88,12 @@ typedef struct {
 
   double        mu2;
 
+  int           idrift;      /* drift velocity model */
+
+  double        cdrift;      /* C_gamma constante (drift flux factor)*/
+
+  double        kdrift;
+
 } cs_vof_parameters_t;
 
 /* Cavitation parameters */
@@ -198,6 +204,90 @@ cs_vof_update_phys_prop(const cs_domain_t *domain);
 
 void
 cs_vof_log_mass_budget(const cs_domain_t *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute the flux of the drift velocity \f$ \vect u _d \f$, by using the flux
+ *        of the standard velocity \f$ \vect u \f$:
+ *
+ * Using the notation:
+ * \f[
+ * \begin{cases}
+ * \left ( \vect u ^{n+1} . \vect S \right ) _{\face} = \Dot{m}_{\face}\\
+ * \left ( \vect u _d^{n+1} . \vect S \right ) _{\face} = \Dot{m^d}_{\face}
+ * \end{cases}
+ * \f]
+ * The drift flux is computed as:
+ * \f[
+ * \Dot{m^d}_{\face} = min \left ( C_{\gamma} \dfrac{\Dot{m}_{\face}}
+ * {\vect S_{\face}}, \underset{\face'}{max} \left [ \dfrac{\Dot{m}_{\face'}}
+ * {\vect S_{\face'}} \right ] \right ) \left ( \vect n . \vect S \right )
+ * _{\face}
+ * \f]
+ * Where \f$ C_{\gamma} \f$ is the drift flux factor defined with the variable
+ * \ref cdrift, \f$ \vect n _{\face} \f$ the normal vector to the interface.
+ * The gradient is computed using a centered scheme:
+ * \f[
+ * \vect n _{\face}} = \dfrac{\left ( \grad \alpha \right ) _{\face}}
+ * {\norm {\left ( \grad \alpha \right ) _{\face} + \delta}},
+ * \text{ with: }
+ * \left ( \grad \alpha \right ) _{\face _{\celli \cellj}} = \dfrac{\left (
+ * \grad \alpha \right ) _\celli + \left ( \grad \alpha \right ) _\cellj}{2},
+ * \text{ and: }
+ * \delta = 10^{-8} / \overline{\vol \celli} ^{1/3}
+ * \f]
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_vof_update_drift_flux(const cs_domain_t *domain);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * <a name="cs_vof_drift_term"></a>
+ *
+ * \brief Add the explicit part of the convection/diffusion terms of a
+ * standard transport equation of a scalar field \f$ \varia \f$.
+ *
+ * More precisely, the right hand side \f$ Rhs \f$ is updated as follows:
+ * \f[
+ * Rhs = Rhs - \sum_{\fij \in \Facei{\celli}}      \left(
+ *        \alpha_\celli^{n+1} \left( 1 - \alpha_\cellj^{n+1} \right) \left(
+ *        \dot{m}_\fij^{d} \right)^{+} + \alpha_\cellj^{n+1} \left( 1 -
+ *        \alpha_\celli^{n+1} \right) \left( \dot{m}_\fij^{d} \right)^{-}
+ *       \right)
+ * \f]
+ *
+ * \param[in]     imrgra        indicator
+ *                               - 0 iterative gradient
+ *                               - 1 least squares gradient
+ * \param[in]     nswrgp        number of reconstruction sweeps for the
+ *                               gradients
+ * \param[in]     imligp        clipping gradient method
+ *                               - < 0 no clipping
+ *                               - = 0 by neighboring gradients
+ *                               - = 1 by the mean gradient
+ * \param[in]     iwarnp        verbosity
+ * \param[in]     epsrgp        relative precision for the gradient
+ *                               reconstruction
+ * \param[in]     climgp        clipping coefficient for the computation of
+ *                               the gradient
+ * \param[in]     pvar          solved variable (current time step)
+ * \param[in]     pvara         solved variable (previous time step)
+ * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_vof_drift_term(const cs_int_t   *imrgra,
+                  const cs_int_t   *nswrgp,
+                  const cs_int_t   *imligp,
+                  const cs_int_t   *iwarnp,
+                  const cs_real_t  *epsrgp,
+                  const cs_real_t  *climgp,
+                  cs_real_t       *restrict pvar,
+                  const cs_real_t *restrict pvara,
+                  cs_real_t       *restrict rhs);
 
 /*----------------------------------------------------------------------------
  *!

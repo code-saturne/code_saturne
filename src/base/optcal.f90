@@ -973,6 +973,8 @@ module optcal
   !> See defined masks in \ref vof_masks.
   integer(c_int), pointer, save :: ivofmt
 
+  integer(c_int), pointer, save :: idrift
+
   !> \addtogroup vof_masks
   !> \{
 

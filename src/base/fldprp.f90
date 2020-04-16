@@ -208,13 +208,15 @@ endif
 
 call ppprop
 
+idim1 = 1
+idim3 = 3
+idim6 = 6
+
 ! --- Properties for Darcy module
 
 if (ippmod(idarcy).eq.1) then
 
   has_previous = .true.
-  idim1 = 1
-  idim6 = 6
   f_name = 'saturation'
   f_label = 'Saturation'
   call add_property_field(f_name, f_label, idim1, has_previous, iflid)
@@ -287,6 +289,13 @@ if (ippmod(idarcy).eq.1) then
                                                       sorption_scal)
   enddo
 
+endif
+
+if (iand(ivofmt,VOF_FREE_SURFACE).ne.0) then
+  idrift = 2
+  has_previous = .false.
+  call add_property_field('drift_velocity', 'Drift Velocity', idim3, &
+                          has_previous, iflid)
 endif
 
 ! --- Mesh displacement for ALE

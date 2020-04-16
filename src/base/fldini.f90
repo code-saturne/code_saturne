@@ -565,6 +565,16 @@ if (ivofmt.gt.0) then
   call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
   call field_set_key_int(ivarfl(ivolf2), kbflux, f_id)
 
+  if (idrift.gt.0) then
+    ityloc = 2  ! inner faces
+    f_name = 'inner_drift_velocity_flux'
+    call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
+
+    ityloc = 3 ! boundary faces
+    f_name = 'boundary_drift_velocity_flux'
+    call field_create(f_name, itycat, ityloc, idim1, inoprv, f_id)
+  endif
+
 endif
 
 !===============================================================================

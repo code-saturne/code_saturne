@@ -108,30 +108,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Synchronize halos for scalar variables.
- *
- * parameters:
- *   m              <-- pointer to associated mesh structure
- *   tr_dim         <-- 0 if pvar does not match a tensor
- *                        or there is no periodicity of rotation
- *                      2 for Reynolds stress
- *   pvar           <-> variable
- *----------------------------------------------------------------------------*/
-
-static void
-_sync_scalar_halo(const cs_mesh_t  *m,
-                  int               tr_dim,
-                  cs_real_t         pvar[])
-{
-  if (m->halo != NULL) {
-    if (tr_dim > 0)
-      cs_halo_sync_component(m->halo, CS_HALO_STANDARD, CS_HALO_ROTATION_IGNORE,
-                             pvar);
-    else
-      cs_halo_sync_var(m->halo, CS_HALO_STANDARD, pvar);
-  }
-}
-
 /*----------------------------------------------------------------------------
  * Return pointer to slope test indicator field values if active.
  *
@@ -1897,7 +1873,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
      or current values are provided */
 
   if (pvar != NULL)
-    _sync_scalar_halo(m, tr_dim, pvar);
+    cs_sync_scalar_halo(m, tr_dim, pvar);
   else if (pvara == NULL)
     pvara = (const cs_real_t *restrict)pvar;
 
@@ -3237,7 +3213,7 @@ cs_face_convection_scalar(int                       idtvar,
      or current values are provided */
 
   if (pvar != NULL)
-    _sync_scalar_halo(m, tr_dim, pvar);
+    cs_sync_scalar_halo(m, tr_dim, pvar);
   else if (pvara == NULL)
     pvara = (const cs_real_t *restrict)pvar;
 
@@ -6897,7 +6873,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
      or current values are provided */
 
   if (pvar != NULL)
-    _sync_scalar_halo(m, tr_dim, pvar);
+    cs_sync_scalar_halo(m, tr_dim, pvar);
   else if (pvara == NULL)
     pvara = (const cs_real_t *restrict)pvar;
 
@@ -8125,7 +8101,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
      or current values are provided */
 
   if (pvar != NULL)
-    _sync_scalar_halo(m, tr_dim, pvar);
+    cs_sync_scalar_halo(m, tr_dim, pvar);
   else if (pvara == NULL)
     pvara = (const cs_real_t *restrict)pvar;
 

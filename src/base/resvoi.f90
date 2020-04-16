@@ -33,11 +33,15 @@
 !> \f[
 !> \dfrac{\alpha^n - \alpha^{n-1}}{\Delta t}
 !>     + \divs \left( \alpha^n \vect{u}^n \right)
+!>     + \divs \left( \left[ \alpha^n
+!>                           \left( 1 - \alpha^{n} \right)
+!>                    \right] \vect{u^r}^n \right)
 !>     = \dfrac{\Gamma_V \left( \alpha^{n-1}, p^n \right)}{\rho_v}
 !> \f]
 !> with \f$ \Gamma_V \f$ the eventual vaporization source term (Merkle model) in
-!> case the cavitation model is enabled and \f$ \rho_v \f$ the reference gas
-!> density.
+!> case the cavitation model is enabled, \f$ \rho_v \f$ the reference gas
+!> density and \f$ \vect{u^r} \f$ the drift velocity for the compressed
+!> interface.
 !>
 !-------------------------------------------------------------------------------
 
@@ -71,6 +75,7 @@ use cavitation
 use vof
 use parall
 use cs_c_bindings
+use cs_cf_bindings
 
 !===============================================================================
 
@@ -270,6 +275,20 @@ else
     smbrs(iel) = smbrs(iel) + rovsdt(iel)*cvara_voidf(iel)
     rovsdt(iel) = -rovsdt(iel)
   enddo
+endif
+
+if (idrift.gt.1) then
+  imrgrp = vcopt%imrgra
+  nswrgp = vcopt%nswrgr
+  imligp = vcopt%imligr
+  iwarnp = vcopt%iwarni
+  epsrgp = vcopt%epsrgr
+  climgp = vcopt%climgr
+
+  call vof_drift_term &
+  !==========
+( imrgrp , nswrgp , imligp , iwarnp , epsrgp , climgp ,          &
+  cvar_voidf      , cvara_voidf     , smbrs  )
 endif
 
 ! Unteady term

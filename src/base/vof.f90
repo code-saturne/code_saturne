@@ -57,6 +57,12 @@ module vof
   !> reference molecular viscosity of fluid 2 (kg/(m s))
   real(c_double), pointer, save :: mu2
 
+  !> Drift flux factor
+  real(c_double), pointer, save :: cdrift
+
+  !> volume fraction gradient factor in drift velocity
+  real(c_double), pointer, save :: kdrift
+
   !> \}
 
   !=============================================================================
@@ -72,11 +78,13 @@ module vof
      ! Interface to C function retrieving pointers to VOF model indicator
      ! and parameters
 
-     subroutine cs_f_vof_get_pointers(ivofmt, rho1, rho2, mu1, mu2) &
+     subroutine cs_f_vof_get_pointers(ivofmt, rho1, rho2, mu1, mu2, &
+       idrift, cdrift, kdrift) &
        bind(C, name='cs_f_vof_get_pointers')
        use, intrinsic :: iso_c_binding
        implicit none
-       type(c_ptr), intent(out) :: ivofmt, rho1, rho2, mu1, mu2
+       type(c_ptr), intent(out) :: ivofmt, rho1, rho2, mu1, mu2, &
+       idrift, cdrift, kdrift
      end subroutine cs_f_vof_get_pointers
 
      !---------------------------------------------------------------------------
@@ -112,6 +120,31 @@ module vof
 
      !---------------------------------------------------------------------------
 
+     ! Interface to C function computing drift flux in VOF model
+
+     subroutine vof_update_drift_flux() &
+       bind(C, name='cs_f_vof_update_drift_flux')
+       use, intrinsic :: iso_c_binding
+       implicit none
+     end subroutine vof_update_drift_flux
+
+     !---------------------------------------------------------------------------
+
+     ! Interface to C function cs_vof_source_term
+
+     subroutine vof_drift_term(imrgra, nswrgp, imligp, iwarnp, epsrgp,    &
+                                   climgp, pvar  , pvara , smbrs )            &
+       bind(C, name='cs_vof_drift_term')
+       use, intrinsic :: iso_c_binding
+       implicit none
+       integer, intent(in) :: imrgra, imligp, iwarnp, nswrgp
+       double precision, intent(in) :: epsrgp, climgp
+       real(kind=c_double), dimension(*), intent(in) :: pvar, pvara
+       real(kind=c_double), dimension(*), intent(inout) :: smbrs
+     end subroutine vof_drift_term
+
+     !---------------------------------------------------------------------------
+
      !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
      !---------------------------------------------------------------------------
@@ -130,21 +163,26 @@ contains
   subroutine vof_model_init
 
     use, intrinsic :: iso_c_binding
-    use optcal, only:ivofmt
+    use optcal, only:ivofmt, idrift
 
     implicit none
 
     ! Local variables
 
-    type(c_ptr) :: c_ivofmt, c_rho1, c_rho2, c_mu1, c_mu2
+    type(c_ptr) :: c_ivofmt, c_rho1, c_rho2, c_mu1, c_mu2, &
+         c_idrift, c_cdrift, c_kdrift
 
-    call cs_f_vof_get_pointers(c_ivofmt, c_rho1, c_rho2, c_mu1, c_mu2)
+    call cs_f_vof_get_pointers(c_ivofmt, c_rho1, c_rho2, c_mu1, c_mu2,       &
+                               c_idrift, c_cdrift, c_kdrift)
 
     call c_f_pointer(c_ivofmt, ivofmt)
     call c_f_pointer(c_rho1, rho1)
     call c_f_pointer(c_rho2, rho2)
     call c_f_pointer(c_mu1, mu1)
     call c_f_pointer(c_mu2, mu2)
+    call c_f_pointer(c_idrift, idrift)
+    call c_f_pointer(c_cdrift, cdrift)
+    call c_f_pointer(c_kdrift, kdrift)
 
   end subroutine vof_model_init
 
