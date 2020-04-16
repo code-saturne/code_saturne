@@ -466,3 +466,31 @@ install-data-local:
 uninstall-local:
 	rm -rf "$(DESTDIR)$(pkgdatadir)/data/thch/dp_radiat_MFS"
 	@$(NORMAL_UNINSTALL)
+
+install-shortcut:
+	@$(NORMAL_INSTALL)
+	@if test "${cs_have_gui}" != "yes"; then \
+		echo "Cannot install shortcut without GUI support"; \
+		exit 1 ; \
+	fi; \
+	DESKTOPPATH=`xdg-user-dir DESKTOP 2>/dev/null` ; \
+	if test "$${DESKTOPPATH}" = "" ; then \
+		if test -d "$${HOME}/Desktop" ; then \
+		  DESKTOPPATH=$${HOME}/Desktop ; \
+		elif test -d "$${HOME}/Bureau" ; then \
+		  DESKTOPPATH=$${HOME}/Bureau ; \
+		else \
+			DESKTOPPATH="none" ; \
+		fi ; \
+	fi ; \
+	if test "$${DESKTOPPATH}" = "none" ; then \
+		echo "Could not find DESKTOPPATH" ; \
+		exit 1 ; \
+	fi ; \
+	if test ! -d "$${DESKTOPPATH}" ; then \
+		echo "'$${DESKTOPPATH}' is not a folder" ; \
+		exit 1 ; \
+	fi ; \
+	cp "$(top_srcdir)/extras/code_saturne.desktop.template" "$${DESKTOPPATH}/code_saturne_$(VERSION).desktop"; \
+	sed -i -e 's|CSPATH|$(prefix)|g' $${DESKTOPPATH}/code_saturne_$(VERSION).desktop; \
+	sed -i -e 's|CSVERSION|$(VERSION)|g' $${DESKTOPPATH}/code_saturne_$(VERSION).desktop ;

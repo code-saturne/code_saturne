@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Terminal=false
+Exec=CSPATH/bin/code_saturne gui %f
+Name=Code_Saturne CSVERSION
+Icon=CSPATH/share/code_saturne/images/splashscreen.png
+X-Desktop-File-Install-Version=0.23
+GenericName=Code_Saturne vCSVERSION
+Categories=Education;Science;
+MimeType=application/x-hdf;

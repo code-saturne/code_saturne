@@ -1,6 +1,14 @@
 Master (not on release branches yet)
 ------------------------------------
 
+Architectural changes:
+
+- Add the possibility to create a desktop shortcut on linux systems.
+  Creation is done using the "make install-shortcut" command after the
+  "make install" command. A code_saturne_($version).desktop file is
+  created in the desktop folder and double-clicking on it launches the
+  GUI.
+
 Release 6.1.0 (April 15 2020)
 -----------------------------
 
