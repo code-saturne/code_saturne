@@ -861,8 +861,7 @@ cs_advection_field_create_fields(void)
        postprocess the advection field */
     if (adv->cell_field_id < 0) {
 
-      if ((adv->status & CS_ADVECTION_FIELD_NAVSTO) &&
-          (adv->status & CS_ADVECTION_FIELD_TYPE_VELOCITY_VECTOR)) {
+      if (cs_flag_test(adv->status, CS_ADVECTION_FIELD_NAVSTO)) {
 
         adv->cell_field_id = cs_field_id_by_name("velocity");
         assert(adv->cell_field_id > -1);
