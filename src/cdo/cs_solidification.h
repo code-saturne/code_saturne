@@ -240,8 +240,7 @@ cs_solidification_set_forcing_eps(cs_real_t    forcing_eps);
  * \param[in]  t_solidus      solidus temperature (in K)
  * \param[in]  t_liquidus     liquidus temperatur (in K)
  * \param[in]  latent_heat    latent heat
- * \param[in]  forcing_coef   (< 0) coefficient in the reaction term to reduce
- *                            the velocity
+ * \param[in]  s_das          secondary dendrite space arms
  */
 /*----------------------------------------------------------------------------*/
 
@@ -249,7 +248,7 @@ void
 cs_solidification_set_voller_model(cs_real_t    t_solidus,
                                    cs_real_t    t_liquidus,
                                    cs_real_t    latent_heat,
-                                   cs_real_t    forcing_coef);
+                                   cs_real_t    s_das);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -258,15 +257,12 @@ cs_solidification_set_voller_model(cs_real_t    t_solidus,
  *
  * \param[in]  n_iter_max    max.number of iterations for the C/T equations
  * \param[in]  g_l_eps       tolerance requested between two iterations
- * \param[in]  forcing_coef  (< 0) coefficient in the reaction term to reduce
- *                           the velocity
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_solidification_set_binary_alloy_param(int             n_iter_max,
-                                         double          g_l_eps,
-                                         cs_real_t       forcing_coef);
+                                         double          g_l_eps);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -286,6 +282,7 @@ cs_solidification_set_binary_alloy_param(int             n_iter_max,
  * \param[in]  t_melt        phase-change temperature for the pure material (A)
  * \param[in]  solute_diff   solutal diffusion coefficient in the liquid
  * \param[in]  latent_heat   latent heat
+ * \param[in]  s_das         secondary dendrite arm spacing
  */
 /*----------------------------------------------------------------------------*/
 
@@ -299,7 +296,8 @@ cs_solidification_set_binary_alloy_model(const char     *name,
                                          cs_real_t       t_eutec,
                                          cs_real_t       t_melt,
                                          cs_real_t       solute_diff,
-                                         cs_real_t       latent_heat);
+                                         cs_real_t       latent_heat,
+                                         cs_real_t       s_das);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -311,27 +309,6 @@ cs_solidification_set_binary_alloy_model(const char     *name,
 
 cs_solidification_t *
 cs_solidification_destroy_all(void);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set the main physical parameters dedicated to this module
- *
- * \param[in]  t_solidus      solidus temperature (in K)
- * \param[in]  t_liquidus     liquidus temperatur (in K)
- * \param[in]  latent_heat    latent heat
- * \param[in]  forcing_eps    epsilon used in penalization term to division by
- *                            zero
- * \param[in]  forcing_coef   (< 0) coefficient in the reaction term to reduce
- *                            the velocity
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_solidification_set_parameters(cs_real_t          t_solidus,
-                                 cs_real_t          t_liquidus,
-                                 cs_real_t          latent_heat,
-                                 cs_real_t          forcing_eps,
-                                 cs_real_t          forcing_coef);
 
 /*----------------------------------------------------------------------------*/
 /*!

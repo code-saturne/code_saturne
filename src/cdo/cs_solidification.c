@@ -124,6 +124,9 @@ typedef void
 
 typedef struct {
 
+  /* Secondary dendrite arm spacing */
+  cs_real_t        s_das;
+
   /* Physical parameters to specify the law of variation of the liquid fraction
    * with respect to the temperature
    *
@@ -139,11 +142,6 @@ typedef struct {
    * Latent heat between the liquid and solid phase
    */
   cs_real_t        latent_heat;
-
-  /* Porous media like reaction term in the momentum equation:
-   * F(u) = forcing_coef * (1- gl)^2/(gl^3 + forcing_eps) * u
-   */
-  cs_real_t        forcing_coef;
 
 } cs_solidification_voller_t;
 
@@ -162,16 +160,14 @@ typedef struct {
    */
   cs_real_t    latent_heat;
 
-  /* Porous media like reaction term in the momentum equation:
-   * F(u) = forcing_coef * (1- gl)^2/(gl^3 + forcing_eps) * u
-   */
-  cs_real_t    forcing_coef;
-
   /* Phase diagram features for an alloy with the component A and B */
   /* -------------------------------------------------------------- */
 
   /* Temperature of phase change for the pure material (conc = 0) */
   cs_real_t    t_melt;
+
+  /* Secondary dendrite arm spacing */
+  cs_real_t    s_das;
 
   /* Eutectic point: temperature and concentration */
   cs_real_t    t_eut;
@@ -252,6 +248,9 @@ struct _solidification_t {
   /* Mass density of the liquid/solid media */
   cs_property_t   *mass_density;
 
+  /* Laminar dynamic viscosity */
+  cs_property_t   *lam_viscosity;
+
   /* Liquid fraction of the mixture */
   /* ------------------------------ */
 
@@ -289,6 +288,15 @@ struct _solidification_t {
   cs_real_t       *forcing_mom_array; /* values of the forcing reaction
                                          coefficient in each cell */
   cs_property_t   *forcing_mom;
+
+  /* Porous media like reaction term in the momentum equation:
+   *
+   * forcing_coef = 180 * visco0 / s_das^2
+   * where visco0 is the laminar viscosity and s_das is the secondary
+   * dendrite arm spacing
+   * F(u) = forcing_coef * (1- gl)^2/(gl^3 + forcing_eps) * u
+   */
+  cs_real_t       forcing_coef;
 
   /* Function pointer related to the way of updating the model */
   cs_solidification_update_t    *update;
@@ -366,8 +374,9 @@ _solidification_create(void)
   solid->options = 0;
   solid->post_flag = 0;
 
-  /* Property */
+  /* Properties */
   solid->mass_density = NULL;
+  solid->lam_viscosity = NULL;
 
   /* Quantities related to the liquid fraction */
   solid->g_l = NULL;
@@ -395,6 +404,7 @@ _solidification_create(void)
      in the momentum equation */
   solid->forcing_mom = NULL;
   solid->forcing_mom_array = NULL;
+  solid->forcing_coef = 0;
 
   /* Function pointer to update the model */
   solid->update = NULL;
@@ -579,10 +589,14 @@ _update_liquid_fraction_voller(const cs_mesh_t             *mesh,
 
   /* Retrieve the value of the mass density (assume to be uniform) */
   assert(cs_property_is_uniform(solid->mass_density));
-  const cs_real_t  cell_rho = cs_property_get_cell_value(0, ts->t_cur,
-                                                         solid->mass_density);
-  const cs_real_t  dgldT_coef =
-    cell_rho*v_model->latent_heat*dgldT/ts->dt[0];
+  const cs_real_t  rho0 = cs_property_get_cell_value(0, ts->t_cur,
+                                                     solid->mass_density);
+  const cs_real_t  dgldT_coef = rho0*v_model->latent_heat*dgldT/ts->dt[0];
+
+  assert(cs_property_is_uniform(solid->lam_viscosity));
+  const cs_real_t  viscl0 = cs_property_get_cell_value(0, ts->t_cur,
+                                                       solid->lam_viscosity);
+  const cs_real_t  forcing_coef = solid->forcing_coef * viscl0;
 
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
@@ -600,7 +614,7 @@ _update_liquid_fraction_voller(const cs_mesh_t             *mesh,
 
       /* Update the forcing coefficient treated as a property for a reaction
          term in the momentum eq. */
-      solid->forcing_mom_array[c_id] = v_model->forcing_coef*inv_forcing_eps;
+      solid->forcing_mom_array[c_id] = forcing_coef*inv_forcing_eps;
 
     }
     else if (temp[c_id] > v_model->t_liquidus) {
@@ -632,8 +646,8 @@ _update_liquid_fraction_voller(const cs_mesh_t             *mesh,
       /* Update the forcing coefficient treated as a property for a reaction
          term in the momentum eq. */
       const cs_real_t  glm1 = 1 - glc;
-      solid->forcing_mom_array[c_id] = v_model->forcing_coef *
-        glm1*glm1/(glc*glc*glc + cs_solidification_forcing_eps);
+      solid->forcing_mom_array[c_id] =
+        forcing_coef * glm1*glm1/(glc*glc*glc + cs_solidification_forcing_eps);
 
     }
 
@@ -855,9 +869,11 @@ _update_cl_st_legacy(const cs_mesh_t             *mesh,
   /* Retrieve the value of the mass density (assume to be uniform) */
   assert(cs_property_is_uniform(solid->mass_density));
   assert(cs_property_is_uniform(solid->thermal_sys->cp));
-  const cs_real_t  cell_rho = cs_property_get_cell_value(0, ts->t_cur,
-                                                         solid->mass_density);
-  const cs_real_t  rhoLovdt = cell_rho*alloy->latent_heat/ts->dt[0];
+
+  const cs_real_t  rho0 = cs_property_get_cell_value(0, ts->t_cur,
+                                                     solid->mass_density);
+  const cs_real_t  rhoLovdt = rho0 * alloy->latent_heat/ts->dt[0];
+
   const cs_real_t  cp = cs_property_get_cell_value(0, ts->t_cur,
                                                    solid->thermal_sys->cp);
   const double  cpovL = cp/alloy->latent_heat;
@@ -1124,9 +1140,9 @@ _update_cl_st_by_step(const cs_mesh_t             *mesh,
   /* Retrieve the value of the mass density (assume to be uniform) */
   assert(cs_property_is_uniform(solid->mass_density));
   assert(cs_property_is_uniform(solid->thermal_sys->cp));
-  const cs_real_t  cell_rho = cs_property_get_cell_value(0, ts->t_cur,
-                                                         solid->mass_density);
-  const cs_real_t  rhoLovdt = cell_rho*alloy->latent_heat/ts->dt[0];
+  const cs_real_t  rho0 = cs_property_get_cell_value(0, ts->t_cur,
+                                                     solid->mass_density);
+  const cs_real_t  rhoLovdt = rho0*alloy->latent_heat/ts->dt[0];
   const cs_real_t  cp = cs_property_get_cell_value(0, ts->t_cur,
                                                    solid->thermal_sys->cp);
   const double  cpovL = cp/alloy->latent_heat;
@@ -1302,6 +1318,10 @@ _update_state_binary_alloy(const cs_mesh_t             *mesh,
   /* Parallel synchronization of the number of cells in each state */
   cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_GNUM_TYPE, solid->n_g_cells);
 
+  assert(cs_property_is_uniform(solid->lam_viscosity));
+  const cs_real_t  viscl0 = cs_property_get_cell_value(0, ts->t_cur,
+                                                       solid->lam_viscosity);
+  const cs_real_t  forcing_coef = solid->forcing_coef * viscl0;
   const cs_real_t  *g_l = solid->g_l_field->val;
 
   /* Set the forcing term in the momentum equation */
@@ -1312,8 +1332,8 @@ _update_state_binary_alloy(const cs_mesh_t             *mesh,
       const cs_real_t gsc = 1 - g_l[c_id];
       const cs_real_t glc3 = g_l[c_id]*g_l[c_id]*g_l[c_id];
 
-      solid->forcing_mom_array[c_id] = alloy->forcing_coef *
-        gsc*gsc/(glc3 + cs_solidification_forcing_eps);
+      solid->forcing_mom_array[c_id] =
+        forcing_coef * gsc*gsc/(glc3 + cs_solidification_forcing_eps);
 
     }
     else
@@ -1326,9 +1346,9 @@ _update_state_binary_alloy(const cs_mesh_t             *mesh,
 
     /* Retrieve the value of the mass density (assume to be uniform) */
     assert(cs_property_is_uniform(solid->mass_density));
-    const cs_real_t  cell_rho = cs_property_get_cell_value(0, ts->t_cur,
-                                                           solid->mass_density);
-    const double  rho_D = cell_rho * alloy->diff_coef;
+    const cs_real_t  rho0 = cs_property_get_cell_value(0, ts->t_cur,
+                                                       solid->mass_density);
+    const double  rho_D = rho0 * alloy->diff_coef;
 
 #   pragma omp parallel for if (quant->n_cells > CS_THR_MIN)
     for (cs_lnum_t i = 0; i < quant->n_cells; i++)
@@ -1717,6 +1737,9 @@ cs_solidification_activate(cs_solidification_model_t      model,
   solid->mass_density = cs_property_by_name(CS_PROPERTY_MASS_DENSITY);
   assert(solid->mass_density != NULL);
 
+  solid->lam_viscosity = cs_property_by_name(CS_NAVSTO_LAMINAR_VISCOSITY);
+  assert(solid->lam_viscosity != NULL);
+
   /* Activate and default settings for the thermal module */
   /* ---------------------------------------------------- */
 
@@ -1803,8 +1826,7 @@ cs_solidification_set_forcing_eps(cs_real_t    forcing_eps)
  * \param[in]  t_solidus      solidus temperature (in K)
  * \param[in]  t_liquidus     liquidus temperatur (in K)
  * \param[in]  latent_heat    latent heat
- * \param[in]  forcing_coef   (< 0) coefficient in the reaction term to reduce
- *                            the velocity
+ * \param[in]  s_das          secondary dendrite space arms
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1812,7 +1834,7 @@ void
 cs_solidification_set_voller_model(cs_real_t    t_solidus,
                                    cs_real_t    t_liquidus,
                                    cs_real_t    latent_heat,
-                                   cs_real_t    forcing_coef)
+                                   cs_real_t    s_das)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
 
@@ -1833,7 +1855,13 @@ cs_solidification_set_voller_model(cs_real_t    t_solidus,
   v_model->t_solidus = t_solidus;
   v_model->t_liquidus = t_liquidus;
   v_model->latent_heat = latent_heat;
-  v_model->forcing_coef = forcing_coef;
+  v_model->s_das = s_das;
+  if (s_das < FLT_MIN)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid value %g for the secondary dendrite arms spacing",
+              __func__, s_das);
+
+  solid->forcing_coef = 180./(s_das*s_das);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1843,15 +1871,12 @@ cs_solidification_set_voller_model(cs_real_t    t_solidus,
  *
  * \param[in]  n_iter_max    max.number of iterations for the C/T equations
  * \param[in]  g_l_eps       tolerance requested between two iterations
- * \param[in]  forcing_coef  (< 0) coefficient in the reaction term to reduce
- *                           the velocity
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_solidification_set_binary_alloy_param(int             n_iter_max,
-                                         double          g_l_eps,
-                                         cs_real_t       forcing_coef)
+                                         double          g_l_eps)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
   if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
@@ -1867,7 +1892,6 @@ cs_solidification_set_binary_alloy_param(int             n_iter_max,
   /* Numerical parameters */
   alloy->n_iter_max = n_iter_max;
   alloy->g_l_tolerance = g_l_eps;
-  alloy->forcing_coef = forcing_coef;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1888,6 +1912,7 @@ cs_solidification_set_binary_alloy_param(int             n_iter_max,
  * \param[in]  t_melt        phase-change temperature for the pure material (A)
  * \param[in]  solute_diff   solutal diffusion coefficient in the liquid
  * \param[in]  latent_heat   latent heat
+ * \param[in]  s_das         secondary dendrite arm spacing
  */
 /*----------------------------------------------------------------------------*/
 
@@ -1901,7 +1926,8 @@ cs_solidification_set_binary_alloy_model(const char     *name,
                                          cs_real_t       t_eutec,
                                          cs_real_t       t_melt,
                                          cs_real_t       solute_diff,
-                                         cs_real_t       latent_heat)
+                                         cs_real_t       latent_heat,
+                                         cs_real_t       s_das)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
   if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
@@ -1961,10 +1987,17 @@ cs_solidification_set_binary_alloy_model(const char     *name,
   /* Numerical parameters (default values) */
   alloy->n_iter_max = 1;
   alloy->g_l_tolerance = 1e-3;
-  alloy->forcing_coef = 1600;
 
   /* Physical constants */
   alloy->latent_heat = latent_heat;
+
+  alloy->s_das = s_das;
+  if (s_das < FLT_MIN)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Invalid value %g for the secondary dendrite arms spacing",
+              __func__, s_das);
+
+  solid->forcing_coef = 180./(s_das*s_das);
 
   /* Phase diagram parameters */
   alloy->kp = kp;
@@ -2121,7 +2154,7 @@ cs_solidification_init_setup(void)
     cs_equation_param_t  *eqp = cs_equation_get_param(alloy->solute_equation);
 
     /* Add the unsteady term */
-    cs_equation_add_time(eqp, cs_property_by_name(CS_PROPERTY_MASS_DENSITY));
+    cs_equation_add_time(eqp, solid->mass_density);
 
     /* Add an advection term to the solute concentration equation */
     cs_equation_add_advection(eqp, cs_navsto_get_adv_field());
@@ -2339,8 +2372,9 @@ cs_solidification_log_setup(void)
                   v_model->t_liquidus, v_model->t_solidus);
     cs_log_printf(CS_LOG_SETUP, "  * Solidification | Latent heat: %5.3e\n",
                   v_model->latent_heat);
-    cs_log_printf(CS_LOG_SETUP, "  * Solidification | Forcing coef: %5.3e\n",
-                  v_model->forcing_coef);
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * Solidification | Forcing coef: %5.3e s_das: %5.3e\n",
+                  solid->forcing_coef, v_model->s_das);
 
   }
   else if (cs_flag_test(solid->model, CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)) {
@@ -2359,11 +2393,12 @@ cs_solidification_log_setup(void)
                   "  * Solidification | Phase change temp.: %5.3e\n"
                   "  * Solidification | Eutectic conc.: %5.3e\n"
                   "  * Solidification | Reference concentration: %5.3e\n"
-                  "  * Solidification | Latent heat: %5.3e\n"
-                  "  * Solidification | Forcing coef: %5.3e\n",
+                  "  * Solidification | Latent heat: %5.3e\n",
                   alloy->dilatation_coef, alloy->kp, alloy->ml, alloy->t_melt,
-                  alloy->c_eut, alloy->ref_concentration, alloy->latent_heat,
-                  alloy->forcing_coef);
+                  alloy->c_eut, alloy->ref_concentration, alloy->latent_heat);
+    cs_log_printf(CS_LOG_SETUP,
+                  "  * Solidification | Forcing coef: %5.3e s_das: %5.3e\n",
+                  solid->forcing_coef, alloy->s_das);
 
     /* Display options */
     cs_log_printf(CS_LOG_SETUP, "  * Solidification | Options:");
