@@ -278,6 +278,7 @@ allocate(izftcd(ncel)) ! should be in init_pcond only
 
 ncetsm = volume_zone_n_type_cells(VOLUME_ZONE_MASS_SOURCE_TERM)
 ncepdc = volume_zone_n_type_cells(VOLUME_ZONE_HEAD_LOSS)
+nfbpcd = 0
 
 ! Total number of cells with head-loss
 ncpdct = ncepdc

@@ -3,6 +3,8 @@ Release 6.0.3 (Unreleased)
 
 Bug fixes:
 
+- Fix uninitialized number of cells for condensation zones.
+
 - Fix reconstruction gradient weighting in computation of face diffusion
   fluxes from pressure increment in pressure correction step. Impacts,
   for example, VoF calculation on non cartesian meshes.
