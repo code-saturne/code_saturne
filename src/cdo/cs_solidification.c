@@ -194,42 +194,43 @@ typedef struct {
   /* Alloy features */
   /* -------------- */
 
-  cs_equation_t    *solute_equation;
+  cs_equation_t     *solute_equation;
+  cs_field_t        *c_bulk;
 
   /* The variable related to this equation in the solute concentration of
-   * the mixture: c (c_s in the solid phase and c_l in the liquid phase)
-   * c = gs*c_s + gl*c_l where gs + gl = 1
+   * the mixture: c_bulk (c_s in the solid phase and c_l in the liquid phase)
+   * c_bulk = gs*c_s + gl*c_l where gs + gl = 1
    * gl is the liquid fraction and gs the solid fraction
    * c_s = kp * c_l
    *
-   * --> c = (gs*kp + gl)*c_l
+   * --> c_bulk = (gs*kp + gl)*c_l
    */
 
   /* Drive the convergence of the liquid fraction between the solutal
      concentration and the thermal equation */
-  int      n_iter_max;
-  double   g_l_tolerance;
+  int                n_iter_max;
+  double             g_l_tolerance;
 
   /* Solute concentration in the liquid phase
    * 1) cs_field_t structure for values at cells
    * 2) array of values at faces (interior and border) */
-  cs_field_t       *c_l_field;
-  cs_real_t        *c_l_faces;
+  cs_field_t        *c_l_field;
+  cs_real_t         *c_l_faces;
 
   /* Liquidus temperature (monitoring purpose) */
-  cs_real_t        *t_liquidus;
+  cs_real_t         *t_liquidus;
 
   /* Temperature values at faces (this is not owned by the structure) */
   const cs_real_t   *temp_faces;
 
   /* Diffusion coefficient for the solute in the liquid phase
    * diff_pty_val = rho * g_l * diff_coef */
-  cs_real_t         diff_coef;
-  cs_property_t    *diff_pty;
-  cs_real_t        *diff_pty_array;
+  cs_real_t          diff_coef;
+  cs_property_t     *diff_pty;
+  cs_real_t         *diff_pty_array;
 
-  cs_property_t    *adv_coef_pty;
-  cs_real_t        *adv_coef_pty_array;
+  cs_property_t     *adv_coef_pty;
+  cs_real_t         *adv_coef_pty_array;
 
 } cs_solidification_binary_alloy_t;
 
@@ -754,8 +755,7 @@ _update_glc_legacy(const cs_mesh_t             *mesh,
   if (cur2prev)
     cs_field_current_to_previous(solid->g_l_field);
 
-  const cs_equation_t  *tr_eq = alloy->solute_equation;
-  const cs_real_t  *c_bulk = (cs_equation_get_field(tr_eq))->val;
+  const cs_real_t  *c_bulk = alloy->c_bulk->val;
   const cs_real_t  *t_bulk = solid->temperature->val;
   const cs_real_t  *t_bulk_pre = solid->temperature->val_pre;
   const cs_real_t  *g_l_pre = solid->g_l_field->val_pre;
@@ -859,9 +859,8 @@ _update_cl_st_legacy(const cs_mesh_t             *mesh,
   cs_solidification_binary_alloy_t  *alloy
     = (cs_solidification_binary_alloy_t *)solid->model_context;
 
-  const cs_equation_t  *tr_eq = alloy->solute_equation;
-  const cs_real_t  *c_bulk = (cs_equation_get_field(tr_eq))->val;
-  const cs_real_t  *c_bulk_pre = (cs_equation_get_field(tr_eq))->val_pre;
+  const cs_real_t  *c_bulk = alloy->c_bulk->val;
+  const cs_real_t  *c_bulk_pre = alloy->c_bulk->val_pre;
   const cs_real_t  *t_bulk = solid->temperature->val;
   const cs_real_t  *t_bulk_pre = solid->temperature->val_pre;
   const cs_real_t  *g_l_pre = solid->g_l_field->val_pre;
@@ -996,9 +995,8 @@ _update_glc_taylor(const cs_mesh_t             *mesh,
   if (cur2prev)
     cs_field_current_to_previous(solid->g_l_field);
 
-  const cs_equation_t  *tr_eq = alloy->solute_equation;
-  const cs_real_t  *c_bulk = (cs_equation_get_field(tr_eq))->val;
-  const cs_real_t  *c_bulk_pre = (cs_equation_get_field(tr_eq))->val_pre;
+  const cs_real_t  *c_bulk = alloy->c_bulk->val;
+  const cs_real_t  *c_bulk_pre = alloy->c_bulk->val_pre;
   const cs_real_t  *t_bulk = solid->temperature->val;
   const cs_real_t  *t_bulk_pre = solid->temperature->val_pre;
   const cs_real_t  *g_l_pre = solid->g_l_field->val_pre;
@@ -1130,9 +1128,8 @@ _update_cl_st_by_step(const cs_mesh_t             *mesh,
   cs_solidification_binary_alloy_t  *alloy
     = (cs_solidification_binary_alloy_t *)solid->model_context;
 
-  const cs_equation_t  *tr_eq = alloy->solute_equation;
-  const cs_real_t  *c_bulk = (cs_equation_get_field(tr_eq))->val;
-  const cs_real_t  *c_bulk_pre = (cs_equation_get_field(tr_eq))->val_pre;
+  const cs_real_t  *c_bulk = alloy->c_bulk->val;
+  const cs_real_t  *c_bulk_pre = alloy->c_bulk->val_pre;
   const cs_real_t  *t_bulk = solid->temperature->val;
   const cs_real_t  *t_bulk_pre = solid->temperature->val_pre;
   const cs_real_t  *g_l_pre = solid->g_l_field->val_pre;
@@ -1952,6 +1949,7 @@ cs_solidification_set_binary_alloy_model(const char     *name,
                                            CS_EQUATION_TYPE_SOLIDIFICATION,
                                            1,
                                            CS_PARAM_BC_HMG_NEUMANN);
+  alloy->c_bulk = NULL;  /* variable field related to this equation */
 
   /* Set an upwind scheme by default since it could be a pure advection eq. */
   cs_equation_param_t  *eqp = cs_equation_get_param(alloy->solute_equation);
@@ -2286,6 +2284,10 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
     cs_solidification_binary_alloy_t  *alloy
       = (cs_solidification_binary_alloy_t *)solid->model_context;
 
+    /* Get a shortcut to the c_bulk field */
+    alloy->c_bulk = cs_equation_get_field(alloy->solute_equation);
+
+    /* Allocate an array to store the liquidus temperature */
     BFT_MALLOC(alloy->t_liquidus, quant->n_cells, cs_real_t);
 
     if (solid->options & CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM) {
