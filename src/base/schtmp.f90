@@ -203,30 +203,18 @@ elseif (iappel.eq.2) then
 
   if (initro.ne.1) then
     initro = 1
-    call field_get_key_int(icrom, key_t_ext_id, iroext)
-    if (iroext.gt.0) then
-      call field_current_to_previous(icrom)
-      call field_current_to_previous(ibrom)
-    endif
+    call field_current_to_previous(icrom)
+    call field_current_to_previous(ibrom)
   endif
   if (initvi.ne.1) then
     initvi = 1
-    call field_get_key_int(iviscl, key_t_ext_id, iviext)
-    if (iviext.gt.0) then
-      call field_current_to_previous(iviscl)
-    endif
-    call field_get_key_int(ivisct, key_t_ext_id, iviext)
-    if (iviext.gt.0) then
-      call field_current_to_previous(ivisct)
-    endif
+    call field_current_to_previous(iviscl)
+    call field_current_to_previous(ivisct)
   endif
   if (initcp.ne.1) then
     initcp = 1
     if (icp.gt.0) then
-      call field_get_key_int(icp, key_t_ext_id, icpext)
-      if (icpext.gt.0) then
-        call field_current_to_previous(icp)
-      endif
+      call field_current_to_previous(icp)
     endif
   endif
 
@@ -240,10 +228,7 @@ elseif (iappel.eq.2) then
         initvs(iscal) = 1
         call field_get_key_int (ivarfl(isca(iscal)), kivisl, f_id)
         if (f_id.ge.0.and.iscavr(iscal).le.0) then
-          call field_get_key_int(f_id, key_t_ext_id, iviext)
-          if (iviext.gt.0) then
-            call field_current_to_previous(f_id)
-          endif
+          call field_current_to_previous(f_id)
         endif
       endif
     enddo
@@ -259,7 +244,7 @@ elseif (iappel.eq.2) then
 !     On conserve les nouvelles valeurs dans l'ancien tableau pour
 !     retablir en fin de pas de temps
 
-  call field_get_key_int(iviscl, key_t_ext_id, iviext)
+   call field_get_key_int(iviscl, key_t_ext_id, iviext)
    if (iviext.gt.0) then
     call field_get_val_s(iviscl, cpro_viscl)
     call field_get_val_prev_s(iviscl, cproa_visls)
