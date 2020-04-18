@@ -553,7 +553,7 @@ cs_cell_polyline_intersect_select(void        *input,
 
     }
 
-    /* Finalize the lenght computation to deal with cases where the segment
+    /* Finalize the length computation to deal with cases where the segment
      * is inside the cell */
     for (cs_lnum_t cell_id = 0; cell_id < m->n_cells; cell_id++) {
       /* There is one intersection on the left of [OD)
