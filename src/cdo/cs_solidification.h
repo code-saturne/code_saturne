@@ -115,17 +115,9 @@ typedef enum {
  * C_0 is the reference concentration
  *
  * \def CS_SOLIDIFICATION_POST_CLIQ
- * \brief Compute and post-process Cliq = C_l*g_l
+ * \brief Post-process Cliq the liquid solute distribution (wt %)
  *        Only available if the model \ref CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
  *        is activated.
- * g_l is the liquid fraction and C_l is the solute distribution (wt %)
- *
- * \def CS_SOLIDIFICATION_POST_CLIQ_ADIM
- * \brief Compute Cliq = C_l*g_l and post-process (Cliq - C_O)/C_0
- *        Only available if the model \ref CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
- *       is activated.
- * g_l is the liquid fraction and C_l is the solute distribution (wt %)
- * C_0 is the reference concentration
  *
  * \def CS_SOLIDIFICATION_POST_CELL_STATE
  * \brief State related to each cell between (solid, mushy, liquid or eutectic)
@@ -141,7 +133,7 @@ typedef enum {
  *        Only available if the model \ref CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
  *        is activated
  *
- * \def CS_SOLIDIFICATION_POST_SOLID_FRACTION_PORTION
+ * \def CS_SOLIDIFICATION_POST_SOLIDIFICATION_RATE
  * \brief Activate the computation and output in the file solidification.dat
  *        for each time step of the integral over the computational domain
  *        of the solid fraction divided by the volume of the domain.
@@ -153,14 +145,13 @@ typedef enum {
  * understanding of the solidification process)
 */
 
-#define CS_SOLIDIFICATION_POST_CBULK_ADIM              (1 << 0) /* =   1 */
-#define CS_SOLIDIFICATION_POST_CLIQ                    (1 << 1) /* =   2 */
-#define CS_SOLIDIFICATION_POST_CLIQ_ADIM               (1 << 2) /* =   4 */
-#define CS_SOLIDIFICATION_POST_CELL_STATE              (1 << 3) /* =   8 */
-#define CS_SOLIDIFICATION_POST_LIQUIDUS_TEMPERATURE    (1 << 4) /* =  16 */
-#define CS_SOLIDIFICATION_POST_SEGREGATION_INDEX       (1 << 5) /* =  32 */
-#define CS_SOLIDIFICATION_POST_SOLID_FRACTION_PORTION  (1 << 6) /* =  64 */
-#define CS_SOLIDIFICATION_ADVANCED_ANALYSIS            (1 << 7) /* = 128 */
+#define CS_SOLIDIFICATION_POST_CBULK_ADIM             (1 << 0) /* =   1 */
+#define CS_SOLIDIFICATION_POST_CLIQ                   (1 << 1) /* =   2 */
+#define CS_SOLIDIFICATION_POST_CELL_STATE             (1 << 2) /* =   4 */
+#define CS_SOLIDIFICATION_POST_LIQUIDUS_TEMPERATURE   (1 << 3) /* =   8 */
+#define CS_SOLIDIFICATION_POST_SEGREGATION_INDEX      (1 << 4) /* =  16 */
+#define CS_SOLIDIFICATION_POST_SOLIDIFICATION_RATE    (1 << 5) /* =  32 */
+#define CS_SOLIDIFICATION_ADVANCED_ANALYSIS           (1 << 6) /* =  64 */
 
 /*!
  * @name Flags specifying numerical options specific to the solidification
@@ -185,12 +176,26 @@ typedef enum {
  * \def CS_SOLIDIFICATION_UPDATE_EUTECTIC_VOLLER
  * \brief Update the liquid fraction according to the model introduced in
  *  Voller & Prakash'89
-*/
+ *
+ * \def CS_SOLIDIFICATION_UPDATE_WITH_EXTRAPOLATION
+ * \brief Use during the computation of dGldT and dGldC an extrpolation of
+ *  variable at time step n+1 using values at n and n-1
+ *
+ * \def CS_SOLIDIFICATION_THERMAL_UPDATE_AFTER_CBULK
+ * \brief Postpon the update of the thermal source terms after the computation
+ * of the new bulk concentration
+ *
+ * \def CS_SOLIDIFICATION_VOLLER_THERMAL_SOURCES
+ * \brief Reproduce the behavior described in Voller & Saminathan'91
+ */
 
 #define CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM  (1 << 0) /* =  1 */
 #define CS_SOLIDIFICATION_UPDATE_GL_WITH_TAYLOR_EXPANSION    (1 << 1) /* =  2 */
 #define CS_SOLIDIFICATION_UPDATE_SOURCE_TERM_BY_STEP         (1 << 2) /* =  4 */
 #define CS_SOLIDIFICATION_UPDATE_EUTECTIC_VOLLER             (1 << 3) /* =  8 */
+#define CS_SOLIDIFICATION_UPDATE_WITH_EXTRAPOLATION          (1 << 4) /* = 16 */
+#define CS_SOLIDIFICATION_THERMAL_UPDATE_AFTER_CBULK         (1 << 5) /* = 32 */
+#define CS_SOLIDIFICATION_VOLLER_THERMAL_SOURCES             (1 << 6) /* = 64 */
 
 /*!
  * @}

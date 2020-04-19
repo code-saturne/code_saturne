@@ -2582,7 +2582,7 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
   cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.Eps:        % -10.6e\n",
                 slesp.eps);
 
-  cs_log_printf(CS_LOG_SETUP, "        SLES | Normalization:  ");
+  cs_log_printf(CS_LOG_SETUP, "        SLES | Normalization:      ");
   switch (slesp.resnorm_type) {
   case CS_PARAM_RESNORM_NORM2_RHS:
     cs_log_printf(CS_LOG_SETUP, "Euclidean norm of the RHS\n");
