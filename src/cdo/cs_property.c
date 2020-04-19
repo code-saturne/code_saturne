@@ -915,8 +915,15 @@ cs_property_finalize_setup(void)
     }
     else if (pty->n_definitions == 1) {
 
-      if (pty->defs[0]->type == CS_XDEF_BY_VALUE)
+      if (pty->defs[0]->type == CS_XDEF_BY_VALUE) {
+
         pty->state_flag |= CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_STEADY;
+
+        /* Set the constant value as the reference value  */
+        if (pty->type & CS_PROPERTY_ISO)
+          pty->ref_value =  cs_xdef_get_scalar_value(pty->defs[0]);
+
+      } /* def by constant value */
 
     }
     else {
