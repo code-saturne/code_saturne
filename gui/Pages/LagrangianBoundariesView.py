@@ -318,11 +318,11 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
         self.tableViewBoundaries.setItemDelegateForColumn(2,delegateInteraction)
         self.tableViewBoundaries.setItemDelegateForColumn(3,delegateSetNumber)
 
-        self.modelIPOIT = ComboModel(self.comboBoxIPOIT,3,1)
+        self.modelIPOIT = ComboModel(self.comboBoxIPOIT,2,1)
         self.modelIPOIT.addItem(self.tr("Mass flow rate"), "rate")
         self.modelIPOIT.addItem(self.tr("Statistical weight set by values"), "prescribed")
 
-        self.modelIJUVW = ComboModel(self.comboBoxIJUVW,4,1)
+        self.modelIJUVW = ComboModel(self.comboBoxIJUVW,3,1)
         self.modelIJUVW.addItem(self.tr("Fluid velocity"), "fluid")
         self.modelIJUVW.addItem(self.tr("Normal direction velocity"), "norm")
         self.modelIJUVW.addItem(self.tr("Velocity given by values"), "components")

@@ -3,6 +3,8 @@ Release 6.0.3 (Unreleased)
 
 Bug fixes:
 
+- Fix bug in the GUI for Lagrangian injection boundary conditions.
+
 - Fix uninitialized number of cells for condensation zones.
 
 - Fix reconstruction gradient weighting in computation of face diffusion
