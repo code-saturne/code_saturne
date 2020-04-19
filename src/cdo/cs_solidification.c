@@ -1763,6 +1763,9 @@ cs_solidification_activate(cs_solidification_model_t      model,
     solid->thermal_reaction_coef = cs_property_add("thermal_reaction_coef",
                                                    CS_PROPERTY_ISO);
 
+    /* If liquid, this coefficient is equal to zero */
+    cs_property_set_reference_value(solid->thermal_reaction_coef, 0);
+
     cs_equation_param_t  *th_eqp =
       cs_equation_get_param(solid->thermal_sys->thermal_eq);
 
@@ -1773,6 +1776,10 @@ cs_solidification_activate(cs_solidification_model_t      model,
   /* Add properties related to this module */
   solid->forcing_mom = cs_property_add("forcing_momentum_coef",
                                        CS_PROPERTY_ISO);
+
+  /* If liquid, this coefficient is equal to zero */
+  cs_property_set_reference_value(solid->forcing_mom, 0);
+
   solid->g_l = cs_property_add("liquid_fraction", CS_PROPERTY_ISO);
 
   /* Allocate the structure storing the modelling context/settings */
