@@ -44,6 +44,7 @@
 #include "cs_navsto_system.h"
 #include "cs_parall.h"
 #include "cs_post.h"
+#include "cs_time_plot.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -71,6 +72,15 @@ typedef enum {
   CS_SOLIDIFICATION_N_STATES       = 4,
 
 } cs_solidification_state_t;
+
+static const char _state_names[CS_SOLIDIFICATION_N_STATES][32] = {
+
+  "Solid",
+  "Mushy",
+  "Liquid",
+  "Eutectic"
+
+};
 
 /*============================================================================
  * Static variables
@@ -260,7 +270,13 @@ struct _solidification_t {
   cs_property_t   *g_l;         /* liquid fraction property */
 
   /* array storing the state (solid, mushy, liquid) for each cell */
-  cs_solidification_state_t   *cell_state;
+  cs_solidification_state_t     *cell_state;
+
+  /* Plot evolution of the solidification process */
+  cs_time_plot_t                *plot_state;
+
+  /* Function pointer related to the way of updating the model */
+  cs_solidification_update_t    *update;
 
   /* Monitoring related to this module */
   cs_real_t        state_ratio[CS_SOLIDIFICATION_N_STATES];
@@ -280,7 +296,7 @@ struct _solidification_t {
   cs_real_t       *thermal_source_term_array;
 
   /* Additional settings related to the choice of solidification modelling */
-  void             *model_context;
+  void            *model_context;
 
   /* A reaction term is introduced in the momentum equation. This terms tends to
    * a huge number when the liquid fraction tends to 0 in order to penalize
@@ -297,10 +313,7 @@ struct _solidification_t {
    * dendrite arm spacing
    * F(u) = forcing_coef * (1- gl)^2/(gl^3 + forcing_eps) * u
    */
-  cs_real_t       forcing_coef;
-
-  /* Function pointer related to the way of updating the model */
-  cs_solidification_update_t    *update;
+  cs_real_t        forcing_coef;
 
 };
 
@@ -392,6 +405,12 @@ _solidification_create(void)
   for (int i = 0; i < CS_SOLIDIFICATION_N_STATES; i++)
     solid->state_ratio[i] = 0;
 
+  /* Function pointer to update the model */
+  solid->update = NULL;
+
+  /* Plot writer related to the solidification process */
+  solid->plot_state = NULL;
+
   /* Structure related to the thermal system solved as a sub-module */
   solid->temperature = NULL;
   solid->thermal_reaction_coef = NULL;
@@ -406,9 +425,6 @@ _solidification_create(void)
   solid->forcing_mom = NULL;
   solid->forcing_mom_array = NULL;
   solid->forcing_coef = 0;
-
-  /* Function pointer to update the model */
-  solid->update = NULL;
 
   return solid;
 }
@@ -1425,11 +1441,13 @@ _update_state_binary_alloy(const cs_mesh_t             *mesh,
  * \brief  Perform the monitoring dedicated to the solidifcation module
  *
  * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts         pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_do_monitoring(const cs_cdo_quantities_t   *quant)
+_do_monitoring(const cs_cdo_quantities_t   *quant,
+               const cs_time_step_t        *ts)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
   assert(solid->temperature != NULL);
@@ -1464,27 +1482,39 @@ _do_monitoring(const cs_cdo_quantities_t   *quant)
 
   /* Finalize the monitoring step*/
   cs_parall_sum(CS_SOLIDIFICATION_N_STATES, CS_REAL_TYPE, solid->state_ratio);
-  const double  inv_voltot = 1./quant->vol_tot;
+  const double  inv_voltot = 100./quant->vol_tot;
   for (int i = 0; i < CS_SOLIDIFICATION_N_STATES; i++)
     solid->state_ratio[i] *= inv_voltot;
+
+  int  n_output_states = CS_SOLIDIFICATION_N_STATES - 1;
+ if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
+   n_output_states += 1;
 
   cs_log_printf(CS_LOG_DEFAULT,
                 "### Solidification monitoring: liquid/mushy/solid states\n"
                 "  * Solid    | %6.2f\%% for %9lu cells;\n"
                 "  * Mushy    | %6.2f\%% for %9lu cells;\n"
                 "  * Liquid   | %6.2f\%% for %9lu cells;\n",
-                100*solid->state_ratio[CS_SOLIDIFICATION_STATE_SOLID],
+                solid->state_ratio[CS_SOLIDIFICATION_STATE_SOLID],
                 solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID],
-                100*solid->state_ratio[CS_SOLIDIFICATION_STATE_MUSHY],
+                solid->state_ratio[CS_SOLIDIFICATION_STATE_MUSHY],
                 solid->n_g_cells[CS_SOLIDIFICATION_STATE_MUSHY],
-                100*solid->state_ratio[CS_SOLIDIFICATION_STATE_LIQUID],
+                solid->state_ratio[CS_SOLIDIFICATION_STATE_LIQUID],
                 solid->n_g_cells[CS_SOLIDIFICATION_STATE_LIQUID]);
 
   if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
     cs_log_printf(CS_LOG_DEFAULT,
                   "  * Eutectic | %6.2f\%% for %9lu cells;\n",
-                  100*solid->state_ratio[CS_SOLIDIFICATION_STATE_EUTECTIC],
+                  solid->state_ratio[CS_SOLIDIFICATION_STATE_EUTECTIC],
                   solid->n_g_cells[CS_SOLIDIFICATION_STATE_EUTECTIC]);
+
+  if (cs_glob_rank_id < 1 && solid->plot_state != NULL)
+    cs_time_plot_vals_write(solid->plot_state,
+                            ts->nt_cur,
+                            ts->t_cur,
+                            n_output_states,
+                            solid->state_ratio);
+
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2096,6 +2126,9 @@ cs_solidification_destroy_all(void)
 
   BFT_FREE(solid->cell_state);
 
+  if (solid->plot_state != NULL)
+    cs_time_plot_finalize(&solid->plot_state);
+
   BFT_FREE(solid);
 
   return NULL;
@@ -2174,6 +2207,32 @@ cs_solidification_init_setup(void)
     }
 
   } /* Binary alloy model */
+
+  if (cs_glob_rank_id < 1) {
+
+    int  n_output_states = CS_SOLIDIFICATION_N_STATES - 1;
+    if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
+      n_output_states += 1;
+
+    const char  **labels;
+    BFT_MALLOC(labels, n_output_states, const char *);
+    for (int i = 0; i <n_output_states; i++)
+      labels[i] = _state_names[i];
+
+    /* Use the physical time rather than the number of iterations */
+    solid->plot_state = cs_time_plot_init_probe("solidification",
+                                                "",
+                                                CS_TIME_PLOT_DAT,
+                                                false,
+                                                180,   /* flush time */
+                                                -1,
+                                                n_output_states,
+                                                NULL,
+                                                NULL,
+                                                labels);
+
+    BFT_FREE(labels);
+  }
 
 }
 
@@ -2661,7 +2720,7 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
   cs_navsto_system_compute(mesh, time_step, connect, quant);
 
   /* Perform the monitoring */
-  _do_monitoring(quant);
+  _do_monitoring(quant, time_step);
 
 }
 
