@@ -878,6 +878,9 @@ cs_property_finalize_setup(void)
     if (pty == NULL)
       bft_error(__FILE__, __LINE__, 0, _(_err_empty_pty));
 
+    if (pty->type & CS_PROPERTY_BY_PRODUCT)
+      continue;
+
     if (pty->n_definitions > 1) { /* Initialization of def_ids */
 
       const cs_lnum_t  n_cells = cs_cdo_quant->n_cells;
@@ -951,6 +954,68 @@ cs_property_finalize_setup(void)
                     " value.\n", pty->name);
 
     }
+
+  } /* Loop on properties */
+
+  for (int i = 0; i < _n_properties; i++) {
+
+    cs_property_t  *pty = _properties[i];
+
+    if (pty->type & CS_PROPERTY_BY_PRODUCT) {
+
+      assert(pty->n_related_properties == 2);
+
+      const cs_property_t  *pty_a = pty->related_properties[0];
+      const cs_property_t  *pty_b = pty->related_properties[1];
+
+      pty->ref_value = pty_a->ref_value * pty_b->ref_value;
+
+      if (pty_a->n_definitions > 1 || pty_b->n_definitions > 1)
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Property %s defined by product.\n"
+                  " This case is not handled yet (too many definitions).",
+                  __func__, pty->name);
+
+      switch (pty_a->defs[0]->type) {
+
+      case CS_XDEF_BY_VALUE:
+        switch (pty_b->defs[0]->type) {
+
+        case CS_XDEF_BY_VALUE:
+          if (pty->type & CS_PROPERTY_ISO) {
+
+            cs_real_t  val_a = _get_cell_value(0, 0, pty_a);
+            cs_real_t  val_b = _get_cell_value(0, 0, pty_b);
+
+            cs_property_def_iso_by_value(pty, NULL, val_a*val_b);
+          }
+          else
+            bft_error(__FILE__, __LINE__, 0,
+                      " %s: Property %s defined by product.\n"
+                      " This case is not handled yet.",
+                      __func__, pty->name);
+          break;
+
+        default:
+          bft_error(__FILE__, __LINE__, 0,
+                    " %s: Property %s defined by product.\n"
+                    " This case is not handled yet (too complex definitions).",
+                    __func__, pty->name);
+          break;
+
+        } /* Def. type for pty_b */
+        break;
+
+      default:
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Property %s defined by product.\n"
+                  " This case is not handled yet (too complex definitions).",
+                  __func__, pty->name);
+        break;
+
+      } /* Def. type for pty_a */
+
+    } /* Only properties defined as a product */
 
   } /* Loop on properties */
 
@@ -1937,14 +2002,19 @@ cs_property_log_setup(void)
                   pty->name, pty->ref_value);
 
     if (pty->type & CS_PROPERTY_ISO)
-      cs_log_printf(CS_LOG_SETUP, "  * %s | Type: isotropic\n", pty->name);
+      cs_log_printf(CS_LOG_SETUP, "  * %s | Type: isotropic", pty->name);
     else if (pty->type & CS_PROPERTY_ORTHO)
-      cs_log_printf(CS_LOG_SETUP, "  * %s | Type: orthotropic\n", pty->name);
+      cs_log_printf(CS_LOG_SETUP, "  * %s | Type: orthotropic", pty->name);
     else if (pty->type & CS_PROPERTY_ANISO)
-      cs_log_printf(CS_LOG_SETUP, "  * %s | Type: anisotropic\n", pty->name);
+      cs_log_printf(CS_LOG_SETUP, "  * %s | Type: anisotropic", pty->name);
     else
       bft_error(__FILE__, __LINE__, 0, _("%s: Invalid type of property."),
                 __func__);
+
+    if (pty->type & CS_PROPERTY_BY_PRODUCT)
+      cs_log_printf(CS_LOG_SETUP, " | by product\n");
+    else
+      cs_log_printf(CS_LOG_SETUP, "\n");
 
     cs_log_printf(CS_LOG_SETUP, "  * %s | Number of definitions: %d\n\n",
                   pty->name, pty->n_definitions);
