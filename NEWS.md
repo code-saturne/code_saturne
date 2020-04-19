@@ -3,6 +3,8 @@ Release 6.1.1 (unreleased)
 
 Bug fixes:
 
+- Fix bug in the GUI for Lagrangian injection boundary conditions.
+
 - Fix uninitialized number of cells for condensation zones.
 
 - Fixes for compilation with gcc 10.0.
