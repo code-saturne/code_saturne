@@ -1061,8 +1061,8 @@ cs_elec_physical_properties(cs_domain_t  *domain)
   /* Joule effect (law must be specified by user) */
 
   int ifcvsl = cs_field_get_key_int(CS_F_(h), keysca);
-  cs_field_t *diff_th;
-  if (ifcvsl > 0)
+  cs_field_t *diff_th = NULL;
+  if (ifcvsl >= 0)
     diff_th = cs_field_by_id(ifcvsl);
 
   int ielarc = cs_glob_physical_model_flag[CS_ELECTRIC_ARCS];
@@ -1271,8 +1271,9 @@ cs_elec_physical_properties(cs_domain_t  *domain)
       }
 
       /* compute Lambda/Cp : kg/(m s) */
-      if (ifcvsl >= 0) {
-        for (int iesp1 = 0; iesp1 < ngaz; iesp1++)
+      if (diff_th != NULL) {
+
+        for (int iesp1 = 0; iesp1 < ngaz; iesp1++) {
           for (int iesp2 = 0; iesp2 < ngaz; iesp2++) {
             coef[iesp1 * (ngaz - 1) + iesp2]
               = 1. +   sqrt(xlabes[iesp1] / xlabes[iesp2])
@@ -1282,6 +1283,7 @@ cs_elec_physical_properties(cs_domain_t  *domain)
             coef[iesp1 * (ngaz - 1) + iesp2]
               /= (sqrt(1. + roesp[iesp1] / roesp[iesp2]) * sqrt(8.));
           }
+        }
         /* Lambda */
         diff_th->val[iel] = 0.;
 
