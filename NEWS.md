@@ -1,15 +1,3 @@
-Release 6.1.1 (unreleased)
---------------------------
-
-Bug fixes:
-
-- Fix for 2nd time order schemes with variable properties.
-  Initialisation of fields should be initialised also for previous values,
-  even if extrapolation is not activated.
-  Note that is it correctly done for restart if previous values are read.
-  Note also that user is able to specify previous and current values using
-  keywords "initro", etc.
-
 Release 6.1.0 (April 15 2020)
 -----------------------------
 
@@ -192,7 +180,7 @@ Default option changes:
 
 Bug fixes:
 
-- Fix reconstruction gradient weightening in computation of face diffusion
+- Fix reconstruction gradient weighting in computation of face diffusion
   fluxes from pressure increment in pressure correction step. Impacts,
   for example, VoF calculation on non cartesian meshes.
 
