@@ -191,7 +191,7 @@ Default option changes:
 
 Bug fixes:
 
-- Fix reconstruction gradient weightening in computation of face diffusion
+- Fix reconstruction gradient weighting in computation of face diffusion
   fluxes from pressure increment in pressure correction step. Impacts,
   for example, VoF calculation on non cartesian meshes.
 
