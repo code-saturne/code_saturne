@@ -429,7 +429,7 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
   /* Sort by class */
   qsort(interf, lnum_particles, sizeof(cs_lnum_2_t), _compare_interface);
 
-  /* Select pairs of parcticles (for agglomeration) */
+  /* Select pairs of particles (for agglomeration) */
   cs_gnum_t _gn_particles = lnum_particles;
   cs_gnum_t lnum_maxpairs = _gn_particles*(_gn_particles+1) / 2;
 
@@ -491,7 +491,7 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
     /* Efficiency of agglomeration */
     lambda *= alp;
 
-    // FIXME: change poisson random generator
+    // FIXME: change Poisson random generator
     if (lambda > 700.) {
       cs_random_normal(1, &rand);
       vp = floor(lambda + sqrt(lambda) * rand);
@@ -533,8 +533,6 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
                      + cs_lagr_particles_get_lnum(p_set, p2+start_particle,
                                                   CS_LAGR_AGGLO_CLASS_ID);
 
-      cs_lnum_t n_max_classes = 0;
-
       if (n_classes_new > cs_glob_lagr_agglomeration_model->n_max_classes) {
         bft_error(__FILE__, __LINE__, 0,
                   _(" ** Lagrangian module:\n"
@@ -543,9 +541,6 @@ cs_lagr_agglomeration(cs_lnum_t  cell_id,
                     " To fix this, increase "
                     " cs_glob_lagr_agglomeration_model->n_max_classes"),
                   cs_glob_lagr_agglomeration_model->n_max_classes);
-      }
-      if (n_classes_new > n_max_classes) {
-        n_max_classes = n_classes_new;
       }
 
       /* Find one existing parcel with the same class (to merge with it) */

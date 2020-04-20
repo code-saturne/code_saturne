@@ -243,13 +243,23 @@ cs_lagr_shape_model_t *cs_glob_lagr_shape_model
 
 /* lagr agglomeration model structure and associated pointer */
 static cs_lagr_agglomeration_model_t _cs_glob_lagr_agglomeration_model
-  = { 0, 0., 0., 0., 0. };
+  = {
+    .n_max_classes = 10000,
+    .min_stat_weight = 0.,
+    .max_stat_weight = 0.,
+    .scalar_kernel = 0.,
+    .base_diameter = 0.};
+
 cs_lagr_agglomeration_model_t *cs_glob_lagr_agglomeration_model
   = &_cs_glob_lagr_agglomeration_model;
 
 /* lagr fragmentation model structure and associated pointer */
 static cs_lagr_fragmentation_model_t _cs_glob_lagr_fragmentation_model
-  = {0, 0, NULL};
+  = {
+    .scalar_kernel = 0.,
+    .base_diameter = 0.,
+    NULL};
+
 cs_lagr_fragmentation_model_t *cs_glob_lagr_fragmentation_model
   = &_cs_glob_lagr_fragmentation_model;
 
