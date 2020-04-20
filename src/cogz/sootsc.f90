@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2019 EDF S.A.
+! Copyright (C) 1998-2020 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -167,7 +167,7 @@ if (ivar.eq.isca(ifsm).or.ivar.eq.isca(inpm)) then
   d2s3 = 2.d0/3.d0
 
   if (irangp.ge.0.or.iperio.eq.1) then
-    call synsca(cpro_temp(1))
+    call synsca(cpro_temp)
     call synsca(cvar_scal)
   endif
 

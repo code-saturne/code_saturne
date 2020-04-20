@@ -44,6 +44,8 @@ Bug fixes:
 
 Architectural changes:
 
+- Fixes for compilation with gcc 10.0.
+
 - Move some cs_cdofb_* functions from "static inline" to regular functions
   to avoid issues when header is compiled with obslete (4.4) GCC version.
 

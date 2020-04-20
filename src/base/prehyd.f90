@@ -125,6 +125,9 @@ double precision normp
 
 double precision rvoid(1)
 
+real(kind=c_double), dimension(:,:), pointer :: pvoid2
+real(kind=c_double), dimension(1,1), target :: rvoid2
+
 double precision, allocatable, dimension(:) :: coefap, cofafp, coefbp, cofbfp
 
 double precision, allocatable, dimension(:) :: viscf, viscb
@@ -168,6 +171,9 @@ endif
 
 ! --- Matrix block size
 ibsize = 1
+
+! Void arrays
+pvoid2 => rvoid2
 
 !===============================================================================
 ! 2. Solving a diffusion equation with source term to obtain
@@ -290,7 +296,7 @@ hyd_p_flag = 0
 call gradient_weighted_s &
  ( f_id   , imrgra , inc    , iccocg , nswrgp , imligp ,         &
    hyd_p_flag,                                                   &
-   iwarnp , epsrgp , climgp , extrap , rvoid  ,                  &
+   iwarnp , epsrgp , climgp , extrap , pvoid2  ,                 &
    prhyd  , xinvro , coefap , coefbp ,                           &
    grdphd   )
 

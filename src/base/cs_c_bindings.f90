@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2019 EDF S.A.
+! Copyright (C) 1998-2020 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -3269,13 +3269,15 @@ contains
     double precision, intent(in) :: epsrgp, climgp, extrap
     real(kind=c_double), dimension(nfabor), intent(in) :: coefap, coefbp
     real(kind=c_double), dimension(ncelet), intent(inout) :: pvar
-    real(kind=c_double), dimension(3, *), intent(in) :: f_ext
+    real(kind=c_double), dimension(:,:), pointer, intent(in) :: f_ext
     real(kind=c_double), dimension(3, ncelet), intent(out) :: grad
 
     ! Local variables
 
     integer          :: imrgrp
     integer          :: idimtr, ipond
+    real(kind=c_double), dimension(:), pointer :: c_weight
+    real(kind=c_double), dimension(1), target :: rvoid1
 
     ! Use iterative gradient
 
@@ -3289,11 +3291,13 @@ contains
 
     idimtr = 0
     ipond = 0
+    rvoid1(1) = 0
+    c_weight => rvoid1
 
     call cgdcel(f_id, imrgrp, inc, recompute_cocg, nswrgp,                     &
                 idimtr, hyd_p_flag, ipond, iwarnp, imligp, epsrgp, extrap,     &
                 climgp, f_ext, coefap, coefbp,                                 &
-                pvar, c_null_ptr, grad)
+                pvar, c_weight, grad)
 
   end subroutine gradient_potential_s
 
@@ -3342,8 +3346,8 @@ contains
     double precision, intent(in) :: epsrgp, climgp, extrap
     real(kind=c_double), dimension(nfabor), intent(in) :: coefap, coefbp
     real(kind=c_double), dimension(ncelet), intent(inout) :: pvar
-    real(kind=c_double), dimension(*), intent(in) :: c_weight
-    real(kind=c_double), dimension(3, *), intent(in) :: f_ext
+    real(kind=c_double), dimension(:), intent(in) :: c_weight
+    real(kind=c_double), dimension(:,:), pointer, intent(in) :: f_ext
     real(kind=c_double), dimension(3, ncelet), intent(out) :: grad
 
     ! Local variables
