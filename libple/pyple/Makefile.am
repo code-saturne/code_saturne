@@ -23,6 +23,17 @@
 
 if HAVE_MPI4PY
 
+edit_python = sed \
+	-e 's|@mpi4pydir[@]|$(MPI4PY_PATH)|g'
+
+pyple_coupler.py: Makefile
+	rm -f $@ $@.tmp
+	srcidr=''; \
+	test -f ./$@.in || srcdir=$(srcdir)/; \
+	$(edit_python) $${srcdir}$@.in >$@.tmp;
+	mv $@.tmp $@
+
+
 AM_CPPFLAGS = $(MPI_CPPFLAGS)
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 AM_LDFLAGS = $(MPI_LDFLAGS)

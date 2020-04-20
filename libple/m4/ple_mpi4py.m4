@@ -35,6 +35,7 @@ AC_ARG_WITH(mpi4py,
 if test "$with_mpi4py" != no; then
   if test -d "$with_mpi4py" ; then
     MPI4PY="$with_mpi4py"
+    AC_SUBST(MPI4PY)
   else
     AC_MSG_FAILURE([directory specified by --with-mpi4py=$with_mpi4py does not exist!])
   fi
@@ -69,6 +70,11 @@ AC_DEFUN([PLE_AC_TEST_MPI4PY], [
     eval AS_TR_CPP(HAVE_PYMOD_mpi4py)=yes
     mpi4py_includes="$($PYTHON -c "$mpi4py_inc_cmd")"
     MPI4PY_CFLAGS="-I${mpi4py_includes}"
+    if test "$with_mpi4py" != no; then
+      MPI4PY_PATH="${with_mpi4py}"
+    else
+      MPI4PY_PATH="None"
+    fi
   else
     AC_MSG_RESULT(no)
     eval AS_TR_CPP(HAVE_PYMOD_mpi4py)=no

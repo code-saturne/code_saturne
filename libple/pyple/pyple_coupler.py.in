@@ -24,6 +24,12 @@
 # a python code with Code_Saturne.
 # ==============================================================================
 
+mpi4pypath = '@mpi4pydir@'
+
+if mpi4pypath:
+    import sys
+    sys.path.insert(0, mpi4pypath)
+
 try:
     from ple import Init as ple_init
     from ple import Coupling as ple_coupling
