@@ -9,6 +9,18 @@ Architectural changes:
   created in the desktop folder and double-clicking on it launches the
   GUI.
 
+Numerics and physical modelling:
+
+- CDO: Add the treatment of the non-linear advection term in
+  Artificial Compressibility coupling algorithm with a Picard
+  algorithm. This enables to treat incompressible Navier-Stokes
+  equations with this coupling algorithm (based on the work performed
+  during Riccardo Milani's PhD).
+
+- CDO: Add the treatment of segregation of binary alloys. More
+  validations are required but first results are promising.
+
+
 Release 6.1.0 (April 15 2020)
 -----------------------------
 
