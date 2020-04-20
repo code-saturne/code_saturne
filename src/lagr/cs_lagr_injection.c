@@ -374,7 +374,7 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
   }
 
   /* temperature */
-  if (   cs_glob_lagr_model->physical_model == 1
+  if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
       && (   cs_glob_lagr_specific_physics->itpvar == 1
           || cs_glob_lagr_specific_physics->idpvar == 1
           || cs_glob_lagr_specific_physics->impvar == 1)) {
@@ -386,13 +386,14 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
 
   /* velocity */
   if (   zis->location_id != CS_MESH_LOCATION_BOUNDARY_FACES
-      && zis->velocity_profile == 0)
+      && zis->velocity_profile == CS_LAGR_IN_IMPOSED_NORM)
     bft_error(__FILE__, __LINE__, 0,
               _("Lagrangian %s zone %d, set %d:\n"
-                " velocity profile type 0 may not be used\n"
+                " velocity profile type CS_LAGR_IN_IMPOSED_NORM may not be used\n"
                 " for volume zones, as it requires surface normals."),
               z_type_name, z_id, set_id);
-  else if (zis->velocity_profile <  -1 || zis->velocity_profile > 1)
+  else if (zis->velocity_profile < CS_LAGR_IN_IMPOSED_FLUID_VALUE
+      ||   zis->velocity_profile > CS_LAGR_IN_IMPOSED_COMPONENTS)
     bft_error(__FILE__, __LINE__, 0, _profile_err_fmt_i,
               z_type_name, z_id, set_id,
               _("velocity"), (int)zis->velocity_profile);
@@ -413,7 +414,7 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
               (double)zis->flow_rate);
 
   /* particle properties: diameter, variance, and rho */
-  if (cs_glob_lagr_model->physical_model != 2) {
+  if (cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_COAL) {
     if (   zis->density  < 0.0
         || zis->diameter < 0.0
         || zis->diameter_variance < 0.0)
@@ -458,7 +459,7 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
 
 
   /* temperature and Cp */
-  if (   cs_glob_lagr_model->physical_model == 1
+  if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
       && cs_glob_lagr_specific_physics->itpvar == 1) {
     cs_real_t tkelvn = -cs_physical_constants_celsius_to_kelvin;
     if (zis->cp < 0.0 || zis->temperature < tkelvn)
@@ -473,7 +474,7 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
   }
 
   /* emissivity */
-  if (   cs_glob_lagr_model->physical_model == 1
+  if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
       && cs_glob_lagr_specific_physics->itpvar == 1
       && extra->radiative_model > 0) {
 
@@ -487,8 +488,7 @@ _injection_check(const cs_lagr_injection_set_t  *zis)
   }
 
   /* Coal */
-
-  if (cs_glob_lagr_model->physical_model == 2) {
+  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
 
     cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
 
@@ -643,9 +643,9 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
 
   /* Initialize pointers (used to simplify future tests) */
 
-  if (   (   cs_glob_lagr_model->physical_model == 1
+  if (   (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
           && cs_glob_lagr_specific_physics->itpvar == 1)
-      || cs_glob_lagr_model->physical_model == 2) {
+      || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
 
     if (   cs_glob_physical_model_flag[CS_COMBUSTION_COAL] >= 0
         || cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0
@@ -703,13 +703,13 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
                                                   CS_LAGR_VELOCITY);
 
       /* prescribed components */
-      if (zis->velocity_profile == 1) {
+      if (zis->velocity_profile == CS_LAGR_IN_IMPOSED_COMPONENTS) {
         for (cs_lnum_t i = 0; i < 3; i++)
           part_vel[i] = zis->velocity[i];
       }
 
       /* prescribed norm */
-      else if (zis->velocity_profile == 0) {
+      else if (zis->velocity_profile == CS_LAGR_IN_IMPOSED_NORM) {
         assert(face_id >= 0);
         for (cs_lnum_t i = 0; i < 3; i++)
           part_vel[i] = -   fvq->b_face_normal[face_id * 3 + i]
@@ -718,7 +718,7 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
       }
 
       /* velocity as seen from fluid */
-      else if (zis->velocity_profile ==  -1) {
+      else if (zis->velocity_profile == CS_LAGR_IN_IMPOSED_FLUID_VALUE) {
         for (cs_lnum_t i = 0; i < 3; i++)
           part_vel[i] = vela[cell_id * 3  + i];
       }
@@ -960,8 +960,8 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
       if (p_am->displ[0][CS_LAGR_TAUP_AUX] > 0)
         cs_lagr_particle_set_real(particle, p_am, CS_LAGR_TAUP_AUX, 0.0);
 
-      if (   cs_glob_lagr_model->physical_model == 0
-          || cs_glob_lagr_model->physical_model == 1) {
+      if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_OFF
+          || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT) {
 
         if (cs_glob_lagr_model->clogging == 0)
           cs_lagr_particle_set_real(particle, p_am, CS_LAGR_MASS,
@@ -971,7 +971,7 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
                                     zis->density * pis6 * d3
                                     * pow(1.0-mporos, 3));
 
-        if (   cs_glob_lagr_model->physical_model == 1
+        if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
             && cs_glob_lagr_specific_physics->itpvar == 1) {
 
           if (cval_t != NULL)
@@ -1005,7 +1005,7 @@ _init_particles(cs_lagr_particle_set_t         *p_set,
 
       }
 
-      else if (cs_glob_lagr_model->physical_model == 2) {
+      else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
 
         int coal_id = zis->coal_number - 1;
 
@@ -1211,7 +1211,7 @@ _check_particles(cs_lagr_particle_set_t         *p_set,
 
   }
 
-  if (cs_glob_lagr_model->physical_model == 2) {
+  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
 
     int r01_attrs[] = {CS_LAGR_WATER_MASS, CS_LAGR_COAL_MASS, CS_LAGR_COKE_MASS,
                        CS_LAGR_COAL_DENSITY};
@@ -1302,7 +1302,7 @@ cs_lagr_injection(int        time_id,
   /* Particles management */
   cs_lagr_particle_set_t  *p_set = cs_glob_lagr_particle_set;
 
-  /* Non-lagrangian fields */
+  /* Mean fluid velocity field */
   cs_real_t *vela = extra->vel->vals[time_id];
 
   cs_lagr_particle_counter_t *pc = cs_lagr_get_particle_counter();
@@ -1331,11 +1331,11 @@ cs_lagr_injection(int        time_id,
                   (int)zd->zone_type[z_id]);
 
       if (   zd->zone_type[z_id] == CS_LAGR_FOULING
-          && cs_glob_lagr_model->physical_model != 2)
+          && cs_glob_lagr_model->physical_model != CS_LAGR_PHYS_COAL)
         bft_error
           (__FILE__, __LINE__, 0,
            _("Lagrangian boundary zone %d nature is of type CS_LAGR_FOULING,\n"
-             "but cs_glob_lagr_model->physical_model is not equal to 2."),
+             "but cs_glob_lagr_model->physical_model is not equal to CS_LAGR_PHYS_COAL."),
            z_id);
       if (   zd->zone_type[z_id] == CS_LAGR_FOULING
           && cs_glob_lagr_model->fouling != 1)

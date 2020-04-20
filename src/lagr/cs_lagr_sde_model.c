@@ -1685,32 +1685,32 @@ cs_lagr_sde_model(const cs_real_t  tempct[],
 
   /* Integration of fluid temperature seen by particles */
 
-  if (   cs_glob_lagr_model->physical_model == 2
-      || (   cs_glob_lagr_model->physical_model == 1
+  if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
+      || (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
           && cs_glob_lagr_specific_physics->itpvar == 1))
     _lagitf(&fluid_temp);
 
   /* Integration of particles temperature */
 
-  if (   cs_glob_lagr_model->physical_model == 1
+  if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
       && cs_glob_lagr_specific_physics->itpvar == 1)
     _lagitp(tempct);
 
   /* Integration of particles diameter */
 
-  if (   cs_glob_lagr_model->physical_model == 1
+  if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
       && cs_glob_lagr_specific_physics-> idpvar == 1)
     _lagidp();
 
   /* Integration of particles mass */
 
-  if (   cs_glob_lagr_model->physical_model == 1
+  if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
       && cs_glob_lagr_specific_physics->impvar == 1)
     _lagimp();
 
   /* Integration of coal equations: hp, mch, mck */
 
-  if (cs_glob_lagr_model->physical_model == 2)
+  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL)
     _lagich(tempct, cpgd1, cpgd2, cpght);
 }
 

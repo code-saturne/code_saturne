@@ -93,21 +93,31 @@ typedef enum {
   CS_LAGR_FOULING,       /*!< fouling (combustion) */
   CS_LAGR_BC_USER        /*!< user-defined */
 
-} cs_lagr_bc_type_t;
+};
 
-  /*! Lagrangian module status.
-     the different values correspond to the following coupling:
-     - CS_LAGR_OFF: Lagrangian module off
-     - CS_LAGR_ONEWAY_COUPLING: Lagrangian two-phase flow in one-way coupling
-         (no influence of the particles on the continuous phase)
-     - CS_LAGR_TWOWAY_COUPLING: Lagrangian two-phase flow with two-way coupling
-         (influence of the particles on the dynamics of the continuous phase).
-         Dynamics, temperature and mass may be coupled independently.
-     - CS_LAGR_FROZEN_CONTINUOUS_PHASE: Lagrangian two-phase flow on frozen i
-         continuous phase. This option
-         only only be used in case of a calculation restart. All the
-         Eulerian fields are frozen (including the scalar fields).
-         This option automatically implies \ref iccvfg = 1 */
+/*! Lagrangian injection condition types */
+/*---------------------------------------*/
+
+enum {
+  CS_LAGR_IN_IMPOSED_FLUID_VALUE = -1,  /*!< impose fluid value
+                                          for the injected particles */
+  CS_LAGR_IN_IMPOSED_NORM = 0,          /*!< impose norm */
+  CS_LAGR_IN_IMPOSED_COMPONENTS = 1     /*!< impose components (for vectors) */
+};
+
+/*! Lagrangian module status.
+   the different values correspond to the following coupling:
+   - CS_LAGR_OFF: Lagrangian module off
+   - CS_LAGR_ONEWAY_COUPLING: Lagrangian two-phase flow in one-way coupling
+       (no influence of the particles on the continuous phase)
+   - CS_LAGR_TWOWAY_COUPLING: Lagrangian two-phase flow with two-way coupling
+       (influence of the particles on the dynamics of the continuous phase).
+       Dynamics, temperature and mass may be coupled independently.
+   - CS_LAGR_FROZEN_CONTINUOUS_PHASE: Lagrangian two-phase flow on frozen i
+       continuous phase. This option
+       only only be used in case of a calculation restart. All the
+       Eulerian fields are frozen (including the scalar fields).
+       This option automatically implies \ref iccvfg = 1 */
 
 typedef enum {
   CS_LAGR_OFF = 0,
@@ -115,6 +125,15 @@ typedef enum {
   CS_LAGR_TWOWAY_COUPLING = 2,
   CS_LAGR_FROZEN_CONTINUOUS_PHASE = 3
 } cs_lagr_module_status_t;
+
+/*! Lagrangian additional physical model */
+/*---------------------------------------*/
+
+enum {
+  CS_LAGR_PHYS_OFF = 0,
+  CS_LAGR_PHYS_HEAT = 1,
+  CS_LAGR_PHYS_COAL = 2
+};
 
 /*! Fixed maximum sizes */
 /*----------------------*/
@@ -244,17 +263,15 @@ typedef struct {
 
   /*! activates (>0) or deactivates (=0) the physical models associated to the
     particles:
-    - 1: allows to associate with the particles evolution equations on
+    - CS_LAGR_PHYS_HEAT: allows to associate with the particles evolution equations on
          their temperature (in degrees Celsius), their diameter and
          their mass
-    - = 2: the particles are pulverised coal particles.
+    - CS_LAGR_PHYS_COAL: the particles are pulverised coal particles.
     Evolution equations on temperature (in degree Celsius), mass of
     reactive coal, mass of char and diameter of the shrinking core are
     associated with the particles. This option is available only if the
     continuous phase represents a pulverised coal flame. */
-  int  physical_model;  /* FIXME: => enum: CS_LAGR_PHYS_STD,
-                                           CS_LAGR_PHYS_COAL,
-                                           CS_LAGR_PHYS_HEAT... */
+  int  physical_model;
   int  n_temperature_layers;
 
   int  deposition;

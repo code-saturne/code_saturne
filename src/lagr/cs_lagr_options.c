@@ -260,7 +260,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   cs_glob_lagr_stat_options->isuist = 1;
 
-  lagr_model->physical_model = 0;
+  lagr_model->physical_model = CS_LAGR_PHYS_OFF;
 
   cs_glob_lagr_specific_physics->idpvar = 0;
 
@@ -393,7 +393,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   /* idpvar itpvar impvar
    * Return couplinh only towards continuous phase */
 
-  if (lagr_model->physical_model == 1) {
+  if (lagr_model->physical_model == CS_LAGR_PHYS_HEAT) {
 
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("in Lagrangian module"),
@@ -430,7 +430,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   }
 
   if (lagr_time_scheme->isuila == 1 &&
-      lagr_model->physical_model == 1 &&
+      lagr_model->physical_model == CS_LAGR_PHYS_HEAT &&
       cs_glob_lagr_specific_physics->itpvar == 1)
     cs_parameters_is_greater_double(CS_ABORT_DELAYED,
                                     _("in Lagrangian module"),
@@ -440,7 +440,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   cs_parameters_error_barrier();
 
-  if (lagr_model->physical_model == 2) {
+  if (lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
 
     if (lagr_time_scheme->t_order == 2) {
       lagr_time_scheme->t_order = 1;
@@ -497,7 +497,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   else
     lagr_model->fouling = 0;
 
-  if (   lagr_model->physical_model != 2
+  if (   lagr_model->physical_model != CS_LAGR_PHYS_COAL
       && cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] >= 0)
     cs_parameters_error
       (CS_ABORT_DELAYED,
@@ -505,11 +505,11 @@ cs_lagr_option_definition(cs_int_t   *isuite,
        _("The pulverized coal model coupled to Lagrangian particle transport\n"
          "is active (cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] = %d)\n"
          "while coal particle transport is not active "
-         "(lagr_model->physical_model = %d, where 2 is expected).\n"),
+         "(lagr_model->physical_model = %d, where CS_LAGR_PHYS_COAL is expected).\n"),
        cs_glob_physical_model_flag[CS_COMBUSTION_PCLC],
        lagr_model->physical_model);
 
-  if (   lagr_model->physical_model == 2
+  if (   lagr_model->physical_model == CS_LAGR_PHYS_COAL
       && (   cs_glob_physical_model_flag[CS_COMBUSTION_PCLC] < 0
           && cs_glob_physical_model_flag[CS_COMBUSTION_COAL] < 0))
     cs_parameters_error
@@ -563,7 +563,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   /* IDPVAR ITPVAR IMPVAR */
 
-  if (lagr_model->physical_model == 1) {
+  if (lagr_model->physical_model == CS_LAGR_PHYS_HEAT) {
 
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("in Lagrangian module"),
@@ -604,7 +604,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   }
 
   if (   lagr_time_scheme->isuila == 1
-      && lagr_model->physical_model == 1
+      && lagr_model->physical_model == CS_LAGR_PHYS_HEAT
       && cs_glob_lagr_specific_physics->itpvar == 1) {
 
     cs_parameters_is_greater_double
@@ -625,7 +625,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   cs_parameters_error_barrier();
 
-  if (lagr_model->physical_model == 2)
+  if (lagr_model->physical_model == CS_LAGR_PHYS_COAL)
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("in Lagrangian module"),
                                   "const_dim->nlayer",
@@ -655,7 +655,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
                                   cs_glob_lagr_source_terms->ltsdyn,
                                   0, 2);
 
-    if (     lagr_model->physical_model == 1
+    if (     lagr_model->physical_model == CS_LAGR_PHYS_HEAT
         && (   cs_glob_lagr_specific_physics->impvar == 1
             || cs_glob_lagr_specific_physics->idpvar == 1)) {
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
@@ -667,9 +667,9 @@ cs_lagr_option_definition(cs_int_t   *isuite,
     else
       cs_glob_lagr_source_terms->ltsmas = 0;
 
-    if (   (   lagr_model->physical_model == 1
+    if (   (   lagr_model->physical_model == CS_LAGR_PHYS_HEAT
             && cs_glob_lagr_specific_physics->itpvar == 1)
-        || lagr_model->physical_model == 2) {
+        || lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
 
       cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                     _("in Lagrangian module"),
@@ -975,7 +975,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   /* Thermal model */
   if (cs_glob_lagr_source_terms->ltsthe == 1) {
 
-    if (lagr_model->physical_model == 1) {
+    if (lagr_model->physical_model == CS_LAGR_PHYS_HEAT) {
 
       /* Temperature */
       if (cs_glob_lagr_specific_physics->itpvar == 1) {
@@ -990,7 +990,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
     }
 
     /* Coal */
-    else if (lagr_model->physical_model == 2) {
+    else if (lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
 
       lagdim->ntersl += 4 + 2 * extra->ncharb;
       cs_glob_lagr_source_terms->itste = irf + 1;

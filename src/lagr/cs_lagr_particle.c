@@ -666,7 +666,7 @@ cs_lagr_particle_attr_initialize(void)
 
   /*  cs_glob_lagr_brownian->lamvbr = *lamvbr; */
 
-  if (lagr_model->physical_model == 2)
+  if (lagr_model->physical_model == CS_LAGR_PHYS_COAL)
     lagr_model->n_temperature_layers = cs_glob_lagr_const_dim->nlayer;
   else
     lagr_model->n_temperature_layers = 1;
@@ -834,7 +834,7 @@ cs_lagr_particle_attr_initialize(void)
 
   }
 
-  if (lagr_model->physical_model == 1) {
+  if (lagr_model->physical_model == CS_LAGR_PHYS_HEAT) {
 
     if (cs_glob_lagr_specific_physics->itpvar == 1) {
 
@@ -853,7 +853,7 @@ cs_lagr_particle_attr_initialize(void)
 
   }
 
-  if (lagr_model->physical_model == 2) {
+  if (lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
 
     attr_keys[CS_LAGR_CP][1] = ++loc_count;
 

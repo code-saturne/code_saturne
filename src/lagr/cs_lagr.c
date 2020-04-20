@@ -170,7 +170,7 @@ static cs_lagr_time_scheme_t _lagr_time_scheme
 /* Main Lagragian physical model parameters */
 
 static cs_lagr_model_t  _lagr_model
-  = {.physical_model = 0,
+  = {.physical_model = CS_LAGR_PHYS_OFF,
      .n_temperature_layers = 1,
      .deposition = 0,
      .dlvo = 0,
@@ -1261,7 +1261,7 @@ cs_lagr_injection_set_default(cs_lagr_injection_set_t  *zis)
   /* Fluid temperature by default  */
   zis->temperature_profile  = 0;
 
-  if (cs_glob_lagr_model->physical_model == 2)
+  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL)
     zis->coal_number        = -2;
 
   zis->cluster              =  0;
@@ -2126,7 +2126,7 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       cs_real_t *cpgd1 = NULL, *cpgd2 = NULL, *cpght = NULL;
       if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
-          && lagr_model->physical_model == 2
+          && lagr_model->physical_model == CS_LAGR_PHYS_COAL
           && cs_glob_lagr_source_terms->ltsthe == 1) {
 
         BFT_MALLOC(cpgd1, p_set->n_particles, cs_real_t);
@@ -2136,9 +2136,9 @@ cs_lagr_solve_time_step(const int         itypfb[],
       }
 
       cs_real_t *tempct = NULL;
-      if (   (   lagr_model->physical_model == 1
+      if (   (   lagr_model->physical_model == CS_LAGR_PHYS_HEAT
               && cs_glob_lagr_specific_physics->itpvar == 1)
-          || lagr_model->physical_model == 2)
+          || lagr_model->physical_model == CS_LAGR_PHYS_COAL)
         BFT_MALLOC(tempct, p_set->n_particles * 2, cs_real_t);
 
       cs_real_t *terbru = NULL;
@@ -2244,7 +2244,8 @@ cs_lagr_solve_time_step(const int         itypfb[],
 
       /* Integration of SDE related to physical models */
 
-      if (lagr_model->physical_model == 1 || lagr_model->physical_model == 2) {
+      if (lagr_model->physical_model == CS_LAGR_PHYS_HEAT
+          || lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
 
         if (cs_glob_lagr_time_step->nor == 1)
           /* Use fields at previous time step    */
@@ -2424,16 +2425,16 @@ cs_lagr_solve_time_step(const int         itypfb[],
         BFT_FREE(tsfext);
 
       if (   cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING
-          && lagr_model->physical_model == 2
+          && lagr_model->physical_model == CS_LAGR_PHYS_COAL
           && cs_glob_lagr_source_terms->ltsthe == 1) {
         BFT_FREE(cpgd1);
         BFT_FREE(cpgd2);
         BFT_FREE(cpght);
       }
 
-      if (   (   lagr_model->physical_model == 1
+      if (   (   lagr_model->physical_model == CS_LAGR_PHYS_HEAT
               && cs_glob_lagr_specific_physics->itpvar == 1)
-          || lagr_model->physical_model == 2)
+          || lagr_model->physical_model == CS_LAGR_PHYS_COAL)
         BFT_FREE(tempct);
 
       if (cs_glob_lagr_brownian->lamvbr == 1)

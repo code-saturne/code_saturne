@@ -1980,7 +1980,7 @@ _cs_lagr_moment_restart_read(void)
 static void
 _init_vars_attribute(void)
 {
-  if (cs_glob_lagr_model->physical_model == 1) {
+  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT) {
     if (cs_glob_lagr_specific_physics->idpvar)
       cs_lagr_stat_activate_attr(CS_LAGR_DIAMETER);
     if (cs_glob_lagr_specific_physics->impvar)
@@ -1989,7 +1989,7 @@ _init_vars_attribute(void)
       cs_lagr_stat_activate_attr(CS_LAGR_TEMPERATURE);
   }
 
-  else if (cs_glob_lagr_model->physical_model == 2) {
+  else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
     cs_lagr_stat_activate_attr(CS_LAGR_MASS);
     cs_lagr_stat_activate_attr(CS_LAGR_WATER_MASS);
     cs_lagr_stat_activate_attr(CS_LAGR_COAL_MASS);
@@ -4399,7 +4399,7 @@ cs_lagr_stat_initialize(void)
 
   cs_lagr_model_t *lagr_model = cs_glob_lagr_model;
 
-  if (lagr_model->physical_model != 2 || lagr_model->fouling < 1) {
+  if (lagr_model->physical_model != CS_LAGR_PHYS_COAL || lagr_model->fouling < 1) {
     cs_lagr_stat_deactivate(CS_LAGR_STAT_FOULING_CUMULATIVE_WEIGHT);
     cs_lagr_stat_deactivate(CS_LAGR_STAT_FOULING_MASS_FLUX);
     cs_lagr_stat_deactivate(CS_LAGR_STAT_FOULING_DIAMETER);

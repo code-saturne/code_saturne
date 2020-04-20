@@ -192,15 +192,18 @@ cs_user_lagr_model(void)
   /* Particle tracking: specific models
    * ================================== */
 
-  /* iphyla = 0 : only transport modeling (default)
-   *         = 1 : equation on temperature (in Celsius degrees), diameter or mass
-   *         = 2 : pulverized coal combustion (only available if the continuous
-   *               phase is a flame of pulverized coal)     */
+  /* physical_model
+   *  = CS_LAGR_PHYS_OFF: only transport modeling (default)
+   *  = CS_LAGR_PHYS_HEAT: equation on temperature (in Celsius degrees),
+   *    diameter or mass
+   *  = CS_LAGR_PHYS_COAL: pulverized coal combustion
+   *    (only available if the continuous phase is a flame of pulverized coal)
+   */
 
-  cs_glob_lagr_model->physical_model = 0;
+  cs_glob_lagr_model->physical_model = CS_LAGR_PHYS_OFF;
 
   /* 3.1 equation on temperature, diameter or mass */
-  if (cs_glob_lagr_model->physical_model == 1) {
+  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT) {
     /* equation on diameter */
     /* (default off: 0 ; on: 1)  */
     cs_glob_lagr_specific_physics->idpvar   = 0;
@@ -246,7 +249,7 @@ cs_user_lagr_model(void)
    *  8 Pa.s and 1.D7 Pa.s For general purpose 1.0D+4 Pa.s is chosen
    *----------------------------------------------------------------------- */
 
-  if (cs_glob_lagr_model->physical_model == 2) {
+  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
     /* iencra = 0 no fouling (default)
        = 1 fouling
        The boundary on which the fouling can occur must be specified with
@@ -334,22 +337,23 @@ cs_user_lagr_model(void)
 
     cs_glob_lagr_source_terms->ltsdyn   = 0;
 
-    /* two-way coupling for mass (if IPHYLA = 1 and IMPVAR = 1)     */
+    /* two-way coupling for mass (if physical_model = CS_LAGR_PHYS_HEAT and impvar = 1)     */
     /* (default off: 0 ; on: 1)  */
 
-    if (   cs_glob_lagr_model->physical_model == 1
+    if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
         && (   cs_glob_lagr_specific_physics->impvar == 1
             || cs_glob_lagr_specific_physics->idpvar == 1))
       cs_glob_lagr_source_terms->ltsmas     = 0;
 
     /* two-way coupling for thermal scalar */
-    /* (if iphyla = 1 and impvar = 1, or iphyla = 2) */
-    /* or for coal variables (if IPHYLA = 2)    */
+    /* (if physical_model = CS_LAGR_PHYS_HEAT and impvar = 1,
+     *  or physical_model = CS_LAGR_PHYS_COAL) */
+    /* or for coal variables (if physical_model = CS_LAGR_PHYS_COAL)    */
     /* (default off: 0 ; on: 1)  */
 
-    if (   (   cs_glob_lagr_model->physical_model == 1
+    if (   (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
             && cs_glob_lagr_specific_physics->itpvar == 1)
-        || cs_glob_lagr_model->physical_model == 2)
+        || cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL)
       cs_glob_lagr_source_terms->ltsthe     = 0;
 
   }
@@ -388,7 +392,7 @@ cs_user_lagr_model(void)
    *   * useful if the calculation is steady (isttio=1)
    *   * if the number of time steps is lower than nstits,
    *     the transmitted source terms are unsteady (i.e. they are reset to
-   *     zero ar each time step)
+   *     zero at each time step)
    *   * the minimal value acceptable for nstist is 1.    */
 
   cs_glob_lagr_stat_options->nstist = cs_glob_lagr_stat_options->idstnt;
@@ -412,10 +416,12 @@ cs_user_lagr_model(void)
 
   cs_lagr_stat_activate_attr(CS_LAGR_STAT_WEIGHT);
 
-  /*Specific models (iphyla = 1) following the chosen options: */
-  /* Mean and variance of the temperature     */
-  /* Mean and variance of the diameter   */
-  /* Mean and variance of the mass  */
+  /* Specific models (physical_model = CS_LAGR_PHYS_HEAT)
+   * following the chosen options:
+   *   Mean and variance of the temperature
+   *   Mean and variance of the diameter
+   *   Mean and variance of the mass
+   */
 
   /* Statistics per class
    * -------------------- */
@@ -710,13 +716,13 @@ cs_user_lagr_model(void)
 
   cs_lagr_stat_activate(CS_LAGR_STAT_IMPACT_ANGLE);
 
-  /* Norm of particle velocity during the interation with the boundary face;
+  /* Norm of particle velocity during the integration with the boundary face;
      example: deactivate even if activated in GUI */
 
   cs_lagr_stat_deactivate(CS_LAGR_STAT_IMPACT_VELOCITY);
 
   /* (default off: 0 ; on: 1) */
-  if (   cs_glob_lagr_model->physical_model == 2
+  if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL
       && cs_glob_lagr_model->fouling == 1) {
 
     /* Mass of fouled coal particles */

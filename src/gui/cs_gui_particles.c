@@ -233,7 +233,7 @@ cs_gui_particles_model(void)
   cs_glob_lagr_model->physical_model = _get_particles_model(tn_pm);
 
   switch (cs_glob_lagr_model->physical_model) {
-  case 1:
+  case CS_LAGR_PHYS_HEAT:
     {
       cs_gui_node_get_status_int(cs_tree_node_get_child(tn_pm, "break_up"),
                                  &(cs_glob_lagr_specific_physics->idpvar));
@@ -243,7 +243,7 @@ cs_gui_particles_model(void)
                                  &(cs_glob_lagr_specific_physics->itpvar));
     }
     break;
-  case 2:
+  case CS_LAGR_PHYS_COAL:
     {
       cs_tree_node_t *tn_cf = cs_tree_node_get_child(tn_pm, "coal_fouling");
 
@@ -341,7 +341,7 @@ cs_gui_particles_model(void)
     _attr_post_status(tn_o, CS_LAGR_AGGLO_CLASS_ID, "parcel_class");
     _attr_post_status(tn_o, CS_LAGR_STAT_WEIGHT, "stat_weight");
 
-    if (cs_glob_lagr_model->physical_model == 2) {
+    if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
       _attr_post_status(tn_o, CS_LAGR_SHRINKING_DIAMETER,
                         "shrinking_core_diameter");
       _attr_post_status(tn_o, CS_LAGR_WATER_MASS, "moisture_mass_fraction");
@@ -400,14 +400,14 @@ cs_gui_particles_model(void)
   bft_printf("--idepst = %i\n", cs_glob_lagr_model->deposition);
   bft_printf("--iphyla = %i\n", cs_glob_lagr_model->physical_model);
   switch(cs_glob_lagr_model->physical_model) {
-  case 0:
+  case CS_LAGR_PHYS_OFF:
     break;
-  case 1:
+  case CS_LAGR_PHYS_HEAT:
     bft_printf("--idpvar = %i\n", cs_glob_lagr_specific_physics->idpvar);
     bft_printf("--impvar = %i\n", cs_glob_lagr_specific_physics->impvar);
     bft_printf("--itpvar = %i\n", cs_glob_lagr_specific_physics->itpvar);
     break;
-  case 2:
+  case CS_LAGR_PHYS_COAL:
     bft_printf("--iencra = %i\n", cs_glob_lagr_model->fouling);
     const cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
     for (int icoal = 0; icoal < extra->ncharb; icoal++) {
@@ -528,11 +528,11 @@ cs_gui_particles_bcs(void)
     else if (! strcmp(interaction, "deposit2"))
       bdy_cond->zone_type[zone_id] = CS_LAGR_DEPO2;
 
-    else if (! strcmp(interaction, "fouling") && iphyla == 2)
+    else if (! strcmp(interaction, "fouling") && iphyla == CS_LAGR_PHYS_COAL)
       bdy_cond->zone_type[zone_id] = CS_LAGR_FOULING;
 
     else if (   ! strcmp(interaction, "fouling")
-             && (iphyla == 0  || iphyla == 1))
+             && (iphyla == CS_LAGR_PHYS_OFF  || iphyla == CS_LAGR_PHYS_HEAT))
       bdy_cond->zone_type[zone_id] = CS_LAGR_DEPO_DLVO;
 
 #if _XML_DEBUG_
@@ -588,34 +588,32 @@ cs_gui_particles_bcs(void)
           choice = cs_tree_node_get_tag(tn_c, "choice");
 
           if (cs_gui_strcmp(choice, "fluid"))
-            zis->velocity_profile = -1;
+            zis->velocity_profile = CS_LAGR_IN_IMPOSED_FLUID_VALUE;
 
           else if (cs_gui_strcmp(choice, "norm")) {
-            zis->velocity_profile = 0;
+            zis->velocity_profile = CS_LAGR_IN_IMPOSED_NORM;
 
             v_r = cs_tree_node_get_child_values_real(tn_c, "norm");
             if (v_r != NULL) zis->velocity_magnitude = v_r[0];
           }
           else if (cs_gui_strcmp(choice, "components")) {
             const char *cname[] = {"velocity_x", "velocity_y", "velocity_z"};
-            zis->velocity_profile = 1;
+            zis->velocity_profile = CS_LAGR_IN_IMPOSED_COMPONENTS;
             for (int i = 0; i < 3; i++) {
               v_r = cs_tree_node_get_child_values_real(tn_c, cname[i]);
               if (v_r != NULL) zis->velocity[i] = v_r[0];
             }
           }
-          else if (cs_gui_strcmp(choice, "subroutine"))
-            zis->velocity_profile = 2;
 
 #if _XML_DEBUG_
           bft_printf("---velocity choice: %i "
                      " (-1: fluid, 0: norm, 1: components, 2: subroutine)\n",
                      zis->velocity_profile);
 
-          if (zis->velocity_profile == 0)
+          if (zis->velocity_profile == CS_LAGR_IN_IMPOSED_NORM)
             bft_printf("----norm = %f \n", zis->velocity_magnitude);
 
-          else if (zis->velocity_profile == 1) {
+          else if (zis->velocity_profile == CS_LAGR_IN_IMPOSED_COMPONENTS) {
             bft_printf("----u = %f \n", zis->velocity[0]);
             bft_printf("----v = %f \n", zis->velocity[1]);
             bft_printf("----w = %f \n", zis->velocity[2]);
@@ -665,7 +663,7 @@ cs_gui_particles_bcs(void)
 #endif
 
         /* density */
-        if (iphyla != 2) {
+        if (iphyla != CS_LAGR_PHYS_COAL) {
           v_r = cs_tree_node_get_child_values_real(tn_i, "density");
           if (v_r != NULL) zis->density = v_r[0];
 
@@ -682,7 +680,7 @@ cs_gui_particles_bcs(void)
           bft_printf("---fouling_index = %f \n", zis->fouling_index);
 #endif
 
-        if (iphyla == 1) {
+        if (iphyla == CS_LAGR_PHYS_HEAT) {
 
           /* temperature, specific_heat, emissivity */
 
@@ -722,7 +720,7 @@ cs_gui_particles_bcs(void)
         }
 
         /* coal */
-        else if (iphyla == 2) {
+        else if (iphyla == CS_LAGR_PHYS_COAL) {
 
           /* Read the coal number */
           v_i = cs_tree_node_get_child_values_int(tn_i, "coal_number");

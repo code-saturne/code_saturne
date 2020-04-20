@@ -263,7 +263,7 @@ _log_setup_injection(cs_log_t  log)
                         _("    fouling index: %g\n"),
                         zis->fouling_index);
 
-        if (   cs_glob_lagr_model->physical_model == 1
+        if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
             && cs_glob_lagr_specific_physics->itpvar == 1) {
           if (zis->temperature_profile == 0)
             cs_log_printf(log,
@@ -280,7 +280,7 @@ _log_setup_injection(cs_log_t  log)
                           _("    emissivity: %g\n"),
                           zis->emissivity);
         }
-        else if (cs_glob_lagr_model->physical_model == 2) {
+        else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
           cs_log_printf(log,
                         _("    coal number: %d\n"),
                         zis->coal_number);
@@ -363,7 +363,7 @@ cs_lagr_log_setup(void)
                 _("    physical_model:    %s\n"),
                 _(physical_model_value_str[cs_glob_lagr_model->physical_model]));
 
-  if (cs_glob_lagr_model->physical_model == 1) {
+  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT) {
     const char *idpvar_value_str[]
       = {N_("    0 (no evolution equation on particle diameter)"),
          N_("    1 (solve the particle diameter evolution)")};
@@ -404,7 +404,7 @@ cs_lagr_log_setup(void)
                 _("    isttio:    %s\n"),
                 _(isttio_value_str[cs_glob_lagr_time_scheme->isttio]));
 
-  if (cs_glob_lagr_model->physical_model == 2) {
+  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
 
     cs_log_printf
       (CS_LOG_SETUP,
@@ -440,7 +440,7 @@ cs_lagr_log_setup(void)
 
   }
 
-  if (cs_glob_lagr_model->physical_model == 2) {
+  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
 
     cs_log_printf
       (CS_LOG_SETUP,
@@ -589,7 +589,7 @@ cs_lagr_log_iteration(void)
      (unsigned long long)(pc->n_g_new),
      pc->w_new);
 
-  if (cs_glob_lagr_model->physical_model == 2 && cs_glob_lagr_model->fouling == 1)
+  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL && cs_glob_lagr_model->fouling == 1)
     cs_log_printf
       (CS_LOG_DEFAULT,
        _("ln  coal particles fouled                    %8llu   %14.5E\n"),

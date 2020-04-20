@@ -208,9 +208,9 @@ cs_lagr_car(int              iprev,
 
     /* Tc computation */
 
-    if (   (   cs_glob_lagr_model->physical_model == 1
+    if (   (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
             && cs_glob_lagr_specific_physics->itpvar == 1)
-        || (cs_glob_lagr_model->physical_model == 2) ) {
+        || (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) ) {
 
       /* Fluid Cp */
       cs_real_t xcp;

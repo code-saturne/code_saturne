@@ -401,7 +401,7 @@ cs_lagr_coupling(const cs_real_t  taup[],
 
   if (cs_glob_lagr_source_terms->ltsthe == 1) {
 
-    if (   cs_glob_lagr_model->physical_model == 1
+    if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
         && cs_glob_lagr_specific_physics->itpvar == 1) {
 
       for (cs_lnum_t npt = 0; npt < nbpart; npt++) {
@@ -458,7 +458,7 @@ cs_lagr_coupling(const cs_real_t  taup[],
       }
 
     }
-    else if (cs_glob_lagr_model->physical_model == 2) {
+    else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
       if (cs_glob_lagr_const_dim->nlayer > 1)
         bft_error(__FILE__, __LINE__, 0,
                   _("Thermal coupling not implemented in multi-layer case"));

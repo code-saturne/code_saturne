@@ -616,7 +616,7 @@ cs_restart_lagrangian_checkpoint_read(void)
 
         if (cs_glob_lagr_source_terms->ltsthe == 1) {
 
-          if (   cs_glob_lagr_model->physical_model == 1
+          if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
               && cs_glob_lagr_specific_physics->itpvar == 1) {
 
             sprintf(nomtsl[cs_glob_lagr_source_terms->itste],
@@ -625,7 +625,7 @@ cs_restart_lagrangian_checkpoint_read(void)
                     "terme_source_thermique_implicite");
 
           }
-          else if (cs_glob_lagr_model->physical_model == 2) {
+          else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
 
             sprintf(nomtsl[cs_glob_lagr_source_terms->itste],
                     "terme_source_thermique_explicite");
@@ -875,7 +875,7 @@ cs_lagr_restart_read_p(void)
        "@    Les indicateurs concernant la physique associee\n"
        "@      aux particules sont modifies :\n"
        "@\n"
-       "@              IPHYLA    ITPVAR    IDPVAR    IMPVAR\n"
+       "@              physical_model ITPVAR    IDPVAR    IMPVAR\n"
        "@  AMONT : %10d%10d%10d%10d\n"
        "@  ACTUEL: %10d%10d%10d%10d\n"
        "@\n"
@@ -895,7 +895,7 @@ cs_lagr_restart_read_p(void)
 
   /* Check compatibility if thermal model change */
 
-  if (jphyla != 0 && cs_glob_lagr_model->physical_model == 0)
+  if (jphyla != CS_LAGR_PHYS_OFF && cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_OFF)
     cs_log_printf
       (CS_LOG_DEFAULT,
        "@\n"
@@ -938,7 +938,7 @@ cs_lagr_restart_read_p(void)
        cs_glob_lagr_specific_physics->tpart,
        cs_glob_lagr_specific_physics->cppart);
 
-  if (cs_glob_lagr_model->physical_model == 2 && jphyla != 2)
+  if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL && jphyla != CS_LAGR_PHYS_COAL)
     bft_error
       (__FILE__, __LINE__, 0,
        "@\n"
@@ -949,7 +949,7 @@ cs_lagr_restart_read_p(void)
        "@      DONNEES AMONT ET ACTUELLES INCOHERENTES\n"
        "@\n"
        "@    L'indicateur d'un calcul Lagrangien de grains\n"
-       "@      de charbon est enclenche (IPHYLA = 2).\n"
+       "@      de charbon est enclenche (physical_model = CS_LAGR_PHYS_COAL).\n"
        "@    Ce fichier suite ne correspond pas\n"
        "@      a un calcul Lagrangien de grains de charbon.\n"
        "@\n"
@@ -959,10 +959,10 @@ cs_lagr_restart_read_p(void)
        "@\n",
        ficsui);
 
-  if (   (   jphyla == 2
-          && cs_glob_lagr_model->physical_model == 1)
-      || (   jphyla == 1
-          && cs_glob_lagr_model->physical_model == 2))
+  if (   (   jphyla == CS_LAGR_PHYS_COAL
+          && cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT)
+      || (   jphyla == CS_LAGR_PHYS_HEAT
+          && cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL))
     bft_error
       (__FILE__, __LINE__, 0,
        "@\n"
@@ -1403,14 +1403,14 @@ cs_restart_lagrangian_checkpoint_write(void)
                 "terme_source_masse");
       }
       if (cs_glob_lagr_source_terms->ltsthe == 1) {
-        if (   cs_glob_lagr_model->physical_model == 1
+        if (   cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_HEAT
             && cs_glob_lagr_specific_physics->itpvar == 1) {
           sprintf(nomtsl[cs_glob_lagr_source_terms->itste],
                   "terme_source_thermique_explicite");
           sprintf(nomtsl[cs_glob_lagr_source_terms->itsti],
                   "terme_source_thermique_implicite");
         }
-        else if (cs_glob_lagr_model->physical_model == 2) {
+        else if (cs_glob_lagr_model->physical_model == CS_LAGR_PHYS_COAL) {
           sprintf(nomtsl[cs_glob_lagr_source_terms->itste],
                   "terme_source_thermique_explicite");
           sprintf(nomtsl[cs_glob_lagr_source_terms->itsti],

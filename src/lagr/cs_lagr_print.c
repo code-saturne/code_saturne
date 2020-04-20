@@ -141,7 +141,7 @@ cs_lagr_print(cs_real_t ttcabs)
           col_id += 2;
         }
 
-        if (   lagr_model->physical_model == 2
+        if (   lagr_model->physical_model == CS_LAGR_PHYS_COAL
             && lagr_model->fouling == 1) {
           fprintf(flal,
                   "# column %2d: inst. number of fouled particles (coal)\n"
@@ -180,7 +180,7 @@ cs_lagr_print(cs_real_t ttcabs)
         fprintf(flal, " %8llu %11.4e",
                 (unsigned long long)(pc->n_g_merged), pc->w_merged);
 
-      if (   lagr_model->physical_model == 2
+      if (   lagr_model->physical_model == CS_LAGR_PHYS_COAL
           && lagr_model->fouling == 1)
         fprintf(flal, " %8llu %11.4e",
                 (unsigned long long)(pc->n_g_fouling), pc->w_fouling);
