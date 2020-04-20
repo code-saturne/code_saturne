@@ -170,7 +170,7 @@ class StandardItemModelBoundaries(QStandardItemModel):
                 "free_inlet_outlet" : { "inlet" : self.tr("Particles inlet"),
                                         "outlet" : self.tr("Particles outlet") },
                 "imposed_p_outlet" : { "outlet" : self.tr("Particles outlet") },
-                "symmetry" : { "part_symmetry" : self.tr("Particles zero-flux"),
+                "symmetry" : { "part_symmetry" : self.tr("Particles symmetry"),
                                "bounce" : self.tr("Particles rebound") }
                 }
         else:
@@ -186,7 +186,7 @@ class StandardItemModelBoundaries(QStandardItemModel):
                 "free_inlet_outlet" : { "inlet" : self.tr("Particles inlet"),
                                         "outlet" : self.tr("Particles outlet") },
                 "imposed_p_outlet" : { "outlet" : self.tr("Particles outlet") },
-                "symmetry" : { "part_symmetry" : self.tr("Particles zero-flux"),
+                "symmetry" : { "part_symmetry" : self.tr("Particles symmetry"),
                                "bounce" : self.tr("Particles rebound")}
                 }
 
