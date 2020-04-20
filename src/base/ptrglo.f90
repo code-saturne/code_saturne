@@ -102,7 +102,7 @@ contains
     deallocate(buffer)
 
     do ii = 1, size
-      call synsca (array(1,ii))
+      call synsca (array(:,ii))
       !==========
     enddo
 
@@ -143,7 +143,7 @@ contains
     enddo
     deallocate(buffer)
 
-    call synvec (array(1,1), array(1,2), array(1,3))
+    call synvec (array(:,1), array(:,2), array(:,3))
     !==========
 
   end subroutine resize_vec_real_array_ni
@@ -225,9 +225,9 @@ contains
 
     call synten &
     !==========
-   ( array(1,1), array(1,2), array(1,3), &
-     array(1,4), array(1,5), array(1,6), &
-     array(1,7), array(1,8), array(1,9) )
+   ( array(:,1), array(:,2), array(:,3), &
+     array(:,4), array(:,5), array(:,6), &
+     array(:,7), array(:,8), array(:,9) )
 
   end subroutine resize_tens_real_array_ni
 
