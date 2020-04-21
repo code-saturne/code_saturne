@@ -696,7 +696,7 @@ enddo
 
 ! --> Initialisation for the aerosol chemistry model:
 
-iaerosol = 0
+iaerosol = CS_ATMO_AEROSOL_OFF
 nogaseouschemistry = .false.
 init_gas_with_lib = .false.
 init_aero_with_lib = .false.

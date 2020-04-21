@@ -477,7 +477,7 @@ if (ifilechemistry.ge.1) then
 endif
 
 ! Atmospheric aerosol chemistry
-if (iaerosol.eq.1) then
+if (iaerosol.ne.CS_ATMO_AEROSOL_OFF) then
 
   do ifac = 1, nfabor
 

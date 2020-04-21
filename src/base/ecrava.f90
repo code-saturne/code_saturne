@@ -67,7 +67,7 @@ use cplsat
 use field
 use atincl, only: init_at_chem
 use atchem, only: ichemistry
-use sshaerosol, only: iaerosol
+use sshaerosol, only: iaerosol, CS_ATMO_AEROSOL_OFF
 use mesh
 use cs_c_bindings
 use cs_nz_condensation, only:izzftcd, nztag1d, ztpar
@@ -248,7 +248,7 @@ call restart_write_section_real_t(rp,rubriq,itysup,nbval,rval)
 
 call turbomachinery_restart_write(rp)
 
-if (ichemistry.gt.0.or.iaerosol.gt.0) then
+if (ichemistry.gt.0.or.iaerosol.ne.CS_ATMO_AEROSOL_OFF) then
   rubriq = 'atmospheric_chem'
   itysup = 0
   nbval  = 1

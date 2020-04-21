@@ -187,7 +187,7 @@ if (ichemistry.ge.1) then
 endif
 
 ! Atmospheric aerosol chemistry
-if (iaerosol.ge.1) then
+if (iaerosol.ne.CS_ATMO_AEROSOL_OFF) then
 
   ! Reading intial concentrations and numbers from file
   !   or from the aerosol library

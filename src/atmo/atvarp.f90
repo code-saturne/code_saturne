@@ -154,11 +154,11 @@ endif
 
 ! Atmospheric gaseous chemistry
 ! Do not change this order
-if (iaerosol.ge.1) ichemistry = 4
+if (iaerosol.eq.CS_ATMO_AEROSOL_SSH) ichemistry = 4
 ! if a chemical scheme is solved, a concentration profiles
 ! file must be used
 if (ichemistry.ge.1) ifilechemistry = ichemistry
-if (nogaseouschemistry .and. iaerosol.eq.0) ichemistry = 0
+if (nogaseouschemistry .and. iaerosol.eq.CS_ATMO_AEROSOL_OFF) ichemistry = 0
 
 if (ifilechemistry.ge.1) then
 
@@ -382,7 +382,7 @@ if (ifilechemistry.ge.1) then
 endif
 
 ! Atmospheric aerosol chemistry
-if (iaerosol.ge.1) then
+if (iaerosol.ne.CS_ATMO_AEROSOL_OFF) then
 
   ! logical unit and name of the chemical profiles file
   impmea=28
@@ -411,7 +411,7 @@ if (ichemistry.ge.1) then
     call field_set_key_double(f_id, kscmin, 0.d0)
   enddo
 endif
-if (iaerosol.ge.1) then
+if (iaerosol.ne.CS_ATMO_AEROSOL_OFF) then
   do ii = nespg + 1, nespg + n_aer * (nlayer_aer + 1)
     f_id = ivarfl(isca(isca_chem(ii)))
     call field_set_key_double(f_id, kscmin, 0.d0)

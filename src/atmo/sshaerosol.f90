@@ -37,8 +37,12 @@ use ppppar, only: nozppm
 !> \addtogroup at_aerosol_chemistry
 !> \{
 
-!> Flag to activate or not aerosol model
-integer(c_int), pointer, save :: iaerosol
+!> Enum and flag to activate or not the aerosol model
+enum, bind(C)
+   enumerator :: CS_ATMO_AEROSOL_OFF = 0
+   enumerator :: CS_ATMO_AEROSOL_SSH = 1
+end enum
+integer(kind=kind(CS_ATMO_AEROSOL_OFF)), pointer, save :: iaerosol
 
 !> Flag to desactivate gaseous chemistry
 logical(c_bool), pointer, save :: nogaseouschemistry

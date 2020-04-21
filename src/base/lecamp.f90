@@ -63,7 +63,7 @@ use cplsat
 use field
 use atincl, only: init_at_chem
 use atchem, only: ichemistry
-use sshaerosol, only: iaerosol
+use sshaerosol, only: iaerosol, CS_ATMO_AEROSOL_OFF
 use turbomachinery
 use cs_c_bindings
 
@@ -336,7 +336,7 @@ call restart_read_fields(rp, RESTART_MAIN)
 ! 6. LECTURE D'INFORMATIONS COMPLEMENTAIRES LEGERES
 !===============================================================================
 
-if (ichemistry.gt.0.or.iaerosol.gt.0) then
+if (ichemistry.gt.0.or.iaerosol.ne.CS_ATMO_AEROSOL_OFF) then
   rubriq = 'atmospheric_chem'
   itysup = 0
   nbval  = 1

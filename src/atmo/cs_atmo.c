@@ -163,28 +163,28 @@ static const char *cs_atmo_aerosol_type_name[]
  *============================================================================*/
 
 void
-cs_f_atmo_get_pointers(int       **syear,
-                       int       **squant,
-                       int       **shour,
-                       int       **smin,
-                       cs_real_t **ssec,
-                       cs_real_t **longitude,
-                       cs_real_t **latitude,
-                       bool      **compute_z_ground,
-                       int       **sedimentation_model,
-                       int       **deposition_model,
-                       int       **nucleation_model,
-                       int       **subgrid_model,
-                       int       **model,
-                       int       **n_species,
-                       int       **n_reactions,
-                       bool      **chemistry_with_photolysis,
-                       int       **model_aerosol,
-                       bool      **frozen_gas_chem,
-                       bool      **init_gas_with_lib,
-                       bool      **init_aero_with_lib,
-                       int       **n_layer,
-                       int       **n_size);
+cs_f_atmo_get_pointers(int                    **syear,
+                       int                    **squant,
+                       int                    **shour,
+                       int                    **smin,
+                       cs_real_t              **ssec,
+                       cs_real_t              **longitude,
+                       cs_real_t              **latitude,
+                       bool                   **compute_z_ground,
+                       int                    **sedimentation_model,
+                       int                    **deposition_model,
+                       int                    **nucleation_model,
+                       int                    **subgrid_model,
+                       int                    **model,
+                       int                    **n_species,
+                       int                    **n_reactions,
+                       bool                   **chemistry_with_photolysis,
+                       cs_atmo_aerosol_type_t **model_aerosol,
+                       bool                   **frozen_gas_chem,
+                       bool                   **init_gas_with_lib,
+                       bool                   **init_aero_with_lib,
+                       int                    **n_layer,
+                       int                    **n_size);
 
 void
 cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
@@ -206,28 +206,28 @@ cs_f_atmo_chem_finalize(void);
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_atmo_get_pointers(int       **syear,
-                       int       **squant,
-                       int       **shour,
-                       int       **smin,
-                       cs_real_t **ssec,
-                       cs_real_t **longitude,
-                       cs_real_t **latitude,
-                       bool      **compute_z_ground,
-                       int       **sedimentation_model,
-                       int       **deposition_model,
-                       int       **nucleation_model,
-                       int       **subgrid_model,
-                       int       **model,
-                       int       **n_species,
-                       int       **n_reactions,
-                       bool      **chemistry_with_photolysis,
-                       int       **model_aerosol,
-                       bool      **frozen_gas_chem,
-                       bool      **init_gas_with_lib,
-                       bool      **init_aero_with_lib,
-                       int       **n_layer,
-                       int       **n_size)
+cs_f_atmo_get_pointers(int                    **syear,
+                       int                    **squant,
+                       int                    **shour,
+                       int                    **smin,
+                       cs_real_t              **ssec,
+                       cs_real_t              **longitude,
+                       cs_real_t              **latitude,
+                       bool                   **compute_z_ground,
+                       int                    **sedimentation_model,
+                       int                    **deposition_model,
+                       int                    **nucleation_model,
+                       int                    **subgrid_model,
+                       int                    **model,
+                       int                    **n_species,
+                       int                    **n_reactions,
+                       bool                   **chemistry_with_photolysis,
+                       cs_atmo_aerosol_type_t **model_aerosol,
+                       bool                   **frozen_gas_chem,
+                       bool                   **init_gas_with_lib,
+                       bool                   **init_aero_with_lib,
+                       int                    **n_layer,
+                       int                    **n_size)
 {
   *syear     = &(_atmo_option.syear);
   *squant    = &(_atmo_option.squant);
@@ -783,6 +783,7 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
  */
 /*----------------------------------------------------------------------------*/
 
+void
 cs_atmo_chemistry_log_setup(void)
 {
   cs_log_printf

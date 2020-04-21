@@ -60,7 +60,7 @@ use cpincl
 use ppincl
 use mesh
 use atchem
-use sshaerosol, only : iaerosol
+use sshaerosol, only : iaerosol, CS_ATMO_AEROSOL_OFF
 use field
 use cs_c_bindings
 use cs_cf_bindings
@@ -109,7 +109,8 @@ allocate(viscf(nfac), viscb(nfabor))
 ipass = ipass + 1
 
 ! Atmospheric chemistry => all chemical fields are not buoyant
-if (ichemistry.ge.1 .and. iaerosol.eq.0 .and. nespg.gt.0 .and. iterns.eq.-1) then
+if (      ichemistry.ge.1 .and. iaerosol.eq.CS_ATMO_AEROSOL_OFF &
+    .and. nespg.gt.0 .and. iterns.eq.-1) then
   ! Computation of kinetics rates
   call kinrates()
 endif
@@ -503,12 +504,12 @@ endif
 
 ! Atmospheric gaseous chemistry
 ! Resolution of chemical evolution of species
-if (ichemistry.ge.1 .and. iaerosol.eq.0 .and. nespg.gt.0 .and. iterns.eq.-1) then
+if (ichemistry.ge.1 .and. iaerosol.eq.CS_ATMO_AEROSOL_OFF .and. nespg.gt.0 .and. iterns.eq.-1) then
   call compute_gaseous_chemistry(dt)
 endif
 
 ! Atmospheric gas + aerosol chemistry
-if (ichemistry.ge.1 .and. iaerosol.ge.1 .and. iterns.eq.-1) then
+if (ichemistry.ge.1 .and. iaerosol.ne.CS_ATMO_AEROSOL_OFF .and. iterns.eq.-1) then
   call cs_atmo_aerosol_time_advance()
 endif
 

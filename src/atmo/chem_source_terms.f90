@@ -91,7 +91,7 @@ type(pmapper_double_r1), dimension(:), allocatable :: cvara_espg
 ! If gaseous chemistry is computed with the external library SSH-aerosol
 ! The source term was estimated at the beginning of scalai
 ! We update the source term and return directly
-if (iaerosol.ge.1) then
+if (iaerosol.ne.CS_ATMO_AEROSOL_OFF) then
   ! This is not ready yet
   write(nfecra,*) "Partially coupled chemistry combined with external aerosol library not implemented yet"
   call csexit(1)

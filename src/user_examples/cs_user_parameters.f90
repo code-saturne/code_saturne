@@ -903,14 +903,14 @@ dtchemmax = 10.0d0
 !!! Aerosol chemistry
 
 ! iaerosol: flag to activate aerosol chemistry
-!   if iaerosol = 0, aerosol chemistry deactivated, default
-!   if iaerosol = 1, ichemistry is automatically set to 4 (scheme 4)
+!   iaerosol = CS_ATMO_AEROSOL_OFF : aerosol chemistry deactivated, default
+!   iaerosol = CS_ATMO_AEROSOL_SSH : ichemistry automatically set to 4
 !     External library SSH-aerosol is used
 !     Corresponding SPACK files must be provided
 !     The SSH namelist file can be specified using
 !       call atmo_chemistry_set_aerosol_file_name("namelist_coag.ssh")
 !       if no namelist file is specified, "namelist.ssh" is used
-iaerosol = 1
+iaerosol = CS_ATMO_AEROSOL_SSH
 
 ! nogaseouschemistry: flag to freeze gaseous chemistry
 !   if nogaseouschemistry = false, gaseous chemistry is activated (default)

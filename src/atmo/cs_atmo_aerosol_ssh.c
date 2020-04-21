@@ -468,12 +468,20 @@ cs_atmo_aerosol_ssh_initialize(void)
 
     /* Get the prefix */
     if (ilr <= cs_glob_atmo_chemistry->n_layer) {
+      if (ilr < 0) bft_error(__FILE__, __LINE__, 0,
+                             _("Atmospheric aerosols : Number of layers negative."));
+      if (ilr > 9999) bft_error(__FILE__, __LINE__, 0,
+                                _("Atmospheric aerosols : Number of layers above limit."));
       sprintf(name, "aerosol_layer_%04d", ilr);
     } else {
       strcpy(name, "aerosol_num");
     }
 
     /* Get the suffix */
+    if (isize < 0) bft_error(__FILE__, __LINE__, 0,
+                             _("Atmospheric aerosols : Number of aerosols negative."));
+    if (isize > 999) bft_error(__FILE__, __LINE__, 0,
+                               _("Atmospheric aerosols : Number of aerosols above limit."));
     char suffix[5];
     sprintf(suffix, "_%03d", isize);
     strcat(name, suffix);
