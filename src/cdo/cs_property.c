@@ -916,23 +916,9 @@ cs_property_finalize_setup(void)
                     __func__, j, pty->name);
 
     }
-    else if (pty->n_definitions == 1) {
+    else if (pty->n_definitions == 0) {
 
-      if (pty->defs[0]->type == CS_XDEF_BY_VALUE) {
-
-        pty->state_flag |= CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_STEADY;
-
-        /* Set the constant value as the reference value  */
-        if (pty->type & CS_PROPERTY_ISO)
-          pty->ref_value =  cs_xdef_get_scalar_value(pty->defs[0]);
-
-      } /* def by constant value */
-
-    }
-    else {
-
-      pty->state_flag |= CS_FLAG_STATE_UNIFORM | CS_FLAG_STATE_STEADY;
-
+      /* Default initialization */
       if (pty->type & CS_PROPERTY_ISO)
         cs_property_def_iso_by_value(pty, NULL, pty->ref_value);
       else if (pty->type & CS_PROPERTY_ORTHO) {
@@ -1123,6 +1109,10 @@ cs_property_def_iso_by_value(cs_property_t    *pty,
   pty->defs[new_id] = d;
   pty->get_eval_at_cell[new_id] = cs_xdef_eval_scalar_by_val;
   pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_scalar_by_val;
+
+  /* Set automatically the reference value if all cells are selected */
+  if (z_id == 0)
+    cs_property_set_reference_value(pty, val);
 
   return d;
 }
