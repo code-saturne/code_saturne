@@ -9,14 +9,6 @@ User changes:
   * send back a message if an iteration has been done subsequently
     to an "advance" message to allow a finer control.
 
-Architectural changes:
-
-- Add the possibility to create a desktop shortcut on linux systems.
-  Creation is done using the "make install-shortcut" command after the
-  "make install" command. A code_saturne_($version).desktop file is
-  created in the desktop folder and double-clicking on it launches the
-  GUI.
-
 Numerics and physical modelling:
 
 - CDO: Add the treatment of the non-linear advection term in
@@ -28,6 +20,17 @@ Numerics and physical modelling:
 - CDO: Add the treatment of segregation of binary alloys. More
   validations are required but first results are promising.
 
+Architectural changes:
+
+- Now require Python 3.4 or higher.
+  Python 2 is still supported for the moment, but the configure checks
+  require Python 3 to "strongly encourage" migration if not done yet.
+
+- Add the possibility to create a desktop shortcut on Linux systems.
+  Creation is done using the "make install-shortcut" command after the
+  "make install" command. A code_saturne_($version).desktop file is
+  created in the desktop folder and double-clicking on it launches
+  the GUI.
 
 Release 6.1.0 (April 15 2020)
 -----------------------------
