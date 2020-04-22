@@ -945,6 +945,16 @@ const double cs_turb_cv2fcl = 0.25;
 const double cs_turb_cv2fet = 110.0;
 
 /*!
+ * Constants for the Baglietto et al. quadratic k-epsilon model.
+ * Useful if and only if \ref iturb = CS_TURB_K_EPSILON_QUAD
+ */
+const double cs_turb_cnl1 = 0.8;
+const double cs_turb_cnl2 = 11.;
+const double cs_turb_cnl3 = 4.5;
+const double cs_turb_cnl4 = 1e3;
+const double cs_turb_cnl5 = 1.;
+
+/*!
  * Constant of the WALE LES method.
  */
 double cs_turb_cwale = 0.25;
