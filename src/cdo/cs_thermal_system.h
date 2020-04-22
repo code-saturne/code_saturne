@@ -259,6 +259,15 @@ cs_thermal_system_add_boussinesq_source_term(const cs_real_t   *gravity,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Retrieve the main equation related to the thermal system
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_t *
+cs_thermal_system_get_equation(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Start setting-up the thermal system
  *         At this stage, numerical settings should be completely determined
  *         but connectivity and geometrical information is not yet available.
