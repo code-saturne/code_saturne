@@ -1110,6 +1110,11 @@ cs_property_def_iso_by_value(cs_property_t    *pty,
   pty->get_eval_at_cell[new_id] = cs_xdef_eval_scalar_by_val;
   pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_scalar_by_val;
 
+  /* Set the state flag */
+  pty->state_flag |= CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
+  if (z_id == 0)
+    pty->state_flag |= CS_FLAG_STATE_UNIFORM;
+
   /* Set automatically the reference value if all cells are selected */
   if (z_id == 0)
     cs_property_set_reference_value(pty, val);
@@ -1158,6 +1163,11 @@ cs_property_def_ortho_by_value(cs_property_t    *pty,
   pty->defs[new_id] = d;
   pty->get_eval_at_cell[new_id] = cs_xdef_eval_vector_by_val;
   pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_vector_by_val;
+
+  /* Set the state flag */
+  pty->state_flag |= CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
+  if (z_id == 0)
+    pty->state_flag |= CS_FLAG_STATE_UNIFORM;
 
   return d;
 }
@@ -1211,6 +1221,11 @@ cs_property_def_aniso_by_value(cs_property_t    *pty,
   pty->defs[new_id] = d;
   pty->get_eval_at_cell[new_id] = cs_xdef_eval_tensor_by_val;
   pty->get_eval_at_cell_cw[new_id] = cs_xdef_cw_eval_tensor_by_val;
+
+  /* Set the state flag */
+  pty->state_flag |= CS_FLAG_STATE_CELLWISE | CS_FLAG_STATE_STEADY;
+  if (z_id == 0)
+    pty->state_flag |= CS_FLAG_STATE_UNIFORM;
 
   return d;
 }
@@ -1275,6 +1290,11 @@ cs_property_def_by_time_func(cs_property_t      *pty,
                                         &def_input);
 
   pty->defs[new_id] = d;
+
+  /* Set the state flag */
+  pty->state_flag |= CS_FLAG_STATE_CELLWISE;
+  if (z_id == 0)
+    pty->state_flag |= CS_FLAG_STATE_UNIFORM;
 
   return d;
 }
@@ -1449,6 +1469,10 @@ cs_property_def_by_array(cs_property_t    *pty,
     bft_error(__FILE__, __LINE__, 0,
               " %s: case not available.\n", __func__);
 
+  /* Set the state flag */
+  if (cs_flag_test(loc, cs_flag_primal_cell))
+    pty->state_flag |= CS_FLAG_STATE_CELLWISE;
+
   return d;
 }
 
@@ -1504,6 +1528,9 @@ cs_property_def_by_field(cs_property_t    *pty,
 
   pty->get_eval_at_cell[id] = cs_xdef_eval_cell_by_field;
   pty->get_eval_at_cell_cw[id] = cs_xdef_cw_eval_by_field;
+
+  /* Set the state flag */
+  pty->state_flag |= CS_FLAG_STATE_CELLWISE;
 }
 
 /*----------------------------------------------------------------------------*/
