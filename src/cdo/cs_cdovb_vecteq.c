@@ -1283,11 +1283,7 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
   /* Main OpenMP block on cell */
   /* ------------------------- */
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)                   \
-  shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav,               \
-         dir_values, forced_ids, fld, rs, _vvb_cell_system,             \
-         _vvb_cell_builder, rhs_norm)                                   \
-  firstprivate(time_eval)
+#pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */

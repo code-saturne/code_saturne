@@ -1647,10 +1647,7 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
   cs_matrix_assembler_values_t  *mav
     = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
-  shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs, fld,      \
-         dir_values, forced_ids, cs_cdofb_cell_sys, cs_cdofb_cell_bld)  \
-  firstprivate(time_eval)
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1871,9 +1868,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
   cs_matrix_assembler_values_t  *mav
     = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
-  shared(quant, connect, ts, eqp, eqb, eqc, rhs, matrix, mav, rs, fld,  \
-         dir_values, forced_ids, cs_cdofb_cell_sys, cs_cdofb_cell_bld)
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -2157,10 +2152,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
   cs_matrix_assembler_values_t  *mav
     = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
-  shared(quant, connect, ts, eqp, eqb, eqc, rhs, matrix, mav, rs, fld,  \
-         dir_values, forced_ids, cs_cdofb_cell_sys, cs_cdofb_cell_bld,  \
-         compute_initial_source)
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();

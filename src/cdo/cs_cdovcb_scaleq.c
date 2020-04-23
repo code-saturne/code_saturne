@@ -1634,9 +1634,7 @@ cs_cdovcb_scaleq_solve_steady_state(bool                        cur2prev,
   /* Main OpenMP block on cell */
   /* ------------------------- */
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)                   \
-  shared(quant, connect, ts, eqp, eqb, eqc, rhs, matrix, mav,           \
-         dir_values, fld, rs, _vcbs_cell_system, _vcbs_cell_builder)
+#pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
@@ -1867,9 +1865,7 @@ cs_cdovcb_scaleq_solve_implicit(bool                        cur2prev,
   /* Main OpenMP block on cell */
   /* ------------------------- */
 
-#pragma omp parallel if (quant->n_cells > CS_THR_MIN)                   \
-  shared(quant, connect, ts, eqp, eqb, eqc, rhs, matrix, mav,           \
-         dir_values, fld, rs, _vcbs_cell_system, _vcbs_cell_builder)
+#pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
     /* Set variables and structures inside the OMP section so that each thread
        has its own value */
