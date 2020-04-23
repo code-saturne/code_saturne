@@ -38,7 +38,7 @@
 !> \param[in]     dlb           Vector B in AX=B
 !______________________________________________________________________________
 
-subroutine solvlin (kindlu,dla,dlalu,dlx,dlb)
+subroutine cs_solvlin (kindlu,dla,dlalu,dlx,dlb)
 
 !===============================================================================
 ! Module files
@@ -101,4 +101,4 @@ else
   endif
 endif
 
-end subroutine solvlin
+end subroutine cs_solvlin

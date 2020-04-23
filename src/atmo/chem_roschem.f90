@@ -115,7 +115,7 @@ do ji = 1, nespg
   dlmat(ji,ji) = 1.d0 + dlmat(ji,ji)
 enddo
 
-call solvlin (0,dlmat,dlmatlu,dlk1,dlb1)
+call cs_solvlin (0,dlmat,dlmatlu,dlk1,dlb1)
 
 !------------------------------------------------------------------------
 !*    5. Computes K2    system: DLmat * K2 = DLb2
@@ -142,7 +142,7 @@ do ji = 1, nespg
   dlb2(ji) =  dlr(ji) - 2.d0*dlk1(ji)
 enddo
 
-call solvlin (1,dlmat,dlmatlu,dlk2,dlb2)
+call cs_solvlin (1,dlmat,dlmatlu,dlk2,dlb2)
 
 !------------------------------------------------------------------------
 !*    6. Outputs - Compute DLconc - Advance the time
