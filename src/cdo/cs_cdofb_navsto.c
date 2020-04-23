@@ -886,6 +886,8 @@ cs_cdofb_navsto_extra_op(const cs_navsto_param_t     *nsp,
                          const cs_real_t             *u_cell,
                          const cs_real_t             *u_face)
 {
+  CS_UNUSED(adv_field);
+
   const cs_boundary_t  *boundaries = nsp->boundaries;
   const cs_real_t  *bmass_flux = mass_flux + quant->n_i_faces;
 
