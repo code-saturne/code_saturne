@@ -553,6 +553,61 @@ _sfb_apply_remaining_bc(const cs_equation_param_t     *eqp,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Compute the residual normalization at the cellwise level according
+ *         to the requested type of renormalization
+ *         This function should be called after the static condensation.
+ *         Case of CDO face-based scalar-valued system.
+ *
+ * \param[in]  type        type of renormalization
+ * \param[in]  cm          pointer to a cs_cell_mesh_t structure
+ * \param[in]  csys        pointer to a cs_cell_sys_t structure
+ *
+ * \return the value of the cellwise contribution to the normalization of
+ *         the residual
+ */
+/*----------------------------------------------------------------------------*/
+
+static double
+_sfb_cw_rhs_normalization(cs_param_resnorm_type_t     type,
+                          const cs_cell_mesh_t       *cm,
+                          const cs_cell_sys_t        *csys)
+{
+  double  _rhs_norm = 0;
+
+  if (type == CS_PARAM_RESNORM_WEIGHTED_RHS) {
+
+    for (short int i = 0; i < cm->n_fc; i++)
+      _rhs_norm += cm->pvol_f[i] * csys->rhs[i]*csys->rhs[i];
+
+  }
+  else if (type == CS_PARAM_RESNORM_FILTERED_RHS) {
+
+    if (csys->has_dirichlet || csys->has_internal_enforcement) {
+
+      for (short int i = 0; i < cm->n_fc; i++) {
+        if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET)
+          continue;
+        else if (csys->intern_forced_ids[i] > -1)
+          continue;
+        else
+          _rhs_norm += csys->rhs[i]*csys->rhs[i];
+      }
+
+    }
+    else { /* No need to apply a filter */
+
+      for (short int i = 0; i < cm->n_fc; i++)
+        _rhs_norm += csys->rhs[i]*csys->rhs[i];
+
+    }
+
+  } /* Type of residual normalization */
+
+  return _rhs_norm;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Perform the assembly step
  *
  * \param[in]      eqc    context for this kind of discretization
@@ -1152,6 +1207,10 @@ cs_cdofb_scaleq_init_context(const cs_equation_param_t   *eqp,
   eqc->assemble = cs_equation_assemble_set(CS_SPACE_SCHEME_CDOFB,
                                            CS_CDO_CONNECT_FACE_SP0);
 
+  /* Renormalization of the residual */
+  if (eqp->sles_param.resnorm_type == CS_PARAM_RESNORM_WEIGHTED_RHS)
+    eqb->msh_flag |= CS_FLAG_COMP_PFC;
+
   return eqc;
 }
 
@@ -1578,6 +1637,7 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
+  double  rhs_norm = 0.0;
 
   BFT_MALLOC(rhs, n_faces, cs_real_t);
 # pragma omp parallel for if (n_faces > CS_THR_MIN)
@@ -1622,7 +1682,7 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
     /* Main loop on cells to build the linear system */
     /* --------------------------------------------- */
 
-#   pragma omp for CS_CDO_OMP_SCHEDULE
+#   pragma omp for CS_CDO_OMP_SCHEDULE reduction(+:rhs_norm)
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       /* Set the current cell flag */
@@ -1685,6 +1745,11 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
                          csys);
 #endif
 
+      /* Compute a cellwise norm of the RHS for the normalization of the
+         residual during the resolution of the linear system */
+      rhs_norm += _sfb_cw_rhs_normalization(eqp->sles_param.resnorm_type,
+                                            cm, csys);
+
       /* Remaining part of boundary conditions */
       _sfb_apply_remaining_bc(eqp, eqc, cm, fm, diff_hodge, csys, cb);
 
@@ -1715,14 +1780,21 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
     memcpy(eqc->face_values_pre, eqc->face_values, sizeof(cs_real_t)*n_faces);
 
   /* Solve the linear system */
-  cs_real_t  normalization = 1.0; /* TODO */
+  /* ======================= */
+
+  /* Last step in the computation of the renormalization coefficient */
+  cs_equation_sync_rhs_normalization(eqp->sles_param.resnorm_type,
+                                     n_faces,
+                                     rhs,
+                                     &rhs_norm);
+
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
 
   cs_equation_solve_scalar_system(n_faces,
                                   eqp,
                                   matrix,
                                   rs,
-                                  normalization,
+                                  rhs_norm,
                                   true, /* rhs_redux */
                                   sles,
                                   eqc->face_values,
@@ -1789,6 +1861,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
+  double  rhs_norm = 0.;
 
   BFT_MALLOC(rhs, n_faces, cs_real_t);
 # pragma omp parallel for if  (n_faces > CS_THR_MIN)
@@ -1837,7 +1910,7 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
     /* Main loop on cells to build the linear system */
     /* --------------------------------------------- */
 
-#   pragma omp for CS_CDO_OMP_SCHEDULE
+#   pragma omp for CS_CDO_OMP_SCHEDULE reduction(+:rhs_norm)
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       /* Set the current cell flag */
@@ -1944,6 +2017,11 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
                          csys);
 #endif
 
+      /* Compute a cellwise norm of the RHS for the normalization of the
+         residual during the resolution of the linear system */
+      rhs_norm += _sfb_cw_rhs_normalization(eqp->sles_param.resnorm_type,
+                                            cm, csys);
+
       /* Remaining part of BOUNDARY CONDITIONS
        * =================================== */
 
@@ -1977,14 +2055,21 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
     memcpy(eqc->face_values_pre, eqc->face_values, sizeof(cs_real_t)*n_faces);
 
   /* Solve the linear system */
-  cs_real_t  normalization = 1.0; /* TODO */
+  /* ======================= */
+
+    /* Last step in the computation of the renormalization coefficient */
+  cs_equation_sync_rhs_normalization(eqp->sles_param.resnorm_type,
+                                     n_faces,
+                                     rhs,
+                                     &rhs_norm);
+
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
 
   cs_equation_solve_scalar_system(n_faces,
                                   eqp,
                                   matrix,
                                   rs,
-                                  normalization,
+                                  rhs_norm,
                                   true, /* rhs_redux */
                                   sles,
                                   eqc->face_values,
@@ -2062,6 +2147,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
+  double  rhs_norm = 0.;
 
   BFT_MALLOC(rhs, n_faces, cs_real_t);
 # pragma omp parallel for if  (n_faces > CS_THR_MIN)
@@ -2114,7 +2200,7 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
     /* Main loop on cells to build the linear system */
     /* --------------------------------------------- */
 
-#   pragma omp for CS_CDO_OMP_SCHEDULE
+#   pragma omp for CS_CDO_OMP_SCHEDULE reduction(+:rhs_norm)
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       /* Set the current cell flag */
@@ -2260,6 +2346,11 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
                          csys);
 #endif
 
+      /* Compute a cellwise norm of the RHS for the normalization of the
+         residual during the resolution of the linear system */
+      rhs_norm += _sfb_cw_rhs_normalization(eqp->sles_param.resnorm_type,
+                                            cm, csys);
+
       /* Remaining part of BOUNDARY CONDITIONS
        * ===================================== */
       _sfb_apply_remaining_bc(eqp, eqc, cm, fm, diff_hodge, csys, cb);
@@ -2291,14 +2382,21 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
     memcpy(eqc->face_values_pre, eqc->face_values, sizeof(cs_real_t)*n_faces);
 
   /* Solve the linear system */
-  cs_real_t  normalization = 1.0; /* TODO */
+  /* ======================= */
+
+  /* Last step in the computation of the renormalization coefficient */
+  cs_equation_sync_rhs_normalization(eqp->sles_param.resnorm_type,
+                                     n_faces,
+                                     rhs,
+                                     &rhs_norm);
+
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
 
   cs_equation_solve_scalar_system(n_faces,
                                   eqp,
                                   matrix,
                                   rs,
-                                  normalization,
+                                  rhs_norm,
                                   true, /* rhs_redux */
                                   sles,
                                   eqc->face_values,

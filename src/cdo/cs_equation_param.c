@@ -1481,7 +1481,8 @@ _set_key(const char            *label,
     break;
 
   case CS_EQKEY_ITSOL_RESNORM_TYPE:
-    if (strcmp(keyval, "none") == 0 || strcmp(keyval, "false") == 0)
+    if (strcmp(keyval, "none") == 0 || strcmp(keyval, "false") == 0 ||
+        strcmp(keyval, "") == 0)
       eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_NONE;
     else if (strcmp(keyval, "rhs") == 0)
       eqp->sles_param.resnorm_type = CS_PARAM_RESNORM_NORM2_RHS;
@@ -2581,23 +2582,20 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
   cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.Eps:        % -10.6e\n",
                 slesp.eps);
 
+  cs_log_printf(CS_LOG_SETUP, "        SLES | Normalization:  ");
   switch (slesp.resnorm_type) {
   case CS_PARAM_RESNORM_NORM2_RHS:
-    cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.Normalized:  %s\n",
-                  "Euclidean norm of the RHS");
+    cs_log_printf(CS_LOG_SETUP, "Euclidean norm of the RHS\n");
     break;
   case CS_PARAM_RESNORM_WEIGHTED_RHS:
-    cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.Normalized:  %s\n",
-                  "Weighted Euclidean norm of the RHS");
+    cs_log_printf(CS_LOG_SETUP, "Weighted Euclidean norm of the RHS\n");
     break;
   case CS_PARAM_RESNORM_FILTERED_RHS:
-    cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.Normalized:  %s\n",
-                  "Filtered Euclidean norm of the RHS");
+    cs_log_printf(CS_LOG_SETUP, "Filtered Euclidean norm of the RHS\n");
     break;
   case CS_PARAM_RESNORM_NONE:
   default:
-    cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.Normalized:  %s\n",
-                  "None");
+    cs_log_printf(CS_LOG_SETUP, "None\n");
     break;
   }
   cs_log_printf(CS_LOG_SETUP, "\n");

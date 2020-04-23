@@ -591,6 +591,65 @@ _vvb_enforce_values(const cs_equation_param_t     *eqp,
   }
 }
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the residual normalization at the cellwise level according
+ *         to the requested type of renormalization
+ *         Case of vector-valued system.
+ *
+ * \param[in]  type       type of renormalization
+ * \param[in]  cm         pointer to a cs_cell_mesh_t structure
+ * \param[in]  csys       pointer to a cs_cell_sys_t structure
+ *
+ * \return the value of the cellwise contribution to the normalization of
+ *         the residual
+ */
+/*----------------------------------------------------------------------------*/
+
+static double
+_vvb_cw_rhs_normalization(cs_param_resnorm_type_t     type,
+                          const cs_cell_mesh_t       *cm,
+                          const cs_cell_sys_t        *csys)
+{
+  double  _rhs_norm = 0;
+
+  if (type == CS_PARAM_RESNORM_WEIGHTED_RHS) {
+
+    for (short int i = 0; i < cm->n_vc; i++) {
+      const cs_real_t  w = cm->wvc[i];
+      const cs_real_t  *_rhs = csys->rhs + 3*i;
+      _rhs_norm += w * (_rhs[0]*_rhs[0] + _rhs[1]*_rhs[1] + _rhs[2]*_rhs[2]);
+    }
+
+    _rhs_norm = cm->vol_c * _rhs_norm;
+
+  }
+  else if (type == CS_PARAM_RESNORM_FILTERED_RHS) {
+
+    if (csys->has_dirichlet || csys->has_internal_enforcement) {
+
+      for (short int i = 0; i < csys->n_dofs; i++) {
+        if (csys->dof_flag[i] & CS_CDO_BC_DIRICHLET)
+          continue;
+        else if (csys->intern_forced_ids[i] > -1)
+          continue;
+        else
+          _rhs_norm += csys->rhs[i]*csys->rhs[i];
+      }
+
+    }
+    else { /* No need to apply a filter */
+
+      for (short int i = 0; i < csys->n_dofs; i++)
+        _rhs_norm += csys->rhs[i]*csys->rhs[i];
+
+    }
+
+  } /* Type of residual normalization */
+
+  return _rhs_norm;
+}
+
 /*! \endcond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
@@ -1209,7 +1268,7 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
-  cs_real_t  rhs_norm = 0.0;
+  double  rhs_norm = 0.0;
 
   assert(3*n_vertices == eqc->n_dofs);
   BFT_MALLOC(rhs, eqc->n_dofs, cs_real_t);
@@ -1307,9 +1366,8 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
 
       /* Compute a norm of the RHS for the normalization of the residual
          of the linear system to solve */
-      cs_equation_cw_vect_res_normalization(eqp->sles_param.resnorm_type,
-                                            cm->vol_c, csys, cm->wvc,
-                                            &rhs_norm);
+      rhs_norm += _vvb_cw_rhs_normalization(eqp->sles_param.resnorm_type,
+                                            cm, csys);
 
       /* Apply boundary conditions (those which are weakly enforced) */
       _vvb_apply_weak_bc(eqp, eqc, cm, fm, diff_hodge, csys, cb);
@@ -1348,7 +1406,7 @@ cs_cdovb_vecteq_solve_steady_state(bool                        cur2prev,
   cs_matrix_assembler_values_finalize(&mav);
 
   /* Last step in the computation of the renormalization coefficient */
-  cs_equation_sync_res_normalization(eqp->sles_param.resnorm_type,
+  cs_equation_sync_rhs_normalization(eqp->sles_param.resnorm_type,
                                      eqc->n_dofs, /* 3*n_vertices */
                                      rhs,
                                      &rhs_norm);
