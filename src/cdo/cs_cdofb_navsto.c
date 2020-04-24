@@ -452,8 +452,7 @@ cs_cdofb_navsto_mass_flux(const cs_navsto_param_t     *nsp,
   assert(nsp->mass_density->n_definitions == 1);
   assert(face_vel != NULL);
 
-  const cs_real_t  rho_val =
-    cs_xdef_get_scalar_value(nsp->mass_density->defs[0]);
+  const cs_real_t  rho_val = nsp->mass_density->ref_value;
   cs_real_t  *mass_flux = cs_xdef_get_array(adv->definition);
 
   if (mass_flux == NULL)

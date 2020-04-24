@@ -592,8 +592,8 @@ _mono_apply_remaining_bc(const cs_equation_param_t     *eqp,
 
       if (bf_type[i] & CS_BOUNDARY_IMPOSED_VEL) {
 
-        /* Update mass RHS from the knowledge of the mass flux
-         * TODO: multiply by rho */
+        /* Update mass RHS (constrain on the velocity divergence) from the
+           knowledge of the boundary face velocity */
         mass_rhs[cm->c_id] -= cs_math_3_dot_product(csys->dir_values + 3*f,
                                                     div_op + 3*f);
 
