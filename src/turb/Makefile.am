@@ -65,6 +65,7 @@ AM_LDFLAGS =
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
+cs_turbulence_rotation.h \
 cs_les_filter.h \
 cs_les_inflow.h \
 cs_les_balance.h \
@@ -81,6 +82,7 @@ cs_les_inflow.c \
 cs_les_balance.c \
 cs_turbulence_bc.c \
 cs_turbulence_model.c \
+cs_turbulence_rotation.c \
 clipke.f90 \
 clipsa.f90 \
 clpalp.f90 \
@@ -99,7 +101,6 @@ resv2f.f90 \
 rijech.f90 \
 rijthe.f90 \
 rijthe2.f90 \
-rotcor.f90 \
 tsepls.f90 \
 turbke.f90 \
 turbkw.f90 \

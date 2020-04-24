@@ -186,8 +186,6 @@ double precision, dimension(:), pointer :: w_dist
 type(var_cal_opt) :: vcopt_k, vcopt_e
 
 !===============================================================================
-
-!===============================================================================
 ! 1. Initialization
 !===============================================================================
 
@@ -575,7 +573,7 @@ if (irccor.eq.1) then
 
   ! Compute the modified Ceps2 coefficient (w1 array not used)
 
-  call rotcor(dt, w1, ce2rc)
+  call cs_turbulence_rotation_correction(dt, w1, ce2rc)
 
 else
 

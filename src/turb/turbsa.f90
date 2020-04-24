@@ -148,8 +148,6 @@ double precision, dimension(:), pointer :: w_dist
 type(var_cal_opt) :: vcopt_nusa
 
 !===============================================================================
-
-!===============================================================================
 ! 1. Initialization
 !===============================================================================
 
@@ -319,7 +317,7 @@ if (irccor.eq.1) then
   allocate(rotfct(ncel))
 
   ! Compute the rotation function (w1 array not used)
-  call rotcor(dt, rotfct, w1)
+  call cs_turbulence_rotation_correction(dt, rotfct, w1)
 
   do iel = 1, ncel
     csab1r(iel) = csab1*rotfct(iel)

@@ -177,8 +177,6 @@ double precision, dimension(:,:,:), pointer :: coefbv, cofbfv
 type(var_cal_opt) :: vcopt_w, vcopt_k, vcopt_u
 
 !===============================================================================
-
-!===============================================================================
 ! 1.Initialization
 !===============================================================================
 
@@ -492,7 +490,7 @@ if (irccor.eq.1) then
   allocate(rotfct(ncel))
 
   ! Compute the rotation function (gdkgdw array not used)
-  call rotcor(dt, rotfct, gdkgdw)
+  call cs_turbulence_rotation_correction(dt, rotfct, gdkgdw)
 
   do iel = 1, ncel
     prodk(iel) = prodk(iel)*rotfct(iel)
