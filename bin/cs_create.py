@@ -804,12 +804,12 @@ domains = [
         # This modification is needed for the dlopen of the cathare .so file
         if cathare_path:
             v25_3_line="export v25_3=%s" % cathare_path
-            new_line="export LD_PATH_LIBRARY=$v25_3/%s/"+":$LD_LIBRARY_PATH"
+            new_line="export LD_LIBRARY_PATH=$v25_3/%s/"+":$LD_LIBRARY_PATH"
             il=0
             for line in runcase.lines:
                 il+=1
                 if 'export PATH' in line:
-                    runcase.lines.insert(il, new_line % ("lib/ICoCo"))
+                    runcase.lines.insert(il, new_line % ("ICoCo/lib"))
                     runcase.lines.insert(il, new_line % ("lib"))
                     runcase.lines.insert(il, v25_3_line)
                     runcase.run_cmd_line_id += 3
