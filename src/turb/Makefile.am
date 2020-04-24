@@ -37,6 +37,7 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/fvm \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src/lagr \
 -I$(top_srcdir)/src/cdo \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
@@ -70,6 +71,7 @@ cs_les_filter.h \
 cs_les_inflow.h \
 cs_les_balance.h \
 cs_turbulence_bc.h \
+cs_turbulence_kw.h \
 cs_turbulence_model.h
 
 # Library source files
@@ -81,6 +83,7 @@ cs_les_filter.c \
 cs_les_inflow.c \
 cs_les_balance.c \
 cs_turbulence_bc.c \
+cs_turbulence_kw.c \
 cs_turbulence_model.c \
 cs_turbulence_rotation.c \
 clipke.f90 \
@@ -103,7 +106,6 @@ rijthe.f90 \
 rijthe2.f90 \
 tsepls.f90 \
 turbke.f90 \
-turbkw.f90 \
 turbsa.f90 \
 turrij.f90 \
 visdyn.f90 \

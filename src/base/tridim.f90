@@ -240,6 +240,16 @@ interface
     real(kind=c_double), dimension(*) :: cku
   end subroutine cs_lagr_head_losses
 
+  subroutine cs_turbulence_kw &
+       (nvar, nscal, ncesmp, icetsm, itypsm, dt, smacel) &
+    bind(C, name='cs_turbulence_kw')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: nvar, nscal, ncesmp
+    integer(c_int), dimension(*), intent(in) :: icetsm, itypsm
+    real(kind=c_double), dimension(*) :: dt, smacel
+  end subroutine cs_turbulence_kw
+
 end interface
 
 !===============================================================================
@@ -1351,13 +1361,7 @@ if (iccvfg.eq.0) then
 
   else if (iturb.eq.60) then
 
-    call turbkw &
-  ( nvar   , nscal  ,                                              &
-    ncepdc , ncetsm ,                                              &
-    icepdc , icetsm , itypsm ,                                     &
-    dt     ,                                                       &
-    tslagr ,                                                       &
-    ckupdc , smacel )
+    call cs_turbulence_kw(nvar, nscal, ncetsm, icetsm, itypsm, dt, smacel)
 
     call field_get_val_s(ivarfl(ik), cvar_k)
     call field_get_val_prev_s(ivarfl(ik), cvara_k)
