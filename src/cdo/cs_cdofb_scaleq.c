@@ -1422,6 +1422,7 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
   /* Initialize the local system: matrix and rhs */
   cs_matrix_t  *matrix = cs_matrix_create(cs_shared_ms);
   cs_real_t  *rhs = NULL;
+  double  rhs_norm = 0.;
 
   BFT_MALLOC(rhs, n_faces, cs_real_t);
 # pragma omp parallel for if (n_faces > CS_THR_MIN)
@@ -1431,11 +1432,7 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
   cs_matrix_assembler_values_t  *mav
     = cs_matrix_assembler_values_init(matrix, NULL, NULL);
 
-# pragma omp parallel if (quant->n_cells > CS_THR_MIN)                  \
-  shared(quant, connect, eqp, eqb, eqc, rhs, matrix, mav, rs,           \
-         cell_values, dir_values, fld, cs_cdofb_cell_sys,               \
-         forced_ids, cs_cdofb_cell_bld)                                 \
-  firstprivate(time_eval)
+# pragma omp parallel if (quant->n_cells > CS_THR_MIN)
   {
 #if defined(HAVE_OPENMP) /* Determine the default number of OpenMP threads */
     int  t_id = omp_get_thread_num();
@@ -1467,7 +1464,7 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
     /* Main loop on cells to build the linear system */
     /* --------------------------------------------- */
 
-#   pragma omp for CS_CDO_OMP_SCHEDULE
+#   pragma omp for CS_CDO_OMP_SCHEDULE reduction(+:rhs_norm)
     for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
       /* Set the current cell flag */
@@ -1541,6 +1538,11 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
                          csys);
 #endif
 
+      /* Compute a cellwise norm of the RHS for the normalization of the
+         residual during the resolution of the linear system */
+      rhs_norm += _sfb_cw_rhs_normalization(eqp->sles_param.resnorm_type,
+                                            cm, csys);
+
       /* Remaining part of boundary conditions */
       _sfb_apply_remaining_bc(eqp, eqc, cm, fm, diff_hodge, csys, cb);
 
@@ -1568,20 +1570,27 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
   cs_timer_counter_add_diff(&(eqb->tcb), &t0, &t1);
 
   /* Solve the linear system */
-  cs_real_t  normalization = 1.0; /* TODO */
+  /* ======================= */
+
+  /* Last step in the computation of the renormalization coefficient */
+  cs_equation_sync_rhs_normalization(eqp->sles_param.resnorm_type,
+                                     n_faces,
+                                     rhs,
+                                     &rhs_norm);
+
   cs_sles_t  *sles = cs_sles_find_or_add(eqp->sles_param.field_id, NULL);
 
   cs_equation_solve_scalar_system(n_faces,
                                   eqp,
                                   matrix,
                                   rs,
-                                  normalization,
+                                  rhs_norm,
                                   true, /* rhs_redux */
                                   sles,
                                   eqc->face_values,
                                   rhs);
 
-  /* Update field */
+  /* Update field (cell values ar known) */
   memcpy(fld->val, cell_values, quant->n_cells*sizeof(cs_real_t));
 
   /* Free remaining buffers */
