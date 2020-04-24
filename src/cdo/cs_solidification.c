@@ -2577,6 +2577,16 @@ cs_solidification_initialize(const cs_mesh_t              *mesh,
 
     } /* CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM */
 
+    /* One assumes that all the alloy mixture is liquid thus C_l = C_bulk */
+    memcpy(alloy->c_l_field->val, alloy->c_bulk->val,
+           quant->n_cells*sizeof(cs_real_t));
+
+    if (alloy->c_l_faces != NULL) {
+      cs_real_t  *c_bulk_faces =
+        cs_equation_get_face_values(alloy->solute_equation, false);
+      memset(alloy->c_l_faces, c_bulk_faces, quant->n_faces*sizeof(cs_real_t));
+    }
+
   } /* CS_SOLIDIFICATION_MODEL_BINARY_ALLOY */
 
   /* Update fields and properties which are related to solved variables */
