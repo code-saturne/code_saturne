@@ -1039,7 +1039,8 @@ cs_cdofb_predco_compute_implicit(const cs_mesh_t              *mesh,
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
-    cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(connect);
+    cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(nsp,
+                                                                    connect);
     cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
     cs_hodge_t  *diff_hodge =
       (mom_eqc->diffusion_hodge == NULL) ? NULL : mom_eqc->diffusion_hodge[t_id];

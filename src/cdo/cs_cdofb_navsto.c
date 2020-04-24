@@ -175,21 +175,27 @@ _normal_flux_reco(short int                  fb,
 /*!
  * \brief  Create and allocate a local NavSto builder when Fb schemes are used
  *
- * \param[in] connect        pointer to a cs_cdo_connect_t structure
+ * \param[in] nsp         set of parameters to define the NavSto system
+ * \param[in] connect     pointer to a cs_cdo_connect_t structure
  *
  * \return a cs_cdofb_navsto_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cdofb_navsto_builder_t
-cs_cdofb_navsto_create_builder(const cs_cdo_connect_t   *connect)
+cs_cdofb_navsto_create_builder(const cs_navsto_param_t  *nsp,
+                               const cs_cdo_connect_t   *connect)
 {
-  cs_cdofb_navsto_builder_t  nsb = {.div_op = NULL,
+  cs_cdofb_navsto_builder_t  nsb = {.rho_c = 1.,
+                                    .div_op = NULL,
                                     .bf_type = NULL,
                                     .pressure_bc_val = NULL};
 
   if (connect == NULL)
     return nsb;
+  assert(nsp != NULL);
+
+  nsb.rho_c = nsp->mass_density->ref_value;
 
   BFT_MALLOC(nsb.div_op, 3*connect->n_max_fbyc, cs_real_t);
   BFT_MALLOC(nsb.bf_type, connect->n_max_fbyc, cs_boundary_type_t);
@@ -242,6 +248,11 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
   assert(cm != NULL && csys != NULL && nsp != NULL); /* sanity checks */
 
   const short int n_fc = cm->n_fc;
+
+  /* Update the value of the mass density for the current cell if needed */
+  /* TODO: Case of a uniform but not constant in time */
+  if (!cs_property_is_uniform(nsp->mass_density))
+    nsb->rho_c = cs_property_value_in_cell(cm, nsp->mass_density, t_eval);
 
   /* Build the divergence operator:
    *        D(\hat{u}) = \frac{1}{|c|} \sum_{f_c} \iota_{fc} u_f.f

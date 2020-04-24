@@ -67,6 +67,9 @@ BEGIN_C_DECLS
 
 typedef struct {
 
+  /* Value of the mass density for the current cell */
+  cs_real_t            rho_c;
+
   /* Operator */
   cs_real_t           *div_op;           /* Size: 3*n_fc
                                             div_op = -|c|div */
@@ -122,14 +125,16 @@ cs_cdofb_navsto_divergence_vect(const cs_cell_mesh_t  *cm,
 /*!
  * \brief  Create and allocate a local NavSto builder when Fb schemes are used
  *
- * \param[in] connect        pointer to a cs_cdo_connect_t structure
+ * \param[in] nsp         set of parameters to define the NavSto system
+ * \param[in] connect     pointer to a cs_cdo_connect_t structure
  *
  * \return a cs_cdofb_navsto_builder_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 cs_cdofb_navsto_builder_t
-cs_cdofb_navsto_create_builder(const cs_cdo_connect_t   *connect);
+cs_cdofb_navsto_create_builder(const cs_navsto_param_t  *nsp,
+                               const cs_cdo_connect_t   *connect);
 
 /*----------------------------------------------------------------------------*/
 /*!

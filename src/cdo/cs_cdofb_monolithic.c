@@ -1056,7 +1056,8 @@ _steady_build(const cs_navsto_param_t      *nsp,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
-    cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(connect);
+    cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(nsp,
+                                                                    connect);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
     cs_hodge_t  *diff_hodge =
@@ -1242,7 +1243,8 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
-    cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(connect);
+    cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(nsp,
+                                                                    connect);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
     cs_hodge_t  *diff_hodge =
@@ -1456,9 +1458,10 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
     const cs_real_t  inv_dtcur = 1./dt_cur;
     const cs_real_t  t_eval = t_cur + mom_eqp->theta*dt_cur;
 
-  /* Each thread get back its related structures:
+    /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
-    cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(connect);
+    cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(nsp,
+                                                                    connect);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
     cs_hodge_t  *diff_hodge =

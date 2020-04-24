@@ -629,7 +629,8 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
 
     /* Each thread get back its related structures:
        Get the cell-wise view of the mesh and the algebraic system */
-    cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(connect);
+    cs_cdofb_navsto_builder_t  nsb = cs_cdofb_navsto_create_builder(nsp,
+                                                                    connect);
     cs_cell_mesh_t  *cm = cs_cdo_local_get_cell_mesh(t_id);
     cs_equation_assemble_t  *eqa = cs_equation_assemble_get(t_id);
     cs_hodge_t  *diff_hodge =
