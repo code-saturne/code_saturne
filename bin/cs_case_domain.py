@@ -1536,7 +1536,10 @@ class cathare_domain(domain):
         # Getting the .xml from NEPTUNE_CFD, since all definitions are made
         # within its GUI and paramfile
 
-        nept_paramfile = os.path.join(self.data_dir,
+        _spath = os.path.split(self.case_dir)[0]
+        nept_paramfile = os.path.join(_spath,
+                                      self.neptune_cfd_dom,
+                                      "DATA",
                                       param)
 
         ofile = open(nept_paramfile,'r').readlines()
