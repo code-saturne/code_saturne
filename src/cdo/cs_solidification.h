@@ -110,19 +110,20 @@ typedef enum {
  * \def CS_SOLIDIFICATION_POST_CBULK_ADIM
  *
  * \brief Compute and post-process (C_bulk - C_0)/C_0
- * Only available if the model \ref CS_SOLIDIFICATION_MODEL_BINARY_ALLOY is
- * activated C_0 is the reference concentration
+ *        Only available if the model \ref CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
+ *        is activated
+ * C_0 is the reference concentration
  *
  * \def CS_SOLIDIFICATION_POST_CLIQ
  * \brief Compute and post-process Cliq = C_l*g_l
- * Only available if the model \ref CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
- * is activated.
+ *        Only available if the model \ref CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
+ *        is activated.
  * g_l is the liquid fraction and C_l is the solute distribution (wt %)
  *
  * \def CS_SOLIDIFICATION_POST_CLIQ_ADIM
  * \brief Compute Cliq = C_l*g_l and post-process (Cliq - C_O)/C_0
- * Only available if the model \ref CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
- * is activated.
+ *        Only available if the model \ref CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
+ *       is activated.
  * g_l is the liquid fraction and C_l is the solute distribution (wt %)
  * C_0 is the reference concentration
  *
@@ -131,19 +132,35 @@ typedef enum {
  *
  * \def CS_SOLIDIFICATION_POST_LIQUIDUS_TEMPERATURE
  * \brief Activate the (volumic) post-processing of the liquidus temperature
- * in each cell
+ *        in each cell
+ *
+ * \def CS_SOLIDIFICATION_POST_SEGREGATION_INDEX
+ * \brief Activate the computation and output in the file solidification.dat
+ *        for each time step of the segregation index defined by
+ *        sqrt( 1/|Domaine| * \int_{Domain} ((C_bulk - C_0)/C_0)**2 )
+ *        Only available if the model \ref CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
+ *        is activated
+ *
+ * \def CS_SOLIDIFICATION_POST_SOLID_FRACTION_PORTION
+ * \brief Activate the computation and output in the file solidification.dat
+ *        for each time step of the integral over the computational domain
+ *        of the solid fraction divided by the volume of the domain.
+ *        Only available if the model \ref CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
+ *        is activated
  *
  * \def CS_SOLIDIFICATION_ADVANCED_ANALYSIS
  * \brief Activate a set of post-processing (Advanced usage. Only for the
  * understanding of the solidification process)
 */
 
-#define CS_SOLIDIFICATION_POST_CBULK_ADIM            (1 << 0) /* =  1 */
-#define CS_SOLIDIFICATION_POST_CLIQ                  (1 << 1) /* =  2 */
-#define CS_SOLIDIFICATION_POST_CLIQ_ADIM             (1 << 2) /* =  4 */
-#define CS_SOLIDIFICATION_POST_CELL_STATE            (1 << 3) /* =  8 */
-#define CS_SOLIDIFICATION_POST_LIQUIDUS_TEMPERATURE  (1 << 4) /* = 16 */
-#define CS_SOLIDIFICATION_ADVANCED_ANALYSIS          (1 << 5) /* = 32 */
+#define CS_SOLIDIFICATION_POST_CBULK_ADIM              (1 << 0) /* =   1 */
+#define CS_SOLIDIFICATION_POST_CLIQ                    (1 << 1) /* =   2 */
+#define CS_SOLIDIFICATION_POST_CLIQ_ADIM               (1 << 2) /* =   4 */
+#define CS_SOLIDIFICATION_POST_CELL_STATE              (1 << 3) /* =   8 */
+#define CS_SOLIDIFICATION_POST_LIQUIDUS_TEMPERATURE    (1 << 4) /* =  16 */
+#define CS_SOLIDIFICATION_POST_SEGREGATION_INDEX       (1 << 5) /* =  32 */
+#define CS_SOLIDIFICATION_POST_SOLID_FRACTION_PORTION  (1 << 6) /* =  64 */
+#define CS_SOLIDIFICATION_ADVANCED_ANALYSIS            (1 << 7) /* = 128 */
 
 /*!
  * @name Flags specifying numerical options specific to the solidification
@@ -384,12 +401,14 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
  *
  * \param[in]  connect   pointer to a cs_cdo_connect_t structure
  * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts         pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
-                           const cs_cdo_quantities_t   *quant);
+                           const cs_cdo_quantities_t   *quant,
+                           const cs_time_step_t        *ts);
 
 /*----------------------------------------------------------------------------*/
 /*!

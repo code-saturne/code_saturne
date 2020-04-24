@@ -499,7 +499,9 @@ cs_domain_post(cs_domain_t  *domain)
 
     /* 5.c Specific operations for the Solidification module */
     if (cs_solidification_is_activated())
-      cs_solidification_extra_op(domain->connect, domain->cdo_quantities);
+      cs_solidification_extra_op(domain->connect,
+                                 domain->cdo_quantities,
+                                 domain->time_step);
 
     /* Basic statistic related to variables */
     if (domain->cdo_context->mode == CS_DOMAIN_CDO_MODE_ONLY)

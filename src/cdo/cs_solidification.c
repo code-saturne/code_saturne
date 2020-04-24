@@ -1486,10 +1486,6 @@ _do_monitoring(const cs_cdo_quantities_t   *quant,
   for (int i = 0; i < CS_SOLIDIFICATION_N_STATES; i++)
     solid->state_ratio[i] *= inv_voltot;
 
-  int  n_output_states = CS_SOLIDIFICATION_N_STATES - 1;
- if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
-   n_output_states += 1;
-
   cs_log_printf(CS_LOG_DEFAULT,
                 "### Solidification monitoring: liquid/mushy/solid states\n"
                 "  * Solid    | %6.2f\%% for %9lu cells;\n"
@@ -1507,13 +1503,6 @@ _do_monitoring(const cs_cdo_quantities_t   *quant,
                   "  * Eutectic | %6.2f\%% for %9lu cells;\n",
                   solid->state_ratio[CS_SOLIDIFICATION_STATE_EUTECTIC],
                   solid->n_g_cells[CS_SOLIDIFICATION_STATE_EUTECTIC]);
-
-  if (cs_glob_rank_id < 1 && solid->plot_state != NULL)
-    cs_time_plot_vals_write(solid->plot_state,
-                            ts->nt_cur,
-                            ts->t_cur,
-                            n_output_states,
-                            solid->state_ratio);
 
 }
 
@@ -2214,10 +2203,27 @@ cs_solidification_init_setup(void)
     if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
       n_output_states += 1;
 
+    int  n_output_values = n_output_states;
+    if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+      if (solid->post_flag & CS_SOLIDIFICATION_POST_SEGREGATION_INDEX)
+        n_output_values += 1;
+    }
+
+    if (solid->post_flag & CS_SOLIDIFICATION_POST_SOLID_FRACTION_PORTION)
+      n_output_values += 1;
+
     const char  **labels;
-    BFT_MALLOC(labels, n_output_states, const char *);
-    for (int i = 0; i <n_output_states; i++)
+    BFT_MALLOC(labels, n_output_values, const char *);
+    for (int i = 0; i < n_output_states; i++)
       labels[i] = _state_names[i];
+
+    n_output_values = n_output_states;
+    if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY)
+      if (solid->post_flag & CS_SOLIDIFICATION_POST_SEGREGATION_INDEX)
+        labels[n_output_values++] = "SegrIndex";
+
+    if (solid->post_flag & CS_SOLIDIFICATION_POST_SOLID_FRACTION_PORTION)
+      labels[n_output_values++] = "SolidPortion";
 
     /* Use the physical time rather than the number of iterations */
     solid->plot_state = cs_time_plot_init_probe("solidification",
@@ -2226,13 +2232,14 @@ cs_solidification_init_setup(void)
                                                 false,
                                                 180,   /* flush time */
                                                 -1,
-                                                n_output_states,
+                                                n_output_values,
                                                 NULL,
                                                 NULL,
                                                 labels);
 
     BFT_FREE(labels);
-  }
+
+  } /* rank 0 */
 
 }
 
@@ -2730,15 +2737,16 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
  *
  * \param[in]  connect   pointer to a cs_cdo_connect_t structure
  * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts         pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
-                           const cs_cdo_quantities_t   *quant)
+                           const cs_cdo_quantities_t   *quant,
+                           const cs_time_step_t        *ts)
 {
   CS_UNUSED(connect);
-  CS_UNUSED(quant);
 
   cs_solidification_t  *solid = cs_solidification_structure;
 
@@ -2747,16 +2755,85 @@ cs_solidification_extra_op(const cs_cdo_connect_t      *connect,
 
   if ((solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) == 0)
     return;
-  if ((solid->post_flag & CS_SOLIDIFICATION_ADVANCED_ANALYSIS) == 0)
-    return;
 
   cs_solidification_binary_alloy_t  *alloy
     = (cs_solidification_binary_alloy_t *)solid->model_context;
-
   assert(alloy != NULL);
 
-  cs_equation_t  *eq = alloy->solute_equation;
-  const cs_real_t  *c_bulk = (cs_equation_get_field(eq))->val;
+  const cs_real_t  *c_bulk = alloy->c_bulk->val;
+
+  /* Estimate the number of values to output */
+  int  n_output_values = CS_SOLIDIFICATION_N_STATES - 1;
+  if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+    n_output_values += 1;
+
+    if (solid->post_flag & CS_SOLIDIFICATION_POST_SEGREGATION_INDEX)
+      n_output_values += 1;
+
+  }
+
+  if (solid->post_flag & CS_SOLIDIFICATION_POST_SOLID_FRACTION_PORTION)
+    n_output_values += 1;
+
+  /* Compute the output values */
+  cs_real_t  *output_values = NULL;
+  BFT_MALLOC(output_values, n_output_values, cs_real_t);
+  memset(output_values, 0, n_output_values*sizeof(cs_real_t));
+
+  int n_output_states = (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) ?
+    CS_SOLIDIFICATION_N_STATES : CS_SOLIDIFICATION_N_STATES - 1;
+  for (int i = 0; i < n_output_states; i++)
+    output_values[i] = solid->state_ratio[i];
+
+  n_output_values = n_output_states;
+  if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+    if (solid->post_flag & CS_SOLIDIFICATION_POST_SEGREGATION_INDEX) {
+
+      const cs_real_t  inv_cref = 1./alloy->ref_concentration;
+
+      cs_real_t  si = 0;
+      for (cs_lnum_t i = 0; i < quant->n_cells; i++) {
+        double  c = (c_bulk[i] - alloy->ref_concentration)*inv_cref;
+        si += c*c*quant->cell_vol[i];
+      }
+
+      /* Parallel reduction */
+      cs_parall_sum(1, CS_REAL_TYPE, &si);
+
+      output_values[n_output_values] = sqrt(si/quant->vol_tot);
+      n_output_values++;
+
+    }
+  } /* Binary alloy modelling */
+
+  if (solid->post_flag & CS_SOLIDIFICATION_POST_SOLID_FRACTION_PORTION) {
+
+    const cs_real_t  *gl = solid->g_l_field->val;
+
+    cs_real_t  integr = 0;
+    for (cs_lnum_t i = 0; i < quant->n_cells; i++)
+      integr += (1 - gl[i])*quant->cell_vol[i];
+
+    /* Parallel reduction */
+    cs_parall_sum(1, CS_REAL_TYPE, &integr);
+
+    output_values[n_output_values] = integr/quant->vol_tot;
+    n_output_values++;
+
+  }
+
+  if (cs_glob_rank_id < 1 && solid->plot_state != NULL)
+    cs_time_plot_vals_write(solid->plot_state,
+                            ts->nt_cur,
+                            ts->t_cur,
+                            n_output_values,
+                            output_values);
+
+  BFT_FREE(output_values);
+
+  if ((solid->post_flag & CS_SOLIDIFICATION_ADVANCED_ANALYSIS) == 0)
+    return;
+
   const cs_real_t  *c_l = alloy->c_l_field->val;
   const cs_real_t  *t_bulk = solid->temperature->val;
   const cs_real_t  *t_liq = alloy->t_liquidus;
@@ -2988,12 +3065,8 @@ cs_solidification_extra_post(void                      *input,
 
       if (solid->post_flag & CS_SOLIDIFICATION_POST_CBULK_ADIM) {
 
-        cs_field_t  *c_bulk_field =
-          cs_equation_get_field(alloy->solute_equation);
         const cs_real_t  inv_cref = 1./alloy->ref_concentration;
-        assert(c_bulk_field != NULL);
-
-        const cs_real_t  *c_bulk = c_bulk_field->val;
+        const cs_real_t  *c_bulk = alloy->c_bulk->val;
 
         for (cs_lnum_t i = 0; i < n_cells; i++)
           wb[i] = (c_bulk[i] - alloy->ref_concentration)*inv_cref;
