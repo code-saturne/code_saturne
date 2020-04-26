@@ -281,6 +281,7 @@ def process_cmd_line(argv, pkg):
            'force_id': force_id,
            'n_procs': options.nprocs,
            'n_threads': options.nthreads,
+           'time_limit': None,
            'compute_build': compute_build}
 
     return r_c, s_c, run_conf
@@ -555,6 +556,7 @@ def run(argv=[], pkg=None, submit_args=None):
 
     retval = c.run(n_procs=r_c['n_procs'],
                    n_threads=r_c['n_threads'],
+                   time_limit=r_c['time_limit'],
                    run_id=r_c['run_id'],
                    force_id=r_c['force_id'],
                    stages=stages)

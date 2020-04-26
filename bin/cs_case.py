@@ -297,6 +297,10 @@ class case:
 
         self.run_id = None
 
+        # Time limit
+
+        self.time_limit = None
+
         # Error reporting
         self.error = ''
         self.error_long = ''
@@ -1572,7 +1576,7 @@ class case:
 
     #---------------------------------------------------------------------------
 
-    def run_solver(self, run_id = None):
+    def run_solver(self):
 
         """
         Run solver proper.
@@ -1593,10 +1597,17 @@ class case:
                          ' **********************\n\n')
         sys.stdout.flush()
 
-        # Maximum remaining time for PBS or similar batch system.
+        # Maximum remaining time if defined through run configuration
+        # or batch system.
 
         b = cs_exec_environment.batch_info()
         max_time = b.get_remaining_time()
+        if self.time_limit:
+            if max_time:
+                if self.time_limit < max_time:
+                    max_time = self.time_limit
+            else:
+                max_time = self.time_limit
         if max_time != None:
             os.putenv('CS_MAXTIME', str(max_time))
 
@@ -1663,8 +1674,7 @@ class case:
 
     #---------------------------------------------------------------------------
 
-    def save_results(self,
-                     run_id = None):
+    def save_results(self):
 
         """
         Save calcultation results from execution directory to result
@@ -1723,6 +1733,7 @@ class case:
     def run(self,
             n_procs = None,
             n_threads = None,
+            time_limit = None,
             mpiexec_options=None,
             scratchdir = None,
             run_id = None,
@@ -1799,6 +1810,16 @@ class case:
         # (nonlocal filesystem, reachable by all the processes)
 
         self.set_exec_dir(force_id)
+
+        # Optional time limit
+
+        if time_limit != None:
+            try:
+                time_limit = int(time_limit)
+                if time_limit >= 0:
+                    self.time_limit = time_limit
+            except Exception:
+                pass
 
         # Greeting message.
 
