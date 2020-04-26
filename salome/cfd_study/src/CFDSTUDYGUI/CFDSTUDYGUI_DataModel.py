@@ -503,6 +503,12 @@ def _SetStudyLocation(theStudyPath, theCaseNames,theCreateOpt,
             replaceOrInsertCouplingPath(os.path.join(theStudyPath,
                                                      "coupling_parameters.py"))
 
+        # TODO handle number of procs required in a consistant manner for coupled cases
+        # Better handled using models/BatchRunningModel
+        if "run.cfg" in os.listdir(theStudyPath) and theCreateOpt:
+            if theNprocs != "":
+                pass
+
     return iok
 
 
@@ -1834,6 +1840,10 @@ def checkCode(theCase):
     @rtype: C{CFD_Saturne} or C{CFD_Neptune}
     @return: C{True} if C{theCase} has the script to start GUI in the DATA folder.
     """
+
+    # TODO: this should be a feature od the code_saturne scripts
+    # (for exampe a sub-command of "code_saturne run" or code_saturne.info")
+
     if not checkType(theCase, dict_object["Case"]):
         return CFD_Code()
 
