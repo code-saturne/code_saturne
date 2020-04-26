@@ -42,7 +42,8 @@ import fnmatch
 from code_saturne.cs_exec_environment import get_shell_type, enquote_arg
 from code_saturne.cs_compile import files_to_compile, compile_and_link
 from code_saturne import cs_create
-from code_saturne.cs_create import set_executable
+from code_saturne.cs_create import set_executable, create_local_launcher
+from code_saturne import cs_run_conf
 
 from code_saturne.model import XMLengine
 from code_saturne.studymanager.cs_studymanager_pathes_model import PathesModel
@@ -296,42 +297,7 @@ class Case(object):
 
         # 3) Update the GUI script from the Repository
         data_subdir = os.path.join(self.__repo, subdir, "DATA")
-        self.update_launch_script_path(data_subdir, None, xmlonly)
-
-    #---------------------------------------------------------------------------
-
-    def update_launch_script_path(self, subdir, destdir=None, xmlonly=False):
-        """
-        Update path for the script in the Repository.
-        """
-        if not destdir:
-            gui_script = os.path.join(self.__repo, subdir, self.pkg.guiname)
-        else:
-            gui_script = os.path.join(destdir, subdir, self.pkg.guiname)
-
-        have_gui = 1
-        try:
-            f = open(gui_script, mode = 'r')
-        except IOError:
-           print("Warning SaturneGUI does not exist: %s\n" % gui_script)
-           have_gui = 0
-
-        if have_gui:
-           lines = f.readlines()
-           f.close()
-
-           for i in range(len(lines)):
-               if re.search(r'^export PATH=', lines[i]):
-                   if xmlonly:
-                       lines[i] = 'export PATH="":$PATH\n'
-                   else:
-                       lines[i] = 'export PATH="' + self.pkg.get_dir('bindir')\
-                                                  +'":$PATH\n'
-           f = open(gui_script, mode = 'w')
-           f.writelines(lines)
-           f.close()
-
-           set_executable(gui_script)
+        create_local_launcher(self.package, data_subdir)
 
     #---------------------------------------------------------------------------
 
@@ -354,7 +320,7 @@ class Case(object):
 
         if self.subdomains:
             case_dir = os.path.join(self.__repo, self.label)
-            self.update_launch_script_path(case_dir, None, xmlonly)
+            create_local_launcher(self.package, case_dir)
             # recreate possibly missing but compulsory directory
             r = os.path.join(case_dir, "RESU_COUPLING")
             if not os.path.isdir(r):
@@ -416,6 +382,29 @@ class Case(object):
 
     #---------------------------------------------------------------------------
 
+    def __updateRunId(self, run_id):
+        """
+        Update the run configuration.
+        """
+
+        # Determine run.cfg path
+        path = os.path.join(self.__dest, self.label)
+        if not self.subdomains:
+            path = os.path.join(path, "DATA")
+
+        path = os.path.join(path, "run.cfg")
+
+        run_conf = cs_run_conf.run_conf(path,
+                                        package=self.pkg)
+
+        # Assign run command from repo in dest
+        run_conf.set('run', 'id', str(run_id))
+
+        # Write runcase
+        run_conf.save()
+
+    #---------------------------------------------------------------------------
+
     def run(self):
         """
         Check if a run with same result subdirectory name exists
@@ -447,6 +436,8 @@ class Case(object):
 
         self.run_id  = run_id
         self.run_dir = run_dir
+
+        self.__updateRunId(run_id)
 
         run_cmd = enquote_arg(self.exe) + " run"
         error, self.is_time = run_studymanager_command(run_cmd, self.__log)
@@ -792,13 +783,12 @@ class Study(object):
                             os.mkdir(resu_coupling)
                         run_conf_path = 'run.cfg'
             if coupling and not os.path.isfile(run_conf_path):
-                from code_saturne import cs_run_conf
                 run_conf = cs_run_conf.run_conf('run.cfg',
                                                 package=self.__package,
                                                 create_if_missing=True)
                 run_conf.set('setup', 'coupling', coupling)
                 run_conf.save()
-            c.update_launch_script_path(c.label, destdir=self.__dest)
+            create_local_launcher(self.__package, self.__dest)
             os.chdir(self.__dest)
         else:
             cmd = e + " create --case " + c.label  \
@@ -895,8 +885,6 @@ class Study(object):
                                               case_label=c.label)
                     # update path in gui/run script
                     data_subdir = os.path.join(c.label, "DATA")
-                    c.update_launch_script_path(data_subdir, self.__dest,
-                                                xmlonly=False)
 
         os.chdir(repbase)
 

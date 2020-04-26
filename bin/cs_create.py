@@ -335,13 +335,11 @@ class study:
         if self.py_case_name is not None:
             self.create_python_case(repbase)
 
-        # Creating coupling structure
+        # Creating coupling structures
         if len(self.cases) + len(self.syr_case_names) > 1 \
            or self.cat_case_name or self.py_case_name:
             self.create_coupling(repbase)
-
-        # Create launcher for code coupling
-        create_local_launcher(self.package, repbase)
+            create_local_launcher(self.package, repbase)
 
 
     def create_syrthes_cases(self, repbase):
