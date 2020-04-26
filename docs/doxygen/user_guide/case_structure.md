@@ -254,11 +254,11 @@ place when the file is regenerated.
 As an extension of the common [`.ini`] file format, an alternative way of
 defining key-value pairs in a given section is to define a section named
 *section-name:key*. In this case, all lines inside that section are
-associated to the value (except for initial en final empty lines).
-This avoids indentation requirments using multiline entries and generally
+associated to the value (except for initial and final empty lines).
+This avoids indentation requirements using multiline entries and generally
 keeps things more readable. Such sections may optionally be closed by
 an empty `[]` section declaration. This is only useful if comments
-must be added before a following section, as they are implicitely closed
+must be added before a following section, as they are implicitly closed
 when a following section declaration or the end of file is reached.
 
 The relevant sections and associated keywords are described below:
@@ -297,7 +297,7 @@ pairs may be used.
 Optional (recommended) section relative to run stages and other aspects.
 
 In case of multiple available builds (such as when standard and debug builds
-are available, the compute build may be defined here:
+are available), the compute build may be defined here:
 
 * `compute_build`
 

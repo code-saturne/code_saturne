@@ -61,7 +61,7 @@ Once these steps completed, the user should go in the directory `CASE1/DATA` and
 A window similar to the one below will appear.
 
 \anchor fig_3_e1
-![GUI main page](gui_case_dir.png) "GUI Main Page"
+![GUI main page](gui_case_dir.png "GUI Main Page")
 
 Click on the "Run computation" button in the toolbar, as shown
 [below](@ref fig_43_e1).
@@ -86,7 +86,7 @@ following points in `CASE1/RESU/<YYYYMMDD-hhmm>`
   error messages in the `preprocessor*.log` file;
 - if the problem is related to boundary conditions, the user should visualize
   the `error.ensight` file with ParaView or EnSight;
-- if the calculation stops in the cod_saturne solver, the user should look for
+- if the calculation stops in the code_saturne solver, the user should look for
   messages at the end of the files `run_solver.log` and `error*`.
   In addition, the user can track the following keywords in the log
   (these are specific error signals):
@@ -105,4 +105,4 @@ with the use of the Valgrind tool or a debugger. The use of such a tool can be
 specified in the GUI in the advanced options of the item "Prepare batch calculation",
 or without the GUI, in the `cs_user_scripts.py` file (which can be found in
 `DATA/REFERENCE` and should be copied in `DATA`, see the
-[step by step calculation instructions](@ref sec_prg_stepbystepcalculation]).
+[step by step calculation instructions](@ref sec_prg_stepbystepcalculation)).

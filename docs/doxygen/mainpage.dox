@@ -54,9 +54,8 @@
   \section mainpage_install Installation
 
   code_saturne may be configured and installed using the
-  \c configure shell script and \c make. Please read the \c INSTALL
-  file in the toplevel source directory if you are not familiar
-  with configuration scripts generated through GNU autoconf and automake.
+  \c configure shell script and \c make. Please refer to the
+  <a href="../../install.pdf"><b>installation guide</b></a>.
 
   \section mainpage_sublibs Sub-libraries
 
