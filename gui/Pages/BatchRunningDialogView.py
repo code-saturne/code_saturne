@@ -790,7 +790,15 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
 
         rm_type = self.jmdl.batch.rm_type
 
-        cmd = cs_exec_environment.enquote_arg(sys.argv[0])
+        cmd = sys.argv[0]
+
+        if not cmd:
+           pkg = self.case['package']
+           bindir = pkg.get_dir('bindir')
+           cmd = os.path.join(bindir, pkg.name)
+
+        cmd = cs_exec_environment.enquote_arg(cmd)
+
         run_title = self.case.module_name()
 
         if rm_type == None:
