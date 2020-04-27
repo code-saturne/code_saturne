@@ -168,9 +168,8 @@ cs_evaluate_3_square_wc2x_norm(const cs_real_t        *array,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the relative norm of the difference of two arrays scanned
- *         by the same \ref cs_adjacency_t structure. Normalization is done
- *         with the reference array.
+ * \brief  Compute the norm of the difference of two arrays scanne by the same
+ *         \ref cs_adjacency_t structure with the reference array.
  *         The quantities computed are synchronized in parallel.
  *
  * \param[in]  array   array to analyze
@@ -195,6 +194,29 @@ cs_evaluate_delta_square_wc2x_norm(const cs_real_t        *array,
  *         by the same \ref cs_adjacency_t structure. Normalization is done
  *         with the reference array.
  *         The quantities computed are synchronized in parallel.
+ *
+ * \param[in]  array   array to analyze
+ * \param[in]  ref     array used for normalization and difference
+ * \param[in]  c2x     ajacency structure from cell to x entities (mandatory)
+ * \param[in]  w_c2x   weight to apply (mandatory), scanned by c2x
+ *
+ * \return the computed square weighted and normalized L2-norm of the
+ *          difference between array and reference
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_evaluate_delta_square_wc2x_rnorm(const cs_real_t        *array,
+                                    const cs_real_t        *ref,
+                                    const cs_adjacency_t   *c2x,
+                                    const cs_real_t        *w_c2x);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the relative norm of the difference of two arrays scanned
+ *         by the same \ref cs_adjacency_t structure. Normalization is done
+ *         with the reference array.
+ *         The quantities computed are synchronized in parallel.
  *         Case of vector-valued arrays.
  *
  * \param[in]  array   array to analyze
@@ -208,10 +230,10 @@ cs_evaluate_delta_square_wc2x_norm(const cs_real_t        *array,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_evaluate_delta_3_square_wc2x_norm(const cs_real_t        *array,
-                                     const cs_real_t        *ref,
-                                     const cs_adjacency_t   *c2x,
-                                     const cs_real_t        *w_c2x);
+cs_evaluate_delta_3_square_wc2x_rnorm(const cs_real_t        *array,
+                                      const cs_real_t        *ref,
+                                      const cs_adjacency_t   *c2x,
+                                      const cs_real_t        *w_c2x);
 
 /*----------------------------------------------------------------------------*/
 /*!

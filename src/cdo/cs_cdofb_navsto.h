@@ -172,7 +172,9 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Test if one has to do one more Picard iteration
+ * \brief  Test if one has to do one more Picard iteration.
+ *         Test if performed on the relative norm on the increment between
+ *         two iterations but also on the divergence.
  *
  * \param[in]      nsp               pointer to a cs_navsto_param_t structure
  * \param[in]      connect           set of additional connectivities for CDO

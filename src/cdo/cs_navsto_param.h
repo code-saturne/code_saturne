@@ -342,11 +342,17 @@ typedef struct {
    */
   int                           algo_n_max_iter;
 
-  /*! \var picard_tolerance
-   *  Tolerance at which the Picard algorithm is resolved. One handles the
-   *  non-linearity arising from the advection term with the algorithm.
+  /*! \var picard_rtol
+   *  Relative tolerance at which the Picard algorithm is resolved. One handles
+   *  the non-linearity arising from the advection term with the algorithm.
    */
-  cs_real_t                     picard_tolerance;
+  cs_real_t                     picard_rtol;
+
+  /*! \var picard_atol
+   *  Absolute tolerance at which the Picard algorithm is resolved. One handles
+   *  the non-linearity arising from the advection term with the algorithm.
+   */
+  cs_real_t                     picard_atol;
 
   /*! \var picard_n_max_iter
    * Maximal number of iterations for the Picard algorithm used to handle
@@ -635,6 +641,14 @@ typedef struct {
  * \var res
  * value of the residual for the iterative algorithm
  *
+ * \var res0
+ * Initial value of the residual for the iterative algorithm
+ *
+ * \var tol
+ * tolerance computed as tol = max(atol, res0*rtol) where
+ * atol and rtol are respectively the absolute and relative tolerance associated
+ * to the algorithm
+ *
  * \var n_algo_iter
  * number of iterations for the algorithm (outer iterations)
  *
@@ -649,6 +663,9 @@ typedef struct {
 
   cs_sles_convergence_state_t      cvg;
   double                           res;
+  double                           res0;
+  double                           tol;
+
   int                              n_algo_iter;
   int                              n_inner_iter;
   int                              last_inner_iter;
@@ -686,9 +703,13 @@ typedef struct {
  * Set the type to use in all routines involving quadrature (similar to \ref
  * CS_EQKEY_BC_QUADRATURE)
  *
- * \var CS_NSKEY_PICARD_TOLERANCE
- * Tolerance at which the non-linearity arising from the advection term is
- * resolved
+ * \var CS_NSKEY_PICARD_RTOL
+ * Relative tolerance at which the non-linearity arising from the advection
+ * term is resolved using a Picard (fixed-point) algorithm
+ *
+ * \var CS_NSKEY_PICARD_ATOL
+ * Absolute tolerance at which the non-linearity arising from the advection
+ * term is resolved using a Picard (fixed-point) algorithm
  *
  * \var CS_NSKEY_RESIDUAL_TOLERANCE
  * Tolerance at which the Oseen or Stokes system is resolved (apply to the
@@ -724,7 +745,8 @@ typedef enum {
   CS_NSKEY_MAX_ALGO_ITER,
   CS_NSKEY_MAX_PICARD_ITER,
   CS_NSKEY_QUADRATURE,
-  CS_NSKEY_PICARD_TOLERANCE,
+  CS_NSKEY_PICARD_RTOL,
+  CS_NSKEY_PICARD_ATOL,
   CS_NSKEY_RESIDUAL_TOLERANCE,
   CS_NSKEY_SLES_STRATEGY,
   CS_NSKEY_SPACE_SCHEME,
@@ -797,16 +819,10 @@ cs_navsto_algo_info_printf(const char                    *algo_name,
                            double                         div_l2)
 {
   assert(algo_name != NULL);
-  if (ns_info.n_algo_iter == 1)
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "%8s.It%02d-- %9s  %5d  %6d  %6.4e\n",
-                  algo_name, ns_info.n_algo_iter, " ",
-                  ns_info.last_inner_iter, ns_info.n_inner_iter, div_l2);
-  else
-    cs_log_printf(CS_LOG_DEFAULT,
-                  "%8s.It%02d-- %5.3e  %5d  %6d  %6.4e\n",
-                  algo_name, ns_info.n_algo_iter, ns_info.res,
-                  ns_info.last_inner_iter, ns_info.n_inner_iter, div_l2);
+  cs_log_printf(CS_LOG_DEFAULT,
+                "%8s.It%02d-- %5.3e  %5d  %6d  %6.4e\n",
+                algo_name, ns_info.n_algo_iter, ns_info.res,
+                ns_info.last_inner_iter, ns_info.n_inner_iter, div_l2);
   cs_log_printf_flush(CS_LOG_DEFAULT);
 }
 

@@ -1710,9 +1710,8 @@ cs_evaluate_3_square_wc2x_norm(const cs_real_t        *array,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the relative norm of the difference of two arrays scanned
- *         by the same \ref cs_adjacency_t structure. Normalization is done
- *         with the reference array.
+ * \brief  Compute the norm of the difference of two arrays scanne by the same
+ *         \ref cs_adjacency_t structure with the reference array.
  *         The quantities computed are synchronized in parallel.
  *
  * \param[in]  array   array to analyze
@@ -1730,6 +1729,98 @@ cs_evaluate_delta_square_wc2x_norm(const cs_real_t        *array,
                                    const cs_real_t        *ref,
                                    const cs_adjacency_t   *c2x,
                                    const cs_real_t        *w_c2x)
+{
+  _sanity_checks(__func__, c2x, w_c2x);
+
+  const cs_lnum_t  size = c2x->idx[cs_cdo_quant->n_cells];
+
+  /*
+   * The algorithm used is l3superblock60, based on the article:
+   * "Reducing Floating Point Error in Dot Product Using the Superblock Family
+   * of Algorithms" by Anthony M. Castaldo, R. Clint Whaley, and Anthony
+   * T. Chronopoulos, SIAM J. SCI. COMPUT., Vol. 31, No. 2, pp. 1156--1174
+   * 2008 Society for Industrial and Applied Mathematics
+   */
+
+  double  n2 = 0;
+
+# pragma omp parallel reduction(+:n2) if (size > CS_THR_MIN)
+  {
+    cs_lnum_t s_id, e_id;
+    _thread_range(size, &s_id, &e_id);
+
+    const cs_lnum_t  n = e_id - s_id;
+    const cs_lnum_t  *_ids = c2x->ids + s_id;
+    const cs_real_t  *_w = w_c2x + s_id;
+    const cs_lnum_t  block_size = CS_SBLOCK_BLOCK_SIZE;
+    const cs_lnum_t  n_blocks = (n + block_size - 1) / block_size;
+    const cs_lnum_t  n_sblocks = (n_blocks > 3) ? sqrt(n_blocks) : 1;
+    const cs_lnum_t  blocks_in_sblocks =
+      (n + block_size*n_sblocks - 1) / (block_size*n_sblocks);
+
+    cs_lnum_t  shift = 0;
+
+    for (cs_lnum_t s = 0; s < n_sblocks; s++) { /* Loop on slices */
+
+      double  s_n2 = 0.0;
+
+      for (cs_lnum_t b_id = 0; b_id < blocks_in_sblocks; b_id++) {
+
+        const cs_lnum_t  start_id = shift;
+        shift += block_size;
+        if (shift > n)
+          shift = n, b_id = blocks_in_sblocks;
+        const cs_lnum_t  end_id = shift;
+
+        double  _n2 = 0.0;
+        for (cs_lnum_t j = start_id; j < end_id; j++) {
+
+          const cs_lnum_t  x_id = _ids[j];
+          const cs_real_t  w = _w[j];
+          const cs_real_t  delta = array[x_id] - ref[x_id];
+
+          _n2   += w * delta*delta;
+
+        } /* Loop on block_size */
+
+        s_n2   += _n2;
+
+      } /* Loop on blocks */
+
+      n2   += s_n2;
+
+    } /* Loop on super-blocks */
+
+  } /* OpenMP block */
+
+  /* Parallel treatment */
+  cs_parall_sum(1, CS_DOUBLE, &n2);
+
+  return (cs_real_t)n2;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the relative norm of the difference of two arrays scanned
+ *         by the same \ref cs_adjacency_t structure. Normalization is done
+ *         with the reference array.
+ *         The quantities computed are synchronized in parallel.
+ *
+ * \param[in]  array   array to analyze
+ * \param[in]  ref     array used for normalization and difference
+ * \param[in]  c2x     ajacency structure from cell to x entities (mandatory)
+ * \param[in]  w_c2x   weight to apply (mandatory), scanned by c2x
+ *
+ * \return the computed square weighted and normalized L2-norm of the
+ *          difference between array and reference
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_real_t
+cs_evaluate_delta_square_wc2x_rnorm(const cs_real_t        *array,
+                                    const cs_real_t        *ref,
+                                    const cs_adjacency_t   *c2x,
+                                    const cs_real_t        *w_c2x)
 {
   _sanity_checks(__func__, c2x, w_c2x);
 
@@ -1831,10 +1922,10 @@ cs_evaluate_delta_square_wc2x_norm(const cs_real_t        *array,
 /*----------------------------------------------------------------------------*/
 
 cs_real_t
-cs_evaluate_delta_3_square_wc2x_norm(const cs_real_t        *array,
-                                     const cs_real_t        *ref,
-                                     const cs_adjacency_t   *c2x,
-                                     const cs_real_t        *w_c2x)
+cs_evaluate_delta_3_square_wc2x_rnorm(const cs_real_t        *array,
+                                      const cs_real_t        *ref,
+                                      const cs_adjacency_t   *c2x,
+                                      const cs_real_t        *w_c2x)
 {
   _sanity_checks(__func__, c2x, w_c2x);
 

@@ -368,7 +368,9 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Test if one has to do one more Picard iteration
+ * \brief  Test if one has to do one more Picard iteration.
+ *         Test if performed on the relative norm on the increment between
+ *         two iterations but also on the divergence.
  *
  * \param[in]      nsp               pointer to a cs_navsto_param_t structure
  * \param[in]      connect           set of additional connectivities for CDO
@@ -394,28 +396,43 @@ cs_cdofb_navsto_picard_cvg_test(const cs_navsto_param_t      *nsp,
 
   cs_real_t  previous_picard_res = ns_info->res;
 
+  /* Storage of the initial residual to build a relative tolerance */
+  if (ns_info->n_algo_iter == 0) {
+
+    ns_info->res0 = cs_evaluate_delta_square_wc2x_norm(previous_iterate,
+                                                       current_iterate,
+                                                       connect->c2f,
+                                                       quant->pvol_fc);
+    assert(ns_info->res0 > -DBL_MIN);
+    ns_info->res0 = sqrt(ns_info->res0);
+    ns_info->res = ns_info->res0;
+    ns_info->tol = fmax(nslesp.picard_rtol*ns_info->res0, nslesp.picard_atol);
+
+  }
+  else {
+
+    ns_info->res = cs_evaluate_delta_square_wc2x_norm(previous_iterate,
+                                                      current_iterate,
+                                                      connect->c2f,
+                                                      quant->pvol_fc);
+    assert(ns_info->res > -DBL_MIN);
+    ns_info->res = sqrt(ns_info->res);
+
+  }
+
   /* Increment the number of Picard iterations */
   ns_info->n_algo_iter += 1;
 
-  /* Compute the new residual: L2 norm of the mass flux increment */
-  ns_info->res = cs_evaluate_delta_square_wc2x_norm(previous_iterate,
-                                                    current_iterate,
-                                                    connect->c2f,
-                                                    quant->pvol_fc);
-  assert(ns_info->res > -DBL_MIN);
-  ns_info->res = sqrt(ns_info->res);
-
   /* Set the convergence status */
-  if (ns_info->res < nslesp.picard_tolerance &&
-      div_l2_norm < nslesp.picard_tolerance) {
+  if (ns_info->res < ns_info->tol) // && div_l2_norm  < nslesp.picard_atol)
     ns_info->cvg = CS_SLES_CONVERGED;
-  }
-  else if (ns_info->res >  diverg_factor * previous_picard_res) {
+
+  else if (ns_info->res >  diverg_factor * previous_picard_res)
     ns_info->cvg = CS_SLES_DIVERGED;
-  }
-  else if (ns_info->n_algo_iter >= nslesp.picard_n_max_iter) {
+
+  else if (ns_info->n_algo_iter >= nslesp.picard_n_max_iter)
     ns_info->cvg = CS_SLES_MAX_ITERATION;
-  }
+
   else
     ns_info->cvg = CS_SLES_ITERATING;
 

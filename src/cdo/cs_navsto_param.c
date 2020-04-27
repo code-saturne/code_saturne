@@ -255,7 +255,8 @@ cs_navsto_param_create(const cs_boundary_t             *boundaries,
   /* Resolution parameters */
   param->sles_param.algo_n_max_iter = 100;
   param->sles_param.algo_tolerance = 1e-08;
-  param->sles_param.picard_tolerance = 1e-6;
+  param->sles_param.picard_rtol = 1e-3;
+  param->sles_param.picard_atol = 1e-6;
   param->sles_param.picard_n_max_iter = 50;
   param->sles_param.strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
 
@@ -535,11 +536,20 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     }
     break; /* Quadrature */
 
-  case CS_NSKEY_PICARD_TOLERANCE:
-    nsp->sles_param.picard_tolerance = atof(val);
-    if (nsp->sles_param.picard_tolerance < 0)
+  case CS_NSKEY_PICARD_RTOL:
+    nsp->sles_param.picard_rtol = atof(val);
+    if (nsp->sles_param.picard_rtol < 0)
       bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid value for the Picard tolerance\n", __func__);
+                " %s: Invalid value for the Picard relative tolerance\n",
+                __func__);
+    break;
+
+  case CS_NSKEY_PICARD_ATOL:
+    nsp->sles_param.picard_atol = atof(val);
+    if (nsp->sles_param.picard_atol < 0)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid value for the Picard absolute tolerance\n",
+                __func__);
     break;
 
   case CS_NSKEY_RESIDUAL_TOLERANCE:
@@ -786,8 +796,9 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
 
   /* Describe if needed the SLES settings for the Picard algorithm */
   if (nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES) {
-    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Picard.Residual:  %5.3e\n",
-                  nsp->sles_param.picard_tolerance);
+    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Picard.rtol: %5.3e;"
+                  " Picard.atol: %5.3e\n",
+                  nsp->sles_param.picard_rtol, nsp->sles_param.picard_atol);
     cs_log_printf(CS_LOG_SETUP, "  * NavSto | Picard.Max.Iters: %d\n",
                   nsp->sles_param.picard_n_max_iter);
   }
