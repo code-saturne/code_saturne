@@ -268,8 +268,12 @@ class BatchRunningModel(object):
         config_features = pkg_compute.config.features
         if config_features['mpi'] == 'yes':
             self.have_mpi = True
+        else:
+            self.have_mpi = False
         if config_features['openmp'] == 'yes':
             self.have_openmp = True
+        else:
+            self.have_openmp = False
 
         if not self.have_mpi:
             self.job_dict['n_procs'] = None
