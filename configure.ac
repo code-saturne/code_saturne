@@ -1145,7 +1145,6 @@ AC_CONFIG_FILES([Makefile
                  docs/Makefile docs/doxygen/Makefile docs/style/csvers.tex
                  docs/studymanager/Makefile docs/studymanager/graphics/Makefile
                  docs/developer/Makefile docs/developer/graphics/Makefile
-                 docs/install/Makefile
                  docs/refcard/Makefile docs/refcard/graphics/Makefile
                  docs/theory/Makefile docs/theory/graphics/Makefile
                  docs/user/Makefile docs/user/graphics/Makefile
