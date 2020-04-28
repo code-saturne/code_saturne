@@ -27,6 +27,10 @@ Numerics and physical modelling:
 
 Architectural changes:
 
+- Documentation: move the installation documentation to a top-level
+  INSTALL.md file. This replaces both the matching sections in the
+  README.mf and the LaTeX-based install.pdf file.
+
 - Replace SCRIPTS/"runcase" with DATA/run.cfg logic.
   * DATA/SaturneGUI is replaced by DATA/code_saturne, which can both launch
     the GUI or run the code (using "./code_saturne" or "./code_saturne run").

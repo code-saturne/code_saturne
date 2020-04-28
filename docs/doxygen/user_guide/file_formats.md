@@ -262,7 +262,9 @@ The current MED 4.x versions are based on HDF5 1.10.
 <tr><td> Input compatibility  <td> MED 2.3 to 4.1 (assuming up to date MED library);
                                    only unstructured nodal connectivity is supported
 <tr><td> Output compatibility <td> MED 3.0 and above (based on MED library version)
-<tr><td> Documentation        <td> on-line documentation; download link at
+<tr><td> Documentation        <td> on-line documentation; descripyion at
+                                   https://www.salome-platform.org/user-section/about/med,
+                                   download link at
                                    http://files.salome-platform.org/Salome/other/med-4.0.0.tar.gz
 <tr><td> Parallel IO       <td> supported (using HDF5 parallel IO); still has unresolved bug.
 </table>

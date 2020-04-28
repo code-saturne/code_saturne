@@ -71,6 +71,7 @@ build-aux/ylwrap
 EXTRA_DIST = \
 $(AUX_DIST) \
 install_saturne.py \
+INSTALL.md \
 NEWS.md \
 README.md \
 extras/FMI/README.md \

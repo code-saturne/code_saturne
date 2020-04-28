@@ -22,7 +22,7 @@
 
 #-------------------------------------------------------------------------------
 
-LATEX_SUBDIRS = refcard theory user install developer studymanager
+LATEX_SUBDIRS = refcard theory user developer studymanager
 
 DOXYGEN_SUBDIRS = doxygen
 
