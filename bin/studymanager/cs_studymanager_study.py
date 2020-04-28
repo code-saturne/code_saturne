@@ -297,7 +297,7 @@ class Case(object):
 
         # 3) Update the GUI script from the Repository
         data_subdir = os.path.join(self.__repo, subdir, "DATA")
-        create_local_launcher(self.package, data_subdir)
+        create_local_launcher(self.pkg, data_subdir)
 
     #---------------------------------------------------------------------------
 
@@ -320,7 +320,7 @@ class Case(object):
 
         if self.subdomains:
             case_dir = os.path.join(self.__repo, self.label)
-            create_local_launcher(self.package, case_dir)
+            create_local_launcher(self.pkg, case_dir)
             # recreate possibly missing but compulsory directory
             r = os.path.join(case_dir, "RESU_COUPLING")
             if not os.path.isdir(r):
