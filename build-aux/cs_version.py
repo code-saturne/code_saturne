@@ -184,18 +184,19 @@ def git_version(srcdir, defaults):
     # Universal newlines options may fail in some cases with
     # Python 3, so check for newlines using '\n' and '\\n' later.
 
-    p = subprocess.Popen(cmd,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE,
-                         universal_newlines=False)
-    output = p.communicate()
-    if p.returncode != 0:
-        return major, minor, release, extra
-    else:
-        commit_rev = output[0]
-        if sys.version[0] == '3':
-            commit_rev = commit_rev.decode('utf-8')
-        revision += '-' + commit_rev
+    try:
+        p = subprocess.Popen(cmd,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE,
+                             universal_newlines=False)
+        output = p.communicate()
+        if p.returncode == 0:
+            commit_rev = output[0]
+            if sys.version[0] == '3':
+                commit_rev = commit_rev.decode('utf-8')
+            revision += '-' + commit_rev
+    except Exception:
+        pass
 
     return major, minor, release, extra, revision
 
@@ -211,20 +212,23 @@ def git_version_is_modified(srcdir):
 
     cmd = ['git', '--no-pager', '--git-dir='+os.path.join(srcdir, '.git'),
            '--work-tree='+srcdir, 'status', '-s', '-uno']
-    p = subprocess.Popen(cmd,
-                         stdout=subprocess.PIPE,
-                         stderr=subprocess.PIPE,
-                         universal_newlines=True)
-    output = p.communicate()
-    o0 = str(output[0])
-    if p.returncode == 0:
-        changes = o0.split('\n')
-        n_changes = len(changes) - 1
-        for c in changes:
-            if c[-3:] == '.po':
-                n_changes -= 1
-        if n_changes > 0:
-            return True
+    try:
+        p = subprocess.Popen(cmd,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE,
+                             universal_newlines=True)
+        output = p.communicate()
+        o0 = str(output[0])
+        if p.returncode == 0:
+            changes = o0.split('\n')
+            n_changes = len(changes) - 1
+            for c in changes:
+                if c[-3:] == '.po':
+                    n_changes -= 1
+            if n_changes > 0:
+                return True
+    except Exception:
+        pass
 
     return False
 
