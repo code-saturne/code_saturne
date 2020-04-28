@@ -656,7 +656,7 @@ class Setup:
         self.cxx = find_executable(['c++', 'g++', 'icpc', 'xlc++', 'clang++'], 'CXX')
         self.mpicc = find_executable(['mpicc', 'mpicc.openmpi', 'mpicc.mpich'])
         self.mpicxx = find_executable(['mpicxx', 'mpicxx.openmpi', 'mpicxx.mpich'])
-        self.python = find_executable(['python'], 'PYTHON')
+        self.python = find_executable(['python3'], 'PYTHON')
 
         # Architecture name
         self.arch = os.uname()[0] + '_' + os.uname()[4]
