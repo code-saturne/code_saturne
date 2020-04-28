@@ -1143,11 +1143,10 @@ AC_CONFIG_FILES([Makefile
                  gui/Makefile gui/Base/Makefile gui/Pages/Makefile
                  gui/studymanager_gui/Makefile gui/trackcvg/Makefile
                  docs/Makefile docs/doxygen/Makefile docs/style/csvers.tex
-                 docs/studymanager/Makefile docs/studymanager/graphics/Makefile
-                 docs/developer/Makefile docs/developer/graphics/Makefile
-                 docs/refcard/Makefile docs/refcard/graphics/Makefile
+                 docs/studymanager/Makefile
+                 docs/developer/Makefile docs/refcard/Makefile
                  docs/theory/Makefile docs/theory/graphics/Makefile
-                 docs/user/Makefile docs/user/graphics/Makefile
+                 docs/user/Makefile
                  tests/Makefile
                  bin/cs_config.py])
 

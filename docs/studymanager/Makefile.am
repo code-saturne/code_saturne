@@ -42,10 +42,6 @@ PDFMAIN = $(TEXMAIN:.tex=.pdf)
 
 if HAVE_LATEX
 
-# Subdirectories (order is important)
-
-SUBDIRS = graphics .
-
 # Environment variables for LaTeX
 
 TEXINPUTS = $(top_srcdir)/docs/style/$(cs_tex_path_sep)$(top_builddir)/docs/style/$(cs_tex_path_sep)$(srcdir)//$(cs_tex_path_sep)$(builddir)//$(cs_tex_path_end)
