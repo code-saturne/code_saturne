@@ -951,7 +951,7 @@ command for this build contains:
 
 ```
 $ cmake \
--DCMAKE_INSTALL_PREFIX=<span style="color:green">${INSTALL_PATH}</span>_osmesa \
+-DCMAKE_INSTALL_PREFIX=${INSTALL_PATH}_osmesa \
 -DPARAVIEW_BUILD_QT_GUI=OFF \
 -DPARAVIEW_USE_MPI=ON \
 -DPARAVIEW_USE_PYTHON=ON \
@@ -960,11 +960,11 @@ $ cmake \
 -DOPENGL_INCLUDE_DIR=IGNORE \
 -DOPENGL_xmesa_INCLUDE_DIR=IGNORE \
 -DOPENGL_gl_LIBRARY=IGNORE \
--DOSMESA_INCLUDE_DIR=<span style="color:green">${MESA_INSTALL_PREFIX}</span>/include \
--DOSMESA_LIBRARY}=<span style="color:green">${MESA_INSTALL_PREFIX}</span>/lib/libOSMesa.so \
+-DOSMESA_INCLUDE_DIR=${MESA_INSTALL_PREFIX}/include \
+-DOSMESA_LIBRARY}=${MESA_INSTALL_PREFIX}/lib/libOSMesa.so \
 -DVTK_OPENGL_HAS_OSMESA=ON \
 -DVTK_USE_OFFSCREEN}=OFF \
-<span style="color:green">${PARAVIEW_SRC_PATH}</span>
+${PARAVIEW_SRC_PATH}
 ```
 
 More info may also be found on the
@@ -1020,9 +1020,9 @@ $ cd ..
 $ mkdir dbg
 $ cd dbg
 $ ../../code_saturne/configure \
---prefix=/home/user/Code_Saturne/<version>/arch/<span style="color:red">dbg</span> \
+--prefix=/home/user/Code_Saturne/<version>/arch/dbg \
 --with-med}=/home/user/opt/med-4.0 \
-<span style="color:red">--enable-debug</span> \
+--enable-debug \
 CC=/home/user/opt/mpich-3.2/bin/mpicc FC=gfortran
 ```
 
@@ -1444,6 +1444,6 @@ by the GUI but not the executable, so to avoid causing issues with
 a debugger using its own version of Qt, separate sections would need
 to be defined. None of those issues exist with `RPATH`.
 
-To avoid most issues, the code_saturne scripts also update `LD_LIBRARY_yPATH`
+To avoid most issues, the code_saturne scripts also update `LD_LIBRARY_PATH`
 before calling executable modules, but you could be affected if running
 them directly from the command line.

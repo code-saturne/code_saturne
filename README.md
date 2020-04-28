@@ -55,8 +55,4 @@ or by a combination thereof.
 Install instructions (from source) are provided in the
 accompanying [INSTALL.md](INSTALL.md) file.
 
-For more information please refer to the code_saturne documentation, available
-through the "code_saturne info -g refcard" and "code_saturnes info -g user"
-commands.
-
 Code_Saturne support: saturne-support@edf.fr
