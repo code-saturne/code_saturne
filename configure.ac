@@ -1250,6 +1250,15 @@ if (test "x$cs_env_modules" != "x") ; then
   echo " Auto load environment modules: "$cs_env_modules""
 fi
 echo
+echo " PdfLaTeX (document typesetting) available: "$cs_have_latex""
+if (test x$cs_have_latex = xyes) ; then
+  echo "   Fig2dev (TransFig) available: "$cs_have_fig2dev""
+fi
+echo " Doxygen (document generation) available: "$cs_have_doxygen""
+if (test x$cs_have_doxygen = xyes) ; then
+  echo "   dot (Graphviz) available: "$cs_have_dot""
+fi
+echo
 echo "The package has been configured. Type:"
 echo " make"
 echo " make install"

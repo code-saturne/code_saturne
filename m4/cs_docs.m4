@@ -73,7 +73,7 @@ dnl where is fig2dev ?
 AC_PATH_PROG(FIG2DEV, [fig2dev])
 if test "x$FIG2DEV" = "x"; then
   AC_MSG_WARN(fig2dev not found)
-  cs_have_latex=no
+  cs_have_fig2dev=no
 fi
 
 dnl So as to correctly set TEXINPUTS environment variable, one needs to use
@@ -89,7 +89,9 @@ AC_SUBST([cs_tex_path_end])
 AC_SUBST([cs_tex_path_sep])
 
 AM_CONDITIONAL(HAVE_LATEX, [test $cs_have_latex = yes])
+AM_CONDITIONAL(HAVE_FIG2DEV, [test $cs_have_fig2dev = yes])
 AC_SUBST(cs_have_latex)
+AC_SUBST(cs_have_fig2dev)
 
 ])dnl
 
@@ -100,6 +102,7 @@ AC_SUBST(cs_have_latex)
 AC_DEFUN([CS_AC_TEST_DOXYGEN],[
 
 cs_have_doxygen=yes
+cs_have_dot=yes
 
 AC_ARG_VAR([DOXYGEN], [source code documentation generator])
 
@@ -116,11 +119,12 @@ dnl where is dot ?
 AC_PATH_PROG(DOT, [dot])
 if test "x$DOT" = "x"; then
   AC_MSG_WARN(dot not found)
-  cs_have_doxygen=no
+  cs_have_dot=no
 fi
 
 AM_CONDITIONAL(HAVE_DOXYGEN, [test $cs_have_doxygen = yes])
 AC_SUBST(cs_have_doxygen)
+AC_SUBST(cs_have_dot)
 
 ])dnl
 

@@ -91,6 +91,7 @@ graphics/loilog.pdf
 PDFMAIN = $(TEXMAIN:.tex=.pdf)
 
 if HAVE_LATEX
+if HAVE_FIG2DEV
 
 # Subdirectories (order is important)
 
@@ -142,6 +143,7 @@ distclean-local: clean-local
 dist-hook: pdf
 	$(INSTALL_DATA) $(PDFMAIN) $(distdir)
 
+endif
 endif
 
 # Install the documentation if available
