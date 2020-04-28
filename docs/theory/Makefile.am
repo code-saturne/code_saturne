@@ -82,19 +82,13 @@ TEXINPUTFILES =
 
 # Distributed files
 
-EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES) \
-graphics/clthermique.pdf \
-graphics/loilog.pdf
+EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES) graphics
 
 # Generated pdf document
 
 PDFMAIN = $(TEXMAIN:.tex=.pdf)
 
 if HAVE_LATEX
-
-# Subdirectories (order is important)
-
-SUBDIRS = graphics .
 
 # Environment variables for LaTeX
 

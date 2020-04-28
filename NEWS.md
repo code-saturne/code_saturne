@@ -10,14 +10,18 @@ Bug fixes:
 
 - Fix uninitialized number of cells for condensation zones.
 
-- Fixes for compilation with gcc 10.0.
-
 - Fix for 2nd time order schemes with variable properties.
   Initialisation of fields should be initialised also for previous values,
   even if extrapolation is not activated.
   Note that is it correctly done for restart if previous values are read.
   Note also that user is able to specify previous and current values using
   keywords "initro", etc.
+
+Architectural changes:
+
+- Remove dependency of fig2dev for documentation build.
+
+- Fixes for compilation with gcc 10.0.
 
 Release 6.1.0 (April 15 2020)
 -----------------------------

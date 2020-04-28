@@ -1,0 +1,81 @@
+<?xml version="1.0" standalone="no"?>
+<!-- Creator: fig2dev Version 3.2.7 -->
+<!-- CreationDate: 2020-04-28 04:50:55 -->
+<!-- Magnification: 1.05 -->
+<svg	xmlns="http://www.w3.org/2000/svg"
+	xmlns:xlink="http://www.w3.org/1999/xlink"
+	width="353pt" height="139pt"
+	viewBox="-786 1014 5589 2196">
+<g fill="none">
+<!-- Line -->
+<polyline points=" 2835,1125 4635,1125"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" 1125,1125 2925,1125"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" 4500,2925 4500,1125"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" 2835,2925 4635,2925"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" 2835,2925 2835,1125"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" 1125,2925 2925,2925"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" 1125,2925 1125,1125"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" -675,2925 1125,2925"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" -675,1125 1125,1125"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Line -->
+<polyline points=" -675,2925 -675,1125"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Text -->
+<text xml:space="preserve" x="1260" y="1395" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">5</text>
+<!-- Text -->
+<text xml:space="preserve" x="-540" y="1395" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">4</text>
+<!-- Text -->
+<text xml:space="preserve" x="1260" y="3195" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">1</text>
+<!-- Text -->
+<text xml:space="preserve" x="-540" y="3195" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">0</text>
+<!-- Text -->
+<text xml:space="preserve" x="4635" y="3195" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">3</text>
+<!-- Text -->
+<text xml:space="preserve" x="2970" y="3195" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">2</text>
+<!-- Text -->
+<text xml:space="preserve" x="2970" y="1395" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">6</text>
+<!-- Text -->
+<text xml:space="preserve" x="4635" y="1395" fill="#000000" font-family="Helvetica" font-style="normal" font-weight="bold" font-size="192" text-anchor="start">7</text>
+<!-- Circle -->
+<circle cx="4506" cy="1125" r="103" fill="#000000"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Circle -->
+<circle cx="1131" cy="1125" r="103" fill="#000000"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Circle -->
+<circle cx="2841" cy="2925" r="103" fill="#000000"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Circle -->
+<circle cx="1131" cy="2925" r="103" fill="#000000"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Circle -->
+<circle cx="-669" cy="2925" r="103" fill="#000000"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Circle -->
+<circle cx="2841" cy="1125" r="103" fill="#000000"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Circle -->
+<circle cx="4506" cy="2925" r="103" fill="#000000"
+	stroke="#000000" stroke-width="8px"/>
+<!-- Circle -->
+<circle cx="-675" cy="1125" r="103" fill="#000000"
+	stroke="#000000" stroke-width="8px"/>
+</g>
+</svg>

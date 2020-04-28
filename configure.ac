@@ -1143,12 +1143,11 @@ AC_CONFIG_FILES([Makefile
                  gui/Makefile gui/Base/Makefile gui/Pages/Makefile
                  gui/studymanager_gui/Makefile gui/trackcvg/Makefile
                  docs/Makefile docs/doxygen/Makefile docs/style/csvers.tex
-                 docs/studymanager/Makefile docs/studymanager/graphics/Makefile
-                 docs/developer/Makefile docs/developer/graphics/Makefile
-                 docs/install/Makefile
-                 docs/refcard/Makefile docs/refcard/graphics/Makefile
-                 docs/theory/Makefile docs/theory/graphics/Makefile
-                 docs/user/Makefile docs/user/graphics/Makefile
+                 docs/developer/Makefile  docs/install/Makefile
+                 docs/refcard/Makefile
+                 docs/studymanager/Makefile
+                 docs/theory/Makefile
+                 docs/user/Makefile
                  tests/Makefile
                  bin/cs_config.py])
 
@@ -1250,6 +1249,12 @@ echo " PETSc support: "$cs_have_petsc""
 echo " Dynamic loader support: "$cs_have_dlloader""
 if (test "x$cs_env_modules" != "x") ; then
   echo " Auto load environment modules: "$cs_env_modules""
+fi
+echo
+echo " PdfLaTeX (document typesetting) available: "$cs_have_latex""
+echo " Doxygen (document generation) available: "$cs_have_doxygen""
+if (test x$cs_have_doxygen = xyes) ; then
+  echo "   dot (Graphviz) available: "$cs_have_dot""
 fi
 echo
 echo "The package has been configured. Type:"
