@@ -237,9 +237,6 @@ typedef struct {
                                  itytur=4)
                                  - 1: true
                                  - 0: false */
-  int           ivrtex;       /* vortex method (in LES)
-                                 - 1: true
-                                 - 0: false (default) */
 
 } cs_turb_les_model_t;
 

@@ -41,30 +41,10 @@ module entsor
   !> standard output
   integer, save :: nfecra
 
-  !> unit of the upstream restart file for the vortex method.
-  !> Useful if and only if \ref optcal::isuivo "isuivo"=1 and
-  !> \ref optcal::ivrtex "ivrtex"=1.
-  integer, save :: impmvo
-
-  !> unit of the downstream restart file for the vortex method.
-  !> Useful if and only if \ref optcal::ivrtex "ivrtex"=1.
-  integer, save :: impvvo
-
-  !> unit of the \ref vorinc::ficvor "ficvor" data files for the vortex method.
-  !>
-  !> These files are text files. Their number and names are specified by the user
-  !> in the \ref usvort subroutine.
-  !> (Although it corresponds to an 'upstream' data file, \ref impdvo is
-  !> initialized to 20 because, in case of multiple vortex entries,
-  !> it is opened at the same time as the upstream restart file,
-  !> which already uses unit 11)
-  !> useful if and only if \ref optcal::ivrtex "ivrtex"=1.
-  integer, save :: impdvo
-
   !> name of file, see usvort module.
   character(len=13), save :: ficdat
 
-  !> saving period of the restart filesy5
+  !> saving period of the restart files
   !>   - -2: no restart at all
   !>   - -1: only at the end of the calculation
   !>   - 0: by default (four times during the calculation)

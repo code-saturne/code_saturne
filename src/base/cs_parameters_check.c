@@ -1369,28 +1369,6 @@ cs_parameters_check(void)
                                    CS_TURB_K_OMEGA);
   }
 
-  /* Vortex method for LES */
-  assert(cs_glob_turb_les_model != NULL);
-  cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
-                                _("while reading input data"),
-                                "cs_glob_turb_les_model->ivrtex",
-                                cs_glob_turb_les_model->ivrtex,
-                                0, 2);
-
-  if (   turb_model->type != CS_TURB_LES
-      && cs_glob_turb_les_model->ivrtex == 1) {
-    cs_parameters_is_equal_int(CS_WARNING,
-                               _("while reading input data,\n"
-                                 "synthetic vortex method only for LES , "
-                                 "this setting will be ignored"),
-                               "cs_glob_turb_les_model->ivrtex",
-                               cs_glob_turb_les_model->ivrtex,
-                               0);
-
-    cs_turb_les_model_t *les_model = cs_get_glob_turb_les_model();
-    les_model->ivrtex = 0;
-  }
-
   /* LES balance */
   if (   cs_glob_turb_model->itytur != 4
       && cs_glob_les_balance->i_les_balance != 0) {

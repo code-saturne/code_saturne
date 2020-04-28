@@ -74,8 +74,7 @@ turbke.tex \
 turrij.tex \
 viscfa.tex \
 visort.tex \
-visecv.tex \
-vortex.tex
+visecv.tex
 
 
 TEXINPUTFILES =

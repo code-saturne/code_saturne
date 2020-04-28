@@ -294,14 +294,6 @@ module optcal
   !> Useful if nfpt1d > 0
   integer, save :: isuit1
 
-  !> For the vortex method, indicates whether the synthetic
-  !> vortices at the inlet should be initialised or read
-  !> from the restart file.
-  !> Useful if \ref iturb = 40, 41, 42 and \ref ivrtex = 1
-  !> - 0: initialized
-  !> - 1: read
-  integer, save :: isuivo
-
   !> Reading of the LES inflow module restart file.
   !> -0: not activated
   !> -1: activated\n
@@ -725,15 +717,6 @@ module optcal
   !> for potential limitations.\n
   !> Useful if and only if \ref iturb = 40 or 41
   integer(c_int), pointer, save :: idries
-
-  !> Activates or not the generation of synthetic turbulence at the
-  !> different inlet boundaries with the LES model (generation of
-  !> unsteady synthetic eddies).\n
-  !> - 1: true
-  !> - 0: false (default)
-  !> Useful if \ref iturb =40, 41 or 42\n
-  !> This keyword requires the completion of the routine  \ref usvort
-  integer(c_int), pointer, save :: ivrtex
 
   !> Wall boundary condition on omega in k-omega SST
   !> 0: Deprecated Neumann boundary condition
@@ -1380,11 +1363,11 @@ module optcal
     ! Interface to C function retrieving pointers to members of the
     ! LES turbulence model structure
 
-    subroutine cs_f_turb_les_model_get_pointers(idries, ivrtex) &
+    subroutine cs_f_turb_les_model_get_pointers(idries) &
       bind(C, name='cs_f_turb_les_model_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: idries, ivrtex
+      type(c_ptr), intent(out) :: idries
     end subroutine cs_f_turb_les_model_get_pointers
 
     ! Interface to C function retrieving pointers to members of the
@@ -1699,13 +1682,12 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: c_idries, c_ivrtex, c_i_les_balance
+    type(c_ptr) :: c_idries, c_i_les_balance
 
-    call cs_f_turb_les_model_get_pointers(c_idries, c_ivrtex)
+    call cs_f_turb_les_model_get_pointers(c_idries)
     call cs_f_les_balance_get_pointer(c_i_les_balance)
 
     call c_f_pointer(c_idries, idries)
-    call c_f_pointer(c_ivrtex, ivrtex)
     call c_f_pointer(c_i_les_balance, i_les_balance)
 
   end subroutine turb_les_model_init

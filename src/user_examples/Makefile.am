@@ -183,7 +183,6 @@ cs_user_source_terms-richards.c \
 cs_user_source_terms-scalar_in_a_channel.c \
 cs_user_source_terms-turbulence.c \
 usthht.f90 \
-usvort.f90 \
 usvosy.f90
 
 noinst_LTLIBRARIES = libcsexample.la

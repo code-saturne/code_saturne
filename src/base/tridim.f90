@@ -67,7 +67,6 @@ use atincl
 use ctincl
 use atsoil
 use lagran
-use vorinc
 use radiat
 use cplsat
 use ppcpfu
@@ -795,32 +794,6 @@ endif
 
 if(vcopt_u%iwarni.ge.1) then
   write(nfecra,1030)
-endif
-
-!  -- Methode des vortex en LES :
-!     Definition ou modification eventuelle des parametres
-!     Mise a jour des vortex
-
-if (ivrtex.eq.1) then
-
-  iappel = 2
-  call usvort &
- ( nvar   , nscal  ,                                              &
-   iappel ,                                                       &
-   dt     )
-
-!     Verification des donnees entrees par l'utilisateur
-!       (au premier passage seulement)
-  if (ipass.eq.1) then
-    call vorver ( nfabor , iappel )
-  endif
-
-  if(irangp.le.0) then
-    call vortex
-  endif
-
-! -- Fin de zone Methode des vortex
-
 endif
 
 ! --- Methode ALE : debut de boucle d'implicitation du deplacement des

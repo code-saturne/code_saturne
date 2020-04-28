@@ -156,14 +156,6 @@ call map_turbomachinery_model(iturbo, ityint)
 
 ! ---> NFECRA vaut 6 par defaut ou 9 en parallele (CSINIT)
 
-!    Methode des vortex : on utilise la meme unite
-!                  Pour le fichier de donnees, on specifie l'unite ici, mais le
-!                  nom est laisse dans usvort. On utilise 20 et pas 11
-!                  car en cas d'entree multiple, les deux fichiers doivent etre
-!                  ouverts en meme temps dans VORINI
-impmvo = 11
-impdvo = 20
-
 ! ---> Fichier aval
 
 !     NTSUIT : Periode de sauvegarde du fichier suite
@@ -173,11 +165,6 @@ impdvo = 20
 !              > 0  : periode
 
 ntsuit = 0
-
-!    Methode des vortex : on utilise la meme unite
-!                  et le format ascii obligatoirement
-!                  (pas de detection automatique, fichiers de taille faible)
-impvvo = 20
 
 ! ---> Fichier thermochinie
 !        FPP : utilisateur
@@ -471,14 +458,12 @@ iflxmw = 0
 !         (GUI, cs_user_parameters.f90, and lecamo)
 !       The restart indicator of the 1D wall thermal model is initialized by default
 !         to -1, to force the user to set it in uspt1d.
-!       The same goes for the vortex method restart indicator.
 !       The same goes for the synthetic turbulence method restart indicator.
 
 isuite = 0
 iecaux = 1
 ileaux = 1
 isuit1 = -1
-isuivo = -1
 isuisy = -1
 
 ! Time stepping (value not already in C)
@@ -675,9 +660,6 @@ nftcdt= 0
 ineedy = 0
 imajdy = 0
 icdpar = -999
-
-! --- Methode des vortex
-ivrtex = 0
 
 ! --- LES balance
 i_les_balance = 0

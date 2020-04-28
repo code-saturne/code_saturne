@@ -114,17 +114,7 @@ visqke.f90 \
 vissma.f90 \
 vissst.f90 \
 visv2f.f90 \
-viswal.f90 \
-vor2cl.f90 \
-vordep.f90 \
-vorimp.f90 \
-vorin0.f90 \
-vorini.f90 \
-vorlgv.f90 \
-vorpre.f90 \
-vortex.f90 \
-vorver.f90 \
-vorvit.f90
+viswal.f90
 libcsturb_la_LDFLAGS = -no-undefined
 
 clean-local:

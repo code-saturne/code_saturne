@@ -482,16 +482,6 @@ endif
 iccvfg = 1
 
 
-! --- Vortex method for inlet conditions in L.E.S.
-!       (0: not activated,  1: activated)
-!     The vortex method only regards the L.E.S. models
-!     To use the vortex method, edit the 'usvort.f90' user file.
-
-
-if (itytur.eq.4) then
-  ivrtex = 1
-endif
-
 ! --- Rotation/curvature correction for eddy-viscosity turbulence models
 !      0: deactivated
 !      1: activated

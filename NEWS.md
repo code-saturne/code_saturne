@@ -20,6 +20,8 @@ User changes:
 
 Numerics and physical modelling:
 
+- Turbulence: remove the vortex method for LES.
+
 - CDO: Add the treatment of the non-linear advection term in
   Artificial Compressibility coupling algorithm with a Picard
   algorithm. This enables to treat incompressible Navier-Stokes

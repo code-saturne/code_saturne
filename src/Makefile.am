@@ -95,7 +95,6 @@ pprt/ppthch.f90 \
 cogz/coincl.f90 \
 rayt/radiat.f90 \
 base/vof.f90 \
-turb/vorinc.f90 \
 base/ptrglo.f90 \
 darc/darcy_module.f90 \
 base/turbomachinery.f90

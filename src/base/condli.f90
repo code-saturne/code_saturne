@@ -386,13 +386,6 @@ call user_boundary_conditions(nvar, itypfb, icodcl, rcodcl)
 
 call uiclve(nozppm, itypfb, izfppp)
 
-! -- Methode des vortex en L.E.S. :
-!    (Transfert des vortex dans les tableaux RCODCL)
-
-if (ivrtex.eq.1) then
-  call vor2cl(itypfb, rcodcl)
-endif
-
 ! --- Couplage code/code entre deux instances (ou plus) de Code_Saturne
 !       On s'occupe ici du couplage via les faces de bord, et de la
 !       transformation de l'information recue en condition limite.

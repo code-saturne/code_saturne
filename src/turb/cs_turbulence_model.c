@@ -296,14 +296,6 @@ BEGIN_C_DECLS
         in the domain. Refer to keyword \ref optcal::icdpar "icdpar"
         for potential limitations.\n
         Useful if and only if \ref iturb = 40 or 41
-  \var  cs_turb_les_model_t::ivrtex
-        Activates or not the generation of synthetic turbulence at the
-        different inlet boundaries with the LES model (generation of
-        unsteady synthetic eddies).\n
-        - 1: true
-        - 0: false (default)
-        Useful if \ref iturb =40, 41 or 42\n
-        This keyword requires the completion of the routine  \ref usvort
 */
 
 /*----------------------------------------------------------------------------*/
@@ -373,7 +365,6 @@ const cs_turb_rans_model_t  *cs_glob_turb_rans_model = &_turb_rans_model;
 static cs_turb_les_model_t  _turb_les_model =
 {
   .idries = -1,
-  .ivrtex = 0
 };
 
 const cs_turb_les_model_t  *cs_glob_turb_les_model = &_turb_les_model;
@@ -1030,8 +1021,7 @@ cs_f_turb_rans_model_get_pointers(int     **irccor,
                                   int     **iclptr);
 
 void
-cs_f_turb_les_model_get_pointers(int     **idries,
-                                 int     **ivrtex);
+cs_f_turb_les_model_get_pointers(int     **idries);
 
 void
 cs_f_turb_reference_values(double  **almax,
@@ -1144,15 +1134,12 @@ cs_f_turb_rans_model_get_pointers(int     **irccor,
  *
  * parameters:
  *   idries --> pointer to cs_glob_turb_les_model->idries
- *   ivrtex --> pointer to cs_glob_turb_les_model->ivrtex
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_turb_les_model_get_pointers(int     **idries,
-                                 int     **ivrtex)
+cs_f_turb_les_model_get_pointers(int     **idries)
 {
   *idries = &(_turb_les_model.idries);
-  *ivrtex = &(_turb_les_model.ivrtex);
 }
 
 /*----------------------------------------------------------------------------
@@ -1724,12 +1711,10 @@ cs_turb_model_log_setup(void)
          "                                (filter and LES filter)\n"
          "                                (recommended value: 1.5)\n"
          "    smagmx:      %14.5e (Max Smagorinsky in the)\n"
-         "                                (dynamic model case)\n"
-         "    ivrtex:      %14d (Use of the vortex method)\n"),
+         "                                (dynamic model case)\n"),
          cs_turb_csmago, cs_turb_cwale, cs_turb_xlesfl,
          cs_turb_ales, cs_turb_bles, cs_glob_turb_les_model->idries,
-         cs_turb_cdries, cs_turb_xlesfd, cs_turb_smagmx,
-         cs_glob_turb_les_model->ivrtex);
+         cs_turb_cdries, cs_turb_xlesfd, cs_turb_smagmx);
 
   }
   else if (   turb_model->iturb == CS_TURB_V2F_PHI

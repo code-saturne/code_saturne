@@ -55,7 +55,6 @@ use ppincl
 use coincl
 use cpincl
 use lagran
-use vorinc
 use radiat
 use cplsat
 use atincl
@@ -741,28 +740,6 @@ if (nctsmt.gt.0) then
 
 endif
 
-! -- Methode des vortex pour la L.E.S.
-!    (dans verini on s'est deja assure que ITYTUR=4 si IVRTEX=1)
-
-if (ivrtex.eq.1) then
-
-  allocate(irepvo(nfabor))
-
-  call vorin0(nfabor)
-
-  iappel = 1
-
-  call usvort(nvar, nscal, iappel, dt)
-  call vorver (nfabor, iappel)
-
-  call init_vortex
-
-  call vorpre
-
-endif
-
-! -- Fin de zone Methode des vortex pour la L.E.S.
-
 ! -- Structures mobiles en ALE
 
 if (iale.ge.1) then
@@ -1174,10 +1151,6 @@ endif
 
 ! Free main arrays
 
-if (ivrtex.eq.1) then
-  deallocate(irepvo)
-endif
-
 call turbomachinery_finalize
 
 call radiat_finalize
@@ -1242,10 +1215,6 @@ endif
 
 if (nfpt1d.gt.0) then
   call cs_1d_wall_thermal_finalize
-endif
-
-if (ivrtex.eq.1) then
-  call finalize_vortex
 endif
 
 if (i_les_balance.gt.0) then
