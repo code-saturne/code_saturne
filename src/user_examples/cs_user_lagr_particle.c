@@ -185,7 +185,8 @@ _inlet2(cs_lagr_particle_set_t  *p_set,
  * \param[out]    fextla   user external force field (m/s^2)$
  */
 /*----------------------------------------------------------------------------*/
-  /*! [lagr_ef] */
+
+/*! [lagr_ef] */
 void
 cs_user_lagr_ef(cs_real_t            dt_p,
                 const cs_real_t      taup[],
@@ -209,6 +210,7 @@ cs_user_lagr_ef(cs_real_t            dt_p,
 
 }
 /*! [lagr_ef] */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief User function (non-mandatory intervention)
@@ -224,7 +226,6 @@ cs_user_lagr_ef(cs_real_t            dt_p,
 void
 cs_user_lagr_extra_operations(const cs_real_t  dt[])
 {
-
   /*! [lagr_init] */
 
   cs_lagr_particle_set_t  *p_set = cs_lagr_get_particle_set();
@@ -283,7 +284,6 @@ cs_user_lagr_extra_operations(const cs_real_t  dt[])
   }
 
   /*! [lagr_example] */
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -386,6 +386,7 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
     cs_lagr_particles_set_real(particles, p_id, CS_LAGR_STAT_WEIGHT, 0.01);
 
     /* User variables */
+
     for (int attr_id = CS_LAGR_USER;
          attr_id < CS_LAGR_USER + cs_glob_lagr_model->n_user_variables;
          attr_id++) {
@@ -402,6 +403,7 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
      the particle injection. */
 
   /* if new particles have entered the domain  */
+
   for (cs_lnum_t ip = particle_range[0]; ip < particle_range[1]; ip++) {
     _inlet2(particles, ip);
   }
@@ -409,12 +411,11 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
   /*
    * Trick to average the statistics at iteration nstist
    * starting from an unsteady two-coupling calculation
-   *                                                      */
-  if (cs_glob_time_step->nt_cur > cs_glob_lagr_stat_options->nstist) {
+   */
 
+  if (cs_glob_time_step->nt_cur > cs_glob_lagr_stat_options->nstist) {
     cs_glob_lagr_source_terms->nstits = cs_glob_lagr_stat_options->nstist;
     cs_glob_lagr_time_scheme->isttio = 1;
-
   }
 
   /* Simulation of the instantaneous turbulent fluid flow velocities seen
@@ -435,7 +436,7 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
    *     velocities of the flow seen.
    *   - the reconstruction must be adapted to the case. */
 
-  if (false) {
+  {
     int time_id = 1;
     if (cs_glob_time_step->nt_cur == 1)
       time_id = 0;

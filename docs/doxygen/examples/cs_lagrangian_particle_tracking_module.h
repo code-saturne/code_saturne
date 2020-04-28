@@ -25,7 +25,6 @@
 /*-----------------------------------------------------------------------------*/
 
 /*!
-
   \page cs_lagrangian_particle_tracking_module Parameters settings for lagrangian module
 
   \section cs_user_lagr_module_intro  Introduction
@@ -98,8 +97,6 @@
 
   \snippet cs_user_lagr_model.c boundary_statistics
 
-
-
   \page cs_lagrangian_particle_tracking_bc User boundary condition definition for the Lagrangian model
 
   \section cs_user_lagr_boundary_conditions_h  Boundary conditions
@@ -160,8 +157,6 @@
   elimination:
 
   \snippet cs_user_lagr_boundary_conditions.c update
-
-
 
   \section cs_user_lagr_volume_conditions_h  Volume conditions
 
@@ -275,12 +270,12 @@
   \snippet cs_user_lagr_particle.c lagr_thermal_relax_time
 
 
-
   \page cs_user_lagr_extra_operations User extra operations for the Lagrangian module
 
   \section cs_user_lagr_extra_operations_intro Introduction
 
-  This page provides an example that may be used or adapted to perform extra or advanced extra-operations within the Lagrangian module.
+  This page provides an example that may be used or adapted to perform extra or
+  advanced extra-operations within the Lagrangian module.
 
   \section cs_user_lagr_extra_operations_example Example
 
@@ -291,8 +286,6 @@
   In the next example we compute the particle mass flow rate on 4 planes
 
   \snippet cs_user_lagr_particle.c lagr_example
-
-
 
   \page cs_user_lagr_sde SDE within the Lagrangian model
 
@@ -327,6 +320,4 @@
   Example of the integration of the SDE (Stochastic Differential Equation).
 
   \snippet cs_user_lagr_particle.c lagr_SDE
-
-
 */

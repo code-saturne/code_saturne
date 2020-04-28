@@ -93,7 +93,7 @@ typedef enum {
   CS_LAGR_FOULING,       /*!< fouling (combustion) */
   CS_LAGR_BC_USER        /*!< user-defined */
 
-};
+} cs_lagr_bc_type;
 
 /*! Lagrangian injection condition types */
 /*---------------------------------------*/
