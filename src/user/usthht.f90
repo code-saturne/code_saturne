@@ -30,7 +30,7 @@
 !>  Enthalpy    -> Temperature law (mode =  1) \n
 !>  Temperature -> Enthalpy    law (mode = -1)
 !>
-!> See \subpage us_thht for examples.
+!> See \ref us_thht for examples.
 
 subroutine usthht &
 !================

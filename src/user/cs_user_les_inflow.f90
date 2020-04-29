@@ -38,7 +38,7 @@
 !>
 !> \brief Generation of synthetic turbulence at LES inlets initialization
 !>
-!> See \subpage les_inflow for examples.
+!> See \ref les_inflow for examples.
 !>
 !> \c nent and \c isuisy might be defined.
 !>

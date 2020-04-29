@@ -66,7 +66,7 @@ BEGIN_C_DECLS
  * general purpose (i.e. anything that does not have another dedicated
  * user function).
  *
- * This example is a part of the \subpage turbomachinery example.
+ * This example is a part of the \ref turbomachinery example.
  */
 /*----------------------------------------------------------------------------*/
 

@@ -54,7 +54,7 @@ BEGIN_C_DECLS
  *
  * \brief Set user solver for heat equation.
  *
- * See \subpage user_solver for examples.
+ * See \ref user_solver for examples.
  */
 /*----------------------------------------------------------------------------*/
 

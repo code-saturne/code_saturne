@@ -74,7 +74,7 @@
   -                  | cs_glob_mesh->n_b_cells               | Number of boundary cells
   \ref lndfac        | cs_glob_mesh->i_face_vtx_connect_size | Size of the connectivity \n interior faces -> vertices
   \ref lndfbr        | cs_glob_mesh->b_face_vtx_connect_size | Size of the connectivity \n boundary faces -> vertices
-  \ref nfml          | cs_glob_mesh->n_families              | Number of families
+  -                  | cs_glob_mesh->n_families              | Number of families
   \ref ifacel        | cs_glob_mesh->i_face_cells            | Interior faces -> cells connectivity
   \ref ifabor        | cs_glob_mesh->b_face_cells            | Boundary faces -> cells connectivity
   \ref ipnfac        | cs_glob_mesh->i_face_vtx_idx          | Interior faces -> vertices index
@@ -195,7 +195,7 @@
 
   Fortran code                             | C code                       | Description
   ------------------------------------------------ | ---------------------------- | ------------
-  call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ipr), cvar_pr)       | CS_F_(p)->val       | Pressure
+  <tt> call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ipr), cvar_pr)  | CS_F_(p)->val       | Pressure
   call \ref field::field_get_val_v "field_get_val_v"(ivarfl(\ref iu), cvar_vel)       | CS_F_(vel)->val     | Velocity
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ivoidf), cvar_voidf) | CS_F_(void_f)->val  | Void fraction for Volume of Fluid model
   call \ref field::field_get_val_s "field_get_val_s"(ivarfl(\ref ik  ), cvar_k  )     | CS_F_(k)->val       | Turbulent kinetic energy \f$ k \f$
@@ -223,7 +223,7 @@
 
   Fortran code                                                                                    |C code                             | Description
   ------------------------------------------------------------------------------------------------|---------------------------------- | ------------
-  dt                                                                                              |CS_F_(dt)->val                     | Local time step
+  <tt> dt                                                                                         |CS_F_(dt)->val                     | Local time step
   call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::iviscl "iviscl", cpro_viscl)    |CS_F_(mu)->val                     | Molecular viscosity
   call \ref field::field_get_val_s "field_get_val_s"(\ref numvar::ivisct "ivisct", cpro_visct)    |CS_F_(mu_t)->val                   | Turbulent dynamic viscosity
   call \ref field::field_get_val_s "field_get_val_s"(\ref cstphy::icp "icp", cpro_cp)             |CS_F_(cp)->val                     | Specific heat
@@ -331,7 +331,7 @@
 
   C code                            | Description
   --------------------------------- | ------------
-  \ref CS_F_(rad_lumin)->val        | Radiative luminance
+  <tt> \ref CS_F_(rad_lumin)->val   | Radiative luminance
   \ref CS_F_(rad_q)->val            | Radiative flux
   \ref CS_FI_(rad_ets,iesp-1)->val  | Radiative flux explicit source term
   \ref CS_FI_(rad_its,iesp-1)->val  | Radiative flux implicit source term

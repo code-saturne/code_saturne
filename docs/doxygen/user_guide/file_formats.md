@@ -478,8 +478,8 @@ a "Generate Script" item can be found directly under the "Catalyst"
 menubar item.
 
 A code_saturne postprocessing writer will try to read a script named
-*<writer_name>*`.py`, which should be placed in a case's `DATA` directory.
-Using ParaView 5.5 or above, the root node (input) of the visulaization
+`<writer_name>.py`, which should be placed in a case's `DATA` directory.
+Using ParaView 5.5 or above, the root node (input) of the visualization
 pipeline should be renamed to that of the code_saturne writer so
 that the generated script can reference the input.
 

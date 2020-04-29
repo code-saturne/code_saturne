@@ -56,7 +56,7 @@ BEGIN_C_DECLS
  *
  * \brief User functions for input of calculation parameters.
  *
- * See \subpage parameters for examples.
+ * See \ref parameters for examples.
  */
 /*----------------------------------------------------------------------------*/
 

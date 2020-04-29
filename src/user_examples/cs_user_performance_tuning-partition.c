@@ -55,7 +55,7 @@ BEGIN_C_DECLS
  *
  * \brief Partitioning option setting example.
  *
- * See \subpage cs_user_performance_tuning for examples.
+ * See \ref cs_user_performance_tuning for examples.
  */
 /*----------------------------------------------------------------------------*/
 

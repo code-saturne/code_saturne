@@ -277,6 +277,8 @@ _g_id_binary_find(cs_lnum_t        g_id_array_size,
   return mid_id;
 }
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -68,7 +68,7 @@ BEGIN_C_DECLS
 /*!
  * \brief User definition of radiative transfer boundary conditions.
  *
- * See \subpage cs_user_radiative_transfer for examples.
+ * See \ref cs_user_radiative_transfer for examples.
  *
  * \warning the temperature unit here is the Kelvin
  *

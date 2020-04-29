@@ -331,6 +331,8 @@ _exchange_double_array(void               *handle,
 
 #endif /* defined(HAVE_DLOPEN)*/
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/

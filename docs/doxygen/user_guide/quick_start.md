@@ -22,12 +22,12 @@
 
 We assume in this section that the users has the calculation data file
 (calculation set up) at his disposal, or has already prepared it following
-for instance the step-by-step guidance provided in \CS tutorial. The steps
-described below are intended to provide a way to quickly run through the
+for instance the step-by-step guidance provided in the code_saturne tutorials.
+The steps described below are intended to provide a way to quickly run through the
 Graphical User Interface (GUI).
 
 Setting up your environment {#sec_prg_environement_cs}
----------------------------
+===========================
 
 It is recommended before running code_saturne to define an alias to the
 `code_saturne` script, for example:
@@ -40,7 +40,7 @@ where '${install_prefix} is the base directory where code_saturne and its compon
 have been installed.
 
 More detailed instructions are provided in the dedicated
-[setting up your environemnt](@ref cs_user_settings) section.
+[setting up your environment](@ref cs_ug_user_settings) section.
 
 Preparing a case
 ----------------

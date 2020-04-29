@@ -30,7 +30,7 @@
 !>
 !> \brief Initialize variables
 !>
-!> See \subpage cs_user_initialization for examples.
+!> See \ref cs_user_initialization for examples.
 !>
 !> This subroutine is called at beginning of the computation
 !> (restart or not) before the loop time step.

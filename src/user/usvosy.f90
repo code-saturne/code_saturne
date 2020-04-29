@@ -30,7 +30,7 @@
 !>
 !> \brief Compute a volume exchange coefficient for SYRTHES coupling
 !>
-!> See \subpage us_vosy for examples.
+!> See \ref us_vosy for examples.
 
 
 subroutine usvosy &

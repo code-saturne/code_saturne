@@ -1220,7 +1220,7 @@ Here, we have a general `/home/projects/code_saturne` directory for all
 code_saturne directories, with a `x.y` directory for each (major.minor) version,
 including `src` and `arch` subdirectories for sources and installations
 respectively. Only the installation directories are needed to use the code,
-but keepin the sources nearby may be practical for reference.
+but keeping the sources nearby may be practical for reference.
 
 For an install on which multiple versions and architectures of the code should
 be available, configure commands with all bells and whistles (except SALOME

@@ -103,17 +103,17 @@ number of internal faces of the initial mesh).
 ### Logging operations in parallel mode
 
 When running in parallel, only the first rank actually produces outputs
-when writing to ``run\_solver.log'' using the \ref nfecra logical unit
-in Fortran, or \bft_printf or \cs_log_printf.
+when writing to `run_solver.log` using the `nfecra` logical unit
+in Fortran, or \ref bft_printf or \ref cs_log_printf in C.
 
-This avoids requiring tests in calling code, whic would add clutter
+This avoids requiring tests in calling code, which would add clutter
 an could easily be forgotten.
 
 ### File ouptut operations in parallel mode
 
 When writing simple output to files, it is important to check for the
 local rank, and to avoid writing to a same file from multiple processors,
-unless dedicated features are used, such as the \cs_file.c functions.
+unless dedicated features are used, such as the \ref cs_file.c functions.
 
 ### Some notes about periodicity
 
@@ -124,14 +124,11 @@ rather than a classical boundary condition.
 Some particular points should be reminded:
 
 * Periodicity should work when the periodic boundaries are meshed
-  differently (periodicity of non-conforming faces), {\it except} for
+  differently (periodicity of non-conforming faces), *except* for
   the case of a 180 degree rotation periodicity with faces coupled
   on the rotation axis.
 * Rotation periodicity is incompatible with
   * semi-transparent radiation,
   * reinforced velocity-pressure coupling `ipucou=1`
-* In the case of rotation periodicity with the uncoupled \f$R_{ij}\f$ model,
+* In the case of rotation periodicity with the uncoupled *R<sub>ij</sub> model,
   some terms which are usually implicited are handled explicitely.
-
-
-

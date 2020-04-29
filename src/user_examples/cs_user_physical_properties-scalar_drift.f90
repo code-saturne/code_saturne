@@ -31,7 +31,7 @@
 !>
 !> brief Definition of physical variable laws for scalars with a drift.
 !>
-!> See \subpage physical_properties for examples.
+!> See \ref physical_properties for examples.
 !>
 
 !-------------------------------------------------------------------------------

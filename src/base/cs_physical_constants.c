@@ -68,6 +68,7 @@ BEGIN_C_DECLS
   \file cs_physical_constants.c
         Base physical constants and fluid properties data.
 */
+
 /*----------------------------------------------------------------------------*/
 
 /*! \struct cs_physical_constants_t
@@ -125,7 +126,7 @@ BEGIN_C_DECLS
         - 1: true, its variation law be given either
         in the GUI, or in the user subroutine
         \ref cs_user_physical_properties .\n
-        See \subpage physical_properties for more informations.
+        See \ref physical_properties for more informations.
         - 0: false, its value is the reference density
         \ref ro0.
 
@@ -134,7 +135,7 @@ BEGIN_C_DECLS
            - 1: true, its variation law be given either
         in the GUI, or in the user subroutine
         \ref cs_user_physical_properties .\n
-        See \subpage physical_properties for more informations.
+        See \ref physical_properties for more informations.
            - 0: false, its value is the reference molecular
         dynamic viscosity \ref viscl0
   \var  cs_fluid_properties_t::ivsuth

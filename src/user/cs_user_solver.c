@@ -54,7 +54,7 @@ BEGIN_C_DECLS
  *
  * \brief User solver setting and implementation
  *
- * See \subpage user_solver for examples.
+ * See \ref user_solver for examples.
  */
 /*----------------------------------------------------------------------------*/
 

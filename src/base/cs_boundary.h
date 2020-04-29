@@ -303,6 +303,7 @@ cs_boundary_need_pressure_rescaling(cs_lnum_t                  n_b_faces,
 /*!
  * \brief  Build a boundary type description
  *
+ * \param[in]   bdy            pointer to a structure storing boundary info
  * \param[in]   b_type         type flag
  * \param[in]   descr_len_max  maximum name length
  * \param[out]  descr          subtype name

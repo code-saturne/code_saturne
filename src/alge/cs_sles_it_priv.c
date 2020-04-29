@@ -313,6 +313,8 @@ cs_sles_it_setup_priv(cs_sles_it_t       *c,
   }
 }
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

@@ -59,7 +59,7 @@ BEGIN_C_DECLS
  *
  * \brief User definitions of porous media.
  *
- * See \subpage cs_porosity for examples.
+ * See \ref cs_porosity for examples.
  */
 /*----------------------------------------------------------------------------*/
 

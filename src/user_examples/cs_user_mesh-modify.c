@@ -57,7 +57,7 @@ BEGIN_C_DECLS
  *
  * \brief Mesh modification example.
  *
- * See \subpage cs_user_mesh for examples.
+ * See \ref cs_user_mesh for examples.
  */
 /*----------------------------------------------------------------------------*/
 

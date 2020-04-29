@@ -58,7 +58,7 @@ BEGIN_C_DECLS
  *
  * \brief Definition of turbomachinery related options.
  *
- * See \subpage turbomachinery for examples.
+ * See \ref turbomachinery for examples.
 */
 /*----------------------------------------------------------------------------*/
 

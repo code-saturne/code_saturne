@@ -35,8 +35,8 @@
 !>
 !> \brief User subroutines for additional right-hand side source terms
 !>
-!> See \subpage cs_user_source_terms and
-!> \subpage cs_user_source_terms-scalar_in_a_channel for examples.
+!> See \ref cs_user_source_terms and
+!> \ref cs_user_source_terms-scalar_in_a_channel for examples.
 !>
 !===============================================================================
 !> \brief Additional right-hand side source terms for velocity components equation

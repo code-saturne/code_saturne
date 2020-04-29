@@ -1182,6 +1182,8 @@ _cell_to_vertex_strided(cs_cell_to_vertex_type_t   method,
   }
 }
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*============================================================================
  * Public function definitions
  *============================================================================*/

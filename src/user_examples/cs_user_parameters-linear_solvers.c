@@ -74,7 +74,7 @@ BEGIN_C_DECLS
  *
  * \brief Linear solvers examples.
  *
- * See \subpage parameters for examples.
+ * See \ref parameters for examples.
  *
  */
 /*----------------------------------------------------------------------------*/

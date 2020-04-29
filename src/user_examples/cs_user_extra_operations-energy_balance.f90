@@ -32,8 +32,8 @@
 !>  general purpose
 !>  (i.e. anything that does not have another dedicated user subroutine)
 !>
-!> See \subpage cs_user_extra_operations_examples and
-!> \subpage cs_user_extra_operations-nusselt_calculation for examples.
+!> See \ref cs_user_extra_operations_examples and
+!> \ref cs_user_extra_operations-nusselt_calculation for examples.
 !>
 !> This is an example of cs_user_extra_operations.f90 which
 !> performs an energy balance.

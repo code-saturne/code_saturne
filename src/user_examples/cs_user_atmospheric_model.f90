@@ -30,7 +30,7 @@
 !>
 !> \brief User subroutines dedicated to the atmospheric model.
 !>
-!> See \subpage cs_user_atmospheric_model for examples.
+!> See \ref cs_user_atmospheric_model for examples.
 !-------------------------------------------------------------------------------
 
 !===============================================================================

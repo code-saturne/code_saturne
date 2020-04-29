@@ -1787,16 +1787,16 @@ cs_cdo_advection_fb_cencsv(const cs_cell_mesh_t      *cm,
       /* Consistent part */
       f_row[c] -= beta_flx;
       c_row[c] += beta_flx; /* Could be avoided (?):
-                               u_c v_c \sum_f(c) |f| \beta \dot \nu_fc =
+                               u_c v_c \sum_f(c) |f| \beta \cdot \nu_fc =
                                u_c v_c \int_c div(\beta) = 0 */
 
       /* Stabilization part */
       f_row[f] += _A_minus; /* Could be avoided:
-                               \sum_c(f) u_f v_f (\beta \dot \nu_fc) = 0 */
+                               \sum_c(f) u_f v_f (\beta \cdot \nu_fc) = 0 */
       f_row[c] -= _A_minus;
       c_row[f] -= _A_minus;
       c_row[c] += _A_minus; /* Could be avoided (?):
-                               u_c v_c \sum_f(c) |f| \beta \dot \nu_fc =
+                               u_c v_c \sum_f(c) |f| \beta \cdot \nu_fc =
                                u_c v_c \int_c div(\beta) = 0 */
 
     }
@@ -1911,16 +1911,16 @@ cs_cdo_advection_fb_cencsv_di(const cs_cell_mesh_t      *cm,
       /* Consistent part */
       f_row[c] -= beta_flx;
       c_row[c] += beta_flx; /* Could be avoided (?):
-                               u_c v_c \sum_f(c) |f| \beta \dot \nu_fc =
+                               u_c v_c \sum_f(c) |f| \beta \cdot \nu_fc =
                                u_c v_c \int_c div(\beta) = 0 */
 
       /* Stabilization part */
       f_row[f] += _A_minus; /* Could be avoided:
-                               \sum_c(f) u_f v_f (\beta \dot \nu_fc) = 0 */
+                               \sum_c(f) u_f v_f (\beta \cdot \nu_fc) = 0 */
       f_row[c] -= _A_minus;
       c_row[f] -= _A_minus;
       c_row[c] += _A_minus; /* Could be avoided (?):
-                               u_c v_c \sum_f(c) |f| \beta \dot \nu_fc =
+                               u_c v_c \sum_f(c) |f| \beta \cdot \nu_fc =
                                u_c v_c \int_c div(\beta) = 0 */
 
     }
@@ -2036,11 +2036,11 @@ cs_cdo_advection_fb_cennoc(const cs_cell_mesh_t      *cm,
 
       /* Stabilization part */
       f_row[f] += _A_minus; /* Could be avoided:
-                               \sum_c(f) u_f v_f (\beta \dot \nu_fc) = 0 */
+                               \sum_c(f) u_f v_f (\beta \cdot \nu_fc) = 0 */
       f_row[c] -= _A_minus;
       c_row[f] -= _A_minus;
       c_row[c] += _A_minus; /* Could be avoided (?):
-                               u_c v_c \sum_f(c) |f| \beta \dot \nu_fc =
+                               u_c v_c \sum_f(c) |f| \beta \cdot \nu_fc =
                                u_c v_c \int_c div(\beta) = 0 */
 
     }
@@ -2156,11 +2156,11 @@ cs_cdo_advection_fb_cennoc_di(const cs_cell_mesh_t      *cm,
 
       /* Stabilization part */
       f_row[f] += _A_minus; /* Could be avoided:
-                               \sum_c(f) u_f v_f (\beta \dot \nu_fc) = 0 */
+                               \sum_c(f) u_f v_f (\beta \cdot \nu_fc) = 0 */
       f_row[c] -= _A_minus;
       c_row[f] -= _A_minus;
       c_row[c] += _A_minus; /* Could be avoided (?):
-                               u_c v_c \sum_f(c) |f| \beta \dot \nu_fc =
+                               u_c v_c \sum_f(c) |f| \beta \cdot \nu_fc =
                                u_c v_c \int_c div(\beta) = 0 */
 
     }

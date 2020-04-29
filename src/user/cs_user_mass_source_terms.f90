@@ -30,7 +30,7 @@
 !>
 !> \brief Mass source term user subroutine.
 !>
-!> See \subpage cs_user_mass_source_terms for examples.
+!> See \ref cs_user_mass_source_terms for examples.
 !>
 
 !-------------------------------------------------------------------------------

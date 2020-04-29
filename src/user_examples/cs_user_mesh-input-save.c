@@ -58,7 +58,7 @@ BEGIN_C_DECLS
  *
  * \brief Mesh input definition and mesh saving examples.
  *
- * See \subpage cs_user_mesh for examples.
+ * See \ref cs_user_mesh for examples.
  */
 /*----------------------------------------------------------------------------*/
 

@@ -564,9 +564,9 @@ cs_boundary_build_type_array(const cs_boundary_t   *boundaries,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_boundary_def_wall_zones(cs_boundary_t   *bdy)
+cs_boundary_def_wall_zones(cs_boundary_t   *boundaries)
 {
-  if (bdy == NULL)
+  if (boundaries == NULL)
     return;
 
   /* Add a new boundary zone (and also a new mesh location) related to all
@@ -576,7 +576,7 @@ cs_boundary_def_wall_zones(cs_boundary_t   *bdy)
   int  flag = CS_BOUNDARY_ZONE_WALL | CS_BOUNDARY_ZONE_PRIVATE;
   int  z_id = cs_boundary_zone_define_by_func(zone_name,
                                               _wall_boundary_selection,
-                                              bdy,
+                                              boundaries,
                                               flag);
 
   /* Allow overlay with other boundary zones used to set BCs on transport
@@ -628,6 +628,7 @@ cs_boundary_need_pressure_rescaling(cs_lnum_t                  n_b_faces,
 /*!
  * \brief  Build a boundary type description
  *
+ * \param[in]   bdy            pointer to a structure storing boundary info
  * \param[in]   b_type         type flag
  * \param[in]   descr_len_max  maximum name length
  * \param[out]  descr          subtype name

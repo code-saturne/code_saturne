@@ -25,7 +25,7 @@
 This page provides additional details on mesh import and preprocessing steps,
 as well as how mesh regions can be managed in the code_saturne Solver.
 
-Referring to the modules described in the [base architecture](@ref base_architecture)
+Referring to the modules described in the [base architecture](@ref main_components)
 presentation, a mesh can be imported using the code_saturne Preprocessor,
 than further preprocessed in the Solver's initialization steps.
 
@@ -448,7 +448,7 @@ following types:
         sections. If present, boundary condition names are
         interpreted as group names, and groups may also be defined
         based on element section or zone names using additional
-         Preprocessor [options](@ref #sec_optpcs_mesh)
+         Preprocessor [options](@ref sec_optpcs_mesh)
         (`-grp-cel` or `-grp-fac` followed by `section` or `zone`).
       - In the MED format and Salome platform, mesh groups are the main
         user-level concept to reference elements.
@@ -651,15 +651,15 @@ In C, the equivalent functions are:
 * \ref cs_selector_get_cell_list for cells.
 
 
-The user may then use a loop on the selected elements.\\
+The user may then use a loop on the selected elements.
 For instance, in the subroutine `cs_user_boundary_y_conditions` used to impose
 boundary  conditions, let us consider the boundary faces of color
-number 2 and which have the coordinate $X <= 0.01$
-(so that \verb+call getfbr('2 and x <= 0.01', nlelt,lstelt)+);
-we can do a loop (\verb+do ilelt = 1, nlelt+) and
-obtain \verb+ifac = lstelt(ilelt)+.
+number 2 and which have the coordinate *X <= 0.01*
+(so that `call getfbr('2 and x <= 0.01', nlelt,lstelt)`);
+we can do a loop (`do ilelt = 1, nlelt`) and
+obtain `ifac = lstelt(ilelt)`.
 
-More examples are available in the \doxygenfile{base_examples.html}{`doxygen` documentation}.
+More examples are available in the [User examples](@ref cs_user_examples) section.
 
 Volume and boundary zones {#sec_zones}
 =========================

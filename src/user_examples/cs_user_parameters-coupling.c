@@ -62,7 +62,7 @@ BEGIN_C_DECLS
  *
  * \brief Code coupling parameters examples.
  *
- * See \subpage user_coupling for examples.
+ * See \ref user_coupling for examples.
  */
 /*----------------------------------------------------------------------------*/
 

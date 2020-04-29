@@ -2406,97 +2406,97 @@ cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *mesh,
-                                      cs_mesh_quantities_t  *mesh_quantities)
+cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
+                                      cs_mesh_quantities_t  *mq)
 {
-  cs_lnum_t  n_i_faces = mesh->n_i_faces;
-  cs_lnum_t  n_b_faces = CS_MAX(mesh->n_b_faces, mesh->n_b_faces_all);
-  cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
+  cs_lnum_t  n_i_faces = m->n_i_faces;
+  cs_lnum_t  n_b_faces = CS_MAX(m->n_b_faces, m->n_b_faces_all);
+  cs_lnum_t  n_cells_with_ghosts = m->n_cells_with_ghosts;
 
   /* If this is not an update, allocate members of the structure */
 
-  if (mesh_quantities->i_face_normal == NULL)
-    BFT_MALLOC(mesh_quantities->i_face_normal, n_i_faces*3, cs_real_t);
+  if (mq->i_face_normal == NULL)
+    BFT_MALLOC(mq->i_face_normal, n_i_faces*3, cs_real_t);
 
-  if (mesh_quantities->i_face_cog == NULL)
-    BFT_MALLOC(mesh_quantities->i_face_cog, n_i_faces*3, cs_real_t);
+  if (mq->i_face_cog == NULL)
+    BFT_MALLOC(mq->i_face_cog, n_i_faces*3, cs_real_t);
 
-  if (mesh_quantities->b_face_normal == NULL)
-    BFT_MALLOC(mesh_quantities->b_face_normal, n_b_faces*3, cs_real_t);
+  if (mq->b_face_normal == NULL)
+    BFT_MALLOC(mq->b_face_normal, n_b_faces*3, cs_real_t);
 
-  if (mesh_quantities->b_face_cog == NULL)
-    BFT_MALLOC(mesh_quantities->b_face_cog, n_b_faces*3, cs_real_t);
+  if (mq->b_face_cog == NULL)
+    BFT_MALLOC(mq->b_face_cog, n_b_faces*3, cs_real_t);
 
-  if (mesh_quantities->cell_cen == NULL)
-    BFT_MALLOC(mesh_quantities->cell_cen, n_cells_with_ghosts*3, cs_real_t);
+  if (mq->cell_cen == NULL)
+    BFT_MALLOC(mq->cell_cen, n_cells_with_ghosts*3, cs_real_t);
 
-  if (mesh_quantities->cell_vol == NULL)
-    BFT_MALLOC(mesh_quantities->cell_vol, n_cells_with_ghosts, cs_real_t);
+  if (mq->cell_vol == NULL)
+    BFT_MALLOC(mq->cell_vol, n_cells_with_ghosts, cs_real_t);
 
-  if (mesh_quantities->i_face_surf == NULL)
-    BFT_MALLOC(mesh_quantities->i_face_surf, n_i_faces, cs_real_t);
+  if (mq->i_face_surf == NULL)
+    BFT_MALLOC(mq->i_face_surf, n_i_faces, cs_real_t);
 
-  if (mesh_quantities->b_face_surf == NULL)
-    BFT_MALLOC(mesh_quantities->b_face_surf, n_b_faces, cs_real_t);
+  if (mq->b_face_surf == NULL)
+    BFT_MALLOC(mq->b_face_surf, n_b_faces, cs_real_t);
 
   /* Compute face centers of gravity, normals, and surfaces */
 
   _compute_face_quantities(n_i_faces,
-                           (const cs_real_3_t *)mesh->vtx_coord,
-                           mesh->i_face_vtx_idx,
-                           mesh->i_face_vtx_lst,
-                           (cs_real_3_t *)mesh_quantities->i_face_cog,
-                           (cs_real_3_t *)mesh_quantities->i_face_normal);
+                           (const cs_real_3_t *)m->vtx_coord,
+                           m->i_face_vtx_idx,
+                           m->i_face_vtx_lst,
+                           (cs_real_3_t *)mq->i_face_cog,
+                           (cs_real_3_t *)mq->i_face_normal);
 
   _compute_face_surface(n_i_faces,
-                        mesh_quantities->i_face_normal,
-                        mesh_quantities->i_face_surf);
+                        mq->i_face_normal,
+                        mq->i_face_surf);
 
   _compute_face_quantities(n_b_faces,
-                           (const cs_real_3_t *)mesh->vtx_coord,
-                           mesh->b_face_vtx_idx,
-                           mesh->b_face_vtx_lst,
-                           (cs_real_3_t *)mesh_quantities->b_face_cog,
-                           (cs_real_3_t *)mesh_quantities->b_face_normal);
+                           (const cs_real_3_t *)m->vtx_coord,
+                           m->b_face_vtx_idx,
+                           m->b_face_vtx_lst,
+                           (cs_real_3_t *)mq->b_face_cog,
+                           (cs_real_3_t *)mq->b_face_normal);
 
   _compute_face_surface(n_b_faces,
-                        mesh_quantities->b_face_normal,
-                        mesh_quantities->b_face_surf);
+                        mq->b_face_normal,
+                        mq->b_face_surf);
 
   if (cs_glob_mesh_quantities_flag & CS_FACE_CENTER_REFINE) {
     _refine_warped_face_centers
       (n_i_faces,
-       (const cs_real_3_t *)mesh->vtx_coord,
-       mesh->i_face_vtx_idx,
-       mesh->i_face_vtx_lst,
-       (cs_real_3_t *)mesh_quantities->i_face_cog,
-       (const cs_real_3_t *)mesh_quantities->i_face_normal);
+       (const cs_real_3_t *)m->vtx_coord,
+       m->i_face_vtx_idx,
+       m->i_face_vtx_lst,
+       (cs_real_3_t *)mq->i_face_cog,
+       (const cs_real_3_t *)mq->i_face_normal);
 
     _refine_warped_face_centers
       (n_b_faces,
-       (const cs_real_3_t *)mesh->vtx_coord,
-       mesh->b_face_vtx_idx,
-       mesh->b_face_vtx_lst,
-       (cs_real_3_t *)mesh_quantities->b_face_cog,
-       (const cs_real_3_t *)mesh_quantities->b_face_normal);
+       (const cs_real_3_t *)m->vtx_coord,
+       m->b_face_vtx_idx,
+       m->b_face_vtx_lst,
+       (cs_real_3_t *)mq->b_face_cog,
+       (const cs_real_3_t *)mq->b_face_normal);
   }
 
   if (_ajust_face_cog_compat_v11_v52) {
     _adjust_face_cog_v11_v52
       (n_i_faces,
-       (const cs_real_3_t *)mesh->vtx_coord,
-       mesh->i_face_vtx_idx,
-       mesh->i_face_vtx_lst,
-       (cs_real_3_t *)mesh_quantities->i_face_cog,
-       (const cs_real_3_t *)mesh_quantities->i_face_normal);
+       (const cs_real_3_t *)m->vtx_coord,
+       m->i_face_vtx_idx,
+       m->i_face_vtx_lst,
+       (cs_real_3_t *)mq->i_face_cog,
+       (const cs_real_3_t *)mq->i_face_normal);
 
     _adjust_face_cog_v11_v52
       (n_b_faces,
-       (const cs_real_3_t *)mesh->vtx_coord,
-       mesh->b_face_vtx_idx,
-       mesh->b_face_vtx_lst,
-       (cs_real_3_t *)mesh_quantities->b_face_cog,
-       (const cs_real_3_t *)mesh_quantities->b_face_normal);
+       (const cs_real_3_t *)m->vtx_coord,
+       m->b_face_vtx_idx,
+       m->b_face_vtx_lst,
+       (cs_real_3_t *)mq->b_face_cog,
+       (const cs_real_3_t *)mq->b_face_normal);
   }
 
   /* Compute cell centers from face barycenters or vertices */
@@ -2506,22 +2506,22 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *mesh,
   switch (_cell_cen_algorithm) {
 
   case 0:
-    cs_mesh_quantities_cell_faces_cog(mesh,
-                                      mesh_quantities->i_face_normal,
-                                      mesh_quantities->i_face_cog,
-                                      mesh_quantities->b_face_normal,
-                                      mesh_quantities->b_face_cog,
-                                      mesh_quantities->cell_cen);
+    cs_mesh_quantities_cell_faces_cog(m,
+                                      mq->i_face_normal,
+                                      mq->i_face_cog,
+                                      mq->b_face_normal,
+                                      mq->b_face_cog,
+                                      mq->cell_cen);
 
     break;
   case 1:
-    _compute_cell_quantities(mesh,
-                             (const cs_real_3_t *)mesh_quantities->i_face_normal,
-                             (const cs_real_3_t *)mesh_quantities->i_face_cog,
-                             (const cs_real_3_t *)mesh_quantities->b_face_normal,
-                             (const cs_real_3_t *)mesh_quantities->b_face_cog,
-                             (cs_real_3_t *)mesh_quantities->cell_cen,
-                             mesh_quantities->cell_vol);
+    _compute_cell_quantities(m,
+                             (const cs_real_3_t *)mq->i_face_normal,
+                             (const cs_real_3_t *)mq->i_face_cog,
+                             (const cs_real_3_t *)mq->b_face_normal,
+                             (const cs_real_3_t *)mq->b_face_cog,
+                             (cs_real_3_t *)mq->cell_cen,
+                             mq->cell_vol);
     volume_computed = true;
     break;
 
@@ -2531,12 +2531,12 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *mesh,
   }
 
   if (cs_glob_mesh_quantities_flag & CS_CELL_CENTER_CORRECTION) {
-    _recompute_cell_cen_face(mesh,
-                             (const cs_real_3_t *)(mesh_quantities->i_face_normal),
-                             (const cs_real_3_t *)(mesh_quantities->i_face_cog),
-                             (const cs_real_3_t *)(mesh_quantities->b_face_normal),
-                             (const cs_real_3_t *)(mesh_quantities->b_face_cog),
-                             (cs_real_3_t *)(mesh_quantities->cell_cen));
+    _recompute_cell_cen_face(m,
+                             (const cs_real_3_t *)(mq->i_face_normal),
+                             (const cs_real_3_t *)(mq->i_face_cog),
+                             (const cs_real_3_t *)(mq->b_face_normal),
+                             (const cs_real_3_t *)(mq->b_face_cog),
+                             (cs_real_3_t *)(mq->cell_cen));
     volume_computed = false; /* should not be different with plane faces,
                                 not sure with warped faces */
   }
@@ -2544,25 +2544,25 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *mesh,
   /* Recompute face centers as the middle of two cell centers if possible */
   if (cs_glob_mesh_quantities_flag & CS_CELL_FACE_CENTER_CORRECTION) {
 
-     if (mesh->halo != NULL) {
-       cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED,
-                                mesh_quantities->cell_cen, 3);
-       if (mesh->n_init_perio > 0)
-         cs_halo_perio_sync_coords(mesh->halo, CS_HALO_EXTENDED,
-                                   mesh_quantities->cell_cen);
+     if (m->halo != NULL) {
+       cs_halo_sync_var_strided(m->halo, CS_HALO_EXTENDED,
+                                mq->cell_cen, 3);
+       if (m->n_init_perio > 0)
+         cs_halo_perio_sync_coords(m->halo, CS_HALO_EXTENDED,
+                                   mq->cell_cen);
      }
 
-    _correct_cell_face_center(mesh,
+    _correct_cell_face_center(m,
                               n_cells_with_ghosts,
                               n_i_faces,
                               n_b_faces,
-                              (const cs_lnum_2_t *)(mesh->i_face_cells),
-                              mesh->b_face_cells,
-                              (cs_real_3_t *)(mesh_quantities->cell_cen),
-                              (cs_real_3_t *)(mesh_quantities->i_face_cog),
-                              (cs_real_3_t *)(mesh_quantities->b_face_cog),
-                              (cs_real_3_t *)(mesh_quantities->i_face_normal),
-                              (cs_real_3_t *)(mesh_quantities->b_face_normal));
+                              (const cs_lnum_2_t *)(m->i_face_cells),
+                              m->b_face_cells,
+                              (cs_real_3_t *)(mq->cell_cen),
+                              (cs_real_3_t *)(mq->i_face_cog),
+                              (cs_real_3_t *)(mq->b_face_cog),
+                              (cs_real_3_t *)(mq->i_face_normal),
+                              (cs_real_3_t *)(mq->b_face_normal));
 
     volume_computed = false;
 
@@ -2571,60 +2571,58 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *mesh,
   /* Compute the volume of cells */
 
   if (volume_computed == false)
-    _compute_cell_volume
-      (mesh,
-       (const cs_real_3_t *)(mesh_quantities->i_face_normal),
-       (const cs_real_3_t *)(mesh_quantities->i_face_cog),
-       (const cs_real_3_t *)(mesh_quantities->b_face_normal),
-       (const cs_real_3_t *)(mesh_quantities->b_face_cog),
-       (const cs_real_3_t *)(mesh_quantities->cell_cen),
-       mesh_quantities->cell_vol);
-
+    _compute_cell_volume(m,
+                         (const cs_real_3_t *)(mq->i_face_normal),
+                         (const cs_real_3_t *)(mq->i_face_cog),
+                         (const cs_real_3_t *)(mq->b_face_normal),
+                         (const cs_real_3_t *)(mq->b_face_cog),
+                         (const cs_real_3_t *)(mq->cell_cen),
+                         mq->cell_vol);
 
   /* Correction of small or negative volumes
      (doesn't conserve the total volume) */
 
   if (cs_glob_mesh_quantities_flag & CS_CELL_VOLUME_RATIO_CORRECTION)
-    _cell_bad_volume_correction(mesh,
-                                mesh_quantities->cell_vol);
+    _cell_bad_volume_correction(m,
+                                mq->cell_vol);
 
   /* Synchronize geometric quantities */
 
-  if (mesh->halo != NULL) {
+  if (m->halo != NULL) {
 
-    cs_halo_sync_var_strided(mesh->halo, CS_HALO_EXTENDED,
-                             mesh_quantities->cell_cen, 3);
-    if (mesh->n_init_perio > 0)
-      cs_halo_perio_sync_coords(mesh->halo, CS_HALO_EXTENDED,
-                                mesh_quantities->cell_cen);
+    cs_halo_sync_var_strided(m->halo, CS_HALO_EXTENDED,
+                             mq->cell_cen, 3);
+    if (m->n_init_perio > 0)
+      cs_halo_perio_sync_coords(m->halo, CS_HALO_EXTENDED,
+                                mq->cell_cen);
 
-    cs_halo_sync_var(mesh->halo, CS_HALO_EXTENDED, mesh_quantities->cell_vol);
+    cs_halo_sync_var(m->halo, CS_HALO_EXTENDED, mq->cell_vol);
 
   }
 
-  _cell_volume_reductions(mesh,
-                          mesh_quantities->cell_vol,
-                          &(mesh_quantities->min_vol),
-                          &(mesh_quantities->max_vol),
-                          &(mesh_quantities->tot_vol));
+  _cell_volume_reductions(m,
+                          mq->cell_vol,
+                          &(mq->min_vol),
+                          &(mq->max_vol),
+                          &(mq->tot_vol));
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
 
     cs_real_t  _min_vol, _max_vol, _tot_vol;
 
-    MPI_Allreduce(&(mesh_quantities->min_vol), &_min_vol, 1, CS_MPI_REAL,
+    MPI_Allreduce(&(mq->min_vol), &_min_vol, 1, CS_MPI_REAL,
                   MPI_MIN, cs_glob_mpi_comm);
 
-    MPI_Allreduce(&(mesh_quantities->max_vol), &_max_vol, 1, CS_MPI_REAL,
+    MPI_Allreduce(&(mq->max_vol), &_max_vol, 1, CS_MPI_REAL,
                   MPI_MAX, cs_glob_mpi_comm);
 
-    MPI_Allreduce(&(mesh_quantities->tot_vol), &_tot_vol, 1, CS_MPI_REAL,
+    MPI_Allreduce(&(mq->tot_vol), &_tot_vol, 1, CS_MPI_REAL,
                   MPI_SUM, cs_glob_mpi_comm);
 
-    mesh_quantities->min_vol = _min_vol;
-    mesh_quantities->max_vol = _max_vol;
-    mesh_quantities->tot_vol = _tot_vol;
+    mq->min_vol = _min_vol;
+    mq->max_vol = _max_vol;
+    mq->tot_vol = _tot_vol;
 
   }
 #endif
@@ -2640,130 +2638,130 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
-                           cs_mesh_quantities_t  *mesh_quantities)
+cs_mesh_quantities_compute(const cs_mesh_t       *m,
+                           cs_mesh_quantities_t  *mq)
 {
-  cs_lnum_t  dim = mesh->dim;
-  cs_lnum_t  n_i_faces = mesh->n_i_faces;
-  cs_lnum_t  n_b_faces = mesh->n_b_faces;
-  cs_lnum_t  n_cells_with_ghosts = mesh->n_cells_with_ghosts;
+  cs_lnum_t  dim = m->dim;
+  cs_lnum_t  n_i_faces = m->n_i_faces;
+  cs_lnum_t  n_b_faces = m->n_b_faces;
+  cs_lnum_t  n_cells_with_ghosts = m->n_cells_with_ghosts;
 
   /* Update the number of passes */
 
   _n_computations++;
 
-  cs_mesh_quantities_compute_preprocess(mesh, mesh_quantities);
+  cs_mesh_quantities_compute_preprocess(m, mq);
 
   /* Fluid surfaces and volumes: point to standard quantities and
    * may be modified afterwards */
-  mesh_quantities->i_f_face_normal = mesh_quantities->i_face_normal;
-  mesh_quantities->b_f_face_normal = mesh_quantities->b_face_normal;
-  mesh_quantities->i_f_face_surf = mesh_quantities->i_face_surf;
-  mesh_quantities->b_f_face_surf = mesh_quantities->b_face_surf;
+  mq->i_f_face_normal = mq->i_face_normal;
+  mq->b_f_face_normal = mq->b_face_normal;
+  mq->i_f_face_surf = mq->i_face_surf;
+  mq->b_f_face_surf = mq->b_face_surf;
 
-  mesh_quantities->cell_f_vol = mesh_quantities->cell_vol;
+  mq->cell_f_vol = mq->cell_vol;
 
   /* Porous models */
   if (cs_glob_porous_model > 0) {
-    mesh_quantities->has_disable_flag = 1;
+    mq->has_disable_flag = 1;
   }
   else {
-    mesh_quantities->min_f_vol = mesh_quantities->min_vol;
-    mesh_quantities->max_f_vol = mesh_quantities->max_vol;
-    mesh_quantities->tot_f_vol = mesh_quantities->tot_vol;
+    mq->min_f_vol = mq->min_vol;
+    mq->max_f_vol = mq->max_vol;
+    mq->tot_f_vol = mq->tot_vol;
   }
 
-  if (mesh_quantities->has_disable_flag == 1) {
-    if (mesh_quantities->c_disable_flag == NULL)
-      BFT_MALLOC(mesh_quantities->c_disable_flag, n_cells_with_ghosts, int);
+  if (mq->has_disable_flag == 1) {
+    if (mq->c_disable_flag == NULL)
+      BFT_MALLOC(mq->c_disable_flag, n_cells_with_ghosts, int);
     for (cs_lnum_t cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++)
-      mesh_quantities->c_disable_flag[cell_id] = 0;
+      mq->c_disable_flag[cell_id] = 0;
   }
   else {
-    if (mesh_quantities->c_disable_flag == NULL)
-      BFT_MALLOC(mesh_quantities->c_disable_flag, 1, int);
-    mesh_quantities->c_disable_flag[0] = 0;
+    if (mq->c_disable_flag == NULL)
+      BFT_MALLOC(mq->c_disable_flag, 1, int);
+    mq->c_disable_flag[0] = 0;
   }
 
-  if (mesh_quantities->i_dist == NULL)
-    BFT_MALLOC(mesh_quantities->i_dist, n_i_faces, cs_real_t);
+  if (mq->i_dist == NULL)
+    BFT_MALLOC(mq->i_dist, n_i_faces, cs_real_t);
 
-  if (mesh_quantities->b_dist == NULL)
-    BFT_MALLOC(mesh_quantities->b_dist, n_b_faces, cs_real_t);
+  if (mq->b_dist == NULL)
+    BFT_MALLOC(mq->b_dist, n_b_faces, cs_real_t);
 
-  if (mesh_quantities->weight == NULL)
-    BFT_MALLOC(mesh_quantities->weight, n_i_faces, cs_real_t);
+  if (mq->weight == NULL)
+    BFT_MALLOC(mq->weight, n_i_faces, cs_real_t);
 
-  if (mesh_quantities->dijpf == NULL)
-    BFT_MALLOC(mesh_quantities->dijpf, n_i_faces*dim, cs_real_t);
+  if (mq->dijpf == NULL)
+    BFT_MALLOC(mq->dijpf, n_i_faces*dim, cs_real_t);
 
-  if (mesh_quantities->diipb == NULL)
-    BFT_MALLOC(mesh_quantities->diipb, n_b_faces*dim, cs_real_t);
+  if (mq->diipb == NULL)
+    BFT_MALLOC(mq->diipb, n_b_faces*dim, cs_real_t);
 
-  if (mesh_quantities->dofij == NULL)
-    BFT_MALLOC(mesh_quantities->dofij, n_i_faces*dim, cs_real_t);
+  if (mq->dofij == NULL)
+    BFT_MALLOC(mq->dofij, n_i_faces*dim, cs_real_t);
 
-  if (mesh_quantities->diipf == NULL)
-    BFT_MALLOC(mesh_quantities->diipf, n_i_faces*dim, cs_real_t);
+  if (mq->diipf == NULL)
+    BFT_MALLOC(mq->diipf, n_i_faces*dim, cs_real_t);
 
-  if (mesh_quantities->djjpf == NULL)
-    BFT_MALLOC(mesh_quantities->djjpf, n_i_faces*dim, cs_real_t);
+  if (mq->djjpf == NULL)
+    BFT_MALLOC(mq->djjpf, n_i_faces*dim, cs_real_t);
 
-  if (mesh_quantities->b_sym_flag == NULL)
-    BFT_MALLOC(mesh_quantities->b_sym_flag, n_b_faces, cs_int_t);
+  if (mq->b_sym_flag == NULL)
+    BFT_MALLOC(mq->b_sym_flag, n_b_faces, cs_int_t);
 
   /* Compute some distances relative to faces and associated weighting */
 
-  _compute_face_distances(mesh->n_i_faces,
-                          mesh->n_b_faces,
-                          (const cs_lnum_2_t *)(mesh->i_face_cells),
-                          mesh->b_face_cells,
-                          (const cs_real_3_t *)(mesh_quantities->i_face_normal),
-                          (const cs_real_3_t *)(mesh_quantities->b_face_normal),
-                          (const cs_real_3_t *)(mesh_quantities->i_face_cog),
-                          (const cs_real_3_t *)(mesh_quantities->b_face_cog),
-                          (const cs_real_3_t *)(mesh_quantities->cell_cen),
-                          (const cs_real_t *)(mesh_quantities->cell_vol),
-                          mesh_quantities->i_dist,
-                          mesh_quantities->b_dist,
-                          mesh_quantities->weight);
+  _compute_face_distances(m->n_i_faces,
+                          m->n_b_faces,
+                          (const cs_lnum_2_t *)(m->i_face_cells),
+                          m->b_face_cells,
+                          (const cs_real_3_t *)(mq->i_face_normal),
+                          (const cs_real_3_t *)(mq->b_face_normal),
+                          (const cs_real_3_t *)(mq->i_face_cog),
+                          (const cs_real_3_t *)(mq->b_face_cog),
+                          (const cs_real_3_t *)(mq->cell_cen),
+                          (const cs_real_t *)(mq->cell_vol),
+                          mq->i_dist,
+                          mq->b_dist,
+                          mq->weight);
 
   /* Compute some vectors relative to faces to handle non-orthogonalities */
 
   _compute_face_vectors(dim,
-                        mesh->n_i_faces,
-                        mesh->n_b_faces,
-                        (const cs_lnum_2_t *)(mesh->i_face_cells),
-                        mesh->b_face_cells,
-                        mesh_quantities->i_face_normal,
-                        mesh_quantities->b_face_normal,
-                        mesh_quantities->i_face_cog,
-                        mesh_quantities->b_face_cog,
-                        mesh_quantities->i_face_surf,
-                        mesh_quantities->cell_cen,
-                        mesh_quantities->weight,
-                        mesh_quantities->b_dist,
-                        mesh_quantities->dijpf,
-                        mesh_quantities->diipb,
-                        mesh_quantities->dofij);
+                        m->n_i_faces,
+                        m->n_b_faces,
+                        (const cs_lnum_2_t *)(m->i_face_cells),
+                        m->b_face_cells,
+                        mq->i_face_normal,
+                        mq->b_face_normal,
+                        mq->i_face_cog,
+                        mq->b_face_cog,
+                        mq->i_face_surf,
+                        mq->cell_cen,
+                        mq->weight,
+                        mq->b_dist,
+                        mq->dijpf,
+                        mq->diipb,
+                        mq->dofij);
 
   /* Compute additional vectors relative to faces to handle non-orthogonalities */
 
   _compute_face_sup_vectors
-    (mesh->n_cells,
-     mesh->n_i_faces,
-     (const cs_lnum_2_t *)(mesh->i_face_cells),
-     (const cs_real_3_t *)(mesh_quantities->i_face_normal),
-     (const cs_real_3_t *)(mesh_quantities->i_face_cog),
-     (const cs_real_3_t *)(mesh_quantities->cell_cen),
-     mesh_quantities->cell_vol,
-     mesh_quantities->i_dist,
-     (cs_real_3_t *)(mesh_quantities->diipf),
-     (cs_real_3_t *)(mesh_quantities->djjpf));
+    (m->n_cells,
+     m->n_i_faces,
+     (const cs_lnum_2_t *)(m->i_face_cells),
+     (const cs_real_3_t *)(mq->i_face_normal),
+     (const cs_real_3_t *)(mq->i_face_cog),
+     (const cs_real_3_t *)(mq->cell_cen),
+     mq->cell_vol,
+     mq->i_dist,
+     (cs_real_3_t *)(mq->diipf),
+     (cs_real_3_t *)(mq->djjpf));
 
   /* Build the geometrical matrix linear gradient correction */
   if (cs_glob_mesh_quantities_flag & CS_BAD_CELLS_WARPED_CORRECTION)
-    _compute_corr_grad_lin(mesh, mesh_quantities);
+    _compute_corr_grad_lin(m, mq);
 
   /* Print some information on the control volumes, and check min volume */
 
@@ -2772,16 +2770,16 @@ cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
                  "       Minimum control volume      = %14.7e\n"
                  "       Maximum control volume      = %14.7e\n"
                  "       Total volume for the domain = %14.7e\n"),
-               mesh_quantities->min_vol, mesh_quantities->max_vol,
-               mesh_quantities->tot_vol);
+               mq->min_vol, mq->max_vol,
+               mq->tot_vol);
   else {
-    if (mesh_quantities->min_vol <= 0.) {
+    if (mq->min_vol <= 0.) {
       bft_printf(_(" --- Information on the volumes\n"
                    "       Minimum control volume      = %14.7e\n"
                    "       Maximum control volume      = %14.7e\n"
                    "       Total volume for the domain = %14.7e\n"),
-                 mesh_quantities->min_vol, mesh_quantities->max_vol,
-                 mesh_quantities->tot_vol);
+                 mq->min_vol, mq->max_vol,
+                 mq->tot_vol);
       bft_printf(_("\nAbort due to the detection of a negative control "
                    "volume.\n"));
     }

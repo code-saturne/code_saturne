@@ -30,7 +30,7 @@
 !>
 !> \brief Fuel example
 !>
-!> See \subpage cs_user_initialization for examples.
+!> See \ref cs_user_initialization for examples.
 !>
 !
 !-------------------------------------------------------------------------------

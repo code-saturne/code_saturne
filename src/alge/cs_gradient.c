@@ -91,6 +91,7 @@ BEGIN_C_DECLS
  * <a href="../../theory.pdf#gradreco"><b>gradient reconstruction</b></a>
  * section of the theory guide for more informations.
  */
+
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*=============================================================================

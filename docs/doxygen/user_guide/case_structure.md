@@ -32,7 +32,7 @@ To create a case, either the GUI or the```code_saturne create``` command
 can be used. As usual for all code_saturne commands,
 the ```code_saturne create --help```
 will list the available options. More details are provided in the
-dedicated [case generator](@ref #sec_prg_cscreate) section.
+dedicated [case generator](@ref sec_prg_cscreate) section.
 
 Organization and set-up of code_saturne computations is based on several concepts:
 
@@ -227,7 +227,7 @@ As a rule of thumb, all files in `DATA` or `SRC` except for the
 `code_saturne` script are copied for use during code execution,
 but subdirectories are not.
 
-Run configuration file (run.cfg) {#sec_prg_runcfg}
+Run configuration file (run.cfg) {#sec_prg_run_cfg}
 ----------------------
 
 For a given case, various execution-related settings can be defined

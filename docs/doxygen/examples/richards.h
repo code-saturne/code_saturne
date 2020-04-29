@@ -29,7 +29,7 @@
 
   \section richards_intro Introduction
 
-  The Hydrogeology module of \CS is a numerical model for water flow and solute
+  The Hydrogeology module of code_saturne is a numerical model for water flow and solute
   transport in continuous porous media. The flow part is based on the Richards
   equation, derived from the Darcy law and the conservation of mass. The
   transport part is based on the the classical advection-diffusion equation,

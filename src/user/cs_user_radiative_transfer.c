@@ -59,7 +59,7 @@ BEGIN_C_DECLS
  * \brief User function for input of radiative transfer parameters:
  *        absorption coefficient and net radiation flux.
  *
- *  See \subpage cs_user_radiative_transfer for examples.
+ *  See \ref cs_user_radiative_transfer for examples.
  */
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */

@@ -71,6 +71,8 @@ BEGIN_C_DECLS
 
 typedef struct _cdofb_monolithic_t  cs_cdofb_monolithic_t;
 
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+
 /*=============================================================================
  * Definitions of function pointers
  *============================================================================*/
@@ -316,7 +318,7 @@ struct _cdofb_monolithic_t {
 
 };
 
-/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function prototypes

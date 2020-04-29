@@ -63,7 +63,7 @@ BEGIN_C_DECLS
  * \brief User functions for setting a calcultion using the groundwater flow
  *        module with CDO schemes
  *
- * See \subpage parameters for examples.
+ * See \ref parameters for examples.
  */
 /*----------------------------------------------------------------------------*/
 

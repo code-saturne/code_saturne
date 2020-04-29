@@ -689,7 +689,7 @@ cs_matrix_get_tuning_runs(int     *n_min_products,
  * \brief Set default matrix type for a given fill type.
  *
  * \param[in] fill type  Fill type for which tuning behavior is set
- * \param[in] mv         Matrix variant to use for this type
+ * \param[in] type       Matrix type to use
  */
 /*----------------------------------------------------------------------------*/
 

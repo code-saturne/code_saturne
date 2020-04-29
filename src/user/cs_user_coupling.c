@@ -57,7 +57,7 @@ BEGIN_C_DECLS
  *
  * \brief Code couplings definition with SYRTHES and Code_Saturne.
  *
- * See \subpage user_coupling for examples.
+ * See \ref user_coupling for examples.
  */
 /*----------------------------------------------------------------------------*/
 

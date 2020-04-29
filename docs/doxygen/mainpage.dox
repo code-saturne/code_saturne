@@ -46,7 +46,7 @@
   code_saturne is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the
   Free Software Foundation; either version 2 of the License, or (at your option)
-  any later version. \CS is distributed in the hope that it will be
+  any later version. code_saturne is distributed in the hope that it will be
   useful, but WITHOUT ANY WARRANTY; without even the implied warranty
   of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
@@ -55,7 +55,7 @@
 
   code_saturne may be configured and installed using the
   \c configure shell script and \c make. Please refer to the
-  <a href="../../install.pdf"><b>installation guide</b></a>.
+  \ref autotoc_md0 "installation guide".
 
   \section mainpage_sublibs Sub-libraries
 
@@ -75,13 +75,12 @@
 
   \section additional_doc Additional documentation
 
-  In addition to the Doxygen documentation, Code_Saturne is provided with six
+  In addition to the Doxygen documentation, code_saturne is provided with six
   pdf documents:
     - a <a href="../../user.pdf"><b>user guide</b></a>,
     - a <a href="../../theory.pdf"><b>theory guide</b></a>,
     - a <a href="../../developer.pdf"><b>developer guide</b></a>,
     - a <a href="../../studymanager.pdf"><b>guide of studymanager</b></a>,
-    - an <a href="../../install.pdf"><b>installation guide</b></a>,
     - a <a href="../../refcard.pdf"><b>refcard</b></a>.
 
   \section main_components Base architecture

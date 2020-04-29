@@ -62,7 +62,7 @@ BEGIN_C_DECLS
  *
  * \brief Time moments example
  *
- * See \subpage parameters for examples.
+ * See \ref parameters for examples.
  *
  */
 /*----------------------------------------------------------------------------*/

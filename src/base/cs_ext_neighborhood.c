@@ -77,7 +77,7 @@ BEGIN_C_DECLS
   \file cs_ext_neighborhood.c
         Extended cell neighborhood.
 
-  \enum cs_ext_neighhborhood_type_t
+  \enum cs_ext_neighborhood_type_t
 
   \brief Type of extended neighborhood associated with the mesh
 

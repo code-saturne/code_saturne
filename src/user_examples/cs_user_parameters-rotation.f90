@@ -30,7 +30,7 @@
 !>
 !> \brief Rotation parameters example.
 !>
-!>  See \subpage f_parameters for examples.
+!>  See \ref f_parameters for examples.
 !>
 !>   If the Code_Saturne GUI is used, this file is not required (but may be
 !>   used to override parameters entered through the GUI, and to set

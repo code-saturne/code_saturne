@@ -57,7 +57,7 @@ BEGIN_C_DECLS
  *
  * \brief Additional source terms for variable equations.
  *
- * See \subpage user_source_terms for examples.
+ * See \ref user_source_terms for examples.
  */
 /*----------------------------------------------------------------------------*/
 

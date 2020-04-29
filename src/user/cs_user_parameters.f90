@@ -29,7 +29,7 @@
 !> \brief User subroutines for input of calculation parameters (Fortran modules).
 !>        These subroutines are called in all cases.
 !>
-!>  See \subpage f_parameters for examples.
+!>  See \ref f_parameters for examples.
 !>
 !>   If the Code_Saturne GUI is used, this file is not required (but may be
 !>   used to override parameters entered through the GUI, and to set

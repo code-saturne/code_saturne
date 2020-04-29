@@ -30,7 +30,7 @@
 !>
 !> \brief User-defined module: it allows to create any user array.
 !>
-!> See \subpage cs_user_modules for examples.
+!> See \ref cs_user_modules for examples.
 !>
 !> This file is compiled before all other user Fortran files.
 !> To ensure this, it must not be renamed.

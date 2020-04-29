@@ -31,7 +31,7 @@
 !> \brief This function computes the porosity (volume factor \f$ \epsilon \f$
 !> when porosity module is activated (iporos = 1 in cs_user_parameters.f90).
 !>
-!> See \subpage cs_porosity for examples.
+!> See \ref cs_porosity for examples.
 !>
 !-------------------------------------------------------------------------------
 

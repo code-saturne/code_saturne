@@ -902,8 +902,8 @@ cs_matrix_pre_vector_multiply_sync(cs_halo_rotation_t   rotation_mode,
  *           structure.
  *
  * \param[in, out]  matrix_p  untyped pointer to matrix description structure
- * \param[in]       db size   optional diagonal block sizes
- * \param[in]       eb size   optional extra-diagonal block sizes
+ * \param[in]       db_size   optional diagonal block sizes
+ * \param[in]       eb_size   optional extra-diagonal block sizes
  */
 /*----------------------------------------------------------------------------*/
 
@@ -935,7 +935,7 @@ cs_matrix_csr_assembler_values_init(void              *matrix_p,
  * \param[in]       stride    associated data block size
  * \param[in]       row_id    associated local row ids
  * \param[in]       col_idx   associated local column indexes
- * \param[in]       val       pointer to values (size: n*stride)
+ * \param[in]       vals      pointer to values (size: n*stride)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -958,8 +958,8 @@ cs_matrix_csr_assembler_values_add(void             *matrix_p,
  *           structure.
  *
  * \param[in, out]  matrix_p  untyped pointer to matrix description structure
- * \param[in]       db size   optional diagonal block sizes
- * \param[in]       eb size   optional extra-diagonal block sizes
+ * \param[in]       db_size   optional diagonal block sizes
+ * \param[in]       eb_size   optional extra-diagonal block sizes
  */
 /*----------------------------------------------------------------------------*/
 
@@ -991,7 +991,7 @@ cs_matrix_msr_assembler_values_init(void              *matrix_p,
  * \param[in]       stride    associated data block size
  * \param[in]       row_id    associated local row ids
  * \param[in]       col_idx   associated local column indexes
- * \param[in]       val       pointer to values (size: n*stride)
+ * \param[in]       vals      pointer to values (size: n*stride)
  */
 /*----------------------------------------------------------------------------*/
 

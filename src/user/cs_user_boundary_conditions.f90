@@ -31,7 +31,7 @@
 !> \brief User subroutine which fills boundary conditions arrays
 !> (\c icodcl, \c rcodcl) for unknown variables.
 !>
-!> See \subpage cs_user_boundary_conditions_examples for examples.
+!> See \ref cs_user_boundary_conditions_examples for examples.
 !>
 !> \section cs_user_boundary_conditions_intro Introduction
 !>

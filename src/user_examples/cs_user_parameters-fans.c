@@ -62,7 +62,7 @@ BEGIN_C_DECLS
  *
  * \brief Fans parameters example
  *
- * See \subpage parameters for examples.
+ * See \ref parameters for examples.
  */
 /*----------------------------------------------------------------------------*/
 

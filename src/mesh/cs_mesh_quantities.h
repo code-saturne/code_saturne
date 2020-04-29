@@ -265,8 +265,8 @@ cs_mesh_quantities_free_all(cs_mesh_quantities_t  *mq);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *mesh,
-                                      cs_mesh_quantities_t  *mesh_quantities);
+cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *m,
+                                      cs_mesh_quantities_t  *mq);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -278,8 +278,8 @@ cs_mesh_quantities_compute_preprocess(const cs_mesh_t       *mesh,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_mesh_quantities_compute(const cs_mesh_t       *mesh,
-                           cs_mesh_quantities_t  *mesh_quantities);
+cs_mesh_quantities_compute(const cs_mesh_t       *m,
+                           cs_mesh_quantities_t  *mq);
 
 /*----------------------------------------------------------------------------
  * Compute fluid mesh quantities

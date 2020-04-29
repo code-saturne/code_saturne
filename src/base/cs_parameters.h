@@ -202,7 +202,7 @@ typedef struct {
   int           isto2t;       /* time scheme activated for the source
                                  terms of turbulent equations */
 
-  double        thetst;       /* value of \f$theta\$f for turbulence */
+  double        thetst;       /* value of \f$theta\f$ for turbulence */
 
 } cs_time_scheme_t;
 

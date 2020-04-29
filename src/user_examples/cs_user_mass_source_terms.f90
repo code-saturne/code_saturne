@@ -30,7 +30,7 @@
 !>
 !> \brief Mass source term example.
 !>
-!> See \subpage cs_user_mass_source_terms for examples.
+!> See \ref cs_user_mass_source_terms for examples.
 !>
 
 !-------------------------------------------------------------------------------

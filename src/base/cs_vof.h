@@ -48,12 +48,10 @@ BEGIN_C_DECLS
 
 /*!
    @addtogroup vof
-
-   \defgroup vof_masks Masks used to specify Volume of Fluid models
-
-   @addtogroup vof_masks
    @{
 
+   \defgroup vof_masks Masks used to specify Volume of Fluid models
+   @{
  */
 
 /*! Volume of Fluid model */
@@ -67,7 +65,6 @@ BEGIN_C_DECLS
 
 /*!
     @}
-
     @}
 */
 

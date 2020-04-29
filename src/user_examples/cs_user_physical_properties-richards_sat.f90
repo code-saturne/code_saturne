@@ -30,7 +30,7 @@
 !>
 !> \brief Definition of physical variable laws example.
 !>
-!> See \subpage physical_properties for examples.
+!> See \ref physical_properties for examples.
 !>
 !-------------------------------------------------------------------------------
 

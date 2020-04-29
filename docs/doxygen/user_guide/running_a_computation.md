@@ -273,28 +273,28 @@ indicate a required argument, "`[ ]`" to indicate an optional argument).
 <table>
 <caption id="control_file_commands">control_file syntax</caption>
 <tr><th> command                          <th> arguments
-<tr><td> max_time_step                    <td> <time_step_number>
-<tr><td> max_time_value                   <td> <time_value>
-<tr><td> max_wall_time                    <td> <wall_time>
+<tr><td> max_time_step                    <td> &lttime_step_number&gt
+<tr><td> max_time_value                   <td> &lttime_value&gt
+<tr><td> max_wall_time                    <td> &ltwall_time&gt
 <tr><td>                                  <td>
-<tr><td> checkpoint_time_step             <td> <time_step_number>
-<tr><td> checkpoint_time_value            <td> <time_value>
-<tr><td> checkpoint_wall_time             <td> <wall_clock_time>
+<tr><td> checkpoint_time_step             <td> &lttime_step_number&gt
+<tr><td> checkpoint_time_value            <td> &lttime_value&gt
+<tr><td> checkpoint_wall_time             <td> &ltwall_clock_time&gt
 <tr><td>                                  <td>
-<tr><td> checkpoint_time_step_interval    <td> <time_step_interval>
-<tr><td> checkpoint_time_value_interval   <td> <time_interval>
-<tr><td> checkpoint_wall_time_interval    <td> <wall_time_interval>
+<tr><td> checkpoint_time_step_interval    <td> &lttime_step_interval&gt
+<tr><td> checkpoint_time_value_interval   <td> &lttime_interval&gt
+<tr><td> checkpoint_wall_time_interval    <td> &ltwall_time_interval&gt
 <tr><td>                                  <td>
-<tr><td> control_file_wtime_interval      <td> <wall_time_interval>
+<tr><td> control_file_wtime_interval      <td> &ltwall_time_interval&gt
 <tr><td>                                  <td>
 <tr><td> flush                            <td> [time_step_number]
 <tr><td>                                  <td>
-<tr><td> notebook_set                     <td> <parameter_name> <value>
+<tr><td> notebook_set                     <td> &ltparameter_name&gt &ltvalue&gt
 <tr><td>                                  <td>
-<tr><td> postprocess_time_step            <td> <time_step_number> [writer_id]
-<tr><td> postprocess_time_value           <td> <time_step_value> [writer_id]
+<tr><td> postprocess_time_step            <td> &lttime_step_number&gt [writer_id]
+<tr><td> postprocess_time_value           <td> &lttime_step_value&gt [writer_id]
 <tr><td>                                  <td>
-<tr><td> time_step_limit                  <td> <time_step_count>
+<tr><td> time_step_limit                  <td> &lttime_step_count&gt
 </table>
 
 The `time_step_limit` differs from the `max_time_step` command,
@@ -346,7 +346,7 @@ Environment variables specific to the code_saturne environment {#sec_env_var_cs}
 
 Variable               | Role
 -----------------------|------------------------------------------------------------
-`CS_SCRATCHDIR`        | Allows defining the execution directory (see [temporary directory](@case_structure_scratchdir)),overriding the default path or settings from the global or user `code_saturne.cfg`.
+`CS_SCRATCHDIR`        | Allows defining the execution directory (see [temporary directory](@ref case_structure_scratchdir)),overriding the default path or settings from the global or user `code_saturne.cfg`.
 `CS_MEM_LOG`           | Allows defining a file name in which memory management based on the [BFT_MALLOC](@ref BFT_MALLOC), [BFT_REALLOC](@ref BFT_REALLOC), and [BFT_FREE](@ref BFT_FREE) is logged (useful to check for some memory leaks).
 `CS_MPIEXEC_OPTIONS`   | This variable allows defining extra arguments to be passed to the MPI execution command by the run scripts.  If this option is defined, it will have priority over the value defined in the preferences file (or by computed defaults), so if necessary, it is possible to define a setting specific to a given run using this mechanism.  This may be useful when tuning the installation to a given system, for example experimenting MPI mapping and "bind to core" type features.
 `CS_RENUMBER`          | Deactivating mesh renumbering in the Solver is possible by setting `CS_RENUMBER=off`.

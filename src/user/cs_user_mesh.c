@@ -63,7 +63,7 @@ BEGIN_C_DECLS
  *
  * \brief Definition and modification of the calculation mesh.
  *
- * See \subpage cs_user_mesh for examples.
+ * See \ref cs_user_mesh for examples.
  */
 /*----------------------------------------------------------------------------*/
 
