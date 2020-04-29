@@ -2584,7 +2584,7 @@ cs_solidification_initialize(const cs_mesh_t              *mesh,
     if (alloy->c_l_faces != NULL) {
       cs_real_t  *c_bulk_faces =
         cs_equation_get_face_values(alloy->solute_equation, false);
-      memset(alloy->c_l_faces, c_bulk_faces, quant->n_faces*sizeof(cs_real_t));
+      memcpy(alloy->c_l_faces, c_bulk_faces, quant->n_faces*sizeof(cs_real_t));
     }
 
   } /* CS_SOLIDIFICATION_MODEL_BINARY_ALLOY */
