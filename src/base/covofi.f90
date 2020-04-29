@@ -629,8 +629,7 @@ if (ncesmp.gt.0) then
 
   ! On incremente SMBRS par -Gamma RTPA et ROVSDT par Gamma
   call catsma &
-  !==========
- ( ncelet , ncel   , ncesmp , iiun   , isso2t(iscal) ,            &
+ ( ncesmp , iiun   , isso2t(iscal) ,                              &
    icetsm , itypsm(1,ivar) ,                                      &
    cell_f_vol , cvara_var    , smacel(1,ivar) , srcmas   ,        &
    smbrs  , rovsdt , w1)

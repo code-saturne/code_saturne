@@ -600,8 +600,7 @@ if (ncesmp.gt.0) then
 
   !       We increment smbr by -Gamma.var_prev and rovsdt by Gamma
   call catsma                                                     &
- ( ncelet , ncel   , ncesmp , iiun   , isto2t ,                   &
-   icetsm , itypsm(1,ivar) ,                                      &
+ ( ncesmp , iiun   , isto2t , icetsm , itypsm(1,ivar) ,           &
    cell_f_vol , cvara_var  , smacel(1,ivar) , smacel(1,ipr) ,     &
    smbr   ,  rovsdt , w2 )
 

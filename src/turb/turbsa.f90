@@ -485,9 +485,7 @@ if (ncesmp.gt.0) then
   ivar = inusa
 
   call catsma &
- ( ncelet , ncel   , ncesmp , iiun   ,                            &
-   isto2t ,                                                       &
-   icetsm , itypsm(1,ivar) ,                                      &
+ ( ncesmp , iiun   , isto2t , icetsm , itypsm(1,ivar) ,               &
    cell_f_vol , cvara_nusa     , smacel(1,ivar) , smacel(1,ipr) ,     &
    rhssa  , tinssa , w1 )
 

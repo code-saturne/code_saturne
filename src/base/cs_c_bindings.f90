@@ -2875,10 +2875,12 @@ module cs_c_bindings
     end function cs_f_notebook_parameter_value_by_name
 
     !---------------------------------------------------------------------------
-    ! Computing rotation/curvature correction for eddy-viscosity models.
+
+    ! Interface to C function Computing rotation/curvature correction
+    ! for eddy-viscosity models.
 
     subroutine rotcor(dt, rotfct, ce2rc)  &
-         bind(C, name='cs_rotcor')
+        bind(C, name='cs_rotcor')
       use, intrinsic :: iso_c_binding
       implicit none
       real(kind=c_double), dimension(*), intent(in) :: dt
@@ -2887,6 +2889,25 @@ module cs_c_bindings
     end subroutine rotcor
 
     !---------------------------------------------------------------------------
+
+    ! Interface to C function to implicit and explicit sources terms
+    ! from sources mass computation.
+
+    subroutine catsma(ncesmp, iterns, isnexp, icetsm, itpsmp,  &
+                      volume, pvara, smcelp, gamma,            &
+                      tsexp, tsimp, gapinj)                    &
+        bind(C, name='cs_mass_source_terms')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), intent(in), value :: ncesmp
+      integer(c_int), intent(in), value :: iterns, isnexp
+      integer(kind=c_int), dimension(*), intent(in) :: icetsm, itpsmp
+      real(kind=c_double), dimension(*), intent(in) :: volume
+      real(kind=c_double), dimension(*), intent(in) :: pvara
+      real(kind=c_double), dimension(*), intent(in) :: gamma, smcelp
+      real(kind=c_double), dimension(*), intent(inout) :: tsexp, tsimp
+      real(kind=c_double), dimension(*), intent(out) :: gapinj
+    end subroutine catsma
 
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 

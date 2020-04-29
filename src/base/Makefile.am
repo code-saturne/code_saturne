@@ -172,7 +172,8 @@ cs_volume_zone.h \
 cs_wall_functions.h \
 cs_zone.h \
 cs_base_headers.h \
-cs_headers.h
+cs_headers.h \
+cs_mass_source_terms.h
 
 if HAVE_CUDA
 pkginclude_HEADERS += cs_base_cuda.h
@@ -228,7 +229,7 @@ b_h_to_t.f90 \
 c_h_to_t.f90 \
 calhyd.f90 \
 caltri.f90 \
-catsma.f90 \
+cs_mass_source_terms.c \
 catsmv.f90 \
 catsmt.f90 \
 clpsca.f90 \

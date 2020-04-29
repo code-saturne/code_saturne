@@ -876,8 +876,7 @@ if (ncesmp.gt.0) then
   ivar = ik
 
   call catsma &
- ( ncelet , ncel   , ncesmp , iiun   ,                            &
-   isto2t ,                                                       &
+ ( ncesmp , iiun   , isto2t ,                                     &
    icetsm , itypsm(1,ivar) ,                                      &
    volume , cvara_k      , smacel(1,ivar) , smacel(1,ipr) ,       &
    smbrk  , tinstk , gamk )
@@ -885,8 +884,7 @@ if (ncesmp.gt.0) then
   ivar = iomg
 
   call catsma &
- ( ncelet , ncel   , ncesmp , iiun   ,                            &
-   isto2t ,                                                       &
+ ( ncesmp , iiun   , isto2t ,                                     &
    icetsm , itypsm(1,ivar) ,                                      &
    volume , cvara_omg    , smacel(1,ivar) , smacel(1,ipr) ,       &
    smbrw  , tinstw , gamw )

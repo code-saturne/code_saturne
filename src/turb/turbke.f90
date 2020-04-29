@@ -1213,8 +1213,7 @@ if (ncesmp.gt.0) then
   ivar = ik
 
   call catsma &
- ( ncelet , ncel   , ncesmp , iiun   ,                            &
-   isto2t ,                                                       &
+ ( ncesmp , iiun   , isto2t ,                                     &
    icetsm , itypsm(:,ivar)  ,                                     &
    cell_f_vol , cvara_k         , smacel(:,ivar) , smacel(1,ipr) ,    &
    smbrk  , w2     , w4 )
@@ -1222,8 +1221,7 @@ if (ncesmp.gt.0) then
   ivar = iep
 
   call catsma &
- ( ncelet , ncel   , ncesmp , iiun   ,                            &
-   isto2t ,                                                       &
+ ( ncesmp , iiun   , isto2t ,                                     &
    icetsm , itypsm(:,ivar)  ,                                     &
    cell_f_vol , cvara_ep        , smacel(:,ivar) , smacel(1,ipr) ,    &
    smbre  , w3     , w5 )
