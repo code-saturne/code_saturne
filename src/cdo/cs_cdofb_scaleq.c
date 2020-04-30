@@ -204,10 +204,10 @@ _setup(cs_real_t                     t_eval,
  * \param[in]      cm          pointer to a cellwise view of the mesh
  * \param[in]      eqp         pointer to a cs_equation_param_t structure
  * \param[in]      eqb         pointer to a cs_equation_builder_t structure
- * \param[in]      eqc         pointer to a cs_cdofb_scaleq_t structure
  * \param[in]      dir_values  Dirichlet values associated to each face
  * \param[in]      forced_ids  indirection in case of internal enforcement
- * \param[in]      field_tn    values of the field at the last computed time
+ * \param[in]      val_f_pre   face values used as the previous one
+ * \param[in]      val_c_pre   cell values used as the previous one
  * \param[in, out] csys        pointer to a cellwise view of the system
  * \param[in, out] cb          pointer to a cellwise builder
  */
@@ -217,10 +217,10 @@ static void
 _sfb_init_cell_system(const cs_cell_mesh_t         *cm,
                       const cs_equation_param_t    *eqp,
                       const cs_equation_builder_t  *eqb,
-                      const cs_cdofb_scaleq_t      *eqc,
                       const cs_real_t               dir_values[],
                       const cs_lnum_t               forced_ids[],
-                      const cs_real_t               field_tn[],
+                      const cs_real_t               val_f_pre[],
+                      const cs_real_t               val_c_pre[],
                       cs_cell_sys_t                *csys,
                       cs_cell_builder_t            *cb)
 {
@@ -237,10 +237,10 @@ _sfb_init_cell_system(const cs_cell_mesh_t         *cm,
 
   for (short int f = 0; f < cm->n_fc; f++) {
     csys->dof_ids[f] = cm->f_ids[f];
-    csys->val_n[f] = eqc->face_values[cm->f_ids[f]];
+    csys->val_n[f] = val_f_pre[cm->f_ids[f]];
   }
   csys->dof_ids[cm->n_fc] = cm->c_id;
-  csys->val_n[cm->n_fc] = field_tn[cm->c_id];
+  csys->val_n[cm->n_fc] = val_c_pre[cm->c_id];
 
   /* Store the local values attached to Dirichlet values if the current cell
      has at least one border face */
@@ -1460,6 +1460,10 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
     /* Initialization of the values of properties */
     cs_equation_init_properties(eqp, eqb, diff_hodge, cb);
 
+    /* Set values used as the previous one (useless here) */
+    cs_real_t  *val_f_pre = eqc->face_values;
+    cs_real_t  *val_c_pre = fld->val;
+
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
     /* --------------------------------------------- */
@@ -1475,7 +1479,8 @@ cs_cdofb_scaleq_interpolate(const cs_mesh_t            *mesh,
                          connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
-      _sfb_init_cell_system(cm, eqp, eqb, eqc, dir_values, forced_ids, fld->val,
+      _sfb_init_cell_system(cm, eqp, eqb, dir_values, forced_ids,
+                            val_f_pre, val_c_pre,
                             csys, cb);
 
       /* Build and add the diffusion/advection/reaction term to the local
@@ -1684,6 +1689,10 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
     /* Initialization of the values of properties */
     cs_equation_init_properties(eqp, eqb, diff_hodge, cb);
 
+    /* Set values used as the previous one (useless here) */
+    cs_real_t  *val_f_pre = eqc->face_values;
+    cs_real_t  *val_c_pre = fld->val;
+
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
     /* --------------------------------------------- */
@@ -1700,7 +1709,8 @@ cs_cdofb_scaleq_solve_steady_state(bool                        cur2prev,
                          connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
-      _sfb_init_cell_system(cm, eqp, eqb, eqc, dir_values, forced_ids, fld->val,
+      _sfb_init_cell_system(cm, eqp, eqb, dir_values, forced_ids,
+                            val_f_pre, val_c_pre,
                             csys, cb);
 
       /* Build and add the diffusion/advection/reaction terms to the local
@@ -1910,6 +1920,13 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
     /* Initialization of the values of properties */
     cs_equation_init_properties(eqp, eqb, diff_hodge, cb);
 
+    /* Set values used as the previous one */
+    cs_real_t  *val_f_pre = NULL, *val_c_pre = NULL;
+    if (cur2prev)
+      val_f_pre = eqc->face_values, val_c_pre = fld->val;
+    else  /* Non-linear process --> values at t^n in *_pre  */
+      val_f_pre = eqc->face_values_pre, val_c_pre = fld->val_pre;
+
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
     /* --------------------------------------------- */
@@ -1926,7 +1943,8 @@ cs_cdofb_scaleq_solve_implicit(bool                        cur2prev,
                          connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
-      _sfb_init_cell_system(cm, eqp, eqb, eqc, dir_values, forced_ids, fld->val,
+      _sfb_init_cell_system(cm, eqp, eqb, dir_values, forced_ids,
+                            val_f_pre, val_c_pre,
                             csys, cb);
 
       /* Build and add the diffusion/advection/reaction terms to the local
@@ -2197,6 +2215,13 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
     /* Initialization of the values of properties */
     cs_equation_init_properties(eqp, eqb, diff_hodge, cb);
 
+    /* Set values used as the previous one */
+    cs_real_t  *val_f_pre = NULL, *val_c_pre = NULL;
+    if (cur2prev)
+      val_f_pre = eqc->face_values, val_c_pre = fld->val;
+    else  /* Non-linear process --> values at t^n in *_pre  */
+      val_f_pre = eqc->face_values_pre, val_c_pre = fld->val_pre;
+
     /* --------------------------------------------- */
     /* Main loop on cells to build the linear system */
     /* --------------------------------------------- */
@@ -2213,7 +2238,8 @@ cs_cdofb_scaleq_solve_theta(bool                        cur2prev,
                          connect, quant, cm);
 
       /* Set the local (i.e. cellwise) structures for the current cell */
-      _sfb_init_cell_system(cm, eqp, eqb, eqc, dir_values, forced_ids, fld->val,
+      _sfb_init_cell_system(cm, eqp, eqb, dir_values, forced_ids,
+                            val_f_pre, val_c_pre,
                             csys, cb);
 
       /* Build and add the diffusion/advection/reaction terms to the local
