@@ -77,6 +77,8 @@ def getRestartInfo(package, results_dir=None, restart_path='*'):
             m = os.path.join(results_dir, r, 'checkpoint', 'main')
         else:
             m = os.path.join(r, 'main')
+        if not os.path.isfile(m):
+            m += '.csc'
         if os.path.isfile(m):
             if True: # try:
                 nt = -1

@@ -459,7 +459,9 @@ class domain(base_domain):
         results = os.listdir(results_dir)
         results.sort(reverse=True)
         for r in results:
-            m = os.path.join(results_dir, r, 'checkpoint', 'main')
+            m = os.path.join(results_dir, r, 'checkpoint', 'main.csc')
+            if not os.path.isfile(m):
+                m = os.path.join(results_dir, r, 'checkpoint', 'main')
             if os.path.isfile(m):
                 try:
                     cmd = self.package.get_io_dump()

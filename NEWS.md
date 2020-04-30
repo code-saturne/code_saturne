@@ -3,6 +3,9 @@ Release 6.1.1 (unreleased)
 
 Bug fixes:
 
+- Fix automatic selection of checkoints, broken in v6.0.0 for
+  checkpoint files using the new .csc extension.
+
 - Fix bug in the GUI for Lagrangian injection boundary conditions.
 
 - Fix uninitialized number of cells for condensation zones.
