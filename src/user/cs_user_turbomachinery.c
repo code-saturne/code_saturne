@@ -72,6 +72,7 @@ BEGIN_C_DECLS
 */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_turbomachinery
 void
 cs_user_turbomachinery(void)
 {
@@ -84,6 +85,7 @@ cs_user_turbomachinery(void)
 */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_turbomachinery_rotor
 void
 cs_user_turbomachinery_rotor(void)
 {
@@ -96,6 +98,7 @@ cs_user_turbomachinery_rotor(void)
 */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_turbomachinery_set_rotation_velocity
 void
 cs_user_turbomachinery_set_rotation_velocity(void)
 {

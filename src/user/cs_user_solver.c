@@ -70,6 +70,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_solver_set
 int
 cs_user_solver_set(void)
 {
@@ -86,6 +87,7 @@ cs_user_solver_set(void)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_solver
 void
 cs_user_solver(const cs_mesh_t             *mesh,
                const cs_mesh_quantities_t  *mesh_quantities)

@@ -80,6 +80,7 @@ build-aux/catalyst \
 build-aux/catalyst-5.6 \
 build-aux/cs_compile_build.py \
 build-aux/cs_config_test.py \
+build-aux/cs_user_src_filter.py \
 build-aux/cs_version.py \
 build-aux/list_modules.sh \
 build-aux/petsc-petscvariables.makefile \

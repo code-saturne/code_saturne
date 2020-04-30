@@ -86,6 +86,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_lagr_ef
 void
 cs_user_lagr_ef(cs_real_t            dt_p,
                 const cs_real_t      taup[],
@@ -114,6 +115,7 @@ cs_user_lagr_ef(cs_real_t            dt_p,
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_lagr_extra_operations
 void
 cs_user_lagr_extra_operations(const cs_real_t  dt[])
 {
@@ -133,6 +135,7 @@ cs_user_lagr_extra_operations(const cs_real_t  dt[])
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_lagr_imposed_motion
 void
 cs_user_lagr_imposed_motion(const cs_real_t  coords[3],
                             cs_real_t        dt,
@@ -165,6 +168,7 @@ cs_user_lagr_imposed_motion(const cs_real_t  coords[3],
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_lagr_in
 void
 cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
                 const cs_lagr_injection_set_t  *zis,
@@ -232,6 +236,7 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_lagr_rt
 void
 cs_user_lagr_rt(cs_lnum_t        id_p,
                 cs_real_t        re_p,
@@ -268,6 +273,7 @@ cs_user_lagr_rt(cs_lnum_t        id_p,
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_lagr_rt_t
 void
 cs_user_lagr_rt_t(cs_lnum_t        id_p,
                   cs_real_t        re_p,
@@ -315,6 +321,7 @@ cs_user_lagr_rt_t(cs_lnum_t        id_p,
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_lagr_sde
 void
 cs_user_lagr_sde(const cs_real_t  dt[],
                  cs_real_t        taup[],

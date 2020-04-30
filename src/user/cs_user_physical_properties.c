@@ -76,6 +76,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_physical_properties
 void
 cs_user_physical_properties(cs_domain_t   *domain)
 {

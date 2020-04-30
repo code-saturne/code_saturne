@@ -48,6 +48,7 @@
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_lagr_model
 void
 cs_user_lagr_model(void)
 {

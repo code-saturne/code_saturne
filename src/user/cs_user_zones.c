@@ -58,6 +58,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_zones
 void
 cs_user_zones(void)
 {

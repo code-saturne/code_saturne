@@ -76,6 +76,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_radiative_transfer_parameters
 void
 cs_user_radiative_transfer_parameters(void)
 {
@@ -102,6 +103,7 @@ cs_user_radiative_transfer_parameters(void)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_rad_transfer_absorption
 void
 cs_user_rad_transfer_absorption(const int  bc_type[],
                                 cs_real_t  ck[])
@@ -138,6 +140,7 @@ cs_user_rad_transfer_absorption(const int  bc_type[],
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_rad_transfer_net_flux
 void
 cs_user_rad_transfer_net_flux(const int        bc_type[],
                               const cs_real_t  coefap[],

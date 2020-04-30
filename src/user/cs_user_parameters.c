@@ -79,6 +79,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_model
 void
 cs_user_model(void)
 {
@@ -101,6 +102,7 @@ cs_user_model(void)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_parameters
 void
 cs_user_parameters(cs_domain_t   *domain)
 {
@@ -118,6 +120,7 @@ cs_user_parameters(cs_domain_t   *domain)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_finalize_setup
 void
 cs_user_finalize_setup(cs_domain_t   *domain)
 {
@@ -140,6 +143,7 @@ cs_user_finalize_setup(cs_domain_t   *domain)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_linear_solvers
 void
 cs_user_linear_solvers(void)
 {
@@ -156,6 +160,7 @@ cs_user_linear_solvers(void)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_time_moments
 void
 cs_user_time_moments(void)
 {
@@ -170,6 +175,7 @@ cs_user_time_moments(void)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_internal_coupling
 void
 cs_user_internal_coupling(void)
 {

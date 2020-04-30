@@ -64,6 +64,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_postprocess_writers
 void
 cs_user_postprocess_writers(void)
 {
@@ -80,6 +81,7 @@ cs_user_postprocess_writers(void)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_postprocess_meshes
 void
 cs_user_postprocess_meshes(void)
 {
@@ -94,6 +96,7 @@ cs_user_postprocess_meshes(void)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_postprocess_probes
 void
 cs_user_postprocess_probes(void)
 {
@@ -126,6 +129,7 @@ cs_user_postprocess_probes(void)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_postprocess_values
 void
 cs_user_postprocess_values(const char            *mesh_name,
                            int                    mesh_id,
@@ -156,6 +160,7 @@ cs_user_postprocess_values(const char            *mesh_name,
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_postprocess_activate
 void
 cs_user_postprocess_activate(int     nt_max_abs,
                              int     nt_cur_abs,

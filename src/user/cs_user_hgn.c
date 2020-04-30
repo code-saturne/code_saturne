@@ -77,6 +77,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_hgn_thermo_relax_time
 void
 cs_user_hgn_thermo_relax_time(const cs_mesh_t *mesh,
                               const cs_real_t *alpha_eq,

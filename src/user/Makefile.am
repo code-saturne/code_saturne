@@ -238,11 +238,7 @@ install-data-hook:
 	  mv "$${file}.tmp" "$${file}"; \
 	done ;\
 	c_user_files=`ls *.c 2>/dev/null`; \
-	stubvers="\/\* VERS \*\/"; \
-	version="\/\* Code_Saturne version $(VERSION) \*\/"; \
-	comment="\/\* REMOVE_LINE_FOR_USE_OF_SUBROUTINE \*\/"; \
 	for file in $${c_user_files}; do \
-	  $(SED) -e "N;s/$${stubvers}/$${version}/" < "$${file}" | \
-	  $(SED) -e "/$${comment}/d" > "$${file}.tmp" && \
+	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(VERSION)" < "$${file}" > "$${file}.tmp" && \
 	  mv "$${file}.tmp" "$${file}"; \
 	done

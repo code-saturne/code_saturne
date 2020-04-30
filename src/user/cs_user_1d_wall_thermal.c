@@ -83,6 +83,7 @@ BEGIN_C_DECLS
  * User function definitions
  *============================================================================*/
 
+#pragma weak cs_user_1d_wall_thermal
 void
 cs_user_1d_wall_thermal(int iappel,
                         int isuit1)

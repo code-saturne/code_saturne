@@ -145,6 +145,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_radiative_transfer_bcs
 void
 cs_user_radiative_transfer_bcs(int               nvar,
                                const int         bc_type[],

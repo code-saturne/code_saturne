@@ -83,6 +83,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_initialization
 void
 cs_user_initialization(cs_domain_t     *domain)
 {

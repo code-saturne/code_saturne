@@ -150,6 +150,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_source_terms
 void
 cs_user_source_terms(cs_domain_t  *domain,
                      int           f_id,

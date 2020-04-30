@@ -86,21 +86,15 @@ cs_user_boundary_conditions(int         nvar,
   CS_UNUSED(nvar);
   CS_UNUSED(bc_type);
 
-  /* TEST TO REMOVE FOR USAGE */
-  if (true)
-    return;
-
   /* Get a user parameter defined in the GUI notebook */
   /*! [user_defined_param] */
   cs_real_t t_bnd = cs_notebook_parameter_value_by_name("t_inlet");
   /*! [user_defined_param] */
 
-
   /* Define some variables needed for the boundary condition specification */
 
   /*! [bc_param] */
   const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-
 
   const int keyvar = cs_field_key_id("variable_id");
   cs_field_t *scalar = cs_field_by_name_try("scalar1");
@@ -125,7 +119,6 @@ cs_user_boundary_conditions(int         nvar,
 
   BFT_FREE(lstelt);
   /*! [apply_bc] */
-
 }
 
 /*----------------------------------------------------------------------------*/

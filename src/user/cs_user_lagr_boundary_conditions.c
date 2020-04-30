@@ -62,6 +62,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_lagr_boundary_conditions
 void
 cs_user_lagr_boundary_conditions(const int  bc_type[])
 {
@@ -87,6 +88,7 @@ cs_user_lagr_boundary_conditions(const int  bc_type[])
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_lagr_user_boundary_interaction
 void
 cs_lagr_user_boundary_interaction(cs_lagr_particle_set_t    *particles,
                                   cs_lnum_t                  p_id,

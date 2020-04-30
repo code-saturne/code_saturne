@@ -85,6 +85,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_extra_operations_initialize
 void
 cs_user_extra_operations_initialize(cs_domain_t     *domain)
 {
@@ -102,6 +103,7 @@ cs_user_extra_operations_initialize(cs_domain_t     *domain)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_extra_operations
 void
 cs_user_extra_operations(cs_domain_t     *domain)
 {
@@ -119,6 +121,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_extra_operations_finalize
 void
 cs_user_extra_operations_finalize(cs_domain_t     *domain)
 {

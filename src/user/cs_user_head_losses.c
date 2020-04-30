@@ -87,6 +87,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_head_losses
 void
 cs_user_head_losses(const  cs_zone_t  *zone,
                     cs_real_t          cku[][6])

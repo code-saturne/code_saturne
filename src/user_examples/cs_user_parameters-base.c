@@ -535,7 +535,6 @@ cs_user_parameters(cs_domain_t *domain)
     fp->xyzp0[1] = 0.;
     fp->xyzp0[2] = 0.;
 
-
     /* irovar, ivivar, icp: constant or variable density,
                               viscosity/diffusivity, and specific heat
 
@@ -730,7 +729,6 @@ cs_user_parameters(cs_domain_t *domain)
     cs_field_set_key_struct(CS_F_(eps), key_cal_opt_id, &vcopt);
   }
 
-
   /* Example: choose a convective scheme and
    * a limiter for a given variable (user and non-user) */
   /*----------------------------------------------*/
@@ -817,7 +815,6 @@ cs_user_parameters(cs_domain_t *domain)
                             1.);
 
   }
-
 
   /*-----------------------------------------------------------------------*/
 
@@ -1172,7 +1169,6 @@ cs_user_internal_coupling(void)
 
   /*! [param_internal_coupling] */
 
-
   /* Example: compute porosity from a scan of points
    * ------------------------------------------------*/
 
@@ -1190,7 +1186,6 @@ cs_user_internal_coupling(void)
   cs_glob_porosity_from_scan_opt->transformation_matrix[1][0] = -sin(angle);
   cs_glob_porosity_from_scan_opt->transformation_matrix[1][1] =  cos(angle);
   cs_glob_porosity_from_scan_opt->transformation_matrix[2][2] = 1.;
-
 
   /* Add some sources to fill fluid space */
   {
@@ -1256,7 +1251,6 @@ cs_user_finalize_setup(cs_domain_t     *domain)
                                cs_field_key_id("post_vis"),
                                CS_POST_MONITOR);
   /*! [setup_post_lum] */
-
 }
 
 /*----------------------------------------------------------------------------*/

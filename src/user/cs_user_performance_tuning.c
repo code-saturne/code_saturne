@@ -69,6 +69,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_numbering
 void
 cs_user_numbering(void)
 {
@@ -81,6 +82,7 @@ cs_user_numbering(void)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_partition
 void
 cs_user_partition(void)
 {
@@ -93,6 +95,7 @@ cs_user_partition(void)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_parallel_io
 void
 cs_user_parallel_io(void)
 {
@@ -105,6 +108,7 @@ cs_user_parallel_io(void)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_matrix_tuning
 void
 cs_user_matrix_tuning(void)
 {

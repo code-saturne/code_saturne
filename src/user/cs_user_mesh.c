@@ -77,6 +77,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_mesh_input
 void
 cs_user_mesh_input(void)
 {
@@ -89,6 +90,7 @@ cs_user_mesh_input(void)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_join
 void
 cs_user_join(void)
 {
@@ -101,6 +103,7 @@ cs_user_join(void)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_periodicity
 void
 cs_user_periodicity(void)
 {
@@ -113,6 +116,7 @@ cs_user_periodicity(void)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_mesh_warping
 void
 cs_user_mesh_warping(void)
 {
@@ -127,6 +131,7 @@ cs_user_mesh_warping(void)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_mesh_boundary
 void
 cs_user_mesh_boundary(cs_mesh_t  *mesh)
 {
@@ -141,6 +146,7 @@ cs_user_mesh_boundary(cs_mesh_t  *mesh)
 */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_mesh_modify
 void
 cs_user_mesh_modify(cs_mesh_t  *mesh)
 {
@@ -155,6 +161,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
 */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_mesh_smoothe
 void
 cs_user_mesh_smoothe(cs_mesh_t  *mesh)
 {
@@ -171,6 +178,7 @@ cs_user_mesh_smoothe(cs_mesh_t  *mesh)
 */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_mesh_save
 void
 cs_user_mesh_save(cs_mesh_t  *mesh)
 {
@@ -186,6 +194,7 @@ cs_user_mesh_save(cs_mesh_t  *mesh)
 */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_mesh_bad_cells_tag
 void
 cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
                            cs_mesh_quantities_t  *mesh_quantities)
@@ -204,6 +213,7 @@ cs_user_mesh_bad_cells_tag(cs_mesh_t             *mesh,
 */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_mesh_modify_partial
 void
 cs_user_mesh_modify_partial(cs_mesh_t             *mesh,
                             cs_mesh_quantities_t  *mesh_quantities)

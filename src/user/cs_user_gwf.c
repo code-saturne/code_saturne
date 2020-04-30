@@ -82,6 +82,7 @@ BEGIN_C_DECLS
 */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_gwf_setup
 void
 cs_user_gwf_setup(cs_domain_t   *domain)
 {
@@ -97,6 +98,7 @@ cs_user_gwf_setup(cs_domain_t   *domain)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_gwf_get_soil_density
 void
 cs_user_gwf_get_soil_density(const cs_gwf_soil_t   *soil,
                              cs_real_t             *density)

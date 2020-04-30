@@ -27,6 +27,12 @@ Numerics and physical modelling:
 
 Architectural changes:
 
+- Add pragmas in reference C user file to try to assign weak linkage
+  to those files. This seems to work with gcc and clang, and is also
+  mentioned in the IBM xl C documentation. This is a cleaner approach
+  than allowing multiple definitions and should work on systems whose
+  dynamic linkers cause issues with this.
+
 - Documentation: move the installation documentation to a top-level
   INSTALL.md file. This replaces both the matching sections in the
   README.mf and the LaTeX-based install.pdf file.

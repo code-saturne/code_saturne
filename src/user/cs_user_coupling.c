@@ -74,6 +74,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_syrthes_coupling
 void
 cs_user_syrthes_coupling(void)
 {
@@ -89,6 +90,7 @@ cs_user_syrthes_coupling(void)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_saturne_coupling
 void
 cs_user_saturne_coupling(void)
 {

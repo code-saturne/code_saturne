@@ -60,6 +60,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_user_lagr_volume_conditions
 void
 cs_user_lagr_volume_conditions(void)
 {
@@ -83,6 +84,7 @@ cs_user_lagr_volume_conditions(void)
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_lagr_user_internal_interaction
 void
 cs_lagr_user_internal_interaction(cs_lagr_particle_set_t    *particles,
                                   cs_lnum_t                  p_id,
