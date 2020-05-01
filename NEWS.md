@@ -48,6 +48,8 @@ Bug fixes:
 
 Architectural changes:
 
+- Remove dependency of fig2dev for documentation build.
+
 - Fixes for compilation with gcc 10.0.
 
 - Move some cs_cdofb_* functions from "static inline" to regular functions

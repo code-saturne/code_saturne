@@ -2,7 +2,7 @@ dnl-----------------------------------------------------------------------------
 dnl
 dnl This file is part of Code_Saturne, a general-purpose CFD tool.
 dnl
-dnl Copyright (C) 1998-2019 EDF S.A.
+dnl Copyright (C) 1998-2020 EDF S.A.
 dnl
 dnl This program is free software; you can redistribute it and/or modify it under
 dnl the terms of the GNU General Public License as published by the Free Software
@@ -64,15 +64,6 @@ dnl where is makeindex ?
 AC_PATH_PROG(MAKEINDEX, [makeindex])
 if test "x$MAKEINDEX" = "x"; then
   AC_MSG_WARN(makeindex not found)
-  cs_have_latex=no
-fi
-
-AC_ARG_VAR([FIG2DEV], [Xfig translation tool])
-
-dnl where is fig2dev ?
-AC_PATH_PROG(FIG2DEV, [fig2dev])
-if test "x$FIG2DEV" = "x"; then
-  AC_MSG_WARN(fig2dev not found)
   cs_have_latex=no
 fi
 

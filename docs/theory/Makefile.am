@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2019 EDF S.A.
+# Copyright (C) 1998-2020 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -82,19 +82,13 @@ TEXINPUTFILES =
 
 # Distributed files
 
-EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES) \
-graphics/clthermique.pdf \
-graphics/loilog.pdf
+EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES) graphics
 
 # Generated pdf document
 
 PDFMAIN = $(TEXMAIN:.tex=.pdf)
 
 if HAVE_LATEX
-
-# Subdirectories (order is important)
-
-SUBDIRS = graphics .
 
 # Environment variables for LaTeX
 

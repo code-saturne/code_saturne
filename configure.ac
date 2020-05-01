@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2019 EDF S.A.
+# Copyright (C) 1998-2020 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -30,7 +30,7 @@ m4_define([cs_licence_c_comment],
 [/*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2019 EDF S.A.
+  Copyright (C) 1998-2020 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -85,7 +85,7 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 
 AC_ARG_WITH(shell-env,
             [AS_HELP_STRING([--with-shell-env],
-                            [source given or detected shell environment)])],
+                            [source given or detected shell environment])],
             [if test "x$with_shell_env" = "x"; then
                shell_env=auto
              elif test -f "$with_shell_env"; then
@@ -1201,12 +1201,10 @@ AC_CONFIG_FILES([Makefile po/Makefile.in
                  salome/cfd_study/src/CFDSTUDYGUI/Makefile
                  salome/cfd_study/src/CFDSTUDYOTURNS/Makefile
                  docs/Makefile docs/doxygen/Makefile docs/style/csvers.tex
-                 docs/studymanager/Makefile docs/studymanager/graphics/Makefile
-                 docs/developer/Makefile docs/developer/graphics/Makefile
-                 docs/install/Makefile
-                 docs/refcard/Makefile docs/refcard/graphics/Makefile
-                 docs/theory/Makefile docs/theory/graphics/Makefile
-                 docs/user/Makefile docs/user/graphics/Makefile
+                 docs/developer/Makefile docs/install/Makefile
+                 docs/refcard/Makefile docs/theory/Makefile
+                 docs/studymanager/Makefile
+                 docs/user/Makefile
                  tests/Makefile
                  extras/salome/fsi_appli_config.xml
                  extras/windows/innosetup/setup_mingw.iss
