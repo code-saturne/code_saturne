@@ -329,8 +329,8 @@ typedef struct {
   /* Function to update the quantities related to the momentum equations */
   cs_solidification_update_t     *update_momentum_properties;
 
-  /* Function to update the g_l and the cell state */
-  cs_solidification_update_t     *update_gl_and_state;
+  /* Function to update the liquid fraction */
+  cs_solidification_update_t     *update_gl;
 
   /* Function to update c_l */
   cs_solidification_update_t     *update_cl;
@@ -363,6 +363,16 @@ typedef struct {
 
   int                n_iter_max;
   double             delta_tolerance;
+
+  /* During the non-linear iteration process one needs:
+   *  temp_{n}         --> stored in field->val_pre
+   *  temp_{n+1}^k     --> stored in tk_bulk (in this structure)
+   *  temp_{n+1}^{k+1} --> stored in field->val
+   *
+   * Same thing for the bulk concentration.
+   */
+  cs_real_t         *tk_bulk;
+  cs_real_t         *ck_bulk;
 
   /* Solute concentration in the liquid phase
    * 1) array of the last computed values at cells

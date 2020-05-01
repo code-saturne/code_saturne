@@ -544,6 +544,77 @@ _update_liquid_fraction_voller(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Update the state associated to each cell in the case of a binary
+ *         alloy. No MPI synchronization has to be performed at this stage.
+ *
+ * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_binary_alloy_final_state(const cs_cdo_quantities_t   *quant)
+{
+  cs_solidification_t  *solid = cs_solidification_structure;
+  cs_solidification_binary_alloy_t  *alloy
+    = (cs_solidification_binary_alloy_t *)solid->model_context;
+  cs_solidification_state_t  state;
+
+  /* Update the cell state (at this stage, one should have converged between
+   * the couple (temp, conc) and the liquid fraction */
+  const cs_real_t  *t_bulk = solid->temperature->val;
+  const cs_real_t  *c_bulk = alloy->c_bulk->val;
+  const cs_real_t  *g_l = solid->g_l_field->val;
+
+  for (int i = 0; i < CS_SOLIDIFICATION_N_STATES; i++) solid->n_g_cells[i] = 0;
+
+  for (cs_lnum_t  c_id = 0; c_id < quant->n_cells; c_id++) {
+
+    /* At convergence, one should have gliq = function(temp, conc) but one
+     * may have not converged */
+    const cs_real_t  conc = c_bulk[c_id];
+    const cs_real_t  temp = t_bulk[c_id];
+    const cs_real_t  gliq = g_l[c_id];
+
+    const cs_real_t  t_liquidus = _get_t_liquidus(alloy, conc);
+
+    if (temp > t_liquidus) {
+
+      if (gliq < 1)
+        state = CS_SOLIDIFICATION_STATE_MUSHY;
+      else
+        state = CS_SOLIDIFICATION_STATE_LIQUID;
+
+    }
+    else {   /* temp < t_liquidus */
+
+      const cs_real_t  t_solidus = _get_t_solidus(alloy, conc);
+      if (temp > t_solidus)
+        state = CS_SOLIDIFICATION_STATE_MUSHY;
+
+      else { /* temp < t_solidus */
+
+        if (conc < alloy->cs1 || temp < alloy->t_eut_inf) {
+          if (gliq > 0)
+            state = CS_SOLIDIFICATION_STATE_MUSHY;
+          else
+            state = CS_SOLIDIFICATION_STATE_SOLID;
+        }
+        else
+          state = CS_SOLIDIFICATION_STATE_EUTECTIC;
+
+      } /* solidus */
+
+    }   /* liquidus */
+
+    solid->n_g_cells[state] += 1;
+    solid->cell_state[c_id] = state;
+
+  } /* Loop on cells */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Compute the liquidus and solidus temperatures from the given
  *         concentration and temperature. Estimate the resulting state.
  *         Case of a binary alloy model.
@@ -870,8 +941,6 @@ _update_glc_legacy(const cs_mesh_t             *mesh,
                                                    solid->thermal_sys->cp);
   const double  cpovL = cp/alloy->latent_heat;
 
-  for (int i = 0; i < CS_SOLIDIFICATION_N_STATES; i++) solid->n_g_cells[i] = 0;
-
   /* Update g_l values in each cell as well as the cell state and the related
      count */
   for (cs_lnum_t  c_id = 0; c_id < quant->n_cells; c_id++) {
@@ -886,24 +955,15 @@ _update_glc_legacy(const cs_mesh_t             *mesh,
 
     case CS_SOLIDIFICATION_STATE_SOLID:
       g_l[c_id] = 0.;
-
-      solid->cell_state[c_id] = CS_SOLIDIFICATION_STATE_SOLID;
-      solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID] += 1;
       break;
 
     case CS_SOLIDIFICATION_STATE_MUSHY:
       g_l[c_id] = alloy->inv_kpm1 *
         ( alloy->kp - alloy->ml*conc / (temp - alloy->t_melt) );
-
-      solid->n_g_cells[CS_SOLIDIFICATION_STATE_MUSHY] += 1;
-      solid->cell_state[c_id] = CS_SOLIDIFICATION_STATE_MUSHY;
       break;
 
     case CS_SOLIDIFICATION_STATE_LIQUID:
       g_l[c_id] = 1;
-
-      solid->n_g_cells[CS_SOLIDIFICATION_STATE_LIQUID] += 1;
-      solid->cell_state[c_id] = CS_SOLIDIFICATION_STATE_LIQUID;
       break;
 
     case CS_SOLIDIFICATION_STATE_EUTECTIC:
@@ -914,9 +974,6 @@ _update_glc_legacy(const cs_mesh_t             *mesh,
       }
       else
         g_l[c_id] = (conc - alloy->cs1)*alloy->dgldC_eut;
-
-      solid->n_g_cells[CS_SOLIDIFICATION_STATE_EUTECTIC] += 1;
-      solid->cell_state[c_id] = CS_SOLIDIFICATION_STATE_EUTECTIC;
       break;
 
     default:
@@ -995,9 +1052,6 @@ _update_glc_taylor(const cs_mesh_t             *mesh,
 
     case CS_SOLIDIFICATION_STATE_SOLID:
       g_l[c_id] = 0.;
-
-      solid->cell_state[c_id] = CS_SOLIDIFICATION_STATE_SOLID;
-      solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID] += 1;
       break;
 
     case CS_SOLIDIFICATION_STATE_MUSHY:
@@ -1012,17 +1066,11 @@ _update_glc_taylor(const cs_mesh_t             *mesh,
         g_l[c_id] = g_l_pre[c_id]
           + dgldT * (temp - temp_pre) + dgldC * (conc - conc_pre);
         g_l[c_id] = fmin(fmax(0, g_l[c_id]), 1.);
-
-        solid->n_g_cells[CS_SOLIDIFICATION_STATE_MUSHY] += 1;
-        solid->cell_state[c_id] = CS_SOLIDIFICATION_STATE_MUSHY;
       }
       break;
 
     case CS_SOLIDIFICATION_STATE_LIQUID:
       g_l[c_id] = 1;
-
-      solid->n_g_cells[CS_SOLIDIFICATION_STATE_LIQUID] += 1;
-      solid->cell_state[c_id] = CS_SOLIDIFICATION_STATE_LIQUID;
       break;
 
     case CS_SOLIDIFICATION_STATE_EUTECTIC:
@@ -1047,9 +1095,6 @@ _update_glc_taylor(const cs_mesh_t             *mesh,
           g_l[c_id] = fmin(fmax(0, g_l[c_id]), 1.);
 
         }
-
-        solid->n_g_cells[CS_SOLIDIFICATION_STATE_EUTECTIC] += 1;
-        solid->cell_state[c_id] = CS_SOLIDIFICATION_STATE_EUTECTIC;
       }
       break;
 
@@ -1120,29 +1165,6 @@ _update_glc_voller(const cs_mesh_t             *mesh,
     g_l[c_id] = g_l_pre[c_id]
       + dgldT * (temp - temp_pre) + dgldC * (conc - conc_pre);
     g_l[c_id] = fmin(fmax(0, g_l[c_id]), 1.);
-
-    if (g_l[c_id] > 0) {
-
-      if (g_l[c_id] < 1) {      /* MUSHY */
-
-        solid->n_g_cells[CS_SOLIDIFICATION_STATE_MUSHY] += 1;
-        solid->cell_state[c_id] = CS_SOLIDIFICATION_STATE_MUSHY;
-
-      }
-      else {                    /* LIQUID */
-
-        solid->n_g_cells[CS_SOLIDIFICATION_STATE_LIQUID] += 1;
-        solid->cell_state[c_id] = CS_SOLIDIFICATION_STATE_LIQUID;
-
-      }
-
-    }
-    else {                      /* SOLID */
-
-      solid->cell_state[c_id] = CS_SOLIDIFICATION_STATE_SOLID;
-      solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID] += 1;
-
-    }
 
   } /* Loop on cells */
 
@@ -1501,7 +1523,7 @@ _update_thm_st_by_step(const cs_mesh_t             *mesh,
     const cs_real_t  temp = t_bulk[c_id];
     const cs_real_t  gliq = g_l[c_id];
 
-    switch (solid->cell_state[c_id]) {
+    switch (_which_state(alloy, temp, conc)) {
 
     case CS_SOLIDIFICATION_STATE_SOLID:
       solid->thermal_reaction_coef_array[c_id] = 0;
@@ -2148,6 +2170,8 @@ cs_solidification_set_binary_alloy_model(const char     *name,
   /* Numerical parameters (default values) */
   alloy->n_iter_max = 1;
   alloy->delta_tolerance = 1e-3;
+  alloy->tk_bulk = NULL;
+  alloy->ck_bulk = NULL;
 
   /* Physical constants */
   alloy->latent_heat = latent_heat;
@@ -2186,9 +2210,9 @@ cs_solidification_set_binary_alloy_model(const char     *name,
   alloy->update_cl = _update_cl;
 
   if (solid->options & CS_SOLIDIFICATION_UPDATE_GL_WITH_TAYLOR_EXPANSION)
-    alloy->update_gl_and_state = _update_glc_taylor;
+    alloy->update_gl = _update_glc_taylor;
   else
-    alloy->update_gl_and_state = _update_glc_legacy;
+    alloy->update_gl = _update_glc_legacy;
 
   if (solid->options & CS_SOLIDIFICATION_VOLLER_THERMAL_SOURCES) {
     assert((solid->options & CS_SOLIDIFICATION_UPDATE_SOURCE_TERM_BY_STEP)==0);
@@ -2273,7 +2297,7 @@ cs_solidification_set_update_func(cs_solidification_update_t  *mom_eq_func,
   }
 
   if (gl_state_func != NULL) {
-    alloy->update_gl_and_state = gl_state_func;
+    alloy->update_gl = gl_state_func;
     solid->options |= CS_SOLIDIFICATION_BINARY_ALLOY_G_FUNC;
   }
 
@@ -2319,6 +2343,8 @@ cs_solidification_destroy_all(void)
 
     BFT_FREE(alloy->diff_pty_array);
     BFT_FREE(alloy->c_l_cells);
+    BFT_FREE(alloy->tk_bulk);
+    BFT_FREE(alloy->ck_bulk);
 
     if (solid->options & CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM)
       BFT_FREE(alloy->c_l_faces);
@@ -2569,6 +2595,7 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
   }
 
   if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
+    /*               ==================================== */
 
     cs_solidification_binary_alloy_t  *alloy
       = (cs_solidification_binary_alloy_t *)solid->model_context;
@@ -2576,8 +2603,12 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
     /* Get a shortcut to the c_bulk field */
     alloy->c_bulk = cs_equation_get_field(alloy->solute_equation);
 
-    /* Allocate an array to store the liquid concentration */
+    /* Allocate an array to store the liquid concentration and arrays storing
+       the intermediate states during the sub-iterations to solve the
+       non-linearity */
     BFT_MALLOC(alloy->c_l_cells, n_cells, cs_real_t);
+    BFT_MALLOC(alloy->tk_bulk, n_cells, cs_real_t);
+    BFT_MALLOC(alloy->ck_bulk, n_cells, cs_real_t);
 
     if (solid->options & CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM) {
 
@@ -2848,8 +2879,12 @@ cs_solidification_initialize(const cs_mesh_t              *mesh,
     } /* CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM */
 
     /* One assumes that all the alloy mixture is liquid thus C_l = C_bulk */
-    memcpy(alloy->c_l_cells, alloy->c_bulk->val,
-           quant->n_cells*sizeof(cs_real_t));
+    const cs_lnum_t  n_cells = quant->n_cells;
+    memcpy(alloy->c_l_cells, alloy->c_bulk->val, n_cells*sizeof(cs_real_t));
+
+    /* Set the previous iterate before calling update functions */
+    memcpy(alloy->tk_bulk, solid->temperature->val, n_cells*sizeof(cs_real_t));
+    memcpy(alloy->ck_bulk, alloy->c_bulk->val, n_cells*sizeof(cs_real_t));
 
     if (alloy->c_l_faces != NULL) {
       cs_real_t  *c_bulk_faces =
@@ -2859,6 +2894,14 @@ cs_solidification_initialize(const cs_mesh_t              *mesh,
 
   } /* CS_SOLIDIFICATION_MODEL_BINARY_ALLOY */
 
+  else {
+
+    cs_solidification_voller_t  *v_model
+      = (cs_solidification_voller_t *)solid->model_context;
+
+    v_model->update(mesh, connect, quant, time_step);
+
+  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2897,6 +2940,10 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
     cs_real_t  *conc = cs_equation_get_cell_values(c_eq, false);
 
     /* Compute the state at t^(n+1) knowing that at state t^(n)
+
+     * Non-linear iterations (k) are also performed to converge on the relation
+     * gliq^{k+1} = gliq(temp^{k+1}, conc^{k+1})
+     *
      * Cbulk^{0}_{n+1} = Cbulk_{n}
      * Tbulk^{0}_{n+1} = Tbulk_{n}
      * gl^{0}_{n+1} = gl_{n}
@@ -2905,21 +2952,9 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
     cs_equation_current_to_previous(t_eq);
     cs_field_current_to_previous(solid->g_l_field);
 
-    /* Store the following arrays to be able to restore the state of these
-     * arrays when computing the level of progress between two successive
-     * sub-iterations:
-     * - t_bulk at cells at sub-iteration k
-     * - c_bulk at cells at sub-iteration k
-     */
-
-    cs_real_t  *k_state = NULL, *tk_bulk = NULL, *ck_bulk = NULL;
-
-    BFT_MALLOC(k_state, 2*quant->n_cells, cs_real_t);
-
-    tk_bulk = k_state;
-    memcpy(tk_bulk, temp, csize);
-    ck_bulk = k_state + quant->n_cells;
-    memcpy(ck_bulk, conc, csize);
+    /* At the beginning, field_{n+1}^{k=0} = field_n */
+    memcpy(alloy->tk_bulk, temp, csize);
+    memcpy(alloy->ck_bulk, conc, csize);
 
     int  n_iter = 0;
     cs_real_t  delta_temp = 1 + alloy->delta_tolerance;
@@ -2927,72 +2962,67 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
 
     while ( ( delta_temp  > alloy->delta_tolerance ||
               delta_cbulk > alloy->delta_tolerance  ) &&
-            n_iter      < alloy->n_iter_max) {
+            n_iter        < alloy->n_iter_max) {
 
-      /* Update fields and properties which are related to solved variables
-       * g_l, state */
-      alloy->update_gl_and_state(mesh, connect, quant, time_step);
+      /* Solve Cbulk^(k+1)_{n+1} knowing Cbulk^{k}_{n+1}  */
+      cs_equation_solve(false,  /* No cur2prev inside a non-linear iterative
+                                   process */
+                        mesh, alloy->solute_equation);
 
-      /* Update the liquid concentration of the solute (c_l) */
-      alloy->update_cl(mesh, connect, quant, time_step);
-
-      if (solid->options & CS_SOLIDIFICATION_THERMAL_UPDATE_AFTER_CBULK) {
-
-        /* Solve Cbulk^(k+1)_{n+1} knowing Cbulk^{k}_{n+1}  */
-        cs_equation_solve(false,  /* No cur2prev inside a non-linear iterative
-                                     process */
-                          mesh, alloy->solute_equation);
-
-        /* Update the source term for the thermal equation */
-        alloy->update_thm_st(mesh, connect, quant, time_step);
-
-      }
-      else {
-
-        /* Update the source term for the thermal equation */
-        alloy->update_thm_st(mesh, connect, quant, time_step);
-
-        /* Solve Cbulk^(k+1)_{n+1} knowing Cbulk^{k}_{n+1}  */
-        cs_equation_solve(false,  /* No cur2prev inside a non-linear iterative
-                                     process */
-                          mesh, alloy->solute_equation);
-
-      }
+      /* Update the source term for the thermal equation */
+      alloy->update_thm_st(mesh, connect, quant, time_step);
 
       /* Solve the thermal system */
       cs_thermal_system_compute(false, /* No cur2prev inside a non-linear
                                           iterative process */
                                 mesh, time_step, connect, quant);
 
+      /* Update fields and properties which are related to solved variables
+       * g_l, state */
+      alloy->update_gl(mesh, connect, quant, time_step);
+
       /* Evolution of the temperature and the bulk concentration during this
          iteration */
       delta_temp = -1, delta_cbulk = -1;
+      cs_lnum_t  cid_maxt = -1, cid_maxc = -1;
       for (cs_lnum_t  c_id = 0; c_id < quant->n_cells; c_id++) {
 
-        delta_temp = fmax( delta_temp, fabs(temp[c_id]-tk_bulk[c_id]) );
-        tk_bulk[c_id] = temp[c_id];
-        delta_cbulk = fmax( delta_cbulk, fabs(conc[c_id]-ck_bulk[c_id]) );
-        ck_bulk[c_id] = conc[c_id];
 
-      }
+        cs_real_t  dtemp = fabs(temp[c_id]- alloy->tk_bulk[c_id]);
+        cs_real_t  dconc = fabs(conc[c_id] - alloy->ck_bulk[c_id]);
+
+        alloy->tk_bulk[c_id] = temp[c_id];
+        alloy->ck_bulk[c_id] = conc[c_id];
+
+        if (dtemp > delta_temp)
+          delta_temp = dtemp, cid_maxt = c_id;
+        if (dconc > delta_cbulk)
+          delta_cbulk = dconc, cid_maxc = c_id;
+
+      } /* Loop on cells */
 
       n_iter++;
       cs_log_printf(CS_LOG_DEFAULT,
-                    "### Solidification: "
-                    " k= %d; delta_temp= %5.3e; delta_cbulk= %5.3e\n",
+                    "### Solidification.NL: "
+                    " k= %d | delta_temp= %5.3e | delta_cbulk= %5.3e\n",
                     n_iter, delta_temp, delta_cbulk);
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "### Solidification.NL: "
+                    " k= %d | delta_temp= %7d | delta_cbulk= %7d\n",
+                    n_iter, cid_maxt, cid_maxc);
 
     } /* while iterating */
 
-    /* Free memory */
-    BFT_FREE(k_state);
+    /* Update the liquid concentration of the solute (c_l) */
+    alloy->update_cl(mesh, connect, quant, time_step);
 
     /* Update fields and properties which are related to solved variables
-     * g_l, state, the liquid concentration of the solute (c_l)
-     * C_l is used in the Boussinesq approximation
-     * g_l in the Darcy term acting as a penalization term */
-    alloy->update_gl_and_state(mesh, connect, quant, time_step);
-    alloy->update_cl(mesh, connect, quant, time_step);
+     * g_l, state */
+    alloy->update_gl(mesh, connect, quant, time_step);
+
+    /* The cell state is now updated at this stage. This will be useful for
+       the monitoring */
+    _update_binary_alloy_final_state(quant);
 
     /* Update fields and properties which are related to solved variables */
     alloy->update_momentum_properties(mesh, connect, quant, time_step);
@@ -3002,9 +3032,6 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
 
     cs_solidification_voller_t  *v_model
       = (cs_solidification_voller_t *)solid->model_context;
-
-    if (time_step->nt_cur == 0)
-      v_model->update(mesh, connect, quant, time_step);
 
     /* Add equations to be solved at each time step */
     cs_thermal_system_compute(true, /* operate a cur2prev operation inside */
