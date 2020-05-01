@@ -33,6 +33,7 @@
 #include "cs_boundary.h"
 #include "cs_equation.h"
 #include "cs_navsto_param.h"
+#include "cs_time_plot.h"
 #include "cs_time_step.h"
 
 /*----------------------------------------------------------------------------*/
@@ -50,57 +51,6 @@ BEGIN_C_DECLS
 /*============================================================================
  * Macro definitions
  *============================================================================*/
-
-/*=============================================================================
- * Structure and type definitions
- *============================================================================*/
-
-typedef cs_flag_t  cs_solidification_model_t;
-
-/*! \enum cs_navsto_param_model_bit_t
- *  \brief Bit values for physical modelling related to the Navier-Stokes system
- *  of equations
- *
- * \var CS_SOLIDIFICATION_MODEL_STOKES
- * Stokes equations (mass and momentum) with the classical choice of variables
- * i.e. velocity and pressure. Mass density is assumed to be constant.
- *
- * \var CS_SOLIDIFICATION_MODEL_NAVIER_STOKES
- * Navier-Stokes equations: mass and momentum with a constant mass density
- *
- * \var CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87
- * Modelling introduced in Voller and Prakash entitled:
- * "A fixed grid numerical modelling methodology for convection-diffusion mushy
- * region phase-change problems" Int. J. Heat Transfer, 30 (8), 1987.
- * No tracer. Only physical constants describing the solidification process are
- * used.
- *
- * \var CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
- * The tracer is composed by an alloy with two chemical constituents
- */
-
-typedef enum {
-
-  /* Main modelling for the dynamic
-     ------------------------------ */
-
-  CS_SOLIDIFICATION_MODEL_STOKES                  = 1<<0, /* =   1 */
-  CS_SOLIDIFICATION_MODEL_NAVIER_STOKES           = 1<<1, /* =   2 */
-
-  /* Main modelling for the thermal system
-     ------------------------------------- */
-
-  CS_SOLIDIFICATION_MODEL_USE_TEMPERATURE         = 1<<2, /* =   4 */
-  CS_SOLIDIFICATION_MODEL_USE_ENTHALPY            = 1<<3, /* =   8 */
-
-  /* Solidification modelling
-     ------------------------ */
-
-  CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87       = 1<<4, /* =  16 */
-  CS_SOLIDIFICATION_MODEL_BINARY_ALLOY            = 1<<5, /* =  32 */
-
-} cs_solidification_model_bit_t;
-
 
 /*!
  * @name Flags specifying automatic post-processing for the solidification
@@ -189,19 +139,330 @@ typedef enum {
  * \brief Reproduce the behavior described in Voller & Saminathan'91
  */
 
-#define CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM  (1 << 0) /* =  1 */
-#define CS_SOLIDIFICATION_UPDATE_GL_WITH_TAYLOR_EXPANSION    (1 << 1) /* =  2 */
-#define CS_SOLIDIFICATION_UPDATE_SOURCE_TERM_BY_STEP         (1 << 2) /* =  4 */
-#define CS_SOLIDIFICATION_UPDATE_EUTECTIC_VOLLER             (1 << 3) /* =  8 */
-#define CS_SOLIDIFICATION_UPDATE_WITH_EXTRAPOLATION          (1 << 4) /* = 16 */
-#define CS_SOLIDIFICATION_THERMAL_UPDATE_AFTER_CBULK         (1 << 5) /* = 32 */
-#define CS_SOLIDIFICATION_VOLLER_THERMAL_SOURCES             (1 << 6) /* = 64 */
+#define CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM (1 << 0) /*=    1 */
+#define CS_SOLIDIFICATION_UPDATE_GL_WITH_TAYLOR_EXPANSION   (1 << 1) /*=    2 */
+#define CS_SOLIDIFICATION_UPDATE_SOURCE_TERM_BY_STEP        (1 << 2) /*=    4 */
+#define CS_SOLIDIFICATION_UPDATE_EUTECTIC_VOLLER            (1 << 3) /*=    8 */
+#define CS_SOLIDIFICATION_UPDATE_WITH_EXTRAPOLATION         (1 << 4) /*=   16 */
+#define CS_SOLIDIFICATION_THERMAL_UPDATE_AFTER_CBULK        (1 << 5) /*=   32 */
+#define CS_SOLIDIFICATION_VOLLER_THERMAL_SOURCES            (1 << 6) /*=   64 */
+
+/* Automatically set by the code if user functions are used */
+#define CS_SOLIDIFICATION_BINARY_ALLOY_M_FUNC               (1 << 7) /*=  128 */
+#define CS_SOLIDIFICATION_BINARY_ALLOY_C_FUNC               (1 << 8) /*=  256 */
+#define CS_SOLIDIFICATION_BINARY_ALLOY_G_FUNC               (1 << 9) /*=  512 */
+#define CS_SOLIDIFICATION_BINARY_ALLOY_T_FUNC               (1 <<10) /*= 1024 */
 
 /*!
  * @}
  */
 
-typedef struct _solidification_t  cs_solidification_t;
+/*=============================================================================
+ * Structure and type definitions
+ *============================================================================*/
+
+typedef cs_flag_t  cs_solidification_model_t;
+
+/*! \enum cs_solidification_model_bit_t
+ *  \brief Bit values for physical modelling related to the Navier-Stokes system
+ *  of equations
+ *
+ * \var CS_SOLIDIFICATION_MODEL_STOKES
+ * Stokes equations (mass and momentum) with the classical choice of variables
+ * i.e. velocity and pressure. Mass density is assumed to be constant.
+ *
+ * \var CS_SOLIDIFICATION_MODEL_NAVIER_STOKES
+ * Navier-Stokes equations: mass and momentum with a constant mass density
+ *
+ * \var CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87
+ * Modelling introduced in Voller and Prakash entitled:
+ * "A fixed grid numerical modelling methodology for convection-diffusion mushy
+ * region phase-change problems" Int. J. Heat Transfer, 30 (8), 1987.
+ * No tracer. Only physical constants describing the solidification process are
+ * used.
+ *
+ * \var CS_SOLIDIFICATION_MODEL_BINARY_ALLOY
+ * The tracer is composed by an alloy with two chemical constituents
+ */
+
+typedef enum {
+
+  /* Main modelling for the dynamic
+     ------------------------------ */
+
+  CS_SOLIDIFICATION_MODEL_STOKES                  = 1<<0, /* =   1 */
+  CS_SOLIDIFICATION_MODEL_NAVIER_STOKES           = 1<<1, /* =   2 */
+
+  /* Main modelling for the thermal system
+     ------------------------------------- */
+
+  CS_SOLIDIFICATION_MODEL_USE_TEMPERATURE         = 1<<2, /* =   4 */
+  CS_SOLIDIFICATION_MODEL_USE_ENTHALPY            = 1<<3, /* =   8 */
+
+  /* Solidification modelling
+     ------------------------ */
+
+  CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87       = 1<<4, /* =  16 */
+  CS_SOLIDIFICATION_MODEL_BINARY_ALLOY            = 1<<5, /* =  32 */
+
+} cs_solidification_model_bit_t;
+
+/*! \enum cs_solidification_state_t
+ *  \brief King of state in which a cell or an entity is
+ */
+
+typedef enum {
+
+  CS_SOLIDIFICATION_STATE_SOLID    = 0,
+  CS_SOLIDIFICATION_STATE_MUSHY    = 1,
+  CS_SOLIDIFICATION_STATE_LIQUID   = 2,
+  CS_SOLIDIFICATION_STATE_EUTECTIC = 3,
+
+  CS_SOLIDIFICATION_N_STATES       = 4,
+
+} cs_solidification_state_t;
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Function pointer associated to a solidification model aiming at
+ *         updating/initializing the solidification variables/properties
+ *         dedicated to the model
+ *
+ * \param[in]  mesh       pointer to a cs_mesh_t structure
+ * \param[in]  connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts         pointer to a cs_time_step_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+typedef void
+(cs_solidification_update_t)(const cs_mesh_t             *mesh,
+                             const cs_cdo_connect_t      *connect,
+                             const cs_cdo_quantities_t   *quant,
+                             const cs_time_step_t        *ts);
+
+/* Structure storing physical parameters related to a choice of solidification
+   modelling */
+
+/* Voller and Prakash model "A fixed grid numerical modelling methodology for
+ * convection-diffusion mushy region phase-change problems" Int. J. Heat
+ * Transfer, 30 (8), 1987.
+ * No tracer. Only physical constants describing the solidification process are
+ * used.
+ */
+
+/*----------------------------------------------------------------------------
+ * Solidification without segregation (Voller & Prakash'87 model)
+ *----------------------------------------------------------------------------*/
+
+typedef struct {
+
+  /* Secondary dendrite arm spacing */
+  cs_real_t                      s_das;
+
+  /* Physical parameters to specify the law of variation of the liquid fraction
+   * with respect to the temperature
+   *
+   * gl(T) = 1 if T > t_liquidus and gl(T) = 0 if T < t_solidus
+   * Otherwise:
+   * gl(T) = (T - t_solidus)/(t_liquidus - t_solidus)
+   */
+
+  cs_real_t                      t_solidus;
+  cs_real_t                      t_liquidus;
+
+  /* Physical parameter for computing the source term in the energy equation
+   * Latent heat between the liquid and solid phase
+   */
+  cs_real_t                      latent_heat;
+
+  /* Function pointer related to the way of updating the model */
+  cs_solidification_update_t    *update;
+
+} cs_solidification_voller_t;
+
+
+/*----------------------------------------------------------------------------
+ * Solidification of a binary alloy with segregation (Voller & Prakash'89 model)
+ *----------------------------------------------------------------------------*/
+
+typedef struct {
+
+  /* Parameters for the Boussinesq approximation in the momentum equation
+   * related to solute concentration:
+   * solutal dilatation/expansion coefficient and the reference mixture
+   * concentration for the binary alloy
+   */
+  cs_real_t    dilatation_coef;
+  cs_real_t    ref_concentration;
+
+  /* Physical parameter for computing the source term in the energy equation
+   * Latent heat between the liquid and solid phase
+   */
+  cs_real_t    latent_heat;
+
+  /* Phase diagram features for an alloy with the component A and B */
+  /* -------------------------------------------------------------- */
+
+  /* Temperature of phase change for the pure material (conc = 0) */
+  cs_real_t    t_melt;
+
+  /* Secondary dendrite arm spacing */
+  cs_real_t    s_das;
+
+  /* Eutectic point: temperature and concentration */
+  cs_real_t    t_eut;
+  cs_real_t    t_eut_inf;
+  cs_real_t    t_eut_sup;
+
+  cs_real_t    c_eut;
+  cs_real_t    cs1;
+  cs_real_t    dgldC_eut;
+
+  /* Physical parameters */
+  cs_real_t    kp;       /* distribution coefficient */
+  cs_real_t    inv_kp;   /* reciprocal of kp */
+  cs_real_t    inv_kpm1; /* 1/(kp - 1) */
+  cs_real_t    ml;       /* Liquidus slope \frac{\partial g_l}{\partial C} */
+  cs_real_t    inv_ml;   /* reciprocal of ml */
+
+  /* Function to update the quantities related to the momentum equations */
+  cs_solidification_update_t     *update_momentum_properties;
+
+  /* Function to update the g_l and the cell state */
+  cs_solidification_update_t     *update_gl_and_state;
+
+  /* Function to update c_l */
+  cs_solidification_update_t     *update_cl;
+
+  /* Function to update the source term for the thermal equation*/
+  cs_solidification_update_t     *update_thm_st;
+
+  /* Alloy features */
+  /* -------------- */
+
+  cs_equation_t     *solute_equation;
+  cs_field_t        *c_bulk;
+
+  /* The variable related to this equation in the solute concentration of
+   * the mixture: c_bulk (c_s in the solid phase and c_l in the liquid phase)
+   * c_bulk = gs*c_s + gl*c_l where gs + gl = 1
+   * gl is the liquid fraction and gs the solid fraction
+   * c_s = kp * c_l (lever rule is assumed up to now)
+   *
+   * --> c_bulk = (gs*kp + gl)*c_l
+   */
+
+  /* Drive the convergence of the coupled system (solute transport and thermal
+   * equation) with respect to the following criteria (taken from Voller and
+   * Swaminathan'91)
+   *   max_{c\in C} |Temp^(k+1) - Temp^(k)| < delta_tolerance
+   *   max_{c\in C} |Cbulk^(k+1) - Cbulk*^(k)| < delta_tolerance
+   *   n_iter < n_iter_max
+   */
+
+  int                n_iter_max;
+  double             delta_tolerance;
+
+  /* Solute concentration in the liquid phase
+   * 1) array of the last computed values at cells
+   * 2) array of the last computed values at faces (interior and border) */
+  cs_real_t         *c_l_cells;
+  cs_real_t         *c_l_faces;
+
+  /* Temperature values at faces (this is not owned by the structure) */
+  const cs_real_t   *temp_faces;
+
+  /* Diffusion coefficient for the solute in the liquid phase
+   * diff_pty_val = rho * g_l * diff_coef */
+  cs_real_t          diff_coef;
+  cs_property_t     *diff_pty;
+  cs_real_t         *diff_pty_array;
+
+  cs_property_t     *adv_coef_pty;
+  cs_real_t         *adv_coef_pty_array;
+
+  /* Optional postprocessing arrays */
+  /* ------------------------------ */
+
+  /* Liquidus temperature (values at cell centers) */
+  cs_real_t         *t_liquidus;
+
+  /* Quantities for advanced analysis */
+  cs_real_t         *tbulk_minus_tliq;
+  cs_real_t         *cliq_minus_cbulk;
+
+} cs_solidification_binary_alloy_t;
+
+/*----------------------------------------------------------------------------
+ * Main structure to man,age the solidification process
+ *----------------------------------------------------------------------------*/
+
+typedef struct  {
+
+  cs_flag_t        model;       /* Modelling for the solidifcation module */
+  cs_flag_t        options;     /* Flag dedicated to general options to handle
+                                 * the solidification module*/
+  cs_flag_t        post_flag;   /* Flag dedicated to the post-processing
+                                 * of the solidifcation module */
+
+  /* Mass density of the liquid/solid media */
+  cs_property_t   *mass_density;
+
+  /* Laminar dynamic viscosity */
+  cs_property_t   *lam_viscosity;
+
+  /* Liquid fraction of the mixture */
+  /* ------------------------------ */
+
+  cs_field_t      *g_l_field;   /* field storing the values of the liquid
+                                   fraction at each cell */
+  cs_property_t   *g_l;         /* liquid fraction property */
+
+  /* array storing the state (solid, mushy, liquid) for each cell */
+  cs_solidification_state_t     *cell_state;
+
+  /* Plot evolution of the solidification process */
+  cs_time_plot_t                *plot_state;
+
+  /* Monitoring related to this module */
+  cs_real_t        state_ratio[CS_SOLIDIFICATION_N_STATES];
+  cs_gnum_t        n_g_cells[CS_SOLIDIFICATION_N_STATES];
+
+  /* Quantities related to the energy equation */
+  /* ----------------------------------------- */
+
+  cs_thermal_system_t   *thermal_sys;
+
+  /* Fields associated to this module */
+  cs_field_t      *temperature;
+
+  /* A reaction term and source term are introduced in the thermal model */
+  cs_property_t   *thermal_reaction_coef;
+  cs_real_t       *thermal_reaction_coef_array;
+  cs_real_t       *thermal_source_term_array;
+
+  /* Additional settings related to the choice of solidification modelling */
+  void            *model_context;
+
+  /* A reaction term is introduced in the momentum equation. This terms tends to
+   * a huge number when the liquid fraction tends to 0 in order to penalize
+   * the velocity to zero when the whole cell is solid
+   */
+  cs_real_t       *forcing_mom_array; /* values of the forcing reaction
+                                         coefficient in each cell */
+  cs_property_t   *forcing_mom;
+
+  /* Porous media like reaction term in the momentum equation:
+   *
+   * forcing_coef = 180 * visco0 / s_das^2
+   * where visco0 is the laminar viscosity and s_das is the secondary
+   * dendrite arm spacing
+   * F(u) = forcing_coef * (1- gl)^2/(gl^3 + forcing_eps) * u
+   */
+  cs_real_t        forcing_coef;
+
+} cs_solidification_t;
 
 /*============================================================================
  * Public function prototypes
@@ -215,6 +476,17 @@ typedef struct _solidification_t  cs_solidification_t;
 
 bool
 cs_solidification_is_activated(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Retrieve the main structure to deal with solidification process
+ *
+ * \return a pointer to a new allocated solidification structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_solidification_t *
+cs_solidification_get_structure(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -274,20 +546,6 @@ cs_solidification_set_voller_model(cs_real_t    t_solidus,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set the main numerical parameters which described a solidification
- *         process with a binary alloy (with component A and B)
- *
- * \param[in]  n_iter_max    max.number of iterations for the C/T equations
- * \param[in]  g_l_eps       tolerance requested between two iterations
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_solidification_set_binary_alloy_param(int             n_iter_max,
-                                         double          g_l_eps);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Set the main physical parameters which described a solidification
  *         process with a binary alloy (with component A and B)
  *         Add a transport equation for the solute concentration to simulate
@@ -320,6 +578,43 @@ cs_solidification_set_binary_alloy_model(const char     *name,
                                          cs_real_t       solute_diff,
                                          cs_real_t       latent_heat,
                                          cs_real_t       s_das);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the main numerical parameters which described a solidification
+ *         process with a binary alloy (with component A and B)
+ *
+ * \param[in]  n_iter_max    max.number of iterations for the C/T equations
+ * \param[in]  g_l_eps       tolerance requested between two iterations
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solidification_set_binary_alloy_param(int             n_iter_max,
+                                         double          g_l_eps);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the functions to perform the update of physical properties
+ *         and/or the computation of the thermal source term or quantities
+ *         defining the solidification process.
+ *         Advanced usage. This enables to finely control the numerical or
+ *         physical modelling aspects.
+ *         These functions are related to a binary alloy modelling.
+ *         If a function is set to NULL then the automatic settings is kept.
+ *
+ * \param[in] mom_eq_func   func. pointer to update momentum quantities
+ * \param[in] conc_eq_func  func. pointer to update concentration quantities
+ * \param[in] gliq_func     func. pointer to update state and liquid fraction
+ * \param[in] thm_eq_func   func. pointer to update thermal quantities
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solidification_set_update_func(cs_solidification_update_t  *mom_eq_func,
+                                  cs_solidification_update_t  *conc_eq_func,
+                                  cs_solidification_update_t  *gl_state_func,
+                                  cs_solidification_update_t  *thm_eq_func);
 
 /*----------------------------------------------------------------------------*/
 /*!
