@@ -48,7 +48,7 @@ $ cd ..
 In this case, additional tools need to be available:
 • GNU Autotools: Autoconf, Automake, Libtool (2.2 or 2.4).
 • Bison (or Yacc) and Flex (or Lex)
-• PdfLaTeX and TransFig
+• PdfLaTeX
 • Doxygen (1.8.7 or more recent). The path to Doxygen can be specified during
 the configure phase with `configure DOXYGEN=PATH TO DOXYGEN`.
 
@@ -693,8 +693,8 @@ The list of third-party software usable with code_saturne is provided here:
   code may be used for conjugate heat transfer.
 
 For developers, the GNU Autotools (Autoconf, Automake, Libtool)
-will be necessary. To build the documentation, pdfLaTeX and fig2dev
-(part of TransFig) will be necessary.
+will be necessary. To build the documentation, pdfLaTeX,
+and Doxygen are needed, and dot (from Graphviz) recommended.
 
 PLE (Parallel Location and Exchange) Library
 --------------------------------------------

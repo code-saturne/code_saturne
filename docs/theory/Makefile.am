@@ -82,20 +82,13 @@ TEXINPUTFILES =
 
 # Distributed files
 
-EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES) \
-graphics/clthermique.pdf \
-graphics/loilog.pdf
+EXTRA_DIST = $(TEXMAIN) $(TEXOTHERS) $(TEXINPUTFILES) graphics
 
 # Generated pdf document
 
 PDFMAIN = $(TEXMAIN:.tex=.pdf)
 
 if HAVE_LATEX
-if HAVE_FIG2DEV
-
-# Subdirectories (order is important)
-
-SUBDIRS = graphics .
 
 # Environment variables for LaTeX
 
@@ -143,7 +136,6 @@ distclean-local: clean-local
 dist-hook: pdf
 	$(INSTALL_DATA) $(PDFMAIN) $(distdir)
 
-endif
 endif
 
 # Install the documentation if available

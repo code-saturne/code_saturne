@@ -1143,9 +1143,9 @@ AC_CONFIG_FILES([Makefile
                  gui/Makefile gui/Base/Makefile gui/Pages/Makefile
                  gui/studymanager_gui/Makefile gui/trackcvg/Makefile
                  docs/Makefile docs/doxygen/Makefile docs/style/csvers.tex
-                 docs/studymanager/Makefile
                  docs/developer/Makefile docs/refcard/Makefile
-                 docs/theory/Makefile docs/theory/graphics/Makefile
+                 docs/studymanager/Makefile
+                 docs/theory/Makefile
                  docs/user/Makefile
                  tests/Makefile
                  bin/cs_config.py])
@@ -1251,9 +1251,6 @@ if (test "x$cs_env_modules" != "x") ; then
 fi
 echo
 echo " PdfLaTeX (document typesetting) available: "$cs_have_latex""
-if (test x$cs_have_latex = xyes) ; then
-  echo "   Fig2dev (TransFig) available: "$cs_have_fig2dev""
-fi
 echo " Doxygen (document generation) available: "$cs_have_doxygen""
 if (test x$cs_have_doxygen = xyes) ; then
   echo "   dot (Graphviz) available: "$cs_have_dot""

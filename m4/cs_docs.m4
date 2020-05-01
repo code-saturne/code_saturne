@@ -67,15 +67,6 @@ if test "x$MAKEINDEX" = "x"; then
   cs_have_latex=no
 fi
 
-AC_ARG_VAR([FIG2DEV], [Xfig translation tool])
-
-dnl where is fig2dev ?
-AC_PATH_PROG(FIG2DEV, [fig2dev])
-if test "x$FIG2DEV" = "x"; then
-  AC_MSG_WARN(fig2dev not found)
-  cs_have_fig2dev=no
-fi
-
 dnl So as to correctly set TEXINPUTS environment variable, one needs to use
 dnl the system dependant path separator
 if test "$host_os" = mingw64 ; then
@@ -89,9 +80,7 @@ AC_SUBST([cs_tex_path_end])
 AC_SUBST([cs_tex_path_sep])
 
 AM_CONDITIONAL(HAVE_LATEX, [test $cs_have_latex = yes])
-AM_CONDITIONAL(HAVE_FIG2DEV, [test $cs_have_fig2dev = yes])
 AC_SUBST(cs_have_latex)
-AC_SUBST(cs_have_fig2dev)
 
 ])dnl
 
