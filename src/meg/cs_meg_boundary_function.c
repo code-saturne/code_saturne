@@ -66,6 +66,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_meg_boundary_function
 cs_real_t *
 cs_meg_boundary_function(const cs_zone_t  *zone,
                          const char       *field_name,

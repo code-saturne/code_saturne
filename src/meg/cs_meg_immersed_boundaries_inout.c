@@ -66,6 +66,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_meg_immersed_boundaries_inout
 void
 cs_meg_immersed_boundaries_inout(int         *ipenal,
                                  const char  *object_name,
@@ -78,5 +79,8 @@ cs_meg_immersed_boundaries_inout(int         *ipenal,
   CS_UNUSED(t);
 
   return;
-
 }
+
+/*----------------------------------------------------------------------------*/
+
+END_C_DECLS

@@ -66,6 +66,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_meg_source_terms
 cs_real_t *
 cs_meg_source_terms(const cs_zone_t  *zone,
                     const char       *name,

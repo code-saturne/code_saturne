@@ -67,6 +67,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
+#pragma weak cs_meg_initialization
 cs_real_t *
 cs_meg_initialization(const cs_zone_t  *zone,
                       const char       *field_name)
