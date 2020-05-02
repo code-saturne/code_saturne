@@ -57,7 +57,7 @@ The following general rules are strongly recommended:
 \end{itemize}
 
 For new developements, prefer C to Fortran, as the code should progressively
-mve to purely C code. As many variables and arrays are still accessible
+move to purely C code. As many variables and arrays are still accessible
 only through Fortran modules, this is not always possible, but defining
 Fortran/C bindings such as in the \texttt{field.f90} module helps
 make data accessible to both languages, easing the progressive migration
@@ -88,8 +88,7 @@ followed:
 
 The following presentation rules are strongly recommended:
 \begin{itemize}
-\item indentation step: 2 characters (4 characters in \texttt{cs\_gui\_*}
-      files).
+\item indentation step: 2 characters.
 \item always use lowercase characters for instructions and identifiers,
       except for enumerations and macros which should be in uppercase.
 \end{itemize}
@@ -403,11 +402,16 @@ current Fortran compilers.
 
 \subsection{Python coding style}
 
-Code should work both using Python 2 or 3. Python 2 support will be
+Code should work both using Python 3 or 2. Python 2 support will be
 removed at some future date, but since on many older systems, Python 2 only
 might be installed by default, compatibility should be ensured for
-a few more years.
+the near future.
 
-Details on the differences between major Python versions and associated
-recommendations may be found at:
-\url{http://docs.python.org/py3k/howto/pyporting.html}.
+The core python scripts use a coding style similar to PEP-8
+(\url{https://www.python.org/dev/peps/pep-0008/}).
+PEP-257 (docstring conventions) is also recommended.
+
+Other parts of the code tend to use a CamelCase naming, but should otherwise
+adhere to the same standards. Moving the to PEP-8 style would be ideal,
+though to avoid confusion, this should be done in an ``atomic'' step
+for each module.
