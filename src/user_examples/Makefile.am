@@ -201,6 +201,11 @@ clean-local:
 # Done with two sed passes (does not work otherwise)
 
 install-data-hook:
+	c_user_files=`ls ${top_srcdir}/src/user/*.c 2>/dev/null`; \
+	for f in $${c_user_files}; do \
+          file=`basename "$${f}"` && \
+	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(VERSION)" < "${top_srcdir}/src/user_examples/$${file}" > "$(DESTDIR)$(pkgdatadir)/user_examples/$${file}"; \
+	done ; \
 	cd $(DESTDIR)$(pkgdatadir)/user_examples && \
 	f90_user_examples=`ls *.f90 2>/dev/null`; \
 	stubvers="^\!VERS\n"; \
@@ -208,10 +213,5 @@ install-data-hook:
 	version2="\!                      --------------------------"; \
 	for file in $${f90_user_examples}; do \
 	  $(SED) -e "N;s/$${stubvers}/$${version1}$${version2}/" < "$${file}" > "$${file}.tmp" && \
-	  mv "$${file}.tmp" "$${file}"; \
-	done ;\
-	c_user_examples=`ls *.c 2>/dev/null`; \
-	for file in $${c_user_examples}; do \
-	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(VERSION)" < "$${file}" > "$${file}.tmp" && \
 	  mv "$${file}.tmp" "$${file}"; \
 	done
