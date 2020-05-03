@@ -1359,6 +1359,9 @@ cs_cdofb_scaleq_init_values(cs_real_t                     t_eval,
 
     BFT_FREE(def2f_idx);
 
+    if (fld->val_pre != NULL)
+      memcpy(fld->val_pre, c_vals, quant->n_cells*sizeof(cs_real_t));
+
   } /* Initial values to set */
 
   /* Set the boundary values as initial values: Compute the values of the
@@ -1372,6 +1375,9 @@ cs_cdofb_scaleq_init_values(cs_real_t                     t_eval,
                                    cs_cdofb_cell_bld[0],
                                    f_vals + quant->n_i_faces);
 
+  if (eqc->face_values_pre != NULL)
+    memcpy(eqc->face_values_pre, eqc->face_values,
+           quant->n_faces*sizeof(cs_real_t));
 }
 
 /*----------------------------------------------------------------------------*/
