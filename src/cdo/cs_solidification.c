@@ -2494,6 +2494,8 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
 
   /* Initially one assumes that all is liquid */
   cs_field_set_values(solid->g_l_field, 1.);
+  for (cs_lnum_t i = 0; i < n_cells; i++)
+    solid->g_l_field->val_pre[i] = 1.;
 
   BFT_MALLOC(solid->cell_state, n_cells, cs_solidification_state_t);
 # pragma omp parallel for if (n_cells > CS_THR_MIN)
