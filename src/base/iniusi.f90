@@ -262,6 +262,10 @@ call csphys(visls0, itempk)
 ! Turbulence reference values (uref, almax)
 call cs_gui_turb_ref_values
 
+! Set turbulence constants according to model choices.
+! This can be overwritten by the user in cs_user_parameters()
+call cs_f_turb_complete_constants
+
 ! Scamin, scamax, turbulent flux model
 call cssca2(iturt)
 

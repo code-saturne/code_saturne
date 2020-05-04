@@ -1436,7 +1436,7 @@ cs_set_glob_turb_model(void)
 void
 cs_turb_compute_constants(void)
 {
-  cs_turb_dpow   = 1/(1.+cs_turb_bpow);
+  cs_turb_dpow   = 1./(1.+cs_turb_bpow);
   cs_turb_cmu025 = pow(cs_turb_cmu,0.25);
   cs_turb_cstlog_alpha = exp(-cs_turb_xkappa
                              * (cs_turb_cstlog_rough - cs_turb_cstlog));
