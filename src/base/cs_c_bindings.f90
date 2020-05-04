@@ -2876,20 +2876,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function Computing rotation/curvature correction
-    ! for eddy-viscosity models.
-
-    subroutine rotcor(dt, rotfct, ce2rc)  &
-        bind(C, name='cs_rotcor')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), dimension(*), intent(in) :: dt
-      real(kind=c_double), dimension(*), intent(out) :: rotfct
-      real(kind=c_double), dimension(*), intent(out) :: ce2rc
-    end subroutine rotcor
-
-    !---------------------------------------------------------------------------
-
     ! Interface to C function to implicit and explicit sources terms
     ! from sources mass computation.
 
