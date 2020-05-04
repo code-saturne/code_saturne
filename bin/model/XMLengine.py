@@ -1180,7 +1180,14 @@ class XMLDocument(XMLElement):
 
         for n in node.childNodes:
             if n.nodeType == Node.TEXT_NODE:
-                if node.tagName[-7:] != 'formula':
+                is_formula = False
+                if node.tagName == 'frequency':
+                    if node.hasAttribute('period'):
+                        if node.getAttribute('period') == 'formula':
+                            is_formula = True
+                elif node.tagName[-7:] == 'formula':
+                    is_formula = True
+                if not is_formula:
                     n.data = self.xmlNormalizeWhitespace(n.data)
                 else:
                     while n.data[:1] in (" ", "\n", "\t"):
