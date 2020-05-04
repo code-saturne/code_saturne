@@ -1095,19 +1095,8 @@ do iel = 1, ncel
   w8(iel) = 0.d0
 enddo
 
-call cs_user_turbulence_source_terms &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivarfl(ik)      ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
-   ckupdc , smacel ,                                              &
-   w7     , usimpk )
-
-call cs_user_turbulence_source_terms &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivarfl(iep)     ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
-   ckupdc , smacel ,                                              &
-   w8     , usimpe )
+call user_source_terms(ivarfl(ik), w7, usimpk)
+call user_source_terms(ivarfl(iep), w8, usimpe)
 
 if (ippmod(iatmos).ge.0) then
   ! Nudging towards optimal interpolation for k

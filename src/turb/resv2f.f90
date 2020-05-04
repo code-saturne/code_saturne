@@ -287,14 +287,6 @@ enddo
 ! 3.1 User source terms
 !===============================================================================
 
-call cs_user_turbulence_source_terms &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivarfl(ivar)    ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
-   ckupdc , smacel ,                                              &
-   smbr   , rovsdt )
-
-! C version
 call user_source_terms(ivarfl(ivar), smbr, rovsdt)
 
 !     If we extrapolate the source terms
@@ -557,14 +549,6 @@ enddo
 ! 4.1 User source terms
 !===============================================================================
 
-call cs_user_turbulence_source_terms &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivarfl(ivar)    ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
-   ckupdc , smacel ,                                              &
-   smbr   , rovsdt )
-
-! C version
 call user_source_terms(ivarfl(ivar), smbr, rovsdt)
 
 !     If we extrapolate the source terms

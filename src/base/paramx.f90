@@ -347,6 +347,7 @@ module paramx
   integer cs_user_boundary_conditions, cs_user_parameters,         &
           cs_user_initialization, cs_user_physical_properties,     &
           cs_user_extra_operations, ushist, cs_f_user_head_losses, &
+          cs_user_turbulence_source_terms,                         &
           usvpst, usatph
 
 end module paramx

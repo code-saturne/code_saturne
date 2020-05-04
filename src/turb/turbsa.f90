@@ -401,14 +401,6 @@ do iel = 1, ncel
   tsexp (iel) = 0.d0
 enddo
 
-call cs_user_turbulence_source_terms &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivarfl(inusa)   ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
-   ckupdc , smacel ,                                              &
-   tsexp  , tsimp )
-
-! C version
 call user_source_terms(ivarfl(inusa), tsexp, tsimp)
 
 !===============================================================================

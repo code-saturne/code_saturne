@@ -3,6 +3,10 @@ Master (not on release branches yet)
 
 User changes:
 
+- Removed the cs_user_turbulence_source_terms user subroutine.
+  Turbulent source terms can be added using the generic (C)
+  cs_user_source_terms function.
+
 - Add a code_saturne FMU example with full implementation of the methods
   allowing to operate with it from a master FMU. extras/FMI/README.md provides
   brief indications on how to create a code_saturne FMU. The example is based
