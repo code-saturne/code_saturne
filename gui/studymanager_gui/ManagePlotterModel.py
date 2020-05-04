@@ -886,7 +886,7 @@ class ManagePlotterModel(Model):
         """
         study_node = self.case.xmlGetNode("study", label = study)
         nn = study_node.xmlGetNode("case", id = case_idx)
-        nn.xmlInitChildNode("data", file=name)
+        nn.xmlInitChildNode("data", dest="", file=name)
 
 
     def delCaseDataFile(self, study, case_idx, idx):

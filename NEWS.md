@@ -3,6 +3,9 @@ Release 6.0.3 (Unreleased)
 
 Bug fixes:
 
+- Fix in studymanager GUI: when adding a data file, a missing "dest"
+  tag led to errors at execution (GitLab issue #201).
+
 - Fix bug in the GUI for Lagrangian injection boundary conditions.
 
 - Fix uninitialized number of cells for condensation zones.
