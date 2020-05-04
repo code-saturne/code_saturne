@@ -1292,21 +1292,19 @@ if (iccvfg.eq.0) then
 
     call turbke &
   ( nvar   , nscal  ,                                              &
-    ncepdc , ncetsm ,                                              &
-    icepdc , icetsm , itypsm ,                                     &
+    ncetsm , icetsm , itypsm ,                                     &
     dt     ,                                                       &
     tslagr ,                                                       &
-    ckupdc , smacel ,                                              &
+    smacel ,                                                       &
     prdv2f )
 
     if( itytur.eq.5 )  then
 
       call resv2f &
-    ( nvar   , nscal  ,                                              &
-      ncepdc , ncetsm ,                                              &
-      icepdc , icetsm , itypsm ,                                     &
-      dt     ,                                                       &
-      ckupdc , smacel ,                                              &
+    ( nvar   , ncetsm ,                                            &
+      icetsm , itypsm ,                                            &
+      dt     ,                                                     &
+      smacel ,                                                     &
       prdv2f )
 
       ! Free memory
@@ -1375,15 +1373,9 @@ if (iccvfg.eq.0) then
       enddo
     end if
 
-  else if( iturb.eq.70 ) then
+  else if (iturb.eq.70) then
 
-    call turbsa &
-  ( nvar   , nscal  ,                                              &
-    ncepdc , ncetsm ,                                              &
-    icepdc , icetsm , itypsm ,                                     &
-    dt     ,                                                       &
-    ckupdc , smacel ,                                              &
-    itypfb )
+    call turbsa(nvar, ncetsm, icetsm, itypsm, dt, smacel, itypfb)
 
     call field_get_val_s(ivarfl(inusa), cvar_nusa)
     call field_get_val_prev_s(ivarfl(inusa), cvara_nusa)

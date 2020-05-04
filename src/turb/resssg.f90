@@ -45,11 +45,9 @@
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     ivar          variable number
 !> \param[in]     isou          local variable number (7 here)
-!> \param[in]     icepdc        index of cells with head loss
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     itypsm        type of mass source term for each variable
 !>                               (see \ref cs_user_mass_source_terms)
@@ -58,7 +56,6 @@
 !>                                 only for iturb=31
 !> \param[in]     gradro        work array for grad rom
 !>                              (without rho volume) only for iturb=30
-!> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        value associated to each variable in the mass
 !>                               source terms or mass rate
 !>                               (see \ref cs_user_mass_source_terms)
@@ -70,12 +67,12 @@
 !_______________________________________________________________________________
 
 subroutine resssg &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+ ( nvar   , nscal  , ncesmp ,                                     &
    ivar   , isou   ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
+   icetsm , itypsm ,                                              &
    dt     ,                                                       &
    gradv  , gradro ,                                              &
-   ckupdc , smacel ,                                              &
+   smacel ,                                                       &
    viscf  , viscb  ,                                              &
    tslagi ,                                                       &
    smbr   , rovsdt )
@@ -110,16 +107,15 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          ncepdp , ncesmp
+integer          ncesmp
 integer          ivar   , isou
 
-integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet)
 double precision gradv(3, 3, ncelet)
 double precision gradro(3,ncelet)
-double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
+double precision smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
 double precision tslagi(ncelet)
 double precision smbr(ncelet), rovsdt(ncelet)

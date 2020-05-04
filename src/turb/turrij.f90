@@ -624,12 +624,12 @@ else
     ! Rij-epsilon SSG or EBRSM
     elseif (iturb.eq.31.or.iturb.eq.32) then
       call resssg &
-      ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+      ( nvar   , nscal  , ncesmp ,                                     &
         ivar   , isou   ,                                              &
-        icepdc , icetsm , itypsm ,                                     &
+        icetsm , itypsm ,                                              &
         dt     ,                                                       &
         gradv  , gradro ,                                              &
-        ckupdc , smacel ,                                              &
+        smacel ,                                                       &
         viscf  , viscb  ,                                              &
         tslagi ,                                                       &
         smbr   , rovsdt )

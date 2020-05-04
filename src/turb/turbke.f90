@@ -42,15 +42,12 @@
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     ncesmp        number of cells with mass source term
-!> \param[in]     icepdc        index of the ncepdp cells with head loss
 !> \param[in]     icetsm        index of cells with mass source term
 !> \param[in]     itypsm        mass source type for the variables
 !>                              (cf. cs_user_mass_source_terms)
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     tslagr        coupling term of the lagangian module
-!> \param[in]     ckupdc        work array for the head loss
 !> \param[in]     smacel        values of the variables associated to the
 !>                               mass source
 !>                               (for ivar=ipr, smacel is the mass flux)
@@ -58,10 +55,10 @@
 !_______________________________________________________________________________
 
 subroutine turbke &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm ,                                     &
+ ( nvar   , nscal  , ncesmp ,                                     &
+   icetsm , itypsm ,                                              &
    dt     ,                                                       &
-   tslagr , ckupdc , smacel , prdv2f )
+   tslagr , smacel , prdv2f )
 
 !===============================================================================
 
@@ -90,14 +87,13 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          ncepdp , ncesmp
+integer          ncesmp
 
-integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet)
 double precision tslagr(ncelet,*)
-double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
+double precision smacel(ncesmp,nvar)
 double precision prdv2f(ncelet)
 
 ! Local variables

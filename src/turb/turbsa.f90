@@ -39,15 +39,11 @@
 !  mode           name          role
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
-!> \param[in]     nscal         total number of scalars
-!> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     ncesmp        number of cells with mass source term
-!> \param[in]     icepdc        number of ncepdp cells with head losses
 !> \param[in]     icetsm        number of cells with mass source
 !> \param[in]     itypsm        type of mass source for the variables
 !>                               (cf. cs_user_mass_source_terms)
 !> \param[in]     dt            time step (per cell)
-!> \param[in]     ckupdc        work array for head losses
 !> \param[in]     smacel        value of variables associated to the
 !                               mass source
 !                               for ivar = ipr, smacel = mass flux
@@ -55,10 +51,10 @@
 !______________________________________________________________________________!
 
 subroutine turbsa &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm ,                                     &
+ ( nvar   , ncesmp ,                                              &
+   icetsm , itypsm ,                                              &
    dt     ,                                                       &
-   ckupdc , smacel ,                                              &
+   smacel ,                                                       &
    itypfb )
 
 !===============================================================================
@@ -83,17 +79,16 @@ implicit none
 
 ! Arguments
 
-integer          nvar   , nscal
-integer          ncepdp , ncesmp
+integer          nvar
+integer          ncesmp
 
-integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 integer          itypfb(nfabor)
 integer          icvflb
 integer          ivoid(1)
 
 double precision dt(ncelet)
-double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
+double precision smacel(ncesmp,nvar)
 
 ! Local variables
 
