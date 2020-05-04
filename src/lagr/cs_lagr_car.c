@@ -256,7 +256,7 @@ cs_lagr_car(int              iprev,
   /* Compute turbulent kinetic energy and dissipation
      based on turbulence model */
 
-  if (cs_glob_lagr_time_scheme->idistu == 1) {
+  if (cs_glob_lagr_model->idistu == 1) {
 
     cs_real_t  *energi = NULL, * dissip = NULL;
     BFT_MALLOC(energi, ncel, cs_real_t);
@@ -320,7 +320,7 @@ cs_lagr_car(int              iprev,
            "Turbulent dispersion is taken into account with idistu = %d\n"
            " Activated turbulence model is %d, when only k-eps, Rij-eps,\n"
            " V2f or k-omega are handled."),
-         (int)cs_glob_lagr_time_scheme->idistu,
+         (int)cs_glob_lagr_model->idistu,
          (int)extra->iturb);
 
     }
@@ -360,8 +360,8 @@ cs_lagr_car(int              iprev,
 
         }
 
-        if (   cs_glob_lagr_time_scheme->modcpl > 0
-            && cs_glob_time_step->nt_cur > cs_glob_lagr_time_scheme->modcpl) {
+        if (   cs_glob_lagr_model->modcpl > 0
+            && cs_glob_time_step->nt_cur > cs_glob_lagr_model->modcpl) {
 
           int stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY);
 
@@ -391,45 +391,54 @@ cs_lagr_car(int              iprev,
 
         uvwdif = (3.0 * uvwdif) / (2.0 * energi[cell_id]);
 
-        if (   cs_glob_lagr_time_scheme->modcpl > 0
-            && cs_glob_time_step->nt_cur > cs_glob_lagr_time_scheme->modcpl) {
+        if (   cs_glob_lagr_model->modcpl > 0
+            && cs_glob_time_step->nt_cur > cs_glob_lagr_model->modcpl) {
 
-          if (cs_glob_lagr_time_scheme->idirla == 1) {
 
+          /* The complete model is made isotropic
+           *
+           * TL_i^* = TL / B_i
+           *
+           * B^2_n  = 1 +  beta^2 |<u_r>|^2/(2 k_f / 3)
+           * B^2_t1 = 1 +4 beta^2 |<u_r>|^2/(2 k_f / 3)
+           * B^2_t2 = 1 +4 beta^2 |<u_r>|^2/(2 k_f / 3)
+           *
+           * is replaced by "tr(B^2)/3 Id"
+           * */
+          if (cs_glob_lagr_model->idirla == 0) {
+            bbi[0] = sqrt(1.0 + 3. * cbcb * uvwdif);
+            bbi[1] = sqrt(1.0 + 3. * cbcb * uvwdif);
+            bbi[2] = sqrt(1.0 + 3. * cbcb * uvwdif);
+          }
+
+          /* Mean direction is X */
+          else if (cs_glob_lagr_model->idirla == 1) {
             bbi[0] = sqrt(1.0 +       cbcb * uvwdif);
             bbi[1] = sqrt(1.0 + 4.0 * cbcb * uvwdif);
             bbi[2] = sqrt(1.0 + 4.0 * cbcb * uvwdif);
-            for (cs_lnum_t id = 0; id < 3; id++)
-              tlag[ip][id] = tl / bbi[id];
-
           }
 
-          else if (cs_glob_lagr_time_scheme->idirla == 2) {
-
+          /* Mean direction is Y */
+          else if (cs_glob_lagr_model->idirla == 2) {
             bbi[0] = sqrt(1.0 + 4.0 * cbcb * uvwdif);
             bbi[1] = sqrt(1.0 +       cbcb * uvwdif);
             bbi[2] = sqrt(1.0 + 4.0 * cbcb * uvwdif);
-            for (cs_lnum_t id = 0; id < 3; id++)
-              tlag[ip][id] = tl / bbi[id];
-
           }
 
-          else if (cs_glob_lagr_time_scheme->idirla == 3) {
-
+          /* Mean direction is Z */
+          else if (cs_glob_lagr_model->idirla == 3) {
             bbi[0] = sqrt(1.0 + 4.0 * cbcb * uvwdif);
             bbi[1] = sqrt(1.0 + 4.0 * cbcb * uvwdif);
             bbi[2] = sqrt(1.0 +       cbcb * uvwdif);
-            for (cs_lnum_t id = 0; id < 3; id++)
-              tlag[ip][id] = tl / bbi[id];
-
           }
 
-          else { /* if (cs_glob_lagr_time_scheme->idirla == 4) */
+          /* Mean direction is computed locally */
+          else { /* if (cs_glob_lagr_model->idirla == 4) */
 
             /* relative main direction */
             cs_real_3_t vrn, n_dir;
             for (cs_lnum_t i = 0; i < 3; i++)
-              vrn[i] = vpart[i] - vflui[i];
+              vrn[i] = vpart[i] - vflui[i];//FIXME should be MEAN particle velocity
 
             cs_math_3_normalise(vrn, n_dir);
 
@@ -438,16 +447,19 @@ cs_lagr_car(int              iprev,
             an = (1.0 + cbcb * uvwdif);
             at = (1.0 + 4.0 * cbcb * uvwdif);
 
-            /* We take the diagonal part of
+            /* We take (only) the diagonal part of
              *  an. n(x)n + at (1 - n(x)n) */
 
             for (cs_lnum_t id = 0; id < 3; id++)
               bbi[id] = sqrt(an * cs_math_pow2(n_dir[id])
                            + at * (1. - cs_math_pow2(n_dir[id])));
 
-            for (cs_lnum_t id = 0; id < 3; id++)
-              tlag[ip][id] = tl / bbi[id];
           }
+
+          /* Compute the timescale of the fluid velocities seen by discrete
+           * particles in parallel and transverse directions */
+          for (cs_lnum_t id = 0; id < 3; id++)
+            tlag[ip][id] = tl / bbi[id];
 
           if (extra->itytur == 3) {
 
@@ -493,7 +505,7 @@ cs_lagr_car(int              iprev,
           for (cs_lnum_t id = 0; id < 3; id++)
             tlag[ip][id] = tl;
 
-          if (cs_glob_lagr_time_scheme->idiffl == 0) {
+          if (cs_glob_lagr_model->idiffl == 0) {
 
             uvwdif      = sqrt(uvwdif);
             tlag[ip][0] = tl / (1.0 + cb * uvwdif);
@@ -538,9 +550,9 @@ cs_lagr_car(int              iprev,
   /* Compute Pii
      ----------- */
 
-  if (   cs_glob_lagr_time_scheme->modcpl > 0
+  if (   cs_glob_lagr_model->modcpl > 0
       && (  cs_glob_time_step->nt_cur
-          > cs_glob_lagr_time_scheme->modcpl)) {
+          > cs_glob_lagr_model->modcpl)) {
 
     int stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY);
 

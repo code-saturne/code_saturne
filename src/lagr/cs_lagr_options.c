@@ -290,10 +290,10 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   cs_glob_lagr_boundary_interactions->nombrd = NULL;
 
   lagr_time_scheme->t_order = 2;
-  lagr_time_scheme->idistu = 1;
-  lagr_time_scheme->idiffl = 0;
-  lagr_time_scheme->modcpl = 0;
-  lagr_time_scheme->idirla = 0;
+  lagr_model->modcpl = 0;
+  lagr_model->idirla = 0;
+  lagr_model->idistu = 1;
+  lagr_model->idiffl = 0;
   lagr_time_scheme->ilapoi = 0;
   lagr_time_scheme->iadded_mass = 0;
   lagr_time_scheme->added_mass_const = 1.0;
@@ -732,11 +732,11 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("in Lagrangian module"),
-                                "cs_glob_lagr_time_scheme->idistu",
-                                lagr_time_scheme->idistu,
+                                "cs_glob_lagr_model->idistu",
+                                lagr_model->idistu,
                                 0, 2);
 
-  if (   lagr_time_scheme->idistu == 1
+  if (   lagr_model->idistu == 1
       && extra->itytur != 2
       && extra->itytur != 3
       && extra->iturb != 50
@@ -750,7 +750,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
        extra->iturb);
 
   }
-  else if (   lagr_time_scheme->idistu == 0
+  else if (   lagr_model->idistu == 0
            && extra->iturb != 0
            && extra->itytur!= 2
            && extra->itytur!= 3
@@ -768,25 +768,25 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                 _("in Lagrangian module"),
-                                "cs_glob_lagr_time_scheme->idiffl",
-                                lagr_time_scheme->idiffl,
+                                "cs_glob_lagr_model->idiffl",
+                                lagr_model->idiffl,
                                 0, 2);
 
-  if (lagr_time_scheme->modcpl < 0)
-    lagr_time_scheme->modcpl = 0;
+  if (lagr_model->modcpl < 0)
+    lagr_model->modcpl = 0;
 
-  if (lagr_time_scheme->modcpl > 0) {
+  if (lagr_model->modcpl > 0) {
 
-    if (lagr_time_scheme->modcpl < cs_glob_lagr_stat_options->idstnt)
+    if (lagr_model->modcpl < cs_glob_lagr_stat_options->idstnt)
       cs_parameters_error
         (CS_ABORT_DELAYED,
          _("in Lagrangian module"),
          _("The turbulent dispersion option is incompatible with that of\n"
            "statistics.\n\n"
            "Statisitics must be actve fo this model, so we must have\n"
-           "lagr_time_scheme->modcpl >= cs_glob_lagr_stat_options->idstnt\n"
+           "lagr_model->modcpl >= cs_glob_lagr_stat_options->idstnt\n"
            "while their current values are %d < %d."),
-         lagr_time_scheme->modcpl,
+         lagr_model->modcpl,
          cs_glob_lagr_stat_options->idstnt);
 
     /* Velocity statistics are needed for this model */
@@ -794,9 +794,9 @@ cs_lagr_option_definition(cs_int_t   *isuite,
 
     cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
                                   _("in Lagrangian module"),
-                                  "cs_glob_lagr_time_scheme->idirla",
-                                  lagr_time_scheme->idirla,
-                                  1, 5);
+                                  "cs_glob_lagr_model->idirla",
+                                  lagr_model->idirla,
+                                  0, 5);
   }
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
@@ -1030,7 +1030,7 @@ cs_lagr_option_definition(cs_int_t   *isuite,
   /* Now activate basic statistics */
 
 #if 0
-  if (   cs_glob_lagr_time_scheme->modcpl > 0
+  if (   cs_glob_lagr_model->modcpl > 0
       || cs_glob_lagr_time_scheme->ilapoi == 1)
     cs_lagr_stat_activate(CS_LAGR_STAT_CUMULATIVE_WEIGHT);
 #endif

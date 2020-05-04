@@ -450,7 +450,7 @@ cs_user_lagr_model(void)
       Activation of the turbulent dispersion
       (default on: 1 ; off: 0) */
 
-  cs_glob_lagr_time_scheme->idistu = 1;
+  cs_glob_lagr_model->idistu = 1;
 
   /* Turbulent dispersion imposed to the fluid one.
 
@@ -461,23 +461,25 @@ cs_user_lagr_model(void)
      we are simulating the displacement of fluid particles.
      (default off: 0 ; on: 1) */
 
-  cs_glob_lagr_time_scheme->idiffl = 0;
+  cs_glob_lagr_model->idiffl = 0;
 
   /* modcpl :
      = 0 for the incomplete model (default value)
      > 0 for the full model, is equal the absolute number
      of time steps from which the full model is activated
-     modcpl must not be lower than idstnt */
+     modcpl must not be larger than idstnt */
 
-  cs_glob_lagr_time_scheme->modcpl = 0;
+  cs_glob_lagr_model->modcpl = 0;
 
-  /* idirla (=1 or 2 or 3) : 1st, 2nd or 3rd direction
-     of the full model. Corresponds to the main direction
-     of the flow. Allow to calculate a non-isotropic Lagrangian timescale
-     (default idirla=1) */
+  /* idirla (=1 or 2 or 3) : x, y or z direction of the full model.
+   * Corresponds to the main direction of the flow.
+   * Allow to calculate a non-isotropic Lagrangian timescale (default idirla=0)
+   * 4 stands for a local direction
+   * 0 stand for an isotropic Lagrangian timescale.
+   * */
 
-  if (cs_glob_lagr_time_scheme->modcpl > 0)
-    cs_glob_lagr_time_scheme->idirla = 1;
+  if (cs_glob_lagr_model->modcpl > 0)
+    cs_glob_lagr_model->idirla = 1;
 
   /*! [dispersed_phases_treatment] */
 

@@ -662,7 +662,7 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
      as seen by solid particles along their trajectory.
      -------------------------------------------------- */
 
-  if (cs_glob_lagr_time_scheme->idistu == 1) {
+  if (cs_glob_lagr_model->idistu == 1) {
 
     if (extra->cvar_k != NULL)
       cvar_k = (const cs_real_t *)extra->cvar_k->vals[time_id];
@@ -683,11 +683,11 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
          _("The Lagrangian module is incompatible with the selected\n"
            " turbulence model.\n\n"
            "Turbulent dispersion is used with:\n"
-           "  cs_glob_lagr_time_scheme->idistu = %d\n"
+           "  cs_glob_lagr_model->idistu = %d\n"
            "And the turbulence model is iturb = %d\n\n"
            "The only turbulence models compatible with the Lagrangian model's\n"
            "turbulent dispersion are k-epsilon, Rij-epsilon, v2f, and k-omega."),
-         cs_glob_lagr_time_scheme->idistu,
+         cs_glob_lagr_model->idistu,
          extra->iturb);
     }
 
@@ -700,7 +700,7 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
 
   BFT_MALLOC(vagaus, n, cs_real_3_t);
 
-  if (cs_glob_lagr_time_scheme->idistu == 1 && n > 0) {
+  if (cs_glob_lagr_model->idistu == 1 && n > 0) {
     cs_random_normal(n*3, (cs_real_t *)vagaus);
   }
 
@@ -726,7 +726,8 @@ cs_lagr_new_particle_init(const cs_lnum_t  particle_range[2],
 
     cs_real_t w = 0.;
 
-    if (cs_glob_lagr_time_scheme->idistu == 1) {
+    /* TODO better... */
+    if (cs_glob_lagr_model->idistu == 1) {
       if (cvar_k != NULL)
         w = cvar_k[iel];
       else if (cvar_rij != NULL)

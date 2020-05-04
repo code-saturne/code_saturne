@@ -770,7 +770,7 @@ cs_lagr_particle_attr_initialize(void)
     attr_keys[CS_LAGR_PRED_VELOCITY_SEEN][1] = ++pepa_loc_add;
     attr_keys[CS_LAGR_PRED_VELOCITY_SEEN][2] = 3;
 
-    if (cs_glob_lagr_time_scheme->idistu == 1) {
+    if (cs_glob_lagr_model->idistu == 1) {
       attr_keys[CS_LAGR_V_GAUSS][0] = CS_LAGR_P_RPRP;
       attr_keys[CS_LAGR_V_GAUSS][1] = ++pepa_loc_add;
       attr_keys[CS_LAGR_V_GAUSS][2] = 9;

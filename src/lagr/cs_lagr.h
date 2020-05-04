@@ -202,31 +202,6 @@ typedef struct {
   /*! trajectory algorithm order in time */
   int  t_order;
 
-  /*! activates (>0) or not (=0) the complete turbulent dispersion model.
-    When \ref modcpl is strictly positive, its value is interpreted as the
-    absolute Lagrangian time step number (including restarts) after which the
-    complete model is applied.
-    Since the complete model uses volume statistics, \ref modcpl must
-    either be 0 or be larger than \ref idstnt. */
-  int     modcpl;
-
-  /*!  direction (1=x, 2=y, 3=z, 4=local_max) of the complete model.
-    it corresponds to the main directions of the flow.
-    Useful if \ref modcpl > 0 */
-  int     idirla;
-
-  /*!  activation (=1) or not (=0) of the particle turbulent dispersion.
-    The turbulent dispersion is compatible only with the RANS turbulent models
-    (\f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$, v2f or \f$k-\omega\f$).
-    (\ref iturb=20, 21, 30, 31, 50 or 60). */
-  int     idistu;
-
-  /*! \ref idiffl=1 suppresses the crossing trajectory effect, making
-    turbulent dispersion for the particles identical to the turbulent
-    diffusion of fluid particles.
-    Useful if \ref idistu=1 */
-  int     idiffl;
-
   /*! activation (=1) or not (=0) of the solution of a Poisson's equation for
     the correction of the particle instantaneous velocities
     (in order to obtain a null divergence).
@@ -274,6 +249,34 @@ typedef struct {
   int  physical_model;
   int  n_temperature_layers;
 
+  /*! activates (>0) or not (=0) the complete turbulent dispersion model.
+    When \ref modcpl is strictly positive, its value is interpreted as the
+    absolute Lagrangian time step number (including restarts) after which the
+    complete model is applied.
+    Since the complete model uses volume statistics, \ref modcpl must
+    either be 0 or be larger than \ref idstnt. */
+  int modcpl;
+
+  /*!  direction (1=x, 2=y, 3=z) of the complete model.
+    It corresponds to the mean relative directions of the flow.
+    Useful only if \ref modcpl > 0
+    0 proposes an isotropic Lagrangian timescale.
+    4 proposes the local mean direction.
+    */
+  int idirla;
+
+  /*!  activation (=1) or not (=0) of the particle turbulent dispersion.
+    The turbulent dispersion is compatible only with the RANS turbulent models
+    (\f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$, v2f or \f$k-\omega\f$).
+    (\ref iturb=20, 21, 30, 31, 50 or 60). */
+  int idistu;
+
+  /*! \ref idiffl=1 suppresses the crossing trajectory effect, making
+    turbulent dispersion for the particles identical to the turbulent
+    diffusion of fluid particles.
+    Useful if \ref idistu=1 */
+  int idiffl;
+
   int  deposition;
   int  dlvo;
 
@@ -294,8 +297,8 @@ typedef struct {
      - 2: ellipsoids */
   int  shape;
 
-  /* - 0: no consolidation model
-     - 1: consolidation model */
+  /*! - 0: no consolidation model
+      - 1: consolidation model */
   int  consolidation;
 
   int  precipitation;

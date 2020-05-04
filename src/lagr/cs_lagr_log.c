@@ -469,21 +469,30 @@ cs_lagr_log_setup(void)
   cs_log_printf
     (CS_LOG_SETUP,
      _("\n  Turbulent dispersion options:\n"
-       "    lagrangian turbulent dispersion:              %s\n"
+       "    Lagrangian turbulent dispersion:              %s\n"
        "      identical to fluid turbulent diffusion:     %s\n"
        "    apply complete model from time step:          %d\n"),
-     _status(cs_glob_lagr_time_scheme->idistu),
-     _status(cs_glob_lagr_time_scheme->idiffl),
-     cs_glob_lagr_time_scheme->modcpl);
+     _status(cs_glob_lagr_model->idistu),
+     _status(cs_glob_lagr_model->idiffl),
+     cs_glob_lagr_model->modcpl);
 
-  if (cs_glob_lagr_time_scheme->modcpl) {
-    const char c_dir[] = "xyz*";
-    int _idirla = cs_glob_lagr_time_scheme->idirla;
+  if (cs_glob_lagr_model->modcpl) {
+
+    const char *idirla_value_str[]
+      = {
+        N_("  0 (isotropic)"),
+        N_("  x"),
+        N_("  y"),
+        N_("  z"),
+        N_("  local (mean relative velocity direction)"),
+      };
+
+    int _idirla = cs_glob_lagr_model->idirla;
     assert(_idirla > -1 && _idirla < 5);
     cs_log_printf
       (CS_LOG_SETUP,
-       _("    complete model main flow direction: %c\n"),
-       c_dir[_idirla]);
+       _("    complete model mean direction: %s\n"),
+       _(idirla_value_str[cs_glob_lagr_model->idirla]));
   }
 
   cs_log_printf
@@ -512,7 +521,7 @@ cs_lagr_log_setup(void)
   if (cs_glob_lagr_boundary_interactions->has_part_impact_nbr)
     cs_log_printf(CS_LOG_SETUP, "    %s\n", "particle impact number");
 
-  /* Volumic statistics   */
+  /* Volume statistics   */
 
   cs_log_printf(CS_LOG_SETUP,
                 _("\n"

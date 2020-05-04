@@ -159,19 +159,19 @@ static cs_lagr_time_scheme_t _lagr_time_scheme
      .isttio = 0,
      .isuila = 1,
      .t_order = 0,
-     .modcpl = 0,
-     .idirla = 0,
-     .idistu = 0,
-     .idiffl = 0,
      .ilapoi = 0,
      .iadded_mass = 0,
      .added_mass_const = 0};
 
-/* Main Lagragian physical model parameters */
+/* Main Lagrangian physical model parameters */
 
 static cs_lagr_model_t  _lagr_model
   = {.physical_model = CS_LAGR_PHYS_OFF,
      .n_temperature_layers = 1,
+     .modcpl = 0,
+     .idirla = 0,
+     .idistu = 1,
+     .idiffl = 0,
      .deposition = 0,
      .dlvo = 0,
      .roughness = 0,
@@ -1710,7 +1710,7 @@ cs_lagr_solve_initialize(const cs_real_t  *dt)
   cs_lnum_t ncelet = cs_glob_mesh->n_cells_with_ghosts;
 
   BFT_MALLOC(extra->grad_pr, ncelet, cs_real_3_t);
-  if (cs_glob_lagr_time_scheme->modcpl > 0
+  if (cs_glob_lagr_model->modcpl > 0
       || cs_glob_lagr_model->shape > 0 )
     BFT_MALLOC(extra->grad_vel, ncelet, cs_real_33_t);
 

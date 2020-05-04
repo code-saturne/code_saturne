@@ -2640,7 +2640,7 @@ cs_lagr_sde(cs_real_t           dt_p,
 
   /* Random values */
 
-  if (cs_glob_lagr_time_scheme->idistu == 1) {
+  if (cs_glob_lagr_model->idistu == 1) {
     if (cs_glob_lagr_time_step->nor > 1) {
       for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
         unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
@@ -2815,7 +2815,7 @@ cs_lagr_sde(cs_real_t           dt_p,
 
       for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
         unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
-        if (cs_glob_lagr_time_scheme->idistu == 1) {
+        if (cs_glob_lagr_model->idistu == 1) {
           cs_real_t *_v_gauss
             = cs_lagr_particle_attr(particle, p_am, CS_LAGR_V_GAUSS);
           for (cs_lnum_t id = 0; id < 3; id++) {

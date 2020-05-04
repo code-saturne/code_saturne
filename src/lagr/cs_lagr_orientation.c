@@ -521,7 +521,7 @@ cs_lagr_orientation_dyn_spheroids(int iprev,
            " Activated turbulence model is %d, when only k-eps, Rij-eps,\n"
            " V2f or k-omega are compatible with turbulent dispersion and Lagrangian module.\n"
            "\n"),
-         (int)cs_glob_lagr_time_scheme->idistu,
+         (int)cs_glob_lagr_model->idistu,
          (int)extra->iturb);
       cs_exit(1);
     }
