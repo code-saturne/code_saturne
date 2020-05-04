@@ -63,7 +63,7 @@ from code_saturne.model.Boundary                       import Boundary
 from code_saturne.Pages.FluidStructureInteractionAdvancedOptionsDialogForm import \
 Ui_FluidStructureInteractionAdvancedOptionsDialogForm
 
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
@@ -295,7 +295,7 @@ class Coupling:
     value of the widget base on the boundary
     """
 
-    def __init__(self, widget, getterStr, setterStr ):
+    def __init__(self, widget, getterStr, setterStr):
         """
         Constructor. getterStr and setterStr are string
         """
@@ -349,6 +349,13 @@ class Coupling:
         getattr(self.__boundary, self.__setterStr)(value)
 
 
+    def getBoundaryName(self):
+        """
+        Return the name of the boundary using the getter function
+        """
+        return getattr(self.__boundary, "getZoneName")()
+
+
 #-------------------------------------------------------------------------------
 # LineEdit Coupling class
 #-------------------------------------------------------------------------------
@@ -398,16 +405,28 @@ class FormulaCoupling(Coupling):
     Formula button that depend on a boundary
     """
 
-    def __init__(self, button, getter, setter, default, required, symbols, examples):
+    def __init__(self, button, parent, getter, setter,
+                 default, required, symbols, examples):
         """
         Constructor
         """
-        Coupling.__init__(self, button, getter, setter)
+        super(FormulaCoupling, self).__init__(button, getter, setter)
 
+        self.parent     = parent
         self.__default  = default
         self.__required = required
         self.__examples = examples
         self.__symbols  = symbols
+
+        self.object_type = ''
+        if getter == 'getMassMatrix':
+            self.object_type = 'mass_matrix'
+        elif getter == 'getStiffnessMatrix':
+            self.object_type = 'stiffness_matrix'
+        elif getter == 'getDampingMatrix':
+            self.object_type = 'damping_matrix'
+        elif getter == 'getFluidForceMatrix':
+            self.object_type = 'fluid_force'
 
         button.clicked.connect(self.__slotFormula)
 
@@ -428,18 +447,21 @@ class FormulaCoupling(Coupling):
         Run formula editor.
         """
         # Read current expression
+        name = str(self.getBoundaryName())
         exp = self.getBoundaryDefinedValue()
 
         if not exp:
             exp = self.__default
 
         # run the editor
-        dialog = QMeiEditorView(self.getWidget(),
-                                check_syntax = None,
+        dialog = QMegEditorView(self.parent,
+                                function_type = 'fsi',
+                                zone_name = name,
+                                variable_name = self.object_type,
                                 expression = exp,
-                                required   = self.__required,
-                                symbols    = self.__symbols,
-                                examples   = self.__examples)
+                                required = self.__required,
+                                symbols = self.__symbols,
+                                examples = self.__examples)
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("FormulaCoupling -> %s" % str(result))
@@ -585,7 +607,7 @@ class CouplingManager:
                            ('%(t)s32', '%(n)s matrix of the structure (3,2)')]
         symbols = [('dt', 'time step'),
                    ('t', 'current time'),
-                   ('nbIter', 'number of iteration')]
+                   ('iter', 'current iteration')]
 
         # Add notebook symbols
         self.notebook = NotebookModel(self.case)
@@ -619,21 +641,24 @@ k11 = 2;\nk22 = 2;\nk33 = 2;\nk12 = 0;\nk13 = 0;\nk23 = 0;\nk21 = 0;\nk31 = 0;\n
 
         couplings = []
         couplings.append(FormulaCoupling(mainView.pushButtonMassMatrix,
+                                         mainView,
                                          "getMassMatrix", "setMassMatrix",
                                          m_default, m_default_required,
                                          symbols, m_examples))
 
         couplings.append(FormulaCoupling(mainView.pushButtonDampingMatrix,
+                                         mainView,
                                          "getDampingMatrix", "setDampingMatrix",
                                          c_default, c_default_required,
                                          symbols, c_examples))
 
         couplings.append(FormulaCoupling(mainView.pushButtonStiffnessMatrix,
+                                         mainView,
                                          "getStiffnessMatrix", "setStiffnessMatrix",
                                          k_default, k_default_required,
                                          symbols, k_examples))
 
-        defaultFluidForce  = "fx = "
+        defaultFluidForce  = "fx = 0;"
         requiredFluidForce = [('fx', 'force applied to the structure along X'),
                               ('fy', 'force applied to the structure along Y'),
                               ('fz', 'force applied to the structure along Z')]
@@ -645,13 +670,14 @@ k11 = 2;\nk22 = 2;\nk33 = 2;\nk12 = 0;\nk13 = 0;\nk23 = 0;\nk21 = 0;\nk31 = 0;\n
         examplesFluidForce = """# The fluid force is zero in the Y direction.
 #
 fx = fluid_fx;\nfy = 0;\nfz = fluid_fz;"""
-        couplings.append( FormulaCoupling(mainView.pushButtonFluidForce,
-                                          "getFluidForceMatrix",
-                                          "setFluidForceMatrix",
-                                          defaultFluidForce,
-                                          requiredFluidForce,
-                                          symbolsFluidForce,
-                                          examplesFluidForce))
+        couplings.append(FormulaCoupling(mainView.pushButtonFluidForce,
+                                         mainView,
+                                         "getFluidForceMatrix",
+                                         "setFluidForceMatrix",
+                                         defaultFluidForce,
+                                         requiredFluidForce,
+                                         symbolsFluidForce,
+                                         examplesFluidForce))
         self.__internalCouplings.extend(couplings)
 
 

@@ -122,6 +122,13 @@ cs_meg_immersed_boundaries_inout(int         *ipenal,
                                  cs_real_3_t  xyz,
                                  cs_real_t    t)
 {
+""",
+'fsi':"""void
+cs_meg_fsi_struct(const char       *object_type,
+                  const char       *name,
+                  const cs_real_t   fluid_f[],
+                  cs_real_t         val[])
+{
 """
 }
 
@@ -129,19 +136,22 @@ _function_names = {'vol':'cs_meg_volume_function.c',
                    'bnd':'cs_meg_boundary_function.c',
                    'src':'cs_meg_source_terms.c',
                    'ini':'cs_meg_initialization.c',
-                   'ibm':'cs_meg_immersed_boundaries_inout.c'}
+                   'ibm':'cs_meg_immersed_boundaries_inout.c',
+                   'fsi':'cs_meg_fsi_struct.c'}
 
 _block_comments = {'vol':'User defined formula for variable(s) %s over zone %s',
                    'bnd':'User defined formula for "%s" over BC=%s',
                    'src':'User defined source term for %s over zone %s',
                    'ini':'User defined initialization for variable %s over zone %s',
-                   'ibm':'User defined explicit formula of %s indicator for object %s'}
+                   'ibm':'User defined explicit formula of %s indicator for object %s',
+                   'fsi':'User defined FSI coupling structure %s for zone %s'}
 
 _func_short_to_long = {'vol':'volume zone',
                        'bnd':'boundary',
                        'src':'source term',
                        'ini':'initialization',
-                       'ibm':'Immersed boundaries'}
+                       'ibm':'Immersed boundaries',
+                       'fsi':'Mechanicaly-coupled structures'}
 
 #-------------------------------------------------------------------------------
 
@@ -181,14 +191,16 @@ def parse_gui_expression(expression,
                          func_type,
                          glob_tokens,
                          loop_tokens,
-                         need_for_loop = False):
+                         need_for_loop = False,
+                         indent_decl = 2,
+                         indent_main = 3):
 
     usr_code = ''
     usr_defs = ''
     if_loop = False
 
     tab = '  '
-    ntabs = 3
+    ntabs = indent_main
     if func_type == 'ibm':
         ntabs = 2
 
@@ -203,7 +215,7 @@ def parse_gui_expression(expression,
                                                    need_for_loop)
 
     for exp in expr_user:
-        usr_defs += 2*tab + exp
+        usr_defs += indent_decl*tab + exp
 
     for exp in expr_list:
         usr_code += ntabs*tab + exp
@@ -216,7 +228,6 @@ def parse_gui_expression(expression,
 # Utility functions
 #===============================================================================
 
-#-------------------------
 def break_expression(exp):
 
     expression_lines = []
@@ -230,8 +241,6 @@ def break_expression(exp):
         expression_lines.append(line_comp)
 
     return expression_lines
-#-------------------------
-
 
 #===============================================================================
 # Main class
@@ -257,7 +266,8 @@ class mei_to_c_interpreter:
                       'bnd':{},
                       'src':{},
                       'ini':{},
-                      'ibm':{}}
+                      'ibm':{},
+                      'fsi':{}}
 
         self.code_to_write = ""
 
@@ -281,6 +291,9 @@ class mei_to_c_interpreter:
 
             # Immersed boundaries function
             self.generate_immersed_boundaries_code()
+
+            # ALE/FSI internal couplingfunction
+            self.generate_fsi_ic_code()
 
     #---------------------------------------------------------------------------
 
@@ -349,8 +362,8 @@ class mei_to_c_interpreter:
         coords = ['x', 'y', 'z']
         need_coords = False
 
-
         # ------------------------
+
         # Deal with tokens which require a definition
         glob_tokens = {}
         loop_tokens = {}
@@ -398,6 +411,7 @@ class mei_to_c_interpreter:
 
                 loop_tokens[fl] = 'const cs_real_t %s = %s_vals[c_id];' \
                         % (fl, fl)
+
         # ------------------------
 
         for s in required:
@@ -491,6 +505,7 @@ class mei_to_c_interpreter:
         usr_defs += '\n'
 
         # ------------------------
+
         # Deal with tokens which require a definition
         glob_tokens = {}
         loop_tokens = {}
@@ -594,6 +609,7 @@ class mei_to_c_interpreter:
         coords = ['x', 'y', 'z']
 
         # ------------------------
+
         # Deal with tokens which require a definition
         glob_tokens = {}
         loop_tokens = {}
@@ -619,7 +635,6 @@ class mei_to_c_interpreter:
 
             loop_tokens[f] = 'const cs_real_t %s = %s_vals[c_id];' % (f, f)
         # ------------------------
-
 
         for r in required:
             known_symbols.append(r)
@@ -691,6 +706,7 @@ class mei_to_c_interpreter:
         coords = ['x', 'y', 'z']
 
         # ------------------------
+
         # Deal with tokens which require a definition
         glob_tokens = {}
         loop_tokens = {}
@@ -710,6 +726,7 @@ class mei_to_c_interpreter:
             'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");' % (kn, kn)
 
         # fluid properties
+
         for kp in _pkg_fluid_prop_dict[self.module_name].keys():
             if len(name.split("_")) > 1:
                 try:
@@ -723,15 +740,15 @@ class mei_to_c_interpreter:
             pn = _pkg_fluid_prop_dict[self.module_name][kp]
             glob_tokens[kp] = 'const cs_real_t %s = %s->%s;' %(kp, gs, pn)
 
-
         # known fields
+
         for f in known_fields:
             glob_tokens[f[0]] = \
             'const cs_real_t *%s_vals = cs_field_by_name("%s")->val;' % (f[0], f[1])
             loop_tokens[f[0]] = \
             'const cs_real_t %s = %s_vals[c_id];' % (f[0], f[0])
-        # ------------------------
 
+        # ------------------------
 
         for r in required:
             known_symbols.append(r)
@@ -795,6 +812,7 @@ class mei_to_c_interpreter:
         coords = ['x', 'y', 'z']
 
         # ------------------------
+
         # Deal with tokens which require a definition
         glob_tokens = {}
         loop_tokens = {}
@@ -812,8 +830,8 @@ class mei_to_c_interpreter:
         for kn in self.notebook.keys():
             glob_tokens[kn] = \
             'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");' % (kn, kn)
-        # ------------------------
 
+        # ------------------------
 
         for s in required:
             known_symbols.append(s);
@@ -844,6 +862,110 @@ class mei_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
+    def write_fsi_block(self, func_key):
+
+        if func_key not in self.funcs['fsi'].keys():
+            return
+
+        func_params = self.funcs['fsi'][func_key]
+
+        expression   = func_params['exp']
+        symbols      = func_params['sym']
+        known_fields = func_params['knf']
+        cname        = func_params['cnd']
+
+        if type(func_params['req'][0]) == tuple:
+            required = [r[0] for r in func_params['req']]
+        else:
+            required = func_params['req']
+
+        exp_lines_comp = func_params['lines']
+
+        zone, mat_name = func_key.split('::')
+
+        # Get user definitions and code
+        usr_defs = ''
+        usr_code = ''
+        usr_blck = ''
+
+        tab   = "  "
+        ntabs = 2
+
+        known_symbols = []
+        for req in required:
+            known_symbols.append(req)
+
+        # Deal with tokens which require a definition
+        glob_tokens = {}
+        loop_tokens = {}
+        glob_tokens.update(_base_tokens)
+
+        # Notebook variables
+        for kn in self.notebook.keys():
+            glob_tokens[kn] = \
+            'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");' % (kn, kn)
+
+        # Parse the user expresion
+        parsed_exp = parse_gui_expression(expression,
+                                          required,
+                                          known_symbols,
+                                          'fsi',
+                                          glob_tokens,
+                                          loop_tokens,
+                                          indent_decl=3)
+
+        usr_code += parsed_exp[0]
+        if parsed_exp[1] != '':
+            usr_defs += parsed_exp[1]
+
+        # Write the block
+        block_cond  = tab + 'if (   strcmp(object_type, "%s") == 0\n' % (mat_name)
+        block_cond += tab + '    && strcmp(name, "%s") == 0) {\n' % (zone)
+        usr_blck = block_cond + '\n'
+        set_blck = '    }\n\n'
+
+        if mat_name == "mass_matrix":
+            usr_blck += '    cs_real_t m11 = 0, m12 = 0, m13 = 0;\n'
+            usr_blck += '    cs_real_t m21 = 0, m22 = 0, m23 = 0;\n'
+            usr_blck += '    cs_real_t m31 = 0, m32 = 0, m33 = 0;\n\n'
+            set_blck += '    val[0] = m11; val[1] = m12; val[2] = m13;\n'
+            set_blck += '    val[3] = m21; val[4] = m22; val[5] = m23;\n'
+            set_blck += '    val[6] = m31; val[7] = m32; val[8] = m33;\n'
+        elif mat_name == "stiffness_matrix":
+            usr_blck += '    cs_real_t k11 = 0, k12 = 0, k13 = 0;\n'
+            usr_blck += '    cs_real_t k21 = 0, k22 = 0, k23 = 0;\n'
+            usr_blck += '    cs_real_t k31 = 0, k32 = 0, k33 = 0;\n\n'
+            set_blck += '    val[0] = k11; val[1] = k12; val[2] = k13;\n'
+            set_blck += '    val[3] = k21; val[4] = k22; val[5] = k23;\n'
+            set_blck += '    val[6] = k31; val[7] = k32; val[8] = k33;\n'
+        elif mat_name == "damping_matrix":
+            usr_blck += '    cs_real_t c11 = 0, c12 = 0, c13 = 0;\n'
+            usr_blck += '    cs_real_t c21 = 0, c22 = 0, c23 = 0;\n'
+            usr_blck += '    cs_real_t c31 = 0, c32 = 0, c33 = 0;\n\n'
+            set_blck += '    val[0] = c11; val[1] = c12; val[2] = c13;\n'
+            set_blck += '    val[3] = c21; val[4] = c22; val[5] = c23;\n'
+            set_blck += '    val[6] = c31; val[7] = c32; val[8] = c33;\n'
+        elif mat_name == "fluid_force":
+            usr_blck += '    cs_real_t fluid_fx = fluid_f[0];\n'
+            usr_blck += '    cs_real_t fluid_fy = fluid_f[1];\n'
+            usr_blck += '    cs_real_t fluid_fz = fluid_f[2];\n'
+            usr_blck += '    cs_real_t fx = 0, fy = 0, fz = 0;\n'
+            set_blck += '    val[0] = fx; val[1] = fy; val[2] = fz;\n'
+
+        usr_blck += '    {\n'
+
+        usr_blck += usr_defs
+
+        usr_blck += usr_code
+
+        usr_blck += set_blck
+
+        usr_blck += tab + '}\n'
+
+        return usr_blck
+
+    #---------------------------------------------------------------------------
+
     def write_block(self, func_type, key):
 
         # Check if function exists
@@ -860,6 +982,8 @@ class mei_to_c_interpreter:
             return self.write_ini_block(key)
         elif func_type == 'ibm':
             return self.write_ibm_block(key)
+        elif func_type == 'fsi':
+            return self.write_fsi_block(key)
         else:
             return None
 
@@ -1009,7 +1133,6 @@ class mei_to_c_interpreter:
                         self.init_block('vol', zone_name, fname,
                                         exp, req, sym, known_fields)
 
-
     #---------------------------------------------------------------------------
 
     def generate_boundary_code(self):
@@ -1108,14 +1231,14 @@ class mei_to_c_interpreter:
                             req  = ['k', 'epsilon']
                         elif turb_model in ('Rij-epsilon', 'Rij-SSG'):
                             name = 'turbulence_rije'
-                            # Carefull! The order of rij components must be the same
+                            # Careful! The order of rij components must be the same
                             # as in the code (r23 before r13)
                             req  = ['r11', 'r22', 'r33',
                                     'r12', 'r23', 'r13',
                                     'epsilon']
                         elif turb_model == 'Rij-EBRSM':
                             name = 'turbulence_rij_ebrsm'
-                            # Carefull! The order of rij components must be the same
+                            # Careful! The order of rij components must be the same
                             # as in the code (r23 before r13)
                             req  = ['r11', 'r22', 'r33',
                                     'r12', 'r23', 'r13',
@@ -1364,7 +1487,6 @@ class mei_to_c_interpreter:
                                             exp, req, sym, known_fields,
                                             source_type='thermal_source_term')
 
-
     #---------------------------------------------------------------------------
 
     def generate_initialize_code(self):
@@ -1469,7 +1591,7 @@ class mei_to_c_interpreter:
             spm = SpeciesModel(self.case)
 
             for zone in vlm.getZones():
-                if zone.getNature()['initialization'] is 'on':
+                if zone.getNature()['initialization'] == 'on':
                     z_id = str(zone.getCodeNumber())
                     zone_name = zone.getLabel()
 
@@ -1547,12 +1669,68 @@ class mei_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
+    def generate_fsi_ic_code(self):
+        # ALE enabled ?
+
+        if not self.module_name == 'code_saturne':
+            return
+
+        from code_saturne.model.NotebookModel import NotebookModel
+
+        from code_saturne.model.LocalizationModel import LocalizationModel
+        from code_saturne.model.Boundary import Boundary
+        from code_saturne.model.TurbulenceModel import TurbulenceModel
+
+        blm = LocalizationModel('BoundaryZone', self.case)
+
+        for zone in blm.getZones():
+
+            boundary = Boundary(zone._nature, zone._label, self.case)
+
+            # ALE: imposed mesh velocity
+            c = boundary.getALEChoice()
+            if c != "internal_coupling":
+                continue
+
+            boundary = Boundary("coupling_mobile_boundary", zone._label, self.case)
+
+            m_mat = boundary.getMassMatrix()
+            k_mat = boundary.getStiffnessMatrix()
+            c_mat = boundary.getDampingMatrix()
+            f_force = boundary.getFluidForceMatrix()
+
+            sym = ['t', 'dt', 'iter']
+            for (name, val) in NotebookModel(self.case).getNotebookList():
+                sym.append((name, 'value (notebook) = ' + str(val)))
+
+            req = ['m11', 'm12', 'm13', 'm21', 'm22', 'm23', 'm31', 'm32', 'm33']
+            self.init_block('fsi', zone._label, 'mass_matrix',
+                            m_mat, req, sym, known_fields=[])
+
+            req = ['k11', 'k12', 'k13', 'k21', 'k22', 'k23', 'k31', 'k32', 'k33']
+            self.init_block('fsi', zone._label, 'stiffness_matrix',
+                            k_mat, req, sym, known_fields=[])
+
+            req = ['c11', 'c12', 'c13', 'c21', 'c22', 'c23', 'c31', 'c32', 'c33']
+            self.init_block('fsi', zone._label, 'damping_matrix',
+                            c_mat, req, sym, known_fields=[])
+
+            sym = ['t', 'dt', 'iter', 'fluid_fx', 'fluid_fy', 'fluid_fz']
+            for (name, val) in NotebookModel(self.case).getNotebookList():
+                sym.append((name, 'value (notebook) = ' + str(val)))
+            req = ['fx', 'fy', 'fz']
+
+            self.init_block('fsi', zone._label, 'fluid_force',
+                            f_force, req, sym, known_fields=[])
+
+    #---------------------------------------------------------------------------
+
     def check_meg_code_syntax(self, function_name):
 
         if not os.path.exists(self.tmp_path):
             os.makedirs(self.tmp_path)
 
-        if function_name in ['vol', 'bnd', 'src', 'ini', 'ibm']:
+        if function_name in ['vol', 'bnd', 'src', 'ini', 'ibm', 'fsi']:
             self.save_function(func_type=function_name,
                                hard_path=self.tmp_path)
 

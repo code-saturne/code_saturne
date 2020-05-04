@@ -38,13 +38,14 @@ import unittest
 #-------------------------------------------------------------------------------
 # Application modules import
 #-------------------------------------------------------------------------------
+
 from code_saturne.model.XMLvariables import  Model, Variables
 from code_saturne.model.XMLmodel     import  ModelTest
-
 
 #-------------------------------------------------------------------------------
 # Constants class
 #-------------------------------------------------------------------------------
+
 class Constants:
     """
     Define class that manages constants
@@ -81,10 +82,10 @@ class Constants:
         else:
             self.__dict__[attr] = value
 
-
 #-------------------------------------------------------------------------------
 # Constant class
 #-------------------------------------------------------------------------------
+
 const = Constants()
 
 const.max_iterations_implicitation           = 'max_iterations_implicitation'
@@ -95,7 +96,7 @@ const.stress_prediction_alpha                = 'stress_prediction_alpha'
 const.monitor_point_synchronisation          = 'monitor_point_synchronisation'
 
 #-------------------------------------------------------------------------------
-# Mobil Mesh model class
+# Mobile Mesh model class
 #-------------------------------------------------------------------------------
 
 class FluidStructureInteractionModel(Model):
@@ -120,10 +121,10 @@ class FluidStructureInteractionModel(Model):
         self.__defaults[const.stress_prediction_alpha] = 2
         self.__defaults[const.monitor_point_synchronisation] = 'off'
 
-
     #------------------------------------------------------------------
     # MaxIterations
     #------------------------------------------------------------------
+
     @Variables.undoLocal
     def setMaxIterations(self, value):
         """
@@ -140,12 +141,12 @@ class FluidStructureInteractionModel(Model):
         Get value of maximum of iteration if implicitation from xml file.
         """
         return self.__getIntData(const.max_iterations_implicitation,
-                                 self.setMaxIterations )
-
+                                 self.setMaxIterations)
 
     #------------------------------------------------------------------
     # Precision
     #------------------------------------------------------------------
+
     @Variables.undoLocal
     def setPrecision(self, value):
         """
@@ -161,12 +162,12 @@ class FluidStructureInteractionModel(Model):
         Get value of precision of implicitation from xml file.
         """
         return self.__getDoubleData(const.implicitation_precision,
-                                    self.setPrecision )
-
+                                    self.setPrecision)
 
     #------------------------------------------------------------------
     # DisplacementPredictionAlpha
     #------------------------------------------------------------------
+
     @Variables.undoLocal
     def setDisplacementPredictionAlpha(self, value):
         """
@@ -181,12 +182,12 @@ class FluidStructureInteractionModel(Model):
         Get value of displacement prediction alpha from xml file.
         """
         return self.__getDoubleData(const.displacement_prediction_alpha,
-                                     self.setDisplacementPredictionAlpha )
-
+                                    self.setDisplacementPredictionAlpha)
 
     #------------------------------------------------------------------
     # DisplacementPredictionBeta
     #------------------------------------------------------------------
+
     @Variables.undoLocal
     def setDisplacementPredictionBeta(self, value):
         """
@@ -201,12 +202,12 @@ class FluidStructureInteractionModel(Model):
         Get value of displacement prediction beta from xml file.
         """
         return self.__getDoubleData(const.displacement_prediction_beta,
-                                     self.setDisplacementPredictionBeta )
-
+                                    self.setDisplacementPredictionBeta)
 
     #------------------------------------------------------------------
     # StressPredictionAlpha
     #------------------------------------------------------------------
+
     @Variables.undoLocal
     def setStressPredictionAlpha(self, value):
         """
@@ -221,12 +222,12 @@ class FluidStructureInteractionModel(Model):
         Get value of stress prediction alpha from xml file.
         """
         return self.__getDoubleData(const.stress_prediction_alpha,
-                                    self.setStressPredictionAlpha )
-
+                                    self.setStressPredictionAlpha)
 
     #------------------------------------------------------------------
     # Monitor point synchronisation
     #------------------------------------------------------------------
+
     @Variables.undoLocal
     def setMonitorPointSynchronisation(self, value):
         """
@@ -243,10 +244,10 @@ class FluidStructureInteractionModel(Model):
         return self.__getOnOffXML(const.monitor_point_synchronisation,
                                   self.setMonitorPointSynchronisation)
 
+    #------------------------------------------------------------------
+    # Helper functions
+    #------------------------------------------------------------------
 
-    #------------------------------------------------------------------
-    # Helper function
-    #------------------------------------------------------------------
     def __getStringData(self, name, setFunction):
         """
         Get string value from xml file.
@@ -300,13 +301,11 @@ class FluidStructureInteractionModel(Model):
         return self.__getDefaultDataIfNone(value, name, setFunction)
 
 
-
     def getNodeALE(self):
         """
         Return the node ALE
         """
         return self.__node_ale
-
 
 #-------------------------------------------------------------------------------
 # FluidStructureInteraction test case

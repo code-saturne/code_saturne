@@ -57,7 +57,7 @@ class Boundary(object) :
     """
     Abstract class
     """
-    def __new__(cls, nature , label, case) :
+    def __new__(cls, nature, label, case) :
         """
         Factory
         """
@@ -3462,7 +3462,9 @@ class CouplingMobilBoundary(Boundary) :
         """
         Constructor
         """
-        return object.__new__(cls)
+        boundary = object.__new__(cls)
+        boundary.label = label
+        return boundary
 
 
     def _initBoundary(self):
@@ -3533,11 +3535,22 @@ class CouplingMobilBoundary(Boundary) :
         return value
 
 
+    # Label
+    #------
+
+    @Variables.noUndo
+    def getZoneName(self):
+        """
+        Get associated boundary label.
+        """
+        return self.label
+
+
     # InitialDisplacement
     #--------------------
 
     @Variables.undoLocal
-    def setInitialDisplacementX(self, value ):
+    def setInitialDisplacementX(self, value):
         """
         Set value of initial displacement X into xml file.
         """
@@ -3545,7 +3558,7 @@ class CouplingMobilBoundary(Boundary) :
 
 
     @Variables.noUndo
-    def getInitialDisplacementX(self ):
+    def getInitialDisplacementX(self):
         """
         Get value of initial displacement X from xml file.
         """

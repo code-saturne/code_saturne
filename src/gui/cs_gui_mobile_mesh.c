@@ -46,8 +46,6 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
-#include "mei_evaluate.h"
-
 #include "cs_ale.h"
 #include "cs_base.h"
 #include "cs_boundary.h"
@@ -136,72 +134,6 @@ _ale_visc_type(cs_tree_node_t  *tn_ale)
   }
 
   return mvisc_type;
-}
-
-/*-----------------------------------------------------------------------------
- * Initialize mei tree and check for symbols existence
- *
- * parameters:
- *   formula        <-- mei formula
- *   symbols        <-- array of symbol to check
- *   symbol_nbr     <-- number of symbol in symbols
- *   variables      <-- variables required in the formula
- *   variable_nbr   <-- number of variable in variables
- *   dtref          <-- time step
- *   ttcabs         <-- current time
- *   ntcabs         <-- current iteration number
- *----------------------------------------------------------------------------*/
-
-static mei_tree_t *
-_init_mei_tree(const char    *formula,
-               const char   **symbols,
-               int            symbol_nbr,
-               const char   **variables,
-               const double  *variables_value,
-               int            variable_nbr,
-               const double   dtref,
-               const double   ttcabs,
-               const int      ntcabs)
-{
-  int i = 0;
-
-  /* return an empty interpreter */
-  mei_tree_t *tree = mei_tree_new(formula);
-
-  /* Insert variables into mei_tree */
-  for (i = 0; i < variable_nbr; ++i) {
-    double value = 0;
-
-    /* Read value from variables_value if it is not null 0 otherwise */
-    if (variables_value)
-      value = variables_value[i];
-    mei_tree_insert(tree, variables[i], value);
-  }
-
-  /* Add commun variables: dt, t, nbIter */
-  mei_tree_insert(tree, "dt",   dtref);
-  mei_tree_insert(tree, "t",    ttcabs);
-  mei_tree_insert(tree, "iter", ntcabs);
-
-  /* add variable from notebook */
-  cs_gui_add_notebook_variables(tree);
-
-  /* try to build the interpreter */
-  if (mei_tree_builder(tree))
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error: can not interpret expression: %s\n"), tree->string);
-
-  /* Check for symbols */
-  for (i = 0; i < symbol_nbr; ++i) {
-    const char* symbol = symbols[i];
-
-    if (mei_tree_find_symbol(tree, symbol)) {
-      bft_error(__FILE__, __LINE__, 0,
-                _("Error: can not find the required symbol: %s\n"), symbol);
-    }
-  }
-
-  return tree;
 }
 
 /*-----------------------------------------------------------------------------
@@ -457,63 +389,6 @@ _get_internal_coupling_xyz_values(cs_tree_node_t  *tn_ic,
 }
 
 /*-----------------------------------------------------------------------------
- * Retrieve the internal coupling matrices
- *
- * parameters:
- *   tn_ic            <-- node for a given BC's internal coupling definitions
- *   name             <-- matrix name
- *   symbols          <-- see _init_mei_tree
- *   symbol_nbr       <-- see _init_mei_tree
- *   variables        <-- see _init_mei_tree
- *   variables_value  <-- see _init_mei_tree
- *   variable_nbr     <-- see _init_mei_tree
- *   output_matrix,   --> result matrix
- *   dtref            <-- time step
- *   ttcabs           <-- current time
- *   ntcabs           <-- current iteration number
- *----------------------------------------------------------------------------*/
-
-static void
-_get_internal_coupling_matrix(cs_tree_node_t  *tn_ic,
-                              const char      *name,
-                              const char      *symbols[],
-                              int              symbol_nbr,
-                              const char     **variables,
-                              const double    *variables_value,
-                              int              variable_nbr,
-                              double          *output_matrix,
-                              double           dtref,
-                              double           ttcabs,
-                              int              ntcabs)
-{
-  /* Get the formula */
-  mei_tree_t *tree;
-
-  int i = 0;
-  cs_tree_node_t  *tn = cs_tree_node_get_child(tn_ic, name);
-
-  const char *matrix = cs_tree_node_get_child_value_str(tn, "formula");
-
-  if (!matrix)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Formula is null for %s %s"), tn_ic->name, name);
-
-  /* Initialize mei */
-  tree = _init_mei_tree(matrix, symbols, symbol_nbr,
-                        variables, variables_value, variable_nbr,
-                        dtref, ttcabs, ntcabs);
-  mei_evaluate(tree);
-
-  /* Read matrix values */
-  for (i = 0; i < symbol_nbr; ++i) {
-    const char *symbol = symbols[i];
-    output_matrix[i] = mei_tree_lookup(tree, symbol);
-  }
-
-  mei_tree_destroy(tree);
-}
-
-/*-----------------------------------------------------------------------------
  * Retrieve data for internal coupling for a specific boundary
  *
  * parameters:
@@ -523,69 +398,33 @@ _get_internal_coupling_matrix(cs_tree_node_t  *tn_ic,
  *   xkstru   --> Stiffness matrix
  *   forstr   --> Fluid force matrix
  *   istruc   <-- internal coupling boundary index
- *   dtref    <-- time step
- *   ttcabs   <-- current time
- *   ntcabs   <-- current iteration number
  *----------------------------------------------------------------------------*/
 
 static void
-_get_uistr2_data(cs_tree_node_t  *tn_ic,
+_get_uistr2_data(const char      *label,
                  double          *xmstru,
                  double          *xcstru,
                  double          *xkstru,
                  double          *forstr,
-                 int              istruc,
-                 double           dtref,
-                 double           ttcabs,
-                 int              ntcabs)
+                 int              istruc)
 {
-  const char  *m_symbols[] = {"m11", "m12", "m13",
-                              "m21", "m22", "m23",
-                              "m31", "m32", "m33"};
-  const char  *c_symbols[] = {"c11", "c12", "c13",
-                              "c21", "c22", "c23",
-                              "c31", "c32", "c33"};
-  const char  *k_symbols[] = {"k11", "k12", "k13",
-                              "k21", "k22", "k23",
-                              "k31", "k32", "k33"};
-
-  int symbol_nbr = sizeof(m_symbols) / sizeof(m_symbols[0]);
-
-  const char   *force_symbols[] = {"fx", "fy", "fz"};
-  int force_symbol_nbr = sizeof(force_symbols) / sizeof(force_symbols[0]);
-
-  const int  variable_nbr = 3;
-  const char *variables[3] = {"fluid_fx", "fluid_fy", "fluid_fz"};
-  double variable_values[3];
-
   /* Get mass matrix, damping matrix and stiffness matrix */
 
-  _get_internal_coupling_matrix(tn_ic, "mass_matrix", m_symbols,
-                                symbol_nbr, 0, 0, 0,
-                                &xmstru[istruc * symbol_nbr],
-                                dtref, ttcabs, ntcabs);
+  cs_meg_fsi_struct("mass_matrix", label, NULL,
+                    &xmstru[istruc * 9]);
+  cs_meg_fsi_struct("damping_matrix", label, NULL,
+                    &xcstru[istruc * 9]);
+  cs_meg_fsi_struct("stiffness_matrix", label, NULL,
+                    &xkstru[istruc * 9]);
 
-  _get_internal_coupling_matrix(tn_ic, "damping_matrix", c_symbols,
-                                symbol_nbr, 0, 0, 0,
-                                &xcstru[istruc * symbol_nbr],
-                                dtref, ttcabs, ntcabs);
-
-  _get_internal_coupling_matrix(tn_ic, "stiffness_matrix", k_symbols,
-                                symbol_nbr, 0, 0, 0,
-                                &xkstru[istruc * symbol_nbr],
-                                dtref, ttcabs, ntcabs);
-
-  /* Set variable for fluid force matrix */
-  variable_values[0] = forstr[istruc * force_symbol_nbr + 0];
-  variable_values[1] = forstr[istruc * force_symbol_nbr + 1];
-  variable_values[2] = forstr[istruc * force_symbol_nbr + 2];
+  /* Set variable for fluid force vector */
+  const cs_real_t fluid_f[3] = {forstr[istruc*3],
+                                forstr[istruc*3 + 1],
+                                forstr[istruc*3 + 2]};
 
   /* Get fluid force matrix */
-  _get_internal_coupling_matrix(tn_ic, "fluid_force_matrix",
-                                force_symbols, force_symbol_nbr,
-                                variables, variable_values, variable_nbr,
-                                &forstr[istruc * force_symbol_nbr],
-                                dtref, ttcabs, ntcabs);
+  cs_meg_fsi_struct("fluid_force", label, fluid_f,
+                    &forstr[istruc * 3]);
 }
 
 /*-----------------------------------------------------------------------------
@@ -886,20 +725,14 @@ void CS_PROCF (uistr1, UISTR1) (cs_lnum_t        *idfstr,
  *   xcstr        --> Damping matrix
  *   xkstru       --> Stiffness matrix
  *   forstr       --> Fluid force matrix
- *   dtref        <--  time step
- *   ttcabs       <-- current time
- *   ntcabs       <-- current iteration number
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uistr2, UISTR2) (double *const  xmstru,
                                 double *const  xcstru,
                                 double *const  xkstru,
-                                double *const  forstr,
-                                double *const  dtref,
-                                double *const  ttcabs,
-                                int    *const  ntcabs)
+                                double *const  forstr)
 {
-  int istru   = 0;
+  int istru = 0;
 
   cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree, "boundary_conditions");
 
@@ -926,15 +759,12 @@ void CS_PROCF (uistr2, UISTR2) (double *const  xmstru,
                                                 "choice",
                                                 "internal_coupling");
 
-      _get_uistr2_data(tn_ic,
+      _get_uistr2_data(label,
                        xmstru,
                        xcstru,
                        xkstru,
                        forstr,
-                       istru,
-                       *dtref,
-                       *ttcabs,
-                       *ntcabs);
+                       istru);
       ++istru;
     }
   }

@@ -884,6 +884,24 @@ cs_meg_immersed_boundaries_inout(int         *ipenal,
                                  cs_real_t    t);
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is used to FSI internal coupling structure values
+ *        for a given boundary and structure
+ *
+ * \param[in]      object_type   name of object type
+ * \param[in]      name          name of matching boundary
+ * \param[in]      fluid_f       array of fluid forces on the object
+ * \param[in,out]  val[]         matrix or vector coefficients
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_meg_fsi_struct(const char       *object_type,
+                  const char       *name,
+                  const cs_real_t   fluid_f[],
+                  cs_real_t         val[]);
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 

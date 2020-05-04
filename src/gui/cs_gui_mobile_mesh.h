@@ -151,18 +151,12 @@ void CS_PROCF (uistr1, UISTR1) (cs_lnum_t        *idfstr,
  * xcstr        --> Damping matrix
  * xkstru       --> Stiffness matrix
  * forstr       --> Fluid force matrix
- * dtref        <--  time step
- * ttcabs       <-- current time
- * ntcabs       <-- current iteration number
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (uistr2, UISTR2) ( double *const  xmstru,
                                  double *const  xcstru,
                                  double *const  xkstru,
-                                 double *const  forstr,
-                                 double *const  dtref,
-                                 double *const  ttcabs,
-                                 int *const     ntcabs);
+                                 double *const  forstr);
 
 /*-----------------------------------------------------------------------------
  * Retrieve data for external coupling

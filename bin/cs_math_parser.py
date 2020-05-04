@@ -30,7 +30,6 @@ import re
 # Utility functions
 #===============================================================================
 
-#---------------------------------------------------------------------------
 def create_req_field(name, dim=0):
 
     r = {'name':name,
@@ -39,10 +38,14 @@ def create_req_field(name, dim=0):
 
     return r
 
+#-------------------------------------------------------------------------------
+
 def rfield_add_comp(rf, c):
 
     rf['components'].append(c)
     rf['dim'] += 1
+
+#-------------------------------------------------------------------------------
 
 def split_req_components(req_list):
     """
@@ -76,6 +79,8 @@ def split_req_components(req_list):
 
     return req_fields
 
+#-------------------------------------------------------------------------------
+
 def get_req_field_info(req_fields, r):
 
     for i in range(len(req_fields)):
@@ -89,6 +94,8 @@ def get_req_field_info(req_fields, r):
 
     return None, None, None
 
+#-------------------------------------------------------------------------------
+
 def dump_req_fields(req_fields):
 
     print("===========================")
@@ -97,7 +104,6 @@ def dump_req_fields(req_fields):
         print("Dim: %d" % (f['dim']))
         print(f['components'])
         print("===========================")
-
 
 #===============================================================================
 # Mathematical expressions parser
@@ -108,14 +114,15 @@ class cs_math_parser:
     Class for a mathematical formula parser.
     """
 
-    #-------------------------
+    #---------------------------------------------------------------------------
+
     def __init__(self):
         # Nothing to do
 
         return
-    #-------------------------
 
-    #-------------------------
+    #---------------------------------------------------------------------------
+
     def find_c_comment_close(self, l, c_id, quotes):
         """
         Return index in given string of closing C-style comment,
@@ -156,9 +163,9 @@ class cs_math_parser:
             c_id += 1
 
         return -1
-    #-------------------------
 
-    #-------------------------
+    #---------------------------------------------------------------------------
+
     def separate_segments(self, lines):
         """
         Separate segments based on expected separators.
@@ -297,9 +304,9 @@ class cs_math_parser:
             l_id += 1
 
         return segments
-    #-------------------------
 
-    #-------------------------
+    #---------------------------------------------------------------------------
+
     def parse_parentheses(self, line):
 
         istart = []
@@ -318,9 +325,9 @@ class cs_math_parser:
             print('A closing parenthese is missing!')
 
         return d
-    #-------------------------
 
-    #-------------------------
+    #---------------------------------------------------------------------------
+
     def get_start_lc(self, expr):
         """
         Return start line and column for a given expression
@@ -330,9 +337,9 @@ class cs_math_parser:
 
         else:
             return expr[1], expr[2]
-    #-------------------------
 
-    #-------------------------
+    #---------------------------------------------------------------------------
+
     def update_expressions_syntax(self, expressions):
         """
         Update legacy expressions, such as "mod"
@@ -432,9 +439,9 @@ class cs_math_parser:
                     new_exp.append(e)
 
         return new_exp
-    #-------------------------
 
-    #-------------------------
+    #---------------------------------------------------------------------------
+
     def recurse_expressions_syntax(self, expressions):
         """
         Recursively Update expressions
@@ -483,9 +490,9 @@ class cs_math_parser:
                     new_exp.append(e)
 
         return new_exp
-    #-------------------------
 
-    #-------------------------
+    #---------------------------------------------------------------------------
+
     def rename_math_functions(self, expressions):
         """
         Rename mathematical functions using the internal functions of
@@ -512,14 +519,14 @@ class cs_math_parser:
                     new_exp.append(e)
 
         return new_exp
-    #-------------------------
 
-    #-------------------------
+    #---------------------------------------------------------------------------
+
     def rebuild_text(self, expressions, comments,
                      level=0, s_line=0, s_col=0, t_prev=''):
         """
         Rebuild source code from expressions and comments.
-        Reinsert comments at recorderd lines in expressions.
+        Reinsert comments at recorded lines in expressions.
         Comments are never inserted before an active token on a given
         line, event if this was the case in the original expression,
         both for simplification and because it is not recommeneded.
@@ -617,27 +624,24 @@ class cs_math_parser:
 
         # Restore comments after code
 
-        """
         if len(comments) > 0:
             if comments[0][1]:
-            iwhile comments[0][1] < e[1]:
-                c = comments.pop(0)
-                line_cur = c[1]
-                while line_cur < line_ref:
-                    text += '\n'
-                    line_cur += 1
-                    for j in range(c[2]):
-                        text += ' '
-                        text += c[0]
-                    line_ref = line_cur
-                text += '\n\n'
-        """
-
+                while comments[0][1] < e[1]:
+                    c = comments.pop(0)
+                    line_cur = c[1]
+                    while line_cur < line_ref:
+                        text += '\n'
+                        line_cur += 1
+                        for j in range(c[2]):
+                            text += ' '
+                            text += '//' + c[0][1:]
+                        line_ref = line_cur
+                    text += '\n\n'
 
         return text, comments, s_line, s_col
-    #-------------------------
 
-    #-------------------------
+    #---------------------------------------------------------------------------
+
     def tokenize(self, segments):
         """
         Tokenize segments and separate comments.
@@ -645,8 +649,6 @@ class cs_math_parser:
 
         whitespace = (' ', '\t', '\n', '\l', '\r')
         sep2 = ('<=', '>=', '!=', '||', '&&', '+=', '-=', '*=', '/=', '**')
-    #    sep1 = ('=', '(', ')', ';', ',', ':', '[', ']', '{', '}',
-    #            '+', '-', '*', '/', '<', '>',  '^', '%', '!', '?')
         sep1 = ('=', '(', ')', ';', ',', ':', '{', '}',
                 '+', '-', '*', '/', '<', '>',  '^', '%', '!', '?')
         digits_p = ('.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
@@ -693,9 +695,9 @@ class cs_math_parser:
                 tokens.append((r, s[1], s[2]+s_id))
 
         return tokens, comments
-    #-------------------------
 
-    #-------------------------
+    #---------------------------------------------------------------------------
+
     def build_expressions(self, exp_lines, tokens):
         """
         Organize expressions as lists of subexpressions based on levels
@@ -785,9 +787,9 @@ class cs_math_parser:
             return None
 
         return current
-    #-------------------------
 
-    #-------------------------
+    #---------------------------------------------------------------------------
+
     def split_for_assignment(self, l):
         """
         Check for assignemnt (separating along = but not >=, <=)
@@ -805,9 +807,9 @@ class cs_math_parser:
             lf.append(l[s_idx:e_idx])
 
         return lf
-    #-------------------------
 
-    #-------------------------
+    #---------------------------------------------------------------------------
+
     def parse_expression(self, expression, req, known_symbols,
                          func_type, glob_tokens, loop_tokens,
                          need_for_loop):
@@ -824,14 +826,11 @@ class cs_math_parser:
         if func_type == "vol":
             req_fields = split_req_components(req)
 
-        # ------------------------------------
         # Parse the Mathematical expression and generate the C block code
         exp_lines = expression.split("\n")
         segments = self.separate_segments(exp_lines)
         tokens, comments = self.tokenize(segments)
-        #-------------------------
 
-        #-------------------------
         for t in tokens:
             tk = t[0]
             if tk not in known_symbols:
@@ -851,12 +850,14 @@ class cs_math_parser:
                         known_symbols.append('xyz')
                         usr_defs.append(glob_tokens['xyz']+'\n')
 
+        #-------------------------
+
         if len(usr_defs) > 0:
             usr_defs.append('\n')
 
         if len(usr_code) > 0:
             usr_code.append('\n')
-        #-------------------------
+
         for t_i, t in enumerate(tokens):
             tk = t[0]
             # Check for assignments:
@@ -866,7 +867,6 @@ class cs_math_parser:
                     usr_defs.append('cs_real_t %s = -1.;\n' % tk0)
                     known_symbols.append(tk0)
 
-        #-------------------------
         for t_i, t in enumerate(tokens):
             tk = t[0]
             new_v = None
@@ -900,21 +900,26 @@ class cs_math_parser:
 
             if new_v != None:
                 tokens[t_i] = (new_v, t[1], t[2])
-        #-------------------------
 
         #-------------------------
+
         tokens = self.rename_math_functions(tokens)
         tokens = self.build_expressions(exp_lines, tokens)
         tokens = self.update_expressions_syntax(tokens)
         tokens = self.recurse_expressions_syntax(tokens)
-        #-------------------------
 
         #-------------------------
+
         # Rebuild lines
         new_text = self.rebuild_text(tokens, comments)
         for line in new_text[0].split('\n'):
             usr_code.append(line + '\n')
+        if len(new_text[1]) > 0:
+            for c in new_text[1]:
+                usr_code.append('//' + c[0][1:] + '\n')
+
         #-------------------------
 
         return usr_code, usr_defs
 
+#-------------------------------------------------------------------------------

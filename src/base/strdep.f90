@@ -213,10 +213,7 @@ deallocate(forast)
 
 if (nbstru.gt.0) then
 
-    call uistr2 &
- ( xmstru, xcstru, xkstru,     &
-   forstp,                     &
-   dtref , ttcabs, ntcabs   )
+  call uistr2(xmstru, xcstru, xkstru, forstp)
 
   call usstr2                                                     &
  ( nbstru ,                                                       &
