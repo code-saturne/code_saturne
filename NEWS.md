@@ -3,6 +3,9 @@ Release 6.1.1 (unreleased)
 
 Bug fixes:
 
+- Fix in studymanager GUI: when adding a data file, a missing "dest"
+  tag led to errors at execution (GitLab issue #201).
+
 - Fix automatic selection of checkoints, broken in v6.0.0 for
   checkpoint files using the new .csc extension.
 
