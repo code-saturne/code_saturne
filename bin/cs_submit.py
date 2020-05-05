@@ -127,6 +127,8 @@ def main(argv, pkg):
     if r_c['job_parameters']:
         submit_cmd += ' ' + r_c['job_parameters']
 
+    submit_cmd += ' ./runcase'
+
     return subprocess.call(submit_cmd, shell=True)
 
     os.chdir(save_wd)
