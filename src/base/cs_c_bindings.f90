@@ -2886,7 +2886,6 @@ module cs_c_bindings
       integer(kind=c_int) :: is_active
     end function cs_f_mesh_quantities_cell_is_active
 
-
     !---------------------------------------------------------------------------
 
     ! Interface to C function to implicit and explicit sources terms
