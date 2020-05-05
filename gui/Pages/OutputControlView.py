@@ -59,7 +59,7 @@ from code_saturne.Base.QtPage import RegExpValidator
 from code_saturne.Base.QtPage import from_qvariant, to_text_string
 from code_saturne.Pages.OutputControlForm import Ui_OutputControlForm
 from code_saturne.model.OutputControlModel import OutputControlModel
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.LagrangianModel import LagrangianModel
 from code_saturne.model.NotebookModel import NotebookModel
 from code_saturne.model.LocalizationModel import LocalizationModel
@@ -2050,17 +2050,19 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             writer_id = self.modelWriter.getItem(row)['id']
             exp = self.mdl.getWriterFrequency(writer_id)
             if not exp:
-                exp = """iactive = 1;\n"""
+                exp = """is_active = false;\n"""
             exa = """#example:"""
-            req = [('iactive', 'at a time step the writer is active or not')]
+            req = [('is_active', 'at a time step the writer is active or not')]
             sym = [('t', 'current time'),
-                   ('niter', 'current time step')]
+                   ('iter', 'current time step')]
 
             for (nme, val) in self.notebook.getNotebookList():
                 sym.append((nme, 'value (notebook) = ' + str(val)))
 
-            dialog = QMeiEditorView(self,
-                                    check_syntax = self.case['package'].get_check_syntax(),
+            dialog = QMegEditorView(parent = self,
+                                    function_type = 'pwa',
+                                    zone_name     = str(writer_id),
+                                    variable_name = 'is_active',
                                     expression = exp,
                                     required   = req,
                                     symbols    = sym,

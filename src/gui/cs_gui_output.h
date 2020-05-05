@@ -76,13 +76,6 @@ cs_gui_postprocess_meshes(void);
 void
 cs_gui_postprocess_writers(void);
 
-/*----------------------------------------------------------------------------
- * Activate writers depending on a formula
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_postprocess_activate(void);
-
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

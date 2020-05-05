@@ -48,8 +48,6 @@
 
 #include "fvm_selector.h"
 
-#include "mei_evaluate.h"
-
 #include "cs_base.h"
 #include "cs_boundary_zone.h"
 #include "cs_gui.h"
@@ -229,46 +227,6 @@ _surfacic_variable_post(const char  *name,
   }
 
   return active;
-}
-
-/*-----------------------------------------------------------------------------
- * Initialize mei tree and check for symbols existence.
- *
- * parameters:
- *   formula        <--  mei formula
- *   nt_cur         <--  current time step
- *   t_cur          <--  current time value
- *
- * return:
- *   MEI tree object
- *----------------------------------------------------------------------------*/
-
-static mei_tree_t *
-_init_mei_tree(const char      *formula,
-               const int        nt_cur,
-               const cs_real_t  t_cur)
-{
-  /* return an empty interpreter */
-
-  mei_tree_t *tree = mei_tree_new(formula);
-
-  /* add commun variables */
-  mei_tree_insert(tree, "niter", nt_cur );
-  mei_tree_insert(tree, "t", t_cur);
-
-  /* add variable from notebook */
-  cs_gui_add_notebook_variables(tree);
-
-  /* try to build the interpreter */
-  if (mei_tree_builder(tree))
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error: can not interpret expression: %s\n"), tree->string);
-  /* check for symbols */
-  if (mei_tree_find_symbol(tree, "iactive"))
-    bft_error(__FILE__, __LINE__, 0,
-              _("Error: can not find the required symbol: %s\n"), "iactive");
-
-  return tree;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -644,46 +602,6 @@ cs_gui_postprocess_writers(void)
                           output_at_end,
                           time_step,
                           time_value);
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Activate writers depending on a formula
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_postprocess_activate(void)
-{
-  const char path_o[] = "analysis_control/output";
-  cs_tree_node_t *tn_o = cs_tree_get_node(cs_glob_tree, path_o);
-
-  for (cs_tree_node_t *tn = cs_tree_get_node(tn_o, "writer");
-       tn != NULL;
-       tn = cs_tree_node_get_next_of_name(tn)) {
-
-    const int *v_i = cs_tree_node_get_child_values_int(tn, "id");
-    if (v_i == NULL) continue;
-
-    int id = v_i[0];
-
-    const char *frequency_choice
-      = cs_tree_node_get_tag(cs_tree_node_get_child(tn, "frequency"),
-                             "period");
-
-    if (cs_gui_strcmp(frequency_choice, "formula")) {
-      const char *formula = cs_tree_node_get_child_value_str(tn, "frequency");
-      assert(formula != NULL);
-      const cs_time_step_t *ts = cs_glob_time_step;
-      mei_tree_t *ev_formula = _init_mei_tree(formula, ts->nt_cur, ts->t_cur);
-      mei_evaluate(ev_formula);
-      int iactive =  mei_tree_lookup(ev_formula, "iactive");
-      mei_tree_destroy(ev_formula);
-      if (iactive == 1)
-        cs_post_activate_writer(id, true);
-      else
-        cs_post_activate_writer(id, false);
-    }
-
   }
 }
 

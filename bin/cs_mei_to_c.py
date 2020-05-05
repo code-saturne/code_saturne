@@ -129,6 +129,10 @@ cs_meg_fsi_struct(const char       *object_type,
                   const cs_real_t   fluid_f[],
                   cs_real_t         val[])
 {
+""",
+'pwa':"""void
+cs_meg_post_activate(void)
+{
 """
 }
 
@@ -137,21 +141,24 @@ _function_names = {'vol':'cs_meg_volume_function.c',
                    'src':'cs_meg_source_terms.c',
                    'ini':'cs_meg_initialization.c',
                    'ibm':'cs_meg_immersed_boundaries_inout.c',
-                   'fsi':'cs_meg_fsi_struct.c'}
+                   'fsi':'cs_meg_fsi_struct.c',
+                   'pwa':'cs_meg_post_output.c'}
 
 _block_comments = {'vol':'User defined formula for variable(s) %s over zone %s',
                    'bnd':'User defined formula for "%s" over BC=%s',
                    'src':'User defined source term for %s over zone %s',
                    'ini':'User defined initialization for variable %s over zone %s',
                    'ibm':'User defined explicit formula of %s indicator for object %s',
-                   'fsi':'User defined FSI coupling structure %s for zone %s'}
+                   'fsi':'User defined FSI coupling structure %s for zone %s',
+                   'pwa':'User defined %s for writer %s'}
 
 _func_short_to_long = {'vol':'volume zone',
                        'bnd':'boundary',
                        'src':'source term',
                        'ini':'initialization',
                        'ibm':'Immersed boundaries',
-                       'fsi':'Mechanicaly-coupled structures'}
+                       'fsi':'Mechanicaly-coupled structures',
+                       'pwa':'Writer activation'}
 
 #-------------------------------------------------------------------------------
 
@@ -267,7 +274,8 @@ class mei_to_c_interpreter:
                       'src':{},
                       'ini':{},
                       'ibm':{},
-                      'fsi':{}}
+                      'fsi':{},
+                      'pwa':{}}
 
         self.code_to_write = ""
 
@@ -292,8 +300,11 @@ class mei_to_c_interpreter:
             # Immersed boundaries function
             self.generate_immersed_boundaries_code()
 
-            # ALE/FSI internal couplingfunction
+            # ALE/FSI internal coupling function
             self.generate_fsi_ic_code()
+
+            # Writer activation
+            self.generate_writer_activation_code()
 
     #---------------------------------------------------------------------------
 
@@ -966,6 +977,80 @@ class mei_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
+    def write_writer_activation_block(self, func_key):
+
+        if func_key not in self.funcs['pwa'].keys():
+            return
+
+        func_params = self.funcs['pwa'][func_key]
+
+        expression   = func_params['exp']
+        symbols      = func_params['sym']
+        known_fields = func_params['knf']
+        cname        = func_params['cnd']
+
+        if type(func_params['req'][0]) == tuple:
+            required = [r[0] for r in func_params['req']]
+        else:
+            required = func_params['req']
+
+        exp_lines_comp = func_params['lines']
+
+        w_id, s = func_key.split('::')
+
+        # Get user definitions and code
+        usr_defs = ''
+        usr_code = ''
+        usr_blck = ''
+
+        tab   = "  "
+        ntabs = 2
+
+        known_symbols = []
+        for req in required:
+            known_symbols.append(req)
+
+        # Deal with tokens which require a definition
+        glob_tokens = {}
+        loop_tokens = {}
+        glob_tokens.update(_base_tokens)
+
+        # Notebook variables
+        for kn in self.notebook.keys():
+            glob_tokens[kn] = \
+            'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");' % (kn, kn)
+
+        # Parse the user expresion
+        parsed_exp = parse_gui_expression(expression,
+                                          required,
+                                          known_symbols,
+                                          'pwa',
+                                          glob_tokens,
+                                          loop_tokens,
+                                          indent_decl=3)
+
+        usr_code += parsed_exp[0]
+        if parsed_exp[1] != '':
+            usr_defs += parsed_exp[1]
+
+        # Write the block
+        usr_blck  = tab + '{\n'
+        usr_blck += tab + '  bool is_active = false;\n\n'
+        usr_blck += tab*2 + '{\n'
+
+        usr_blck += usr_defs
+
+        usr_blck += usr_code
+
+        usr_blck += tab*2 + '}\n'
+        usr_blck += '\n'
+        usr_blck += tab + '  cs_post_activate_writer('+w_id+', is_active);\n'
+        usr_blck += tab + '}\n'
+
+        return usr_blck
+
+    #---------------------------------------------------------------------------
+
     def write_block(self, func_type, key):
 
         # Check if function exists
@@ -984,6 +1069,8 @@ class mei_to_c_interpreter:
             return self.write_ibm_block(key)
         elif func_type == 'fsi':
             return self.write_fsi_block(key)
+        elif func_type == 'pwa':
+            return self.write_writer_activation_block(key)
         else:
             return None
 
@@ -1725,12 +1812,41 @@ class mei_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
+    def generate_writer_activation_code(self):
+        # Output writer activation
+
+        from code_saturne.model.NotebookModel import NotebookModel
+        from code_saturne.model.OutputControlModel import OutputControlModel
+
+        ocm = OutputControlModel(self.case)
+
+        for writer_id in ocm.getWriterIdList():
+
+            formula = None
+            frequency_choice = ocm.getWriterFrequencyChoice(writer_id)
+            if frequency_choice == "formula":
+                formula = ocm.getWriterFrequency(writer_id)
+
+            if not formula:
+                continue
+
+            sym = ['t', 'iter']
+            for (name, val) in NotebookModel(self.case).getNotebookList():
+                sym.append((name, 'value (notebook) = ' + str(val)))
+
+            req = ['is_active']
+
+            self.init_block('pwa', str(writer_id), 'activation',
+                            formula, req, sym, known_fields=[])
+
+    #---------------------------------------------------------------------------
+
     def check_meg_code_syntax(self, function_name):
 
         if not os.path.exists(self.tmp_path):
             os.makedirs(self.tmp_path)
 
-        if function_name in ['vol', 'bnd', 'src', 'ini', 'ibm', 'fsi']:
+        if function_name in ['vol', 'bnd', 'src', 'ini', 'ibm', 'fsi', 'pwa']:
             self.save_function(func_type=function_name,
                                hard_path=self.tmp_path)
 

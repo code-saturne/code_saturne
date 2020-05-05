@@ -885,8 +885,8 @@ cs_meg_immersed_boundaries_inout(int         *ipenal,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function is used to FSI internal coupling structure values
- *        for a given boundary and structure
+ * \brief This function is used to query FSI internal coupling structure values
+ *        for a given boundary and structure.
  *
  * \param[in]      object_type   name of object type
  * \param[in]      name          name of matching boundary
@@ -900,6 +900,15 @@ cs_meg_fsi_struct(const char       *object_type,
                   const char       *name,
                   const cs_real_t   fluid_f[],
                   cs_real_t         val[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is used to activate postprocessing writers.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_meg_post_activate(void);
 
 /*----------------------------------------------------------------------------*/
 

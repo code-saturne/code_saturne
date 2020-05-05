@@ -1,5 +1,5 @@
 /*============================================================================
- * Mathematical Expression Generator function stubs for FSI internal coupling.
+ * Mathematical Expression Generator function stubs for output control.
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
@@ -55,27 +55,15 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief This function is used to query FSI internal coupling structure values
- *        for a given boundary and structure.
- *
- * \param[in]      object_type   name of object type
- * \param[in]      name          name of matching boundary
- * \param[in]      fluid_f       array of fluid forces on the object
- * \param[in,out]  val[]         matrix or vector coefficients
+ * \brief This function is used to activate postprocessing writers.
  */
 /*----------------------------------------------------------------------------*/
 
-#pragma weak cs_meg_fsi_struct
+#pragma weak cs_meg_post_activate
 void
-cs_meg_fsi_struct(const char       *object_type,
-                  const char       *name,
-                  const cs_real_t   fluid_f[],
-                  cs_real_t         val[])
+cs_meg_post_activate(void)
 {
-  CS_UNUSED(object_type);
-  CS_UNUSED(name);
-  CS_UNUSED(fluid_f);
-  CS_UNUSED(val);
+
 }
 
 /*----------------------------------------------------------------------------*/
