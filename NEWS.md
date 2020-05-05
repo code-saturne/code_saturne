@@ -3,6 +3,8 @@ Release 6.1.1 (unreleased)
 
 Bug fixes:
 
+- GUI: fix issue in handling of "==" token in MEG expressions.
+
 - Fix in studymanager GUI: when adding a data file, a missing "dest"
   tag led to errors at execution (GitLab issue #201).
 
