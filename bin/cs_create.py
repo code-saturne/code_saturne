@@ -781,13 +781,13 @@ domains = [
         # If a cathare LIBPATH is given, it is added to LD_LIBRARY_PATH.
         # This modification is needed for the dlopen of the cathare .so file
         if cathare_path:
-            i_c = run_conf.get_install_config_info()
-            resource_name = run_conf.get_resource_name(i_c)
-            v25_3_line="export v25_3=%s" % cathare_path
+            i_c = cs_run_conf.get_install_config_info(self.package)
+            resource_name = cs_run_conf.get_resource_name(i_c)
+            v25_3_line="export v25_3=%s\n" % cathare_path
             new_line="export LD_PATH_LIBRARY=$v25_3/%s/"+":$LD_LIBRARY_PATH\n"
             add_lines = v25_3_line
             add_lines += new_line % ("lib")
-            add_lines += new_line % ("lib/ICoCo")
+            add_lines += new_line % ("ICoCo/lib")
             run_conf.set(resource_name, 'compute_prologue', add_lines)
 
         run_conf.save()
