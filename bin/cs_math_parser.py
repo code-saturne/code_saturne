@@ -648,7 +648,7 @@ class cs_math_parser:
         """
 
         whitespace = (' ', '\t', '\n', '\l', '\r')
-        sep2 = ('<=', '>=', '!=', '||', '&&', '+=', '-=', '*=', '/=', '**')
+        sep2 = ('<=', '>=', '!=', '==', '||', '&&', '+=', '-=', '*=', '/=', '**')
         sep1 = ('=', '(', ')', ';', ',', ':', '{', '}',
                 '+', '-', '*', '/', '<', '>',  '^', '%', '!', '?')
         digits_p = ('.', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9')
@@ -844,7 +844,7 @@ class cs_math_parser:
                     if tk not in known_symbols:
                         known_symbols.append(tk)
 
-                    # If a local coordiante is used, we need to define the
+                    # If a local coordinate is used, we need to define the
                     # global coordinates pointer
                     if tk in ['x', 'y', 'z'] and 'xyz' not in known_symbols:
                         known_symbols.append('xyz')
