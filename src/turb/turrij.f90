@@ -611,12 +611,12 @@ else
     ! Rij-epsilon standard (LRR)
     if (iturb.eq.30) then
       call resrij &
-   ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+   ( nvar   , nscal  , ncesmp ,                                     &
      ivar   , isou   ,                                              &
-     icepdc , icetsm , itypsm ,                                     &
+     icetsm , itypsm ,                                              &
      dt     ,                                                       &
-     cpro_produc , gradro ,                                              &
-     ckupdc , smacel ,                                              &
+     cpro_produc , gradro ,                                         &
+     smacel ,                                                       &
      viscf  , viscb  ,                                              &
      tslagi ,                                                       &
      smbr   , rovsdt )
@@ -643,11 +643,11 @@ endif
 !===============================================================================
 
 call reseps &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm ,                                     &
+ ( nvar   , nscal  , ncesmp ,                                     &
+   icetsm , itypsm ,                                              &
    dt     ,                                                       &
    gradv  , cpro_produc , gradro ,                                &
-   ckupdc , smacel ,                                              &
+   smacel ,                                                       &
    viscf  , viscb  ,                                              &
    smbr   , rovsdt )
 

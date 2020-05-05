@@ -38,7 +38,6 @@
 !______________________________________________________________________________!
 !> \param[in]     nvar          total number of variables
 !> \param[in]     nscal         total number of scalars
-!> \param[in]     ncepdp        number of cells with head loss
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     icepdc        index of cells with head loss
 !> \param[in]     icetsm        index of cells with mass source term
@@ -61,11 +60,11 @@
 !_______________________________________________________________________________
 
 subroutine reseps &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   icepdc , icetsm , itypsm ,                                     &
+ ( nvar   , nscal  , ncesmp ,                                     &
+   icetsm , itypsm ,                                              &
    dt     ,                                                       &
    gradv  , produc , gradro ,                                     &
-   ckupdc , smacel ,                                              &
+   smacel ,                                                       &
    viscf  , viscb  ,                                              &
    smbr   , rovsdt )
 
@@ -97,15 +96,14 @@ implicit none
 ! Arguments
 
 integer          nvar   , nscal
-integer          ncepdp , ncesmp
+integer          ncesmp
 
-integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet)
 double precision produc(6,ncelet), gradv(3, 3, ncelet)
 double precision gradro(3,ncelet)
-double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
+double precision smacel(ncesmp,nvar)
 double precision viscf(nfac), viscb(nfabor)
 double precision smbr(ncelet), rovsdt(ncelet)
 
