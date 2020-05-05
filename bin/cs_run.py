@@ -68,11 +68,6 @@ def update_run_steps(s_c, run_conf, final=False):
         if 'run' in run_conf.sections:
             for kw in s_c:
                 s_c[kw] = run_conf.get_bool('run', kw)
-            if s_c['stage'] == None:
-                if s_c['initialize'] == True:
-                    s_c['stage'] = True
-                else:
-                    s_c['stage'] = False
 
     filter_stages = False
     for k in s_c:
@@ -82,6 +77,7 @@ def update_run_steps(s_c, run_conf, final=False):
     # Default if nothing provided, ensure range is filled otherwise
 
     if filter_stages:
+        stage_ini = s_c['stage']
         i_s = -1
         i_f = -1
         for i, k in enumerate(s_c):
@@ -96,6 +92,13 @@ def update_run_steps(s_c, run_conf, final=False):
                 s_c[k] = True
             else:
                 s_c[k] = False
+        # Special handling of stage defaults, as it is a substage
+        # Of initialization
+        if stage_ini == None:
+            if s_c['initialize'] == True:
+                s_c['stage'] = True
+            else:
+                s_c['stage'] = False
 
     elif final:
         for i, k in enumerate(s_c):
