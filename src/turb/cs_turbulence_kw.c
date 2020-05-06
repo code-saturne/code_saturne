@@ -189,8 +189,8 @@ cs_turbulence_kw(int              nvar,
 
   cs_real_t normp;
 
-  /* Initialilization
-     ================ */
+  /* Initialization
+     ============== */
 
   /* Allocate temporary arrays for the turbulence resolution */
 
@@ -436,7 +436,7 @@ cs_turbulence_kw(int              nvar,
 
       maxgdsv[c_id] = CS_MAX(xgdk2sk, xgdw2sw);
 
-      /* Viscosity for the following computation of the velocity laplacian */
+      /* Viscosity for the following computation of the velocity Laplacian */
       w1[c_id] = 1.;
     }
 
@@ -1095,15 +1095,15 @@ cs_turbulence_kw(int              nvar,
     /* If we extrapolate the ST we put Gamma Pinj in c_st_k_p, c_st_omg_p */
     if (istprv >= 0) {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        c_st_k_p[c_id] = c_st_k_p[c_id] + gamk[c_id];
-        c_st_omg_p[c_id] = c_st_omg_p[c_id] + gamw[c_id];
+        c_st_k_p[c_id] += gamk[c_id];
+        c_st_omg_p[c_id] += gamw[c_id];
       }
     }
     /*  Otherwise we place it directly in SMBR */
     else {
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        smbrk[c_id] = smbrk[c_id] + gamk[c_id];
-        smbrw[c_id] = smbrw[c_id] + gamw[c_id];
+        smbrk[c_id] += gamk[c_id];
+        smbrw[c_id] += gamw[c_id];
       }
     }
 
@@ -1116,8 +1116,8 @@ cs_turbulence_kw(int              nvar,
   if (istprv >= 0) {
     cs_real_t thetp1 = 1. + thets;
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      smbrk[c_id] = smbrk[c_id] + thetp1 * c_st_k_p[c_id];
-      smbrw[c_id] = smbrw[c_id] + thetp1 * c_st_omg_p[c_id];
+      smbrk[c_id] += thetp1 * c_st_k_p[c_id];
+      smbrw[c_id] += thetp1 * c_st_omg_p[c_id];
     }
   }
 
@@ -1130,7 +1130,7 @@ cs_turbulence_kw(int              nvar,
 
     cs_lnum_t c_id = b_face_cells[face_id];
 
-    /* Physical Propreties */
+    /* Physical Properties */
     visclc = viscl[c_id];
     visctc = cvisct[c_id];
 
@@ -1462,7 +1462,7 @@ cs_turbulence_kw(int              nvar,
       viscb[face_id] = 0.;
   }
 
-  /* Solvz omega */
+  /* Solve omega */
   iescap = 0;
   imucpp = 0;
 
