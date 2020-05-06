@@ -325,6 +325,17 @@ interface
 
   end subroutine clsyvt
 
+  subroutine strpre(itrale, italim, ineefl, impale, &
+                    flmalf, flmalb, xprale, cofale)
+
+    implicit none
+    integer :: itrale, italim, ineefl
+    integer, dimension(:) :: impale
+    double precision, pointer, dimension(:) :: flmalf, flmalb, xprale
+    double precision, pointer, dimension(:,:) :: cofale
+
+  end subroutine strpre
+
  end interface
 
 !===============================================================================

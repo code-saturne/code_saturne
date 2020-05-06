@@ -3,6 +3,9 @@ Release 6.0.3 (Unreleased)
 
 Bug fixes:
 
+- Fix crash in FSI with internal structures in builds using
+  the Intel Fortran compilers (due to Fortran pointer handling).
+
 - GUI: fix issue in handling of "==" token in MEG expressions.
 
 - Fix in studymanager GUI: when adding a data file, a missing "dest"

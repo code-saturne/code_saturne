@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2019 EDF S.A.
+! Copyright (C) 1998-2020 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -49,7 +49,7 @@ subroutine strdep &
 ! flmalb(nfabor    ! tr ! --> ! sauvegarde du flux de masse faces brd          !
 ! cofale           ! tr ! --> ! sauvegarde des cl de p et u                    !
 !    (nfabor,8)    !    !     !                                                !
-! xprale(ncelet    ! tr ! --> ! sauvegarde de la pression, si nterup           !
+! xprale(ncelet)   ! tr ! --> ! sauvegarde de la pression, si nterup           !
 !                  !    !     !    est >1                                      !
 !__________________!____!_____!________________________________________________!
 
@@ -85,12 +85,11 @@ implicit none
 
 ! Arguments
 
-integer          itrale , italim , itrfin
-integer          nvar
+integer :: itrale , italim , itrfin, nvar
 
-double precision dt(ncelet)
-double precision flmalf(nfac), flmalb(nfabor), xprale(ncelet)
-double precision cofale(nfabor,11)
+double precision, dimension(:) :: dt
+double precision, pointer, dimension(:) :: flmalf, flmalb, xprale
+double precision, pointer, dimension(:,:) :: cofale
 
 ! Local variables
 
