@@ -437,7 +437,6 @@ cs_user_parameters(cs_domain_t *domain)
       for pressure, it is better to indicate to which reference the
       values relate (for a better resolution of reduced pressure).
 
-
       Other properties are given by default in all cases.
 
       Nonetheless, we may note that:
@@ -553,7 +552,6 @@ cs_user_parameters(cs_domain_t *domain)
            must be defined in cs_user_physical_properties
            (incs_user_physical_properties.f90);
            if they are constant, they take values ro0, viscl0, and cp0.
-
     */
 
     fp->irovar = 1;
@@ -696,7 +694,7 @@ cs_user_parameters(cs_domain_t *domain)
       - iswdyn = 2: means that the last two increments are used to
                          relax
      NB: when iswdyn is greater than 1, then the number of
-         non-orthogonality sweeps is increased to 20.*/
+         non-orthogonality sweeps is increased to 20. */
   {
 
     cs_var_cal_opt_t vcopt;
@@ -915,7 +913,6 @@ cs_user_parameters(cs_domain_t *domain)
 
   /*! [mesh_tag_bad_cells_correction] */
 
-
   /* Postprocessing-related fields
      ============================= */
 
@@ -965,6 +962,7 @@ cs_user_parameters(cs_domain_t *domain)
   cs_parameters_add_property("pressure_gradient",
                              3,
                              CS_MESH_LOCATION_CELLS);
+
   /*--------------------------------------------------------------------------*/
 
   /* Example: add field to post-process the Reynolds stress production tensor
@@ -1142,7 +1140,6 @@ cs_user_internal_coupling(void)
 
   cs_internal_coupling_add_volume(NULL,
                                   "x<.5"); /* Solid volume criterion */
-
 
   /* Activate fluid-solid mode to kill dynamic in the solid */
   cs_stokes_model_t *stokes = cs_get_glob_stokes_model();
