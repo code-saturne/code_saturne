@@ -328,6 +328,111 @@ cs_turbulence_kw(int              nvar,
                   "\n   ** SOLVING K-OMEGA\n"
                   "        ---------------\n");
 
+  /* Take user source terms into account
+   * ===================================
+   *
+   * explicit parts stored in: smbrk, smbrw
+   * implicit parts stored in: usimpk, usimpw */
+
+  cs_real_t *usimpk;
+  cs_real_t *usimpw;
+  BFT_MALLOC(usimpk, n_cells_ext, cs_real_t);
+  BFT_MALLOC(usimpw, n_cells_ext, cs_real_t);
+
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    smbrk[c_id] = 0.;
+    smbrw[c_id] = 0.;
+    usimpk[c_id] = 0.;
+    usimpw[c_id] = 0.;
+    tinstk[c_id] = 0.;
+    tinstw[c_id] = 0.;
+  }
+
+#if 0
+  /* Note: mapping Fortran turbulence source terms
+           would require an extra wrapper, or adding bind(C) to
+           the declaration, which could be "lost" by users
+           starting from older versions, so we simply drop that here */
+
+  cs_user_turbulence_source_terms(nvar,
+                                  nscal,
+                                  ncepdp,
+                                  ncesmp,
+                                  f_k->id,
+                                  icepdc,
+                                  icetsm,
+                                  itypsm,
+                                  ckupdc,
+                                  smacel,
+                                  smbrk,
+                                  usimpk);
+#endif
+
+  cs_user_source_terms(domain,
+                       f_k->id,
+                       smbrk,
+                       usimpk);
+
+#if 0
+  cs_user_turbulence_source_terms(nvar,
+                                  nscal,
+                                  ncepdp,
+                                  ncesmp,
+                                  f_omg->id,
+                                  icepdc,
+                                  icetsm,
+                                  itypsm,
+                                  ckupdc,
+                                  smacel,
+                                  smbrw,
+                                  usimpw);
+#endif
+
+  cs_user_source_terms(domain,
+                       f_omg->id,
+                       smbrw,
+                       usimpw);
+
+  /* If source terms are extrapolated over time */
+
+  if (istprv >= 0) {
+
+    cs_real_t thetak = vcopt_k.thetav;
+    cs_real_t thetaw = vcopt_w.thetav;
+    cs_real_t tuexpk;
+    cs_real_t tuexpw;
+
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      /* Recover the value at time (n-1) */
+      tuexpk = c_st_k_p[c_id];
+      tuexpw = c_st_omg_p[c_id];
+      /* Save the values for the next time-step */
+      c_st_k_p[c_id] = smbrk[c_id];
+      c_st_omg_p[c_id] = smbrw[c_id];
+      /* Explicit Part */
+      smbrk[c_id] = - thets*tuexpk;
+      smbrw[c_id] = - thets*tuexpw;
+      /* It is assumed that (-usimpk > 0) and though this term is implicit */
+      smbrk[c_id] = usimpk[c_id]*cvara_k[c_id] + smbrk[c_id];
+      smbrw[c_id] = usimpw[c_id]*cvara_omg[c_id] + smbrw[c_id];
+      /* Implicit part */
+      tinstk[c_id] -= usimpk[c_id]*thetak;
+      tinstw[c_id] -= usimpw[c_id]*thetaw;
+    }
+  }
+
+  /* If no extrapolation over time */
+  else {
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      /* Explicit Part */
+      smbrk[c_id] += usimpk[c_id]*cvara_k[c_id];
+      smbrw[c_id] += usimpw[c_id]*cvara_omg[c_id];
+      /* Implicit part */
+      tinstk[c_id] += CS_MAX(-usimpk[c_id], 0.);
+      tinstw[c_id] += CS_MAX(-usimpw[c_id], 0.);
+    }
+  }
+
   const double d2s3 = 2./3.;
   const cs_real_t epz2 = cs_math_pow2(cs_math_epzero);
 
@@ -526,10 +631,9 @@ cs_turbulence_kw(int              nvar,
      ============================================ */
 
   for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    ro = crom[c_id];
-    romvsd = ro*cell_f_vol[c_id]/dt[c_id];
-    tinstk[c_id] = vcopt_k.istat*romvsd;
-    tinstw[c_id] = vcopt_w.istat*romvsd;
+    romvsd = crom[c_id]*cell_f_vol[c_id]/dt[c_id];
+    tinstk[c_id] += vcopt_k.istat*romvsd;
+    tinstw[c_id] += vcopt_w.istat*romvsd;
   }
 
   /* Compute production terms
@@ -705,13 +809,12 @@ cs_turbulence_kw(int              nvar,
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       visct = cpro_pcvto[c_id];
-      prodw[c_id] = prodw[c_id] + visct*CS_MAX(-grad_dot_g[c_id], 0.);
-      prodk[c_id] = prodk[c_id] - visct*grad_dot_g[c_id];
+      prodw[c_id] += visct*CS_MAX(-grad_dot_g[c_id], 0.);
+      prodk[c_id] -= visct*grad_dot_g[c_id];
 
       /* Implicit Buoyant terms when negative */
-      tinstk[c_id] = tinstk[c_id]
-                   + fmax(volume[c_id]*visct/cvara_k[c_id]*grad_dot_g[c_id],
-                          0.);
+      tinstk[c_id] +=
+        CS_MAX(cell_f_vol[c_id]*visct/cvara_k[c_id]*grad_dot_g[c_id], 0.);
     }
 
     /* Free memory */
@@ -720,109 +823,6 @@ cs_turbulence_kw(int              nvar,
   else {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
       grad_dot_g[c_id] = 0;
-  }
-
-  /* Take user source terms into account
-   * ===================================
-   *
-   * explicit parts stored in: smbrk, smbrw
-   * implicit parts stored in: usimpk, usimpw */
-
-  cs_real_t *usimpk;
-  cs_real_t *usimpw;
-  BFT_MALLOC(usimpk, n_cells_ext, cs_real_t);
-  BFT_MALLOC(usimpw, n_cells_ext, cs_real_t);
-
-  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-    smbrk[c_id] = 0.;
-    smbrw[c_id] = 0.;
-    usimpk[c_id] = 0.;
-    usimpw[c_id] = 0.;
-  }
-
-#if 0
-  /* Note: mapping Fortran turbulence source terms
-           would require an extra wrapper, or adding bind(C) to
-           the declaration, which could be "lost" by users
-           starting from older versions, so we simply drop that here */
-
-  cs_user_turbulence_source_terms(nvar,
-                                  nscal,
-                                  ncepdp,
-                                  ncesmp,
-                                  f_k->id,
-                                  icepdc,
-                                  icetsm,
-                                  itypsm,
-                                  ckupdc,
-                                  smacel,
-                                  smbrk,
-                                  usimpk);
-#endif
-
-  cs_user_source_terms(domain,
-                       f_k->id,
-                       smbrk,
-                       usimpk);
-
-#if 0
-  cs_user_turbulence_source_terms(nvar,
-                                  nscal,
-                                  ncepdp,
-                                  ncesmp,
-                                  f_omg->id,
-                                  icepdc,
-                                  icetsm,
-                                  itypsm,
-                                  ckupdc,
-                                  smacel,
-                                  smbrw,
-                                  usimpw);
-#endif
-
-  cs_user_source_terms(domain,
-                       f_omg->id,
-                       smbrw,
-                       usimpw);
-
-  /* If source terms are extrapolated over time */
-
-  if (istprv >= 0) {
-
-    cs_real_t thetak = vcopt_k.thetav;
-    cs_real_t thetaw = vcopt_w.thetav;
-    cs_real_t tuexpk;
-    cs_real_t tuexpw;
-
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      /* Recover the value at time (n-1) */
-      tuexpk = c_st_k_p[c_id];
-      tuexpw = c_st_omg_p[c_id];
-      /* Save the values for the next time-step */
-      c_st_k_p[c_id] = smbrk[c_id];
-      c_st_omg_p[c_id] = smbrw[c_id];
-      /* Explicit Part */
-      smbrk[c_id] = - thets*tuexpk;
-      smbrw[c_id] = - thets*tuexpw;
-      /* It is assumed that (-usimpk > 0) and though this term is implicit */
-      smbrk[c_id] = usimpk[c_id]*cvara_k[c_id] + smbrk[c_id];
-      smbrw[c_id] = usimpw[c_id]*cvara_omg[c_id] + smbrw[c_id];
-      /* Implicit part */
-      tinstk[c_id] = tinstk[c_id] -usimpk[c_id]*thetak;
-      tinstw[c_id] = tinstw[c_id] -usimpw[c_id]*thetaw;
-    }
-  }
-
-  /* If no extrapolation over time */
-  else {
-    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      /* Explicit Part */
-      smbrk[c_id] = smbrk[c_id] + usimpk[c_id]*cvara_k[c_id];
-      smbrw[c_id] = smbrw[c_id] + usimpw[c_id]*cvara_omg[c_id];
-      /* Implicit part */
-      tinstk[c_id] = tinstk[c_id] + CS_MAX(-usimpk[c_id],0.);
-      tinstw[c_id] = tinstw[c_id] + CS_MAX(-usimpw[c_id],0.);
-    }
   }
 
   /* Finalization of explicit and implicit source terms
@@ -1001,7 +1001,7 @@ cs_turbulence_kw(int              nvar,
   /* Free memory */
   BFT_FREE(gdkgdw);
 
-  /* Account for Lagrangien 2-way coupling source terms */
+  /* Account for Lagrangian 2-way coupling source terms */
 
   /* 2nd order not handled */
 
