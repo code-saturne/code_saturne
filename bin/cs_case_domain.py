@@ -1564,6 +1564,9 @@ class cathare_domain(domain):
 
             self.param = param
 
+            solver_dir = self.package_compute.get_dir("pkglibexecdir")
+            solver_name = "nc_solver" + self.package.config.exeext
+            self.solver_path = os.path.join(solver_dir, solver_name)
 
     #---------------------------------------------------------------------------
 
@@ -1690,7 +1693,7 @@ class cathare_domain(domain):
         executable path, and associated command-line arguments.
         """
 
-        wd, exec_path, args = super(cathare_domain, self).solver_command(kw)
+        wd, exec_path, args = super(cathare_domain, self).solver_command()
         args += " --c2-wrapper"
 
         return wd, exec_path, args
