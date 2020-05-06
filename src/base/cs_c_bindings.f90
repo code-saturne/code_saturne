@@ -2876,7 +2876,7 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    ! Interface to C function returning 0 for active cells
+    ! Interface to C function returning 1 for active cells
 
     function cs_f_mesh_quantities_cell_is_active(cell_id) result(is_active) &
       bind(C, name='cs_f_mesh_quantities_cell_is_active')
@@ -5934,7 +5934,7 @@ contains
 
   !=============================================================================
 
-  !> \brief Return notebook parameter value
+  !> \brief Indicate of a cell is active fo the current variable
 
   !> \param[in]     iel       cell number (cell_id + 1)
   !> \result        is_active
