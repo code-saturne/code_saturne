@@ -370,28 +370,6 @@ class study:
         os.chdir(repbase)
         self.create_case(self.cat_case_name)
 
-        # Copying the Cathare coupling necessary files for the cases
-        datadir = os.path.join(self.package.get_dir("datadir"),
-                               self.package.name)
-
-        if os.path.isdir(os.path.join(datadir, 'cathare_coupling')):
-
-            cathare_cpl_dir = os.path.join(datadir, 'cathare_coupling')
-
-            # Script which converts the Cathare JDD file to a .so library
-            fin  = open(os.path.join(cathare_cpl_dir, 'user_scripts', 'cathare_jdd_to_lib.sh'))
-            fout = open(os.path.join(repbase, self.cat_case_name, 'DATA', 'cathare_jdd_to_lib.sh'), 'wt')
-            for line in fin:
-                fout.write(line.replace('#path_to_v25_3=',
-                                        'export v25_3='+cathare_path))
-            fin.close()
-            fout.close()
-
-
-        else:
-            sys.stderr.write("Cannot find the directory: " + \
-                             os.path.join(datadir, 'cathare_coupling') + "\n")
-            sys.exit(1)
 
     def create_python_case(self, repbase):
         """

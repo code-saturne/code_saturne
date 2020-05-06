@@ -1109,11 +1109,13 @@ class case:
                 if hasattr(d, "cathare_case_file"):
                     config = configparser.ConfigParser()
                     config.read(self.package.get_configfiles())
-                    icoco_libdir = os.path.join(config.get('install', 'cathare'),
-                                                'ICoCo/lib')
-                    cs_exec_environment.write_prepend_path(s,
-                                                           "LD_LIBRARY_PATH",
-                                                           icoco_libdir)
+                    cathare_path = config.get('install', 'cathare')
+                    for p in ['lib', 'ICoCo/lib']:
+                        lp = os.path.join(cathare_path, p)
+                        cs_exec_environment.write_prepend_path(s,
+                                                               "LD_LIBRARY_PATH",
+                                                               lp)
+
         # Handle environment modules if used
 
         if self.package_compute.config.env_modules != "no":

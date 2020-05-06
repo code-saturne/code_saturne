@@ -1531,6 +1531,10 @@ class cathare_domain(domain):
                         prefix,
                         adaptation)
 
+        # If not provided, setup is automatically set to setup.xml
+        if self.param == None:
+            self.param = "setup.xml"
+
         self.cathare_case_file = cathare_case_file
         self.neptune_cfd_dom   = neptune_cfd_dom
 
@@ -1567,24 +1571,60 @@ class cathare_domain(domain):
 
             self.param = param
 
+            solver_dir = self.package_compute.get_dir("pkglibexecdir")
+            solver_name = "nc_solver" + self.package_compute.config.exeext
+            self.solver_path = os.path.join(solver_dir, solver_name)
+
     #---------------------------------------------------------------------------
 
-    def prepare_cathare_data(self):
+    def compile_cathare2_lib(self):
         """
-        Copy the .xml from the neptune folder and compile the cathare
-        case file into a .so library
+        Copy the Cathare .dat file and the different .f files to the execution
+        folder. Then generate the .so lib based on the ICoCo API of
+        CATHARE2.
         """
 
-        # Compiling the Cathare Case
         orig = os.getcwd()
 
-        os.chdir(self.data_dir)
+        os.chdir(self.exec_dir)
 
-        cathare_shell_cmd  = "chmod +x cathare_jdd_to_lib.sh \n"
-        cathare_shell_cmd += "./cathare_jdd_to_lib.sh " + self.cathare_case_file
-        os.system(cathare_shell_cmd)
+        cathare_compilation_files = [self.cathare_case_file]
 
+        dir_files = os.listdir(self.data_dir)
+        for f in fnmatch.filter(dir_files, '*.f'):
+            cathare_compilation_files.append(f)
+
+        for f in cathare_compilation_files:
+            src_file  = os.path.join(self.data_dir, f)
+            dest_file = os.path.join(self.exec_dir, f)
+            shutil.copy2(src_file, dest_file)
+
+        # Generate the .so creation command (hence reducing dependencies)
+        config = configparser.ConfigParser()
+        config.read(self.package.get_configfiles())
+        shell_cmd = 'export v25_3="%s"\n' % (config.get('install', 'cathare'))
+        shell_cmd+= 'jdd_CATHARE="%s"\n' % (self.cathare_case_file)
+        shell_cmd+= 'export LD_LIBRARY_PATH=${v25_3}/lib:$LD_LIBRARY_PATH\n'
+        shell_cmd+= 'export LD_LIBRARY_PATH=${v25_3}/ICoCo/lib:$LD_LIBRARY_PATH\n'
+        shell_cmd+= 'make -f ${v25_3}/ICoCo/Makefile_gad clean\n'
+        shell_cmd+= '${v25_3}/unix-procedur/vers.unix\n'
+        shell_cmd+= 'DATAFILE=${jdd_CATHARE} make -f ${v25_3}/ICoCo/Makefile_gad lib\n'
+
+        os.system(shell_cmd)
         os.chdir(orig)
+
+    #---------------------------------------------------------------------------
+
+    def compile_and_link(self):
+        """
+        Compile and link user subroutines if needed.
+        """
+
+        # Generate the CATHARE lib first
+        self.compile_cathare2_lib()
+
+        # Then compile NCFD source files if needed
+        super(cathare_domain, self).compile_and_link()
 
     #---------------------------------------------------------------------------
 
@@ -1608,9 +1648,6 @@ class cathare_domain(domain):
 
             self.purge_result(link_path) # in case of previous run here
             self.symlink(mesh_input, link_path)
-
-        # Compile the cathare case if needed
-        self.prepare_cathare_data()
 
         # Copy data files
 
@@ -1692,7 +1729,7 @@ class cathare_domain(domain):
         executable path, and associated command-line arguments.
         """
 
-        wd, exec_path, args = super(cathare_domain, self).solver_command(kw)
+        wd, exec_path, args = super(cathare_domain, self).solver_command()
         args += " --c2-wrapper"
 
         return wd, exec_path, args
