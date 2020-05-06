@@ -79,12 +79,12 @@ implicit none
 
 ! Arguments
 
-integer          itrale , italim , ineefl
+integer :: itrale , italim , ineefl
 
-integer          impale(nnod)
+integer, dimension(:) :: impale
 
-double precision xprale(ncelet)
-double precision cofale(nfabor,11)
+double precision, pointer, dimension(:) :: xprale
+double precision, pointer, dimension(:,:) :: cofale
 
 ! Local variables
 

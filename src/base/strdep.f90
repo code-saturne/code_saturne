@@ -47,7 +47,7 @@ subroutine strdep &
 ! dt(ncelet)       ! ra ! <-- ! time step (per cell)                           !
 ! cofale           ! tr ! --> ! sauvegarde des cl de p et u                    !
 !    (nfabor,8)    !    !     !                                                !
-! xprale(ncelet    ! tr ! --> ! sauvegarde de la pression, si nterup           !
+! xprale(ncelet)   ! tr ! --> ! sauvegarde de la pression, si nterup           !
 !                  !    !     !    est >1                                      !
 !__________________!____!_____!________________________________________________!
 
@@ -82,12 +82,11 @@ implicit none
 
 ! Arguments
 
-integer          itrale , italim , itrfin
-integer          nvar
+integer :: itrale , italim , itrfin, nvar
 
-double precision dt(ncelet)
-double precision xprale(ncelet)
-double precision cofale(nfabor,11)
+double precision, dimension(:) :: dt
+double precision, pointer, dimension(:) :: xprale
+double precision, pointer, dimension(:,:) :: cofale
 
 ! Local variables
 

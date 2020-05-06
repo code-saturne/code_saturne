@@ -230,6 +230,17 @@ interface
 
   end subroutine richards
 
+  subroutine strdep(itrale , italim , itrfin, nvar, dt, cofale, xprale)
+
+    implicit none
+
+    integer :: itrale , italim , itrfin, nvar
+    double precision, dimension(:) :: dt
+    double precision, pointer, dimension(:) :: xprale
+    double precision, pointer, dimension(:,:) :: cofale
+
+  end subroutine strdep
+
   subroutine cs_lagr_head_losses(n_hl_cells, cell_ids, bc_type, cku) &
     bind(C, name='cs_lagr_head_losses')
     use, intrinsic :: iso_c_binding
