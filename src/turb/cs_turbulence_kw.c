@@ -1640,41 +1640,51 @@ cs_turbulence_kw(int              nvar,
     nu0 = viscl0 / ro0;
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-      /* Compute the velocity magnitude */
-      xunorm = pow(vel[c_id][0],2.) + pow(vel[c_id][1],2.) + pow(vel[c_id][2],2.);
-      xunorm = sqrt(xunorm);
 
-      ya = w_dist[c_id];
-      ypa = ya*utaurf/nu0;
-      /* Velocity magnitude is imposed (limitted only), the direction is
-         conserved */
-      if (xunorm <= 1.e-12*uref) {
-        limiter = 1.;
-      }
-      else {
-        limiter = fmin(utaurf/xunorm * (2.5*log(1. + 0.4*ypa)
-                                          + 7.8*(1. - exp(-ypa/11.)
-                                                 - (ypa/11.)*exp(-0.33*ypa))),
-                       1.);
-      }
+      /* In case of coupled fluid/solid simulation 
+       * we do not wan to reinitialize turbulence in
+       * the solid region */
+      cs_lnum_t c_is_active = cs_f_mesh_quantities_cell_is_active(c_id);
 
-      vel[c_id][0] = limiter*vel[c_id][0];
-      vel[c_id][1] = limiter*vel[c_id][1];
-      vel[c_id][2] = limiter*vel[c_id][2];
+      if(c_is_active == 1) {
 
-      ut2 = 0.05 * uref;
-      xeps =   cs_math_pow3(utaurf)
-             * fmin(1. / (cs_turb_xkappa * 15. * nu0 / utaurf),
-                    1. / (cs_turb_xkappa * ya));
-      cvar_k[c_id] = xeps /2. / nu0 * cs_math_pow2(ya) * cs_math_pow2(exp(-ypa/25.))
-                    + cs_math_pow2(ut2) / sqrt(cs_turb_cmu)
-                    * cs_math_pow2(1. - exp(-ypa / 25.));
+        /* Compute the velocity magnitude */
+        xunorm = pow(vel[c_id][0],2.) + pow(vel[c_id][1],2.) + pow(vel[c_id][2],2.);
+        xunorm = sqrt(xunorm);
 
-      cvar_omg[c_id] = cs_math_pow3(ut2) / (cs_turb_xkappa * 15. * nu0 / ut2)
-                                         / (cs_math_pow2(ut2)/sqrt(cs_turb_cmu))
-                                         / cs_turb_cmu;
-    }
-  }
+        ya = w_dist[c_id];
+        ypa = ya*utaurf/nu0;
+        /* Velocity magnitude is imposed (limitted only), the direction is
+           conserved */
+        if (xunorm <= 1.e-12*uref) {
+          limiter = 1.;
+        }
+        else {
+          limiter = fmin(utaurf/xunorm * (2.5*log(1. + 0.4*ypa)
+                                            + 7.8*(1. - exp(-ypa/11.)
+                                                   - (ypa/11.)*exp(-0.33*ypa))),
+                         1.);
+        }
+
+        vel[c_id][0] = limiter*vel[c_id][0];
+        vel[c_id][1] = limiter*vel[c_id][1];
+        vel[c_id][2] = limiter*vel[c_id][2];
+
+        ut2 = 0.05 * uref;
+        xeps =   cs_math_pow3(utaurf)
+               * fmin(1. / (cs_turb_xkappa * 15. * nu0 / utaurf),
+                      1. / (cs_turb_xkappa * ya));
+        cvar_k[c_id] = xeps /2. / nu0 * cs_math_pow2(ya) * cs_math_pow2(exp(-ypa/25.))
+                      + cs_math_pow2(ut2) / sqrt(cs_turb_cmu)
+                      * cs_math_pow2(1. - exp(-ypa / 25.));
+
+        cvar_omg[c_id] = cs_math_pow3(ut2) / (cs_turb_xkappa * 15. * nu0 / ut2)
+                                           / (cs_math_pow2(ut2)/sqrt(cs_turb_cmu))
+                                           / cs_turb_cmu;
+
+      } // End test on active cells
+    } // End Lood on cells 
+  } // End test on time step
 
   /* Cleanup */
 

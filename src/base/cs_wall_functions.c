@@ -58,6 +58,7 @@
 
 #include "cs_log.h"
 #include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
 #include "cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
@@ -355,8 +356,14 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
   /* Activation of wall function by default */
   *iuntur = 1;
 
-  switch (iwallf) {
-  case CS_WALL_F_DISABLED:
+  /* Get the adjacent border cell and its fluid/solid tag */
+  cs_lnum_t cell_id = cs_glob_mesh->b_face_cells[ifac-1] ;
+  cs_lnum_t c_is_active = cs_f_mesh_quantities_cell_is_active(cell_id);
+  
+  /* Is the adjacent border cell a solid cell ? */
+  if(c_is_active == 0) {
+
+    /* If the cell is a solid cell, disable wall functions */
     cs_wall_functions_disabled(l_visc,
                                t_visc,
                                vel,
@@ -370,9 +377,40 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                                dplus,
                                ypup,
                                cofimp);
-    break;
-  case CS_WALL_F_1SCALE_POWER:
-    cs_wall_functions_1scale_power(l_visc,
+  } else {
+
+    switch (iwallf) {
+    case CS_WALL_F_DISABLED:
+      cs_wall_functions_disabled(l_visc,
+                                 t_visc,
+                                 vel,
+                                 y,
+                                 iuntur,
+                                 nsubla,
+                                 nlogla,
+                                 ustar,
+                                 uk,
+                                 yplus,
+                                 dplus,
+                                 ypup,
+                                 cofimp);
+      break;
+    case CS_WALL_F_1SCALE_POWER:
+      cs_wall_functions_1scale_power(l_visc,
+                                     vel,
+                                     y,
+                                     iuntur,
+                                     nsubla,
+                                     nlogla,
+                                     ustar,
+                                     uk,
+                                     yplus,
+                                     ypup,
+                                     cofimp);
+      break;
+    case CS_WALL_F_1SCALE_LOG:
+      cs_wall_functions_1scale_log(ifac,
+                                   l_visc,
                                    vel,
                                    y,
                                    iuntur,
@@ -383,90 +421,24 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                                    yplus,
                                    ypup,
                                    cofimp);
-    break;
-  case CS_WALL_F_1SCALE_LOG:
-    cs_wall_functions_1scale_log(ifac,
-                                 l_visc,
-                                 vel,
-                                 y,
-                                 iuntur,
-                                 nsubla,
-                                 nlogla,
-                                 ustar,
-                                 uk,
-                                 yplus,
-                                 ypup,
-                                 cofimp);
-    break;
-  case CS_WALL_F_2SCALES_LOG:
-    cs_wall_functions_2scales_log(l_visc,
-                                  t_visc,
-                                  vel,
-                                  y,
-                                  kinetic_en,
-                                  iuntur,
-                                  nsubla,
-                                  nlogla,
-                                  ustar,
-                                  uk,
-                                  yplus,
-                                  ypup,
-                                  cofimp);
-    break;
-  case CS_WALL_F_SCALABLE_2SCALES_LOG:
-    cs_wall_functions_2scales_scalable(l_visc,
-                                       t_visc,
-                                       vel,
-                                       y,
-                                       kinetic_en,
-                                       iuntur,
-                                       nsubla,
-                                       nlogla,
-                                       ustar,
-                                       uk,
-                                       yplus,
-                                       dplus,
-                                       ypup,
-                                       cofimp);
-    break;
-  case CS_WALL_F_2SCALES_VDRIEST:
-    cs_wall_functions_2scales_vdriest(rnnb,
-                                      l_visc,
-                                      vel,
-                                      y,
-                                      kinetic_en,
-                                      iuntur,
-                                      nsubla,
-                                      nlogla,
-                                      ustar,
-                                      uk,
-                                      yplus,
-                                      ypup,
-                                      cofimp,
-                                      &lmk,
-                                      roughness,
-                                      wf);
-    break;
-  case CS_WALL_F_2SCALES_SMOOTH_ROUGH:
-    cs_wall_functions_2scales_smooth_rough(l_visc,
-                                           t_visc,
-                                           vel,
-                                           y,
-                                           roughness,
-                                           kinetic_en,
-                                           iuntur,
-                                           nsubla,
-                                           nlogla,
-                                           ustar,
-                                           uk,
-                                           yplus,
-                                           dplus,
-                                           ypup,
-                                           cofimp);
-    break;
-  case CS_WALL_F_2SCALES_CONTINUOUS:
-    cs_wall_functions_2scales_continuous(rnnb,
-                                         l_visc,
+      break;
+    case CS_WALL_F_2SCALES_LOG:
+      cs_wall_functions_2scales_log(l_visc,
+                                    t_visc,
+                                    vel,
+                                    y,
+                                    kinetic_en,
+                                    iuntur,
+                                    nsubla,
+                                    nlogla,
+                                    ustar,
+                                    uk,
+                                    yplus,
+                                    ypup,
+                                    cofimp);
+      break;
+    case CS_WALL_F_SCALABLE_2SCALES_LOG:
+      cs_wall_functions_2scales_scalable(l_visc,
                                          t_visc,
                                          vel,
                                          y,
@@ -477,11 +449,64 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
                                          ustar,
                                          uk,
                                          yplus,
+                                         dplus,
                                          ypup,
                                          cofimp);
-    break;
-  default:
-    break;
+      break;
+    case CS_WALL_F_2SCALES_VDRIEST:
+      cs_wall_functions_2scales_vdriest(rnnb,
+                                        l_visc,
+                                        vel,
+                                        y,
+                                        kinetic_en,
+                                        iuntur,
+                                        nsubla,
+                                        nlogla,
+                                        ustar,
+                                        uk,
+                                        yplus,
+                                        ypup,
+                                        cofimp,
+                                        &lmk,
+                                        roughness,
+                                        wf);
+      break;
+    case CS_WALL_F_2SCALES_SMOOTH_ROUGH:
+      cs_wall_functions_2scales_smooth_rough(l_visc,
+                                             t_visc,
+                                             vel,
+                                             y,
+                                             roughness,
+                                             kinetic_en,
+                                             iuntur,
+                                             nsubla,
+                                             nlogla,
+                                             ustar,
+                                             uk,
+                                             yplus,
+                                             dplus,
+                                             ypup,
+                                             cofimp);
+      break;
+    case CS_WALL_F_2SCALES_CONTINUOUS:
+      cs_wall_functions_2scales_continuous(rnnb,
+                                           l_visc,
+                                           t_visc,
+                                           vel,
+                                           y,
+                                           kinetic_en,
+                                           iuntur,
+                                           nsubla,
+                                           nlogla,
+                                           ustar,
+                                           uk,
+                                           yplus,
+                                           ypup,
+                                           cofimp);
+      break;
+    default:
+      break;
+    }
   }
 }
 
