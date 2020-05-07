@@ -152,7 +152,7 @@ BEGIN_C_DECLS
 #define CS_SOLIDIFICATION_BINARY_ALLOY_C_FUNC               (1 << 8) /*=  256 */
 #define CS_SOLIDIFICATION_BINARY_ALLOY_G_FUNC               (1 << 9) /*=  512 */
 #define CS_SOLIDIFICATION_BINARY_ALLOY_T_FUNC               (1 <<10) /*= 1024 */
-
+#define CS_SOLIDIFICATION_BINARY_ALLOY_TCC_FUNC             (1 <<11) /*= 2048 */
 /*!
  * @}
  */
@@ -236,10 +236,10 @@ typedef enum {
 /*----------------------------------------------------------------------------*/
 
 typedef void
-(cs_solidification_update_t)(const cs_mesh_t             *mesh,
-                             const cs_cdo_connect_t      *connect,
-                             const cs_cdo_quantities_t   *quant,
-                             const cs_time_step_t        *ts);
+(cs_solidification_func_t)(const cs_mesh_t             *mesh,
+                           const cs_cdo_connect_t      *connect,
+                           const cs_cdo_quantities_t   *quant,
+                           const cs_time_step_t        *ts);
 
 /* Structure storing physical parameters related to a choice of solidification
    modelling */
@@ -277,7 +277,7 @@ typedef struct {
   cs_real_t                      latent_heat;
 
   /* Function pointer related to the way of updating the model */
-  cs_solidification_update_t    *update;
+  cs_solidification_func_t    *update;
 
 } cs_solidification_voller_t;
 
@@ -326,17 +326,22 @@ typedef struct {
   cs_real_t    ml;       /* Liquidus slope \frac{\partial g_l}{\partial C} */
   cs_real_t    inv_ml;   /* reciprocal of ml */
 
-  /* Function to update the quantities related to the momentum equations */
-  cs_solidification_update_t     *update_momentum_properties;
+  /* Function to update the velocity forcing in the momentum equation */
+  cs_solidification_func_t     *update_velocity_forcing;
 
   /* Function to update the liquid fraction */
-  cs_solidification_update_t     *update_gl;
+  cs_solidification_func_t     *update_gl;
 
   /* Function to update c_l */
-  cs_solidification_update_t     *update_cl;
+  cs_solidification_func_t     *update_cl;
 
-  /* Function to update the source term for the thermal equation*/
-  cs_solidification_update_t     *update_thm_st;
+  /* Function to update the source term for the thermal equation */
+  cs_solidification_func_t     *update_thm_st;
+
+  /* Function to compute the thermo-solutal coupling (previous function pointers
+     are called inside this function by default but a user can defined whatever
+     is needed inside */
+  cs_solidification_func_t     *thermosolutal_coupling;
 
   /* Alloy features */
   /* -------------- */
@@ -607,24 +612,28 @@ cs_solidification_set_binary_alloy_param(int             n_iter_max,
 /*!
  * \brief  Set the functions to perform the update of physical properties
  *         and/or the computation of the thermal source term or quantities
- *         defining the solidification process.
- *         Advanced usage. This enables to finely control the numerical or
- *         physical modelling aspects.
- *         These functions are related to a binary alloy modelling.
+ *         and/or the way to perform the coupling between the thermal equation
+ *         and the bulk concentration computation. All this setting defines
+ *         the way to compute the solidification process of a binary alloy.
  *         If a function is set to NULL then the automatic settings is kept.
  *
- * \param[in] mom_eq_func   func. pointer to update momentum quantities
- * \param[in] conc_eq_func  func. pointer to update concentration quantities
- * \param[in] gliq_func     func. pointer to update state and liquid fraction
- * \param[in] thm_eq_func   func. pointer to update thermal quantities
+ *         --Advanced usage-- This enables to finely control the numerical or
+ *         physical modelling aspects.
+ *
+ * \param[in] vel_forcing        pointer to update the velocity forcing
+ * \param[in] cliq_update        pointer to update the liquid concentration
+ * \param[in] gliq_update        pointer to update the liquid fraction
+ * \param[in] thm_st_update      pointer to update thermal source terms
+ * \param[in] thm_conc_coupling  pointer to compute the thermo-solutal coupling
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solidification_set_update_func(cs_solidification_update_t  *mom_eq_func,
-                                  cs_solidification_update_t  *conc_eq_func,
-                                  cs_solidification_update_t  *gl_state_func,
-                                  cs_solidification_update_t  *thm_eq_func);
+cs_solidification_set_functions(cs_solidification_func_t  *vel_forcing,
+                                cs_solidification_func_t  *cliq_update,
+                                cs_solidification_func_t  *gliq_update,
+                                cs_solidification_func_t  *thm_st_update,
+                                cs_solidification_func_t  *thm_conc_coupling);
 
 /*----------------------------------------------------------------------------*/
 /*!

@@ -687,7 +687,7 @@ _get_alloy_state(const cs_solidification_binary_alloy_t    *alloy,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_momentum_forcing(const cs_mesh_t             *mesh,
+_update_velocity_forcing(const cs_mesh_t             *mesh,
                          const cs_cdo_connect_t      *connect,
                          const cs_cdo_quantities_t   *quant,
                          const cs_time_step_t        *ts)
@@ -1612,6 +1612,127 @@ _update_thm_st_by_step(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Function aims at computing the new temperature/bulk concentration
+ *         state for the next iteration as well as updating all related
+ *         quantities
+ *
+ * \param[in]      mesh       pointer to a cs_mesh_t structure
+ * \param[in]      connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]      time_step  pointer to a cs_time_step_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_default_binary_coupling(const cs_mesh_t              *mesh,
+                         const cs_cdo_connect_t       *connect,
+                         const cs_cdo_quantities_t    *quant,
+                         const cs_time_step_t         *time_step)
+{
+  cs_solidification_t  *solid = cs_solidification_structure;
+  assert(solid->model & CS_SOLIDIFICATION_MODEL_USE_TEMPERATURE);
+  cs_solidification_binary_alloy_t  *alloy
+    = (cs_solidification_binary_alloy_t *)solid->model_context;
+
+  const size_t  csize = quant->n_cells*sizeof(cs_real_t);
+  const cs_equation_t  *c_eq = alloy->solute_equation;
+  const cs_equation_t  *t_eq = solid->thermal_sys->thermal_eq;
+
+  cs_real_t  *temp = cs_equation_get_cell_values(t_eq, false);
+  cs_real_t  *conc = cs_equation_get_cell_values(c_eq, false);
+
+  /* Compute the state at t^(n+1) knowing that at state t^(n)
+
+   * Non-linear iterations (k) are also performed to converge on the relation
+   * gliq^{k+1} = gliq(temp^{k+1}, conc^{k+1})
+   *
+   * Cbulk^{0}_{n+1} = Cbulk_{n}
+   * Tbulk^{0}_{n+1} = Tbulk_{n}
+   * gl^{0}_{n+1} = gl_{n}
+   */
+  cs_equation_current_to_previous(c_eq);
+  cs_equation_current_to_previous(t_eq);
+  cs_field_current_to_previous(solid->g_l_field);
+
+  /* At the beginning, field_{n+1}^{k=0} = field_n */
+  memcpy(alloy->tk_bulk, temp, csize);
+  memcpy(alloy->ck_bulk, conc, csize);
+
+  int  n_iter = 0;
+  cs_real_t  delta_temp = 1 + alloy->delta_tolerance;
+  cs_real_t  delta_cbulk = 1 + alloy->delta_tolerance;
+
+  while ( ( delta_temp  > alloy->delta_tolerance ||
+            delta_cbulk > alloy->delta_tolerance  ) &&
+          n_iter        < alloy->n_iter_max) {
+
+    /* Solve Cbulk^(k+1)_{n+1} knowing Cbulk^{k}_{n+1}  */
+    cs_equation_solve(false,  /* No cur2prev inside a non-linear iterative
+                                 process */
+                      mesh, alloy->solute_equation);
+
+    /* Update the source term for the thermal equation */
+    alloy->update_thm_st(mesh, connect, quant, time_step);
+
+    /* Solve the thermal system */
+    cs_thermal_system_compute(false, /* No cur2prev inside a non-linear
+                                        iterative process */
+                              mesh, time_step, connect, quant);
+
+    /* Update fields and properties which are related to solved variables
+     * g_l, state */
+    alloy->update_gl(mesh, connect, quant, time_step);
+
+    /* Evolution of the temperature and the bulk concentration during this
+       iteration */
+    delta_temp = -1, delta_cbulk = -1;
+    cs_lnum_t  cid_maxt = -1, cid_maxc = -1;
+    for (cs_lnum_t  c_id = 0; c_id < quant->n_cells; c_id++) {
+
+
+      cs_real_t  dtemp = fabs(temp[c_id]- alloy->tk_bulk[c_id]);
+      cs_real_t  dconc = fabs(conc[c_id] - alloy->ck_bulk[c_id]);
+
+      alloy->tk_bulk[c_id] = temp[c_id];
+      alloy->ck_bulk[c_id] = conc[c_id];
+
+      if (dtemp > delta_temp)
+        delta_temp = dtemp, cid_maxt = c_id;
+      if (dconc > delta_cbulk)
+        delta_cbulk = dconc, cid_maxc = c_id;
+
+    } /* Loop on cells */
+
+    n_iter++;
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "### Solidification.NL: "
+                  " k= %d | delta_temp= %5.3e | delta_cbulk= %5.3e\n",
+                  n_iter, delta_temp, delta_cbulk);
+    cs_log_printf(CS_LOG_DEFAULT,
+                  "### Solidification.NL: "
+                  " k= %d | delta_temp= %7d | delta_cbulk= %7d\n",
+                  n_iter, cid_maxt, cid_maxc);
+
+  } /* while iterating */
+
+    /* Update the liquid concentration of the solute (c_l) */
+  alloy->update_cl(mesh, connect, quant, time_step);
+
+  /* Update fields and properties which are related to solved variables
+   * g_l, state */
+  alloy->update_gl(mesh, connect, quant, time_step);
+
+  /* The cell state is now updated at this stage. This will be useful for
+     the monitoring */
+  _update_binary_alloy_final_state(quant);
+
+  /* Update fields and properties which are related to solved variables */
+  alloy->update_velocity_forcing(mesh, connect, quant, time_step);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Perform the monitoring dedicated to the solidifcation module
  *
  * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
@@ -2206,7 +2327,8 @@ cs_solidification_set_binary_alloy_model(const char     *name,
     alloy->t_eut + cs_solidification_eutectic_threshold;
 
   /* Set the default function pointers for updating properties */
-  alloy->update_momentum_properties = _update_momentum_forcing;
+  alloy->thermosolutal_coupling = _default_binary_coupling;
+  alloy->update_velocity_forcing = _update_velocity_forcing;
   alloy->update_cl = _update_cl;
 
   if (solid->options & CS_SOLIDIFICATION_UPDATE_GL_WITH_TAYLOR_EXPANSION)
@@ -2258,24 +2380,28 @@ cs_solidification_set_binary_alloy_param(int             n_iter_max,
 /*!
  * \brief  Set the functions to perform the update of physical properties
  *         and/or the computation of the thermal source term or quantities
- *         defining the solidification process.
- *         Advanced usage. This enables to finely control the numerical or
- *         physical modelling aspects.
- *         These functions are related to a binary alloy modelling.
+ *         and/or the way to perform the coupling between the thermal equation
+ *         and the bulk concentration computation. All this setting defines
+ *         the way to compute the solidification process of a binary alloy.
  *         If a function is set to NULL then the automatic settings is kept.
  *
- * \param[in] mom_eq_func   func. pointer to update momentum quantities
- * \param[in] conc_eq_func  func. pointer to update concentration quantities
- * \param[in] gliq_func     func. pointer to update state and liquid fraction
- * \param[in] thm_eq_func   func. pointer to update thermal quantities
+ *         --Advanced usage-- This enables to finely control the numerical or
+ *         physical modelling aspects.
+ *
+ * \param[in] vel_forcing        pointer to update the velocity forcing
+ * \param[in] cliq_update        pointer to update the liquid concentration
+ * \param[in] gliq_update        pointer to update the liquid fraction
+ * \param[in] thm_st_update      pointer to update thermal source terms
+ * \param[in] thm_conc_coupling  pointer to compute the thermo-solutal coupling
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solidification_set_update_func(cs_solidification_update_t  *mom_eq_func,
-                                  cs_solidification_update_t  *conc_eq_func,
-                                  cs_solidification_update_t  *gl_state_func,
-                                  cs_solidification_update_t  *thm_eq_func)
+cs_solidification_set_functions(cs_solidification_func_t  *vel_forcing,
+                                cs_solidification_func_t  *cliq_update,
+                                cs_solidification_func_t  *gliq_update,
+                                cs_solidification_func_t  *thm_st_update,
+                                cs_solidification_func_t  *thm_conc_coupling)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
   if (solid == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_module));
@@ -2286,24 +2412,29 @@ cs_solidification_set_update_func(cs_solidification_update_t  *mom_eq_func,
   assert(solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY);
   assert(alloy != NULL);
 
-  if (mom_eq_func != NULL) {
-    alloy->update_momentum_properties = mom_eq_func;
+  if (vel_forcing != NULL) {
+    alloy->update_velocity_forcing = vel_forcing;
     solid->options |= CS_SOLIDIFICATION_BINARY_ALLOY_M_FUNC;
   }
 
-  if (conc_eq_func != NULL) {
-    alloy->update_cl = conc_eq_func;
+  if (cliq_update != NULL) {
+    alloy->update_cl = cliq_update;
     solid->options |= CS_SOLIDIFICATION_BINARY_ALLOY_C_FUNC;
   }
 
-  if (gl_state_func != NULL) {
-    alloy->update_gl = gl_state_func;
+  if (gliq_update != NULL) {
+    alloy->update_gl = gliq_update;
     solid->options |= CS_SOLIDIFICATION_BINARY_ALLOY_G_FUNC;
   }
 
-  if (thm_eq_func != NULL) {
-    alloy->update_thm_st = thm_eq_func;
+  if (thm_st_update != NULL) {
+    alloy->update_thm_st = thm_st_update;
     solid->options |= CS_SOLIDIFICATION_BINARY_ALLOY_T_FUNC;
+  }
+
+  if (thm_conc_coupling != NULL) {
+    alloy->thermosolutal_coupling = thm_conc_coupling;
+    solid->options |= CS_SOLIDIFICATION_BINARY_ALLOY_TCC_FUNC;
   }
 }
 
@@ -2767,8 +2898,6 @@ cs_solidification_log_setup(void)
     } /* Not user-defined */
     cs_log_printf(CS_LOG_SETUP, "\n");
 
-
-
     cs_log_printf(CS_LOG_SETUP, "  * Solidification | Options:");
     if (solid->options & CS_SOLIDIFICATION_BINARY_ALLOY_G_FUNC)
       cs_log_printf(CS_LOG_SETUP,
@@ -2784,6 +2913,15 @@ cs_solidification_log_setup(void)
                       " Update the liquid fraction as in the Legacy");
 
     } /* Not user-defined */
+    cs_log_printf(CS_LOG_SETUP, "\n");
+
+    cs_log_printf(CS_LOG_SETUP, "  * Solidification | Options:");
+    if (solid->options & CS_SOLIDIFICATION_BINARY_ALLOY_TCC_FUNC)
+      cs_log_printf(CS_LOG_SETUP,
+                    " User-defined function for the thermo-solutal coupling");
+    else
+      cs_log_printf(CS_LOG_SETUP,
+                    " Default thermo-solutal coupling");
     cs_log_printf(CS_LOG_SETUP, "\n");
 
     if (cs_flag_test(solid->options,
@@ -2928,104 +3066,10 @@ cs_solidification_compute(const cs_mesh_t              *mesh,
 
   if (solid->model & CS_SOLIDIFICATION_MODEL_BINARY_ALLOY) {
 
-    assert(solid->model & CS_SOLIDIFICATION_MODEL_USE_TEMPERATURE);
     cs_solidification_binary_alloy_t  *alloy
       = (cs_solidification_binary_alloy_t *)solid->model_context;
 
-    const size_t  csize = quant->n_cells*sizeof(cs_real_t);
-    const cs_equation_t  *c_eq = alloy->solute_equation;
-    const cs_equation_t  *t_eq = solid->thermal_sys->thermal_eq;
-
-    cs_real_t  *temp = cs_equation_get_cell_values(t_eq, false);
-    cs_real_t  *conc = cs_equation_get_cell_values(c_eq, false);
-
-    /* Compute the state at t^(n+1) knowing that at state t^(n)
-
-     * Non-linear iterations (k) are also performed to converge on the relation
-     * gliq^{k+1} = gliq(temp^{k+1}, conc^{k+1})
-     *
-     * Cbulk^{0}_{n+1} = Cbulk_{n}
-     * Tbulk^{0}_{n+1} = Tbulk_{n}
-     * gl^{0}_{n+1} = gl_{n}
-     */
-    cs_equation_current_to_previous(c_eq);
-    cs_equation_current_to_previous(t_eq);
-    cs_field_current_to_previous(solid->g_l_field);
-
-    /* At the beginning, field_{n+1}^{k=0} = field_n */
-    memcpy(alloy->tk_bulk, temp, csize);
-    memcpy(alloy->ck_bulk, conc, csize);
-
-    int  n_iter = 0;
-    cs_real_t  delta_temp = 1 + alloy->delta_tolerance;
-    cs_real_t  delta_cbulk = 1 + alloy->delta_tolerance;
-
-    while ( ( delta_temp  > alloy->delta_tolerance ||
-              delta_cbulk > alloy->delta_tolerance  ) &&
-            n_iter        < alloy->n_iter_max) {
-
-      /* Solve Cbulk^(k+1)_{n+1} knowing Cbulk^{k}_{n+1}  */
-      cs_equation_solve(false,  /* No cur2prev inside a non-linear iterative
-                                   process */
-                        mesh, alloy->solute_equation);
-
-      /* Update the source term for the thermal equation */
-      alloy->update_thm_st(mesh, connect, quant, time_step);
-
-      /* Solve the thermal system */
-      cs_thermal_system_compute(false, /* No cur2prev inside a non-linear
-                                          iterative process */
-                                mesh, time_step, connect, quant);
-
-      /* Update fields and properties which are related to solved variables
-       * g_l, state */
-      alloy->update_gl(mesh, connect, quant, time_step);
-
-      /* Evolution of the temperature and the bulk concentration during this
-         iteration */
-      delta_temp = -1, delta_cbulk = -1;
-      cs_lnum_t  cid_maxt = -1, cid_maxc = -1;
-      for (cs_lnum_t  c_id = 0; c_id < quant->n_cells; c_id++) {
-
-
-        cs_real_t  dtemp = fabs(temp[c_id]- alloy->tk_bulk[c_id]);
-        cs_real_t  dconc = fabs(conc[c_id] - alloy->ck_bulk[c_id]);
-
-        alloy->tk_bulk[c_id] = temp[c_id];
-        alloy->ck_bulk[c_id] = conc[c_id];
-
-        if (dtemp > delta_temp)
-          delta_temp = dtemp, cid_maxt = c_id;
-        if (dconc > delta_cbulk)
-          delta_cbulk = dconc, cid_maxc = c_id;
-
-      } /* Loop on cells */
-
-      n_iter++;
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "### Solidification.NL: "
-                    " k= %d | delta_temp= %5.3e | delta_cbulk= %5.3e\n",
-                    n_iter, delta_temp, delta_cbulk);
-      cs_log_printf(CS_LOG_DEFAULT,
-                    "### Solidification.NL: "
-                    " k= %d | delta_temp= %7d | delta_cbulk= %7d\n",
-                    n_iter, cid_maxt, cid_maxc);
-
-    } /* while iterating */
-
-    /* Update the liquid concentration of the solute (c_l) */
-    alloy->update_cl(mesh, connect, quant, time_step);
-
-    /* Update fields and properties which are related to solved variables
-     * g_l, state */
-    alloy->update_gl(mesh, connect, quant, time_step);
-
-    /* The cell state is now updated at this stage. This will be useful for
-       the monitoring */
-    _update_binary_alloy_final_state(quant);
-
-    /* Update fields and properties which are related to solved variables */
-    alloy->update_momentum_properties(mesh, connect, quant, time_step);
+    alloy->thermosolutal_coupling(mesh, connect, quant, time_step);
 
   }
   else { /* Solidification process with a pure component without segregation */
