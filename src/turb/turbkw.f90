@@ -1461,6 +1461,9 @@ if (ntcabs.eq.1.and.reinit_turb.eq.1) then
   nu0 = viscl0 / ro0
 
   do iel = 1, ncel
+
+    if (cell_is_active(iel).eq.0) cycle
+
     ! Compute the velocity magnitude
     xunorm = vel(1,iel)**2 + vel(2,iel)**2 + vel(3,iel)**2
     xunorm = sqrt(xunorm)

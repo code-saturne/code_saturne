@@ -575,6 +575,9 @@ allocate(byplus(nfabor))
 allocate(bdplus(nfabor))
 allocate(buk(nfabor))
 
+! Disable solid cells in fluid_solid mode
+if (fluid_solid) call cs_mesh_quantities_set_has_disable_flag(1)
+
 ! --- Loop on boundary faces
 do ifac = 1, nfabor
 
@@ -796,7 +799,7 @@ do ifac = 1, nfabor
       if (itytur.eq.2.or.iturb.eq.60) then
 
         xmutlm = xkappa*visclc*yplus
-        if (cell_is_active(iel).eq.0) then
+        if (cell_is_active(iel).eq.1) then
           mut_lm_dmut = xmutlm/visctc
         else
           mut_lm_dmut = 0.d0
@@ -1708,6 +1711,10 @@ do ifac = 1, nfabor
 enddo
 ! --- End of loop over faces
 
+
+! Re enable solid cells in fluid_solid mode
+if (fluid_solid) call cs_mesh_quantities_set_has_disable_flag(0)
+
 !===========================================================================
 ! 8. Boundary conditions on the other scalars
 !    (Specific treatment for the variances of the scalars next to walls:
@@ -2480,8 +2487,8 @@ do ifac = 1, nfabor
         ! In the log layer
         if (yplus.ge.ypth.and.iturb.ne.0) then
           xmutlm = xkappa*visclc*yplus
-          if (cell_is_active(iel).eq.0) then
-            mut_lm_dmut = xmutlm/visctc
+          if (cell_is_active(iel).eq.1) then
+            mut_lm_dmut = xmutlm/max(visctc,1.e-12*visclc)
           else
             mut_lm_dmut = 0.d0
           endif

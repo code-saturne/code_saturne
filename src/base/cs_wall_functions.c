@@ -58,6 +58,7 @@
 
 #include "cs_log.h"
 #include "cs_mesh.h"
+#include "cs_mesh_quantities.h"
 #include "cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------
@@ -293,16 +294,9 @@ cs_get_glob_wall_functions(void)
 }
 
 /*----------------------------------------------------------------------------*/
-
-/*! \brief Compute the friction velocity and \f$y^+\f$ / \f$u^+\f$.
-
-*/
-/*------------------------------------------------------------------------------
-  Arguments
- ______________________________________________________________________________.
-   mode           name          role                                           !
- _____________________________________________________________________________*/
 /*!
+ * \brief Compute the friction velocity and \f$y^+\f$ / \f$u^+\f$.
+ *
  * \param[in]     iwallf        wall function type
  * \param[in]     ifac          face number
  * \param[in]     l_visc        kinematic viscosity
@@ -354,6 +348,17 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
 
   /* Activation of wall function by default */
   *iuntur = 1;
+
+  /* Get the adjacent border cell and its fluid/solid tag */
+  cs_lnum_t cell_id = cs_glob_mesh->b_face_cells[ifac-1] ;
+
+  /* If the cell is a solid cell, disable wall functions */
+
+  const cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+  if (mq->has_disable_flag) {
+    if (mq->c_disable_flag[cell_id])
+      iwallf = CS_WALL_F_DISABLED;
+  }
 
   switch (iwallf) {
   case CS_WALL_F_DISABLED:
@@ -485,11 +490,10 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
   }
 }
 
-/*-------------------------------------------------------------------------------*/
-
+/*----------------------------------------------------------------------------*/
 /*!
- *  \brief Compute the correction of the exchange coefficient between the fluid and
- *  the wall for a turbulent flow.
+ *  \brief Compute the correction of the exchange coefficient between the
+ *         fluid and the wall for a turbulent flow.
  *
  *  This is function of the dimensionless
  *  distance to the wall \f$ y^+ = \dfrac{\centip \centf u_\star}{\nu}\f$.
@@ -499,13 +503,6 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
  *  h_{tur} = Pr \dfrac{y^+}{T^+}
  *  \f]
  *
- */
-/*-------------------------------------------------------------------------------
-  Arguments
- ______________________________________________________________________________.
-   mode           name          role                                           !
- ______________________________________________________________________________*/
-/*!
  * \param[in]     iwalfs        type of wall functions for scalar
  * \param[in]     prl           laminar Prandtl number
  * \param[in]     prt           turbulent Prandtl number
@@ -515,7 +512,7 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
  * \param[out]    htur          corrected exchange coefficient
  * \param[out]    yplim         value of the limit for \f$ y^+ \f$
  */
-/*-------------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
