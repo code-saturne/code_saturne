@@ -281,6 +281,28 @@ class Boundary(object) :
         return self._nature
 
 
+    @Variables.noUndo
+    def getDefinedScalarFormulaList(self):
+        """
+        Get the list of scalars with formula which are defined for the boundary.
+        This is based on the XML definition, and not on other model features,
+        so is more lightweight and based on XML tree node structure.
+        """
+
+        l = []
+        for n in self.boundNode.xmlGetNodeList('scalar'):
+            if n['name'] and n['choice']:
+                choice = n['choice']
+                if '_formula' in choice:
+                    name = n['name']
+                    formula = n.xmlGetChildString(choice)
+                    if not formula:
+                        formula = self.getDefaultScalarFormula(name, choice)
+
+                    l.append((name, choice, formula))
+        return l
+
+
     def delete(self):
         """
         Delete Boundary
@@ -1398,6 +1420,7 @@ class JouleBoundary(Boundary) :
         """
         scalar_list = []
         self.sca_model = DefineUserScalarsModel(self.case)
+
         for sca in self.sca_model.getElectricalScalarsNameList():
             scalar_list.append(sca)
 
@@ -3059,9 +3082,14 @@ class WallBoundary(Boundary) :
         """
         Get scalar choice
         """
-        Model().isInList(name, self.__getscalarList())
+        if name in self.__getscalarList():
+            scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
+        else:
+            scalarNode = self.boundNode.xmlGetNode('scalar', name=name)
 
-        scalarNode = self.boundNode.xmlInitNode('scalar', name=name)
+        if not scalarNode:
+            choice = self.__defaultValues()['scalarChoice']
+            return choice
 
         #update type and name of scalar
         self.updateScalarTypeAndName(scalarNode, name)

@@ -52,7 +52,7 @@ from code_saturne.Pages.BoundaryConditionsElectricalForm import Ui_BoundaryCondi
 from code_saturne.model.ElectricalModel import ElectricalModel
 
 from code_saturne.model.LocalizationModel import LocalizationModel, Zone
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.Boundary import Boundary
 from code_saturne.model.NotebookModel import NotebookModel
 
@@ -97,6 +97,8 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.lineEditValueSpecies.textChanged[str].connect(self.slotSpecies)
 
         self.pushButtonPotVectorFormula.clicked.connect(self.slotPotVectorFormula)
+        self.pushButtonPotElecFormula.clicked.connect(self.slotPotElecFormula)
+        self.pushButtonPotElecImFormula.clicked.connect(self.slotPotElecImFormula)
 
         self.comboBoxTypePotElec.activated[str].connect(self.slotPotElecChoice)
         self.comboBoxTypePotElecIm.activated[str].connect(self.slotPotElecImChoice)
@@ -136,9 +138,6 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.modelPotElec.addItem(self.tr("Prescribed flux  (user law)"), 'neumann_formula')
         if self.__model.getScaling() == 'on':
             self.modelPotElec.addItem(self.tr("Implicit value (dpot)"), 'dirichlet_implicit')
-        #TODO
-        self.modelPotElec.disableItem(1)
-        self.modelPotElec.disableItem(3)
 
         self.potElec = "elec_pot_r"
         self.modelPotElecLabel = ComboModel(self.comboBoxPotElec,1,1)
@@ -149,9 +148,6 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.modelPotElecIm.addItem(self.tr("Prescribed value  (user law)"), 'dirichlet_formula')
         self.modelPotElecIm.addItem(self.tr("Prescribed flux"), 'neumann')
         self.modelPotElecIm.addItem(self.tr("Prescribed flux  (user law)"), 'neumann_formula')
-        #TODO
-        self.modelPotElecIm.disableItem(1)
-        self.modelPotElecIm.disableItem(3)
 
         self.potElecIm = 'elec_pot_i'
         self.modelPotElecImLabel = ComboModel(self.comboBoxPotElecIm,1,1)
@@ -161,7 +157,6 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.modelPotVector.addItem(self.tr("Prescribed value  (user law)"), 'dirichlet_formula')
         self.modelPotVector.addItem(self.tr("Null flux"), 'neumann')
         self.modelPotVector.addItem(self.tr("Implicit flux"), 'neumann_implicit')
-        self.modelPotVector.disableItem(0)
 
         self.potVect = 'vec_potential'
         self.modelPotVectLabel = ComboModel(self.comboBoxPotVector, 1, 1)
@@ -217,6 +212,15 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
             self.labelValuePotElec.show()
             v = self.__b.getElecScalarValue(self.potElec, self.potElec_type)
             self.lineEditValuePotElec.setText(str(v))
+        elif '_formula' in self.potElec_type:
+            self.labelValuePotElec.show()
+            self.pushButtonPotElecFormula.setEnabled(True)
+            exp = self.__b.getElecScalarFormula(self.potElec, self.potElec_type)
+            if exp:
+                self.pushButtonPotElecFormula.setStyleSheet("background-color: green")
+                self.pushButtonPotElecFormula.setToolTip(exp)
+            else:
+                self.pushButtonPotElecFormula.setStyleSheet("background-color: red")
 
         # Initialize imaginary electric potential
         if self.__model.getElectricalModel() == 'joule':
@@ -230,6 +234,15 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
                     self.labelValuePotElecIm.show()
                     v = self.__b.getElecScalarValue(self.potElecIm, self.potElecIm_type)
                     self.lineEditValuePotElecIm.setText(str(v))
+                elif '_formula' in self.potElecIm_type:
+                    self.labelValuePotElec.show()
+                    self.pushButtonPotElecFormula.setEnabled(True)
+                    exp = self.__b.getElecScalarFormula(self.potElecIm, self.potElecIm_type)
+                    if exp:
+                        self.pushButtonPotElecImFormula.setStyleSheet("background-color: green")
+                        self.pushButtonPotElecImFormula.setToolTip(exp)
+                    else:
+                        self.pushButtonPotElecImFormula.setStyleSheet("background-color: red")
 
         # Initialize potential vector
         if self.__model.getElectricalModel() == 'arc':
@@ -326,6 +339,68 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
             self.__b.setElecScalarValue(self.species, 'dirichlet', value)
 
 
+    def getScalarFormula(self, variable_name, exp_type, exp):
+        """
+        """
+        result = None
+
+        exa = """#example: """
+        if exp_type == 'dirichlet_formula':
+            req = [(variable_name, str(variable_name))]
+        elif exp_type == 'neumann_formula':
+            req = [("flux", "flux")]
+        elif exp_type == 'exchange_coefficient_formula':
+            req = [(variable_name, str(variable_name)),("hc", "heat coefficient")]
+
+        sym = [('x', "X face's gravity center"),
+               ('y', "Y face's gravity center"),
+               ('z', "Z face's gravity center"),
+               ('dt', 'time step'),
+               ('t', 'current time'),
+               ('iter', 'number of iteration'),
+               ('surface', 'Boundary zone surface')]
+
+        for (nme, val) in self.notebook.getNotebookList():
+            sym.append((nme, 'value (notebook) = ' + str(val)))
+
+        c = self.__boundary.getScalarChoice(variable_name)
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'bnd',
+                                zone_name     = self.__boundary._label,
+                                variable_name = variable_name,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                condition     = c,
+                                examples      = exa)
+
+        if dialog.exec_():
+            result = dialog.get_result()
+            log.debug("slotSpeciesFormula -> %s" % str(result))
+            self.__b.setElecScalarFormula(variable_name, exp_type, str(result))
+
+        return result
+
+
+    @pyqtSlot()
+    def slotPotElecFormula(self):
+        """
+        """
+        exp = self.__b.getElecScalarFormula(self.potElec, self.potElec_type)
+        if self.getScalarFormula(self.potElec, self.potElec_type, exp):
+            self.pushButtonPotElecFormula.setStyleSheet("background-color: green")
+            self.pushButtonPotElecFormula.setToolTip(exp)
+
+    @pyqtSlot()
+    def slotPotElecImFormula(self):
+        """
+        """
+        exp = self.__b.getElecScalarFormula(self.potElec, self.potElec_type)
+        if self.getScalarFormula(self.potElec, self.potElec_type, exp):
+            self.pushButtonPotElecImFormula.setStyleSheet("background-color: green")
+            self.pushButtonPotElecImFormula.setToolTip(exp)
+
+
     @pyqtSlot()
     def slotPotVectorFormula(self):
         """
@@ -352,10 +427,18 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        dialog = QMeiEditorView(self,expression = exp,
-                                required   = req,
-                                symbols    = sym,
-                                examples   = exa)
+        c = self.__b.getElecScalarChoice(self.potVect)
+
+        dialog = QMegEditorView(parent        = self,
+                                function_type = 'bnd',
+                                zone_name     = self.__boundary._label,
+                                variable_name = self.potVect,
+                                expression    = exp,
+                                required      = req,
+                                symbols       = sym,
+                                condition     = c,
+                                examples      = exa)
+
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotPotVectorFormula -> %s" % str(result))

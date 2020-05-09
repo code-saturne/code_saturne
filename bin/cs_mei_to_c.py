@@ -334,12 +334,12 @@ class mei_to_c_interpreter:
                        self.funcs[ftype][fkey]['exp'])
             raise Exception(msg)
 
-        self.funcs[ftype][fkey] = {'exp':expression,
-                                   'req':required,
-                                   'sym':symbols,
-                                   'knf':known_fields,
-                                   'cnd':condition,
-                                   'tpe':source_type}
+        self.funcs[ftype][fkey] = {'exp': expression,
+                                   'req': required,
+                                   'sym': symbols,
+                                   'knf': known_fields,
+                                   'cnd': condition,
+                                   'tpe': source_type}
 
         self.funcs[ftype][fkey]['lines'] = break_expression(expression)
 
@@ -468,7 +468,7 @@ class mei_to_c_interpreter:
     def write_bnd_block(self, func_key):
 
         if func_key not in self.funcs['bnd'].keys():
-            return
+            return None
 
         func_params = self.funcs['bnd'][func_key]
 
@@ -1374,32 +1374,31 @@ class mei_to_c_interpreter:
                                         [], condition=c)
 
                 # Scalars
-                scalar_list = boundary.sca_model.getScalarNameList()
-                if boundary.sca_model.getMeteoScalarsNameList() != None:
-                    for sca in boundary.sca_model.getMeteoScalarsNameList():
-                        scalar_list.append(sca)
-                if len(boundary.sca_model.getThermalScalarName()) > 0:
-                    scalar_list.append(boundary.sca_model.getThermalScalarName()[0])
+                scalar_list = boundary.getDefinedScalarFormulaList()
 
-                if zone._nature not in ['free_inlet_outlet', 'free_surface', \
-                                        'imposed_p_outlet']:
-                  for sca in scalar_list:
-                      c = boundary.getScalarChoice(sca)
-                      sym  = ['x', 'y', 'z', 't', 'dt', 'iter', 'surface']
-                      for (name, val) in NotebookModel(self.case).getNotebookList():
-                          sym.append((name, 'value (notebook) = ' + str(val)))
+                for e in scalar_list:
+                    sca = e[0]
+                    c = e[1]
+                    exp = e[2]
+                    sym  = ['x', 'y', 'z', 't', 'dt', 'iter', 'surface']
+                    for (name, val) in NotebookModel(self.case).getNotebookList():
+                        sym.append((name, 'value (notebook) = ' + str(val)))
 
-                      if '_formula' in c:
-                          exp = boundary.getScalarFormula(sca, c)
-                          if c == 'dirichlet_formula':
-                              req = [sca]
-                          elif c == 'neumann_formula':
-                              req = ['flux']
-                          else:
-                              req = [sca, 'hc']
-                          self.init_block('bnd', zone._label, sca,
-                                          exp, req, sym, [],
-                                          condition=c)
+                    if c == 'dirichlet_formula':
+                        if sca in ('vec_potential',):
+                            req = [sca+'[0]', sca+'[1]', sca+'[2]']
+                        else:
+                            req = [sca]
+                    elif c == 'neumann_formula':
+                        req = ['flux']
+                    elif c == 'exchange_coefficient_formula':
+                        req = [sca, 'hc']
+                    else:
+                        continue
+
+                    self.init_block('bnd', zone._label, sca,
+                                    exp, req, sym, [],
+                                    condition=c)
 
         else:
             from code_saturne.model.LocalizationModel import LocalizationModel
@@ -1972,6 +1971,9 @@ class mei_to_c_interpreter:
             code_to_write += _file_header3
             code_to_write += _function_header[func_type]
             for key in self.funcs[func_type].keys():
+                w_block = self.write_block(func_type, key)
+                if w_block == None:
+                    continue
                 zone_name, var_name = key.split('::')
                 var_name = var_name.replace("+", ", ")
                 m1 = _block_comments[func_type] % (var_name, zone_name)
@@ -1980,7 +1982,7 @@ class mei_to_c_interpreter:
 
                 code_to_write += '  ' + m2
                 code_to_write += '  ' + m1
-                code_to_write += self.write_block(func_type, key)
+                code_to_write += w_block
                 code_to_write += '  ' + m2 + '\n'
 
             if func_type in ['bnd', 'src', 'ini']:
