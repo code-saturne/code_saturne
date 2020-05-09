@@ -1310,7 +1310,7 @@ cs_turbomachinery_join_add(const char  *sel_criteria,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add a cs_join_t structure to the list of rotor/stator couplings.
+ * \brief Add a boundary coupling to the list of rotor/stator couplings.
  *
  * \param[in]  sel_criteria   boundary face selection criteria
  * \param[in]  tolerance      value of the search tolerance

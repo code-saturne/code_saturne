@@ -121,7 +121,7 @@ cs_turbomachinery_join_add(const char  *sel_criteria,
                            int          visualization);
 
 /*----------------------------------------------------------------------------
- * Add a cs_join_t structure to the list of rotor/stator couplings.
+ * \brief Add a boundary coupling to the list of rotor/stator couplings.
  *
  * parameters:
  *   sel_criteria <-- boundary face selection criteria
