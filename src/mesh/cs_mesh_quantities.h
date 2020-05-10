@@ -169,19 +169,6 @@ extern int cs_glob_porous_model;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Return 0 if cell is disabled
- *
- * \param[in]  cell_id
- *
- * \return  0  if cell is disabled
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_f_mesh_quantities_cell_is_active(cs_lnum_t  cell_id);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Query or modification of the option for computing cell centers.
  *
  * \param[in]  algo_choice  < 0 : query

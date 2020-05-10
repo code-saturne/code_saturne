@@ -125,6 +125,9 @@ cs_f_mesh_quantities_get_pointers(int   **iporos);
 void
 cs_f_mesh_quantities_fluid_vol_reductions(void);
 
+int
+cs_f_mesh_quantities_cell_is_active(cs_lnum_t  cell_id);
+
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
