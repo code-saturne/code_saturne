@@ -125,6 +125,9 @@ cs_f_mesh_quantities_get_pointers(int   **iporos);
 void
 cs_f_mesh_quantities_fluid_vol_reductions(void);
 
+int
+cs_f_mesh_quantities_cell_is_active(cs_lnum_t  cell_id);
+
 /*=============================================================================
  * Private function definitions
  *============================================================================*/
@@ -2141,25 +2144,6 @@ _b_thickness(const cs_mesh_t             *m,
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return 0 if cell is disabled, 1 otherwise
- *
- * \param[in]  cell_id
- *
- * \return  0  if cell is disabled
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_f_mesh_quantities_cell_is_active(cs_lnum_t  cell_id)
-{
-  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-
-  return (1 - (mq->has_disable_flag
-          * mq->c_disable_flag[mq->has_disable_flag * cell_id]));
-}
-
 /*----------------------------------------------------------------------------
  * Get pointers to global variables.
  *
@@ -2188,6 +2172,25 @@ cs_f_mesh_quantities_fluid_vol_reductions(void)
 
   cs_mesh_quantities_fluid_vol_reductions(m,
                                           mq);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return 0 if cell is disabled, 1 otherwise
+ *
+ * \param[in]  cell_id
+ *
+ * \return  0  if cell is disabled
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_f_mesh_quantities_cell_is_active(cs_lnum_t  cell_id)
+{
+  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
+
+  return (1 - (mq->has_disable_flag
+          * mq->c_disable_flag[mq->has_disable_flag * cell_id]));
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */

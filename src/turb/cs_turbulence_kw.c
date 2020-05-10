@@ -1626,13 +1626,13 @@ cs_turbulence_kw(int              nvar,
 
   cs_real_t utaurf;
   cs_real_t nu0;
-  cs_real_t xunorm;
   cs_real_t ya;
   cs_real_t ypa;
   cs_real_t limiter;
   cs_real_t ut2;
 
-  if (cs_glob_time_step->nt_cur == 1 && cs_glob_turb_rans_model->reinit_turb == 1) {
+  if (   cs_glob_time_step->nt_cur == 1
+      && cs_glob_turb_rans_model->reinit_turb == 1) {
 
     cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
 
@@ -1641,50 +1641,50 @@ cs_turbulence_kw(int              nvar,
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-      /* In case of coupled fluid/solid simulation 
-       * we do not wan to reinitialize turbulence in
-       * the solid region */
-      cs_lnum_t c_is_active = cs_f_mesh_quantities_cell_is_active(c_id);
+      /* In case of coupled fluid/solid simulation
+       * avoid reinitializing turbulence in the solid region */
+      if (fvq->has_disable_flag) {
+        if (fvq->c_disable_flag[c_id])
+          continue;
+      }
 
-      if(c_is_active == 1) {
+      /* Compute the velocity magnitude */
+      cs_real_t xunorm = cs_math_3_norm(vel[c_id]);
 
-        /* Compute the velocity magnitude */
-        xunorm = pow(vel[c_id][0],2.) + pow(vel[c_id][1],2.) + pow(vel[c_id][2],2.);
-        xunorm = sqrt(xunorm);
+      ya = w_dist[c_id];
+      ypa = ya*utaurf/nu0;
+      /* Velocity magnitude is imposed (limited only),
+         the direction is conserved */
+      if (xunorm <= 1.e-12*uref) {
+        limiter = 1.;
+      }
+      else {
+        limiter = fmin(utaurf/xunorm * (2.5*log(1. + 0.4*ypa)
+                                        + 7.8*(1. - exp(-ypa/11.)
+                                               - (ypa/11.)*exp(-0.33*ypa))),
+                       1.);
+      }
 
-        ya = w_dist[c_id];
-        ypa = ya*utaurf/nu0;
-        /* Velocity magnitude is imposed (limitted only), the direction is
-           conserved */
-        if (xunorm <= 1.e-12*uref) {
-          limiter = 1.;
-        }
-        else {
-          limiter = fmin(utaurf/xunorm * (2.5*log(1. + 0.4*ypa)
-                                            + 7.8*(1. - exp(-ypa/11.)
-                                                   - (ypa/11.)*exp(-0.33*ypa))),
-                         1.);
-        }
+      vel[c_id][0] = limiter*vel[c_id][0];
+      vel[c_id][1] = limiter*vel[c_id][1];
+      vel[c_id][2] = limiter*vel[c_id][2];
 
-        vel[c_id][0] = limiter*vel[c_id][0];
-        vel[c_id][1] = limiter*vel[c_id][1];
-        vel[c_id][2] = limiter*vel[c_id][2];
+      ut2 = 0.05 * uref;
+      xeps =   cs_math_pow3(utaurf)
+             * fmin(1. / (cs_turb_xkappa * 15. * nu0 / utaurf),
+                    1. / (cs_turb_xkappa * ya));
+      cvar_k[c_id] = xeps /2. / nu0 * cs_math_pow2(ya)
+                                    * cs_math_pow2(exp(-ypa/25.))
+                    + cs_math_pow2(ut2) / sqrt(cs_turb_cmu)
+                    * cs_math_pow2(1. - exp(-ypa / 25.));
 
-        ut2 = 0.05 * uref;
-        xeps =   cs_math_pow3(utaurf)
-               * fmin(1. / (cs_turb_xkappa * 15. * nu0 / utaurf),
-                      1. / (cs_turb_xkappa * ya));
-        cvar_k[c_id] = xeps /2. / nu0 * cs_math_pow2(ya) * cs_math_pow2(exp(-ypa/25.))
-                      + cs_math_pow2(ut2) / sqrt(cs_turb_cmu)
-                      * cs_math_pow2(1. - exp(-ypa / 25.));
+      cvar_omg[c_id] = cs_math_pow3(ut2) / (cs_turb_xkappa * 15. * nu0 / ut2)
+                                         / (cs_math_pow2(ut2)/sqrt(cs_turb_cmu))
+                                         / cs_turb_cmu;
 
-        cvar_omg[c_id] = cs_math_pow3(ut2) / (cs_turb_xkappa * 15. * nu0 / ut2)
-                                           / (cs_math_pow2(ut2)/sqrt(cs_turb_cmu))
-                                           / cs_turb_cmu;
+    }
 
-      } // End test on active cells
-    } // End Lood on cells 
-  } // End test on time step
+  } /* End of test on turbulence reinitialization */
 
   /* Cleanup */
 
@@ -1709,7 +1709,7 @@ cs_turbulence_kw(int              nvar,
   BFT_FREE(d2uidxi2);
   BFT_FREE(vel_laplacian);
   BFT_FREE(rotfct);
-  }
+}
 
 /*----------------------------------------------------------------------------*/
 

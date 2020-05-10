@@ -906,8 +906,10 @@ cs_wall_functions_2scales_smooth_rough(cs_real_t   l_visc,
 
     *nlogla += 1;
 
+  }
+
   /* Viscous sub-layer and therefore shift again */
-  } else {
+  else {
 
     *dplus = ypluli - *yplus;
     *yplus = ypluli;
@@ -1210,8 +1212,9 @@ cs_wall_functions_t *
 cs_get_glob_wall_functions(void);
 
 /*----------------------------------------------------------------------------*/
-/*! \brief  Compute the friction velocity and \f$y^+\f$ / \f$u^+\f$.
-
+/*!
+ * \brief  Compute the friction velocity and \f$y^+\f$ / \f$u^+\f$.
+ *
  * \param[in]     iwallf        wall function type
  * \param[in]     ifac          face number
  * \param[in]     l_visc        kinematic viscosity
