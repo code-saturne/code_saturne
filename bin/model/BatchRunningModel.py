@@ -288,9 +288,14 @@ class BatchRunningModel(object):
         """
 
         if not self.run_conf:
-            return
-
-        self.__update__()
+            if  param and path:
+                self.path = path
+                if os.path.isfile(path):
+                    self.load()
+            if not self.run_conf:
+                return
+        else:
+            self.__update__()
 
         if param != None:
             param = os.path.basename(param)
