@@ -47,7 +47,6 @@ $ cd ..
 ```
 In this case, additional tools need to be available:
 • GNU Autotools: Autoconf, Automake, Libtool (2.2 or 2.4).
-• Bison (or Yacc) and Flex (or Lex)
 • PdfLaTeX
 • Doxygen (1.8.7 or more recent). The path to Doxygen can be specified during
 the configure phase with `configure DOXYGEN=PATH TO DOXYGEN`.

@@ -271,7 +271,7 @@ bin/cs_run_conf.py \
 bin/cs_script.py \
 bin/cs_submit.py \
 bin/cs_math_parser.py \
-bin/cs_mei_to_c.py \
+bin/cs_meg_to_c.py \
 bin/cs_update.py \
 bin/cs_xml_reader.py
 

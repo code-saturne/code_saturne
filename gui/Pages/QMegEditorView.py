@@ -28,8 +28,8 @@ Its is based on the MEI tools
 
 This module contains the following classes and function:
 - format
-- QMeiHighlighter
-- QMeiEditorView
+- QMegHighlighter
+- QMegEditorView
 """
 
 #-------------------------------------------------------------------------------
@@ -55,9 +55,9 @@ from code_saturne.Base.CompletionTextEditor import *
 #-------------------------------------------------------------------------------
 
 from code_saturne.model.Common import GuiParam
-from code_saturne.Pages.QMeiEditorForm import Ui_QMeiDialog
+from code_saturne.Pages.QMegEditorForm import Ui_QMegDialog
+from code_saturne.cs_meg_to_c import meg_to_c_interpreter
 
-from code_saturne.cs_mei_to_c import mei_to_c_interpreter
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -96,7 +96,7 @@ STYLES = {
     }
 
 
-class QMeiHighlighter(QSyntaxHighlighter):
+class QMegHighlighter(QSyntaxHighlighter):
     """
     Syntax highlighter for the mathematical expressions editor.
     """
@@ -122,9 +122,9 @@ class QMeiHighlighter(QSyntaxHighlighter):
         QSyntaxHighlighter.__init__(self, document)
 
         rules = []
-        rules += [(r'\b%s\b' % w, STYLES['keyword']) for w in QMeiHighlighter.keywords]
-        rules += [(r'%s' % o, STYLES['operator']) for o in QMeiHighlighter.operators]
-        rules += [(r'%s' % b, STYLES['brace']) for b in QMeiHighlighter.braces]
+        rules += [(r'\b%s\b' % w, STYLES['keyword']) for w in QMegHighlighter.keywords]
+        rules += [(r'%s' % o, STYLES['operator']) for o in QMegHighlighter.operators]
+        rules += [(r'%s' % b, STYLES['brace']) for b in QMegHighlighter.braces]
         rules += [(r'\b%s\b' % r, STYLES['required']) for r,l in required]
         rules += [(r'\b%s\b' % s, STYLES['symbols']) for s,l in symbols]
         rules += [(r'#[^\n]*', STYLES['comment'])]
@@ -149,7 +149,7 @@ class QMeiHighlighter(QSyntaxHighlighter):
 # Dialog for mathematical expression interpretor
 #-------------------------------------------------------------------------------
 
-class QMegEditorView(QDialog, Ui_QMeiDialog):
+class QMegEditorView(QDialog, Ui_QMegDialog):
     """
     """
     def __init__(self, parent, function_type, zone_name, variable_name,
@@ -160,12 +160,12 @@ class QMegEditorView(QDialog, Ui_QMeiDialog):
         """
         QDialog.__init__(self, parent)
 
-        Ui_QMeiDialog.__init__(self)
+        Ui_QMegDialog.__init__(self)
         self.setupUi(self)
 
-        self.mei_to_c = mei_to_c_interpreter(parent.case, False)
+        self.meg_to_c = meg_to_c_interpreter(parent.case, False)
 
-        self.mei_to_c.init_block(function_type,
+        self.meg_to_c.init_block(function_type,
                                  zone_name,
                                  variable_name,
                                  expression,
@@ -204,8 +204,8 @@ class QMegEditorView(QDialog, Ui_QMeiDialog):
 
         # Syntax highlighting
         CompletionTextEdit(self.textEditExpression)
-        self.h1 = QMeiHighlighter(self.textEditExpression, req, sym)
-        self.h2 = QMeiHighlighter(self.textEditExamples, req, sym)
+        self.h1 = QMegHighlighter(self.textEditExpression, req, sym)
+        self.h2 = QMegHighlighter(self.textEditExamples, req, sym)
 
         # Required symbols of the mathematical expression
 
@@ -309,7 +309,7 @@ class QMegEditorView(QDialog, Ui_QMeiDialog):
         What to do when user clicks on 'OK'.
         """
 
-        if self.mei_to_c == None:
+        if self.meg_to_c == None:
             QDialog.accept(self)
             return
 
@@ -319,15 +319,15 @@ class QMegEditorView(QDialog, Ui_QMeiDialog):
 
         log.debug("check.string: %s" % str(self.textEditExpression.toPlainText()))
 
-        # The provided mei_to_c interpreter should have only one block.
+        # The provided meg_to_c interpreter should have only one block.
         # Could, and should, be modified in the future to identify
         # the good key if needed...
         new_exp = str(self.textEditExpression.toPlainText()) + '\n'
         check = 0
-        for func_type in self.mei_to_c.funcs.keys():
-            for k in self.mei_to_c.funcs[func_type].keys():
-                self.mei_to_c.update_block_expression(func_type, k, new_exp)
-                check, err_msg, n_erros = self.mei_to_c.check_meg_code_syntax(func_type)
+        for func_type in self.meg_to_c.funcs.keys():
+            for k in self.meg_to_c.funcs[func_type].keys():
+                self.meg_to_c.update_block_expression(func_type, k, new_exp)
+                check, err_msg, n_erros = self.meg_to_c.check_meg_code_syntax(func_type)
 
         if check != 0:
             if sys.version_info[0] < 3:
@@ -338,7 +338,7 @@ class QMegEditorView(QDialog, Ui_QMeiDialog):
             self.textEditExpression.textChanged.connect(self.slotClearBackground)
             return
 
-        self.mei_to_c.clean_tmp_dir()
+        self.meg_to_c.clean_tmp_dir()
 
         QDialog.accept(self)
 
@@ -347,7 +347,7 @@ class QMegEditorView(QDialog, Ui_QMeiDialog):
         """
         Method called when 'Cancel' button is clicked
         """
-        self.mei_to_c.clean_tmp_dir()
+        self.meg_to_c.clean_tmp_dir()
         log.debug("reject()")
         QDialog.reject(self)
 
@@ -374,7 +374,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     app.lastWindowClosed.connect(app.quit)
     parent = QWidget()
-    dlg = QMeiEditorView(parent)
+    dlg = QMegEditorView(parent)
     dlg.show()
     signal.signal(signal.SIGINT, signal.SIG_DFL)
     sys.exit(app.exec_())

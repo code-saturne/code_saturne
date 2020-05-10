@@ -33,6 +33,9 @@ Numerics and physical modelling:
 
 Architectural changes:
 
+- Fully replace MEI by generated (MEG) code. This removed the bootstrap
+  dependency on Bison and Flex.
+
 - Add pragmas in reference C user file to try to assign weak linkage
   to those files. This seems to work with gcc and clang, and is also
   mentioned in the IBM xl C documentation. This is a cleaner approach

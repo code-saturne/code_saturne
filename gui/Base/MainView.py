@@ -98,7 +98,7 @@ from code_saturne.model.ScriptRunningModel import ScriptRunningModel
 from code_saturne.model.SolutionDomainModel import getRunType
 from code_saturne.Base.QtPage import getexistingdirectory
 from code_saturne.Base.QtPage import from_qvariant, to_text_string, getopenfilename, getsavefilename
-from code_saturne.cs_mei_to_c import mei_to_c_interpreter
+from code_saturne.cs_meg_to_c import meg_to_c_interpreter
 
 #-------------------------------------------------------------------------------
 # log config
@@ -1393,7 +1393,7 @@ class MainView(object):
         """
         state = 0
         if self.case['run_type'] == 'standard':
-            mci = mei_to_c_interpreter(self.case)
+            mci = meg_to_c_interpreter(self.case)
 
             mci_state = mci.save_all_functions()
 

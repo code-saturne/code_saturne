@@ -102,7 +102,6 @@ PorosityView.py \
 PreprocessingView.py \
 ProfilesView.py \
 QMegEditorView.py \
-QMeiEditorView.py \
 SalomeActors.py \
 SalomeHandler.py \
 SolutionDomainView.py \
@@ -186,7 +185,7 @@ OutputVolumicVariablesForm.ui \
 PerformanceTuningForm.ui \
 PorosityForm.ui \
 ProfilesForm.ui \
-QMeiEditorForm.ui \
+QMegEditorForm.ui \
 PreprocessingForm.ui \
 SolutionDomainForm.ui \
 SourceTermsForm.ui \

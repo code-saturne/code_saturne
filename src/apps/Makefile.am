@@ -144,7 +144,6 @@ $(top_builddir)/src/rayt/libcsrayt.la \
 $(top_builddir)/src/user/libcsuser.la \
 $(top_builddir)/src/meg/libcsmeg.la \
 $(top_builddir)/src/libcsmodules.la \
-$(top_builddir)/src/mei/libmei.la \
 $(top_builddir)/src/bft/libbft.la \
 $(LIBPLE_LA) \
 $(LDFLAGS_PLE) $(LIBS_PLE) \
@@ -200,12 +199,6 @@ if HAVE_FRONTEND
 pkglibexec_PROGRAMS += cs_io_dump
 endif
 
-# Code_Saturne syntax checker
-
-if HAVE_FRONTEND
-pkglibexec_PROGRAMS += cs_check_syntax
-endif
-
 if HAVE_BACKEND
 cs_solver$(EXEEXT): libcs_solver.la
 	PYTHONPATH=$(top_builddir)/bin:$(top_srcdir)/bin \
@@ -219,25 +212,6 @@ if HAVE_FRONTEND
 cs_io_dump_CPPFLAGS = -DLOCALEDIR=\"'$(localedir)'\" -I$(top_srcdir)/src/base
 cs_io_dump_SOURCES = cs_io_dump.c
 cs_io_dump_LDADD = $(LTLIBINTL)
-endif
-
-# Code_Saturne syntax checker
-
-if HAVE_FRONTEND
-
-cs_check_syntax_CPPFLAGS = \
--DLOCALEDIR=\"'$(localedir)'\" \
--I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/bft \
--I$(top_srcdir)/src/mei
-cs_check_syntax_SOURCES = cs_check_syntax.c
-cs_check_syntax_LDADD = \
-$(top_builddir)/src/mei/libmei.la \
-$(top_builddir)/src/bft/libbft.la \
--lm
-cs_check_syntax_LDFLAGS = \
-$(ORIGINRUNPATH)
-
 endif
 
 # cs_solver executable is built using the same Python script as when

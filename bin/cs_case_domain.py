@@ -44,7 +44,7 @@ from code_saturne.cs_exec_environment import enquote_arg, separate_args
 from code_saturne.cs_exec_environment import get_ld_library_path_additions
 from code_saturne.cs_exec_environment import source_syrthes_env
 
-from code_saturne.cs_mei_to_c import mei_to_c_interpreter
+from code_saturne.cs_meg_to_c import meg_to_c_interpreter
 
 #===============================================================================
 # Utility functions
@@ -631,7 +631,7 @@ class domain(base_domain):
             case.xmlSaveDocument()
 
             case['case_path'] = self.exec_dir
-            self.mci = mei_to_c_interpreter(case, module_name=module_name)
+            self.mci = meg_to_c_interpreter(case, module_name=module_name)
 
             if self.mci.has_meg_code():
                 needs_comp = True

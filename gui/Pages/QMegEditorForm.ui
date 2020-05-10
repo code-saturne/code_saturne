@@ -1,6 +1,6 @@
 <ui version="4.0" >
- <class>QMeiDialog</class>
- <widget class="QDialog" name="QMeiDialog" >
+ <class>QMegDialog</class>
+ <widget class="QDialog" name="QMegDialog" >
   <property name="geometry" >
    <rect>
     <x>0</x>
@@ -114,7 +114,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>accepted()</signal>
-   <receiver>QMeiDialog</receiver>
+   <receiver>QMegDialog</receiver>
    <slot>accept()</slot>
    <hints>
     <hint type="sourcelabel" >
@@ -130,7 +130,7 @@
   <connection>
    <sender>buttonBox</sender>
    <signal>rejected()</signal>
-   <receiver>QMeiDialog</receiver>
+   <receiver>QMegDialog</receiver>
    <slot>reject()</slot>
    <hints>
     <hint type="sourcelabel" >
