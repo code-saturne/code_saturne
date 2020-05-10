@@ -209,11 +209,6 @@ Makefile.in
 
 # /src/mati/
 
-# /src/mei/
-/src/mei/mei_parser.c
-/src/mei/mei_parser.h
-/src/mei/mei_scanner.c
-
 # /src/pprt/
 
 # /src/rayt/
