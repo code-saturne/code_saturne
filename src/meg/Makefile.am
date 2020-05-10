@@ -81,6 +81,7 @@ cs_meg_fsi_struct.c \
 cs_meg_immersed_boundaries_inout.c \
 cs_meg_initialization.c \
 cs_meg_post_output.c \
+cs_meg_post_profile.c \
 cs_meg_source_terms.c \
 cs_meg_volume_function.c
 

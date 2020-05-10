@@ -48,8 +48,6 @@
 
 #include "fvm_selector.h"
 
-#include "mei_evaluate.h"
-
 #include "cs_all_to_all.h"
 #include "cs_base.h"
 #include "cs_boundary.h"
@@ -3903,38 +3901,6 @@ cs_gui_finalize(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add notebook variable to a formula.
- *
- * \param[in, out]  ev_law  pointer to MEI formula structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gui_add_notebook_variables(void  *ev_law)
-{
-  mei_tree_t  *_ev_law = ev_law;
-
-  const char path0[] = "physical_properties/notebook/var";
-
-  for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
-       tn != NULL;
-       tn = cs_tree_node_get_next_of_name(tn)) {
-
-    const char *name = cs_tree_node_get_tag(tn, "name");
-    const char *c_value = cs_tree_node_get_tag(tn, "value");
-
-    assert(name != NULL);
-    assert(c_value != NULL);
-
-    if (name != NULL && c_value != NULL) {
-      cs_real_t val = atof(c_value);
-      mei_tree_insert(_ev_law, name, val);
-    }
-  }
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Compute GUI-defined head losses for a given volume zone.
  *
  * Head loss tensor coefficients for each cell are organized as follows:
@@ -4448,28 +4414,6 @@ cs_gui_profile_output(void)
 
       cs_real_t *array = NULL;
 
-      const char *formula = _get_profile_child_str(tn, "formula");
-      mei_tree_t *ev_formula  = mei_tree_new(formula);
-
-      mei_tree_insert(ev_formula, "s", 0.0);
-
-      /* add variable from notebook */
-      cs_gui_add_notebook_variables(ev_formula);
-
-      /* try to build the interpreter */
-
-      if (mei_tree_builder(ev_formula))
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Error: can not interpret expression: %s\n %i"),
-                  ev_formula->string, mei_tree_builder(ev_formula));
-
-      const char *coord[] = {"x", "y", "z"};
-
-      if (mei_tree_find_symbols(ev_formula, 3, coord))
-        bft_error(__FILE__, __LINE__, 0,
-                  _("Error: can not find the required symbol: %s\n"),
-                  "x, y or z");
-
       int nvar_prop = cs_tree_get_node_count(tn, "var_prop");
 
       for (cs_tree_node_t *tn_vp = cs_tree_node_get_child(tn, "var_prop");
@@ -4535,36 +4479,31 @@ cs_gui_profile_output(void)
         BFT_FREE(filename);
       }
 
-      cs_lnum_t npoint = 0;
+      cs_lnum_t n_coords = 0;
       const int *v_np = _get_profile_child_int(tn, "points");
       if (v_np != NULL)
-        npoint = v_np[0];
+        n_coords = v_np[0];
 
       cs_lnum_t  c_id1 = -999, c_id = -999;
       int        rank1 = -999, c_rank = -999;
-      double x1 = 0., y1 = 0., z1 = 0.;
+      cs_real_t  xyz1[] = {0., 0., 0.};
 
-      cs_real_t a = 1. / (double) (npoint-1);
+      cs_real_t a = 1. / (double) (n_coords-1);
 
-      for (int ii = 0; ii < npoint; ii++) {
+      cs_real_3_t *coords;
+      BFT_MALLOC(coords, n_coords, cs_real_3_t);
 
-        double xx, yy, zz, xyz[3];
+      cs_meg_post_profiles(label, n_coords, coords);
 
-        cs_real_t aa = ii*a;
-        mei_tree_insert(ev_formula, "s", aa);
-        mei_evaluate(ev_formula);
+      if (n_coords > 0) {
+        xyz1[0] = coords[0][0];
+        xyz1[1] = coords[0][1];
+        xyz1[2] = coords[0][2];
+      }
 
-        xyz[0] = mei_tree_lookup(ev_formula, "x");
-        xyz[1] = mei_tree_lookup(ev_formula, "y");
-        xyz[2] = mei_tree_lookup(ev_formula, "z");
+      for (int ii = 0; ii < n_coords; ii++) {
 
-        if (ii == 0) {
-          x1 = xyz[0];
-          y1 = xyz[1];
-          z1 = xyz[2];
-        }
-
-        cs_geom_closest_point(n_cells, cell_cen, xyz,
+        cs_geom_closest_point(n_cells, cell_cen, coords[ii],
                               &c_id, &c_rank);
 
         cs_parall_bcast(c_rank, 1, CS_LNUM_TYPE, &c_id);
@@ -4575,16 +4514,10 @@ cs_gui_profile_output(void)
 
           if (cs_glob_rank_id == c_rank) {
 
-            xx = cell_cen[c_id][0];
-            yy = cell_cen[c_id][1];
-            zz = cell_cen[c_id][2];
-            array[1] = xx;
-            array[2] = yy;
-            array[3] = zz;
-            xx = xx - x1;
-            yy = yy - y1;
-            zz = zz - z1;
-            array[0] = sqrt(xx*xx + yy*yy + zz*zz);
+            array[0] = cs_math_3_distance(cell_cen[c_id], xyz1);
+            array[1] = cell_cen[c_id][0];
+            array[2] = cell_cen[c_id][1];
+            array[3] = cell_cen[c_id][2];
 
             int vp_id = 4;
             for (cs_tree_node_t *tn_vp = cs_tree_node_get_child(tn, "var_prop");
@@ -4646,10 +4579,10 @@ cs_gui_profile_output(void)
           }
         }
       }
-      mei_tree_destroy(ev_formula);
 
       if (cs_glob_rank_id <= 0) fclose(file);
 
+      BFT_FREE(coords);
       BFT_FREE(array);
     }
 

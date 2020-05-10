@@ -434,17 +434,6 @@ cs_gui_finalize(void);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Add notebook variable to a formula.
- *
- * \param[in, out]  ev_law  pointer to MEI formula structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gui_add_notebook_variables(void  *ev_law);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief Compute GUI-defined head losses for a given volume zone.
  *
  * Head loss tensor coefficients for each cell are organized as follows:

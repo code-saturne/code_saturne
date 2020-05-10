@@ -70,7 +70,8 @@ _file_header2 = \
 """
 
 _file_header3 = \
-"""/*----------------------------------------------------------------------------*/
+"""
+/*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
@@ -130,35 +131,44 @@ cs_meg_fsi_struct(const char       *object_type,
                   cs_real_t         val[])
 {
 """,
+'pfl':"""void
+cs_meg_post_profiles(const char       *name,
+                     int               n_coords,
+                     cs_real_t         coords[][3])
+{
+""",
 'pwa':"""void
 cs_meg_post_activate(void)
 {
 """
 }
 
-_function_names = {'vol':'cs_meg_volume_function.c',
-                   'bnd':'cs_meg_boundary_function.c',
-                   'src':'cs_meg_source_terms.c',
-                   'ini':'cs_meg_initialization.c',
-                   'ibm':'cs_meg_immersed_boundaries_inout.c',
-                   'fsi':'cs_meg_fsi_struct.c',
-                   'pwa':'cs_meg_post_output.c'}
+_function_names = {'vol': 'cs_meg_volume_function.c',
+                   'bnd': 'cs_meg_boundary_function.c',
+                   'src': 'cs_meg_source_terms.c',
+                   'ini': 'cs_meg_initialization.c',
+                   'ibm': 'cs_meg_immersed_boundaries_inout.c',
+                   'fsi': 'cs_meg_fsi_struct.c',
+                   'pfl': 'cs_meg_post_profile.c',
+                   'pwa': 'cs_meg_post_output.c'}
 
-_block_comments = {'vol':'User defined formula for variable(s) %s over zone %s',
-                   'bnd':'User defined formula for "%s" over BC=%s',
-                   'src':'User defined source term for %s over zone %s',
-                   'ini':'User defined initialization for variable %s over zone %s',
-                   'ibm':'User defined explicit formula of %s indicator for object %s',
-                   'fsi':'User defined FSI coupling structure %s for zone %s',
-                   'pwa':'User defined %s for writer %s'}
+_block_comments = {'vol': 'User defined formula for variable(s) %s over zone %s',
+                   'bnd': 'User defined formula for "%s" over BC=%s',
+                   'src': 'User defined source term for %s over zone %s',
+                   'ini': 'User defined initialization for variable %s over zone %s',
+                   'ibm': 'User defined explicit formula of %s indicator for object %s',
+                   'fsi': 'User defined FSI coupling structure %s for zone %s',
+                   'pfl': 'User-defined %s for profile %s',
+                   'pwa': 'User defined %s for writer %s'}
 
-_func_short_to_long = {'vol':'volume zone',
-                       'bnd':'boundary',
-                       'src':'source term',
-                       'ini':'initialization',
-                       'ibm':'Immersed boundaries',
-                       'fsi':'Mechanicaly-coupled structures',
-                       'pwa':'Writer activation'}
+_func_short_to_long = {'vol': 'volume zone',
+                       'bnd': 'boundary',
+                       'src': 'source term',
+                       'ini': 'initialization',
+                       'ibm': 'Immersed boundaries',
+                       'fsi': 'Mechanicaly-coupled structures',
+                       'pfl': 'Profile coordinates',
+                       'pwa': 'Writer activation'}
 
 #-------------------------------------------------------------------------------
 
@@ -229,8 +239,6 @@ def parse_gui_expression(expression,
 
     return usr_code, usr_defs
 
-#---------------------------------------------------------------------------
-
 #===============================================================================
 # Utility functions
 #===============================================================================
@@ -269,13 +277,14 @@ class mei_to_c_interpreter:
         self.tmp_path = os.path.join(self.data_path, 'tmp')
 
         # function name to file name dictionary
-        self.funcs = {'vol':{},
-                      'bnd':{},
-                      'src':{},
-                      'ini':{},
-                      'ibm':{},
-                      'fsi':{},
-                      'pwa':{}}
+        self.funcs = {'vol': {},
+                      'bnd': {},
+                      'src': {},
+                      'ini': {},
+                      'ibm': {},
+                      'fsi': {},
+                      'pfl': {},
+                      'pwa': {}}
 
         self.code_to_write = ""
 
@@ -302,6 +311,9 @@ class mei_to_c_interpreter:
 
             # ALE/FSI internal coupling function
             self.generate_fsi_ic_code()
+
+            # Writer profiles code
+            self.generate_post_profile_code()
 
             # Writer activation
             self.generate_writer_activation_code()
@@ -403,7 +415,7 @@ class mei_to_c_interpreter:
             else:
                 phase_id = -1
             gs = _pkg_glob_struct[self.module_name].replace('PHASE_ID',
-                                                         str(phase_id))
+                                                            str(phase_id))
             pn = _pkg_fluid_prop_dict[self.module_name][kp]
             glob_tokens[kp] = 'const cs_real_t %s = %s->%s;' %(kp, gs, pn)
 
@@ -508,9 +520,9 @@ class mei_to_c_interpreter:
 
         # allocate the new array
         if need_for_loop:
-            usr_defs += ntabs*tab + 'const int vals_size = zone->n_elts * %d;\n' % (len(required))
+            usr_defs += ntabs*tab + 'const cs_lnum_t vals_size = zone->n_elts * %d;\n' % (len(required))
         else:
-            usr_defs += ntabs*tab + 'const int vals_size = %d;\n' % (len(required))
+            usr_defs += ntabs*tab + 'const cs_lnum_t vals_size = %d;\n' % (len(required))
 
         usr_defs += ntabs*tab + 'BFT_MALLOC(new_vals, vals_size, cs_real_t);\n'
         usr_defs += '\n'
@@ -612,7 +624,7 @@ class mei_to_c_interpreter:
         tab   = '  '
         ntabs = 2
 
-        usr_defs += ntabs*tab + 'const int vals_size = zone->n_elts * %d;\n' % (len(required))
+        usr_defs += ntabs*tab + 'const cs_lnum_t vals_size = zone->n_elts * %d;\n' % (len(required))
         usr_defs += ntabs*tab + 'BFT_MALLOC(new_vals, vals_size, cs_real_t);\n'
         usr_defs += '\n'
 
@@ -665,7 +677,7 @@ class mei_to_c_interpreter:
         # Write the block
         block_cond  = tab + 'if (strcmp(zone->name, "%s") == 0 &&\n' % (zone)
         block_cond += tab + '    strcmp(name, "%s") == 0 && \n' % (name)
-        block_cond += tab + '    strcmp(source_type, "%s") == 0 ) {\n' % (source_type)
+        block_cond += tab + '    strcmp(source_type, "%s") == 0) {\n' % (source_type)
         usr_blck = block_cond + '\n'
 
         usr_blck += usr_defs
@@ -709,7 +721,7 @@ class mei_to_c_interpreter:
         tab   = '  '
         ntabs = 2
 
-        usr_defs += ntabs*tab + 'const int vals_size = zone->n_elts * %d;\n' % (len(required))
+        usr_defs += ntabs*tab + 'const cs_lnum_t vals_size = zone->n_elts * %d;\n' % (len(required))
         usr_defs += ntabs*tab + 'BFT_MALLOC(new_vals, vals_size, cs_real_t);\n'
         usr_defs += '\n'
 
@@ -778,7 +790,7 @@ class mei_to_c_interpreter:
 
         # Write the block
         block_cond  = tab + 'if (strcmp(zone->name, "%s") == 0 &&\n' % (zone)
-        block_cond += tab + '    strcmp(field_name, "%s") == 0 ) {\n' % (name)
+        block_cond += tab + '    strcmp(field_name, "%s") == 0) {\n' % (name)
         usr_blck = block_cond + '\n'
 
         usr_blck += usr_defs
@@ -977,6 +989,82 @@ class mei_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
+    def write_profile_coo_block(self, func_key):
+
+        if func_key not in self.funcs['pfl'].keys():
+            return
+
+        func_params = self.funcs['pfl'][func_key]
+
+        expression   = func_params['exp']
+        symbols      = func_params['sym']
+        known_fields = func_params['knf']
+        cname        = func_params['cnd']
+
+        if type(func_params['req'][0]) == tuple:
+            required = [r[0] for r in func_params['req']]
+        else:
+            required = func_params['req']
+
+        exp_lines_comp = func_params['lines']
+
+        name, s = func_key.split('::')
+
+        # Get user definitions and code
+        usr_defs = ''
+        usr_code = ''
+        usr_blck = ''
+
+        tab   = "  "
+        ntabs = 2
+
+        known_symbols = []
+        for req in required:
+            known_symbols.append(req)
+
+        # Deal with tokens which require a definition
+        glob_tokens = {}
+        loop_tokens = {}
+        glob_tokens.update(_base_tokens)
+
+        # Notebook variables
+        for kn in self.notebook.keys():
+            glob_tokens[kn] = \
+            'const cs_real_t %s = cs_notebook_parameter_value_by_name("%s");' % (kn, kn)
+
+        # Parse the user expresion
+        parsed_exp = parse_gui_expression(expression,
+                                          required,
+                                          known_symbols,
+                                          'pwa',
+                                          glob_tokens,
+                                          loop_tokens,
+                                          indent_decl=2)
+
+        usr_code += parsed_exp[0]
+        if parsed_exp[1] != '':
+            usr_defs += parsed_exp[1]
+
+        # Write the block
+        usr_blck =  tab + 'if (strcmp(name, "%s") == 0) {\n' % (name)
+        usr_blck += usr_defs
+        usr_blck += tab + '  cs_real_t x, y, z;\n\n'
+        usr_blck += tab + '  for (int p_id = 0; p_id < n_coords; p_id++) {\n'
+        usr_blck += tab + '    cs_real_t s = (cs_real_t)p_id / (cs_real_t)(n_coords-1);\n\n'
+
+        usr_blck += usr_code
+
+        usr_blck += '\n'
+        usr_blck += tab + '    coords[p_id][0] = x;\n'
+        usr_blck += tab + '    coords[p_id][1] = y;\n'
+        usr_blck += tab + '    coords[p_id][2] = z;\n'
+        usr_blck += tab*2 + '}\n'
+        usr_blck += tab + '}\n'
+
+        return usr_blck
+
+    #---------------------------------------------------------------------------
+
     def write_writer_activation_block(self, func_key):
 
         if func_key not in self.funcs['pwa'].keys():
@@ -1069,6 +1157,8 @@ class mei_to_c_interpreter:
             return self.write_ibm_block(key)
         elif func_type == 'fsi':
             return self.write_fsi_block(key)
+        elif func_type == 'pfl':
+            return self.write_profile_coo_block(key)
         elif func_type == 'pwa':
             return self.write_writer_activation_block(key)
         else:
@@ -1112,7 +1202,6 @@ class mei_to_c_interpreter:
             exp, req, sca, sym = ale_model.getFormulaViscComponents()
             self.init_block('vol', 'all_cells', 'mesh_viscosity',
                             exp, req, sym, sca)
-
 
             # GroundWater Flows Law
             vlm = LocalizationModel('VolumicZone', self.case)
@@ -1255,7 +1344,9 @@ class mei_to_c_interpreter:
                     sym = ['x', 'y', 'z', 't', 'dt', 'iter', 'surface']
                     for (name, val) in NotebookModel(self.case).getNotebookList():
                         sym.append((name, 'value (notebook) = ' + str(val)))
-                    req = ['mesh_displacement[0]', 'mesh_displacement[1]', 'mesh_displacement[2]']
+                    req = ['mesh_displacement[0]',
+                           'mesh_displacement[1]',
+                           'mesh_displacement[2]']
                     exp = boundary.getALEFormula()
 
                     name = 'mesh_velocity'
@@ -1734,7 +1825,6 @@ class mei_to_c_interpreter:
                                             spm.getScalarLabelByName(s),
                                             exp, req, sym, [])
 
-
     #---------------------------------------------------------------------------
 
     def generate_immersed_boundaries_code(self):
@@ -1811,6 +1901,34 @@ class mei_to_c_interpreter:
 
     #---------------------------------------------------------------------------
 
+    def generate_post_profile_code(self):
+        # Output writer activation
+
+        from code_saturne.model.NotebookModel import NotebookModel
+        from code_saturne.model.ProfilesModel import ProfilesModel
+
+        pfm = ProfilesModel(self.case)
+
+        for l in pfm.getProfilesLabelsList():
+
+            formula = pfm.getFormula(l)
+
+            if not formula:
+                continue
+
+            npts = pfm.getNbPoint(l)
+
+            sym = ['s']
+            for (name, val) in NotebookModel(self.case).getNotebookList():
+                sym.append((name, 'value (notebook) = ' + str(val)))
+
+            req = ['x', 'y', 'z']
+
+            self.init_block('pfl', l, 'coordinates',
+                            formula, req, sym, known_fields=[])
+
+    #---------------------------------------------------------------------------
+
     def generate_writer_activation_code(self):
         # Output writer activation
 
@@ -1845,7 +1963,8 @@ class mei_to_c_interpreter:
         if not os.path.exists(self.tmp_path):
             os.makedirs(self.tmp_path)
 
-        if function_name in ['vol', 'bnd', 'src', 'ini', 'ibm', 'fsi', 'pwa']:
+        if function_name in ('vol', 'bnd', 'src', 'ini', 'ibm', 'fsi',
+                             'pfl', 'pwa'):
             self.save_function(func_type=function_name,
                                hard_path=self.tmp_path)
 
@@ -1970,6 +2089,7 @@ class mei_to_c_interpreter:
 #                code_to_write += _file_header2
             code_to_write += _file_header3
             code_to_write += _function_header[func_type]
+            k_count = 0
             for key in self.funcs[func_type].keys():
                 w_block = self.write_block(func_type, key)
                 if w_block == None:
@@ -1977,13 +2097,16 @@ class mei_to_c_interpreter:
                 zone_name, var_name = key.split('::')
                 var_name = var_name.replace("+", ", ")
                 m1 = _block_comments[func_type] % (var_name, zone_name)
-                m2 = '/*-' + '-'*len(m1) + '-*/\n'
-                m1 = '/* ' + m1 + ' */\n'
+                m2 = '  -' + '-'*len(m1) + ' */\n\n'
+                m1 = '/* ' + m1 + '\n'
 
-                code_to_write += '  ' + m2
+                if k_count > 0:
+                    code_to_write += '\n'
                 code_to_write += '  ' + m1
+                code_to_write += '  ' + m2
                 code_to_write += w_block
-                code_to_write += '  ' + m2 + '\n'
+
+                k_count += 1
 
             if func_type in ['bnd', 'src', 'ini']:
                 code_to_write += '  return new_vals;\n'

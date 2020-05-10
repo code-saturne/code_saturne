@@ -50,7 +50,7 @@ from code_saturne.Base.QtPage import IntValidator, DoubleValidator, RegExpValida
 from code_saturne.Base.QtPage import from_qvariant
 from code_saturne.Pages.ProfilesForm import Ui_ProfilesForm
 from code_saturne.model.ProfilesModel import ProfilesModel
-from code_saturne.Pages.QMeiEditorView import QMeiEditorView
+from code_saturne.Pages.QMegEditorView import QMegEditorView
 from code_saturne.model.NotebookModel import NotebookModel
 
 #-------------------------------------------------------------------------------
@@ -479,8 +479,10 @@ z = z1*s + z0*(1.-s);"""
         for (nme, val) in self.notebook.getNotebookList():
             sym.append((nme, 'value (notebook) = ' + str(val)))
 
-        dialog = QMeiEditorView(self,
-                                check_syntax = self.case['package'].get_check_syntax(),
+        dialog = QMegEditorView(self,
+                                function_type = 'pfl',
+                                zone_name     = self.label_select,
+                                variable_name = 'coords',
                                 expression = exp,
                                 required   = req,
                                 symbols    = sym,

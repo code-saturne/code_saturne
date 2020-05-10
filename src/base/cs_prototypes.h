@@ -869,7 +869,7 @@ cs_meg_source_terms(const cs_zone_t  *zone,
  * \brief This function is used to indicate whether a given point is within or
  * outside a given solid
  *
- * \param[inout]    ipenal       indicator for cut cells algorithm
+ * \param[in, out]  ipenal       indicator for cut cells algorithm
  * \param[in]       object_name  name of the solid object
  * \param[in]       xyz          cs_real_3_t pointer containing the point coordinates
  * \param[in]       t            time value
@@ -888,10 +888,10 @@ cs_meg_immersed_boundaries_inout(int         *ipenal,
  * \brief This function is used to query FSI internal coupling structure values
  *        for a given boundary and structure.
  *
- * \param[in]      object_type   name of object type
- * \param[in]      name          name of matching boundary
- * \param[in]      fluid_f       array of fluid forces on the object
- * \param[in,out]  val[]         matrix or vector coefficients
+ * \param[in]       object_type   name of object type
+ * \param[in]       name          name of matching boundary
+ * \param[in]       fluid_f       array of fluid forces on the object
+ * \param[in, out]  val[]         matrix or vector coefficients
  */
 /*----------------------------------------------------------------------------*/
 
@@ -909,6 +909,21 @@ cs_meg_fsi_struct(const char       *object_type,
 
 void
 cs_meg_post_activate(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief This function is used to define profile coordinates.
+ *
+ * \param[in]       name          name of matching profile
+ * \param[in]       n_coords      number of point coordinates
+ * \param[in, out]  coords        point coordinates
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_meg_post_profiles(const char   *name,
+                     int           n_coords,
+                     cs_real_t     coords[][3]);
 
 /*----------------------------------------------------------------------------*/
 

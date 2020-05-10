@@ -153,7 +153,7 @@ class ProfilesModel(Model):
         node.xmlSetData('points', NbPoint)
 
 
-    def __getNbPoint(self, label):
+    def getNbPoint(self, label):
         """
         Private method.
         Gets coordinates for profile named I{label}.
@@ -306,7 +306,7 @@ class ProfilesModel(Model):
             formula = self.__defaultValues()['formula']
             self.setFormula(label, formula)
 
-        NbPoint = self.__getNbPoint(label)
+        NbPoint = self.getNbPoint(label)
         if not NbPoint:
             NbPoint = self.__defaultValues()['points']
             self.setNbPoint(label, NbPoint)
