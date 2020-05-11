@@ -338,7 +338,7 @@ _dump_medcoupling_mesh(MEDCouplingUMesh *m,
       strcat(fname, _ext);
     fname[lsdir+lname+lext+1] = '\0';
 
-    WriteUMesh(fname, m, fname);
+    WriteUMesh(fname, m, true);
   }
 
   return;
