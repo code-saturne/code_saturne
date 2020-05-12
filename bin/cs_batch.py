@@ -180,7 +180,7 @@ class batch:
         if self.rm_template:
             if self.rm_template[0:5] == 'SLURM':
                 self.rm_type = 'SLURM'
-                self.submit_command_prefix = 'sbatch'
+                self.submit_command = 'sbatch'
                 for k in ('SBATCH_WCKEY', 'SLURM_WCKEY'):
                     if k in os.environ:
                         v = os.environ[k]
@@ -188,22 +188,22 @@ class batch:
                             self.params['job_wckey'] = v
             elif self.rm_template[0:3] == 'CCC':
                 self.rm_type = 'CCC'
-                self.submit_command_prefix = 'ccc_msub'
+                self.submit_command = 'ccc_msub'
             elif self.rm_template[0:5] == 'LOADL':
                 self.rm_type = 'LOADL'
-                self.submit_command_prefix = 'llsubmit'
+                self.submit_command = 'llsubmit'
             elif self.rm_template[0:3] == 'LSF':
                 self.rm_type = 'LSF'
-                self.submit_command_prefix = 'bsub'
+                self.submit_command = 'bsub'
             elif self.rm_template[0:3] == 'OAR':
                 self.rm_type = 'OAR'
-                self.submit_command_prefix = 'oarsub'
+                self.submit_command = 'oarsub'
             elif self.rm_template[0:3] == 'PBS':
                 self.rm_type = 'PBS'
-                self.submit_command_prefix = 'qsub'
+                self.submit_command = 'qsub'
             elif self.rm_template[0:3] == 'SGE':
                 self.rm_type = 'SGE'
-                self.submit_command_prefix = 'qsub'
+                self.submit_command = 'qsub'
             else:
                 self.rm_type = os.path.basename(rm_template)
 

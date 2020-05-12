@@ -93,7 +93,7 @@ def main(argv, pkg):
 
     batch = cs_batch.batch(pkg)
 
-    submit_cmd = batch.submit_command_prefix
+    submit_cmd = batch.submit_command_prefix()
 
     if not submit_cmd:
         submit_cmd = get_shell_type()
