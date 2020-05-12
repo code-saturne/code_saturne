@@ -1545,11 +1545,21 @@ class cathare_domain(domain):
         # Getting the .xml from NEPTUNE_CFD, since all definitions are made
         # within its GUI and paramfile
 
+        # First we check if code is launched using the run command,
+        # hence in the main folder. If using submit, then  _spath
+        # corresponds to the execution folder, so we remove the DATA
         _spath = os.path.split(self.case_dir)[0]
         nept_paramfile = os.path.join(_spath,
                                       self.neptune_cfd_dom,
                                       "DATA",
                                       param)
+
+        if not os.path.exists(nept_paramfile):
+            nept_paramfile = os.path.join(_spath,
+                                          self.neptune_cfd_dom,
+                                          param)
+            if not os.path.exists(nept_paramfile):
+                raise Exception("Could not find NEPTUNE_CFD data file.")
 
         ofile = open(nept_paramfile,'r').readlines()
         nfile = open(os.path.join(self.data_dir, param),'w')
