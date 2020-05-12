@@ -108,44 +108,21 @@ BEGIN_C_DECLS
  *       module
  * @{
  *
- * \def CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM
+ * \def CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM
  * \brief The solute equation related to the transport of the bulk concentration
- * is treated with a source term related to an explicit advection of the
- * quantity (C - Cl). The default behavior is to add a weighting coefficient
- * to the (implicit) advection term related to the liquid fraction
+ *        is treated with a source term related to an explicit advection of the
+ *        quantity (C - Cl). The default behavior is to add a weighting
+ *        coefficient to the (implicit) advection term related to the liquid
+ *        fraction
  *
- * \def CS_SOLIDIFICATION_UPDATE_GL_WITH_TAYLOR_EXPANSION
- * \brief The update of the liquid fraction using a Taylor expansion in time
- *   dgl/dt = dgl/dT*(dT/dt) + dgl/dC*(dC/dt)
- *
- * \def CS_SOLIDIFICATION_UPDATE_SOURCE_TERM_BY_STEP
- * \brief Update the source term related to the thermal equation considering
- * a path between the initial and final state. For each step, one considers to
- * add or not a source term.
- *
- * \def CS_SOLIDIFICATION_UPDATE_EUTECTIC_VOLLER
- * \brief Update the liquid fraction according to the model introduced in
- *  Voller & Prakash'89
- *
- * \def CS_SOLIDIFICATION_UPDATE_WITH_EXTRAPOLATION
- * \brief Use during the computation of dGldT and dGldC an extrpolation of
- *  variable at time step n+1 using values at n and n-1
- *
- * \def CS_SOLIDIFICATION_THERMAL_UPDATE_AFTER_CBULK
- * \brief Postpon the update of the thermal source terms after the computation
- * of the new bulk concentration
- *
- * \def CS_SOLIDIFICATION_VOLLER_THERMAL_SOURCES
- * \brief Reproduce the behavior described in Voller & Saminathan'91
+ * \def CS_SOLIDIFICATION_USE_EXTRAPOLATION
+ * \brief Use an extrapolation during the computation of different terms
+ *        according to the strategy. This extrapolation of variable at time
+ *        step n+1 uses values at n and n-1: 2*u^n - u^{n-1}
  */
 
-#define CS_SOLIDIFICATION_SOLUTE_WITH_ADVECTIVE_SOURCE_TERM (1 << 0) /*=    1 */
-#define CS_SOLIDIFICATION_UPDATE_GL_WITH_TAYLOR_EXPANSION   (1 << 1) /*=    2 */
-#define CS_SOLIDIFICATION_UPDATE_SOURCE_TERM_BY_STEP        (1 << 2) /*=    4 */
-#define CS_SOLIDIFICATION_UPDATE_EUTECTIC_VOLLER            (1 << 3) /*=    8 */
-#define CS_SOLIDIFICATION_UPDATE_WITH_EXTRAPOLATION         (1 << 4) /*=   16 */
-#define CS_SOLIDIFICATION_THERMAL_UPDATE_AFTER_CBULK        (1 << 5) /*=   32 */
-#define CS_SOLIDIFICATION_VOLLER_THERMAL_SOURCES            (1 << 6) /*=   64 */
+#define CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM           (1 << 0) /*=    1 */
+#define CS_SOLIDIFICATION_USE_EXTRAPOLATION                 (1 << 1) /*=    2 */
 
 /* Automatically set by the code if user functions are used */
 #define CS_SOLIDIFICATION_BINARY_ALLOY_M_FUNC               (1 << 7) /*=  128 */
@@ -153,6 +130,7 @@ BEGIN_C_DECLS
 #define CS_SOLIDIFICATION_BINARY_ALLOY_G_FUNC               (1 << 9) /*=  512 */
 #define CS_SOLIDIFICATION_BINARY_ALLOY_T_FUNC               (1 <<10) /*= 1024 */
 #define CS_SOLIDIFICATION_BINARY_ALLOY_TCC_FUNC             (1 <<11) /*= 2048 */
+
 /*!
  * @}
  */
@@ -208,7 +186,7 @@ typedef enum {
 } cs_solidification_model_bit_t;
 
 /*! \enum cs_solidification_state_t
- *  \brief King of state in which a cell or an entity is
+ *  \brief Kind of state in which a cell or an entity is
  */
 
 typedef enum {
@@ -221,6 +199,23 @@ typedef enum {
   CS_SOLIDIFICATION_N_STATES       = 4,
 
 } cs_solidification_state_t;
+
+/*! \enum cs_solidification_strategy_t
+ *  \brief Kind of strategy to use to model the segregation/solidification
+ *         process. This implies a setting of functions to update the liquid
+ *         fraction, the thermal source terms, the liquid concentration and its
+ *         related quantities.
+ */
+
+typedef enum {
+
+  CS_SOLIDIFICATION_STRATEGY_LEGAGY,
+  CS_SOLIDIFICATION_STRATEGY_TAYLOR,
+  CS_SOLIDIFICATION_STRATEGY_PATH,
+
+  CS_SOLIDIFICATION_N_STRATEGIES
+
+} cs_solidification_strategy_t;
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -277,7 +272,7 @@ typedef struct {
   cs_real_t                      latent_heat;
 
   /* Function pointer related to the way of updating the model */
-  cs_solidification_func_t    *update;
+  cs_solidification_func_t      *update;
 
 } cs_solidification_voller_t;
 
@@ -332,8 +327,8 @@ typedef struct {
   /* Function to update the liquid fraction */
   cs_solidification_func_t     *update_gl;
 
-  /* Function to update c_l */
-  cs_solidification_func_t     *update_cl;
+  /* Function to update c_l in each cell */
+  cs_solidification_func_t     *update_clc;
 
   /* Function to update the source term for the thermal equation */
   cs_solidification_func_t     *update_thm_st;
@@ -364,20 +359,36 @@ typedef struct {
    *   max_{c\in C} |Temp^(k+1) - Temp^(k)| < delta_tolerance
    *   max_{c\in C} |Cbulk^(k+1) - Cbulk*^(k)| < delta_tolerance
    *   n_iter < n_iter_max
+   *
+   * eta_relax: add a relaxation in the update of the eta coefficient
+   * conc_liq = eta_coef * conc_bulk
+   * eta_relax = 0. --> No relaxation (default choice)
+   *
+   * gliq_relax: idem but for the liquid fraction
    */
 
-  int                n_iter_max;
-  double             delta_tolerance;
+  int                              iter;
+  int                              n_iter_max;
+  double                           delta_tolerance;
+  double                           eta_relax;
+  double                           gliq_relax;
+  cs_solidification_strategy_t     strategy;
 
   /* During the non-linear iteration process one needs:
    *  temp_{n}         --> stored in field->val_pre
    *  temp_{n+1}^k     --> stored in tk_bulk (in this structure)
    *  temp_{n+1}^{k+1} --> stored in field->val
    *
+   * Optionally one may consider an extrapolated temperature and bulk
+   * concentration
+   *  temp_{n+1}^{extrap} = 2*temp_{n} - temp_{n-1}
+   *
    * Same thing for the bulk concentration.
    */
   cs_real_t         *tk_bulk;
   cs_real_t         *ck_bulk;
+  cs_real_t         *tx_bulk;
+  cs_real_t         *cx_bulk;
 
   /* Solute concentration in the liquid phase
    * 1) array of the last computed values at cells
@@ -394,8 +405,8 @@ typedef struct {
   cs_property_t     *diff_pty;
   cs_real_t         *diff_pty_array;
 
-  cs_property_t     *adv_coef_pty;
-  cs_real_t         *adv_coef_pty_array;
+  cs_property_t     *eta_coef_pty;
+  cs_real_t         *eta_coef_array;
 
   /* Optional postprocessing arrays */
   /* ------------------------------ */
@@ -420,6 +431,7 @@ typedef struct  {
                                  * the solidification module*/
   cs_flag_t        post_flag;   /* Flag dedicated to the post-processing
                                  * of the solidifcation module */
+  int              verbosity;   /* Level of verbosity */
 
   /* Mass density of the liquid/solid media */
   cs_property_t   *mass_density;
@@ -502,6 +514,17 @@ cs_solidification_is_activated(void);
 
 cs_solidification_t *
 cs_solidification_get_structure(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set the level of verbosity for the solidification module
+ *
+ * \param[in]   verbosity     level of verbosity to set
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_solidification_set_verbosity(int   verbosity);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -599,14 +622,23 @@ cs_solidification_set_binary_alloy_model(const char     *name,
  * \brief  Set the main numerical parameters which described a solidification
  *         process with a binary alloy (with component A and B)
  *
- * \param[in]  n_iter_max    max.number of iterations for the C/T equations
- * \param[in]  g_l_eps       tolerance requested between two iterations
+ * \param[in]  strategy     strategy to perform the numerical segregation
+ * \param[in]  n_iter_max   max.number of iterations for the C/T equations
+ * \param[in]  tolerance    tolerance under which non-linear iter. stop
+ * \param[in]  gliq_relax   relaxation coefficient for the update of the
+ *                          liquid fraction
+ * \param[in]  eta_relax    relaxation coefficient for the update of the
+ *                          eta coefficient (scaling in front of the advective
+ *                          term)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_solidification_set_binary_alloy_param(int             n_iter_max,
-                                         double          g_l_eps);
+cs_solidification_set_segregation_opt(cs_solidification_strategy_t  strategy,
+                                      int                           n_iter_max,
+                                      double                        tolerance,
+                                      double                        gliq_relax,
+                                      double                        eta_relax);
 
 /*----------------------------------------------------------------------------*/
 /*!
