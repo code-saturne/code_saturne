@@ -728,6 +728,16 @@ endif
 if (icdpar.eq.-1 .and. ikw.eq.1 .and. isuite.eq.1)                &
      write(nfecra,2001)
 
+! ---> IKECOU
+!      If the fluid_solid option is enabled, we force ikecou to 0. 
+if (fluid_solid) then
+  if(ikecou .eq. 1) then
+    ikecou = 0
+    write(nfecra,5000)
+  endif
+endif
+
+
 ! ---> RELAXV
 if (idtvar.lt.0) then
   relxsp = 1.d0-relxst
@@ -1211,6 +1221,23 @@ endif
 '@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
 '@',                                                            /)
-
+ 5000 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ WARNING:       IN THE DATA SPECIFICATION',                /,&
+'@    ========',                                                /,&
+'@',                                                            /,&
+'@  The pseudo coupling of turbulent dissipation and turbulent',/,&
+'@  kinetic energy (ikecou = 1) is not compatible with the use',/,&
+'@  of fluid/solid option to disable the dynamic in the solid ',/,&
+'@  cells (fluid_solid =1). ',                                  /,&
+'@',                                                            /,&
+'@  The parameter ikecou is forced to 0 (no coupling)',         /,&
+'@',                                                            /,&
+'@  The calculation will be run.',                              /,&
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /)
 return
 end subroutine

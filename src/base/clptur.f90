@@ -575,9 +575,6 @@ allocate(byplus(nfabor))
 allocate(bdplus(nfabor))
 allocate(buk(nfabor))
 
-! Disable solid cells in fluid_solid mode
-if (fluid_solid) call cs_mesh_quantities_set_has_disable_flag(1)
-
 ! --- Loop on boundary faces
 do ifac = 1, nfabor
 
@@ -1711,9 +1708,6 @@ do ifac = 1, nfabor
 enddo
 ! --- End of loop over faces
 
-
-! Re enable solid cells in fluid_solid mode
-if (fluid_solid) call cs_mesh_quantities_set_has_disable_flag(0)
 
 !===========================================================================
 ! 8. Boundary conditions on the other scalars
