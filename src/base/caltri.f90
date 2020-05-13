@@ -178,14 +178,6 @@ interface
 
   !=============================================================================
 
-  subroutine cs_gui_profile_output()  &
-    bind(C, name='cs_gui_profile_output')
-    use, intrinsic :: iso_c_binding
-    implicit none
-  end subroutine cs_gui_profile_output
-
-  !=============================================================================
-
   subroutine cs_restart_map_build()  &
     bind(C, name='cs_restart_map_build')
     use, intrinsic :: iso_c_binding
@@ -945,7 +937,6 @@ if (itrale.gt.0) then
 
   ! 1D profiles postprocessing output
 
-  call cs_gui_profile_output()
   call uiexop()
 
   call cs_f_user_extra_operations(nvar, nscal, dt)

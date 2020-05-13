@@ -54,13 +54,14 @@
 #include "cs_gui_util.h"
 #include "cs_gui_variables.h"
 #include "cs_log.h"
+#include "cs_math.h"
 #include "cs_mesh_location.h"
 #include "cs_selector.h"
 #include "cs_physical_model.h"
 #include "cs_post.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
-#include "cs_parameters.h"
+#include "cs_prototypes.h"
 #include "cs_thermal_model.h"
 #include "cs_time_moment.h"
 #include "cs_volume_zone.h"
@@ -97,8 +98,10 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*============================================================================
- * Static global variables
+ * Static local variables
  *============================================================================*/
+
+static char _rij_c_names[6][4] = {"r11", "r22", "r33", "r12", "r23", "r13"};
 
 /*============================================================================
  * Private function definitions
@@ -227,6 +230,343 @@ _surfacic_variable_post(const char  *name,
   }
 
   return active;
+}
+
+/*----------------------------------------------------------------------------
+ * Return a string value associated with a child node for a profile.
+ *
+ * If the matching child node is not present, an error is produced
+ *
+ * parameters:
+ *   tn <-- tree node associated with profile
+ *
+ * return:
+ *   pointer to matching child string
+ *----------------------------------------------------------------------------*/
+
+static const char *
+_get_profile_child_str(cs_tree_node_t  *tn,
+                       const char      *child_name)
+{
+  const char *name = cs_tree_node_get_child_value_str(tn, child_name);
+
+  if (name == NULL) {
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("Incorrect setup tree definition for the following node:\n"));
+    cs_tree_dump(CS_LOG_DEFAULT, 2, tn);
+    bft_error(__FILE__, __LINE__, 0,
+              _("Missing child node: %s"), child_name);
+  }
+
+  return name;
+}
+
+/*----------------------------------------------------------------------------
+ * Return an array of integers associated with a child node for a profile.
+ *
+ * If the matching child node is not present, an error is produced
+ *
+ * parameters:
+ *   tn <-- tree node associated with profile
+ *
+ * return:
+ *   pointer to matching child values
+ *----------------------------------------------------------------------------*/
+
+static const int *
+_get_profile_child_int(cs_tree_node_t  *tn,
+                       const char      *child_name)
+{
+  const int *v = cs_tree_node_get_child_values_int(tn, child_name);
+
+  if (v == NULL) {
+    cs_base_warn(__FILE__, __LINE__);
+    bft_printf(_("Incorrect setup tree definition for the following node:\n"));
+    cs_tree_dump(CS_LOG_DEFAULT, 2, tn);
+    bft_error(__FILE__, __LINE__, 0,
+              _("Missing child node: %s"), child_name);
+  }
+
+  return v;
+}
+
+/*----------------------------------------------------------------------------
+ * Get output format for 1D profile
+ *
+ * parameters:
+ *   tn <-- tree node associated with profile
+ *
+ * return:
+ *   1 for CSV, 0 for DAT
+ *----------------------------------------------------------------------------*/
+
+static int
+_get_profile_format(cs_tree_node_t  *tn)
+{
+  int format = 0;
+
+  const char *format_s
+    = cs_tree_node_get_tag(cs_tree_node_get_child(tn, "format"),
+                           "name");
+
+  if (format_s != NULL) {
+    if (cs_gui_strcmp(format_s, "CSV"))
+      format = 1;
+    else if (cs_gui_strcmp(format_s, "DAT"))
+      format = 0;
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Invalid profile format: %s"), format_s);
+  }
+
+  return format;
+}
+
+/*----------------------------------------------------------------------------
+ * Return the component of variables or properties or scalar for 1D profile
+ *
+ * parameters:
+ *   tn <-- tree node associated with profile variable
+ *----------------------------------------------------------------------------*/
+
+static int
+_get_profile_v_component(cs_tree_node_t  *tn)
+{
+  int comp_id = -1;
+
+  const char *c_name = cs_tree_node_get_tag(tn, "component");
+
+  if (c_name != NULL) {
+    int n = sscanf(c_name, "%d", &comp_id);
+    if (n != 1)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error converting profile component tag %s to integer."),
+                c_name);
+  }
+
+  return comp_id;
+}
+
+/*----------------------------------------------------------------------------
+ * Return associated field for a node referring to a field.
+ *
+ * A node referring to a field must have a "name" tag (i.e. child with a
+ * string value).
+ *
+ * In the case of NEPTUNE_CFD, an additional "field_id" tag requiring
+ * addition of the "_<field_id>" extension to match the field's name
+ * may be present, so this is tested also.
+ *
+ * parameters:
+ *   tn   <-- tree node associated with profile variable
+ *   name <-- value of node's "name" tag (already determined)
+ *
+ * return:
+ *   pointer to field if match, NULL otherwise
+ *----------------------------------------------------------------------------*/
+
+static const cs_field_t *
+_tree_node_get_field(cs_tree_node_t  *tn)
+{
+  const cs_field_t *f = NULL;
+
+  const char *name = cs_gui_node_get_tag(tn, "name");
+  const char *id_name = cs_tree_node_get_tag(tn, "field_id");
+
+  /* Handle phase id (field_id tag in xml) for NEPTUNE_CFD */
+
+  if (id_name != NULL) {
+    if (strcmp(id_name, "none") != 0) {
+      char buffer[128];
+      snprintf(buffer, 127, "%s_%s", name, id_name);
+      buffer[127] = '\0';
+      if (strlen(buffer) >= 127)
+        bft_error(__FILE__, __LINE__, 0,
+                  "Local buffer too small to assemble field name with:\n"
+                  "name: %s\n"
+                  "field_id: %s\n", name, id_name);
+      f = cs_field_by_name_try(buffer);
+    }
+  }
+
+  if (f == NULL) {
+
+    /* Handle segregated Reynolds tensor solver */
+    if (strcmp(name, "rij") == 0) {
+      int idim = _get_profile_v_component(tn);
+      f = cs_field_by_name_try(_rij_c_names[idim]);
+    }
+
+    /* Fix time step output */
+    else if (strcmp(name, "local_time_step") == 0)
+      f = CS_F_(dt);
+
+    /* General case */
+    else
+      f = cs_field_by_name_try(name);
+
+  }
+
+  if (f == NULL)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Field with name \"%s\" not found"), name);
+
+  return f;
+}
+
+/*----------------------------------------------------------------------------
+ * Profile definitions
+ *----------------------------------------------------------------------------*/
+
+static void
+_define_profiles(void)
+{
+  /* Loop on 1D profile definitions */
+
+  int profile_id = 0;
+
+  const char path0[] = "analysis_control/profiles/profile";
+
+  int n_writers = 0;
+
+  int        *w_i_vals = NULL;
+  cs_real_t  *w_r_vals = NULL;
+
+  int writer_id_start = cs_post_get_free_writer_id();
+
+  const char *format_name[] = {"dat", "csv"};
+
+  for (cs_tree_node_t *tn = cs_tree_get_node(cs_glob_tree, path0);
+       tn != NULL;
+       tn = cs_tree_node_get_next_of_name(tn), profile_id++) {
+
+    const char *name = cs_gui_node_get_tag(tn, "label");
+
+    /* for each profile, check the output frequency */
+
+    int writer_id = 0;
+    int output_format = _get_profile_format(tn);
+    int output_at_end = 0;
+    int output_frequency = -1;
+    cs_real_t time_output = -1.;
+
+    const char *output_type = _get_profile_child_str(tn, "output_type");
+    if (cs_gui_strcmp(output_type, "time_value")) {
+      const cs_real_t *v
+        = cs_tree_node_get_child_values_real(tn, "output_frequency");
+      if (v != NULL)
+        time_output = v[0];
+    }
+    else if (cs_gui_strcmp(output_type, "frequency")) {
+      const int *v
+        = cs_tree_node_get_child_values_int(tn, "output_frequency");
+      if (v != NULL)
+        output_frequency = v[0];
+      else
+        output_frequency = 1;
+    }
+    else if (cs_gui_strcmp(output_type, "end")) {
+      output_at_end = true;
+    }
+
+    /* Check if the output frequency matches an existing writer id;
+       create a writer if necessary */
+
+    for (int i = 0; i < n_writers; i++) {
+      if (   w_i_vals[i*3]   == output_format
+          && w_i_vals[i*3+1] == output_at_end
+          && w_i_vals[i*3+2] == output_frequency
+          && fabs(w_r_vals[i] - time_output) < cs_math_epzero) {
+        writer_id = writer_id_start - i;
+        break;
+      }
+    }
+
+    if (writer_id == 0) {  /* Add new writer */
+
+      int i = n_writers;
+
+      n_writers += 1;
+      BFT_REALLOC(w_i_vals, n_writers*3, int);
+      BFT_REALLOC(w_r_vals, n_writers, cs_real_t);
+      w_i_vals[i*3] = output_format;
+      w_i_vals[i*3+1] = output_at_end;
+      w_i_vals[i*3+2] = output_frequency;
+      w_r_vals[i] = time_output;
+      writer_id = writer_id_start - i;
+
+      bool _output_at_end = (output_at_end) ? true : false;
+
+      cs_post_define_writer(writer_id,
+                            "",
+                            "profiles",
+                            "plot",
+                            format_name[output_format],
+                            FVM_WRITER_FIXED_MESH,
+                            false, /* output_at_start */
+                            _output_at_end,
+                            output_frequency,
+                            time_output);
+
+    }
+
+    int n_coords = 0;
+    const int *v_np = _get_profile_child_int(tn, "points");
+    if (v_np != NULL)
+      n_coords = v_np[0];
+
+    cs_real_3_t *coords;
+    BFT_MALLOC(coords, n_coords, cs_real_3_t);
+
+    cs_meg_post_profiles(name, n_coords, coords);
+
+    cs_probe_set_t *pset
+      = cs_probe_set_create_from_array(name,
+                                       n_coords,
+                                       coords,
+                                       NULL);
+
+    BFT_FREE(coords);
+
+    cs_probe_set_assign_curvilinear_abscissa(pset, NULL);
+
+    int writer_ids[1] = {writer_id};
+    cs_probe_set_associate_writers(pset, 1, writer_ids);
+
+    cs_probe_set_auto_var(pset, false);
+    cs_probe_set_snap_mode(pset, CS_PROBE_SNAP_ELT_CENTER);
+
+    /* TODO: add global flag to mesh to indicate whether it
+       is fixed or not, so as to set transient_location
+       to false when not required */
+
+    cs_probe_set_option(pset, "transient_location", "true");
+
+    /* Output coordinates */
+
+    cs_probe_set_auto_curvilinear_coords(pset, true);
+    cs_probe_set_auto_cartesian_coords(pset, true);
+
+    /* Associate fields */
+
+    for (cs_tree_node_t *tn_vp = cs_tree_node_get_child(tn, "var_prop");
+         tn_vp != NULL;
+         tn_vp = cs_tree_node_get_next_of_name(tn_vp)) {
+
+      const cs_field_t *f = _tree_node_get_field(tn_vp);
+      int comp_id = _get_profile_v_component(tn_vp);
+
+      cs_probe_set_associate_field(pset,
+                                   writer_id,
+                                   f->id,
+                                   comp_id);
+
+    }
+
+  }
+
+  BFT_FREE(w_i_vals);
+  BFT_FREE(w_r_vals);
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -507,6 +847,13 @@ cs_gui_postprocess_meshes(void)
                         false,                   /* output_at_end */
                         frequency_n,
                         frequency_t);
+
+  /* Profile definitions;
+     note that this may lead to additional writer definitions, as
+     the GUI does not yet present profiles in a consistent
+     writer/mesh logic (TODO) */
+
+  _define_profiles();
 }
 
 /*----------------------------------------------------------------------------

@@ -625,6 +625,30 @@ cs_post_mesh_detach_writer(int  mesh_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Associate a writer to a postprocessing mesh.
+ *
+ * This function must be called during the postprocessing output definition
+ * stage, before any output actually occurs.
+ *
+ * If the field should already be output automatically based on the mesh
+ * category and field output keywords, it will not be added.
+ *
+ * \param[in]  mesh_id    id of associated mesh
+ * \param[in]  writer_id  id of specified associated writer,
+ *                        or \ref CS_POST_WRITER_ALL_ASSOCIATED for all
+ * \param[in]  field_id   id of field to attach
+ * \param[in]  comp_id    id of field component (-1 for all)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_post_mesh_attach_field(int  mesh_id,
+                          int  writer_id,
+                          int  field_id,
+                          int  comp_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Get a postprocessing meshes entity presence flag.
  *
  * This flag is an array of 5 integers, indicating the presence of elements

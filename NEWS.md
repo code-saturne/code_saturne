@@ -3,9 +3,17 @@ Master (not on release branches yet)
 
 User changes:
 
-- Removed the cs_user_turbulence_source_terms user subroutine.
+- Add the possibility of defining fields to output with a given
+  postprocessing mesh using the new `cs_post_mesh_attach_field`
+  and `cs_probe_set_associate_field` functions.
+  * This allows a finer control than the global 'auto_var' options
+  * For profiles, the curvilinear and cartesian coordinates may also
+    be output using the `cs_probe_set_auto_curvilinear_coords` and
+    `cs_probe_set_auto_cartesian_coords` functions.
+
+- Removed the `cs_user_turbulence_source_terms` user subroutine.
   Turbulent source terms can be added using the generic (C)
-  cs_user_source_terms function.
+  `cs_user_source_terms` function.
 
 - Add a code_saturne FMU example with full implementation of the methods
   allowing to operate with it from a master FMU. extras/FMI/README.md provides
@@ -33,6 +41,8 @@ Numerics and physical modelling:
 
 Architectural changes:
 
+- Use `cs_probe_t` type profiles for GUI-defined profiles.
+
 - Fully replace MEI by generated (MEG) code. This removed the bootstrap
   dependency on Bison and Flex.
 
@@ -44,9 +54,9 @@ Architectural changes:
 
 - Documentation: move the installation documentation to a top-level
   INSTALL.md file. This replaces both the matching sections in the
-  README.mf and the LaTeX-based install.pdf file.
+  README.md and the LaTeX-based install.pdf file.
 
-- Replace SCRIPTS/"runcase" with DATA/run.cfg logic.
+- Replace `SCRIPTS/runcase` with `DATA/run.cfg` logic.
   * DATA/SaturneGUI is replaced by DATA/code_saturne, which can both launch
     the GUI or run the code (using "./code_saturne" or "./code_saturne run").
   * The new logic allows keeping sections specific to various batch systems
@@ -58,8 +68,8 @@ Architectural changes:
   require Python 3 to "strongly encourage" migration if not done yet.
 
 - Add the possibility to create a desktop shortcut on Linux systems.
-  Creation is done using the "make install-shortcut" command after the
-  "make install" command. A code_saturne_($version).desktop file is
+  Creation is done using the `make install-shortcut` command after the
+  `make install` command. A `code_saturne_($version).desktop` file is
   created in the desktop folder and double-clicking on it launches
   the GUI.
 

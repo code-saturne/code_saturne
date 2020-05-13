@@ -92,11 +92,14 @@ typedef void
                                cs_real_t    **s);
 
 /*============================================================================
- *  Global variables
+ * Global variables
  *============================================================================*/
 
-/*=============================================================================
- * Public function prototypes for Fortran API
+/*============================================================================
+ * Semi-private function prototypes
+ *
+ * The following functions are intended to be used by the postprocessing layer
+ * (cs_post.c), not directly by the user.
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
@@ -107,6 +110,29 @@ typedef void
 
 void
 cs_probe_finalize(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Transfer info on associated fields to the caller.
+ *
+ * This function transfert the property of the associated arrays to the caller
+ * and removes it from the probe set info.
+ *
+ * \param[in]   pset        pointer to a cs_probe_set_t structure
+ * \param[out]  n_fields    number of associated fields
+ * \param[out]  field_info  associated field info (array of tuples with
+ *                          writer id, field id, component id)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_probe_set_transfer_associated_field_info(cs_probe_set_t   *pset,
+                                            int              *n_fields,
+                                            int             **field_info);
+
+/*=============================================================================
+ * Public function prototypes.
+ *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -169,6 +195,8 @@ cs_probe_set_get_name(cs_probe_set_t   *pset);
  * \param[out] on_boundary     true if probes are located on boundary
  * \param[out] on_curve        true if the probe set has cuvilinear coordinates
  * \param[out] auto_variables  true if set of variables to output is predefined
+ * \param[out] auto_curve_coo  true if curvilinear coordinates should be output
+ * \param[out] auto_cart_coo   true if cartesian coordinates should be output
  * \param[out] n_writers       number of associated  user-defined writers,
  *                             or -1 if default unchanged
  * \param[out] writer_ids      pointer to a list of writer ids
@@ -181,6 +209,8 @@ cs_probe_set_get_post_info(const cs_probe_set_t   *pset,
                            bool                   *on_boundary,
                            bool                   *on_curve,
                            bool                   *auto_variables,
+                           bool                   *auto_curve_coo,
+                           bool                   *auto_cart_coo,
                            int                    *n_writers,
                            int                    *writer_ids[]);
 
@@ -308,6 +338,31 @@ cs_probe_set_allow_overwrite(const char  *name);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Assign curvilinear abscissa for the given probe set
+ *
+ * This is effective only when using probe sets to which curvilinear
+ * coordinates have not already been assigned.
+ *
+ * So this may be used following \ref cs_probe_set_create (and probe additions)
+ * or \ref cs_probe_set_create_from_array, but will be ignored for probe sets
+ * defined using \ref cs_probe_set_create_from_segment and
+ * \ref cs_probe_set_create_from_local.
+ *
+ * If provided, the array of curvilinear absicssa must match the size of the
+ * probe set. If set to NULL, it is assumed a unifor spacing is provided
+ * between points.
+ *
+ * \param[in]  pset  pointer to a cs_probe_set_t structure
+ * \param[in]  s     array of curvilinear abscissa, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_probe_set_assign_curvilinear_abscissa(cs_probe_set_t   *pset,
+                                         const cs_real_t  *s);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Associate a list of writers to a probe set.
  *
  * \param[in, out] pset        pointer to a cs_probe_set_t structure to set
@@ -323,7 +378,31 @@ cs_probe_set_associate_writers(cs_probe_set_t   *pset,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Set to true or false the automatic post-processing of variables
+ * \brief Associate a field to a probe set.
+ *
+ * This function must be called during the postprocessing output definition
+ * stage, before any output actually occurs.
+ *
+ * If the field should already be output automatically based on the mesh
+ * category and field output keywords, it will be filtered at a later stage.
+ *
+ * \param[in]  pset       pointer to a cs_probe_set_t structure
+ * \param[in]  writer_id  id of specified associated writer,
+ *                        or 0 (\ref CS_POST_WRITER_ALL_ASSOCIATED) for all
+ * \param[in]  field_id   id of field to attach
+ * \param[in]  comp_id    id of field component (-1 for all)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_probe_set_associate_field(cs_probe_set_t   *pset,
+                             int               writer_id,
+                             int               field_id,
+                             int               comp_id);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set automatic output of variables behavior.
  *
  * \param[in, out] pset     pointer to a cs_probe_set_t structure
  * \param[in]      mode     true or false
@@ -333,6 +412,32 @@ cs_probe_set_associate_writers(cs_probe_set_t   *pset,
 void
 cs_probe_set_auto_var(cs_probe_set_t   *pset,
                       bool              mode);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set automatic output of curvilinear coordinates.
+ *
+ * \param[in, out] pset     pointer to a cs_probe_set_t structure
+ * \param[in]      mode     true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_probe_set_auto_curvilinear_coords(cs_probe_set_t   *pset,
+                                     bool              mode);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Set automatic output of curvilinear coordinates.
+ *
+ * \param[in, out] pset     pointer to a cs_probe_set_t structure
+ * \param[in]      mode     true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_probe_set_auto_cartesian_coords(cs_probe_set_t   *pset,
+                                   bool              mode);
 
 /*----------------------------------------------------------------------------*/
 /*!

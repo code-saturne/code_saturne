@@ -485,13 +485,6 @@ cs_gui_mpi_algorithms(void);
 void
 cs_gui_porous_model(void);
 
-/*----------------------------------------------------------------------------
- * 1D profile postprocessing
- *----------------------------------------------------------------------------*/
-
-void
-cs_gui_profile_output(void);
-
 /*-----------------------------------------------------------------------------
  * Get initial value from property markup.
  *
