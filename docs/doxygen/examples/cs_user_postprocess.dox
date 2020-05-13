@@ -383,6 +383,12 @@
 
   \snippet cs_user_postprocess.c post_define_probes_1
 
+  The same set could also be defined using predifined arrays:
+
+  \snippet cs_user_postprocess.c post_define_probes_2
+
+  In both cases, labels are optional (NULL may be used instead).
+
   Probe set creation functions return a pointer to a \ref cs_probe_set_t
   structure which can be used to specify additional options using the
   \ref cs_probe_set_option function.
@@ -390,6 +396,62 @@
   A writer (id = CS_POST_WRITER_PROBES) using the format "time_plot" is
   associated by default to a set of monitoring probes.
   This is not the case for profiles.
+
+  Profiles are special probe sets, for which a curvilinear coordinate is
+  usually provided (or deduced, when \ref cs_probe_set_create_from_segment
+  or \ref cs_probe_set_create_from_local construction function is used).
+  Curvilinear coordinates may also be assigned to probe sets generated
+  using \ref cs_probe_set_create or \cs_probe_set_create_from_array
+  by using the \ref cs_probe_set_assign_curvilinear_abscissa function.
+
+  Instead of being assigned by default to a time plot, profiles are generally
+  used with writers using the "plot" format (with a "dat" or "csv" sub-option).
+  Instead of using one file per variable with one column per point and
+  one line per output time, this produces one file pour output time, with
+  une column per variable and one line per point. But they may also be used
+  with time plots (as a regular probe set), or as with any post-processing
+  output mesh, with 3D formats such as EnSight or MED.
+
+  The following example shows how to simply define a profile on a given
+  segment, and associate it to writer 2:
+
+  \snippet cs_user_postprocess.c post_define_profile_1
+
+  Probe sets (including profiles) may also be located along the domain
+  boundary, if this is specified. In the following example, we set the
+  "boundary" option to "true" to specify that the probes should be located
+  on the boundary instead of the default volume mesh. We could also set
+  a "criteria" option to define a selection filter for the portion of the mesh
+  in which probes should be located (by default, the whole mesh).
+
+  Here We also choose to "snap" the points to the nearest vertices. Snapping
+  probes to cell centers or vertices is useful mainly when the values to
+  plot are located on those points.
+
+  \snippet cs_user_postprocess.c post_define_profile_2
+
+  \section cs_user_postprocess_h_profile_vars Defining output on a probe set
+
+  To select a specific set of fields to output with a given probe set
+  or profile, the \ref cs_probe_set_associate_field function may be used.
+  It allows specifying whether the output relates to all associated writers
+  or specific ones, and for multidimensional fields, allows selecting specific
+  components (\comp_id = -1 for all components, or the (0 to n-1)-th
+  component if filtering is desired.
+
+  This is used in general for probe sets whose "automatic" variables
+  output is turned off (using \cs_probe_set_auto_var), though it can be used
+  to extend that glob setting.
+
+  Finally, the user may choose to output the curvilinear coordinates
+  associated with a profile and/or the point coordinates, using the
+  \ref cs_probe_set_auto_curvilinear_coords and
+  \ref cs_probe_set_auto_cartesian_coords respectively, since these are
+  not output by default.
+
+  This last example illustrates a combination of those possibilities:
+
+  \snippet cs_user_postprocess.c post_define_profile_2
 
   \section cs_user_postprocess_h_profile_advanced Advanced profile definitions
 
@@ -444,6 +506,27 @@
 
   The examples of post-processing given below use meshes defined in the
   examples for \ref cs_user_postprocess_meshes above.
+
+  \subsection cs_user_postprocess_h_var_add_f_1 Output a given field or component with a given mesh
+
+  To output specific field values on a given postprocessing mesh, that
+  field may be attached (associated) to that mesh.
+
+  In the following example, the pressure is output on mesh *4*, for
+  all associated writers:
+
+  \snippet cs_user_postprocess.c post_attach_field_1
+
+  In this second example, the velocity's z component is ouput on mesh 4,
+  only for writer 1:
+
+  \snippet cs_user_postprocess.c post_attach_field_2
+
+  If the mesh has the \c auto_variables option enabled, and a field is already
+  selected for "standard" postprocessing (i.e. selected for output in the GUI,
+  or \c post_vis key value includes the \c CS_POST_ON_LOCATION bit), it will
+  not be output an additional time, so this option should be safely usable even
+  with limited precautions.
 
   \subsection cs_user_postprocess_h_volume_mesh_tke Output of the turbulent kinetic energy for the Rij-Epsilon model on the volume mesh
 
@@ -511,6 +594,8 @@
 
   \page cs_user_postprocess_h_interpolate_p Interpolation
 
+  \section cs_user_postprocess_h_probe_interpolate Probe set interpolation
+
   By default, probes and profile values are "P0" interpolated,
   that is their value is that of the containing cell or face,
   or closest vertex.
@@ -519,7 +604,7 @@
 
   The P1 interpolation is based on a local least-squares gradient,
   so ghost cell values must be synchronized  (this is automatically
-  the case for fields, must must be handled by the user in case of
+  the case for fields, but must be handled by the user in case of
   auxiliary arrays).
 
   If a field's boundary values (i.e. associated field) are known,
@@ -527,10 +612,26 @@
   are defined, they are used. When neither boundary values nor boundary
   conditions are known (i.e. for a non-solved variable field or
   values not defined as a field), homogeneous Neumann boundary conditions
-  are assumed.
+  are assumed. Improved gradient interpolation for stratification and
+  "jumps" is also ignored here, so this may lead to excessively smooth
+  output in areas where this should occur.
 
-  The following example shows how intepolation may be used in
-  the \ref cs_user_postprocess_values function.
+  Interpolation may be activated in a global manner for all outputs
+  using a given probe set as by setting the set's "interpolate", option to 1,
+  as shown on the following example. The "probes" set configured here
+  is the default probe set defined using the GUI:
+
+  \snippet cs_user_postprocess.c post_set_probes_interpolate
+
+  If a finer control is needed, such as applying a different interpolation
+  option to selected fields, or providing a more precice (but usually
+  more costly interpolation, interpolation may also be defined on a case per
+  case basis using the \ref cs_user_postprocess_values function.
+
+  The following example shows how this may be done, using the built-in
+  \ref cs_interpolate_from_location_p1 function (which is based on the
+  "P1" interpolation described above) by passing its pointer to the
+  to \ref cs_post_write_probe_values outout function.
 
   \snippet cs_user_postprocess-probes-interpolate.c post_probes_interpolate_var_1
 
@@ -543,6 +644,10 @@
 
   Note also that interpolation could be also used in
   some \ref cs_user_extra_operations cases.
+
+  If needed, users may also define their own interpolation functions,
+  whose arguments should match \ref cs_interpolate_from_location_t and pass the
+  appropriate pointer to \ref cs_post_write_probe_values.
 
   \page cs_user_postprocess_h_activation_p Advanced management of output times
 

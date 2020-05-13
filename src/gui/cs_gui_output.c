@@ -534,7 +534,14 @@ _define_profiles(void)
     cs_probe_set_associate_writers(pset, 1, writer_ids);
 
     cs_probe_set_auto_var(pset, false);
+
+    /* TODO: add option in GUI to select betwen "snap to cell center"
+       and interpolation (or other combinations) */
+#if 1
     cs_probe_set_snap_mode(pset, CS_PROBE_SNAP_ELT_CENTER);
+#else
+    cs_probe_set_option(pset, "interpolation", "1");
+#endif
 
     /* TODO: add global flag to mesh to indicate whether it
        is fixed or not, so as to set transient_location

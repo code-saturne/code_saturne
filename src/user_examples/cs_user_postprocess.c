@@ -477,9 +477,7 @@ cs_user_postprocess_meshes(void)
   /* Example: attach default txt histogram writer on boundary mesh */
 
   /*! [post_attach_mesh_1] */
-  {
-    cs_post_mesh_attach_writer(CS_POST_MESH_BOUNDARY, CS_POST_WRITER_HISTOGRAMS);
-  }
+  cs_post_mesh_attach_writer(CS_POST_MESH_BOUNDARY, CS_POST_WRITER_HISTOGRAMS);
   /*! [post_attach_mesh_1] */
 
   /*--------------------------------------------------------------------------*/
@@ -487,10 +485,30 @@ cs_user_postprocess_meshes(void)
   /* Example: attach user tex histogram writer of id 6 on volume mesh */
 
   /*! [post_attach_mesh_2] */
-  {
-    cs_post_mesh_attach_writer(CS_POST_MESH_VOLUME, 6);
-  }
+  cs_post_mesh_attach_writer(CS_POST_MESH_VOLUME, 6);
   /*! [post_attach_mesh_2] */
+
+  /*--------------------------------------------------------------------------*/
+
+  /* Example: output specific field on mesh with all associated writers */
+
+  /*! [post_attach_field_1] */
+  cs_post_mesh_attach_field(4,
+                            CS_POST_WRITER_ALL_ASSOCIATED,
+                            cs_field_id_by_name("pressure"),
+                            -1);
+  /*! [post_attach_field_1] */
+  /*--------------------------------------------------------------------------*/
+
+  /* Example: output z-component of velocity field on mesh with
+     a given writer */
+
+  /*! [post_attach_field_2] */
+  cs_post_mesh_attach_field(4,
+                            1,
+                            CS_F_(vel)->id,
+                            2);
+  /*! [post_attach_field_2] */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -517,11 +535,34 @@ cs_user_postprocess_probes(void)
     cs_probe_set_add_probe(pset, 0.25, 0.025, 0.025, "M1");
     cs_probe_set_add_probe(pset, 0.50, 0.025, 0.025, "M2");
     cs_probe_set_add_probe(pset, 0.75, 0.025, 0.025, "M3");
-
   }
   /*! [post_define_probes_1] */
 
+  /*! [post_define_probes_2] */
+  {
+    const cs_real_t coords[][3] = {{0.25, 0.025, 0.025},
+                                   {0.50, 0.025, 0.025},
+                                   {0.75, 0.025, 0.025}};
+    const char *labels[] = {"M1", "M2", "M3"};
+
+    cs_probe_set_t  *pset = cs_probe_set_create_from_array("Monitoring",
+                                                           3,
+                                                           coords,
+                                                           labels);
+  }
+  /*! [post_define_probes_2] */
+
+  /*! [post_set_probes_interpolate] */
+  {
+    cs_probe_set_t  *pset = cs_probe_set_get("probes");
+
+    cs_probe_set_option(pset, "interpolation", "1");
+  }
+  /*! [post_set_probes_interpolate] */
+
   /* Add a first profile */
+
+  /*! [post_define_profile_1] */
   {
     cs_coord_3_t  start = {0., 0.025, 0.025};
     cs_coord_3_t  end = {1., 0.025, 0.025};
@@ -535,36 +576,58 @@ cs_user_postprocess_probes(void)
 
     cs_probe_set_associate_writers(pset, 1, writer_ids);
   }
+  /*! [post_define_profile_1] */
 
   /* Add a second profile attached to boundary vertices */
+
+  /*! [post_define_profile_2] */
   {
     cs_coord_3_t  start = {0., 0., 0.};
     cs_coord_3_t  end = {1., 0., 0.};
 
-    cs_probe_set_create_from_segment("P1",    // name
-                                     11,      // n_probes
-                                     start,   // start coordinates
-                                     end);    // end coordinates
-  }
+    cs_probe_set_t  *pset =
+      cs_probe_set_create_from_segment("P2",    // name
+                                       11,      // n_probes
+                                       start,   // start coordinates
+                                       end);    // end coordinates
 
-  /* Add a second profile attached to boundary vertices */
-  {
-    cs_coord_3_t  start = {0., 0., 0.};
-    cs_coord_3_t  end = {1., 0., 0.};
-    int  writer_ids[] = {5};
-
-    cs_probe_set_t *pset =
-      cs_probe_set_create_from_segment("P2",     // name
-                                       21,       // n_probes
-                                       start,    // start coordinate
-                                       end);     // end coordinate
-
+    int  writer_ids[] = {2};
     cs_probe_set_associate_writers(pset, 1, writer_ids);
 
     cs_probe_set_option(pset, "boundary", "true");
     cs_probe_set_snap_mode(pset, CS_PROBE_SNAP_VERTEX);
   }
+  /*! [post_define_profile_2] */
 
+  /* Define output on a profile */
+
+  /*! [post_define_profile_3] */
+  {
+    cs_coord_3_t  start = {0., 0.025, 0.025};
+    cs_coord_3_t  end = {1., 0.025, 0.025};
+    int  writer_ids[] = {2};
+
+    cs_probe_set_t  *pset =
+      cs_probe_set_create_from_segment("Prof4", // name
+                                       11,      // n_probes
+                                       start,   // start coordinates
+                                       end);    // end coordinates
+
+    cs_probe_set_associate_writers(pset, 1, writer_ids);
+
+    cs_probe_set_auto_curvilinear_coords(pset, true);
+    cs_probe_set_auto_var(pset, false);
+
+    cs_probe_set_associate_field(pset,
+                                 CS_POST_WRITER_ALL_ASSOCIATED,
+                                 CS_F_(p)->id,
+                                 -1);
+    cs_probe_set_associate_field(pset,
+                                 CS_POST_WRITER_ALL_ASSOCIATED,
+                                 CS_F_(vel)->id,
+                                 0);
+  }
+  /*! [post_define_profile_3] */
 }
 
 /*----------------------------------------------------------------------------*/
@@ -608,6 +671,10 @@ cs_user_postprocess_values(const char            *mesh_name,
                            const cs_lnum_t        vertex_list[],
                            const cs_time_step_t  *ts)
 {
+  CS_NO_WARN_IF_UNUSED(probes);
+  CS_NO_WARN_IF_UNUSED(n_vertices);
+  CS_NO_WARN_IF_UNUSED(vertex_list);
+
   /* Output of k = 1/2 (R11+R22+R33) for the Rij-epsilon model
      ------------------------------------------------------ */
 
@@ -797,6 +864,9 @@ cs_user_postprocess_activate(int     nt_max_abs,
                              int     nt_cur_abs,
                              double  t_cur_abs)
 {
+  CS_NO_WARN_IF_UNUSED(nt_cur_abs);
+  CS_NO_WARN_IF_UNUSED(t_cur_abs);
+
   /* Use the cs_post_activate_writer() function to force the
    * "active" or "inactive" flag for a specific writer or for all
    * writers for the current time step.

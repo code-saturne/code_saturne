@@ -230,6 +230,21 @@ cs_probe_set_get_location_criteria(cs_probe_set_t   *pset);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Return the interpolation option for a given probe set
+ *
+ * Interpolation will be applied only where possible.
+ *
+ * \param[in]   pset       pointer to a cs_probe_set_t structure
+ *
+ * \return interpolation option value
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_probe_set_get_interpolation(cs_probe_set_t   *pset);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create a new set of probes.
  *
  * \param[in]   name        name of the set of probes
@@ -467,6 +482,10 @@ cs_probe_set_snap_mode(cs_probe_set_t   *pset,
  *
  * - \c \b selection_criteria where keyval is selection criteria string
  * - \c \b tolerance  where keyval is for instance "0.05" (default "0.10")
+ * - \c \b interpolation if \ c 0, P0 interpolation (default); if \c 1,
+ *         simple gradient-based interpolation for volume probes (ignored
+ *         for boundaries). Other interpolation options might be added
+ *         in the future.
  *
  * \param[in, out] pset     pointer to a cs_probe_set_t structure to set
  * \param[in]      keyname  name of the keyword related to the parameter to set

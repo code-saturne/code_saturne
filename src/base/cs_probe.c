@@ -139,6 +139,9 @@ struct _cs_probe_set_t {
 
   char         *located;        /* 1 for located probes, 0 for unlocated */
 
+  int           interpolation;  /* 0: no interpolation;
+                                   1: local gradient-based interpolation */
+
   /* User-defined writers associated to this set of probes */
 
   int           n_writers;      /* Number of writers (-1 if unset) */
@@ -161,6 +164,7 @@ typedef enum {
   PSETKEY_BOUNDARY,
   PSETKEY_SELECT_CRIT,
   PSETKEY_TOLERANCE,
+  PSETKEY_INTERPOLATION,
   PSETKEY_ERROR
 
 } psetkey_t;
@@ -208,6 +212,8 @@ _print_psetkey(psetkey_t  key)
     return "selection_criteria";
   case PSETKEY_TOLERANCE:
     return "tolerance";
+  case PSETKEY_INTERPOLATION:
+    return "interpolation";
   default:
     assert(0);
   }
@@ -239,6 +245,8 @@ _get_psetkey(const char  *keyname)
     key = PSETKEY_SELECT_CRIT;
   else if (strcmp(keyname, "tolerance") == 0)
     key = PSETKEY_TOLERANCE;
+  else if (strcmp(keyname, "interpolation") == 0)
+    key = PSETKEY_INTERPOLATION;
 
   return key;
 }
@@ -371,6 +379,8 @@ _probe_set_create(const char    *name,
   pset->elt_id = NULL;
   pset->vtx_id = NULL;
   pset->located = NULL;
+
+  pset->interpolation = 0;
 
   pset->n_writers = -1;
   pset->writer_ids = NULL;
@@ -666,6 +676,26 @@ cs_probe_set_get_location_criteria(cs_probe_set_t   *pset)
     return  NULL;
 
   return pset->sel_criter;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Return the interpolation option for a given probe set
+ *
+ * Interpolation will be applied only where possible.
+ *
+ * \param[in]   pset       pointer to a cs_probe_set_t structure
+ *
+ * \return interpolation option value
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_probe_set_get_interpolation(cs_probe_set_t   *pset) {
+  if (pset == NULL)
+    return  0;
+
+  return pset->interpolation;
 }
 
 /*----------------------------------------------------------------------------*/
@@ -1124,6 +1154,10 @@ cs_probe_set_snap_mode(cs_probe_set_t   *pset,
  *
  * - \c \b selection_criteria where keyval is selection criteria string
  * - \c \b tolerance  where keyval is for instance "0.05" (default "0.10")
+ * - \c \b interpolation if \ c 0, P0 interpolation (default); if \c 1,
+ *         simple gradient-based interpolation for volume probes (ignored
+ *         for boundaries). Other interpolation options might be added
+ *         in the future.
  *
  * \param[in, out] pset     pointer to a cs_probe_set_t structure to set
  * \param[in]      keyname  name of the keyword related to the parameter to set
@@ -1194,6 +1228,10 @@ cs_probe_set_option(cs_probe_set_t   *pset,
 
   case PSETKEY_TOLERANCE:
     pset->tolerance = atof(keyval);
+    break;
+
+  case PSETKEY_INTERPOLATION:
+    pset->interpolation = atoi(keyval);
     break;
 
   default:

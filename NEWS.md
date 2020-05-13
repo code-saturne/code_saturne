@@ -3,6 +3,9 @@ Master (not on release branches yet)
 
 User changes:
 
+- Allow activating P1 interpolation for probes and profiles using a simple
+  function call: `cs_probe_set_option(pset, "interpolation", "1");`
+
 - Add the possibility of defining fields to output with a given
   postprocessing mesh using the new `cs_post_mesh_attach_field`
   and `cs_probe_set_associate_field` functions.

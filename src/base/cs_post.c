@@ -2830,48 +2830,6 @@ _boundary_submeshes_by_group(const cs_mesh_t   *mesh,
   BFT_FREE(group_flag);
 }
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Interpolate values from fields defined on cells or faces.
- *
- * \param[in, out]  input           pointer to optional (untyped) value
- *                                  or structure.
- * \param[in]       datatype        associated datatype
- * \param[in]       val_dim         dimension of data values
- * \param[in]       n_points        number of interpolation points
- * \param[in]       point_location  location of points in mesh elements
- * \param[in]       point_coords    point coordinates
- * \param[in]       location_vals   values at mesh location
- * \param[out]      point_vals      interpolated values at points
- */
-/*----------------------------------------------------------------------------*/
-
-static void
-_field_interpolate(void                *input,
-                   cs_datatype_t        datatype,
-                   int                  val_dim,
-                   cs_lnum_t            n_points,
-                   const cs_lnum_t      point_location[],
-                   const cs_real_3_t    point_coords[],
-                   const void          *location_vals,
-                   void                *point_vals)
-{
-  CS_UNUSED(input);
-
-  /* int f_id = *((int *)input); */
-
-  /* TODO add options here */
-
-  cs_interpolate_from_location_p0(NULL,
-                                  datatype,
-                                  val_dim,
-                                  n_points,
-                                  point_location,
-                                  point_coords,
-                                  location_vals,
-                                  point_vals);
-}
-
 /*----------------------------------------------------------------------------
  * Check if a given field matches the profile for post_write_var.
  *
@@ -3068,6 +3026,15 @@ static void
 _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
                        const cs_time_step_t  *ts)
 {
+  cs_interpolate_from_location_t
+    *interpolate_func = cs_interpolate_from_location_p0;
+
+  cs_probe_set_t  *pset = (cs_probe_set_t *)post_mesh->sel_input[4];
+  if (pset != NULL) {
+    if (cs_probe_set_get_interpolation(pset) == 1)
+      interpolate_func = cs_interpolate_from_location_p1;
+  }
+
   /* Base output for cell and boundary meshes */
   /*------------------------------------------*/
 
@@ -3100,9 +3067,25 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
       if (name == NULL)
         name = f->name;
 
-      if (   field_loc_type == CS_MESH_LOCATION_CELLS
-          || field_loc_type == CS_MESH_LOCATION_BOUNDARY_FACES
-          || field_loc_type == CS_MESH_LOCATION_INTERIOR_FACES) {
+      if (pset != NULL) {
+        char interpolate_input[96];
+        strncpy(interpolate_input, f->name, 95); interpolate_input[95] = '\0';
+
+        cs_post_write_probe_values(post_mesh->id,
+                                   CS_POST_WRITER_ALL_ASSOCIATED,
+                                   name,
+                                   f->dim,
+                                   CS_POST_TYPE_cs_real_t,
+                                   f->location_id,
+                                   interpolate_func,
+                                   interpolate_input,
+                                   f->val,
+                                   ts);
+      }
+
+      else if (   field_loc_type == CS_MESH_LOCATION_CELLS
+               || field_loc_type == CS_MESH_LOCATION_BOUNDARY_FACES
+               || field_loc_type == CS_MESH_LOCATION_INTERIOR_FACES) {
 
         const cs_real_t *cell_val = NULL, *b_face_val = NULL;
 
@@ -3169,14 +3152,17 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
       if (name == NULL)
         name = f->name;
 
+      char interpolate_input[96];
+      strncpy(interpolate_input, f->name, 95); interpolate_input[95] = '\0';
+
       cs_post_write_probe_values(post_mesh->id,
                                  CS_POST_WRITER_ALL_ASSOCIATED,
                                  name,
                                  f->dim,
                                  CS_POST_TYPE_cs_real_t,
                                  f->location_id,
-                                 _field_interpolate,
-                                 &f_id,
+                                 interpolate_func,
+                                 interpolate_input,
                                  f->val,
                                  ts);
 
@@ -3241,8 +3227,16 @@ static void
 _cs_post_output_attached_fields(cs_post_mesh_t        *post_mesh,
                                 const cs_time_step_t  *ts)
 {
-  cs_probe_set_t  *pset = (cs_probe_set_t *)post_mesh->sel_input[4];
   const int label_key_id = cs_field_key_id("label");
+
+  cs_probe_set_t  *pset = (cs_probe_set_t *)post_mesh->sel_input[4];
+  cs_interpolate_from_location_t
+    *interpolate_func = cs_interpolate_from_location_p0;
+
+  if (pset != NULL) {
+    if (cs_probe_set_get_interpolation(pset) == 1)
+      interpolate_func = cs_interpolate_from_location_p1;
+  }
 
   for (int i = 0; i < post_mesh->n_a_fields; i++) {
 
@@ -3263,7 +3257,9 @@ _cs_post_output_attached_fields(cs_post_mesh_t        *post_mesh,
     if (name == NULL)
       name = f->name;
 
-    int fc_id = f_id;
+    cs_interpolate_from_location_t
+      *_interpolate_func = interpolate_func;
+
     int f_dim = f->dim;
     cs_real_t *_val = NULL;
     const cs_real_t *f_val = f->val;
@@ -3273,10 +3269,10 @@ _cs_post_output_attached_fields(cs_post_mesh_t        *post_mesh,
         continue;
       else {
         _val = _extract_field_component(f, comp_id, name, name_buf);
-        fc_id = -1;
         f_dim = 1;
         f_val = _val;
         name = name_buf;
+        _interpolate_func = cs_interpolate_from_location_p0;
       }
     }
 
@@ -3328,14 +3324,17 @@ _cs_post_output_attached_fields(cs_post_mesh_t        *post_mesh,
                  || field_loc_type == CS_MESH_LOCATION_BOUNDARY_FACES
                  || field_loc_type == CS_MESH_LOCATION_VERTICES)) {
 
+      char interpolate_input[96];
+      strncpy(interpolate_input, f->name, 95); interpolate_input[95] = '\0';
+
       cs_post_write_probe_values(post_mesh->id,
                                  writer_id,
                                  name,
                                  f_dim,
                                  CS_POST_TYPE_cs_real_t,
                                  f->location_id,
-                                 _field_interpolate,
-                                 &fc_id,
+                                 _interpolate_func,
+                                 interpolate_input,
                                  f_val,
                                  ts);
 
