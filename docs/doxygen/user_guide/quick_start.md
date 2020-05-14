@@ -92,7 +92,7 @@ following points in `CASE1/RESU/<YYYYMMDD-hhmm>`
   (these are specific error signals):
   * `SIGFPE`: a floating point exception occurred. It happens when there is a
               division by 0, when the calculation did not converge,
-              or when a real number reached a value over \f$10^{300}\f$.
+              or when a real number reached a value over *10<sup>300</sup>*.
               Depending on the host architecture and build options,
               this type of exception may be caught or ignored.
   * `SIGSEGV`: a memory error such as a segmentation violation occurred.

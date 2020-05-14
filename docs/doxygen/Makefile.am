@@ -23,7 +23,8 @@
 #-------------------------------------------------------------------------------
 
 EXTRA_DIST = Doxyfile-pre Doxyfile-src Doxyfile-ui \
-DoxygenLayout.xml doxypypy.py mainpage.dox images examples
+DoxygenLayout.xml doxypypy.py mainpage.dox images examples \
+user_guide developer_guide
 
 # Overload doxygen executable
 
