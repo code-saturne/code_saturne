@@ -208,10 +208,13 @@ _which_state(const cs_solidification_binary_alloy_t     *alloy,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Determine in which state is a tuple (temp, conc, gliq)
+ * \brief  Determine in which state is a tuple (temp, conc, gl) from the
+ *         evaluation of its enthalpy. The calling code has to be sure that the
+ *         tuple is consistent.
  *         Assumption of the lever rule.
  *
  * \param[in]  alloy    pointer to a binary alloy structure
+ * \param[in]  cp       value of the heat capacity
  * \param[in]  temp     value of the temperature
  * \param[in]  conc     value of the bulk concentration
  * \param[in]  gliq     value of the liquid fraction
@@ -221,40 +224,45 @@ _which_state(const cs_solidification_binary_alloy_t     *alloy,
 /*----------------------------------------------------------------------------*/
 
 static inline cs_solidification_state_t
-_which_state_with_gl(const cs_solidification_binary_alloy_t     *alloy,
-                     const cs_real_t                             temp,
-                     const cs_real_t                             conc,
-                     const cs_real_t                             gliq)
+_which_state_by_enthalpy(const cs_solidification_binary_alloy_t     *alloy,
+                         const cs_real_t                             cp,
+                         const cs_real_t                             temp,
+                         const cs_real_t                             conc,
+                         const cs_real_t                             gliq)
 {
-  const cs_real_t  t_liquidus = _get_t_liquidus(alloy, conc);
+  const cs_real_t  h_liq = cp*_get_t_liquidus(alloy, conc) + alloy->latent_heat;
+  const cs_real_t  h = cp*temp + gliq*alloy->latent_heat;
 
-  if (temp > t_liquidus) {
+  if (h > h_liq)
+    return CS_SOLIDIFICATION_STATE_LIQUID;
 
-    if (gliq < 1)
-      return CS_SOLIDIFICATION_STATE_MUSHY;
-    else
-      return CS_SOLIDIFICATION_STATE_LIQUID;
+  else {
 
-  }
-  else {   /* temp < t_liquidus */
+    if (conc > alloy->cs1) {    /* Part with eutectic */
 
-    const cs_real_t  t_solidus = _get_t_solidus(alloy, conc);
-    if (temp > t_solidus)
-      return CS_SOLIDIFICATION_STATE_MUSHY;
+      const cs_real_t  h_sol = cp*alloy->t_eut;
+      const cs_real_t  gleut = (conc - alloy->cs1)*alloy->dgldC_eut;
+      const cs_real_t  h_eut = cp*alloy->t_eut + gleut*alloy->latent_heat;
 
-    else { /* temp < t_solidus */
-
-      if (conc < alloy->cs1 || temp < alloy->t_eut_inf) {
-        if (gliq > 0)
-          return CS_SOLIDIFICATION_STATE_MUSHY;
-        else
-          return CS_SOLIDIFICATION_STATE_SOLID;
-      }
-      else
+      if (h > h_eut)
+        return CS_SOLIDIFICATION_STATE_MUSHY;
+      else if (h > h_sol)
         return CS_SOLIDIFICATION_STATE_EUTECTIC;
+      else
+        return CS_SOLIDIFICATION_STATE_SOLID;
 
-    } /* solidus */
-  }   /* liquidus */
+    }
+    else {                      /* Part without eutectic */
+
+      const cs_real_t  h_sol = cp*(alloy->t_melt+alloy->ml*conc*alloy->inv_kp);
+      if (h > h_sol)
+        return CS_SOLIDIFICATION_STATE_MUSHY;
+      else
+        return CS_SOLIDIFICATION_STATE_SOLID;
+
+    } /* Eutectic or not that is the question ? */
+
+  } /* Liquid ? */
 
 }
 
@@ -625,16 +633,22 @@ _update_liquid_fraction_voller(const cs_mesh_t             *mesh,
  * \brief  Update the state associated to each cell in the case of a binary
  *         alloy. No MPI synchronization has to be performed at this stage.
  *
- * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  quant   pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts      pointer to a cs_time_step_t structure
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_binary_alloy_final_state(const cs_cdo_quantities_t   *quant)
+_update_binary_alloy_final_state(const cs_cdo_quantities_t   *quant,
+                                 const cs_time_step_t        *ts)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
   cs_solidification_binary_alloy_t  *alloy
     = (cs_solidification_binary_alloy_t *)solid->model_context;
+
+  assert(cs_property_is_uniform(solid->thermal_sys->cp));
+  const cs_real_t  cp = cs_property_get_cell_value(0, ts->t_cur,
+                                                   solid->thermal_sys->cp);
 
   /* Update the cell state (at this stage, one should have converged between
    * the couple (temp, conc) and the liquid fraction */
@@ -646,10 +660,11 @@ _update_binary_alloy_final_state(const cs_cdo_quantities_t   *quant)
 
   for (cs_lnum_t  c_id = 0; c_id < quant->n_cells; c_id++) {
 
-    cs_solidification_state_t  state = _which_state_with_gl(alloy,
-                                                            t_bulk[c_id],
-                                                            c_bulk[c_id],
-                                                            g_l[c_id]);
+    cs_solidification_state_t  state = _which_state_by_enthalpy(alloy,
+                                                                cp,
+                                                                t_bulk[c_id],
+                                                                c_bulk[c_id],
+                                                                g_l[c_id]);
 
     solid->cell_state[c_id] = state;
     solid->n_g_cells[state] += 1;
@@ -1578,7 +1593,7 @@ _default_binary_coupling(const cs_mesh_t              *mesh,
 
   /* The cell state is now updated at this stage. This will be useful for
      the monitoring */
-  _update_binary_alloy_final_state(quant);
+  _update_binary_alloy_final_state(quant, time_step);
 
   /* Update the forcing term in the momentum equation */
   alloy->update_velocity_forcing(mesh, connect, quant, time_step);
