@@ -1305,6 +1305,14 @@ cs_turbomachinery_join_add(const char  *sel_criteria,
   cs_glob_join_count++; /* Store number of joining (without periodic ones) */
   cs_glob_n_joinings++;
 
+  /* Set mesh modification type */
+
+  if (_turbomachinery != NULL) {
+    if (   _turbomachinery->model == CS_TURBOMACHINERY_TRANSIENT
+        && cs_glob_mesh->time_dep < CS_MESH_TRANSIENT_CONNECT)
+      cs_glob_mesh->time_dep = CS_MESH_TRANSIENT_CONNECT;
+  }
+
   return cs_glob_n_joinings;
 }
 
@@ -1335,6 +1343,12 @@ cs_turbomachinery_coupling_add(const char  *sel_criteria,
                                verbosity);
 
   _turbomachinery->n_couplings += 1;
+
+  if (_turbomachinery != NULL) {
+    if (   _turbomachinery->model == CS_TURBOMACHINERY_TRANSIENT
+        && cs_glob_mesh->time_dep < CS_MESH_TRANSIENT_COORDS)
+      cs_glob_mesh->time_dep = CS_MESH_TRANSIENT_COORDS;
+  }
 
   return cs_sat_coupling_n_couplings();
 }

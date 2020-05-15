@@ -2152,6 +2152,8 @@ cs_mesh_create(void)
   mesh->domain_num = cs_glob_rank_id + 1;
   mesh->n_domains = 0;
 
+  mesh->time_dep = CS_MESH_FIXED;
+
   /* Local dimensions */
 
   mesh->n_cells = 0;

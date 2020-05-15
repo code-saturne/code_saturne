@@ -3,6 +3,14 @@ Master (not on release branches yet)
 
 User changes:
 
+- When a non-transient probe set is clipped to cell centers and multiple
+  probes located in a given cell, only the one closest to the cell center
+  is retained.
+  * This is similar to the behavior of the old GUI-defined profile system,
+     but is cleaner and more controlled.
+  * When the mash changes over time, all probes are kept as they may not
+    be in the same cell on the next call.
+
 - Allow activating P1 interpolation for probes and profiles using a simple
   function call: `cs_probe_set_option(pset, "interpolation", "1");`
 

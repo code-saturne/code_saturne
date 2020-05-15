@@ -543,11 +543,8 @@ _define_profiles(void)
     cs_probe_set_option(pset, "interpolation", "1");
 #endif
 
-    /* TODO: add global flag to mesh to indicate whether it
-       is fixed or not, so as to set transient_location
-       to false when not required */
-
-    cs_probe_set_option(pset, "transient_location", "true");
+    if (cs_glob_mesh->time_dep > CS_MESH_FIXED)
+      cs_probe_set_option(pset, "transient_location", "true");
 
     /* Output coordinates */
 

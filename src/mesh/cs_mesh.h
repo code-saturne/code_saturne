@@ -57,8 +57,19 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* Mesh structure definition */
-/* ------------------------- */
+/*! Mesh time dependency */
+/*  -------------------- */
+
+typedef enum {
+
+  CS_MESH_FIXED,              /*!< Mesh definitions do not change with time */
+  CS_MESH_TRANSIENT_COORDS,   /*!< Vertex coordinates may change with time */
+  CS_MESH_TRANSIENT_CONNECT   /*!< Mesh connectivity may change with time */
+
+} cs_mesh_time_dep_t;
+
+/*! Mesh structure definition */
+/*  ------------------------- */
 
 typedef struct {
 
@@ -67,6 +78,8 @@ typedef struct {
   cs_lnum_t  dim;                /*!< space dimension */
   cs_lnum_t  domain_num;         /*!< local domain number */
   cs_lnum_t  n_domains;          /*!< number of domains */
+
+  cs_mesh_time_dep_t  time_dep;  /*!< time dependency */
 
   /* Local dimensions */
 

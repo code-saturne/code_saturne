@@ -53,6 +53,7 @@
 #include "cs_mesh_connect.h"
 #include "cs_mesh_location.h"
 #include "cs_mesh_quantities.h"
+#include "cs_parall.h"
 #include "cs_selector.h"
 #include "cs_timer.h"
 
@@ -115,6 +116,10 @@ struct _cs_probe_set_t {
   cs_lnum_t     n_max_probes;   /* Number of probes initially requested */
   cs_lnum_t     n_probes;       /* Number of probes really used */
   cs_lnum_t     n_loc_probes;   /* Number of probes located on this rank */
+
+  cs_real_3_t  *coords_ini;     /* Initial coordinates of the set of probes
+                                   (only when snap mode is on and
+                                   location is transient) */
 
   cs_real_3_t  *coords;         /* Coordinates of the set of probes
                                    Initially allocated to n_max_probes. */
@@ -290,6 +295,7 @@ _probe_set_free(cs_probe_set_t   *pset)
     return;
 
   BFT_FREE(pset->name);
+  BFT_FREE(pset->coords_ini);
   BFT_FREE(pset->coords);
   BFT_FREE(pset->sel_criter);
   BFT_FREE(pset->loc_id);
@@ -367,6 +373,8 @@ _probe_set_create(const char    *name,
   pset->n_max_probes = n_max_probes;
   pset->n_probes = 0;
   pset->n_loc_probes = 0;
+
+  pset->coords_ini = NULL;
 
   BFT_MALLOC(pset->coords, n_max_probes, cs_real_3_t);
   pset->s_coords = NULL;
@@ -459,6 +467,131 @@ _build_local_probe_set(cs_probe_set_t  *pset)
   pset->n_probes = n_elts;
   pset->coords = coords;
   pset->s_coords = s;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Merge identical probes when snapped to center.
+ *
+ * \param[in, out]  pset    pointer to a cs_probe_set_t structure
+ * \param[in]       center  cell centers
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_merge_snapped_to_center(cs_probe_set_t   *pset,
+                         const cs_real_t   centers[])
+{
+  if (pset == NULL)
+    return;
+
+  int *tag;
+  BFT_MALLOC(tag, pset->n_probes, int);
+
+  for (int i = 0; i < pset->n_probes; i++)
+    tag[i] = 0;
+
+  cs_lnum_t s_id = 0;
+  cs_lnum_t l_prv = -1;
+
+  for (int i = 0; i < pset->n_loc_probes; i++) {
+    int l = pset->elt_id[i];
+    if (l != l_prv) {
+      if (l_prv > -1) {
+        int j_min = s_id;
+        cs_real_t d_min = HUGE_VAL;
+        for (int j = s_id; j < i; j++) {
+          int k = pset->loc_id[i];
+          cs_real_t d = cs_math_3_distance(pset->coords[k], centers + l*3);
+          if (d < d_min) {
+            j_min = j;
+            d_min = d;
+          }
+        }
+        tag[pset->loc_id[j_min]] = 1;
+      }
+      s_id = i;
+    }
+    else if (l < 0)
+      s_id = i;
+    l_prv = l;
+  }
+
+  /* Last series of located points (l_prev > -1 if we enter loop) */
+
+  int j_min = -1;
+  cs_real_t d_min = HUGE_VAL;
+
+  for (int j = s_id; j < pset->n_loc_probes; j++) {
+    int k = pset->loc_id[j];
+    int l = pset->elt_id[j];
+    cs_real_t d = cs_math_3_distance(pset->coords[k], centers + l*3);
+    if (d < d_min) {
+      j_min = j;
+      d_min = d;
+    }
+  }
+
+  if (j_min > -1)
+    tag[pset->loc_id[j_min]] = 1;
+
+  /* Now all points to keep are tagged */
+
+  cs_parall_max(pset->n_probes, CS_INT_TYPE, tag);
+
+  /* Discard untagged points
+     ----------------------- */
+
+  /* Update global arrays; transfer tag to renumbering array */
+
+  int n_probes = 0;
+
+  for (int i = 0; i < pset->n_probes; i++) {
+    if (tag[i] > 0) {
+      tag[i] = n_probes;
+      for (int j = 0; j < 3; j++)
+        pset->coords[n_probes][j] = pset->coords[i][j];
+      if (pset->s_coords != NULL)
+        pset->s_coords[n_probes] = pset->s_coords[i];
+      if (pset->labels != NULL)
+        pset->labels[n_probes] = pset->labels[i];
+      pset->located[n_probes] = pset->located[i];
+      n_probes++;
+    }
+    else {
+      if (pset->labels != NULL)
+        BFT_FREE(pset->labels[i]);
+      tag[i] = -1;
+    }
+  }
+  pset->n_probes = n_probes;
+
+  BFT_REALLOC(pset->coords, n_probes, cs_real_3_t);
+  if (pset->s_coords != NULL)
+    BFT_REALLOC(pset->s_coords, n_probes, cs_real_t);
+  if (pset->labels != NULL)
+    BFT_REALLOC(pset->labels, n_probes, char *);
+  BFT_REALLOC(pset->located, n_probes, char);
+
+  /* Update local arrays */
+
+  int n_loc_probes = 0;
+  for (int i = 0; i < pset->n_loc_probes; i++) {
+    int j = pset->loc_id[i];
+    if (tag[j] > -1) {
+      pset->loc_id[n_loc_probes] = tag[j];
+      pset->elt_id[n_loc_probes] = pset->elt_id[i];
+      pset->vtx_id[n_loc_probes] = pset->vtx_id[i];
+      n_loc_probes += 1;
+    }
+  }
+  pset->n_loc_probes = n_loc_probes;
+
+  BFT_REALLOC(pset->loc_id, n_loc_probes, int);
+  BFT_REALLOC(pset->elt_id, n_loc_probes, cs_lnum_t);
+  BFT_REALLOC(pset->vtx_id, n_loc_probes, cs_lnum_t);
+
+  BFT_FREE(tag);
 }
 
 /*============================================================================
@@ -1273,10 +1406,16 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
 
   const bool  on_boundary = (pset->flags & CS_PROBE_BOUNDARY) ? true : false;
 
-  /* Build in local case */
+  /* Build in local case, restore saved coordinates if snapped otherwise */
 
   if (pset->p_define_func != NULL)
     _build_local_probe_set(pset);
+
+  else if (pset->coords_ini != NULL) {
+    memcpy(pset->coords,
+           pset->coords_ini,
+           pset->n_probes*3*sizeof(cs_real_t));
+  }
 
   /* Allocate on first pass */
 
@@ -1558,6 +1697,22 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
 
   if (pset->flags & CS_PROBE_BOUNDARY) centers = mq->b_face_cog;
 
+  /* In case of clip to cell center:
+     - Remove redundant probes in case of fixed mesh
+     - save original coordinates in case of variable mesh */
+
+  if (   pset->snap_mode == CS_PROBE_SNAP_ELT_CENTER
+      && pset->p_define_func == NULL) {
+    if (! (pset->flags & CS_PROBE_TRANSIENT))
+      _merge_snapped_to_center(pset, centers);
+    else if (pset->coords_ini == NULL) {
+      BFT_MALLOC(pset->coords_ini, pset->n_probes, cs_real_3_t);
+      memcpy(pset->coords_ini,
+             pset->coords,
+             pset->n_probes*3*sizeof(cs_real_t));
+    }
+  }
+
   BFT_MALLOC(probe_coords, pset->n_loc_probes, cs_coord_3_t);
   BFT_MALLOC(global_num, pset->n_loc_probes, cs_gnum_t);
 
@@ -1588,8 +1743,8 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
 
   if (pset->snap_mode == CS_PROBE_SNAP_ELT_CENTER) {
     for (int i = 0; i < pset->n_loc_probes; i++) {
-      int j = pset->loc_id[i];
       if (pset->elt_id[i] > -1) {
+        const int j = pset->loc_id[i];
         const cs_real_t  *elt_coords = centers + pset->elt_id[i]*3;
         for (int k = 0; k < 3; k++)
           pset->coords[j][k] = elt_coords[k];
@@ -1598,8 +1753,8 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
   }
   else if (pset->snap_mode == CS_PROBE_SNAP_VERTEX) {
     for (int i = 0; i < pset->n_loc_probes; i++) {
-      int j = pset->loc_id[i];
       if (pset->vtx_id[i] > -1) {
+        const int j = pset->loc_id[i];
         const cs_real_t  *vtx_coords = m->vtx_coord + pset->vtx_id[i]*3;
         for (int k = 0; k < 3; k++)
           pset->coords[j][k] = vtx_coords[k];
@@ -1658,7 +1813,6 @@ cs_probe_set_export_mesh(cs_probe_set_t   *pset,
     }
     assert(j == ngl);
     fvm_nodal_transfer_global_vertex_labels(exp_mesh, g_labels);
-
   }
 
   /* probe_coords is managed by exp_mesh */
