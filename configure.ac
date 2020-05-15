@@ -591,7 +591,7 @@ AC_SUBST(cs_src_revision)
 
 # Define the different version numbers for later use
 
-cs_version=`$PYTHON ${srcdir}/build-aux/cs_version.py --short`
+cs_version=`$PYTHON ${srcdir}/build-aux/cs_version.py`
 cs_version_full=`$PYTHON ${srcdir}/build-aux/cs_version.py --full`
 cs_version_short=`$PYTHON ${srcdir}/build-aux/cs_version.py --short`
 

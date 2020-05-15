@@ -147,7 +147,10 @@ The second thing is to prepare the computation directories. For instance, the st
 \end{center}
 The mesh files should be copied in the directory \texttt{MESH} (though they may also be selected from another directory, see \S\ref{sec:prg_stepbystepcalculation}),
 and the Fortran user files necessary for the calculation in the directory \texttt{CASE1/SRC}.  Finally, the calculation data file \texttt{setup.xml} read by the GUI should be copied to the directory \texttt{CASE1/DATA}.
-Once these steps completed, the user should go in the directory \texttt{CASE1/DATA} and type de command line \texttt{./SaturneGUI setup.xml} to load the calculation file into the interface. A window similar to \figurename\ref{fig:3_e1} will appear. Click on the heading ``Calculation management'', select the heading ``Prepare batch calculation'', see \figurename~\ref{fig:43_e1}. After having chosen the number of processors, press ``start calculation'' to run the calculation.
+Once these steps completed, the user should go in the directory \texttt{CASE1/DATA} and type de command line \texttt{./SaturneGUI setup.xml} to load the calculation file into the interface.\footnote{
+When working on a new cas, running \texttt{./SaturneGUI} with no argument can be used to create
+a new setup.}
+A window similar to \figurename\ref{fig:3_e1} will appear. Click on ``Run computation'' button (also in the ``Tools'' menu), and select the heading ``Prepare batch calculation'', see \figurename~\ref{fig:43_e1}. After having chosen the number of processors, press ``start calculation'' to run the calculation.
 
 \begin{figure}[!ht]
 \begin{center}
