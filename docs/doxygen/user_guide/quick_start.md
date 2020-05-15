@@ -56,7 +56,7 @@ selected from another directory  (see [sec:prg_stepbystepcalculation])
 and the C and Fortran user files necessary for the calculation in the directory
 `CASE1/SRC`.  Finally, the calculation data file `setup.xml` managed  by the GUI
 should be copied to the `CASE1/DATA` directory.
-Once these steps completed, the user should go in the directory `CASE1/DATA` and run
+Once these steps are completed, the user should go in the directory `CASE1/DATA` and run
 ```./code_saturne gui  setup.xml``` to load the calculation file into the interface.
 A window similar to the one below will appear.
 
