@@ -373,7 +373,7 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
         self.jmdl = self.case['job_model']
 
         if self.jmdl == None:
-            if 'data_path' in self.case:
+            if self.case['data_path']:
                 run_conf_path = os.path.join(self.case['data_path'], 'run.cfg')
             else:
                 run_conf_path = None
