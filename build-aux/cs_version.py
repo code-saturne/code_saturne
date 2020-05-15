@@ -326,7 +326,7 @@ if __name__ == '__main__':
 
     elif sys.argv[1] == '--short':
         major, minor, release, extra = version_from_news(srcdir)
-        sys.stdout.write(build_version_string(major, minor, '', extra))
+        sys.stdout.write(build_version_string(major, minor, '', ''))
 
     # Call tools
 
