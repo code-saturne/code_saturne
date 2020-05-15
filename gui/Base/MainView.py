@@ -1435,12 +1435,12 @@ class MainView(object):
          - version
          - contact
         """
-        msg = self.package.code_name + "\n"                 +\
-              "version " + self.package.version + "\n\n"    +\
-              "For information about this application "     +\
-              "please contact:\n\n"                         +\
-              self.package.bugreport + "\n\n"               +\
-              "Please visit our site:\n"                    +\
+        msg = self.package.code_name + "\n"                      +\
+              "version " + self.package.version_full + "\n\n"    +\
+              "For information about this application "          +\
+              "please contact:\n\n"                              +\
+              self.package.bugreport + "\n\n"                    +\
+              "Please visit our site:\n"                         +\
               self.package.url
         QMessageBox.about(self, self.package.name, msg)
 
