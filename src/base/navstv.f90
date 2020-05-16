@@ -353,7 +353,7 @@ if (nterup.gt.1) then
   ! (cette derniere vaut la pression a l'iteration precedente)
   if (iterns.gt.1) then
     if (irangp.ge.0.or.iperio.eq.1) then
-      call synvin(uvwk(1,1))
+      call synvin(uvwk)
       call synsca(cvara_pr)
     endif
   endif

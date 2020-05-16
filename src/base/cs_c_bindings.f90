@@ -2,7 +2,7 @@
 
 ! This file is part of Code_Saturne, a general-purpose CFD tool.
 !
-! Copyright (C) 1998-2018 EDF S.A.
+! Copyright (C) 1998-2020 EDF S.A.
 !
 ! This program is free software; you can redistribute it and/or modify it under
 ! the terms of the GNU General Public License as published by the Free Software
@@ -2670,6 +2670,10 @@ contains
     integer        :: hyd_p_flag
     integer        :: idimtr, ipond
     type(c_ptr)    :: f
+    real(kind=c_double), dimension(:,:), pointer :: f_ext
+    real(kind=c_double), dimension(:), pointer :: c_weight
+    real(kind=c_double), dimension(1), target :: rvoid1
+    real(kind=c_double), dimension(1,1), target :: rvoid2
 
     ! Preparation for periodicity of rotation
 
@@ -2700,11 +2704,15 @@ contains
 
     hyd_p_flag = 0
     ipond = 0
+    rvoid2(1,1) = 0
+    rvoid1(1) = 0
+    f_ext => rvoid2
+    c_weight => rvoid1
 
     call cgdcel(f_id, imrgra, inc, recompute_cocg, nswrgp,                     &
                 idimtr, hyd_p_flag, ipond, iwarnp, imligp, epsrgp, extrap,     &
-                climgp, c_null_ptr, coefap, coefbp,                            &
-                pvar, c_null_ptr, grad)
+                climgp, f_ext, coefap, coefbp,                                 &
+                pvar, c_weight, grad)
 
   end subroutine gradient_s
 
@@ -2751,13 +2759,15 @@ contains
     double precision, intent(in) :: epsrgp, climgp, extrap
     real(kind=c_double), dimension(nfabor), intent(in) :: coefap, coefbp
     real(kind=c_double), dimension(ncelet), intent(inout) :: pvar
-    real(kind=c_double), dimension(3, *), intent(in) :: f_ext
+    real(kind=c_double), dimension(:,:), pointer, intent(in) :: f_ext
     real(kind=c_double), dimension(3, ncelet), intent(out) :: grad
 
     ! Local variables
 
     integer          :: imrgrp
     integer          :: idimtr, ipond
+    real(kind=c_double), dimension(:), pointer :: c_weight
+    real(kind=c_double), dimension(1), target :: rvoid1
 
     ! Use iterative gradient
 
@@ -2771,11 +2781,13 @@ contains
 
     idimtr = 0
     ipond = 0
+    rvoid1(1) = 0
+    c_weight => rvoid1
 
     call cgdcel(f_id, imrgrp, inc, recompute_cocg, nswrgp,                     &
                 idimtr, hyd_p_flag, ipond, iwarnp, imligp, epsrgp, extrap,     &
                 climgp, f_ext, coefap, coefbp,                                 &
-                pvar, c_null_ptr, grad)
+                pvar, c_weight, grad)
 
   end subroutine gradient_potential_s
 
@@ -2820,26 +2832,30 @@ contains
     double precision, intent(in) :: epsrgp, climgp, extrap
     real(kind=c_double), dimension(nfabor), intent(in) :: coefap, coefbp
     real(kind=c_double), dimension(ncelet), intent(inout) :: pvar
-    real(kind=c_double), dimension(*), intent(in) :: c_weight
+    real(kind=c_double), dimension(:), intent(in) :: c_weight
     real(kind=c_double), dimension(3, ncelet), intent(out) :: grad
 
     ! Local variables
 
     integer          :: hyd_p_flag
     integer          :: idimtr, ipond
+    real(kind=c_double), dimension(:,:), pointer :: f_ext
+    real(kind=c_double), dimension(1,1), target :: rvoid2
 
     ! The current variable is a scalar
     idimtr = 0
 
     ! the gradient is computed with no extern hydrostatic force
     hyd_p_flag = 0
+    rvoid2(1,1) = 0
+    f_ext => rvoid2
 
     ! the pressure gradient coefficient weighting is used
     ipond = 1
 
     call cgdcel(f_id, imrgra, inc, recompute_cocg, nswrgp,                     &
                 idimtr, hyd_p_flag, ipond, iwarnp, imligp, epsrgp, extrap,     &
-                climgp, c_null_ptr, coefap, coefbp,                            &
+                climgp, f_ext, coefap, coefbp,                                 &
                 pvar, c_weight, grad)
 
   end subroutine gradient_weighted_s
@@ -2902,7 +2918,11 @@ contains
     c_name = trim(name)//c_null_char
     c_cat = trim(category)//c_null_char
     c_ml = location
-    c_inten = is_intensive
+    if (is_intensive .eqv. .true.) then
+      c_inten = .true.
+    else
+      c_inten = .false.
+    endif
     c_dim = dim
 
     call cs_log_iteration_add_array(c_name, c_cat, c_ml, c_inten, c_dim, val)
