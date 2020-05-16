@@ -3536,6 +3536,10 @@ contains
     integer        :: hyd_p_flag
     integer        :: idimtr, ipond
     type(c_ptr)    :: f
+    real(kind=c_double), dimension(:,:), pointer :: f_ext
+    real(kind=c_double), dimension(:), pointer :: c_weight
+    real(kind=c_double), dimension(1), target :: rvoid1
+    real(kind=c_double), dimension(1,1), target :: rvoid2
 
     ! Preparation for periodicity of rotation
 
@@ -3566,11 +3570,15 @@ contains
 
     hyd_p_flag = 0
     ipond = 0
+    rvoid2(1,1) = 0
+    rvoid1(1) = 0
+    f_ext => rvoid2
+    c_weight => rvoid1
 
     call cgdcel(f_id, imrgra, inc, recompute_cocg, nswrgp,                     &
                 idimtr, hyd_p_flag, ipond, iwarnp, imligp, epsrgp, extrap,     &
-                climgp, c_null_ptr, coefap, coefbp,                            &
-                pvar, c_null_ptr, grad)
+                climgp, f_ext, coefap, coefbp,                                 &
+                pvar, c_weight, grad)
 
   end subroutine gradient_s
 
@@ -3773,7 +3781,11 @@ contains
     c_name = trim(name)//c_null_char
     c_cat = trim(category)//c_null_char
     c_ml = location
-    c_inten = is_intensive
+    if (is_intensive .eqv. .true.) then
+      c_inten = .true.
+    else
+      c_inten = .false.
+    endif
     c_dim = dim
 
     call cs_log_iteration_add_array(c_name, c_cat, c_ml, c_inten, c_dim, val)
