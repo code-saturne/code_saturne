@@ -1318,7 +1318,6 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
             grad[jj][j] -= pfacj * i_f_face_normal[f_id][j];
           }
 
-
         } /* loop on faces */
 
       } /* loop on threads */
@@ -1366,7 +1365,6 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
     } /* loop on thread groups */
 
   } /* End of test on hydrostatic pressure */
-
 
   /* Standard case, without hydrostatic pressure */
   /*---------------------------------------------*/
