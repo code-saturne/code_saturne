@@ -249,7 +249,7 @@ if (nberro.ne.0) then
   jvolfl = 0
 endif
 
-car54 =' Fin de la lecture des options                        '
+car54 =' Finished reading options                             '
 write(nfecra,1110)car54
 
 !===============================================================================
