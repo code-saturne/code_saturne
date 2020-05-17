@@ -1370,13 +1370,13 @@ _update_thm_taylor(const cs_mesh_t             *mesh,
   for (cs_lnum_t  c_id = 0; c_id < quant->n_cells; c_id++) {
 
     const cs_real_t  conc = c_bulk[c_id];
-    const cs_real_t  temp = t_bulk[c_id];
     const cs_real_t  conc_pre = c_bulk_pre[c_id];
     const cs_real_t  temp_pre = t_bulk_pre[c_id];
+    const cs_real_t  gliq_pre = g_l_pre[c_id];
 
     const cs_real_t  rhocvolLovdt = quant->cell_vol[c_id] * rhoLovdt;
 
-    state_k = _which_state(alloy, temp, conc);
+    state_k = _which_state(alloy, alloy->tk_bulk[c_id], alloy->ck_bulk[c_id]);
 
     /* Knowing in which part of the phase diagram we are, then we update
      * the value of the concentration of the liquid "solute" */
@@ -1415,7 +1415,6 @@ _update_thm_taylor(const cs_mesh_t             *mesh,
 
     case CS_SOLIDIFICATION_STATE_EUTECTIC:
       {
-        const cs_real_t  gliq_pre = g_l_pre[c_id];
         const cs_real_t  temp_k = alloy->tk_bulk[c_id];  /* temp_{n+1}^k */
 
         solid->thermal_reaction_coef_array[c_id] = 0;
@@ -1435,6 +1434,418 @@ _update_thm_taylor(const cs_mesh_t             *mesh,
       break;
 
     case CS_SOLIDIFICATION_STATE_SOLID:
+      solid->thermal_reaction_coef_array[c_id] = 0;
+      solid->thermal_source_term_array[c_id] = 0;
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid state for cell %d\n", __func__, c_id);
+      break;
+
+    } /* Switch on cell state */
+
+  } /* Loop on cells */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the liquid fraction in each cell and related quantities.
+ *         This corresponds to the case of a binary alloy model with no
+ *         advective source term for the solute transport.
+ *
+ * \param[in]  mesh       pointer to a cs_mesh_t structure
+ * \param[in]  connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts         pointer to a cs_time_step_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_gl_path(const cs_mesh_t             *mesh,
+                const cs_cdo_connect_t      *connect,
+                const cs_cdo_quantities_t   *quant,
+                const cs_time_step_t        *ts)
+{
+  CS_UNUSED(mesh);
+  CS_UNUSED(connect);
+  CS_UNUSED(ts);
+  cs_solidification_t  *solid = cs_solidification_structure;
+  cs_solidification_binary_alloy_t  *alloy
+    = (cs_solidification_binary_alloy_t *)solid->model_context;
+
+  assert(cs_property_is_uniform(solid->thermal_sys->cp));
+  const cs_real_t  cp = cs_property_get_cell_value(0, ts->t_cur,
+                                                   solid->thermal_sys->cp);
+  const double  cpovL = cp/alloy->latent_heat;
+
+  const cs_real_t  *c_bulk = alloy->c_bulk->val;
+  const cs_real_t  *c_bulk_pre = alloy->c_bulk->val_pre;
+  const cs_real_t  *t_bulk_pre = solid->temperature->val_pre;
+  cs_real_t        *t_bulk = solid->temperature->val;
+  const cs_real_t  *g_l_pre = solid->g_l_field->val_pre;
+  cs_real_t        *g_l = solid->g_l_field->val;
+
+  /* Update g_l values in each cell as well as the cell state and the related
+     count */
+  for (cs_lnum_t  c_id = 0; c_id < quant->n_cells; c_id++) {
+
+    const cs_real_t  conc = c_bulk[c_id];            /* conc_{n+1}^{k+1}  */
+    const cs_real_t  temp = t_bulk[c_id];            /* temp_{n+1}^{k+1} */
+    const cs_real_t  conc_pre = c_bulk_pre[c_id];
+    const cs_real_t  temp_pre = t_bulk_pre[c_id];
+
+    cs_real_t  dgldC, dgldT, gliq, eta_new, t_solidus, t_liquidus, t_star;
+    cs_solidification_state_t  state, state_pre;
+
+    /* gliq, temp and conc iterates may be not related with the gliq(temp, conc)
+     * function until convergence is reached. So one needs to be careful. */
+    state = _which_state(alloy, temp, conc);
+    state_pre = _which_state(alloy, temp_pre, conc_pre);
+
+    /* Knowing in which part of the phase diagram we are and we then update
+     * the value of the liquid fraction: g_l and the concentration of the
+     * liquid "solute" */
+
+    switch (state) {
+
+    case CS_SOLIDIFICATION_STATE_SOLID:
+      /* ============================= */
+
+      switch (state_pre) {
+      case CS_SOLIDIFICATION_STATE_LIQUID: /* Liquid --> Solid transition */
+        t_liquidus = _get_t_liquidus(alloy, conc_pre);
+
+        _get_dgl_mushy(alloy, t_liquidus, conc_pre, &dgldT, &dgldC);
+
+        t_star = ( cpovL*temp + dgldT*t_liquidus + dgldC*(conc_pre - conc) ) /
+          ( cpovL + dgldT );
+        t_bulk[c_id] = t_star;
+
+        gliq = 1 + (dgldT*(t_star - t_liquidus) + dgldC*(conc-conc_pre));
+
+        /* Make sure that the liquid fraction remains inside physical bounds */
+        gliq = fmin(fmax(0, gliq), 1.);
+
+        if (t_star > alloy->t_eut_sup)  /* Mushy or liquid */
+          eta_new = 1/( gliq * (1-alloy->kp) + alloy->kp );
+        else  /* Eutectic or solid */
+          eta_new = _get_eta(alloy, conc);
+        break;
+
+      case CS_SOLIDIFICATION_STATE_MUSHY: /* Mushy --> Solid transition */
+        t_solidus = _get_t_solidus(alloy, conc_pre);
+
+        _get_dgl_mushy(alloy, temp_pre, conc_pre, &dgldT, &dgldC);
+
+        /* First part of the evolution in the mushy zone */
+        if (conc < alloy->cs1)  /* Part without eutectic */
+          gliq = g_l_pre[c_id] +
+            dgldC *          (conc - conc_pre) + dgldT * (temp - temp_pre);
+        else                        /* Part with eutectic */
+          gliq = g_l_pre[c_id] +
+            alloy->dgldC_eut*(conc - conc_pre) + dgldT * (temp - temp_pre);
+
+        /* Make sure that the liquid fraction remains inside physical bounds */
+        gliq = fmin(fmax(0, gliq), 1.);
+
+        if (gliq > 0) /* Remain on the solidus line and redefine a new state */
+          t_bulk[c_id] = t_solidus;
+
+        eta_new = _get_eta(alloy, conc);
+        break;
+
+      case CS_SOLIDIFICATION_STATE_EUTECTIC: /* Eutectic --> Solid transition */
+        _get_dgl_mushy(alloy, alloy->t_eut, conc_pre, &dgldT, &dgldC);
+
+        /* First part of the path in the eutectic zone */
+        gliq = g_l_pre[c_id] +
+          alloy->dgldC_eut*(conc - conc_pre) + dgldT * (temp - temp_pre);
+
+        /* Make sure that the liquid fraction remains inside physical bounds */
+        gliq = fmin(fmax(0, gliq), 1.);
+
+        if (gliq > 0) /* Remain on the solidus line and redefine a new state */
+          t_bulk[c_id] = alloy->t_eut;
+
+        eta_new = _get_eta(alloy, conc);
+        break;
+
+      default: /* Solid --> solid */
+        gliq = 0;
+        eta_new = _get_eta(alloy, conc);
+        break;
+
+      } /* Switch on the previous state */
+      break;
+
+
+    case CS_SOLIDIFICATION_STATE_MUSHY:
+      /* ============================= */
+
+      switch (state_pre) {
+
+      case CS_SOLIDIFICATION_STATE_LIQUID: /* Liquid --> Mushy transition */
+        t_liquidus = _get_t_liquidus(alloy, conc_pre);
+
+        _get_dgl_mushy(alloy, t_liquidus, conc_pre, &dgldT, &dgldC);
+
+        t_star = ( cpovL*temp + dgldT*t_liquidus + dgldC*(conc_pre - conc) ) /
+          ( cpovL + dgldT );
+
+        gliq = 1 + (dgldT*(t_star - t_liquidus) + dgldC*(conc-conc_pre));
+
+        t_bulk[c_id] = t_star;
+        break;
+
+      default:
+        gliq = alloy->inv_kpm1 *
+          ( alloy->kp - alloy->ml*conc / (temp - alloy->t_melt) );
+
+      } /* End of switch on the previous state */
+
+      /* Make sure that the liquid fraction remains inside physical bounds */
+      gliq = fmin(fmax(0, gliq), 1.);
+
+      eta_new = 1/( gliq * (1-alloy->kp) + alloy->kp );
+      break;
+
+
+    case CS_SOLIDIFICATION_STATE_LIQUID:
+      /* ============================== */
+      gliq = 1;
+      eta_new = 1;
+      break;
+
+
+    case CS_SOLIDIFICATION_STATE_EUTECTIC:
+      /* ================================ */
+
+      switch (state_pre) {
+
+      case CS_SOLIDIFICATION_STATE_LIQUID: /* Liquid --> Eutectic transition */
+        t_liquidus = _get_t_liquidus(alloy, conc_pre);
+
+        _get_dgl_mushy(alloy, t_liquidus, conc_pre, &dgldT, &dgldC);
+
+        t_star = ( cpovL*temp + dgldT*t_liquidus + dgldC*(conc_pre - conc) ) /
+          ( cpovL + dgldT );
+
+        t_bulk[c_id] = t_star;
+
+        gliq = 1 + (dgldT*(t_star - t_liquidus) + dgldC*(conc-conc_pre));
+
+        /* Make sure that the liquid fraction remains inside physical bounds */
+        gliq = fmin(fmax(0, gliq), 1.);
+
+        if (t_star > alloy->t_eut_inf)
+          eta_new = 1/( gliq * (1-alloy->kp) + alloy->kp );
+        else
+          eta_new = _get_eta(alloy, conc);
+        break;
+
+      case CS_SOLIDIFICATION_STATE_MUSHY: /* Mushy --> Eutectic transition */
+        assert(conc > alloy->cs1);
+
+        /* First part of the path in the mushy zone */
+        _get_dgl_mushy(alloy, temp_pre, conc_pre, &dgldT, &dgldC);
+
+        gliq = g_l_pre[c_id] +
+          alloy->dgldC_eut*(conc - conc_pre) + dgldT*(alloy->t_eut - temp_pre);
+
+        /* Make sure that the liquid fraction remains inside physical bounds */
+        gliq = fmin(fmax(0, gliq), 1.);
+
+        eta_new = _get_eta(alloy, conc);
+        break;
+
+      default:
+        //const cs_real_t  temp_k = alloy->tk_bulk[c_id];  /* temp_{n+1}^k */
+        /* g_l[c_id] is the value at the iterate k */
+        //gliq = g_l[c_id] + cpovL * (temp_k - alloy->t_eut);
+        gliq = (conc - alloy->cs1)*alloy->dgldC_eut;
+
+        /* Make sure that the liquid fraction remains inside physical bounds */
+        gliq = fmin(fmax(0, gliq), 1.);
+
+        /* In this case Cl = C_eut = eta * Cbulk--> eta = C_eut/Cbulk */
+        eta_new = _get_eta(alloy, conc);
+        break;
+
+      }
+      break;
+
+    default:
+      bft_error(__FILE__, __LINE__, 0, " %s: Invalid state for cell %d\n",
+                __func__, c_id);
+      break;
+
+    } /* Switch on cell state */
+
+    /* Update the liquid fraction and apply if needed a relaxation */
+    if (alloy->gliq_relax > 0)
+      g_l[c_id] = (1 - alloy->gliq_relax)*gliq + alloy->gliq_relax*g_l[c_id];
+    else
+      g_l[c_id] = gliq;
+
+    /* Update eta and apply if needed a relaxation */
+    if (alloy->eta_relax > 0) {
+      cs_real_t  eta_old = alloy->eta_coef_array[c_id];
+      alloy->eta_coef_array[c_id] =
+        (1-alloy->eta_relax)*eta_new + alloy->eta_relax*eta_old;
+    }
+    else
+      alloy->eta_coef_array[c_id] = eta_new;
+
+  } /* Loop on cells */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Update the source term for the thermal equation.
+ *         This corresponds to the binary alloy model.
+ *
+ * \param[in]  mesh       pointer to a cs_mesh_t structure
+ * \param[in]  connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  ts         pointer to a cs_time_step_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_thm_path(const cs_mesh_t             *mesh,
+                 const cs_cdo_connect_t      *connect,
+                 const cs_cdo_quantities_t   *quant,
+                 const cs_time_step_t        *ts)
+{
+  CS_UNUSED(mesh);
+  CS_UNUSED(connect);
+  cs_real_t  dgldC, dgldT, t_solidus, t_liquidus;
+  cs_solidification_state_t  state_k;
+
+  cs_solidification_t  *solid = cs_solidification_structure;
+  cs_solidification_binary_alloy_t  *alloy
+    = (cs_solidification_binary_alloy_t *)solid->model_context;
+
+  const cs_real_t  *c_bulk = alloy->c_bulk->val;
+  const cs_real_t  *c_bulk_pre = alloy->c_bulk->val_pre;
+  const cs_real_t  *t_bulk = solid->temperature->val;
+  const cs_real_t  *t_bulk_pre = solid->temperature->val_pre;
+  const cs_real_t  *g_l = solid->g_l_field->val;
+  const cs_real_t  *g_l_pre = solid->g_l_field->val_pre;
+
+  /* Retrieve the value of the mass density (assume to be uniform) */
+  assert(cs_property_is_uniform(solid->mass_density));
+  assert(cs_property_is_uniform(solid->thermal_sys->cp));
+
+  const cs_real_t  rho0 = cs_property_get_cell_value(0, ts->t_cur,
+                                                     solid->mass_density);
+  const cs_real_t  cp0 = cs_property_get_cell_value(0, ts->t_cur,
+                                                    solid->thermal_sys->cp);
+
+  const cs_real_t  rhoLovdt = rho0 * alloy->latent_heat/ts->dt[0];
+  const double  cpovL = cp0/alloy->latent_heat;
+
+  for (cs_lnum_t  c_id = 0; c_id < quant->n_cells; c_id++) {
+
+    const cs_real_t  conc_kp1 = c_bulk[c_id]; /* Solute transport solved */
+    const cs_real_t  conc_k = alloy->ck_bulk[c_id];
+    const cs_real_t  temp_k = t_bulk[c_id];
+
+    const cs_real_t  conc_pre = c_bulk_pre[c_id];
+    const cs_real_t  temp_pre = t_bulk_pre[c_id];
+    const cs_real_t  gliq_pre = g_l_pre[c_id];
+
+    const cs_real_t  rhocvolLovdt = quant->cell_vol[c_id] * rhoLovdt;
+
+    state_k = _which_state(alloy, temp_k, conc_k);
+
+    /* Knowing in which part of the phase diagram we are, then we update
+     * the value of the concentration of the liquid "solute" */
+    switch (_which_state(alloy, temp_pre, conc_pre)) {
+
+    case CS_SOLIDIFICATION_STATE_LIQUID:
+      /* ==============================
+       * From the knowledge of the previous iteration, try something smarter...
+       */
+      if (state_k == CS_SOLIDIFICATION_STATE_LIQUID) {
+        solid->thermal_reaction_coef_array[c_id] = 0;
+        solid->thermal_source_term_array[c_id] = 0;
+      }
+      else { /* Liquid --> Mushy transition */
+        /*      Liquid --> Solid transition */
+        /*      Liquid --> Eutectic transition */
+        t_liquidus = _get_t_liquidus(alloy, conc_pre);
+
+        _get_dgl_mushy(alloy, t_liquidus, conc_pre, &dgldT, &dgldC);
+
+        solid->thermal_reaction_coef_array[c_id] = dgldT * rhoLovdt;
+        solid->thermal_source_term_array[c_id] = rhocvolLovdt *
+          ( dgldT * t_liquidus + dgldC * (conc_pre - conc_kp1) );
+
+      }
+      break;
+
+    case CS_SOLIDIFICATION_STATE_MUSHY:
+      /* ============================= */
+      {
+        _get_dgl_mushy(alloy, temp_pre, conc_pre, &dgldT, &dgldC);
+
+        switch (state_k) {
+
+        case CS_SOLIDIFICATION_STATE_SOLID:    /* Mushy --> Solid transition */
+          solid->thermal_reaction_coef_array[c_id] = dgldT * rhoLovdt;
+          if (conc_kp1 < alloy->cs1)  /* Part without eutectic */
+            solid->thermal_source_term_array[c_id] = rhocvolLovdt *
+              ( dgldT*temp_pre + dgldC*(conc_pre-conc_kp1) );
+          else                        /* Part with eutectic */
+            solid->thermal_source_term_array[c_id] = rhocvolLovdt *
+              ( dgldT*temp_pre + alloy->dgldC_eut*(conc_pre-conc_kp1) );
+          break;
+
+        case CS_SOLIDIFICATION_STATE_EUTECTIC: /* Mushy --> Eutectic */
+          assert(conc_kp1 > alloy->cs1);
+
+          /* First part in the mushy zone but not the final part */
+          solid->thermal_reaction_coef_array[c_id] = dgldT * rhoLovdt;
+          solid->thermal_source_term_array[c_id] = rhocvolLovdt *
+            ( dgldT*temp_pre + alloy->dgldC_eut*(conc_pre-conc_kp1) );
+          break;
+
+        default:
+          solid->thermal_reaction_coef_array[c_id] = dgldT * rhoLovdt;
+          solid->thermal_source_term_array[c_id] = rhocvolLovdt *
+            ( dgldT * temp_pre + dgldC * (conc_pre - conc_kp1) );
+          break;
+
+        }
+
+      }
+      break;
+
+    case CS_SOLIDIFICATION_STATE_EUTECTIC:
+      /* ================================ */
+      /* const cs_real_t  temp_k = alloy->tk_bulk[c_id];  /\* temp_{n+1}^k *\/ */
+
+      solid->thermal_reaction_coef_array[c_id] = 0;
+
+      /* /\* Estimate the variation of liquid fraction so that the physical */
+      /*    bounds are satisfied for the liquid fraction) *\/ */
+      /* cs_real_t  dgl = cpovL * (temp_k - alloy->t_eut); */
+
+      /* if (dgl + gliq_pre < 0) */
+      /*   dgl = -gliq_pre; */
+      /* else if (dgl + gliq_pre > 1) */
+      /*   dgl = 1 - gliq_pre; */
+
+      solid->thermal_source_term_array[c_id] = rhocvolLovdt *
+        alloy->dgldC_eut * (conc_pre - conc_kp1);
+      break;
+
+    case CS_SOLIDIFICATION_STATE_SOLID:
+      /* ============================= */
       solid->thermal_reaction_coef_array[c_id] = 0;
       solid->thermal_source_term_array[c_id] = 0;
       break;
@@ -2295,6 +2706,18 @@ cs_solidification_set_segregation_opt(cs_solidification_strategy_t  strategy,
       alloy->update_gl = _update_gl_taylor;
 
     alloy->update_thm_st = _update_thm_taylor;
+
+  }
+  else if (strategy == CS_SOLIDIFICATION_STRATEGY_PATH) {
+
+    if (solid->options & CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM)
+      bft_error(__FILE__, __LINE__, 0,
+                "%s: Adding an advective source term is incompatible with"
+                " the Path strategy.\n", __func__);
+    else
+      alloy->update_gl = _update_gl_path;
+
+    alloy->update_thm_st = _update_thm_path;
 
   }
 
