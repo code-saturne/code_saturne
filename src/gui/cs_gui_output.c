@@ -391,19 +391,21 @@ _tree_node_get_field(cs_tree_node_t  *tn)
 
   if (f == NULL) {
 
-    /* Handle segregated Reynolds tensor solver */
-    if (strcmp(name, "rij") == 0) {
-      int idim = _get_profile_v_component(tn);
-      f = cs_field_by_name_try(_rij_c_names[idim]);
-    }
-
     /* Fix time step output */
-    else if (strcmp(name, "local_time_step") == 0)
+    if (strcmp(name, "local_time_step") == 0)
       f = CS_F_(dt);
 
     /* General case */
     else
       f = cs_field_by_name_try(name);
+
+    /* Handle segregated Reynolds tensor solver */
+    if (f == NULL) {
+      if (strcmp(name, "rij") == 0) {
+        int idim = _get_profile_v_component(tn);
+        f = cs_field_by_name_try(_rij_c_names[idim]);
+      }
+    }
 
   }
 
