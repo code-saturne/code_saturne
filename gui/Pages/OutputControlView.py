@@ -1819,11 +1819,12 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
             options = self.mdl.getWriterOptions(writer_id)
             self.__updateOptionsFormat(options, row_writer)
             self.showAssociatedWriterTable()
+            self.showAssociatedLagrangianWriterTable()
 
 
     def showAssociatedWriterTable(self):
         cindex = self.tableViewMesh.currentIndex()
-        if cindex != (-1,-1):
+        if (cindex.row(), cindex.column()) != (-1, -1):
             row = cindex.row()
             mesh_id = self.modelMesh.getItem(row)['id']
 
@@ -1849,7 +1850,7 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
 
     def showAssociatedLagrangianWriterTable(self):
         cindex = self.tableViewLagrangianMesh.currentIndex()
-        if cindex != (-1,-1):
+        if (cindex.row(), cindex.column()) != (-1, -1):
             row = cindex.row()
             mesh_id = self.modelLagrangianMesh.getItem(row)['id']
 

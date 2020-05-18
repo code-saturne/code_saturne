@@ -10,6 +10,9 @@ Bug fixes:
 - Fix crash in FSI with internal structures in builds using
   the Intel Fortran compilers (due to Fortran pointer handling).
 
+- GUI: fix missing update of Lagrangian mesh wrter association in some
+  combinations of writer renaming (GitLab issue #203).
+
 - GUI: fix issue in handling of "==" token in MEG expressions.
 
 - Fix in studymanager GUI: when adding a data file, a missing "dest"
