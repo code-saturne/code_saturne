@@ -3287,7 +3287,7 @@ cs_solidification_extra_post(void                      *input,
                             1,
                             false,  // interlace
                             true,   // true = original mesh
-                            CS_POST_TYPE_int,
+                            CS_POST_TYPE_cs_real_t,
                             alloy->cliq_minus_cbulk, NULL, NULL,
                             time_step);
 
@@ -3298,7 +3298,7 @@ cs_solidification_extra_post(void                      *input,
                             1,
                             false,  // interlace
                             true,   // true = original mesh
-                            CS_POST_TYPE_int,
+                            CS_POST_TYPE_cs_real_t,
                             alloy->tbulk_minus_tliq, NULL, NULL,
                             time_step);
 
@@ -3309,7 +3309,7 @@ cs_solidification_extra_post(void                      *input,
                             1,
                             false,  // interlace
                             true,   // true = original mesh
-                            CS_POST_TYPE_int,
+                            CS_POST_TYPE_cs_real_t,
                             alloy->eta_coef_array, NULL, NULL,
                             time_step);
 
