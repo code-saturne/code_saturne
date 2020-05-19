@@ -34,6 +34,8 @@ Bug fixes:
 
 Architectural changes:
 
+- Fix compilation when using non standard python (not python or python3)
+
 - Remove dependency of fig2dev for documentation build.
 
 - Fixes for compilation with gcc 10.0.
