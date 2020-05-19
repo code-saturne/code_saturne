@@ -3026,13 +3026,22 @@ static void
 _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
                        const cs_time_step_t  *ts)
 {
-  cs_interpolate_from_location_t
-    *interpolate_func = cs_interpolate_from_location_p0;
-
+  int  pset_interpolation = 0;
+  bool pset_on_boundary = false;
   cs_probe_set_t  *pset = (cs_probe_set_t *)post_mesh->sel_input[4];
+
   if (pset != NULL) {
-    if (cs_probe_set_get_interpolation(pset) == 1)
-      interpolate_func = cs_interpolate_from_location_p1;
+    cs_probe_set_get_post_info(pset,
+                               NULL,
+                               &pset_on_boundary,
+                               NULL,
+                               NULL,
+                               NULL,
+                               NULL,
+                               NULL,
+                               NULL);
+    if (pset_on_boundary == false && cs_probe_set_get_interpolation(pset) == 1)
+      pset_interpolation = 1;
   }
 
   /* Base output for cell and boundary meshes */
@@ -3070,6 +3079,12 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
       if (pset != NULL) {
         char interpolate_input[96];
         strncpy(interpolate_input, f->name, 95); interpolate_input[95] = '\0';
+
+        cs_interpolate_from_location_t
+          *interpolate_func = cs_interpolate_from_location_p0;
+        if (   field_loc_type == CS_MESH_LOCATION_CELLS
+            && pset_interpolation == 1)
+          interpolate_func = cs_interpolate_from_location_p1;
 
         cs_post_write_probe_values(post_mesh->id,
                                    CS_POST_WRITER_ALL_ASSOCIATED,
@@ -3140,10 +3155,17 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
       const cs_mesh_location_type_t field_loc_type
         = cs_mesh_location_get_type(f->location_id);
 
-      if (   field_loc_type != CS_MESH_LOCATION_CELLS
-          && field_loc_type != CS_MESH_LOCATION_BOUNDARY_FACES
-          && field_loc_type != CS_MESH_LOCATION_VERTICES)
-        continue;
+      if (pset_on_boundary) {
+        if (   field_loc_type != CS_MESH_LOCATION_CELLS
+            && field_loc_type != CS_MESH_LOCATION_BOUNDARY_FACES
+            && field_loc_type != CS_MESH_LOCATION_VERTICES)
+          continue;
+      }
+      else {
+        if (   field_loc_type != CS_MESH_LOCATION_CELLS
+            && field_loc_type != CS_MESH_LOCATION_VERTICES)
+          continue;
+      }
 
       if (! (cs_field_get_key_int(f, vis_key_id) & CS_POST_MONITOR))
         continue;
@@ -3151,6 +3173,12 @@ _cs_post_output_fields(cs_post_mesh_t        *post_mesh,
       const char *name = cs_field_get_key_str(f, label_key_id);
       if (name == NULL)
         name = f->name;
+
+      cs_interpolate_from_location_t
+        *interpolate_func = cs_interpolate_from_location_p0;
+      if (   field_loc_type == CS_MESH_LOCATION_CELLS
+          && pset_interpolation == 1)
+        interpolate_func = cs_interpolate_from_location_p1;
 
       char interpolate_input[96];
       strncpy(interpolate_input, f->name, 95); interpolate_input[95] = '\0';
@@ -3229,12 +3257,23 @@ _cs_post_output_attached_fields(cs_post_mesh_t        *post_mesh,
 {
   const int label_key_id = cs_field_key_id("label");
 
+  bool pset_on_boundary = false;
   cs_probe_set_t  *pset = (cs_probe_set_t *)post_mesh->sel_input[4];
+
   cs_interpolate_from_location_t
     *interpolate_func = cs_interpolate_from_location_p0;
 
   if (pset != NULL) {
-    if (cs_probe_set_get_interpolation(pset) == 1)
+    cs_probe_set_get_post_info(pset,
+                               NULL,
+                               &pset_on_boundary,
+                               NULL,
+                               NULL,
+                               NULL,
+                               NULL,
+                               NULL,
+                               NULL);
+    if (pset_on_boundary == false && cs_probe_set_get_interpolation(pset) == 1)
       interpolate_func = cs_interpolate_from_location_p1;
   }
 
@@ -3323,6 +3362,10 @@ _cs_post_output_attached_fields(cs_post_mesh_t        *post_mesh,
              && (   field_loc_type == CS_MESH_LOCATION_CELLS
                  || field_loc_type == CS_MESH_LOCATION_BOUNDARY_FACES
                  || field_loc_type == CS_MESH_LOCATION_VERTICES)) {
+
+      if (! pset_on_boundary
+          && field_loc_type != CS_MESH_LOCATION_BOUNDARY_FACES)
+        continue;
 
       char interpolate_input[96];
       strncpy(interpolate_input, f->name, 95); interpolate_input[95] = '\0';
@@ -6003,7 +6046,7 @@ cs_post_write_probe_values(int                              mesh_id,
   int nt_cur = (ts != NULL) ? ts->nt_cur : -1;
   double t_cur = (ts != NULL) ? ts->t_cur : 0.;
 
-  bool on_boundary, on_curve;
+  bool on_boundary;
 
   /* Initializations */
 
@@ -6018,7 +6061,7 @@ cs_post_write_probe_values(int                              mesh_id,
   cs_probe_set_get_post_info(pset,
                              NULL,
                              &on_boundary,
-                             &on_curve,
+                             NULL,
                              NULL,
                              NULL,
                              NULL,
