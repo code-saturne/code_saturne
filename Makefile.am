@@ -195,7 +195,7 @@ bin/code_saturne: Makefile
 	test -f ./$@.$(LAUNCHER_EXT).in || srcdir=$(srcdir)/; \
 	$(edit_launcher) $${srcdir}$@.$(LAUNCHER_EXT).in >$@.tmp
 	mv $@.tmp $@
-	${top_srcdir}/build-aux/cs_version.py --replace $@ $@
+	$(PYTHON) ${top_srcdir}/build-aux/cs_version.py --replace $@ $@
 
 if HAVE_SHELL_LAUNCHER
 bin/code_saturne.py: Makefile $(srcdir)/bin/code_saturne.py.in
