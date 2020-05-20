@@ -114,15 +114,22 @@ BEGIN_C_DECLS
  *        quantity (C - Cl). The default behavior is to add a weighting
  *        coefficient to the (implicit) advection term related to the liquid
  *        fraction
+ *        This option is related to the LEGACY strategy.
  *
  * \def CS_SOLIDIFICATION_USE_EXTRAPOLATION
  * \brief Use an extrapolation during the computation of different terms
  *        according to the strategy. This extrapolation of variable at time
  *        step n+1 uses values at n and n-1: 2*u^n - u^{n-1}
+ *
+ * \def CS_SOLIDIFICATION_WITH_PENALIZED_EUTECTIC
+ * \brief Option related to the PATH strategy.
+ *        Introduced a reaction term and a source term in order to remain on
+ *        the eutectic plateau.
  */
 
 #define CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM           (1 << 0) /*=    1 */
 #define CS_SOLIDIFICATION_USE_EXTRAPOLATION                 (1 << 1) /*=    2 */
+#define CS_SOLIDIFICATION_WITH_PENALIZED_EUTECTIC           (1 << 2) /*=    4 */
 
 /* Automatically set by the code if user functions are used */
 #define CS_SOLIDIFICATION_BINARY_ALLOY_M_FUNC               (1 << 7) /*=  128 */
