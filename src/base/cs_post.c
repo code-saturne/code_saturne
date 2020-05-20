@@ -2857,7 +2857,7 @@ _cs_post_match_post_write_var(const cs_post_mesh_t     *post_mesh,
     if (field_loc_type == CS_MESH_LOCATION_VERTICES)
       match = true;
     else if (   field_loc_type == CS_MESH_LOCATION_BOUNDARY_FACES
-             && post_mesh->ent_flag[CS_POST_LOCATION_B_FACE] == 0)
+             && post_mesh->ent_flag[CS_POST_LOCATION_I_FACE] == 0)
       match = true;
   }
 
