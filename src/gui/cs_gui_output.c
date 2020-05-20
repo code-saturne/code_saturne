@@ -156,7 +156,7 @@ _field_post(const char  *field_type,
   const int k_lbl = cs_field_key_id("label");
   const int k_post = cs_field_key_id("post_vis");
 
-  cs_tree_node_t *tn =_get_node(field_type, f->name);
+  cs_tree_node_t *tn = _get_node(field_type, f->name);
 
   if (tn == NULL)
     return;
@@ -367,7 +367,8 @@ cs_gui_output(void)
     const cs_field_t  *f = cs_field_by_id(f_id);
     if (f->type & CS_FIELD_VARIABLE)
       _field_post("variable", f->id);
-    else if (f->type & CS_FIELD_PROPERTY)
+    else if (   (f->type & CS_FIELD_PROPERTY)
+             || (f->type & CS_FIELD_POSTPROCESS))
       _field_post("property", f->id);
     else if (moment_id != NULL) {
       if (moment_id[f_id] > -1)
