@@ -723,6 +723,7 @@ _petsc_amg_block_gamg_hook(void     *context,
                                      SIGFPE detection */
 }
 
+#if defined(PETSC_HAVE_HYPRE)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Function pointer: setup hook for setting PETSc solver and
@@ -792,6 +793,7 @@ _petsc_amg_block_boomer_hook(void     *context,
   cs_fp_exception_restore_trap(); /* Avoid trouble with a too restrictive
                                      SIGFPE detection */
 }
+#endif
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -838,11 +840,15 @@ _petsc_block_jacobi_hook(void     *context,
     KSPSetType(_ksp, KSPPREONLY);
     KSPGetPC(_ksp, &_pc);
     if (slesp.solver_class == CS_PARAM_SLES_CLASS_HYPRE) {
+#if defined(PETSC_HAVE_HYPRE)
       PCSetType(_pc, PCHYPRE);
       PCHYPRESetType(_pc, "euclid"); /* ILU(1) by default */
+#else
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid option: HYPRE is not installed.", __func__);
+#endif
     }
     else {
-
       PC  _subpc;
       KSP *_subksp;
 
