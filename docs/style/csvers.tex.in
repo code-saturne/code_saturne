@@ -20,6 +20,5 @@
 
 %-------------------------------------------------------------------------------
 
-\newcommand{\CS}{%
-  {\fontfamily{ppl}\fontshape{it}\selectfont Code\_Saturne}\xspace}
+\newcommand{\CS}{code\_saturne\xspace}
 \newcommand{\verscs}{@cs_version_short@\xspace}
