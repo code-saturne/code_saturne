@@ -148,14 +148,14 @@ class LagrangianStatisticsModel(Model):
     @Variables.noUndo
     def getVariablesNamesBoundary(self):
         names = ["particle_events_weight",
-                 "particle_mass_flux",
+                 "particle_mass_flux_density",
                  "mean_particle_impact_angle",
                  "var_particle_impact_angle",
                  "mean_particle_impact_velocity",
                  "var_particle_impact_velocity"]
         if self.coal_fouling:
             names += ["particle_fouling_events_weight",
-                      "particle_fouling_mass_flux",
+                      "particle_fouling_mass_flux_density",
                       "mean_particle_fouling_diameter",
                       "var_particle_fouling_diameter",
                       "mean_particle_fouling_coke_fraction",

@@ -1830,14 +1830,16 @@ class XMLinit(BaseXmlInit):
 
                 bdy_node = stats_node.xmlGetNode('boundary')
                 if bdy_node:
-                    rename = {"Part_bndy_mass_flux": "particle_mass_flux",
+                    rename = {"Part_bndy_mass_flux": "particle_mass_flux_density",
                               "Part_impact_number": "particle_events_weight",
                               "Part_impact_angle": "mean_particle_impact_angle",
                               "Part_impact_velocity": "mean_particle_impact_velocity",
                               "Part_fouled_impact_number": "particle_fouling_events_weight",
-                              "Part_fouled_mass_flux": "particle_fouling_mass_flux",
+                              "Part_fouled_mass_flux": "particle_fouling_mass_flux_density",
                               "Part_fouled_diam": "mean_particle_fouling_diameter",
-                              "Part_fouled_Xck": "mean_particle_fouling_coke_fraction"}
+                              "Part_fouled_Xck": "mean_particle_fouling_coke_fraction",
+                              "particle_mass_flux": "particle_mass_flux_density",
+                              "particle_fouling_mass_flux": "particle_fouling_mass_flux_density"}
                     for attr in list(rename.keys()):
                         node = bdy_node.xmlGetNode('property', name=attr)
                         if node:
