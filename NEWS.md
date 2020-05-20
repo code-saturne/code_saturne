@@ -10,7 +10,10 @@ Bug fixes:
 - Fix crash in FSI with internal structures in builds using
   the Intel Fortran compilers (due to Fortran pointer handling).
 
-- GUI: fix missing update of Lagrangian mesh wrter association in some
+- GUI: fix ignored handling of Lagrangian statistics postprocessing
+  output settings
+
+- GUI: fix missing update of Lagrangian mesh writer association in some
   combinations of writer renaming (GitLab issue #203).
 
 - GUI: fix issue in handling of "==" token in MEG expressions.
