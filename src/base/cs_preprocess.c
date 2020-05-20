@@ -374,8 +374,8 @@ cs_preprocess_mesh(cs_halo_type_t   halo_type)
   if (need_save)
     cs_mesh_save(cs_glob_mesh, NULL, NULL, "mesh_output.csm");
 
-  cs_glob_mesh->n_b_faces_all = cs_glob_mesh->n_b_faces_all;
-  cs_glob_mesh->n_g_b_faces_all = cs_glob_mesh->n_g_b_faces_all;
+  cs_glob_mesh->n_b_faces_all = cs_glob_mesh->n_b_faces;
+  cs_glob_mesh->n_g_b_faces_all = cs_glob_mesh->n_g_b_faces;
 
   /* Destroy the temporary structure used to build the main mesh */
 
