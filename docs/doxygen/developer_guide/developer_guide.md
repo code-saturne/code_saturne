@@ -29,3 +29,4 @@ itself and for writing user-defined functions.
 
 \subpage cs_dg_common_constructs
 
+\subpage cs_dg_writing_theory

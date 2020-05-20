@@ -1143,7 +1143,7 @@ AC_CONFIG_FILES([Makefile
                  gui/Makefile gui/Base/Makefile gui/Pages/Makefile
                  gui/studymanager_gui/Makefile gui/trackcvg/Makefile
                  docs/Makefile docs/doxygen/Makefile docs/style/csvers.tex
-                 docs/developer/Makefile docs/refcard/Makefile
+                 docs/refcard/Makefile
                  docs/studymanager/Makefile
                  docs/theory/Makefile
                  docs/user/Makefile

@@ -1,0 +1,10 @@
+/* Modified CSS for doxygen 1.8.13 */
+
+table.doxtable th {
+	background-color: lightgrey;
+	color: black;
+	font-size: 110%;
+	padding-bottom: 4px;
+	padding-top: 5px;
+}
+

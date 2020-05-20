@@ -15,6 +15,7 @@
     <tab type="usergroup" visible="yes" url="@ref cs_dg_developer_guide" title="Developer guide">
       <tab type="user" visible="yes" url="@ref cs_dg_coding_style" title="Coding style guidelines"/>
       <tab type="user" visible="yes" url="@ref cs_dg_common_constructs" title="Common constructs"/>
+      <tab type="user" visible="yes" url="@ref cs_dg_writing_theory" title="Writing the theory documentation"/>
     </tab>
     <tab type="pages" visible="no" title=""/>
     <tab type="modules" visible="yes" title=""/>
