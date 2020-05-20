@@ -198,6 +198,7 @@ _mono_update_divergence(const cs_real_t           *face_vel,
                                                 quant,
                                                 cs_shared_connect->c2f,
                                                 face_vel);
+
     norm2 += quant->cell_vol[c_id] * div[c_id] * div[c_id];
 
   }
@@ -217,16 +218,52 @@ _mono_update_divergence(const cs_real_t           *face_vel,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Make sure that the enforcement is done (remove tolerance that may
+ *         arise from the resolution)
+ *         Case of a monolithic coupling algorithm.
+ *
+ * \param[in]       nsp      set of parameters for the Navier-Stokes system
+ * \param[in, out]  vel_f    velocity at faces
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_mono_enforce_face_velocity(const cs_navsto_param_t     *nsp,
+                            cs_real_t                   *vel_f)
+{
+  /* Enforcement of solid cells is always defined as follows for the momentum
+   * equation:
+   * CS_EQUATION_ENFORCE_BY_CELLS | CS_EQUATION_ENFORCE_BY_REFERENCE_VALUE
+   */
+  const cs_adjacency_t  *c2f = cs_shared_connect->c2f;
+
+  for (cs_lnum_t i = 0; i < nsp->n_solid_cells; i++) {
+
+    const cs_lnum_t  c_id = nsp->solid_cell_ids[i];
+    for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
+      const cs_lnum_t  f_id = c2f->ids[j];
+      for (int k = 0; k < 3; k++)
+        vel_f[3*f_id+k] = 0.;
+    }
+
+  } /* Loop on solid cells */
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Update the velocity fields at cells and rescale the pressure field
  *         Case of a monolithic coupling algorithm.
  *
+ * \param[in]       nsp      set of parameters for the Navier-Stokes system
  * \param[in, out]  sc       scheme context
  * \param[in, out]  mom_eqc  context of the momentum equation
  */
 /*----------------------------------------------------------------------------*/
 
 static void
-_mono_update_related_cell_fields(cs_cdofb_monolithic_t         *sc,
+_mono_update_related_cell_fields(const cs_navsto_param_t       *nsp,
+                                 cs_cdofb_monolithic_t         *sc,
                                  cs_cdofb_vecteq_t             *mom_eqc)
 {
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
@@ -241,6 +278,16 @@ _mono_update_related_cell_fields(cs_cdofb_monolithic_t         *sc,
                                         mom_eqc->acf_tilda,
                                         vel_f,              /* face values */
                                         sc->velocity->val); /* cell values */
+
+  /* Enforcement of solid cells is always defined as follows for the momentum
+   * equation:
+   * CS_EQUATION_ENFORCE_BY_CELLS | CS_EQUATION_ENFORCE_BY_REFERENCE_VALUE
+   */
+  for (cs_lnum_t i = 0; i < nsp->n_solid_cells; i++) {
+    cs_real_t  *_vel = sc->velocity->val + 3*nsp->solid_cell_ids[i];
+    for (int k = 0; k < 3; k++)
+      _vel[k] = 0.;
+  }
 
   /* Rescale pressure if needed */
   cs_field_t  *pr_fld = sc->pressure;
@@ -837,23 +884,31 @@ _velocity_full_assembly(const cs_cell_sys_t            *csys,
 
   cs_matrix_assembler_values_t   *mav = sc->mav_structures[0];
   cs_real_t  *rhs = sc->msles->b_f;
+  cs_real_t  *_div = sc->msles->div_op + 3*connect->c2f->idx[cm->c_id];
+
+  /* 1. Store divergence operator in non assembly
+   *    Take into account solid zone where DoF is set to zero */
+  /* ======================================================== */
+  if (csys->has_internal_enforcement) {
+    for (int i = 0; i < 3*n_f; i++) {
+      if (csys->intern_forced_ids[i] > -1)
+        _div[i] = 0.; /* The velocity-block set the value of this DoF */
+      else
+        _div[i] = div_op[i];
+    }
+  }
+  else
+    memcpy(_div, div_op, 3*n_f*sizeof(cs_real_t));
 
   /* 1. Matrix assembly
    * ================== */
 
   if (sc->msles->graddiv_coef > 0.) {
     cs_real_t  gamma = sc->msles->graddiv_coef / cm->vol_c;
-    cs_cdofb_navsto_add_grad_div(cm->n_fc, gamma, div_op, csys->mat);
+    cs_cdofb_navsto_add_grad_div(cm->n_fc, gamma, _div, csys->mat);
   }
 
   cs_cdofb_vecteq_assembly(csys, rs, cm, has_sourceterm, eqc, eqa, mav, rhs);
-
-  /* 2. Store divergence operator in non assembly
-   * ============================================ */
-
-  cs_real_t  *_div = sc->msles->div_op + 3*connect->c2f->idx[cm->c_id];
-  memcpy(_div, div_op, 3*n_f*sizeof(cs_real_t));
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2105,8 +2160,12 @@ cs_cdofb_monolithic_steady(const cs_mesh_t            *mesh,
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
 
+  /* Make sure that the DoFs are correctly enforced after the resolution */
+  if (nsp->n_solid_cells > 0)
+    _mono_enforce_face_velocity(nsp, mom_eqc->face_values);
+
   /* Now update the velocity and pressure fields associated to cells */
-  _mono_update_related_cell_fields(sc, mom_eqc);
+  _mono_update_related_cell_fields(nsp, sc, mom_eqc);
 
   /* Compute the new velocity divergence and retrieve its L2-norm */
   cs_real_t  div_l2_norm = _mono_update_divergence(mom_eqc->face_values,
@@ -2211,6 +2270,10 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
 
+  /* Make sure that the DoFs are correctly enforced after the resolution */
+  if (nsp->n_solid_cells > 0)
+    _mono_enforce_face_velocity(nsp, mom_eqc->face_values);
+
   /* Compute the new velocity divergence and retrieve its L2-norm */
   cs_real_t  div_l2_norm = _mono_update_divergence(mom_eqc->face_values,
                                                    sc->divergence->val);
@@ -2260,6 +2323,10 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
     t_solve_end = cs_timer_time();
     cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
 
+    /* Make sure that the DoFs are correctly enforced after the resolution */
+    if (nsp->n_solid_cells > 0)
+      _mono_enforce_face_velocity(nsp, mom_eqc->face_values);
+
     /* Compute the new velocity divergence and retrieve its L2-norm */
     div_l2_norm = _mono_update_divergence(mom_eqc->face_values,
                                           sc->divergence->val);
@@ -2298,7 +2365,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   }
 
   /* Now compute/update the velocity and pressure fields */
-  _mono_update_related_cell_fields(sc, mom_eqc);
+  _mono_update_related_cell_fields(nsp, sc, mom_eqc);
 
   /* Frees */
   cs_cdofb_monolithic_sles_clean(msles);
@@ -2394,8 +2461,12 @@ cs_cdofb_monolithic(const cs_mesh_t           *mesh,
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
 
+  /* Make sure that the DoFs are correctly enforced after the resolution */
+  if (nsp->n_solid_cells > 0)
+    _mono_enforce_face_velocity(nsp, mom_eqc->face_values);
+
   /* Now update the velocity and pressure fields associated to cells */
-  _mono_update_related_cell_fields(sc, mom_eqc);
+  _mono_update_related_cell_fields(nsp, sc, mom_eqc);
 
   /* Compute the new velocity divergence and retrieve its L2-norm */
   cs_real_t  div_l2_norm = _mono_update_divergence(mom_eqc->face_values,
@@ -2503,6 +2574,10 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
 
+  /* Make sure that the DoFs are correctly enforced after the resolution */
+  if (mom_eqp->n_enforced_cells > 0 || mom_eqp->n_enforced_dofs > 0)
+    _mono_enforce_face_velocity(nsp, mom_eqc->face_values);
+
   /* Compute the new velocity divergence and retrieve its L2-norm */
   cs_real_t  div_l2_norm = _mono_update_divergence(mom_eqc->face_values,
                                                    sc->divergence->val);
@@ -2552,6 +2627,10 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
     t_solve_end = cs_timer_time();
     cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
 
+    /* Make sure that the DoFs are correctly enforced after the resolution */
+    if (nsp->n_solid_cells > 0)
+      _mono_enforce_face_velocity(nsp, mom_eqc->face_values);
+
     /* Compute the new velocity divergence and retrieve its L2-norm */
     div_l2_norm = _mono_update_divergence(mom_eqc->face_values,
                                           sc->divergence->val);
@@ -2590,7 +2669,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   }
 
   /* Now compute/update the velocity and pressure fields */
-  _mono_update_related_cell_fields(sc, mom_eqc);
+  _mono_update_related_cell_fields(nsp, sc, mom_eqc);
 
   /* Frees */
   cs_cdofb_monolithic_sles_clean(msles);
