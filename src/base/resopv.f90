@@ -197,7 +197,7 @@ double precision ressol, rnorm2
 double precision nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta
 double precision visci(3,3), fikis, viscis, distfi
 double precision cfl, kpdc, rho, pimp, bpmasf
-double precision normp
+double precision normp, rc1(3)
 
 type(solving_info) sinfo
 type(var_cal_opt) :: vcopt_p, vcopt_u
@@ -878,21 +878,25 @@ if (idilat.ge.4) then
     do iel = 1, ncel
       arsr  = arak/crom(iel)
 
-      trav(1,iel) = arsr*(                                 &
-                           vitenp(1,iel)*trav(1,iel)      &
-                         + vitenp(4,iel)*trav(2,iel)      &
-                         + vitenp(6,iel)*trav(3,iel)      &
-                         )
-      trav(2,iel) = arsr*(                                 &
-                           vitenp(4,iel)*trav(1,iel)      &
-                         + vitenp(2,iel)*trav(2,iel)      &
-                         + vitenp(5,iel)*trav(3,iel)      &
-                         )
-      trav(3,iel) = arsr*(                                 &
-                           vitenp(6,iel)*trav(1,iel)      &
-                         + vitenp(5,iel)*trav(2,iel)      &
-                         + vitenp(3,iel)*trav(3,iel)      &
-                         )
+      rc1(1) = arsr*(                                &
+                      vitenp(1,iel)*trav(1,iel)      &
+                    + vitenp(4,iel)*trav(2,iel)      &
+                    + vitenp(6,iel)*trav(3,iel)      &
+                    )
+      rc1(2) = arsr*(                                &
+                      vitenp(4,iel)*trav(1,iel)      &
+                    + vitenp(2,iel)*trav(2,iel)      &
+                    + vitenp(5,iel)*trav(3,iel)      &
+                    )
+      rc1(3) = arsr*(                                &
+                      vitenp(6,iel)*trav(1,iel)      &
+                    + vitenp(5,iel)*trav(2,iel)      &
+                    + vitenp(3,iel)*trav(3,iel)      &
+                    )
+
+      do isou = 1, 3
+        trav(isou,iel) = rc1(isou)
+      enddo
 
     enddo
   else
@@ -917,21 +921,25 @@ else
     do iel = 1, ncel
       arsr  = arak/crom(iel)
 
-      trav(1,iel) = vel(1,iel) + arsr*(                   &
-                           vitenp(1,iel)*trav(1,iel)      &
-                         + vitenp(4,iel)*trav(2,iel)      &
-                         + vitenp(6,iel)*trav(3,iel)      &
-                         )
-      trav(2,iel) = vel(2,iel) + arsr*(                   &
-                           vitenp(4,iel)*trav(1,iel)      &
-                         + vitenp(2,iel)*trav(2,iel)      &
-                         + vitenp(5,iel)*trav(3,iel)      &
-                         )
-      trav(3,iel) = vel(3,iel) + arsr*(                   &
-                           vitenp(6,iel)*trav(1,iel)      &
-                         + vitenp(5,iel)*trav(2,iel)      &
-                         + vitenp(3,iel)*trav(3,iel)      &
-                         )
+      rc1(1) = arsr*(                                &
+                      vitenp(1,iel)*trav(1,iel)      &
+                    + vitenp(4,iel)*trav(2,iel)      &
+                    + vitenp(6,iel)*trav(3,iel)      &
+                    )
+      rc1(2) = arsr*(                                &
+                      vitenp(4,iel)*trav(1,iel)      &
+                    + vitenp(2,iel)*trav(2,iel)      &
+                    + vitenp(5,iel)*trav(3,iel)      &
+                    )
+      rc1(3) = arsr*(                                &
+                      vitenp(6,iel)*trav(1,iel)      &
+                    + vitenp(5,iel)*trav(2,iel)      &
+                    + vitenp(3,iel)*trav(3,iel)      &
+                    )
+
+      do isou = 1, 3
+        trav(isou,iel) = vel(isou,iel) + rc1(isou)
+      enddo
 
     enddo
   else

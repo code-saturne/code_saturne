@@ -3,6 +3,11 @@ Release 6.0.3 (Unreleased)
 
 Bug fixes:
 
+- Fix computation of Rhie & Chow first term in cases where diffusion in
+  pressure correction step is anisotropic.
+  This could have an impact on calculations with either head losses,
+  tensorial porosity or the pseudo-coupled velocity-pressure solver.
+
 - Fix internal coupling: clip turbulent viscosity in solid zones.
   This should also fix k-omega with the ikecou=1 option (not tested, and
   deprecated) and with the porous approach (use cell_f_vol rather volume).
