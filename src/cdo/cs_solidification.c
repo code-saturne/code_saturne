@@ -2686,7 +2686,7 @@ cs_solidification_set_segregation_opt(cs_solidification_strategy_t  strategy,
   alloy->eta_relax = eta_relax;
 
   alloy->strategy = strategy;
-  if (strategy == CS_SOLIDIFICATION_STRATEGY_LEGAGY) {
+  if (strategy == CS_SOLIDIFICATION_STRATEGY_LEGACY) {
 
     if (solid->options & CS_SOLIDIFICATION_WITH_SOLUTE_SOURCE_TERM)
       alloy->update_gl = _update_gl_legacy_ast;
@@ -3224,7 +3224,7 @@ cs_solidification_log_setup(void)
     cs_log_printf(CS_LOG_SETUP, "  * Solidification | Strategy:");
     switch (alloy->strategy) {
 
-    case CS_SOLIDIFICATION_STRATEGY_LEGAGY:
+    case CS_SOLIDIFICATION_STRATEGY_LEGACY:
       cs_log_printf(CS_LOG_SETUP, " Legacy\n");
       break;
     case CS_SOLIDIFICATION_STRATEGY_TAYLOR:
