@@ -84,6 +84,13 @@ Architectural changes:
   created in the desktop folder and double-clicking on it launches
   the GUI.
 
+Bug fixes:
+
+- Fix computation of Rhie & Chow first term in cases where diffusion in
+  pressure correction step is anisotropic.
+  This could have an impact on calculations with either head losses,
+  tensorial porosity or the pseudo-coupled velocity-pressure solver.
+
 Release 6.1.0 (April 15 2020)
 -----------------------------
 
