@@ -1094,6 +1094,48 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set a solid zone related to the Navier-Stokes equations
+ *
+ * \param[in] n_solid_cells    number of solid cells
+ * \param[in] solid_cell_ids   list of cell ids (local numbering)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_system_set_solid_cells(cs_lnum_t          n_solid_cells,
+                                 cs_lnum_t          solid_cell_ids[])
+{
+  cs_navsto_system_t  *ns = cs_navsto_system;
+
+  if (ns == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_ns));
+
+  cs_navsto_param_t *nsp = ns->param;
+  assert(nsp != NULL);
+
+  if (nsp->n_solid_cells < n_solid_cells)
+    BFT_REALLOC(nsp->solid_cell_ids, n_solid_cells, cs_lnum_t);
+
+  nsp->n_solid_cells = n_solid_cells;
+  if (n_solid_cells == 0)
+    return;
+
+  memcpy(nsp->solid_cell_ids, solid_cell_ids, n_solid_cells*sizeof(cs_lnum_t));
+
+  /* The momentum equation has to enforce a zero-velocity */
+  cs_equation_t  *mom_eq = cs_navsto_system_get_momentum_eq();
+  cs_equation_param_t  *mom_eqp = cs_equation_get_param(mom_eq);
+  cs_real_t  zero_velocity[3] = {0, 0, 0};
+
+  cs_equation_enforce_by_cell_selection(mom_eqp,
+                                        n_solid_cells,
+                                        solid_cell_ids,
+                                        zero_velocity,
+                                        NULL);
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Update variables and related quantities when a new state of the
  *         Navier-Stokes system has been computed
  *

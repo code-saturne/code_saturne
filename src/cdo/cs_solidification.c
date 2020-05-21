@@ -469,44 +469,22 @@ _enforce_solid_cells(const cs_cdo_connect_t      *connect,
                      const cs_cdo_quantities_t   *quant)
 {
   cs_solidification_t  *solid = cs_solidification_structure;
-  cs_equation_t  *mom_eq = cs_navsto_system_get_momentum_eq();
-  cs_equation_param_t  *mom_eqp = cs_equation_get_param(mom_eq);
-  cs_real_t  *face_velocity = cs_equation_get_face_values(mom_eq, false);
-  cs_real_t  *mass_flux = cs_navsto_get_mass_flux(false); /* current values */
-
-  const cs_adjacency_t  *c2f = connect->c2f;
+  cs_navsto_param_t  *nsp = cs_navsto_system_get_param();
 
   /* List of solid cells */
   cs_lnum_t  *solid_cells = NULL;
   BFT_MALLOC(solid_cells, solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID],
              cs_lnum_t);
 
-  cs_lnum_t  ii = 0;
+  cs_lnum_t  n_solid_cells = 0;
   for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
-    if (solid->cell_state[c_id] == CS_SOLIDIFICATION_STATE_SOLID) {
-      solid_cells[ii++] = c_id;
+    if (solid->cell_state[c_id] == CS_SOLIDIFICATION_STATE_SOLID)
+      solid_cells[n_solid_cells++] = c_id;
+  }
 
-      /* Kill the advection field and the face velocity for each face attached
-         to a solid cell */
-      for (cs_lnum_t j = c2f->idx[c_id]; j < c2f->idx[c_id+1]; j++) {
-
-        const cs_lnum_t f_id = c2f->ids[j];
-        mass_flux[f_id] = 0;
-        cs_real_t  *_vel_f = face_velocity + 3*f_id;
-        _vel_f[0] = _vel_f[1] = _vel_f[2] = 0.;
-
-      } /* Loop on cell faces */
-
-    } /* solid cell */
-  } /* Loop on cells */
-
-  assert((cs_gnum_t)ii == solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID]);
-  cs_real_t  zero_velocity[3] = {0, 0, 0};
-  cs_equation_enforce_by_cell_selection(mom_eqp,
-                               solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID],
-                                        solid_cells,
-                                        zero_velocity,
-                                        NULL);
+  assert((cs_gnum_t)n_solid_cells
+         == solid->n_g_cells[CS_SOLIDIFICATION_STATE_SOLID]);
+  cs_navsto_system_set_solid_cells(n_solid_cells, solid_cells);
 
   BFT_FREE(solid_cells);
 }

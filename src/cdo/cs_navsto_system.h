@@ -466,6 +466,19 @@ cs_navsto_system_initialize(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set a solid zone related to the Navier-Stokes equations
+ *
+ * \param[in] n_solid_cells    number of solid cells
+ * \param[in] solid_cell_ids   list of cell ids (local numbering)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_navsto_system_set_solid_cells(cs_lnum_t          n_solid_cells,
+                                 cs_lnum_t          solid_cell_ids[]);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Update variables and related quantities when a new state of the
  *         Navier-Stokes system has been computed
  *

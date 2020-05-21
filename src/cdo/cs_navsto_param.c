@@ -317,7 +317,10 @@ cs_navsto_param_create(const cs_boundary_t             *boundaries,
   param->n_velocity_bc_defs = 0;
   param->velocity_bc_defs = NULL;
 
-  /* Boundary conditions for the pressure field */
+  /* Enforcement of a solid zone */
+  param->n_solid_cells = 0;
+  param->solid_cell_ids = NULL;
+
   return param;
 }
 
@@ -387,6 +390,8 @@ cs_navsto_param_free(cs_navsto_param_t    *param)
     param->pressure_bc_defs = NULL;
 
   }
+
+  BFT_FREE(param->solid_cell_ids);
 
   /* Free the main structure */
   BFT_FREE(param);
