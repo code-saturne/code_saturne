@@ -3364,7 +3364,7 @@ _cs_post_output_attached_fields(cs_post_mesh_t        *post_mesh,
                  || field_loc_type == CS_MESH_LOCATION_VERTICES)) {
 
       if (! pset_on_boundary
-          && field_loc_type != CS_MESH_LOCATION_BOUNDARY_FACES)
+          && field_loc_type == CS_MESH_LOCATION_BOUNDARY_FACES)
         continue;
 
       char interpolate_input[96];
