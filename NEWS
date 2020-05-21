@@ -6,6 +6,12 @@ Bug fixes
 
 - GUI: fix crash when accessing time step with some meteo models.
 
+- Fix computation of Rhie & Chow first term in cases where diffusion in
+  pressure correction step is anisotropic.
+  This could have an impact on calculations with either head losses,
+  tensorial porosity or the pseudo-coupled velocity-pressure solver.
+
+
 Release 5.0.12 (Feb 7 2020)
 ===========================
 
