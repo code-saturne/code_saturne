@@ -23,7 +23,11 @@
 DOC_MODULE=saturne
 
 docdir = $(datadir)/doc/@PACKAGE@
-EXTRA_DIST = Doxyfile mainpage.h
+EXTRA_DIST = Doxyfile \
+mainpage.dox \
+ple_coupling_example_domains.svg \
+ple_coupling_example_exchange.svg \
+ple_coupling_example_init.svg
 
 if HAVE_DOXYGEN
 
