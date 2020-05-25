@@ -235,8 +235,9 @@ typedef enum {
   CS_ENUMF_(drho_dp),        /*!< drho over dp */
   CS_ENUMF_(drho_dh),        /*!< drho over dh */
   CS_ENUMF_(tau12_t),        /*!< turbulent tau12 */
-  CS_ENUMF_(lift),           /*!< Particles lift */
+  CS_ENUMF_(lift),           /*!< Lift coefficient */
   CS_ENUMF_(disp_t),         /*!< Turbulent dispersion */
+  CS_ENUMF_(surf_tens),      /*!< Surface tension */
   CS_ENUMF_(drift_vel),      /*!< Particles drift velocity */
   CS_ENUMF_(yplus),          /*!< Wall distance: y+ */
   CS_ENUMF_(vel_mean),       /*!< Mean velocity (for dispersed phases) */
