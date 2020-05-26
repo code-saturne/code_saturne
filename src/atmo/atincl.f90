@@ -46,7 +46,7 @@ implicit none
 !   Arrays specific to values read in the input meteo file:
 
 !> time (in sec) of the meteo profile
-double precision, allocatable, dimension(:) :: tmmet
+double precision, dimension(:), pointer :: tmmet
 
 !> altitudes of the dynamic profiles (read in the input meteo file)
 double precision, allocatable, dimension(:) :: zdmet
@@ -59,7 +59,7 @@ double precision, allocatable, dimension(:,:) :: mom_met
 double precision, allocatable, dimension(:,:) :: mom
 
 !> altitudes of the temperature profile (read in the input meteo file)
-double precision, allocatable, dimension(:) :: ztmet
+double precision, dimension(:), pointer :: ztmet
 
 !> meteo u  profiles (read in the input meteo file)
 double precision, allocatable, dimension(:,:) :: umet
@@ -103,13 +103,13 @@ double precision, allocatable, dimension(:,:) :: rmet
 double precision, allocatable, dimension(:,:) :: tpmet
 
 !> hydrostatic pressure from Laplace integration
-double precision, allocatable, dimension(:,:) :: phmet
+double precision, dimension(:,:), pointer :: phmet
 
 !> Diagnosed nebulosity
-double precision, allocatable, dimension(:) :: nebdia
+double precision, dimension(:), pointer :: nebdia
 
 !> fractional nebulosity
-double precision, allocatable, dimension(:) :: nn
+double precision, dimension(:), pointer :: nn
 
 ! 1.2 Pointers for the positions of the variables
 !------------------------------------------------
@@ -142,16 +142,16 @@ integer, save :: imomst
 !>flag for reading the meteo input file
 !> - = 0 -> no reading
 !> - = 1 -> reading
-integer, save :: imeteo
+integer(c_int), pointer, save :: imeteo
 
 !> numbers of altitudes for the dynamics
-integer, save :: nbmetd
+integer(c_int), pointer, save :: nbmetd
 
 !> numbers of altitudes for the temperature and specific humidity
-integer, save :: nbmett
+integer(c_int), pointer, save :: nbmett
 
 !> numbers of time steps for the meteo profiles
-integer, save :: nbmetm
+integer(c_int), pointer, save :: nbmetm
 
 !> read zone boundary conditions from profile
 integer, save :: iprofm(nozppm)
@@ -221,7 +221,7 @@ real(c_double), pointer, save:: xlat
 ! 2.3 Data specific to the meteo profile above the domain
 !--------------------------------------------------------
 !> Number of vertical levels (cf. 1D radiative scheme
-integer, save:: nbmaxt
+integer(c_int), pointer, save:: nbmaxt
 
 !> flag to compute the hydrostastic pressure by Laplace integration
 !> in the meteo profiles
@@ -229,7 +229,6 @@ integer, save:: nbmaxt
 !> = 1 : top to bottom Laplace integration based on P computed for
 !>            the standard atmosphere at z(nbmaxt)
 integer, save:: ihpm
-
 
 ! 2.4 Data specific to the 1D vertical grid:
 !-------------------------------------------
@@ -394,6 +393,34 @@ integer, save :: kopint
 
     !---------------------------------------------------------------------------
 
+    !> \brief Return pointers to atmo includes
+
+    subroutine cs_f_atmo_get_pointers(syear, squant, shour, smin, ssec, &
+        longitude, latitude,                                            &
+        compute_z_ground,                                               &
+        sedimentation_model, deposition_model, nucleation_model,        &
+        subgrid_model, ichemistry, nespg, nrg, chem_with_photo,         &
+        iaerosol, frozen_gas_chem, init_gas_with_lib,                   &
+        init_aero_with_lib, n_aero, n_sizebin, imeteo,                  &
+        nbmetd, nbmett, nbmetm, nbmaxt)                                 &
+      bind(C, name='cs_f_atmo_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), intent(out) :: compute_z_ground, ichemistry, nespg, nrg
+      type(c_ptr), intent(out) :: sedimentation_model, deposition_model
+      type(c_ptr), intent(out) :: nucleation_model
+      type(c_ptr), intent(out) :: subgrid_model
+      type(c_ptr), intent(out) :: syear, squant, shour, smin, ssec
+      type(c_ptr), intent(out) :: longitude, latitude
+      type(c_ptr), intent(out) :: iaerosol, frozen_gas_chem
+      type(c_ptr), intent(out) :: init_gas_with_lib, init_aero_with_lib
+      type(c_ptr), intent(out) :: n_aero, n_sizebin, chem_with_photo
+      type(c_ptr), intent(out) :: imeteo
+      type(c_ptr), intent(out) :: nbmetd, nbmett, nbmetm, nbmaxt
+    end subroutine cs_f_atmo_get_pointers
+
+    !---------------------------------------------------------------------------
+
     !> \brief Calculation of the specific enthalpy of liquid water
 
     !> \return specific enthalpy of liquid water
@@ -529,6 +556,8 @@ contains
     type(c_ptr) :: c_longitude, c_latitude
     type(c_ptr) :: c_modelaero, c_frozen_gas_chem, c_nlayer, c_nsize
     type(c_ptr) :: c_init_gas_with_lib, c_init_aero_with_lib, c_chem_with_photo
+    type(c_ptr) :: c_imeteo
+    type(c_ptr) :: c_nbmetd, c_nbmett, c_nbmetm, c_nbmaxt
 
     call cs_f_atmo_get_pointers(                  &
       c_syear, c_squant, c_shour, c_smin, c_ssec, &
@@ -540,7 +569,8 @@ contains
       c_modelaero, c_frozen_gas_chem,             &
       c_init_gas_with_lib,                        &
       c_init_aero_with_lib, c_nlayer,             &
-      c_nsize)
+      c_nsize, c_imeteo,                          &
+      c_nbmetd, c_nbmett, c_nbmetm, c_nbmaxt)
 
     call c_f_pointer(c_syear, syear)
     call c_f_pointer(c_squant, squant)
@@ -568,6 +598,11 @@ contains
     call c_f_pointer(c_init_aero_with_lib, init_aero_with_lib)
     call c_f_pointer(c_nlayer, nlayer_aer)
     call c_f_pointer(c_nsize, n_aer)
+    call c_f_pointer(c_imeteo, imeteo)
+    call c_f_pointer(c_nbmetd, nbmetd)
+    call c_f_pointer(c_nbmett, nbmett)
+    call c_f_pointer(c_nbmetm, nbmetm)
+    call c_f_pointer(c_nbmaxt, nbmaxt)
 
     return
 
@@ -577,11 +612,29 @@ contains
 !> \brief Initialisation of meteo data
 subroutine init_meteo
 
+use cs_c_bindings
 use atsoil
 
 implicit none
 
 integer :: imode, ifac
+! Local variables
+type(c_ptr) :: c_z_temp_met, c_time_met
+type(c_ptr) :: c_frac_neb, c_diag_neb
+type(c_ptr) :: c_hyd_p_met
+
+integer(c_int),   dimension(2) :: dim_hyd_p_met
+
+call cs_f_atmo_arrays_get_pointers(                &
+     c_z_temp_met, c_time_met,                     &
+     c_hyd_p_met, dim_hyd_p_met,                   &
+     c_frac_neb, c_diag_neb)
+
+call c_f_pointer(c_z_temp_met, ztmet, [nbmaxt])
+call c_f_pointer(c_time_met, tmmet, [nbmetm])
+call c_f_pointer(c_hyd_p_met, phmet, [dim_hyd_p_met])
+call c_f_pointer(c_frac_neb, nn, [ncelet])
+call c_f_pointer(c_diag_neb, nebdia, [ncelet])
 
 ! Allocate additional arrays for Water Microphysics
 
@@ -655,9 +708,12 @@ end subroutine init_meteo
 !> \brief Final step for deallocation
 subroutine finalize_meteo
 
+use cs_c_bindings
 use atsoil
 
 implicit none
+
+call cs_f_atmo_finalize()
 
 if (ippmod(iatmos).ge.2) then
   deallocate(nebdia)

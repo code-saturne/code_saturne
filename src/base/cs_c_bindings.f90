@@ -2339,32 +2339,6 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
-    !> \brief Return pointers to atmo includes
-
-    subroutine cs_f_atmo_get_pointers(syear, squant, shour, smin, ssec, &
-        longitude, latitude,                                            &
-        compute_z_ground,                                               &
-        sedimentation_model, deposition_model, nucleation_model,        &
-        subgrid_model, ichemistry, nespg, nrg, chem_with_photo,         &
-        iaerosol, frozen_gas_chem, init_gas_with_lib,                   &
-        init_aero_with_lib, n_aero, n_sizebin)                          &
-      bind(C, name='cs_f_atmo_get_pointers')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(c_ptr), intent(out) :: compute_z_ground, ichemistry, nespg, nrg
-      type(c_ptr), intent(out) :: sedimentation_model, deposition_model
-      type(c_ptr), intent(out) :: nucleation_model
-      type(c_ptr), intent(out) :: subgrid_model
-      type(c_ptr), intent(out) :: syear, squant, shour, smin, ssec
-      type(c_ptr), intent(out) :: longitude, latitude
-      type(c_ptr), intent(out) :: iaerosol, frozen_gas_chem
-      type(c_ptr), intent(out) :: init_gas_with_lib, init_aero_with_lib
-      type(c_ptr), intent(out) :: n_aero, n_sizebin, chem_with_photo
-
-    end subroutine cs_f_atmo_get_pointers
-
-    !---------------------------------------------------------------------------
-
     !> \brief Compute the relative ground elevation (mainly for the atmospheric
     !>  module).
 
@@ -2388,6 +2362,20 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    !> \brief Return pointers to atmo arrays
+
+    subroutine cs_f_atmo_arrays_get_pointers(p_ztmet, p_tmmet, &
+         p_phmet, dim_phmet,                                   &
+         p_nn, p_nebdia)                                       &
+         bind(C, name='cs_f_atmo_arrays_get_pointers')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), dimension(2) :: dim_phmet
+      type(c_ptr), intent(out) :: p_ztmet, p_tmmet, p_phmet, p_nn, p_nebdia
+    end subroutine cs_f_atmo_arrays_get_pointers
+
+    !---------------------------------------------------------------------------
+
     !> \brief Deallocate arrays for atmo chemistry
 
     subroutine cs_f_atmo_chem_finalize() &
@@ -2395,6 +2383,16 @@ module cs_c_bindings
       use, intrinsic :: iso_c_binding
       implicit none
     end subroutine cs_f_atmo_chem_finalize
+
+    !---------------------------------------------------------------------------
+
+    !> \brief Deallocate arrays for atmo module
+
+    subroutine cs_f_atmo_finalize() &
+         bind(C, name='cs_f_atmo_finalize')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_f_atmo_finalize
 
     !---------------------------------------------------------------------------
 

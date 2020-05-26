@@ -119,6 +119,17 @@ static cs_atmo_option_t  _atmo_option = {
   .deposition_model = 0,
   .nucleation_model = 0,
   .subgrid_model = 0,
+  .imeteo = 0,
+  .nbmetd = -1,
+  .nbmett = -1,
+  .nbmetm = -1,
+  .nbmaxt = -1,
+
+  .z_temp_met = NULL,
+  .time_met   = NULL,
+  .hyd_p_met  = NULL,
+  .frac_neb  = NULL,
+  .diag_neb  = NULL
 };
 
 /* atmo chemistry options structure */
@@ -184,7 +195,20 @@ cs_f_atmo_get_pointers(int                    **syear,
                        bool                   **init_gas_with_lib,
                        bool                   **init_aero_with_lib,
                        int                    **n_layer,
-                       int                    **n_size);
+                       int                    **n_size,
+                       int                    **imeteo,
+                       int                    **nbmetd,
+                       int                    **nbmett,
+                       int                    **nbmetm,
+                       int                    **nbmaxt);
+
+void
+cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
+                              cs_real_t **time_met,
+                              cs_real_t **hyd_p_met,
+                              int         dim_hyd_p_met[2],
+                              cs_real_t **frac_neb,
+                              cs_real_t **diag_neb);
 
 void
 cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
@@ -196,6 +220,9 @@ cs_f_atmo_chem_initialize_species_to_fid(int *species_fid);
 
 void
 cs_f_atmo_chem_finalize(void);
+
+void
+cs_f_atmo_finalize(void);
 
 /*============================================================================
  * Fortran wrapper function definitions
@@ -227,7 +254,12 @@ cs_f_atmo_get_pointers(int                    **syear,
                        bool                   **init_gas_with_lib,
                        bool                   **init_aero_with_lib,
                        int                    **n_layer,
-                       int                    **n_size)
+                       int                    **n_size,
+                       int                    **imeteo,
+                       int                    **nbmetd,
+                       int                    **nbmett,
+                       int                    **nbmetm,
+                       int                    **nbmaxt)
 {
   *syear     = &(_atmo_option.syear);
   *squant    = &(_atmo_option.squant);
@@ -241,6 +273,11 @@ cs_f_atmo_get_pointers(int                    **syear,
   *deposition_model = &(_atmo_option.deposition_model);
   *nucleation_model = &(_atmo_option.nucleation_model);
   *subgrid_model = &(_atmo_option.subgrid_model);
+  *imeteo     = &(_atmo_option.imeteo);
+  *nbmetd     = &(_atmo_option.nbmetd);
+  *nbmett     = &(_atmo_option.nbmett);
+  *nbmetm     = &(_atmo_option.nbmetm);
+  *nbmaxt     = &(_atmo_option.nbmaxt);
   *model = &(_atmo_chem.model);
   *n_species = &(_atmo_chem.n_species);
   *n_reactions = &(_atmo_chem.n_reactions);
@@ -273,6 +310,39 @@ cs_f_atmo_chem_arrays_get_pointers(int       **species_to_scalar_id,
 }
 
 void
+cs_f_atmo_arrays_get_pointers(cs_real_t **z_temp_met,
+                              cs_real_t **time_met,
+                              cs_real_t **hyd_p_met,
+                              int         dim_hyd_p_met[2],
+                              cs_real_t **frac_neb,
+                              cs_real_t **diag_neb)
+{
+  const cs_mesh_t  *m = cs_glob_mesh;
+  cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+
+  if (_atmo_option.z_temp_met == NULL)
+    BFT_MALLOC(_atmo_option.z_temp_met, _atmo_option.nbmaxt, cs_real_t);
+  if (_atmo_option.time_met == NULL)
+    BFT_MALLOC(_atmo_option.time_met, _atmo_option.nbmetm, cs_real_t);
+  if (_atmo_option.hyd_p_met == NULL)
+    BFT_MALLOC(_atmo_option.hyd_p_met,
+               _atmo_option.nbmetm*_atmo_option.nbmaxt, cs_real_t);
+  if (_atmo_option.frac_neb == NULL)
+    BFT_MALLOC(_atmo_option.frac_neb, n_cells_ext, cs_real_t);
+  if (_atmo_option.diag_neb == NULL)
+    BFT_MALLOC(_atmo_option.diag_neb, n_cells_ext, cs_real_t);
+
+  *hyd_p_met       = _atmo_option.hyd_p_met;
+  dim_hyd_p_met[0] = _atmo_option.nbmaxt;
+  dim_hyd_p_met[1] = _atmo_option.nbmetm;
+
+  *z_temp_met = _atmo_option.z_temp_met;
+  *time_met   = _atmo_option.time_met;
+  *frac_neb   = _atmo_option.frac_neb;
+  *diag_neb   = _atmo_option.diag_neb;
+}
+
+void
 cs_f_atmo_chem_initialize_species_to_fid(int *species_fid)
 {
   assert(species_fid != NULL);
@@ -294,6 +364,17 @@ cs_f_atmo_chem_finalize(void)
   BFT_FREE(_atmo_chem.chempoint);
   BFT_FREE(_atmo_chem.spack_file_name);
   BFT_FREE(_atmo_chem.aero_file_name);
+}
+
+
+void
+cs_f_atmo_finalize(void)
+{
+  BFT_FREE(_atmo_option.z_temp_met);
+  BFT_FREE(_atmo_option.time_met);
+  BFT_FREE(_atmo_option.hyd_p_met);
+  BFT_FREE(_atmo_option.frac_neb);
+  BFT_FREE(_atmo_option.diag_neb);
 }
 
 /*============================================================================
@@ -363,29 +444,28 @@ cs_atmo_z_ground_compute(void)
      (const cs_real_3_t *restrict)mq->i_face_normal;
   const cs_real_3_t *restrict b_face_normal =
      (const cs_real_3_t *restrict)mq->b_face_normal;
-  const cs_real_3_t *restrict b_face_cog =
-     (const cs_real_3_t *restrict)mq->b_face_cog;
+  const cs_real_3_t *restrict b_face_cog
+    = (const cs_real_3_t *restrict)mq->b_face_cog;
 
   const int *bc_type = cs_glob_bc_type;
 
   /* Pointer to z_ground field */
   cs_field_t *f = cs_field_by_name_try("z_ground");
 
-  cs_real_t *restrict i_massflux =
-    cs_field_by_id(
-        cs_field_get_key_int(f, cs_field_key_id("inner_mass_flux_id")))->val;
-  cs_real_t *restrict b_massflux =
-    cs_field_by_id(
-        cs_field_get_key_int(f, cs_field_key_id("boundary_mass_flux_id")))->val;
+  cs_real_t *restrict i_massflux
+    = cs_field_by_id
+        (cs_field_get_key_int(f, cs_field_key_id("inner_mass_flux_id")))->val;
+  cs_real_t *restrict b_massflux
+    = cs_field_by_id
+        (cs_field_get_key_int(f, cs_field_key_id("boundary_mass_flux_id")))->val;
 
   cs_var_cal_opt_t vcopt;
   cs_field_get_key_struct(f, cs_field_key_id("var_cal_opt"), &vcopt);
 
-  cs_real_3_t normal;
+  cs_real_t normal[3];
   /* Normal direction is given by the gravity */
-  cs_math_3_normalise(
-      (const cs_real_t *)(cs_glob_physical_constants->gravity),
-      normal);
+  cs_math_3_normalise((const cs_real_t *)(cs_glob_physical_constants->gravity),
+                      normal);
 
   for (int i = 0; i < 3; i++)
     normal[i] *= -1.;
@@ -398,7 +478,6 @@ cs_atmo_z_ground_compute(void)
 
   for (cs_lnum_t face_id = 0; face_id < m->n_b_faces; face_id++)
     b_massflux[face_id] = cs_math_3_dot_product(normal, b_face_normal[face_id]);
-
 
   /* Boundary conditions
    *====================*/
@@ -516,10 +595,10 @@ cs_atmo_z_ground_compute(void)
                                      NULL);
 
   /* Free memory */
+
   BFT_FREE(dpvar);
   BFT_FREE(rhs);
   BFT_FREE(rovsdt);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -545,7 +624,6 @@ cs_atmo_chemistry_set_spack_file_name(const char *file_name)
              char);
 
   sprintf(_atmo_chem.spack_file_name, "%s", file_name);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -571,7 +649,6 @@ cs_atmo_chemistry_set_aerosol_file_name(const char *file_name)
              char);
 
   sprintf(_atmo_chem.aero_file_name, "%s", file_name);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -651,7 +728,7 @@ cs_atmo_declare_chem_from_spack(void)
                 line_num);
 
     /* The order is already ok */
-    _atmo_chem.chempoint[i] = i+1;//FIXME ?
+    _atmo_chem.chempoint[i] = i+1; //FIXME ?
 
     /* Build name of the field:
      * species_name in lower case */
@@ -701,7 +778,6 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
                              cs_real_t *omega,
                              cs_real_t *fo)
 {
-
   /* 1 - initialisations */
   *fo = 1370.;
 
@@ -714,16 +790,18 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
 
   /* 2 - compute declinaison (maximum error < 3 mn) */
 
-  cs_real_t decl = 0.006918 - 0.399912*cos(t00) + 0.070257*sin(t00)
-    - 0.006758*cos(2.*t00) + 0.000907*sin(2.*t00) - 0.002697*cos(3.*t00)
-     + 0.001480*sin(3.*t00);
+  cs_real_t decl
+    =   0.006918 - 0.399912*cos(t00) + 0.070257*sin(t00)
+      - 0.006758*cos(2.*t00) + 0.000907*sin(2.*t00) - 0.002697*cos(3.*t00)
+      + 0.001480*sin(3.*t00);
 
   /* 3 - compute local solar hour
    * equation du temps     erreur maxi    35 secondes
    */
 
-  cs_real_t eqt = (0.000075 + 0.001868*cos(t00) - 0.032077*sin(t00)
-      - 0.014615*cos(2.*t00) - 0.040849*sin(2.*t00))*12./cs_math_pi;
+  cs_real_t eqt
+    = (  0.000075 + 0.001868*cos(t00) - 0.032077*sin(t00)
+       - 0.014615*cos(2.*t00) - 0.040849*sin(2.*t00)) * 12./cs_math_pi;
 
   cs_real_t local_time = utc + flong + eqt;
 
@@ -751,7 +829,7 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
   }
   *omega -= cs_glob_atmo_option->domain_orientation * cs_math_pi / 180.;
 
-  /* 5 - calcul de l'albedo sur mer qui depend de l'angle zenithal */
+  /* 5 - compute albedo at sea which depends on the zenithal angle */
 
   if (sea_id == 1) {
     cs_real_t ho = acos(*muzero);
@@ -768,10 +846,10 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
     corfo=(r0/r)**2
     precision better than e-04 */
 
-  cs_real_t corfo = 1.000110 + 0.034221*cos(t00) + 0.001280*sin(t00)
-    + 0.000719*cos(2.*t00) + 0.000077*sin(2.*t00);
+  cs_real_t corfo
+    =   1.000110 + 0.034221*cos(t00) + 0.001280*sin(t00)
+      + 0.000719*cos(2.*t00) + 0.000077*sin(2.*t00);
   *fo *= corfo;
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -783,21 +861,21 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
 void
 cs_atmo_chemistry_log_setup(void)
 {
-  cs_log_printf
-    (CS_LOG_SETUP,
-     _("\nAtmospheric chemistry options\n"
-       "---------------------\n\n"));
+  cs_log_printf(CS_LOG_SETUP,
+                _("\n"
+                  "Atmospheric chemistry options\n"
+                  "-----------------------------\n\n"));
 
   if (cs_glob_atmo_chemistry->model == 0) {
 
     /* No atmospheric chemistry */
-    cs_log_printf
-      (CS_LOG_SETUP,
-       _("  No atmospheric chemistry\n\n"));
+    cs_log_printf(CS_LOG_SETUP,
+                  _("  No atmospheric chemistry\n\n"));
 
-  } else if (cs_glob_atmo_chemistry->model == 1
-             || cs_glob_atmo_chemistry->model == 2
-             || cs_glob_atmo_chemistry->model == 3) {
+  }
+  else if (   cs_glob_atmo_chemistry->model == 1
+           || cs_glob_atmo_chemistry->model == 2
+           || cs_glob_atmo_chemistry->model == 3) {
 
     /* Pre-defined schemes */
     cs_log_printf

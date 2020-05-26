@@ -108,7 +108,14 @@ typedef struct {
   cs_real_t longitude;
   /*! latitude of the domain origin */
   cs_real_t latitude;
-
+  /*! numbers of altitudes for the dynamics */
+  int nbmetd;
+  /*! numbers of altitudes for the temperature and specific humidity */
+  int nbmett;
+  /* numbers of time steps for the meteo profiles */
+  int nbmetm;
+  /* Number of vertical levels */
+  int nbmaxt;
   /*! Domain orientation (angle in degree between y direction and north),
    * 0 by default */
   cs_real_t domain_orientation;
@@ -119,6 +126,19 @@ typedef struct {
   int deposition_model;
   int nucleation_model;
   int subgrid_model;
+  int imeteo;
+
+  /* Altitudes of the temperature profile */
+  cs_real_t *z_temp_met;
+  /* Time (in sec) of the meteo profile */
+  cs_real_t *time_met;
+  /* Hydrostatic pressure from Laplace integration */
+  cs_real_t *hyd_p_met;
+  /* Fractional nebulosity */
+  cs_real_t *frac_neb;
+  /* Diagnosed nebulosity */
+  cs_real_t *diag_neb;
+
 } cs_atmo_option_t;
 
 /*----------------------------------------------------------------------------
