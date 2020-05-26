@@ -572,11 +572,12 @@ class Plotter(object):
                                      case.label, case.resu,
                                      dest, "monitoring", file_name)
                     if not os.path.isfile(f):
-                        raise ValueError("\n\nThis file does not exist: %s\n (call with path: %s)\n" % (file_name, f))
+                        print("\n\nThis file does not exist: %s\n (last call with path: %s)\n" % (file_name, f))
 
-                    for ycol in range(2, self.__number_of_column(f) + 1):
-                        curve = Probes(f, fig, ycol)
-                        self.curves.append(curve)
+                    else:
+                        for ycol in range(2, self.__number_of_column(f) + 1):
+                            curve = Probes(f, fig, ycol)
+                            self.curves.append(curve)
 
         # Read the files of results of cases
         for case in study_object.cases:
