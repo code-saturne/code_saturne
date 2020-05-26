@@ -203,7 +203,7 @@ _convergence_test(cs_sles_it_t              *c,
     if (verbosity > -1) {
       if (verbosity == 1) /* Already output if verbosity > 1 */
         bft_printf("%s [%s]:\n", cs_sles_it_type_name[c->type],
-            convergence->name);
+                   convergence->name);
       else {
         if (convergence->r_norm > 0.)
           bft_printf(_(final_fmt),
@@ -211,7 +211,7 @@ _convergence_test(cs_sles_it_t              *c,
                      convergence->r_norm, s->initial_residue);
         else
           bft_printf(_("  n_iter : %5d, res_abs : %11.4e\n"),
-              n_iter, residue);
+                     n_iter, residue);
       }
       if (convergence->precision > 0.)
         bft_printf(_(" @@ Warning: non convergence\n"));
@@ -517,20 +517,20 @@ _flexible_conjugate_gradient(cs_sles_it_t              *c,
 
   cs_matrix_vector_multiply(rotation_mode, a, vx, rk);  /* rk = A.x0 */
 
-#   pragma omp parallel if(n_rows > CS_THR_MIN)
-    {
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        rk[ii] = rhs[ii] - rk[ii];
+# pragma omp parallel if(n_rows > CS_THR_MIN)
+  {
+#   pragma omp for nowait
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+      rk[ii] = rhs[ii] - rk[ii];
 
-#     pragma omp for nowait
-      for (cs_lnum_t ii = 0; ii < n_rows; ii++)
-        qk[ii] = 0;
-    }
+#   pragma omp for nowait
+    for (cs_lnum_t ii = 0; ii < n_rows; ii++)
+      qk[ii] = 0;
+  }
 
-    double rho_km1 = 0;
+  double rho_km1 = 0;
 
-    while (cvg == CS_SLES_ITERATING) {
+  while (cvg == CS_SLES_ITERATING) {
 
     /* Preconditioning */
 
@@ -554,6 +554,8 @@ _flexible_conjugate_gradient(cs_sles_it_t              *c,
 
     if (n_iter > 0)
       cvg = _convergence_test(c, n_iter, residue, convergence);
+    else
+      c->setup_data->initial_residue = residue;
 
     if (cvg != CS_SLES_ITERATING)
       break;
