@@ -3,6 +3,9 @@ Release 6.0.3 (Unreleased)
 
 Bug fixes:
 
+- Fix false positive in divergence check for flexible congugate gradient
+  occuring in some cases, including in basic "full junction" tutorial.
+
 - Fix computation of Rhie & Chow first term in cases where diffusion in
   pressure correction step is anisotropic.
   This could have an impact on calculations with either head losses,
