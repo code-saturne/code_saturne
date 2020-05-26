@@ -565,6 +565,9 @@ fi
 
 # Define the different version numbers where needed
 
+cs_version_short=`$PYTHON ${srcdir}/build-aux/cs_version.py --short`
+AC_SUBST(cs_version_short)
+
 case "$host_os" in
   mingw* | cygwin)
     cs_version=`$PYTHON ${srcdir}/build-aux/cs_version.py --short`
@@ -572,10 +575,8 @@ case "$host_os" in
     cs_version_short=`$PYTHON ${srcdir}/build-aux/cs_version.py --short`
     AC_SUBST(cs_version)
     AC_SUBST(cs_version_full)
-    AC_SUBST(cs_version_short)
     AM_SUBST_NOTMAKE(cs_version)
     AM_SUBST_NOTMAKE(cs_version_full)
-    AM_SUBST_NOTMAKE(cs_version_short)
     ;;
   *)
     ;;
