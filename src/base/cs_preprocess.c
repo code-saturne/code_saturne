@@ -505,7 +505,7 @@ cs_preprocess_mesh_selected_b_faces_ignore(cs_mesh_t             *m,
 
   /* Initialize selectors and locations for the mesh */
 
-  cs_mesh_init_selectors();
+  cs_mesh_update_selectors(cs_glob_mesh);
   cs_mesh_location_build(cs_glob_mesh, -1);
   cs_volume_zone_build_all(true);
   cs_volume_zone_print_info();

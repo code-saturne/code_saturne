@@ -305,7 +305,7 @@ _update_family(cs_lnum_t         n_elts,
 }
 
 /*----------------------------------------------------------------------------
- * Redistribute face generaltion level in case of renubering
+ * Redistribute face generation level in case of renubering
  *
  * parameters:
  *   n_elts     <--  Number of elements
@@ -6135,14 +6135,16 @@ cs_renumber_b_faces_select_ignore(cs_mesh_t        *mesh,
                                   cs_lnum_t         n_faces,
                                   const cs_lnum_t   face_ids[])
 {
+  cs_lnum_t  *_face_ids = NULL;
+
   /* Try to ensure number of total boundary faces with symmetry is updated */
 
   if (mesh->n_b_faces_all < mesh->n_b_faces) {
-    cs_glob_mesh->n_g_b_faces_all = cs_glob_mesh->n_g_b_faces;
+    mesh->n_g_b_faces_all = mesh->n_g_b_faces;
     mesh->n_b_faces_all = mesh->n_b_faces;
   }
 
-  cs_glob_mesh->n_g_b_faces = cs_glob_mesh->n_g_b_faces_all;
+  mesh->n_g_b_faces = mesh->n_g_b_faces_all;
   mesh->n_b_faces = mesh->n_b_faces_all;
 
   if (n_faces < 1)
@@ -6151,13 +6153,37 @@ cs_renumber_b_faces_select_ignore(cs_mesh_t        *mesh,
   if (mesh->b_face_numbering != NULL)
     cs_numbering_destroy(&(mesh->b_face_numbering));
 
+  /* Use selection flag to avoir list reordering issues */
+
+  char *sel_flag = NULL;
+
   /* Revert to initial numbering */
 
   if (mesh->global_b_face_num != NULL) {
+    const cs_lnum_t n = mesh->n_b_faces;
+    const cs_lnum_t n_s = n_faces;
+    const cs_lnum_t *s_id = face_ids;
+
     cs_lnum_t *new_to_old_b = cs_order_gnum(NULL,
                                             mesh->global_b_face_num,
                                             mesh->n_b_faces);
     _cs_renumber_update_b_faces(mesh, new_to_old_b);
+
+    BFT_MALLOC(sel_flag, mesh->n_b_faces, char);
+    for (cs_lnum_t i = 0; i < n; i++)
+      sel_flag[i] = 0;
+    for (cs_lnum_t i = 0; i < n_s; i++)
+      sel_flag[s_id[i]] = 1;
+
+    BFT_MALLOC(_face_ids, n_s, cs_lnum_t);
+    cs_lnum_t j = 0;
+    for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++) {
+      if (sel_flag[new_to_old_b[i]] != 0) {
+        _face_ids[j] = i;
+        j++;
+      }
+    }
+    assert(j == n_s);
 
     BFT_FREE(new_to_old_b);
 
@@ -6169,11 +6195,11 @@ cs_renumber_b_faces_select_ignore(cs_mesh_t        *mesh,
   {
     const cs_lnum_t n = mesh->n_b_faces;
     const cs_lnum_t n_s = n_faces;
-    const cs_lnum_t *s_id = face_ids;
+    const cs_lnum_t *s_id = (_face_ids != NULL) ? _face_ids : face_ids;
 
-    char *sel_flag;
     BFT_MALLOC(new_to_old, n, cs_lnum_t);
-    BFT_MALLOC(sel_flag, n, char);
+    if (sel_flag == NULL)
+      BFT_MALLOC(sel_flag, n, char);
 
     for (cs_lnum_t i = 0; i < n; i++)
       sel_flag[i] = 0;
@@ -6193,9 +6219,10 @@ cs_renumber_b_faces_select_ignore(cs_mesh_t        *mesh,
         l++;
       }
     }
-
-    BFT_FREE(sel_flag);
   }
+
+  BFT_FREE(_face_ids);
+  BFT_FREE(sel_flag);
 
   _cs_renumber_update_b_faces(mesh, new_to_old);
   BFT_FREE(new_to_old);
@@ -6233,7 +6260,7 @@ cs_renumber_b_faces_select_ignore(cs_mesh_t        *mesh,
       mesh->global_b_face_num[n_b_faces + i] = b_gnum_end[i] + n_g_b_faces;
 
     n_io_num = fvm_io_num_destroy(n_io_num);
-    n_io_num_end = fvm_io_num_destroy(n_io_num);
+    n_io_num_end = fvm_io_num_destroy(n_io_num_end);
 
     mesh->n_g_b_faces = n_g_b_faces;
 
