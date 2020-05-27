@@ -59,9 +59,10 @@ cs_air_props.h \
 cs_at_opt_interp.h \
 cs_at_data_assim.h \
 cs_atmo.h \
-cs_atmo_headers.h \
 cs_atmo_aerosol.h \
 cs_atmo_aerosol_ssh.h \
+cs_atmo_headers.h \
+cs_atmo_profile_std.h \
 cs_intprf.h
 
 # Library source files
@@ -76,7 +77,6 @@ atlecc.f90 \
 atlecm.f90 \
 atmcls.f90 \
 atmsol.f90 \
-atmstd.f90 \
 atphyv.f90 \
 atprke.f90 \
 atprop.f90 \
@@ -87,6 +87,7 @@ atvarp.f90 \
 chem_luscheme1.f90 \
 chem_luscheme2.f90 \
 chem_luscheme3.f90 \
+chem_roschem.f90 \
 chem_solvelu.f90 \
 chem_source_terms.f90 \
 compute_gaseous_chemistry.f90 \
@@ -96,6 +97,7 @@ cs_at_data_assim.c \
 cs_atmo.c \
 cs_atmo_aerosol.c \
 cs_atmo_aerosol_ssh.c \
+cs_atmo_profile_std.c \
 cs_at_source_terms.f90 \
 cs_intprf.c \
 etheq.f90  \
@@ -105,7 +107,6 @@ rayigc.f90 \
 rayir.f90 \
 rayive.f90 \
 rayso.f90 \
-chem_roschem.f90 \
 solcat.f90 \
 soliva.f90 \
 solmoy.f90 \

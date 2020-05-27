@@ -2988,13 +2988,25 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function computing standard atmospheric profile
+
+    subroutine atmstd(z, p, t, r) &
+      bind(C, name='cs_atmo_profile_std')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), intent(in), value :: z
+      real(kind=c_double), intent(out) :: p, t, r
+    end subroutine atmstd
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function to implicit and explicit sources terms
     ! from sources mass computation.
 
     subroutine catsma(ncesmp, iterns, isnexp, icetsm, itpsmp,  &
                       volume, pvara, smcelp, gamma,            &
                       tsexp, tsimp, gapinj)                    &
-        bind(C, name='cs_mass_source_terms')
+      bind(C, name='cs_mass_source_terms')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), intent(in), value :: ncesmp
@@ -3018,6 +3030,8 @@ module cs_c_bindings
       implicit none
       integer(c_int), intent(in), value :: ncel, iclip
     end subroutine clipke
+
+    !---------------------------------------------------------------------------
 
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
