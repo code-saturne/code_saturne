@@ -351,8 +351,7 @@ if(itytur.eq.2 .or. itytur.eq.5) then
       cvar_ep(iel) = cvar_k(iel)**1.5d0*xcmu/almax
     enddo
 
-    iclip = 1
-    call clipke(ncelet, ncel, iclip)
+    call clipke(ncel, 1)
 
   else
     do iel = 1, ncel

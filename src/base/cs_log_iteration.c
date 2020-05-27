@@ -1174,10 +1174,10 @@ _add_clipping(int               name_id,
 
   /* Update values */
   if (dim > 1) {
-      _clips_count[(v_idx)*2] = n_clip_min;
-      _clips_count[(v_idx)*2 + 1] = n_clip_max;
-      _clips_vmin[v_idx] = min_pre_clip[0];
-      _clips_vmax[v_idx] = max_pre_clip[0];
+    _clips_count[(v_idx)*2] = n_clip_min;
+    _clips_count[(v_idx)*2 + 1] = n_clip_max;
+    _clips_vmin[v_idx] = min_pre_clip[0];
+    _clips_vmax[v_idx] = max_pre_clip[0];
     for (int i = 0; i < dim; i++) {
       _clips_vmin[v_idx + i + 1] = min_pre_clip[i];
       _clips_vmax[v_idx + i + 1] = max_pre_clip[i];
@@ -1615,7 +1615,7 @@ cs_log_iteration_clipping(const char       *name,
 
   _add_clipping(name_id, -1, dim,
                 n_clip_min, n_clip_max,
-                min_pre_clip, max_pre_clip,0,0);
+                min_pre_clip, max_pre_clip, 0, 0);
 }
 
 /*----------------------------------------------------------------------------*/

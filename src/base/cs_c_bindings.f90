@@ -2935,7 +2935,7 @@ module cs_c_bindings
     ! Interface to C function to get notebook parameter value
 
     function cs_f_notebook_parameter_value_by_name(name) result(val) &
-        bind(C, name='cs_notebook_parameter_value_by_name')
+      bind(C, name='cs_notebook_parameter_value_by_name')
       use, intrinsic :: iso_c_binding
       implicit none
       character(kind=c_char, len=1), dimension(*), intent(in)  :: name
@@ -2974,6 +2974,20 @@ module cs_c_bindings
       real(kind=c_double), dimension(*), intent(inout) :: tsexp, tsimp
       real(kind=c_double), dimension(*), intent(out) :: gapinj
     end subroutine catsma
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function clipping of the turbulent kinetic energy
+    ! and the turbulent dissipation.
+
+    subroutine clipke(ncel, iclip)   &
+      bind(C, name='cs_clip_ke')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), intent(in), value :: ncel, iclip
+    end subroutine clipke
+
+    !---------------------------------------------------------------------------
 
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 

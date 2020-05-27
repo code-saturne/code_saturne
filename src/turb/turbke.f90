@@ -101,7 +101,6 @@ double precision prdv2f(ncelet)
 character(len=80) :: chaine
 integer          iel   , ifac  , init  , inc   , iccocg, ivar
 integer          f_id0 , iiun  , f_id
-integer          iclip
 integer          imrgrp, nswrgp, imligp, iwgrp
 integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
@@ -1638,8 +1637,7 @@ call codits &
 ! 15. Clipping
 !===============================================================================
 
-iclip = 1
-call clipke(ncelet, ncel, iclip)
+call clipke(ncel, 1)
 
 ! Free memory
 deallocate(gradv)

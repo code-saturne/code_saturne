@@ -356,9 +356,8 @@ if (iusini.eq.1.or.isuite.eq.1) then
       call parmin (xepmin)
     endif
 
-    if(xekmin.ge.0.d0.and.xepmin.ge.0.d0) then
-      iclip = 1
-      call clipke(ncelet, ncel, iclip)
+    if (xekmin.ge.0.d0.and.xepmin.ge.0.d0) then
+      call clipke(ncel, 1)
     else
       write(nfecra,3020) xekmin,xepmin
       iok = iok + 1
