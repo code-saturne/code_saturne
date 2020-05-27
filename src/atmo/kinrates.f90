@@ -125,13 +125,11 @@ do iel = 1, ncel
 
     ! Hydrostatic pressure
     call intprf                                                   &
-    !==========
    (nbmett, nbmetm,                                               &
     ztmet , tmmet, phmet, zent, ttcabs, press )
 
     ! Temperature
     call intprf                                                   &
-    !==========
    (nbmett, nbmetm,                                               &
     ztmet , tmmet, ttmet, zent, ttcabs, temp )
     temp=temp+tkelvi
@@ -147,7 +145,6 @@ do iel = 1, ncel
   else if (imeteo.eq.1) then
 
     call intprf                                                   &
-    !==========
    (nbmett, nbmetm,                                               &
     ztmet , tmmet, qvmet, zent, ttcabs, hspec )
 

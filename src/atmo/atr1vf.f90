@@ -47,6 +47,7 @@ use mesh
 use field
 use atincl
 use atsoil
+use cs_c_bindings
 
 !===============================================================================
 

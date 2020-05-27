@@ -294,6 +294,38 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Temporal and z-axis interpolation for meteorological profiles
+
+    function cs_intprf(nprofz, nproft, profz, proft,              &
+                       profv, xz, t) result (var)                 &
+         bind(C, name='cs_intprf')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), intent(in), value :: nprofz, nproft
+      real(kind=c_double), dimension(nprofz), intent(in) :: profz
+      real(kind=c_double), dimension(nproft), intent(in) :: proft
+      real(kind=c_double), dimension(nprofz,nproft), intent(in) :: profv
+      real(kind=c_double), intent(in), value :: xz, t
+      real(kind=c_double) :: var
+    end function cs_intprf
+
+    !---------------------------------------------------------------------------
+
+    ! Z-axis interpolation for meteorological profiles
+
+    subroutine cs_intprz(nprofz, profz, profv, xz, z_lv, var)  &
+         bind(C, name='cs_intprz')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), intent(in), value :: nprofz
+      real(kind=c_double), dimension(nprofz), intent(in) :: profz, profv
+      real(kind=c_double), intent(in), value :: xz
+      integer(c_int), dimension(2), intent(out) :: z_lv
+      real(kind=c_double), intent(out) :: var
+    end subroutine cs_intprz
+
+    !---------------------------------------------------------------------------
+
     !> \brief Compute filters for dynamic models.
 
 
@@ -2987,8 +3019,6 @@ module cs_c_bindings
       integer(c_int), intent(in), value :: ncel, iclip
     end subroutine clipke
 
-    !---------------------------------------------------------------------------
-
     !> (DOXYGEN_SHOULD_SKIP_THIS) \endcond
 
     !---------------------------------------------------------------------------
@@ -3027,6 +3057,52 @@ contains
     return
 
   end subroutine balance_by_zone
+
+  !=============================================================================
+
+  !> \brief Temporal and z-axis interpolation for meteorological profiles
+
+  !> An optimized linear interpolation is used.
+
+  subroutine intprf(nprofz, nproft, profz, proft,              &
+                    profv, xz, temps, var)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    integer(c_int), intent(in), value :: nprofz, nproft
+    real(kind=c_double), dimension(nprofz), intent(in) :: profz
+    real(kind=c_double), dimension(nproft), intent(in) :: proft
+    real(kind=c_double), dimension(nprofz, nproft), intent(in) :: profv
+    real(kind=c_double), intent(in), value :: xz, temps
+    real(kind=c_double), intent(out) :: var
+
+    var = cs_intprf(nprofz, nproft, profz, proft, profv, xz, temps)
+
+  end subroutine intprf
+
+  !=============================================================================
+
+  !> \brief z-axis interpolation for meteorological profiles
+
+  !> An optimized linear interpolation is used.
+
+  subroutine intprz(nprofz, profz, profv, xz, iz1, iz2, var)
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+    integer(c_int), intent(in), value :: nprofz
+    real(kind=c_double), dimension(nprofz), intent(in) :: profz, profv
+    real(kind=c_double), intent(in), value :: xz
+    integer(c_int), intent(out) :: iz1, iz2
+    real(kind=c_double), intent(out) :: var
+
+    integer(c_int), dimension(2) :: z_lv
+
+    call cs_intprz(nprofz, profz, profv, xz, z_lv, var)
+    iz1 = z_lv(1) + 1
+    iz2 = z_lv(2) + 1
+
+  end subroutine intprz
 
   !=============================================================================
 

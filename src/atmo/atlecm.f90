@@ -43,6 +43,7 @@ use cstphy
 use ppppar
 use optcal
 use atincl
+use cs_c_bindings
 
 !===============================================================================
 

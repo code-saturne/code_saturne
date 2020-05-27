@@ -59,6 +59,7 @@ use ppppar
 use ppthch
 use ppincl
 use atincl
+use cs_c_bindings
 
 !===============================================================================
 

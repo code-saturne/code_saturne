@@ -55,6 +55,7 @@ use mesh
 use atchem
 use sshaerosol
 use field
+use cs_c_bindings
 
 !===============================================================================
 
@@ -161,7 +162,6 @@ if (ifilechemistry.ge.1) then
       do iel = 1, ncel
         zent = xyzcen(3,iel)
         call intprf                                                         &
-        !==========
         (nbchmz, nbchim,                                                    &
          zproc, tchem, espnum(1+(k-1)*nbchim*nbchmz), zent  , ttcabs, xcent )
         ! The first nespg user scalars are supposed to be chemical species
@@ -284,22 +284,18 @@ if (isuite.eq.0) then
         zent = xyzcen(3,iel)
 
         call intprf                                                   &
-        !==========
        (nbmetd, nbmetm,                                               &
         zdmet, tmmet, umet , zent  , ttcabs, xuent )
 
         call intprf                                                   &
-        !==========
        (nbmetd, nbmetm,                                               &
         zdmet, tmmet, vmet , zent  , ttcabs, xvent )
 
         call intprf                                                   &
-        !==========
        (nbmetd, nbmetm,                                               &
         zdmet, tmmet, ekmet, zent  , ttcabs, xkent )
 
         call intprf                                                   &
-        !==========
        (nbmetd, nbmetm,                                               &
         zdmet, tmmet, epmet, zent  , ttcabs, xeent )
 
@@ -354,7 +350,6 @@ if (isuite.eq.0) then
         if (ippmod(iatmos).eq.1) then
           ! The thermal scalar is potential temperature
             call intprf                                                 &
-            !==========
          (nbmett, nbmetm,                                               &
           ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
 
@@ -364,19 +359,16 @@ if (isuite.eq.0) then
         if (ippmod(iatmos).eq.2) then
           ! The thermal scalar is liquid potential temperature
             call intprf                                                 &
-            !==========
          (nbmett, nbmetm,                                               &
           ztmet, tmmet, tpmet, zent  , ttcabs, tpent )
             cvar_scalt(iel) = tpent
 
             call intprf                                                 &
-            !==========
          (nbmett, nbmetm,                                               &
           ztmet, tmmet, qvmet, zent  , ttcabs, qvent )
             cvar_totwt(iel) = qvent
 
             call intprf                                                 &
-            !==========
          (nbmett, nbmetm,                                               &
           ztmet, tmmet, ncmet, zent  , ttcabs, ncent )
             cvar_ntdrp(iel) = ncent

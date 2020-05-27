@@ -62,6 +62,7 @@ use atincl
 use atsoil
 use mesh
 use field
+use cs_c_bindings
 
 implicit none
 
@@ -203,7 +204,6 @@ do isol = 1, nfmodsol
       call atmstd(zreel,pres1,dum,dum)
     else
       call intprf                                                       &
-         !==========
          (nbmett, nbmetm,                                               &
           ztmet, tmmet, phmet, zreel, ttcabs, pres1)
     endif
@@ -226,7 +226,6 @@ do isol = 1, nfmodsol
       call atmstd(zreel,pres1,dum,dum)
     else
       call intprf                                                       &
-         !==========
          (nbmett, nbmetm,                                               &
           ztmet, tmmet, phmet, zreel, ttcabs, pres1)
     endif

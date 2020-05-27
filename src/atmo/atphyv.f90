@@ -51,6 +51,7 @@ use atincl
 use field
 use spefun
 use field_operator
+use cs_c_bindings
 
 !===============================================================================
 
@@ -142,7 +143,6 @@ do iel = 1, ncel
   else
     ! Pressure profile from meteo file:
     call intprf &
-    !==========
        ( nbmett, nbmetm,                                            &
          ztmet , tmmet , phmet , zent, ttcabs, pp )
   endif

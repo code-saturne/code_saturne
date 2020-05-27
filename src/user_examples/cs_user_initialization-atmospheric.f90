@@ -78,6 +78,7 @@ use cs_coal_incl
 use cs_fuel_incl
 use mesh
 use field
+use cs_c_bindings
 
 !===============================================================================
 

@@ -57,6 +57,7 @@ use mesh
 use field
 use atincl
 use field_operator
+use cs_c_bindings
 
 !===============================================================================
 
