@@ -816,6 +816,7 @@ _update_gl_legacy(const cs_mesh_t             *mesh,
 
   const cs_real_t  *c_bulk = alloy->c_bulk->val;
   const cs_real_t  *t_bulk = solid->temperature->val;
+  const cs_real_t  *g_l_pre = solid->g_l_field->val_pre;
   cs_real_t        *g_l = solid->g_l_field->val;
 
   /* Update g_l values in each cell as well as the cell state and the related
@@ -824,6 +825,7 @@ _update_gl_legacy(const cs_mesh_t             *mesh,
 
     cs_real_t  eta_new, gliq;
 
+    const cs_real_t  eta_old = alloy->eta_coef_array[c_id];
     const cs_real_t  conc = c_bulk[c_id];
     const cs_real_t  temp = t_bulk[c_id];
 
@@ -834,7 +836,10 @@ _update_gl_legacy(const cs_mesh_t             *mesh,
 
     case CS_SOLIDIFICATION_STATE_SOLID:
       gliq = 0.;
-      eta_new = _get_eta(alloy, conc);
+      if (g_l_pre[c_id] > 0)    /* Not in a solid state */
+        eta_new = _get_eta(alloy, conc);
+      else
+        eta_new = eta_old;
      break;
 
     case CS_SOLIDIFICATION_STATE_MUSHY:
@@ -843,7 +848,7 @@ _update_gl_legacy(const cs_mesh_t             *mesh,
       /* Make sure that the liquid fraction remains inside physical bounds */
       gliq = fmin(fmax(0, gliq), 1.);
 
-      eta_new = 1/( g_l[c_id] * (1-alloy->kp) + alloy->kp );
+      eta_new = 1/( gliq * (1-alloy->kp) + alloy->kp );
       break;
 
     case CS_SOLIDIFICATION_STATE_LIQUID:
@@ -874,11 +879,9 @@ _update_gl_legacy(const cs_mesh_t             *mesh,
       g_l[c_id] = gliq;
 
     /* Update eta and apply if needed a relaxation */
-    if (alloy->eta_relax > 0) {
-      cs_real_t  eta_old = alloy->eta_coef_array[c_id];
+    if (alloy->eta_relax > 0)
       alloy->eta_coef_array[c_id] =
         (1-alloy->eta_relax)*eta_new + alloy->eta_relax*eta_old;
-    }
     else
       alloy->eta_coef_array[c_id] = eta_new;
 
@@ -2043,9 +2046,9 @@ _default_binary_coupling(const cs_mesh_t              *mesh,
        iteration */
     delta_temp = -1, delta_cbulk = -1;
     cs_lnum_t  cid_maxt = -1, cid_maxc = -1;
-    for (cs_lnum_t  c_id = 0; c_id < quant->n_cells; c_id++) {
+    for (cs_lnum_t c_id = 0; c_id < quant->n_cells; c_id++) {
 
-      cs_real_t  dtemp = fabs(temp[c_id]- alloy->tk_bulk[c_id]);
+      cs_real_t  dtemp = fabs(temp[c_id] - alloy->tk_bulk[c_id]);
       cs_real_t  dconc = fabs(conc[c_id] - alloy->ck_bulk[c_id]);
 
       alloy->tk_bulk[c_id] = temp[c_id];
