@@ -783,6 +783,7 @@ cs_atmo_compute_solar_angles(cs_real_t latitude,
  */
 /*----------------------------------------------------------------------------*/
 
+void
 cs_atmo_chemistry_log_setup(void)
 {
   cs_log_printf
