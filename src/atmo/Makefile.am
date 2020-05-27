@@ -63,6 +63,7 @@ cs_atmo_aerosol.h \
 cs_atmo_aerosol_ssh.h \
 cs_atmo_headers.h \
 cs_atmo_profile_std.h \
+cs_etheq.h  \
 cs_intprf.h
 
 # Library source files
@@ -99,8 +100,8 @@ cs_atmo_aerosol.c \
 cs_atmo_aerosol_ssh.c \
 cs_atmo_profile_std.c \
 cs_at_source_terms.f90 \
+cs_etheq.c  \
 cs_intprf.c \
-etheq.f90  \
 kinrates.f90 \
 nuclea.f90 \
 rayigc.f90 \
