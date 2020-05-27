@@ -1290,6 +1290,7 @@ _free_mesh(int _mesh_id)
     BFT_FREE(post_mesh->criteria[i]);
 
   BFT_FREE(post_mesh->name);
+  BFT_FREE(post_mesh->a_field_info);
 
   /* Shift remaining meshes */
 
@@ -1304,8 +1305,6 @@ _free_mesh(int _mesh_id)
       post_mesh->edges_ref -= 1;
     }
   }
-
-  BFT_FREE(post_mesh->a_field_info);
 
   for (i = _mesh_id + 1; i < _cs_post_n_meshes; i++) {
     post_mesh = _cs_post_meshes + i;
