@@ -260,6 +260,17 @@ interface
     real(kind=c_double), dimension(*) :: dt, smacel
   end subroutine cs_turbulence_kw
 
+  subroutine cs_turbulence_ke &
+       (nvar, ncesmp, icetsm, itypsm, dt, smacel, prdv2f) &
+    bind(C, name='cs_turbulence_ke')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: nvar, ncesmp
+    integer(c_int), dimension(*), intent(in) :: icetsm, itypsm
+    real(kind=c_double), dimension(*) :: dt, smacel
+    real(kind=c_double), dimension(*), intent(in) :: prdv2f
+  end subroutine cs_turbulence_ke
+
 end interface
 
 !===============================================================================
@@ -1282,13 +1293,8 @@ if (iccvfg.eq.0) then
 
   if ((itytur.eq.2) .or. (itytur.eq.5)) then
 
-    call turbke &
-  ( nvar   , nscal  ,                                              &
-    ncetsm , icetsm , itypsm ,                                     &
-    dt     ,                                                       &
-    tslagr ,                                                       &
-    smacel ,                                                       &
-    prdv2f )
+    call cs_turbulence_ke(nvar, ncetsm, icetsm,   &
+                          itypsm, dt, smacel, prdv2f)
 
     if( itytur.eq.5 )  then
 

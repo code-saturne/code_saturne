@@ -3,7 +3,7 @@
 !
 ! 1) Momentum equation (coupled solver)
 ! 2) Species transport
-! 3) Turbulence (k-epsilon, k-omega, Rij-epsilon, v2-f, Spalart-Allmaras)
+! 3) Turbulence (Rij-epsilon)
 !===============================================================================
 
 !-------------------------------------------------------------------------------
