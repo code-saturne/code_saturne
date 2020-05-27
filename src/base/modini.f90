@@ -729,7 +729,7 @@ if (icdpar.eq.-1 .and. ikw.eq.1 .and. isuite.eq.1)                &
      write(nfecra,2001)
 
 ! ---> IKECOU
-!      If the fluid_solid option is enabled, we force ikecou to 0. 
+!      If the fluid_solid option is enabled, we force ikecou to 0.
 if (fluid_solid) then
   if(ikecou .eq. 1) then
     ikecou = 0
