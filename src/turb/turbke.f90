@@ -636,7 +636,7 @@ endif
 ! (function of the potential temperature)
 if (igrake.eq.1 .and. ippmod(iatmos).ge.1) then
 
-  call atprke(nscal, tinstk, smbrk, smbre)
+  call atprke(tinstk, smbrk, smbre)
 
 ! --- Buoyancy term     G = Beta*g.Grad(scalar)/prdtur/rho
 !     Here is computed  G =-g.grad(rho)/prdtur/rho

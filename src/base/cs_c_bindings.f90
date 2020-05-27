@@ -3000,6 +3000,18 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function computing etheta and eq variable
+    ! knowing the saturation.
+
+    subroutine atprke(tinstk, smbrk, smbre)  &
+      bind(C, name='cs_atprke')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), dimension(*), intent(inout) :: tinstk, smbrk, smbre
+    end subroutine atprke
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function to implicit and explicit sources terms
     ! from sources mass computation.
 
@@ -3030,20 +3042,6 @@ module cs_c_bindings
       implicit none
       integer(c_int), intent(in), value :: ncel, iclip
     end subroutine clipke
-
-    !---------------------------------------------------------------------------
-
-    ! Interface to C function computing etheta and eq variable
-    ! knowing the saturation.
-
-    subroutine etheq(pphy, theta1, qw, qldia, xnebdia, xnn, etheta, eq)  &
-      bind(C, name='cs_etheq')
-      use, intrinsic :: iso_c_binding
-      implicit none
-      real(kind=c_double), intent(in), value :: pphy, theta1, qw, qldia
-      real(kind=c_double), intent(in), value :: xnebdia, xnn
-      real(kind=c_double), intent(out) :: etheta, eq
-    end subroutine etheq
 
     !---------------------------------------------------------------------------
 

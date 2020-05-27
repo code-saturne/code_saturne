@@ -1,8 +1,8 @@
-#ifndef __CS_ETHEQ_H__
-#define __CS_ETHEQ_H__
+#ifndef __CS_ATPRKE_H__
+#define __CS_ATPRKE_H__
 
 /*============================================================================
- * Compute etheta and eq variable knowing the saturation.
+ * Modify the k-epsilon turbulence model for the atmospheric module.
  *============================================================================*/
 
 /*
@@ -31,43 +31,52 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
-
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
+
+/*=============================================================================
+ * Local Macro definitions
+ *============================================================================*/
+
+/*============================================================================
+ * Type definition
+ *============================================================================*/
+
+/*============================================================================
+ *  Global variables
+ *============================================================================*/
+
+/*============================================================================
+ * Public function prototypes for Fortran API
+ *============================================================================*/
 
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
-/*
- * \brief Compute etheta and eq variable knowing the saturation.
+/*!
+ * \brief Modify the \f$k-\varepsilon\f$ turbulence model
+ *        formulation for the atmospheric module
  *
- * \param[in]       pphy        pressure [Pa]
- * \param[in]       thetal      Liquid potential temperature
- * \param[in]       qw          total water amount
- * \param[in]       qldia       mean liquid water content
- * \param[in]       xnebdia     nebulosity after the diagnostic
- * \param[in]       xnn         second order moment "n" <s'ql'>/(2*sigma_s**2)
- * \param[out]      etheta      sensible heat part of buoyancy flux
- * \param[out]      eq          latent heat part of buoyancy flux
+ * Adjunction of a production term for buyancy in the \f$k-\varepsilon\f$
+ * model in the context of the atmospheric module
+ * g = g*grad(theta)/prdtur/theta
+ *
+ * \param[in, out]  tinstk    Implicit part of the buoyancy term (for k)
+ * \param[in, out]  smbrk     Explicit part of the buoyancy term (for k)
+ * \param[in, out]  smbre     Explicit part of the buoyancy term (for eps)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_etheq(cs_real_t   pphy,
-         cs_real_t   thetal,
-         cs_real_t   qw,
-         cs_real_t   qldia,
-         cs_real_t   xnebdia,
-         cs_real_t   xnn,
-         cs_real_t  *etheta,
-         cs_real_t  *eq);
+cs_atprke(cs_real_t  *tinstk,
+          cs_real_t  *smbrk,
+          cs_real_t  *smbre);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_ETHEQ_H__ */
+#endif /* __CS_ATPRKE_H__ */

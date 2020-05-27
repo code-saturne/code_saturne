@@ -35,10 +35,12 @@ endif
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/base \
--I$(top_srcdir)/src/cdo \
--I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/cdo \
 -I$(top_srcdir)/src/fvm \
+-I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src/pprt \
+-I$(top_srcdir)/src/turb \
 $(CPPFLAGS_PLE) \
 $(MPI_CPPFLAGS)
 
@@ -63,7 +65,7 @@ cs_atmo_aerosol.h \
 cs_atmo_aerosol_ssh.h \
 cs_atmo_headers.h \
 cs_atmo_profile_std.h \
-cs_etheq.h  \
+cs_atprke.h \
 cs_intprf.h
 
 # Library source files
@@ -79,7 +81,6 @@ atlecm.f90 \
 atmcls.f90 \
 atmsol.f90 \
 atphyv.f90 \
-atprke.f90 \
 atprop.f90 \
 atr1vf.f90 \
 attssc.f90 \
@@ -95,12 +96,12 @@ compute_gaseous_chemistry.f90 \
 cs_air_props.c \
 cs_at_opt_interp.c \
 cs_at_data_assim.c \
+cs_at_source_terms.f90 \
 cs_atmo.c \
 cs_atmo_aerosol.c \
 cs_atmo_aerosol_ssh.c \
 cs_atmo_profile_std.c \
-cs_at_source_terms.f90 \
-cs_etheq.c  \
+cs_atprke.c \
 cs_intprf.c \
 kinrates.f90 \
 nuclea.f90 \
