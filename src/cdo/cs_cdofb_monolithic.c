@@ -163,9 +163,8 @@ _mono_fields_to_previous(cs_cdofb_monolithic_t        *sc,
            3 * quant->n_faces * sizeof(cs_real_t));
 
   /* Mass flux arrays */
-  if (cc->mass_flux_array_pre != NULL)
-    memcpy(cc->mass_flux_array_pre, cc->mass_flux_array,
-           quant->n_faces * sizeof(cs_real_t));
+  memcpy(cc->mass_flux_array_pre, cc->mass_flux_array,
+         quant->n_faces * sizeof(cs_real_t));
 
 }
 

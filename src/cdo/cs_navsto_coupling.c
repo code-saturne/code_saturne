@@ -175,8 +175,7 @@ cs_navsto_ac_free_context(const cs_navsto_param_t    *nsp,
   cs_navsto_ac_t  *nsc = (cs_navsto_ac_t *)context;
 
   BFT_FREE(nsc->mass_flux_array);
-  if (nsc->mass_flux_array_pre != NULL)
-    BFT_FREE(nsc->mass_flux_array_pre);
+  BFT_FREE(nsc->mass_flux_array_pre);
 
   BFT_FREE(nsc);
 
@@ -271,10 +270,8 @@ cs_navsto_ac_last_setup(const cs_cdo_connect_t      *connect,
       BFT_MALLOC(nsc->mass_flux_array, quant->n_faces, cs_real_t);
       memset(nsc->mass_flux_array, 0, sizeof(cs_real_t)*quant->n_faces);
 
-      if (!cs_navsto_param_is_steady(nsp)) {
-        BFT_MALLOC(nsc->mass_flux_array_pre, quant->n_faces, cs_real_t);
-        memset(nsc->mass_flux_array_pre, 0, sizeof(cs_real_t)*quant->n_faces);
-      }
+      BFT_MALLOC(nsc->mass_flux_array_pre, quant->n_faces, cs_real_t);
+      memset(nsc->mass_flux_array_pre, 0, sizeof(cs_real_t)*quant->n_faces);
 
       cs_flag_t loc_flag =
         CS_FLAG_FULL_LOC | CS_FLAG_SCALAR | cs_flag_primal_face;
@@ -451,8 +448,7 @@ cs_navsto_monolithic_free_context(const cs_navsto_param_t    *nsp,
   cs_navsto_monolithic_t  *nsc = (cs_navsto_monolithic_t *)context;
 
   BFT_FREE(nsc->mass_flux_array);
-  if (nsc->mass_flux_array_pre != NULL)
-    BFT_FREE(nsc->mass_flux_array_pre);
+  BFT_FREE(nsc->mass_flux_array_pre);
 
   BFT_FREE(nsc);
 
@@ -544,10 +540,8 @@ cs_navsto_monolithic_last_setup(const cs_cdo_connect_t      *connect,
       BFT_MALLOC(nsc->mass_flux_array, quant->n_faces, cs_real_t);
       memset(nsc->mass_flux_array, 0, sizeof(cs_real_t)*quant->n_faces);
 
-      if (!cs_navsto_param_is_steady(nsp)) {
-        BFT_MALLOC(nsc->mass_flux_array_pre, quant->n_faces, cs_real_t);
-        memset(nsc->mass_flux_array_pre, 0, sizeof(cs_real_t)*quant->n_faces);
-      }
+      BFT_MALLOC(nsc->mass_flux_array_pre, quant->n_faces, cs_real_t);
+      memset(nsc->mass_flux_array_pre, 0, sizeof(cs_real_t)*quant->n_faces);
 
       cs_flag_t loc_flag =
         CS_FLAG_FULL_LOC | CS_FLAG_SCALAR | cs_flag_primal_face;
@@ -750,8 +744,7 @@ cs_navsto_projection_free_context(const cs_navsto_param_t    *nsp,
   BFT_FREE(nsc->bdy_pressure_incr);
 
   BFT_FREE(nsc->mass_flux_array);
-  if (nsc->mass_flux_array_pre != NULL)
-    BFT_FREE(nsc->mass_flux_array_pre);
+  BFT_FREE(nsc->mass_flux_array_pre);
 
   BFT_FREE(nsc);
 
