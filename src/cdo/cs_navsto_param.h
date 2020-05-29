@@ -33,7 +33,6 @@
 #include "cs_equation_param.h"
 #include "cs_math.h"
 #include "cs_physical_constants.h"
-#include "cs_sles.h"
 #include "cs_turbulence_model.h"
 
 /*----------------------------------------------------------------------------*/
@@ -318,6 +317,24 @@ typedef enum {
 
 } cs_navsto_sles_t;
 
+/*! \enum cs_navsto_nl_algo_t
+ *
+ *  \brief Type of algorithm used to tackle the non-linearity arising from
+ *  the Navier-Stokes system.
+ *
+ * \var CS_NAVSTO_NL_PICARD_ALGO
+ * Associated keyword: "picard" or "fixed-point"
+ * This is the default algorithm.
+ *
+ */
+
+typedef enum {
+
+  CS_NAVSTO_NL_PICARD_ALGO,
+
+  CS_NAVSTO_NL_ALGO_TYPES
+
+} cs_navsto_nl_algo_t;
 
 /*! \struct cs_navsto_param_sles_t
  *  \brief Structure storing the parameters for solving the Navier-Stokes system
@@ -326,39 +343,89 @@ typedef enum {
 typedef struct {
 
   /*! \var strategy
-   * Choice of strategy for solving the Navier--Stokes system
+   *  Choice of strategy for solving the Navier--Stokes system
    */
   cs_navsto_sles_t              strategy;
 
-  /*! \var algo_tolerance
-   *  Tolerance at which the Oseen/Stokes system is resolved (apply to the
-   *  residual of the coupling algorithm chosen to solve the Navier--Stokes
-   *  system)
+  /*!
+   * @name Inner and linear algorithm
+   * Set of parameters to drive the resolution of the (inner) linear system
+   * @{
    */
-  cs_real_t                     algo_tolerance;
 
-  /*! \var algo_n_max_iter
-   * Maximal number of iterations of the coupling algorithm.
+  /*! \var il_algo_rtol
+   *  Relative tolerance factor of the linear and inner system used to solve
+   *  either the Oseen or the Stokes system. This algorithm is for instance an
+   *  Uzawa or GKB algorithm. This is incorporated in a non-linear process in
+   *  case of Navier--Stokes equations.
    */
-  int                           algo_n_max_iter;
+  cs_real_t                     il_algo_rtol;
 
-  /*! \var picard_rtol
-   *  Relative tolerance at which the Picard algorithm is resolved. One handles
-   *  the non-linearity arising from the advection term with the algorithm.
+  /*! \var il_algo_atol
+   *  Similar to \ref il_algo_rtol but in the case of an absolute tolerance
+   *  factor.
    */
-  cs_real_t                     picard_rtol;
+  cs_real_t                     il_algo_atol;
 
-  /*! \var picard_atol
-   *  Absolute tolerance at which the Picard algorithm is resolved. One handles
-   *  the non-linearity arising from the advection term with the algorithm.
+  /*! \var il_algo_dtol
+   *  Similar to \ref il_algo_rtol but in the case of a divergence tolerance
+   *  factor. (default 1e3)
    */
-  cs_real_t                     picard_atol;
+  cs_real_t                     il_algo_dtol;
 
-  /*! \var picard_n_max_iter
-   * Maximal number of iterations for the Picard algorithm used to handle
-   * the non-linearity arising from the advection term.
+  /*! \var n_max_il_algo_iter
+   *  Maximal number of iterations to solve the inner linear system
    */
-  int                           picard_n_max_iter;
+  int                           n_max_il_algo_iter;
+
+  /*! \var il_algo_verbosity
+   *  Level of verbosity related to the inner linear system
+   */
+  cs_real_t                     il_algo_verbosity;
+
+  /*!
+   * @}
+   * @name Non-linear algorithm
+   * Set of parameters to drive the resolution of the non-linearity arising from
+   * the Navier--Stokes system
+   * @{
+   */
+
+  /*! \var nl_algo
+   *  Type of algorithm used to tackle the non-linearity
+   */
+  cs_navsto_nl_algo_t           nl_algo;
+
+  /*! \var nl_algo_rtol
+   *  Relative tolerance factor used in the algorithm used for tackling the
+   *  non-linearity.
+   */
+  cs_real_t                     nl_algo_rtol;
+
+  /*! \var nl_algo_atol
+   *  Absolute tolerance factor used in the algorithm used for tackling the
+   *  non-linearity.
+   */
+  cs_real_t                     nl_algo_atol;
+
+  /*! \var nl_algo_dtol
+   *  Divergence tolerance factor used in the algorithm used for tackling the
+   *  non-linearity.
+   */
+  cs_real_t                     nl_algo_dtol;
+
+  /*! \var n_max_nl_algo_iter
+   *  Maximal number of iterations for the Picard algorithm used to handle
+   *  the non-linearity arising from the advection term.
+   */
+  int                           n_max_nl_algo_iter;
+
+  /*! \var il_algo_verbosity
+   *  Level of verbosity related to the non-linear algorithm
+   */
+  cs_real_t                     nl_algo_verbosity;
+
+  /*! @} */
 
 } cs_navsto_param_sles_t;
 
@@ -646,47 +713,6 @@ typedef struct {
 
 } cs_navsto_param_t;
 
-/*! \struct cs_navsto_algo_info_t
- *  \brief Set of information related to the convergence of the iterative
- *         algorithm (Picard or Uzawa for instance)
- *
- * \var cvg
- * convergence or divergence status
- *
- * \var res
- * value of the residual for the iterative algorithm
- *
- * \var res0
- * Initial value of the residual for the iterative algorithm
- *
- * \var tol
- * tolerance computed as tol = max(atol, res0*rtol) where
- * atol and rtol are respectively the absolute and relative tolerance associated
- * to the algorithm
- *
- * \var n_algo_iter
- * number of iterations for the algorithm (outer iterations)
- *
- * \var n_inner_iter
- * cumulated number of inner iterations (sum over the outer iterations)
- *
- * \var last_inner_iter
- * last number of iterations for the inner solver
- */
-
-typedef struct {
-
-  cs_sles_convergence_state_t      cvg;
-  double                           res;
-  double                           res0;
-  double                           tol;
-
-  int                              n_algo_iter;
-  int                              n_inner_iter;
-  int                              last_inner_iter;
-
-} cs_navsto_algo_info_t;
-
 /*! \enum cs_navsto_key_t
  *  \brief List of available keys for setting the parameters of the
  *         Navier-Stokes system
@@ -707,28 +733,57 @@ typedef struct {
  * Set the scaling of the grad-div term when an artificial compressibility
  * algorithm or an Uzawa-Augmented Lagrangian method is used
  *
- * \var CS_NSKEY_MAX_ALGO_ITER
- * Set the maximal number of iteration for solving the coupled system.
+ * \var CS_NSKEY_IL_ALGO_ATOL
+ * Absolute tolerance at which the Oseen or Stokes system is resolved. These
+ * systems corresponds to an inner linear system to solve when considering the
+ * Navier-Stokes system since one has to handle the non-linearity in addition as
+ * an outer process.
  *
- * \var CS_NSKEY_MAX_PICARD_ITER
+ * \var CS_NSKEY_IL_ALGO_DTOL
+ * Divergence tolerance at which the Oseen or Stokes system is resolved. These
+ * systems corresponds to an inner linear system to solve when considering the
+ * Navier-Stokes system since one has to handle the non-linearity in addition as
+ * an outer process.
+ *
+ * \var CS_NSKEY_IL_ALGO_RTOL
+ * Relative tolerance at which the Oseen or Stokes system is resolved. These
+ * systems corresponds to an inner linear system to solve when considering the
+ * Navier-Stokes system since one has to handle the non-linearity in addition as
+ * an outer process.
+ *
+ * \var CS_NSKEY_IL_ALGO_VERBOSITY
+ * Level of verbosity related to the inner linear algorithm (cf. \ref
+ * CS_NSKEY_SLES_STRATEGY)
+ *
+ * \var CS_NSKEY_MAX_IL_ALGO_ITER
+ * Set the maximal number of iteration for solving the inner linear system.
+ *
+ * \var CS_NSKEY_MAX_NL_ALGO_ITER
  * Set the maximal number of Picard iterations for solving the non-linearity
  * arising from the advection form
+ *
+ * \var CS_NSKEY_NL_ALGO
+ * Type of algorithm to consider to solve the non-linearity arising from the
+ * Navier-Stokes system
+ *
+ * \var CS_NSKEY_NL_ALGO_ATOL
+ * Absolute tolerance at which the non-linearity arising from the advection
+ * term is resolved using a Picard (fixed-point) algorithm
+ *
+ * \var CS_NSKEY_NL_ALGO_DTOL
+ * Divergence tolerance at which the non-linearity arising from the advection
+ * term is resolved using a Picard (fixed-point) algorithm
+ *
+ * \var CS_NSKEY_NL_ALGO_RTOL
+ * Relative tolerance at which the non-linearity arising from the advection
+ * term is resolved using a Picard (fixed-point) algorithm
+ *
+ * \var CS_NSKEY_NL_ALGO_VERBOSITY
+ * Level of verbosity related to the non-linear algorithm (Picar for instance)
  *
  * \var CS_NSKEY_QUADRATURE
  * Set the type to use in all routines involving quadrature (similar to \ref
  * CS_EQKEY_BC_QUADRATURE)
- *
- * \var CS_NSKEY_PICARD_RTOL
- * Relative tolerance at which the non-linearity arising from the advection
- * term is resolved using a Picard (fixed-point) algorithm
- *
- * \var CS_NSKEY_PICARD_ATOL
- * Absolute tolerance at which the non-linearity arising from the advection
- * term is resolved using a Picard (fixed-point) algorithm
- *
- * \var CS_NSKEY_RESIDUAL_TOLERANCE
- * Tolerance at which the Oseen or Stokes system is resolved (apply to the
- * residual of the coupling algorithm chosen to solve the Navier--Stokes system)
  *
  * \var CS_NSKEY_SLES_STRATEGY
  * Strategy for solving the SLES arising from the discretization of the
@@ -757,12 +812,18 @@ typedef enum {
   CS_NSKEY_ADVECTION_SCHEME,
   CS_NSKEY_DOF_REDUCTION,
   CS_NSKEY_GD_SCALE_COEF,
-  CS_NSKEY_MAX_ALGO_ITER,
-  CS_NSKEY_MAX_PICARD_ITER,
+  CS_NSKEY_IL_ALGO_ATOL,
+  CS_NSKEY_IL_ALGO_DTOL,
+  CS_NSKEY_IL_ALGO_RTOL,
+  CS_NSKEY_IL_ALGO_VERBOSITY,
+  CS_NSKEY_MAX_IL_ALGO_ITER,
+  CS_NSKEY_MAX_NL_ALGO_ITER,
+  CS_NSKEY_NL_ALGO,
+  CS_NSKEY_NL_ALGO_ATOL,
+  CS_NSKEY_NL_ALGO_DTOL,
+  CS_NSKEY_NL_ALGO_RTOL,
+  CS_NSKEY_NL_ALGO_VERBOSITY,
   CS_NSKEY_QUADRATURE,
-  CS_NSKEY_PICARD_RTOL,
-  CS_NSKEY_PICARD_ATOL,
-  CS_NSKEY_RESIDUAL_TOLERANCE,
   CS_NSKEY_SLES_STRATEGY,
   CS_NSKEY_SPACE_SCHEME,
   CS_NSKEY_TIME_SCHEME,
@@ -776,70 +837,6 @@ typedef enum {
 /*============================================================================
  * Inline static public function prototypes
  *============================================================================*/
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Initialize a cs_navsto_algo_info_t structure
- *
- * \param[in]   ns_info   pointer to a cs_navsto_algo_info_t to initialize
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_navsto_algo_info_init(cs_navsto_algo_info_t   *ns_info)
-{
-  if (ns_info == NULL)
-    return;
-
-  ns_info->cvg = CS_SLES_ITERATING;
-  ns_info->res = cs_math_big_r;
-  ns_info->n_algo_iter = 0;
-  ns_info->n_inner_iter = 0;
-  ns_info->last_inner_iter = 0;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Print header before dumping information gathered in the structure
- *         cs_navsto_algo_info_t
- *
- * \param[in]  algo_name     name of the algorithm
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_navsto_algo_info_header(const char   *algo_name)
-{
-  assert(algo_name != NULL);
-  cs_log_printf(CS_LOG_DEFAULT,
-                "%8s.It  -- Algo.Res   Inner    Cumul  ||div(u)||\n",
-                algo_name);
-  cs_log_printf_flush(CS_LOG_DEFAULT);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Print header before dumping information gathered in the structure
- *         cs_navsto_algo_info_t
- *
- * \param[in]  algo_name     name of the algorithm
- * \param[in]  ns_info       cs_navsto_algo_info_t structure
- * \param[in]  div_l2        l2 norm of the divergence
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-cs_navsto_algo_info_printf(const char                    *algo_name,
-                           const cs_navsto_algo_info_t    ns_info,
-                           double                         div_l2)
-{
-  assert(algo_name != NULL);
-  cs_log_printf(CS_LOG_DEFAULT,
-                "%8s.It%02d-- %5.3e  %5d  %6d  %6.4e\n",
-                algo_name, ns_info.n_algo_iter, ns_info.res,
-                ns_info.last_inner_iter, ns_info.n_inner_iter, div_l2);
-  cs_log_printf_flush(CS_LOG_DEFAULT);
-}
 
 /*----------------------------------------------------------------------------*/
 /*!

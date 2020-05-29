@@ -252,14 +252,22 @@ cs_navsto_param_create(const cs_boundary_t             *boundaries,
     param->time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT;
   param->theta = 1.0;
 
-  /* Resolution parameters */
-  param->sles_param.algo_n_max_iter = 100;
-  param->sles_param.algo_tolerance = 1e-08;
-  param->sles_param.picard_rtol = 1e-3;
-  param->sles_param.picard_atol = 1e-6;
-  param->sles_param.picard_n_max_iter = 50;
+  /* Resolution parameters (inner linear system then the non-linear system )*/
   param->sles_param.strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
+  param->sles_param.n_max_il_algo_iter = 100;
+  param->sles_param.il_algo_rtol = 1e-08;
+  param->sles_param.il_algo_atol = 1e-08;
+  param->sles_param.il_algo_dtol = 1e3;
+  param->sles_param.il_algo_verbosity = 0;
 
+  param->sles_param.nl_algo = CS_NAVSTO_NL_PICARD_ALGO;
+  param->sles_param.n_max_nl_algo_iter = 25;
+  param->sles_param.nl_algo_rtol = 1e-5;
+  param->sles_param.nl_algo_atol = 1e-5;
+  param->sles_param.nl_algo_dtol = 1e3;
+  param->sles_param.nl_algo_verbosity = 1;
+
+  /* Physical boundaries specific to the problem at stake */
   param->boundaries = boundaries; /* shared structure */
 
   /* Remark: As velocity and pressure may not be associated to an equation
@@ -510,12 +518,85 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     } /* End of switch */
     break;
 
-  case CS_NSKEY_MAX_ALGO_ITER:
-    nsp->sles_param.algo_n_max_iter = atoi(val);
+  case CS_NSKEY_IL_ALGO_ATOL:
+    nsp->sles_param.il_algo_atol = atof(val);
+    if (nsp->sles_param.il_algo_rtol < 0)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid value for the absolute tolerance\n", __func__);
     break;
 
-  case CS_NSKEY_MAX_PICARD_ITER:
-    nsp->sles_param.picard_n_max_iter = atoi(val);
+  case CS_NSKEY_IL_ALGO_DTOL:
+    nsp->sles_param.il_algo_dtol = atof(val);
+    if (nsp->sles_param.il_algo_dtol < 0)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid value for the divergence tolerance\n", __func__);
+    break;
+
+  case CS_NSKEY_IL_ALGO_RTOL:
+    nsp->sles_param.il_algo_rtol = atof(val);
+    if (nsp->sles_param.il_algo_rtol < 0)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid value for the residual tolerance\n", __func__);
+    break;
+
+  case CS_NSKEY_IL_ALGO_VERBOSITY:
+    nsp->sles_param.il_algo_verbosity = atoi(val);
+    break;
+
+  case CS_NSKEY_MAX_IL_ALGO_ITER:
+    nsp->sles_param.n_max_il_algo_iter = atoi(val);
+    break;
+
+  case CS_NSKEY_MAX_NL_ALGO_ITER:
+    nsp->sles_param.n_max_nl_algo_iter = atoi(val);
+    break;
+
+  case CS_NSKEY_NL_ALGO:
+    {
+      if (strcmp(val, "picard") == 0)
+        nsp->sles_param.nl_algo = CS_NAVSTO_NL_PICARD_ALGO;
+      else if (strcmp(val, "fixed-point") == 0)
+        nsp->sles_param.nl_algo = CS_NAVSTO_NL_PICARD_ALGO;
+      else {
+        const char *_val = val;
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Invalid value \"%s\" for key CS_NSKEY_NL_ALGO\n"
+                  " Valid choices are \"picard\", \"fixed-point\".",
+                  __func__, _val);
+      }
+
+    }
+    break; /* Non-linear algorithm */
+
+  case CS_NSKEY_NL_ALGO_ATOL:
+    nsp->sles_param.nl_algo_atol = atof(val);
+    if (nsp->sles_param.il_algo_atol < 0)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid value for the absolute tolerance of the"
+                " non-linear algorithm\n",
+                __func__);
+    break;
+
+  case CS_NSKEY_NL_ALGO_DTOL:
+    nsp->sles_param.nl_algo_dtol = atof(val);
+    if (nsp->sles_param.nl_algo_dtol < 0)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid value for the divergence tolerance of the"
+                " non-linear algorithm\n",
+                __func__);
+    break;
+
+  case CS_NSKEY_NL_ALGO_RTOL:
+    nsp->sles_param.nl_algo_rtol = atof(val);
+    if (nsp->sles_param.nl_algo_rtol < 0)
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Invalid value for the relative tolerance of the"
+                " non-linear algorithm\n",
+                __func__);
+    break;
+
+  case CS_NSKEY_NL_ALGO_VERBOSITY:
+    nsp->sles_param.nl_algo_verbosity = atoi(val);
     break;
 
   case CS_NSKEY_QUADRATURE:
@@ -540,29 +621,6 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 
     }
     break; /* Quadrature */
-
-  case CS_NSKEY_PICARD_RTOL:
-    nsp->sles_param.picard_rtol = atof(val);
-    if (nsp->sles_param.picard_rtol < 0)
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid value for the Picard relative tolerance\n",
-                __func__);
-    break;
-
-  case CS_NSKEY_PICARD_ATOL:
-    nsp->sles_param.picard_atol = atof(val);
-    if (nsp->sles_param.picard_atol < 0)
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid value for the Picard absolute tolerance\n",
-                __func__);
-    break;
-
-  case CS_NSKEY_RESIDUAL_TOLERANCE:
-    nsp->sles_param.algo_tolerance = atof(val);
-    if (nsp->sles_param.algo_tolerance < 0)
-      bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid value for the residual tolerance\n", __func__);
-    break;
 
   case CS_NSKEY_SLES_STRATEGY:
     if (strcmp(val, "no_block") == 0) {
@@ -799,20 +857,25 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
   cs_log_printf(CS_LOG_SETUP, "  * NavSto | Coupling: %s\n",
                 cs_navsto_param_coupling_name[nsp->coupling]);
 
-  /* Describe if needed the SLES settings for the Picard algorithm */
+  /* Describe if needed the SLES settings for the non-linear algorithm */
   if (nsp->model & CS_NAVSTO_MODEL_INCOMPRESSIBLE_NAVIER_STOKES) {
-    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Picard.rtol: %5.3e;"
-                  " Picard.atol: %5.3e\n",
-                  nsp->sles_param.picard_rtol, nsp->sles_param.picard_atol);
-    cs_log_printf(CS_LOG_SETUP, "  * NavSto | Picard.Max.Iters: %d\n",
-                  nsp->sles_param.picard_n_max_iter);
+
+    const char algo_name[] = "Picard";
+    if (nsp->sles_param.nl_algo != CS_NAVSTO_NL_PICARD_ALGO)
+      bft_error(__FILE__, __LINE__, 0, "%s: Invalid non-linear algo.", __func__);
+
+    cs_log_printf(CS_LOG_SETUP, "  * NavSto | %s: rtol: %5.3e;"
+                  " atol: %5.3e; dtol: %5.3e\n",
+                  algo_name, nsp->sles_param.nl_algo_rtol,
+                  nsp->sles_param.nl_algo_atol, nsp->sles_param.nl_algo_dtol);
+    cs_log_printf(CS_LOG_SETUP, "  * NavSto | %s: Max.Iterations: %d\n",
+                  algo_name, nsp->sles_param.n_max_nl_algo_iter);
+
   }
 
-  /* Describe the strategy to inverse the linear system */
+  /* Describe the strategy to inverse the (inner) linear system */
   const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
 
-  cs_log_printf(CS_LOG_SETUP, "  * NavSto | Algo.Residual: %5.3e\n",
-                nslesp.algo_tolerance);
   cs_log_printf(CS_LOG_SETUP, "  * NavSto | SLES.Strategy: ");
   switch (nslesp.strategy) {
 
@@ -861,6 +924,9 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
     cs_log_printf(CS_LOG_SETUP, "  * NavSto | Grad-div scaling %e\n",
                   nsp->gd_scale_coef);
 
+  cs_log_printf(CS_LOG_SETUP, "  * NavSto | InnerLinear.Algo.Tolerances:"
+                " rtol: %5.3e; atol: %5.3e; dtol: %5.3e\n",
+                nslesp.il_algo_rtol, nslesp.il_algo_atol, nslesp.il_algo_dtol);
 
   const char *space_scheme = cs_param_get_space_scheme_name(nsp->space_scheme);
   if (nsp->space_scheme < CS_SPACE_N_SCHEMES)

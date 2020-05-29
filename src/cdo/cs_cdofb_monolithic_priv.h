@@ -48,6 +48,7 @@
 #include "cs_equation_bc.h"
 #include "cs_equation_common.h"
 #include "cs_equation_priv.h"
+#include "cs_iter_algo.h"
 #include "cs_navsto_coupling.h"
 #include "cs_param.h"
 #include "cs_static_condensation.h"
@@ -300,6 +301,13 @@ struct _cdofb_monolithic_t {
    */
 
   cs_cdofb_monolithic_sles_t       *msles;
+
+  /*!
+   * \var algo_info
+   * Structure used to drive the convergence of high-level iterative algorithms
+   */
+
+  cs_iter_algo_info_t              *algo_info;
 
   /*!
    * @}

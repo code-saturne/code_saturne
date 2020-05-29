@@ -172,31 +172,6 @@ cs_cdofb_navsto_define_builder(cs_real_t                    t_eval,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Test if one has to do one more Picard iteration.
- *         Test if performed on the relative norm on the increment between
- *         two iterations but also on the divergence.
- *
- * \param[in]      nsp               pointer to a cs_navsto_param_t structure
- * \param[in]      connect           set of additional connectivities for CDO
- * \param[in]      quant             set of additional geometrical quantities
- * \param[in]      previous_iterate  previous state of the mass flux iterate
- * \param[in]      current_iterate   current state of the mass flux iterate
- * \param[in]      div_l2_norm       L2 norm of the velocity divergence
- * \param[in, out] ns_info           pointer to a cs_navsto_algo_info_t struct.
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_cdofb_navsto_picard_cvg_test(const cs_navsto_param_t      *nsp,
-                                const cs_cdo_connect_t       *connect,
-                                const cs_cdo_quantities_t    *quant,
-                                const cs_real_t              *previous_iterate,
-                                const cs_real_t              *current_iterate,
-                                cs_real_t                     div_l2_norm,
-                                cs_navsto_algo_info_t        *ns_info);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Compute the mass flux playing the role of the advection field in
  *         the Navier-Stokes equations
  *         One considers the mass flux across primal faces which relies on the

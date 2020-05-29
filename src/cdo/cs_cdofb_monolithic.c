@@ -2024,6 +2024,15 @@ cs_cdofb_monolithic_init_scheme_context(const cs_navsto_param_t   *nsp,
   /* Set the pointer storing linear algebra features */
   sc->msles = msles;
 
+  /* Iterative algorithm to handle the non-linearity (Picard by default) */
+  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
+
+  sc->algo_info = cs_iter_algo_define(nslesp.nl_algo_verbosity,
+                                      nslesp.n_max_nl_algo_iter,
+                                      nslesp.nl_algo_atol,
+                                      nslesp.nl_algo_rtol,
+                                      nslesp.nl_algo_dtol);
+
   /* Monitoring */
   CS_TIMER_COUNTER_INIT(sc->timer);
 
@@ -2072,6 +2081,8 @@ cs_cdofb_monolithic_free_scheme_context(void   *scheme_context)
 
   /* Free the context structure for solving saddle-point system */
   cs_cdofb_monolithic_sles_free(&(sc->msles));
+
+  BFT_FREE(sc->algo_info);
 
   /* Other pointers are only shared (i.e. not owner) */
   BFT_FREE(sc);
@@ -2213,6 +2224,7 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t  *mom_eqp = mom_eq->param;
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
+  cs_iter_algo_info_t  *nl_info = sc->algo_info;
 
   /*--------------------------------------------------------------------------
    *                    INITIAL BUILD: START
@@ -2252,8 +2264,8 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
   /* Solve the linear system */
   cs_timer_t  t_solve_start = cs_timer_time();
-  cs_navsto_algo_info_t  ns_info;
-  cs_navsto_algo_info_init(&ns_info);
+
+  cs_iter_algo_reset(nl_info);
 
   cs_cdofb_monolithic_sles_t  *msles = sc->msles;
 
@@ -2263,8 +2275,8 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
   /* Solve the new system:
    * Update the value of mom_eqc->face_values and sc->pressure->val */
-  ns_info.n_inner_iter =
-    (ns_info.last_inner_iter = sc->solve(nsp, mom_eqp, msles));
+  nl_info->n_inner_iter =
+    (nl_info->last_inner_iter = sc->solve(nsp, mom_eqp, msles));
 
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -2284,13 +2296,13 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
    *                   PICARD ITERATIONS: START
    *--------------------------------------------------------------------------*/
 
-  cs_cdofb_navsto_picard_cvg_test(nsp, cs_shared_connect, quant,
-                                  cc->mass_flux_array_pre,
-                                  cc->mass_flux_array,
-                                  div_l2_norm,
-                                  &ns_info);
+  cs_iter_algo_navsto_fb_picard_cvg(cs_shared_connect, quant,
+                                    cc->mass_flux_array_pre,
+                                    cc->mass_flux_array,
+                                    div_l2_norm,
+                                    nl_info);
 
-  while (ns_info.cvg == CS_SLES_ITERATING) {
+  while (nl_info->cvg == CS_SLES_ITERATING) {
 
     /* Main loop on cells to define the linear system to solve */
     cs_timer_t  t_build_start = cs_timer_time();
@@ -2312,8 +2324,8 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
      * Update the value of mom_eqc->face_values and sc->pressure->val */
     t_solve_start = cs_timer_time();
 
-    ns_info.n_inner_iter +=
-      (ns_info.last_inner_iter = sc->solve(nsp, mom_eqp, msles));
+    nl_info->n_inner_iter +=
+      (nl_info->last_inner_iter = sc->solve(nsp, mom_eqp, msles));
 
     t_solve_end = cs_timer_time();
     cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -2332,13 +2344,13 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
 
     cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values, cc->adv_field);
 
-    /* Check the convergence status and update the ns_info structure related
+    /* Check the convergence status and update the nl_info structure related
      * to the convergence monitoring */
-    cs_cdofb_navsto_picard_cvg_test(nsp, cs_shared_connect, quant,
-                                    cc->mass_flux_array_pre,
-                                    cc->mass_flux_array,
-                                    div_l2_norm,
-                                    &ns_info);
+    cs_iter_algo_navsto_fb_picard_cvg(cs_shared_connect, quant,
+                                      cc->mass_flux_array_pre,
+                                      cc->mass_flux_array,
+                                      div_l2_norm,
+                                      nl_info);
 
   } /* Loop on Picard iterations */
 
@@ -2346,15 +2358,15 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
    *                   PICARD ITERATIONS: END
    *--------------------------------------------------------------------------*/
 
-  if (ns_info.cvg == CS_SLES_DIVERGED)
+  if (nl_info->cvg == CS_SLES_DIVERGED)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Picard iteration for equation \"%s\" diverged.\n",
               __func__, mom_eqp->name);
-  else if (ns_info.cvg == CS_SLES_MAX_ITERATION) {
+  else if (nl_info->cvg == CS_SLES_MAX_ITERATION) {
     cs_log_printf(CS_LOG_DEFAULT,
                   "%8s.ItXXX-- %5.3e  Picard algorithm DID NOT CONVERGE "
                   "within the prescribed max. number of iterations.\n",
-                  "Picard", ns_info.res);
+                  "Picard", nl_info->res);
     cs_base_warn(__FILE__, __LINE__);
     bft_printf( "%s: Picard algorithm reaches the max. number of iterations\n",
                 __func__);
@@ -2511,6 +2523,7 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t  *mom_eqp = mom_eq->param;
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
+  cs_iter_algo_info_t  *nl_info = sc->algo_info;
 
   /*--------------------------------------------------------------------------
    *                    INITIAL BUILD: START
@@ -2550,8 +2563,8 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   /* Solve the linear system */
   cs_timer_t  t_solve_start = cs_timer_time();
-  cs_navsto_algo_info_t  ns_info;
-  cs_navsto_algo_info_init(&ns_info);
+
+  cs_iter_algo_reset(nl_info);
 
   cs_cdofb_monolithic_sles_t  *msles = sc->msles;
 
@@ -2561,8 +2574,8 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   /* Solve the new system:
    * Update the value of mom_eqc->face_values and sc->pressure->val */
-  ns_info.n_inner_iter =
-    (ns_info.last_inner_iter = sc->solve(nsp, mom_eqp, msles));
+  nl_info->n_inner_iter =
+    (nl_info->last_inner_iter = sc->solve(nsp, mom_eqp, msles));
 
   cs_timer_t  t_solve_end = cs_timer_time();
   cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -2582,13 +2595,13 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
    *                   PICARD ITERATIONS: START
    *--------------------------------------------------------------------------*/
 
-  cs_cdofb_navsto_picard_cvg_test(nsp, cs_shared_connect, quant,
-                                  cc->mass_flux_array_pre,
-                                  cc->mass_flux_array,
-                                  div_l2_norm,
-                                  &ns_info);
+  cs_iter_algo_navsto_fb_picard_cvg(cs_shared_connect, quant,
+                                    cc->mass_flux_array_pre,
+                                    cc->mass_flux_array,
+                                    div_l2_norm,
+                                    nl_info);
 
-  while (ns_info.cvg == CS_SLES_ITERATING) {
+  while (nl_info->cvg == CS_SLES_ITERATING) {
 
     /* Start of the system building */
     cs_timer_t  t_build_start = cs_timer_time();
@@ -2610,8 +2623,8 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
     /* Solve the new system */
     t_solve_start = cs_timer_time();
 
-    ns_info.n_inner_iter +=
-      (ns_info.last_inner_iter = sc->solve(nsp, mom_eqp, msles));
+    nl_info->n_inner_iter +=
+      (nl_info->last_inner_iter = sc->solve(nsp, mom_eqp, msles));
 
     t_solve_end = cs_timer_time();
     cs_timer_counter_add_diff(&(mom_eqb->tcs), &t_solve_start, &t_solve_end);
@@ -2626,13 +2639,13 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
     cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values, cc->adv_field);
 
-    /* Check the convergence status and update the ns_info structure related
+    /* Check the convergence status and update the nl_info structure related
      * to the convergence monitoring */
-    cs_cdofb_navsto_picard_cvg_test(nsp, cs_shared_connect, quant,
-                                    cc->mass_flux_array_pre,
-                                    cc->mass_flux_array,
-                                    div_l2_norm,
-                                    &ns_info);
+    cs_iter_algo_navsto_fb_picard_cvg(cs_shared_connect, quant,
+                                      cc->mass_flux_array_pre,
+                                      cc->mass_flux_array,
+                                      div_l2_norm,
+                                      nl_info);
 
   } /* Loop on Picard iterations */
 
@@ -2640,15 +2653,15 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
    *                   PICARD ITERATIONS: END
    *--------------------------------------------------------------------------*/
 
-  if (ns_info.cvg == CS_SLES_DIVERGED)
+  if (nl_info->cvg == CS_SLES_DIVERGED)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Picard iteration for equation \"%s\" diverged.\n",
               __func__, mom_eqp->name);
-  else if (ns_info.cvg == CS_SLES_MAX_ITERATION) {
+  else if (nl_info->cvg == CS_SLES_MAX_ITERATION) {
     cs_log_printf(CS_LOG_DEFAULT,
                   "%8s.ItXXX-- %5.3e  Picard algorithm DID NOT CONVERGE "
                   "within the prescribed max. number of iterations.\n",
-                  "Picard", ns_info.res);
+                  "Picard", nl_info->res);
     cs_base_warn(__FILE__, __LINE__);
     bft_printf(" %s: Picard algorithm reaches the max. number of iterations\n",
                 __func__);

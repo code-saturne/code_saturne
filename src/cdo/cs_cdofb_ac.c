@@ -62,6 +62,7 @@
 #include "cs_equation_common.h"
 #include "cs_equation_priv.h"
 #include "cs_evaluate.h"
+#include "cs_iter_algo.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_navsto_sles.h"
@@ -199,6 +200,15 @@ typedef struct {
   cs_cdo_apply_boundary_t        *apply_sliding_wall;
   cs_cdo_apply_boundary_t        *apply_velocity_inlet;
   cs_cdo_apply_boundary_t        *apply_symmetry;
+
+  /*!
+   * @}
+   * @name Convergence monitoring
+   * Structure used to drive the convergence of high-level iterative algorithms
+   * @{
+   */
+
+  cs_iter_algo_info_t            *algo_info;
 
   /*!
    * @}
@@ -945,6 +955,14 @@ cs_cdofb_ac_init_scheme_context(const cs_navsto_param_t    *nsp,
 
   }
 
+  /* Iterative algorithm to handle the non-linearity (Picard by default) */
+  const cs_navsto_param_sles_t  nslesp = nsp->sles_param;
+
+  sc->algo_info = cs_iter_algo_define(nslesp.nl_algo_verbosity,
+                                      nslesp.n_max_nl_algo_iter,
+                                      nslesp.nl_algo_atol,
+                                      nslesp.nl_algo_rtol,
+                                      nslesp.nl_algo_dtol);
 
   /* Monitoring */
   CS_TIMER_COUNTER_INIT(sc->timer);
@@ -972,6 +990,8 @@ cs_cdofb_ac_free_scheme_context(void   *scheme_context)
 
   /* Free BC structure */
   sc->pressure_bc = cs_cdo_bc_free(sc->pressure_bc);
+
+  BFT_FREE(sc->algo_info);
 
   /* Other pointers are only shared (i.e. not owner) */
   BFT_FREE(sc);
@@ -1225,6 +1245,7 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   cs_cdofb_vecteq_t  *mom_eqc= (cs_cdofb_vecteq_t *)mom_eq->scheme_context;
   cs_equation_param_t *mom_eqp = mom_eq->param;
   cs_equation_builder_t  *mom_eqb = mom_eq->builder;
+  cs_iter_algo_info_t  *nl_info = sc->algo_info;
 
   /*--------------------------------------------------------------------------
    *                    INITIAL BUILD: START
@@ -1295,16 +1316,16 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
   cs_timer_counter_add_diff(&(mom_eqb->tce), &t_upd, &t_tmp);
 
   cs_timer_t  t_solve_start = cs_timer_time();
-  cs_navsto_algo_info_t  ns_info;
-  cs_navsto_algo_info_init(&ns_info);
+
+  cs_iter_algo_reset(nl_info);
 
   /* Solve the linear system (treated as a scalar-valued system
    * with 3 times more DoFs) */
   cs_real_t  normalization = 1.0; /* TODO */
   cs_sles_t  *sles = cs_sles_find_or_add(mom_eqp->sles_param.field_id, NULL);
 
-  ns_info.n_inner_iter =
-    (ns_info.last_inner_iter = cs_equation_solve_scalar_system(3*n_faces,
+  nl_info->n_inner_iter =
+    (nl_info->last_inner_iter = cs_equation_solve_scalar_system(3*n_faces,
                                                           mom_eqp,
                                                           matrix,
                                                           rs,
@@ -1340,17 +1361,17 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
    *                   PICARD ITERATIONS: START
    *--------------------------------------------------------------------------*/
 
-  cs_cdofb_navsto_picard_cvg_test(nsp, connect, quant,
-                                  cc->mass_flux_array_pre,
-                                  cc->mass_flux_array,
-                                  div_l2_norm,
-                                  &ns_info);
+  cs_iter_algo_navsto_fb_picard_cvg(connect, quant,
+                                    cc->mass_flux_array_pre,
+                                    cc->mass_flux_array,
+                                    div_l2_norm,
+                                    nl_info);
 
   cs_real_t  *mass_flux_iter_pre = NULL;
-  if (ns_info.cvg == CS_SLES_ITERATING)
+  if (nl_info->cvg == CS_SLES_ITERATING)
     BFT_MALLOC(mass_flux_iter_pre, quant->n_faces, cs_real_t);
 
-  while (ns_info.cvg == CS_SLES_ITERATING) {
+  while (nl_info->cvg == CS_SLES_ITERATING) {
 
     /* Main loop on cells to define the linear system to solve */
     cs_timer_t  t_build_start = cs_timer_time();
@@ -1386,8 +1407,8 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
     sles = cs_sles_find_or_add(mom_eqp->sles_param.field_id, NULL);
     cs_sles_setup(sles, matrix);
 
-    ns_info.n_inner_iter =
-      (ns_info.last_inner_iter = cs_equation_solve_scalar_system(3*n_faces,
+    nl_info->n_inner_iter =
+      (nl_info->last_inner_iter = cs_equation_solve_scalar_system(3*n_faces,
                                                             mom_eqp,
                                                             matrix,
                                                             rs,
@@ -1408,13 +1429,13 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
 
     cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values, cc->adv_field);
 
-    /* Check the convergence status and update the ns_info structure related
+    /* Check the convergence status and update the nl_info structure related
      * to the convergence monitoring */
-    cs_cdofb_navsto_picard_cvg_test(nsp, connect, quant,
-                                    mass_flux_iter_pre,
-                                    cc->mass_flux_array,
-                                    div_l2_norm,
-                                    &ns_info);
+    cs_iter_algo_navsto_fb_picard_cvg(connect, quant,
+                                      mass_flux_iter_pre,
+                                      cc->mass_flux_array,
+                                      div_l2_norm,
+                                      nl_info);
 
   } /* Loop on Picard iterations */
 
@@ -1422,15 +1443,15 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
    *                   PICARD ITERATIONS: END
    *--------------------------------------------------------------------------*/
 
-  if (ns_info.cvg == CS_SLES_DIVERGED)
+  if (nl_info->cvg == CS_SLES_DIVERGED)
     bft_error(__FILE__, __LINE__, 0,
               "%s: Picard iteration for equation \"%s\" diverged.\n",
               __func__, mom_eqp->name);
-  else if (ns_info.cvg == CS_SLES_MAX_ITERATION) {
+  else if (nl_info->cvg == CS_SLES_MAX_ITERATION) {
     cs_log_printf(CS_LOG_DEFAULT,
                   "%8s.ItXXX-- %5.3e  Picard algorithm DID NOT CONVERGE "
                   "within the prescribed max. number of iterations.\n",
-                  "Picard", ns_info.res);
+                  "Picard", nl_info->res);
     cs_base_warn(__FILE__, __LINE__);
     bft_printf(" %s: Picard algorithm reaches the max. number of iterations\n",
                 __func__);
