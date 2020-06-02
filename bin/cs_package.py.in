@@ -37,11 +37,16 @@ except Exception:
 
 class package:
 
-    def __init__(self, scriptdir=None):
+    def __init__(self, scriptdir=None, reload_config=False):
 
         # System configuration (compilers, pre-requisites, ...)
 
-        self.config = cs_config.config()
+        if reload_config:
+            import importlib
+            config = importlib.import_module('cs_config')
+            self.config = config.config()
+        else:
+            self.config = cs_config.config()
 
         # Package information
 
@@ -226,13 +231,12 @@ class package:
                 reload(cs_config)
                 import cs_package
                 reload(cs_package)
+                pkg = cs_package.package()
             else:
                 import importlib
-                from code_saturne import cs_config
-                importlib.reload(cs_config)
-                from code_saturne import cs_package
-                importlib.reload(cs_package)
-            pkg = cs_package.package()
+                importlib.invalidate_caches()
+                package = importlib.import_module('cs_package')
+                pkg = package.package(reload_config=True)
             sys.path.pop(0)
         else:
             raise ImportError("Alternative version '" + pythondir + "' not found.")
