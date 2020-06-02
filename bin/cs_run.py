@@ -355,6 +355,9 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
     # Resources: try to find a matching section, using
     # resource_name, batch, and job_defaults in decreasing priority.
 
+    if not r_c['compute_build']:
+        r_c['compute_build'] = run_conf.get_bool('run', 'compute_build')
+
     resource_name = i_c['resource_name']
     if not resource_name or not resource_name in run_conf.sections:
         resource_name = i_c['batch']
