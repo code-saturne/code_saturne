@@ -3,6 +3,8 @@ Release 6.0.3 (Unreleased)
 
 Bug fixes:
 
+- Fix loading/handling of compute builds on some Python environments.
+
 - Fix false positive in divergence check for flexible congugate gradient
   occuring in some cases, including in basic "full junction" tutorial.
 

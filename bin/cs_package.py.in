@@ -5,7 +5,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2019 EDF S.A.
+# Copyright (C) 1998-2020 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -26,19 +26,26 @@
 import os
 import sys
 
-import cs_config
-
+try:
+    from code_saturne import cs_config
+except Exception:
+    import cs_config
 
 # Package information
 #--------------------
 
 class package:
 
-    def __init__(self, scriptdir=None):
+    def __init__(self, scriptdir=None, reload_config=False):
 
         # System configuration (compilers, pre-requisites, ...)
 
-        self.config = cs_config.config()
+        if reload_config:
+            import importlib
+            config = importlib.import_module('cs_config')
+            self.config = config.config()
+        else:
+            self.config = cs_config.config()
 
         # Package information
 
@@ -51,7 +58,7 @@ class package:
         self.version = "@cs_version@"
         self.version_full = "@cs_version_full@"
         self.version_short = "@cs_version_short@"
-        self.revision = "@cs_src_revision@"
+        self.revision = "@cs_revision@"
 
         self.code_name = "Code_Saturne"
 
@@ -219,17 +226,16 @@ class package:
             import sys
             sys.path.insert(0, pythondir)
             if sys.version < '3.4':
-                import cs_config
+                from code_saturne import cs_config
                 reload(cs_config)
                 import cs_package
                 reload(cs_package)
+                pkg = cs_package.package()
             else:
                 import importlib
-                import cs_config
-                importlib.reload(cs_config)
-                import cs_package
-                importlib.reload(cs_package)
-            pkg = cs_package.package()
+                importlib.invalidate_caches()
+                package = importlib.import_module('cs_package')
+                pkg = package.package(reload_config=True)
             sys.path.pop(0)
         else:
             raise ImportError("Alternative version '" + pythondir + "' not found.")
