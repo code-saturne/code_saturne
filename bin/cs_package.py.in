@@ -31,7 +31,6 @@ try:
 except Exception:
     import cs_config
 
-
 # Package information
 #--------------------
 

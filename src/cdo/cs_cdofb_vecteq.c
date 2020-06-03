@@ -359,7 +359,7 @@ cs_cdofb_vecteq_init_cell_system(const cs_cell_mesh_t         *cm,
     for (int k = 0; k < 3; k++) {
       csys->dof_ids[3*f + k] = 3*f_id + k;
       if (val_f_pre != NULL)    /* Case of steady algo. */
-      csys->val_n[3*f + k] = val_f_pre[3*f_id + k];
+        csys->val_n[3*f + k] = val_f_pre[3*f_id + k];
     }
 
   }
