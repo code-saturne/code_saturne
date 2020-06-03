@@ -2290,10 +2290,6 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
                                   div_l2_norm,
                                   &ns_info);
 
-  cs_real_t  *mass_flux_iter_pre = NULL;
-  if (ns_info.cvg == CS_SLES_ITERATING)
-    BFT_MALLOC(mass_flux_iter_pre, quant->n_faces, cs_real_t);
-
   while (ns_info.cvg == CS_SLES_ITERATING) {
 
     /* Main loop on cells to define the linear system to solve */
@@ -2331,14 +2327,15 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
                                           sc->divergence->val);
 
     /* Compute the new mass flux used as the advection field */
-    memcpy(mass_flux_iter_pre, cc->mass_flux_array, n_faces*sizeof(cs_real_t));
+    memcpy(cc->mass_flux_array_pre, cc->mass_flux_array,
+           n_faces*sizeof(cs_real_t));
 
     cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values, cc->adv_field);
 
     /* Check the convergence status and update the ns_info structure related
      * to the convergence monitoring */
     cs_cdofb_navsto_picard_cvg_test(nsp, cs_shared_connect, quant,
-                                    mass_flux_iter_pre,
+                                    cc->mass_flux_array_pre,
                                     cc->mass_flux_array,
                                     div_l2_norm,
                                     &ns_info);
@@ -2370,9 +2367,6 @@ cs_cdofb_monolithic_steady_nl(const cs_mesh_t           *mesh,
   cs_cdofb_monolithic_sles_clean(msles);
   BFT_FREE(dir_values);
   BFT_FREE(enforced_ids);
-
-  if (mass_flux_iter_pre != NULL)
-    BFT_FREE(mass_flux_iter_pre);
 
   cs_timer_t  t_end = cs_timer_time();
   cs_timer_counter_add_diff(&(sc->timer), &t_start, &t_end);
@@ -2594,10 +2588,6 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
                                   div_l2_norm,
                                   &ns_info);
 
-  cs_real_t  *mass_flux_iter_pre = NULL;
-  if (ns_info.cvg == CS_SLES_ITERATING)
-    BFT_MALLOC(mass_flux_iter_pre, quant->n_faces, cs_real_t);
-
   while (ns_info.cvg == CS_SLES_ITERATING) {
 
     /* Start of the system building */
@@ -2634,15 +2624,12 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
     div_l2_norm = _mono_update_divergence(mom_eqc->face_values,
                                           sc->divergence->val);
 
-    /* Compute the new mass flux used as the advection field */
-    memcpy(mass_flux_iter_pre, cc->mass_flux_array, n_faces*sizeof(cs_real_t));
-
     cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values, cc->adv_field);
 
     /* Check the convergence status and update the ns_info structure related
      * to the convergence monitoring */
     cs_cdofb_navsto_picard_cvg_test(nsp, cs_shared_connect, quant,
-                                    mass_flux_iter_pre,
+                                    cc->mass_flux_array_pre,
                                     cc->mass_flux_array,
                                     div_l2_norm,
                                     &ns_info);
@@ -2672,8 +2659,6 @@ cs_cdofb_monolithic_nl(const cs_mesh_t           *mesh,
 
   /* Frees */
   cs_cdofb_monolithic_sles_clean(msles);
-  if (mass_flux_iter_pre != NULL)
-    BFT_FREE(mass_flux_iter_pre);
   BFT_FREE(dir_values);
   BFT_FREE(enforced_ids);
 
