@@ -194,8 +194,8 @@ cs_iter_algo_navsto_fb_picard_cvg(const cs_cdo_connect_t      *connect,
 
   if (a_info->verbosity > 0) {
     if (a_info->n_algo_iter == 1)
-      cs_iter_algo_navsto_print_header("Picard");
-    cs_iter_algo_navsto_print("Picard", a_info, div_l2_norm);
+      cs_iter_algo_navsto_print_header("## Picard");
+    cs_iter_algo_navsto_print("## Picard", a_info, div_l2_norm);
   }
 
 }

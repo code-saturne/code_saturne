@@ -1803,7 +1803,7 @@ _gkb_cvg_test(cs_gkb_builder_t           *gkb)
 
   if (gkb->info->verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT,
-                  "#### GKB.It%d %5.3e %5d %6d z2:%6.4e renorm:%6.4e cvg:%d\n",
+                  "### GKB.It%d %5.3e %5d %6d z2:%6.4e renorm:%6.4e cvg:%d\n",
                   gkb->info->n_algo_iter, gkb->info->res,
                   gkb->info->last_inner_iter, gkb->info->n_inner_iter,
                   z2, sqrt(gkb->zeta_square_sum), gkb->info->cvg);
@@ -1856,7 +1856,7 @@ _uza_cvg_test(cs_uza_builder_t           *uza)
 
   if (uza->info->verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT,
-                  "#### UZA.It%02d-- %5.3e %5d %6d cvg:%d\n",
+                  "### UZA.It%02d-- %5.3e %5d %6d cvg:%d\n",
                   uza->info->n_algo_iter, uza->info->res,
                   uza->info->last_inner_iter, uza->info->n_inner_iter,
                   uza->info->cvg);
@@ -1894,6 +1894,11 @@ _uza_incr_cvg_test(cs_real_t                   delta_u_l2,
   if (uza->info->n_algo_iter == 1) { /* First call */
     uza->info->res0 = uza->info->res;
     uza->info->tol = fmax(uza->info->atol, uza->info->rtol*uza->info->res0);
+
+    if (uza->info->verbosity > 1)
+      cs_log_printf(CS_LOG_DEFAULT,
+                    "### UZAi.res0: %5.3e tol: %5.3e\n",
+                    uza->info->res0, uza->info->tol);
   }
 
   /* Set the convergence status */
@@ -1917,7 +1922,7 @@ _uza_incr_cvg_test(cs_real_t                   delta_u_l2,
 
   if (uza->info->verbosity > 0)
     cs_log_printf(CS_LOG_DEFAULT,
-                  "#### UZAi.It%02d %5.3e %5d %6d cvg:%d div:%5.3e, du:%5.3e\n",
+                  "### UZAi.It%02d %5.3e %5d %6d cvg:%d div:%5.3e, du:%5.3e\n",
                   uza->info->n_algo_iter, uza->info->res,
                   uza->info->last_inner_iter, uza->info->n_inner_iter,
                   uza->info->cvg, divu_l2, delta_u_l2);
@@ -2370,7 +2375,7 @@ cs_cdofb_monolithic_solve(const cs_navsto_param_t       *nsp,
 
   /* Output information about the convergence of the resolution */
   if (sles_param.verbosity > 1)
-    cs_log_printf(CS_LOG_DEFAULT, "#####  %s/SLES: code %-d n_iters %d"
+    cs_log_printf(CS_LOG_DEFAULT, "####  %s/SLES: code %-d n_iters %d"
                   " residual % -8.4e nnz %lu\n",
                   eqp->name, code, n_iters, residual, nnz);
 
