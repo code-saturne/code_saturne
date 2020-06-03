@@ -1367,10 +1367,6 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
                                     div_l2_norm,
                                     nl_info);
 
-  cs_real_t  *mass_flux_iter_pre = NULL;
-  if (nl_info->cvg == CS_SLES_ITERATING)
-    BFT_MALLOC(mass_flux_iter_pre, quant->n_faces, cs_real_t);
-
   while (nl_info->cvg == CS_SLES_ITERATING) {
 
     /* Main loop on cells to define the linear system to solve */
@@ -1425,14 +1421,15 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
     div_l2_norm = _ac_update_div(vel_f, div);
 
     /* Compute the new mass flux used as the advection field */
-    memcpy(mass_flux_iter_pre, cc->mass_flux_array, n_faces*sizeof(cs_real_t));
+    memcpy(cc->mass_flux_array_pre, cc->mass_flux_array,
+           n_faces*sizeof(cs_real_t));
 
     cs_cdofb_navsto_mass_flux(nsp, quant, mom_eqc->face_values, cc->adv_field);
 
     /* Check the convergence status and update the nl_info structure related
      * to the convergence monitoring */
     cs_iter_algo_navsto_fb_picard_cvg(connect, quant,
-                                      mass_flux_iter_pre,
+                                      cc->mass_flux_array_pre,
                                       cc->mass_flux_array,
                                       div_l2_norm,
                                       nl_info);
@@ -1480,8 +1477,6 @@ cs_cdofb_ac_compute_implicit_nl(const cs_mesh_t              *mesh,
 #endif
 
   /* Frees */
-  if (mass_flux_iter_pre != NULL)
-    BFT_FREE(mass_flux_iter_pre);
   BFT_FREE(dir_values);
   BFT_FREE(rhs);
   cs_sles_free(sles);
