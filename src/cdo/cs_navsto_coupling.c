@@ -146,7 +146,7 @@ cs_navsto_ac_create_context(cs_navsto_param_t    *nsp,
 
   nsc->adv_field = cs_advection_field_add("mass_flux", adv_status);
 
-  /* Allocated during the last steup stage when the mesh has been read */
+  /* Allocated during the last setup stage when the mesh has been read */
   nsc->mass_flux_array = NULL;
   nsc->mass_flux_array_pre = NULL;
 
@@ -421,7 +421,7 @@ cs_navsto_monolithic_create_context(cs_navsto_param_t    *nsp,
 
   nsc->adv_field = cs_advection_field_add("mass_flux", adv_status);
 
-  /* Allocated during the last steup stage when the mesh has been read */
+  /* Allocated during the last setup stage when the mesh has been read */
   nsc->mass_flux_array = NULL;
   nsc->mass_flux_array_pre = NULL;
 
