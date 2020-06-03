@@ -1323,6 +1323,11 @@ void cs_gui_turb_model(void)
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
     cs_gui_node_get_child_status_int(tn_t, "gravity_terms", &(rans_mdl->igrake));
   }
+    else if (cs_gui_strcmp(model, "Launder-Sharma")) {
+    turb_mdl->iturb = 22;
+    cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);
+    cs_gui_node_get_child_status_int(tn_t, "gravity_terms", &(rans_mdl->igrake));
+  }
   else if (cs_gui_strcmp(model, "Rij-epsilon")) {
     turb_mdl->iturb = CS_TURB_RIJ_EPSILON_LRR;
     cs_gui_node_get_child_int(tn_t, "wall_function", &iwallf);

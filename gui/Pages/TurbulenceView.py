@@ -84,6 +84,8 @@ class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsD
 
         if default['model'] in ('k-epsilon', 'k-epsilon-PL'):
             title = self.tr("Options for k-epsilon model")
+        elif default['model'] in ('Launder-Sharma'):
+            title = self.tr("Options for Launder-Sharma k-epsilon model")
         elif default['model'] in ('Rij-epsilon', 'Rij-SSG', 'Rij-EBRSM'):
             title = self.tr("Options for Rij-epsilon model")
         elif default['model'] == 'k-omega-SST':
@@ -210,6 +212,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         self.modelTurbModel.addItem(self.tr("Mixing length"), "mixing_length")
         self.modelTurbModel.addItem(self.tr("k-epsilon"), "k-epsilon")
         self.modelTurbModel.addItem(self.tr("k-epsilon Linear Production"), "k-epsilon-PL")
+        self.modelTurbModel.addItem(self.tr("Launder-Sharma"), "Launder-Sharma")
         self.modelTurbModel.addItem(self.tr("Rij-epsilon LRR"), "Rij-epsilon")
         self.modelTurbModel.addItem(self.tr("Rij-epsilon SSG"), "Rij-SSG")
         self.modelTurbModel.addItem(self.tr("Rij-epsilon EBRSM"), "Rij-EBRSM")
