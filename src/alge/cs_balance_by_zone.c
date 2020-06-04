@@ -2402,7 +2402,6 @@ cs_flux_through_surface(const char         *scalar_name,
   /* Temperature indicator.
      Will multiply by CP in order to have energy. */
   bool itemperature = false;
-  const int scal_id = cs_field_get_key_int(f, cs_field_key_id("scalar_id"));
   if (f == cs_thermal_model_field()) {
     if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE)
       itemperature = true;

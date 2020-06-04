@@ -4083,7 +4083,7 @@ cs_sles_it_solve(void                *context,
 
   cs_sles_convergence_state_t cvg = CS_SLES_ITERATING;
 
-  cs_timer_t t0, t1;
+  cs_timer_t t0 = {0, 0, 0, 0}, t1;
 
   unsigned _n_iter = 0;
   cs_sles_it_convergence_t  convergence;

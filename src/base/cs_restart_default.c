@@ -546,7 +546,7 @@ _read_field_vals_legacy(cs_restart_t  *r,
     else if (strcmp(f->name, "joule_power") == 0)
       strncpy(sec_name, "tsource_sc_ce_joule", 127);
     else if (strcmp(f->name, "laplace_force") == 0)
-      strncpy(old_name, "laplace_force", 127);
+      strncpy(old_name, "laplace_force", 96);
   }
 
   if (sec_name[0] == '\0') {
@@ -579,24 +579,24 @@ _read_field_vals_legacy(cs_restart_t  *r,
   else if (f->dim == 3 && retcode == CS_RESTART_ERR_EXISTS) {
 
     if (strcmp(old_name, "vit_maillage") == 0) {
-      snprintf(old_name_x, 127, "%s_u_ce", old_name);
-      snprintf(old_name_y, 127, "%s_v_ce", old_name);
-      snprintf(old_name_z, 127, "%s_w_ce", old_name);
+      snprintf(old_name_x, 96, "%s_u_ce", old_name);
+      snprintf(old_name_y, 96, "%s_v_ce", old_name);
+      snprintf(old_name_z, 96, "%s_w_ce", old_name);
     }
     else if (strcmp(old_name, "laplace_force") == 0) {
-      snprintf(old_name_x, 127, "%s_1", old_name);
-      snprintf(old_name_y, 127, "%s_2", old_name);
-      snprintf(old_name_z, 127, "%s_2", old_name);
+      snprintf(old_name_x, 96, "%s_1", old_name);
+      snprintf(old_name_y, 96, "%s_2", old_name);
+      snprintf(old_name_z, 96, "%s_2", old_name);
     }
     else {
-      snprintf(old_name_x, 127, "%s_u_ce_phase01", old_name);
-      snprintf(old_name_y, 127, "%s_v_ce_phase01", old_name);
-      snprintf(old_name_z, 127, "%s_w_ce_phase01", old_name);
+      snprintf(old_name_x, 96, "%s_u_ce_phase01", old_name);
+      snprintf(old_name_y, 96, "%s_v_ce_phase01", old_name);
+      snprintf(old_name_z, 96, "%s_w_ce_phase01", old_name);
     }
 
-    old_name_x[127] = '\0';
-    old_name_y[127] = '\0';
-    old_name_z[127] = '\0';
+    old_name_x[95] = '\0';
+    old_name_y[95] = '\0';
+    old_name_z[95] = '\0';
 
     retcode = cs_restart_check_section(r,
                                        old_name_x,
@@ -616,12 +616,12 @@ _read_field_vals_legacy(cs_restart_t  *r,
   else if (f->dim == 6 && retcode == CS_RESTART_ERR_EXISTS) {
 
     if (strcmp(old_name, "Rij") == 0) {
-      snprintf(old_name_xx, 127, "r11::vals::0");
-      snprintf(old_name_yy, 127, "r22::vals::0");
-      snprintf(old_name_zz, 127, "r33::vals::0");
-      snprintf(old_name_xy, 127, "r12::vals::0");
-      snprintf(old_name_yz, 127, "r23::vals::0");
-      snprintf(old_name_xz, 127, "r13::vals::0");
+      snprintf(old_name_xx, 96, "r11::vals::0");
+      snprintf(old_name_yy, 96, "r22::vals::0");
+      snprintf(old_name_zz, 96, "r33::vals::0");
+      snprintf(old_name_xy, 96, "r12::vals::0");
+      snprintf(old_name_yz, 96, "r23::vals::0");
+      snprintf(old_name_xz, 96, "r13::vals::0");
 
       retcode = cs_restart_check_section(r,
                                          old_name_xx,
@@ -1503,7 +1503,6 @@ _read_and_convert_turb_variables(cs_restart_t  *r,
 
       cs_real_3_t *v_vel = (cs_real_3_t *)(CS_F_(vel)->vals[t_id]);
 
-      int err_k = 0;
       cs_real_t *v_k;
       BFT_MALLOC(v_k, n_cells, cs_real_t);
 

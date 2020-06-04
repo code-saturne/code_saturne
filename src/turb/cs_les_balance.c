@@ -251,7 +251,7 @@ _les_balance_get_tm_by_name(const char *name)
   int n_moments = cs_time_moment_n_moments();
   cs_field_t *f = NULL;
 
-  for (int imom = 0 ; imom < n_moments ; imom++) {
+  for (int imom = 0; imom < n_moments; imom++) {
     f = cs_time_moment_get_field(imom);
     if (strcmp(f->name, name) == 0)
       return f;
@@ -277,15 +277,15 @@ _les_balance_get_tm_label(int         isca,
                           char       *buffer)
 {
   /* Initializing an empty string with name */
-  char cSca[5];
+  char csca[5];
 
   memset(buffer, '\0', 32);
-  memset(cSca, '\0', sizeof(cSca));
   strcpy(buffer, name);
 
   /* Add the scalar number to this name */
-  sprintf(cSca, "_%d", isca);
-  strcat(buffer, cSca);
+  snprintf(csca, 4, "_%d", isca);
+  csca[4] = '\0';
+  strcat(buffer, csca);
 }
 
 /*----------------------------------------------------------------------------*
@@ -347,7 +347,7 @@ _les_balance_laplacian(cs_real_t   *wa,
   const cs_real_t visc = 1., pimp = 0., qimp = 0., hext = -1;
   cs_real_t a, b;
 
-  for (cs_lnum_t face_id = 0 ; face_id < n_b_faces ; face_id++) {
+  for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
     cs_real_t hint = visc / fvq->b_dist[face_id];
 
     if (   type == 0
@@ -376,7 +376,7 @@ _les_balance_laplacian(cs_real_t   *wa,
 
   cs_real_t *c_visc, *i_visc, *b_visc;
   BFT_MALLOC(c_visc, n_cells_ext, cs_real_t);
-  for (cs_lnum_t c_id = 0 ; c_id < n_cells ; c_id++)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     c_visc[c_id] = visc;
 
   BFT_MALLOC(i_visc, n_i_faces, cs_real_t);
@@ -414,7 +414,7 @@ _les_balance_laplacian(cs_real_t   *wa,
   BFT_FREE(i_visc);
   BFT_FREE(b_visc);
 
-  for (cs_lnum_t c_id = 0 ; c_id < n_cells ; c_id++)
+  for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
     res[c_id] /= cs_glob_mesh_quantities->cell_f_vol[c_id];
 }
 
@@ -460,10 +460,10 @@ _les_balance_laplacian(cs_real_t   *wa,
   inc = 1;
 
   /* Bc coeffs */
-  for (cs_lnum_t ifac = 0 ; ifac < n_b_faces ; ifac++) {
-    for (int ii = 0 ; ii < 3 ; ii++) {
+  for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
+    for (cs_lnum_t ii = 0; ii < 3; ii++) {
         coefav[ifac][ii] = 0.;
-        for (int pp = 0 ; pp < 3 ; pp++) {
+        for (cs_lnum_t pp = 0; pp < 3; pp++) {
           if (bc_type[ifac] == CS_SMOOTHWALL
            || bc_type[ifac] == CS_ROUGHWALL)
             coefbv[ifac][ii][pp] = 0.;
@@ -549,7 +549,7 @@ _les_balance_compute_gradients(void)
     BFT_MALLOC(coefbs, n_b_faces, cs_real_t);
 
     /* Bc coeffs */
-    for (cs_lnum_t ifac = 0 ; ifac < n_b_faces ; ifac++) {
+    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
       coefas[ifac] = 0.;
       if (bc_type[ifac] == CS_SMOOTHWALL
        || bc_type[ifac] == CS_ROUGHWALL)
@@ -590,7 +590,7 @@ _les_balance_compute_gradients(void)
     const int keysca = cs_field_key_id("scalar_id");
     int iii = 0;
 
-    for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id ++) {
+    for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
       cs_field_t *f = cs_field_by_id(f_id);
       int isca = cs_field_get_key_int(f, keysca);
       if (isca > 0) {
@@ -630,9 +630,9 @@ _les_balance_compute_pdjuisym(const void   *input,
 
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
 
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
     cs_real_t pre = CS_F_(p)->val[iel];
-    for (int ii = 0 ; ii < 6 ; ii++) {
+    for (cs_lnum_t ii = 0; ii < 6; ii++) {
       int i = idirtens[ii][0];
       int j = idirtens[ii][1];
       vals[6*iel + ii] = pre*(grdv[iel][i][j] + grdv[iel][j][i]);
@@ -659,7 +659,7 @@ _les_balance_compute_smag(const void   *input,
 
   cs_real_t *cpro_smago = cs_field_by_name("smagorinsky_constant^2")->val;
 
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++)
     vals[iel] = cs_math_sq(cpro_smago[iel]);
 }
 
@@ -681,15 +681,15 @@ _les_balance_compute_dkuidkuj(const void   *input,
 
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
 
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
 
-    for (int ii = 0 ; ii < 6 ; ii++)
+    for (cs_lnum_t ii = 0; ii < 6; ii++)
       vals[6*iel + ii] = 0.;
 
-    for (int ii = 0 ; ii < 6 ; ii++) {
+    for (cs_lnum_t ii = 0; ii < 6; ii++) {
       int i = idirtens[ii][0];
       int j = idirtens[ii][1];
-      for (int k = 0 ; k < 3 ; k++)
+      for (cs_lnum_t k = 0; k < 3; k++)
         vals[6*iel + ii] += grdv[iel][i][k] + grdv[iel][j][k];
     }
   }
@@ -722,18 +722,18 @@ _les_balance_compute_uidktaujk(const void   *input,
 
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
 
-  for (int i = 0 ; i < 3 ; i++) {
+  for (cs_lnum_t i = 0; i < 3; i++) {
 
-    for (int j = 0 ; j < 3 ; j++) {
+    for (cs_lnum_t j = 0; j < 3; j++) {
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-        for (int k = 0 ; k < 3 ; k++)
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+        for (cs_lnum_t k = 0; k < 3; k++)
           vel[iel][k] = -CS_F_(mu_t)->val[iel]*( grdv[iel][j][k]
                                                 +grdv[iel][k][j]);
 
       _les_balance_divergence_vector(vel, diverg);
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         vals[9*iel+i*3+j] = velocity[iel][i]*diverg[iel];
     }
   }
@@ -760,15 +760,15 @@ _les_balance_compute_nutdkuidkuj(const void   *input,
 
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
 
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
 
-    for (int ii = 0 ; ii < 6 ; ii++)
+    for (cs_lnum_t ii = 0; ii < 6; ii++)
       vals[6*iel + ii] = 0.;
 
-    for (int ii = 0 ; ii < 6 ; ii++) {
+    for (cs_lnum_t ii = 0; ii < 6; ii++) {
       int i = idirtens[ii][0];
       int j = idirtens[ii][1];
-      for (int k = 0 ; k < 3 ; k++)
+      for (cs_lnum_t k = 0; k < 3; k++)
         vals[6*iel + ii] +=
           CS_F_(mu_t)->val[iel]*grdv[iel][i][k]*grdv[iel][j][k];
     }
@@ -798,15 +798,15 @@ _les_balance_compute_dknutuidjuksym(const void   *input,
   cs_real_33_t *grdv  = (cs_real_33_t *)_gradv->val;
   cs_real_3_t *grdnu = (cs_real_3_t *)_gradnut->val;
 
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
 
-    for (int ii = 0 ; ii < 6 ; ii++)
+    for (cs_lnum_t ii = 0; ii < 6; ii++)
       vals[6*iel + ii] = 0.;
 
-    for (int ii = 0 ; ii < 6 ; ii++) {
+    for (cs_lnum_t ii = 0; ii < 6; ii++) {
       i = idirtens[ii][0];
       j = idirtens[ii][1];
-      for (int k = 0 ; k < 3 ; k++)
+      for (cs_lnum_t k = 0; k < 3; k++)
         vals[6*iel + ii] += grdnu[iel][i]
                             *( vel[iel][i]*grdv[iel][k][j]
                               +vel[iel][j]*grdv[iel][k][i]);
@@ -828,14 +828,14 @@ _les_balance_compute_nutdkuiuj(const void   *input,
 {
   const int *k = (const int *)input;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
-  int i,j ;
+  int i,j;
 
   cs_real_3_t *vel   = (cs_real_3_t *)CS_F_(vel)->val;
   cs_real_6_t *tens  = (cs_real_6_t *)vals;
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
 
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
-    for (int ii = 0 ; ii < 6 ; ii++) {
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+    for (cs_lnum_t ii = 0; ii < 6; ii++) {
       i = idirtens[ii][0];
       j = idirtens[ii][1];
       tens[iel][ii] = CS_F_(mu_t)->val[iel]
@@ -864,13 +864,13 @@ _les_balance_compute_dknutdiuk(const void   *input,
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
   cs_real_3_t *grdnu = (cs_real_3_t *)_gradnut->val;
 
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
 
-    for (int i = 0 ; i < 3 ; i++)
+    for (cs_lnum_t i = 0; i < 3; i++)
       vals[3*iel + i] = 0.;
 
-    for (int i = 0 ; i < 3 ; i++)
-      for (int j = 0 ; j < 3 ; j++)
+    for (cs_lnum_t i = 0; i < 3; i++)
+      for (cs_lnum_t j = 0; j < 3; j++)
         vals[3*iel + i] += grdnu[iel][i]*grdv[iel][i][j];
   }
 }
@@ -895,9 +895,9 @@ _les_balance_compute_uidjnut(const void   *input,
   cs_real_3_t *vel   = (cs_real_3_t *)CS_F_(vel)->val;
   cs_real_33_t *tens = (cs_real_33_t *)vals;
 
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
-    for (int i = 0 ; i < 3 ; i++)
-      for (int j = 0 ; j < 3 ; j++)
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+    for (cs_lnum_t i = 0; i < 3; i++)
+      for (cs_lnum_t j = 0; j < 3; j++)
         tens[iel][i][j] = vel[iel][i]*grdnu[iel][j];
   }
 }
@@ -920,7 +920,7 @@ _les_balance_compute_djtdjui(const void   *input,
   cs_real_t dtdxjduidxj;
   int isca = 0;
 
-  for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
+  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     if (cs_field_get_key_int(f, keysca) > 0) {
       if (f_id == sca->id)
@@ -932,10 +932,10 @@ _les_balance_compute_djtdjui(const void   *input,
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
 
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
-    for (int i = 0 ; i < 3 ; i++) {
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+    for (cs_lnum_t i = 0; i < 3; i++) {
       dtdxjduidxj = 0.;
-      for (int kk = 0 ; kk < 3 ; kk++)
+      for (cs_lnum_t kk = 0; kk < 3; kk++)
         dtdxjduidxj += grdt[iel][kk]*grdv[iel][i][kk];
 
       vals[3*iel+i] = dtdxjduidxj;
@@ -960,8 +960,8 @@ _les_balance_compute_tuiuj(const void   *input,
   cs_real_3_t *vel = (cs_real_3_t *)CS_F_(vel)->val;
   int i, j;
 
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
-    for (int ii = 0 ; ii < 6 ; ii++) {
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+    for (cs_lnum_t ii = 0; ii < 6; ii++) {
       i = idirtens[ii][0];
       j = idirtens[ii][1];
       vals[6*iel+ii] = sca->val[iel]*vel[iel][i]*vel[iel][j];
@@ -989,7 +989,7 @@ _les_balance_compute_uidjt(const void   *input,
   const int keysca = cs_field_key_id("scalar_id");
   int isca = 0;
 
-  for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
+  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     if (cs_field_get_key_int(f, keysca) > 0) {
       if (f_id == sca->id)
@@ -1000,9 +1000,9 @@ _les_balance_compute_uidjt(const void   *input,
 
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
 
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-    for (int i = 0 ; i < 3 ; i++)
-      for (int j = 0 ; j < 3 ; j++)
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+    for (cs_lnum_t i = 0; i < 3; i++)
+      for (cs_lnum_t j = 0; j < 3; j++)
         tens[iel][i][j] = vel[iel][i]*grdt[iel][j];
 }
 
@@ -1024,7 +1024,7 @@ _les_balance_compute_ditdit(const void   *input,
   cs_real_t dtdxidtdxi;
   int isca = 0;
 
-  for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
+  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     if (cs_field_get_key_int(f, keysca) > 0) {
       if (f_id == sca->id)
@@ -1035,9 +1035,9 @@ _les_balance_compute_ditdit(const void   *input,
 
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
 
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
     dtdxidtdxi = 0.;
-    for (int i = 0 ; i < 3 ; i++)
+    for (cs_lnum_t i = 0; i < 3; i++)
       dtdxidtdxi += grdt[iel][i]; // FIXME: missing SQUARE??
     vals[iel] = dtdxidtdxi;
   }
@@ -1061,7 +1061,7 @@ _les_balance_compute_tdjtauij(const void   *input,
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   int isca = 0;
 
-  for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
+  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     if (cs_field_get_key_int(f, keysca) > 0) {
       if (f_id == sca->id)
@@ -1078,15 +1078,15 @@ _les_balance_compute_tdjtauij(const void   *input,
 
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
 
-  for (int i = 0 ; i < 3 ; i++) {
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-      for (int k = 0 ; k < 3 ; k++)
+  for (cs_lnum_t i = 0; i < 3; i++) {
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+      for (cs_lnum_t k = 0; k < 3; k++)
         w1[iel][k] = -CS_F_(mu_t)->val[iel]*( grdv[iel][i][k]
                                              +grdv[iel][k][i]);
 
     _les_balance_divergence_vector(w1, diverg);
 
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
       vals[3*iel+i] = sca->val[iel]*diverg[iel];
   }
 
@@ -1113,7 +1113,7 @@ _les_balance_compute_uidivturflux(const void   *input,
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
   int isca = 0;
 
-  for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
+  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     if (cs_field_get_key_int(f, keysca) > 0) {
       if (f_id == sca->id)
@@ -1133,15 +1133,15 @@ _les_balance_compute_uidivturflux(const void   *input,
 
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
 
-  for (int i = 0 ; i < 3 ; i++) {
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-      for (int k = 0 ; k < 3 ; k++)
+  for (cs_lnum_t i = 0; i < 3; i++) {
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+      for (cs_lnum_t k = 0; k < 3; k++)
         w1[iel][k] =  cs_math_sq(CS_F_(mu_t)->val[iel])/sigmas
                      *(grdv[iel][i][k]+grdv[iel][k][i]);
 
     _les_balance_divergence_vector(w1, diverg);
 
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
       vals[3*iel+i] = vel[iel][i]*diverg[iel];
   }
 
@@ -1168,7 +1168,7 @@ _les_balance_compute_tdivturflux(const void   *input,
   const int ksigmas = cs_field_key_id("turbulent_schmidt");
   int isca = 0;
 
-  for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
+  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     if (cs_field_get_key_int(f, keysca) > 0) {
       if (f_id == sca->id)
@@ -1188,15 +1188,15 @@ _les_balance_compute_tdivturflux(const void   *input,
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
 
   /* TODO : bug dans le fortran, boucle sur ii ? */
-  for (int i = 0 ; i < 3 ; i++)
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-      for (int k = 0 ; k < 3 ; k++)
+  for (cs_lnum_t i = 0; i < 3; i++)
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+      for (cs_lnum_t k = 0; k < 3; k++)
         w1[iel][k] =  cs_math_sq(CS_F_(mu_t)->val[iel])/sigmas
                      *(grdv[iel][i][k]+grdv[iel][k][i]);
 
   _les_balance_divergence_vector(w1, diverg);
 
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++)
     vals[iel] = sca->val[iel]*diverg[iel];
 
   BFT_FREE(diverg);
@@ -1221,7 +1221,7 @@ _les_balance_compute_nutditdit(const void   *input,
   cs_real_t nutditdit;
   int isca = 0;
 
-  for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
+  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     if (cs_field_get_key_int(f, keysca) > 0) {
       if (f_id == sca->id)
@@ -1232,9 +1232,9 @@ _les_balance_compute_nutditdit(const void   *input,
 
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
 
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
     nutditdit = 0.;
-    for (int i = 0 ; i < 3 ; i++)
+    for (cs_lnum_t i = 0; i < 3; i++)
       nutditdit +=  CS_F_(mu_t)->val[iel]*sca->val[iel]
                        *cs_math_sq(grdt[iel][i]);
 
@@ -1262,7 +1262,7 @@ _les_balance_compute_nutuidjt(const void   *input,
   const int keysca = cs_field_key_id("scalar_id");
   int isca = 0;
 
-  for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
+  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     if (cs_field_get_key_int(f, keysca) > 0) {
       if (f_id == sca->id)
@@ -1273,9 +1273,9 @@ _les_balance_compute_nutuidjt(const void   *input,
 
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
 
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-    for (int i = 0 ; i < 3 ; i++)
-      for (int j = 0 ; j < 3 ; j++)
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+    for (cs_lnum_t i = 0; i < 3; i++)
+      for (cs_lnum_t j = 0; j < 3; j++)
         tens[iel][i][j] = CS_F_(mu_t)->val[iel]*vel[iel][i]*grdt[iel][j];
 }
 
@@ -1297,7 +1297,7 @@ _les_balance_compute_nutdjuidjt(const void   *input,
   cs_real_t nutdjuidjt;
   int isca = 0;
 
-  for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id++) {
+  for (int f_id = 0; f_id < cs_field_n_fields(); f_id++) {
     cs_field_t *f = cs_field_by_id(f_id);
     if (cs_field_get_key_int(f, keysca) > 0) {
       if (f_id == sca->id)
@@ -1309,10 +1309,10 @@ _les_balance_compute_nutdjuidjt(const void   *input,
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
   cs_real_3_t *grdt = (cs_real_3_t *)_gradt[isca]->val;
 
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
-    for (int i = 0 ; i < 3 ; i++) {
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+    for (cs_lnum_t i = 0; i < 3; i++) {
       nutdjuidjt = 0.;
-      for (int kk = 0 ; kk < 3 ; kk++)
+      for (cs_lnum_t kk = 0; kk < 3; kk++)
         nutdjuidjt += CS_F_(mu_t)->val[iel]*grdv[iel][i][kk]*grdt[iel][kk];
 
       vals[3*iel+i] = nutdjuidjt;
@@ -1340,10 +1340,10 @@ _les_balance_compute_djnutdiuj(const void   *input,
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
   cs_real_3_t *grdnu = (cs_real_3_t *)_gradnut->val;
 
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
-    for (int i = 0 ; i < 3 ; i++) {
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+    for (cs_lnum_t i = 0; i < 3; i++) {
       djnutdiuj = 0.;
-      for (int kk = 0 ; kk < 3 ; kk++)
+      for (cs_lnum_t kk = 0; kk < 3; kk++)
         djnutdiuj += grdnu[iel][kk]*grdv[iel][kk][i];
 
       vals[3*iel+i] = djnutdiuj;
@@ -1370,10 +1370,10 @@ _les_balance_compute_djnuttdiuj(const void   *input,
   cs_real_33_t *grdv = (cs_real_33_t *)_gradv->val;
   cs_real_3_t *grdnu = (cs_real_3_t *)_gradnut->val;
 
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
-    for (int i = 0 ; i < 3 ; i++) {
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+    for (cs_lnum_t i = 0; i < 3; i++) {
       djnuttdiuj = 0.;
-      for (int kk = 0 ; kk < 3 ; kk++)
+      for (cs_lnum_t kk = 0; kk < 3; kk++)
         djnuttdiuj += grdnu[iel][kk]*sca->val[iel]*grdv[iel][kk][i];
 
       vals[3*iel+i] = djnuttdiuj;
@@ -1832,7 +1832,7 @@ _les_balance_time_moment_tui(void)
   }
 
   /* Define time moments for Tui balance */
-  for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id ++) {
+  for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
     cs_field_t *f = cs_field_by_id(f_id);
     int iscal = cs_field_get_key_int(f, keysca)-1;
     if (iscal > -1) {
@@ -2300,7 +2300,7 @@ _les_balance_allocate_rij(void)
     BFT_MALLOC(brij->budsgsij, n_cells, cs_real_6_t);
 
   if (_les_balance.type & CS_LES_BALANCE_RIJ_FULL)
-    BFT_MALLOC(brij->budsgsfullij, n_cells, cs_real_96_t);
+    BFT_MALLOC(brij->budsgsfullij, n_cells, cs_real_69_t);
 
   return brij;
 }
@@ -2351,7 +2351,7 @@ _les_balance_allocate_tui(void)
   if (_les_balance.type & CS_LES_BALANCE_TUI_FULL) {
     BFT_MALLOC(btui->budsgsvarfull, n_cells, cs_real_6_t);
     BFT_MALLOC(btui->budsgstuifull, 10, cs_real_3_t *);
-    for (int ii = 0 ; ii < 10 ; ii++)
+    for (int ii = 0; ii < 10; ii++)
       BFT_MALLOC(btui->budsgstuifull[ii], n_cells, cs_real_3_t);
   }
 
@@ -2371,9 +2371,9 @@ _les_balance_initialize_rij(void)
 
   cs_les_balance_rij_t *brij = _les_balance.brij;
 
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
 
-    for (int i = 0 ; i < 6 ; i++) {
+    for (cs_lnum_t i = 0; i < 6; i++) {
       brij->prodij[iel][i] = 0.;
       brij->epsij[iel][i] = 0.;
       brij->phiij[iel][i] = 0.;
@@ -2388,8 +2388,8 @@ _les_balance_initialize_rij(void)
     }
 
     if (_les_balance.type & CS_LES_BALANCE_RIJ_FULL)
-      for (int i = 0 ; i < 9 ; i++)
-        for (int j = 0 ; j < 6 ; j++)
+      for (cs_lnum_t i = 0; i < 9; i++)
+        for (cs_lnum_t j = 0; j < 6; j++)
           brij->budsgsfullij[iel][i][j] = 0.;
 
   }
@@ -2451,7 +2451,7 @@ _les_balance_initialize_tui(void)
   const int keysca = cs_field_key_id("scalar_id");
   int iscal = 0;
 
-  for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id ++) {
+  for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
     cs_field_t *f = cs_field_by_id(f_id);
     if (cs_field_get_key_int(f, keysca) > 0) {
       _les_balance.btui[iscal]->f_id = f_id;
@@ -2462,10 +2462,10 @@ _les_balance_initialize_tui(void)
   /* Since every time averages for Tui were created using
      time moments, there is no need to initialize them by
      reading the les_balance restart */
-  for (int isca = 0 ; isca < nscal ; isca++) {
+  for (int isca = 0; isca < nscal; isca++) {
     cs_les_balance_tui_t *btui = _les_balance.btui[isca];
 
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
       btui->unstvar[iel] = 0.;
       btui->tptp[iel] = 0.;
       btui->prodvar[iel] = 0.;
@@ -2474,7 +2474,7 @@ _les_balance_initialize_tui(void)
       btui->convvar[iel] = 0.;
       btui->difflamvar[iel] = 0.;
 
-      for (int ii = 0 ; ii < 3 ; ii++) {
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
         btui->unstti[iel][ii] = 0.;
         btui->tpuip[iel][ii] = 0.;
         btui->prodtUi[iel][ii] = 0.;
@@ -2490,13 +2490,13 @@ _les_balance_initialize_tui(void)
       if (_les_balance.type & CS_LES_BALANCE_TUI_BASE) {
         btui->budsgsvar[iel] = 0.;
 
-        for (int ii = 0 ; ii < 3 ; ii++)
+        for (cs_lnum_t ii = 0; ii < 3; ii++)
           btui->budsgstui[iel][ii] = 0.;
       }
 
       if (_les_balance.type & CS_LES_BALANCE_TUI_FULL)
-        for (int ii = 0 ; ii < 10 ; ii++)
-          for (int jj = 0 ; jj < 3 ; jj++)
+        for (cs_lnum_t ii = 0; ii < 10; ii++)
+          for (cs_lnum_t jj = 0; jj < 3; jj++)
             btui->budsgstuifull[ii][iel][jj] = 0.;
     }
   }
@@ -2549,7 +2549,7 @@ _les_balance_destroy_tui(cs_les_balance_tui_t **btui)
   if (btui == NULL)
     return btui;
 
-  for (int isca = 0 ; isca < nscal ; isca++) {
+  for (int isca = 0; isca < nscal; isca++) {
 
     BFT_FREE(btui[isca]->unstvar);
     BFT_FREE(btui[isca]->tptp);
@@ -2575,7 +2575,7 @@ _les_balance_destroy_tui(cs_les_balance_tui_t **btui)
     }
 
     if (_les_balance.type & CS_LES_BALANCE_TUI_FULL) {
-      for (int ii = 0 ; ii < 10 ; ii++)
+      for (int ii = 0; ii < 10; ii++)
         BFT_FREE(btui[isca]->budsgstuifull[ii]);
       BFT_FREE(btui[isca]->budsgstuifull);
       BFT_FREE(btui[isca]->budsgsvarfull);
@@ -2621,7 +2621,7 @@ _les_balance_create_tui(void)
 
   /* Creation and allocation of the structure containing
      working arrays */
-  for (int isca = 0 ; isca < nscal ; isca++)
+  for (int isca = 0; isca < nscal; isca++)
     _les_balance.btui[isca] = _les_balance_allocate_tui();
 
   /* Initialization of working arrays */
@@ -2765,23 +2765,23 @@ cs_les_balance_create(void)
   /* Count the number of scalars nscal */
   const int keysca = cs_field_key_id("scalar_id");
 
-  for (int f_id = 0 ; f_id < cs_field_n_fields() ; f_id ++) {
+  for (int f_id = 0; f_id < cs_field_n_fields(); f_id ++) {
     cs_field_t *f = cs_field_by_id(f_id);
     int isca = cs_field_get_key_int(f, keysca);
     if (isca > 0) nscal++;
   }
 
   /* Remplissage des tableaux de directions de tenseurs */
-  for (int ii = 0 ; ii < 3 ; ii++)
-    for (int jj = 0 ; jj < 3 ; jj++)
-      for (int iii = 0 ; iii < 6 ; iii++)
+  for (cs_lnum_t ii = 0; ii < 3; ii++)
+    for (cs_lnum_t jj = 0; jj < 3; jj++)
+      for (cs_lnum_t iii = 0; iii < 6; iii++)
         if (ii*jj == idirtens[iii][0]*idirtens[iii][1])
           ipdirtens[ii][jj] = iii;
 
-  for (int ii = 0 ; ii < 3 ; ii++)
-    for (int jj = 0 ; jj < 3 ; jj++)
-      for (int kk = 0 ; kk < 3 ; kk++)
-        for (int iii = 0 ; iii < 10 ; iii++)
+  for (cs_lnum_t ii = 0; ii < 3; ii++)
+    for (cs_lnum_t jj = 0; jj < 3; jj++)
+      for (cs_lnum_t kk = 0; kk < 3; kk++)
+        for (cs_lnum_t iii = 0; iii < 10; iii++)
           if (ii*jj*kk == idirtens3[iii][0]*idirtens3[iii][1]*idirtens3[iii][2])
             ipdirtens3[ii][jj][kk] = iii;
 
@@ -2863,7 +2863,8 @@ cs_les_balance_compute_rij(void)
 
   cs_real_t *p, *nut;
   cs_real_3_t *ui, *pu, *nutui, *dnutdxkdukdxi, *dnutdxi;
-  cs_real_6_t *uiuj, *rij, *pduidxj, *duidxkdujdxk, *nutduidxkdujdxk, *dnutdxkuidukdxjsym;
+  cs_real_6_t *uiuj, *rij, *pduidxj, *duidxkdujdxk;
+  cs_real_6_t *nutduidxkdujdxk, *dnutdxkuidukdxjsym;
   cs_real_33_t *nutduidxj, *uidtaujkdxk, *duidxj, *uidnutdxj;
 
   /* Time moments retrieved by name */
@@ -2882,12 +2883,18 @@ cs_les_balance_compute_rij(void)
     uidtaujkdxk  = (cs_real_33_t *)_les_balance_get_tm_by_name("uidktaujk_m")->val;
 
   if (_les_balance.type & CS_LES_BALANCE_RIJ_FULL) {
-    nutui              = (cs_real_3_t  *)_les_balance_get_tm_by_name("nutui_m")->val;
-    dnutdxkdukdxi      = (cs_real_3_t  *)_les_balance_get_tm_by_name("dknutdiuk_m")->val;
-    dnutdxi            = (cs_real_3_t  *)_les_balance_get_tm_by_name("dinut_m")->val;
-    nutduidxkdujdxk    = (cs_real_6_t  *)_les_balance_get_tm_by_name("nutdkuidkuj_m")->val;
-    dnutdxkuidukdxjsym = (cs_real_6_t  *)_les_balance_get_tm_by_name("dknutuidjuksym_m")->val;
-    uidnutdxj          = (cs_real_33_t *)_les_balance_get_tm_by_name("uidjnut_m")->val;
+    nutui
+      = (cs_real_3_t *)_les_balance_get_tm_by_name("nutui_m")->val;
+    dnutdxkdukdxi
+      = (cs_real_3_t *)_les_balance_get_tm_by_name("dknutdiuk_m")->val;
+    dnutdxi
+      = (cs_real_3_t *)_les_balance_get_tm_by_name("dinut_m")->val;
+    nutduidxkdujdxk
+      = (cs_real_6_t  *)_les_balance_get_tm_by_name("nutdkuidkuj_m")->val;
+    dnutdxkuidukdxjsym
+      = (cs_real_6_t *)_les_balance_get_tm_by_name("dknutuidjuksym_m")->val;
+    uidnutdxj
+      = (cs_real_33_t *)_les_balance_get_tm_by_name("uidjnut_m")->val;
   }
 
   /* Get the triple corrleations mean UiUjUk*/
@@ -2906,19 +2913,19 @@ cs_les_balance_compute_rij(void)
   uiujuk[9] = cs_field_by_name("u3u3u3_m")->val;
 
   /* Get additional averaged fields */
-  cs_real_6_t** nutdkuiuj;
-  cs_real_33_t** uidujdxk;
+  cs_real_6_t  **nutdkuiuj;
+  cs_real_33_t **uidujdxk;
   BFT_MALLOC(nutdkuiuj, 3, cs_real_6_t*);
   BFT_MALLOC(uidujdxk, 3, cs_real_33_t*);
 
   if (_les_balance.type & CS_LES_BALANCE_RIJ_FULL) {
-    nutdkuiuj[0] = cs_field_by_name("nutd1uiuj_m")->val;
-    nutdkuiuj[1] = cs_field_by_name("nutd2uiuj_m")->val;
-    nutdkuiuj[2] = cs_field_by_name("nutd3uiuj_m")->val;
+    nutdkuiuj[0] = (cs_real_6_t *)cs_field_by_name("nutd1uiuj_m")->val;
+    nutdkuiuj[1] = (cs_real_6_t *)cs_field_by_name("nutd2uiuj_m")->val;
+    nutdkuiuj[2] = (cs_real_6_t *)cs_field_by_name("nutd3uiuj_m")->val;
 
-    uidujdxk[0] = cs_field_by_name("u1dkuj_m")->val;
-    uidujdxk[1] = cs_field_by_name("u2dkuj_m")->val;
-    uidujdxk[2] = cs_field_by_name("u3dkuj_m")->val;
+    uidujdxk[0] = (cs_real_33_t *)cs_field_by_name("u1dkuj_m")->val;
+    uidujdxk[1] = (cs_real_33_t *)cs_field_by_name("u2dkuj_m")->val;
+    uidujdxk[2] = (cs_real_33_t *)cs_field_by_name("u3dkuj_m")->val;
   }
 
   /* Working arrays */
@@ -2948,8 +2955,8 @@ cs_les_balance_compute_rij(void)
   BFT_MALLOC(diverg, n_cells_ext, cs_real_t);
   BFT_MALLOC(lapl, n_cells_ext, cs_real_t);
 
-  for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
-    for (int iii = 0 ; iii < 6 ; iii++) {
+  for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+    for (cs_lnum_t iii = 0; iii < 6; iii++) {
       brij->prodij[iel][iii]    = 0.;
       brij->epsij[iel][iii]     = 0.;
       brij->phiij[iel][iii]     = 0.;
@@ -2961,15 +2968,15 @@ cs_les_balance_compute_rij(void)
   }
 
   /* unstij, epsij, prodij, phiij */
-  for (int ii = 0 ; ii < 6 ; ii++) {
+  for (cs_lnum_t ii = 0; ii < 6; ii++) {
     i = idirtens[ii][0];
     j = idirtens[ii][1];
 
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
       brij->unstij[iel][ii] = (rij[iel][ii] - brij->unstij[iel][ii])/dtref;
       brij->epsij[iel][ii] = duidxkdujdxk[iel][ii];
 
-      for (int kk = 0 ; kk < 3 ; kk++) {
+      for (cs_lnum_t kk = 0; kk < 3; kk++) {
         jj = ipdirtens[i][kk];
         ll = ipdirtens[j][kk];
         brij->prodij[iel][ii] -= rij[iel][ll]*duidxj[iel][i][kk]
@@ -2977,29 +2984,30 @@ cs_les_balance_compute_rij(void)
         brij->epsij[iel][ii] -= duidxj[iel][i][kk]*duidxj[iel][j][kk];
       }
 
-      brij->phiij[iel][ii] = (pduidxj[iel][ii] - p[iel]*(duidxj[iel][i][j]+duidxj[iel][j][i]))/ro0;
+      brij->phiij[iel][ii] = (pduidxj[iel][ii]
+                              - p[iel]*(duidxj[iel][i][j]+duidxj[iel][j][i]))/ro0;
       brij->epsij[iel][ii] *= -2.*viscl0/ro0;
     }
   }
 
   /* convij */
-  for (int iii = 0 ; iii < 6 ; iii++) {
+  for (cs_lnum_t iii = 0; iii < 6; iii++) {
     i = idirtens[iii][0];
     j = idirtens[iii][1];
 
     /* convij */
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-      for (int kk = 0 ; kk < 3 ; kk++)
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+      for (cs_lnum_t kk = 0; kk < 3; kk++)
         w1[iel][kk] = ui[iel][kk]*rij[iel][iii];
 
     _les_balance_divergence_vector(w1, diverg);
 
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
       brij->convij[iel][iii] = diverg[iel];
 
     /* difftij */
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
-      for (int kk = 0 ; kk < 3 ; kk++) {
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      for (cs_lnum_t kk = 0; kk < 3; kk++) {
         jjj = ipdirtens[i][kk];
         kkk = ipdirtens[j][kk];
         lll = ipdirtens3[i][j][kk];
@@ -3014,16 +3022,16 @@ cs_les_balance_compute_rij(void)
 
     _les_balance_divergence_vector(w1, diverg);
 
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
       brij->difftij[iel][iii] = diverg[iel];
 
     /* difftpij */
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-      for (int kk = 0 ; kk < 3 ; kk++)
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+      for (cs_lnum_t kk = 0; kk < 3; kk++)
         w1[iel][kk] = 0.;
 
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
-      for (int kk = 0 ; kk < 3 ; kk++) {
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      for (cs_lnum_t kk = 0; kk < 3; kk++) {
         if (kk == i)
           w1[iel][kk] -= pu[iel][j] - p[iel]*ui[iel][j];
         else if (kk == j)
@@ -3033,41 +3041,41 @@ cs_les_balance_compute_rij(void)
 
     _les_balance_divergence_vector(w1, diverg);
 
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
       brij->difftpij[iel][iii] = diverg[iel];
 
     /* Laminar diffusion */
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
       w2[iel] = rij[iel][iii];
 
     _les_balance_laplacian(w2, lapl, 0);
 
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
       brij->difflamij[iel][iii] = viscl0*lapl[iel]/ro0;
   }
 
   if (_les_balance.type & CS_LES_BALANCE_RIJ_BASE) {
 
-    for (int iii = 0 ; iii < 6 ; iii++) {
+    for (cs_lnum_t iii = 0; iii < 6; iii++) {
       i = idirtens[iii][0];
       j = idirtens[iii][1];
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-        for (int kk = 0 ; kk < 3 ; kk++)
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+        for (cs_lnum_t kk = 0; kk < 3; kk++)
           w1[iel][kk] = -nutduidxj[iel][j][kk] - nutduidxj[iel][kk][j];
 
       _les_balance_divergence_vector(w1, diverg);
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         brij->budsgsij[iel][iii] = -(uidtaujkdxk[iel][i][j]-ui[iel][i]*diverg[iel]);
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-        for (int kk = 0 ; kk < 3 ; kk++)
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+        for (cs_lnum_t kk = 0; kk < 3; kk++)
           w1[iel][kk] = -nutduidxj[iel][i][kk] - nutduidxj[iel][kk][i];
 
       _les_balance_divergence_vector(w1, diverg);
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         brij->budsgsij[iel][iii] -= (uidtaujkdxk[iel][j][i]-ui[iel][j]*diverg[iel]);
         brij->budsgsij[iel][iii] /= ro0;
       }
@@ -3076,47 +3084,52 @@ cs_les_balance_compute_rij(void)
 
   if (_les_balance.type & CS_LES_BALANCE_RIJ_FULL) {
 
-    for (int iii = 0 ; iii < 6 ; iii++) {
+    for (cs_lnum_t iii = 0; iii < 6; iii++) {
       i = idirtens[iii][0];
       j = idirtens[iii][1];
       cs_real_33_t *uidujdxk_ii = (cs_real_33_t*)uidujdxk[i];
       cs_real_33_t *uidujdxk_jj = (cs_real_33_t*)uidujdxk[j];
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-        for (int kk = 0 ; kk < 3 ; kk++)
-          w1[iel][kk] = nut[iel]*((uidujdxk_ii[iel][j][kk] - ui[iel][i]*duidxj[iel][j][kk])
-                                + (uidujdxk_jj[iel][i][kk] - ui[iel][j]*duidxj[iel][i][kk]));
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+        for (cs_lnum_t kk = 0; kk < 3; kk++)
+          w1[iel][kk] = nut[iel]*((  uidujdxk_ii[iel][j][kk]
+                                   - ui[iel][i]*duidxj[iel][j][kk])
+                                + (  uidujdxk_jj[iel][i][kk]
+                                   - ui[iel][j]*duidxj[iel][i][kk]));
 
       _les_balance_divergence_vector(w1, diverg);
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         brij->budsgsfullij[iel][iii][0] = diverg[iel]/ro0;
         brij->budsgsfullij[iel][iii][1] = nut[iel]/viscl0*brij->epsij[iel][iii];
       }
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
-        for (int kk = 0 ; kk < 3 ; kk++) {
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+        for (cs_lnum_t kk = 0; kk < 3; kk++) {
           cs_real_6_t *nutdkuiuj_loc = (cs_real_6_t*)nutdkuiuj[kk];
 
           w1[iel][kk] = nutdkuiuj_loc[iel][iii]
                       + 2.*nut[iel]*(ui[iel][i]*duidxj[iel][j][kk]
                                    + ui[iel][j]*duidxj[iel][i][kk])
-                      - nut[iel]*(uidujdxk_ii[iel][j][kk]+ uidujdxk_jj[iel][i][kk])
-                      - ui[iel][i]*nutduidxj[iel][j][kk] - ui[iel][j]*nutduidxj[iel][i][kk]
-                      - duidxj[iel][j][kk]*nutui[iel][i] - duidxj[iel][i][kk]*nutui[iel][j];
+                      - nut[iel]*(uidujdxk_ii[iel][j][kk] + uidujdxk_jj[iel][i][kk])
+                      - ui[iel][i]*nutduidxj[iel][j][kk]
+                      - ui[iel][j]*nutduidxj[iel][i][kk]
+                      - duidxj[iel][j][kk]*nutui[iel][i]
+                      - duidxj[iel][i][kk]*nutui[iel][j];
         }
       }
 
       _les_balance_divergence_vector(w1, diverg);
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         brij->budsgsfullij[iel][iii][2] = diverg[iel]/ro0;
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
-        brij->budsgsfullij[iel][iii][3] = nutduidxkdujdxk[iel][iii] - nut[iel]*duidxkdujdxk[iel][iii];
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+        brij->budsgsfullij[iel][iii][3] =  nutduidxkdujdxk[iel][iii]
+                                         - nut[iel]*duidxkdujdxk[iel][iii];
 
         cs_real_t xx = 0.;
-        for (int kk = 0 ; kk < 3 ; kk++)
+        for (cs_lnum_t kk = 0; kk < 3; kk++)
           xx += 2.*nut[iel]*duidxj[iel][i][kk]*duidxj[iel][j][kk]
               - duidxj[iel][i][kk]*nutduidxj[iel][j][kk]
               - duidxj[iel][j][kk]*nutduidxj[iel][i][kk];
@@ -3127,7 +3140,7 @@ cs_les_balance_compute_rij(void)
     }
 
     /* Bc coeffs */
-    for (cs_lnum_t ifac = 0 ; ifac < n_b_faces ; ifac++) {
+    for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
       coefas[ifac] = 0.;
       if (bc_type[ifac] == CS_SMOOTHWALL
        || bc_type[ifac] == CS_ROUGHWALL)
@@ -3158,74 +3171,81 @@ cs_les_balance_compute_rij(void)
                        NULL,
                        w3);
 
-    for (int iii = 0 ; iii < 6 ; iii++) {
+    for (cs_lnum_t iii = 0; iii < 6; iii++) {
       i = idirtens[iii][0];
       j = idirtens[iii][1];
       cs_real_33_t *uidujdxk_ii = (cs_real_33_t*)uidujdxk[i];
       cs_real_33_t *uidujdxk_jj = (cs_real_33_t*)uidujdxk[j];
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         brij->budsgsfullij[iel][iii][4] = 0.;
-        for (int kk = 0 ; kk < 3 ; kk++)
-          brij->budsgsfullij[iel][iii][4] += w3[iel][kk]*
-                                           ( uidujdxk_ii[iel][kk][j]-ui[iel][i]*duidxj[iel][kk][j]
-                                           + uidujdxk_jj[iel][kk][i]-ui[iel][j]*duidxj[iel][kk][i] );
+        for (cs_lnum_t kk = 0; kk < 3; kk++)
+          brij->budsgsfullij[iel][iii][4]
+            += w3[iel][kk]
+               *(  uidujdxk_ii[iel][kk][j]-ui[iel][i]*duidxj[iel][kk][j]
+                 + uidujdxk_jj[iel][kk][i]-ui[iel][j]*duidxj[iel][kk][i] );
         brij->budsgsfullij[iel][iii][4] /= ro0;
       }
     }
 
-    for (int iii = 0 ; iii < 6 ; iii++) {
+    for (cs_lnum_t iii = 0; iii < 6; iii++) {
       i = idirtens[iii][0];
       j = idirtens[iii][1];
       cs_real_33_t *uidujdxk_ii = (cs_real_33_t*)uidujdxk[i];
       cs_real_33_t *uidujdxk_jj = (cs_real_33_t*)uidujdxk[j];
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
-       brij->budsgsfullij[iel][iii][5] = dnutdxkuidukdxjsym[iel][iii]-ui[iel][i]*dnutdxkdukdxi[iel][j]
-                                                                     -ui[iel][j]*dnutdxkdukdxi[iel][i];
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+       brij->budsgsfullij[iel][iii][5] =   dnutdxkuidukdxjsym[iel][iii]
+                                         - ui[iel][i]*dnutdxkdukdxi[iel][j]
+                                         - ui[iel][j]*dnutdxkdukdxi[iel][i];
       }
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         cs_real_t xx = 0.;
-        for (int kk = 0 ; kk < 3 ; kk++) {
-          xx += 2.*dnutdxi[iel][kk]*(ui[iel][i]*duidxj[iel][kk][j]+ui[iel][j]*duidxj[iel][kk][i])
-                 - dnutdxi[iel][kk]*(uidujdxk_ii[iel][kk][j] + uidujdxk_jj[iel][kk][i])
-                 - duidxj[iel][kk][j]*uidnutdxj[iel][i][kk] - duidxj[iel][kk][i]*uidnutdxj[iel][j][kk];
+        for (cs_lnum_t kk = 0; kk < 3; kk++) {
+          xx += 2.*dnutdxi[iel][kk]*(  ui[iel][i]*duidxj[iel][kk][j]
+                                     + ui[iel][j]*duidxj[iel][kk][i])
+                 - dnutdxi[iel][kk]*(  uidujdxk_ii[iel][kk][j]
+                                     + uidujdxk_jj[iel][kk][i])
+                 - duidxj[iel][kk][j]*uidnutdxj[iel][i][kk]
+                 - duidxj[iel][kk][i]*uidnutdxj[iel][j][kk];
         }
 
         brij->budsgsfullij[iel][iii][5] += xx;
         brij->budsgsfullij[iel][iii][5] /= ro0;
       }
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-        for (int kk = 0 ; kk < 3 ; kk++)
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+        for (cs_lnum_t kk = 0; kk < 3; kk++)
           w1[iel][kk] = (nutui[iel][j]-nut[iel]*ui[iel][j])*duidxj[iel][i][kk]
                       + (nutui[iel][i]-nut[iel]*ui[iel][i])*duidxj[iel][j][kk];
 
       _les_balance_divergence_vector(w1, diverg);
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         brij->budsgsfullij[iel][iii][6] = diverg[iel]/ro0;
 
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         brij->budsgsfullij[iel][iii][7] = 0.;
-        for (int kk = 0  ; kk < 3 ; kk++)
-          brij->budsgsfullij[iel][iii][7] -= (nutduidxj[iel][j][kk]-nut[iel]*duidxj[iel][j][kk])
-                                             *duidxj[iel][i][kk]
-                                           + (nutduidxj[iel][i][kk]-nut[iel]*duidxj[iel][i][kk])
-                                             *duidxj[iel][j][kk];
+        for (cs_lnum_t kk = 0; kk < 3; kk++)
+          brij->budsgsfullij[iel][iii][7]
+            -=    (  nutduidxj[iel][j][kk]
+                   - nut[iel]*duidxj[iel][j][kk]) * duidxj[iel][i][kk]
+                + (  nutduidxj[iel][i][kk]
+                   - nut[iel]*duidxj[iel][i][kk]) * duidxj[iel][j][kk];
 
         brij->budsgsfullij[iel][iii][7] /= ro0;
       }
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
         brij->budsgsfullij[iel][iii][8] = 0.;
-        for (int kk = 0  ; kk < 3 ; kk++)
-          brij->budsgsfullij[iel][iii][8] += (uidnutdxj[iel][i][kk]-ui[iel][i]*dnutdxi[iel][kk])
-                                             *duidxj[iel][kk][j]
-                                           + (uidnutdxj[iel][j][kk]-ui[iel][j]*dnutdxi[iel][kk])
-                                             *duidxj[iel][kk][i];
+        for (cs_lnum_t kk = 0; kk < 3; kk++)
+          brij->budsgsfullij[iel][iii][8]
+            +=      (uidnutdxj[iel][i][kk]-ui[iel][i]*dnutdxi[iel][kk])
+                  * duidxj[iel][kk][j]
+                +   (uidnutdxj[iel][j][kk]-ui[iel][j]*dnutdxi[iel][kk])
+                  * duidxj[iel][kk][i];
 
         brij->budsgsfullij[iel][iii][8] /= ro0;
       }
@@ -3278,11 +3298,16 @@ cs_les_balance_compute_tui(void)
   cs_real_3_t *dnutdxjdujdxi, *dnutdxi, *tdnutdxi, *tdtdxi;
   cs_real_33_t *nuttduidxj, *nutuidtdxj;
 
-  cs_real_t    *p         = (cs_real_t    *)_les_balance_get_tm_by_name("p_m")->val;
-  cs_real_3_t  *ui        = (cs_real_3_t  *)_les_balance_get_tm_by_name("ui_m")->val;
-  cs_real_33_t *duidxj    = (cs_real_33_t *)_les_balance_get_tm_by_name("djui_m")->val;
-  cs_real_6_t  *uiuj      = (cs_real_6_t  *)_les_balance_get_tm_by_name("uiuj_m")->val;
-  cs_real_33_t *nutduidxj = (cs_real_33_t *)_les_balance_get_tm_by_name("nutdjui_m")->val;
+  cs_real_t    *p
+    = (cs_real_t    *)_les_balance_get_tm_by_name("p_m")->val;
+  cs_real_3_t  *ui
+    = (cs_real_3_t  *)_les_balance_get_tm_by_name("ui_m")->val;
+  cs_real_33_t *duidxj
+    = (cs_real_33_t *)_les_balance_get_tm_by_name("djui_m")->val;
+  cs_real_6_t  *uiuj
+    = (cs_real_6_t  *)_les_balance_get_tm_by_name("uiuj_m")->val;
+  cs_real_33_t *nutduidxj
+    = (cs_real_33_t *)_les_balance_get_tm_by_name("nutdjui_m")->val;
 
   if (_les_balance.type & CS_LES_BALANCE_TUI_FULL) {
     nut           =                _les_balance_get_tm_by_name("nut_m")->val;
@@ -3311,7 +3336,7 @@ cs_les_balance_compute_tui(void)
   BFT_MALLOC(coefas, n_b_faces  , cs_real_t  );
 
   /* For each scalar */
-  for (int isca = 0 ; isca < nscal ; isca++) {
+  for (int isca = 0; isca < nscal; isca++) {
 
     cs_les_balance_tui_t *b_sca = _les_balance.btui[isca];
 
@@ -3326,42 +3351,63 @@ cs_les_balance_compute_tui(void)
     cs_real_t    *tp         = _les_balance_get_tm_by_scalar_id(isca, "tp_m")->val;
     cs_real_t    *t2         = _les_balance_get_tm_by_scalar_id(isca, "t_v")->val;
 
-    cs_real_3_t  *tui         = (cs_real_3_t *)_les_balance_get_tm_by_scalar_id(isca, "tui_m")->val;
-    cs_real_3_t  *ttui        = (cs_real_3_t *)_les_balance_get_tm_by_scalar_id(isca, "ttui_m")->val;
-    cs_real_3_t  *dtdxi       = (cs_real_3_t *)_les_balance_get_tm_by_scalar_id(isca, "dtdxi_m")->val;
-    cs_real_3_t  *pdtdxi      = (cs_real_3_t *)_les_balance_get_tm_by_scalar_id(isca, "pdtdxi_m")->val;
-    cs_real_3_t  *dtdxjduidxj = (cs_real_3_t *)_les_balance_get_tm_by_scalar_id(isca, "djtdjui_m")->val;
+    cs_real_3_t  *tui
+      = (cs_real_3_t *)_les_balance_get_tm_by_scalar_id(isca, "tui_m")->val;
+    cs_real_3_t  *ttui
+      = (cs_real_3_t *)_les_balance_get_tm_by_scalar_id(isca, "ttui_m")->val;
+    cs_real_3_t  *dtdxi
+      = (cs_real_3_t *)_les_balance_get_tm_by_scalar_id(isca, "dtdxi_m")->val;
+    cs_real_3_t  *pdtdxi
+      = (cs_real_3_t *)_les_balance_get_tm_by_scalar_id(isca, "pdtdxi_m")->val;
+    cs_real_3_t  *dtdxjduidxj
+      = (cs_real_3_t *)_les_balance_get_tm_by_scalar_id(isca, "djtdjui_m")->val;
 
-    cs_real_6_t  *tuiuj = (cs_real_6_t *)_les_balance_get_tm_by_scalar_id(isca, "tuiuj_m")->val;
+    cs_real_6_t  *tuiuj
+      = (cs_real_6_t *)_les_balance_get_tm_by_scalar_id(isca, "tuiuj_m")->val;
 
-    cs_real_33_t *tduidxj = (cs_real_33_t *)_les_balance_get_tm_by_scalar_id(isca, "tdjui_m")->val;
-    cs_real_33_t *uidtdxj = (cs_real_33_t *)_les_balance_get_tm_by_scalar_id(isca, "uidjt_m")->val;
+    cs_real_33_t *tduidxj
+      = (cs_real_33_t *)_les_balance_get_tm_by_scalar_id(isca, "tdjui_m")->val;
+    cs_real_33_t *uidtdxj
+      = (cs_real_33_t *)_les_balance_get_tm_by_scalar_id(isca, "uidjt_m")->val;
 
     if (_les_balance.type & CS_LES_BALANCE_TUI_BASE) {
-      tdivturflux  =                _les_balance_get_tm_by_scalar_id(isca, "tdivturflux_m")->val;
-      tdtauijdxj   = (cs_real_3_t *)_les_balance_get_tm_by_scalar_id(isca, "tdjtauij_m")->val;
-      uidivturflux = (cs_real_3_t *)_les_balance_get_tm_by_scalar_id(isca, "uidivturflux_m")->val;
+      tdivturflux
+        = _les_balance_get_tm_by_scalar_id(isca, "tdivturflux_m")->val;
+      tdtauijdxj
+        = (cs_real_3_t *)_les_balance_get_tm_by_scalar_id(isca, "tdjtauij_m")->val;
+      uidivturflux
+        = (cs_real_3_t *)_les_balance_get_tm_by_scalar_id(isca, "uidivturflux_m")->val;
     }
 
     if (_les_balance.type & CS_LES_BALANCE_TUI_FULL) {
-      nutt           =                 _les_balance_get_tm_by_scalar_id(isca, "nutt_m")->val;
-      nutdtdxidtdxi  =                 _les_balance_get_tm_by_scalar_id(isca, "nutditdit_m")->val;
-      nutduidxjdtdxj = (cs_real_3_t  *)_les_balance_get_tm_by_scalar_id(isca, "nutdjuidjt_m")->val;
-      dnutdxjtdujdxi = (cs_real_3_t  *)_les_balance_get_tm_by_scalar_id(isca, "djnuttdiuj_m")->val;
-      tdnutdxi       = (cs_real_3_t  *)_les_balance_get_tm_by_scalar_id(isca, "tdinut_m")->val;
-      tdtdxi         = (cs_real_3_t  *)_les_balance_get_tm_by_scalar_id(isca, "tdit_m")->val;
-      nuttdtdxi      = (cs_real_3_t  *)_les_balance_get_tm_by_scalar_id(isca, "nuttdit_m")->val;
-      nuttduidxj     = (cs_real_33_t *)_les_balance_get_tm_by_scalar_id(isca, "nuttdjui_m")->val;
-      nutuidtdxj     = (cs_real_33_t *)_les_balance_get_tm_by_scalar_id(isca, "nutuidjt_m")->val;
+      nutt
+        =                 _les_balance_get_tm_by_scalar_id(isca, "nutt_m")->val;
+      nutdtdxidtdxi
+        =                 _les_balance_get_tm_by_scalar_id(isca, "nutditdit_m")->val;
+      nutduidxjdtdxj
+        = (cs_real_3_t  *)_les_balance_get_tm_by_scalar_id(isca, "nutdjuidjt_m")->val;
+      dnutdxjtdujdxi
+        = (cs_real_3_t  *)_les_balance_get_tm_by_scalar_id(isca, "djnuttdiuj_m")->val;
+      tdnutdxi
+        = (cs_real_3_t  *)_les_balance_get_tm_by_scalar_id(isca, "tdinut_m")->val;
+      tdtdxi
+        = (cs_real_3_t  *)_les_balance_get_tm_by_scalar_id(isca, "tdit_m")->val;
+      nuttdtdxi
+        = (cs_real_3_t  *)_les_balance_get_tm_by_scalar_id(isca, "nuttdit_m")->val;
+      nuttduidxj
+        = (cs_real_33_t *)_les_balance_get_tm_by_scalar_id(isca, "nuttdjui_m")->val;
+      nutuidtdxj
+        = (cs_real_33_t *)_les_balance_get_tm_by_scalar_id(isca, "nutuidjt_m")->val;
     }
 
     if (_les_balance.type & CS_LES_BALANCE_TUI_FULL ||
         _les_balance.type & CS_LES_BALANCE_TUI_BASE   )
-      nutdtdxi       = (cs_real_3_t  *)_les_balance_get_tm_by_scalar_id(isca, "nutdit_m")->val;
+      nutdtdxi
+        = (cs_real_3_t  *)_les_balance_get_tm_by_scalar_id(isca, "nutdit_m")->val;
 
     /* Initialization */
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
-      for (int ii = 0 ; ii < 3 ; ii++) {
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
         b_sca->prodtUi[iel][ii]   = 0.;
         b_sca->prodtTi[iel][ii]   = 0.;
         b_sca->phiti[iel][ii]     = 0.;
@@ -3374,20 +3420,20 @@ cs_les_balance_compute_tui(void)
     }
 
     /* tptp */
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
       b_sca->tptp[iel] = t2[iel] - cs_math_sq(t[iel]);
-      for (int ii = 0 ; ii < 3 ; ii++)
+      for (cs_lnum_t ii = 0; ii < 3; ii++)
         b_sca->tpuip[iel][ii] = tui[iel][ii] - t[iel]*ui[iel][ii];
     }
 
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
-      for (int ii = 0 ; ii < 3 ; ii++) {
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
         b_sca->unstti[iel][ii] = (b_sca->tpuip[iel][ii]-b_sca->unstti[iel][ii])/dtref;
         b_sca->prodtUi[iel][ii] = 0.;
         b_sca->prodtTi[iel][ii] = 0.;
         b_sca->epsti[iel][ii] = dtdxjduidxj[iel][ii];
 
-        for (int kk = 0 ; kk < 3 ; kk++) {
+        for (cs_lnum_t kk = 0; kk < 3; kk++) {
           iii = ipdirtens[ii][kk];
           b_sca->prodtUi[iel][ii] -= b_sca->tpuip[iel][kk]*duidxj[iel][ii][kk];
           wvar = uiuj[iel][iii] - ui[iel][ii]*ui[iel][kk];
@@ -3401,19 +3447,19 @@ cs_les_balance_compute_tui(void)
     }
 
     /* convti */
-    for (int ii = 0 ; ii < 3 ; ii++) {
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-        for (int kk = 0 ; kk < 3 ; kk++)
+    for (cs_lnum_t ii = 0; ii < 3; ii++) {
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+        for (cs_lnum_t kk = 0; kk < 3; kk++)
           w1[iel][kk] = ui[iel][kk]*b_sca->tpuip[iel][ii];
 
       _les_balance_divergence_vector(w1, diverg);
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         b_sca->convti[iel][ii] = diverg[iel];
 
       /* difftti */
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
-        for (int kk = 0 ; kk < 3 ; kk++) {
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+        for (cs_lnum_t kk = 0; kk < 3; kk++) {
           jjj = ipdirtens[ii][kk];
           w1[iel][kk] = - tuiuj[iel][jjj] - 2.*t[iel]*ui[iel][ii]*ui[iel][kk]
                                              + ui[iel][ii]*tui[iel][kk]
@@ -3424,35 +3470,35 @@ cs_les_balance_compute_tui(void)
 
       _les_balance_divergence_vector(w1, diverg);
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         b_sca->difftti[iel][ii] = diverg[iel];
 
 
       /* diffttpi */
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-        for (int kk = 0 ; kk < 3 ; kk++)
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+        for (cs_lnum_t kk = 0; kk < 3; kk++)
           w1[iel][kk] = tp[iel] - t[iel]*p[iel];
 
       _les_balance_divergence_vector(w1, diverg);
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         b_sca->diffttpi[iel][iii] = diverg[iel]/ro0;
 
 
       /* Laminar diffusion */
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-        for (int kk = 0 ; kk < 3 ; kk++)
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+        for (cs_lnum_t kk = 0; kk < 3; kk++)
           w1[iel][kk] = viscl0*(tduidxj[iel][ii][kk]-t[iel]*duidxj[iel][ii][kk])
                       + visls0*(uidtdxj[iel][ii][kk]-ui[iel][ii]*dtdxi[iel][kk]);
 
       _les_balance_divergence_vector(w1, diverg);
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         b_sca->difflamti[iel][ii] = diverg[iel]/ro0;
     }
 
     /* Variance budgets */
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
       b_sca->prodvar[iel]    = 0.;
       b_sca->epsvar[iel]     = 0.;
       b_sca->difftvar[iel]   = 0.;
@@ -3460,11 +3506,11 @@ cs_les_balance_compute_tui(void)
       b_sca->difflamvar[iel] = 0.;
     }
 
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
       b_sca->unstvar[iel] = (b_sca->tptp[iel] - b_sca->unstvar[iel])/dtref;
       b_sca->prodvar[iel] = 0.;
       b_sca->epsvar[iel] = dtdxidtdxi[iel];
-      for (int kk = 0 ; kk < 3 ; kk++) {
+      for (cs_lnum_t kk = 0; kk < 3; kk++) {
         b_sca->prodvar[iel] += b_sca->tpuip[iel][kk]*dtdxi[iel][kk];
         b_sca->epsvar[iel] -= cs_math_sq(dtdxi[iel][kk]);
       }
@@ -3473,18 +3519,18 @@ cs_les_balance_compute_tui(void)
     }
 
     /* convvar */
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-      for (int kk = 0 ; kk < 3 ; kk++)
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+      for (cs_lnum_t kk = 0; kk < 3; kk++)
         w1[iel][kk] = ui[iel][kk]*b_sca->tptp[iel];
 
     _les_balance_divergence_vector(w1, diverg);
 
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
       b_sca->convvar[iel] = diverg[iel];
 
     /* difftti */
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
-      for (int kk = 0 ; kk < 3 ; kk++) {
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+      for (cs_lnum_t kk = 0; kk < 3; kk++) {
         w1[iel][kk] = ttui[iel][kk] + 2.*cs_math_sq(t[iel])*ui[iel][kk]
                                     - ui[iel][kk]*t2[iel]
                                     - 2.*t[iel]*tui[iel][kk];
@@ -3493,75 +3539,80 @@ cs_les_balance_compute_tui(void)
 
     _les_balance_divergence_vector(w1, diverg);
 
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
       b_sca->difftvar[iel] = diverg[iel];
 
     /* Laminar diffusion */
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
       w2[iel] = b_sca->tptp[iel];
 
     _les_balance_laplacian(w2, lapl, 1);
 
-    for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+    for (cs_lnum_t iel = 0; iel < n_cells; iel++)
       b_sca->difflamvar[iel] = visls0*lapl[iel]/ro0;
 
 
     if (_les_balance.type & CS_LES_BALANCE_TUI_BASE) {
 
-      for (int ii = 0 ; ii < 3 ; ii++) {
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-          for (int kk = 0 ; kk < 3 ; kk++)
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+          for (cs_lnum_t kk = 0; kk < 3; kk++)
             w1[iel][kk] = -nutduidxj[iel][ii][kk] - nutduidxj[iel][kk][ii];
 
         _les_balance_divergence_vector(w1, diverg);
 
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
           b_sca->budsgstui[iel][ii] = -tdtauijdxj[iel][ii]-t[iel]*diverg[iel];
       }
 
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-        for (int kk = 0 ; kk < 3 ; kk++)
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+        for (cs_lnum_t kk = 0; kk < 3; kk++)
           w1[iel][kk] = -nutdtdxi[iel][kk];
 
 
       _les_balance_divergence_vector(w1, diverg);
 
 
-      for (int ii = 0 ; ii < 3 ; ii++) {
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-          b_sca->budsgstui[iel][ii] -= (uidivturflux[iel][ii]-ui[iel][ii]*diverg[iel]/sigmas);
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+          b_sca->budsgstui[iel][ii]
+            -= (uidivturflux[iel][ii]-ui[iel][ii]*diverg[iel]/sigmas);
 
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
           b_sca->budsgstui[iel][ii] /= ro0;
       }
 
       /* Total SGS contribution for the variance of a scalar */
-      for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-        b_sca->budsgsvar[iel] = -2.*(tdivturflux[iel]-t[iel]*diverg[iel]/sigmas)/ro0;
+      for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+        b_sca->budsgsvar[iel]
+          = -2.*(tdivturflux[iel]-t[iel]*diverg[iel]/sigmas)/ro0;
 
     }
 
     if (_les_balance.type & CS_LES_BALANCE_TUI_FULL) {
 
-      for (int ii = 0 ; ii < 3 ; ii++) {
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-          for (int kk = 0 ; kk < 3 ; kk++)
-            w1[iel][kk] = nut[iel]*(tduidxj[iel][ii][kk]-t[iel]*duidxj[iel][ii][kk])
-                        + nut[iel]*(uidtdxj[iel][ii][kk]-ui[iel][ii]*dtdxi[iel][kk])/sigmas;
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+          for (cs_lnum_t kk = 0; kk < 3; kk++)
+            w1[iel][kk] = nut[iel]*( tduidxj[iel][ii][kk]
+                                    -t[iel]*duidxj[iel][ii][kk])
+                        + nut[iel]*( uidtdxj[iel][ii][kk]
+                                    -ui[iel][ii]*dtdxi[iel][kk])/sigmas;
 
 
         _les_balance_divergence_vector(w1, diverg);
 
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
           b_sca->budsgstuifull[0][iel][ii] = diverg[iel]/ro0;
 
 
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-          b_sca->budsgstuifull[1][iel][ii] = nut[iel]*(1.+1./sigmas)*b_sca->epsti[iel][ii]/xvistot;
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+          b_sca->budsgstuifull[1][iel][ii]
+            = nut[iel]*(1.+1./sigmas)*b_sca->epsti[iel][ii]/xvistot;
 
 
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
-          for (int kk = 0 ; kk < 3 ; kk++) {
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+          for (cs_lnum_t kk = 0; kk < 3; kk++) {
             w1[iel][kk] = nuttduidxj[iel][ii][kk]
                         + 2.*nut[iel]*t[iel]*duidxj[iel][ii][kk]
                         - nut[iel]*tduidxj[iel][ii][kk]
@@ -3577,14 +3628,15 @@ cs_les_balance_compute_tui(void)
 
         _les_balance_divergence_vector(w1, diverg);
 
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
           b_sca->budsgstuifull[2][iel][ii] = diverg[iel]/ro0;
 
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
-          b_sca->budsgstuifull[3][iel][ii] = nutduidxjdtdxj[iel][ii] - nut[iel]*dtdxjduidxj[iel][ii];
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
+          b_sca->budsgstuifull[3][iel][ii]
+            = nutduidxjdtdxj[iel][ii] - nut[iel]*dtdxjduidxj[iel][ii];
 
           xx = 0.;
-          for (int kk = 0 ; kk < 3 ; kk++)
+          for (cs_lnum_t kk = 0; kk < 3; kk++)
             xx = xx + 2.*nut[iel]*duidxj[iel][ii][kk]*dtdxi[iel][kk]
                     - duidxj[iel][ii][kk]*nutdtdxi[iel][kk]
                     - dtdxi[iel][kk]*nutduidxj[iel][ii][kk];
@@ -3595,7 +3647,7 @@ cs_les_balance_compute_tui(void)
       }
 
       /* Bc coeffs */
-      for (cs_lnum_t ifac = 0 ; ifac < n_b_faces ; ifac++) {
+      for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
         coefas[ifac] = 0.;
         if (bc_type[ifac] == CS_SMOOTHWALL
          || bc_type[ifac] == CS_ROUGHWALL)
@@ -3627,16 +3679,18 @@ cs_les_balance_compute_tui(void)
                          w1);
 
 
-      for (int ii = 0 ; ii < 3 ; ii++) {
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+      for (cs_lnum_t ii = 0; ii < 3; ii++) {
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
           b_sca->budsgstuifull[4][iel][ii] = 0.;
-          for (int kk = 0 ; kk < 3 ; kk++)
-            b_sca->budsgstuifull[4][iel][ii] += w1[iel][kk]*(tduidxj[iel][ii][kk]-t[iel]*duidxj[iel][ii][kk]);
+          for (cs_lnum_t kk = 0; kk < 3; kk++)
+            b_sca->budsgstuifull[4][iel][ii]
+              += w1[iel][kk]*(tduidxj[iel][ii][kk]-t[iel]*duidxj[iel][ii][kk]);
           b_sca->budsgstuifull[4][iel][ii] /= ro0;
 
-          b_sca->budsgstuifull[5][iel][ii] = dnutdxjtdujdxi[iel][ii] - t[iel]*dnutdxjdujdxi[iel][ii];
+          b_sca->budsgstuifull[5][iel][ii] =   dnutdxjtdujdxi[iel][ii]
+                                             - t[iel]*dnutdxjdujdxi[iel][ii];
           xx = 0.;
-          for (int kk = 0 ; kk < 3 ; kk++)
+          for (cs_lnum_t kk = 0; kk < 3; kk++)
             xx = xx + 2.*t[iel]*dnutdxi[iel][kk]*duidxj[iel][kk][ii]
                     - duidxj[iel][kk][ii]*tdnutdxi[iel][kk]
                     - dnutdxi[iel][kk]*tduidxj[iel][kk][ii];
@@ -3645,44 +3699,49 @@ cs_les_balance_compute_tui(void)
           b_sca->budsgstuifull[5][iel][ii] *= viscl0/ro0;
         }
 
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-          for (int kk = 0 ; kk < 3 ; kk++)
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+          for (cs_lnum_t kk = 0; kk < 3; kk++)
             w1[iel][kk] = duidxj[iel][ii][kk]*(nutt[iel]-nut[iel]*t[iel])
                         + dtdxi[iel][kk]*(nutui[iel][ii]-nut[iel]*ui[iel][ii])/sigmas;
 
         _les_balance_divergence_vector(w1, diverg);
 
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
           b_sca->budsgstuifull[6][iel][ii] = diverg[iel]/ro0;
 
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
           b_sca->budsgstuifull[7][iel][ii] = 0.;
           b_sca->budsgstuifull[8][iel][ii] = 0.;
-          for (int kk = 0 ; kk < 3 ; kk++) {
-            b_sca->budsgstuifull[7][iel][ii] -= duidxj[iel][ii][kk]*(nutdtdxi[iel][kk]-nut[iel]*dtdxi[iel][kk])
-                                              + dtdxi[iel][kk]*(nutduidxj[iel][ii][kk]-nut[iel]*duidxj[iel][ii][kk])/sigmas;
-            b_sca->budsgstuifull[8][iel][ii] += duidxj[iel][kk][ii]*(tdnutdxi[iel][kk]-t[iel]*dnutdxi[iel][kk]);
+          for (cs_lnum_t kk = 0; kk < 3; kk++) {
+            b_sca->budsgstuifull[7][iel][ii]
+              -=   duidxj[iel][ii][kk]*(nutdtdxi[iel][kk]
+                 - nut[iel]*dtdxi[iel][kk])
+                 + dtdxi[iel][kk]*(nutduidxj[iel][ii][kk]
+                 - nut[iel]*duidxj[iel][ii][kk])/sigmas;
+            b_sca->budsgstuifull[8][iel][ii]
+              +=   duidxj[iel][kk][ii]*( tdnutdxi[iel][kk]
+                                        -t[iel]*dnutdxi[iel][kk]);
           }
           b_sca->budsgstuifull[7][iel][ii] /= ro0;
           b_sca->budsgstuifull[8][iel][ii] /= ro0;
         }
 
 
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-          for (int kk = 0 ; kk < 3 ; kk++)
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+          for (cs_lnum_t kk = 0; kk < 3; kk++)
             w1[iel][kk] = 2.*nut[iel]/sigmas*(tdtdxi[iel][kk]-t[iel]*dtdxi[iel][kk]);
 
 
         _les_balance_divergence_vector(w1, diverg);
 
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
           b_sca->budsgsvarfull[iel][0] = diverg[iel]/ro0;
 
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
           b_sca->budsgsvarfull[iel][1] = b_sca->epsvar[iel]*nut[iel]/viscl0;
 
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-          for (int kk = 0 ; kk < 3 ; kk++)
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+          for (cs_lnum_t kk = 0; kk < 3; kk++)
             w1[iel][kk] = nuttdtdxi[iel][kk]
                         + 2.*nut[iel]*t[iel]*dtdxi[iel][kk]
                         - nut[iel]*tdtdxi[iel][kk]
@@ -3691,32 +3750,34 @@ cs_les_balance_compute_tui(void)
 
         _les_balance_divergence_vector(w1, diverg);
 
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
           b_sca->budsgsvarfull[iel][2] = 2.*diverg[iel]/(ro0*sigmas);
 
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
           b_sca->budsgsvarfull[iel][3] = nutdtdxidtdxi[iel]-nut[iel]*dtdxidtdxi[iel];
           xx = 0.;
-          for (int kk = 0 ; kk < 3 ; kk++)
-            xx += 2.*nut[iel]*t[iel]*dtdxi[iel][kk]-t[iel]*nutdtdxi[iel][kk]-dtdxi[iel][kk]*nutt[iel];
+          for (cs_lnum_t kk = 0; kk < 3; kk++)
+            xx += 2.*nut[iel]*t[iel]*dtdxi[iel][kk]
+                  -t[iel]*nutdtdxi[iel][kk]-dtdxi[iel][kk]*nutt[iel];
 
           b_sca->budsgsvarfull[iel][3] += xx;
           b_sca->budsgsvarfull[iel][3] *= -2./(sigmas*ro0);
         }
 
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
-          for (int kk = 0 ; kk < 3 ; kk++)
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+          for (cs_lnum_t kk = 0; kk < 3; kk++)
             w1[iel][kk] = dtdxi[iel][kk]*(nutt[iel]-nut[iel]*t[iel]);
 
         _les_balance_divergence_vector(w1, diverg);
 
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++)
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
           b_sca->budsgsvarfull[iel][4] = 2.*diverg[iel]/(sigmas*ro0);
 
-        for (cs_lnum_t iel = 0 ; iel < n_cells ; iel++) {
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
           b_sca->budsgsvarfull[iel][5] = 0.;
-          for (int kk = 0 ; kk < 3 ; kk++)
-            b_sca->budsgsvarfull[iel][5] += dtdxi[iel][kk]*(nutdtdxi[iel][kk]-nut[iel]*dtdxi[iel][kk]);
+          for (cs_lnum_t kk = 0; kk < 3; kk++)
+            b_sca->budsgsvarfull[iel][5]
+              += dtdxi[iel][kk]*(nutdtdxi[iel][kk]-nut[iel]*dtdxi[iel][kk]);
           b_sca->budsgsvarfull[iel][5] *= -2./(sigmas*ro0);
         }
       }

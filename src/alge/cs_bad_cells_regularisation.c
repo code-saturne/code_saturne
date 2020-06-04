@@ -402,17 +402,11 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t  *var,
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
   cs_lnum_t n_cells = mesh->n_cells;
   cs_lnum_t n_i_faces = mesh->n_i_faces;
-  cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
-  const int *b_face_cells = mesh->b_face_cells;
 
   const cs_real_t *surfn = mq->i_face_surf;
-  const cs_real_t *surfbn = mq->b_face_surf;
   double *dist = mq->i_dist;
-  double *distbr = mq->b_dist;
   double *volume  = mq->cell_vol;
-
-  const cs_real_3_t *surfbo = (const cs_real_3_t *) mq->b_face_normal;
 
   cs_real_66_t *dam;
   cs_real_6_t *rhs;
@@ -489,7 +483,14 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t  *var,
   }
 
   /* Boundary projection... should be consistent with BCs... */
+#if 0
   if (boundary_projection == 1) {
+    cs_lnum_t n_b_faces = mesh->n_b_faces;
+    const cs_lnum_t *b_face_cells = mesh->b_face_cells;
+    const cs_real_3_t *surfbo = (const cs_real_3_t *) mq->b_face_normal;
+    const cs_real_t *surfbn = mq->b_face_surf;
+    double *distbr = mq->b_dist;
+
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       if (cs_glob_bc_type[face_id] == CS_SMOOTHWALL ||
           cs_glob_bc_type[face_id] == CS_ROUGHWALL  ||
@@ -508,6 +509,7 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t  *var,
       }
     }
   }
+#endif
 
   cs_real_t rnorm = sqrt(cs_gdot(6*n_cells,
                                  (const cs_real_t *)rhs,
@@ -670,6 +672,7 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
     }
   }
 
+#if 0
   /* Boudanry projection... should be consistent with BCs... */
   if (boundary_projection == 1) {
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
@@ -690,6 +693,7 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
       }
     }
   }
+#endif
 
   cs_real_t rnorm = sqrt(cs_gdot(9*n_cells,
                                  (const cs_real_t *)rhs,

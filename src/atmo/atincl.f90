@@ -1024,7 +1024,7 @@ subroutine mo_compute_from_thermal_flux(z,z0,du,flux,tm,gredu,dlmo,ustar)
   ! Local variables
   double precision tstar
   double precision dlmo_old,ustar_old,tstar_old
-  double precision coef_mom,coef_moh
+  double precision coef_mom
   double precision prec_lmo,prec_ustar,prec_tstar,arr_lmo
   double precision num, denom
   integer icompt

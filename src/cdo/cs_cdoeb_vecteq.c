@@ -371,7 +371,7 @@ _eb_enforce_values(const cs_equation_param_t     *eqp,
  */
 /*----------------------------------------------------------------------------*/
 
-double
+static double
 _eb_cw_rhs_normalization(cs_param_resnorm_type_t     type,
                          const cs_cell_mesh_t       *cm,
                          const cs_cell_sys_t        *csys)

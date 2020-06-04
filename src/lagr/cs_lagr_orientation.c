@@ -504,11 +504,11 @@ cs_lagr_orientation_dyn_spheroids(int iprev,
 
     cs_real_t visccf = extra->viscl->val[cell_id] / romf;
 
-    cs_real_t epsilon;
-    if (extra->itytur == 2 || extra->itytur == 3 || extra->iturb == 50 ) {
+    cs_real_t epsilon = 0;
+    if (extra->itytur == 2 || extra->itytur == 3 || extra->iturb == 50) {
       epsilon = extra->cvar_ep->vals[iprev][cell_id];
     }
-    else if ( extra->iturb == 60) {
+    else if (extra->iturb == 60) {
       epsilon = extra->cmu * extra->cvar_k->vals[iprev][cell_id]
                            * extra->cvar_omg->vals[iprev][cell_id];
     }

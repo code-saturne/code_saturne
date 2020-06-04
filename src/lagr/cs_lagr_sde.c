@@ -2512,7 +2512,7 @@ _lagdep(cs_real_t           dtp,
       /* Otherwise, the deposition submodel is applied
        * ============================================= */
 
-      else if (! deposition_flags & CS_LAGR_PART_TO_DELETE) {
+      else if (! (deposition_flags & CS_LAGR_PART_TO_DELETE)) {
 
         cs_lnum_t *marko_value
           = (cs_lnum_t *)cs_lagr_particle_attr(particle,
