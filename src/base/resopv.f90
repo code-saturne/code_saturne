@@ -180,7 +180,7 @@ integer          itypfl
 integer          isou  , ibsize, iesize
 integer          imucpp, idftnp, iswdyp
 integer          iescap, ircflp, ischcp, isstpp, ivar, f_id0
-integer          nswrsp, iwgrp
+integer          nswrsp
 integer          imvisp, i_vof_mass_transfer
 integer          iflid, iflwgr, f_dim, imasac
 integer          f_id
@@ -1072,7 +1072,6 @@ if (arak.gt.0.d0) then
 
     nswrgp = vcopt_p%nswrgr
     imligp = vcopt_p%imligr
-    iwgrp  = vcopt_p%iwgrec
     iwarnp = vcopt_p%iwarni
     epsrgp = vcopt_p%epsrgr
     climgp = vcopt_p%climgr
@@ -1080,7 +1079,7 @@ if (arak.gt.0.d0) then
 
     call itrmas &
  ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
-   iwgrp  , iwarnp ,                                                           &
+   0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    frcxt  ,                                                                    &
    cvar_pr,                                                                    &
@@ -1823,7 +1822,6 @@ inc  = 0
 if (iphydr.eq.1.or.iifren.eq.1) inc = 1
 nswrgp = vcopt_p%nswrgr
 imligp = vcopt_p%imligr
-iwgrp  = vcopt_p%iwgrec
 iwarnp = vcopt_p%iwarni
 epsrgp = vcopt_p%epsrgr
 climgp = vcopt_p%climgr
@@ -1833,7 +1831,7 @@ if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
 
   call itrmas &
  ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
-   iwgrp  , iwarnp ,                                                           &
+   0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    dfrcxt ,                                                                    &
    phia   ,                                                                    &
@@ -1851,7 +1849,7 @@ if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
 
   call itrmas &
  ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
-   iwgrp  , iwarnp ,                                                           &
+   0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    dfrcxt ,                                                                    &
    dphi   ,                                                                    &
@@ -2183,7 +2181,6 @@ if (idilat.eq.5) then
   iccocg = 1
   nswrgp = vcopt_p%nswrgr
   imligp = vcopt_p%imligr
-  iwgrp  = vcopt_p%iwgrec
   iwarnp = vcopt_p%iwarni
   epsrgp = vcopt_p%epsrgr
   climgp = vcopt_p%climgr
@@ -2192,7 +2189,7 @@ if (idilat.eq.5) then
   if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
     call itrmas &
  ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
-   iwgrp  , iwarnp ,                                                           &
+   0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    dfrcxt ,                                                                    &
    dphi   ,                                                                    &
@@ -2209,7 +2206,7 @@ if (idilat.eq.5) then
 
     call itrmas &
  ( f_id0  , init   , inc    , imrgra , iccocg , nswrgp , imligp , iphydr ,     &
-   iwgrp  , iwarnp ,                                                           &
+   0      , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    dfrcxt ,                                                                    &
    ddphi  ,                                                                    &
