@@ -158,6 +158,7 @@ _field_output(void           *context,
               void           *buffer)
 {
   CS_UNUSED(datatype);
+  CS_UNUSED(component_id);
 
   _plot_context_t *c = context;
 

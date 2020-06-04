@@ -8168,7 +8168,7 @@ _tensor_gradient_clipping(const cs_mesh_t              *m,
 
           cs_real_t grad_dist1[6], var_dist[6];
 
-          for (cs_lnum_t i = 0; i < 3; i++) {
+          for (cs_lnum_t i = 0; i < 6; i++) {
             grad_dist1[i]
               = 0.5 * (  (gradt[c_id1][i][0]+gradt[c_id2][i][0])*dist[0]
                        + (gradt[c_id1][i][1]+gradt[c_id2][i][1])*dist[1]

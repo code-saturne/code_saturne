@@ -3,6 +3,12 @@ Release 6.1.1 (unreleased)
 
 Bug fixes:
 
+- Source code compiler warning pass, may fix unreported issues on:
+  * tensor gradient limiter
+  * Lagrangien deposition model
+  * Lagrangian statistics activation for multilayer (combustion) attributes
+  * LES balance (postprocessing) computation.
+
 - Fix loading/handling of compute builds on some Python environments.
 
 - Fix false positive in divergence check for flexible congugate gradient

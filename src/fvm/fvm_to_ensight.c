@@ -910,6 +910,7 @@ _field_output_g(void           *context,
                 cs_gnum_t       block_end,
                 void           *buffer)
 {
+  CS_NO_WARN_IF_UNUSED(datatype);
   CS_UNUSED(dimension);
   CS_UNUSED(component_id);
 

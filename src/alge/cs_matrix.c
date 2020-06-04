@@ -4876,9 +4876,9 @@ _matrix_create(cs_matrix_type_t  type)
     break;
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _("Handling of matrixes in %s format\n"
+              _("Handling of matrixes in format type %d\n"
                 "is not operational yet."),
-              _(cs_matrix_type_name[m->type]));
+              m->type);
     break;
   }
 
@@ -5025,9 +5025,9 @@ cs_matrix_structure_create(cs_matrix_type_t       type,
     break;
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _("Handling of matrixes in %s format\n"
+              _("Handling of matrixes in format type %d\n"
                 "is not operational yet."),
-              _(cs_matrix_type_name[type]));
+              type);
     break;
   }
 
@@ -5380,9 +5380,9 @@ cs_matrix_create_by_copy(cs_matrix_t   *src)
     break;
   default:
     bft_error(__FILE__, __LINE__, 0,
-              _("Handling of matrixes in %s format\n"
+              _("Handling of matrixes in format type %d\n"
                 "is not operational yet."),
-              _(cs_matrix_type_name[m->type]));
+              m->type);
     break;
   }
 

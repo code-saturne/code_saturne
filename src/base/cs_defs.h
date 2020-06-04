@@ -329,7 +329,7 @@ typedef cs_real_t  cs_real_34_t[3][4];      /* Matrix of 3x4 real values */
 
 typedef cs_real_t  cs_real_63_t[6][3];      /* Matrix of 6x3 real values */
 
-typedef cs_real_t  cs_real_96_t[9][6];      /* Matrix of 9x6 real values */
+typedef cs_real_t  cs_real_69_t[6][9];      /* Matrix of 6x9 real values */
 
 typedef cs_real_33_t  cs_real_332_t[2];     /* vector of 2 3x3 matrices
                                                of real values */

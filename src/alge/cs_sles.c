@@ -2038,17 +2038,10 @@ cs_sles_post_output_var(const char      *name,
     if (flag > 0) {
 
       char type_name[32];
-      size_t l = strlen(name);
-
-      l += strlen("_fp_type");
-
-      if (l > 31)
-        l = 31;
-
-      l -= strlen("_fp_type");
+      size_t l = 31 - strlen("_fp_type");
 
       strncpy(type_name, name, l);
-      type_name[l] = '\0';
+      type_name[31] = '\0';
 
       strcat(type_name, "_fp_type");
 

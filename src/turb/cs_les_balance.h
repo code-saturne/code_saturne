@@ -66,26 +66,24 @@ BEGIN_C_DECLS
  * Type definition
  *============================================================================*/
 
-/* Additional types */
-
 /* Rij LES balance structure */
 /*---------------------------*/
 
 typedef struct {
 
   /* Working arrays */
-  cs_real_t      *pp2;
-  cs_real_t      *smagp2;
-  cs_real_6_t    *prodij;
-  cs_real_6_t    *phiij;
-  cs_real_6_t    *epsij;
-  cs_real_6_t    *difftij;
-  cs_real_6_t    *difftpij;
-  cs_real_6_t    *unstij;
-  cs_real_6_t    *convij;
-  cs_real_6_t    *difflamij;
-  cs_real_6_t    *budsgsij;
-  cs_real_96_t   *budsgsfullij;
+  cs_real_t     *pp2;
+  cs_real_t     *smagp2;
+  cs_real_6_t   *prodij;
+  cs_real_6_t   *phiij;
+  cs_real_6_t   *epsij;
+  cs_real_6_t   *difftij;
+  cs_real_6_t   *difftpij;
+  cs_real_6_t   *unstij;
+  cs_real_6_t   *convij;
+  cs_real_6_t   *difflamij;
+  cs_real_6_t   *budsgsij;
+  cs_real_69_t  *budsgsfullij;
 
 } cs_les_balance_rij_t;
 

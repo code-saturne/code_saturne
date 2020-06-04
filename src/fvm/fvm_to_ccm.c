@@ -3116,7 +3116,7 @@ _write_multidimensional_field_data(const char              *name,
   int i;
 
   CCMIOID data_id;
-  CCMIOComponent component;
+  CCMIOComponent component = 0;
 
   CCMIOError error = kCCMIONoErr, *err = &error;
 
@@ -3388,7 +3388,7 @@ _write_field(const char                 *name,
 {
   CCMIOError error = kCCMIONoErr, *err = &error;
   CCMIOID field_id, map_id, data_id;
-  CCMIODataLocation data_location;
+  CCMIODataLocation data_location = 0;
 
   char short_name[15];
   strncpy(short_name, name, 4);

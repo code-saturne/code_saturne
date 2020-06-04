@@ -4350,7 +4350,7 @@ cs_lagr_stat_type_by_name(const char  *name)
     attr = attrs[i];
     if (strncmp(_name,
                 cs_lagr_attribute_name[attr],
-                strlen(cs_lagr_attribute_name[attr]) == 0))
+                strlen(cs_lagr_attribute_name[attr])) == 0)
       return CS_LAGR_STAT_ATTR + attr;
   }
 

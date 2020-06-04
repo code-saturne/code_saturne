@@ -198,24 +198,15 @@ ecs_loc_def__strlen(const char  *chaine)
     else if (mode_utf8 == 1) {
 
       int ind;
-      bool       multibyte = false;
 
       for (ind = 0; ind < lng; ind++) {
 
         char c = chaine[ind];
 
-        if (multibyte == false || (c < 0x80 || c > 0xBF)) {
-
-          multibyte = false;
-
-          if (c <= 0x7F) {
-            retval++;
-          }
-          else if (c >= 0xC0 || c <= 0xFD) {
-            multibyte = true;
-            retval++;
-          }
+        if (c < 0x80 || c > 0xBF) { /* Single byte or first byte in UTF-8 */
+          retval++;
         }
+
       }
     }
   }
