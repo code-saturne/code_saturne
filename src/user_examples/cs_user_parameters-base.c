@@ -636,13 +636,14 @@ cs_user_parameters(cs_domain_t *domain)
       if we suspect an excessive level of numerical diffusion on
         a variable ivar representing a user scalar
         iscal (with ivar=isca(iscal)), it may be useful to set
-        blencv = 1.0d0 to use a second-order scheme in space for
+        blencv = 1.0to use a second-order scheme in space for
         convection. For temperature or enthalpy in particular, we
         may thus choose in this case:
 
-        call field_get_key_struct_var_cal_opt(ivarfl(isca(iscalt)), vcopt)
-        vcopt%blencv = 1.0d0
-        call field_set_key_struct_var_cal_opt(ivarfl(isca(iscalt)), vcopt)
+        cs_field_t *f = cs_thermal_model_field();
+        cs_var_cal_opt_t *vcopt
+           = cs_field_get_key_struct_ptr(f, cs_field_key_id("var_cal_opt"));
+        vcopt->blencv = 1.;
 
       For non-user scalars relative to specific physics
         implicitly defined by the model,
@@ -651,18 +652,16 @@ cs_user_parameters(cs_domain_t *domain)
 
   {
     int n_fields = cs_field_n_fields();
+    int key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
     for (int f_id = 0; f_id < n_fields; f_id++) {
 
       cs_field_t  *f = cs_field_by_id(f_id);
 
       if (f->type & CS_FIELD_VARIABLE) {
-        cs_var_cal_opt_t vcopt;
-        int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-
-        cs_field_get_key_struct(f, key_cal_opt_id, &vcopt);
-        vcopt.blencv = 1.;
-        cs_field_set_key_struct(f, key_cal_opt_id, &vcopt);
+        cs_var_cal_opt_t *vcopt
+          = cs_field_get_key_struct_ptr(f, key_cal_opt_id);
+        vcopt->blencv = 1.;
       }
     }
   }
@@ -671,18 +670,16 @@ cs_user_parameters(cs_domain_t *domain)
      epsilo: relative precision for the solution of the linear system. */
   {
     int n_fields = cs_field_n_fields();
+    int key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
     for (int f_id = 0; f_id < n_fields; f_id++) {
 
       cs_field_t  *f = cs_field_by_id(f_id);
 
       if (f->type & CS_FIELD_VARIABLE) {
-        cs_var_cal_opt_t vcopt;
-        int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-
-        cs_field_get_key_struct(f, key_cal_opt_id, &vcopt);
-        vcopt.epsilo = 1.e-6;
-        cs_field_set_key_struct(f, key_cal_opt_id, &vcopt);
+        cs_var_cal_opt_t *vcopt
+          = cs_field_get_key_struct_ptr(f, key_cal_opt_id);
+        vcopt->epsilo = 1.e-6;
       }
     }
   }
@@ -696,13 +693,11 @@ cs_user_parameters(cs_domain_t *domain)
      NB: when iswdyn is greater than 1, then the number of
          non-orthogonality sweeps is increased to 20. */
   {
-
-    cs_var_cal_opt_t vcopt;
     int key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
-    cs_field_get_key_struct(CS_F_(p), key_cal_opt_id, &vcopt);
-    vcopt.iswdyn = 2;
-    cs_field_set_key_struct(CS_F_(p), key_cal_opt_id, &vcopt);
+    cs_var_cal_opt_t *vcopt
+      = cs_field_get_key_struct_ptr(CS_F_(p), key_cal_opt_id);
+    vcopt->iswdyn = 2;
   }
 
   /* Stabilization in turbulent regime
@@ -712,17 +707,14 @@ cs_user_parameters(cs_domain_t *domain)
     of the turbulence model, that is for k-epsilon models:
     */
   {
-
-    cs_var_cal_opt_t vcopt;
+    cs_var_cal_opt_t  *vcopt;
     int key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
-    cs_field_get_key_struct(CS_F_(k), key_cal_opt_id, &vcopt);
-    vcopt.ircflu = 0;
-    cs_field_set_key_struct(CS_F_(k), key_cal_opt_id, &vcopt);
+    vcopt = cs_field_get_key_struct_ptr(CS_F_(k), key_cal_opt_id);
+    vcopt->ircflu = 0;
 
-    cs_field_get_key_struct(CS_F_(eps), key_cal_opt_id, &vcopt);
-    vcopt.ircflu = 0;
-    cs_field_set_key_struct(CS_F_(eps), key_cal_opt_id, &vcopt);
+    vcopt = cs_field_get_key_struct_ptr(CS_F_(eps), key_cal_opt_id);
+    vcopt->ircflu = 0;
   }
 
   /* Example: choose a convective scheme and
@@ -801,7 +793,6 @@ cs_user_parameters(cs_domain_t *domain)
    * do not set min or max values here. */
 
   {
-
     /* We define the min and max bounds */
     cs_field_set_key_double(CS_F_(t),
                             cs_field_key_id("min_scalar_clipping"),
@@ -809,7 +800,6 @@ cs_user_parameters(cs_domain_t *domain)
     cs_field_set_key_double(CS_F_(t),
                             cs_field_key_id("max_scalar_clipping"),
                             1.);
-
   }
 
   /*-----------------------------------------------------------------------*/
@@ -845,10 +835,8 @@ cs_user_parameters(cs_domain_t *domain)
     int key_is_buoyant = cs_field_key_id("is_buoyant");
 
     cs_field_set_key_int(sca1, key_is_buoyant, 1);
-
   }
   /*! [param_var_is_buoyant] */
-
 
   /* Example: Scalar with a drift (key work "drift_scalar_model">0)
               or without drift
@@ -972,7 +960,6 @@ cs_user_parameters(cs_domain_t *domain)
   cs_parameters_add_property("rij_production",
                              6,
                              CS_MESH_LOCATION_CELLS);
-
 
   /* Example: force presence of boundary temperature field */
   /*-------------------------------------------------------*/

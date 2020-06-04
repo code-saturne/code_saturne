@@ -96,11 +96,7 @@ cs_user_source_terms(cs_domain_t  *domain,
   /*! [st_meta] */
 
   /*! [thermal_scalar_only] */
-  /* scalar id */
-  const int  key_sca = cs_field_key_id("scalar_id");
-  const int  scalar_id = cs_field_get_key_int(f, key_sca);
-
-  if (scalar_id < 0 || scalar_id != cs_glob_thermal_model->iscalt)
+  if (f != cs_thermal_model_field())
     return;
   /*! [thermal_scalar_only] */
 
