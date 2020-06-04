@@ -346,7 +346,7 @@ _exchange_double_array(void               *handle,
 void
 cs_atmo_aerosol_ssh_initialize(void)
 {
-  assert(cs_glob_atmo_chemistry->model_aerosol == CS_ATMO_AEROSOL_SSH);
+  assert(cs_glob_atmo_chemistry->aerosol_model == CS_ATMO_AEROSOL_SSH);
 
 #if defined(HAVE_DLOPEN)
   /* Load the shared library */
@@ -513,7 +513,7 @@ cs_atmo_aerosol_ssh_initialize(void)
 void
 cs_atmo_aerosol_ssh_finalize(void)
 {
-  assert(cs_glob_atmo_chemistry->model_aerosol == CS_ATMO_AEROSOL_SSH);
+  assert(cs_glob_atmo_chemistry->aerosol_model == CS_ATMO_AEROSOL_SSH);
 
 #if defined(HAVE_DLOPEN)
   /* Finalize SSH */
@@ -539,7 +539,7 @@ cs_atmo_aerosol_ssh_finalize(void)
 void
 cs_atmo_aerosol_ssh_set_aero(cs_real_t* array)
 {
-  assert(cs_glob_atmo_chemistry->model_aerosol == CS_ATMO_AEROSOL_SSH);
+  assert(cs_glob_atmo_chemistry->aerosol_model == CS_ATMO_AEROSOL_SSH);
 
 #if defined(HAVE_DLOPEN)
   const int _size = cs_glob_atmo_chemistry->n_layer
@@ -571,7 +571,7 @@ cs_atmo_aerosol_ssh_set_aero(cs_real_t* array)
 void
 cs_atmo_aerosol_ssh_get_aero(cs_real_t* array)
 {
-  assert(cs_glob_atmo_chemistry->model_aerosol == CS_ATMO_AEROSOL_SSH);
+  assert(cs_glob_atmo_chemistry->aerosol_model == CS_ATMO_AEROSOL_SSH);
 
 #if defined(HAVE_DLOPEN)
   const int _size = cs_glob_atmo_chemistry->n_layer
@@ -613,7 +613,7 @@ cs_atmo_aerosol_ssh_get_aero(cs_real_t* array)
 void
 cs_atmo_aerosol_ssh_set_gas(cs_real_t* array)
 {
-  assert(cs_glob_atmo_chemistry->model_aerosol == CS_ATMO_AEROSOL_SSH);
+  assert(cs_glob_atmo_chemistry->aerosol_model == CS_ATMO_AEROSOL_SSH);
 
 #if defined(HAVE_DLOPEN)
   /* Set the gas concentrations */
@@ -637,7 +637,7 @@ cs_atmo_aerosol_ssh_set_gas(cs_real_t* array)
 void
 cs_atmo_aerosol_ssh_get_gas(cs_real_t* array)
 {
-  assert(cs_glob_atmo_chemistry->model_aerosol == CS_ATMO_AEROSOL_SSH);
+  assert(cs_glob_atmo_chemistry->aerosol_model == CS_ATMO_AEROSOL_SSH);
 
 #if defined(HAVE_DLOPEN)
   /* Get the gas concentrations */
@@ -664,7 +664,7 @@ cs_atmo_aerosol_ssh_get_gas(cs_real_t* array)
 void
 cs_atmo_aerosol_ssh_time_advance(void)
 {
-  assert(cs_glob_atmo_chemistry->model_aerosol == CS_ATMO_AEROSOL_SSH);
+  assert(cs_glob_atmo_chemistry->aerosol_model == CS_ATMO_AEROSOL_SSH);
 
 #if defined(HAVE_DLOPEN)
   const cs_domain_t *domain = cs_glob_domain;

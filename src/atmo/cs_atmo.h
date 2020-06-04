@@ -60,20 +60,24 @@ BEGIN_C_DECLS
  * Atmospheric nucleation models
  *----------------------------------------------------------------------------*/
 
-enum {
+typedef enum {
+
   CS_ATMO_NUC_OFF = 0,
   CS_ATMO_NUC_PRUPPACHER_KLETT = 1,
   CS_ATMO_NUC_COHARD = 2,
   CS_ATMO_NUC_ABDUL_RAZZAK = 3
-};
+
+} cs_atmo_nucleation_type_t;
 
 /*----------------------------------------------------------------------------
  * Atmospheric aerosol external library
  *----------------------------------------------------------------------------*/
 
 typedef enum {
+
   CS_ATMO_AEROSOL_OFF = 0,
   CS_ATMO_AEROSOL_SSH = 1
+
 } cs_atmo_aerosol_type_t;
 
 /*============================================================================
@@ -122,21 +126,26 @@ typedef struct {
  *----------------------------------------------------------------------------*/
 
 typedef struct {
+
   /*! Choice of chemistry resolution scheme
        - 0 --> no atmospheric chemistry
        - 1 --> quasi steady equilibrium NOx scheme with 4 species and 5 reactions
        - 2 --> scheme with 20 species and 34 reactions
-       - 3 --> scheme CB05 with 52 species and 155 reactions
+       - 3 --> CB05 scheme with 52 species and 155 reactions
        - 4 --> user defined schema from SPACK */
+
   int model;
   int n_species;
   int n_reactions;
+
   /* Flag to deactivate photolysis */
-  bool chemistry_with_photolysis;
+  bool  chemistry_with_photolysis;
+
   /*! Choice of the aerosol model
        - CS_ATMO_AEROSOL_OFF ---> no aerosol model
        - CS_ATMO_AEROSOL_SSH ---> external library SSH-aerosol */
-  cs_atmo_aerosol_type_t model_aerosol;
+  cs_atmo_aerosol_type_t aerosol_model;
+
   /*! Flag to deactivate gaseous chemistry when using aerosols */
   bool frozen_gas_chem;
   /*! Flag to initialize gaseous species with the aerosol library */
@@ -148,13 +157,15 @@ typedef struct {
   /*! Number of aerosols */
   int n_size;
   char *spack_file_name;
-  int *species_to_scalar_id; // used only in fortran
+  int *species_to_scalar_id; // used only in Fortran
   int *species_to_field_id;
   /*! Molar mass of the chemical species (g/mol) */
   cs_real_t *molar_mass;
   int *chempoint;
+
   /*! Name of the file used to initialize the aerosol shared library */
   char *aero_file_name;
+
 } cs_atmo_chemistry_t;
 
 /*============================================================================

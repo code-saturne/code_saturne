@@ -138,11 +138,10 @@ BEGIN_C_DECLS
 void
 cs_atmo_aerosol_initialize(void)
 {
-  assert(cs_glob_atmo_chemistry->model_aerosol != CS_ATMO_AEROSOL_OFF);
+  assert(cs_glob_atmo_chemistry->aerosol_model != CS_ATMO_AEROSOL_OFF);
 
-  if (cs_glob_atmo_chemistry->model_aerosol == CS_ATMO_AEROSOL_SSH)
+  if (cs_glob_atmo_chemistry->aerosol_model == CS_ATMO_AEROSOL_SSH)
     cs_atmo_aerosol_ssh_initialize();
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -154,11 +153,10 @@ cs_atmo_aerosol_initialize(void)
 void
 cs_atmo_aerosol_finalize(void)
 {
-  assert(cs_glob_atmo_chemistry->model_aerosol != CS_ATMO_AEROSOL_OFF);
+  assert(cs_glob_atmo_chemistry->aerosol_model != CS_ATMO_AEROSOL_OFF);
 
-  if (cs_glob_atmo_chemistry->model_aerosol == CS_ATMO_AEROSOL_SSH)
+  if (cs_glob_atmo_chemistry->aerosol_model == CS_ATMO_AEROSOL_SSH)
     cs_atmo_aerosol_ssh_finalize();
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -171,11 +169,10 @@ cs_atmo_aerosol_finalize(void)
 void
 cs_atmo_aerosol_get_aero(cs_real_t* array)
 {
-  assert(cs_glob_atmo_chemistry->model_aerosol != CS_ATMO_AEROSOL_OFF);
+  assert(cs_glob_atmo_chemistry->aerosol_model != CS_ATMO_AEROSOL_OFF);
 
-  if (cs_glob_atmo_chemistry->model_aerosol == CS_ATMO_AEROSOL_SSH)
+  if (cs_glob_atmo_chemistry->aerosol_model == CS_ATMO_AEROSOL_SSH)
     cs_atmo_aerosol_ssh_get_aero(array);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -188,11 +185,10 @@ cs_atmo_aerosol_get_aero(cs_real_t* array)
 void
 cs_atmo_aerosol_get_gas(cs_real_t* array)
 {
-  assert(cs_glob_atmo_chemistry->model_aerosol != CS_ATMO_AEROSOL_OFF);
+  assert(cs_glob_atmo_chemistry->aerosol_model != CS_ATMO_AEROSOL_OFF);
 
-  if (cs_glob_atmo_chemistry->model_aerosol == CS_ATMO_AEROSOL_SSH)
+  if (cs_glob_atmo_chemistry->aerosol_model == CS_ATMO_AEROSOL_SSH)
     cs_atmo_aerosol_ssh_get_gas(array);
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -205,11 +201,10 @@ cs_atmo_aerosol_get_gas(cs_real_t* array)
 void
 cs_atmo_aerosol_time_advance(void)
 {
-  assert(cs_glob_atmo_chemistry->model_aerosol != CS_ATMO_AEROSOL_OFF);
+  assert(cs_glob_atmo_chemistry->aerosol_model != CS_ATMO_AEROSOL_OFF);
 
-  if (cs_glob_atmo_chemistry->model_aerosol == CS_ATMO_AEROSOL_SSH)
+  if (cs_glob_atmo_chemistry->aerosol_model == CS_ATMO_AEROSOL_SSH)
     cs_atmo_aerosol_ssh_time_advance();
-
 }
 
 /*----------------------------------------------------------------------------*/
