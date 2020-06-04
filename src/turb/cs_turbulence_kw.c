@@ -721,18 +721,12 @@ cs_turbulence_kw(int              nvar,
     /* prodk=min(P,c1*eps)+G */
     /* prodw=P+(1-ce3)*G */
 
-    cs_real_t prdtur;
-    if (   cs_glob_thermal_model->iscalt > 0
-        && nscal >= cs_glob_thermal_model->iscalt) {
+    cs_real_t prdtur = 1;
 
-      cs_real_t turb_schmidt
-        = cs_field_get_key_double(cs_field_by_id(cs_glob_thermal_model->iscalt),
-                                cs_field_key_id("turbulent_schmidt"));
-
-      prdtur = turb_schmidt;
-    }
-    else {
-      prdtur = 1.;
+    cs_field_t *f_thm = cs_thermal_model_field();
+    if (f_thm != NULL) {
+      prdtur = cs_field_get_key_double(f_thm,
+                                       cs_field_key_id("turbulent_schmidt"));
     }
 
     /* Buoyant term:     G = Beta*g*GRAD(T)/PrT/ro
@@ -745,7 +739,7 @@ cs_turbulence_kw(int              nvar,
       iccocg = true;
       inc = 1;
 
-      cs_field_gradient_scalar(cs_field_by_id(cs_glob_thermal_model->iscalt),
+      cs_field_gradient_scalar(f_thm,
                                true,
                                inc,
                                iccocg,
