@@ -202,7 +202,7 @@ module pointe
   !> See the user subroutine \ref cs_user_mass_source_terms
   double precision, allocatable, dimension(:,:) :: smacel
 
-  !> liquid-vapour mass transfer term for cavitating flows
+  !> liquid-vapor mass transfer term for cavitating flows
   !> and its derivative with respect to pressure
   double precision, allocatable, dimension(:) :: gamcav, dgdpca
 
@@ -352,7 +352,7 @@ contains
       call field_set_key_struct_var_cal_opt(ivarfl(ipr), vcopt)
     endif
 
-    ! liquid-vapour mass transfer term for cavitating flows
+    ! liquid-vapor mass transfer term for cavitating flows
     ! and its part implicit in pressure
     if (iand(ivofmt,VOF_MERKLE_MASS_TRANSFER).ne.0) then
       allocate(gamcav(ncelet), dgdpca(ncelet))
@@ -383,7 +383,7 @@ contains
 
     allocate(buffer(ncelet))
 
-    ! liquid-vapour mass transfer term for cavitating flows
+    ! liquid-vapor mass transfer term for cavitating flows
     ! and its part implicit in pressure
 
     if (allocated(gamcav)) then

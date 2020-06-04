@@ -2032,14 +2032,16 @@ cs_ctwr_source_term(int              f_id,
 
           /* Global mass source term for continuity (pressure) equation
            * Note that if rain were already considered in the bulk, then inner
-           * mass transfer between liquid and vapor would disappeard */
-          //FIXME: Consider putting rain in the bulk --> implication on 'c' variables different from 'h'
+           * mass transfer between liquid and vapor would disappear */
+
+          //FIXME: Consider putting rain in the bulk
+          //       --> implication on 'c' variables different from 'h'
           if (f_id == (CS_F_(p)->id)) {
             /* Warning: not multiplied by Cell volume! no addition neither */
             exp_st[cell_id] = +mass_source;
           }
 
-          /* Water (vapour + condensate) in gas mass fraction equation except rain */
+          /* Water (vapor + condensate) in gas mass fraction equation except rain */
           else if (f_id == (CS_F_(ym_w)->id)) {
             exp_st[cell_id] += vol_mass_source*(1. - f_var[cell_id]);
             imp_st[cell_id] += vol_mass_source;

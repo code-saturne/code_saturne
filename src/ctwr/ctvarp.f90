@@ -88,7 +88,7 @@ call field_get_key_id("max_scalar_clipping", kscmax)
 
 ! Bulk definition - For cooling towers, the bulk is the humid air
 ! By definition, humid air is composed of two species: dry air and
-! water vapour (whether in gas or condensate form)
+! water vapor (whether in gas or condensate form)
 ! ---------------------------------------------------------------
 
 ! Thermal model - Set parameters of calculations (module optcal)
@@ -99,10 +99,11 @@ itpscl = 2  ! Temperature in Celsius
 
 icp = 0     ! Cp is variable (>=0 means variable, -1 means constant)
             ! It has to vary with humidity
-            ! Needs to be specified here because the automated creation and initialisation
-            ! of the cell array for Cp in 'iniva0' depends on its value
-            ! (unlike the cell arrays for density and viscosity which are initialised
-            ! irrespective of the values of irovar and ivivar)
+            ! Needs to be specified here because the automated creation and
+            ! initialisation of the cell array for Cp in 'iniva0' depends
+            ! on its value (unlike the cell arrays for density and viscosity
+            ! which are initialized irrespective of the values
+            ! of irovar and ivivar)
 
 ! The thermal transported scalar is the temperature of the bulk.
 ! If the atmospheric module in switch off, we create the field
@@ -167,8 +168,9 @@ f_id = ivarfl(isca(it_p_l))
 
 call field_set_key_int(f_id, keyccl, icla)
 
-! Scalar with drift, but do not create an additional mass flux (use 'ibclr' instead of 'ibset')
-! for the enthalpy.  It reuses the mass flux of already identified with the mass fraction
+! Scalar with drift, but do not create an additional mass flux
+!  (use 'ibclr' instead of 'ibset') for the enthalpy.
+!  It reuses the mass flux of already identified with the mass fraction
 iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
 
 call field_set_key_int(f_id, keydri, iscdri)
@@ -223,14 +225,15 @@ call field_set_key_int(f_id, kivisl, ifcvsl)
 
 ! Transport and solve for the enthalpy of the liquid - with the same drift
 ! as the mass fraction Y_l
-! NB: Enthalpy of the liquidus must be transported after the bulk enthalpy
+! NB: Enthalpy of the liquids must be transported after the bulk enthalpy
 call add_model_scalar_field('enthalpy_liquid', 'Enthalpy liq', ihml) ! TODO x_p_h_l or y_p_h_2
 f_id = ivarfl(isca(ihml))
 
 call field_set_key_int(f_id, keyccl, icla)
 
-! Scalar with drift, but do not create an additional mass flux (use 'ibclr' instead of 'ibset')
-! for the enthalpy.  It reuses the mass flux of already identified with the mass fraction
+! Scalar with drift, but do not create an additional mass flux
+! (use 'ibclr' instead of 'ibset') for the enthalpy.
+!  It reuses the mass flux of already identified with the mass fraction
 iscdri = ibclr(iscdri, DRIFT_SCALAR_ADD_DRIFT_FLUX)
 
 iscdri = ibset(iscdri, DRIFT_SCALAR_IMPOSED_MASS_FLUX)

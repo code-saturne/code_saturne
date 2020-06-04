@@ -449,7 +449,7 @@ if (ippmod(icompf).ge.0.and.ippmod(icompf).ne.3) then
 endif
 
 !===============================================================================
-! 4. VoF: compute liquid-vapour mass transfer term (cavitating flows)
+! 4. VoF: compute liquid-vapor mass transfer term (cavitating flows)
 !===============================================================================
 
 if (iand(ivofmt,VOF_MERKLE_MASS_TRANSFER).ne.0) then

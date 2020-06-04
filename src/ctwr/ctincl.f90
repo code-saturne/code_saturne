@@ -47,13 +47,13 @@ module ctincl
   !> Cp of dry air
   real(c_double), pointer, save :: cp_a
 
-  !> Cp of water vapour
+  !> Cp of water vapor
   real(c_double), pointer, save :: cp_v
 
   !> Cp of liquid water
   real(c_double), pointer, save :: cp_l
 
-  !> Enthalpy of vapourisation of water
+  !> Enthalpy of vaporisation of water
   real(c_double), pointer, save :: hv0
 
   !> Density of liquid water

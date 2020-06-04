@@ -152,9 +152,9 @@ cs_air_h_l(cs_real_t  t_l)
 /*!
  * \brief Calculation water vapor mass enthalpy
  *
- * \return water vapour mass enthalpy
+ * \return water vapor mass enthalpy
  *
- * \param[in]     t_vap          water vapour temperature in Celsius
+ * \param[in]     t_vap          water vapor temperature in Celsius
  */
 /*----------------------------------------------------------------------------*/
 
@@ -465,10 +465,10 @@ cs_air_yw_sat(cs_real_t  t_c,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Computes the saturation water vapour pressure function of the
+ * \brief Computes the saturation water vapor pressure function of the
  *      temperature (in Celsius)
  *
- * \return the saturation water vapour pressure (=esatliq)
+ * \return the saturation water vapor pressure (=esatliq)
  *
  * \param[in]  t_c   temperature in Celsius degree
  */
@@ -653,7 +653,7 @@ cs_rho_humidair(cs_real_t   ywm, //TODO rename yw_h
  * \param[in]     rho0          reference density of humid air
  * \param[in]     p0            reference pressure
  * \param[in]     t0            reference temperature of humid air
- * \param[in]     molmassrat    dry air to water vapour molecular mass ratio
+ * \param[in]     molmassrat    dry air to water vapor molecular mass ratio
  * \param[in]     t_h           temperature of humid air in Celsius
  */
 /*----------------------------------------------------------------------------*/

@@ -410,7 +410,8 @@ integer, save :: kopint
 
     !---------------------------------------------------------------------------
 
-    !> \brief Calculation of the absolute humidity at saturation for a given temperature.
+    !> \brief Calculation of the absolute humidity at saturation
+    !>        for a given temperature.
 
     !> \param[in]  t_c  temperature (in Celsius)
     !> \param[in]  p    pressure
@@ -425,7 +426,8 @@ integer, save :: kopint
 
     !---------------------------------------------------------------------------
 
-    !> \brief Calculation of the air water mass fraction at saturation for a given temperature.
+    !> \brief Calculation of the air water mass fraction at saturation
+    !>        for a given temperature.
 
     !> \param[in]  t_c  temperature (in Celsius)
     !> \param[in]  p    pressure
@@ -440,7 +442,8 @@ integer, save :: kopint
 
     !---------------------------------------------------------------------------
 
-    !> \brief Computes the saturation water vapour pressure function of the temperature (C).
+    !> \brief Computes the saturation water vapor pressure function
+    !> of the temperature (C).
 
     !> \param[in]  t_c  temperature (in Celsius)
 

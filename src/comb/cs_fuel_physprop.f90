@@ -224,7 +224,7 @@ f2m( : ) = 0.d0
 f3m( : ) = 0.d0
 f4m( : ) = 0.d0
 f5m( : ) = 0.d0
-! Water vapour
+! Water vapor
 f6m( : ) = 0.d0
 ! Heterogeneous combustion
 f7m( : ) = 0.d0
