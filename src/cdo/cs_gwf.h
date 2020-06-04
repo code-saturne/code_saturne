@@ -44,7 +44,7 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
-#define CS_GWF_ADVECTION_NAME   "darcy_velocity"
+#define CS_GWF_ADV_FIELD_NAME   "darcy_velocity"
 
 /*!
  * @name Flags specifying the general behavior of the groundwater flow module

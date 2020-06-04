@@ -97,12 +97,14 @@ typedef void
  *=================================== */
 
 /* Type of predefined modelling for the groundwater flows */
+
 typedef enum {
 
-  CS_GWF_SOIL_GENUCHTEN, /* Van Genuchten-Mualem laws for dimensionless
-                            moisture content and hydraulic conductivity */
-  CS_GWF_SOIL_SATURATED, /* media is satured */
-  CS_GWF_SOIL_USER,      /* User-defined model */
+  CS_GWF_SOIL_GENUCHTEN,  /* Van Genuchten-Mualem laws for dimensionless
+                             moisture content and hydraulic conductivity */
+  CS_GWF_SOIL_SATURATED,  /* media is satured */
+  CS_GWF_SOIL_USER,       /* User-defined model */
+
   CS_GWF_SOIL_N_HYDRAULIC_MODELS
 
 } cs_gwf_soil_hydraulic_model_t;
@@ -111,6 +113,7 @@ typedef enum {
 /* --------------------------------------------------------------------- */
 
 /* Parameters defining a van Genuchten-Mualen hydraulic model */
+
 typedef struct {
 
   double         bulk_density;
@@ -119,14 +122,17 @@ typedef struct {
   cs_real_33_t   saturated_permeability;
 
   /* Advanced parameters */
-  double  n;          // 1.25 < n < 6
-  double  m;          // m = 1 - 1/n
-  double  scale;      // scale parameter [m^-1]
-  double  tortuosity; // tortuosity param. for saturated hydraulic conductivity
+
+  double  n;           /* 1.25 < n < 6 */
+  double  m;           /* m = 1 - 1/n */
+  double  scale;       /* scale parameter [m^-1] */
+  double  tortuosity;  /* tortuosity param. for saturated hydraulic
+                          conductivity */
 
 } cs_gwf_soil_genuchten_param_t;
 
 /* Input structure used to update the physical properties */
+
 typedef struct {
 
   cs_real_t         *permeability_values;
@@ -156,6 +162,8 @@ typedef struct {
 } cs_gwf_saturated_update_input_t;
 
 /* Set of parameters describing a soil */
+/* ----------------------------------- */
+
 typedef struct {
 
   int    id;       /* soil id */

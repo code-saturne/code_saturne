@@ -73,77 +73,6 @@ BEGIN_C_DECLS
 /* Permeability in each subdomain */
 static const double k1 = 1e5, k2 = 1;
 
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Get the explicit definition of the problem for the Richards eq.
- *         pt_ids is optional. If not NULL, it enables to access in coords
- *         at the right location and the same thing to fill retval if compact
- *         is set to false
- *         Rely on a generic function pointer for an analytic function
- *
- * \param[in]      time      when ?
- * \param[in]      n_elts    number of elements to consider
- * \param[in]      pt_ids    list of elements ids (to access coords and fill)
- * \param[in]      coords    where ?
- * \param[in]      compact   true:no indirection, false:indirection for filling
- * \param[in]      input     NULL or pointer to a structure cast on-the-fly
- * \param[in, out] retval    result of the function
- */
-/*----------------------------------------------------------------------------*/
-
-static inline void
-get_tracer_sol(cs_real_t          time,
-               cs_lnum_t          n_points,
-               const cs_lnum_t   *pt_ids,
-               const cs_real_t   *xyz,
-               bool               compact,
-               void              *input,
-               cs_real_t         *retval)
-{
-  CS_UNUSED(input);
-
-  /* Physical parameters */
-  const double  magnitude = 2*k1/(k1 + k2);
-  const double  x_front = magnitude * time;
-
-  if (pt_ids != NULL && !compact) {
-
-    for (cs_lnum_t  i = 0; i < n_points; i++) {
-
-      const cs_lnum_t  id = pt_ids[i];
-      const double  x = xyz[3*id];
-      if (x <= x_front)
-        retval[id] = 1;
-      else
-        retval[id] = 0;
-    }
-
-  }
-  else if (pt_ids != NULL && compact) {
-
-    for (cs_lnum_t  i = 0; i < n_points; i++) {
-      const double  x = xyz[3*pt_ids[i]];
-      if (x <= x_front)
-        retval[i] = 1;
-      else
-        retval[i] = 0;
-    }
-
-  }
-  else {
-
-    for (cs_lnum_t  i = 0; i < n_points; i++) {
-      const double  x = xyz[3*i];
-      if (x <= x_front)
-        retval[i] = 1;
-      else
-        retval[i] = 0;
-    }
-
-  }
-
-}
-
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
@@ -173,15 +102,15 @@ cs_user_gwf_setup(cs_domain_t   *domain)
   {
     cs_gwf_soil_t  *s1 = cs_gwf_soil_by_name("soil1");
     cs_gwf_set_iso_saturated_soil(s1,
-                                  k1,     // saturated permeability
-                                  1.0,    // saturated moisture
-                                  1.0);   // bulk density (useless)
+                                  k1,     /* saturated permeability */
+                                  1.0,    /* saturated moisture */
+                                  1.0);   /* bulk density (useless) */
 
     cs_gwf_soil_t  *s2 = cs_gwf_soil_by_name("soil2");
     cs_gwf_set_iso_saturated_soil(s2,
-                                  k2,     // saturated permeability
-                                  1.0,    // saturated moisture
-                                  1.0);   // bulk density (useless)
+                                  k2,     /* saturated permeability */
+                                  1.0,    /* saturated moisture */
+                                  1.0);   /* bulk density (useless) */
   }
   /*! [param_cdo_gwf_set_soil] */
 

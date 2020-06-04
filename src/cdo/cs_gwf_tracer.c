@@ -430,7 +430,7 @@ cs_gwf_tracer_init(int                      tracer_id,
   tracer->eq = cs_equation_add(eq_name,
                                var_name,
                                CS_EQUATION_TYPE_GROUNDWATER,
-                               1,
+                               1, /* scalar-valued equation */
                                CS_PARAM_BC_HMG_NEUMANN);
 
   tracer->model = model;
@@ -601,7 +601,7 @@ cs_gwf_set_standard_tracer(cs_gwf_tracer_t   *tracer,
 /*!
  * \brief  Add terms to the algebraic system related to a tracer equation
  *         according to the settings.
- *         Case of the standar tracer modelling
+ *         Case of the standard tracer modelling
  *         Rely on the generic function: cs_gwf_tracer_add_terms_t
  *
  * \param[in, out] tracer       pointer to a cs_gwf_tracer_t structure

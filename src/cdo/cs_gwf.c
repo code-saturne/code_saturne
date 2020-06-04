@@ -628,7 +628,7 @@ cs_gwf_activate(cs_property_type_t    pty_type,
   if (!(flag & CS_GWF_RICHARDS_UNSTEADY)) /* Steady-state Richards eq. */
     adv_status |= CS_ADVECTION_FIELD_STEADY;
 
-  gw->adv_field = cs_advection_field_add(CS_GWF_ADVECTION_NAME, adv_status);
+  gw->adv_field = cs_advection_field_add(CS_GWF_ADV_FIELD_NAME, adv_status);
 
   /* Add a property related to the diffusion term of the Richards eq. */
   gw->permeability = cs_property_add("permeability", pty_type);
