@@ -207,18 +207,38 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         self.modelTurbModel = ComboModel(self.comboBoxTurbModel,10,1)
 
         self.modelTurbModel.addItem(self.tr("No model (i.e. laminar flow)"), "off")
-        self.modelTurbModel.addItem(self.tr("Mixing length"), "mixing_length")
-        self.modelTurbModel.addItem(self.tr("k-epsilon"), "k-epsilon")
-        self.modelTurbModel.addItem(self.tr("k-epsilon Linear Production"), "k-epsilon-PL")
-        self.modelTurbModel.addItem(self.tr("Rij-epsilon LRR"), "Rij-epsilon")
-        self.modelTurbModel.addItem(self.tr("Rij-epsilon SSG"), "Rij-SSG")
-        self.modelTurbModel.addItem(self.tr("Rij-epsilon EBRSM"), "Rij-EBRSM")
-        self.modelTurbModel.addItem(self.tr("v2f BL-v2/k"), "v2f-BL-v2/k")
-        self.modelTurbModel.addItem(self.tr("k-omega SST"), "k-omega-SST")
-        self.modelTurbModel.addItem(self.tr("Spalart-Allmaras"), "Spalart-Allmaras")
-        self.modelTurbModel.addItem(self.tr("LES (Smagorinsky)"), "LES_Smagorinsky")
-        self.modelTurbModel.addItem(self.tr("LES (classical dynamic model)"), "LES_dynamique")
-        self.modelTurbModel.addItem(self.tr("LES (WALE)"), "LES_WALE")
+
+        # RANS - Algebraic 
+        self.modelTurbModel.addItemGroup(self.tr("RANS - Algebraic"))
+        self.modelTurbModel.addItem(self.tr("Mixing length"), "mixing_length", groupName="RANS - Algebraic")
+
+        # RANS - 1st order
+        self.modelTurbModel.addItemGroup(self.tr("RANS - 1st order"))
+
+        self.modelTurbModel.addItem(self.tr("k-\u03B5 Linear Production"), "k-epsilon-PL", groupName="RANS - 1st order")
+        self.modelTurbModel.addItem(self.tr("v\u00B2-f BL-v\u00B2/k"), "v2f-BL-v2/k", groupName="RANS - 1st order")
+        self.modelTurbModel.addItem(self.tr("k-\u03C9 SST"), "k-omega-SST", groupName="RANS - 1st order")
+        self.modelTurbModel.addItem(self.tr("Spalart-Allmaras"), "Spalart-Allmaras", groupName="RANS - 1st order")
+
+        # RANS - 2nd order
+        self.modelTurbModel.addItemGroup(self.tr("RANS - 2nd order"))
+
+        self.modelTurbModel.addItem(self.tr("R\u1D62\u2C7C-\u03B5 SSG"), "Rij-SSG", groupName="RANS - 2nd order")
+        self.modelTurbModel.addItem(self.tr("R\u1D62\u2C7C-\u03B5 EBRSM"), "Rij-EBRSM", groupName="RANS - 2nd order")
+
+        # LES
+        self.modelTurbModel.addItemGroup(self.tr("LES"))
+
+        self.modelTurbModel.addItem(self.tr("Smagorinsky"), "LES_Smagorinsky", groupName="LES")
+        self.modelTurbModel.addItem(self.tr("Standard dynamic model"), "LES_dynamique", groupName="LES")
+        self.modelTurbModel.addItem(self.tr("WALE"), "LES_WALE", groupName="LES")
+
+        # Others
+        self.modelTurbModel.addItemGroup(self.tr(""))
+        self.modelTurbModel.addItemGroup(self.tr("Others"))
+
+        self.modelTurbModel.addItem(self.tr("R\u1D62\u2C7C-\u03B5 LRR"), "Rij-epsilon", groupName="Others")
+        self.modelTurbModel.addItem(self.tr("k-\u03B5"), "k-epsilon", groupName="Others")
 
         self.modelLength = ComboModel(self.comboBoxLength,2,1)
         self.modelLength.addItem(self.tr("Automatic"), 'automatic')
