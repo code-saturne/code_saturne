@@ -928,7 +928,7 @@ _update_gl_legacy_ast(const cs_mesh_t             *mesh,
      count */
   for (cs_lnum_t  c_id = 0; c_id < quant->n_cells; c_id++) {
 
-    cs_real_t  gliq;
+    cs_real_t  gliq = 1;        /* Initialization as liquid */
 
     const cs_real_t  conc = c_bulk[c_id];
     const cs_real_t  temp = t_bulk[c_id];
@@ -958,7 +958,6 @@ _update_gl_legacy_ast(const cs_mesh_t             *mesh,
       break;
 
     case CS_SOLIDIFICATION_STATE_LIQUID:
-      gliq = 1;
       c_l[c_id] = conc;
       break;
 

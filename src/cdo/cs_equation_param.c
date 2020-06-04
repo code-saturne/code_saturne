@@ -1509,7 +1509,7 @@ _set_key(const char            *label,
     if (strcmp(keyval, "critical") == 0)
       eqp->omp_assembly_choice = CS_PARAM_ASSEMBLE_OMP_CRITICAL;
     else if (strcmp(keyval, "atomic") == 0)
-      eqp->sles_param.precond = CS_PARAM_ASSEMBLE_OMP_ATOMIC;
+      eqp->omp_assembly_choice = CS_PARAM_ASSEMBLE_OMP_ATOMIC;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
