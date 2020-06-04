@@ -766,6 +766,9 @@ cs_gwf_log_setup(void)
   /* Detailed setup of the soil properties */
   cs_gwf_soil_log_setup();
 
+  /* Detailed setup of the tracer equations */
+  for (int i = 0; i < gw->n_tracers; i++)
+    cs_gwf_tracer_log_setup(gw->tracers[i]);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -798,25 +801,32 @@ cs_gwf_set_post_options(cs_flag_t       post_flag)
  *         diffusion/reaction parameters result from a physical modelling.
  *         Terms solved in the equation are activated according to the settings.
  *
+ * \param[in]  model      physical modelling to consider (0 = default settings)
  * \param[in]  eq_name    name of the tracer equation
  * \param[in]  var_name   name of the related variable
  */
 /*----------------------------------------------------------------------------*/
 
 cs_gwf_tracer_t *
-cs_gwf_add_tracer(const char               *eq_name,
+cs_gwf_add_tracer(cs_gwf_tracer_model_t     model,
+                  const char               *eq_name,
                   const char               *var_name)
 {
   cs_gwf_t  *gw = cs_gwf_main_structure;
 
   if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
 
+  if (model & CS_GWF_TRACER_USER)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: User-defined is not allowed in this context.\n"
+              " Please consider cs_gwf_add_user_tracer() instead.", __func__);
+
   int  tr_id = gw->n_tracers;
   cs_gwf_tracer_t  *tracer = cs_gwf_tracer_init(tr_id,
                                                 eq_name,
                                                 var_name,
                                                 gw->adv_field,
-                                                CS_GWF_TRACER_STANDARD);
+                                                model);
 
   gw->n_tracers += 1;
   BFT_REALLOC(gw->tracers, gw->n_tracers, cs_gwf_tracer_t *);
@@ -826,8 +836,8 @@ cs_gwf_add_tracer(const char               *eq_name,
               gw->n_tracers, cs_gwf_tracer_add_terms_t *);
 
   gw->tracers[tr_id] = tracer;
-  gw->finalize_tracer_setup[tr_id] = cs_gwf_tracer_standard_setup;
-  gw->add_tracer_terms[tr_id] = cs_gwf_tracer_standard_add_terms;
+  gw->finalize_tracer_setup[tr_id] = cs_gwf_tracer_setup;
+  gw->add_tracer_terms[tr_id] = cs_gwf_tracer_add_terms;
 
   return tracer;
 }
@@ -850,7 +860,7 @@ cs_gwf_add_tracer(const char               *eq_name,
 /*----------------------------------------------------------------------------*/
 
 cs_gwf_tracer_t *
-cs_gwf_add_tracer_user(const char                  *eq_name,
+cs_gwf_add_user_tracer(const char                  *eq_name,
                        const char                  *var_name,
                        cs_gwf_tracer_setup_t       *setup,
                        cs_gwf_tracer_add_terms_t   *add_terms)
@@ -1312,12 +1322,13 @@ cs_gwf_update(const cs_mesh_t             *mesh,
                            gw->moisture_field->val, 8);
 #endif
 
-  /* Update the diffusivity associated to each tracer equation if needed */
+  /* Update the diffusivity tensor associated to each tracer equation since the
+     Darcy velocity may have changed */
   for (int i = 0; i < gw->n_tracers; i++) {
 
     cs_gwf_tracer_t  *tracer = gw->tracers[i];
-    if (tracer->update_properties != NULL)
-      tracer->update_properties(tracer, mesh, connect, quant, time_eval);
+    if (tracer->update_diff_tensor != NULL)
+      tracer->update_diff_tensor(tracer, time_eval, mesh, connect, quant);
 
   }
 
@@ -1388,6 +1399,11 @@ cs_gwf_compute_steady_state(const cs_mesh_t              *mesh,
         cs_equation_solve_deprecated(tracer->eq);
 
       }
+
+      if (tracer->update_precipitation != NULL)
+        tracer->update_precipitation(tracer,
+                                     time_step->t_cur,
+                                     mesh, connect, cdoq);
 
     } /* Solve this equation which is steady */
 
@@ -1464,7 +1480,12 @@ cs_gwf_compute(const cs_mesh_t              *mesh,
 
       }
 
-    } /* Solve this equation which is steady */
+      if (tracer->update_precipitation != NULL)
+        tracer->update_precipitation(tracer,
+                                     time_step->t_cur,
+                                     mesh, connect, cdoq);
+
+    } /* Solve this equation which is unsteady */
 
   } /* Loop on tracer equations */
 
@@ -1505,7 +1526,7 @@ cs_gwf_integrate_tracer(const cs_cdo_connect_t     *connect,
   const cs_real_t  *moisture_val = moist->val;
   const cs_equation_param_t  *tr_eqp = cs_equation_get_param(tracer->eq);
 
-  cs_gwf_std_tracer_input_t  *sti = (cs_gwf_std_tracer_input_t *)tracer->input;
+  cs_gwf_tracer_input_t  *sti = (cs_gwf_tracer_input_t *)tracer->input;
   cs_real_t  int_value = 0.0;
 
   switch (tr_eqp->space_scheme) {

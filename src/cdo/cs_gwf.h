@@ -220,13 +220,15 @@ cs_gwf_set_post_options(cs_flag_t       post_flag);
  *         diffusion/reaction parameters result from a physical modelling.
  *         Terms solved in the equation are activated according to the settings.
  *
+ * \param[in]  model      physical modelling to consider (0 = default settings)
  * \param[in]  eq_name    name of the tracer equation
  * \param[in]  var_name   name of the related variable
  */
 /*----------------------------------------------------------------------------*/
 
 cs_gwf_tracer_t *
-cs_gwf_add_tracer(const char               *eq_name,
+cs_gwf_add_tracer(cs_gwf_tracer_model_t     model,
+                  const char               *eq_name,
                   const char               *var_name);
 
 /*----------------------------------------------------------------------------*/
@@ -247,7 +249,7 @@ cs_gwf_add_tracer(const char               *eq_name,
 /*----------------------------------------------------------------------------*/
 
 cs_gwf_tracer_t *
-cs_gwf_add_tracer_user(const char                  *eq_name,
+cs_gwf_add_user_tracer(const char                  *eq_name,
                        const char                  *var_name,
                        cs_gwf_tracer_setup_t       *setup,
                        cs_gwf_tracer_add_terms_t   *add_terms);

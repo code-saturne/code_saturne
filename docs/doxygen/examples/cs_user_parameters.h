@@ -281,7 +281,7 @@
   the darcean flux as the advection field. This call implies the
   creation of a new equation related to a new variable field name
   given as arguments. Advanced tracer equations can be defined using
-  \ref cs_gwf_add_tracer_user.
+  \ref cs_gwf_add_user_tracer.
 
   \snippet cs_user_parameters-cdo-gwf.c param_cdo_gwf_add_tracer
 

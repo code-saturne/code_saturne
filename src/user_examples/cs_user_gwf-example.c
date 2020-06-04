@@ -123,12 +123,12 @@ cs_user_gwf_setup(cs_domain_t   *domain)
   /*! [param_cdo_gwf_set_tracer] */
   {
     cs_gwf_tracer_t *tr = cs_gwf_tracer_by_name("Tracer_01");
-    cs_gwf_set_standard_tracer(tr,
-                               NULL,        // zone name or NULL for all
-                               0.,          // water molecular diffusivity
-                               0., 0.,      // alpha (longi. and transvesal)
-                               0.,          // distribution coef.
-                               0.);         // 1st order decay coef.
+    cs_gwf_set_main_tracer_param(tr,
+                                 NULL,     /* soil name or NULL for all */
+                                 0.,       /* water molecular diffusivity */
+                                 0., 0.,   /* alpha (longi. and transvesal) */
+                                 0.,       /* distribution coef. */
+                                 0.);      /* 1st order decay coef. */
   }
   /*! [param_cdo_gwf_set_tracer] */
 }

@@ -278,12 +278,13 @@ cs_user_model(void)
      For standard tracer:
        cs_gwf_add_tracer(eqname, varname);
      For user-defined tracer
-       cs_gwf_add_tracer_user(eqname, varname, setup_func);
+       cs_gwf_add_user_tracer(eqname, varname, setup_func);
   */
 
   /*! [param_cdo_gwf_add_tracer] */
   {
-    cs_gwf_add_tracer("Tracer_01","C1");
+    cs_gwf_tracer_model_t  model = 0; /* default model */
+    cs_gwf_add_tracer(model, "Tracer_01","C1");
   }
   /*! [param_cdo_gwf_add_tracer] */
 
