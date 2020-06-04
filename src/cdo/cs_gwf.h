@@ -46,24 +46,18 @@ BEGIN_C_DECLS
 
 #define CS_GWF_ADV_FIELD_NAME   "darcy_velocity"
 
+typedef cs_flag_t  cs_gwf_model_t;
+
 /*!
  * @name Flags specifying the general behavior of the groundwater flow module
  * @{
  *
+ * \enum cs_gwf_model_bit_t
+ * \brief elemental modelling choice either from the physical viewpoint or the
+ * numerical viewpoint
+
  * \def CS_GWF_GRAVITATION
  * \brief Gravitation effects are taken into account in the Richards equation
- *
- * \def CS_GWF_FORCE_RICHARDS_ITERATIONS
- * \brief Even if the Richards equation is steady-state, this equation is
- *        solved at each iteration.
- *
- * \def CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE
- * \brief Compute the mean-value of the hydraulic head field and subtract this
- *        mean-value to get a field with zero mean-value. It's important to set
- *        this flag if no boundary condition is given.
- *
- * \def CS_GWF_ENFORCE_DIVERGENCE_FREE
- * \brief Activate a treatment to enforce a Darcy flux to be divergence-free
  *
  * \def CS_GWF_RICHARDS_UNSTEADY
  * \brief Richards equation is unsteady (unsatured behavior)
@@ -77,15 +71,40 @@ BEGIN_C_DECLS
  *        can be performed in this case)
  *
  *
+ * \def CS_GWF_FORCE_RICHARDS_ITERATIONS
+ * \brief Even if the Richards equation is steady-state, this equation is
+ *        solved at each iteration.
+ *
+ * \def CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE
+ * \brief Compute the mean-value of the hydraulic head field and subtract this
+ *        mean-value to get a field with zero mean-value. It's important to set
+ *        this flag if no boundary condition is given.
+ *
+ * \def CS_GWF_ENFORCE_DIVERGENCE_FREE
+ * \brief Activate a treatment to enforce a Darcy flux to be divergence-free
+ *
+ *
  */
 
-#define CS_GWF_GRAVITATION                     (1 << 0)
-#define CS_GWF_FORCE_RICHARDS_ITERATIONS       (1 << 1)
-#define CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE (1 << 2)
-#define CS_GWF_ENFORCE_DIVERGENCE_FREE         (1 << 3)
-#define CS_GWF_RICHARDS_UNSTEADY               (1 << 4)
-#define CS_GWF_SOIL_PROPERTY_UNSTEADY          (1 << 5)
-#define CS_GWF_SOIL_ALL_SATURATED              (1 << 6)
+typedef enum {
+
+  /* Main physical modelling */
+  /* ----------------------- */
+
+  CS_GWF_GRAVITATION                     = 1<< 0, /* =   1 */
+  CS_GWF_RICHARDS_UNSTEADY               = 1<< 1, /* =   2 */
+  CS_GWF_SOIL_PROPERTY_UNSTEADY          = 1<< 2, /* =   4 */
+  CS_GWF_SOIL_ALL_SATURATED              = 1<< 3, /* =   8 */
+
+
+  /* Main numerical options */
+  /* ---------------------- */
+
+  CS_GWF_FORCE_RICHARDS_ITERATIONS       = 1<< 6, /* =   64 */
+  CS_GWF_RESCALE_HEAD_TO_ZERO_MEAN_VALUE = 1<< 7, /* =  128 */
+  CS_GWF_ENFORCE_DIVERGENCE_FREE         = 1<< 8  /* =  256 */
+
+} cs_gwf_model_bit_t;
 
 /*! @}
  *!
