@@ -133,6 +133,10 @@ struct _cs_medcoupling_remapper_t {
 static int                          _n_remappers = 0;
 static cs_medcoupling_remapper_t  **_remapper = NULL;
 
+/*============================================================================
+ * Private function definitions
+ *============================================================================*/
+
 #if defined(HAVE_MEDCOUPLING) && defined(HAVE_MEDCOUPLING_LOADER)
 
 /*----------------------------------------------------------------------------*/
