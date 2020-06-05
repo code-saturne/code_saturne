@@ -159,7 +159,6 @@ BEGIN_C_DECLS
 
   \brief LES balance general options descriptor.
 
-
   Members of this turbulence model are publicly accessible, to allow for concise
   syntax, as it is expected to be used in many places.
 
@@ -169,6 +168,7 @@ BEGIN_C_DECLS
   \var  cs_les_balance_t::type
   \var  cs_les_balance_t::frequency_n
 */
+
 /*----------------------------------------------------------------------------*/
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
@@ -426,7 +426,6 @@ _les_balance_laplacian(cs_real_t   *wa,
  * parameters:
  *   wa   <--  vector array
  *   res  <->  divergence of wa
- *
  *----------------------------------------------------------------------------*/
 
  static void
@@ -507,9 +506,7 @@ _les_balance_laplacian(cs_real_t   *wa,
 }
 
 /*----------------------------------------------------------------------------
- *
  *  Compute the most needed gradients at each iteration.
- *
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1382,10 +1379,8 @@ _les_balance_compute_djnuttdiuj(const void   *input,
 }
 
 /*----------------------------------------------------------------------------
- *
  * Declare generic time moments for either the Rij or the Tui LES balance.
  * Time moments are defined either by field ids or by function.
- *
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1544,10 +1539,8 @@ _les_balance_time_moment(void)
 }
 
 /*----------------------------------------------------------------------------
- *
  * Declare time moments that can be define either by field ids or by function.
  * for the Rij LES balance
- *
  *----------------------------------------------------------------------------*/
 
 static void
@@ -1800,10 +1793,8 @@ _les_balance_time_moment_rij(void)
 }
 
 /*----------------------------------------------------------------------------
- *
  * Declare time moments that can be define either by field ids or by function.
  * for the Tui LES balance
- *
  *----------------------------------------------------------------------------*/
 
 static void
@@ -2265,7 +2256,6 @@ _les_balance_time_moment_tui(void)
   }
 
   BFT_FREE(buffer);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -2359,9 +2349,7 @@ _les_balance_allocate_tui(void)
 }
 
 /*----------------------------------------------------------------------------
- *
  * Initialize the brij structure of _les_balance
- *
  *----------------------------------------------------------------------------*/
 
 static void
@@ -2396,10 +2384,8 @@ _les_balance_initialize_rij(void)
 }
 
 /*----------------------------------------------------------------------------
- *
  * Check that in case of a restart calculation, the current LES balance type
  * is the same as in the previous calculation.
- *
  *----------------------------------------------------------------------------*/
 
 static void
@@ -2422,9 +2408,10 @@ _check_restart_type(void)
                                      &type);
 
     if (ierror < CS_RESTART_SUCCESS)
-      bft_error(__FILE__, __LINE__, 0,
-                _("Abort while opening the LES balance restart file: %s\n"
-                  "This file does not seem to be a LES balance checkpoint file."),
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("Abort while opening the LES balance restart file: %s\n"
+           "This file does not seem to be a LES balance checkpoint file."),
                 ficsui);
 
     if (!(type & _les_balance.type))
@@ -2439,9 +2426,7 @@ _check_restart_type(void)
 }
 
 /*----------------------------------------------------------------------------
- *
  * Initialize a btui structure of _les_balance
- *
  *----------------------------------------------------------------------------*/
 
 static void
@@ -2590,9 +2575,7 @@ _les_balance_destroy_tui(cs_les_balance_tui_t **btui)
 }
 
 /*----------------------------------------------------------------------------
- *
  * Create, allocate and initialize a the brij structure of _les_balance.
- *
  *----------------------------------------------------------------------------*/
 
 static void
@@ -2609,9 +2592,7 @@ _les_balance_create_rij(void)
 }
 
 /*----------------------------------------------------------------------------
- *
  * Create, allocate and initialize btui structures of _les_balance.
- *
  *----------------------------------------------------------------------------*/
 
 static void
@@ -2729,8 +2710,9 @@ cs_les_balance_create_fields(void)
   }
 }
 
-/*----------------------------------------------------------------------------
- *! \brief Provide access to cs_glob_les_balance
+/*----------------------------------------------------------------------------*/
+/*!
+ *\brief Provide access to cs_glob_les_balance
  *
  * \return pointer to LES balance global structure
  */
@@ -2745,7 +2727,6 @@ cs_get_glob_les_balance(void)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Create a LES balance descriptor.
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -2984,8 +2965,9 @@ cs_les_balance_compute_rij(void)
         brij->epsij[iel][ii] -= duidxj[iel][i][kk]*duidxj[iel][j][kk];
       }
 
-      brij->phiij[iel][ii] = (pduidxj[iel][ii]
-                              - p[iel]*(duidxj[iel][i][j]+duidxj[iel][j][i]))/ro0;
+      brij->phiij[iel][ii] = (  pduidxj[iel][ii]
+                              - p[iel]*(duidxj[iel][i][j]
+                              + duidxj[iel][j][i])) / ro0;
       brij->epsij[iel][ii] *= -2.*viscl0/ro0;
     }
   }
@@ -3067,7 +3049,8 @@ cs_les_balance_compute_rij(void)
       _les_balance_divergence_vector(w1, diverg);
 
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
-        brij->budsgsij[iel][iii] = -(uidtaujkdxk[iel][i][j]-ui[iel][i]*diverg[iel]);
+        brij->budsgsij[iel][iii]
+          = -(uidtaujkdxk[iel][i][j]-ui[iel][i]*diverg[iel]);
 
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         for (cs_lnum_t kk = 0; kk < 3; kk++)
@@ -3076,7 +3059,8 @@ cs_les_balance_compute_rij(void)
       _les_balance_divergence_vector(w1, diverg);
 
       for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-        brij->budsgsij[iel][iii] -= (uidtaujkdxk[iel][j][i]-ui[iel][j]*diverg[iel]);
+        brij->budsgsij[iel][iii] -= (  uidtaujkdxk[iel][j][i]
+                                     - ui[iel][j]*diverg[iel]);
         brij->budsgsij[iel][iii] /= ro0;
       }
     }
@@ -3109,9 +3093,10 @@ cs_les_balance_compute_rij(void)
           cs_real_6_t *nutdkuiuj_loc = (cs_real_6_t*)nutdkuiuj[kk];
 
           w1[iel][kk] = nutdkuiuj_loc[iel][iii]
-                      + 2.*nut[iel]*(ui[iel][i]*duidxj[iel][j][kk]
-                                   + ui[iel][j]*duidxj[iel][i][kk])
-                      - nut[iel]*(uidujdxk_ii[iel][j][kk] + uidujdxk_jj[iel][i][kk])
+                      + 2.*nut[iel]*(  ui[iel][i]*duidxj[iel][j][kk]
+                                     + ui[iel][j]*duidxj[iel][i][kk])
+                      - nut[iel]*(  uidujdxk_ii[iel][j][kk]
+                                  + uidujdxk_jj[iel][i][kk])
                       - ui[iel][i]*nutduidxj[iel][j][kk]
                       - ui[iel][j]*nutduidxj[iel][i][kk]
                       - duidxj[iel][j][kk]*nutui[iel][i]
@@ -3135,7 +3120,8 @@ cs_les_balance_compute_rij(void)
               - duidxj[iel][j][kk]*nutduidxj[iel][i][kk];
 
         brij->budsgsfullij[iel][iii][3] += xx;
-        brij->budsgsfullij[iel][iii][3] = -2./ro0*brij->budsgsfullij[iel][iii][3];
+        brij->budsgsfullij[iel][iii][3]
+          = -2./ro0*brij->budsgsfullij[iel][iii][3];
       }
     }
 
@@ -3329,11 +3315,11 @@ cs_les_balance_compute_tui(void)
   cs_real_3_t *w1;
 
   BFT_MALLOC(w1    , n_cells_ext, cs_real_3_t);
-  BFT_MALLOC(w2    , n_cells_ext, cs_real_t  );
-  BFT_MALLOC(diverg, n_cells_ext, cs_real_t  );
-  BFT_MALLOC(lapl  , n_cells_ext, cs_real_t  );
-  BFT_MALLOC(coefbs, n_b_faces  , cs_real_t  );
-  BFT_MALLOC(coefas, n_b_faces  , cs_real_t  );
+  BFT_MALLOC(w2    , n_cells_ext, cs_real_t);
+  BFT_MALLOC(diverg, n_cells_ext, cs_real_t);
+  BFT_MALLOC(lapl  , n_cells_ext, cs_real_t);
+  BFT_MALLOC(coefbs, n_b_faces  , cs_real_t);
+  BFT_MALLOC(coefas, n_b_faces  , cs_real_t);
 
   /* For each scalar */
   for (int isca = 0; isca < nscal; isca++) {
@@ -3428,7 +3414,8 @@ cs_les_balance_compute_tui(void)
 
     for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
       for (cs_lnum_t ii = 0; ii < 3; ii++) {
-        b_sca->unstti[iel][ii] = (b_sca->tpuip[iel][ii]-b_sca->unstti[iel][ii])/dtref;
+        b_sca->unstti[iel][ii] = (  b_sca->tpuip[iel][ii]
+                                  - b_sca->unstti[iel][ii]) / dtref;
         b_sca->prodtUi[iel][ii] = 0.;
         b_sca->prodtTi[iel][ii] = 0.;
         b_sca->epsti[iel][ii] = dtdxjduidxj[iel][ii];
@@ -3569,9 +3556,7 @@ cs_les_balance_compute_tui(void)
         for (cs_lnum_t kk = 0; kk < 3; kk++)
           w1[iel][kk] = -nutdtdxi[iel][kk];
 
-
       _les_balance_divergence_vector(w1, diverg);
-
 
       for (cs_lnum_t ii = 0; ii < 3; ii++) {
         for (cs_lnum_t iel = 0; iel < n_cells; iel++)
@@ -3599,12 +3584,10 @@ cs_les_balance_compute_tui(void)
                         + nut[iel]*( uidtdxj[iel][ii][kk]
                                     -ui[iel][ii]*dtdxi[iel][kk])/sigmas;
 
-
         _les_balance_divergence_vector(w1, diverg);
 
         for (cs_lnum_t iel = 0; iel < n_cells; iel++)
           b_sca->budsgstuifull[0][iel][ii] = diverg[iel]/ro0;
-
 
         for (cs_lnum_t iel = 0; iel < n_cells; iel++)
           b_sca->budsgstuifull[1][iel][ii]
@@ -3678,7 +3661,6 @@ cs_les_balance_compute_tui(void)
                          NULL,
                          w1);
 
-
       for (cs_lnum_t ii = 0; ii < 3; ii++) {
         for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
           b_sca->budsgstuifull[4][iel][ii] = 0.;
@@ -3699,10 +3681,14 @@ cs_les_balance_compute_tui(void)
           b_sca->budsgstuifull[5][iel][ii] *= viscl0/ro0;
         }
 
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
           for (cs_lnum_t kk = 0; kk < 3; kk++)
-            w1[iel][kk] = duidxj[iel][ii][kk]*(nutt[iel]-nut[iel]*t[iel])
-                        + dtdxi[iel][kk]*(nutui[iel][ii]-nut[iel]*ui[iel][ii])/sigmas;
+            w1[iel][kk] =     duidxj[iel][ii][kk]
+                            * (nutt[iel]-nut[iel]*t[iel])
+                          +   dtdxi[iel][kk]
+                            * (  nutui[iel][ii]
+                               - nut[iel]*ui[iel][ii]) / sigmas;
+}
 
         _les_balance_divergence_vector(w1, diverg);
 
@@ -3727,10 +3713,11 @@ cs_les_balance_compute_tui(void)
         }
 
 
-        for (cs_lnum_t iel = 0; iel < n_cells; iel++)
+        for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
           for (cs_lnum_t kk = 0; kk < 3; kk++)
-            w1[iel][kk] = 2.*nut[iel]/sigmas*(tdtdxi[iel][kk]-t[iel]*dtdxi[iel][kk]);
-
+            w1[iel][kk] =   2.*nut[iel]/sigmas*(tdtdxi[iel][kk]
+                          - t[iel]*dtdxi[iel][kk]);
+        }
 
         _les_balance_divergence_vector(w1, diverg);
 
@@ -3754,7 +3741,8 @@ cs_les_balance_compute_tui(void)
           b_sca->budsgsvarfull[iel][2] = 2.*diverg[iel]/(ro0*sigmas);
 
         for (cs_lnum_t iel = 0; iel < n_cells; iel++) {
-          b_sca->budsgsvarfull[iel][3] = nutdtdxidtdxi[iel]-nut[iel]*dtdxidtdxi[iel];
+          b_sca->budsgsvarfull[iel][3]
+            = nutdtdxidtdxi[iel]-nut[iel]*dtdxidtdxi[iel];
           xx = 0.;
           for (cs_lnum_t kk = 0; kk < 3; kk++)
             xx += 2.*nut[iel]*t[iel]*dtdxi[iel][kk]
@@ -3868,7 +3856,6 @@ cs_les_balance_activate(int     type_flag,
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the LES balance for Tui or Rij
- *
  */
 /*----------------------------------------------------------------------------*/
 
