@@ -3,6 +3,10 @@ Release 6.0.3 (Unreleased)
 
 Bug fixes:
 
+- Source code compiler warning pass, may fix unreported issues on:
+  * Lagrangien deposition model
+  * Lagrangian statistics activation for multilayer (combustion) attributes
+
 - Fix loading/handling of compute builds on some Python environments.
 
 - Fix false positive in divergence check for flexible congugate gradient

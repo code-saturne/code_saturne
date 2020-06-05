@@ -1645,7 +1645,6 @@ ecs_loc_pre_gmsh__lit_elements_v4(ecs_maillage_t  *maillage,
   unsigned long  nbr_elt;
   unsigned long  n_ent_blocks;
 
-  long        label;
   ecs_int_t   type_ecs;
   ecs_int_t   nbr_elt_lus;
   ecs_int_t   ind_nod_elt;
@@ -1783,9 +1782,9 @@ ecs_loc_pre_gmsh__lit_elements_v4(ecs_maillage_t  *maillage,
         ecs_error(__FILE__, __LINE__, 0,
                   _("Error reading a Gmsh mesh file:\n"
                     "at line %ld of file \"%s\".\n"
-                    "Type identifier <%d> for element <%ld> is not recognized."),
+                    "Type identifier <%d> for element bloc <%ld> is not recognized."),
                   (long)(*num_ligne), ecs_file_get_name(fic_maillage),
-                  (int)type_gmsh, (long)label);
+                  (int)type_gmsh, (long)eb);
 
       type_ecs         = ecs_gmsh_elt_liste_c[type_gmsh - 1].ecs_typ;
       nbr_nod_elt_gmsh = ecs_gmsh_elt_liste_c[type_gmsh - 1].nbr_som;
@@ -1820,8 +1819,6 @@ ecs_loc_pre_gmsh__lit_elements_v4(ecs_maillage_t  *maillage,
           ligne_decodee = true;
           continue;
         }
-
-        label = atol(ssch);
 
         /* Lecture des numéros des sommets de l'élément courant */
 
@@ -1948,8 +1945,6 @@ ecs_loc_pre_gmsh__lit_elements_v4(ecs_maillage_t  *maillage,
             continue;
           }
 
-          label = data[0];
-
           /* Lecture des numéros des sommets de l'élément courant */
 
           for (ind_nod_elt = 0; ind_nod_elt < nbr_nod_elt_gmsh; ind_nod_elt++)
@@ -1971,8 +1966,6 @@ ecs_loc_pre_gmsh__lit_elements_v4(ecs_maillage_t  *maillage,
             cpt_are += 1;
             continue;
           }
-
-          label = data[0];
 
           /* Lecture des numéros des sommets de l'élément courant */
 

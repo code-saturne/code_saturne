@@ -480,7 +480,7 @@ _field_output(void           *context,
     strcpy(var_name, c->name);
 
   /* File name */
-  char t_stamp[32];
+  char t_stamp[141];
   sprintf(t_stamp, "_%s_%.4i", var_name, w->nt);
   size_t l =   strlen(w->path) + strlen(w->name)
              + strlen(t_stamp) + 4 + 1;

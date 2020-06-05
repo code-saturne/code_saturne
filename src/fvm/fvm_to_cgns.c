@@ -723,7 +723,7 @@ _add_solution(fvm_to_cgns_writer_t        *writer,
 
   sol_length = strlen(sol_name);
   BFT_MALLOC(base->solutions[sol_id]->name, sol_length + 1, char);
-  strncpy(base->solutions[sol_id]->name, sol_name, sol_length);
+  strncpy(base->solutions[sol_id]->name, sol_name, sol_length + 1);
   base->solutions[sol_id]->name[sol_length] = '\0';
 
   if (rank == 0) {
@@ -2657,25 +2657,24 @@ _export_field_e(const fvm_writer_section_t      *export_list,
                 cs_datatype_t                    datatype,
                 const void                *const field_values[])
 {
-  const fvm_writer_section_t  *next_section = NULL;
-
   _cgns_context_t c;
   c.writer = writer;
   c.base = base;
   c.field_label = fieldlabel;
   c.solution_index = solution_index;
 
-  next_section = fvm_writer_field_helper_output_e(helper,
-                                                  &c,
-                                                  export_list,
-                                                  input_dim,
-                                                  interlace,
-                                                  NULL, /* comp_order */
-                                                  n_parent_lists,
-                                                  parent_num_shift,
-                                                  datatype,
-                                                  field_values,
-                                                  _field_output);
+  const fvm_writer_section_t  *next_section
+    = fvm_writer_field_helper_output_e(helper,
+                                       &c,
+                                       export_list,
+                                       input_dim,
+                                       interlace,
+                                       NULL, /* comp_order */
+                                       n_parent_lists,
+                                       parent_num_shift,
+                                       datatype,
+                                       field_values,
+                                       _field_output);
 
   assert(next_section == NULL);
 }
@@ -2746,7 +2745,7 @@ _export_field_n(const fvm_nodal_t               *mesh,
 static void
 _create_timedependent_data(fvm_to_cgns_writer_t  *writer)
 {
-  int     base_id, j, name_len;
+  int     base_id, j;
   cgsize_t dim[2];
 
   double *time_values = NULL;
@@ -2865,9 +2864,8 @@ _create_timedependent_data(fvm_to_cgns_writer_t  *writer)
         sol_names[j] = ' ';
 
       for (sol_id = 0; sol_id < base->n_sols; sol_id++) {
-        name_len = strlen(base->solutions[sol_id]->name);
         strncpy(sol_names + sol_id * FVM_CGNS_NAME_SIZE,
-                base->solutions[sol_id]->name, name_len);
+                base->solutions[sol_id]->name, FVM_CGNS_NAME_SIZE);
       }
 
       retval = cg_array_write("FlowSolutionPointers",
@@ -3558,8 +3556,6 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
   fvm_writer_field_helper_t  *helper = NULL;
   fvm_writer_section_t  *export_list = NULL;
 
-  fvm_to_cgns_solution_t *solution;
-
   char  *field_label = NULL;
   fvm_to_cgns_writer_t  *writer = (fvm_to_cgns_writer_t *)this_writer_p;
   int base_index = 0;
@@ -3644,7 +3640,7 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
                               time_value,
                               cgns_location);
 
-  solution = writer->bases[base_index - 1]->solutions[sol_index - 1];
+  fvm_to_cgns_solution_t *solution = writer->bases[base_index - 1]->solutions[sol_index - 1];
   assert(solution->location == cgns_location);
 
   /* Field_Name adaptation if necessary */
@@ -3669,7 +3665,7 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
     for (i = 0; i < output_dim; i++) {
 
       tmp = field_label + (i * shift);
-      strncpy(tmp, field_name, shift - 1);
+      strncpy(tmp, field_name, shift);
       tmp[shift - 1] = '\0';
 
       if (output_dim > 1) {
