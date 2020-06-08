@@ -1387,6 +1387,7 @@ _update_gl_path(const cs_mesh_t             *mesh,
 
     /* gliq, temp and conc iterates may be not related with the gliq(temp, conc)
      * function until convergence is reached. So one needs to be careful. */
+    gliq = gliq_pre; /* default initialization to avoid a warning */
     state = _which_state(alloy, temp, conc);
     state_pre = _which_state(alloy, temp_pre, conc_pre);
     eta_new = alloy->eta_coef_array[c_id];

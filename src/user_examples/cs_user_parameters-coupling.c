@@ -89,6 +89,8 @@ BEGIN_C_DECLS
 void
 cs_user_parameters(cs_domain_t  *domain)
 {
+  CS_UNUSED(domain);
+
   /*-------------------------------------------------------------------------
    * Ensure coupled codes use the smallest of their defined time steps.
    *-------------------------------------------------------------------------*/

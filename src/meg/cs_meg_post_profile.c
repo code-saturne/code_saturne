@@ -69,7 +69,10 @@ cs_meg_post_profiles(const char       *name,
                      int               n_coords,
                      cs_real_t         coords[][3])
 {
-
+  /* Avoid compilation warnings */
+  CS_UNUSED(name);
+  CS_UNUSED(n_coords);
+  CS_UNUSED(coords);
 }
 
 /*----------------------------------------------------------------------------*/
