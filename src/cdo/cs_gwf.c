@@ -57,6 +57,7 @@
 #include "cs_mesh_location.h"
 #include "cs_parall.h"
 #include "cs_param.h"
+#include "cs_physical_constants.h"
 #include "cs_post.h"
 #include "cs_reco.h"
 #include "cs_zone.h"
@@ -103,9 +104,6 @@ struct _gwf_t {
                                  * the GWF module*/
   cs_flag_t          post_flag; /* Flag dedicated to the post-processing
                                  * of the GWF module */
-
-  /* Gravity effect */
-  cs_real_3_t        gravity;
 
   /* Set of equations associated to this module */
   cs_equation_t     *richards;  /* "hydraulic_head" is the associated variable
@@ -330,6 +328,8 @@ _update_head(cs_gwf_t                    *gw,
 
   if (gw->flag & CS_GWF_GRAVITATION) { /* Update the pressure head */
 
+    cs_physical_constants_t  *phys = cs_get_glob_physical_constants();
+
     /* Sanity checks */
     if (pressure_head == NULL)
       bft_error(__FILE__, __LINE__, 0,
@@ -345,7 +345,7 @@ _update_head(cs_gwf_t                    *gw,
 
 #     pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
-        const cs_real_t  gpot = _dp3(cdoq->vtx_coord + 3*i, gw->gravity);
+        const cs_real_t  gpot = _dp3(cdoq->vtx_coord + 3*i, phys->gravity);
         pressure_head->val[i] = hydraulic_head->val[i] - gpot;
       }
 
@@ -361,7 +361,7 @@ _update_head(cs_gwf_t                    *gw,
 
 #       pragma omp parallel for if (cdoq->n_vertices > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < cdoq->n_vertices; i++) {
-          const cs_real_t  gpot = _dp3(cdoq->vtx_coord + 3*i, gw->gravity);
+          const cs_real_t  gpot = _dp3(cdoq->vtx_coord + 3*i, phys->gravity);
           pressure_head->val[i] = hydraulic_head->val[i] - gpot;
         }
 
@@ -371,7 +371,7 @@ _update_head(cs_gwf_t                    *gw,
 
 #       pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
         for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
-          const cs_real_t  gpot = _dp3(cdoq->cell_centers + 3*i, gw->gravity);
+          const cs_real_t  gpot = _dp3(cdoq->cell_centers + 3*i, phys->gravity);
           gw->head_in_law[i] = hydraulic_head_cells[i] - gpot;
         }
 
@@ -383,7 +383,7 @@ _update_head(cs_gwf_t                    *gw,
 
 #     pragma omp parallel for if (cdoq->n_cells > CS_THR_MIN)
       for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
-        const cs_real_t  gpot = _dp3(cdoq->cell_centers + 3*i, gw->gravity);
+        const cs_real_t  gpot = _dp3(cdoq->cell_centers + 3*i, phys->gravity);
         pressure_head->val[i] = hydraulic_head->val[i] - gpot;
       }
       break;
@@ -544,8 +544,6 @@ _gwf_create(void)
   gw->tracers = NULL;
   gw->finalize_tracer_setup = NULL;
   gw->add_tracer_terms = NULL;
-
-  gw->gravity[0] = 0, gw->gravity[1] = 0, gw->gravity[2] = 0;
 
   gw->moisture_content = NULL;
   gw->moisture_field = NULL;
@@ -722,9 +720,7 @@ cs_gwf_log_setup(void)
 
   /* Display information on the general options */
   if (gw->flag & CS_GWF_GRAVITATION)
-    cs_log_printf(CS_LOG_SETUP,
-                  "  * GWF | Gravitation: **True** [%.2f %.2f %.2f]\n",
-                  gw->gravity[0], gw->gravity[1], gw->gravity[2]);
+    cs_log_printf(CS_LOG_SETUP, "  * GWF | Gravitation: **True**\n");
   else
     cs_log_printf(CS_LOG_SETUP, "  * GWF | Gravitation: **False**\n");
 
@@ -791,27 +787,6 @@ cs_gwf_set_post_options(cs_flag_t       post_flag)
   gw->post_flag = post_flag;
   if (gw->post_flag & CS_GWF_POST_DARCY_FLUX_AT_BOUNDARY)
     gw->adv_field->status |= CS_ADVECTION_FIELD_DEFINE_AT_BOUNDARY_FACES;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Activate the gravity and set the gravitaty vector
-
- * \param[in]       gvec      values of the gravity vector
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_set_gravity_vector(const cs_real_3_t      gvec)
-{
-  cs_gwf_t  *gw = cs_gwf_main_structure;
-
-  if (gw == NULL) bft_error(__FILE__, __LINE__, 0, _(_err_empty_gw));
-
-  gw->flag |= CS_GWF_GRAVITATION;
-  gw->gravity[0] = gvec[0];
-  gw->gravity[1] = gvec[1];
-  gw->gravity[2] = gvec[2];
 }
 
 /*----------------------------------------------------------------------------*/

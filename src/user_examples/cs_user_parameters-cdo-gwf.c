@@ -217,8 +217,7 @@ cs_user_model(void)
      ================================
 
      For the groundwater flow module:
-     >> cs_gwf_activate(permeability_type,
-                        richards_flag);
+     >> cs_gwf_activate(permeability_type, option_flag);
 
      * permeability_type is one of the following keywords:
        CS_PROPERTY_ISO, CS_PROPERTY_ORTHO or CS_PROPERTY_ANISO
@@ -239,11 +238,23 @@ cs_user_model(void)
 
   /*! [param_cdo_activate_gwf] */
   {
+    cs_flag_t  option_flag = 0;
 
-  cs_gwf_activate(CS_PROPERTY_ISO, 0); // no flag to set
-
+    cs_gwf_activate(CS_PROPERTY_ISO, option_flag);
   }
   /*! [param_cdo_activate_gwf] */
+
+  /*! [param_cdo_activate_gwf_b] */
+  {
+    /* Take into account the gravity effect */
+    cs_flag_t  option_flag = CS_GWF_GRAVITATION;
+
+    /* In this case, the gravity vector has to be defined (either using the GUI
+       or in cs_user_parameters() function */
+
+    cs_gwf_activate(CS_PROPERTY_ISO, option_flag);
+  }
+  /*! [param_cdo_activate_gwf_b] */
 
   /* =========
      Add soils (must be done before adding tracers)

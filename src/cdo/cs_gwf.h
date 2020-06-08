@@ -213,17 +213,6 @@ cs_gwf_set_post_options(cs_flag_t       post_flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Activate the gravity and set the gravitaty vector
-
- * \param[in]       gvec      values of the gravity vector
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_gwf_set_gravity_vector(const cs_real_3_t      gvec);
-
-/*----------------------------------------------------------------------------*/
-/*!
  * \brief  Add a new equation related to the groundwater flow module
  *         This equation is a particular type of unsteady advection-diffusion
  *         reaction eq.
