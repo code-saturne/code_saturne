@@ -91,6 +91,15 @@ if test "x$with_eos" != "xno" ; then
     EOS_CPPFLAGS="${EOS_CPPFLAGS} -DEOS_PRE_V1_6"
   fi
 
+  # check for pre-v1.8.0
+  # This test is necessary because starting from 1.8.0 definition of mixing
+  # in EOS changed.
+  AC_MSG_CHECKING([if EOS version >= 1.8.0])
+  AS_VERSION_COMPARE(${eosversion}, 1.8.0, [EOS_PRE_V1_8=-1], [EOS_PRE_V1_8=0], [EOS_PRE_V1_8=1])
+  if test "${EOS_PRE_V1_8}" = "-1"; then
+    EOS_CPPFLAGS="${EOS_CPPFLAGS} -DEOS_PRE_V1_8"
+  fi
+
   CPPFLAGS="${CPPFLAGS} ${EOS_CPPFLAGS}"
   LDFLAGS="${LDFLAGS} ${EOS_LDFLAGS}"
   LIBS="${EOS_LIBS} ${LIBS}"
