@@ -96,7 +96,7 @@ integer          iel   , ical, ifac
 integer          nswmpr
 integer          isweep, niterf
 integer          iphydp
-integer          imrgrp, nswrgp, imligp, iwarnp
+integer          imrgrp, nswrgp, imligp, iwarnp, iwgrp
 integer          idiffp, iconvp, ndircp
 integer          ibsize, iesize
 integer          imucpp, f_id0
@@ -345,6 +345,7 @@ do isweep = 1, nswmpr
     imrgrp = vcopt_pr%imrgra
     nswrgp = vcopt_pr%nswrgr
     imligp = vcopt_pr%imligr
+    iwgrp  = vcopt_pr%iwgrec
     iwarnp = vcopt_pr%iwarni
     epsrgp = vcopt_pr%epsrgr
     climgp = vcopt_pr%climgr
@@ -354,7 +355,7 @@ do isweep = 1, nswmpr
     call itrgrp &
     !==========
  ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydp ,     &
-   iwarnp ,                                                                    &
+   iwgrp  , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    dfext  ,                                                                    &
    phydr  ,                                                                    &

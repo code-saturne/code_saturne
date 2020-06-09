@@ -3,6 +3,9 @@ Release 6.1.1 (unreleased)
 
 Bug fixes:
 
+- Fix reconstruction gradient weighting in computation of face diffusion
+  from pressure increment in pressure correction step.
+
 - Source code compiler warning pass, may fix unreported issues on:
   * tensor gradient limiter
   * Lagrangien deposition model
