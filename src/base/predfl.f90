@@ -105,7 +105,7 @@ integer          iccocg, inc   , init  , isym
 integer          ii, iel   , ifac
 integer          nswmpr
 integer          isweep, niterf
-integer          imrgrp, nswrgp, imligp, iwarnp
+integer          imrgrp, nswrgp, imligp, iwarnp, iwgrp
 integer          iflmas, iflmab
 integer          idiffp, iconvp, ndircp
 integer          ibsize, iesize, iphydp
@@ -339,6 +339,7 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
     imrgrp = vcopt%imrgra
     nswrgp = vcopt%nswrgr
     imligp = vcopt%imligr
+    iwgrp  = vcopt%iwgrec
     iwarnp = vcopt%iwarni
     epsrgp = vcopt%epsrgr
     climgp = vcopt%climgr
@@ -349,7 +350,7 @@ do while (isweep.le.nswmpr.and.residu.gt.tcrite)
     call itrgrp &
     !==========
    ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydp ,   &
-     iwarnp ,                                                                  &
+     iwgrp  , iwarnp ,                                                         &
      epsrgp , climgp , extrap ,                                                &
      rvoid  ,                                                                  &
      pot    ,                                                                  &

@@ -102,7 +102,7 @@ character(len=80) :: chaine
 integer          iel   , ifac  , init  , inc   , iccocg, ivar
 integer          f_id0 , iiun  , f_id
 integer          iclip
-integer          imrgrp, nswrgp, imligp
+integer          imrgrp, nswrgp, imligp, iwgrp
 integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          iflmas, iflmab
@@ -786,6 +786,7 @@ if (iturb.eq.51) then
   imrgrp = vcopt_k%imrgra
   nswrgp = vcopt_k%nswrgr
   imligp = vcopt_k%imligr
+  iwgrp  = vcopt_k%iwgrec
   iwarnp = vcopt_k%iwarni
   epsrgp = vcopt_k%epsrgr
   climgp = vcopt_k%climgr
@@ -794,7 +795,7 @@ if (iturb.eq.51) then
 
   call itrgrp &
 ( ivarfl(ivar), init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydp , &
-  iwarnp ,                                                                     &
+  iwgrp  , iwarnp ,                                                            &
   epsrgp , climgp , extrap ,                                                   &
   rvoid  ,                                                                     &
   cvara_k         ,                                                            &

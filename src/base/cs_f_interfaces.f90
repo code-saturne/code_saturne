@@ -89,13 +89,13 @@ module cs_f_interfaces
 
     subroutine itrgrv &
       (f_id, init, inc, imrgra, iccocg, nswrgp, imligp, ircflp,                &
-      iphydp, iwarnp,                                                          &
+      iphydp, iwgrp, iwarnp,                                                   &
       epsrgp, climgp, extrap, frcxt,                                           &
       pvar, coefap, coefbp, cofafp, cofbfp, viscf, viscb, viscel,              &
       weighf, weighb, diverg)
       use mesh
       integer :: f_id, init, inc, imrgra, iccocg, nswrgp, imligp, ircflp
-      integer :: iwarnp , iphydp
+      integer :: iwgrp, iwarnp , iphydp
       double precision :: epsrgp, climgp, extrap
       double precision, dimension(ncelet) :: pvar
       double precision, dimension(nfabor) :: coefap, coefbp, cofafp, cofbfp

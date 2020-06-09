@@ -805,6 +805,7 @@ void CS_PROCF (itrgrp, ITRGRP)
  const cs_int_t  *const   nswrgp,
  const cs_int_t  *const   imligp,
  const cs_int_t  *const   iphydp,
+ const cs_int_t  *const   iwgrp,
  const cs_int_t  *const   iwarnp,
  const cs_real_t *const   epsrgp,
  const cs_real_t *const   climgp,
@@ -834,6 +835,7 @@ void CS_PROCF (itrgrp, ITRGRP)
                          *nswrgp,
                          *imligp,
                          *iphydp,
+                         *iwgrp,
                          *iwarnp,
                          *epsrgp,
                          *climgp,
@@ -865,6 +867,7 @@ void CS_PROCF (itrgrv, ITRGRV)
  const cs_int_t  *const   imligp,
  const cs_int_t  *const   ircflp,
  const cs_int_t  *const   iphydp,
+ const cs_int_t  *const   iwgrp,
  const cs_int_t  *const   iwarnp,
  const cs_real_t *const   epsrgp,
  const cs_real_t *const   climgp,
@@ -897,6 +900,7 @@ void CS_PROCF (itrgrv, ITRGRV)
                                      *imligp,
                                      *ircflp,
                                      *iphydp,
+                                     *iwgrp,
                                      *iwarnp,
                                      *epsrgp,
                                      *climgp,
@@ -11351,6 +11355,9 @@ cs_face_anisotropic_diffusion_potential(const int                 f_id,
  *                               - = 1 thank to the mean gradient
  * \param[in]     iphydp        hydrostatic pressure indicator
  * \param[in]     iwarnp        verbosity
+ * \param[in]     iwgrp         indicator
+ *                               - 1 weight gradient by vicosity*porosity
+ *                               - weighting determined by field options
  * \param[in]     epsrgp        relative precision for the gradient
  *                               reconstruction
  * \param[in]     climgp        clipping coeffecient for the computation of
@@ -11386,6 +11393,7 @@ cs_diffusion_potential(const int                 f_id,
                        int                       nswrgp,
                        int                       imligp,
                        int                       iphydp,
+                       int                       iwgrp,
                        int                       iwarnp,
                        double                    epsrgp,
                        double                    climgp,
@@ -11542,7 +11550,13 @@ cs_diffusion_potential(const int                 f_id,
     BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
     /* Compute gradient */
-    if (f_id != -1) {
+    if (iwgrp > 0) {
+      gweight = visel;
+      if (halo != NULL)
+        cs_halo_sync_var(halo, halo_type, gweight);
+    }
+
+    else if (f_id > -1) {
       /* Get the calculation option from the field */
       int key_cal_opt_id = cs_field_key_id("var_cal_opt");
       cs_var_cal_opt_t var_cal_opt;
@@ -11722,6 +11736,9 @@ cs_diffusion_potential(const int                 f_id,
  * \param[in]     iphydp        indicator
  *                               - 1 hydrostatic pressure taken into account
  *                               - 0 otherwise
+ * \param[in]     iwgrp         indicator
+ *                               - 1 weight gradient by vicosity*porosity
+ *                               - weighting determined by field options
  * \param[in]     iwarnp        verbosity
  * \param[in]     epsrgp        relative precision for the gradient
  *                               reconstruction
@@ -11763,6 +11780,7 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
                                    int                       imligp,
                                    int                       ircflp,
                                    int                       iphydp,
+                                   int                       iwgrp,
                                    int                       iwarnp,
                                    double                    epsrgp,
                                    double                    climgp,
@@ -11984,7 +12002,16 @@ cs_anisotropic_diffusion_potential(const int                 f_id,
     BFT_MALLOC(grad, n_cells_ext, cs_real_3_t);
 
     /* Compute gradient */
-    if (f_id != -1) {
+    if (iwgrp > 0) {
+      gweight = (cs_real_t *)viscce;
+      if (halo != NULL) {
+        cs_halo_sync_var_strided(halo, halo_type, gweight, 6);
+        if (cs_glob_mesh->n_init_perio > 0)
+          cs_halo_perio_sync_var_sym_tens(halo, halo_type, gweight);
+      }
+    }
+
+    else if (f_id > -1) {
       /* Get the calculation option from the field */
       int key_cal_opt_id = cs_field_key_id("var_cal_opt");
       cs_var_cal_opt_t var_cal_opt;

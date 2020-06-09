@@ -349,6 +349,7 @@ inc  = 1 ! 0 increment, 1 otherwise
 imrgrp = vcopt_p%imrgra
 nswrgp = vcopt_p%nswrgr ! number of sweeps for gradients reconstruction
 imligp = vcopt_p%imligr
+iwgrp  = vcopt_p%iwgrec
 iwarnp = vcopt_p%iwarni
 epsrgp = vcopt_p%epsrgr
 climgp = vcopt_p%climgr
@@ -359,7 +360,7 @@ if (darcy_anisotropic_permeability.eq.0) then
 
   call itrgrp &
 ( ivarfl(ipr), init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydr , &
-  iwarnp ,                                                                    &
+  iwgrp  , iwarnp ,                                                           &
   epsrgp , climgp , extrap ,                                                  &
   rvoid  ,                                                                    &
   cvar_pr   ,                                                                 &
@@ -373,7 +374,7 @@ else if (darcy_anisotropic_permeability.eq.1) then
 
   call itrgrv &
 ( ivarfl(ipr), init   , inc    , imrgrp , iccocg , nswrgp , imligp , ircflp ,        &
-  iphydr , iwarnp ,                                                                  &
+  iphydr , iwgrp  , iwarnp ,                                                         &
   epsrgp , climgp , extrap ,                                                         &
   rvoid  ,                                                                           &
   cvar_pr   ,                                                                        &
@@ -477,7 +478,7 @@ do while ( (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp) &
 
     call itrgrp &
   ( ivarfl(ipr), init  , inc , imrgrp , iccocg , nswrgp , imligp , iphydr ,  &
-    iwarnp ,                                                                 &
+    iwgrp  , iwarnp ,                                                        &
     epsrgp , climgp , extrap ,                                               &
     rvoid  ,                                                                 &
     cvar_pr   ,                                                              &
@@ -491,7 +492,7 @@ do while ( (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp) &
 
     call itrgrv &
     ( ivarfl(ipr), init, inc, imrgrp, iccocg, nswrgp, imligp, ircflp,        &
-      iphydr, iwarnp, epsrgp , climgp, extrap, rvoid,                        &
+      iphydr, iwgrp, iwarnp, epsrgp , climgp, extrap, rvoid,                 &
       cvar_pr, coefa_p, coefb_p, coefaf_p, coefbf_p,                         &
       viscf, viscb,                                                          &
       cpro_permeability_6, weighf, weighb, rhs)

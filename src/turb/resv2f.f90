@@ -94,7 +94,7 @@ integer          init  , ifac  , iel   , inc   , iprev , iccocg
 integer          ivar
 integer          iiun
 integer          iflmas, iflmab
-integer          imrgrp, nswrgp, imligp, iwarnp, iphydp
+integer          imrgrp, nswrgp, imligp, iwarnp, iwgrp, iphydp
 integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
 integer          istprv
@@ -364,6 +364,7 @@ call field_get_key_struct_var_cal_opt(ivarfl(iphi), vcopt)
 imrgrp = vcopt%imrgra
 nswrgp = vcopt%nswrgr
 imligp = vcopt%imligr
+iwgrp  = vcopt%iwgrec
 iwarnp = vcopt%iwarni
 epsrgp = vcopt%epsrgr
 climgp = vcopt%climgr
@@ -373,7 +374,7 @@ iphydp = 0
 call itrgrp &
  ( ivarfl(iphi)    , init   , inc    , imrgrp ,                      &
    iccocg , nswrgp , imligp , iphydp ,                               &
-   iwarnp ,                                                          &
+   iwgrp  , iwarnp ,                                                 &
    epsrgp , climgp , extrap ,                                        &
    rvoid  ,                                                          &
    cvara_phi       ,                                                 &
