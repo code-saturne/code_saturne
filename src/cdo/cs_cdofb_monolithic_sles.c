@@ -48,15 +48,16 @@
 #endif
 
 /*----------------------------------------------------------------------------
- *  Local headers
+ *  BFT headers
  *----------------------------------------------------------------------------*/
 
 #include <bft_mem.h>
 
+/*----------------------------------------------------------------------------
+ *  Local headers
+ *----------------------------------------------------------------------------*/
+
 #include "cs_blas.h"
-#if defined(DEBUG) && !defined(NDEBUG)
-#include "cs_dbg.h"
-#endif
 #include "cs_equation.h"
 #include "cs_evaluate.h"
 #include "cs_fp_exception.h"
@@ -64,10 +65,19 @@
 #include "cs_navsto_coupling.h"
 #include "cs_parall.h"
 #include "cs_sles.h"
+#include "cs_timer.h"
+
+#if defined(DEBUG) && !defined(NDEBUG)
+#include "cs_dbg.h"
+#endif
+
+#if defined(HAVE_MUMPS)
+#include "cs_sles_mumps.h"
+#endif
+
 #if defined(HAVE_PETSC)
 #include "cs_sles_petsc.h"
 #endif
-#include "cs_timer.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file

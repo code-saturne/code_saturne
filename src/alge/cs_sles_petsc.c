@@ -408,7 +408,7 @@ _shell_mat_duplicate(Mat                  a,
 }
 
 /*----------------------------------------------------------------------------
- * Duplicate matrix
+ * Destroy matrix
  *
  * parameters:
  *   a  <-- Pointer to PETSc matrix structure
@@ -1599,7 +1599,6 @@ cs_sles_petsc_log(const void  *context,
                     s_type, p_type, norm_type_name, m_type);
 
   }
-
   else if (log_type == CS_LOG_PERFORMANCE) {
 
     int n_calls = c->n_solves;

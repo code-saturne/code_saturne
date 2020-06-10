@@ -815,7 +815,6 @@ cs_real_t *
 cs_equation_get_vertex_values(const cs_equation_t    *eq,
                               bool                    previous);
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the integral over the domain of the variable field
