@@ -1041,6 +1041,7 @@ cs_gwf_soil_log_setup(void)
 
   } /* Loop on soils */
 
+  cs_log_printf(CS_LOG_SETUP, "\n");
 }
 
 /*----------------------------------------------------------------------------*/

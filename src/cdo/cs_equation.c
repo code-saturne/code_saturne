@@ -1362,7 +1362,7 @@ cs_equation_log_setup(void)
       cs_timer_stats_start(eq->main_ts_id);
 
     cs_log_printf(CS_LOG_SETUP,
-                  "\nSummary of settings for %s eq. (variable %s)\n",
+                  "Summary of settings for %s eq. (variable %s)\n",
                   eq->param->name, eq->varname);
     cs_log_printf(CS_LOG_SETUP, "%s", h2_sep);
 

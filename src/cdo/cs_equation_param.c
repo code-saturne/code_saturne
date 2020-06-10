@@ -2295,7 +2295,7 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
   assert(strlen(eqname) < 200); /* Check that prefix is large enough */
 
   /* High-level settings */
-  cs_log_printf(CS_LOG_SETUP, "\n### %s: High-level settings\n", eqname);
+  cs_log_printf(CS_LOG_SETUP, "\n### %s | High-level settings\n", eqname);
   cs_log_printf(CS_LOG_SETUP, "  * %s | Type: ", eqname);
   switch (eqp->type) {
   case CS_EQUATION_TYPE_GROUNDWATER:
@@ -2369,7 +2369,7 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
   }
 
   /* Boundary conditions */
-  cs_log_printf(CS_LOG_SETUP, "\n### %s: Boundary condition settings\n",
+  cs_log_printf(CS_LOG_SETUP, "\n### %s | Boundary condition settings\n",
                 eqname);
   cs_log_printf(CS_LOG_SETUP,
                 "  * %s | Boundary conditions | Default: %s\n",
@@ -2405,7 +2405,7 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
 
   if (unsteady) {
 
-    cs_log_printf(CS_LOG_SETUP, "\n### %s: Time settings\n", eqname);
+    cs_log_printf(CS_LOG_SETUP, "\n### %s | Time settings\n", eqname);
     cs_log_printf(CS_LOG_SETUP,
                   "  * %s | Initial conditions | Number of definitions: %d",
                   eqname, eqp->n_ic_defs);
@@ -2440,7 +2440,7 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
 
   if (diffusion) {
 
-    cs_log_printf(CS_LOG_SETUP, "\n### %s: Diffusion term settings\n", eqname);
+    cs_log_printf(CS_LOG_SETUP, "\n### %s | Diffusion term settings\n", eqname);
     cs_log_printf(CS_LOG_SETUP, "  * %s | Diffusion property: %s\n\n",
                   eqname, cs_property_get_name(eqp->diffusion_property));
 
@@ -2451,7 +2451,7 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
 
   if (curlcurl) {
 
-    cs_log_printf(CS_LOG_SETUP, "\n### %s: Curl-Curl term settings\n", eqname);
+    cs_log_printf(CS_LOG_SETUP, "\n### %s | Curl-Curl term settings\n", eqname);
     cs_log_printf(CS_LOG_SETUP, "  * %s | Curl-Curl property: %s\n\n",
                   eqname, cs_property_get_name(eqp->curlcurl_property));
 
@@ -2462,7 +2462,7 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
 
   if (graddiv) {
 
-    cs_log_printf(CS_LOG_SETUP, "\n### %s: Grad-Div term settings\n", eqname);
+    cs_log_printf(CS_LOG_SETUP, "\n### %s | Grad-Div term settings\n", eqname);
     cs_log_printf(CS_LOG_SETUP, "  * %s | Grad-Div property: %s\n\n",
                   eqname, cs_property_get_name(eqp->graddiv_property));
 
@@ -2473,7 +2473,7 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
 
   if (convection) {
 
-    cs_log_printf(CS_LOG_SETUP, "\n### %s: Advection term settings\n", eqname);
+    cs_log_printf(CS_LOG_SETUP, "\n### %s | Advection term settings\n", eqname);
     cs_log_printf(CS_LOG_SETUP, "  * %s | Advection.Field: %s\n",
                   eqname, cs_advection_field_get_name(eqp->adv_field));
     if (eqp->adv_scaling_property != NULL)
@@ -2532,7 +2532,7 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
 
   if (reaction) {
 
-    cs_log_printf(CS_LOG_SETUP, "\n### %s: Reaction settings\n", eqname);
+    cs_log_printf(CS_LOG_SETUP, "\n### %s | Reaction settings\n", eqname);
     cs_log_printf(CS_LOG_SETUP, "  * %s | Reaction | Number of terms: %d\n",
                   eqname, eqp->n_reaction_terms);
 
@@ -2543,7 +2543,7 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
 
   if (source_term) {
 
-    cs_log_printf(CS_LOG_SETUP, "\n### %s: Source term settings\n", eqname);
+    cs_log_printf(CS_LOG_SETUP, "\n### %s | Source term settings\n", eqname);
     cs_log_printf(CS_LOG_SETUP, "  * %s | Source terms | Number of terms: %d\n",
                   eqname, eqp->n_source_terms);
 
@@ -2557,9 +2557,9 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
   /* Iterative solver information */
   const cs_param_sles_t   slesp = eqp->sles_param;
 
-  cs_log_printf(CS_LOG_SETUP, "\n### %s: Linear algebra settings\n\n",
+  cs_log_printf(CS_LOG_SETUP, "\n### %s | Linear algebra settings\n",
                 eqname);
-  cs_log_printf(CS_LOG_SETUP, "        SLES | Family:");
+  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Family:", eqname);
   if (slesp.solver_class == CS_PARAM_SLES_CLASS_CS)
     cs_log_printf(CS_LOG_SETUP, "             Code_Saturne\n");
   else if (slesp.solver_class == CS_PARAM_SLES_CLASS_PETSC)
@@ -2567,28 +2567,28 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
   else if (slesp.solver_class == CS_PARAM_SLES_CLASS_HYPRE)
     cs_log_printf(CS_LOG_SETUP, "             HYPRE\n");
 
-  cs_log_printf(CS_LOG_SETUP, "        SLES | Verbosity:          %d\n",
-                slesp.verbosity);
-  cs_log_printf(CS_LOG_SETUP, "        SLES | Field id:           %d\n",
-                slesp.field_id);
-  cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.MaxIter:     %d\n",
-                slesp.n_max_iter);
+  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Verbosity:          %d\n",
+                eqname, slesp.verbosity);
+  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Field id:           %d\n",
+                eqname, slesp.field_id);
+  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.MaxIter:     %d\n",
+                eqname, slesp.n_max_iter);
 
-  cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.Name:        %s\n",
-                cs_param_get_solver_name(slesp.solver));
+  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Name:        %s\n",
+                eqname, cs_param_get_solver_name(slesp.solver));
   if (slesp.solver == CS_PARAM_ITSOL_AMG)
-    cs_log_printf(CS_LOG_SETUP, "        SLES | AMG.Type:           %s\n",
-                  cs_param_get_amg_type_name(slesp.amg_type));
-  cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.Precond:     %s\n",
-                cs_param_get_precond_name(slesp.precond));
+    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES AMG.Type:           %s\n",
+                  eqname, cs_param_get_amg_type_name(slesp.amg_type));
+  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Precond:     %s\n",
+                eqname, cs_param_get_precond_name(slesp.precond));
   if (slesp.precond == CS_PARAM_PRECOND_AMG)
-    cs_log_printf(CS_LOG_SETUP, "        SLES | AMG.Type:           %s\n",
-                  cs_param_get_amg_type_name(slesp.amg_type));
+    cs_log_printf(CS_LOG_SETUP, "  * %s | SLES AMG.Type:           %s\n",
+                  eqname, cs_param_get_amg_type_name(slesp.amg_type));
 
-  cs_log_printf(CS_LOG_SETUP, "        SLES | Solver.Eps:        % -10.6e\n",
-                slesp.eps);
+  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Solver.Eps:        % -10.6e\n",
+                eqname, slesp.eps);
 
-  cs_log_printf(CS_LOG_SETUP, "        SLES | Normalization:      ");
+  cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Normalization:      ", eqname);
   switch (slesp.resnorm_type) {
   case CS_PARAM_RESNORM_NORM2_RHS:
     cs_log_printf(CS_LOG_SETUP, "Euclidean norm of the RHS\n");

@@ -1996,7 +1996,7 @@ cs_property_log_setup(void)
   assert(_properties != NULL);
 
   cs_log_printf(CS_LOG_SETUP, "\nSummary of the definition of properties\n");
-  cs_log_printf(CS_LOG_SETUP, "%s\n", h1_sep);
+  cs_log_printf(CS_LOG_SETUP, "%s", h1_sep);
 
   char  prefix[256];
 
@@ -2012,8 +2012,7 @@ cs_property_log_setup(void)
     if (pty->state_flag & CS_FLAG_STATE_UNIFORM)  is_uniform = true;
     if (pty->state_flag & CS_FLAG_STATE_STEADY) is_steady = true;
 
-    cs_log_printf(CS_LOG_SETUP, "\n  * %s | Uniform %s Steady %s\n",
-                  pty->name,
+    cs_log_printf(CS_LOG_SETUP, "\n  * %s | Uniform %s Steady %s\n", pty->name,
                   cs_base_strtf(is_uniform), cs_base_strtf(is_steady));
     cs_log_printf(CS_LOG_SETUP, "  * %s | Reference value  % -8.4e\n",
                   pty->name, pty->ref_value);
