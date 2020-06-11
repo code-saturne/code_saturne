@@ -3078,7 +3078,7 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
       BFT_MALLOC(alloy->cx_bulk, n_cells, cs_real_t);
     }
 
-    /* Allocate eta even if SOLUTE_WITH_SOURC_TERM is activated */
+    /* Allocate eta even if SOLUTE_WITH_SOURCE_TERM is activated */
     const cs_real_t  eta_ref_value = 1.;
     BFT_MALLOC(alloy->eta_coef_array, n_cells, cs_real_t);
 #   pragma omp parallel for if (n_cells > CS_THR_MIN)
@@ -3198,7 +3198,7 @@ cs_solidification_log_setup(void)
                   alloy->dilatation_coef, alloy->kp, alloy->ml, alloy->t_melt,
                   alloy->c_eut, alloy->ref_concentration, alloy->latent_heat);
     cs_log_printf(CS_LOG_SETUP,
-                  "  * Solidification | Forcing coef: %5.3e s_das: %5.3e\n",
+                  "  * Solidification | Forcing coef: %5.3e; s_das: %5.3e\n",
                   solid->forcing_coef, alloy->s_das);
 
     /* Display options */

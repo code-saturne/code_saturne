@@ -428,7 +428,7 @@ typedef struct {
 } cs_solidification_binary_alloy_t;
 
 /*----------------------------------------------------------------------------
- * Main structure to man,age the solidification process
+ * Main structure to manage the solidification process
  *----------------------------------------------------------------------------*/
 
 typedef struct  {

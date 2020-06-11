@@ -290,7 +290,7 @@ extern cs_face_mesh_t        **cs_cdo_local_face_meshes;
 extern cs_face_mesh_light_t  **cs_cdo_local_face_meshes_light;
 
 /*============================================================================
- * Staic inline function prototypes
+ * Static inline function prototypes
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
