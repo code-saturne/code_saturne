@@ -442,6 +442,10 @@ typedef struct  {
 
   /* Mass density of the liquid/solid media */
   cs_property_t   *mass_density;
+  cs_real_t        rho0;
+
+  /* Heat capacity in the solidification/melting area (assumed to be uniform) */
+  cs_real_t        cp0;
 
   /* Laminar dynamic viscosity */
   cs_property_t   *lam_viscosity;
@@ -495,6 +499,10 @@ typedef struct  {
    * F(u) = forcing_coef * (1- gl)^2/(gl^3 + forcing_eps) * u
    */
   cs_real_t        forcing_coef;
+
+  /* First cell associated to a fluid/solid area (i.e. not associated to
+   * a permanent solid zone) */
+  cs_lnum_t        first_cell;
 
 } cs_solidification_t;
 
@@ -699,8 +707,8 @@ cs_solidification_init_setup(void);
  * \brief  Finalize the setup stage for equations related to the solidification
  *         module
  *
- * \param[in]      connect    pointer to a cs_cdo_connect_t structure
- * \param[in]      quant      pointer to a cs_cdo_quantities_t structure
+ * \param[in]  connect    pointer to a cs_cdo_connect_t structure
+ * \param[in]  quant      pointer to a cs_cdo_quantities_t structure
  */
 /*----------------------------------------------------------------------------*/
 
