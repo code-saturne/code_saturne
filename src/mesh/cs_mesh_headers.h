@@ -65,6 +65,7 @@
 #include "cs_mesh_warping.h"
 #include "cs_mesh_smoother.h"
 #include "cs_partition.h"
+#include "cs_symmetry_faces_filter.h"
 
 /*----------------------------------------------------------------------------*/
 
