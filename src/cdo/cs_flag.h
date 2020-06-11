@@ -44,14 +44,25 @@ BEGIN_C_DECLS
 /*!
  * @name Flags specifying the type of cell
  * @{
+ *
+ * \def CS_FLAG_BOUNDARY_CELL_BY_FACE
+ * \brief (= 1) boundary cell with at least one border face
+ *
+ * \def CS_FLAG_BOUNDARY_CELL_BY_VERTEX
+ * \brief (= 2) boundary cell with at least one border vertex
+ *
+ * \def CS_FLAG_BOUNDARY_CELL_BY_EDGE
+ * \brief (= 4) boundary cell with at least one border edge
+ *
+ * \def CS_FLAG_SOLID_CELL
+ * \brief (= 8) cell attached to a solid zone during the calculation
+ *
  */
 
-#define CS_FLAG_BOUNDARY_CELL_BY_FACE   (1 << 0)  /*!< 1: boundary cell with at
-                                                    least one border face */
-#define CS_FLAG_BOUNDARY_CELL_BY_VERTEX (1 << 1)  /*!< 2: boundary cell with at
-                                                    least one border vertex */
-#define CS_FLAG_BOUNDARY_CELL_BY_EDGE   (1 << 2)  /*!< 4: boundary cell with at
-                                                    least one border edge   */
+#define CS_FLAG_BOUNDARY_CELL_BY_FACE     (1 << 0)
+#define CS_FLAG_BOUNDARY_CELL_BY_VERTEX   (1 << 1)
+#define CS_FLAG_BOUNDARY_CELL_BY_EDGE     (1 << 2)
+#define CS_FLAG_SOLID_CELL                (1 << 3)
 
 /*!
  * @}

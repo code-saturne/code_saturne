@@ -94,7 +94,7 @@ typedef struct {
 
   /* Cell-related members */
   fvm_element_t     *cell_type;   /* type of cell */
-  cs_flag_t         *cell_flag;   /* Flag (Border) */
+  cs_flag_t         *cell_flag;   /* Flag (Border/Solid) */
   cs_adjacency_t    *c2f;         /* cell --> faces connectivity */
   cs_adjacency_t    *c2e;         /* cell --> edges connectivity */
   cs_adjacency_t    *c2v;         /* cell --> vertices connectivity */

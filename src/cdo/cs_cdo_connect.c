@@ -51,6 +51,7 @@
 #include "cs_param.h"
 #include "cs_param_cdo.h"
 #include "cs_sort.h"
+#include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------
  * Header for the current file
@@ -588,10 +589,21 @@ _build_cell_flag(cs_cdo_connect_t   *connect,
   BFT_MALLOC(connect->cell_flag, n_cells, cs_flag_t);
   memset(connect->cell_flag, 0, n_cells*sizeof(cs_flag_t));
 
+  /* Loop on volume zones to find solid zones and then tag cells */
+  for (int z_id = 0; z_id < cs_volume_zone_n_zones(); z_id++) {
+
+    const cs_zone_t  *z = cs_volume_zone_by_id(z_id);
+    if (z->type & CS_VOLUME_ZONE_SOLID) {
+      for (cs_lnum_t i = 0; i < z->n_elts; i++)
+        connect->cell_flag[z->elt_ids[i]] |= CS_FLAG_SOLID_CELL;
+    }
+
+  } /* Loop on volume zones */
+
   /* Loop on border faces and flag boundary cells */
   const cs_lnum_t  *c_ids = connect->f2c->ids + connect->f2c->idx[n_i_faces];
   for (cs_lnum_t f_id = 0; f_id < n_b_faces; f_id++)
-    connect->cell_flag[c_ids[f_id]] = CS_FLAG_BOUNDARY_CELL_BY_FACE;
+    connect->cell_flag[c_ids[f_id]] |= CS_FLAG_BOUNDARY_CELL_BY_FACE;
 
 
   if (vb_scheme_flag > 0 || vcb_scheme_flag > 0) {
