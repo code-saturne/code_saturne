@@ -75,6 +75,9 @@ BEGIN_C_DECLS
 /*! soil used in the groundwater flow module */
 #define CS_VOLUME_ZONE_GWF_SOIL             (1 << 5)
 
+/*! zone defined as solid during the simulation */
+#define CS_VOLUME_ZONE_SOLID                (1 << 6)
+
 /*! @} */
 
 /*============================================================================
