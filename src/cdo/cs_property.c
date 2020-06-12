@@ -495,6 +495,48 @@ _tensor_in_cell_by_property_product(const cs_cell_mesh_t   *cm,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define a property as the product of two existing properties
+ *
+ * \param[in, out]  pty      resulting property
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_define_pty_by_product(cs_property_t          *pty)
+{
+  /* Only one definition is added in this case specifying that the definition
+   * relies on other definitions to be defined. The exact way to specify values
+   * is managed by the calling code (with a call to each sub-definition using
+   * the standard algorithm)
+   */
+
+  int  id = _add_new_def(pty);
+  assert(id == 0);
+
+  int dim = 1;
+  if (pty->type == CS_PROPERTY_ORTHO)
+    dim = 3;
+  else if (pty->type == CS_PROPERTY_ANISO)
+    dim = 9;
+
+  cs_flag_t  state_flag = 0;
+  cs_flag_t  meta_flag = 0;
+
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_SUB_DEFINITIONS,
+                                        dim,
+                                        0,     /* zone_id = all cells */
+                                        state_flag,
+                                        meta_flag,
+                                        NULL); /* no input */
+
+  /* Set pointers */
+  pty->defs[id] = d;
+  pty->get_eval_at_cell[id] = NULL;
+  pty->get_eval_at_cell_cw[id] = NULL;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create and initialize a new property structure
  *
  * \param[in]  name       name of the property
@@ -956,50 +998,7 @@ cs_property_finalize_setup(void)
 
       pty->ref_value = pty_a->ref_value * pty_b->ref_value;
 
-      if (pty_a->n_definitions > 1 || pty_b->n_definitions > 1)
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Property %s defined by product.\n"
-                  " This case is not handled yet (too many definitions).",
-                  __func__, pty->name);
-
-      switch (pty_a->defs[0]->type) {
-
-      case CS_XDEF_BY_VALUE:
-        switch (pty_b->defs[0]->type) {
-
-        case CS_XDEF_BY_VALUE:
-          if (pty->type & CS_PROPERTY_ISO) {
-
-            cs_real_t  val_a = _get_cell_value(0, 0, pty_a);
-            cs_real_t  val_b = _get_cell_value(0, 0, pty_b);
-
-            cs_property_def_iso_by_value(pty, NULL, val_a*val_b);
-          }
-          else
-            bft_error(__FILE__, __LINE__, 0,
-                      " %s: Property %s defined by product.\n"
-                      " This case is not handled yet.",
-                      __func__, pty->name);
-          break;
-
-        default:
-          bft_error(__FILE__, __LINE__, 0,
-                    " %s: Property %s defined by product.\n"
-                    " This case is not handled yet (too complex definitions).",
-                    __func__, pty->name);
-          break;
-
-        } /* Def. type for pty_b */
-        break;
-
-      default:
-        bft_error(__FILE__, __LINE__, 0,
-                  " %s: Property %s defined by product.\n"
-                  " This case is not handled yet (too complex definitions).",
-                  __func__, pty->name);
-        break;
-
-      } /* Def. type for pty_a */
+      _define_pty_by_product(pty);
 
     } /* Only properties defined as a product */
 
