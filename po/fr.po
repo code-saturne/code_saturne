@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: code-saturne\n"
 "Report-Msgid-Bugs-To: saturne-support@edf.fr\n"
-"POT-Creation-Date: 2020-02-10 14:36+0100\n"
+"POT-Creation-Date: 2020-06-12 14:35+0200\n"
 "PO-Revision-Date: 2012-01-26 12:00+0100\n"
 "Last-Translator: Code_Saturne <saturne-support@edf.fr>\n"
 "Language-Team: French <traduc@traduc.org>\n"
@@ -1979,6 +1979,16 @@ msgstr ""
 "\"%s\" :\n"
 "La description des éléments de l'entité <%d> était attendue sous la forme "
 "\"tagEntity dimEntity typeEle numElements\"."
+
+#, c-format
+msgid ""
+"Error reading a Gmsh mesh file:\n"
+"at line %ld of file \"%s\".\n"
+"Type identifier <%d> for element bloc <%ld> is not recognized."
+msgstr ""
+"Erreur à la lecture du fichier de maillage Gmsh :\n"
+"à la ligne %ld du fichier \"%s\".\n"
+"L'identificateur <%d> du type de l'élément <%ld> n'est pas reconnu."
 
 #, c-format
 msgid ""
@@ -8865,6 +8875,12 @@ msgstr ""
 msgid "    arak:        %14.5e (Arakawa factor)\n"
 msgstr "    arak:        %14.5e (Facteur d'Arakawa)\n"
 
+msgid ""
+"\n"
+"  Fluid-solid mode (disable dynamics in the solid part)\n"
+"\n"
+msgstr ""
+
 #, c-format
 msgid " SYRTHES coupling %d: initializing MPI communication ... "
 msgstr " Couplage SYRTHES %d : initialisation de la communication MPI ..."
@@ -10639,7 +10655,7 @@ msgid "Hilbert (in bounding cube)"
 msgstr "Hilbert (dans cube englobant)"
 
 #, c-format
-msgid "%s: point set is empty or contains identical values."
+msgid "%s: point set contains identical values."
 msgstr ""
 
 #, c-format

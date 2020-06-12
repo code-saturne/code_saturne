@@ -136,7 +136,7 @@ class FSI_ASTER(FSI_ORB__POA.FSI_ASTER,dsccalcium.PyDSCComponent,SUPERV):
       except NameError:
         pass
     return jdc
-    
+
   def interpstring(self,text,args):
     try:
       self.jdc.g_context.update(args)

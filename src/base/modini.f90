@@ -768,7 +768,7 @@ if (ikecou.eq.-999) then
   endif
 endif
 
-!      If the fluid_solid option is enabled, we force ikecou to 0. 
+!      If the fluid_solid option is enabled, we force ikecou to 0.
 if (fluid_solid) then
   if (ikecou .eq. 1) then
     ikecou = 0
