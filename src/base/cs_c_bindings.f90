@@ -1935,6 +1935,18 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function cs_clip_turbulent_fluxes
+
+    subroutine cs_clip_turbulent_fluxes(flux_id, variance_id) &
+      bind(C, name='cs_clip_turbulent_fluxes')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: flux_id
+      integer(c_int), value :: variance_id
+    end subroutine cs_clip_turbulent_fluxes
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function cs_balance_scalar
 
     subroutine cs_balance_scalar(idtvar, f_id , imucpp, imasac, inc,          &

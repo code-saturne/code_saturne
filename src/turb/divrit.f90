@@ -59,7 +59,7 @@ use numvar
 use entsor
 use optcal
 use cstphy
-use cstnum!
+use cstnum
 use pointe
 use field
 use field_operator
@@ -527,6 +527,11 @@ else
   iscal  , xcpp   , xut    , xuta   ,                    &
   dt     ,                                               &
   gradv  , gradt  , grad_al)
+
+  ! Clipping of the turbulence flux vector
+  if ((itt.gt.0).and.(ntcabs.gt.1)) then
+    call cs_clip_turbulent_fluxes(f_id, ivarfl(isca(itt)))
+  endif
 
   call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
 

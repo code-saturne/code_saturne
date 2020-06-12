@@ -452,6 +452,13 @@ cs_turb_model_log_setup(void);
 void
 cs_turb_constants_log_setup(void);
 
+/*----------------------------------------------------------------------------*
+ * Clip turbulent fluxes
+ *----------------------------------------------------------------------------*/
+
+void
+cs_clip_turbulent_fluxes(int flux_id, int ivartt);
+
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS

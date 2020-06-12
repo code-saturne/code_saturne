@@ -61,6 +61,8 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_turbulence_model.h"
+#include "cs_math.h"
+#include "cs_log_iteration.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -2019,6 +2021,117 @@ cs_turb_constants_log_setup(void)
                     "    cssr2:       %14.5e (Coef c_r2)\n"
                     "    cssr3:       %14.5e (Coef c_r3)\n"),
                   cs_turb_cssr1, cs_turb_cssr2, cs_turb_cssr3);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Clipping for the turbulence flux vector
+ *
+ * \param[in]       flux_id       turbulent flux index
+ * \param[in]       variance_id   scalar variance index
+ *
+ *----------------------------------------------------------------------------*/
+
+void cs_clip_turbulent_fluxes(int flux_id, int variance_id)
+{
+  cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+
+  const cs_real_6_t *cvar_rij = (const cs_real_6_t *) CS_F_(rij)->val;
+  const cs_real_t *cvar_tt = (const cs_real_t *) cs_field_by_id(variance_id)->val;
+  cs_real_3_t *cvar_rit = (cs_real_3_t *) cs_field_by_id(flux_id)->val;
+  cs_real_3_t *cvar_clip_rit;
+
+  cs_field_t *field_rit = cs_field_by_id(flux_id);
+  cs_field_t *field_tt = cs_field_by_id(variance_id);
+
+  /* Local variables */
+  const cs_real_t tol_jacobi = 1.0e-12;
+  const cs_real_t l_threshold = 1.0e12;
+  cs_lnum_t iclip = 0;
+  cs_real_t flsq, maj;
+  cs_real_33_t rij;
+  cs_real_33_t eigvect = {{1.0,0.0,0.0},{0.0,1.0,0.0},{0.0,0.0,1.0}};
+  cs_real_3_t eigval;
+  cs_real_3_t rot_rit;
+  cs_real_3_t rit;
+
+  /* Get clippings field for DFM */
+  cs_lnum_t kclipp, kclipp2, clip_rit_id;
+  kclipp = cs_field_key_id("clipping_id");
+  clip_rit_id = cs_field_get_key_int(field_rit, kclipp);
+  if (clip_rit_id >= 0) {
+    cvar_clip_rit = (cs_real_3_t *) cs_field_by_id(clip_rit_id)->val;
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
+      cvar_clip_rit[cell_id][0] = 0;
+      cvar_clip_rit[cell_id][1] = 0;
+      cvar_clip_rit[cell_id][2] = 0;
+    }
+  }
+
+  cs_real_t rit_min_prcoord[3] = {l_threshold,l_threshold,l_threshold};
+  cs_real_t rit_max_prcoord[3] = {-l_threshold,-l_threshold,-l_threshold};
+
+  cs_lnum_t iclip_tab_max[3] = {0,0,0};
+  cs_lnum_t iclip_tab_min[3] = {0,0,0};
+
+  for (int cell_id = 0; cell_id < n_cells; cell_id++) {
+    rij[0][0] = cvar_rij[cell_id][0];
+    rij[1][1] = cvar_rij[cell_id][1];
+    rij[2][2] = cvar_rij[cell_id][2];
+    rij[0][1] = cvar_rij[cell_id][3];
+    rij[1][0] = cvar_rij[cell_id][3];
+    rij[0][2] = cvar_rij[cell_id][5];
+    rij[2][0] = cvar_rij[cell_id][5];
+    rij[1][2] = cvar_rij[cell_id][4];
+    rij[2][1] = cvar_rij[cell_id][4];
+
+    rit[0] = cvar_rit[cell_id][0];
+    rit[1] = cvar_rit[cell_id][1];
+    rit[2] = cvar_rit[cell_id][2];
+
+    cs_math_33_eig_val_vec(rij,tol_jacobi,eigval,eigvect);
+    cs_math_33_3_product(eigvect,cvar_rit[cell_id],rot_rit);
+
+    for (int i = 0; i < 3; i++) {
+      rit_min_prcoord[i] = CS_MIN(rit_min_prcoord[i],rot_rit[i]);
+      rit_max_prcoord[i] = CS_MAX(rit_max_prcoord[i],rot_rit[i]);
+    }
+
+    for (int i = 0; i < 3; i++) {
+      flsq = pow(rot_rit[i],2);
+      maj = eigval[i]*cvar_tt[cell_id];
+      if ((flsq > 1.0e-12) && (flsq > maj)) {
+        rot_rit[i] = rot_rit[i]*sqrt(maj/flsq);
+        iclip = 1;
+        if (rot_rit[i] > 0)
+          iclip_tab_max[i] += 1;
+        else
+          iclip_tab_min[i] += 1;
+      }
+    }
+
+    if (iclip > 0) {
+      cs_math_33t_3_product(eigvect,rot_rit,cvar_rit[cell_id]);
+      cvar_clip_rit[cell_id][0] = cvar_rit[cell_id][0] - rit[0];
+      cvar_clip_rit[cell_id][1] = cvar_rit[cell_id][1] - rit[1];
+      cvar_clip_rit[cell_id][2] = cvar_rit[cell_id][2] - rit[2];
+    }
+  }
+
+  cs_lnum_t iclip_max = iclip_tab_max[0] + iclip_tab_max[1]
+                      + iclip_tab_max[2];
+  cs_lnum_t iclip_min = iclip_tab_min[0] + iclip_tab_min[1]
+                      + iclip_tab_min[2];
+
+  /* Save clippings for log */
+  cs_log_iteration_clipping_field(flux_id,
+                                  iclip_min,
+                                  iclip_max,
+                                  rit_min_prcoord,
+                                  rit_max_prcoord,
+                                  iclip_tab_min,
+                                  iclip_tab_max);
+  return;
 }
 
 /*----------------------------------------------------------------------------*/

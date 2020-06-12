@@ -94,6 +94,7 @@ integer          key_t_ext_id
 integer          nfld
 integer          n_prev
 integer          t_ext
+integer          kclipp
 
 character(len=80) :: name, f_name, f_label, s_label, s_name
 type(var_cal_opt) :: vcopt_dfm, vcopt_alpha, vcopt
@@ -182,6 +183,9 @@ do ii = 1, nscal
         call field_get_key_struct_var_cal_opt(iflid, vcopt_dfm)
         vcopt_dfm%idften = ANISOTROPIC_RIGHT_DIFFUSION
         call field_set_key_struct_var_cal_opt(iflid, vcopt_dfm)
+
+        call field_get_key_id("clipping_id",kclipp)
+        call field_set_key_int(iflid, kclipp, 1)
 
       else
         itycat = FIELD_INTENSIVE + FIELD_PROPERTY  ! for properties
