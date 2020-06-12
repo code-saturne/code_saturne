@@ -400,8 +400,9 @@ _svb_conv_diff_reac(const cs_equation_param_t     *eqp,
 #endif
   }
 
-  if (cs_equation_param_has_convection(eqp)) {  /* ADVECTION TERM
-                                                 * ============== */
+  if (cs_equation_param_has_convection(eqp) &&
+      ((cb->cell_flag & CS_FLAG_SOLID_CELL) == 0)) {  /* ADVECTION TERM
+                                                       * ============== */
 
     /* Define the local advection matrix (the diffusion property
      * is given as parameter since some schemes introduce a portion of
@@ -502,7 +503,8 @@ _svb_apply_weak_bc(const cs_equation_param_t     *eqp,
 
     /* Contribution for the advection term: csys is updated inside
        (matrix and rhs) and Dirichlet BCs are handled inside */
-    if (cs_equation_param_has_convection(eqp))
+    if (cs_equation_param_has_convection(eqp) &&
+        ((cb->cell_flag & CS_FLAG_SOLID_CELL) == 0))
       eqc->add_advection_bc(cm, eqp, cb->t_bc_eval, fm, cb, csys);
 
     /* The enforcement of the Dirichlet has to be done after all
@@ -567,7 +569,7 @@ _svb_enforce_values(const cs_equation_param_t     *eqp,
 #endif
   }
 
-  if (cb->cell_flag > 0 && csys->has_dirichlet) {
+  if (cs_cell_has_boundary_elements(cb) && csys->has_dirichlet) {
 
     /* Boundary element (through either vertices or faces) */
 

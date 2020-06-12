@@ -356,8 +356,9 @@ _sfb_conv_diff_reac(const cs_equation_param_t     *eqp,
 #endif
   }
 
-  if (cs_equation_param_has_convection(eqp)) {  /* ADVECTION TERM
-                                                 * ============== */
+  if (cs_equation_param_has_convection(eqp) &&
+      ((cb->cell_flag & CS_FLAG_SOLID_CELL) == 0)) {  /* ADVECTION TERM
+                                                       * ============== */
 
     /* Define the local advection matrix and store the advection
        fluxes across primal faces */
@@ -485,8 +486,12 @@ _sfb_apply_bc_partly(const cs_equation_param_t     *eqp,
 
     }
 
-    if (cs_equation_param_has_convection(eqp)) { /* Always weakly enforced */
+    if (cs_equation_param_has_convection(eqp) &&
+        ((cb->cell_flag & CS_FLAG_SOLID_CELL) == 0)) {
+
+      /* advection term is always weakly enforced */
       eqc->adv_func_bc(eqp, cm, cb, csys);
+
     }
 
   } /* Boundary cell */

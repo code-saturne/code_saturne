@@ -402,8 +402,9 @@ _svcb_conv_diff_reac(const cs_equation_param_t     *eqp,
 #endif
   }
 
-  if (cs_equation_param_has_convection(eqp)) {  /* ADVECTION TERM
-                                                 * ============== */
+  if (cs_equation_param_has_convection(eqp) &&
+      ((cb->cell_flag & CS_FLAG_SOLID_CELL) == 0)) {  /* ADVECTION TERM
+                                                       * ============== */
 
     cs_property_data_t  *diff_pty =
       (diff_hodge == NULL) ? NULL : diff_hodge->pty_data;
@@ -512,7 +513,8 @@ _svcb_apply_weak_bc(const cs_equation_param_t     *eqp,
    * Operations that have to be performed BEFORE the static condensation */
   if (cb->cell_flag & CS_FLAG_BOUNDARY_CELL_BY_FACE) {
 
-    if (cs_equation_param_has_convection(eqp))
+    if (cs_equation_param_has_convection(eqp) &&
+        ((cb->cell_flag & CS_FLAG_SOLID_CELL) == 0))
       /* Apply boundary conditions related to the advection term
          csys is updated inside (matrix and rhs) */
       eqc->add_advection_bc(cm, eqp, cb->t_bc_eval, fm, cb, csys);
@@ -574,7 +576,7 @@ _svcb_enforce_values(const cs_equation_param_t     *eqp,
 {
   /* BOUNDARY CONDITION CONTRIBUTION TO THE ALGEBRAIC SYSTEM
    * Operations that have to be performed AFTER the static condensation */
-  if (cb->cell_flag > 0 && csys->has_dirichlet) {
+  if (cs_cell_has_boundary_elements(cb) && csys->has_dirichlet) {
 
     if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_PENALIZED ||
         eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC) {

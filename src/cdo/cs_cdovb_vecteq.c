@@ -559,7 +559,7 @@ _vvb_enforce_values(const cs_equation_param_t     *eqp,
                     cs_cell_sys_t                 *csys,
                     cs_cell_builder_t             *cb)
 {
-  if (cb->cell_flag > 0 && csys->has_dirichlet) {
+  if (cs_cell_has_boundary_elements(cb) && csys->has_dirichlet) {
 
     /* Boundary element (through either vertices or faces) */
     if (eqp->default_enforcement == CS_PARAM_BC_ENFORCE_ALGEBRAIC ||

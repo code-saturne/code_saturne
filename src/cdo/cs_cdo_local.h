@@ -295,6 +295,27 @@ extern cs_face_mesh_light_t  **cs_cdo_local_face_meshes_light;
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief   Check if at least one entity of the cell belongs to the boundary
+ *
+ * \param[in]       cm      pointer to a cs_cell_mesh_t structure
+ *
+ * \return true or false
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline bool
+cs_cell_has_boundary_elements(const cs_cell_builder_t  *const cb)
+{
+  if ((cb->cell_flag & (CS_FLAG_BOUNDARY_CELL_BY_FACE   |
+                        CS_FLAG_BOUNDARY_CELL_BY_VERTEX |
+                        CS_FLAG_BOUNDARY_CELL_BY_EDGE)) > 0)
+    return true;
+  else
+    return false;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief   Retrieve the vertex id in the cellwise numbering associated to the
  *          given vertex id in the mesh numbering
  *
