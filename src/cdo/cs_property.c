@@ -389,7 +389,7 @@ _get_cell_tensor_by_property_product(cs_lnum_t               c_id,
   }
   else {
     assert(pty->type & CS_PROPERTY_ANISO);
-    tensor[0][0] = tensor[1][1] = tensor[2][2] = 0;
+    /* tensor has been initialized by the calling function */
     cs_math_33_product_add(tensor_a, tensor_b, tensor);
   }
 }
