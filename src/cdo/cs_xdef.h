@@ -74,6 +74,11 @@ BEGIN_C_DECLS
  * Definition which enables to spread a given quantity inside a volume.
  * Useful to initialized a tracer in a subdomain for instance.
  *
+ * \var CS_XDEF_BY_SUB_DEFINITIONS
+ * Definition relying on a combination of other CS_XDEF_***
+ * This kind of definition is useful for the definition of a property
+ * as the product of two existing ones.
+ *
  * \var CS_XDEF_BY_TIME_FUNCTION
  * Definition relying on a function for setting the time step (see
  * \ref cs_time_func_t)
@@ -90,6 +95,7 @@ typedef enum {
   CS_XDEF_BY_FIELD,
   CS_XDEF_BY_FUNCTION,
   CS_XDEF_BY_QOV,
+  CS_XDEF_BY_SUB_DEFINITIONS,
   CS_XDEF_BY_TIME_FUNCTION,
   CS_XDEF_BY_VALUE,
 

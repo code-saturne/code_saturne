@@ -748,6 +748,10 @@ cs_xdef_log(const char          *prefix,
                   "%s | Definition by a quantity over a volume\n", _p);
     break;
 
+  case CS_XDEF_BY_SUB_DEFINITIONS:
+    cs_log_printf(CS_LOG_SETUP, "%s | Definition by sub-definitions\n", _p);
+    break;
+
   case CS_XDEF_BY_TIME_FUNCTION:
     cs_log_printf(CS_LOG_SETUP, "%s | Definition by a time function\n", _p);
     break;
