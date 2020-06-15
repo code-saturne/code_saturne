@@ -2438,6 +2438,12 @@ cs_cdofb_monolithic_by_blocks_solve(const cs_navsto_param_t       *nsp,
 {
   const cs_matrix_t  *matrix = msles->block_matrices[0];
 
+  CS_UNUSED(matrix);
+  CS_UNUSED(eqp);
+  CS_UNUSED(nsp);
+
+  /* TODO: W.I.P. */
+
   return 0;
 }
 
