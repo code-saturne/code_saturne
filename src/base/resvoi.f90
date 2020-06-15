@@ -277,7 +277,7 @@ else
   enddo
 endif
 
-if (idrift.gt.1) then
+if (idrift.gt.0) then
   imrgrp = vcopt%imrgra
   nswrgp = vcopt%nswrgr
   imligp = vcopt%imligr

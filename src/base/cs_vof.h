@@ -207,8 +207,11 @@ cs_vof_log_mass_budget(const cs_domain_t *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the flux of the drift velocity \f$ \vect u _d \f$, by using the flux
- *        of the standard velocity \f$ \vect u \f$:
+ * \brief Compute the flux of the drift velocity \f$ \vect u _d \f$,
+ *        by using the flux of the standard velocity \f$ \vect u \f$
+ *        following the approach described by
+ *        Suraj S Deshpande et al 2012 Comput. Sci. Disc. 5 014016.
+ *        It is activated with the option idrift = 1
  *
  * Using the notation:
  * \f[
@@ -240,7 +243,7 @@ cs_vof_log_mass_budget(const cs_domain_t *domain);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_vof_update_drift_flux(const cs_domain_t *domain);
+cs_vof_deshpande_drift_flux(const cs_domain_t *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!

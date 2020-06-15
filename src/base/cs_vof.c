@@ -133,7 +133,9 @@ BEGIN_C_DECLS
         drift velocity model
             - 0: drift model disable
             - 1: field inner_drift_velocity_flux is used
+                 Deshpande's model
             - 2: field drift_velocity is used
+                 User-defined drift velocity field
 
   \var  cs_vof_parameters_t::cdrift
         Flux factor parameter.
@@ -347,9 +349,9 @@ cs_f_vof_log_mass_budget(void)
 }
 
 void
-cs_f_vof_update_drift_flux(void)
+cs_f_vof_deshpande_drift_flux(void)
 {
-  cs_vof_update_drift_flux(cs_glob_domain);
+  cs_vof_deshpande_drift_flux(cs_glob_domain);
 }
 
 /*----------------------------------------------------------------------------
@@ -691,7 +693,10 @@ cs_vof_log_mass_budget(const cs_domain_t *domain)
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Compute the flux of the drift velocity \f$ \vect u _d \f$,
- *        by using the flux of the standard velocity \f$ \vect u \f$:
+ *        by using the flux of the standard velocity \f$ \vect u \f$
+ *        following the approach described by
+ *        Suraj S Deshpande et al 2012 Comput. Sci. Disc. 5 014016.
+ *        It is activated with the option idrift = 1
  *
  * Using the notation:
  * \f[
@@ -723,7 +728,7 @@ cs_vof_log_mass_budget(const cs_domain_t *domain)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_vof_update_drift_flux(const cs_domain_t *domain)
+cs_vof_deshpande_drift_flux(const cs_domain_t *domain)
 {
   const cs_mesh_t *m = domain->mesh;
   const cs_mesh_quantities_t *mq = domain->mesh_quantities;
@@ -744,6 +749,7 @@ cs_vof_update_drift_flux(const cs_domain_t *domain)
   const cs_real_t *restrict i_voidflux =
     cs_field_by_id(cs_field_get_key_int(CS_F_(void_f), kiflux))->val;
 
+  // FIXME See what we should do for boundary terms bdriftflux
   cs_field_t *idriftflux = NULL;
   idriftflux = cs_field_by_name_try("inner_drift_velocity_flux");
 
@@ -779,11 +785,14 @@ cs_vof_update_drift_flux(const cs_domain_t *domain)
     cs_lnum_t cell_id2 = i_face_cells[f_id][1]; // associated boundary cell
     cs_real_t fluxfactor =
       CS_MIN(cdrift*CS_ABS(i_voidflux[f_id])/i_face_surf[f_id],maxfluxsurf);
+    
     for (int idim = 0; idim < 3; idim++)
       gradface[idim] = (dvdx[cell_id1][idim] + dvdx[cell_id2][idim])/2.;
+    
     cs_real_t normgrad = sqrt(pow(gradface[0],2)+
                               pow(gradface[1],2)+
                               pow(gradface[2],2));
+    
     for (int idim = 0; idim < 3; idim++)
       normalface[idim] = gradface[idim]/(normgrad+delta);
 
@@ -875,7 +884,7 @@ cs_vof_drift_term(const cs_int_t   *const imrgra,
     ---> Computation of the drift flux
     ======================================================================*/
 
-  if (_vof_parameters.idrift == 1) cs_vof_update_drift_flux(cs_glob_domain);
+  if (_vof_parameters.idrift == 1) cs_vof_deshpande_drift_flux(cs_glob_domain);
 
   /* ======================================================================
     ---> Computation of the mass flux at faces
@@ -911,10 +920,11 @@ cs_vof_drift_term(const cs_int_t   *const imrgra,
   /* Boundary coefficients */
   for (cs_lnum_t ifac = 0 ; ifac < n_b_faces ; ifac++) {
     for (int ii = 0 ; ii < 3 ; ii++) {
-        coefav[ifac][ii] = 0.;
-        for (int jj = 0 ; jj < 3 ; jj++) {
-            coefbv[ifac][ii][jj] = 1.;
+      coefav[ifac][ii] = 0.;
+      for (int jj = 0 ; jj < 3 ; jj++) {
+        coefbv[ifac][ii][jj] = 0.;
       }
+      coefbv[ifac][ii][ii] = 1.;
     }
   }
 
@@ -938,6 +948,9 @@ cs_vof_drift_term(const cs_int_t   *const imrgra,
                (const cs_real_33_t *)coefbv,
                cpro_idriftf,
                cpro_bdriftf);
+
+  BFT_FREE(coefav);
+  BFT_FREE(coefbv);
 
   /* ======================================================================
     ---> Contribution from interior faces
