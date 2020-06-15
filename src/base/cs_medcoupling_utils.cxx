@@ -66,6 +66,7 @@
 /*----------------------------------------------------------------------------
  * MEDCOUPLING library headers
  *----------------------------------------------------------------------------*/
+
 #include "cs_medcoupling_utils.hxx"
 
 #if defined(HAVE_MEDCOUPLING)
@@ -80,12 +81,13 @@ using namespace MEDCoupling;
 
 #endif
 
+/*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
 
-static const int _perm_tri[3]  = {0, 2, 1};
-static const int _perm_quad[4] = {0, 3, 2, 1};
-static const int _perm_pent[5] = {0, 4, 3, 2, 1};
+static const cs_lnum_t _perm_tri[3]  = {0, 2, 1};
+static const cs_lnum_t _perm_quad[4] = {0, 3, 2, 1};
+static const cs_lnum_t _perm_pent[5] = {0, 4, 3, 2, 1};
 
 /*============================================================================
  * Private function definitions
@@ -100,11 +102,10 @@ static const int _perm_pent[5] = {0, 4, 3, 2, 1};
  */
 /* -------------------------------------------------------------------------- */
 
-static const int *
-_get_face_vertices_permutation(int n_face_vertices)
+static inline const cs_lnum_t *
+_get_face_vertices_permutation(int  n_face_vertices)
 {
-
-  const int *perm = NULL;
+  const cs_lnum_t *perm = NULL;
 
   switch (n_face_vertices) {
     case 3:
@@ -125,6 +126,7 @@ _get_face_vertices_permutation(int n_face_vertices)
 }
 
 #if defined(HAVE_MEDCOUPLING)
+
 /* -------------------------------------------------------------------------- */
 /*!
  * \brief   Assign vertex coordinates to a MEDCoupling mesh structure
@@ -257,7 +259,7 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
 
     assert(eid >= 0 && eid < mesh->n_b_faces);
 
-    int n_vtx = mesh->b_face_vtx_idx[eid+1] - mesh->b_face_vtx_idx[eid];
+    cs_lnum_t n_vtx = mesh->b_face_vtx_idx[eid+1] - mesh->b_face_vtx_idx[eid];
 
     cs_lnum_t connect_start = mesh->b_face_vtx_idx[eid];
 
@@ -266,11 +268,12 @@ _assign_face_mesh(const cs_mesh_t   *mesh,
       BFT_REALLOC(elt_buf, elt_buf_size, int);
     }
 
-    const int *_perm_face = _get_face_vertices_permutation(n_vtx);
+    const cs_lnum_t *_perm_face = _get_face_vertices_permutation(n_vtx);
     if (_perm_face != NULL) {
       for (j = 0; j < n_vtx; j++)
         elt_buf[j] = vtx_id[mesh->b_face_vtx_lst[connect_start + _perm_face[j]]];
-    } else {
+    }
+    else {
       for (j = 0; j < n_vtx; j++)
         elt_buf[j] = vtx_id[mesh->b_face_vtx_lst[connect_start + n_vtx - 1 - j]];
     }
@@ -334,11 +337,11 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
   for (i = 0; i < mesh->n_cells; i++)
     cell_id[i] = -1;
 
-  for (i = 0; i < n_elts; i++){
+  for (i = 0; i < n_elts; i++) {
     cell_id[elts_list[i]] = cell_count++;
   }
   for (int ii = 0; ii < n_elts; ii++) {
-    new_to_old[ cell_id[elts_list[ii]] ] = elts_list[ii];
+    new_to_old[cell_id[elts_list[ii]]] = elts_list[ii];
   }
 
   /* Mark and renumber vertices */
@@ -384,7 +387,7 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
   /* Build temporary descending connectivity */
 
   cs_mesh_connect_get_cell_faces(mesh,
-                                 mesh->n_cells,
+                                 mesh->n_cells, /* TODO test using n_elts */
                                  cell_id,
                                  &cell_faces_idx,
                                  &cell_faces_num);
