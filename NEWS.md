@@ -1,3 +1,12 @@
+Release 6.0.4 (Unreleased)
+--------------------------
+
+Bug fixes:
+
+- Re-fix issues on some build configurations related to loading/handling
+  of compute builds. The previous fix from release 6.0.3 broke
+  loading the GUI on some confgurations.
+
 Release 6.0.3 (June 12, 2020)
 -----------------------------
 

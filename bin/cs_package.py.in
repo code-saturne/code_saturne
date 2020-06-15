@@ -26,10 +26,7 @@
 import os
 import sys
 
-try:
-    from code_saturne import cs_config
-except Exception:
-    import cs_config
+import cs_config
 
 # Package information
 #--------------------
@@ -42,7 +39,7 @@ class package:
 
         if reload_config:
             import importlib
-            config = importlib.import_module('cs_config')
+            config = importlib.reload(cs_config)
             self.config = config.config()
         else:
             self.config = cs_config.config()
@@ -226,15 +223,16 @@ class package:
             import sys
             sys.path.insert(0, pythondir)
             if sys.version < '3.4':
-                from code_saturne import cs_config
+                import cs_config
                 reload(cs_config)
                 import cs_package
                 reload(cs_package)
                 pkg = cs_package.package()
             else:
                 import importlib
-                importlib.invalidate_caches()
                 package = importlib.import_module('cs_package')
+                importlib.invalidate_caches()
+                package = importlib.reload(package)
                 pkg = package.package(reload_config=True)
             sys.path.pop(0)
         else:
