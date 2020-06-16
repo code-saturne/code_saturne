@@ -141,8 +141,10 @@ if test "x$GCC" = "xyes"; then
   # Intel and LLVM compilers may pass as GCC but
   # may be recognized by version string
 
-  if test -n "`$CC --version | grep icc`" ; then
+  if test -n "`$CC --version | grep ICC`" ; then
     cs_gcc=icc
+  elif test -n "`$CC --version | grep ICX`" ; then
+    cs_gcc=icx
   elif test -n "`$CC --version | grep clang`" ; then
     cs_gcc=clang
   else
@@ -241,14 +243,18 @@ if test "x$cs_gcc" = "xgcc"; then
       ;;
   esac
 
-# Otherwise, are we using icc ?
-#------------------------------
+# Otherwise, are we using icc or icx ?
+#-------------------------------------
 
-elif test "x$cs_gcc" = "xicc"; then
+elif test "x$cs_gcc" = "xicc" -o "x$cs_gcc" = "xicx" ; then
 
-  cs_cc_version=`echo $CC --version | grep icc |sed 's/[a-zA-Z()]//g'`
-
-  echo "compiler '$CC' is Intel ICC"
+  if test "x$cs_gcc" = "xicc" ; then
+    cs_cc_version=`echo $CC --version | grep ICC |sed 's/[a-zA-Z()]//g'`
+    echo "compiler '$CC' is Intel ICC"
+  else
+    cs_cc_version=`echo $CC --version | grep ICX |sed 's/[a-zA-Z()]//g'`
+    echo "compiler '$CC' is Intel ICX"
+  fi
 
   # Version strings for logging purposes and known compiler flag
   $CC -V conftest.c > $outfile 2>&1
@@ -456,10 +462,10 @@ if test "x$GXX" = "xyes"; then
   # Intel and LLVM compilers may pass as GXX but
   # may be recognized by version string
 
-  if test -n "`$CXX --version | grep icpc`" ; then
+  if test -n "`$CXX --version | grep ICC`" ; then
     cs_gxx=icpc
-  elif test -n "`$CXX --version | grep icc`" ; then
-    cs_gxx=icc
+  elif test -n "`$CXX --version | grep ICX`" ; then
+    cs_gxx=icpx
   elif test -n "`$CXX --version | grep clang`" ; then
     cs_gxx=clang
   else
@@ -556,18 +562,18 @@ if test "x$cs_gxx" = "xg++"; then
       ;;
   esac
 
-# Otherwise, are we using icc ?
-#------------------------------
+# Otherwise, are we using icpc or icpx ?
+#---------------------------------------
 
-elif test "x$cs_gxx" = "xicpc" -o "x$cs_gxx" = "xicc"; then
+elif test "x$cs_gxx" = "xicpc" -o "x$cs_gxx" = "xicpx"; then
 
   if test "x$cs_gxx" = "xicpc"; then
-    cs_cxx_version=`echo $CXX --version | grep icpc |sed 's/[a-zA-Z()]//g'`
-  else
-    cs_cxx_version=`echo $CXX --version | grep icc |sed 's/[a-zA-Z()]//g'`
+    cs_cxx_version=`echo $CXX --version | grep ICC |sed 's/[a-zA-Z()]//g'`
+    echo "compiler '$CXX' is Intel ICC"
+  elif test "x$cs_gxx" = "xicpx"; then
+    cs_cxx_version=`echo $CXX --version | grep ICX |sed 's/[a-zA-Z()]//g'`
+    echo "compiler '$CXX' is Intel ICX"
   fi
-
-  echo "compiler '$CXX' is Intel ICC"
 
   # Version strings for logging purposes and known compiler flag
   $CXX -V conftest.c > $outfile 2>&1
