@@ -492,8 +492,8 @@ cs_thermal_system_set_reference_parameters(cs_real_t    temp0,
 /*----------------------------------------------------------------------------*/
 
 cs_source_term_boussinesq_t *
-cs_thermal_system_add_boussinesq_source_term(const cs_real_t   *gravity,
-                                             cs_real_t          rho0)
+cs_thermal_system_add_boussinesq_term(const cs_real_t   *gravity,
+                                      cs_real_t          rho0)
 {
   cs_thermal_system_t  *thm = cs_thermal_system;
 

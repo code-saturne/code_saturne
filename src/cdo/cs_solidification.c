@@ -3020,8 +3020,8 @@ cs_solidification_finalize_setup(const cs_cdo_connect_t       *connect,
    * temperature. This structure is allocated here but the lifecycle is
    * managed by the cs_thermal_system_t structure */
   cs_source_term_boussinesq_t  *thm_bq =
-    cs_thermal_system_add_boussinesq_source_term(phy_constants->gravity,
-                                                 solid->mass_density->ref_value);
+    cs_thermal_system_add_boussinesq_term(phy_constants->gravity,
+                                          solid->mass_density->ref_value);
 
   cs_dof_func_t  *func = NULL;
   if (solid->model & CS_SOLIDIFICATION_MODEL_VOLLER_PRAKASH_87)

@@ -995,7 +995,7 @@ cs_navsto_system_finalize_setup(const cs_mesh_t            *mesh,
     /* This structure is allocated here but the lifecycle is managed by the
        cs_thermal_system_t structure */
     cs_source_term_boussinesq_t  *bq =
-      cs_thermal_system_add_boussinesq_source_term(gravity_vector, rho0);
+      cs_thermal_system_add_boussinesq_term(gravity_vector, rho0);
 
     /* Up to now, only CDO Face-based schemes are considered */
     assert(nsp->space_scheme == CS_SPACE_SCHEME_CDOFB);
