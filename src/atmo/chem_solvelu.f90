@@ -86,8 +86,8 @@ if (kindlu .eq. 0) then
     call lu_decompose_3(nespg,dlalu)
     call lu_solve_3(nespg,dlalu,dlx)
   else if (ichemistry.eq.4) then
-    call lu_decompose(nespg,dlalu)
-    call lu_solve(nespg,dlalu,dlx)
+    call ssh_lu_decompose(nespg,dlalu)
+    call ssh_lu_solve(nespg,dlalu,dlx)
   endif
 else
   if (ichemistry.eq.1) then
@@ -97,7 +97,7 @@ else
   else if (ichemistry.eq.3) then
     call lu_solve_3(nespg,dlalu,dlx)
   else if (ichemistry.eq.4) then
-    call lu_solve(nespg,dlalu,dlx)
+    call ssh_lu_solve(nespg,dlalu,dlx)
   endif
 endif
 

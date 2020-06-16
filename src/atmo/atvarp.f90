@@ -361,7 +361,7 @@ if (ifilechemistry.ge.1) then
     call cs_atmo_declare_chem_from_spack()
 
     ! Read the number of reactions
-    call dimensions(ii, nrg, jj)
+    call ssh_dimensions(ii, nrg, jj)
 
     ! Verification
     if (ii.ne.nespg) then
@@ -415,6 +415,11 @@ if (iaerosol.ne.CS_ATMO_AEROSOL_OFF) then
   do ii = nespg + 1, nespg + n_aer * (nlayer_aer + 1)
     f_id = ivarfl(isca(isca_chem(ii)))
     call field_set_key_double(f_id, kscmin, 0.d0)
+  enddo
+  ! Allow large aerosol numbers
+  do ii = nespg + n_aer * nlayer_aer + 1, nespg + n_aer * (nlayer_aer + 1)
+    f_id = ivarfl(isca(isca_chem(ii)))
+    call field_set_key_double(f_id, kscmax, 1.d40)
   enddo
 endif
 

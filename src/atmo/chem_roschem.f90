@@ -101,7 +101,7 @@ else if (ichemistry.eq.2) then
 else if (ichemistry.eq.3) then
   call jacdchemdc_3 (nespg,nrg,dlconc,conv_factor,conv_factor_jac,dlrki,dldrdc)
 else if (ichemistry.eq.4) then
-  call jacdchemdc (nespg,nrg,dlconc,conv_factor,conv_factor_jac,dlrki,dldrdc)
+  call ssh_jacdchemdc (nespg,nrg,dlconc,conv_factor,conv_factor_jac,dlrki,dldrdc)
 endif
 
 !------------------------------------------------------------------------

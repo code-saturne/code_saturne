@@ -110,6 +110,7 @@ BEGIN_C_DECLS
 void *_aerosol_so = NULL;
 const char _lib_path[] = "libssh-aerosol.so";
 bool _allow_ssh_postprocess = false;
+bool _update_ssh_thermo = false;
 bool _verbose = false;
 cs_real_t _ssh_time_offset;
 
@@ -674,10 +675,9 @@ cs_atmo_aerosol_ssh_time_advance(void)
   if (cs_glob_time_step_options->idtvar == CS_TIME_STEP_CONSTANT
       || cs_glob_time_step_options->idtvar == CS_TIME_STEP_ADAPTIVE) {
 
-    double current_time = cs_glob_time_step->t_cur + _ssh_time_offset;
     double dt = (cs_glob_time_step_options->idtvar == CS_TIME_STEP_ADAPTIVE) ?
                  CS_F_(dt)->val[0] : cs_glob_time_step->dt_ref;
-    current_time += dt;
+    double current_time = cs_glob_time_step->t_cur + _ssh_time_offset - dt;
 
     /* Set the current time */
     _send_double(_aerosol_so, "api_sshaerosol_set_current_t_", current_time);
@@ -700,23 +700,27 @@ cs_atmo_aerosol_ssh_time_advance(void)
 
     /* Conversion from ppm to microg / m^3 */
     const cs_real_t ppm_to_microg = 1e-3 * CS_F_(rho)->val[cell_id];
-    const cs_real_t microg_to_ppm = 1 / ppm_to_microg;
+    const cs_real_t microg_to_ppm = 1. / ppm_to_microg;
 
     /* Set the Pressure */
-    double pres = cs_field_by_name("total_pressure")->val[cell_id];
-    _send_double(_aerosol_so, "api_sshaerosol_set_pressure_", pres);
+    if (_update_ssh_thermo) {
+      double pres = cs_field_by_name("total_pressure")->val[cell_id];
+      _send_double(_aerosol_so, "api_sshaerosol_set_pressure_", pres);
+    }
 
     /* Set the Temperature (K) */
-    double temp;
-    if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE) {
-      temp = cs_field_by_name("temperature")->val[cell_id];
-      if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS)
-        temp -= cs_physical_constants_celsius_to_kelvin;
-    } else {
-      /* We have enthalpy, use reference temperature */
-      temp = cs_glob_fluid_properties->t0;
+    if (_update_ssh_thermo) {
+      double temp;
+      if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TEMPERATURE) {
+        temp = cs_field_by_name("temperature")->val[cell_id];
+        if (cs_glob_thermal_model->itpscl == CS_TEMPERATURE_SCALE_CELSIUS)
+          temp -= cs_physical_constants_celsius_to_kelvin;
+      } else {
+        /* We have enthalpy, use reference temperature */
+        temp = cs_glob_fluid_properties->t0;
+      }
+      _send_double(_aerosol_so, "api_sshaerosol_set_temperature_", temp);
     }
-    _send_double(_aerosol_so, "api_sshaerosol_set_temperature_", temp);
 
     /* Set the pH */
     if (false) {
@@ -726,7 +730,7 @@ cs_atmo_aerosol_ssh_time_advance(void)
     }
 
     /* Set the relative humidity */
-    {
+    if (_update_ssh_thermo) {
       cs_field_t* fld = cs_field_by_name_try("total_water");
       if (fld != NULL) {
         cs_real_t totwt = fld->val[cell_id];
@@ -740,10 +744,8 @@ cs_atmo_aerosol_ssh_time_advance(void)
     }
 
     /* Update the specific humidity */
-    _call(_aerosol_so, "api_sshaerosol_update_humidity_");
-
-    /* Emissions */
-    _call(_aerosol_so, "api_sshaerosol_emission_");
+    if (_update_ssh_thermo)
+      _call(_aerosol_so, "api_sshaerosol_update_humidity_");
 
     /* Update SSH gaseous concentrations */
     {
@@ -780,6 +782,9 @@ cs_atmo_aerosol_ssh_time_advance(void)
 
     /* Update concentration-dependent arrays in SSH-aerosol */
     _call(_aerosol_so, "api_sshaerosol_init_again_");
+
+    /* Emissions */
+    _call(_aerosol_so, "api_sshaerosol_emission_");
 
     /* Call the gaseous chemistry */
     _call(_aerosol_so, "api_sshaerosol_gaschemistry_");
