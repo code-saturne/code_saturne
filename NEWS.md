@@ -1,3 +1,12 @@
+Release 6.0.5 (unreleased)
+-----------------------------
+
+Bug fixes:
+
+- Fix wrong setting of turbulent boundary condition type (formula) for
+  dispersed phases in NCFD. Option is ignored inside the code, but could
+  lead to wrong behaviour of the GUI.
+
 Release 6.0.4 (June 15, 2020)
 -----------------------------
 
