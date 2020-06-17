@@ -3,6 +3,10 @@ Release 6.1.1 (unreleased)
 
 Bug fixes:
 
+- Fix wrong setting of turbulent boundary condition type (formula) for
+  dispersed phases in NCFD. Option is ignored inside the code, but could
+  lead to wrong behaviour of the GUI.
+
 - Fix reconstruction gradient weighting in computation of face diffusion
   from pressure increment in pressure correction step.
 
