@@ -749,7 +749,6 @@ cs_vof_deshpande_drift_flux(const cs_domain_t *domain)
   const cs_real_t *restrict i_voidflux =
     cs_field_by_id(cs_field_get_key_int(CS_F_(void_f), kiflux))->val;
 
-  // FIXME See what we should do for boundary terms bdriftflux
   cs_field_t *idriftflux = NULL;
   idriftflux = cs_field_by_name_try("inner_drift_velocity_flux");
 
@@ -884,73 +883,76 @@ cs_vof_drift_term(const cs_int_t   *const imrgra,
     ---> Computation of the drift flux
     ======================================================================*/
 
-  if (_vof_parameters.idrift == 1) cs_vof_deshpande_drift_flux(cs_glob_domain);
-
-  /* ======================================================================
-    ---> Computation of the mass flux at faces
-    ======================================================================*/
-
-  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
-  int f_id, itypfl, iflmb0, init, inc;
-
-  cs_real_3_t *coefav;
-  cs_real_33_t *coefbv;
-
   cs_field_t *vr = cs_field_by_name_try("drift_velocity");
   cs_field_t *idriftflux = cs_field_by_name_try("inner_drift_velocity_flux");
   cs_field_t *bdriftflux = cs_field_by_name_try("boundary_drift_velocity_flux");
 
-  /* Check if field exist */
-  if (idriftflux == NULL)
-    bft_error(__FILE__, __LINE__, 0,_("error drift velocity not defined\n"));
+  if (_vof_parameters.idrift == 1) {
 
-  cs_real_3_t *cpro_vr = (cs_real_3_t *)vr->val;
-  cs_real_t *cpro_idriftf = idriftflux->val;
-  cs_real_t *cpro_bdriftf = bdriftflux->val;
+    // FIXME Handle boundary terms bdriftflux
+    cs_vof_deshpande_drift_flux(cs_glob_domain);
 
-  BFT_MALLOC(coefav, n_b_faces, cs_real_3_t);
-  BFT_MALLOC(coefbv, n_b_faces, cs_real_33_t);
+  } else {
 
-  f_id = -1;
-  itypfl = 0;
-  iflmb0 = 1;
-  init = 1;
-  inc = 1;
-
-  /* Boundary coefficients */
-  for (cs_lnum_t ifac = 0 ; ifac < n_b_faces ; ifac++) {
-    for (int ii = 0 ; ii < 3 ; ii++) {
-      coefav[ifac][ii] = 0.;
-      for (int jj = 0 ; jj < 3 ; jj++) {
-        coefbv[ifac][ii][jj] = 0.;
+    const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+    int f_id, itypfl, iflmb0, init, inc;
+  
+    cs_real_3_t *coefav;
+    cs_real_33_t *coefbv;
+  
+    /* Check if field exist */
+    if (idriftflux == NULL)
+      bft_error(__FILE__, __LINE__, 0,_("error drift velocity not defined\n"));
+  
+    cs_real_3_t *cpro_vr = (cs_real_3_t *)vr->val;
+    cs_real_t *cpro_idriftf = idriftflux->val;
+    cs_real_t *cpro_bdriftf = bdriftflux->val;
+  
+    BFT_MALLOC(coefav, n_b_faces, cs_real_3_t);
+    BFT_MALLOC(coefbv, n_b_faces, cs_real_33_t);
+  
+    f_id = -1;
+    itypfl = 0;
+    iflmb0 = 1;
+    init = 1;
+    inc = 1;
+  
+    /* Boundary coefficients */
+    for (cs_lnum_t ifac = 0 ; ifac < n_b_faces ; ifac++) {
+      for (int ii = 0 ; ii < 3 ; ii++) {
+        coefav[ifac][ii] = 0.;
+        for (int jj = 0 ; jj < 3 ; jj++) {
+          coefbv[ifac][ii][jj] = 0.;
+        }
+        coefbv[ifac][ii][ii] = 1.;
       }
-      coefbv[ifac][ii][ii] = 1.;
     }
+  
+    cs_mass_flux(m,
+                 fvq,
+                 f_id,
+                 itypfl,
+                 iflmb0,
+                 init,
+                 inc,
+                 *imrgra,
+                 *nswrgp,
+                 *imligp,
+                 *iwarnp,
+                 *epsrgp,
+                 *climgp,
+                 NULL, /* rom */
+                 NULL, /* romb */
+                 (const cs_real_3_t *)cpro_vr,
+                 (const cs_real_3_t *)coefav,
+                 (const cs_real_33_t *)coefbv,
+                 cpro_idriftf,
+                 cpro_bdriftf);
+  
+    BFT_FREE(coefav);
+    BFT_FREE(coefbv);
+
   }
-
-  cs_mass_flux(m,
-               fvq,
-               f_id,
-               itypfl,
-               iflmb0,
-               init,
-               inc,
-               *imrgra,
-               *nswrgp,
-               *imligp,
-               *iwarnp,
-               *epsrgp,
-               *climgp,
-               NULL, /* rom */
-               NULL, /* romb */
-               (const cs_real_3_t *)cpro_vr,
-               (const cs_real_3_t *)coefav,
-               (const cs_real_33_t *)coefbv,
-               cpro_idriftf,
-               cpro_bdriftf);
-
-  BFT_FREE(coefav);
-  BFT_FREE(coefbv);
 
   /* ======================================================================
     ---> Contribution from interior faces
