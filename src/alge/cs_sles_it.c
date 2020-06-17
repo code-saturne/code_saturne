@@ -231,11 +231,11 @@ _convergence_test(cs_sles_it_t              *c,
 #endif
     if (diverges == 1) {
       bft_printf(_("\n\n"
-            "%s [%s]: divergence after %u iterations:\n"
-            "  initial residual: %11.4e; current residual: %11.4e\n"),
-          cs_sles_it_type_name[c->type], convergence->name,
-          convergence->n_iterations,
-          s->initial_residue, convergence->residue);
+                   "%s [%s]: divergence after %u iterations:\n"
+                   "  initial residual: %11.4e; current residual: %11.4e\n"),
+                 cs_sles_it_type_name[c->type], convergence->name,
+                 convergence->n_iterations,
+                 s->initial_residue, convergence->residue);
       return CS_SLES_DIVERGED;
     }
   }
