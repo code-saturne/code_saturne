@@ -227,12 +227,6 @@ class BoundaryConditionsHydraulicHeadView(QWidget, Ui_BoundaryConditionsHydrauli
         self.initialize()
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

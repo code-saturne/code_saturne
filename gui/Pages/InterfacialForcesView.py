@@ -125,10 +125,6 @@ class FieldDelegate(QItemDelegate):
                 model.setData(idx, value, Qt.DisplayRole)
 
 
-    def tr(self, text):
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Combo box delegate for the drag model
 #-------------------------------------------------------------------------------
@@ -181,14 +177,9 @@ class DragDelegate(QItemDelegate):
                 model.setData(idx, self.dicoM2V[value], Qt.DisplayRole)
 
 
-    def tr(self, text):
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Combo box delegate for the added mass model
 #-------------------------------------------------------------------------------
-
 
 class AddedMassDelegate(QItemDelegate):
     """
@@ -231,14 +222,9 @@ class AddedMassDelegate(QItemDelegate):
                 model.setData(idx, self.dicoM2V[value], Qt.DisplayRole)
 
 
-    def tr(self, text):
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Combo box delegate for the lift
 #-------------------------------------------------------------------------------
-
 
 class LiftDelegate(QItemDelegate):
     """
@@ -281,14 +267,9 @@ class LiftDelegate(QItemDelegate):
                 model.setData(idx, self.dicoM2V[value], Qt.DisplayRole)
 
 
-    def tr(self, text):
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Combo box delegate for the turbulent dispersion
 #-------------------------------------------------------------------------------
-
 
 class DispersionTurbulentDelegate(QItemDelegate):
     """
@@ -338,14 +319,9 @@ class DispersionTurbulentDelegate(QItemDelegate):
                 model.setData(idx, self.dicoM2V[value], Qt.DisplayRole)
 
 
-    def tr(self, text):
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Combo box delegate for the wall forces
 #-------------------------------------------------------------------------------
-
 
 class WallForceDelegate(QItemDelegate):
     """
@@ -392,10 +368,6 @@ class WallForceDelegate(QItemDelegate):
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
                 model.setData(idx, self.dicoM2V[value], Qt.DisplayRole)
-
-
-    def tr(self, text):
-        return text
 
 
 #-------------------------------------------------------------------------------

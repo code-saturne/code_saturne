@@ -165,10 +165,6 @@ class TypeDelegate(QItemDelegate):
                 model.setData(idx, value, Qt.DisplayRole)
 
 
-    def tr(self, text):
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Combo box delegate for the field selection
 #-------------------------------------------------------------------------------
@@ -212,10 +208,6 @@ class FieldDelegate(QItemDelegate):
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
                 model.setData(idx, value, Qt.DisplayRole)
-
-
-    def tr(self, text):
-        return text
 
 
 #-------------------------------------------------------------------------------

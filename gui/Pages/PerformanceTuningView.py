@@ -396,13 +396,6 @@ class PerformanceTuningView(QWidget, Ui_PerformanceTuningForm):
         self.case['current_tab'] = index
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

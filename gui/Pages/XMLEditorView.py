@@ -226,12 +226,6 @@ class XMLEditorView(QDialog, Ui_XMLEditor):
         return
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # Test function
 #-------------------------------------------------------------------------------

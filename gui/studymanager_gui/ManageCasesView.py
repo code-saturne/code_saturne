@@ -932,13 +932,6 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
             self.mdl.setPostScriptInput(study, idx, file)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

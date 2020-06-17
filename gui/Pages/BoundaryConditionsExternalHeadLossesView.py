@@ -158,12 +158,6 @@ class BoundaryConditionsExternalHeadLossesView(QWidget, Ui_BoundaryConditionsExt
             self.pushButtonHeadLossesFormula.setToolTip(result)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

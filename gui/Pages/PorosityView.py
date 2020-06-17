@@ -248,13 +248,6 @@ class PorosityView(QWidget, Ui_PorosityForm):
             self.pushButtonPorosity.setStyleSheet("background-color: green")
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

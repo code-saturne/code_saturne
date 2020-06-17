@@ -651,6 +651,3 @@ pressure = P0 + rho0 * g * (zmax - z);"""
             self.pushButtonScalar.hide()
 
 
-    def tr(self, text):
-        return text
-

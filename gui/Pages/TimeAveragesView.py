@@ -149,9 +149,6 @@ class StartTypeDelegate(QItemDelegate):
                 model.setData(idx, txt, Qt.DisplayRole)
 
 
-    def tr(self, text):
-        return text
-
 #-------------------------------------------------------------------------------
 # Line edit delegate for the start time
 #-------------------------------------------------------------------------------
@@ -230,10 +227,6 @@ class RestartTypeDelegate(QItemDelegate):
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
                 model.setData(idx, value, Qt.DisplayRole)
-
-
-    def tr(self, text):
-        return text
 
 
 #-------------------------------------------------------------------------------
@@ -606,12 +599,6 @@ class TimeAveragesView(QWidget, Ui_TimeAveragesForm):
         self.treeViewAverage.clearSelection()
         self.groupBoxTimeAverage.hide()
 
-
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
 
 #-------------------------------------------------------------------------------
 # End

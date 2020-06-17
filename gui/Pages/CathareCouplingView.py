@@ -538,11 +538,6 @@ class CathareCouplingView(QWidget, Ui_CathareCouplingForm):
             self.lineEditCathareFile.setText(file_name)
             self.__model.setCathareFile(file_name)
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
 
 #-------------------------------------------------------------------------------
 # End

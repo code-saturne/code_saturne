@@ -166,10 +166,6 @@ class FieldDelegate(QItemDelegate):
                 model.setData(idx, value, Qt.DisplayRole)
 
 
-    def tr(self, text):
-        return text
-
-
 #-------------------------------------------------------------------------------
 # StandardItemModelUserScalar class
 #-------------------------------------------------------------------------------

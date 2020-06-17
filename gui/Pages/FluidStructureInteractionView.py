@@ -185,13 +185,6 @@ class FluidStructureInteractionAdvancedOptionsView(QDialog,
         QDialog.reject(self)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # StandarItemModel class
 #-------------------------------------------------------------------------------
@@ -892,12 +885,6 @@ class FluidStructureInteractionView(QWidget, Ui_FluidStructureInteractionForm):
             self.__model.setStressPredictionAlpha(result[stress_prediction_alpha])
             self.__model.setMonitorPointSynchronisation(result[monitor_point_synchronisation])
 
-
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
 
 #-------------------------------------------------------------------------------
 # End

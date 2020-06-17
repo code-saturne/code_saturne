@@ -151,12 +151,6 @@ class BoundaryConditionsScalarView(QWidget, Ui_BoundaryConditionsScalar) :
             self.__boundary.setScalarValue(self.__currentField, self.__currentScalar, value)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

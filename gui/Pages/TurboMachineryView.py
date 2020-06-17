@@ -457,14 +457,6 @@ class TurboMachineryView(QWidget, Ui_TurboMachineryForm):
             self.mdl.setRotationCenter(rotor_id, "invariant_z", val)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
-
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

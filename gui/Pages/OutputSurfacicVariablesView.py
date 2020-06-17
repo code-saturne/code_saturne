@@ -232,12 +232,6 @@ class OutputSurfacicVariablesView(QWidget, Ui_OutputSurfacicVariablesForm):
         self.case.undoStartGlobal()
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

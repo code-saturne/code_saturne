@@ -52,6 +52,11 @@ Numerics and physical modelling:
 
 Architectural changes:
 
+- [GUI]: enable Qt translation mechanism.
+  Translation files are not maintained, but may be built using  pylupdate5,
+  linguist-qt5, and lrelease, and files named code_saturne_<lang>.qm
+  under <install_prefix>/share/translation will be handled.
+
 - Use `cs_probe_t` type profiles for GUI-defined profiles.
 
 - Fully replace MEI by generated (MEG) code. This removed the bootstrap

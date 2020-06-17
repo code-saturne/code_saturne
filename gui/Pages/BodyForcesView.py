@@ -205,13 +205,6 @@ class BodyForcesView(QWidget, Ui_BodyForcesForm):
             self.cmdl.setOmega('omega_z', omega_z)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

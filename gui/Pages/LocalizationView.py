@@ -241,13 +241,6 @@ class VolumicZoneAdvancedView(QDialog, Ui_VolumicZoneAdvancedDialogForm):
         QDialog.reject(self)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Line edit delegate for the label
 #-------------------------------------------------------------------------------
@@ -384,9 +377,6 @@ class BoundaryNatureDelegate(QItemDelegate):
             if idx.column() == index.column():
                 model.setData(idx, value, Qt.DisplayRole)
 
-
-    def tr(self, text):
-        return text
 
 #-------------------------------------------------------------------------------
 # StandarItemModel class for QComboBox in nature delegate (Volumic)
@@ -1081,12 +1071,6 @@ class LocalizationView(QWidget, Ui_LocalizationForm):
         for col in range(topLeft.column(), bottomRight.column()+1):
             self.tableView.resizeColumnToContents(col)
 
-
-    def tr(self, text):
-        """
-        Translation.
-        """
-        return text
 
 #-------------------------------------------------------------------------------
 # Define Volumic regions class

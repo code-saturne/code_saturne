@@ -211,13 +211,6 @@ class GroundwaterView(QWidget, Ui_GroundwaterForm):
             self.mdl.setGravity('off')
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
     @pyqtSlot(str)
     def slotSpeciesName(self, text):
         """

@@ -237,14 +237,6 @@ class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
 #        # Thermal Initialization
 
 
-
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

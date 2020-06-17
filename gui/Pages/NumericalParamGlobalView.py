@@ -277,13 +277,6 @@ class NumericalParamGlobalView(QWidget, Ui_NumericalParamGlobalForm):
         log.debug("slotExtNeighbors-> %s" % enh_type)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

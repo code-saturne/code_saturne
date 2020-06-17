@@ -300,13 +300,6 @@ class ElectricalView(QWidget, Ui_ElectricalForm):
             self.model.setPlaneDefinition("epsilon", current)
 
 
-    def tr(self, text):
-        """
-        Translation.
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

@@ -344,12 +344,6 @@ class ConjugateHeatTransferView(QWidget, Ui_ConjugateHeatTransferForm):
                 self.tableViewSyrthes.hideColumn(0)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

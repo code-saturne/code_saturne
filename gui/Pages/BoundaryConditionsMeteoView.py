@@ -183,12 +183,6 @@ class BoundaryConditionsMeteoView(QWidget, Ui_BoundaryConditionsMeteoForm):
             self.__boundary.setAutomaticNatureStatus('off')
 
 
-    def tr(self, text):
-        """
-        Translation.
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

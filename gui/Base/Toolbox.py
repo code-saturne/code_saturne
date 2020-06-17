@@ -31,6 +31,7 @@ This module defines the following function:
 # Application modules import
 #-------------------------------------------------------------------------------
 
+from code_saturne.Base.QtCore  import QCoreApplication
 from code_saturne.model.Common import *
 
 #-------------------------------------------------------------------------------
@@ -319,7 +320,14 @@ def tr(text):
     """
     Translation
     """
-    return text
+
+    # Note that the matching tree entries are declared in BrowserView,
+    # so the translation context requires this.
+    # Merging this into BrowserView (and making the former more dynamic)
+    # and using function pointers would go a long way towards
+    # making the code more modular an easier to navigate thna this mess.
+
+    return QCoreApplication.translate('BrowserView', text)
 
 #-------------------------------------------------------------------------------
 # End of Toolbox

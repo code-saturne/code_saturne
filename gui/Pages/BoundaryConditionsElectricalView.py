@@ -470,12 +470,6 @@ class BoundaryConditionsElectricalView(QWidget, Ui_BoundaryConditionsElectricalF
         self.hide()
 
 
-    def tr(self, text):
-        """
-        Translation.
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

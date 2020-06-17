@@ -120,10 +120,6 @@ class TurbulenceDelegate(QItemDelegate):
                 model.setData(idx, self.dicoM2V[value], Qt.DisplayRole)
 
 
-    def tr(self, text):
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Combo box delegate for the two way coupling
 #-------------------------------------------------------------------------------
@@ -185,9 +181,6 @@ class CouplingDelegate(QItemDelegate):
                 model.setData(idx, self.dicoM2V[value], Qt.DisplayRole)
 
 
-    def tr(self, text):
-        return text
-
 #-------------------------------------------------------------------------------
 # Combo box delegate for the thermal turbulent fluxes
 #-------------------------------------------------------------------------------
@@ -241,10 +234,6 @@ class TurbFluxDelegate(QItemDelegate):
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
                 model.setData(idx, self.dicoM2V[value], Qt.DisplayRole)
-
-
-    def tr(self, text):
-        return text
 
 
 #-------------------------------------------------------------------------------

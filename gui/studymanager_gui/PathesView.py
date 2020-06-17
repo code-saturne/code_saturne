@@ -156,12 +156,6 @@ class PathesView(QWidget, Ui_PathesForm):
             self.mdl.setDestinationPath(self.dest_path)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

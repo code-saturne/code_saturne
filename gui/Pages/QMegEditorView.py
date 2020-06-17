@@ -359,12 +359,6 @@ class QMegEditorView(QDialog, Ui_QMegDialog):
         return self.textEditExpression.toPlainText()
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # Test function
 #-------------------------------------------------------------------------------

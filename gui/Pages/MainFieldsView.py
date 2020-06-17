@@ -186,10 +186,6 @@ class NatureDelegate(QItemDelegate):
                 model.setData(idx, value, Qt.DisplayRole)
 
 
-    def tr(self, text):
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Combo box delegate for the enthalpy
 #-------------------------------------------------------------------------------
@@ -239,10 +235,6 @@ class EnthalpyDelegate(QItemDelegate):
                 model.setData(idx, value, Qt.DisplayRole)
 
 
-    def tr(self, text):
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Combo box delegate for the criterion of field
 #-------------------------------------------------------------------------------
@@ -288,10 +280,6 @@ class CriterionDelegate(QItemDelegate):
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
                 model.setData(idx, value, Qt.DisplayRole)
-
-
-    def tr(self, text):
-        return text
 
 
 #-------------------------------------------------------------------------------
@@ -340,10 +328,6 @@ class CarrierDelegate(QItemDelegate):
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
                 model.setData(idx, value, Qt.DisplayRole)
-
-
-    def tr(self, text):
-        return text
 
 
 #-------------------------------------------------------------------------------
@@ -566,9 +550,6 @@ class StandardItemModelMainFields(QStandardItemModel):
         row = self.rowCount()
         self.setRowCount(row-1)
         self.updateItem()
-
-    def tr(self, text):
-        return text
 
 
 #-------------------------------------------------------------------------------

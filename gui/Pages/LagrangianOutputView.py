@@ -276,13 +276,6 @@ class LagrangianOutputView(QWidget, Ui_LagrangianOutputForm):
             self.model.setMoistureMassStatus("off")
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

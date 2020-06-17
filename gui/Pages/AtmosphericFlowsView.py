@@ -134,12 +134,6 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
             self.__model.setMeteoDataFileName(file)
 
 
-    def tr(self, text):
-        """
-        Translation.
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

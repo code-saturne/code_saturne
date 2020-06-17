@@ -155,13 +155,6 @@ class MeshDimDelegate(QItemDelegate):
         model.setData(index, value, Qt.DisplayRole)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Model class
 #-------------------------------------------------------------------------------
@@ -519,14 +512,6 @@ class FansView(QWidget, Ui_FansForm):
         if self.lineEditCoefZ.validator().state == QValidator.Acceptable:
             val = from_qvariant(text, float)
             self.mdl.setFanProperty(idx, "curve_coeffs_z", val)
-
-
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 
 
 #-------------------------------------------------------------------------------

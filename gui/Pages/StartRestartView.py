@@ -209,12 +209,6 @@ class StartRestartAdvancedDialogView(QDialog, Ui_StartRestartAdvancedDialogForm)
         return self.result
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # Main class
 #-------------------------------------------------------------------------------
@@ -544,12 +538,6 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
             self.model.setRestartWithAuxiliaryStatus(result['restart_with_auxiliary'])
             self.model.setRestartRescue(result['restart_rescue'])
 
-
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
 
 #-------------------------------------------------------------------------------
 # Testing part

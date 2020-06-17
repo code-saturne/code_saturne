@@ -221,11 +221,6 @@ class LagrangianAdvancedOptionsDialogView(QDialog, Ui_LagrangianAdvancedOptionsD
         QDialog.reject(self)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
 #-------------------------------------------------------------------------------
 # Line edit delegate for the label
 #-------------------------------------------------------------------------------
@@ -696,12 +691,6 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
             self.model.setCompleteModelStartIteration(result['complete_model_iteration'])
             self.model.setCompleteModelDirection(int(result['complete_model_direction']))
 
-
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
 
 #-------------------------------------------------------------------------------
 # Testing part

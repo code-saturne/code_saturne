@@ -133,12 +133,6 @@ class BoundaryConditionsPressureView(QWidget, Ui_BoundaryConditionsPressureForm)
             self.__boundary.setPressureValue(t)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

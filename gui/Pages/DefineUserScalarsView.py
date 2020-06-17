@@ -174,12 +174,6 @@ class GGDHDelegate(QItemDelegate):
         model.setData(index, value, Qt.DisplayRole)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # Line edit delegate for the variance name
 #-------------------------------------------------------------------------------
@@ -274,12 +268,6 @@ class VarianceDelegate(QItemDelegate):
         value = self.modelCombo.dicoV2M[txt]
         model.setData(index, value, Qt.DisplayRole)
 
-
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
 
 #-------------------------------------------------------------------------------
 # StandarItemModel class
@@ -677,12 +665,6 @@ class DefineUserScalarsView(QWidget, Ui_DefineUserScalarsForm):
         for col in range(topLeft.column(), bottomRight.column()+1):
             self.tableView.resizeColumnToContents(col)
 
-
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
 
 #-------------------------------------------------------------------------------
 # End

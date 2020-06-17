@@ -365,12 +365,6 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
         self.mappedInletWidget.hideWidget()
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

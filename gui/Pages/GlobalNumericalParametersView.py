@@ -162,13 +162,6 @@ class GlobalNumericalParametersAdvancedOptionsDialogView(QDialog, Ui_GlobalNumer
         QDialog.reject(self)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # GlobalNumericalParametersView class
 #-------------------------------------------------------------------------------
@@ -484,10 +477,4 @@ class GlobalNumericalParametersView(QWidget, Ui_GlobalNumericalParameters):
             self.mdl.setRegulateBadCells('on')
         else:
             self.mdl.setRegulateBadCells('off')
-
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
 

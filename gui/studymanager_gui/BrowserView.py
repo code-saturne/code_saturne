@@ -67,11 +67,13 @@ class BrowserView(SaturneBrowserView):
     """
     Class for the browser widget
     """
-    def __init__(self):
+    def __init__(self, parent=None):
         """
         Constructor
         """
-        SaturneBrowserView.__init__(self)
+        self.parent = parent
+
+        SaturneBrowserView.__init__(self, parent)
         tree = self._browser()
         self.model = TreeModel(str(tree))
 

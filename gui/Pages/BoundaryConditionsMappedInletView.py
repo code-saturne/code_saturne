@@ -201,12 +201,6 @@ class BoundaryConditionsMappedInletView(QWidget, Ui_BoundaryConditionsMappedInle
             self.__boundary.setMappedInletTranslation('translation_z', value)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

@@ -490,11 +490,6 @@ class ImmersedBoundariesViewNeptune(QWidget, Ui_ImmersedBoundariesNeptune):
             self.modelFSI.deleteRow(row)
             self.ibm.deleteFSIObject(row+1)
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
 
     @pyqtSlot()
     def slotExplicitFormula(self):

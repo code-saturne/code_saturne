@@ -175,12 +175,6 @@ class TurbulenceAdvancedOptionsDialogView(QDialog, Ui_TurbulenceAdvancedOptionsD
         QDialog.reject(self)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # Main view class
 #-------------------------------------------------------------------------------
@@ -420,12 +414,6 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
             self.model.setWallFunction(result['wall_function'])
             self.model.setGravity(result['gravity_terms'])
 
-
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
 
 #-------------------------------------------------------------------------------
 # End

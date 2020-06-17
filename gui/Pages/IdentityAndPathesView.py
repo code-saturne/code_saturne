@@ -233,12 +233,6 @@ class IdentityAndPathesView(QWidget, Ui_IdentityAndPathesForm):
             self.mdl.setRelevantSubdir("no", '')
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

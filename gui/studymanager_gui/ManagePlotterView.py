@@ -137,13 +137,6 @@ class ManageSubplotDialogView(QDialog, Ui_ManagePlotterSubplotForm):
         QDialog.reject(self)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Advanced dialog for plot
 #-------------------------------------------------------------------------------
@@ -215,13 +208,6 @@ class ManagePlotDialogView(QDialog, Ui_ManagePlotForm):
         Method called when user clicks 'Cancel'
         """
         QDialog.reject(self)
-
-
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
 
 
 #-------------------------------------------------------------------------------
@@ -1692,12 +1678,6 @@ class ManagePlotterView(QWidget, Ui_ManagePlotterForm):
         self.treeViewCases.clearSelection()
         self.slotChangeSelectionCases()
 
-
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
 
 #-------------------------------------------------------------------------------
 # Testing part

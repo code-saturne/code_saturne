@@ -139,10 +139,6 @@ class MaterialsDelegate(QItemDelegate):
                 model.setData(idx, self.modelCombo.dicoM2V[value], Qt.DisplayRole)
 
 
-    def tr(self, text):
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Combo box delegate for the method
 #-------------------------------------------------------------------------------
@@ -198,10 +194,6 @@ class MethodDelegate(QItemDelegate):
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
                 model.setData(idx, self.modelCombo.dicoM2V[value], Qt.DisplayRole)
-
-
-    def tr(self, text):
-        return text
 
 
 #-------------------------------------------------------------------------------
@@ -1459,13 +1451,6 @@ temperature = enthalpy / 1000;
             self.mdl.setFormula('none', 'LatentHeat', result)
             self.pushButtonHlat.setStyleSheet("background-color: green")
             self.pushButtonHlat.setToolTip(result)
-
-
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
 
 
 #-------------------------------------------------------------------------------

@@ -94,13 +94,6 @@ def preprocessorFile(parent, initdir):
     return file_name
 
 
-
-def tr(text):
-    """
-    Translation
-    """
-    return text
-
 #-------------------------------------------------------------------------------
 # Informations class
 #-------------------------------------------------------------------------------

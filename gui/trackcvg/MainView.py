@@ -1237,17 +1237,6 @@ class MainView(object):
         ficIn.close()
 
 
-    def tr(self, text):
-        """
-        private method
-
-        translation
-
-        @param text: text to translate
-        @return: translated text
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # Main Window for Code_Saturne
 #-------------------------------------------------------------------------------

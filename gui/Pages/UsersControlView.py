@@ -165,10 +165,6 @@ class LocationDelegate(QItemDelegate):
                 model.setData(idx, value, Qt.DisplayRole)
 
 
-    def tr(self, text):
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Dimension delegate
 #-------------------------------------------------------------------------------
@@ -210,9 +206,6 @@ class UserDimensionDelegate(QItemDelegate):
         for idx in selectionModel.selectedIndexes():
             if idx.column() == index.column():
                 model.setData(idx, value, Qt.DisplayRole)
-
-    def tr(self, text):
-        return text
 
 
 #-------------------------------------------------------------------------------

@@ -156,12 +156,6 @@ class BoundaryConditionsFractionView(QWidget, Ui_BoundaryConditionsFraction) :
             self.lineEditFraction.hide()
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

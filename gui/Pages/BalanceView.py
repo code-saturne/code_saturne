@@ -496,14 +496,6 @@ class BalanceView(QWidget, Ui_BalanceForm):
         self.tableViewScalarBalance.clearSelection()
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
-
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

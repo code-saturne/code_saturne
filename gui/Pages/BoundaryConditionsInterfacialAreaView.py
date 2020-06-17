@@ -126,12 +126,6 @@ class BoundaryConditionsInterfacialAreaView(QWidget, Ui_BoundaryConditionsInterf
             self.__boundary.setDiameter(self.__currentField, value)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

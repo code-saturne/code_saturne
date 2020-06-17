@@ -360,7 +360,8 @@ class CommandMgrDialogView(QDialog, Ui_CommandMgrDialogForm):
         """
         Public Method. Translation.
         """
-        return text
+        return QCoreApplication.translate('CommandMgrDialogView', text)
+
 
 #-------------------------------------------------------------------------------
 # End

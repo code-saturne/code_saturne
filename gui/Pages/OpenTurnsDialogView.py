@@ -375,12 +375,6 @@ class OpenTurnsDialogView(QDialog, Ui_OpenTurnsDialogForm):
         QDialog.accept(self)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
     def addDistantBuilds(self, host_name):
         """
         Search for the distant builds of Code_Saturne for the given distant

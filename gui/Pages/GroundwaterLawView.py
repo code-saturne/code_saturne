@@ -773,12 +773,6 @@ class GroundwaterLawView(QWidget, Ui_GroundwaterLawForm):
             scal = self.scalar
             self.mdl.setGroundWaterScalarPropertyByZone(scal, name, 'kminus', val)
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 
 #-------------------------------------------------------------------------------
 # Testing part

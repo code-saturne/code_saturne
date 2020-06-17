@@ -135,14 +135,9 @@ class ParticleBoundaryInteractionDelegate(QItemDelegate):
                 model.setData(idx, value, Qt.DisplayRole)
 
 
-    def tr(self, text):
-        return text
-
-
 #-------------------------------------------------------------------------------
 # StandarItemModel class to display boundaries in a QTreeView
 #-------------------------------------------------------------------------------
-
 
 class StandardItemModelBoundaries(QStandardItemModel):
     def __init__(self, case, model):
@@ -281,14 +276,9 @@ class StandardItemModelBoundaries(QStandardItemModel):
         return self._data[row]
 
 
-    def tr(self, text):
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Main class
 #-------------------------------------------------------------------------------
-
 
 class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
     """
@@ -778,12 +768,6 @@ class LagrangianBoundariesView(QWidget, Ui_LagrangianBoundariesForm):
             value = from_qvariant(text, float)
             self.model.setCoalTemperatureValue(self.label, self.iset, value)
 
-
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
 
 #-------------------------------------------------------------------------------
 # End

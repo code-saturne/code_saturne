@@ -173,15 +173,18 @@ def main(argv, pkg):
     # Locale detection
     locale = QLocale.system().name()
     translator = QTranslator(app)
-    if translator.load("qt_" + locale,
-                       QLibraryInfo.location(QLibraryInfo.TranslationsPath)):
+
+    tr_file = "code_saturne"
+    localedir = pkg.get_dir('localedir')
+    tr_loaded = translator.load(QLocale(), tr_file, "_", localedir, ".qm")
+    if tr_loaded:
         app.installTranslator(translator)
 
     if spl:
         app.setOverrideCursor(QCursor(Qt.WaitCursor))
         pixmap = QPixmap('%s/splashscreen.png' % images_path)
         splash = QSplashScreen(pixmap, Qt.WindowStaysOnTopHint)
-        splash.setMask(pixmap.mask()) # this is usefull if the splashscreen is not a regular ractangle...
+        splash.setMask(pixmap.mask()) # this is useful if the splashscreen is not a regular ractangle...
         splash.show()
         if pkg.name == 'neptune_cfd':
             splash.showMessage("%(name)s %(vers)s starting..." \

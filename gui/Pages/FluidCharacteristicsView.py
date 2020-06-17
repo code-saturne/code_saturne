@@ -1232,13 +1232,6 @@ thermal_conductivity = 6.2e-5 * temperature + 8.1e-3;
             self.pushButtonDiff.setStyleSheet("background-color: green")
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

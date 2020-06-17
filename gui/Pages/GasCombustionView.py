@@ -155,13 +155,6 @@ class GasCombustionView(QWidget, Ui_GasCombustionForm):
             self.pushButtonThermochemistryData.setStyleSheet("background-color: green")
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

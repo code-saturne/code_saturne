@@ -152,12 +152,6 @@ class BoundaryConditionsNonCondensableView(QWidget, Ui_BoundaryConditionsNonCond
             self.__boundary.setNonCondensableValue(self.__currentField, self.__currentNonCondensable, value)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

@@ -1161,13 +1161,6 @@ class SolutionDomainView(QWidget, Ui_SolutionDomainForm):
         self.mdl.setMeshSaveOnModify(self.checkBoxMeshSave.isChecked())
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

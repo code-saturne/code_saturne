@@ -356,11 +356,6 @@ R12-23 = 5e-05;"""
             self.pushButtonTurb.setToolTip(result)
             self.pushButtonTurb.setStyleSheet("background-color: green")
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
 
 #-------------------------------------------------------------------------------
 # End

@@ -378,13 +378,6 @@ class FacesSelectionView(QWidget, Ui_FacesSelectionForm):
             break
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

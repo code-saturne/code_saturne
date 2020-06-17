@@ -478,12 +478,6 @@ class AssociatedWriterDelegate(QItemDelegate):
         model.setData(index, value, Qt.DisplayRole)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # QStandardItemModel for Mesh QTableView
 #-------------------------------------------------------------------------------
@@ -2898,12 +2892,6 @@ class OutputControlView(QWidget, Ui_OutputControlForm):
         """
         self.case['current_tab'] = index
 
-
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
 
 #-------------------------------------------------------------------------------
 # Testing part

@@ -1112,13 +1112,6 @@ class PreprocessingView(QWidget, Ui_PreprocessingForm):
             self.tableModelExtrude.deleteItem(row)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

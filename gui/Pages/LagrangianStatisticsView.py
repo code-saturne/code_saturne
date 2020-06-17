@@ -521,13 +521,6 @@ class LagrangianStatisticsView(QWidget, Ui_LagrangianStatisticsForm):
             self.model.setIterationStartBoundary(value)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

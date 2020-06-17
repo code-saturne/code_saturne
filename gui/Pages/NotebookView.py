@@ -461,13 +461,6 @@ class NotebookView(QWidget, Ui_NotebookForm):
         self.treeViewNotebook.expandAll()
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

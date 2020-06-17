@@ -331,13 +331,6 @@ class BoundaryConditionsWallRadiativeTransferView(QWidget,
             self.__boundary.setFlux(c)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

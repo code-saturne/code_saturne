@@ -103,12 +103,6 @@ class VerifyExistenceLabelDialogView(QDialog, Ui_VerifyExistenceLabelDialogForm)
         QDialog.reject(self)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

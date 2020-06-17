@@ -1059,12 +1059,6 @@ class BatchRunningDialogView(QDialog, Ui_BatchRunningDialogForm):
             pass
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

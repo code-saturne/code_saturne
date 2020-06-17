@@ -165,13 +165,6 @@ class ThermalRadiationAdvancedDialogView(QDialog, Ui_ThermalRadiationAdvancedDia
         return self.result
 
 
-    def tr(self, text):
-        """
-        Translation.
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Main class
 #-------------------------------------------------------------------------------
@@ -475,13 +468,6 @@ class ThermalView(QWidget, Ui_ThermalForm):
             self.rmdl.setTrs(result['idiver'])
             self.rmdl.setTemperatureListing(result['tempP'])
             self.rmdl.setIntensityResolution(result['intensity'])
-
-
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
 
 
 #-------------------------------------------------------------------------------

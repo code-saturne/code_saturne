@@ -171,35 +171,35 @@ class TreeModel(QAbstractItemModel):
 
                 style = QWidget().style()
 
-                if page_name == 'Mesh':
+                if page_name == self.tr('Mesh'):
                     img_path = ":/icons/22x22/prepro-mode.png"
                     icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
-                elif page_name == 'Calculation features':
+                elif page_name == self.tr('Calculation features'):
                     img_path = ":/icons/22x22/calculation_features.png"
                     icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
-                elif page_name == 'Fluid properties':
+                elif page_name == self.tr('Fluid properties'):
                     img_path = ":/icons/22x22/physical_properties.png"
                     icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
-                elif page_name == 'Volume zones':
+                elif page_name == self.tr('Volume zones'):
                     img_path = ":/icons/22x22/volume_zones.png"
                     icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
-                elif page_name == 'Boundary zones':
+                elif page_name == self.tr('Boundary zones'):
                     img_path = ":/icons/22x22/boundary_conditions.png"
                     icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
-                elif page_name == 'Time settings':
+                elif page_name == self.tr('Time settings'):
                     img_path = ":/icons/22x22/time_stepping.png"
                     icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
-                elif page_name == 'Numerical parameters':
+                elif page_name == self.tr('Numerical parameters'):
                     img_path = ":/icons/22x22/numerical_params.png"
                     icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
-                elif page_name == 'Postprocessing':
+                elif page_name == self.tr('Postprocessing'):
                     img_path = ":/icons/22x22/postprocessing.png"
                     icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
@@ -207,7 +207,7 @@ class TreeModel(QAbstractItemModel):
                     img_path = ":/icons/22x22/closure_modeling.png"
                     icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
-                elif page_name == 'Performance settings':
+                elif page_name == self.tr('Performance settings'):
                     img_path = ":/icons/22x22/run_parameters.png"
                     icon = QIcon()
                     icon.addPixmap(QPixmap(_fromUtf8(img_path)), QIcon.Normal, QIcon.Off)
@@ -432,11 +432,13 @@ class BrowserView(QWidget, Ui_BrowserForm):
     """
     Class for the browser widget
     """
-    def __init__(self):
+    def __init__(self, parent=None):
         """
         Constructor
         """
-        QWidget.__init__(self)
+        self.parent = parent
+
+        QWidget.__init__(self, parent)
 
         Ui_BrowserForm.__init__(self)
         self.setupUi(self)
@@ -521,7 +523,17 @@ Postprocessing
     Balance by zone
 Performance settings
 """
-        return tree
+
+        tr_tree = ""
+        for l in tree.split('\n'):
+            l = l.rstrip()
+            if l[:4] == '    ':
+                l = '    ' + self.tr(l[4:])
+            else:
+                l = self.tr(l)
+            tr_tree += l + '\n'
+
+        return tr_tree
 
 
     def setRowClose(self, string):
@@ -1090,7 +1102,7 @@ Performance settings
         """
         Translation
         """
-        return text
+        return QCoreApplication.translate('BrowserView', text)
 
 #-------------------------------------------------------------------------------
 # Testing part

@@ -1532,7 +1532,7 @@ class MainView(object):
         @param text: text to translate
         @return: translated text
         """
-        return text
+        return QCoreApplication.translate('MainView', text)
 
 #-------------------------------------------------------------------------------
 # Main Window for Code_Saturne
@@ -1573,7 +1573,7 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
 
         self.XML_DOC_VERSION = XML_DOC_VERSION
 
-        self.Browser = BrowserView()
+        self.Browser = BrowserView(self)
         self.ui_initialize()
 
         # Code_Saturne doc

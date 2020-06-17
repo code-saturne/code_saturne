@@ -1011,12 +1011,6 @@ class NumericalParamEquationView(QWidget, Ui_NumericalParamEquationForm):
         self.case['current_tab'] = index
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

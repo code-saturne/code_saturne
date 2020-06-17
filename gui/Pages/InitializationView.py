@@ -872,13 +872,6 @@ class InitializationView(QWidget, Ui_InitializationForm):
                     __Button.setStyleSheet("background-color: red")
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

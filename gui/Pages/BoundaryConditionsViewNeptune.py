@@ -404,8 +404,6 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditions):
         self.WallWidget.hideWidget()
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
+#-------------------------------------------------------------------------------
+# End
+#-------------------------------------------------------------------------------

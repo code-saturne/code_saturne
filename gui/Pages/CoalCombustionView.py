@@ -2024,13 +2024,6 @@ class CoalCombustionView(QWidget, Ui_CoalCombustionForm):
         self.case['current_tab'] = index
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

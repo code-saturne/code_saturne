@@ -127,12 +127,6 @@ class BoundaryConditionsWallView(QWidget, Ui_BoundaryConditionsWall) :
         self.__boundary.setWallModel(self.__currentField, mdl)
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

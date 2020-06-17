@@ -494,12 +494,6 @@ class TimeStepView(QWidget, Ui_TimeStepForm):
             self.mdl.setThermalTimeStep("off")
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

@@ -73,7 +73,6 @@ except:
 from code_saturne.model import XMLengine
 from code_saturne.model.XMLmodel import *
 from code_saturne.model.Common import XML_DOC_VERSION, GuiParam
-from code_saturne.studymanager_gui.Toolbox import displaySelectedPage
 from code_saturne.studymanager_gui.BrowserView import BrowserView
 from code_saturne.studymanager.cs_studymanager_xml_init import smgr_xml_init
 
@@ -797,17 +796,6 @@ class MainView(object):
             settings.remove("MainWindow/Font")
 
 
-    def tr(self, text):
-        """
-        private method
-
-        translation
-
-        @param text: text to translate
-        @return: translated text
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # Main Window for studymanager
 #-------------------------------------------------------------------------------
@@ -844,7 +832,7 @@ class MainViewSmgr(QMainWindow, Ui_MainForm, MainView):
 
         self.XML_DOC_VERSION = XML_DOC_VERSION
 
-        self.Browser = BrowserView()
+        self.Browser = BrowserView(self)
         self.ui_initialize()
 
         self.displayCSManualAction.triggered.connect(self.displayCSManual)

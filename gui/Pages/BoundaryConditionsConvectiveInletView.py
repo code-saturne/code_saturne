@@ -151,12 +151,6 @@ class BoundaryConditionsConvectiveInletView(QWidget, Ui_BoundaryConditionsConvec
             self.__boundary.setConvectiveInletStatus("off")
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

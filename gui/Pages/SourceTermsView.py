@@ -471,13 +471,6 @@ dSudu = - rho / tau; # Jacobian of the source term"""
             self.pushButtonThermal.setStyleSheet("background-color: green")
 
 
-    def tr(self, text):
-        """
-        Translation
-        """
-        return text
-
-
 #-------------------------------------------------------------------------------
 # Testing part
 #-------------------------------------------------------------------------------

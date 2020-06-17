@@ -840,11 +840,6 @@ class AnalysisFeaturesView(QWidget, Ui_AnalysisFeaturesForm):
         self.browser.configureTree(self.case)
 
 
-    def tr(self, text):
-        """
-        """
-        return text
-
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------
