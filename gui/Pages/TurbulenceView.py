@@ -202,7 +202,7 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
 
         self.modelTurbModel.addItem(self.tr("No model (i.e. laminar flow)"), "off")
 
-        # RANS - Algebraic 
+        # RANS - Algebraic
         self.modelTurbModel.addItemGroup(self.tr("RANS - Algebraic"))
         self.modelTurbModel.addItem(self.tr("Mixing length"), "mixing_length", groupName="RANS - Algebraic")
 

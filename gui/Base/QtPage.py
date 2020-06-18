@@ -428,8 +428,8 @@ class ComboModel:
 
         item = self.item_groups[group_name].generateItem()
         self.model.setItem(index, item)
-        
-        self.items.append(group_name) 
+
+        self.items.append(group_name)
 
         self.last += 1
 

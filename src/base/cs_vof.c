@@ -784,14 +784,14 @@ cs_vof_deshpande_drift_flux(const cs_domain_t *domain)
     cs_lnum_t cell_id2 = i_face_cells[f_id][1]; // associated boundary cell
     cs_real_t fluxfactor =
       CS_MIN(cdrift*CS_ABS(i_voidflux[f_id])/i_face_surf[f_id],maxfluxsurf);
-    
+
     for (int idim = 0; idim < 3; idim++)
       gradface[idim] = (dvdx[cell_id1][idim] + dvdx[cell_id2][idim])/2.;
-    
+
     cs_real_t normgrad = sqrt(pow(gradface[0],2)+
                               pow(gradface[1],2)+
                               pow(gradface[2],2));
-    
+
     for (int idim = 0; idim < 3; idim++)
       normalface[idim] = gradface[idim]/(normgrad+delta);
 
@@ -896,27 +896,27 @@ cs_vof_drift_term(const cs_int_t   *const imrgra,
 
     const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
     int f_id, itypfl, iflmb0, init, inc;
-  
+
     cs_real_3_t *coefav;
     cs_real_33_t *coefbv;
-  
+
     /* Check if field exist */
     if (idriftflux == NULL)
       bft_error(__FILE__, __LINE__, 0,_("error drift velocity not defined\n"));
-  
+
     cs_real_3_t *cpro_vr = (cs_real_3_t *)vr->val;
     cs_real_t *cpro_idriftf = idriftflux->val;
     cs_real_t *cpro_bdriftf = bdriftflux->val;
-  
+
     BFT_MALLOC(coefav, n_b_faces, cs_real_3_t);
     BFT_MALLOC(coefbv, n_b_faces, cs_real_33_t);
-  
+
     f_id = -1;
     itypfl = 0;
     iflmb0 = 1;
     init = 1;
     inc = 1;
-  
+
     /* Boundary coefficients */
     for (cs_lnum_t ifac = 0 ; ifac < n_b_faces ; ifac++) {
       for (int ii = 0 ; ii < 3 ; ii++) {
@@ -927,7 +927,7 @@ cs_vof_drift_term(const cs_int_t   *const imrgra,
         coefbv[ifac][ii][ii] = 1.;
       }
     }
-  
+
     cs_mass_flux(m,
                  fvq,
                  f_id,
@@ -948,7 +948,7 @@ cs_vof_drift_term(const cs_int_t   *const imrgra,
                  (const cs_real_33_t *)coefbv,
                  cpro_idriftf,
                  cpro_bdriftf);
-  
+
     BFT_FREE(coefav);
     BFT_FREE(coefbv);
 
