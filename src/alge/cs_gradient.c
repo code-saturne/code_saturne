@@ -173,6 +173,65 @@ static int                        _n_gradient_quantities = 0;
 static cs_gradient_quantities_t  *_gradient_quantities = NULL;
 
 /*============================================================================
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+void
+cs_f_gradient_s(int               f_id,
+                int               imrgra,
+                int               inc,
+                int               iccocg,
+                int               n_r_sweeps,
+                int               idimtr,
+                int               iwarnp,
+                int               imligp,
+                cs_real_t         epsrgp,
+                cs_real_t         extrap,
+                cs_real_t         climgp,
+                const cs_real_t   coefap[],
+                const cs_real_t   coefbp[],
+                cs_real_t         pvar[],
+                cs_real_3_t       grad[]);
+
+void
+cs_f_gradient_potential(int               f_id,
+                        int               imrgra,
+                        int               inc,
+                        int               iccocg,
+                        int               n_r_sweeps,
+                        int               iphydp,
+                        int               iwarnp,
+                        int               imligp,
+                        cs_real_t         epsrgp,
+                        cs_real_t         extrap,
+                        cs_real_t         climgp,
+                        cs_real_3_t       f_ext[],
+                        const cs_real_t   coefap[],
+                        const cs_real_t   coefbp[],
+                        cs_real_t         pvar[],
+                        cs_real_3_t       grad[]);
+
+void
+cs_f_gradient_weighted_s(int               f_id,
+                         int               imrgra,
+                         int               inc,
+                         int               iccocg,
+                         int               n_r_sweeps,
+                         int               iphydp,
+                         int               iwarnp,
+                         int               imligp,
+                         cs_real_t         epsrgp,
+                         cs_real_t         extrap,
+                         cs_real_t         climgp,
+                         cs_real_3_t       f_ext[],
+                         const cs_real_t   coefap[],
+                         const cs_real_t   coefbp[],
+                         cs_real_t         pvar[],
+                         cs_real_t         c_weight[],
+                         cs_real_3_t       grad[]);
+
+/*============================================================================
  * Private function definitions
  *============================================================================*/
 
@@ -8526,6 +8585,248 @@ _gradient_tensor(const char                *var_name,
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
+ * Fortran wrapper function definitions
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Compute cell gradient of scalar field or component of vector or
+ * tensor field.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_gradient_s(int               f_id,
+                int               imrgra,
+                int               inc,
+                int               iccocg,
+                int               n_r_sweeps,
+                int               idimtr,
+                int               iwarnp,
+                int               imligp,
+                cs_real_t         epsrgp,
+                cs_real_t         extrap,
+                cs_real_t         climgp,
+                const cs_real_t   coefap[],
+                const cs_real_t   coefbp[],
+                cs_real_t         pvar[],
+                cs_real_3_t       grad[])
+{
+  bool recompute_cocg = (iccocg) ? true : false;
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+
+  char var_name[32];
+  if (f_id > -1) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    snprintf(var_name, 31, "%s", f->name);
+  }
+  else
+    strcpy(var_name, "Work array");
+  var_name[31] = '\0';
+
+  /* Choose gradient type */
+
+  cs_gradient_type_by_imrgra(imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  /* Check if given field has internal coupling  */
+  cs_internal_coupling_t  *cpl = NULL;
+  if (f_id > -1) {
+    const int key_id = cs_field_key_id_try("coupling_entity");
+    if (key_id > -1) {
+      const cs_field_t *f = cs_field_by_id(f_id);
+      int coupl_id = cs_field_get_key_int(f, key_id);
+      if (coupl_id > -1)
+        cpl = cs_internal_coupling_by_id(coupl_id);
+    }
+  }
+
+  /* Compute gradient */
+
+  cs_gradient_scalar(var_name,
+                     gradient_type,
+                     halo_type,
+                     inc,
+                     recompute_cocg,
+                     n_r_sweeps,
+                     idimtr,
+                     0,             /* iphydp */
+                     1,             /* w_stride */
+                     iwarnp,
+                     imligp,
+                     epsrgp,
+                     extrap,
+                     climgp,
+                     NULL,          /* f_ext */
+                     coefap,
+                     coefbp,
+                     pvar,
+                     NULL,          /* c_weight */
+                     cpl,
+                     grad);
+}
+
+/*----------------------------------------------------------------------------
+ * Compute cell gradient of potential-type values.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_gradient_potential(int               f_id,
+                        int               imrgra,
+                        int               inc,
+                        int               iccocg,
+                        int               n_r_sweeps,
+                        int               iphydp,
+                        int               iwarnp,
+                        int               imligp,
+                        cs_real_t         epsrgp,
+                        cs_real_t         extrap,
+                        cs_real_t         climgp,
+                        cs_real_3_t       f_ext[],
+                        const cs_real_t   coefap[],
+                        const cs_real_t   coefbp[],
+                        cs_real_t         pvar[],
+                        cs_real_3_t       grad[])
+{
+  bool recompute_cocg = (iccocg) ? true : false;
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+
+  char var_name[32];
+  if (f_id > -1) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    snprintf(var_name, 31, "%s", f->name);
+  }
+  else
+    strcpy(var_name, "Work array");
+  var_name[31] = '\0';
+
+  /* Choose gradient type */
+
+  cs_gradient_type_by_imrgra(imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  /* Check if given field has internal coupling  */
+  cs_internal_coupling_t  *cpl = NULL;
+  if (f_id > -1) {
+    const int key_id = cs_field_key_id_try("coupling_entity");
+    if (key_id > -1) {
+      const cs_field_t *f = cs_field_by_id(f_id);
+      int coupl_id = cs_field_get_key_int(f, key_id);
+      if (coupl_id > -1)
+        cpl = cs_internal_coupling_by_id(coupl_id);
+    }
+  }
+
+  /* Compute gradient */
+
+  cs_gradient_scalar(var_name,
+                     gradient_type,
+                     halo_type,
+                     inc,
+                     recompute_cocg,
+                     n_r_sweeps,
+                     0,             /* idimtr */
+                     iphydp,
+                     1,             /* w_stride */
+                     iwarnp,
+                     imligp,
+                     epsrgp,
+                     extrap,
+                     climgp,
+                     f_ext,
+                     coefap,
+                     coefbp,
+                     pvar,
+                     NULL,          /* c_weight */
+                     cpl,
+                     grad);
+}
+
+/*----------------------------------------------------------------------------
+ * Compute cell gradient of potential-type values.
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_gradient_weighted_s(int               f_id,
+                         int               imrgra,
+                         int               inc,
+                         int               iccocg,
+                         int               n_r_sweeps,
+                         int               iphydp,
+                         int               iwarnp,
+                         int               imligp,
+                         cs_real_t         epsrgp,
+                         cs_real_t         extrap,
+                         cs_real_t         climgp,
+                         cs_real_3_t       f_ext[],
+                         const cs_real_t   coefap[],
+                         const cs_real_t   coefbp[],
+                         cs_real_t         pvar[],
+                         cs_real_t         c_weight[],
+                         cs_real_3_t       grad[])
+{
+  bool recompute_cocg = (iccocg) ? true : false;
+
+  cs_halo_type_t halo_type = CS_HALO_STANDARD;
+  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
+
+  char var_name[32];
+  if (f_id > -1) {
+    cs_field_t *f = cs_field_by_id(f_id);
+    snprintf(var_name, 31, "%s", f->name);
+  }
+  else
+    strcpy(var_name, "Work array");
+  var_name[31] = '\0';
+
+  /* Choose gradient type */
+
+  cs_gradient_type_by_imrgra(imrgra,
+                             &gradient_type,
+                             &halo_type);
+
+  /* Check if given field has internal coupling  */
+  cs_internal_coupling_t  *cpl = NULL;
+  if (f_id > -1) {
+    const int key_id = cs_field_key_id_try("coupling_entity");
+    if (key_id > -1) {
+      const cs_field_t *f = cs_field_by_id(f_id);
+      int coupl_id = cs_field_get_key_int(f, key_id);
+      if (coupl_id > -1)
+        cpl = cs_internal_coupling_by_id(coupl_id);
+    }
+  }
+
+  /* Compute gradient */
+
+  cs_gradient_scalar(var_name,
+                     gradient_type,
+                     halo_type,
+                     inc,
+                     recompute_cocg,
+                     n_r_sweeps,
+                     0,             /* idimtr */
+                     iphydp,
+                     1,             /* w_stride */
+                     iwarnp,
+                     imligp,
+                     epsrgp,
+                     extrap,
+                     climgp,
+                     f_ext,
+                     coefap,
+                     coefbp,
+                     pvar,
+                     c_weight,
+                     cpl,
+                     grad);
+}
+
+/*============================================================================
  * Public function definitions for Fortran API
  *============================================================================*/
 
@@ -8713,96 +9014,6 @@ void CS_PROCF (grdpor, GRDPOR)
 }
 
 /*----------------------------------------------------------------------------
- * Compute cell gradient of scalar field or component of vector or
- * tensor field.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (cgdcel, CGDCEL)
-(
- const cs_int_t   *const f_id,        /* <-- field id                         */
- const cs_int_t   *const imrgra,      /* <-- gradient computation mode        */
- const cs_int_t   *const inc,         /* <-- 0 or 1: increment or not         */
- const cs_int_t   *const iccocg,      /* <-- 1 or 0: recompute COCG or not    */
- const cs_int_t   *const n_r_sweeps,  /* <-- >1: with reconstruction          */
- const cs_int_t   *const idimtr,      /* <-- 0, 1, 2: scalar, vector, tensor
-                                             in case of rotation              */
- const cs_int_t   *const iphydp,      /* <-- use hydrosatatic pressure        */
- const cs_int_t   *const ipond,       /* <-- >0: weighted gradient computation*/
- const cs_int_t   *const iwarnp,      /* <-- verbosity level                  */
- const cs_int_t   *const imligp,      /* <-- type of clipping                 */
- const cs_real_t  *const epsrgp,      /* <-- precision for iterative gradient
-                                             calculation                      */
- const cs_real_t  *const extrap,      /* <-- extrapolate gradient at boundary */
- const cs_real_t  *const climgp,      /* <-- clipping coefficient             */
-       cs_real_3_t       f_ext[],     /* <-- exterior force generating the
-                                             hydrostatic pressure             */
- const cs_real_t         coefap[],    /* <-- boundary condition term          */
- const cs_real_t         coefbp[],    /* <-- boundary condition term          */
-       cs_real_t         pvar[],      /* <-- gradient's base variable         */
-       cs_real_t         ktvar[],     /* <-- gradient coefficient variable    */
-       cs_real_3_t       grad[]       /* <-> gradient                         */
-)
-{
-  cs_real_t *c_weight = (*ipond > 0) ? ktvar : NULL;
-
-  bool recompute_cocg = (*iccocg) ? true : false;
-
-  cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
-
-  char var_name[32];
-  if (*f_id > -1) {
-    cs_field_t *f = cs_field_by_id(*f_id);
-    snprintf(var_name, 31, "%s", f->name);
-  }
-  else
-    strcpy(var_name, "Work array");
-  var_name[31] = '\0';
-
-  /* Choose gradient type */
-
-  cs_gradient_type_by_imrgra(*imrgra,
-                             &gradient_type,
-                             &halo_type);
-
-  /* Check if given field has internal coupling  */
-  cs_internal_coupling_t  *cpl = NULL;
-  if (*f_id > -1) {
-    const int key_id = cs_field_key_id_try("coupling_entity");
-    if (key_id > -1) {
-      const cs_field_t *f = cs_field_by_id(*f_id);
-      int coupl_id = cs_field_get_key_int(f, key_id);
-      if (coupl_id > -1)
-        cpl = cs_internal_coupling_by_id(coupl_id);
-    }
-  }
-
-  /* Compute gradient */
-
-  cs_gradient_scalar(var_name,
-                     gradient_type,
-                     halo_type,
-                     *inc,
-                     recompute_cocg,
-                     *n_r_sweeps,
-                     *idimtr,
-                     *iphydp,
-                     1,             /* w_stride */
-                     *iwarnp,
-                     *imligp,
-                     *epsrgp,
-                     *extrap,
-                     *climgp,
-                     f_ext,
-                     coefap,
-                     coefbp,
-                     pvar,
-                     c_weight,
-                     cpl,
-                     grad);
-}
-
-/*----------------------------------------------------------------------------
  * Compute cell gradient of vector field.
  *----------------------------------------------------------------------------*/
 
@@ -8865,59 +9076,6 @@ void CS_PROCF (cgdvec, CGDVEC)
                      pvar,
                      NULL, /* weighted gradient */
                      cpl,
-                     grad);
-}
-
-/*----------------------------------------------------------------------------
- * Compute cell gradient of tensor field.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (cgdts, CGDTS)
-(
- const cs_int_t         *const f_id,
- const cs_int_t         *const imrgra,    /* <-- gradient computation mode    */
- const cs_int_t         *const inc,       /* <-- 0 or 1: increment or not     */
- const cs_int_t         *const n_r_sweeps,    /* <-- >1: with reconstruction  */
- const cs_int_t         *const iwarnp,    /* <-- verbosity level              */
- const cs_int_t         *const imligp,    /* <-- type of clipping             */
- const cs_real_t        *const epsrgp,    /* <-- precision for iterative
-                                                 gradient calculation         */
- const cs_real_t        *const climgp,    /* <-- clipping coefficient         */
- const cs_real_6_t             coefav[],  /* <-- boundary condition term      */
- const cs_real_66_t            coefbv[],  /* <-- boundary condition term      */
-
-       cs_real_6_t             pvar[],    /* <-- gradient's base variable     */
-       cs_real_63_t            grad[]    /* <-> gradient of the variable
-                                                 (du_i/dx_j : gradv[][i][j])  */
-)
-{
-  char var_name[32];
-
-  cs_halo_type_t halo_type = CS_HALO_STANDARD;
-  cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
-
-  cs_gradient_type_by_imrgra(*imrgra,
-                             &gradient_type,
-                             &halo_type);
-
-  if (*f_id > -1)
-    snprintf(var_name, 31, "Field %2d", *f_id);
-  else
-    strcpy(var_name, "Work array");
-  var_name[31] = '\0';
-
-  cs_gradient_tensor(var_name,
-                     gradient_type,
-                     halo_type,
-                     *inc,
-                     *n_r_sweeps,
-                     *iwarnp,
-                     *imligp,
-                     *epsrgp,
-                     *climgp,
-                     coefav,
-                     coefbv,
-                     pvar,
                      grad);
 }
 

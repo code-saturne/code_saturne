@@ -103,37 +103,6 @@ void CS_PROCF (grdpor, GRDPOR)
 );
 
 /*----------------------------------------------------------------------------
- * Compute cell gradient of scalar field or component of vector or
- * tensor field.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (cgdcel, CGDCEL)
-(
- const cs_int_t   *const f_id,        /* <-- field id, or -1                  */
- const cs_int_t   *const imrgra,      /* <-- gradient computation mode        */
- const cs_int_t   *const inc,         /* <-- 0 or 1: increment or not         */
- const cs_int_t   *const iccocg,      /* <-- 1 or 0: recompute COCG or not    */
- const cs_int_t   *const n_r_sweeps,  /* <-- >1: with reconstruction          */
- const cs_int_t   *const idimtr,      /* <-- 0, 1, 2: scalar, vector, tensor
-                                             in case of rotation              */
- const cs_int_t   *const iphydp,      /* <-- use hydrosatatic pressure        */
- const cs_int_t   *const ipond,       /* <-- >0: weighted gradient computation*/
- const cs_int_t   *const iwarnp,      /* <-- verbosity level                  */
- const cs_int_t   *const imligp,      /* <-- type of clipping                 */
- const cs_real_t  *const epsrgp,      /* <-- precision for iterative gradient
-                                             calculation                      */
- const cs_real_t  *const extrap,      /* <-- extrapolate gradient at boundary */
- const cs_real_t  *const climgp,      /* <-- clipping coefficient             */
-       cs_real_3_t       f_ext[],     /* <-- exterior force generating the
-                                             hydrostatic pressure             */
- const cs_real_t         coefap[],    /* <-- boundary condition term          */
- const cs_real_t         coefbp[],    /* <-- boundary condition term          */
-       cs_real_t         pvar[],      /* <-- gradient's base variable         */
-       cs_real_t         ktvar[],     /* <-- gradient coefficient variable    */
-       cs_real_3_t       grad[]       /* <-> gradient                         */
-);
-
-/*----------------------------------------------------------------------------
  * Compute cell gradient of vector field.
  *----------------------------------------------------------------------------*/
 
@@ -152,29 +121,6 @@ void CS_PROCF (cgdvec, CGDVEC)
  const cs_real_33_t            coefbv[],  /* <-- boundary condition term      */
        cs_real_3_t             pvar[],    /* <-- gradient's base variable     */
        cs_real_33_t            gradv[]    /* <-> gradient of the variable
-                                                 (du_i/dx_j : gradv[][i][j])  */
-);
-
-/*----------------------------------------------------------------------------
- * Compute cell gradient of tensor field.
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (cgdts, CGDTS)
-(
- const cs_int_t         *const f_id,
- const cs_int_t         *const imrgra,    /* <-- gradient computation mode    */
- const cs_int_t         *const inc,       /* <-- 0 or 1: increment or not     */
- const cs_int_t         *const n_r_sweeps,    /* <-- >1: with reconstruction  */
- const cs_int_t         *const iwarnp,    /* <-- verbosity level              */
- const cs_int_t         *const imligp,    /* <-- type of clipping             */
- const cs_real_t        *const epsrgp,    /* <-- precision for iterative
-                                                 gradient calculation         */
- const cs_real_t        *const climgp,    /* <-- clipping coefficient         */
- const cs_real_6_t             coefav[],  /* <-- boundary condition term      */
- const cs_real_66_t            coefbv[],  /* <-- boundary condition term      */
-
-       cs_real_6_t             pvar[],    /* <-- gradient's base variable     */
-       cs_real_63_t            grad[]    /* <-> gradient of the variable
                                                  (du_i/dx_j : gradv[][i][j])  */
 );
 

@@ -2854,6 +2854,64 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function for scalar gradient
+
+    subroutine cs_f_gradient_s(f_id, imrgra, inc, iccocg, n_r_sweeps,          &
+                               idimtr, iwarnp, imligp,                         &
+                               epsrgp, extrap, climgp,                         &
+                               coefap, coefbp, pvar, grad)                     &
+      bind(C, name='cs_f_gradient_s')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id, imrgra, inc, iccocg, n_r_sweeps
+      integer(c_int), value :: idimtr, iwarnp, imligp
+      real(kind=c_double), value :: epsrgp, extrap, climgp
+      real(kind=c_double), dimension(*), intent(in) :: coefap, coefbp
+      real(kind=c_double), dimension(*), intent(inout) :: pvar
+      real(kind=c_double), dimension(*), intent(inout) :: grad
+    end subroutine cs_f_gradient_s
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function for scalar potential gradient
+
+    subroutine cs_f_gradient_potential(f_id, imrgra, inc, iccocg, n_r_sweeps,  &
+                                       iphydp,  iwarnp, imligp,                &
+                                       epsrgp, extrap, climgp,                 &
+                                       f_ext, coefap, coefbp, pvar, grad)      &
+      bind(C, name='cs_f_gradient_potential')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id, imrgra, inc, iccocg, n_r_sweeps
+      integer(c_int), value :: iphydp, iwarnp, imligp
+      real(kind=c_double), value :: epsrgp, extrap, climgp
+      real(kind=c_double), dimension(*), intent(in) :: coefap, coefbp
+      real(kind=c_double), dimension(*), intent(inout) :: f_ext, pvar
+      real(kind=c_double), dimension(*), intent(inout) :: grad
+    end subroutine cs_f_gradient_potential
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function for scalar gradient with weighting
+
+    subroutine cs_f_gradient_weighted_s(f_id, imrgra, inc, iccocg, n_r_sweeps, &
+                                        iphydp,  iwarnp, imligp,               &
+                                        epsrgp, extrap, climgp,                &
+                                        f_ext, coefap, coefbp, pvar, c_weight, &
+                                        grad)                                  &
+      bind(C, name='cs_f_gradient_weighted_s')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: f_id, imrgra, inc, iccocg, n_r_sweeps
+      integer(c_int), value :: iphydp, iwarnp, imligp
+      real(kind=c_double), value :: epsrgp, extrap, climgp
+      real(kind=c_double), dimension(*), intent(in) :: coefap, coefbp
+      real(kind=c_double), dimension(*), intent(inout) :: f_ext, pvar
+      real(kind=c_double), dimension(*), intent(inout) :: c_weight, grad
+    end subroutine cs_f_gradient_weighted_s
+
+    !---------------------------------------------------------------------------
+
     ! Interface to C function computing total, min, and max cell fluid volumes
 
     subroutine cs_f_mesh_quantities_fluid_vol_reductions()  &
@@ -3533,13 +3591,8 @@ contains
 
     ! Local variables
 
-    integer        :: hyd_p_flag
-    integer        :: idimtr, ipond
+    integer        :: idimtr
     type(c_ptr)    :: f
-    real(kind=c_double), dimension(:,:), pointer :: f_ext
-    real(kind=c_double), dimension(:), pointer :: c_weight
-    real(kind=c_double), dimension(1), target :: rvoid1
-    real(kind=c_double), dimension(1,1), target :: rvoid2
 
     ! Preparation for periodicity of rotation
 
@@ -3568,17 +3621,9 @@ contains
 
     ! The gradient of a potential (pressure, ...) is a vector
 
-    hyd_p_flag = 0
-    ipond = 0
-    rvoid2(1,1) = 0
-    rvoid1(1) = 0
-    f_ext => rvoid2
-    c_weight => rvoid1
-
-    call cgdcel(f_id, imrgra, inc, recompute_cocg, nswrgp,                     &
-                idimtr, hyd_p_flag, ipond, iwarnp, imligp, epsrgp, extrap,     &
-                climgp, f_ext, coefap, coefbp,                                 &
-                pvar, c_weight, grad)
+    call cs_f_gradient_s(f_id, imrgra, inc, recompute_cocg, nswrgp,            &
+                         idimtr, iwarnp, imligp,                               &
+                         epsrgp, extrap, climgp, coefap, coefbp, pvar, grad)
 
   end subroutine gradient_s
 
@@ -3631,9 +3676,6 @@ contains
     ! Local variables
 
     integer          :: imrgrp
-    integer          :: idimtr, ipond
-    real(kind=c_double), dimension(:), pointer :: c_weight
-    real(kind=c_double), dimension(1), target :: rvoid1
 
     ! Use iterative gradient
 
@@ -3645,15 +3687,10 @@ contains
 
     ! The gradient of a potential (pressure, ...) is a vector
 
-    idimtr = 0
-    ipond = 0
-    rvoid1(1) = 0
-    c_weight => rvoid1
-
-    call cgdcel(f_id, imrgrp, inc, recompute_cocg, nswrgp,                     &
-                idimtr, hyd_p_flag, ipond, iwarnp, imligp, epsrgp, extrap,     &
-                climgp, f_ext, coefap, coefbp,                                 &
-                pvar, c_weight, grad)
+    call cs_f_gradient_potential(f_id, imrgrp, inc, recompute_cocg, nswrgp,    &
+                                 hyd_p_flag, iwarnp, imligp,                   &
+                                 epsrgp, extrap, climgp,                       &
+                                 f_ext, coefap, coefbp, pvar, grad)
 
   end subroutine gradient_potential_s
 
@@ -3702,24 +3739,14 @@ contains
     double precision, intent(in) :: epsrgp, climgp, extrap
     real(kind=c_double), dimension(nfabor), intent(in) :: coefap, coefbp
     real(kind=c_double), dimension(ncelet), intent(inout) :: pvar
-    real(kind=c_double), dimension(:), intent(in) :: c_weight
+    real(kind=c_double), dimension(:), intent(inout) :: c_weight
     real(kind=c_double), dimension(:,:), pointer, intent(in) :: f_ext
     real(kind=c_double), dimension(3, ncelet), intent(out) :: grad
 
-    ! Local variables
-
-    integer          :: idimtr, ipond
-
-    ! The current variable is a scalar
-    idimtr = 0
-
-    ! the pressure gradient coefficient weighting is used
-    ipond = 1
-
-    call cgdcel(f_id, imrgra, inc, recompute_cocg, nswrgp,                     &
-                idimtr, hyd_p_flag, ipond, iwarnp, imligp, epsrgp, extrap,     &
-                climgp, f_ext, coefap, coefbp,                                 &
-                pvar, c_weight, grad)
+    call cs_f_gradient_weighted_s(f_id, imrgra, inc, recompute_cocg, nswrgp,   &
+                                  hyd_p_flag, iwarnp, imligp, epsrgp, extrap,  &
+                                  climgp, f_ext, coefap, coefbp,               &
+                                  pvar, c_weight, grad)
 
   end subroutine gradient_weighted_s
 
