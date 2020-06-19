@@ -332,7 +332,7 @@ cs_log_strlen(const char  *str)
           if (c <= 0x7F) {
             retval++;
           }
-          else if (c >= 0xC0 || c <= 0xFD) {
+          else {
             multibyte = true;
             retval++;
           }
