@@ -143,11 +143,11 @@ if test "x$GCC" = "xyes"; then
 
   cs_ac_cc_version=`$CC $user_CFLAGS --version 2>&1 | head -1`
 
-  if test -n "`echo cs_ac_cc_version | grep ICC`" ; then
+  if test -n "`echo $cs_ac_cc_version | grep ICC`" ; then
     cs_gcc=icc
-  elif test -n "`echo cs_ac_cc_version | grep ICX`" ; then
+  elif test -n "`echo $cs_ac_cc_version | grep ICX`" ; then
     cs_gcc=icx
-  elif test -n "`echo cs_ac_cc_version | grep clang`" ; then
+  elif test -n "`echo $cs_ac_cc_version | grep clang`" ; then
     cs_gcc=clang
   else
     cs_gcc=gcc
@@ -924,7 +924,7 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
 
     cs_fc_version=`echo $cs_ac_fc_version | sed 's/[a-zA-Z()]//g'`
 
-    echo "compiler '$FC' is Intel Fortran"
+    echo "compiler '$FC' is Intel Fortran NextGen"
 
     # Version strings for logging purposes and known compiler flag
     $FC $user_FCLAGS-V > $outfile 2>&1
