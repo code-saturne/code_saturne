@@ -141,11 +141,13 @@ if test "x$GCC" = "xyes"; then
   # Intel and LLVM compilers may pass as GCC but
   # may be recognized by version string
 
-  if test -n "`$CC --version | grep ICC`" ; then
+  cs_ac_cc_version=`$CC $user_CFLAGS --version 2>&1 | head -1`
+
+  if test -n "`echo cs_ac_cc_version | grep ICC`" ; then
     cs_gcc=icc
-  elif test -n "`$CC --version | grep ICX`" ; then
+  elif test -n "`echo cs_ac_cc_version | grep ICX`" ; then
     cs_gcc=icx
-  elif test -n "`$CC --version | grep clang`" ; then
+  elif test -n "`echo cs_ac_cc_version | grep clang`" ; then
     cs_gcc=clang
   else
     cs_gcc=gcc
@@ -157,7 +159,6 @@ if test "x$cs_gcc" = "xgcc"; then
 
   # Version strings for logging purposes and known compiler flag
   $CC -v > $outfile 2>&1
-  cs_ac_cc_version=`$CC --version 2>&1 | head -1`
   cs_cc_compiler_known=yes
 
   # Practical version info for option setting
@@ -243,22 +244,16 @@ if test "x$cs_gcc" = "xgcc"; then
       ;;
   esac
 
-# Otherwise, are we using icc or icx ?
-#-------------------------------------
+# Otherwise, are we using ICC Classic ?
+#--------------------------------------
 
-elif test "x$cs_gcc" = "xicc" -o "x$cs_gcc" = "xicx" ; then
+elif test "x$cs_gcc" = "xicc" ; then
 
-  if test "x$cs_gcc" = "xicc" ; then
-    cs_cc_version=`echo $CC --version | grep ICC |sed 's/[a-zA-Z()]//g'`
-    echo "compiler '$CC' is Intel ICC"
-  else
-    cs_cc_version=`echo $CC --version | grep ICX |sed 's/[a-zA-Z()]//g'`
-    echo "compiler '$CC' is Intel ICX"
-  fi
+  cs_cc_version=`echo $cs_ac_cc_version | grep ICC |sed 's/[a-zA-Z()]//g'`
+  echo "compiler '$CC' is Intel ICC Classic"
 
   # Version strings for logging purposes and known compiler flag
-  $CC -V conftest.c > $outfile 2>&1
-  cs_ac_cc_version=`$CC --version 2>&1 | head -1`
+  $CC $user_CFLAGS -V conftest.c > $outfile 2>&1
   cs_cc_compiler_known=yes
 
   # Some version numbers
@@ -281,6 +276,34 @@ elif test "x$cs_gcc" = "xicc" -o "x$cs_gcc" = "xicx" ; then
       cflags_default_omp="-openmp"
       ;;
   esac
+
+# Otherwise, are we using ICC NextGen ?
+#--------------------------------------
+
+elif test "x$cs_gcc" = "xicc" -o "x$cs_gcc" = "xicx" ; then
+
+  cs_cc_version=`echo $cs_ac_cc_version | grep ICX |sed 's/[a-zA-Z()]//g'`
+  echo "compiler '$CC' is Intel ICC NextGen"
+
+  # Version strings for logging purposes and known compiler flag
+  $CC $user_CFLAGS -V conftest.c > $outfile 2>&1
+  cs_cc_compiler_known=yes
+
+  # Some version numbers
+  cs_cc_vers_major=`echo $cs_ac_cc_version | cut -f 3 -d" " | cut -f1 -d.`
+  cs_cc_vers_minor=`echo $cs_ac_cc_version | cut -f 3 -d" " | cut -f2 -d.`
+  cs_cc_vers_patch=`echo $cs_ac_cc_version | cut -f 3 -d" " | cut -f3 -d.`
+  test -n "$cs_cc_vers_major" || cs_cc_vers_major=0
+  test -n "$cs_cc_vers_minor" || cs_cc_vers_minor=0
+  test -n "$cs_cc_vers_patch" || cs_cc_vers_patch=0
+
+  # Default compiler flags
+  # (temporarily disable "operands evaluated in unspecified order" remark -- 981)
+  cflags_default="-funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused -wd981"
+  cflags_default_dbg="-g -O0 -ftrapuv"
+  cflags_default_opt="-O2"
+  cflags_default_hot="-O3"
+  cflags_default_omp="-qopenmp"
 
 # Otherwise, are we using clang ?
 #--------------------------------
@@ -380,7 +403,7 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
 fi
 
 # Otherwise, are we using the Cray compiler ?
-#------------------------------------------
+#--------------------------------------------
 
 if test "x$cs_cc_compiler_known" != "xyes" ; then
 
@@ -462,11 +485,13 @@ if test "x$GXX" = "xyes"; then
   # Intel and LLVM compilers may pass as GXX but
   # may be recognized by version string
 
-  if test -n "`$CXX --version | grep ICC`" ; then
+  cs_ac_cxx_version=`$CXX $user_CXXFLAGS --version 2>&1 | head -1`
+
+  if test -n "`echo $cs_ac_cxx_version | grep ICC`" ; then
     cs_gxx=icpc
-  elif test -n "`$CXX --version | grep ICX`" ; then
+  elif test -n "`echo $cs_ac_cxx_version | grep ICX`" ; then
     cs_gxx=icpx
-  elif test -n "`$CXX --version | grep clang`" ; then
+  elif test -n "`echo $cs_ac_cxx_version | grep clang`" ; then
     cs_gxx=clang
   else
     cs_gxx=g++
@@ -478,7 +503,6 @@ if test "x$cs_gxx" = "xg++"; then
 
   # Version strings for logging purposes and known compiler flag
   $CXX -v > $outfile 2>&1
-  cs_ac_cxx_version=`$CXX --version 2>&1 | head -1`
   cs_cxx_compiler_known=yes
 
   # Practical version info for option setting
@@ -562,22 +586,16 @@ if test "x$cs_gxx" = "xg++"; then
       ;;
   esac
 
-# Otherwise, are we using icpc or icpx ?
-#---------------------------------------
+# Otherwise, are we using ICC Classic ?
+#--------------------------------------
 
-elif test "x$cs_gxx" = "xicpc" -o "x$cs_gxx" = "xicpx"; then
+elif test "x$cs_gxx" = "xicpc"; then
 
-  if test "x$cs_gxx" = "xicpc"; then
-    cs_cxx_version=`echo $CXX --version | grep ICC |sed 's/[a-zA-Z()]//g'`
-    echo "compiler '$CXX' is Intel ICC"
-  elif test "x$cs_gxx" = "xicpx"; then
-    cs_cxx_version=`echo $CXX --version | grep ICX |sed 's/[a-zA-Z()]//g'`
-    echo "compiler '$CXX' is Intel ICX"
-  fi
+  cs_cxx_version=`echo $CXX --version | grep ICC |sed 's/[a-zA-Z()]//g'`
+  echo "compiler '$CXX' is Intel ICC Classic"
 
   # Version strings for logging purposes and known compiler flag
-  $CXX -V conftest.c > $outfile 2>&1
-  cs_ac_cxx_version=`$CXX --version 2>&1 | head -1`
+  $CXX $user_CXXFLAGS -V conftest.c > $outfile 2>&1
   cs_cxx_compiler_known=yes
 
   cs_cxx_vers_major=`echo $cs_ac_cxx_version | cut -f 3 -d" " | cut -f1 -d.`
@@ -600,6 +618,33 @@ elif test "x$cs_gxx" = "xicpc" -o "x$cs_gxx" = "xicpx"; then
       cxxflags_default_omp="-openmp"
       ;;
   esac
+
+# Otherwise, are we using ICC NextGen ?
+#--------------------------------------
+
+elif test "x$cs_gxx" = "xicpc" -o "x$cs_gxx" = "xicpx"; then
+
+  cs_cxx_version=`echo $CXX --version | grep ICX |sed 's/[a-zA-Z()]//g'`
+  echo "compiler '$CXX' is Intel ICC NextGen"
+
+  # Version strings for logging purposes and known compiler flag
+  $CXX $user_CXXFLAGS -V conftest.c > $outfile 2>&1
+  cs_cxx_compiler_known=yes
+
+  cs_cxx_vers_major=`echo $cs_ac_cxx_version | cut -f 3 -d" " | cut -f1 -d.`
+  cs_cxx_vers_minor=`echo $cs_ac_cxx_version | cut -f 3 -d" " | cut -f2 -d.`
+  cs_cxx_vers_patch=`echo $cs_ac_cxx_version | cut -f 3 -d" " | cut -f3 -d.`
+  test -n "$cs_cxx_vers_major" || cs_cxx_vers_major=0
+  test -n "$cs_cxx_vers_minor" || cs_cxx_vers_minor=0
+  test -n "$cs_cxx_vers_patch" || cs_cxx_vers_patch=0
+
+  # Default compiler flags
+  cxxflags_default="-Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cxxflags_default_dbg="-g -O0 -ftrapuv"
+  cxxflags_default_opt="-O2"
+  cxxflags_default_hot="-O3"
+  cxxflags_default_omp="-qopenmp"
+  cxxflags_default_std="-funsigned-char"
 
 # Otherwise, are we using clang ?
 #--------------------------------
@@ -764,10 +809,12 @@ fcflags_default_prf="-g"
 
 cs_gfortran=no
 
+cs_ac_fc_version=`$FC $user_FCFLAGS --version 2>&1 | head -1`
+
 # Are we using gfortran ?
 #------------------------
 
-$FC --version 2>&1 | grep 'GNU Fortran' > /dev/null
+echo $cs_ac_fc_version | grep 'GNU Fortran' > /dev/null
 
 if test "$?" = "0" ; then
 
@@ -780,7 +827,6 @@ if test "$?" = "0" ; then
 
   # Version strings for logging purposes and known compiler flag
   $FC -v > $outfile 2>&1
-  cs_ac_fc_version=`$FC --version 2>&1 | head -1`
   cs_fc_compiler_known=yes
 
   # Practical version info for option setting
@@ -830,19 +876,18 @@ fi
 
 if test "x$cs_fc_compiler_known" != "xyes" ; then
 
-  # Are we using ifort ?
-  #---------------------
+  # Are we using IFORT Classic ?
+  #-----------------------------
 
-  $FC --version 2>&1 | grep 'IFORT' > /dev/null
+  echo $cs_ac_fc_version | grep 'ifort' > /dev/null
   if test "$?" = "0" ; then
 
-    cs_fc_version=`echo $FC --version | grep ifort |sed 's/[a-zA-Z()]//g'`
+    cs_fc_version=`echo $cs_ac_fc_version | sed 's/[a-zA-Z()]//g'`
 
-    echo "compiler '$FC' is Intel Fortran"
+    echo "compiler '$FC' is Intel Fortran Classic"
 
     # Version strings for logging purposes and known compiler flag
-    $FC -V > $outfile 2>&1
-    cs_ac_fc_version=`$FC --version 2>&1 | head -1`
+    $FC $user_FCLAGS -V > $outfile 2>&1
     cs_fc_compiler_known=yes
 
     cs_fc_vers_major=`echo $cs_ac_fc_version | cut -f 3 -d" " | cut -f1 -d.`
@@ -871,6 +916,42 @@ fi
 
 if test "x$cs_fc_compiler_known" != "xyes" ; then
 
+  # Are we using IFORT NextGen ?
+  #-----------------------------
+
+  echo $cs_ac_fc_version | grep 'ifx' > /dev/null
+  if test "$?" = "0" ; then
+
+    cs_fc_version=`echo $cs_ac_fc_version | sed 's/[a-zA-Z()]//g'`
+
+    echo "compiler '$FC' is Intel Fortran"
+
+    # Version strings for logging purposes and known compiler flag
+    $FC $user_FCLAGS-V > $outfile 2>&1
+    cs_fc_compiler_known=yes
+
+    cs_fc_vers_major=`echo $cs_ac_fc_version | cut -f 3 -d" " | cut -f1 -d.`
+    cs_fc_vers_minor=`echo $cs_ac_fc_version | cut -f 3 -d" " | cut -f2 -d.`
+    cs_fc_vers_patch=`echo $cs_ac_fc_version | cut -f 3 -d" " | cut -f3 -d.`
+    test -n "$cs_fc_vers_major" || cs_fc_vers_major=0
+    test -n "$cs_fc_vers_minor" || cs_fc_vers_minor=0
+    test -n "$cs_fc_vers_patch" || cs_fc_vers_patch=0
+
+    # Default compiler flags
+    # (temporarily disable "unused variable" remark -- 7712)
+    fcflags_default="-cpp -fpic -warn -diag-disable 7712"
+    fcflags_default_dbg="-g -O0 -traceback -check all -check nopointer -fpe0 -ftrapuv"
+    fcflags_default_opt="-O2"
+    fcflags_default_hot="-O3"
+    fcflags_default_omp="-qopenmp"
+
+  fi
+fi
+
+if test "x$cs_fc_compiler_known" != "xyes" ; then
+
+  cs_ac_fc_version=""
+
   # Are we using pgf95 ?
   #---------------------
 
@@ -881,7 +962,7 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
 
     # Version strings for logging purposes and known compiler flag
     $FC -V > $outfile 2>&1
-    cs_ac_cc_version=`grep -i pgf $outfile`
+    cs_ac_fc_version=`grep -i pgf $outfile`
     cs_fc_compiler_known=yes
 
     # Default compiler flags
@@ -1003,12 +1084,12 @@ nvccflags_default_dbg="-g"
 nvccflags_default_opt="-O2"
 nvccflags_default_prf="-g"
 
+
 ############
 #          #
 #  Linker  #
 #          #
 ############
-
 
 # Default linker flags
 #---------------------

@@ -90,6 +90,7 @@ sbin/bootstrap \
 sbin/clean \
 sbin/rmb \
 config/cs_auto_flags.sh \
+config/code_saturne_build.cfg.in.in \
 m4/cs_blas.m4 \
 m4/cs_catalyst.m4 \
 m4/cs_ccm.m4 \
@@ -124,6 +125,7 @@ cs_version.h
 DISTCLEANFILES = \
 bin/code_saturne \
 bin/cs_package.py \
+lib/code_saturne_build.cfg \
 cs_config.h \
 cs_version.h \
 libtool_cuda
@@ -165,6 +167,33 @@ edit_package = sed \
 	-e 's|@docdir[@]|$(docdir)|g' \
 	-e 's|@pdfdir[@]|$(pdfdir)|g' \
 	-e 's|@sysconfdir[@]|$(sysconfdir)|g' \
+	-e 's|@PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
+	-e 's|@PACKAGE_TARNAME[@]|$(PACKAGE_TARNAME)|g' \
+	-e 's|@PACKAGE_VERSION[@]|$(PACKAGE_VERSION)|g' \
+	-e 's|@PACKAGE_STRING[@]|$(PACKAGE_STRING)|g' \
+	-e 's|@PACKAGE_BUGREPORT[@]|$(PACKAGE_BUGREPORT)|g' \
+	-e 's|@PACKAGE_URL[@]|$(PACKAGE_URL)|g' \
+	-e 's|@SALOME_KERNEL[@]|$(SALOME_KERNEL)|g' \
+	-e 's|@SALOMEENVCMD[@]|$(SALOMEENVCMD)|g'
+
+edit_cfg = sed \
+	-e 's|@cfg_prefix[@]|$(prefix)|g' \
+	-e 's|@cfg_exec_prefix[@]|$(exec_prefix)|g' \
+	-e 's|@cfg_bindir[@]|$(bindir)|g' \
+	-e 's|@cfg_includedir[@]|$(includedir)|g' \
+	-e 's|@cfg_pkgincludedir[@]|$(pkgincludedir)|g' \
+	-e 's|@cfg_libdir[@]|$(libdir)|g' \
+	-e 's|@cfg_libexecdir[@]|$(libexecdir)|g' \
+	-e 's|@cfg_pkglibexecdir[@]|$(pkglibexecdir)|g' \
+	-e 's|@cfg_pythondir[@]|$(pythondir)|g' \
+	-e 's|@cfg_pkgpythondir[@]|$(pkgpythondir)|g' \
+	-e 's|@cfg_localedir[@]|$(localedir)|g' \
+	-e 's|@cfg_datarootdir[@]|$(datarootdir)|g' \
+	-e 's|@cfg_datadir[@]|$(datadir)|g' \
+	-e 's|@cfg_pkgdatadir[@]|$(pkgdatadir)|g' \
+	-e 's|@cfg_docdir[@]|$(docdir)|g' \
+	-e 's|@cfg_pdfdir[@]|$(pdfdir)|g' \
+	-e 's|@cfg_sysconfdir[@]|$(sysconfdir)|g' \
 	-e 's|@PACKAGE_NAME[@]|$(PACKAGE_NAME)|g' \
 	-e 's|@PACKAGE_TARNAME[@]|$(PACKAGE_TARNAME)|g' \
 	-e 's|@PACKAGE_VERSION[@]|$(PACKAGE_VERSION)|g' \
@@ -221,9 +250,28 @@ bin/code_saturne: $(srcdir)/bin/code_saturne.$(LAUNCHER_EXT).in
 cs_version.h: Makefile $(top_srcdir)/src/base/cs_version.h.in
 	$(PYTHON) ${top_srcdir}/build-aux/cs_version.py --replace ${top_srcdir}/src/base/cs_version.h.in cs_version.h
 
+config/code_saturne_build.cfg.in: $(srcdir)/Makefile.in $(top_builddir)/config.status
+	@case '$?' in \
+	  *config.status*) \
+	    echo ' $(SHELL) ./config.status'; \
+	    $(SHELL) ./config.status;; \
+	  *) \
+	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__maybe_remake_depfiles)'; \
+	    cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__maybe_remake_depfiles);; \
+	esac;
+
+lib/code_saturne_build.cfg: Makefile config/code_saturne_build.cfg.in
+	rm -f $@ $@.tmp
+	$(MKDIR_P) lib
+	srcdir=''; \
+	$(edit_cfg) config/code_saturne_build.cfg.in >$@.tmp
+	mv $@.tmp $@
+	$(PYTHON) ${top_srcdir}/build-aux/cs_version.py --replace $@ $@
+
 BUILT_SOURCES = \
+cs_version.h \
 bin/cs_package.py \
-cs_version.h
+lib/code_saturne_build.cfg
 
 CLEANFILES = $(edit_scripts)
 EXTRA_DIST += bin/code_saturne.py.in bin/cs_package.py.in \
@@ -238,6 +286,9 @@ bin/code_saturne
 if HAVE_SHELL_LAUNCHER
 nodist_bin_SCRIPTS += bin/code_saturne.py
 endif
+
+nodist_bin_SCRIPTS = \
+bin/code_saturne
 
 # Install Python library
 
@@ -464,11 +515,13 @@ all-local:
 
 install-data-local:
 	@$(NORMAL_INSTALL)
+	cp lib/code_saturne_build.cfg "$(DESTDIR)$(libdir)"
 	test -z "$(pkgdatadir)/data/thch" || $(MKDIR_P) "$(DESTDIR)$(pkgdatadir)/data/thch"
 	tar xvJf "$(top_srcdir)/data/thch/dp_radiat_MFS.tar.xz" -C "$(DESTDIR)$(pkgdatadir)/data/thch"
 
 uninstall-local:
 	rm -rf "$(DESTDIR)$(pkgdatadir)/data/thch/dp_radiat_MFS"
+	rm -f"$(DESTDIR)$(libdir)"
 	@$(NORMAL_UNINSTALL)
 
 install-shortcut:

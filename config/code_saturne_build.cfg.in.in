@@ -1,0 +1,241 @@
+# code_saturne build and install configuration information.
+
+# Generated automaticaly at build and install stages.
+
+#-------------------------------------------------------------------------------
+
+# This file is part of Code_Saturne, a general-purpose CFD tool.
+#
+# Copyright (C) 1998-2020 EDF S.A.
+#
+# This program is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License as published by the Free Software
+# Foundation; either version 2 of the License, or (at your option) any later
+# version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+# details.
+#
+# You should have received a copy of the GNU General Public License along with
+# this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+# Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+#-------------------------------------------------------------------------------
+
+# Package information
+# -------------------
+
+[package]
+
+name: @PACKAGE_NAME@
+tarname: @PACKAGE_TARNAME@
+pkgversion: @PACKAGE_VERSION@
+string: @PACKAGE_STRING@
+bugreport: @PACKAGE_BUGREPORT@
+url: @PACKAGE_URL@
+version: @cs_version@
+version_full: @cs_version_full@
+version_short: @cs_version_short@
+revision: @cs_revision@
+
+# Installation directories
+# ------------------------
+
+[install]
+
+prefix: @cfg_prefix@
+exec_prefix: @cfg_exec_prefix@
+bindir: @cfg_bindir@
+includedir: @cfg_includedir@
+pkgincludedir: @cfg_pkgincludedir@
+libdir: @cfg_libdir@
+libexecdir: @cfg_libexecdir@
+pkglibexecdir: @cfg_pkglibexecdir@
+pythondir: @cfg_pythondir@
+pkgpythondir: @cfg_pkgpythondir@
+localedir: @cfg_localedir@
+datarootdir: @cfg_datarootdir@
+datadir: @cfg_datadir@
+pkgdatadir: @cfg_pkgdatadir@
+docdir: @cfg_docdir@
+pdfdir: @cfg_pdfdir@
+sysconfdir: @cfg_sysconfdir@
+
+# Compilers and associated flags
+# ------------------------------
+
+[compilers]
+
+cc: @CC@
+cxx: @CXX@
+fc: @FC@
+ld: @CS_LD@
+
+cc_vendor: @cc_vendor@
+cc_version: @cc_version@
+cxx_vendor: @cxx_vendor@
+cxx_version: @cxx_version@
+fc_vendor: @fc_vendor@
+fc_version: @fc_version@
+nvcc_version: @nvcc_version@
+
+cflags: @CFLAGS@ @CFLAGS_DBG@ @CFLAGS_OPT@
+cxxflags: @CXXFLAGS@ @CXXFLAGS_DBG@ @CXXFLAGS_OPT@
+fcflags: @FCFLAGS@ @FCFLAGS_DBG@ @FCFLAGS_OPT@
+
+cppflags: @CPPFLAGS@
+ldflags: @LDFLAGS@
+libs: @LIBS@ @FCLIBS@
+
+fcmodinclude: @FCMODINCLUDE@
+rpath: @LDRPATH@
+special_user_link: @cs_special_user_link@
+
+[python]
+
+python: @PYTHON@
+
+# Execution environment
+#----------------------
+
+[environment]
+
+env_modules: @cs_env_modules@
+env_modulecmd: @MODULECMD@
+
+# SALOME-related information
+
+salome_env: @SALOMEENVCMD@
+
+# Optional features
+#------------------
+
+[features]
+
+debug: @debug@
+relocatable: @relocatable@
+shared: @enable_shared@
+gui: @cs_have_gui@
+frontend: @cs_have_frontend@
+mpi: @cs_have_mpi@
+openmp: @cs_have_openmp@
+cuda: @cs_have_cuda@
+long-gnum: @cs_have_long_gnum@
+build_os: @build_os@
+
+# Library information
+#--------------------
+
+[ple]
+variant: @ple_type@
+cppflags: @PLE_CPPFLAGS@
+ldflags: @PLE_LDFLAGS@
+libs: @PLE_LIBS@
+
+[blas]
+have: @cs_have_blas@
+cppflags: @BLAS_CPPFLAGS@
+ldflags: @BLAS_LDFLAGS@
+libs: @BLAS_LIBS@
+
+[ccm]
+have: @cs_have_ccm@
+cppflags: @CCM_CPPFLAGS@
+ldflags: @CCM_LDFLAGS@
+libs: @CCM_LIBS@
+
+[cgns]
+have: @cs_have_cgns@
+cppflags: @CGNS_CPPFLAGS@
+ldflags: @CGNS_LDFLAGS@
+libs: @CGNS_LIBS@
+
+[hdf5]
+have: @cs_have_hdf5@
+cppflags: @HDF5_CPPFLAGS@
+ldflags: @HDF5_LDFLAGS@
+libs: @HDF5_LIBS@
+
+[med]
+have: @cs_have_med@
+cppflags: @MED_CPPFLAGS@
+ldflags: @MED_LDFLAGS@
+libs: @MED_LIBS@
+
+[catalyst]
+have: @cs_have_catalyst@
+dynamic_load: @cs_py_have_plugin_catalyst@
+cppflags: @CATALYST_CPPFLAGS@
+ldflags: @CATALYST_LDFLAGS@
+libs: @CATALYST_LIBS@
+
+[melissa]
+have: @cs_have_melissa@
+dynamic_load: @cs_py_have_plugin_melissa@
+cppflags: @MELISSA_CPPFLAGS@
+ldflags: @MELISSA_LDFLAGS@
+libs: @MELISSA_LIBS@
+
+[medcoupling]
+have: @cs_have_medcoupling@
+dynamic_load: @cs_py_have_plugin_medcoupling@
+cppflags: @MEDCOUPLING_CPPFLAGS@
+ldflags: @MEDCOUPLING_LDFLAGS@
+libs: @MEDCOUPLING_LIBS@
+
+[eos]
+have: @cs_have_eos@
+prefix: @eos_prefix@
+cppflags: @EOS_CPPFLAGS@
+ldflags: @EOS_LDFLAGS@
+libs: @EOS_LIBS@
+
+[freesteam]
+have: @cs_have_freesteam@
+prefix: @freesteam_prefix@
+cppflags: @FREESTEAM_CPPFLAGS@
+ldflags: @FREESTEAM_LDFLAGS@
+libs: @FREESTEAM_LIBS@
+
+[coolprop]
+have: @cs_have_coolprop@
+prefix: @coolprop_prefix@
+cppflags: @COOLPROP_CPPFLAGS@
+ldflags: @COOLPROP_LDFLAGS@
+libs: @COOLPROP_LIBS@
+pythonpath: @COOLPROPPYTHONPATH@
+
+[metis]
+have: @cs_have_metis@
+cppflags: @METIS_CPPFLAGS@
+ldflags: @METIS_LDFLAGS@
+libs: @METIS_LIBS@
+
+[mpi]
+have: @cs_have_mpi@
+variant: @mpi_type@
+bindir: @mpi_bindir@
+libdir: @mpi_libdir@
+cppflags: @MPI_CPPFLAGS@
+ldflags: @MPI_LDFLAGS@
+libs: @MPI_LIBS@
+
+[cuda]
+have: @cs_have_cuda@
+cppflags: @CUDA_CPPFLAGS@
+ldflags: @CUDA_LDFLAGS@
+libs: @CUDA_LIBS@
+
+[petsc]
+have: @cs_have_petsc@
+cppflags: @PETSC_CPPFLAGS@
+ldflags: @PETSC_LDFLAGS@
+libs: @PETSC_LIBS@
+
+[scotch]
+have: @cs_have_scotch@
+cppflags: @SCOTCH_CPPFLAGS@
+ldflags: @SCOTCH_LDFLAGS@
+libs: @SCOTCH_LIBS@

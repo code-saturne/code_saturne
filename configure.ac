@@ -53,7 +53,7 @@ m4_define([cs_licence_c_comment],
 m4_define([cs_version_string],
           [m4_normalize(esyscmd([build-aux/cs_version.py]))])
 
-AC_INIT([code_saturne],[cs_version_string],[saturne-support@edf.fr],[],[http://code-saturne.org])
+AC_INIT([code_saturne],[cs_version_string],[saturne-support@edf.fr],[],[https://code-saturne.org])
 AC_CONFIG_SRCDIR([src/apps/cs_solver.c])
 
 # Use the config directory for libtool stuff ...
@@ -263,7 +263,13 @@ if test "x$auto_flags" = "xyes" ; then
   AC_SUBST(FCFLAGS_HOT)
 
   AC_SUBST(LDRPATH)
-  AC_SUBST(ccversion, [${cs_cc_version}])
+  AC_SUBST(cc_vendor, [${cs_cc_vendor}])
+  AC_SUBST(cc_version, [${cs_cc_version}])
+  AC_SUBST(cxx_vendor, [${cs_cxx_vendor}])
+  AC_SUBST(cxx_version, [${cs_cxx_version}])
+  AC_SUBST(fc_vendor, [${cs_fc_vendor}])
+  AC_SUBST(fc_version, [${cs_fc_version}])
+  AC_SUBST(nvcc_version, [${cs_nvcc_version}])
 
 fi
 
@@ -563,24 +569,14 @@ fi
 # Checks for additional version information.
 #------------------------------------------------------------------------------
 
-# Define the different version numbers where needed
+# Define the different version number where needed
+# (detailed version numbers are generated during the build step as a
+# precaution, so that when switching revisions not requiring
+# rebuild of the configure file / re-configure, the correct
+# version number is used).
 
 cs_version_short=`$PYTHON ${srcdir}/build-aux/cs_version.py --short`
 AC_SUBST(cs_version_short)
-
-case "$host_os" in
-  mingw* | cygwin)
-    cs_version=`$PYTHON ${srcdir}/build-aux/cs_version.py --short`
-    cs_version_full=`$PYTHON ${srcdir}/build-aux/cs_version.py --full`
-    cs_version_short=`$PYTHON ${srcdir}/build-aux/cs_version.py --short`
-    AC_SUBST(cs_version)
-    AC_SUBST(cs_version_full)
-    AM_SUBST_NOTMAKE(cs_version)
-    AM_SUBST_NOTMAKE(cs_version_full)
-    ;;
-  *)
-    ;;
-esac
 
 #------------------------------------------------------------------------------
 # Optional shared library and plugin support
@@ -1147,7 +1143,8 @@ AC_CONFIG_FILES([Makefile
                  docs/refcard/Makefile docs/theory/Makefile
                  docs/user/Makefile
                  tests/Makefile
-                 bin/cs_config.py])
+                 bin/cs_config.py
+                 config/code_saturne_build.cfg.in])
 
 #------------------------------------------------------------------------------
 
