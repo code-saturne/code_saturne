@@ -250,6 +250,7 @@ if test "x$cs_gcc" = "xgcc"; then
 elif test "x$cs_gcc" = "xicc" ; then
 
   cs_cc_version=`echo $cs_ac_cc_version | grep ICC |sed 's/[a-zA-Z()]//g'`
+  cs_cc_vendor='Intel ICC Classic'
   echo "compiler '$CC' is Intel ICC Classic"
 
   # Version strings for logging purposes and known compiler flag
@@ -283,6 +284,7 @@ elif test "x$cs_gcc" = "xicc" ; then
 elif test "x$cs_gcc" = "xicc" -o "x$cs_gcc" = "xicx" ; then
 
   cs_cc_version=`echo $cs_ac_cc_version | grep ICX |sed 's/[a-zA-Z()]//g'`
+  cs_cc_vendor='Intel ICC NextGen'
   echo "compiler '$CC' is Intel ICC NextGen"
 
   # Version strings for logging purposes and known compiler flag
@@ -591,11 +593,12 @@ if test "x$cs_gxx" = "xg++"; then
 
 elif test "x$cs_gxx" = "xicpc"; then
 
-  cs_cxx_version=`echo $CXX --version | grep ICC |sed 's/[a-zA-Z()]//g'`
+  cs_cxx_version=`echo $cs_ac_cxx_version | grep ICC |sed 's/[a-zA-Z()]//g'`
   echo "compiler '$CXX' is Intel ICC Classic"
 
   # Version strings for logging purposes and known compiler flag
   $CXX $user_CXXFLAGS -V conftest.c > $outfile 2>&1
+  cs_cxx_vendor='Intel ICC Classic'
   cs_cxx_compiler_known=yes
 
   cs_cxx_vers_major=`echo $cs_ac_cxx_version | cut -f 3 -d" " | cut -f1 -d.`
@@ -624,11 +627,12 @@ elif test "x$cs_gxx" = "xicpc"; then
 
 elif test "x$cs_gxx" = "xicpc" -o "x$cs_gxx" = "xicpx"; then
 
-  cs_cxx_version=`echo $CXX --version | grep ICX |sed 's/[a-zA-Z()]//g'`
+  cs_cxx_version=`echo $cs_ac_cxx_version | grep ICX |sed 's/[a-zA-Z()]//g'`
   echo "compiler '$CXX' is Intel ICC NextGen"
 
   # Version strings for logging purposes and known compiler flag
   $CXX $user_CXXFLAGS -V conftest.c > $outfile 2>&1
+  cs_cxx_vendor='Intel ICC NextGen'
   cs_cxx_compiler_known=yes
 
   cs_cxx_vers_major=`echo $cs_ac_cxx_version | cut -f 3 -d" " | cut -f1 -d.`
@@ -883,6 +887,7 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
   if test "$?" = "0" ; then
 
     cs_fc_version=`echo $cs_ac_fc_version | sed 's/[a-zA-Z()]//g'`
+    cs_fc_vendor='Intel IFORT Classic'
 
     echo "compiler '$FC' is Intel Fortran Classic"
 
@@ -923,6 +928,7 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
   if test "$?" = "0" ; then
 
     cs_fc_version=`echo $cs_ac_fc_version | sed 's/[a-zA-Z()]//g'`
+    cs_fc_vendor='Intel IFORT NextGen'
 
     echo "compiler '$FC' is Intel Fortran NextGen"
 
