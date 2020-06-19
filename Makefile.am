@@ -287,9 +287,6 @@ if HAVE_SHELL_LAUNCHER
 nodist_bin_SCRIPTS += bin/code_saturne.py
 endif
 
-nodist_bin_SCRIPTS = \
-bin/code_saturne
-
 # Install Python library
 
 nodist_pkgpython_PYTHON = \
