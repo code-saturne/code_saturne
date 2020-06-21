@@ -404,8 +404,11 @@ cs_cell_polyline_intersect_select(void        *input,
                                                     n_inout,
                                                     NULL);
 
-          /* Segment is inside if n_inout[0] > 0
-           * and n_inout[1] > 0 for two faces */
+          /* Segment is inside cell i if
+           *  n_inout[0] > 0 and t < 0 for a face
+           *  and
+           *  n_inout[1] > 0 and t > 0 for an other face
+           */
           if (c_id0 < _n_cells) {
             /* Intersection of (OD) with the face
              * may be on [OD)
@@ -414,21 +417,26 @@ cs_cell_polyline_intersect_select(void        *input,
               _out[c_id0] += n_inout[1];
 
             /* Intersection of (OD) with the face
-             * may be on (OD]
+             * may be on (OD] (because t < 0)
              * It may enter c_id0 */
             if (t < 0)
               _in[c_id0] += n_inout[0];
           }
+          /* Segment is inside cell j if
+           *  n_inout[0] > 0 and t < 0 for a face
+           *  and
+           *  n_inout[1] > 0 and t > 0 for an other face
+           */
           if (c_id1 < _n_cells) {
             /* Intersection of (OD) with the face
-             * may be on [OD)
-             * It may enter c_id1 */
+             * may be on [OD) (because t > 0)
+             * It may leave c_id1 (if OD.n < 0) */
             if (t >= 0.)
               _out[c_id1] += n_inout[0];
 
             /* Intersection of (OD) with the face
              * may be on (OD]
-             * It may leave c_id0 */
+             * It may enter c_id1 (if 0D.n > 0) */
             if (t < 0.)
               _in[c_id1] += n_inout[1];
           }
@@ -509,9 +517,11 @@ cs_cell_polyline_intersect_select(void        *input,
                                                     sx1,
                                                     n_inout,
                                                     NULL);
-
-          /* Segment is inside if n_inout[0] > 0
-           * and n_inout[1] > 0 for two faces */
+          /* Segment is inside cell i if
+           *  n_inout[0] > 0 and t < 0 for a face
+           *  and
+           *  n_inout[1] > 0 and t > 0 for an other face
+           */
           if (c_id < _n_cells) {
             /* Intersection of (OD) with the face
              * may be on [OD)

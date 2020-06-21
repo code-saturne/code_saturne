@@ -310,7 +310,7 @@ cs_geom_segment_intersect_face(int               orient,
       e1[j] = vtx_1[j] - face_cog[j];
     }
 
-    /* P = e1^e0: same value for the two neighbooring cells
+    /* P = e1^e0: same value for the two neighbouring cells
      * NB: in the other direction to the face normal */
 
     const cs_real_3_t pvec = {e1[1]*e0[2] - e1[2]*e0[1],
@@ -381,7 +381,7 @@ cs_geom_segment_intersect_face(int               orient,
     double og_p = - cs_math_3_dot_product(vgo, pvec);
 
     /* This sign is absolute (ie same result is obtained if the face is seen from
-     * the other neighbooring cell.
+     * the other neighbouring cell.
      */
     int sign_og_p = (og_p > 0 ? 1 : -1);
 
@@ -393,7 +393,7 @@ cs_geom_segment_intersect_face(int               orient,
        * (it means OD points toward cell j)
        * */
 
-      /* We dont care if it is entering or outgoing
+      /* We don't care if it is entering or outgoing
        * but we store this information correctly
        * Convention
        * t > 0: entering i
@@ -445,7 +445,7 @@ cs_geom_segment_intersect_face(int               orient,
         }
       } else {
         n_inout[0]++;
-        /* Incomming intersection on segment [OD] */
+        /* Incoming intersection on segment [OD] */
         if (fabs(og_p) < fabs(od_p))
           n_intersects--;
       }
@@ -454,7 +454,7 @@ cs_geom_segment_intersect_face(int               orient,
       /* Opposite sign (meaning there is a possible intersection of the line
        * with t<0).  */
 
-      /* We dont car if it is entering or outgoing
+      /* We don't care if it is entering or outgoing
        * but we store this information correctly
        * Convention
        * t > 0: entering i
