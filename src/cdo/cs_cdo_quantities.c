@@ -1231,18 +1231,18 @@ cs_cdo_quantities_dump(const cs_cdo_quantities_t  *cdoq)
 
   fprintf(fdump, "\n Quantities structure: %p\n\n", (const void *)cdoq);
 
-  fprintf(fdump, " -cdoq- n_cells =    %d\n", cdoq->n_cells);
-  fprintf(fdump, " -cdoq- n_faces =    %d\n", cdoq->n_faces);
-  fprintf(fdump, " -cdoq- n_edges =    %d\n", cdoq->n_edges);
-  fprintf(fdump, " -cdoq- n_vertices = %d\n", cdoq->n_vertices);
+  fprintf(fdump, " -cdoq- n_cells =    %ld\n", (long)cdoq->n_cells);
+  fprintf(fdump, " -cdoq- n_faces =    %ld\n", (long)cdoq->n_faces);
+  fprintf(fdump, " -cdoq- n_edges =    %ld\n", (long)cdoq->n_edges);
+  fprintf(fdump, " -cdoq- n_vertices = %ld\n", (long)cdoq->n_vertices);
   fprintf(fdump, " -cdoq- Total volume = %.6e\n\n", cdoq->vol_tot);
 
   fprintf(fdump, "\n *** Cell Quantities ***\n");
   fprintf(fdump, "-msg- num.; volume ; center (3)\n");
   for (cs_lnum_t i = 0; i < cdoq->n_cells; i++) {
     cs_lnum_t  p = 3*i;
-    fprintf(fdump, " [%6d] | %12.8e | % -12.8e | % -12.8e |% -12.8e\n",
-            i+1, cdoq->cell_vol[i], cdoq->cell_centers[p],
+    fprintf(fdump, " [%6ld] | %12.8e | % -12.8e | % -12.8e |% -12.8e\n",
+            (long)i+1, cdoq->cell_vol[i], cdoq->cell_centers[p],
             cdoq->cell_centers[p+1], cdoq->cell_centers[p+2]);
   }
 
@@ -1264,8 +1264,8 @@ cs_cdo_quantities_dump(const cs_cdo_quantities_t  *cdoq)
   fprintf(fdump, "-msg- num. ; measure ; unitary vector (3) ; center (3)\n");
   for (cs_lnum_t i = 0; i < cdoq->n_edges; i++) {
     const cs_nvec3_t  e_vect = cs_quant_set_edge_nvec(i, cdoq);
-    fprintf(fdump, " -cdoq-  [%8d] | % -10.6e | % -10.6e | % -10.6e |"
-            " % -10.6e |\n", i+1, e_vect.meas,
+    fprintf(fdump, " -cdoq-  [%8ld] | % -10.6e | % -10.6e | % -10.6e |"
+            " % -10.6e |\n", (long)i+1, e_vect.meas,
             e_vect.unitv[0], e_vect.unitv[1], e_vect.unitv[2]);
   }
 
@@ -1734,8 +1734,8 @@ cs_quant_dump(FILE             *f,
 
   if (_f == NULL) _f = stdout;
 
-  fprintf(_f, " -cdoq-  [%8d] | % -10.6e | % -10.6e | % -10.6e | % -10.6e |"
-          " % -10.6e | % -10.6e | % -10.6e\n", num, q.meas,
+  fprintf(_f, " -cdoq-  [%8ld] | % -10.6e | % -10.6e | % -10.6e | % -10.6e |"
+          " % -10.6e | % -10.6e | % -10.6e\n", (long)num, q.meas,
           q.unitv[0], q.unitv[1], q.unitv[2], q.center[0], q.center[1],
           q.center[2]);
 }

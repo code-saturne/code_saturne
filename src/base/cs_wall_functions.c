@@ -211,7 +211,7 @@ cs_f_wall_functions_get_pointers(int     **iwallf,
 
 void CS_PROCF (wallfunctions, WALLFUNCTIONS)
 (
- const cs_int_t   *const iwallf,
+ const int        *const iwallf,
  const cs_lnum_t  *const ifac,
  const cs_real_t  *const l_visc,
  const cs_real_t  *const t_visc,
@@ -220,7 +220,7 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
  const cs_real_t  *const roughness,
  const cs_real_t  *const rnnb,
  const cs_real_t  *const kinetic_en,
-       cs_int_t         *iuntur,
+       int              *iuntur,
        cs_lnum_t        *nsubla,
        cs_lnum_t        *nlogla,
        cs_real_t        *ustar,
@@ -259,7 +259,7 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
 
 void CS_PROCF (hturbp, HTURBP)
 (
- const cs_int_t   *const iwalfs,
+ const int        *const iwalfs,
  const cs_real_t  *const prl,
  const cs_real_t  *const prt,
  const cs_real_t  *const yplus,

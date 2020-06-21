@@ -90,16 +90,16 @@ static double cs_glob_mesh_warping_threshold = -1.0;
  *----------------------------------------------------------------------------*/
 
 static void
-_select_warped_faces(cs_int_t        n_faces,
+_select_warped_faces(cs_lnum_t       n_faces,
                      double          max_warp_angle,
                      double          face_warping[],
-                     cs_int_t        *p_n_warp_faces,
-                     cs_int_t        *p_warp_face_lst[])
+                     cs_lnum_t      *p_n_warp_faces,
+                     cs_lnum_t      *p_warp_face_lst[])
 {
-  cs_int_t  face_id;
+  cs_lnum_t  face_id;
 
-  cs_int_t  n_warp_faces = 0;
-  cs_int_t  *warp_face_lst = NULL;
+  cs_lnum_t  n_warp_faces = 0;
+  cs_lnum_t  *warp_face_lst = NULL;
 
   if (n_faces > 0) {
 
@@ -107,7 +107,7 @@ _select_warped_faces(cs_int_t        n_faces,
       if (face_warping[face_id] >= max_warp_angle)
         n_warp_faces++;
 
-    BFT_MALLOC(warp_face_lst, n_warp_faces, cs_int_t);
+    BFT_MALLOC(warp_face_lst, n_warp_faces, cs_lnum_t);
 
     n_warp_faces = 0;
 
@@ -689,7 +689,7 @@ _cut_warped_faces(cs_mesh_t      *mesh,
                   cs_lnum_t      *p_n_faces,
                   cs_lnum_t      *p_face_vtx_connect_size,
                   cs_lnum_t      *p_face_cells[],
-                  cs_lnum_t      *p_face_family[],
+                  int            *p_face_family[],
                   char           *p_face_r_gen[],
                   cs_lnum_t      *p_face_vtx_idx[],
                   cs_lnum_t      *p_face_vtx_lst[])
@@ -702,7 +702,8 @@ _cut_warped_faces(cs_mesh_t      *mesh,
 
   fvm_triangulate_state_t  *triangle_state = NULL;
   cs_lnum_t  *new_face_vtx_idx = NULL, *new_face_vtx_lst = NULL;
-  cs_lnum_t  *new_face_cells = NULL, *new_face_family = NULL;
+  cs_lnum_t  *new_face_cells = NULL;
+  int        *new_face_family = NULL;
   char       *new_face_r_gen = NULL;
   cs_lnum_t  *cut_face_lst = NULL;
   cs_lnum_t  *n_sub_elt_lst = NULL;
@@ -767,7 +768,7 @@ _cut_warped_faces(cs_mesh_t      *mesh,
   BFT_MALLOC(new_face_vtx_idx, n_new_faces + 1, cs_lnum_t);
   BFT_MALLOC(new_face_vtx_lst, connect_size, cs_lnum_t);
   BFT_MALLOC(new_face_cells, n_new_faces*stride, cs_lnum_t);
-  BFT_MALLOC(new_face_family, n_new_faces, cs_lnum_t);
+  BFT_MALLOC(new_face_family, n_new_faces, int);
   if (p_face_r_gen != NULL)
     BFT_MALLOC(new_face_r_gen, n_new_faces, char);
 
@@ -899,8 +900,8 @@ _cut_warped_faces(cs_mesh_t      *mesh,
 
 static void
 _update_cut_faces_num(cs_mesh_t      *mesh,
-                      cs_int_t        n_faces,
-                      cs_int_t        n_init_faces,
+                      cs_lnum_t       n_faces,
+                      cs_lnum_t       n_init_faces,
                       cs_lnum_t       n_sub_elt_lst[],
                       cs_gnum_t      *n_g_faces,
                       cs_gnum_t     **p_global_face_num)
@@ -964,10 +965,10 @@ _update_cut_faces_num(cs_mesh_t      *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_post_before_cutting(cs_int_t        n_i_warp_faces,
-                     cs_int_t        n_b_warp_faces,
-                     cs_int_t        i_warp_face_lst[],
-                     cs_int_t        b_warp_face_lst[],
+_post_before_cutting(cs_lnum_t       n_i_warp_faces,
+                     cs_lnum_t       n_b_warp_faces,
+                     cs_lnum_t       i_warp_face_lst[],
+                     cs_lnum_t       b_warp_face_lst[],
                      double          i_face_warping[],
                      double          b_face_warping[])
 {
@@ -977,7 +978,7 @@ _post_before_cutting(cs_int_t        n_i_warp_faces,
   fvm_nodal_t  *fvm_mesh = NULL;
   fvm_writer_t  *writer = NULL;
 
-  const cs_int_t  writer_id = -1; /* default writer */
+  const cs_lnum_t  writer_id = -1; /* default writer */
   const void  *var_ptr[2] = {NULL, NULL};
 
   parent_num_shift[0] = 0;
@@ -1036,15 +1037,15 @@ _post_before_cutting(cs_int_t        n_i_warp_faces,
  *----------------------------------------------------------------------------*/
 
 static void
-_post_after_cutting(cs_int_t       n_i_cut_faces,
-                    cs_int_t       n_b_cut_faces,
-                    cs_int_t       i_cut_face_lst[],
-                    cs_int_t       b_cut_face_lst[])
+_post_after_cutting(cs_lnum_t   n_i_cut_faces,
+                    cs_lnum_t   n_b_cut_faces,
+                    cs_lnum_t   i_cut_face_lst[],
+                    cs_lnum_t   b_cut_face_lst[])
 {
   fvm_nodal_t  *fvm_mesh = NULL;
   fvm_writer_t  *writer = NULL;
 
-  const cs_int_t  writer_id = -1; /* default writer */
+  const int  writer_id = -1; /* default writer */
 
   if (cs_post_writer_exists(writer_id) == false)
     return;
@@ -1090,7 +1091,7 @@ _post_after_cutting(cs_int_t       n_i_cut_faces,
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (setcwf, SETCWF) (const cs_int_t   *cwfpst,
+CS_PROCF (setcwf, SETCWF) (const int        *cwfpst,
                            const cs_real_t  *cwfthr)
 {
   cs_mesh_warping_set_defaults((double)(*cwfthr),
@@ -1117,18 +1118,16 @@ cs_mesh_warping_cut_faces(cs_mesh_t  *mesh,
                           double      max_warp_angle,
                           bool        post_flag)
 {
-  cs_int_t  i;
-
-  cs_int_t  n_i_cut_faces = 0, n_b_cut_faces = 0;
-  cs_int_t  *i_face_lst = NULL, *b_face_lst = NULL;
+  cs_lnum_t  n_i_cut_faces = 0, n_b_cut_faces = 0;
+  cs_lnum_t  *i_face_lst = NULL, *b_face_lst = NULL;
   cs_real_t  *i_face_normal = NULL, *b_face_normal = NULL;
   double  *working_array = NULL, *i_face_warping = NULL, *b_face_warping = NULL;
   cs_lnum_t  *n_i_sub_elt_lst = NULL, *n_b_sub_elt_lst = NULL;
   cs_gnum_t  n_g_faces_ini = 0;
   cs_gnum_t  n_g_i_cut_faces = 0, n_g_b_cut_faces = 0;
 
-  const cs_int_t  n_init_i_faces = mesh->n_i_faces;
-  const cs_int_t  n_init_b_faces = mesh->n_b_faces;
+  const cs_lnum_t  n_init_i_faces = mesh->n_i_faces;
+  const cs_lnum_t  n_init_b_faces = mesh->n_b_faces;
 
 #if 0   /* DEBUG */
   cs_mesh_dump(mesh);
@@ -1142,7 +1141,7 @@ cs_mesh_warping_cut_faces(cs_mesh_t  *mesh,
 
   BFT_MALLOC(working_array, n_init_i_faces + n_init_b_faces, double);
 
-  for (i = 0; i < n_init_i_faces + n_init_b_faces; i++)
+  for (cs_lnum_t i = 0; i < n_init_i_faces + n_init_b_faces; i++)
     working_array[i] = 0.;
 
   i_face_warping = working_array;
@@ -1175,18 +1174,11 @@ cs_mesh_warping_cut_faces(cs_mesh_t  *mesh,
 
   /* Define the global number of faces which need to be cut */
 
+  n_g_i_cut_faces = n_i_cut_faces;
+  n_g_b_cut_faces = n_b_cut_faces;
   if (mesh->n_domains > 1) {
-#if defined(HAVE_MPI)
-    MPI_Allreduce(&n_i_cut_faces, &n_g_i_cut_faces, 1, CS_MPI_INT,
-                  MPI_SUM, cs_glob_mpi_comm);
-
-    MPI_Allreduce(&n_b_cut_faces, &n_g_b_cut_faces, 1, CS_MPI_INT,
-                  MPI_SUM, cs_glob_mpi_comm);
-#endif
-  }
-  else {
-    n_g_i_cut_faces = n_i_cut_faces;
-    n_g_b_cut_faces = n_b_cut_faces;
+    cs_parall_counter(&n_g_i_cut_faces, 1);
+    cs_parall_counter(&n_g_b_cut_faces, 1);
   }
 
   /* Test if there are faces to cut to continue */

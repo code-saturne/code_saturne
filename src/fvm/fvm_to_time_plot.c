@@ -170,7 +170,7 @@ _coords_output(void           *context,
   FILE *_f;
 
   const cs_real_t *coords = buffer;
-  const cs_lnum_t n_coords = block_end - block_start;
+  const int n_coords = block_end - block_start;
 
   char t_stamp[32];
   if (w->nt >= 0)
@@ -202,7 +202,7 @@ _coords_output(void           *context,
 
     if (probe_names != NULL) {
       fprintf(_f, "# Monitoring point names:\n");
-      for (cs_lnum_t i = 0; i < n_coords; i++)
+      for (int i = 0; i < n_coords; i++)
         fprintf(_f, "#   %6i %16s\n",
                 i+1, probe_names[i]);
       fprintf(_f, "#\n");
@@ -212,7 +212,7 @@ _coords_output(void           *context,
 
     switch(dimension) {
     case 3:
-      for (cs_lnum_t i = 0; i < n_coords; i++)
+      for (int i = 0; i < n_coords; i++)
         fprintf(_f, "# %6i %14.7e %14.7e %14.7e\n",
                 i + 1,
                 coords[i*3],
@@ -220,14 +220,14 @@ _coords_output(void           *context,
                 coords[i*3 + 2]);
       break;
     case 2:
-      for (cs_lnum_t i = 0; i < n_coords; i++)
+      for (int i = 0; i < n_coords; i++)
         fprintf(_f, "# %6i %14.7e %14.7e\n",
                 i + 1,
                 coords[i*2],
                 coords[i*2 + 1]);
       break;
     case 1:
-      for (cs_lnum_t i = 0; i < n_coords; i++)
+      for (int i = 0; i < n_coords; i++)
         fprintf(_f, "# %6i %14.7e\n",
                 i + 1,
                 coords[i]);
@@ -244,21 +244,21 @@ _coords_output(void           *context,
     switch(dimension) {
     case 3:
       fprintf(_f, "x, y, z\n");
-      for (cs_lnum_t i = 0; i < n_coords; i++) {
+      for (int i = 0; i < n_coords; i++) {
         fprintf(_f, "%14.7e, %14.7e, %14.7e\n",
                 coords[i*3], coords[i*3 + 1], coords[i*3 + 2]);
       }
       break;
     case 2:
       fprintf(_f, "x, y\n");
-      for (cs_lnum_t i = 0; i < n_coords; i++) {
+      for (int i = 0; i < n_coords; i++) {
         fprintf(_f, "%14.7e, %14.7e\n",
                 coords[i*2], coords[i*2 + 1]);
       }
       break;
     case 1:
       fprintf(_f, "x\n");
-      for (cs_lnum_t i = 0; i < n_coords; i++) {
+      for (int i = 0; i < n_coords; i++) {
         fprintf(_f, "%14.7e\n", coords[i]);
       }
       break;

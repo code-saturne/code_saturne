@@ -409,7 +409,6 @@ _boundary_scalar(cs_tree_node_t  *tn_bc,
                  int              izone,
                  int              f_id)
 {
-  const char *nature = tn_bc->name;
   const cs_field_t  *f = cs_field_by_id(f_id);
   const int dim = f->dim;
 
@@ -2615,7 +2614,7 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
       else if (compr_auto) {
         if (   (compr_auto == CS_INLET  && (   inature2 == CS_ESICF
                                             || inature2 == CS_EPHCF))
-            || (compr_auto = CS_OUTLET  &&  (   inature2 == CS_SSPCF
+            || (compr_auto == CS_OUTLET &&  (   inature2 == CS_SSPCF
                                              || inature2 == CS_SOPCF)))
           inature2 = inature;
       }

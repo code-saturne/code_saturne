@@ -1894,8 +1894,8 @@ cs_join_gset_dump(FILE                  *f,
     f = stdout;
 
   fprintf(f, "\nDump cs_join_gset_t structure: %p\n", (const void *)set);
-  fprintf(f, "number of elements: %10d\n", set->n_elts);
-  fprintf(f, "size of the list  : %10d\n\n", set->index[set->n_elts]);
+  fprintf(f, "number of elements: %10ld\n", (long)set->n_elts);
+  fprintf(f, "size of the list  : %10ld\n\n", (long)set->index[set->n_elts]);
 
   for (i = 0; i < set->n_elts; i++) {
 

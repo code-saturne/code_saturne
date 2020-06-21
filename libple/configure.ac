@@ -348,6 +348,29 @@ PLE_AC_CHECK_SIZEOF([long long], [ple])
 PLE_AC_CHECK_SIZEOF([float], [ple])
 PLE_AC_CHECK_SIZEOF([double], [ple])
 
+# Use long local numbers ?
+AC_ARG_ENABLE(long-lnum,
+  [AS_HELP_STRING([--enable-long-lnum],[use long local numbers])],
+  [
+    case "${enableval}" in
+      yes) ple_have_long_lnum=yes ;;
+      no)  ple_have_long_lnum=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-long-lnum]) ;;
+    esac
+  ],
+  [ ple_have_long_lnum=no ]
+)
+
+if test "x$ple_have_long_lnum" = "xyes"; then
+  PLE_AC_CONFIG_PUBL_DEFINE([PLE_HAVE_LONG_LNUM], [1],
+                            [Use 64-bit type for ple_lnum_t.])
+else
+  PLE_AC_CONFIG_PUBL_SET([PLE_HAVE_LONG_LNUM], [0],
+                         [Use 64-bit type for ple_lnum_t.])
+fi
+
+AC_SUBST(ple_have_long_lnum)
+
 #------------------------------------------------------------------------------
 # Determine OpenMP support (not used in source code yet)
 #------------------------------------------------------------------------------

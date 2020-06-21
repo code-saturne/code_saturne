@@ -361,9 +361,9 @@ cs_user_rad_transfer_net_flux(const int        bc_type[],
         (__FILE__, __LINE__, 0,
          "In %s:\n"
          "  non-handled boundary faces for net flux calculation\n\n"
-         "  Last face: %10d; zone = %d; nature = %d\n",
+         "  Last face: %10ld; zone = %d; nature = %d\n",
          __func__,
-         ifac,
+         (long)ifac,
          cs_boundary_zone_face_zone_id()[ifac],
          bc_type[ifac]);
 

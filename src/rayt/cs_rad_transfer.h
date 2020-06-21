@@ -70,7 +70,6 @@ typedef enum {
 
 } cs_rad_quadrature_type_t;
 
-
 /* Radiative transfer model type for atmospheric module */
 
 enum {

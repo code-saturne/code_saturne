@@ -131,7 +131,7 @@ static cs_lnum_t _pcg_sr_threshold = 512;
 static cs_sles_convergence_state_t
 _conjugate_gradient(cs_sles_it_t              *c,
                     const cs_matrix_t         *a,
-                    int                        diag_block_size,
+                    cs_lnum_t                  diag_block_size,
                     cs_halo_rotation_t         rotation_mode,
                     cs_sles_it_convergence_t  *convergence,
                     const cs_real_t           *rhs,
@@ -301,7 +301,7 @@ _conjugate_gradient(cs_sles_it_t              *c,
 static cs_sles_convergence_state_t
 _conjugate_gradient_sr(cs_sles_it_t              *c,
                        const cs_matrix_t         *a,
-                       int                        diag_block_size,
+                       cs_lnum_t                  diag_block_size,
                        cs_halo_rotation_t         rotation_mode,
                        cs_sles_it_convergence_t  *convergence,
                        const cs_real_t           *rhs,
@@ -475,7 +475,7 @@ _conjugate_gradient_sr(cs_sles_it_t              *c,
 static cs_sles_convergence_state_t
 _conjugate_gradient_npc(cs_sles_it_t              *c,
                         const cs_matrix_t         *a,
-                        int                        diag_block_size,
+                        cs_lnum_t                  diag_block_size,
                         cs_halo_rotation_t         rotation_mode,
                         cs_sles_it_convergence_t  *convergence,
                         const cs_real_t           *rhs,
@@ -633,7 +633,7 @@ _conjugate_gradient_npc(cs_sles_it_t              *c,
 static cs_sles_convergence_state_t
 _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
                            const cs_matrix_t         *a,
-                           int                        diag_block_size,
+                           cs_lnum_t                  diag_block_size,
                            cs_halo_rotation_t         rotation_mode,
                            cs_sles_it_convergence_t  *convergence,
                            const cs_real_t           *rhs,
@@ -785,7 +785,7 @@ _conjugate_gradient_npc_sr(cs_sles_it_t              *c,
 static cs_sles_convergence_state_t
 _jacobi(cs_sles_it_t              *c,
         const cs_matrix_t         *a,
-        int                        diag_block_size,
+        cs_lnum_t                  diag_block_size,
         cs_halo_rotation_t         rotation_mode,
         cs_sles_it_convergence_t  *convergence,
         const cs_real_t           *rhs,
@@ -880,7 +880,7 @@ _jacobi(cs_sles_it_t              *c,
 static cs_sles_convergence_state_t
 _block_3_jacobi(cs_sles_it_t              *c,
                 const cs_matrix_t         *a,
-                int                        diag_block_size,
+                cs_lnum_t                  diag_block_size,
                 cs_halo_rotation_t         rotation_mode,
                 cs_sles_it_convergence_t  *convergence,
                 const cs_real_t           *rhs,
@@ -974,7 +974,7 @@ _block_3_jacobi(cs_sles_it_t              *c,
 static cs_sles_convergence_state_t
 _block_jacobi(cs_sles_it_t              *c,
               const cs_matrix_t         *a,
-              int                        diag_block_size,
+              cs_lnum_t                  diag_block_size,
               cs_halo_rotation_t         rotation_mode,
               cs_sles_it_convergence_t  *convergence,
               const cs_real_t           *rhs,
@@ -991,7 +991,7 @@ _block_jacobi(cs_sles_it_t              *c,
   /*-------------------------------------------------------------*/
   assert(c->setup_data != NULL);
 
-  const int *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
 
   const cs_real_t  *restrict ad_inv = c->setup_data->ad_inv;
 
@@ -1065,7 +1065,7 @@ _block_jacobi(cs_sles_it_t              *c,
 static cs_sles_convergence_state_t
 _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
                             const cs_matrix_t         *a,
-                            int                        diag_block_size,
+                            cs_lnum_t                  diag_block_size,
                             cs_halo_rotation_t         rotation_mode,
                             cs_sles_it_convergence_t  *convergence,
                             const cs_real_t           *rhs,
@@ -1080,7 +1080,7 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
   const cs_lnum_t  *a_row_index, *a_col_id;
   const cs_real_t  *a_d_val, *a_x_val;
 
-  const int *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
   cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_x_val);
 
   const cs_lnum_t  *order = c->add_data->order;
@@ -1179,7 +1179,7 @@ _p_ordered_gauss_seidel_msr(cs_sles_it_t              *c,
 static cs_sles_convergence_state_t
 _p_gauss_seidel_msr(cs_sles_it_t              *c,
                     const cs_matrix_t         *a,
-                    int                        diag_block_size,
+                    cs_lnum_t                  diag_block_size,
                     cs_halo_rotation_t         rotation_mode,
                     cs_sles_it_convergence_t  *convergence,
                     const cs_real_t           *rhs,
@@ -1194,7 +1194,7 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
   const cs_lnum_t  *a_row_index, *a_col_id;
   const cs_real_t  *a_d_val, *a_x_val;
 
-  const int *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
   cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_x_val);
 
   /* Current iteration */
@@ -1290,7 +1290,7 @@ _p_gauss_seidel_msr(cs_sles_it_t              *c,
 static cs_sles_convergence_state_t
 _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
                         const cs_matrix_t         *a,
-                        int                        diag_block_size,
+                        cs_lnum_t                  diag_block_size,
                         cs_halo_rotation_t         rotation_mode,
                         cs_sles_it_convergence_t  *convergence,
                         const cs_real_t           *rhs,
@@ -1320,7 +1320,7 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
   const cs_lnum_t  *a_row_index, *a_col_id;
   const cs_real_t  *a_d_val, *a_x_val;
 
-  const int *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
   cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_x_val);
 
   /* Current iteration */
@@ -1474,7 +1474,7 @@ _p_sym_gauss_seidel_msr(cs_sles_it_t              *c,
 static cs_sles_convergence_state_t
 _ts_f_gauss_seidel_msr(cs_sles_it_t              *c,
                        const cs_matrix_t         *a,
-                       int                        diag_block_size,
+                       cs_lnum_t                  diag_block_size,
                        cs_halo_rotation_t         rotation_mode,
                        cs_sles_it_convergence_t  *convergence,
                        const cs_real_t           *rhs,
@@ -1494,7 +1494,7 @@ _ts_f_gauss_seidel_msr(cs_sles_it_t              *c,
   const cs_lnum_t  *a_row_index, *a_col_id;
   const cs_real_t  *a_d_val, *a_x_val;
 
-  const int *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
   cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_x_val);
 
   /* Single iteration */
@@ -1595,7 +1595,7 @@ _ts_f_gauss_seidel_msr(cs_sles_it_t              *c,
 static cs_sles_convergence_state_t
 _ts_b_gauss_seidel_msr(cs_sles_it_t              *c,
                        const cs_matrix_t         *a,
-                       int                        diag_block_size,
+                       cs_lnum_t                  diag_block_size,
                        cs_halo_rotation_t         rotation_mode,
                        cs_sles_it_convergence_t  *convergence,
                        const cs_real_t           *rhs,
@@ -1615,7 +1615,7 @@ _ts_b_gauss_seidel_msr(cs_sles_it_t              *c,
   const cs_lnum_t  *a_row_index, *a_col_id;
   const cs_real_t  *a_d_val, *a_x_val;
 
-  const int *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
   cs_matrix_get_msr_arrays(a, &a_row_index, &a_col_id, &a_d_val, &a_x_val);
 
   /* Single iteration */
@@ -1715,7 +1715,7 @@ _ts_b_gauss_seidel_msr(cs_sles_it_t              *c,
 static cs_sles_convergence_state_t
 _p_gauss_seidel(cs_sles_it_t              *c,
                 const cs_matrix_t         *a,
-                int                        diag_block_size,
+                cs_lnum_t                  diag_block_size,
                 cs_halo_rotation_t         rotation_mode,
                 cs_sles_it_convergence_t  *convergence,
                 const cs_real_t           *rhs,
@@ -2043,8 +2043,8 @@ cs_multigrid_smoother_solve(void                *context,
 
   cs_sles_it_convergence_t  convergence;
 
-  const int *diag_block_size = cs_matrix_get_diag_block_size(a);
-  const int _diag_block_size = diag_block_size[0];
+  const cs_lnum_t *diag_block_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t _diag_block_size = diag_block_size[0];
 
   assert(diag_block_size[0] == diag_block_size[1]);
 

@@ -94,8 +94,9 @@ _check_i_face_cells(void)
     if (mesh->i_face_cells[i][0] == -1 || mesh->i_face_cells[i][1] == -1)
       bft_error(__FILE__, __LINE__, 0,
                 _("Internal face -> cells connectivity value not initialized\n"
-                  "for face: %d (cell_num1 = %d and cell_num2 = %d)\n"),
-                i+1, mesh->i_face_cells[i][0], mesh->i_face_cells[i][1]);
+                  "for face: %ld (cell_num1 = %ld and cell_num2 = %ld)\n"),
+                (long)i+1, (long)mesh->i_face_cells[i][0],
+                (long)mesh->i_face_cells[i][1]);
 
   }
 

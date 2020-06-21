@@ -92,8 +92,6 @@ BEGIN_C_DECLS
 
   \brief Postprocessing input variable type
 
-  \var CS_POST_TYPE_cs_int_t
-       Fortran integer
   \var CS_POST_TYPE_cs_real_t
        Fortran double precision
   \var CS_POST_TYPE_int
@@ -846,13 +844,6 @@ _cs_post_cnv_datatype(cs_post_type_t  type_cs)
   cs_datatype_t type_fvm = CS_DATATYPE_NULL;
 
   switch(type_cs) {
-
-  case CS_POST_TYPE_cs_int_t:
-    if (sizeof(cs_int_t) == 4)
-      type_fvm = CS_INT32;
-    else if (sizeof(cs_int_t) == 8)
-      type_fvm = CS_INT64;
-    break;
 
   case CS_POST_TYPE_cs_real_t:
     if (sizeof(cs_real_t) == sizeof(double))
@@ -2904,7 +2895,7 @@ _extract_field_component(const cs_field_t  *f,
     strncat(name_buf, cs_glob_field_comp_name_9[comp_id], 5);
     break;
   default:
-    snprintf(name_buf + strlen(name_buf), 5, "[%d]", comp_id);
+    snprintf(name_buf + strlen(name_buf), 5, "[%ld]", (long)comp_id);
   }
   name_buf[95] = '\0';
 
@@ -6720,7 +6711,7 @@ cs_post_time_step_output(const cs_time_step_t  *ts)
 
       if (n_elts > n_elts_max) {
         n_elts_max = n_elts;
-        BFT_REALLOC(parent_ids, n_elts_max, cs_int_t);
+        BFT_REALLOC(parent_ids, n_elts_max, cs_lnum_t);
       }
 
       /* Get corresponding element ids */
@@ -6774,8 +6765,8 @@ cs_post_time_step_output(const cs_time_step_t  *ts)
 
         else {
 
-          BFT_MALLOC(i_face_ids, n_i_faces, cs_int_t);
-          BFT_MALLOC(b_face_ids, n_b_faces, cs_int_t);
+          BFT_MALLOC(i_face_ids, n_i_faces, cs_lnum_t);
+          BFT_MALLOC(b_face_ids, n_b_faces, cs_lnum_t);
 
           n_i_faces = 0, n_b_faces = 0;
 

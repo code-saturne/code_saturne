@@ -234,7 +234,7 @@ _field_interpolate_by_gradient(const cs_field_t   *f,
     bft_error(__FILE__, __LINE__, 0,
               _("Field gradient interpolation for field %s of dimension %d:\n"
                 " not implemented."),
-              f->name, dim);
+              f->name, (int)dim);
 
   /* Now interpolated values */
 
@@ -379,6 +379,8 @@ cs_f_field_gradient_scalar(int                    f_id,
                            int                    recompute_cocg,
                            cs_real_3_t  *restrict grad)
 {
+  CS_UNUSED(imrgr0);
+
   bool _use_previous_t = use_previous_t ? true : false;
   bool _recompute_cocg = recompute_cocg ? true : false;
 
@@ -417,6 +419,8 @@ cs_f_field_gradient_potential(int                    f_id,
                               cs_real_3_t            f_ext[],
                               cs_real_3_t  *restrict grad)
 {
+  CS_UNUSED(imrgr0);
+
   bool _use_previous_t = use_previous_t ? true : false;
   bool _recompute_cocg = recompute_cocg ? true : false;
 
@@ -451,6 +455,8 @@ cs_f_field_gradient_vector(int                     f_id,
                            int                     inc,
                            cs_real_33_t  *restrict grad)
 {
+  CS_UNUSED(imrgr0);
+
   bool _use_previous_t = use_previous_t ? true : false;
 
   const cs_field_t *f = cs_field_by_id(f_id);
@@ -481,6 +487,8 @@ cs_f_field_gradient_tensor(int                     f_id,
                            int                     inc,
                            cs_real_63_t  *restrict grad)
 {
+  CS_UNUSED(imrgr0);
+
   bool _use_previous_t = use_previous_t ? true : false;
 
   const cs_field_t *f = cs_field_by_id(f_id);

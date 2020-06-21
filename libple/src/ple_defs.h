@@ -140,7 +140,12 @@ _ptr = ple_mem_free(_ptr, #_ptr, __FILE__, __LINE__)
  *  - ple_lnum_t must be signed
  *----------------------------------------------------------------------------*/
 
-typedef int      ple_lnum_t;     /* Local integer index or number */
+#if defined(PLE_HAVE_LONG_LNUM)
+  typedef long     ple_lnum_t;     /* Local integer index or number */
+#else
+  typedef int      ple_lnum_t;     /* Local integer index or number */
+#endif
+
 typedef double   ple_coord_t;    /* Real number (coordinate value) */
 
 /*----------------------------------------------------------------------------
@@ -151,7 +156,12 @@ typedef double   ple_coord_t;    /* Real number (coordinate value) */
 
 #define PLE_MPI_TAG      (int)('P'+'L'+'E') /* MPI tag for PLE operations */
 
-#define PLE_MPI_LNUM     MPI_INT         /* MPI type for ple_lnum_t type */
+#if defined(PLE_HAVE_LONG_LNUM)
+#  define PLE_MPI_LNUM   MPI_LONG        /* MPI type for ple_lnum_t type */
+#else
+#  define PLE_MPI_LNUM   MPI_INT         /* MPI type for ple_lnum_t type */
+#endif
+
 #define PLE_MPI_COORD    MPI_DOUBLE      /* MPI type for ple_coord_t type */
 
 #endif

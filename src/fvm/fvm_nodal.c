@@ -635,12 +635,12 @@ _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
     idx = this_section->face_index;
     num = this_section->face_num;
     for (i = 0; i < n_elements; i++) {
-      bft_printf("%10d (idx = %10d) %10d\n",
-                 i+1, idx[i], num[idx[i]]);
+      bft_printf("%10ld (idx = %10ld) %10ld\n",
+                 (long)i+1, (long)idx[i], (long)num[idx[i]]);
       for (j = idx[i] + 1; j < idx[i + 1]; j++)
-        bft_printf("                              %10d\n", num[j]);
+        bft_printf("                              %10ld\n", (long)num[j]);
     }
-    bft_printf("      end  (idx = %10d)\n", idx[n_elements]);
+    bft_printf("      end  (idx = %10ld)\n", (long)idx[n_elements]);
   }
 
   if (this_section->vertex_index != NULL) {
@@ -650,12 +650,12 @@ _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
     idx = this_section->vertex_index;
     num = this_section->vertex_num;
     for (i = 0; i < n_faces; i++) {
-      bft_printf("%10d (idx = %10d) %10d\n",
-                i + 1, idx[i], num[idx[i]]);
+      bft_printf("%10ld (idx = %10ld) %10ld\n",
+                 (long)i + 1, (long)idx[i], (long)num[idx[i]]);
       for (j = idx[i] + 1; j < idx[i + 1]; j++)
-        bft_printf("                              %10d\n", num[j]);
+        bft_printf("                              %10ld\n", (long)num[j]);
     }
-    bft_printf("      end  (idx = %10d)\n", idx[n_faces]);
+    bft_printf("      end  (idx = %10ld)\n", (long)idx[n_faces]);
   }
 
   else {
@@ -665,43 +665,46 @@ _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
     switch(this_section->stride) {
     case 2:
       for (i = 0; i < n_elements; i++)
-        bft_printf("%10d : %10d %10d\n",
-                   i+1, num[i*2], num[i*2+1]);
+        bft_printf("%10ld : %10ld %10ld\n",
+                   (long)i+1, (long)num[i*2], (long)num[i*2+1]);
       break;
     case 3:
       for (i = 0; i < n_elements; i++)
-        bft_printf("%10d : %10d %10d %10d\n",
-                   i+1, num[i*3], num[i*3+1], num[i*3+2]);
+        bft_printf("%10ld : %10ld %10ld %10ld\n",
+                   (long)i+1, (long)num[i*3], (long)num[i*3+1],
+                   (long)num[i*3+2]);
       break;
     case 4:
       for (i = 0; i < n_elements; i++)
-        bft_printf("%10d : %10d %10d %10d %10d\n",
-                   i+1, num[i*4], num[i*4+1], num[i*4+2],
-                   num[i*4+3]);
+        bft_printf("%10ld : %10ld %10ld %10ld %10ld\n",
+                   (long)i+1, (long)num[i*4], (long)num[i*4+1],
+                   (long)num[i*4+2], (long)num[i*4+3]);
       break;
     case 5:
       for (i = 0; i < n_elements; i++)
-        bft_printf("%10d : %10d %10d %10d %10d %10d\n",
-                   i+1, num[i*5], num[i*5+1], num[i*5+2],
-                   num[i*5+3], num[i*5+4]);
+        bft_printf("%10ld : %10ld %10ld %10ld %10ld %10ld\n",
+                   (long)i+1, (long)num[i*5], (long)num[i*5+1],
+                   (long)num[i*5+2], (long)num[i*5+3], (long)num[i*5+4]);
       break;
     case 6:
       for (i = 0; i < n_elements; i++)
-        bft_printf("%10d : %10d %10d %10d %10d %10d %10d\n",
-                   i+1, num[i*6], num[i*6+1], num[i*6+2],
-                   num[i*6+3], num[i*6+4], num[i*6+5]);
+        bft_printf("%10ld : %10ld %10ld %10ld %10ld %10ld %10ld\n",
+                   (long)i+1, (long)num[i*6], (long)num[i*6+1],
+                   (long)num[i*6+2], (long)num[i*6+3], (long)num[i*6+4],
+                   (long)num[i*6+5]);
       break;
     case 8:
       for (i = 0; i < n_elements; i++)
-        bft_printf("%10d : %10d %10d %10d %10d %10d %10d %10d %10d\n",
-                   i+1, num[i*8], num[i*8+1], num[i*8+2], num[i*8+3],
-                   num[i*8+4], num[i*8+5], num[i*8+6], num[i*8+7]);
+        bft_printf("%10ld : %10ld %10ld %10ld %10ld %10ld %10ld %10ld %10ld\n",
+                   (long)i+1, (long)num[i*8], (long)num[i*8+1],
+                   (long)num[i*8+2], (long)num[i*8+3], (long)num[i*8+4],
+                   (long)num[i*8+5], (long)num[i*8+6], (long)num[i*8+7]);
       break;
     default:
       for (i = 0; i < n_elements; i++) {
-        bft_printf("%10d :", i+1);
+        bft_printf("%10ld :", (long)i+1);
         for (j = 0; j < this_section->stride; j++)
-          bft_printf(" %10d", num[i*this_section->stride + j]);
+          bft_printf(" %10ld", (long)num[i*this_section->stride + j]);
         bft_printf("\n");
       }
     }
@@ -710,14 +713,14 @@ _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
   if (this_section->gc_id != NULL) {
     bft_printf("\nGroup class ids:\n\n");
     for (i = 0; i < this_section->n_elements; i++)
-      bft_printf("%10d : %10d\n", i + 1, this_section->gc_id[i]);
+      bft_printf("%10ld : %10d\n", (long)i+1, this_section->gc_id[i]);
     bft_printf("\n");
   }
 
   if (this_section->tag != NULL) {
     bft_printf("\nTags:\n\n");
     for (i = 0; i < this_section->n_elements; i++)
-      bft_printf("%10d : %10d\n", i + 1, this_section->tag[i]);
+      bft_printf("%10ld : %10d\n", (long)i+1, this_section->tag[i]);
     bft_printf("\n");
   }
 
@@ -733,7 +736,8 @@ _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
     bft_printf("\n  Nil\n\n");
   else {
     for (i = 0; i < this_section->n_elements; i++)
-      bft_printf("  %10d %10d\n", i+1, this_section->parent_element_num[i]);
+      bft_printf("  %10ld %10ld\n", (long)i+1,
+                 (long)this_section->parent_element_num[i]);
   }
 
   /* Global element numbers (only for parallel execution) */
@@ -1808,7 +1812,7 @@ fvm_nodal_set_group_class_set(fvm_nodal_t                  *this_nodal,
   int gc_id, section_id;
   int n_gc = fvm_group_class_set_size(gc_set);
   int n_gc_new = 0;
-  cs_lnum_t *gc_renum = NULL;
+  int *gc_renum = NULL;
 
   assert(this_nodal != NULL);
 
@@ -1820,7 +1824,7 @@ fvm_nodal_set_group_class_set(fvm_nodal_t                  *this_nodal,
 
   /* Mark referenced group classes */
 
-  BFT_MALLOC(gc_renum, n_gc, cs_lnum_t);
+  BFT_MALLOC(gc_renum, n_gc, int);
 
   for (gc_id = 0; gc_id < n_gc; gc_id++)
     gc_renum[gc_id] = 0;
@@ -1836,7 +1840,7 @@ fvm_nodal_set_group_class_set(fvm_nodal_t                  *this_nodal,
     }
   }
 
-  cs_parall_counter_max(gc_renum, n_gc);
+  cs_parall_max(n_gc, CS_INT_TYPE, gc_renum);
 
   /* Renumber group classes if necessary */
 
@@ -2586,14 +2590,14 @@ fvm_nodal_dump(const fvm_nodal_t  *this_nodal)
              this_nodal->n_sections);
 
   bft_printf("\n"
-             "Number of cells:               %d\n"
-             "Number of faces:               %d\n"
-             "Number of edges:               %d\n"
-             "Number of vertices:            %d\n",
-            this_nodal->n_cells,
-            this_nodal->n_faces,
-            this_nodal->n_edges,
-            this_nodal->n_vertices);
+             "Number of cells:               %ld\n"
+             "Number of faces:               %ld\n"
+             "Number of edges:               %ld\n"
+             "Number of vertices:            %ld\n",
+             (long)this_nodal->n_cells,
+             (long)this_nodal->n_faces,
+             (long)this_nodal->n_edges,
+             (long)this_nodal->n_vertices);
 
   if (this_nodal->n_vertices > 0) {
 
@@ -2619,19 +2623,19 @@ fvm_nodal_dump(const fvm_nodal_t  *this_nodal)
       switch(this_nodal->dim) {
       case 1:
         for (i = 0; i < this_nodal->n_vertices; i++)
-          bft_printf("%10d : %12.5f\n",
-                     num_vertex++, (double)(coord[i]));
+          bft_printf("%10ld : %12.5f\n",
+                     (long)num_vertex++, (double)(coord[i]));
         break;
       case 2:
         for (i = 0; i < this_nodal->n_vertices; i++)
-          bft_printf("%10d : %12.5f %12.5f\n",
-                     num_vertex++, (double)(coord[i*2]),
+          bft_printf("%10ld : %12.5f %12.5f\n",
+                     (long)num_vertex++, (double)(coord[i*2]),
                      (double)(coord[i*2+1]));
         break;
       case 3:
         for (i = 0; i < this_nodal->n_vertices; i++)
-          bft_printf("%10d : %12.5f %12.5f %12.5f\n",
-                     num_vertex++, (double)(coord[i*3]),
+          bft_printf("%10ld : %12.5f %12.5f %12.5f\n",
+                     (long)num_vertex++, (double)(coord[i*3]),
                      (double)(coord[i*3+1]), (double)(coord[i*3+2]));
         break;
       default:
@@ -2649,24 +2653,24 @@ fvm_nodal_dump(const fvm_nodal_t  *this_nodal)
         for (i = 0; i < this_nodal->n_vertices; i++) {
           coord =   this_nodal->vertex_coords
                   + (this_nodal->parent_vertex_num[i]-1);
-          bft_printf("%10d : %12.5f\n",
-                     num_vertex++, (double)(coord[0]));
+          bft_printf("%10ld : %12.5f\n",
+                     (long)num_vertex++, (double)(coord[0]));
         }
         break;
       case 2:
         for (i = 0; i < this_nodal->n_vertices; i++) {
           coord =   this_nodal->vertex_coords
                   + ((this_nodal->parent_vertex_num[i]-1)*2);
-          bft_printf("%10d : %12.5f %12.5f\n",
-                     num_vertex++, (double)(coord[0]), (double)(coord[1]));
+          bft_printf("%10ld : %12.5f %12.5f\n",
+                     (long)num_vertex++, (double)(coord[0]), (double)(coord[1]));
         }
         break;
       case 3:
         for (i = 0; i < this_nodal->n_vertices; i++) {
           coord =   this_nodal->vertex_coords
                   + ((this_nodal->parent_vertex_num[i]-1)*3);
-          bft_printf("%10d : %12.5f %12.5f %12.5f\n",
-                     num_vertex++, (double)(coord[0]), (double)(coord[1]),
+          bft_printf("%10ld : %12.5f %12.5f %12.5f\n",
+                     (long)num_vertex++, (double)(coord[0]), (double)(coord[1]),
                      (double)(coord[2]));
         }
         break;
@@ -2705,10 +2709,10 @@ fvm_nodal_dump(const fvm_nodal_t  *this_nodal)
     cs_lnum_t n_labels = (cs_lnum_t)fvm_nodal_n_g_vertices(this_nodal);
     for (i = 0; i < n_labels; i++) {
       if (this_nodal->global_vertex_labels[i] != NULL)
-        bft_printf("%10d : %s\n",
-                   i+1, this_nodal->global_vertex_labels[i]);
+        bft_printf("%10ld : %s\n",
+                   (long)i+1, this_nodal->global_vertex_labels[i]);
       else
-        bft_printf("%10d : (null)\n", i+1);
+        bft_printf("%10ld : (null)\n", (long)i+1);
     }
   }
 }

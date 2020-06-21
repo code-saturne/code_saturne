@@ -120,7 +120,7 @@ _sync_cell_fam(cs_mesh_t   *const mesh)
   if (mesh->verbosity > 0)
     bft_printf(_("Synchronizing cell families\n"));
 
-  cs_halo_sync_num(halo, CS_HALO_EXTENDED, mesh->cell_family);
+  cs_halo_sync_untyped(halo, CS_HALO_EXTENDED, sizeof(int), mesh->cell_family);
 }
 
 /*----------------------------------------------------------------------------
@@ -167,7 +167,7 @@ _display_histograms(cs_lnum_t        n_vals,
   double step;
 
   cs_lnum_t count[CS_MESH_N_SUBS];
-  cs_lnum_t n_steps = CS_MESH_N_SUBS;
+  int n_steps = CS_MESH_N_SUBS;
 
   /* Compute local min and max */
 
@@ -211,13 +211,13 @@ _display_histograms(cs_lnum_t        n_vals,
 
     for (i = 0, j = 1; i < n_steps - 1; i++, j++)
       bft_printf("    %3d : [ %10d ; %10d [ = %10d\n",
-                 i+1,
+                 (int)i+1,
                  (int)(val_min + i*step),
                  (int)(val_min + j*step),
                  (int)(count[i]));
 
     bft_printf("    %3d : [ %10d ; %10d ] = %10d\n",
-               n_steps,
+               (int)n_steps,
                (int)(val_min + (n_steps - 1)*step),
                (int)val_max,
                (int)(count[n_steps - 1]));
@@ -383,7 +383,7 @@ _print_cell_neighbor_info(const cs_mesh_t  *mesh)
 
     for (i = 0, j = 1; i < n_steps - 1; i++, j++)
       bft_printf("    %3d : [ %10d ; %10d [ = %10llu\n",
-                 i+1,
+                 (int)i+1,
                  (int)(n_min_neighbors + i*step),
                  (int)(n_min_neighbors + j*step),
                  (unsigned long long)(count[i]));
@@ -1759,8 +1759,8 @@ _print_mesh_info(cs_mesh_t  *mesh)
     BFT_MALLOC(rank_buffer, mesh->n_domains, cs_lnum_t);
 
 #if defined(HAVE_MPI)
-    MPI_Allgather(&(mesh->n_cells), 1, CS_MPI_INT,
-                  rank_buffer     , 1, CS_MPI_INT, cs_glob_mpi_comm);
+    MPI_Allgather(&(mesh->n_cells), 1, CS_MPI_LNUM,
+                  rank_buffer     , 1, CS_MPI_LNUM, cs_glob_mpi_comm);
 #endif
 
     bft_printf(_("\n Histogram of the number of cells per rank:\n\n"));
@@ -1771,17 +1771,16 @@ _print_mesh_info(cs_mesh_t  *mesh)
 
   else
     bft_printf
-      (_(" Number of cells:                                      %d\n"),
-       mesh->n_cells);
-
+      (_(" Number of cells:                                      %ld\n"),
+       (long)mesh->n_cells);
 
   bft_printf("\n ----------------------------------------------------------\n");
 
   if (mesh->n_domains > 1) {
 
 #if defined(HAVE_MPI)
-    MPI_Allgather(&(mesh->n_cells_with_ghosts), 1, CS_MPI_INT,
-                  rank_buffer, 1, CS_MPI_INT, cs_glob_mpi_comm);
+    MPI_Allgather(&(mesh->n_cells_with_ghosts), 1, CS_MPI_LNUM,
+                  rank_buffer, 1, CS_MPI_LNUM, cs_glob_mpi_comm);
 #endif
 
     bft_printf(_("\n Histogram of the number of standard + halo cells "
@@ -1793,8 +1792,8 @@ _print_mesh_info(cs_mesh_t  *mesh)
 
   else
     bft_printf
-      (_(" Number of cells + halo cells:                         %d\n\n"),
-       mesh->n_cells_with_ghosts);
+      (_(" Number of cells + halo cells:                         %ld\n\n"),
+       (long)mesh->n_cells_with_ghosts);
 
 
   bft_printf("\n ----------------------------------------------------------\n");
@@ -1808,8 +1807,8 @@ _print_mesh_info(cs_mesh_t  *mesh)
       cs_lnum_t  n_gcells = mesh->n_ghost_cells;
 
 #if defined(HAVE_MPI)
-      MPI_Allgather(&n_gcells  , 1, CS_MPI_INT,
-                    rank_buffer, 1, CS_MPI_INT, cs_glob_mpi_comm);
+      MPI_Allgather(&n_gcells  , 1, CS_MPI_LNUM,
+                    rank_buffer, 1, CS_MPI_LNUM, cs_glob_mpi_comm);
 #endif
 
       bft_printf
@@ -1820,8 +1819,8 @@ _print_mesh_info(cs_mesh_t  *mesh)
       if (mesh->halo_type == CS_HALO_EXTENDED) {
 
 #if defined(HAVE_MPI)
-        MPI_Allgather(&n_std_ghost_cells, 1, CS_MPI_INT,
-                      rank_buffer, 1, CS_MPI_INT, cs_glob_mpi_comm);
+        MPI_Allgather(&n_std_ghost_cells, 1, CS_MPI_LNUM,
+                      rank_buffer, 1, CS_MPI_LNUM, cs_glob_mpi_comm);
 #endif
 
         bft_printf
@@ -1835,11 +1834,11 @@ _print_mesh_info(cs_mesh_t  *mesh)
     } /* If n_ranks > 1 */
 
     else {
-      bft_printf(_("\n Number of ghost cells:                          %10d\n"),
-                 mesh->n_ghost_cells);
+      bft_printf(_("\n Number of ghost cells:                          %10ld\n"),
+                 (long)mesh->n_ghost_cells);
       if (mesh->halo_type == CS_HALO_EXTENDED)
-        bft_printf(_("   in the standard neighborhood:              %10d\n"),
-                   n_std_ghost_cells);
+        bft_printf(_("   in the standard neighborhood:              %10ld\n"),
+                   (long)n_std_ghost_cells);
     }
 
     bft_printf("\n"
@@ -1852,8 +1851,8 @@ _print_mesh_info(cs_mesh_t  *mesh)
   if (mesh->n_domains > 1) {
 
 #if defined(HAVE_MPI)
-    MPI_Allgather(&(mesh->n_i_faces), 1, CS_MPI_INT,
-                  rank_buffer, 1, CS_MPI_INT, cs_glob_mpi_comm);
+    MPI_Allgather(&(mesh->n_i_faces), 1, CS_MPI_LNUM,
+                  rank_buffer, 1, CS_MPI_LNUM, cs_glob_mpi_comm);
 #endif
 
     bft_printf
@@ -1865,16 +1864,16 @@ _print_mesh_info(cs_mesh_t  *mesh)
 
   else
     bft_printf
-      (_(" Number of interior faces:                             %d\n"),
-       mesh->n_i_faces);
+      (_(" Number of interior faces:                             %ld\n"),
+       (long)mesh->n_i_faces);
 
   bft_printf("\n ----------------------------------------------------------\n");
 
   if (mesh->n_domains > 1) {
 
 #if defined(HAVE_MPI)
-    MPI_Allgather(&(mesh->n_b_faces), 1, CS_MPI_INT,
-                  rank_buffer, 1, CS_MPI_INT, cs_glob_mpi_comm);
+    MPI_Allgather(&(mesh->n_b_faces), 1, CS_MPI_LNUM,
+                  rank_buffer, 1, CS_MPI_LNUM, cs_glob_mpi_comm);
 #endif
 
     bft_printf
@@ -1886,8 +1885,8 @@ _print_mesh_info(cs_mesh_t  *mesh)
 
   else
     bft_printf
-      (_(" Number of boundary faces:                             %d\n"),
-       mesh->n_b_faces);
+      (_(" Number of boundary faces:                             %ld\n"),
+       (long)mesh->n_b_faces);
 
   bft_printf("\n ----------------------------------------------------------\n");
 
@@ -1903,8 +1902,8 @@ _print_mesh_info(cs_mesh_t  *mesh)
 
     cs_lnum_t  n_c_domains = halo->n_c_domains;
 
-    MPI_Allgather(&n_c_domains, 1, CS_MPI_INT,
-                  rank_buffer , 1, CS_MPI_INT, cs_glob_mpi_comm);
+    MPI_Allgather(&n_c_domains, 1, CS_MPI_LNUM,
+                  rank_buffer , 1, CS_MPI_LNUM, cs_glob_mpi_comm);
 
     bft_printf(_("\n Histogram of the number of neighboring domains "
                  "per rank:\n\n"));
@@ -3053,7 +3052,8 @@ cs_mesh_clean_families(cs_mesh_t  *mesh)
   size_t n_gc_vals = mesh->n_max_family_items;
   size_t size_tot = n_gc * n_gc_vals;
   cs_gnum_t *interlaced = NULL;
-  int *order = NULL, *renum = NULL;
+  cs_lnum_t *order = NULL;
+  int *renum = NULL;
 
   if (mesh->n_families < 2)
     return;
@@ -3106,7 +3106,7 @@ cs_mesh_clean_families(cs_mesh_t  *mesh)
   /* Update definitions */
 
   mesh->n_families = gc_count;
-  BFT_REALLOC(mesh->family_item, gc_count*n_gc_vals, cs_lnum_t);
+  BFT_REALLOC(mesh->family_item, gc_count*n_gc_vals, int);
 
   for (i = 0; i < n_gc; i++) {
     gc_id = renum[i];
@@ -3874,26 +3874,24 @@ cs_mesh_selector_stats(cs_mesh_t  *mesh)
 void
 cs_mesh_dump(const cs_mesh_t  *mesh)
 {
-  cs_lnum_t  i, j;
-
   bft_printf("\n\nDUMP OF THE MESH STRUCTURE: %p\n\n", (const void *)mesh);
 
   bft_printf("space dim :        %d\n"
              "n_domains :        %d\n"
              "domain_num:        %d\n",
-             mesh->dim, mesh->n_domains, mesh->domain_num);
+             (int)mesh->dim, mesh->n_domains, mesh->domain_num);
 
   bft_printf("\nNumber of families: %3d\n",mesh->n_families);
 
   bft_printf("\nLocal dimensions:\n"
-             "n_cells:                  %d\n"
-             "n_cells_with_ghosts:      %d\n"
-             "n_vertices:               %d\n"
-             "n_i_faces:                %d\n"
-             "n_b_faces:                %d\n",
-             mesh->n_cells, mesh->n_cells_with_ghosts,
-             mesh->n_vertices,
-             mesh->n_i_faces, mesh->n_b_faces);
+             "n_cells:                  %ld\n"
+             "n_cells_with_ghosts:      %ld\n"
+             "n_vertices:               %ld\n"
+             "n_i_faces:                %ld\n"
+             "n_b_faces:                %ld\n",
+             (long)mesh->n_cells, (long)mesh->n_cells_with_ghosts,
+             (long)mesh->n_vertices,
+             (long)mesh->n_i_faces, (long)mesh->n_b_faces);
 
   bft_printf("\nGlobal dimensions:\n"
              "n_g_cells:                %llu\n"
@@ -3910,16 +3908,16 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
              "        --------\n\n");
 
   bft_printf("\nVertex coordinates:\n");
-  for (i = 0; i < mesh->n_vertices; i++)
-    bft_printf("   <%3d >  %10.3f        %10.3f        %10.3f\n",
-               i, mesh->vtx_coord[3*i], mesh->vtx_coord[3*i+1],
+  for (cs_lnum_t i = 0; i < mesh->n_vertices; i++)
+    bft_printf("   <%3ld >  %10.3f        %10.3f        %10.3f\n",
+               (long)i, mesh->vtx_coord[3*i], mesh->vtx_coord[3*i+1],
                mesh->vtx_coord[3*i+2]);
 
   if (mesh->global_vtx_num != NULL) {
     bft_printf("\nGlobal vertex numbering:\n");
-    for (i = 0; i < mesh->n_vertices; i++)
-      bft_printf("   <%7d >  %10llu\n",
-                 i, (unsigned long long)(mesh->global_vtx_num[i]));
+    for (cs_lnum_t i = 0; i < mesh->n_vertices; i++)
+      bft_printf("   <%7ld >  %10llu\n",
+                 (long)i, (unsigned long long)(mesh->global_vtx_num[i]));
   }
 
   bft_printf("\n\n        ---------------------------"
@@ -3927,34 +3925,37 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
              "        ---------------------------\n\n");
 
   bft_printf("\nInternal faces -> Cells connectivity:\n");
-  for (i = 0; i < mesh->n_i_faces; i++)
-    bft_printf("   < %7d >  %7d  <---->  %7d\n", i,
-               mesh->i_face_cells[i][0], mesh->i_face_cells[i][1]);
+  for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++)
+    bft_printf("   < %7ld >  %7ld  <---->  %7ld\n", (long)i,
+               (long)mesh->i_face_cells[i][0],
+               (long)mesh->i_face_cells[i][1]);
 
   bft_printf("\nInternal faces -> vertices connectivity:\n");
-  for (i = 0; i < mesh->n_i_faces; i++) {
-    bft_printf("    < %7d >", i);
-    for (j = mesh->i_face_vtx_idx[i]; j < mesh->i_face_vtx_idx[i+1]; j++)
-      bft_printf("  %7d ",mesh->i_face_vtx_lst[j]);
+  for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++) {
+    bft_printf("    < %7ld >", (long)i);
+    for (cs_lnum_t j = mesh->i_face_vtx_idx[i];
+         j < mesh->i_face_vtx_idx[i+1];
+         j++)
+      bft_printf("  %7ld ", (long)mesh->i_face_vtx_lst[j]);
     bft_printf("\n");
   }
 
   bft_printf("\nFamily of each internal face:\n");
-  for (i = 0; i < mesh->n_i_faces; i++)
-    bft_printf("   < %3d >  %5d\n", i, mesh->i_face_family[i]);
+  for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++)
+    bft_printf("   < %3ld >  %5d\n", (long)i, mesh->i_face_family[i]);
 
   if (mesh->i_face_r_gen != NULL) {
     bft_printf("Refinement generation of each internal face:\n");
-    for (i = 0; i < mesh->n_i_faces; i++)
-      bft_printf("   < %3d >  %5d\n", i, (int)(mesh->i_face_r_gen[i]));
+    for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++)
+      bft_printf("   < %3ld >  %5d\n", (long)i, (int)(mesh->i_face_r_gen[i]));
   }
 
   if (mesh->global_i_face_num != NULL) {
 
     bft_printf("\nInternal faces global numbering:\n");
-    for (i = 0; i < mesh->n_i_faces; i++)
-      bft_printf("   < %7d >  %12llu\n",
-                 i, (unsigned long long)(mesh->global_i_face_num[i]));
+    for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++)
+      bft_printf("   < %7ld >  %12llu\n",
+                 (long)i, (unsigned long long)(mesh->global_i_face_num[i]));
     bft_printf("\n");
 
   }
@@ -3964,27 +3965,29 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
              "        -------------------------\n\n");
 
   bft_printf("\nBorder faces -> Cells connectivity:\n");
-  for (i = 0; i < mesh->n_b_faces; i++)
-    bft_printf("   < %7d >  %7d\n", i, mesh->b_face_cells[i]);
+  for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++)
+    bft_printf("   < %7ld >  %7ld\n", (long)i, (long)mesh->b_face_cells[i]);
 
   bft_printf("\nBorder faces -> vertices connectivity:\n");
-  for (i = 0; i < mesh->n_b_faces; i++) {
-    bft_printf("   < %7d >", i);
-    for (j = mesh->b_face_vtx_idx[i]; j < mesh->b_face_vtx_idx[i+1]; j++)
-      bft_printf("  %7d ",mesh->b_face_vtx_lst[j]);
+  for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++) {
+    bft_printf("   < %7ld >", (long)i);
+    for (cs_lnum_t j = mesh->b_face_vtx_idx[i];
+         j < mesh->b_face_vtx_idx[i+1];
+         j++)
+      bft_printf("  %7ld ", (long)mesh->b_face_vtx_lst[j]);
     bft_printf("\n");
   }
 
   bft_printf("\nFamily of each boundary face:\n");
-  for (i = 0; i < mesh->n_b_faces; i++)
-    bft_printf("   < %3d >  %5d\n", i, mesh->b_face_family[i]);
+  for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++)
+    bft_printf("   < %3ld >  %5d\n", (long)i, mesh->b_face_family[i]);
 
   if (mesh->global_b_face_num != NULL) {
 
     bft_printf("\nBoundary faces global numbering:\n");
-    for (i = 0; i < mesh->n_b_faces; i++)
-      bft_printf("   < %7d >  %12llu\n",
-                 i, (unsigned long long)(mesh->global_b_face_num[i]));
+    for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++)
+      bft_printf("   < %7ld >  %12llu\n",
+                 (long)i, (unsigned long long)(mesh->global_b_face_num[i]));
     bft_printf("\n");
 
   }
@@ -3996,16 +3999,16 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
   if (mesh->global_cell_num != NULL) {
 
     bft_printf("\nCell global numbering:\n");
-    for (i = 0; i < mesh->n_cells; i++)
-      bft_printf("   < %7d >  %12llu\n", i,
+    for (cs_lnum_t i = 0; i < mesh->n_cells; i++)
+      bft_printf("   < %7ld >  %12llu\n", i,
                  (unsigned long long)(mesh->global_cell_num[i]));
     bft_printf("\n");
 
   }
 
   bft_printf("Family of each cell:\n");
-  for (i = 0; i < mesh->n_cells_with_ghosts; i++)
-    bft_printf("   < %3d >  %5d\n", i, mesh->cell_family[i]);
+  for (cs_lnum_t i = 0; i < mesh->n_cells_with_ghosts; i++)
+    bft_printf("   < %3ld >  %5d\n", (long)i, mesh->cell_family[i]);
 
   if (mesh->halo != NULL) {
 
@@ -4014,23 +4017,23 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
     bft_printf("\nHalo information: %p\n", (const void *)halo);
 
     bft_printf("n_c_domains:              %d\n", halo->n_c_domains);
-    bft_printf("n_ghost_cells:            %d\n", mesh->n_ghost_cells);
-    bft_printf("n_std_ghost_cells:        %d\n",
-               halo->n_elts[CS_HALO_STANDARD]);
-    bft_printf("n_ext_ghost_cells:        %d\n",
+    bft_printf("n_ghost_cells:            %ld\n", (long)mesh->n_ghost_cells);
+    bft_printf("n_std_ghost_cells:        %ld\n",
+               (long)halo->n_elts[CS_HALO_STANDARD]);
+    bft_printf("n_ext_ghost_cells:        %ld\n",
                halo->n_elts[CS_HALO_EXTENDED] - halo->n_elts[CS_HALO_STANDARD]);
 
-    for (i = 0; i < halo->n_c_domains; i++) {
+    for (int i = 0; i < halo->n_c_domains; i++) {
 
       bft_printf("\n\nRank id:        %d\n"
-                 "Halo index start:        %d        end:        %d\n"
-                 "Send index start:        %d        end:        %d\n"
+                 "Halo index start:        %ld        end:        %ld\n"
+                 "Send index start:        %ld        end:        %ld\n"
                  "Send cell ids:\n",
                  halo->c_domain_rank[i],
-                 halo->index[2*i], halo->index[2*i+2],
-                 halo->send_index[2*i], halo->send_index[2*i+2]);
-      for (j = halo->send_index[2*i]; j < halo->send_index[2*i+2]; j++)
-        bft_printf("  %10d : %10d\n", j, halo->send_list[j]);
+                 (long)halo->index[2*i], (long)halo->index[2*i+2],
+                 (long)halo->send_index[2*i], (long)halo->send_index[2*i+2]);
+      for (cs_lnum_t j = halo->send_index[2*i]; j < halo->send_index[2*i+2]; j++)
+        bft_printf("  %10ld : %10ld\n", (long)j, (long)halo->send_list[j]);
 
     } /* End of loop on the frontiers of halo */
 
@@ -4043,22 +4046,22 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
       bft_printf("n_transforms:                %d\n",mesh->n_transforms);
 
       bft_printf("\nData in the standard halo\n");
-      for (i = 0; i < n_transforms; i++)
-        for (j = 0; j < n_c_domains; j++)
-          bft_printf("< rank:%3d >< transform:%2d > start_idx: %5d"
-                     "        n_elts: %5d\n",
+      for (int i = 0; i < n_transforms; i++)
+        for (int j = 0; j < n_c_domains; j++)
+          bft_printf("< rank:%3d >< transform:%2d > start_idx: %5ld"
+                     "        n_elts: %5ld\n",
                      halo->c_domain_rank[j], i,
-                     halo->perio_lst[4*n_c_domains*i + 4*j],
-                     halo->perio_lst[4*n_c_domains*i + 4*j+1]);
+                     (long)halo->perio_lst[4*n_c_domains*i + 4*j],
+                     (long)halo->perio_lst[4*n_c_domains*i + 4*j+1]);
 
       bft_printf("\nData in the extended halo\n");
-      for (i = 0; i < n_transforms; i++)
-        for (j = 0; j < n_c_domains; j++)
+      for (int i = 0; i < n_transforms; i++)
+        for (int j = 0; j < n_c_domains; j++)
           bft_printf("< rank:%3d >< transform:%2d >        "
-                     "start_idx:  %5d, n_elts:  %5d\n",
+                     "start_idx:  %5ld, n_elts:  %5ld\n",
                      halo->c_domain_rank[j], i,
-                     halo->perio_lst[4*n_c_domains*i + 4*j+2],
-                     halo->perio_lst[4*n_c_domains*i + 4*j+3]);
+                     (long)halo->perio_lst[4*n_c_domains*i + 4*j+2],
+                     (long)halo->perio_lst[4*n_c_domains*i + 4*j+3]);
 
     } /* End if n_perio > 0 */
 
@@ -4067,10 +4070,12 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
   if (mesh->cell_cells_idx != NULL) {
 
     bft_printf("\n\nCell -> cells connectivity for extended neighborhood\n\n");
-    for (i = 0; i < mesh->n_cells; i++) {
-      bft_printf("< cell id:%3d>         ", i);
-      for (j = mesh->cell_cells_idx[i]; j < mesh->cell_cells_idx[i+1]; j++)
-        bft_printf("%d        ", mesh->cell_cells_lst[j]);
+    for (cs_lnum_t i = 0; i < mesh->n_cells; i++) {
+      bft_printf("< cell id:%3ld>         ", (long)i);
+      for (cs_lnum_t j = mesh->cell_cells_idx[i];
+           j < mesh->cell_cells_idx[i+1];
+           j++)
+        bft_printf("%ld        ", (long)mesh->cell_cells_lst[j]);
       bft_printf("\n");
     }
 
@@ -4080,10 +4085,12 @@ cs_mesh_dump(const cs_mesh_t  *mesh)
 
     bft_printf("\n\nGhost cell -> vertices connectivity "
                "for extended neighborhood\n\n");
-    for (i = 0; i < mesh->n_ghost_cells; i++) {
-      bft_printf("< gcell id:%3d>        ", i + mesh->n_cells);
-      for (j = mesh->gcell_vtx_idx[i]; j < mesh->gcell_vtx_idx[i+1]; j++)
-        bft_printf("%d        ", mesh->gcell_vtx_lst[j]);
+    for (cs_lnum_t i = 0; i < mesh->n_ghost_cells; i++) {
+      bft_printf("< gcell id:%3ld>        ", (long)i + mesh->n_cells);
+      for (cs_lnum_t j = mesh->gcell_vtx_idx[i];
+           j < mesh->gcell_vtx_idx[i+1];
+           j++)
+        bft_printf("%ld        ", (long)mesh->gcell_vtx_lst[j]);
       bft_printf("\n");
     }
 

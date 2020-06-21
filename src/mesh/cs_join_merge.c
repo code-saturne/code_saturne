@@ -345,9 +345,9 @@ _compute_new_vertex_gnum(const cs_join_mesh_t       *work,
   if (n_new_vertices != n_new_vertices_save)
     bft_error(__FILE__, __LINE__, 0,
               _("  The number of new vertices to create is not consistent.\n"
-                "     Previous number: %10d\n"
-                "     Current number:  %10d\n\n"),
-              n_new_vertices_save, n_new_vertices);
+                "     Previous number: %10ld\n"
+                "     Current number:  %10ld\n\n"),
+              (long)n_new_vertices_save, (long)n_new_vertices);
 
   /* Create a new fvm_io_num_t structure */
 
@@ -1257,8 +1257,8 @@ _pre_merge(cs_join_param_t     param,
                (unsigned long long)n_g_counter);
 
     if (param.verbosity > 2) {
-      fprintf(cs_glob_join_log, "\n  Local number of pre-merges: %d\n",
-              n_local_pre_merge);
+      fprintf(cs_glob_join_log, "\n  Local number of pre-merges: %ld\n",
+              (long)n_local_pre_merge);
     }
   }
 
@@ -1567,11 +1567,11 @@ static void
 _break_equivalence(cs_join_param_t         param,
                    cs_lnum_t               set_size,
                    const cs_join_vertex_t  set[],
-                   int                     state[],
+                   cs_lnum_t               state[],
                    cs_lnum_t               n_issues,
-                   const int               issues[],
-                   const int               idx[],
-                   const int               subset_num[],
+                   const cs_lnum_t         issues[],
+                   const cs_lnum_t         idx[],
+                   const cs_lnum_t         subset_num[],
                    const double            distances[])
 {
   cs_lnum_t  i, i1, i2, k;
@@ -1639,9 +1639,9 @@ _break_equivalence(cs_join_param_t         param,
 
             if (param.verbosity > 3)
               fprintf(cs_glob_join_log,
-                      " %2d - Break equivalence between [%llu, %llu]"
+                      " %2ld - Break equivalence between [%llu, %llu]"
                       " (dist_ref: %6.4e)\n",
-                      issues[i],
+                      (long)issues[i],
                       (unsigned long long)set[i_save].gnum,
                       (unsigned long long)set[i2].gnum, dist_save);
 
@@ -1682,7 +1682,7 @@ _solve_transitivity(cs_join_param_t    param,
 {
   cs_lnum_t  i1, i2, k, n_issues;
 
-  cs_lnum_t  n_loops = 0;
+  int  n_loops = 0;
   bool  is_end = false;
   cs_lnum_t  *subset_num = NULL, *state = NULL, *prev_num = NULL;
   cs_lnum_t  *subset_issues = NULL, *idx = NULL;
@@ -1812,7 +1812,8 @@ _merge_vertices(cs_join_param_t    param,
   bool  ok;
 
   cs_lnum_t  max_list_size = 0, vv_max_list_size = 0;
-  cs_lnum_t  n_loops = 0, n_max_loops = 0, n_transitivity = 0;
+  cs_lnum_t  n_transitivity = 0;
+  int        n_loops = 0, n_max_loops = 0;
 
   cs_join_gset_t  *equiv_gnum = NULL;
   cs_real_t  *rbuf = NULL;
@@ -1929,9 +1930,9 @@ _merge_vertices(cs_join_param_t    param,
         /* Display information on vertices to merge */
         if (verbosity > 3) {
           fprintf(logfile,
-                  "\n Begin merge for ref. elt: %llu - list_size: %d\n",
+                  "\n Begin merge for ref. elt: %llu - list_size: %ld\n",
                   (unsigned long long)merge_ref_elts[i],
-                  merge_index[i+1] - merge_index[i]);
+                  (long)(merge_index[i+1] - merge_index[i]));
           for (j = 0; j < list_size; j++) {
             fprintf(logfile, "%9llu -", (unsigned long long)list[j]);
             cs_join_mesh_dump_vertex(logfile, set[j]);
@@ -1955,9 +1956,9 @@ _merge_vertices(cs_join_param_t    param,
         if (verbosity > 3) { /* Display information */
           fprintf(logfile, "\n  %3d loop(s) to get consistent subsets\n",
                   n_loops);
-          fprintf(logfile, "\n End merge for ref. elt: %llu - list_size: %d\n",
+          fprintf(logfile, "\n End merge for ref. elt: %llu - list_size: %ld\n",
                   (unsigned long long)merge_ref_elts[i],
-                  merge_index[i+1] - merge_index[i]);
+                  (long)(merge_index[i+1] - merge_index[i]));
           for (j = 0; j < list_size; j++) {
             fprintf(logfile, "%7llu -", (unsigned long long)list[j]);
             cs_join_mesh_dump_vertex(logfile, vertices[list[j]]);
@@ -2445,8 +2446,8 @@ _update_inter_edges_after_merge(cs_join_param_t          param,
 
   if (param.verbosity > 2)
     fprintf(logfile,
-            "  Number of sub-elements to add to edge definition: %8d\n",
-            n_adds);
+            "  Number of sub-elements to add to edge definition: %8ld\n",
+            (long)n_adds);
 
   if (n_adds > 0) { /* Define a new inter_edges structure */
 
@@ -2960,9 +2961,9 @@ cs_join_create_new_vertices(int                     verbosity,
     if (vtx.gnum == 0 || vtx.tolerance < -0.99)
       bft_error(__FILE__, __LINE__, 0,
                 _("  Inconsistent value found in cs_join_vertex_t struct.:\n"
-                  "    Vertex %d is defined by:\n"
+                  "    Vertex %ld is defined by:\n"
                   "      %llu - [%7.4le, %7.4le, %7.4le] - %lg\n"),
-                i, (unsigned long long)vtx.gnum,
+                (long)i, (unsigned long long)vtx.gnum,
                 vtx.coord[0], vtx.coord[1], vtx.coord[2],
                 vtx.tolerance);
 
@@ -3019,9 +3020,9 @@ cs_join_merge_vertices(cs_join_param_t        param,
     cs_parall_counter(&g_n_equiv, 1);
     fprintf(cs_glob_join_log,
             "\n"
-            "  Final number of equiv. between vertices; local: %9d\n"
+            "  Final number of equiv. between vertices; local: %9ld\n"
             "                                          global: %9llu\n",
-            vtx_eset->n_equiv, (unsigned long long)g_n_equiv);
+            (long)vtx_eset->n_equiv, (unsigned long long)g_n_equiv);
   }
 
   /* Operate merge between equivalent vertices.

@@ -84,18 +84,18 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /* Common statics */
-static cs_int_t ntsto = 0;
-static cs_int_t ipass = 0;
+static int  ntsto = 0;
+static int  ipass = 0;
 static cs_real_t *tsto = NULL;
 static cs_real_t *asto = NULL;
 static cs_real_t *ksto2 = NULL;
 
 /* ADF08 model specifics */
-static cs_int_t nysto = 0;
+static int        nysto = 0;
 static cs_real_t *ysto = NULL;
 
 /* ADF50 model specifics */
-static cs_int_t nxh2osto = 0;
+static int        nxh2osto = 0;
 static cs_real_t *xh2osto = NULL;
 static cs_real_t *ksto1 = NULL;
 
@@ -114,7 +114,7 @@ static cs_real_t *ksto1 = NULL;
 static inline void
 _line_to_array(FILE      *radfile,
                cs_real_t  values[],
-               cs_int_t  *nvalues)
+               int       *nvalues)
 {
   char line[256];
   fgets(line, 256, radfile);
@@ -324,7 +324,7 @@ cs_rad_transfer_adf08(const cs_real_t  pco2[],
 
     /* Absortion Coefficient */
 
-    for (cs_int_t i = 0; i < nwsgg; i++) {
+    for (int i = 0; i < nwsgg; i++) {
       cs_real_t kmloc =    (1.0 - rt) * (1.0 - rx)
                          * ksto2[i + ix * nwsgg + it * nysto * nwsgg]
                        +   (1.0 - rt) * (rx)
@@ -593,7 +593,7 @@ cs_rad_transfer_adf50(const cs_real_t  pco2[],
     }
 
     /* Absortion Coefficient */
-    for (cs_int_t i = 0; i < nwsgg; i++) {
+    for (int i = 0; i < nwsgg; i++) {
       cs_real_t kco2loc =  ksto1[i + it * nwsgg]
                          + rt * (  ksto1[i + (it+1) * nwsgg]
                                  - ksto1[i + it * nwsgg]);

@@ -315,7 +315,7 @@ static void
 _get_faces_to_send(const cs_join_gset_t  *o2n_hist,
                    const cs_gnum_t        gnum_rank_index[],
                    cs_lnum_t             *n_send,
-                   cs_lnum_t             *send_rank[],
+                   int                   *send_rank[],
                    cs_lnum_t             *send_faces[])
 {
   cs_lnum_t  i, j, rank, start, end;
@@ -621,7 +621,8 @@ _dump_face_builder(cs_lnum_t              face_id,
   cs_lnum_t  face_e = builder->face_index[face_id+1];
   cs_lnum_t  n_subfaces = face_e - face_s;
 
-  fprintf(logfile, " Face %9d (n_subfaces: %d):\n", face_id+1, n_subfaces);
+  fprintf(logfile, " Face %9ld (n_subfaces: %ld):\n",
+          (long)face_id+1, (long)n_subfaces);
 
   for (i = face_s; i <face_e; i++, subface_id++) {
 
@@ -629,17 +630,17 @@ _dump_face_builder(cs_lnum_t              face_id,
     cs_lnum_t  subface_e = builder->subface_index->array[i+1];
 
     if (builder->subface_gnum == NULL)
-      fprintf(logfile, "   subface %4d: (%d, %d) -",
-              subface_id, subface_s, subface_e);
+      fprintf(logfile, "   subface %4ld: (%ld, %ld) -",
+              (long)subface_id, (long)subface_s, (long)subface_e);
     else
-      fprintf(logfile, "   subface %4d (%10llu) - (%d, %d) -",
-              subface_id,
+      fprintf(logfile, "   subface %4ld (%10llu) - (%ld, %ld) -",
+              (long)subface_id,
               (unsigned long long)builder->subface_gnum[face_s + subface_id],
-              subface_s, subface_e);
+              (long)subface_s, (long)subface_e);
 
     if (builder->subface_gconnect == NULL) {
       for (j = subface_s; j < subface_e; j++)
-        fprintf(logfile, " %d ", builder->subface_connect->array[j]);
+        fprintf(logfile, " %ld ", (long)builder->subface_connect->array[j]);
     }
     else {
       for (j = subface_s; j < subface_e; j++)
@@ -1039,9 +1040,10 @@ _find_next(cs_join_param_t         param,
     assert(n_connect_vertices < 2);
 
     bft_error(__FILE__, __LINE__, 0,
-              _(" Joining operation : split face %d\n"
+              _(" Joining operation : split face %ld\n"
                 " Problem in the connectivity. Could not find a "
-                "connection with the vertex %d\n"), fid, vid1+1);
+                "connection with the vertex %ld\n"),
+              (long)fid, (long)vid1+1);
 
 
   } /* End of test on the number of vertices connected to vid2 */
@@ -2054,8 +2056,8 @@ cs_join_split_faces(cs_join_param_t          param,
 
           if (param.verbosity > 2) {
             fprintf(cs_glob_join_log,
-                    "\n Keep initial connectivity for face %d [%llu]:\n",
-                    fid+1, (unsigned long long)w->face_gnum[fid]);
+                    "\n Keep initial connectivity for face %ld [%llu]:\n",
+                    (long)fid+1, (unsigned long long)w->face_gnum[fid]);
             _dump_face_builder(block_id, builder, cs_glob_join_log);
           }
 

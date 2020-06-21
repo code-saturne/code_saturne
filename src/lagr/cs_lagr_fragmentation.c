@@ -362,7 +362,7 @@ _gaps_classes(cs_lnum_t  array[][2],
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_lnum_t
+static int
 _compare_interface(const void  *a,
                    const void  *b)
 {
@@ -487,7 +487,7 @@ cs_lagr_fragmentation(cs_real_t  dt,
       continue;
 
     /* Generate the number of fragmentation events */
-    cs_lnum_t vp = 0;
+    int vp = 0;
     cs_real_t rand;
 
     cs_lnum_t class_nb = cs_lagr_particles_get_lnum(p_set, corr[i],

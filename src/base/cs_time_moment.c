@@ -289,7 +289,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
                                     "time_moments:sizes",
                                     CS_MESH_LOCATION_NONE,
                                     3,
-                                    CS_TYPE_cs_int_t,
+                                    CS_TYPE_int,
                                     sizes);
 
   if (retcode == CS_RESTART_ERR_EXISTS)
@@ -335,7 +335,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
                           "time_moments:wa:location_id",
                           CS_MESH_LOCATION_NONE,
                           ri->n_wa,
-                          CS_TYPE_cs_int_t,
+                          CS_TYPE_int,
                           ri->wa_location_id);
   _assert_restart_success(retcode);
 
@@ -349,7 +349,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
                           "time_moments:wa:nt_start",
                           CS_MESH_LOCATION_NONE,
                           ri->n_wa,
-                          CS_TYPE_cs_int_t,
+                          CS_TYPE_int,
                           ri->wa_nt_start);
   _assert_restart_success(retcode);
 
@@ -384,7 +384,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
                                     "time_moments:type",
                                     CS_MESH_LOCATION_NONE,
                                     ri->n_moments,
-                                    CS_TYPE_cs_int_t,
+                                    CS_TYPE_int,
                                     ri->m_type);
   _assert_restart_success(retcode);
 
@@ -392,7 +392,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
                                     "time_moments:location_id",
                                     CS_MESH_LOCATION_NONE,
                                     ri->n_moments,
-                                    CS_TYPE_cs_int_t,
+                                    CS_TYPE_int,
                                     ri->location_id);
   _assert_restart_success(retcode);
 
@@ -400,7 +400,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
                                     "time_moments:dimension",
                                     CS_MESH_LOCATION_NONE,
                                     ri->n_moments,
-                                    CS_TYPE_cs_int_t,
+                                    CS_TYPE_int,
                                     ri->dimension);
   _assert_restart_success(retcode);
 
@@ -408,7 +408,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
                                     "time_moments:wa_id",
                                     CS_MESH_LOCATION_NONE,
                                     ri->n_moments,
-                                    CS_TYPE_cs_int_t,
+                                    CS_TYPE_int,
                                     ri->wa_id);
   _assert_restart_success(retcode);
 
@@ -416,7 +416,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
                                     "time_moments:lower_order_id",
                                     CS_MESH_LOCATION_NONE,
                                     ri->n_moments,
-                                    CS_TYPE_cs_int_t,
+                                    CS_TYPE_int,
                                     ri->l_id);
   _assert_restart_success(retcode);
 }
@@ -939,8 +939,8 @@ _sd_moment_data(const void  *input,
 
   const cs_lnum_t n_elts = cs_mesh_location_get_n_elts(location_id)[0];
 
-  cs_lnum_t _f_dim[16*2];
-  cs_lnum_t *f_dim;
+  int _f_dim[16*2];
+  int *f_dim;
 
   const cs_real_t * _f_val[16];
   const cs_real_t **f_val;
@@ -2717,7 +2717,7 @@ cs_time_moment_restart_write(cs_restart_t  *restart)
                            "time_moments:sizes",
                            CS_MESH_LOCATION_NONE,
                            3,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            sizes);
 
   cs_restart_write_section(restart,
@@ -2755,14 +2755,14 @@ cs_time_moment_restart_write(cs_restart_t  *restart)
                            "time_moments:wa:location_id",
                            CS_MESH_LOCATION_NONE,
                            n_active_wa,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            location_id);
 
   cs_restart_write_section(restart,
                            "time_moments:wa:nt_start",
                            CS_MESH_LOCATION_NONE,
                            n_active_wa,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            nt_start);
 
   cs_restart_write_section(restart,
@@ -2827,35 +2827,35 @@ cs_time_moment_restart_write(cs_restart_t  *restart)
                            "time_moments:type",
                            CS_MESH_LOCATION_NONE,
                            n_active_moments,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            m_type);
 
   cs_restart_write_section(restart,
                            "time_moments:location_id",
                            CS_MESH_LOCATION_NONE,
                            n_active_moments,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            location_id);
 
   cs_restart_write_section(restart,
                            "time_moments:dimension",
                            CS_MESH_LOCATION_NONE,
                            n_active_moments,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            dimension);
 
   cs_restart_write_section(restart,
                            "time_moments:wa_id",
                            CS_MESH_LOCATION_NONE,
                            n_active_moments,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            wa_id);
 
   cs_restart_write_section(restart,
                            "time_moments:lower_order_id",
                            CS_MESH_LOCATION_NONE,
                            n_active_moments,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            l_id);
 
   BFT_FREE(l_id);

@@ -643,7 +643,7 @@ cs_rad_transfer_modak(cs_real_t        ck[],
     if ((1.0 - alpha) <= cs_math_epzero)
       bft_error(__FILE__, __LINE__, 0,
                 _("Error in %s: absorptivity computation\n"
-                  "  cell_id = %10d\n"
+                  "  cell_id = %10ld\n"
                   "  alpha = %15.7e\n"
                   "  pco2  = %15.7e\n"
                   "  ph2o  = %15.7e\n"
@@ -652,7 +652,7 @@ cs_rad_transfer_modak(cs_real_t        ck[],
                   "  path  = %15.7e\n"
                   "  fv    = %15.7E\n"),
                 __func__,
-                cell_id,
+                (long)cell_id,
                 alpha,
                 pco2[cell_id],
                 ph2o[cell_id],

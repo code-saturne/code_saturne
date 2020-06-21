@@ -122,8 +122,8 @@ _type_size(cs_restart_val_type_t   val_type)
   case CS_TYPE_char:
     retval = 1;
     break;
-  case CS_TYPE_cs_int_t:
-    retval = sizeof(cs_int_t);
+  case CS_TYPE_int:
+    retval = sizeof(int);
     break;
   case CS_TYPE_cs_gnum_t:
     retval = sizeof(cs_gnum_t);

@@ -293,9 +293,15 @@ typedef enum {
   typedef unsigned  cs_gnum_t;
 #endif
 
-/* Other types */
+/* Local integer index or number */
 
-typedef int               cs_lnum_t;   /* Local integer index or number */
+#if defined(HAVE_LONG_LNUM)
+  typedef long  cs_lnum_t;
+#else
+  typedef int   cs_lnum_t;
+#endif
+
+/* Other types */
 typedef double            cs_coord_t;  /* Real number (coordinate value) */
 
 typedef int                 cs_int_t;    /* Fortran integer */
@@ -305,10 +311,10 @@ typedef unsigned short int  cs_flag_t;   /* Flag storing metadata */
 
 /* Vector or array block types */
 
-typedef int        cs_lnum_2_t[2];      /* Vector of 2 local numbers */
-typedef int        cs_lnum_3_t[3];      /* Vector of 3 local numbers */
+typedef cs_lnum_t  cs_lnum_2_t[2];      /* Vector of 2 local numbers */
+typedef cs_lnum_t  cs_lnum_3_t[3];      /* Vector of 3 local numbers */
 
-typedef double     cs_coord_3_t[3];         /* Vector of 3 real (coordinate)
+typedef cs_coord_t cs_coord_3_t[3];         /* Vector of 3 real (coordinate)
                                                values */
 
 typedef cs_real_t  cs_real_2_t[2];          /* Vector of 2 real values */
@@ -357,7 +363,6 @@ typedef struct {
 
 #if defined(HAVE_MPI) && !defined(CS_IGNORE_MPI)
 
-#  define CS_MPI_INT       MPI_INT         /* If cs_int_t is an int */
 #  define CS_MPI_REAL      MPI_DOUBLE      /* If cs_real_t is a double */
 
 /* MPI type for cs_gnum_t integer type (depends on configuration) */
@@ -379,9 +384,16 @@ typedef struct {
 #    define CS_MPI_GNUM       MPI_UNSIGNED
 #  endif
 
+/* MPI type for cs_lnum_t type */
+
+#  if defined(HAVE_LONG_LNUM)
+#    define CS_MPI_LNUM     MPI_LONG
+#  else
+#    define CS_MPI_LNUM     MPI_INT
+#  endif
+
 #  define CS_MPI_EFLAG    MPI_UNSIGNED       /* MPI type for cs_mflag_t type */
 #  define CS_MPI_FLAG     MPI_UNSIGNED_SHORT /* MPI type for cs_flag_t type */
-#  define CS_MPI_LNUM     MPI_INT            /* MPI type for cs_lnum_t type */
 #  define CS_MPI_COORD    MPI_DOUBLE         /* MPI type for cs_coord_t type */
 
 #endif /* defined(HAVE_MPI) && !defined(CS_IGNORE_MPI) */
@@ -397,10 +409,18 @@ typedef struct {
 # define CS_GNUM_TYPE     CS_UINT32
 #endif
 
-#if (SIZEOF_INT == 8)
-# define CS_LNUM_TYPE     CS_INT64
+#if defined(HAVE_LONG_LNUM)
+# if (SIZEOF_LONG == 8)
+#  define CS_LNUM_TYPE     CS_INT64
+# else
+#  define CS_LNUM_TYPE     CS_INT32
+# endif
 #else
-# define CS_LNUM_TYPE     CS_INT32
+# if (SIZEOF_INT == 8)
+#  define CS_LNUM_TYPE     CS_INT64
+# else
+#  define CS_LNUM_TYPE     CS_INT32
+# endif
 #endif
 
 #if (SIZEOF_INT == 8)

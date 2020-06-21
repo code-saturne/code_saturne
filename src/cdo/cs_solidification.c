@@ -704,7 +704,7 @@ _update_clc(const cs_mesh_t             *mesh,
 
     default:
       bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid state for cell %d\n", __func__, c_id);
+                " %s: Invalid state for cell %ld\n", __func__, (long)c_id);
       break;
 
     } /* Switch on cell state */
@@ -797,7 +797,7 @@ _update_gl_legacy(const cs_mesh_t             *mesh,
 
     default:
       bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid state for cell %d\n", __func__, c_id);
+                " %s: Invalid state for cell %ld\n", __func__, (long)c_id);
       break;
 
     } /* Switch on cell state */
@@ -900,7 +900,7 @@ _update_gl_legacy_ast(const cs_mesh_t             *mesh,
 
     default:
       bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid state for cell %d\n", __func__, c_id);
+                " %s: Invalid state for cell %ld\n", __func__, (long)c_id);
       break;
 
     } /* Switch on cell state */
@@ -951,7 +951,7 @@ _update_gl_legacy_ast(const cs_mesh_t             *mesh,
 
     default:
       bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid state for face %d\n", __func__, f_id);
+                " %s: Invalid state for face %ld\n", __func__, (long)f_id);
       break;
 
     } /* Switch on face state */
@@ -1029,7 +1029,7 @@ _update_thm_legacy(const cs_mesh_t             *mesh,
 
     default:
       bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid state for cell %d\n", __func__, c_id);
+                " %s: Invalid state for cell %ld\n", __func__, (long)c_id);
       break;
 
     } /* Switch on cell state */
@@ -1203,8 +1203,8 @@ _update_gl_taylor(const cs_mesh_t             *mesh,
       break;
 
     default:
-      bft_error(__FILE__, __LINE__, 0, " %s: Invalid state for cell %d\n",
-                __func__, c_id);
+      bft_error(__FILE__, __LINE__, 0, " %s: Invalid state for cell %ld\n",
+                __func__, (long)c_id);
       break;
 
     } /* Switch on cell state */
@@ -1338,7 +1338,7 @@ _update_thm_taylor(const cs_mesh_t             *mesh,
 
     default:
       bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid state for cell %d\n", __func__, c_id);
+                " %s: Invalid state for cell %ld\n", __func__, (long)c_id);
       break;
 
     } /* Switch on cell state */
@@ -1665,8 +1665,8 @@ _update_gl_path(const cs_mesh_t             *mesh,
       break;
 
     default:
-      bft_error(__FILE__, __LINE__, 0, " %s: Invalid state for cell %d\n",
-                __func__, c_id);
+      bft_error(__FILE__, __LINE__, 0, " %s: Invalid state for cell %ld\n",
+                __func__, (long)c_id);
       break;
 
     } /* Switch on cell state */
@@ -1844,7 +1844,7 @@ _update_thm_path(const cs_mesh_t             *mesh,
 
     default:
       bft_error(__FILE__, __LINE__, 0,
-                " %s: Invalid state for cell %d\n", __func__, c_id);
+                " %s: Invalid state for cell %ld\n", __func__, (long)c_id);
       break;
 
     } /* Switch on cell state */
@@ -1980,8 +1980,8 @@ _default_binary_coupling(const cs_mesh_t              *mesh,
       if (solid->verbosity > 1)
         cs_log_printf(CS_LOG_DEFAULT,
                       "### Solidification.NL: "
-                      " k= %d | delta_temp= %7d | delta_cbulk= %7d\n",
-                      alloy->iter, cid_maxt, cid_maxc);
+                      " k= %d | delta_temp= %7ld | delta_cbulk= %7ld\n",
+                      alloy->iter, (long)cid_maxt, (long)cid_maxc);
     }
 
   } /* while iterating */

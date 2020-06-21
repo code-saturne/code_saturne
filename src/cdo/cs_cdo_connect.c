@@ -124,8 +124,8 @@ _add_f2e_entry(cs_lnum_t                  shift,
 
 #if defined(DEBUG) && !defined(NDEBUG)
   if (f2e->ids[shift] == -1)
-    bft_error(__FILE__, __LINE__, 0, " %s: edge not found (v1: %d, v2: %d)\n",
-              __func__, v1_id, v2_id);
+    bft_error(__FILE__, __LINE__, 0, " %s: edge not found (v1: %ld, v2: %ld)\n",
+              __func__, (long)v1_id, (long)v2_id);
 #endif
 }
 
@@ -1379,19 +1379,19 @@ cs_cdo_connect_summary(const cs_cdo_connect_t  *connect,
   /* Output */
   cs_log_printf(CS_LOG_DEFAULT,
                 " --dim-- max. number of faces by cell:    %4d\n",
-                n_max_entbyc[0]);
+                (int)n_max_entbyc[0]);
   cs_log_printf(CS_LOG_DEFAULT,
                 " --dim-- max. number of edges by cell:    %4d\n",
-                n_max_entbyc[1]);
+                (int)n_max_entbyc[1]);
   cs_log_printf(CS_LOG_DEFAULT,
                 " --dim-- max. number of vertices by cell: %4d\n",
-                n_max_entbyc[2]);
+                (int)n_max_entbyc[2]);
   cs_log_printf(CS_LOG_DEFAULT,
-                "\n --dim-- max. vertex range for a cell:      %d\n",
-                n_max_entbyc[3]);
+                "\n --dim-- max. vertex range for a cell:  %ld\n",
+                (long)n_max_entbyc[3]);
   cs_log_printf(CS_LOG_DEFAULT,
-                " --dim-- max. edge range for a cell:        %d\n",
-                n_max_entbyc[4]);
+                " --dim-- max. edge range for a cell:      %ld\n",
+                (long)n_max_entbyc[4]);
 
   /* Information about special case where vertices are lying on the boundary
      but not a face (for instance a tetrahedron) */

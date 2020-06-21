@@ -2404,7 +2404,7 @@ _check_restart_type(void)
                                      "les_balance_type",
                                      itysup,
                                      1,
-                                     CS_TYPE_cs_int_t,
+                                     CS_TYPE_int,
                                      &type);
 
     if (ierror < CS_RESTART_SUCCESS)
@@ -3808,7 +3808,7 @@ cs_les_balance_write_restart(void)
                              nomrub,
                              support,
                              1,
-                             CS_TYPE_cs_int_t,
+                             CS_TYPE_int,
                              &(_les_balance.type));
 
   }

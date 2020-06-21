@@ -439,7 +439,7 @@ _alltoall_caller_update_meta(_mpi_all_to_all_caller_t  *dc,
                              int                        stride)
 {
   size_t elt_size = cs_datatype_size[datatype]*stride;
-  size_t align_size = sizeof(cs_lnum_t);
+  size_t align_size = sizeof(int);
 
   /* Free previous associated datatype if needed */
 
@@ -453,8 +453,11 @@ _alltoall_caller_update_meta(_mpi_all_to_all_caller_t  *dc,
 
   /* Recompute data size and alignment */
 
-  if (dc->dest_id_datatype == CS_LNUM_TYPE)
+  if (dc->dest_id_datatype == CS_LNUM_TYPE) {
     dc->elt_shift = sizeof(cs_lnum_t);
+    if (sizeof(cs_lnum_t) > align_size)
+      align_size = sizeof(cs_lnum_t);
+  }
   else
     dc->elt_shift = 0;
 

@@ -223,8 +223,8 @@ _init_wt_limit(void)
 
 void CS_PROCF (armtps, ARMTPS)
 (
- const cs_int_t  *ntcabs,
-       cs_int_t  *ntmabs
+ const int  *ntcabs,
+ int        *ntmabs
 )
 {
   int ts_max = *ntmabs;
@@ -373,7 +373,7 @@ cs_resource_get_max_timestep(int   ts_cur,
 
 #if defined(HAVE_MPI)
     if (cs_glob_n_ranks > 1)
-      MPI_Bcast(ts_max, 1, CS_MPI_INT, 0, cs_glob_mpi_comm);
+      MPI_Bcast(ts_max, 1, MPI_INT, 0, cs_glob_mpi_comm);
 #endif
 
   }

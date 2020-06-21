@@ -301,7 +301,7 @@ _mesh_to_builder_g(cs_mesh_t          *mesh,
 
   cs_part_to_block_t *d = NULL;
 
-  cs_lnum_t *face_gc_id = NULL;
+  int *face_gc_id = NULL;
   cs_gnum_t *cell_gnum = NULL, *face_gnum = NULL;
   cs_gnum_t *face_cell_g = NULL;
 
@@ -1162,7 +1162,7 @@ _write_dimensions(cs_mesh_t          *mesh,
 
   cs_io_write_global("group_class_properties",
                      (mesh->n_families * mesh->n_max_family_items), 0, 0, 1,
-                     lnum_type,
+                     CS_INT_TYPE,
                      mesh->family_item, pp_out);
 
   if (mesh->n_init_perio > 0) {

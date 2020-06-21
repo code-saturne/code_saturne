@@ -1907,13 +1907,13 @@ _dump_node(const fvm_box_tree_t  *bt,
   const fvm_morton_code_t  m_code = node->morton_code;
 
   bft_printf("\n"
-             "  node %10d (%s)\n"
+             "  node %10ld (%s)\n"
              "    level:   %3u - anchor: [ %10u %10u %10u ]\n"
-             "    n_boxes: %3d - start_id: %u\n"
+             "    n_boxes: %3ld - start_id: %ld\n"
              "    boxes:\n",
-             node_id, node_type[(int)(node->is_leaf)],
+             (long)node_id, node_type[(int)(node->is_leaf)],
              m_code.L, m_code.X[0], m_code.X[1], m_code.X[2],
-             node->n_boxes, node->start_id);
+             (long)node->n_boxes, (long)node->start_id);
 
   for (i = 0; i < node->n_boxes; i++)
     bft_printf("        %d\n", (int)(bt->box_ids[node->start_id + i]));
@@ -2293,7 +2293,7 @@ fvm_box_tree_get_distrib(fvm_box_tree_t        *bt,
     distrib->index[i+1] += distrib->index[i];
 
   BFT_MALLOC(distrib->list,
-             distrib->index[distrib->n_ranks], int);
+             distrib->index[distrib->n_ranks], cs_lnum_t);
 
   BFT_MALLOC(counter, distrib->n_ranks, cs_lnum_t);
 

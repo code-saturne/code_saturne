@@ -598,8 +598,8 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
 
   cs_real_t  *da = NULL, *xa = NULL, *x = NULL, *y = NULL;
   cs_real_t  *yr0 = NULL;
-  int d_block_size[4] = {3, 3, 3, 9};
-  int ed_block_size[4] = {3, 3, 3, 9};
+  cs_lnum_t d_block_size[4] = {3, 3, 3, 9};
+  cs_lnum_t ed_block_size[4] = {3, 3, 3, 9};
 
   cs_matrix_fill_type_t f_type[]
     = {CS_MATRIX_SCALAR,           /* Simple scalar matrix */
@@ -668,7 +668,7 @@ _matrix_check_asmb(cs_lnum_t              n_rows,
 
   for (f_id = 0; f_id < 2; f_id++) {
 
-    const int *_d_block_size
+    const cs_lnum_t *_d_block_size
       = (f_type[f_id] >= CS_MATRIX_BLOCK_D) ? d_block_size : NULL;
     const cs_lnum_t stride = (_d_block_size != NULL) ? d_block_size[1] : 1;
     const cs_lnum_t sd = stride*stride; /* for current fill types */

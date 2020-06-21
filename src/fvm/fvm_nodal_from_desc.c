@@ -1461,8 +1461,8 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
     else
       if (retcode == FVM_NODAL_FROM_DESC_FAILURE)
         bft_error(__FILE__, __LINE__, 0,
-                  _("Incoherent connectivity for cell %d\n"),
-                  cell_id);
+                  _("Incoherent connectivity for cell %ld\n"),
+                  (long)cell_id);
 
   }
 

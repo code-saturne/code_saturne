@@ -282,7 +282,7 @@ cs_join_mesh_minmax_tol(cs_join_param_t    param,
 
 void
 cs_join_mesh_exchange(cs_lnum_t              n_send,
-                      const cs_lnum_t        send_rank[],
+                      const int              send_rank[],
                       const cs_lnum_t        send_faces[],
                       const cs_join_mesh_t  *send_mesh,
                       cs_join_mesh_t        *recv_mesh,
@@ -374,7 +374,7 @@ cs_join_mesh_define_edges(const cs_join_mesh_t  *mesh);
  *   an edge number relative to the couple of vertices
  *---------------------------------------------------------------------------*/
 
-cs_int_t
+cs_lnum_t
 cs_join_mesh_get_edge(cs_lnum_t               v1_num,
                       cs_lnum_t               v2_num,
                       const cs_join_edges_t  *edges);

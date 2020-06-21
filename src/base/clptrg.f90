@@ -167,7 +167,7 @@ double precision utau, upx, upy, upz, usn
 double precision uiptn, uiptmn, uiptmx
 double precision uetmax, uetmin, ukmax, ukmin, yplumx, yplumn
 double precision tetmax, tetmin, tplumx, tplumn
-double precision uk, uet, yplus, ypup, uplus, phit
+double precision uk, uet, yplus, uplus, phit
 double precision gredu, temp
 double precision cfnnu, cfnns, cfnnk, cfnne
 double precision sqrcmu, ek
@@ -246,7 +246,7 @@ type(var_cal_opt) :: vcopt_rij, vcopt_ep
 
 double precision coef_mom,coef_momm
 double precision one_minus_ri
-double precision dlmo_loc,dt,tm,dist2,dist3,flux
+double precision dlmo_loc,dt,tm,dist2,flux
 double precision, dimension(:), allocatable :: bdlmo_loc
 
 !===============================================================================
@@ -1805,7 +1805,6 @@ double precision act, rugt
 double precision rinfiv(3), pimpv(3)
 double precision visci(3,3), hintt(6)
 double precision turb_schmidt, exchange_coef
-double precision qimp
 double precision rcprod
 double precision coef_mom,coef_moh,coef_mohh,dlmo_loc
 

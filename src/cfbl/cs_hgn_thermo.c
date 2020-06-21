@@ -300,6 +300,8 @@ _eq_function(cs_real_t e,
 
     bft_error(__FILE__, __LINE__, 0,
               _("Unknown form for equilibrium function.\n"));
+    res1 = 0;
+    res2 = 0;
 
   }
 

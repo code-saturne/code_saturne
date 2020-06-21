@@ -66,7 +66,7 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (setcwf, SETCWF) (const cs_int_t   *cwfpst,
+CS_PROCF (setcwf, SETCWF) (const int        *cwfpst,
                            const cs_real_t  *cwfthr);
 
 /*=============================================================================

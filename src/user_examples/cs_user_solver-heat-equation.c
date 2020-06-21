@@ -92,7 +92,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
 {
   /*! [local_variables] */
 
-  cs_int_t    i, iter, n_iter;
+  int         i, iter, n_iter;
 
   cs_real_t   x0, xL, t0, tL, L;
   cs_real_t   r;
@@ -102,7 +102,7 @@ cs_user_solver(const cs_mesh_t             *mesh,
   cs_restart_t    *restart, *checkpoint;
   cs_time_plot_t  *time_plot;
 
-  const cs_int_t   n = mesh->n_cells;
+  const cs_lnum_t   n = mesh->n_cells;
   const cs_real_t  pi = 4.*atan(1.);
 
   const char  var_name[] = "temperature";

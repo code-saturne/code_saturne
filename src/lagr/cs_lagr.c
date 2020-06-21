@@ -430,49 +430,49 @@ cs_real_33_t  *cs_glob_lagr_b_face_proj = NULL;
  *============================================================================*/
 
 void
-cs_f_lagr_params_pointers(cs_int_t  **p_iilagr,
-                          cs_int_t  **p_idepst,
-                          cs_int_t  **p_iflow,
-                          cs_int_t  **p_ipreci);
+cs_f_lagr_params_pointers(int  **p_iilagr,
+                          int  **p_idepst,
+                          int  **p_iflow,
+                          int  **p_ipreci);
 
 void
-cs_f_lagr_dim_pointers(cs_int_t     **p_ntersl);
+cs_f_lagr_dim_pointers(int  **p_ntersl);
 
 void
-cs_f_lagr_clogging_model_pointers(cs_real_t **jamlim,
-                                  cs_real_t **mporos,
-                                  cs_real_t **csthpp);
+cs_f_lagr_clogging_model_pointers(cs_real_t  **jamlim,
+                                  cs_real_t  **mporos,
+                                  cs_real_t  **csthpp);
 
 void
 cs_f_lagr_shape_model_pointers(cs_real_t **param_chmb);
 
 void
-cs_f_lagr_agglomeration_model_pointers( cs_lnum_t **n_max_classes,
-                                        cs_real_t **min_stat_weight,
-                                        cs_real_t **max_stat_weight,
-                                        cs_real_t **scalar_kernel,
-                                        cs_real_t **base_diameter );
+cs_f_lagr_agglomeration_model_pointers( cs_lnum_t  **n_max_classes,
+                                        cs_real_t  **min_stat_weight,
+                                        cs_real_t  **max_stat_weight,
+                                        cs_real_t  **scalar_kernel,
+                                        cs_real_t  **base_diameter );
 
 void
-cs_f_lagr_consolidation_model_pointers(cs_lnum_t **iconsol,
-                                       cs_real_t **rate_consol,
-                                       cs_real_t **slope_consol,
-                                       cs_real_t **force_consol);
+cs_f_lagr_consolidation_model_pointers(cs_lnum_t  **iconsol,
+                                       cs_real_t  **rate_consol,
+                                       cs_real_t  **slope_consol,
+                                       cs_real_t  **force_consol);
 
 void
-cs_f_lagr_source_terms_pointers(cs_int_t **p_ltsdyn,
-                                cs_int_t **p_ltsmas,
-                                cs_int_t **p_ltsthe,
-                                cs_int_t **p_itsli,
-                                cs_int_t **p_itske,
-                                cs_int_t **p_itste,
-                                cs_int_t **p_itsti,
-                                cs_int_t **p_itsmas,
-                                cs_int_t **p_itsco,
-                                cs_int_t **p_itsmv1,
-                                cs_int_t **p_itsmv2,
-                                cs_int_t  *dim_itsmv1,
-                                cs_int_t  *dim_itsmv2);
+cs_f_lagr_source_terms_pointers(int  **p_ltsdyn,
+                                int  **p_ltsmas,
+                                int  **p_ltsthe,
+                                int  **p_itsli,
+                                int  **p_itske,
+                                int  **p_itste,
+                                int  **p_itsti,
+                                int  **p_itsmas,
+                                int  **p_itsco,
+                                int  **p_itsmv1,
+                                int  **p_itsmv2,
+                                int   *dim_itsmv1,
+                                int   *dim_itsmv2);
 
 void
 cs_f_lagr_specific_physics(int        *iirayo,
@@ -481,18 +481,18 @@ cs_f_lagr_specific_physics(int        *iirayo,
                            cs_real_t  *diftl0);
 
 void
-cs_f_lagr_coal_comb(cs_int_t   *ih2o,
-                    cs_int_t   *io2,
-                    cs_int_t   *ico,
-                    cs_int_t   *iatc,
+cs_f_lagr_coal_comb(int        *ih2o,
+                    int        *io2,
+                    int        *ico,
+                    int        *iatc,
                     cs_real_t  *prefth,
                     cs_real_t  *trefth,
-                    cs_int_t   *natom,
+                    int        *natom,
                     cs_real_t  *wmolat,
-                    cs_int_t   *ngazem,
+                    int        *ngazem,
                     cs_real_t  *wmole,
-                    cs_int_t   *iym1,
-                    cs_int_t   *ncharm,
+                    int        *iym1,
+                    int        *ncharm,
                     cs_real_t  *a1ch,
                     cs_real_t  *h02ch,
                     cs_real_t  *e1ch,
@@ -525,10 +525,10 @@ cs_f_lagr_coal_comb(cs_int_t   *ih2o,
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_lagr_params_pointers(cs_int_t  **p_iilagr,
-                          cs_int_t  **p_idepst,
-                          cs_int_t  **p_iflow,
-                          cs_int_t  **p_ipreci)
+cs_f_lagr_params_pointers(int  **p_iilagr,
+                          int  **p_idepst,
+                          int  **p_iflow,
+                          int  **p_ipreci)
 {
   *p_iilagr = &_lagr_time_scheme.iilagr;
   *p_idepst = &_lagr_model.deposition;
@@ -547,7 +547,7 @@ cs_f_lagr_params_pointers(cs_int_t  **p_iilagr,
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_lagr_dim_pointers(cs_int_t   **p_ntersl)
+cs_f_lagr_dim_pointers(int  **p_ntersl)
 {
   *p_ntersl = &(_lagr_dim.ntersl);
 }
@@ -596,19 +596,19 @@ cs_f_lagr_consolidation_model_pointers(cs_lnum_t **iconsol,
 }
 
 void
-cs_f_lagr_source_terms_pointers(cs_int_t **p_ltsdyn,
-                                cs_int_t **p_ltsmas,
-                                cs_int_t **p_ltsthe,
-                                cs_int_t **p_itsli,
-                                cs_int_t **p_itske,
-                                cs_int_t **p_itste,
-                                cs_int_t **p_itsti,
-                                cs_int_t **p_itsmas,
-                                cs_int_t **p_itsco,
-                                cs_int_t **p_itsmv1,
-                                cs_int_t **p_itsmv2,
-                                cs_int_t  *dim_itsmv1,
-                                cs_int_t  *dim_itsmv2)
+cs_f_lagr_source_terms_pointers(int  **p_ltsdyn,
+                                int  **p_ltsmas,
+                                int  **p_ltsthe,
+                                int  **p_itsli,
+                                int  **p_itske,
+                                int  **p_itste,
+                                int  **p_itsti,
+                                int  **p_itsmas,
+                                int  **p_itsco,
+                                int  **p_itsmv1,
+                                int  **p_itsmv2,
+                                int  *dim_itsmv1,
+                                int  *dim_itsmv2)
 {
   *p_ltsdyn = &cs_glob_lagr_source_terms->ltsdyn;
   *p_ltsmas = &cs_glob_lagr_source_terms->ltsmas;
@@ -657,18 +657,18 @@ cs_f_lagr_specific_physics(int        *iirayo,
 }
 
 void
-cs_f_lagr_coal_comb(cs_int_t   *ih2o,
-                    cs_int_t   *io2,
-                    cs_int_t   *ico,
-                    cs_int_t   *iatc,
+cs_f_lagr_coal_comb(int        *ih2o,
+                    int        *io2,
+                    int        *ico,
+                    int        *iatc,
                     cs_real_t  *prefth,
                     cs_real_t  *trefth,
-                    cs_int_t   *natom,
+                    int        *natom,
                     cs_real_t  *wmolat,
-                    cs_int_t   *ngazem,
+                    int        *ngazem,
                     cs_real_t  *wmole,
-                    cs_int_t   *iym1,
-                    cs_int_t   *ncharm,
+                    int        *iym1,
+                    int        *ncharm,
                     cs_real_t  *a1ch,
                     cs_real_t  *h02ch,
                     cs_real_t  *e1ch,
@@ -2601,9 +2601,9 @@ cs_lagr_solve_time_step(const int         itypfb[],
             bft_printf("   ** LAGRANGIAN MODULE:\n"
                        "   ** Error in cs_lagr.c: inclg < 0 ! \n"
                        "---------------------------------------------\n\n\n"
-                       "** Ifac = %d  and inclg = %g\n"
+                       "** Ifac = %ld  and inclg = %g\n"
                        "-------------------------------------------------\n",
-                       ifac, bound_stat[lag_bdi->inclg * n_b_faces + ifac]);
+                       (long)ifac, bound_stat[lag_bdi->inclg * n_b_faces + ifac]);
           }
 
         }

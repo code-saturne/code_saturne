@@ -139,10 +139,10 @@ cs_turbomachinery_t  *_turbomachinery = NULL;
  * (descriptions follow, with function bodies).
  *============================================================================*/
 
-void cs_f_map_turbomachinery_model(cs_int_t    *iturbo,
-                                   cs_int_t    *ityint);
+void cs_f_map_turbomachinery_model(int  *iturbo,
+                                   int  *ityint);
 
-void cs_f_map_turbomachinery_rotor(int       **irotce);
+void cs_f_map_turbomachinery_rotor(int  **irotce);
 
 /*============================================================================
  * Private function definitions
@@ -561,7 +561,7 @@ _copy_mesh(const cs_mesh_t  *mesh,
   mesh_copy->n_groups = mesh->n_groups;
 
   if (mesh->n_groups > 0) {
-    BFT_MALLOC(mesh_copy->group_idx, mesh->n_groups + 1, cs_lnum_t);
+    BFT_MALLOC(mesh_copy->group_idx, mesh->n_groups + 1, int);
     memcpy(mesh_copy->group_idx, mesh->group_idx,
            (mesh->n_groups + 1)*sizeof(cs_lnum_t));
     BFT_MALLOC(mesh_copy->group, mesh->group_idx[mesh->n_groups], char);
@@ -574,22 +574,22 @@ _copy_mesh(const cs_mesh_t  *mesh,
 
   n_elts = mesh->n_families*mesh->n_max_family_items;
   if (n_elts > 0) {
-    BFT_MALLOC(mesh_copy->family_item, n_elts , cs_lnum_t);
-    memcpy(mesh_copy->family_item, mesh->family_item, n_elts*sizeof(cs_lnum_t));
+    BFT_MALLOC(mesh_copy->family_item, n_elts , int);
+    memcpy(mesh_copy->family_item, mesh->family_item, n_elts*sizeof(int));
   }
 
-  BFT_MALLOC(mesh_copy->cell_family, mesh->n_cells_with_ghosts, cs_lnum_t);
+  BFT_MALLOC(mesh_copy->cell_family, mesh->n_cells_with_ghosts, int);
   memcpy(mesh_copy->cell_family, mesh->cell_family,
-         mesh->n_cells_with_ghosts*sizeof(cs_lnum_t));
+         mesh->n_cells_with_ghosts*sizeof(int));
 
-  BFT_MALLOC(mesh_copy->i_face_family, mesh->n_i_faces, cs_lnum_t);
+  BFT_MALLOC(mesh_copy->i_face_family, mesh->n_i_faces, int);
   memcpy(mesh_copy->i_face_family, mesh->i_face_family,
-         mesh->n_i_faces*sizeof(cs_lnum_t));
+         mesh->n_i_faces*sizeof(int));
 
   if (mesh->n_b_faces > 0) {
-    BFT_MALLOC(mesh_copy->b_face_family, mesh->n_b_faces, cs_lnum_t);
+    BFT_MALLOC(mesh_copy->b_face_family, mesh->n_b_faces, int);
     memcpy(mesh_copy->b_face_family, mesh->b_face_family,
-           mesh->n_b_faces*sizeof(cs_lnum_t));
+           mesh->n_b_faces*sizeof(int));
   }
 
   if (mesh->i_face_r_gen != NULL) {
@@ -1153,8 +1153,8 @@ _update_mesh(bool     restart_mode,
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_map_turbomachinery_model(cs_int_t    *iturbo,
-                              cs_int_t    *ityint)
+cs_f_map_turbomachinery_model(int  *iturbo,
+                              int  *ityint)
 {
   if (_turbomachinery != NULL)
     *iturbo = _turbomachinery->model;
@@ -1175,7 +1175,7 @@ cs_f_map_turbomachinery_model(cs_int_t    *iturbo,
  *----------------------------------------------------------------------------*/
 
 void
-cs_f_map_turbomachinery_rotor(cs_int_t   **irotce)
+cs_f_map_turbomachinery_rotor(int  **irotce)
 {
   if (_turbomachinery != NULL)
     *irotce = _turbomachinery->cell_rotor_num;

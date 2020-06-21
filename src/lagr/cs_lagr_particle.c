@@ -1271,8 +1271,8 @@ cs_lagr_particle_set_dump(const cs_lagr_particle_set_t  *particles)
 
     bft_printf("Particle set\n");
     bft_printf("------------\n");
-    bft_printf("  n_particles:      %10d\n", particles->n_particles);
-    bft_printf("  n_particles_max:  %10d\n", particles->n_particles_max);
+    bft_printf("  n_particles:      %10ld\n", (long)particles->n_particles);
+    bft_printf("  n_particles_max:  %10ld\n", (long)particles->n_particles_max);
 
     bft_printf_flush();
 

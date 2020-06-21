@@ -232,7 +232,7 @@ cs_lagr_resuspension(void)
 
       else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
 
-        cs_lnum_t mode = 1;
+        int mode = 1;
         CS_PROCF (usthht,USTHHT)(&mode, &(extra->scal_t->val[iel]), &temp);
 
       }
@@ -496,7 +496,7 @@ cs_lagr_resuspension(void)
           /* Average number of contact in a cluster */
           cs_real_t ncont_pp = pow(p_diam/diam_mean, 2);
 
-          cs_lnum_t ncont = 1;
+          int ncont = 1;
 
           if (ncont_pp > 600.0) {
             cs_real_t rtmp;

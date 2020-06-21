@@ -96,8 +96,8 @@ extern void cs_f_flush_logs(void);
 
 extern void CS_PROCF (csprnt, CSPRNT)
 (
-  char       *cs_buf_print,
-  cs_int_t   *msgsize
+  char  *cs_buf_print,
+  int   *msgsize
 );
 
 /*----------------------------------------------------------------------------
@@ -106,9 +106,9 @@ extern void CS_PROCF (csprnt, CSPRNT)
 
 extern void CS_PROCF (csopli, CSOPLI)
 (
- const cs_int_t  *infecr,  /* <-- value to assign to nfecra */
- const cs_int_t  *isuppr,  /* <-- supress output if 1 */
- const cs_int_t  *ierror   /* --> error code (0 if sucess) */
+ const int  *infecr,  /* <-- value to assign to nfecra */
+ const int  *isuppr,  /* <-- supress output if 1 */
+ const int  *ierror   /* --> error code (0 if sucess) */
 );
 
 /*----------------------------------------------------------------------------
@@ -146,7 +146,7 @@ static int
 _bft_printf_f(const char     *const format,
               va_list         arg_ptr)
 {
-  cs_int_t  msgsize;
+  int  msgsize;
 
   /* Buffer for printing from C code: print to a character string, which will
      be printed to file by Fortran code.
@@ -237,7 +237,7 @@ _close_c_log_file(void)
 
 void CS_PROCF (csexit, CSEXIT)
 (
-  const cs_int_t  *status
+  const int  *status
 )
 {
   cs_exit(*status);
@@ -276,8 +276,8 @@ void CS_PROCF (dmtmps, DMTMPS)
 
 void CS_PROCF (csmkdr, CSMKDR)
 (
- const char       *dirnam,
- const cs_int_t   *dirlen
+ const char  *dirnam,
+ const int   *dirlen
 )
 {
   char    *bufname;
@@ -364,7 +364,7 @@ void CS_PROCF (cserf, CSERF)
 
 void CS_PROCF (cslogname, CSLOGNAME)
 (
- const cs_int_t   *len,
+ const int        *len,
  char             *dir
  CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
                                          by many Fortran compilers) */
@@ -412,7 +412,7 @@ void CS_PROCF (cslogname, CSLOGNAME)
 
 void CS_PROCF (csdatadir, CSDATADIR)
 (
- const cs_int_t   *len,
+ const int        *len,
  char             *dir
  CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
                                          by many Fortran compilers) */
@@ -459,7 +459,7 @@ cs_base_fortran_bft_printf_set(const char  *log_name,
 {
   const char *name = NULL;
   bool suppress = false;
-  cs_int_t infecr = 6, isuppr = 0, ierror = 0;
+  int  infecr = 6, isuppr = 0, ierror = 0;
 
   /* C output */
 
@@ -576,7 +576,7 @@ cs_base_fortran_bft_printf_to_f(void)
 
   if (name != NULL) {
 
-    cs_int_t nfecra = 9, isuppr = 0, ierror = 0;
+    int nfecra = 9, isuppr = 0, ierror = 0;
 
     /* Close C output */
 

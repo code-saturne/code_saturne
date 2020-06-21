@@ -171,8 +171,8 @@ _mesh_interpol_create_connect(cs_interpol_grid_t   *ig)
 
       MPI_Reduce(&val_in, &val_min, 1, MPI_DOUBLE_INT, MPI_MINLOC, 0,
                   cs_glob_mpi_comm);
-      MPI_Bcast(&val_min.rank, 1, CS_MPI_INT, 0, cs_glob_mpi_comm);
-      MPI_Bcast(&location[ii], 1, CS_MPI_INT, val_min.rank,
+      MPI_Bcast(&val_min.rank, 1, MPI_INT, 0, cs_glob_mpi_comm);
+      MPI_Bcast(&location[ii], 1, MPI_INT, val_min.rank,
                 cs_glob_mpi_comm);
 
       ig->rank_connect[ii] = val_min.rank;
@@ -192,12 +192,12 @@ _mesh_interpol_create_connect(cs_interpol_grid_t   *ig)
 }
 
 /*----------------------------------------------------------------------------
- * Interpolate mesh field on interpol grid strcuture.
+ * Interpolate mesh field on interpol grid structure.
  *
  * parameters:
  *   ig                   <-- pointer to the interpolation grid structure
  *   values_to_interpol   <-- field on mesh (size = n_cells)
- *   interpolated_values  --> interpolated values on the interpol grid
+ *   interpolated_values  --> interpolated values on the interpolation grid
  *                            structure (size = ig->nb_point)
  *----------------------------------------------------------------------------*/
 
@@ -432,7 +432,6 @@ cs_interpol_grid_init(cs_interpol_grid_t    *ig,
  * parameters:
  *   name        <-- measures set name
  *   type_flag   <-- mask of field property and category values (not used yet)
- *   location_id <-- id of associated location
  *   dim         <-- measure set dimension (number of components)
  *   interleaved <-- if dim > 1, indicate if field is interleaved
  *
@@ -701,7 +700,7 @@ cs_measures_set_add_values(cs_measures_set_t       *ms,
  *  id <-- measures set id
  *
  * return:
- *   pointer to the grid structure
+ *   pointer to the measures set structure
  *
  *----------------------------------------------------------------------------*/
 
@@ -751,7 +750,7 @@ cs_interpol_grid_by_id(int  id)
  * name <-- measure set name
  *
  * return:
- *   pointer to the measure set structure
+ *   pointer to the measures set structure
  *----------------------------------------------------------------------------*/
 
 cs_measures_set_t  *
@@ -869,11 +868,11 @@ cs_interpol_grids_destroy(void)
 
 void CS_PROCF(mestcr, MESTCR)
 (
- const char          *name,
- const cs_int_t      *lname,
- const cs_int_t      *idim,
- const cs_int_t      *ilved,
- cs_int_t            *imeset
+ const char   *name,
+ const int    *lname,
+ const int    *idim,
+ const int    *ilved,
+ int          *imeset
 )
 {
   char *bufname;
@@ -908,9 +907,9 @@ void CS_PROCF(mestcr, MESTCR)
 
 void CS_PROCF(gridcr, GRIDCR)
 (
- const char          *name,
- const cs_int_t      *lname,
- cs_int_t            *igrid
+ const char     *name,
+ const int      *lname,
+ int            *igrid
 )
 {
   char *bufname;
@@ -944,13 +943,13 @@ void CS_PROCF(gridcr, GRIDCR)
 
 void CS_PROCF(mesmap, MESMAP)
 (
- const cs_int_t         *imeset,
- const cs_int_t         *inbmes,
- const cs_real_t        *meset,
- const cs_real_t        *coords,
- const cs_int_t         *cressm,
- const cs_int_t         *interp,
- const cs_real_t        *infrad
+ const int         *imeset,
+ const int         *inbmes,
+ const cs_real_t   *meset,
+ const cs_real_t   *coords,
+ const int         *cressm,
+ const int         *interp,
+ const cs_real_t   *infrad
 )
 {
 
@@ -971,7 +970,7 @@ void CS_PROCF(mesmap, MESMAP)
  *
  * Fortran interface
  *
- * subroutine gridmp (name, lname, igrid)
+ * subroutine gridmap (name, lname, igrid)
  * *****************
  *
  * integer          igrid       : <-- : Measures set id
@@ -981,9 +980,9 @@ void CS_PROCF(mesmap, MESMAP)
 
 void CS_PROCF(grimap, GRIMAP)
 (
- const cs_int_t         *igrid,
- const cs_int_t         *inpts,
- const cs_real_t        *coords
+ const int         *igrid,
+ const int         *inpts,
+ const cs_real_t   *coords
 )
 {
   cs_interpol_grid_t *ig = cs_interpol_grid_by_id(*igrid);
@@ -1012,13 +1011,13 @@ void CS_PROCF(grimap, GRIMAP)
 
 void CS_PROCF(mesadd, MESADD)
 (
- const cs_int_t         *imeset,
- const cs_int_t         *inbmes,
- const cs_real_t        *meset,
- const cs_real_t        *coords,
- const cs_int_t         *cressm,
- const cs_int_t         *interp,
- const cs_real_t        *infrad
+ const int         *imeset,
+ const int         *inbmes,
+ const cs_real_t   *meset,
+ const cs_real_t   *coords,
+ const int         *cressm,
+ const int         *interp,
+ const cs_real_t   *infrad
 )
 {
   cs_measures_set_t *ms = cs_measures_set_by_id(*imeset);
@@ -1050,9 +1049,9 @@ void CS_PROCF(mesadd, MESADD)
 
 void CS_PROCF(mscrss, MSCRSS)
 (
- const cs_int_t         *imeset,
- const cs_int_t         *type,
- cs_real_t              *pldval
+ const int         *imeset,
+ const int         *type,
+ cs_real_t         *pldval
 )
 {
   cs_measures_set_t *ms = cs_measures_set_by_id(*imeset);
@@ -1077,9 +1076,9 @@ void CS_PROCF(mscrss, MSCRSS)
 
 void CS_PROCF(gripol, GRIPOL)
 (
- const cs_int_t         *igrid,
- const cs_real_t        *inval,
- cs_real_t              *pldval
+ const int         *igrid,
+ const cs_real_t   *inval,
+ cs_real_t         *pldval
 )
 {
   cs_interpol_grid_t *ig = cs_interpol_grid_by_id(*igrid);

@@ -134,7 +134,7 @@ struct _cs_probe_set_t {
   void                         *p_define_input;  /* Advanced local definition
                                                     input */
 
-  int          *loc_id;         /* ids of probes located on local domain */
+  cs_lnum_t    *loc_id;         /* ids of probes located on local domain */
 
   cs_lnum_t    *elt_id;         /* Element ids where the probes have been
                                    located (size: n_loc_probes); -1 for
@@ -587,7 +587,7 @@ _merge_snapped_to_center(cs_probe_set_t   *pset,
   }
   pset->n_loc_probes = n_loc_probes;
 
-  BFT_REALLOC(pset->loc_id, n_loc_probes, int);
+  BFT_REALLOC(pset->loc_id, n_loc_probes, cs_lnum_t);
   BFT_REALLOC(pset->elt_id, n_loc_probes, cs_lnum_t);
   BFT_REALLOC(pset->vtx_id, n_loc_probes, cs_lnum_t);
 
@@ -1426,7 +1426,7 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
 
   /* Reallocate on all passes, in case local sizes change */
 
-  BFT_REALLOC(pset->loc_id, pset->n_probes, int);
+  BFT_REALLOC(pset->loc_id, pset->n_probes, cs_lnum_t);
   BFT_REALLOC(pset->elt_id, pset->n_probes, cs_lnum_t);
   BFT_FREE(pset->vtx_id);
 
@@ -1566,10 +1566,10 @@ cs_probe_set_locate(cs_probe_set_t     *pset,
 
   if (n_unlocated_probes > 0 && first_location) {
     bft_printf(_("\n Warning: probe set \"%s\"\n"
-                 "   %lu (of %d) probes are not located"
+                 "   %lu (of %ld) probes are not located"
                  " on the associated mesh:\n"),
                pset->name, (unsigned long)n_unlocated_probes,
-               pset->n_probes);
+               (long)pset->n_probes);
     for (int i = 0; i < pset->n_probes; i++) {
       if (pset->located[i] == 0) {
         if (pset->labels == NULL)
@@ -1930,7 +1930,8 @@ cs_probe_set_dump(const cs_probe_set_t   *pset)
     bft_printf(" selection:  %s\n", pset->sel_criter);
 
   bft_printf(" n_probes:   %d; %d; %d (locally located; defined; max.)\n",
-             pset->n_loc_probes, pset->n_probes, pset->n_max_probes);
+             (int)pset->n_loc_probes, (int)pset->n_probes,
+             (int)pset->n_max_probes);
 
   for (int i = 0; i < pset->n_probes; i++) {
 
@@ -1940,7 +1941,7 @@ cs_probe_set_dump(const cs_probe_set_t   *pset)
     if (pset->s_coords != NULL)
       bft_printf(" %5.3e |", pset->s_coords[i]);
     if (pset->elt_id != NULL && pset->located != NULL)
-      bft_printf(" %6d | %c |", pset->elt_id[i], pset->located[i]);
+      bft_printf(" %6d | %c |", (int)pset->elt_id[i], pset->located[i]);
     if (pset->labels != NULL)
       if (pset->labels[i] != NULL)
         bft_printf(" %s", pset->labels[i]);

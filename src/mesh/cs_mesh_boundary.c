@@ -270,7 +270,7 @@ _clean_i_face_cells(cs_lnum_2_t      *i_face_cells,
  *----------------------------------------------------------------------------*/
 
 static void
-_clean_i_family(cs_lnum_t        *i_face_family,
+_clean_i_family(int              *i_face_family,
                 cs_lnum_t         n_i_faces,
                 const cs_lnum_t  *clean_list,
                 cs_lnum_t         clean_list_size)
@@ -445,7 +445,7 @@ _add_b_faces(cs_mesh_t        *mesh,
              cs_lnum_t        *b_face_vtx_idx,
              cs_lnum_t        *b_face_vtx_lst,
              cs_lnum_t        *b_face_cells,
-             cs_lnum_t        *b_face_family,
+             int              *b_face_family,
              cs_lnum_t         b_face_vtx_connect_size,
              const cs_lnum_t  *list,
              cs_lnum_t         list_size)
@@ -1607,7 +1607,7 @@ _boundary_insert(cs_mesh_t           *mesh,
   BFT_REALLOC(mesh->b_face_vtx_lst,
               b_face_vtx_connect_size + count[1],
               cs_lnum_t);
-  BFT_REALLOC(mesh->b_face_family, n_b_faces + count[0], cs_lnum_t);
+  BFT_REALLOC(mesh->b_face_family, n_b_faces + count[0], int);
 
   _add_b_faces(mesh,
                mesh->b_face_vtx_idx,
@@ -1707,7 +1707,7 @@ _boundary_insert(cs_mesh_t           *mesh,
   BFT_REALLOC(mesh->i_face_vtx_idx, mesh->n_i_faces + 1, cs_lnum_t);
   BFT_REALLOC(mesh->i_face_vtx_lst, mesh->i_face_vtx_connect_size, cs_lnum_t);
   BFT_REALLOC(mesh->i_face_cells, mesh->n_i_faces, cs_lnum_2_t);
-  BFT_REALLOC(mesh->i_face_family, mesh->n_i_faces, cs_lnum_t);
+  BFT_REALLOC(mesh->i_face_family, mesh->n_i_faces, int);
   BFT_REALLOC(mesh->i_face_r_gen, mesh->n_i_faces, char);
 
   if (mesh->n_g_b_faces != _n_g_b_faces)

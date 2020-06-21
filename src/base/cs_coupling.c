@@ -119,9 +119,9 @@ static double _cs_coupling_ts_multiplier = 1.0;
 
 void CS_PROCF(cplsyn, CPLSYN)
 (
- cs_int_t         *ntmabs,
- const cs_int_t   *ntcabs,
- cs_real_t        *dtref
+ int         *ntmabs,
+ const int   *ntcabs,
+ cs_real_t   *dtref
 )
 {
   int  current_ts_id = *ntcabs;
@@ -151,7 +151,7 @@ void CS_PROCF(cplsyn, CPLSYN)
 
 void CS_PROCF(cplact, CPLACT)
 (
- cs_int_t         *isync
+ int         *isync
 )
 {
   if (cs_coupling_is_sync_active())

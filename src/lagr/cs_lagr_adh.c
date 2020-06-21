@@ -329,7 +329,7 @@ cs_lagr_adh(cs_lnum_t   ip,
   }
   else {
 
-    cs_lnum_t ntmp;
+    int ntmp;
 
     cs_random_poisson(1, nmoyag, &ntmp);
 
@@ -337,7 +337,7 @@ cs_lagr_adh(cs_lnum_t   ip,
 
   }
 
-  cs_lnum_t nbasg = 0;
+  int nbasg = 0;
   if (cs_lagr_particle_get_lnum(part, p_am, CS_LAGR_N_LARGE_ASPERITIES) > 1) {
 
     nmoyag =  1.0
@@ -356,7 +356,7 @@ cs_lagr_adh(cs_lnum_t   ip,
     }
     else {
 
-      cs_lnum_t ntmp;
+      int ntmp;
 
       cs_random_poisson(1, nmoyag, &ntmp);
 
@@ -398,7 +398,7 @@ cs_lagr_adh(cs_lnum_t   ip,
     }
     else {
 
-      cs_lnum_t ntmp;
+      int ntmp;
 
       cs_random_poisson(1, nmoyap, &ntmp);
 
@@ -426,7 +426,7 @@ cs_lagr_adh(cs_lnum_t   ip,
       }
       else {
 
-        cs_lnum_t ntmp;
+        int ntmp;
 
         cs_random_poisson(1, nmoyap, &ntmp);
         nbasp = ntmp;
@@ -468,7 +468,7 @@ cs_lagr_adh(cs_lnum_t   ip,
     }
     else {
 
-      cs_lnum_t ntmp;
+      int ntmp;
 
       cs_random_poisson(1, nmoyap, &ntmp);
 
@@ -494,7 +494,7 @@ cs_lagr_adh(cs_lnum_t   ip,
       }
       else {
 
-        cs_lnum_t ntmp;
+        int ntmp;
 
         cs_random_poisson(1, nmoyap, &ntmp);
 

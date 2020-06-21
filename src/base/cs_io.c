@@ -948,7 +948,7 @@ _echo_header(const char     *sec_name,
  * FVM datatypes must have been converted to the corresponding
  * Code_Saturne compatible datatype before calling this function:
  *   CS_CHAR               -> char
- *   CS_INT32 / CS_INT64   -> cs_lnum_t / cs_int_t
+ *   CS_INT32 / CS_INT64   -> cs_lnum_t
  *   CS_UINT32 / CS_UINT64 -> cs_gnum_t
  *   CS_REAL / CS_FLOAT    -> double / cs_real_t
  *
@@ -1023,8 +1023,9 @@ _echo_data(size_t          echo,
         const cs_lnum_t *_elts = elts;
 
         for (i = echo_start ; i < echo_end ; i++)
-          bft_printf("    %10llu : %12d\n",
-                     (unsigned long long)(i + num_shift), *(_elts + i));
+          bft_printf("    %10llu : %12ld\n",
+                     (unsigned long long)(i + num_shift),
+                     (long)*(_elts + i));
       }
       break;
 
@@ -1092,7 +1093,7 @@ _echo_data(size_t          echo,
  * dest_type must have been set to the corresponding
  * Code_Saturne compatible datatype before calling this function and
  * conversion will be done accordingly:
- *   CS_INT32 / CS_INT64   -> cs_lnum_t / cs_int_t
+ *   CS_INT32 / CS_INT64   -> cs_lnum_t
  *   CS_UINT32 / CS_UINT64 -> cs_gnum_t
  *   CS_REAL / CS_FLOAT    -> double / cs_real_t
  *
@@ -1123,130 +1124,110 @@ _cs_io_convert_read(void           *buffer,
   switch(dest_type) {
 
   case CS_INT32:
+    {
+      int32_t *_dest = dest;
+
+      if (buffer_type == CS_INT32) {
+        int32_t * _buffer = buffer;
+        for (ii = 0; ii < n_elts; ii++)
+          _dest[ii] = _buffer[ii];
+      }
+      else if (buffer_type == CS_INT64) {
+        int64_t * _buffer = buffer;
+        for (ii = 0; ii < n_elts; ii++)
+          _dest[ii] = _buffer[ii];
+      }
+      if (buffer_type == CS_UINT32) {
+        uint32_t * _buffer = buffer;
+        for (ii = 0; ii < n_elts; ii++)
+          _dest[ii] = _buffer[ii];
+      }
+      else if (buffer_type == CS_UINT64) {
+        uint64_t * _buffer = buffer;
+        for (ii = 0; ii < n_elts; ii++)
+          _dest[ii] = _buffer[ii];
+      }
+    }
+    break;
+
   case CS_INT64:
     {
-      cs_lnum_t *_dest = dest;
+      int64_t *_dest = dest;
 
-      if (   buffer_type == CS_INT32
-          || buffer_type == CS_INT64) {
-
-        if (sizeof(long) == buffer_type_size) {
-          long * _buffer = buffer;
-          for (ii = 0; ii < n_elts; ii++)
-            _dest[ii] = _buffer[ii];
-        }
-        else if (sizeof(long long) == buffer_type_size) {
-          long long * _buffer = buffer;
-          for (ii = 0; ii < n_elts; ii++)
+      if (buffer_type == CS_INT32) {
+        int32_t * _buffer = buffer;
+        for (ii = 0; ii < n_elts; ii++)
           _dest[ii] = _buffer[ii];
-        }
-        else if (sizeof(int) == buffer_type_size) {
-          int * _buffer = buffer;
-          for (ii = 0; ii < n_elts; ii++)
-          _dest[ii] = _buffer[ii];
-        }
-        else if (sizeof(short) == buffer_type_size) {
-          short * _buffer = buffer;
-          for (ii = 0; ii < n_elts; ii++)
-          _dest[ii] = _buffer[ii];
-        }
-
       }
-
-      else if (   buffer_type == CS_UINT32
-               || buffer_type == CS_UINT64) {
-
-        if (sizeof(unsigned long) == buffer_type_size) {
-          unsigned long * _buffer = buffer;
-          for (ii = 0; ii < n_elts; ii++)
-            _dest[ii] = _buffer[ii];
-        }
-        else if (sizeof(unsigned long long) == buffer_type_size) {
-          unsigned long long * _buffer = buffer;
-          for (ii = 0; ii < n_elts; ii++)
+      else if (buffer_type == CS_INT64) {
+        int64_t * _buffer = buffer;
+        for (ii = 0; ii < n_elts; ii++)
           _dest[ii] = _buffer[ii];
-        }
-        else if (sizeof(unsigned int) == buffer_type_size) {
-          unsigned int * _buffer = buffer;
-          for (ii = 0; ii < n_elts; ii++)
-          _dest[ii] = _buffer[ii];
-        }
-        else if (sizeof(unsigned short) == buffer_type_size) {
-          unsigned short * _buffer = buffer;
-          for (ii = 0; ii < n_elts; ii++)
-          _dest[ii] = _buffer[ii];
-        }
-
       }
-
-      assert(   sizeof(long) == buffer_type_size
-             || sizeof(long long) == buffer_type_size
-             || sizeof(int) == buffer_type_size
-             || sizeof(short) == buffer_type_size);
+      if (buffer_type == CS_UINT32) {
+        uint32_t * _buffer = buffer;
+        for (ii = 0; ii < n_elts; ii++)
+          _dest[ii] = _buffer[ii];
+      }
+      else if (buffer_type == CS_UINT64) {
+        uint64_t * _buffer = buffer;
+        for (ii = 0; ii < n_elts; ii++)
+          _dest[ii] = _buffer[ii];
+      }
     }
     break;
 
   case CS_UINT32:
+    {
+      uint32_t *_dest = dest;
+
+      if (buffer_type == CS_INT32) {
+        int32_t * _buffer = buffer;
+        for (ii = 0; ii < n_elts; ii++)
+          _dest[ii] = _buffer[ii];
+      }
+      else if (buffer_type == CS_INT64) {
+        int64_t * _buffer = buffer;
+        for (ii = 0; ii < n_elts; ii++)
+          _dest[ii] = _buffer[ii];
+      }
+      if (buffer_type == CS_UINT32) {
+        uint32_t * _buffer = buffer;
+        for (ii = 0; ii < n_elts; ii++)
+          _dest[ii] = _buffer[ii];
+      }
+      else if (buffer_type == CS_UINT64) {
+        uint64_t * _buffer = buffer;
+        for (ii = 0; ii < n_elts; ii++)
+          _dest[ii] = _buffer[ii];
+      }
+    }
+    break;
+
   case CS_UINT64:
     {
-      cs_gnum_t *_dest = dest;
+      uint64_t *_dest = dest;
 
-      if (   buffer_type == CS_INT32
-          || buffer_type == CS_INT64) {
-
-        if (sizeof(long) == buffer_type_size) {
-          long * _buffer = buffer;
-          for (ii = 0; ii < n_elts; ii++)
-            _dest[ii] = _buffer[ii];
-        }
-        else if (sizeof(long long) == buffer_type_size) {
-          long long * _buffer = buffer;
-          for (ii = 0; ii < n_elts; ii++)
+      if (buffer_type == CS_INT32) {
+        int32_t * _buffer = buffer;
+        for (ii = 0; ii < n_elts; ii++)
           _dest[ii] = _buffer[ii];
-        }
-        else if (sizeof(int) == buffer_type_size) {
-          int * _buffer = buffer;
-          for (ii = 0; ii < n_elts; ii++)
-          _dest[ii] = _buffer[ii];
-        }
-        else if (sizeof(short) == buffer_type_size) {
-          short * _buffer = buffer;
-          for (ii = 0; ii < n_elts; ii++)
-          _dest[ii] = _buffer[ii];
-        }
-
       }
-
-      else if (   buffer_type == CS_UINT32
-               || buffer_type == CS_UINT64) {
-
-        if (sizeof(unsigned long) == buffer_type_size) {
-          unsigned long * _buffer = buffer;
-          for (ii = 0; ii < n_elts; ii++)
-            _dest[ii] = _buffer[ii];
-        }
-        else if (sizeof(unsigned long long) == buffer_type_size) {
-          unsigned long long * _buffer = buffer;
-          for (ii = 0; ii < n_elts; ii++)
+      else if (buffer_type == CS_INT64) {
+        int64_t * _buffer = buffer;
+        for (ii = 0; ii < n_elts; ii++)
           _dest[ii] = _buffer[ii];
-        }
-        else if (sizeof(unsigned int) == buffer_type_size) {
-          unsigned int * _buffer = buffer;
-          for (ii = 0; ii < n_elts; ii++)
-          _dest[ii] = _buffer[ii];
-        }
-        else if (sizeof(unsigned short) == buffer_type_size) {
-          unsigned short * _buffer = buffer;
-          for (ii = 0; ii < n_elts; ii++)
-          _dest[ii] = _buffer[ii];
-        }
-
       }
-
-      assert(   sizeof(long) == buffer_type_size
-             || sizeof(long long) == buffer_type_size
-             || sizeof(int) == buffer_type_size
-             || sizeof(short) == buffer_type_size);
+      if (buffer_type == CS_UINT32) {
+        uint32_t * _buffer = buffer;
+        for (ii = 0; ii < n_elts; ii++)
+          _dest[ii] = _buffer[ii];
+      }
+      else if (buffer_type == CS_UINT64) {
+        uint64_t * _buffer = buffer;
+        for (ii = 0; ii < n_elts; ii++)
+          _dest[ii] = _buffer[ii];
+      }
     }
     break;
 
@@ -2402,6 +2383,43 @@ cs_io_set_indexed_position(cs_io_t             *inp,
   }
 
   return retval;
+}
+
+/*----------------------------------------------------------------------------
+ * Set a section's final data type to int.
+ *
+ * It the datatype is not compatible, throw an error.
+ *
+ * parameters:
+ *   header <-- header structure
+ *   cs_io  --> kernel IO structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_io_set_int(cs_io_sec_header_t  *header,
+              const cs_io_t       *cs_io)
+{
+  assert(header != NULL);
+
+  if (   header->type_read != CS_INT32
+      && header->type_read != CS_INT64
+      && header->type_read != CS_UINT32
+      && header->type_read != CS_UINT64)
+    bft_error(__FILE__, __LINE__, 0,
+              _("Error reading file: \"%s\".\n"
+                "Type expected for section: "
+                "\"%s\" is a signed integer\n"
+                "and is not convertible from type read: \"%s\"."),
+              cs_file_get_name(cs_io->f),
+              header->sec_name,
+              cs_io->type_name);
+
+  assert(sizeof(int) == 4 || sizeof(int) == 8);
+
+  if (sizeof(int) == 4)
+    header->elt_type = CS_INT32;
+  else
+    header->elt_type = CS_INT64;
 }
 
 /*----------------------------------------------------------------------------

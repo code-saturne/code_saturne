@@ -897,8 +897,8 @@ cs_gwf_build_cell2soil(cs_lnum_t    n_cells)
     for (cs_lnum_t j = 0; j < n_cells; j++)
       if (_cell2soil_ids[j] == -1)
         bft_error(__FILE__, __LINE__, 0,
-                  " %s: At least cell%d has no related soil.\n",
-                  __func__, j);
+                  " %s: At least cell %ld has no related soil.\n",
+                  __func__, (long)j);
 
   } /* n_soils > 1 */
 

@@ -1038,7 +1038,7 @@ _add_layer_faces(cs_mesh_t        *m,
                 m->i_face_vtx_idx[m->n_i_faces] + connect_add_size,
                 cs_lnum_t);
 
-    BFT_REALLOC(m->i_face_family, m->n_i_faces + n_add_faces, cs_lnum_t);
+    BFT_REALLOC(m->i_face_family, m->n_i_faces + n_add_faces, int);
     BFT_REALLOC(m->i_face_r_gen, m->n_i_faces + n_add_faces, char);
 
     bool have_g_i_face_num = (m->global_i_face_num != NULL) ? true : false;
@@ -1325,7 +1325,7 @@ _add_side_faces(cs_mesh_t           *m,
     cs_lnum_t *a_face_cell = NULL;
     cs_lnum_t *p_face_vtx_idx = NULL;
     cs_lnum_t *p_face_vtx_lst = NULL;
-    cs_lnum_t *a_face_gc = NULL;
+    int *a_face_gc = NULL;
     cs_gnum_t *a_face_gnum = NULL;
     char *a_face_r_gen = NULL;
 
@@ -1335,7 +1335,7 @@ _add_side_faces(cs_mesh_t           *m,
       BFT_REALLOC(m->i_face_cells, m->n_i_faces + n_faces_add, cs_lnum_2_t);
       BFT_REALLOC(m->i_face_vtx_idx, m->n_i_faces + n_faces_add + 1, cs_lnum_t);
       BFT_REALLOC(m->i_face_vtx_lst, f2v_size_ini + f2v_size_add, cs_lnum_t);
-      BFT_REALLOC(m->i_face_family, m->n_i_faces + n_faces_add, cs_lnum_t);
+      BFT_REALLOC(m->i_face_family, m->n_i_faces + n_faces_add, int);
       BFT_REALLOC(m->i_face_r_gen, m->n_i_faces + n_faces_add, char);
       a_face_cell = (cs_lnum_t *)(m->i_face_cells + m->n_i_faces);
       p_face_vtx_idx = m->i_face_vtx_idx + m->n_i_faces;
@@ -1353,7 +1353,7 @@ _add_side_faces(cs_mesh_t           *m,
       BFT_REALLOC(m->b_face_cells, m->n_b_faces + n_faces_add, cs_lnum_t);
       BFT_REALLOC(m->b_face_vtx_idx, m->n_b_faces + n_faces_add + 1, cs_lnum_t);
       BFT_REALLOC(m->b_face_vtx_lst, f2v_size_ini + f2v_size_add, cs_lnum_t);
-      BFT_REALLOC(m->b_face_family, m->n_b_faces + n_faces_add, cs_lnum_t);
+      BFT_REALLOC(m->b_face_family, m->n_b_faces + n_faces_add, int);
       a_face_cell = m->b_face_cells + m->n_b_faces;
       p_face_vtx_idx = m->b_face_vtx_idx + m->n_b_faces;
       p_face_vtx_lst = m->b_face_vtx_lst + f2v_size_ini;

@@ -1467,7 +1467,7 @@ _export_nodal_polyhedra_g(const fvm_to_ensight_writer_t  *w,
 
     }
 
-    BFT_MALLOC(part_vtx_num, part_vtx_idx[section->n_elements], cs_lnum_t);
+    BFT_MALLOC(part_vtx_num, part_vtx_idx[section->n_elements], int32_t);
 
     l = 0;
 

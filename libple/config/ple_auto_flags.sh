@@ -11,7 +11,7 @@
 # given OS/CPU/compiler combination:
 #
 # cppflags_default       # Base CPPFLAGS                     (default: "")
-#
+
 # cflags_default         # Base CFLAGS                       (default: "")
 # cflags_default_dbg     # Added to $CFLAGS for debugging    (default: "-g")
 # cflags_default_opt     # Added to $CFLAGS for optimization (default: "-O")
@@ -80,15 +80,17 @@ ple_gcc=no
 
 if test "x$GCC" = "xyes"; then
 
-  # Intel and Pathscale compilers may pass as GCC but
+  # Intel and LLVM compilers may pass as GCC but
   # may be recognized by version string
 
-  if test -n "`$CC --version | grep icc`" ; then
+  ple_ac_cc_version=`$CC $user_CFLAGS --version 2>&1 | head -1`
+
+  if test -n "`echo $ple_ac_cc_version | grep ICC`" ; then
     ple_gcc=icc
-  elif test -n "`$CC --version | grep clang`" ; then
+  elif test -n "`echo $ple_ac_cc_version | grep ICX`" ; then
+    ple_gcc=icx
+  elif test -n "`echo $ple_ac_cc_version | grep clang`" ; then
     ple_gcc=clang
-  elif test -n "`$CC --version 2>&1 | grep PathScale`" ; then
-    ple_gcc=pathcc
   else
     ple_gcc=gcc
   fi
@@ -99,7 +101,6 @@ if test "x$ple_gcc" = "xgcc"; then
 
   # Version strings for logging purposes and known compiler flag
   $CC -v > $outfile 2>&1
-  ple_ac_cc_version=`$CC --version 2>&1 | head -1`
   ple_cc_compiler_known=yes
 
   # Practical version info for option setting
@@ -183,18 +184,16 @@ if test "x$ple_gcc" = "xgcc"; then
       ;;
   esac
 
-# Otherwise, are we using icc ?
-#------------------------------
+# Otherwise, are we using ICC Classic ?
+#--------------------------------------
 
-elif test "x$ple_gcc" = "xicc"; then
+elif test "x$ple_gcc" = "xicc" ; then
 
-  ple_cc_version=`echo $CC --version | grep icc |sed 's/[a-zA-Z()]//g'`
-
-  echo "compiler '$CC' is Intel ICC"
+  ple_cc_version=`echo $ple_ac_cc_version | grep ICC |sed 's/[a-zA-Z()]//g'`
+  echo "compiler '$CC' is Intel ICC Classic"
 
   # Version strings for logging purposes and known compiler flag
-  $CC -V conftest.c > $outfile 2>&1
-  ple_ac_cc_version=`$CC --version 2>&1 | head -1`
+  $CC $user_CFLAGS -V conftest.c > $outfile 2>&1
   ple_cc_compiler_known=yes
 
   # Some version numbers
@@ -206,7 +205,8 @@ elif test "x$ple_gcc" = "xicc"; then
   test -n "$ple_cc_vers_patch" || ple_cc_vers_patch=0
 
   # Default compiler flags
-  cflags_default="-strict-ansi -std=c99 -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  # (temporarily disable "operands evaluated in unspecified order" remark -- 981)
+  cflags_default="-std=c99 -restrict -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused -wd981"
   cflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
   cflags_default_opt="-O2"
   cflags_default_omp="-qopenmp"
@@ -215,6 +215,34 @@ elif test "x$ple_gcc" = "xicc"; then
       cflags_default_omp="-openmp"
       ;;
   esac
+
+# Otherwise, are we using ICC NextGen ?
+#--------------------------------------
+
+elif test "x$ple_gcc" = "xicc" -o "x$ple_gcc" = "xicx" ; then
+
+  ple_cc_version=`echo $ple_ac_cc_version | grep ICX |sed 's/[a-zA-Z()]//g'`
+  echo "compiler '$CC' is Intel ICC NextGen"
+
+  # Version strings for logging purposes and known compiler flag
+  $CC $user_CFLAGS -V conftest.c > $outfile 2>&1
+  ple_cc_compiler_known=yes
+
+  # Some version numbers
+  ple_cc_vers_major=`echo $ple_ac_cc_version | cut -f 3 -d" " | cut -f1 -d.`
+  ple_cc_vers_minor=`echo $ple_ac_cc_version | cut -f 3 -d" " | cut -f2 -d.`
+  ple_cc_vers_patch=`echo $ple_ac_cc_version | cut -f 3 -d" " | cut -f3 -d.`
+  test -n "$ple_cc_vers_major" || ple_cc_vers_major=0
+  test -n "$ple_cc_vers_minor" || ple_cc_vers_minor=0
+  test -n "$ple_cc_vers_patch" || ple_cc_vers_patch=0
+
+  # Default compiler flags
+  # (temporarily disable "operands evaluated in unspecified order" remark -- 981)
+  cflags_default="-funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused -wd981"
+  cflags_default_dbg="-g -O0 -ftrapuv"
+  cflags_default_opt="-O2"
+  cflags_default_hot="-O3"
+  cflags_default_omp="-qopenmp"
 
 # Otherwise, are we using clang ?
 #--------------------------------
@@ -231,34 +259,11 @@ elif test "x$ple_gcc" = "xclang"; then
   ple_cc_compiler_known=yes
 
   # Default compiler flags
+  # (temporarily disable "operands evaluated in unspecified order" remark -- 981)
   cflags_default="-std=c99 -funsigned-char -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
   cflags_default_dbg="-g -O0"
   cflags_default_opt="-O2"
-  cflags_default_omp="-openmp"
-
-# Otherwise, are we using pathcc ?
-#---------------------------------
-
-elif test "x$ple_gcc" = "xpathcc"; then
-
-  $CC --version 2>&1 | grep 'PathScale' > /dev/null
-  if test "$?" = "0" ; then
-
-    echo "compiler '$CC' is PathScale C compiler"
-
-    # Version strings for logging purposes and known compiler flag
-    $CC --version > $outfile 2>&1
-    ple_ac_cc_version=`grep -i Compiler $outfile`
-    ple_cc_compiler_known=yes
-
-    # Default compiler flags
-    cflags_default="-c99 -noswitcherror"
-    cflags_default="-std=c99 -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wunused-value"
-    cflags_default_dbg="-g"
-    cflags_default_opt="-O2"
-    cflags_default_omp="-openmp"
-
-  fi
+  cflags_default_omp="-fopenmp=libomp"
 
 fi
 
@@ -314,31 +319,11 @@ if test "x$ple_cc_compiler_known" != "xyes" ; then
     ldflags_default_opt="-O3"
     ldflags_default_dbg="-g -qfullpath"
 
-    # Adjust options for IBM Blue Gene cross-compiler
-
-    grep 'Blue Gene' $outfile > /dev/null
-    if test "$?" = "0" ; then
-      # Default compiler flags (we assume that MPI wrappers are used)
-      ple_ibm_bg_type=`grep 'Blue Gene' $outfile | sed -e 's/.*Blue Gene\/\([A-Z]\).*/\1/'`
-      if test "x$ple_ibm_bg_type" = "xP" ; then
-        cppflags_default="-I/bgsys/drivers/ppcfloor/arch/include"
-        cflags_default="-qlanglvl=extc99"
-        cflags_default_opt="-O3"
-        cflags_default_dbg="-g"
-      elif test -f /bgsys/drivers/ppcfloor/cnk/bin/bgq_kernel.elf ; then
-        ple_ibm_bg_type="Q"
-        cppflags_default=""
-        cflags_default=""                    # "-qlanglvl=extc99" by default
-        cflags_default_opt="-g -O3"
-        cflags_default_dbg="-g"
-      fi
-    fi
-
   fi
 fi
 
 # Otherwise, are we using the Cray compiler ?
-#------------------------------------------
+#--------------------------------------------
 
 if test "x$ple_cc_compiler_known" != "xyes" ; then
 

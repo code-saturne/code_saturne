@@ -74,7 +74,7 @@ typedef enum {
 
 typedef enum {
   CS_TYPE_char,
-  CS_TYPE_cs_int_t,
+  CS_TYPE_int,
   CS_TYPE_cs_gnum_t,
   CS_TYPE_cs_real_t,
 } cs_restart_val_type_t;
@@ -201,7 +201,7 @@ typedef void
 
 void CS_PROCF (dflsui, DFLSUI)
 (
- cs_int_t   *ntsuit,
+ int        *ntsuit,
  cs_real_t  *ttsuit,
  cs_real_t  *wtsuit
 );
@@ -219,7 +219,7 @@ void CS_PROCF (dflsui, DFLSUI)
 
 void CS_PROCF (reqsui, REQSUI)
 (
- cs_int_t   *iisuit
+ int  *iisuit
 );
 
 /*----------------------------------------------------------------------------
@@ -266,7 +266,7 @@ void CS_PROCF (trbsui, TRBSUI)
 
 void CS_PROCF (indsui, INDSUI)
 (
- cs_int_t   *isuite
+ int   *isuite
 );
 
 /*============================================================================

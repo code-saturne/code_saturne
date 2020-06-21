@@ -1131,7 +1131,7 @@ _fill_halo(cs_mesh_t  *mesh)
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
 #if defined(HAVE_MPI)
-      MPI_Irecv(&(halo->index[2*rank_id+1]), 2, CS_MPI_INT,
+      MPI_Irecv(&(halo->index[2*rank_id+1]), 2, CS_MPI_LNUM,
                 halo->c_domain_rank[rank_id],
                 halo->c_domain_rank[rank_id],
                 cs_glob_mpi_comm,
@@ -1164,7 +1164,7 @@ _fill_halo(cs_mesh_t  *mesh)
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
 #if defined(HAVE_MPI)
-      MPI_Isend(&(count[shift]), 2, CS_MPI_INT,
+      MPI_Isend(&(count[shift]), 2, CS_MPI_LNUM,
                 halo->c_domain_rank[rank_id],
                 local_rank,
                 cs_glob_mpi_comm,
@@ -1225,10 +1225,10 @@ _fill_halo(cs_mesh_t  *mesh)
         }
 
 #if defined(HAVE_MPI)
-        MPI_Sendrecv(&(exchange_buffer[0]), n_elts_to_exchange, CS_MPI_INT,
+        MPI_Sendrecv(&(exchange_buffer[0]), n_elts_to_exchange, CS_MPI_LNUM,
                      halo->c_domain_rank[rank_id], local_rank,
                      &(exchange_buffer[n_elts_to_exchange]), n_elts_to_exchange,
-                     CS_MPI_INT,
+                     CS_MPI_LNUM,
                      halo->c_domain_rank[rank_id], halo->c_domain_rank[rank_id],
                      cs_glob_mpi_comm, status);
 #endif
@@ -1527,7 +1527,7 @@ static void
 _get_start_end_idx(const cs_mesh_t    *mesh,
                    const cs_lnum_t    *index,
                    const cs_lnum_t    *perio_lst,
-                   cs_lnum_t           rank_id,
+                   int                 rank_id,
                    cs_lnum_t           tr_id,
                    cs_lnum_t           type_id,
                    cs_lnum_t          *p_start_idx,
@@ -1698,17 +1698,18 @@ _count_send_gcell_to_dist_vtx_connect(cs_mesh_t            *mesh,
               if (n_added_vertices > 1) {
 
                 if (cs_glob_n_ranks > 1)
-                  bft_printf("fac_num: %d (%llu)\n"
-                             "vtx_num: %d (%llu) - n_added: %d\n",
-                             fac_id+1,
+                  bft_printf("fac_num: %ld (%llu)\n"
+                             "vtx_num: %ld (%llu) - n_added: %ld\n",
+                             (long)fac_id+1,
                              (unsigned long long)(mesh->global_i_face_num[fac_id]),
-                             vtx_id+1,
+                             (long)vtx_id+1,
                              (unsigned long long)(mesh->global_vtx_num[vtx_id]),
-                             n_added_vertices);
+                             (long)n_added_vertices);
                 else
-                  bft_printf("fac_num: %d\n"
-                             "vtx_num: %d - n_added: %d\n",
-                             fac_id+1, vtx_id+1, n_added_vertices);
+                  bft_printf("fac_num: %ld\n"
+                             "vtx_num: %ld - n_added: %ld\n",
+                             (long)fac_id+1, (long)vtx_id+1,
+                             (long)n_added_vertices);
                 bft_printf_flush();
 
                 bft_error(__FILE__, __LINE__, 0, _(err_corresp),
@@ -2061,9 +2062,9 @@ _exchange_gcell_vtx_connect(cs_mesh_t  *mesh,
       n_recv_elts =  halo->index[2*rank_id+2] - halo->index[2*rank_id];
 
 #if defined(HAVE_MPI)
-      MPI_Sendrecv(&(send_idx_buffer[0]), n_send_elts, CS_MPI_INT,
+      MPI_Sendrecv(&(send_idx_buffer[0]), n_send_elts, CS_MPI_LNUM,
                    halo->c_domain_rank[rank_id], local_rank,
-                   &(recv_buffer[0]), n_recv_elts, CS_MPI_INT,
+                   &(recv_buffer[0]), n_recv_elts, CS_MPI_LNUM,
                    halo->c_domain_rank[rank_id], halo->c_domain_rank[rank_id],
                    cs_glob_mpi_comm, &status);
 #endif
@@ -2109,9 +2110,9 @@ _exchange_gcell_vtx_connect(cs_mesh_t  *mesh,
     if (halo->c_domain_rank[rank_id] != local_rank) {
 
 #if defined(HAVE_MPI)
-      MPI_Sendrecv(send_buffer, n_send_elts, CS_MPI_INT,
+      MPI_Sendrecv(send_buffer, n_send_elts, CS_MPI_LNUM,
                    halo->c_domain_rank[rank_id], local_rank,
-                   recv_buffer, n_recv_elts, CS_MPI_INT,
+                   recv_buffer, n_recv_elts, CS_MPI_LNUM,
                    halo->c_domain_rank[rank_id], halo->c_domain_rank[rank_id],
                    cs_glob_mpi_comm, &status);
 #endif
@@ -2151,36 +2152,38 @@ _check_i_face_cells(cs_mesh_t  *mesh)
       if (mesh->global_i_face_num != NULL)
         bft_error(__FILE__, __LINE__, 0,
                   " Error detected in interior face -> cells connectivity.\n"
-                  " Face %d (%llu) has an incomplete connectivity.\n"
-                  " Cell1: %d - Cell2: %d (%llu)",
-                  i+1, (unsigned long long)(mesh->global_i_face_num[i]),
-                  mesh->i_face_cells[i][0],
-                  mesh->i_face_cells[i][1],
+                  " Face %ld (%llu) has an incomplete connectivity.\n"
+                  " Cell1: %ld - Cell2: %ld (%llu)",
+                  (long)i+1, (unsigned long long)(mesh->global_i_face_num[i]),
+                  (long)mesh->i_face_cells[i][0],
+                  (long)mesh->i_face_cells[i][1],
                   (unsigned long long)(mesh->global_cell_num[mesh->i_face_cells[i][1]]));
       else /* Serial run */
         bft_error(__FILE__, __LINE__, 0,
                   " Error detected in interior face -> cells connectivity.\n"
-                  " Face %d has an incomplete connectivity.\n"
-                  " Cell1: %d - Cell2: %d",
-                  i+1, mesh->i_face_cells[i][0], mesh->i_face_cells[i][1]);
+                  " Face %ld has an incomplete connectivity.\n"
+                  " Cell1: %ld - Cell2: %ld",
+                  (long)i+1, (long)mesh->i_face_cells[i][0],
+                  (long)mesh->i_face_cells[i][1]);
     }
 
     if (mesh->i_face_cells[i][1] < 0) {
       if (mesh->global_i_face_num != NULL)
         bft_error(__FILE__, __LINE__, 0,
                   " Error detected in interior face -> cells connectivity.\n"
-                  " Face %d (%llu) has an incomplete connectivity.\n"
-                  " Cell1: %d (%llu) - Cell2: %d",
-                  i+1, (unsigned long long)(mesh->global_i_face_num[i]),
-                  mesh->i_face_cells[i][0],
+                  " Face %ld (%llu) has an incomplete connectivity.\n"
+                  " Cell1: %ld (%llu) - Cell2: %ld",
+                  (long)i+1, (unsigned long long)(mesh->global_i_face_num[i]),
+                  (long)mesh->i_face_cells[i][0],
                   (unsigned long long)(mesh->global_cell_num[mesh->i_face_cells[i][0]]),
-                  mesh->i_face_cells[i][1]);
+                  (long)mesh->i_face_cells[i][1]);
       else
         bft_error(__FILE__, __LINE__, 0,
                   " Error detected in interior face -> cells connectivity.\n"
-                  " Face %d has an incomplete connectivity.\n"
-                  " Cell1: %d - Cell2: %d",
-                  i+1, mesh->i_face_cells[i][0], mesh->i_face_cells[i][1]);
+                  " Face %ld has an incomplete connectivity.\n"
+                  " Cell1: %ld - Cell2: %ld",
+                  (long)i+1, (long)mesh->i_face_cells[i][0],
+                  (long)mesh->i_face_cells[i][1]);
     }
 
   }
@@ -2236,8 +2239,9 @@ _update_i_face_cells(cs_mesh_t           *mesh,
                      cs_lnum_t           *cell_faces_idx,
                      cs_lnum_t           *cell_faces_lst)
 {
-  int  i, j, gcell_id, face_id, if_id, rank, shift, index_end;
-  int  tr_id, start, end, length, n_interfaces, mpi_count, distant_rank;
+  int  rank, n_interfaces, distant_rank;
+  cs_lnum_t  i, j, gcell_id, face_id, if_id, shift, index_end;
+  cs_lnum_t tr_id, start, end, length, mpi_count;
 
   int  local_rank_id = (cs_glob_n_ranks == 1) ? 0 : -1;
   cs_halo_t  *halo = mesh->halo;
@@ -2249,8 +2253,8 @@ _update_i_face_cells(cs_mesh_t           *mesh,
   const int  n_ranks = cs_glob_n_ranks;
   const int  local_rank = (cs_glob_rank_id == -1) ? 0 : cs_glob_rank_id;
   const int  n_c_domains = halo->n_c_domains;
-  const int  *s_index = halo->send_index;
-  const int  *s_gcell_ids = halo->send_list;
+  const cs_lnum_t  *s_index = halo->send_index;
+  const cs_lnum_t  *s_gcell_ids = halo->send_list;
   const cs_interface_t  *interface = NULL;
   const cs_lnum_t  *loc_ids = NULL;
   const cs_lnum_t  *dist_ids = NULL;
@@ -2408,11 +2412,11 @@ _update_i_face_cells(cs_mesh_t           *mesh,
 
       if (halo->c_domain_rank[rank] != local_rank) {
 
-        buffer = gcell_face_count + start ;
+        buffer = gcell_face_count + start;
 
         MPI_Irecv(buffer,
                   length,
-                  CS_MPI_INT,
+                  CS_MPI_LNUM,
                   halo->c_domain_rank[rank],
                   halo->c_domain_rank[rank],
                   cs_glob_mpi_comm,
@@ -2442,7 +2446,7 @@ _update_i_face_cells(cs_mesh_t           *mesh,
 
         MPI_Isend(buffer,
                   length,
-                  CS_MPI_INT,
+                  CS_MPI_LNUM,
                   halo->c_domain_rank[rank],
                   local_rank,
                   cs_glob_mpi_comm,
@@ -2573,11 +2577,11 @@ _update_i_face_cells(cs_mesh_t           *mesh,
 
       if (halo->c_domain_rank[rank] != local_rank) {
 
-        buffer = recv_buffer + start ;
+        buffer = recv_buffer + start;
 
         MPI_Irecv(buffer,
                   length,
-                  CS_MPI_INT,
+                  CS_MPI_LNUM,
                   halo->c_domain_rank[rank],
                   halo->c_domain_rank[rank],
                   cs_glob_mpi_comm,
@@ -2605,7 +2609,7 @@ _update_i_face_cells(cs_mesh_t           *mesh,
 
         MPI_Isend(buffer,
                   length,
-                  CS_MPI_INT,
+                  CS_MPI_LNUM,
                   halo->c_domain_rank[rank],
                   local_rank,
                   cs_glob_mpi_comm,
@@ -3082,7 +3086,7 @@ cs_mesh_halo_define(cs_mesh_t           *mesh,
   /* Update mesh structure elements bound to halo management */
 
   if (mesh->n_ghost_cells > 0)
-    BFT_REALLOC(mesh->cell_family, mesh->n_cells_with_ghosts, cs_lnum_t);
+    BFT_REALLOC(mesh->cell_family, mesh->n_cells_with_ghosts, int);
 
   cs_halo_update_buffers(halo);
 

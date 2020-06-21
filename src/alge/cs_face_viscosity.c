@@ -108,10 +108,10 @@ BEGIN_C_DECLS
 
 void CS_PROCF (viscfa, VISCFA)
 (
- const cs_int_t  *const   visc_mean_type,
- cs_real_t                c_visc[],
- cs_real_t                i_visc[],
- cs_real_t                b_visc[]
+ const int  *const   visc_mean_type,
+ cs_real_t           c_visc[],
+ cs_real_t           i_visc[],
+ cs_real_t           b_visc[]
 )
 {
   const cs_mesh_t  *m = cs_glob_mesh;
@@ -131,10 +131,10 @@ void CS_PROCF (viscfa, VISCFA)
 
 void CS_PROCF (vistnv, VISTNV)
 (
- const cs_int_t  *const   visc_mean_type,
- cs_real_6_t              c_visc[],
- cs_real_33_t             i_visc[],
- cs_real_t                b_visc[]
+ const int  *const   visc_mean_type,
+ cs_real_6_t         c_visc[],
+ cs_real_33_t        i_visc[],
+ cs_real_t           b_visc[]
 )
 {
   const cs_mesh_t  *m = cs_glob_mesh;
@@ -154,12 +154,12 @@ void CS_PROCF (vistnv, VISTNV)
 
 void CS_PROCF (vitens, VITENS)
 (
- cs_real_6_t              c_visc[],
- const cs_int_t  *const   iwarnp,
- cs_real_2_t              weighf[],
- cs_real_t                weighb[],
- cs_real_t                i_visc[],
- cs_real_t                b_visc[]
+ cs_real_6_t         c_visc[],
+ const int    *const iwarnp,
+ cs_real_2_t         weighf[],
+ cs_real_t           weighb[],
+ cs_real_t           i_visc[],
+ cs_real_t           b_visc[]
 )
 {
   const cs_mesh_t  *m = cs_glob_mesh;

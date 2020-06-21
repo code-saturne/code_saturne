@@ -847,10 +847,10 @@ cs_parall_allgather_r(int        n_elts,
 
     assert(sizeof(double) == sizeof(cs_real_t));
 
-    BFT_MALLOC(count, n_domains, cs_int_t);
-    BFT_MALLOC(shift, n_domains, cs_int_t);
+    BFT_MALLOC(count, n_domains, int);
+    BFT_MALLOC(shift, n_domains, int);
 
-    MPI_Allgather(&n_elts, 1, CS_MPI_INT, count, 1, CS_MPI_INT,
+    MPI_Allgather(&n_elts, 1, MPI_INT, count, 1, MPI_INT,
                   cs_glob_mpi_comm);
 
     shift[0] = 0;

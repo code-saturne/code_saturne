@@ -252,7 +252,7 @@ _perio_face_clean(cs_join_param_t      param,
   }
 
   BFT_REALLOC(mesh->global_i_face_num, mesh->n_i_faces, cs_gnum_t);
-  BFT_REALLOC(mesh->i_face_family, mesh->n_i_faces, cs_lnum_t);
+  BFT_REALLOC(mesh->i_face_family, mesh->n_i_faces, int);
   BFT_REALLOC(mesh->i_face_r_gen, mesh->n_i_faces, char);
 
   /* Update interior face connectivity */
@@ -302,8 +302,8 @@ _perio_face_clean(cs_join_param_t      param,
 
 void CS_PROCF(tstjpe, tstjpe)
 (
- cs_int_t    *iperio,
- cs_int_t    *iperot
+ int    *iperio,
+ int    *iperot
 )
 {
   int i;
@@ -690,8 +690,8 @@ cs_join_perio_apply(cs_join_t          *this_join,
   if (param.verbosity > 2)
     fprintf(cs_glob_join_log,
             "  Apply periodicity to the local join mesh structure\n"
-            "  New number of faces to treat locally: %8d\n",
-            jmesh->n_faces);
+            "  New number of faces to treat locally: %ld\n",
+            (long)jmesh->n_faces);
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
   if (cs_glob_join_log != NULL) {
@@ -1017,8 +1017,8 @@ cs_join_perio_merge_back(cs_join_t          *this_join,
 
   if (param.verbosity > 3)
     fprintf(cs_glob_join_log,
-            "  Add locally %d new vertices for periodicity\n",
-            n_new_vertices);
+            "  Add locally %ld new vertices for periodicity\n",
+            (long)n_new_vertices);
 
   shift = select->n_couples;
   select->n_couples += n_new_vertices;

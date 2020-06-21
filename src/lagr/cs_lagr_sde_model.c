@@ -160,12 +160,12 @@ _lagtmp(cs_lnum_t        npt,
         const cs_real_t  phith[],
         cs_real_t        temp[])
 {
-  cs_lnum_t  l_id;
+  int l_id;
 
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
 
-  cs_lnum_t nlayer = cs_glob_lagr_const_dim->nlayer;
-  cs_lnum_t l_id_max = nlayer - 1;
+  int nlayer = cs_glob_lagr_const_dim->nlayer;
+  int l_id_max = nlayer - 1;
 
   cs_real_t delray[nlayer], radiusd[nlayer], rho[nlayer];
 
@@ -1357,7 +1357,7 @@ _lagich(const cs_real_t   tempct[],
         f2mc[iii] = 0.0;
     }
 
-    cs_lnum_t mode = -1;
+    int mode = -1;
     CS_PROCF(cpthp1, CPTHP1) (&mode, &aux2, coefe, f1mc, f2mc, &part_temp[l_id_het]);
 
     /* Compute MO2/MC/2. HO2(TF)    */

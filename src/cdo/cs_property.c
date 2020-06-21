@@ -954,8 +954,8 @@ cs_property_finalize_setup(void)
       for (cs_lnum_t j = 0; j < n_cells; j++)
         if (pty->def_ids[j] == -1)
           bft_error(__FILE__, __LINE__, 0,
-                    " %s: cell%d is unset for property %s\n",
-                    __func__, j, pty->name);
+                    " %s: cell %ld is unset for property %s\n",
+                    __func__, (long)j, pty->name);
 
     }
     else if (pty->n_definitions == 0) {

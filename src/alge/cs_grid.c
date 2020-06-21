@@ -799,7 +799,7 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
 
         MPI_Irecv(coarse_row + halo->n_local_elts + start,
                   length,
-                  CS_MPI_INT,
+                  CS_MPI_LNUM,
                   halo->c_domain_rank[rank_id],
                   halo->c_domain_rank[rank_id],
                   cs_glob_mpi_comm,
@@ -828,7 +828,7 @@ _exchange_halo_coarsening(const cs_halo_t  *halo,
 
         MPI_Isend(coarse_send + start,
                   length,
-                  CS_MPI_INT,
+                  CS_MPI_LNUM,
                   halo->c_domain_rank[rank_id],
                   local_rank,
                   cs_glob_mpi_comm,
@@ -2362,8 +2362,8 @@ _merge_grids(cs_grid_t  *g,
   BFT_FREE(face_list);
 
   if (verbosity > 3)
-    bft_printf("      merged to %d (from %d) rows\n\n",
-               g->n_rows, g->n_elts_r[0]);
+    bft_printf("      merged to %ld (from %ld) rows\n\n",
+               (long)g->n_rows, (long)g->n_elts_r[0]);
 }
 
 /*----------------------------------------------------------------------------
@@ -2376,7 +2376,7 @@ _merge_grids(cs_grid_t  *g,
  *----------------------------------------------------------------------------*/
 
 static void
-_scatter_row_num(const cs_grid_t  *g,
+_scatter_row_int(const cs_grid_t  *g,
                  int              *num)
 {
   assert(g != NULL);
@@ -2397,13 +2397,57 @@ _scatter_row_num(const cs_grid_t  *g,
         cs_lnum_t n_send = (  g->merge_cell_idx[rank_id+1]
                             - g->merge_cell_idx[rank_id]);
         int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
-        MPI_Send(num + g->merge_cell_idx[rank_id], n_send, MPI_INT,
+        MPI_Send(num + g->merge_cell_idx[rank_id], n_send, CS_MPI_LNUM,
                  dist_rank, tag, comm);
       }
     }
     else {
       MPI_Status status;
-      MPI_Recv(num, g->n_elts_r[0], MPI_INT,
+      MPI_Recv(num, g->n_elts_r[0], CS_MPI_LNUM,
+               g->merge_sub_root, tag, comm, &status);
+    }
+  }
+
+}
+
+/*----------------------------------------------------------------------------
+ * Scatter coarse cell integer data in case of merged grids
+ *
+ * parameters:
+ *   g    <-- Grid structure
+ *   num  <-> Variable defined on merged grid cells in,
+ *            defined on scattered to grid cells out
+ *----------------------------------------------------------------------------*/
+
+static void
+_scatter_row_num(const cs_grid_t  *g,
+                 cs_lnum_t        *num)
+{
+  assert(g != NULL);
+
+  /* If grid merging has taken place, scatter coarse data */
+
+  if (g->merge_sub_size > 1) {
+
+    MPI_Comm  comm = cs_glob_mpi_comm;
+    static const int tag = 'p'+'r'+'o'+'l'+'o'+'n'+'g';
+
+    /* Append data */
+
+    if (g->merge_sub_rank == 0) {
+      int rank_id;
+      assert(cs_glob_rank_id == g->merge_sub_root);
+      for (rank_id = 1; rank_id < g->merge_sub_size; rank_id++) {
+        cs_lnum_t n_send = (  g->merge_cell_idx[rank_id+1]
+                            - g->merge_cell_idx[rank_id]);
+        int dist_rank = g->merge_sub_root + g->merge_stride*rank_id;
+        MPI_Send(num + g->merge_cell_idx[rank_id], n_send, CS_MPI_LNUM,
+                 dist_rank, tag, comm);
+      }
+    }
+    else {
+      MPI_Status status;
+      MPI_Recv(num, g->n_elts_r[0], CS_MPI_LNUM,
                g->merge_sub_root, tag, comm, &status);
     }
   }
@@ -4841,8 +4885,8 @@ _project_coarse_row_to_parent(cs_grid_t  *c)
 
   if (f->parent != NULL) { /* level > 0*/
 
-    int *c_coarse_row = c->coarse_row;
-    int *f_coarse_row = f->coarse_row;
+    cs_lnum_t *c_coarse_row = c->coarse_row;
+    cs_lnum_t *f_coarse_row = f->coarse_row;
 
     cs_lnum_t f_n_cols = f->parent->n_cols_ext;
 
@@ -4890,6 +4934,51 @@ _build_coarse_matrix_null(cs_grid_t         *c,
                              NULL,
                              NULL,
                              NULL);
+}
+
+/*----------------------------------------------------------------------------
+ * Compute fine row integer values from coarse row values
+ *
+ * parameters:
+ *   c       <-- Fine grid structure
+ *   f       <-- Fine grid structure
+ *   c_num   --> Variable (rank) defined on coarse grid rows
+ *   f_num   <-- Variable (rank) defined on fine grid rows
+ *----------------------------------------------------------------------------*/
+
+static void
+_prolong_row_int(const cs_grid_t  *c,
+                 const cs_grid_t  *f,
+                 int              *c_num,
+                 int              *f_num)
+{
+  const cs_lnum_t *coarse_row;
+  const int *_c_num = c_num;
+
+  cs_lnum_t f_n_rows = f->n_rows;
+
+  assert(f != NULL);
+  assert(c != NULL);
+  assert(c->coarse_row != NULL || f_n_rows == 0);
+  assert(f_num != NULL);
+  assert(c_num != NULL);
+
+#if defined(HAVE_MPI)
+  _scatter_row_int(c, c_num);
+#endif
+
+  /* Set fine values (possible penalization at first level) */
+
+  coarse_row = c->coarse_row;
+
+# pragma omp parallel for if(f_n_rows > CS_THR_MIN)
+  for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
+    cs_lnum_t i = coarse_row[ii];
+    if (i >= 0)
+      f_num[ii] = _c_num[i];
+    else
+      f_num[ii] = -1;
+  }
 }
 
 /*============================================================================
@@ -6028,51 +6117,6 @@ cs_grid_restrict_row_var(const cs_grid_t  *f,
 }
 
 /*----------------------------------------------------------------------------
- * Compute fine row integer values from coarse row values
- *
- * parameters:
- *   c       <-- Fine grid structure
- *   f       <-- Fine grid structure
- *   c_num   --> Variable defined on coarse grid rows
- *   f_num   <-- Variable defined on fine grid rows
- *----------------------------------------------------------------------------*/
-
-void
-cs_grid_prolong_row_num(const cs_grid_t  *c,
-                        const cs_grid_t  *f,
-                        int              *c_num,
-                        int              *f_num)
-{
-  const cs_lnum_t *coarse_row;
-  const int *_c_num = c_num;
-
-  cs_lnum_t f_n_rows = f->n_rows;
-
-  assert(f != NULL);
-  assert(c != NULL);
-  assert(c->coarse_row != NULL || f_n_rows == 0);
-  assert(f_num != NULL);
-  assert(c_num != NULL);
-
-#if defined(HAVE_MPI)
-  _scatter_row_num(c, c_num);
-#endif
-
-  /* Set fine values (possible penalization at first level) */
-
-  coarse_row = c->coarse_row;
-
-# pragma omp parallel for if(f_n_rows > CS_THR_MIN)
-  for (cs_lnum_t ii = 0; ii < f_n_rows; ii++) {
-    cs_lnum_t i = coarse_row[ii];
-    if (i >= 0)
-      f_num[ii] = _c_num[i];
-    else
-      f_num[ii] = -1;
-  }
-}
-
-/*----------------------------------------------------------------------------
  * Compute fine row variable values from coarse row values
  *
  * parameters:
@@ -6324,10 +6368,10 @@ cs_grid_project_row_rank(const cs_grid_t  *g,
 
       cs_lnum_t n_parent_rows = _g->parent->n_rows;
 
-      cs_grid_prolong_row_num(_g,
-                              _g->parent,
-                              tmp_rank_1,
-                              tmp_rank_2);
+      _prolong_row_int(_g,
+                       _g->parent,
+                       tmp_rank_1,
+                       tmp_rank_2);
 
       for (ii = 0; ii < n_parent_rows; ii++)
         tmp_rank_1[ii] = tmp_rank_2[ii];
@@ -6525,7 +6569,7 @@ cs_grid_dump(const cs_grid_t  *g)
   if (g->merge_cell_idx != NULL) {
     bft_printf("  merge_cell_idx\n");
     for (i = 0; i < g->merge_sub_size + 1; i++)
-      bft_printf("    %d: %d\n", i, g->merge_cell_idx[i]);
+      bft_printf("    %ld: %ld\n", (long)i, (long)g->merge_cell_idx[i]);
   }
 
 #endif
@@ -6543,24 +6587,24 @@ cs_grid_dump(const cs_grid_t  *g)
     bft_printf("\n"
                "  face -> cell connectivity;\n");
     for (i = 0; i < g->n_faces; i++)
-      bft_printf("    %d : %d, %d\n", (int)(i+1),
-                 (int)(g->face_cell[i][0]), (int)(g->face_cell[i][1]));
+      bft_printf("    %ld : %ld, %ld\n", (long)(i+1),
+                 (long)(g->face_cell[i][0]), (long)(g->face_cell[i][1]));
   }
 
   if (g->coarse_row != NULL && g->parent != NULL) {
     bft_printf("\n"
                "  coarse_row;\n");
     for (i = 0; i < g->parent->n_rows; i++)
-      bft_printf("    %d : %d\n",
-                 (int)(i+1), (int)(g->coarse_row[i]));
+      bft_printf("    %ld : %ld\n",
+                 (long)(i+1), (long)(g->coarse_row[i]));
   }
 
   if (g->coarse_face != NULL && g->parent != NULL) {
     bft_printf("\n"
                "  coarse_face;\n");
     for (i = 0; i < g->parent->n_faces; i++)
-      bft_printf("    %d : %d\n",
-                 (int)(i+1), (int)(g->coarse_face[i]));
+      bft_printf("    %ld : %ld\n",
+                 (long)(i+1), (long)(g->coarse_face[i]));
   }
 
   cs_halo_dump(g->halo, 1);

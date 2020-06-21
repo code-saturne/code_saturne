@@ -781,8 +781,8 @@ cs_parameters_is_greater_double(cs_parameter_error_behavior_t   err_behavior,
 void
 cs_parameters_error_barrier(void)
 {
-  cs_lnum_t n_errors = _param_check_errors;
-  cs_parall_counter_max(&n_errors, 1);
+  int n_errors = _param_check_errors;
+  cs_parall_sum(1, CS_INT_TYPE, &n_errors);
 
   if (n_errors > 0)
     bft_error

@@ -71,10 +71,10 @@ typedef struct _cs_ast_coupling_t  cs_ast_coupling_t;
 
 void CS_PROCF(astgeo, ASTGEO)
 (
- cs_int_t   *nbfast,
- cs_int_t   *lstfac,
- cs_int_t   *idfast,
- cs_int_t   *idnast,
+ cs_lnum_t  *nbfast,
+ cs_lnum_t  *lstfac,
+ cs_lnum_t  *idfast,
+ cs_lnum_t  *idnast,
  cs_real_t  *almax
 );
 
@@ -90,8 +90,7 @@ void CS_PROCF(astgeo, ASTGEO)
 
 void CS_PROCF(astfor, ASTFOR)
 (
- cs_int_t    *ntcast,
- cs_int_t    *nbfast,
+ cs_lnum_t   *nbfast,
  cs_real_t   *forast
 );
 
@@ -107,8 +106,7 @@ void CS_PROCF(astfor, ASTFOR)
 
 void CS_PROCF(astcin, ASTCIN)
 (
- cs_int_t    *ntcast,
- cs_real_3_t *disale
+ cs_real_3_t  *disale
 );
 
 /*----------------------------------------------------------------------------
@@ -123,8 +121,7 @@ void CS_PROCF(astcin, ASTCIN)
 
 void CS_PROCF(astpdt, ASTPDT)
 (
- cs_real_t *dttab,
- cs_int_t  *nbpdt
+ cs_real_t  *dttab
 );
 
 /*============================================================================

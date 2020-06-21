@@ -266,8 +266,8 @@ cs_wall_functions_1scale_log(cs_lnum_t    ifac,
     if (iter >= niter_max) {
       bft_printf(_("WARNING: non-convergence in the computation\n"
                    "******** of the friction velocity\n\n"
-                   "face number: %d \n"
-                   "friction vel: %f \n" ), ifac, *ustar);
+                   "face id: %ld \n"
+                   "friction vel: %f \n" ), (long)ifac, *ustar);
     }
 
     *uk = *ustar;
@@ -1165,7 +1165,7 @@ cs_wall_functions_s_vdriest(cs_real_t  prl,
 
 void CS_PROCF (wallfunctions, WALLFUNCTIONS)
 (
- const cs_int_t   *const iwallf,
+ const int        *const iwallf,
  const cs_lnum_t  *const ifac,
  const cs_real_t  *const viscosity,
  const cs_real_t  *const t_visc,
@@ -1174,7 +1174,7 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
  const cs_real_t  *const roughness,
  const cs_real_t  *const rnnb,
  const cs_real_t  *const kinetic_en,
-       cs_int_t         *iuntur,
+       int              *iuntur,
        cs_lnum_t        *nsubla,
        cs_lnum_t        *nlogla,
        cs_real_t        *ustar,
@@ -1191,7 +1191,7 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
 
 void CS_PROCF (hturbp, HTURBP)
 (
- const cs_int_t   *const iwalfs,
+ const int        *const iwalfs,
  const cs_real_t  *const prl,
  const cs_real_t  *const prt,
  const cs_real_t  *const yplus,

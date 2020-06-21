@@ -419,9 +419,27 @@ AC_ARG_ENABLE(long-gnum,
 )
 
 if test "x$cs_have_long_gnum" = "xyes"; then
-  AC_DEFINE([HAVE_LONG_GNUM], 1, [Use 64-bit type if available for cs_gnum_t.])
+  AC_DEFINE([HAVE_LONG_GNUM], 1, [Use 64-bit type for cs_gnum_t.])
 fi
 AC_SUBST(cs_have_long_gnum)
+
+# Use long local numbers ?
+AC_ARG_ENABLE(long-lnum,
+  [AS_HELP_STRING([--enable-long-lnum],[use long local numbers])],
+  [
+    case "${enableval}" in
+      yes) cs_have_long_lnum=yes ;;
+      no)  cs_have_long_lnum=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-long-lnum]) ;;
+    esac
+  ],
+  [ cs_have_long_lnum=no ]
+)
+
+if test "x$cs_have_long_lnum" = "xyes"; then
+  AC_DEFINE([HAVE_LONG_LNUM], 1, [Use 64-bit type for cs_lnum_t.])
+fi
+AC_SUBST(cs_have_long_lnum)
 
 # Check for Fortran module generation
 CS_AC_TEST_FC_MOD

@@ -83,7 +83,7 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (algdom, ALGDOM)(cs_int_t  *iopt);
+CS_PROCF (algdom, ALGDOM)(int  *iopt);
 
 /*=============================================================================
  * Public function prototypes

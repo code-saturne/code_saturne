@@ -700,9 +700,9 @@ fvm_box_set_dump(const fvm_box_set_t  *boxes,
     for (i = 0; i < boxes->n_boxes; i++) {
       const cs_coord_t *bmin = boxes->extents + i*6;
       const cs_coord_t *bmax = boxes->extents + i*6 + 3;
-      bft_printf("  id %8d, num %9llu: "
+      bft_printf("  id %8ld, num %9llu: "
                  "[%7.5e %7.5e %7.5e] --> [%7.5e %7.5e %7.5e]\n",
-                 i, (unsigned long long)(boxes->g_num[i]),
+                 (long)i, (unsigned long long)(boxes->g_num[i]),
                  bmin[0], bmin[1], bmin[2],
                  bmax[0], bmax[1], bmax[2]);
     }
@@ -712,9 +712,9 @@ fvm_box_set_dump(const fvm_box_set_t  *boxes,
     for (i = 0; i < boxes->n_boxes; i++) {
       const cs_coord_t *bmin = boxes->extents + i*4;
       const cs_coord_t *bmax = boxes->extents + i*4 + 2;
-      bft_printf("  id %8d, num %9llu: "
+      bft_printf("  id %8ld, num %9llu: "
                  "[%7.5e %7.5e] --> [%7.5e %7.5e]\n",
-                 i, (unsigned long long)(boxes->g_num[i]),
+                 (long)i, (unsigned long long)(boxes->g_num[i]),
                  bmin[0], bmin[1], bmax[0], bmax[1]);
     }
   }
@@ -723,9 +723,9 @@ fvm_box_set_dump(const fvm_box_set_t  *boxes,
     for (i = 0; i < boxes->n_boxes; i++) {
       const cs_coord_t *bmin = boxes->extents + i*2;
       const cs_coord_t *bmax = boxes->extents + i*2 + 1;
-      bft_printf("  id %8d, num %9llu: "
+      bft_printf("  id %8ld, num %9llu: "
                  "[%7.5e] --> [%7.5e]\n",
-                 i, (unsigned long long)(boxes->g_num[i]),
+                 (long)i, (unsigned long long)(boxes->g_num[i]),
                  bmin[0], bmax[0]);
     }
   }
@@ -934,12 +934,14 @@ fvm_box_distrib_dump_statistics(const fvm_box_distrib_t  *distrib,
   if (n_quantiles > 0) {
 
     for (i = 0; i < n_quantiles - 1; i++)
-      bft_printf("    %3d : [ %10d ; %10d [ = %10d\n",
-                 i+1, quantile_start[i], quantile_start[i+1], n_boxes[i]);
+      bft_printf("    %3ld : [ %10ld ; %10ld [ = %10ld\n",
+                 (long)i+1, (long)quantile_start[i], (long)quantile_start[i+1],
+                 (long)n_boxes[i]);
 
     i = n_quantiles -1;
-    bft_printf("    %3d : [ %10d ; %10d ] = %10d\n",
-               i+1, quantile_start[i], quantile_start[i+1] - 1, n_boxes[i]);
+    bft_printf("    %3ld : [ %10ld ; %10ld ] = %10ld\n",
+               (long)i+1, (long)quantile_start[i], (long)quantile_start[i+1] - 1,
+               (long)n_boxes[i]);
 
   }
   bft_printf_flush();

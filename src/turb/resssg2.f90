@@ -164,7 +164,7 @@ double precision rctse
 double precision eigen_max
 double precision eigen_vals(3)
 double precision turb_schmidt
-double precision gradchk, gradro_impl, tr_impl, const
+double precision gradchk, gradro_impl, const
 double precision kseps
 double precision matrn(6), oo_matrn(6)
 double precision ceps_impl, cphi3impl, cphiw_impl

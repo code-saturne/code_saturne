@@ -317,7 +317,7 @@ cs_volume_zone_log_setup(void);
  */
 /*----------------------------------------------------------------------------*/
 
-cs_lnum_t
+int
 cs_volume_zone_n_type_zones(int  type_flag);
 
 /*----------------------------------------------------------------------------*/
@@ -359,6 +359,7 @@ cs_volume_zone_select_type_cells(int        type_flag,
  * \brief Print volume zones information to listing file
  */
 /*----------------------------------------------------------------------------*/
+
 void
 cs_volume_zone_print_info(void);
 

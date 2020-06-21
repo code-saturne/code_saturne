@@ -2145,11 +2145,13 @@ cs_sdm_dump(cs_lnum_t           parent_id,
 {
   if (mat == NULL) {
     cs_log_printf(CS_LOG_DEFAULT,
-                  "<< MATRIX is set to NULL (parent id: %d)>>\n", parent_id);
+                  "<< MATRIX is set to NULL (parent id: %ld)>>\n",
+                  (long)parent_id);
     return;
   }
 
-  cs_log_printf(CS_LOG_DEFAULT, "<< MATRIX parent id: %d >>\n", parent_id);
+  cs_log_printf(CS_LOG_DEFAULT, "<< MATRIX parent id: %ld >>\n",
+                (long)parent_id);
 
   if (mat->n_rows < 1 || mat->n_cols < 1) {
     cs_log_printf(CS_LOG_DEFAULT, " No value.\n");
@@ -2161,13 +2163,13 @@ cs_sdm_dump(cs_lnum_t           parent_id,
 
   else {
 
-    cs_log_printf(CS_LOG_DEFAULT, " %8s %11d", " ", col_ids[0]);
+    cs_log_printf(CS_LOG_DEFAULT, " %8s %11ld", " ", (long)col_ids[0]);
     for (short int i = 1; i < mat->n_cols; i++)
-      cs_log_printf(CS_LOG_DEFAULT, " %11d", col_ids[i]);
+      cs_log_printf(CS_LOG_DEFAULT, " %11ld", (long)col_ids[i]);
     cs_log_printf(CS_LOG_DEFAULT, "\n");
 
     for (short int i = 0; i < mat->n_rows; i++) {
-      cs_log_printf(CS_LOG_DEFAULT, " %8d ", row_ids[i]);
+      cs_log_printf(CS_LOG_DEFAULT, " %8ld ", (long)row_ids[i]);
       for (short int j = 0; j < mat->n_cols; j++)
         cs_log_printf(CS_LOG_DEFAULT, " % .4e", mat->val[i*mat->n_cols+j]);
       cs_log_printf(CS_LOG_DEFAULT, "\n");
@@ -2254,8 +2256,8 @@ cs_sdm_block_dump(cs_lnum_t           parent_id,
   }
   assert(mat->block_desc != NULL);
 
-  cs_log_printf(CS_LOG_DEFAULT, "\n << BLOCK MATRIX parent id: %d >>\n",
-                parent_id);
+  cs_log_printf(CS_LOG_DEFAULT, "\n << BLOCK MATRIX parent id: %ld >>\n",
+                (long)parent_id);
 
   const int  n_b_rows = mat->block_desc->n_row_blocks;
   const int  n_b_cols = mat->block_desc->n_col_blocks;

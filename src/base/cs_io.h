@@ -295,6 +295,20 @@ cs_io_set_indexed_position(cs_io_t             *inp,
                            size_t               id);
 
 /*----------------------------------------------------------------------------
+ * Set a section's final data type to int.
+ *
+ * It the datatype is not compatible, throw an error.
+ *
+ * parameters:
+ *   header <-- header structure
+ *   cs_io  --> kernel IO structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_io_set_int(cs_io_sec_header_t  *header,
+              const cs_io_t       *cs_io);
+
+/*----------------------------------------------------------------------------
  * Set a message's final data type to cs_lnum_t.
  *
  * It the datatype is not compatible, throw an error.

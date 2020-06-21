@@ -63,7 +63,7 @@ BEGIN_C_DECLS
  */
 /*----------------------------------------------------------------------------*/
 
-#pragma weak cs_meg_post_profile
+#pragma weak cs_meg_post_profiles
 void
 cs_meg_post_profiles(const char       *name,
                      int               n_coords,

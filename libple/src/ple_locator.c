@@ -1096,7 +1096,7 @@ _locate_distant(ple_locator_t               *this_locator,
                 float                        tolerance_fraction,
                 ple_lnum_t                   n_points,
                 const ple_lnum_t             point_list[],
-                const ple_lnum_t             point_tag[],
+                const int                    point_tag[],
                 const ple_coord_t            point_coords[],
                 ple_lnum_t                   location[],
                 ple_lnum_t                   location_rank_id[],
@@ -1109,7 +1109,7 @@ _locate_distant(ple_locator_t               *this_locator,
   ple_lnum_t j;
   ple_lnum_t n_coords_loc, n_coords_dist;
   ple_lnum_t *location_loc, *location_dist;
-  ple_lnum_t *tag_dist, *send_tag;
+  int *tag_dist, *send_tag;
   ple_coord_t *coords_dist, *send_coords;
   float *distance_dist, *distance_loc;
 
@@ -1183,7 +1183,7 @@ _locate_distant(ple_locator_t               *this_locator,
   PLE_MALLOC(send_id, _n_points, ple_lnum_t);
 
   if (have_tags)
-    PLE_MALLOC(send_tag, _n_points, ple_lnum_t);
+    PLE_MALLOC(send_tag, _n_points, int);
   else
     send_tag = NULL;
 
@@ -1264,7 +1264,7 @@ _locate_distant(ple_locator_t               *this_locator,
 
     PLE_MALLOC(coords_dist, n_coords_dist*dim, ple_coord_t);
     if (have_tags)
-      PLE_MALLOC(tag_dist, n_coords_dist, ple_lnum_t);
+      PLE_MALLOC(tag_dist, n_coords_dist, int);
     else
       tag_dist = NULL;
 
@@ -1278,9 +1278,9 @@ _locate_distant(ple_locator_t               *this_locator,
 
     if (have_tags)
       MPI_Sendrecv(send_tag, (int)(n_coords_loc),
-                   PLE_MPI_LNUM, dist_rank, PLE_MPI_TAG,
+                   MPI_INT, dist_rank, PLE_MPI_TAG,
                    tag_dist, (int)(n_coords_dist),
-                   PLE_MPI_LNUM, dist_rank, PLE_MPI_TAG,
+                   MPI_INT, dist_rank, PLE_MPI_TAG,
                    this_locator->comm, &status);
 
     _locator_trace_end_comm(_ple_locator_log_end_p_comm, comm_timing);
@@ -1408,7 +1408,7 @@ _locate_all_distant(ple_locator_t               *this_locator,
                     float                        tolerance_fraction,
                     ple_lnum_t                   n_points,
                     const ple_lnum_t             point_list[],
-                    const ple_lnum_t             point_tag[],
+                    const int                    point_tag[],
                     const ple_coord_t            point_coords[],
                     ple_lnum_t                   location[],
                     ple_lnum_t                   location_rank_id[],
@@ -1852,7 +1852,7 @@ _locate_all_local(ple_locator_t               *this_locator,
                   float                        tolerance_fraction,
                   ple_lnum_t                   n_points,
                   const ple_lnum_t             point_list[],
-                  const ple_lnum_t             point_tag[],
+                  const int                    point_tag[],
                   const ple_coord_t            point_coords[],
                   ple_lnum_t                   location[],
                   float                        distance[],
@@ -1891,14 +1891,15 @@ _locate_all_local(ple_locator_t               *this_locator,
     ple_lnum_t *_location = location;
     float *_distance = distance;
 
-    ple_lnum_t *id, *tag;
+    ple_lnum_t *id;
+    int *tag;
     ple_coord_t *coords;
 
     PLE_MALLOC(coords, n_points * dim, ple_coord_t);
     PLE_MALLOC(id, n_points, ple_lnum_t);
 
     if (have_tags)
-      PLE_MALLOC(tag, n_points, ple_lnum_t);
+      PLE_MALLOC(tag, n_points, int);
     else
       tag = NULL;
 
@@ -1937,7 +1938,7 @@ _locate_all_local(ple_locator_t               *this_locator,
     PLE_REALLOC(coords, n_coords * dim, ple_coord_t);
     PLE_REALLOC(id, n_coords, ple_lnum_t);
     if (have_tags)
-      PLE_REALLOC(tag, n_coords, ple_lnum_t);
+      PLE_REALLOC(tag, n_coords, int);
 
     if (n_coords < n_points) {
       PLE_MALLOC(_location, n_coords, ple_lnum_t);
@@ -2925,7 +2926,7 @@ ple_locator_set_mesh(ple_locator_t               *this_locator,
                      int                          dim,
                      ple_lnum_t                   n_points,
                      const ple_lnum_t             point_list[],
-                     const ple_lnum_t             point_tag[],
+                     const int                    point_tag[],
                      const ple_coord_t            point_coords[],
                      float                        distance[],
                      ple_mesh_extents_t          *mesh_extents_f,
@@ -3014,7 +3015,7 @@ ple_locator_extend_search(ple_locator_t               *this_locator,
                           float                        tolerance_fraction,
                           ple_lnum_t                   n_points,
                           const ple_lnum_t             point_list[],
-                          const ple_lnum_t             point_tag[],
+                          const int                    point_tag[],
                           const ple_coord_t            point_coords[],
                           float                        distance[],
                           ple_mesh_extents_t          *mesh_extents_f,

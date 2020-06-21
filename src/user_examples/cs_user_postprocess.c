@@ -70,8 +70,8 @@ _i_faces_select_example(void         *input,
   CS_UNUSED(input);
 
   cs_lnum_t i, face_id;
-  cs_lnum_t n_families = 0;
-  cs_int_t *family_list = NULL;
+  int n_families = 0;
+  int *family_list = NULL;
   int *family_mask = NULL;
 
   cs_lnum_t n_i_faces = 0;
@@ -85,7 +85,7 @@ _i_faces_select_example(void         *input,
 
   /* Build mask on families matching groups "2" (1), "3" (2) */
 
-  BFT_MALLOC(family_list, m->n_families, cs_int_t);
+  BFT_MALLOC(family_list, m->n_families, int);
   BFT_MALLOC(family_mask, m->n_families, int);
 
   for (i = 0; i < m->n_families; i++)

@@ -273,7 +273,7 @@ cs_at_data_assim_build_ops(void)
         bft_printf("    Obs %i\n",ii);
         for (cs_lnum_t jj = proj_idx[ii]; jj < proj_idx[ii+1]; jj++)
           bft_printf("    Point %i x %.2f y %.2f z %.2f coef %.2f\n",
-                     jj, (proj + jj*4)[1], (proj + jj*4)[2],
+                     (int)jj, (proj + jj*4)[1], (proj + jj*4)[2],
                      (proj + jj*4)[3], (proj + jj*4)[0]);
         bft_printf("\n");
       }

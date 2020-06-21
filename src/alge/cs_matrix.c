@@ -2371,9 +2371,9 @@ _set_coeffs_csr_from_msr(cs_matrix_t       *matrix,
     bft_error
       (__FILE__, __LINE__, 0,
        "%s:\n"
-       "  case with diagonal block size %d en extradiagonal block size %d\n"
+       "  case with diagonal block size %ld en extradiagonal block size %ld\n"
        "  not implemented.\n",
-       __func__, matrix->db_size[0], matrix->eb_size[0]);
+       __func__, (long)matrix->db_size[0], (long)matrix->eb_size[0]);
 
   /* Special configuration where ownership is transferred directly */
 

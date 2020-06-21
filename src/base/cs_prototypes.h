@@ -66,7 +66,7 @@ extern void CS_PROCF (caltri, CALTRI)
 
 extern void CS_PROCF (cpthp1, CPTHP1)
 (
- const cs_int_t   *mode,    /* <-- 1: h to t, 2: t to h */
+ const int        *mode,    /* <-- 1: h to t, 2: t to h */
  cs_real_t        *eh,      /* <-> enthalpy of gas mix */
  cs_real_t        *xesp,    /* <-- mas fraction of species */
  cs_real_t        *f1mc,    /* <-- mean f1 */
@@ -80,8 +80,8 @@ extern void CS_PROCF (cpthp1, CPTHP1)
 
 extern void CS_PROCF (csinit, CSINIT)
 (
- const cs_int_t  *irgpar,  /* <-- MPI Rank in parallel, -1 otherwise */
- const cs_int_t  *nrgpar   /* <-- Number of MPI processes, or 1 */
+ const int  *irgpar,  /* <-- MPI Rank in parallel, -1 otherwise */
+ const int  *nrgpar   /* <-- Number of MPI processes, or 1 */
 );
 
 /*----------------------------------------------------------------------------
@@ -90,8 +90,8 @@ extern void CS_PROCF (csinit, CSINIT)
 
 extern void CS_PROCF (distpr, DISTPR)
 (
- const cs_int_t  *itypfb,    /* <-- boudnary face types */
- cs_real_t       *distpa     /* <-- wall distance */
+ const int  *itypfb,    /* <-- boudnary face types */
+ cs_real_t  *distpa     /* <-- wall distance */
 );
 
 /*----------------------------------------------------------------------------
@@ -100,16 +100,16 @@ extern void CS_PROCF (distpr, DISTPR)
 
 extern void CS_PROCF (dvvpst, DVVPST)
 (
- const cs_int_t  *nummai,    /* <-- number or post-processing mesh */
- const cs_int_t  *numtyp,    /* <-- number or post-processing type
-                              *     (-1 as volume, -2 as boundary, or nummai) */
- const cs_int_t  *nvar,      /* <-- number of variables */
- const cs_int_t  *ncelps,    /* <-- number of post-processed cells */
- const cs_int_t  *nfbrps,    /* <-- number of post processed boundary faces */
- const cs_int_t   lstcel[],  /* <-- list of post-processed cells */
- const cs_int_t   lstfbr[],  /* <-- list of post-processed boundary faces */
- cs_real_t        tracel[],  /* --- work array for output cells */
- cs_real_t        trafbr[]   /* --- work array for output boundary faces */
+ const int        *nummai,    /* <-- number or post-processing mesh */
+ const int        *numtyp,    /* <-- number or post-processing type
+                               *     (-1 as volume, -2 as boundary, or nummai) */
+ const int        *nvar,      /* <-- number of variables */
+ const cs_lnum_t  *ncelps,    /* <-- number of post-processed cells */
+ const cs_lnum_t  *nfbrps,    /* <-- number of post processed boundary faces */
+ const cs_lnum_t   lstcel[],  /* <-- list of post-processed cells */
+ const cs_lnum_t   lstfbr[],  /* <-- list of post-processed boundary faces */
+ cs_real_t         tracel[],  /* --- work array for output cells */
+ cs_real_t         trafbr[]   /* --- work array for output boundary faces */
 );
 
 /*----------------------------------------------------------------------------
@@ -118,14 +118,14 @@ extern void CS_PROCF (dvvpst, DVVPST)
 
 extern void CS_PROCF (findpt, FINDPT)
 (
- const cs_int_t   *ncelet,   /* <-- number of extended (real + ghost) cells */
- const cs_int_t   *ncel,     /* <-- number of cells */
+ const cs_lnum_t  *ncelet,   /* <-- number of extended (real + ghost) cells */
+ const cs_lnum_t  *ncel,     /* <-- number of cells */
  const cs_real_t  *xyzcen,   /* <-- cell centers */
  const cs_real_t  *xx,       /* <-- node coordinate X */
  const cs_real_t  *yy,       /* <-- node coordinate Y */
  const cs_real_t  *zz,       /* <-- node coordinate Z */
-       cs_int_t   *node,     /* --> node we are looking for, zero if error */
-       cs_int_t   *ndrang    /* --> rank of associated process */
+       cs_lnum_t  *node,     /* --> node we are looking for, zero if error */
+       int        *ndrang    /* --> rank of associated process */
 );
 
 /*----------------------------------------------------------------------------
@@ -140,7 +140,7 @@ extern void CS_PROCF (findpt, FINDPT)
  *----------------------------------------------------------------------------*/
 
 extern void
-CS_PROCF (haltyp, HALTYP)(const cs_int_t   *ivoset);
+CS_PROCF (haltyp, HALTYP)(const int  *ivoset);
 
 /*----------------------------------------------------------------------------
  * Main Fortran options initialization
@@ -157,7 +157,7 @@ extern void CS_PROCF (initi1, INITI1)
 
 extern void CS_PROCF (set_cdo_mode, SET_CDO_MODE)
 (
- const cs_int_t   *mode     /* <-- -1: no CDO, 1: with CDO, 2: CDO only */
+ const int   *mode     /* <-- -1: no CDO, 1: with CDO, 2: CDO only */
 );
 
 /*----------------------------------------------------------------------------
@@ -166,9 +166,9 @@ extern void CS_PROCF (set_cdo_mode, SET_CDO_MODE)
 
 void CS_PROCF (usthht, USTHHT)
 (
- const cs_int_t  *mode,      /* <-- -1 : t -> h ; 1 : h -> t */
- cs_real_t       *enthal,    /* <-- enthalpy */
- cs_real_t       *temper     /* <-- temperature */
+ const int  *mode,      /* <-- -1 : t -> h ; 1 : h -> t */
+ cs_real_t  *enthal,    /* <-- enthalpy */
+ cs_real_t  *temper     /* <-- temperature */
 );
 
 /*----------------------------------------------------------------------------*/
@@ -248,7 +248,7 @@ void CS_PROCF (c_h_to_t, c_h_to_t)
  *----------------------------------------------------------------------------*/
 
 int
-cs_add_model_field_indexes(int f_id);
+cs_add_model_field_indexes(int  f_id);
 
 /*----------------------------------------------------------------------------
  * Return Lagrangian model status.

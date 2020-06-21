@@ -374,8 +374,8 @@ _create_assembler(int  coupling_id)
 
 void
 cs_matrix_vector_native_multiply(bool                symmetric,
-                                 const int           db_size[4],
-                                 const int           eb_size[4],
+                                 const cs_lnum_t     db_size[4],
+                                 const cs_lnum_t     eb_size[4],
                                  cs_halo_rotation_t  rotation_mode,
                                  int                 f_id,
                                  const cs_real_t    *dam,
@@ -525,9 +525,9 @@ cs_matrix_update_mesh(void)
  *----------------------------------------------------------------------------*/
 
 cs_matrix_t  *
-cs_matrix_default(bool        symmetric,
-                  const int   diag_block_size[],
-                  const int   extra_diag_block_size[])
+cs_matrix_default(bool             symmetric,
+                  const cs_lnum_t  diag_block_size[],
+                  const cs_lnum_t  extra_diag_block_size[])
 {
   cs_matrix_t *m = NULL;
 
@@ -565,9 +565,9 @@ cs_matrix_default(bool        symmetric,
  *----------------------------------------------------------------------------*/
 
 cs_matrix_t  *
-cs_matrix_msr(bool        symmetric,
-              const int  *diag_block_size,
-              const int  *extra_diag_block_size)
+cs_matrix_msr(bool              symmetric,
+              const cs_lnum_t  *diag_block_size,
+              const cs_lnum_t  *extra_diag_block_size)
 {
   cs_matrix_type_t t = CS_MATRIX_MSR;
   cs_matrix_fill_type_t mft = cs_matrix_get_fill_type(symmetric,
@@ -593,9 +593,9 @@ cs_matrix_msr(bool        symmetric,
  *----------------------------------------------------------------------------*/
 
 cs_matrix_t  *
-cs_matrix_native(bool        symmetric,
-                 const int  *diag_block_size,
-                 const int  *extra_diag_block_size)
+cs_matrix_native(bool             symmetric,
+                 const cs_lnum_t  *diag_block_size,
+                 const cs_lnum_t  *extra_diag_block_size)
 {
   CS_UNUSED(symmetric);
   CS_UNUSED(diag_block_size);
@@ -753,8 +753,8 @@ cs_matrix_t *
 cs_matrix_set_coefficients_coupled(const cs_field_t  *f,
                                    cs_matrix_type_t   type,
                                    bool               symmetric,
-                                   const int         *diag_block_size,
-                                   const int         *extra_diag_block_size,
+                                   const cs_lnum_t   *diag_block_size,
+                                   const cs_lnum_t   *extra_diag_block_size,
                                    const cs_real_t   *da,
                                    const cs_real_t   *xa)
 {

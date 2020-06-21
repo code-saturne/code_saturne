@@ -332,6 +332,41 @@ cs_sort_shell(cs_lnum_t  l,
 }
 
 /*----------------------------------------------------------------------------
+ * Sort an array of integers "a" between its left bound "l" and its
+ * right bound "r" using a shell sort (Knuth algorithm).
+ *
+ * parameters:
+ *   l <-- left bound
+ *   r <-- right bound
+ *   a <-> array to sort
+ *---------------------------------------------------------------------------*/
+
+void
+cs_sort_int_shell(cs_lnum_t  l,
+                  cs_lnum_t  r,
+                  int        a[])
+{
+  cs_lnum_t i, j, h;
+
+  /* Compute stride */
+  for (h = 1; h <= (r-l)/9; h = 3*h+1) ;
+
+  /* Sort array */
+  for (; h > 0; h /= 3) {
+    for (i = l+h; i < r; i++) {
+
+      cs_lnum_t  v = a[i];
+
+      j = i;
+      while ((j >= l+h) && (v < a[j-h]))
+        a[j] = a[j-h], j -= h;
+      a[j] = v;
+
+    } /* Loop on array elements */
+  } /* End of loop on stride */
+}
+
+/*----------------------------------------------------------------------------
  * Sort a global array "a" between its left bound "l" and its right bound "r"
  * thanks to a shell sort (Knuth algorithm).
  *
@@ -487,12 +522,12 @@ cs_sort_dcoupled_shell(int     l,
 void
 cs_sort_sicoupled_shell(int        l,
                         int        r,
-                        int        a[],
+                        cs_lnum_t  a[],
                         short int  b[])
 {
-  int  i, j, h;
+  cs_lnum_t  i, j, h;
 
-  int  size = r - l;
+  cs_lnum_t  size = r - l;
 
   if (size == 0)
     return;
@@ -520,7 +555,6 @@ cs_sort_sicoupled_shell(int        l,
     } /* Loop on array elements */
 
   } /* End of loop on stride */
-
 }
 
 /*----------------------------------------------------------------------------

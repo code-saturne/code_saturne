@@ -458,8 +458,8 @@ cs_cell_sys_dump(const char             msg[],
                    ">> %-8s | %-8s | %-6s\n", "_ID", "ID", "FLAG");
         for (int i = 0; i < csys->n_bc_faces; i++) {
           short int f = csys->_f_ids[i];
-          bft_printf(">> %8d | %8d | %6d\n",
-                     f, csys->bf_ids[f], csys->bf_flag[f]);
+          bft_printf(">> %8d | %8ld | %6d\n",
+                     f, (long)csys->bf_ids[f], csys->bf_flag[f]);
         }
       }
 
@@ -475,10 +475,10 @@ cs_cell_sys_dump(const char             msg[],
                "IDS", "RHS", "TS", "VAL_PREV", "ENFORCED", "FLAG",
                "DIR_VALS");
     for (int i = 0; i < csys->n_dofs; i++)
-      bft_printf(">> %8d | % -.3e | % -.3e | % -.3e |"
-                 " %8d | %6d | % -.3e\n",
-                 csys->dof_ids[i], csys->rhs[i], csys->source[i],
-                 csys->val_n[i], csys->intern_forced_ids[i],
+      bft_printf(">> %8ld | % -.3e | % -.3e | % -.3e |"
+                 " %8ld | %6d | % -.3e\n",
+                 (long)csys->dof_ids[i], csys->rhs[i], csys->source[i],
+                 csys->val_n[i], (long)csys->intern_forced_ids[i],
                  csys->dof_flag[i], csys->dir_values[i]);
   }
 }
@@ -734,10 +734,10 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
   }
 
   bft_printf("\n>> [rank: %d] Dump cs_cell_mesh_t %p; %s; flag: %d\n"
-             " c_id:%d; vol: %9.6e; xc (% .4e % .4e % .4e); diam: % .4e\n",
+             " c_id:%ld; vol: %9.6e; xc (% .4e % .4e % .4e); diam: % .4e\n",
              cs_glob_rank_id, (const void *)cm, fvm_element_type_name[cm->type],
-             cm->flag, cm->c_id, cm->vol_c, cm->xc[0], cm->xc[1], cm->xc[2],
-             cm->diam_c);
+             cm->flag, (long)cm->c_id, cm->vol_c, cm->xc[0], cm->xc[1],
+             cm->xc[2], cm->diam_c);
 
   /* Information related to primal vertices */
   if (cm->flag & cs_flag_need_v) {
@@ -745,9 +745,9 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
     bft_printf(" %s | %6s | %35s | %10s\n",
                "v", "id", "coord", "wvc");
     for (short int v = 0; v < cm->n_vc; v++)
-      bft_printf("%2d | %6d | % .4e % .4e % .4e | %.4e\n",
-                 v, cm->v_ids[v], cm->xv[3*v], cm->xv[3*v+1], cm->xv[3*v+2],
-                 cm->wvc[v]);
+      bft_printf("%2d | %6ld | % .4e % .4e % .4e | %.4e\n",
+                 v, (long)cm->v_ids[v], cm->xv[3*v], cm->xv[3*v+1],
+                 cm->xv[3*v+2], cm->wvc[v]);
 
   } /* Vertex quantities */
 
@@ -762,10 +762,10 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
 
       cs_quant_t  peq = cm->edge[e];
       cs_nvec3_t  dfq = cm->dface[e];
-      bft_printf("%2d | %6d | %3d | %2d | %2d | %.3e |"
+      bft_printf("%2d | %6ld | %3d | %2d | %2d | %.3e |"
                  " % .4e % .4e % .4e | % .4e % .4e % .4e | %.4e |"
                  " % .4e % .4e % .4e | % .4e\n",
-                 e, cm->e_ids[e], cm->e2v_sgn[e], cm->e2v_ids[2*e],
+                 e, (long)cm->e_ids[e], cm->e2v_sgn[e], cm->e2v_ids[2*e],
                  cm->e2v_ids[2*e+1], peq.meas, peq.unitv[0], peq.unitv[1],
                  peq.unitv[2], peq.center[0], peq.center[1], peq.center[2],
                  dfq.meas, dfq.unitv[0], dfq.unitv[1], dfq.unitv[2],
@@ -785,10 +785,10 @@ cs_cell_mesh_dump(const cs_cell_mesh_t     *cm)
     for (short int f = 0; f < cm->n_fc; f++) {
       cs_quant_t  pfq = cm->face[f];
       cs_nvec3_t  deq = cm->dedge[f];
-      bft_printf("%2d | %6d | %.3e | %3d | % .4e % .4e % .4e |"
+      bft_printf("%2d | %6ld | %.3e | %3d | % .4e % .4e % .4e |"
                  " % .4e % .4e % .4e | %.4e | % .4e % .4e % .4e | %.3e |"
                  " %.3e | %.3e\n",
-                 f, cm->f_ids[f], pfq.meas, cm->f_sgn[f],
+                 f, (long)cm->f_ids[f], pfq.meas, cm->f_sgn[f],
                  pfq.unitv[0], pfq.unitv[1], pfq.unitv[2], pfq.center[0],
                  pfq.center[1], pfq.center[2], deq.meas, deq.unitv[0],
                  deq.unitv[1], deq.unitv[2], cm->pvol_f[f], cm->hfc[f],
@@ -1563,7 +1563,7 @@ cs_face_mesh_build(cs_lnum_t                    c_id,
 
   if (_f == n_fc) /* Sanity check */
     bft_error(__FILE__, __LINE__, 0,
-              _(" Face %d not found.\n Stop build a face mesh."), f_id);
+              _(" Face %ld not found.\n Stop build a face mesh."), (long)f_id);
 
   const cs_lnum_t  *f2e_idx = connect->f2e->idx + f_id;
   const cs_lnum_t  *f2e_lst = connect->f2e->ids + f2e_idx[0];

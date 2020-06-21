@@ -107,8 +107,8 @@ extern const char *cs_grid_coarsening_type_name[];
 
 cs_grid_t *
 cs_grid_create_from_shared(cs_lnum_t              n_faces,
-                           const int             *diag_block_size,
-                           const int             *extra_diag_block_size,
+                           const cs_lnum_t       *diag_block_size,
+                           const cs_lnum_t       *extra_diag_block_size,
                            const cs_lnum_2_t     *face_cell,
                            const cs_real_t       *cell_cen,
                            const cs_real_t       *cell_vol,
@@ -179,8 +179,8 @@ void
 cs_grid_get_info(const cs_grid_t  *g,
                  int              *level,
                  bool             *symmetric,
-                 int              *db_size,
-                 int              *eb_size,
+                 cs_lnum_t        *db_size,
+                 cs_lnum_t        *eb_size,
                  int              *n_ranks,
                  cs_lnum_t        *n_rows,
                  cs_lnum_t        *n_cols_ext,
@@ -350,22 +350,6 @@ cs_grid_restrict_row_var(const cs_grid_t  *f,
                          const cs_grid_t  *c,
                          const cs_real_t  *f_var,
                          cs_real_t        *c_var);
-
-/*----------------------------------------------------------------------------
- * Compute fine row integer values from coarse row values
- *
- * parameters:
- *   c       <-- Fine grid structure
- *   f       <-- Fine grid structure
- *   c_num   --> Variable defined on coarse grid rows
- *   f_num   <-- Variable defined on fine grid rows
- *----------------------------------------------------------------------------*/
-
-void
-cs_grid_prolong_row_num(const cs_grid_t  *c,
-                        const cs_grid_t  *f,
-                        int              *c_num,
-                        int              *f_num);
 
 /*----------------------------------------------------------------------------
  * Compute fine row variable values from coarse row values

@@ -89,6 +89,21 @@ cs_sort_shell(cs_lnum_t  l,
               cs_lnum_t  a[]);
 
 /*----------------------------------------------------------------------------
+ * Sort an array of integers "a" between its left bound "l" and its
+ * right bound "r" using a shell sort (Knuth algorithm).
+ *
+ * parameters:
+ *   l <-- left bound
+ *   r <-- right bound
+ *   a <-> array to sort
+ *---------------------------------------------------------------------------*/
+
+void
+cs_sort_int_shell(cs_lnum_t  l,
+                  cs_lnum_t  r,
+                  int        a[]);
+
+/*----------------------------------------------------------------------------
  * Sort a global array "a" between its left bound "l" and its right bound "r"
  * thanks to a shell sort (Knuth algorithm).
  *
@@ -154,7 +169,7 @@ cs_sort_dcoupled_shell(int     l,
 void
 cs_sort_sicoupled_shell(int        l,
                         int        r,
-                        int        a[],
+                        cs_lnum_t  a[],
                         short int  b[]);
 
 /*----------------------------------------------------------------------------

@@ -72,7 +72,7 @@ BEGIN_C_DECLS
 
 void CS_PROCF(nbcsyr, NBCSYR)
 (
- cs_int_t  *const n_couplings
+ int  *n_couplings
 );
 
 /*----------------------------------------------------------------------------
@@ -90,8 +90,8 @@ void CS_PROCF(nbcsyr, NBCSYR)
 
 void CS_PROCF(tsursy, TSURSY)
 (
- cs_int_t  *const cplnum,
- cs_int_t  *issurf
+ int  *const cplnum,
+ int  *issurf
 );
 
 /*----------------------------------------------------------------------------
@@ -109,8 +109,8 @@ void CS_PROCF(tsursy, TSURSY)
 
 void CS_PROCF(tvolsy, TVOLSY)
 (
- cs_int_t  *const cplnum,
- cs_int_t  *isvol
+ int  *const cplnum,
+ int  *isvol
 );
 
 /*----------------------------------------------------------------------------
@@ -128,9 +128,9 @@ void CS_PROCF(tvolsy, TVOLSY)
 
 void CS_PROCF(nbesyr, NBESYR)
 (
- const cs_int_t  *coupl_num,
- const cs_int_t  *mode,
-       cs_int_t  *n_coupl_elts
+ const int  *coupl_num,
+ const int  *mode,
+ cs_lnum_t  *n_coupl_elts
 );
 
 /*----------------------------------------------------------------------------
@@ -148,9 +148,9 @@ void CS_PROCF(nbesyr, NBESYR)
 
 void CS_PROCF(leltsy, LELTSY)
 (
- const cs_int_t    *coupl_num,
- const cs_int_t    *mode,
-       cs_lnum_t   *coupl_elt_list
+ const int   *coupl_num,
+ const int   *mode,
+ cs_lnum_t   *coupl_elt_list
 );
 
 /*----------------------------------------------------------------------------
@@ -168,8 +168,8 @@ void CS_PROCF(leltsy, LELTSY)
 
 void CS_PROCF (varsyi, VARSYI)
 (
- cs_int_t   *numsyr,
- cs_int_t   *mode,
+ int        *numsyr,
+ int        *mode,
  cs_real_t  *tsolid
 );
 
@@ -190,9 +190,9 @@ void CS_PROCF (varsyi, VARSYI)
 
 void CS_PROCF (varsyo, VARSYO)
 (
- cs_int_t   *numsyr,
- cs_int_t   *mode,
- cs_int_t   *lstelt,
+ int        *numsyr,
+ int        *mode,
+ cs_lnum_t  *lstelt,
  cs_real_t  *tfluid,
  cs_real_t  *hfluid
 );
@@ -214,7 +214,7 @@ void CS_PROCF (varsyo, VARSYO)
 
 void CS_PROCF (ctbvsy, CTBVSY)
 (
- cs_int_t   *numsyr,
+ int        *numsyr,
  cs_real_t  *tfluid,
  cs_real_t  *ctbimp,
  cs_real_t  *ctbexp

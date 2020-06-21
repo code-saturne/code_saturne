@@ -463,7 +463,7 @@ _lages1(cs_real_t           dtp,
 
           else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
 
-            cs_lnum_t mode  = 1;
+            int mode  = 1;
             CS_PROCF(usthht, USTHHT)(&mode, &(extra->scal_t->val[cell_id]), &tempf);
 
             tempf = tempf + tkelvi;
@@ -1794,7 +1794,7 @@ _lagesd(cs_real_t             dtp,
         else {
           /* Case without consolidation */
 
-          cs_lnum_t ncont = 1;
+          int ncont = 1;
 
           if (ncont_pp > 600.0) {
 
@@ -2355,7 +2355,7 @@ _lagdep(cs_real_t           dtp,
 
       else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
 
-        cs_lnum_t mode  = 1;
+        int mode  = 1;
         CS_PROCF (usthht,USTHHT) (&mode, &(extra->scal_t->val[cell_id]), &tempf);
 
         tempf = tempf + tkelvi;
@@ -2894,8 +2894,8 @@ cs_lagr_sde_attr(cs_lagr_attribute_t   attr,
           (__FILE__, __LINE__, 0,
            _("The characteristic time for the stochastic differential equation\n"
              "of variable %d should be > 0.\n\n"
-             "Here, for particle %d, its value is %e11.4."),
-           attr, ip, tcarac[ip]);
+             "Here, for particle %ld, its value is %e11.4."),
+           attr, (long)ip, tcarac[ip]);
 
       cs_real_t aux1 = cs_glob_lagr_time_step->dtp/tcarac[ip];
       cs_real_t aux2 = exp(-aux1);
@@ -2932,8 +2932,8 @@ cs_lagr_sde_attr(cs_lagr_attribute_t   attr,
           (__FILE__, __LINE__, 0,
            _("The characteristic time for the stochastic differential equation\n"
              "of variable %d should be > 0.\n\n"
-             "Here, for particle %d, its value is %e11.4."),
-           attr, ip, tcarac[ip]);
+             "Here, for particle %ld, its value is %e11.4."),
+           attr, (long)ip, tcarac[ip]);
 
       cs_real_t aux1   = cs_glob_lagr_time_step->dtp / tcarac [ip];
       cs_real_t aux2   = exp(-aux1);

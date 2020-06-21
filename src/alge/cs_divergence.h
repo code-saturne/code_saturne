@@ -60,15 +60,15 @@ BEGIN_C_DECLS
 
 void CS_PROCF (inimav, INIMAV)
 (
- const cs_int_t   *const  f_id,
- const cs_int_t   *const  itypfl,
- const cs_int_t   *const  iflmb0,
- const cs_int_t   *const  init,
- const cs_int_t   *const  inc,
- const cs_int_t   *const  imrgra,
- const cs_int_t   *const  nswrgu,
- const cs_int_t   *const  imligu,
- const cs_int_t   *const  iwarnu,
+ const int        *const  f_id,
+ const int        *const  itypfl,
+ const int        *const  iflmb0,
+ const int        *const  init,
+ const int        *const  inc,
+ const int        *const  imrgra,
+ const int        *const  nswrgu,
+ const int        *const  imligu,
+ const int        *const  iwarnu,
  const cs_real_t  *const  epsrgu,
  const cs_real_t  *const  climgu,
  const cs_real_t          rom[],
@@ -86,7 +86,7 @@ void CS_PROCF (inimav, INIMAV)
 
 void CS_PROCF (divmas, DIVMAS)
 (
- const cs_int_t  *const   init,
+ const int       *const   init,
  const cs_real_t          i_massflux[],
  const cs_real_t          b_massflux[],
  cs_real_t                diverg[]
@@ -98,7 +98,7 @@ void CS_PROCF (divmas, DIVMAS)
 
 void CS_PROCF (divmat, DIVMAT)
 (
- const cs_int_t    *const   init,
+ const int         *const   init,
  const cs_real_3_t          i_massflux[],
  const cs_real_3_t          b_massflux[],
  cs_real_3_t                diverg[]
@@ -110,8 +110,8 @@ void CS_PROCF (divmat, DIVMAT)
 
 void CS_PROCF (projts, PROJTS)
 (
- const cs_int_t  *const   init,
- const cs_int_t  *const   nswrgu,
+ const int       *const   init,
+ const int       *const   nswrgu,
  const cs_real_3_t        frcxt[],
  const cs_real_t          cofbfp[],
  cs_real_t                i_massflux[],
@@ -129,9 +129,9 @@ void CS_PROCF (projts, PROJTS)
 
 void CS_PROCF (projtv, PROJTV)
 (
- const cs_int_t  *const   init,
- const cs_int_t  *const   nswrgu,
- const cs_int_t  *const   ircflp,
+ const int       *const   init,
+ const int       *const   nswrgu,
+ const int       *const   ircflp,
  const cs_real_3_t        frcxt[],
  const cs_real_t          cofbfp[],
  const cs_real_t          i_visc[],
@@ -148,15 +148,15 @@ void CS_PROCF (projtv, PROJTV)
 
 void CS_PROCF (divrij, DIVRIJ)
 (
- const cs_int_t   *const  f_id,
- const cs_int_t   *const  itypfl,
- const cs_int_t   *const  iflmb0,
- const cs_int_t   *const  init,
- const cs_int_t   *const  inc,
- const cs_int_t   *const  imrgra,
- const cs_int_t   *const  nswrgu,
- const cs_int_t   *const  imligu,
- const cs_int_t   *const  iwarnu,
+ const int        *const  f_id,
+ const int        *const  itypfl,
+ const int        *const  iflmb0,
+ const int        *const  init,
+ const int        *const  inc,
+ const int        *const  imrgra,
+ const int        *const  nswrgu,
+ const int        *const  imligu,
+ const int        *const  iwarnu,
  const cs_real_t  *const  epsrgu,
  const cs_real_t  *const  climgu,
  const cs_real_t          rom[],

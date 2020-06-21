@@ -116,7 +116,7 @@ _porcel(cs_real_t         mdiam[],
   /*Compute distance to deposition wall, and check deposition exists on
     at least one face.*/
 
-  int indic = 0;
+  cs_lnum_t indic = 0;
 
   for (cs_lnum_t ifac = 0; ifac < nfabor; ifac++) {
     if (   (bc_type[ifac] == CS_SMOOTHWALL || bc_type[ifac] == CS_ROUGHWALL)

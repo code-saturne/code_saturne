@@ -564,7 +564,7 @@ _log_fields(void)
 
     size_t max_name_width = cs_log_strlen(_("field"));
     int loc_id = m_l[li];
-    int have_weight = 0;
+    cs_lnum_t have_weight = 0;
     double total_weight = -1;
     cs_gnum_t n_g_elts = 0;
     cs_real_t *gather_array = NULL; /* only if CS_MESH_LOCATION_VERTICES */

@@ -746,8 +746,8 @@ _matrix_time_test(double                       t_measure,
   cs_real_t  *da = NULL, *xa = NULL, *x = NULL, *y = NULL;
   cs_matrix_structure_t *ms = NULL;
   cs_matrix_t *m = NULL;
-  int d_block_size[4] = {3, 3, 3, 9};
-  int ed_block_size[4] = {3, 3, 3, 9};
+  cs_lnum_t d_block_size[4] = {3, 3, 3, 9};
+  cs_lnum_t ed_block_size[4] = {3, 3, 3, 9};
 
   type_prev = CS_MATRIX_N_TYPES;
 
@@ -824,9 +824,9 @@ _matrix_time_test(double                       t_measure,
 
     for (f_id = 0; f_id < CS_MATRIX_N_FILL_TYPES; f_id++) {
 
-      const int *_d_block_size
+      const cs_lnum_t *_d_block_size
         = (f_id >= CS_MATRIX_BLOCK_D) ? d_block_size : NULL;
-      const int *_ed_block_size
+      const cs_lnum_t *_ed_block_size
         = (f_id >= CS_MATRIX_BLOCK) ? ed_block_size : NULL;
       const bool sym_coeffs
         = (   f_id == CS_MATRIX_SCALAR_SYM

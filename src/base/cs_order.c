@@ -900,10 +900,10 @@ cs_order_gnum_s(const cs_lnum_t  list[],
   BFT_MALLOC(order, nb_ent, cs_lnum_t);
 
   cs_order_gnum_allocated_s(list,
-                              number,
-                              stride,
-                              order,
-                              nb_ent);
+                            number,
+                            stride,
+                            order,
+                            nb_ent);
 
   return order;
 }

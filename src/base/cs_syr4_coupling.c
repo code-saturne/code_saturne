@@ -1296,7 +1296,7 @@ _sync_after_location(cs_syr4_coupling_t  *syr_coupling)
  *   number of SYRTHES couplings
  *----------------------------------------------------------------------------*/
 
-cs_lnum_t
+int
 cs_syr4_coupling_n_couplings(void)
 {
   return cs_glob_syr4_n_couplings;
@@ -1313,7 +1313,7 @@ cs_syr4_coupling_n_couplings(void)
  *----------------------------------------------------------------------------*/
 
 cs_syr4_coupling_t *
-cs_syr4_coupling_by_id(cs_lnum_t coupling_id)
+cs_syr4_coupling_by_id(int  coupling_id)
 {
   cs_syr4_coupling_t  *retval = NULL;
 
@@ -1341,8 +1341,8 @@ cs_syr4_coupling_by_id(cs_lnum_t coupling_id)
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr4_coupling_add(cs_lnum_t    dim,
-                     cs_lnum_t    ref_axis,
+cs_syr4_coupling_add(int          dim,
+                     int          ref_axis,
                      const char  *face_sel_criterion,
                      const char  *cell_sel_criterion,
                      const char  *syr_name,
@@ -1691,14 +1691,13 @@ cs_syr4_coupling_get_n_elts(const cs_syr4_coupling_t *syr_coupling,
 
 void
 cs_syr4_coupling_get_elt_list(const cs_syr4_coupling_t  *syr_coupling,
-                              cs_int_t                   cpl_elt_lst[],
+                              cs_lnum_t                  cpl_elt_lst[],
                               int                        mode)
 {
   cs_syr4_coupling_ent_t  *coupling_ent = NULL;
 
   /* Sanity checks */
 
-  assert(sizeof(cs_lnum_t) == sizeof(cs_int_t));
   assert(syr_coupling != NULL);
   assert(mode == 0 || mode == 1);
 
@@ -1778,7 +1777,7 @@ cs_syr4_coupling_send_tf_hf(cs_syr4_coupling_t  *syr_coupling,
                             const cs_lnum_t      cpl_elt_lst[],
                             cs_real_t            tf[],
                             cs_real_t            hf[],
-                            cs_int_t             mode)
+                            int                  mode)
 {
   cs_lnum_t ii;
 

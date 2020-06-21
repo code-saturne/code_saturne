@@ -123,7 +123,7 @@ struct _cs_interface_set_t {
 typedef struct {
 
   int          count;    /* Number of equivalences */
-  int         *shift;    /* Index of per-equivalence data in rank[] and num[] */
+  cs_lnum_t   *shift;    /* Index of per-equivalence data in rank[] and num[] */
   int         *rank;     /* Rank associated with each element */
   int         *tr_id;    /* Transformation id associated with each element,
                             + 1, with 0 indicating no transformation
@@ -271,8 +271,8 @@ _cs_interface_dump(const cs_interface_t  *itf)
       end_id = tr_index[section_id + 1];
 
       for (i = start_id; i < end_id; i++)
-        bft_printf("    %10d %10d %10d\n",
-                   i, itf->elt_id[i], itf->match_id[i]);
+        bft_printf("    %10ld %10ld %10ld\n",
+                   (long)i, (long)itf->elt_id[i], (long)itf->match_id[i]);
 
     }
 
@@ -294,7 +294,7 @@ _cs_interface_dump(const cs_interface_t  *itf)
       end_id = tr_index[section_id + 1];
 
       for (i = start_id; i < end_id; i++)
-        bft_printf("    %10d %10d\n", i, itf->elt_id[i]);
+        bft_printf("    %10ld %10ld\n", (long)i, (long)itf->elt_id[i]);
 
     }
 
@@ -308,7 +308,7 @@ _cs_interface_dump(const cs_interface_t  *itf)
                "            id      send_order\n");
 
     for (i = 0; i < itf->size; i++)
-      bft_printf("    %10d %10d\n", i, itf->send_order[i]);
+      bft_printf("    %10ld %10ld\n", (long)i, (long)itf->send_order[i]);
 
   }
 
@@ -641,7 +641,7 @@ _block_global_num_to_equiv(cs_lnum_t          n_elts_recv,
 
   /* Build equivalence data */
 
-  BFT_MALLOC(e.rank, e.shift[e.count], cs_lnum_t);
+  BFT_MALLOC(e.rank, e.shift[e.count], int);
   BFT_MALLOC(e.num, e.shift[e.count], cs_lnum_t);
 
   for (cs_lnum_t i = 0; i < n_elts_recv; i++) {
@@ -1510,7 +1510,7 @@ _count_periodic_equiv_exchange(size_t                     block_size,
                                const _per_block_equiv_t  *equiv,
                                cs_lnum_t                  n_block_couples,
                                const cs_gnum_t            block_couples[],
-                               const int                  couple_block_id[],
+                               const cs_lnum_t            couple_block_id[],
                                int                        dest_rank[],
                                cs_lnum_t                  src_index[])
 {
@@ -1588,7 +1588,7 @@ _exchange_periodic_equiv(size_t                     block_size,
                          const cs_gnum_t            block_couples[],
                          MPI_Comm                   comm)
 {
-  int *couple_block_id = NULL;
+  cs_lnum_t *couple_block_id = NULL;
   int *reverse_tr_id = NULL;
   cs_lnum_t *order = NULL;
   cs_gnum_t *block_recv_num = NULL;
@@ -1779,7 +1779,7 @@ _exchange_periodic_equiv(size_t                     block_size,
     BFT_MALLOC(pe.shift, pe.count + 1, int);
 
     BFT_MALLOC(pe.rank, j, int);
-    BFT_MALLOC(pe.num, j, int);
+    BFT_MALLOC(pe.num, j, cs_lnum_t);
 
     pe.shift[0] = 0;
 

@@ -66,7 +66,7 @@ BEGIN_C_DECLS
 
 void CS_PROCF (csexit, CSEXIT)
 (
-  const cs_int_t  *status
+  const int  *status
 );
 
 /*----------------------------------------------------------------------------
@@ -99,8 +99,8 @@ void CS_PROCF (dmtmps, DMTMPS)
 
 void CS_PROCF (csmkdr, CSMKDR)
 (
- const char       *dirnam,
- const cs_int_t   *dirlen
+ const char  *dirnam,
+ const int   *dirlen
 );
 
 /*----------------------------------------------------------------------------
@@ -156,8 +156,8 @@ void CS_PROCF (cserf, CSERF)
 
 void CS_PROCF (cslogname, CSLOGNAME)
 (
- const cs_int_t   *len,
- char             *dir
+ const int   *len,
+ char        *dir
  CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
                                          by many Fortran compilers) */
 );
@@ -180,8 +180,8 @@ void CS_PROCF (cslogname, CSLOGNAME)
 
 void CS_PROCF (csdatadir, CSDATADIR)
 (
- const cs_int_t   *len,
- char             *dir
+ const int   *len,
+ char        *dir
  CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
                                          by many Fortran compilers) */
 );

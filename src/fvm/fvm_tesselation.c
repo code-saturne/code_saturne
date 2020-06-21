@@ -2889,8 +2889,8 @@ fvm_tesselation_dump(const fvm_tesselation_t  *this_tesselation)
         _DECODE_TRIANGLE_VERTICES(tv,
                                   this_tesselation->encoding[idx[j] - 2*j],
                                   decoding_mask);
-        bft_printf("%10d (idx = %10d) %10d %10d %10d\n",
-                   j+1, idx[j], (int)tv[0], (int)tv[1], (int)tv[2]);
+        bft_printf("%10ld (idx = %10ld) %10d %10d %10d\n",
+                   (long)j+1, (long)idx[j], (int)tv[0], (int)tv[1], (int)tv[2]);
         for (k = idx[j] -2*j + 1; k < idx[j+1] - 2*j; k++) {
           _DECODE_TRIANGLE_VERTICES(tv,
                                     this_tesselation->encoding[k],
@@ -2899,13 +2899,14 @@ fvm_tesselation_dump(const fvm_tesselation_t  *this_tesselation)
                      (int)tv[0], (int)tv[1], (int)tv[2]);
         }
       }
-      bft_printf("      end  (idx = %10d)\n", idx[n_elements]);
+      bft_printf("      end  (idx = %10ld)\n", (long)idx[n_elements]);
     }
     else { /* if (this_tesselation->type != FVM_FACE_QUAD) */
       bft_printf("\nEncoding (diagonal flag):\n\n");
       n_elements = this_tesselation->n_elements;
       for (j = 0; j < n_elements; j++)
-        bft_printf("%10d: %10d\n", j+1, (int)this_tesselation->encoding[j]);
+        bft_printf("%10ld: %10d\n",
+                   (long)j+1, (int)this_tesselation->encoding[j]);
     }
 
   }
@@ -2917,8 +2918,8 @@ fvm_tesselation_dump(const fvm_tesselation_t  *this_tesselation)
       n_elements = this_tesselation->n_elements;
       idx = this_tesselation->sub_elt_index[i];
       for (j = 0; j < n_elements; j++)
-        bft_printf("%10d: idx = %10d\n", j+1, idx[j]);
-      bft_printf("      end: idx = %10d\n", idx[n_elements]);
+        bft_printf("%10ld: idx = %10ld\n", (long)j+1, (long)idx[j]);
+      bft_printf("      end: idx = %10ld\n", (long)idx[n_elements]);
     }
   }
 

@@ -91,7 +91,7 @@ _findpt_r(cs_domain_t          *domain,
           const cs_rotation_t  *r,
           const cs_real_3_t     coords,
           cs_lnum_t            *node,
-          cs_lnum_t            *rank)
+          int                  *rank)
 {
   cs_real_t d[3];
 
@@ -106,7 +106,7 @@ _findpt_r(cs_domain_t          *domain,
 
   /*! [extra_tbm_get_rotor] */
 
-  const cs_lnum_t *rotor_num = NULL;
+  const int *rotor_num = NULL;
   rotor_num = cs_turbomachinery_get_cell_rotor_num();
 
   for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
@@ -271,7 +271,7 @@ cs_user_extra_operations(cs_domain_t     *domain)
 
     cs_lnum_t npoint = 360;
     cs_lnum_t cell_id1 = -999;
-    cs_lnum_t rank_id1 = -999;
+    int       rank_id1 = -999;
 
     for (cs_lnum_t point_id = 0; point_id < npoint; point_id++) {
 

@@ -126,9 +126,9 @@ const cs_real_t x_kg[5] = {0.0001, 0.25, 0.5, 0.75, 1.0};
 /*----------------------------------------------------------------------------*/
 
 static inline void
-_line_to_array(FILE      *radfile,
-               cs_real_t  values[],
-               cs_int_t  *nvalues)
+_line_to_array(FILE       *radfile,
+               cs_real_t   values[],
+               int        *nvalues)
 {
   char line[256];
   fgets(line, 256, radfile);

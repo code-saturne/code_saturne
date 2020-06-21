@@ -277,7 +277,7 @@ cs_user_lagr_extra_operations(const cs_real_t  dt[])
 
     cs_real_t stat_age = cs_lagr_stat_get_age();
 
-    for (cs_lnum_t iplan = 0; iplan < 4; iplan++)
+    for (int iplan = 0; iplan < 4; iplan++)
       bft_printf(" Particle mass flow at Z(%d): %e14.5)",
                  iplan,
                  _m_flow[iplan]/stat_age);

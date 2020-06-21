@@ -99,7 +99,7 @@ extern const char *cs_gradient_type_name[];
 
 void CS_PROCF (grdpor, GRDPOR)
 (
- const cs_int_t   *const inc          /* <-- 0 or 1: increment or not         */
+ const int   *const inc          /* <-- 0 or 1: increment or not         */
 );
 
 /*----------------------------------------------------------------------------
@@ -108,19 +108,19 @@ void CS_PROCF (grdpor, GRDPOR)
 
 void CS_PROCF (cgdvec, CGDVEC)
 (
- const cs_int_t         *const f_id,      /* <-- field id, or -1              */
- const cs_int_t         *const imrgra,    /* <-- gradient computation mode    */
- const cs_int_t         *const inc,       /* <-- 0 or 1: increment or not     */
- const cs_int_t         *const n_r_sweeps,/* <-- >1: with reconstruction      */
- const cs_int_t         *const iwarnp,    /* <-- verbosity level              */
- const cs_int_t         *const imligp,    /* <-- type of clipping             */
+ const int              *const f_id,      /* <-- field id, or -1              */
+ const int              *const imrgra,    /* <-- gradient computation mode    */
+ const int              *const inc,       /* <-- 0 or 1: increment or not     */
+ const int              *const n_r_sweeps,/* <-- >1: with reconstruction      */
+ const int              *const iwarnp,    /* <-- verbosity level              */
+ const int              *const imligp,    /* <-- type of clipping             */
  const cs_real_t        *const epsrgp,    /* <-- precision for iterative
                                                  gradient calculation         */
  const cs_real_t        *const climgp,    /* <-- clipping coefficient         */
  const cs_real_3_t             coefav[],  /* <-- boundary condition term      */
  const cs_real_33_t            coefbv[],  /* <-- boundary condition term      */
        cs_real_3_t             pvar[],    /* <-- gradient's base variable     */
-       cs_real_33_t            gradv[]    /* <-> gradient of the variable
+       cs_real_33_t            grad[]     /* <-> gradient of the variable
                                                  (du_i/dx_j : gradv[][i][j])  */
 );
 
@@ -165,7 +165,7 @@ cs_gradient_free_quantities(void);
  * \param[in]       inc            if 0, solve on increment; 1 otherwise
  * \param[in]       recompute_cocg should COCG FV quantities be recomputed ?
  * \param[in]       n_r_sweeps     if > 1, number of reconstruction sweeps
- *                                 (only used by CS_GRADIENT_ITER)
+ *                                 (only used by CS_GRADIENT_GREEN_ITER)
  * \param[in]       tr_dim         2 for tensor with periodicity of rotation,
  *                                 0 otherwise
  * \param[in]       hyd_p_flag     flag for hydrostatic pressure
@@ -218,7 +218,7 @@ cs_gradient_scalar(const char                    *var_name,
  * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
  * \param[in]       n_r_sweeps      if > 1, number of reconstruction sweeps
- *                                  (only used by CS_GRADIENT_ITER)
+ *                                  (only used by CS_GRADIENT_GREEN_ITER)
  * \param[in]       verbosity       verbosity level
  * \param[in]       clip_mode       clipping mode
  * \param[in]       epsilon         precision for iterative gradient calculation
@@ -259,7 +259,7 @@ cs_gradient_vector(const char                    *var_name,
  * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
  * \param[in]       n_r_sweeps      if > 1, number of reconstruction sweeps
- *                                  (only used by CS_GRADIENT_ITER)
+ *                                  (only used by CS_GRADIENT_GREEN_ITER)
  * \param[in]       verbosity       verbosity level
  * \param[in]       clip_mode       clipping mode
  * \param[in]       epsilon         precision for iterative gradient calculation
@@ -302,7 +302,7 @@ cs_gradient_tensor(const char                *var_name,
  * \param[in]   inc             if 0, solve on increment; 1 otherwise
  * \param[in]   recompute_cocg  should COCG FV quantities be recomputed ?
  * \param[in]   n_r_sweeps      if > 1, number of reconstruction sweeps
- *                              (only used by CS_GRADIENT_ITER)
+ *                              (only used by CS_GRADIENT_GREEN_ITER)
  * \param[in]   tr_dim          2 for tensor with periodicity of rotation,
  *                              0 otherwise
  * \param[in]   hyd_p_flag      flag for hydrostatic pressure
@@ -359,7 +359,7 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
  * \param[in]   halo_type       halo type
  * \param[in]   inc             if 0, solve on increment; 1 otherwise
  * \param[in]   n_r_sweeps      if > 1, number of reconstruction sweeps
- *                              (only used by CS_GRADIENT_ITER)
+ *                              (only used by CS_GRADIENT_GREEN_ITER)
  * \param[in]   verbosity       verbosity level
  * \param[in]   clip_mode       clipping mode
  * \param[in]   epsilon         precision for iterative gradient calculation
@@ -389,7 +389,7 @@ cs_gradient_vector_synced_input(const char                *var_name,
                                 const cs_real_t            var[restrict][3],
                                 const cs_real_t            c_weight[restrict],
                                 const cs_internal_coupling_t  *cpl,
-                                cs_real_33_t     *restrict gradv);
+                                cs_real_t                  grad[restrict][3][3]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -404,7 +404,7 @@ cs_gradient_vector_synced_input(const char                *var_name,
  * \param[in]       halo_type       halo type
  * \param[in]       inc             if 0, solve on increment; 1 otherwise
  * \param[in]       n_r_sweeps      if > 1, number of reconstruction sweeps
- *                                  (only used by CS_GRADIENT_ITER)
+ *                                  (only used by CS_GRADIENT_GREEN_ITER)
  * \param[in]       verbosity       verbosity level
  * \param[in]       clip_mode       clipping mode
  * \param[in]       epsilon         precision for iterative gradient calculation

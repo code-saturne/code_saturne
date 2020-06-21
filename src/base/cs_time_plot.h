@@ -91,17 +91,17 @@ typedef enum {
 
 void CS_PROCF (tpsini, TPSINI)
 (
- const cs_int_t  *tplnum,
+ const int       *tplnum,
  const char      *tplnam,
  const char      *tplpre,
- const cs_int_t  *tplfmt,
- const cs_int_t  *idtvar,
- const cs_int_t  *nstru,
+ const int       *tplfmt,
+ const int       *idtvar,
+ const int       *nstru,
  const cs_real_t *xmstru,
  const cs_real_t *xcstru,
  const cs_real_t *xkstru,
- const cs_int_t  *lnam,
- const cs_int_t  *lpre
+ const int       *lnam,
+ const int       *lpre
  CS_ARGF_SUPP_CHAINE              /*     (possible 'length' arguments added
                                          by many Fortran compilers) */
 );
@@ -121,8 +121,8 @@ void CS_PROCF (tpsini, TPSINI)
 
 void CS_PROCF (tplend, TPLEND)
 (
- const cs_int_t  *tplnum,
- const cs_int_t  *tplfmt
+ const int       *tplnum,
+ const int       *tplfmt
 );
 
 /*----------------------------------------------------------------------------
@@ -142,10 +142,10 @@ void CS_PROCF (tplend, TPLEND)
 
 void CS_PROCF (tplwri, TPLWRI)
 (
- const cs_int_t  *tplnum,
- const cs_int_t  *tplfmt,
- const cs_int_t  *nprb,
- const cs_int_t  *ntcabs,
+ const int       *tplnum,
+ const int       *tplfmt,
+ const int       *nprb,
+ const int       *ntcabs,
  const cs_real_t *ttcabs,
  const cs_real_t *valprb
 );
@@ -164,7 +164,7 @@ void CS_PROCF (tplwri, TPLWRI)
 
 void CS_PROCF (tplnbr, TPLNBR)
 (
- cs_int_t  *ntpl
+ int       *ntpl
 );
 
 /*=============================================================================

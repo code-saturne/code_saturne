@@ -267,7 +267,7 @@ cs_1d_wall_thermal_create(void)
   _1d_wall_thermal.nmxt1d = 0;
 
   /* Allocate the izft1d array */
-  BFT_MALLOC(_1d_wall_thermal.izft1d, n_b_faces, int);
+  BFT_MALLOC(_1d_wall_thermal.izft1d, n_b_faces, cs_lnum_t);
 
   for (cs_lnum_t ifac = 0 ; ifac < n_b_faces ; ifac++) {
     _1d_wall_thermal.izft1d[ifac] = 0;
@@ -646,11 +646,11 @@ cs_1d_wall_thermal_read(void)
     /* Read the header */
     cs_lnum_t  *tabvar;
 
-    BFT_MALLOC(tabvar, 1, int);
+    BFT_MALLOC(tabvar, 1, cs_lnum_t);
 
     nbvent  = 1;
     support = CS_MESH_LOCATION_NONE;
-    typ_val = CS_TYPE_cs_int_t;
+    typ_val = CS_TYPE_int;
 
     ierror = cs_restart_read_section(suite,
                                      "version_fichier_suite_module_1d",
@@ -682,14 +682,14 @@ cs_1d_wall_thermal_read(void)
     cs_lnum_t  *tabvar;
     cs_lnum_t  mfpt1d;
     cs_gnum_t  mfpt1t;
-    cs_lnum_t  iok;
+    int  iok;
 
-    BFT_MALLOC(tabvar, n_b_faces, int);
+    BFT_MALLOC(tabvar, n_b_faces, cs_lnum_t);
 
     const char nomrub[] = "nb_pts_discretis";
     nbvent  = 1;
     support = CS_MESH_LOCATION_BOUNDARY_FACES;
-    typ_val = CS_TYPE_cs_int_t;
+    typ_val = CS_TYPE_int;
 
     ierror = cs_restart_read_section(suite,
                                      nomrub,
@@ -1011,7 +1011,7 @@ cs_1d_wall_thermal_write(void)
 
     nbvent  = 1;
     support = CS_MESH_LOCATION_NONE;
-    typ_val = CS_TYPE_cs_int_t;
+    typ_val = CS_TYPE_int;
 
     cs_restart_write_section(suite,
                              "version_fichier_suite_module_1d",
@@ -1032,7 +1032,7 @@ cs_1d_wall_thermal_write(void)
 
     nbvent  = 1;
     support = CS_MESH_LOCATION_BOUNDARY_FACES;
-    typ_val = CS_TYPE_cs_int_t;
+    typ_val = CS_TYPE_int;
 
     for (ii = 0 ; ii < _1d_wall_thermal.nfpt1d ; ii++) {
       ifac = _1d_wall_thermal.ifpt1d[ii] - 1;

@@ -158,8 +158,7 @@ cs_bad_cells_regularisation_scalar(cs_real_t *var)
   cs_real_t epsilp = 1.e-12;
 
   /* Matrix block size */
-  int ibsize = 1;
-  int db_size[4] = {ibsize, ibsize, ibsize, ibsize*ibsize};
+  cs_lnum_t db_size[4] = {1, 1, 1, 1};
 
   cs_sles_solve_native(-1, /* f_id */
                        "potential_regularisation_scalar",
@@ -221,7 +220,7 @@ cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
   cs_lnum_t n_i_faces = mesh->n_i_faces;
   cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
-  const int *b_face_cells = mesh->b_face_cells;
+  const cs_lnum_t *b_face_cells = mesh->b_face_cells;
 
   const cs_real_t *surfn = mq->i_face_surf;
   const cs_real_t *surfbn = mq->b_face_surf;
@@ -337,8 +336,7 @@ cs_bad_cells_regularisation_vector(cs_real_3_t  *var,
   cs_real_t epsilp = 1.e-12;
 
   /* Matrix block size */
-  int ibsize = 3;
-  int db_size[4] = {ibsize, ibsize, ibsize, ibsize*ibsize};
+  cs_lnum_t db_size[4] = {3, 3, 3, 3*3};
 
   cs_sles_solve_native(-1, /* f_id */
                        "potential_regularisation_vector",
@@ -522,8 +520,7 @@ cs_bad_cells_regularisation_sym_tensor(cs_real_6_t  *var,
   cs_real_t epsilp = 1.e-12;
 
   /* Matrix block size */
-  int ibsize = 6;
-  int db_size[4] = {ibsize, ibsize, ibsize, ibsize*ibsize};
+  cs_lnum_t db_size[4] = {6, 6, 6, 6*6};
 
   cs_sles_solve_native(-1, /* f_id */
                        "potential_regularisation_sym_tensor",
@@ -586,9 +583,7 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
   cs_lnum_t n_cells_ext = mesh->n_cells_with_ghosts;
   cs_lnum_t n_cells = mesh->n_cells;
   cs_lnum_t n_i_faces = mesh->n_i_faces;
-  cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
-  const int *b_face_cells = mesh->b_face_cells;
 
   const cs_real_t *surfn = mq->i_face_surf;
   const cs_real_t *surfbn = mq->b_face_surf;
@@ -675,6 +670,8 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
 #if 0
   /* Boudanry projection... should be consistent with BCs... */
   if (boundary_projection == 1) {
+    cs_lnum_t n_b_faces = mesh->n_b_faces;
+    const cs_lnum_t *b_face_cells = mesh->b_face_cells;
     for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
       if (cs_glob_bc_type[face_id] == CS_SMOOTHWALL ||
           cs_glob_bc_type[face_id] == CS_ROUGHWALL  ||
@@ -706,8 +703,7 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
   cs_real_t epsilp = 1.e-12;
 
   /* Matrix block size */
-  int ibsize = 9;
-  int db_size[4] = {ibsize, ibsize, ibsize, ibsize*ibsize};
+  cs_lnum_t db_size[4] = {9, 9, 9, 9*9};
 
   cs_sles_solve_native(-1, /* f_id */
                        "potential_regularisation_tensor",
@@ -749,7 +745,6 @@ cs_bad_cells_regularisation_tensor(cs_real_9_t  *var,
   BFT_FREE(dam);
   BFT_FREE(rhs);
 }
-
 
 /*----------------------------------------------------------------------------*/
 

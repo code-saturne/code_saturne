@@ -981,8 +981,7 @@ _control_notebook(const cs_time_step_t   *ts,
     _read_next_string(true, s, &name);
     if (_read_next_double(false, cur_line, (const char **)s, &val) == 1) {
       int editable;
-      int is_present = cs_notebook_parameter_is_present(name,
-                                                        &editable);
+      cs_notebook_parameter_is_present(name, &editable);
       if (editable) {
         cs_notebook_parameter_set_value(name, val);
         bft_printf("  %-32s \"%s\" set to %12.5g\n",

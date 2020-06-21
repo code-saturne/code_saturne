@@ -1342,9 +1342,9 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
                   "flows:\n"
                   "The computation of the subsonic inlet boundary condition\n"
                   "with imposed total pressure and total enthalpy failed at\n"
-                  "boundary face %i. The direction vector given by the user\n"
+                  "boundary face %ld. The direction vector given by the user\n"
                   "can't be null."),
-              face_id);
+                (long)face_id);
 
     dir[0] = bc_vel[face_id][0] / norm;
     dir[1] = bc_vel[face_id][1] / norm;
@@ -1360,9 +1360,9 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
                    "flows:\n"
                    "The computation of the subsonic inlet boundary condition\n"
                    "with imposed total pressure and total enthalpy failed at\n"
-                   "boundary face %i. The direction vector given by the user\n"
+                   "boundary face %ld. The direction vector given by the user\n"
                    "points outward the fluid domain.\n",
-                 face_id);
+                 (long)face_id);
 
     /*  Computation of the sound speed inside the domain */
     ci = sqrt(gamma * (pri+psginf) / roi);
@@ -1585,10 +1585,10 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
                    "Fixed point algorithm did not converge when computing\n"
                    "the subsonic inlet boundary condition with total\n"
                    "pressure and total enthalpy imposed.\n"
-                   "At boundary face %i,\n"
+                   "At boundary face %ld,\n"
                    "boundary Mach number residual = %12.4e,\n"
                    "maximum number of iterations (%i) was reached.\n",
-                 face_id, res, nitermax);
+                 (long)face_id, res, nitermax);
   }
 }
 

@@ -398,16 +398,16 @@ _check_equiv(const cs_join_edges_t  *edges,
       fprintf(logfile,
               "\n"
               "  Edge - Edge intersection warning between:\n"
-              "    edge 1: %d (%llu) [%d (%llu), %d (%llu)]\n"
-              "    edge 2: %d (%llu) [%d (%llu), %d (%llu)]\n"
+              "    edge 1: %ld (%llu) [%ld (%llu), %ld (%llu)]\n"
+              "    edge 2: %ld (%llu) [%ld (%llu), %ld (%llu)]\n"
               "  Intersection found for curv. abs. %f (e1) - %f (e2)"
               " will be ignored.\n",
-              e1_id+1, (unsigned long long)edges->gnum[e1_id],
-              v1e1_id+1, (unsigned long long)mesh->vertices[v1e1_id].gnum,
-              v2e1_id+1, (unsigned long long)mesh->vertices[v2e1_id].gnum,
-              e2_id+1, (unsigned long long)edges->gnum[e2_id],
-              v1e2_id+1, (unsigned long long)mesh->vertices[v1e2_id].gnum,
-              v2e2_id+1, (unsigned long long)mesh->vertices[v2e2_id].gnum,
+              (long)e1_id+1, (unsigned long long)edges->gnum[e1_id],
+              (long)v1e1_id+1, (unsigned long long)mesh->vertices[v1e1_id].gnum,
+              (long)v2e1_id+1, (unsigned long long)mesh->vertices[v2e1_id].gnum,
+              (long)e2_id+1, (unsigned long long)edges->gnum[e2_id],
+              (long)v1e2_id+1, (unsigned long long)mesh->vertices[v1e2_id].gnum,
+              (long)v2e2_id+1, (unsigned long long)mesh->vertices[v2e2_id].gnum,
               curv_abs1, curv_abs2);
 
       if (p1.tolerance < d12 && verbosity > 4)
@@ -636,7 +636,7 @@ _find_edge_equiv(cs_join_param_t  param,
                  cs_coord_t       abs_lst[],
                  double           tol_lst[],
                  bool             equiv_lst[],
-                 int              tag[],
+                 cs_lnum_t        tag[],
                  double           edge_length)
 {
   int  i, i1, i2, k;
@@ -788,7 +788,7 @@ _new_edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
                         double                  parall_eps2,
                         int                     verbosity,
                         FILE                   *logfile,
-                        int                    *n_inter)
+                        cs_lnum_t              *n_inter)
 {
   int  k;
   double  a, b, c, d, e, f, s, t;
@@ -1502,7 +1502,7 @@ _edge_edge_3d_inter(const cs_join_mesh_t   *mesh,
                     double                  parall_eps2,
                     int                     verbosity,
                     FILE                   *logfile,
-                    int                    *n_inter)
+                    cs_lnum_t              *n_inter)
 {
   int  k;
   double  a, b, c, d, e, f, s, t;
@@ -2331,8 +2331,8 @@ cs_join_inter_set_dump(FILE                       *f,
 
   fprintf(f, "\n  Dump an inter_set_t structure (%p)\n", (const void *)i_set);
 
-  fprintf(f, "  n_max_inter: %10d\n", i_set->n_max_inter);
-  fprintf(f, "  n_inter    : %10d\n\n", i_set->n_inter);
+  fprintf(f, "  n_max_inter: %10ld\n", (long)i_set->n_max_inter);
+  fprintf(f, "  n_inter    : %10ld\n\n", (long)i_set->n_inter);
 
   for (i = 0; i < i_set->n_inter; i++) {
 
@@ -2742,7 +2742,8 @@ cs_join_add_equiv_from_edges(cs_join_param_t               param,
           n_break_counter += 1;
           if (param.verbosity > 3)
             fprintf(logfile,
-                    " Edge %8d: n_equiv. broken: %d\n", i+1, n_breaks);
+                    " Edge %8ld: n_equiv. broken: %ld\n",
+                    (long)i+1, (long)n_breaks);
         }
 
         n_max_breaks = CS_MAX(n_max_breaks, n_breaks);
@@ -3406,9 +3407,9 @@ cs_join_intersect_update_struct(int                      verbosity,
 
     if (verbosity > 2)
       fprintf(cs_glob_join_log,
-              "\n  Add %d new vertices in the %s mesh definition"
+              "\n  Add %ld new vertices in the %s mesh definition"
               " during update of the edge definition.\n",
-              n_new_vertices, mesh->name);
+              (long)n_new_vertices, mesh->name);
 
     BFT_REALLOC(mesh->vertices,
                 n_init_vertices + n_new_vertices,
@@ -3645,11 +3646,11 @@ cs_join_intersect_edges(cs_join_param_t         param,
               (int)n_inter_detected, (int)n_trivial_inter,
               (int)n_real_inter);
       fprintf(logfile,
-              "\n  Local number of edge-edge intersection warnings: %9d\n",
-              _n_inter_tolerance_warnings);
+              "\n  Local number of edge-edge intersection warnings: %9ld\n",
+              (long)_n_inter_tolerance_warnings);
       fprintf(logfile,
-              "\n  Local number of equivalences between vertices: %9d\n",
-              _vtx_eset->n_equiv);
+              "\n  Local number of equivalences between vertices: %9ld\n",
+              (long)_vtx_eset->n_equiv);
     }
 
   }
@@ -4016,8 +4017,8 @@ cs_join_inter_edges_dump(FILE                         *f,
   if (inter_edges == NULL)
     return;
 
-  fprintf(f, "  n_edges:      %10d\n", inter_edges->n_edges);
-  fprintf(f, "  max_sub_size: %10d\n\n", inter_edges->max_sub_size);
+  fprintf(f, "  n_edges:      %10ld\n", (long)inter_edges->n_edges);
+  fprintf(f, "  max_sub_size: %10ld\n\n", (long)inter_edges->max_sub_size);
 
   for (i = 0; i < inter_edges->n_edges; i++) {
 
@@ -4031,20 +4032,20 @@ cs_join_inter_edges_dump(FILE                         *f,
     cs_lnum_t  start = inter_edges->index[i];
     cs_lnum_t  end = inter_edges->index[i+1];
 
-    fprintf(f, "\n%6d: [%9llu] = (%7d [%9llu] - %7d [%9llu])\n",
-            i, (unsigned long long)edges->gnum[i],
-            v1_num, (unsigned long long)v1_gnum,
-            v2_num, (unsigned long long)v2_gnum);
+    fprintf(f, "\n%6ld: [%9llu] = (%7ld [%9llu] - %7ld [%9llu])\n",
+            (long)i, (unsigned long long)edges->gnum[i],
+            (long)v1_num, (unsigned long long)v1_gnum,
+            (long)v2_num, (unsigned long long)v2_gnum);
 
-    fprintf(f, "    n_sub_inter: %4d - index : %7d <-- %7d\n",
-            end-start, start, end);
+    fprintf(f, "    n_sub_inter: %4ld - index : %7ld <-- %7ld\n",
+            (long)end-start, (long)start, (long)end);
 
     if (inter_edges->vtx_glst == NULL) {
 
       for (j = start, k = 0; j < end; j++, k++)
         fprintf
-          (f, "       %7d (%9d) - (%7llu, %8.6e)\n",
-           k, inter_edges->vtx_lst[j],
+          (f, "       %7ld (%9ld) - (%7llu, %8.6e)\n",
+           (long)k, (long)inter_edges->vtx_lst[j],
            (unsigned long long)mesh->vertices[inter_edges->vtx_lst[j]-1].gnum,
            inter_edges->abs_lst[j]);
 
@@ -4052,8 +4053,8 @@ cs_join_inter_edges_dump(FILE                         *f,
     else {
 
       for (j = start, k = 0; j < end; j++, k++)
-        fprintf(f, "       %9d - (%7llu, %8.6e)\n",
-                k, (unsigned long long)inter_edges->vtx_glst[j],
+        fprintf(f, "       %9ld - (%7llu, %8.6e)\n",
+                (long)k, (unsigned long long)inter_edges->vtx_glst[j],
                 inter_edges->abs_lst[j]);
 
     }

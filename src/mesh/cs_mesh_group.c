@@ -658,7 +658,8 @@ _mesh_group_add(cs_mesh_t        *mesh,
   /* Build index on entities (previous group class for elements
      not selected, previous + new for those selected) */
 
-  cs_lnum_t *gc_tmp_idx = NULL, *gc_tmp = NULL;
+  cs_lnum_t *gc_tmp_idx = NULL;
+  int *gc_tmp = NULL;
 
   BFT_MALLOC(gc_tmp_idx, n_elts + 1, cs_lnum_t);
   gc_tmp_idx[0] = 0;
@@ -762,7 +763,7 @@ cs_mesh_group_clean(cs_mesh_t  *mesh)
 
   BFT_FREE(order);
 
-  BFT_REALLOC(mesh->group_idx, n_groups + 1, cs_int_t);
+  BFT_REALLOC(mesh->group_idx, n_groups + 1, int);
   BFT_REALLOC(mesh->group, size_tot, char);
 
   mesh->n_groups = n_groups;
@@ -959,7 +960,7 @@ cs_mesh_group_combine_classes(cs_mesh_t   *mesh,
     if (n_max_family_items > mesh->n_max_family_items) {
       BFT_REALLOC(mesh->family_item,
                   mesh->n_families*n_max_family_items,
-                  cs_lnum_t);
+                  int);
       for (i = mesh->n_max_family_items;
            i < n_max_family_items;
            i++) {

@@ -61,8 +61,8 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF(ledevi, LEDEVI)(cs_int_t  *iperio,
-                         cs_int_t  *iperot);
+CS_PROCF(ledevi, LEDEVI)(int  *iperio,
+                         int  *iperot);
 
 /*============================================================================
  *  Public function prototypes

@@ -512,7 +512,7 @@ cs_lagr_restart_read_particle_data(cs_restart_t  *r)
       continue;
 
     if (datatype == CS_LNUM_TYPE)
-      restart_type = CS_TYPE_cs_int_t;
+      restart_type = CS_TYPE_int;
     else if (datatype == CS_GNUM_TYPE)
       restart_type = CS_TYPE_cs_gnum_t;
     else {
@@ -760,7 +760,7 @@ cs_lagr_restart_write_particle_data(cs_restart_t  *r)
       continue;
 
     if (datatype == CS_LNUM_TYPE)
-      restart_type = CS_TYPE_cs_int_t;
+      restart_type = CS_TYPE_int;
     else if (datatype == CS_GNUM_TYPE)
       restart_type = CS_TYPE_cs_gnum_t;
     else {

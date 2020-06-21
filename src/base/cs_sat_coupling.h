@@ -78,11 +78,11 @@ typedef void
                          int             *point_tag);
 
 /*============================================================================
- *  Public function prototypes for Fortran API
+ * Public function prototypes for Fortran API
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Get number of code coupling
+ * Get number of code couplings
  *
  * Fortran interface:
  *
@@ -94,7 +94,7 @@ typedef void
 
 void CS_PROCF (nbccpl, NBCCPL)
 (
- cs_int_t  *nbrcpl
+ int  *nbrcpl
 );
 
 /*----------------------------------------------------------------------------
@@ -116,7 +116,7 @@ void CS_PROCF (nbccpl, NBCCPL)
  *
  * Fortran interface:
  *
- * SUBROUTINE DEFCPL
+ * SUBROUTINE DEFLOC
  * *****************
  *
  * INTEGER          NUMCPL         : --> : coupling number
@@ -124,7 +124,7 @@ void CS_PROCF (nbccpl, NBCCPL)
 
 void CS_PROCF (defloc, DEFLOC)
 (
- const cs_int_t  *numcpl
+ const int  *numcpl
 );
 
 /*----------------------------------------------------------------------------
@@ -149,13 +149,13 @@ void CS_PROCF (defloc, DEFLOC)
 
 void CS_PROCF (nbecpl, NBECPL)
 (
- const cs_int_t  *numcpl,
-       cs_int_t  *ncesup,
-       cs_int_t  *nfbsup,
-       cs_int_t  *ncecpl,
-       cs_int_t  *nfbcpl,
-       cs_int_t  *ncencp,
-       cs_int_t  *nfbncp
+ const int        *numcpl,
+       cs_lnum_t  *ncesup,
+       cs_lnum_t  *nfbsup,
+       cs_lnum_t  *ncecpl,
+       cs_lnum_t  *nfbcpl,
+       cs_lnum_t  *ncencp,
+       cs_lnum_t  *nfbncp
 );
 
 /*----------------------------------------------------------------------------
@@ -179,11 +179,11 @@ void CS_PROCF (nbecpl, NBECPL)
 
 void CS_PROCF (lelcpl, LELCPL)
 (
- const cs_int_t  *numcpl,
- const cs_int_t  *ncecpl,
- const cs_int_t  *nfbcpl,
-       cs_int_t  *lcecpl,
-       cs_int_t  *lfbcpl
+ const int        *numcpl,
+ const cs_lnum_t  *ncecpl,
+ const cs_lnum_t  *nfbcpl,
+       cs_lnum_t  *lcecpl,
+       cs_lnum_t  *lfbcpl
 );
 
 /*----------------------------------------------------------------------------
@@ -207,11 +207,11 @@ void CS_PROCF (lelcpl, LELCPL)
 
 void CS_PROCF (lencpl, LENCPL)
 (
- const cs_int_t  *numcpl,
- const cs_int_t  *ncencp,
- const cs_int_t  *nfbncp,
-       cs_int_t  *lcencp,
-       cs_int_t  *lfbncp
+ const int        *numcpl,
+ const cs_lnum_t  *ncencp,
+ const cs_lnum_t  *nfbncp,
+       cs_lnum_t  *lcencp,
+       cs_lnum_t  *lfbncp
 );
 
 /*----------------------------------------------------------------------------
@@ -230,9 +230,9 @@ void CS_PROCF (lencpl, LENCPL)
 
 void CS_PROCF (npdcpl, NPDCPL)
 (
- const cs_int_t  *numcpl,
-       cs_int_t  *ncedis,
-       cs_int_t  *nfbdis
+ const int        *numcpl,
+       cs_lnum_t  *ncedis,
+       cs_lnum_t  *nfbdis
 );
 
 /*----------------------------------------------------------------------------
@@ -260,19 +260,21 @@ void CS_PROCF (npdcpl, NPDCPL)
  * INTEGER          LOCPTS(*)      : <-- : "containing" number associated to
  *                                 :     :   each point
  * DOUBLE PRECISION COOPTS(3,*)    : <-- : distant point coordinates
+ * DOUBLE PRECISION DJPPTS(3,*)    : <-- : distant vectors to the coupled face
+ * DOUBLE PRECISION PNDPTS(*)      : <-- : distant weighting coefficients
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (coocpl, COOCPL)
 (
- const cs_int_t  *numcpl,
- const cs_int_t  *nbrpts,
- const cs_int_t  *itydis,
-       cs_int_t  *ityloc,
-       cs_int_t  *locpts,
-       cs_real_t *coopts,
-       cs_real_t *djppts,
-       cs_real_t *dofpts,
-       cs_real_t *pndpts
+ const int        *numcpl,
+ const cs_lnum_t  *nbrpts,
+ const int        *itydis,
+       int        *ityloc,
+       cs_lnum_t  *locpts,
+       cs_real_t  *coopts,
+       cs_real_t  *djppts,
+       cs_real_t  *dofpts,
+       cs_real_t  *pndpts
 );
 
 /*----------------------------------------------------------------------------
@@ -285,19 +287,19 @@ void CS_PROCF (coocpl, COOCPL)
  * *****************
  *
  * INTEGER          NUMCPL         : --> : coupling number
- * INTEGER          NBRCPL         : --> : number of distant points
+ * INTEGER          NBRPTS         : --> : number of distant points
  * INTEGER          ITYLOC         : <-- : 1 : localization on the local cells
  *                                 :     : 2 : localization on the local faces
- * DOUBLE PRECISION pndcpl(*)      : <-- : weighting coefficients
+ * DOUBLE PRECISION PNDCPL(*)      : <-- : weighting coefficients
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF (pondcp, PONDCP)
 (
- const cs_int_t  *numcpl,
- const cs_int_t  *nbrcpl,
-       cs_int_t  *ityloc,
-       cs_real_t *pndcpl,
-       cs_real_t *distof
+ const int        *numcpl,
+ const cs_lnum_t  *nbrpts,
+       int        *ityloc,
+       cs_real_t  *pndcpl,
+       cs_real_t  *distof
 );
 
 /*----------------------------------------------------------------------------
@@ -321,13 +323,13 @@ void CS_PROCF (pondcp, PONDCP)
 
 void CS_PROCF (varcpl, VARCPL)
 (
- const cs_int_t  *numcpl,
- const cs_int_t  *nbrdis,
- const cs_int_t  *nbrloc,
- const cs_int_t  *ityvar,
- const cs_int_t  *stride,
-       cs_real_t *vardis,
-       cs_real_t *varloc
+ const int        *numcpl,
+ const cs_lnum_t  *nbrdis,
+ const cs_lnum_t  *nbrloc,
+ const int        *ityvar,
+ const cs_lnum_t  *stride,
+       cs_real_t  *vardis,
+       cs_real_t  *varloc
 );
 
 /*----------------------------------------------------------------------------
@@ -350,11 +352,11 @@ void CS_PROCF (varcpl, VARCPL)
 
 void CS_PROCF (tbicpl, TBICPL)
 (
- const cs_int_t  *numcpl,
- const cs_int_t  *nbrdis,
- const cs_int_t  *nbrloc,
-       cs_int_t  *vardis,
-       cs_int_t  *varloc
+ const int        *numcpl,
+ const cs_lnum_t  *nbrdis,
+ const cs_lnum_t  *nbrloc,
+       cs_lnum_t  *vardis,
+       cs_lnum_t  *varloc
 );
 
 /*----------------------------------------------------------------------------
@@ -377,11 +379,11 @@ void CS_PROCF (tbicpl, TBICPL)
 
 void CS_PROCF (tbrcpl, TBRCPL)
 (
- const cs_int_t  *numcpl,
- const cs_int_t  *nbrdis,
- const cs_int_t  *nbrloc,
-       cs_real_t *vardis,
-       cs_real_t *varloc
+ const int        *numcpl,
+ const cs_lnum_t  *nbrdis,
+ const cs_lnum_t  *nbrloc,
+       cs_real_t  *vardis,
+       cs_real_t  *varloc
 );
 
 /*----------------------------------------------------------------------------
@@ -402,9 +404,9 @@ void CS_PROCF (tbrcpl, TBRCPL)
 
 void CS_PROCF (mxicpl, MXICPL)
 (
- const cs_int_t  *const numcpl,
-       cs_int_t  *const vardis,
-       cs_int_t  *const varmax
+ const int        *const numcpl,
+       cs_lnum_t  *const vardis,
+       cs_lnum_t  *const varmax
 );
 
 /*============================================================================

@@ -161,7 +161,7 @@ cs_measures_set_create(const char   *name,
  *                          0: not taken into account
  *                          1: taken into account
  *   measures_coords  <-- measures spaces coordonates
- *   measures         <-- measures values (associated to coordonates)
+ *   measures         <-- measures values (associated to coordinates)
  *   influence_radius <-- influence radius for interpolation (xyz interleaved)
  *----------------------------------------------------------------------------*/
 
@@ -252,7 +252,7 @@ cs_interpol_grid_t  *
 cs_interpol_grid_by_id(int  id);
 
 /*----------------------------------------------------------------------------
- * Return a pointer to a measures set based on its name.
+ * Return a pointer to a measure set based on its name.
  *
  * This function requires that a measure set of the given name is defined.
  *
@@ -316,11 +316,13 @@ cs_interpol_grids_destroy(void);
  * integer          imesset     : --> : id of defined measures set
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(mestcr, MESTCR)(const char          *name,
-                              const cs_int_t      *lname,
-                              const cs_int_t      *idim,
-                              const cs_int_t      *ilved,
-                              cs_int_t            *imeset);
+void CS_PROCF(mestcr, MESTCR)
+(
+ const char   *name,
+ const int    *lname,
+ const int    *idim,
+ const int    *ilved,
+ int          *imeset);
 
 /*----------------------------------------------------------------------------
  * Define a grid.
@@ -335,9 +337,11 @@ void CS_PROCF(mestcr, MESTCR)(const char          *name,
  * integer          igrid       : --> : id of defined grid
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(gridcr, GRIDCR)(const char          *name,
-                              const cs_int_t      *lname,
-                              cs_int_t            *igrid);
+void CS_PROCF(gridcr, GRIDCR)
+(
+ const char     *name,
+ const int      *lname,
+ int            *igrid);
 
 /*----------------------------------------------------------------------------
  * (re)Allocate and map values to a measure set.
@@ -356,13 +360,16 @@ void CS_PROCF(gridcr, GRIDCR)(const char          *name,
  * integer*         infrad      : <-- : Influence radius for interpolation
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(mesmap, MESMAP)(const cs_int_t         *imeset,
-                              const cs_int_t         *inbmes,
-                              const cs_real_t        *meset,
-                              const cs_real_t        *coords,
-                              const cs_int_t         *cressm,
-                              const cs_int_t         *interp,
-                              const cs_real_t        *infrad);
+void CS_PROCF(mesmap, MESMAP)
+(
+ const int         *imeset,
+ const int         *inbmes,
+ const cs_real_t   *meset,
+ const cs_real_t   *coords,
+ const int         *cressm,
+ const int         *interp,
+ const cs_real_t   *infrad
+);
 
 /*----------------------------------------------------------------------------
  * Map a grid grid.
@@ -377,9 +384,12 @@ void CS_PROCF(mesmap, MESMAP)(const cs_int_t         *imeset,
  * cs_real_t*       coords      : <-- : Pointer to measures coordonates array
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(grimap, GRIMAP)(const cs_int_t         *igrid,
-                              const cs_int_t         *inpts,
-                              const cs_real_t        *coords);
+void CS_PROCF(grimap, GRIMAP)
+(
+ const int         *igrid,
+ const int         *inpts,
+ const cs_real_t   *coords
+);
 
 /*----------------------------------------------------------------------------
  * Add values to a measure set.
@@ -398,13 +408,16 @@ void CS_PROCF(grimap, GRIMAP)(const cs_int_t         *igrid,
  * integer*         infrad      : <-- : Influence radius for interpolation
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(mesadd, MESADD)(const cs_int_t         *imeset,
-                              const cs_int_t         *inbmes,
-                              const cs_real_t        *meset,
-                              const cs_real_t        *coords,
-                              const cs_int_t         *cressm,
-                              const cs_int_t         *interp,
-                              const cs_real_t        *infrad);
+void CS_PROCF(mesadd, MESADD)
+(
+ const int         *imeset,
+ const int         *inbmes,
+ const cs_real_t   *meset,
+ const cs_real_t   *coords,
+ const int         *cressm,
+ const int         *interp,
+ const cs_real_t   *infrad
+);
 
 /*----------------------------------------------------------------------------
  * Compute a Cressman interpolation on the global mesh.
@@ -421,9 +434,12 @@ void CS_PROCF(mesadd, MESADD)(const cs_int_t         *imeset,
  * cs_real_t*       pldval      : --> : Interpolated values on the global mesh
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(mscrss, MSCRSS)(const cs_int_t         *imeset,
-                              const cs_int_t         *type,
-                              cs_real_t              *pldval);
+void CS_PROCF(mscrss, MSCRSS)
+(
+ const int         *imeset,
+ const int         *type,
+ cs_real_t         *pldval
+);
 
 /*----------------------------------------------------------------------------
  * Interpolate calculed field on a grid.
@@ -438,9 +454,12 @@ void CS_PROCF(mscrss, MSCRSS)(const cs_int_t         *imeset,
  * cs_real_t*       pldval      : --> : Interpolated values on the grid
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(gripol, GRIPOL)(const cs_int_t         *igrid,
-                              const cs_real_t        *inval,
-                              cs_real_t              *pldval);
+void CS_PROCF(gripol, GRIPOL)
+(
+ const int         *igrid,
+ const cs_real_t   *inval,
+ cs_real_t         *pldval
+);
 
 /*----------------------------------------------------------------------------
  * Destroy measures sets.

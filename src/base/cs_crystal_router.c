@@ -1183,16 +1183,14 @@ _get_data_s_with_dest_id(cs_crystal_router_t   *cr,
       if (reverse_multiple) {
         for (size_t i = i0; i < i1; i++) {
           const int *cr_src_rank_p
-            = (const cs_lnum_t *)(  cr->buffer[0] + i*cr->comp_size
-                                  + sizeof(int));
+            = (const int *)(cr->buffer[0] + i*cr->comp_size + sizeof(int));
           src_rank[i] = *cr_src_rank_p;
         }
       }
       else {
         for (size_t i = i0; i < i1; i++) {
           const int *cr_src_rank_p
-            = (const cs_lnum_t *)(  cr->buffer[0] + i*cr->comp_size
-                                  + sizeof(int));
+            = (const int *)(cr->buffer[0] + i*cr->comp_size + sizeof(int));
           src_rank[_dest_id[i]] = *cr_src_rank_p;
         }
       }

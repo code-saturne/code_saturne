@@ -345,16 +345,16 @@ _extract_face_vertices(cs_mesh_t         *mesh,
 
   /* Allocate and initialize */
 
-  BFT_MALLOC(mesh->i_face_vtx_idx, mesh->n_i_faces+1, cs_int_t);
-  BFT_MALLOC(mesh->i_face_vtx_lst, mesh->i_face_vtx_connect_size, cs_int_t);
+  BFT_MALLOC(mesh->i_face_vtx_idx, mesh->n_i_faces+1, cs_lnum_t);
+  BFT_MALLOC(mesh->i_face_vtx_lst, mesh->i_face_vtx_connect_size, cs_lnum_t);
 
   mesh->i_face_vtx_idx[0] = 0;
 
-  BFT_MALLOC(mesh->b_face_vtx_idx, mesh->n_b_faces+1, cs_int_t);
+  BFT_MALLOC(mesh->b_face_vtx_idx, mesh->n_b_faces+1, cs_lnum_t);
   mesh->b_face_vtx_idx[0] = 0;
 
   if (mesh->n_b_faces > 0)
-    BFT_MALLOC(mesh->b_face_vtx_lst, mesh->b_face_vtx_connect_size, cs_int_t);
+    BFT_MALLOC(mesh->b_face_vtx_lst, mesh->b_face_vtx_connect_size, cs_lnum_t);
 
   /* Now copy face -> vertices connectivity */
 
@@ -506,10 +506,10 @@ _extract_face_gnum(cs_mesh_t         *mesh,
  *----------------------------------------------------------------------------*/
 
 static void
-_extract_face_gc_id(cs_mesh_t        *mesh,
-                   cs_lnum_t          n_faces,
-                   const cs_lnum_t    face_gc_id[],
-                   const char         face_type[])
+_extract_face_gc_id(cs_mesh_t  *mesh,
+                    cs_lnum_t   n_faces,
+                    const int   face_gc_id[],
+                    const char  face_type[])
 {
   cs_lnum_t i;
 
@@ -1054,7 +1054,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
   cs_gnum_t *_face_gvertices = NULL;
 
   cs_lnum_2_t *_face_cells = NULL;
-  cs_lnum_t *_face_gc_id = NULL;
+  int  *_face_gc_id = NULL;
   char *_face_r_gen = NULL;
   cs_lnum_t *_face_vertices_idx = NULL;
   cs_lnum_t *_face_vertices = NULL;
@@ -1093,7 +1093,7 @@ _decompose_data_g(cs_mesh_t          *mesh,
     BFT_MALLOC(b_global_num, n_block_ents, cs_gnum_t);
 
     mesh->cell_family = cs_all_to_all_copy_array(d,
-                                                 CS_LNUM_TYPE,
+                                                 CS_INT_TYPE,
                                                  1,
                                                  false, /* reverse */
                                                  mb->cell_gc_id,
@@ -1188,10 +1188,10 @@ _decompose_data_g(cs_mesh_t          *mesh,
 
   /* Face family */
 
-  BFT_MALLOC(_face_gc_id, _n_faces, cs_lnum_t);
+  BFT_MALLOC(_face_gc_id, _n_faces, int);
 
   cs_all_to_all_copy_array(d,
-                           CS_LNUM_TYPE,
+                           CS_INT_TYPE,
                            1,
                            true,  /* reverse */
                            mb->face_gc_id,

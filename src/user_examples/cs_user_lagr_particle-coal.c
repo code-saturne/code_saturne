@@ -198,7 +198,7 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
     cs_real_t *particle_coal_density
       = cs_lagr_particles_attr(particles, p_id, CS_LAGR_COAL_DENSITY);
 
-    for (int l_id = 0; n_layers; l_id++) {
+    for (int l_id = 0; l_id < n_layers; l_id++) {
       particle_temperature[l_id] = temperature[l_id];
       particle_coal_mass[l_id] = coal_mass_fraction[l_id] * mass / n_layers;
       particle_coke_mass[l_id] = coke_mass_fraction[l_id] * mass / n_layers;

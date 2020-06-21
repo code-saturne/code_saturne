@@ -2311,10 +2311,10 @@ _setup_hierarchy(void             *context,
 
   /* Setup solvers */
 
-    if (mg->subtype == CS_MULTIGRID_BOTTOM)
-      _multigrid_setup_sles_k_cycle_bottom(mg, name, verbosity);
-    else
-      _multigrid_setup_sles(mg, name, verbosity);
+  if (mg->subtype == CS_MULTIGRID_BOTTOM)
+    _multigrid_setup_sles_k_cycle_bottom(mg, name, verbosity);
+  else
+    _multigrid_setup_sles(mg, name, verbosity);
 
   /* Update timers */
 
@@ -4200,8 +4200,9 @@ cs_multigrid_setup_conv_diff(void               *context,
   /* Build coarse grids hierarchy */
   /*------------------------------*/
 
-  const int *diag_block_size = cs_matrix_get_diag_block_size(a);
-  const int *extra_diag_block_size = cs_matrix_get_extra_diag_block_size(a);
+  const cs_lnum_t *diag_block_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t *extra_diag_block_size
+    = cs_matrix_get_extra_diag_block_size(a);
 
   cs_grid_t *f
     = cs_grid_create_from_shared(mesh->n_i_faces,
@@ -4276,7 +4277,7 @@ cs_multigrid_solve(void                *context,
   cs_multigrid_t *mg = context;
   cs_multigrid_info_t *mg_info = &(mg->info);
 
-  const int *db_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
 
   assert(db_size[0] == db_size[1]);
 
@@ -4555,9 +4556,8 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
     int lv_id = 0;
     cs_real_t *var = NULL, *da = NULL;
 
-    int i;
-    int db_size[4] = {1, 1, 1, 1};
-    int eb_size[4] = {1, 1, 1, 1};
+    cs_lnum_t db_size[4] = {1, 1, 1, 1};
+    cs_lnum_t eb_size[4] = {1, 1, 1, 1};
 
     const cs_grid_t *g = mgd->grid_hierarchy[0];
     const cs_lnum_t n_base_rows = cs_grid_get_n_rows(g);
@@ -4672,7 +4672,7 @@ cs_multigrid_error_post_and_abort(cs_sles_t                    *sles,
 
       const cs_real_t *c_rhs_lv = mgd->rhs_vx[level*2];
       for (ii = 0; ii < n_cells; ii++) {
-        for (i = 0; i < db_size[0]; i++)
+        for (cs_lnum_t i = 0; i < db_size[0]; i++)
           c_res[ii*db_size[1] + i]
             = fabs(c_res[ii*db_size[1] + i] - c_rhs_lv[ii*db_size[1] + i]);
       }

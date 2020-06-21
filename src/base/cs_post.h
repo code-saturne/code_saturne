@@ -93,9 +93,8 @@ BEGIN_C_DECLS
 /* Datatype enumeration */
 
 typedef enum {
-  CS_POST_TYPE_cs_int_t,
-  CS_POST_TYPE_cs_real_t,
   CS_POST_TYPE_int,
+  CS_POST_TYPE_cs_real_t,
   CS_POST_TYPE_float,
   CS_POST_TYPE_double
 } cs_post_type_t;

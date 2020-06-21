@@ -407,8 +407,8 @@ cs_sles_default_get_verbosity(int          f_id,
 void
 cs_sles_setup_native_conv_diff(int                  f_id,
                                const char          *name,
-                               const int           *diag_block_size,
-                               const int           *extra_diag_block_size,
+                               const cs_lnum_t     *diag_block_size,
+                               const cs_lnum_t     *extra_diag_block_size,
                                const cs_real_t     *da,
                                const cs_real_t     *xa,
                                const cs_real_t     *da_conv,
@@ -557,8 +557,8 @@ void
 cs_sles_setup_native_coupling(int               f_id,
                               const char       *name,
                               bool              symmetric,
-                              const int        *diag_block_size,
-                              const int        *extra_diag_block_size,
+                              const cs_lnum_t  *diag_block_size,
+                              const cs_lnum_t  *extra_diag_block_size,
                               const cs_real_t  *da,
                               const cs_real_t  *xa)
 {
@@ -655,8 +655,8 @@ cs_sles_convergence_state_t
 cs_sles_solve_native(int                  f_id,
                      const char          *name,
                      bool                 symmetric,
-                     const int           *diag_block_size,
-                     const int           *extra_diag_block_size,
+                     const cs_lnum_t     *diag_block_size,
+                     const cs_lnum_t     *extra_diag_block_size,
                      const cs_real_t     *da,
                      const cs_real_t     *xa,
                      cs_halo_rotation_t   rotation_mode,
@@ -1025,7 +1025,7 @@ cs_sles_default_error(cs_sles_t                    *sles,
   /* Reset solution if new solve is expected */
 
   if (alternative) {
-    const int *db_size = cs_matrix_get_diag_block_size(a);
+    const cs_lnum_t *db_size = cs_matrix_get_diag_block_size(a);
     const cs_lnum_t n_cols = cs_matrix_get_n_columns(a) * db_size[1];
     for (cs_lnum_t i = 0; i < n_cols; i++)
       vx[i] = 0;

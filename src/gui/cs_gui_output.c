@@ -585,7 +585,7 @@ _define_profiles(void)
  * Determine output boundary fields
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (cspstb, CSPSTB) (cs_int_t        *ipstdv)
+void CS_PROCF (cspstb, CSPSTB) (int  *ipstdv)
 {
   /* Surfacic variables output */
 

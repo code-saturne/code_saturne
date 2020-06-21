@@ -135,10 +135,10 @@ CS_PROCF (elini1, ELINI1) (cs_real_t       *visls0,
                            cs_real_t       *diftl0);
 
 void
-CS_PROCF (elflux, ELFLUX) (cs_int_t *iappel);
+CS_PROCF (elflux, ELFLUX) (int      *iappel);
 
 void
-CS_PROCF (elthht, ELTHHT) (cs_int_t  *mode,
+CS_PROCF (elthht, ELTHHT) (int       *mode,
                            cs_real_t *ym,
                            cs_real_t *enthal,
                            cs_real_t *temp);
@@ -150,7 +150,7 @@ void
 CS_PROCF (elphyv, ELPHYV) (void);
 
 void
-CS_PROCF (eltssc, ELTSSC) (const cs_int_t  *isca,
+CS_PROCF (eltssc, ELTSSC) (const int       *isca,
                            cs_real_t       *smbrs);
 
 void
@@ -158,7 +158,7 @@ CS_PROCF (eltsvv, ELTSVV) (const int       *f_id,
                            cs_real_t       *smbrv);
 
 void
-CS_PROCF (eliniv, ELINIV) (cs_int_t *isuite);
+CS_PROCF (eliniv, ELINIV) (int      *isuite);
 
 void
 CS_PROCF (elreca, ELRECA) (cs_real_t *dt);

@@ -223,8 +223,6 @@ fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
                   const cs_coord_t    extrusion_vectors[],
                   const cs_coord_t    distribution[])
 {
-  int dim, k;
-  cs_lnum_t   i, j;
   cs_lnum_t   n_vertices;
   cs_lnum_t   vertex_shift;
   cs_coord_t  *_distrib = NULL;
@@ -237,25 +235,25 @@ fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
   assert(this_nodal != NULL);
   assert(extrusion_vectors != NULL || this_nodal->n_vertices == 0);
 
-  dim = this_nodal->dim;
+  cs_lnum_t dim = this_nodal->dim;
 
   /* Check that no section is of too high dimension */
 
-  for (i = 0; i < this_nodal->n_sections; i++) {
+  for (int i = 0; i < this_nodal->n_sections; i++) {
     const fvm_nodal_section_t *_section = this_nodal->sections[i];
     if (_section->entity_dim >= dim)
       bft_error(__FILE__, __LINE__, 0,
                 _("Dimension of mesh \"%s\" section %d equals %d\n"
                   "with mesh spatial dimension %d prior to extrusion\n"
                   "when it should be smaller."),
-                this_nodal->name, i+1, _section->entity_dim, dim);
+                this_nodal->name, i+1, _section->entity_dim, (int)dim);
   }
 
   /* Set distribution if necessary */
 
   if (distribution == NULL) {
     BFT_MALLOC(_distrib, n_planes, cs_coord_t);
-    for (i = 0; i < n_planes; i++)
+    for (cs_lnum_t i = 0; i < n_planes; i++)
       _distrib[i] = ((double)i) / ((double)n_layers);
     distrib = _distrib;
   }
@@ -269,12 +267,12 @@ fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
 
   if (this_nodal->_parent_vertex_num != NULL) {
 
-    for (i = 0; i < n_vertices; i++) {
+    for (cs_lnum_t i = 0; i < n_vertices; i++) {
       const double *_old_coords
         = old_coords + ((this_nodal->parent_vertex_num[i]-1) * dim);
       vertex_shift = n_planes * dim * i;
-      for (j = 0; j < n_planes; j++) {
-        for (k = 0; k < dim; k++) {
+      for (cs_lnum_t j = 0; j < n_planes; j++) {
+        for (cs_lnum_t k = 0; k < dim; k++) {
           new_coords[vertex_shift + (j*dim) + k]
             =   _old_coords[k]
               + (extrusion_vectors[i*dim + k] * distrib[j]);
@@ -285,10 +283,10 @@ fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
   }
   else {
 
-    for (i = 0; i < n_vertices; i++) {
+    for (cs_lnum_t i = 0; i < n_vertices; i++) {
       vertex_shift = n_planes * dim * i;
-      for (j = 0; j < n_planes; j++) {
-        for (k = 0; k < dim; k++) {
+      for (cs_lnum_t j = 0; j < n_planes; j++) {
+        for (cs_lnum_t k = 0; k < dim; k++) {
           new_coords[vertex_shift + (j*dim) + k]
             =   old_coords[i*dim + k]
               + (extrusion_vectors[i*dim + k] * distrib[j]);
@@ -323,10 +321,10 @@ fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
 
     BFT_MALLOC(global_vertex_num, n_planes*n_vertices, cs_gnum_t);
 
-    for (i = 0; i < n_vertices; i++) {
+    for (cs_lnum_t i = 0; i < n_vertices; i++) {
       cs_gnum_t   base_num = (  (old_global_vertex_num[i]-1)
                               * (cs_gnum_t)n_planes) + 1;
-      for (j = 0; j < n_planes; j++)
+      for (cs_lnum_t j = 0; j < n_planes; j++)
         global_vertex_num[i*n_planes + j] = base_num + (cs_gnum_t)j;
     }
 
@@ -350,7 +348,7 @@ fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
   this_nodal->n_faces = 0;
   this_nodal->n_edges = 0;
 
-  for (i = 0; i < this_nodal->n_sections; i++) {
+  for (int i = 0; i < this_nodal->n_sections; i++) {
 
     fvm_nodal_section_t *_section = this_nodal->sections[i];
 
@@ -381,7 +379,6 @@ fvm_nodal_extrude(fvm_nodal_t        *this_nodal,
   if (this_nodal->n_vertices != 0 && this_nodal->n_sections == 0)
     bft_error(__FILE__, __LINE__, 0,
               _("Extrusion of vertices only to edges not implemented yet."));
-
 }
 
 /*----------------------------------------------------------------------------*/

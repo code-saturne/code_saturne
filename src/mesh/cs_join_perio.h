@@ -68,8 +68,8 @@ BEGIN_C_DECLS
 
 void CS_PROCF(tstjpe, tstjpe)
 (
- cs_int_t    *iperio,
- cs_int_t    *iperot
+ int    *iperio,
+ int    *iperot
 );
 
 /*=============================================================================

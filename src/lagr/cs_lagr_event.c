@@ -701,8 +701,8 @@ cs_lagr_event_set_dump(const cs_lagr_event_set_t  *events)
 
     bft_printf("Particle events set\n");
     bft_printf("-------------------\n");
-    bft_printf("  n_events:      %10d\n", events->n_events);
-    bft_printf("  n_events_max:  %10d\n", events->n_events_max);
+    bft_printf("  n_events:      %10ld\n", (long)events->n_events);
+    bft_printf("  n_events_max:  %10ld\n", (long)events->n_events_max);
 
     bft_printf_flush();
 

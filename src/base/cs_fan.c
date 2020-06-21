@@ -620,7 +620,7 @@ cs_fan_compute_flows(const cs_mesh_t             *mesh,
   cs_real_t  flow;
 
   cs_fan_t  *fan = NULL;
-  cs_lnum_t  *cell_fan_id = NULL;
+  int       *cell_fan_id = NULL;
 
   const cs_lnum_t  n_ext_cells = mesh->n_cells_with_ghosts;
   const cs_lnum_t  nbr_fac = mesh->n_i_faces;
@@ -634,7 +634,7 @@ cs_fan_compute_flows(const cs_mesh_t             *mesh,
 
   /* Flag the cells */
 
-  BFT_MALLOC(cell_fan_id, n_ext_cells, cs_lnum_t);
+  BFT_MALLOC(cell_fan_id, n_ext_cells, int);
 
   cs_fan_flag_cells(mesh, cell_fan_id);
 

@@ -563,7 +563,7 @@ cs_domain_read_restart(cs_domain_t  *domain)
                           "code_saturne:checkpoint:main:version", // secname
                           CS_MESH_LOCATION_NONE,                  // ml_id
                           1,                                      // nb. values
-                          CS_TYPE_cs_int_t,                       // val. type
+                          CS_TYPE_int,                            // val. type
                           &i_val);                                // value(s)
 
   if (retval != CS_RESTART_SUCCESS)
@@ -585,7 +585,7 @@ cs_domain_read_restart(cs_domain_t  *domain)
                                    "cdo:n_equations",
                                    CS_MESH_LOCATION_NONE,
                                    1,
-                                   CS_TYPE_cs_int_t,
+                                   CS_TYPE_int,
                                    &i_val);
 
   if (retval != CS_RESTART_SUCCESS)
@@ -601,7 +601,7 @@ cs_domain_read_restart(cs_domain_t  *domain)
                                    "cdo:n_properties",
                                    CS_MESH_LOCATION_NONE,
                                    1,
-                                   CS_TYPE_cs_int_t,
+                                   CS_TYPE_int,
                                    &i_val);
 
   if (retval != CS_RESTART_SUCCESS)
@@ -617,7 +617,7 @@ cs_domain_read_restart(cs_domain_t  *domain)
                                    "cdo:n_adv_fields",
                                    CS_MESH_LOCATION_NONE,
                                    1,
-                                   CS_TYPE_cs_int_t,
+                                   CS_TYPE_int,
                                    &i_val);
 
   if (retval != CS_RESTART_SUCCESS)
@@ -634,7 +634,7 @@ cs_domain_read_restart(cs_domain_t  *domain)
                                    "groundwater_flow_module",
                                    CS_MESH_LOCATION_NONE,
                                    1,
-                                   CS_TYPE_cs_int_t,
+                                   CS_TYPE_int,
                                    &i_val);
 
   if (retval != CS_RESTART_SUCCESS)
@@ -651,7 +651,7 @@ cs_domain_read_restart(cs_domain_t  *domain)
                                    "navier_stokes_system",
                                    CS_MESH_LOCATION_NONE,
                                    1,
-                                   CS_TYPE_cs_int_t,
+                                   CS_TYPE_int,
                                    &i_val);
 
   if (retval != CS_RESTART_SUCCESS)
@@ -668,7 +668,7 @@ cs_domain_read_restart(cs_domain_t  *domain)
                                    "wall_distance",
                                    CS_MESH_LOCATION_NONE,
                                    1,
-                                   CS_TYPE_cs_int_t,
+                                   CS_TYPE_int,
                                    &i_val);
 
   if (retval != CS_RESTART_SUCCESS)
@@ -684,7 +684,7 @@ cs_domain_read_restart(cs_domain_t  *domain)
                                    "cur_time_step",
                                    CS_MESH_LOCATION_NONE,
                                    1,
-                                   CS_TYPE_cs_int_t,
+                                   CS_TYPE_int,
                                    &nt_cur);
 
   if (retval != CS_RESTART_SUCCESS)
@@ -761,7 +761,7 @@ cs_domain_write_restart(const cs_domain_t  *domain)
                            "code_saturne:checkpoint:main:version", // secname
                            CS_MESH_LOCATION_NONE,                  // ml_id
                            1,                                      // nb. values
-                           CS_TYPE_cs_int_t,                       // val. type
+                           CS_TYPE_int,                            // val. type
                            &version);                              // value(s)
 
   /* Write a new section: field information */
@@ -773,7 +773,7 @@ cs_domain_write_restart(const cs_domain_t  *domain)
                            "cdo:n_equations",
                            CS_MESH_LOCATION_NONE,
                            1,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            &n_equations);
 
   /* Write a new section */
@@ -782,7 +782,7 @@ cs_domain_write_restart(const cs_domain_t  *domain)
                            "cdo:n_properties",
                            CS_MESH_LOCATION_NONE,
                            1,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            &n_properties);
 
   /* Write a new section */
@@ -791,7 +791,7 @@ cs_domain_write_restart(const cs_domain_t  *domain)
                            "cdo:n_adv_fields",
                            CS_MESH_LOCATION_NONE,
                            1,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            &n_adv_fields);
 
   /* Write a new section: activation or not of the groundwater flow module */
@@ -801,7 +801,7 @@ cs_domain_write_restart(const cs_domain_t  *domain)
                            "groundwater_flow_module",
                            CS_MESH_LOCATION_NONE,
                            1,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            &igwf);
 
   /* Write a new section: activation or not of the Navier-Stokes system */
@@ -811,7 +811,7 @@ cs_domain_write_restart(const cs_domain_t  *domain)
                            "navier_stokes_system",
                            CS_MESH_LOCATION_NONE,
                            1,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            &inss);
 
   /* Write a new section: computation or not of the wall distance */
@@ -821,7 +821,7 @@ cs_domain_write_restart(const cs_domain_t  *domain)
                            "wall_distance",
                            CS_MESH_LOCATION_NONE,
                            1,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            &iwall);
 
   /* Write a new section: number of computed time steps */
@@ -830,7 +830,7 @@ cs_domain_write_restart(const cs_domain_t  *domain)
                            "cur_time_step",
                            CS_MESH_LOCATION_NONE,
                            1,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            &ntcabs);
 
   /* Read a new section: number of computed time steps */

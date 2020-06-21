@@ -154,7 +154,7 @@ static cs_opts_t  opts;
 static void
 _run(void)
 {
-  cs_int_t  ivoset = 0;
+  int  ivoset = 0;
 
   int  check_mask = 0;
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
@@ -232,7 +232,7 @@ _run(void)
 
   if ((opts.preprocess | opts.verif) == false && opts.benchmark <= 0) {
 
-    cs_int_t _rank_id = cs_glob_rank_id, _n_ranks = cs_glob_n_ranks;
+    int _rank_id = cs_glob_rank_id, _n_ranks = cs_glob_n_ranks;
 
     cs_base_fortran_bft_printf_to_f();
 

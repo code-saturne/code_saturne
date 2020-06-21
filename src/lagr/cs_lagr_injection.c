@@ -1201,9 +1201,9 @@ _check_particles(cs_lagr_particle_set_t         *p_set,
         if (val <= 0.0)
           bft_error(__FILE__, __LINE__, 0,
                     _("Lagrangian %s zone %d, set %d:\n"
-                      "  particle %d has a negative %s: %g"),
+                      "  particle %ld has a negative %s: %g"),
                     z_type_name, zis->zone_id, zis->set_id,
-                    p_id, cs_lagr_attribute_name[attr], (double)val);
+                    (long)p_id, cs_lagr_attribute_name[attr], (double)val);
 
       }
 
@@ -1230,16 +1230,16 @@ _check_particles(cs_lagr_particle_set_t         *p_set,
             if (n_vals == 1)
               bft_error(__FILE__, __LINE__, 0,
                         _("Lagrangian %s zone %d, set %d:\n"
-                          "  particle %d has a negative %s: %g"),
+                          "  particle %ld has a negative %s: %g"),
                         z_type_name, zis->zone_id, zis->set_id,
-                        p_id, cs_lagr_attribute_name[attr], (double)vals[0]);
+                        (long)p_id, cs_lagr_attribute_name[attr], (double)vals[0]);
             else
               bft_error(__FILE__, __LINE__, 0,
                         _("Lagrangian %s zone %d, set %d:\n"
-                          "  particle %d has a negative %s\n"
+                          "  particle %ld has a negative %s\n"
                           "  in layer %d: %g"),
                         z_type_name, zis->zone_id, zis->set_id,
-                        p_id, cs_lagr_attribute_name[attr], l_id, (double)vals[l_id]);
+                        (long)p_id, cs_lagr_attribute_name[attr], l_id, (double)vals[l_id]);
           }
 
         }
@@ -1254,9 +1254,9 @@ _check_particles(cs_lagr_particle_set_t         *p_set,
         if (val < 0) {
           bft_error(__FILE__, __LINE__, 0,
                     _("Lagrangian %s zone %d, set %d:\n"
-                      "  particle %d has a negative %s: %g"),
+                      "  particle %ld has a negative %s: %g"),
                     z_type_name, zis->zone_id, zis->set_id,
-                    p_id, cs_lagr_attribute_name[attr], (double)val);
+                    (long)p_id, cs_lagr_attribute_name[attr], (double)val);
 
         }
 

@@ -82,9 +82,9 @@ BEGIN_C_DECLS
 
 void CS_PROCF(cplsyn, CPLSYN)
 (
- cs_int_t         *ntmabs,
- const cs_int_t   *ntcabs,
- cs_real_t        *dtref
+ int         *ntmabs,
+ const int   *ntcabs,
+ cs_real_t   *dtref
  );
 
 /*----------------------------------------------------------------------------
@@ -101,7 +101,7 @@ void CS_PROCF(cplsyn, CPLSYN)
 
 void CS_PROCF(cplact, CPLACT)
 (
- cs_int_t         *isync
+ int         *isync
 );
 
 /*============================================================================

@@ -70,10 +70,10 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (lagopt, LAGOPT) (cs_int_t   *isuite,
-                           cs_int_t   *iccvfg,
-                           cs_int_t   *iscalt,
-                           cs_real_t *dtref);
+CS_PROCF (lagopt, LAGOPT) (int        *isuite,
+                           int        *iccvfg,
+                           int        *iscalt,
+                           cs_real_t  *dtref);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -96,10 +96,10 @@ CS_PROCF (lagopt, LAGOPT) (cs_int_t   *isuite,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_option_definition(cs_int_t   *isuite,
-                          cs_int_t   *iccvfg,
-                          cs_int_t   *iscalt,
-                          cs_real_t *dtref);
+cs_lagr_option_definition(int        *isuite,
+                          int        *iccvfg,
+                          int        *iscalt,
+                          cs_real_t  *dtref);
 
 /*----------------------------------------------------------------------------*/
 

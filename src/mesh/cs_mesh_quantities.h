@@ -136,16 +136,16 @@ typedef struct {
 
   cs_real_t     *corr_grad_lin_det;  /* Determinant of geometrical matrix
                                         linear gradient correction */
-  cs_real_33_t  *corr_grad_lin;      /* Geometrical matrix
+  cs_real_33_t  *corr_grad_lin;    /* Geometrical matrix
                                         linear gradient correction */
 
-  cs_int_t      *b_sym_flag;     /* Symmetry flag for boundary faces */
-  int           has_disable_flag;   /* Is the cell disabled?
-                                       0: unactivated
-                                       1: activated */
-  int           *c_disable_flag;   /* Is the cell disabled?
-                                    used for fluid solid and porous modelling */
-  unsigned      *bad_cell_flag;  /* Flag (mask) for bad cells detected */
+  int          *b_sym_flag;        /* Symmetry flag for boundary faces */
+  int           has_disable_flag;  /* Is the cell disabled?
+                                      0: unactivated
+                                      1: activated */
+  int          *c_disable_flag;    /* Is the cell disabled?
+                                      used for fluid solid and porous modelling */
+  unsigned     *bad_cell_flag;     /* Flag (mask) for bad cells detected */
 
 } cs_mesh_quantities_t ;
 

@@ -127,8 +127,6 @@ _add_faces_to_nodal(const cs_mesh_t  *mesh,
 
   cs_gnum_t  *num_glob_fac = NULL;
 
-  assert(sizeof(int) == sizeof(cs_lnum_t)); /* For families */
-
   /* Count the number of faces to convert */
 
   n_max_faces = mesh->n_i_faces + mesh->n_b_faces;
@@ -329,7 +327,7 @@ cs_mesh_connect_get_cell_faces(const cs_mesh_t         *mesh,
   if (extr_cell_id != NULL)
     n_loc_cells = extr_cell_size;
 
-  BFT_MALLOC(cell_faces_idx, n_loc_cells + 1, cs_int_t);
+  BFT_MALLOC(cell_faces_idx, n_loc_cells + 1, cs_lnum_t);
 
   for (cell_id = 0; cell_id < n_loc_cells + 1; cell_id++)
     cell_faces_idx[cell_id] = 0;
@@ -376,8 +374,8 @@ cs_mesh_connect_get_cell_faces(const cs_mesh_t         *mesh,
 
   /* Build array of values */
 
-  BFT_MALLOC(cell_faces_val, cell_faces_idx[n_loc_cells] - 1, cs_int_t);
-  BFT_MALLOC(cell_face_count, n_loc_cells, cs_int_t);
+  BFT_MALLOC(cell_faces_val, cell_faces_idx[n_loc_cells] - 1, cs_lnum_t);
+  BFT_MALLOC(cell_face_count, n_loc_cells, cs_lnum_t);
 
   for (cell_id = 0; cell_id < n_loc_cells; cell_id++)
     cell_face_count[cell_id] = 0;
@@ -427,7 +425,7 @@ cs_mesh_connect_get_cell_faces(const cs_mesh_t         *mesh,
 
 #if 0 && defined(DEBUG) && !defined(NDEBUG)
  {
-   cs_int_t ipos, ival;
+   cs_lnum_t ipos, ival;
    /* Print arrays */
    bft_printf("dbg : cs_mesh_ret_cel_fac\n"
               "nombre de cellules extraites = %d\n", extr_cell_size);
@@ -621,8 +619,6 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
 
   fvm_nodal_set_parent(extr_mesh, mesh);
 
-  assert(sizeof(int) == sizeof(cs_lnum_t)); /* For families */
-
   if (include_families)
     cell_family = mesh->cell_family;
 
@@ -712,8 +708,6 @@ cs_mesh_connect_faces_to_nodal(const cs_mesh_t  *mesh,
                                cs_lnum_t         b_face_list[])
 {
   fvm_nodal_t  *extr_mesh = NULL;
-
-  assert(sizeof(int) == sizeof(cs_lnum_t)); /* For families */
 
   /* Check that the mesh contains face -> vertices connectivity */
 

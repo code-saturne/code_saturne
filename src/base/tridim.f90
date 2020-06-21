@@ -735,7 +735,7 @@ call dttvar &
 
 if (nbaste.gt.0.and.itrale.gt.nalinf) then
   ntrela = ntcabs - ntpabs
-  call astpdt(dt, ntrela)
+  call astpdt(dt)
 endif
 
 ! Compute the pseudo tensorial time step if needed for the pressure solving

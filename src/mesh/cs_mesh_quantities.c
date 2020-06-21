@@ -1304,7 +1304,9 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
 
   if (cpt1 > 0) {
     bft_printf("Total number of cell centers on the other side of a face "
-               "(before correction) = %lu / %d\n", cpt1, mesh->n_cells);
+               "(before correction) = %llu / %ld\n",
+               (unsigned long long)cpt1,
+               (long)mesh->n_cells);
 
     /* Second pass */
     cs_real_33_t *a;
@@ -1475,7 +1477,9 @@ _recompute_cell_cen_face(const cs_mesh_t     *mesh,
     cs_parall_counter(&cpt2, 1);
 
     bft_printf("Total number of cell centers on the other side of a face "
-               "(after correction) = %lu / %d\n", cpt2, mesh->n_cells);
+               "(after correction) = %llu / %ld\n",
+               (unsigned long long)cpt2,
+               (long)mesh->n_cells);
 
     for (cs_lnum_t cell_id = 0; cell_id < mesh->n_cells; cell_id++) {
       if (pb1[cell_id] > 0 && pb2[cell_id] == 0) {
@@ -2730,7 +2734,7 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
     BFT_MALLOC(mq->djjpf, n_i_faces*dim, cs_real_t);
 
   if (mq->b_sym_flag == NULL)
-    BFT_MALLOC(mq->b_sym_flag, n_b_faces, cs_int_t);
+    BFT_MALLOC(mq->b_sym_flag, n_b_faces, int);
 
   /* Compute some distances relative to faces and associated weighting */
 
@@ -3620,12 +3624,12 @@ cs_mesh_quantities_dump(const cs_mesh_t             *mesh,
 
   bft_printf("Cell center coordinates:\n");
   for (i = 0; i < n_cells; i++)
-    bft_printf("    < %d >    %.3f    %.3f    %.3f\n", i+1,
+    bft_printf("    < %ld >    %.3f    %.3f    %.3f\n", (long)i+1,
                cell_cen[3*i], cell_cen[3*i+1], cell_cen[3*i+2]);
 
   bft_printf("\nCell volume:\n");
   for (i = 0; i < n_cells; i++)
-    bft_printf("    < %d >    %.3f\n", i+1, cell_vol[i]);
+    bft_printf("    < %ld >    %.3f\n", (long)i+1, cell_vol[i]);
 
   /* Internal faces data */
 
@@ -3636,17 +3640,17 @@ cs_mesh_quantities_dump(const cs_mesh_t             *mesh,
 
   bft_printf("\nInterior face normals\n");
   for (i = 0; i < n_i_faces; i++)
-    bft_printf("    < %d >    %.3f    %.3f    %.3f\n", i+1,
+    bft_printf("    < %ld >    %.3f    %.3f    %.3f\n", (long)i+1,
                i_fac_norm[3*i], i_fac_norm[3*i+1], i_fac_norm[3*i+2]);
 
   bft_printf("\nInterior face centers\n");
   for (i = 0; i < n_i_faces; i++)
-    bft_printf("    < %d >    %.3f    %.3f    %.3f\n", i+1,
+    bft_printf("    < %ld >    %.3f    %.3f    %.3f\n", (long)i+1,
                i_fac_cog[3*i], i_fac_cog[3*i+1], i_fac_cog[3*i+2]);
 
   bft_printf("\nInterior face surfaces\n");
   for (i = 0; i < n_i_faces; i++)
-    bft_printf("    < %d >    %.3f\n", i+1, i_fac_surf[i]);
+    bft_printf("    < %ld >    %.3f\n", (long)i+1, i_fac_surf[i]);
 
   /* Border faces data */
 
@@ -3657,17 +3661,17 @@ cs_mesh_quantities_dump(const cs_mesh_t             *mesh,
 
   bft_printf("\nBoundary face normals\n");
   for (i = 0; i < n_b_faces; i++)
-    bft_printf("    < %d >    %.3f    %.3f    %.3f\n", i+1,
+    bft_printf("    < %ld >    %.3f    %.3f    %.3f\n", (long)i+1,
                b_fac_norm[3*i], b_fac_norm[3*i+1], b_fac_norm[3*i+2]);
 
   bft_printf("\nBoundary faces centers\n");
   for (i = 0; i < n_b_faces; i++)
-    bft_printf("    < %d >    %.3f    %.3f    %.3f\n", i+1,
+    bft_printf("    < %ld >    %.3f    %.3f    %.3f\n", (long)i+1,
                b_fac_cog[3*i], b_fac_cog[3*i+1], b_fac_cog[3*i+2]);
 
   bft_printf("\nBoundary face surfaces\n");
   for (i = 0; i < n_b_faces; i++)
-    bft_printf("    < %d >    %.3f\n", i+1, b_fac_surf[i]);
+    bft_printf("    < %ld >    %.3f\n", (long)i+1, b_fac_surf[i]);
 
   bft_printf("\n\nEND OF DUMP OF MESH QUANTITIES STRUCTURE\n\n");
   bft_printf_flush();

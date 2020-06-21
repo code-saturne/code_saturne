@@ -444,8 +444,8 @@ _read_ent_values(cs_restart_t           *r,
   case CS_TYPE_char:
     nbr_byte_ent = n_location_vals;
     break;
-  case CS_TYPE_cs_int_t:
-    nbr_byte_ent = n_location_vals * sizeof(cs_int_t);
+  case CS_TYPE_int:
+    nbr_byte_ent = n_location_vals * sizeof(int);
     cs_io_set_cs_lnum(header, r->fh);
     break;
   case CS_TYPE_cs_gnum_t:
@@ -545,9 +545,9 @@ _write_ent_values(const cs_restart_t     *r,
     nbr_byte_ent = n_location_vals;
     elt_type = CS_CHAR;
     break;
-  case CS_TYPE_cs_int_t:
-    nbr_byte_ent = n_location_vals * sizeof(cs_int_t);
-    elt_type = (sizeof(cs_int_t) == 8) ? CS_INT64 : CS_INT32;
+  case CS_TYPE_int:
+    nbr_byte_ent = n_location_vals * sizeof(int);
+    elt_type = (sizeof(int) == 8) ? CS_INT64 : CS_INT32;
     break;
   case CS_TYPE_cs_gnum_t:
     nbr_byte_ent = n_location_vals * sizeof(cs_gnum_t);
@@ -659,12 +659,12 @@ _restart_permute_read(cs_lnum_t               n_ents,
     }
     break;
 
-  case CS_TYPE_cs_int_t:
+  case CS_TYPE_int:
     {
-      cs_int_t  *val_ord;
-      cs_int_t  *val_cur = (cs_int_t *)vals;
+      int  *val_ord;
+      int  *val_cur = (int *)vals;
 
-      BFT_MALLOC(val_ord, n_ents * n_location_vals, cs_int_t);
+      BFT_MALLOC(val_ord, n_ents * n_location_vals, int);
 
       for (ent_id = 0; ent_id < n_ents; ent_id++) {
         for (jj = 0; jj < n_location_vals; jj++)
@@ -774,12 +774,12 @@ _restart_permute_write(cs_lnum_t               n_ents,
     }
     break;
 
-  case CS_TYPE_cs_int_t:
+  case CS_TYPE_int:
     {
-      cs_int_t  *val_ord;
-      const cs_int_t  *val_cur = (const cs_int_t *)vals;
+      int  *val_ord;
+      const int  *val_cur = (const int *)vals;
 
-      BFT_MALLOC(val_ord, n_ents * n_location_vals, cs_int_t);
+      BFT_MALLOC(val_ord, n_ents * n_location_vals, int);
 
       for (ent_id = 0; ent_id < n_ents; ent_id++) {
         for (jj = 0; jj < n_location_vals; jj++)
@@ -1117,11 +1117,11 @@ _check_section(cs_restart_t           *restart,
   }
   else if (header.elt_type == CS_INT32 || header.elt_type == CS_INT64) {
     cs_io_set_cs_lnum(&header, restart->fh);
-    if (val_type != CS_TYPE_cs_int_t)
+    if (val_type != CS_TYPE_int)
       return CS_RESTART_ERR_VAL_TYPE;
   }
   else if (header.elt_type == CS_UINT32 || header.elt_type == CS_UINT64) {
-    if (val_type != CS_TYPE_cs_gnum_t && val_type != CS_TYPE_cs_int_t)
+    if (val_type != CS_TYPE_cs_gnum_t && val_type != CS_TYPE_int)
       return CS_RESTART_ERR_VAL_TYPE;
   }
   else if (header.elt_type == CS_FLOAT || header.elt_type == CS_DOUBLE) {
@@ -1161,7 +1161,7 @@ _read_section(cs_restart_t           *restart,
 {
   CS_UNUSED(context);
 
-  cs_int_t   n_ents;
+  cs_lnum_t n_ents;
   cs_gnum_t n_glob_ents;
 
   const cs_gnum_t  *ent_global_num;
@@ -1169,7 +1169,7 @@ _read_section(cs_restart_t           *restart,
   size_t rec_id, rec_id_tmp;
   cs_io_sec_header_t header;
 
-  cs_int_t _n_location_vals = n_location_vals;
+  cs_lnum_t _n_location_vals = n_location_vals;
   size_t index_size = 0;
 
   index_size = cs_io_get_index_size(restart->fh);
@@ -1277,14 +1277,14 @@ _read_section(cs_restart_t           *restart,
   }
   else if (header.elt_type == CS_INT32 || header.elt_type == CS_INT64) {
     cs_io_set_cs_lnum(&header, restart->fh);
-    if (val_type != CS_TYPE_cs_int_t) {
+    if (val_type != CS_TYPE_int) {
       bft_printf(_("  %s: section \"%s\" is not of integer type.\n"),
                  restart->name, sec_name);
       return CS_RESTART_ERR_VAL_TYPE;
     }
   }
   else if (header.elt_type == CS_UINT32 || header.elt_type == CS_UINT64) {
-    if (val_type != CS_TYPE_cs_gnum_t && val_type != CS_TYPE_cs_int_t) {
+    if (val_type != CS_TYPE_cs_gnum_t && val_type != CS_TYPE_int) {
       bft_printf(_("  %s: section \"%s\" is not of global number type.\n"),
                  restart->name, sec_name);
       return CS_RESTART_ERR_VAL_TYPE;
@@ -1307,7 +1307,7 @@ _read_section(cs_restart_t           *restart,
   if (header.elt_type == CS_UINT32 || header.elt_type == CS_UINT64) {
     if (val_type == CS_TYPE_cs_gnum_t)
       cs_io_set_cs_gnum(&header, restart->fh);
-    else if (val_type == CS_TYPE_cs_int_t)
+    else if (val_type == CS_TYPE_int)
       cs_io_set_cs_lnum(&header, restart->fh);
   }
   else if (header.elt_type == CS_FLOAT || header.elt_type == CS_DOUBLE) {
@@ -1387,7 +1387,7 @@ _write_section(cs_restart_t           *restart,
 
   const cs_gnum_t  *ent_global_num;
 
-  cs_int_t _n_location_vals = n_location_vals;
+  cs_lnum_t _n_location_vals = n_location_vals;
 
   assert(restart != NULL);
 
@@ -1415,8 +1415,8 @@ _write_section(cs_restart_t           *restart,
   case CS_TYPE_char:
     elt_type = CS_CHAR;
     break;
-  case CS_TYPE_cs_int_t:
-    elt_type = (sizeof(cs_int_t) == 8) ? CS_INT64 : CS_INT32;
+  case CS_TYPE_int:
+    elt_type = (sizeof(int) == 8) ? CS_INT64 : CS_INT32;
     break;
   case CS_TYPE_cs_gnum_t:
     elt_type = (sizeof(cs_gnum_t) == 8) ? CS_UINT64 : CS_UINT32;
@@ -1772,7 +1772,7 @@ _restart_multiwriter_increment(_restart_multiwriter_t  *mw,
 
 void CS_PROCF (dflsui, DFLSUI)
 (
- cs_int_t   *ntsuit,
+ int        *ntsuit,
  cs_real_t  *ttsuit,
  cs_real_t  *wtsuit
 )
@@ -1793,7 +1793,7 @@ void CS_PROCF (dflsui, DFLSUI)
 
 void CS_PROCF (reqsui, REQSUI)
 (
- cs_int_t   *iisuit
+ int  *iisuit
 )
 {
   if (cs_restart_checkpoint_required(cs_glob_time_step))
@@ -1810,7 +1810,7 @@ void CS_PROCF (reqsui, REQSUI)
  *
  * Fortran interface
  *
- * subroutine indsui
+ * subroutine stusui
  * *****************
  *----------------------------------------------------------------------------*/
 
@@ -1852,7 +1852,7 @@ void CS_PROCF (trbsui, TRBSUI)
 
 void CS_PROCF (indsui, INDSUI)
 (
- cs_int_t   *isuite
+ int   *isuite
 )
 {
   *isuite = cs_restart_present();
@@ -3118,7 +3118,7 @@ cs_restart_read_particles(cs_restart_t  *restart,
                                       sec_name,
                                       particles_location_id,
                                       1,
-                                      CS_TYPE_cs_int_t,
+                                      CS_TYPE_int,
                                       particle_cell_id);
     for (cs_lnum_t i = 0; i < n_particles; i++)
       particle_cell_id[i] -= 1;
@@ -3980,7 +3980,7 @@ cs_restart_check_if_restart_from_ncfd(cs_restart_t  *r)
                                      "version_fichier_suite_principal",
                                      CS_MESH_LOCATION_NONE,
                                      1,
-                                     CS_TYPE_cs_int_t,
+                                     CS_TYPE_int,
                                      inttmp);
 
   if (ierror == 0) {

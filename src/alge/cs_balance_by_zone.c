@@ -905,11 +905,7 @@ cs_balance_by_zone_compute(const char      *scalar_name,
   cs_real_t *cv_limiter = NULL;
   cs_real_t *df_limiter = NULL;
 
-  cs_real_t *gweight = NULL;
-
   const int key_lim_choice = cs_field_key_id("limiter_choice");
-
-  cs_real_t  *v_slope_test = cs_get_v_slope_test(field_id,  var_cal_opt);
 
   /* Initialize balance contributions
     ---------------------------------
@@ -1464,12 +1460,13 @@ cs_balance_by_zone_compute(const char      *scalar_name,
       bldfrp = CS_MAX(CS_MIN(df_limiter[c_id1], df_limiter[c_id2]), 0.);
 
     cs_real_t hybrid_coef_ii, hybrid_coef_jj;
-    cs_lnum_t ic, id;
+    cs_lnum_t ic = -1, id = -1;
     cs_real_t courant_c = -1.;
     if (ischcp == 3) {
       hybrid_coef_ii = CS_F_(hybrid_blend)->val[c_id1];
       hybrid_coef_jj = CS_F_(hybrid_blend)->val[c_id2];
-    } else if ( ischcp == 4) {
+    }
+    else if (ischcp == 4) {
       hybrid_coef_ii = 0.;
       hybrid_coef_jj = 0.;
       /* Determine central and downwind sides w.r.t. current face */
@@ -2506,8 +2503,6 @@ cs_flux_through_surface(const char         *scalar_name,
   cs_real_t *cv_limiter = NULL;
   cs_real_t *df_limiter = NULL;
 
-  cs_real_t *gweight = NULL;
-
   const cs_lnum_t n_cells = m->n_cells;
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_i_faces = m->n_i_faces;
@@ -2543,8 +2538,6 @@ cs_flux_through_surface(const char         *scalar_name,
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
   const int key_lim_choice = cs_field_key_id("limiter_choice");
-
-  cs_real_t  *v_slope_test = cs_get_v_slope_test(field_id,  var_cal_opt);
 
   /* initialize output */
 
@@ -2995,12 +2988,13 @@ cs_flux_through_surface(const char         *scalar_name,
       bldfrp = CS_MAX(CS_MIN(df_limiter[c_id1], df_limiter[c_id2]), 0.);
 
     cs_real_t hybrid_coef_ii, hybrid_coef_jj;
-    cs_lnum_t ic, id;
+    cs_lnum_t ic = -1, id = -1;
     cs_real_t courant_c = -1.;
     if (ischcp == 3) {
       hybrid_coef_ii = CS_F_(hybrid_blend)->val[c_id1];
       hybrid_coef_jj = CS_F_(hybrid_blend)->val[c_id2];
-    } else if ( ischcp == 4) {
+    }
+    else if (ischcp == 4) {
       hybrid_coef_ii = 0.;
       hybrid_coef_jj = 0.;
       /* Determine central and downwind sides w.r.t. current face */

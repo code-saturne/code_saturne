@@ -231,7 +231,8 @@ cs_lagr_clogging_barrier(const void                     *particle,
 
   cs_real_t mean_nb_cont;
 
-  cs_lnum_t  dim_aux = 1, contact_count[1];
+  cs_lnum_t  dim_aux = 1;
+  int        contact_count[1];
   cs_real_t  value;
   cs_lnum_t  i;
 

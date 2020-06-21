@@ -908,9 +908,9 @@ cs_matrix_pre_vector_multiply_sync(cs_halo_rotation_t   rotation_mode,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_csr_assembler_values_init(void              *matrix_p,
-                                    const cs_lnum_t    db_size[4],
-                                    const cs_lnum_t    eb_size[4]);
+cs_matrix_csr_assembler_values_init(void             *matrix_p,
+                                    const cs_lnum_t   db_size[4],
+                                    const cs_lnum_t   eb_size[4]);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -964,9 +964,9 @@ cs_matrix_csr_assembler_values_add(void             *matrix_p,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_matrix_msr_assembler_values_init(void              *matrix_p,
-                                    const cs_lnum_t    db_size[4],
-                                    const cs_lnum_t    eb_size[4]);
+cs_matrix_msr_assembler_values_init(void             *matrix_p,
+                                    const cs_lnum_t   db_size[4],
+                                    const cs_lnum_t   eb_size[4]);
 
 /*----------------------------------------------------------------------------*/
 /*!

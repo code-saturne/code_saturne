@@ -345,8 +345,8 @@ void CS_PROCF(uiiniv, UIINIV)(const int          *isuite,
  * double precision viscv0   <--  volumic viscosity
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(uiphyv, UIPHYV)(const cs_int_t  *iviscv,
-                              const cs_int_t  *itempk,
+void CS_PROCF(uiphyv, UIPHYV)(const int       *iviscv,
+                              const int       *itempk,
                               const cs_real_t *visls0,
                               const cs_real_t *viscv0);
 

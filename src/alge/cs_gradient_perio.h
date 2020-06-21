@@ -79,8 +79,8 @@ BEGIN_C_DECLS
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (permas, PERMAS)(const cs_int_t  *iappel,
-                          cs_real_t        rom[]);
+CS_PROCF (permas, PERMAS)(const int  *iappel,
+                          cs_real_t   rom[]);
 
 /*----------------------------------------------------------------------------
  * Preparation rotation periodicity for Reynolds stresses.
@@ -97,8 +97,8 @@ CS_PROCF (permas, PERMAS)(const cs_int_t  *iappel,
 
 void CS_PROCF (perinr, PERINR)
 (
- const cs_int_t   *const imrgra,  /* <-- gradient computation mode            */
- const cs_int_t   *const iwarnp,  /* <-- verbosity level                      */
+ const int        *const imrgra,  /* <-- gradient computation mode            */
+ const int        *const iwarnp,  /* <-- verbosity level                      */
  const cs_real_t  *const epsrgp,  /* <-- precision for iterative gradient
                                          calculation                          */
  const cs_real_t  *const extrap   /* <-- extrapolate gradient at boundary     */
@@ -196,7 +196,7 @@ cs_gradient_perio_init_rij_tensor(int           *tr_dim,
  * variables when reconstructing gradients.
  *
  * parameters:
- *   f_id      <--   field index
+ *   f_id      <--   field id
  *   grad      -->   gradient of field
  *
  * size of _drdxyz and _wdrdxy = n_ghost_cells*6*3
@@ -204,8 +204,8 @@ cs_gradient_perio_init_rij_tensor(int           *tr_dim,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gradient_perio_process_rij(const cs_int_t    *f_id,
-                              cs_real_3_t        grad[]);
+cs_gradient_perio_process_rij(int          f_id,
+                              cs_real_3_t  grad[]);
 
 /*----------------------------------------------------------------------------*/
 

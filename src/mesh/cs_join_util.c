@@ -528,7 +528,7 @@ static void
 _add_single_vertices(cs_interface_set_t  *interfaces,
                      cs_lnum_t            var_size,
                      cs_lnum_t           *count,
-                     cs_lnum_t           *related_ranks,
+                     int                 *related_ranks,
                      cs_join_sync_t      *single,
                      int                  verbosity)
 {
@@ -664,15 +664,15 @@ _add_single_vertices(cs_interface_set_t  *interfaces,
             "\n  Single vertices for the joining operation: (%p)\n",
             (void *)single);
     fprintf(logfile,
-            "  Single vertices: n_elts : %8d\n"
+            "  Single vertices: n_elts : %8ld\n"
             "  Single vertices: n_ranks: %8d\n",
-            single->n_elts, single->n_ranks);
+            (long)single->n_elts, single->n_ranks);
 
     if (single->n_elts > 0) {
       for (i = 0; i < single->n_ranks; i++)
         for (j = single->index[i]; j < single->index[i+1]; j++)
-          fprintf(logfile, " %9d | %6d | %9d\n",
-                     j, single->ranks[i], single->array[j]);
+          fprintf(logfile, " %9ld | %6d | %9ld\n",
+                  (long)j, single->ranks[i], (long)single->array[j]);
       fprintf(logfile, "\n");
     }
     fflush(logfile);
@@ -820,15 +820,15 @@ _add_coupled_vertices(cs_interface_set_t  *interfaces,
     fprintf(logfile, "\n  Coupled vertices for the joining operation: (%p)\n",
             (void *)coupled);
     fprintf(logfile,
-            "  Coupled vertices: n_elts : %8d\n"
+            "  Coupled vertices: n_elts : %8ld\n"
             "  Coupled vertices: n_ranks: %8d\n",
-            coupled->n_elts, coupled->n_ranks);
+            (long)coupled->n_elts, coupled->n_ranks);
 
     if (coupled->n_elts > 0) {
       for (i = 0; i < coupled->n_ranks; i++)
         for (j = coupled->index[i]; j < coupled->index[i+1]; j++)
-          fprintf(logfile, " %9d | %6d | %9d\n",
-                  j, coupled->ranks[i], coupled->array[j]);
+          fprintf(logfile, " %9ld | %6d | %9ld\n",
+                  (long)j, coupled->ranks[i], (long)coupled->array[j]);
       fprintf(logfile, "\n");
    }
     fflush(logfile);
@@ -860,12 +860,13 @@ _get_missing_vertices(cs_lnum_t            n_vertices,
   cs_lnum_t  i;
   cs_gnum_t  n_l_elts, n_g_elts;
 
-  cs_lnum_t  *vtx_tag = NULL, *related_ranks = NULL;
+  cs_lnum_t  *vtx_tag = NULL;
+  int *related_ranks = NULL;
 
   /* Define a counter on vertices. 1 if selected, 0 otherwise */
 
   BFT_MALLOC(vtx_tag, n_vertices, cs_lnum_t);
-  BFT_MALLOC(related_ranks, n_vertices, cs_lnum_t);
+  BFT_MALLOC(related_ranks, n_vertices, int);
 
   for (i = 0; i < n_vertices; i++) {
     vtx_tag[i] = 0;
@@ -1300,9 +1301,9 @@ _add_single_edges(cs_interface_set_t   *ifs,
   int i;
   cs_lnum_t  j, fid, s, e;
 
-  int  tmp_size = 0, max_size = 10;
+  cs_lnum_t  tmp_size = 0, max_size = 10;
   cs_lnum_t *sel_v2v_recv_idx = NULL, *sel_v2v_recv_lst = NULL;
-  int  *tmp_edges = NULL;
+  cs_lnum_t *tmp_edges = NULL;
 
   assert(s_edges != NULL);
 
@@ -1318,7 +1319,7 @@ _add_single_edges(cs_interface_set_t   *ifs,
 
   /* Scan adjacent faces to find new "single" edges */
 
-  BFT_MALLOC(tmp_edges, 2*max_size, int);
+  BFT_MALLOC(tmp_edges, 2*max_size, cs_lnum_t);
 
   for (i = 0; i < selection->n_b_adj_faces; i++) {
 
@@ -1394,7 +1395,7 @@ _add_single_edges(cs_interface_set_t   *ifs,
     const int  n_interfaces = cs_interface_set_size(ifs);
 
     s_edges->n_elts = tmp_size;
-    BFT_REALLOC(tmp_edges, 2*tmp_size, int);
+    BFT_REALLOC(tmp_edges, 2*tmp_size, cs_lnum_t);
 
     BFT_MALLOC(edge_tag, tmp_size, bool);
     BFT_MALLOC(s_edges->array, 2*tmp_size, cs_lnum_t);
@@ -1493,16 +1494,16 @@ _add_single_edges(cs_interface_set_t   *ifs,
     fprintf(logfile, "\n  Single edges for the joining operation: (%p)\n",
             (void *)s_edges);
     fprintf(logfile,
-            "  Single edges: n_elts : %8d\n"
+            "  Single edges: n_elts : %8ld\n"
             "  Single edges: n_ranks: %8d\n",
-            s_edges->n_elts, s_edges->n_ranks);
+            (long)s_edges->n_elts, s_edges->n_ranks);
 
     if (s_edges->n_elts > 0) {
       for (i = 0; i < s_edges->n_ranks; i++)
         for (j = s_edges->index[i]; j < s_edges->index[i+1]; j++)
-          fprintf(logfile, " %9d | %6d | (%9d, %9d)\n",
-                  j, s_edges->ranks[i], s_edges->array[2*j],
-                  s_edges->array[2*j+1]);
+          fprintf(logfile, " %9ld | %6d | (%9ld, %9ld)\n",
+                  (long)j, s_edges->ranks[i], (long)s_edges->array[2*j],
+                  (long)s_edges->array[2*j+1]);
       fprintf(logfile, "\n");
     }
     fflush(logfile);
@@ -1758,17 +1759,17 @@ _add_coupled_edges(cs_interface_set_t   *ifs,
     fprintf(logfile, "\n  Coupled edges for the joining operation: (%p)\n",
             (void *)c_edges);
     fprintf(logfile,
-            "  Coupled edges: n_elts : %8d\n"
+            "  Coupled edges: n_elts : %8ld\n"
             "  Coupled edges: n_ranks: %8d\n",
-            c_edges->n_elts, c_edges->n_ranks);
+            (long)c_edges->n_elts, c_edges->n_ranks);
 
     if (c_edges->n_elts > 0) {
       int  shift;
       for (i = 0, shift = 0; i < c_edges->n_ranks; i++) {
         for (j = c_edges->index[i]; j < c_edges->index[i+1]; j++) {
-          fprintf(logfile, " %9d | %6d | (%9d, %9d)\n",
-                  shift, c_edges->ranks[i],
-                  c_edges->array[2*j], c_edges->array[2*j+1]);
+          fprintf(logfile, " %9ld | %6d | (%9ld, %9ld)\n",
+                  (long)shift, c_edges->ranks[i],
+                  (long)c_edges->array[2*j], (long)c_edges->array[2*j+1]);
           shift++;
         }
       }
@@ -2024,17 +2025,17 @@ _get_missing_edges(cs_lnum_t            b_f2v_idx[],
     fprintf(logfile, "\n  Coupled edges for the joining operation: (%p)\n",
             (void *)c_edges);
     fprintf(logfile,
-            "  Coupled edges: n_elts : %8d\n"
+            "  Coupled edges: n_elts : %8ld\n"
             "  Coupled edges: n_ranks: %8d\n",
-            c_edges->n_elts, c_edges->n_ranks);
+            (long)c_edges->n_elts, c_edges->n_ranks);
 
     if (c_edges->n_elts > 0) {
       int  shift;
       for (i = 0, shift = 0; i < c_edges->n_ranks; i++) {
         for (j = c_edges->index[i]; j < c_edges->index[i+1]; j++) {
-          fprintf(logfile, " %9d | %6d | (%9d, %9d)\n",
-                  shift, c_edges->ranks[i],
-                  c_edges->array[2*j], c_edges->array[2*j+1]);
+          fprintf(logfile, " %9ld | %6d | (%9ld, %9ld)\n",
+                  (long)shift, c_edges->ranks[i],
+                  (long)c_edges->array[2*j], (long)c_edges->array[2*j+1]);
           shift++;
         }
       }
@@ -2044,16 +2045,16 @@ _get_missing_edges(cs_lnum_t            b_f2v_idx[],
     fprintf(logfile, "\n  Single edges for the joining operation: (%p)\n",
             (void *)s_edges);
     fprintf(logfile,
-            "  Single edges: n_elts : %8d\n"
+            "  Single edges: n_elts : %8ld\n"
             "  Single edges: n_ranks: %8d\n",
-            s_edges->n_elts, s_edges->n_ranks);
+            (long)s_edges->n_elts, s_edges->n_ranks);
 
     if (s_edges->n_elts > 0) {
       for (i = 0; i < s_edges->n_ranks; i++)
         for (j = s_edges->index[i]; j < s_edges->index[i+1]; j++)
-          fprintf(logfile, " %9d | %6d | (%9d, %9d)\n",
-                  j, s_edges->ranks[i], s_edges->array[2*j],
-                  s_edges->array[2*j+1]);
+          fprintf(logfile, " %9ld | %6d | (%9ld, %9ld)\n",
+                  (long)j, s_edges->ranks[i], (long)s_edges->array[2*j],
+                  (long)s_edges->array[2*j+1]);
       fprintf(logfile, "\n");
     }
 
@@ -2219,8 +2220,6 @@ cs_join_select_create(const char              *selection_criteria,
                       fvm_periodicity_type_t   perio_type,
                       int                      verbosity)
 {
-  cs_lnum_t  i;
-
   cs_lnum_t  *vtx_tag = NULL;
   cs_join_select_t  *selection = NULL;
   cs_lnum_t  *order = NULL, *ordered_faces = NULL;
@@ -2288,7 +2287,7 @@ cs_join_select_create(const char              *selection_criteria,
 
   if (perio_type != FVM_PERIODICITY_NULL) {
     cs_lnum_t j = 0;
-    for (i = 0; i < selection->n_faces; i++) {
+    for (cs_lnum_t i = 0; i < selection->n_faces; i++) {
       cs_lnum_t f_id = selection->faces[i]-1;
       if (mesh->b_face_cells[f_id] > -1)
         selection->faces[j++] = f_id+1;
@@ -2301,7 +2300,7 @@ cs_join_select_create(const char              *selection_criteria,
 
   cs_order_gnum_allocated(selection->faces, NULL, order, selection->n_faces);
 
-  for (i = 0; i < selection->n_faces; i++)
+  for (cs_lnum_t i = 0; i < selection->n_faces; i++)
     ordered_faces[i] = selection->faces[order[i]];
 
   BFT_FREE(order);
@@ -2427,19 +2426,19 @@ cs_join_select_create(const char              *selection_criteria,
   BFT_MALLOC(selection->b_face_state, mesh->n_b_faces, cs_join_state_t);
   BFT_MALLOC(selection->i_face_state, mesh->n_i_faces, cs_join_state_t);
 
-  for (i = 0; i < mesh->n_b_faces; i++)
+  for (cs_lnum_t i = 0; i < mesh->n_b_faces; i++)
     selection->b_face_state[i] = CS_JOIN_STATE_UNDEF;
 
-  for (i = 0; i < mesh->n_i_faces; i++)
+  for (cs_lnum_t i = 0; i < mesh->n_i_faces; i++)
     selection->i_face_state[i] = CS_JOIN_STATE_UNDEF;
 
-  for (i = 0; i < selection->n_faces; i++)
+  for (cs_lnum_t i = 0; i < selection->n_faces; i++)
     selection->b_face_state[selection->faces[i]-1] = CS_JOIN_STATE_ORIGIN;
 
-  for (i = 0; i < selection->n_b_adj_faces; i++)
+  for (cs_lnum_t i = 0; i < selection->n_b_adj_faces; i++)
     selection->b_face_state[selection->b_adj_faces[i]-1] = CS_JOIN_STATE_ORIGIN;
 
-  for (i = 0; i < selection->n_i_adj_faces; i++)
+  for (cs_lnum_t i = 0; i < selection->n_i_adj_faces; i++)
     selection->i_face_state[selection->i_adj_faces[i]-1] = CS_JOIN_STATE_ORIGIN;
 
   /* Display information according to the level of verbosity */
@@ -2451,39 +2450,43 @@ cs_join_select_create(const char              *selection_criteria,
     fprintf(logfile,
             "\n  Local information about selection structure:\n");
     fprintf(logfile,
-            "    number of faces:               %8d\n",
-            selection->n_faces);
+            "    number of faces:               %8ld\n",
+            (long)selection->n_faces);
     fprintf(logfile,
-            "    number of vertices:            %8d\n",
-            selection->n_vertices);
+            "    number of vertices:            %8ld\n",
+            (long)selection->n_vertices);
     fprintf(logfile,
-            "    number of adj. boundary faces: %8d\n",
-            selection->n_b_adj_faces);
+            "    number of adj. boundary faces: %8ld\n",
+            (long)selection->n_b_adj_faces);
     fprintf(logfile,
-            "    number of adj. interior faces: %8d\n",
-            selection->n_i_adj_faces);
+            "    number of adj. interior faces: %8ld\n",
+            (long)selection->n_i_adj_faces);
 
     if (selection->do_single_sync == true) {
       fprintf(logfile,
               "\n Information on single/coupled elements:\n");
       fprintf(logfile,
-              "   Number of single vertices : %6d with %3d related ranks\n",
-              selection->s_vertices->n_elts, selection->s_vertices->n_ranks);
+              "   Number of single vertices : %6ld with %3d related ranks\n",
+              (long)selection->s_vertices->n_elts,
+              selection->s_vertices->n_ranks);
       fprintf(logfile,
-              "   Number of coupled vertices: %6d with %3d related ranks\n",
-              selection->c_vertices->n_elts, selection->c_vertices->n_ranks);
+              "   Number of coupled vertices: %6ld with %3d related ranks\n",
+              (long)selection->c_vertices->n_elts,
+              selection->c_vertices->n_ranks);
       fprintf(logfile,
-              "   Number of single edges    : %6d with %3d related ranks\n",
-              selection->s_edges->n_elts, selection->s_edges->n_ranks);
+              "   Number of single edges    : %6ld with %3d related ranks\n",
+              (long)selection->s_edges->n_elts,
+              selection->s_edges->n_ranks);
       fprintf(logfile,
-              "   Number of coupled edges   : %6d with %3d related ranks\n",
-              selection->c_edges->n_elts, selection->c_edges->n_ranks);
+              "   Number of coupled edges   : %6ld with %3d related ranks\n",
+              (long)selection->c_edges->n_elts,
+              selection->c_edges->n_ranks);
     }
 
     if (verbosity > 3) {
       fprintf(logfile,
               "\n  Compact index on ranks for the selected faces:\n");
-      for (i = 0; i < n_ranks + 1; i++)
+      for (int i = 0; i < n_ranks + 1; i++)
         fprintf(logfile,
                 " %5d | %11llu\n", i,
                 (unsigned long long)selection->compact_rank_index[i]);
@@ -2496,10 +2499,10 @@ cs_join_select_create(const char              *selection_criteria,
 
       fprintf(logfile,
               "\n  Selected faces for the joining operation:\n");
-      for (i = 0; i < selection->n_faces; i++)
+      for (cs_lnum_t i = 0; i < selection->n_faces; i++)
         fprintf(logfile,
-                " %9d | %9d | %10llu\n",
-                i, selection->faces[i],
+                " %9ld | %9ld | %10llu\n",
+                (long)i, (long)selection->faces[i],
                 (unsigned long long)selection->compact_face_gnum[i]);
       fprintf(logfile, "\n");
     }
@@ -2507,26 +2510,27 @@ cs_join_select_create(const char              *selection_criteria,
     if (verbosity > 4) {
       fprintf(logfile,
               "\n  Selected vertices for the joining operation:\n");
-      for (i = 0; i < selection->n_vertices; i++)
+      for (cs_lnum_t i = 0; i < selection->n_vertices; i++)
         fprintf(logfile,
-                " %9d | %9d\n", i, selection->vertices[i]);
+                " %9ld | %9ld\n", (long)i, (long)selection->vertices[i]);
       fprintf(logfile, "\n");
     }
 
     if (verbosity > 4) {
       fprintf(logfile,
               "\n  Contiguous boundary faces for the joining operation:\n");
-      for (i = 0; i < selection->n_b_adj_faces; i++)
+      for (cs_lnum_t i = 0; i < selection->n_b_adj_faces; i++)
         fprintf(logfile,
-                " %9d | %9d\n", i, selection->b_adj_faces[i]);
+                " %9ld | %9ld\n", (long)i, (long)selection->b_adj_faces[i]);
       fprintf(logfile, "\n");
     }
 
     if (verbosity > 4) {
       fprintf(logfile,
               "\n  Contiguous interior faces for the joining operation:\n");
-      for (i = 0; i < selection->n_i_adj_faces; i++)
-        fprintf(logfile, " %9d | %9d\n", i, selection->i_adj_faces[i]);
+      for (cs_lnum_t i = 0; i < selection->n_i_adj_faces; i++)
+        fprintf(logfile, " %9ld | %9ld\n",
+                (long)i, (long)selection->i_adj_faces[i]);
       fprintf(logfile, "\n");
     }
 
@@ -2706,18 +2710,18 @@ cs_join_build_edges_idx(cs_lnum_t        n_faces,
                         const cs_lnum_t  f2v_lst[],
                         cs_lnum_t        v2v_idx[])
 {
-  cs_lnum_t  i, j, v1, v2, fid, s, e;
-
   /* Loop on all selected faces. No need to loop on other faces because
      the selected vertices are all found with this only step. */
 
-  for (i = 0; i < n_faces; i++) {
+  for (cs_lnum_t i = 0; i < n_faces; i++) {
 
-    fid = faces[i] - 1;
-    s = f2v_idx[fid];
-    e = f2v_idx[fid+1];
+    cs_lnum_t v1, v2;
 
-    for (j = s; j < e - 1; j++) { /* scan edges */
+    cs_lnum_t fid = faces[i] - 1;
+    cs_lnum_t s = f2v_idx[fid];
+    cs_lnum_t e = f2v_idx[fid+1];
+
+    for (cs_lnum_t j = s; j < e - 1; j++) { /* scan edges */
 
       v1 = f2v_lst[j] + 1;
       v2 = f2v_lst[j+1] + 1;
@@ -2729,7 +2733,8 @@ cs_join_build_edges_idx(cs_lnum_t        n_faces,
       else
         bft_error(__FILE__, __LINE__, 0,
                   _("  Inconsistent mesh definition. Cannot build edges.\n"
-                    "  Face %d has the same vertex %d twice.\n"), fid+1, v1);
+                    "  Face %ld has the same vertex %ld twice.\n"),
+                  (long)fid+1, (long)v1);
 
     }
 
@@ -2745,7 +2750,8 @@ cs_join_build_edges_idx(cs_lnum_t        n_faces,
     else
       bft_error(__FILE__, __LINE__, 0,
                 _("  Inconsistent mesh definition. Cannot build edges.\n"
-                  "  Face %d has the same vertex %d twice.\n"), fid+1, v1);
+                  "  Face %ld has the same vertex %ld twice.\n"),
+                (long)fid+1, (long)v1);
 
   } /* End of loop on selected faces */
 }

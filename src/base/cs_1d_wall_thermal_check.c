@@ -103,15 +103,15 @@ cs_1d_wall_thermal_check(int iappel,
                  "@\n"
                  "@    NFPT1D MUST BE POSITIVE AND LOWER THAN NFABOR\n"
                  "@    ONE HAS HERE\n"
-                 "@       NFABOR = %d\n"
-                 "@       NFPT1D = %d\n"
+                 "@       NFABOR = %ld\n"
+                 "@       NFPT1D = %ld\n"
                  "@\n"
                  "@  The calculation will not run.\n"
                  "@\n"
                  "@  Verify uspt1d.\n"
                  "@\n"
                  "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                 "@\n", n_b_faces, nfpt1d);
+                 "@\n", (long)n_b_faces, (long)nfpt1d);
       cs_exit(EXIT_FAILURE);
     }
     if (isuit1 != 0 && isuit1 != 1) {
@@ -147,15 +147,15 @@ cs_1d_wall_thermal_check(int iappel,
                      "@\n"
                      "@    THE ARRAY IFPT1D MUST GIVE A BOUNDARY FACE NUMBER\n"
                      "@    ONE HAS HERE\n"
-                     "@       NFABOR = %d\n"
-                     "@       IFPT1D(%d) = %d\n"
+                     "@       NFABOR = %ld\n"
+                     "@       IFPT1D(%ld) = %ld\n"
                      "@\n"
                      "@  The calculation will not run.\n"
                      "@\n"
                      "@  Verify uspt1d.\n"
                      "@\n"
                      "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                     "@\n", n_b_faces, ii, ifpt1d);
+                     "@\n", (long)n_b_faces, (long)ii, (long)ifpt1d);
           cs_exit(EXIT_FAILURE);
         }
       }
@@ -172,14 +172,16 @@ cs_1d_wall_thermal_check(int iappel,
                      "@\n"
                      "@    THE ARRAY NPPT1D MUST GIVE A POSITIVE INTEGER\n"
                      "@    ONE HAS HERE\n"
-                     "@       NPPT1D(%d) = %d\n"
+                     "@       NPPT1D(%ld) = %ld\n"
                      "@\n"
                      "@  The calculation will not run.\n"
                      "@\n"
                      "@  Verify uspt1d.\n"
                      "@\n"
                      "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                     "@", ii, cs_glob_1d_wall_thermal->local_models[ii].nppt1d);
+                     "@",
+                     (long)ii,
+                     (long)cs_glob_1d_wall_thermal->local_models[ii].nppt1d);
           cs_exit(EXIT_FAILURE);
         }
         if (cs_glob_1d_wall_thermal->local_models[ii].eppt1d <= 0.) {
@@ -192,15 +194,18 @@ cs_1d_wall_thermal_check(int iappel,
                      "@\n"
                      "@    THE ARRAY EPPT1D MUST GIVE A POSITIVE REAL\n"
                      "@    ONE HAS HERE\n"
-                     "@       EPPT1D(%d) = %14.5e\n"
-                     "@       (BOUNDARY FACE NUMBER %d)\n"
+                     "@       EPPT1D(%ld) = %14.5e\n"
+                     "@       (BOUNDARY FACE NUMBER %ld)\n"
                      "@\n"
                      "@  The calculation will not run.\n"
                      "@\n"
                      "@  Verify uspt1d.\n"
                      "@\n"
                      "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                     "@\n", ii, cs_glob_1d_wall_thermal->local_models[ii].eppt1d, ifac);
+                     "@\n",
+                     (long)ii,
+                     cs_glob_1d_wall_thermal->local_models[ii].eppt1d,
+                     (long)ifac);
           cs_exit(EXIT_FAILURE);
         }
         if (cs_glob_1d_wall_thermal->local_models[ii].rgpt1d <= 0.) {
@@ -213,15 +218,18 @@ cs_1d_wall_thermal_check(int iappel,
                      "@\n"
                      "@    THE ARRAY RGPT1D MUST GIVE A POSITIVE REAL\n"
                      "@    ONE HAS HERE\n"
-                     "@       RGPT1D(%d) = %14.5e\n"
-                     "@       (BOUNDARY FACE NUMBER %d)\n"
+                     "@       RGPT1D(%ld) = %14.5e\n"
+                     "@       (BOUNDARY FACE NUMBER %ld)\n"
                      "@\n"
                      "@  The calculation will not run.\n"
                      "@\n"
                      "@  Verify uspt1d.\n"
                      "@\n"
                      "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                     "@\n", ii, cs_glob_1d_wall_thermal->local_models[ii].rgpt1d, ifac);
+                     "@\n",
+                     (long)ii,
+                     cs_glob_1d_wall_thermal->local_models[ii].rgpt1d,
+                     (long)ifac);
           cs_exit(EXIT_FAILURE);
         }
       }
@@ -240,15 +248,15 @@ cs_1d_wall_thermal_check(int iappel,
                    "@\n"
                    "@    THE ARRAY ICLT1D CAN ONLY TAKE THE VALUES 1 OR 3\n"
                    "@    ONE HAS HERE\n"
-                   "@       ICLT1D(%d) = %d\n"
-                   "@       (BOUNDARY FACE NUMBER %d)\n"
+                   "@       ICLT1D(%ld) = %d\n"
+                   "@       (BOUNDARY FACE NUMBER %ld)\n"
                    "@\n"
                    "@  The calculation will not run.\n"
                    "@\n"
                    "@  Verify uspt1d.\n"
                    "@\n"
                    "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                   "@\n", ii, iclt1d, ifac);
+                   "@\n", (long)ii, iclt1d, (long)ifac);
         cs_exit(EXIT_FAILURE);
       }
       if (cs_glob_1d_wall_thermal->local_models[ii].xlmbt1 <= 0.)  {
@@ -261,15 +269,18 @@ cs_1d_wall_thermal_check(int iappel,
                      "@\n"
                      "@    THE ARRAY XLMBT1 MUST GIVE A POSITIVE REAL\n"
                      "@    ONE HAS HERE\n"
-                     "@       XLMBT1(%d) = %14.5e\n"
-                     "@       (BOUNDARY FACE NUMBER %d)\n"
+                     "@       XLMBT1(%ld) = %14.5e\n"
+                     "@       (BOUNDARY FACE NUMBER %ld)\n"
                      "@\n"
                      "@  The calculation will not run.\n"
                      "@\n"
                      "@  Verify uspt1d.\n"
                      "@\n"
                      "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                     "@\n", ii, cs_glob_1d_wall_thermal->local_models[ii].xlmbt1, ifac);
+                     "@\n",
+                     (long)ii,
+                     cs_glob_1d_wall_thermal->local_models[ii].xlmbt1,
+                     (long)ifac);
         cs_exit(EXIT_FAILURE);
       }
       if (cs_glob_1d_wall_thermal->local_models[ii].rcpt1d <= 0.)  {
@@ -282,15 +293,18 @@ cs_1d_wall_thermal_check(int iappel,
                      "@\n"
                      "@    THE ARRAY RCPT1D MUST GIVE A POSITIVE REAL\n"
                      "@    ONE HAS HERE\n"
-                     "@       RCPT1D(%d) = %14.5e\n"
-                     "@       (BOUNDARY FACE NUMBER %d)\n"
+                     "@       RCPT1D(%ld) = %14.5e\n"
+                     "@       (BOUNDARY FACE NUMBER %ld)\n"
                      "@\n"
                      "@  The calculation will not run.\n"
                      "@\n"
                      "@  Verify uspt1d.\n"
                      "@\n"
                      "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                     "@\n", ii, cs_glob_1d_wall_thermal->local_models[ii].rcpt1d, ifac);
+                     "@\n",
+                     (long)ii,
+                     cs_glob_1d_wall_thermal->local_models[ii].rcpt1d,
+                     (long)ifac);
         cs_exit(EXIT_FAILURE);
       }
       if (cs_glob_1d_wall_thermal->local_models[ii].dtpt1d <= 0.)  {
@@ -303,15 +317,18 @@ cs_1d_wall_thermal_check(int iappel,
                      "@\n"
                      "@    THE ARRAY DTPT1D MUST GIVE A POSITIVE REAL\n"
                      "@    ONE HAS HERE\n"
-                     "@       DTPT1D(%d) = %14.5e\n"
-                     "@       (BOUNDARY FACE NUMBER %d)\n"
+                     "@       DTPT1D(%ld) = %14.5e\n"
+                     "@       (BOUNDARY FACE NUMBER %ld)\n"
                      "@\n"
                      "@  The calculation will not run.\n"
                      "@\n"
                      "@  Verify uspt1d.\n"
                      "@\n"
                      "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@\n"
-                     "@\n", ii, cs_glob_1d_wall_thermal->local_models[ii].dtpt1d, ifac);
+                     "@\n",
+                     (long)ii,
+                     cs_glob_1d_wall_thermal->local_models[ii].dtpt1d,
+                     (long)ifac);
         cs_exit(EXIT_FAILURE);
       }
     }

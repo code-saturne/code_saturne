@@ -825,7 +825,7 @@ fvm_selector_create(int                           dim,
     for (i = 0; i < n_group_classes; i++)
       BFT_MALLOC(selector->_group_class_elements[i],
                  selector->_n_group_class_elements[i],
-                 int);
+                 cs_lnum_t);
 
     /* Definition loop */
 

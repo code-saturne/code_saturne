@@ -113,7 +113,7 @@ BEGIN_C_DECLS
 typedef cs_sles_convergence_state_t
 (cs_sles_it_solve_t) (cs_sles_it_t              *c,
                       const cs_matrix_t         *a,
-                      int                        diag_block_size,
+                      cs_lnum_t                  diag_block_size,
                       cs_halo_rotation_t         rotation_mode,
                       cs_sles_it_convergence_t  *convergence,
                       const cs_real_t           *rhs,

@@ -2415,8 +2415,8 @@ cs_advection_field_cw_face_flux(const cs_cell_mesh_t       *cm,
         else
           bft_error(__FILE__, __LINE__, 0,
                     " %s: Invalid support for evaluating the advection field %s"
-                    " at the cell center of cell %d.",
-                    __func__, adv->name, cm->c_id);
+                    " at the cell center of cell %ld.",
+                    __func__, adv->name, (long)cm->c_id);
       }
       break; /* Definition by array */
 
@@ -2695,7 +2695,8 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
       else
         bft_error(__FILE__, __LINE__, 0,
                   " Invalid support for evaluating the advection field %s"
-                  " at the cell center of cell %d.", adv->name, cm->c_id);
+                  " at the cell center of cell %ld.", adv->name,
+                  (long)cm->c_id);
     }
     break;
 

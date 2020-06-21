@@ -214,9 +214,9 @@ _free_lagr_encrustation_pointers(void)
 /* ---------------------------------------------------------------------- */
 
 void
-CS_PROCF (lagopt, LAGOPT) (cs_int_t   *isuite,
-                           cs_int_t   *iccvfg,
-                           cs_int_t   *iscalt,
+CS_PROCF (lagopt, LAGOPT) (int        *isuite,
+                           int        *iccvfg,
+                           int        *iscalt,
                            cs_real_t  *dtref)
 {
   cs_lagr_option_definition(isuite, iccvfg, iscalt, dtref);
@@ -239,9 +239,9 @@ CS_PROCF (lagopt, LAGOPT) (cs_int_t   *isuite,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_option_definition(cs_int_t   *isuite,
-                          cs_int_t   *iccvfg,
-                          cs_int_t   *iscalt,
+cs_lagr_option_definition(int        *isuite,
+                          int        *iccvfg,
+                          int        *iscalt,
                           cs_real_t  *dtref)
 {
   /* Short-name and write access pointers to global variables */

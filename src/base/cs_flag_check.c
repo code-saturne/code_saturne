@@ -416,7 +416,7 @@ _postprocess(const char   *error_mesh_name,
                           1,
                           false, /* no interlace */
                           true,  /* use parents */
-                          CS_POST_TYPE_cs_int_t,
+                          CS_POST_TYPE_int,
                           NULL,
                           NULL,
                           _flag,

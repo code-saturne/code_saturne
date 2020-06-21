@@ -143,7 +143,7 @@ _read_legacy_field_info(cs_restart_t  *r)
                                       sec_id[i],
                                       CS_MESH_LOCATION_NONE,
                                       1,
-                                      CS_TYPE_cs_int_t,
+                                      CS_TYPE_int,
                                       n_old + i);
     if (retcode != CS_RESTART_SUCCESS)
       bft_error
@@ -493,7 +493,7 @@ _read_field_vals_legacy(cs_restart_t  *r,
         strncpy(old_name, "al", 96);
       else
         sec_code = cs_restart_check_section(r, "fm_al_phase01",
-                                            0, 1, CS_TYPE_cs_int_t);
+                                            0, 1, CS_TYPE_int);
       if (sec_code == CS_RESTART_SUCCESS)
         strncpy(old_name, "al", 96);
     }
@@ -692,7 +692,7 @@ _legacy_mass_flux_num(cs_restart_t      *r,
                                           sec_name,
                                           CS_MESH_LOCATION_NONE,
                                           1,
-                                          CS_TYPE_cs_int_t,
+                                          CS_TYPE_int,
                                           buf);
     if (retcode == CS_RESTART_SUCCESS)
       retval = buf[0];
@@ -876,14 +876,14 @@ _check_field_model(cs_restart_t               *r,
                                      sec_name,
                                      CS_MESH_LOCATION_NONE,
                                      n_o_fields,
-                                     CS_TYPE_cs_int_t);
+                                     CS_TYPE_int);
 
   if (retcode == CS_RESTART_SUCCESS)
     retcode = cs_restart_read_section(r,
                                       sec_name,
                                       CS_MESH_LOCATION_NONE,
                                       n_o_fields,
-                                      CS_TYPE_cs_int_t,
+                                      CS_TYPE_int,
                                       old_key_val);
 
   /* If data is available, compare models */
@@ -974,7 +974,7 @@ _check_turb_flux_model(cs_restart_t               *r,
                                                 sec_name,
                                                 CS_MESH_LOCATION_NONE,
                                                 1,
-                                                CS_TYPE_cs_int_t,
+                                                CS_TYPE_int,
                                                 old_s_model);
           if (retcode == CS_RESTART_SUCCESS) {
             if (cs_field_get_key_int(f, key_id) != old_s_model[0])
@@ -1026,20 +1026,20 @@ _read_model_option_compat(cs_restart_t  *r,
                                          m_name,
                                          CS_MESH_LOCATION_NONE,
                                          1,
-                                         CS_TYPE_cs_int_t);
+                                         CS_TYPE_int);
 
   if (retcode == CS_RESTART_ERR_EXISTS) {
     retcode = cs_restart_check_section(r,
                                        m_name_old,
                                        CS_MESH_LOCATION_NONE,
                                        count_old,
-                                       CS_TYPE_cs_int_t);
+                                       CS_TYPE_int);
     if (retcode == CS_RESTART_SUCCESS) {
       cs_restart_read_section(r,
                               m_name_old,
                               CS_MESH_LOCATION_NONE,
                               count_old,
-                              CS_TYPE_cs_int_t,
+                              CS_TYPE_int,
                               options);
       if (retcode == CS_RESTART_SUCCESS)
         retcount = count_old;
@@ -1050,7 +1050,7 @@ _read_model_option_compat(cs_restart_t  *r,
                             m_name,
                             CS_MESH_LOCATION_NONE,
                             count,
-                            CS_TYPE_cs_int_t,
+                            CS_TYPE_int,
                             options);
     if (retcode == CS_RESTART_SUCCESS)
       retcount = count;
@@ -1588,14 +1588,14 @@ cs_restart_read_field_info(cs_restart_t           *r,
 
   /* Now read field names, in id order */
 
-  cs_lnum_t *type_buf = NULL;
+  int  *type_buf = NULL;
   char *name_buf = NULL;
 
   retcode = cs_restart_read_section(r,
                                     "fields:sizes",
                                     CS_MESH_LOCATION_NONE,
                                     2,
-                                    CS_TYPE_cs_int_t,
+                                    CS_TYPE_int,
                                     sizes);
 
   if (retcode == CS_RESTART_SUCCESS) {
@@ -1607,7 +1607,7 @@ cs_restart_read_field_info(cs_restart_t           *r,
     /* Now read main metadata */
 
     BFT_MALLOC(name_buf, sizes[1] + 1, char);
-    BFT_MALLOC(type_buf, sizes[0], cs_int_t);
+    BFT_MALLOC(type_buf, sizes[0], int);
 
     retcode = cs_restart_read_section(r,
                                       "fields:names",
@@ -1636,7 +1636,7 @@ cs_restart_read_field_info(cs_restart_t           *r,
                                         "fields:types",
                                         CS_MESH_LOCATION_NONE,
                                         sizes[0],
-                                        CS_TYPE_cs_int_t,
+                                        CS_TYPE_int,
                                         type_buf);
 
       if (retcode != CS_RESTART_SUCCESS) {
@@ -1756,7 +1756,7 @@ cs_restart_write_field_info(cs_restart_t  *r)
                            "fields:sizes",
                            CS_MESH_LOCATION_NONE,
                            2,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            sizes);
 
   cs_restart_write_section(r,
@@ -1770,7 +1770,7 @@ cs_restart_write_field_info(cs_restart_t  *r)
                            "fields:types",
                            CS_MESH_LOCATION_NONE,
                            n_fields,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            type_buf);
 
   BFT_FREE(name_buf);
@@ -2012,7 +2012,7 @@ cs_restart_write_variables(cs_restart_t  *r,
                                "fields:turbulent_flux_model",
                                CS_MESH_LOCATION_NONE,
                                n_fields,
-                               CS_TYPE_cs_int_t,
+                               CS_TYPE_int,
                                turbt_buf);
 
     BFT_FREE(turbt_buf);
@@ -2149,7 +2149,7 @@ cs_restart_read_linked_fields(cs_restart_t               *r,
                                      sec_name,
                                      CS_MESH_LOCATION_NONE,
                                      n_o_fields,
-                                     CS_TYPE_cs_int_t);
+                                     CS_TYPE_int);
 
   /* Try to read in compatibility mode if section not found */
 
@@ -2163,7 +2163,7 @@ cs_restart_read_linked_fields(cs_restart_t               *r,
                                       sec_name,
                                       CS_MESH_LOCATION_NONE,
                                       n_o_fields,
-                                      CS_TYPE_cs_int_t,
+                                      CS_TYPE_int,
                                       old_key_val);
 
   BFT_FREE(sec_name);
@@ -2311,7 +2311,7 @@ cs_restart_write_linked_fields(cs_restart_t  *r,
                            sec_name,
                            CS_MESH_LOCATION_NONE,
                            n_fields,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            key_val);
 
   BFT_FREE(sec_name);
@@ -2822,7 +2822,7 @@ void
 cs_restart_read_time_step_info(cs_restart_t  *r)
 {
   int retval;
-  cs_int_t _n_ts = -1;
+  int _n_ts = -1;
   cs_real_t _ts = -1;
 
   /* First syntax */
@@ -2831,14 +2831,14 @@ cs_restart_read_time_step_info(cs_restart_t  *r)
                                     "nbre_pas_de_temps",
                                     0,
                                     1,
-                                    CS_TYPE_cs_int_t);
+                                    CS_TYPE_int);
 
   if (retval == CS_RESTART_SUCCESS) {
     retval = cs_restart_read_section(r,
                                      "nbre_pas_de_temps",
                                      0,
                                      1,
-                                     CS_TYPE_cs_int_t,
+                                     CS_TYPE_int,
                                      &_n_ts);
     if (retval == CS_RESTART_SUCCESS)
       retval = cs_restart_read_section(r,
@@ -2860,14 +2860,14 @@ cs_restart_read_time_step_info(cs_restart_t  *r)
                                     "ntcabs",
                                     0,
                                     1,
-                                    CS_TYPE_cs_int_t);
+                                    CS_TYPE_int);
 
   if (retval == CS_RESTART_SUCCESS) {
     retval = cs_restart_read_section(r,
                                      "ntcabs",
                                      0,
                                      1,
-                                     CS_TYPE_cs_int_t,
+                                     CS_TYPE_int,
                                      &_n_ts);
     if (retval == CS_RESTART_SUCCESS)
       retval = cs_restart_read_section(r,

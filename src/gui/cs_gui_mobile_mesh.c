@@ -779,8 +779,8 @@ void CS_PROCF (uistr2, UISTR2) (double *const  xmstru,
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF(uiaste, UIASTE)(int       *idfstr,
-                         cs_int_t  *asddlf)
+CS_PROCF(uiaste, UIASTE)(int  *idfstr,
+                         int  *asddlf)
 {
   int istruct     = 0;
 

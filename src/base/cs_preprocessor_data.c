@@ -311,18 +311,17 @@ _mesh_reader_destroy(_mesh_reader_t  **mr)
  *----------------------------------------------------------------------------*/
 
 static void
-_add_periodicity(cs_mesh_t *mesh,
-                 cs_int_t   perio_type,
-                 cs_int_t   perio_num,
-                 cs_real_t  matrix[3][4])
+_add_periodicity(cs_mesh_t  *mesh,
+                 int         perio_type,
+                 int         perio_num,
+                 cs_real_t   matrix[3][4])
 {
-  cs_int_t  i, j;
   double  _matrix[3][4];
 
   fvm_periodicity_type_t _perio_type = (fvm_periodicity_type_t)perio_type;
 
-  for (i = 0; i < 3; i++) {
-    for (j = 0; j < 4; j++)
+  for (int i = 0; i < 3; i++) {
+    for (int j = 0; j < 4; j++)
       _matrix[i][j] = matrix[i][j];
   }
 
@@ -510,14 +509,13 @@ static void
 _colors_to_groups(cs_mesh_t  *mesh,
                   int         n_gc)
 {
-  cs_int_t  i, j;
   int  n_colors = 0;
   int  color_names_size = 0;
 
   /* Counting pass */
 
-  for (j = 0; j < mesh->n_max_family_items; j++) {
-    for (i = mesh->n_families - n_gc; i < mesh->n_families; i++) {
+  for (int j = 0; j < mesh->n_max_family_items; j++) {
+    for (int i = mesh->n_families - n_gc; i < mesh->n_families; i++) {
       if (mesh->family_item[mesh->n_families*j + i] > 0) {
         int color_id = mesh->family_item[mesh->n_families*j + i];
         int name_size = 1;
@@ -535,13 +533,13 @@ _colors_to_groups(cs_mesh_t  *mesh,
 
   if (n_colors > 0) {
     if (mesh->n_groups > 0) {
-      BFT_REALLOC(mesh->group_idx, mesh->n_groups + n_colors + 1, cs_int_t);
+      BFT_REALLOC(mesh->group_idx, mesh->n_groups + n_colors + 1, int);
       BFT_REALLOC(mesh->group,
                   mesh->group_idx[mesh->n_groups] + color_names_size,
                   char);
     }
     else {
-      BFT_MALLOC(mesh->group_idx, n_colors + 1, cs_int_t);
+      BFT_MALLOC(mesh->group_idx, n_colors + 1, int);
       BFT_MALLOC(mesh->group, color_names_size, char);
       mesh->group_idx[0] = 0;
     }
@@ -549,12 +547,12 @@ _colors_to_groups(cs_mesh_t  *mesh,
 
   /* Assignment */
 
-  for (j = 0; j < mesh->n_max_family_items; j++) {
-    for (i = mesh->n_families - n_gc; i < mesh->n_families; i++) {
+  for (int j = 0; j < mesh->n_max_family_items; j++) {
+    for (int i = mesh->n_families - n_gc; i < mesh->n_families; i++) {
       if (mesh->family_item[mesh->n_families*j + i] > 0) {
         int color_id = mesh->family_item[mesh->n_families*j + i];
         int name_size = 1;
-        cs_int_t group_end = mesh->group_idx[mesh->n_groups];
+        int group_end = mesh->group_idx[mesh->n_groups];
         sprintf(mesh->group + group_end, "%d", color_id);
         while (color_id > 0) {
           color_id /= 10;
@@ -680,7 +678,6 @@ _read_dimensions(cs_mesh_t          *mesh,
                  _mesh_reader_t     *mr,
                  int                 file_id)
 {
-  cs_int_t  i, j;
   cs_io_sec_header_t  header;
 
   cs_gnum_t  n_elts = 0;
@@ -830,7 +827,7 @@ _read_dimensions(cs_mesh_t          *mesh,
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
-        cs_io_set_cs_lnum(&header, pp_in);
+        cs_io_set_int(&header, pp_in);
         cs_io_read_global(&header, &n_gc, pp_in);
         mesh->n_families += n_gc;
       }
@@ -843,17 +840,17 @@ _read_dimensions(cs_mesh_t          *mesh,
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
-        cs_io_set_cs_lnum(&header, pp_in);
+        cs_io_set_int(&header, pp_in);
         cs_io_read_global(&header, &n_gc_props_max, pp_in);
         if (n_gc_props_max > mesh->n_max_family_items) {
           /* Update (pad) previous definitions */
           BFT_REALLOC(mesh->family_item,
                       mesh->n_families*n_gc_props_max,
-                      cs_int_t);
-          for (i = mesh->n_max_family_items;
+                      int);
+          for (int i = mesh->n_max_family_items;
                i < n_gc_props_max;
                i++) {
-            for (j = 0; j < mesh->n_families - n_gc; j++)
+            for (int j = 0; j < mesh->n_families - n_gc; j++)
               mesh->family_item[(mesh->n_families - n_gc)*i + j] = 0;
           }
           mesh->n_max_family_items = n_gc_props_max;
@@ -868,7 +865,7 @@ _read_dimensions(cs_mesh_t          *mesh,
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
-        cs_io_set_cs_lnum(&header, pp_in);
+        cs_io_set_int(&header, pp_in);
         cs_io_read_global(&header, &n_groups, pp_in);
         mesh->n_groups += n_groups;
       }
@@ -877,21 +874,22 @@ _read_dimensions(cs_mesh_t          *mesh,
     else if (strncmp(header.sec_name, "group_name_index",
                      CS_IO_NAME_LEN) == 0) {
 
-      if ((cs_int_t)header.n_vals != n_groups + 1)
+      if ((int)header.n_vals != n_groups + 1)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
-        cs_io_set_cs_lnum(&header, pp_in);
-        cs_lnum_t *_group_idx;
-        BFT_MALLOC(_group_idx, n_groups + 1, cs_lnum_t);
+        cs_io_set_int(&header, pp_in);
+        int *_group_idx;
+        BFT_MALLOC(_group_idx, n_groups + 1, int);
         cs_io_read_global(&header, _group_idx, pp_in);
         if (mesh->group_idx == NULL) {
           BFT_MALLOC(mesh->group_idx, mesh->n_groups + 1, int);
-          for (i = 0; i < n_groups+1; i++)
+          for (int i = 0; i < n_groups+1; i++)
             mesh->group_idx[i] = _group_idx[i] - 1;
         }
         else {
           BFT_REALLOC(mesh->group_idx, mesh->n_groups + 1, int);
+          int i, j;
           for (i = 0, j = mesh->n_groups - n_groups; i < n_groups; i++, j++)
             mesh->group_idx[j + 1] = (   mesh->group_idx[j]
                                       + _group_idx[i+1] - _group_idx[i]);
@@ -904,13 +902,13 @@ _read_dimensions(cs_mesh_t          *mesh,
                      CS_IO_NAME_LEN) == 0) {
 
       if (   mesh->group_idx == NULL
-          || (  (cs_int_t)header.n_vals
+          || (  (int)header.n_vals
               != (  mesh->group_idx[mesh->n_groups]
                   - mesh->group_idx[mesh->n_groups - n_groups])))
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
-        i = mesh->group_idx[mesh->n_groups - n_groups] - mesh->group_idx[0];
+        int i = mesh->group_idx[mesh->n_groups - n_groups] - mesh->group_idx[0];
         BFT_REALLOC(mesh->group, i + header.n_vals + 1, char);
         cs_io_read_global(&header, mesh->group + i, pp_in);
       }
@@ -924,24 +922,25 @@ _read_dimensions(cs_mesh_t          *mesh,
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
+        cs_io_set_int(&header, pp_in);
         if (mesh->family_item == NULL)
-          BFT_MALLOC(mesh->family_item, n_elts, cs_int_t);
+          BFT_MALLOC(mesh->family_item, n_elts, int);
         if (mesh->n_families == n_gc)
           cs_io_read_global(&header, mesh->family_item, pp_in);
         else {
-          cs_int_t *_family_item = NULL;
-          BFT_REALLOC(mesh->family_item, n_elts, cs_int_t);
-          BFT_MALLOC(_family_item, header.n_vals, cs_int_t);
+          int *_family_item = NULL;
+          BFT_REALLOC(mesh->family_item, n_elts, int);
+          BFT_MALLOC(_family_item, header.n_vals, int);
           cs_io_read_global(&header, _family_item, pp_in);
           /* Shift previous data */
-          for (j = mesh->n_max_family_items - 1; j > 0; j--) {
-            for (i = mesh->n_families - n_gc - 1; i > -1; i--)
+          for (int j = mesh->n_max_family_items - 1; j > 0; j--) {
+            for (int i = mesh->n_families - n_gc - 1; i > -1; i--)
               mesh->family_item[mesh->n_families*j + i]
                 = mesh->family_item[(mesh->n_families - n_gc)*j + i];
           }
-          for (i = 0; i < n_gc; i++) {
+          for (int i = 0; i < n_gc; i++) {
             /* Copy group class data, shifting group names if necessary */
-            for (j = 0; j < n_gc_props_max; j++) {
+            for (int j = 0; j < n_gc_props_max; j++) {
               int _family_item_j = _family_item[n_gc*j + i];
               if (_family_item_j < 0)
                 _family_item_j -= (mesh->n_groups - n_groups);
@@ -949,7 +948,7 @@ _read_dimensions(cs_mesh_t          *mesh,
                 = _family_item_j;
             }
             /* Pad if necessary */
-            for (j = n_gc_props_max; j < mesh->n_max_family_items; j++)
+            for (int j = n_gc_props_max; j < mesh->n_max_family_items; j++)
               mesh->family_item[mesh->n_families*j + (mesh->n_families-n_gc+i)]
                 = 0;
           }
@@ -993,7 +992,7 @@ _read_dimensions(cs_mesh_t          *mesh,
 
         mb->n_perio = mesh->n_init_perio;
 
-        for (i = mesh->n_init_perio - n_init_perio;
+        for (int i = mesh->n_init_perio - n_init_perio;
              i < mesh->n_init_perio;
              i++) {
           mb->n_per_face_couples[i] = 0;
@@ -1010,7 +1009,7 @@ _read_dimensions(cs_mesh_t          *mesh,
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
-        cs_int_t n_rot_perio;
+        int n_rot_perio;
         cs_io_set_cs_lnum(&header, pp_in);
         cs_io_read_global(&header, &n_rot_perio, pp_in);
         if (n_rot_perio > 0)
@@ -1021,7 +1020,7 @@ _read_dimensions(cs_mesh_t          *mesh,
     else if (strncmp(header.sec_name, "n_periodic_faces",
                      CS_IO_NAME_LEN) == 0) {
 
-      if ((cs_int_t)header.n_vals != n_init_perio)
+      if ((int)header.n_vals != n_init_perio)
         bft_error(__FILE__, __LINE__, 0,
                   _(unexpected_msg), header.sec_name, cs_io_get_name(pp_in));
       else {
@@ -1030,7 +1029,7 @@ _read_dimensions(cs_mesh_t          *mesh,
         cs_io_read_global(&header,
                           mb->n_g_per_face_couples + dest_offset,
                           pp_in);
-        for (i = dest_offset; i < mesh->n_init_perio; i++)
+        for (int i = dest_offset; i < mesh->n_init_perio; i++)
           mb->n_g_per_face_couples[i] /= 2;
       }
 
@@ -1350,13 +1349,13 @@ _read_data(int                 file_id,
            _mesh_reader_t     *mr,
            long                echo)
 {
-  cs_int_t  perio_id, perio_type;
+  int  perio_id, perio_type;
   cs_file_access_t  method;
   cs_io_sec_header_t  header;
 
   cs_real_t  perio_matrix[3][4];
 
-  cs_int_t  perio_num = -1;
+  int        perio_num = -1;
   bool       end_read = false;
   bool       data_read = false;
   cs_io_t  *pp_in = NULL;
@@ -1528,10 +1527,10 @@ _read_data(int                 file_id,
 
         /* Allocate for first file read */
         if (mb->cell_gc_id == NULL)
-          BFT_MALLOC(mb->cell_gc_id, n_vals, cs_int_t);
+          BFT_MALLOC(mb->cell_gc_id, n_vals, int);
 
         /* Read data */
-        cs_io_set_cs_lnum(&header, pp_in);
+        cs_io_set_int(&header, pp_in);
         cs_io_read_block(&header, gnum_range_cur[0], gnum_range_cur[1],
                          mb->cell_gc_id + val_offset_cur, pp_in);
 
@@ -1571,7 +1570,7 @@ _read_data(int                 file_id,
           BFT_MALLOC(mb->face_gc_id, n_vals, int);
 
         /* Read data */
-        cs_io_set_cs_lnum(&header, pp_in);
+        cs_io_set_int(&header, pp_in);
         cs_io_read_block(&header, gnum_range_cur[0], gnum_range_cur[1],
                          mb->face_gc_id + val_offset_cur, pp_in);
 
@@ -1882,8 +1881,8 @@ _read_data(int                 file_id,
  *----------------------------------------------------------------------------*/
 
 void
-CS_PROCF(ledevi, LEDEVI)(cs_int_t   *iperio,
-                         cs_int_t   *iperot)
+CS_PROCF(ledevi, LEDEVI)(int  *iperio,
+                         int  *iperot)
 {
   cs_mesh_t  *m = cs_glob_mesh;
 

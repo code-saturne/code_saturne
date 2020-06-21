@@ -287,16 +287,16 @@ static const char *_vertices_renum_name[]
 static void
 _update_family(cs_lnum_t         n_elts,
                const cs_lnum_t  *new_to_old,
-               cs_lnum_t        *family)
+               int              *family)
 {
-  cs_lnum_t *old_family;
+  int *old_family;
 
   if (family == NULL)
     return;
 
-  BFT_MALLOC(old_family, n_elts, cs_lnum_t);
+  BFT_MALLOC(old_family, n_elts, int);
 
-  memcpy(old_family, family, n_elts*sizeof(cs_lnum_t));
+  memcpy(old_family, family, n_elts*sizeof(int));
 
   for (cs_lnum_t ii = 0; ii < n_elts; ii++)
     family[ii] = old_family[new_to_old[ii]];
@@ -1392,10 +1392,10 @@ _order_i_faces_by_cell_adjacency(const cs_mesh_t         *mesh,
         && _i_faces_adjacent_to_halo_last
         && (! _cells_adjacent_to_halo_last)) {
 
-      cs_lnum_t  *halo_class;
+      int  *halo_class;
 
       BFT_MALLOC(faces_keys, mesh->n_i_faces * 3, cs_lnum_t);
-      BFT_MALLOC(halo_class, mesh->n_ghost_cells, cs_lnum_t);
+      BFT_MALLOC(halo_class, mesh->n_ghost_cells, int);
 
       _classify_halo_cells(mesh, halo_class);
 
@@ -1640,7 +1640,7 @@ _independent_face_groups(cs_lnum_t            max_group_size,
                          cs_lnum_t            n_faces,
                          const cs_lnum_2_t   *face_cell,
                          cs_lnum_t           *new_to_old,
-                         cs_lnum_t           *n_groups,
+                         int                 *n_groups,
                          cs_lnum_t          **group_size)
 {
   cs_lnum_t f_id, i, j, k;
@@ -2241,8 +2241,8 @@ static int
 _renum_face_multipass(cs_mesh_t    *mesh,
                       int           n_i_threads,
                       cs_lnum_t     new_to_old_i[],
-                      cs_lnum_t    *n_groups,
-                      cs_lnum_t    *n_no_adj_halo_groups,
+                      int          *n_groups,
+                      int          *n_no_adj_halo_groups,
                       cs_lnum_t   **group_index)
 {
   int g_id, t_id;
@@ -2545,7 +2545,7 @@ _renum_i_faces_no_share_cell_in_block(cs_mesh_t    *mesh,
                                       int           n_i_threads,
                                       int           max_group_size,
                                       cs_lnum_t     new_to_old_i[],
-                                      cs_lnum_t    *n_i_groups,
+                                      int          *n_i_groups,
                                       cs_lnum_t   **i_group_index)
 {
   cs_lnum_t  *i_group_size = NULL;
@@ -2609,7 +2609,7 @@ _renum_b_faces_no_share_cell_across_thread(cs_mesh_t   *mesh,
                                            int          n_b_threads,
                                            cs_lnum_t    min_subset_size,
                                            cs_lnum_t    new_to_old_b[],
-                                           cs_lnum_t   *n_b_groups,
+                                           int         *n_b_groups,
                                            cs_lnum_t  **b_group_index)
 {
   int t_id;
@@ -5318,8 +5318,8 @@ _renumber_i_test(cs_mesh_t  *mesh)
                   || (accumulator[c_id_1] > -1 && accumulator[c_id_1] != t_id)) {
                 face_errors += 1;
                 if (mesh->verbosity > 3)
-                  bft_printf("f_id %d (%d %d) g %d t %d\n",
-                             f_id, c_id_0, c_id_1, g_id, t_id);
+                  bft_printf("f_id %ld (%ld %ld) g %d t %d\n",
+                             (long)f_id, (long)c_id_0, (long)c_id_1, g_id, t_id);
               }
               accumulator[c_id_0] = t_id;
               accumulator[c_id_1] = t_id;
@@ -5379,8 +5379,8 @@ _renumber_i_test(cs_mesh_t  *mesh)
               || accumulator[c_id_1] == block_id) {
             face_errors += 1;
             if (mesh->verbosity > 3)
-              bft_printf("f_id %d (%d %d) b %d\n",
-                         f_id, c_id_0, c_id_1, block_id);
+              bft_printf("f_id %ld (%ld %ld) b %d\n",
+                         (long)f_id, (long)c_id_0, (long)c_id_1, (int)block_id);
           }
           accumulator[c_id_0] = block_id;
           accumulator[c_id_1] = block_id;
@@ -5534,8 +5534,8 @@ _renumber_b_test(cs_mesh_t  *mesh)
           if (accumulator[c_id] == block_id)
             face_errors += 1;
           if (mesh->verbosity > 3)
-            bft_printf("f_id %d (%d) b %d\n",
-                       f_id, c_id, block_id);
+            bft_printf("f_id %ld (%ld) b %d\n",
+                       (long)f_id, (long)c_id, (int)block_id);
           accumulator[c_id] = block_id;
         }
 

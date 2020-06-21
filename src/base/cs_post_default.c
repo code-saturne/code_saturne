@@ -81,8 +81,8 @@ BEGIN_C_DECLS
 
 typedef struct {
 
-  const cs_int_t   *nvar;
-  const cs_int_t   *nscal;
+  const int   *nvar;
+  const int   *nscal;
 
 } cs_post_default_input_t;
 
@@ -146,8 +146,8 @@ _write_additional_vars(void                  *input,
 
   cs_post_default_input_t  *_input = input;
 
-  cs_int_t   nummai = mesh_id;
-  cs_int_t   numtyp = cat_id;
+  int   nummai = mesh_id;
+  int   numtyp = cat_id;
 
   cs_real_t  *var_trav = NULL;
   cs_real_t  *cel_vals = NULL;
@@ -365,8 +365,8 @@ _write_q_criterion(void                  *input,
 
 void CS_PROCF (pstvar, PSTVAR)
 (
- const cs_int_t   *nvar,
- const cs_int_t   *nscal
+ const int   *nvar,
+ const int   *nscal
 )
 {
   /* Define or update map of variables */

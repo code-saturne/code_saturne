@@ -106,8 +106,8 @@ struct _cs_sat_coupling_t {
   ple_locator_t   *localis_cel;  /* Locator associated with cells */
   ple_locator_t   *localis_fbr;  /* Locator associated with boundary faces */
 
-  cs_int_t         nbr_cel_sup;  /* Number of associated cell locations */
-  cs_int_t         nbr_fbr_sup;  /* Number of associated face locations */
+  cs_lnum_t        nbr_cel_sup;  /* Number of associated cell locations */
+  cs_lnum_t        nbr_fbr_sup;  /* Number of associated face locations */
 
   fvm_nodal_t     *cells_sup;    /* Local cells at which distant values are
                                     interpolated*/
@@ -562,12 +562,12 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
   int    icoo;
   int    reverse;
 
-  cs_int_t    ind;
-  cs_int_t    iel;
-  cs_int_t    ifac;
+  cs_lnum_t    ind;
+  cs_lnum_t    iel;
+  cs_lnum_t    ifac;
 
-  cs_int_t    n_fbr_loc  = 0;
-  cs_int_t    n_fbr_dist = 0;
+  cs_lnum_t    n_fbr_loc  = 0;
+  cs_lnum_t    n_fbr_dist = 0;
 
   cs_real_t   pdt_scal;
   cs_real_t   surface;
@@ -838,7 +838,7 @@ _sat_coupling_interpolate(cs_sat_coupling_t  *couplage)
 
 void CS_PROCF (nbccpl, NBCCPL)
 (
- cs_lnum_t   *n_couplings
+ int   *n_couplings
 )
 {
   if (_cs_glob_n_sat_cp < 0) {
@@ -877,11 +877,11 @@ void CS_PROCF (nbccpl, NBCCPL)
 
 void CS_PROCF (defloc, DEFLOC)
 (
- const cs_int_t  *numcpl
+ const int  *numcpl
 )
 {
-  cs_int_t  ind;
-  cs_int_t  nbr_fbr_cpl = 0, nbr_cel_cpl = 0;
+  cs_lnum_t  ind;
+  cs_lnum_t  nbr_fbr_cpl = 0, nbr_cel_cpl = 0;
 
   int  indic_glob[2] = {0, 0};
   int  indic_loc[2] = {0, 0};
@@ -1140,13 +1140,13 @@ void CS_PROCF (defloc, DEFLOC)
 
 void CS_PROCF (nbecpl, NBECPL)
 (
- const cs_int_t  *numcpl,
-       cs_int_t  *ncesup,
-       cs_int_t  *nfbsup,
-       cs_int_t  *ncecpl,
-       cs_int_t  *nfbcpl,
-       cs_int_t  *ncencp,
-       cs_int_t  *nfbncp
+ const int        *numcpl,
+       cs_lnum_t  *ncesup,
+       cs_lnum_t  *nfbsup,
+       cs_lnum_t  *ncecpl,
+       cs_lnum_t  *nfbcpl,
+       cs_lnum_t  *ncencp,
+       cs_lnum_t  *nfbncp
 )
 {
   cs_sat_coupling_t  *coupl = NULL;
@@ -1202,21 +1202,21 @@ void CS_PROCF (nbecpl, NBECPL)
 
 void CS_PROCF (lelcpl, LELCPL)
 (
- const cs_int_t  *numcpl,
- const cs_int_t  *ncecpl,
- const cs_int_t  *nfbcpl,
-       cs_int_t  *lcecpl,
-       cs_int_t  *lfbcpl
+ const int        *numcpl,
+ const cs_lnum_t  *ncecpl,
+ const cs_lnum_t  *nfbcpl,
+       cs_lnum_t  *lcecpl,
+       cs_lnum_t  *lfbcpl
 )
 {
-  cs_int_t  ind;
+  cs_lnum_t  ind;
 
-  cs_int_t  _ncecpl = 0;
-  cs_int_t  _nfbcpl = 0;
+  cs_lnum_t  _ncecpl = 0;
+  cs_lnum_t  _nfbcpl = 0;
 
   cs_sat_coupling_t  *coupl = NULL;
 
-  const cs_int_t  *lst = NULL;
+  const cs_lnum_t  *lst = NULL;
 
   /* Initializations and verifications */
 
@@ -1277,21 +1277,20 @@ void CS_PROCF (lelcpl, LELCPL)
 
 void CS_PROCF (lencpl, LENCPL)
 (
- const cs_int_t  *numcpl,
- const cs_int_t  *ncencp,
- const cs_int_t  *nfbncp,
-       cs_int_t  *lcencp,
-       cs_int_t  *lfbncp
+ const int        *numcpl,
+ const cs_lnum_t  *ncencp,
+ const cs_lnum_t  *nfbncp,
+       cs_lnum_t  *lcencp,
+       cs_lnum_t  *lfbncp
 )
 {
-  cs_int_t  ind;
+  cs_lnum_t  ind;
 
-  cs_int_t  _ncencp = 0;
-  cs_int_t  _nfbncp = 0;
+  cs_lnum_t  _ncencp = 0;
+  cs_lnum_t  _nfbncp = 0;
   cs_sat_coupling_t  *coupl = NULL;
 
-  const cs_int_t  *lst = NULL;
-
+  const cs_lnum_t  *lst = NULL;
 
   /* Initializations and verifications */
 
@@ -1347,9 +1346,9 @@ void CS_PROCF (lencpl, LENCPL)
 
 void CS_PROCF (npdcpl, NPDCPL)
 (
- const cs_int_t  *numcpl,
-       cs_int_t  *ncedis,
-       cs_int_t  *nfbdis
+ const int        *numcpl,
+       cs_lnum_t  *ncedis,
+       cs_lnum_t  *nfbdis
 )
 {
   cs_sat_coupling_t  *coupl = NULL;
@@ -1407,20 +1406,20 @@ void CS_PROCF (npdcpl, NPDCPL)
 
 void CS_PROCF (coocpl, COOCPL)
 (
- const cs_int_t  *numcpl,
- const cs_int_t  *nbrpts,
- const cs_int_t  *itydis,
-       cs_int_t  *ityloc,
-       cs_int_t  *locpts,
-       cs_real_t *coopts,
-       cs_real_t *djppts,
-       cs_real_t *dofpts,
-       cs_real_t *pndpts
+ const int        *numcpl,
+ const cs_lnum_t  *nbrpts,
+ const int        *itydis,
+       int        *ityloc,
+       cs_lnum_t  *locpts,
+       cs_real_t  *coopts,
+       cs_real_t  *djppts,
+       cs_real_t  *dofpts,
+       cs_real_t  *pndpts
 )
 {
-  cs_int_t  ind, icoo;
+  cs_lnum_t  ind, icoo;
 
-  cs_int_t  n_pts_dist = 0;
+  cs_lnum_t  n_pts_dist = 0;
   cs_sat_coupling_t  *coupl = NULL;
   ple_locator_t  *localis = NULL;
 
@@ -1501,7 +1500,7 @@ void CS_PROCF (coocpl, COOCPL)
  * *****************
  *
  * INTEGER          NUMCPL         : --> : coupling number
- * INTEGER          NBRCPL         : --> : number of distant points
+ * INTEGER          NBRPTS         : --> : number of distant points
  * INTEGER          ITYLOC         : <-- : 1 : localization on the local cells
  *                                 :     : 2 : localization on the local faces
  * DOUBLE PRECISION PNDCPL(*)      : <-- : weighting coefficients
@@ -1509,16 +1508,14 @@ void CS_PROCF (coocpl, COOCPL)
 
 void CS_PROCF (pondcp, PONDCP)
 (
- const cs_int_t  *const numcpl,
- const cs_int_t  *const nbrpts,
-       cs_int_t  *const ityloc,
-       cs_real_t *const pndcpl,
-       cs_real_t *const distof
+ const int        *numcpl,
+ const cs_lnum_t  *nbrpts,
+       int        *ityloc,
+       cs_real_t  *pndcpl,
+       cs_real_t  *distof
 )
 {
-  int             icoo;
-  cs_int_t        ind;
-  cs_int_t        nfbcpl = 0;
+  cs_lnum_t       nfbcpl = 0;
   cs_sat_coupling_t  *coupl = NULL;
   ple_locator_t  *localis = NULL;
 
@@ -1555,16 +1552,15 @@ void CS_PROCF (pondcp, PONDCP)
 
     if (nfbcpl > 0) {
 
-      for (ind = 0 ; ind < nfbcpl ; ind++) {
+      for (cs_lnum_t ind = 0 ; ind < nfbcpl ; ind++) {
         pndcpl[ind] = coupl->local_pond_fbr[ind];
-        for (icoo = 0 ; icoo < 3 ; icoo++)
+        for (cs_lnum_t icoo = 0 ; icoo < 3 ; icoo++)
           distof[ind*3 + icoo] = coupl->local_of[ind*3 + icoo];
       }
 
     }
 
   }
-
 }
 
 /*----------------------------------------------------------------------------
@@ -1588,17 +1584,17 @@ void CS_PROCF (pondcp, PONDCP)
 
 void CS_PROCF (varcpl, VARCPL)
 (
- const cs_int_t  *numcpl,
- const cs_int_t  *nbrdis,
- const cs_int_t  *nbrloc,
- const cs_int_t  *ityvar,
- const cs_int_t  *stride,
-       cs_real_t *vardis,
-       cs_real_t *varloc
+ const int        *numcpl,
+ const cs_lnum_t  *nbrdis,
+ const cs_lnum_t  *nbrloc,
+ const int        *ityvar,
+ const cs_lnum_t  *stride,
+       cs_real_t  *vardis,
+       cs_real_t  *varloc
 )
 {
-  cs_int_t  n_val_dist_ref = 0;
-  cs_int_t  n_val_loc_ref = 0;
+  cs_lnum_t  n_val_dist_ref = 0;
+  cs_lnum_t  n_val_loc_ref = 0;
   cs_real_t  *val_dist = NULL;
   cs_real_t  *val_loc = NULL;
   cs_sat_coupling_t  *coupl = NULL;
@@ -1677,15 +1673,14 @@ void CS_PROCF (varcpl, VARCPL)
 
 void CS_PROCF (tbicpl, TBICPL)
 (
- const cs_int_t  *numcpl,
- const cs_int_t  *nbrdis,
- const cs_int_t  *nbrloc,
-       cs_int_t  *vardis,
-       cs_int_t  *varloc
+ const int        *numcpl,
+ const cs_lnum_t  *nbrdis,
+ const cs_lnum_t  *nbrloc,
+       cs_lnum_t  *vardis,
+       cs_lnum_t  *varloc
 )
 {
-  cs_int_t  ind;
-  cs_int_t  nbr = 0;
+  cs_lnum_t  nbr = 0;
   bool  distant = false;
 
 #if defined(HAVE_MPI)
@@ -1710,14 +1705,14 @@ void CS_PROCF (tbicpl, TBICPL)
     /* Exchange between the groups master node */
 
     if (cs_glob_rank_id < 1)
-      MPI_Sendrecv(vardis, *nbrdis, CS_MPI_INT, coupl->sat_root_rank, 0,
-                   varloc, *nbrloc, CS_MPI_INT, coupl->sat_root_rank, 0,
+      MPI_Sendrecv(vardis, *nbrdis, CS_MPI_LNUM, coupl->sat_root_rank, 0,
+                   varloc, *nbrloc, CS_MPI_LNUM, coupl->sat_root_rank, 0,
                    coupl->comm, &status);
 
     /* Synchronization inside a group */
 
     if (cs_glob_n_ranks > 1)
-      MPI_Bcast (varloc, *nbrloc, CS_MPI_INT, 0, cs_glob_mpi_comm);
+      MPI_Bcast (varloc, *nbrloc, CS_MPI_LNUM, 0, cs_glob_mpi_comm);
 
   }
 
@@ -1727,7 +1722,7 @@ void CS_PROCF (tbicpl, TBICPL)
 
     nbr = CS_MIN(*nbrdis, *nbrloc);
 
-    for (ind = 0; ind < nbr; ind++)
+    for (cs_lnum_t ind = 0; ind < nbr; ind++)
       varloc[ind] = vardis[ind];
 
   }
@@ -1753,15 +1748,14 @@ void CS_PROCF (tbicpl, TBICPL)
 
 void CS_PROCF (tbrcpl, TBRCPL)
 (
- const cs_int_t  *numcpl,
- const cs_int_t  *nbrdis,
- const cs_int_t  *nbrloc,
-       cs_real_t *vardis,
-       cs_real_t *varloc
+ const int        *numcpl,
+ const cs_lnum_t  *nbrdis,
+ const cs_lnum_t  *nbrloc,
+       cs_real_t  *vardis,
+       cs_real_t  *varloc
 )
 {
-  cs_int_t  ind;
-  cs_int_t  nbr = 0;
+  cs_lnum_t  nbr = 0;
   bool  distant = false;
 
 #if defined(HAVE_MPI)
@@ -1803,7 +1797,7 @@ void CS_PROCF (tbrcpl, TBRCPL)
 
     nbr = CS_MIN(*nbrdis, *nbrloc);
 
-    for (ind = 0; ind < nbr; ind++)
+    for (cs_lnum_t ind = 0; ind < nbr; ind++)
       varloc[ind] = vardis[ind];
 
   }
@@ -1827,9 +1821,9 @@ void CS_PROCF (tbrcpl, TBRCPL)
 
 void CS_PROCF (mxicpl, MXICPL)
 (
- const cs_int_t  *numcpl,
-       cs_int_t  *vardis,
-       cs_int_t  *varmax
+ const int        *const numcpl,
+       cs_lnum_t  *const vardis,
+       cs_lnum_t  *const varmax
 )
 {
   bool  distant = false;
@@ -1851,7 +1845,7 @@ void CS_PROCF (mxicpl, MXICPL)
 
     distant = true;
 
-    MPI_Allreduce(vardis, varmax, 1, CS_MPI_INT, MPI_MAX, coupl->comm);
+    MPI_Allreduce(vardis, varmax, 1, CS_MPI_LNUM, MPI_MAX, coupl->comm);
 
   }
 

@@ -265,7 +265,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
 
-  int eb_size[4],db_size[4];
+  cs_lnum_t eb_size[4], db_size[4];
 
   cs_solving_info_t sinfo;
 
@@ -1247,7 +1247,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
   cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
 
-  int eb_size[4],db_size[4];
+  cs_lnum_t eb_size[4], db_size[4];
 
   cs_solving_info_t sinfo;
 
@@ -2080,7 +2080,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 
   cs_halo_rotation_t rotation_mode = CS_HALO_ROTATION_COPY;
 
-  int eb_size[4],db_size[4];
+  cs_lnum_t eb_size[4], db_size[4];
 
   cs_solving_info_t sinfo;
   int coupling_id = -1;

@@ -2527,7 +2527,7 @@ _lsq_scalar_gradient(const cs_mesh_t                *m,
     = (const cs_real_3_t *restrict)fvq->b_face_cog;
   const cs_real_3_t *restrict diipb
     = (const cs_real_3_t *restrict)fvq->diipb;
-  const cs_int_t *isympa = fvq->b_sym_flag;
+  const int *isympa = fvq->b_sym_flag;
   const cs_real_t *restrict weight = fvq->weight;
 
   cs_real_33_t   *restrict cocgb = NULL;
@@ -8837,7 +8837,7 @@ cs_f_gradient_weighted_s(int               f_id,
 
 void CS_PROCF (grdpor, GRDPOR)
 (
- const cs_int_t   *const inc          /* <-- 0 or 1: increment or not         */
+ const int   *const inc          /* <-- 0 or 1: increment or not         */
 )
 {
   const cs_mesh_t  *m = cs_glob_mesh;
@@ -9019,12 +9019,12 @@ void CS_PROCF (grdpor, GRDPOR)
 
 void CS_PROCF (cgdvec, CGDVEC)
 (
- const cs_int_t         *const f_id,      /* <-- field id, or -1              */
- const cs_int_t         *const imrgra,    /* <-- gradient computation mode    */
- const cs_int_t         *const inc,       /* <-- 0 or 1: increment or not     */
- const cs_int_t         *const n_r_sweeps,/* <-- >1: with reconstruction      */
- const cs_int_t         *const iwarnp,    /* <-- verbosity level              */
- const cs_int_t         *const imligp,    /* <-- type of clipping             */
+ const int              *const f_id,      /* <-- field id, or -1              */
+ const int              *const imrgra,    /* <-- gradient computation mode    */
+ const int              *const inc,       /* <-- 0 or 1: increment or not     */
+ const int              *const n_r_sweeps,/* <-- >1: with reconstruction      */
+ const int              *const iwarnp,    /* <-- verbosity level              */
+ const int              *const imligp,    /* <-- type of clipping             */
  const cs_real_t        *const epsrgp,    /* <-- precision for iterative
                                                  gradient calculation         */
  const cs_real_t        *const climgp,    /* <-- clipping coefficient         */
@@ -9639,7 +9639,7 @@ cs_gradient_vector_synced_input(const char                *var_name,
                                 const cs_real_t            bc_coeff_b[][3][3],
                                 const cs_real_t            var[restrict][3],
                                 const cs_real_t            c_weight[restrict],
-                                const cs_internal_coupling_t    *cpl,
+                                const cs_internal_coupling_t  *cpl,
                                 cs_real_t                  grad[restrict][3][3])
 {
   cs_gradient_info_t *gradient_info = NULL;

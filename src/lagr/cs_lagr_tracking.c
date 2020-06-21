@@ -1122,7 +1122,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
   cs_real_t  tmp;
   cs_real_t  disp[3], intersect_pt[3];
 
-  cs_lnum_t  event_flag = 0;
+  int  event_flag = 0;
 
   cs_lagr_tracking_state_t  particle_state = CS_LAGR_PART_TO_SYNC;
 
@@ -1198,9 +1198,10 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
                             CS_LAGR_E_FACE_ID,
                             face_id);
 
-    cs_real_t *e_coords = cs_lagr_events_attr(events,
-                                              event_id,
-                                              CS_LAGR_COORDS);
+    cs_real_t *e_coords
+      = cs_lagr_events_attr(events,
+                            event_id,
+                            (cs_lagr_event_attribute_t)CS_LAGR_COORDS);
     for (int k = 0; k < 3; k++)
       e_coords[k] = intersect_pt[k];
 
@@ -1469,13 +1470,13 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
           if (cur_part_close_face_id != face_id) {
             bft_error(__FILE__, __LINE__, 0,
-                      _(" Error in %s: in the face number %d \n"
+                      _(" Error in %s: in the face number %ld \n"
                         "no deposited particle found to form a cluster \n"
                         "using the surface coverage %e (scov_cdf %e) \n"
-                        "The particle used thus belongs to another face (%d) \n"),
+                        "The particle used thus belongs to another face (%ld) \n"),
                       __func__,
-                      particle_close_face_id, *surface_coverage,
-                      scov_cdf, cur_part_close_face_id);
+                      (long)particle_close_face_id, *surface_coverage,
+                      scov_cdf, (long)cur_part_close_face_id);
           }
 
           /* The depositing particle is merged with the existing one */
@@ -2295,7 +2296,7 @@ _exchange_counter(const cs_halo_t  *halo,
       if (halo->c_domain_rank[rank] != local_rank)
         MPI_Irecv(&(lag_halo->recv_count[rank]),
                   1,
-                  CS_MPI_INT,
+                  CS_MPI_LNUM,
                   halo->c_domain_rank[rank],
                   halo->c_domain_rank[rank],
                   cs_glob_mpi_comm,
@@ -2321,7 +2322,7 @@ _exchange_counter(const cs_halo_t  *halo,
       if (halo->c_domain_rank[rank] != local_rank)
         MPI_Isend(&(lag_halo->send_count[rank]),
                   1,
-                  CS_MPI_INT,
+                  CS_MPI_LNUM,
                   halo->c_domain_rank[rank],
                   local_rank,
                   cs_glob_mpi_comm,

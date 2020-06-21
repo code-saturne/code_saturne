@@ -212,8 +212,8 @@ cs_selector_get_perio_face_list(int         perio_num,
 
 void
 cs_selector_get_family_list(const char  *criteria,
-                            cs_lnum_t   *n_families,
-                            cs_int_t     family_list[]);
+                            int         *n_families,
+                            int          family_list[]);
 
 /*----------------------------------------------------------------------------*/
 

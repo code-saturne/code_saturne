@@ -146,7 +146,7 @@ _b_diag_dom_diag_contrib(const cs_real_t  *restrict da,
                          cs_real_t        *restrict dd,
                          cs_lnum_t         n_rows,
                          cs_lnum_t         n_cols_ext,
-                         const int         b_size[4])
+                         const cs_lnum_t   b_size[4])
 {
   cs_lnum_t  ii, jj, kk;
   double  sign;
@@ -228,7 +228,7 @@ static void
 _b_diag_dom_diag_normalize(const cs_real_t  *restrict da,
                            cs_real_t        *restrict dd,
                            cs_lnum_t         n_rows,
-                           const int         b_size[4])
+                           const cs_lnum_t   b_size[4])
 {
   cs_lnum_t  ii, jj;
   double  d_val;
@@ -322,7 +322,7 @@ _b_diag_dom_native(const cs_matrix_t  *matrix,
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
 
   const cs_real_t  *restrict xa = mc->xa;
-  const int *db_size = matrix->db_size;
+  const cs_lnum_t *db_size = matrix->db_size;
 
   /* block diagonal contribution */
 
@@ -381,8 +381,8 @@ _bb_diag_dom_native(const cs_matrix_t  *matrix,
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
 
   const cs_real_t  *restrict xa = mc->xa;
-  const int *db_size = matrix->db_size;
-  const int *eb_size = matrix->eb_size;
+  const cs_lnum_t *db_size = matrix->db_size;
+  const cs_lnum_t *eb_size = matrix->eb_size;
 
   /* block diagonal contribution */
 
@@ -609,7 +609,7 @@ _b_diag_dom_msr(const cs_matrix_t  *matrix,
 
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-  const int *db_size = matrix->db_size;
+  const cs_lnum_t *db_size = matrix->db_size;
   const cs_lnum_t  n_rows = ms->n_rows;
 
   /* diagonal contribution */
@@ -695,7 +695,7 @@ _b_pre_dump_diag_contrib(const cs_real_t  *restrict da,
                          cs_real_t        *restrict m_val,
                          const cs_gnum_t  *restrict g_coo_num,
                          cs_lnum_t         n_rows,
-                         const int         b_size[4])
+                         const cs_lnum_t   b_size[4])
 {
   cs_lnum_t  ii, jj, kk;
   cs_lnum_t  db_size[2] = {b_size[0], b_size[0]*b_size[0]};
@@ -847,7 +847,7 @@ _b_pre_dump_native(const cs_matrix_t  *matrix,
   const cs_matrix_coeff_native_t  *mc = matrix->coeffs;
 
   const cs_real_t  *restrict xa = mc->xa;
-  const int *db_size = matrix->db_size;
+  const cs_lnum_t *db_size = matrix->db_size;
 
   cs_lnum_t  n_entries = (ms->n_rows*db_size[0] + ms->n_edges*2) * db_size[0];
 
@@ -1173,7 +1173,7 @@ _b_pre_dump_msr(const cs_matrix_t   *matrix,
 
   const cs_matrix_struct_csr_t  *ms = matrix->structure;
   const cs_matrix_coeff_msr_t  *mc = matrix->coeffs;
-  const int  *db_size = matrix->db_size;
+  const cs_lnum_t  *db_size = matrix->db_size;
   const cs_lnum_t  n_rows = ms->n_rows;
   const cs_lnum_t  dump_id_shift = ms->n_rows*db_size[0]*db_size[0];
 
@@ -2073,8 +2073,8 @@ cs_matrix_dump_test(cs_lnum_t              n_rows,
   int  test_id;
 
   cs_real_t  *da = NULL, *xa = NULL, *rhs = NULL;
-  int diag_block_size[4] = {3, 3, 3, 9};
-  int extra_diag_block_size[4] = {1, 1, 1, 1};
+  cs_lnum_t  diag_block_size[4] = {3, 3, 3, 9};
+  cs_lnum_t  extra_diag_block_size[4] = {1, 1, 1, 1};
 
   const int n_tests = 7;
   const char *name[] = {"matrix_native",
@@ -2120,8 +2120,8 @@ cs_matrix_dump_test(cs_lnum_t              n_rows,
 
   for (test_id = 0; test_id < n_tests; test_id++) {
 
-    int *_diag_block_size = (block_flag[test_id]) ? diag_block_size : NULL;
-    int *_extra_diag_block_size = (block_flag[test_id]-1) ?
+    cs_lnum_t *_diag_block_size = (block_flag[test_id]) ? diag_block_size : NULL;
+    cs_lnum_t *_extra_diag_block_size = (block_flag[test_id]-1) ?
       extra_diag_block_size : NULL;
 
     cs_matrix_structure_t

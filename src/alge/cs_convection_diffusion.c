@@ -164,7 +164,6 @@ _beta_limiter_denom(const int              f_id,
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
 
   const int ischcp = var_cal_opt.ischcv;
-  const int isstpp = var_cal_opt.isstpc;
   const int ircflp = var_cal_opt.ircflu;
   const int imrgra = var_cal_opt.imrgra;
   const cs_real_t thetap = var_cal_opt.thetav;
@@ -590,16 +589,16 @@ _beta_limiter_num(const int           f_id,
 
 void CS_PROCF (itrmas, ITRMAS)
 (
- const cs_int_t  *const   f_id,
- const cs_int_t  *const   init,
- const cs_int_t  *const   inc,
- const cs_int_t  *const   imrgra,
- const cs_int_t  *const   iccocg,
- const cs_int_t  *const   nswrgp,
- const cs_int_t  *const   imligp,
- const cs_int_t  *const   iphydp,
- const cs_int_t  *const   iwgrp,
- const cs_int_t  *const   iwarnp,
+ const int       *const   f_id,
+ const int       *const   init,
+ const int       *const   inc,
+ const int       *const   imrgra,
+ const int       *const   iccocg,
+ const int       *const   nswrgp,
+ const int       *const   imligp,
+ const int       *const   iphydp,
+ const int       *const   iwgrp,
+ const int       *const   iwarnp,
  const cs_real_t *const   epsrgp,
  const cs_real_t *const   climgp,
  const cs_real_t *const   extrap,
@@ -653,17 +652,17 @@ void CS_PROCF (itrmas, ITRMAS)
 
 void CS_PROCF (itrmav, ITRMAV)
 (
- const cs_int_t  *const   f_id,
- const cs_int_t  *const   init,
- const cs_int_t  *const   inc,
- const cs_int_t  *const   imrgra,
- const cs_int_t  *const   iccocg,
- const cs_int_t  *const   nswrgp,
- const cs_int_t  *const   imligp,
- const cs_int_t  *const   ircflp,
- const cs_int_t  *const   iphydp,
- const cs_int_t  *const   iwgrp,
- const cs_int_t  *const   iwarnp,
+ const int       *const   f_id,
+ const int       *const   init,
+ const int       *const   inc,
+ const int       *const   imrgra,
+ const int       *const   iccocg,
+ const int       *const   nswrgp,
+ const int       *const   imligp,
+ const int       *const   ircflp,
+ const int       *const   iphydp,
+ const int       *const   iwgrp,
+ const int       *const   iwarnp,
  const cs_real_t *const   epsrgp,
  const cs_real_t *const   climgp,
  const cs_real_t *const   extrap,
@@ -722,16 +721,16 @@ void CS_PROCF (itrmav, ITRMAV)
 
 void CS_PROCF (itrgrp, ITRGRP)
 (
- const cs_int_t  *const   f_id,
- const cs_int_t  *const   init,
- const cs_int_t  *const   inc,
- const cs_int_t  *const   imrgra,
- const cs_int_t  *const   iccocg,
- const cs_int_t  *const   nswrgp,
- const cs_int_t  *const   imligp,
- const cs_int_t  *const   iphydp,
- const cs_int_t  *const   iwgrp,
- const cs_int_t  *const   iwarnp,
+ const int       *const   f_id,
+ const int       *const   init,
+ const int       *const   inc,
+ const int       *const   imrgra,
+ const int       *const   iccocg,
+ const int       *const   nswrgp,
+ const int       *const   imligp,
+ const int       *const   iphydp,
+ const int       *const   iwgrp,
+ const int       *const   iwarnp,
  const cs_real_t *const   epsrgp,
  const cs_real_t *const   climgp,
  const cs_real_t *const   extrap,
@@ -783,17 +782,17 @@ void CS_PROCF (itrgrp, ITRGRP)
 
 void CS_PROCF (itrgrv, ITRGRV)
 (
- const cs_int_t  *const   f_id,
- const cs_int_t  *const   init,
- const cs_int_t  *const   inc,
- const cs_int_t  *const   imrgra,
- const cs_int_t  *const   iccocg,
- const cs_int_t  *const   nswrgp,
- const cs_int_t  *const   imligp,
- const cs_int_t  *const   ircflp,
- const cs_int_t  *const   iphydp,
- const cs_int_t  *const   iwgrp,
- const cs_int_t  *const   iwarnp,
+ const int       *const   f_id,
+ const int       *const   init,
+ const int       *const   inc,
+ const int       *const   imrgra,
+ const int       *const   iccocg,
+ const int       *const   nswrgp,
+ const int       *const   imligp,
+ const int       *const   ircflp,
+ const int       *const   iphydp,
+ const int       *const   iwgrp,
+ const int       *const   iwarnp,
  const cs_real_t *const   epsrgp,
  const cs_real_t *const   climgp,
  const cs_real_t *const   extrap,
@@ -989,7 +988,7 @@ cs_slope_test_gradient(int                     f_id,
 
     /* Gradient periodicity of rotation for Reynolds stress components */
     if (cs_glob_mesh->have_rotation_perio > 0 && f_id != -1)
-      cs_gradient_perio_process_rij(&f_id, grdpa);
+      cs_gradient_perio_process_rij(f_id, grdpa);
   }
 
 }
@@ -1121,7 +1120,7 @@ cs_upwind_gradient(const int                     f_id,
 
     /* Gradient periodicity of rotation for Reynolds stress components */
     if (cs_glob_mesh->have_rotation_perio > 0 && f_id != -1)
-      cs_gradient_perio_process_rij(&f_id, grdpa);
+      cs_gradient_perio_process_rij(f_id, grdpa);
   }
 }
 
@@ -1607,7 +1606,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
                                int                       imasac,
                                cs_real_t       *restrict pvar,
                                const cs_real_t *restrict pvara,
-                               const cs_int_t            icvfli[],
+                               const int                 icvfli[],
                                const cs_real_t           coefap[],
                                const cs_real_t           coefbp[],
                                const cs_real_t           cofafp[],
@@ -1708,7 +1707,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
   cs_real_t *df_limiter_local = NULL;
   cs_real_t hint, hext, heq;
   cs_lnum_t *faces_local = NULL;
-  cs_int_t n_local;
+  cs_lnum_t n_local;
   cs_lnum_t n_distant;
   cs_lnum_t *faces_distant = NULL;
   int coupling_id;
@@ -1796,7 +1795,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
 
   if (icoupl > 0) {
     assert(f_id != -1);
-    const cs_int_t coupling_key_id = cs_field_key_id("coupling_entity");
+    const int coupling_key_id = cs_field_key_id("coupling_entity");
     coupling_id = cs_field_get_key_int(f, coupling_key_id);
     cpl = cs_internal_coupling_by_id(coupling_id);
     cs_internal_coupling_coupled_faces(cpl,
@@ -2475,48 +2474,48 @@ cs_convection_diffusion_scalar(int                       idtvar,
             if (df_limiter != NULL && ircflp > 0)
               bldfrp = CS_MAX(CS_MIN(df_limiter[ii], df_limiter[jj]), 0.);
 
-              cs_i_cd_unsteady_slope_test(&upwind_switch,
-                                          iconvp,
-                                          bldfrp,
-                                          ischcp,
-                                          blencp,
-                                          blend_st,
-                                          weight[face_id],
-                                          i_dist[face_id],
-                                          i_face_surf[face_id],
-                                          cell_cen[ii],
-                                          cell_cen[jj],
-                                          i_face_normal[face_id],
-                                          i_face_cog[face_id],
-                                          diipf[face_id],
-                                          djjpf[face_id],
-                                          i_massflux[face_id],
-                                          grad[ii],
-                                          grad[jj],
-                                          gradup[ii],
-                                          gradup[jj],
-                                          gradst[ii],
-                                          gradst[jj],
-                                          _pvar[ii],
-                                          _pvar[jj],
-                                          &pif,
-                                          &pjf,
-                                          &pip,
-                                          &pjp);
+            cs_i_cd_unsteady_slope_test(&upwind_switch,
+                                        iconvp,
+                                        bldfrp,
+                                        ischcp,
+                                        blencp,
+                                        blend_st,
+                                        weight[face_id],
+                                        i_dist[face_id],
+                                        i_face_surf[face_id],
+                                        cell_cen[ii],
+                                        cell_cen[jj],
+                                        i_face_normal[face_id],
+                                        i_face_cog[face_id],
+                                        diipf[face_id],
+                                        djjpf[face_id],
+                                        i_massflux[face_id],
+                                        grad[ii],
+                                        grad[jj],
+                                        gradup[ii],
+                                        gradup[jj],
+                                        gradst[ii],
+                                        gradst[jj],
+                                        _pvar[ii],
+                                        _pvar[jj],
+                                        &pif,
+                                        &pjf,
+                                        &pip,
+                                        &pjp);
 
-              cs_i_conv_flux(iconvp,
-                             thetap,
-                             imasac,
-                             _pvar[ii],
-                             _pvar[jj],
-                             pif,
-                             pif, /* no relaxation */
-                             pjf,
-                             pjf, /* no relaxation */
-                             i_massflux[face_id],
-                             1., /* xcpp */
-                             1., /* xcpp */
-                             fluxij);
+            cs_i_conv_flux(iconvp,
+                           thetap,
+                           imasac,
+                           _pvar[ii],
+                           _pvar[jj],
+                           pif,
+                           pif, /* no relaxation */
+                           pjf,
+                           pjf, /* no relaxation */
+                           i_massflux[face_id],
+                           1., /* xcpp */
+                           1., /* xcpp */
+                           fluxij);
 
             cs_i_diff_flux(idiffp,
                            thetap,
@@ -2959,7 +2958,7 @@ cs_face_convection_scalar(int                       idtvar,
                           int                       imasac,
                           cs_real_t       *restrict pvar,
                           const cs_real_t *restrict pvara,
-                          const cs_int_t            icvfli[],
+                          const int                 icvfli[],
                           const cs_real_t           coefap[],
                           const cs_real_t           coefbp[],
                           const cs_real_t           i_massflux[],
@@ -3136,7 +3135,7 @@ cs_face_convection_scalar(int                       idtvar,
 
   if (icoupl > 0) {
     assert(f_id != -1);
-    const cs_int_t coupling_key_id = cs_field_key_id("coupling_entity");
+    const int coupling_key_id = cs_field_key_id("coupling_entity");
     coupling_id = cs_field_get_key_int(f, coupling_key_id);
     cpl = cs_internal_coupling_by_id(coupling_id);
   }
@@ -4075,7 +4074,7 @@ cs_convection_diffusion_vector(int                         idtvar,
                                int                         imasac,
                                cs_real_3_t       *restrict pvar,
                                const cs_real_3_t *restrict pvara,
-                               const cs_int_t              icvfli[],
+                               const int                   icvfli[],
                                const cs_real_3_t           coefav[],
                                const cs_real_33_t          coefbv[],
                                const cs_real_3_t           cofafv[],
@@ -4195,7 +4194,7 @@ cs_convection_diffusion_vector(int                         idtvar,
   cs_real_t *df_limiter_local = NULL;
   cs_real_t hint, hext, heq;
   cs_lnum_t *faces_local = NULL;
-  cs_int_t n_local;
+  cs_lnum_t n_local;
   cs_lnum_t n_distant;
   cs_lnum_t *faces_distant = NULL;
   int coupling_id;
@@ -4253,7 +4252,7 @@ cs_convection_diffusion_vector(int                         idtvar,
 
   if (icoupl > 0) {
     assert(f_id != -1);
-    const cs_int_t coupling_key_id = cs_field_key_id("coupling_entity");
+    const int coupling_key_id = cs_field_key_id("coupling_entity");
     coupling_id = cs_field_get_key_int(f, coupling_key_id);
     cpl = cs_internal_coupling_by_id(coupling_id);
     cs_internal_coupling_coupled_faces(cpl,
@@ -6707,7 +6706,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
   cs_real_t *df_limiter_local = NULL;
   cs_real_t hint, hext, heq;
   cs_lnum_t *faces_local = NULL;
-  cs_int_t n_local;
+  cs_lnum_t n_local;
   cs_lnum_t n_distant;
   cs_lnum_t *faces_distant = NULL;
   int coupling_id;
@@ -6791,7 +6790,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
 
   if (icoupl > 0) {
     assert(f_id != -1);
-    const cs_int_t coupling_key_id = cs_field_key_id("coupling_entity");
+    const int coupling_key_id = cs_field_key_id("coupling_entity");
     coupling_id = cs_field_get_key_int(f, coupling_key_id);
     cpl = cs_internal_coupling_by_id(coupling_id);
     cs_internal_coupling_coupled_faces(cpl,
@@ -7937,7 +7936,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
   cs_real_6_t *viscce_local = NULL;
   cs_real_t *weighb_local = NULL;
   cs_lnum_t *faces_local = NULL;
-  cs_int_t n_local;
+  cs_lnum_t n_local;
   int coupling_id;
   cs_internal_coupling_t *cpl = NULL;
 
@@ -8031,7 +8030,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
 
   if (icoupl > 0) {
     assert(f_id != -1);
-    const cs_int_t coupling_key_id = cs_field_key_id("coupling_entity");
+    const int coupling_key_id = cs_field_key_id("coupling_entity");
     coupling_id = cs_field_get_key_int(f, coupling_key_id);
     cpl = cs_internal_coupling_by_id(coupling_id);
     cs_internal_coupling_coupled_faces(cpl,
@@ -8672,7 +8671,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
 
   /* Internal coupling variables */
   cs_lnum_t *faces_local = NULL;
-  cs_int_t n_local;
+  cs_lnum_t n_local;
   cs_lnum_t n_distant;
   cs_lnum_t *faces_distant = NULL;
   int coupling_id;
@@ -8735,7 +8734,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
 
   if (icoupl > 0) {
     assert(f_id != -1);
-    const cs_int_t coupling_key_id = cs_field_key_id("coupling_entity");
+    const int coupling_key_id = cs_field_key_id("coupling_entity");
     coupling_id = cs_field_get_key_int(f, coupling_key_id);
     cpl = cs_internal_coupling_by_id(coupling_id);
     cs_internal_coupling_coupled_faces(cpl,
@@ -9221,7 +9220,7 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
   cs_real_6_t *viscce_local = NULL;
   cs_real_t *weighb_local = NULL;
   cs_lnum_t *faces_local = NULL;
-  cs_int_t n_local;
+  cs_lnum_t n_local;
   cs_lnum_t n_distant;
   cs_lnum_t *faces_distant = NULL;
   int coupling_id;
@@ -9288,7 +9287,7 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
 
   if (icoupl > 0) {
     assert(f_id != -1);
-    const cs_int_t coupling_key_id = cs_field_key_id("coupling_entity");
+    const int coupling_key_id = cs_field_key_id("coupling_entity");
     coupling_id = cs_field_get_key_int(f, coupling_key_id);
     cpl = cs_internal_coupling_by_id(coupling_id);
     cs_internal_coupling_coupled_faces(cpl,

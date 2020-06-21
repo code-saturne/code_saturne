@@ -217,16 +217,15 @@ cs_lagr_roughness_barrier(const void                     *particle,
                           cs_lnum_t                       iel,
                           cs_real_t                      *energy_barrier)
 {
-  cs_int_t  i;
   cs_real_t param2, value;
   cs_lnum_t param1,contact,compt_max;
   cs_lnum_t iclas, ints, np, iasp;
-  cs_real_t rpart2[2],udlvor[500];
-  cs_real_t distasp, posasp1[2000], posasp2[2000],
-    posasp3[2000], posasp4[2000], disminp;
+  cs_real_t rpart2[2], udlvor[500];
+  cs_real_t distasp, posasp1[2000], posasp2[2000];
+  cs_real_t posasp3[2000], posasp4[2000], disminp;
   cs_real_t scov[2], seff[1];
-  cs_lnum_t nbtemp[12000];
-  cs_lnum_t nbasp[1], nclas, nbaspt[1], nasptot;
+  int nbtemp[12000];
+  int nbasp[1], nclas, nbaspt[1], nasptot;
   cs_real_t random;
 
   contact = 0;
@@ -295,7 +294,7 @@ cs_lagr_roughness_barrier(const void                     *particle,
     /* Placement of asperities */
     cs_lnum_t iboucle;
 
-    for (i = 0; i < nbasp[iclas]; i++) {
+    for (int i = 0; i < nbasp[iclas]; i++) {
       iboucle  = 0;
       do {
         contact = 0;

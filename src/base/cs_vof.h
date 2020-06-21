@@ -247,8 +247,6 @@ cs_vof_deshpande_drift_flux(const cs_domain_t *domain);
 
 /*----------------------------------------------------------------------------*/
 /*!
- * <a name="cs_vof_drift_term"></a>
- *
  * \brief Add the explicit part of the convection/diffusion terms of a
  * standard transport equation of a scalar field \f$ \varia \f$.
  *
@@ -282,15 +280,15 @@ cs_vof_deshpande_drift_flux(const cs_domain_t *domain);
 /*----------------------------------------------------------------------------*/
 
 void
-cs_vof_drift_term(const cs_int_t   *imrgra,
-                  const cs_int_t   *nswrgp,
-                  const cs_int_t   *imligp,
-                  const cs_int_t   *iwarnp,
-                  const cs_real_t  *epsrgp,
-                  const cs_real_t  *climgp,
-                  cs_real_t       *restrict pvar,
-                  const cs_real_t *restrict pvara,
-                  cs_real_t       *restrict rhs);
+cs_vof_drift_term(int                        imrgra,
+                  int                        nswrgp,
+                  int                        imligp,
+                  int                        iwarnp,
+                  cs_real_t                  epsrgp,
+                  cs_real_t                  climgp,
+                  cs_real_t        *restrict pvar,
+                  const cs_real_t  *restrict pvara,
+                  cs_real_t        *restrict rhs);
 
 /*----------------------------------------------------------------------------
  *!

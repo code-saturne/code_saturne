@@ -1835,8 +1835,8 @@ cs_join_all(bool  preprocess)
                              &edge_edge_visibility);
 
       if (mesh->verbosity > 0 && join_param.verbosity > 2)
-        bft_printf(_("\n  Number of faces to treat locally: %10d\n"),
-                   work_jmesh->n_faces);
+        bft_printf(_("\n  Number of faces to treat locally: %ld\n"),
+                   (long)work_jmesh->n_faces);
 
       /*
 

@@ -1670,11 +1670,11 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
   {
     itysup = 0;
 
-    cs_int_t ivers;
+    int ivers;
 
     retcode = cs_restart_read_section
                 (r, "version_fichier_suite_Lagrangien_statistiques",
-                 itysup, 1, CS_TYPE_cs_int_t, &ivers);
+                 itysup, 1, CS_TYPE_int, &ivers);
   }
 
   /* Now read main metadata */
@@ -1687,7 +1687,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
                                     "lagr_stats:sizes",
                                     CS_MESH_LOCATION_NONE,
                                     3,
-                                    CS_TYPE_cs_int_t,
+                                    CS_TYPE_int,
                                     sizes);
   ri->nt_prev = ts->nt_prev;
   ri->t_prev = ts->t_prev;
@@ -1728,7 +1728,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
                           "lagr_stats:wa:location_id",
                           CS_MESH_LOCATION_NONE,
                           ri->n_wa,
-                          CS_TYPE_cs_int_t,
+                          CS_TYPE_int,
                           ri->wa_location_id);
   _assert_restart_success(retcode);
 
@@ -1736,7 +1736,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
                           "lagr_stats:wa:nt_start",
                           CS_MESH_LOCATION_NONE,
                           ri->n_wa,
-                          CS_TYPE_cs_int_t,
+                          CS_TYPE_int,
                           ri->wa_nt_start);
   _assert_restart_success(retcode);
 
@@ -1763,7 +1763,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
                                     "lagr_stats:group",
                                     CS_MESH_LOCATION_NONE,
                                     ri->n_moments,
-                                    CS_TYPE_cs_int_t,
+                                    CS_TYPE_int,
                                     ri->group);
   if (retcode != CS_RESTART_SUCCESS) {
     for (int i = 0; i < ri->n_moments; i++)
@@ -1774,7 +1774,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
                                     "lagr_stats:type",
                                     CS_MESH_LOCATION_NONE,
                                     ri->n_moments,
-                                    CS_TYPE_cs_int_t,
+                                    CS_TYPE_int,
                                     ri->m_type);
   _assert_restart_success(retcode);
 
@@ -1782,7 +1782,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
                                     "lagr_stats:class",
                                     CS_MESH_LOCATION_NONE,
                                     ri->n_moments,
-                                    CS_TYPE_cs_int_t,
+                                    CS_TYPE_int,
                                     ri->class);
   _assert_restart_success(retcode);
 
@@ -1790,7 +1790,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
                                     "lagr_stats:location_id",
                                     CS_MESH_LOCATION_NONE,
                                     ri->n_moments,
-                                    CS_TYPE_cs_int_t,
+                                    CS_TYPE_int,
                                     ri->location_id);
   _assert_restart_success(retcode);
 
@@ -1798,7 +1798,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
                                     "lagr_stats:dimension",
                                     CS_MESH_LOCATION_NONE,
                                     ri->n_moments,
-                                    CS_TYPE_cs_int_t,
+                                    CS_TYPE_int,
                                     ri->dimension);
   _assert_restart_success(retcode);
 
@@ -1806,7 +1806,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
                                     "lagr_stats:wa_id",
                                     CS_MESH_LOCATION_NONE,
                                     ri->n_moments,
-                                    CS_TYPE_cs_int_t,
+                                    CS_TYPE_int,
                                     ri->wa_id);
   _assert_restart_success(retcode);
 
@@ -1814,7 +1814,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
                                     "lagr_stats:lower_order_id",
                                     CS_MESH_LOCATION_NONE,
                                     ri->n_moments,
-                                    CS_TYPE_cs_int_t,
+                                    CS_TYPE_int,
                                     ri->l_id);
   _assert_restart_success(retcode);
 
@@ -1822,7 +1822,7 @@ _restart_info_read_auxiliary(cs_restart_t  *r)
                                     "lagr_stats:stat_type",
                                     CS_MESH_LOCATION_NONE,
                                     ri->n_moments,
-                                    CS_TYPE_cs_int_t,
+                                    CS_TYPE_int,
                                     ri->stat_type);
   _assert_restart_success(retcode);
 }
@@ -5478,7 +5478,7 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
                            "lagr_stats:sizes",
                            CS_MESH_LOCATION_NONE,
                            3,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            sizes);
 
   cs_restart_write_section(restart,
@@ -5511,14 +5511,14 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
                            "lagr_stats:wa:location_id",
                            CS_MESH_LOCATION_NONE,
                            n_active_wa,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            location_id);
 
   cs_restart_write_section(restart,
                            "lagr_stats:wa:nt_start",
                            CS_MESH_LOCATION_NONE,
                            n_active_wa,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            nt_start);
 
   cs_restart_write_section(restart,
@@ -5607,56 +5607,56 @@ cs_lagr_stat_restart_write(cs_restart_t  *restart)
                            "lagr_stats:group",
                            CS_MESH_LOCATION_NONE,
                            n_active_moments,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            stat_group);
 
   cs_restart_write_section(restart,
                            "lagr_stats:type",
                            CS_MESH_LOCATION_NONE,
                            n_active_moments,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            m_type);
 
   cs_restart_write_section(restart,
                            "lagr_stats:class",
                            CS_MESH_LOCATION_NONE,
                            n_active_moments,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            class);
 
   cs_restart_write_section(restart,
                            "lagr_stats:location_id",
                            CS_MESH_LOCATION_NONE,
                            n_active_moments,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            location_id);
 
   cs_restart_write_section(restart,
                            "lagr_stats:dimension",
                            CS_MESH_LOCATION_NONE,
                            n_active_moments,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            dimension);
 
   cs_restart_write_section(restart,
                            "lagr_stats:wa_id",
                            CS_MESH_LOCATION_NONE,
                            n_active_moments,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            wa_id);
 
   cs_restart_write_section(restart,
                            "lagr_stats:lower_order_id",
                            CS_MESH_LOCATION_NONE,
                            n_active_moments,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            l_id);
 
   cs_restart_write_section(restart,
                            "lagr_stats:stat_type",
                            CS_MESH_LOCATION_NONE,
                            n_active_moments,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            stat_type);
 
   BFT_FREE(l_id);

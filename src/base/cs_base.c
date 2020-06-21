@@ -1430,7 +1430,7 @@ cs_base_get_rank_step_comm(int  rank_step)
 
     _n_step_comms += 1;
     BFT_REALLOC(_step_comm, _n_step_comms, MPI_Comm);
-    BFT_REALLOC(_step_ranks, _n_step_comms, cs_lnum_t);
+    BFT_REALLOC(_step_ranks, _n_step_comms, int);
 
     _step_ranks[comm_id] = n_ranks;
 
@@ -2225,9 +2225,9 @@ cs_base_string_f_to_c_create(const char  *f_str,
 void
 cs_base_string_f_to_c_free(char  **c_str)
 {
-  cs_int_t ind;
+  int ind;
 
-  for (ind = 0 ; ind < CS_BASE_N_STRINGS ; ind++) {
+  for (ind = 0; ind < CS_BASE_N_STRINGS; ind++) {
     if (*c_str == cs_glob_base_str[ind]) {
       cs_glob_base_str_is_free[ind] = true;
       *c_str = NULL;

@@ -448,18 +448,18 @@ _val_ant(cs_ast_coupling_t  *ast_cpl)
 
 void CS_PROCF(astgeo, ASTGEO)
 (
-  cs_int_t   *nbfast,
-  cs_int_t   *lstfac,
-  cs_int_t   *idfast,
-  cs_int_t   *idnast,
+  cs_lnum_t  *nbfast,
+  cs_lnum_t  *lstfac,
+  cs_lnum_t  *idfast,
+  cs_lnum_t  *idnast,
   cs_real_t  *almax
 )
 {
   cs_lnum_t j, n_faces;
   cs_lnum_t n_vertices;
 
-  cs_lnum_t *faces_color = NULL;
-  cs_lnum_t *vertices_color = NULL;
+  int       *faces_color = NULL;
+  int       *vertices_color = NULL;
 
   cs_real_t *face_centers = NULL;
   cs_real_t *vtx_coords = NULL;
@@ -493,8 +493,8 @@ void CS_PROCF(astgeo, ASTGEO)
 
   fvm_nodal_get_parent_num(fsi_mesh, 0, ast_cpl->s_vtx_num);
 
-  BFT_MALLOC(faces_color, n_faces, cs_lnum_t);
-  BFT_MALLOC(vertices_color, n_vertices, cs_lnum_t);
+  BFT_MALLOC(faces_color, n_faces, int);
+  BFT_MALLOC(vertices_color, n_vertices, int);
   BFT_MALLOC(face_centers, 3*n_faces, cs_real_t);
   BFT_MALLOC(vtx_coords, 3*n_vertices, cs_real_t);
 
@@ -719,7 +719,6 @@ void CS_PROCF(astgeo, ASTGEO)
 
 void CS_PROCF(astfor, ASTFOR)
 (
- cs_lnum_t    *ntcast,
  cs_lnum_t    *nbfast,
  cs_real_t    *forast
 )
@@ -849,8 +848,7 @@ void CS_PROCF(astfor, ASTFOR)
 
 void CS_PROCF(astcin, ASTCIN)
 (
- cs_int_t    *ntcast,
- cs_real_3_t *disale
+ cs_real_3_t  *disale
 )
 {
   cs_ast_coupling_t  *ast_cpl = cs_glob_ast_coupling;
@@ -936,8 +934,7 @@ void CS_PROCF(astcin, ASTCIN)
 void
 CS_PROCF(astpdt, ASTPDT)
 (
-  cs_real_t *dttab,
-  cs_int_t  *nbpdt
+  cs_real_t  *dttab
 )
 {
   cs_ast_coupling_t  *ast_cpl = cs_glob_ast_coupling;
@@ -1223,7 +1220,7 @@ cs_ast_coupling_get_ext_cvg(void)
 #if defined(HAVE_MPI)
 
   if (cs_glob_n_ranks > 1)
-    MPI_Bcast(&(ast_cpl->icv1), 1, CS_MPI_INT, 0, cs_glob_mpi_comm);
+    MPI_Bcast(&(ast_cpl->icv1), 1, MPI_INT, 0, cs_glob_mpi_comm);
 
 #endif
 

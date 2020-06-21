@@ -969,8 +969,8 @@ cs_equation_set_vertex_bc_flag(const cs_cdo_connect_t     *connect,
       const cs_lnum_t v_id = bf2v->ids[j];
       if (vflag[v_id] == 0)
         bft_error(__FILE__, __LINE__, 0,
-                  "%s: Border vertices %d without any boundary conditions.",
-                  __func__, v_id);
+                  "%s: Border vertices %ld without any boundary conditions.",
+                  __func__, (long)v_id);
     }
   } /* Loop on border faces */
 #endif
@@ -1032,8 +1032,8 @@ cs_equation_set_edge_bc_flag(const cs_cdo_connect_t     *connect,
       const cs_lnum_t e_id = f2e->ids[j];
       if (edge_flag[e_id] == 0)
         bft_error(__FILE__, __LINE__, 0,
-                  "%s: Border edge %d without any boundary conditions.",
-                  __func__, e_id);
+                  "%s: Border edge %ld without any boundary conditions.",
+                  __func__, (long)e_id);
     }
   } /* Loop on border faces */
 #endif

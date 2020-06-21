@@ -749,10 +749,12 @@ cs_at_opt_interp_read_file(char const           filename[50],
   while (fgets(line, MAX_LINE_SIZE, fichier)) {
     /* Reading Number of observations */
     if (strncmp(line, "_nobs_", 6) == 0) {
-      fscanf(fichier, "%i", &(ms->nb_measures));
+      int n_measures;
+      fscanf(fichier, "%i", &n_measures);
+      ms->nb_measures = n_measures;
 
 #if _OI_DEBUG_
-      bft_printf("   *Reading _nobs_ : %i\n", ms->nb_measures);
+      bft_printf("   *Reading _nobs_ : %i\n", n_measures);
 #endif
 
       if (ms->nb_measures <= 0) {

@@ -78,7 +78,7 @@ typedef struct _cs_syr4_coupling_t  cs_syr4_coupling_t;
 
 void CS_PROCF (ctbvsy, CTBVSY)
 (
- cs_int_t   *numsyr,
+ int        *numsyr,
  cs_real_t  *tfluid,
  cs_real_t  *ctbimp,
  cs_real_t  *ctbexp
@@ -109,7 +109,7 @@ cs_syr4_coupling_n_couplings(void);
  *----------------------------------------------------------------------------*/
 
 cs_syr4_coupling_t *
-cs_syr4_coupling_by_id(cs_int_t coupling_id);
+cs_syr4_coupling_by_id(int  coupling_id);
 
 /*----------------------------------------------------------------------------
  * Create a syr4_coupling_t structure.
@@ -243,7 +243,7 @@ cs_syr4_coupling_get_n_elts(const cs_syr4_coupling_t *syr_coupling,
 
 void
 cs_syr4_coupling_get_elt_list(const cs_syr4_coupling_t  *syr_coupling,
-                              cs_int_t                   cpl_elt_lst[],
+                              cs_lnum_t                  cpl_elt_lst[],
                               int                        mode);
 
 /*----------------------------------------------------------------------------

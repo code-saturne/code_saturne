@@ -200,7 +200,7 @@ enddo
 
 !     Envoi de l'effort applique aux structures externes
 if (nbaste.gt.0) then
-  call astfor(ntcast, nbfast, forast)
+  call astfor(nbfast, forast)
 endif
 
 ! Free memory

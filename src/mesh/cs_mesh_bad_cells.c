@@ -528,7 +528,7 @@ _bad_cells_post(const cs_mesh_t             *mesh,
 {
   int i;
 
-  cs_lnum_t  *bad_cells_v = NULL;
+  int  *bad_cells_v = NULL;
 
   const cs_lnum_t  n_cells       = mesh->n_cells;
   const unsigned  *bad_cell_flag = mesh_quantities->bad_cell_flag;
@@ -643,7 +643,7 @@ _to_regularize(const cs_mesh_t             *mesh,
   cs_lnum_t n_i_faces = mesh->n_i_faces;
   cs_lnum_t n_b_faces = mesh->n_b_faces;
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)mesh->i_face_cells;
-  const int *b_face_cells = mesh->b_face_cells;
+  const cs_lnum_t *b_face_cells = mesh->b_face_cells;
 
   const cs_real_3_t *cdgfac = (const cs_real_3_t *) mq->i_face_cog;
   const cs_real_3_t *cdgfbo = (const cs_real_3_t *) mq->b_face_cog;

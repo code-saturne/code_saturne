@@ -80,54 +80,62 @@ typedef struct _cs_inlet_t  cs_inlet_t;
 
 void CS_PROCF(defsyn, DEFSYN)
 (
- cs_int_t            *n_inlets     /* <-- number of inlets                    */
+ int  *n_inlets                    /* <-- number of inlets                    */
 );
 
 /*----------------------------------------------------------------------------
  * General synthetic turbulence generation
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF(synthe, SYNTHE)(
- const cs_int_t  *const nvar,      /* --> number of variables                 */
- const cs_int_t  *const nscal,     /* --> number of scalars                   */
- const cs_int_t  *const iu,        /* --> index of velocity component         */
- const cs_int_t  *const iv,        /* --> index of velocity component         */
- const cs_int_t  *const iw,        /* --> index of velocity component         */
+void CS_PROCF(synthe, SYNTHE)
+(
+ const int       *const nvar,      /* --> number of variables                 */
+ const int       *const nscal,     /* --> number of scalars                   */
+ const int       *const iu,        /* --> index of velocity component         */
+ const int       *const iv,        /* --> index of velocity component         */
+ const int       *const iw,        /* --> index of velocity component         */
  const cs_real_t *const ttcabs,    /* --> current physical time               */
  const cs_real_t        dt[],      /* --> time step                           */
        cs_real_t        rcodcl[]   /* <-> boundary conditions array           */
 );
 
 void CS_PROCF(cs_user_les_inflow_init, CS_USER_LES_INFLOW_INIT)(
- cs_int_t              *nent       /* <-- number of LES inlets                */
+ int                   *nent       /* <-- number of LES inlets                */
 );
 
 void CS_PROCF(cs_user_les_inflow_define, CS_USER_LES_INFLOW_DEFINE)(
- const cs_int_t  *const nument,    /* --> id of the inlet                     */
-          int         *typent,     /* <-- type of inflow method at the inlet  */
-          int         *nelent,     /* <-- numb. of entities of the inflow meth*/
-          int         *iverbo,     /* <-- verbosity level                     */
-       cs_int_t       *nfbent,     /* <-- numb. of bound. faces of the inlet  */
-       cs_int_t        lfbent[],   /* <-- list of bound. faces of the inlet   */
-       cs_real_t       vitent[],   /* <-- ref. mean velocity at the inlet     */
-       cs_real_t      *enrent,     /* <-- ref. turb. kin. ener. at the inlet  */
-       cs_real_t      *dspent      /* <-- ref. turb. dissipation at the inlet */
+ const int       *const nument,    /* --> id of the inlet                     */
+ int                   *typent,    /* <-- type of inflow method at the inlet  */
+ int                   *nelent,    /* <-- numb. of entities of the inflow meth*/
+ int                   *iverbo,    /* <-- verbosity level                     */
+ cs_lnum_t             *nfbent,    /* <-- numb. of bound. faces of the inlet  */
+ cs_lnum_t              lfbent[],  /* <-- list of bound. faces of the inlet   */
+ cs_real_t              vitent[],  /* <-- ref. mean velocity at the inlet     */
+ cs_real_t             *enrent,    /* <-- ref. turb. kin. ener. at the inlet  */
+ cs_real_t             *dspent     /* <-- ref. turb. dissipation at the inlet */
 );
 
 void CS_PROCF(cs_user_les_inflow_advanced, CS_USER_LES_INFLOW_ADVANCED)(
- const cs_int_t  *const nument,    /* --> id of the inlet                     */
- const cs_int_t  *const nfbent,    /* --> numb. of bound. faces of the inlet  */
- const cs_int_t  *const nvar,      /* --> number of variables                 */
- const cs_int_t  *const nscal,     /* --> number of scalars                   */
- const cs_int_t         lfbent[],  /* --> list of bound. faces of the inlet   */
- const cs_real_t        dt[],      /* --> time step                           */
-       cs_real_t        uent[],    /* <-- mean velocity at the inlet faces    */
-       cs_real_t        rijent[],  /* <-- turb. kin. ener. at the inlet faces */
-       cs_real_t        epsent[]   /* <-- turb. dissipation at the inlet faces*/
+ const int        *const nument,   /* --> id of the inlet                     */
+ const cs_lnum_t  *const nfbent,   /* --> numb. of bound. faces of the inlet  */
+ const int        *const nvar,     /* --> number of variables                 */
+ const int        *const nscal,    /* --> number of scalars                   */
+ const cs_lnum_t         lfbent[], /* --> list of bound. faces of the inlet   */
+ const cs_real_t         dt[],     /* --> time step                           */
+       cs_real_t         uent[],   /* <-- mean velocity at the inlet faces    */
+       cs_real_t         rijent[], /* <-- turb. kin. ener. at the inlet faces */
+       cs_real_t         epsent[]  /* <-- turb. dissipation at the inlet faces*/
 );
 
 /*----------------------------------------------------------------------------
  * Read the restart file of the LES inflow module
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE LECSYN
+ * *****************
+ *
+ * character(kind=c_char)  filename : <-- : Name of the restart file
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(lecsyn, LECSYN)
@@ -136,7 +144,14 @@ void CS_PROCF(lecsyn, LECSYN)
 );
 
 /*----------------------------------------------------------------------------
- * Write the restart file of the LES inflow module
+ * Write the restart file of les inflow module
+ *
+ * Fortran interface:
+ *
+ * SUBROUTINE ECRSYN
+ * *****************
+ *
+ * character(kind=c_char)  filename : <-- : Name of the restart file
  *----------------------------------------------------------------------------*/
 
 void CS_PROCF(ecrsyn, ECRSYN)

@@ -657,7 +657,7 @@ cs_lagr_log_iteration(void)
 
   cs_parall_sum(flow_rate_size, CS_REAL_TYPE, flow_rate);
 
-  for (cs_lnum_t z_id = 0; z_id < bdy_cond->n_zones; z_id++) {
+  for (int z_id = 0; z_id < bdy_cond->n_zones; z_id++) {
 
     if (CS_ABS(flow_rate[z_id*n_stats]) > 0.) {
 

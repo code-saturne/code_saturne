@@ -249,9 +249,9 @@ cs_cdo_bc_face_define(cs_param_bc_type_t    default_bc,
     bc->n_robin_faces + bc->n_sliding_faces + bc->n_circulation_faces;
   if (n_set_faces != bc->n_b_faces)
     bft_error(__FILE__, __LINE__, 0,
-              " %s: There are %d faces without boundary conditions.\n"
+              " %s: There are %ld faces without boundary conditions.\n"
               " Please check your settings.",
-              __func__, bc->n_b_faces - n_set_faces);
+              __func__, (long)(bc->n_b_faces - n_set_faces));
 #endif
 
   /* Allocate list of border faces by type of boundary conditions */

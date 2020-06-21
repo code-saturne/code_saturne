@@ -117,7 +117,7 @@ cs_rad_transfer_write(void)
                            "version_fichier_suite_rayonnement",
                            CS_MESH_LOCATION_NONE,
                            1,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            &ivers);
 
   cs_log_printf(CS_LOG_DEFAULT,
@@ -129,7 +129,7 @@ cs_rad_transfer_write(void)
                            "nbre_pas_de_temps",
                            CS_MESH_LOCATION_NONE,
                            1,
-                           CS_TYPE_cs_int_t,
+                           CS_TYPE_int,
                            &cs_glob_time_step->nt_cur);
 
   cs_restart_write_section(rp,
@@ -217,7 +217,7 @@ cs_rad_transfer_read(void)
                                          rubriq,
                                          CS_MESH_LOCATION_NONE,
                                          1,
-                                         CS_TYPE_cs_int_t,
+                                         CS_TYPE_int,
                                          &ivers);
     if (ierror != 0)
       cs_parameters_error

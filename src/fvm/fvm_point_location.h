@@ -88,7 +88,7 @@ fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
                          float               tolerance_fraction,
                          int                 locate_on_parents,
                          cs_lnum_t           n_points,
-                         const cs_lnum_t    *point_tag,
+                         const int          *point_tag,
                          const cs_coord_t    point_coords[],
                          cs_lnum_t           location[],
                          float               distance[]);

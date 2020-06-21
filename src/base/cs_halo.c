@@ -99,6 +99,42 @@ static int _cs_glob_halo_use_barrier = false;
  * Private function definitions
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Test if an array of global numbers is ordered.
+ *
+ * \param[in]  list    optional list (1 to n numbering) of selected entities
+ *                     (or NULL if all nb_ent are selected). This list may
+ *                     contain element numbers in any order
+ * \param[in]  nb_ent  number of entities considered
+ *
+ * \return  1 if ordered, 0 otherwise.
+ */
+/*----------------------------------------------------------------------------*/
+
+static int
+_order_int_test(const int  list[],
+                size_t     nb_ent)
+{
+  size_t i = 0;
+
+  /* If numbering is explicit */
+
+  if (list != NULL) {
+    for (i = 1 ; i < nb_ent ; i++) {
+      if (list[i] < list[i-1])
+        break;
+    }
+  }
+  else
+    i = nb_ent;
+
+  if (i == nb_ent || nb_ent == 0)
+    return 1;
+  else
+    return 0;
+}
+
 /*----------------------------------------------------------------------------
  * Save rotation terms of a halo to an internal buffer.
  *
@@ -379,9 +415,8 @@ cs_halo_create(const cs_interface_set_t  *ifs)
   /* Order ranks */
 
   if (   halo->n_c_domains > 2
-      && cs_order_gnum_test(&(halo->c_domain_rank[1]),
-                            NULL,
-                            halo->n_c_domains-1) == 0) {
+      && _order_int_test(&(halo->c_domain_rank[1]),
+                         halo->n_c_domains-1) == 0) {
 
     cs_lnum_t  *order = NULL;
     cs_gnum_t  *buffer = NULL;
@@ -1293,7 +1328,7 @@ cs_halo_sync_num(const cs_halo_t  *halo,
         if (length > 0)
           MPI_Irecv(num + halo->n_local_elts + start,
                     length,
-                    CS_MPI_INT,
+                    CS_MPI_LNUM,
                     halo->c_domain_rank[rank_id],
                     halo->c_domain_rank[rank_id],
                     cs_glob_mpi_comm,
@@ -1343,7 +1378,7 @@ cs_halo_sync_num(const cs_halo_t  *halo,
         if (length > 0)
           MPI_Isend(build_buffer + start,
                     length,
-                    CS_MPI_INT,
+                    CS_MPI_LNUM,
                     halo->c_domain_rank[rank_id],
                     local_rank,
                     cs_glob_mpi_comm,
@@ -1825,8 +1860,6 @@ void
 cs_halo_dump(const cs_halo_t  *halo,
              int               print_level)
 {
-  cs_lnum_t  i, j, halo_id;
-
   if (halo == NULL) {
     bft_printf("\n\n  halo: nil\n");
     return;
@@ -1837,17 +1870,17 @@ cs_halo_dump(const cs_halo_t  *halo,
              "  n_c_domains:    %d\n"
              "  periodicity:    %p\n"
              "  n_rotations:    %d\n"
-             "  n_local_elts:   %d\n",
+             "  n_local_elts:   %ld\n",
              (const void *)halo,
              halo->n_transforms, halo->n_c_domains,
              (const void *)halo->periodicity,
-             halo->n_rotations, halo->n_local_elts);
+             halo->n_rotations, (long)halo->n_local_elts);
 
   bft_printf("\nRanks on halo frontier:\n");
-  for (i = 0; i < halo->n_c_domains; i++)
+  for (int i = 0; i < halo->n_c_domains; i++)
     bft_printf("%5d", halo->c_domain_rank[i]);
 
-  for (halo_id = 0; halo_id < 2; halo_id++) {
+  for (int halo_id = 0; halo_id < 2; halo_id++) {
 
     cs_lnum_t  n_elts[2];
     cs_lnum_t  *index = NULL, *list = NULL, *perio_lst = NULL;
@@ -1876,8 +1909,8 @@ cs_halo_dump(const cs_halo_t  *halo,
     }
 
     bft_printf("    ---------\n\n");
-    bft_printf("  n_ghost_cells:        %d\n"
-               "  n_std_ghost_cells:    %d\n", n_elts[1], n_elts[0]);
+    bft_printf("  n_ghost_cells:        %ld\n"
+               "  n_std_ghost_cells:    %ld\n", (long)n_elts[1], (long)n_elts[0]);
 
     if (index == NULL)
       return;
@@ -1886,38 +1919,38 @@ cs_halo_dump(const cs_halo_t  *halo,
 
       const cs_lnum_t  stride = 4*halo->n_c_domains;
 
-      for (i = 0; i < halo->n_transforms; i++) {
+      for (int i = 0; i < halo->n_transforms; i++) {
 
         bft_printf("\nTransformation number: %d\n", i+1);
 
-        for (j = 0; j < halo->n_c_domains; j++) {
+        for (int j = 0; j < halo->n_c_domains; j++) {
 
-          bft_printf("    rank %3d <STD> %5d %5d <EXT> %5d %5d\n",
+          bft_printf("    rank %3d <STD> %5ld %5ld <EXT> %5ld %5ld\n",
                      halo->c_domain_rank[j],
-                     perio_lst[i*stride + 4*j],
-                     perio_lst[i*stride + 4*j+1],
-                     perio_lst[i*stride + 4*j+2],
-                     perio_lst[i*stride + 4*j+3]);
+                     (long)perio_lst[i*stride + 4*j],
+                     (long)perio_lst[i*stride + 4*j+1],
+                     (long)perio_lst[i*stride + 4*j+2],
+                     (long)perio_lst[i*stride + 4*j+3]);
         }
 
       } /* End of loop on perio */
 
     } /* End if n_perio > 0 */
 
-    for (i = 0; i < halo->n_c_domains; i++) {
+    for (int i = 0; i < halo->n_c_domains; i++) {
 
       bft_printf("\n  rank      %d:\n", halo->c_domain_rank[i]);
 
       if (index[2*i+1] - index[2*i] > 0) {
 
         bft_printf("\n  Standard halo\n");
-        bft_printf("  idx start %d:          idx end   %d:\n",
-                   index[2*i], index[2*i+1]);
+        bft_printf("  idx start %ld:          idx end   %ld:\n",
+                   (long)index[2*i], (long)index[2*i+1]);
 
         if (print_level > 0 && list != NULL) {
           bft_printf("\n            idx     elt id\n");
-          for (j = index[2*i]; j < index[2*i+1]; j++)
-            bft_printf("    %10d %10d\n", j, list[j]);
+          for (cs_lnum_t j = index[2*i]; j < index[2*i+1]; j++)
+            bft_printf("    %10ld %10ld\n", (long)j, (long)list[j]);
         }
 
       } /* there are elements on standard neighborhood */
@@ -1925,14 +1958,14 @@ cs_halo_dump(const cs_halo_t  *halo,
       if (index[2*i+2] - index[2*i+1] > 0) {
 
         bft_printf("\n  Extended halo\n");
-        bft_printf("  idx start %d:          idx end   %d:\n",
-                   index[2*i+1], index[2*i+2]);
+        bft_printf("  idx start %ld:          idx end   %ld:\n",
+                   (long)index[2*i+1], (long)index[2*i+2]);
 
         if (print_level > 0 && list != NULL) {
           bft_printf("\n            idx     elt id\n");
-          for (j = index[2*i+1]; j < index[2*i+2]; j++)
-            bft_printf("    %10d %10d %10d\n",
-                       j, list[j], halo->n_local_elts+j);
+          for (long j = index[2*i+1]; j < index[2*i+2]; j++)
+            bft_printf("    %10ld %10ld %10ld\n",
+                       (long)j, (long)list[j], (long)halo->n_local_elts+j);
         }
 
       } /* If there are elements on extended neighborhood */

@@ -76,8 +76,8 @@ BEGIN_C_DECLS
 
 void CS_PROCF (armtps, ARMTPS)
 (
- const cs_int_t  *ntcabs,
-       cs_int_t  *ntmabs
+ const int  *ntcabs,
+ int        *ntmabs
 );
 
 /*============================================================================

@@ -401,7 +401,7 @@ _locate_by_extents_1d(cs_lnum_t         elt_num,
                       const int        *elt_tag,
                       const double      extents[],
                       cs_lnum_t         n_points,
-                      const cs_lnum_t  *point_tag,
+                      const int        *point_tag,
                       const cs_coord_t  point_coords[],
                       cs_lnum_t         location[],
                       float             distance[])
@@ -698,7 +698,7 @@ _build_octree(cs_lnum_t         n_points,
   cs_lnum_t point_range[2];
   _octree_t _octree;
 
-  int *point_ids_tmp = NULL;
+  cs_lnum_t *point_ids_tmp = NULL;
 
   /* Initialization */
 
@@ -724,7 +724,7 @@ _build_octree(cs_lnum_t         n_points,
     for (i = 0; i < _octree.n_points; i++)
       _octree.point_ids[i] = i;
 
-    BFT_MALLOC(point_ids_tmp, n_points, int);
+    BFT_MALLOC(point_ids_tmp, n_points, cs_lnum_t);
 
     _build_octree_leaves(0,
                          _octree.extents,
@@ -1074,7 +1074,7 @@ _build_quadtree(cs_lnum_t         n_points,
   cs_lnum_t point_range[2];
   _quadtree_t _quadtree;
 
-  int *point_ids_tmp = NULL;
+  cs_lnum_t *point_ids_tmp = NULL;
 
   /* Initialization */
 
@@ -1100,7 +1100,7 @@ _build_quadtree(cs_lnum_t         n_points,
     for (i = 0; i < _quadtree.n_points; i++)
       _quadtree.point_ids[i] = i;
 
-    BFT_MALLOC(point_ids_tmp, n_points, int);
+    BFT_MALLOC(point_ids_tmp, n_points, cs_lnum_t);
 
     _build_quadtree_leaves(0,
                            _quadtree.extents,
@@ -1276,7 +1276,7 @@ _query_quadtree(const double        extents[],
 
 static void
 _ignore_same_tag(int                tag,
-                 const cs_lnum_t    point_tag[],
+                 const int          point_tag[],
                  cs_lnum_t         *n_loc_points,
                  cs_lnum_t          loc_point_ids[])
 {
@@ -2322,7 +2322,7 @@ _polyhedra_section_locate(const fvm_nodal_section_t  *this_section,
                           const cs_coord_t            vertex_coords[],
                           const double                tolerance[2],
                           cs_lnum_t                   base_element_num,
-                          const cs_lnum_t            *point_tag,
+                          const int                  *point_tag,
                           const cs_coord_t            point_coords[],
                           _octree_t                  *octree,
                           cs_lnum_t                   points_in_extents[],
@@ -2361,7 +2361,7 @@ _polyhedra_section_locate(const fvm_nodal_section_t  *this_section,
   if (n_vertices_max < 3)
     return;
 
-  BFT_MALLOC(triangle_vertices, (n_vertices_max-2)*3, int);
+  BFT_MALLOC(triangle_vertices, (n_vertices_max-2)*3, cs_lnum_t);
   state = fvm_triangulate_state_create(n_vertices_max);
 
   /* Loop on elements */
@@ -2558,7 +2558,7 @@ _polygons_section_locate_3d(const fvm_nodal_section_t   *this_section,
                             const cs_coord_t             vertex_coords[],
                             const double                 tolerance[2],
                             cs_lnum_t                    base_element_num,
-                            const cs_lnum_t             *point_tag,
+                            const int                   *point_tag,
                             const cs_coord_t             point_coords[],
                             _octree_t                   *octree,
                             cs_lnum_t                    points_in_extents[],
@@ -2595,7 +2595,7 @@ _polygons_section_locate_3d(const fvm_nodal_section_t   *this_section,
   if (n_vertices_max < 3)
     return;
 
-  BFT_MALLOC(triangle_vertices, (n_vertices_max-2)*3, int);
+  BFT_MALLOC(triangle_vertices, (n_vertices_max-2)*3, cs_lnum_t);
   state = fvm_triangulate_state_create(n_vertices_max);
 
   /* Main loop on elements */
@@ -2713,7 +2713,7 @@ _nodal_section_locate_3d(const fvm_nodal_section_t  *this_section,
                          const cs_coord_t            vertex_coords[],
                          const double                tolerance[2],
                          cs_lnum_t                   base_element_num,
-                         const cs_lnum_t            *point_tag,
+                         const int                  *point_tag,
                          const cs_coord_t            point_coords[],
                          _octree_t                  *octree,
                          cs_lnum_t                   points_in_extents[],
@@ -2911,7 +2911,7 @@ _nodal_section_locate_2d(const fvm_nodal_section_t  *this_section,
                          const cs_coord_t            vertex_coords[],
                          const double                tolerance[2],
                          cs_lnum_t                   base_element_num,
-                         const cs_lnum_t            *point_tag,
+                         const int                  *point_tag,
                          const cs_coord_t            point_coords[],
                          _quadtree_t                *quadtree,
                          cs_lnum_t                   points_in_extents[],
@@ -2950,7 +2950,7 @@ _nodal_section_locate_2d(const fvm_nodal_section_t  *this_section,
     if (n_vertices_max < 3)
       return;
 
-    BFT_MALLOC(triangle_vertices, (n_vertices_max-2)*3, int);
+    BFT_MALLOC(triangle_vertices, (n_vertices_max-2)*3, cs_lnum_t);
     state = fvm_triangulate_state_create(n_vertices_max);
 
   }
@@ -3155,7 +3155,7 @@ _nodal_section_locate_1d(const fvm_nodal_section_t  *this_section,
                          const double                tolerance[2],
                          cs_lnum_t                   base_element_num,
                          cs_lnum_t                   n_points,
-                         const cs_lnum_t            *point_tag,
+                         const int                  *point_tag,
                          const cs_coord_t            point_coords[],
                          cs_lnum_t                   location[],
                          float                       distance[])
@@ -3164,7 +3164,7 @@ _nodal_section_locate_1d(const fvm_nodal_section_t  *this_section,
   cs_coord_t  edge_coords[2];
   double delta, elt_extents[2];
 
-  cs_lnum_t *elt_tag = NULL;
+  int *elt_tag = NULL;
 
   for (i = 0; i < this_section->n_elements; i++) {
 
@@ -3256,7 +3256,7 @@ fvm_point_location_nodal(const fvm_nodal_t  *this_nodal,
                          float               tolerance_fraction,
                          int                 locate_on_parents,
                          cs_lnum_t           n_points,
-                         const cs_lnum_t    *point_tag,
+                         const int          *point_tag,
                          const cs_coord_t    point_coords[],
                          cs_lnum_t           location[],
                          float               distance[])
@@ -3484,8 +3484,8 @@ fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
         bft_error(__FILE__, __LINE__, 0,
                   _(" Located element can not be found among the sections of"
                     " highest dimension.\n"
-                    " Element num: %d\n Nodal mesh name: %s\n"),
-                  num, this_nodal->name);
+                    " Element num: %ld\n Nodal mesh name: %s\n"),
+                  (long)num, this_nodal->name);
 
       const cs_lnum_t  elt_id = num - section_index[max_dim_s_id] - 1;
       const int  s_id = section_list[max_dim_s_id];
@@ -3560,8 +3560,8 @@ fvm_point_location_closest_vertex(const fvm_nodal_t  *this_nodal,
 
       if (chosen_id == -1)
         bft_error(__FILE__, __LINE__, 0,
-                  _(" Closest vertex has not been found for point %d in"
-                    " mesh %s\n"), num, this_nodal->name);
+                  _(" Closest vertex has not been found for point %ld in"
+                    " mesh %s\n"), (long)num, this_nodal->name);
 
       /* Update arrays to return */
       located_vtx_num[p_id] = chosen_id + 1;

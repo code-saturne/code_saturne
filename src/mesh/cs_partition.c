@@ -2601,7 +2601,7 @@ _read_cell_rank(cs_mesh_t          *mesh,
         cs_io_set_cs_lnum(&header, rank_pp_in);
         if (mb->cell_bi.gnum_range[0] > 0)
           n_elts = mb->cell_bi.gnum_range[1] - mb->cell_bi.gnum_range[0];
-        BFT_MALLOC(mb->cell_rank, n_elts, cs_lnum_t);
+        BFT_MALLOC(mb->cell_rank, n_elts, int);
         cs_io_read_block(&header,
                          mb->cell_bi.gnum_range[0],
                          mb->cell_bi.gnum_range[1],

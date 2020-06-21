@@ -85,16 +85,16 @@ void CS_PROCF (matrix, MATRIX)
 
 void CS_PROCF (matrdt, MATRDT)
 (
- const cs_int_t  *const   iconvp,
- const cs_int_t  *const   idiffp,
- const cs_int_t  *const   isym,
- const cs_real_t          coefbp[],
- const cs_real_t          cofbfp[],
- const cs_real_t          i_massflux[],
- const cs_real_t          b_massflux[],
- const cs_real_t          i_visc[],
- const cs_real_t          b_visc[],
- cs_real_t                da[]
+ const int        *const iconvp,
+ const int        *const idiffp,
+ const int        *const isym,
+ const cs_real_t         coefbp[],
+ const cs_real_t         cofbfp[],
+ const cs_real_t         i_massflux[],
+ const cs_real_t         b_massflux[],
+ const cs_real_t         i_visc[],
+ const cs_real_t         b_visc[],
+ cs_real_t               da[]
 );
 
 /*=============================================================================
@@ -160,7 +160,7 @@ cs_matrix_wrapper_vector(int                  iconvp,
                          int                  tensorial_diffusion,
                          int                  ndircp,
                          int                  isym,
-                         int                  eb_size[4],
+                         cs_lnum_t            eb_size[4],
                          double               thetap,
                          const cs_real_33_t   coefbu[],
                          const cs_real_33_t   cofbfu[],
@@ -236,6 +236,7 @@ cs_sym_matrix_scalar(const cs_mesh_t          *m,
                      const cs_real_t           b_visc[],
                      cs_real_t       *restrict da,
                      cs_real_t       *restrict xa);
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Build the diffusion matrix for a tensor field
@@ -480,7 +481,7 @@ cs_matrix_vector(const cs_mesh_t            *m,
                  const cs_mesh_quantities_t *mq,
                  int                         iconvp,
                  int                         idiffp,
-                 int                         eb_size[4],
+                 cs_lnum_t                   eb_size[4],
                  double                      thetap,
                  const cs_real_33_t          coefbu[],
                  const cs_real_33_t          cofbfu[],

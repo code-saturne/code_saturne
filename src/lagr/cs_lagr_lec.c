@@ -116,11 +116,11 @@ CS_PROCF(lagout, LAGOUT)(void)
 void
 cs_restart_lagrangian_checkpoint_read(void)
 {
-  cs_lnum_t mstits, nberro;
-  cs_lnum_t mstist, jdstnt, nclsto, mstbor, jsttio;
-  cs_lnum_t jturb , jtytur;
+  int  mstits, nberro;
+  int  mstist, jdstnt, nclsto, mstbor, jsttio;
+  int  jturb , jtytur;
 
-  cs_int_t  ierror = CS_RESTART_SUCCESS;
+  int  ierror = CS_RESTART_SUCCESS;
 
   cs_lagr_extra_module_t *extra = cs_glob_lagr_extra_module;
 
@@ -190,7 +190,7 @@ cs_restart_lagrangian_checkpoint_read(void)
                  (lag_stat_restart,
                   "version_fichier_suite_Lagrangien_statistiques",
                   CS_MESH_LOCATION_NONE,
-                  1, CS_TYPE_cs_int_t, &ivers);
+                  1, CS_TYPE_int, &ivers);
       if (ierror != 0)
         bft_error(__FILE__, __LINE__, 0,
                   _("Abort while opening the lagrangian module restart file: %s\n"
@@ -202,7 +202,7 @@ cs_restart_lagrangian_checkpoint_read(void)
       ierror = cs_restart_read_section(lag_stat_restart,
                                        "indicateur_ecoulement_stationnaire",
                                        CS_MESH_LOCATION_NONE,
-                                       1, CS_TYPE_cs_int_t, &jsttio);
+                                       1, CS_TYPE_int, &jsttio);
       if (ierror != 0)
         cs_parameters_error
           (CS_ABORT_IMMEDIATE,
@@ -253,13 +253,13 @@ cs_restart_lagrangian_checkpoint_read(void)
       nberro += cs_restart_read_section(lag_stat_restart,
                                         "iteration_debut_statistiques",
                                         CS_MESH_LOCATION_NONE,
-                                        1, CS_TYPE_cs_int_t, &jdstnt);
+                                        1, CS_TYPE_int, &jdstnt);
 
       nberro += cs_restart_read_section
                   (lag_stat_restart,
                    "iteration_debut_statistiques_stationnaires",
                    CS_MESH_LOCATION_NONE,
-                   1, CS_TYPE_cs_int_t, &mstist);
+                   1, CS_TYPE_int, &mstist);
 
       if (nberro != 0) {
 
@@ -302,12 +302,12 @@ cs_restart_lagrangian_checkpoint_read(void)
              mstist, cs_glob_lagr_stat_options->nstist);
 
         {
-          cs_int_t tabvar[1];
+          int tabvar[1];
 
           char rubriq[] = "classe_statistique_particules";
           ierror = cs_restart_read_section(lag_stat_restart, rubriq,
                                            CS_MESH_LOCATION_NONE,
-                                           1, CS_TYPE_cs_int_t, tabvar);
+                                           1, CS_TYPE_int, tabvar);
           nclsto = tabvar[0];
           if (ierror != 0)
             nclsto = 0;
@@ -334,7 +334,7 @@ cs_restart_lagrangian_checkpoint_read(void)
         ierror = cs_restart_read_section(lag_stat_restart,
                                          rubriq,
                                          CS_MESH_LOCATION_NONE,
-                                         1, CS_TYPE_cs_int_t,
+                                         1, CS_TYPE_int,
                                          tabvar);
         mstbor = tabvar[0];
       }
@@ -385,7 +385,7 @@ cs_restart_lagrangian_checkpoint_read(void)
           ierror = cs_restart_read_section(lag_stat_restart,
                                            "nombre_iterations_stats_frontieres",
                                            CS_MESH_LOCATION_NONE,
-                                           1, CS_TYPE_cs_int_t, tabvar);
+                                           1, CS_TYPE_int, tabvar);
           if (ierror == 0)
             cs_glob_lagr_boundary_interactions->npstft  = tabvar[0];
           else
@@ -405,7 +405,7 @@ cs_restart_lagrangian_checkpoint_read(void)
                      (lag_stat_restart,
                       "nombre_iterations_stats_frontieres_stationnaires",
                       CS_MESH_LOCATION_NONE,
-                      1, CS_TYPE_cs_int_t, tabvar);
+                      1, CS_TYPE_int, tabvar);
           if (ierror == 0)
             cs_glob_lagr_boundary_interactions->npstf = tabvar[0];
           else
@@ -477,12 +477,12 @@ cs_restart_lagrangian_checkpoint_read(void)
     if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
 
       {
-        cs_int_t tabvar[1];
+        int tabvar[1];
 
         char rubriq[] = "iteration_debut_termes_sources_stationnaires";
         ierror = cs_restart_read_section(lag_stat_restart, rubriq,
                                          CS_MESH_LOCATION_NONE,
-                                         1, CS_TYPE_cs_int_t, tabvar);
+                                         1, CS_TYPE_int, tabvar);
         mstits = tabvar[0];
       }
       if (ierror != 0) {
@@ -515,12 +515,12 @@ cs_restart_lagrangian_checkpoint_read(void)
       else {
 
         {
-          cs_int_t tabvar[1];
+          int tabvar[1];
 
           char rubriq[] = "modele_turbulence_termes_sources";
           ierror = cs_restart_read_section(lag_stat_restart, rubriq,
                                            CS_MESH_LOCATION_NONE,
-                                           1, CS_TYPE_cs_int_t, tabvar);
+                                           1, CS_TYPE_int, tabvar);
           jturb   = tabvar[0];
           jtytur  = jturb / 10;
         }
@@ -561,12 +561,12 @@ cs_restart_lagrangian_checkpoint_read(void)
 
         /* Read of return coupling progress */
         {
-          cs_int_t tabvar[1];
+          int tabvar[1];
 
           char rubriq[] = "nombre_iterations_termes_sources_stationnaires";
           ierror = cs_restart_read_section(lag_stat_restart, rubriq,
                                            CS_MESH_LOCATION_NONE,
-                                           1, CS_TYPE_cs_int_t, tabvar);
+                                           1, CS_TYPE_int, tabvar);
           cs_glob_lagr_source_terms->npts = tabvar[0];
         }
 
@@ -728,7 +728,7 @@ cs_lagr_restart_read_p(void)
   cs_lnum_t ierror = 0, iok = 0;
 
   /* read variables */
-  cs_lnum_t mvls, jphyla, jtpvar, jdpvar, jmpvar;
+  int  mvls, jphyla, jtpvar, jdpvar, jmpvar;
 
   cs_lagr_particle_counter_t *pc = cs_lagr_get_particle_counter();
 
@@ -753,12 +753,12 @@ cs_lagr_restart_read_p(void)
   /* Restart file type; version number not used as yet. */
 
   {
-    cs_int_t tabvar[1];
+    int tabvar[1];
 
     char rubriq[] = "version_fichier_suite_Lagrangien_variables";
     ierror = cs_restart_read_section(lag_stat_restart, rubriq,
                                      CS_MESH_LOCATION_NONE,
-                                     1, CS_TYPE_cs_int_t, tabvar);
+                                     1, CS_TYPE_int, tabvar);
   }
 
   if (ierror != 0)
@@ -805,7 +805,7 @@ cs_lagr_restart_read_p(void)
     ierror = cs_restart_read_section(lag_stat_restart,
                                      "indicateur_physique_particules",
                                      CS_MESH_LOCATION_NONE,
-                                     1, CS_TYPE_cs_int_t, &jphyla);
+                                     1, CS_TYPE_int, &jphyla);
     if (ierror != 0)
       cs_parameters_error
         (CS_ABORT_DELAYED,
@@ -820,7 +820,7 @@ cs_lagr_restart_read_p(void)
     ierror = cs_restart_read_section(lag_stat_restart,
                                      "indicateur_temperature_particules",
                                      CS_MESH_LOCATION_NONE,
-                                     1, CS_TYPE_cs_int_t, &jtpvar);
+                                     1, CS_TYPE_int, &jtpvar);
     if (ierror != 0)
       cs_parameters_error
         (CS_ABORT_DELAYED,
@@ -842,7 +842,7 @@ cs_lagr_restart_read_p(void)
     ierror = cs_restart_read_section(lag_stat_restart,
                                      "indicateur_diametre_particules",
                                      CS_MESH_LOCATION_NONE,
-                                     1, CS_TYPE_cs_int_t, &jdpvar);
+                                     1, CS_TYPE_int, &jdpvar);
     if (ierror != 0)
       jdpvar = cs_glob_lagr_specific_physics->idpvar;
   }
@@ -851,7 +851,7 @@ cs_lagr_restart_read_p(void)
     ierror = cs_restart_read_section(lag_stat_restart,
                                      "indicateur_masse_particules",
                                      CS_MESH_LOCATION_NONE,
-                                     1, CS_TYPE_cs_int_t, &jmpvar);
+                                     1, CS_TYPE_int, &jmpvar);
     if (ierror != 0)
       jmpvar = cs_glob_lagr_specific_physics->impvar;
   }
@@ -1014,7 +1014,7 @@ cs_lagr_restart_read_p(void)
     ierror = cs_restart_read_section(lag_stat_restart,
                                      "nombre_total_particules",
                                      CS_MESH_LOCATION_NONE,
-                                     1, CS_TYPE_cs_int_t, tabvar);
+                                     1, CS_TYPE_int, tabvar);
     pc->n_g_cumulative_total = tabvar[0];
     if (ierror != 0)
       cs_parameters_error
@@ -1032,7 +1032,7 @@ cs_lagr_restart_read_p(void)
     ierror = cs_restart_read_section(lag_stat_restart,
                                      "nombre_particules_perdues",
                                      CS_MESH_LOCATION_NONE,
-                                     1, CS_TYPE_cs_int_t, tabvar);
+                                     1, CS_TYPE_int, tabvar);
     pc->n_g_cumulative_failed = tabvar[0];
     if (ierror != 0)
       cs_parameters_error
@@ -1046,11 +1046,11 @@ cs_lagr_restart_read_p(void)
   }
 
   {
-    cs_int_t tabvar[1];
+    int tabvar[1];
     ierror = cs_restart_read_section(lag_stat_restart,
                                      "nombre_variables_utilisateur",
                                      CS_MESH_LOCATION_NONE,
-                                     1, CS_TYPE_cs_int_t, tabvar);
+                                     1, CS_TYPE_int, tabvar);
     mvls = tabvar[0];
     if (ierror != 0)
       mvls = 0;
@@ -1138,7 +1138,7 @@ cs_restart_lagrangian_checkpoint_write(void)
     cs_restart_write_section(lag_stat_restart,
                              "version_fichier_suite_Lagrangien_variables",
                              CS_MESH_LOCATION_NONE,
-                             1, CS_TYPE_cs_int_t, &ivers);
+                             1, CS_TYPE_int, &ivers);
   }
 
   {
@@ -1156,7 +1156,7 @@ cs_restart_lagrangian_checkpoint_write(void)
     cs_restart_write_section(lag_stat_restart,
                              "nombre_total_particules",
                              CS_MESH_LOCATION_NONE,
-                             1, CS_TYPE_cs_int_t, tabvar);
+                             1, CS_TYPE_int, tabvar);
   }
 
   {
@@ -1164,7 +1164,7 @@ cs_restart_lagrangian_checkpoint_write(void)
     cs_restart_write_section(lag_stat_restart,
                              "nombre_particules_perdues",
                              CS_MESH_LOCATION_NONE,
-                             1, CS_TYPE_cs_int_t, tabvar);
+                             1, CS_TYPE_int, tabvar);
   }
 
   {
@@ -1172,7 +1172,7 @@ cs_restart_lagrangian_checkpoint_write(void)
     cs_restart_write_section(lag_stat_restart,
                              "indicateur_physique_particules",
                              CS_MESH_LOCATION_NONE,
-                             1, CS_TYPE_cs_int_t, tabvar);
+                             1, CS_TYPE_int, tabvar);
   }
 
   {
@@ -1180,7 +1180,7 @@ cs_restart_lagrangian_checkpoint_write(void)
     cs_restart_write_section(lag_stat_restart,
                              "indicateur_temperature_particules",
                              CS_MESH_LOCATION_NONE,
-                             1, CS_TYPE_cs_int_t, tabvar);
+                             1, CS_TYPE_int, tabvar);
   }
 
   {
@@ -1188,7 +1188,7 @@ cs_restart_lagrangian_checkpoint_write(void)
     cs_restart_write_section(lag_stat_restart,
                              "indicateur_diametre_particules",
                              CS_MESH_LOCATION_NONE,
-                             1, CS_TYPE_cs_int_t, tabvar);
+                             1, CS_TYPE_int, tabvar);
   }
 
   {
@@ -1196,7 +1196,7 @@ cs_restart_lagrangian_checkpoint_write(void)
     cs_restart_write_section(lag_stat_restart,
                              "indicateur_masse_particules",
                              CS_MESH_LOCATION_NONE,
-                             1, CS_TYPE_cs_int_t, tabvar);
+                             1, CS_TYPE_int, tabvar);
   }
 
   {
@@ -1204,7 +1204,7 @@ cs_restart_lagrangian_checkpoint_write(void)
     cs_restart_write_section(lag_stat_restart,
                              "nombre_variables_utilisateur",
                              CS_MESH_LOCATION_NONE,
-                             1, CS_TYPE_cs_int_t, tabvar);
+                             1, CS_TYPE_int, tabvar);
   }
 
   cs_restart_write_fields(lag_stat_restart, CS_RESTART_LAGR);
@@ -1252,7 +1252,7 @@ cs_restart_lagrangian_checkpoint_write(void)
       cs_restart_write_section(lag_stat_restart,
                                "version_fichier_suite_Lagrangien_statistiques",
                                CS_MESH_LOCATION_NONE,
-                               1, CS_TYPE_cs_int_t, tabvar);
+                               1, CS_TYPE_int, tabvar);
     }
 
     /* write isttio which can be useful in all cases */
@@ -1261,7 +1261,7 @@ cs_restart_lagrangian_checkpoint_write(void)
       cs_restart_write_section(lag_stat_restart,
                                "indicateur_ecoulement_stationnaire",
                                CS_MESH_LOCATION_NONE,
-                               1, CS_TYPE_cs_int_t, tabvar);
+                               1, CS_TYPE_int, tabvar);
     }
 
     /* write volume statistics first */
@@ -1272,7 +1272,7 @@ cs_restart_lagrangian_checkpoint_write(void)
         cs_restart_write_section(lag_stat_restart,
                                  "iteration_debut_statistiques",
                                  CS_MESH_LOCATION_NONE,
-                                 1, CS_TYPE_cs_int_t, tabvar);
+                                 1, CS_TYPE_int, tabvar);
       }
 
       {
@@ -1280,7 +1280,7 @@ cs_restart_lagrangian_checkpoint_write(void)
         cs_restart_write_section(lag_stat_restart,
                                  "iteration_debut_statistiques_stationnaires",
                                  CS_MESH_LOCATION_NONE,
-                                 1, CS_TYPE_cs_int_t, tabvar);
+                                 1, CS_TYPE_int, tabvar);
       }
 
       {
@@ -1289,7 +1289,7 @@ cs_restart_lagrangian_checkpoint_write(void)
         cs_restart_write_section(lag_stat_restart,
                                  "classe_statistique_particules",
                                  CS_MESH_LOCATION_NONE,
-                                 1, CS_TYPE_cs_int_t, tabvar);
+                                 1, CS_TYPE_int, tabvar);
       }
 
       /* volume statistics */
@@ -1306,7 +1306,7 @@ cs_restart_lagrangian_checkpoint_write(void)
           (lag_stat_restart,
            "iteration_debut_stats_frontieres_stationnaires",
            CS_MESH_LOCATION_NONE,
-           1, CS_TYPE_cs_int_t, tabvar);
+           1, CS_TYPE_int, tabvar);
       }
 
       {
@@ -1315,7 +1315,7 @@ cs_restart_lagrangian_checkpoint_write(void)
         cs_restart_write_section(lag_stat_restart,
                                  "nombre_iterations_stats_frontieres",
                                  CS_MESH_LOCATION_NONE,
-                                 1, CS_TYPE_cs_int_t, tabvar);
+                                 1, CS_TYPE_int, tabvar);
       }
 
       {
@@ -1325,7 +1325,7 @@ cs_restart_lagrangian_checkpoint_write(void)
           (lag_stat_restart,
            "nombre_iterations_stats_frontieres_stationnaires",
            CS_MESH_LOCATION_NONE,
-           1, CS_TYPE_cs_int_t, tabvar);
+           1, CS_TYPE_int, tabvar);
       }
 
       {
@@ -1367,7 +1367,7 @@ cs_restart_lagrangian_checkpoint_write(void)
 
         cs_restart_write_section(lag_stat_restart, rubriq,
                                  CS_MESH_LOCATION_NONE,
-                                 1, CS_TYPE_cs_int_t, tabvar);
+                                 1, CS_TYPE_int, tabvar);
       }
 
       {
@@ -1377,7 +1377,7 @@ cs_restart_lagrangian_checkpoint_write(void)
           (lag_stat_restart,
            "nombre_iterations_termes_sources_stationnaires",
            CS_MESH_LOCATION_NONE,
-           1, CS_TYPE_cs_int_t, tabvar);
+           1, CS_TYPE_int, tabvar);
       }
 
       {
@@ -1385,7 +1385,7 @@ cs_restart_lagrangian_checkpoint_write(void)
         cs_restart_write_section(lag_stat_restart,
                                  "modele_turbulence_termes_sources",
                                  CS_MESH_LOCATION_NONE,
-                                 1, CS_TYPE_cs_int_t, tabvar);
+                                 1, CS_TYPE_int, tabvar);
       }
 
       /* ST labels for section names */

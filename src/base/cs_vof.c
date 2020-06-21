@@ -273,6 +273,9 @@ void
 cs_f_vof_log_mass_budget(void);
 
 void
+cs_f_vof_deshpande_drift_flux(void);
+
+void
 cs_f_vof_update_drift_flux(void);
 
 void
@@ -805,8 +808,6 @@ cs_vof_deshpande_drift_flux(const cs_domain_t *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * <a name="cs_vof_drift_term"></a>
- *
  * \brief Add the divergence of the drift velocity term in the volume
  *        fraction equation.
  *
@@ -839,15 +840,15 @@ cs_vof_deshpande_drift_flux(const cs_domain_t *domain)
 /*----------------------------------------------------------------------------*/
 
 void
-cs_vof_drift_term(const cs_int_t   *const imrgra,
-                  const cs_int_t   *const nswrgp,
-                  const cs_int_t   *const imligp,
-                  const cs_int_t   *const iwarnp,
-                  const cs_real_t  *const epsrgp,
-                  const cs_real_t  *const climgp,
-                  cs_real_t       *restrict pvar,
-                  const cs_real_t *restrict pvara,
-                  cs_real_t       *restrict rhs)
+cs_vof_drift_term(int                        imrgra,
+                  int                        nswrgp,
+                  int                        imligp,
+                  int                        iwarnp,
+                  cs_real_t                  epsrgp,
+                  cs_real_t                  climgp,
+                  cs_real_t        *restrict pvar,
+                  const cs_real_t  *restrict pvara,
+                  cs_real_t        *restrict rhs)
 {
   const cs_mesh_t  *m = cs_glob_mesh;
   cs_mesh_quantities_t  *fvq = cs_glob_mesh_quantities;
@@ -879,8 +880,8 @@ cs_vof_drift_term(const cs_int_t   *const imrgra,
 
   const cs_real_t  *restrict _pvar = (pvar != NULL) ? pvar : pvara;
 
-  /* ======================================================================
-    ---> Computation of the drift flux
+  /*======================================================================
+    Computation of the drift flux
     ======================================================================*/
 
   cs_field_t *vr = cs_field_by_name_try("drift_velocity");
@@ -935,12 +936,12 @@ cs_vof_drift_term(const cs_int_t   *const imrgra,
                  iflmb0,
                  init,
                  inc,
-                 *imrgra,
-                 *nswrgp,
-                 *imligp,
-                 *iwarnp,
-                 *epsrgp,
-                 *climgp,
+                 imrgra,
+                 nswrgp,
+                 imligp,
+                 iwarnp,
+                 epsrgp,
+                 climgp,
                  NULL, /* rom */
                  NULL, /* romb */
                  (const cs_real_3_t *)cpro_vr,
@@ -954,8 +955,8 @@ cs_vof_drift_term(const cs_int_t   *const imrgra,
 
   }
 
-  /* ======================================================================
-    ---> Contribution from interior faces
+  /*======================================================================
+    Contribution from interior faces
     ======================================================================*/
 
   if (n_cells_ext>n_cells) {

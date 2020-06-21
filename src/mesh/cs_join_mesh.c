@@ -900,14 +900,14 @@ _remove_empty_edges(cs_join_mesh_t  *mesh,
 
       n_simplified_faces++;
       if (verbosity > 3)
-        bft_printf("  Simplified face %d (%llu)\n", i+1,
+        bft_printf("  Simplified face %ld (%llu)\n", (long)i+1,
                    (unsigned long long)(mesh->face_gnum[i]));
 
       if (n_face_vertices < 3)
         bft_error(__FILE__, __LINE__, 0,
                   _("  The simplified face has less than 3 vertices.\n"
                     "  Check your joining parameters.\n"
-                    "  Face %d (%llu)\n"), i+1,
+                    "  Face %ld (%llu)\n"), (long)i+1,
                   (unsigned long long)(mesh->face_gnum[i]));
     }
 
@@ -1057,18 +1057,18 @@ _remove_degenerate_edges(cs_join_mesh_t  *mesh,
 
       if (verbosity > 5) {
 
-        bft_printf("\n  Remove edge for face: %d [%llu]:",
-                   i+1, (unsigned long long)(mesh->face_gnum[i]));
+        bft_printf("\n  Remove edge for face: %ld [%llu]:",
+                   (long)i+1, (unsigned long long)(mesh->face_gnum[i]));
         bft_printf("\n    Initial def: ");
         for (j = start_id; j < end_id; j++) {
           cs_lnum_t  v_id = mesh->face_vtx_lst[j];
-          bft_printf(" %d (%llu) ", v_id+1,
+          bft_printf(" %ld (%llu) ", (long)v_id+1,
                      (unsigned long long)(mesh->vertices[v_id].gnum));
         }
         bft_printf("\n    Final def:   ");
         for (j = 0; j < n_face_vertices; j++) {
           cs_lnum_t  v_id = tmp->array[j] - 1;
-          bft_printf(" %d (%llu) ", v_id+1,
+          bft_printf(" %ld (%llu) ", (long)v_id+1,
                      (unsigned long long)(mesh->vertices[v_id].gnum));
         }
         bft_printf("\n");
@@ -1080,7 +1080,7 @@ _remove_degenerate_edges(cs_join_mesh_t  *mesh,
         bft_error(__FILE__, __LINE__, 0,
                   _("  The simplified face has less than 3 vertices.\n"
                     "  Check your joining parameters.\n"
-                    "  Face %d (%llu)\n"), i+1,
+                    "  Face %ld (%llu)\n"), (long)i+1,
                   (unsigned long long)(mesh->face_gnum[i]));
 
     } /* End if n_face_vertices != n_init_vertices */
@@ -1156,9 +1156,9 @@ _count_new_added_vtx_to_edge(cs_lnum_t               v1_id,
     bft_error(__FILE__, __LINE__, 0,
               _("\n Problem in mesh connectivity.\n"
                 " Detected when updating connectivity.\n"
-                " Edge number: %d (%llu) - (%d, %d) in old numbering.\n"),
-              edge_num, (unsigned long long)(edges->gnum[edge_id]),
-              v1_id, v2_id);
+                " Edge number: %ld (%llu) - (%ld, %ld) in old numbering.\n"),
+              (long)edge_num, (unsigned long long)(edges->gnum[edge_id]),
+              (long)v1_id, (long)v2_id);
 
   /* Add the first vertex (new_v1_id) */
 
@@ -2075,7 +2075,7 @@ cs_join_mesh_minmax_tol(cs_join_param_t    param,
 
 void
 cs_join_mesh_exchange(cs_lnum_t              n_send,
-                      const cs_lnum_t        send_rank[],
+                      const int              send_rank[],
                       const cs_lnum_t        send_faces[],
                       const cs_join_mesh_t  *send_mesh,
                       cs_join_mesh_t        *recv_mesh,
@@ -3013,8 +3013,8 @@ cs_join_mesh_get_edge(cs_lnum_t               v1_num,
 
   if (edges->vtx_idx[v1_num] - edges->vtx_idx[v1_num-1] == 0)
     bft_error(__FILE__, __LINE__, 0,
-              _(" The given vertex number: %d is not defined"
-                " in the edge structure (edges->vtx_idx).\n"), v1_num);
+              _(" The given vertex number: %ld is not defined"
+                " in the edge structure (edges->vtx_idx).\n"), (long)v1_num);
 
   for (i = edges->vtx_idx[v1_num-1]; i < edges->vtx_idx[v1_num]; i++) {
     if (edges->adj_vtx_lst[i] == v2_num - 1) {
@@ -3026,9 +3026,10 @@ cs_join_mesh_get_edge(cs_lnum_t               v1_num,
   if (edge_num == 0)
     bft_error(__FILE__, __LINE__, 0,
               _(" The given couple of vertex numbers :\n"
-                "   vertex 1 : %d\n"
-                "   vertex 2 : %d\n"
-                " is not defined in the edge structure.\n"), v1_num, v2_num);
+                "   vertex 1 : %ld\n"
+                "   vertex 2 : %ld\n"
+                " is not defined in the edge structure.\n"),
+              (long)v1_num, (long)v2_num);
 
   assert(edge_num != 0);
 
@@ -3567,7 +3568,7 @@ cs_join_mesh_dump(FILE                  *f,
 
   fprintf(f, "\n\n  -- Dump a cs_join_mesh_t structure: %s (%p) --\n",
           mesh->name, (const void *)mesh);
-  fprintf(f, "\n mesh->n_faces:     %11d\n", mesh->n_faces);
+  fprintf(f, "\n mesh->n_faces:     %11ld\n", (long)mesh->n_faces);
   fprintf(f, " mesh->n_g_faces:   %11llu\n\n",
           (unsigned long long)mesh->n_g_faces);
 
@@ -3578,16 +3579,16 @@ cs_join_mesh_dump(FILE                  *f,
       cs_lnum_t  start = mesh->face_vtx_idx[i];
       cs_lnum_t  end = mesh->face_vtx_idx[i+1];
 
-      fprintf(f, "\n face_id: %9d gnum: %10llu n_vertices : %4d\n",
-              i, (unsigned long long)mesh->face_gnum[i], end-start);
+      fprintf(f, "\n face_id: %9ld gnum: %10llu n_vertices : %4ld\n",
+              (long)i, (unsigned long long)mesh->face_gnum[i], end-start);
 
       for (j = start; j < end; j++) {
 
         cs_lnum_t  vtx_id = mesh->face_vtx_lst[j];
         cs_join_vertex_t  v_data = mesh->vertices[vtx_id];
 
-        fprintf(f," %8d - %10llu - [ % 7.5e % 7.5e % 7.5e] - %s\n",
-                vtx_id+1, (unsigned long long)v_data.gnum,
+        fprintf(f," %8ld - %10llu - [ % 7.5e % 7.5e % 7.5e] - %s\n",
+                (long)vtx_id+1, (unsigned long long)v_data.gnum,
                 v_data.coord[0], v_data.coord[1], v_data.coord[2],
                 _print_state(v_data.state));
 
@@ -3604,11 +3605,11 @@ cs_join_mesh_dump(FILE                  *f,
         if (vtx_id1 == vtx_id2) {
           fprintf(f,
                   "  Incoherency found in the current mesh definition\n"
-                  "  Face number: %d (global: %llu)\n"
-                  "  Vertices: local (%d, %d), global (%llu, %llu)"
+                  "  Face number: %ld (global: %llu)\n"
+                  "  Vertices: local (%ld, %ld), global (%llu, %llu)"
                   " are defined twice\n",
-                  i+1, (unsigned long long)mesh->face_gnum[i],
-                  vtx_id1+1, vtx_id2+1,
+                  (long)i+1, (unsigned long long)mesh->face_gnum[i],
+                  (long)vtx_id1+1, (long)vtx_id2+1,
                   (unsigned long long)(mesh->vertices[vtx_id1]).gnum,
                   (unsigned long long)(mesh->vertices[vtx_id2]).gnum);
           fflush(f);
@@ -3624,11 +3625,11 @@ cs_join_mesh_dump(FILE                  *f,
         if (vtx_id1 == vtx_id2) {
           fprintf(f,
                   "  Incoherency found in the current mesh definition\n"
-                  "  Face number: %d (global: %llu)\n"
-                  "  Vertices: local (%d, %d), global (%llu, %llu)"
+                  "  Face number: %ld (global: %llu)\n"
+                  "  Vertices: local (%ld, %ld), global (%llu, %llu)"
                   " are defined twice\n",
-                  i+1, (unsigned long long)(mesh->face_gnum[i]),
-                  vtx_id1+1, vtx_id2+1,
+                  (long)i+1, (unsigned long long)(mesh->face_gnum[i]),
+                  (long)vtx_id1+1, (long)vtx_id2+1,
                   (unsigned long long)((mesh->vertices[vtx_id1]).gnum),
                   (unsigned long long)((mesh->vertices[vtx_id2]).gnum));
           fflush(f);
@@ -3643,9 +3644,9 @@ cs_join_mesh_dump(FILE                  *f,
   fprintf(f,
           "\n Dump vertex data\n"
           "   mesh->vertices     :  %p\n"
-          "   mesh->n_vertices   : %11d\n"
+          "   mesh->n_vertices   : %11ld\n"
           "   mesh->n_g_vertices : %11llu\n\n",
-          (const void *)mesh->vertices, mesh->n_vertices,
+          (const void *)mesh->vertices, (long)mesh->n_vertices,
           (unsigned long long)mesh->n_g_vertices);
 
   if (mesh->n_vertices > 0) {
@@ -3683,8 +3684,8 @@ cs_join_mesh_dump_edges(FILE                   *f,
     return;
 
   fprintf(f, "\n  Edge connectivity used in the joining operation:\n");
-  fprintf(f, "  Number of edges:      %8d\n", edges->n_edges);
-  fprintf(f, "  Number of vertices:   %8d\n", edges->n_vertices);
+  fprintf(f, "  Number of edges:      %8ld\n", (long)edges->n_edges);
+  fprintf(f, "  Number of vertices:   %8ld\n", (long)edges->n_vertices);
 
   for (i = 0; i < edges->n_edges; i++) { /* Dump edge connectivity */
 
@@ -3693,8 +3694,8 @@ cs_join_mesh_dump_edges(FILE                   *f,
     cs_gnum_t  v1_gnum = (mesh->vertices[v1_id]).gnum;
     cs_gnum_t  v2_gnum = (mesh->vertices[v2_id]).gnum;
 
-    fprintf(f, "  Edge %6d  (%8llu) <Vertex> [%8llu %8llu]\n",
-            i+1, (unsigned long long)edges->gnum[i],
+    fprintf(f, "  Edge %6ld  (%8llu) <Vertex> [%8llu %8llu]\n",
+            (long)i+1, (unsigned long long)edges->gnum[i],
             (unsigned long long)v1_gnum,
             (unsigned long long)v2_gnum);
 
@@ -3702,10 +3703,10 @@ cs_join_mesh_dump_edges(FILE                   *f,
 
     if (v1_id == v2_id) {
       fprintf(f, "  Incoherency found in the current edge definition\n"
-                 "  Edge number: %d\n"
-                 "  Vertices: local (%d, %d), global (%llu, %llu)"
+                 "  Edge number: %ld\n"
+                 "  Vertices: local (%ld, %ld), global (%llu, %llu)"
                  " are defined twice\n",
-                 i+1, v1_id+1, v2_id+1,
+                 (long)i+1, (long)v1_id+1, (long)v2_id+1,
               (unsigned long long)v1_gnum, (unsigned long long)v2_gnum);
       fflush(f);
       assert(0);
@@ -3713,10 +3714,10 @@ cs_join_mesh_dump_edges(FILE                   *f,
 
     if (v1_gnum == v2_gnum) {
       fprintf(f, "  Incoherency found in the current edge definition\n"
-                 "  Edge number: %d\n"
-                 "  Vertices: local (%d, %d), global (%llu, %llu)"
+                 "  Edge number: %ld\n"
+                 "  Vertices: local (%ld, %ld), global (%llu, %llu)"
                  " are defined twice\n",
-                 i+1, v1_id+1, v2_id+1,
+              (long)i+1, (long)v1_id+1, (long)v2_id+1,
               (unsigned long long)v1_gnum, (unsigned long long)v2_gnum);
       fflush(f);
       assert(0);
@@ -3731,8 +3732,9 @@ cs_join_mesh_dump_edges(FILE                   *f,
     cs_lnum_t  start = edges->vtx_idx[i];
     cs_lnum_t  end = edges->vtx_idx[i+1];
 
-    fprintf(f, "  Vertex %6d (%7llu) - %3d - ",
-               i+1, (unsigned long long)(mesh->vertices[i]).gnum, end - start);
+    fprintf(f, "  Vertex %6ld (%7llu) - %3d - ",
+            (long)i+1, (unsigned long long)(mesh->vertices[i]).gnum,
+            (int)(end - start));
 
     for (j = start; j < end; j++) {
       if (edges->edge_lst[j] > 0)

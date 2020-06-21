@@ -475,14 +475,14 @@ CS_PROCF (elini1, ELINI1) (cs_real_t *visls0,
 }
 
 void
-CS_PROCF (elflux, ELFLUX) (cs_int_t *iappel)
+CS_PROCF (elflux, ELFLUX) (int      *iappel)
 {
   cs_elec_compute_fields(cs_glob_mesh,
                          *iappel);
 }
 
 void
-CS_PROCF (elthht, ELTHHT) (cs_int_t  *mode,
+CS_PROCF (elthht, ELTHHT) (int       *mode,
                            cs_real_t *ym,
                            cs_real_t *enthal,
                            cs_real_t *temp)
@@ -504,7 +504,7 @@ CS_PROCF (elphyv, ELPHYV) (void)
 }
 
 void
-CS_PROCF (eltssc, ELTSSC) (const cs_int_t  *isca,
+CS_PROCF (eltssc, ELTSSC) (const int       *isca,
                            cs_real_t       *smbrs)
 {
   const cs_mesh_t *mesh = cs_glob_mesh;
@@ -529,7 +529,7 @@ CS_PROCF (eltsvv, ELTSVV) (const int       *f_id,
 }
 
 void
-CS_PROCF (eliniv, ELINIV) (cs_int_t  *isuite)
+CS_PROCF (eliniv, ELINIV) (int       *isuite)
 {
   cs_elec_fields_initialize(cs_glob_mesh,  *isuite);
 }

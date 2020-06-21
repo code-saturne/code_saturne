@@ -72,8 +72,8 @@ BEGIN_C_DECLS
 
 void CS_PROCF (pstvar, PSTVAR)
 (
- const cs_int_t   *nvar,
- const cs_int_t   *nscal
+ const int   *nvar,
+ const int   *nscal
 );
 
 /*============================================================================

@@ -130,9 +130,9 @@ struct _cs_ctwr_zone_t {
   cs_real_t  xleak_fac;          /* Leakage factor (ratio of outlet/inlet
                                     flow rate) */
 
-  cs_int_t   n_cells;            /* Number of air cells belonging to the zone */
+  cs_lnum_t  n_cells;            /* Number of air cells belonging to the zone */
 
-  cs_int_t   up_ct_id;           /* Id of upstream exchange zone (if any) */
+  int        up_ct_id;           /* Id of upstream exchange zone (if any) */
 
   cs_lnum_t  n_inlet_faces;      /* Number of inlet faces */
   cs_lnum_t  n_outlet_faces;     /* Number of outlet faces */

@@ -52,6 +52,7 @@
 #include "cs_field_pointer.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
+#include "cs_parall.h"
 #include "cs_random.h"
 #include "cs_timer.h"
 #include "cs_mesh_location.h"
@@ -137,8 +138,8 @@ struct _cs_inlet_t {
 
   /* Geometric informations */
 
-  cs_int_t              n_faces;
-  cs_int_t             *parent_num;
+  cs_lnum_t             n_faces;
+  cs_lnum_t            *parent_num;
 
   cs_real_t            *face_centre;
   cs_real_t            *face_surface;
@@ -218,10 +219,10 @@ static cs_restart_t  *cs_glob_inflow_suite = NULL;
  *----------------------------------------------------------------------------*/
 
 static void
-_random_method(const cs_int_t   n_points,
-               cs_real_t       *fluctuations)
+_random_method(cs_lnum_t   n_points,
+               cs_real_t  *fluctuations)
 {
-  cs_int_t  point_id;
+  cs_lnum_t  point_id;
 
   int       coo_id;
 
@@ -249,16 +250,16 @@ _random_method(const cs_int_t   n_points,
  *----------------------------------------------------------------------------*/
 
 static void
-_batten_method(const cs_int_t       n_points,
+_batten_method(cs_lnum_t            n_points,
                const cs_real_t     *point_coordinates,
-               const int            initialize,
+               int                  initialize,
                cs_inflow_batten_t  *inflow,
-               const cs_real_t      time,
+               cs_real_t            time,
                const cs_real_t     *reynolds_stresses,
                const cs_real_t     *dissipation_rate,
                cs_real_t           *fluctuations)
 {
-  cs_int_t  point_id;
+  cs_lnum_t  point_id;
 
   int       coo_id;
   int       mode_id;
@@ -434,14 +435,14 @@ _batten_method(const cs_int_t       n_points,
  *----------------------------------------------------------------------------*/
 
 static void
-_synthetic_eddy_method(const cs_int_t    n_points,
-                       const cs_int_t   *num_face,
+_synthetic_eddy_method(cs_lnum_t         n_points,
+                       const cs_lnum_t  *num_face,
                        const cs_real_t  *point_coordinates,
                        const cs_real_t  *point_ponderation,
-                       const int         initialize,
-                       const int         verbosity,
+                       int               initialize,
+                       int               verbosity,
                        cs_inflow_sem_t  *inflow,
-                       const cs_real_t   time_step,
+                       cs_real_t         time_step,
                        const cs_real_t  *velocity,
                        const cs_real_t  *reynolds_stresses,
                        const cs_real_t  *dissipation_rate,
@@ -482,7 +483,7 @@ _synthetic_eddy_method(const cs_int_t    n_points,
 
   for (point_id = 0; point_id < n_points; point_id++) {
 
-    cs_int_t  b_face_id = num_face[point_id] - 1;
+    cs_lnum_t  b_face_id = num_face[point_id] - 1;
     cs_lnum_t cell_id = mesh->b_face_cells[b_face_id];
 
     for (coo_id = 0; coo_id < 3; coo_id++) {
@@ -515,8 +516,8 @@ _synthetic_eddy_method(const cs_int_t    n_points,
 
   if (verbosity > 0) {
 
-    char     direction[3] = "xyz";
-    cs_int_t sum[3] = {compt[0], compt[1], compt[2]};
+    char      direction[3] = "xyz";
+    cs_lnum_t sum[3] = {compt[0], compt[1], compt[2]};
 
     bft_printf(_("Max. size of synthetic eddies:\n"));
 
@@ -566,14 +567,14 @@ _synthetic_eddy_method(const cs_int_t    n_points,
 #if defined(HAVE_MPI)
 
     if (cs_glob_rank_id >= 0)
-      MPI_Allreduce(&compt, &sum, 3, CS_MPI_INT, MPI_SUM,
+      MPI_Allreduce(&compt, &sum, 3, CS_MPI_LNUM, MPI_SUM,
                     cs_glob_mpi_comm);
 
 #endif
 
     for (coo_id = 0; coo_id < 3; coo_id++)
-      bft_printf(_("   sigma_%c clipped %d times\n"),
-                   direction[coo_id], sum[coo_id]);
+      bft_printf(_("   sigma_%c clipped %ld times\n"),
+                   direction[coo_id], (long)sum[coo_id]);
 
     bft_printf(_("\n"));
   }
@@ -887,13 +888,11 @@ _synthetic_eddy_method(const cs_int_t    n_points,
  *----------------------------------------------------------------------------*/
 
 static void
-_rescale_fluctuations(cs_int_t     n_points,
+_rescale_fluctuations(cs_lnum_t    n_points,
                       cs_real_t   *statistics,
                       cs_real_t   *fluctuations)
 {
-  cs_int_t   point_id;
-
-  for (point_id = 0; point_id < n_points; point_id++) {
+  for (cs_lnum_t point_id = 0; point_id < n_points; point_id++) {
 
     /* Reynolds stresses */
 
@@ -941,8 +940,8 @@ _rescale_fluctuations(cs_int_t     n_points,
  *----------------------------------------------------------------------------*/
 
 static void
-_rescale_flowrate(cs_int_t     n_points,
-                  cs_int_t    *num_face,
+_rescale_flowrate(cs_lnum_t    n_points,
+                  cs_lnum_t   *num_face,
                   cs_real_t   *fluctuations)
 {
   /* Compute the mass flow rate of the fluctuating field */
@@ -1050,15 +1049,15 @@ _rescale_flowrate(cs_int_t     n_points,
 
 static void
 _cs_inflow_add_inlet(cs_inflow_type_t   type,
-                     const cs_int_t     n_faces,
-                     const cs_int_t    *num_face,
-                     const int          n_entities,
-                     const int          verbosity,
+                     cs_lnum_t          n_faces,
+                     const cs_lnum_t   *num_face,
+                     int                n_entities,
+                     int                verbosity,
                      const cs_real_t   *mean_velocity,
-                     const cs_real_t    kinetic_energy,
-                     const cs_real_t    dissipation_rate)
+                     cs_real_t          kinetic_energy,
+                     cs_real_t          dissipation_rate)
 {
-  cs_int_t  face_id;
+  cs_lnum_t  face_id;
 
   int       coo_id;
 
@@ -1084,7 +1083,7 @@ _cs_inflow_add_inlet(cs_inflow_type_t   type,
 
   if (inlet->n_faces > 0) {
 
-    BFT_MALLOC(inlet->parent_num, inlet->n_faces, cs_int_t);
+    BFT_MALLOC(inlet->parent_num, inlet->n_faces, cs_lnum_t);
     for (face_id = 0; face_id < n_faces; face_id++)
       inlet->parent_num[face_id] = num_face[face_id];
 
@@ -1212,10 +1211,10 @@ _cs_inflow_add_inlet(cs_inflow_type_t   type,
 
 void CS_PROCF(defsyn, DEFSYN)
 (
- cs_int_t            *n_inlets     /* --> number of inlets                    */
+ int  *n_inlets                    /* <-- number of inlets                    */
 )
 {
-  cs_int_t inlet_id;
+  int inlet_id;
 
   /* Definition of the global parameters of the inlets */
 
@@ -1224,27 +1223,25 @@ void CS_PROCF(defsyn, DEFSYN)
   for (inlet_id = 0; inlet_id < *n_inlets; inlet_id++) {
 
     const cs_mesh_t  *mesh = cs_glob_mesh;
-    const cs_int_t    nument = inlet_id + 1;
-    int      j;
-    cs_int_t n_faces_g;
+    const int         nument = inlet_id + 1;
 
     /* Initializations */
 
     int        type = 0;
-    cs_int_t   n_faces = 0;
+    cs_lnum_t  n_faces = 0;
     int        n_entities = 0;
     int        verbosity = 0;
 
-    cs_int_t  *index_face = NULL;
+    cs_lnum_t *index_face = NULL;
 
     cs_real_t  mean_velocity[3] = {0., 0., 0.};
 
     cs_real_t  kinetic_energy = 0.;
     cs_real_t  dissipation_rate = 0.;
 
-    BFT_MALLOC(index_face, mesh->n_b_faces, cs_int_t);
+    BFT_MALLOC(index_face, mesh->n_b_faces, cs_lnum_t);
 
-    for (j = 0; j < mesh->n_b_faces; j++)
+    for (cs_lnum_t j = 0; j < mesh->n_b_faces; j++)
       index_face[j] = 0;
 
     bft_printf(_(" Definition of the LES inflow boundary \"%d\" \n"),
@@ -1263,15 +1260,8 @@ void CS_PROCF(defsyn, DEFSYN)
                              &kinetic_energy,
                              &dissipation_rate);
 
-    n_faces_g = n_faces;
-
-#if defined(HAVE_MPI)
-
-    if (cs_glob_rank_id >= 0)
-      MPI_Allreduce(&n_faces, &n_faces_g, 1, CS_MPI_INT, MPI_SUM,
-                    cs_glob_mpi_comm);
-
-#endif
+    cs_gnum_t n_faces_g = n_faces;
+    cs_parall_counter(&n_faces_g, 1);
 
     if (n_faces_g == 0)
       bft_error(__FILE__, __LINE__, 0,
@@ -1294,8 +1284,8 @@ void CS_PROCF(defsyn, DEFSYN)
     BFT_FREE(index_face);
 
     bft_printf(_("   Method: %d (%s)\n"
-                 "   Number of boundary faces (global): %d\n"),
-               type,cs_inflow_type_name[type],n_faces_g);
+                 "   Number of boundary faces (global): %llu\n"),
+               type, cs_inflow_type_name[type], (unsigned long long)n_faces_g);
 
     if (type == 2)
       bft_printf(_("   Number of modes: %d\n\n"),n_entities);
@@ -1317,17 +1307,17 @@ void CS_PROCF(defsyn, DEFSYN)
 
 void CS_PROCF(synthe, SYNTHE)
 (
- const cs_int_t  *const nvar,      /* --> number of variables                 */
- const cs_int_t  *const nscal,     /* --> number of scalars                   */
- const cs_int_t  *const iu,        /* --> index of velocity component         */
- const cs_int_t  *const iv,        /* --> index of velocity component         */
- const cs_int_t  *const iw,        /* --> index of velocity component         */
+ const int       *const nvar,      /* --> number of variables                 */
+ const int       *const nscal,     /* --> number of scalars                   */
+ const int       *const iu,        /* --> index of velocity component         */
+ const int       *const iv,        /* --> index of velocity component         */
+ const int       *const iw,        /* --> index of velocity component         */
  const cs_real_t *const ttcabs,    /* --> current physical time               */
  const cs_real_t        dt[],      /* --> time step                           */
        cs_real_t        rcodcl[]   /* <-> boundary conditions array           */
 )
 {
-  cs_int_t  face_id;
+  cs_lnum_t  face_id;
 
   int       inlet_id;
   int       coo_id;
@@ -1474,7 +1464,7 @@ void CS_PROCF(synthe, SYNTHE)
 
     for (face_id = 0; face_id < inlet->n_faces; face_id++) {
 
-      cs_int_t index_face = inlet->parent_num[face_id]-1;
+      cs_lnum_t index_face = inlet->parent_num[face_id]-1;
 
       rcodcl[0*n_b_faces*(*nvar) + (*iu - 1)*n_b_faces + index_face] =
         mean_velocity[face_id*3 + 0]
@@ -1519,8 +1509,7 @@ void CS_PROCF(lecsyn, LECSYN)
 )
 {
   bool                corresp_cel, corresp_fac, corresp_fbr, corresp_som;
-  cs_int_t            nbvent;
-  cs_int_t            indfac, ierror;
+  int                 indfac, ierror;
 
   cs_restart_t             *suite;
   cs_mesh_location_type_t   support;
@@ -1559,19 +1548,18 @@ void CS_PROCF(lecsyn, LECSYN)
 
 
   { /* Read the header */
-    char       nomrub[] = "version_fichier_suite_turbulence_synthetique";
-    cs_int_t   *tabvar;
+    char    nomrub[] = "version_fichier_suite_turbulence_synthetique";
+    int    *tabvar;
 
-    BFT_MALLOC(tabvar, 1, cs_int_t);
+    BFT_MALLOC(tabvar, 1, int);
 
-    nbvent  = 1;
     support = CS_MESH_LOCATION_NONE;
-    typ_val = CS_TYPE_cs_int_t;
+    typ_val = CS_TYPE_int;
 
     ierror = cs_restart_read_section(suite,
                                      nomrub,
                                      support,
-                                     nbvent,
+                                     1,
                                      typ_val,
                                      tabvar);
 
@@ -1592,19 +1580,18 @@ void CS_PROCF(lecsyn, LECSYN)
 
   { /* Read the number of inlets */
     char       nomrub[] = "nb_inlets";
-    cs_int_t   *tabvar;
-    cs_int_t   n_inlets;
+    int       *tabvar;
+    int        n_inlets;
 
-    BFT_MALLOC(tabvar, 1, cs_int_t);
+    BFT_MALLOC(tabvar, 1, int);
 
-    nbvent  = 1;
     support = CS_MESH_LOCATION_NONE;
-    typ_val = CS_TYPE_cs_int_t;
+    typ_val = CS_TYPE_int;
 
     ierror = cs_restart_read_section(suite,
                                      nomrub,
                                      support,
-                                     nbvent,
+                                     1,
                                      typ_val,
                                      tabvar);
 
@@ -1630,7 +1617,7 @@ void CS_PROCF(lecsyn, LECSYN)
 
   { /* Read the structure of each inlet */
     int inlet_id;
-    cs_int_t   *tabvar;
+    int   *tabvar;
 
     for (inlet_id = 0; inlet_id < cs_glob_inflow_n_inlets; inlet_id++) {
 
@@ -1640,16 +1627,15 @@ void CS_PROCF(lecsyn, LECSYN)
         char             nomrub[] = "type_inlet";
         cs_inflow_type_t type;
 
-        BFT_MALLOC(tabvar, 1, cs_int_t);
+        BFT_MALLOC(tabvar, 1, int);
 
-        nbvent  = 1;
         support = CS_MESH_LOCATION_NONE;
-        typ_val = CS_TYPE_cs_int_t;
+        typ_val = CS_TYPE_int;
 
         ierror = cs_restart_read_section(suite,
                                          nomrub,
                                          support,
-                                         nbvent,
+                                         1,
                                          typ_val,
                                          tabvar);
 
@@ -1690,18 +1676,17 @@ void CS_PROCF(lecsyn, LECSYN)
 
           { /* number of modes */
             char nomrub[] = "batten_number_modes";
-            cs_int_t n_modes;
+            int n_modes;
 
-            BFT_MALLOC(tabvar, 1, cs_int_t);
+            BFT_MALLOC(tabvar, 1, int);
 
-            nbvent  = 1;
             support = CS_MESH_LOCATION_NONE;
-            typ_val = CS_TYPE_cs_int_t;
+            typ_val = CS_TYPE_int;
 
             ierror = cs_restart_read_section(suite,
                                              nomrub,
                                              support,
-                                             nbvent,
+                                             1,
                                              typ_val,
                                              tabvar);
 
@@ -1728,14 +1713,13 @@ void CS_PROCF(lecsyn, LECSYN)
           { /* frequencies */
             char nomrub1[] = "batten_frequencies";
 
-            nbvent  = inflow->n_modes;
             support = CS_MESH_LOCATION_NONE;
             typ_val = CS_TYPE_cs_real_t;
 
             ierror = cs_restart_read_section(suite,
                                              nomrub1,
                                              support,
-                                             nbvent,
+                                             inflow->n_modes,
                                              typ_val,
                                              inflow->frequency);
 
@@ -1749,14 +1733,13 @@ void CS_PROCF(lecsyn, LECSYN)
             /* wave vector */
             char nomrub2[] = "batten_wave_vector";
 
-            nbvent  = 3*inflow->n_modes;
             support = CS_MESH_LOCATION_NONE;
             typ_val = CS_TYPE_cs_real_t;
 
             ierror = cs_restart_read_section(suite,
                                              nomrub2,
                                              support,
-                                             nbvent,
+                                             3*inflow->n_modes,
                                              typ_val,
                                              inflow->wave_vector);
 
@@ -1770,14 +1753,13 @@ void CS_PROCF(lecsyn, LECSYN)
             /* amplitude cos */
             char nomrub3[] = "batten_amplitude_cos";
 
-            nbvent  = 3*inflow->n_modes;
             support = CS_MESH_LOCATION_NONE;
             typ_val = CS_TYPE_cs_real_t;
 
             ierror = cs_restart_read_section(suite,
                                              nomrub3,
                                              support,
-                                             nbvent,
+                                             3*inflow->n_modes,
                                              typ_val,
                                              inflow->amplitude_cos);
 
@@ -1791,14 +1773,13 @@ void CS_PROCF(lecsyn, LECSYN)
             /* amplitude sin */
             char nomrub4[] = "batten_amplitude_sin";
 
-            nbvent  = 3*inflow->n_modes;
             support = CS_MESH_LOCATION_NONE;
             typ_val = CS_TYPE_cs_real_t;
 
             ierror = cs_restart_read_section(suite,
                                              nomrub4,
                                              support,
-                                             nbvent,
+                                             3*inflow->n_modes,
                                              typ_val,
                                              inflow->amplitude_sin);
 
@@ -1821,18 +1802,17 @@ void CS_PROCF(lecsyn, LECSYN)
 
           { /* number of structures */
             char nomrub[] = "sem_number_structures";
-            cs_int_t n_structures;
+            int n_structures;
 
-            BFT_MALLOC(tabvar, 1, cs_int_t);
+            BFT_MALLOC(tabvar, 1, int);
 
-            nbvent  = 1;
             support = CS_MESH_LOCATION_NONE;
-            typ_val = CS_TYPE_cs_int_t;
+            typ_val = CS_TYPE_int;
 
             ierror = cs_restart_read_section(suite,
                                              nomrub,
                                              support,
-                                             nbvent,
+                                             1,
                                              typ_val,
                                              tabvar);
 
@@ -1859,14 +1839,13 @@ void CS_PROCF(lecsyn, LECSYN)
           { /* positions */
             char nomrub1[] = "sem_positions";
 
-            nbvent  = 3*inflow->n_structures;
             support = CS_MESH_LOCATION_NONE;
             typ_val = CS_TYPE_cs_real_t;
 
             ierror = cs_restart_read_section(suite,
                                              nomrub1,
                                              support,
-                                             nbvent,
+                                             3*inflow->n_structures,
                                              typ_val,
                                              inflow->position);
 
@@ -1880,14 +1859,13 @@ void CS_PROCF(lecsyn, LECSYN)
             /* energies */
             char nomrub2[] = "sem_energies";
 
-            nbvent  = 3*inflow->n_structures;
             support = CS_MESH_LOCATION_NONE;
             typ_val = CS_TYPE_cs_real_t;
 
             ierror = cs_restart_read_section(suite,
                                              nomrub2,
                                              support,
-                                             nbvent,
+                                             3*inflow->n_structures,
                                              typ_val,
                                              inflow->energy);
 
@@ -1937,8 +1915,6 @@ void CS_PROCF(ecrsyn, ECRSYN)
 {
   int   inlet_id;
 
-  cs_int_t            nbvent;
-
   cs_restart_t             *suite;
   cs_mesh_location_type_t   support;
   cs_restart_val_type_t     typ_val;
@@ -1964,21 +1940,20 @@ void CS_PROCF(ecrsyn, ECRSYN)
 
 
   { /* Write the header */
-    char       nomrub[] = "version_fichier_suite_turbulence_synthetique";
-    cs_int_t   *tabvar;
+    char   nomrub[] = "version_fichier_suite_turbulence_synthetique";
+    int   *tabvar;
 
-    BFT_MALLOC(tabvar, 1, cs_int_t);
+    BFT_MALLOC(tabvar, 1, int);
 
-    nbvent  = 1;
     support = CS_MESH_LOCATION_NONE;
-    typ_val = CS_TYPE_cs_int_t;
+    typ_val = CS_TYPE_int;
 
     *tabvar = 120;
 
     cs_restart_write_section(suite,
                              nomrub,
                              support,
-                             nbvent,
+                             1,
                              typ_val,
                              tabvar);
 
@@ -1986,21 +1961,20 @@ void CS_PROCF(ecrsyn, ECRSYN)
   }
 
   { /* Write the number of inlets */
-    char       nomrub[] = "nb_inlets";
-    cs_int_t   *tabvar;
+    char   nomrub[] = "nb_inlets";
+    int   *tabvar;
 
-    BFT_MALLOC(tabvar, 1, cs_int_t);
+    BFT_MALLOC(tabvar, 1, int);
 
     *tabvar = cs_glob_inflow_n_inlets;
 
-    nbvent  = 1;
     support = CS_MESH_LOCATION_NONE;
-    typ_val = CS_TYPE_cs_int_t;
+    typ_val = CS_TYPE_int;
 
     cs_restart_write_section(suite,
                              nomrub,
                              support,
-                             nbvent,
+                             1,
                              typ_val,
                              tabvar);
 
@@ -2008,7 +1982,7 @@ void CS_PROCF(ecrsyn, ECRSYN)
   }
 
   { /* Write the structure of each inlet */
-    cs_int_t   *tabvar;
+    int   *tabvar;
 
     for (inlet_id = 0; inlet_id < cs_glob_inflow_n_inlets; inlet_id++) {
 
@@ -2017,18 +1991,17 @@ void CS_PROCF(ecrsyn, ECRSYN)
       { /* type of inlet */
         char       nomrub[] = "type_inlet";
 
-        BFT_MALLOC(tabvar, 1, cs_int_t);
+        BFT_MALLOC(tabvar, 1, int);
 
-        *tabvar = (cs_int_t)inlet->type;
+        *tabvar = (int)inlet->type;
 
-        nbvent  = 1;
         support = CS_MESH_LOCATION_NONE;
-        typ_val = CS_TYPE_cs_int_t;
+        typ_val = CS_TYPE_int;
 
         cs_restart_write_section(suite,
                                  nomrub,
                                  support,
-                                 nbvent,
+                                 1,
                                  typ_val,
                                  tabvar);
 
@@ -2050,18 +2023,17 @@ void CS_PROCF(ecrsyn, ECRSYN)
           { /* number of modes */
             char nomrub[] = "batten_number_modes";
 
-            BFT_MALLOC(tabvar, 1, cs_int_t);
+            BFT_MALLOC(tabvar, 1, int);
 
             *tabvar = inflow->n_modes;
 
-            nbvent  = 1;
             support = CS_MESH_LOCATION_NONE;
-            typ_val = CS_TYPE_cs_int_t;
+            typ_val = CS_TYPE_int;
 
             cs_restart_write_section(suite,
                                      nomrub,
                                      support,
-                                     nbvent,
+                                     1,
                                      typ_val,
                                      tabvar);
 
@@ -2071,56 +2043,52 @@ void CS_PROCF(ecrsyn, ECRSYN)
           { /* frequencies */
             char nomrub1[] = "batten_frequencies";
 
-            nbvent  = inflow->n_modes;
             support = CS_MESH_LOCATION_NONE;
             typ_val = CS_TYPE_cs_real_t;
 
             cs_restart_write_section(suite,
                                      nomrub1,
                                      support,
-                                     nbvent,
+                                     inflow->n_modes,
                                      typ_val,
                                      inflow->frequency);
 
             /* wave vector */
             char nomrub2[] = "batten_wave_vector";
 
-            nbvent  = 3*inflow->n_modes;
             support = CS_MESH_LOCATION_NONE;
             typ_val = CS_TYPE_cs_real_t;
 
             cs_restart_write_section(suite,
                                      nomrub2,
                                      support,
-                                     nbvent,
+                                     3*inflow->n_modes,
                                      typ_val,
                                      inflow->wave_vector);
 
             /* amplitude cos */
             char nomrub3[] = "batten_amplitude_cos";
 
-            nbvent  = 3*inflow->n_modes;
             support = CS_MESH_LOCATION_NONE;
             typ_val = CS_TYPE_cs_real_t;
 
             cs_restart_write_section(suite,
                                      nomrub3,
                                      support,
-                                     nbvent,
+                                     3*inflow->n_modes,
                                      typ_val,
                                      inflow->amplitude_cos);
 
             /* amplitude sin */
             char nomrub4[] = "batten_amplitude_sin";
 
-            nbvent  = 3*inflow->n_modes;
             support = CS_MESH_LOCATION_NONE;
             typ_val = CS_TYPE_cs_real_t;
 
             cs_restart_write_section(suite,
                                      nomrub4,
                                      support,
-                                     nbvent,
+                                     3*inflow->n_modes,
                                      typ_val,
                                      inflow->amplitude_sin);
           }
@@ -2136,18 +2104,17 @@ void CS_PROCF(ecrsyn, ECRSYN)
           { /* number of structures */
             char nomrub[] = "sem_number_structures";
 
-            BFT_MALLOC(tabvar, 1, cs_int_t);
+            BFT_MALLOC(tabvar, 1, int);
 
             *tabvar = inflow->n_structures;
 
-            nbvent  = 1;
             support = CS_MESH_LOCATION_NONE;
-            typ_val = CS_TYPE_cs_int_t;
+            typ_val = CS_TYPE_int;
 
             cs_restart_write_section(suite,
                                      nomrub,
                                      support,
-                                     nbvent,
+                                     1,
                                      typ_val,
                                      tabvar);
 
@@ -2157,28 +2124,26 @@ void CS_PROCF(ecrsyn, ECRSYN)
           { /* positions */
             char nomrub1[] = "sem_positions";
 
-            nbvent  = 3*inflow->n_structures;
             support = CS_MESH_LOCATION_NONE;
             typ_val = CS_TYPE_cs_real_t;
 
             cs_restart_write_section(suite,
                                      nomrub1,
                                      support,
-                                     nbvent,
+                                     3*inflow->n_structures,
                                      typ_val,
                                      inflow->position);
 
             /* energies */
             char nomrub2[] = "sem_energies";
 
-            nbvent  = 3*inflow->n_structures;
             support = CS_MESH_LOCATION_NONE;
             typ_val = CS_TYPE_cs_real_t;
 
             cs_restart_write_section(suite,
                                      nomrub2,
                                      support,
-                                     nbvent,
+                                     3*inflow->n_structures,
                                      typ_val,
                                      inflow->energy);
           }

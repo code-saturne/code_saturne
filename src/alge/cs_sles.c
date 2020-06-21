@@ -658,7 +658,7 @@ _needs_solving(const  char        *name,
 
   /* Initialize residue, check for immediate return */
 
-  const int *diag_block_size = cs_matrix_get_diag_block_size(a);
+  const cs_lnum_t *diag_block_size = cs_matrix_get_diag_block_size(a);
   const cs_lnum_t _diag_block_size = diag_block_size[1];
   assert(diag_block_size[0] == diag_block_size[1]);
 
@@ -790,7 +790,7 @@ _ensure_alloc_post(cs_sles_t          *sles,
 {
   if (sles->post_info != NULL) {
 
-    const int *diag_block_size = cs_matrix_get_diag_block_size(a);
+    const cs_lnum_t *diag_block_size = cs_matrix_get_diag_block_size(a);
     const cs_lnum_t n_vals = cs_matrix_get_n_columns(a) * diag_block_size[1];
 
     sles->post_info->n_rows = cs_matrix_get_n_rows(a);
@@ -1874,7 +1874,7 @@ cs_sles_post_error_output_def(const char          *name,
 
     const cs_lnum_t n_cols = cs_matrix_get_n_columns(a);
     const cs_lnum_t n_rows = cs_matrix_get_n_rows(a);
-    const int *diag_block_size = cs_matrix_get_diag_block_size(a);
+    const cs_lnum_t *diag_block_size = cs_matrix_get_diag_block_size(a);
 
     /* Check for mesh location */
 

@@ -211,8 +211,7 @@ if (nbaste.gt.0) then
 
     ! Reception des deplacements predits et remplissage de disale
 
-    call astcin(ntcast, disale)
-    !==========
+    call astcin(disale)
 
   endif
 

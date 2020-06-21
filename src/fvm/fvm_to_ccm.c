@@ -375,8 +375,8 @@ _build_ordered_cell_gnum(const cs_mesh_t    *b_mesh,
     cs_lnum_t  rank_id, t_id, shift;
     cs_lnum_t  start = 0, end = 0;
 
-    const cs_int_t  n_transforms = halo->n_transforms;
-    const cs_int_t  n_elts = halo->n_local_elts;
+    const int  n_transforms = halo->n_transforms;
+    const cs_lnum_t  n_elts = halo->n_local_elts;
 
     cs_halo_sync_untyped(b_mesh->halo,
                          CS_HALO_EXTENDED,
@@ -1209,9 +1209,6 @@ _write_cells_g(const cs_mesh_t      *b_mesh,
   CCMIOID map_id, topology_id, cells_id;
   CCMIOError error = kCCMIONoErr, *err = &error;
 
-  const cs_datatype_t lnum_type
-    = (sizeof(int) == 8) ? CS_INT64 : CS_INT32;
-
   cs_block_dist_info_t cell_bi
     = cs_block_dist_compute_sizes(w->rank,
                                   w->n_ranks,
@@ -1240,7 +1237,7 @@ _write_cells_g(const cs_mesh_t      *b_mesh,
 
   BFT_MALLOC(_cell_gc_id,
              (cell_bi.gnum_range[1] - cell_bi.gnum_range[0]),
-             cs_lnum_t);
+             int);
 
   d = cs_part_to_block_create_by_gnum(w->comm,
                                       cell_bi,
@@ -1248,7 +1245,7 @@ _write_cells_g(const cs_mesh_t      *b_mesh,
                                       cell_gnum);
 
   cs_part_to_block_copy_array(d,
-                              lnum_type,
+                              CS_INT_TYPE,
                               1,
                               b_mesh->cell_family,
                               _cell_gc_id);
@@ -1316,7 +1313,7 @@ _write_face_vertices_g(const cs_mesh_t         *b_mesh,
   cs_ccm_num_t n_face_vertices;
 
   cs_lnum_t *face_vtx_idx = NULL, *face_vtx_lst = NULL;
-  cs_ccm_num_t *face_connect_idx = NULL, *_face_connect_idx = NULL;
+  cs_lnum_t *face_connect_idx = NULL, *_face_connect_idx = NULL;
   cs_ccm_num_t *face_connect_g = NULL, *_face_connect_g = NULL;
 
   cs_lnum_t n_faces = 0, face_connect_size = 0;
@@ -1347,8 +1344,8 @@ _write_face_vertices_g(const cs_mesh_t         *b_mesh,
   /* Face -> vertex connectivity */
   /*-----------------------------*/
 
-  BFT_MALLOC(face_connect_idx, n_faces + 1, cs_ccm_num_t);
-  BFT_MALLOC(_face_connect_idx, block_size + 1, cs_ccm_num_t);
+  BFT_MALLOC(face_connect_idx, n_faces + 1, cs_lnum_t);
+  BFT_MALLOC(_face_connect_idx, block_size + 1, cs_lnum_t);
 
   face_connect_idx[0] = 0;
   for (i = 0; i < n_faces; i++) {
@@ -1569,7 +1566,7 @@ _write_face_vertices_perio_g(const cs_mesh_t        *b_mesh,
   cs_lnum_t i, j, k;
   cs_ccm_num_t n_face_vertices;
 
-  cs_ccm_num_t *face_connect_idx = NULL, *_face_connect_idx = NULL;
+  cs_lnum_t *face_connect_idx = NULL, *_face_connect_idx = NULL;
   cs_ccm_num_t *face_connect_g = NULL, *_face_connect_g = NULL;
 
   cs_lnum_t n_faces = b_mesh->n_i_faces;
@@ -1590,7 +1587,7 @@ _write_face_vertices_perio_g(const cs_mesh_t        *b_mesh,
   /* Allocate arrays large enough for both periodic boundary + true interior
      faces to avoid counting loop */
 
-  BFT_MALLOC(face_connect_idx, n_faces + 1, cs_ccm_num_t);
+  BFT_MALLOC(face_connect_idx, n_faces + 1, cs_lnum_t);
 
   block_size = face_bi.gnum_range[1] - face_bi.gnum_range[0];
 
@@ -1622,7 +1619,7 @@ _write_face_vertices_perio_g(const cs_mesh_t        *b_mesh,
     }
   }
 
-  BFT_MALLOC(_face_connect_idx, block_size + 1, cs_ccm_num_t);
+  BFT_MALLOC(_face_connect_idx, block_size + 1, cs_lnum_t);
 
   cs_part_to_block_copy_index(d, face_connect_idx, _face_connect_idx);
 
@@ -2286,7 +2283,7 @@ _write_face_cells_l(const cs_mesh_t        *b_mesh,
                     const cs_gnum_t        *cell_gnum)
 {
   cs_lnum_t i;
-  cs_lnum_t *face_cells = NULL;
+  cs_ccm_num_t *face_cells = NULL;
 
   /* Face -> cell connectivity */
   /*---------------------------*/

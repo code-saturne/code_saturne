@@ -76,8 +76,8 @@ typedef struct {
   /* General features */
 
   cs_lnum_t  dim;                /*!< space dimension */
-  cs_lnum_t  domain_num;         /*!< local domain number */
-  cs_lnum_t  n_domains;          /*!< number of domains */
+  int        domain_num;         /*!< local domain number */
+  int        n_domains;          /*!< number of domains */
 
   cs_mesh_time_dep_t  time_dep;  /*!< time dependency */
 

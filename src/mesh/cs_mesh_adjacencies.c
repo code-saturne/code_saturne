@@ -1234,26 +1234,26 @@ cs_adjacency_dump(const char           *name,
   bool  is_shared = (adj->flag & CS_ADJACENCY_SHARED) ? true : false;
 
   fprintf(f, "  shared:            %6s\n", is_shared ? "true" : "false");
-  fprintf(f, "  n_elts:            %6d\n", adj->n_elts);
-  fprintf(f, "  stride:            %6d\n", adj->stride);
-  fprintf(f, "  idx_size:          %6d\n", adj->idx[adj->n_elts]);
+  fprintf(f, "  n_elts:            %6ld\n", (long)adj->n_elts);
+  fprintf(f, "  stride:            %6d\n", (int)adj->stride);
+  fprintf(f, "  idx_size:          %6ld\n", (long)adj->idx[adj->n_elts]);
 
   if (adj->flag & CS_ADJACENCY_STRIDE) {
     if (adj->flag & CS_ADJACENCY_SIGNED) {
 
       for (cs_lnum_t i = 0; i < adj->n_elts; i++) {
-        fprintf(f, "\n[%6d] ", i);
+        fprintf(f, "\n[%6ld] ", (long)i);
         for (cs_lnum_t j = i*adj->stride; j < adj->stride*(i+1); j++)
-          fprintf(f, "%5d (%-d) |", adj->ids[j], adj->sgn[j]);
+          fprintf(f, "%5ld (%-d) |", (long)adj->ids[j], adj->sgn[j]);
       }
 
     }
     else {
 
       for (cs_lnum_t i = 0; i < adj->n_elts; i++) {
-        fprintf(f, "\n[%6d] ", i);
+        fprintf(f, "\n[%6ld] ", (long)i);
         for (cs_lnum_t j = i*adj->stride; j < adj->stride*(i+1); j++)
-          fprintf(f, "%5d |", adj->ids[j]);
+          fprintf(f, "%5ld |", (long)adj->ids[j]);
       }
 
     }
@@ -1262,18 +1262,18 @@ cs_adjacency_dump(const char           *name,
     if (adj->flag & CS_ADJACENCY_SIGNED) {
 
       for (cs_lnum_t i = 0; i < adj->n_elts; i++) {
-        fprintf(f, "\n[%6d] ", i);
+        fprintf(f, "\n[%6ld] ", (long)i);
         for (cs_lnum_t j = adj->idx[i]; j < adj->idx[i+1]; j++)
-          fprintf(f, "%5d (%-d) |", adj->ids[j], adj->sgn[j]);
+          fprintf(f, "%5ld (%-d) |", (long)adj->ids[j], adj->sgn[j]);
       }
 
     }
     else {
 
       for (cs_lnum_t i = 0; i < adj->n_elts; i++) {
-        fprintf(f, "\n[%6d] ", i);
+        fprintf(f, "\n[%6ld] ", (long)i);
         for (cs_lnum_t j = adj->idx[i]; j < adj->idx[i+1]; j++)
-          fprintf(f, "%5d |", adj->ids[j]);
+          fprintf(f, "%5ld |", (long)adj->ids[j]);
       }
 
     }

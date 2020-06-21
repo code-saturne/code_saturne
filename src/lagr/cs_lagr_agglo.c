@@ -151,7 +151,7 @@ _get_row_col(cs_lnum_t  res[2],
  */
 /*----------------------------------------------------------------------------*/
 
-static cs_lnum_t
+static int
 _compare_interface(const void  *a,
                    const void  *b)
 {

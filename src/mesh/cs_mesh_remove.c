@@ -167,7 +167,7 @@ cs_mesh_remove_cells(cs_mesh_t    *m,
      with different groups, the first group wins */
 
   int *b_gc_id;
-  BFT_MALLOC(b_gc_id, n_cells, cs_lnum_t);
+  BFT_MALLOC(b_gc_id, n_cells, int);
   for (cs_lnum_t i = 0; i < n_cells; i++)
     b_gc_id[i] = default_family_id;
 

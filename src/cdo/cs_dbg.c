@@ -250,13 +250,13 @@ cs_dbg_darray_to_listing(const char        *header,
 
   for (cs_lnum_t i = 0; i < n_rows; i++) {
     for (cs_lnum_t j = i*n_cols; j < (i+1)*n_cols; j++)
-      cs_log_printf(CS_LOG_DEFAULT, " (%04d) % 6.4e", j, array[j]);
+      cs_log_printf(CS_LOG_DEFAULT, " (%04ld) % 6.4e", (long)j, array[j]);
     cs_log_printf(CS_LOG_DEFAULT, "\n");
   }
 
   if (n_rows*n_cols < size) {
     for (cs_lnum_t j = n_rows*n_cols; j < size; j++)
-      cs_log_printf(CS_LOG_DEFAULT, " (%04d) % 6.4e", j, array[j]);
+      cs_log_printf(CS_LOG_DEFAULT, " (%04ld) % 6.4e", (long)j, array[j]);
     cs_log_printf(CS_LOG_DEFAULT, "\n");
   }
 
@@ -286,13 +286,13 @@ cs_dbg_iarray_to_listing(const char        *header,
 
   for (cs_lnum_t i = 0; i < n_rows; i++) {
     for (cs_lnum_t j = i*n_cols; j < (i+1)*n_cols; j++)
-      cs_log_printf(CS_LOG_DEFAULT, " (%04d) % 6d", j, array[j]);
+      cs_log_printf(CS_LOG_DEFAULT, " (%04ld) % 6ld", (long)j, (long)array[j]);
     cs_log_printf(CS_LOG_DEFAULT, "\n");
   }
 
   if (n_rows*n_cols < size) {
     for (cs_lnum_t j = n_rows*n_cols; j < size; j++)
-      cs_log_printf(CS_LOG_DEFAULT, " (%04d) % 6d", j, array[j]);
+      cs_log_printf(CS_LOG_DEFAULT, " (%04ld) % 6ld", (long)j, (long)array[j]);
     cs_log_printf(CS_LOG_DEFAULT, "\n");
   }
 
@@ -327,9 +327,9 @@ cs_dbg_dump_local_scalar_msr_matrix(const char          *name,
 
     const cs_lnum_t  *idx = row_index + i;
 
-    cs_log_printf(CS_LOG_DEFAULT, "%4d |D|% -6.4e |E", i, d_val[i]);
+    cs_log_printf(CS_LOG_DEFAULT, "%4ld |D|% -6.4e |E", (long)i, d_val[i]);
     for (cs_lnum_t j = idx[0]; j < idx[1]; j++)
-      cs_log_printf(CS_LOG_DEFAULT, "|% -6.4e c%4d", x_val[j], col_id[j]);
+      cs_log_printf(CS_LOG_DEFAULT, "|% -6.4e c%4ld", x_val[j], (long)col_id[j]);
     cs_log_printf(CS_LOG_DEFAULT, "\n");
 
   } /* Loop on rows */
@@ -370,24 +370,24 @@ cs_dbg_dump_linear_system(const char        *eqname,
   cs_log_printf(CS_LOG_DEFAULT, " >> SOLUTION\n");
   for (cs_lnum_t i = 0; i < n_dump_rows; i++) {
     for (cs_lnum_t j = i*n_dump_cols; j < (i+1)*n_dump_cols; j++)
-      cs_log_printf(CS_LOG_DEFAULT, "%4d % -6.4e |", j, x[j]);
+      cs_log_printf(CS_LOG_DEFAULT, "%4ld % -6.4e |", (long)j, x[j]);
     cs_log_printf(CS_LOG_DEFAULT, "\n");
   }
   if (n_dump_rows*n_dump_cols < size) {
     for (cs_lnum_t j = n_dump_rows*n_dump_cols; j < size; j++)
-      cs_log_printf(CS_LOG_DEFAULT, "%4d % -6.4e |", j, x[j]);
+      cs_log_printf(CS_LOG_DEFAULT, "%4ld % -6.4e |", (long)j, x[j]);
     cs_log_printf(CS_LOG_DEFAULT, "\n");
   }
 
   cs_log_printf(CS_LOG_DEFAULT, " >> RIGHT-HAND SIDE\n");
   for (cs_lnum_t i = 0; i < n_dump_rows; i++) {
     for (cs_lnum_t j = i*n_dump_cols; j < (i+1)*n_dump_cols; j++)
-      cs_log_printf(CS_LOG_DEFAULT, "%4d % -6.4e |", j, b[j]);
+      cs_log_printf(CS_LOG_DEFAULT, "%4ld % -6.4e |", (long)j, b[j]);
     cs_log_printf(CS_LOG_DEFAULT, "\n");
   }
   if (n_dump_rows*n_dump_cols < size) {
     for (cs_lnum_t j = n_dump_rows*n_dump_cols; j < size; j++)
-      cs_log_printf(CS_LOG_DEFAULT, "%4d % -6.4e |", j, b[j]);
+      cs_log_printf(CS_LOG_DEFAULT, "%4ld % -6.4e |", (long)j, b[j]);
     cs_log_printf(CS_LOG_DEFAULT, "\n");
   }
 
@@ -396,12 +396,12 @@ cs_dbg_dump_linear_system(const char        *eqname,
     cs_log_printf(CS_LOG_DEFAULT, " >> DIAGONAL ENTRIES\n");
     for (cs_lnum_t i = 0; i < n_dump_rows; i++) {
       for (cs_lnum_t j = i*n_dump_cols; j < (i+1)*n_dump_cols; j++)
-        cs_log_printf(CS_LOG_DEFAULT, "%4d % -6.4e |", j, dval[j]);
+        cs_log_printf(CS_LOG_DEFAULT, "%4ld % -6.4e |", (long)j, dval[j]);
       cs_log_printf(CS_LOG_DEFAULT, "\n");
     }
     if (n_dump_rows*n_dump_cols < size) {
       for (cs_lnum_t j = n_dump_rows*n_dump_cols; j < size; j++)
-        cs_log_printf(CS_LOG_DEFAULT, "%4d % -6.4e |", j, dval[j]);
+        cs_log_printf(CS_LOG_DEFAULT, "%4ld % -6.4e |", (long)j, dval[j]);
       cs_log_printf(CS_LOG_DEFAULT, "\n");
     }
 
@@ -417,15 +417,15 @@ cs_dbg_dump_linear_system(const char        *eqname,
       int  _n_rows = n_entries/_n_cols;
 
       for (cs_lnum_t ii = 0; ii < _n_rows; ii++) {
-        cs_log_printf(CS_LOG_DEFAULT, "ROW%4d >> ", i);
+        cs_log_printf(CS_LOG_DEFAULT, "ROW%4ld >> ", (long)i);
         for (cs_lnum_t jj = ii*_n_cols; jj < (ii+1)*_n_cols; jj++)
-          cs_log_printf(CS_LOG_DEFAULT, "%4d: % -6.4e |", _col[jj], _val[jj]);
+          cs_log_printf(CS_LOG_DEFAULT, "%4ld: % -6.4e |", (long)_col[jj], _val[jj]);
         cs_log_printf(CS_LOG_DEFAULT, "\n");
       }
       if (_n_rows*_n_cols < n_entries) {
-        cs_log_printf(CS_LOG_DEFAULT, "ROW%4d >> ", i);
+        cs_log_printf(CS_LOG_DEFAULT, "ROW%4ld >> ", (long)i);
         for (cs_lnum_t jj = _n_rows*_n_cols; jj < n_entries; jj++)
-          cs_log_printf(CS_LOG_DEFAULT, "%4d: % -6.4e |", _col[jj], _val[jj]);
+          cs_log_printf(CS_LOG_DEFAULT, "%4ld: % -6.4e |", (long)_col[jj], _val[jj]);
         cs_log_printf(CS_LOG_DEFAULT, "\n");
       }
 

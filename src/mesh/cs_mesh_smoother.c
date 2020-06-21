@@ -118,15 +118,14 @@ _compute_distance(const double  a[3],
  *----------------------------------------------------------------------------*/
 
 static void
-_compute_minmax(cs_int_t            n_vals,
+_compute_minmax(cs_lnum_t           n_vals,
                 const cs_real_t     var[],
                 cs_real_t          *min,
                 cs_real_t          *max)
 {
-  cs_int_t  i;
   cs_real_t  _min = DBL_MAX, _max = -DBL_MAX;
 
-  for (i = 0; i < n_vals; i++) {
+  for (cs_lnum_t i = 0; i < n_vals; i++) {
     _min = CS_MIN(_min, var[i]);
     _max = CS_MAX(_max, var[i]);
   }
@@ -375,9 +374,9 @@ _move_vertices(cs_mesh_t  *mesh,
 static void
 _get_local_tolerance(const cs_real_t   vtx_coords[],
                      double            vtx_tolerance[],
-                     const cs_int_t    n_faces,
-                     const cs_int_t    face_vtx_idx[],
-                     const cs_int_t    face_vtx_lst[],
+                     const cs_lnum_t   n_faces,
+                     const cs_lnum_t   face_vtx_idx[],
+                     const cs_lnum_t   face_vtx_lst[],
                      double            fraction)
 {
   cs_lnum_t  j, k, start, end, face_id, vtx_id1, vtx_id2;
@@ -464,7 +463,7 @@ _get_global_tolerance(cs_mesh_t            *mesh,
                                      0,
                                      n_g_vertices);
 
-  cs_int_t block_size = bi.block_size;
+  cs_lnum_t block_size = bi.block_size;
 
   cs_all_to_all_t
     *d = cs_all_to_all_create_from_block(n_vertices,
