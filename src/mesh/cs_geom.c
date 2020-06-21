@@ -297,6 +297,13 @@ cs_geom_segment_intersect_face(int               orient,
   p0 = _test_edge(sx0, sx1, face_cog, vtx_0);
   pip1 = p0;
 
+  /* Sign of "[OD].p" for the first sub-triangle.
+   * We need to store this to check if all e_out are around
+   * (OD), and for that the multiplier "[OD].p" must be the same
+   * Otherwise we can have troubles when [OD] is orthogonal to the face normal
+   * (it can switch sign from one triangle to an other...) */
+  int sign_od_p0 = 0;
+
   /* Loop on vertices of the face */
   for (cs_lnum_t i = 0; i < n_vertices; i++) {
 
@@ -320,9 +327,12 @@ cs_geom_segment_intersect_face(int               orient,
     double od_p = cs_math_3_dot_product(disp, pvec);
 
     /* This sign is absolute (ie same result is obtained if the face is seen
-     * from the other neighbooring cell).
+     * from the other neighbouring cell).
      */
     int sign_od_p = (od_p > 0 ? 1 : -1);
+
+    if (sign_od_p0 == 0)
+      sign_od_p0 = sign_od_p;
 
     /* 2nd edge: vector ei+1, pi+1 = ei+1 ^ OG */
 
@@ -358,10 +368,17 @@ cs_geom_segment_intersect_face(int               orient,
 
     /* Special treatment if the intersection point is
      * in G exactly (so w_sign is < 0 for all e_out)
+     * Not: all e_out should be talen with the same noram p.
+     * We take the first sign_od_p
      */
-    if (w_sign > 0)
+    if (w_sign * sign_od_p *sign_od_p0 > 0)
       in_cog = false;
-    /* Last vertex */
+
+    /* Last vertex for the face,
+     * in_cog is true for all e_out edges which means that
+     * w_sign <= 0 for all
+     * AND no triangle was selected (because the line is passing exactly
+     * in the cog G) */
     if ((i == (n_vertices - 1)) && in_cog) {
       u_sign = 1;
       v_sign = 1;
