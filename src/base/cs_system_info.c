@@ -54,10 +54,6 @@
 #include <pwd.h>
 #endif
 
-#if defined(__bgq__) && defined(__xlc__)
-#include <spi/include/kernel/location.h>
-#endif
-
 #if defined(HAVE_CUDA)
 #include "cs_base_cuda.h"
 #endif
@@ -242,6 +238,43 @@ _sys_info_issue(char      *issue_str,
 #endif
 }
 
+#if defined(HAVE_MPI)
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Determine min an max number of ranks per node
+ *
+ * \param[in]  comm            associated MPI communicator
+ * \param[in]  ranks_per_node  number of ranks per node (min and max)
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_mpi_ranks_per_node(MPI_Comm  comm,
+                    int       ranks_per_node[2])
+{
+#if (MPI_VERSION < 3)
+  ranks_per_node[0] = -1;
+  ranks_per_node[1] = -1;
+#else
+
+  MPI_Comm sh_comm;
+  MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0,
+                      MPI_INFO_NULL, &sh_comm);
+  int sh_ranks;
+  MPI_Comm_rank(sh_comm, &sh_ranks);
+  sh_ranks += 1;
+  MPI_Allreduce(MPI_IN_PLACE, &sh_ranks, 1, MPI_INT, MPI_MAX, sh_comm);
+  MPI_Comm_free(&sh_comm);
+
+  MPI_Allreduce(&sh_ranks, ranks_per_node, 1, MPI_INT, MPI_MIN, comm);
+  MPI_Allreduce(&sh_ranks, ranks_per_node+1, 1, MPI_INT, MPI_MAX, comm);
+
+#endif
+}
+
+#endif /* defined(HAVE_MPI) */
+
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Print available system information.
@@ -290,11 +323,6 @@ _system_info(bool  log)
 
 # if defined(HAVE_MPI)
   int mpi_flag = 0;
-#endif
-
-#if defined(__bgq__) && defined(__xlc__)
-  Personality_t personality;
-  Kernel_GetPersonality(&personality, sizeof(personality));
 #endif
 
   /* Date */
@@ -350,9 +378,7 @@ _system_info(bool  log)
 
   /* Available memory */
 
-#if defined(__bgq__) && defined(__xlc__)
-  ram = personality.DDR_Config.DDRSizeMB;
-#elif defined(__linux__) \
+#if defined(__linux__) \
    && defined(HAVE_SYS_SYSINFO_H) && defined(HAVE_SYSINFO)
   {
     struct sysinfo info;
@@ -374,9 +400,9 @@ _system_info(bool  log)
 
 #if defined(HAVE_GETPWUID) && defined(HAVE_GETEUID)
 
-  /* Functions not available on IBM Blue Gene or Cray XT,
+  /* Functions not available on Cray XT,
      but a stub may exist, so we make sure we ignore it */
-#if   defined(__bg__) || defined(_CRAYC) \
+#if   defined(_CRAYC) \
    || defined(__CRAYXT) || defined(__CRAYXE) || defined(__CRAYXC)
   pwd_user = NULL;
 #else
@@ -425,45 +451,8 @@ _system_info(bool  log)
     MPI_Comm_size(comm, &n_ranks);
     MPI_Comm_size(MPI_COMM_WORLD, &n_world_ranks);
 
-#   if defined(__bgq__) && defined(__xlc__)
-
-    {
-      int a_torus, b_torus, c_torus, d_torus, e_torus;
-      int n_flags = personality.Network_Config.NetFlags;
-      int n_hw_threads = Kernel_ProcessorCount();
-
-      for (log_id = 0; log_id < n_logs; log_id++) {
-        cs_log_printf(logs[log_id],
-                      "  %s%d\n", _("MPI ranks:           "), n_ranks);
-        if (n_world_ranks > n_ranks)
-          cs_log_printf(logs[log_id],
-                        "  %s%d\n", _("MPI_COMM_WORLD size: "),
-                        n_world_ranks);
-        cs_log_printf(logs[log_id],
-                      "  %s%d\n", _("Hardware threads:    "), n_hw_threads);
-      }
-
-      if (n_flags & ND_ENABLE_TORUS_DIM_A) a_torus = 1; else a_torus = 0;
-      if (n_flags & ND_ENABLE_TORUS_DIM_B) b_torus = 1; else b_torus = 0;
-      if (n_flags & ND_ENABLE_TORUS_DIM_C) c_torus = 1; else c_torus = 0;
-      if (n_flags & ND_ENABLE_TORUS_DIM_D) d_torus = 1; else d_torus = 0;
-      if (n_flags & ND_ENABLE_TORUS_DIM_E) e_torus = 1; else e_torus = 0;
-
-      for (log_id = 0; log_id < n_logs; log_id++) {
-        cs_log_printf(logs[log_id],
-                      "  %s<%d,%d,%d,%d,%d>\n", _("Block shape:         "),
-                      personality.Network_Config.Anodes,
-                      personality.Network_Config.Bnodes,
-                      personality.Network_Config.Cnodes,
-                      personality.Network_Config.Dnodes,
-                      personality.Network_Config.Enodes);
-        cs_log_printf(logs[log_id],
-                      "  %s<%d,%d,%d,%d,%d>\n", _("Torus links enabled: "),
-                      a_torus, b_torus, c_torus, d_torus, e_torus);
-      }
-    }
-
-#   else
+    int ranks_per_node[2];
+    _mpi_ranks_per_node(comm, ranks_per_node);
 
     {
       int appnum = -1;
@@ -486,14 +475,22 @@ _system_info(bool  log)
           cs_log_printf(logs[log_id],
                         "  %s%d\n", _("MPI ranks:           "), n_ranks);
 
+        if (ranks_per_node[0] > 0 && ranks_per_node[0] < n_ranks) {
+          if (ranks_per_node[0] == ranks_per_node[1])
+            cs_log_printf(logs[log_id],
+                          "  %s%d\n", _("MPI ranks per node:  "),
+                          ranks_per_node[0]);
+          else
+            cs_log_printf(logs[log_id],
+                          "  %s%d - %d\n", _("MPI ranks per node:  "),
+                          ranks_per_node[0], ranks_per_node[1]);
+        }
         if (n_world_ranks > n_ranks)
           cs_log_printf(logs[log_id],
                         "  %s%d\n", _("MPI_COMM_WORLD size: "),
                         n_world_ranks);
       }
     }
-
-#   endif /* defined(HAVE_MPI) */
 
   }
 
@@ -521,7 +518,29 @@ _system_info(bool  log)
 #if defined(HAVE_CUDA)
   for (log_id = 0; log_id < n_logs; log_id++)
     cs_base_cuda_device_info(log_id);
-#else
+#endif
+
+#if    defined(CS_CC_VERSION_STRING) || defined(CS_CXX_VERSION_STRING) \
+    || defined(CS_FC_VERSION_STRING) || defined(CS_NVCC_VERSION_STRING)
+  for (log_id = 0; log_id < n_logs; log_id++) {
+    cs_log_printf(logs[log_id], "\n  Compilers used for build:\n");
+#   if defined(CS_CC_VERSION_STRING)
+    cs_log_printf(logs[log_id],
+                  "    %s%s\n", _("C compiler:        "), CS_CC_VERSION_STRING);
+#   endif
+#   if defined(CS_CXX_VERSION_STRING)
+    cs_log_printf(logs[log_id],
+                  "    %s%s\n", _("C++ compiler:      "), CS_CXX_VERSION_STRING);
+#   endif
+#   if defined(CS_FC_VERSION_STRING)
+    cs_log_printf(logs[log_id],
+                  "    %s%s\n", _("Fortran compiler:  "), CS_FC_VERSION_STRING);
+#   endif
+#   if defined(CS_NVCC_VERSION_STRING)
+    cs_log_printf(logs[log_id],
+                  "    %s%s\n", _("CUDA compiler:     "), CS_NVCC_VERSION_STRING);
+#   endif
+  }
 #endif
 }
 

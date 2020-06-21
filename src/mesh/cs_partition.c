@@ -2815,9 +2815,7 @@ cs_partition_external_library_info(void)
   n_ext_libs++;
 #endif
 
-  if (n_ext_libs == 1)
-    bft_printf(_("\n  External libraries for partitioning:\n"));
-  else if (n_ext_libs > 1)
+  if (n_ext_libs >= 1)
     bft_printf(_("\n  External libraries for partitioning:\n"));
 
 #if defined(HAVE_METIS)

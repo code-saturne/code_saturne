@@ -421,14 +421,10 @@ typedef struct {
 #define CS_COORD_TYPE     CS_DOUBLE
 
 /* Minimum size for OpenMP loops
- *  (based on initial benchmarking, which will need updates)
- *-----------------------------------------------------------*/
+ *  (will need benchmarking and tuning for various systems)
+ *---------------------------------------------------------*/
 
-#if defined(__bgq__) && defined(__xlc__)
-#  define CS_THR_MIN 1014
-#else
-#  define CS_THR_MIN 128
-#endif
+#define CS_THR_MIN 128
 
 /* Cache line size, or multiple thereof */
 /*--------------------------------------*/

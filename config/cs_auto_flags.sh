@@ -64,8 +64,12 @@
 # Two other environment variable strings are defined, containing possibly
 # more detailed compiler information:
 #
-# cs_ac_cc_version      # Compiler version string, 1 line max.
-# cs_ac_cc_version_full # Compiler version string, 10 lines max.
+# cs_ac_cc_version       # C compiler version string, 1 line max.
+# cs_ac_cc_version_full  # C compiler version string, 10 lines max.
+# cs_ac_cxx_version      # C++ compiler version string, 1 line max.
+# cs_ac_cxx_version_full # C++ compiler version string, 10 lines max.
+# cs_ac_fc_version       # Fortran compiler version string, 1 line max.
+# cs_ac_fc_version_full  # Fortran compiler version string, 10 lines max.
 
 # The sourcing approach and some tests are borrowed from the HDF5 configure
 # environment.
@@ -95,7 +99,7 @@ _______EOF
 save_LANG=$LANG
 unset LANG;
 
-# Libraries only added on special cases (such as IBM Blue Gene),
+# Libraries only added on special cases),
 # so initialize empty variables here
 
 libs_default=""
@@ -250,7 +254,6 @@ if test "x$cs_gcc" = "xgcc"; then
 elif test "x$cs_gcc" = "xicc" ; then
 
   cs_cc_version=`echo $cs_ac_cc_version | grep ICC |sed 's/[a-zA-Z()]//g'`
-  cs_cc_vendor='Intel ICC Classic'
   echo "compiler '$CC' is Intel ICC Classic"
 
   # Version strings for logging purposes and known compiler flag
@@ -284,7 +287,6 @@ elif test "x$cs_gcc" = "xicc" ; then
 elif test "x$cs_gcc" = "xicc" -o "x$cs_gcc" = "xicx" ; then
 
   cs_cc_version=`echo $cs_ac_cc_version | grep ICX |sed 's/[a-zA-Z()]//g'`
-  cs_cc_vendor='Intel ICC NextGen'
   echo "compiler '$CC' is Intel ICC NextGen"
 
   # Version strings for logging purposes and known compiler flag
@@ -365,7 +367,7 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
   $CC -qversion 2>&1 | grep 'XL C' > /dev/null
   if test "$?" = "0" ; then
 
-    echo "compiler '$CC' is IBM XL C compiler"
+    echo "compiler '$CC' is IBM XL C/C++ compiler"
 
     # Version strings for logging purposes and known compiler flag
     $CC -qversion > $outfile 2>&1
@@ -385,21 +387,6 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
     ldflags_default_opt="-O3"
     ldflags_default_dbg="-g -qfullpath"
     ldflags_rpath="-R"
-
-    # Adjust options for IBM Blue Gene cross-compiler
-
-    grep 'Blue Gene' $outfile > /dev/null
-    if test "$?" = "0" ; then
-      # Default compiler flags (we assume that MPI wrappers are used)
-      if test -f /bgsys/drivers/ppcfloor/cnk/bin/bgq_kernel.elf ; then
-        cs_ibm_bg_type="Q"
-        cppflags_default=""
-        cflags_default=""                    # "-qlanglvl=extc99" by default
-        cflags_default_opt="-g -O3"
-        cflags_default_hot="-g -O3 -qhot"
-        cflags_default_dbg="-g"
-      fi
-    fi
 
   fi
 fi
@@ -598,7 +585,6 @@ elif test "x$cs_gxx" = "xicpc"; then
 
   # Version strings for logging purposes and known compiler flag
   $CXX $user_CXXFLAGS -V conftest.c > $outfile 2>&1
-  cs_cxx_vendor='Intel ICC Classic'
   cs_cxx_compiler_known=yes
 
   cs_cxx_vers_major=`echo $cs_ac_cxx_version | cut -f 3 -d" " | cut -f1 -d.`
@@ -632,7 +618,6 @@ elif test "x$cs_gxx" = "xicpc" -o "x$cs_gxx" = "xicpx"; then
 
   # Version strings for logging purposes and known compiler flag
   $CXX $user_CXXFLAGS -V conftest.c > $outfile 2>&1
-  cs_cxx_vendor='Intel ICC NextGen'
   cs_cxx_compiler_known=yes
 
   cs_cxx_vers_major=`echo $cs_ac_cxx_version | cut -f 3 -d" " | cut -f1 -d.`
@@ -721,19 +706,6 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
     cxxflags_default_dbg="-g"
     cxxflags_default_omp="-qsmp=omp -qthreaded"
     cxxflags_default_std=""
-
-    # Adjust options for IBM Blue Gene cross-compiler
-
-    grep 'Blue Gene' $outfile > /dev/null
-    if test "$?" = "0" ; then
-      # Default compiler flags (we assume that MPI wrappers are used)
-      if test -f /bgsys/drivers/ppcfloor/cnk/bin/bgq_kernel.elf ; then
-        cxxflags_default="-qlanglvl=redefmac"
-        cxxflags_default_opt="-g -O3"
-        cxxflags_default_hot="-g -O3 -qhot"
-        cxxflags_default_dbg="-g"
-      fi
-    fi
 
   fi
 fi
@@ -928,7 +900,6 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
   if test "$?" = "0" ; then
 
     cs_fc_version=`echo $cs_ac_fc_version | sed 's/[a-zA-Z()]//g'`
-    cs_fc_vendor='Intel IFORT NextGen'
 
     echo "compiler '$FC' is Intel Fortran NextGen"
 
@@ -1003,21 +974,6 @@ if test "x$cs_fc_compiler_known" != "xyes" ; then
     fcflags_default_opt="-O3"
     fcflags_default_omp="-qsmp=omp -qthreaded"
 
-    # Adjust options for IBM Blue Gene cross-compiler
-
-    grep 'Blue Gene' $outfile > /dev/null
-
-    if test "$?" = "0" ; then
-
-      # Default compiler flags (we assume that MPI wrappers are used)
-      if test -f /bgsys/drivers/ppcfloor/cnk/bin/bgq_kernel.elf ; then
-        fcflags_default="-qextname -qsuffix=cpp=f90"
-        fcflags_default_dbg="-g -qcheck"
-        fcflags_default_opt="-g -O3"
-        fcflags_default_hot="-g -O3 -qhot"
-      fi
-    fi
-
   fi
 fi
 
@@ -1083,6 +1039,8 @@ cs_nvcc_version="`$NVCC -version 2>&1 |grep 'release' |\
                   sed 's/.*release \([-a-z0-9\.]*\).*/\1/'`"
 
 echo "compiler '${NVCC}' version ${cs_nvcc_version}"
+
+cs_ac_nvcc_version="`$NVCC -version 2>&1 |grep 'release' | head -1`"
 
 # Default compiler flags
 nvccflags_default=""

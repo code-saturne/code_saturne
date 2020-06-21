@@ -158,11 +158,6 @@ static _cs_base_sighandler_t cs_glob_base_sigterm_save = SIG_DFL;
 static _cs_base_sighandler_t cs_glob_base_sigfpe_save = SIG_DFL;
 static _cs_base_sighandler_t cs_glob_base_sigsegv_save = SIG_DFL;
 
-#if defined(__bgq__)
-static _cs_base_sighandler_t cs_glob_base_sigabrt_save = SIG_DFL;
-static _cs_base_sighandler_t cs_glob_base_sigtrap_save = SIG_DFL;
-#endif
-
 #if defined(SIGXCPU)
 static _cs_base_sighandler_t cs_glob_base_sigcpu_save = SIG_DFL;
 #endif
@@ -715,14 +710,6 @@ _cs_base_sig_fatal(int  signum)
     _cs_base_err_printf(_("SIGSEGV signal (forbidden memory area access) "
                           "intercepted!\n"));
     break;
-
-#if defined(__bgq__)
-  case SIGABRT:
-    _cs_base_err_printf(_("SIGABRT signal (Abort) "
-                          "intercepted.\n"));
-    cs_glob_base_sigabrt_save  = signal(SIGABRT, cs_glob_base_sigabrt_save);
-    break;
-#endif
 
 #if defined(SIGXCPU)
   case SIGXCPU:
@@ -1564,11 +1551,6 @@ cs_base_error_init(bool  signal_defaults)
 
     cs_glob_base_sigfpe_save  = signal(SIGFPE, _cs_base_sig_fatal);
     cs_glob_base_sigsegv_save = signal(SIGSEGV, _cs_base_sig_fatal);
-
-#if defined(__bgq__)
-    cs_glob_base_sigabrt_save  = signal(SIGABRT, _cs_base_sig_fatal);
-    cs_glob_base_sigtrap_save  = signal(SIGTRAP, _cs_base_sig_fatal);
-#endif
 
 #if defined(SIGXCPU)
     if (cs_glob_rank_id <= 0)

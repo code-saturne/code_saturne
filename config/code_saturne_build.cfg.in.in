@@ -73,13 +73,10 @@ cxx: @CXX@
 fc: @FC@
 ld: @CS_LD@
 
-cc_vendor: @cc_vendor@
-cc_version: @cc_version@
-cxx_vendor: @cxx_vendor@
-cxx_version: @cxx_version@
-fc_vendor: @fc_vendor@
-fc_version: @fc_version@
-nvcc_version: @nvcc_version@
+cc_version: @cs_cc_version_string@
+cxx_version: @cs_cxx_version_string@
+fc_version: @cs_fc_version_string@
+nvcc_version: @cs_nvcc_version_string@
 
 cflags: @CFLAGS@ @CFLAGS_DBG@ @CFLAGS_OPT@
 cxxflags: @CXXFLAGS@ @CXXFLAGS_DBG@ @CXXFLAGS_OPT@

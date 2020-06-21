@@ -3281,6 +3281,9 @@ cs_file_defaults_info(void)
                         N_("  I/O read method:     %s (%s)\n"),
                         N_("  I/O write method:    %s (%s)\n")};
 
+  for (log_id = 0; log_id < 2; log_id++)
+    cs_log_printf(logs[log_id], "\n");
+
   for (cs_file_mode_t mode = CS_FILE_MODE_READ;
        mode < CS_FILE_MODE_APPEND;
        mode++) {

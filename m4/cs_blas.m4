@@ -107,13 +107,7 @@ if test "x$with_blas" != "xno" ; then
 
       if test "$1" = "yes" -o "x$with_blas_libs" = "x"; then # Threaded version ?
 
-        if test "x$cs_ibm_bg_type" = "xQ"; then
-          BLAS_LIBS="-lesslbg"
-          BLAS_LDFLAGS="-L$with_blas/lib64"
-          BLASRUNPATH="-R$with_blas/lib64"
-        else
-          BLAS_LIBS="-lesslsmp"
-        fi
+        BLAS_LIBS="-lesslsmp"
 
         LDFLAGS="${saved_LDFLAGS} ${BLAS_LDFLAGS}"
         LIBS=" ${BLAS_LIBS} ${saved_LIBS}"
@@ -130,9 +124,7 @@ if test "x$with_blas" != "xno" ; then
       if test "$cs_have_blas" = "no" ; then # Test for non-threaded version
                                             # or explicitely specified libs
 
-        if test "x$cs_ibm_bg_type" = "xQ" ; then
-          BLAS_LIBS="-lesslbg"
-        elif test "x$with_blas_libs" != "x" -a "x$with_blas_type" = "xESSL"; then
+        if test "x$with_blas_libs" != "x" -a "x$with_blas_type" = "xESSL"; then
           BLAS_LIBS="$with_blas_libs"
         else
           BLAS_LIBS="-lessl"

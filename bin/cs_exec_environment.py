@@ -1421,7 +1421,6 @@ class mpi_environment:
                                'MSMPI':self.__init_msmpi__,
                                'OpenMPI':self.__init_openmpi__,
                                'BullxMPI':self.__init_openmpi__,
-                               'BGQ_MPI':self.__init_bgq__,
                                'Platform_MPI':self.__init_platform_mpi__}
             if self.type in mpi_env_by_type:
                 init_method = mpi_env_by_type[self.type]
@@ -1788,46 +1787,6 @@ class mpi_environment:
         # Info commands
 
         self.info_cmds = ['ompi_info -a']
-
-    #---------------------------------------------------------------------------
-
-    def __init_bgq__(self, p, resource_info=None, wdir = None):
-
-        """
-        Initialize for Blue Gene/Q environment.
-        """
-
-        # Set base executable path
-
-        self.mpiexec = 'runjob'
-
-        # Determine processor count and MPMD handling
-
-        self.mpiexec_n = ' --np '
-        self.mpmd = MPI_MPMD_configfile
-
-        rm = None
-        ppn = 1
-        if resource_info != None:
-            rm = resource_info.manager
-            ppn = resource_info.n_procs_per_node()
-        if rm == 'SLURM':
-            self.mpiexec = 'srun'
-            self.mpiexec_n = ' --ntasks='
-            if ppn:
-                self.mpiexec_n_per_node = ' --ntasks-per-node=' + str(ppn)
-        else:
-            if ppn != 1:
-                self.mpiexec_n_per_node = ' --ranks-per-node ' + str(ppn)
-            self.mpiexec_separator = ':'
-
-        # Other options to add
-
-        # self.mpiexec_exe = '--exe'
-        # self.mpiexec_args = '--args'
-        # self.mpiexec_envs = '--envs OMP_NUM_THREADS=' + str(omp_num_threads)
-
-        # Info commands
 
     #---------------------------------------------------------------------------
 

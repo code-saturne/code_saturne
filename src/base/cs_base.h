@@ -65,11 +65,7 @@
  * be better optimized on memory-aligned data (if 0 here, no alignment
  * is leveraged). This alignment is not exploited yet in Code_Saturne. */
 
-#if defined(__bgq__)
-#define CS_MEM_ALIGN 32
-#else
 #define CS_MEM_ALIGN 0
-#endif
 
 #define CS_BASE_STRING_LEN                             80
 

@@ -203,9 +203,6 @@ if test "x$cs_have_mpi_header" = "xyes" ; then
 
   CPPFLAGS="$saved_CPPFLAGS $MPI_CPPFLAGS"
   mpi_type=""
-  if test "x$cs_ibm_bg_type" = "xQ" ; then
-    mpi_type=BGQ_MPI
-  fi
   if test "x$mpi_type" = "x"; then
     AC_EGREP_CPP([cs_msmpi],
                  [

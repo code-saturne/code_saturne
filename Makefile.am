@@ -250,16 +250,6 @@ bin/code_saturne: $(srcdir)/bin/code_saturne.$(LAUNCHER_EXT).in
 cs_version.h: Makefile $(top_srcdir)/src/base/cs_version.h.in
 	$(PYTHON) ${top_srcdir}/build-aux/cs_version.py --replace ${top_srcdir}/src/base/cs_version.h.in cs_version.h
 
-config/code_saturne_build.cfg.in: $(srcdir)/Makefile.in $(top_builddir)/config.status
-	@case '$?' in \
-	  *config.status*) \
-	    echo ' $(SHELL) ./config.status'; \
-	    $(SHELL) ./config.status;; \
-	  *) \
-	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__maybe_remake_depfiles)'; \
-	    cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__maybe_remake_depfiles);; \
-	esac;
-
 lib/code_saturne_build.cfg: Makefile config/code_saturne_build.cfg.in
 	rm -f $@ $@.tmp
 	$(MKDIR_P) lib

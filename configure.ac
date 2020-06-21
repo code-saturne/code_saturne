@@ -263,13 +263,26 @@ if test "x$auto_flags" = "xyes" ; then
   AC_SUBST(FCFLAGS_HOT)
 
   AC_SUBST(LDRPATH)
-  AC_SUBST(cc_vendor, [${cs_cc_vendor}])
-  AC_SUBST(cc_version, [${cs_cc_version}])
-  AC_SUBST(cxx_vendor, [${cs_cxx_vendor}])
-  AC_SUBST(cxx_version, [${cs_cxx_version}])
-  AC_SUBST(fc_vendor, [${cs_fc_vendor}])
-  AC_SUBST(fc_version, [${cs_fc_version}])
-  AC_SUBST(nvcc_version, [${cs_nvcc_version}])
+  AC_SUBST(cs_cc_version_string, [${cs_ac_cc_version}])
+  AC_SUBST(cs_cxx_version_string, [${cs_ac_cxx_version}])
+  AC_SUBST(cs_fc_version_string, [${cs_ac_fc_version}])
+  AC_SUBST(cs_nvcc_version_string, [${cs_ac_nvcc_version}])
+
+  if test "x$cs_ac_cc_version" != "x" -a "x$cs_ac_cc_version" != "xunknown" ; then
+    AC_DEFINE_UNQUOTED([CS_CC_VERSION_STRING], ["$cs_ac_cc_version"], [C compiler version string])
+    echo "yes $cs_ac_cc_version"
+  else
+    echo "no $cs_ac_cc_version"
+  fi
+  if test "x$cs_ac_cxx_version" != "x" -a "x$cs_ac_cxx_version" != "xunknown" ; then
+    AC_DEFINE_UNQUOTED([CS_CXX_VERSION_STRING], ["$cs_ac_cxx_version"], [C++ compiler version string])
+  fi
+  if test "x$cs_ac_fc_version" != "x" -a "x$cs_ac_fc_version" != "xunknown" ; then
+    AC_DEFINE_UNQUOTED([CS_FC_VERSION_STRING], ["$cs_ac_fc_version"], [Fortran compiler version string])
+  fi
+  if test "x$cs_ac_nvcc_version" != "x" ; then
+    AC_DEFINE_UNQUOTED([CS_NVCC_VERSION_STRING], ["$cs_ac_nvcc_version"], [CUDA compiler version string])
+  fi
 
 fi
 
@@ -406,7 +419,7 @@ AC_ARG_ENABLE(long-gnum,
 )
 
 if test "x$cs_have_long_gnum" = "xyes"; then
-  AC_DEFINE([HAVE_LONG_GNUM],1,[Use 64-bit type if available for cs_gnum_t.])
+  AC_DEFINE([HAVE_LONG_GNUM], 1, [Use 64-bit type if available for cs_gnum_t.])
 fi
 AC_SUBST(cs_have_long_gnum)
 
