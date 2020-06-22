@@ -512,7 +512,8 @@ all-local:
 
 install-data-local:
 	@$(NORMAL_INSTALL)
-	cp lib/code_saturne_build.cfg "$(DESTDIR)$(libdir)"
+	$(MKDIR_P) "$(DESTDIR)$(libdir)"
+	cp lib/code_saturne_build.cfg "$(DESTDIR)$(libdir)/code_saturne_build.cfg"
 	test -z "$(pkgdatadir)/data/thch" || $(MKDIR_P) "$(DESTDIR)$(pkgdatadir)/data/thch"
 	tar xvJf "$(top_srcdir)/data/thch/dp_radiat_MFS.tar.xz" -C "$(DESTDIR)$(pkgdatadir)/data/thch"
 
