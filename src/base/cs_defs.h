@@ -304,7 +304,6 @@ typedef enum {
 /* Other types */
 typedef double            cs_coord_t;  /* Real number (coordinate value) */
 
-typedef int                 cs_int_t;    /* Fortran integer */
 typedef double              cs_real_t;   /* Fortran double precision */
 typedef char                cs_byte_t;   /* Byte (untyped memory unit) */
 typedef unsigned short int  cs_flag_t;   /* Flag storing metadata */

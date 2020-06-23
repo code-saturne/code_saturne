@@ -71,15 +71,6 @@ BEGIN_C_DECLS
            not depend on mesh size, so as not to pollute the readability
            and comprehensibility of the code.
 
-  \typedef cs_int_t
-            \brief Fortran-compatible integer
-            \deprecated
-            Currently, this integer type is necessarily of the same
-            type as \ref cs_lnum_t, but it should only be used in Fortran
-            wrapper function definitions. Moving to ISO_C_BINDINGS,
-            and converting more code to C, this type should eventually
-            disappear.
-
   \typedef cs_lnum_2_t
            \brief vector of 2 local mesh-entity ids
 
