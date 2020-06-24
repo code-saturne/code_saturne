@@ -624,7 +624,6 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
 
   fvm_nodal_from_desc_add_cells(extr_mesh,
                                 extr_cell_count,
-                                NULL,
                                 2,
                                 face_num_shift,
                                 (const cs_lnum_t **)face_vertices_idx,

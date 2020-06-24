@@ -48,12 +48,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------
  * Convert and add cells from an descending connectivity mesh to a nodal mesh.
  *
- * If the optional filter list extr_cells[] argument is non-NULL, cells
- * {extr_cells[0], extr_cells[1], extr_cells[n_extr_cells - 1]} are converted
- * and added to the nodal mesh. If this filter is set to NULL, cells
- * {1, 2, ..., n_extr_cells} are considered.
- *
- * In addition, an optional parent_cell_num[] array may also be given, in
+ * An optional parent_cell_num[] array may also be given, in
  * case the descending connectivity mesh definition is based on a temporary
  * subset of a parent mesh, (corresponding to the parent_cell_num[] list,
  * using 1 to n numbering), and the final nodal mesh element parent numbering
@@ -62,7 +57,6 @@ BEGIN_C_DECLS
  * parameters:
  *   this_nodal      <-> nodal mesh structure
  *   n_extr_cells    <-- count of cells to add
- *   extr_cells      <-- optional filter list of cells to extract (1 to n)
  *   n_face_lists    <-- number of face lists
  *   face_list_shift <-- face list to common number index shifts;
  *                       size: n_face_lists
@@ -80,7 +74,6 @@ BEGIN_C_DECLS
 void
 fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
                               const cs_lnum_t     n_extr_cells,
-                              const cs_lnum_t     extr_cells[],
                               const int           n_face_lists,
                               const cs_lnum_t     face_list_shift[],
                               const cs_lnum_t    *face_vertex_idx[],

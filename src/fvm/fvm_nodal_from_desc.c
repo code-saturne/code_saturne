@@ -1248,12 +1248,7 @@ _fvm_nodal_add_sections(fvm_nodal_t          *this_nodal,
 /*----------------------------------------------------------------------------
  * Convert and add cells from an descending connectivity mesh to a nodal mesh.
  *
- * If the optional filter list extr_cells[] argument is non-NULL, cells
- * {extr_cells[0], extr_cells[1], extr_cells[n_extr_cells - 1]} are converted
- * and added to the nodal mesh. If this filter is set to NULL, cells
- * {1, 2, ..., n_extr_cells} are considered.
- *
- * In addition, an optional parent_cell_num[] array may also be given, in
+ * An optional parent_cell_num[] array may also be given, in
  * case the descending connectivity mesh definition is based on a temporary
  * subset of a parent mesh, (corresponding to the parent_cell_num[] list,
  * using 1 to n numbering), and the final nodal mesh element parent numbering
@@ -1262,7 +1257,6 @@ _fvm_nodal_add_sections(fvm_nodal_t          *this_nodal,
  * parameters:
  *   this_nodal      <-> nodal mesh structure
  *   n_extr_cells    <-- count of cells to add
- *   extr_cells      <-- optional filter list of cells to extract (1 to n)
  *   n_face_lists    <-- number of face lists
  *   face_list_shift <-- face list to common number index shifts;
  *                       size: n_face_lists + 1
@@ -1280,7 +1274,6 @@ _fvm_nodal_add_sections(fvm_nodal_t          *this_nodal,
 void
 fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
                               const cs_lnum_t     n_extr_cells,
-                              const cs_lnum_t     extr_cells[],
                               const int           n_face_lists,
                               const cs_lnum_t     face_list_shift[],
                               const cs_lnum_t    *face_vertex_idx[],
@@ -1292,7 +1285,6 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
                               cs_lnum_t          *cell_face_list[])
 {
   int  type_id;
-  cs_lnum_t   cell_counter, cell_id;
 
   fvm_element_t  cell_type;
 
@@ -1321,12 +1313,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
   /* Guess connectivity types */
   /*--------------------------*/
 
-  for (cell_counter = 0 ; cell_counter < n_extr_cells ; cell_counter++) {
-
-    if (extr_cells != NULL)
-      cell_id = extr_cells[cell_counter] - 1;
-    else
-      cell_id = cell_counter;
+  for (cs_lnum_t cell_id = 0 ; cell_id < n_extr_cells ; cell_id++) {
 
     cell_type = _nodal_cell_from_desc(cell_id,
                                       n_face_lists,
@@ -1400,12 +1387,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
   /* Construction of nodal connectivities */
   /*--------------------------------------*/
 
-  for (cell_counter = 0 ; cell_counter < n_extr_cells ; cell_counter++) {
-
-    if (extr_cells != NULL)
-      cell_id = extr_cells[cell_counter] - 1;
-    else
-      cell_id = cell_counter;
+  for (cs_lnum_t cell_id = 0 ; cell_id < n_extr_cells ; cell_id++) {
 
     cell_type = _nodal_cell_from_desc(cell_id,
                                       n_face_lists,
@@ -1506,7 +1488,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
         continue;
       BFT_MALLOC(section->gc_id, section->n_elements, int);
       if (section->parent_element_num != NULL) {
-        for (cell_id = 0; cell_id < section->n_elements; cell_id++)
+        for (cs_lnum_t cell_id = 0; cell_id < section->n_elements; cell_id++)
           section->gc_id[cell_id]
             = cell_gc_id[section->parent_element_num[cell_id] - 1];
       }
