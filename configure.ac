@@ -684,6 +684,7 @@ fi
 CS_AC_TEST_BLAS([$cs_have_openmp])
 CS_AC_TEST_MPI
 CS_AC_TEST_METIS
+CS_AC_TEST_MUMPS
 CS_AC_TEST_SCOTCH
 CS_AC_TEST_HDF5
 CS_AC_TEST_CGNS
@@ -1272,6 +1273,7 @@ echo " EOS support: "$cs_have_eos""
 echo " freesteam support: "$cs_have_freesteam""
 echo " CoolProp support: "$cs_have_coolprop""
 echo " PETSc support: "$cs_have_petsc""
+echo " MUMPS support: "$cs_have_mumps""
 echo " Dynamic loader support: "$cs_have_dlloader""
 if (test "x$cs_env_modules" != "x") ; then
   echo " Auto load environment modules: "$cs_env_modules""
@@ -1290,4 +1292,3 @@ echo " make install"
 echo
 echo "To generate and install the Code_Saturne kernel"
 echo
-

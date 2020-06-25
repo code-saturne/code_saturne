@@ -39,12 +39,24 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/base \
 -I$(top_srcdir)/src/mesh \
 -I$(top_srcdir)/src/turb \
-$(CPPFLAGS_PLE) \
-$(PETSC_CPPFLAGS) $(MPI_CPPFLAGS)
+$(CPPFLAGS_PLE) $(MPI_CPPFLAGS)
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 
 AM_LDFLAGS =
+
+# Conditionally compiled files relying on PETSc/MUMPS libraries
+
+libcscdo_extension_la_CPPFLAGS =\
+-I$(top_srcdir)/src/alge \
+-I$(top_srcdir)/src/bft  \
+-I$(top_srcdir)/src/fvm  \
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/mesh \
+-I$(top_srcdir)/src/turb \
+$(CPPFLAGS_PLE) \
+$(PETSC_CPPFLAGS) $(MUMPS_CPPFLAGS) \
+$(MPI_CPPFLAGS)
 
 # Public header files (to be installed)
 
@@ -55,6 +67,7 @@ cs_cdo_advection.h \
 cs_cdo_bc.h \
 cs_cdo_connect.h \
 cs_cdo_diffusion.h \
+cs_cdoeb_priv.h \
 cs_cdo_field_interpolation.h \
 cs_cdo_local.h \
 cs_cdo_main.h \
@@ -63,14 +76,15 @@ cs_cdo_time.h \
 cs_cdofb_ac.h \
 cs_cdoeb_vecteq.h \
 cs_cdofb_monolithic.h \
+cs_cdofb_monolithic_priv.h \
 cs_cdofb_monolithic_sles.h \
 cs_cdofb_navsto.h \
 cs_cdofb_predco.h \
 cs_cdofb_priv.h \
 cs_cdofb_scaleq.h \
 cs_cdofb_vecteq.h \
-cs_cdovb_priv.h \
 cs_cdovb_scaleq.h \
+cs_cdovb_priv.h \
 cs_cdovb_vecteq.h \
 cs_cdovcb_scaleq.h \
 cs_dbg.h \
@@ -117,10 +131,6 @@ cs_xdef_cw_eval.h \
 cs_xdef_eval.h \
 cs_cdo_headers.h
 
-noinst_HEADERS = \
-cs_cdoeb_priv.h \
-cs_cdofb_monolithic_priv.h
-
 # Library source files
 
 noinst_LTLIBRARIES = libcscdo.la
@@ -137,11 +147,8 @@ cs_cdo_main.c \
 cs_cdo_quantities.c \
 cs_cdo_time.c \
 cs_cdoeb_vecteq.c \
-cs_cdofb_ac.c \
 cs_cdofb_monolithic.c \
-cs_cdofb_monolithic_sles.c \
 cs_cdofb_navsto.c \
-cs_cdofb_predco.c \
 cs_cdofb_scaleq.c \
 cs_cdofb_vecteq.c \
 cs_cdovb_scaleq.c \
@@ -155,7 +162,6 @@ cs_equation.c \
 cs_equation_assemble.c \
 cs_equation_bc.c \
 cs_equation_common.c \
-cs_equation_param.c \
 cs_evaluate.c \
 cs_flag.c \
 cs_gwf.c \
@@ -171,7 +177,6 @@ cs_maxwell.c \
 cs_mesh_deform.c \
 cs_navsto_coupling.c \
 cs_navsto_param.c \
-cs_navsto_sles.c \
 cs_navsto_system.c \
 cs_param.c \
 cs_property.c \
@@ -189,6 +194,17 @@ cs_xdef_cw_eval.c \
 cs_xdef_eval.c
 
 libcscdo_la_LDFLAGS = -no-undefined
+
+libcscdo_la_LIBADD =
+
+noinst_LTLIBRARIES += libcscdo_extension.la
+libcscdo_la_LIBADD += libcscdo_extension.la
+libcscdo_extension_la_SOURCES = \
+cs_cdofb_ac.c \
+cs_cdofb_monolithic_sles.c \
+cs_cdofb_predco.c \
+cs_equation_param.c \
+cs_navsto_sles.c
 
 clean-local:
 	-rm -f *__genmod.f90 *.mod

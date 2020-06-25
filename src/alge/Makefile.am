@@ -54,6 +54,15 @@ libcsalge_petsc_la_CPPFLAGS =\
 -I$(top_srcdir)/src/mesh \
 $(PETSC_CPPFLAGS) $(MPI_CPPFLAGS)
 
+if HAVE_MUMPS
+  libcsalge_mumps_la_CPPFLAGS =\
+  -I$(top_srcdir)/src/base \
+  -I$(top_srcdir)/src/bft \
+  -I$(top_srcdir)/src/fvm \
+  -I$(top_srcdir)/src/mesh \
+  $(MUMPS_CPPFLAGS) $(MPI_CPPFLAGS)
+endif
+
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
@@ -89,6 +98,10 @@ cs_sles_pc.h
 
 if HAVE_PETSC
 pkginclude_HEADERS += cs_sles_petsc.h
+endif
+
+if HAVE_MUMPS
+pkginclude_HEADERS += cs_sles_mumps.h
 endif
 
 # Library source files
@@ -135,6 +148,15 @@ if HAVE_PETSC
 noinst_LTLIBRARIES += libcsalge_petsc.la
 libcsalge_la_LIBADD += libcsalge_petsc.la
 libcsalge_petsc_la_SOURCES = cs_sles_petsc.c
+endif
+
+if HAVE_MUMPS
+noinst_LTLIBRARIES += libcsalge_mumps.la
+libcsalge_la_LIBADD += libcsalge_mumps.la
+libcsalge_mumps_la_SOURCES = cs_sles_mumps.c
+libcsalge_mumps_la_LIBADD = \
+$(MUMPS_LDFLAGS) $(MUMPSRUNPATH) $(MUMPS_LIBS)
+libcsalge_mumps_la_LDFLAGS = -no-undefined
 endif
 
 clean-local:

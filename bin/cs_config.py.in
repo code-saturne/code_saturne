@@ -91,6 +91,7 @@ class config:
                         'ccm', 'cgns', 'med', 'hdf5',   # Mesh filters
                         'catalyst', 'melissa',          # co-processing libraries
                         'medcoupling',                  # MED coupling
+                        'mumps',                        # Sparse direct solver
                         'petsc',                        # Linear algebra
                         'metis', 'scotch',              # Partionning libraries
                         'mpi',                          # MPI
@@ -312,6 +313,13 @@ class config:
                          flags = {'cppflags': "@CUDA_CPPFLAGS@",
                                   'ldflags': "@CUDA_LDFLAGS@",
                                   'libs': "@CUDA_LIBS@"})
+
+        self.libs['mumps'] = \
+            prerequisite("MUMPS",
+                         have = "@cs_have_mumps@",
+                         flags = {'cppflags': "@MUMPS_CPPFLAGS@",
+                                  'ldflags': "@MUMPS_LDFLAGS@",
+                                  'libs': "@MUMPS_LIBS@"})
 
         self.libs['petsc'] = \
             prerequisite("PETSc",
@@ -661,4 +669,3 @@ if __name__ == '__main__':
     from code_saturne import cs_package
     pkg = cs_package.package()
     main(sys.argv[1:], pkg)
-

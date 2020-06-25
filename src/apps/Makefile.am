@@ -80,6 +80,13 @@ else
 endif
 endif
 
+# MUMPS
+
+if HAVE_MUMPS
+  CPPFLAGS_MUMPS = $(MUMPS_CPPFLAGS)
+  LDADD_MUMPS = $(MUMPS_LDFLAGS) $(MUMPSRUNPATH) $(MUMPS_LIBS)
+endif
+
 # CoolProp
 
 if HAVE_COOLPROP
@@ -107,7 +114,9 @@ AM_CPPFLAGS = \
 -I$(top_srcdir)/src/gui \
 -I$(top_srcdir)/src/turb \
 $(CPPFLAGS_PLE) \
-$(MPI_CPPFLAGS) $(CPPFLAGS_BLAS)
+$(MPI_CPPFLAGS) $(CPPFLAGS_BLAS) \
+$(CPPFLAGS_MUMPS)
+
 
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 
@@ -126,12 +135,12 @@ $(top_builddir)/src/base/libcsbase.la \
 $(top_builddir)/src/base/libcscore.la \
 $(top_builddir)/src/base/libcsrenumber.la \
 $(top_builddir)/src/pprt/libcspprt.la \
+$(top_builddir)/src/cdo/libcscdo.la \
 $(top_builddir)/src/alge/libcsalge.la \
 $(top_builddir)/src/mesh/libcsmesh.la \
 $(top_builddir)/src/mesh/libcspartition.la \
 $(top_builddir)/src/turb/libcsturb.la \
 $(top_builddir)/src/atmo/libcsatmo.la \
-$(top_builddir)/src/cdo/libcscdo.la \
 $(top_builddir)/src/cfbl/libcscfbl.la \
 $(top_builddir)/src/cogz/libcscogz.la \
 $(top_builddir)/src/comb/libcscomb.la \
@@ -151,6 +160,7 @@ $(CCM_LDFLAGS) $(CCMRUNPATH) $(CCM_LIBS) \
 $(CGNS_LDFLAGS) $(CGNSRUNPATH) $(CGNS_LIBS) \
 $(MED_LDFLAGS) $(MED_LIBS) $(MEDRUNPATH) \
 $(HDF5_LDFLAGS) $(HDF5_LIBS) $(HDF5RUNPATH) \
+$(LDADD_MUMPS) \
 $(METIS_LDFLAGS) $(METIS_LIBS) $(METISRUNPATH) \
 $(SCOTCH_LDFLAGS) $(SCOTCH_LIBS) $(SCOTCHRUNPATH) \
 $(EOS_LDFLAGS) $(EOS_LIBS) $(EOSRUNPATH) \
@@ -173,6 +183,7 @@ $(CCM_LDFLAGS) $(CCMRUNPATH) $(CCM_LIBS) \
 $(CGNS_LDFLAGS) $(CGNSRUNPATH) $(CGNS_LIBS) \
 $(MED_LDFLAGS) $(MED_LIBS) $(MEDRUNPATH) \
 $(HDF5_LDFLAGS) $(HDF5_LIBS) $(HDF5RUNPATH) \
+$(LDADD_MUMPS) \
 $(METIS_LDFLAGS) $(METIS_LIBS) $(METISRUNPATH) \
 $(SCOTCH_LDFLAGS) $(SCOTCH_LIBS) $(SCOTCHRUNPATH) \
 $(EOS_LDFLAGS) $(EOS_LIBS) $(EOSRUNPATH) \
@@ -203,7 +214,7 @@ if HAVE_BACKEND
 cs_solver$(EXEEXT): libcs_solver.la
 	PYTHONPATH=$(top_builddir)/bin:$(top_srcdir)/bin \
 	$(PYTHON) -B $(top_srcdir)/build-aux/cs_compile_build.py \
-        $(top_srcdir)/src/apps/cs_solver.c
+	$(top_srcdir)/src/apps/cs_solver.c
 endif
 
 # Code_Saturne IO utility (minimal dependencies)
