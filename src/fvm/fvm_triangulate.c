@@ -841,14 +841,28 @@ _triangulate_quadrangle(int                    dim,
   double v1[3] = {0.0, 0.0, 0.0}, v2[3] = {0.0, 0.0, 0.0};
   double n0[3] = {0.0, 0.0, 0.0}, ni[3] = {0.0, 0.0, 0.0};
 
-  if (quadrangle_vertices != NULL) {
-    for (i = 0; i < 4 ; i++)
-      vertex_id[i] = quadrangle_vertices[i] - base;
-  }
-
   if (parent_vertex_num != NULL) {
-    for (i = 0; i < 4 ; i++)
-      vertex_id[i] = parent_vertex_num[i] - base;
+    if (quadrangle_vertices != NULL) {
+      for (i = 0; i < 4; i++)
+        vertex_id[i] = parent_vertex_num[quadrangle_vertices[i]-base] - base;
+    }
+    else {
+      for (i = 0; i < 4; i++)
+        vertex_id[i] = parent_vertex_num[i] - base;
+    }
+
+  }
+  else { /* (if parent_vertex_num == NULL) */
+
+    if (quadrangle_vertices != NULL) {
+      for (i = 0; i < 4 ; i++)
+        vertex_id[i] = quadrangle_vertices[i] - base;
+    }
+    else {
+      for (i = 0; i < 4 ; i++)
+        vertex_id[i] = i;
+    }
+
   }
 
   /* Check for an obtuse angle */
@@ -1120,9 +1134,10 @@ fvm_triangulate_polygon(int                             dim,
       }
     }
     else {
-      for (i = 0; i < (n_vertices * dim); i++) {
+      for (i = 0; i < n_vertices * dim; i++) {
         int vertex_id = parent_vertex_num[i] - base;
-        state->coords[i] = coords[vertex_id];
+        for (j = 0; j < dim; j++)
+          state->coords[i*dim + j] = coords[vertex_id*dim + j];
       }
     }
 
