@@ -59,7 +59,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------
  * Function pointer for user settings of a PETSc KSP solver setup.
  *
- * This function is called the end of the setup stage for a KSP solver.
+ * This function is called at the end of the setup stage for a KSP solver.
  *
  * Note that using the advanced KSPSetPostSolve and KSPSetPreSolve functions,
  * this also allows setting further function pointers for pre and post-solve
@@ -93,7 +93,7 @@ typedef struct _cs_sles_petsc_t  cs_sles_petsc_t;
 /*----------------------------------------------------------------------------
  * Function pointer for user settings of a PETSc KSP solver setup.
  *
- * This function is called the end of the setup stage for a KSP solver.
+ * This function is called at the end of the setup stage for a KSP solver.
  *
  * Note that using the advanced KSPSetPostSolve and KSPSetPreSolve functions,
  * this also allows setting further function pointers for pre and post-solve

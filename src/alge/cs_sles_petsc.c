@@ -470,7 +470,7 @@ _cs_ksp_converged(KSP                  ksp,
 /*----------------------------------------------------------------------------
  * Function pointer for user settings of a PETSc KSP solver setup.
  *
- * This function is called the end of the setup stage for a KSP solver.
+ * This function is called at the end of the setup stage for a KSP solver.
  *
  * Note that using the advanced KSPSetPostSolve and KSPSetPreSolve functions,
  * this also allows setting further function pointers for pre and post-solve

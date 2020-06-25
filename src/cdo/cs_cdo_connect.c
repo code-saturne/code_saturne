@@ -1387,7 +1387,7 @@ cs_cdo_connect_summary(const cs_cdo_connect_t  *connect,
                 " --dim-- max. number of vertices by cell: %4d\n",
                 (int)n_max_entbyc[2]);
   cs_log_printf(CS_LOG_DEFAULT,
-                "\n --dim-- max. vertex range for a cell:  %ld\n",
+                "\n --dim-- max. vertex range for a cell:    %ld\n",
                 (long)n_max_entbyc[3]);
   cs_log_printf(CS_LOG_DEFAULT,
                 " --dim-- max. edge range for a cell:      %ld\n",

@@ -253,19 +253,19 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver)
     return "BiCGstab2";
     break;
   case CS_PARAM_ITSOL_CG:
-    return  "CG";
+    return "CG";
     break;
   case CS_PARAM_ITSOL_CR3:
     return "Conjugate.Residual.3Layers";
     break;
   case CS_PARAM_ITSOL_FCG:
-    return  "Flexible.CG";
+    return "Flexible.CG";
     break;
   case CS_PARAM_ITSOL_FGMRES:
-    return  "Flexible.GMRES";
+    return "Flexible.GMRES";
     break;
   case CS_PARAM_ITSOL_GAUSS_SEIDEL:
-    return  "Gauss.Seidel";
+    return "Gauss.Seidel";
     break;
   case CS_PARAM_ITSOL_GKB_CG:
     return "Golub-Kahan.BiOrthogonalization.with.CG.(inner.solver)";
@@ -277,19 +277,19 @@ cs_param_get_solver_name(cs_param_itsol_type_t  solver)
     return "GMRES";
     break;
   case CS_PARAM_ITSOL_JACOBI:
-    return  "Jacobi";
+    return "Jacobi";
     break;
   case CS_PARAM_ITSOL_MINRES:
-    return  "MinRes";
+    return "MinRes";
     break;
   case CS_PARAM_ITSOL_MUMPS:
-    return  "MUMPS (LU factorization)";
+    return "MUMPS (LU factorization)";
     break;
   case CS_PARAM_ITSOL_MUMPS_LDLT:
-    return  "MUMPS (LDLT factorization)";
+    return "MUMPS (LDLT factorization)";
     break;
   case CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL:
-    return  "Symmetric.Gauss.Seidel";
+    return "Symmetric.Gauss.Seidel";
     break;
 
   default:
