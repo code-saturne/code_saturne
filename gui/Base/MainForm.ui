@@ -12,11 +12,11 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Code_Saturne</string>
+   <string>code_saturne</string>
   </property>
   <property name="windowIcon">
    <iconset resource="resource_base.qrc">
-    <normaloff>:/icons/22x22/MONO-bulle-HD.png</normaloff>:/icons/22x22/MONO-bulle-HD.png</iconset>
+    <normaloff>:/icons/22x22/logo_salome_cfd.png</normaloff>:/icons/22x22/logo_salome_cfd.png</iconset>
   </property>
   <property name="dockOptions">
    <set>QMainWindow::AllowNestedDocks|QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks</set>
@@ -42,7 +42,7 @@
      <x>0</x>
      <y>0</y>
      <width>717</width>
-     <height>28</height>
+     <height>30</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuO_ptions">
@@ -82,7 +82,6 @@
      <addaction name="displayCSManualAction"/>
      <addaction name="displayCSTutorialAction"/>
      <addaction name="displayCSTheoryAction"/>
-     <addaction name="displayCSSmgrAction"/>
      <addaction name="displayCSRefcardAction"/>
      <addaction name="displayCSDoxygenAction"/>
      <addaction name="displayNCManualAction"/>
@@ -427,10 +426,10 @@
   </action>
   <action name="displayCSManualAction">
    <property name="text">
-    <string>&amp;Code_Saturne</string>
+    <string>&amp;code_saturne</string>
    </property>
    <property name="statusTip">
-    <string>Code_Saturne user manual.</string>
+    <string>code_saturne user manual.</string>
    </property>
    <property name="shortcut">
     <string>F1</string>
@@ -438,10 +437,10 @@
   </action>
   <action name="displayCSTutorialAction">
    <property name="text">
-    <string>&amp;Code_Saturne tutorial</string>
+    <string>&amp;code_saturne tutorial</string>
    </property>
    <property name="statusTip">
-    <string>Code_Saturne tutorial.</string>
+    <string>code_saturne tutorial.</string>
    </property>
    <property name="shortcut">
     <string>F2</string>
@@ -449,32 +448,21 @@
   </action>
   <action name="displayCSTheoryAction">
    <property name="text">
-    <string>&amp;Code_Saturne theory</string>
+    <string>&amp;code_saturne theory</string>
    </property>
    <property name="statusTip">
-    <string>Code_Saturne theory guide.</string>
+    <string>code_saturne theory guide.</string>
    </property>
    <property name="shortcut">
     <string>F3</string>
    </property>
   </action>
-  <action name="displayCSSmgrAction">
-   <property name="text">
-    <string>&amp;Code_Saturne studymanager</string>
-   </property>
-   <property name="statusTip">
-    <string>Code_Saturne studymanager guide.</string>
-   </property>
-   <property name="shortcut">
-    <string>F4</string>
-   </property>
-  </action>
   <action name="displayCSRefcardAction">
    <property name="text">
-    <string>&amp;Code_Saturne reference card</string>
+    <string>&amp;code_saturne reference card</string>
    </property>
    <property name="statusTip">
-    <string>Code_Saturne quick reference card.</string>
+    <string>code_saturne quick reference card.</string>
    </property>
    <property name="shortcut">
     <string>F5</string>
@@ -482,10 +470,10 @@
   </action>
   <action name="displayCSDoxygenAction">
    <property name="text">
-    <string>&amp;Code_Saturne doxygen</string>
+    <string>&amp;code_saturne doxygen</string>
    </property>
    <property name="statusTip">
-    <string>Code_Saturne quick doxygen.</string>
+    <string>code_saturne quick doxygen.</string>
    </property>
    <property name="shortcut">
     <string>F6</string>

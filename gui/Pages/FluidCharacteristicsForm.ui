@@ -17,7 +17,7 @@
    <item row="4" column="0">
     <widget class="QGroupBox" name="groupBoxMassMolar">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference molar mass in kg/mol for compressible flows.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XMASMR&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference molar mass in kg/mol for compressible flows.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XMASMR&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
       <string>Molar mass reference</string>
@@ -28,7 +28,7 @@
         <item>
          <widget class="QLabel" name="labelMassMolar">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference molar mass in kg/mol for compressible flows.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XMASMR&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference molar mass in kg/mol for compressible flows.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XMASMR&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>value</string>
@@ -38,14 +38,14 @@
         <item>
          <widget class="QLineEdit" name="lineEditMassMolar">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference molar mass in kg/mol for compressible flows.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XMASMR&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference molar mass in kg/mol for compressible flows.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XMASMR&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QLabel" name="labelUnitMassMolar">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference molar mass in kg/mol for compressible flows.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XMASMR&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference molar mass in kg/mol for compressible flows.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XMASMR&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>kg/mol</string>
@@ -72,7 +72,7 @@
         <item>
          <widget class="QLabel" name="labelInfoMassMolar">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference molar mass in kg/mol for compressible flows.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XMASMR&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference molar mass in kg/mol for compressible flows.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XMASMR&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>(used for initialization of user scalars)</string>
@@ -100,7 +100,7 @@
    <item row="10" column="0">
     <widget class="QGroupBox" name="groupBoxDiftl0">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the dynamic diffusion coefficient in kg/m/s. Useful only with combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;DIFTL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the dynamic diffusion coefficient in kg/m/s. Useful only with combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;DIFTL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
       <string>Dynamic diffusion coefficient</string>
@@ -204,7 +204,7 @@
           <item>
            <widget class="QLabel" name="labelDiftl0">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the dynamic diffusion coefficient in kg/m/s. Useful only with combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;DIFTL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the dynamic diffusion coefficient in kg/m/s. Useful only with combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;DIFTL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>Reference</string>
@@ -234,14 +234,14 @@
           <item>
            <widget class="QLineEdit" name="lineEditDiftl0">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the dynamic diffusion coefficient in kg/m/s. Useful only with combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;DIFTL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the dynamic diffusion coefficient in kg/m/s. Useful only with combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;DIFTL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QLabel" name="labelUnitDiftl0">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the dynamic diffusion coefficient in kg/m/s. Useful only with combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;DIFTL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the dynamic diffusion coefficient in kg/m/s. Useful only with combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;DIFTL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>kg/(m.s)</string>
@@ -271,7 +271,7 @@
    <item row="3" column="0">
     <widget class="QGroupBox" name="groupBoxTempd3p">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperatures of the oxydant and the fuel in Kelvin in case of Gas combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key words: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;TINFUE&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;, &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;TINOXY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperatures of the oxydant and the fuel in Kelvin in case of Gas combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key words: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;TINFUE&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;, &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;TINOXY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
       <string>Gas Combustion Reference temperatures</string>
@@ -295,7 +295,7 @@
         <item row="0" column="0" colspan="2">
          <widget class="QLabel" name="labelOxydant">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperatures of the oxydant and the fuel in Kelvin in case of Gas combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key words: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;TINOXY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperatures of the oxydant and the fuel in Kelvin in case of Gas combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key words: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;TINOXY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>Oxydant</string>
@@ -305,14 +305,14 @@
         <item row="0" column="2">
          <widget class="QLineEdit" name="lineEditOxydant">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperatures of the oxydant and the fuel in Kelvin in case of Gas combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key words: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;TINOXY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperatures of the oxydant and the fuel in Kelvin in case of Gas combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key words: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;TINOXY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
         </item>
         <item row="0" column="3">
          <widget class="QLabel" name="labelUnitT0_2">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperatures of the oxydant and the fuel in Kelvin in case of Gas combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key words: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;TINOXY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperatures of the oxydant and the fuel in Kelvin in case of Gas combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key words: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;TINOXY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>K</string>
@@ -322,7 +322,7 @@
         <item row="1" column="0">
          <widget class="QLabel" name="labelTFuel">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperature for the fuel in Kelvin in case of Gas combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;TINFUE&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperature for the fuel in Kelvin in case of Gas combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;TINFUE&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>Fuel</string>
@@ -345,14 +345,14 @@
         <item row="1" column="2">
          <widget class="QLineEdit" name="lineEditFuel">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperature for the fuel in Kelvin in case of Gas combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;TINFUE&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperature for the fuel in Kelvin in case of Gas combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;TINFUE&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
         </item>
         <item row="1" column="3">
          <widget class="QLabel" name="labelUnitT0_3">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperature for the fuel in Kelvin in case of Gas combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;TINFUE&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperature for the fuel in Kelvin in case of Gas combustion.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;TINFUE&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>K</string>
@@ -522,7 +522,7 @@
    <item row="5" column="0">
     <widget class="QGroupBox" name="groupBoxRho">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the fluid density. It can be either constant, in which case the reference value must be completed, or variable and then the formula editor must be filled.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IROVAR&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the fluid density. It can be either constant, in which case the reference value must be completed, or variable and then the formula editor must be filled.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IROVAR&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
       <string>Density</string>
@@ -670,7 +670,7 @@
            <item>
             <widget class="QLabel" name="labelRho">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the density reference value in kg/m&lt;/span&gt;&lt;span style=&quot; font-size:9pt; vertical-align:super;&quot;&gt;3&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;. If the density is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;RO0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the density reference value in kg/m&lt;/span&gt;&lt;span style=&quot; font-size:9pt; vertical-align:super;&quot;&gt;3&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;. If the density is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;RO0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>Reference</string>
@@ -698,7 +698,7 @@
               </font>
              </property>
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the density reference value in kg/m&lt;/span&gt;&lt;span style=&quot; font-size:9pt; vertical-align:super;&quot;&gt;3&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;. If the density is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;RO0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the density reference value in kg/m&lt;/span&gt;&lt;span style=&quot; font-size:9pt; vertical-align:super;&quot;&gt;3&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;. If the density is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;RO0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>r</string>
@@ -708,14 +708,14 @@
            <item>
             <widget class="QLineEdit" name="lineEditRho">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the density reference value in kg/m&lt;/span&gt;&lt;span style=&quot; font-size:9pt; vertical-align:super;&quot;&gt;3&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;. If the density is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;RO0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the density reference value in kg/m&lt;/span&gt;&lt;span style=&quot; font-size:9pt; vertical-align:super;&quot;&gt;3&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;. If the density is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;RO0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
             </widget>
            </item>
            <item>
             <widget class="QLabel" name="labelUnitRho">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the density reference value in kg/m&lt;/span&gt;&lt;span style=&quot; font-size:9pt; vertical-align:super;&quot;&gt;3&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;. If the density is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;RO0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the density reference value in kg/m&lt;/span&gt;&lt;span style=&quot; font-size:9pt; vertical-align:super;&quot;&gt;3&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;. If the density is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;RO0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>kg/m&lt;sup&gt;3&lt;/sup&gt;</string>
@@ -746,7 +746,7 @@
    <item row="7" column="0">
     <widget class="QGroupBox" name="groupBoxCp">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the fluid specific heat. It can be either constant, in which case the reference value must be completed, or variable and then the formula editor must be filled.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;ICP&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the fluid specific heat. It can be either constant, in which case the reference value must be completed, or variable and then the formula editor must be filled.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;ICP&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
       <string>Specific heat</string>
@@ -805,7 +805,7 @@
             <item>
              <widget class="QPushButton" name="pushButtonCp">
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the fluid specific heat. It can be either constant, in which case the reference value must be completed, or variable and then the formula editor must be filled.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;ICP&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the fluid specific heat. It can be either constant, in which case the reference value must be completed, or variable and then the formula editor must be filled.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;ICP&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string/>
@@ -850,7 +850,7 @@
           <item>
            <widget class="QLabel" name="labelCp">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the specific heat reference value in J/kg/K. If the specific heat is variable, this  value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;CP0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the specific heat reference value in J/kg/K. If the specific heat is variable, this  value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;CP0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>Reference</string>
@@ -880,7 +880,7 @@
              </font>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the specific heat reference value in J/kg/K. If the specific heat is variable, this  value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;CP0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the specific heat reference value in J/kg/K. If the specific heat is variable, this  value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;CP0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;C&lt;span style=&quot; vertical-align:sub;&quot;&gt;p&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -890,14 +890,14 @@
           <item>
            <widget class="QLineEdit" name="lineEditCp">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the specific heat reference value in J/kg/K. If the specific heat is variable, this  value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;CP0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the specific heat reference value in J/kg/K. If the specific heat is variable, this  value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;CP0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QLabel" name="labelUnitCp">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the specific heat reference value in J/kg/K. If the specific heat is variable, this  value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;CP0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the specific heat reference value in J/kg/K. If the specific heat is variable, this  value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;CP0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>J/kg/K</string>
@@ -927,7 +927,7 @@
    <item row="8" column="0">
     <widget class="QGroupBox" name="groupBoxViscv0">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the fluid volumic viscosity. It can be either constant, in which case the reference value must be completed, or variable and then the formula editor must be filled. Useful only with compressible flows.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IVISCV&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the fluid volumic viscosity. It can be either constant, in which case the reference value must be completed, or variable and then the formula editor must be filled. Useful only with compressible flows.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IVISCV&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
       <string>Volumic viscosity</string>
@@ -1031,7 +1031,7 @@
           <item>
            <widget class="QLabel" name="labelViscv0">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the volumic viscosity reference value in kg/(m/s). If the volumic viscosity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCV0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the volumic viscosity reference value in kg/(m/s). If the volumic viscosity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCV0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>Reference</string>
@@ -1059,7 +1059,7 @@
              </font>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the volumic viscosity reference value in kg/(m/s). If the volumic viscosity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCV0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the volumic viscosity reference value in kg/(m/s). If the volumic viscosity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCV0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;m&lt;span style=&quot; vertical-align:sub;font-family:Cantarell;&quot;&gt;v&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -1069,14 +1069,14 @@
           <item>
            <widget class="QLineEdit" name="lineEditViscv0">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the volumic viscosity reference value in kg/(m/s). If the volumic viscosity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCV0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the volumic viscosity reference value in kg/(m/s). If the volumic viscosity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCV0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QLabel" name="labelUnitViscv0">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the volumic viscosity reference value in kg/(m/s). If the volumic viscosity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCV0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the volumic viscosity reference value in kg/(m/s). If the volumic viscosity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCV0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>kg/(m.s)</string>
@@ -1210,7 +1210,7 @@
           <item>
            <widget class="QLabel" name="labelAl">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the thermal conductivity reference value in W/m/K. If the thermal conductivity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the thermal conductivity reference value in W/m/K. If the thermal conductivity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>Reference</string>
@@ -1238,7 +1238,7 @@
              </font>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the thermal conductivity reference value in W/m/K. If the thermal conductivity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the thermal conductivity reference value in W/m/K. If the thermal conductivity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>l</string>
@@ -1248,14 +1248,14 @@
           <item>
            <widget class="QLineEdit" name="lineEditAl">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the thermal conductivity reference value in W/m/K. If the thermal conductivity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the thermal conductivity reference value in W/m/K. If the thermal conductivity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>
           <item>
            <widget class="QLabel" name="labelUnitAl">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the thermal conductivity reference value in W/m/K. If the thermal conductivity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the thermal conductivity reference value in W/m/K. If the thermal conductivity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>W/m/K</string>
@@ -1480,7 +1480,7 @@
    <item row="1" column="0">
     <widget class="QGroupBox" name="groupBoxPressure">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference pressure in Pascals. &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;p0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; is the reference pressure for the total pressure. Except with the compressible module, the total pressure P is evaluated from the reduced pressure &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P*&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; so that &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; is equal to &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;p0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; at the reference position &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;x0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; (given by &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;xyzp0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference pressure in Pascals. &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;p0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; is the reference pressure for the total pressure. Except with the compressible module, the total pressure P is evaluated from the reduced pressure &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P*&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; so that &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; is equal to &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;p0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; at the reference position &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;x0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; (given by &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;xyzp0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
       <string>Reference total pressure</string>
@@ -1491,7 +1491,7 @@
         <item>
          <widget class="QLabel" name="labelP0">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference pressure in Pascals. &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;p0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; is the reference pressure for the total pressure. Except with the compressible module, the total pressure P is evaluated from the reduced pressure &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P*&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; so that &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; is equal to &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;p0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; at the reference position &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;x0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; (given by &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;xyzp0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference pressure in Pascals. &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;p0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; is the reference pressure for the total pressure. Except with the compressible module, the total pressure P is evaluated from the reduced pressure &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P*&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; so that &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; is equal to &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;p0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; at the reference position &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;x0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; (given by &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;xyzp0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>value</string>
@@ -1501,14 +1501,14 @@
         <item>
          <widget class="QLineEdit" name="lineEditP0">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference pressure in Pascals. &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;p0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; is the reference pressure for the total pressure. Except with the compressible module, the total pressure P is evaluated from the reduced pressure &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P*&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; so that &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; is equal to &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;p0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; at the reference position &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;x0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; (given by &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;xyzp0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference pressure in Pascals. &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;p0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; is the reference pressure for the total pressure. Except with the compressible module, the total pressure P is evaluated from the reduced pressure &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P*&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; so that &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; is equal to &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;p0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; at the reference position &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;x0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; (given by &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;xyzp0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QLabel" name="labelUnitP0">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference pressure in Pascals. &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;p0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; is the reference pressure for the total pressure. Except with the compressible module, the total pressure P is evaluated from the reduced pressure &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P*&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; so that &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; is equal to &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;p0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; at the reference position &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;x0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; (given by &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;xyzp0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference pressure in Pascals. &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;p0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; is the reference pressure for the total pressure. Except with the compressible module, the total pressure P is evaluated from the reduced pressure &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P*&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; so that &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; is equal to &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;p0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; at the reference position &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;x0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; (given by &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;xyzp0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;P0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>Pa</string>
@@ -1536,7 +1536,7 @@
    <item row="2" column="0">
     <widget class="QGroupBox" name="groupBoxTemperature">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperature in Kelvin. For the combustion, electric model and compressible modules, defining this temprature is compulsory (initialization) and must be greather than 0.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;T0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperature in Kelvin. For the combustion, electric model and compressible modules, defining this temprature is compulsory (initialization) and must be greather than 0.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;T0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
       <string>Reference temperature</string>
@@ -1547,7 +1547,7 @@
         <item>
          <widget class="QLabel" name="labelT0">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperature in Kelvin. For the combustion, electric model and compressible modules, defining this temprature is compulsory (initialization) and must be greather than 0.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;T0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperature in Kelvin. For the combustion, electric model and compressible modules, defining this temprature is compulsory (initialization) and must be greather than 0.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;T0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>value</string>
@@ -1557,14 +1557,14 @@
         <item>
          <widget class="QLineEdit" name="lineEditT0">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperature in Kelvin. For the combustion, electric model and compressible modules, defining this temprature is compulsory (initialization) and must be greather than 0.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;T0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperature in Kelvin. For the combustion, electric model and compressible modules, defining this temprature is compulsory (initialization) and must be greather than 0.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;T0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </widget>
         </item>
         <item>
          <widget class="QLabel" name="labelUnitT0">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperature in Kelvin. For the combustion, electric model and compressible modules, defining this temprature is compulsory (initialization) and must be greather than 0.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;T0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperature in Kelvin. For the combustion, electric model and compressible modules, defining this temprature is compulsory (initialization) and must be greather than 0.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;T0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>K</string>
@@ -1591,7 +1591,7 @@
         <item>
          <widget class="QLabel" name="labelInfoT0">
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperature in Kelvin. For the combustion, electric model and compressible modules, defining this temprature is compulsory (initialization) and must be greather than 0.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;T0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the reference temperature in Kelvin. For the combustion, electric model and compressible modules, defining this temprature is compulsory (initialization) and must be greather than 0.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;T0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
           <property name="text">
            <string>(used for properties initialization)</string>
@@ -1619,7 +1619,7 @@
    <item row="6" column="0">
     <widget class="QGroupBox" name="groupBoxMu">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the fluid viscosity. It can be either constant, in which case the reference value must be completed, or variable and then the formula editor must be filled.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IVIVAR&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the fluid viscosity. It can be either constant, in which case the reference value must be completed, or variable and then the formula editor must be filled.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IVIVAR&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
       <string>Viscosity</string>
@@ -1767,7 +1767,7 @@
            <item>
             <widget class="QLabel" name="labelMu">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the viscosity reference value in Pa.s. If the viscosity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the viscosity reference value in Pa.s. If the viscosity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>Reference</string>
@@ -1795,7 +1795,7 @@
               </font>
              </property>
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the viscosity reference value in Pa.s. If the viscosity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the viscosity reference value in Pa.s. If the viscosity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>m</string>
@@ -1805,14 +1805,14 @@
            <item>
             <widget class="QLineEdit" name="lineEditMu">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the viscosity reference value in Pa.s. If the viscosity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the viscosity reference value in Pa.s. If the viscosity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
             </widget>
            </item>
            <item>
             <widget class="QLabel" name="labelUnitMu">
              <property name="toolTip">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the viscosity reference value in Pa.s. If the viscosity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the viscosity reference value in Pa.s. If the viscosity is variable, this value will be used for the initialization.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VISCL0&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
               <string>Pa.s</string>

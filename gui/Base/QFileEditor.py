@@ -464,7 +464,7 @@ class QFileEditor(QMainWindow):
         super(QFileEditor, self).__init__(parent)
         self.setGeometry(50, 50, 500, 300)
 
-        self.setWindowTitle("Code_Saturne built-in file editor")
+        self.setWindowTitle("code_saturne built-in file editor")
         self.parent = parent
 
         self.case_dir = case_dir

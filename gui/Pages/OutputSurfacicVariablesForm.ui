@@ -17,7 +17,7 @@
    <item row="0" column="0">
     <widget class="QGroupBox" name="groupBox">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define surface output options for each variable:&lt;br/&gt;- Output label: name of the variable in the postprocessing outputs (listing, writers, output...),&lt;br/&gt;- Internal name: name of the variable in the Code_Saturne framework,&lt;br/&gt;- Post-processing: check the box for the variable to be taken into account by the default writers.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define surface output options for each variable:&lt;br/&gt;- Output label: name of the variable in the postprocessing outputs (listing, writers, output...),&lt;br/&gt;- Internal name: name of the variable in the code_saturne framework,&lt;br/&gt;- Post-processing: check the box for the variable to be taken into account by the default writers.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
       <string>Solution control</string>
@@ -32,7 +32,7 @@
          </size>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define surface output options for each variable:&lt;br/&gt;- Output label: name of the variable in the postprocessing outputs (listing, writers, output...),&lt;br/&gt;- Internal name: name of the variable in the Code_Saturne framework,&lt;br/&gt;- Post-processing: check the box for the variable to be taken into account by the default writers.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define surface output options for each variable:&lt;br/&gt;- Output label: name of the variable in the postprocessing outputs (listing, writers, output...),&lt;br/&gt;- Internal name: name of the variable in the code_saturne framework,&lt;br/&gt;- Post-processing: check the box for the variable to be taken into account by the default writers.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>

@@ -55,7 +55,7 @@
       </font>
      </property>
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the gravity vector.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key words: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GX&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;, &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; and &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GZ&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the gravity vector.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key words: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GX&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;, &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; and &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GZ&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
       <string>Gravity</string>
@@ -70,7 +70,7 @@
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;X&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the gravity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GX&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;X&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the gravity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GX&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>
@@ -84,7 +84,7 @@
          </font>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Z&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the gravity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GZ&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Z&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the gravity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GZ&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>g&lt;sub&gt;z&lt;/sub</string>
@@ -101,7 +101,7 @@
          </font>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;X&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the gravity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GX&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;X&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the gravity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GX&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>g&lt;sub&gt;x&lt;/sub</string>
@@ -118,7 +118,7 @@
          </font>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Y&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the gravity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Y&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the gravity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>m/s&lt;sup&gt;2&lt;/sup&gt;</string>
@@ -134,7 +134,7 @@
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Z&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the gravity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GZ&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Z&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the gravity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GZ&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>
@@ -161,7 +161,7 @@
          </font>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Z&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the gravity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GZ&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Z&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the gravity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GZ&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>m/s&lt;sup&gt;2&lt;/sup&gt;</string>
@@ -178,7 +178,7 @@
          </font>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Y&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the gravity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Y&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the gravity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>g&lt;sub&gt;y&lt;/sub</string>
@@ -194,7 +194,7 @@
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Y&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the gravity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Y&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the gravity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>
@@ -208,7 +208,7 @@
          </font>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;X&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the gravity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GX&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;X&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the gravity.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;GX&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>m/s&lt;sup&gt;2&lt;/sup&gt;</string>
@@ -250,7 +250,7 @@
          </font>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Y&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the rotation vector Omega.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;OMEGAY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Y&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the rotation vector Omega.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;OMEGAY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -271,7 +271,7 @@ p, li { white-space: pre-wrap; }
          </font>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Z&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the rotation vector Omega.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;OMEGAZ&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Z&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the rotation vector Omega.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;OMEGAZ&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>Ω&lt;sub&gt;z&lt;/sub&gt;</string>
@@ -288,7 +288,7 @@ p, li { white-space: pre-wrap; }
          </font>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;X&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the rotation vector Omega.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;OMEGAX&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;X&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the rotation vector Omega.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;OMEGAX&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
@@ -309,7 +309,7 @@ p, li { white-space: pre-wrap; }
          </font>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;X&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the rotation vector Omega.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;OMEGAX&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;X&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the rotation vector Omega.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;OMEGAX&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>Ω&lt;sub&gt;x&lt;/sub&gt;</string>
@@ -326,7 +326,7 @@ p, li { white-space: pre-wrap; }
          </font>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Y&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the rotation vector Omega.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;OMEGAY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Y&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the rotation vector Omega.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;OMEGAY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>Ω&lt;sub&gt;y&lt;/sub&gt;</string>
@@ -342,7 +342,7 @@ p, li { white-space: pre-wrap; }
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;X&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the rotation vector Omega.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;OMEGAX&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;X&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the rotation vector Omega.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;OMEGAX&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>
@@ -355,7 +355,7 @@ p, li { white-space: pre-wrap; }
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Z&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the rotation vector Omega.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;OMEGAZ&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Z&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the rotation vector Omega.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;OMEGAZ&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>
@@ -368,7 +368,7 @@ p, li { white-space: pre-wrap; }
          </sizepolicy>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Y&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the rotation vector Omega.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;OMEGAY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Y&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the rotation vector Omega.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;OMEGAY&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>
@@ -382,7 +382,7 @@ p, li { white-space: pre-wrap; }
          </font>
         </property>
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Z&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the rotation vector Omega.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;OMEGAZ&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Define the &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;Z&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; component of the rotation vector Omega.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;OMEGAZ&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
         <property name="text">
          <string>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;

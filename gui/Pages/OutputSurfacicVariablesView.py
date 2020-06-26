@@ -109,7 +109,7 @@ class StandardItemModelOutput(QStandardItemModel):
         # ToolTips BUG
         if role == Qt.ToolTipRole:
             if index.column() == 2:
-                return self.tr("Code_Saturne keyword: ipstdv")
+                return self.tr("code_saturne keyword: ipstdv")
 
         # StatusTips
         if role == Qt.StatusTipRole:

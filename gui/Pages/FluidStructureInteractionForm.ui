@@ -74,7 +74,7 @@
                  <item row="1" column="0">
                   <widget class="QLabel" name="labelEPALIM">
                    <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;EPALIM&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;EPALIM&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                    </property>
                    <property name="text">
                     <string>Relative precision for implicit coupling
@@ -111,7 +111,7 @@ with internal structures</string>
                     </size>
                    </property>
                    <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;EPALIM&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;EPALIM&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                    </property>
                   </widget>
                  </item>
@@ -163,7 +163,7 @@ with internal structures</string>
                     </size>
                    </property>
                    <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;NALIMX&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;NALIMX&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                    </property>
                   </widget>
                  </item>
@@ -177,7 +177,7 @@ with internal structures</string>
                  <item row="0" column="0">
                   <widget class="QLabel" name="labelNALIMX">
                    <property name="toolTip">
-                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;NALIMX&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;NALIMX&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                    </property>
                    <property name="text">
                     <string>Maximum number of sub-iterations for implicit
@@ -214,7 +214,7 @@ coupling with internal structures</string>
                        <item row="2" column="1">
                         <widget class="QLineEdit" name="lineEditInitialDisplacementY">
                          <property name="toolTip">
-                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XSTR0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XSTR0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                         </widget>
                        </item>
@@ -241,7 +241,7 @@ coupling with internal structures</string>
                        <item row="1" column="4">
                         <widget class="QLineEdit" name="lineEditEquilibriumDisplacementX">
                          <property name="toolTip">
-                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XSTREQ&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XSTREQ&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                         </widget>
                        </item>
@@ -262,21 +262,21 @@ coupling with internal structures</string>
                        <item row="2" column="7">
                         <widget class="QLineEdit" name="lineEditInitialVelocityY">
                          <property name="toolTip">
-                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VSTR0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VSTR0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                         </widget>
                        </item>
                        <item row="1" column="1">
                         <widget class="QLineEdit" name="lineEditInitialDisplacementX">
                          <property name="toolTip">
-                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XSTR0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XSTR0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                         </widget>
                        </item>
                        <item row="1" column="7">
                         <widget class="QLineEdit" name="lineEditInitialVelocityX">
                          <property name="toolTip">
-                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VSTR0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VSTR0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                         </widget>
                        </item>
@@ -290,7 +290,7 @@ coupling with internal structures</string>
                        <item row="3" column="1">
                         <widget class="QLineEdit" name="lineEditInitialDisplacementZ">
                          <property name="toolTip">
-                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XSTR0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XSTR0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                         </widget>
                        </item>
@@ -332,7 +332,7 @@ coupling with internal structures</string>
                        <item row="3" column="4">
                         <widget class="QLineEdit" name="lineEditEquilibriumDisplacementZ">
                          <property name="toolTip">
-                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XSTREQ&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XSTREQ&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                         </widget>
                        </item>
@@ -359,14 +359,14 @@ coupling with internal structures</string>
                        <item row="2" column="4">
                         <widget class="QLineEdit" name="lineEditEquilibriumDisplacementY">
                          <property name="toolTip">
-                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XSTREQ&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XSTREQ&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                         </widget>
                        </item>
                        <item row="3" column="7">
                         <widget class="QLineEdit" name="lineEditInitialVelocityZ">
                          <property name="toolTip">
-                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VSTR0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;VSTR0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                         </widget>
                        </item>
@@ -395,7 +395,7 @@ coupling with internal structures</string>
                           </size>
                          </property>
                          <property name="toolTip">
-                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XMSTRU&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XMSTRU&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                          <property name="text">
                           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;right&quot;&gt;Mass matrix&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -405,7 +405,7 @@ coupling with internal structures</string>
                        <item>
                         <widget class="QPushButton" name="pushButtonMassMatrix">
                          <property name="toolTip">
-                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XMSTRU&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XMSTRU&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                          <property name="text">
                           <string/>
@@ -444,7 +444,7 @@ coupling with internal structures</string>
                           </size>
                          </property>
                          <property name="toolTip">
-                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XCSTRU&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XCSTRU&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                          <property name="text">
                           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;right&quot;&gt;Damping matrix&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -454,7 +454,7 @@ coupling with internal structures</string>
                        <item>
                         <widget class="QPushButton" name="pushButtonDampingMatrix">
                          <property name="toolTip">
-                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XCSTRU&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XCSTRU&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                          <property name="text">
                           <string/>
@@ -493,7 +493,7 @@ coupling with internal structures</string>
                           </size>
                          </property>
                          <property name="toolTip">
-                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XKSTRU&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XKSTRU&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                          <property name="text">
                           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p align=&quot;right&quot;&gt;Stiffness matrix&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -503,7 +503,7 @@ coupling with internal structures</string>
                        <item>
                         <widget class="QPushButton" name="pushButtonStiffnessMatrix">
                          <property name="toolTip">
-                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XKSTRU&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;XKSTRU&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                          <property name="text">
                           <string/>
@@ -545,7 +545,7 @@ coupling with internal structures</string>
                        <item>
                         <widget class="QPushButton" name="pushButtonFluidForce">
                          <property name="toolTip">
-                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;FORSTR&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;FORSTR&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                          </property>
                          <property name="text">
                           <string/>

@@ -124,7 +124,7 @@ class MainView(object):
         MainView.Instances.add(self)
 
         iconpath = os.path.split(os.path.dirname(os.path.abspath(__file__)))[0]
-        iconpath = os.path.join(iconpath, "Base", "MONO-bulle-HD.png")
+        iconpath = os.path.join(iconpath, "Base", "logo_salome_cfd.png")
         icon = QIcon(QPixmap(iconpath))
         self.setWindowIcon(icon)
 
@@ -838,7 +838,6 @@ class MainViewSmgr(QMainWindow, Ui_MainForm, MainView):
         self.displayCSManualAction.triggered.connect(self.displayCSManual)
         self.displayCSTutorialAction.triggered.connect(self.displayCSTutorial)
         self.displayCSTheoryAction.triggered.connect(self.displayCSTheory)
-        self.displayCSSmgrAction.triggered.connect(self.displayCSSmgr)
         self.displayCSRefcardAction.triggered.connect(self.displayCSRefcard)
         self.displayCSDoxygenAction.triggered.connect(self.displayCSDoxygen)
 
@@ -852,8 +851,6 @@ class MainViewSmgr(QMainWindow, Ui_MainForm, MainView):
             self.displayCSManualAction.setEnabled(False)
         if 'theory.pdf' not in liste:
             self.displayCSTheoryAction.setEnabled(False)
-        if 'studymanager.pdf' not in liste:
-            self.displayCSSmgrAction.setEnabled(False)
         if 'refcard.pdf' not in liste:
             self.displayCSRefcardAction.setEnabled(False)
         if 'doxygen' not in liste:

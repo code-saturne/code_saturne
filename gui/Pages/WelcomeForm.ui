@@ -11,10 +11,10 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Welcome to Code_Saturne</string>
+   <string>Welcome to code_saturne</string>
   </property>
   <property name="statusTip">
-   <string>Welcome to Code_Saturne.</string>
+   <string>Welcome to code_saturne.</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="1">

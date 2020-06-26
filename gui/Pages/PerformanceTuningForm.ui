@@ -247,7 +247,7 @@ by later calculation</string>
             <item row="1" column="3">
              <widget class="QCheckBox" name="checkBox_IgnorePerio">
               <property name="toolTip">
-               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;For graph-based partitionings, ignoring periodicity may slightly decrease partitioning quality, but may avoid degrading the performance of the mesh matching in case of couplings using the PLE library (such as SYRTHES, Code_Saturne, or NEPTUNE_CFD).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;For graph-based partitionings, ignoring periodicity may slightly decrease partitioning quality, but may avoid degrading the performance of the mesh matching in case of couplings using the PLE library (such as SYRTHES, code_saturne, or neptune_cfd).&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
               </property>
               <property name="text">
                <string>Ignore Periodicity</string>

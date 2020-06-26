@@ -40,7 +40,7 @@
           <item>
            <widget class="QLabel" name="labelWallFunctions">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate the type of wall function that will be used to derive the wall boundary conditions for the dynamic equations.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IWALLF&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate the type of wall function that will be used to derive the wall boundary conditions for the dynamic equations.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IWALLF&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>Wall function type</string>
@@ -69,7 +69,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate the type of wall function that will be used to derive the wall boundary conditions for the dynamic equations.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IWALLF&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate the type of wall function that will be used to derive the wall boundary conditions for the dynamic equations.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IWALLF&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <item>
              <property name="text">
@@ -126,7 +126,7 @@
           <item>
            <widget class="QLabel" name="labelGravity">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate if the buoyancy related terms are taken into account or not in the turbulence equations.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IGRAKE&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; / &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IGRARI&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate if the buoyancy related terms are taken into account or not in the turbulence equations.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IGRAKE&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; / &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IGRARI&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>Gravity terms in the turbulence equations</string>
@@ -149,7 +149,7 @@
           <item>
            <widget class="QCheckBox" name="checkBoxGravity">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate if the buoyancy related terms are taken into account or not in the turbulence equations.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IGRAKE&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; / &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IGRARI&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate if the buoyancy related terms are taken into account or not in the turbulence equations.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IGRAKE&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt; / &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;IGRARI&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string/>

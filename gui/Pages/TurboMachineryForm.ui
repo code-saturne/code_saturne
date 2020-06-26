@@ -17,7 +17,7 @@
    <item row="0" column="0">
     <widget class="QGroupBox" name="groupBoxTurboMachinery">
      <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the turbomachinery model between a full transient simulation or a frozen rotor model.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(Code_Saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;ITURBO&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Select the turbomachinery model between a full transient simulation or a frozen rotor model.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;ITURBO&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="title">
       <string>Turbomachinery</string>

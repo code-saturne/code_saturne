@@ -836,16 +836,13 @@ class MainView(object):
         else:
             package = self.package
 
-        title += self.tr(package.code_name)
+        title += self.tr(package.name)
 
         module_name = 'code_saturne'
         if hasattr(self, 'case'):
             module_name = self.case.module_name()
 
-        if module_name == "NEPTUNE_CFD":
-            icon = QIcon(QPixmap(icondir+"logoneptune.png"))
-        else:
-            icon = QIcon(QPixmap(icondir+"MONO-bulle-HD.png"))
+        icon = QIcon(QPixmap(icondir+"logo_salome_cfd.png"))
         self.setWindowIcon(icon)
         self.setWindowTitle(title)
 
@@ -922,7 +919,7 @@ class MainView(object):
         if not open_editor:
             title = self.tr("Warning")
             msg   = self.tr("Warning: you can only manage user files for a "\
-                            "Code_Saturne CASE with an xml file.")
+                            "code_saturne case with an xml file.")
             QMessageBox.warning(self, title, msg)
             return
 
@@ -964,7 +961,7 @@ class MainView(object):
         if not open_viewer:
             title = self.tr("Warning")
             msg   = self.tr("Warning: you can only view log files for a "\
-                            "Code_Saturne CASE with an xml file.")
+                            "code_saturne case with an xml file.")
             QMessageBox.warning(self, title, msg)
             return
 
@@ -1580,7 +1577,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.displayCSManualAction.triggered.connect(self.displayCSManual)
         self.displayCSTutorialAction.triggered.connect(self.displayCSTutorial)
         self.displayCSTheoryAction.triggered.connect(self.displayCSTheory)
-        self.displayCSSmgrAction.triggered.connect(self.displayCSSmgr)
         self.displayCSRefcardAction.triggered.connect(self.displayCSRefcard)
         self.displayCSDoxygenAction.triggered.connect(self.displayCSDoxygen)
 
@@ -1606,8 +1602,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
             self.displayCSManualAction.setEnabled(False)
         if 'theory.pdf' not in liste:
             self.displayCSTheoryAction.setEnabled(False)
-        if 'studymanager.pdf' not in liste:
-            self.displayCSSmgrAction.setEnabled(False)
         if 'refcard.pdf' not in liste:
             self.displayCSRefcardAction.setEnabled(False)
         if 'doxygen' not in liste:

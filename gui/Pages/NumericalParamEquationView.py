@@ -385,7 +385,7 @@ class StandardItemModelScheme(QStandardItemModel):
 
         if role == Qt.ToolTipRole:
             if index.column() > 0:
-                return self.tr("Code_Saturne keyword: " + key.upper())
+                return self.tr("code_saturne keyword: " + key.upper())
 
         elif role == Qt.DisplayRole and not column in [3, 4]:
             if key == 'ischcv':
@@ -583,7 +583,7 @@ class StandardItemModelSolver(QStandardItemModel):
             elif index.column() == 4:
                 return self.tr("Field variable calculation option keyword: iwarni")
             elif index.column() == 5:
-                return self.tr("Code_Saturne keyword: CDTVAR")
+                return self.tr("code_saturne keyword: CDTVAR")
 
         elif role == Qt.DisplayRole:
             row = index.row()
@@ -793,10 +793,6 @@ class StandardItemModelClipping(QStandardItemModel):
                         self.tr("Maximal\nvalue")]
 
         self.setColumnCount(len(self.headers))
-
-        self.toolTipRole = [self.tr("Code_Saturne keyword: NSCAUS"),
-                            self.tr("Code_Saturne keyword: SCAMIN"),
-                            self.tr("Code_Saturne keyword: SCAMAX")]
 
         self._data = []
         self._disable = []

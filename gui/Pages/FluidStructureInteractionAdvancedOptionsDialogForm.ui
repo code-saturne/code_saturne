@@ -85,7 +85,7 @@
             <item row="0" column="2" >
              <widget class="QLineEdit" name="lineEditDisplacementAlpha" >
               <property name="toolTip" >
-               <string>Code_Saturne key word: AEXXST</string>
+               <string>code_saturne key word: aexxst</string>
               </property>
              </widget>
             </item>
@@ -112,7 +112,7 @@
             <item row="1" column="2" >
              <widget class="QLineEdit" name="lineEditDisplacementBeta" >
               <property name="toolTip" >
-               <string>Code_Saturne key word: BEXXST</string>
+               <string>code_saturne key word: bexxst</string>
               </property>
              </widget>
             </item>
@@ -184,7 +184,7 @@
             <item>
              <widget class="QLineEdit" name="lineEditStressAlpha" >
               <property name="toolTip" >
-               <string>Code_Saturne key word: CFOPRE</string>
+               <string>code_saturne key word: cfopre</string>
               </property>
               <property name="text" >
                <string/>
@@ -220,7 +220,7 @@
           <item>
            <widget class="QCheckBox" name="checkBoxSynchronization" >
             <property name="toolTip" >
-             <string>Code_Saturne key word: IHISTR</string>
+             <string>code_saturne key word: ihistr</string>
             </property>
             <property name="layoutDirection" >
              <enum>Qt::RightToLeft</enum>

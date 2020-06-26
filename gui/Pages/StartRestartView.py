@@ -449,7 +449,7 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
     @pyqtSlot()
     def slotStartRestart(self):
         """
-        Input IRESTART Code_Saturne keyword.
+        Handle restart.
         """
         if self.radioButtonYes.isChecked():
             if not self.restart_path or self.restart_path == '*':

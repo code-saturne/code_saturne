@@ -102,8 +102,7 @@ basedir = $(pkgpythondir)/Base
 dist_base_PYTHON = \
 __init__.py \
 $(PYFILES) \
-icons/22x22/MONO-bulle-HD.png \
-icons/22x22/logoneptune.png
+icons/22x22/logo_salome_cfd.png
 
 nodist_base_PYTHON = \
 $(FORMS) \
