@@ -695,10 +695,9 @@ cs_vof_log_mass_budget(const cs_domain_t *domain)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Compute the flux of the drift velocity \f$ \vect u _d \f$,
- *        by using the flux of the standard velocity \f$ \vect u \f$
- *        following the approach described by
- *        Suraj S Deshpande et al 2012 Comput. Sci. Disc. 5 014016.
+ * \brief Compute a relative velocity \f$ \vect u _d \f$ directly at internal
+ *        faces (drift flux), following the approach described by
+ *        Suraj S. Deshpande et al 2012 Comput. Sci. Disc. 5 014016.
  *        It is activated with the option idrift = 1
  *
  * Using the notation:
@@ -748,26 +747,26 @@ cs_vof_deshpande_drift_flux(const cs_domain_t *domain)
   /* Constant parameter */
   const cs_real_t cdrift = _vof_parameters.cdrift;
 
-  const int kiflux = cs_field_key_id("inner_flux_id");
-  const cs_real_t *restrict i_voidflux =
-    cs_field_by_id(cs_field_get_key_int(CS_F_(void_f), kiflux))->val;
+  const int kimasf = cs_field_key_id("inner_mass_flux_id");
+  const cs_real_t *restrict i_volflux =
+    cs_field_by_id(cs_field_get_key_int(CS_F_(void_f), kimasf))->val;
 
   cs_field_t *idriftflux = NULL;
   idriftflux = cs_field_by_name_try("inner_drift_velocity_flux");
 
-  /* Check if field exist */
+  /* Check if field exists */
   if (idriftflux == NULL)
     bft_error(__FILE__, __LINE__, 0,_("error drift velocity not defined\n"));
   cs_real_t *cpro_idriftf = idriftflux->val;
 
-  cs_real_3_t *dvdx;
-  BFT_MALLOC(dvdx, n_cells_with_ghosts, cs_real_3_t);
+  cs_real_3_t *voidf_grad;
+  BFT_MALLOC(voidf_grad, n_cells_with_ghosts, cs_real_3_t);
   /* Compute the gradient of the void fraction */
   cs_field_gradient_scalar(CS_F_(void_f),
                            true,           // use_previous_t
                            1,              // inc
                            true,           // _recompute_cocg
-                           dvdx);
+                           voidf_grad);
 
   /* Stabilization factor */
   cs_real_t delta = pow(10,-8)/pow(tot_vol/n_g_cells,(1./3.));
@@ -775,35 +774,39 @@ cs_vof_deshpande_drift_flux(const cs_domain_t *domain)
   /* Compute the max of flux/Surf over the entire domain*/
   cs_real_t maxfluxsurf = 0.;
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-    if (maxfluxsurf < CS_ABS(i_voidflux[f_id])/i_face_surf[f_id])
-      maxfluxsurf = CS_ABS(i_voidflux[f_id])/i_face_surf[f_id];
+    if (maxfluxsurf < CS_ABS(i_volflux[f_id])/i_face_surf[f_id])
+      maxfluxsurf = CS_ABS(i_volflux[f_id])/i_face_surf[f_id];
   }
   cs_parall_max(1, CS_DOUBLE, &maxfluxsurf);
 
-  /* Update the drift flux */
+  const cs_real_t rho1 = _vof_parameters.rho1;
+  const cs_real_t rho2 = _vof_parameters.rho2;
+  cs_real_t dr_sign = rho2 - rho1 / CS_ABS(rho2 - rho1);
+
+  /* Compute the relative velocity at internal faces */
   cs_real_3_t gradface, normalface;
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
-    cs_lnum_t cell_id1 = i_face_cells[f_id][0]; // associated boundary cell
-    cs_lnum_t cell_id2 = i_face_cells[f_id][1]; // associated boundary cell
+    cs_lnum_t cell_id1 = i_face_cells[f_id][0];
+    cs_lnum_t cell_id2 = i_face_cells[f_id][1];
     cs_real_t fluxfactor =
-      CS_MIN(cdrift*CS_ABS(i_voidflux[f_id])/i_face_surf[f_id],maxfluxsurf);
+      CS_MIN(cdrift*CS_ABS(i_volflux[f_id])/i_face_surf[f_id], maxfluxsurf);
 
     for (int idim = 0; idim < 3; idim++)
-      gradface[idim] = (dvdx[cell_id1][idim] + dvdx[cell_id2][idim])/2.;
+      gradface[idim] = (voidf_grad[cell_id1][idim] + voidf_grad[cell_id2][idim])/2.;
 
     cs_real_t normgrad = sqrt(pow(gradface[0],2)+
                               pow(gradface[1],2)+
                               pow(gradface[2],2));
 
     for (int idim = 0; idim < 3; idim++)
-      normalface[idim] = gradface[idim]/(normgrad+delta);
+      normalface[idim] = dr_sign * gradface[idim] / (normgrad+delta);
 
     cpro_idriftf[f_id] = fluxfactor*(normalface[0]*i_face_normal[f_id][0]+
                                      normalface[1]*i_face_normal[f_id][1]+
                                      normalface[2]*i_face_normal[f_id][2]);
   }
-  BFT_FREE(dvdx);
 
+  BFT_FREE(voidf_grad);
 }
 
 /*----------------------------------------------------------------------------*/
