@@ -781,7 +781,6 @@ cs_vof_deshpande_drift_flux(const cs_domain_t *domain)
 
   const cs_real_t rho1 = _vof_parameters.rho1;
   const cs_real_t rho2 = _vof_parameters.rho2;
-  cs_real_t dr_sign = rho2 - rho1 / CS_ABS(rho2 - rho1);
 
   /* Compute the relative velocity at internal faces */
   cs_real_3_t gradface, normalface;
@@ -799,7 +798,7 @@ cs_vof_deshpande_drift_flux(const cs_domain_t *domain)
                               pow(gradface[2],2));
 
     for (int idim = 0; idim < 3; idim++)
-      normalface[idim] = dr_sign * gradface[idim] / (normgrad+delta);
+      normalface[idim] = gradface[idim] / (normgrad+delta);
 
     cpro_idriftf[f_id] = fluxfactor*(normalface[0]*i_face_normal[f_id][0]+
                                      normalface[1]*i_face_normal[f_id][1]+
