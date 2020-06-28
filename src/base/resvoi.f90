@@ -97,7 +97,7 @@ integer          iflmas, iflmab
 integer          iwarnp, i_mass_transfer
 integer          imucpp, idftnp, iswdyp
 
-integer          icvflb
+integer          icvflb, kiflux, kbflux, icflux_id, bcflux_id
 integer          ivoid(1)
 integer          kscmin, kscmax, iclmin(1), iclmax(1)
 
@@ -116,7 +116,7 @@ double precision, allocatable, dimension(:) :: dpvar, divu
 double precision, dimension(:), pointer :: ivolfl, bvolfl
 double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 double precision, dimension(:), pointer :: c_st_voidf
-double precision, dimension(:), pointer :: cvar_pr, cvara_pr
+double precision, dimension(:), pointer :: cvar_pr, cvara_pr, icflux, bcflux
 double precision, dimension(:), pointer :: cvar_voidf, cvara_voidf
 
 type(var_cal_opt) :: vcopt
@@ -197,6 +197,23 @@ do ifac = 1, nfac
 enddo
 do ifac = 1, nfabor
    viscb(ifac) = 1.d0
+enddo
+
+! Initialize void fraction convection flux
+call field_get_key_id("inner_flux_id", kiflux)
+call field_get_key_id("boundary_flux_id", kbflux)
+
+call field_get_key_int(ivarfl(ivar), kiflux, icflux_id)
+call field_get_key_int(ivarfl(ivar), kbflux, bcflux_id)
+
+call field_get_val_s(icflux_id, icflux)
+do ifac = 1, nfac
+  icflux(ifac) = 0.d0
+enddo
+
+call field_get_val_s(bcflux_id, bcflux)
+do ifac = 1, nfabor
+  bcflux(ifac) = 0.d0
 enddo
 
 !===============================================================================

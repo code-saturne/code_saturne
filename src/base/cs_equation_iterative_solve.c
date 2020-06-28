@@ -943,8 +943,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
         i_flux2[2*face_id  ] = 0.;
         i_flux2[2*face_id+1] = 0.;
       }
-      for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++)
-        b_flux->val[face_id] = 0.;
 
       inc  = 1;
       iccocg = 1;
@@ -1001,7 +999,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
       /* FIXME diffusion part */
 
       for (cs_lnum_t face_id = 0; face_id < n_i_faces; face_id++)
-        i_flux->val[face_id] = i_flux2[2*face_id];
+        i_flux->val[face_id] += i_flux2[2*face_id];
       BFT_FREE(i_flux2);
     }
   }

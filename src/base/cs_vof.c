@@ -779,9 +779,6 @@ cs_vof_deshpande_drift_flux(const cs_domain_t *domain)
   }
   cs_parall_max(1, CS_DOUBLE, &maxfluxsurf);
 
-  const cs_real_t rho1 = _vof_parameters.rho1;
-  const cs_real_t rho2 = _vof_parameters.rho2;
-
   /* Compute the relative velocity at internal faces */
   cs_real_3_t gradface, normalface;
   for (cs_lnum_t f_id = 0; f_id < n_i_faces; f_id++) {
@@ -791,7 +788,8 @@ cs_vof_deshpande_drift_flux(const cs_domain_t *domain)
       CS_MIN(cdrift*CS_ABS(i_volflux[f_id])/i_face_surf[f_id], maxfluxsurf);
 
     for (int idim = 0; idim < 3; idim++)
-      gradface[idim] = (voidf_grad[cell_id1][idim] + voidf_grad[cell_id2][idim])/2.;
+      gradface[idim] = (  voidf_grad[cell_id1][idim]
+                        + voidf_grad[cell_id2][idim])/2.;
 
     cs_real_t normgrad = sqrt(pow(gradface[0],2)+
                               pow(gradface[1],2)+
@@ -961,6 +959,10 @@ cs_vof_drift_term(int                        imrgra,
     Contribution from interior faces
     ======================================================================*/
 
+  const int kiflux = cs_field_key_id("inner_flux_id");
+  int i_flux_id = cs_field_get_key_int(CS_F_(void_f), kiflux);
+  cs_field_t *i_flux = cs_field_by_id(i_flux_id);
+
   if (n_cells_ext>n_cells) {
 #   pragma omp parallel for if(n_cells_ext - n_cells > CS_THR_MIN)
     for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++) {
@@ -1005,11 +1007,14 @@ cs_vof_drift_term(int                        imrgra,
                        _pvar[jj],
                        _pvar[ii],
                        _pvar[jj],
-                       kdrift*(2.-_pvar[ii]-_pvar[jj])/2.*i_face_surf[face_id]/i_dist[face_id],
+                       kdrift*(2.-_pvar[ii]-_pvar[jj])
+                        / 2.*i_face_surf[face_id]/i_dist[face_id],
                        fluxij);
 
         rhs[ii] -= fluxij[0];
         rhs[jj] += fluxij[1];
+        /* store void fraction convection flux contribution */
+        i_flux->val[face_id] += fluxij[0];
       }
     }
   }
