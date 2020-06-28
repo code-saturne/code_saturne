@@ -26,14 +26,14 @@ EXTRA_DIST = Doxyfile-pre Doxyfile-src Doxyfile-ui \
 DoxygenLayout.xml doxypypy.py mainpage.dox images examples \
 user_guide developer_guide
 
-# Overload doxygen executable
+# Overload Doxygen executable
 
 if HAVE_DOXYGEN
 
 DOXYGENCMD = export TEXINPUTS="$(abs_top_srcdir)/docs/style/$(cs_tex_path_end)"; \
   srcdir="$(top_srcdir)" builddir="$(top_builddir)" ple_docdir="$(ple_docdir)" \
   package_name="$(PACKAGE_NAME)" package_version="$(cs_version_short)" \
-  have_dot="$(cs_have_dot)" \
+  have_dot="$(cs_have_dot)" use_mathjax="$(cs_enable_mathjax)" \
   "$(DOXYGEN)"
 
 doxygen-pre:

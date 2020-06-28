@@ -52,6 +52,9 @@ Numerics and physical modelling:
 
 Architectural changes:
 
+- Documentation: add optional MathJax support for Doxygen. Currently
+  uses an external MathJax server, so works on-line only.
+
 - [GUI]: enable Qt translation mechanism.
   Translation files are not maintained, but may be built using  pylupdate5,
   linguist-qt5, and lrelease, and files named code_saturne_<lang>.qm

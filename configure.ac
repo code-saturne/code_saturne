@@ -1281,6 +1281,7 @@ echo " PdfLaTeX (document typesetting) available: "$cs_have_latex""
 echo " Doxygen (document generation) available: "$cs_have_doxygen""
 if (test x$cs_have_doxygen = xyes) ; then
   echo "   dot (Graphviz) available: "$cs_have_dot""
+  echo "   MathJax enabled: "$cs_enable_mathjax""
 fi
 echo
 echo "The package has been configured. Type:"

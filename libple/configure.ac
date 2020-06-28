@@ -569,6 +569,10 @@ echo " use debugging code: "$debug""
 echo " MPI (Message Passing Interface) support: "$ple_have_mpi""
 echo " OpenMP support: "$ple_have_openmp""
 echo " Python bindings: "$python_bindings""
+echo " Doxygen (document generation) available: "$ple_have_doxygen""
+if (test x$cs_have_doxygen = xyes) ; then
+  echo "   dot (Graphviz) available: "$ple_have_dot""
+fi
 echo
 echo "The package has been configured. Type:"
 echo " make"

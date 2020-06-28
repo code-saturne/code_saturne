@@ -111,9 +111,22 @@ if test "x$DOT" = "x"; then
   cs_have_dot=no
 fi
 
+AC_ARG_ENABLE(mathjax,
+  [AS_HELP_STRING([--enable-mathjax], [enable MathJax for math in html])],
+  [
+    case "${enableval}" in
+      yes) cs_enable_mathjax=yes ;;
+      no)  cs_enable_mathjax=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-mathjax]) ;;
+    esac
+  ],
+  [ cs_enable_mathjax=no ]
+)
+
 AM_CONDITIONAL(HAVE_DOXYGEN, [test $cs_have_doxygen = yes])
 AC_SUBST(cs_have_doxygen)
 AC_SUBST(cs_have_dot)
+AC_SUBST(cs_enable_mathjax)
 
 ])dnl
 

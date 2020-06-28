@@ -8582,8 +8582,6 @@ _gradient_tensor(const char                *var_name,
   BFT_FREE(_bc_coeff_b);
 }
 
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -8825,6 +8823,8 @@ cs_f_gradient_weighted_s(int               f_id,
                      cpl,
                      grad);
 }
+
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
  * Public function definitions for Fortran API

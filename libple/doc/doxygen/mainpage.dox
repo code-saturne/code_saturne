@@ -24,6 +24,8 @@
 
 /*-----------------------------------------------------------------------------*/
 
+#include <ple_locator.h>
+
 /*!
   \mainpage PLE (Parallel Location and Exchange) documentation
 

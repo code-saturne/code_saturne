@@ -64,7 +64,7 @@ The available macros for mathematical symbols are available through
 the `csmacros.sty` package.
 
 <table>
-<caption id="latex_name_macro">Mathematical operators defined in csmacros</caption>
+<caption id="latex_name_macro_op">Mathematical operators defined in csmacros</caption>
 <tr><th> \f$ \mbox{\LaTeX} \f$ code  <th> preview <th> comment
 <tr><td> `$\divs$`           <td> \f$ \divs    \f$ <td>
 <tr><td> `$\divv$`           <td> \f$ \divv    \f$ <td>
@@ -102,7 +102,7 @@ code_saturne. The following table lists the main ones, but may not be complete,
 so checking the actual contents of `csmacros.sty` is always recommened.
 
 <table>
-<caption id="latex_name_macro">Discretized quanties defined in csmacros</caption>
+<caption id="latex_name_macro_q">Discretized quanties defined in csmacros</caption>
 <tr><th> \f$ \mbox{\LaTeX} \f$ code          <th> preview <th> comment
 <tr><td> `$\Facei{\celli}$` <td> \f$ \Facei{\celli} \f$ <td> set of internal faces
 <tr><td> `$\Faceb{\cellj}$` <td> \f$ \Faceb{\cellj} \f$ <td> set of boundary faces

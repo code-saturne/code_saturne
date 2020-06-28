@@ -41,6 +41,7 @@ SUBDIRS = src pyple tests doc
 EXTRA_DIST = README.md \
              m4/ple_config_info.m4 \
              m4/ple_config_publ.m4 \
+             m4/ple_doc.m4 \
              m4/ple_mpi.m4 \
              m4/ple_mpi4py.m4 \
              m4/ple_types.m4 \
