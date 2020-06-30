@@ -486,8 +486,6 @@ inline static void
 _assemble_row_scal_l(const cs_matrix_assembler_t     *ma,
                      cs_equation_assemble_row_t      *row)
 {
-  assert(ma->d_r_idx == NULL); /* local-id-based function, need to adapt */
-
   const cs_lnum_t  l_r_id = row->l_id; /* g_r_id - ma->l_range[0]; */
   const cs_lnum_t  l_start = ma->r_idx[l_r_id], l_end = ma->r_idx[l_r_id+1];
   const int  n_l_cols = l_end - l_start;
