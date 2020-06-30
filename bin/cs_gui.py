@@ -120,10 +120,14 @@ def process_cmd_line(argv):
         else:
             options.file_name = args[0]
 
-    # If no parameter file passed and a setup.xml is present, open it
+    # If no parameter file passed and a setup.xml is present, open it,
+    # otherwise create a new case.
     has_setup = os.path.isfile(os.path.join(os.getcwd(), 'setup.xml'))
-    if not options.file_name and has_setup:
-        options.file_name = "setup.xml"
+    if not options.file_name:
+        if has_setup:
+            options.file_name = "setup.xml"
+        else:
+            options.file_name = "new case"
 
     return options.file_name, options.splash_screen
 

@@ -482,12 +482,6 @@ class MainView(object):
             except:
                 raise
 
-        # 3) neutral point (default page layout)
-
-        else:
-            self.displayWelcomePage()
-            self.dockWidgetBrowserDisplay(False)
-
 
     def dockWidgetBrowserDisplay(self, bool=True):
         """
@@ -1641,14 +1635,6 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
             from code_saturne.cs_package import package as cs_package
             self.package = cs_package()
             return XMLinit(self.case).initialize(prepro_only)
-
-
-    def displayWelcomePage(self):
-        """
-        Display the Welcome (and the default) page
-        """
-        self.page = WelcomeView()
-        self.scrollArea.setWidget(self.page)
 
 
     def displayFirstPage(self):
