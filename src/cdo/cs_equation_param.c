@@ -57,6 +57,10 @@
 #include "cs_source_term.h"
 #include "cs_volume_zone.h"
 
+#if defined(HAVE_MUMPS)
+#include "cs_sles_mumps.h"
+#endif
+
 #if defined(HAVE_PETSC)
 #include "cs_sles_petsc.h"
 #endif
@@ -1462,12 +1466,34 @@ _set_key(const char            *label,
     else if (strcmp(keyval, "mumps") == 0) {
       eqp->sles_param.solver = CS_PARAM_ITSOL_MUMPS;
       eqp->sles_param.precond = CS_PARAM_PRECOND_NONE;
-      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
+      /* Modify the default */
+      if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS) {
+#if defined(HAVE_MUMPS)
+        eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_MUMPS;
+#else
+#if defined(HAVE_PETSC)
+        eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
+#endif
+#endif
+      }
+      assert(eqp->sles_param.solver_class != CS_PARAM_SLES_CLASS_CS &&
+             eqp->sles_param.solver_class != CS_PARAM_SLES_CLASS_HYPRE);
     }
     else if (strcmp(keyval, "mumps_ldlt") == 0) {
       eqp->sles_param.solver = CS_PARAM_ITSOL_MUMPS_LDLT;
       eqp->sles_param.precond = CS_PARAM_PRECOND_NONE;
-      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
+      /* Modify the default */
+      if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS) {
+#if defined(HAVE_MUMPS)
+        eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_MUMPS;
+#else
+#if defined(HAVE_PETSC)
+        eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
+#endif
+#endif
+      }
+      assert(eqp->sles_param.solver_class != CS_PARAM_SLES_CLASS_CS &&
+             eqp->sles_param.solver_class != CS_PARAM_SLES_CLASS_HYPRE);
     }
     else if (strcmp(keyval, "none") == 0)
       eqp->sles_param.solver = CS_PARAM_ITSOL_NONE;
@@ -1623,10 +1649,12 @@ _set_key(const char            *label,
   case CS_EQKEY_SOLVER_FAMILY:
     if (strcmp(keyval, "cs") == 0)
       eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_CS;
-    else if (strcmp(keyval, "petsc") == 0)
-      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
     else if (strcmp(keyval, "hypre") == 0)
       eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_HYPRE;
+    else if (strcmp(keyval, "mumps") == 0)
+      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_MUMPS;
+    else if (strcmp(keyval, "petsc") == 0)
+      eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
@@ -2166,6 +2194,27 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp)
     _set_saturne_sles(eqp);
     break;
 
+  case CS_PARAM_SLES_CLASS_MUMPS: /* MUMPS sparse direct solvers */
+#if defined(HAVE_MUMPS)
+    {
+      int  sym = 0; /* non-symmetric as default */
+      if (slesp.solver == CS_PARAM_ITSOL_MUMPS_LDLT)
+        sym = 1;
+
+      cs_sles_mumps_define(slesp.field_id,
+                           NULL,
+                           sym,
+                           cs_user_sles_mumps_hook,
+                           (void *)eqp);
+    }
+#else
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: MUMPS is not supported directly."
+              "Please check your settings or your code_saturne installation.",
+              __func__);
+#endif
+    break;
+
   case CS_PARAM_SLES_CLASS_PETSC: /* PETSc solvers */
   case CS_PARAM_SLES_CLASS_HYPRE: /* HYPRE solvers through PETSc */
 #if defined(HAVE_PETSC)
@@ -2562,10 +2611,12 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
   cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Family:", eqname);
   if (slesp.solver_class == CS_PARAM_SLES_CLASS_CS)
     cs_log_printf(CS_LOG_SETUP, "             Code_Saturne\n");
-  else if (slesp.solver_class == CS_PARAM_SLES_CLASS_PETSC)
-    cs_log_printf(CS_LOG_SETUP, "             PETSc\n");
+  else if (slesp.solver_class == CS_PARAM_SLES_CLASS_MUMPS)
+    cs_log_printf(CS_LOG_SETUP, "             MUMPS\n");
   else if (slesp.solver_class == CS_PARAM_SLES_CLASS_HYPRE)
     cs_log_printf(CS_LOG_SETUP, "             HYPRE\n");
+  else if (slesp.solver_class == CS_PARAM_SLES_CLASS_PETSC)
+    cs_log_printf(CS_LOG_SETUP, "             PETSc\n");
 
   cs_log_printf(CS_LOG_SETUP, "  * %s | SLES Verbosity:          %d\n",
                 eqname, slesp.verbosity);

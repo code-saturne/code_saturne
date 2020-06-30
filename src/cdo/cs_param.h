@@ -399,11 +399,15 @@ typedef enum {
  * \var CS_PARAM_SLES_CLASS_CS
  * Iterative solvers available in Code_Saturne
  *
- * \var CS_PARAM_SLES_CLASS_PETSC
- * Solvers available in PETSc
- *
  * \var CS_PARAM_SLES_CLASS_HYPRE
  * Solvers available in HYPRE through the PETSc library
+ *
+ * \var CS_PARAM_SLES_CLASS_MUMPS
+ * Solvers available with MUMPS (without the PETSc interface)
+ *
+ * \var CS_PARAM_SLES_CLASS_PETSC Solvers available in PETSc. Please notice that
+ * the MUMPS solver can be handled within PETSc if the installation of PETSc
+ * includes the MUMPS library
  *
  * \var CS_PARAM_SLES_N_CLASSES
  */
@@ -411,8 +415,9 @@ typedef enum {
 typedef enum {
 
   CS_PARAM_SLES_CLASS_CS,
-  CS_PARAM_SLES_CLASS_PETSC,
   CS_PARAM_SLES_CLASS_HYPRE,
+  CS_PARAM_SLES_CLASS_MUMPS,
+  CS_PARAM_SLES_CLASS_PETSC,
   CS_PARAM_SLES_N_CLASSES
 
 } cs_param_sles_class_t;
