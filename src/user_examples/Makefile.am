@@ -200,7 +200,7 @@ clean-local:
 # Done with two sed passes (does not work otherwise)
 
 install-data-hook:
-	c_user_files=`ls ${top_srcdir}/src/user/*.c 2>/dev/null`; \
+	c_user_files=`ls ${top_srcdir}/src/user_examples/*.c 2>/dev/null`; \
 	for f in $${c_user_files}; do \
           file=`basename "$${f}"` && \
 	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(VERSION)" < "${top_srcdir}/src/user_examples/$${file}" > "$(DESTDIR)$(pkgdatadir)/user_examples/$${file}"; \
