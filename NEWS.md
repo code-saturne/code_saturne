@@ -50,6 +50,14 @@ Numerics and physical modelling:
 - CDO: Add the treatment of segregation of binary alloys. More
   validations are required but first results are promising.
 
+- CDO: Add _solid cells_ for the treatment of permanent solid walls
+  (by opposition to cells in the fluid domain which may become
+  solid/mushy/fluid w.r.t. the thermophysical constraints) during the
+  solidification or melting process.
+
+- Add a first interface with the MUMPS library to get access to sparse
+  direct solvers without the PETSc library (experimental).
+
 Architectural changes:
 
 - Documentation: add optional MathJax support for Doxygen. Currently
