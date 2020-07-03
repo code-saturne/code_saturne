@@ -231,7 +231,7 @@ cs_vof_log_mass_budget(const cs_domain_t *domain);
  * \ref cdrift, \f$ \vect n _{\face} \f$ the normal vector to the interface.
  * The gradient is computed using a centered scheme:
  * \f[
- * \vect n _{\face}} = \dfrac{\left ( \grad \alpha \right ) _{\face}}
+ * {\vect n _{\face}} = \dfrac{\left ( \grad \alpha \right ) _{\face}}
  * {\norm {\left ( \grad \alpha \right ) _{\face} + \delta}},
  * \text{ with: }
  * \left ( \grad \alpha \right ) _{\face _{\celli \cellj}} = \dfrac{\left (
