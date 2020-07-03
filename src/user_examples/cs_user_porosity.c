@@ -77,7 +77,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_user_porosity(cs_domain_t  *domain)
+cs_user_porosity(cs_domain_t   *domain)
 {
   /*!< [init_poro_mq] */
   cs_mesh_t *m = domain->mesh;

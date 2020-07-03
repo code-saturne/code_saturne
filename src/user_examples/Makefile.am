@@ -70,7 +70,10 @@ $(FCFLAGS_DBG) $(FCFLAGS_OPT)
 
 AM_LDFLAGS =
 
-EXTRA_DIST =
+EXTRA_DIST = \
+cs_cad_intersect.h \
+cs_cad_intersect.cxx \
+cs_user_porosity-from_cad.c
 
 # Library source files
 
@@ -200,8 +203,13 @@ clean-local:
 # Done with two sed passes (does not work otherwise)
 
 install-data-hook:
-	c_user_files=`ls ${top_srcdir}/src/user_examples/*.c 2>/dev/null`; \
+	c_user_files=`ls ${top_srcdir}/src/user_examples/*.c* 2>/dev/null`; \
 	for f in $${c_user_files}; do \
+          file=`basename "$${f}"` && \
+	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(VERSION)" < "${top_srcdir}/src/user_examples/$${file}" > "$(DESTDIR)$(pkgdatadir)/user_examples/$${file}"; \
+	done ; \
+	h_user_files=`ls ${top_srcdir}/src/user_examples/*.h 2>/dev/null`; \
+	for f in $${h_user_files}; do \
           file=`basename "$${f}"` && \
 	  $(PYTHON) "${top_srcdir}/build-aux/cs_user_src_filter.py" "$(VERSION)" < "${top_srcdir}/src/user_examples/$${file}" > "$(DESTDIR)$(pkgdatadir)/user_examples/$${file}"; \
 	done ; \

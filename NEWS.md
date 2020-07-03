@@ -3,6 +3,8 @@ Master (not on release branches yet)
 
 User changes:
 
+- Add example for computing porosity values from a CAD shape.
+
 - When a non-transient probe set is clipped to cell centers and multiple
   probes located in a given cell, only the one closest to the cell center
   is retained.

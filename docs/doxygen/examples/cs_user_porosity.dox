@@ -1,0 +1,162 @@
+/*============================================================================
+ * Code_Saturne documentation page
+ *============================================================================*/
+
+/*
+  This file is part of Code_Saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2020 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*-----------------------------------------------------------------------------*/
+
+/*!
+  \page cs_porosity Examples of data settings for porous media
+  (cs_user_porosity.c)
+
+  \section intro_poro Introduction
+
+  This function computes the porosity (volume factor \f$ \epsilon \f$
+  when porosity module is activated (iporos = 1 in cs_user_parameters.f90).
+
+  \section cs_user_poro_examples Porosity setting examples
+  Here is the list of examples:
+
+  - \subpage base_poro_examples
+  - \subpage base_poro_cad_example
+
+*/
+
+/*-----------------------------------------------------------------------------*/
+
+/*!
+  \page base_poro_examples Setting porosity values: basic example
+
+  \section base_loc_var_poro Local definitions and initialization
+
+  \subsection mesh_quantities Mesh quantities
+
+  It may be useful to access some mesh adjacencies and  quantities,
+  in which case local pointers allow for more readable code:
+
+  \snippet cs_user_porosity.c init_poro_mq
+
+  \subsection properties Associated properties
+
+  Accessing cell porosity property values is required so values may be set:
+
+  \snippet cs_user_porosity.c init_poro_pro
+
+  \section example_porosity Example: define porosity by geometric zones
+
+  Individual cell porosity values can be assigned to each cell, so
+  they may be based on groups, geometric criteria, or any other
+  time-independent functions:
+
+  \snippet cs_user_porosity.c set_poro_cells_1
+
+  Matching face equivalent surfaces should also be assigned in a
+  corresponding manner, for interior faces:
+
+  \snippet cs_user_porosity.c set_poro_i_faces_1
+
+  and for boundary faces:
+
+  \snippet cs_user_porosity.c set_poro_b_faces_1
+
+  \page base_poro_cad_example Setting porosity values from a CAD file
+
+  Using an appropriate CAD representation, it may be possible to
+  compute the porosity fields using "common" or "cut" boolean operations
+  between cells in the porous zones and the CAD volume. If the CAD
+  shape represents the actual fluid volume, the common volume between
+  the shape and the porous mesh section's cells will be used. If the
+  CAD shape represents the solid volume, it should be cut from the
+  pourous mesh section's cells.
+
+  The following example uses functions from the OpenCascade Technology
+  (OCCT) libraries (https://dev.opencascade.org/doc/overview/html/index.html),
+  and assumes they are installed on the user's machine. As these libraries
+  form the backbone of the SALOME platform's CAD features, they are present
+  with any generic or common SALOME install, and are available as a package
+  in many Linux distributions.
+
+  \section user_poro_cad_compile_link Libraries to compile and link.
+
+  As the OCCT libraries provide a C++ API, interfacing them with code_saturne
+  requires a file written in C++, so the following example uses a
+  separate C++ file, \ref cs_cad_intersect.cxx to to most of the work.
+  This file is also a user example, and may be improved or modified.
+
+  To compile and link, additional compiler flags must be passed to code_saturne.
+  They may be defined in <_ref cs_user_scripts.py, and the following
+  values are recommended (adapting the paths to the local environment):
+
+  \code{.py}
+  occ_include_path = "/opt/occ/7.4.0/include/opencascade"
+  occ_lib_paths = ("/opt/occ/7.4.0/lib", "/opt/gl2ps/1.4.0.1/lib")
+
+  occ_libs "-lTKMesh -lTKernel -lTKG2d -lTKG3d -lTKMath -lTKIGES  -lTKXSBase -lTKBin -lTKBool -lTKBO -lTKCDF -lTKBRep -lTKTopAlgo -lTKGeomAlgo -lTKGeomBase -lTKOffset -lTKPrim -lTKSTEP -lTKSTEPBase -lTKSTEPAttr -lTKHLR -lTKFeat"
+
+  domain.compile_cxxflags = "-std=c++11 -I" + occ_include_path;
+  domain.compile_libs = ""
+  for p in occ_lib_paths:
+      domain.compile_libs += "-L" + p + " -Wl,-rpath -Wl," + p + " "
+      domain.compile_libs += occ_libs
+  \endcode
+
+  \section user_poro_cad_proto Function prototypes.
+
+  As the prototypes for the \ref cs_cad_intersect.cxx are not part of the
+  defaul code_saturne installation, do not forget to include the
+  \c cs_cad_intersect.h header in the Local headers section of
+  the cs_user_porosity.c file:
+
+  \snippet cs_user_porosity-from_cad.c user_poro_cad_proto
+
+  \section user_poro_cad_zone Zone selection
+
+  It is recommended to use the standard zone selection mechanism
+  to select cells which may be intersected by the CAD shape, for example:
+
+  \snippet cs_user_porosity-from_cad.c user_poro_cad_zone
+
+  \section user_poro_cad_init Local variables and initialization
+
+  A few local varibles may allow a more concise syntax, and
+  optional face porosity arrays may be declared as temporary work arrays
+  if face factors are required::
+
+  \snippet cs_user_porosity-from_cad.c user_poro_cad_init
+
+  \section user_poro_cad_intersect CAD intersection operation
+
+  The actual CAD intersection is done using the following call
+  (adapting the file path to the actual file):
+
+  \snippet cs_user_porosity-from_cad.c user_poro_cad_intersect
+
+  \section user_poro_cad_quantities Computing porous quantities
+
+  Though the cell porosity is directly set by the call above,
+  face quantities may be computed from the face porosities.
+  The following code also handles the cleanup op local arrays.
+
+  \snippet cs_user_porosity-from_cad.c user_poro_cad_quantities
+*/
+
+/*-----------------------------------------------------------------------------*/
