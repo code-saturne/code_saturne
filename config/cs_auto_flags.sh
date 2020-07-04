@@ -187,7 +187,7 @@ if test "x$cs_gcc" = "xgcc"; then
   test -n "$cs_cc_vers_patch" || cs_cc_vers_patch=0
 
   # Default compiler flags
-  cflags_default="-std=c99 -fms-extensions -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wfloat-equal -Werror=implicit-function-declaration"
+  cflags_default="-fms-extensions -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wfloat-equal -Werror=implicit-function-declaration"
   cflags_default_dbg="-g"
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
@@ -242,12 +242,6 @@ if test "x$cs_gcc" = "xgcc"; then
       ;;
   esac
 
-  case "$host_os" in
-    mingw64)
-      cflags_default="`echo $cflags_default | sed -e 's/-std=c99/-std=gnu99/g'`"
-      ;;
-  esac
-
 # Otherwise, are we using ICC Classic ?
 #--------------------------------------
 
@@ -270,7 +264,7 @@ elif test "x$cs_gcc" = "xicc" ; then
 
   # Default compiler flags
   # (temporarily disable "operands evaluated in unspecified order" remark -- 981)
-  cflags_default="-std=c99 -restrict -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused -wd981"
+  cflags_default="-restrict -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused -wd981"
   cflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
@@ -325,7 +319,7 @@ elif test "x$cs_gcc" = "xclang"; then
 
   # Default compiler flags
   # (temporarily disable "operands evaluated in unspecified order" remark -- 981)
-  cflags_default="-std=c99 -funsigned-char -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
+  cflags_default="-funsigned-char -Wall -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused"
   cflags_default_dbg="-g -O0"
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
@@ -349,7 +343,7 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
     cs_cc_compiler_known=yes
 
     # Default compiler flags
-    cflags_default="-c99 -noswitcherror"
+    cflags_default="-noswitcherror"
     cflags_default_dbg="-g -Mbounds"
     cflags_default_opt="-O2"
     cflags_default_hot="-fast"
@@ -376,7 +370,7 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
     cs_linker_set=yes
 
     # Default compiler flags
-    cflags_default="-qlanglvl=stdc99 -q64"
+    cflags_default=""
     cflags_default_opt="-O3"
     cflags_default_hot="-O3"
     cflags_default_dbg="-g -qfullpath"
