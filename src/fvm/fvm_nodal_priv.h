@@ -66,6 +66,11 @@ typedef struct _fvm_nodal_section_t {
 
   fvm_element_t  type;             /* Element types */
 
+  int         boundary_flag;       /* Is section on boundary ?
+                                      -1: does not apply or unspecified;
+                                      0: no
+                                      1: yes */
+
   /* Connectivity */
   /*--------------*/
 

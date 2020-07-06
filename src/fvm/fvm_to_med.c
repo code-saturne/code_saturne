@@ -4604,6 +4604,8 @@ fvm_to_med_export_nodal(void               *this_writer,
 
   export_list = fvm_writer_export_list(mesh,
                                        0,
+                                       3,
+                                       -1,
                                        true,
                                        false,
                                        writer->discard_polygons,
@@ -4831,8 +4833,12 @@ fvm_to_med_export_field(void                            *this_writer,
   /* Build list of sections that are used here, in order of output */
   /*---------------------------------------------------------------*/
 
+  int export_dim = fvm_nodal_get_max_entity_dim(mesh);
+
   export_list = fvm_writer_export_list(mesh,
-                                       fvm_nodal_get_max_entity_dim(mesh),
+                                       export_dim,
+                                       export_dim,
+                                       -1,
                                        true,
                                        false,
                                        writer->discard_polygons,

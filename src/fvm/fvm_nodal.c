@@ -221,6 +221,7 @@ _fvm_nodal_section_copy(const fvm_nodal_section_t *this_section)
 
   new_section->n_elements = this_section->n_elements;
   new_section->type = this_section->type;
+  new_section->boundary_flag = this_section->boundary_flag;
 
   /* Connectivity */
 
@@ -587,9 +588,11 @@ _fvm_nodal_section_dump(const fvm_nodal_section_t  *this_section)
   bft_printf("\n"
              "Entity dimension:     %d\n"
              "Number of elements:   %ld\n"
-             "Element type:         %s\n",
+             "Element type:         %s\n"
+             "Boundary flag:        %d\n",
              this_section->entity_dim, (long)this_section->n_elements,
-             fvm_elements_type_name[this_section->type]);
+             fvm_elements_type_name[this_section->type],
+             this_section->boundary_flag);
 
   bft_printf("\n"
              "Connectivity_size:     %llu\n"
@@ -804,6 +807,8 @@ fvm_nodal_section_create(const fvm_element_t  type)
 
   this_section->n_elements = 0;
   this_section->type = type;
+
+  this_section->boundary_flag = -1;
 
   /* Connectivity */
 

@@ -1196,6 +1196,9 @@ _field_helper_output_nl(fvm_writer_field_helper_t        *helper,
  *   group_by_type        <-- if true, group sections of same type
  *   group_all            <-- if true, all sections continue previous ones
  *   min_export_dim       <-- minimum dimension of sections to export
+ *   max_export_dim       <-- maximum dimension of sections to export
+ *   boundary_flag        <-- -1 if ignored, otherwise only sections
+ *                            with -1 or matching boundary flag
  *   discard_polygons     <-- ignore polygonal sections
  *   discard_polyhedra    <-- ignore polyhedral sections
  *   divide_polygons      <-- tesselate polygonal sections
@@ -1209,6 +1212,8 @@ _field_helper_output_nl(fvm_writer_field_helper_t        *helper,
 fvm_writer_section_t *
 fvm_writer_export_list(const fvm_nodal_t          *mesh,
                        int                         min_export_dim,
+                       int                         max_export_dim,
+                       int                         boundary_flag,
                        bool                        group_by_type,
                        bool                        group_all,
                        bool                        discard_polygons,
@@ -1237,25 +1242,32 @@ fvm_writer_export_list(const fvm_nodal_t          *mesh,
        (i.e. no output of faces if cells present, or edges
        if cells or faces) */
 
-    if (section->entity_dim >= min_export_dim) {
+    /* Ignore sections with entity dimension outside bounds */
+    if (   section->entity_dim < min_export_dim
+        || section->entity_dim > max_export_dim)
+      continue;
 
-      /* Optionally discard polygons or polyhedra */
-      if (   (section->type == FVM_FACE_POLY && discard_polygons == true)
-          || (section->type == FVM_CELL_POLY && discard_polyhedra == true))
-        continue;
+    /* Ignore sections with non-matching boundary flags */
+    if (   boundary_flag > -1
+        && section->boundary_flag > -1
+        && section->boundary_flag != boundary_flag)
+      continue;
 
-      /* Possibly add multiple sections when dividing polygons or polyhedra
-         (ignore those sections if no tesselation present) */
-      else if (   (section->type == FVM_FACE_POLY && divide_polygons == true)
-               || (section->type == FVM_CELL_POLY && divide_polyhedra == true)) {
-        if (section->tesselation != NULL)
-          n_sections += fvm_tesselation_n_sub_types(section->tesselation);
-      }
+    /* Optionally discard polygons or polyhedra */
+    if (   (section->type == FVM_FACE_POLY && discard_polygons == true)
+        || (section->type == FVM_CELL_POLY && discard_polyhedra == true))
+      continue;
 
-      else
-        n_sections += 1;
-
+    /* Possibly add multiple sections when dividing polygons or polyhedra
+       (ignore those sections if no tesselation present) */
+    else if (   (section->type == FVM_FACE_POLY && divide_polygons == true)
+             || (section->type == FVM_CELL_POLY && divide_polyhedra == true)) {
+      if (section->tesselation != NULL)
+        n_sections += fvm_tesselation_n_sub_types(section->tesselation);
     }
+
+    else
+      n_sections += 1;
 
   }
 
@@ -1279,8 +1291,15 @@ fvm_writer_export_list(const fvm_nodal_t          *mesh,
     const fvm_tesselation_t    *tesselation = NULL;
     const fvm_nodal_section_t  *const  section = mesh->sections[i];
 
-    /* Ignore sections with entity dimension other than the highest */
-    if (section->entity_dim < min_export_dim)
+    /* Ignore sections with entity dimension outside bounds */
+    if (   section->entity_dim < min_export_dim
+        || section->entity_dim > max_export_dim)
+      continue;
+
+    /* Ignore sections with non-matching boundary flags */
+    if (   boundary_flag > -1
+        && section->boundary_flag > -1
+        && section->boundary_flag != boundary_flag)
       continue;
 
     /* Ignore polygonal or polyhedra sections if they should be discarded */

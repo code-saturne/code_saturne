@@ -578,9 +578,13 @@ fvm_to_melissa_export_field(void                  *this_writer_p,
   /* Initialize writer helper */
   /*--------------------------*/
 
+  int export_dim = fvm_nodal_get_max_entity_dim(mesh);
+
   /* Build list of sections that are used here, in order of output */
   export_list = fvm_writer_export_list(mesh,
-                                       fvm_nodal_get_max_entity_dim(mesh),
+                                       export_dim,
+                                       export_dim,
+                                       -1,
                                        false, /* group by type */
                                        true,  /* group all */
                                        false,

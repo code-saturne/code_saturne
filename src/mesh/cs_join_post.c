@@ -310,6 +310,7 @@ cs_join_post_mesh(const char            *mesh_name,
   /* Define fvm_nodal_t structure */
 
   fvm_nodal_from_desc_add_faces(post_mesh,
+                                -1,
                                 join_mesh->n_faces,
                                 NULL,
                                 1,

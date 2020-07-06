@@ -91,19 +91,19 @@ BEGIN_C_DECLS
  * parameters:
  *   mesh             <-- base mesh
  *   extr_mesh        <-- extracted mesh name
+ *   boundary_flag    <-- -1 if unspecified, 0 if faces are not on boundary,
+ *                        1 if faces are on boundary
  *   include_families <-- include family info if true
  *   i_face_list_size <-- size of i_face_list[] array
  *   b_face_list_size <-- size of b_face_list[] array
  *   i_face_list      <-> list of interior faces (1 to n), or NULL
  *   b_face_list      <-> list of boundary faces (1 to n), or NULL
- *
- * returns:
- *   pointer to extracted nodal mesh
  *----------------------------------------------------------------------------*/
 
 static void
 _add_faces_to_nodal(const cs_mesh_t  *mesh,
                     fvm_nodal_t      *extr_mesh,
+                    int               boundary_flag,
                     bool              include_families,
                     cs_lnum_t         i_face_list_size,
                     cs_lnum_t         b_face_list_size,
@@ -124,8 +124,6 @@ _add_faces_to_nodal(const cs_mesh_t  *mesh,
   cs_lnum_t  *face_vertices_num[2];
   const int   *_face_families[2];
   const int   **face_families = NULL;
-
-  cs_gnum_t  *num_glob_fac = NULL;
 
   /* Count the number of faces to convert */
 
@@ -229,6 +227,7 @@ _add_faces_to_nodal(const cs_mesh_t  *mesh,
   face_vertices_num[1] = mesh->i_face_vtx_lst;
 
   fvm_nodal_from_desc_add_faces(extr_mesh,
+                                boundary_flag,
                                 extr_face_count,
                                 extr_face_list,
                                 2,
@@ -239,6 +238,29 @@ _add_faces_to_nodal(const cs_mesh_t  *mesh,
                                 NULL);
 
   BFT_FREE(extr_face_list);
+}
+
+/*----------------------------------------------------------------------------
+ * Order added faces in an external mesh.
+ *
+ * parameters:
+ *   mesh             <-- base mesh
+ *   extr_mesh        <-- extracted mesh name
+ *----------------------------------------------------------------------------*/
+
+static void
+_order_nodal_faces(const cs_mesh_t  *mesh,
+                   fvm_nodal_t      *extr_mesh)
+{
+  cs_lnum_t   face_id, i;
+
+  cs_lnum_t   n_max_faces = 0;
+
+  cs_gnum_t  *num_glob_fac = NULL;
+
+  /* Count the number of faces to convert */
+
+  n_max_faces = mesh->n_i_faces + mesh->n_b_faces;
 
   /* In case of parallelism or face renumbering, sort faces by
      increasing global number */
@@ -640,11 +662,23 @@ cs_mesh_connect_cells_to_nodal(const cs_mesh_t  *mesh,
 
     _add_faces_to_nodal(mesh,
                         extr_mesh,
+                        1,
+                        include_families,
+                        0,
+                        b_face_count,
+                        NULL,
+                        b_face_list);
+
+    _add_faces_to_nodal(mesh,
+                        extr_mesh,
+                        0,
                         include_families,
                         i_face_count,
-                        b_face_count,
+                        0,
                         i_face_list,
-                        b_face_list);
+                        NULL);
+
+    _order_nodal_faces(mesh, extr_mesh);
 
     BFT_FREE(i_face_list);
     BFT_FREE(b_face_list);
@@ -722,11 +756,14 @@ cs_mesh_connect_faces_to_nodal(const cs_mesh_t  *mesh,
 
   _add_faces_to_nodal(mesh,
                       extr_mesh,
+                      -1,
                       include_families,
                       i_face_list_size,
                       b_face_list_size,
                       i_face_list,
                       b_face_list);
+
+  _order_nodal_faces(mesh, extr_mesh);
 
   fvm_nodal_set_shared_vertices(extr_mesh,
                                 mesh->vtx_coord);

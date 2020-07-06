@@ -3,6 +3,12 @@ Master (not on release branches yet)
 
 User changes:
 
+- Various improvments to CGNS output:
+  * Added output of boundary condition sections (on by default)
+  * Allow discarding steady data (to avoid isues with ParaView when both
+    steady and unsteady data s present)
+  * Use single precision by defaul fro variables (leads to smaller files).
+
 - Add example for computing porosity values from a CAD shape.
 
 - When a non-transient probe set is clipped to cell centers and multiple

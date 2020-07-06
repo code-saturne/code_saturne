@@ -124,6 +124,9 @@ typedef void
  * parameters:
  *   mesh                 <-- pointer to nodal mesh structure
  *   min_export_dim       <-- minimum dimension of sections to export
+ *   max_export_dim       <-- maximum dimension of sections to export
+ *   boundary_flag        <-- -1 if ignored, otherwise only sections
+ *                            with -1 or matching boundary flag
  *   group_by_type        <-- if true, group sections of same type
  *   group_all            <-- if true, all sections continue previous ones
  *   discard_polygons     <-- ignore polygonal sections
@@ -139,6 +142,8 @@ typedef void
 fvm_writer_section_t *
 fvm_writer_export_list(const fvm_nodal_t          *mesh,
                        int                         min_export_dim,
+                       int                         max_export_dim,
+                       int                         boundary_flag,
                        bool                        group_by_type,
                        bool                        group_all,
                        bool                        discard_polygons,

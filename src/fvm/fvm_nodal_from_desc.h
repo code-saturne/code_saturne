@@ -100,6 +100,8 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
  *
  * parameters:
  *   this_nodal      <-> nodal mesh structure
+ *   boundary_flag   <-- -1 if unspecified, 0 if faces are not on boundary,
+ *                       1 if faces are on boundary
  *   n_extr_faces    <-- count of faces to add
  *   extr_faces      <-- optional filter list of faces to extract (1 to n)
  *   n_face_lists    <-- number of face lists
@@ -115,6 +117,7 @@ fvm_nodal_from_desc_add_cells(fvm_nodal_t        *this_nodal,
 
 void
 fvm_nodal_from_desc_add_faces(fvm_nodal_t        *this_nodal,
+                              int                 boundary_flag,
                               const cs_lnum_t     n_extr_faces,
                               const cs_lnum_t     extr_faces[],
                               const int           n_face_lists,

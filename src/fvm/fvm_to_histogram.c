@@ -759,9 +759,13 @@ fvm_to_histogram_export_field(void                  *writer,
   if (datatype >= CS_INT32 && datatype <= CS_UINT64)
     dest_datatype = CS_INT64;
 
+  int export_dim = fvm_nodal_get_max_entity_dim(mesh);
+
   fvm_writer_section_t  *export_list
     = fvm_writer_export_list(mesh,
-                             fvm_nodal_get_max_entity_dim(mesh),
+                             export_dim,
+                             export_dim,
+                             -1,
                              true,
                              true,
                              false,

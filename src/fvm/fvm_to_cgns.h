@@ -96,9 +96,15 @@ fvm_to_cgns_version_string(int string_index,
  * Initialize FVM to CGNS file writer.
  *
  * Options are:
+ *   discard_bcs         do not output boundary conditions
+ *   discard_steady      discard steady solution data
+ *                       (to avoid issues with some tools when both steady
+ *                       and unsteady data is present)
  *   discard_polygons    do not output polygons or related values
  *   discard_polyhedra   do not output polyhedra or related values
  *   divide_polygons     tesselate polygons with triangles
+ *   preserve_precision  do not convert double precision to single
+ *                       precision types (leads to larger files)
  *   adf                 use ADF file type
  *   hdf5                use HDF5 file type (default if available)
  *   links               split output to separate files using links

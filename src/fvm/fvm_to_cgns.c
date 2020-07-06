@@ -63,6 +63,7 @@
 
 #include "cs_block_dist.h"
 #include "cs_file.h"
+#include "cs_map.h"
 #include "cs_parall.h"
 #include "cs_part_to_block.h"
 
@@ -172,11 +173,17 @@ struct _fvm_to_cgns_writer_t {
 
   bool         is_open;            /* True if CGNS file is open */
 
+  bool         discard_bcs;        /* True if boundary conditions should be
+                                      discarded */
+  bool         discard_steady;     /* Discard time-independent values */
+
   bool         discard_polygons;   /* Option to discard polygonal elements */
   bool         discard_polyhedra;  /* Option to discard polyhedral elements */
 
   bool         divide_polygons;    /* Option to tesselate polygonal elements */
   bool         divide_polyhedra;   /* Option to tesselate polygonal elements */
+
+  bool         preserve_precision; /* Preserve double precison variable type */
 
   int          rank;               /* Rank of current process in communicator */
   int          n_ranks;            /* Number of processes in communicator */
@@ -196,13 +203,28 @@ struct _fvm_to_cgns_writer_t {
 typedef struct _fvm_to_cgns_writer_t fvm_to_cgns_writer_t;
 
 /*----------------------------------------------------------------------------
- * Context structure for fvm_writer_field_helper_output_* functions.
+ * Context for fvm_writer_field_helper_output_* functions for BC's
  *----------------------------------------------------------------------------*/
 
 typedef struct {
 
   const fvm_to_cgns_writer_t  *writer;          /* Writer structure */
+  const fvm_nodal_t           *mesh;            /* Mesh structure */
 
+  const fvm_to_cgns_base_t    *base;            /* Associated CGNS base */
+
+  cs_gnum_t                    n_g_vol_elts;    /* Global number of volume
+                                                   elements */
+
+} _cgns_bc_context_t;
+
+/*----------------------------------------------------------------------------
+ * Context structure for main fvm_writer_field_helper_output_* functions.
+ *----------------------------------------------------------------------------*/
+
+typedef struct {
+
+  const fvm_to_cgns_writer_t  *writer;          /* Writer structure */
   const fvm_to_cgns_base_t    *base;            /* Associated CGNS base */
   const char                  *field_label;     /* Associated field label */
   cgsize_t                     write_idx_start; /* Write index start */
@@ -308,13 +330,18 @@ _create_writer(const char             *name,
 
   /* Other variables */
 
-  w->rank = 0;
-  w->n_ranks = 1;
+  w->discard_bcs = false;
+  w->discard_steady = false;
 
   w->discard_polygons = false;
   w->discard_polyhedra = false;
   w->divide_polygons = false;
   w->divide_polyhedra = true;
+
+  w->preserve_precision = false;
+
+  w->rank = 0;
+  w->n_ranks = 1;
 
 /* As CGNS does not handle polyhedral elements simply, polyhedra are
  * automatically tesselated with tetrahedra and pyramids
@@ -323,10 +350,13 @@ _create_writer(const char             *name,
   /* Copy from reference if present) */
 
   if (reference != NULL) {
+    w->discard_bcs = reference->discard_bcs;
+    w->discard_steady = reference->discard_steady;
     w->discard_polygons = reference->discard_polygons;
     w->divide_polygons = reference->divide_polygons;
     w->discard_polyhedra = reference->discard_polyhedra;
     w->divide_polyhedra = reference->divide_polyhedra;
+    w->preserve_precision = reference->preserve_precision;
     w->rank = reference->rank;
     w->n_ranks = reference->n_ranks;
 #if defined(HAVE_MPI)
@@ -887,7 +917,19 @@ _add_zone(const fvm_nodal_t           *mesh,
 
   zone_sizes[0] = n_g_vertices + n_g_extra_vertices;
 
-  /* Compute global number of entities in this zone */
+  /* Check maximum element dimension in this zone */
+
+  int vol_dim = -1;
+
+  current_section = export_sections;
+  while (current_section != NULL) {
+    const fvm_nodal_section_t *const section = current_section->section;
+    if (section->entity_dim > vol_dim)
+      vol_dim = section->entity_dim;
+    current_section = current_section->next;
+  }
+
+  /* Compute global number of volume in this zone */
 
   current_section = export_sections;
 
@@ -895,20 +937,24 @@ _add_zone(const fvm_nodal_t           *mesh,
 
     const fvm_nodal_section_t *const section = current_section->section;
 
-    if (current_section->type == section->type)
+    if (section->entity_dim == vol_dim) {
 
-      /* Regular section */
-      n_g_entities += fvm_nodal_section_n_g_elements(section);
+      if (current_section->type == section->type)
 
-    else {
+        /* Regular section */
+        n_g_entities += fvm_nodal_section_n_g_elements(section);
 
-      /* Tesselated section */
-      fvm_tesselation_get_global_size(section->tesselation,
-                                      current_section->type,
-                                      &n_g_tesselated_elements,
-                                      NULL);
+      else {
 
-      n_g_entities += n_g_tesselated_elements;
+        /* Tesselated section */
+        fvm_tesselation_get_global_size(section->tesselation,
+                                        current_section->type,
+                                        &n_g_tesselated_elements,
+                                        NULL);
+
+        n_g_entities += n_g_tesselated_elements;
+      }
+
     }
 
     current_section = current_section->next;
@@ -940,6 +986,54 @@ _add_zone(const fvm_nodal_t           *mesh,
               writer->name, base->name, cg_get_error());
 
   assert(zone_index == 1);
+}
+
+/*----------------------------------------------------------------------------
+ * Reorder export list by higher dimension first
+ *
+ * parameters:
+ *   export_list <-> pointer to reordered list of sections
+ *----------------------------------------------------------------------------*/
+
+static void
+_reorder_export_list(fvm_writer_section_t  *export_list)
+{
+  fvm_writer_section_t *ordered = NULL;
+
+  /* Count and allocate temporary copy */
+
+  int n_sections = 0;
+  fvm_writer_section_t *n = export_list;
+
+  while (n != NULL) {
+    n_sections++;
+    n = n->next;
+  }
+
+  BFT_MALLOC(ordered, n_sections, fvm_writer_section_t);
+  n_sections = 0;
+
+  for (int dim = 3; dim > -1; dim--) {
+
+    n = export_list;
+    while (n != NULL) {
+      if (n->section->entity_dim == dim) {
+        ordered[n_sections] = *n;
+        n_sections++;
+      }
+      n = n->next;
+    }
+
+  }
+
+  for (int i = 0; i < n_sections; i++)
+    export_list[i] = ordered[i];
+
+  for (int i = 0; i < n_sections - 1; i++)
+    (export_list[i]).next = &(export_list[i+1]);
+  (export_list[n_sections - 1]).next = NULL;
+
+  BFT_FREE(ordered);
 }
 
 /*----------------------------------------------------------------------------
@@ -1151,6 +1245,292 @@ _coord_output(const fvm_to_cgns_writer_t  *w,
 }
 
 /*----------------------------------------------------------------------------
+ * Output function for boundary conditions.
+ *
+ * This function is passed to fvm_writer_field_helper_output_* functions.
+ *
+ * parameters:
+ *   context      <-> pointer to writer and field context
+ *   datatype     <-- output datatype
+ *   dimension    <-- output field dimension
+ *   component_id <-- output component id (if non-interleaved)
+ *   block_start  <-- start global number of element for current block
+ *   block_end    <-- past-the-end global number of element for current block
+ *   buffer       <-> associated output buffer
+ *----------------------------------------------------------------------------*/
+
+static void
+_bcs_output(void           *context,
+            cs_datatype_t   datatype,
+            int             dimension,
+            int             component_id,
+            cs_gnum_t       block_start,
+            cs_gnum_t       block_end,
+            void           *buffer)
+{
+  CS_UNUSED(datatype);
+  CS_UNUSED(dimension);
+  CS_UNUSED(component_id);
+
+  _cgns_bc_context_t *c = context;
+
+  const fvm_to_cgns_writer_t  *w = c->writer;
+
+  /* Array should be gathered to rank 0 due to CGNS API limitation
+     when using serial CGNS API */
+
+  if (w->rank > 0) {
+    assert(block_start >= block_end);
+    return;
+  }
+
+  const fvm_group_class_set_t   *gc_set = c->mesh->gc_set;
+
+  if (gc_set == NULL)
+    return;
+
+  cgsize_t    n_elts = block_end - block_start;
+  int        *f_gc_id = buffer;
+
+  int n_gc_sets = fvm_group_class_set_size(gc_set) + 1;
+
+  /* Determine which group classes are referenced here */
+
+  cgsize_t *gc_elt_count;
+  BFT_MALLOC(gc_elt_count, n_gc_sets, cgsize_t);
+
+  for (int i = 0; i < n_gc_sets; i++)
+    gc_elt_count[i] = 0;
+
+  for (cgsize_t i = 0; i < n_elts; i++) {
+    int _gc_id = f_gc_id[i] - 1;
+    if (_gc_id < 0)
+      continue;
+    assert(_gc_id < n_gc_sets);
+    if (_gc_id < n_gc_sets)
+      gc_elt_count[_gc_id] += 1;
+  }
+
+  /* Now we can determine which groups are referenced */
+
+  cs_map_name_to_id_t *group_names = cs_map_name_to_id_create();
+
+  int n_max_groups = 0;
+
+  for (int gc_id = 0; gc_id < n_gc_sets; gc_id++) {
+    if (gc_elt_count[gc_id]) {
+      const fvm_group_class_t *gc = fvm_group_class_set_get(gc_set, gc_id);
+      int n = fvm_group_class_get_n_groups(gc);
+      const char **g_names = fvm_group_class_get_group_names(gc);
+      if (n > n_max_groups)
+        n_max_groups = n;
+      for (int i = 0; i < n; i++)
+        cs_map_name_to_id(group_names, g_names[i]);  /* insert in map */
+    }
+  }
+
+  /* Build index on groups */
+
+  int n_groups = cs_map_name_to_id_size(group_names);
+
+  int *gc_idx;
+  BFT_MALLOC(gc_idx, n_gc_sets+1, int);
+
+  for (int gc_id = 0; gc_id < n_gc_sets; gc_id++) {
+    if (gc_elt_count[gc_id]) {
+      const fvm_group_class_t *gc = fvm_group_class_set_get(gc_set, gc_id);
+      gc_idx[gc_id+1] = fvm_group_class_get_n_groups(gc);
+    }
+    else
+      gc_idx[gc_id+1] = 0;
+  }
+
+  BFT_FREE(gc_elt_count);
+
+  /* Transform count to index */
+
+  gc_idx[0] = 0;
+  for (int i = 0; i < n_gc_sets; i++) {
+    gc_idx[i+1] += gc_idx[i];
+  }
+
+  int *gc_g_id;
+  BFT_MALLOC(gc_g_id, gc_idx[n_gc_sets], int);
+
+  for (int gc_id = 0; gc_id < n_gc_sets; gc_id++) {
+    if (gc_idx[gc_id+1] > gc_idx[gc_id]) {
+      const fvm_group_class_t *gc = fvm_group_class_set_get(gc_set, gc_id);
+      int n = fvm_group_class_get_n_groups(gc);
+      const char **g_names = fvm_group_class_get_group_names(gc);
+      for (int i = 0; i < n; i++) {
+        int g_id = cs_map_name_to_id(group_names, g_names[i]);
+        gc_g_id[gc_idx[gc_id] + i] = g_id;
+      }
+    }
+  }
+
+  /* Now build lists for each group */
+
+  cgsize_t *g_idx, *g_count;
+  BFT_MALLOC(g_idx, n_groups+1, cgsize_t);
+  BFT_MALLOC(g_count, n_groups, cgsize_t);
+
+  for (int g_id = 0; g_id < n_groups; g_id++)
+    g_count[g_id] = 0;
+
+  for (cgsize_t i = 0; i < n_elts; i++) {
+    int _gc_id = f_gc_id[i] - 1;
+    if (_gc_id < 0)
+      continue;
+    int s_id = gc_idx[_gc_id];
+    int e_id = gc_idx[_gc_id+1];
+    for (int j = s_id; j < e_id; j++) {
+      int g_id = gc_g_id[j];
+      g_count[g_id] += 1;
+    }
+  }
+
+  g_idx[0] = 0;
+  for (int g_id = 0; g_id < n_groups; g_id++) {
+    g_idx[g_id+1] = g_idx[g_id] + g_count[g_id];
+    g_count[g_id] = 0;
+  }
+
+  cgsize_t *g_elts;
+  BFT_MALLOC(g_elts, g_idx[n_groups], cgsize_t);
+
+  cgsize_t id_shift = c->n_g_vol_elts + 1;
+
+  for (cgsize_t i = 0; i < n_elts; i++) {
+    int _gc_id = f_gc_id[i] - 1;
+    if (_gc_id < 0)
+      continue;
+    int s_id = gc_idx[_gc_id];
+    int e_id = gc_idx[_gc_id+1];
+    for (int j = s_id; j < e_id; j++) {
+      int g_id = gc_g_id[j];
+      g_elts[g_idx[g_id] + g_count[g_id]] = id_shift + i;
+      g_count[g_id] += 1;
+    }
+  }
+
+  BFT_FREE(g_count);
+
+  BFT_FREE(gc_idx);
+  BFT_FREE(gc_g_id);
+
+  /* Now loop on groups */
+
+  const int   zone_index = 1; /* We always use zone index = 1 */
+
+  int  retval = CG_OK;
+
+  for (int i = 0; i < n_groups; i++) {
+
+    const char *bc_name = cs_map_name_to_id_reverse(group_names, i);
+
+    cgsize_t s_id = g_idx[i];
+    cgsize_t e_id = g_idx[i+1];
+
+    cgsize_t npnts = e_id - s_id;
+    cgsize_t *pnts = g_elts + s_id;
+
+    int bc_id = 0;
+
+    if (npnts < 1)
+      continue;
+
+#if CGNS_VERSION > 4100
+    CGNS_ENUMT(PointSetType_t) pset_type = CGNS_ENUMV(PointList);
+#else
+    CGNS_ENUMT(PointSetType_t) pset_type = CGNS_ENUMV(ElementList);
+#endif
+
+    /* Check if we have a continous range */
+
+    if (npnts > 1) {
+
+      bool range = true;
+      for (cgsize_t j = 1; j < npnts; j++) {
+        if (pnts[j] != pnts[j-1]) {
+          range = false;
+          break;
+        }
+      }
+
+      if (range) {
+        pnts[1] = pnts[npnts-1];
+        npnts = 2;
+#if CGNS_VERSION > 4100
+        pset_type = CGNS_ENUMV(PointRange);
+#else
+        pset_type = CGNS_ENUMV(ElementRange);
+#endif
+      }
+
+    }
+
+    retval = cg_boco_write(w->index,
+                           c->base->index,
+                           zone_index,
+                           bc_name,
+                           CGNS_ENUMV(BCTypeUserDefined),
+                           pset_type,
+                           npnts,
+                           pnts,
+                           &bc_id);
+
+    if (retval != CG_OK)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error writing boundary conditions (cg_boco_write):\n"
+                  "Associated writer: \"%s\"\n"
+                  "Associated mesh: \"%s\"\n"
+                  "Associated BC: \"%s\"\n%s"),
+                w->name, c->mesh->name, bc_name, cg_get_error());
+
+#if CGNS_VERSION > 4100
+
+    else
+      retval = cg_goto(w->index,
+                       c->base->index,
+                       "Zone_t",
+                       zone_index,
+                       "ZoneBC_t",
+                       1,
+                       "BC_t",
+                       bc_id,
+                       "end");
+
+    if (retval != CG_OK)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error accessing boundary conditions (cg_goto):\n"
+                  "Associated writer: \"%s\"\n"
+                  "Associated mesh: \"%s\"\n"
+                  "Associated BC: \"%s\"\n%s"),
+                w->name, c->mesh->name, bc_name, cg_get_error());
+
+    else if (retval == CG_OK)
+      retval = cg_gridlocation_write(CGNS_ENUMV(FaceCenter));
+
+    if (retval != CG_OK)
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error writing BC grid location (cg_gridlocation_write):\n"
+                  "Associated writer: \"%s\"\n"
+                  "Associated mesh: \"%s\"\n"
+                  "Associated BC: \"%s\"\n%s"),
+                w->name, c->mesh->name, bc_name, cg_get_error());
+
+#endif
+
+  }
+
+  BFT_FREE(g_idx);
+  BFT_FREE(g_elts);
+
+  cs_map_name_to_id_destroy(&group_names);
+}
+
+/*----------------------------------------------------------------------------
  * Output function for field values.
  *
  * This function is passed to fvm_writer_field_helper_output_* functions.
@@ -1340,9 +1720,6 @@ _export_vertex_coords_g(fvm_to_cgns_writer_t  *writer,
                                      "CoordinateZ"};
 
   assert(base != NULL);
-
-  /* TODO: allow choice of single or double-precision output
-     (make choice independent of cs_coord_t) */
 
   if (sizeof(cs_coord_t) == sizeof(double)) {
     datatype = CS_DOUBLE;
@@ -2742,6 +3119,115 @@ _export_field_n(const fvm_nodal_t               *mesh,
 }
 
 /*----------------------------------------------------------------------------
+ * Write boundary conditions associated with a nodal mesh to a CGNS file.
+ *
+ * parameters:
+ *   w                 <-- pointer to associated writer.
+ *   mesh              <-- pointer to associated nodal mesh structure
+ *   base              <-- pointer to CGNS base structure.
+ *   elt_gnum_shift    <-- global element id shift (number of volume elements)
+ *----------------------------------------------------------------------------*/
+
+static void
+_export_bcs(fvm_to_cgns_writer_t  *w,
+            const fvm_nodal_t     *mesh,
+            fvm_to_cgns_base_t    *base,
+            cs_gnum_t              elt_gnum_shift)
+{
+  fvm_writer_field_helper_t  *helper = NULL;
+  fvm_writer_section_t  *export_list = NULL;
+
+  int bc_dim = fvm_nodal_get_max_entity_dim(mesh) - 1;
+
+  /* Initialize writer helper */
+
+  export_list = fvm_writer_export_list(mesh,
+                                       bc_dim,
+                                       bc_dim,
+                                       1,
+                                       true,
+                                       true,
+                                       w->discard_polygons,
+                                       w->discard_polyhedra,
+                                       w->divide_polygons,
+                                       true);
+
+  if (export_list == NULL)
+    return;
+
+  helper = fvm_writer_field_helper_create(mesh,
+                                          export_list,
+                                          1, /* output_dim */
+                                          CS_NO_INTERLACE,
+                                          CS_INT_TYPE,
+                                          FVM_WRITER_PER_ELEMENT);
+
+#if defined(HAVE_MPI)
+
+  /* No partial write available for boundary conditions,
+     so gather lists to rank 0 */
+
+  fvm_writer_field_helper_init_g(helper,
+                                 w->n_ranks, /* min_rank_step */
+                                 w->min_block_size,
+                                 w->comm);
+
+#endif
+
+  /* Create temporary array copying family ids */
+
+  cs_lnum_t n_b_ids = fvm_nodal_get_n_entities(mesh, bc_dim);
+
+  int *gc_id;
+  BFT_MALLOC(gc_id, n_b_ids, int);
+
+  n_b_ids = 0;
+  for (int section_id = 0; section_id < mesh->n_sections; section_id++) {
+    const fvm_nodal_section_t *section = mesh->sections[section_id];
+    if (section->entity_dim == bc_dim) {
+      if (section->boundary_flag && section->gc_id != NULL) {
+        for (cs_lnum_t i = 0; i < section->n_elements; i++)
+          gc_id[n_b_ids++] = section->gc_id[i];
+      }
+      else {
+        for (cs_lnum_t i = 0; i < section->n_elements; i++)
+          gc_id[n_b_ids++] = 0;
+      }
+    }
+  }
+
+  /* Distribute group class ids and output boundary conditions */
+
+  _cgns_bc_context_t c;
+  c.writer = w;
+  c.mesh = mesh;
+  c.base = base;
+  c.n_g_vol_elts = elt_gnum_shift;
+
+  const void  *var_ptr[1] = {gc_id};
+
+  fvm_writer_field_helper_output_e(helper,
+                                   &c,
+                                   export_list,
+                                   1,
+                                   CS_NO_INTERLACE,
+                                   NULL, /* comp_order */
+                                   0,    /* n_parent_lists */
+                                   NULL, /* parent_num_shift */
+                                   CS_INT_TYPE,
+                                   var_ptr,
+                                   _bcs_output);
+
+  BFT_FREE(gc_id);
+
+  /* Free helper structures */
+
+  fvm_writer_field_helper_destroy(&helper);
+
+  BFT_FREE(export_list);
+}
+
+/*----------------------------------------------------------------------------
  * Create time-dependent data structure in CGNS file: Base Iterative Data
  * structure and Zone Iterative Data structure
  *
@@ -2972,9 +3458,15 @@ fvm_to_cgns_version_string(int string_index,
  * Initialize FVM to CGNS file writer.
  *
  * Options are:
+ *   discard_bcs         do not output boundary conditions
+ *   discard_steady      discard steady solution data
+ *                       (to avoid issues with some tools when both steady
+ *                       and unsteady data is present)
  *   discard_polygons    do not output polygons or related values
  *   discard_polyhedra   do not output polyhedra or related values
  *   divide_polygons     tesselate polygons with triangles
+ *   preserve_precision  do not convert double precision to single
+ *                       precision types (leads to larger files)
  *   adf                 use ADF file type
  *   hdf5                use HDF5 file type (default if available)
  *   links               split output to separate files using links
@@ -3049,7 +3541,15 @@ fvm_to_cgns_init_writer(const char             *name,
 
       l_opt = i2 - i1;
 
-      if (   (l_opt == 16)
+      if (   (l_opt == 11)
+               && (strncmp(options + i1, "discard_bcs", l_opt) == 0))
+        writer->discard_bcs = true;
+
+      else if (   (l_opt == 14)
+          && (strncmp(options + i1, "discard_steady", l_opt) == 0))
+        writer->discard_steady = true;
+
+      else if (   (l_opt == 16)
           && (strncmp(options + i1, "discard_polygons", l_opt) == 0))
         writer->discard_polygons = true;
 
@@ -3060,6 +3560,10 @@ fvm_to_cgns_init_writer(const char             *name,
       else if (   (l_opt == 15)
                && (strncmp(options + i1, "divide_polygons", l_opt) == 0))
         writer->divide_polygons = true;
+
+      else if (   (l_opt == 18)
+               && (strncmp(options + i1, "preserve_precision", l_opt) == 0))
+        writer->preserve_precision = true;
 
       else if (   (l_opt == 3)
                && (strncmp(options + i1, "adf", l_opt) == 0))
@@ -3262,7 +3766,9 @@ fvm_to_cgns_needs_tesselation(void               *this_writer_p,
   fvm_to_cgns_writer_t  *this_writer
                              = (fvm_to_cgns_writer_t *)this_writer_p;
 
-  const int  export_dim = fvm_nodal_get_max_entity_dim(mesh);
+  int  export_dim = fvm_nodal_get_max_entity_dim(mesh);
+  if (this_writer->discard_bcs == false)
+    export_dim -= 1;
 
   /* Initial count and allocation */
 
@@ -3279,7 +3785,7 @@ fvm_to_cgns_needs_tesselation(void               *this_writer_p,
          (i.e. no output of faces if cells present, or edges
          if cells or faces) */
 
-      if (section->entity_dim == export_dim) {
+      if (section->entity_dim >= export_dim) {
         if (section->type == element_type)
           retval = 1;
       }
@@ -3311,14 +3817,17 @@ fvm_to_cgns_export_nodal(void               *this_writer_p,
   cs_gnum_t   global_counter = 0;
 
   bool new_base = true;
+  bool export_bcs = true;
 
   const fvm_writer_section_t  *export_section = NULL;
   fvm_writer_section_t  *export_list = NULL;
   fvm_to_cgns_base_t *base = NULL;
-  fvm_to_cgns_writer_t  *writer
-                        = (fvm_to_cgns_writer_t *)this_writer_p;
+  fvm_to_cgns_writer_t  *writer  = (fvm_to_cgns_writer_t *)this_writer_p;
 
   const int   n_ranks = writer->n_ranks;
+
+  if (mesh->gc_set == NULL || writer->discard_bcs)
+    export_bcs = false;
 
   /* Initialization */
   /*----------------*/
@@ -3351,14 +3860,23 @@ fvm_to_cgns_export_nodal(void               *this_writer_p,
 
   /* Build list of sections that are used here, in order of output */
 
+  int max_dim = fvm_nodal_get_max_entity_dim(mesh);
+  int min_dim = max_dim;
+  if (export_bcs)
+    min_dim -= 1;
+
   export_list = fvm_writer_export_list(mesh,
-                                       fvm_nodal_get_max_entity_dim(mesh),
+                                       min_dim,
+                                       max_dim,
+                                       1,
                                        true,
                                        false,
                                        writer->discard_polygons,
                                        writer->discard_polyhedra,
                                        writer->divide_polygons,
                                        true);
+
+  _reorder_export_list(export_list);
 
   /* Create a zone */
   /*---------------*/
@@ -3405,6 +3923,8 @@ fvm_to_cgns_export_nodal(void               *this_writer_p,
   /* Element connectivity */
   /*----------------------*/
 
+  cs_gnum_t n_g_max_dim_elts = 0;
+
   if (   new_base
       || writer->time_dependency ==  FVM_WRITER_TRANSIENT_CONNECT)
     export_section = export_list;
@@ -3414,6 +3934,21 @@ fvm_to_cgns_export_nodal(void               *this_writer_p,
   while (export_section != NULL) {
 
     const fvm_nodal_section_t  *section = export_section->section;
+
+    /* update global number of elements */
+
+    if (export_bcs && section->entity_dim == max_dim) {
+      if (export_section->type == section->type)
+        n_g_max_dim_elts += fvm_nodal_section_n_g_elements(section);
+      else {
+        cs_gnum_t n_g_tesselated_elements;
+        fvm_tesselation_get_global_size(section->tesselation,
+                                        export_section->type,
+                                        &n_g_tesselated_elements,
+                                        NULL);
+        n_g_max_dim_elts += n_g_tesselated_elements;
+      }
+    }
 
     /* update section_id (used in section name) */
 
@@ -3510,10 +4045,14 @@ fvm_to_cgns_export_nodal(void               *this_writer_p,
 
   } /* End of loop on sections */
 
+  /* Export boundary conditions */
+
+  if (export_bcs)
+    _export_bcs(writer, mesh, base, n_g_max_dim_elts);
+
   /* Free buffers */
 
   BFT_FREE(export_list);
-
 }
 
 /*----------------------------------------------------------------------------
@@ -3557,7 +4096,7 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
 {
   char   base_name[FVM_CGNS_NAME_SIZE+1];
   char   field_name[FVM_CGNS_NAME_SIZE+1];
-  cs_datatype_t  export_datatype = CS_DATATYPE_NULL;
+  cs_datatype_t  export_datatype = CS_FLOAT;
   int    output_dim;
 
   fvm_writer_field_helper_t  *helper = NULL;
@@ -3571,6 +4110,9 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
 
   const int  rank = writer->rank;
 
+  if (writer->discard_steady && time_step < 0)
+    return;
+
   /* Initialization */
   /*----------------*/
 
@@ -3578,7 +4120,10 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
 
   switch (datatype) {
   case CS_DOUBLE:
-    export_datatype = CS_DOUBLE;
+    if (writer->preserve_precision)
+      export_datatype = CS_DOUBLE;
+    else
+      export_datatype = CS_FLOAT;
     break;
   case CS_FLOAT:
     export_datatype = CS_FLOAT;
@@ -3601,6 +4146,8 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
 
   /* Set CGNS location */
 
+  if (location == FVM_WRITER_PER_NODE)
+    return;
   if (location == FVM_WRITER_PER_NODE)
     cgns_location = CGNS_ENUMV(Vertex);
   else if (location == FVM_WRITER_PER_ELEMENT)
@@ -3647,7 +4194,8 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
                               time_value,
                               cgns_location);
 
-  fvm_to_cgns_solution_t *solution = writer->bases[base_index - 1]->solutions[sol_index - 1];
+  fvm_to_cgns_solution_t *solution
+    = writer->bases[base_index - 1]->solutions[sol_index - 1];
   assert(solution->location == cgns_location);
 
   /* Field_Name adaptation if necessary */
@@ -3722,8 +4270,12 @@ fvm_to_cgns_export_field(void                   *this_writer_p,
   /* Initialize writer helper */
   /*--------------------------*/
 
+  int export_dim = fvm_nodal_get_max_entity_dim(mesh);
+
   export_list = fvm_writer_export_list(mesh,
-                                       fvm_nodal_get_max_entity_dim(mesh),
+                                       export_dim,
+                                       export_dim,
+                                       -1,
                                        true,
                                        true,
                                        writer->discard_polygons,
