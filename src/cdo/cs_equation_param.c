@@ -2204,6 +2204,7 @@ cs_equation_param_set_sles(cs_equation_param_t      *eqp)
       cs_sles_mumps_define(slesp.field_id,
                            NULL,
                            sym,
+                           slesp.verbosity,
                            cs_user_sles_mumps_hook,
                            (void *)eqp);
     }

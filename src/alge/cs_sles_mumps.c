@@ -156,6 +156,8 @@ struct _cs_sles_mumps_t {
   int                          sym;           /* 0: unsymmetric
                                                * 1: S.P.D.
                                                * 2: symmetric */
+  int                          verbosity;
+
   void                        *hook_context;  /* Optional user context */
   cs_sles_mumps_setup_hook_t  *setup_hook;    /* Post setup function */
 
@@ -230,6 +232,7 @@ cs_user_sles_mumps_hook(void               *context,
  * \param[in]      f_id          associated field id, or < 0
  * \param[in]      name          associated name if f_id < 0, or NULL
  * \param[in]      sym           type of matrix (unsymmetric, SPD, symmetric)
+ * \param[in]      verbosity     level of verbosity
  * \param[in]      setup_hook    pointer to optional setup epilogue function
  * \param[in,out]  context       pointer to optional (untyped) value or
  *                               structure for setup_hook, or NULL
@@ -242,10 +245,14 @@ cs_sles_mumps_t *
 cs_sles_mumps_define(int                          f_id,
                      const char                  *name,
                      int                          sym,
+                     int                          verbosity,
                      cs_sles_mumps_setup_hook_t  *setup_hook,
                      void                        *context)
 {
-  cs_sles_mumps_t * c = cs_sles_mumps_create(sym, setup_hook, context);
+  cs_sles_mumps_t * c = cs_sles_mumps_create(sym,
+                                             verbosity,
+                                             setup_hook,
+                                             context);
 
   cs_sles_t *sc = cs_sles_define(f_id,
                                  name,
@@ -266,6 +273,7 @@ cs_sles_mumps_define(int                          f_id,
  * \brief Create MUMPS linear system solver info and context.
  *
  * \param[in]      sym           type of matrix (unsymmetric, SPD, symmetric)
+ * \param[in]      verbosity     level of verbosity
  * \param[in]      setup_hook    pointer to optional setup epilogue function
  * \param[in,out]  context       pointer to optional (untyped) value or
  *                               structure for setup_hook, or NULL
@@ -276,6 +284,7 @@ cs_sles_mumps_define(int                          f_id,
 
 cs_sles_mumps_t *
 cs_sles_mumps_create(int                          sym,
+                     int                          verbosity,
                      cs_sles_mumps_setup_hook_t  *setup_hook,
                      void                        *context)
 {
@@ -293,6 +302,7 @@ cs_sles_mumps_create(int                          sym,
   /* Options */
 
   c->sym = sym;
+  c->verbosity = verbosity;
   c->hook_context = context;
   c->setup_hook = setup_hook;
 
@@ -323,7 +333,10 @@ cs_sles_mumps_copy(const void   *context)
 
   if (context != NULL) {
     const cs_sles_mumps_t *c = context;
-    d = cs_sles_mumps_create(c->sym, c->setup_hook, c->hook_context);
+    d = cs_sles_mumps_create(c->sym,
+                             c->verbosity,
+                             c->setup_hook,
+                             c->hook_context);
   }
 
   return d;
@@ -418,7 +431,6 @@ cs_sles_mumps_setup(void               *context,
                     const cs_matrix_t  *a,
                     int                 verbosity)
 {
-  CS_UNUSED(verbosity);
   CS_UNUSED(name);
 
   cs_timer_t t0;
@@ -431,6 +443,10 @@ cs_sles_mumps_setup(void               *context,
     BFT_MALLOC(c->setup_data, 1, cs_sles_mumps_setup_t);
     sd = c->setup_data;
   }
+
+  int _verbosity = c->verbosity;
+  if (_verbosity < 0)
+    _verbosity = verbosity;
 
   BFT_MALLOC(sd->mumps, 1, DMUMPS_STRUC_C);
 
@@ -460,10 +476,29 @@ cs_sles_mumps_setup(void               *context,
   /* Output */
 
   sd->mumps->ICNTL(1) = 6;      /* Error output: default value */
-  sd->mumps->ICNTL(2) = 0;      /* Rank  statistics: default value */
-  sd->mumps->ICNTL(3) = 6;      /* Global information: default value */
-  sd->mumps->ICNTL(4) = 2;      /* Verbosity level: default value */
-  sd->mumps->ICNTL(11) = 2;     /* Error analysis */
+
+  if (_verbosity <= 0) {
+
+    sd->mumps->ICNTL(2) = -1;   /* Rank statistics: default value */
+    sd->mumps->ICNTL(3) = -1;   /* No global information printed */
+    sd->mumps->ICNTL(4) = 0;    /* No message printed */
+    sd->mumps->ICNTL(11) = 0;   /* No error analysis */
+
+  }
+  else {
+
+    sd->mumps->ICNTL(2) = 0;    /* Rank statistics: default value */
+    sd->mumps->ICNTL(3) = 6;    /* Global information: default value */
+    sd->mumps->ICNTL(11) = 2;   /* Main error analysis */
+
+    if (_verbosity == 1)
+      sd->mumps->ICNTL(4) = 1;  /* Only error messages printed */
+    else if (_verbosity == 2)
+      sd->mumps->ICNTL(4) = 2;  /* Verbosity level: default value */
+    else /* verbosity > 2 */
+      sd->mumps->ICNTL(4) = 4;  /* All messages are printed */
+
+  }
 
   if (cs_glob_n_ranks == 1) { /* sequential run */
 

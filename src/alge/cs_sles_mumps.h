@@ -137,6 +137,7 @@ cs_user_sles_mumps_hook(void               *context,
  * \param[in]      f_id          associated field id, or < 0
  * \param[in]      name          associated name if f_id < 0, or NULL
  * \param[in]      sym           type of matrix (unsymmetric, SPD, symmetric)
+ * \param[in]      verbosity     level of verbosity
  * \param[in]      setup_hook    pointer to optional setup epilogue function
  * \param[in,out]  context       pointer to optional (untyped) value or
  *                               structure for setup_hook, or NULL
@@ -149,6 +150,7 @@ cs_sles_mumps_t *
 cs_sles_mumps_define(int                          f_id,
                      const char                  *name,
                      int                          sym,
+                     int                          verbosity,
                      cs_sles_mumps_setup_hook_t  *setup_hook,
                      void                        *context);
 
@@ -157,6 +159,7 @@ cs_sles_mumps_define(int                          f_id,
  * \brief Create MUMPS linear system solver info and context.
  *
  * \param[in]      sym           type of matrix (unsymmetric, SPD, symmetric)
+ * \param[in]      verbosity     level of verbosity
  * \param[in]      setup_hook    pointer to optional setup epilogue function
  * \param[in,out]  context       pointer to optional (untyped) value or
  *                               structure for setup_hook, or NULL
@@ -167,6 +170,7 @@ cs_sles_mumps_define(int                          f_id,
 
 cs_sles_mumps_t *
 cs_sles_mumps_create(int                          sym,
+                     int                          verbosity,
                      cs_sles_mumps_setup_hook_t  *setup_hook,
                      void                        *context);
 
