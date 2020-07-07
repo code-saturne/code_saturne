@@ -597,9 +597,9 @@ class Setup:
             Package(name="HDF5",
                     description="Hierarchical Data Format",
                     package="hdf5",
-                    version="1.10.5",
-                    archive="hdf5-1.10.5.tar.gz",
-                    url="https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.5/src/%s")
+                    version="1.10.6",
+                    archive="hdf5-1.10.6.tar.gz",
+                    url="https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.10/hdf5-1.10.6/src/%s")
 
         p = self.packages['hdf5']
         p.config_opts = "--enable-build-mode=production"
@@ -610,9 +610,9 @@ class Setup:
             Package(name="CGNS",
                     description="CFD General Notation System",
                     package="cgns",
-                    version="3.4.0",
-                    archive="CGNS-3.4.0.tar.gz",
-                    url="https://github.com/CGNS/CGNS/archive/v3.4.0.tar.gz")
+                    version="4.1.1",
+                    archive="CGNS-4.1.1.tar.gz",
+                    url="https://github.com/CGNS/CGNS/archive/v4.1.1.tar.gz")
 
         p = self.packages['cgns']
         p.config_opts = "-DCGNS_ENABLE_64BIT=ON -DCGNS_ENABLE_SCOPING=ON"
@@ -646,9 +646,9 @@ class Setup:
             Package(name="scotch",
                     description="PT-Scotch",
                     package="scotch",
-                    version="6.0.6",
-                    archive="scotch_6.0.6.tar.gz",
-                    url="https://gforge.inria.fr/frs/download.php/file/37622/%s")
+                    version="6.0.9",
+                    archive="scotch_6.0.9.tar.gz",
+                    url="https://gforge.inria.fr/frs/download.php/file/38187/%s")
 
     #---------------------------------------------------------------------------
 
@@ -760,7 +760,6 @@ to start the installation.
                     if not list[1] in ['default', 'auto']:
                         self.prefix = list[1]
                 elif key == 'debug': self.debug = list[1]
-                elif key == 'language': self.language = list[1]
                 elif key == 'use_arch': self.use_arch = list[1]
                 elif key == 'arch':
                     self.arch = list[1]
@@ -854,14 +853,6 @@ Check the setup file and some utilities presence.
             sys.stderr.write("\n*** Aborting installation:\n"
                              "\'disable_frontend\' option in the setup file "
                              "should be \'yes\' or \'no\'.\n"
-                             "Please check your setup file.\n\n")
-            sys.exit(1)
-
-        # Testing language option
-        if self.language not in ['en', 'fr']:
-            sys.stderr.write("\n*** Aborting installation:\n"
-                             "\'language\' option in the setup file "
-                             "should be \'en\' or \'fr'.\n"
                              "Please check your setup file.\n\n")
             sys.exit(1)
 
@@ -1083,11 +1074,6 @@ Check the setup file and some utilities presence.
         if self.salome:
             config_opts = config_opts + " --with-salome=" + self.salome
 
-        # Language
-
-        if self.language == 'fr':
-            config_opts = config_opts + " --enable-french"
-
         # Build type
 
         if self.shared:
@@ -1161,13 +1147,6 @@ Check the setup file and some utilities presence.
 # Download packages ?
 #--------------------------------------------------------
 download  %(download)s
-#
-#--------------------------------------------------------
-# Language
-#   default: "en" english
-#   others:  "fr" french
-#--------------------------------------------------------
-language  %(lang)s
 #
 #--------------------------------------------------------
 # Install Code_Saturne with debugging symbols
@@ -1299,7 +1278,7 @@ salome    %(salome)s
 
         sf.write(setupMain
                  % { 'download':self.download, 'prefix':prefix,
-                     'lang':self.language, 'debug':self.debug,
+                     'debug':self.debug,
                      'use_arch':self.use_arch, 'arch':arch,
                      'cc':cc, 'mpicc':mpicc,
                      'fc':fc,
