@@ -355,6 +355,18 @@ cs_sles_mumps_free(void  *context)
 
     sd->mumps->job = MUMPS_JOB_END;
     dmumps_c(sd->mumps);
+
+    if (cs_glob_n_ranks == 1) {
+
+      BFT_FREE(sd->mumps->irn);
+      BFT_FREE(sd->mumps->jcn);
+      BFT_FREE(sd->mumps->a);
+
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0, "%s: Not yet implemented", __func__);
+
+    BFT_FREE(sd->mumps);
     BFT_FREE(c->setup_data);
 
   }
