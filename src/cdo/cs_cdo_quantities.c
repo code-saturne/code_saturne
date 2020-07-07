@@ -117,8 +117,8 @@ typedef struct { /* These quantities are the integral of q on the plane
  * Static global variables
  *============================================================================*/
 
-cs_cdo_quantities_algo_ccenter_t  cs_cdo_quantities_cc_algo =
-  CS_CDO_QUANTITIES_SATURNE_CENTER;
+/* Store in a flag which quantities have to be computed */
+cs_flag_t  cs_cdo_quantities_flag = 0;
 
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
@@ -404,33 +404,18 @@ _get_fsub_quantities(cs_lnum_t                 f_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute additional quantities related to faces
- *         - Dual edges (segment between x_f and x_c and scanned with c2f
- *           adjacency
+ * \brief  Compute additional quantities related to faces like dual edges
+ *         (segment between x_f and x_c and scanned with c2f adjacency)
  *
  * \param[in]      topo              pointer to a cs_cdo_connect_t structure
  * \param[in, out] cdoq              pointer to cs_cdo_quantities_t structure
- * \param[in]      eb_scheme_flag    metadata for Edge-based schemes
- * \param[in]      fb_scheme_flag    metadata for Face-based schemes
- * \param[in]      vb_scheme_flag    metadata for Vertex-based schemes
- * \param[in]      vcb_scheme_flag   metadata for Vertex+Cell-based schemes
- * \param[in]      hho_scheme_flag   metadata for HHO schemes
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _compute_face_based_quantities(const cs_cdo_connect_t  *topo,
-                               cs_cdo_quantities_t     *cdoq,
-                               cs_flag_t                eb_scheme_flag,
-                               cs_flag_t                fb_scheme_flag,
-                               cs_flag_t                vb_scheme_flag,
-                               cs_flag_t                vcb_scheme_flag,
-                               cs_flag_t                hho_scheme_flag)
+                               cs_cdo_quantities_t     *cdoq)
 {
-  /* Parameters not used up to now */
-  CS_UNUSED(eb_scheme_flag);
-  CS_UNUSED(vb_scheme_flag);
-
   /* Compute dual edge quantities */
   const cs_lnum_t  n_cells = cdoq->n_cells;
   const cs_adjacency_t  *c2f = topo->c2f;
@@ -458,7 +443,10 @@ _compute_face_based_quantities(const cs_cdo_connect_t  *topo,
   } /* End of loop on cells */
 
   /* Compute the volume of the pyramid */
-  if (fb_scheme_flag > 0 || hho_scheme_flag > 0 || vcb_scheme_flag > 0)
+  cs_flag_t  masks[3] = { CS_CDO_QUANTITIES_FB_SCHEME,
+                          CS_CDO_QUANTITIES_HHO_SCHEME,
+                          CS_CDO_QUANTITIES_VCB_SCHEME };
+  if (cs_flag_at_least(cs_cdo_quantities_flag, 3, masks))
     cs_cdo_quantities_compute_pvol_fc(cdoq, topo->c2f, &(cdoq->pvol_fc));
 }
 
@@ -473,28 +461,13 @@ _compute_face_based_quantities(const cs_cdo_connect_t  *topo,
  *
  * \param[in]      topo             pointer to a cs_cdo_connect_t structure
  * \param[in, out] quant            pointer to cs_cdo_quantities_t structure
- * \param[in]      eb_scheme_flag   metadata for Edge-based schemes
- * \param[in]      fb_scheme_flag   metadata for Face-based schemes
- * \param[in]      vb_scheme_flag   metadata for Vertex-based schemes
- * \param[in]      vcb_scheme_flag  metadata for Vertex+Cell-based schemes
- * \param[in]      hho_scheme_flag  metadata for HHO schemes
  */
 /*----------------------------------------------------------------------------*/
 
 static void
 _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
-                               cs_cdo_quantities_t     *quant,
-                               cs_flag_t                eb_scheme_flag,
-                               cs_flag_t                fb_scheme_flag,
-                               cs_flag_t                vb_scheme_flag,
-                               cs_flag_t                vcb_scheme_flag,
-                               cs_flag_t                hho_scheme_flag)
-
+                               cs_cdo_quantities_t     *quant)
 {
-  /* Unused parameters up to now */
-  CS_UNUSED(fb_scheme_flag);
-  CS_UNUSED(hho_scheme_flag);
-
   /* Sanity check */
   assert(topo->e2v != NULL);
   assert(topo->f2e != NULL && topo->f2c != NULL && topo->c2e != NULL);
@@ -537,98 +510,102 @@ _compute_edge_based_quantities(const cs_cdo_connect_t  *topo,
 
   } /* End of loop on edges */
 
-  /* Allocate and initialize array */
-  if (eb_scheme_flag > 0 || vb_scheme_flag > 0 || vcb_scheme_flag > 0) {
+  cs_flag_t  masks[3] = { CS_CDO_QUANTITIES_EB_SCHEME,
+                          CS_CDO_QUANTITIES_VB_SCHEME,
+                          CS_CDO_QUANTITIES_VCB_SCHEME };
+  if (!cs_flag_at_least(cs_cdo_quantities_flag, 3, masks)) {
+    BFT_FREE(edge_center);
+    return;
+  }
 
-    /* a) Compute the two vector areas composing each dual face
-     * b) Compute the volume associated to eachedge in a cell
-     */
-    BFT_MALLOC(quant->pvol_ec, topo->c2e->idx[n_cells], cs_real_t);
-    BFT_MALLOC(quant->dface_normal, 3*topo->c2e->idx[n_cells], cs_real_t);
+  /* Allocate and initialize array
+   * a) Compute the two vector areas composing each dual face
+   * b) Compute the volume associated to eachedge in a cell
+   */
+  BFT_MALLOC(quant->pvol_ec, topo->c2e->idx[n_cells], cs_real_t);
+  BFT_MALLOC(quant->dface_normal, 3*topo->c2e->idx[n_cells], cs_real_t);
 
 # pragma omp parallel shared(quant, topo, edge_center)
-    { /* OMP Block */
+  { /* OMP Block */
 
-      const cs_adjacency_t  *c2f = topo->c2f, *f2e = topo->f2e;
+    const cs_adjacency_t  *c2f = topo->c2f, *f2e = topo->f2e;
 
 #     pragma omp for CS_CDO_OMP_SCHEDULE
-      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+    for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
-        const cs_lnum_t  *c2e_idx = topo->c2e->idx + c_id;
-        const cs_lnum_t  *c2e_ids = topo->c2e->ids + c2e_idx[0];
-        const short int  n_ec = c2e_idx[1] - c2e_idx[0];
+      const cs_lnum_t  *c2e_idx = topo->c2e->idx + c_id;
+      const cs_lnum_t  *c2e_ids = topo->c2e->ids + c2e_idx[0];
+      const short int  n_ec = c2e_idx[1] - c2e_idx[0];
 
-        /* Initialize sface */
-        cs_real_t  *cell_dface = quant->dface_normal + 3*c2e_idx[0];
-        memset(cell_dface, 0, 3*n_ec*sizeof(cs_real_t));
+      /* Initialize sface */
+      cs_real_t  *cell_dface = quant->dface_normal + 3*c2e_idx[0];
+      memset(cell_dface, 0, 3*n_ec*sizeof(cs_real_t));
 
-        /* Get cell center */
-        const cs_real_t  *xc = quant->cell_centers + 3*c_id;
+      /* Get cell center */
+      const cs_real_t  *xc = quant->cell_centers + 3*c_id;
 
-        for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
+      for (cs_lnum_t i = c2f->idx[c_id]; i < c2f->idx[c_id+1]; i++) {
 
-          const cs_lnum_t  f_id = c2f->ids[i];
+        const cs_lnum_t  f_id = c2f->ids[i];
 
-          /* Compute xf -> xc */
-          const cs_real_t  *xf = (f_id < quant->n_i_faces) ?
-            quant->i_face_center + 3* f_id :
-            quant->b_face_center + 3*(f_id - quant->n_i_faces);
-          const cs_real_3_t  xfxc = { xf[0] - xc[0],
-                                      xf[1] - xc[1],
-                                      xf[2] - xc[2] };
+        /* Compute xf -> xc */
+        const cs_real_t  *xf = (f_id < quant->n_i_faces) ?
+          quant->i_face_center + 3* f_id :
+          quant->b_face_center + 3*(f_id - quant->n_i_faces);
+        const cs_real_3_t  xfxc = { xf[0] - xc[0],
+                                    xf[1] - xc[1],
+                                    xf[2] - xc[2] };
 
-          for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
+        for (cs_lnum_t j = f2e->idx[f_id]; j < f2e->idx[f_id+1]; j++) {
 
-            const cs_lnum_t  e_id = topo->f2e->ids[j];
-            const cs_real_t  *xe = edge_center + 3*e_id;
+          const cs_lnum_t  e_id = topo->f2e->ids[j];
+          const cs_real_t  *xe = edge_center + 3*e_id;
 
-            /* Compute the vectorial area for the triangle : xc, xf, xe */
-            cs_real_3_t  tria_vect, xexc;
-            for (int k = 0; k < 3; k++)
-              xexc[k] = xc[k] - xe[k];
-            cs_math_3_cross_product(xfxc, xexc, tria_vect);
+          /* Compute the vectorial area for the triangle : xc, xf, xe */
+          cs_real_3_t  tria_vect, xexc;
+          for (int k = 0; k < 3; k++)
+            xexc[k] = xc[k] - xe[k];
+          cs_math_3_cross_product(xfxc, xexc, tria_vect);
 
-            /* Find the corresponding local cell edge */
-            short int e = n_ec;
-            for (short int _e = 0; _e < n_ec; _e++) {
-              if (c2e_ids[_e] == e_id) {
-                e = _e;
-                break;
-              }
+          /* Find the corresponding local cell edge */
+          short int e = n_ec;
+          for (short int _e = 0; _e < n_ec; _e++) {
+            if (c2e_ids[_e] == e_id) {
+              e = _e;
+              break;
             }
-            CS_CDO_OMP_ASSERT(e < n_ec);
+          }
+          CS_CDO_OMP_ASSERT(e < n_ec);
 
-            /* One should have (normal_tria, tangent_e) > 0 */
-            cs_nvec3_t  edge = cs_quant_set_edge_nvec(e_id, quant);
-            cs_nvec3_t  tria;
-            cs_nvec3(tria_vect, &tria);
-            const double  orient = _dp3(tria.unitv, edge.unitv);
-            CS_CDO_OMP_ASSERT(fabs(orient) > 0);
+          /* One should have (normal_tria, tangent_e) > 0 */
+          cs_nvec3_t  edge = cs_quant_set_edge_nvec(e_id, quant);
+          cs_nvec3_t  tria;
+          cs_nvec3(tria_vect, &tria);
+          const double  orient = _dp3(tria.unitv, edge.unitv);
+          CS_CDO_OMP_ASSERT(fabs(orient) > 0);
 
-            /* Store the computed data */
-            cs_real_t  *_dface = cell_dface + 3*e;
-            if (orient < 0)
-              for (int k = 0; k < 3; k++) _dface[k] -= 0.5 * tria_vect[k];
-            else
-              for (int k = 0; k < 3; k++) _dface[k] += 0.5 * tria_vect[k];
+          /* Store the computed data */
+          cs_real_t  *_dface = cell_dface + 3*e;
+          if (orient < 0)
+            for (int k = 0; k < 3; k++) _dface[k] -= 0.5 * tria_vect[k];
+          else
+            for (int k = 0; k < 3; k++) _dface[k] += 0.5 * tria_vect[k];
 
-          } /* Loop on face edges */
+        } /* Loop on face edges */
 
-        } /* Loop on cell faces */
+      } /* Loop on cell faces */
 
         /* Compute pvol_ec */
-        cs_real_t  *_pvol = quant->pvol_ec + c2e_idx[0];
-        for (short int e = 0; e < n_ec; e++) {
-          _pvol[e] = cs_math_1ov3 * _dp3(cell_dface + 3*e,
-                                         quant->edge_vector + 3*c2e_ids[e]);
-          CS_CDO_OMP_ASSERT(_pvol[e] > 0);
-        }
+      cs_real_t  *_pvol = quant->pvol_ec + c2e_idx[0];
+      for (short int e = 0; e < n_ec; e++) {
+        _pvol[e] = cs_math_1ov3 * _dp3(cell_dface + 3*e,
+                                       quant->edge_vector + 3*c2e_ids[e]);
+        CS_CDO_OMP_ASSERT(_pvol[e] > 0);
+      }
 
-      } /* End of loop on cells */
+    } /* End of loop on cells */
 
-    } /* End of OpenMP block */
-
-  } /* Test scheme flag */
+  } /* End of OpenMP block */
 
   BFT_FREE(edge_center);
 }
@@ -647,6 +624,11 @@ static void
 _compute_dcell_quantities(const cs_cdo_connect_t  *topo,
                           cs_cdo_quantities_t     *quant)
 {
+  cs_flag_t  masks[2] = { CS_CDO_QUANTITIES_VB_SCHEME |
+                          CS_CDO_QUANTITIES_VCB_SCHEME };
+  if (!cs_flag_at_least(cs_cdo_quantities_flag, 2, masks))
+    return;
+
   /* Sanity checks */
   assert(topo->f2e != NULL && topo->f2c != NULL && topo->c2v != NULL);
 
@@ -937,32 +919,43 @@ _mirtich_algorithm(const cs_mesh_t             *mesh,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set which quantities have to be computed. Additionnal quantities
+ *         are added to cs_cdo_quantities_flag (static variable)
+ *
+ * \param[in]  option_flag     flag to set geometrical quantities to compute
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_set(cs_flag_t   option_flag)
+{
+  cs_cdo_quantities_flag |= option_flag;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set the type of algorithm to use for computing the cell center
+ *         (deprecated)
  *
  * \param[in]  algo     type of algorithm
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_quantities_set_algo_ccenter(cs_cdo_quantities_algo_ccenter_t   algo)
+cs_cdo_quantities_set_algo_ccenter(cs_cdo_quantities_bit_t   algo)
 {
-  cs_cdo_quantities_cc_algo = algo;
+  cs_cdo_quantities_flag |= algo;
 }
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Build a cs_cdo_quantities_t structure. Some quantities are shared
  *        with the \ref cs_mesh_quantities_t structure and other are not
- *        built according to the given scheme flags.
+ *        built according to the given flags in cs_cdo_quantities_flag.
  *
  * \param[in]  m                 pointer to a cs_mesh_t structure
  * \param[in]  mq                pointer to a cs_mesh_quantities_t structure
  * \param[in]  topo              pointer to a cs_cdo_connect_t structure
- * \param[in]  eb_scheme_flag    metadata for Edge-based schemes
- * \param[in]  fb_scheme_flag    metadata for Face-based schemes
- * \param[in]  vb_scheme_flag    metadata for Vertex-based schemes
- * \param[in]  vcb_scheme_flag   metadata for Vertex+Cell-based schemes
- * \param[in]  hho_scheme_flag   metadata for HHO schemes
  *
  * \return  a new allocated pointer to a cs_cdo_quantities_t structure
  */
@@ -971,12 +964,7 @@ cs_cdo_quantities_set_algo_ccenter(cs_cdo_quantities_algo_ccenter_t   algo)
 cs_cdo_quantities_t *
 cs_cdo_quantities_build(const cs_mesh_t             *m,
                         const cs_mesh_quantities_t  *mq,
-                        const cs_cdo_connect_t      *topo,
-                        cs_flag_t                    eb_scheme_flag,
-                        cs_flag_t                    fb_scheme_flag,
-                        cs_flag_t                    vb_scheme_flag,
-                        cs_flag_t                    vcb_scheme_flag,
-                        cs_flag_t                    hho_scheme_flag)
+                        const cs_cdo_connect_t      *topo)
 {
   cs_timer_t t0 = cs_timer_time();
 
@@ -1030,68 +1018,55 @@ cs_cdo_quantities_build(const cs_mesh_t             *m,
   cdoq->n_g_cells = m->n_g_cells;
   cdoq->cell_vol = mq->cell_vol;
 
-  /* 2) Define quantities available for all schemes */
-  /*    =========================================== */
-
   /* Compute the cell centers */
-  switch (cs_cdo_quantities_cc_algo) {
+  if (cs_cdo_quantities_flag & CS_CDO_QUANTITIES_SATURNE_CENTER) {
 
-  case CS_CDO_QUANTITIES_MEANV_CENTER:
+    cdoq->cell_centers = mq->cell_cen; /* shared */
+
+  }
+  else if (cs_cdo_quantities_flag & CS_CDO_QUANTITIES_BARYC_CENTER) {
+
+    BFT_MALLOC(cdoq->cell_centers, 3*n_cells, cs_real_t);
+
+    /* Compute the (real) barycentric centers */
+    _mirtich_algorithm(m, mq, topo, cdoq);
+
+  }
+  else if (cs_cdo_quantities_flag & CS_CDO_QUANTITIES_MEANV_CENTER) {
+
     BFT_MALLOC(cdoq->cell_centers, 3*n_cells, cs_real_t);
     _vtx_algorithm(topo, cdoq);
-    break;
 
-  case CS_CDO_QUANTITIES_BARYC_CENTER:
-    BFT_MALLOC(cdoq->cell_centers, 3*n_cells, cs_real_t);
-    /* Compute (real) the barycentric centers and cell volumes */
-    _mirtich_algorithm(m, mq, topo, cdoq);
-    break;
+  }
+  else { /* Use as default the cell center computed in the legacy approach */
 
-  case CS_CDO_QUANTITIES_SATURNE_CENTER:
-    /* Copy cell centers */
-    cdoq->cell_centers = mq->cell_cen;
-    break;
+    cdoq->cell_centers = mq->cell_cen; /* shared */
+    /* The default behaviour is to use the cell center already computed in the
+       legacy part */
+    cs_cdo_quantities_flag |= CS_CDO_QUANTITIES_SATURNE_CENTER;
 
-  default:
-    bft_error(__FILE__, __LINE__, 0,
-              _("%s: Unkwown algorithm for cell center computation\n"),
-              __func__);
+  }
 
-  } /* switch according to cs_cdo_quantities_cc_algo */
+  /* 2) Define quantities available for CDO schemes */
+  /*    =========================================== */
 
   /* Face-related quantities */
   /* ----------------------- */
 
-  _compute_face_based_quantities(topo,
-                                 cdoq,
-                                 eb_scheme_flag,
-                                 fb_scheme_flag,
-                                 vb_scheme_flag,
-                                 vcb_scheme_flag,
-                                 hho_scheme_flag);
-
-  /* 3) Define specific quantities */
-  /*    ========================== */
+  _compute_face_based_quantities(topo, cdoq);
 
   /* Vertex-related quantities */
   /* ----------------------- */
 
   /* Compute dual cell volume attached to each vertex in a cell */
-  if (vb_scheme_flag > 0 || vcb_scheme_flag > 0)
-    _compute_dcell_quantities(topo, cdoq);
+  _compute_dcell_quantities(topo, cdoq);
 
   /* Edge-related quantities */
   /* ----------------------- */
 
-  _compute_edge_based_quantities(topo,
-                                 cdoq,
-                                 eb_scheme_flag,
-                                 fb_scheme_flag,
-                                 vb_scheme_flag,
-                                 vcb_scheme_flag,
-                                 hho_scheme_flag);
+  _compute_edge_based_quantities(topo, cdoq);
 
-  /* 4) Define metadata */
+  /* 3) Define metadata */
   /*    =============== */
 
   /* Define cs_quant_info_t structure */
@@ -1123,7 +1098,7 @@ cs_cdo_quantities_free(cs_cdo_quantities_t   *cdoq)
     return cdoq;
 
   /* Cell-related quantities */
-  if (cs_cdo_quantities_cc_algo != CS_CDO_QUANTITIES_SATURNE_CENTER)
+  if (!(cs_cdo_quantities_flag & CS_CDO_QUANTITIES_SATURNE_CENTER))
     BFT_FREE(cdoq->cell_centers);
 
   /* Face-related quantities */
@@ -1157,24 +1132,15 @@ cs_cdo_quantities_summary(const cs_cdo_quantities_t  *quant)
 {
   cs_log_printf(CS_LOG_SETUP, "\n## CDO quantities settings\n");
 
-  switch (cs_cdo_quantities_cc_algo) {
-
-  case CS_CDO_QUANTITIES_MEANV_CENTER:
-    cs_log_printf(CS_LOG_SETUP,
-                  " * Cell.Center.Algo: Vertices.MeanValue\n");
-    break;
-  case CS_CDO_QUANTITIES_BARYC_CENTER:
-    cs_log_printf(CS_LOG_SETUP,
-                  " * Cell.Center.Algo: Mirtich\n");
-    break;
-  case CS_CDO_QUANTITIES_SATURNE_CENTER:
-    cs_log_printf(CS_LOG_SETUP,
-                  " * Cell.Center.Algo: Original\n");
-    break;
-
-  default:
-    break;
-  } /* switch according to cs_cdo_quantities_cc_algo */
+  if (cs_cdo_quantities_flag & CS_CDO_QUANTITIES_SATURNE_CENTER)
+    cs_log_printf(CS_LOG_SETUP, " * Cell.Center.Algo: Original\n");
+  else if (cs_cdo_quantities_flag & CS_CDO_QUANTITIES_BARYC_CENTER)
+    cs_log_printf(CS_LOG_SETUP, " * Cell.Center.Algo: Mirtich\n");
+  else if (cs_cdo_quantities_flag & CS_CDO_QUANTITIES_MEANV_CENTER)
+    cs_log_printf(CS_LOG_SETUP, " * Cell.Center.Algo: Vertices.MeanValue\n");
+  else
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Invalid algorithm to set the cell center.\n", __func__);
 
   /* Output */
   cs_log_printf(CS_LOG_DEFAULT, "\n CDO mesh quantities information:\n");

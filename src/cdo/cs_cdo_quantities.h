@@ -50,21 +50,54 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/* Type of algorithm used to compute the cell center */
+/*! \enum cs_cdo_quantities_bit_t
+ *  \brief Bit values for setting which quantities to compute
+ *
+ * \var CS_CDO_QUANTITIES_EB_SCHEME
+ * Geometrical quantities related to edge-based schemes
+ *
+ * \var CS_CDO_QUANTITIES_FB_SCHEME
+ * Geometrical quantities related to face-based schemes
+ *
+ * \var CS_CDO_QUANTITIES_HHO_SCHEME
+ * Geometrical quantities related to HHO schemes
+ *
+ * \var CS_CDO_QUANTITIES_VB_SCHEME
+ * Geometrical quantities related to vertex-based schemes
+ *
+ * \var CS_CDO_QUANTITIES_VCB_SCHEME
+ * Geometrical quantities related to vertex+cell-based schemes
+ *
+ * \var CS_CDO_QUANTITIES_MEANV_CENTER
+ * Center is computed as the mean of cell vertices
+ *
+ * \var CS_CDO_QUANTITIES_BARYC_CENTER
+ * Center is computed as the real cell barycenter
+ *
+ * \var CS_CDO_QUANTITIES_SATURNE_CENTER
+ * Center is the one defined in cs_mesh_quantities_t (i.e. the one
+ * used in the legacy Finite Volume scheme).
+ */
+
 typedef enum {
 
-  /* Center is computed as the mean of cell vertices */
-  CS_CDO_QUANTITIES_MEANV_CENTER,
+  /* Set of geometrical quantities related to CDO schemes */
 
-  /* Center is computed as the real cell barycenter */
-  CS_CDO_QUANTITIES_BARYC_CENTER,
+  CS_CDO_QUANTITIES_EB_SCHEME                  = 1<<0,  /* =   1 */
+  CS_CDO_QUANTITIES_FB_SCHEME                  = 1<<1,  /* =   2 */
+  CS_CDO_QUANTITIES_HHO_SCHEME                 = 1<<2,  /* =   4 */
+  CS_CDO_QUANTITIES_VB_SCHEME                  = 1<<3,  /* =   8 */
+  CS_CDO_QUANTITIES_VCB_SCHEME                 = 1<<4,  /* =  16 */
 
-  /* Use the cell center computed in cs_mesh_quantities.c (Default behavior) */
-  CS_CDO_QUANTITIES_SATURNE_CENTER,
+  /* How to compute the cell center
+     ------------------------------ */
 
-  CS_CDO_QUANTITIES_N_CENTER_ALGOS
+  CS_CDO_QUANTITIES_MEANV_CENTER               = 1<<7,  /* = 128 */
+  CS_CDO_QUANTITIES_BARYC_CENTER               = 1<<8,  /* = 256 */
+  CS_CDO_QUANTITIES_SATURNE_CENTER             = 1<<9,  /* = 512 */
 
-} cs_cdo_quantities_algo_ccenter_t;
+} cs_cdo_quantities_bit_t;
+
 
 /* Structure storing information about variation of entities across the
    mesh for a given type of entity (cell, face and edge) */
@@ -89,6 +122,10 @@ typedef struct {
 } cs_quant_t;
 
 typedef struct { /* Specific mesh quantities */
+
+  /* Flag storing which quantities to compute and how to define the cell
+   * center */
+  cs_flag_t        flag;
 
   /* Global mesh quantities */
   double           vol_tot;
@@ -217,29 +254,37 @@ cs_compute_area_from_quant(const cs_quant_t    qa,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Set which quantities have to be computed. Additionnal quantities
+ *         are added to cs_cdo_quantities_flag (static variable)
+ *
+ * \param[in]  option_flag     flag to set geometrical quantities to compute
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_cdo_quantities_set(cs_flag_t   option_flag);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set the type of algorithm to use for computing the cell center
+ *         (deprecated)
  *
  * \param[in]  algo     type of algorithm
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cdo_quantities_set_algo_ccenter(cs_cdo_quantities_algo_ccenter_t   algo);
+cs_cdo_quantities_set_algo_ccenter(cs_cdo_quantities_bit_t   algo);
 
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Build a cs_cdo_quantities_t structure. Some quantities are shared
  *        with the \ref cs_mesh_quantities_t structure and other are not
- *        built according to the given scheme flags.
+ *        built according to the given flags in cs_cdo_quantities_flag.
  *
  * \param[in]  m                 pointer to a cs_mesh_t structure
  * \param[in]  mq                pointer to a cs_mesh_quantities_t structure
  * \param[in]  topo              pointer to a cs_cdo_connect_t structure
- * \param[in]  eb_scheme_flag    metadata for Edge-based schemes
- * \param[in]  fb_scheme_flag    metadata for Face-based schemes
- * \param[in]  vb_scheme_flag    metadata for Vertex-based schemes
- * \param[in]  vcb_scheme_flag   metadata for Vertex+Cell-based schemes
- * \param[in]  hho_scheme_flag   metadata for HHO schemes
  *
  * \return  a new allocated pointer to a cs_cdo_quantities_t structure
  */
@@ -248,12 +293,7 @@ cs_cdo_quantities_set_algo_ccenter(cs_cdo_quantities_algo_ccenter_t   algo);
 cs_cdo_quantities_t *
 cs_cdo_quantities_build(const cs_mesh_t             *m,
                         const cs_mesh_quantities_t  *mq,
-                        const cs_cdo_connect_t      *topo,
-                        cs_flag_t                    eb_scheme_flag,
-                        cs_flag_t                    fb_scheme_flag,
-                        cs_flag_t                    vb_scheme_flag,
-                        cs_flag_t                    vcb_scheme_flag,
-                        cs_flag_t                    hho_scheme_flag);
+                        const cs_cdo_connect_t      *topo);
 
 /*----------------------------------------------------------------------------*/
 /*!

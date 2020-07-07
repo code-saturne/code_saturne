@@ -132,6 +132,7 @@ _set_scheme_flags(cs_domain_t    *domain)
   if (domain->cdo_context == NULL)
     bft_error(__FILE__, __LINE__, 0, _err_empty_cdo_context);
 
+  cs_flag_t  quant_flag = 0;
   cs_domain_cdo_context_t  *cc = domain->cdo_context;
 
   /* Define a scheme flag for the current domain */
@@ -145,6 +146,7 @@ _set_scheme_flags(cs_domain_t    *domain)
     switch (scheme) {
 
     case CS_SPACE_SCHEME_CDOVB:
+      quant_flag |= CS_CDO_QUANTITIES_VB_SCHEME;
       cc->vb_scheme_flag |= CS_FLAG_SCHEME_POLY0;
       if (vardim == 1)
         cc->vb_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
@@ -155,6 +157,7 @@ _set_scheme_flags(cs_domain_t    *domain)
       break;
 
     case CS_SPACE_SCHEME_CDOVCB:
+      quant_flag |= CS_CDO_QUANTITIES_VCB_SCHEME;
       cc->vcb_scheme_flag |= CS_FLAG_SCHEME_POLY0;
       if (vardim == 1)
         cc->vcb_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
@@ -166,12 +169,15 @@ _set_scheme_flags(cs_domain_t    *domain)
 
     case CS_SPACE_SCHEME_CDOEB:
       assert(vardim == 3);
-      /* vardim should equal to 3 but each edge is associated a scalar-valued
+      quant_flag |= CS_CDO_QUANTITIES_EB_SCHEME;
+
+      /* vardim should equal to 3 but each edge is associated to a scalar-valued
          quantity */
       cc->eb_scheme_flag |= CS_FLAG_SCHEME_POLY0 | CS_FLAG_SCHEME_SCALAR;
       break;
 
     case CS_SPACE_SCHEME_CDOFB:
+      quant_flag |= CS_CDO_QUANTITIES_FB_SCHEME;
       cc->fb_scheme_flag |= CS_FLAG_SCHEME_POLY0;
       if (vardim == 1)
         cc->fb_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
@@ -183,6 +189,7 @@ _set_scheme_flags(cs_domain_t    *domain)
 
     case CS_SPACE_SCHEME_HHO_P0:
       assert(cs_equation_get_space_poly_degree(eq) == 0);
+      quant_flag |= CS_CDO_QUANTITIES_HHO_SCHEME;
       cc->hho_scheme_flag |= CS_FLAG_SCHEME_POLY0;
       if (vardim == 1)
         cc->hho_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
@@ -193,6 +200,7 @@ _set_scheme_flags(cs_domain_t    *domain)
       break;
 
     case CS_SPACE_SCHEME_HHO_P1:
+      quant_flag |= CS_CDO_QUANTITIES_HHO_SCHEME;
       cc->hho_scheme_flag |= CS_FLAG_SCHEME_POLY1;
       assert(cs_equation_get_space_poly_degree(eq) == 1);
       if (vardim == 1)
@@ -204,6 +212,7 @@ _set_scheme_flags(cs_domain_t    *domain)
       break;
 
     case CS_SPACE_SCHEME_HHO_P2:
+      quant_flag |= CS_CDO_QUANTITIES_HHO_SCHEME;
       cc->hho_scheme_flag |= CS_FLAG_SCHEME_POLY2;
       assert(cs_equation_get_space_poly_degree(eq) == 2);
       if (vardim == 1)
@@ -230,18 +239,22 @@ _set_scheme_flags(cs_domain_t    *domain)
     switch (nsp->space_scheme) {
 
     case CS_SPACE_SCHEME_CDOVB:
+      quant_flag |= CS_CDO_QUANTITIES_VB_SCHEME;
       cc->vb_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
       break;
 
     case CS_SPACE_SCHEME_CDOVCB:
+      quant_flag |= CS_CDO_QUANTITIES_VCB_SCHEME;
       cc->vcb_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
       break;
 
     case CS_SPACE_SCHEME_CDOEB:
+      quant_flag |= CS_CDO_QUANTITIES_EB_SCHEME;
       cc->eb_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
       break;
 
     case CS_SPACE_SCHEME_CDOFB:
+      quant_flag |= CS_CDO_QUANTITIES_FB_SCHEME;
       cc->fb_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
       if (nsp->sles_param.strategy == CS_NAVSTO_SLES_BY_BLOCKS)
         cc->fb_scheme_flag |= CS_FLAG_SCHEME_SCALAR;
@@ -250,6 +263,7 @@ _set_scheme_flags(cs_domain_t    *domain)
     case CS_SPACE_SCHEME_HHO_P0:
     case CS_SPACE_SCHEME_HHO_P1:
     case CS_SPACE_SCHEME_HHO_P2:
+      quant_flag |= CS_CDO_QUANTITIES_HHO_SCHEME;
       cc->hho_scheme_flag |= CS_FLAG_SCHEME_NAVSTO;
       break;
 
@@ -260,6 +274,8 @@ _set_scheme_flags(cs_domain_t    *domain)
 
   } /* NavSto is activated */
 
+  /* Update the flag storing which geometrical quantities have to be computed */
+  cs_cdo_quantities_set(quant_flag);
 }
 
 /*============================================================================
@@ -569,16 +585,25 @@ cs_domain_init_cdo_structures(cs_domain_t                 *domain)
                                         cc->hho_scheme_flag);
 
   /* Build additional mesh quantities in a separate structure */
+  cs_flag_t  cdo_quantities_flag = 0;
+  if (cc->eb_scheme_flag)
+    cdo_quantities_flag |= CS_CDO_QUANTITIES_EB_SCHEME;
+  if (cc->fb_scheme_flag)
+    cdo_quantities_flag |= CS_CDO_QUANTITIES_FB_SCHEME;
+  if (cc->hho_scheme_flag)
+    cdo_quantities_flag |= CS_CDO_QUANTITIES_HHO_SCHEME;
+  if (cc->vb_scheme_flag)
+    cdo_quantities_flag |= CS_CDO_QUANTITIES_VB_SCHEME;
+  if (cc->vcb_scheme_flag)
+    cdo_quantities_flag |= CS_CDO_QUANTITIES_VCB_SCHEME;
+
+  cs_cdo_quantities_set(cdo_quantities_flag);
+
   domain->cdo_quantities = cs_cdo_quantities_build(domain->mesh,
                                                    domain->mesh_quantities,
-                                                   domain->connect,
-                                                   cc->eb_scheme_flag,
-                                                   cc->fb_scheme_flag,
-                                                   cc->vb_scheme_flag,
-                                                   cc->vcb_scheme_flag,
-                                                   cc->hho_scheme_flag);
+                                                   domain->connect);
 
-  /* Shared main generic structure
+  /* Main generic structures are shared with low-level files.
      Avoid the declaration of global variables by sharing pointers */
   cs_source_term_set_shared_pointers(domain->cdo_quantities,
                                      domain->connect);
