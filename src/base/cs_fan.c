@@ -79,7 +79,8 @@ struct _cs_fan_t {
 
   int            id;                     /* Fan id */
   int            dim;                    /* 2D or 3D geometry */
-
+  int            mode;                   /* Use of the fan as a wind turbine (1)
+                                            or as a fan (0)(default) */
   double         inlet_axis_coords[3];   /* Axis point coordinates of the
                                             inlet face */
   double         outlet_axis_coords[3];  /* Axis point coordinates of the
@@ -89,6 +90,7 @@ struct _cs_fan_t {
   double         thickness;              /* Fan thickness */
   double         surface;                /* Fan total surface */
   double         volume;                 /* Fan total volume */
+  double         volume_expected;        /* Fan theoretical volume */
 
   double         fan_radius;             /* Fan radius */
   double         blades_radius;          /* Blades radius */
@@ -210,6 +212,9 @@ void CS_PROCF (tsvvtl, TSVVTL)
  * \param[in]    fan_dim             fan dimension:
  *                                     2: pseudo-2D (extruded mesh)
  *                                     3: 3D (standard)
+ * \param[in]    mode                mode:
+ *                                     0: fan
+ *                                     1: wind turbine
  * \param[in]    inlet_axis_coords   intersection of axis and inlet face
  * \param[in]    outlet_axis_coords  intersection of axis and outlet face
  * \param[in]    fan_radius          fan radius
@@ -224,6 +229,7 @@ void CS_PROCF (tsvvtl, TSVVTL)
 
 void
 cs_fan_define(int              fan_dim,
+              int              mode,
               const cs_real_t  inlet_axis_coords[3],
               const cs_real_t  outlet_axis_coords[3],
               cs_real_t        fan_radius,
@@ -241,6 +247,8 @@ cs_fan_define(int              fan_dim,
   fan->id = _cs_glob_n_fans;
 
   fan->dim = fan_dim;
+
+  fan->mode = mode;
 
   for (int i = 0; i < 3; i++) {
     fan->inlet_axis_coords[i] = inlet_axis_coords[i];
@@ -264,12 +272,14 @@ cs_fan_define(int              fan_dim,
 
   for (int i = 0; i < 3; i++) {
     fan->axis_dir[i] = outlet_axis_coords[i] - inlet_axis_coords[i];
-    fan->thickness += (fan->axis_dir[i] * fan->axis_dir[i]);
   }
-  fan->thickness = sqrt(fan->thickness);
 
-  for (int i = 0; i < 3; i++)
-    fan->axis_dir[i] /= fan->thickness;
+  fan->thickness = cs_math_3_norm(fan->axis_dir);
+  cs_math_3_normalize(fan->axis_dir, fan->axis_dir);
+
+  /* Compute fan theoretical volume */
+
+  fan->volume_expected = cs_math_pi*cs_math_pow2(fan->fan_radius)*fan->thickness;
 
   /* Surface/volume initialized to 0, will be set by cs_fan_build_all */
 
@@ -351,6 +361,7 @@ cs_fan_log_setup(void)
       (CS_LOG_SETUP,
        _("  Fan id:  %d\n"
          "    Fan mesh dimension:  %d\n"
+         "    Wind turbine:        %d\n"
          "    Axis coordinates:    [%11.4e, %11.4e, %11.4e,\n"
          "                          %11.4e, %11.4e, %11.4e]\n"
          "    Fan radius:          %11.4e\n"
@@ -358,7 +369,7 @@ cs_fan_log_setup(void)
          "      Hub radius:        %11.4e\n"
          "    Curve coefficients:  C0: %10.3e, C1: %10.3e, C2: %10.3e\n"
          "    Axial torque:        %10.3e\n"),
-       fan->id, fan->dim,
+       fan->id, fan->dim, fan->mode,
        fan->inlet_axis_coords[0],
        fan->inlet_axis_coords[1],
        fan->inlet_axis_coords[2],
@@ -391,14 +402,16 @@ cs_fan_log_iteration(void)
                   "----\n"));
 
   cs_log_printf(CS_LOG_DEFAULT,
-                  _("    id      surface       volume         flow       deltaP\n"
-                    "  ----  -----------  -----------  -----------  -----------\n"));
+                 _("    id      surface  volume(real) volume(th.)"
+                   "       flow       deltaP\n"
+                   "  ----  -----------  -----------  -----------"
+                   "  ---------  -----------\n" ));
 
   for (int i = 0; i < _cs_glob_n_fans; i++) {
     cs_fan_t  *fan = _cs_glob_fans[i];
     cs_log_printf(CS_LOG_DEFAULT,
-                  " %5d  %11.4e  %11.4e  %11.4e %11.4e\n",
-                  fan->id, fan->surface, fan->volume,
+                  " %5d  %11.4e  %11.4e  %11.4e  %11.4e  %11.4e\n",
+                  fan->id, fan->surface, fan->volume, fan->volume_expected,
                   0.5*(fan->out_flow - fan->in_flow),
                   fan->delta_p);
   }
@@ -417,18 +430,16 @@ void
 cs_fan_build_all(const cs_mesh_t              *mesh,
                  const cs_mesh_quantities_t   *mesh_quantities)
 {
-  cs_lnum_t  fan_id;
-
   cs_real_t  coo_axis;
-  cs_real_t  d_2_axis;
   cs_real_t  d_cel_axis[3];
   cs_real_t  l_surf;
 
   cs_fan_t  *fan = NULL;
   cs_lnum_t  *cpt_cel_vtl = NULL;
-  cs_lnum_t  *cell_fan_id = NULL;
+  int  *cell_fan_id = NULL;
 
-  const cs_lnum_t  n_ext_cells = mesh->n_cells_with_ghosts;
+  const cs_lnum_t  n_cells = mesh->n_cells;
+  const cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
   const cs_lnum_2_t  *i_face_cells = (const cs_lnum_2_t  *)(mesh->i_face_cells);
   const cs_lnum_t  *b_face_cells = mesh->b_face_cells;
   const cs_real_3_t *restrict cell_cen
@@ -440,7 +451,7 @@ cs_fan_build_all(const cs_mesh_t              *mesh,
 
   /* Reset fans in case already built */
 
-  for (fan_id = 0; fan_id < _cs_glob_n_fans; fan_id++) {
+  for (int fan_id = 0; fan_id < _cs_glob_n_fans; fan_id++) {
     fan = _cs_glob_fans[fan_id];
     fan->n_cells = 0;
     fan->surface = 0;
@@ -450,18 +461,18 @@ cs_fan_build_all(const cs_mesh_t              *mesh,
   /* Create an array for cells flaging */
   /*-----------------------------------*/
 
-  BFT_MALLOC(cell_fan_id, n_ext_cells, cs_lnum_t);
+  BFT_MALLOC(cell_fan_id, n_cells_ext, int);
 
-  for (cs_lnum_t cell_id = 0; cell_id < n_ext_cells; cell_id++)
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
     cell_fan_id[cell_id] = -1;
 
   /* Main loop on cells */
 
-  for (cs_lnum_t cell_id = 0; cell_id < n_ext_cells; cell_id++) {
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
     /* Loop on fans */
 
-    for (fan_id = 0; fan_id < _cs_glob_n_fans; fan_id++) {
+    for (int fan_id = 0; fan_id < _cs_glob_n_fans; fan_id++) {
 
       fan = _cs_glob_fans[fan_id];
 
@@ -474,14 +485,12 @@ cs_fan_build_all(const cs_mesh_t              *mesh,
 
       /* Dot product with the axis vector */
 
-      coo_axis = (  d_cel_axis[0] * fan->axis_dir[0]
-                  + d_cel_axis[1] * fan->axis_dir[1]
-                  + d_cel_axis[2] * fan->axis_dir[2]);
+      coo_axis = cs_math_3_dot_product(d_cel_axis, fan->axis_dir);
 
       /* Cell potentially in the fan if its center projection on the axis
          is within the thickness */
 
-      if (coo_axis >= 0.0 && coo_axis <= fan->thickness) {
+      if (coo_axis >= 0. && coo_axis <= fan->thickness) {
 
         /* Projection of the vector from the outlet face axis point
            to the cell center in the fan plane */
@@ -489,21 +498,16 @@ cs_fan_build_all(const cs_mesh_t              *mesh,
         for (int coo_id = 0; coo_id < 3; coo_id++)
           d_cel_axis[coo_id] -= coo_axis * fan->axis_dir[coo_id];
 
-        /* Square distance to the axis */
-
-        d_2_axis = (  d_cel_axis[0] * d_cel_axis[0]
-                    + d_cel_axis[1] * d_cel_axis[1]
-                    + d_cel_axis[2] * d_cel_axis[2]);
+        /* Distance to the axis */
+        cs_real_t d_axis = cs_math_3_norm(d_cel_axis);
 
         /* If the cell is in the fan */
 
-        if (d_2_axis <= fan->fan_radius * fan->fan_radius) {
+        if (d_axis <= fan->fan_radius) {
 
           cell_fan_id[cell_id] = fan_id;
           fan->n_cells += 1;
           fan->volume += mesh_quantities->cell_vol[cell_id];
-          break;
-
         }
 
       }
@@ -512,23 +516,35 @@ cs_fan_build_all(const cs_mesh_t              *mesh,
 
   } /* End of main loop on cells */
 
+  for (int fan_id = 0; fan_id < _cs_glob_n_fans; fan_id++) {
+    cs_parall_sum(1, CS_DOUBLE, &((_cs_glob_fans[fan_id])->volume));
+  }
+
+  /* Synchronize cell_fan_id */
+  if (mesh->halo != NULL)
+    cs_halo_sync_untyped(mesh->halo,
+                         CS_HALO_EXTENDED,
+                         sizeof(int),
+                         cell_fan_id);
+
   /* Create the lists of cells belonging to each fan */
   /*-------------------------------------------------*/
 
   BFT_MALLOC(cpt_cel_vtl, _cs_glob_n_fans, cs_lnum_t);
 
-  for (fan_id = 0; fan_id < _cs_glob_n_fans; fan_id++) {
+  for (int fan_id = 0; fan_id < _cs_glob_n_fans; fan_id++) {
 
     fan = _cs_glob_fans[fan_id];
+
     BFT_REALLOC(fan->cell_list, fan->n_cells, cs_lnum_t);
 
     cpt_cel_vtl[fan_id] = 0;
   }
 
-  for (cs_lnum_t cell_id = 0; cell_id < n_ext_cells; cell_id++) {
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells; cell_id++) {
 
     if (cell_fan_id[cell_id] > -1) {
-      fan_id = cell_fan_id[cell_id];
+      int fan_id = cell_fan_id[cell_id];
       fan = _cs_glob_fans[fan_id];
       fan->cell_list[cpt_cel_vtl[fan_id]] = cell_id;
       cpt_cel_vtl[fan_id] += 1;
@@ -537,7 +553,7 @@ cs_fan_build_all(const cs_mesh_t              *mesh,
   }
 
 #if defined(DEBUG) && !defined(NDEBUG)
-  for (fan_id = 0; fan_id < _cs_glob_n_fans; fan_id++) {
+  for (int fan_id = 0; fan_id < _cs_glob_n_fans; fan_id++) {
     fan = _cs_glob_fans[fan_id];
     assert(cpt_cel_vtl[fan_id] == fan->n_cells);
   }
@@ -558,17 +574,16 @@ cs_fan_build_all(const cs_mesh_t              *mesh,
 
       l_surf = cs_math_3_norm((i_face_normal[face_id]));
       if (cell_fan_id[cell_id_1] > -1) {
-        fan_id = cell_fan_id[cell_id_1];
+        int fan_id = cell_fan_id[cell_id_1];
         fan = _cs_glob_fans[fan_id];
         fan->surface += l_surf;
       }
       if (cell_fan_id[cell_id_2] > -1) {
-        fan_id = cell_fan_id[cell_id_2];
+        int fan_id = cell_fan_id[cell_id_2];
         fan = _cs_glob_fans[fan_id];
         fan->surface += l_surf;
       }
     }
-
   }
 
   /* Contribution to the domain boundary */
@@ -577,17 +592,17 @@ cs_fan_build_all(const cs_mesh_t              *mesh,
 
     if (cell_fan_id[b_face_cells[face_id]] > -1) {
       l_surf = cs_math_3_norm((b_face_normal[face_id]));
-      fan_id = cell_fan_id[b_face_cells[face_id]];
+      int fan_id = cell_fan_id[b_face_cells[face_id]];
       fan = _cs_glob_fans[fan_id];
       fan->surface += l_surf;
     }
-
   }
 
-  for (fan_id = 0; fan_id < _cs_glob_n_fans; fan_id++)
+  for (int fan_id = 0; fan_id < _cs_glob_n_fans; fan_id++)
     cs_parall_sum(1, CS_DOUBLE, &((_cs_glob_fans[fan_id])->surface));
 
   /* Free memory */
+
 
   BFT_FREE(cpt_cel_vtl);
   BFT_FREE(cell_fan_id);
@@ -614,15 +629,14 @@ cs_fan_compute_flows(const cs_mesh_t             *mesh,
                      const cs_real_t              c_rho[],
                      const cs_real_t              b_rho[])
 {
-  cs_lnum_t   fan_id;
   cs_lnum_t   direction;
 
   cs_real_t  flow;
 
   cs_fan_t  *fan = NULL;
-  int       *cell_fan_id = NULL;
+  int *cell_fan_id = NULL;
 
-  const cs_lnum_t  n_ext_cells = mesh->n_cells_with_ghosts;
+  const cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
   const cs_lnum_t  nbr_fac = mesh->n_i_faces;
   const cs_lnum_t  nbr_fbr = mesh->n_b_faces;
   const cs_lnum_2_t *i_face_cells = (const cs_lnum_2_t *)(mesh->i_face_cells);
@@ -634,13 +648,13 @@ cs_fan_compute_flows(const cs_mesh_t             *mesh,
 
   /* Flag the cells */
 
-  BFT_MALLOC(cell_fan_id, n_ext_cells, int);
+  BFT_MALLOC(cell_fan_id, n_cells_ext, int);
 
   cs_fan_flag_cells(mesh, cell_fan_id);
 
   /* Set the fans flows to zero */
 
-  for (fan_id = 0; fan_id < _cs_glob_n_fans; fan_id++) {
+  for (int fan_id = 0; fan_id < _cs_glob_n_fans; fan_id++) {
     fan = _cs_glob_fans[fan_id];
     fan->in_flow = 0.0;
     fan->out_flow = 0.0;
@@ -659,7 +673,7 @@ cs_fan_compute_flows(const cs_mesh_t             *mesh,
       for (int i = 0; i < 2; i++) {
 
         cs_lnum_t cell_id = i_face_cells[face_id][i];
-        fan_id = cell_fan_id[cell_id];
+        int fan_id = cell_fan_id[cell_id];
 
         if (fan_id > -1) {
           fan = _cs_glob_fans[fan_id];
@@ -671,7 +685,6 @@ cs_fan_compute_flows(const cs_mesh_t             *mesh,
           else
             fan->in_flow += flow;
         }
-
       }
 
     }
@@ -682,7 +695,7 @@ cs_fan_compute_flows(const cs_mesh_t             *mesh,
 
   for (cs_lnum_t face_id = 0; face_id < nbr_fbr; face_id++) {
 
-    fan_id = cell_fan_id[b_face_cells[face_id]];
+    int fan_id = cell_fan_id[b_face_cells[face_id]];
 
     if (fan_id > -1) {
 
@@ -695,24 +708,20 @@ cs_fan_compute_flows(const cs_mesh_t             *mesh,
         fan->in_flow += flow;
 
     }
-
   }
 
 #if defined(HAVE_MPI)
   if (cs_glob_n_ranks > 1) {
 
-    for (fan_id = 0; fan_id < _cs_glob_n_fans; fan_id++) {
-
-      cs_real_t flow_glob[2];
-      cs_real_t flow_loc[2];
+    for (int fan_id = 0; fan_id < _cs_glob_n_fans; fan_id++) {
 
       fan = _cs_glob_fans[fan_id];
 
-      flow_loc[0] = fan->out_flow;
-      flow_loc[1] = fan->in_flow;
+      cs_real_t flow_glob[2];
+      cs_real_t flow_loc[2] = {fan->out_flow, fan->in_flow};
 
-      MPI_Allreduce (flow_loc, flow_glob, 2, CS_MPI_REAL, MPI_SUM,
-                     cs_glob_mpi_comm);
+      MPI_Allreduce(flow_loc, flow_glob, 2, CS_MPI_REAL, MPI_SUM,
+                    cs_glob_mpi_comm);
 
       fan->out_flow = flow_glob[0];
       fan->in_flow = flow_glob[1];
@@ -750,8 +759,6 @@ void
 cs_fan_compute_force(const cs_mesh_quantities_t  *mesh_quantities,
                      cs_real_3_t                  source_t[])
 {
-  cs_lnum_t  fan_id;
-
   cs_real_t  f_z, f_theta;
   cs_real_t  f_rot[3];
 
@@ -765,7 +772,7 @@ cs_fan_compute_force(const cs_mesh_quantities_t  *mesh_quantities,
   /* Loop on fans */
   /*--------------*/
 
-  for (fan_id = 0; fan_id < _cs_glob_n_fans; fan_id++) {
+  for (int fan_id = 0; fan_id < _cs_glob_n_fans; fan_id++) {
 
     cs_fan_t *fan = _cs_glob_fans[fan_id];
 
@@ -798,14 +805,20 @@ cs_fan_compute_force(const cs_mesh_quantities_t  *mesh_quantities,
       }
       else if (r_hub < r_blades) {
 
-        cs_real_t  r_1, r_2, aux, aux_1, aux_2, coo_axis, d_axis, d_cel_axis[3];
+        cs_real_t  r_1, r_2, aux_1, aux_2, coo_axis, d_axis, d_cel_axis[3];
 
         r_1 = 0.7  * fan->blades_radius;
         r_2 = 0.85 * fan->blades_radius;
 
         if (fan->dim == 2) {
-          aux_1 =   (fan->delta_p * 2.0 * r_fan)
-                  / (fan->thickness * (1.15*r_blades - r_hub));
+          if (fan->mode == 1) {
+            aux_1 = -  (fan->delta_p * 2.0 * r_fan)
+                    / (fan->thickness * (1.15*r_blades - r_hub));
+          }
+          else{
+            aux_1 =   (fan->delta_p * 2.0 * r_fan)
+                    / (fan->thickness * (1.15*r_blades - r_hub));
+          }
           aux_2 = 0.0;
         }
         else {
@@ -825,7 +838,10 @@ cs_fan_compute_force(const cs_mesh_quantities_t  *mesh_quantities,
                                 * (  1.042*r_blades4
                                    + 0.523*r_hub4
                                    - 1.667*r_blades3*r_hub));
-          aux_1 = f_base * fan->delta_p * pi * r_fan2;
+          if (fan->mode == 1)
+            aux_1 = - f_base * fan->delta_p * pi * r_fan2;
+          else
+            aux_1 = f_base * fan->delta_p * pi * r_fan2;
           aux_2 = f_orth * fan->axial_torque;
         }
 
@@ -838,9 +854,7 @@ cs_fan_compute_force(const cs_mesh_quantities_t  *mesh_quantities,
 
         /* Projection of the cell center on the fan axis */
 
-        coo_axis = (  d_cel_axis[0] * fan->axis_dir[0]
-                    + d_cel_axis[1] * fan->axis_dir[1]
-                    + d_cel_axis[2] * fan->axis_dir[2]);
+        coo_axis = cs_math_3_dot_product(d_cel_axis, fan->axis_dir);
 
         /* Projection of the vector from the outlet face axis point
            to the cell center in the fan plane */
@@ -852,9 +866,7 @@ cs_fan_compute_force(const cs_mesh_quantities_t  *mesh_quantities,
 
         cs_math_3_cross_product(fan->axis_dir, d_cel_axis, f_rot);
 
-        aux = cs_math_3_norm(f_rot);
-        for (int coo_id = 0; coo_id < 3; coo_id++)
-          f_rot[coo_id] /= aux;
+        cs_math_3_normalize(f_rot, f_rot);
 
         if (d_axis < r_hub) {
           f_z     = 0.0;
@@ -880,9 +892,11 @@ cs_fan_compute_force(const cs_mesh_quantities_t  *mesh_quantities,
       }
 
       for (int coo_id = 0; coo_id < 3; coo_id++)
-        source_t[cell_id][coo_id] +=    (   (f_z * fan->axis_dir[coo_id])
-                                         + (f_theta * f_rot[coo_id]))
-                                     * cell_f_vol[cell_id];
+        source_t[cell_id][coo_id]
+          +=    (   (f_z * fan->axis_dir[coo_id])
+                 + (f_theta * f_rot[coo_id]))
+             * fan->volume_expected / fan->volume /* Correction factor */
+             * cell_f_vol[cell_id];
 
     }  /* End of loop on fan cells */
 
@@ -896,7 +910,7 @@ cs_fan_compute_force(const cs_mesh_quantities_t  *mesh_quantities,
  *        (by the fan id, -1 otherwise)
  *
  * \param[in]   mesh          assosiated mesh structure
- * \param[out]  cell_fan_id  fan id (or -1) for each cell
+ * \param[out]  cell_fan_id   fan id (or -1) for each cell
  */
 /*----------------------------------------------------------------------------*/
 
@@ -904,18 +918,15 @@ void
 cs_fan_flag_cells(const cs_mesh_t  *mesh,
                   int               cell_fan_id[])
 {
-  int         fan_id;
-
   cs_fan_t  *fan;
 
-  const cs_lnum_t  n_ext_cells = mesh->n_cells_with_ghosts;
+  const cs_lnum_t  n_cells_ext = mesh->n_cells_with_ghosts;
 
   /* Flag the cells */
-
-  for (cs_lnum_t cell_id = 0; cell_id < n_ext_cells; cell_id++)
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
     cell_fan_id[cell_id] = -1;
 
-  for (fan_id = 0; fan_id < _cs_glob_n_fans; fan_id++) {
+  for (int fan_id = 0; fan_id < _cs_glob_n_fans; fan_id++) {
 
     fan = _cs_glob_fans[fan_id];
 
@@ -925,7 +936,7 @@ cs_fan_flag_cells(const cs_mesh_t  *mesh,
     }
 
   }
-
+  /* Synchronize cell_fan_id */
   if (mesh->halo != NULL)
     cs_halo_sync_untyped(mesh->halo,
                          CS_HALO_EXTENDED,
@@ -935,9 +946,8 @@ cs_fan_flag_cells(const cs_mesh_t  *mesh,
   /* Store the cell_fan_id in the postprocessing field */
 
   cs_field_t *c_fan_id = cs_field_by_name("fan_id");
-  for (cs_lnum_t cell_id = 0; cell_id < n_ext_cells; cell_id++)
+  for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
     c_fan_id->val[cell_id] = (cs_real_t)cell_fan_id[cell_id];
-
 }
 
 /*----------------------------------------------------------------------------*/
@@ -987,7 +997,6 @@ cs_fan_cells_select(void         *input,
   }
 
   /* Free memory */
-
   BFT_FREE(cell_fan_id);
   BFT_REALLOC(_cell_ids, _n_cells, cs_lnum_t);
 

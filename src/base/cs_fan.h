@@ -113,8 +113,11 @@ void CS_PROCF (tsvvtl, TSVVTL)
  *
  * parameters:
  *   fan_dim             <-- fan dimension:
- *                           2: pseudo-2D (extruded mesh)
- *                           3: 3D (standard)
+ *                             2: pseudo-2D (extruded mesh)
+ *                             3: 3D (standard)
+ *   mode                <-- mode:
+ *                             0: fan
+ *                             1: wind turbine
  *   inlet_axis_coords   <-- intersection coords. of axis and inlet face
  *   outlet_axis_coords  <-- intersection coords. od axis and outlet face
  *   fan_radius          <-- fan radius
@@ -128,6 +131,7 @@ void CS_PROCF (tsvvtl, TSVVTL)
 
 void
 cs_fan_define(int              fan_dim,
+              int              mode,
               const cs_real_t  inlet_axis_coords[3],
               const cs_real_t  outlet_axis_coords[3],
               cs_real_t        fan_radius,

@@ -108,6 +108,7 @@ cs_user_parameters(cs_domain_t   *domain)
     const cs_real_t  axial_torque = 0.01;
 
     cs_fan_define(3, /* fan (mesh) dimension (2D or 3D) */
+                  0, /* 0: Fan mode or 1: wind turbine mode */
                   inlet_axis_coords,
                   outlet_axis_coords,
                   fan_radius,

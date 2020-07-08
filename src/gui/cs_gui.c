@@ -4790,6 +4790,7 @@ cs_gui_define_fans(void)
     }
 
     cs_fan_define(dim, /* fan (mesh) dimension (2D or 3D) */
+                  0,   /* mode */
                   inlet_axis_coords,
                   outlet_axis_coords,
                   fan_radius,
