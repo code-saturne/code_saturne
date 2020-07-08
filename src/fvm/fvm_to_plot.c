@@ -95,6 +95,8 @@ typedef struct {
 
   cs_plot_format_t  format;        /* Plot format */
 
+  bool              no_time_step;  /* Do not append time step to file name */
+
   int               nt;            /* Time step */
   double            t;             /* Time value */
 
@@ -185,10 +187,10 @@ _field_output(void           *context,
   if (w->f == NULL) {
 
     char t_stamp[32];
-    if (w->nt >= 0)
-      sprintf(t_stamp, "_%.4i", w->nt);
-    else
+    if (w->no_time_step || w->nt < 0)
       t_stamp[0] = '\0';
+    else
+      sprintf(t_stamp, "_%.4i", w->nt);
     size_t l =   strlen(w->path) + strlen(w->name)
                + strlen(t_stamp) + 4 + 1;
     BFT_REALLOC(w->file_name, l, char);
@@ -290,6 +292,7 @@ _field_output(void           *context,
  * Options are:
  *   csv                 output CSV (comma-separated-values) files
  *   dat                 output dat (space-separated) files
+ *   no_time_step        do not add time step id to file name
  *
  * parameters:
  *   name           <-- base output case name.
@@ -351,6 +354,7 @@ fvm_to_plot_init_writer(const char             *name,
   /* Defaults */
 
   w->format = CS_PLOT_CSV;
+  w->no_time_step = false;
 
   w->nt = -1;
   w->t = -1;
@@ -381,6 +385,8 @@ fvm_to_plot_init_writer(const char             *name,
         w->format = CS_PLOT_CSV;
       else if ((l_opt == 3) && (strncmp(options + i1, "dat", l_opt) == 0))
         w->format = CS_PLOT_DAT;
+      else if ((l_opt == 12) && (strncmp(options + i1, "no_time_step", l_opt) == 0))
+        w->no_time_step = true;
 
       for (i1 = i2 + 1 ; i1 < l_tot && options[i1] == ' ' ; i1++);
 

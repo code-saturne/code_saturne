@@ -499,11 +499,20 @@ _define_profiles(void)
 
       bool _output_at_end = (output_at_end) ? true : false;
 
+      char format_options[64];
+      strncpy(format_options, format_name[output_format], 63);
+      format_options[63] = '\0';
+      if (_output_at_end && output_frequency < 0 && time_output < 0) {
+        size_t l = strlen(format_options);
+        strncat(format_options, ", no_time_step", 63-l);
+        format_options[63] = '\0';
+      }
+
       cs_post_define_writer(writer_id,
                             "",
                             "profiles",
                             "plot",
-                            format_name[output_format],
+                            format_options,
                             FVM_WRITER_FIXED_MESH,
                             false, /* output_at_start */
                             _output_at_end,

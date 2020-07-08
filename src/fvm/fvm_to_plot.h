@@ -60,6 +60,7 @@ BEGIN_C_DECLS
  * Options are:
  *   dat                 output .dat files
  *   csv                 output .csv files (default)
+ *   no_time_step        do not add time step id to file name
  *
  * parameters:
  *   name           <-- base output case name.
