@@ -1,11 +1,19 @@
+Release 6.1.2 (unreleased)
+--------------------------
+
+Bug fixes:
+
+- Fix field output numbering on polyhedra or polygons when writer
+  subdivision is activated in serial mode.
+
+- Fix wrong setting of turbulent boundary condition type (formula) for
+  dispersed phases in NCFD. Option is ignored inside the code, but could
+  lead to wrong behavior.
+
 Release 6.1.1 (June 12, 2020)
 -----------------------------
 
 Bug fixes:
-
-- Fix wrong setting of turbulent boundary condition type (formula) for
-  dispersed phases in NCFD. Option is ignored inside the code, but could
-  lead to wrong behaviour of the GUI.
 
 - Fix reconstruction gradient weighting in computation of face diffusion
   from pressure increment in pressure correction step.
