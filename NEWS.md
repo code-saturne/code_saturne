@@ -110,6 +110,9 @@ Architectural changes:
 
 Bug fixes:
 
+- Fix field output numbering on polyhedra or polygons when writer
+  subdivision is activated in serial mode.
+
 - Fix computation of Rhie & Chow first term in cases where diffusion in
   pressure correction step is anisotropic.
   This could have an impact on calculations with either head losses,
