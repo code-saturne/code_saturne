@@ -125,7 +125,7 @@ if test "x$ple_gcc" = "xgcc"; then
   test -n "$ple_cc_vers_patch" || ple_cc_vers_patch=0
 
   # Default compiler flags
-  cflags_default="-std=c99 -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused"
+  cflags_default="-funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused"
   cflags_default_dbg="-g"
   cflags_default_opt="-O2"
   cflags_default_omp="-fopenmp"
@@ -149,7 +149,10 @@ if test "x$ple_gcc" = "xgcc"; then
   # may not handle all flags)
 
   case "$ple_cc_vendor-$ple_cc_version" in
-    gcc-[45]*)
+    gcc-[4]*)
+      cflags_default="$cflags_default std=c99 -fms-extensions "
+      ;;
+    gcc-[5]*)
       ;;
     *)
       cflags_default="$cflags_default -Wmisleading-indentation -Wduplicated-cond"
@@ -160,7 +163,7 @@ if test "x$ple_gcc" = "xgcc"; then
     gcc-4.[012345678]*)
       ;;
     *)
-      cflags_default="$cflags_default -fdiagnostics-color=auto"
+      cflags_default="$cflags_default -fdiagnostics-color=auto -Werror=format-security"
       ;;
   esac
 
@@ -175,12 +178,6 @@ if test "x$ple_gcc" = "xgcc"; then
       ;;
     *)
       cflags_default_opt="$cflags_default_opt -fexcess-precision=fast"
-      ;;
-  esac
-
-  case "$host_os" in
-    mingw64)
-      cflags_default="`echo $cflags_default | sed -e 's/-std=c99/-std=gnu99/g'`"
       ;;
   esac
 
@@ -283,7 +280,7 @@ if test "x$ple_cc_compiler_known" != "xyes" ; then
     ple_cc_compiler_known=yes
 
     # Default compiler flags
-    cflags_default="-c99 -noswitcherror"
+    cflags_default="-noswitcherror"
     cflags_default_dbg="-g -Mbounds"
     cflags_default_opt="-O2"
     cflags_default_omp="-mp"
@@ -309,7 +306,7 @@ if test "x$ple_cc_compiler_known" != "xyes" ; then
     ple_linker_set=yes
 
     # Default compiler flags
-    cflags_default="-qlanglvl=stdc99 -q64"
+    cflags_default=""
     cflags_default_opt="-O3"
     cflags_default_dbg="-g -qfullpath"
     cflags_default_omp="-qsmp=omp -qthreaded"
