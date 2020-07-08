@@ -68,7 +68,17 @@ typedef enum {
 /* Inlet definition */
 /*------------------*/
 
-typedef struct _cs_inlet_t  cs_inlet_t;
+typedef struct _cs_inlet_t       cs_inlet_t;
+
+typedef struct {
+
+  int         n_structures;       /* Number of coherent structures */
+  int         volume_mode;        /* Indicator to use classic inlet SEM (0)
+                                     or volumic SEM over the domain */
+  cs_real_t  *position;           /* Position of the structures */
+  cs_real_t  *energy;             /* Anisotropic energy of the structures */
+
+} cs_inflow_sem_t;
 
 /*=============================================================================
  * Public function prototypes for Fortran API
@@ -80,7 +90,10 @@ typedef struct _cs_inlet_t  cs_inlet_t;
 
 void CS_PROCF(defsyn, DEFSYN)
 (
- int  *n_inlets                    /* <-- number of inlets                    */
+ int  *n_inlets,                   /* <-- number of inlets                    */
+ int  *n_structures,               /* <-- number of structures                */
+ int  *volume_mode                 /* <-- Variable to use classic SEM or
+                                          volume SEM                          */
 );
 
 /*----------------------------------------------------------------------------
@@ -100,13 +113,14 @@ void CS_PROCF(synthe, SYNTHE)
 );
 
 void CS_PROCF(cs_user_les_inflow_init, CS_USER_LES_INFLOW_INIT)(
- int                   *nent       /* <-- number of LES inlets                */
+ int                   *nent,      /* <-- number of LES inlets                */
+ int                   *nstruct,   /* <-- numb. of entities of the inflow meth*/
+ int                   *volmode    /* <-- volumic SEM mode or normal one      */
 );
 
 void CS_PROCF(cs_user_les_inflow_define, CS_USER_LES_INFLOW_DEFINE)(
  const int       *const nument,    /* --> id of the inlet                     */
  int                   *typent,    /* <-- type of inflow method at the inlet  */
- int                   *nelent,    /* <-- numb. of entities of the inflow meth*/
  int                   *iverbo,    /* <-- verbosity level                     */
  cs_lnum_t             *nfbent,    /* <-- numb. of bound. faces of the inlet  */
  cs_lnum_t              lfbent[],  /* <-- list of bound. faces of the inlet   */
@@ -169,6 +183,55 @@ void CS_PROCF(ecrsyn, ECRSYN)
 
 void
 cs_inflow_finalize(void);
+
+/*----------------------------------------------------------------------------
+ * Generation of synthetic turbulence via the Synthetic Eddy Method (SEM).
+ *
+ * parameters:
+ *   n_points          --> Local number of points where turbulence is generated
+ *   num_face          --> Local id of inlet boundary faces
+ *   point_coordinates --> Coordinates of the points
+ *   point_ponderation --> Ponderation of the points (surface, volume or NULL)
+ *   initialize        --> Indicator of initialization
+ *   verbosity         --> Indicator of verbosity level
+ *   inflow            --> Specific structure for Batten method
+ *   time_step         --> Time step at the present iteration
+ *   velocity          --> Velocity at each point
+ *   reynolds_stresses --> Reynolds stresses at each point
+ *   dissipation_rate  --> Dissipation rate at each point
+ *   fluctuations      <-- Velocity fluctuations generated at each point
+ *----------------------------------------------------------------------------*/
+
+void
+cs_les_synthetic_eddy_method(cs_lnum_t         n_points,
+                             const cs_lnum_t  *num_face,
+                             const cs_real_t  *point_coordinates,
+                             const cs_real_t  *point_ponderation,
+                             int               initialize,
+                             int               verbosity,
+                             cs_inflow_sem_t  *inflow,
+                             cs_real_t         time_step,
+                             const cs_real_t  *velocity,
+                             const cs_real_t  *reynolds_stresses,
+                             const cs_real_t  *dissipation_rate,
+                             cs_real_t        *fluctuations);
+
+/*----------------------------------------------------------------------------
+ * Rescaling of the fluctuations by the statistics following the Lund method.
+ *
+ * One assumes that the statistics are interlaced and ordered as follow :
+ *   <u'u'>  <v'v'>  <w'w'>  <u'v'>  <u'w'>  <v'w'>
+ *
+ * parameters:
+ *   n_points          --> Local number of points where turbulence is generated
+ *   statistics        --> Statistics (i.e. Reynolds stresses)
+ *   fluctuations      <-- Velocity fluctuations generated
+ *----------------------------------------------------------------------------*/
+
+void
+cs_les_rescale_fluctuations(cs_lnum_t    n_points,
+                            cs_real_t   *statistics,
+                            cs_real_t   *fluctuations);
 
 /*----------------------------------------------------------------------------*/
 

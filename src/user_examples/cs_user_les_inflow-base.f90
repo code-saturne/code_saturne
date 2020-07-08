@@ -46,6 +46,13 @@
 !> \c isuisy = 1: Reading of the LES inflow module restart file
 !>           = 0: not activated (synthetic turbulence reinitialized)
 !>
+!> \c nstruct indicates the number of "entities" relative to the method
+!>       (useful only for the Batten method and the SEM):
+!>
+!>         for Batten : number of Fourier modes of the turbulent fluctuations
+!>         for SEM    : number of synthetic eddies building the fluctuations
+!>
+!> \c volmode = Indicator to use volumic SEM or SEM through an inlet
 !-------------------------------------------------------------------------------
 
 !-------------------------------------------------------------------------------
@@ -54,9 +61,11 @@
 !  mode           name          role                                           !
 !______________________________________________________________________________!
 !> \param[out]    nent          number of synthetic turbulence inlets
+!> \param[out]    nstruct       numb. of entities of the inflow meth
+!> \param[out]    volmode       variable to use classic SEM or volume SEM
 !_______________________________________________________________________________
 
-subroutine cs_user_les_inflow_init (nent)
+subroutine cs_user_les_inflow_init (nent, nstruct,volmode)
 
 
 !===============================================================================
@@ -71,7 +80,7 @@ implicit none
 
 ! Arguments
 
-integer nent
+integer nent, nstruct,volmode
 
 ! Local variables
 
@@ -81,8 +90,10 @@ integer nent
 ! nent = Number of inlets
 !------------------------
 
-! There is two distinct synthetic turbulence inlets in the flow
+! There are two distinct synthetic turbulence inlets in the flow
 nent = 2
+nstruct = 50
+volmode=0
 
 ! Reading of the LES inflow module restart file
 
@@ -109,7 +120,7 @@ end subroutine cs_user_les_inflow_init
 
 subroutine cs_user_les_inflow_define &
 !===================================
-( nument, typent, nelent, iverbo,                                             &
+( nument, typent, iverbo,                                                     &
   nfbent, lfbent,                                                             &
   vitent, enrent, dspent                                                      &
 )
@@ -132,12 +143,6 @@ subroutine cs_user_les_inflow_define &
 !         1 : random gaussian noise
 !         2 : Batten method, based on Fourier mode decomposition
 !         3 : Synthetic Eddy Method (SEM)
-
-!     * nelent indicates the number of "entities" relative to the method
-!       (useful only for the Batten method and the SEM):
-
-!         for Batten : number of Fourier modes of the turbulent fluctuations
-!         for SEM    : number of synthetic eddies building the fluctuations
 
 !     * iverbo indicates the verbosity level (log)
 
@@ -171,7 +176,6 @@ subroutine cs_user_les_inflow_define &
 !__________________!____!_____!________________________________________________!
 ! nument           ! i  ! --> ! id of the inlet                                !
 ! typent           ! i  ! <-- ! type of inflow method at the inlet             !
-! nelent           ! i  ! <-- ! numb. of entities of the inflow meth           !
 ! iverbo           ! i  ! <-- ! verbosity level                                !
 ! nfbent           ! i  ! <-- ! numb. of bound. faces of the inlet             !
 ! lfbent           ! ra ! <-- ! list of bound. faces of the inlet              !
@@ -205,7 +209,7 @@ implicit none
 ! Arguments
 
 integer          nument, iverbo
-integer          nfbent, typent, nelent
+integer          nfbent, typent
 integer          lfbent(nfabor)
 
 double precision vitent(3), enrent, dspent
@@ -223,9 +227,6 @@ if (nument.eq.1) then
 
   ! Batten method
   typent = 2
-
-  ! Synthetic fluctuations are composed of 200 modes
-  nelent = 200
 
   ! No specific verbosity
   iverbo = 0
@@ -258,9 +259,6 @@ if (nument.eq.1) then
 
   ! Synthetic Eddy Method
   typent = 3
-
-  ! 2000 synthetic eddies contribute to the turbulent fluctuations
-  nelent = 2000
 
   ! Details concerning SEM in the log
   iverbo = 1

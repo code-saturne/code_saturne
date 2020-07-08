@@ -93,7 +93,7 @@ integer          modhis, iappel, iisuit
 integer          iel
 integer          inod   , idim, ifac
 integer          itrale , ntmsav
-integer          nent
+integer          nent , nstruct, volmode
 integer          iterns
 integer          stats_id, restart_stats_id, lagr_stats_id, post_stats_id
 
@@ -573,7 +573,9 @@ endif
 !===============================================================================
 
 nent = 0
-call defsyn(nent)
+nstruct = 0
+volmode = 0
+call defsyn(nent,nstruct,volmode)
 
 !===============================================================================
 ! Possible restart
