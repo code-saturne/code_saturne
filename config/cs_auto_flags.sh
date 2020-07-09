@@ -213,7 +213,7 @@ if test "x$cs_gcc" = "xgcc"; then
 
   case "$cs_cc_vendor-$cs_cc_version" in
     gcc-[4]*)
-      cflags_default="$cflags_default std=c99 -fms-extensions "
+      cflags_default="$cflags_default -std=c99 -fms-extensions "
       ;;
     gcc-[5]*)
       ;;

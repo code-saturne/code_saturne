@@ -150,7 +150,7 @@ if test "x$ple_gcc" = "xgcc"; then
 
   case "$ple_cc_vendor-$ple_cc_version" in
     gcc-[4]*)
-      cflags_default="$cflags_default std=c99 -fms-extensions "
+      cflags_default="$cflags_default -std=c99 -fms-extensions "
       ;;
     gcc-[5]*)
       ;;
