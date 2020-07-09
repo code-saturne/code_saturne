@@ -879,13 +879,16 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
             study = current.parent().internalPointer().item.name
 
         cur_path = os.getcwd()
-        rep = os.path.abspath(os.path.join(self.mdl.repo, study, "POST"))
-        os.chdir(rep)
+        base_dir = os.path.abspath(os.path.join(self.mdl.repo, study))
+        rep = os.path.abspath(os.path.join(base_dir, "POST"))
+        if not os.path.isdir(rep):
+            rep = os.path.abspath(os.path.join(os.path.split(base_dir)[0], "POST"))
+        if not os.path.isdir(rep):
+            rep = base_dir
         title = self.tr("postprocess script")
         filetypes = self.tr("All Files (*)")
         file = QFileDialog.getOpenFileName(self, title, rep, filetypes)[0]
         file = str(file)
-        os.chdir(cur_path)
 
         if not file:
             return
