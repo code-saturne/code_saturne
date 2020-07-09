@@ -52,6 +52,13 @@ if test "x$with_mumps" != "xno" ; then
   MUMPS_CPPFLAGS="-I${with_mumps}/include ${MUMPS_CPPFLAGS}"
   MUMPS_LDFLAGS="-L${with_mumps}/lib ${MUMPS_LDFLAGS}"
   MUMPS_LIBS="-ldmumps -lmumps_common ${MUMPS_LIBS}"
+  if test "x$FC" = "xifort" ; then
+    MUMPS_LIBS="${MUMPS_LIBS} -lifcore -lm"
+  elif test "x$FC" = "xmpiifort" ; then
+    MUMPS_LIBS="${MUMPS_LIBS} -lifcore -lm"
+  else
+    MUMPS_LIBS="${MUMPS_LIBS} -lgfortran -lm"
+  fi
   MUMPSRUNPATH="-R${with_mumps}/lib"
 
   AC_MSG_NOTICE([MUMPS_CPP=${MUMPS_CPPFLAGS}])

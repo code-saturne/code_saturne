@@ -51,7 +51,7 @@ m4_define([cs_licence_c_comment],
 #       to be maintained properly (as it should be anyways).
 
 m4_define([cs_version_string],
-          [m4_normalize(esyscmd([build-aux/cs_version.py]))])
+	  [m4_normalize(esyscmd([build-aux/cs_version.py]))])
 
 AC_INIT([code_saturne],[cs_version_string],[saturne-support@edf.fr],[],[https://code-saturne.org])
 AC_CONFIG_SRCDIR([src/apps/cs_solver.c])
@@ -82,14 +82,14 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES])
 #------------------------------------------------------------------------------
 
 AC_ARG_WITH(shell-env,
-            [AS_HELP_STRING([--with-shell-env],
-                            [source given or detected shell environment])],
-            [if test "x$with_shell_env" = "x"; then
-               shell_env=auto
-             elif test -f "$with_shell_env"; then
-               shell_env="$with_shell_env"
-             fi],
-            [shell_env=no]
+	    [AS_HELP_STRING([--with-shell-env],
+			    [source given or detected shell environment])],
+	    [if test "x$with_shell_env" = "x"; then
+	       shell_env=auto
+	     elif test -f "$with_shell_env"; then
+	       shell_env="$with_shell_env"
+	     fi],
+	    [shell_env=no]
 )
 AC_SUBST(shell_env)
 
@@ -339,7 +339,7 @@ if test "x$enable_shared" = "xno" ; then
   case "$host_os" in
     linux* | *bsd* | cnk* | mingw64 | cygwin* )
       if test "x$auto_flags" = "xyes" ; then
-        LDFLAGS="${LDFLAGS} -Wl,--allow-multiple-definition"
+	LDFLAGS="${LDFLAGS} -Wl,--allow-multiple-definition"
       fi
       ;;
     darwin*)
@@ -350,28 +350,28 @@ else
   case "$host_os" in
     linux* )
       if test "x$auto_flags" = "xyes" ; then
-        case "$cs_ac_cc_version" in
-          Cray* )
-            CFLAGS="${CFLAGS} -fPIC"
-            ;;
-          *)
-            LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
-            ;;
-        esac
-        case "$cs_ac_cxx_version" in
-          Cray* )
-            CXXFLAGS="${CXXFLAGS} -fPIC"
-            ;;
-          *)
-            ;;
-        esac
-        case "$cs_ac_fc_version" in
-          Cray* )
-            FCFLAGS="${FCFLAGS} -fPIC"
-            ;;
-          *)
-            ;;
-        esac
+	case "$cs_ac_cc_version" in
+	  Cray* )
+	    CFLAGS="${CFLAGS} -fPIC"
+	    ;;
+	  *)
+	    LDFLAGS="${LDFLAGS} -Wl,-export-dynamic"
+	    ;;
+	esac
+	case "$cs_ac_cxx_version" in
+	  Cray* )
+	    CXXFLAGS="${CXXFLAGS} -fPIC"
+	    ;;
+	  *)
+	    ;;
+	esac
+	case "$cs_ac_fc_version" in
+	  Cray* )
+	    FCFLAGS="${FCFLAGS} -fPIC"
+	    ;;
+	  *)
+	    ;;
+	esac
       fi
       ;;
   esac
@@ -486,30 +486,30 @@ if test "x$cs_have_openmp" = "xyes" ; then
 
   AC_MSG_CHECKING([for OpenMP (C)])
   AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <omp.h>]],
-                 [[ omp_get_num_threads();]])],
-                 [cs_have_openmp=yes],
-                 [cs_have_openmp=no])
+		 [[ omp_get_num_threads();]])],
+		 [cs_have_openmp=yes],
+		 [cs_have_openmp=no])
   AC_MSG_RESULT($cs_have_openmp)
   if test "x$cs_have_openmp" = "xyes" ; then
     AC_MSG_CHECKING([for OpenMP simd])
     # Note that as the m4 language does not allow escaping [ and ],
     # we use quadrigraphs @<:@ and @>:@ instead here.
     AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <omp.h>]],
-                     [[double a@<:@128@:>@;
-                      #pragma omp for simd safelen(4)
-                      for (int i = 0; i < 128; i++) a@<:@i@:>@ = i;]])],
-                     [cs_have_openmp_simd=yes],
-                     [cs_have_openmp_simd=no])
+		     [[double a@<:@128@:>@;
+		      #pragma omp for simd safelen(4)
+		      for (int i = 0; i < 128; i++) a@<:@i@:>@ = i;]])],
+		     [cs_have_openmp_simd=yes],
+		     [cs_have_openmp_simd=no])
     AC_MSG_RESULT($cs_have_openmp_simd)
     AC_LANG_PUSH([Fortran])
     AC_MSG_CHECKING([for OpenMP (Fortran)])
     AC_LINK_IFELSE([AC_LANG_PROGRAM([],
-                   [[
+		   [[
       integer n
       n = omp_get_num_threads()
 ]])],
-                   [cs_have_openmp_f=yes],
-                   [cs_have_openmp_f=no])
+		   [cs_have_openmp_f=yes],
+		   [cs_have_openmp_f=no])
     AC_MSG_RESULT($cs_have_openmp_f)
     AC_LANG_POP([Fortran])
   fi
@@ -551,7 +551,7 @@ if test "x$auto_flags" = "xyes" ; then
     else
       $NVCCFLAGS="$NVCCFLAGS $nvccflags_default_opt"
       if test "x$profile" = xyes; then
-        $NVCCFLAGS="$NVCCFLAGS $nvccflags_default_prf"
+	$NVCCFLAGS="$NVCCFLAGS $nvccflags_default_prf"
       fi
     fi
     AC_SUBST(NVCCFLAGS_DBG)
@@ -634,9 +634,9 @@ if test "x$cs_have_dlloader" = "xyes" ; then
 
   AC_MSG_CHECKING([for dlopen])
   AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <dlfcn.h>]],
-                 [[ dlopen("none.so", RTLD_LAZY);]])],
-                 [cs_have_dlloader=dlopen],
-                 [cs_have_dlloader=no])
+		 [[ dlopen("none.so", RTLD_LAZY);]])],
+		 [cs_have_dlloader=dlopen],
+		 [cs_have_dlloader=no])
   AC_MSG_RESULT($cs_have_dlloader)
   if test "x$cs_have_dlloader" = "xdlopen" ; then
     AC_DEFINE([HAVE_DLOPEN], 1, [dlopen support])
@@ -657,7 +657,7 @@ AC_ARG_ENABLE(dlopen-rtld-global,
   [
     case "${enableval}" in
       yes)  AC_DEFINE([CS_DLOPEN_USE_RTLD_GLOBAL], 1,
-                       [use RTLD_GLOBAL in dlopen flags.]) ;;
+		       [use RTLD_GLOBAL in dlopen flags.]) ;;
       no) ;;
       *)   AC_MSG_ERROR([bad value ${enableval} for --enable-dlopen-rtld-global]) ;;
     esac
@@ -684,7 +684,6 @@ fi
 CS_AC_TEST_BLAS([$cs_have_openmp])
 CS_AC_TEST_MPI
 CS_AC_TEST_METIS
-CS_AC_TEST_MUMPS
 CS_AC_TEST_SCOTCH
 CS_AC_TEST_HDF5
 CS_AC_TEST_CGNS
@@ -697,6 +696,7 @@ CS_AC_TEST_ZLIB
 CS_AC_TEST_MEDCOUPLING
 CS_AC_TEST_CATALYST
 CS_AC_TEST_MELISSA
+CS_AC_TEST_MUMPS
 CS_AC_TEST_PETSC
 
 CS_AC_TEST_DOCS
@@ -740,7 +740,7 @@ AM_CONDITIONAL(HAVE_LINK_CXX, test x$cs_have_link_cxx = xyes)
 #------------------------------------------------------------------------------
 
 AC_ARG_ENABLE(frontend, [AS_HELP_STRING([--disable-frontend],
-                                        [disable front-end elements])],
+					[disable front-end elements])],
   [
     case "${enableval}" in
       yes) cs_have_frontend=yes ;;
@@ -758,7 +758,7 @@ AC_SUBST(cs_have_frontend)
 #------------------------------------------------------------------------------
 
 AC_ARG_ENABLE(backend, [AS_HELP_STRING([--disable-backend],
-                                        [disable back-end elements])],
+					[disable back-end elements])],
   [
     case "${enableval}" in
       yes) cs_have_backend=yes ;;
@@ -776,7 +776,7 @@ AC_SUBST(cs_have_backend)
 #------------------------------------------------------------------------------
 
 AC_ARG_ENABLE(gui, [AS_HELP_STRING([--disable-gui],
-                                   [disable the Graphical User Interface])],
+				   [disable the Graphical User Interface])],
   [
     case "${enableval}" in
       yes) cs_have_gui=check ;;
@@ -1031,9 +1031,9 @@ if test "x$malloc_hooks" = "xyes" ; then
   # Basic test
   AC_MSG_CHECKING([for malloc hooks])
   AC_LINK_IFELSE([AC_LANG_PROGRAM([[]],
-                 [[ int __malloc_hook(); __malloc_hook(); ]])],
-                 [cs_have_malloc_hooks=yes],
-                 [cs_have_malloc_hooks=no])
+		 [[ int __malloc_hook(); __malloc_hook(); ]])],
+		 [cs_have_malloc_hooks=yes],
+		 [cs_have_malloc_hooks=no])
   AC_MSG_RESULT($cs_have_malloc_hooks)
 
 fi
@@ -1055,9 +1055,9 @@ AC_LINK_IFELSE([AC_LANG_PROGRAM([[#if defined(__GNUC__)
 #include <memory.h>
 #include <execinfo.h>
 #endif]],
-               [[ void *tr_array[10]; backtrace(tr_array, 10); ]])],
-               [cs_have_glibc_backtrace=yes],
-               [cs_have_glibc_backtrace=no])
+	       [[ void *tr_array[10]; backtrace(tr_array, 10); ]])],
+	       [cs_have_glibc_backtrace=yes],
+	       [cs_have_glibc_backtrace=no])
 AC_MSG_RESULT($cs_have_glibc_backtrace)
 
 if test "x$cs_have_glibc_backtrace" = "xyes"; then
@@ -1070,9 +1070,9 @@ cs_have_cplus_demangle=no
 
 AC_MSG_CHECKING([for glibc cplus_demangle])
 AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <demangle.h>]],
-               [[ const char *s; cplus_demangle(s, auto_demangling); ]])],
-               [cs_have_cplus_demangle=yes],
-               [cs_have_cplus_demangle=no])
+	       [[ const char *s; cplus_demangle(s, auto_demangling); ]])],
+	       [cs_have_cplus_demangle=yes],
+	       [cs_have_cplus_demangle=no])
 AC_MSG_RESULT($cs_have_cplus_demangle)
 
 if test "x$cs_have_cplus_demangle" = "xyes"; then
@@ -1157,26 +1157,26 @@ AC_SUBST(NEPTUNE_CFD)
 # Main configuration
 
 AC_CONFIG_FILES([Makefile
-                 preprocessor/Makefile
-                 preprocessor/appli/Makefile preprocessor/base/Makefile
-                 preprocessor/pre-post/Makefile preprocessor/util/Makefile
-                 src/Makefile      src/apps/Makefile src/gui/Makefile
-                 src/bft/Makefile  src/fvm/Makefile
-                 src/base/Makefile src/atmo/Makefile src/cdo/Makefile
-                 src/cfbl/Makefile src/cogz/Makefile src/ctwr/Makefile
-                 src/darc/Makefile src/elec/Makefile src/comb/Makefile
-                 src/pprt/Makefile src/lagr/Makefile src/rayt/Makefile
-                 src/turb/Makefile src/alge/Makefile src/mesh/Makefile
-                 src/user/Makefile src/user_examples/Makefile
-                 src/meg/Makefile
-                 gui/Makefile gui/Base/Makefile gui/Pages/Makefile
-                 gui/studymanager_gui/Makefile gui/trackcvg/Makefile
-                 docs/Makefile docs/doxygen/Makefile docs/style/csvers.tex
-                 docs/refcard/Makefile docs/theory/Makefile
-                 docs/user/Makefile
-                 tests/Makefile
-                 bin/cs_config.py
-                 config/code_saturne_build.cfg.in])
+		 preprocessor/Makefile
+		 preprocessor/appli/Makefile preprocessor/base/Makefile
+		 preprocessor/pre-post/Makefile preprocessor/util/Makefile
+		 src/Makefile      src/apps/Makefile src/gui/Makefile
+		 src/bft/Makefile  src/fvm/Makefile
+		 src/base/Makefile src/atmo/Makefile src/cdo/Makefile
+		 src/cfbl/Makefile src/cogz/Makefile src/ctwr/Makefile
+		 src/darc/Makefile src/elec/Makefile src/comb/Makefile
+		 src/pprt/Makefile src/lagr/Makefile src/rayt/Makefile
+		 src/turb/Makefile src/alge/Makefile src/mesh/Makefile
+		 src/user/Makefile src/user_examples/Makefile
+		 src/meg/Makefile
+		 gui/Makefile gui/Base/Makefile gui/Pages/Makefile
+		 gui/studymanager_gui/Makefile gui/trackcvg/Makefile
+		 docs/Makefile docs/doxygen/Makefile docs/style/csvers.tex
+		 docs/refcard/Makefile docs/theory/Makefile
+		 docs/user/Makefile
+		 tests/Makefile
+		 bin/cs_config.py
+		 config/code_saturne_build.cfg.in])
 
 #------------------------------------------------------------------------------
 
