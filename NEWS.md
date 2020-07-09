@@ -3,6 +3,8 @@ Release 6.0.5 (unreleased)
 
 Bug fixes:
 
+- Fans model: fix volume computation and associated scaling in parallel mode.
+
 - Fix field output numbering on polyhedra or polygons when writer
   subdivision is activated in serial mode.
 
