@@ -512,6 +512,17 @@ cs_fan_build_all(const cs_mesh_t              *mesh,
 
   } /* End of main loop on cells */
 
+  for (int fan_id = 0; fan_id < _cs_glob_n_fans; fan_id++) {
+    cs_parall_sum(1, CS_DOUBLE, &((_cs_glob_fans[fan_id])->volume));
+  }
+
+  /* Synchronize cell_fan_id */
+  if (mesh->halo != NULL)
+    cs_halo_sync_untyped(mesh->halo,
+                         CS_HALO_EXTENDED,
+                         sizeof(int),
+                         cell_fan_id);
+
   /* Create the lists of cells belonging to each fan */
   /*-------------------------------------------------*/
 
