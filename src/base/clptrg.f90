@@ -2106,7 +2106,7 @@ do ifac = 1, nfabor
       ! Dry atmosphere, Monin Obukhov
       call mo_psih(distbf+rugt,rugt,dlmo_loc,coef_moh)
       ! T+
-      tplus = xkappa * coef_moh
+      tplus = coef_moh / xkappa
     endif
 
     ! Dirichlet on the scalar, with wall function
