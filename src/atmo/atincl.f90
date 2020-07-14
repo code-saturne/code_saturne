@@ -1081,9 +1081,9 @@ subroutine mo_compute_from_thermal_flux(z,z0,du,flux,tm,gredu,dlmo,ustar)
 
   ! Convergence test
   if (icompt.le.1000) then
-    if (abs(ustar_old).gt.epzero.and.abs((ustar-ustar_old)).ge.prec_ustar*ustar_old) go to 123
-    if (abs(tstar_old).gt.epzero.and.abs((tstar-tstar_old)).ge.prec_tstar*tstar_old) go to 123
-    if (abs(dlmo_old).gt.epzero.and.abs((dlmo-dlmo_old)).ge.prec_lmo*dlmo_old) go to 123
+    if (abs(ustar_old).gt.epzero.and.abs((ustar-ustar_old)).ge.prec_ustar*abs(ustar_old)) go to 123
+    if (abs(tstar_old).gt.epzero.and.abs((tstar-tstar_old)).ge.prec_tstar*abs(tstar_old)) go to 123
+    if (abs(dlmo_old).gt.epzero.and.abs((dlmo-dlmo_old)).ge.prec_lmo*abs(dlmo_old)) go to 123
 
     if (abs(ustar_old).le.epzero.and.abs(ustar).gt.epzero) go to 123
     if (abs(tstar_old).le.epzero.and.abs(tstar).gt.epzero) go to 123
@@ -1194,9 +1194,9 @@ subroutine mo_compute_from_thermal_diff(z,z0,du,dt,tm,gredu,dlmo,ustar)
 
   ! Convergence test
   if (icompt.le.1000) then !FIXME compteur max 1000 a mettre en param
-    if (abs(ustar_old).gt.epzero.and.abs((ustar-ustar_old)).ge.prec_ustar*ustar_old) go to 123
-    if (abs(tstar_old).gt.epzero.and.abs((tstar-tstar_old)).ge.prec_tstar*tstar_old) go to 123
-    if (abs(dlmo_old).gt.epzero.and.abs((dlmo-dlmo_old)).ge.prec_lmo*dlmo_old) go to 123
+    if (abs(ustar_old).gt.epzero.and.abs((ustar-ustar_old)).ge.prec_ustar*abs(ustar_old)) go to 123
+    if (abs(tstar_old).gt.epzero.and.abs((tstar-tstar_old)).ge.prec_tstar*abs(tstar_old)) go to 123
+    if (abs(dlmo_old).gt.epzero.and.abs((dlmo-dlmo_old)).ge.prec_lmo*abs(dlmo_old)) go to 123
 
     if (abs(ustar_old).le.epzero.and.abs(ustar).gt.epzero) go to 123
     if (abs(tstar_old).le.epzero.and.abs(tstar).gt.epzero) go to 123
