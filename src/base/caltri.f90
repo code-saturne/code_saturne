@@ -240,7 +240,6 @@ call initi2
 iappel = 1
 
 ! Allocate temporary arrays for zones definition
-allocate(izcpdc(ncel))
 allocate(izctsm(ncel))
 allocate(izftcd(ncel)) ! should be in init_pcond only
 
@@ -350,7 +349,6 @@ endif
 call cs_1d_wall_thermal_check(iappel, isuit1)
 
 ! Free memory if relevant
-if (ncpdct.eq.0) deallocate(izcpdc)
 if (nctsmt.eq.0) deallocate(izctsm)
 if (nftcdt.eq.0) deallocate(izftcd)
 if (nfpt1t.eq.0) call cs_1d_wall_thermal_finalize

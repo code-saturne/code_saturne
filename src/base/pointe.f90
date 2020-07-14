@@ -159,9 +159,6 @@ module pointe
   !> See \c {iicepd}
   integer, allocatable, dimension(:) :: icepdc
 
-  !> zones with head losses
-  integer, allocatable, dimension(:) :: izcpdc
-
   !> \anchor ckupdc
   !> value of the coefficients of the pressure drop tensor of the
   !> \c ncepdc cells in which a pressure drop is imposed.
@@ -422,7 +419,6 @@ contains
 
     deallocate(itrifb)
     if (allocated(idfstr)) deallocate(idfstr)
-    if (allocated(izcpdc)) deallocate(izcpdc)
     if (allocated(izctsm)) deallocate(izctsm)
     if (allocated(b_head_loss)) deallocate(b_head_loss)
     if (allocated(gamcav)) deallocate(gamcav, dgdpca)
