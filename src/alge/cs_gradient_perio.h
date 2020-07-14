@@ -55,34 +55,6 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Periodicity management for INIMAS
- *
- * If INIMAS is called by NAVSTO :
- *    We assume that gradient on ghost cells given by a rotation is known
- *    and is equal to the velocity one for the previous time step.
- * If INIMAS is called by DIVRIJ
- *    We assume that (more justifiable than in previous case) gradient on
- *    ghost cells given by rotation is equal to Rij gradient for the previous
- *    time step.
- *
- * Fortran Interface:
- *
- * subroutine permas
- * *****************
- *
- * integer          iappel      :  -> : indicateur d'appel dans inimas
- *                                          = 1 si appel au debut
- *                                          = 2 si appel a la fin
- * double precision rom(ncelet) :  -> : masse volumique aux cellules
- *
- * Size of DRDXYZ and WDRDXY = n_ghost_cells*6*3
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (permas, PERMAS)(const int  *iappel,
-                          cs_real_t   rom[]);
-
-/*----------------------------------------------------------------------------
  * Preparation rotation periodicity for Reynolds stresses.
  *
  * Compute an estimation of the velocity gradient.
