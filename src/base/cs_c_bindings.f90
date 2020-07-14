@@ -3015,14 +3015,14 @@ module cs_c_bindings
     ! Interface to C function to implicit and explicit sources terms
     ! from sources mass computation.
 
-    subroutine catsma(ncesmp, iterns, isnexp, icetsm, itpsmp,  &
+    subroutine catsma(ncesmp, iterns, icetsm, itpsmp,          &
                       volume, pvara, smcelp, gamma,            &
                       tsexp, tsimp, gapinj)                    &
       bind(C, name='cs_mass_source_terms')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), intent(in), value :: ncesmp
-      integer(c_int), intent(in), value :: iterns, isnexp
+      integer(c_int), intent(in), value :: iterns
       integer(kind=c_int), dimension(*), intent(in) :: icetsm, itpsmp
       real(kind=c_double), dimension(*), intent(in) :: volume
       real(kind=c_double), dimension(*), intent(in) :: pvara

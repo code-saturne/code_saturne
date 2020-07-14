@@ -93,7 +93,6 @@ double precision smacel(ncesmp,nvar)
 ! Local variables
 
 integer          iel   , ifac  , inc   , iccocg, iprev, ivar
-integer          iiun
 integer          imrgrp, nswrgp, imligp
 integer          iconvp, idiffp, ndircp
 integer          nswrsp, ircflp, ischcp, isstpp, iescap
@@ -464,17 +463,13 @@ enddo
 
 if (ncesmp.gt.0) then
 
-  ! Integer equal to 1. (in navsto: nb of sub-iteration)
-  iiun = 1
-
   ! --- Explicit and Implicit part
   !     -Gamma.var_prev is added to the RHS and Gamma to tinssa
   ivar = inusa
 
-  call catsma &
- ( ncesmp , iiun   , isto2t , icetsm , itypsm(1,ivar) ,               &
-   cell_f_vol , cvara_nusa     , smacel(1,ivar) , smacel(1,ipr) ,     &
-   rhssa  , tinssa , w1 )
+  call catsma(ncesmp, 1, icetsm, itypsm(:,ivar),                     &
+             cell_f_vol, cvara_nusa, smacel(:,ivar), smacel(:,ipr),  &
+             rhssa, tinssa, w1)
 
   ! --- Explicit part: Gamma Pinj
   !     (if we extrapolate source terms, Gamma.var_prev is stored in prev. TS)

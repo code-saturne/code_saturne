@@ -34,8 +34,6 @@
 !> \param[in]     ncel          number of cells
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     iterns        Navier-Stokes iteration number
-!> \param[in]     isnexp        sources terms of treated phase extrapolation
-!>                              indicator
 !> \param[in]     icetsm        source mass cells pointer
 !> \param[in]     itpsmp        mass source type for the working variable
 !>                              (cf. \ref cs_user_mass_source_terms)
@@ -52,7 +50,7 @@
 !______________________________________________________________________________
 
 subroutine catsmv &
- ( ncelet , ncel   , ncesmp , iterns , isnexp ,                   &
+ ( ncelet , ncel   , ncesmp , iterns ,                            &
    icetsm , itpsmp ,                                              &
    cell_f_vol      , vela   , smcelv , gamma  ,                   &
    tsexpv , tsimpv , gavinj )
@@ -65,7 +63,7 @@ implicit none
 
 ! Variables
 
-integer          ncelet, ncel  , ncesmp, iterns, isnexp
+integer          ncelet, ncel  , ncesmp, iterns
 integer          icetsm(ncesmp), itpsmp(ncesmp)
 double precision cell_f_vol(ncelet)
 double precision vela  (3,ncelet)
@@ -110,25 +108,14 @@ if(iterns.eq.1) then
 endif
 
 !     Sur la diagonale
-if(isnexp.gt.0) then
-  do ii = 1, ncesmp
-    iel = icetsm(ii)
-    if (gamma(ii).gt.0.d0 .and. itpsmp(ii).eq.1) then
-      do isou = 1, 3
-        tsimpv(isou,isou,iel) = tsimpv(isou,isou,iel)+cell_f_vol(iel)*gamma(ii)
-      enddo
-    endif
-  enddo
-else
-  do ii = 1, ncesmp
-    iel = icetsm(ii)
-    if (gamma(ii).gt.0.d0 .and. itpsmp(ii).eq.1) then
-      do isou = 1, 3
-        tsimpv(isou,isou,iel) = tsimpv(isou,isou,iel)+cell_f_vol(iel)*gamma(ii)
-      enddo
-    endif
-  enddo
-endif
+do ii = 1, ncesmp
+  iel = icetsm(ii)
+  if (gamma(ii).gt.0.d0 .and. itpsmp(ii).eq.1) then
+    do isou = 1, 3
+      tsimpv(isou,isou,iel) = tsimpv(isou,isou,iel)+cell_f_vol(iel)*gamma(ii)
+    enddo
+  endif
+enddo
 
 return
 end subroutine

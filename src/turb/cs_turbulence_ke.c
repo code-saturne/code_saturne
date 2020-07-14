@@ -1451,15 +1451,11 @@ cs_turbulence_ke(int              nvar,
 
     }
 
-    /* Integer equal to 1 (for navsto: nb of sur-iter) */
-    int iveln = 1;
-
     /* We incremente smbrs with -Gamma.var_prev and rovsdt with Gamma */
     /* ivar = k; */
 
     cs_mass_source_terms(ncesmp,
-                         iveln,
-                         isto2t,
+                         1,
                          icetsm,
                          itypsm_k,
                          cell_f_vol,
@@ -1472,8 +1468,7 @@ cs_turbulence_ke(int              nvar,
 
     /* ivar = eps; */
     cs_mass_source_terms(ncesmp,
-                         iveln,
-                         isto2t,
+                         1,
                          icetsm,
                          itypsm_eps,
                          cell_f_vol,

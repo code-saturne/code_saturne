@@ -278,11 +278,9 @@ enddo
 if (ncesmp.gt.0) then
   iterns = 1
   allocate(gapinj(ncelet))
-  call catsma ( ncesmp , iterns ,                                              &
-                isno2t,                                                        &
-                icetsm , itypsm(1,ivar),                                       &
-                cell_f_vol    , cvara_energ   , smacel(1,ivar),                &
-                smacel(1,ipr) , smbrs , rovsdt , gapinj)
+  call catsma(ncesmp, iterns, icetsm, itypsm(:,ivar),                          &
+              cell_f_vol, cvara_energ, smacel(:,ivar),                         &
+              smacel(:,ipr), smbrs, rovsdt, gapinj)
   deallocate(gapinj)
 endif
 

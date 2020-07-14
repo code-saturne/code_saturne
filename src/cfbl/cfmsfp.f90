@@ -368,12 +368,10 @@ if (ncesmp.gt.0) then
     enddo
   enddo
 
-  call catsmv &
-       !==========
-     ( ncelet , ncel , ncesmp , iterns , isno2t,                   &
-       icetsm , itypsm(1,iu),                                      &
-       cell_f_vol   , vel0 , smacel(1,iu) ,smacel(1,ipr) ,         &
-       tsexp  , tsimp , gavinj )
+  call catsmv(ncelet, ncel, ncesmp, iterns,                              &
+              icetsm, itypsm(:,iu),                                      &
+              cell_f_vol, vel0, smacel(:,iu), smacel(:,ipr),             &
+              tsexp, tsimp, gavinj)
 
   do iel = 1, ncel
     do isou = 1, 3

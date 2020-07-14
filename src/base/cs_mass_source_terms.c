@@ -84,8 +84,6 @@ BEGIN_C_DECLS
  *
  * \param[in]     ncesmp        number of cells with mass source term
  * \param[in]     iterns        iteration number on Navier-Stoke
- * \param[in]     isnexp        sources terms of treated phasis extrapolation
- *                              indicator
  * \param[in]     icetsm        source mass cells pointer (1-based numbering)
  * \param[in]     itpsmp        mass source type for the working variable
  *                              (see \ref cs_user_mass_source_terms)
@@ -104,7 +102,6 @@ BEGIN_C_DECLS
 void
 cs_mass_source_terms(cs_lnum_t             ncesmp,
                      int                   iterns,
-                     int                   isnexp,
                      const int             icetsm[],
                      int                   itpsmp[],
                      const cs_real_t       volume[],
@@ -149,23 +146,12 @@ cs_mass_source_terms(cs_lnum_t             ncesmp,
 
   /* On the diagonal */
 
-  if (isnexp > 0) {
-    for (cs_lnum_t i = 0; i < ncesmp; i++) {
-      cs_lnum_t c_id = icetsm[i] - 1;
-      if (gamma[i] > 0. && itpsmp[i] == 1) {
-        st_imp[c_id] = st_imp[c_id] + volume[c_id]*gamma[i];
-      }
+  for (cs_lnum_t i = 0; i < ncesmp; i++) {
+    cs_lnum_t c_id = icetsm[i] - 1;
+    if (gamma[i] > 0. && itpsmp[i] == 1) {
+      st_imp[c_id] += volume[c_id]*gamma[i];
     }
   }
-  else {
-    for (cs_lnum_t i = 0; i < ncesmp; i++) {
-      cs_lnum_t c_id = icetsm[i] - 1;
-      if (gamma[i] > 0. && itpsmp[i] == 1) {
-        st_imp[c_id] = st_imp[c_id] + volume[c_id]*gamma[i];
-      }
-    }
-  }
-
 }
 
 /*----------------------------------------------------------------------------*/

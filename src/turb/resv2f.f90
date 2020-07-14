@@ -92,7 +92,6 @@ double precision prdv2f(ncelet)
 
 integer          init  , ifac  , iel   , inc   , iprev , iccocg
 integer          ivar
-integer          iiun
 integer          iflmas, iflmab
 integer          imrgrp, nswrgp, imligp, iwarnp, iwgrp, iphydp
 integer          iconvp, idiffp, ndircp
@@ -575,14 +574,10 @@ endif
 
 if (ncesmp.gt.0) then
 
-  !       Integer equal to 1 (for navsto: nb of over-iter)
-  iiun = 1
-
   !       We increment smbr by -Gamma.var_prev and rovsdt by Gamma
-  call catsma                                                     &
- ( ncesmp , iiun   , isto2t , icetsm , itypsm(1,ivar) ,           &
-   cell_f_vol , cvara_var  , smacel(1,ivar) , smacel(1,ipr) ,     &
-   smbr   ,  rovsdt , w2 )
+  call catsma(ncesmp, 1, icetsm, itypsm(:,ivar),                     &
+              cell_f_vol, cvara_var, smacel(:,ivar), smacel(:,ipr),  &
+              smbr, rovsdt, w2)
 
   ! If we extrapolate the source term we put Gamma Pinj in the prev. TS
   if (istprv.ge.0) then

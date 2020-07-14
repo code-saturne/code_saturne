@@ -1500,15 +1500,15 @@ if (ncesmp.gt.0) then
   allocate(gavinj(3,ncelet))
   if (nterup.eq.1) then
     call catsmv &
-  ( ncelet , ncel , ncesmp , iterns , isno2t,                   &
+  ( ncelet , ncel , ncesmp , iterns ,                           &
     icetsm , itypsm(1,iu),                                      &
-    cell_f_vol    , vela , smacel(1,iu) , smacel(1,ipr) ,       &
+    cell_f_vol    , vela , smacel(:,iu) , smacel(:,ipr) ,       &
     trav   , fimp , gavinj )
   else
     call catsmv &
-  ( ncelet , ncel , ncesmp , iterns , isno2t,                   &
+  ( ncelet , ncel , ncesmp , iterns ,                           &
     icetsm , itypsm(1,iu),                                      &
-    cell_f_vol    , vela , smacel(1,iu) , smacel(1,ipr) ,       &
+    cell_f_vol    , vela , smacel(:,iu) , smacel(:,ipr) ,       &
     trava  , fimp  , gavinj )
   endif
 

@@ -159,7 +159,6 @@ cs_turbulence_kw(int              nvar,
 
   const cs_time_scheme_t *time_scheme = cs_get_glob_time_scheme();
   const cs_real_t thets  = time_scheme->thetst;
-  const int isto2t  = time_scheme->isto2t;
 
   const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
   cs_real_t viscl0 = phys_pro->viscl0; /* reference pressure */
@@ -1003,15 +1002,11 @@ cs_turbulence_kw(int              nvar,
     BFT_MALLOC(gamk, n_cells_ext, cs_real_t);
     BFT_MALLOC(gamw, n_cells_ext, cs_real_t);
 
-    /* Integer equal to 1 (pour navsto: nb de sur-iter) */
-    int iveln = 1;
-
     /* On incremente SMBRS par -Gamma.var_prev et ROVSDT par Gamma */
     /* ivar = k; */
 
     cs_mass_source_terms(ncesmp,
-                         iveln,
-                         isto2t,
+                         1,
                          icetsm,
                          itypsm_k,
                          cell_f_vol,
@@ -1025,8 +1020,7 @@ cs_turbulence_kw(int              nvar,
     /* ivar = omg; */
 
     cs_mass_source_terms(ncesmp,
-                         iveln,
-                         isto2t,
+                         1,
                          icetsm,
                          itypsm_omg,
                          cell_f_vol,

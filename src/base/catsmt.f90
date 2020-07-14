@@ -34,8 +34,6 @@
 !> \param[in]     ncel          number of cells
 !> \param[in]     ncesmp        number of cells with mass source term
 !> \param[in]     iterns        iteration number on Navier-Stoke
-!> \param[in]     isnexp        sources terms of treated phasis extrapolation
-!>                              indicator
 !> \param[in]     icetsm        source mass cells pointer
 !> \param[in]     itpsmp        mass source type for the working variable
 !>                              (see \ref cs_user_mass_source_terms)
@@ -51,7 +49,7 @@
 !______________________________________________________________________________
 
 subroutine catsmt &
- ( ncelet , ncel   , ncesmp , iterns , isnexp ,                   &
+ ( ncelet , ncel   , ncesmp , iterns ,                            &
    icetsm , itpsmp ,                                              &
    volume , pvara  , smcelp , gamma  ,                            &
    tsexp  , tsimp  , gapinj )
@@ -110,25 +108,14 @@ if(iterns.eq.1) then
 endif
 
 !     Sur la diagonale
-if(isnexp.gt.0) then
-  do ii = 1, ncesmp
-    iel = icetsm(ii)
-    if (gamma(ii).gt.0.d0 .and. itpsmp(ii).eq.1) then
-      do isou = 1, 6
-        tsimp(isou,isou,iel) = tsimp(isou,isou,iel)+volume(iel)*gamma(ii)
-      enddo
-    endif
-  enddo
-else
-  do ii = 1, ncesmp
-    iel = icetsm(ii)
-    if (gamma(ii).gt.0.d0 .and. itpsmp(ii).eq.1) then
-      do isou = 1, 6
-        tsimp(isou,isou,iel) = tsimp(isou,isou,iel)+volume(iel)*gamma(ii)
-      enddo
-    endif
-  enddo
-endif
+do ii = 1, ncesmp
+  iel = icetsm(ii)
+  if (gamma(ii).gt.0.d0 .and. itpsmp(ii).eq.1) then
+    do isou = 1, 6
+      tsimp(isou,isou,iel) = tsimp(isou,isou,iel)+volume(iel)*gamma(ii)
+    enddo
+  endif
+enddo
 
 return
 end subroutine

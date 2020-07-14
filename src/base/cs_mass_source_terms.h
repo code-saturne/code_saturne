@@ -45,8 +45,6 @@ BEGIN_C_DECLS
  *
  * \param[in]     ncesmp        number of cells with mass source term
  * \param[in]     iterns        iteration number on Navier-Stoke
- * \param[in]     isnexp        sources terms of treated phasis extrapolation
- *                              indicator
  * \param[in]     icetsm        source mass cells pointer (1-based numbering)
  * \param[in]     itpsmp        mass source type for the working variable
  *                              (see \ref cs_user_mass_source_terms)
@@ -65,7 +63,6 @@ BEGIN_C_DECLS
 void
 cs_mass_source_terms(cs_lnum_t             ncesmp,
                      int                   iterns,
-                     int                   isnexp,
                      const int             icetsm[],
                      int                   itpsmp[],
                      const cs_real_t       volume[],

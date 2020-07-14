@@ -2638,7 +2638,6 @@ cs_source_term_hhosd_by_analytic(const cs_xdef_t           *source,
   } /* End of switch on the cell-type */
 }
 
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief  Compute the contribution of a source term for a cell and add it to
