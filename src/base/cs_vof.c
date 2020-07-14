@@ -557,9 +557,9 @@ cs_vof_update_phys_prop(const cs_domain_t *domain)
 /*!
  * \brief Write in main log the global mixture mass budget:
  * \f[
- * \sum_i\left(
- * |\Omega_i|\dfrac{\alpha_i^n - \alpha_i^{n-1}}{\Delta t} +
- * \sum_{j\in\Face{\celli}}\left(\rho\vect{u}\vect{S}\right)_{ij}^n
+ * \sum_\celli\left(
+ * |\Omega_\celli|\dfrac{\alpha_\celli^n - \alpha_\celli^{n-1}}{\Delta t} +
+ * \sum_{\cellj\in\Face{\celli}}\left(\rho\vect{u}\vect{S}\right)_{\ij}^n
  * \right).
  * \f]
  */
@@ -711,14 +711,14 @@ cs_vof_log_mass_budget(const cs_domain_t *domain)
  * \f[
  * \Dot{m^d}_{\face} = min \left ( C_{\gamma} \dfrac{\Dot{m}_{\face}}
  * {\vect S_{\face}}, \underset{\face'}{max} \left [ \dfrac{\Dot{m}_{\face'}}
- * {\vect S_{\face'}} \right ] \right ) \left ( \vect n . \vect S \right )
+ * {\vect S_{\face'}} \right ] \right ) \left ( \vect n \cdot \vect S \right )
  * _{\face}
  * \f]
  * Where \f$ C_{\gamma} \f$ is the drift flux factor defined with the variable
  * \ref cdrift, \f$ \vect n _{\face} \f$ the normal vector to the interface.
  * The gradient is computed using a centered scheme:
  * \f[
- * {\vect n _{\face}} = \dfrac{\left ( \grad \alpha \right ) _{\face}}
+ * \vect {n} _{\face} = \dfrac{\left ( \grad \alpha \right ) _{\face}}
  * {\norm {\left ( \grad \alpha \right ) _{\face} + \delta}},
  * \text{ with: }
  * \left ( \grad \alpha \right ) _{\face _{\celli \cellj}} = \dfrac{\left (

@@ -28,7 +28,7 @@ Introduction {#cs_case_structure_intro}
 This page describes the directory structure used by code_saturne to
 handle case data, model and numerical parameters, and run options.
 
-To create a case, either the GUI or the```code_saturne create``` command
+To create a case, either the GUI or the ```code_saturne create``` command
 can be used. As usual for all code_saturne commands,
 the ```code_saturne create --help```
 will list the available options. More details are provided in the

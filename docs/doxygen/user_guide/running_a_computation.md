@@ -247,7 +247,7 @@ sources to be detected immediately, before the job is submitted, and
 also modifying the base setup without impacting an already submitted job.
 On some HPC systems, the compilers may also be available only on the front-end nodes,
 so this also avoids possible issues related to trying to compile user-defined
-functions and re-link the code from a a compute node.
+functions and re-link the code from a compute node.
 
 Interactive modification of selected parameters {#sec_prg_control_file}
 ===============================================
@@ -361,8 +361,8 @@ Note that in general, if a given behavior is modifiable through an environment
 variable rather than by a command-line option, it has little interest for a
 non-developer, or is expected to be needed only in exceptional cases.
 
-Variable             | Role
----------------------|------------------------------------------------------------
+Variable                                 | Role
+-----------------------------------------|----------------------------------
 `CS_PREPROCESS_MEM_LOG`                  | Allows defining a file name in which memory allocation, reallocation, and freeing is logged.
 `CS_PREPROCESS_MIN_EDGE_LEN`             | Under the indicated length ( *10<sup>-15</sup>* by default), an edge is considered to be degenerate and its vertices will be merged after the transformation to descending connectivity. Degenerate edges and faces will thus be removed. Hence, the post-processed element does not change, but the Solver may handle a prism where the preprocessor input contained a hexahedron with two identical vertex couples (and thus a face of zero surface). If the Preprocessor does not print any information relative to this type of correction, it means that it has not been necessary. To completely deactivate this automatic correction, a negative value may be assigned to this environment variable.
 `CS_PREPROCESS_MEM_IGNORE_IDEAS_COO_SYS` | If this variable is defined and is a strictly positive integer, coordinate systems in [I-deas universal](@ref sec_fmtdesc_unv) format files will be ignored. The behavior of the Preprocessor will thus be the same as that of versions 1.0 and 1.1. Note that in any case, non Cartesian coordinate systems are not handled yet.
