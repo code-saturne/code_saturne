@@ -109,7 +109,8 @@ The command line options can be listed with the following command:
 - `--create-xml`: create xml from study (current directory has to be
   a study)
 
-### Examples
+Examples
+--------
 
 - read `sample.xml`, create **destination** directory and exit;
   ```
