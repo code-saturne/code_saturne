@@ -742,8 +742,8 @@ cs_user_parameters(cs_domain_t *domain)
     int key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
     cs_field_get_key_struct(sca1, key_cal_opt_id, &vcopt);
-    vcopt.ischcv = 0;
-    vcopt.isstpc = 3;
+    vcopt.ischcv = 4;
+    vcopt.isstpc = 0;
     cs_field_set_key_struct(sca1, key_cal_opt_id, &vcopt);
 
     /* Min/Max limiter or NVD/TVD limiters
