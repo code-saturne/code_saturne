@@ -3,6 +3,8 @@ Release 6.1.2 (unreleased)
 
 Bug fixes:
 
+- Fix memory leak for NVD convective schemes (used in VOF module).
+
 - Fans model: fix volume computation and associated scaling in parallel mode.
 
 - Fix field output numbering on polyhedra or polygons when writer

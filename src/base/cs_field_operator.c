@@ -345,11 +345,16 @@ _local_extrema_scalar(const cs_real_t *restrict pvar,
     }
   }
 
+  /* Free memory */
+  BFT_FREE(v_min);
+  BFT_FREE(v_max);
+
   /* Synchronisation */
   if (m->halo != NULL) {
     cs_halo_sync_var(m->halo, halo_type, local_min);
     cs_halo_sync_var(m->halo, halo_type, local_max);
   }
+
 }
 
 /*============================================================================
