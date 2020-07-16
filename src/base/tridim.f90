@@ -251,11 +251,11 @@ interface
   end subroutine cs_lagr_head_losses
 
   subroutine cs_turbulence_kw &
-       (nvar, nscal, ncesmp, icetsm, itypsm, dt, smacel) &
+       (nvar, ncesmp, icetsm, itypsm, dt, smacel) &
     bind(C, name='cs_turbulence_kw')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value :: nvar, nscal, ncesmp
+    integer(c_int), value :: nvar, ncesmp
     integer(c_int), dimension(*), intent(in) :: icetsm, itypsm
     real(kind=c_double), dimension(*) :: dt, smacel
   end subroutine cs_turbulence_kw
@@ -1340,7 +1340,7 @@ if (iccvfg.eq.0) then
 
   else if (iturb.eq.60) then
 
-    call cs_turbulence_kw(nvar, nscal, ncetsm, icetsm, itypsm, dt, smacel)
+    call cs_turbulence_kw(nvar, ncetsm, icetsm, itypsm, dt, smacel)
 
     call field_get_val_s(ivarfl(ik), cvar_k)
     call field_get_val_prev_s(ivarfl(ik), cvara_k)
@@ -1428,7 +1428,6 @@ deallocate(isostd)
 !      DE LA MASSE VOLUMIQUE ET DE LA CHALEUR SPECIFIQUE POUR
 !      UN THETA SCHEMA
 !===============================================================================
-
 
 iappel = 5
 call schtmp(nscal, iappel)

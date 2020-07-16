@@ -8,7 +8,7 @@
 /*
   This file is part of Code_Saturne, a general-purpose CFD tool.
 
-  Copyright (C) 1998-2019 EDF S.A.
+  Copyright (C) 1998-2020 EDF S.A.
 
   This program is free software; you can redistribute it and/or modify it under
   the terms of the GNU General Public License as published by the Free Software
@@ -49,7 +49,6 @@ BEGIN_C_DECLS
  * or slightly compressible flows for one time step.
  *
  * \param[in]     nvar          total number of variables
- * \param[in]     nscal         total number of scalars
  * \param[in]     ncesmp        number of cells with mass source term
  * \param[in]     icetsm        index of cells with mass source term
  * \param[in]     itypsm        mass source type for the variables
@@ -59,11 +58,10 @@ BEGIN_C_DECLS
  *                              mass source
  *                              (for ivar=ipr, smacel is the mass flux)
  */
- /*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_turbulence_kw(int              nvar,
-                 int              nscal,
                  int              ncesmp,
                  int              icetsm[],
                  int              itypsm[nvar][ncesmp],

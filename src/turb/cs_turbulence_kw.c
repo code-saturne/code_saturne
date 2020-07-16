@@ -89,11 +89,11 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
-  \file cs_turb_kw_model.c
+  \file cs_turbulence_kw.c
 
-  * Solve the \f$ k - \omega \f$ SST for incompressible flows
-  * or slightly compressible flows for one time step.
- */
+  Solve the \f$ k - \omega \f$ SST for incompressible flows
+  or slightly compressible flows for one time step.
+*/
 
 /*----------------------------------------------------------------------------*/
 
@@ -121,7 +121,6 @@ BEGIN_C_DECLS
  * or slightly compressible flows for one time step.
  *
  * \param[in]     nvar          total number of variables
- * \param[in]     nscal         total number of scalars
  * \param[in]     ncepdp        number of cells with head loss
  * \param[in]     ncesmp        number of cells with mass source term
  * \param[in]     icetsm        index of cells with mass source term
@@ -136,7 +135,6 @@ BEGIN_C_DECLS
 
 void
 cs_turbulence_kw(int              nvar,
-                 int              nscal,
                  int              ncesmp,
                  int              icetsm[],
                  int              itypsm[nvar][ncesmp],
@@ -183,11 +181,7 @@ cs_turbulence_kw(int              nvar,
   int icvflb;
   int ivisep;
   int imasac;
-  int init;
-  int iescap;
   int imucpp;
-
-  cs_real_t normp;
 
   /* Initialization
      ============== */
@@ -325,8 +319,9 @@ cs_turbulence_kw(int              nvar,
 
   if (vcopt_k.iwarni >= 1)
     cs_log_printf(CS_LOG_DEFAULT,
-                  "\n   ** SOLVING K-OMEGA\n"
-                  "        ---------------\n");
+                  "\n"
+                  "  ** Solving k-omega\n"
+                  "     ---------------\n");
 
   /* Take user source terms into account
    * ===================================
@@ -348,45 +343,10 @@ cs_turbulence_kw(int              nvar,
     tinstw[c_id] = 0.;
   }
 
-#if 0
-  /* Note: mapping Fortran turbulence source terms
-           would require an extra wrapper, or adding bind(C) to
-           the declaration, which could be "lost" by users
-           starting from older versions, so we simply drop that here */
-
-  cs_user_turbulence_source_terms(nvar,
-                                  nscal,
-                                  ncepdp,
-                                  ncesmp,
-                                  f_k->id,
-                                  icepdc,
-                                  icetsm,
-                                  itypsm,
-                                  ckupdc,
-                                  smacel,
-                                  smbrk,
-                                  usimpk);
-#endif
-
   cs_user_source_terms(domain,
                        f_k->id,
                        smbrk,
                        usimpk);
-
-#if 0
-  cs_user_turbulence_source_terms(nvar,
-                                  nscal,
-                                  ncepdp,
-                                  ncesmp,
-                                  f_omg->id,
-                                  icepdc,
-                                  icetsm,
-                                  itypsm,
-                                  ckupdc,
-                                  smacel,
-                                  smbrw,
-                                  usimpw);
-#endif
 
   cs_user_source_terms(domain,
                        f_omg->id,
@@ -464,20 +424,18 @@ cs_turbulence_kw(int              nvar,
   BFT_MALLOC(gradk, n_cells_ext, cs_real_3_t);
   BFT_MALLOC(grado, n_cells_ext, cs_real_3_t);
 
-  int inc = 1;
-  bool iccocg = true;
   bool use_previous_t = true;
 
   cs_field_gradient_scalar(f_k,
                            use_previous_t,
-                           inc,
-                           iccocg,
+                           1,     /* inc */
+                           true,  /* iccocg */
                            gradk);
 
   cs_field_gradient_scalar(f_omg,
                            use_previous_t,
-                           inc,
-                           iccocg,
+                           1,     /* inc */
+                           true,  /* iccocg */
                            grado);
 
   /* Initialization of work arrays in case of Hybrid turbulence modelling */
@@ -494,12 +452,10 @@ cs_turbulence_kw(int              nvar,
        Computation of dU_i/dx_j * dU_i/dx_j */
 
     /* Computation of the velocity gradient */
-    use_previous_t = true;
-    inc = 1;
 
     cs_field_gradient_vector(CS_F_(vel),
-                             use_previous_t,
-                             inc,
+                             true,  /* use_previous_t */
+                             1,     /* inc */
                              gradv);
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -554,7 +510,6 @@ cs_turbulence_kw(int              nvar,
 
     icvflb = 0;
     imasac = 0;
-    inc    = 1;
     ivisep = 0;
 
     cs_var_cal_opt_t vcopt_u_loc;
@@ -564,7 +519,7 @@ cs_turbulence_kw(int              nvar,
     cs_balance_vector(cs_glob_time_step_options->idtvar,
                       -1, /* f_id */
                       imasac,
-                      inc,
+                      1,  /* inc */
                       ivisep,
                       &vcopt_u_loc,
                       cvar_vel,
@@ -734,18 +689,15 @@ cs_turbulence_kw(int              nvar,
 
     /* Boussinesq approximation, only for the thermal scalar for the moment */
 
-    if (cs_glob_stokes_model->idilat == 0)  {
-
-      iccocg = true;
-      inc = 1;
+    if (cs_glob_stokes_model->idilat == 0) {
 
       cs_field_gradient_scalar(f_thm,
                                true,
-                               inc,
-                               iccocg,
+                               1,    /* inc */
+                               true, /* iccocg */
                                grad);
 
-      /*FIXME make it dependant on the scalar and use is_buoyant field */
+      /* FIXME make it dependant on the scalar and use is_buoyant field */
       cs_real_t *cpro_beta = cs_field_by_name("thermal_expansion")->val;
 
       /* - Beta grad(T) . g / Pr_T */
@@ -757,7 +709,7 @@ cs_turbulence_kw(int              nvar,
     }
     else {
 
-      /* BCs on ro: Dirichlet ROMB
+      /* BCs on rho: Dirichlet ROMB
          NB: viscb is used as COEFB */
 
       for (cs_lnum_t face_id = 0; face_id < n_b_faces; face_id++) {
@@ -770,14 +722,12 @@ cs_turbulence_kw(int              nvar,
       cs_gradient_type_by_imrgra(vcopt_k.imrgra,
                                  &gradient_type,
                                  &halo_type);
-      iccocg = true;
-      inc = 1;
 
       cs_gradient_scalar("cromo_grad",
                          gradient_type,
                          halo_type,
-                         inc,
-                         iccocg,
+                         1,     /* inc */
+                         true,  /* iccocg */
                          vcopt_k.nswrgr,
                          0,
                          0,
@@ -796,8 +746,8 @@ cs_turbulence_kw(int              nvar,
                          grad);
 
       for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
-        ro = cromo[c_id];
-        grad_dot_g[c_id] = cs_math_3_dot_product(grad[c_id], grav)/(ro*prdtur);
+        cs_real_t rho = cromo[c_id];
+        grad_dot_g[c_id] = cs_math_3_dot_product(grad[c_id], grav)/(rho*prdtur);
       }
     }
 
@@ -995,7 +945,8 @@ cs_turbulence_kw(int              nvar,
   /* Free memory */
   BFT_FREE(gdkgdw);
 
-  /* Account for Lagrangian 2-way coupling source terms */
+  /* Account for Lagrangian 2-way coupling source terms
+     -------------------------------------------------- */
 
   /* 2nd order not handled */
 
@@ -1013,7 +964,7 @@ cs_turbulence_kw(int              nvar,
         /* Implicit and explicit source terms on k */
         smbrk[c_id] += lag_st_k[c_id];
 
-        /* Explicit source terms on  omega: directly use CE4 constant from
+        /* Explicit source terms on omega: directly use CE4 constant from
            k-epsilon (without justification). To be explored if necessary */
 
         smbrw[c_id] += cs_turb_ce4 * lag_st_k[c_id] * cromo[c_id] / cpro_pcvto[c_id];
@@ -1195,8 +1146,6 @@ cs_turbulence_kw(int              nvar,
         viscb[face_id] = 0.;
     }
 
-    iccocg = true;
-    inc    = 1;
     imucpp = 0;
     imasac = 1;
 
@@ -1204,8 +1153,8 @@ cs_turbulence_kw(int              nvar,
                       f_k->id,
                       imucpp,
                       imasac,
-                      inc,
-                      iccocg,
+                      1,     /* inc */
+                      true,  /* iccocg */
                       &vcopt_k_loc,
                       cvara_k,
                       cvara_k,
@@ -1256,8 +1205,6 @@ cs_turbulence_kw(int              nvar,
         viscb[face_id] = 0.;
     }
 
-    iccocg = true;
-    inc    = 1;
     imucpp = 0;
     imasac = 1;
 
@@ -1265,8 +1212,8 @@ cs_turbulence_kw(int              nvar,
                       f_omg->id,
                       imucpp,
                       imasac,
-                      inc,
-                      iccocg,
+                      1,     /* inc */
+                      true,  /* iccocg */
                       &vcopt_w_loc,
                       cvara_omg ,
                       cvara_omg ,
@@ -1368,10 +1315,10 @@ cs_turbulence_kw(int              nvar,
   }
 
   /* Solve for turbulent kinetic energy (k)
-     ===== */
+     ---------------------------------- */
 
   /* Face viscosity */
-  if (vcopt_k.idiff >=  1) {
+  if (vcopt_k.idiff >= 1) {
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       xxf1 = xf1[c_id];
@@ -1431,8 +1378,7 @@ cs_turbulence_kw(int              nvar,
                                      NULL,
                                      NULL);
 
-  /* Solve for Omega
-     ===== */
+  /* Solve for Omega */
 
   /* Face viscosity */
   if (vcopt_w.idiff >=  1) {
@@ -1457,19 +1403,14 @@ cs_turbulence_kw(int              nvar,
   }
 
   /* Solve omega */
-  iescap = 0;
-  imucpp = 0;
-
-  normp = -1.;
-  init   = 1;
 
   cs_equation_iterative_solve_scalar(cs_glob_time_step_options->idtvar,
-                                     init,
+                                     1,    /* init */
                                      f_omg->id,
                                      f_omg->name,
-                                     iescap,
-                                     imucpp,
-                                     normp,
+                                     0,   /* iescap */
+                                     0,   /* imucpp */
+                                     -1,  /* normp */
                                      &vcopt_w_loc,
                                      cvara_omg,
                                      cvara_omg,

@@ -74,7 +74,6 @@ use ppppar
 use ppthch
 use ppincl
 use mesh
-use pointe, only: itypfb
 use field
 use cs_c_bindings
 use cs_cf_bindings

@@ -132,7 +132,7 @@ double precision rm, req
 double precision a3, tvsups, dtvsups
 double precision foirs, foirs1, foirs2
 double precision tlsups, fnss
-double precision omega, var, zent
+double precision var, zent
 
 double precision, allocatable :: rov(:), roc(:), rol(:), qv0(:), qc(:)
 double precision, allocatable :: qqc(:), qql(:)
