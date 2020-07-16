@@ -868,9 +868,12 @@ _file_read_block_s(cs_file_t  *f,
 
     MPI_Status status;
 
-    int loc_count = global_num_end - global_num_start;
+    cs_lnum_t loc_count = global_num_end - global_num_start;
     int _counts[64];
     int *counts = NULL;
+
+    MPI_Datatype ent_type = MPI_BYTE;
+    size_t _size = size;
 
     if (f->rank == 0) {
       if (f->n_ranks < 64)
@@ -888,7 +891,7 @@ _file_read_block_s(cs_file_t  *f,
     if (f->rank == 0) {
 
       int dist_rank;
-      int _buf_size = global_num_end - global_num_start;
+      cs_lnum_t _buf_size = global_num_end - global_num_start;
       unsigned char *_buf = NULL;
 
       /* Allocate exchange buffer */
@@ -897,6 +900,12 @@ _file_read_block_s(cs_file_t  *f,
         _buf_size = CS_MAX(_buf_size, counts[dist_rank]);
 
       BFT_MALLOC(_buf, _buf_size*size, unsigned char);
+
+      if (_buf_size*size > INT_MAX) {
+        MPI_Type_contiguous(size, MPI_BYTE, &ent_type);
+        MPI_Type_commit(&ent_type);
+        _size = 1;
+      }
 
       /* Loop on distant ranks */
 
@@ -912,7 +921,7 @@ _file_read_block_s(cs_file_t  *f,
 
         /* Send to corresponding rank */
 
-        MPI_Send(_buf, counts[dist_rank]*size, MPI_BYTE, dist_rank,
+        MPI_Send(_buf, counts[dist_rank]*_size, ent_type, dist_rank,
                  CS_FILE_MPI_TAG, f->comm);
 
       } /* End of loop on distant ranks */
@@ -925,15 +934,24 @@ _file_read_block_s(cs_file_t  *f,
 
     else if (loc_count > 0) {
 
+      if (loc_count*size > INT_MAX) {
+        MPI_Type_contiguous(size, MPI_BYTE, &ent_type);
+        MPI_Type_commit(&ent_type);
+        _size = 1;
+      }
+
       /* Receive data */
 
-      MPI_Recv(buf, (int)(loc_count*size), MPI_BYTE, 0,
+      MPI_Recv(buf, (int)(loc_count*_size), ent_type, 0,
                CS_FILE_MPI_TAG, f->comm, &status);
 
-      MPI_Get_count(&status, MPI_BYTE, &loc_count);
-      retval = loc_count / size;
+      MPI_Get_count(&status, ent_type, &loc_count);
+      retval = loc_count / _size;
 
     }
+
+    if (ent_type != MPI_BYTE)
+      MPI_Type_free(&ent_type);
 
     if (counts != NULL && counts != _counts)
       BFT_FREE(counts);
@@ -1590,7 +1608,7 @@ _mpi_file_write_block_noncoll(cs_file_t  *f,
       _mpi_io_error_message(f->name, errcode);
 
     if (count > 0)
-      MPI_Get_count(&status, MPI_BYTE, &count);
+      MPI_Get_count(&status, ent_type, &count);
 
     if (ent_type != MPI_BYTE) {
       MPI_Type_free(&ent_type);
@@ -1639,7 +1657,7 @@ _mpi_file_write_block_eo(cs_file_t  *f,
     _mpi_io_error_message(f->name, errcode);
 
   if (count > 0)
-    MPI_Get_count(&status, MPI_BYTE, &count);
+    MPI_Get_count(&status, ent_type, &count);
 
   if (ent_type != MPI_BYTE) {
     MPI_Type_free(&ent_type);
@@ -1701,7 +1719,7 @@ _mpi_file_write_block_ip(cs_file_t  *f,
   MPI_Type_free(&file_type);
 
   if (lengths[0] > 0)
-    MPI_Get_count(&status, MPI_BYTE, &count);
+    MPI_Get_count(&status, ent_type, &count);
 
   if (ent_type != MPI_BYTE) {
     MPI_Type_free(&ent_type);

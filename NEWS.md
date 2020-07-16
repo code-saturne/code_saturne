@@ -3,6 +3,8 @@ Release 6.1.2 (unreleased)
 
 Bug fixes:
 
+- Fix read/write for blocks larger than 2^32 bytes.
+
 - Fix in atmo Monin-Obukhov wall function.
 
 - Fix memory leak for NVD convective schemes (used in VOF module).
