@@ -1138,9 +1138,8 @@ cs_post_anisotropy_invariant(cs_lnum_t               n_cells,
   cs_field_interpolate_t interpolation_type = CS_FIELD_INTERPOLATE_MEAN;
 
   /* Compute the Reynolds Stresses if we are using EVM */
-  if (   turb_model->itytur != 2
-      && turb_model->itytur != 6
-      && turb_model->itytur != 5) {
+  if (   turb_model->order == CS_TURB_FIRST_ORDER
+      && turb_model->type  == CS_TURB_RANS) {
     cs_post_evm_reynolds_stresses(interpolation_type,
                                   n_cells,
                                   cell_ids,
@@ -1176,30 +1175,30 @@ cs_post_anisotropy_invariant(cs_lnum_t               n_cells,
 
     cs_real_t xk = 0.5*(rij[iel][0]+rij[iel][1]+rij[iel][2]);
     cs_real_t bij[3][3];
-    cs_real_t xeta, xksi ;
+    cs_real_t xeta, xksi;
 
     bij[0][0] = rij[iel][0]/(2.0*xk) - d1s3;
     bij[1][1] = rij[iel][1]/(2.0*xk) - d1s3;
     bij[2][2] = rij[iel][2]/(2.0*xk) - d1s3;
-    bij[0][1] = rij[iel][3]/(2.0*xk) ;
-    bij[1][2] = rij[iel][4]/(2.0*xk) ;
-    bij[0][2] = rij[iel][5]/(2.0*xk) ;
-    bij[1][0] = bij[0][1] ;
-    bij[2][1] = bij[1][2] ;
-    bij[2][0] = bij[0][2] ;
+    bij[0][1] = rij[iel][3]/(2.0*xk);
+    bij[1][2] = rij[iel][4]/(2.0*xk);
+    bij[0][2] = rij[iel][5]/(2.0*xk);
+    bij[1][0] = bij[0][1];
+    bij[2][1] = bij[1][2];
+    bij[2][0] = bij[0][2];
 
-    xeta = 0. ;
-    xksi = 0. ;
+    xeta = 0.;
+    xksi = 0.;
     for (cs_lnum_t i = 0; i < 3; i++) {
       for (cs_lnum_t j = 0; j < 3; j++) {
-        xeta += bij[i][j]*bij[j][i] ;
+        xeta += cs_math_pow2(bij[i][j]);
         for (cs_lnum_t k = 0; k < 3; k++)
           xksi += bij[i][j]*bij[j][k]*bij[k][i];
       }
     }
 
-    inv[iloc][0] =  sqrt(-xeta/6.0);
-    inv[iloc][1] =  cbrt(xksi/6.0);
+    inv[iloc][0] = sqrt(xeta/6.0);
+    inv[iloc][1] = cbrt(xksi/6.0);
   }
 
   BFT_FREE(rij);
