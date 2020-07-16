@@ -519,11 +519,16 @@ cs_sles_mumps_setup(void               *context,
       MPI_Init(NULL, NULL);
 #endif
     }
-#endif /* HAVE_MPI */
 
+    if (cs_glob_mpi_comm == MPI_COMM_NULL)
+      cs_glob_mpi_comm = MPI_COMM_WORLD;
+
+    sd->mumps->comm_fortran = (MUMPS_INT)MPI_Comm_c2f(cs_glob_mpi_comm);
+#else
     sd->mumps->comm_fortran = USE_COMM_WORLD; /* Not used in this case and set
                                                  to the default value given by
                                                  the MUMPS documentation */
+#endif /* HAVE_MPI */
 
     /* First step: Initialization */
 
