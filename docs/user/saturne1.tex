@@ -93,7 +93,7 @@ controlled by the launch script. The potential command line options are passed
 through user modifiable variables at the beginning of the \texttt{cs\_user\_scripts.py} file
 (this file may be copied from the \texttt{DATA/REFERENCE} to the \texttt{DATA} and edited).
 This way, the user only has to fill these variables and doesn't need
-to search deep in the script for the Solver command line. For more advanced
+to search deeply in the script for the solver command line. For more advanced
 usage, the main options are described below:
 
 \begin{list}{$\bullet$}{}
@@ -103,7 +103,7 @@ is used to distinguish between different code instances launched together.
 
 \item \texttt{--mpi}: specifies that the calculation is running
 with MPI communications. The number of processors used will be determined
-automatically by the Solver. With most MPI implementations, the
+automatically by the solver. With most MPI implementations, the
 code will detect the presence of an MPI environment automatically, and
 this option is redundant. It is only kept for the rare case in which the
 MPI environment might not be detected.
@@ -129,9 +129,9 @@ of elementary operations on the machine. A secondary option
 is used in association with an MPI trace utility. It restricts the elementary
 operations to those implying MPI communications and does only one of each
 elementary operation, to avoid overfilling the MPI trace report.\\
-This command is to be placed in the \\texttt{domain.solver\_args} variable
+This command is to be placed in the \texttt{domain.solver\_args} variable
 in the \texttt{cs\_user\_scripts.py} file to be added automatically to the
-Solver command line.
+solver command line.
 
 \item \texttt{--trace}: activates the tracing of the output to the standard output.
 This option can be specified in the \texttt{domain.logging\_args} field
@@ -185,57 +185,55 @@ through the GUI, or overriding options set through the GUI.
 \subsection{Graphical User Interface}
 %==================================
 \label{sec:prg_gui}%
-A Graphical User Interface is available with \CS.
-This Interface creates or reads an XML file according to
-a specific \CS schema which is then interpreted by the code.
+A Graphical User Interface (GUI) is available with \CS.  This GUI creates or
+reads an XML file according to a specific \CS schema which is then interpreted
+by the code.
 
-In version \verscs, the Graphical Interface manages calculation parameters,
-standard initialisation values and boundary
-conditions for standard physics, pulverised fuel combustion, gas combustion,
-atmospheric flows, Lagrangian module,  electrical model, compressible model and radiative
-transfers (user subroutines can still be completed though).
+In version \verscs, the GUI manages calculation parameters, standard
+initialisation values and boundary conditions for standard physics, pulverised
+fuel combustion, gas combustion, atmospheric flows, Lagrangian module,
+electrical model, compressible model and radiative transfers (user subroutines
+can still be completed though).
 
-The Interface is optional. Each setting or definition that can be specified
-through the Interface can also be specified in the user subroutines. In case of
-conflict, all calculation parameters, initialisation value or boundary condition
-set directly in the user subroutines will prevail over what is defined by the
-Interface. However, it is no longer necessary to redefine everything in the
-user subroutines. Only what was not set or could not be set using the Graphical
-Interface should be specified.
+The GUI is optional. Each setting or definition that can be specified through
+the GUI can also be specified in the user subroutines. In case of conflict, all
+calculation parameters, initialisation value or boundary condition set directly
+in the user subroutines will prevail over what is defined by the GUI. However,
+it is no longer necessary to redefine everything in the user subroutines. Only
+what was not set or could not be set using the GUI should be specified.
 
 {\em WARNING: }
-There are some limitations to the changes that can be made between the Interface
-and the user routines. In particular, it is not possible to specify a certain
-number of solved variables in the Interface and change it in the user routines
-(for example, it is not possible to specify the use of a $k-\varepsilon$ model
-in the Interface and change it to $R_{ij}-\varepsilon$ in \texttt{cs\_user\_parameters.f90}, or
-to define additional scalars in \texttt{cs\_user\_parameters.f90} with respect to the
-Interface). Also, all boundaries should be referenced in the Interface, even if
-the associated conditions are intended to be modified in \texttt{cs\_user\_boundary\_conditions}, and
-their nature (entry, outlet, wall\footnote{Smooth and rough walls are considered
-to have the same nature}, symmetry) should not be changed.
+There are some limitations to the changes that can be made between the GUI and
+the user routines. In particular, it is not possible to specify a certain number
+of solved variables in the GUI and change it in the user routines (for example,
+it is not possible to specify the use of a $k-\varepsilon$ model in the GUI and
+change it to $R_{ij}-\varepsilon$ in \texttt{cs\_user\_parameters.f90}, or to
+define additional scalars in \texttt{cs\_user\_parameters.f90} with respect to
+the GUI). Also, all boundaries should be referenced in the GUI, even if the
+associated conditions are intended to be modified in
+\texttt{cs\_user\_boundary\_conditions}, and their nature (entry, outlet,
+wall\footnote{Smooth and rough walls are considered to have the same nature},
+symmetry) should not be changed.
 
 For example, in order to set the boundary conditions of a calculation
 corresponding to a channel flow with a given inlet velocity profile, one
 should:\\
 - set the boundary conditions corresponding to the wall and the output
-using the Graphical Interface\\
+using the GUI\\
 - set a dummy boundary condition for the inlet (uniform velocity for instance)
 - set the proper velocity profile at inlet in \texttt{cs\_user\_boundary\_conditions}. The wall and
 output areas must not appear in \texttt{cs\_user\_boundary\_conditions}. The dummy velocity
-entered in the Interface will not be taken into account.
+entered in the GUI will not be taken into account.
 
-The Graphical User Interface is launched with the \texttt{./SaturneGUI} command
-in the directory \texttt{DATA}. The first step is
-then to load an existing parameter file (in order to modify it) or to
-open a new one. The settings to be given or checked for a standard calculation are the
-following:
+The GUI is launched with the \texttt{./SaturneGUI} command in the directory
+\texttt{DATA}. The first step is then to load an existing parameter file (in
+order to modify it) or to open a new one. The settings to be given or checked
+for a standard calculation are the following:
 
 \begin{list}{-}{}
 \item Calculation environment: definition of the mesh file(s),
       stand-alone execution of the Preprocessor module
-      (used by the Interface to get the groups of the boundary
-      faces).
+      (used by the GUI to get the groups of the boundary faces).
 
 \item Thermophysical models: physical model, ALE mobile mesh features,
       turbulence model, thermal model, coupling with \syrthes.
@@ -254,7 +252,7 @@ following:
 \item Boundary conditions: definition of the boundary conditions for
       each variable. The colors of the boundary faces may be read
       directly from a ``preprocessor.log*'' files created by the Preprocessor
-      or a ``run\_solver.log'' file from a previous Solver run.
+      or a ``run\_solver.log'' file from a previous solver run.
 
 \item Numerical parameters: number and type of time step, advanced parameters
       for the numerical solution of the equations.
@@ -274,15 +272,14 @@ following:
 
 \end{list}
 
-The \CS tutorial \cite{tutorial} offers a step-by-step guidance to the setting
-up of some simple calculations with the \CS Interface.
+The \CS tutorial~\cite{tutorial} offers a step-by-step guidance to the setting
+up of some simple calculations with the \CS GUI.
 
-To launch \CS using an XML parameter file,
-the name of the file must
-be given using the \texttt{--param} option of \texttt{code\_saturne run} in
-the launch script (see \S\ref{sec:prg_runcase}). When the launch
-script is edited from the Interface (Calculation management $\rightarrow$
-Prepare batch analysis), this option is set automatically.
+To launch \CS using an XML parameter file, the name of the file must be given
+using the \texttt{--param} option of \texttt{code\_saturne run} in the launch
+script (see \S\ref{sec:prg_runcase}). When the launch script is edited from the
+GUI (Calculation management $\rightarrow$ Prepare batch analysis), this option
+is set automatically.
 
 %==================================
 \subsection{User subroutines}
