@@ -727,6 +727,10 @@ class ManageCasesView(QWidget, Ui_ManageCasesForm):
 
             input_name = self.mdl.getPostScriptInput(study, idx)
             self.lineEditInput.setText(str(input_name))
+            if input_name == '<multiple inputs>':
+                self.pushButtonInput.setEnabled(False)
+            else:
+                self.pushButtonInput.setEnabled(True)
 
             # compare
             status = self.mdl.getCompareStatus(study, idx)

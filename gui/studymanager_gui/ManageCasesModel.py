@@ -540,10 +540,14 @@ class ManageCasesModel(Model):
         self.isInt(case_idx)
         study_node = self.case.xmlGetNode('study', label = study_name)
         node = study_node.xmlGetNode("case", id = case_idx)
-        nn = node.xmlGetNode("input")
         name = ""
-        if nn:
-            name = nn['file']
+        lst = node.xmlGetNodeList("input")
+        if lst:
+            if len(lst) == 1:
+                nn = lst[0]
+                name = nn['file']
+            elif len(lst) >= 1:
+                name = '<multiple inputs>'
         return name
 
 
