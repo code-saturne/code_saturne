@@ -734,15 +734,15 @@ cs_user_parameters(cs_domain_t *domain)
        4: NVD/TVD Scheme */
 
     /* isstpc:
-      0: swich on the slope test
-      1: swich off the slope test (default)
-      2: continuous limiter ensuring boundedness (beta limiter)*/
+      0: slope test enabled
+      1: slope test disabled (default)
+      2: continuous limiter ensuring boundedness (beta limiter) enabled */
 
     cs_var_cal_opt_t vcopt;
     int key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
     cs_field_get_key_struct(sca1, key_cal_opt_id, &vcopt);
-    vcopt.ischcv = 4;
+    vcopt.ischcv = 1;
     vcopt.isstpc = 0;
     cs_field_set_key_struct(sca1, key_cal_opt_id, &vcopt);
 

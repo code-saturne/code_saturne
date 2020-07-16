@@ -239,8 +239,6 @@ BEGIN_C_DECLS
         For each unknown variable to calculate, isstpc indicates whether a slope
         test should be used to switch from a second-order to an upwind convective
         scheme under certain conditions, to ensure stability.
-        - -1: deprecated slope test activated for the considered unknown
-              (for vector variable only)
         - 0: slope test activated for the considered unknown
         - 1: slope test deactivated for the considered unknown
         - 2: continuous limiter ensuring boundedness (beta limiter)
