@@ -5890,7 +5890,7 @@ cs_grid_coarsen(const cs_grid_t  *f,
     cc->level -=1;
     cc->parent = f;
 
-    assert(cc->parent = c->parent);
+    assert(cc->parent == c->parent);
 
     cs_grid_destroy(&c);
     c = cc;
