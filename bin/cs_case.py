@@ -932,7 +932,9 @@ class case:
         mpi_cmd = ''
         mpi_cmd_exe = ''
         mpi_cmd_args = ''
-        if n_procs > 1 and mpi_env.mpiexec != None:
+
+        if (n_procs > 1 and mpi_env.mpiexec != None) or \
+           (os.path.basename(mpi_env.mpiexec)[:4] == 'srun'):
             mpi_cmd = mpi_env.mpiexec
             if mpi_env.mpiexec_opts != None:
                 mpi_cmd += ' ' + mpi_env.mpiexec_opts
