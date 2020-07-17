@@ -608,7 +608,8 @@ contains
 
   end subroutine atmo_init
 
-  !=============================================================================
+!===============================================================================
+
 !> \brief Initialisation of meteo data
 subroutine init_meteo
 
@@ -625,10 +626,13 @@ type(c_ptr) :: c_hyd_p_met
 
 integer(c_int),   dimension(2) :: dim_hyd_p_met
 
-call cs_f_atmo_arrays_get_pointers(                &
-     c_z_temp_met, c_time_met,                     &
-     c_hyd_p_met, dim_hyd_p_met,                   &
-     c_frac_neb, c_diag_neb)
+if (imeteo.gt.0) then
+  call atlecm(0)
+endif
+
+call cs_f_atmo_arrays_get_pointers(c_z_temp_met, c_time_met,     &
+                                   c_hyd_p_met, dim_hyd_p_met,   &
+                                   c_frac_neb, c_diag_neb)
 
 call c_f_pointer(c_z_temp_met, ztmet, [nbmaxt])
 call c_f_pointer(c_time_met, tmmet, [nbmetm])
@@ -638,20 +642,11 @@ call c_f_pointer(c_diag_neb, nebdia, [ncelet])
 
 ! Allocate additional arrays for Water Microphysics
 
-if (ippmod(iatmos).ge.2) then
-  allocate(nebdia(ncelet))
-  allocate(nn(ncelet))
-endif
-
 if (imeteo.gt.0) then
-
-  imode = 0
-
-  call atlecm ( imode )
 
   ! NB : only ztmet,ttmet,qvmet,ncmet are extended to 11000m if iatr1=1
   !           rmet,tpmet,phmet
-  allocate(tmmet(nbmetm), zdmet(nbmetd), ztmet(nbmaxt))
+  allocate(zdmet(nbmetd))
   allocate(dpdt_met(nbmetd))
   allocate(mom(3, nbmetd))
   allocate(mom_met(3, nbmetd))
@@ -660,7 +655,7 @@ if (imeteo.gt.0) then
   allocate(ttmet(nbmaxt,nbmetm), qvmet(nbmaxt,nbmetm), ncmet(nbmaxt,nbmetm))
   allocate(pmer(nbmetm))
   allocate(xmet(nbmetm), ymet(nbmetm))
-  allocate(rmet(nbmaxt,nbmetm), tpmet(nbmaxt,nbmetm), phmet(nbmaxt,nbmetm))
+  allocate(rmet(nbmaxt,nbmetm), tpmet(nbmaxt,nbmetm))
 
   ! Allocate and initialize auto inlet/outlet flag
 
@@ -675,7 +670,7 @@ if (imeteo.gt.0) then
 
     imode = 0
 
-    call usatdv ( imode )
+    call usatdv(imode)
 
     allocate(xyvert(nvert,3), zvert(kmx))
     allocate(acinfe(kmx), dacinfe(kmx), aco2(kmx,kmx), aco2s(kmx,kmx))
@@ -686,9 +681,9 @@ if (imeteo.gt.0) then
 
     allocate(soilvert(nvert))
 
-    call mestcr  ("rayi",  len("rayi"), 1, 0, idrayi)
-    call mestcr  ("rayst", len("rayst"), 1, 0, idrayst)
-    call gridcr  ("int_grid", len("int_grid"), igrid)
+    call mestcr("rayi",  len("rayi"), 1, 0, idrayi)
+    call mestcr("rayst", len("rayst"), 1, 0, idrayst)
+    call gridcr("int_grid", len("int_grid"), igrid)
 
     if (irdu.eq.1) then
       allocate(iru(kmx,nvert), ird(kmx,nvert))
@@ -705,6 +700,7 @@ endif
 end subroutine init_meteo
 
 !=============================================================================
+
 !> \brief Final step for deallocation
 subroutine finalize_meteo
 
@@ -715,21 +711,16 @@ implicit none
 
 call cs_f_atmo_finalize()
 
-if (ippmod(iatmos).ge.2) then
-  deallocate(nebdia)
-  deallocate(nn)
-endif
-
 if (imeteo.gt.0) then
 
-  deallocate(tmmet, zdmet, ztmet)
+  deallocate(zdmet)
   deallocate(mom, mom_met, dpdt_met)
   deallocate(umet, vmet, wmet)
   deallocate(ekmet, epmet)
   deallocate(ttmet, qvmet, ncmet)
   deallocate(pmer)
   deallocate(xmet, ymet)
-  deallocate(rmet, tpmet, phmet)
+  deallocate(rmet, tpmet)
 
   deallocate(iautom)
 
