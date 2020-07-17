@@ -335,7 +335,7 @@ do iel = 1, ncel
   tinstk(iel) = tinstk(iel) + max(-rho*cell_f_vol(iel)*cmu*ttke*gravke, 0.d0)
 
   ! Explicit part
-  smbre(iel) = smbrk(iel) + visct*max(gravke, zero)
+  smbre(iel) = smbre(iel) + visct*max(gravke, zero)
   smbrk(iel) = smbrk(iel) + visct*gravke
 enddo
 end subroutine humid_atmosphere

@@ -3,6 +3,8 @@ Release 6.1.2 (unreleased)
 
 Bug fixes:
 
+- Fix possible dissipation source term error in buoyant humid atmosphere.
+
 - Fix read/write for blocks larger than 2^32 bytes.
 
 - Fix in atmo Monin-Obukhov wall function.
