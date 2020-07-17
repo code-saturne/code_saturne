@@ -559,16 +559,16 @@ cs_atprke(cs_real_t  tinstk[],
      ======================================== */
 
   if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == 1)
-    _dry_atmosphere(tinstk,
-                    cromo,
+    _dry_atmosphere(cromo,
                     cpro_pcvto,
+                    tinstk,
                     smbrk,
                     smbre);
 
   else if (cs_glob_physical_model_flag[CS_ATMOSPHERIC] == 2)
-    _humid_atmosphere(tinstk,
-                      cromo,
+    _humid_atmosphere(cromo,
                       cpro_pcvto,
+                      tinstk,
                       smbrk,
                       smbre);
 }
