@@ -809,6 +809,7 @@ cs_measures_sets_destroy(void)
     BFT_FREE(ms->coords);
     BFT_FREE(ms->is_interpol);
     BFT_FREE(ms->is_cressman);
+    BFT_FREE(ms->inf_radius);
     BFT_FREE(ms->comp_ids);
   }
 
