@@ -357,16 +357,23 @@ _get_profile_v_component(cs_tree_node_t  *tn)
  * addition of the "_<field_id>" extension to match the field's name
  * may be present, so this is tested also.
  *
+ * If the category and associated name are defined and a field matching
+ * a tag is not present, a message is logged. If those are not defined
+ * and a matching field is not found, an error is produced.
+ *
  * parameters:
- *   tn   <-- tree node associated with profile variable
- *   name <-- value of node's "name" tag (already determined)
+ *   tn            <-- tree node associated with profile variable
+ *   category      <-- category for which this function is used, or NULL
+ *   category_name <-- name of object in category
  *
  * return:
  *   pointer to field if match, NULL otherwise
  *----------------------------------------------------------------------------*/
 
 static const cs_field_t *
-_tree_node_get_field(cs_tree_node_t  *tn)
+_tree_node_get_field(cs_tree_node_t  *tn,
+                     const char      *category,
+                     const char      *category_name)
 {
   const cs_field_t *f = NULL;
 
@@ -409,9 +416,14 @@ _tree_node_get_field(cs_tree_node_t  *tn)
 
   }
 
-  if (f == NULL)
-    bft_error(__FILE__, __LINE__, 0,
-              _("Field with name \"%s\" not found"), name);
+  if (f == NULL) {
+    if (category != NULL && category_name != NULL)
+      bft_printf(_("  For %s \"%s\", field with name \"%s\" not found\n"),
+                 category, category_name,  name);
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Field with name \"%s\" not found"), name);
+  }
 
   return f;
 }
@@ -568,7 +580,11 @@ _define_profiles(void)
          tn_vp != NULL;
          tn_vp = cs_tree_node_get_next_of_name(tn_vp)) {
 
-      const cs_field_t *f = _tree_node_get_field(tn_vp);
+      const cs_field_t *f = _tree_node_get_field(tn_vp, "profile", name);
+
+      if (f == NULL)
+        continue;
+
       int comp_id = _get_profile_v_component(tn_vp);
 
       cs_probe_set_associate_field(pset,
