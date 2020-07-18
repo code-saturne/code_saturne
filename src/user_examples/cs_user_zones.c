@@ -87,7 +87,7 @@ cs_user_zones(void)
 
       snprintf(name, 127, "source_%d", i);
       snprintf(criteria, 127, "sphere[%f, %f, %f, 0.5]",
-               s_coords[0], s_coords[0], s_coords[0]);
+               s_coords[0], s_coords[1], s_coords[2]);
 
       cs_volume_zone_define(name, criteria, CS_VOLUME_ZONE_SOURCE_TERM);
     }
