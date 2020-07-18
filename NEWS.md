@@ -3,6 +3,8 @@ Release 6.0.5 (unreleased)
 
 Bug fixes:
 
+- Fix OpenMP crash with ALE.
+
 - Fans model: fix volume computation and associated scaling in parallel mode.
 
 - Fix field output numbering on polyhedra or polygons when writer
