@@ -633,6 +633,7 @@ cs_turbulence_ke(int              nvar,
   cs_real_t rho, visct, xs, cmueta, xeps, xk, xttke, ttke, xss, xcmu;
   cs_real_t xqc1, xqc2, xqc3;
   cs_real_t xstrai[3][3], xrotac[3][3];
+  cs_field_t *f_tke_prod = cs_field_by_name_try("tke_production");
 
   if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_LIN_PROD) {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
@@ -642,6 +643,9 @@ cs_turbulence_ke(int              nvar,
       cmueta = fmin(cs_turb_cmu*cvara_k[c_id]/cvara_ep[c_id]*xs, sqrcmu);
       smbrk[c_id] = rho*cmueta*xs*cvara_k[c_id];
       smbre[c_id] = smbrk[c_id];
+      /* Save production for post processing */
+      if (f_tke_prod != NULL)
+        f_tke_prod->val[c_id] = smbrk[c_id]/rho;
     }
   }
   else if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_QUAD) {
@@ -710,6 +714,10 @@ cs_turbulence_ke(int              nvar,
                     - xqc1*visct*xttke* (skskjsji - d1s3*sijsij*divu[c_id])
                     - xqc2*visct*xttke* (wkskjsji + skiwjksji)
                     - xqc3*visct*xttke* (wkwjksji - d1s3*wijwij*divu[c_id]);
+      /* Save production for post processing */
+      if (f_tke_prod != NULL)
+        f_tke_prod->val[c_id] = smbrk[c_id]/rho;
+
       smbre[c_id] = smbrk[c_id];
     } /* End loop on cells */
 
@@ -721,6 +729,9 @@ cs_turbulence_ke(int              nvar,
       visct = cpro_pcvto[c_id];
       smbrk[c_id] = visct*strain[c_id];
       smbre[c_id] = smbrk[c_id];
+      /* Save production for post processing */
+      if (f_tke_prod != NULL)
+        f_tke_prod->val[c_id] = smbrk[c_id]/rho;
     }
   }
 
@@ -903,6 +914,8 @@ cs_turbulence_ke(int              nvar,
        smbrk = P+G
        smbre = P+(1-ce3)*G */
 
+    cs_field_t *f_tke_buoy = cs_field_by_name_try("tke_buoyancy");
+
     /* smbr* store mu_TxS**2 */
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       rho   = cromo[c_id];
@@ -917,6 +930,9 @@ cs_turbulence_ke(int              nvar,
       /* Explicit Buoyant terms */
       smbre[c_id] = smbre[c_id] + visct*fmax(- grad_dot_g[c_id], 0.);
       smbrk[c_id] = smbrk[c_id] - visct*grad_dot_g[c_id];
+      /* Save for post processing */
+      if (f_tke_buoy != NULL)
+        f_tke_buoy->val[c_id] = -visct*grad_dot_g[c_id]/rho;
     }
 
     /* Free memory */

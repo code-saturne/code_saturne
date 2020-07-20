@@ -284,6 +284,7 @@ _dry_atmosphere(const cs_real_t  cromo[],
   if (cs_glob_turb_model->itytur == 2) {
 
     cs_real_t rho, visct, xeps, xk, ttke, gravke;
+    cs_field_t *f_tke_buoy = cs_field_by_name_try("tke_buoyancy");
 
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
       rho    = cromo[c_id];
@@ -303,6 +304,10 @@ _dry_atmosphere(const cs_real_t  cromo[],
       /* Explicit part */
       smbre[c_id] += visct*fmax(gravke, 0.);
       smbrk[c_id] += visct*gravke;
+
+      /* Save for post processing */
+      if (f_tke_buoy != NULL)
+        f_tke_buoy->val[c_id] = visct*gravke/rho;
     }
 
   }
