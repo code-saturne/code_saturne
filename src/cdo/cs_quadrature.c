@@ -171,10 +171,8 @@ cs_quadrature_edge_2pts(const cs_real_3_t  v1,
                         cs_real_3_t        gpts[],
                         double             w[])
 {
-  int  k;
-
   /* Compute quadrature points */
-  for (k = 0; k < 3; k++) {
+  for (int k = 0; k < 3; k++) {
     gpts[0][k] = v1[k]*_edge_quad2c2 + v2[k]*_edge_quad2c1;
     gpts[1][k] = v1[k]*_edge_quad2c1 + v2[k]*_edge_quad2c2;
   }
@@ -203,12 +201,10 @@ cs_quadrature_edge_3pts(const cs_real_3_t  v1,
                         cs_real_3_t        gpts[],
                         double             w[])
 {
-  int  k;
-
   const double  b = len * _quad_over18;
 
   /* Compute quadrature points */
-  for (k = 0; k < 3; k++) {
+  for (int k = 0; k < 3; k++) {
     gpts[0][k] = 0.5*( v1[k] + v2[k] );
     gpts[1][k] = v1[k]*_edge_quad3c1 + v2[k]*_edge_quad3c2;
     gpts[2][k] = v1[k]*_edge_quad3c2 + v2[k]*_edge_quad3c1;
@@ -240,10 +236,8 @@ cs_quadrature_tria_3pts(const cs_real_3_t   v1,
                         cs_real_3_t         gpts[],
                         double              w[])
 {
-  int  k;
-
   /* Compute quadrature points */
-  for (k = 0; k < 3; k++) {
+  for (int k = 0; k < 3; k++) {
     gpts[0][k] = 0.5*( v1[k] + v2[k] );
     gpts[1][k] = 0.5*( v1[k] + v3[k] );
     gpts[2][k] = 0.5*( v2[k] + v3[k] );
@@ -275,10 +269,8 @@ cs_quadrature_tria_4pts(const cs_real_3_t   v1,
                         cs_real_3_t         gpts[],
                         double              w[])
 {
-  int  k;
-
   /* Compute quadrature points */
-  for (k = 0; k < 3; k++) {
+  for (int k = 0; k < 3; k++) {
     gpts[0][k] = _quad_over3*( v1[k] + v2[k] + v3[k] );
     gpts[1][k] = 0.2*( v1[k] + v2[k] ) + 0.6*v3[k];
     gpts[2][k] = 0.2*( v1[k] + v3[k] ) + 0.6*v2[k];
@@ -312,10 +304,8 @@ cs_quadrature_tria_7pts(const cs_real_3_t   v1,
                         cs_real_3_t         gpts[],
                         double              w[])
 {
-  int  k;
-
   /* Compute quadrature points */
-  for (k = 0; k < 3; k++) {
+  for (int k = 0; k < 3; k++) {
     gpts[0][k] = _quad_over3*( v1[k] + v2[k] + v3[k] );
     gpts[1][k] = _tria_quad7c1* (v1[k] + v2[k]) + (1-2*_tria_quad7c1)*v3[k];
     gpts[2][k] = _tria_quad7c1* (v3[k] + v1[k]) + (1-2*_tria_quad7c1)*v2[k];
