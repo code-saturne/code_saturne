@@ -1274,7 +1274,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
           cs_real_t  add0 = 0, add1 = 0;
           for (int p = 0; p < 4; p++) {
             add0 += w[    p] * _dp3(_val + 3*p,     fq.unitv);
-            add1 += w[3 + p] * _dp3(_val + 3*(3+p), fq.unitv);
+            add1 += w[4 + p] * _dp3(_val + 3*(4+p), fq.unitv);
           }
 
           eval[v1] += add0;
@@ -1313,7 +1313,7 @@ cs_xdef_cw_eval_flux_at_vtx_by_analytic(const cs_cell_mesh_t      *cm,
           cs_real_t  add0 = 0, add1 = 0;
           for (int p = 0; p < 4; p++) {
             add0 += w[    p] * _dp3(_val + 3*p,     fq.unitv);
-            add1 += w[3 + p] * _dp3(_val + 3*(3+p), fq.unitv);
+            add1 += w[4 + p] * _dp3(_val + 3*(4+p), fq.unitv);
           }
 
           eval[v1] += add0;
