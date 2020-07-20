@@ -135,7 +135,7 @@ struct _cs_syr4_coupling_t {
   int                      dim;            /* Coupled mesh dimension */
   int                      ref_axis;       /* Selected axis for edge extraction */
 
-  char                    *syr_name;       /* Application name, or -1 */
+  char                    *syr_name;       /* Application name */
 
   char                    *face_sel;       /* Face selection criteria */
   char                    *cell_sel;       /* Face selection criteria */
@@ -524,7 +524,6 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
   bool      ext_syr = false;
   cs_lnum_t n_exterior = 0;
   cs_gnum_t n_ext = 0;
-  cs_lnum_t *elt_list = NULL;
   cs_coord_t *elt_centers = NULL;
   fvm_nodal_t *location_elts = NULL;
   float *cs_to_syr_dist = NULL;
@@ -569,6 +568,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                + strlen(syr_coupling->syr_name) + 1, char);
     sprintf(coupled_mesh_name, _("SYRTHES %s cells"), syr_coupling->syr_name);
 
+    cs_lnum_t *elt_list = NULL;
     BFT_MALLOC(elt_list, cs_glob_mesh->n_cells, cs_lnum_t);
 
     cs_selector_get_cell_num_list(select_criteria,
@@ -600,6 +600,7 @@ _create_coupled_ent(cs_syr4_coupling_t  *syr_coupling,
                char);
     sprintf(coupled_mesh_name, _("SYRTHES %s faces"), syr_coupling->syr_name);
 
+    cs_lnum_t *elt_list = NULL;
     BFT_MALLOC(elt_list, cs_glob_mesh->n_b_faces, cs_lnum_t);
 
     cs_selector_get_b_face_num_list(select_criteria,
@@ -1030,7 +1031,7 @@ _all_comm_times(void)
         else
           cs_log_printf(CS_LOG_PERFORMANCE,
                         _("\n  coupling %d (%s):\n\n"),
-                        coupl_id + 1, _(ent_type[ent_id]));
+                        coupl_id, _(ent_type[ent_id]));
 
         ple_locator_get_times(ce->locator,
                               &location_wtime,
@@ -1157,13 +1158,13 @@ _post_var_update(cs_syr4_coupling_ent_t  *coupling_ent,
  * Code_Saturne sent before its computed global flux for this time step.
  *
  * parameters:
- *   syr_coupling    <-- SYRTHES coupling structure
- *   coupl_face_list <-- list of coupled boundary faces
+ *   syr_coupling   <-- SYRTHES coupling structure
+ *   coupl_face_ids <-- ids of coupled boundary faces
  *----------------------------------------------------------------------------*/
 
 static void
 _ensure_conservativity(cs_syr4_coupling_t   *syr_coupling,
-                       const cs_lnum_t       coupl_face_list[])
+                       const cs_lnum_t       coupl_face_ids[])
 {
   cs_lnum_t ii, face_id;
 
@@ -1175,7 +1176,7 @@ _ensure_conservativity(cs_syr4_coupling_t   *syr_coupling,
   /* Sanity checks */
 
   assert(surf != NULL);
-  assert(coupl_face_list != NULL);
+  assert(coupl_face_ids != NULL);
   assert(syr_coupling != NULL);
   coupling_ent = syr_coupling->faces;
   assert(coupling_ent != NULL);
@@ -1183,7 +1184,7 @@ _ensure_conservativity(cs_syr4_coupling_t   *syr_coupling,
   /* Compute Code_Saturne's global flux */
 
   for (ii = 0; ii < coupling_ent->n_elts; ii++) {
-    face_id = coupl_face_list[ii] - 1;
+    face_id = coupl_face_ids[ii];
     _flux += coupling_ent->flux[ii] * surf[face_id];
   }
 
@@ -1467,6 +1468,27 @@ cs_syr4_coupling_all_destroy(void)
 }
 
 /*----------------------------------------------------------------------------
+ * Get name of SYRTHES coupling.
+ *
+ * parameters:
+ *   syr_coupling <-- SYRTHES coupling structure
+ *
+ * returns:
+ *   pointer to SYRTHES coupling name
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_syr4_coupling_get_name(cs_syr4_coupling_t  *syr_coupling)
+{
+  const char *retval = cs_empty_string;
+
+  if (syr_coupling->syr_name != NULL)
+    retval = syr_coupling->syr_name;
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------
  * Set conservativity forcing flag to True (1) or False (0) for all defined
  * SYRTHES couplings
  *
@@ -1685,14 +1707,14 @@ cs_syr4_coupling_get_n_elts(const cs_syr4_coupling_t *syr_coupling,
  *
  * parameters:
  *   syr_coupling  <-- SYRTHES coupling structure
- *   cpl_elt_lst   --> List of coupled elements (1 to n)
+ *   cpl_elt_ids   --> Ids of coupled elements (0 to n-1)
  *   mode          <-- 0 (surface); 1 (volume)
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr4_coupling_get_elt_list(const cs_syr4_coupling_t  *syr_coupling,
-                              cs_lnum_t                  cpl_elt_lst[],
-                              int                        mode)
+cs_syr4_coupling_get_elt_ids(const cs_syr4_coupling_t  *syr_coupling,
+                             cs_lnum_t                  cpl_elt_ids[],
+                             int                        mode)
 {
   cs_syr4_coupling_ent_t  *coupling_ent = NULL;
 
@@ -1707,9 +1729,9 @@ cs_syr4_coupling_get_elt_list(const cs_syr4_coupling_t  *syr_coupling,
     coupling_ent = syr_coupling->cells;
 
   if (coupling_ent != NULL)
-    fvm_nodal_get_parent_num(coupling_ent->elts,
-                             coupling_ent->elt_dim,
-                             cpl_elt_lst);
+    fvm_nodal_get_parent_id(coupling_ent->elts,
+                            coupling_ent->elt_dim,
+                            cpl_elt_ids);
 }
 
 /*----------------------------------------------------------------------------
@@ -1765,16 +1787,16 @@ cs_syr4_coupling_recv_tsolid(cs_syr4_coupling_t  *syr_coupling,
  * Send coupling variables to SYRTHES
  *
  * parameters:
- *   syr_coupling    <-- SYRTHES coupling structure
- *   coupl_face_list <-- list of coupled boundary faces
- *   tf              <-- fluid temperature
- *   hf              <-- fluid heat exchange coef. (numerical or user-defined)
- *   mode            <-- 0: surface coupling; 1: volume coupling
+ *   syr_coupling <-- SYRTHES coupling structure
+ *   cpl_elt_ids  <-- ids of coupled elements
+ *   tf           <-- fluid temperature
+ *   hf           <-- fluid heat exchange coef. (numerical or user-defined)
+ *   mode          <-- 0: surface coupling; 1: volume coupling
  *----------------------------------------------------------------------------*/
 
 void
 cs_syr4_coupling_send_tf_hf(cs_syr4_coupling_t  *syr_coupling,
-                            const cs_lnum_t      cpl_elt_lst[],
+                            const cs_lnum_t      cpl_elt_ids[],
                             cs_real_t            tf[],
                             cs_real_t            hf[],
                             int                  mode)
@@ -1836,7 +1858,7 @@ cs_syr4_coupling_send_tf_hf(cs_syr4_coupling_t  *syr_coupling,
   /* Exchange flux and corrector coefficient to ensure conservativity */
 
   if (cs_syr4_coupling_conservativity > 0 && mode == 0)
-    _ensure_conservativity(syr_coupling, cpl_elt_lst);
+    _ensure_conservativity(syr_coupling, cpl_elt_ids);
 }
 
 /*----------------------------------------------------------------------------

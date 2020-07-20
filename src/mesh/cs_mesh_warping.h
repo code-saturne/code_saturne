@@ -46,29 +46,6 @@ BEGIN_C_DECLS
  * Type definitions
  *============================================================================*/
 
-/*============================================================================
- * Public function prototypes for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Set the threshold to cut warped faces.
- *
- * Fortran interface :
- *
- * subroutine setcwf (cwfthr)
- * *****************
- *
- * integer          cwfpst      : <-> : if 1, activate postprocessing when
- *                                      cutting warped faces (default 0)
- * double precision cwfthr      : <-> : threshold angle (in degrees) if
- *                                      positive, do not cut warped faces
- *                                      if negative (default -1)
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (setcwf, SETCWF) (const int        *cwfpst,
-                           const cs_real_t  *cwfthr);
-
 /*=============================================================================
  * Public function prototypes
  *============================================================================*/

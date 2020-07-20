@@ -43,8 +43,7 @@
 !_______________________________________________________________________________
 
 
-subroutine b_h_to_t            &
- ( h_b , t_b )
+subroutine b_h_to_t(h_b, t_b)
 
 !===============================================================================
 ! Module files
@@ -74,7 +73,7 @@ implicit none
 
 ! Arguments
 
-double precision, dimension(nfabor),intent(in) :: h_b
+double precision, dimension(nfabor), intent(in) :: h_b
 double precision, dimension(nfabor), intent(out), target :: t_b
 
 ! Local variables

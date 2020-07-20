@@ -37,11 +37,22 @@ BEGIN_C_DECLS
  * Public function prototypes
  *============================================================================*/
 
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Mass source term due to precipitation
+ *
+ * \param[in]   dtref      pointer to reference time step
+ * \param[in]   crom       pointer to density value
+ * \param[in]   cvar_scal  pointer to scal  value
+ * \param[out]  crvexp     explicit part of the source term
+ */
+/*----------------------------------------------------------------------------*/
+
 void
-CS_PROCF(precst, PRECST)(cs_real_t *dtref,
-                         cs_real_t *crom,
-                         cs_real_t *cvar_scal,
-                         cs_real_t  crvexp[]);
+cs_lagr_precipitation_mass_st(cs_real_t        dtref,
+                              const cs_real_t  crom[],
+                              const cs_real_t  cvar_scal[],
+                              cs_real_t        crvexp[]);
 
 /*----------------------------------------------------------------------------*/
 /*!

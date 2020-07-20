@@ -53,7 +53,7 @@ implicit none
 
 ! Local variables
 
-integer          iok, ipp, nmodpp
+integer          iok, ipp, nmodpp, have_thermal_model
 
 double precision ttsuit, wtsuit
 
@@ -124,7 +124,11 @@ if (ippmod(iatmos).ge.0) call cs_at_data_assim_initialize
 
 call lagran_init_map
 
-call lagopt(isuite, iccvfg, iscalt, dtref)
+have_thermal_model = 0
+if (iscalt.ge.1) then
+  have_thermal_model = 1
+endif
+call cs_lagr_options_definition(isuite, have_thermal_model, dtref, iccvfg)
 
 ! Additional fields if not in CDO mode only
 

@@ -59,9 +59,14 @@
 #include "cs_coupling.h"
 #endif
 
+#include "cs_cf_thermo.h"
+#include "cs_field.h"
+#include "cs_field_pointer.h"
 #include "cs_log.h"
+#include "cs_mesh.h"
 #include "cs_parall.h"
 #include "cs_prototypes.h"
+#include "cs_physical_model.h"
 #include "cs_thermal_model.h"
 #include "cs_syr4_coupling.h"
 
@@ -346,7 +351,6 @@ _init_all_mpi_syr(void)
 
     int j;
     ple_coupling_mpi_set_info_t ai;
-
     int n_syr_apps = 0;
     int *syr_appinfo = NULL;
 
@@ -432,341 +436,6 @@ _init_all_mpi_syr(void)
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- *  Public function definitions for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Get number of SYRTHES couplings.
- *
- * Fortran Interface:
- *
- * SUBROUTINE NBCSYR
- * *****************
- *
- * INTEGER          n_couplings     : <-- : number of SYRTHES couplings
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(nbcsyr, NBCSYR)
-(
- int  *n_couplings
-)
-{
-  *n_couplings = cs_syr_coupling_n_couplings();
-}
-
-/*----------------------------------------------------------------------------
- * Test if the given SYRTHES coupling number is a surface coupling
- * Return 1 if true else 0
- *
- * Fortran Interface:
- *
- * SUBROUTINE TSURSY
- * *****************
- *
- * INTEGER          cplnum     : <-- : number of the SYRTHES coupling
- * INTEGER          issurf     : --> : 1 if surface coupling else 0
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(tsursy, TSURSY)
-(
- int  *const cplnum,
- int  *issurf
-)
-{
-  int n_couplings = 0;
-
-  *issurf = 0; /* Default initialization */
-
-  assert(_cs_glob_n_syr_cp > -1);
-
-  if (_cs_glob_n_syr_cp == _cs_glob_n_syr4_cp) {
-
-    n_couplings = _cs_glob_n_syr_cp;
-
-    if (*cplnum < 1 || *cplnum > n_couplings)
-      bft_error(__FILE__, __LINE__, 0,
-                _("SYRTHES coupling number %d impossible; "
-                  "there are %d couplings"), *cplnum, n_couplings);
-
-    {
-      cs_syr4_coupling_t *syr_coupling
-        = cs_syr4_coupling_by_id(*cplnum - 1);
-
-      *issurf = cs_syr4_coupling_is_surf(syr_coupling);
-    }
-
-  }
-  else { /* Couplings are still defined in the builder structure */
-
-    if (_syr_coupling_builder_size == _cs_glob_n_syr_cp) {
-
-      _cs_syr_coupling_builder_t *scb = NULL;
-
-      n_couplings = _cs_glob_n_syr_cp;
-
-      if (*cplnum < 1 || *cplnum > n_couplings)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("SYRTHES coupling number %d impossible; "
-                    "there are %d couplings"), *cplnum, n_couplings);
-
-      scb = _syr_coupling_builder + (*cplnum) - 1;
-
-      if (scb->face_sel_c != NULL)
-        *issurf = 1;
-    }
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Test if the given SYRTHES coupling number is a volume coupling
- * Return 1 if true else 0
- *
- * Fortran Interface:
- *
- * SUBROUTINE TVOLSY
- * *****************
- *
- * INTEGER          cplnum     : <-- : number of the SYRTHES coupling
- * INTEGER          issurf     : --> : 1 if volume coupling else 0
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(tvolsy, TVOLSY)
-(
- int  *const cplnum,
- int  *isvol
-)
-{
-  int n_couplings = 0;
-
-  *isvol = 0; /* Default initialization */
-
-  assert(_cs_glob_n_syr_cp > -1);
-
-  if (_cs_glob_n_syr_cp == _cs_glob_n_syr4_cp) {
-
-    n_couplings = _cs_glob_n_syr_cp;
-
-    if (*cplnum < 1 || *cplnum > n_couplings)
-      bft_error(__FILE__, __LINE__, 0,
-                _("SYRTHES coupling number %d impossible; "
-                  "there are %d couplings"), *cplnum, n_couplings);
-
-    {
-      cs_syr4_coupling_t *syr_coupling
-        = cs_syr4_coupling_by_id(*cplnum - 1);
-
-      *isvol = cs_syr4_coupling_is_vol(syr_coupling);
-    }
-
-  }
-  else { /* Couplings are still defined in the builder structure */
-
-    if (_syr_coupling_builder_size == _cs_glob_n_syr_cp) {
-
-      _cs_syr_coupling_builder_t *scb = NULL;
-
-      n_couplings = _cs_glob_n_syr_cp;
-
-      if (*cplnum < 1 || *cplnum > n_couplings)
-        bft_error(__FILE__, __LINE__, 0,
-                  _("SYRTHES coupling number %d impossible; "
-                    "there are %d couplings"), *cplnum, n_couplings);
-
-      scb = _syr_coupling_builder + (*cplnum) - 1;
-
-      if (scb->cell_sel_c != NULL)
-        *isvol = 1;
-
-    }
-
-  }
-
-}
-
-/*----------------------------------------------------------------------------
- * Get number of coupled elements with SYRTHES.
- *
- * Fortran Interface:
- *
- * SUBROUTINE NBESYR
- * *****************
- *
- * INTEGER          coupl_num       : --> : coupling number
- * INTEGER          mode            : --> : 0 (surface); 1 (volume)
- * INTEGER          n_coupl_elts    : <-- : number of coupled elements
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(nbesyr, NBESYR)
-(
- const int  *coupl_num,
- const int  *mode,
- cs_lnum_t  *n_coupl_elts
-)
-{
-  int n_couplings = _cs_glob_n_syr4_cp;
-
-  if (*coupl_num < 1 || *coupl_num > n_couplings)
-    bft_error(__FILE__, __LINE__, 0,
-              _("SYRTHES coupling number %d impossible; "
-                "there are %d couplings"),
-              *coupl_num, n_couplings);
-
-  else {
-    cs_syr4_coupling_t *syr_coupling
-      = cs_syr4_coupling_by_id(*coupl_num - 1);
-    *n_coupl_elts = cs_syr4_coupling_get_n_elts(syr_coupling, *mode);
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Get local numbering of coupled elements
- *
- * Fortran interface:
- *
- * SUBROUTINE LELTSY
- * *****************
- *
- * INTEGER      coupl_num       : --> : coupling number
- * INTEGER      mode            : --> : 0 (surface); 1 (volume)
- * INTEGER      coupl_elt_list  : <-- : list of coupled elements
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF(leltsy, LELTSY)
-(
- const int   *coupl_num,
- const int   *mode,
- cs_lnum_t   *coupl_elt_list
-)
-{
-  int n_couplings = _cs_glob_n_syr4_cp;
-
-  if (*coupl_num < 1 || *coupl_num > n_couplings)
-    bft_error(__FILE__, __LINE__, 0,
-              _("SYRTHES coupling number %d impossible; "
-                "there are %d couplings"),
-              *coupl_num, n_couplings);
-  else {
-    cs_syr4_coupling_t *syr_coupling
-      = cs_syr4_coupling_by_id(*coupl_num - 1);
-    cs_syr4_coupling_get_elt_list(syr_coupling, coupl_elt_list, *mode);
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Receive coupling variables from SYRTHES
- *
- * Fortran Interface:
- *
- * SUBROUTINE VARSYI
- * *****************
- *
- * INTEGER          NUMSYR      : --> : Number of SYRTHES coupling
- * INTEGER          MODE        : --> : 0 (surface); 1 (volume)
- * DOUBLE PRECISION TSOLID      : <-- : Solid temperature
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (varsyi, VARSYI)
-(
- int        *numsyr,
- int        *mode,
- cs_real_t  *tsolid
-)
-{
-  int n_couplings = _cs_glob_n_syr4_cp;
-
-  if (*numsyr < 1 || *numsyr > n_couplings)
-    bft_error(__FILE__, __LINE__, 0,
-              _("SYRTHES coupling number %d impossible; "
-                "there are %d couplings"),
-              *numsyr, n_couplings);
-  else {
-    cs_syr4_coupling_t *syr_coupling
-      = cs_syr4_coupling_by_id(*numsyr - 1);
-    cs_syr4_coupling_recv_tsolid(syr_coupling, tsolid, *mode);
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Send coupling variables to SYRTHES
- *
- * Fortran Interface:
- *
- * SUBROUTINE VARSYO
- * *****************
- *
- * INTEGER          NUMSYR      : --> : Number of SYRTHES coupling
- * INTEGER          MODE        : --> : 0 (surface); 1 (volume)
- * INTEGER          LSTELT      : --> : List of coupled elements
- * DOUBLE PRECISION TFLUID      : --> : Fluid temperature
- * DOUBLE PRECISION HFLUID      : --> : Exchange coefficient
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (varsyo, VARSYO)
-(
- int        *numsyr,
- int        *mode,
- cs_lnum_t  *lstelt,
- cs_real_t  *tfluid,
- cs_real_t  *hfluid
-)
-{
-  int n_couplings = _cs_glob_n_syr4_cp;
-
-  if (*numsyr < 1 || *numsyr > n_couplings)
-    bft_error(__FILE__, __LINE__, 0,
-              _("SYRTHES coupling number %d impossible; "
-                "there are %d couplings"),
-              *numsyr, n_couplings);
-  else {
-    cs_syr4_coupling_t *syr_coupling
-      = cs_syr4_coupling_by_id(*numsyr - 1);
-    cs_syr4_coupling_send_tf_hf(syr_coupling, lstelt, tfluid, hfluid, *mode);
-  }
-}
-
-/*----------------------------------------------------------------------------
- * Compute the explicit/implicit contribution to source terms in case of
- * volume coupling with SYRTHES4
- *
- * Fortran Interface:
- *
- * SUBROUTINE CTBVSY
- * *****************
- *
- * INTEGER          NUMSYR      : --> : Number of SYRTHES coupling
- * DOUBLE PRECISION TFLUID      : --> : Fluid temperature
- * DOUBLE PRECISION CTBIMP      : <-> : Implicit contribution
- * DOUBLE PRECISION CTBEXP      : <-> : Explicit contribution
- *----------------------------------------------------------------------------*/
-
-void CS_PROCF (ctbvsy, CTBVSY)
-(
- int        *numsyr,
- cs_real_t  *tfluid,
- cs_real_t  *ctbimp,
- cs_real_t  *ctbexp
-)
-{
-  int n_couplings = _cs_glob_n_syr4_cp;
-
-  if (*numsyr < 1 || *numsyr > n_couplings)
-    bft_error(__FILE__, __LINE__, 0,
-              _("SYRTHES coupling number %d impossible; "
-                "there are %d couplings"),
-              *numsyr, n_couplings);
-
-  {
-    cs_syr4_coupling_t *syr_coupling
-      = cs_syr4_coupling_by_id(*numsyr - 1);
-
-    cs_syr4_coupling_ts_contrib(syr_coupling, tfluid, ctbimp, ctbexp);
-  }
-
-}
-
-/*============================================================================
  * Public function definitions
  *============================================================================*/
 
@@ -774,7 +443,6 @@ void CS_PROCF (ctbvsy, CTBVSY)
 /*!
  * \brief Define new SYRTHES coupling.
  *
- * The arguments to \ref cs_syr_coupling_define are:
  * \param[in] syrthes_name      matching SYRTHES application name
  * \param[in] boundary_criteria surface selection criteria, or NULL
  * \param[in] volume_criteria   volume selection criteria, or NULL
@@ -984,15 +652,15 @@ cs_syr_coupling_log_setup(void)
 
     int n_surf_coupl = 0, n_vol_coupl = 0, issurf, isvol;
 
-    for (int ii = 1 ; ii <= n_coupl ; ii++) {
+    for (int coupl_id = 0; coupl_id < _cs_glob_n_syr4_cp; coupl_id++) {
+      cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(coupl_id);
+
       /* Add a new surface coupling if detected */
-      issurf = 0;
-      CS_PROCF(tsursy, TSURSY)(&ii, &issurf);
+      issurf = cs_syr4_coupling_is_surf(syr_coupling);
       n_surf_coupl += issurf;
 
       /* Add a new volume coupling if detected */
-      isvol = 0;
-      CS_PROCF(tvolsy, TVOLSY)(&ii, &isvol);
+      isvol = cs_syr4_coupling_is_vol(syr_coupling);
       n_vol_coupl += isvol;
     }
 
@@ -1042,6 +710,715 @@ cs_syr_coupling_init_meshes(void)
   for (int coupl_id = 0; coupl_id < _cs_glob_n_syr4_cp; coupl_id++) {
     cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(coupl_id);
     cs_syr4_coupling_init_mesh(syr_coupling);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Check if the given SYRTHES coupling number is a surface couplings.
+ *
+ * \param[in] cpl_id   matching SYRTHES coupling id
+ *
+ * \return 1 if the coupling includes the surface, 0 otherwise.
+ */
+/*----------------------------------------------------------------------------*/
+
+int
+cs_syr_coupling_is_surf(int  cpl_id)
+{
+  int retval = 0;  /* Default initialization */
+
+  int n_couplings = _cs_glob_n_syr_cp;
+
+  assert(_cs_glob_n_syr_cp > -1);
+
+  if (cpl_id < 0 || cpl_id >= n_couplings)
+    bft_error(__FILE__, __LINE__, 0,
+              _("SYRTHES coupling id %d impossible; "
+                "there are %d couplings"), cpl_id, n_couplings);
+
+  if (_cs_glob_n_syr_cp == _cs_glob_n_syr4_cp) {
+    cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(cpl_id);
+    retval = cs_syr4_coupling_is_surf(syr_coupling);
+  }
+
+  else { /* Couplings are still defined in the builder structure */
+    if (_syr_coupling_builder_size == _cs_glob_n_syr_cp) {
+      _cs_syr_coupling_builder_t *scb = NULL;
+      scb = _syr_coupling_builder + cpl_id;
+      if (scb->face_sel_c != NULL)
+        retval = 1;
+    }
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Read boundary field/variable values relative to a SYRTHES coupling.
+ *
+ * \param[in]       nvar     number of variables
+ * \param[in]       bc_type  boundary condition type
+ * \param[in, out]  icodcl   boundary condition codes
+ * \param[in, out]  rcodcl   boundary condition values
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_syr_coupling_recv_boundary(int        nvar,
+                              int        bc_type[],
+                              int        icodcl[],
+                              cs_real_t  rcodcl[])
+{
+  /* SYRTHES coupling: get wall temperature
+     ====================================== */
+
+  const int kcpsyr = cs_field_key_id("syrthes_coupling");
+
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+  const cs_lnum_t n_vars = nvar;  /* cast to cs_lnum_t because this
+                                     is used in address computations here */
+
+  /* Get number of coupling cases */
+
+  int n_cpl = cs_syr_coupling_n_couplings();
+
+  /* Loop on fields, handling only those coupled with Syrthes */
+
+  int n_fields = cs_field_n_fields();
+  for (int field_id = 0 ; field_id <  n_fields; field_id++) {
+
+    cs_field_t  *f = cs_field_by_id(field_id);
+
+    int icpsyr = 0;
+    if (f->type & CS_FIELD_VARIABLE)
+      icpsyr = cs_field_get_key_int(f, kcpsyr);
+
+    if (icpsyr < 1)
+      continue;
+
+    /* Loop on couplings: get wall temperature array for each coupling
+       and apply matching boundary condition. */
+
+    for (int cpl_id = 0; cpl_id < n_cpl; cpl_id++) {
+
+      cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(cpl_id);
+
+      if (! cs_syr4_coupling_is_surf(syr_coupling))  /* ignore if volume-only */
+        continue;
+
+      cs_lnum_t n_cpl_faces = cs_syr4_coupling_get_n_elts(syr_coupling, 0);
+
+      /* Get list of coupled faces */
+
+      cs_lnum_t  *f_ids;
+      BFT_MALLOC(f_ids, n_cpl_faces, cs_lnum_t);
+      cs_syr4_coupling_get_elt_ids(syr_coupling, f_ids, 0);
+
+      /* Read wall temperature and interpolate if necessary */
+
+      cs_real_t *t_solid;
+      BFT_MALLOC(t_solid, n_cpl_faces, cs_real_t);
+      cs_syr4_coupling_recv_tsolid(syr_coupling, t_solid, 0);
+
+      /*  For scalars coupled with SYRTHES, prescribe a Dirichlet
+          condition at coupled faces.
+          For the time being, pass here only once, as only one scalar is
+          coupled with SYRTHES.
+          For the compressible module, solve in energy, but save the
+          temperature separately, for BC's to be clearer. */
+
+      const int k_var_id = cs_field_key_id("variable_id");
+      int var_id = cs_field_get_key_int(f, k_var_id) - 1;
+
+      if (cs_glob_physical_model_flag[CS_COMPRESSIBLE] >= 0) {
+        if (f == CS_F_(e_tot)) {
+          const cs_field_t *f_t_kelvin = CS_F_(t_kelvin);
+          var_id = cs_field_get_key_int(f_t_kelvin, k_var_id);
+        }
+        else
+          bft_error
+            (__FILE__, __LINE__, 0,
+             _("With the compressible module, only the \"total energy\"\n"
+               "scalar field may be coupled with SYRTHES.\n"
+               "Here, one tries to couple with the field \"%s\"."),
+             f->name);
+      }
+
+      int  *_icodcl = icodcl + (var_id*n_b_faces);
+      cs_real_t  *_rcodcl1 = rcodcl + (var_id*n_b_faces);
+      cs_real_t  *_rcodcl2 = rcodcl + (n_b_faces*n_vars + var_id*n_b_faces);
+      cs_real_t  *_rcodcl3 = rcodcl + (2*n_b_faces*n_vars + var_id*n_b_faces);
+
+      for (cs_lnum_t i = 0; i < n_cpl_faces; i++) {
+
+        cs_lnum_t face_id = f_ids[i];
+
+        if (   _icodcl[face_id] != CS_INDEF
+            && _icodcl[face_id] != CS_SMOOTHWALL
+            && _icodcl[face_id] != CS_ROUGHWALL) {
+          if (bc_type[face_id] == CS_SMOOTHWALL)
+            _icodcl[face_id] = CS_SMOOTHWALL;
+          else if (bc_type[face_id] == CS_ROUGHWALL)
+            _icodcl[face_id] = CS_ROUGHWALL;
+        }
+
+        _rcodcl1[face_id] = t_solid[i];
+        _rcodcl2[face_id] = cs_math_infinite_r;
+        _rcodcl3[face_id] = 0.;
+
+      }
+
+      /* Possible temperature -> enthalpy conversion */
+
+      if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
+
+        if (f == cs_thermal_model_field()) {
+
+          cs_real_t *h_b;
+          BFT_MALLOC(h_b, n_cpl_faces, cs_real_t);
+
+          for (cs_lnum_t i = 0; i < n_cpl_faces; i++)
+            h_b[i] = 0;
+
+          for (cs_lnum_t i = 0; i < n_cpl_faces; i++) {
+            cs_lnum_t face_id = f_ids[i];
+            h_b[face_id] = t_solid[i];
+          }
+
+          for (cs_lnum_t i = 0; i < n_cpl_faces; i++)
+            f_ids[i] += 1;
+
+          int _n_cpl_faces = n_cpl_faces;
+          CS_PROCF(b_t_to_h, B_T_TO_H)(&_n_cpl_faces, f_ids, h_b, h_b);
+
+          for (cs_lnum_t i = 0; i < n_cpl_faces; i++)
+            f_ids[i] -= 1;
+
+          for (cs_lnum_t i = 0; i < n_cpl_faces; i++) {
+            cs_lnum_t face_id = f_ids[i];
+            _rcodcl1[face_id] = h_b[face_id];
+          }
+
+          BFT_FREE(h_b);
+
+        }
+
+      } /* End case for enthalpy */
+
+      BFT_FREE(f_ids);
+      BFT_FREE(t_solid);
+
+    } /* End loop on couplings */
+
+  } /* End loop on fields */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Send field/variable values relative to a SYRTHES coupling.
+ *
+ * \param[in]  h_wall  wall thermal exchange coefficient
+ * \param[in]  t_wall  wall thermal variable
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_syr_coupling_send_boundary(const cs_real_t  h_wall[],
+                              cs_real_t        t_wall[])
+{
+  const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
+  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
+
+  /* Get number of coupling cases */
+
+  int n_cpl = cs_syr_coupling_n_couplings();
+
+  /* Check if we have a boundary coupling. */
+
+  bool have_boundary_cpl = false;
+  for (int cpl_id = 0; cpl_id < n_cpl; cpl_id++) {
+    cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(cpl_id);
+    if (cs_syr4_coupling_is_surf(syr_coupling)) {
+      have_boundary_cpl = true;
+      break;
+    }
+  }
+
+  if (! have_boundary_cpl)
+    return;
+
+  /* Build arrays large enough for all cases */
+
+  cs_lnum_t  *f_ids;
+  cs_real_t  *t_fluid, *h_cpl;
+  BFT_MALLOC(f_ids, n_b_faces, cs_lnum_t);
+  BFT_MALLOC(t_fluid, n_b_faces, cs_real_t);
+  BFT_MALLOC(h_cpl, n_b_faces, cs_real_t);
+
+  /* Prepare conversion to temperature for enthalpy or energy
+     (check for surface couplings to make sure it is needed,
+     exit earlier otherwise) */
+
+  cs_real_t  *wa = NULL;
+  if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_ENTHALPY) {
+    BFT_MALLOC(wa, n_b_faces, cs_real_t);
+    CS_PROCF(b_h_to_t, B_H_TO_T)(t_wall, wa);
+  }
+  else if (cs_glob_thermal_model->itherm == CS_THERMAL_MODEL_TOTAL_ENERGY) {
+    /* Epsilon sup for perfect gas at cells */
+    BFT_MALLOC(wa, n_cells, cs_real_t);
+    cs_cf_thermo_eps_sup(CS_F_(rho)->val, wa, n_cells);
+  }
+
+  /* Loop on couplings */
+
+  for (int cpl_id = 0; cpl_id < n_cpl; cpl_id++) {
+
+    cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(cpl_id);
+
+    if (! cs_syr4_coupling_is_surf(syr_coupling))  /* ignore if volume-only */
+      continue;
+
+    cs_lnum_t n_cpl_faces = cs_syr4_coupling_get_n_elts(syr_coupling, 0);
+
+    /* Get list of coupled faces */
+
+    cs_syr4_coupling_get_elt_ids(syr_coupling, f_ids, 0);
+
+    switch (cs_glob_thermal_model->itherm) {
+
+    case CS_THERMAL_MODEL_TEMPERATURE:
+      {
+        for (cs_lnum_t i = 0; i < n_cpl_faces; i++) {
+          cs_lnum_t face_id = f_ids[i];
+
+          /* Saved fluid temperatures and exchange coefficients */
+          t_fluid[i] = t_wall[face_id];
+          h_cpl[i] = h_wall[face_id];
+        }
+      }
+      break;
+
+    case CS_THERMAL_MODEL_ENTHALPY:
+      {
+        /* In enthalpy formulation, transform to temperatures for SYRTHES
+         *  To conserve flux Phi = (lambda/d     ) Delta T
+         *                 or Phi = (lambda/(d Cp)) Delta H
+         * recall      hbord = lambda/d.
+         *  Conservation is not guaranteed, so we add a warning. */
+
+        for (cs_lnum_t i = 0; i < n_cpl_faces; i++) {
+          cs_lnum_t face_id = f_ids[i];
+
+          t_fluid[i] = wa[face_id];
+          h_cpl[i] = h_wall[face_id];
+        }
+      }
+      break;
+
+    case CS_THERMAL_MODEL_TOTAL_ENERGY:
+      {
+        /* In energy formulation, transform to temperatures for SYRTHES
+         *  To conserve flux Phi = (lambda/d     ) Delta T
+         *                or Phi = (lambda/(d Cp)) Delta H
+         *  Recall      hbord = lambda/ d
+         *  Note that Ei = Cv Ti + 1/2 Ui*Ui + Epsilon_sup_i
+         *  and  that Ep = Cv Tp + 1/2 Ui*Ui + Epsilon_sup_i
+         *    (the difference is thus Cv Delta T)
+
+         * Modify temperature and exchange coefficient
+
+         * Compute e - CvT */
+
+        const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
+
+        cs_real_t   cv0 = cs_glob_fluid_properties->cv0;
+        const cs_real_t  *cv = NULL;
+        cs_lnum_t   cv_step = 0;
+
+        const cs_real_3_t *cvar_vel = (const cs_real_3_t *)CS_F_(vel)->val;
+
+        if (CS_F_(cv) != NULL) {
+          cv = (const cs_real_t *)CS_F_(cv)->val;
+          cv_step = 1;
+        }
+        else
+          cv = &cv0;
+
+        const cs_real_t *cvar_e_tot = (const cs_real_t *)CS_F_(e_tot)->val;
+
+        for (cs_lnum_t i = 0; i < n_cpl_faces; i++) {
+          cs_lnum_t face_id = f_ids[i];
+          cs_lnum_t cell_id = b_face_cells[face_id];
+
+          cs_real_t cvt =   cvar_e_tot[face_id]
+                          - 0.5*cs_math_3_square_norm(cvar_vel[cell_id])
+                          + wa[cell_id];
+
+          t_fluid[i] = cvt / cv[cell_id * cv_step];
+          h_cpl[i] = h_wall[face_id];
+        }
+      }
+      break;
+
+    default:
+      break;
+    }
+
+    /* Fluxes are multiplied by porosity if present.
+     * Here as the flux is expressed as h.(Tw-Tf), the exchange coefficient
+     * is multipled by the porosity. */
+
+    const cs_field_t *f_poro = CS_F_(poro);
+
+    if (f_poro != NULL) {
+
+      const cs_lnum_t *b_face_cells = cs_glob_mesh->b_face_cells;
+
+      if (f_poro->dim == 1) {
+        const cs_real_t * cpro_poro = (const cs_real_t *)f_poro->val;
+        for (cs_lnum_t i = 0; i < n_cpl_faces; i++) {
+          cs_lnum_t face_id = f_ids[i];
+          cs_lnum_t cell_id = b_face_cells[face_id];
+          h_cpl[i] *= cpro_poro[cell_id];
+        }
+      }
+      else if (f_poro->dim == 6) {
+        const cs_real_6_t * cpro_poro = (const cs_real_6_t *)f_poro->val;
+        for (cs_lnum_t i = 0; i < n_cpl_faces; i++) {
+          cs_lnum_t face_id = f_ids[i];
+          cs_lnum_t cell_id = b_face_cells[face_id];
+          /* TODO: using a product between the porosity
+             and the boundary face normal would be more precise. */
+          h_cpl[i] *= 1./3. * (  cpro_poro[cell_id][0]
+                               + cpro_poro[cell_id][1]
+                               + cpro_poro[cell_id][2]);
+        }
+      }
+
+    }
+
+    cs_syr4_coupling_send_tf_hf(syr_coupling, f_ids, t_fluid, h_cpl, 0);
+
+  } /* End loop on couplings */
+
+  BFT_FREE(wa);
+
+  BFT_FREE(f_ids);
+  BFT_FREE(t_fluid);
+  BFT_FREE(h_cpl);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Exchange volume values relative to a SYRTHES coupling.
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_syr_coupling_exchange_volume(void)
+{
+  const int kcpsyr = cs_field_key_id("syrthes_coupling");
+
+  /* Get number of coupling cases */
+
+  int n_cpl = cs_syr_coupling_n_couplings();
+
+  /* Loop on fields, handling only those coupled with Syrthes */
+
+  int n_fields = cs_field_n_fields();
+  for (int field_id = 0 ; field_id <  n_fields; field_id++) {
+
+    cs_field_t  *f = cs_field_by_id(field_id);
+
+    int icpsyr = 0;
+    if (f->type & CS_FIELD_VARIABLE)
+      icpsyr = cs_field_get_key_int(f, kcpsyr);
+
+    if (icpsyr < 1)
+      continue;
+
+    /* Sanity check : only temperature is possible when doing a
+       volume coupling with SYRTHES */
+    if (f != cs_thermal_model_field())
+      bft_error
+        (__FILE__, __LINE__, 0,
+         _("SYRTHES volume coupling possible only with temperature variable,\n"
+           "not \"%s\"."),
+         f->name);
+
+    /* Loop on couplings: get wall temperature array for each coupling
+       and apply matching boundary condition. */
+
+    for (int cpl_id = 0; cpl_id < n_cpl; cpl_id++) {
+
+      cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(cpl_id);
+
+      if (! cs_syr4_coupling_is_vol(syr_coupling))  /* ignore if surface-only */
+        continue;
+
+      cs_lnum_t n_cpl_cells = cs_syr4_coupling_get_n_elts(syr_coupling, 1);
+
+      /* Get list of coupled cells */
+
+      cs_lnum_t  *c_ids;
+      cs_real_t *t_fluid, *h_vol;
+      BFT_MALLOC(c_ids, n_cpl_cells, cs_lnum_t);
+      BFT_MALLOC(t_fluid, n_cpl_cells, cs_real_t);
+      BFT_MALLOC(h_vol, n_cpl_cells, cs_real_t);
+
+      cs_syr4_coupling_get_elt_ids(syr_coupling, c_ids, 1);
+
+      for (cs_lnum_t i = 0; i < n_cpl_cells; i++) {
+        h_vol[i] = 0.;
+      }
+
+      /* Receive solid temperature.
+       * This temperature is stored in a C structure for a future
+       * use in source term definition. */
+
+      cs_syr4_coupling_recv_tsolid(syr_coupling, t_fluid, 1);
+
+      const cs_real_t  *cvar_t = (const cs_real_t *)f->val;
+
+      const char  *syrthes_name = cs_syr4_coupling_get_name(syr_coupling);
+
+
+      cs_user_syrthes_coupling_volume_h(cpl_id,
+                                        syrthes_name,
+                                        n_cpl_cells,
+                                        c_ids,
+                                        h_vol);
+
+      for (cs_lnum_t i = 0; i < n_cpl_cells; i++)
+        t_fluid[i] = cvar_t[c_ids[i]];
+
+      cs_syr4_coupling_send_tf_hf(syr_coupling, c_ids, t_fluid, h_vol, 1);
+
+      BFT_FREE(c_ids);
+      BFT_FREE(t_fluid);
+      BFT_FREE(h_vol);
+
+    } /* End loop on couplings */
+
+  } /* End loop on fields */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Compute the source term (implicit and/or explicit part) for a
+ *         volume coupling with SYRTHES.
+ *
+ * \param[in]       field_id  field id
+ * \param[in, out]  st_exp    explicit source term
+ * \param[in, out]  st_imp    implicit source term
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_syr_coupling_volume_source_terms(int        field_id,
+                                    cs_real_t  st_exp[],
+                                    cs_real_t  st_imp[])
+{
+  cs_field_t  *f = cs_field_by_id(field_id);
+
+  const cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+
+  /* Get number of coupling cases */
+
+  int n_cpl = cs_syr_coupling_n_couplings();
+
+  /* Sanity check : only temperature is possible when doing a
+     volume coupling with SYRTHES */
+  if (f != cs_thermal_model_field())
+    bft_error
+      (__FILE__, __LINE__, 0,
+       _("SYRTHES volume coupling possible only with temperature variable,\n"
+         "not \"%s\"."),
+       f->name);
+
+  /* Loop on couplings: get wall temperature array for each coupling
+     and apply matching boundary condition. */
+
+  for (int cpl_id = 0; cpl_id < n_cpl; cpl_id++) {
+
+    cs_syr4_coupling_t *syr_coupling = cs_syr4_coupling_by_id(cpl_id);
+
+    if (! cs_syr4_coupling_is_vol(syr_coupling))  /* ignore if surface-only */
+      continue;
+
+    cs_lnum_t n_cpl_cells = cs_syr4_coupling_get_n_elts(syr_coupling, 1);
+
+    /* Get list of coupled cells */
+
+    cs_lnum_t  *c_ids;
+    cs_real_t *t_fluid, *ctbimp, *ctbexp;
+    BFT_MALLOC(c_ids, n_cpl_cells, cs_lnum_t);
+    BFT_MALLOC(t_fluid, n_cpl_cells, cs_real_t);
+    BFT_MALLOC(ctbimp, n_cpl_cells, cs_real_t);
+    BFT_MALLOC(ctbexp, n_cpl_cells, cs_real_t);
+
+    cs_syr4_coupling_get_elt_ids(syr_coupling, c_ids, 1);
+
+    /* Loop on coupled cells to initialize arrays */
+
+    const cs_real_t *cvara_vart = (const cs_real_t *)f->vals[1];
+
+    for (cs_lnum_t i = 0; i < n_cpl_cells; i++) {
+      t_fluid[i] = cvara_vart[c_ids[i]];
+      ctbimp[i] = 0.;
+      ctbexp[i] = 0.;
+    }
+
+    /* Loop on coupled cells to compute crvexp and crvimp */
+
+    for (cs_lnum_t i = 0; i < n_cpl_cells; i++) {
+
+      cs_lnum_t c_id = c_ids[i];
+
+      cs_real_t tsexp = (ctbexp[i] - ctbimp[i]*t_fluid[i]) * cell_f_vol[c_id];
+      cs_real_t tsimp =  ctbimp[i] * cell_f_vol[c_id];
+
+      st_exp[c_id] += tsexp;
+      st_imp[c_id] += tsimp;
+
+    }
+
+    BFT_FREE(c_ids);
+    BFT_FREE(t_fluid);
+    BFT_FREE(ctbimp);
+    BFT_FREE(ctbexp);
+
+  } /* End loop on couplings */
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get number of coupled elements with SYRTHES.
+ *
+ * \param[in]   cpl_id  coupling id
+ * \param[in]   mode    0 for boundary, 1 for volume
+ *
+ * \return  number of coupled elements for this coupling
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_lnum_t
+cs_syr_coupling_n_elts(int  cpl_id,
+                       int  mode)
+{
+  int n_couplings = _cs_glob_n_syr4_cp;
+  cs_lnum_t retval = 0;
+
+  if (cpl_id < 0 || cpl_id >= n_couplings)
+    bft_error(__FILE__, __LINE__, 0,
+              _("SYRTHES coupling id %d impossible; "
+                "there are %d couplings"),
+              cpl_id, n_couplings);
+
+  else {
+    cs_syr4_coupling_t *syr_coupling
+      = cs_syr4_coupling_by_id(cpl_id);
+    retval = cs_syr4_coupling_get_n_elts(syr_coupling, mode);
+  }
+
+  return retval;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Get local ids of elements coupled with SYRTHES
+ *
+ * \param[in]    cpl_id   coupling id
+ * \param[in]    mode     0 for boundary, 1 for volume
+ * \param[out]   elt_ids  ids of coupled elements (preallocated)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_syr_coupling_elt_ids(int        cpl_id,
+                        int        mode,
+                        cs_lnum_t  elt_ids[])
+{
+  int n_couplings = _cs_glob_n_syr4_cp;
+
+  if (cpl_id < 0 || cpl_id >= n_couplings)
+    bft_error(__FILE__, __LINE__, 0,
+              _("SYRTHES coupling id %d impossible; "
+                "there are %d couplings"),
+              cpl_id, n_couplings);
+
+  else {
+    cs_syr4_coupling_t *syr_coupling
+      = cs_syr4_coupling_by_id(cpl_id);
+    cs_syr4_coupling_get_elt_ids(syr_coupling, elt_ids, mode);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Receive coupling variables from SYRTHES.
+ *
+ * \param[in]    cpl_id   coupling id
+ * \param[in]    mode     0 for boundary, 1 for volume
+ * \param[out]   t_solid  solid temperature
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_syr_coupling_recv_tsolid(int        cpl_id,
+                            int        mode,
+                            cs_real_t  t_solid[])
+{
+  int n_couplings = _cs_glob_n_syr4_cp;
+
+  if (cpl_id < 0 || cpl_id >= n_couplings)
+    bft_error(__FILE__, __LINE__, 0,
+              _("SYRTHES coupling id %d impossible; "
+                "there are %d couplings"),
+              cpl_id, n_couplings);
+
+  else {
+    cs_syr4_coupling_t *syr_coupling
+      = cs_syr4_coupling_by_id(cpl_id);
+    cs_syr4_coupling_recv_tsolid(syr_coupling, t_solid, mode);
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Send coupling variables to SYRTHES.
+ *
+ * \param[in]    cpl_id   coupling id
+ * \param[in]    mode     0 for boundary, 1 for volume
+ * \param[in]    elt_ids  ids of coupled elements
+ * \param[in]    t_fluid  fluid temperature
+ * \param[in]    h_fluid  fluid exchage coefficient
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_syr_coupling_send_tf_hf(int              cpl_id,
+                           int              mode,
+                           const cs_lnum_t  elt_ids[],
+                           cs_real_t        t_fluid[],
+                           cs_real_t        h_fluid[])
+{
+  int n_couplings = _cs_glob_n_syr4_cp;
+
+  if (cpl_id < 0 || cpl_id >= n_couplings)
+    bft_error(__FILE__, __LINE__, 0,
+              _("SYRTHES coupling id %d impossible; "
+                "there are %d couplings"),
+              cpl_id, n_couplings);
+
+  else {
+    cs_syr4_coupling_t *syr_coupling
+      = cs_syr4_coupling_by_id(cpl_id);
+    cs_syr4_coupling_send_tf_hf(syr_coupling, elt_ids,
+                                t_fluid, h_fluid, mode);
   }
 }
 

@@ -93,8 +93,10 @@ BEGIN_C_DECLS
  * File variables
  *============================================================================*/
 
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+
 /*============================================================================
- * Public function definitions for Fortran API
+ * Public function definitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
@@ -107,11 +109,12 @@ BEGIN_C_DECLS
  * \param[out]  crvexp     explicit part of the source term
  */
 /*----------------------------------------------------------------------------*/
+
 void
-CS_PROCF (precst,PRECST) (cs_real_t *dtref,
-                          cs_real_t *crom,
-                          cs_real_t *cvar_scal,
-                          cs_real_t  crvexp[])
+cs_lagr_precipitation_mass_st(cs_real_t        dtref,
+                              const cs_real_t  crom[],
+                              const cs_real_t  cvar_scal[],
+                              cs_real_t        crvexp[])
 {
   cs_real_t pis6 = cs_math_pi / 6.0;
 
@@ -203,7 +206,7 @@ CS_PROCF (precst,PRECST) (cs_real_t *dtref,
         preci->nbprec[iel] =   (cvar_scal[iel] - solub[iel])
                              * fvq->cell_vol[iel] / mass;
         mp_preci[iel] =  preci->nbprec[iel] * mass;
-        crvexp[iel]   = -crom[iel] * mp_preci[iel] / *dtref;
+        crvexp[iel]   = -crom[iel] * mp_preci[iel] / dtref;
 
       }
 
@@ -234,7 +237,7 @@ CS_PROCF (precst,PRECST) (cs_real_t *dtref,
                                                                CS_LAGR_STAT_WEIGHT);
 
                 if (   ((solub[iel] - cvar_scal[iel]) * fvq->cell_vol[iel])
-                    >= (mp_diss[iel * preci->nbrclas + iclas] + p_weight * mass) )
+                    >= (mp_diss[iel * preci->nbrclas + iclas] + p_weight * mass))
                   mp_diss[iel * preci->nbrclas + iclas] += p_weight * mass;
 
               }
@@ -246,7 +249,7 @@ CS_PROCF (precst,PRECST) (cs_real_t *dtref,
         }
 
         for (cs_lnum_t iclas = 0; iclas < preci->nbrclas; iclas++)
-          crvexp[iel] += crom[iel] * mp_diss[iel * preci->nbrclas + iclas] / *dtref;
+          crvexp[iel] += crom[iel] * mp_diss[iel*preci->nbrclas + iclas] / dtref;
 
       }
 
@@ -257,12 +260,6 @@ CS_PROCF (precst,PRECST) (cs_real_t *dtref,
   BFT_FREE(mp_preci);
   BFT_FREE(part_tot);
 }
-
-/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
-
-/*============================================================================
- * Public function definitions
- *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
 /*!

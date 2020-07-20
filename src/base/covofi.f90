@@ -224,6 +224,22 @@ type(var_cal_opt) :: vcopt, vcopt_varsc
 type(gwf_soilwater_partition) :: sorption_scal
 
 !===============================================================================
+! Interfaces
+!===============================================================================
+
+interface
+
+  subroutine cs_syr_coupling_volume_source_terms(field_id, st_exp, st_imp) &
+    bind(C, name = 'cs_syr_coupling_volume_source_terms')
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(kind=c_int), value :: field_id
+    real(kind=c_double), dimension(*), intent(inout) :: st_exp, st_imp
+
+  end subroutine cs_syr_coupling_volume_source_terms
+
+ end interface
 
 !===============================================================================
 ! 1. Initialization
@@ -464,7 +480,7 @@ endif
 ! Precipitation/dissolution for lagrangian module
 ! Calculation of source terms du to precipitation and dissolution phenomena
 if (ipreci.eq.1.and.iscal.eq.1) then
-  call precst(dtref, crom, cvar_var, smbrs)
+  call cs_lagr_precipitation_mass_st(dtref, crom, cvar_var, smbrs)
 endif
 
 ! Si on extrapole les TS :
@@ -514,7 +530,7 @@ endif
 !     Ordre 2 non pris en compte
 
 if (iscal.eq.iscalt) then
-  call cptssy(iscal, smbrs, rovsdt)
+  call cs_syr_coupling_volume_source_terms(iflid, smbrs, rovsdt)
 endif
 
 ! --> Physique particulieres

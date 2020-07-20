@@ -226,6 +226,33 @@ module lagran
 
     !---------------------------------------------------------------------------
 
+    !> Execute one time step of the Lagrangian model.
+
+    subroutine cs_lagr_options_definition(isuite, have_thermal_model,  &
+                                          dtref, iccvfg)               &
+      bind(C, name='cs_lagr_options_definition')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value :: isuite, have_thermal_model
+      real(kind=c_double), value :: dtref
+      integer(c_int), intent(inout) :: iccvfg
+    end subroutine cs_lagr_options_definition
+
+    !---------------------------------------------------------------------------
+
+    !> Mass source term due to precipitation.
+
+    subroutine cs_lagr_precipitation_mass_st(dtref, crom, cvar_scal, crvexp)  &
+      bind(C, name='cs_lagr_precipitation_mass_st')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      real(kind=c_double), value :: dtref
+      real(kind=c_double), dimension(*), intent(in) :: crom, cvar_scal
+      real(kind=c_double), dimension(*), intent(out) :: crvexp
+    end subroutine cs_lagr_precipitation_mass_st
+
+    !---------------------------------------------------------------------------
+
     !> Prepare for execution of the Lagrangian model.
 
     subroutine cs_lagr_solve_initialize(dt)  &

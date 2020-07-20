@@ -194,34 +194,9 @@ _free_lagr_encrustation_pointers(void)
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Fortran wrapper function definitions
+ * Public function definitions
  *============================================================================*/
 
-/* ---------------------------------------------------------------------- */
-/*!
- * \brief Lagrangian module options definition.
- *
- * - default initialization
- * - read user settings
- * - check settings coherency
- * - initialize some structures relative to Lagrangian module
- *
- * \param[in]  isuite
- * \param[in]  iccvfg
- * \param[in]  iscalt
- * \param[in]  dtref
- */
-/* ---------------------------------------------------------------------- */
-
-void
-CS_PROCF (lagopt, LAGOPT) (int        *isuite,
-                           int        *iccvfg,
-                           int        *iscalt,
-                           cs_real_t  *dtref)
-{
-  cs_lagr_option_definition(isuite, iccvfg, iscalt, dtref);
-}
-
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Lagrangian module options definition.
@@ -231,18 +206,18 @@ CS_PROCF (lagopt, LAGOPT) (int        *isuite,
  * - check settings coherency
  * - initialize some structures relative to Lagrangian module
  *
- * \param[in]  isuite
- * \param[in]  iccvfg
- * \param[in]  iscalt
- * \param[in]  dtref
+ * \param[in]       isuite
+ * \param[in]       have_thermal_model
+ * \param[in]       dtref
+ * \param[in, out]  iccvfg
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_option_definition(int        *isuite,
-                          int        *iccvfg,
-                          int        *iscalt,
-                          cs_real_t  *dtref)
+cs_lagr_options_definition(int         isuite,
+                           int         have_thermal_model,
+                           cs_real_t   dtref,
+                           int        *iccvfg)
 {
   /* Short-name and write access pointers to global variables */
 
@@ -331,7 +306,7 @@ cs_lagr_option_definition(int        *isuite,
   /* Restart needed if computation on frozen field.
      Note that for the Lagrangian module, frozen field also includes scalars. */
 
-  if (lagr_time_scheme->iilagr == CS_LAGR_FROZEN_CONTINUOUS_PHASE && *isuite != 1)
+  if (lagr_time_scheme->iilagr == CS_LAGR_FROZEN_CONTINUOUS_PHASE && isuite != 1)
     cs_parameters_error
       (CS_ABORT_DELAYED,
        _("in Lagrangian module"),
@@ -369,7 +344,7 @@ cs_lagr_option_definition(int        *isuite,
   else if (lagr_time_scheme->isuila > 1)
     lagr_time_scheme->isuila = 1;
 
-  if (lagr_time_scheme->isuila == 1 && *isuite == 0)
+  if (lagr_time_scheme->isuila == 1 && isuite == 0)
     lagr_time_scheme->isuila = 0;
 
   if (cs_glob_lagr_stat_options->isuist < 0)
@@ -411,7 +386,8 @@ cs_lagr_option_definition(int        *isuite,
                                   cs_glob_lagr_specific_physics->impvar,
                                   0, 2);
 
-    if (cs_glob_lagr_specific_physics->itpvar == 1 && *iscalt ==  -1)
+    if (   cs_glob_lagr_specific_physics->itpvar == 1
+        && have_thermal_model == 0)
       cs_parameters_error
         (CS_ABORT_DELAYED,
          _("in Lagrangian module"),
@@ -584,15 +560,14 @@ cs_lagr_option_definition(int        *isuite,
                                   0, 2);
 
     if (   cs_glob_lagr_specific_physics->itpvar == 1
-        && *iscalt == -1)
+        && have_thermal_model == 0)
       cs_parameters_error
         (CS_ABORT_DELAYED,
          _("in Lagrangian module"),
          _("The temperature model for particles is active\n"
            "(cs_glob_lagr_specific_physics->itpvar = %d)\n"
-           "but no Eulerian thermal scalar is available (iscalt = %d)\n"),
-         cs_glob_lagr_specific_physics->itpvar,
-         *iscalt);
+           "but no Eulerian thermal scalar is available\n"),
+         cs_glob_lagr_specific_physics->itpvar);
 
   }
   else {
@@ -818,7 +793,7 @@ cs_lagr_option_definition(int        *isuite,
      ==================================================== */
 
   /* Lagrangian time step (by defaul, the continuous phase time step) */
-  cs_glob_lagr_time_step->dtp = *dtref;
+  cs_glob_lagr_time_step->dtp = dtref;
 
   /* Lagrangian current physical time */
   cs_glob_lagr_time_step->ttclag = 0.0;

@@ -194,6 +194,22 @@ interface
 
   !=============================================================================
 
+  subroutine cs_restart_lagrangian_checkpoint_read()  &
+    bind(C, name='cs_restart_lagrangian_checkpoint_read')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_restart_lagrangian_checkpoint_read
+
+  !=============================================================================
+
+  subroutine cs_restart_lagrangian_checkpoint_write()  &
+    bind(C, name='cs_restart_lagrangian_checkpoint_write')
+    use, intrinsic :: iso_c_binding
+    implicit none
+  end subroutine cs_restart_lagrangian_checkpoint_write
+
+  !=============================================================================
+
 end interface
 
 !===============================================================================
@@ -601,7 +617,7 @@ if (isuite.eq.1) then
 
   ! Lagrangian module restart (particles) */
   if (iilagr.gt.0) then
-    call laglec()
+    call cs_restart_lagrangian_checkpoint_read()
   endif
 
   if (isuisy.eq.1) then
@@ -998,7 +1014,7 @@ if (iisuit.eq.1) then
   endif
 
   if (iilagr.gt.0) then
-    call lagout()
+    call cs_restart_lagrangian_checkpoint_write()
   endif
 
   if (iirayo.gt.0) then

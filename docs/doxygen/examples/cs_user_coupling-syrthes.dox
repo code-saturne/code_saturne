@@ -25,38 +25,23 @@
 /*-----------------------------------------------------------------------------*/
 
 /*!
-  \page us_vosy Examples of volume exchange coefficient computation for SYRTHES coupling (usvosy.f90)
+  \page us_vosy Examples of volume exchange coefficient computation for SYRTHES coupling (cs_user_syrthes_coupling_volume_h)
 
-   The \ref usvosy subroutine is used to compute a volume exchange
+   The \ref cs_user_syrthes_coupling_volume_h function is required to compute a volume exchange
    coefficient for SYRTHES coupling.
 
-  \section usvosy_h_usvosy Examples
+  \section cs_user_syrthes_coupling_volume_h Examples
 
   The following code blocks show two examples of computation of
   a volume exchange coefficient.
 
-  \subsection usvosy_h_usvosy_arg Arguments of usvosy
+  \subsection cs_user_syrthes_coupling_volume_h_1 Example 1
 
-  \snippet usvosy.f90 arg
+  The first example corresponds to a constant volume exchange coefficient:
 
-  \subsection usvosy_h_usvosy_loc_var_dec Variable declaration
+  \snippet cs_user_coupling-syrthes.c example_1
 
-  \snippet usvosy.f90 loc_var_dec
-
-  \subsection usvosy_h_usvosy_init Initialization
-
-  The values of the different fields that will be needed for the computation of the
-  volume exchange coefficient are retrieved.
-
-  \snippet usvosy.f90 init
-
-  \subsection usvosy_h_usvosy_1 Example 1
-
-  The first example corresponds to a constant volume exchange coefficient.
-
-  \snippet usvosy.f90 example_1
-
-  \subsection usvosy_h_usvosy_2 Example 2
+  \subsection cs_user_syrthes_coupling_volume_h_2 Example 2
 
   The second example corresponds to a variable volume exchange coefficient
   defined as follows :
@@ -67,6 +52,23 @@
 
   \f[ h_{surf} = \frac{Nu \lambda}{L} \f]
 
-  \snippet usvosy.f90 example_2
+  First, the values of the different fields that will be needed for the
+  computation of the volume exchange coefficient are retrieved.
+
+  \snippet cs_user_coupling-syrthes.c example_2_init
+
+  Then the coefficient can be computed and assigned to all cells.
+
+  \snippet cs_user_coupling-syrthes.c example_2
+
+  Not that in this example, no test is done on the coupling id
+  or Syrthes instance name. The corresponding arguments
+  can be used to apply specific computations in cas of multiple
+  couplings.
+
+  Also, although a test is done to check if the scalar behaves
+  as a temperature regarding multiplication by Cp for more
+  generality, the Syrthes volume coupling currently only handles
+  the temperature variable.
 
 */

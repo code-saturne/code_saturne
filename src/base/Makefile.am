@@ -39,6 +39,7 @@ LIBTOOL_CUDA = $(SHELL) $(top_builddir)/libtool_cuda
 AM_CPPFLAGS = \
 -I$(top_srcdir)/src/alge \
 -I$(top_srcdir)/src/cdo \
+-I$(top_srcdir)/src/cfbl \
 -I$(top_srcdir)/src/ctwr \
 -I$(top_srcdir)/src/lagr \
 -I$(top_srcdir)/src/mesh \
@@ -241,12 +242,8 @@ condensation_source_terms.f90 \
 condli.f90 \
 cou1di.f90 \
 cou1do.f90 \
-coupbi.f90 \
-coupbo.f90 \
 covofi.f90 \
 covofv.f90 \
-cptssy.f90 \
-cpvosy.f90 \
 cs_1d_wall_thermal.c \
 cs_1d_wall_thermal_check.c \
 cs_ale.c \

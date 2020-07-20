@@ -1072,33 +1072,6 @@ _post_after_cutting(cs_lnum_t   n_i_cut_faces,
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
 
 /*============================================================================
- * Public function definitions for Fortran API
- *============================================================================*/
-
-/*----------------------------------------------------------------------------
- * Set the threshold to cut warped faces.
- *
- * Fortran interface :
- *
- * subroutine setcwf (cwfthr)
- * *****************
- *
- * integer          cwfpst      : <-> : if 1, activate postprocessing when
- *                                      cutting warped faces (default 0)
- * double precision cwfthr      : <-> : threshold angle (in degrees) if
- *                                      positive, do not cut warped faces
- *                                      if negative (default -1)
- *----------------------------------------------------------------------------*/
-
-void
-CS_PROCF (setcwf, SETCWF) (const int        *cwfpst,
-                           const cs_real_t  *cwfthr)
-{
-  cs_mesh_warping_set_defaults((double)(*cwfthr),
-                               (int)(*cwfpst));
-}
-
-/*============================================================================
  * Public function definitions
  *============================================================================*/
 

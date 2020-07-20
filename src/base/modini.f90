@@ -641,8 +641,7 @@ if (nscal.gt.0) then
 
 !     On regarde s'il y a du couplage
 
-  call nbcsyr (nbccou)
-  !==========
+  nbccou = cs_syr_coupling_n_couplings()
 
 !     S'il y a du couplage
   if (nbccou .ne. 0) then

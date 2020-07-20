@@ -312,6 +312,26 @@ interface
 
   end subroutine clsyvt
 
+  subroutine cs_syr_coupling_recv_boundary(nvar, bc_type, icodcl, rcodcl) &
+    bind(C, name = 'cs_syr_coupling_recv_boundary')
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(kind=c_int), value :: nvar
+    integer(kind=c_int), dimension(*), intent(inout) :: bc_type
+    integer(kind=c_int), dimension(*), intent(inout) :: icodcl
+    real(kind=c_double), dimension(*), intent(inout) :: rcodcl
+
+  end subroutine cs_syr_coupling_recv_boundary
+
+  subroutine cs_syr_coupling_exchange_volume() &
+    bind(C, name = 'cs_syr_coupling_exchange_volume')
+
+    use, intrinsic :: iso_c_binding
+    implicit none
+
+  end subroutine cs_syr_coupling_exchange_volume
+
   subroutine strpre(itrale, italim, ineefl, impale, xprale, cofale)
 
     implicit none
@@ -457,9 +477,9 @@ endif
 
 if (itrfin.eq.1 .and. itrfup.eq.1) then
 
-  call cpvosy(iscalt, dt)
+  call cs_syr_coupling_exchange_volume
 
-  call coupbi(nfabor, nscal, icodcl, rcodcl)
+  call cs_syr_coupling_recv_boundary(nvar, itypfb, icodcl, rcodcl)
 
   if (nfpt1t.gt.0) then
     call cou1di(nfabor, iscalt, icodcl, rcodcl)
@@ -655,7 +675,7 @@ call field_get_val_s(ivisct, visct)
 !     (thanks to the formula: fi + grad(fi).ii')
 
 !    for the coupling with syrthes
-!     theipb is used by coupbo after condli
+!     theipb is used by cs_syr_coupling_send_boundary after condli
 !    for the coupling with the 1d wall thermal module
 !     theipb is used by cou1do after condli
 !    for the radiation module

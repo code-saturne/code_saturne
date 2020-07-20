@@ -314,7 +314,7 @@ module cs_c_bindings
     ! Z-axis interpolation for meteorological profiles
 
     subroutine cs_intprz(nprofz, profz, profv, xz, z_lv, var)  &
-         bind(C, name='cs_intprz')
+      bind(C, name='cs_intprz')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), intent(in), value :: nprofz
@@ -549,6 +549,17 @@ module cs_c_bindings
         use, intrinsic :: iso_c_binding
         implicit none
     end subroutine restart_clean_multiwriters_history
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function returning number of SYRTHES couplingsg.
+
+    function cs_syr_coupling_n_couplings() result(n_couplings) &
+      bind(C, name='cs_syr_coupling_n_couplings')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(kind=c_int) :: n_couplings
+    end function cs_syr_coupling_n_couplings
 
     !---------------------------------------------------------------------------
 

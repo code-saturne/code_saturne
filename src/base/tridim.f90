@@ -250,15 +250,15 @@ interface
     real(kind=c_double), dimension(*) :: cku
   end subroutine cs_lagr_head_losses
 
-  subroutine cs_turbulence_kw &
-       (nvar, ncesmp, icetsm, itypsm, dt, smacel) &
-    bind(C, name='cs_turbulence_kw')
+  subroutine cs_syr_coupling_send_boundary(h_wall, t_wall) &
+    bind(C, name = 'cs_syr_coupling_send_boundary')
+
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value :: nvar, ncesmp
-    integer(c_int), dimension(*), intent(in) :: icetsm, itypsm
-    real(kind=c_double), dimension(*) :: dt, smacel
-  end subroutine cs_turbulence_kw
+    real(kind=c_double), dimension(*), intent(in) :: h_wall
+    real(kind=c_double), dimension(*), intent(inout) :: t_wall
+
+  end subroutine cs_syr_coupling_send_boundary
 
   subroutine cs_turbulence_ke &
        (nvar, ncesmp, icetsm, itypsm, dt, smacel, prdv2f) &
@@ -270,6 +270,16 @@ interface
     real(kind=c_double), dimension(*) :: dt, smacel
     real(kind=c_double), dimension(*), intent(in) :: prdv2f
   end subroutine cs_turbulence_ke
+
+  subroutine cs_turbulence_kw &
+       (nvar, ncesmp, icetsm, itypsm, dt, smacel) &
+    bind(C, name='cs_turbulence_kw')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(c_int), value :: nvar, ncesmp
+    integer(c_int), dimension(*), intent(in) :: icetsm, itypsm
+    real(kind=c_double), dimension(*) :: dt, smacel
+  end subroutine cs_turbulence_kw
 
 end interface
 
@@ -308,7 +318,7 @@ ipass = ipass + 1
 
 call field_get_key_id("syrthes_coupling", kcpsyr)
 
-call nbcsyr (nbccou)
+nbccou = cs_syr_coupling_n_couplings()
 isvhb = 0
 if (nbccou .ge. 1) then
   do iscal = 1, nscal
@@ -955,7 +965,7 @@ do while (iterns.le.nterup)
   if (itrfin.eq.1 .and. itrfup.eq.1) then
 
     if (isvhb.gt.0) then
-      call coupbo(itherm, cvcst, hbord, theipb)
+      call cs_syr_coupling_send_boundary(hbord, theipb)
     endif
 
     if (iscalt.gt.0 .and. nfpt1t.gt.0) then

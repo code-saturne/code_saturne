@@ -166,5 +166,140 @@ cs_user_syrthes_coupling(void)
 }
 
 /*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute a volume exchange coefficient for SYRTHES couplings.
+ *
+ * \param[in]   coupling_id   Syrthes coupling id
+ * \param[in]   syrthes_name  name of associated Syrthes instance
+ * \param[in]   n_elts        number of associated cells
+ * \param[in]   elt_ids       associated cell ids
+ * \param[out]  h_vol         associated exchange coefficient (size: n_elts)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_syrthes_coupling_volume_h(int               coupling_id,
+                                  const char       *syrthes_name,
+                                  cs_lnum_t         n_elts,
+                                  const cs_lnum_t   elt_ids[],
+                                  cs_real_t         h_vol[])
+{
+  CS_NO_WARN_IF_UNUSED(coupling_id);
+  CS_NO_WARN_IF_UNUSED(syrthes_name);
+
+  /* Example 1 of the computation of a constant volumic exchange coefficient
+     ----------------------------------------------------------------------- */
+
+  /*! [example_1] */
+  cs_real_t hvol_cst = 1.0e6;
+
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+    h_vol[i] = hvol_cst;
+  }
+  /*! [example_1] */
+
+  /* Example 2 of the computation of a volumic exchange coefficient
+   * --------------------------------------------------------------
+   *
+   *  hvol(iel) =  hsurf(iel) * exchange_surface_by_unit_vol
+   *
+   *  with: hsurf = Nusselt * lambda / L
+   *
+   *  lambda is the thermal conductivity coefficient
+   *   L is a characteristic length
+   *
+   *  Nusselt is computed by means of the Colburn correlation
+   *
+   *  Nu = 0.023 * Re^(0.8) * Pr^(1/3)
+   *
+   *  Re is the Reynolds number and Pr is the Prandtl number
+   */
+
+  /*! [example_2_init] */
+  const cs_real_3_t  *cvar_vel = (const cs_real_3_t *)CS_F_(vel)->val;
+  const cs_real_t  *cpro_rom = (const cs_real_t *)CS_F_(rho)->val;
+  const cs_real_t  *cpro_mu = (const cs_real_t *)CS_F_(mu)->val;
+
+  const cs_real_t  cp0 = cs_glob_fluid_properties->cp0;
+  cs_real_t  visls0 = -1;
+
+  const cs_real_t  *cpro_cp = NULL, *cpro_viscls = NULL;
+  cs_lnum_t  cp_step = 0, viscls_step = 0;
+
+  if (CS_F_(cp) != NULL) {
+    cpro_cp = (const cs_real_t *)CS_F_(cp)->val;
+    cp_step = 1;
+  }
+  else {
+    cpro_cp = &cp0;
+  }
+
+  /* Get thermal field and associated diffusivity
+     (temperature only handled here) */
+
+  const cs_field_t *fth = cs_thermal_model_field();
+
+  const int viscl_id = cs_field_get_key_int(fth,
+                                            cs_field_key_id("diffusivity_id"));
+
+  if (viscl_id > -1) {
+    cpro_viscls = (const cs_real_t *)cs_field_by_id(viscl_id)->val;
+    viscls_step = 1;
+  }
+  else {
+    visls0 = cs_field_get_key_double(fth, cs_field_key_id("diffusivity_ref"));
+    cpro_viscls = &visls0;
+  }
+
+  const int is_temperature
+    = cs_field_get_key_int(fth,
+                           cs_field_key_id("is_temperature"));
+  /*! [example_2_init] */
+
+  /*! [example_2] */
+  cs_real_t sexcvo = 36.18;  /* Surface area where exchanges take
+                                place by unit of volume */
+  cs_real_t l0 = 0.03;       /* Characteristic length */
+
+  for (cs_lnum_t i = 0; i < n_elts; i++) {
+
+    cs_lnum_t c_id = elt_ids[i];
+
+    cs_real_t rho = cpro_rom[c_id];
+    cs_real_t mu = cpro_mu[c_id];
+    cs_real_t cp = cpro_cp[c_id*cp_step];
+
+    cs_real_t lambda, lambda_over_cp;
+
+    if (is_temperature) {
+      lambda = cpro_viscls[c_id*viscls_step];
+      lambda_over_cp = lambda / cp;
+    }
+    else {
+      lambda_over_cp = cpro_viscls[c_id*viscls_step];
+      lambda =  lambda_over_cp * cp;
+    }
+
+    /* Compute a local molecular Prandtl **(1/3) */
+
+    cs_real_t  pr = mu / lambda_over_cp;
+
+    /* Compute a local Reynolds number */
+
+    cs_real_t uloc = cs_math_3_norm(cvar_vel[c_id]);
+    cs_real_t re = fmax(uloc*rho*l0/mu, 1.);  /* To avoid division by zero */
+
+    /* Compute Nusselt number using Colburn correlation */
+
+    cs_real_t nu = 0.023 * pow(re, 0.8) * pow(pr, 1./3.);
+    cs_real_t h_corr = nu * lambda / l0;
+
+    /* Compute hvol */
+    h_vol[i] = h_corr * sexcvo;
+  }
+  /*! [example_2] */
+}
+
+/*----------------------------------------------------------------------------*/
 
 END_C_DECLS

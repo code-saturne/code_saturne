@@ -208,11 +208,11 @@ cs_user_rad_transfer_net_flux(const int        itypfb[],
  * Convert temperature to enthalpy at boundary
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (b_t_to_h, b_t_to_h)
+void CS_PROCF (b_t_to_h, B_T_TO_H)
 (
  const cs_lnum_t *nlst,          /* --> number of faces in list */
  const cs_lnum_t *lstfac,        /* --> list of boundary faces at which
-                                    conversion is requested */
+                                        conversion is requested */
  const cs_real_t *t_b,           /* --> temperature at boundary */
  cs_real_t       *h_b            /* --> enthalpy at boundary */
 );
@@ -221,10 +221,26 @@ void CS_PROCF (b_t_to_h, b_t_to_h)
  * Convert enthalpy to temperature at cells
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (c_h_to_t, c_h_to_t)
+void CS_PROCF (c_h_to_t, C_H_TO_T)
 (
  const cs_real_t *h,           /* --> enthalpy */
  cs_real_t       *t            /* --> temperature */
+);
+
+/*----------------------------------------------------------------------------
+ * Convert enthalpy to temperature at boundary.
+ *
+ * If conversion is done in-place, h and t may point to the same arrays.
+ *
+ * parameters:
+ *   h  <-- enthalpy
+ *   t  --> temperature
+ *----------------------------------------------------------------------------*/
+
+void CS_PROCF (b_h_to_t, B_H_TO_T)
+(
+ const cs_real_t  *h,         /* --> enthalpy */
+ cs_real_t        *t        /* --> temperature */
 );
 
 /*----------------------------------------------------------------------------
@@ -698,6 +714,25 @@ cs_user_saturne_coupling(void);
 
 void
 cs_user_syrthes_coupling(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute a volume exchange coefficient for SYRTHES couplings.
+ *
+ * \param[in]   coupling_id   Syrthes coupling id
+ * \param[in]   syrthes_name  name of associated Syrthes instance
+ * \param[in]   n_elts        number of associated cells
+ * \param[in]   elt_ids       associated cell ids
+ * \param[out]  h_vol         associated exchange coefficient (size: n_elts)
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_user_syrthes_coupling_volume_h(int               coupling_id,
+                                  const char       *syrthes_name,
+                                  cs_lnum_t         n_elts,
+                                  const cs_lnum_t   elt_ids[],
+                                  cs_real_t         h_vol[]);
 
 /*----------------------------------------------------------------------------
  * Define time moments.

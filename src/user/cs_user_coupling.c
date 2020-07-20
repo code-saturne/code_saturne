@@ -67,6 +67,22 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief Define couplings with other instances of Code_Saturne.
+ *
+ * This is done by calling the \ref cs_sat_coupling_define function for each
+ * coupling to add.
+ */
+/*----------------------------------------------------------------------------*/
+
+#pragma weak cs_user_saturne_coupling
+void
+cs_user_saturne_coupling(void)
+{
+
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief Define couplings with SYRTHES code.
  *
  * This is done by calling the \ref cs_syr_coupling_define function for each
@@ -83,16 +99,23 @@ cs_user_syrthes_coupling(void)
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Define couplings with other instances of Code_Saturne.
+ * \brief Compute a volume exchange coefficient for SYRTHES couplings.
  *
- * This is done by calling the \ref cs_sat_coupling_define function for each
- * coupling to add.
+ * \param[in]   coupling_id   Syrthes coupling id
+ * \param[in]   syrthes_name  name of associated Syrthes instance
+ * \param[in]   n_elts        number of associated cells
+ * \param[in]   elt_ids       associated cell ids
+ * \param[out]  h_vol         associated exchange coefficient (size: n_elts)
  */
 /*----------------------------------------------------------------------------*/
 
-#pragma weak cs_user_saturne_coupling
+#pragma weak cs_user_syrthes_coupling_volume_h
 void
-cs_user_saturne_coupling(void)
+cs_user_syrthes_coupling_volume_h(int               coupling_id,
+                                  const char       *syrthes_name,
+                                  cs_lnum_t         n_elts,
+                                  const cs_lnum_t   elt_ids[],
+                                  cs_real_t         h_vol[])
 {
 
 }

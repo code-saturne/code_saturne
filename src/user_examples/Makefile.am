@@ -185,8 +185,7 @@ cs_user_source_terms-base.c \
 cs_user_source_terms-richards.c \
 cs_user_source_terms-scalar_in_a_channel.c \
 cs_user_source_terms-turbulence.c \
-usthht.f90 \
-usvosy.f90
+usthht.f90
 
 noinst_LTLIBRARIES = libcsexample.la
 libcsexample_la_SOURCES = $(examplefiles)

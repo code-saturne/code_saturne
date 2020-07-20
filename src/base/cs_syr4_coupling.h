@@ -146,6 +146,19 @@ void
 cs_syr4_coupling_all_destroy(void);
 
 /*----------------------------------------------------------------------------
+ * Get name of SYRTHES coupling.
+ *
+ * parameters:
+ *   syr_coupling <-- SYRTHES coupling structure
+ *
+ * returns:
+ *   pointer to SYRTHES coupling name
+ *----------------------------------------------------------------------------*/
+
+const char *
+cs_syr4_coupling_get_name(cs_syr4_coupling_t  *syr_coupling);
+
+/*----------------------------------------------------------------------------
  * Set conservativity forcing flag to True (1) or False (0) for all defined
  * SYRTHES couplings
  *
@@ -237,14 +250,14 @@ cs_syr4_coupling_get_n_elts(const cs_syr4_coupling_t *syr_coupling,
  *
  * parameters:
  *   syr_coupling  <-- SYRTHES coupling structure
- *   cpl_elt_lst   --> List of coupled elements (1 to n)
+ *   cpl_elt_ids   --> List of coupled elements (0 to n-1)
  *   mode          <-- 0 (surface); 1 (volume)
  *----------------------------------------------------------------------------*/
 
 void
-cs_syr4_coupling_get_elt_list(const cs_syr4_coupling_t  *syr_coupling,
-                              cs_lnum_t                  cpl_elt_lst[],
-                              int                        mode);
+cs_syr4_coupling_get_elt_ids(const cs_syr4_coupling_t  *syr_coupling,
+                             cs_lnum_t                  cpl_elt_ids[],
+                             int                        mode);
 
 /*----------------------------------------------------------------------------
  * Receive coupling variables from SYRTHES
@@ -264,16 +277,16 @@ cs_syr4_coupling_recv_tsolid(cs_syr4_coupling_t  *syr_coupling,
  * Send coupling variables to SYRTHES
  *
  * parameters:
- *   syr_coupling  <-- SYRTHES coupling structure
- *   cpl_elt_list  <-- list of coupled boundary faces
- *   tf            <-- fluid temperature
- *   hf            <-- fluid heat exchange coef. (numerical or user-defined)
- *   mode          <-- 0 (surface); 1 (volume)
+ *   syr_coupling <-- SYRTHES coupling structure
+ *   cpl_elt_ids  <-- ids of coupled elements
+ *   tf           <-- fluid temperature
+ *   hf           <-- fluid heat exchange coef. (numerical or user-defined)
+ *   mode          <-- 0: surface coupling; 1: volume coupling
  *----------------------------------------------------------------------------*/
 
 void
 cs_syr4_coupling_send_tf_hf(cs_syr4_coupling_t  *syr_coupling,
-                            const cs_lnum_t      cpl_elt_lst[],
+                            const cs_lnum_t      cpl_elt_ids[],
                             cs_real_t            tf[],
                             cs_real_t            hf[],
                             int                  mode);

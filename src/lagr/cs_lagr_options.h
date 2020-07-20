@@ -51,55 +51,25 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Lagrangian module initialization
- *   1) Initialisation par defaut du parametrage du module
- *   lagrangien
- *   2) Lecture du parametrage utilisateur
- *   3) Verifications du parametrage utilisateur et
- *   controles de coherence
- *   4) Initialisation des variables en COMMON et des pointeurs
- *   sur les tableaux lies aux particules, aux statistiques,
- *   aux conditions aux limites, aux variables parietales,
- *   aux donnees pour le couplage retour.
+ * \brief Lagrangian module options definition.
  *
- * \param[in]  isuite
- * \param[in]  iccvfg
- * \param[in]  iscalt
- * \param[in]  dtref
+ * - default initialization
+ * - read user settings
+ * - check settings coherency
+ * - initialize some structures relative to Lagrangian module
+ *
+ * \param[in]       isuite
+ * \param[in]       have_thermal_model
+ * \param[in]       dtref
+ * \param[in, out]  iccvfg
  */
 /*----------------------------------------------------------------------------*/
 
 void
-CS_PROCF (lagopt, LAGOPT) (int        *isuite,
-                           int        *iccvfg,
-                           int        *iscalt,
-                           cs_real_t  *dtref);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Lagrangian module initialization
- *   1) Initialisation par defaut du parametrage du module
- *   lagrangien
- *   2) Lecture du parametrage utilisateur
- *   3) Verifications du parametrage utilisateur et
- *   controles de coherence
- *   4) Initialisation des variables en COMMON et des pointeurs
- *   sur les tableaux lies aux particules, aux statistiques,
- *   aux conditions aux limites, aux variables parietales,
- *   aux donnees pour le couplage retour.
- *
- * \param[in]  isuite
- * \param[in]  iccvfg
- * \param[in]  iscalt
- * \param[in]  dtref
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_lagr_option_definition(int        *isuite,
-                          int        *iccvfg,
-                          int        *iscalt,
-                          cs_real_t  *dtref);
+cs_lagr_options_definition(int         isuite,
+                           int         have_thermal_model,
+                           cs_real_t   dtref,
+                           int        *iccvfg);
 
 /*----------------------------------------------------------------------------*/
 
