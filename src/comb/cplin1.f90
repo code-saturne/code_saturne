@@ -88,13 +88,7 @@ type(var_cal_opt) :: vcopt
 ! --> Nature des scalaires transportes
 
 do isc = 1, nscapp
-
-! ---- Type de scalaire (0 passif, 1 temperature en K
-!                                 -1 temperature en C
-!                                  2 enthalpie)
-!      La distinction -1/1 sert pour le rayonnement
-  iscacp(iscapp(isc)) = 0
-
+  call field_set_key_int(ivarfl(isca(iscapp(isc))), kscacp, 0)
 enddo
 
 ! --> Donnees physiques ou numeriques propres aux scalaires CP
@@ -103,7 +97,7 @@ do isc = 1, nscapp
 
   jj = iscapp(isc)
 
-  if ( iscavr(jj).le.0 ) then
+  if (iscavr(jj).le.0) then
 
 ! ---- En combustion on considere que la viscosite turbulente domine
 !      ON S'INTERDIT DONC LE CALCUL DES FLAMMES LAMINAIRES AVEC Le =/= 1

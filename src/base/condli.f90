@@ -207,7 +207,7 @@ integer          ihcp  , iscal
 integer          inc   , iprev , iccocg
 integer          isoent, isorti, ncpt,   isocpt(2)
 integer          iclsym, ipatur, ipatrg, isvhbl
-integer          ifcvsl
+integer          iscacp, ifcvsl
 integer          itplus, itstar
 integer          f_id, iut, ivt, iwt, ialt, iflmab
 integer          kbfid, b_f_id
@@ -274,16 +274,6 @@ type(var_cal_opt) :: vcopt
 !===============================================================================
 
 interface
-
-  subroutine b_h_to_t(h_b, t_b)
-
-    use mesh, only: nfabor
-    implicit none
-
-    double precision, dimension(nfabor), intent(in) :: h_b
-    double precision, dimension(nfabor), intent(out), target :: t_b
-
-  end subroutine b_h_to_t
 
   subroutine clptur(nscal, isvhb, icodcl, rcodcl, velipb, rijipb, &
                     visvdr, hbord, theipb)
@@ -2582,6 +2572,8 @@ if (nscal.ge.1) then
       call field_get_val_s(ifcvsl, viscls)
     endif
 
+    call field_get_key_int(f_id, kscacp, iscacp)
+
     ! --- Indicateur de prise en compte de Cp ou non
     !       (selon si le scalaire (scalaire associe pour une fluctuation)
     !        doit etre ou non traite comme une temperature)
@@ -2595,7 +2587,7 @@ if (nscal.ge.1) then
       iscal = iscavr(ii)
     endif
 
-    if (iscacp(iscal).eq.1) then
+    if (iscacp.eq.1) then
       if(icp.ge.0) then
         ihcp = 2
       else
@@ -2832,7 +2824,7 @@ if (nscal.ge.1) then
               endif
 
             ! Temperature
-            elseif (iscacp(ii).eq.1) then
+            elseif (iscacp.eq.1) then
               exchange_coef = hint
             endif
           endif

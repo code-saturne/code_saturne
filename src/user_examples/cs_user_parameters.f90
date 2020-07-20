@@ -463,21 +463,16 @@ if (nmodpp.eq.0) then
   itpscl = 2
 endif
 
-
 !   If a USER scalar behaves like a temperature (relative to Cp):
-!     we set iscacp(isca) = 1.
-!
-!   Otherwise, we do not modify iscacp(isca)
-
+!     we set the "is_temperature" keyword to 1.
 
 if (nscaus.gt.0) then
   do ii = 1, nscaus
-    iscacp(isca(ii)) = 1
+    call field_set_key_int(ivarfl(isca(ii)), kscacp, 1)
   enddo
 endif
 
 ! --- Calculation (restart) with frozen velocity field (1 yes, 0 no)
-
 
 iccvfg = 1
 

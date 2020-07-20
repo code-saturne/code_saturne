@@ -783,7 +783,7 @@ integer          icodcl(nfabor,nvar)
 
 integer          ivar, f_id
 integer          ifac, iel, isou, jsou
-integer          ifcvsl
+integer          iscacp, ifcvsl
 
 double precision cpp, rkl, visclc
 double precision distbf, srfbnf
@@ -828,6 +828,9 @@ if (ifcvsl .ge. 0) then
   call field_get_val_s(ifcvsl, viscls)
 endif
 
+! Does the scalar behave as a temperature ?
+call field_get_key_int(f_id, kscacp, iscacp)
+
 ! Turbulent diffusive flux of the scalar T
 ! (blending factor so that the component v'T' have only
 !  mu_T/(mu+mu_T)* Phi_T)
@@ -870,7 +873,7 @@ do ifac = 1, nfabor
     ! --- Physical Propreties
     visclc = viscl(iel)
     cpp = 1.d0
-    if (iscacp(iscal).eq.1) then
+    if (iscacp.eq.1) then
       if (icp.ge.0) then
         cpp = cpro_cp(iel)
       else

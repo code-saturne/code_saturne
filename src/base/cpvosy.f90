@@ -72,7 +72,7 @@ double precision dt(ncelet)
 ! Local variables
 
 integer          nbccou, inbcou, inbcoo, ncecpl, iloc, iel
-integer          mode, isvol
+integer          mode, isvol, iscacp
 
 integer, dimension(:), allocatable :: lcecpl
 double precision, dimension(:), allocatable :: tfluid, hvol
@@ -88,6 +88,9 @@ double precision, dimension(:), pointer :: cvar_scalt
 
 call nbcsyr(nbccou)
 !==========
+
+! Does the scalar behave as a temperature ?
+call field_get_key_int(ivarfl(isca(iscalt)), kscacp, iscacp)
 
 !---> Loop on couplings
 
@@ -112,7 +115,7 @@ do inbcou = 1, nbccou
     endif
 
     if (iscalt.eq.isvtf) then
-      if (iscacp(iscalt).ne.1) then
+      if (iscacp.ne.1) then
         write(nfecra, 1000)
         call csexit(1)
       endif

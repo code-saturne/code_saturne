@@ -68,8 +68,7 @@ implicit none
 
 ! Local variables
 
-integer          ii
-integer          iok
+integer          ii, iok
 
 type(var_cal_opt) :: vcopt
 
@@ -81,7 +80,7 @@ type(var_cal_opt) :: vcopt
 ! TODO check this; should be 1 for temperature unless handled in
 !      another manner
 
-iscacp(itempk) = 0
+call field_set_key_int(ivarfl(isca(itempk)), kscacp, 0)
 
 !         - Schema convectif % schema 2ieme ordre
 !           = 0 : upwind

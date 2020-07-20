@@ -103,6 +103,8 @@ call field_get_key_id("boundary_mass_flux_id", kbmasf)
 call field_get_key_id("diffusivity_id", kivisl)
 call field_get_key_id("diffusivity_ref", kvisl0)
 
+call field_get_key_id("is_temperature", kscacp)
+
 call field_get_key_id("density_id", kromsl)
 
 call field_get_key_id("gradient_weighting_id", kwgrec)
@@ -842,7 +844,6 @@ uref    = -grand*10.d0
 !         qu'on ne clippe pas les scalaires (sauf a +/-GRAND)
 
 do iscal = 1, nscamx
-  iscacp(iscal) =-10
   iclvfl(iscal) = -1
   visls0(iscal) =-grand*10.d0
   rvarfl(iscal) = 0.8d0

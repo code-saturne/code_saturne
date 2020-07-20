@@ -82,7 +82,7 @@ integer          indest, iiidef, istop
 integer          kscmin, kscmax
 integer          keyvar, keysca
 integer          key_t_ext_id, icpext
-integer          iviext
+integer          iviext, iscacp
 integer          iroext
 integer          ivisext
 double precision scmaxp, scminp
@@ -612,9 +612,10 @@ if (nscal.gt.0) then
 
 !     Scalaire passif, temperature, enthalpie, energie
   do ii = 1, nscal
-    if (iscacp(ii).lt.0.or.iscacp(ii).gt.1) then
+    call field_get_key_int(ivarfl(isca(ii)), kscacp, iscacp)
+    if (iscacp.lt.0.or.iscacp.gt.1) then
       call field_get_label(ivarfl(isca(ii)), chaine)
-      write(nfecra,4300)chaine(1:16),ii,iscacp(ii)
+      write(nfecra,4300)chaine(1:16),iscacp
       iok = iok + 1
     endif
   enddo
@@ -712,7 +713,8 @@ if (nscal.gt.0) then
     if (cp0.lt.0.d0) then
       iisct = 0
       do iis = 1, nscal
-        if (iscacp(iis).eq.1) then
+        call field_get_key_int(ivarfl(isca(iis)), kscacp, iscacp)
+        if (iscacp.eq.1) then
           iisct = 1
         endif
       enddo
@@ -1490,9 +1492,9 @@ endif
 '@',                                                            /,&
 '@ @@  WARNING:   STOP WHILE READING INPUT DATA',               /,&
 '@    =========',                                               /,&
-'@    SCALAR ', a16,                                            /,&
-'@    ISCACP(',i10,   ') MUST BE AN INTEGER EQUAL TO 1 OR 0',   /,&
-'@   IT HAS VALUE', i10,                                        /,&
+'@ Scalar ', a16,                                               /,&
+'@  "is_temperature" must be an integer equal to 1 or 0',       /,&
+'@   it has value', i1,                                         /,&
 '@',                                                            /,&
 '@   The calculation could NOT run.',                           /,&
 '@',                                                            /,&

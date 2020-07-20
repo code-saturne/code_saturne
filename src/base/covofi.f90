@@ -149,7 +149,7 @@ integer          ivar
 integer          ii, ifac , iel, isou
 integer          iprev , inc   , iccocg, iiun, ibcl
 integer          ivarsc
-integer          iiscav
+integer          iiscav, iscacp
 integer          ifcvsl, iflmas, iflmab, f_oi_id
 integer          nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
@@ -346,11 +346,13 @@ endif
 
 imucpp = 0
 if (iscavr(iscal).gt.0) then
-  if (abs(iscacp(iscavr(iscal))).eq.1) then
+  call field_get_key_int(ivarfl(isca(iscavr(iscal))), kscacp, iscacp)
+  if (iscacp.eq.1) then
     imucpp = 1
   endif
 else
-  if (abs(iscacp(iscal)).eq.1) then
+  call field_get_key_int(iflid, kscacp, iscacp)
+  if (iscacp.eq.1) then
     imucpp = 1
   endif
 endif

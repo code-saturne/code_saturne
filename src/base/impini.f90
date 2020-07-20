@@ -520,7 +520,7 @@ if (nscal.ge.1) then
     f_id = ivarfl(isca(ii))
     call field_get_label(f_id, chaine)
     call field_get_key_double(f_id, ksigmas, turb_schmidt)
-    write(nfecra,6021) chaine(1:16),ii,iscacp(ii),      &
+    write(nfecra,6021) chaine(1:16),ii, &
                        iturt(ii),visls0(ii),turb_schmidt
   enddo
   write(nfecra,6031)
@@ -561,11 +561,11 @@ endif
  6010 format(                                                     &
 '       ITBRRB = ',4x,i10,    ' (T or H reconstruction at bdy)',/)
  6011 format(                                                     &
-'-------------------------------------------------------------',/,&
-' Variable         Number ISCACP  ITURT     VISLS0      SIGMAS',/,&
-'-------------------------------------------------------------'  )
+'-----------------------------------------------------',/,&
+' Variable         Number ITURT     VISLS0      SIGMAS',/,&
+'-----------------------------------------------------'  )
  6021 format( &
- 1x,    a16,    i7,    i7,    i7,     e12.4,      e12.4  )
+ 1x,    a16,    i7,    i7,     e12.4,      e12.4  )
  6031 format( &
 '-------------------------------------------------------------',/)
  6012 format( &
@@ -593,7 +593,7 @@ endif
 '         are placed at the end, from',                         /,&
 '         NSCAUS+1 to NSCAPP+NSCAUS=NSCAL.',                    /,&
                                                                 /,&
-'       ISCACP = 0 or 1     2   (use Cp or not               )',/,&
+'       is_temerature = 0 or 1  (use Cp or not               )',/,&
 '       VISLS0 = >0             (Reference viscosity         )',/,&
 '       SIGMAS = >0             (Schmidt                     )',/,&
 '       RVARFL = >0             (Rf, cf variance dissipation )',/,&

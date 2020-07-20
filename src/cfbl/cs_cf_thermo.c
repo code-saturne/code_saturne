@@ -1607,9 +1607,9 @@ cs_cf_thermo_ph_inlet_bc(cs_real_t   *bc_en,
 /*----------------------------------------------------------------------------*/
 
 void
-cs_cf_thermo_eps_sup(cs_real_t *dens,
-                     cs_real_t *eps_sup,
-                     cs_lnum_t  l_size)
+cs_cf_thermo_eps_sup(const cs_real_t  *dens,
+                     cs_real_t        *eps_sup,
+                     cs_lnum_t         l_size)
 {
   int ieos = cs_glob_cf_model->ieos;
 

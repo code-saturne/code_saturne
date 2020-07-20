@@ -3,6 +3,10 @@ Master (not on release branches yet)
 
 User changes:
 
+- Thermal model:
+  * the iscacp(iscal) array is replaced by the field key-word "is_temperature".
+    This allows using it also from C code.
+
 - Various improvments to CGNS output:
   * Added output of boundary condition sections (on by default)
   * Allow discarding steady data (to avoid isues with ParaView when both

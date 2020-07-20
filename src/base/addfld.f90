@@ -80,7 +80,7 @@ implicit none
 ! Local variables
 
 integer          ii, iscal
-integer          ifcvsl, kbfid
+integer          iscacp, ifcvsl, kbfid
 integer          iflid, iopchr
 integer          itycat, ityloc, idim1, idim3
 integer          f_id, potr, poti, flag
@@ -244,7 +244,9 @@ do ii = 1, nscal
       s_name = 'thermal'
       s_label = 'Th'
     endif
-    if (iscacp(ii).gt.0) then
+    call field_get_key_int(f_id, kscacp, iscacp)
+    print *, iscacp
+    if (iscacp.gt.0) then
       f_name  = trim(s_name) // '_conductivity'
       f_label = trim(s_label) // ' Cond'
     else

@@ -192,6 +192,9 @@ module numvar
   !> variable diffusivity field id key for scalars
   integer, save :: kivisl
 
+  !> do scalars behave as a temperature (regarding multiplication by Cp) ?
+  integer, save :: kscacp
+
   !> variable density field id key for scalars
   integer, save :: kromsl
 

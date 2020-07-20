@@ -81,7 +81,7 @@ integer          nswrgp, imligp, iwarnp
 integer          iccocg, inc, imrgrp
 integer          iconvp, idiffp, ircflp
 integer          ischcp, isstpp
-integer          ifcvsl, iflmas, iflmab
+integer          iscacp, ifcvsl, iflmas, iflmab
 integer          imucpp, idftnp, imasac
 integer          key_buoyant_id, is_buoyant_fld
 double precision epsrgp, climgp, extrap
@@ -117,11 +117,11 @@ do iscal = 1, nscal
   ! Index for variable
   ivar = isca(iscal)
 
-  call field_get_val_s(ivarfl(isca(iscal)), cvar_scal)
+  call field_get_val_s(ivarfl(ivar), cvar_scal)
 
   ! Key id for buoyant field (inside the Navier Stokes loop)
   call field_get_key_id("is_buoyant", key_buoyant_id)
-  call field_get_key_int(ivarfl(isca(iscal)), key_buoyant_id, is_buoyant_fld)
+  call field_get_key_int(ivarfl(ivar), key_buoyant_id, is_buoyant_fld)
 
   ! If the scalar is buoyant, it is inside the Navier Stokes loop, and so iterns >=1
   ! otherwise it is outside of the loop and iterns = -1.
@@ -130,11 +130,13 @@ do iscal = 1, nscal
 
   imucpp = 0
   if (iscavr(iscal).gt.0) then
-    if (abs(iscacp(iscavr(iscal))).eq.1) then
+    call field_get_key_int(ivarfl(isca(iscavr(iscal))), kscacp, iscacp)
+    if (iscacp.eq.1) then
       imucpp = 1
     endif
   else
-    if (abs(iscacp(iscal)).eq.1) then
+    call field_get_key_int(ivarfl(ivar), kscacp, iscacp)
+    if (iscacp.eq.1) then
       imucpp = 1
     endif
   endif

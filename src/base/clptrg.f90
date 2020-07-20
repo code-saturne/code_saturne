@@ -1795,7 +1795,7 @@ double precision, dimension(:) :: bdlmo_loc
 
 integer          ivar, f_id, b_f_id, isvhbl
 integer          ifac, iel, isou, jsou
-integer          ifcvsl, itplus, itstar
+integer          iscacp, ifcvsl, itplus, itstar
 
 double precision cpp, rkl, prdtl, visclc, romc, tplus, cpscv
 double precision distfi, distbf, fikis, hint, heq, hflui, hext
@@ -1952,8 +1952,11 @@ else
   endif
 endif
 
+! Does the scalar behave as a temperature ?
+call field_get_key_int(f_id, kscacp, iscacp)
+
 ! retrieve turbulent Schmidt value for current scalar
-call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
+call field_get_key_double(f_id, ksigmas, turb_schmidt)
 
 ! --- Loop on boundary faces
 do ifac = 1, nfabor
@@ -1977,7 +1980,7 @@ do ifac = 1, nfabor
     distbf = distb(ifac)
 
     cpp = 1.d0
-    if (iscacp(iscal).eq.1) then
+    if (iscacp.eq.1) then
       if (icp.ge.0) then
         cpp = cpro_cp(iel)
       else
@@ -2230,7 +2233,7 @@ do ifac = 1, nfabor
           endif
 
           ! Temperature
-        elseif (iscacp(iscal).eq.1) then
+        elseif (iscacp.eq.1) then
           exchange_coef = hflui
         endif
       endif

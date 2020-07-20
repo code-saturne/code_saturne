@@ -95,7 +95,7 @@ character(len=80) :: chaine
 integer          ivar  , iel   , ifac  , iscal
 integer          ii    , jj    , iok   , iok1  , iok2  , iisct, idfm, iggafm, iebdfm
 integer          nn    , isou
-integer          mbrom , ifcvsl
+integer          mbrom , ifcvsl, iscacp
 integer          iclipc, idftnp
 integer          iprev , inc, iccocg
 
@@ -870,7 +870,8 @@ if (icp.ge.0) then
     iisct = 0
     if (itherm.ne.0) iisct = 1
     do iscal = 1, nscal
-      if (iscacp(iscal).ne.0) then
+      call field_get_key_int(ivarfl(isca(iscal)), kscacp, iscacp)
+      if (iscacp.ne.0) then
         iisct = 1
       endif
     enddo

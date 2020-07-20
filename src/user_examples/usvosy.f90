@@ -101,7 +101,7 @@ double precision hvol(ncecpl)
 
 ! Local variables
 
-integer          iiscvr, iel, iloc, ifcvsl
+integer          iel, iloc, ifcvsl, iscacp
 
 double precision cp, mu, lambda, rho, uloc, L, sexcvo
 double precision nu, re, pr
@@ -135,6 +135,7 @@ else
   cpro_viscls => NULL()
 endif
 
+call field_get_key_int (ivarfl(isca(iscal)), kscacp, iscacp)
 !< [init]
 
 !< [example_1]
@@ -196,7 +197,7 @@ do iloc = 1, ncecpl  ! Loop on coupled cells
   endif
 
   if (ifcvsl.ge.0) then ! lambda/Cp is variable
-    if (iscacp(iscal).eq.1) then
+    if (iscacp.eq.1) then
       lambda =  cpro_viscls(iel)
       lambda_over_cp = lambda/cp
     else
@@ -204,7 +205,7 @@ do iloc = 1, ncecpl  ! Loop on coupled cells
       lambda =  lambda_over_cp * cp
     endif
   else
-    if (iscacp(iscal).eq.1) then
+    if (iscacp.eq.1) then
       lambda =  visls0(iscal)
       lambda_over_cp = lambda/cp
     else

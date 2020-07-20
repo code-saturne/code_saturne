@@ -83,19 +83,13 @@ type(var_cal_opt) :: vcopt
 ! --> Nature des scalaires transportes
 
 do isc = 1, nscapp
-
-! ---- Type de scalaire (0 passif, 1 temperature en K
-!                                 -1 temperature en C
-!                                  2 enthalpie)
-!      La distinction -1/1 sert pour le rayonnement
-  iscacp(iscapp(isc)) = 0
-
+  call field_set_key_int(ivarfl(isca(iscapp(isc))), kscacp, 0)
 enddo
 
 ! ---- On resout en enthalpie avec un CP constant (Cf. cpvarp)
 
 itherm = 2
-iscacp(iscalt) = 0
+call field_set_key_int(ivarfl(isca(iscalt)), kscacp, 0)
 
 ! --> Donnees physiques ou numeriques propres aux scalaires CP
 

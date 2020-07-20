@@ -60,6 +60,7 @@ use ppthch
 use coincl
 use cpincl
 use ppincl
+use field
 
 !===============================================================================
 
@@ -67,26 +68,26 @@ implicit none
 
 ! Local variables
 
-integer :: ii
+integer :: ii, iscacp
 
 !===============================================================================
 
 !===============================================================================
-! 0. VERIFICATION ISCACP
+! Check "is_temperature"
 !===============================================================================
 
 ! L'utilisateur ne doit pas y avoir touche.
 
 do ii = 1, nscapp
-  if(iscacp(iscapp(ii)).ne.-10) then
-    write(nfecra,1001) ii, iscapp(ii), iscapp(ii), iscacp(iscapp(ii))
-    call csexit (1)
-    !==========
+  call field_get_key_int(ivarfl(isca(iscapp(ii))), kscacp, iscacp)
+  if (iscacp.ne.-1) then
+    write(nfecra,1001) iscapp(ii), iscapp(ii), iscacp
+    call csexit(1)
   endif
 enddo
 
 if (itherm .eq. 1) then
-  iscacp(iscalt) = 1
+  call field_set_key_int(ivarfl(isca(iscalt)), kscacp, 1)
 endif
 
 !===============================================================================
@@ -156,13 +157,13 @@ endif
 '@ @@ WARNING: STOP WHILE READING INPUT DATA'                  ,/,&
 '@    ======='                                                 ,/,&
 '@'                                                            ,/,&
-'@  The values of ISCACP are set automatically for model'      ,/,&
-'@  (i.e. non-user) scalars.'                                  ,/,&
+'@  The values of "is_temperature" are set automatically for'  ,/,&
+'@  model (i.e. non-user) scalars.'                            ,/,&
 '@'                                                            ,/,&
 '@  The user should not set a value for them, however'         ,/,&
 '@    for the scalar ', i10,' corresponding to the model'      ,/,&
 '@    scalar ', i10,' we have'                                 ,/,&
-'@    iscacp(', i10,') = ', i10                                ,/,&
+'@    "is_temperature" = ', i11                                ,/,&
 '@'                                                            ,/,&
 '@  The calculation could NOT run.'                            ,/,&
 '@'                                                            ,/,&

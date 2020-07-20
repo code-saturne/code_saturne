@@ -64,7 +64,7 @@ integer          ii, jj, imom, iok, ikw
 integer          nbccou, flag
 integer          nscacp, iscal
 integer          imrgrp
-integer          kcpsyr, icpsyr
+integer          iscacp, kcpsyr, icpsyr
 integer          nfld, f_type
 integer          key_t_ext_id, icpext, kscmin, kscmax
 integer          iviext
@@ -679,23 +679,23 @@ if (itherm.ge.1 .and. itpscl.le.0) then
   itpscl = 1
 endif
 
-! ---> ISCACP
-!      Si l'utilisateur n'a pas modifie ISCACP, on prend par defaut :
-!        scalaire passif  pour les scalaires autres que ISCALT
-!      Les modifs adequates devront etre ajoutees pour les physiques
-!        particulieres
-
-!         = 0 : passif, enthalpie, ou energie
+! ---> "is_temperature"
+!      If the user has not modified "is_temperature", we take by default:
+!        passive scalar of scalars other than iscalt
+!         = 0 : passive, enthalpy, or energy
 !         = 1 : temperature
 
 if (nscal.gt.0) then
   do ii = 1, nscal
-    if (iscacp(ii).eq.-10)then
+    call field_get_key_int(ivarfl(isca(ii)), kscacp, iscacp)
+    if (iscacp.eq.-1) then
       if (ii.eq.iscalt .and. itherm.eq.1) then
-        iscacp(ii) = 1
+        iscacp = 1
       else
-        iscacp(ii) = 0
+        iscacp = 0
       endif
+      print *, iscacp
+      call field_set_key_int(ivarfl(isca(ii)), kscacp, iscacp)
     endif
   enddo
 endif

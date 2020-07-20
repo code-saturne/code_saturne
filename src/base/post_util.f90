@@ -79,7 +79,7 @@ double precision, dimension(nfbrps), intent(out)   :: bflux
 integer ::         inc, iccocg, f_id
 integer ::         ifac, iloc, ivar
 integer ::         iel
-integer ::         iflmab
+integer ::         iflmab, iscacp
 
 double precision :: cpp   , srfbn , heq
 double precision :: flumab, diipbx, diipby, diipbz
@@ -100,19 +100,18 @@ logical(c_bool), dimension(:), pointer ::  cpl_faces
 
 if (iscalt.gt.0) then
 
-  ivar   = isca(iscalt)
-
+  ivar = isca(iscalt)
   f_id = ivarfl(ivar)
 
   ! Boundary condition pointers for gradients and advection
 
-  call field_get_coefa_s(ivarfl(ivar), coefap)
-  call field_get_coefb_s(ivarfl(ivar), coefbp)
+  call field_get_coefa_s(f_id, coefap)
+  call field_get_coefb_s(f_id, coefbp)
 
   ! Boundary condition pointers for diffusion
 
-  call field_get_coefaf_s(ivarfl(ivar), cofafp)
-  call field_get_coefbf_s(ivarfl(ivar), cofbfp)
+  call field_get_coefaf_s(f_id, cofafp)
+  call field_get_coefbf_s(f_id, cofbfp)
 
   ! Boundary condition pointers for diffusion with coupling
 
@@ -123,12 +122,15 @@ if (iscalt.gt.0) then
 
   call field_get_val_prev_s(ivarfl(ivar), tscalp)
 
-  if (iscacp(iscalt).eq.1 .and. icp.ge.0) then
+  call field_get_key_int(f_id, kscacp, iscacp)
+  if (iscacp.eq.1 .and. icp.ge.0) then
     call field_get_val_s(icp, cpro_cp)
   endif
 
-  call field_get_key_int(ivarfl(ivar), kbmasf, iflmab)
+  call field_get_key_int(f_id, kbmasf, iflmab)
   call field_get_val_s(iflmab, bmasfl)
+
+  call field_get_key_int(f_id, kscacp, iscacp)
 
   ! Compute variable values at boundary faces
 
@@ -185,7 +187,7 @@ if (iscalt.gt.0) then
     ifac = lstfbr(iloc)
     iel = ifabor(ifac)
 
-    if (iscacp(iscalt).eq.1) then
+    if (iscacp.eq.1) then
       if (icp.ge.0) then
         cpp = cpro_cp(iel)
       else

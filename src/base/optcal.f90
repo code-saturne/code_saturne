@@ -1096,12 +1096,6 @@ module optcal
   !> \addtogroup scalar_params
   !> \{
 
-  !> \anchor iscacp
-  !> iscacp : 0 : scalar does not behave like a temperature
-  !>          1 : scalar behaves like a temperature (use Cp for wall law)
-  !>        > 1 : not yet allowed, could be used for multiple Cp definitions
-  integer, save ::          iscacp(nscamx)
-
   !> iclvfl : 0 : clip variances to zero
   !>          1 : clip variances to zero and to f(1-f)
   !>          2 : clip variances to  max(zero,scamin) and scamax
