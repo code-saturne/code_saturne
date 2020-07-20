@@ -84,7 +84,8 @@ end module cdomod
 
 !=============================================================================
 
-subroutine set_cdo_mode (icdoval)
+subroutine cs_f_set_cdo_mode(icdoval)  &
+  bind(C, name='cs_f_set_cdo_mode')
 
   !===========================================================================
   ! Module files
@@ -98,11 +99,11 @@ subroutine set_cdo_mode (icdoval)
 
   ! Arguments
 
-  integer(c_int)          icdoval
+  integer(c_int), value :: icdoval
 
   !===========================================================================
 
   icdo = icdoval
 
   return
-end subroutine set_cdo_mode
+end subroutine cs_f_set_cdo_mode

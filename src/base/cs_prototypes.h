@@ -152,15 +152,6 @@ extern void CS_PROCF (initi1, INITI1)
 );
 
 /*----------------------------------------------------------------------------
- * Set the CDO mode in the FORTRAN part
- *----------------------------------------------------------------------------*/
-
-extern void CS_PROCF (set_cdo_mode, SET_CDO_MODE)
-(
- const int   *mode     /* <-- -1: no CDO, 1: with CDO, 2: CDO only */
-);
-
-/*----------------------------------------------------------------------------
  * User function for enthalpy <-> temperature conversion
  *----------------------------------------------------------------------------*/
 

@@ -102,7 +102,22 @@ static double  cs_domain_kahan_time_compensation = 0.0;
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*============================================================================
- * Private function prototypes
+ * Prototypes for functions intended for use only by Fortran wrappers.
+ * (descriptions follow, with function bodies).
+ *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Set the CDO mode in the Fortran part
+ *
+ * parameters:
+ *   mode <-- -1: no CDO, 1: with CDO, 2: CDO only
+ *----------------------------------------------------------------------------*/
+
+extern void
+cs_f_set_cdo_mode(int  mode);
+
+/*============================================================================
+ * Private function defintitions
  *============================================================================*/
 
 /*----------------------------------------------------------------------------*/
@@ -267,7 +282,7 @@ cs_domain_set_cdo_mode(cs_domain_t    *domain,
   else
     domain->cdo_context->mode = mode;
 
-  CS_PROCF(set_cdo_mode, SET_CDO_MODE)(&mode);
+  cs_f_set_cdo_mode(mode);
 }
 
 /*----------------------------------------------------------------------------*/
