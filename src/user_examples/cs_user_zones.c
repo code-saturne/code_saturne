@@ -111,7 +111,8 @@ cs_user_zones(void)
     cs_real_t wind_dir = 0.;
 
     if (fscanf(file, "%d\n", &n_turbines) != 1)
-      bft_error(__FILE__,__LINE__, 0, _("Could not read the number of turbines."));
+      bft_error(__FILE__,__LINE__, 0,
+                _("Could not read the number of turbines."));
 
     for (int i = 0; i < n_turbines; i++) {
       int turbine_id = 0;
@@ -126,21 +127,20 @@ cs_user_zones(void)
       if (fscanf(file, "%f\n", &(turb_cen[2])) != 1)
         bft_error(__FILE__,__LINE__, 0, _("Could not read turbine z."));
 
-      double s_coords[] = {
-	      turb_cen[0] - 0.5 * turb_lenght * cos(wind_dir),
-	      turb_cen[1] - 0.5 * turb_lenght * sin(wind_dir),
-	      turb_cen[2]};
-      double e_coords[] = {
-	      turb_cen[0] + 0.5 * turb_lenght * cos(wind_dir),
-	      turb_cen[1] + 0.5 * turb_lenght * sin(wind_dir),
-	      turb_cen[2]};
+      double s_coords[]
+        = {turb_cen[0] - 0.5 * turb_lenght * cos(wind_dir),
+           turb_cen[1] - 0.5 * turb_lenght * sin(wind_dir),
+           turb_cen[2]};
+      double e_coords[]
+        = {turb_cen[0] + 0.5 * turb_lenght * cos(wind_dir),
+           turb_cen[1] + 0.5 * turb_lenght * sin(wind_dir),
+           turb_cen[2]};
 
       snprintf(name, 127, "turbine_%d", i);
       snprintf(criteria, 127, "cylinder[%f, %f, %f, %f, %f, %f, %f]",
-               s_coords[0], s_coords[1], s_coords[2],/* Start */
-               e_coords[0], e_coords[1], e_coords[2],/* End */
-               radius /* Radius */
-	       );
+               s_coords[0], s_coords[1], s_coords[2], /* Start */
+               e_coords[0], e_coords[1], e_coords[2], /* End */
+               radius); /* Radius */
 
       cs_volume_zone_define(name, criteria, CS_VOLUME_ZONE_SOURCE_TERM);
     }
