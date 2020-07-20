@@ -47,14 +47,18 @@ class pyple_coupler():
                  run_dir=None,
                  verbosity=1,
                  logfile = None,
-                 output_mode="master",):
+                 output_mode="master",
+                 use_mpi=True):
+
         """
         Init method.
         :param name: string
                      name of the app
         :param verbosity:   int, optional
                             log verbosity level
-                            default value is 1
+                            default value is 1.
+                            1:info level
+                            2:debug level
                             If negative value, no output
         :param logfile:     string, optional
                             User defined name for the logfile.
@@ -87,7 +91,8 @@ class pyple_coupler():
         self.user_options = {'rundir':run_dir,
                              'verbos':verbosity,
                              'logfile':logfile,
-                             'output':output_mode}
+                             'output':output_mode,
+                             'use_mpi':use_mpi}
 
         self.verbosity = verbosity
         self.print_info = False
@@ -140,6 +145,7 @@ class pyple_coupler():
         default logfile name is:
         <app_name>_<rank>_pyple_coupler.log'
         """
+        self.logger = None
         if self.verbosity > 0:
             if self.user_options['output'] == "all":
                 self.print_info = True
@@ -152,11 +158,27 @@ class pyple_coupler():
                 self.log_name = "%s_r%05d_pyple_coupler.log" % (self.name, self.local_rank)
 
         if self.print_info:
-            f = open(self.log_name, "w")
-            f.write(" ===================================== \n")
-            f.write("  '%s' pycoupler usage log \n" % self.name)
-            f.write(" ===================================== \n\n")
-            f.close()
+
+            import logging
+
+            self.logger = logging.getLoger("PyPLE")
+
+            fh = logging.FileHandler(self.log_name)
+            formatter = logging.Formatter('%(name)s[LEVEL=%(levelname)s] : %(message)s')
+            fh.setFormatter(formatter)
+            if self.verbosity == 1:
+                self.logger.setLevel(logging.INFO)
+                fh.setLevel(logging.INFO)
+            else:
+                self.logger.setLevel(logging.DEBUG)
+                fh.setLevel(logging.DEBUG)
+
+            self.logger.addHandler(fh)
+
+            self.logger.info(" ===================================== ")
+            self.logger.info("  '%s' pycoupler usage log " % self.name)
+            self.logger.info(" ===================================== ")
+
     # ----------------------------------
 
 
@@ -169,16 +191,16 @@ class pyple_coupler():
         :param verbosity: int, optional
                           verbosity level of the message
                           default is 0
+                          debug   is 1
         """
 
-        if self.verbosity >= verbosity and self.print_info:
-            f = open(self.log_name, "a")
-            f.write(" ===================================== \n")
-            msg_lines = msg.split('\n')
-            for line in msg_lines:
-                f.write("  "+line+"\n")
-            f.write(" ===================================== \n\n")
-            f.close()
+        if not self.print_info or verbosity < 0:
+            return
+
+        if verbosity == 0:
+            self.logger.info(msg)
+        else:
+            self.logger.debug(msg)
     # ----------------------------------
 
 
@@ -189,6 +211,11 @@ class pyple_coupler():
         """
 
         init_msg = ""
+        self.base_comm  = None
+        self.world_rank = -1
+        # If no mpi is needed exit
+        if self.user_options["use_mpi"] == False:
+            return
 
         if _ple_avail:
                 self.has_ple = ple_init.mpi_initialized()
