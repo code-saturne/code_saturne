@@ -528,6 +528,10 @@ typedef enum {
  * Global variables
  *============================================================================*/
 
+/* Empty but non-NULL string */
+
+extern const char     cs_empty_string[];
+
 /* Sizes and names associated with datatypes */
 
 extern const size_t   cs_datatype_size[];

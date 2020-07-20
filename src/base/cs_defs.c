@@ -121,6 +121,10 @@ BEGIN_C_DECLS
  * Global variables
  *============================================================================*/
 
+/* Empty string */
+
+const char   cs_empty_string[] = "";
+
 /* Sizes associated with datatypes */
 
 const size_t  cs_datatype_size[] = {0,
