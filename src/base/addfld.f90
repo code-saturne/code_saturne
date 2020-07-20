@@ -245,7 +245,6 @@ do ii = 1, nscal
       s_label = 'Th'
     endif
     call field_get_key_int(f_id, kscacp, iscacp)
-    print *, iscacp
     if (iscacp.gt.0) then
       f_name  = trim(s_name) // '_conductivity'
       f_label = trim(s_label) // ' Cond'

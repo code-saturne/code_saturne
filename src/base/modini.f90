@@ -694,7 +694,6 @@ if (nscal.gt.0) then
       else
         iscacp = 0
       endif
-      print *, iscacp
       call field_set_key_int(ivarfl(isca(ii)), kscacp, iscacp)
     endif
   enddo
