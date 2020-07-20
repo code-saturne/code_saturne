@@ -2099,6 +2099,9 @@ fvm_nodal_get_n_elements(const fvm_nodal_t  *this_nodal,
  * with the parent entity numbers of those entities, in order (i.e. in
  * local section order, section by section).
  *
+ * This function is similar to fvm_nodal_get_parent_num(), but returns
+ * numbers (1 to n) instead of ids (0 to n-1).
+ *
  * parameters:
  *   this_nodal <-- pointer to nodal mesh structure
  *   entity_dim <-- dimension of entities we are interested in (0 to 3)
@@ -2146,6 +2149,70 @@ fvm_nodal_get_parent_num(const fvm_nodal_t  *this_nodal,
         else {
           for (i = 0; i < section->n_elements; i++)
             parent_num[entity_count++] = i + 1;
+        }
+      }
+
+    } /* end loop on sections */
+
+  }
+}
+
+/*----------------------------------------------------------------------------
+ * Return local parent id array for all entities of a given
+ * dimension in a nodal mesh.
+ *
+ * The number of entities of the given dimension may be obtained
+ * through fvm_nodal_get_n_entities(), the parent_num[] array is populated
+ * with the parent entity numbers of those entities, in order (i.e. in
+ * local section order, section by section).
+ *
+ * parameters:
+ *   this_nodal <-- pointer to nodal mesh structure
+ *   entity_dim <-- dimension of entities we are interested in (0 to 3)
+ *   parent_id --> entity parent id (array must be pre-allocated)
+ *----------------------------------------------------------------------------*/
+
+void
+fvm_nodal_get_parent_id(const fvm_nodal_t  *this_nodal,
+                        int                 entity_dim,
+                        cs_lnum_t           parent_id[])
+{
+  int section_id;
+  cs_lnum_t i;
+
+  cs_lnum_t entity_count = 0;
+
+  assert(this_nodal != NULL);
+
+  /* Entity dimension 0: vertices */
+
+  if (entity_dim == 0) {
+    if (this_nodal->parent_vertex_num != NULL) {
+      for (i = 0; i < this_nodal->n_vertices; i++)
+        parent_id[entity_count++] = this_nodal->parent_vertex_num[i] - 1;
+    }
+    else {
+      for (i = 0; i < this_nodal->n_vertices; i++)
+        parent_id[entity_count++] = i;
+    }
+  }
+
+  /* Entity dimension > 0: edges, faces, or cells */
+
+  else {
+
+    for (section_id = 0; section_id < this_nodal->n_sections; section_id++) {
+
+      const fvm_nodal_section_t  *section = this_nodal->sections[section_id];
+
+      if (section->entity_dim == entity_dim) {
+        if (section->parent_element_num != NULL) {
+          for (i = 0; i < section->n_elements; i++)
+            parent_id[entity_count++] = section->parent_element_num[i] - 1;
+        }
+        else {
+          for (i = 0; i < section->n_elements; i++)
+            parent_id[entity_count++] = i;
         }
       }
 
