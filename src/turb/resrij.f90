@@ -259,8 +259,6 @@ endif
 ! 2. User source terms
 !===============================================================================
 
-call user_source_terms(ivarfl(ivar), smbr, rovsdt)
-
 !     If we extrapolate the source terms
 if (st_prv_id.ge.0) then
   do iel = 1, ncel

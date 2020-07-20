@@ -264,16 +264,6 @@ endif
 ! 2. User source terms
 !===============================================================================
 
-call cs_user_turbulence_source_terms2 &
- ( nvar   , nscal  , ncepdp , ncesmp ,                            &
-   ivarfl(irij)    ,                                              &
-   icepdc , icetsm , itypsm ,                                     &
-   ckupdc , smacel ,                                              &
-   smbr   , rovsdt )
-
-! C version
-call user_source_terms(ivarfl(irij), smbr, rovsdt)
-
   !     If we extrapolate the source terms
 if (st_prv_id.ge.0) then
   do iel = 1, ncel

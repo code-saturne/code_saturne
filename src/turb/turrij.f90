@@ -360,6 +360,20 @@ iprev = 1
 call field_gradient_vector(ivarfl(iu), iprev, 0, inc, gradv)
 
 !===============================================================================
+! 1.2 Call source terms for Rij
+!===============================================================================
+
+call cs_user_turbulence_source_terms2 &
+ ( nvar   , nscal  , ncepdp , ncesmp ,                            &
+   ivarfl(ivar)    ,                                              &
+   icepdc , icetsm , itypsm ,                                     &
+   ckupdc , smacel ,                                              &
+   smbrts , rovsdtts, gradv)
+
+! C version
+call user_source_terms(ivarfl(ivar), smbrts, rovsdtts)
+
+!===============================================================================
 ! 2.2 Compute the production term for Rij
 !===============================================================================
 
