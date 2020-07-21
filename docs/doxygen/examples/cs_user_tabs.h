@@ -80,6 +80,5 @@ Here is a list of user examples. Thoroughly documented snippets are provided.
    - \subpage us_thht
    - \subpage us_vosy
    - \subpage us_pt1d
-   - \subpage us_vort
    - \subpage cs_user_lagr_sde
 */
