@@ -104,12 +104,28 @@ fi
 
 AC_ARG_VAR([DOT], [graphs generator])
 
+AC_ARG_ENABLE(dot,
+  [AS_HELP_STRING([--enable-dot], [enable Graphviz dot for diagrams in html])],
+  [
+    case "${enableval}" in
+      yes) cs_have_dot=yes ;;
+      no)  cs_have_dot=no ;;
+      *)   AC_MSG_ERROR([bad value ${enableval} for --enable-dot]) ;;
+    esac
+  ],
+  [ cs_have_dot=yes ]
+)
+
 dnl where is dot ?
-AC_PATH_PROG(DOT, [dot])
-if test "x$DOT" = "x"; then
-  AC_MSG_WARN(dot not found)
-  cs_have_dot=no
+if test "x$cs_have_dot" = "xyes"; then
+  AC_PATH_PROG(DOT, [dot])
+  if test "x$DOT" = "x"; then
+    AC_MSG_WARN(dot not found)
+    cs_have_dot=no
+  fi
 fi
+
+# use MathJax for equations ?
 
 AC_ARG_ENABLE(mathjax,
   [AS_HELP_STRING([--enable-mathjax], [enable MathJax for math in html])],

@@ -270,9 +270,6 @@ if test "x$auto_flags" = "xyes" ; then
 
   if test "x$cs_ac_cc_version" != "x" -a "x$cs_ac_cc_version" != "xunknown" ; then
     AC_DEFINE_UNQUOTED([CS_CC_VERSION_STRING], ["$cs_ac_cc_version"], [C compiler version string])
-    echo "yes $cs_ac_cc_version"
-  else
-    echo "no $cs_ac_cc_version"
   fi
   if test "x$cs_ac_cxx_version" != "x" -a "x$cs_ac_cxx_version" != "xunknown" ; then
     AC_DEFINE_UNQUOTED([CS_CXX_VERSION_STRING], ["$cs_ac_cxx_version"], [C++ compiler version string])
