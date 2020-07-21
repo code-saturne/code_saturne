@@ -259,7 +259,7 @@ _mpi_ranks_per_node(MPI_Comm  comm,
 #else
 
   MPI_Comm sh_comm;
-  MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, 0,
+  MPI_Comm_split_type(comm, MPI_COMM_TYPE_SHARED, 0,
                       MPI_INFO_NULL, &sh_comm);
   int sh_ranks;
   MPI_Comm_rank(sh_comm, &sh_ranks);
