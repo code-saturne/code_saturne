@@ -161,10 +161,10 @@ struct _ple_locator_t {
 
   /* Timing information (2 fields/time; 0: total; 1: communication) */
 
-  double  location_wtime[4];       /* Location Wall-clock time */
-  double  location_cpu_time[4];    /* Location CPU time */
-  double  exchange_wtime[4];       /* Variable exchange Wall-clock time */
-  double  exchange_cpu_time[4];    /* Variable exchange CPU time */
+  double  location_wtime[2];       /* Location Wall-clock time */
+  double  location_cpu_time[2];    /* Location CPU time */
+  double  exchange_wtime[2];       /* Variable exchange Wall-clock time */
+  double  exchange_cpu_time[2];    /* Variable exchange CPU time */
 };
 
 /*============================================================================
@@ -1372,8 +1372,6 @@ _locate_distant(ple_locator_t               *this_locator,
 
   this_locator->location_wtime[1] += comm_timing[0];
   this_locator->location_cpu_time[1] += comm_timing[1];
-  this_locator->location_wtime[3] += comm_timing[0];
-  this_locator->location_cpu_time[3] += comm_timing[1];
 }
 
 /*----------------------------------------------------------------------------
@@ -2733,12 +2731,10 @@ _get_times(const ple_locator_t  *this_locator,
   if (this_locator != NULL) {
 
     if (location_wtime != NULL) {
-      location_wtime[0] = _locator->location_wtime[time_type];
-      location_wtime[1] = _locator->location_wtime[time_type + 2];
+      *location_wtime = _locator->location_wtime[time_type];
     }
     if (location_cpu_time != NULL) {
-      location_cpu_time[0] = _locator->location_cpu_time[time_type];
-      location_cpu_time[1] = _locator->location_cpu_time[time_type + 2];
+      *location_cpu_time = _locator->location_cpu_time[time_type];
     }
     if (exchange_wtime != NULL)
       *exchange_wtime = _locator->exchange_wtime[time_type];
@@ -2834,7 +2830,7 @@ ple_locator_create(void)
   this_locator->n_exterior = 0;
   this_locator->exterior_list = NULL;
 
-  for (i = 0; i < 4; i++) {
+  for (i = 0; i < 2; i++) {
     this_locator->location_wtime[i] = 0.;
     this_locator->location_cpu_time[i] = 0.;
   }
@@ -3572,8 +3568,8 @@ ple_locator_exchange_point_var(ple_locator_t     *this_locator,
  * associated with the location of closest elements stage.
  *
  * \param[in]  this_locator      pointer to locator structure
- * \param[out] location_wtime    Location Wall-clock time (size: 2 or NULL)
- * \param[out] location_cpu_time Location CPU time (size: 1 or NULL)
+ * \param[out] location_wtime    Location Wall-clock time (or NULL)
+ * \param[out] location_cpu_time Location CPU time (or NULL)
  * \param[out] exchange_wtime    Variable exchange Wall-clock time
  *                               (size: 1 or NULL)
  * \param[out] exchange_cpu_time Variable exchange CPU time (size: 2 or NULL)
@@ -3605,11 +3601,10 @@ ple_locator_get_times(const ple_locator_t  *this_locator,
  *
  * parameters:
  * \param[in]  this_locator      pointer to locator structure
- * \param[out] location_wtime    Location Wall-clock time (size: 2 or NULL)
- * \param[out] location_cpu_time Location CPU time (size: 1 or NULL)
- * \param[out] exchange_wtime    Variable exchange Wall-clock time
- *                               (size: 1 or NULL)
- * \param[out] exchange_cpu_time Variable exchange CPU time (size: 2 or NULL)
+ * \param[out] location_wtime    Location Wall-clock time (or NULL)
+ * \param[out] location_cpu_time Location CPU time (or NULL)
+ * \param[out] exchange_wtime    Variable exchange Wall-clock time (or NULL)
+ * \param[out] exchange_cpu_time Variable exchange CPU time (or NULL)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -3782,16 +3777,16 @@ ple_locator_dump(const ple_locator_t  *this_locator)
   /*--------------------*/
 
   ple_printf("  Location Wall-clock time: %12.5f (comm: %12.5f)\n",
-             _locator->location_wtime[0], _locator->location_wtime[0]);
+             _locator->location_wtime[0], _locator->location_wtime[1]);
 
   ple_printf("  Location CPU time:        %12.5f (comm: %12.5f)\n",
-             _locator->location_cpu_time[0], _locator->location_cpu_time[0]);
+             _locator->location_cpu_time[0], _locator->location_cpu_time[1]);
 
   ple_printf("  Exchange Wall-clock time: %12.5f (comm: %12.5f)\n",
-             _locator->exchange_wtime[0], _locator->exchange_wtime[0]);
+             _locator->exchange_wtime[0], _locator->exchange_wtime[1]);
 
   ple_printf("  Exchange CPU time:        %12.5f (comm: %12.5f)\n",
-             _locator->exchange_cpu_time[0], _locator->exchange_cpu_time[0]);
+             _locator->exchange_cpu_time[0], _locator->exchange_cpu_time[1]);
 
 }
 
