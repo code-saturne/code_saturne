@@ -128,37 +128,13 @@ double precision dt(ncelet)
 
 ! INSERT_VARIABLE_DEFINITIONS_HERE
 
-integer, allocatable, dimension(:) :: lstelt
-
 !===============================================================================
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_START
-
-if (1.eq.1) then
-!       Tag to know if a call to this subroutine has already been done
-  iusini = 0
-  return
-endif
-
-! TEST_TO_REMOVE_FOR_USE_OF_SUBROUTINE_END
-
-!===============================================================================
-! Initialization
-!===============================================================================
-
-allocate(lstelt(ncel)) ! temporary array for cells selection
 
 ! INSERT_MAIN_CODE_HERE
-
-!--------
-! Formats
-!--------
 
 !----
 ! End
 !----
-
-deallocate(lstelt) ! temporary array for cells selection
 
 return
 end subroutine cs_user_f_initialization

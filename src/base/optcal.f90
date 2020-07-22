@@ -1023,14 +1023,6 @@ module optcal
   !>    - 0: Standard algorithm (Without porosity)
   integer(c_int), pointer, save :: iporos
 
-  !TODO move it elsewhere?
-  ! Indicateur de passage dans l'initialisation des
-  !                       variables par l'utilisateur
-  !          iusini = 1 passage dans usiniv ou ppiniv
-  !                   0 pas de passage (ni iusini ni ppiniv)
-
-  integer, save :: iusini
-
   !> \}
 
   !----------------------------------------------------------------------------

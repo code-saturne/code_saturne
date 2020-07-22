@@ -134,11 +134,6 @@ iok = 0
 !    INITIALISATIONS QUI LUI SONT PROPRES
 !===============================================================================
 
-! Indicateur d'initialisation des scalaires par l'utilisateur
-! (mis a 1 si passage dans USINIV ou PPINIV ou dans l'IHM ; a 0 sinon)
-
-iusini = 1
-
 iflidp = -1
 
 do ivar = 1, nvar
@@ -188,21 +183,7 @@ if (ippmod(iphpar).eq.0) then
 
   call cs_user_f_initialization(nvar, nscal, dt)
 
-  !     Avec l'interface, il peut y avoir eu initialisation,
-  !       meme si usiniv n'est pas utilise.
-  if (isuite.eq.0) then
-    iusini = 1
-  endif
-
 else
-
-  ! ON FAIT DE LA PHYSIQUE PARTICULIERE
-  !   On pourrait remonter la partie init non utilisateur de ppiniv avant lecamo
-  !     dans iniva0, mais il faudrait quand meme conserver ici l'appel a
-  !     ppiniv car il encapsule les appels aux ss pgm utilisateur similaires a
-  !     usiniv.
-
-  iusini = 1
 
   call ppiniv(nvar, nscal, dt)
 
@@ -338,9 +319,9 @@ endif
 !          fait au moins une erreur qui peut en cacher d'autres)
 !===============================================================================
 
-if (iusini.eq.1.or.isuite.eq.1) then
+if (.true.) then
 
-  if(itytur.eq.2 .or. itytur.eq.5) then
+  if (itytur.eq.2 .or. itytur.eq.5) then
 
     call field_get_val_s(ivarfl(ik), cvar_k)
     call field_get_val_s(ivarfl(iep), cvar_ep)
@@ -563,7 +544,7 @@ endif
 ! On traite tous les scalaires d'abord, car ils peuvent etre necessaires
 !     pour clipper les variances
 
-if(nscal.gt.0.and.(iusini.eq.1.or.isuite.eq.1)) then
+if (nscal.gt.0) then
 
 !     Scalaires non variance
 
