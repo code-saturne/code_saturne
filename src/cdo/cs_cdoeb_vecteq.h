@@ -1,5 +1,5 @@
-#ifndef __CS_CDOEB_SCALEQ_H__
-#define __CS_CDOEB_SCALEQ_H__
+#ifndef __CS_CDOEB_VECTEQ_H__
+#define __CS_CDOEB_VECTEQ_H__
 
 /*============================================================================
  * Build an algebraic CDO edge-based system. Degrees of freedom are defined as
