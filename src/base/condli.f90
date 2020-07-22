@@ -273,7 +273,21 @@ type(var_cal_opt) :: vcopt
 ! Interfaces
 !===============================================================================
 
+!===============================================================================
+! Interfaces
+!===============================================================================
+
 interface
+
+  subroutine b_h_to_t(h_b, t_b)
+
+    use mesh, only: nfabor
+    implicit none
+
+    double precision, dimension(nfabor), intent(in) :: h_b
+    double precision, dimension(nfabor), intent(out), target :: t_b
+
+  end subroutine b_h_to_t
 
   subroutine clptur(nscal, isvhb, icodcl, rcodcl, velipb, rijipb, &
                     visvdr, hbord, theipb)
