@@ -56,6 +56,7 @@
 #include "cs_mesh.h"
 #include "cs_field.h"
 #include "cs_field_pointer.h"
+#include "cs_parameters.h"
 #include "cs_physical_model.h"
 #include "cs_selector.h"
 #include "cs_elec_model.h"

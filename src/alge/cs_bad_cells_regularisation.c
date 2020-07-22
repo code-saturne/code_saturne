@@ -54,6 +54,7 @@
 #include "cs_mesh_bad_cells.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
+#include "cs_parameters.h"
 #include "cs_sles_default.h"
 
 /*----------------------------------------------------------------------------

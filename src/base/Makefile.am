@@ -136,6 +136,7 @@ cs_part_to_block.h \
 cs_physical_constants.h \
 cs_physical_properties.h \
 cs_porosity_from_scan.h \
+cs_porous_model.h \
 cs_post.h \
 cs_post_default.h \
 cs_post_util.h \
@@ -296,6 +297,7 @@ cs_parameters_check.c \
 cs_physical_constants.c \
 cs_physical_properties.c \
 cs_porosity_from_scan.c \
+cs_porous_model.c \
 cs_post.c \
 cs_post_default.c \
 cs_post_util.c \

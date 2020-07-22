@@ -464,8 +464,8 @@ call iniva0(nscal)
 if (iporos.ge.1) then
 
   ! Make fluid surfaces of mesh quantity point to the created fields
-  call cs_mesh_quantities_set_has_disable_flag(1)
-  call cs_mesh_init_fluid_quantities()
+  call cs_porous_model_set_has_disable_flag(1)
+  call cs_porous_model_init_fluid_quantities()
 
   ! Compute porosity from scan
   if (compute_porosity_from_scan) then

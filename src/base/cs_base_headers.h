@@ -73,6 +73,7 @@
 #include "cs_physical_constants.h"
 #include "cs_physical_properties.h"
 #include "cs_porosity_from_scan.h"
+#include "cs_porous_model.h"
 #include "cs_post.h"
 #include "cs_post_util.h"
 #include "cs_preprocess.h"

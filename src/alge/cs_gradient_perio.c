@@ -97,53 +97,6 @@ static cs_real_t  *_drdxyz = NULL, *_wdrdxy = NULL;
  *============================================================================*/
 
 /*----------------------------------------------------------------------------
- * Update drdxyz and wdrdxy for periodic ghost cells.
- *
- * Called by PERMAS.
- *
- * parameters:
- *   h_cell_id --> cell id in halo
- *   cell_id   --> cell id
- *   rom       --> density array
- *   call_id   --> first or second call
- *   drdxyz    <-> Gradient on components of Rij (Reynolds stress tensor)
- *   wdrdxy    <-> associated working array.
- *----------------------------------------------------------------------------*/
-
-static void
-_update_drdxyz(cs_lnum_t         h_cell_id,
-               cs_lnum_t         cell_id,
-               const cs_real_t   rom[],
-               int               call_id,
-               cs_real_t         drdxyz[],
-               cs_real_t         wdrdxy[])
-{
-  cs_lnum_t  i, j, id;
-
-  if (call_id == 1) { /* First call */
-
-    for (i = 0; i < 2*3; i++) {
-      for (j = 0; j < 3; j++) {
-        id = j + 3*i + 3*6*h_cell_id;
-        wdrdxy[id] = drdxyz[id];
-        drdxyz[id] *= rom[cell_id];
-      }
-    }
-
-  }
-  else if (call_id == 2) { /* Second call */
-
-    for (i = 0; i < 2*3; i++) {
-      for (j = 0; j < 3; j++) {
-        id = j + 3*i + 3*6*h_cell_id;
-        drdxyz[id] = wdrdxy[id];
-      }
-    }
-
-  } /* End if second call */
-}
-
-/*----------------------------------------------------------------------------
  * Save ghost cell values of an initial Rij component gradient.
  *
  * Note that ghost cell values of comp_grad are synchronized by this function.

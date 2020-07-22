@@ -63,6 +63,7 @@
 #include "cs_ext_neighborhood.h"
 #include "cs_mesh_adjacencies.h"
 #include "cs_mesh_quantities.h"
+#include "cs_porous_model.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
 #include "cs_timer_stats.h"
@@ -1263,7 +1264,7 @@ _initialize_scalar_gradient(const cs_mesh_t                *m,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
-  int has_dc = fvq->has_disable_flag; /* Has cells disabled? */
+  cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
 
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
@@ -1691,7 +1692,7 @@ _iterative_scalar_gradient(const cs_mesh_t                *m,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
-  int has_dc = fvq->has_disable_flag; /* Has cells disabled? */
+  cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
 
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
@@ -3421,7 +3422,7 @@ _reconstruct_scalar_gradient(const cs_mesh_t                 *m,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
-  int has_dc = fvq->has_disable_flag; /* Has cells disabled? */
+  cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
 
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
@@ -4162,7 +4163,7 @@ _fv_vtx_based_scalar_gradient(const cs_mesh_t                *m,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
-  int has_dc = fvq->has_disable_flag; /* Has cells disabled? */
+  cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
 
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
@@ -5038,7 +5039,7 @@ _initialize_vector_gradient(const cs_mesh_t              *m,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
-  int has_dc = fvq->has_disable_flag; /* Has cells disabled? */
+  cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
 
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
@@ -5222,7 +5223,7 @@ _reconstruct_vector_gradient(const cs_mesh_t              *m,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
-  int has_dc = fvq->has_disable_flag; /* Has cells disabled? */
+  cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
 
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
@@ -5469,7 +5470,7 @@ _iterative_vector_gradient(const cs_mesh_t               *m,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
-  int has_dc = fvq->has_disable_flag; /* Has cells disabled? */
+  cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
 
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
@@ -5759,7 +5760,7 @@ _iterative_tensor_gradient(const cs_mesh_t              *m,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
-  int has_dc = fvq->has_disable_flag; /* Has cells disabled? */
+  cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
 
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
@@ -6849,7 +6850,7 @@ _fv_vtx_based_vector_gradient(const cs_mesh_t               *m,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
-  int has_dc = fvq->has_disable_flag; /* Has cells disabled? */
+  cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
 
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
   if (cs_glob_porous_model == 1 || cs_glob_porous_model == 2)
@@ -7373,7 +7374,7 @@ _initialize_tensor_gradient(const cs_mesh_t              *m,
     = (const cs_lnum_t *restrict)m->b_face_cells;
 
   const int *restrict c_disable_flag = fvq->c_disable_flag;
-  int has_dc = fvq->has_disable_flag; /* Has cells disabled? */
+  cs_lnum_t has_dc = fvq->has_disable_flag; /* Has cells disabled? */
 
   const cs_real_t *restrict weight = fvq->weight;
   const cs_real_t *restrict cell_f_vol = fvq->cell_f_vol;
@@ -8867,7 +8868,7 @@ void CS_PROCF (grdpor, GRDPOR)
   const cs_real_t *restrict b_face_surf = mq->b_face_surf;
 
   const int *restrict c_disable_flag = mq->c_disable_flag;
-  int has_dc = mq->has_disable_flag; /* Has cells disabled? */
+  cs_lnum_t has_dc = mq->has_disable_flag; /* Has cells disabled? */
 
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
   const cs_lnum_t n_cells = m->n_cells;
@@ -8927,7 +8928,7 @@ void CS_PROCF (grdpor, GRDPOR)
           cs_real_t d_f_surf = 0.;
           /* Is the cell disabled (for solid or porous)?
              Not the case if coupled */
-          if (has_dc *  c_disable_flag[has_dc * ii] == 0
+          if (   has_dc * c_disable_flag[has_dc * ii] == 0
               && has_dc * c_disable_flag[has_dc * jj] == 0)
             d_f_surf = 1. / CS_MAX(i_f_face_surf[f_id],
                                    cs_math_epzero * i_face_surf[f_id]);

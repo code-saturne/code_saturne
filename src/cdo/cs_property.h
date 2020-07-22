@@ -31,6 +31,7 @@
  *  Local headers
  *----------------------------------------------------------------------------*/
 
+#include "cs_field.h"
 #include "cs_flag.h"
 #include "cs_param.h"
 #include "cs_xdef.h"

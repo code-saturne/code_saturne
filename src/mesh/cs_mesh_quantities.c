@@ -53,7 +53,6 @@
 #include "cs_mesh_connect.h"
 #include "cs_parall.h"
 #include "cs_bad_cells_regularisation.h"
-#include "cs_preprocess.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -107,9 +106,6 @@ static int _ajust_face_cog_compat_v11_v52 = 0;
 unsigned cs_glob_mesh_quantities_flag =
   CS_BAD_CELLS_WARPED_CORRECTION + CS_FACE_DISTANCE_CLIP;
 
-/* Choice of the porous model */
-int cs_glob_porous_model = 0;
-
 /* Number of computation updates */
 
 static int _n_computations = 0;
@@ -120,13 +116,7 @@ static int _n_computations = 0;
  *============================================================================*/
 
 void
-cs_f_mesh_quantities_get_pointers(int   **iporos);
-
-void
 cs_f_mesh_quantities_fluid_vol_reductions(void);
-
-int
-cs_f_mesh_quantities_cell_is_active(cs_lnum_t  cell_id);
 
 /*=============================================================================
  * Private function definitions
@@ -2149,22 +2139,6 @@ _b_thickness(const cs_mesh_t             *m,
 /*! \cond DOXYGEN_SHOULD_SKIP_THIS */
 
 /*----------------------------------------------------------------------------
- * Get pointers to global variables.
- *
- * This function is intended for use by Fortran wrappers, and
- * enables mapping to Fortran global pointers.
- *
- * parameters:
- *   iporos  --> pointer to cs_glob_porous_model
- *----------------------------------------------------------------------------*/
-
-void
-cs_f_mesh_quantities_get_pointers(int   **iporos)
-{
-  *iporos = &(cs_glob_porous_model);
-}
-
-/*----------------------------------------------------------------------------
  * Compute the total, min, and max fluid volumes of cells
  *----------------------------------------------------------------------------*/
 
@@ -2176,25 +2150,6 @@ cs_f_mesh_quantities_fluid_vol_reductions(void)
 
   cs_mesh_quantities_fluid_vol_reductions(m,
                                           mq);
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Return 0 if cell is disabled, 1 otherwise
- *
- * \param[in]  cell_id
- *
- * \return  0  if cell is disabled
- */
-/*----------------------------------------------------------------------------*/
-
-int
-cs_f_mesh_quantities_cell_is_active(cs_lnum_t  cell_id)
-{
-  cs_mesh_quantities_t *mq = cs_glob_mesh_quantities;
-
-  return (1 - (mq->has_disable_flag
-          * mq->c_disable_flag[mq->has_disable_flag * cell_id]));
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -2244,80 +2199,6 @@ cs_mesh_quantities_face_cog_choice(int  algo_choice)
     _ajust_face_cog_compat_v11_v52 = algo_choice;
 
   return _ajust_face_cog_compat_v11_v52;
-}
-
-/*----------------------------------------------------------------------------
- * Compute fluid volumes and fluid surfaces in addition to cell volumes
- * and surfaces.
- *
- * parameters:
- *   porous_model <-- porous model option (> 0 for porosity)
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_quantities_set_porous_model(int  porous_model)
-{
-  cs_glob_porous_model = porous_model;
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set (unset) has_disable_flag
- *
- * \param[in]  flag 1: on, 0: off
- */
-/*----------------------------------------------------------------------------*/
-void
-cs_mesh_quantities_set_has_disable_flag(int  flag)
-{
-  cs_mesh_quantities_t *mq =cs_glob_mesh_quantities;
-
-  mq->has_disable_flag = flag;
-  /* if off, fluid surfaces point toward cell surfaces */
-  /* Porous models */
-  if (cs_glob_porous_model > 0) {
-    if (flag == 0) {
-      /* Set pointers of face quantities to the standard ones */
-      if (cs_glob_porous_model == 3) {
-        mq->i_f_face_normal = mq->i_face_normal;
-        mq->b_f_face_normal = mq->b_face_normal;
-        mq->i_f_face_surf   = mq->i_face_surf;
-        mq->b_f_face_surf   = mq->b_face_surf;
-        mq->i_f_face_factor = NULL;
-        mq->b_f_face_factor = NULL;
-      }
-      mq->cell_f_vol = mq->cell_vol;
-    } else {
-      /* Use fluid surfaces and volumes */
-      if (cs_glob_porous_model == 3) {
-        mq->i_f_face_normal = cs_field_by_name("i_f_face_normal")->val;
-        mq->b_f_face_normal = cs_field_by_name("b_f_face_normal")->val;
-        mq->i_f_face_surf   = cs_field_by_name("i_f_face_surf")->val;
-        mq->b_f_face_surf   = cs_field_by_name("b_f_face_surf")->val;
-        mq->i_f_face_factor
-          = (cs_real_2_t *)cs_field_by_name("i_f_face_factor")->val;
-        mq->b_f_face_factor = cs_field_by_name("b_f_face_factor")->val;
-      }
-      mq->cell_f_vol        = cs_field_by_name("cell_f_vol")->val;
-    }
-  }
-
-  /* Update Fortran pointer quantities */
-  cs_preprocess_mesh_update_fortran();
-}
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Init fluid quantities
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_mesh_init_fluid_quantities(void)
-{
-  if (cs_glob_porous_model == 3) {
-    cs_mesh_init_fluid_sections(cs_glob_mesh, cs_glob_mesh_quantities);
-  }
 }
 
 /*----------------------------------------------------------------------------*/
@@ -2688,26 +2569,10 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
   mq->cell_f_vol = mq->cell_vol;
 
   /* Porous models */
-  if (cs_glob_porous_model > 0) {
-    mq->has_disable_flag = 1;
-  }
-  else {
-    mq->min_f_vol = mq->min_vol;
-    mq->max_f_vol = mq->max_vol;
-    mq->tot_f_vol = mq->tot_vol;
-  }
-
-  if (mq->has_disable_flag == 1) {
-    if (mq->c_disable_flag == NULL)
-      BFT_MALLOC(mq->c_disable_flag, n_cells_with_ghosts, int);
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells_with_ghosts; cell_id++)
-      mq->c_disable_flag[cell_id] = 0;
-  }
-  else {
-    if (mq->c_disable_flag == NULL)
-      BFT_MALLOC(mq->c_disable_flag, 1, int);
-    mq->c_disable_flag[0] = 0;
-  }
+  mq->has_disable_flag = 0;
+  mq->min_f_vol = mq->min_vol;
+  mq->max_f_vol = mq->max_vol;
+  mq->tot_f_vol = mq->tot_vol;
 
   if (mq->i_dist == NULL)
     BFT_MALLOC(mq->i_dist, n_i_faces, cs_real_t);

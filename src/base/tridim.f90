@@ -523,7 +523,7 @@ if (vcopt_u%iwarni.ge.1) then
 endif
 
 ! Disable solid cells in fluid_solid mode
-if (fluid_solid) call cs_mesh_quantities_set_has_disable_flag(1)
+if (fluid_solid) call cs_porous_model_set_has_disable_flag(1)
 iterns = -1
 call phyvar(nvar, nscal, iterns, dt)
 
@@ -1103,7 +1103,7 @@ do while (iterns.le.nterup)
       endif
 
       ! Enable solid cells in fluid_solid mode
-      if (fluid_solid) call cs_mesh_quantities_set_has_disable_flag(0)
+      if (fluid_solid) call cs_porous_model_set_has_disable_flag(0)
 
       ! Update buoyant scalar(s)
       call scalai(nvar, nscal , iterns , dt)
@@ -1117,7 +1117,7 @@ do while (iterns.le.nterup)
       !-------------------------------------------
 
       ! Disable solid cells in fluid_solid mode
-      if (fluid_solid) call cs_mesh_quantities_set_has_disable_flag(1)
+      if (fluid_solid) call cs_porous_model_set_has_disable_flag(1)
       call phyvar(nvar, nscal, iterns, dt)
 
     endif
@@ -1396,7 +1396,7 @@ if (iccvfg.eq.0) then
 endif  ! Fin si calcul sur champ de vitesse fige SUITE
 
 ! Re enable solid cells in fluid_solid mode
-if (fluid_solid) call cs_mesh_quantities_set_has_disable_flag(0)
+if (fluid_solid) call cs_porous_model_set_has_disable_flag(0)
 
 !===============================================================================
 ! 15.  RESOLUTION DES SCALAIRES

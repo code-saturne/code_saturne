@@ -51,31 +51,27 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_balance.h"
 #include "cs_blas.h"
+#include "cs_convection_diffusion.h"
+#include "cs_field.h"
+#include "cs_field_pointer.h"
 #include "cs_halo.h"
-#include "cs_halo_perio.h"
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh.h"
 #include "cs_field.h"
 #include "cs_gradient.h"
-#include "cs_gradient_perio.h"
-#include "cs_ext_neighborhood.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parameters.h"
+#include "cs_porous_model.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
-#include "cs_join_perio.h"
 #include "cs_parall.h"
-#include "cs_field.h"
-#include "cs_field_pointer.h"
 #include "cs_matrix_building.h"
 #include "cs_matrix_default.h"
-#include "cs_convection_diffusion.h"
 #include "cs_sles.h"
 #include "cs_sles_default.h"
-#include "cs_preprocessor_data.h"
-#include "cs_balance.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
@@ -255,7 +251,6 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
   const cs_real_t  *cell_vol = cs_glob_mesh_quantities->cell_vol;
   const cs_lnum_t n_cells = cs_glob_mesh->n_cells;
   const cs_lnum_t n_i_faces = cs_glob_mesh->n_i_faces;
-  const cs_lnum_t n_b_faces = cs_glob_mesh->n_b_faces;
   const cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
 
   int isym, inc, isweep, niterf, iccocg, nswmod, itenso, iinvpe;

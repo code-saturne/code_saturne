@@ -33,6 +33,7 @@
 
 #include "cs_base.h"
 #include "cs_domain.h"
+#include "cs_field.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_mesh_bad_cells.h"

@@ -58,6 +58,7 @@
 #include "cs_parall.h"
 #include "cs_physical_constants.h"
 #include "cs_physical_model.h"
+#include "cs_porous_model.h"
 #include "cs_rad_transfer.h"
 #include "cs_restart_default.h"
 #include "cs_thermal_model.h"

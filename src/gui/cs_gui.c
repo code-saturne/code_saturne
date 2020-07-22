@@ -72,6 +72,7 @@
 #include "cs_multigrid.h"
 #include "cs_order.h"
 #include "cs_parall.h"
+#include "cs_porous_model.h"
 #include "cs_parameters.h"
 #include "cs_partition.h"
 #include "cs_physical_model.h"

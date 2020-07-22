@@ -60,6 +60,7 @@
 #include "cs_ext_neighborhood.h"
 #include "cs_mesh_quantities.h"
 #include "cs_parameters.h"
+#include "cs_porous_model.h"
 #include "cs_prototypes.h"
 #include "cs_timer.h"
 

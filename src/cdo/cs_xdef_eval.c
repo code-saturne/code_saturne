@@ -44,6 +44,7 @@
 #include <bft_mem.h>
 
 #include "cs_defs.h"
+#include "cs_field.h"
 #include "cs_mesh_location.h"
 #include "cs_reco.h"
 #include "cs_time_step.h"

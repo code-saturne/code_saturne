@@ -54,6 +54,7 @@
 #include "cs_mesh.h"
 #include "cs_mesh_location.h"
 #include "cs_parall.h"
+#include "cs_parameters.h"
 #include "cs_prototypes.h"
 #include "cs_range_set.h"
 #include "cs_time_moment.h"

@@ -33,7 +33,6 @@
 
 #include "cs_base.h"
 #include "cs_mesh.h"
-#include "cs_internal_coupling.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -150,7 +149,7 @@ typedef struct {
 } cs_mesh_quantities_t ;
 
 /*============================================================================
- * Static global variables
+ * Global variables
  *============================================================================*/
 
 /* Pointer to mesh quantities structure associated to the main mesh */
@@ -159,9 +158,6 @@ extern cs_mesh_quantities_t  *cs_glob_mesh_quantities;
 
 /* Flag (mask) to activate bad cells correction */
 extern unsigned cs_glob_mesh_quantities_flag;
-
-/* Choice of the porous model */
-extern int cs_glob_porous_model;
 
 /*=============================================================================
  * Public function prototypes
@@ -197,28 +193,6 @@ cs_mesh_quantities_cell_cen_choice(int  algo_choice);
 
 int
 cs_mesh_quantities_face_cog_choice(int  algo_choice);
-
-/*----------------------------------------------------------------------------
- * Compute fluid volumes and fluid surfaces in addition to cell volumes
- * and surfaces.
- *
- * parameters:
- *   porous_model <-- porous model option (> 0 for porosity)
- *----------------------------------------------------------------------------*/
-
-void
-cs_mesh_quantities_set_porous_model(int  porous_model);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Set (unset) has_disable_flag
- *
- * \param[in]  flag   1: on, 0: off
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_mesh_quantities_set_has_disable_flag(int  flag);
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -292,15 +266,6 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
 void
 cs_mesh_quantities_fluid_compute(const cs_mesh_t       *mesh,
                                  cs_mesh_quantities_t  *mesh_quantities);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief  Init fluid quantities
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_mesh_init_fluid_quantities(void);
 
 /*----------------------------------------------------------------------------
  * Compute the total, min, and max fluid volumes of cells
@@ -530,19 +495,6 @@ cs_mesh_quantities_log_setup(void);
 void
 cs_mesh_quantities_dump(const cs_mesh_t             *mesh,
                         const cs_mesh_quantities_t  *mesh_quantities);
-
-/*----------------------------------------------------------------------------*/
-/*!
- * \brief Tag disabled solid cells for fluid_solid mode.
- *
- * \param[in, out] m     pointer to a cs_mesh_t structure
- * \param[in, out] mq    pointer to a cs_mesh_quantities_t structure
- */
-/*----------------------------------------------------------------------------*/
-
-void
-cs_internal_coupling_tag_disable_cells(cs_mesh_t            *m,
-                                       cs_mesh_quantities_t *mq);
 
 /*----------------------------------------------------------------------------*/
 

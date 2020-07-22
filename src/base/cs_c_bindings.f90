@@ -2705,33 +2705,33 @@ module cs_c_bindings
 
     ! Init fluid mesh quantities
 
-    subroutine cs_mesh_init_fluid_quantities()   &
-      bind(C, name='cs_mesh_init_fluid_quantities')
+    subroutine cs_porous_model_init_fluid_quantities()   &
+      bind(C, name='cs_porous_model_init_fluid_quantities')
       use, intrinsic :: iso_c_binding
       implicit none
-    end subroutine cs_mesh_init_fluid_quantities
+    end subroutine cs_porous_model_init_fluid_quantities
 
     !---------------------------------------------------------------------------
 
     ! Set has_disable_flag
 
-    subroutine cs_mesh_quantities_set_has_disable_flag(flag)   &
-      bind(C, name='cs_mesh_quantities_set_has_disable_flag')
+    subroutine cs_porous_model_set_has_disable_flag(flag)   &
+      bind(C, name='cs_porous_model_set_has_disable_flag')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(kind=c_int), value :: flag
-    end subroutine cs_mesh_quantities_set_has_disable_flag
+    end subroutine cs_porous_model_set_has_disable_flag
 
     !---------------------------------------------------------------------------
 
     ! Set porosity model.
 
-    subroutine cs_mesh_quantities_set_porous_model(iporos)   &
-      bind(C, name='cs_mesh_quantities_set_porous_model')
+    subroutine cs_porous_model_set_model(iporos)   &
+      bind(C, name='cs_porous_model_set_model')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(kind=c_int), value :: iporos
-    end subroutine cs_mesh_quantities_set_porous_model
+    end subroutine cs_porous_model_set_model
 
     !---------------------------------------------------------------------------
 
@@ -2989,13 +2989,13 @@ module cs_c_bindings
 
     ! Interface to C function returning 1 for active cells
 
-    function cs_f_mesh_quantities_cell_is_active(cell_id) result(is_active) &
-      bind(C, name='cs_f_mesh_quantities_cell_is_active')
+    function cs_f_porous_model_cell_is_active(cell_id) result(is_active) &
+      bind(C, name='cs_f_porous_model_cell_is_active')
       use, intrinsic :: iso_c_binding
       implicit none
       integer(c_int), value :: cell_id
       integer(kind=c_int) :: is_active
-    end function cs_f_mesh_quantities_cell_is_active
+    end function cs_f_porous_model_cell_is_active
 
     !---------------------------------------------------------------------------
 
@@ -6158,7 +6158,7 @@ contains
 
 
     c_cell_id = iel - 1
-    c_is_active = cs_f_mesh_quantities_cell_is_active(c_cell_id)
+    c_is_active = cs_f_porous_model_cell_is_active(c_cell_id)
     is_active = c_is_active
 
   end function cell_is_active

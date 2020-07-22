@@ -320,7 +320,7 @@ if (ippmod(icompf).ge.0) then
 endif
 
 ! Choose the porous model
-call cs_mesh_quantities_set_porous_model(iporos)
+call cs_porous_model_set_model(iporos)
 
 ! --- Varpos
 ! If CDO mode only, skip this stage

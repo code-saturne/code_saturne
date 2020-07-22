@@ -51,6 +51,7 @@
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_parall.h"
+#include "cs_parameters.h"
 #include "cs_xdef_eval.h"
 
 #if defined(DEBUG) && !defined(NDEBUG)

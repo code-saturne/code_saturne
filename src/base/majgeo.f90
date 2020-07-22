@@ -154,12 +154,12 @@ interface
 
   ! Interface to C function retrieving pointers to mesh quantity options
 
-  subroutine cs_f_mesh_quantities_get_pointers(iporos)  &
-    bind(C, name='cs_f_mesh_quantities_get_pointers')
+  subroutine cs_f_porous_model_get_pointers(iporos)  &
+    bind(C, name='cs_f_porous_model_get_pointers')
     use, intrinsic :: iso_c_binding
     implicit none
     type(c_ptr), intent(out) :: iporos
-  end subroutine cs_f_mesh_quantities_get_pointers
+  end subroutine cs_f_porous_model_get_pointers
 
 end interface
 
@@ -215,7 +215,7 @@ xyzcen => xyzce2(1:3,1:ncelet)
 ! 4. Define pointers on mesh quantities
 !===============================================================================
 
-call cs_f_mesh_quantities_get_pointers(c_iporos)
+call cs_f_porous_model_get_pointers(c_iporos)
 call c_f_pointer(c_iporos, iporo2)
 
 isympa => isymp2(1:nfabor)

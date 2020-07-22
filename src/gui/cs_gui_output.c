@@ -57,6 +57,7 @@
 #include "cs_math.h"
 #include "cs_mesh_location.h"
 #include "cs_selector.h"
+#include "cs_parameters.h"
 #include "cs_physical_model.h"
 #include "cs_post.h"
 #include "cs_field.h"

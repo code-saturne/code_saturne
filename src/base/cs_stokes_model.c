@@ -53,6 +53,7 @@
 #include "cs_parall.h"
 #include "cs_parameters.h"
 #include "cs_physical_model.h"
+#include "cs_porous_model.h"
 #include "cs_mesh_location.h"
 #include "cs_time_step.h"
 #include "cs_turbulence_model.h"
