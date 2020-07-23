@@ -2569,7 +2569,19 @@ cs_mesh_quantities_compute(const cs_mesh_t       *m,
   mq->cell_f_vol = mq->cell_vol;
 
   /* Porous models */
-  mq->has_disable_flag = 0;
+  if (mq->has_disable_flag == 1) {
+    cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
+    if (mq->c_disable_flag == NULL)
+      BFT_REALLOC(mq->c_disable_flag, n_cells_ext, int);
+    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
+      mq->c_disable_flag[cell_id] = 0;
+  }
+  else {
+    if (mq->c_disable_flag == NULL)
+      BFT_REALLOC(mq->c_disable_flag, 1, int);
+    mq->c_disable_flag[0] = 0;
+  }
+
   mq->min_f_vol = mq->min_vol;
   mq->max_f_vol = mq->max_vol;
   mq->tot_f_vol = mq->tot_vol;
