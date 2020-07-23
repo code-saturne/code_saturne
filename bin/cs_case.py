@@ -821,7 +821,7 @@ class case:
 
         for d in self.py_domains:
             s_args = d.solver_command()
-            _pypath, _pyscript = a_args[1].split(" ")
+            _pypath, _pyscript = s_args[1].split(" ")
             _rundir = os.path.basename(s_args[0])
 
             cmd  = '%d-%d\t' % (rank_id, rank_id + d.n_procs - 1)
