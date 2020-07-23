@@ -213,7 +213,7 @@ if test "x$cs_gcc" = "xgcc"; then
 
   case "$cs_cc_vendor-$cs_cc_version" in
     gcc-[4]*)
-      cflags_default="$cflags_default -std=c99 -fms-extensions "
+      cflags_default="$cflags_default -std=c11"
       ;;
     gcc-[5]*)
       ;;
@@ -267,7 +267,7 @@ elif test "x$cs_gcc" = "xicc" ; then
 
   # Default compiler flags
   # (temporarily disable "operands evaluated in unspecified order" remark -- 981)
-  cflags_default="-std=c99 -restrict -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused -wd981"
+  cflags_default="-std=c11 -restrict -funsigned-char -Wall -Wcheck -Wshadow -Wpointer-arith -Wmissing-prototypes -Wuninitialized -Wunused -wd981"
   cflags_default_dbg="-g -O0 -traceback -w2 -Wp64 -ftrapuv"
   cflags_default_opt="-O2"
   cflags_default_hot="-O3"
@@ -404,7 +404,7 @@ if test "x$cs_cc_compiler_known" != "xyes" ; then
     cs_linker_set=yes
 
     # Default compiler flags
-    cflags_default=""                        # "-h c99" by default
+    cflags_default="-h std=c11"
     cflags_default_opt="-O2"
     cflags_default_hot="-O3"
     cflags_default_dbg="-g"
@@ -722,7 +722,7 @@ if test "x$cs_cxx_compiler_known" != "xyes" ; then
     cs_cxx_compiler_known=yes
 
     # Default compiler flags
-    cxxflags_default=""                        # "-h c99" by default
+    cxxflags_default="-h std=c++11"
     cxxflags_default_opt="-O2"
     cxxflags_default_hot="-O3"
     cxxflags_default_dbg="-g"

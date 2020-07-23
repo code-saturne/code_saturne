@@ -417,7 +417,7 @@ Compilers and interpreters
 ==========================
 
 For a minimal build of code_saturne on a Linux or Posix system, the requirements are:
-* A C compiler, conforming at least to the C99 standard.
+* A C compiler, conforming at least to the C11 standard.
 * A Fortran compiler, conforming at least to the Fortran 95 standard
   and supporting the ISO_C_BINDING Fortran 2003 module.
 * A Python interpreter, with Python version 3.4 or above.
