@@ -266,6 +266,9 @@ _zone_define(const char  *name)
   z->measure = -1.;
   z->boundary_measure = -1.;
 
+  for (int idim = 0; idim < 3; idim++)
+    z->cog[idim] = 0.;
+
   return z;
 }
 
@@ -325,25 +328,31 @@ _volume_zone_compute_metadata(bool       mesh_modified,
   if (z->time_varying || mesh_modified) {
     cs_real_t *cell_vol   = cs_glob_mesh_quantities->cell_vol;
     cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
+    cs_real_3_t *cell_cen = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;
 
     z->measure = 0.;
     z->f_measure = 0.;
     z->boundary_measure = -1.;
     z->f_boundary_measure = -1.;
+    for (int idim = 0; idim < 3; idim++)
+      z->cog[idim] = 0.;
 
     for (cs_lnum_t e_id = 0; e_id < z->n_elts; e_id++) {
       cs_lnum_t c_id = z->elt_ids[e_id];
       z->measure   += cell_vol[c_id];
       z->f_measure += cell_f_vol[c_id];
+      for (int idim = 0; idim < 3; idim++)
+        z->cog[idim] += cell_cen[c_id][idim] * cell_vol[c_id];
     }
 
-    cs_real_t measures[4] = {z->measure, z->f_measure,
-                             z->boundary_measure, z->f_boundary_measure};
+    cs_real_t measures[7] = {z->measure, z->f_measure,
+                             z->boundary_measure, z->f_boundary_measure,
+                             z->cog[0], z->cog[1], z->cog[2]};
+
+    cs_parall_sum(7, CS_REAL_TYPE, measures);
 
     cs_gnum_t n_g_elts = z->n_elts;
     cs_parall_sum(1, CS_GNUM_TYPE, &n_g_elts);
-
-    cs_parall_sum(4, CS_REAL_TYPE, measures);
 
     z->n_g_elts = n_g_elts;
 
@@ -351,6 +360,8 @@ _volume_zone_compute_metadata(bool       mesh_modified,
     z->f_measure = measures[1];
     z->boundary_measure = measures[2];
     z->f_boundary_measure = measures[3];
+    for (int idim = 0; idim < 3; idim++)
+      z->cog[idim] = measures[4+idim] / measures[0];
   }
 }
 
@@ -965,9 +976,13 @@ cs_volume_zone_print_info(void)
     bft_printf(_("  Volume zone \"%s\"\n"
                  "    id              = %d\n"
                  "    Number of cells = %llu\n"
-                 "    Volume          = %14.7e\n"),
-               z->name, z->id, (unsigned long long)z->n_g_elts,
-               z->measure);
+                 "    Volume          = %14.7e\n"
+                 "  Center of gravity = (%14.7e, %14.7e, %14.7e)\n"),
+               z->name,
+               z->id,
+               (unsigned long long)z->n_g_elts,
+               z->measure,
+               z->cog[0], z->cog[1], z->cog[2]);
     /* Only log fluid volumes when different to volumes */
     if (cell_f_vol != cell_vol && cell_f_vol != NULL)
       bft_printf(_("    Fluid volume    = %14.7e\n"),

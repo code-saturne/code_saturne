@@ -78,6 +78,7 @@ typedef struct {
                                            the zone */
   cs_real_t         f_boundary_measure;  /*!< Fluid boundary measure
                                            of the zone */
+  cs_real_t         cog[3];              /*!< Center of gravity of the zone */
 
 } cs_zone_t;
 
