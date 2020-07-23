@@ -38,6 +38,7 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_defs.h"
+#include "cs_equation_param.h"
 #include "cs_field.h"
 #include "cs_tree.h"
 
@@ -55,43 +56,10 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------
  * Structure of variable calculation options
+ * (now an alias of cs_equation_param_t)
  *----------------------------------------------------------------------------*/
 
-typedef struct {
-  int     iwarni;
-  int     iconv;
-  int     istat;
-  int     idircl;
-  int     ndircl;
-  int     idiff;
-  int     idifft;
-  int     idften;
-  int     iswdyn;
-  int     ischcv;
-  int     ibdtso;
-  int     isstpc;
-  int     nswrgr;
-  int     nswrsm;
-  int     imrgra;
-  int     imligr;
-  int     ircflu;
-  int     iwgrec;       /* gradient calculation
-                           - 0: standard (default)
-                           - 1: weighted (could be used with imvisf = 1) */
-  int     icoupl;       /* internal coupling
-                           - -1: not coupled (default)
-                           -  1: coupled                                 */
-
-  double  thetav;
-  double  blencv;
-  double  blend_st;
-  double  epsilo;
-  double  epsrsm;
-  double  epsrgr;
-  double  climgr;
-  double  extrag;
-  double  relaxv;
-} cs_var_cal_opt_t;
+typedef cs_equation_param_t cs_var_cal_opt_t;
 
 /*----------------------------------------------------------------------------
  * Structure of the solving info

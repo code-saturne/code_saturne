@@ -214,6 +214,45 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Interface to C function copying a var_cal_opt structure associated
+    ! with a field.
+
+    subroutine cs_f_field_set_key_struct_var_cal_opt(f_id, k_value) &
+      bind(C, name='cs_f_field_set_key_struct_var_cal_opt')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value             :: f_id
+      type(c_ptr), value                :: k_value
+    end subroutine cs_f_field_set_key_struct_var_cal_opt
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function setting a var_cal_opt structure associated
+    ! with a field.
+
+    subroutine cs_f_field_get_key_struct_var_cal_opt(f_id, k_value) &
+      bind(C, name='cs_f_field_get_key_struct_var_cal_opt')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      integer(c_int), value             :: f_id
+      type(c_ptr), value                :: k_value
+    end subroutine cs_f_field_get_key_struct_var_cal_opt
+
+    !---------------------------------------------------------------------------
+
+    ! Interface to C function returninng a pointer to a cs_equation_param_t
+    ! structure based on a given var_cal_opt structure.
+
+    function equation_param_from_vcopt(k_value) result(eqp) &
+      bind(C, name='cs_f_equation_param_from_var_cal_opt')
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(c_ptr), value :: k_value
+      type(c_ptr)        :: eqp
+    end function equation_param_from_vcopt
+
+    !---------------------------------------------------------------------------
+
     !> \brief  Return the number of fans.
 
     !> \return number of defined fans
@@ -3375,7 +3414,7 @@ contains
     p_k_value => k_value
     c_k_value = c_loc(p_k_value)
 
-    call cs_f_field_set_key_struct(c_f_id, c_k_id, c_k_value)
+    call cs_f_field_set_key_struct_var_cal_opt(c_f_id, c_k_value)
 
     return
 
@@ -3533,28 +3572,20 @@ contains
     ! Arguments
 
     integer, intent(in)                      :: f_id
-    type(var_cal_opt), intent(inout), target :: k_value
+    type(var_cal_opt), intent(out), target :: k_value
 
     ! Local variables
 
     integer(c_int)                 :: c_f_id
     type(var_cal_opt),pointer      :: p_k_value
     type(c_ptr)                    :: c_k_value
-    character(len=11+1, kind=c_char) :: c_name
-
-    integer(c_int), save           :: c_k_id = -1
-
-    if (c_k_id .eq. -1) then
-      c_name = "var_cal_opt"//c_null_char
-      c_k_id = cs_f_field_key_id(c_name)
-    endif
 
     c_f_id = f_id
 
     p_k_value => k_value
     c_k_value = c_loc(p_k_value)
 
-    call cs_f_field_get_key_struct(c_f_id, c_k_id, c_k_value)
+    call cs_f_field_get_key_struct_var_cal_opt(c_f_id, c_k_value)
 
     return
 
@@ -5178,9 +5209,6 @@ contains
 
     c_name = trim(nomva0)//c_null_char
 
-    p_k_value => vcopt
-    c_k_value = c_loc(p_k_value)
-
     vcopt%iwarni = iwarnp
     vcopt%iconv  = iconvp
     vcopt%istat  = -1
@@ -5207,6 +5235,9 @@ contains
     vcopt%climgr = climgp
     vcopt%extrag = extrap
     vcopt%relaxv = relaxp
+
+    p_k_value => vcopt
+    c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
 
     call cs_equation_iterative_solve_scalar(idtvar, iterns,                    &
                                             f_id, c_name,                      &
@@ -5421,9 +5452,6 @@ contains
 
     c_name = trim(nomva0)//c_null_char
 
-    p_k_value => vcopt
-    c_k_value = c_loc(p_k_value)
-
     vcopt%iwarni = iwarnp
     vcopt%iconv  = iconvp
     vcopt%istat  = -1
@@ -5449,6 +5477,9 @@ contains
     vcopt%climgr = climgp
     vcopt%extrag = 0
     vcopt%relaxv = relaxp
+
+    p_k_value => vcopt
+    c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
 
     call cs_equation_iterative_solve_vector(idtvar, iterns,                    &
                                             f_id, c_name,                      &
@@ -5648,9 +5679,6 @@ contains
 
     c_name = trim(nomva0)//c_null_char
 
-    p_k_value => vcopt
-    c_k_value = c_loc(p_k_value)
-
     vcopt%iwarni = iwarnp
     vcopt%iconv  = iconvp
     vcopt%istat  = -1
@@ -5676,6 +5704,9 @@ contains
     vcopt%climgr = climgp
     vcopt%extrag = 0
     vcopt%relaxv = relaxp
+
+    p_k_value => vcopt
+    c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
 
     call cs_equation_iterative_solve_tensor(idtvar, f_id, c_name,              &
                                             c_k_value,                         &
@@ -5844,9 +5875,6 @@ contains
     type(var_cal_opt), pointer  :: p_k_value
     type(c_ptr)                 :: c_k_value
 
-    p_k_value => vcopt
-    c_k_value = c_loc(p_k_value)
-
     vcopt%iwarni = iwarnp
     vcopt%iconv  = iconvp
     vcopt%istat  = -1
@@ -5871,6 +5899,9 @@ contains
     vcopt%climgr = climgp
     vcopt%extrag = extrap
     vcopt%relaxv = relaxp
+
+    p_k_value => vcopt
+    c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
 
     call cs_balance_scalar(idtvar, f_id , imucpp, imasac, inc, iccocg,        &
                            c_k_value, pvar , pvara , coefap, coefbp,          &
@@ -6038,9 +6069,6 @@ contains
     type(var_cal_opt), pointer  :: p_k_value
     type(c_ptr)                 :: c_k_value
 
-    p_k_value => vcopt
-    c_k_value = c_loc(p_k_value)
-
     vcopt%iwarni = iwarnp
     vcopt%iconv  = iconvp
     vcopt%istat  = -1
@@ -6065,6 +6093,9 @@ contains
     vcopt%climgr = climgp
     vcopt%extrag = -1
     vcopt%relaxv = relaxp
+
+    p_k_value => vcopt
+    c_k_value = equation_param_from_vcopt(c_loc(p_k_value))
 
     call cs_balance_vector(idtvar, f_id, imasac, inc, ivisep,                &
                            c_k_value, pvar, pvara , coefav, coefbv, cofafv,  &

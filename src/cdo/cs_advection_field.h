@@ -34,6 +34,7 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
+#include "cs_field.h"
 #include "cs_mesh_location.h"
 #include "cs_param.h"
 #include "cs_property.h"

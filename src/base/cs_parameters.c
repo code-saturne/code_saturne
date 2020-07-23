@@ -130,288 +130,6 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 /*!
-  \struct cs_var_cal_opt_t
-
-  \brief structure containing the variable calculation options.
-
-  \var  cs_var_cal_opt_t::iwarni
-        \anchor iwarni
-        \ref iwarni characterises the level of detail of the outputs for a
-        variable. The quantity of information increases with its value.
-        Impose the value 0 or 1 for a reasonable log size. Impose the
-        value 2 to get a maximum quantity of information, in case of problem
-        during the execution.
-
- \var  cs_var_cal_opt_t::iconv
-        \anchor iconv
-        For each unknown variable to calculate, indicates if the convection is
-        taken into account (1) or not (0). By default,
-        \ref cs_var_cal_opt_t::iconv "iconv" is set to 0 for the pressure
-        (variable \ref ipr) or f in v2f modelling (variable \ref ifb)
-        and set to 1 for the other unknowns.
-
-  \var  cs_var_cal_opt_t::istat
-        \anchor istat
-        For each unknown variable to calculate, indicates whether unsteady
-        terms are present (1) or not (0) in the matrices. By default,
-        \ref cs_var_cal_opt_t::istat "istat" is set to 0 for the pressure
-        (variable \ref ipr) or f in v2f modelling (variable \ref ifb) and
-        set to 1 for the other unknowns.
-
-  \var  cs_var_cal_opt_t::idircl
-        \anchor idircl
-        indicates whether the diagonal of the matrix should be slightly
-        shifted or not if there is no Dirichlet boundary condition and
-        if \ref cs_var_cal_opt_t::istat "istat" = 0.
-         - 0: false
-         - 1: true
-        Indeed, in such a case, the matrix for the general
-        advection/diffusion equation is singular. A slight shift in the
-        diagonal will make it invertible again.\n By default, \ref idircl
-        is set to 1 for all the unknowns, except \f$\overline{f}\f$ in v2f
-        modelling, since its equation contains another diagonal term
-        that ensures the regularity of the matrix.
-        \remark
-        the code computes automatically for each variable the number of Dirichlet
-        BCs
-
-  \var  cs_var_cal_opt_t::ndircl
-        \anchor ndircl
-        number of Dirichlet BCs
-
-  \var  cs_var_cal_opt_t::idiff
-        \anchor idiff
-        For each unknown variable to calculate, indicates whether the
-        diffusion is taken into account (1) or not (0).
-
-  \var  cs_var_cal_opt_t::idifft
-        \anchor idifft
-        For each unknown variable to calculate, when diffusion is taken into
-        account (\ref idiff = 1), \ref idifft indicates if the turbulent
-        diffusion is taken into account (\ref idifft = 1) or not (0).
-
-  \var  cs_var_cal_opt_t::idften
-        \anchor idften
-        Type of diffusivity flag (sum of mask constants defining if diffusivity
-        is isotropic, anisotropic, ... Masks are defined in \ref scalar_params).
-
-  \var  cs_var_cal_opt_t::iswdyn
-        \anchor iswdyn
-        Dynamic relaxation type:
-        - 0 no dynamic relaxation
-        - 1 dynamic relaxation depending on \f$ \delta \varia^k \f$
-        - 2 dynamic relaxation depending on \f$ \delta \varia^k \f$ and
-        \f$ \delta \varia^{k-1} \f$.
-
-  \var  cs_var_cal_opt_t::ischcv
-        \anchor ischcv
-        For each unknown variable to calculate, \ref ischcv indicates the type of
-        second-order convective scheme
-        - 0: Second Order Linear Upwind
-        - 1: Centered \n
-        - 2: Second Order with upwind-gradient reconstruction (SOLU) \n
-        - 3: Blending between Second Order Linear Upwind and Centered scheme \n
-        - 4: NVD/TVD Scheme
-             Then "limiter_choice" keyword must be set:
-             * 0: Gamma
-             * 1: SMART
-             * 2: CUBISTA
-             * 3: SUPERBEE
-             * 4: MUSCL
-             * 5: MINMOD
-             * 6: CLAM
-             * 7: STOIC
-             * 8: OSHER
-             * 9: WASEB
-             * --- VOF scheme ---
-             * 10: M-HRIC
-             * 11: M-CICSAM
-        Useful for all the unknowns variables which are convected
-        (\ref iconv = 1) and for which a second-order scheme is used
-        (\ref blencv > 0).
-
-  \var  cs_var_cal_opt_t::ibdtso
-        \anchor ibdtso
-        Backward differential scheme in time order.
-
-  \var  cs_var_cal_opt_t::isstpc
-        \anchor isstpc
-        For each unknown variable to calculate, isstpc indicates whether a slope
-        test should be used to switch from a second-order to an upwind convective
-        scheme under certain conditions, to ensure stability.
-        - 0: slope test activated for the considered unknown
-        - 1: slope test deactivated for the considered unknown
-        - 2: continuous limiter ensuring boundedness (beta limiter)
-        Useful for all the unknowns variable which are convected (\ref iconv = 1)
-        and for which a second-order scheme is used (\ref blencv > 0).
-        The use of the slope test stabilises the calculation but may bring
-        the order in space to decrease quickly.
-
-  \var  cs_var_cal_opt_t::nswrgr
-        \anchor nswrgr
-        Number of iterations for the iterative gradient reconstruction
-        (\ref imrgra = 0).
-        If \ref imrgra = 0 and \ref nswrgr <= 1, gradients are not reconstructed.
-
-  \var  cs_var_cal_opt_t::nswrsm
-        \anchor nswrsm
-        For each unknown variable, nswrsm indicates the number of iterations for
-        the reconstruction of the right-hand sides of the equations with a
-        first-order scheme in time (standard case), the default values are 2 for
-        pressure and 1 for the other variables. With a second-order scheme in
-        time (\ref optcal::ischtp "ischtp" = 2) or LES, the default values are
-        5 for pressure and 10 for the other variables.
-
-  \var  cs_var_cal_opt_t::imrgra
-        \anchor imrgra
-        Indicates the type of gradient reconstruction (one method for all the
-        variables)
-           - 0: iterative reconstruction of the non-orthogonalities
-           - 1: least squares method based on the first neighbor cells (cells
-        which share a face with the treated cell)
-           - 2, 3: least squares method using the extended neighborhood
-           - 4: Green-Gauss based using the least squares method (first neighbors)
-                to compute face values
-           - 5, 6: Green-Gauss based using the least squares method with an
-                extended neighborhood to compute face values
-        squares method based on a partial extended neighborhood
-        if \ref imrgra fails due to probable mesh quality problems, it is usually
-        effective to use \ref imrgra = 3. Moreover, \ref imrgra = 3 is usually
-        faster than \ref imrgra = 0 (but with less feedback on its use).
-
-  \var  cs_var_cal_opt_t::imligr
-        \anchor imligr
-        For each unknown variable, indicates the type of gradient limitation
-           - -1 (CS_GRADIENT_LIMIT_NONE): no limitation
-           - 0 (CS_GRADIENT_LIMIT_CELL): based on the neighbors
-           - 1 (CS_GRADIENT_LIMIT_FACE): superior order\n
-        \ref imligr is applied only to least-squares gradients.
-        In the case of the Green-Gauss gradient with least-squares-based
-        face gradients, it is applied to the least-squares step.
-
-  \var  cs_var_cal_opt_t::ircflu
-        \anchor ircflu
-        For each unknown variable, \ref ircflu indicates whether the convective
-        and diffusive fluxes at the faces should be reconstructed:
-           - 0: no reconstruction
-           - 1: reconstruction \n
-        Deactivating the reconstruction of the fluxes can have a stabilising
-        effect on the calculation. It is sometimes useful with the
-        \f$ k-\epsilon \f$ model, if the mesh is strongly non-orthogonal
-        in the near-wall region, where the gradients of k and \f$ \epsilon \f$
-        are strong. In such a case, setting \ref ircflu = 0 will probably help
-        (switching to a first order convective scheme, \ref blencv = 0, for k
-        and \f$ \epsilon \f$ might also help in that case).
-
-  \var  cs_var_cal_opt_t::iwgrec
-        \anchor iwgrec
-        Gradient calculation
-          - 0: standard
-          - 1: weighted
-
-  \var  cs_var_cal_opt_t::thetav
-        \anchor thetav
-        For each variable variable, thetav is the value of \f$ \theta \f$ used to
-        express at the second-order the terms of convection, diffusion and the
-        source terms which are linear functions of the solved variable (according
-        to the formula \f$ \phi^{n+\theta}
-        = (1-\theta) \phi^n + \theta \phi^{n+1}\f$.
-        Generally, only the values 1 and 0.5 are used. The user is not allowed to
-        modify this variable.
-           - 1: first-order
-           - 0.5: second-order \n
-        Concerning the pressure, the value of \ref thetav is always 1. Concerning
-        the other variables, the value \ref thetav = 0.5 is used when the
-        second-order time scheme is activated by \ref ischtp = 2 (standard value
-        for LES calculations), otherwise \ref thetav is set to 1.
-
-  \var  cs_var_cal_opt_t::blencv
-        \anchor blencv
-        For each unknown variable to calculate, blencv indicates the proportion
-        of second-order convective scheme (0 corresponds to an upwind first-order
-        scheme); in case of LES calculation, a second-order scheme is
-        recommended and activated by default (\ref blencv = 1).\n
-        Useful for all the unknowns variable for which \ref iconv = 1.
-
-  \var  cs_var_cal_opt_t::blend_st
-        \anchor blend_st
-        For each unknown variable to calculate, blend_st indicates the proportion
-        of second-order convective scheme (0 corresponds to an upwind first-order
-        scheme) after the slope test is activated;
-        in case of LES calculation, a second-order scheme is
-        recommended and activated by default (\ref blend_st = 1).\n
-        Useful for all the unknowns variable for which \ref iconv = 1.
-
-
-  \var  cs_var_cal_opt_t::epsilo
-        \anchor epsilo
-        <a name="epsilo"></a>
-        For each unknown variable, relative precision for the solution of the
-        linear system. The default value is \ref epsilo = \f$ 10^-8 \f$ . This
-        value is set low on purpose. When there are enough iterations on the
-        reconstruction of the right-hand side of the equation, the value may be
-        increased (by default, in case of second-order in time, with
-        \ref nswrsm = 5 or 10, \ref epsilo is increased  to \f$ 10^-5 \f$.
-
-  \var  cs_var_cal_opt_t::epsrsm
-        \anchor epsrsm
-        For each unknown variable, relative precision on the reconstruction of
-        the right hand-side. The default value is \ref epsrsm = \f$ 10^-8 \f$.
-        This value is set low on purpose. When there are not enough iterations on
-        the reconstruction of the right-hand side of the equation, the value may
-        be increased (by default, in case of second-order in time, with
-        \ref nswrsm = 5 or 10, \ref epsrsm is increased to
-        \f$ 10^-5 \f$ ).
-
-  \var  cs_var_cal_opt_t::epsrgr
-        \anchor epsrgr
-        For each unknown variable, relative precision for the iterative gradient
-        reconstruction.\n Useful for all the unknowns when \ref imrgra = 0.
-
-  \var  cs_var_cal_opt_t::climgr
-        \anchor climgr
-        For least squares gradients, factor of gradient limitation
-        (high value means little limitation). \n
-        Useful for all the variables using least-squares gradients for
-        which \ref imligr > CS_GRADIENT_LIMIT_NONE.
-
-  \var  cs_var_cal_opt_t::extrag
-        \anchor extrag
-        For the variable pressure \ref ipr, extrapolation coefficient of the
-        gradients at the boundaries. It affects only the Neumann conditions.
-        The only possible values of \ref extrag are:
-             - 0: homogeneous Neumann calculated at first-order
-             - 1: gradient extrapolation (gradient at the boundary face equal to
-        the gradient in the neighbor cell), calculated at second-order in the
-        case of an orthogonal mesh and at first-order otherwise extrag often
-        allows to correct the non-physical velocities that appear on horizontal
-        walls when density is variable and there is gravity. It is strongly
-        advised to keep \ref extrag = 0 for the variables apart from pressure.
-        See also \ref cs_stokes_model_t::iphydr "iphydr". In practice, only the
-        values 0 and 1 are allowed.
-
-  \var  cs_var_cal_opt_t::relaxv
-        \anchor relaxv
-        For each variable ivar, relaxation coefficient of the variable. This
-        relaxation parameter is only useful for the pressure with the unsteady
-        algorithm (so as to improve the convergence in case of meshes of
-        insufficient quality or and for some of the turbulent models
-        (\ref iturb = 20, 21, 50 or 60 and \ref optcal::ikecou "ikecou" = 0;
-        if \ref optcal::ikecou "ikecou" = 1, \ref relaxv is not used, whatever
-        its value may be).
-        Default values are 0.7 for turbulent variables and 1. for pressure.
-        \ref relaxv also stores the value of the relaxation coefficient when
-        using the steady algorithm, deduced from the value of
-        \ref optcal::relxst "relxst" (defaulting to \ref relaxv = 1.
-        - \ref optcal::relxst "relxst"). Useful only for the pressure and
-        for turbulent variables if and only if (\f$ k-\epsilon \f$, v2f
-        or \f$ k-\omega \f$ models without coupling) with the unsteady
-        algorithm. Always useful with the steady algorithm.
-*/
-
-/*----------------------------------------------------------------------------*/
-
-/*!
   \struct cs_time_scheme_t
 
   \brief Time scheme descriptor.
@@ -492,9 +210,59 @@ BEGIN_C_DECLS
  * Macro definitions
  *============================================================================*/
 
+#define _CS_HODGE_LEGACY_INIT \
+{.inv_pty = false, \
+.type = CS_HODGE_N_TYPES, \
+.algo = CS_HODGE_N_ALGOS, \
+.coef = 0}
+
 /*============================================================================
  * Type definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------
+ * Structure of variable calculation options mappable to Fortran
+ *----------------------------------------------------------------------------*/
+
+typedef struct {
+
+  int     iwarni;
+  int     iconv;
+  int     istat;
+  int     idircl;
+  int     ndircl;
+  int     idiff;
+  int     idifft;
+  int     idften;
+  int     iswdyn;
+  int     ischcv;
+  int     ibdtso;
+  int     isstpc;
+  int     nswrgr;
+  int     nswrsm;
+  int     imrgra;
+  int     imligr;
+  int     ircflu;
+  int     iwgrec;       /* gradient calculation
+                           - 0: standard (default)
+                           - 1: weighted (could be used with imvisf = 1) */
+  int     icoupl;       /* internal coupling
+                           - -1: not coupled (default)
+                           -  1: coupled                                 */
+
+  double  thetav;
+  double  blencv;
+  double  blend_st;
+  double  epsilo;
+  double  epsrsm;
+  double  epsrgr;
+  double  climgr;
+  double  extrag;
+  double  relaxv;
+
+} cs_f_var_cal_opt_t;
+
+/*----------------------------------------------------------------------------*/
 
 /* Definition of user variable */
 
@@ -523,37 +291,108 @@ typedef struct {
 
 /* Default variable compute options */
 
-static cs_var_cal_opt_t _var_cal_opt =
-{
-  .iwarni = 0,
-  .iconv  = 1,
-  .istat  = 1,
-  .idircl = 1,
-  .ndircl = 0,
-  .idiff  = 1,
-  .idifft = 1,
-  .idften = CS_ISOTROPIC_DIFFUSION,
-  .iswdyn = 0,
-  .ischcv = 1,
-  .ibdtso = 1,
-  .isstpc = 1,
-  .nswrgr = 100,
-  .nswrsm = 1,
-  .imrgra = -1,
-  .imligr = -1,
-  .ircflu = 1,
-  .iwgrec = 0,
-  .icoupl = -1,
-  .thetav = 1.,
-  .blencv = 1.,
-  .blend_st = 0.,
-  .epsilo = 1.e-8,
-  .epsrsm = 1.e-7,
-  .epsrgr = 1.e-5,
-  .climgr = 1.5,
-  .extrag = 0.,
-  .relaxv = 1.
-};
+static cs_equation_param_t _equation_param_default
+= {
+   .name = NULL,
+   .type = CS_EQUATION_N_TYPES,
+   .dim = 1,
+   .verbosity = 0,
+
+   .flag = 0,
+   .process_flag = 0,
+   .space_scheme = CS_SPACE_SCHEME_LEGACY,
+   .dof_reduction = CS_PARAM_REDUCTION_AVERAGE,
+   .space_poly_degree = 0,
+
+   .iwarni = 0,
+   .iconv  = 1,
+   .istat  = 1,
+   .idircl = 1,
+   .ndircl = 0,
+   .idiff  = 1,
+   .idifft = 1,
+   .idften = CS_ISOTROPIC_DIFFUSION,
+   .iswdyn = 0,
+   .ischcv = 1,
+   .ibdtso = 1,
+   .isstpc = 1,
+   .nswrgr = 100,
+   .nswrsm = 1,
+   .imrgra = -1,
+   .imligr = -1,
+   .ircflu = 1,
+   .iwgrec = 0,
+   .icoupl = -1,
+   .thetav = 1.,
+   .blencv = 1.,
+   .blend_st = 0.,
+   .epsilo = 1.e-8,
+   .epsrsm = 1.e-7,
+   .epsrgr = 1.e-5,
+   .climgr = 1.5,
+   .extrag = 0.,
+   .relaxv = 1.,
+
+   .default_bc = CS_PARAM_BC_HMG_NEUMANN,
+   .n_bc_defs = 0,
+   .bc_defs = NULL,
+
+   .default_enforcement = CS_PARAM_BC_ENFORCE_ALGEBRAIC,
+   .strong_pena_bc_coeff = -1,
+   .weak_pena_bc_coeff = -1,
+
+   .n_ic_defs = 0,
+   .ic_defs = NULL,
+
+   .do_lumping = false,
+   .time_hodgep = _CS_HODGE_LEGACY_INIT,
+   .time_property = NULL,
+   .time_scheme = CS_TIME_SCHEME_EULER_IMPLICIT,
+   .theta = 1,
+
+   .diffusion_hodgep = _CS_HODGE_LEGACY_INIT,
+   .diffusion_property = NULL,
+   .curlcurl_hodgep = _CS_HODGE_LEGACY_INIT,
+   .curlcurl_property = NULL,
+   .graddiv_hodgep = _CS_HODGE_LEGACY_INIT,
+   .graddiv_property = NULL,
+
+   .adv_formulation = CS_PARAM_ADVECTION_FORM_CONSERV,
+   .adv_scheme = CS_PARAM_N_ADVECTION_SCHEMES,
+   .upwind_portion = 0.,
+   .adv_field = NULL,
+   .adv_scaling_property = NULL,
+
+   .reaction_hodgep = _CS_HODGE_LEGACY_INIT,
+   .n_reaction_terms = 0,
+   .reaction_properties = NULL,
+   .n_source_terms = 0,
+   .source_terms = NULL,
+
+   .enforcement_type = 0,
+   .enforcement_ref_value = NULL,
+
+   .n_enforced_cells = 0,
+   .enforced_cell_ids = NULL,
+   .enforced_cell_values = NULL,
+
+   .n_enforced_dofs = 0,
+   .enforced_dof_ids = NULL,
+   .enforced_dof_values = NULL,
+
+   .sles_param = {.setup_done = false,
+                  .verbosity = 0,
+                  .field_id = -1,
+                  .solver_class = CS_PARAM_SLES_CLASS_CS,
+                  .precond = CS_PARAM_PRECOND_NONE,
+                  .solver = CS_PARAM_ITSOL_NONE,
+                  .amg_type = CS_PARAM_AMG_NONE,
+                  .resnorm_type = CS_PARAM_RESNORM_NONE,
+                  .n_max_iter = 0,
+                  .eps = 0},
+
+   .omp_assembly_choice = CS_PARAM_ASSEMBLE_OMP_CRITICAL
+  };
 
 /* Space discretisation options structure and associated pointer */
 
@@ -651,6 +490,17 @@ cs_f_piso_get_pointers(int     **nterup,
                        double  **xnrmu0,
                        int     **n_buoyant_scal);
 
+void
+cs_f_field_get_key_struct_var_cal_opt(int                  f_id,
+                                      cs_f_var_cal_opt_t  *vcopt);
+
+void
+cs_f_field_set_key_struct_var_cal_opt(int                        f_id,
+                                      const cs_f_var_cal_opt_t  *vcopt);
+
+void *
+cs_f_equation_param_from_var_cal_opt(const cs_f_var_cal_opt_t  *vcopt);
+
 /*============================================================================
  * Private function definitions
  *============================================================================*/
@@ -705,7 +555,7 @@ _log_func_default_var_cal_opt(const void *t)
 
   cs_log_printf(CS_LOG_SETUP,_("    Printing\n"));
   cs_log_printf(CS_LOG_SETUP, fmt_i, "iwarni", _t->iwarni,
-                _("Verbosity level: 0, 1 or 2"));
+                _("Verbosity level."));
 
   cs_log_printf(CS_LOG_SETUP,"    Time stepping\n");
   cs_log_printf(CS_LOG_SETUP, fmt_i, "istat ", _t->istat,
@@ -831,6 +681,50 @@ _log_func_default_gas_mix_species_prop(const void *t)
                 _("Sutherland temperature for conductivity"));
 }
 
+/*----------------------------------------------------------------------------
+ * Copy values from a Fortran var_cal_opt structure to an
+ * equation_params_t structure, whose other members are unchanged.
+ *
+ * parameters:
+ *   vcopt  <-- associated Fortran var_cal_opt structure
+ *   eqp    <-> associated cs_equation_params_t structure
+ *----------------------------------------------------------------------------*/
+
+static void
+_var_cal_opt_to_equation_params(const cs_f_var_cal_opt_t  *vcopt,
+                                cs_equation_param_t       *eqp)
+{
+  eqp->iwarni = vcopt->iwarni;
+  eqp->iconv  = vcopt->iconv;
+  eqp->istat  = vcopt->istat;
+  eqp->idircl = vcopt->idircl;
+  eqp->ndircl = vcopt->ndircl;
+  eqp->idiff  = vcopt->idiff;
+  eqp->idifft = vcopt->idifft;
+  eqp->idften = vcopt->idften;
+  eqp->iswdyn = vcopt->iswdyn;
+  eqp->ischcv = vcopt->ischcv;
+  eqp->ibdtso = vcopt->ibdtso;
+  eqp->isstpc = vcopt->isstpc;
+  eqp->nswrgr = vcopt->nswrgr;
+  eqp->nswrsm = vcopt->nswrsm;
+  eqp->imrgra = vcopt->imrgra;
+  eqp->imligr = vcopt->imligr;
+  eqp->ircflu = vcopt->ircflu;
+  eqp->iwgrec = vcopt->iwgrec;
+  eqp->icoupl = vcopt->icoupl;
+
+  eqp->thetav = vcopt->thetav;
+  eqp->blencv = vcopt->blencv;
+  eqp->blend_st = vcopt->blend_st;
+  eqp->epsilo = vcopt->epsilo;
+  eqp->epsrsm = vcopt->epsrsm;
+  eqp->epsrgr = vcopt->epsrgr;
+  eqp->climgr = vcopt->climgr;
+  eqp->extrag = vcopt->extrag;
+  eqp->relaxv = vcopt->relaxv;
+}
+
 /*============================================================================
  * Fortran wrapper function definitions
  *============================================================================*/
@@ -898,6 +792,117 @@ cs_f_piso_get_pointers(int     **nterup,
   *xnrmu  = &(_piso.xnrmu);
   *xnrmu0 = &(_piso.xnrmu0);
   *n_buoyant_scal = &(_piso.n_buoyant_scal);
+}
+
+/*----------------------------------------------------------------------------
+ * Copy values from cs_equation_params structure of a given field
+ * to the matching Fortran var_cal_opt structure
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *
+ * parameters:
+ *   f_id   associated field id
+ *   vcopt  associated structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_field_get_key_struct_var_cal_opt(int                  f_id,
+                                      cs_f_var_cal_opt_t  *vcopt)
+{
+  static int c_k_id = -1;
+  if (c_k_id < 0)
+    c_k_id = cs_field_key_id("var_cal_opt");
+
+  const cs_equation_param_t *eqp
+    = cs_field_get_key_struct_const_ptr(cs_field_by_id(f_id),
+                                        c_k_id);
+
+  vcopt->iwarni = eqp->iwarni;
+  vcopt->iconv  = eqp->iconv;
+  vcopt->istat  = eqp->istat;
+  vcopt->idircl = eqp->idircl;
+  vcopt->ndircl = eqp->ndircl;
+  vcopt->idiff  = eqp->idiff;
+  vcopt->idifft = eqp->idifft;
+  vcopt->idften = eqp->idften;
+  vcopt->iswdyn = eqp->iswdyn;
+  vcopt->ischcv = eqp->ischcv;
+  vcopt->ibdtso = eqp->ibdtso;
+  vcopt->isstpc = eqp->isstpc;
+  vcopt->nswrgr = eqp->nswrgr;
+  vcopt->nswrsm = eqp->nswrsm;
+  vcopt->imrgra = eqp->imrgra;
+  vcopt->imligr = eqp->imligr;
+  vcopt->ircflu = eqp->ircflu;
+  vcopt->iwgrec = eqp->iwgrec;
+  vcopt->icoupl = eqp->icoupl;
+
+  vcopt->thetav = eqp->thetav;
+  vcopt->blencv = eqp->blencv;
+  vcopt->blend_st = eqp->blend_st;
+  vcopt->epsilo = eqp->epsilo;
+  vcopt->epsrsm = eqp->epsrsm;
+  vcopt->epsrgr = eqp->epsrgr;
+  vcopt->climgr = eqp->climgr;
+  vcopt->extrag = eqp->extrag;
+  vcopt->relaxv = eqp->relaxv;
+}
+
+/*----------------------------------------------------------------------------
+ * Copy values from cs_equation_params structure of a given field
+ * to the matching Fortran var_cal_opt structure
+ *
+ * This function is intended for use by Fortran wrappers, and
+ * enables mapping to Fortran global pointers.
+ *
+ * parameters:
+ *   f_id   associated field id
+ *   vcopt  associated structure
+ *----------------------------------------------------------------------------*/
+
+void
+cs_f_field_set_key_struct_var_cal_opt(int                        f_id,
+                                      const cs_f_var_cal_opt_t  *vcopt)
+{
+  static int c_k_id = -1;
+  if (c_k_id < 0)
+    c_k_id = cs_field_key_id("var_cal_opt");
+
+  cs_equation_param_t *eqp
+    = cs_field_get_key_struct_ptr(cs_field_by_id(f_id), c_k_id);
+
+  _var_cal_opt_to_equation_params(vcopt, eqp);
+}
+
+/*----------------------------------------------------------------------------
+ * Return a pointer to a cs_equation_params structure initialized from
+ * a Fortran var_cal_opt structure.
+ *
+ * Note that to avoid issues with the structure not being interoperable
+ * with Fortran, and its size not being known easily in Fortran either
+ * (and subject to change with code maintenance), a pointer to a static
+ * variable of this function is returned. This means this function is not
+ * thread safe, which should not be an issue, since the functions to which
+ * this object is passed are not expected to be either, as they are quite
+ * high level and usually include MPI operations on a global communicator.
+ *
+ * parameters:
+ *   vcopt <-- Fortran var_cal_opt
+ *
+ * returns:
+ *   pointer to matching cs_equation_params
+ *----------------------------------------------------------------------------*/
+
+void *
+cs_f_equation_param_from_var_cal_opt(const cs_f_var_cal_opt_t  *vcopt)
+{
+  static cs_equation_param_t eqp;
+  memcpy(&eqp, &_equation_param_default, sizeof(cs_equation_param_t));
+
+  _var_cal_opt_to_equation_params(vcopt, &eqp);
+
+  return &eqp;
 }
 
 /*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
@@ -1085,7 +1090,7 @@ cs_parameters_define_field_keys(void)
 
   /* Structure containing the calculation options of the field variables */
   cs_field_define_key_struct("var_cal_opt",
-                             &_var_cal_opt,
+                             &_equation_param_default,
                              _log_func_var_cal_opt,
                              _log_func_default_var_cal_opt,
                              sizeof(cs_var_cal_opt_t),
@@ -1614,7 +1619,7 @@ cs_parameters_add_boundary_temperature(void)
 cs_var_cal_opt_t
 cs_parameters_var_cal_opt_default(void)
 {
-  return _var_cal_opt;
+  return _equation_param_default;
 }
 
 /*----------------------------------------------------------------------------*/

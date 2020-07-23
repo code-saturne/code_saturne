@@ -192,6 +192,8 @@ typedef enum {
 
 } cs_equation_type_t;
 
+/*----------------------------------------------------------------------------*/
+
 /*! \struct cs_equation_param_t
  *  \brief Set of parameters to handle an unsteady convection-diffusion-reaction
  *         equation with term sources
@@ -228,6 +230,254 @@ typedef struct {
    * Maximum degree of the polynomial basis
    */
   int                        space_poly_degree;
+
+  /*!
+   * @name Legacy Settings
+   * @{
+   *
+   * \var iwarni
+   * Verbosity for the resolution (0 or 1 for a reasonable log size,  2 or more
+   * for troubleshooting.
+   *
+   * \var iconv
+   * Indicate if the convection is taken into account (1) or not (0). By default,
+   * 0 for the pressure or f in v2f model, 1 for the other unknowns.
+   *
+   * \var istat
+   * Indicate whether unsteady terms are present (1) or not (0) in the matrices.
+   * By default, 0 for the pressure or f in v2f model, 1 for the other unknowns.
+   *
+   * \var idircl
+   * Indicate whether the diagonal of the matrix should be slightly shifted if
+   * there is no Dirichlet boundary condition and if \ref istat = 0
+   * (0: false / 1: true). Indeed, in such a case, the matrix for the general
+   * advection/diffusion equation is singular. A slight shift in the diagonal
+   * will make it invertible again.
+   * By default, \ref dircl is set to 1 for all the unknowns, except
+   * \f$\overline{f}\f$ in the v2f model (whose equation already contain another
+   * diagonal term).
+   * \remark this code is defined automatically based on the
+   * presence of Dirichlet BCs.
+   *
+   * \var ndircl
+   * Number of Dirichlet BCs
+   *
+   * \var idiff
+   * Indifcate if diffusion is taken into account (1) or not (0).
+   *
+   * \var idifft
+   * When diffusion is taken into account (\ref idiff = 1), indicate if the
+   * turbulent diffusion is taken into account (\ref idifft = 1) or not (0).
+   *
+   * \var idften
+   * Type of diffusivity flag (sum of mask constants defining if diffusivity is
+   * isotropic, anisotropic, ... Masks are defined in \ref scalar_params).
+   *
+   * \var iswdyn
+   * Dynamic relaxation type:
+   * - 0 no dynamic relaxation
+   * - 1 dynamic relaxation depending on \f$ \delta \varia^k \f$
+   * - 2 dynamic relaxation depending on \f$ \delta \varia^k \f$
+   *    and \f$ \delta \varia^{k-1} \f$.
+   *
+   * \var ischcv
+   * Indicate the type of second-order convective scheme
+   * - 0: Second Order Linear Upwind
+   * - 1: Centered
+   * - 2: Second Order with upwind-gradient reconstruction (SOLU)
+   * - 3: Blending between SOLU and Centered scheme
+   * - 4: NVD/TVD Scheme
+   * Then "limiter_choice" keyword must be set:
+   * - 0: Gamma
+   * - 1: SMART
+   * - 2: CUBISTA
+   * - 3: SUPERBEE
+   * - 4: MUSCL
+   * - 5: MINMOD
+   * - 6: CLAM
+   * - 7: STOIC
+   * - 8: OSHER
+   * - 9: WASEB
+   * --- VOF scheme ---
+   * - 10: M-HRIC
+   * - 11: M-CICSAM
+   *
+   * \var ibdtso
+   * Backward differential scheme in time order.
+   *
+   * \var isstpc
+   * Indicate whether a slope test should be used to switch from a second-order
+   * to an upwind convective scheme under certain conditions, to ensure stability.
+   * - 0: slope test activated
+   * - 1: slope test deactivated
+   * - 2: continuous limiter ensuring boundedness (beta limiter)
+   * The use of the slope test stabilises the calculation but may reduce the
+   * spatial convergence order.
+   *
+   * \var nswrgr
+   * Iteration limit for the iterative gradient reconstruction (\ref imrgra = 0).
+   * If \ref imrgra = 0 and \ref nswrgr <= 1, gradients are not reconstructed.
+   *
+   * \var nswrsm
+   * Iteration limit for the reconstruction of the right-hand sides of the
+   * equations with a first-order scheme in time (standard case), the default
+   * values are 2 for pressure and 1 for the other variables. With a second-order
+   * scheme in time (\ref optcal::ischtp "ischtp" = 2) or LES, the default values
+   * are 5 for pressure and 10 for the other variables.
+   *
+   * \var imrgra
+   * Type of gradient reconstruction
+   * - 0: iterative reconstruction of the non-orthogonalities
+   * - 1: least squares method based on the first neighbor cells
+   *      (those which share a face with the treated cell)
+   * - 2, 3: least squares method using the extended neighborhood
+   * - 4: Green-Gauss based using the least squares method
+   *      (first neighbors) to compute face values
+   * - 5, 6: Green-Gauss based using the least squares method with
+   *      and extended neighborhood to compute face values\n
+   * If the computation fails due to mesh quality aspects,
+   * it is usually effective to use \ref imrgra = 3, 5, or 6.
+   *
+   * \var imligr
+   * Type of gradient limiter
+   * - -1 (CS_GRADIENT_LIMIT_NONE): no limitation
+   * - 0 (CS_GRADIENT_LIMIT_CELL): based on the neighbors
+   * - 1 (CS_GRADIENT_LIMIT_FACE): superior order\n
+   * \ref imligr is applied only to least-squares gradients.
+   * In the case of the Green-Gauss gradient with least-squares
+   * based face gradients, applied to the least-squares step.
+   *
+   * \var ircflu
+   * Indicate whether the convective and diffusive fluxes at the faces should be
+   * reconstructed:
+   * - 0: no reconstruction
+   * - 1: reconstruction
+   * Deactivating the reconstruction of the fluxes can have a stabilizing effect
+   * on the calculation. It is sometimes useful with the \f$ k-\epsilon \f$
+   * model, if the mesh is strongly non-orthogonal in the near-wall region, where
+   * the gradients of k and \f$ \epsilon \f$ are strong. In such a case, setting
+   * \ref ircflu = 0 will probably help (switching to a first order convective
+   * scheme, \ref blencv = 0, for k and \f$ \epsilon \f$ might also help in that
+   * case).
+   *
+   * \var iwgrec
+   * Gradient calculation weighting
+   * - 0: standard
+   * - 1: weighted
+   *
+   * \var icoupl
+   * Internal coupling indicator
+   * - -1: not coupled (default)
+   * -  1: coupled
+   *
+   * \var thetav
+   * Value of \f$ \theta \f$ used to express at the second order the terms of
+   * convection, diffusion and the source terms which are linear functions of the
+   * solved variable, according to the formula
+   * \f$ \phi^{n+\theta} = (1-\theta) \phi^n + \theta \phi^{n+1} \f$.
+   * Generally, only the values 1 and 0.5 are used. The user is not allowed to
+   * modify this variable.
+   * - 1: first-order
+   * - 0.5: second-order \n
+   * For the pressure, \ref thetav is always 1. For  the other variables,
+   * \ref thetav = 0.5 is used when the  second-order time scheme is activated
+   * (\ref ischtp = 2, standard for LES calculations), otherwise \ref thetav = 1.
+   *
+   * \var blencv
+   * Proportion of second-order convective scheme (0 corresponds to an upwind
+   * first-order scheme); in case of LES calculation, a second-order scheme is
+   * recommended and activated by default (\ref blencv = 1).\n
+   * Relevant where \ref iconv = 1.
+   *
+   * \var blend_st
+   * Proportion of second-order convective scheme (0 corresponds to an upwind
+   * first-order scheme) after the slope test is activated; in case of LES
+   * calculation, a second-order scheme is recommended and activated by
+   * default (\ref blend_st = 1).\n
+   * Relevant where\ref iconv = 1.
+   *
+   * \var epsilo
+   * Relative precision for the solution of the linear system.
+   * The default is \ref epsilo = \f$ 10^-8 \f$ . When there are enough
+   * iterations on the reconstruction of the right-hand side of the equation, the
+   * value may be increased (by default, in case of second-order in time, with
+   * \ref nswrsm = 5 or 10, \ref epsilo is increased to \f$ 10^-5 \f$.
+   *
+   * \var epsrsm
+   * Relative precision on the reconstruction of the right hand-side. The default
+   * is \ref epsrsm = \f$ 10^-8 \f$. When there are not enough iterations on the
+   * reconstruction of the right-hand side of the equation, the value may be
+   * increased (by default, in case of second-order in time, with
+   * \ref nswrsm = 5 or 10, \ref epsrsm is increased to \f$ 10^-5 \f$ ).
+   *
+   * \var epsrgr
+   * Relative precision for the iterative gradient reconstruction.
+   * (when \ref imrgra = 0).
+   *
+   * \var climgr
+   * For least squares gradients, factor of gradient limitation
+   * (high value means little limitation).\n
+   * Relevant for all the variables using least-squares gradientsfor which
+   * \ref imligr > CS_GRADIENT_LIMIT_NONE.
+   *
+   * \var extrag
+   * For the pressure variable, extrapolation  coefficient of the gradients at
+   * the boundaries. It applies only to the Neumann condition areas.
+   * The only possible values of \ref extrag are:
+   * - 0: homogeneous Neumann calculated at first-order
+   * - 1: gradient extrapolation (gradient at the boundary equal to the gradient
+   *      in the neighbor cell), calculated to the second-order in the case of an
+   *      orthogonal mesh and to the first-order otherwise.
+   * \c extrag may allow to correct the spurious velocities that appear on
+   * horizontal walls when density is variable and there is gravity. It is
+   * strongly advised to keep \ref extrag = 0 for the variables apart from
+   * pressure. See also \ref cs_stokes_model_t::iphydr "iphydr". In practice,
+   * only values 0 and 1 are allowed.
+
+   * \var relaxv
+   * Relaxation coefficient for the associated variable. This relaxation
+   * parameter is only useful for the pressure with the unsteady algorithm (so
+   * as to improve the convergence in case of meshes of insufficient quality or
+   * of some turbulent models (k-epsilon, v2f, k-omega) and \ref ikecou = 0;
+   * if \ref ikecou = 1, \ref relaxv is ignored.\n
+   * Default values are 0.7 for turbulent variables and 1. for pressure.
+   * \ref relaxv also stores the value of the relaxation coefficient when using
+   * the steady algorithm, deduced from the value of \ref relxst (defaulting to
+   * \ref relaxv = 1. - \ref relxst).\n
+   * Used only for the pressure and for turbulent variables
+   * (\f$ k-\epsilon \f$, v2f or \f$ k-\omega \f$ models without coupling) with
+   * the unsteady algorithm. Always used with the steady algorithm.
+   *
+  */
+
+  int iwarni;      /* TODO; merge with verbosity */
+  int iconv;
+  int istat;
+  int idircl;
+  int ndircl;
+  int idiff;
+  int idifft;
+  int idften;
+  int iswdyn;
+  int ischcv;
+  int ibdtso;
+  int isstpc;
+  int nswrgr;
+  int nswrsm;
+  int imrgra;
+  int imligr;
+  int ircflu;
+  int iwgrec;
+  int icoupl;
+  double thetav;   /* TODO: merge with theta */
+  double blencv;
+  double blend_st;
+  double epsilo;
+  double epsrsm;
+  double epsrgr;
+  double climgr;
+  double extrag;
+  double relaxv;
 
   /*!
    * @}
@@ -523,6 +773,8 @@ typedef struct {
   /*! @} */
 
 } cs_equation_param_t;
+
+/*----------------------------------------------------------------------------*/
 
 /*! \enum cs_equation_key_t
  *  \brief List of available keys for setting the parameters of an equation
