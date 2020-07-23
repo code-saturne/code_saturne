@@ -542,6 +542,14 @@ _define_profiles(void)
     cs_real_3_t *coords;
     BFT_MALLOC(coords, n_coords, cs_real_3_t);
 
+    /* Be debugger-friendly in case cs_meg_post_profiles does not handle
+       this well (if generation is wrong or missing) */
+    for (cs_lnum_t i = 0; i < n_coords; i++) {
+      coords[i][0] = -1.e30;
+      coords[i][1] = -1.e30;
+      coords[i][2] = -1.e30;
+    }
+
     cs_meg_post_profiles(name, n_coords, coords);
 
     cs_probe_set_t *pset
