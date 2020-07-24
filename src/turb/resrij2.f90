@@ -52,6 +52,8 @@
 !> \param[in]     itypsm        type of mass source term for each variable
 !>                               (see \ref cs_user_mass_source_terms)
 !> \param[in]     dt            time step (per cell)
+!> \param[in]     gradv         work array for the velocity grad term
+!>                                 only for iturb=31
 !> \param[in]     produc        work array for production
 !> \param[in]     gradro        work array for grad rom
 !>                              (without rho volume) only for iturb=30
@@ -69,7 +71,7 @@ subroutine resrij2 &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
-   produc , gradro ,                                              &
+   gradv, produc , gradro ,                                              &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
    tslagi ,                                                       &
@@ -110,6 +112,7 @@ integer          icepdc(ncepdp)
 integer          icetsm(ncesmp), itypsm(ncesmp,nvar)
 
 double precision dt(ncelet)
+double precision gradv(3, 3, ncelet)
 double precision produc(6,ncelet)
 double precision gradro(3,ncelet)
 double precision ckupdc(6,ncepdp), smacel(ncesmp,nvar)
@@ -162,6 +165,22 @@ double precision, allocatable, dimension(:,:) :: cvara_r
 double precision, dimension(:,:), pointer :: c_st_prv, lagr_st_rij
 double precision, dimension(:), pointer :: viscl
 double precision, dimension(:,:), pointer :: cpro_buoyancy
+
+integer iii,jjj
+integer t2v(3,3)
+
+double precision impl_drsm(6,6)
+double precision implmat2add(3,3)
+double precision impl_lin_cst, impl_id_cst
+double precision aiksjk, aikrjk, aii ,aklskl, aikakj
+double precision xaniso(3,3), xstrai(3,3), xrotac(3,3), xprod(3,3)
+double precision sym_strain(6)
+double precision matrn(6), oo_matrn(6)
+double precision eigen_vals(3)
+double precision ceps_impl
+double precision eigen_max
+double precision pij, phiij1, phiij2, epsij
+double precision d1s2
 
 type(var_cal_opt) :: vcopt_rij
 
@@ -260,6 +279,12 @@ else
   ccorio = 0.d0
 endif
 
+d1s2   = 1.d0/2.d0
+
+t2v(1,1) = 1; t2v(1,2) = 4; t2v(1,3) = 6;
+t2v(2,1) = 4; t2v(2,2) = 2; t2v(2,3) = 5;
+t2v(3,1) = 6; t2v(3,2) = 5; t2v(3,3) = 3;
+
 !===============================================================================
 ! 2. User source terms
 !===============================================================================
@@ -350,114 +375,203 @@ enddo
 ! 6. Production, Pressure-Strain correlation, dissipation
 !===============================================================================
 
-! ---> Source term
+do iel = 1, ncel
 
-!      (1-CRIJ2) Pij (for all components of Rij)
+  ! Initalize implicit matrices at 0
+  do isou = 1, 6
+    do jsou = 1, 6
+      impl_drsm(isou, jsou) = 0.0d0
+    end do
+  end do
+  do isou = 1, 3
+    do jsou = 1, 3
+      implmat2add(isou, jsou) = 0.0d0
+    end do
+  end do
 
-!      DELTAIJ*(2/3.CRIJ2.P+2/3.CRIJ1.EPSILON)
-!                    (diagonal terms for R11, R22 et R33)
+  impl_lin_cst = 0.0d0
+  impl_id_cst  = 0.0d0
 
-!      -DELTAIJ*2/3*EPSILON
+  ! Pij
+  xprod(1,1) = produc(1, iel)
+  xprod(1,2) = produc(4, iel)
+  xprod(1,3) = produc(6, iel)
+  xprod(2,2) = produc(2, iel)
+  xprod(2,3) = produc(5, iel)
+  xprod(3,3) = produc(3, iel)
 
-!     If we extrapolate the source terms
-!     We modify the implicit part:
-!     In PHI1, we will only take rho CRIJ1 epsilon/k and not
-!                                rho CRIJ1 epsilon/k (1-2/3 DELTAIJ)
-!     It allow to keep  k^n instead of (R11^(n+1)+R22^n+R33^n)
-!     This choice is questionable. It is the solution isoluc = 1
-!     If we want to take all as implicit (like it is done in
-!     standard first order), it is the solution isoluc = 2
-!     -> to  be tested more precisely if necessary
+  xprod(2,1) = xprod(1,2)
+  xprod(3,1) = xprod(1,3)
+  xprod(3,2) = xprod(2,3)
 
+  trprod = d1s2 * (xprod(1,1) + xprod(2,2) + xprod(3,3) )
+  trrij  = d1s2 * (cvara_var(1 ,iel) + cvara_var(2 ,iel) + cvara_var(3 ,iel))
 
-!     If we extrapolate the source terms
-if (st_prv_id.ge.0) then
+  !-----> aII = aijaij
+  aii    = 0.d0
+  aklskl = 0.d0
+  aiksjk = 0.d0
+  aikrjk = 0.d0
+  aikakj = 0.d0
+  ! aij
+  xaniso(1,1) = cvara_var(1 ,iel)/trrij - d2s3
+  xaniso(2,2) = cvara_var(2 ,iel)/trrij - d2s3
+  xaniso(3,3) = cvara_var(3 ,iel)/trrij - d2s3
+  xaniso(1,2) = cvara_var(4 ,iel)/trrij
+  xaniso(1,3) = cvara_var(6 ,iel)/trrij
+  xaniso(2,3) = cvara_var(5 ,iel)/trrij
+  xaniso(2,1) = xaniso(1,2)
+  xaniso(3,1) = xaniso(1,3)
+  xaniso(3,2) = xaniso(2,3)
+  ! Sij
+  xstrai(1,1) = gradv(1, 1, iel)
+  xstrai(1,2) = d1s2*(gradv(2, 1, iel)+gradv(1, 2, iel))
+  xstrai(1,3) = d1s2*(gradv(3, 1, iel)+gradv(1, 3, iel))
+  xstrai(2,1) = xstrai(1,2)
+  xstrai(2,2) = gradv(2, 2, iel)
+  xstrai(2,3) = d1s2*(gradv(3, 2, iel)+gradv(2, 3, iel))
+  xstrai(3,1) = xstrai(1,3)
+  xstrai(3,2) = xstrai(2,3)
+  xstrai(3,3) = gradv(3, 3, iel)
+  sym_strain(1) = xstrai(1,1)
+  sym_strain(2) = xstrai(2,2)
+  sym_strain(3) = xstrai(3,3)
+  sym_strain(4) = xstrai(1,2)
+  sym_strain(5) = xstrai(2,3)
+  sym_strain(6) = xstrai(1,3)
+  ! omegaij
+  xrotac(1,1) = 0.d0
+  xrotac(1,2) = d1s2*(gradv(2, 1, iel)-gradv(1, 2, iel))
+  xrotac(1,3) = d1s2*(gradv(3, 1, iel)-gradv(1, 3, iel))
+  xrotac(2,1) = -xrotac(1,2)
+  xrotac(2,2) = 0.d0
+  xrotac(2,3) = d1s2*(gradv(3, 2, iel)-gradv(2, 3, iel))
+  xrotac(3,1) = -xrotac(1,3)
+  xrotac(3,2) = -xrotac(2,3)
+  xrotac(3,3) = 0.d0
 
-  isoluc = 1
-
-  do iel = 1, ncel
-
-    !     Half-traces of Prod and R
-    trprod = 0.5d0*(produc(1,iel)+produc(2,iel)+produc(3,iel))
-    trrij  = 0.5d0 * (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel))
-
-    do isou = 1, 6
-      !     Calculation of Prod+Phi1+Phi2-Eps
-      !       = rhoPij-C1rho eps/k(Rij-2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
-      !       In c_st_prv:
-      !       = rhoPij-C1rho eps/k(   -2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
-      !       = rho{2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij           }
-      c_st_prv(isou,iel) = c_st_prv(isou,iel) + cromo(iel) * cell_f_vol(iel) &
-        *(   deltij(isou)*d2s3*                                           &
-             (  crij2*trprod                                        &
-              +(crij1-1.d0)* cvara_ep(iel)  )                       &
-           +(1.0d0-crij2)*produc(isou,iel)               )
-      !       In smbr
-      !       =       -C1rho eps/k(Rij         )
-      !       = rho{                                     -C1eps/kRij}
-      smbr(isou,iel) = smbr(isou,iel) + crom(iel) * cell_f_vol(iel)               &
-        *( -crij1*cvara_ep(iel)/trrij * cvara_var(isou,iel) )
-
-      !     Calculation of the implicit part coming from Phil
-      !       = C1rho eps/k(1        )
-      rovsdt(isou,isou,iel) = rovsdt(isou,isou,iel) + crom(iel) * cell_f_vol(iel)           &
-                              *crij1*cvara_ep(iel)/trrij*thetv
+  do ii=1,3
+    do jj = 1,3
+      ! aii = aij.aij
+      aii    = aii+xaniso(ii,jj)*xaniso(ii,jj)
+      ! aklskl = aij.Sij
+      aklskl = aklskl + xaniso(ii,jj)*xstrai(ii,jj)
     enddo
   enddo
 
-  !     If we want to implicit a part of -C1rho eps/k(   -2/3k dij)
-  if (isoluc.eq.2) then
+  ! Computation of implicit components
 
-    do iel = 1, ncel
+  do isou = 1, 6
+    matrn(isou) = cvara_var(isou,iel)/trrij
+    oo_matrn(isou) = 0.0d0
+  end do
 
-      trrij  = 0.5d0 * (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel))
-      do isou = 1, 6
-        !    We remove of cromo
-        !       =       -C1rho eps/k(   -1/3Rij dij)
-        c_st_prv(isou,iel) = c_st_prv(isou,iel) - cromo(iel) * cell_f_vol(iel)    &
-        *(deltij(isou)*d1s3*crij1*cvara_ep(iel)/trrij * cvara_var(isou,iel))
-        !    We add to smbr (with crom)
-        !       =       -C1rho eps/k(   -1/3Rij dij)
-        smbr(isou,iel)      = smbr(isou,iel)                       &
-                            + crom(iel) * cell_f_vol(iel)          &
-        *(deltij(isou)*d1s3*crij1*cvara_ep(iel)/trrij * cvara_var(isou,iel))
-        !    We add to rovsdt (woth crom)
-        !       =        C1rho eps/k(   -1/3    dij)
-        rovsdt(isou,isou,iel) = rovsdt(isou,isou,iel) + crom(iel) * cell_f_vol(iel)         &
-        *(deltij(isou)*d1s3*crij1*cvara_ep(iel)/trrij                 )
+  ! Inversing the matrix
+  call symmetric_matrix_inverse(matrn, oo_matrn)
+  do isou = 1, dimrij
+    oo_matrn(isou) = oo_matrn(isou)/trrij
+  end do
+
+  ! Computing the maximal eigenvalue (in terms of norm!) of S
+  call calc_symtens_eigvals(sym_strain, eigen_vals)
+  eigen_max = maxval(abs(eigen_vals))
+
+  ! Constant for the dissipation
+  ceps_impl = d1s3 * cvara_ep(iel)
+
+  ! Identity constant
+  impl_id_cst = -d1s3*crij2*min(trprod,0.0d0)
+
+  ! Linear constant
+  impl_lin_cst = eigen_max *     ( &
+                 (1.d0-crij2)    )   ! Production + Phi2
+
+  do jsou = 1, 3
+    do isou = 1 ,3
+      iii = t2v(isou,jsou)
+      implmat2add(isou,jsou) = (1.d0-crij2)*xrotac(isou,jsou)              &
+                             + impl_lin_cst*deltij(iii)       &
+                             + impl_id_cst*d1s2*oo_matrn(iii) &
+                             + ceps_impl*oo_matrn(iii)
+    end do
+  end do
+
+  impl_drsm(:,:) = 0.0d0
+  call reduce_symprod33_to_66(implmat2add, impl_drsm)
+
+  ! Rotating frame of reference => "absolute" vorticity
+  if (icorio.eq.1) then
+    do ii = 1, 3
+      do jj = 1, 3
+        xrotac(ii,jj) = xrotac(ii,jj) + matrot(ii,jj)
       enddo
     enddo
-
   endif
 
-! If we do not extrapolate the source terms
-else
-
-  do iel = 1, ncel
-
-    !     Half-traces of Prod and R
-    trprod = 0.5d0*(produc(1,iel)+produc(2,iel)+produc(3,iel))
-    trrij  =  0.5d0 * (cvara_var(1,iel) + cvara_var(2,iel) + cvara_var(3,iel))
-
-    do isou = 1, 6
-      !     Calculation of Prod+Phi1+Phi2-Eps
-      !       = rhoPij-C1rho eps/k(Rij-2/3k dij)-C2rho(Pij-1/3Pkk dij)-2/3rho eps dij
-      !       = rho{2/3dij[C2 Pkk/2+(C1-1)eps)]+(1-C2)Pij-C1eps/kRij}
-      smbr(isou,iel) = smbr(isou,iel) + crom(iel) * cell_f_vol(iel) &
-        *(   deltij(isou)*d2s3*                                           &
-             (  crij2*trprod                                        &
-              +(crij1-1.d0)* cvara_ep(iel)  )                       &
-           +(1.0d0-crij2)*produc(isou,iel)                          &
-           -crij1*cvara_ep(iel)/trrij * cvara_var(isou,iel)  )
-
-      !     Calculation of the implicit part coming from Phi1
-      !       = C1rho eps/k(1-1/3 dij)
-      rovsdt(isou,isou,iel) = rovsdt(isou,isou,iel) + crom(iel) * cell_f_vol(iel)           &
-           *(1.d0-d1s3*deltij(isou))*crij1*cvara_ep(iel)/trrij
+  do isou = 1, dimrij
+    if (isou.eq.1)then
+      iii = 1
+      jjj = 1
+    elseif (isou.eq.2)then
+      iii = 2
+      jjj = 2
+    elseif (isou.eq.3)then
+      iii = 3
+      jjj = 3
+    elseif (isou.eq.4)then
+      iii = 1
+      jjj = 2
+    elseif (isou.eq.5)then
+      iii = 2
+      jjj = 3
+    elseif (isou.eq.6)then
+      iii = 1
+      jjj = 3
+    endif
+    aiksjk = 0
+    aikrjk = 0
+    aikakj = 0
+    do kk = 1,3
+      ! aiksjk = aik.Sjk+ajk.Sik
+      aiksjk = aiksjk + xaniso(iii,kk)*xstrai(jjj,kk)              &
+                +xaniso(jjj,kk)*xstrai(iii,kk)
+      ! aikrjk = aik.Omega_jk + ajk.omega_ik
+      aikrjk = aikrjk + xaniso(iii,kk)*xrotac(jjj,kk)              &
+                +xaniso(jjj,kk)*xrotac(iii,kk)
+      ! aikakj = aik*akj
+      aikakj = aikakj + xaniso(iii,kk)*xaniso(kk,jjj)
     enddo
+
+    ! Explicit terms
+    pij = (1.d0 - crij2)*xprod(iii,jjj)
+    phiij1 = -cvara_ep(iel)*crij1*xaniso(iii,jjj)
+    phiij2 = d2s3*crij2*trprod*deltij(isou)
+    epsij = -d2s3*cvara_ep(iel)*deltij(isou)
+
+    if (st_prv_id.ge.0) then
+      c_st_prv(isou,iel) = c_st_prv(isou,iel) &
+        + cromo(iel)*cell_f_vol(iel)*(pij+phiij1+phiij2+epsij)
+    else
+      smbr(isou,iel) = smbr(isou,iel) &
+        + cromo(iel)*cell_f_vol(iel)*(pij+phiij1+phiij2+epsij)
+      ! Implicit terms
+      rovsdt(isou,isou,iel) = rovsdt(isou,isou,iel) &
+        + cell_f_vol(iel)/trrij*crom(iel)*(crij1*cvara_ep(iel))
+
+      ! Carefull ! Inversion of the order of the coefficients since
+      ! rovsdt matrix is then used by a c function for the linear solving
+      do jsou = 1, 6
+        rovsdt(jsou,isou,iel) = rovsdt(jsou,isou,iel) + cell_f_vol(iel) &
+                                *crom(iel) * impl_drsm(isou,jsou)
+      end do
+
+    endif
+
   enddo
 
-endif
+enddo
+
+
 
 !===============================================================================
 ! 6-bis. Coriolis terms in the Phi1 and production

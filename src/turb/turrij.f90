@@ -590,11 +590,12 @@ if (irijco.eq.1) then
 
   ! Rij-epsilon standard (LRR)
   if (iturb.eq.30) then !TODO
+
     call resrij2 &
  ( nvar   , nscal  , ncepdp , ncesmp ,                            &
    icepdc , icetsm , itypsm ,                                     &
    dt     ,                                                       &
-   cpro_produc , gradro ,                                         &
+   gradv  , cpro_produc , gradro ,                                &
    ckupdc , smacel ,                                              &
    viscf  , viscb  ,                                              &
    tslagi ,                                                       &
