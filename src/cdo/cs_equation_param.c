@@ -1819,6 +1819,39 @@ cs_equation_create_param(const char            *name,
   eqp->dof_reduction = CS_PARAM_REDUCTION_DERHAM;
   eqp->space_poly_degree = 0;
 
+  /* Default initialization for the legacy var_col_opt structure which is now
+   * shared inside the cs_equation_param_t structure
+   * The default value used here should be the same as the one considered in
+   * src/base/cs_parameters.c (static variable called _equation_param_default) */
+
+  eqp->iconv  = 1;
+  eqp->istat  = 1;
+  eqp->idircl = 1;
+  eqp->ndircl = 0;
+  eqp->idiff  = 1;
+  eqp->idifft = 1;
+  eqp->idften = CS_ISOTROPIC_DIFFUSION;
+  eqp->iswdyn = 0;
+  eqp->ischcv = 1;
+  eqp->ibdtso = 1;
+  eqp->isstpc = 1;
+  eqp->nswrgr = 100;
+  eqp->nswrsm = 1;
+  eqp->imrgra = -1;
+  eqp->imligr = -1;
+  eqp->ircflu = 1;
+  eqp->iwgrec = 0;
+  eqp->icoupl = -1;
+  eqp->thetav = 1.;
+  eqp->blencv = 1.;
+  eqp->blend_st = 0.;
+  eqp->epsilo = 1.e-8;
+  eqp->epsrsm = 1.e-7;
+  eqp->epsrgr = 1.e-5;
+  eqp->climgr = 1.5;
+  eqp->extrag = 0.;
+  eqp->relaxv = 1.;
+
   /* Boundary conditions structure.
      One assigns a boundary condition by default */
   eqp->default_bc = default_bc;
@@ -1951,6 +1984,35 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
   dst->space_scheme = ref->space_scheme;
   dst->dof_reduction = ref->dof_reduction;
   dst->space_poly_degree = ref->space_poly_degree;
+
+  /* Members originally located in the cs_var_cal_opt_t structure */
+  dst->iconv  = ref->iconv;
+  dst->istat  = ref->istat;
+  dst->idircl = ref->idircl;
+  dst->ndircl = ref->ndircl;
+  dst->idiff  = ref->idiff;
+  dst->idifft = ref->idifft;
+  dst->idften = ref->idften;
+  dst->iswdyn = ref->iswdyn;
+  dst->ischcv = ref->ischcv;
+  dst->ibdtso = ref->ibdtso;
+  dst->isstpc = ref->isstpc;
+  dst->nswrgr = ref->nswrgr;
+  dst->nswrsm = ref->nswrsm;
+  dst->imrgra = ref->imrgra;
+  dst->imligr = ref->imligr;
+  dst->ircflu = ref->ircflu;
+  dst->iwgrec = ref->iwgrec;
+  dst->icoupl = ref->icoupl;
+  dst->thetav = ref->thetav;
+  dst->blencv = ref->blencv;
+  dst->blend_st = ref->blend_st;
+  dst->epsilo = ref->epsilo;
+  dst->epsrsm = ref->epsrsm;
+  dst->epsrgr = ref->epsrgr;
+  dst->climgr = ref->climgr;
+  dst->extrag = ref->extrag;
+  dst->relaxv = ref->relaxv;
 
   /* Boundary conditions structure */
   dst->default_bc = ref->default_bc;
