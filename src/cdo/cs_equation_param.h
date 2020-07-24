@@ -66,7 +66,7 @@ BEGIN_C_DECLS
  *
  * \def CS_EQUATION_DIFFUSION
  * \brief Diffusion term is needed. A scalar-/vector-valued Laplacian
- * with div .grad
+ *        with div .grad
  *
  * \def CS_EQUATION_CURLCURL
  * \brief The term related to the curl-curl operator is needed
@@ -79,7 +79,7 @@ BEGIN_C_DECLS
  *
  * \def CS_EQUATION_FORCE_VALUES
  * \brief Add an algebraic manipulation to set the value of a given set of
- *       interior degrees of freedom
+ *        interior degrees of freedom
  *
  * \def CS_EQUATION_USER_HOOK
  * \brief Activate a user hook to get a fine control of the discretization

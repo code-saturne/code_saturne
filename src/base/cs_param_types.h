@@ -371,6 +371,7 @@ typedef enum {
   CS_PARAM_BC_ROBIN,
   CS_PARAM_BC_SLIDING,
   CS_PARAM_BC_CIRCULATION,
+
   CS_PARAM_N_BC_TYPES
 
 } cs_param_bc_type_t;
@@ -445,6 +446,7 @@ typedef enum {
   CS_PARAM_SLES_CLASS_HYPRE,
   CS_PARAM_SLES_CLASS_MUMPS,
   CS_PARAM_SLES_CLASS_PETSC,
+
   CS_PARAM_SLES_N_CLASSES
 
 } cs_param_sles_class_t;
@@ -463,6 +465,7 @@ typedef enum {
   CS_PARAM_AMG_PETSC_PCMG  ,    /*!< preconditioned MG algorithm from PETSc */
   CS_PARAM_AMG_HOUSE_V,         /*!< In-house algorithm with V-cycle */
   CS_PARAM_AMG_HOUSE_K,         /*!< In-house algorithm with K-cycle */
+
   CS_PARAM_N_AMG_TYPES
 
 } cs_param_amg_type_t;
@@ -637,6 +640,7 @@ typedef enum {
   CS_PARAM_ITSOL_MUMPS,            /*!< Only with PETsc */
   CS_PARAM_ITSOL_MUMPS_LDLT,       /*!< Only with PETsc */
   CS_PARAM_ITSOL_SYM_GAUSS_SEIDEL,
+
   CS_PARAM_N_ITSOL_TYPES
 
 } cs_param_itsol_type_t;

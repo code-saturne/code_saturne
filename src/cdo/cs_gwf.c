@@ -172,11 +172,13 @@ static cs_gwf_t  *cs_gwf_main_structure = NULL;
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Evaluate
+ * \brief  Compute at which time one has to evaluate quantities
  *
  * \param[in] gw         pointer to the cs_gwf_t structure
  * \param[in] t_cur      current physical time
  * \param[in] dt_cur     current time step
+ *
+ * \return the value of a physical time
  */
 /*----------------------------------------------------------------------------*/
 
@@ -231,8 +233,8 @@ _get_time_eval(const cs_gwf_t  *const gw,
 /*----------------------------------------------------------------------------*/
 
 static void
-_update_darcy_vb_flux_at_boundary(cs_real_t                      t_eval,
-                                  const cs_gwf_t                *gw)
+_update_darcy_vb_flux_at_boundary(cs_real_t                t_eval,
+                                  const cs_gwf_t          *gw)
 {
   cs_adv_field_t  *adv = gw->adv_field;
 
