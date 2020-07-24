@@ -462,8 +462,9 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
       nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SG;
     else if (strcmp(val, "centered") == 0)
       nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CENTERED;
-    else if (strcmp(val, "mix_centered_upwind") == 0)
-      nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND;
+    else if (strcmp(val, "mix_centered_upwind") == 0 ||
+             strcmp(val, "hybrid_centered_upwind") == 0)
+      nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND;
     else if (strcmp(val, "cip") == 0) {
       nsp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CIP;
       /* Automatically switch to a non-conservative formulation */

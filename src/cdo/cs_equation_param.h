@@ -642,17 +642,18 @@ typedef struct {
    * Value between 0. and 1. (0: centered scheme, 1: pure upwind scheme)
    * Introduce a constant portion of upwinding in a centered scheme
    * Only useful if the advection scheme is set to
+   * CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND
    *
    * \var adv_field
    * Pointer to the \ref cs_adv_field_t structure associated to the advection
    * term
    *
    * \var adv_scaling_property
-   * May be set to NULL even if the advection term is activated. The value of this
-   * property in each cell is multiplicative coefficient in front of the advection
-   * term (boundary terms are also considered)
-   * This is useful to treat the thermal module using the variable temperature
-   * instead of the enthalpy for instance or in the solidification module.
+   * May be set to NULL even if the advection term is activated. The value of
+   * this property in each cell is multiplicative coefficient in front of the
+   * advection term (boundary terms are also considered) This is useful to treat
+   * the thermal module using the variable temperature instead of the enthalpy
+   * for instance or in the solidification module.
    */
 
   cs_param_advection_form_t     adv_formulation;
@@ -796,7 +797,8 @@ typedef struct {
  * depend on the space discretization scheme.
  * - "upwind" (cf. \ref CS_PARAM_ADVECTION_SCHEME_UPWIND)
  * - "centered" (cf. \ref CS_PARAM_ADVECTION_SCHEME_CENTERED)
- * - "mix_centered_upwind" (\ref CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND)
+ * - "mix_centered_upwind" or "hybrid_centered_upwind"
+ *   (cf. \ref CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND)
  * - "samarskii" --> switch smoothly between an upwind and a centered scheme
  *   thanks to a weight depending on the Peclet number. (cf.
  * \ref CS_PARAM_ADVECTION_SCHEME_SAMARSKII). Only for CDO-Vb schemes.

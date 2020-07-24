@@ -264,7 +264,7 @@ typedef enum {
  * \ref CS_SPACE_SCHEME_CDOVCB
  * Variant with a cellwise constant approximation of the advection field
  *
- * \var CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND
+ * \var CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND
  * Centered discretization with a portion between [0,1] of upwinding.
  * The portion is specified thanks to \ref CS_EQKEY_ADV_UPWIND_PORTION
  * If the portion is equal to 0, then one recovers
@@ -288,7 +288,7 @@ typedef enum {
   CS_PARAM_ADVECTION_SCHEME_CENTERED,
   CS_PARAM_ADVECTION_SCHEME_CIP,
   CS_PARAM_ADVECTION_SCHEME_CIP_CW,
-  CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND,
+  CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND,
   CS_PARAM_ADVECTION_SCHEME_SAMARSKII,
   CS_PARAM_ADVECTION_SCHEME_SG,
   CS_PARAM_ADVECTION_SCHEME_UPWIND,

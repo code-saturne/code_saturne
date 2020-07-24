@@ -1230,8 +1230,9 @@ _set_key(const char            *label,
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_SG;
     else if (strcmp(keyval, "centered") == 0)
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CENTERED;
-    else if (strcmp(keyval, "mix_centered_upwind") == 0)
-      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND;
+    else if (strcmp(keyval, "mix_centered_upwind") == 0 ||
+             strcmp(keyval, "hybrid_centered_upwind") == 0)
+      eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND;
     else if (strcmp(keyval, "cip") == 0) {
       eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_CIP;
       /* Automatically switch to a non-conservative formulation */
@@ -1251,6 +1252,8 @@ _set_key(const char            *label,
 
   case CS_EQKEY_ADV_UPWIND_PORTION:
     eqp->upwind_portion = atof(keyval);
+    /* Automatic witch to a hybrid upwind/centered scheme for advection */
+    eqp->adv_scheme = CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND;
     break;
 
   case CS_EQKEY_AMG_TYPE:
@@ -2559,7 +2562,7 @@ cs_equation_summary_param(const cs_equation_param_t   *eqp)
     case CS_PARAM_ADVECTION_SCHEME_CIP_CW:
       cs_log_printf(CS_LOG_SETUP, " continuous interior penalty (CellWise)\n");
       break;
-    case CS_PARAM_ADVECTION_SCHEME_MIX_CENTERED_UPWIND:
+    case CS_PARAM_ADVECTION_SCHEME_HYBRID_CENTERED_UPWIND:
       cs_log_printf(CS_LOG_SETUP, " centered-upwind (%3.2f %% of upwind)\n",
                     100*eqp->upwind_portion);
       break;
