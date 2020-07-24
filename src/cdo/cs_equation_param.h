@@ -208,16 +208,28 @@ typedef struct {
   char *restrict       name;           /*!< name of the equation */
   cs_equation_type_t   type;           /*!< type of equation: predefined... */
   int                  dim;            /*!< Dimension of the unknown */
-  int                  verbosity;      /*!< Level of detail for output */
+
+  /*! \var verbosity
+   *  Verbosity for the resolution (0 or 1 for a reasonable log size,  2 or more
+   * for troubleshooting).
+   *
+   * \var iwarni
+   * \deprecated use verbosity instead (iwarni is an alias to verbosity)
+   */
+
+  union {
+    int                verbosity;
+    int                iwarni;
+  };
 
   /*! \var flag
    *  Flag to know if unsteady or diffusion or convection or reaction
-   *  or source term are activated or not
+   *  or source terms are activated or not
    */
   cs_flag_t                  flag;
 
   /*! \var process_flag
-   *  Flag to known if predefined post-treatments such as Peclet,
+   *  Flag to determine if predefined post-treatments such as Peclet,
    *  are requested
    */
   cs_flag_t                  process_flag;
@@ -234,10 +246,6 @@ typedef struct {
   /*!
    * @name Legacy Settings
    * @{
-   *
-   * \var iwarni
-   * Verbosity for the resolution (0 or 1 for a reasonable log size,  2 or more
-   * for troubleshooting.
    *
    * \var iconv
    * Indicate if the convection is taken into account (1) or not (0). By default,
@@ -450,7 +458,6 @@ typedef struct {
    *
   */
 
-  int iwarni;      /* TODO; merge with verbosity */
   int iconv;
   int istat;
   int idircl;
