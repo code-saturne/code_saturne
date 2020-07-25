@@ -698,10 +698,10 @@ typedef struct {
  *============================================================================*/
 
 /* Separation lines: header1, header2 (compatible with markdown), other */
-extern const char h1_sep[80];
-extern const char h2_sep[80];
-extern const char sepline[80];
-extern const char msepline[50];
+extern const char cs_sep_h1[80];
+extern const char cs_sep_h2[80];
+extern const char cs_sepline[80];
+extern const char cs_med_sepline[50];
 
 /*============================================================================
  * Public function prototypes

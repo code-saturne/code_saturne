@@ -711,7 +711,7 @@ cs_gwf_log_setup(void)
     return;
 
   cs_log_printf(CS_LOG_SETUP, "\nSummary of the groundwater module\n");
-  cs_log_printf(CS_LOG_SETUP, "%s", h1_sep);
+  cs_log_printf(CS_LOG_SETUP, "%s", cs_sep_h1);
 
   /* Tracers */
   cs_log_printf(CS_LOG_SETUP,

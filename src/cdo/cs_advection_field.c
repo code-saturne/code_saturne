@@ -476,7 +476,7 @@ cs_advection_field_log_setup(void)
   char  prefix[256];
 
   cs_log_printf(CS_LOG_SETUP, "\nSummary of the advection field\n");
-  cs_log_printf(CS_LOG_SETUP, "%s\n", h1_sep);
+  cs_log_printf(CS_LOG_SETUP, "%s\n", cs_sep_h1);
 
   for (int i = 0; i < _n_adv_fields; i++) {
 

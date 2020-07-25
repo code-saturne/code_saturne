@@ -1995,7 +1995,7 @@ cs_property_log_setup(void)
   assert(_properties != NULL);
 
   cs_log_printf(CS_LOG_SETUP, "\nSummary of the definition of properties\n");
-  cs_log_printf(CS_LOG_SETUP, "%s", h1_sep);
+  cs_log_printf(CS_LOG_SETUP, "%s", cs_sep_h1);
 
   char  prefix[256];
 

@@ -208,10 +208,10 @@ _solve_steady_state_domain(cs_domain_t  *domain)
     /* Otherwise log is called from the FORTRAN part */
 
     if (!cs_equation_needs_steady_state_solve()) {
-      cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
+      cs_log_printf(CS_LOG_DEFAULT, "\n%s", cs_sep_h1);
       cs_log_printf(CS_LOG_DEFAULT,
                     "# Iter: 0; >> Initial state");
-      cs_log_printf(CS_LOG_DEFAULT, "\n%s\n", h1_sep);
+      cs_log_printf(CS_LOG_DEFAULT, "\n%s\n", cs_sep_h1);
 
       /* Extra operations and post-processing of the computed solutions */
       cs_post_time_step_begin(domain->time_step);
@@ -228,15 +228,15 @@ _solve_steady_state_domain(cs_domain_t  *domain)
 
   /* Output information */
   if (domain->only_steady) {
-    cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
+    cs_log_printf(CS_LOG_DEFAULT, "\n%s", cs_sep_h1);
     cs_log_printf(CS_LOG_DEFAULT, "#      Solve steady-state problem(s)\n");
-    cs_log_printf(CS_LOG_DEFAULT, "%s", h1_sep);
+    cs_log_printf(CS_LOG_DEFAULT, "%s", cs_sep_h1);
   }
   else if (do_output) {
-    cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
+    cs_log_printf(CS_LOG_DEFAULT, "\n%s", cs_sep_h1);
     cs_log_printf(CS_LOG_DEFAULT,
                   "# Iter: 0; >> Solve only requested steady-state equations");
-    cs_log_printf(CS_LOG_DEFAULT, "\n%s\n", h1_sep);
+    cs_log_printf(CS_LOG_DEFAULT, "\n%s\n", cs_sep_h1);
   }
 
   /* Predefined equation for the computation of the wall distance */
@@ -312,11 +312,11 @@ _solve_domain(cs_domain_t  *domain)
     const double  t_cur = ts->t_cur;
     const double  dt_cur = ts->dt[0];
 
-    cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
+    cs_log_printf(CS_LOG_DEFAULT, "\n%s", cs_sep_h1);
     cs_log_printf(CS_LOG_DEFAULT, "# Iter: %d >>"
                   " Solve domain from time=%6.4e to %6.4e; dt=%5.3e",
                   nt_cur, t_cur, t_cur + dt_cur, dt_cur);
-    cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
+    cs_log_printf(CS_LOG_DEFAULT, "\n%s", cs_sep_h1);
 
   }
 
@@ -667,9 +667,9 @@ cs_cdo_main(cs_domain_t   *domain)
   cs_user_extra_operations_initialize(cs_glob_domain);
 
   /* Output information */
-  cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
+  cs_log_printf(CS_LOG_DEFAULT, "\n%s", cs_sep_h1);
   cs_log_printf(CS_LOG_DEFAULT, "#      Start main loop\n");
-  cs_log_printf(CS_LOG_DEFAULT, "%s", h1_sep);
+  cs_log_printf(CS_LOG_DEFAULT, "%s", cs_sep_h1);
 
   /* Build and solve equations related to the computational domain in case of
      steady-state equations */
@@ -730,9 +730,9 @@ cs_cdo_main(cs_domain_t   *domain)
 
   cs_timer_stats_stop(cs_cdo_ts_id);
   if (cs_glob_rank_id <= 0) {
-    cs_log_printf(CS_LOG_DEFAULT, "\n%s", h1_sep);
+    cs_log_printf(CS_LOG_DEFAULT, "\n%s", cs_sep_h1);
     cs_log_printf(CS_LOG_DEFAULT, "#\tExit CDO core module\n");
-    cs_log_printf(CS_LOG_DEFAULT, "%s", h1_sep);
+    cs_log_printf(CS_LOG_DEFAULT, "%s", cs_sep_h1);
     cs_log_printf_flush(CS_LOG_DEFAULT);
   }
 

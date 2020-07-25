@@ -832,7 +832,7 @@ cs_thermal_system_log_setup(void)
     return;
 
   cs_log_printf(CS_LOG_SETUP, "\nSummary of the thermal module\n");
-  cs_log_printf(CS_LOG_SETUP, "%s\n", h1_sep);
+  cs_log_printf(CS_LOG_SETUP, "%s\n", cs_sep_h1);
 
   cs_log_printf(CS_LOG_SETUP, "  * Thermal | Model:");
   if (thm->model & CS_THERMAL_MODEL_STEADY)

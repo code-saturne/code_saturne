@@ -828,7 +828,7 @@ void
 cs_domain_setup_log(const cs_domain_t   *domain)
 {
   cs_log_printf(CS_LOG_SETUP, "\nSummary of the CDO domain settings\n");
-  cs_log_printf(CS_LOG_SETUP, "%s\n", h1_sep);
+  cs_log_printf(CS_LOG_SETUP, "%s\n", cs_sep_h1);
 
   int  cdo_mode = cs_domain_get_cdo_mode(domain);
   switch (cdo_mode) {

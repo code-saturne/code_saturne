@@ -1351,7 +1351,7 @@ void
 cs_equation_log_setup(void)
 {
   cs_log_printf(CS_LOG_SETUP, "\nSettings for equations\n");
-  cs_log_printf(CS_LOG_SETUP, "%s\n", h1_sep);
+  cs_log_printf(CS_LOG_SETUP, "%s\n", cs_sep_h1);
 
   for (int  eq_id = 0; eq_id < _n_equations; eq_id++) {
 
@@ -1364,7 +1364,7 @@ cs_equation_log_setup(void)
     cs_log_printf(CS_LOG_SETUP,
                   "Summary of settings for %s eq. (variable %s)\n",
                   eq->param->name, eq->varname);
-    cs_log_printf(CS_LOG_SETUP, "%s", h2_sep);
+    cs_log_printf(CS_LOG_SETUP, "%s", cs_sep_h2);
 
     cs_equation_summary_param(eq->param);
 
