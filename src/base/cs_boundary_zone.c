@@ -30,12 +30,13 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
+#include <float.h>
+#include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
-#include <math.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -315,12 +316,14 @@ _boundary_zone_compute_metadata(bool       mesh_modified,
   /* We recompute values only if mesh is modified or zone is time varying.
    * FIXME: For the moment, the boundary measure is not computed, but set to -1.
    * to be improved in the future.
-   * Not thta boundary measure of a (2D) surface should be the length of the perimeter
+   * Not that boundary measure of a (2D) surface should be the length of the
+   * perimeter
    */
   if (z->time_varying || mesh_modified) {
+
     cs_real_t *b_face_surf   = cs_glob_mesh_quantities->b_face_surf;
     cs_real_t *b_f_face_surf = cs_glob_mesh_quantities->b_f_face_surf;
-    cs_real_3_t *face_cen    = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
+    cs_real_3_t *face_cen = (cs_real_3_t *)cs_glob_mesh_quantities->b_face_cog;
 
     z->measure = 0.;
     z->f_measure = 0.;
@@ -353,9 +356,14 @@ _boundary_zone_compute_metadata(bool       mesh_modified,
     z->f_measure = measures[1];
     z->boundary_measure = measures[2];
     z->f_boundary_measure = measures[3];
-    for (int idim = 0; idim < 3; idim++)
-      z->cog[idim] = measures[4+idim] / measures[0];
-  }
+
+    /* Avoid a SIGFPE error */
+    if (fabs(measures[0]) > DBL_MIN)
+      for (int idim = 0; idim < 3; idim++)
+        z->cog[idim] = measures[4+idim] / measures[0];
+
+  } /* Need to compute metadata */
+
 }
 
 /*============================================================================

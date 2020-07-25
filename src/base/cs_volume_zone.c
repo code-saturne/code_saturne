@@ -30,12 +30,13 @@
  * Standard C library headers
  *----------------------------------------------------------------------------*/
 
+#include <assert.h>
+#include <float.h>
+#include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <assert.h>
-#include <math.h>
 
 #if defined(HAVE_MPI)
 #include <mpi.h>
@@ -326,6 +327,7 @@ _volume_zone_compute_metadata(bool       mesh_modified,
    * to be improved in the future.
    */
   if (z->time_varying || mesh_modified) {
+
     cs_real_t *cell_vol   = cs_glob_mesh_quantities->cell_vol;
     cs_real_t *cell_f_vol = cs_glob_mesh_quantities->cell_f_vol;
     cs_real_3_t *cell_cen = (cs_real_3_t *)cs_glob_mesh_quantities->cell_cen;
@@ -360,9 +362,14 @@ _volume_zone_compute_metadata(bool       mesh_modified,
     z->f_measure = measures[1];
     z->boundary_measure = measures[2];
     z->f_boundary_measure = measures[3];
-    for (int idim = 0; idim < 3; idim++)
-      z->cog[idim] = measures[4+idim] / measures[0];
-  }
+
+    /* Avoid a SIGFPE error */
+    if (fabs(measures[0]) > DBL_MIN)
+      for (int idim = 0; idim < 3; idim++)
+        z->cog[idim] = measures[4+idim] / measures[0];
+
+  } /* Need to compute metadata */
+
 }
 
 /*============================================================================
