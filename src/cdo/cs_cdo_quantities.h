@@ -191,8 +191,9 @@ typedef struct { /* Specific mesh quantities */
                                        Unit vector is the tangential direction
                                        attached to the edge */
 
-  /* For each edge e belonging to a cell c, two contributions coming from 2
-     triangles  s(x_c, x_f, x_e) for a face f in Face_e are considered.
+  /* For each edge e belonging to a cell c, the dual face is built from the
+     contributions of two triangles s(x_c, x_f, x_e) and s(x_c, x_f', x_e) with
+     the faces f and f' belonging to F_e \cap F_c
      Scan this quantity with the c2e connectivity */
 
   cs_real_t        *dface_normal;   /* Vector-valued normal for each dual face
