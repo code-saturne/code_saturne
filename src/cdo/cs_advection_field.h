@@ -36,7 +36,7 @@
 #include "cs_cdo_quantities.h"
 #include "cs_field.h"
 #include "cs_mesh_location.h"
-#include "cs_param.h"
+#include "cs_param_types.h"
 #include "cs_property.h"
 #include "cs_xdef.h"
 #include "cs_xdef_eval.h"

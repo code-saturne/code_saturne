@@ -48,7 +48,7 @@
 #include "cs_mesh_adjacencies.h"
 #include "cs_order.h"
 #include "cs_parall.h"
-#include "cs_param.h"
+#include "cs_param_types.h"
 #include "cs_param_cdo.h"
 #include "cs_sort.h"
 #include "cs_volume_zone.h"

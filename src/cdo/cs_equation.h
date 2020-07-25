@@ -34,7 +34,6 @@
 #include "cs_equation_param.h"
 #include "cs_equation_common.h"
 #include "cs_field.h"
-#include "cs_param.h"
 #include "cs_mesh.h"
 #include "cs_restart.h"
 #include "cs_time_step.h"

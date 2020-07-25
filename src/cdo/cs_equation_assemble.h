@@ -33,8 +33,8 @@
 #include "cs_cdo_connect.h"
 #include "cs_matrix.h"
 #include "cs_matrix_assembler.h"
-#include "cs_param.h"
 #include "cs_param_cdo.h"
+#include "cs_param_types.h"
 #include "cs_sdm.h"
 
 /*----------------------------------------------------------------------------*/

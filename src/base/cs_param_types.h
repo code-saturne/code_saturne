@@ -1,5 +1,5 @@
-#ifndef __CS_PARAM_H__
-#define __CS_PARAM_H__
+#ifndef __CS_PARAM_TYPES_H__
+#define __CS_PARAM_TYPES_H__
 
 /*============================================================================
  * Manage the definition/setting of a computation
@@ -812,4 +812,4 @@ cs_param_get_amg_type_name(cs_param_amg_type_t   type);
 
 END_C_DECLS
 
-#endif /* __CS_PARAM_H__ */
+#endif /* __CS_PARAM_TYPES_H__ */

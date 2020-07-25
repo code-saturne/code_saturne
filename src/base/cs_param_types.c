@@ -1,5 +1,5 @@
 /*============================================================================
- * Routines to handle basic parameter settings
+ * Routines to handle basic parameter types
  *============================================================================*/
 
 /*
@@ -45,7 +45,7 @@
  * Header for the current file
  *----------------------------------------------------------------------------*/
 
-#include "cs_param.h"
+#include "cs_param_types.h"
 
 /*----------------------------------------------------------------------------*/
 
@@ -55,7 +55,7 @@ BEGIN_C_DECLS
  * Local Macro definitions and structure definitions
  *============================================================================*/
 
-#define CS_PARAM_DBG  0
+#define CS_PARAM_TYPES_DBG  0
 
 /*============================================================================
  * Global variables

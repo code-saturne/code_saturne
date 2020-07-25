@@ -67,7 +67,6 @@
 #include "cs_math.h"
 #include "cs_navsto_sles.h"
 #include "cs_parall.h"
-#include "cs_param.h"
 #include "cs_post.h"
 #include "cs_sles.h"
 #include "cs_source_term.h"

@@ -56,7 +56,6 @@
 #include "cs_log.h"
 #include "cs_math.h"
 #include "cs_mesh_location.h"
-#include "cs_param.h"
 #include "cs_post.h"
 #include "cs_quadrature.h"
 #include "cs_reco.h"

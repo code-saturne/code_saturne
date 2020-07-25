@@ -42,7 +42,6 @@
 #include "cs_evaluate.h"
 #include "cs_hodge.h"
 #include "cs_log.h"
-#include "cs_param.h"
 #include "cs_param_cdo.h"
 #include "cs_scheme_geometry.h"
 #include "cs_source_term.h"

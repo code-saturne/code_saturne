@@ -67,7 +67,6 @@
 #include "cs_log.h"
 #include "cs_navsto_coupling.h"
 #include "cs_parall.h"
-#include "cs_param.h"
 #include "cs_post.h"
 #include "cs_sdm.h"
 #include "cs_source_term.h"

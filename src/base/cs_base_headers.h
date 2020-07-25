@@ -68,6 +68,7 @@
 #include "cs_numbering.h"
 #include "cs_order.h"
 #include "cs_parall.h"
+#include "cs_param_types.h"
 #include "cs_parameters.h"
 #include "cs_part_to_block.h"
 #include "cs_physical_constants.h"

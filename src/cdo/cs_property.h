@@ -33,7 +33,7 @@
 
 #include "cs_field.h"
 #include "cs_flag.h"
-#include "cs_param.h"
+#include "cs_param_types.h"
 #include "cs_xdef.h"
 #include "cs_xdef_cw_eval.h"
 #include "cs_xdef_eval.h"

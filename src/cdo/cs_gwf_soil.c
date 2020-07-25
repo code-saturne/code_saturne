@@ -49,7 +49,7 @@
 #include "cs_math.h"
 #include "cs_mesh_location.h"
 #include "cs_parall.h"
-#include "cs_param.h"
+#include "cs_param_types.h"
 #include "cs_post.h"
 #include "cs_prototypes.h"
 #include "cs_reco.h"

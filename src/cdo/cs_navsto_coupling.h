@@ -34,7 +34,6 @@
 #include "cs_equation.h"
 #include "cs_field.h"
 #include "cs_navsto_param.h"
-#include "cs_param.h"
 
 /*----------------------------------------------------------------------------*/
 

@@ -50,7 +50,6 @@
 #include "cs_equation_priv.h"
 #include "cs_iter_algo.h"
 #include "cs_navsto_coupling.h"
-#include "cs_param.h"
 #include "cs_static_condensation.h"
 #include "cs_timer.h"
 

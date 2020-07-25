@@ -129,6 +129,7 @@ cs_notebook.h \
 cs_numbering.h \
 cs_opts.h \
 cs_order.h \
+cs_param_types.h \
 cs_parameters.h \
 cs_parameters_check.h \
 cs_parall.h \
@@ -292,6 +293,7 @@ cs_gas_mix_physical_properties.f90 \
 csopli.f90 \
 cs_opts.c \
 cs_parall.c \
+cs_param_types.c \
 cs_parameters.c \
 cs_parameters_check.c \
 cs_physical_constants.c \
@@ -529,4 +531,3 @@ clean-local:
 
 .cu.lo:
 	$(LIBTOOL_CUDA) --tag=CC --mode=compile $(NVCC) $(AM_CPPFLAGS) -I$(top_srcdir)/src/base -I../.. $(NVCC_FLAGS) -c -o $@ $<
-

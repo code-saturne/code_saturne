@@ -32,7 +32,7 @@
 #include "cs_advection_field.h"
 #include "cs_equation.h"
 #include "cs_field.h"
-#include "cs_param.h"
+#include "cs_param_types.h"
 #include "cs_property.h"
 #include "cs_maxwell.h"
 #include "cs_mesh.h"

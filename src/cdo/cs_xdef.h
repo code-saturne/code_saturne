@@ -35,7 +35,7 @@
 
 #include "cs_base.h"
 #include "cs_boundary_zone.h"
-#include "cs_param.h"
+#include "cs_param_types.h"
 #include "cs_quadrature.h"
 #include "cs_volume_zone.h"
 

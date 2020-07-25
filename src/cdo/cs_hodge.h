@@ -36,7 +36,6 @@
 #include "cs_cdo_connect.h"
 #include "cs_cdo_local.h"
 #include "cs_cdo_quantities.h"
-#include "cs_param.h"
 #include "cs_param_cdo.h"
 #include "cs_property.h"
 #include "cs_sdm.h"

@@ -37,7 +37,7 @@
 #include "cs_domain.h"
 #include "cs_equation.h"
 #include "cs_gwf.h"
-#include "cs_param.h"
+#include "cs_param_types.h"
 #include "cs_property.h"
 
 /*----------------------------------------------------------------------------*/

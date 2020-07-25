@@ -34,7 +34,7 @@
 #include "cs_base.h"
 #include "cs_cdo_quantities.h"
 #include "cs_cdo_local.h"
-#include "cs_param.h"
+#include "cs_param_types.h"
 #include "cs_quadrature.h"
 #include "cs_xdef.h"
 

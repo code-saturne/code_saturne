@@ -30,7 +30,6 @@
  *----------------------------------------------------------------------------*/
 
 #include "cs_advection_field.h"
-#include "cs_param.h"
 #include "cs_param_cdo.h"
 #include "cs_hodge.h"
 #include "cs_property.h"

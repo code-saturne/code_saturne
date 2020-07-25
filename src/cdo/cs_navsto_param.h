@@ -719,11 +719,11 @@ typedef struct {
  *
  * \var CS_NSKEY_ADVECTION_FORMULATION
  * Set the type of formulation for the advection term, for example in the  Oseen
- * problem . cf. cs_param.h
+ * problem . cf. cs_param_types.h
  *
  * \var CS_NSKEY_ADVECTION_SCHEME
  * Set the type of scheme for the advection term, for example in the  Oseen
- * problem . cf. cs_param.h
+ * problem . cf. cs_param_types.h
  *
  * \var CS_NSKEY_DOF_REDUCTION
  * Set how the DoFs are defined (similar to \ref CS_EQKEY_DOF_REDUCTION)

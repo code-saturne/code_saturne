@@ -114,7 +114,6 @@ cs_navsto_coupling.h \
 cs_navsto_param.h \
 cs_navsto_sles.h \
 cs_navsto_system.h \
-cs_param.h \
 cs_param_cdo.h \
 cs_property.h \
 cs_quadrature.h \
@@ -178,7 +177,6 @@ cs_mesh_deform.c \
 cs_navsto_coupling.c \
 cs_navsto_param.c \
 cs_navsto_system.c \
-cs_param.c \
 cs_property.c \
 cs_quadrature.c \
 cs_reco.c \

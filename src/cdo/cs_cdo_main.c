@@ -57,8 +57,6 @@
 #include "cs_maxwell.h"
 #include "cs_navsto_system.h"
 #include "cs_parall.h"
-#include "cs_param.h"
-#include "cs_param_cdo.h"
 #include "cs_post.h"
 #include "cs_prototypes.h"
 #include "cs_solidification.h"

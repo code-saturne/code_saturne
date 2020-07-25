@@ -44,7 +44,7 @@
 #include <bft_printf.h>
 
 #include "cs_math.h"
-#include "cs_param.h"
+#include "cs_param_types.h"
 
 /*----------------------------------------------------------------------------
  *  Header for the current file
