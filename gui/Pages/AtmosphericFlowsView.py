@@ -125,6 +125,8 @@ class AtmosphericFlowsView(QWidget, Ui_AtmosphericFlowsForm):
         if not file:
             return
         file = os.path.basename(file)
+        if not data:
+            data = os.getcwd()
         if file not in os.listdir(data):
             title = self.tr("Warning")
             msg   = self.tr("This selected file is not in the DATA directory")
