@@ -255,7 +255,20 @@ cs_user_postprocess_values(const char            *mesh_name,
 
     const char *name = cs_probe_set_get_name(probes);
 
-    const cs_time_step_t *ts_post = (ts->nt_cur == ts->nt_max) ? NULL : ts;
+    bool is_profile = false;
+    cs_probe_set_get_post_info(probes,
+                               NULL,
+                               NULL,
+                               &is_profile,
+                               NULL,
+                               NULL,
+                               NULL,
+                               NULL,
+                               NULL);
+
+    const cs_time_step_t *ts_post = ts;
+    if (is_profile && ts->nt_cur == ts->nt_max)
+      ts = NULL;
 
     /* Common variables */
 
