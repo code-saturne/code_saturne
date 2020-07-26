@@ -2419,7 +2419,7 @@ fvm_writer_field_component_name(char    *s,
                                 int      component_id)
 {
   static const char *comp3[] = {"X", "Y", "Z"};
-  static const char *comp6[] = {"XX", "YY", "ZZ", "XY", "XZ", "YZ"};
+  static const char *comp6[] = {"XX", "YY", "ZZ", "XY", "YZ", "XZ"};
   static const char *comp9[] = {"XX", "XY", "XZ",
                                 "YX", "YY", "YZ",
                                 "ZX", "ZY", "ZZ"};
