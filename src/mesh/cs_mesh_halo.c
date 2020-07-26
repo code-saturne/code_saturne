@@ -972,7 +972,7 @@ _fill_send_halo(cs_mesh_t                 *mesh,
 
   } /* End if gcell_face_idx and gcell_faces_lst != NULL */
 
-  /* Destroy the lookup table strcuture */
+  /* Destroy the lookup table structure */
 
   _vtx_lookup_destroy(&vtx_lookup);
 

@@ -194,7 +194,7 @@ typedef struct {
 
 } cs_gwf_tracer_input_t;
 
-/* Set of parameters describing a tracer strcuture */
+/* Set of parameters describing a tracer structure */
 /* ----------------------------------------------- */
 
 struct _gwf_tracer_t{
