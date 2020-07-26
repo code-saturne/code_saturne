@@ -155,7 +155,7 @@ cs_user_lagr_imposed_motion(const cs_real_t  coords[3],
  *
  * This function is called for each injection zone and set. Particles
  * with ids between \c pset->n_particles and \c n_elts are initialized
- * but may be modidied by this function.
+ * but may be modified by this function.
  *
  * \param[in,out]  particles         particle set
  * \param[in]      zis               zone injection set data

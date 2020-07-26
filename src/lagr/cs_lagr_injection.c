@@ -1594,13 +1594,13 @@ cs_lagr_injection(int        time_id,
                                          1,
                                          CS_LAGR_CELL_ID,
                                          saved_cell_id[i]);
-            cs_real_t *p_coords
+            cs_real_t *p_coords_prev
               = cs_lagr_particles_attr_n(p_set,
                                          p_id,
                                          1,
                                          CS_LAGR_COORDS);
             for (cs_lnum_t j = 0; j < 3; j++)
-              p_coords[j] = saved_coords[i][j];
+              p_coords_prev[j] = saved_coords[i][j];
           }
 
           BFT_FREE(saved_coords);
