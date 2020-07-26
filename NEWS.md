@@ -3,6 +3,9 @@ Release 6.0.5 (unreleased)
 
 Bug fixes:
 
+- Fix inversion of tensor component time plots (probes) YZ and XZ
+  (GitLab issue #208).
+
 - Fix OpenMP crash with ALE.
 
 - Fans model: fix volume computation and associated scaling in parallel mode.
