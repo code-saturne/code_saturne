@@ -4,6 +4,9 @@ Release 5.0.13 (Unreleased)
 Bug fixes
 ---------
 
+- Fix inversion of tensor component time plots (probes) YZ and XZ
+  (GitLab issue #208).
+
 - GUI: fix crash when accessing time step with some meteo models.
 
 - Fix computation of Rhie & Chow first term in cases where diffusion in
