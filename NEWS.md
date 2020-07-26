@@ -3,6 +3,8 @@ Release 6.1.2 (unreleased)
 
 Bug fixes:
 
+- Fix inversion of tensor component time plots YZ and XZ (GitLab issue #208).
+
 - Fix OpenMP crash with ALE.
 
 - Fix possible dissipation source term error in buoyant humid atmosphere.
