@@ -966,13 +966,14 @@ cs_turbulence_kw(int              nvar,
         /* Explicit source terms on omega: directly use CE4 constant from
            k-epsilon (without justification). To be explored if necessary */
 
-        smbrw[c_id] += cs_turb_ce4 * lag_st_k[c_id] * cromo[c_id] / cpro_pcvto[c_id];
+        smbrw[c_id] +=   cs_turb_ce4 * lag_st_k[c_id] * cromo[c_id]
+                       / cpro_pcvto[c_id];
 
         /* Implicit source terms on k */
         tinstk[c_id] += CS_MAX(-lag_st_i[c_id], 0.);
 
         /* Implicit source terms on omega */
-        tinstw[c_id] =+ CS_MAX(-cs_turb_ce4 * lag_st_k[c_id] / cvara_k[c_id], 0.);
+        tinstw[c_id] += CS_MAX(-cs_turb_ce4 * lag_st_k[c_id] / cvara_k[c_id], 0.);
 
       }
 

@@ -1429,7 +1429,7 @@ cs_turbulence_ke(int              nvar,
         tinstk[c_id] += CS_MAX(-lag_st_i[c_id], 0.);
 
         /* Implicit source terms on omega */
-        tinste[c_id] =+ CS_MAX(-cs_turb_ce4 * lag_st_k[c_id] / cvara_k[c_id], 0.);
+        tinste[c_id] += CS_MAX(-cs_turb_ce4 * lag_st_k[c_id] / cvara_k[c_id], 0.);
 
       }
 
