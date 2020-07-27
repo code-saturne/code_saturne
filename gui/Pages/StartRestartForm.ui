@@ -308,7 +308,7 @@
               <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;Indicate whether the dynamic field should be frozen or not. In such a case, the values of velocity, pressure, and turbulence variables are kept constant. Only the equations for the scalars are solved.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;(code_saturne key word: &lt;/span&gt;&lt;span style=&quot; font-size:9pt; font-weight:600;&quot;&gt;ICCVFG&lt;/span&gt;&lt;span style=&quot; font-size:9pt;&quot;&gt;)&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
              <property name="text">
-              <string>Calculation on frozen velocity and pressure fields</string>
+              <string>Calculation on frozen dynamic (velocity, pressure and turbulence)</string>
              </property>
             </widget>
            </item>
