@@ -167,7 +167,6 @@ class case:
                  package_compute = None,      # package for compute environment
                  case_dir = None,
                  staging_dir = None,
-                 coupling_parameters = None,
                  domains = None,
                  syr_domains = None,
                  py_domains = None):
@@ -289,9 +288,6 @@ class case:
                 + 'all or no domains must execute their solver.\n'
             raise RunCaseError(err_str)
 
-        # Coupling parameters if present
-
-        self.coupling_parameters = coupling_parameters
 
         # Date or other name
 
@@ -1368,14 +1364,6 @@ class case:
             d.prepare_data()
             if len(d.error) > 0:
                 self.error = d.error
-
-        # Output coupling parameters for staging
-
-        if self.coupling_parameters:
-            s = open(os.path.join(self.result_dir,
-                                  'coupling_parameters.py'), 'w')
-            s.write(self.coupling_parameters)
-            s.close()
 
         # Rename temporary file to indicate new status
 

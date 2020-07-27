@@ -193,43 +193,28 @@ class Case(object):
         # TODO: use run.cfg info, so as to allow another coupling parameters
         #       path ('run.cfg' is fixed, 'coupling_parameters.py' is not).
 
-        coupling = os.path.join(self.__repo, self.label, "coupling_parameters.py")
-        if not os.path.isfile(coupling):
-            coupling = None
+        coupling = False
+        run_conf = None
+        run_confing_path = os.path.join(self.__repo, self.label, "run.cfg")
+        if os.path.isfile(run_config_path):
+            run_conf = cs_run_conf.run_conf(run_config_path, package=self.pkg)
+            if run_conf.get("setup", "coupled_domains") != None:
+                coupling = True
 
-        if coupling != None:
+        if coupling:
             self.resu = 'RESU_COUPLING'
 
             # Apply coupling parameters information
 
             from code_saturne import cs_case_coupling
-            try:
-                exec(compile(open(coupling).read(), '<string>', 'exec'))
-            except Exception:
-                execfile(coupling)
+            from code_saturne.cs_run import get_coupling_parameters_from_run_conf
+
+            coupled_domains = get_coupling_parameters_from_run_conf(run_conf)
 
             self.subdomains = []
-            for d in locals()['domains']:
+            for d in coupled_domains:
                 if d['solver'].lower() in ('code_saturne', 'neptune_cfd'):
                     self.subdomains.append(d['domain'])
-                elif d['solver'].lower() == "syrthes":
-                    syrthes = True
-
-            # Insert syrthes path in coupling parameters
-
-            if syrthes:
-                syrthes_insert = cs_create.syrthes_path_line(pkg)
-                if syrthes_insert:
-                    fd = open(coupling)
-                    fd_lines = fd.readlines()
-                    fd.close()
-                    fd = open(coupling, 'w')
-                    for line in fd_lines:
-                        if "sys.path.insert" in line:
-                            fd.write(syrthes_insert)
-                        else:
-                            fd.write(line)
-                    fd.close()
 
         self.exe = os.path.join(pkg.get_dir('bindir'),
                                 pkg.name + pkg.config.shext)
@@ -367,8 +352,6 @@ class Case(object):
     def __suggest_run_id(self):
 
         cmd = enquote_arg(self.exe) + " run --suggest-id"
-        if self.subdomains:
-            cmd += " --coupling=coupling_parameters.py"
         p = subprocess.Popen(cmd,
                              shell=True,
                              executable=get_shell_type(),
@@ -762,7 +745,6 @@ class Study(object):
             os.chdir(c.label)
             refdir = os.path.join(self.__repo, c.label)
             retval = 1
-            coupling = None
             for node in os.listdir(refdir):
                 ref = os.path.join(self.__repo, c.label, node)
                 if node in c.subdomains:
@@ -776,18 +758,15 @@ class Study(object):
                     shutil.copytree(ref, node, symlinks=True)
                 else:
                     shutil.copy2(ref, node)
-                    if node == 'coupling_parameters.py':
-                        coupling = node
-                        resu_coupling = 'RESU_COUPLING'
-                        if not os.path.isdir(resu_coupling):
-                            os.mkdir(resu_coupling)
-                        run_conf_path = 'run.cfg'
-            if coupling and not os.path.isfile(run_conf_path):
-                run_conf = cs_run_conf.run_conf('run.cfg',
-                                                package=self.__package,
-                                                create_if_missing=True)
-                run_conf.set('setup', 'coupling', coupling)
-                run_conf.save()
+                    if node == 'run.cfg':
+                        temp_run_conf = cs_run_conf.run_conf('run.cfg',
+                                                             package=self.__package)
+                        if temp_run_conf.get('setup', 'coupled_domains'):
+                            resu_coupling = 'RESU_COUPLING'
+                            if not os.path.isdir(resu_coupling):
+                                os.mkdir(resu_coupling)
+                            run_conf_path = 'run.cfg'
+
             create_local_launcher(self.__package, self.__dest)
             os.chdir(self.__dest)
         else:

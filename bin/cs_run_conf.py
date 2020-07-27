@@ -417,16 +417,16 @@ class run_conf(object):
                         v = k_value[0]
                         if v in ('True', 'False'):
                             v = v.lower()
-                        lines.append(k + ': ' + v)
+                        lines.append(k + ' = ' + v)
                     else:
                         if k_comment:
                             lines.append('')
-                        lines.append(k + ': ')
+                        lines.append(k + ' = ')
                         for l in k_value:
                             lines.append('    ' + l)
                         lines.append('')
                 elif k_comment:
-                    lines.append(k + ':')
+                    lines.append(k + ' = ')
 
             if has_simple:
                 if k_value_l < 2:

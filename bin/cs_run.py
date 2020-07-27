@@ -139,10 +139,6 @@ def process_cmd_line(argv, pkg):
                       metavar="<case>",
                       help="path to the case's directory")
 
-    parser.add_option("--coupling", dest="coupling", type="string",
-                      metavar="<coupling>",
-                      help="path or name of the coupling descriptor file")
-
     parser.add_option("--id", dest="id", type="string",
                       metavar="<id>",
                       help="use the given run id")
@@ -187,7 +183,6 @@ def process_cmd_line(argv, pkg):
     parser.set_defaults(compute=None)
     parser.set_defaults(finalize=None)
     parser.set_defaults(param=None)
-    parser.set_defaults(coupling=None)
     parser.set_defaults(domain=None)
     parser.set_defaults(id=None)
     parser.set_defaults(nprocs=None)
@@ -217,35 +212,39 @@ def process_cmd_line(argv, pkg):
     param = None
     compute_build = None
 
-    if options.coupling and options.param:
-        # Multiple domain case
-        cmd_line = sys.argv[0]
-        for arg in sys.argv[1:]:
-            cmd_line += ' ' + arg
-        err_str = 'Error:' + os.linesep
-        err_str += cmd_line + os.linesep
-        err_str += '--coupling and -p/--param options are incompatible.'
-        raise RunCaseError(err_str)
-
     # Also check for possible settings file
 
-    coupling = options.coupling
     run_id = options.id
     run_conf = None
 
     run_config_path = os.path.join(os.getcwd(), 'run.cfg')
     if os.path.isfile(run_config_path):
         run_conf = cs_run_conf.run_conf(run_config_path, package=pkg)
-        if not coupling:
-            if 'setup' in run_conf.sections:
-                if 'coupling' in run_conf.sections['setup']:
-                    coupling = run_conf.sections['setup']['coupling']
         if not run_id and not filter_stages:
             if 'run' in run_conf.sections and not filter_stages:
                 update_run_steps(s_c, run_conf)
                 if s_c['stage'] == False:
                     if 'id' in run_conf.sections['run']:
                         run_id = run_conf.sections['run']['id']
+
+
+    # Check for multiple domain case
+    # Kept the 'coupling' file def for the definition of the case_dir function
+    coupling = None
+    coupled_domains = get_coupling_parameters_from_run_conf(run_conf)
+    if coupled_domains != []:
+        coupling = run_config_path
+
+    if coupling and options.param:
+        cmd_line = sys.argv[0]
+        for arg in sys.argv[1:]:
+            cmd_line += ' ' + arg
+        err_str = 'Error:' + os.linesep
+        err_str += cmd_line + os.linesep
+        err_str += '-p/--param option is incompatible with '
+        err_str += '"coupled_domains" option defined within the run.cfg file.'
+        raise RunCaseError(err_str)
+
 
     casedir, staging_dir = cs_case.get_case_dir(case=options.case,
                                                 param=options.param,
@@ -282,7 +281,7 @@ def process_cmd_line(argv, pkg):
            'staging_dir': staging_dir,
            'run_id': run_id,
            'param': param,
-           'coupling': coupling,
+           'coupled_domains': coupled_domains,
            'id_prefix': options.id_prefix,
            'id_suffix': options.id_suffix,
            'suggest_id': options.suggest_id,
@@ -307,7 +306,7 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
     run_config_path = ""
     setup_default_path = ""
 
-    if r_c['coupling']:
+    if r_c['coupled_domains'] != []:
         run_config_path = os.path.join(casedir, 'run.cfg')
     else:
         run_config_path = os.path.join(casedir, 'DATA', 'run.cfg')
@@ -436,9 +435,19 @@ def generate_run_config_file(path, resource_name, r_c, s_c, pkg):
 
     sections = {}
 
-    if 'coupling' in r_c:
-        if r_c['coupling']:
-            sections['setup'] = {'coupling': r_c['coupling']}
+    if 'coupled_domains' in r_c:
+        if r_c['coupled_domains'] != []:
+            dom_str=''
+            for i, d in enumerate(r_c['coupled_domains']):
+                dom_name = d['domain']
+                if i != 0:
+                    dom_str += ':'
+                dom_str += dom_name
+
+                # Add the domain section
+                sections[dom_name] = {key:str(d[key]) for key in d.keys()}
+
+            sections['setup'] = {'coupled_domains': dom_str}
 
     sections['run'] = {'id': r_c['run_id'],
                        'stage': False,
@@ -461,6 +470,36 @@ def generate_run_config_file(path, resource_name, r_c, s_c, pkg):
     run_conf = cs_run_conf.run_conf(None)
     run_conf.sections = sections
     run_conf.save(path, new=True)
+
+#-------------------------------------------------------------------------------
+# Retrieve coupling related dictionary
+#-------------------------------------------------------------------------------
+
+def get_coupling_parameters_from_run_conf(run_conf):
+    """
+    Return the list of coupled domains defined inside a run.cfg.
+    Empty list if single-case run.
+    """
+
+    domain_names = run_conf.get('setup', 'coupled_domains')
+
+    domains = []
+
+    if domain_names:
+        for d in domain_names.split(":"):
+            dtemp = run_conf.sections[d.lower()]
+            domains.append({})
+
+            for key in dtemp.keys():
+                if dtemp[key] and dtemp[key] != 'None':
+                    if key in ('n_procs_max', 'n_procs_min', 'n_procs_weight'):
+                        domains[-1][key] = int(dtemp[key])
+                    else:
+                        domains[-1][key] = str(dtemp[key])
+                else:
+                    domains[-1][key] = None
+
+    return domains
 
 #===============================================================================
 # Run the calculation
@@ -509,20 +548,11 @@ def run(argv=[], pkg=None, submit_args=None):
 
     # Specific case for coupling
 
-    if r_c['coupling']:
+    if r_c['coupled_domains'] != []:
 
         from code_saturne import cs_case_coupling
 
-        coupling =r_c['coupling']
-        if os.path.isfile(coupling):
-            try:
-                c_locals = {}
-                exec(compile(open(coupling).read(), coupling, 'exec'),
-                     globals(),
-                     c_locals)
-                domains = c_locals['domains']
-            except Exception:
-                execfile(coupling)
+        domains = r_c['coupled_domains']
 
         verbose = True
         if r_c['suggest_id']:

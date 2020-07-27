@@ -225,19 +225,6 @@ class runcase(object):
 
     #---------------------------------------------------------------------------
 
-    def get_coupling(self):
-        """
-        Get the coupling option in the run command
-        """
-
-        args = separate_args(self.lines[self.run_cmd_line_id])
-
-        return get_command_single_value(args,
-                                        ('--coupling',
-                                         '--coupling='))
-
-    #---------------------------------------------------------------------------
-
     def get_parameters(self):
         """
         Get the parameters option in the run command
@@ -323,9 +310,6 @@ class runcase(object):
         setup_dict = {}
         if param != 'setup.xml':
             setup_dict['param'] = param
-        coupling = self.get_coupling()
-        if coupling:
-            setup_dict['coupling'] = coupling
         if len(setup_dict) > 0:
             sections['setup'] = setup_dict
 
