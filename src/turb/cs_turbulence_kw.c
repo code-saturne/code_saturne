@@ -213,7 +213,6 @@ cs_turbulence_kw(int              nvar,
   cs_real_t *s2pw2 = NULL;
   cs_real_t *maxgdsv = NULL;
   cs_real_t *d2uidxi2 = NULL;
-  cs_real_3_t *vel_laplacian = NULL;
 
   if (cs_glob_turb_model->hybrid_turb == 2) {
     /* DDES hybrid model */
@@ -224,7 +223,6 @@ cs_turbulence_kw(int              nvar,
     /* SAS hybrid model */
     BFT_MALLOC(maxgdsv, n_cells_ext, cs_real_t);
     BFT_MALLOC(d2uidxi2, n_cells_ext, cs_real_t);
-    BFT_MALLOC(vel_laplacian, n_cells_ext, cs_real_3_t);
   }
 
   const cs_real_t *cvisct =  (const cs_real_t *)CS_F_(mu_t)->val;
@@ -515,6 +513,15 @@ cs_turbulence_kw(int              nvar,
     cs_field_get_key_struct(CS_F_(vel), key_cal_opt_id, &vcopt_u_loc);
     vcopt_u_loc.iconv = 0;
 
+    cs_real_3_t *vel_laplacian;
+    BFT_MALLOC(vel_laplacian, n_cells_ext, cs_real_3_t);
+
+#   pragma omp parallel for if(n_cells_ext> CS_THR_MIN)
+    for (cs_lnum_t c_id = 0; c_id < n_cells_ext; c_id++) {
+      for (cs_lnum_t i = 0; i < 3; i++)
+        vel_laplacian[c_id][i] = 0;
+    }
+
     cs_balance_vector(cs_glob_time_step_options->idtvar,
                       -1, /* f_id */
                       imasac,
@@ -546,6 +553,8 @@ cs_turbulence_kw(int              nvar,
         v_lap[i] = vel_laplacian[c_id][i] / volume[c_id];
       d2uidxi2[c_id] = cs_math_3_square_norm(v_lap);
     }
+
+    BFT_FREE(vel_laplacian);
 
   }
 
@@ -877,7 +886,7 @@ cs_turbulence_kw(int              nvar,
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
 
       visct  = cpro_pcvto[c_id];
-      ro    = cromo[c_id];
+      ro     = cromo[c_id];
       xk     = cvara_k[c_id];
       xw     = cvara_omg[c_id];
       xxf1   = xf1[c_id];
@@ -1637,7 +1646,6 @@ cs_turbulence_kw(int              nvar,
   BFT_FREE(s2pw2);
   BFT_FREE(maxgdsv);
   BFT_FREE(d2uidxi2);
-  BFT_FREE(vel_laplacian);
   BFT_FREE(rotfct);
 }
 
