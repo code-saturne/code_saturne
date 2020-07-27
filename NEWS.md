@@ -3,6 +3,8 @@ Release 6.1.2 (unreleased)
 
 Bug fixes:
 
+- Fix missing initialization in k-omega SAS hybrid model.
+
 - Fix inversion of tensor component time plots YZ and XZ (GitLab issue #208).
 
 - Fix OpenMP crash with ALE.

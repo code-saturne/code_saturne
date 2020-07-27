@@ -376,6 +376,12 @@ else if (hybrid_turb.eq.3) then
   relaxp = vcopt_u%relaxv
   icvflb = 0
 
+  do iel = 1, ncelet
+    vel_laplacian(1,iel) = 0.d0
+    vel_laplacian(2,iel) = 0.d0
+    vel_laplacian(3,iel) = 0.d0
+  enddo
+
   call bilscv &
   ( idtvar  , f_id     , iconvp , idiffp , nswrgp , imligp , ircflp , &
     ischcp  , isstpp   , inc    , imrgrp , ivisep ,                   &
