@@ -793,6 +793,11 @@ if (idtvar.lt.0) then
   arak = arak/max(vcopt%relaxv,epzero)
 endif
 
+! With a staggered approach no Rhie and Chow correction is needed
+if (staggered.eq.1) then
+  arak = 0.d0
+endif
+
 !===============================================================================
 ! 4. TABLEAUX DE cstphy
 !===============================================================================

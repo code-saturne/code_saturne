@@ -189,15 +189,16 @@ integer          ivoid(1)
 
 double precision residu, phydr0, rnormp
 double precision arsr  , thetap
-double precision dtsrom
+double precision dtsrom, dtm
 double precision epsrgp, climgp, extrap, epsilp
 double precision drom  , relaxp
-double precision hint, qimpv(3)
+double precision hint, dimp, qimpv(3)
 double precision ressol, rnorm2
 double precision nadxkm1, nadxk, paxm1ax, paxm1rk, paxkrk, alph, beta
 double precision visci(3,3), fikis, viscis, distfi
 double precision cfl, kpdc, rho, pimp, bpmasf
 double precision normp, rc1(3)
+double precision porosf
 
 type(solving_info) sinfo
 type(var_cal_opt) :: vcopt_p, vcopt_u
@@ -233,10 +234,12 @@ double precision, allocatable, dimension(:), target  :: divu
 double precision, allocatable, dimension(:,:), target :: tpusro
 double precision, dimension(:), pointer :: viscap
 double precision, dimension(:,:), pointer :: vitenp
-double precision, dimension(:), pointer :: imasfl, bmasfl
+double precision, dimension(:), pointer :: imasfl, bmasfl, imasfla, bmasfla
+double precision, dimension(:), pointer :: porosi
+
 double precision, dimension(:), pointer :: brom, crom, croma, broma
 double precision, dimension(:), pointer :: brom_eos, crom_eos
-double precision, dimension(:), pointer :: cvar_pr
+double precision, dimension(:), pointer :: cvar_pr, cvara_pr
 double precision, dimension(:), pointer :: cpro_divu
 double precision, dimension(:), pointer :: cpro_wgrec_s
 double precision, dimension(:,:), pointer :: cpro_wgrec_v
@@ -254,6 +257,8 @@ double precision, allocatable, dimension(:) :: c2
 double precision, dimension(:), pointer :: cpro_cp, cpro_cv
 double precision, dimension(:), pointer :: cvar_fracv, cvar_fracm, cvar_frace
 double precision, dimension(:), pointer :: phi
+double precision, dimension(:), pointer :: hli, hlb, sti
+double precision, allocatable, dimension(:), target :: taui, taub
 
 !===============================================================================
 
@@ -383,6 +388,7 @@ else
 endif
 
 call field_get_val_s(ivarfl(ipr), cvar_pr)
+call field_get_val_prev_s(ivarfl(ipr), cvara_pr)
 
 call field_get_key_int(ivarfl(ipr), kimasf, iflmas)
 call field_get_key_int(ivarfl(ipr), kbmasf, iflmab)
@@ -451,6 +457,24 @@ if (ivofmt.gt.0.or.idilat.eq.4) then
 
 endif
 
+call field_get_val_s_by_name("inner_face_head_loss", hli)
+call field_get_val_s_by_name("boundary_face_head_loss", hlb)
+
+if (staggered.eq.1) then
+  allocate(taui(nfac))
+  do ifac = 1, nfac
+    iel = ifacel(1,ifac)
+    taui(ifac) = dt(iel) / (1.d0 + hli(ifac) * dt(iel));
+  enddo
+  call synsca(taui)
+  allocate(taub(nfabor))
+  do ifac = 1, nfabor
+    iel = ifabor(ifac)
+    taub(ifac) = dt(iel) / (1.d0 + hlb(ifac) * dt(iel));
+  enddo
+  call synsca(taub)
+endif
+
 !===============================================================================
 ! 2. Compute an approximated pressure increment if needed
 !    that is when there are buoyancy terms (gravity and variable density)
@@ -463,12 +487,19 @@ do ifac = 1, nfac
 enddo
 
 do ifac = 1, nfabor
-  coefa_dp(ifac) = 0.d0
-  coefaf_dp(ifac) = 0.d0
+  iel = ifabor(ifac)
+  if (cell_is_1d(iel).eq.0) then
+    coefa_dp(ifac) = 0.d0
+    coefaf_dp(ifac) = 0.d0
+  else
+    coefa_dp(ifac) = coefa_p(ifac)
+    coefaf_dp(ifac) = coefaf_p(ifac)
+  endif
   coefb_dp(ifac) = coefb_p(ifac)
   coefbf_dp(ifac) = coefbf_p(ifac)
   bflux(ifac) = 0.d0
 enddo
+
 
 ! Compute a pseudo hydrostatic pressure increment stored
 ! in cvar_hydro_pres(.) with Homogeneous Neumann BCs everywhere
@@ -698,6 +729,10 @@ if (ippmod(icompf).eq.3) then
   enddo
 endif
 
+if (staggered.eq. 1 .and. iporos.ge.1) then
+  call field_get_val_s(ipori, porosi)
+endif
+
 ! ---> Face diffusivity
 if (vcopt_p%idiff.ge.1) then
 
@@ -756,6 +791,25 @@ else
     viscb(ifac) = 0.d0
   enddo
 
+endif
+
+if (staggered.eq.1) then
+  do ifac = 1, nfac
+    ii = ifacel(1,ifac)
+    jj = ifacel(2,ifac)
+    if (cell_is_1d(ii).eq.1.or.cell_is_1d(jj).eq.1) then
+      dtm = 0.5d0*(dt(ii)+dt(jj))
+      viscf(ifac) = taui(ifac) / dtm * viscf(ifac)
+    endif
+  enddo
+  call synsca(viscf)
+  do ifac = 1, nfabor
+    ii = ifabor(ifac)
+    if (cell_is_1d(ii).eq.1) then
+      viscb(ifac) = taub(ifac) / dt(ii) * viscb(ifac)
+    endif
+  enddo
+  call synsca(viscb)
 endif
 
 iconvp = vcopt_p%iconv
@@ -901,6 +955,95 @@ call inimav &
    coefav , coefbv ,                                              &
    imasfl , bmasfl )
 
+if (staggered.eq.1) then
+
+  call field_get_val_prev_s(iflmas, imasfla)
+  call field_get_val_prev_s(iflmab, bmasfla)
+  call field_get_val_s_by_name("inner_face_source_term", sti)
+
+  if (isuite.eq.0 .and. ntcabs.eq.1) then
+    do ifac = 1, nfac
+      imasfla(ifac) = imasfl(ifac)
+    enddo
+    do ifac = 1, nfabor
+      bmasfla(ifac) = bmasfl(ifac)
+    enddo
+  endif
+
+  if (iporos.ge.1) then
+    do ifac = 1, nfac
+      ii = ifacel(1,ifac)
+      jj = ifacel(2,ifac)
+      if (cell_is_1d(ii).eq.1.or.cell_is_1d(jj).eq.1) then
+        dtm = 0.5d0*(dt(ii)+dt(jj))
+        porosf = min(porosi(ii),porosi(jj))
+        imasfl(ifac) = taui(ifac) / dtm * imasfla(ifac)+porosf*taui(ifac)*sti(ifac)*suffan(ifac)
+      endif
+    enddo
+    do ifac = 1, nfabor
+      ii = ifabor(ifac)
+      if (cell_is_1d(ii).eq.1) then
+        if ( itypfb(ifac).eq.ientre ) then
+          bmasfl(ifac) = taub(ifac) / dt(ii) * bmasfl(ifac)
+        else
+          bmasfl(ifac) = taub(ifac) / dt(ii) * bmasfla(ifac)
+        endif
+      endif
+    enddo
+
+    do ifac = 1, nfabor
+      ii = ifabor(ifac)
+      if (itypfb(ifac).eq.ientre.and.cell_is_1d(ii).eq.1) then
+
+        dtm = 0.5d0*(dt(ii)+dt(jj))
+        dimp = -(1.d0-dtm/taub(ifac))*bmasfl(ifac)/suffbn(ifac)
+        hint = taub(ifac) / distb(ifac)
+
+        call set_neumann_scalar &
+          ( coefa_dp(ifac), coefaf_dp(ifac),                         &
+            coefb_dp(ifac), coefbf_dp(ifac),                         &
+            dimp          , hint )
+
+      endif
+    enddo
+  else
+    do ifac = 1, nfac
+      ii = ifacel(1,ifac)
+      jj = ifacel(2,ifac)
+      if (cell_is_1d(ii).eq.1.or.cell_is_1d(jj).eq.1) then
+        dtm = 0.5d0*(dt(ii)+dt(jj))
+        imasfl(ifac) = taui(ifac) / dtm * imasfla(ifac)+taui(ifac)*sti(ifac)*suffan(ifac)
+      endif
+    enddo
+    do ifac = 1, nfabor
+      ii = ifabor(ifac)
+      if (cell_is_1d(ii).eq.1) then
+        if ( itypfb(ifac).eq.ientre ) then
+          bmasfl(ifac) = taub(ifac) / dt(ii) * bmasfl(ifac)
+        else
+          bmasfl(ifac) = taub(ifac) / dt(ii) * bmasfla(ifac)
+        endif
+      endif
+    enddo
+
+    do ifac = 1, nfabor
+      ii = ifabor(ifac)
+      if (itypfb(ifac).eq.ientre.and.cell_is_1d(ii).eq.1) then
+
+        dtm = 0.5d0*(dt(ii)+dt(jj))
+        dimp = -(1.d0-dtm/taub(ifac))*bmasfl(ifac)/suffbn(ifac)
+        hint = taub(ifac) / distb(ifac)
+
+        call set_neumann_scalar &
+          ( coefa_dp(ifac), coefaf_dp(ifac),                         &
+            coefb_dp(ifac), coefbf_dp(ifac),                         &
+            dimp          , hint )
+
+      endif
+    enddo
+  endif
+
+endif
 
 ! --- Projection aux faces des forces exterieures
 
@@ -1143,13 +1286,21 @@ nswmpr = vcopt_p%nswrsm
 
 if (f_id_ph.ge.0) then
   do iel = 1, ncel
-    phi(iel)  = cvar_hydro_pres(iel) - cvar_hydro_pres_prev(iel)
+    if (cell_is_1d(iel).eq.0) then
+      phi(iel)  = cvar_hydro_pres(iel) - cvar_hydro_pres_prev(iel)
+    else
+      phi(iel)  = cvara_pr(iel) + cvar_hydro_pres(iel) - cvar_hydro_pres_prev(iel)
+    endif
     dphi(iel) = 0.d0
     phia(iel) = phi(iel)
   enddo
 else
   do iel = 1, ncel
-    phi(iel)  = 0.d0
+    if (cell_is_1d(iel).eq.0) then
+      phi(iel) = 0.d0
+    else
+      phi(iel)  = cvara_pr(iel)
+    endif
     dphi(iel) = 0.d0
     phia(iel) = phi(iel)
   enddo
@@ -1309,9 +1460,68 @@ if (i_vof_mass_transfer.ne.0) then
   enddo
 endif
 
+if (staggered.eq.1) then
+
+  ! --- Update the right hand side and update the residual
+  !      rhs^{k+1} = - div(rho u^n) - D(dt, delta delta p^{k+1})
+  !-------------------------------------------------------------
+
+  iccocg = 1
+  init = 1
+  inc  = 1
+  imrgrp = vcopt_p%imrgra
+  nswrgp = vcopt_p%nswrgr
+  imligp = vcopt_p%imligr
+  iwgrp  = vcopt_p%iwgrec
+  iwarnp = vcopt_p%iwarni
+  epsrgp = vcopt_p%epsrgr
+  climgp = vcopt_p%climgr
+  extrap = vcopt_p%extrag
+
+  if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
+
+    call itrgrp &
+    !==========
+  ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydr ,     &
+    iwgrp  , iwarnp ,                                                           &
+    epsrgp , climgp , extrap ,                                                  &
+    dfrcxt ,                                                                    &
+    phi    ,                                                                    &
+    coefa_dp  , coefb_dp  ,                                                     &
+    coefaf_dp , coefbf_dp ,                                                     &
+    viscf  , viscb  ,                                                           &
+    viscap ,                                                                    &
+    rhs    )
+
+  else if (iand(vcopt_p%idften, ANISOTROPIC_DIFFUSION).ne.0) then
+
+    ircflp = vcopt_p%ircflu
+
+    call itrgrv &
+    !==========
+  ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , ircflp , &
+    iphydr , iwgrp  , iwarnp ,                                              &
+    epsrgp , climgp , extrap ,                                              &
+    dfrcxt ,                                                                &
+    phi    ,                                                                &
+    coefa_dp  , coefb_dp  ,                                                 &
+    coefaf_dp , coefbf_dp ,                                                 &
+    viscf  , viscb  ,                                                       &
+    vitenp ,                                                                &
+    weighf , weighb ,                                                       &
+    rhs    )
+
+  endif
+
+endif
+
 ! --- Initial right hand side
 do iel = 1, ncel
-  rhs(iel) = - cpro_divu(iel) - rovsdt(iel)*phi(iel)
+  if (cell_is_1d(iel).eq.1) then
+    rhs(iel) = -rhs(iel) - cpro_divu(iel) - rovsdt(iel)*phi(iel)
+  else
+    rhs(iel) = - cpro_divu(iel) - rovsdt(iel)*phi(iel)
+  endif
 enddo
 
 ! --- Right hand side residual
@@ -1644,7 +1854,7 @@ do while (isweep.le.nswmpr.and.residu.gt.vcopt_p%epsrsm*rnormp)
   iccocg = 1
   init = 1
   inc  = 0
-  if (iphydr.eq.1.or.iifren.eq.1) inc = 1
+  if (iphydr.eq.1.or.iifren.eq.1.or.staggered.eq.1) inc = 1
   imrgrp = vcopt_p%imrgra
   nswrgp = vcopt_p%nswrgr
   imligp = vcopt_p%imligr
@@ -1761,7 +1971,7 @@ init = 0
 inc  = 0
 ! In case of hydrostatic pressure, inc is set to 1 to take explicit
 ! boundary conditions on the pressure (coefa)
-if (iphydr.eq.1.or.iifren.eq.1) inc = 1
+if (iphydr.eq.1.or.iifren.eq.1.or.staggered.eq.1) inc = 1
 imrgrp = vcopt_p%imrgra
 nswrgp = vcopt_p%nswrgr
 imligp = vcopt_p%imligr
@@ -2217,8 +2427,13 @@ if (idtvar.lt.0) then
     cvar_pr(iel) = cvar_pr(iel) + vcopt_p%relaxv*phi(iel)
   enddo
 else
+
   do iel = 1, ncel
-    cvar_pr(iel) = cvar_pr(iel) + phi(iel)
+    if (cell_is_1d(iel).eq.0) then
+      cvar_pr(iel) = cvar_pr(iel) + phi(iel)
+    else
+      cvar_pr(iel) = phi(iel)
+    endif
   enddo
 endif
 
@@ -2240,6 +2455,7 @@ if (idilat.eq.4) then
 endif
 
 ! Free memory
+if (staggered.eq.1) deallocate(taui,taub)
 deallocate(dam, xam)
 deallocate(trav)
 deallocate(res, phia, dphi)

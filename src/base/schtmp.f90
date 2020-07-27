@@ -107,7 +107,7 @@ if (iappel.eq.1) then
   ! Note: if there is no previous values, nothing is done
   ! for explicit schemes (istmpf=0) a specific treatment is done
   ! because previous value is used as a work array...
-  if (istmpf.ne.0) then
+  if (istmpf.ne.0 .or. staggered.eq.1) then
     call field_get_key_int(ivarfl(iu), kimasf, iflmas)
     call field_get_key_int(ivarfl(iu), kbmasf, iflmab)
     call field_current_to_previous(iflmas)
