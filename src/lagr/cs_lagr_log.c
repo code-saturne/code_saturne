@@ -471,29 +471,10 @@ cs_lagr_log_setup(void)
      _("\n  Turbulent dispersion options:\n"
        "    Lagrangian turbulent dispersion:              %s\n"
        "      identical to fluid turbulent diffusion:     %s\n"
-       "    apply complete model from time step:          %d\n"),
+       "    apply model from time step:                   %d\n"),
      _status(cs_glob_lagr_model->idistu),
      _status(cs_glob_lagr_model->idiffl),
      cs_glob_lagr_model->modcpl);
-
-  if (cs_glob_lagr_model->modcpl) {
-
-    const char *idirla_value_str[]
-      = {
-        N_("  0 (isotropic)"),
-        N_("  x"),
-        N_("  y"),
-        N_("  z"),
-        N_("  local (mean relative velocity direction)"),
-      };
-
-    int _idirla = cs_glob_lagr_model->idirla;
-    assert(_idirla > -1 && _idirla < 5);
-    cs_log_printf
-      (CS_LOG_SETUP,
-       _("    complete model mean direction: %s\n"),
-       _(idirla_value_str[cs_glob_lagr_model->idirla]));
-  }
 
   cs_log_printf
     (CS_LOG_SETUP,

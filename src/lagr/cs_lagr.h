@@ -249,21 +249,13 @@ typedef struct {
   int  physical_model;
   int  n_temperature_layers;
 
-  /*! activates (>0) or not (=0) the complete turbulent dispersion model.
+  /*! activates (>0) or not (=0) the turbulent dispersion model.
     When \ref modcpl is strictly positive, its value is interpreted as the
     absolute Lagrangian time step number (including restarts) after which the
     complete model is applied.
-    Since the complete model uses volume statistics, \ref modcpl must
+    Since the turbulent dispersion model uses volume statistics, \ref modcpl must
     either be 0 or be larger than \ref idstnt. */
   int modcpl;
-
-  /*!  direction (1=x, 2=y, 3=z) of the complete model.
-    It corresponds to the mean relative directions of the flow.
-    Useful only if \ref modcpl > 0
-    0 proposes an isotropic Lagrangian timescale.
-    4 proposes the local mean direction.
-    */
-  int idirla;
 
   /*!  activation (=1) or not (=0) of the particle turbulent dispersion.
     The turbulent dispersion is compatible only with the RANS turbulent models

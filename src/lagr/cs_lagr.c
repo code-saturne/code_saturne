@@ -168,8 +168,7 @@ static cs_lagr_time_scheme_t _lagr_time_scheme
 static cs_lagr_model_t  _lagr_model
   = {.physical_model = CS_LAGR_PHYS_OFF,
      .n_temperature_layers = 1,
-     .modcpl = 0,
-     .idirla = 0,
+     .modcpl = 1,
      .idistu = 1,
      .idiffl = 0,
      .deposition = 0,

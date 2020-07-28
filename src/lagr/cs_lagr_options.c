@@ -265,8 +265,7 @@ cs_lagr_options_definition(int         isuite,
   cs_glob_lagr_boundary_interactions->nombrd = NULL;
 
   lagr_time_scheme->t_order = 2;
-  lagr_model->modcpl = 0;
-  lagr_model->idirla = 0;
+  lagr_model->modcpl = 1;
   lagr_model->idistu = 1;
   lagr_model->idiffl = 0;
   lagr_time_scheme->ilapoi = 0;
@@ -767,11 +766,6 @@ cs_lagr_options_definition(int         isuite,
     /* Velocity statistics are needed for this model */
     cs_lagr_stat_activate_attr(CS_LAGR_VELOCITY);
 
-    cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
-                                  _("in Lagrangian module"),
-                                  "cs_glob_lagr_model->idirla",
-                                  lagr_model->idirla,
-                                  0, 5);
   }
 
   cs_parameters_is_in_range_int(CS_ABORT_DELAYED,
