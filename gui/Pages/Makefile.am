@@ -167,7 +167,6 @@ HeadLossesForm.ui \
 IdentityAndPathesForm.ui \
 ImmersedBoundariesNeptune.ui \
 InitializationForm.ui \
-LagrangianAdvancedOptionsDialogForm.ui \
 LagrangianBoundariesForm.ui \
 LagrangianForm.ui \
 LagrangianOutputForm.ui \

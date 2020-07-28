@@ -95,8 +95,7 @@ class LagrangianModel(Model):
         default['scheme_order']                        = 1
         default['turbulent_dispersion']                = "on"
         default['fluid_particles_turbulent_diffusion'] = "off"
-        default['complete_model_iteration']            = 0
-        default['complete_model_direction']            = 4
+        default['complete_model']                      = 1
 
         return default
 
@@ -654,7 +653,7 @@ class LagrangianModel(Model):
 
 
     @Variables.undoLocal
-    def setCompleteModelStartIteration(self, iteration):
+    def setCompleteModel(self, iteration):
         """
         Set value for complete model start iteration.
         """
@@ -664,40 +663,16 @@ class LagrangianModel(Model):
 
 
     @Variables.noUndo
-    def getCompleteModelStartIteration(self):
+    def getCompleteModel(self):
         """
         Return value for complete model iteration.
         """
         iteration = self.node_lagr.xmlGetInt('complete_model')
         if iteration == None:
-            iteration = self.defaultParticlesValues()['complete_model_iteration']
-            self.setCompleteModelStartIteration(iteration)
+            iteration = self.defaultParticlesValues()['complete_model']
+            self.setCompleteModel(iteration)
         return iteration
 
-
-    @Variables.undoLocal
-    def setCompleteModelDirection(self, value):
-        """
-        Set value for complete model direction.
-        """
-        self.isInt(value)
-        self.isInList(value, (1,2,3,4))
-        node_direction = self.node_lagr.xmlInitChildNode('complete_model_direction', 'choice')
-        node_direction['choice'] = value
-
-
-    @Variables.noUndo
-    def getCompleteModelDirection(self):
-        """
-        Return value for complete model direction.
-        """
-        node_direction = self.node_lagr.xmlInitChildNode('complete_model_direction', 'choice')
-        if node_direction:
-            val = node_direction['choice']
-            if val == "":
-                val = self.defaultParticlesValues()['complete_model_direction']
-                self.setCompleteModelDirection(val)
-        return val
 
 #-------------------------------------------------------------------------------
 # Lagrangian test case
@@ -1067,23 +1042,6 @@ class LagrangianTestCase(ModelTest):
 
         assert mdl.node_lagr == self.xmlNodeFromString(doc), \
             'Could not set default values for complete model start iteration.'
-
-
-    def checkCompleteModelDirection(self):
-        """Check whether the complete model direction could be set and get."""
-        mdl = LagrangianModel(self.case)
-        status = mdl.getCompleteModelDirection()
-
-        assert status == mdl.defaultParticlesValues()['complete_model_direction'], \
-            'Could not get default values for complete model direction.'
-
-        mdl.setCompleteModelDirection(2)
-        doc = """<lagrangian model="off">
-                    <complete_model_direction choice="2"/>
-                 </lagrangian>"""
-
-        assert mdl.node_lagr == self.xmlNodeFromString(doc), \
-            'Could not set default values for complete model direction.'
 
 
 def suite():
