@@ -1,0 +1,20 @@
+7                       Nb especes courantes
+8                       Nb de points de tabulation ENTH-TEMP
+300.                    TMIN
+3000.                   TMAX
+                        Especes Gazeuses
+            CH4       C2H4         CO         O2        CO2        H2O        N2
+            .35        .35        .35        .35        .35        .35       .35     coeff absorption (ray) 
+4                       Nb especes elementaires / Composition CHON
+ .012        1          2          1          0          1          0          0
+ .001        4          4          0          0          0          2          0
+ .016        0          0          1          2          2          1          0
+ .014        0          0          0          0          0          0          2
+4                       Nb d'especes globales (ici : / Fuel / Oxydant / Produits1 / Produits2)/ composition en especes elementaires
+             1.         0.         0.         0.         0.         0.         0.         CH4
+             0.         0.         0.         1.         0.         0.         3.76       Air
+             0.         0.         1.         0.         0.         2.         1.88       CH4+.5*Air=CO +2H2O+qspN2
+             0.         0.         0.         0.         1.         2.         7.52       CH4+ 2*Air=CO2+2H2O+qspN2
+2                       Nb de reactions mises en jeu pour les especes globales/stoechiometrie en nb de mole especes globales
+1  2        -1.        -2.38        4.88    0.
+3  2         0.        -7.14       -4.88    10.52

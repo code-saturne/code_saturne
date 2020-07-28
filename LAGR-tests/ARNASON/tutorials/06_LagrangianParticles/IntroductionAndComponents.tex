@@ -1,0 +1,33 @@
+\section{Introduction}
+
+%--------------------------------------------------------------------------------------------------
+\subsection{Tutorial Components}
+
+This tutorial makes use of:
+\begin{itemize}
+  \item The \salome \cite{Salome} platform for geometry generation, meshing, and post-processing
+  \item \CS \cite{CS_Paper, CS_Web} for CFD calculations, possibly integrated in the \salome platform (then named \salome\_CFD)
+  \item Reference \cite{Arnason} for comparison with published results
+\end{itemize}
+To work through this tutorial you will need a computer on which these two software applications are already available or on which you have permission to install them.
+
+You will also need to know how to create and setup a \CS study, for example with the CFDStudy module. For instructions on how to do so, please see \cite{ShearDriven_Tuto}.
+
+\subsection{Tutorial Structure}
+This tutorial focuses on the modelling of particle dispersion in turbulent pipe flow using the Lagrangian module of \CS.
+
+This tutorial is made of five parts:
+
+\begin{itemize}
+
+\item presentation of Arnason et al. experimental set-up, flow physics and operating conditions.
+
+\item tutorial to create the computational domain (geometry and mesh) using \salome modules \geom and \smesh.
+
+\item set-up of the single phase flow case in \CS with RANS turbulence modelling.
+  
+\item set-up of the Lagrangian simulation on a frozen velocity field obtained in the previous section.
+  
+\item comparison of the results of the numerical simulation with measurements from \cite{Arnason}.
+
+\end{itemize}

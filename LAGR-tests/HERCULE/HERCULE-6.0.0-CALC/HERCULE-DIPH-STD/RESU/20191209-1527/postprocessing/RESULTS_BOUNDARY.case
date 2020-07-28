@@ -1,0 +1,60 @@
+FORMAT
+type: ensight gold
+
+GEOMETRY
+model: results_boundary.geo
+
+VARIABLE
+scalar per element:                        mpi_rank_id       results_boundary.mpi_rank_id
+scalar per element:                   boundary_zone_id       results_boundary.boundary_zone_id
+scalar per element: 1           particle_events_weight       results_boundary.particle_events_weight.*****
+scalar per element: 1               particle_mass_flux       results_boundary.particle_mass_flux.*****
+scalar per element: 1        particle_events_weight_c1       results_boundary.particle_events_weight_c1.*****
+scalar per element: 1            particle_mass_flux_c1       results_boundary.particle_mass_flux_c1.*****
+scalar per element: 1       mean_particle_impact_angle       results_boundary.mean_particle_impact_angle.*****
+scalar per element: 1        var_particle_impact_angle       results_boundary.var_particle_impact_angle.*****
+scalar per element: 1    mean_particle_impact_angle_c1       results_boundary.mean_particle_impact_angle_c1.*****
+scalar per element: 1     var_particle_impact_angle_c1       results_boundary.var_particle_impact_angle_c1.*****
+scalar per element: 1    mean_particle_impact_velocity       results_boundary.mean_particle_impact_velocity.*****
+scalar per element: 1     var_particle_impact_velocity       results_boundary.var_particle_impact_velocity.*****
+scalar per element: 1 mean_particle_impact_velocity_c1       results_boundary.mean_particle_impact_velocity_c1.*****
+scalar per element: 1  var_particle_impact_velocity_c1       results_boundary.var_particle_impact_velocity_c1.*****
+scalar per element: 1                            Yplus       results_boundary.yplus.*****
+vector per element: 1                           Stress       results_boundary.stress.*****
+
+TIME
+time set:              1
+number of steps:       30
+filename start number: 1
+filename increment:    1
+time values:
+            2.1
+            2.2
+            2.3
+            2.4
+            2.5
+            2.6
+            2.7
+            2.8
+            2.9
+            3.
+            3.1
+            3.2
+            3.3
+            3.4
+            3.5
+            3.6
+            3.7
+            3.8
+            3.9
+            4.
+            4.1
+            4.2
+            4.3
+            4.4
+            4.5
+            4.6
+            4.7
+            4.8
+            4.9
+            5.

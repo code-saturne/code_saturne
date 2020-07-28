@@ -1,0 +1,17 @@
+
+
+Single phase calculation
+-> HERCULE-MONO
+
+Two-phase calculations
+For the first two-phase calculation: "standard" model, starting from the first Lagrangian step (MODCPL=0)
+-> HERCULE-DIPH-STD
+For the second two-phase calculation : "complete" model, starting from the first Lagrangian step (MODCPL=1 and IDIRLA=3)
+-> HERCULE-DIPH-CPL
+
+Remarks: The "complete" model diverges after some iterations due to a CFL number > 4. The time step were reduced from 0.001s to 0.0005s. So we add a periodicity for the 
+lagrangian particle injection to keep the same number of particles. The calculation becomes stable but the flow structure is very different. The oscillation is stronger
+ than with the "standard" model. It could be intersting to use the same time step (0.0005s) for the "standard" model and the single phase calculation.
+
+For the three cases, we did only the time average for the radial and axial velocity. All the profiles were added in the GUI.
+I think it is better to evaluate the convergence with the non-time average value at the probes.

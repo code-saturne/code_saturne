@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI case="LAGR" solver_version="5.3" study="ATMO-CHANNEL" version="2.0">
+	<additional_scalars/>
+	<analysis_control>
+		<error_estimator/>
+		<output>
+			<listing_printing_frequency>1</listing_printing_frequency>
+			<mesh id="-1" label="Fluid domain" type="cells">
+				<all_variables status="on"/>
+				<location>all[]</location>
+				<writer id="-1"/>
+			</mesh>
+			<mesh id="-2" label="Boundary" type="boundary_faces">
+				<all_variables status="on"/>
+				<location>all[]</location>
+				<writer id="-1"/>
+			</mesh>
+			<mesh id="-3" label="particles" type="particles">
+				<all_variables status="on"/>
+				<density>1</density>
+				<location>all[]</location>
+				<writer id="-3"/>
+			</mesh>
+			<probe_format choice="DAT"/>
+			<probe_recording_frequency>1</probe_recording_frequency>
+			<writer id="-1" label="results">
+				<directory name="postprocessing"/>
+				<format name="ensight" options="separate_meshes"/>
+				<frequency period="time_step">1000</frequency>
+				<output_at_end status="on"/>
+				<time_dependency choice="fixed_mesh"/>
+			</writer>
+			<writer id="-3" label="particles">
+				<directory name="postprocessing"/>
+				<format name="ensight" options=""/>
+				<frequency period="time_step">10</frequency>
+				<output_at_end status="on"/>
+				<output_at_start status="on"/>
+				<time_dependency choice="transient_connectivity"/>
+			</writer>
+			<writer id="-4" label="trajectories">
+				<directory name="postprocessing"/>
+				<format name="ensight" options=""/>
+				<frequency period="none"/>
+				<output_at_end status="on"/>
+				<time_dependency choice="fixed_mesh"/>
+			</writer>
+		</output>
+		<profiles>
+			<profile label="profile1">
+				<format name="DAT"/>
+				<formula>z0 = 0.0;
+z1 = 1.0;
+x = 0.025;
+y = 0.025;
+z = z1*s + z0*(1.-s);</formula>
+				<output_frequency>-1</output_frequency>
+				<output_type>end</output_type>
+				<points>200</points>
+				<var_prop component="0" name="rij"/>
+				<var_prop component="3" name="rij"/>
+				<var_prop component="5" name="rij"/>
+				<var_prop component="1" name="rij"/>
+				<var_prop component="4" name="rij"/>
+				<var_prop component="2" name="rij"/>
+				<var_prop component="0" name="velocity"/>
+				<var_prop component="1" name="velocity"/>
+				<var_prop component="2" name="velocity"/>
+			</profile>
+		</profiles>
+		<scalar_balances/>
+		<time_averages/>
+		<time_parameters>
+			<iterations>240000</iterations>
+			<property label="CourantNb" name="courant_number"/>
+			<property label="FourierNb" name="fourier_number"/>
+			<time_passing>0</time_passing>
+			<time_step_ref>0.01</time_step_ref>
+			<zero_time_step status="off"/>
+		</time_parameters>
+	</analysis_control>
+	<boundary_conditions>
+		<boundary label="BC_1" name="1" nature="inlet">Box1_inlet</boundary>
+		<boundary label="BC_2" name="2" nature="outlet">Box1_outlet</boundary>
+		<boundary label="BC_3" name="3" nature="wall">Box1_sol</boundary>
+		<boundary label="BC_4" name="4" nature="symmetry">Box1_sommet</boundary>
+		<boundary label="BC_5" name="5" nature="symmetry">Box1_sym1</boundary>
+		<boundary label="BC_6" name="6" nature="symmetry">Box1_sym2</boundary>
+		<inlet field_id="none" label="BC_1">
+			<particles choice="inlet"/>
+			<turbulence choice="hydraulic_diameter">
+				<formula>r11 = 0.1;
+r22 = 0.1;
+r33 = 0.1;
+r12 = 0;
+r13 = 0;
+r23 = 0;
+epsilon = 0.1;</formula>
+				<hydraulic_diameter>1</hydraulic_diameter>
+			</turbulence>
+			<velocity_pressure choice="norm" direction="formula">
+				<direction_formula>kappa = 0.42;
+ustar = 0.05;
+
+dir_x = ustar/kappa*log(z);
+dir_y = 0.0;
+dir_z = 0.0;</direction_formula>
+				<norm>1</norm>
+			</velocity_pressure>
+		</inlet>
+		<outlet field_id="none" label="BC_2">
+			<particles choice="outlet"/>
+		</outlet>
+		<symmetry field_id="none" label="BC_4">
+			<particles choice="part_symmetry"/>
+		</symmetry>
+		<symmetry field_id="none" label="BC_5">
+			<particles choice="part_symmetry"/>
+		</symmetry>
+		<symmetry field_id="none" label="BC_6">
+			<particles choice="part_symmetry"/>
+		</symmetry>
+		<wall field_id="none" label="BC_3">
+			<particles choice="bounce"/>
+			<velocity_pressure choice="off">
+				<dirichlet component="0" name="velocity">0</dirichlet>
+				<dirichlet component="1" name="velocity">0</dirichlet>
+				<dirichlet component="2" name="velocity">0</dirichlet>
+			</velocity_pressure>
+		</wall>
+	</boundary_conditions>
+	<calculation_management>
+		<block_io/>
+		<partitioning/>
+		<run_type>standard</run_type>
+		<start_restart>
+			<frozen_field status="off"/>
+			<restart path="../FLUID/RESU/Fluid-ustar-0_05-C0-3_5/checkpoint"/>
+			<restart_rescue>0</restart_rescue>
+			<restart_with_auxiliary status="on"/>
+		</start_restart>
+	</calculation_management>
+	<lagrangian model="frozen">
+		<carrier_field_stationary status="off"/>
+		<complete_model>1</complete_model>
+		<complete_model_direction choice="1"/>
+		<deposition_submodel status="off"/>
+		<fluid_particles_turbulent_diffusion status="on"/>
+		<output>
+			<diameter status="on"/>
+			<listing_printing_frequency>1</listing_printing_frequency>
+			<mass status="on"/>
+			<resident_time status="on"/>
+			<temperature status="on"/>
+			<velocity_fluid_seen status="on"/>
+			<velocity_particles status="on"/>
+		</output>
+		<particles_models model="off">
+			<coal_fouling status="off"/>
+			<thermal status="off"/>
+		</particles_models>
+		<restart status="off"/>
+		<scheme_order choice="1"/>
+		<statistics>
+			<boundary status="on">
+				<property name="Part_bndy_mass_flux"/>
+				<property name="Part_impact_angle"/>
+				<property name="Part_impact_number"/>
+				<property name="Part_impact_velocity"/>
+			</boundary>
+			<iteration_start>1</iteration_start>
+			<iteration_steady_start>4000</iteration_steady_start>
+			<restart status="off"/>
+			<statistics_groups_of_particles>0</statistics_groups_of_particles>
+			<threshold>0</threshold>
+			<volume status="on">
+				<property name="Part_resid_time"/>
+				<property name="Part_statis_weight"/>
+				<property name="Part_velocity"/>
+				<property name="Part_vol_frac"/>
+			</volume>
+		</statistics>
+		<turbulent_dispersion status="on"/>
+	</lagrangian>
+	<numerical_parameters>
+		<gradient_reconstruction choice="0"/>
+		<gradient_transposed status="on"/>
+		<hydrostatic_pressure status="off"/>
+		<pressure_relaxation>1</pressure_relaxation>
+		<velocity_pressure_algo choice="simplec">
+			<piso_sweep_number>1</piso_sweep_number>
+		</velocity_pressure_algo>
+		<velocity_pressure_coupling status="off"/>
+		<wall_pressure_extrapolation>0</wall_pressure_extrapolation>
+	</numerical_parameters>
+	<physical_properties>
+		<fluid_properties>
+			<material choice="user_material"/>
+			<method choice="user_properties"/>
+			<property choice="constant" label="Density" name="density">
+				<initial_value>1.17862</initial_value>
+				<listing_printing status="off"/>
+				<postprocessing_recording status="off"/>
+			</property>
+			<property choice="constant" label="LamVisc" name="molecular_viscosity">
+				<initial_value>1.83e-05</initial_value>
+				<listing_printing status="off"/>
+				<postprocessing_recording status="off"/>
+			</property>
+			<property choice="constant" label="SpecHeat" name="specific_heat">
+				<initial_value>1017.24</initial_value>
+				<listing_printing status="off"/>
+				<postprocessing_recording status="off"/>
+			</property>
+			<property choice="constant" label="ThermalCond" name="thermal_conductivity">
+				<initial_value>0.02495</initial_value>
+				<listing_printing status="off"/>
+				<postprocessing_recording status="off"/>
+			</property>
+			<reference choice="user_material"/>
+		</fluid_properties>
+		<gravity>
+			<gravity_x>0</gravity_x>
+			<gravity_y>0</gravity_y>
+			<gravity_z>0</gravity_z>
+		</gravity>
+		<notebook/>
+		<omega>
+			<omega_x>0</omega_x>
+			<omega_y>0</omega_y>
+			<omega_z>0</omega_z>
+		</omega>
+	</physical_properties>
+	<solution_domain>
+		<extrusion/>
+		<faces_cutting status="off"/>
+		<joining>
+			<face_joining name="1">
+				<fraction>0.1</fraction>
+				<plane>25</plane>
+				<selector>Box1_inlet or Box1_outlet</selector>
+				<verbosity>1</verbosity>
+				<visualization>1</visualization>
+			</face_joining>
+		</joining>
+		<mesh_input path="../FLUID/RESU/Fluid-ustar-0_05/mesh_output"/>
+		<mesh_smoothing status="off"/>
+		<meshes_list>
+			<mesh name="mesh_output" path="/home/chenry/Documents/Simulations/Code_Saturne/ATMO-CHANNEL/FLUID/RESU/Fluid-ustar-0_05"/>
+		</meshes_list>
+		<periodicity>
+			<face_periodicity mode="translation" name="1">
+				<fraction>0.1</fraction>
+				<plane>25</plane>
+				<selector>Box1_inlet or Box1_outlet</selector>
+				<translation>
+					<translation_x>0.05</translation_x>
+					<translation_y>0</translation_y>
+					<translation_z>0</translation_z>
+				</translation>
+				<verbosity>1</verbosity>
+				<visualization>1</visualization>
+			</face_periodicity>
+		</periodicity>
+		<thin_walls/>
+		<volumic_conditions>
+			<zone groundwater_law="off" head_losses="off" id="1" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" porosity="off" scalar_source_term="off" thermal_source_term="off">all[]</zone>
+			<zone groundwater_law="off" head_losses="off" id="2" initialization="off" label="Zone_1" mass_source_term="off" momentum_source_term="off" porosity="off" scalar_source_term="off" thermal_source_term="off">z&lt;0.5 and z &gt;0.46</zone>
+		</volumic_conditions>
+	</solution_domain>
+	<thermophysical_models>
+		<ale_method status="off">
+			<formula>mesh_viscosity_1 = 1;</formula>
+			<mesh_viscosity type="isotrop"/>
+		</ale_method>
+		<atmospheric_flows model="off"/>
+		<compressible_model model="off"/>
+		<conjugate_heat_transfer>
+			<external_coupling/>
+		</conjugate_heat_transfer>
+		<fans/>
+		<gas_combustion model="off" option="off"/>
+		<groundwater_model model="off"/>
+		<joule_effect model="off"/>
+		<radiative_transfer model="off"/>
+		<reference_values>
+			<pressure>101325</pressure>
+			<temperature>293.15</temperature>
+			<velocity>1</velocity>
+		</reference_values>
+		<solid_fuels model="off"/>
+		<thermal_scalar model="off"/>
+		<turbomachinery model="off">
+			<joining/>
+		</turbomachinery>
+		<turbulence model="Rij-epsilon">
+			<gravity_terms status="on"/>
+			<initialization choice="reference_value" zone_id="1">
+				<formula>r11 = 0.1;
+r22 = 0.1;
+r33 = 0.1;
+r12 = 0;
+r23 = 0;
+r13 = 0.0;
+epsilon = 0.1;</formula>
+			</initialization>
+			<property label="TurbVisc" name="turbulent_viscosity"/>
+			<variable label="epsilon" name="epsilon">
+				<blending_factor>0</blending_factor>
+				<rhs_reconstruction>1</rhs_reconstruction>
+			</variable>
+			<variable dimension="6" label="Rij" name="rij">
+				<blending_factor>0</blending_factor>
+				<rhs_reconstruction>1</rhs_reconstruction>
+			</variable>
+			<wall_function>3</wall_function>
+		</turbulence>
+		<velocity_pressure>
+			<initialization>
+				<formula zone_id="1"># Initialisation (not important due to source terms)
+velocity[0] = 1.0;
+velocity[1] = 0.;
+velocity[2] = 0.;</formula>
+			</initialization>
+			<property label="Stress" name="stress" support="boundary"/>
+			<property label="Stress, normal" name="stress_normal" support="boundary">
+				<postprocessing_recording status="off"/>
+			</property>
+			<property label="Stress, tangential" name="stress_tangential" support="boundary">
+				<postprocessing_recording status="off"/>
+			</property>
+			<property label="total_pressure" name="total_pressure"/>
+			<property label="Yplus" name="yplus" support="boundary"/>
+			<variable label="Pressure" name="pressure">
+				<rhs_reconstruction>2</rhs_reconstruction>
+			</variable>
+			<variable dimension="3" label="Velocity" name="velocity">
+				<blending_factor>1</blending_factor>
+				<rhs_reconstruction>1</rhs_reconstruction>
+			</variable>
+		</velocity_pressure>
+	</thermophysical_models>
+</Code_Saturne_GUI>

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+# Ensure the correct command is found:
+export PATH="/user/chenry/home/Documents/Software/Code_Saturne/6.1-popart/code_saturne-6.1-alpha/arch/Linux_x86_64/bin":$PATH
+
+# Run command:
+\code_saturne gui $@

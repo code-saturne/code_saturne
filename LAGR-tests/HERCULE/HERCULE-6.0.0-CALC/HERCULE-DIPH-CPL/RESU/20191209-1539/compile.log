@@ -1,0 +1,88 @@
+/home/yohann-ws2/Documents/EDF/ETUDE_2019/HERCULE/Work/HERCULE/HERCULE-6.0.0-CALC/HERCULE-DIPH-CPL/RESU/20191209-1539/src/cs_meg_initialization.c: In function ‘cs_meg_initialization’:
+/home/yohann-ws2/Documents/EDF/ETUDE_2019/HERCULE/Work/HERCULE/HERCULE-6.0.0-CALC/HERCULE-DIPH-CPL/RESU/20191209-1539/src/cs_meg_initialization.c:47:17: warning: unused variable ‘c_id’ [-Wunused-variable]
+       cs_lnum_t c_id = zone->elt_ids[e_id];
+                 ^~~~
+/home/yohann-ws2/Documents/EDF/ETUDE_2019/HERCULE/Work/HERCULE/HERCULE-6.0.0-CALC/HERCULE-DIPH-CPL/RESU/20191209-1539/src/cs_user_modules_inlet.f90:67:25:
+
+       DOUBLE PRECISION D1,D2,D3,D4
+                         1
+Warning: Unused variable ‘d1’ declared at (1) [-Wunused-variable]
+/home/yohann-ws2/Documents/EDF/ETUDE_2019/HERCULE/Work/HERCULE/HERCULE-6.0.0-CALC/HERCULE-DIPH-CPL/RESU/20191209-1539/src/cs_user_modules_inlet.f90:67:28:
+
+       DOUBLE PRECISION D1,D2,D3,D4
+                            1
+Warning: Unused variable ‘d2’ declared at (1) [-Wunused-variable]
+/home/yohann-ws2/Documents/EDF/ETUDE_2019/HERCULE/Work/HERCULE/HERCULE-6.0.0-CALC/HERCULE-DIPH-CPL/RESU/20191209-1539/src/cs_user_modules_inlet.f90:67:31:
+
+       DOUBLE PRECISION D1,D2,D3,D4
+                               1
+Warning: Unused variable ‘d3’ declared at (1) [-Wunused-variable]
+/home/yohann-ws2/Documents/EDF/ETUDE_2019/HERCULE/Work/HERCULE/HERCULE-6.0.0-CALC/HERCULE-DIPH-CPL/RESU/20191209-1539/src/cs_user_modules_inlet.f90:67:34:
+
+       DOUBLE PRECISION D1,D2,D3,D4
+                                  1
+Warning: Unused variable ‘d4’ declared at (1) [-Wunused-variable]
+/home/yohann-ws2/Documents/EDF/ETUDE_2019/HERCULE/Work/HERCULE/HERCULE-6.0.0-CALC/HERCULE-DIPH-CPL/RESU/20191209-1539/src/cs_user_modules_inlet.f90:65:35:
+
+       DOUBLE PRECISION UU,VV,WW,XLM
+                                   1
+Warning: Unused variable ‘xlm’ declared at (1) [-Wunused-variable]
+/home/yohann-ws2/Documents/EDF/ETUDE_2019/HERCULE/Work/HERCULE/HERCULE-6.0.0-CALC/HERCULE-DIPH-CPL/RESU/20191209-1539/src/cs_user_boundary_conditions.f90:462:52:
+
+ double precision, dimension(:), pointer :: bfpro_rom
+                                                    1
+Warning: Unused variable ‘bfpro_rom’ declared at (1) [-Wunused-variable]
+/home/yohann-ws2/Documents/EDF/ETUDE_2019/HERCULE/Work/HERCULE/HERCULE-6.0.0-CALC/HERCULE-DIPH-CPL/RESU/20191209-1539/src/cs_user_boundary_conditions.f90:399:5:
+
+    dt     ,                                                       &
+     1
+Warning: Unused dummy argument ‘dt’ at (1) [-Wunused-dummy-argument]
+/home/yohann-ws2/Documents/EDF/ETUDE_2019/HERCULE/Work/HERCULE/HERCULE-6.0.0-CALC/HERCULE-DIPH-CPL/RESU/20191209-1539/src/cs_user_boundary_conditions.f90:398:9:
+
+    icodcl , itrifb , itypfb , izfppp ,                            &
+         1
+Warning: Unused dummy argument ‘icodcl’ at (1) [-Wunused-dummy-argument]
+/home/yohann-ws2/Documents/EDF/ETUDE_2019/HERCULE/Work/HERCULE/HERCULE-6.0.0-CALC/HERCULE-DIPH-CPL/RESU/20191209-1539/src/cs_user_boundary_conditions.f90:451:30:
+
+ integer          ifac, iel, ii
+                              1
+Warning: Unused variable ‘ii’ declared at (1) [-Wunused-variable]
+/home/yohann-ws2/Documents/EDF/ETUDE_2019/HERCULE/Work/HERCULE/HERCULE-6.0.0-CALC/HERCULE-DIPH-CPL/RESU/20191209-1539/src/cs_user_boundary_conditions.f90:398:18:
+
+    icodcl , itrifb , itypfb , izfppp ,                            &
+                  1
+Warning: Unused dummy argument ‘itrifb’ at (1) [-Wunused-dummy-argument]
+/home/yohann-ws2/Documents/EDF/ETUDE_2019/HERCULE/Work/HERCULE/HERCULE-6.0.0-CALC/HERCULE-DIPH-CPL/RESU/20191209-1539/src/cs_user_boundary_conditions.f90:398:36:
+
+    icodcl , itrifb , itypfb , izfppp ,                            &
+                                    1
+Warning: Unused dummy argument ‘izfppp’ at (1) [-Wunused-dummy-argument]
+/home/yohann-ws2/Documents/EDF/ETUDE_2019/HERCULE/Work/HERCULE/HERCULE-6.0.0-CALC/HERCULE-DIPH-CPL/RESU/20191209-1539/src/cs_user_boundary_conditions.f90:397:17:
+
+  ( nvar   , nscal  ,                                              &
+                 1
+Warning: Unused dummy argument ‘nscal’ at (1) [-Wunused-dummy-argument]
+/home/yohann-ws2/Documents/EDF/ETUDE_2019/HERCULE/Work/HERCULE/HERCULE-6.0.0-CALC/HERCULE-DIPH-CPL/RESU/20191209-1539/src/cs_user_boundary_conditions.f90:454:23:
+
+ double precision rhomoy, xdh
+                       1
+Warning: Unused variable ‘rhomoy’ declared at (1) [-Wunused-variable]
+/home/yohann-ws2/Documents/EDF/ETUDE_2019/HERCULE/Work/HERCULE/HERCULE-6.0.0-CALC/HERCULE-DIPH-CPL/RESU/20191209-1539/src/cs_user_boundary_conditions.f90:453:22:
+
+ double precision uref2
+                      1
+Warning: Unused variable ‘uref2’ declared at (1) [-Wunused-variable]
+/home/yohann-ws2/Documents/EDF/ETUDE_2019/HERCULE/Work/HERCULE/HERCULE-6.0.0-CALC/HERCULE-DIPH-CPL/RESU/20191209-1539/src/cs_user_boundary_conditions.f90:454:28:
+
+ double precision rhomoy, xdh
+                            1
+Warning: Unused variable ‘xdh’ declared at (1) [-Wunused-variable]
+/home/yohann-ws2/Documents/EDF/ETUDE_2019/HERCULE/Work/HERCULE/HERCULE-6.0.0-CALC/HERCULE-DIPH-CPL/RESU/20191209-1539/src/cs_user_boundary_conditions.f90:455:22:
+
+ double precision xitur
+                      1
+Warning: Unused variable ‘xitur’ declared at (1) [-Wunused-variable]
+mpicc -DHAVE_CONFIG_H -I/home/yohann-ws2/Code_Saturne/6.0-beta_211119/code_saturne-6.0.0-patch/arch/Linux_x86_64/include -I/home/yohann-ws2/Code_Saturne/6.0-beta_211119/code_saturne-6.0.0-patch/arch/Linux_x86_64/include/code_saturne -I/home/yohann-ws2/Code_Saturne/5.1.0/cgnslib-3.3.0/arch/Linux_x86_64/include -I/home/yohann-ws2/salome/Salome-V8_5_0-univ_public/prerequisites/Medfichier-331/include -I/home/yohann-ws2/salome/Salome-V8_5_0-univ_public/prerequisites/Hdf5-1814/include -I/home/yohann-ws2/Code_Saturne/5.3.1_07Jan19/parmetis-4.0.3/arch/Linux_x86_64/include -DOMPI_SKIP_MPICXX -D_POSIX_C_SOURCE=200809L -DNDEBUG -std=c99 -fms-extensions -funsigned-char -pedantic -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wfloat-equal -Wmisleading-indentation -Wduplicated-cond -fdiagnostics-color=auto -fopenmp -funroll-loops -O2 -Wuninitialized -fexcess-precision=fast -c /home/yohann-ws2/Documents/EDF/ETUDE_2019/HERCULE/Work/HERCULE/HERCULE-6.0.0-CALC/HERCULE-DIPH-CPL/RESU/20191209-1539/src/cs_meg_initialization.c
+mpifort -I /home/yohann-ws2/Code_Saturne/6.0-beta_211119/code_saturne-6.0.0-patch/arch/Linux_x86_64/include/code_saturne -x f95-cpp-input -Wall -pedantic-errors -std=f2003 -fdiagnostics-color=auto -fopenmp -O -c /home/yohann-ws2/Documents/EDF/ETUDE_2019/HERCULE/Work/HERCULE/HERCULE-6.0.0-CALC/HERCULE-DIPH-CPL/RESU/20191209-1539/src/cs_user_modules_inlet.f90
+mpifort -o cs_f_user_boundary_conditions.o -I /home/yohann-ws2/Code_Saturne/6.0-beta_211119/code_saturne-6.0.0-patch/arch/Linux_x86_64/include/code_saturne -x f95-cpp-input -Wall -pedantic-errors -std=f2003 -fdiagnostics-color=auto -fopenmp -O -c /home/yohann-ws2/Documents/EDF/ETUDE_2019/HERCULE/Work/HERCULE/HERCULE-6.0.0-CALC/HERCULE-DIPH-CPL/RESU/20191209-1539/src/cs_user_boundary_conditions.f90
+mpicc -o /home/yohann-ws2/Documents/EDF/ETUDE_2019/HERCULE/Work/HERCULE/HERCULE-6.0.0-CALC/HERCULE-DIPH-CPL/RESU/20191209-1539/cs_solver cs_meg_initialization.o cs_user_modules_inlet.o cs_f_user_boundary_conditions.o -lcs_solver -L/home/yohann-ws2/Code_Saturne/6.0-beta_211119/code_saturne-6.0.0-patch/arch/Linux_x86_64/lib -L/home/yohann-ws2/Code_Saturne/5.1.0/cgnslib-3.3.0/arch/Linux_x86_64/lib -L/home/yohann-ws2/salome/Salome-V8_5_0-univ_public/prerequisites/Medfichier-331/lib -L/home/yohann-ws2/salome/Salome-V8_5_0-univ_public/prerequisites/Hdf5-1814/lib -L/home/yohann-ws2/Code_Saturne/5.3.1_07Jan19/parmetis-4.0.3/arch/Linux_x86_64/lib -O -Wl,-export-dynamic -fopenmp -lsaturne -lple -lcgns -lmedC -lhdf5 -lparmetis -lmetis -lz -ldl -L/usr/lib -L/usr/lib/x86_64-linux-gnu/openmpi/lib -L/usr/lib/gcc/x86_64-linux-gnu/7 -L/usr/lib/x86_64-linux-gnu -L/lib/x86_64-linux-gnu -L/lib -lmpi_usempif08 -lmpi_usempi_ignore_tkr -lmpi_mpifh -lmpi -lgfortran -lquadmath -lpthread -lm -Wl,-rpath -Wl,:/home/yohann-ws2/Code_Saturne/6.0-beta_211119/code_saturne-6.0.0-patch/arch/Linux_x86_64/lib:/home/yohann-ws2/Code_Saturne/5.1.0/cgnslib-3.3.0/arch/Linux_x86_64/lib:/home/yohann-ws2/salome/Salome-V8_5_0-univ_public/prerequisites/Medfichier-331/lib:/home/yohann-ws2/salome/Salome-V8_5_0-univ_public/prerequisites/Hdf5-1814/lib:/home/yohann-ws2/Code_Saturne/5.3.1_07Jan19/parmetis-4.0.3/arch/Linux_x86_64/lib:/usr//lib

@@ -1,0 +1,106 @@
+%-------------------------------------------------------------------------------
+
+% This file is part of Code_Saturne, a general-purpose CFD tool.
+%
+% Copyright (C) 1998-2013 EDF S.A.
+%
+% This program is free software; you can redistribute it and/or modify it under
+% the terms of the GNU General Public License as published by the Free Software
+% Foundation; either version 2 of the License, or (at your option) any later
+% version.
+%
+% This program is distributed in the hope that it will be useful, but WITHOUT
+% ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+% FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+% details.
+%
+% You should have received a copy of the GNU General Public License along with
+% this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+% Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+%-------------------------------------------------------------------------------
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Short doc CS class corresponding to report
+\documentclass[a4paper,10pt,twoside]{csdoc}
+\usepackage{csmacros}
+\usepackage{multirow}
+\usepackage{listings}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Packages and commands for hyperlink
+\hypersetup{%
+  pdftitle = {CodeSaturne tutorial: Lagrangian Particles},
+  pdfauthor = {MFEE},
+  pdfpagemode = UseOutlines
+}
+\pdfinfo{/CreationDate (D:20030429000000-01 00 )}
+
+%
+% pdfpagemode = UseThumbs
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Additional macros
+% \newcommand{/...}{...}
+%
+
+%
+\renewcommand{\thefigure}{\Roman{part}.\arabic{figure}}
+\renewcommand{\thetable}{\Roman{part}.\arabic{table}}
+\renewcommand{\theequation}{\Roman{part}.\arabic{equation}}
+\renewcommand{\thesection}{\arabic{section}}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\IMAGES}{IMAGES}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Info for header pages
+\titreCS{\CS version~\verscs tutorial:
+
+Particles Dispersion in a Turbulent Pipe Flow}
+\docassociesCS{}
+\resumeCS{}
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Document start
+\begin{document}
+
+\def\contentsname{\textbf{\normalsize TABLE OF CONTENTS}\pdfbookmark[1]{Table of
+contents}{contents}}
+\def\indexname{Index of the main variables and keywords}
+
+\pdfbookmark[1]{Flyleaf}{pdg}
+\large
+\makepdgCS
+\normalsize
+
+\begin{center}\begin{singlespace}
+\tableofcontents
+\end{singlespace}\end{center}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\passepage
+\stepcounter{chapter}
+\part{Introduction}
+\include{IntroductionAndComponents}
+\setcounter{section}{0}
+\stepcounter{chapter}
+\part{Particles dispersion in a turbulent pipe flow}
+\include{experimental_setup}
+\include{Creating_domain}
+\include{RANS}
+\include{Lagrangian_Computation}
+\include{Results}
+\include{References}
+\include{Appendix}
+
+\end{document}
+

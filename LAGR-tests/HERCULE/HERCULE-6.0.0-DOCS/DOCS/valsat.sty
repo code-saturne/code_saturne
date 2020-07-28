@@ -1,0 +1,204 @@
+\ProvidesPackage {valsat}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PACKAGES
+%---------
+\RequirePackage[english]{babel}
+\RequirePackage[T1]{fontenc}
+\RequirePackage{float}
+\RequirePackage{epsfig}
+\RequirePackage{fancyhdr}
+\RequirePackage{ifthen}
+\RequirePackage{graphicx}
+\RequirePackage{bm}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% PAGE FORMAT
+%------------------
+\marginparsep=0pt
+\marginparwidth=0pt
+\topmargin -13mm
+\headheight 1.5cm
+\headsep 6mm
+\textheight 233mm
+\footskip 15mm
+\evensidemargin 7mm
+\oddsidemargin 7mm
+\textwidth 156mm
+\parindent 5mm
+\parskip 6pt
+\tabcolsep 1mm
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% POLICIES
+% --------
+\DeclareFixedFont{\polsec}{OT1}{phv}{b}{n}{16}
+\DeclareFixedFont{\polssec}{OT1}{phv}{b}{n}{14}
+\DeclareFixedFont{\polsssec}{OT1}{phv}{b}{n}{12}
+\renewcommand{\section}{\@startsection {section}{1}{-5mm}
+                        {12pt plus2pt minus1pt}
+                        {6pt}
+                        {\bfseries\fontsize{16}{18}\selectfont\polsec}}
+\renewcommand{\subsection}{\@startsection {subsection}{2}{-5mm}
+                           {12pt plus2pt minus1pt}
+                           {6pt}
+                           {\bfseries\fontsize{14}{16}\polssec}}
+\renewcommand{\subsubsection}{\@startsection {subsubsection}{3}{-5mm}
+                           {12pt plus2pt minus1pt}
+                           {6pt}
+                           {\bfseries\fontsize{12}{14}\polsssec}}
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% HEADER AND FOOTER
+% -----------------------
+\pagestyle{fancy}
+\fancyhead{}
+\fancyhead[LE,LO]{\cartouche}
+\fancyfoot{}
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}
+
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% CARTRIDGE
+% ---------
+\newcommand{\cartouche}{%
+\hspace*{-6mm}
+\begin{tabular}{|p{3.1cm}|p{9.3cm}|p{3.1cm}|}
+\hline
+{\fontseries{bx}\selectfont EDF}\par
+\vspace{2mm}
+\fontfamily{phv}\fontsize{6pt}{8pt}\selectfont
+DIVISION R \& D\par
+SERVICE MTI\par
+D\'EPARTEMENT MFTT&
+\centering\textbf{Validation Report \\ \CS\ Version 6.0.0}&
+{\small HI-83/01/006/P1}\par
+\centerline{\small Page \thepage/\Pagetot}\\
+\hline
+\end{tabular}}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% NUMBERING OF SECTIONS
+% -------------------------
+\renewcommand{\thesection}{\Numfich.\arabic{section}}
+\renewcommand{\thefigure}{\Numfich.\arabic{figure}}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% SUMMARY
+% --------
+\def\@dottedtoclinesec#1#2#3#4#5{%
+  \ifnum #1>\c@tocdepth \else
+    \vskip \z@ \@plus.2\p@
+    {\leftskip #2\relax \rightskip \@tocrmarg \parfillskip -\rightskip
+     \parindent #2\relax\@afterindenttrue
+     \interlinepenalty\@M
+     \leavevmode
+     \@tempdima #3\relax
+     \advance\leftskip \@tempdima \null\hskip -\leftskip
+     \MakeUppercase{#4}\nobreak
+     \leaders\hbox{$\m@th
+        \mkern \@dotsep mu\hbox{.}\mkern \@dotsep
+        mu$}\hfill
+     \nobreak
+     \hb@xt@\@pnumwidth{\hfil\normalfont \normalcolor #5}%
+     \par}%
+  \fi}
+\renewcommand*\l@section{\upshape\bfseries \@dottedtoclinesec{1}{0mm}{2.2em}}
+\renewcommand*\l@subsection{\mdseries\scshape \@dottedtocline{2}{0mm}{3.1em}}
+\renewcommand*\l@subsubsection{\itshape \@dottedtocline{3}{3mm}{4.3em}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% BIBLIOGRAPHY
+%-------------
+% Remove the title References
+
+\renewenvironment{thebibliography}[1]
+     {\list{\@biblabel{\@arabic\c@enumiv}}%
+           {\settowidth\labelwidth{\@biblabel{#1}}%
+            \leftmargin\labelwidth
+            \advance\leftmargin\labelsep
+            \@openbib@code
+            \usecounter{enumiv}%
+            \let\p@enumiv\@empty
+            \renewcommand\theenumiv{\@arabic\c@enumiv}}%
+      \sloppy\clubpenalty4000\widowpenalty4000%
+      \sfcode`\.\@m}
+     {\def\@noitemerr
+       {\@latex@warning{Empty `thebibliography' environment}}%
+      \endlist}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% MACROS
+%-------
+\newcommand{\noparindent}
+{\parindent=0pt\par}
+
+\newcommand{\smallparindent}
+{\parindent=5pt\par}
+
+\newcommand{\titreFV}[1]{
+\vspace*{0.3cm}
+\begin{center}%
+   {\bf\LARGE #1 \par}%
+    \vskip 3em%
+\end{center}}
+
+\newcommand{\sousti}[2]{
+\vbox{{\bf Author :}\hspace*{5pt} #1\hfill{\bf Updated :}\hspace*{5pt} #2}
+}
+
+\newcommand{\version}[1]{
+{\vskip 0.5cm\noindent%
+\parbox[t]{\linewidth}{{\bf Version \& patches :}\hspace*{5pt} #1}}
+}
+
+\newcommand{\motcle}[1]{
+{\parbox[t]{\linewidth}{{\bf Key-words :}\hspace*{5pt} #1}}
+}
+
+\newcommand{\com}[1]{{\it #1}}
+
+\newcommand{\rem}[1]{Remarque : {\it #1}}
+
+\newcommand{\mont}{\vspace*{-0.3cm}}
+\newcommand{\montp}{\vspace*{-0.5cm}}
+\newcommand{\monti}[1]{\vspace*{-#1}}
+
+\newcommand{\gras}[1]{\mathbf #1}
+\newcommand{\expo}[1]{\mbox{e}^{\scriptstyle #1}}
+\newcommand{\disp}{\displaystyle}
+
+\newcommand{\colonne}[2]{\hspace*{-0.2cm}\begin{tabular}{l}#1\\#2\end{tabular}}
+\newcommand{\colonn}[2]{\begin{tabular}{l}#1\\#2\end{tabular}}
+\newcommand{\colonc}[2]{\begin{tabular}{c}#1\\#2\end{tabular}}
+\newcommand{\colonr}[2]{\begin{tabular}{r}#1\\#2\end{tabular}}
+
+\newcommand{\passepage}{%
+\clearpage
+\ifthenelse{\isodd{\arabic{page}}}
+{}{\vspace*{6.cm}
+\begin{center}
+\textit{This page is intentionally blank}
+\end{center}\newpage}}
+
+\newcommand{\estet}{ESTET}
+\newcommand{\nts}{N3S}
+\newcommand{\ntsef}{N3S-EF}
+\newcommand{\CS}{
+{\fontfamily{ppl}\fontshape{it}\selectfont Code\_Saturne}}
+

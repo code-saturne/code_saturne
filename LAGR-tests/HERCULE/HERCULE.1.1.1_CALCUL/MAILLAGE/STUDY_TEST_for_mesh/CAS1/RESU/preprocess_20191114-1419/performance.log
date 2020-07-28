@@ -1,0 +1,73 @@
+
+Local case configuration:
+
+  Date:                Thu 14 Nov 2019 14:19:55 CET
+  System:              Linux 5.3.11-300.fc31.x86_64
+  Machine:             Riemann
+  Processor:           model name	: Intel(R) Core(TM) i7-7700T CPU @ 2.90GHz
+  Memory:              15806 MB
+  Directory:           /home/panos/Runs/Code_Saturne/HERCULE/HERCULE.1.1.1_CALCUL/MAILLAGE/STUDY_TEST_for_mesh/CAS1/RESU/preprocess_20191114-1419
+  OpenMP threads:      1
+  Processors/node:     8
+  I/O read method:     standard input and output, serial access
+  I/O write method:    standard input and output, serial access
+
+--------------------------------------------------------------------------------
+
+Halo creation times summary
+
+  Halo creation:                             0 s
+
+  Total time for halo creation:              0 s
+
+--------------------------------------------------------------------------------
+
+Total elapsed time for linear equation system solvers:  0.000 s
+
+--------------------------------------------------------------------------------
+
+Mesh entity selections by criteria statistics:
+
+  entity type     evaluations          time
+  -----------------------------------------
+  cells                     0       0.00000
+  interior faces            0       0.00000
+  boundary faces            0       0.00000
+
+--------------------------------------------------------------------------------
+
+Writing of "results" (MED) summary:
+
+  CPU time for meshes:                     0.018
+  CPU time for variables:                  0.000
+  CPU time forcing output:                 0.000
+
+  Elapsed time for meshes:                 0.020
+  Elapsed time for variables:              0.000
+  Elapsed time forcing output:             0.000
+
+--------------------------------------------------------------------------------
+
+Code_Saturne IO files read:
+
+  mesh_input
+    data:      0.00391 s,        2.056 MiB
+    open:      0.00403 s, 2 open(s)
+
+--------------------------------------------------------------------------------
+
+Calculation time summary:
+
+  User CPU time:              0.091 s
+  System CPU time:            0.017 s
+
+  Elapsed time:               0.071 s
+  CPU / elapsed time          1.516
+
+--------------------------------------------------------------------------------
+
+Memory use summary:
+
+  Total memory used:                             356.055 MiB
+
+--------------------------------------------------------------------------------
