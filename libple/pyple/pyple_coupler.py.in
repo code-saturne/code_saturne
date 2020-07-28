@@ -161,7 +161,7 @@ class pyple_coupler():
 
             import logging
 
-            self.logger = logging.getLoger("PyPLE")
+            self.logger = logging.getLogger("PyPLE")
 
             fh = logging.FileHandler(self.log_name)
             formatter = logging.Formatter('%(name)s[LEVEL=%(levelname)s] : %(message)s')
@@ -275,7 +275,7 @@ class pyple_coupler():
 
         self.init_log()
 
-        _sync_flag = 0
+        _sync_flag = ple_coupling.PLE_COUPLING_FLAGS['INIT']
 
         self.ple_set = ple_coupling.ple_mpi_set(_sync_flag,
                                                 self.app_type,
@@ -323,23 +323,34 @@ class pyple_coupler():
 
 
     # ----------------------------------
-    def sync_coupling_status(self, end_coupling=False, app_dt=100000000.0):
+    def sync_coupling_status(self,
+                             user_flags=ple_coupling.PLE_COUPLING_FLAGS['TS_MIN'],
+                             end_coupling=False,
+                             app_dt=100000000.0):
         """
         Sync with the other codes/apps using PLE.
         Returns exit_status which tells us if the coupling needs to stop.
         0: continue
         1: stop
 
+        :param user_flags  : User sync flags (defined in PLE_COUPLING_FLAGS)
+                             default is 'TS_MIN'-> compute min time step
         :param end_coupling: bool, optional
                              Flag to force the end of the coupled run.
                              defualt is False
+        :param app_dt      : float, optional
+                             application time step to use for syncing
+                             default is 100000000.0
         """
 
-        sync_flags = ple_coupling.PLE_COUPLING_FLAGS['NO_SYNC']
-        sync_flags = sync_flags | ple_coupling.PLE_COUPLING_FLAGS['TS_MIN']
+        sync_flags = 0
+        sync_flags = sync_flags | user_flags
 
         if end_coupling:
             sync_flags = sync_flags | ple_coupling.PLE_COUPLING_FLAGS['STOP']
+        else:
+            sync_flags = sync_flags | ple_coupling.PLE_COUPLING_FLAGS['NEW_ITERATION']
+
 
         self.ple_set.synchronize(sync_flags, app_dt)
 
@@ -351,14 +362,14 @@ class pyple_coupler():
             if app_id != self.app_id:
                 ai = self.ple_set.get_info(app_id)
                 if (ai['status'] & ple_coupling.PLE_COUPLING_FLAGS['STOP']) != 0:
-                    sync_msg = "%s asked to stop the coupling" % (ai.app_name)
+                    sync_msg = "%s asked to stop the coupling" % (ai['app_name'])
                     exit_status = 1
                     break
 
                 if (ai['status'] & ple_coupling.PLE_COUPLING_FLAGS['LAST']) != 0:
 
                     if self.last_cpl_iter:
-                        sync_msg =  "%s is at its last iteration. " % (ai.app_name)
+                        sync_msg =  "%s is at its last iteration. " % (ai['app_name'])
                         sync_msg += "Coupling is to stop"
                         exit_status = 1
                         break
