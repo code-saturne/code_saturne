@@ -285,7 +285,6 @@ cs_turbulence_ke(int              nvar,
 
   const cs_time_scheme_t *time_scheme = cs_get_glob_time_scheme();
   const cs_real_t thets  = time_scheme->thetst;
-  const int isto2t  = time_scheme->isto2t;
 
   const cs_fluid_properties_t *phys_pro = cs_get_glob_fluid_properties();
   cs_real_t viscl0 = phys_pro->viscl0; /* reference pressure */
@@ -643,9 +642,11 @@ cs_turbulence_ke(int              nvar,
       cmueta = fmin(cs_turb_cmu*cvara_k[c_id]/cvara_ep[c_id]*xs, sqrcmu);
       smbrk[c_id] = rho*cmueta*xs*cvara_k[c_id];
       smbre[c_id] = smbrk[c_id];
-      /* Save production for post processing */
-      if (f_tke_prod != NULL)
-        f_tke_prod->val[c_id] = smbrk[c_id]/rho;
+    }
+    /* Save production for post processing */
+    if (f_tke_prod != NULL) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        f_tke_prod->val[c_id] = smbrk[c_id] / cromo[c_id];
     }
   }
   else if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON_QUAD) {
@@ -714,24 +715,29 @@ cs_turbulence_ke(int              nvar,
                     - xqc1*visct*xttke* (skskjsji - d1s3*sijsij*divu[c_id])
                     - xqc2*visct*xttke* (wkskjsji + skiwjksji)
                     - xqc3*visct*xttke* (wkwjksji - d1s3*wijwij*divu[c_id]);
-      /* Save production for post processing */
-      if (f_tke_prod != NULL)
-        f_tke_prod->val[c_id] = smbrk[c_id]/rho;
-
       smbre[c_id] = smbrk[c_id];
     } /* End loop on cells */
+
+    /* Save production for post processing */
+    if (f_tke_prod != NULL) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        f_tke_prod->val[c_id] = smbrk[c_id] / crom[c_id];
+    }
 
     /* End test on specific k-epsilon model
        In the general case Pk = mu_t*SijSij */
   }
   else {
     for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++) {
+      rho   = crom[c_id];
       visct = cpro_pcvto[c_id];
       smbrk[c_id] = visct*strain[c_id];
       smbre[c_id] = smbrk[c_id];
-      /* Save production for post processing */
-      if (f_tke_prod != NULL)
-        f_tke_prod->val[c_id] = smbrk[c_id]/rho;
+    }
+    /* Save production for post processing */
+    if (f_tke_prod != NULL) {
+      for (cs_lnum_t c_id = 0; c_id < n_cells; c_id++)
+        f_tke_prod->val[c_id] = smbrk[c_id] / crom[c_id];
     }
   }
 
@@ -780,8 +786,10 @@ cs_turbulence_ke(int              nvar,
           xdist = fmax(w_dist[c_id], cs_math_epzero);
           xrey  = rho*xdist*sqrt(xk)/viscl[c_id];
           xpk   = smbrk[c_id] -  d2s3*rho*xk*divu[c_id];
-          xpkp  = 1.33*(1. - 0.3*exp(-cs_math_pow2(rho*cs_math_pow2(xk)/viscl[c_id]/xeps)))
-            *(xpk + 2.*viscl[c_id]*xk/cs_math_pow2(xdist))*exp(-3.75e-3*cs_math_pow2(xrey));
+          xpkp  =   1.33*(1. - 0.3*exp(-cs_math_pow2(rho*cs_math_pow2(xk)
+                                                     /viscl[c_id]/xeps)))
+                  * (xpk + 2.*viscl[c_id]*xk/cs_math_pow2(xdist))
+                  * exp(-3.75e-3*cs_math_pow2(xrey));
 
           ce1rc[c_id] = (1. + xpkp/fmax(xpk, 1.e-10))*cs_turb_ce1;
         }
