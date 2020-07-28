@@ -132,7 +132,7 @@ C=======================================================================
 C
 C     NOMBRE DE PARTICULES MAXIMAL AUTORISE DANS LE DOMAINE
 C     (PAR DEFAUT : NBPMAX = 1000)
-C     * Attention, la mémoire est réservée en conséquence, et le nombre
+C     * Attention, la mï¿½moire est rï¿½servï¿½e en consï¿½quence, et le nombre
 C       max de particules traitees au cours d'une iteration Lagrangienne
 C       est limite a NBPMAX.
 C     * L'ordre de grandeur de NBPMAX doit etre evalue au mieux lors
@@ -408,21 +408,12 @@ C
       IDIFFL = 0
 C
 C     MODCPL : 
-C          = 0 pour le modele incomplet (VALEUR PAR DEFAUT)
-C          > 0 pour le modele complet, est egal au numero de l'iteration
-C          Lagrangienne absolue (i.e. suites comprises) a partir de
-C          laquelle mise le modele complet est active
-C          MODCPL ne doit pas etre inferieur a IDSTNT
-C
+C     = 0 for assuming that the particles represent fluid particles.
+C     > 0 for activating the turbulent dispersion model, is equal the
+C     absolute number of time steps from which the model is activated.
+C     Note that MODCPL must not be larger than IDSTNT. The default
+C     value is 1.C
       MODCPL = 1
-C
-C     IDIRLA  =1 ou 2 ou 3 : 1ere, 2eme ou 3eme direction
-C       du modele complet. Correspond à la direction principale
-C       de l'écoulement. Permet de calculer un echelle de temps
-C       Lagrangienne non isotrope.
-C       (DEFAUT IDIRLA = 1)
-C
-      IF (MODCPL.GT.0) IDIRLA = 3
 C
 C
 C=======================================================================

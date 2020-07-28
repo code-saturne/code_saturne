@@ -436,10 +436,13 @@ cs_user_lagr_model(void)
   cs_glob_lagr_time_scheme->idiffl = 0;
 
   /* modcpl :
-     = 0 for enabling the turbulent dispersion model (default value)
-     = 1 for assuming that the particles represent the fluid */
+     = 0 for assuming that the particles represent fluid particles.
+     > 0 for activating the turbulent dispersion model, is equal the
+     absolute number of time steps from which the model is activated.
+     Note that modcpl must not be larger than idstnt. The default
+     value is 1. */
 
-  cs_glob_lagr_time_scheme->modcpl = 0;
+  cs_glob_lagr_time_scheme->modcpl = 1;
 
   /* Options concerning the treatment of specific forces
    * =================================================== */
