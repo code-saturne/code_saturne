@@ -1064,6 +1064,11 @@ class case:
                                                                "LD_LIBRARY_PATH",
                                                                lp)
 
+        # Handle python coupling
+        if self.py_domains:
+            pydir = self.package_compute.get_dir("pythondir")
+            cs_exec_environment.write_prepend_path(s, "PYTHONPATH", pydir)
+
         # Handle environment modules if used
 
         if self.package_compute.config.env_modules != "no":
@@ -1406,7 +1411,7 @@ class case:
             d.solver_path = os.path.join('.', 'syrthes')
 
         for d in self.py_domains:
-            d.solver_path = os.path.join('.', 'python')
+            d.solver_path = self.package.config.python
 
     #---------------------------------------------------------------------------
 
