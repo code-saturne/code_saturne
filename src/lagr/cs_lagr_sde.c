@@ -194,6 +194,16 @@ _lages1(cs_real_t           dtp,
   const cs_real_3_t *cvar_vel
     = (const cs_real_3_t *)(extra->vel->vals[_prev_id]);
 
+  /* Obtain the mean particle velocity for each cell */
+
+  int stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY);
+
+  cs_field_t *mean_vel_field = cs_lagr_stat_get_moment(
+      stat_type, CS_LAGR_STAT_GROUP_PARTICLE, CS_LAGR_MOMENT_MEAN, 0, -1);
+
+  const cs_real_3_t *mean_vel =
+      (const cs_real_3_t *)(mean_vel_field->vals[_prev_id]);
+
   /* Integrate SDE's over particles
    * Note: new particles will be integrated at the next time step, otherwise
    * positions might be overwritten */
@@ -225,6 +235,10 @@ _lages1(cs_real_t           dtp,
       cs_real_t *part_coords       = cs_lagr_particle_attr(particle, p_am,
                                                            CS_LAGR_COORDS);
 
+      /* Get mean particle velocity*/
+      cs_real_t mean_part_vel[3] = {mean_vel[cell_id][0], mean_vel[cell_id][1],
+                                    mean_vel[cell_id][2]};
+
       /* Initialize (without change of frame)*/
 
       cs_real_t part_vel_r[3] = {part_vel[0], part_vel[1], part_vel[2]};
@@ -238,57 +252,108 @@ _lages1(cs_real_t           dtp,
       cs_real_t taup_r[3] = {taup[ip], taup[ip], taup[ip]};
       cs_real_t displ_r[3];
 
+      bool perform_rotation = false;
+      cs_real_33_t trans_m;
 
-      if (cs_glob_lagr_model->shape == 2 || cs_glob_lagr_model->shape == 1) {
-        /* ===========================================================================
-         * 1bis. Reference frame change:
-         * --------------------------
-         * global reference frame --> local reference frame for ellipsoids
-         * ======================================================================== */
+      /* ===========================================================================
+       * 1bis. Reference frame change:
+       * --------------------------
+       * global reference frame --> local reference frame for ellipsoids
+       * ========================================================================
+       */
 
-        /* 1.0 - get rotation matrix */
-        cs_real_33_t trans_m;
-        if (cs_glob_lagr_model->shape == 2 ) {
-          // Use euler angles for spheroids (jeffery)
-          cs_real_t *euler = cs_lagr_particle_attr(particle, p_am,
-              CS_LAGR_EULER);
+      /* 1.0 - get rotation matrix */
 
-          trans_m[0][0] = 2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5);/* (0,0) */
-          trans_m[0][1] = 2.*(euler[1]*euler[2]-euler[0]*euler[3]);    /* (0,1) */
-          trans_m[0][2] = 2.*(euler[1]*euler[3]+euler[0]*euler[2]);    /* (0,2) */
-          trans_m[1][0] = 2.*(euler[1]*euler[2]+euler[0]*euler[3]);    /* (1,0) */
-          trans_m[1][1] = 2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5);/* (1,1) */
-          trans_m[1][2] = 2.*(euler[2]*euler[3]-euler[0]*euler[1]);    /* (1,2) */
-          trans_m[2][0] = 2.*(euler[1]*euler[3]-euler[0]*euler[2]);    /* (2,0) */
-          trans_m[2][1] = 2.*(euler[2]*euler[3]+euler[0]*euler[1]);    /* (2,1) */
-          trans_m[2][2] = 2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5); /* (2,2) */
+      if (cs_glob_lagr_model->shape == 2) {
+        
+        // Use euler angles for spheroids (jeffery)
+        cs_real_t *euler = cs_lagr_particle_attr(particle, p_am, CS_LAGR_EULER);
+
+        trans_m[0][0] = 2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5);/* (0,0) */
+        trans_m[0][1] = 2.*(euler[1]*euler[2]-euler[0]*euler[3]);    /* (0,1) */
+        trans_m[0][2] = 2.*(euler[1]*euler[3]+euler[0]*euler[2]);    /* (0,2) */
+        trans_m[1][0] = 2.*(euler[1]*euler[2]+euler[0]*euler[3]);    /* (1,0) */
+        trans_m[1][1] = 2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5);/* (1,1) */
+        trans_m[1][2] = 2.*(euler[2]*euler[3]-euler[0]*euler[1]);    /* (1,2) */
+        trans_m[2][0] = 2.*(euler[1]*euler[3]-euler[0]*euler[2]);    /* (2,0) */
+        trans_m[2][1] = 2.*(euler[2]*euler[3]+euler[0]*euler[1]);    /* (2,1) */
+        trans_m[2][2] = 2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5); /* (2,2) */
+
+        perform_rotation = true;
+
+      } else if (cs_glob_lagr_model->shape == 1) {
+
+        // Use rotation matrix for stochastic model
+        cs_real_t *orient_loc  = cs_lagr_particle_attr(particle, p_am, CS_LAGR_ORIENTATION);
+        cs_real_t axe_singularity[3] = { 1.0, 0.0, 0.0 };
+
+        // Get vector for rotation
+        cs_real_t n_rot[3];
+        n_rot[0] = orient_loc[1]*axe_singularity[2] - orient_loc[2]*axe_singularity[1];
+        n_rot[1] = orient_loc[2]*axe_singularity[0] - orient_loc[0]*axe_singularity[2];
+        n_rot[2] = orient_loc[0]*axe_singularity[1] - orient_loc[1]*axe_singularity[0];
+        cs_math_3_normalise(n_rot, n_rot);
+
+        // Compute rotation angle
+        cs_real_t rot_angle = acos(orient_loc[0]*axe_singularity[0]
+                                + orient_loc[1]*axe_singularity[1]
+                                + orient_loc[2]*axe_singularity[2]);
+
+        // Compute the rotation matrix
+        trans_m[0][0] = cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle));     // [0][0]
+        trans_m[0][1] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) + n_rot[2]*sin(rot_angle); // [0][1]
+        trans_m[0][2] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[1]*sin(rot_angle); // [0][2]
+        trans_m[1][0] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) - n_rot[2]*sin(rot_angle); // [1][0]
+        trans_m[1][1] = cos(rot_angle) + cs_math_pow2(n_rot[1])*(1.0 - cos(rot_angle));     // [1][1]
+        trans_m[1][2] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[0]*sin(rot_angle); // [1][2]
+        trans_m[2][0] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[1]*sin(rot_angle); // [2][0]
+        trans_m[2][1] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[0]*sin(rot_angle); // [2][1]
+        trans_m[2][2] = cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle));     // [2][2]
+        
+        perform_rotation = true;
+      } 
+      else if (cs_glob_lagr_model->shape == 0 &&
+               cs_glob_lagr_model->modcpl > 0 &&
+               cs_glob_time_step->nt_cur > cs_glob_lagr_model->modcpl) {
+
+        // Rotate the frame of reference with respect to the
+        // relative particle direction
+        cs_real_t new_dir[3];
+        const cs_real_t eps = 1.0e-24;
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          new_dir[i] = mean_part_vel[i] - fluid_vel_r[i];
+          new_dir[i] = (new_dir[i] >= 0.0) ? new_dir[i] + eps : new_dir[i] - eps;
         }
-        else if (cs_glob_lagr_model->shape == 1 ) {
-          // Use rotation matrix for stochastic model
-          cs_real_t *orient_loc  = cs_lagr_particle_attr(particle, p_am,
-                                                         CS_LAGR_ORIENTATION);
-          cs_real_t axe_singularity[3] = { 1.0, 0.0, 0.0 };
-          // Get vector for rotation
-          cs_real_t n_rot[3];
-          n_rot[0] = orient_loc[1]*axe_singularity[2] -orient_loc[2]*axe_singularity[1];
-          n_rot[1] = orient_loc[2]*axe_singularity[0] -orient_loc[0]*axe_singularity[2];
-          n_rot[2] = orient_loc[0]*axe_singularity[1] -orient_loc[1]*axe_singularity[0];
-          cs_math_3_normalise(n_rot, n_rot);
-          // Compute rotation angle
-          cs_real_t rot_angle = acos( orient_loc[0]*axe_singularity[0]
-                                    + orient_loc[1]*axe_singularity[1]
-                                    + orient_loc[2]*axe_singularity[2]);
-          // Compute the rotation matrix
-          trans_m[0][0] = cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle));     // [0][0]
-          trans_m[0][1] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) + n_rot[2]*sin(rot_angle); // [0][1]
-          trans_m[0][2] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[1]*sin(rot_angle); // [0][2]
-          trans_m[1][0] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) - n_rot[2]*sin(rot_angle); // [1][0]
-          trans_m[1][1] = cos(rot_angle) + cs_math_pow2(n_rot[1])*(1.0 - cos(rot_angle));     // [1][1]
-          trans_m[1][2] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[0]*sin(rot_angle); // [1][2]
-          trans_m[2][0] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[1]*sin(rot_angle); // [2][0]
-          trans_m[2][1] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[0]*sin(rot_angle); // [2][1]
-          trans_m[2][2] = cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle));     // [2][2]
-        }
+
+        cs_math_3_normalise(new_dir, new_dir);
+
+        // Compute the rotation angle between the x-axis and
+        // the new direction
+        cs_real_t x_axis[3] = {1.0, 0.0, 0.0};
+        cs_real_t rot_angle = acos(cs_math_3_dot_product(new_dir, x_axis));
+
+        // The rotation axis is the result of the cross product between
+        // the new direction vector and the x-axis
+        cs_real_t n_rot[3];
+        cs_math_3_cross_product(new_dir, x_axis, n_rot);
+        cs_math_3_normalise(n_rot, n_rot);
+
+        // Compute the rotation matrix
+        trans_m[0][0] = cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle));     // [0][0]
+        trans_m[0][1] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) + n_rot[2]*sin(rot_angle); // [0][1]
+        trans_m[0][2] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[1]*sin(rot_angle); // [0][2]
+        trans_m[1][0] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) - n_rot[2]*sin(rot_angle); // [1][0]
+        trans_m[1][1] = cos(rot_angle) + cs_math_pow2(n_rot[1])*(1.0 - cos(rot_angle));     // [1][1]
+        trans_m[1][2] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[0]*sin(rot_angle); // [1][2]
+        trans_m[2][0] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[1]*sin(rot_angle); // [2][0]
+        trans_m[2][1] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[0]*sin(rot_angle); // [2][1]
+        trans_m[2][2] = cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle));     // [2][2]
+
+        perform_rotation = true;
+      }
+
+      if (perform_rotation) {
+
         /* 1.1 - particle velocity */
 
         cs_math_33_3_product(trans_m, old_part_vel, old_part_vel_r);
@@ -311,19 +376,21 @@ _lages1(cs_real_t           dtp,
 
         /* 1.7 - taup  */
 
-        cs_real_t *radii = cs_lagr_particle_attr(particle, p_am,
-            CS_LAGR_RADII);
+        if (cs_glob_lagr_model->shape == 1 || cs_glob_lagr_model->shape == 2) {
 
-        cs_real_t *s_p = cs_lagr_particle_attr(particle, p_am,
-            CS_LAGR_SHAPE_PARAM);
+          cs_real_t *radii =
+              cs_lagr_particle_attr(particle, p_am, CS_LAGR_RADII);
 
-        taup_r[0] = 3.0 / 8.0 * taup[ip] * (radii[0]*radii[0]*s_p[0]+ s_p[3])
-          / pow(radii[0]*radii[1]*radii[2], 2.0/3.0);
-        taup_r[1] = 3.0 / 8.0 * taup[ip] * (radii[1]*radii[1]*s_p[1]+ s_p[3])
-          / pow(radii[0]*radii[1]*radii[2], 2.0/3.0);
-        taup_r[2] = 3.0 / 8.0 * taup[ip] * (radii[2]*radii[2]*s_p[2]+ s_p[3])
-          / pow(radii[0]*radii[1]*radii[2], 2.0/3.0);
+          cs_real_t *s_p =
+              cs_lagr_particle_attr(particle, p_am, CS_LAGR_SHAPE_PARAM);
 
+          taup_r[0] = 3.0 / 8.0 * taup[ip]*(radii[0]*radii[0]*s_p[0] + s_p[3]) /
+                      pow(radii[0]*radii[1]*radii[2], 2.0 / 3.0);
+          taup_r[1] = 3.0 / 8.0 * taup[ip]*(radii[1]*radii[1]*s_p[1] + s_p[3]) /
+                      pow(radii[0]*radii[1]*radii[2], 2.0 / 3.0);
+          taup_r[2] = 3.0 / 8.0 * taup[ip]*(radii[2]*radii[2]*s_p[2] + s_p[3]) /
+                      pow(radii[0]*radii[1]*radii[2], 2.0 / 3.0);
+        }
       }
 
       /* =========================================================================
@@ -541,81 +608,129 @@ _lages1(cs_real_t           dtp,
        * NB: Inverse transformation: transpose of trans_m
        * ======================================================================== */
 
-      if (cs_glob_lagr_model->shape == 0) {
-        /* For spherical particles, no change of frame*/
-        for (cs_lnum_t id = 0; id < 3; id++) {
-          part_coords[id] = old_part_coords[id] + displ_r[id];
-          part_vel[id] = part_vel_r[id];
-          part_vel_seen[id] = part_vel_seen_r[id];
-        }
-      }
+      /* 3.0 - get rotation matrix */
 
-      else if (cs_glob_lagr_model->shape == 2 || cs_glob_lagr_model->shape == 1) {
+      perform_rotation = false;
 
-        /* 3.0 - get rotation matrix */
-        cs_real_33_t trans_m;
-        if (cs_glob_lagr_model->shape == 2) {
-          cs_real_t *euler = cs_lagr_particle_attr(particle, p_am,
-                                                   CS_LAGR_EULER);
-          trans_m[0][0] = 2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5);/* (0,0) */
-          trans_m[0][1] = 2.*(euler[1]*euler[2]-euler[0]*euler[3]);    /* (0,1) */
-          trans_m[0][2] = 2.*(euler[1]*euler[3]+euler[0]*euler[2]);    /* (0,2) */
-          trans_m[1][0] = 2.*(euler[1]*euler[2]+euler[0]*euler[3]);    /* (1,0) */
-          trans_m[1][1] = 2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5);/* (1,1) */
-          trans_m[1][2] = 2.*(euler[2]*euler[3]-euler[0]*euler[1]);    /* (1,2) */
-          trans_m[2][0] = 2.*(euler[1]*euler[3]-euler[0]*euler[2]);    /* (2,0) */
-          trans_m[2][1] = 2.*(euler[2]*euler[3]+euler[0]*euler[1]);    /* (2,1) */
-          trans_m[2][2] = 2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5); /* (2,2) */
+      if (cs_glob_lagr_model->shape == 0 &&
+          cs_glob_lagr_model->modcpl > 0 &&
+          cs_glob_time_step->nt_cur > cs_glob_lagr_model->modcpl) {
 
-        }
-        else if (cs_glob_lagr_model->shape == 1) {
-          // Use rotation matrix for stochastic model
-          cs_real_t *orient_loc  = cs_lagr_particle_attr(particle, p_am,
-                                                         CS_LAGR_ORIENTATION);
-          cs_real_t axe_singularity[3] = { 1.0, 0.0, 0.0 };
-          // Get vector for rotation
-          cs_real_t n_rot[3];
-          n_rot[0] = orient_loc[1]*axe_singularity[2] -orient_loc[2]*axe_singularity[1];
-          n_rot[1] = orient_loc[2]*axe_singularity[0] -orient_loc[0]*axe_singularity[2];
-          n_rot[2] = orient_loc[0]*axe_singularity[1] -orient_loc[1]*axe_singularity[0];
-          cs_math_3_normalise(n_rot, n_rot);
-          // Compute rotation angle
-          cs_real_t rot_angle = acos( orient_loc[0]*axe_singularity[0]
-                                    + orient_loc[1]*axe_singularity[1]
-                                    + orient_loc[2]*axe_singularity[2]);
-          // Compute the rotation matrix
-          trans_m[0][0] = cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle));     // [0][0]
-          trans_m[0][1] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) + n_rot[2]*sin(rot_angle); // [0][1]
-          trans_m[0][2] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[1]*sin(rot_angle); // [0][2]
-          trans_m[1][0] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) - n_rot[2]*sin(rot_angle); // [1][0]
-          trans_m[1][1] = cos(rot_angle) + cs_math_pow2(n_rot[1])*(1.0 - cos(rot_angle));     // [1][1]
-          trans_m[1][2] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[0]*sin(rot_angle); // [1][2]
-          trans_m[2][0] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[1]*sin(rot_angle); // [2][0]
-          trans_m[2][1] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[0]*sin(rot_angle); // [2][1]
-          trans_m[2][2] = cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle));     // [2][2]
-
+        // Rotate the frame of reference with respect to the
+        // relative particle direction
+        cs_real_t new_dir[3];
+        const cs_real_t eps = 1.0e-24;
+        for (cs_lnum_t i = 0; i < 3; i++) {
+          new_dir[i] = mean_part_vel[i] - fluid_vel_r[i];
+          new_dir[i] = (new_dir[i] >= 0.0) ? new_dir[i] + eps : new_dir[i] - eps;
         }
 
-        /* 3.1 - Displacement   */
+        cs_math_3_normalise(new_dir, new_dir);
 
-        cs_real_t displ[3];
+        // Compute the rotation angle between the x-axis and
+        // the new direction
+        cs_real_t x_axis[3] = {1.0, 0.0, 0.0};
+        cs_real_t rot_angle = acos(cs_math_3_dot_product(new_dir, x_axis));
 
-        cs_math_33t_3_product(trans_m, displ_r, displ);
-        for (cs_lnum_t id = 0; id < 3; id++)
-          part_coords[id] = old_part_coords[id] + displ[id];
+        // The rotation axis is the result of the cross product between
+        // the new direction vector and the x-axis
+        cs_real_t n_rot[3];
+        cs_math_3_cross_product(new_dir, x_axis, n_rot);
+        cs_math_3_normalise(n_rot, n_rot);
 
-        /* 3.2 - Particle velocity   */
+        // Compute the rotation matrix
+        trans_m[0][0] = cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle));     // [0][0]
+        trans_m[0][1] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) + n_rot[2]*sin(rot_angle); // [0][1]
+        trans_m[0][2] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[1]*sin(rot_angle); // [0][2]
+        trans_m[1][0] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) - n_rot[2]*sin(rot_angle); // [1][0]
+        trans_m[1][1] = cos(rot_angle) + cs_math_pow2(n_rot[1])*(1.0 - cos(rot_angle));     // [1][1]
+        trans_m[1][2] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[0]*sin(rot_angle); // [1][2]
+        trans_m[2][0] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[1]*sin(rot_angle); // [2][0]
+        trans_m[2][1] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[0]*sin(rot_angle); // [2][1]
+        trans_m[2][2] = cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle));     // [2][2]
 
-        cs_math_33t_3_product(trans_m, part_vel_r, part_vel);
-
-        /* 3.3 - flow-seen velocity  */
-
-        cs_math_33t_3_product(trans_m, part_vel_seen_r, part_vel_seen);
+        perform_rotation = true;
 
       }
+      else if (cs_glob_lagr_model->shape == 2) {
 
+        cs_real_t *euler = cs_lagr_particle_attr(particle, p_am, CS_LAGR_EULER);
+
+        trans_m[0][0] = 2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5);/* (0,0) */
+        trans_m[0][1] = 2.*(euler[1]*euler[2]-euler[0]*euler[3]);    /* (0,1) */
+        trans_m[0][2] = 2.*(euler[1]*euler[3]+euler[0]*euler[2]);    /* (0,2) */
+        trans_m[1][0] = 2.*(euler[1]*euler[2]+euler[0]*euler[3]);    /* (1,0) */
+        trans_m[1][1] = 2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5);/* (1,1) */
+        trans_m[1][2] = 2.*(euler[2]*euler[3]-euler[0]*euler[1]);    /* (1,2) */
+        trans_m[2][0] = 2.*(euler[1]*euler[3]-euler[0]*euler[2]);    /* (2,0) */
+        trans_m[2][1] = 2.*(euler[2]*euler[3]+euler[0]*euler[1]);    /* (2,1) */
+        trans_m[2][2] = 2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5); /* (2,2) */
+
+        perform_rotation = true;
+
+      }
+      else if (cs_glob_lagr_model->shape == 1) {
+
+        // Use rotation matrix for stochastic model
+        cs_real_t *orient_loc = cs_lagr_particle_attr(particle, p_am, CS_LAGR_ORIENTATION);
+        cs_real_t axe_singularity[3] = { 1.0, 0.0, 0.0 };
+
+        // Get vector for rotation
+        cs_real_t n_rot[3];
+        n_rot[0] = orient_loc[1]*axe_singularity[2] - orient_loc[2]*axe_singularity[1];
+        n_rot[1] = orient_loc[2]*axe_singularity[0] - orient_loc[0]*axe_singularity[2];
+        n_rot[2] = orient_loc[0]*axe_singularity[1] - orient_loc[1]*axe_singularity[0];
+        cs_math_3_normalise(n_rot, n_rot);
+
+        // Compute rotation angle
+        cs_real_t rot_angle = acos( orient_loc[0]*axe_singularity[0]
+                                   + orient_loc[1]*axe_singularity[1]
+                                   + orient_loc[2]*axe_singularity[2]);
+          
+        // Compute the rotation matrix
+        trans_m[0][0] = cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle));     // [0][0]
+        trans_m[0][1] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) + n_rot[2]*sin(rot_angle); // [0][1]
+        trans_m[0][2] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[1]*sin(rot_angle); // [0][2]
+        trans_m[1][0] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) - n_rot[2]*sin(rot_angle); // [1][0]
+        trans_m[1][1] = cos(rot_angle) + cs_math_pow2(n_rot[1])*(1.0 - cos(rot_angle));     // [1][1]
+        trans_m[1][2] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[0]*sin(rot_angle); // [1][2]
+        trans_m[2][0] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[1]*sin(rot_angle); // [2][0]
+        trans_m[2][1] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[0]*sin(rot_angle); // [2][1]
+        trans_m[2][2] = cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle));     // [2][2]
+
+        perform_rotation = true;
+
+      }
+
+      if (perform_rotation) {
+
+          /* 3.1 - Displacement   */
+
+          cs_real_t displ[3];
+
+          cs_math_33t_3_product(trans_m, displ_r, displ);
+          for (cs_lnum_t id = 0; id < 3; id++)
+            part_coords[id] = old_part_coords[id] + displ[id];
+
+          /* 3.2 - Particle velocity   */
+
+          cs_math_33t_3_product(trans_m, part_vel_r, part_vel);
+
+          /* 3.3 - flow-seen velocity  */
+
+          cs_math_33t_3_product(trans_m, part_vel_seen_r, part_vel_seen);
+
+      }
+      else
+      {
+          /* No change of frame*/
+          for (cs_lnum_t id = 0; id < 3; id++) {
+            part_coords[id] = old_part_coords[id] + displ_r[id];
+            part_vel[id] = part_vel_r[id];
+            part_vel_seen[id] = part_vel_seen_r[id];
+          }
+      }
     }
-
   }
 }
 
