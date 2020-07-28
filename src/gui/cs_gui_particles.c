@@ -322,12 +322,6 @@ cs_gui_particles_model(void)
   cs_gui_node_get_child_int(tn_lagr, "complete_model",
                             (&cs_glob_lagr_model->modcpl));
 
-  choice = cs_tree_node_get_tag(cs_tree_node_get_child
-                                  (tn_lagr, "complete_model_direction"),
-                                "choice");
-  if (choice != NULL)
-    cs_glob_lagr_model->idirla = atoi(choice);
-
   /* Output */
 
   cs_tree_node_t *tn_o = cs_tree_node_get_child(tn_lagr, "output");
@@ -444,7 +438,6 @@ cs_gui_particles_model(void)
   bft_printf("--idistu = %i\n", cs_glob_lagr_model->idistu);
   bft_printf("--idiffl = %i\n", cs_glob_lagr_model->idiffl);
   bft_printf("--modcpl = %i\n", cs_glob_lagr_model->modcpl);
-  bft_printf("--idirla = %i\n", cs_glob_lagr_model->idirla);
 
   bft_printf("--isuist = %i\n", cs_glob_lagr_stat_options->isuist);
   bft_printf("--nbclst = %i\n", cs_glob_lagr_model->n_stat_classes);

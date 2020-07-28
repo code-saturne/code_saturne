@@ -394,7 +394,6 @@ cs_lagr_car(int              iprev,
         if (   cs_glob_lagr_model->modcpl > 0
             && cs_glob_time_step->nt_cur > cs_glob_lagr_model->modcpl) {
 
-
           /* The complete model is made isotropic
            *
            * TL_i^* = TL / B_i
@@ -405,56 +404,27 @@ cs_lagr_car(int              iprev,
            *
            * is replaced by "tr(B^2)/3 Id"
            * */
-          if (cs_glob_lagr_model->idirla == 0) {
-            bbi[0] = sqrt(1.0 + 3. * cbcb * uvwdif);
-            bbi[1] = sqrt(1.0 + 3. * cbcb * uvwdif);
-            bbi[2] = sqrt(1.0 + 3. * cbcb * uvwdif);
-          }
-
-          /* Mean direction is X */
-          else if (cs_glob_lagr_model->idirla == 1) {
-            bbi[0] = sqrt(1.0 +       cbcb * uvwdif);
-            bbi[1] = sqrt(1.0 + 4.0 * cbcb * uvwdif);
-            bbi[2] = sqrt(1.0 + 4.0 * cbcb * uvwdif);
-          }
-
-          /* Mean direction is Y */
-          else if (cs_glob_lagr_model->idirla == 2) {
-            bbi[0] = sqrt(1.0 + 4.0 * cbcb * uvwdif);
-            bbi[1] = sqrt(1.0 +       cbcb * uvwdif);
-            bbi[2] = sqrt(1.0 + 4.0 * cbcb * uvwdif);
-          }
-
-          /* Mean direction is Z */
-          else if (cs_glob_lagr_model->idirla == 3) {
-            bbi[0] = sqrt(1.0 + 4.0 * cbcb * uvwdif);
-            bbi[1] = sqrt(1.0 + 4.0 * cbcb * uvwdif);
-            bbi[2] = sqrt(1.0 +       cbcb * uvwdif);
-          }
 
           /* Mean direction is computed locally */
-          else { /* if (cs_glob_lagr_model->idirla == 4) */
+  
+          /* relative main direction */
+          cs_real_3_t vrn, n_dir;
+          for (cs_lnum_t i = 0; i < 3; i++)
+            vrn[i] = vpart[i] - vflui[i]; //FIXME should be MEAN particle velocity
 
-            /* relative main direction */
-            cs_real_3_t vrn, n_dir;
-            for (cs_lnum_t i = 0; i < 3; i++)
-              vrn[i] = vpart[i] - vflui[i];//FIXME should be MEAN particle velocity
+          cs_math_3_normalise(vrn, n_dir);
 
-            cs_math_3_normalise(vrn, n_dir);
+          /* crossing trajectory in the n_dir direction */
+          cs_real_t an, at;
+          an = (1.0 + cbcb * uvwdif);
+          at = (1.0 + 4.0 * cbcb * uvwdif);
 
-            /* crossing trajectory in the n_dir direction */
-            cs_real_t an, at;
-            an = (1.0 + cbcb * uvwdif);
-            at = (1.0 + 4.0 * cbcb * uvwdif);
+          /* We take (only) the diagonal part of
+           *  an. n(x)n + at (1 - n(x)n) */
 
-            /* We take (only) the diagonal part of
-             *  an. n(x)n + at (1 - n(x)n) */
-
-            for (cs_lnum_t id = 0; id < 3; id++)
-              bbi[id] = sqrt(an * cs_math_pow2(n_dir[id])
-                           + at * (1. - cs_math_pow2(n_dir[id])));
-
-          }
+          for (cs_lnum_t id = 0; id < 3; id++)
+            bbi[id] = sqrt(an * cs_math_pow2(n_dir[id])
+                      + at * (1. - cs_math_pow2(n_dir[id])));
 
           /* Compute the timescale of the fluid velocities seen by discrete
            * particles in parallel and transverse directions */
