@@ -364,8 +364,11 @@ pyple_coupling_mpi_set_get_status(PyObject *self, PyObject *args)
   const int n_apps = ple_coupling_mpi_set_n_apps(_mpi_sets[set_index]);
 
   PyObject *status_list = PyList_New(n_apps);
-  for (int i = 0; i < n_apps; i++)
-    PyList_SetItem(status_list, i, set_status[i]);
+  for (int i = 0; i < n_apps; i++) {
+    /* Need to construct a Python int before insertion inside the list */
+    PyObject *python_status = Py_BuildValue("i", set_status[i]);
+    PyList_SetItem(status_list, i, python_status);
+  }
 
   /* Return a Python list */
   return status_list;
