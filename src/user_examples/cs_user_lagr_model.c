@@ -464,22 +464,13 @@ cs_user_lagr_model(void)
   cs_glob_lagr_model->idiffl = 0;
 
   /* modcpl :
-     = 0 for the incomplete model (default value)
-     > 0 for the full model, is equal the absolute number
-     of time steps from which the full model is activated
-     modcpl must not be larger than idstnt */
+     = 0 for assuming that the particles represent fluid particles.
+     > 0 for activating the turbulent dispersion model, is equal the 
+     absolute number of time steps from which the model is activated.
+     Note that modcpl must not be larger than idstnt. The default
+     value is 1. */
 
-  cs_glob_lagr_model->modcpl = 0;
-
-  /* idirla (=1 or 2 or 3) : x, y or z direction of the full model.
-   * Corresponds to the main direction of the flow.
-   * Allow to calculate a non-isotropic Lagrangian timescale (default idirla=0)
-   * 4 stands for a local direction
-   * 0 stand for an isotropic Lagrangian timescale.
-   * */
-
-  if (cs_glob_lagr_model->modcpl > 0)
-    cs_glob_lagr_model->idirla = 1;
+  cs_glob_lagr_model->modcpl = 1;
 
   /*! [dispersed_phases_treatment] */
 

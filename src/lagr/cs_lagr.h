@@ -249,12 +249,13 @@ typedef struct {
   int  physical_model;
   int  n_temperature_layers;
 
-  /*! activates (>0) or not (=0) the turbulent dispersion model.
+  /*! activates (>0) the turbulent dispersion model.
     When \ref modcpl is strictly positive, its value is interpreted as the
     absolute Lagrangian time step number (including restarts) after which the
     complete model is applied.
     Since the turbulent dispersion model uses volume statistics, \ref modcpl must
-    either be 0 or be larger than \ref idstnt. */
+    either be 0 or be larger than \ref idstnt. 
+    When \ref modcpl is 0 then the particles are assumed to be fluid particles. */
   int modcpl;
 
   /*!  activation (=1) or not (=0) of the particle turbulent dispersion.

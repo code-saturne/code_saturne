@@ -757,7 +757,7 @@ cs_lagr_options_definition(int         isuite,
          _("in Lagrangian module"),
          _("The turbulent dispersion option is incompatible with that of\n"
            "statistics.\n\n"
-           "Statisitics must be actve fo this model, so we must have\n"
+           "Statistics must be actιve fo this model, so we must have\n"
            "lagr_model->modcpl >= cs_glob_lagr_stat_options->idstnt\n"
            "while their current values are %d < %d."),
          lagr_model->modcpl,

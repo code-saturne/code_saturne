@@ -441,14 +441,6 @@ cs_user_lagr_model(void)
 
   cs_glob_lagr_time_scheme->modcpl = 0;
 
-  /* idirla (=1 or 2 or 3) : 1st, 2nd or 3rd direction
-     of the full model. Corresponds to the main direction
-     of the flow. Allow to calculate a non-isotropic Lagrangian timescale
-     (default idirla=1) */
-
-  if (cs_glob_lagr_time_scheme->modcpl > 0)
-    cs_glob_lagr_time_scheme->idirla = 1;
-
   /* Options concerning the treatment of specific forces
    * =================================================== */
 
