@@ -288,6 +288,12 @@ class case:
                 + 'all or no domains must execute their solver.\n'
             raise RunCaseError(err_str)
 
+        # Script hooks
+
+        self.run_prologue = None
+        self.run_epilogue = None
+        self.compute_prologue = None
+        self.compute_epilogue = None
 
         # Date or other name
 
@@ -956,7 +962,6 @@ class case:
 
             s_args = self.domains[0].solver_command()
 
-            s.write('cd ' + s_args[0] + '\n\n')
             cs_exec_environment.write_script_comment(s, 'Run solver.\n')
             s.write(mpi_cmd + s_args[1] + mpi_cmd_args + s_args[2])
             s.write(' ' + cs_exec_environment.get_script_positional_args() +
@@ -1002,7 +1007,7 @@ class case:
 
     #---------------------------------------------------------------------------
 
-    def generate_solver_script(self, exec_env, prologue=None, epilogue=None):
+    def generate_solver_script(self, exec_env):
         """
         Generate localexec file.
         """
@@ -1151,12 +1156,16 @@ class case:
             cs_exec_environment.write_script_comment(s, 'Boot MPI daemons.\n')
             s.write(mpi_env.mpiboot + ' || exit $?\n\n')
 
-        # Add user-defined prologue if defined in run.cfg
+        # Ensure we are in the correct directory
 
-        if prologue:
-            s.write('\n')
-            s.write(prologue)
-            s.write('\n')
+        s.write('cd ' + cs_exec_environment.enquote_arg(self.exec_dir) + '\n\n')
+
+        # Add user-defined prologue if defined
+
+        if self.compute_prologue:
+            s.write('# Compute prologue\n')
+            s.write(self.compute_prologue)
+            s.write('\n\n')
 
         # Generate script body
 
@@ -1167,13 +1176,6 @@ class case:
         cs_exec_environment.write_export_env(s, 'CS_RET',
                                              cs_exec_environment.get_script_return_code())
 
-        # Add user-defined epilogue if defined in run.cfg
-
-        if epilogue:
-            s.write('\n')
-            s.write(epilogue)
-            s.write('\n')
-
         # Halt MPI daemons if necessary
 
         if n_procs > 1 and mpi_env.mpihalt != None:
@@ -1183,6 +1185,13 @@ class case:
         if mpi_env.del_hostsfile != None:
             cs_exec_environment.write_script_comment(s, 'Remove hostsfile.\n')
             s.write(mpi_env.del_hostsfile + '\n\n')
+
+        # Add user-defined epilogue if defined
+
+        if self.compute_epilogue:
+            s.write('\n# Compute epilogue\n')
+            s.write(self.compute_epilogue)
+            s.write('\n')
 
         if sys.platform.startswith('win'):
             s.write('\nexit %CS_RET%\n')
@@ -1685,9 +1694,7 @@ class case:
             scratchdir = None,
             run_id = None,
             force_id = False,
-            stages = None,
-            compute_prologue=None,
-            compute_epilogue=False):
+            stages = None):
 
         """
         Main script.
@@ -1800,6 +1807,12 @@ class case:
                                  'exceeded_time_limit'), None)
         # Now run
 
+        if self.run_prologue:
+            cwd = os.getcwd()
+            os.chdir(self.exec_dir)
+            retcode = cs_exec_environment.run_command(self.run_prologue)
+            os.chdir(cwd)
+
         try:
             retcode = 0
             if stages['prepare_data']:
@@ -1827,6 +1840,8 @@ class case:
 
         # Standard or error exit
 
+        retcode = 0
+
         if len(self.error) > 0:
             check_stage = {'preprocess':'preprocessing',
                            'solver':'calculation'}
@@ -1838,9 +1853,15 @@ class case:
             if len(self.error_long) > 0:
                 err_str += self.error_long + '\n\n'
             sys.stderr.write(err_str)
-            return 1
-        else:
-            return 0
+            retcode = 1
+
+        if self.run_epilogue:
+            cwd = os.getcwd()
+            os.chdir(self.exec_dir)
+            retcode = cs_exec_environment.run_command(self.run_epilogue)
+            os.chdir(cwd)
+
+        return retcode
 
     #---------------------------------------------------------------------------
 

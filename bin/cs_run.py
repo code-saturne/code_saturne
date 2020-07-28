@@ -593,6 +593,11 @@ def run(argv=[], pkg=None, submit_args=None):
             submit_stages[s] = stages[s]
             stages[s] = False
 
+    c.run_prologue = r_c['run_prologue']
+    c.run_epilogue = r_c['run_epilogue']
+    c.compute_prologue = r_c['compute_prologue']
+    c.compute_epilogue = r_c['compute_epilogue']
+
     # Now run case
 
     retval = c.run(n_procs=r_c['n_procs'],
