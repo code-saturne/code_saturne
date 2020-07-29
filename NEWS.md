@@ -72,6 +72,10 @@ Numerics and physical modelling:
 
 Architectural changes:
 
+- For coupled cases, replace `coupling_parameters.py` file by settings
+  in the top-level `run.cfg` (see Doxygen documentation for details).
+  Cases must be updated manually.
+
 - Documentation: add optional MathJax support for Doxygen. Currently
   uses an external MathJax server, so works on-line only.
 
