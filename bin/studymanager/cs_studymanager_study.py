@@ -195,7 +195,7 @@ class Case(object):
 
         coupling = False
         run_conf = None
-        run_confing_path = os.path.join(self.__repo, self.label, "run.cfg")
+        run_config_path = os.path.join(self.__repo, self.label, "run.cfg")
         if os.path.isfile(run_config_path):
             run_conf = cs_run_conf.run_conf(run_config_path, package=self.pkg)
             if run_conf.get("setup", "coupled_domains") != None:
