@@ -258,7 +258,7 @@ typedef struct {
     and \ref idiffl=1 automatically. */
   int modcpl;
 
-  /*!  activation (=1) or not (=0) of the particle turbulent dispersion model.
+  /*! activation (=1) or not (=0) of the particle turbulent dispersion model.
     The turbulent dispersion model is compatible only with the RANS turbulent models
     (\f$k-\varepsilon\f$, \f$R_{ij}-\varepsilon\f$, v2f or \f$k-\omega\f$).
     (\ref iturb=20, 21, 30, 31, 50 or 60). */
