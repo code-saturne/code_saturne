@@ -272,10 +272,12 @@ Optional section relative to associated setup. Allowed keywords are:
 
   Name of the parameters file (default: setup.xml).
 
-* `coupling`
+* `coupled_domains`
 
-  Name of the coupling_parameters file if present
-  (default: coupling_parameters.py).
+  List of domains that should be coupled, separated by colons (_:_).
+  When present (for a coupled run's top-level configuration file),
+  a section named after each domain's (transformed to lowercase)
+  may also be present to define additional options for that case.
 
 As the recommended `setup.xml` and coupling_parameters.py are used by default
 if not specified here but present in the directory structure, this section is
@@ -460,3 +462,81 @@ additional environment variables. The associated key names are:
   environment; it is thus usually preferred to `run_epilogue` when both
   could be used.
 
+### [${coupled_case_name}] {#case_structure_coupling_options}
+<!-- -->
+
+In case of code coupling, for each domain, a section whose name is
+based on the domain name may be present.
+The section name should always be in lowercase (per file formmat
+specifications) even if the domain name is not.
+
+* `solver`
+
+  Defines the solver type; currently allowed names (case-independent) are:
+  `code_saturne`, `neptune_cfd`, `SYRTHES`, `CATHARE`, `python_code`.
+  Additional allowed or required keywords may depend on the solver
+  type.
+
+* `domain`
+
+  Directory name (with exact capitalization) associated to the given
+  domain. By default, this should be the same as the domain name.
+
+* `n_procs_weight`
+
+  How many MPI ranks will be assigned to this domain will be based
+  on the ratio of this weight relative to the total `n_procs_weight`
+  of all coupled domains and the total number of ranks assigned
+  to the coupled computation.
+
+  The weight to assign to each domain may be estimated based on the
+  relative domain sizes and associated computational cost, so
+  as to balance the load as well as possible. Checking performance log
+  coupling timings may help improving the load balance based on previous
+  runs (when the coupling communication time represents the largest part
+  of the coupling exchange cost, this can usually be interpreted as including
+  time waiting for other domains, so more resources should be allocated
+  to domains with lower communication time, and less to those with higher
+  communication time.
+
+* `n_procs_min`
+
+  Minimum number of MPI ranks assigned to this domain. By default,
+  this value is 1. This setting may be useful if the weight-based computation
+  could lead to an insufficient number of assigned ranks for some resource
+  configurations, for example due to rounding.
+
+* `n_procs_max`
+
+  Maximmum number of MPI ranks assigned to this domain. This may
+  be useful if the computational tool associated to a given domain
+  is not parallel or is expected not to scale well beyond a given number
+  of MPI ranks.
+
+* `opt`
+
+  For Syrthes domains, additional options (for example, postprocessing with
+  `-v ens` or `-v med`).
+
+* `param`
+
+  For Syrthes domains, name of associated parameters file.
+
+* `cathare_case_file`
+
+  For CATHARE domains, name of the associated dataset file.
+
+* `neptune_cfd_domain`
+
+  For CATHARE domains, name of the computational domain assigned
+  to the false neptune_cfd instance which actually wraps CATHARE.
+
+* `script`
+
+  For Python-based solver domains, name of the main matching
+  Python script.
+
+* `command_line`
+
+  For Python-based solver domains, name of the associated
+  command-line arguments.

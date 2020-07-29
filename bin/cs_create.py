@@ -416,26 +416,20 @@ class study:
             c = os.path.normpath(c)
             base_c = os.path.basename(c)
 
-            coupled_domains.append({'solver':solver_name,
-                                    'domain':base_c,
-                                    'n_procs_weight':'None',
-                                    'n_procs_min':1,
-                                    'n_procs_max':'None'})
-
+            coupled_domains.append({'solver': solver_name,
+                                    'domain': base_c,
+                                    'n_procs_weight': 'None'})
 
         for c in self.syr_case_names:
 
             c = os.path.normpath(c)
             base_c = os.path.basename(c)
 
-
-            coupled_domains.append({'solver':'SYRTHES',
-                                    'domain':base_c,
+            coupled_domains.append({'solver': 'SYRTHES',
+                                    'domain': base_c,
                                     'param': 'syrthes_data.syd',
-                                    'n_procs_weight':'None',
-                                    'n_procs_min':1,
-                                    'n_procs_max':'None',
-                                    'opt':''})
+                                    'n_procs_weight': 'None',
+                                    'opt': ''})
             # Last entry is for additional SYRTHES options
             # (ex.: postprocessing with '-v ens' or '-v med')
 
@@ -444,10 +438,10 @@ class study:
             c = os.path.normpath(self.cat_case_name)
             base_c = os.path.basename(c)
 
-            coupled_domains.append({'solver':'CATHARE',
-                                    'domain':base_c,
-                                    'cathare_case_file':'jdd_case.dat',
-                                    'neptune_cfd_domain':'NEPTUNE'})
+            coupled_domains.append({'solver': 'CATHARE',
+                                    'domain': base_c,
+                                    'cathare_case_file':' jdd_case.dat',
+                                    'neptune_cfd_domain': 'NEPTUNE'})
 
 
         if self.py_case_name is not None:
@@ -455,13 +449,12 @@ class study:
             c = os.path.normpath(self.py_case_name)
             base_c = os.path.basename(c)
 
-            coupled_domains.append({'solver':'PYTHON_CODE',
-                                    'domain':self.py_case_name,
-                                    'script':'pycode.py',
-                                    'command_line':'',
-                                    'n_procs_weight':None,
-                                    'n_procs_min':1,
-                                    'n_procs_max':None})
+            coupled_domains.append({'solver': 'PYTHON_CODE',
+                                    'domain': self.py_case_name,
+                                    'script': 'pycode.py',
+                                    'command_line': '',
+                                    'n_procs_weight': None,
+                                    'n_procs_max': None})
 
         # Result directory for coupling execution
 
