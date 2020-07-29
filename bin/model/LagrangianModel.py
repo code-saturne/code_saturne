@@ -659,7 +659,7 @@ class LagrangianModel(Model):
         """
         self.isInt(value)
         self.isInList(value, (0, 1))
-        self.node_lagr.xmlSetData('regular_particles', iteration)
+        self.node_lagr.xmlSetData('regular_particles', value)
 
 
     @Variables.noUndo
