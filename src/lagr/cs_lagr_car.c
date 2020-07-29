@@ -394,7 +394,7 @@ cs_lagr_car(int              iprev,
         if (   cs_glob_lagr_model->modcpl > 0
             && cs_glob_time_step->nt_cur > cs_glob_lagr_model->modcpl) {
 
-          /* The complete model is made isotropic
+          /* The turbulence dispersion model is made isotropic
            *
            * TL_i^* = TL / B_i
            *
