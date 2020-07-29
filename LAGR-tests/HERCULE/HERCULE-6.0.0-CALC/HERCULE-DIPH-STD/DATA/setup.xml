@@ -323,7 +323,7 @@ z = 0.42;</formula>
   </calculation_management>
   <lagrangian model="two_way">
     <carrier_field_stationary status="off"/>
-    <complete_model>0</complete_model>
+    <regular_particles>0</regular_particles>
     <complete_model_direction choice="1"/>
     <deposition_submodel status="off"/>
     <fluid_particles_turbulent_diffusion status="off"/>

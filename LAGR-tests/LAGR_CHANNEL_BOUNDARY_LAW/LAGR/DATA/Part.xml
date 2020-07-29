@@ -141,7 +141,7 @@ dir_z = 0.0;</direction_formula>
 	</calculation_management>
 	<lagrangian model="frozen">
 		<carrier_field_stationary status="off"/>
-		<complete_model>1</complete_model>
+		<regular_particles>1</regular_particles>
 		<complete_model_direction choice="1"/>
 		<deposition_submodel status="off"/>
 		<fluid_particles_turbulent_diffusion status="on"/>

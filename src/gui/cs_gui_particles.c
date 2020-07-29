@@ -319,7 +319,7 @@ cs_gui_particles_model(void)
                                                     "deposition_submodel"),
                              &(cs_glob_lagr_model->deposition));
 
-  cs_gui_node_get_child_int(tn_lagr, "complete_model",
+  cs_gui_node_get_child_int(tn_lagr, "regular_particles",
                             (&cs_glob_lagr_model->modcpl));
 
   /* Output */
@@ -391,7 +391,7 @@ cs_gui_particles_model(void)
    * statistics are required, so activate it after the start time of
    * statistics.
    */
-  if (cs_glob_lagr_model->modcpl > 0)
+  if (cs_glob_lagr_model->modcpl == 1)
     cs_glob_lagr_model->modcpl =
       CS_MAX(cs_glob_lagr_model->modcpl, cs_glob_lagr_stat_options->idstnt);
 

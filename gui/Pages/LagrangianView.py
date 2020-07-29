@@ -240,8 +240,8 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         # Default settings
         self.default = {}
         self.default['scheme_order'] = self.model.getSchemeOrder()
-        self.default['complete_model'] = self.model.getCompleteModel()
-        self.default['turbulent_dispertion'] = self.model.getTurbulentDispersion()
+        self.default['regular_particles'] = self.model.getRegularParticles()
+        self.default['turbulent_dispersion'] = self.model.getTurbulentDispersion()
         self.default['fluid_particles_turbulent_diffusion'] = self.model.getTurbulentDiffusion()
         self.result = self.default.copy()
 
@@ -365,11 +365,11 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         Input MODCPL.
         """
         if self.checkBoxMODCPL.isChecked():
-            self.model.setCompleteModel(0)
+            self.model.setRegularParticles(0)
             self.model.setTurbulentDispersion("off")
             self.model.setTurbulentDiffusion("on")
         else:
-            self.model.setCompleteModel(1)
+            self.model.setRegularParticles(1)
             self.model.setTurbulentDispersion("on")
             self.model.setTurbulentDiffusion("off")
 

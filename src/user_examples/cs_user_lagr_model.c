@@ -464,11 +464,13 @@ cs_user_lagr_model(void)
   cs_glob_lagr_model->idiffl = 0;
 
   /* modcpl :
-     = 0 for assuming that the particles represent fluid particles.
-     > 0 for activating the turbulent dispersion model, is equal the 
-     absolute number of time steps from which the model is activated.
-     Note that modcpl must not be larger than idstnt. The default
-     value is 1. */
+     A value of 0 sets the assumption that we have regular particles.
+     In this case idistu=1 and diffl=0 automatically.
+     Since the turbulent dispersion model uses volume statistics,
+     idstnt must also be 1.
+     When modcpl=0 then the particles are assumed to be fluid particles
+     and the turbulence dispersion model is disabled. Also, idistu=0
+     and idiffl=1 automatically. The default value is 1.*/
 
   cs_glob_lagr_model->modcpl = 1;
 

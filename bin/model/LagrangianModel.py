@@ -95,7 +95,7 @@ class LagrangianModel(Model):
         default['scheme_order']                        = 1
         default['turbulent_dispersion']                = "on"
         default['fluid_particles_turbulent_diffusion'] = "off"
-        default['complete_model']                      = 1
+        default['regular_particles']                   = 1
 
         return default
 
@@ -653,25 +653,25 @@ class LagrangianModel(Model):
 
 
     @Variables.undoLocal
-    def setCompleteModel(self, iteration):
+    def setRegularParticles(self, value):
         """
-        Set value for complete model start iteration.
+        Set value for regular particles
         """
-        self.isInt(iteration)
-        self.isGreaterOrEqual(iteration, 0)
-        self.node_lagr.xmlSetData('complete_model', iteration)
+        self.isInt(value)
+        self.isInList(value, (0, 1))
+        self.node_lagr.xmlSetData('regular_particles', iteration)
 
 
     @Variables.noUndo
-    def getCompleteModel(self):
+    def getRegularParticles(self):
         """
-        Return value for complete model iteration.
+        Return value for regular particles
         """
-        iteration = self.node_lagr.xmlGetInt('complete_model')
-        if iteration == None:
-            iteration = self.defaultParticlesValues()['complete_model']
-            self.setCompleteModel(iteration)
-        return iteration
+        value = self.node_lagr.xmlGetInt('regular_particles')
+        if value == None:
+            value = self.defaultParticlesValues()['regular_particles']
+            self.setRegularParticles(value)
+        return value
 
 
 #-------------------------------------------------------------------------------
@@ -1027,17 +1027,17 @@ class LagrangianTestCase(ModelTest):
             'Could not set default values for turbulent diffusion status.'
 
 
-    def checkCompleteModelStartIteration(self):
-        """Check whether the complete model start iteration could be set and get."""
+    def checkTurbulenceDispersionStartIteration(self):
+        """Check whether the turbulence dispersion model start iteration could be set and get."""
         mdl = LagrangianModel(self.case)
-        status = mdl.getCompleteModelStartIteration()
+        status = mdl.getTurbulenceDispersionStartIteration()
 
         assert status == mdl.defaultParticlesValues()['complete_model_iteration'], \
             'Could not get default values for complete model start iteration.'
 
-        mdl.setCompleteModelStartIteration(1234)
+        mdl.setTurbulenceDispersionStartIteration(1234)
         doc = """<lagrangian model="off">
-                     <complete_model>1234</complete_model>
+                     <regular_particles>1234</regular_particles>
                  </lagrangian>"""
 
         assert mdl.node_lagr == self.xmlNodeFromString(doc), \

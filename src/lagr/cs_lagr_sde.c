@@ -281,7 +281,8 @@ _lages1(cs_real_t           dtp,
 
         perform_rotation = true;
 
-      } else if (cs_glob_lagr_model->shape == 1) {
+      } 
+      else if (cs_glob_lagr_model->shape == 1) {
 
         // Use rotation matrix for stochastic model
         cs_real_t *orient_loc  = cs_lagr_particle_attr(particle, p_am, CS_LAGR_ORIENTATION);
@@ -311,10 +312,10 @@ _lages1(cs_real_t           dtp,
         trans_m[2][2] = cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle));     // [2][2]
         
         perform_rotation = true;
+
       } 
       else if (cs_glob_lagr_model->shape == 0 &&
-               cs_glob_lagr_model->modcpl > 0 &&
-               cs_glob_time_step->nt_cur > cs_glob_lagr_model->modcpl) {
+               cs_glob_lagr_model->modcpl == 1) {
 
         // Rotate the frame of reference with respect to the
         // relative particle direction
@@ -350,6 +351,7 @@ _lages1(cs_real_t           dtp,
         trans_m[2][2] = cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle));     // [2][2]
 
         perform_rotation = true;
+        
       }
 
       if (perform_rotation) {
@@ -613,8 +615,7 @@ _lages1(cs_real_t           dtp,
       perform_rotation = false;
 
       if (cs_glob_lagr_model->shape == 0 &&
-          cs_glob_lagr_model->modcpl > 0 &&
-          cs_glob_time_step->nt_cur > cs_glob_lagr_model->modcpl) {
+          cs_glob_lagr_model->modcpl == 1) {
 
         // Rotate the frame of reference with respect to the
         // relative particle direction

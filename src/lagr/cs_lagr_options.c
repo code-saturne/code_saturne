@@ -749,7 +749,7 @@ cs_lagr_options_definition(int         isuite,
   if (lagr_model->modcpl < 0)
     lagr_model->modcpl = 0;
 
-  if (lagr_model->modcpl > 0) {
+  if (lagr_model->modcpl == 1) {
 
     if (lagr_model->modcpl < cs_glob_lagr_stat_options->idstnt)
       cs_parameters_error
@@ -999,7 +999,7 @@ cs_lagr_options_definition(int         isuite,
   /* Now activate basic statistics */
 
 #if 0
-  if (   cs_glob_lagr_model->modcpl > 0
+  if (   cs_glob_lagr_model->modcpl == 1
       || cs_glob_lagr_time_scheme->ilapoi == 1)
     cs_lagr_stat_activate(CS_LAGR_STAT_CUMULATIVE_WEIGHT);
 #endif

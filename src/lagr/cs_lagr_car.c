@@ -360,8 +360,7 @@ cs_lagr_car(int              iprev,
 
         }
 
-        if (   cs_glob_lagr_model->modcpl > 0
-            && cs_glob_time_step->nt_cur > cs_glob_lagr_model->modcpl) {
+        if (cs_glob_lagr_model->modcpl == 1) {
 
           int stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY);
 
@@ -391,8 +390,7 @@ cs_lagr_car(int              iprev,
 
         uvwdif = (3.0 * uvwdif) / (2.0 * energi[cell_id]);
 
-        if (   cs_glob_lagr_model->modcpl > 0
-            && cs_glob_time_step->nt_cur > cs_glob_lagr_model->modcpl) {
+        if (cs_glob_lagr_model->modcpl == 1) {
 
           /* The turbulence dispersion model is made isotropic
            *
@@ -503,9 +501,7 @@ cs_lagr_car(int              iprev,
   /* Compute Pii
      ----------- */
 
-  if (   cs_glob_lagr_model->modcpl > 0
-      && (  cs_glob_time_step->nt_cur
-          > cs_glob_lagr_model->modcpl)) {
+  if (cs_glob_lagr_model->modcpl == 1) {
 
     int stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY);
 
