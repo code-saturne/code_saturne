@@ -245,9 +245,10 @@ def isaSaturneSyrthesCouplingStudy(theStudyPath):
         mess = cfdstudyMess.trMessage(ObjectTR.tr("MUST_BE_A_DIRECTORY"),[theStudyPath])
         cfdstudyMess.criticalMessage(mess)
         return False
+    # TODO replace by a more robust test, using a query function of the
+    # main code_saturne command or subcommand (to be added)
     dirList = os.listdir(theStudyPath)
-    if not (dirList.count("RESU_COUPLING") and dirList.count("coupling_parameters.py") \
-            and (dirList.count("runcase") or dirList.count("code_saturne") or dirList.count("neptune_cfd"))):
+    if not (dirList.count("RESU_COUPLING") and dirList.count("run.cfg")):
         return False
     for i in dirList:
         ipath = os.path.join(theStudyPath,i)

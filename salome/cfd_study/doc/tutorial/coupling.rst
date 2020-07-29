@@ -40,8 +40,8 @@ and two files:
      RESU_COUPLING           directory for study results
      saturne_case            directory for *Code_Saturne* case (DATA, SRC)
      syrthes                 directory for *SYRTHES*
-     coupling_parameters.py  file for coupling parameters (number of processors, ...)
-     runcase                 executable script
+     run.cfg                 run and couplings configuration file (number of processors, ...)
+     code_saturne            executable script (local wrapper to global command)
      ======================  =========================================================
 
 -------------------------------------
@@ -62,7 +62,7 @@ Run computation
 -------------------------------------
 
 When calculation parameters are defined, close the salome GUI and launch the **salome shell** again.
-Then, go to the directory **my_study** and edit **coupling_parameters.py** file.
+Then, go to the directory **my_study** and edit the **run.cfg** file.
 
-Finally, to launch the computation just run the **runcase** file with the command ``./runcase``.
+Finally, to launch the use the following: ``./code_saturne run``.
 

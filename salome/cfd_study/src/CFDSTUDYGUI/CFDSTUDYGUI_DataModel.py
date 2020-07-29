@@ -498,11 +498,6 @@ def _SetStudyLocation(theStudyPath, theCaseNames,theCreateOpt,
 
     if iok:
         UpdateSubTree(studyObject)
-        if "coupling_parameters.py" in os.listdir(theStudyPath):
-            # Update SYRTHES PATH into coupling_parameters.py file
-            replaceOrInsertCouplingPath(os.path.join(theStudyPath,
-                                                     "coupling_parameters.py"))
-
         # TODO handle number of procs required in a consistant manner for coupled cases
         # Better handled using models/BatchRunningModel
         if "run.cfg" in os.listdir(theStudyPath) and theCreateOpt:
@@ -511,31 +506,6 @@ def _SetStudyLocation(theStudyPath, theCaseNames,theCreateOpt,
 
     return iok
 
-
-def replaceOrInsertCouplingPath(The_coupling_parameters_path):
-    """
-    coupling_parameters.py file is updated according to syrthes path needed
-    """
-    log.debug("replaceOrInsertCouplingPath")
-    f = open(The_coupling_parameters_path,"r")
-    l = f.readlines()
-    f.close()
-    boo = False
-    if not os.getenv("SYRTHES4_HOME"):
-        mess = cfdstudyMess.trMessage(ObjectTR.tr("COUPLING_SYRTHES4_HOME_MISSING"),[])
-        cfdstudyMess.criticalMessage(mess)
-        return
-    lineToInsert = "sys.path.insert(1,"+"'"+os.path.join(os.path.join(os.environ["SYRTHES4_HOME"],"share"),"syrthes")+os.sep+"')\n"
-    for i in l :
-        if  i.startswith("sys.path.insert"):
-            ind = l.index(i)
-            l[ind] = lineToInsert
-            boo = True
-    if not boo:
-        l.insert(1,lineToInsert)
-    f = open(The_coupling_parameters_path,"w")
-    f.writelines(l)
-    f.close()
 
 def _CallCreateScript(theStudyPath, isCreateStudy, theCaseNames,
                       theCopyOpt, theNameRef, theSyrthesOpt, theSyrthesCase):
@@ -929,9 +899,7 @@ def _FillObject(theObject, theParent, theBuilder):
                     else:
                         objectId = dict_object["OtherFolder"]
 
-        if name == "coupling_parameters.py":
-            objectId = dict_object["CouplingFilePy"]
-        elif name in ("code_saturne", "neptune_cfd", "runcase"):
+        if name in ("code_saturne", "neptune_cfd", "runcase"):
             objectId = dict_object["CouplingLauncher"]
         elif name == "RESU_COUPLING":
             objectId = dict_object["RESU_COUPLINGFolder"]
@@ -1180,10 +1148,6 @@ def _FillObject(theObject, theParent, theBuilder):
             else:
                 # test if folder is a result cfd folder?
                 objectId = dict_object["RESUSubFolder"]
-
-        else:
-            if name == "coupling_parameters.py":
-                objectId = dict_object["CouplingFilePy"]
 
     elif parentId == dict_object["RESUSubFolderSYR"]:
         if re.match(".*\.log$", name):
