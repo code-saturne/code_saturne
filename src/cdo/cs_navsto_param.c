@@ -1180,6 +1180,11 @@ cs_navsto_add_velocity_ic_by_analytic(cs_navsto_param_t      *nsp,
                               &anai);
   }
 
+  /* Assign the default quadrature type of the Navier-Stokes module to this
+   * definition (this can be modified by the user if the same call is performed
+   * in cs_user_finalize_setup()) */
+  cs_xdef_set_quadrature(d, nsp->qtype);
+
   int  new_id = nsp->n_velocity_ic_defs;
   nsp->n_velocity_ic_defs += 1;
   BFT_REALLOC(nsp->velocity_ic_defs, nsp->n_velocity_ic_defs, cs_xdef_t *);
@@ -1280,6 +1285,11 @@ cs_navsto_add_pressure_ic_by_analytic(cs_navsto_param_t      *nsp,
                                         0,  /* state flag */
                                         meta_flag,
                                         &anai);
+
+  /* Assign the default quadrature type of the Navier-Stokes module to this
+   * definition (this can be modified by the user if the same call is
+   * performed in cs_user_finalize_setup()) */
+  cs_xdef_set_quadrature(d, nsp->qtype);
 
   int  new_id = nsp->n_pressure_ic_defs;
   nsp->n_pressure_ic_defs += 1;
@@ -1681,6 +1691,11 @@ cs_navsto_set_velocity_inlet_by_analytic(cs_navsto_param_t    *nsp,
                                           CS_CDO_BC_DIRICHLET,
                                           &anai);
 
+  /* Assign the default quadrature type of the Navier-Stokes module to this
+   * definition (this can be modified by the user if the same call is
+   * performed in cs_user_finalize_setup()) */
+  cs_xdef_set_quadrature(d, nsp->qtype);
+
   int  new_id = nsp->n_velocity_bc_defs;
 
   nsp->n_velocity_bc_defs += 1;
@@ -1717,6 +1732,10 @@ cs_navsto_add_source_term_by_analytic(cs_navsto_param_t    *nsp,
   cs_equation_param_t *eqp = _get_momentum_param(nsp);
   cs_xdef_t  *d = cs_equation_add_source_term_by_analytic(eqp,
                                                           z_name, ana, input);
+
+  /* Assign the default quadrature type of the Navier-Stokes module to this
+   * definition (this can be modified by the user if the same call is
+   * performed in cs_user_finalize_setup()) */
   cs_xdef_set_quadrature(d, nsp->qtype);
 
   return d;
