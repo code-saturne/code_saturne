@@ -481,9 +481,12 @@ def get_coupling_parameters_from_run_conf(run_conf):
     Empty list if single-case run.
     """
 
-    domain_names = run_conf.get('setup', 'coupled_domains')
-
     domains = []
+
+    if not run_conf:
+        return domains
+
+    domain_names = run_conf.get('setup', 'coupled_domains')
 
     if domain_names:
         for d in domain_names.split(":"):
