@@ -2557,45 +2557,6 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
 
       case CS_QUADRATURE_HIGHER:
         {
-          /* 3 Gauss points by triangle spanned by x_c, x_f, x_e */
-          cs_real_t  w[3], eval[9];
-          cs_real_3_t  gpts[3];
-
-          /* Loop on cell faces */
-          for (short int f = 0; f < cm->n_fc; f++) {
-
-            const cs_quant_t  face = cm->face[f];
-
-            for (short int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
-
-              const short int  e = cm->f2e_ids[i];
-              const cs_quant_t  edge = cm->edge[e];
-              const cs_nvec3_t  sefc = cm->sefc[i];
-
-              cs_quadrature_tria_3pts(edge.center, face.center, cm->xc,
-                                      sefc.meas,
-                                      gpts, w);
-
-              cs_xdef_cw_eval_at_xyz_by_analytic(cm,
-                                                 3, (const cs_real_t *)gpts,
-                                                 time_eval,
-                                                 def->input,
-                                                 eval);
-
-              cs_real_t  add = 0;
-              for (int p = 0; p < 3; p++)
-                add += w[p] * _dp3(eval + 3*p, sefc.unitv);
-              fluxes[e] += add;
-
-            } /* Loop on face edges */
-
-          } /* Loop on cell faces */
-
-        }
-        break; /* CS_QUADRATURE_HIGHER */
-
-      case CS_QUADRATURE_HIGHEST:
-        {
           /* 4 Gauss points by triangle spanned by x_c, x_f, x_e */
           cs_real_t  w[4], eval[12];
           cs_real_3_t  gpts[4];
@@ -2623,6 +2584,45 @@ cs_advection_field_cw_dface_flux(const cs_cell_mesh_t     *cm,
 
               cs_real_t  add = 0;
               for (int p = 0; p < 4; p++)
+                add += w[p] * _dp3(eval + 3*p, sefc.unitv);
+              fluxes[e] += add;
+
+            } /* Loop on face edges */
+
+          } /* Loop on cell faces */
+
+        }
+        break; /* CS_QUADRATURE_HIGHER */
+
+      case CS_QUADRATURE_HIGHEST:
+        {
+          /* 7 Gauss points by triangle spanned by x_c, x_f, x_e */
+          cs_real_t  w[7], eval[21];
+          cs_real_3_t  gpts[7];
+
+          /* Loop on cell faces */
+          for (short int f = 0; f < cm->n_fc; f++) {
+
+            const cs_quant_t  face = cm->face[f];
+
+            for (short int i = cm->f2e_idx[f]; i < cm->f2e_idx[f+1]; i++) {
+
+              const short int  e = cm->f2e_ids[i];
+              const cs_quant_t  edge = cm->edge[e];
+              const cs_nvec3_t  sefc = cm->sefc[i];
+
+              cs_quadrature_tria_7pts(edge.center, face.center, cm->xc,
+                                      sefc.meas,
+                                      gpts, w);
+
+              cs_xdef_cw_eval_at_xyz_by_analytic(cm,
+                                                 7, (const cs_real_t *)gpts,
+                                                 time_eval,
+                                                 def->input,
+                                                 eval);
+
+              cs_real_t  add = 0;
+              for (int p = 0; p < 7; p++)
                 add += w[p] * _dp3(eval + 3*p, sefc.unitv);
               fluxes[e] += add;
 
