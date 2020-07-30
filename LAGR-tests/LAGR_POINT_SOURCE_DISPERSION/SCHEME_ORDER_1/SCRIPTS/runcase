@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# Source the Salome environment settings
-source /home/panos/Development/Salome/SALOME-9.4.0/env_launch.sh
-
-# Run command:
-\code_saturne run --param lagrange-single-cell.xml
