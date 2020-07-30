@@ -1628,7 +1628,7 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
           cs_math_33_3_product((const cs_real_t (*)[3])_eval[p], fq.unitv,
                                _val);
           for (int k = 0; k < 3; k++)
-            eval[3*f+k] += w[p] * cm->tef[i] * _val[k];
+            eval[3*f+k] += w[p] * _val[k];
         }
 
       }
@@ -1673,7 +1673,7 @@ cs_xdef_cw_eval_tensor_flux_by_analytic(const cs_cell_mesh_t      *cm,
           cs_math_33_3_product((const cs_real_t (*)[3])_eval[p], fq.unitv,
                                _val);
           for (int k = 0; k < 3; k++)
-            eval[3*f+k] += w[p] * cm->tef[i] * _val[k];
+            eval[3*f+k] += w[p] * _val[k];
         }
 
       }
