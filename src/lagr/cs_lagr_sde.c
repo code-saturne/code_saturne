@@ -318,40 +318,49 @@ _lages1(cs_real_t           dtp,
                cs_glob_lagr_model->modcpl == 1) {
 
         // Rotate the frame of reference with respect to the
-        // relative particle direction
+        // relative particle direction, if possible
         cs_real_t new_dir[3];
-        const cs_real_t eps = 1.0e-24;
-        for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t i = 0; i < 3; i++)
           new_dir[i] = mean_part_vel[i] - fluid_vel_r[i];
-          new_dir[i] = (new_dir[i] >= 0.0) ? new_dir[i] + eps : new_dir[i] - eps;
+
+        cs_real_t mag = cs_math_3_norm(new_dir);
+
+        // The rotation will be done only when the relative
+        // particle velocity is large enough
+        if (mag <= cs_math_epzero) {
+
+          perform_rotation = false;
+
+        } else {
+
+          cs_math_3_normalise(new_dir, new_dir);
+
+          // Compute the rotation angle between the x-axis and
+          // the new direction
+          cs_real_t x_axis[3] = {1.0, 0.0, 0.0};
+          cs_real_t rot_angle = acos(cs_math_3_dot_product(new_dir, x_axis));
+
+          // The rotation axis is the result of the cross product between
+          // the new direction vector and the x-axis
+          cs_real_t n_rot[3];
+          cs_math_3_cross_product(new_dir, x_axis, n_rot);
+          cs_math_3_normalise(n_rot, n_rot);
+
+          // Compute the rotation matrix
+          trans_m[0][0] = cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle));     // [0][0]
+          trans_m[0][1] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) + n_rot[2]*sin(rot_angle); // [0][1]
+          trans_m[0][2] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[1]*sin(rot_angle); // [0][2]
+          trans_m[1][0] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) - n_rot[2]*sin(rot_angle); // [1][0]
+          trans_m[1][1] = cos(rot_angle) + cs_math_pow2(n_rot[1])*(1.0 - cos(rot_angle));     // [1][1]
+          trans_m[1][2] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[0]*sin(rot_angle); // [1][2]
+          trans_m[2][0] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[1]*sin(rot_angle); // [2][0]
+          trans_m[2][1] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[0]*sin(rot_angle); // [2][1]
+          trans_m[2][2] = cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle));     // [2][2]
+
+          perform_rotation = true;
+
         }
 
-        cs_math_3_normalise(new_dir, new_dir);
-
-        // Compute the rotation angle between the x-axis and
-        // the new direction
-        cs_real_t x_axis[3] = {1.0, 0.0, 0.0};
-        cs_real_t rot_angle = acos(cs_math_3_dot_product(new_dir, x_axis));
-
-        // The rotation axis is the result of the cross product between
-        // the new direction vector and the x-axis
-        cs_real_t n_rot[3];
-        cs_math_3_cross_product(new_dir, x_axis, n_rot);
-        cs_math_3_normalise(n_rot, n_rot);
-
-        // Compute the rotation matrix
-        trans_m[0][0] = cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle));     // [0][0]
-        trans_m[0][1] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) + n_rot[2]*sin(rot_angle); // [0][1]
-        trans_m[0][2] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[1]*sin(rot_angle); // [0][2]
-        trans_m[1][0] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) - n_rot[2]*sin(rot_angle); // [1][0]
-        trans_m[1][1] = cos(rot_angle) + cs_math_pow2(n_rot[1])*(1.0 - cos(rot_angle));     // [1][1]
-        trans_m[1][2] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[0]*sin(rot_angle); // [1][2]
-        trans_m[2][0] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[1]*sin(rot_angle); // [2][0]
-        trans_m[2][1] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[0]*sin(rot_angle); // [2][1]
-        trans_m[2][2] = cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle));     // [2][2]
-
-        perform_rotation = true;
-        
       }
 
       if (perform_rotation) {
@@ -392,7 +401,9 @@ _lages1(cs_real_t           dtp,
                       pow(radii[0]*radii[1]*radii[2], 2.0 / 3.0);
           taup_r[2] = 3.0 / 8.0 * taup[ip]*(radii[2]*radii[2]*s_p[2] + s_p[3]) /
                       pow(radii[0]*radii[1]*radii[2], 2.0 / 3.0);
+
         }
+
       }
 
       /* =========================================================================
@@ -618,39 +629,48 @@ _lages1(cs_real_t           dtp,
           cs_glob_lagr_model->modcpl == 1) {
 
         // Rotate the frame of reference with respect to the
-        // relative particle direction
+        // relative particle direction, if possible
         cs_real_t new_dir[3];
-        const cs_real_t eps = 1.0e-24;
-        for (cs_lnum_t i = 0; i < 3; i++) {
+        for (cs_lnum_t i = 0; i < 3; i++)
           new_dir[i] = mean_part_vel[i] - fluid_vel_r[i];
-          new_dir[i] = (new_dir[i] >= 0.0) ? new_dir[i] + eps : new_dir[i] - eps;
+
+        cs_real_t mag = cs_math_3_norm(new_dir);
+
+        // The rotation will be done only when the relative 
+        // particle velocity is large enough
+        if (mag <= cs_math_epzero) {
+
+          perform_rotation = false;
+
+        } else {
+
+          cs_math_3_normalise(new_dir, new_dir);
+
+          // Compute the rotation angle between the x-axis and
+          // the new direction
+          cs_real_t x_axis[3] = {1.0, 0.0, 0.0};
+          cs_real_t rot_angle = acos(cs_math_3_dot_product(new_dir, x_axis));
+
+          // The rotation axis is the result of the cross product between
+          // the new direction vector and the x-axis
+          cs_real_t n_rot[3];
+          cs_math_3_cross_product(new_dir, x_axis, n_rot);
+          cs_math_3_normalise(n_rot, n_rot);
+
+          // Compute the rotation matrix
+          trans_m[0][0] = cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle));     // [0][0]
+          trans_m[0][1] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) + n_rot[2]*sin(rot_angle); // [0][1]
+          trans_m[0][2] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[1]*sin(rot_angle); // [0][2]
+          trans_m[1][0] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) - n_rot[2]*sin(rot_angle); // [1][0]
+          trans_m[1][1] = cos(rot_angle) + cs_math_pow2(n_rot[1])*(1.0 - cos(rot_angle));     // [1][1]
+          trans_m[1][2] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[0]*sin(rot_angle); // [1][2]
+          trans_m[2][0] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[1]*sin(rot_angle); // [2][0]
+          trans_m[2][1] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[0]*sin(rot_angle); // [2][1]
+          trans_m[2][2] = cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle));     // [2][2]
+
+          perform_rotation = true;
+
         }
-
-        cs_math_3_normalise(new_dir, new_dir);
-
-        // Compute the rotation angle between the x-axis and
-        // the new direction
-        cs_real_t x_axis[3] = {1.0, 0.0, 0.0};
-        cs_real_t rot_angle = acos(cs_math_3_dot_product(new_dir, x_axis));
-
-        // The rotation axis is the result of the cross product between
-        // the new direction vector and the x-axis
-        cs_real_t n_rot[3];
-        cs_math_3_cross_product(new_dir, x_axis, n_rot);
-        cs_math_3_normalise(n_rot, n_rot);
-
-        // Compute the rotation matrix
-        trans_m[0][0] = cos(rot_angle) + cs_math_pow2(n_rot[0])*(1.0 - cos(rot_angle));     // [0][0]
-        trans_m[0][1] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) + n_rot[2]*sin(rot_angle); // [0][1]
-        trans_m[0][2] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[1]*sin(rot_angle); // [0][2]
-        trans_m[1][0] = n_rot[0]*n_rot[1]*(1.0 - cos(rot_angle)) - n_rot[2]*sin(rot_angle); // [1][0]
-        trans_m[1][1] = cos(rot_angle) + cs_math_pow2(n_rot[1])*(1.0 - cos(rot_angle));     // [1][1]
-        trans_m[1][2] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[0]*sin(rot_angle); // [1][2]
-        trans_m[2][0] = n_rot[0]*n_rot[2]*(1.0 - cos(rot_angle)) + n_rot[1]*sin(rot_angle); // [2][0]
-        trans_m[2][1] = n_rot[1]*n_rot[2]*(1.0 - cos(rot_angle)) - n_rot[0]*sin(rot_angle); // [2][1]
-        trans_m[2][2] = cos(rot_angle) + cs_math_pow2(n_rot[2])*(1.0 - cos(rot_angle));     // [2][2]
-
-        perform_rotation = true;
 
       }
       else if (cs_glob_lagr_model->shape == 2) {
@@ -731,7 +751,9 @@ _lages1(cs_real_t           dtp,
             part_vel_seen[id] = part_vel_seen_r[id];
           }
       }
+
     }
+    
   }
 }
 
