@@ -4,7 +4,7 @@
 
 # This file is part of Code_Saturne, a general-purpose CFD tool.
 #
-# Copyright (C) 1998-2019 EDF S.A.
+# Copyright (C) 1998-2020 EDF S.A.
 #
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
@@ -241,7 +241,7 @@ class XMLinit(Variables):
         """
         Change XML in order to ensure backward compatibility.
         """
-        cur_vers = self.case['package'].version
+        cur_vers = self.case['package'].version_short
 
         if self.case.root()["solver_version"]:
             his_r = self.case.root()["solver_version"]

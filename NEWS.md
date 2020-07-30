@@ -3,6 +3,8 @@ Release 6.0.5 (unreleased)
 
 Bug fixes:
 
+- Use short version name for XML back compatibility.
+
 - Fix inversion of tensor component time plots (probes) YZ and XZ
   (GitLab issue #208).
 
