@@ -119,7 +119,7 @@ class BaseXmlInit(Variables):
         """
         Change XML in order to ensure backward compatibility.
         """
-        cur_vers = self.case['package'].version
+        cur_vers = self.case['package'].version_short
 
         if self.case.root()["solver_version"]:
             his_r = self.case.root()["solver_version"]
