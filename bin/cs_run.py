@@ -312,6 +312,16 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
         run_config_path = os.path.join(casedir, 'DATA', 'run.cfg')
         setup_default_path = os.path.join(casedir, 'DATA', 'setup.xml')
 
+    # Ensure some keys are set in all cases to simplify future tests
+
+    run_conf_kw= ('job_parameters', 'job_header',
+                  'run_prologue', 'run_epilogue',
+                  'compute_prologue', 'compute_epilogue')
+
+    for kw in run_conf_kw:
+        if not kw in r_c:
+            r_c[kw] = None
+
     if run_conf == None:
         if not os.path.isfile(run_config_path):
             print('Warning:', file = sys.stderr)
@@ -378,14 +388,6 @@ def read_run_config_file(i_c, r_c, s_c, pkg, run_conf=None):
             v = run_conf.get_int(resource_name, kw)
             if v:
                 r_c[kw] = v
-
-    run_conf_kw= ('job_parameters', 'job_header',
-                  'run_prologue', 'run_epilogue',
-                  'compute_prologue', 'compute_epilogue')
-
-    for kw in run_conf_kw:
-        if not kw in r_c:
-            r_c[kw] = None
 
     if run_conf_r:
         for kw in run_conf_kw:
