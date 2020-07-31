@@ -581,6 +581,35 @@ class run_conf(object):
             f.write(line + br)
         f.close()
 
+    #---------------------------------------------------------------------------
+
+    def get_coupling_parameters(self):
+        """
+        Return the list of coupled domains defined inside a run.cfg.
+        Empty list if single-case run.
+        """
+
+        domains = []
+
+        domain_names = self.get('setup', 'coupled_domains')
+
+        if domain_names:
+            for dom in domain_names.split(":"):
+                d = self.sections[dom.lower()]
+                domains.append({})
+
+                for key in d.keys():
+                    if d[key] and d[key] != 'None':
+                        if key in ('n_procs_max', 'n_procs_min', 'n_procs_weight'):
+                            domains[-1][key] = int(d[key])
+                        else:
+                            domains[-1][key] = str(d[key])
+                    else:
+                        domains[-1][key] = None
+
+        return domains
+
+
 #-------------------------------------------------------------------------------
 # End
 #-------------------------------------------------------------------------------

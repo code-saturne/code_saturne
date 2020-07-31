@@ -207,6 +207,7 @@
     <bool>false</bool>
    </attribute>
    <addaction name="runOrSubmitAction"/>
+   <addaction name="editCouplingParametersAction"/>
   </widget>
   <action name="fileOpenAction">
    <property name="icon">
@@ -636,6 +637,21 @@
    </property>
    <property name="statusTip">
     <string>Run computation</string>
+   </property>
+  </action>
+  <action name="editCouplingParametersAction">
+   <property name="icon">
+    <iconset resource="resource_base.qrc">
+     <normaloff>:/icons/22x22/coupling_editor.png</normaloff>:/icons/22x22/coupling_editor.png</iconset>
+   </property>
+   <property name="text">
+    <string>Edit coupling parameters</string>
+   </property>
+   <property name="toolTip">
+    <string>Edit coupling parameters</string>
+   </property>
+   <property name="statusTip">
+    <string>Edit coupling parameters</string>
    </property>
   </action>
  </widget>

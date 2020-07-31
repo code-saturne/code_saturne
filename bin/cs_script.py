@@ -40,6 +40,7 @@ class master_script:
                          'bdump':self.bdump,
                          'compile':self.compile,
                          'config':self.config,
+                         'cplgui':self.gui,
                          'create':self.create,
                          'gui':self.gui,
                          'studymanagergui':self.studymanager_gui,

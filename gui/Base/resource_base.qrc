@@ -31,5 +31,6 @@
     <file>icons/22x22/time_stepping.png</file>
     <file>icons/22x22/physical_properties.png</file>
     <file>icons/22x22/viewer-icon.png</file>
+    <file>icons/22x22/coupling_editor.png</file>
   </qresource>
 </RCC>

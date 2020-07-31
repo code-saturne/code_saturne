@@ -3,6 +3,13 @@ Master (not on release branches yet)
 
 User changes:
 
+- Add possibility to edit coupling parameters in the GUI using an editor.
+  * Editor can be launched from the GUI of any Code_Saturne coupled case
+    (CASE/DATA/code_saturne).
+  * Editor can be launched from the top-level directory by launching the
+    top-level 'code_saturne' launcher using the following command:
+    code_saturne [gui|cplgui] run.cfg
+
 - Thermal model:
   * the iscacp(iscal) array is replaced by the field key-word "is_temperature".
     This allows using it also from C code.

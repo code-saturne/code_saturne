@@ -231,7 +231,10 @@ def process_cmd_line(argv, pkg):
     # Check for multiple domain case
     # Kept the 'coupling' file def for the definition of the case_dir function
     coupling = None
-    coupled_domains = get_coupling_parameters_from_run_conf(run_conf)
+    coupling_domains =[]
+    if run_conf:
+        coupled_domains = run_conf.get_coupling_parameters()
+
     if coupled_domains != []:
         coupling = run_config_path
 
@@ -472,39 +475,6 @@ def generate_run_config_file(path, resource_name, r_c, s_c, pkg):
     run_conf = cs_run_conf.run_conf(None)
     run_conf.sections = sections
     run_conf.save(path, new=True)
-
-#-------------------------------------------------------------------------------
-# Retrieve coupling related dictionary
-#-------------------------------------------------------------------------------
-
-def get_coupling_parameters_from_run_conf(run_conf):
-    """
-    Return the list of coupled domains defined inside a run.cfg.
-    Empty list if single-case run.
-    """
-
-    domains = []
-
-    if not run_conf:
-        return domains
-
-    domain_names = run_conf.get('setup', 'coupled_domains')
-
-    if domain_names:
-        for d in domain_names.split(":"):
-            dtemp = run_conf.sections[d.lower()]
-            domains.append({})
-
-            for key in dtemp.keys():
-                if dtemp[key] and dtemp[key] != 'None':
-                    if key in ('n_procs_max', 'n_procs_min', 'n_procs_weight'):
-                        domains[-1][key] = int(dtemp[key])
-                    else:
-                        domains[-1][key] = str(dtemp[key])
-                else:
-                    domains[-1][key] = None
-
-    return domains
 
 #===============================================================================
 # Run the calculation
