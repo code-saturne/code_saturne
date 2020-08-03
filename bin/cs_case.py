@@ -718,12 +718,29 @@ class case:
         if os.path.basename(src) == self.package.name:
             src = self.parent_script
 
+        if not src:
+            src = self.package.name
+
         # Copy single file
 
-        if src:
-            dest = os.path.join(self.result_dir, os.path.basename(src))
-            if os.path.isfile(src) and src != dest:
-                shutil.copy2(src, dest)
+        dest = os.path.join(self.result_dir, os.path.basename(src))
+        if os.path.isfile(src) and src != dest:
+            shutil.copy2(src, dest)
+
+    #---------------------------------------------------------------------------
+
+    def copy_top_run_conf(self):
+        """
+        Retrieve top-level run.cfg (if present) from the top directory
+        """
+
+        n = "run.cfg"
+
+        src = os.path.join(self.case_dir, n)
+        dest = os.path.join(self.result_dir, n)
+
+        if os.path.isfile(src) and src != dest:
+            shutil.copy2(src, dest)
 
     #---------------------------------------------------------------------------
 
@@ -1334,6 +1351,7 @@ class case:
         # (as after that, the relative path will not be up to date).
 
         self.copy_script()
+        self.copy_top_run_conf()
 
         os.chdir(self.exec_dir)
 
