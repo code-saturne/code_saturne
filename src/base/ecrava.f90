@@ -576,6 +576,8 @@ if (iecaux.eq.1) then
     rubriq = 'vertex_displacement'
     call restart_write_section_real_t(rp,rubriq,itysup,nbval,disale)
 
+    call restart_write_field_vals(rp, fdiale, 1)
+
     car54=' End writing the ALE data              '
     write(nfecra,1110)car54
 

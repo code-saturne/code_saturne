@@ -3,6 +3,8 @@ Release 6.1.2 (unreleased)
 
 Bug fixes:
 
+- Fix mesh coordinates update in case of ALE restart.
+
 - Use short version name for XML back compatibility.
 
 - Fix missing initialization in k-omega SAS hybrid model.
