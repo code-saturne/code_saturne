@@ -172,7 +172,7 @@ def coupling(package,
                 dom = syrthes_domain(package,
                                      cmd_line = d.get('opt'),
                                      name = domain_s,
-                                     param = d.get('script'),
+                                     param = d.get('param'),
                                      n_procs_weight = d.get('n_procs_weight'),
                                      n_procs_min = d.get('n_procs_min'),
                                      n_procs_max = d.get('n_procs_max'))

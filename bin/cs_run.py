@@ -231,7 +231,8 @@ def process_cmd_line(argv, pkg):
     # Check for multiple domain case
     # Kept the 'coupling' file def for the definition of the case_dir function
     coupling = None
-    coupling_domains =[]
+    coupled_domains =[]
+
     if run_conf:
         coupled_domains = run_conf.get_coupling_parameters()
 

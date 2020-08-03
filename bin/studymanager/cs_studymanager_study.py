@@ -207,9 +207,8 @@ class Case(object):
             # Apply coupling parameters information
 
             from code_saturne import cs_case_coupling
-            from code_saturne.cs_run import get_coupling_parameters_from_run_conf
 
-            coupled_domains = get_coupling_parameters_from_run_conf(run_conf)
+            coupled_domains = run_conf.get_coupling_parameters()
 
             self.subdomains = []
             for d in coupled_domains:
@@ -745,6 +744,7 @@ class Study(object):
             os.chdir(c.label)
             refdir = os.path.join(self.__repo, c.label)
             retval = 1
+            resu_coupling = None
             for node in os.listdir(refdir):
                 ref = os.path.join(self.__repo, c.label, node)
                 if node in c.subdomains:
@@ -763,9 +763,9 @@ class Study(object):
                                                              package=self.__package)
                         if temp_run_conf.get('setup', 'coupled_domains'):
                             resu_coupling = 'RESU_COUPLING'
-                            if not os.path.isdir(resu_coupling):
-                                os.mkdir(resu_coupling)
-                            run_conf_path = 'run.cfg'
+
+            if resu_coupling and not os.path.isdir(resu_coupling):
+                os.mkdir(resu_coupling)
 
             create_local_launcher(self.__package, self.__dest)
             os.chdir(self.__dest)
