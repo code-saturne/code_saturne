@@ -412,10 +412,10 @@ _read_field_vals(cs_restart_t  *r,
  * based on "scalaire_ce_%04" % s_num.
  *
  * parameters:
- *   r            <-- associated restart file pointer
- *   r_name <-- base name with which read is attempted
- *   t_id         <-- time id (0 for current, 1 for previous, ...)
- *   f            <-> file whose values should be read
+ *   r       <-- associated restart file pointer
+ *   r_name  <-- base name with which read is attempted
+ *   t_id    <-- time id (0 for current, 1 for previous, ...)
+ *   f       <-> file whose values should be read
  *
  * returns:
  *   CS_RESTART_SUCCESS in case of success, CS_RESTART_ERR_... otherwise
@@ -535,8 +535,13 @@ _read_field_vals_legacy(cs_restart_t  *r,
     else if (strcmp(f->name, "dt") == 0)
       strncpy(sec_name, "dt_variable_espace_ce", 127);
 
-    else if (strcmp(f->name, "volume_forces") == 0)
-      strncpy(sec_name, "force_ext_ce_phase01", 127);
+    else if (strcmp(f->name, "dt") == 0)
+      strncpy(sec_name, "dt_variable_espace_ce", 127);
+
+    else if (   f->location_id == CS_MESH_LOCATION_VERTICES
+             && strcmp(f->name, "mesh_displacement") == 0
+             && t_id == 0)
+      strncpy(sec_name, "vertex_displacement", 127);
 
     else if (strcmp(f->name, "void_fraction") == 0)
       strncpy(sec_name, "taux_vide_ce", 127);
@@ -2773,7 +2778,8 @@ cs_restart_read_field_vals(cs_restart_t  *r,
     else
       snprintf(sec_name, 127, "%s::vals::%d", r_name, t_id);
 
-  } else
+  }
+  else
     snprintf(sec_name, 127, "%s::vals::%d", r_name, t_id);
 
   sec_name[127] = '\0';
@@ -2844,7 +2850,8 @@ cs_restart_read_field_vals(cs_restart_t  *r,
 
     }
 
-  } else {
+  }
+  else {
     /* Special case for pressure:
      * In NCFD it is the total pressure which is stored. Hence we need
      * to compute P = P_tot - Phydro - (P0-Pred0)

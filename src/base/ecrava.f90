@@ -106,7 +106,6 @@ type(c_ptr) :: rp
 double precision, allocatable, dimension(:,:) :: tmurbf
 double precision, allocatable, dimension(:) :: tparbf
 double precision, pointer, dimension(:) :: dt_s
-double precision, pointer, dimension(:,:) :: disale
 
 type(var_cal_opt) :: vcopt
 
@@ -568,13 +567,8 @@ if (iecaux.eq.1) then
 
   if (iale.ge.1) then
 
-    itysup = 4
-    nbval  = 3
-
-    call field_get_val_v(fdiale, disale)
-
-    rubriq = 'vertex_displacement'
-    call restart_write_section_real_t(rp,rubriq,itysup,nbval,disale)
+    call restart_write_field_vals(rp, fdiale, 0)
+    call restart_write_field_vals(rp, fdiale, 1)
 
     car54=' End writing the ALE data              '
     write(nfecra,1110)car54

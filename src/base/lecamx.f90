@@ -783,13 +783,20 @@ if (iale.ge.1 .and. jale.ge.1) then
 
   call field_get_val_v(fdiale, disale)
 
-  call restart_read_real_3_t_compat                       &
-         (rp, 'vertex_displacement',                      &
-         'deplact_x_no', 'deplact_y_no', 'deplact_z_no',  &
-         itysup, disale, ierror)
+  call restart_read_field_vals(rp, fdiale, 0, ierror)
+  if (ierror .ne. 0) then
+    call restart_read_real_3_t_compat                        &
+           (rp, 'vertex_displacement',                       &
+            'deplact_x_no', 'deplact_y_no', 'deplact_z_no',  &
+            itysup, disale, ierror)
+  endif
 
   if (ierror.eq.0) then
-    call field_current_to_previous(fdiale)
+    call restart_read_field_vals(rp, fdiale, 1, ierror)
+    if (ierror.ne.0) then
+      call field_current_to_previous(fdiale)
+      ierror = 0
+    endif
   endif
 
   nberro=nberro+ierror
