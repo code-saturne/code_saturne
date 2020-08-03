@@ -607,6 +607,8 @@ if (iecaux.eq.1) then
     rubriq = 'vertex_displacement'
     call restart_write_section_real_t(rp,rubriq,itysup,nbval,disale)
 
+    call restart_write_field_vals(rp, fdiale, 1)
+
 #if defined(_CS_LANG_FR)
     car54=' Fin de l''ecriture des donnees ALE    '
 #else

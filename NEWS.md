@@ -3,6 +3,8 @@ Release 6.0.5 (unreleased)
 
 Bug fixes:
 
+- Fix mesh coordinates update in case of ALE restart.
+
 - Use short version name for XML back compatibility.
 
 - Fix inversion of tensor component time plots (probes) YZ and XZ
