@@ -867,10 +867,9 @@ def get_parent_process_path():
 
     path = None
 
-    if sys.platform.startswith('win'):
+    if not sys.platform.startswith('win'):
         try:
             f = open("/proc/" + str(os.getppid()) + "/cmdline")
-            l = f.readlines()
             l = f.read()
             path = l.split('\x00')[1]
         except Exception:
