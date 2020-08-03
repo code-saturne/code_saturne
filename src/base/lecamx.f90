@@ -788,6 +788,10 @@ if (iale.ge.1 .and. jale.ge.1) then
          'deplact_x_no', 'deplact_y_no', 'deplact_z_no',  &
          itysup, disale, ierror)
 
+  if (ierror.eq.0) then
+    call field_current_to_previous(fdiale)
+  endif
+
   nberro=nberro+ierror
 
 ! Si JALE=1, on doit avoir le deplacement dans le fichier suite, sinon

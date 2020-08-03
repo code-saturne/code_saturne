@@ -1181,7 +1181,7 @@ cs_ale_project_displacement(const int           ale_bc_type[],
 
   }
 
-  /* All nodes wich belongs to a boundary face where the
+  /* All nodes wich belong to a boundary face where the
      displacement is imposed (that is all faces except sliding BCs)
      are boundary nodes, the others are interior nodes. */
 
@@ -1190,7 +1190,8 @@ cs_ale_project_displacement(const int           ale_bc_type[],
     if (ale_bc_type[face_id] != CS_ALE_SLIDING) {
 
       for (cs_lnum_t j = m->b_face_vtx_idx[face_id];
-           j < m->b_face_vtx_idx[face_id+1]; j++) {
+           j < m->b_face_vtx_idx[face_id+1];
+           j++) {
 
         const cs_lnum_t  vtx_id = m->b_face_vtx_lst[j];
         vtx_interior_indicator[vtx_id] = false;
@@ -1215,9 +1216,10 @@ cs_ale_project_displacement(const int           ale_bc_type[],
     if (cell_id1 < n_cells) { /* Test to take into account face only once */
 
       for (cs_lnum_t j = m->i_face_vtx_idx[face_id];
-           j < m->i_face_vtx_idx[face_id+1]; j++) {
+           j < m->i_face_vtx_idx[face_id+1];
+           j++) {
 
-        /* Get the vertex number */
+        /* Get the vertex id */
 
         const cs_lnum_t  vtx_id = m->i_face_vtx_lst[j];
 
