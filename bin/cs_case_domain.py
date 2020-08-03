@@ -1065,7 +1065,7 @@ class domain(base_domain):
                 if f in dir_files:
                     purge_list.append(f)
 
-        for f in ['restart', 'partition_input']:
+        for f in ['partition_input']:
             if f in dir_files:
                 purge_list.append(f)
 
