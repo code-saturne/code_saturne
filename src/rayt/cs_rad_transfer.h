@@ -49,9 +49,9 @@ BEGIN_C_DECLS
 
 typedef enum {
 
-  CS_RAD_TRANSFER_NONE,
-  CS_RAD_TRANSFER_DOM,
-  CS_RAD_TRANSFER_P1
+  CS_RAD_TRANSFER_NONE = 0, /* Set a value to avoid compilation warnings */
+  CS_RAD_TRANSFER_DOM  = 1,
+  CS_RAD_TRANSFER_P1   = 2
 
 } cs_rad_transfer_model_t;
 
