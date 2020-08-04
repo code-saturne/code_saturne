@@ -1093,7 +1093,7 @@ cs_advection_field_cw_eval_at_xyz(const cs_adv_field_t  *adv,
         cs_xdef_array_input_t  *ai = (cs_xdef_array_input_t *)def->input;
 
         const cs_real_t  *i_flux = ai->values;
-        const cs_real_t  *b_flux = ai->values + cs_cdo_quant->n_b_faces;
+        const cs_real_t  *b_flux = ai->values + cs_cdo_quant->n_i_faces;
 
         cs_reco_cw_cell_vect_from_face_dofs(cm,
                                             i_flux,
