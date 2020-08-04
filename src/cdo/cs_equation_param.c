@@ -1189,7 +1189,6 @@ _set_saturne_sles(cs_equation_param_t   *eqp)
  * \brief  Set a parameter attached to a keyname in a \ref cs_equation_param_t
  *         structure
  *
- * \param[in]       label    label to identify the error message
  * \param[in, out]  eqp      pointer to a \ref cs_equation_param_t structure
  * \param[in]       key      key related to the member of eq to set
  * \param[in]       keyval   accessor to the value to set
@@ -1197,11 +1196,11 @@ _set_saturne_sles(cs_equation_param_t   *eqp)
 /*----------------------------------------------------------------------------*/
 
 static void
-_set_key(const char            *label,
-         cs_equation_param_t   *eqp,
+_set_key(cs_equation_param_t   *eqp,
          cs_equation_key_t      key,
          const char            *keyval)
 {
+  const char  *eqname = eqp->name;
   const char  emsg[] = " %s: %s equation --> Invalid key value %s for"
     " keyword %s.\n";
 
@@ -1217,7 +1216,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_ADV_FORMULATION");
+                emsg, __func__, eqname, _val, "CS_EQKEY_ADV_FORMULATION");
     }
     break;
 
@@ -1246,7 +1245,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_ADV_SCHEME");
+                emsg, __func__, eqname, _val, "CS_EQKEY_ADV_SCHEME");
     }
     break;
 
@@ -1282,7 +1281,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_AMG_TYPE");
+                emsg, __func__, eqname, _val, "CS_EQKEY_AMG_TYPE");
     }
     break;
 
@@ -1298,7 +1297,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_BC_ENFORCEMENT");
+                emsg, __func__, eqname, _val, "CS_EQKEY_BC_ENFORCEMENT");
     }
     break;
 
@@ -1317,7 +1316,7 @@ _set_key(const char            *label,
       else {
         const char *_val = keyval;
         bft_error(__FILE__, __LINE__, 0,
-                  emsg, __func__, label, _val, "CS_EQKEY_BC_QUADRATURE");
+                  emsg, __func__, eqname, _val, "CS_EQKEY_BC_QUADRATURE");
       }
 
       for (int i = 0; i < eqp->n_bc_defs; i++)
@@ -1359,7 +1358,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_DOF_REDUCTION");
+                emsg, __func__, eqname, _val, "CS_EQKEY_DOF_REDUCTION");
     }
     break;
 
@@ -1375,7 +1374,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_EXTRA_OP");
+                emsg, __func__, eqname, _val, "CS_EQKEY_EXTRA_OP");
     }
     break;
 
@@ -1395,7 +1394,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_HODGE_DIFF_ALGO");
+                emsg, __func__, eqname, _val, "CS_EQKEY_HODGE_DIFF_ALGO");
     }
     break;
 
@@ -1422,7 +1421,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_HODGE_TIME_ALGO");
+                emsg, __func__, eqname, _val, "CS_EQKEY_HODGE_TIME_ALGO");
     }
     break;
 
@@ -1434,7 +1433,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_HODGE_REAC_ALGO");
+                emsg, __func__, eqname, _val, "CS_EQKEY_HODGE_REAC_ALGO");
     }
     break;
 
@@ -1466,44 +1465,66 @@ _set_key(const char            *label,
     }
     else if (strcmp(keyval, "minres") == 0)
       eqp->sles_param.solver = CS_PARAM_ITSOL_MINRES;
+
     else if (strcmp(keyval, "mumps") == 0) {
       eqp->sles_param.solver = CS_PARAM_ITSOL_MUMPS;
       eqp->sles_param.precond = CS_PARAM_PRECOND_NONE;
-      /* Modify the default */
-      if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS) {
+
+      /* Modify the default and check availability of MUMPS solvers */
+      if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS ||
+          eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_MUMPS) {
 #if defined(HAVE_MUMPS)
         eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_MUMPS;
 #else
 #if defined(HAVE_PETSC)
+#if defined(PETSC_HAVE_MUMPS)
         eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
-#endif
-#endif
+#else
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Error detected while setting \"%s\" key for eq. %s\n"
+                  " MUMPS is not available with your installation.\n"
+                  " Please check your installation settings.\n",
+                  __func__, "CS_EQKEY_ITSOL", eqname);
+#endif  /* PETSC_HAVE_MUMPS */
+#endif  /* HAVE_PETSC */
+#endif  /* HAVE_MUMPS */
       }
       assert(eqp->sles_param.solver_class != CS_PARAM_SLES_CLASS_CS &&
              eqp->sles_param.solver_class != CS_PARAM_SLES_CLASS_HYPRE);
+
     }
     else if (strcmp(keyval, "mumps_ldlt") == 0) {
       eqp->sles_param.solver = CS_PARAM_ITSOL_MUMPS_LDLT;
       eqp->sles_param.precond = CS_PARAM_PRECOND_NONE;
+
       /* Modify the default */
       if (eqp->sles_param.solver_class == CS_PARAM_SLES_CLASS_CS) {
 #if defined(HAVE_MUMPS)
         eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_MUMPS;
 #else
 #if defined(HAVE_PETSC)
+#if defined(PETSC_HAVE_MUMPS)
         eqp->sles_param.solver_class = CS_PARAM_SLES_CLASS_PETSC;
-#endif
-#endif
+#else
+        bft_error(__FILE__, __LINE__, 0,
+                  " %s: Error detected while setting \"%s\" key for eq. %s\n"
+                  " MUMPS is not available with your installation.\n"
+                  " Please check your installation settings.\n",
+                  __func__, "CS_EQKEY_ITSOL", eqname);
+#endif  /* PETSC_HAVE_MUMPS */
+#endif  /* HAVE_PETSC */
+#endif  /* HAVE_MUMPS */
       }
       assert(eqp->sles_param.solver_class != CS_PARAM_SLES_CLASS_CS &&
              eqp->sles_param.solver_class != CS_PARAM_SLES_CLASS_HYPRE);
+
     }
     else if (strcmp(keyval, "none") == 0)
       eqp->sles_param.solver = CS_PARAM_ITSOL_NONE;
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_ITSOL");
+                emsg, __func__, eqname, _val, "CS_EQKEY_ITSOL");
     }
     break;
 
@@ -1530,7 +1551,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_ITSOL_RESNORM_TYPE");
+                emsg, __func__, eqname, _val, "CS_EQKEY_ITSOL_RESNORM_TYPE");
     }
     break;
 
@@ -1542,7 +1563,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_OMP_ASSEMBLY_STRATEGY");
+                emsg, __func__, eqname, _val, "CS_EQKEY_OMP_ASSEMBLY_STRATEGY");
     }
     break;
 
@@ -1641,7 +1662,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_PRECOND");
+                emsg, __func__, eqname, _val, "CS_EQKEY_PRECOND");
     }
     break;
 
@@ -1661,7 +1682,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_SOLVER_FAMILY");
+                emsg, __func__, eqname, _val, "CS_EQKEY_SOLVER_FAMILY");
     }
     break;
 
@@ -1723,7 +1744,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_SPACE_SCHEME");
+                emsg, __func__, eqname, _val, "CS_EQKEY_SPACE_SCHEME");
     }
     break;
 
@@ -1749,7 +1770,7 @@ _set_key(const char            *label,
     else {
       const char *_val = keyval;
       bft_error(__FILE__, __LINE__, 0,
-                emsg, __func__, label, _val, "CS_EQKEY_TIME_SCHEME");
+                emsg, __func__, eqname, _val, "CS_EQKEY_TIME_SCHEME");
     }
     break;
 
@@ -1764,7 +1785,7 @@ _set_key(const char            *label,
   default:
     bft_error(__FILE__, __LINE__, 0,
               _(" %s: Invalid key for setting the equation %s."),
-              __func__, label);
+              __func__, eqname);
 
   } /* Switch on keys */
 
@@ -2235,7 +2256,7 @@ cs_equation_set_param(cs_equation_param_t   *eqp,
   val[strlen(keyval)] = '\0';
 
   /* Set the couple (key,keyval) */
-  _set_key(eqp->name, eqp, key, val);
+  _set_key(eqp, key, val);
 }
 
 /*----------------------------------------------------------------------------*/

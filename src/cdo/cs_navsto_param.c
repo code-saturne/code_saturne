@@ -655,7 +655,21 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
       nsp->sles_param.strategy = CS_NAVSTO_SLES_GKB_SATURNE;
     }
     else if (strcmp(val, "mumps") == 0) {
+#if defined(HAVE_MUMPS)
       nsp->sles_param.strategy = CS_NAVSTO_SLES_MUMPS;
+#else
+#if defined(HAVE_PETSC)
+#if defined(PETSC_HAVE_MUMPS)
+      nsp->sles_param.strategy = CS_NAVSTO_SLES_MUMPS;
+#else
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Error detected while setting \"%s\" key\n"
+                " MUMPS is not available with your installation.\n"
+                " Please check your installation settings.\n",
+                __func__, "CS_NSKEY_SLES_STRATEGY");
+#endif  /* PETSC_HAVE_MUMPS */
+#endif  /* HAVE_PETSC */
+#endif  /* HAVE_MUMPS */
     }
     else if (strcmp(val, "uzawa_al") == 0 ||
              strcmp(val, "alu") == 0) {
