@@ -377,7 +377,8 @@ cs_advection_field_add(const char                    *name,
   if (adv->status & CS_ADVECTION_FIELD_DEFINE_AT_BOUNDARY_FACES)
     adv->bdy_field_id = CS_ADVECTION_FIELD_ID_TO_BE_SET;
 
-  /* Update the status to default value if needed */
+  /* Update the status to a scalar flux in case of an advection field coming
+     from the legacy FV part */
   if ((status & CS_ADVECTION_FIELD_NAVSTO) &&
       (status & CS_ADVECTION_FIELD_LEGACY_FV))
     adv->status |= CS_ADVECTION_FIELD_TYPE_SCALAR_FLUX;
@@ -692,7 +693,7 @@ cs_advection_field_def_by_array(cs_adv_field_t    *adv,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_adv_field_t structure thanks to an array of values
+ * \brief  Define a cs_adv_field_t structure thanks to a field structure
  *
  * \param[in, out]  adv       pointer to a cs_adv_field_t structure
  * \param[in]       field     pointer to a cs_field_t structure
@@ -880,18 +881,21 @@ cs_advection_field_create_fields(void)
 
     /* Always add a field attached to cells (it may be used to define the
        numerical flux for advection, to compute adimensional numbers or to
-       postprocess the advection field */
+       postprocess the advection field in case of definition by flux */
     if (adv->cell_field_id < 0) {
 
       if (cs_flag_test(adv->status, CS_ADVECTION_FIELD_NAVSTO)) {
 
+        /* If this is the advection field related to the Navier-Stokes equations
+           then there is no need to allocate a new buffer. One links to the
+           existing velocity field */
         adv->cell_field_id = cs_field_id_by_name("velocity");
         assert(adv->cell_field_id > -1);
 
       }
       else {
 
-        /* Define the name of the field */
+        /* Define the name of the new field related the cell array */
         len = strlen(adv->name) + strlen("_cells") + 1;
         BFT_MALLOC(field_name, len, char);
         sprintf(field_name, "%s_cells", adv->name);
@@ -915,7 +919,8 @@ cs_advection_field_create_fields(void)
 
     if (adv->vtx_field_id == CS_ADVECTION_FIELD_ID_TO_BE_SET) {
 
-      /* Add a field attached to vertices: Define the name of the field */
+      /* The creation of a field to store the value at vertices has been
+         requested. Add this field */
       len = strlen(adv->name) + strlen("_vertices") + 1;
       BFT_MALLOC(field_name, len, char);
       sprintf(field_name, "%s_vertices", adv->name);
@@ -937,12 +942,9 @@ cs_advection_field_create_fields(void)
 
     if (adv->bdy_field_id == CS_ADVECTION_FIELD_ID_TO_BE_SET) {
 
-      /* Add a field attached to boundary faces.
-         (Normal flux) Field at boundary faces:
-         Always create a field at the boundary faces for taking into account
-         the normal flux used in the treatment of the boundary conditions */
-
-      /* Define the name of the field */
+      /* Create a new field at the boundary faces for taking
+         into account the normal flux used in the treatment of the boundary
+         conditions for instance */
       len = strlen(adv->name) + strlen("_boundary_flux") + 1;
       BFT_MALLOC(field_name, len, char);
       sprintf(field_name, "%s_boundary_flux", adv->name);
@@ -1059,8 +1061,8 @@ cs_advection_field_get_cell_vector(cs_lnum_t               c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the value of the vector-valued advection field at a specific
- *         location inside a cell
+ * \brief  Compute the vector-valued interpolation of the advection field at
+ *         a given location inside a cell
  *
  * \param[in]      adv          pointer to a cs_adv_field_t structure
  * \param[in]      cm           pointer to a cs_cell_mesh_t structure
@@ -2830,7 +2832,8 @@ cs_advection_field_update(cs_real_t    t_eval,
       /* Set the new values */
       cs_advection_field_in_cells(adv, t_eval, cfld->val);
 
-      /* Set the new values */
+      /* Set the new values (only in the case of a user-defined advection
+         field */
       if ((adv->status & CS_ADVECTION_FIELD_USER) && adv->bdy_field_id > -1) {
 
         /* Field storing the boundary normal flux */

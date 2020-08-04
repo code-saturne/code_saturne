@@ -77,10 +77,6 @@ typedef cs_flag_t  cs_advection_field_status_t;
  * \var CS_ADVECTION_FIELD_NAVSTO
  *      Advection field stemming from the velocity in the (Navier-)Stokes system
  *
- * \var CS_ADVECTION_FIELD_LEGACY_NAVSTO
- *      The Navier-Stokes equations are solved with the legacy Finite Volume
- *      solver. Thus, the advection field is a mass flux.
- *
  * \var CS_ADVECTION_FIELD_GWF
  *      Advection field stemming from the "GroundWater Flows" module. This is the
  *      Darcean flux.
@@ -574,7 +570,7 @@ cs_advection_field_def_by_array(cs_adv_field_t    *adv,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Define a cs_adv_field_t structure thanks to an array of values
+ * \brief  Define a cs_adv_field_t structure thanks to a field structure
  *
  * \param[in, out]  adv       pointer to a cs_adv_field_t structure
  * \param[in]       field     pointer to a cs_field_t structure
@@ -679,8 +675,8 @@ cs_advection_field_get_cell_vector(cs_lnum_t               c_id,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Compute the value of the vector-valued advection field at a specific
- *         location inside a cell
+ * \brief  Compute the vector-valued interpolation of the advection field at
+ *         a given location inside a cell
  *
  * \param[in]      adv          pointer to a cs_adv_field_t structure
  * \param[in]      cm           pointer to a cs_cell_mesh_t structure
