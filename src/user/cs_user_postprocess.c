@@ -145,7 +145,19 @@ cs_user_postprocess_values(const char            *mesh_name,
                            const cs_lnum_t        vertex_list[],
                            const cs_time_step_t  *ts)
 {
-
+  CS_UNUSED(mesh_name);
+  CS_UNUSED(mesh_id);
+  CS_UNUSED(cat_id);
+  CS_UNUSED(probes);
+  CS_UNUSED(n_cells);
+  CS_UNUSED(n_i_faces);
+  CS_UNUSED(n_b_faces);
+  CS_UNUSED(n_vertices);
+  CS_UNUSED(cell_list);
+  CS_UNUSED(i_face_list);
+  CS_UNUSED(b_face_list);
+  CS_UNUSED(vertex_list);
+  CS_UNUSED(ts);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -166,7 +178,9 @@ cs_user_postprocess_activate(int     nt_max_abs,
                              int     nt_cur_abs,
                              double  t_cur_abs)
 {
-
+  CS_UNUSED(nt_max_abs);
+  CS_UNUSED(nt_cur_abs);
+  CS_UNUSED(t_cur_abs);
 }
 
 /*----------------------------------------------------------------------------*/

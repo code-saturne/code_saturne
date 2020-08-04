@@ -100,7 +100,17 @@ cs_user_lagr_ef(cs_real_t            dt_p,
                 cs_real_t            rho_p[],
                 cs_real_3_t          fextla[])
 {
-
+  CS_UNUSED(dt_p);
+  CS_UNUSED(taup);
+  CS_UNUSED(tlag);
+  CS_UNUSED(piil);
+  CS_UNUSED(bx);
+  CS_UNUSED(tsfext);
+  CS_UNUSED(vagaus);
+  CS_UNUSED(gradpr);
+  CS_UNUSED(gradvf);
+  CS_UNUSED(rho_p);
+  CS_UNUSED(fextla);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -119,7 +129,7 @@ cs_user_lagr_ef(cs_real_t            dt_p,
 void
 cs_user_lagr_extra_operations(const cs_real_t  dt[])
 {
-
+  CS_UNUSED(dt);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -141,7 +151,9 @@ cs_user_lagr_imposed_motion(const cs_real_t  coords[3],
                             cs_real_t        dt,
                             cs_real_t        disp[3])
 {
-
+  CS_UNUSED(coords);
+  CS_UNUSED(dt);
+  CS_UNUSED(disp);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -176,7 +188,11 @@ cs_user_lagr_in(cs_lagr_particle_set_t         *particles,
                 const cs_lnum_t                 particle_face_id[],
                 const cs_real_t                 visc_length[])
 {
-
+  CS_UNUSED(particles);
+  CS_UNUSED(zis);
+  CS_UNUSED(particle_range);
+  CS_UNUSED(particle_face_id);
+  CS_UNUSED(visc_length);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -247,7 +263,14 @@ cs_user_lagr_rt(cs_lnum_t        id_p,
                 cs_real_t        taup[],
                 const cs_real_t  dt[])
 {
-
+  CS_UNUSED(id_p);
+  CS_UNUSED(re_p);
+  CS_UNUSED(uvwr);
+  CS_UNUSED(rho_p);
+  CS_UNUSED(rho_f);
+  CS_UNUSED(nu_f);
+  CS_UNUSED(taup);
+  CS_UNUSED(dt);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -286,7 +309,16 @@ cs_user_lagr_rt_t(cs_lnum_t        id_p,
                   cs_real_t        tauc[],
                   const cs_real_t  dt[])
 {
-
+  CS_UNUSED(id_p);
+  CS_UNUSED(re_p);
+  CS_UNUSED(uvwr);
+  CS_UNUSED(rho_p);
+  CS_UNUSED(rho_f);
+  CS_UNUSED(nu_f);
+  CS_UNUSED(cp_f);
+  CS_UNUSED(k_f);
+  CS_UNUSED(tauc);
+  CS_UNUSED(dt);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -328,7 +360,10 @@ cs_user_lagr_sde(const cs_real_t  dt[],
                  cs_real_3_t      tlag[],
                  cs_real_t        tempct[])
 {
-
+  CS_UNUSED(dt);
+  CS_UNUSED(taup);
+  CS_UNUSED(tlag);
+  CS_UNUSED(tempct);
 }
 
 /*----------------------------------------------------------------------------*/

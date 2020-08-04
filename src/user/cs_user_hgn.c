@@ -87,6 +87,13 @@ cs_user_hgn_thermo_relax_time(const cs_mesh_t *mesh,
                               const cs_real_t *v,
                               cs_real_t       *relax_tau)
 {
+  CS_UNUSED(mesh);
+  CS_UNUSED(alpha_eq);
+  CS_UNUSED(y_eq);
+  CS_UNUSED(z_eq);
+  CS_UNUSED(ei);
+  CS_UNUSED(v);
+  CS_UNUSED(relax_tau);
 }
 
 /*----------------------------------------------------------------------------*/

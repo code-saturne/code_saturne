@@ -117,7 +117,11 @@ cs_user_syrthes_coupling_volume_h(int               coupling_id,
                                   const cs_lnum_t   elt_ids[],
                                   cs_real_t         h_vol[])
 {
-
+  CS_UNUSED(coupling_id);
+  CS_UNUSED(syrthes_name);
+  CS_UNUSED(n_elts);
+  CS_UNUSED(elt_ids);
+  CS_UNUSED(h_vol);
 }
 
 /*----------------------------------------------------------------------------*/

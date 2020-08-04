@@ -88,7 +88,8 @@ void
 cs_user_1d_wall_thermal(int iappel,
                         int isuit1)
 {
-
+  CS_UNUSED(iappel);
+  CS_UNUSED(isuit1);
 }
 
 /*----------------------------------------------------------------------------*/

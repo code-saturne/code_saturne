@@ -166,7 +166,24 @@ cs_user_radiative_transfer_bcs(int               nvar,
                                cs_real_t         textp[],
                                cs_real_t         tintp[])
 {
-
+  CS_UNUSED(nvar);
+  CS_UNUSED(bc_type);
+  CS_UNUSED(icodcl);
+  CS_UNUSED(isothp);
+  CS_UNUSED(tmin);
+  CS_UNUSED(tmax);
+  CS_UNUSED(tx);
+  CS_UNUSED(dt);
+  CS_UNUSED(rcodcl);
+  CS_UNUSED(thwall);
+  CS_UNUSED(qincid);
+  CS_UNUSED(hfcnvp);
+  CS_UNUSED(flcnvp);
+  CS_UNUSED(xlamp);
+  CS_UNUSED(epap);
+  CS_UNUSED(epsp);
+  CS_UNUSED(textp);
+  CS_UNUSED(tintp);
 }
 
 /*----------------------------------------------------------------------------*/
