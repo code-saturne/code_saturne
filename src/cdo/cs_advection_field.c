@@ -1161,13 +1161,28 @@ cs_advection_field_cw_eval_at_xyz(const cs_adv_field_t  *adv,
       {
         cs_xdef_array_input_t  *ai = (cs_xdef_array_input_t *)def->input;
 
-        const cs_real_t  *i_flux = ai->values;
-        const cs_real_t  *b_flux = ai->values + cs_cdo_quant->n_i_faces;
+        if (cs_flag_test(ai->loc, cs_flag_dual_face_byc)) {
 
-        cs_reco_cw_cell_vect_from_face_dofs(cm,
-                                            i_flux,
-                                            b_flux,
-                                            vector_values);
+          assert(ai->index == cs_cdo_connect->c2e->idx);
+          cs_reco_dfbyc_in_cell(cm,
+                                ai->values + ai->index[cm->c_id],
+                                vector_values);
+
+        }
+        else if (cs_flag_test(ai->loc, cs_flag_primal_face)) {
+
+          const cs_real_t  *i_flux = ai->values;
+          const cs_real_t  *b_flux = ai->values + cs_cdo_quant->n_i_faces;
+
+          cs_reco_cw_cell_vect_from_face_dofs(cm,
+                                              i_flux,
+                                              b_flux,
+                                              vector_values);
+        }
+        else
+          bft_error(__FILE__, __LINE__, 0,
+                    " %s: Invalid location for array", __func__);
+
         cs_nvec3(vector_values, eval);
       }
       break;
