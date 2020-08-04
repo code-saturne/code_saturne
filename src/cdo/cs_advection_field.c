@@ -666,7 +666,21 @@ cs_advection_field_def_by_array(cs_adv_field_t    *adv,
                                   .is_owner = is_owner,
                                   .index = index };
 
+  /* Set the stride accord to the status (flux or vector) */
   input.stride = _get_dim_def(adv);
+
+  /* Checkings */
+  if ((loc & CS_FLAG_SCALAR) && input.stride == 3)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Incompatible setting for advection field %s\n"
+              " Array is set as a flux while the advection field as a vector.",
+              __func__, adv->name);
+
+  if ((loc & CS_FLAG_VECTOR) && input.stride == 1)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Incompatible setting for advection field %s\n"
+              " Array is set as a vector while the advection field as a flux.",
+              __func__, adv->name);
 
   adv->definition = cs_xdef_volume_create(CS_XDEF_BY_ARRAY,
                                           input.stride,
@@ -695,12 +709,14 @@ cs_advection_field_def_by_field(cs_adv_field_t    *adv,
   /* Flags will be updated during the creation */
   cs_flag_t  state_flag = 0;
   cs_flag_t  meta_flag = 0;
-  int  dim = _get_dim_def(adv);
 
+  /* Set the stride accord to the status (flux or vector) */
+  int  dim = _get_dim_def(adv);
   if (field->dim != dim)
     bft_error(__FILE__, __LINE__, 0,
               " %s: Inconsistency found between the field dimension and the"
-              " definition of the advection field.\n", __func__);
+              " definition of the advection field %s.\n",
+              __func__, adv->name);
 
   adv->definition = cs_xdef_volume_create(CS_XDEF_BY_FIELD,
                                           dim,
@@ -821,6 +837,12 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
   int  z_id = cs_get_bdy_zone_id(zname);
   if (z_id == 0)
     meta_flag  |= CS_FLAG_FULL_LOC;
+
+  if (loc & CS_FLAG_VECTOR)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: Advection field: %s\n"
+              " The boundary flux is not compatible with a vector-valued"
+              " definition.\n", __func__, adv->name);
 
   cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_ARRAY,
                                           1,  /* dim. */
