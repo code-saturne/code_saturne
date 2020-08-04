@@ -39,6 +39,10 @@
 #include <mpi.h>
 #endif
 
+#if defined(HAVE_PETSC)
+#include <petscversion.h>
+#endif
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
@@ -146,6 +150,41 @@ _adv_scheme_key[CS_PARAM_N_ADVECTION_SCHEMES][CS_BASE_STRING_LEN] =
 /*============================================================================
  * Private function prototypes
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Check if the prerequisite are fullfilled when a PETSC-related type
+ *        of sles strategy is requested
+ *
+ * \param[in]  val          keyval
+ * \param[in]  sles_type    type of SLES strategy
+ *
+ * \return the same sles_type if ok
+ */
+/*----------------------------------------------------------------------------*/
+
+static inline cs_navsto_sles_t
+_check_petsc_strategy(const char         *val,
+                      cs_navsto_sles_t    sles_type)
+{
+#if defined(HAVE_PETSC)
+#if PETSC_VERSION_GE(3,11,0)
+  return sles_type;
+#else
+  if (sles_type == CS_NAVSTO_SLES_GKB_GMRES ||
+      sles_type == CS_NAVSTO_SLES_GKB_PETSC)
+    bft_error(__FILE__, __LINE__, 0,
+              "%s: PETSc version greater or equal to 3.11 is required"
+              " when using the keyval \"%s\"\n", __func__, val);
+  return sles_type;
+#endif
+#else
+  bft_error(__FILE__, __LINE__, 0,
+            " %s: \"CS_NSKEY_SLES_STRATEGY\" keyval %s requires"
+            " an installation with PETSC\n", __func__, val);
+  return CS_NAVSTO_SLES_N_TYPES;
+#endif
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -624,36 +663,41 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
     break; /* Quadrature */
 
   case CS_NSKEY_SLES_STRATEGY:
-    if (strcmp(val, "no_block") == 0) {
+    if (strcmp(val, "no_block") == 0)
       nsp->sles_param.strategy = CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK;
-    }
-    else if (strcmp(val, "by_blocks") == 0) {
+    else if (strcmp(val, "by_blocks") == 0)
       nsp->sles_param.strategy = CS_NAVSTO_SLES_BY_BLOCKS;
-    }
-    else if (strcmp(val, "block_amg_cg") == 0) {
+    else if (strcmp(val, "block_amg_cg") == 0)
       nsp->sles_param.strategy = CS_NAVSTO_SLES_BLOCK_MULTIGRID_CG;
-    }
-    else if (strcmp(val, "additive_gmres") == 0) {
-      nsp->sles_param.strategy = CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK;
-    }
-    else if (strcmp(val, "multiplicative_gmres") == 0) {
-      nsp->sles_param.strategy = CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK;
-    }
-    else if (strcmp(val, "diag_schur_gmres") == 0) {
-      nsp->sles_param.strategy = CS_NAVSTO_SLES_DIAG_SCHUR_GMRES;
-    }
-    else if (strcmp(val, "upper_schur_gmres") == 0) {
-      nsp->sles_param.strategy = CS_NAVSTO_SLES_UPPER_SCHUR_GMRES;
-    }
-    else if (strcmp(val, "gkb_gmres") == 0) {
-      nsp->sles_param.strategy = CS_NAVSTO_SLES_GKB_GMRES;
-    }
-    else if (strcmp(val, "gkb") == 0) {
-      nsp->sles_param.strategy = CS_NAVSTO_SLES_GKB;
-    }
-    else if (strcmp(val, "gkb_saturne") == 0) {
+    else if (strcmp(val, "gkb_saturne") == 0 ||
+             strcmp(val, "gkb") == 0)
       nsp->sles_param.strategy = CS_NAVSTO_SLES_GKB_SATURNE;
-    }
+    else if (strcmp(val, "uzawa_al") == 0 || strcmp(val, "alu") == 0)
+      nsp->sles_param.strategy = CS_NAVSTO_SLES_UZAWA_AL;
+
+    /* All the following options need either PETSC or MUMPS */
+    /* ---------------------------------------------------- */
+
+    else if (strcmp(val, "additive_gmres") == 0)
+      nsp->sles_param.strategy =
+        _check_petsc_strategy(val, CS_NAVSTO_SLES_ADDITIVE_GMRES_BY_BLOCK);
+    else if (strcmp(val, "multiplicative_gmres") == 0)
+      nsp->sles_param.strategy =
+        _check_petsc_strategy(val,
+                              CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK);
+    else if (strcmp(val, "diag_schur_gmres") == 0)
+      nsp->sles_param.strategy =
+        _check_petsc_strategy(val, CS_NAVSTO_SLES_DIAG_SCHUR_GMRES);
+    else if (strcmp(val, "upper_schur_gmres") == 0)
+      nsp->sles_param.strategy =
+        _check_petsc_strategy(val, CS_NAVSTO_SLES_UPPER_SCHUR_GMRES);
+    else if (strcmp(val, "gkb_gmres") == 0)
+      nsp->sles_param.strategy =
+        _check_petsc_strategy(val, CS_NAVSTO_SLES_GKB_GMRES);
+    else if (strcmp(val, "gkb_petsc") == 0)
+      nsp->sles_param.strategy =
+        _check_petsc_strategy(val, CS_NAVSTO_SLES_GKB_PETSC);
+
     else if (strcmp(val, "mumps") == 0) {
 #if defined(HAVE_MUMPS)
       nsp->sles_param.strategy = CS_NAVSTO_SLES_MUMPS;
@@ -671,17 +715,14 @@ cs_navsto_param_set(cs_navsto_param_t    *nsp,
 #endif  /* HAVE_PETSC */
 #endif  /* HAVE_MUMPS */
     }
-    else if (strcmp(val, "uzawa_al") == 0 ||
-             strcmp(val, "alu") == 0) {
-      nsp->sles_param.strategy = CS_NAVSTO_SLES_UZAWA_AL;
-    }
+
     else {
       const char *_val = val;
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Invalid val %s related to key CS_NSKEY_SLES_STRATEGY\n"
                 " Choice between: no_block, by_locks, block_amg_cg,\n"
                 " {additive,multiplicative}_gmres, {diag,upper}_schur_gmres,\n"
-                " gkb, gkb_gmres, gkb_saturne,\n"
+                " gkb, gkb_petsc, gkb_gmres, gkb_saturne,\n"
                 " mumps, uzawa_al or alu", __func__, _val);
     }
     break;
@@ -914,14 +955,14 @@ cs_navsto_param_log(const cs_navsto_param_t    *nsp)
     cs_log_printf(CS_LOG_SETUP, "Upper block preconditioner with Schur approx."
                   " + GMRES\n");
     break;
-  case CS_NAVSTO_SLES_GKB:
-    cs_log_printf(CS_LOG_SETUP, "GKB algorithm\n");
+  case CS_NAVSTO_SLES_GKB_PETSC:
+    cs_log_printf(CS_LOG_SETUP, "GKB algorithm (through PETSc)\n");
     break;
   case CS_NAVSTO_SLES_GKB_GMRES:
     cs_log_printf(CS_LOG_SETUP, "GMRES with a GKB preconditioner\n");
     break;
   case CS_NAVSTO_SLES_GKB_SATURNE:
-    cs_log_printf(CS_LOG_SETUP, "In-house GKB algorithm\n");
+    cs_log_printf(CS_LOG_SETUP, "GKB algorithm (In-House)\n");
     break;
   case CS_NAVSTO_SLES_MUMPS:
     cs_log_printf(CS_LOG_SETUP, "LU factorization with MUMPS\n");

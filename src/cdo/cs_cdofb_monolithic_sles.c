@@ -2172,7 +2172,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
 
 #if defined(HAVE_PETSC)
 #if PETSC_VERSION_GE(3,11,0)    /* Golub-Kahan Bi-diagonalization */
-  case CS_NAVSTO_SLES_GKB:
+  case CS_NAVSTO_SLES_GKB_PETSC:
     cs_sles_petsc_init();
     cs_sles_petsc_define(field_id,
                          NULL,
@@ -2190,7 +2190,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
                          (void *)nsp);
     break;
 #else
-  case CS_NAVSTO_SLES_GKB:
+  case CS_NAVSTO_SLES_GKB_PETSC:
   case CS_NAVSTO_SLES_GKB_GMRES:
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid strategy for solving the linear system %s\n"
@@ -2199,7 +2199,7 @@ cs_cdofb_monolithic_set_sles(cs_navsto_param_t    *nsp,
     break;
 #endif
 #else  /* HAVE_PETSC */
-  case CS_NAVSTO_SLES_GKB:
+  case CS_NAVSTO_SLES_GKB_PETSC:
   case CS_NAVSTO_SLES_GKB_GMRES:
     bft_error(__FILE__, __LINE__, 0,
               "%s: Invalid strategy for solving the linear system %s\n"

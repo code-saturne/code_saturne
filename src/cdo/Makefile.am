@@ -175,7 +175,6 @@ cs_iter_algo.c \
 cs_maxwell.c \
 cs_mesh_deform.c \
 cs_navsto_coupling.c \
-cs_navsto_param.c \
 cs_navsto_system.c \
 cs_property.c \
 cs_quadrature.c \
@@ -202,6 +201,7 @@ cs_cdofb_ac.c \
 cs_cdofb_monolithic_sles.c \
 cs_cdofb_predco.c \
 cs_equation_param.c \
+cs_navsto_param.c \
 cs_navsto_sles.c
 
 clean-local:

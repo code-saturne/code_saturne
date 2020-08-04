@@ -222,8 +222,8 @@ typedef enum {
  * normalization
  *
  *
- * \var CS_NAVSTO_SLES_GKB
- * Associated keyword: "gkb"
+ * \var CS_NAVSTO_SLES_GKB_PETSC
+ * Associated keyword: "gkb_petsc"
  *
  * Available choice when a monolithic approach is used (i.e. with the parameter
  * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm). The
@@ -248,7 +248,7 @@ typedef enum {
  * PETSc library up to now.
  *
  * \var CS_NAVSTO_SLES_GKB_SATURNE
- * Associated keyword: "gkb_saturne"
+ * Associated keyword: "gkb" or "gkb_saturne"
  *
  * Available choice when a monolithic approach is used (i.e. with the parameter
  * CS_NAVSTO_COUPLING_MONOLITHIC is set as coupling algorithm). The
@@ -305,7 +305,7 @@ typedef enum {
   CS_NAVSTO_SLES_BY_BLOCKS,
   CS_NAVSTO_SLES_DIAG_SCHUR_GMRES,
   CS_NAVSTO_SLES_EQ_WITHOUT_BLOCK,
-  CS_NAVSTO_SLES_GKB,
+  CS_NAVSTO_SLES_GKB_PETSC,
   CS_NAVSTO_SLES_GKB_GMRES,
   CS_NAVSTO_SLES_GKB_SATURNE,
   CS_NAVSTO_SLES_MULTIPLICATIVE_GMRES_BY_BLOCK,
