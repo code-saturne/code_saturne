@@ -36,7 +36,7 @@
 */
 
 #if (SIZEOF_LONG < 8) && (_FILE_OFFSET_BITS == 64)
-# if defined(__linux__) || defined(__blrts__) || defined(__bg__)
+# if defined(__linux__)
 #  if !defined(_POSIX_SOURCE)
 #    define _GNU_SOURCE 1
 #  endif

@@ -29,7 +29,7 @@
   the correct feature macros are defined first.
 */
 
-#if defined(__linux__) || defined(__blrts__) || defined(__bg__)
+#if defined(__linux__)
 #  define _GNU_SOURCE
 #endif
 
