@@ -3794,7 +3794,8 @@ cs_les_balance_compute_tui(void)
 void
 cs_les_balance_write_restart(void)
 {
-  cs_restart_t *rp = cs_restart_create("les_balance.csc",
+  const char  restart_name[] = "les_balance.csc";
+  cs_restart_t *rp = cs_restart_create(restart_name,
                                        NULL,
                                        CS_RESTART_MODE_WRITE);
 
@@ -3803,7 +3804,7 @@ cs_les_balance_write_restart(void)
               _("Abort while opening the auxiliary restart "
                 "file in write mode for the LES balance module.\n"
                 "Verify the existence and the name of the restart file: %s\n"),
-              rp);
+              restart_name);
 
   /* Write the header */
   cs_restart_write_section(rp,
