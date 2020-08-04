@@ -83,7 +83,8 @@ cs_mesh_thinwall.h \
 cs_mesh_to_builder.h \
 cs_mesh_warping.h \
 cs_mesh_smoother.h \
-cs_partition.h
+cs_partition.h \
+cs_stl.h
 
 # Library source files
 
@@ -124,7 +125,8 @@ cs_mesh_save.c \
 cs_mesh_thinwall.c \
 cs_mesh_to_builder.c \
 cs_mesh_warping.c \
-cs_mesh_smoother.c
+cs_mesh_smoother.c \
+cs_stl.c
 
 libcsmesh_la_LDFLAGS = -no-undefined
 
