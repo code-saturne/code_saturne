@@ -166,6 +166,45 @@ cs_porous_model_set_model(int  porous_model)
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Initialize disable_flag
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_porous_model_init_disable_flag(void)
+{
+  cs_mesh_t *m =cs_glob_mesh;
+  cs_mesh_quantities_t *mq =cs_glob_mesh_quantities;
+
+  if (cs_glob_porous_model > 0) {
+    cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
+    if (mq->c_disable_flag == NULL) {
+      BFT_MALLOC(mq->c_disable_flag, n_cells_ext, int);
+      for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
+        mq->c_disable_flag[cell_id] = 0;
+    }
+    else {
+      cs_lnum_t n_cells = m->n_cells;
+      BFT_REALLOC(mq->c_disable_flag, n_cells_ext, int);
+      for (cs_lnum_t cell_id = n_cells; cell_id < n_cells_ext; cell_id++)
+        mq->c_disable_flag[cell_id] = 0;
+    }
+    if (m->halo != NULL)
+      cs_halo_sync_untyped(m->halo, CS_HALO_STANDARD, sizeof(int),
+                           mq->c_disable_flag);
+  }
+  else {
+    if (mq->c_disable_flag == NULL)
+      BFT_MALLOC(mq->c_disable_flag, 1, int);
+    mq->c_disable_flag[0] = 0;
+  }
+
+  /* Update Fortran pointer quantities */
+  cs_preprocess_mesh_update_fortran();
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set (unset) has_disable_flag
  *
  * \param[in]  flag   1: on, 0: off
@@ -178,19 +217,6 @@ cs_porous_model_set_has_disable_flag(int  flag)
   cs_mesh_quantities_t *mq =cs_glob_mesh_quantities;
 
   mq->has_disable_flag = flag;
-
-  if (mq->has_disable_flag == 1) {
-    cs_lnum_t n_cells_ext = cs_glob_mesh->n_cells_with_ghosts;
-    if (mq->c_disable_flag == NULL)
-      BFT_REALLOC(mq->c_disable_flag, n_cells_ext, int);
-    for (cs_lnum_t cell_id = 0; cell_id < n_cells_ext; cell_id++)
-      mq->c_disable_flag[cell_id] = 0;
-  }
-  else {
-    if (mq->c_disable_flag == NULL)
-      BFT_REALLOC(mq->c_disable_flag, 1, int);
-    mq->c_disable_flag[0] = 0;
-  }
 
   /* if off, fluid surfaces point toward cell surfaces */
   /* Porous models */

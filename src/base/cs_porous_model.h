@@ -71,6 +71,15 @@ cs_porous_model_set_model(int  porous_model);
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Initialize disable_flag
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_porous_model_init_disable_flag(void);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Set (unset) has_disable_flag
  *
  * \param[in]  flag   1: on, 0: off

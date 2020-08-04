@@ -282,8 +282,6 @@ if (iporos.ge.1) then
   call field_get_val_s(ipori, porosi)
   do iel = 1, ncelet
     porosi(iel) = 1.d0
-    ! No solid cells
-    isolid_0(iel) = 0
   enddo
 
   ! Tensorial porosity
@@ -298,9 +296,6 @@ if (iporos.ge.1) then
       porosf(6, iel) = 0.d0
     enddo
   endif
-
-else
-  isolid_0(1) = 0
 endif
 
 !===============================================================================

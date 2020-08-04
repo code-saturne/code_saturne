@@ -2752,6 +2752,16 @@ module cs_c_bindings
 
     !---------------------------------------------------------------------------
 
+    ! Initialize has_disable_flag
+
+    subroutine cs_porous_model_init_disable_flag()   &
+      bind(C, name='cs_porous_model_init_disable_flag')
+      use, intrinsic :: iso_c_binding
+      implicit none
+    end subroutine cs_porous_model_init_disable_flag
+
+    !---------------------------------------------------------------------------
+
     ! Set has_disable_flag
 
     subroutine cs_porous_model_set_has_disable_flag(flag)   &
