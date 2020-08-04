@@ -640,6 +640,20 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define the value of the boundary normal flux for the given
+ *         cs_adv_field_t structure using a field structure
+ *
+ * \param[in, out]  adv       pointer to a cs_adv_field_t structure
+ * \param[in]       field     pointer to a cs_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_def_boundary_flux_by_field(cs_adv_field_t    *adv,
+                                              cs_field_t        *field);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create all needed cs_field_t structures related to an advection
  *         field
  */

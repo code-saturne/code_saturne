@@ -860,6 +860,48 @@ cs_advection_field_def_boundary_flux_by_array(cs_adv_field_t    *adv,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Define the value of the boundary normal flux for the given
+ *         cs_adv_field_t structure using a field structure
+ *
+ * \param[in, out]  adv       pointer to a cs_adv_field_t structure
+ * \param[in]       field     pointer to a cs_field_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_advection_field_def_boundary_flux_by_field(cs_adv_field_t    *adv,
+                                              cs_field_t        *field)
+{
+  if (adv == NULL)
+    bft_error(__FILE__, __LINE__, 0, _(_err_empty_adv));
+
+  /* Flags will be updated during the creation */
+  cs_flag_t  state_flag = 0;
+  cs_flag_t  meta_flag = CS_FLAG_FULL_LOC; /* all boundary faces are handled */
+
+  /* Set the stride accord to the status (flux or vector) */
+  if (field->dim != 1)
+    bft_error(__FILE__, __LINE__, 0,
+              " %s: Inconsistency found in the field dimension.\n"
+              " A flux is requested (dim = 1) for advection field %s\n",
+              __func__, adv->name);
+
+  cs_xdef_t  *d = cs_xdef_boundary_create(CS_XDEF_BY_FIELD,
+                                          1,  /* dim. */
+                                          0,  /* all boundary faces */
+                                          state_flag,
+                                          meta_flag,
+                                          field);
+
+  int  def_id = adv->n_bdy_flux_defs;
+  assert(def_id == 0);
+  adv->n_bdy_flux_defs += 1;
+  BFT_REALLOC(adv->bdy_flux_defs, adv->n_bdy_flux_defs, cs_xdef_t *);
+  adv->bdy_flux_defs[def_id] = d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Create all needed cs_field_t structures related to an advection
  *         field
  */
@@ -986,18 +1028,43 @@ cs_advection_field_finalize_setup(void)
     cs_adv_field_t  *adv = _adv_fields[i];
     assert(adv != NULL);
 
+    /* Case of an advection field defined as the mass flux from the legacy FV
+       part */
     if ((adv->status & CS_ADVECTION_FIELD_NAVSTO) &&
         (adv->status & CS_ADVECTION_FIELD_LEGACY_FV)) {
 
-      /* Automatic definition */
-      cs_field_t  *fld = cs_field_by_name("inner_mass_flux");
+      /* Automatic definition and checkings */
+      cs_field_t  *fld = cs_field_by_name("boundary_mass_flux");
+      assert(fld != NULL);
+      adv->bdy_field_id = fld->id;
+
+      if (adv->bdy_flux_defs == NULL)
+        cs_advection_field_def_boundary_flux_by_field(adv, fld);
+
+      else { /* Sanity check */
+        if (adv->n_bdy_flux_defs > 1 ||
+            adv->bdy_flux_defs[0]->type != CS_XDEF_BY_FIELD)
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Invalid setting found for the advection field %s\n"
+                    " No need to perform additional setting when the legacy"
+                    " FV mass flux is used.\n", __func__, adv->name);
+      }
+
+      fld = cs_field_by_name("inner_mass_flux");
       assert(fld != NULL);
       cs_advection_field_def_by_field(adv, fld);
       adv->int_field_id = fld->id;
 
-      fld = cs_field_by_name("boundary_mass_flux");
-      assert(fld != NULL);
-      adv->bdy_field_id = fld->id;
+      if (adv->definition == NULL)
+        cs_advection_field_def_by_field(adv, fld);
+
+      else { /* Sanity check */
+        if (adv->definition->type != CS_XDEF_BY_FIELD)
+          bft_error(__FILE__, __LINE__, 0,
+                    "%s: Invalid setting found for the advection field %s\n"
+                    " No need to perform additional setting when the legacy"
+                    " FV mass flux is used.\n", __func__, adv->name);
+      }
 
     }
 
@@ -1105,16 +1172,28 @@ cs_advection_field_cw_eval_at_xyz(const cs_adv_field_t  *adv,
       }
       break;
 
+    case CS_XDEF_BY_FIELD:
+      {
+        const cs_real_t  *i_flux = (cs_field_by_id(adv->int_field_id))->val;
+        const cs_real_t  *b_flux = (cs_field_by_id(adv->bdy_field_id))->val;
+
+        cs_reco_cw_cell_vect_from_face_dofs(cm,
+                                            i_flux,
+                                            b_flux,
+                                            vector_values);
+        cs_nvec3(vector_values, eval);
+      }
+      break;
+
     case CS_XDEF_BY_ANALYTIC_FUNCTION:
     case CS_XDEF_BY_VALUE:
-    case CS_XDEF_BY_FIELD:
       bft_error(__FILE__, __LINE__, 0,
                 " %s: Type of definition not implemented yet.", __func__);
       break;
 
     default:
-      bft_error(__FILE__, __LINE__, 0, " %s: Incompatible type of definition.",
-                __func__);
+      bft_error(__FILE__, __LINE__, 0,
+                " %s: Incompatible type of definition.", __func__);
       break;
 
     } /* Type of definition */
