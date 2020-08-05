@@ -1,0 +1,71 @@
+'JetParietal'
+'GEOM'
+   2                                    $ IMPRE NOMGEOM
+JetParietal.geom
+'QC25'
+     2      1      0      1               $ IMPRE NIVEAU NSURF NDSDE
+    27     -1                             $ NBRELI NS1L
+    26                                    $ NOLO 
+    12                                    $ NOLO 
+    24                                    $ NOLO 
+    23                                    $ NOLO 
+    11                                    $ NOLO 
+    10                                    $ NOLO 
+     9                                    $ NOLO 
+     8                                    $ NOLO 
+     7                                    $ NOLO 
+     6                                    $ NOLO 
+     5                                    $ NOLO 
+     4                                    $ NOLO 
+     3                                    $ NOLO 
+     1                                    $ NOLO 
+     2                                    $ NOLO 
+    27                                    $ NOLO 
+    22                                    $ NOLO 
+    25                                    $ NOLO 
+    21                                    $ NOLO 
+    20                                    $ NOLO 
+    19                                    $ NOLO 
+    18                                    $ NOLO 
+    17                                    $ NOLO 
+    16                                    $ NOLO 
+    15                                    $ NOLO 
+    14                                    $ NOLO 
+    13                                    $ NOLO 
+    -4     1                              $ IMAX NQUAD
+'MA23'
+     2      1      2                      $ IMPRE NIVEA1 NIVEA2
+     0                                    $ IOPT
+            0         0.005               $ ZINF ZSUP
+     1      2      0      2               $ ISUB NBSEC NCGE IREF
+     4     4                              $ NRINF NRSUP
+     4      4      4                      $ NNREFV NNREFI NNREFS
+                                          $ ARETES ET FACES VERTICALES
+    19     19                             $ NNANC NNOUV
+    21     21                             $ NNANC NNOUV
+    11     11                             $ NNANC NNOUV
+    15     15                             $ NNANC NNOUV
+                                          $ SOMMETS ET ARETES 1-ERE SECTION
+    19     19                             $ NNANC NNOUV
+    21     21                             $ NNANC NNOUV
+    11     11                             $ NNANC NNOUV
+    15     15                             $ NNANC NNOUV
+                                          $ SOMMETS ET ARETES DERNIERE SECTION
+    19     19                             $ NNANC NNOUV
+    21     21                             $ NNANC NNOUV
+    11     11                             $ NNANC NNOUV
+    15     15                             $ NNANC NNOUV    
+'DIME'
+     2      3                             $ IMPRE NDIM
+'ROTA'
+     2     2     3                        $ IMPRE NIVEA1 NIVEA2
+        90          1          0          0 $ ANGLE VX VY VZ
+         0          0          0           $ X0 Y0 Z0
+'DIME'
+     2      2                             $ IMPRE NDIM
+'SAUV'
+     2      3                             $ IMPRE NIVEAU
+                                          $ NOM DU FICHIER DE SAUVEGARDE
+JetParietal.des
+
+    
