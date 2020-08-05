@@ -1,0 +1,843 @@
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2020.5.13)  16 JUN 2020 15:45
+entering extended mode
+ \write18 enabled.
+ %&-line parsing enabled.
+**hercule.tex
+(./hercule.tex
+LaTeX2e <2020-02-02> patch level 2
+L3 programming layer <2020-02-14>
+(/usr/share/texlive/texmf-dist/tex/latex/base/article.cls
+Document Class: article 2019/12/20 v1.4l Standard LaTeX document class
+(/usr/share/texlive/texmf-dist/tex/latex/base/size12.clo
+File: size12.clo 2019/12/20 v1.4l Standard LaTeX file (size option)
+)
+\c@part=\count167
+\c@section=\count168
+\c@subsection=\count169
+\c@subsubsection=\count170
+\c@paragraph=\count171
+\c@subparagraph=\count172
+\c@figure=\count173
+\c@table=\count174
+\abovecaptionskip=\skip47
+\belowcaptionskip=\skip48
+\bibindent=\dimen134
+)
+(/usr/share/texlive/texmf-dist/tex/latex/base/inputenc.sty
+Package: inputenc 2018/08/11 v1.3c Input encoding file
+\inpenc@prehook=\toks14
+\inpenc@posthook=\toks15
+) (./valsat.sty
+Package: valsat 
+
+(/usr/share/texlive/texmf-dist/tex/generic/babel/babel.sty
+Package: babel 2020/02/14 3.40 The Babel package
+
+(/usr/share/texlive/texmf-dist/tex/generic/babel/switch.def
+File: switch.def 2020/02/14 3.40 Babel switching mechanism
+)
+(/usr/share/texlive/texmf-dist/tex/generic/babel-english/english.ldf
+Language: english 2017/06/06 v3.3r English support from the babel system
+
+(/usr/share/texlive/texmf-dist/tex/generic/babel/babel.def
+File: babel.def 2020/02/14 3.40 Babel common definitions
+\babel@savecnt=\count175
+\U@D=\dimen135
+
+(/usr/share/texlive/texmf-dist/tex/generic/babel/txtbabel.def)
+\bbl@readstream=\read2
+\bbl@dirlevel=\count176
+)
+Package babel Info: \l@british = using hyphenrules for english
+(babel)             (\language0) on input line 82.
+Package babel Info: \l@UKenglish = using hyphenrules for english
+(babel)             (\language0) on input line 83.
+Package babel Info: \l@canadian = using hyphenrules for english
+(babel)             (\language0) on input line 102.
+Package babel Info: \l@australian = using hyphenrules for english
+(babel)             (\language0) on input line 105.
+Package babel Info: \l@newzealand = using hyphenrules for english
+(babel)             (\language0) on input line 108.
+))
+(/usr/share/texlive/texmf-dist/tex/latex/base/fontenc.sty
+Package: fontenc 2020/02/11 v2.0o Standard LaTeX package
+)
+(/usr/share/texlive/texmf-dist/tex/latex/float/float.sty
+Package: float 2001/11/08 v1.3d Float enhancements (AL)
+\c@float@type=\count177
+\float@exts=\toks16
+\float@box=\box45
+\@float@everytoks=\toks17
+\@floatcapt=\box46
+)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/epsfig.sty
+Package: epsfig 2017/06/25 v1.7b (e)psfig emulation (SPQR)
+
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphicx.sty
+Package: graphicx 2019/11/30 v1.2a Enhanced LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/keyval.sty
+Package: keyval 2014/10/28 v1.15 key=value parser (DPC)
+\KV@toks@=\toks18
+)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/graphics.sty
+Package: graphics 2019/11/30 v1.4a Standard LaTeX Graphics (DPC,SPQR)
+
+(/usr/share/texlive/texmf-dist/tex/latex/graphics/trig.sty
+Package: trig 2016/01/03 v1.10 sin cos tan (DPC)
+)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/graphics.cfg
+File: graphics.cfg 2016/06/04 v1.11 sample graphics configuration
+)
+Package graphics Info: Driver file: pdftex.def on input line 105.
+
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-def/pdftex.def
+File: pdftex.def 2018/01/08 v1.0l Graphics/color driver for pdftex
+))
+\Gin@req@height=\dimen136
+\Gin@req@width=\dimen137
+)
+\epsfxsize=\dimen138
+\epsfysize=\dimen139
+)
+(/usr/share/texlive/texmf-dist/tex/latex/fancyhdr/fancyhdr.sty
+Package: fancyhdr 2019/01/31 v3.10 Extensive control of page headers and footer
+s
+\f@nch@headwidth=\skip49
+\f@nch@O@elh=\skip50
+\f@nch@O@erh=\skip51
+\f@nch@O@olh=\skip52
+\f@nch@O@orh=\skip53
+\f@nch@O@elf=\skip54
+\f@nch@O@erf=\skip55
+\f@nch@O@olf=\skip56
+\f@nch@O@orf=\skip57
+)
+(/usr/share/texlive/texmf-dist/tex/latex/base/ifthen.sty
+Package: ifthen 2014/09/29 v1.1c Standard LaTeX ifthen package (DPC)
+)
+(/usr/share/texlive/texmf-dist/tex/latex/tools/bm.sty
+Package: bm 2019/07/24 v1.2d Bold Symbol Support (DPC/FMi)
+\symboldoperators=\mathgroup4
+\symboldletters=\mathgroup5
+\symboldsymbols=\mathgroup6
+LaTeX Font Info:    Redeclaring math alphabet \mathbf on input line 141.
+LaTeX Info: Redefining \bm on input line 209.
+)
+LaTeX Font Info:    Trying to load font information for OT1+phv on input line 3
+4.
+
+(/usr/share/texlive/texmf-dist/tex/latex/psnfss/ot1phv.fd
+File: ot1phv.fd 2001/06/04 scalable font definitions for OT1/phv.
+))
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsmath.sty
+Package: amsmath 2020/01/20 v2.17e AMS math features
+\@mathmargin=\skip58
+
+For additional information on amsmath, use the `?' option.
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amstext.sty
+Package: amstext 2000/06/29 v2.01 AMS text
+
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsgen.sty
+File: amsgen.sty 1999/11/30 v2.0 generic functions
+\@emptytoks=\toks19
+\ex@=\dimen140
+))
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsbsy.sty
+Package: amsbsy 1999/11/29 v1.2d Bold Symbols
+LaTeX Info: Redefining \boldsymbol on input line 28.
+\pmbraise@=\dimen141
+)
+(/usr/share/texlive/texmf-dist/tex/latex/amsmath/amsopn.sty
+Package: amsopn 2016/03/08 v2.02 operator names
+)
+\inf@bad=\count178
+LaTeX Info: Redefining \frac on input line 227.
+\uproot@=\count179
+\leftroot@=\count180
+LaTeX Info: Redefining \overline on input line 389.
+\classnum@=\count181
+\DOTSCASE@=\count182
+LaTeX Info: Redefining \ldots on input line 486.
+LaTeX Info: Redefining \dots on input line 489.
+LaTeX Info: Redefining \cdots on input line 610.
+\Mathstrutbox@=\box47
+\strutbox@=\box48
+\big@size=\dimen142
+LaTeX Font Info:    Redeclaring font encoding OML on input line 733.
+LaTeX Font Info:    Redeclaring font encoding OMS on input line 734.
+\macc@depth=\count183
+\c@MaxMatrixCols=\count184
+\dotsspace@=\muskip16
+\c@parentequation=\count185
+\dspbrk@lvl=\count186
+\tag@help=\toks20
+\row@=\count187
+\column@=\count188
+\maxfields@=\count189
+\andhelp@=\toks21
+\eqnshift@=\dimen143
+\alignsep@=\dimen144
+\tagshift@=\dimen145
+\tagwidth@=\dimen146
+\totwidth@=\dimen147
+\lineht@=\dimen148
+\@envbody=\toks22
+\multlinegap=\skip59
+\multlinetaggap=\skip60
+\mathdisplay@stack=\toks23
+LaTeX Info: Redefining \[ on input line 2859.
+LaTeX Info: Redefining \] on input line 2860.
+)
+(/usr/share/texlive/texmf-dist/tex/latex/was/gensymb.sty
+Package: gensymb 2003/07/02 v1.0 (WaS)
+)
+(/usr/share/texlive/texmf-dist/tex/latex/auto-pst-pdf/auto-pst-pdf.sty
+Package: auto-pst-pdf 2009/04/26 v0.6 Wrapper for pst-pdf
+
+(/usr/share/texlive/texmf-dist/tex/generic/iftex/ifpdf.sty
+Package: ifpdf 2019/10/25 v3.4 ifpdf legacy package. Use iftex instead.
+
+(/usr/share/texlive/texmf-dist/tex/generic/iftex/iftex.sty
+Package: iftex 2019/11/07 v1.0c TeX engine tests
+))
+(/usr/share/texlive/texmf-dist/tex/latex/xkeyval/xkeyval.sty
+Package: xkeyval 2014/12/03 v2.7a package option processing (HA)
+
+(/usr/share/texlive/texmf-dist/tex/generic/xkeyval/xkeyval.tex
+(/usr/share/texlive/texmf-dist/tex/generic/xkeyval/xkvutils.tex
+\XKV@toks=\toks24
+\XKV@tempa@toks=\toks25
+)
+\XKV@depth=\count190
+File: xkeyval.tex 2014/12/03 v2.7a key=value parser (HA)
+))
+(/usr/share/texlive/texmf-dist/tex/latex/ifplatform/ifplatform.sty
+Package: ifplatform 2017/10/13 v0.4a Testing for the operating system
+
+(/usr/share/texlive/texmf-dist/tex/latex/tools/shellesc.sty
+Package: shellesc 2019/11/08 v1.0c unified shell escape interface for LaTeX
+Package shellesc Info: Unrestricted shell escape enabled on input line 75.
+)
+(/usr/share/texlive/texmf-dist/tex/latex/pdftexcmds/pdftexcmds.sty
+Package: pdftexcmds 2019/11/24 v0.31 Utility functions of pdfTeX for LuaTeX (HO
+)
+
+(/usr/share/texlive/texmf-dist/tex/generic/infwarerr/infwarerr.sty
+Package: infwarerr 2019/12/03 v1.5 Providing info/warning/error messages (HO)
+)
+(/usr/share/texlive/texmf-dist/tex/generic/ltxcmds/ltxcmds.sty
+Package: ltxcmds 2019/12/15 v1.24 LaTeX kernel commands for general use (HO)
+)
+Package pdftexcmds Info: \pdf@primitive is available.
+Package pdftexcmds Info: \pdf@ifprimitive is available.
+Package pdftexcmds Info: \pdfdraftmode found.
+)
+(/usr/share/texlive/texmf-dist/tex/generic/catchfile/catchfile.sty
+Package: catchfile 2019/12/09 v1.8 Catch the contents of a file (HO)
+
+(/usr/share/texlive/texmf-dist/tex/generic/etexcmds/etexcmds.sty
+Package: etexcmds 2019/12/15 v1.7 Avoid name clashes with e-TeX commands (HO)
+))
+(/usr/share/texlive/texmf-dist/tex/generic/iftex/ifluatex.sty
+Package: ifluatex 2019/10/25 v1.5 ifluatex legacy package. Use iftex instead.
+)
+runsystem(uname -s > "hercule.w18")...executed.
+
+ (./hercule.w18)
+runsystem(rm -- "hercule.w18")...executed.
+
+)
+\c@app@runs=\count191
+runsystem(echo " ")...executed.
+
+runsystem(echo "-------------------------------------------------")...executed.
+
+runsystem(echo "auto-pst-pdf: Auxiliary LaTeX compilation")...executed.
+
+runsystem(echo "-------------------------------------------------")...executed.
+
+runsystem(rm -- "hercule-pics.pdf")...executed.
+
+runsystem(latex -no-shell-escape -jobname="hercule-autopp" -interaction=batchmo
+de  "\let \APPmakepictures \empty \input  hercule.tex")...executed.
+
+runsystem(dvips -Ppdf -o "hercule-autopp.ps" "hercule-autopp.dvi")...executed.
+
+runsystem(ps2pdf -dAutoRotatePages=/None "hercule-autopp.ps" "hercule-autopp.pd
+f")...executed.
+
+runsystem(pdfcrop  "hercule-autopp.pdf" "hercule-pics.pdf")...executed.
+
+runsystem(rm -- "hercule-autopp.log")...executed.
+
+runsystem(rm -- "hercule-autopp.dvi")...executed.
+
+runsystem(rm -- "hercule-autopp.ps")...executed.
+
+runsystem(rm -- "hercule-autopp.pdf")...executed.
+
+runsystem(echo "-------------------------------------------------")...executed.
+
+runsystem(echo "auto-pst-pdf: End auxiliary LaTeX compilation")...executed.
+
+runsystem(echo "-------------------------------------------------")...executed.
+
+(/usr/share/texlive/texmf-dist/tex/latex/pst-pdf/pst-pdf.sty
+Package: pst-pdf 2019/11/15 v1.2e PS graphics for pdfLaTeX (RN,HjG)
+
+(/usr/share/texlive/texmf-dist/tex/generic/iftex/ifxetex.sty
+Package: ifxetex 2019/10/25 v0.7 ifxetex legacy package. Use iftex instead.
+)
+(/usr/share/texlive/texmf-dist/tex/generic/iftex/ifvtex.sty
+Package: ifvtex 2019/10/25 v1.7 ifvtex legacy package. Use iftex instead.
+)
+
+! LaTeX Error: File `luatex85.sty' not found.
+
+Type X to quit or <RETURN> to proceed,
+or enter new name. (Default extension: sty)
+
+Enter file name: 
+\c@pspicture=\count192
+Package pst-pdf Info: MODE: 1 (pdfTeX mode) on input line 216.
+(/usr/share/texlive/texmf-dist/tex/latex/pstricks/pstricks.sty
+Package: pstricks 2018/12/21 v0.69 LaTeX wrapper for `PSTricks' (RN,HV)
+
+(/usr/share/texlive/texmf-dist/tex/latex/xcolor/xcolor.sty
+Package: xcolor 2016/05/11 v2.12 LaTeX color extensions (UK)
+
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-cfg/color.cfg
+File: color.cfg 2016/01/02 v1.6 sample color configuration
+)
+Package xcolor Info: Driver file: pdftex.def on input line 225.
+Package xcolor Info: Model `cmy' substituted by `cmy0' on input line 1348.
+Package xcolor Info: Model `hsb' substituted by `rgb' on input line 1352.
+Package xcolor Info: Model `RGB' extended on input line 1364.
+Package xcolor Info: Model `HTML' substituted by `rgb' on input line 1366.
+Package xcolor Info: Model `Hsb' substituted by `hsb' on input line 1367.
+Package xcolor Info: Model `tHsb' substituted by `hsb' on input line 1368.
+Package xcolor Info: Model `HSB' substituted by `hsb' on input line 1369.
+Package xcolor Info: Model `Gray' substituted by `gray' on input line 1370.
+Package xcolor Info: Model `wave' substituted by `hsb' on input line 1371.
+)
+(/usr/share/texlive/texmf-dist/tex/generic/xkeyval/pst-xkey.tex
+File: pst-xkey.tex 2005/11/25 v1.6 PSTricks specialization of xkeyval (HA)
+)
+(/usr/share/texlive/texmf-dist/tex/generic/pstricks/pstricks.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pstricks/pst-fp.tex
+`pst-fp' v0.05, 2010/01/17 (hv)
+\pstFP@xs=\count193
+\pstFP@xia=\count194
+\pstFP@xib=\count195
+\pstFP@xfa=\count196
+\pstFP@xfb=\count197
+\pstFP@rega=\count198
+\pstFP@regb=\count199
+\pstFP@regs=\count266
+\pstFP@times=\count267
+)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfutil-common.tex
+\pgfutil@everybye=\toks26
+\pgfutil@tempdima=\dimen149
+\pgfutil@tempdimb=\dimen150
+
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfutil-common-lists.t
+ex)) (/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfkeys.code.tex
+\pgfkeys@pathtoks=\toks27
+\pgfkeys@temptoks=\toks28
+
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgfkeysfiltered.code.t
+ex
+\pgfkeys@tmptoks=\toks29
+)) (/usr/share/texlive/texmf-dist/tex/generic/pgf/utilities/pgffor.code.tex
+Loading pgffor.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmath.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathcalc.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathutil.code.tex
+\pgf@x=\dimen151
+\pgf@xa=\dimen152
+\pgf@xb=\dimen153
+\pgf@xc=\dimen154
+\pgf@y=\dimen155
+\pgf@ya=\dimen156
+\pgf@yb=\dimen157
+\pgf@yc=\dimen158
+\c@pgf@counta=\count268
+\c@pgf@countb=\count269
+\c@pgf@countc=\count270
+\c@pgf@countd=\count271
+\pgfutil@tempcnta=\count272
+\pgfutil@tempcntb=\count273
+)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathparser.code.tex
+\pgfmath@dimen=\dimen159
+\pgfmath@count=\count274
+\pgfmath@box=\box49
+\pgfmath@toks=\toks30
+\pgfmath@stack@operand=\toks31
+\pgfmath@stack@operation=\toks32
+)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.code.tex
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.basic.code
+.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.trigonomet
+ric.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.random.cod
+e.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.comparison
+.code.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.base.code.
+tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.round.code
+.tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.misc.code.
+tex)
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfunctions.integerari
+thmetics.code.tex)))
+(/usr/share/texlive/texmf-dist/tex/generic/pgf/math/pgfmathfloat.code.tex
+\c@pgfmathroundto@lastzeros=\count275
+))
+\pgffor@iter=\dimen160
+\pgffor@skip=\dimen161
+\pgffor@stack=\toks33
+\pgffor@toks=\toks34
+)
+\psLoopIndex=\count276
+
+`PSTricks' v2.97  <2019/05/11> (tvz,hv)
+\pst@dima=\dimen162
+\pst@dimb=\dimen163
+\pst@dimc=\dimen164
+\pst@dimd=\dimen165
+\pst@dimg=\dimen166
+\pst@dimh=\dimen167
+\pst@dimm=\dimen168
+\pst@dimn=\dimen169
+\pst@dimo=\dimen170
+\pst@dimp=\dimen171
+\pst@hbox=\box50
+\pst@ibox=\box51
+\pst@boxg=\box52
+\pst@cnta=\count277
+\pst@cntb=\count278
+\pst@cntc=\count279
+\pst@cntd=\count280
+\pst@cntg=\count281
+\pst@cnth=\count282
+\pst@cntm=\count283
+\pst@cntn=\count284
+\pst@cnto=\count285
+\pst@cntp=\count286
+\@zero=\count287
+\pst@toks=\toks35
+(/usr/share/texlive/texmf-dist/tex/generic/pstricks/pstricks.con)
+\psunit=\dimen172
+\psxunit=\dimen173
+\psyunit=\dimen174
+\pst@C@@rType=\count288
+\pslinewidth=\dimen175
+\psk@startLW=\dimen176
+\psk@endLW=\dimen177
+\pst@customdefs=\toks36
+\pslinearc=\dimen178
+\pst@symbolStep=\dimen179
+\pst@symbolWidth=\dimen180
+\pst@symbolLinewidth=\dimen181
+\everypsbox=\toks37
+\psframesep=\dimen182
+\pslabelsep=\dimen183
+\sh@wgridXunit=\dimen184
+\sh@wgridYunit=\dimen185
+\pst@shift=\dimen186
+)
+File: pstricks.tex 2019/05/11 v2.97 `PSTricks' (tvz,hv)
+
+(/usr/share/texlive/texmf-dist/tex/generic/pstricks/pst-fp.tex)
+File: pst-fp.tex 2019/05/11 v2.97 `PST-fp' (hv)
+)
+\ppf@output=\toks38
+
+(/usr/share/texmf/tex/latex/preview/preview.sty
+Package: preview 2017/04/24 11.91 (AUCTeX/preview-latex)
+\pr@snippet=\count289
+\pr@box=\box53
+\pr@output=\toks39
+)
+(/usr/share/texlive/texmf-dist/tex/latex/graphics-def/dvips.def
+File: dvips.def 2017/06/20 v3.1d Graphics/color driver for dvips
+)
+(/usr/share/texlive/texmf-dist/tex/latex/environ/environ.sty
+Package: environ 2014/05/04 v0.3 A new way to define environments
+
+(/usr/share/texlive/texmf-dist/tex/latex/trimspaces/trimspaces.sty
+Package: trimspaces 2009/09/17 v1.1 Trim spaces around a token list
+))))
+\largfigpp=\skip61
+\largfigk=\skip62
+\largfigp=\skip63
+\largfign=\skip64
+\largfigm=\skip65
+\largfigt=\skip66
+\largfigi=\skip67
+\largfigg=\skip68
+\largleg=\skip69
+
+(/usr/share/texlive/texmf-dist/tex/latex/l3backend/l3backend-pdfmode.def
+File: l3backend-pdfmode.def 2020-02-03 L3 backend support: PDF mode
+\l__kernel_color_stack_int=\count290
+\l__pdf_internal_box=\box54
+)
+(./hercule.aux
+
+LaTeX Warning: Label `tab_capteur' multiply defined.
+
+)
+\openout1 = `hercule.aux'.
+
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 73.
+LaTeX Font Info:    ... okay on input line 73.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 73.
+LaTeX Font Info:    ... okay on input line 73.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 73.
+LaTeX Font Info:    ... okay on input line 73.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 73.
+LaTeX Font Info:    ... okay on input line 73.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 73.
+LaTeX Font Info:    ... okay on input line 73.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 73.
+LaTeX Font Info:    ... okay on input line 73.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 73.
+LaTeX Font Info:    ... okay on input line 73.
+ (/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
+[Loading MPS to PDF converter (version 2006.09.02).]
+\scratchcounter=\count291
+\scratchdimen=\dimen187
+\scratchbox=\box55
+\nofMPsegments=\count292
+\nofMParguments=\count293
+\everyMPshowfont=\toks40
+\MPscratchCnt=\count294
+\MPscratchDim=\dimen188
+\MPnumerator=\count295
+\makeMPintoPDFobject=\count296
+\everyMPtoPDFconversion=\toks41
+)
+LaTeX Info: Redefining \celsius on input line 73.
+Package gensymb Info: Faking symbols for \degree and \celsius on input line 73.
+
+
+
+Package gensymb Warning: Not defining \perthousand.
+
+LaTeX Info: Redefining \ohm on input line 73.
+Package gensymb Info: Using \Omega for \ohm on input line 73.
+
+Package gensymb Warning: Not defining \micro.
+
+Preview: Fontsize 12pt
+Preview: PDFoutput 1
+
+LaTeX Font Warning: Font shape `T1/cmr/bx/n' in size <16> not available
+(Font)              size <17.28> substituted on input line 89.
+
+(./hercule.toc
+
+LaTeX Font Warning: Font shape `T1/cmr/m/scit' undefined
+(Font)              using `T1/cmr/m/it' instead on input line 19.
+
+)
+\tf@toc=\write3
+\openout3 = `hercule.toc'.
+
+LaTeX Font Info:    Trying to load font information for T1+phv on input line 93
+.
+ (/usr/share/texlive/texmf-dist/tex/latex/psnfss/t1phv.fd
+File: t1phv.fd 2001/06/04 scalable font definitions for T1/phv.
+)
+LaTeX Font Info:    Trying to load font information for T1+ppl on input line 93
+.
+
+(/usr/share/texlive/texmf-dist/tex/latex/psnfss/t1ppl.fd
+File: t1ppl.fd 2001/06/04 font definitions for T1/ppl.
+)
+LaTeX Font Info:    Font shape `T1/ppl/bx/it' in size <12> not available
+(Font)              Font shape `T1/ppl/b/it' tried instead on input line 93.
+
+
+Package Fancyhdr Warning: \headheight is too small (42.67912pt): 
+Make it at least 44.99051pt.
+We now make it that large for the rest of the document.
+This may cause the page layout to be inconsistent, however.
+
+[547{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}
+
+
+Non-PDF special ignored!
+<special> ps: /pssetRGBcolor /setrgbcolor load def /pssetCMYKcolor /setcmyk...
+Non-PDF special ignored!
+<special> ps:tx@Dict begin  gsave STV CP T /ps@rot 0 def grestore  end
+Non-PDF special ignored!
+<special> ps:tx@Dict begin  gsave STV CP T /ps@refangle 0.  def grestore  e...
+] [548
+
+]
+Underfull \hbox (badness 10000) in paragraph at lines 104--107
+
+ []
+
+<hercule-pics.pdf, id=18, page=1, 185.69376pt x 216.81pt>
+File: hercule-pics.pdf Graphic file (type pdf)
+<use hercule-pics.pdf, page 1>
+Package pdftex.def Info: hercule-pics.pdf , page1 used on input line 136.
+(pdftex.def)             Requested size: 185.6933pt x 216.80946pt.
+<hercule-pics.pdf, id=19, page=2, 184.69pt x 231.86626pt>
+File: hercule-pics.pdf Graphic file (type pdf)
+<use hercule-pics.pdf, page 2>
+Package pdftex.def Info: hercule-pics.pdf , page2 used on input line 142.
+(pdftex.def)             Requested size: 184.68953pt x 231.86568pt.
+[549] [550 <./hercule-pics.pdf> <./hercule-pics.pdf>] [551
+
+] [552]
+LaTeX Font Info:    Trying to load font information for T1+cmtt on input line 2
+93.
+
+(/usr/share/texlive/texmf-dist/tex/latex/base/t1cmtt.fd
+File: t1cmtt.fd 2019/12/16 v2.5j Standard LaTeX font definitions
+)
+<hercule-pics.pdf, id=63, page=3, 389.455pt x 315.1775pt>
+File: hercule-pics.pdf Graphic file (type pdf)
+<use hercule-pics.pdf, page 3>
+Package pdftex.def Info: hercule-pics.pdf , page3 used on input line 301.
+(pdftex.def)             Requested size: 389.45404pt x 315.17673pt.
+ [553 <./hercule-pics.pdf>]
+<hercule-pics.pdf, id=73, page=4, 332.24126pt x 275.0275pt>
+File: hercule-pics.pdf Graphic file (type pdf)
+<use hercule-pics.pdf, page 4>
+Package pdftex.def Info: hercule-pics.pdf , page4 used on input line 314.
+(pdftex.def)             Requested size: 332.24043pt x 275.02682pt.
+ [554 <./hercule-pics.pdf>]
+Underfull \hbox (badness 10000) in paragraph at lines 364--366
+
+ []
+
+[555] [556]
+Overfull \hbox (13.19919pt too wide) in paragraph at lines 488--489
+\T1/cmr/m/n/12 un-sat-is-fac-tory re-sults. []NOTE RENUDA, HOPE-FULLY THIS IS N
+O LONGER
+ []
+
+[557]
+LaTeX Font Info:    Font shape `T1/cmtt/bx/n' in size <12> not available
+(Font)              Font shape `T1/cmtt/m/n' tried instead on input line 535.
+ [558]
+Underfull \hbox (badness 1454) in paragraph at lines 573--573
+[]\T1/cmr/m/n/12 Order for the in-te-gra-tion
+ []
+
+
+Underfull \hbox (badness 2762) in paragraph at lines 574--574
+[]\T1/cmr/m/n/12 Particle tur-bu-lent dis-per-
+ []
+
+[559] [560]
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+<hercule-pics.pdf, id=102, page=5, 295.1025pt x 356.33125pt>
+File: hercule-pics.pdf Graphic file (type pdf)
+<use hercule-pics.pdf, page 5>
+Package pdftex.def Info: hercule-pics.pdf , page5 used on input line 717.
+(pdftex.def)             Requested size: 295.10176pt x 356.33037pt.
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+<./FIGURES/RESULTS_CS602/probes_MONO-RijLRR.pdf, id=103, 299.1175pt x 361.35pt>
+
+File: ./FIGURES/RESULTS_CS602/probes_MONO-RijLRR.pdf Graphic file (type pdf)
+<use ./FIGURES/RESULTS_CS602/probes_MONO-RijLRR.pdf>
+Package pdftex.def Info: ./FIGURES/RESULTS_CS602/probes_MONO-RijLRR.pdf  used o
+n input line 724.
+(pdftex.def)             Requested size: 398.33858pt x 481.25111pt.
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+<./FIGURES/RESULTS_CS602/probes_DIPH-STD-RijLRR.pdf, id=104, 298.11375pt x 361.
+35pt>
+File: ./FIGURES/RESULTS_CS602/probes_DIPH-STD-RijLRR.pdf Graphic file (type pdf
+)
+<use ./FIGURES/RESULTS_CS602/probes_DIPH-STD-RijLRR.pdf>
+Package pdftex.def Info: ./FIGURES/RESULTS_CS602/probes_DIPH-STD-RijLRR.pdf  us
+ed on input line 740.
+(pdftex.def)             Requested size: 398.33858pt x 482.86113pt.
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+<./FIGURES/RESULTS_CS602/probes_DIPH-CPL-RijLRR.pdf, id=105, 298.11375pt x 361.
+35pt>
+File: ./FIGURES/RESULTS_CS602/probes_DIPH-CPL-RijLRR.pdf Graphic file (type pdf
+)
+<use ./FIGURES/RESULTS_CS602/probes_DIPH-CPL-RijLRR.pdf>
+Package pdftex.def Info: ./FIGURES/RESULTS_CS602/probes_DIPH-CPL-RijLRR.pdf  us
+ed on input line 747.
+(pdftex.def)             Requested size: 398.33858pt x 482.86113pt.
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[561]
+<./FIGURES/RESULTS_CS602/Number_of_particles.pdf, id=109, 306.14375pt x 116.435
+pt>
+File: ./FIGURES/RESULTS_CS602/Number_of_particles.pdf Graphic file (type pdf)
+<use ./FIGURES/RESULTS_CS602/Number_of_particles.pdf>
+Package pdftex.def Info: ./FIGURES/RESULTS_CS602/Number_of_particles.pdf  used 
+on input line 760.
+(pdftex.def)             Requested size: 256.0748pt x 97.39787pt.
+ [562] [563 <./hercule-pics.pdf>] [564 <./FIGURES/RESULTS_CS602/probes_MONO-Rij
+LRR.pdf>] [565 <./FIGURES/RESULTS_CS602/probes_DIPH-STD-RijLRR.pdf>]
+[566 <./FIGURES/RESULTS_CS602/probes_DIPH-CPL-RijLRR.pdf>] [567 <./FIGURES/RESU
+LTS_CS602/Number_of_particles.pdf>]
+<./FIGURES/RESULTS_CS602/Axial_profile_MONO.pdf, id=234, 317.185pt x 347.2975pt
+>
+File: ./FIGURES/RESULTS_CS602/Axial_profile_MONO.pdf Graphic file (type pdf)
+<use ./FIGURES/RESULTS_CS602/Axial_profile_MONO.pdf>
+Package pdftex.def Info: ./FIGURES/RESULTS_CS602/Axial_profile_MONO.pdf  used o
+n input line 777.
+(pdftex.def)             Requested size: 369.88582pt x 405.03279pt.
+ [568
+
+ <./FIGURES/RESULTS_CS602/Axial_profile_MONO.pdf>]
+<./FIGURES/RESULTS_CS602/Radial_profile_MONO.pdf, id=264, 304.13625pt x 328.226
+26pt>
+File: ./FIGURES/RESULTS_CS602/Radial_profile_MONO.pdf Graphic file (type pdf)
+<use ./FIGURES/RESULTS_CS602/Radial_profile_MONO.pdf>
+Package pdftex.def Info: ./FIGURES/RESULTS_CS602/Radial_profile_MONO.pdf  used 
+on input line 787.
+(pdftex.def)             Requested size: 398.33858pt x 429.90442pt.
+ [569 <./FIGURES/RESULTS_CS602/Radial_profile_MONO.pdf>]
+<./FIGURES/RESULTS_CS602/Axial_profile_DIPH.pdf, id=291, 317.185pt x 347.2975pt
+>
+File: ./FIGURES/RESULTS_CS602/Axial_profile_DIPH.pdf Graphic file (type pdf)
+<use ./FIGURES/RESULTS_CS602/Axial_profile_DIPH.pdf>
+Package pdftex.def Info: ./FIGURES/RESULTS_CS602/Axial_profile_DIPH.pdf  used o
+n input line 807.
+(pdftex.def)             Requested size: 369.88582pt x 405.03279pt.
+
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+<./FIGURES/RESULTS_CS602/Radial_profile_DIPH.pdf, id=292, 304.13625pt x 328.226
+26pt>
+File: ./FIGURES/RESULTS_CS602/Radial_profile_DIPH.pdf Graphic file (type pdf)
+<use ./FIGURES/RESULTS_CS602/Radial_profile_DIPH.pdf>
+Package pdftex.def Info: ./FIGURES/RESULTS_CS602/Radial_profile_DIPH.pdf  used 
+on input line 814.
+(pdftex.def)             Requested size: 398.33858pt x 429.90442pt.
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+<./FIGURES/RESULTS_CS602/Radial_profile_mean_axial_vel_part_DIPH.pdf, id=293, 3
+10.15875pt x 328.22626pt>
+File: ./FIGURES/RESULTS_CS602/Radial_profile_mean_axial_vel_part_DIPH.pdf Graph
+ic file (type pdf)
+<use ./FIGURES/RESULTS_CS602/Radial_profile_mean_axial_vel_part_DIPH.pdf>
+Package pdftex.def Info: ./FIGURES/RESULTS_CS602/Radial_profile_mean_axial_vel_
+part_DIPH.pdf  used on input line 834.
+(pdftex.def)             Requested size: 398.33858pt x 421.54051pt.
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+<./FIGURES/RESULTS_CS602/Radial_profile_mean_radial_vel_part_DIPH.pdf, id=294, 
+319.1925pt x 328.22626pt>
+File: ./FIGURES/RESULTS_CS602/Radial_profile_mean_radial_vel_part_DIPH.pdf Grap
+hic file (type pdf)
+<use ./FIGURES/RESULTS_CS602/Radial_profile_mean_radial_vel_part_DIPH.pdf>
+Package pdftex.def Info: ./FIGURES/RESULTS_CS602/Radial_profile_mean_radial_vel
+_part_DIPH.pdf  used on input line 841.
+(pdftex.def)             Requested size: 398.33858pt x 409.61569pt.
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+<./FIGURES/RESULTS_CS602/Radial_profile_mean_axial_flu_vel_part_DIPH.pdf, id=29
+5, 314.17375pt x 328.22626pt>
+File: ./FIGURES/RESULTS_CS602/Radial_profile_mean_axial_flu_vel_part_DIPH.pdf G
+raphic file (type pdf)
+<use ./FIGURES/RESULTS_CS602/Radial_profile_mean_axial_flu_vel_part_DIPH.pdf>
+Package pdftex.def Info: ./FIGURES/RESULTS_CS602/Radial_profile_mean_axial_flu_
+vel_part_DIPH.pdf  used on input line 848.
+(pdftex.def)             Requested size: 398.33858pt x 416.1766pt.
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+<./FIGURES/RESULTS_CS602/Radial_profile_mean_radial_flu_vel_part_DIPH.pdf, id=2
+96, 310.15875pt x 328.22626pt>
+File: ./FIGURES/RESULTS_CS602/Radial_profile_mean_radial_flu_vel_part_DIPH.pdf 
+Graphic file (type pdf)
+<use ./FIGURES/RESULTS_CS602/Radial_profile_mean_radial_flu_vel_part_DIPH.pdf>
+Package pdftex.def Info: ./FIGURES/RESULTS_CS602/Radial_profile_mean_radial_flu
+_vel_part_DIPH.pdf  used on input line 855.
+(pdftex.def)             Requested size: 398.33858pt x 421.54051pt.
+
+LaTeX Warning: `h' float specifier changed to `ht'.
+
+[570
+
+] [571 <./FIGURES/RESULTS_CS602/Axial_profile_DIPH.pdf>] [572 <./FIGURES/RESULT
+S_CS602/Radial_profile_DIPH.pdf>] [573 <./FIGURES/RESULTS_CS602/Radial_profile_
+mean_axial_vel_part_DIPH.pdf>] [574 <./FIGURES/RESULTS_CS602/Radial_profile_mea
+n_radial_vel_part_DIPH.pdf>] [575 <./FIGURES/RESULTS_CS602/Radial_profile_mean_
+axial_flu_vel_part_DIPH.pdf>] [576 <./FIGURES/RESULTS_CS602/Radial_profile_mean
+_radial_flu_vel_part_DIPH.pdf>] [577
+
+] [578
+
+] (./hercule.aux)
+
+LaTeX Font Warning: Size substitutions with differences
+(Font)              up to 1.28pt have occurred.
+
+
+LaTeX Warning: There were multiply-defined labels.
+
+ ) 
+Here is how much of TeX's memory you used:
+ 11167 strings out of 483154
+ 190503 string characters out of 5965023
+ 448484 words of memory out of 5000000
+ 25926 multiletter control sequences out of 15000+600000
+ 564699 words of font info for 85 fonts, out of 8000000 for 9000
+ 14 hyphenation exceptions out of 8191
+ 54i,21n,59p,1200b,534s stack positions out of 5000i,500n,10000p,200000b,80000s
+ </home/yohann-ws2/.texlive2019/texmf-var/fonts/pk/ljfour/jknappen/ec/ectt120
+0.600pk> </home/yohann-ws2/.texlive2019/texmf-var/fonts/pk/ljfour/jknappen/ec/t
+crm1200.600pk>{/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc} </hom
+e/yohann-ws2/.texlive2019/texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm1000.600pk>
+ </home/yohann-ws2/.texlive2019/texmf-var/fonts/pk/ljfour/jknappen/ec/ecrm0700.
+600pk> </home/yohann-ws2/.texlive2019/texmf-var/fonts/pk/ljfour/jknappen/ec/ecr
+m0800.600pk> </home/yohann-ws2/.texlive2019/texmf-var/fonts/pk/ljfour/jknappen/
+ec/ecbx2074.600pk> </home/yohann-ws2/.texlive2019/texmf-var/fonts/pk/ljfour/jkn
+appen/ec/ecti1200.600pk> </home/yohann-ws2/.texlive2019/texmf-var/fonts/pk/ljfo
+ur/jknappen/ec/eccc1200.600pk> </home/yohann-ws2/.texlive2019/texmf-var/fonts/p
+k/ljfour/jknappen/ec/ecrm1200.600pk> </home/yohann-ws2/.texlive2019/texmf-var/f
+onts/pk/ljfour/jknappen/ec/ecbx2488.600pk> </home/yohann-ws2/.texlive2019/texmf
+-var/fonts/pk/ljfour/jknappen/ec/ecrm1095.600pk> </home/yohann-ws2/.texlive2019
+/texmf-var/fonts/pk/ljfour/jknappen/ec/ecbx1200.600pk></usr/share/texlive/texmf
+-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/share/texlive/texmf-dist/
+fonts/type1/public/amsfonts/cm/cmex10.pfb></usr/share/texlive/texmf-dist/fonts/
+type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist/fonts/type1/
+public/amsfonts/cm/cmmi12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public
+/amsfonts/cm/cmmi8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfon
+ts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/c
+mr12.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr8.pfb
+></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb></usr
+/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/share/
+texlive/texmf-dist/fonts/type1/urw/helvetic/uhvb8a.pfb></usr/share/texlive/texm
+f-dist/fonts/type1/urw/helvetic/uhvr8a.pfb></usr/share/texlive/texmf-dist/fonts
+/type1/urw/palatino/uplbi8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/
+palatino/uplri8a.pfb>
+Output written on hercule.pdf (32 pages, 2971392 bytes).
+PDF statistics:
+ 957 PDF objects out of 1000 (max. 8388607)
+ 385 compressed objects within 4 object streams
+ 0 named destinations out of 1000 (max. 500000)
+ 91 words of extra memory for PDF output out of 10000 (max. 10000000)
+
