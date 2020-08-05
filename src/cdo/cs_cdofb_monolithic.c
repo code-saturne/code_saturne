@@ -1081,12 +1081,15 @@ _steady_build(const cs_navsto_param_t      *nsp,
               const cs_lnum_t               forced_ids[],
               cs_cdofb_monolithic_t        *sc)
 {
-  assert(dir_values !=  NULL);  /* Sanity check */
-
   /* Retrieve shared structures */
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_time_step_t  *ts = cs_shared_time_step;
+
+#if defined(DEBUG) && !defined(NDEBUG)
+  if (quant->n_b_faces > 0)
+    assert(dir_values != NULL);
+#endif
 
   /* Retrieve high-level structures */
   cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
@@ -1265,8 +1268,6 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
                       const cs_lnum_t           forced_ids[],
                       cs_cdofb_monolithic_t    *sc)
 {
-  assert(dir_values !=  NULL);  /* Sanity check */
-
   /* Retrieve high-level structures */
   cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
   cs_equation_t  *mom_eq = cc->momentum;
@@ -1278,6 +1279,11 @@ _implicit_euler_build(const cs_navsto_param_t  *nsp,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_time_step_t *ts = cs_shared_time_step;
+
+#if defined(DEBUG) && !defined(NDEBUG)
+  if (quant->n_b_faces > 0)
+    assert(dir_values != NULL);
+#endif
 
   /* Initialize the matrix and all its related structures needed during
    * the assembly step */
@@ -1474,8 +1480,6 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
                     const cs_lnum_t           forced_ids[],
                     cs_cdofb_monolithic_t    *sc)
 {
-  assert(dir_values !=  NULL);  /* Sanity check */
-
   /* Retrieve high-level structures */
   cs_navsto_monolithic_t *cc = (cs_navsto_monolithic_t *)sc->coupling_context;
   cs_equation_t  *mom_eq = cc->momentum;
@@ -1487,6 +1491,11 @@ _theta_scheme_build(const cs_navsto_param_t  *nsp,
   const cs_cdo_connect_t  *connect = cs_shared_connect;
   const cs_cdo_quantities_t  *quant = cs_shared_quant;
   const cs_time_step_t *ts = cs_shared_time_step;
+
+#if defined(DEBUG) && !defined(NDEBUG)
+  if (quant->n_b_faces > 0)
+    assert(dir_values != NULL);
+#endif
 
   /* Initialize the matrix and all its related structures needed during
    * the assembly step */
