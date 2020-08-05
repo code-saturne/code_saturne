@@ -1,0 +1,178 @@
+%-------------------------------------------------------------------------------
+
+% This file is part of Code_Saturne, a general-purpose CFD tool.
+%
+% Copyright (C) 1998-2017 EDF S.A.
+%
+% This program is free software; you can redistribute it and/or modify it under
+% the terms of the GNU General Public License as published by the Free Software
+% Foundation; either version 2 of the License, or (at your option) any later
+% version.
+%
+% This program is distributed in the hope that it will be useful, but WITHOUT
+% ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+% FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+% details.
+%
+% You should have received a copy of the GNU General Public License along with
+% this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+% Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+%-------------------------------------------------------------------------------
+
+% Name of classical tools of the Code_Saturne environment
+% (note that Code_Saturne itself is defined in csvers.tex)
+%
+\newcommand{\ensight}{EnSight\xspace}
+\newcommand{\ensightg}{EnSight Gold\xspace}
+\newcommand{\fluent}{FLUENT\xspace}
+\newcommand{\bft}{BFT\xspace}
+\newcommand{\catalyst}{Catalyst\xspace}
+\newcommand{\fvm}{FVM\xspace}
+\newcommand{\gambit}{GAMBIT\xspace}
+\newcommand{\gmsh}{Gmsh\xspace}
+\newcommand{\harpoon}{Harpoon\xspace}
+\newcommand{\hexpress}{\emph{HexPress}\xspace}
+\newcommand{\icemcfd}{ICEM~CFD\xspace}
+\newcommand{\ideas}{I-deas\xspace}
+\newcommand{\med}{MED\xspace}
+\newcommand{\metis}{M\textsc{etis}\xspace}
+\newcommand{\parmetis}{P\textsc{ar}M\textsc{etis}\xspace}
+\newcommand{\nopo}{{\sc nopo}\xspace}
+\newcommand{\paraview}{ParaView\xspace}
+\newcommand{\pcs}{Preprocessor\xspace}
+\newcommand{\salome}{SALOME\xspace}
+\newcommand{\scotch}{S\textsc{cotch}\xspace}
+\newcommand{\ptscotch}{PT-S\textsc{cotch}\xspace}
+\newcommand{\simail}{S\textsc{IMAIL}\xspace}
+\newcommand{\starcd}{\textbf{STAR-CD}\xspace}
+\newcommand{\starccmp}{\textbf{STAR-CCM+}\xspace}
+\newcommand{\syrthes}{SYRTHES\xspace}
+\newcommand{\vtk}{VTK\xspace}
+\newcommand{\CS}{%
+  {\fontfamily{ppl}\fontshape{it}\selectfont Code\_Saturne}\xspace}
+\newcommand{\SYR}{%
+  {SYRTHES}\xspace}
+\newcommand{\vnvitem}{\item[\hspace{1cm} -]}
+\newcommand{\vnvcase}[1][]{\item[#1]}
+\newcommand{\IMAGES}{/IMAGES}
+%
+% Mathematical operators (and other useful related macros)
+%
+\newcommand{\dive}{\text{div}\,}
+\newcommand{\divs}{\text{div}\,}
+\newcommand{\divv}{\underline{\text{div}}\,}
+\newcommand{\divt}{\underline{\underline{\text{div}}}\,}
+\newcommand{\grad}{\underline{\nabla}}
+\newcommand{\ggrad}{\text{g}\underline{\underline{\text{rad}}}\,}
+\newcommand{\gradv}{\underline{\nabla}}
+\newcommand{\gradt}{\underline{\underline{\nabla}}}
+\newcommand{\gradtt}{\underline{\underline{\underline{\nabla}}}}
+\newcommand{\mat}[1]{\underline{\textrm{#1}}}
+\newcommand{\matt}[1]{\underline{\underline{\textrm{#1}}}}
+\newcommand{\rot}{\underline{\text{rot}}\ }
+\newcommand{\vect}[1]{\underline{#1}}
+\newcommand{\tens}[1]{\underline{\underline{#1}}}
+\newcommand{\transpose}[1]{#1^T}
+\newcommand{\symmetric}[1]{#1^S}
+\newcommand{\trace}{tr}
+\newcommand{\deviator}[1]{#1^D}
+\newcommand{\norm}[1]{\left| #1 \right|}
+%
+% Discretization
+%
+\newcommand{\Facei}[1]{\mathcal{F}^{int}_{#1}} % set of internal faces
+\newcommand{\Faceb}[1]{\mathcal{F}^{ext}_{#1}} %set of boundary faces
+\newcommand{\Face}[1]{\mathcal{F}_{#1}} % set of faces
+\newcommand{\face}{{f}} % face
+\newcommand{\fij}{{f_{ij}}} % internal face
+\newcommand{\fib}{{f_{b}}} % boundary face
+\newcommand{\iface}{{f_\celli}} % orientated face
+\renewcommand{\ij}{{ij}} % orientated internal face value ("K, sigma" in sushi)
+\newcommand{\ji}{{ji}} % orientated internal face value ("L, sigma" in sushi)
+\newcommand{\ib}{{ib}} % orientated internal face value ("K, sigma" in sushi)
+\newcommand{\celli}{i} % name of the current cell
+\newcommand{\centi}{I} % center of the current cell
+\newcommand{\centip}{{I^\prime}} % orthogonal center of the current cell
+\newcommand{\ipf}{{I^\prime}} % orthogonal center indice of the current cell
+\newcommand{\vol}[1]{\Omega_{#1}} % Volume of the cell #1 (K itself in sushi)
+\newcommand{\cellj}{j} % name of the neighbouring face
+\newcommand{\centj}{J} % center of the neighbouring face
+\newcommand{\centjp}{{J^\prime}} % orthogonal center of the neighbouring cell
+\newcommand{\jpf}{{J^\prime}} % orthogonal center indice of the neighbouring cell
+\newcommand{\centf}{F} % center of the face
+\newcommand{\cento}{O} % intersection between the cell centers and the face
+%
+\newcommand{\dd}{\mathrm{d}} % total derivative
+\newcommand{\der}[2]{\dfrac{\partial #1}{\partial #2}}
+\newcommand{\DP}[1]{\dfrac{\dd #1}{\dd t}} % lagrangian derivative
+%
+\newcommand{\varia}{Y} % variable name
+\newcommand{\variav}{\vect{v}} % vectorial variable name
+\newcommand{\variat}{\tens{t}} % vectorial variable name
+\newcommand{\ncell}{{N_{cell}}} % number of cells
+\newcommand{\nsys}{{\mathtt{n_{sys}}}} % number of cells
+%
+\newcommand{\Neigh}[1]{Neigh\left(#1\right)}
+\newcommand{\Bound}[1]{Bound\left(#1\right)}
+%
+\newcommand{\doxygenfile}[2]{\href{run:./doxygen/src/#1}{#2}}
+%
+\newcommand{\bm}[1]{\text{\boldmath $#1$ \unboldmath} \! \!}
+\newcommand{\comp}[1]{\textrm{#1}}
+\newcommand{\degresC}{{$^\circ$C}\xspace}
+\newcommand{\degres}{^\circ}
+% TODO remove
+\newcommand{\etape}[1]{\vspace{0.3cm}$\bullet\ ${\bf #1}\\}
+%
+\newcommand{\fort}[1]{\texttt{#1}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\ind}[1]{\text{$_{#1}$}}
+\newcommand{\Max}{\text{Max}}
+\newcommand{\Min}{\text{Min}}
+\newcommand{\nl}{\vspace{1ex}}
+% TODO remove
+\newcommand{\var}[1]{\ensuremath{\text{\texttt{#1}}}}
+%
+\newcommand{\sousti}[2]{
+\vbox{{\bf Author:}\hspace*{5pt} #1\hfill{\bf Last update:}\hspace*{5pt} #2}
+}
+
+\newcommand{\keywords}[1]{
+{\parbox[t]{\linewidth}{{\bf Key-words:}\hspace*{5pt} #1}}
+}
+
+
+% Definition of variables and keywords (used in the different tables)
+%
+\newbox\tempbox
+\newcommand{\motcle}[7]{%
+   \noindent
+   \setbox\tempbox\hbox{\hspace*{2.5cm}}
+   \makebox[2.5cm][l]{\tt #1}\index{#1}\makebox[1.3cm][l]{#2}\makebox[6.cm][l]{#3}%
+   \makebox[4.cm][l]{[#4]}#5\hspace{1cm}#6\\
+   \hangindent\wd\tempbox\quad\ignorespaces#7\bigskip}
+\newcommand{\motcleb}[7]{%
+   \noindent
+   \setbox\tempbox\hbox{\hspace*{2.5cm}}
+   \makebox[2.5cm][l]{\tt \bf #1}\index{#1}\makebox[1.3cm][l]{#2}\makebox[6.cm][l]{#3}%
+   \makebox[4.cm][l]{[#4]}#5\hspace{1cm}#6\\
+   \hangindent\wd\tempbox\quad\ignorespaces#7\bigskip}
+%
+\newcommand{\variab}[4]{%
+       \setbox\tempbox\hbox{ifacel [e]: }
+       \hangindent\wd\tempbox\noindent{{\tt #2\index{#1}} [#3]:\quad}\ignorespaces#4.}
+\newcommand{\variabsize}[2]{%
+   \noindent
+   \makebox[.12\linewidth][l]{\tt #1:}\index{#1}\parbox[t]{.88\linewidth}{#2.}}
+\newcommand{\variablist}[4]{%
+       \setbox\tempbox\hbox{ifacel [e]: }
+       \hangindent\wd\tempbox\noindent{{\tt #2\index{#1}} [#3]:\quad}\ignorespaces#4\quad}
+\newcommand{\envvar}[1]{\medskip\noindent{\ttfamily \large #1}}
+%
+% Other useful macros (for \raggedright in tabular, for a Unix tilde)
+%
+\newcommand{\PreserveBackslash}[1]{\let\temp=\\#1\let\\=\temp}
+\newcommand{\tildeunix}{{\huge$_{_{\widetilde{\ }}}$}\hspace*{0.1mm}}
+
+\newcommand{\minititre}[1]{\bigskip\noindent \underline{\sc #1}\\}
