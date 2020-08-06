@@ -194,12 +194,9 @@ _lages1(cs_real_t           dtp,
   const cs_real_3_t *cvar_vel
     = (const cs_real_3_t *)(extra->vel->vals[_prev_id]);
 
-  /* Integrate SDE's over particles
-   * Note: new particles will be integrated at the next time step, otherwise
-   * positions might be overwritten */
+  /* Integrate SDE's over particles */
 
-  cs_lnum_t n_particles_prev = p_set->n_particles - p_set->n_part_new;
-  for (cs_lnum_t ip = 0; ip < n_particles_prev; ip++) {
+  for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
     unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
@@ -684,8 +681,7 @@ _lages2(cs_real_t           dtp,
   /* --> Compute tau_p*A_p and II*TL+<u> :
    *     -------------------------------------*/
 
-  cs_lnum_t n_particles_prev = p_set->n_particles - p_set->n_part_new;
-  for (cs_lnum_t ip = 0; ip < n_particles_prev; ip++) {
+  for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
     if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
         continue;
@@ -713,9 +709,8 @@ _lages2(cs_real_t           dtp,
 
   if (nor == 1) {
 
-    /* --> save tau_p^n */
-    cs_lnum_t n_particles_prev = p_set->n_particles - p_set->n_part_new;
-    for (cs_lnum_t ip = 0; ip < n_particles_prev; ip++) {
+    /* --> Save tau_p^n */
+    for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
       if (cs_lagr_particles_get_flag(p_set, ip, CS_LAGR_PART_FIXED))
         continue;
@@ -727,7 +722,7 @@ _lages2(cs_real_t           dtp,
     /* --> Save coupling */
     if (cs_glob_lagr_time_scheme->iilagr == CS_LAGR_TWOWAY_COUPLING) {
 
-      for (cs_lnum_t ip = 0; ip < n_particles_prev; ip++) {
+      for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
         unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
@@ -745,7 +740,7 @@ _lages2(cs_real_t           dtp,
     }
 
     /* Load terms at t = t_n : */
-    for (cs_lnum_t ip = 0; ip < n_particles_prev; ip++) {
+    for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
       unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
@@ -806,8 +801,7 @@ _lages2(cs_real_t           dtp,
 
     /* Compute Us */
 
-    cs_lnum_t n_particles_prev = p_set->n_particles - p_set->n_part_new;
-    for (cs_lnum_t ip = 0; ip < n_particles_prev; ip++) {
+    for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
       unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
@@ -2307,12 +2301,9 @@ _lagdep(cs_real_t           dtp,
   if (cs_lagr_stat_is_active(CS_LAGR_STAT_GROUP_TRACKING_EVENT))
     events = cs_lagr_event_set_boundary_interaction();
 
-  /* Loop on the particles
-   * Note: new particles will be integrated at the next time step, otherwise
-   * positions might be overwritten */
+  /* Loop on the particles */
 
-  cs_lnum_t n_particles_prev = p_set->n_particles - p_set->n_part_new;
-  for (cs_lnum_t ip = 0; ip < n_particles_prev; ip++) {
+  for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
 
     unsigned char *particle = p_set->p_buffer + p_am->extents * ip;
 
