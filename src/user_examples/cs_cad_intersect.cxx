@@ -174,7 +174,7 @@ _build_cell(const cs_mesh_t              *m,
 
   cs_lnum_t n_v = 0;
   std::map<cs_lnum_t, gp_Pnt>::iterator c_vtx_it;
-  BRepBuilderAPI_Sewing sew; // default tolerance: 1e-6
+  BRepBuilderAPI_Sewing sew(1e-6); // default tolerance: 1e-6
 
   for (cs_lnum_t j = 0; j < n_cell_faces; j++) {
 
@@ -415,6 +415,8 @@ _cad_intersect(const cs_mesh_t        *m,
   STEPControl_Reader reader;
   IFSelect_ReturnStatus status = reader.ReadFile(path);
   Interface_Static::SetCVal ("xstep.cascade.unit", "M");
+  Interface_Static::SetIVal("read.step.ideas", 1);
+  Interface_Static::SetIVal("read.step.nonmanifold", 1);
 
   if (status == IFSelect_RetDone) {
     bft_printf(_("\n"
@@ -463,9 +465,13 @@ _cad_intersect(const cs_mesh_t        *m,
     Bnd_Box bb;
     BRepBndLib::Add(cad_shape, bb);
     bb.Get(x_min, y_min, z_min, x_max, y_max, z_max);
+    GProp_GProps VProps;
+    BRepGProp::VolumeProperties(cad_shape, VProps, Standard_True);
+    cs_real_t cad_volume = VProps.Mass();
     bft_printf(_("    bounding box: [%g %g %g]\n"
-                 "                  [%g %g %g]\n"),
-               x_min, y_min, z_min, x_max, y_max, z_max);
+                 "                  [%g %g %g]\n"
+                 "    volume:       %g\n"),
+               x_min, y_min, z_min, x_max, y_max, z_max, cad_volume);
   }
 
   /* Extract cell->faces index for selected subset */
