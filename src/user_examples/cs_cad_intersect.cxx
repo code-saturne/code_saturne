@@ -71,6 +71,8 @@
 #include <BRepBuilderAPI_Sewing.hxx>
 #include <BRepBuilderAPI_MakeSolid.hxx>
 
+#include <BRepPrimAPI_MakeBox.hxx>
+
 #include <BRepAlgoAPI_Cut.hxx>
 #include <BRepAlgoAPI_Common.hxx>
 
@@ -135,6 +137,111 @@
 /*============================================================================
  * Private function definitions
  *============================================================================*/
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Update extents for one cell.
+ *
+ * \param[in]  m                       pointer to a cs_domain_t structure
+ * \param[in]  cell_id                 caller cell id
+ * \param[in]  n_cell_faces            number of faces for this cell
+ * \param[in]  n_cell_face_num         cell face numbers (1-based, sign orients)
+ * \param[in, out]  extents            extents
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_update_extents(const cs_mesh_t    *m,
+                cs_lnum_t           cell_id,
+                const cs_lnum_t     n_cell_faces,
+                const cs_lnum_t     cell_face_num[],
+                cs_real_t           extents[6])
+{
+  cs_lnum_t n_sub_f = 0;
+
+  const cs_lnum_t *f_vtx_idx, *f_vtx;
+
+  for (cs_lnum_t j = 0; j < n_cell_faces; j++) {
+
+    cs_lnum_t orient = cell_face_num[j] > 0 ? 1 : -1;
+    cs_lnum_t f_id = CS_ABS(cell_face_num[j]) - 1;
+    if (f_id < m->n_b_faces) {
+      f_vtx_idx = m->b_face_vtx_idx;
+      f_vtx = m->b_face_vtx_lst;
+    }
+    else {
+      f_vtx_idx = m->i_face_vtx_idx;
+      f_vtx = m->i_face_vtx_lst;
+      f_id -= m->n_b_faces;
+    }
+
+    cs_lnum_t f_s_id = f_vtx_idx[f_id];
+    cs_lnum_t f_e_id = f_vtx_idx[f_id+1];
+    cs_lnum_t n_f_v = f_e_id - f_s_id;
+
+    for (cs_lnum_t k = 0; k < n_f_v; k++) {
+      cs_lnum_t v_id = (orient > 0) ? f_vtx[f_s_id + k] : f_vtx[f_e_id -1 -k];
+      const cs_real_t *coo = m->vtx_coord + v_id*3;
+      for (cs_lnum_t l = 0; l < 3; l++) {
+        extents[l] = CS_MIN(extents[l], coo[l]);
+        extents[l+3] = CS_MAX(extents[l+3], coo[l]);
+      }
+    }
+
+  }
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Compute extents mesh selection.
+ *
+ * \param[in]   m                 pointer to a cs_domain_t structure
+ * \param[in]   n_cells           number of selected cells
+ * \param[in]   cell_ids          ids of selected cells
+ * \param[in]   n_cell_faces      number of faces for this cell
+ * \param[in]   n_cell_face_num   cell face numbers (1-based, sign orients)
+ * \param[out]  extents           extents
+ */
+/*----------------------------------------------------------------------------*/
+
+static void
+_bounding_box(const cs_mesh_t    *m,
+              cs_lnum_t           n_cells,
+              const cs_lnum_t     cell_ids[],
+              const cs_lnum_t     cell_face_idx[],
+              const cs_lnum_t     cell_face_num[],
+              TopoDS_Solid       &box)
+{
+  cs_real_t extents[6] = {HUGE_VAL, HUGE_VAL, HUGE_VAL,
+                          -HUGE_VAL, -HUGE_VAL, -HUGE_VAL};
+
+  for (cs_lnum_t i = 0; i < m->n_cells; i++) {
+
+    cs_lnum_t c_id = (cell_ids != NULL) ? cell_ids[i] : i;
+    cs_lnum_t s_id = cell_face_idx[i] -1;
+    cs_lnum_t e_id = cell_face_idx[i+1] -1;
+
+    _update_extents(m,
+                    c_id,
+                    e_id - s_id,
+                    cell_face_num + s_id,
+                    extents);
+
+  }
+
+  for (int i = 0; i < 3; i++) {
+    cs_real_t d = extents[i+3] - extents[i];
+    extents[i] -= d*0.01;
+    extents[i] += d*0.01;
+  }
+
+  gp_Pnt pnt1(extents[0], extents[1], extents[2]);
+  gp_Pnt pnt2(extents[3], extents[4], extents[5]);
+
+  BRepPrimAPI_MakeBox mb (pnt1, pnt2);
+  mb.Build();
+  box = mb.Solid();
+}
 
 /*----------------------------------------------------------------------------*/
 /*!
@@ -396,6 +503,9 @@ _cad_intersect(const cs_mesh_t        *m,
                cs_real_t               b_face_porosity[],
                cs_real_t               b_face_f_center[][3])
 {
+  if (n_cells < 1)
+    return;
+
   const cs_lnum_t n_cells_ext = m->n_cells_with_ghosts;
 
   cs_lnum_t  *cell_face_idx = NULL, *cell_face_num = NULL;
@@ -494,6 +604,26 @@ _cad_intersect(const cs_mesh_t        *m,
                                  c_restrict_id,
                                  &cell_face_idx,
                                  &cell_face_num);
+
+  /* Option (optimization):
+     use only part of shape within bounding box */
+
+  if (true) {
+    TopoDS_Solid   box;
+
+    _bounding_box(m,
+                  n_cells,
+                  cell_ids,
+                  cell_face_idx,
+                  cell_face_num,
+                  box);
+
+    BRepAlgoAPI_Common c = BRepAlgoAPI_Common(box, cad_shape);
+    c.Build();
+    if (c.IsDone()) {
+      cad_shape = c.Shape();
+    }
+  }
 
   /* Loop on identified cells */
 
