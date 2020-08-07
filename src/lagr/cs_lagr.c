@@ -1085,6 +1085,11 @@ cs_lagr_init_c_arrays(int          dim_cs_glob_lagr_source_terms[2],
   BFT_MALLOC(cs_glob_lagr_source_terms->st_val,
              cs_glob_lagr_dim->ntersl * cs_glob_mesh->n_cells_with_ghosts,
              cs_real_t);
+  cs_lnum_t _n_st_vals =   cs_glob_lagr_dim->ntersl
+                         * cs_glob_mesh->n_cells_with_ghosts;
+  cs_real_t *_st = cs_glob_lagr_source_terms->st_val;
+  for (cs_lnum_t i = 0; i < _n_st_vals; i++)
+    _st[i] = 0;
 
   *p_cs_glob_lagr_source_terms     = cs_glob_lagr_source_terms->st_val;
   dim_cs_glob_lagr_source_terms[0] = cs_glob_mesh->n_cells_with_ghosts;
