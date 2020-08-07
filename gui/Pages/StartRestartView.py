@@ -317,7 +317,10 @@ class StartRestartView(QWidget, Ui_StartRestartForm):
         self.lineEdit.setFrame(self.restart_path != '*')
 
         if rinfo:
-            self.lineEdit.setText(rinfo[0])
+            if self.restart_path == '*':
+                self.lineEdit.setText(rinfo[0])
+            else:
+                self.lineEdit.setText(self.restart_path)
             self.labelIteration.show()
             self.labelTime.show()
             self.lineEditIteration.show()
