@@ -79,6 +79,8 @@ Numerics and physical modelling:
 
 Architectural changes:
 
+- Add cs_array.c/cs_array.h for array utility functions.
+
 - For coupled cases, replace `coupling_parameters.py` file by settings
   in the top-level `run.cfg` (see Doxygen documentation for details).
   Cases must be updated manually.

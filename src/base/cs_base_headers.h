@@ -33,6 +33,7 @@
 #include "cs_1d_wall_thermal_check.h"
 #include "cs_ale.h"
 #include "cs_all_to_all.h"
+#include "cs_array.h"
 #include "cs_array_reduce.h"
 #include "cs_assert.h"
 #include "cs_base.h"

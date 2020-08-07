@@ -85,6 +85,7 @@ cs_1d_wall_thermal.h \
 cs_1d_wall_thermal_check.h \
 cs_ale.h \
 cs_all_to_all.h \
+cs_array.h \
 cs_array_reduce.h \
 cs_assert.h \
 cs_ast_coupling.h \
@@ -249,6 +250,7 @@ covofv.f90 \
 cs_1d_wall_thermal.c \
 cs_1d_wall_thermal_check.c \
 cs_ale.c \
+cs_array.c \
 cs_array_reduce.c \
 cs_ast_coupling.c \
 cs_base_fortran.c \
