@@ -51,6 +51,7 @@
 #include "bft_mem.h"
 #include "bft_printf.h"
 
+#include "cs_array.h"
 #include "cs_base.h"
 
 #include "cs_field.h"
@@ -1141,6 +1142,14 @@ cs_lagr_init_c_arrays(int          dim_cs_glob_lagr_source_terms[2],
   BFT_MALLOC(cs_glob_lagr_source_terms->st_val,
              cs_glob_lagr_dim->ntersl * cs_glob_mesh->n_cells_with_ghosts,
              cs_real_t);
+  for (cs_lnum_t i = 0; i < cs_glob_lagr_dim->ntersl; i++) {
+    cs_real_t *st =   cs_glob_lagr_source_terms->st_val
+                   + i*cs_glob_mesh->n_cells_with_ghosts;
+    cs_array_set_value_real(cs_glob_mesh->n_cells_with_ghosts,
+                            1,
+                            0,
+                            st);
+  }
 
   *p_cs_glob_lagr_source_terms     = cs_glob_lagr_source_terms->st_val;
   dim_cs_glob_lagr_source_terms[0] = cs_glob_mesh->n_cells_with_ghosts;
