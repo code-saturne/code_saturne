@@ -914,7 +914,7 @@ class MainView(object):
 
         if not open_editor:
             title = self.tr("Warning")
-            msg   = self.tr("Warning: you can only manage user files for a "\
+            msg   = self.tr("You can only manage user files for a "\
                             "code_saturne case with an xml file.")
             QMessageBox.warning(self, title, msg)
             return
@@ -956,7 +956,7 @@ class MainView(object):
 
         if not open_viewer:
             title = self.tr("Warning")
-            msg   = self.tr("Warning: you can only view log files for a "\
+            msg   = self.tr("You can only view log files for a "\
                             "code_saturne case with an xml file.")
             QMessageBox.warning(self, title, msg)
             return
@@ -1341,8 +1341,8 @@ class MainView(object):
 
         if not open_editor:
             title = self.tr("Warning")
-            msg   = self.tr("Warning: you can only manage coupling parameters "\
-                            "inside the run.cfg if you are editing a code_saturne "\
+            msg   = self.tr("You can only manage coupling parameters inside "\
+                            "the run.cfg if you are editing a code_saturne "\
                             "case. Otherwise launch code_saturne cplgui run.cfg")
 
             QMessageBox.warning(self, title, msg)
@@ -1357,7 +1357,7 @@ class MainView(object):
 
         if not open_editor:
             title = self.tr("Warning")
-            msg   = self.tr("Warning: could not find a run.cfg file")
+            msg   = self.tr("Could not find a top-level (coupling) run.cfg file")
             QMessageBox.warning(self, title, msg)
             return
 

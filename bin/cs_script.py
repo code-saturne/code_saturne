@@ -109,6 +109,7 @@ Topics:
   bdump
   compile
   config
+  cplgui
   create
   gui
   studymanagergui

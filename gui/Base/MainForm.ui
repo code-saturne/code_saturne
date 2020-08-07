@@ -42,7 +42,7 @@
      <x>0</x>
      <y>0</y>
      <width>717</width>
-     <height>30</height>
+     <height>19</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuO_ptions">
@@ -206,8 +206,8 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
-   <addaction name="runOrSubmitAction"/>
    <addaction name="editCouplingParametersAction"/>
+   <addaction name="runOrSubmitAction"/>
   </widget>
   <action name="fileOpenAction">
    <property name="icon">
