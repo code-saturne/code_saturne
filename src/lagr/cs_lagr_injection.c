@@ -1603,6 +1603,28 @@ cs_lagr_injection(int        time_id,
                                          CS_LAGR_COORDS);
             for (cs_lnum_t j = 0; j < 3; j++)
               p_coords_prev[j] = saved_coords[i][j];
+
+            /* Just after injection, compute the next particle position with
+             * a reduce integration time so as to simulate continuous injection
+             */
+            cs_real_t res_time = cs_lagr_particles_get_real(p_set, p_id,
+                                                            CS_LAGR_RESIDENCE_TIME);
+
+            if (res_time < 0) {
+
+              cs_real_t *p_coords
+                = cs_lagr_particles_attr_const(p_set,
+                                               p_id,
+                                               CS_LAGR_COORDS);
+              cs_real_t *p_vel =
+                cs_lagr_particles_attr(p_set, p_id, CS_LAGR_VELOCITY);
+              cs_real_t t_fraction = (cs_glob_lagr_time_step->dtp + res_time);
+
+              for (cs_lnum_t j = 0; j < 3; j++)
+                p_coords[j] = p_coords_prev[j] + t_fraction * p_vel[j];
+
+            }
+
           }
 
           BFT_FREE(saved_coords);
