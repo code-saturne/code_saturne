@@ -6,6 +6,10 @@ Release 6.2.0 (unreleased)
 
 User changes:
 
+- GUI: present volume and boundary conditions using sub-nodes in the
+  left-hand tree for the appropriate zones. This is a first step in
+  a change of zone setup presentation.
+
 - Volume mass injections can now be defined using zone and
   equation parameter based cs_equation_add_volume_mass_injection_*
   functions.

@@ -730,7 +730,6 @@ class MainView(object):
         if hasattr(self, 'case'):
             delattr(self, 'case')
 
-
     def loadFile(self, file_name=None):
         """
         Private method
@@ -1699,10 +1698,10 @@ class MainViewSaturne(QMainWindow, Ui_MainForm, MainView):
         self.case['current_tab'] = 0
         self.case['current_index'] = None
         return displaySelectedPage('Calculation environment',
-                                    self,
-                                    self.case,
-                                    stbar=self.statusbar,
-                                    tree=self.Browser)
+                                   self,
+                                   self.case,
+                                   stbar=self.statusbar,
+                                   tree=self.Browser)
 
 
     def displayCSManual(self):

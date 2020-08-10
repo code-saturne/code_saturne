@@ -70,7 +70,7 @@ log.setLevel(GuiParam.DEBUG)
 class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
     """
     """
-    def __init__(self, parent, case, stbar):
+    def __init__(self, parent, case, zone_name, stbar):
         """
         Constructor
         """
@@ -83,42 +83,23 @@ class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
         self.case.undoStopGlobal()
         self.parent = parent
 
-        self.mdl      = MainFieldsSourceTermsModel(self.case)
-        self.mfm      = MainFieldsModel(self.case)
+        self.mdl = MainFieldsSourceTermsModel(self.case)
+        self.mfm = MainFieldsModel(self.case)
         self.notebook = NotebookModel(self.case)
-        self.volzone  = LocalizationModel('VolumicZone', self.case)
 
-        # 0/ Read label names from XML file
-
-        # Velocity
+        self.zoneLabel.setText(zone_name)
+        self.zone = None
+        self.zone_id = None
+        for zone in LocalizationModel('VolumicZone', self.case).getZones():
+            if zone.getLabel() == zone_name:
+                self.zone = zone
+                self.zone_id = str(zone.getCodeNumber())
 
         # Thermal scalar
         self.th_sca_name = 'enthalpy'
 
-        # 1/ Combo box models
-        self.modelZone     = ComboModel(self.comboBoxZone, 1, 1)
-
-        self.zone = ""
-        zones = self.volzone.getZones()
-        for zone in zones:
-            active = 0
-            if ('thermal_source_term' in zone.getNature().keys()):
-                if (zone.getNature()['thermal_source_term']  == "on"):
-                    active = 1
-
-            if (active):
-                label = zone.getLabel()
-                name = str(zone.getCodeNumber())
-                self.modelZone.addItem(self.tr(label), name)
-                if label == "all_cells":
-                    self.zone = name
-                if not self.zone:
-                    self.zone = name
-
-        self.modelZone.setItem(str_model = self.zone)
-
         self.modelField = ComboModel(self.comboBoxField, 1, 1)
-        for fieldId in self.mfm.getFieldIdList() :
+        for fieldId in self.mfm.getFieldIdList():
             label = self.mfm.getLabel(fieldId)
             name = str(fieldId)
             self.modelField.addItem(self.tr(label), name)
@@ -130,27 +111,23 @@ class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
 
 
         # 2/ Connections
-        self.comboBoxZone.activated[str].connect(self.slotZone)
         self.comboBoxField.activated[str].connect(self.slotField)
         self.pushButtonThermal.clicked.connect(self.slotThermalFormula)
 
         # 3/ Initialize widget
 
-        self.initialize(self.zone)
+        self.initialize()
 
         self.case.undoStartGlobal()
 
-
-    def initialize(self, zone_num):
+    def initialize(self):
         """
-        Initialize widget when a new volumic zone is chosen
+        Initialize widget when a new volumic zone_info is chosen
         """
-        zone = self.case.xmlGetNode("zone", id=zone_num)
-
-        if zone['thermal_source_term']  == "on":
+        if self.isSourceTermActived("thermal"):
             self.pushButtonThermal.show()
             self.th_sca_name = 'enthalpy'
-            exp = self.mdl.getThermalFormula(self.zone,
+            exp = self.mdl.getThermalFormula(self.zone_id,
                                              self.currentId,
                                              self.th_sca_name)
             if exp:
@@ -162,17 +139,6 @@ class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
             self.pushButtonThermal.hide()
             self.labelThermal.hide()
 
-
-
-    @pyqtSlot(str)
-    def slotZone(self, text):
-        """
-        INPUT label for choice of zone
-        """
-        self.zone = self.modelZone.dicoV2M[str(text)]
-        self.initialize(self.zone)
-
-
     @pyqtSlot()
     def slotThermalFormula(self):
         """
@@ -180,16 +146,12 @@ class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
         """
         exa = """#example: """
 
-        exp, req, sym = self.mdl.getThermalFormulaComponents(self.zone,
+        exp, req, sym = self.mdl.getThermalFormulaComponents(self.zone_id,
                                                              self.currentId,
                                                              self.th_sca_name)
 
         name = 'enthalpy_%s' % (str(self.currentId))
-        zone_name = None
-        for zone in self.volzone.getZones():
-            if str(zone.getCodeNumber()) == self.zone:
-                zone_name = zone.getLabel()
-                break
+        zone_name = self.zone.getLabel()
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'src',
@@ -204,7 +166,7 @@ class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaThermal -> %s" % str(result))
-            self.mdl.setThermalFormula(self.zone,
+            self.mdl.setThermalFormula(self.zone_id,
                                        self.currentId,
                                        self.th_sca_name,
                                        str(result))
@@ -218,9 +180,8 @@ class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
         INPUT label for choice of field
         """
         self.currentId = self.modelField.dicoV2M[str(text)]
-#        self.initializeVariables(self.zone, self.currentid)
 
-        exp = self.mdl.getThermalFormula(self.zone,
+        exp = self.mdl.getThermalFormula(self.zone_id,
                                          self.currentId,
                                          self.th_sca_name)
         if exp:
@@ -229,13 +190,13 @@ class MainFieldsSourceTermsView(QWidget, Ui_MainFieldsSourceTerms):
         else:
             self.pushButtonThermal.setStyleSheet("background-color: red")
 
-
-#    def initializeVariables(self, zone, fieldId):
-#        """
-#        Initialize variables when a new volumic zone or fieldId is choosen
-#        """
-#        # Thermal Initialization
-
+    def isSourceTermActived(self, nature: str) -> bool:
+        source_term = nature + "_source_term"
+        zone_info = self.zone.getNature()
+        if source_term in zone_info:
+            return zone_info[source_term] == "on"
+        else:
+            return False
 
 #-------------------------------------------------------------------------------
 # Testing part

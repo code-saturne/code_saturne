@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>281</width>
-    <height>468</height>
+    <height>508</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,16 +27,6 @@
      </property>
      <layout class="QGridLayout" name="gridLayout">
       <item row="0" column="0">
-       <widget class="QTreeView" name="treeViewBoundaries">
-        <property name="alternatingRowColors">
-         <bool>true</bool>
-        </property>
-        <property name="rootIsDecorated">
-         <bool>false</bool>
-        </property>
-       </widget>
-      </item>
-      <item row="1" column="0">
        <widget class="BoundaryConditionsRoughWallView" name="roughWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -46,7 +36,7 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
+      <item row="1" column="0">
        <widget class="BoundaryConditionsSlidingWallView" name="slidingWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -56,7 +46,7 @@
         </property>
        </widget>
       </item>
-      <item row="3" column="0">
+      <item row="2" column="0">
        <widget class="BoundaryConditionsMeteoView" name="meteoWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -66,7 +56,7 @@
         </property>
        </widget>
       </item>
-      <item row="6" column="0">
+      <item row="5" column="0">
        <widget class="BoundaryConditionsVelocityInletView" name="velocityWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -76,7 +66,7 @@
         </property>
        </widget>
       </item>
-      <item row="8" column="0">
+      <item row="7" column="0">
        <widget class="BoundaryConditionsCoalInletView" name="coalWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -86,7 +76,7 @@
         </property>
        </widget>
       </item>
-      <item row="9" column="0">
+      <item row="8" column="0">
        <widget class="BoundaryConditionsCompressibleOutletView" name="compressibleOutletWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -96,7 +86,7 @@
         </property>
        </widget>
       </item>
-      <item row="10" column="0">
+      <item row="9" column="0">
        <widget class="BoundaryConditionsTurbulenceInletView" name="turbulenceWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -106,19 +96,19 @@
         </property>
        </widget>
       </item>
-      <item row="11" column="0">
+      <item row="10" column="0">
        <widget class="BoundaryConditionsScalarsView" name="scalarsWidget" native="true"/>
       </item>
-      <item row="12" column="0">
+      <item row="11" column="0">
        <widget class="BoundaryConditionsMobileMeshView" name="mobileMeshWidget" native="true"/>
       </item>
-      <item row="13" column="0">
+      <item row="12" column="0">
        <widget class="BoundaryConditionsWallRadiativeTransferView" name="radiativeWidget" native="true"/>
       </item>
-      <item row="14" column="0">
+      <item row="13" column="0">
        <widget class="BoundaryConditionsElectricalView" name="electricalWidget" native="true"/>
       </item>
-      <item row="15" column="0">
+      <item row="14" column="0">
        <widget class="BoundaryConditionsExternalHeadLossesView" name="externalHeadLossesWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -128,13 +118,13 @@
         </property>
        </widget>
       </item>
-      <item row="16" column="0">
+      <item row="15" column="0">
        <widget class="BoundaryConditionsHydraulicHeadView" name="hydraulicheadWidget" native="true"/>
       </item>
-      <item row="17" column="0">
+      <item row="16" column="0">
        <widget class="BoundaryConditionsPressureView" name="pressureWidget" native="true"/>
       </item>
-      <item row="5" column="0">
+      <item row="4" column="0">
        <widget class="BoundaryConditionsMappedInletView" name="mappedInletWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
@@ -144,7 +134,7 @@
         </property>
        </widget>
       </item>
-      <item row="4" column="0">
+      <item row="3" column="0">
        <widget class="BoundaryConditionsConvectiveInletView" name="convectiveInletWidget" native="true">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">

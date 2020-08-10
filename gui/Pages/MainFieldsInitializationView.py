@@ -76,7 +76,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
     """
     Main fields layout.
     """
-    def __init__(self, parent, case):
+    def __init__(self, parent, case, zone_name):
         """
         Constructor
         """
@@ -93,31 +93,22 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         self.NonCondensable = NonCondensableModel(self.case)
         self.SpeciesModel = SpeciesModel(self.case)
 
-        # Combo box models
-        self.modelVolumeZone = ComboModel(self.comboBoxVolumeZone, 1, 1)
-
-        self.zone = ""
-        zones = self.volzone.getZones()
-        for zone in zones:
-            if zone.getNature()['initialization'] == "on":
-                label = zone.getLabel()
-                name = str(zone.getCodeNumber())
-                self.modelVolumeZone.addItem(self.tr(label), name)
-                if label == "all_cells":
-                    self.zone = name
-                if not self.zone:
-                    self.zone = name
-
-        self.modelVolumeZone.setItem(str_model = self.zone)
+        self.zoneLabel.setText(zone_name)
+        self.zone = None
+        self.zone_id = None
+        for zone in LocalizationModel('VolumicZone', self.case).getZones():
+            if zone.getLabel() == zone_name:
+                self.zone = zone
+                self.zone_id = str(zone.getCodeNumber())
 
         self.modelField = ComboModel(self.comboBoxField, 1, 1)
-        for fieldId in self.mdl.getFieldIdList() :
+        for fieldId in self.mdl.getFieldIdList():
             label = self.mdl.getLabel(fieldId)
             name = str(fieldId)
             self.modelField.addItem(self.tr(label), name)
 
         self.currentid = -1
-        if len(self.mdl.getFieldIdList()) > 0 :
+        if len(self.mdl.getFieldIdList()) > 0:
             self.currentid = self.mdl.getFieldIdList()[0]
             self.modelField.setItem(str_model = self.currentid)
 
@@ -151,7 +142,6 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         self.pushButtonScalar.hide()
 
         # Connect signals to slots
-        self.comboBoxVolumeZone.activated[str].connect(self.slotVolumeZone)
         self.comboBoxField.activated[str].connect(self.slotField)
         self.comboBoxEnergy.activated[str].connect(self.slotEnergyModel)
         self.comboBoxNonCondensable.activated[str].connect(self.slotNonCondensableType)
@@ -163,7 +153,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         self.pushButtonNonCondensable.clicked.connect(self.slotNonCondensable)
         self.pushButtonScalar.clicked.connect(self.slotScalar)
 
-        exp = self.mdl.getFormulaPressure(self.zone)
+        exp = self.mdl.getFormulaPressure(self.zone_id)
         if exp:
             self.pushButtonPressure.setStyleSheet("background-color: green")
             self.pushButtonPressure.setToolTip(exp)
@@ -172,15 +162,15 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
 
         if (len(self.mdl.getFieldIdList()) > 0):
             self.groupBoxDefinition.show()
-            self.initializeVariables(self.zone, self.currentid)
+            self.initializeVariables(self.zone_id, self.currentid)
 
-            exp = self.mdl.getFormula(self.zone, self.currentid, 'velocity')
+            exp = self.mdl.getFormula(self.zone_id, self.currentid, 'velocity')
             if exp:
                 self.pushButtonVelocity.setStyleSheet("background-color: green")
                 self.pushButtonVelocity.setToolTip(exp)
             else:
                 self.pushButtonVelocity.setStyleSheet("background-color: red")
-            exp = self.mdl.getFormula(self.zone, self.currentid, 'volume_fraction')
+            exp = self.mdl.getFormula(self.zone_id, self.currentid, 'volume_fraction')
             if exp:
                 self.pushButtonFraction.setStyleSheet("background-color: green")
                 self.pushButtonFraction.setToolTip(exp)
@@ -188,7 +178,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
                 self.pushButtonFraction.setStyleSheet("background-color: red")
 
             if self.mdl.getEnergyResolution(self.currentid) == "on":
-                exp = self.mdl.getFormula(self.zone, self.currentid, 'enthalpy')
+                exp = self.mdl.getFormula(self.zone_id, self.currentid, 'enthalpy')
                 if exp:
                     self.pushButtonEnergy.setStyleSheet("background-color: green")
                     self.pushButtonEnergy.setToolTip(exp)
@@ -197,7 +187,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
 
             lst = self.NonCondensable.getNonCondensableByFieldId(self.currentid)
             if len(lst) > 0 :
-                exp = self.mdl.getFormulaNonCondensable(self.zone, self.currentid, self.currentNonCond)
+                exp = self.mdl.getFormulaNonCondensable(self.zone_id, self.currentid, self.currentNonCond)
                 if exp:
                     self.pushButtonNonCondensable.setStyleSheet("background-color: green")
                     self.pushButtonNonCondensable.setToolTip(exp)
@@ -206,7 +196,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
 
             lst = self.SpeciesModel.getScalarByFieldId(self.currentid)
             if len(lst) > 0 :
-                exp = self.mdl.getFormulaScalar(self.zone, self.currentid, self.currentScalar)
+                exp = self.mdl.getFormulaScalar(self.zone_id, self.currentid, self.currentScalar)
                 if exp:
                     self.pushButtonScalar.setStyleSheet("background-color: green")
                     self.pushButtonScalar.setToolTip(exp)
@@ -217,32 +207,22 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
 
         self.case.undoStartGlobal()
 
-
-    @pyqtSlot(str)
-    def slotVolumeZone(self, text):
-        """
-        INPUT label for choice of zone
-        """
-        self.zone = self.modelVolumeZone.dicoV2M[str(text)]
-        self.initializeVariables(self.zone, self.currentid)
-
-
     @pyqtSlot(str)
     def slotField(self, text):
         """
         INPUT label for choice of field
         """
         self.currentid = self.modelField.dicoV2M[str(text)]
-        self.initializeVariables(self.zone, self.currentid)
+        self.initializeVariables(self.zone_id, self.currentid)
 
-        exp = self.mdl.getFormula(self.zone, self.currentid, 'velocity')
+        exp = self.mdl.getFormula(self.zone_id, self.currentid, 'velocity')
         if exp:
             self.pushButtonVelocity.setStyleSheet("background-color: green")
             self.pushButtonVelocity.setToolTip(exp)
         else:
             self.pushButtonVelocity.setStyleSheet("background-color: red")
 
-        exp = self.mdl.getFormula(self.zone, self.currentid, 'volume_fraction')
+        exp = self.mdl.getFormula(self.zone_id, self.currentid, 'volume_fraction')
         if exp:
             self.pushButtonFraction.setStyleSheet("background-color: green")
             self.pushButtonFraction.setToolTip(exp)
@@ -250,7 +230,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
             self.pushButtonFraction.setStyleSheet("background-color: red")
 
         if self.mdl.getEnergyResolution(self.currentid) == "on":
-            exp = self.mdl.getFormula(self.zone, self.currentid, 'enthalpy')
+            exp = self.mdl.getFormula(self.zone_id, self.currentid, 'enthalpy')
             if exp:
                 self.pushButtonEnergy.setStyleSheet("background-color: green")
                 self.pushButtonEnergy.setToolTip(exp)
@@ -259,7 +239,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
 
         lst = self.NonCondensable.getNonCondensableByFieldId(self.currentid)
         if len(lst) > 0 :
-            exp = self.mdl.getFormulaNonCondensable(self.zone, self.currentid, self.currentNonCond)
+            exp = self.mdl.getFormulaNonCondensable(self.zone_id, self.currentid, self.currentNonCond)
             if exp:
                 self.pushButtonNonCondensable.setStyleSheet("background-color: green")
                 self.pushButtonNonCondensable.setToolTip(exp)
@@ -268,7 +248,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
 
         lst = self.SpeciesModel.getScalarByFieldId(self.currentid)
         if len(lst) > 0 :
-            exp = self.mdl.getFormulaScalar(self.zone, self.currentid, self.currentScalar)
+            exp = self.mdl.getFormulaScalar(self.zone_id, self.currentid, self.currentScalar)
             if exp:
                 self.pushButtonScalar.setStyleSheet("background-color: green")
                 self.pushButtonScalar.setToolTip(exp)
@@ -282,11 +262,11 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         INPUT label for choice of energy model
         """
         model = self.modelEnergy.dicoV2M[str(text)]
-        self.mdl.setEnergyModel(self.zone, self.currentid, model)
+        self.mdl.setEnergyModel(self.zone_id, self.currentid, model)
 
         if model != "hsat_P":
             self.pushButtonEnergy.setEnabled(True)
-            exp = self.mdl.getFormula(self.zone, self.currentid, 'enthalpy')
+            exp = self.mdl.getFormula(self.zone_id, self.currentid, 'enthalpy')
             if exp:
                 if (model == 'enthalpy' and 'temperature' in exp):
                     self.pushButtonEnergy.setStyleSheet("background-color: red")
@@ -309,7 +289,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         """
         self.currentNonCond = self.modelNonCondensable.dicoV2M[str(text)]
         self.currentNonCondLabel = str(text)
-        exp = self.mdl.getFormulaNonCondensable(self.zone, self.currentid, self.currentNonCond)
+        exp = self.mdl.getFormulaNonCondensable(self.zone_id, self.currentid, self.currentNonCond)
         if exp:
             self.pushButtonNonCondensable.setStyleSheet("background-color: green")
             self.pushButtonNonCondensable.setToolTip(exp)
@@ -324,7 +304,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         """
         self.currentScalar = self.modelScalar.dicoV2M[str(text)]
         self.currentScalarLabel = str(text)
-        exp = self.mdl.getFormulaScalar(self.zone, self.currentid, self.currentScalar)
+        exp = self.mdl.getFormulaScalar(self.zone_id, self.currentid, self.currentScalar)
         if exp:
             self.pushButtonScalar.setStyleSheet("background-color: green")
             self.pushButtonScalar.setToolTip(exp)
@@ -337,7 +317,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         """
         Formula for velocity
         """
-        exp, req, sym = self.mdl.getFormulaComponents(self.zone,
+        exp, req, sym = self.mdl.getFormulaComponents(self.zone_id,
                                                       self.currentid,
                                                       'velocity')
         if not exp:
@@ -346,11 +326,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         exa = "u = 3.0;\nv = 1.0;\nw = 0.0;\n"
 
         name = 'velocity_%s' % (str(self.currentid))
-        zone_name = None
-        for zone in self.volzone.getZones():
-            if str(zone.getCodeNumber()) == self.zone:
-                zone_name = zone.getLabel()
-                break
+        zone_name = self.zone.getLabel()
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'ini',
@@ -364,7 +340,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
-            self.mdl.setFormula(self.zone, self.currentid, 'velocity', result)
+            self.mdl.setFormula(self.zone_id, self.currentid, 'velocity', result)
             self.pushButtonVelocity.setStyleSheet("background-color: green")
             self.pushButtonVelocity.setToolTip(result)
 
@@ -374,7 +350,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         """
         Formula for fraction
         """
-        exp, req, sym = self.mdl.getFormulaComponents(self.zone,
+        exp, req, sym = self.mdl.getFormulaComponents(self.zone_id,
                                                       self.currentid,
                                                       'volume_fraction')
         if not exp:
@@ -386,11 +362,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         exa = "vol_f = 1.0;\n"
 
         name = 'volume_fraction_%s' % (str(self.currentid))
-        zone_name = None
-        for zone in self.volzone.getZones():
-            if str(zone.getCodeNumber()) == self.zone:
-                zone_name = zone.getLabel()
-                break
+        zone_name = self.zone.getLabel()
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'ini',
@@ -404,7 +376,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
-            self.mdl.setFormula(self.zone, self.currentid, 'volume_fraction', result)
+            self.mdl.setFormula(self.zone_id, self.currentid, 'volume_fraction', result)
             self.pushButtonFraction.setStyleSheet("background-color: green")
             self.pushButtonFraction.setToolTip(result)
 
@@ -414,11 +386,11 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         """
         Formula for energy
         """
-        exp, req, sym = self.mdl.getFormulaComponents(self.zone,
+        exp, req, sym = self.mdl.getFormulaComponents(self.zone_id,
                                                       self.currentid,
                                                       'enthalpy')
 
-        th_sca_label = self.mdl.getEnergyModel(self.zone, self.currentid)
+        th_sca_label = self.mdl.getEnergyModel(self.zone_id, self.currentid)
         if not exp:
             if str(th_sca_label) == 'enthalpy':
                 exp = th_sca_label + """ = 50000.0;\n"""
@@ -436,11 +408,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         exa = """#example: """
 
         name = 'enthalpy_%s' % (str(self.currentid))
-        zone_name = None
-        for zone in self.volzone.getZones():
-            if str(zone.getCodeNumber()) == self.zone:
-                zone_name = zone.getLabel()
-                break
+        zone_name = self.zone.getLabel()
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'ini',
@@ -454,7 +422,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
-            self.mdl.setFormula(self.zone, self.currentid, 'enthalpy', result)
+            self.mdl.setFormula(self.zone_id, self.currentid, 'enthalpy', result)
             self.pushButtonEnergy.setStyleSheet("background-color: green")
             self.pushButtonEnergy.setToolTip(result)
 
@@ -464,7 +432,7 @@ class MainFieldsInitializationView(QWidget, Ui_MainFieldsInitialization):
         """
         Formula for pressure
         """
-        exp, req, sym = self.mdl.getPressureFormulaComponents(self.zone)
+        exp, req, sym = self.mdl.getPressureFormulaComponents(self.zone_id)
 
         if not exp:
             exp = """pressure = 101325.;\n"""
@@ -476,11 +444,7 @@ Po = 1.e6;
 pressure = P0 + rho0 * g * (zmax - z);"""
 
         name = 'pressure'
-        zone_name = None
-        for zone in self.volzone.getZones():
-            if str(zone.getCodeNumber()) == self.zone:
-                zone_name = zone.getLabel()
-                break
+        zone_name = self.zone.getLabel()
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'ini',
@@ -494,7 +458,7 @@ pressure = P0 + rho0 * g * (zmax - z);"""
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
-            self.mdl.setFormulaPressure(self.zone, result)
+            self.mdl.setFormulaPressure(self.zone_id, result)
             self.pushButtonPressure.setStyleSheet("background-color: green")
             self.pushButtonPressure.setToolTip(result)
 
@@ -504,7 +468,7 @@ pressure = P0 + rho0 * g * (zmax - z);"""
         """
         Formula for non condensable
         """
-        exp, req, sym = self.mdl.getNonCondensableFormulaComponents(self.zone,
+        exp, req, sym = self.mdl.getNonCondensableFormulaComponents(self.zone_id,
                                                                     self.currentid,
                                                                     self.currentNonCond)
         if not exp:
@@ -513,11 +477,7 @@ pressure = P0 + rho0 * g * (zmax - z);"""
         exa = """#example: """
 
         name = self.currentNonCondLabel
-        zone_name = None
-        for zone in self.volzone.getZones():
-            if str(zone.getCodeNumber()) == self.zone:
-                zone_name = zone.getLabel()
-                break
+        zone_name = self.zone.getLabel()
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'ini',
@@ -531,7 +491,7 @@ pressure = P0 + rho0 * g * (zmax - z);"""
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
-            self.mdl.setFormulaNonCondensable(self.zone, self.currentid, self.currentNonCond, result)
+            self.mdl.setFormulaNonCondensable(self.zone_id, self.currentid, self.currentNonCond, result)
             self.pushButtonNonCondensable.setStyleSheet("background-color: green")
             self.pushButtonNonCondensable.setToolTip(result)
 
@@ -541,7 +501,7 @@ pressure = P0 + rho0 * g * (zmax - z);"""
         """
         Formula for species
         """
-        exp, req, sym = self.mdl.getScalarFormulaComponents(self.zone,
+        exp, req, sym = self.mdl.getScalarFormulaComponents(self.zone_id,
                                                             self.currentid,
                                                             self.currentScalar)
         if not exp:
@@ -550,11 +510,7 @@ pressure = P0 + rho0 * g * (zmax - z);"""
         exa = """#example: """
 
         name = self.currentScalarLabel
-        zone_name = None
-        for zone in self.volzone.getZones():
-            if str(zone.getCodeNumber()) == self.zone:
-                zone_name = zone.getLabel()
-                break
+        zone_name = self.zone.getLabel()
 
         dialog = QMegEditorView(parent        = self,
                                 function_type = 'ini',
@@ -568,7 +524,7 @@ pressure = P0 + rho0 * g * (zmax - z);"""
         if dialog.exec_():
             result = dialog.get_result()
             log.debug("slotFormulaRho -> %s" % str(result))
-            self.mdl.setFormulaScalar(self.zone, self.currentid, self.currentScalar, result)
+            self.mdl.setFormulaScalar(self.zone_id, self.currentid, self.currentScalar, result)
             self.pushButtonScalar.setStyleSheet("background-color: green")
             self.pushButtonScalar.setToolTip(result)
 
