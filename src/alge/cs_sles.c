@@ -1188,7 +1188,7 @@ cs_sles_find_or_add(int          f_id,
  * operations involving access through a field id.
  *
  * \deprecated This function is provided to allow some peculiar
- * calling sequences, in which \ref cs_c_bindings::codits (codits) is
+ * calling sequences, in which \ref cs_equation_iterative_solve_scalar is
  * called with a nonzero \c ivar value, but specific solver options
  * must still be set.
  * In the future, a more consistent mechanism (using a zero \c ivar

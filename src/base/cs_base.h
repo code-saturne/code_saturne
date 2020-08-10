@@ -166,7 +166,7 @@ cs_base_mpi_init(int    *argc,
  *
  * This updates the number of reduced communicators if necessary.
  *
- * \param[in]  n_ranks  number of ranks of reduced communicator
+ * \param[in]  rank_step  associated multiple of total ranks
  */
 /*----------------------------------------------------------------------------*/
 

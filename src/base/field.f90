@@ -1130,6 +1130,8 @@ contains
   !>                           term (coefac and coefbc) are added
   !> \param[in]  have_conv_bc  if .true., BC coefficients used in convection
   !>                           term (coefac and coefbc) are added
+  !> \param[in]  have_exch_bc  if .true., exchange boundary coefficients
+  !>                           (hint and hext)
 
   subroutine field_allocate_bc_coeffs(id, have_flux_bc, have_mom_bc,           &
                                           have_conv_bc, have_exch_bc)

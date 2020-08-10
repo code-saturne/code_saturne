@@ -433,7 +433,8 @@ typedef enum {
  * \var CS_PARAM_SLES_CLASS_MUMPS
  * Solvers available with MUMPS (without the PETSc interface)
  *
- * \var CS_PARAM_SLES_CLASS_PETSC Solvers available in PETSc. Please notice that
+ * \var CS_PARAM_SLES_CLASS_PETSC
+ * Solvers available in PETSc. Please notice that
  * the MUMPS solver can be handled within PETSc if the installation of PETSc
  * includes the MUMPS library
  *
@@ -488,7 +489,7 @@ typedef enum {
  *
  * \var CS_PARAM_PRECOND_AMG
  * Algebraic multigrid preconditioner (additional options may be set using
- * \ref \cs_param_amg_type_t)
+ * \ref cs_param_amg_type_t)
  *
  * \var CS_PARAM_PRECOND_AMG_BLOCK
  * Algebraic multigrid preconditioner by block (useful in case of vector
@@ -566,7 +567,7 @@ typedef enum {
  *
  * \var CS_PARAM_ITSOL_AMG
  *  Algebraic multigrid solver (additional options may be set using
- *  \ref \cs_param_amg_type_t)
+ *  \ref cs_param_amg_type_t)
  *
  * \var CS_PARAM_ITSOL_BICG
  *  Bi-Conjuguate gradient (useful for non-symmetric systems)

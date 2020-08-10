@@ -62,6 +62,9 @@ BEGIN_C_DECLS
  * \param[in]  nvar     number of variable BC's
  * \param[in]  ivart    variable id of thermal variable
  * \param[in]  isothp   list of isothermal boundaries
+ * \param[in]  tmin     minimum allowed temperature (clip to this value)
+ * \param[in]  tmax     maximum allowed temperature (clip to this value)
+ * \param[in]  tx       temperature relaxtion parameter
  * \param[in]  rcodcl   boundary condition values
  *                        rcodcl[0] = Dirichlet value
  *                        rcodcl[1] = exchange coefficient value.
@@ -90,9 +93,9 @@ void
 cs_rad_transfer_wall_flux(int         nvar,
                           int         ivart,
                           int         isothp[],
-                          cs_real_t  *tmin,
-                          cs_real_t  *tmax,
-                          cs_real_t  *tx,
+                          cs_real_t   tmin,
+                          cs_real_t   tmax,
+                          cs_real_t   tx,
                           cs_real_t  *rcodcl,
                           cs_real_t   tparop[],
                           cs_real_t   qincip[],

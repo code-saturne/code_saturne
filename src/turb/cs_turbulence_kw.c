@@ -121,7 +121,6 @@ BEGIN_C_DECLS
  * or slightly compressible flows for one time step.
  *
  * \param[in]     nvar          total number of variables
- * \param[in]     ncepdp        number of cells with head loss
  * \param[in]     ncesmp        number of cells with mass source term
  * \param[in]     icetsm        index of cells with mass source term
  * \param[in]     itypsm        mass source type for the variables

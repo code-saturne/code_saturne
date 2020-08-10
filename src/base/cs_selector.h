@@ -151,7 +151,8 @@ cs_selector_get_cell_vertices_list(const char  *criteria,
 /*!
  * \brief Fill a list of vertices belonging to a given list of cells.
  *
- * \param[in]   criteria    selection criteria string
+ * \param[in]   n_cells     number of selected cells
+ * \param[in]   cell_ids    ids of selected cells
  * \param[out]  n_vertices  number of selected vertices
  * \param[out]  vtx_ids     list of selected vertices
  *                          (0 to n-1, preallocated to cs_glob_mesh->n_vertices)

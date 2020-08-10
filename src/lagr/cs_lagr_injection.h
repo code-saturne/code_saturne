@@ -45,17 +45,19 @@ BEGIN_C_DECLS
 /*!
  * \brief Inject particles in the computational domain.
  *
- * \param[in] time_id     time step indicator for fields
- *                         0: use fields at current time step
- *                         1: use fields at previous time step
- * \param[in] itypfb      boundary face types
+ * \param[in]  time_id      time step indicator for fields
+ *                           0: use fields at current time step
+ *                           1: use fields at previous time step
+ * \param[in]  itypfb       boundary face types
+ * \param[in]  visc_length  viscous layer thickness
+ *                          (size: number of mesh boundary faces)
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_lagr_injection(int        time_id,
                   const int  itypfb[],
-                  cs_real_t  vislen[]);
+                  cs_real_t  visc_length[]);
 
 /*----------------------------------------------------------------------------*/
 

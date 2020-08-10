@@ -311,16 +311,16 @@ cs_gui_node_get_real(cs_tree_node_t  *node,
  * The status is defined in a string-valued child (tag) node. If no such
  * tag is present, the initial status is unchanged.
  *
- * \param[in]       tn      node whose status is queried
+ * \param[in]       node    node whose status is queried
  * \param[in, out]  status  status value (0 or 1)
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gui_node_get_status_int(cs_tree_node_t  *tn,
+cs_gui_node_get_status_int(cs_tree_node_t  *node,
                            int             *status)
 {
-  const char  *value = cs_tree_node_get_tag(tn, "status");
+  const char  *value = cs_tree_node_get_tag(node, "status");
 
   if (cs_gui_strcmp(value, "on"))
     *status = 1;
@@ -473,16 +473,16 @@ cs_gui_node_get_child_real(cs_tree_node_t  *node,
  *
  * \param[in]       node        node whose value is queried
  * \param[in]       child_name  name of child node
- * \param[in, out]  value       queried value
+ * \param[in, out]  status      queried value
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_gui_node_get_child_status_int(cs_tree_node_t  *tn,
+cs_gui_node_get_child_status_int(cs_tree_node_t  *node,
                                  const char      *child_name,
                                  int             *status)
 {
-  cs_tree_node_t *tn_c = cs_tree_node_get_child(tn, child_name);
+  cs_tree_node_t *tn_c = cs_tree_node_get_child(node, child_name);
 
   const char  *value = cs_tree_node_get_tag(tn_c, "status");
 
@@ -507,7 +507,7 @@ cs_gui_node_get_child_status_int(cs_tree_node_t  *tn,
  *
  * \param[in]       node        node whose value is queried
  * \param[in]       child_name  name of child node
- * \param[in, out]  value       queried value
+ * \param[in, out]  status      queried value
  */
 /*----------------------------------------------------------------------------*/
 

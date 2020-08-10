@@ -114,7 +114,8 @@ void CS_PROCF(cplact, CPLACT)
  * Discover other applications in the same MPI root communicator.
  *
  * parameters:
- *   app_name <-- name of this instance of Code_Saturne.
+ *   app_name        <-- name of this instance of Code_Saturne.
+ *   forced_app_type <-- name of app type, or NULL
  *----------------------------------------------------------------------------*/
 
 void

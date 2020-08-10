@@ -210,26 +210,26 @@ typedef struct {
   cs_field_t                 *velocity_divergence;
 
   /*! \var kinetic_energy
-   *  Kinetic energy defined as 1/2 velocity \cdot velocity
+   *  Kinetic energy defined as \f$ 1/2 velocity \cdot velocity \f$
    *  Pointer to a scalar-valued \ref cs_field_t
    */
 
   cs_field_t                 *kinetic_energy;
 
   /*! \var vorticity
-   *  Vorticity of the velocity fied defined as curl(velocity)
+   *  Vorticity of the velocity field defined as curl(velocity)
    *  Pointer to a vector-valued \ref cs_field_t
    */
   cs_field_t                 *vorticity;
 
   /*! \var helicity
-   *  Helicity is defined as \int_c velocity \cdot vorticity
+   *  Helicity is defined as \f$ \int_c velocity \cdot \f$ vorticity
    *  Pointer to a scalar-valued \ref cs_field_t
    */
   cs_field_t                 *helicity;
 
   /*! \var enstrophy
-   *  Enstrophy is defined as \int_c vorticity \cdot vorticity
+   *  Enstrophy is defined as \f$ \int_c vorticity \cdot \f$ vorticity
    *  Pointer to a scalar-valued \ref cs_field_t
    */
   cs_field_t                 *enstrophy;

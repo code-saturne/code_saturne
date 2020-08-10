@@ -1140,7 +1140,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
  *                               \f$ \vect{a}^k \f$.
  *                               If you sub-iter on Navier-Stokes, then
  *                               it allows to initialize by something else than
- *                               \ref pvara (usually \ref pvar= \ref pvara)
+ *                               \c pvara (usually \c pvar= \c pvara)
  * \param[in]     coefav        boundary condition array for the variable
  *                               (explicit part)
  * \param[in]     coefbv        boundary condition array for the variable

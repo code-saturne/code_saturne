@@ -166,7 +166,7 @@ summary          | output file           | global execution and environment summ
 
 In special cases, it is possible to define a separate *scratch* execution directory,
 by setting a 'CS_SCRATCHDIR` environment variable or defining such a directory in the
-general configuration ([code_saturne.cfg](@ref #cs_user_configuration_file})) settings.
+general configuration ([code_saturne.cfg](@ref cs_user_configuration_file})) settings.
 
 In this case, results are copied from the scratch directory to
 the run output directory during the `finalize` stage of a computation.

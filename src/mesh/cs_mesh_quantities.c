@@ -2260,13 +2260,13 @@ cs_mesh_quantities_create(void)
 /*----------------------------------------------------------------------------*/
 
 cs_mesh_quantities_t *
-cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities)
+cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mq)
 {
-  cs_mesh_quantities_free_all(mesh_quantities);
+  cs_mesh_quantities_free_all(mq);
 
-  BFT_FREE(mesh_quantities);
+  BFT_FREE(mq);
 
-  return (mesh_quantities);
+  return (mq);
 }
 
 /*----------------------------------------------------------------------------*/

@@ -130,7 +130,7 @@ BEGIN_C_DECLS
  * \def CS_EQUATION_ENFORCE_BY_CELLS
  * \brief Definition of a selection of DoFs to enforce using a cell selection
  *
- * \def CS_EQUATION_ENFORCE_BY_DOFs
+ * \def CS_EQUATION_ENFORCE_BY_DOFS
  * \brief Definition of a selection of DoFs
  *
  * \def CS_EQUATION_ENFORCE_BY_REFERENCE_VALUE
@@ -260,7 +260,7 @@ typedef struct {
    * (0: false / 1: true). Indeed, in such a case, the matrix for the general
    * advection/diffusion equation is singular. A slight shift in the diagonal
    * will make it invertible again.
-   * By default, \ref dircl is set to 1 for all the unknowns, except
+   * By default, \ref idircl is set to 1 for all the unknowns, except
    * \f$\overline{f}\f$ in the v2f model (whose equation already contain another
    * diagonal term).
    * \remark this code is defined automatically based on the
@@ -388,7 +388,8 @@ typedef struct {
    * - 0.5: second-order \n
    * For the pressure, \ref thetav is always 1. For  the other variables,
    * \ref thetav = 0.5 is used when the  second-order time scheme is activated
-   * (\ref ischtp = 2, standard for LES calculations), otherwise \ref thetav = 1.
+   * (\ref optcal::ischtp "ischtp = 2", standard for LES calculations),
+   * otherwise \ref thetav = 1.
    *
    * \var blencv
    * Proportion of second-order convective scheme (0 corresponds to an upwind
@@ -445,12 +446,14 @@ typedef struct {
    * Relaxation coefficient for the associated variable. This relaxation
    * parameter is only useful for the pressure with the unsteady algorithm (so
    * as to improve the convergence in case of meshes of insufficient quality or
-   * of some turbulent models (k-epsilon, v2f, k-omega) and \ref ikecou = 0;
-   * if \ref ikecou = 1, \ref relaxv is ignored.\n
+   * of some turbulent models (k-epsilon, v2f, k-omega) and
+   * \ref cs_turb_rans_model_t::ikecou "ikecou" = 0; if
+   * \ref cs_turb_rans_model_t::ikecou "ikecou" = 1, \ref relaxv is ignored.\n
    * Default values are 0.7 for turbulent variables and 1. for pressure.
    * \ref relaxv also stores the value of the relaxation coefficient when using
-   * the steady algorithm, deduced from the value of \ref relxst (defaulting to
-   * \ref relaxv = 1. - \ref relxst).\n
+   * the steady algorithm, deduced from the value of
+   * \ref cs_time_step_options_t::relxst "relxst" (defaulting to
+   * \ref relaxv = 1. - relxst).\n
    * Used only for the pressure and for turbulent variables
    * (\f$ k-\epsilon \f$, v2f or \f$ k-\omega \f$ models without coupling) with
    * the unsteady algorithm. Always used with the steady algorithm.

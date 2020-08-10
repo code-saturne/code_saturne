@@ -216,7 +216,7 @@ cs_mesh_quantities_create(void);
 /*----------------------------------------------------------------------------*/
 
 cs_mesh_quantities_t *
-cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mesh_quantities);
+cs_mesh_quantities_destroy(cs_mesh_quantities_t  *mq);
 
 /*----------------------------------------------------------------------------*/
 /*!

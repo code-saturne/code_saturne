@@ -22,7 +22,7 @@
 
 !-------------------------------------------------------------------------------
 
-!> \function clprij
+!> \file clprij.f90
 !> \brief Clipping of the turbulent Reynods stress tensor and the turbulent
 !> dissipation (segregated version).
 !>
@@ -264,7 +264,6 @@ end subroutine clprij
 
 !-------------------------------------------------------------------------------
 
-!> \function clprij2
 !> \brief Clipping of the turbulent Reynods stress tensor and the turbulent
 !> dissipation (coupled version).
 !>

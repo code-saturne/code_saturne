@@ -170,7 +170,8 @@ void CS_PROCF(cplact, CPLACT)
 /*!
  * \brief Discover other applications in the same MPI root communicator.
  *
- * \param[in]  app_name  name of this instance of Code_Saturne
+ * \param[in]  app_name         name of this instance of Code_Saturne
+ * \param[in]  forced_app_type  name of app type, or NULL
  */
 /*----------------------------------------------------------------------------*/
 

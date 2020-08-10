@@ -69,7 +69,6 @@ BEGIN_C_DECLS
  * Two contiguous groups: particles present before agglomeration
  *                        newly created particles (due to agglomeration)
  *
- * \param[in]  cell_id                current cell id
  * \param[in]  dt                     time step
  * \param[in]  minimum_particle_diam  minumum diameter (monomere diameter)
  * \param[in]  main_start             index of the first particle in cell

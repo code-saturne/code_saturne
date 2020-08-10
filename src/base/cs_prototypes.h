@@ -859,10 +859,9 @@ cs_meg_volume_function(const cs_zone_t  *zone,
  * \brief  Evaluate GUI defined mathematical expressions over volume zones for
  *         initialization.
  *
- * \param[in]   zone  pointer to a cs_volume_zone_t structure
- * \param[in]   f     char pointer: variable name
- *
-*/
+ * \param[in]   zone         pointer to a cs_volume_zone_t structure
+ * \param[in]   field_name  variable name
+ */
 /*----------------------------------------------------------------------------*/
 
 cs_real_t *
@@ -876,11 +875,10 @@ cs_meg_initialization(const cs_zone_t *zone,
  * \brief This function is used to compute source terms over a volume zone
  *
  * \param[in]       zone         pointer to cs_volume_zone_t
- * \param[in]       name         char pointer: variable name
- * \param[in]       source_type  char pointer: source term type
+ * \param[in]       name         variable name
+ * \param[in]       source_type  source term type
  *
  * \returns new_vals: a cs_real_t pointer containing the values
- *
  */
 /*----------------------------------------------------------------------------*/
 
@@ -898,16 +896,15 @@ cs_meg_source_terms(const cs_zone_t  *zone,
  *
  * \param[in, out]  ipenal       indicator for cut cells algorithm
  * \param[in]       object_name  name of the solid object
- * \param[in]       xyz          cs_real_3_t pointer containing the point coordinates
+ * \param[in]       xyz          point coordinates
  * \param[in]       t            time value
- *
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_meg_immersed_boundaries_inout(int         *ipenal,
                                  const char  *object_name,
-                                 cs_real_3_t  xyz,
+                                 cs_real_t    xyz[3],
                                  cs_real_t    t);
 
 /*----------------------------------------------------------------------------*/

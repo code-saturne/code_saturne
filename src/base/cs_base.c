@@ -1401,7 +1401,7 @@ cs_base_mpi_init(int    *argc,
  * This updates the number of reduced communicators if necessary.
  *
  * parameters:
- *   n_ranks <-- number of ranks of reduced communicator
+ *   rank_step <-- associated multiple of total ranks
  *----------------------------------------------------------------------------*/
 
 MPI_Comm

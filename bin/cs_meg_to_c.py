@@ -120,7 +120,7 @@ cs_meg_initialization(const cs_zone_t *zone,
 'ibm':"""void
 cs_meg_immersed_boundaries_inout(int         *ipenal,
                                  const char  *object_name,
-                                 cs_real_3_t  xyz,
+                                 cs_real_t    xyz[3],
                                  cs_real_t    t)
 {
 """,

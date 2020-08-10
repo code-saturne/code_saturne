@@ -53,19 +53,19 @@ BEGIN_C_DECLS
 /*!
  * \brief Compute gradients.
  *
- *  - pressure gradient / rho
+ *  - gradient of total pressure
  *  - velocity gradient
  *
  * \param[in]   time_id   0: current time, 1: previous
- * \param[out]  gradpr    pressure gradient
- * \param[out]  gradvf    velocity gradient
+ * \param[out]  grad_pr   pressure gradient
+ * \param[out]  grad_vel  velocity gradient
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_lagr_gradients(int           time_id,
-                  cs_real_3_t  *gradpr,
-                  cs_real_33_t *gradvf);
+cs_lagr_gradients(int            time_id,
+                  cs_real_3_t   *gradpr,
+                  cs_real_33_t  *gradvf);
 
 /*----------------------------------------------------------------------------*/
 

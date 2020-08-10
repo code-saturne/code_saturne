@@ -957,9 +957,9 @@ cs_rad_transfer_bcs(int         nvar,
     cs_rad_transfer_wall_flux(nvar,
                               ivart,
                               isothm,
-                              &tmin,
-                              &tmax,
-                              &tx,
+                              tmin,
+                              tmax,
+                              tx,
                               rcodcl,
                               twall,
                               f_bqinci->val,
@@ -1146,29 +1146,24 @@ cs_rad_transfer_bcs(int         nvar,
 /*!
  * \brief Boundary conditions for DO and P-1 models
  *
- * 1. Boundary conditions for the radiative intensity (DO model)
- * --------------------------------------------------------------
- *      The array coefap stores the intensity for each boundary faces,
- *        depending of the natur of the boundary (Dirichlet condition).
- *      The intensity of radiation is defined as the rate of emitted
- *        energy from unit surface area through unit solid angle.
+ *  The coefap array stores the intensity for each boundary face,
+ *  depending of the nature of the boundary (Dirichlet condition).
+ *  The intensity of radiation is defined as the rate of emitted
+ *  energy from unit surface area through a unit solid angle.
  *
  *   1/ Gray wall: isotropic radiation field.
- *                                   4
- *                     eps.sig.twall         (1-eps).qincid
- *       coefap   =    --------------    +    --------------
- *                           pi                     pi
- *   wall intensity     wall emission           reflecting flux.
- *      (eps=1: black wall; eps=0: reflecting wall)
- *   2/ Free boundary: condition to mimic infinite domain
  *
- * 2. Boundary conditions for the P-1 model
- * ----------------------------------------
+ *   \f$ coefap =  \epsilon.\sigma.twall^4 / \pi + (1-\epsilon).qincid / \pi \f$
+ *
+ *   which is the sum of the wall emission and reflecting flux
+ *   (eps=1: black wall; eps=0: reflecting wall).
+ *
+ *   2/ Free boundary: condition to mimic infinite domain
  *
  * \param[in]  bc_type         boundary face types
  * \param[in]  vect_s          direction vector or NULL
  * \param[in]  ckmel           Absoprtion coefficcient of the mixture
- *                               gas-particules of coal or NULL
+ *                             gas-particules of coal or NULL
  * \param[in]  bpro_eps        Boundary emissivity, or NULL for solar radiation
  * \param[in]  w_gg            Weights of the i-th gray gas at boundaries
  * \param[in]  gg_id           number of the i-th grey gas

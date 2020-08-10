@@ -102,7 +102,7 @@ typedef struct {
 
 cs_medcoupling_mesh_t *
 cs_medcoupling_mesh_create(const char  *name,
-                           const char  *select_criteria,
+                           const char  *selection_criteria,
                            int          elt_dim);
 
 /* -------------------------------------------------------------------------- */

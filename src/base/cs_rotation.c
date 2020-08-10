@@ -509,10 +509,10 @@ cs_rotation_update_coords(cs_lnum_t    n_coords,
 /*!
  * \brief Express a vector in the cyclindrical system associated to a rotation.
  *
- * \param[in]   r   pointer to rotation structure
- * \param[in]   p   cartesian coordinates of the location point
- * \param[in]   v   vector components in cartesian coordinates system
- * \param[out]  vc  vector components in cylindrical coordinates system
+ * \param[in]   r       pointer to rotation structure
+ * \param[in]   coords  cartesian coordinates of the location point
+ * \param[in]   v       vector components in cartesian coordinates system
+ * \param[out]  vc      vector components in cylindrical coordinates system
  */
 /*----------------------------------------------------------------------------*/
 

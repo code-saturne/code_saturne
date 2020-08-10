@@ -562,7 +562,7 @@ _assign_cell_mesh(const cs_mesh_t   *mesh,
 
 cs_medcoupling_mesh_t *
 cs_medcoupling_mesh_create(const char  *name,
-                           const char  *select_criteria,
+                           const char  *selection_criteria,
                            int          elt_dim)
 {
   cs_medcoupling_mesh_t *m = NULL;
@@ -574,8 +574,8 @@ cs_medcoupling_mesh_create(const char  *name,
 #else
 
   BFT_MALLOC(m, 1, cs_medcoupling_mesh_t);
-  BFT_MALLOC(m->sel_criteria, strlen(select_criteria)+1, char);
-  strcpy(m->sel_criteria, select_criteria);
+  BFT_MALLOC(m->sel_criteria, strlen(selection_criteria)+1, char);
+  strcpy(m->sel_criteria, selection_criteria);
 
   m->elt_dim  = elt_dim;
   m->n_elts   = 0;

@@ -5516,8 +5516,8 @@ cs_face_convection_scalar(int                       idtvar,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
- * \param[in]     secvif        secondary viscosity at interior faces
- * \param[in]     secvib        secondary viscosity at boundary faces
+ * \param[in]     i_secvis      secondary viscosity at interior faces
+ * \param[in]     b_secvis      secondary viscosity at boundary faces
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
@@ -5541,8 +5541,8 @@ cs_convection_diffusion_vector(int                         idtvar,
                                const cs_real_t             b_massflux[],
                                const cs_real_t             i_visc[],
                                const cs_real_t             b_visc[],
-                               const cs_real_t             secvif[],
-                               const cs_real_t             secvib[],
+                               const cs_real_t             i_secvis[],
+                               const cs_real_t             b_secvis[],
                                cs_real_3_t       *restrict rhs);
 
 /*----------------------------------------------------------------------------*/
@@ -5795,7 +5795,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
  *                               at interior faces for the r.h.s.
  * \param[in]     b_visc        \f$ \dfrac{S_\fib}{\ipf \centf} \f$
  *                               at border faces for the r.h.s.
- * \param[in]     secvif        secondary viscosity at interior faces
+ * \param[in]     i_secvis      secondary viscosity at interior faces
  * \param[in,out] rhs           right hand side \f$ \vect{Rhs} \f$
  */
 /*----------------------------------------------------------------------------*/
@@ -5814,7 +5814,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
                                      const cs_real_33_t          cofbfv[],
                                      const cs_real_33_t          i_visc[],
                                      const cs_real_t             b_visc[],
-                                     const cs_real_t             secvif[],
+                                     const cs_real_t             i_secvis[],
                                      cs_real_3_t       *restrict rhs);
 
 /*-----------------------------------------------------------------------------*/

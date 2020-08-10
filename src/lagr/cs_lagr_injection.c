@@ -1275,17 +1275,19 @@ _check_particles(cs_lagr_particle_set_t         *p_set,
 /*!
  * \brief Inject particles in the computational domain.
  *
- * \param[in] time_id     time step indicator for fields
- *                         0: use fields at current time step
- *                         1: use fields at previous time step
- * \param[in] itypfb      boundary face types
+ * \param[in]  time_id      time step indicator for fields
+ *                           0: use fields at current time step
+ *                           1: use fields at previous time step
+ * \param[in]  itypfb       boundary face types
+ * \param[in]  visc_length  viscous layer thickness
+ *                          (size: number of mesh boundary faces)
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_lagr_injection(int        time_id,
                   const int  itypfb[],
-                  cs_real_t  vislen[])
+                  cs_real_t  visc_length[])
 {
   CS_UNUSED(itypfb);
 
@@ -1536,7 +1538,7 @@ cs_lagr_injection(int        time_id,
 
         cs_lagr_new_particle_init(particle_range,
                                   time_id,
-                                  vislen);
+                                  visc_length);
 
         /* Advanced user modification:
 
@@ -1579,7 +1581,7 @@ cs_lagr_injection(int        time_id,
                           zis,
                           particle_range,
                           particle_face_ids,
-                          vislen);
+                          visc_length);
 
           /* For safety, build values at previous time step, but reset saved values
              for previous cell number and particle coordinates */

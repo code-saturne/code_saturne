@@ -295,7 +295,8 @@ _random_point_in_face(cs_lnum_t        n_vertices,
  * \param[in]      face_ids           ids of faces in zone
  * \param[in]      face_particle_idx  starting index of added particles
  *                                    for each face in zone
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_lagr_new(cs_lagr_particle_set_t  *particles,
@@ -387,7 +388,8 @@ cs_lagr_new(cs_lagr_particle_set_t  *particles,
  * \param[in]      cell_ids           ids of cells in zone
  * \param[in]      cell_particle_idx  starting index of added particles
  *                                    for each cell in zone
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 void
 cs_lagr_new_v(cs_lagr_particle_set_t  *particles,

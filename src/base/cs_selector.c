@@ -202,10 +202,10 @@ cs_selector_get_cell_num_list(const char  *criteria,
 /*!
  * \brief Fill a list of boundary faces verifying a given selection criteria.
  *
- * \param[in]   criteria   selection criteria string
- * \param[out]  n_i_faces  number of selected boundary faces
- * \param[out]  cell_list  list of selected boundary faces
- *                         (0 to n-1, preallocated to cs_glob_mesh->n_b_faces)
+ * \param[in]   criteria     selection criteria string
+ * \param[out]  n_b_faces    number of selected boundary faces
+ * \param[out]  b_face_list  list of selected boundary faces
+ *                           (0 to n-1, preallocated to cs_glob_mesh->n_b_faces)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -280,10 +280,10 @@ cs_selector_get_b_face_list(const char  *criteria,
 /*!
  * \brief Fill a list of interior faces verifying a given selection criteria.
  *
- * \param[in]   criteria   selection criteria string
- * \param[out]  n_i_faces  number of selected interior faces
- * \param[out]  cell_list  list of selected interior faces
- *                         (0 to n-1, preallocated to cs_glob_mesh->n_i_faces)
+ * \param[in]   criteria     selection criteria string
+ * \param[out]  n_i_faces    number of selected interior faces
+ * \param[out]  i_face_list  list of selected interior faces
+ *                           (0 to n-1, preallocated to cs_glob_mesh->n_i_faces)
  */
 /*----------------------------------------------------------------------------*/
 
@@ -481,7 +481,8 @@ cs_selector_get_cell_vertices_list(const char  *criteria,
 /*!
  * \brief Fill a list of vertices belonging to a given list of cells.
  *
- * \param[in]   criteria    selection criteria string
+ * \param[in]   n_cells     number of selected cells
+ * \param[in]   cell_ids    ids of selected cells
  * \param[out]  n_vertices  number of selected vertices
  * \param[out]  vtx_ids     list of selected vertices
  *                          (0 to n-1, preallocated to cs_glob_mesh->n_vertices)

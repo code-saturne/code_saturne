@@ -369,7 +369,7 @@ cs_gradient_scalar_synced_input(const char                 *var_name,
  * \param[in]   var             gradient's base variable
  * \param[in]   c_weight        cell variable weight, or NULL
  * \param[in]   cpl             associated internal coupling, or NULL
- * \param[out]  gradv           gradient
+ * \param[out]  grad            gradient
                                 (\f$ \der{u_i}{x_j} \f$ is gradv[][i][j])
  */
 /*----------------------------------------------------------------------------*/

@@ -75,12 +75,10 @@
 
   \section additional_doc Additional documentation
 
-  In addition to the Doxygen documentation, code_saturne is provided with six
+  In addition to the Doxygen documentation, code_saturne is provided with several
   pdf documents:
     - a <a href="../../user.pdf"><b>user guide</b></a>,
     - a <a href="../../theory.pdf"><b>theory guide</b></a>,
-    - a <a href="../../developer.pdf"><b>developer guide</b></a>,
-    - a <a href="../../studymanager.pdf"><b>guide of studymanager</b></a>,
     - a <a href="../../refcard.pdf"><b>refcard</b></a>.
 
   \section main_components Base architecture

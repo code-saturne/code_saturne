@@ -1408,7 +1408,8 @@ cs_lagr_update_particle_counter(void)
  *
  * \return
  *   pointer to lagrangian specific physics options
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_lagr_specific_physics_t *
 cs_get_lagr_specific_physics(void)
@@ -1421,7 +1422,8 @@ cs_get_lagr_specific_physics(void)
  *
  * \return
  *   pointer to lagrangian reentrained model options
- *----------------------------------------------------------------------------*/
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_lagr_reentrained_model_t *
 cs_get_lagr_reentrained_model(void)
@@ -1432,9 +1434,9 @@ cs_get_lagr_reentrained_model(void)
 /*----------------------------------------------------------------------------*/
 /*! \brief Provide access to cs_lagr_precipitation_model_t
  *
- * \return
- *   pointer to lagrangian precipitation model options
- *----------------------------------------------------------------------------*/
+ * \return  pointer to lagrangian precipitation model options
+ */
+/*----------------------------------------------------------------------------*/
 
 cs_lagr_precipitation_model_t *
 cs_get_lagr_precipitation_model(void)

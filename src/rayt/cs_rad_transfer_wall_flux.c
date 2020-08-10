@@ -92,6 +92,9 @@ BEGIN_C_DECLS
  * \param[in]  nvar     number of variable BC's
  * \param[in]  ivart    variable id of thermal variable
  * \param[in]  isothp   list of isothermal boundaries
+ * \param[in]  tmin     minimum allowed temperature (clip to this value)
+ * \param[in]  tmax     maximum allowed temperature (clip to this value)
+ * \param[in]  tx       temperature relaxtion parameter
  * \param[in]  rcodcl   boundary condition values
  *                        rcodcl[0] = Dirichlet value
  *                        rcodcl[1] = exchange coefficient value. (infinite
@@ -120,9 +123,9 @@ void
 cs_rad_transfer_wall_flux(int         nvar,
                           int         ivart,
                           int         isothp[],
-                          cs_real_t  *tmin,
-                          cs_real_t  *tmax,
-                          cs_real_t  *tx,
+                          cs_real_t   tmin,
+                          cs_real_t   tmax,
+                          cs_real_t   tx,
                           cs_real_t  *rcodcl,
                           cs_real_t   tparop[],
                           cs_real_t   qincip[],
@@ -244,9 +247,9 @@ cs_rad_transfer_wall_flux(int         nvar,
       cs_real_t abrapp = CS_ABS(rapp);
 
       /* Relaxation */
-      if (abrapp >= *tx) {
+      if (abrapp >= tx) {
         nrelax++;
-        tparop[ifac] *= 1.0 + *tx * rapp / abrapp;
+        tparop[ifac] *= 1.0 + tx * rapp / abrapp;
       }
       else
         tparop[ifac] += detep;
@@ -258,13 +261,13 @@ cs_rad_transfer_wall_flux(int         nvar,
         nplus++;
 
       /* Clipping */
-      if (tparop[ifac] < *tmin) {
+      if (tparop[ifac] < tmin) {
         n1min++;
-        tparop[ifac] = *tmin;
+        tparop[ifac] = tmin;
       }
-      if (tparop[ifac] > *tmax) {
+      if (tparop[ifac] > tmax) {
         n1max++;
-        tparop[ifac] = *tmax;
+        tparop[ifac] = tmax;
       }
 
     }
@@ -286,9 +289,9 @@ cs_rad_transfer_wall_flux(int         nvar,
       qrayt = 0.0;
 
       /* Relaxation */
-      if (abrapp >= *tx) {
+      if (abrapp >= tx) {
         nrelax++;
-        tparop[ifac] *= 1.0 + *tx * rapp / abrapp;
+        tparop[ifac] *= 1.0 + tx * rapp / abrapp;
       }
       else
         tparop[ifac] += detep;
@@ -300,13 +303,13 @@ cs_rad_transfer_wall_flux(int         nvar,
         nplus++;
 
       /* Clipping */
-      if (tparop[ifac] < *tmin) {
+      if (tparop[ifac] < tmin) {
         n1min++;
-        tparop[ifac] = *tmin;
+        tparop[ifac] = tmin;
       }
-      if (tparop[ifac] > *tmax) {
+      if (tparop[ifac] > tmax) {
         n1max++;
-        tparop[ifac] = *tmax;
+        tparop[ifac] = tmax;
       }
 
     }
@@ -332,9 +335,9 @@ cs_rad_transfer_wall_flux(int         nvar,
       cs_real_t abrapp = CS_ABS(rapp);
 
       /* Relaxation */
-      if (abrapp >= *tx) {
+      if (abrapp >= tx) {
         nrelax++;
-        tparop[ifac] *= 1.0 + *tx * rapp / abrapp;
+        tparop[ifac] *= 1.0 + tx * rapp / abrapp;
       }
       else
         tparop[ifac] += detep;
@@ -346,13 +349,13 @@ cs_rad_transfer_wall_flux(int         nvar,
         nplus++;
 
       /* Clipping */
-      if (tparop[ifac] < *tmin) {
+      if (tparop[ifac] < tmin) {
         n1min++;
-        tparop[ifac] = *tmin;
+        tparop[ifac] = tmin;
       }
-      if (tparop[ifac] > *tmax) {
+      if (tparop[ifac] > tmax) {
         n1max++;
-        tparop[ifac] = *tmax;
+        tparop[ifac] = tmax;
       }
 
     }
@@ -374,13 +377,13 @@ cs_rad_transfer_wall_flux(int         nvar,
       qrayt = 0.0;
 
       /* Clipping */
-      if (tparop[ifac] < *tmin) {
+      if (tparop[ifac] < tmin) {
         n1min++;
-        tparop[ifac] = *tmin;
+        tparop[ifac] = tmin;
       }
-      if (tparop[ifac] > *tmax) {
+      if (tparop[ifac] > tmax) {
         n1max++;
-        tparop[ifac] = *tmax;
+        tparop[ifac] = tmax;
       }
 
     }
@@ -566,7 +569,7 @@ cs_rad_transfer_wall_flux(int         nvar,
                       _("\n"
                         " Warning: wall temperature relaxed to %7.2f "
                         "at (%llu points)\n"),
-                      *tx * 100.0, (unsigned long long)nrelax);
+                      tx * 100.0, (unsigned long long)nrelax);
 
       if (n1min > 0 || n1max > 0)
         cs_log_printf(CS_LOG_DEFAULT,

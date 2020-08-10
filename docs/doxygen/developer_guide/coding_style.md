@@ -53,6 +53,11 @@ General rules
 
 The following general rules are strongly recommended:
 
+- Do not break documentation: for example, when modifying
+  arguments to a function or modifying structures, make sure
+  the special Doxygen comments ar up to date. When building the
+  code, use `make html` and check the `docs/doxygen/doxygen_warn.log`
+  file in the build directory.
 - Except for files in which they have a special meaning (such as
   Makefiles), use spaces, not tabs. *Absolutely* avoid tabs in
   Python code. Most importantly, use a decent text editor that does not

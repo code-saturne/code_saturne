@@ -426,7 +426,7 @@ For parallel runs, an MPI library is also necessary (MPI-2 or MPI-3 conforming).
 To build and use the GUI, PyQt 4 or 5 (which in turn requires Qt 4 or 5 and SIP)
 are required. Other libraries may be used for additional mesh format options,
 as well as to improve performance. A list of those libraries
-and their role is given in \S\ref{sec:list_ext_lib}.
+and their role is given in a dedicated [section](@ref cs_install_list_ext_lib)).
 
 For some external libraries, such as MED, MEDCoupling,  and ParaView Catalyst,
 a C++11 compliant C++ compiler is also required.
@@ -527,7 +527,7 @@ Optional third-party libraries
 In addition to an MPI library (for parallelism) and PyQt library (for the GUI),
 other libraries may be used for additional mesh format options,
 as well as to improve performance. A list of those libraries
-and their role is given in a dedicated [section](@ref cs_install_list_ext_lib)).
+and their role is detailed in this section.
 
 Installing third-party libraries for code_saturne
 -------------------------------------------------

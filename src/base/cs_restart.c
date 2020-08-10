@@ -3481,6 +3481,7 @@ cs_restart_write_ids(cs_restart_t           *restart,
  *
  * \param[in]   restart          associated restart file pointer
  * \param[in]   sec_name         section name
+ * \param[in]   old_name         old name
  * \param[in]   location_id      id of corresponding location
  * \param[in]   n_location_vals  number of values per location (interlaced)
  * \param[in]   val_type         value type
@@ -3559,7 +3560,7 @@ cs_restart_read_section_compat(cs_restart_t           *restart,
  * \param[in]   sec_name         section name
  * \param[in]   old_name_x       old name, x component
  * \param[in]   old_name_y       old name, y component
- * \param[in]   old_name_y       old name, z component
+ * \param[in]   old_name_z       old name, z component
  * \param[in]   location_id      id of corresponding location
  * \param[out]  val              array of values
  *

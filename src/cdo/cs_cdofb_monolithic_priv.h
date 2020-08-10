@@ -62,7 +62,7 @@ BEGIN_C_DECLS
  *============================================================================*/
 
 /*!
- * \file cs_cdofb_monolithic_priv.c
+ * \file cs_cdofb_monolithic_priv.h
  *
  * \brief Structures and function pointers useful to build and solve
  *        the Navier-Stokes equations with face-based schemes and a

@@ -255,6 +255,7 @@ _tsepls(cs_real_t w1[])
  * \param[in]     smacel        values of the variables associated to the
  *                              mass source
  *                              (for ivar=ipr, smacel is the mass flux)
+ * \param[out]    prdv2f        v2f production term
  */
  /*----------------------------------------------------------------------------*/
 

@@ -149,7 +149,8 @@ typedef struct {
 /*!
  * \brief Define event map based on defined options.
  *
- * This function should only be called after \ref cs_lagr_attr_initialize,
+ * This function should only be called after
+ * \ref cs_lagr_particle_attr_initialize,
  * as it may use elements from the main particle attributes map.
  */
 /*----------------------------------------------------------------------------*/
@@ -203,7 +204,7 @@ cs_lagr_event_set_create(void);
 /*!
  * Destroy a cs_lagr_event_set_t structure.
  *
- * \param[in, out]  pointer to pointer to event set to destroy
+ * \param[in, out]  events  pointer to pointer to event set to destroy
  */
 /*----------------------------------------------------------------------------*/
 
