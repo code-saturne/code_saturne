@@ -607,8 +607,8 @@ Define curves
 The plots of computational data are built from data files. These data must be
 ordered as column and the files should be in results directory in the
 `RESU` directory (either in the **repository** or in the
-**destination**). Commentaries are allowed in the file, the head of every
-commentary line must start with character `\#`.
+**destination**). Lines starting with character `\#` are treated as
+as comments.
 
 In the parameters file, curves are defined with two markups:
 `<data>` and `<plot>`:
@@ -939,7 +939,7 @@ Tricks {#sec_smgr_tricks}
 
 ### How to comment markups in the parameters file?
 
-The opening and closing signs for commentaries are `<!--` and
+The opening and closing signs for comments in XML markup are `<!--` and
 `-->`. In the following example, nothing from the study
 `MyStudy2` will be read:
 ```{.xml}

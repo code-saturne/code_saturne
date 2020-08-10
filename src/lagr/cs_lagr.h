@@ -173,8 +173,8 @@ typedef struct {
          (influence of the particles on the dynamics of the continuous phase).
          Dynamics, temperature and mass may be coupled independently.
      - CS_LAGR_FROZEN_CONTINUOUS_PHASE: Lagrangian two-phase flow on frozen i
-         continuous phase. This option
-         only only be used in case of a calculation restart. All the
+         continuous phase. This option may
+         only be used in the case of a calculation restart. All the
          Eulerian fields are frozen (including the scalar fields).
          This option automatically implies \ref iccvfg = 1 */
   int  iilagr;

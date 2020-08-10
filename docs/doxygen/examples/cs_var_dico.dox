@@ -45,6 +45,7 @@
    - \subpage mesh
    - \subpage field
    - \subpage local
+   - \subpage field_kw
 
 */
 // _____________________________________________________________________________
@@ -422,5 +423,13 @@
   \c cvar_pr: Values of the variable pressure field defined at the cell centers, at the current time step. \n
   \c cvara_pr: Values of the variable pressure field defined at the cell centers, at the previous time step. \n
   \c cpro_cp: Values of the property specific heat defined field at the cell centers. \n
+
+*/
+// _____________________________________________________________________________
+/*!
+
+  \page field_kw List of main field keys
+
+  A non-exhaustive \ref field_keywords "list of field keys" which are used in the code is provided.
 
 */

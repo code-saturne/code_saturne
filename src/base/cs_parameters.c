@@ -1053,7 +1053,8 @@ cs_parameters_define_field_keys(void)
 
   cs_field_define_key_int("coupling_entity", -1, 0);
 
-  /*! Is the field time-extrapolated?
+  /*
+   * Is the field time-extrapolated?
    * -1: default automatic value
    *  0: "standard" first-order: the value calculated at
    *     the beginning of the current time step (from the
@@ -1066,6 +1067,7 @@ cs_parameters_define_field_keys(void)
    *     extrapolated at $n+1$ according to the same formula
    *     as when = 1 but with \f$\theta\f$ = 1
    */
+
   cs_field_define_key_int("time_extrapolated", -1, 0);
 
   cs_field_define_key_int("measures_set_id", -1, CS_FIELD_VARIABLE);
