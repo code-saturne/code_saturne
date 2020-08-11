@@ -66,7 +66,7 @@ def preprocessorFile(parent, initdir):
     Verify if the choses of file is correct
     """
     file_name = ""
-    title = tr("Select a preprocessor log")
+    title = parent.tr("Select a preprocessor log")
     filetypes = "Preprocessor log (*.log);;All Files (*)"
     filt = "All files (*)"
     initdir = os.path.join(initdir, 'check_mesh')
@@ -86,9 +86,9 @@ def preprocessorFile(parent, initdir):
                 break
 
         if j == -1:
-            title = tr("Informations")
-            msg = tr("Warning : the selected file is not a correct file.\n\n"\
-                     "Verify your selection")
+            title = parent.tr("Informations")
+            msg = parent.tr("Warning : the selected file is not a correct file.\n\n"\
+                            "Verify your selection")
             QMessageBox.information(parent, title, msg)
 
     return file_name
