@@ -454,9 +454,9 @@ typedef struct {
  * Type independent min an max (caution: the argument is evaluated)
  *----------------------------------------------------------------------------*/
 
-#define CS_ABS(a)     ((a) <  0  ? -(a) : (a))  /* Absolute value of a */
-#define CS_MIN(a,b)   ((a) < (b) ?  (a) : (b))  /* Minimum of a et b */
-#define CS_MAX(a,b)   ((a) > (b) ?  (a) : (b))  /* Maximum of a et b */
+#define CS_ABS(a)     ((a) <  0  ? -(a) : (a))  /*!< Absolute value of a */
+#define CS_MIN(a,b)   ((a) < (b) ?  (a) : (b))  /*!< Minimum of a et b */
+#define CS_MAX(a,b)   ((a) > (b) ?  (a) : (b))  /*!< Maximum of a et b */
 
 /*----------------------------------------------------------------------------
  * Variable interlace type:

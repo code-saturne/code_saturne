@@ -53,11 +53,6 @@ General rules
 
 The following general rules are strongly recommended:
 
-- Do not break documentation: for example, when modifying
-  arguments to a function or modifying structures, make sure
-  the special Doxygen comments ar up to date. When building the
-  code, use `make html` and check the `docs/doxygen/doxygen_warn.log`
-  file in the build directory.
 - Except for files in which they have a special meaning (such as
   Makefiles), use spaces, not tabs. *Absolutely* avoid tabs in
   Python code. Most importantly, use a decent text editor that does not
@@ -74,9 +69,9 @@ The following general rules are strongly recommended:
   on line wrapping would actually make revision merging simpler).
 
 For new developments, prefer C to Fortran, as the code should progressively
-move to purely C code. As many variables and arrays are still accessible
-only through Fortran modules, this is not always possible, but defining
-Fortran/C bindings such as in the `field.f90` module helps
+move to purely C (and maybe C++) code. As many variables and arrays are still
+accessible only through Fortran modules, this is not always possible,
+but defining Fortran/C bindings such as in the `field.f90` module helps
 make data accessible to both languages, easing the progressive migration
 from Fortran to C. Fortran bindings should only be defined when access
 to C functions or variables from Fortran is required, and may be removed
@@ -101,19 +96,29 @@ followed:
 C coding style
 ==============
 
+The code_saturne coding style inherits from common conventions, with
+a few specific additions.
+
 General rules
 -------------
 
-The following presentation rules are strongly recommended:
+The following presentation rules should be followed:
 
 - Indentation step: 2 characters.
+
+- Do not use tabulation characters, do not leave whitespace
+  at the end of lines.
+
 - Always use lowercase characters for instructions and identifiers,
   except for enumerations and macros which should be in uppercase.
-
-The following coding rules are strongly recommended:
+  - A mix of lowercase and uppercase characters (for example CamelCase,
+    often encountered in C++ libraries) is allowed in sections
+    dealing specifically with external libraries using such coding styles.
 
 - Header `.h` files should have a mechanism to prevent
   multiple inclusions.
+
+The following coding rules are strongly recommended:
 
 - All macro parameters must be enclosed inside parentheses.
 
@@ -216,9 +221,10 @@ The following rules should be followed:
   `n_elt_groups_`.
 
 - Global identifier names are prefixed by the matching library prefix,
-  such as `cs_=` or `BFT_`;
+  such as `cs_=` or `BFT_`.
 
-- Local identifiers should be prefixed by an underscore character.
+- Local (static) variable and function should be prefixed by an underscore
+  character.
 
 - Index arrays used with *0* to *n-1* (zero-based) numbering should
   be named using a `idx_` or `index_` prefix or suffix, while
@@ -237,7 +243,7 @@ Naming of enumerations
 
 The following form is preferred for enumerations:
 
-```
+```{.c}
 typedef myclass { CS_MYCLASS_ENUM1,
                   CS_MYCLASS_ENUM2,
                   /* etc. */
@@ -256,7 +262,7 @@ Public functions implementing methods are named
 
 Files containing these functions are named *class*`.c`.
 
-Integer types
+Integer types {#sec_prg_lang_integer_types}
 -------------
 
 Several integer types are found in code_saturne:
@@ -277,14 +283,7 @@ Several integer types are found in code_saturne:
    the usual integer types. These warnings should be heeded, as they may
    avoid many hours of debugging.
 
-- `cs_int_t` is deprecated; it was used for integer variables or arrays
-   passed between C and Fortran, though using `integer(kind)` statements
-   in Fortran should be a better future solution. In practice,
-   `cs_int_t` and `cs_lnum_t` are identical. The former
-   is more commonly found in older code, but the latter should be used where
-   applicable for better clarity.
-
-- In all other cases, the standard C types `int` and `size_t}
+- In all other cases, the standard C types `int` and `size_t`
   should be preferred (for example for loops over variables, probes, or
   any entity independent of mesh size.
 
@@ -396,6 +395,43 @@ requiring Fortran 2003 or above should be avoided, except for the
 Fortran 2003 ISO_C_BINDING module, which is available in all
 current Fortran compilers.
 
+### Interoperability of Fortran and C
+
+Interoperability of Fortran and C is possible using the
+[iso_c_bindings](http://fortranwiki.org/fortran/show/iso_c_binding)
+Fortran module, but not easy to automate.
+
+- Does not allow direct mapping of structures with allocated arrays...
+- See \ref field.f90, \ref cs_field.c,  and \ref cs_c_bindings.f90 for simple
+  examples, \ref cs_turbulence_model.c for others.
+  -  This will probably make to want to abandon Fortran
+
+Migration from Fortran to C
+---------------------------
+
+It is preferred than new code be written in C rather than in Fortran.
+Fortran continues to be one of the best supported languages in HPC
+(with C++ and C), and has some interesting features such as Co-Array Fortran
+(starting with in Fortran 2008), but...
+
+- Many free tools were available for Fortran 77, few have been extended
+  to modern Fortran.
+- Available tools are often linked to a few major editors (Intel, NVIDIA, AbSoft, ...)
+- No or few "community" tools aside from PHOTRAN (for Eclipse)
+  - sign of a more reduced user base;
+  - compilers are not as user tested as for C and C++;
+- This is one of the main reasons for focusing more on C, less on Fortran
+  - The other being that many features we need are available in Fortran compilers
+    only since 5 or so years, while equivalent (less complete, but sufficient)
+    features existed in C 20 years ago (i.e. Fortran 95 and 2003 were too little,
+    too late).
+- The lack of local variable scopes in Fortran makes it much more bug-prone
+  than C when using OpenMP loop-based constructs.
+- C has its limitations, but is in general simpler to code for, and can
+  interoperate easily with C++.
+- Performance od C and Fortran is similar when both are used correctly,
+  so is not a discriminating factor.
+
 Python coding style
 ===================
 
@@ -412,3 +448,47 @@ Other parts of the code tend to use a CamelCase naming, but should otherwise
 adhere to the same standards. Moving the to PEP-8 style would be ideal,
 though to avoid confusion, this should be done in an *atomic* step
 for each module.
+
+Documentation
+=============
+
+Documentation of the main code is based on the
+[Doxygen](https://www.doxygen.nl/index.html/) tool, whose documentation
+may be found on its web site.
+
+Additional pages for the documentation may be found in the source tree,
+under `docs/doxygen`. Files containing mostly examaples may use the `.h` or
+`.dox` extension (with `.dox` preferred for easier identification), and
+pages which describe general aspects instead of code are preferrably
+written in Doxygen Markdown (`.md` extension), as this allows better
+readability and interoperation with some editors (such as preview,
+syntax highlighting, ...).
+
+When building the code, remember to often use `make html` and check the
+`docs/doxygen/doxygen_warn.log` file in the build directory for errors
+and warnings.
+
+When modifying arguments to a function or modifying structures, make sure
+the special Doxygen comments are kept up to date. In C code, comments may
+appear both in the C and Fortran parts of the code. Using Doxygen
+comments in the C code and simplified comments in the headers
+(see cs_field.c and cs_field.h for example) is recommended, but as this
+adds to the coding effort, duplicating the headers from the reference
+C code to the headers is allowed. Recent versions of Doxygen do complain
+about this, so avoiding duplicates is still desirable.
+
+Private functions or structures should not appear in the documentation
+(though their arguments should be documented in the source code),
+so in most source files,
+```
+/*! \cond DOXYGEN_SHOULD_SKIP_THIS */
+```
+is used to mark the beginning of a section which should be ignored
+by Doxygen, and
+```
+/*! (DOXYGEN_SHOULD_SKIP_THIS) \endcond */
+```
+used to mark the end of that section. In most cases, this includes private
+structures and functions in C code, but could be extended to public
+function definitions if the `.h` file header already contains the same
+Doxygen-formated comments.
