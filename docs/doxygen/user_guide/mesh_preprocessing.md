@@ -216,7 +216,7 @@ When using the Preprocessor for mesh verification, data for the Solver
 is not always needed. In this case, the `--no-write` option may
 avoid creating a Preprocessor output file.
 
-Mesh preprocessing {#sec_prepro}}
+Mesh preprocessing {#sec_prepro}
 ==================
 
 Meshing remarks {#sec_prg_meshes}

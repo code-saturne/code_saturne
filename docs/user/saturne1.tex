@@ -85,69 +85,6 @@ be a function, a variable, a structure, a type, etc.
 %==================================
 
 %==================================
-\subsection{Solver command line options}
-%==================================
-\label{sec:prg_optappelnoy}%
-In the standard cases, the compilation of \CS and its execution are entirely
-controlled by the launch script. The potential command line options are passed
-through user modifiable variables at the beginning of the \texttt{cs\_user\_scripts.py} file
-(this file may be copied from the \texttt{DATA/REFERENCE} to the \texttt{DATA} and edited).
-This way, the user only has to fill these variables and doesn't need
-to search deeply in the script for the solver command line. For more advanced
-usage, the main options are described below:
-
-\begin{list}{$\bullet$}{}
-\item \texttt{--app-name}: specifies the application name. This is
-useful only in the case of code coupling, where the application name
-is used to distinguish between different code instances launched together.
-
-\item \texttt{--mpi}: specifies that the calculation is running
-with MPI communications. The number of processors used will be determined
-automatically by the solver. With most MPI implementations, the
-code will detect the presence of an MPI environment automatically, and
-this option is redundant. It is only kept for the rare case in which the
-MPI environment might not be detected.
-
-\item \texttt{--preprocess}: triggers the preprocessing-only mode.
-The code may run without any Interface parameter file or any user subroutine.
-Only the initial operations such as mesh joining and modification are
-executed.
-
-\item \texttt{-q} or \texttt{--quality}: triggers the verification mode.
-The code may run without any Interface parameter file or any user subroutine.
-This mode includes the preprocessing stages, and adds elementary tests:\\
-\begin{list}{-}{}
-\item the quality criteria of the mesh are calculated (non-orthogonality angles,
-internal faces off-set, \ldots) and corresponding
-visualizable post-processing output is generated.\\
-\item a few additional mesh consistency tests are run.\\
-\end{list}
-
-\item \texttt{--benchmark}: triggers the benchmark mode, for a timing
-of elementary operations on the machine. A secondary option
-\texttt{--mpitrace} can be added. It is to be activated when the benchmark mode
-is used in association with an MPI trace utility. It restricts the elementary
-operations to those implying MPI communications and does only one of each
-elementary operation, to avoid overfilling the MPI trace report.\\
-This command is to be placed in the \texttt{domain.solver\_args} variable
-in the \texttt{cs\_user\_scripts.py} file to be added automatically to the
-solver command line.
-
-\item \texttt{--trace}: activates the tracing of the output to the standard output.
-This option can be specified in the \texttt{domain.logging\_args} field
-of the user script.
-
-\item \texttt{--logp}: activates the output for the
-processors of rank 1 to $N-1$ in a calculation in parallel on $N$ processors.
-in files \texttt{run\_solver\_r0001.log} to \texttt{run\_solver\_r$N-1$.log}.
-This option can be specified in the \texttt{domain.logging\_args} field
-of the user script.
-
-\item \texttt{-h} or \texttt{--help}: displays a summary of the different
-command line options.
-\end{list}
-
-%==================================
 \subsection{Launch scripts}
 %==================================
 \label{sec:prg_runcase}%
@@ -225,7 +162,7 @@ using the GUI\\
 output areas must not appear in \texttt{cs\_user\_boundary\_conditions}. The dummy velocity
 entered in the GUI will not be taken into account.
 
-The GUI is launched with the \texttt{./SaturneGUI} command in the directory
+The GUI is launched with the \texttt{./code\_saturne} command in the directory
 \texttt{DATA}. The first step is then to load an existing parameter file (in
 order to modify it) or to open a new one. The settings to be given or checked
 for a standard calculation are the following:
@@ -461,7 +398,7 @@ marked by the following strings:
 \end{itemize}
 
 Comparing template and example files with a graphical file comparison tool
-should help the user highlights the matching sections from the examples,
+should help the user highlight the matching sections from the examples,
 so it is recommended as good practice for those not already very familiar
 with those user subroutines.
 
