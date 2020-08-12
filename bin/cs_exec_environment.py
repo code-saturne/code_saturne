@@ -831,6 +831,8 @@ def source_syrthes_env(pkg):
     env_syrthes_home = os.getenv('SYRTHES4_HOME')
 
     if not syrthes_home:
+        print("Set syrthes_home based on SYRTHES4_HOME: ",
+              str(env_syrthes_home))
         syrthes_home = env_syrthes_home
 
     if not syrthes_home:
@@ -849,6 +851,12 @@ def source_syrthes_env(pkg):
                                    'bin', 'syrthes.profile')
         print("Sourcing SYRTHES environment: " + syr_profile)
         source_shell_script(syr_profile)
+    elif os.path.isdir(str(syrthes_home)):
+        cur_path = os.environ['PATH']
+        syrthes_bin = os.path.join(str(syrthes_home), 'bin')
+        if not syrthes_bin in cur_path.split(":"):
+            os.environ['PATH'] = syrthes_bin + ':' + cur_path
+            print("Inserting Syrthes path in PATH")
 
     # Finally, ensure module can be imported
 
