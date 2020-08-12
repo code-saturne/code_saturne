@@ -191,7 +191,6 @@
      <addaction name="displayNCManualAction"/>
      <addaction name="displayCSTutorialAction"/>
      <addaction name="displayCSTheoryAction"/>
-     <addaction name="displayCSSmgrAction"/>
      <addaction name="displayCSRefcardAction"/>
      <addaction name="displayCSDoxygenAction"/>
     </widget>
