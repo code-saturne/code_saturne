@@ -1167,7 +1167,6 @@ cs_wall_functions_s_vdriest(cs_real_t  prl,
  * \param[in]     prl           molecular Prandtl number
  *                              ( \f$ Pr=\sigma=\frac{\mu C_p}{\lambda_f} \f$ )
  * \param[in]     prt           turbulent Prandtl number ( \f$ \sigma_t \f$ )
- * \param[in]     y             wall distance
  * \param[in]     rough_t       scalar roughness length scale
  * \param[in]     uk            velocity scale based on TKE
  * \param[in]     yplus         dimensionless distance to the wall
@@ -1181,30 +1180,34 @@ inline static void
 cs_wall_functions_s_smooth_rough(cs_real_t  l_visc,
                                  cs_real_t  prl,
                                  cs_real_t  prt,
-                                 cs_real_t  y,
                                  cs_real_t  rough_t,
                                  cs_real_t  uk,
                                  cs_real_t  yplus,
                                  cs_real_t  dplus,
                                  cs_real_t *htur)
 {
-  /* Sand grain roughness */
-  double sg_rough = rough_t * exp(cs_turb_xkappa*cs_turb_cstlog_rough);
-
-  cs_real_t hp = sg_rough*uk/l_visc;
-  cs_real_t yk = uk * y / l_visc;
+  /* Sand grain roughness is:
+   * zeta = z0 * exp(kappa 8.5)
+   * Then:
+   * hp = zeta uk / nu * exp( -kappa(8.5 - 5.2))
+   *    = z0 * uk / nu * exp(kappa * 5.2)
+   *   where 5.2 is the smooth log constant, and 8.5 the rough one
+   *
+   *   FIXME check if we should use a molecular Schmidt number
+   */
+  cs_real_t hp = rough_t *uk / l_visc * exp(cs_turb_xkappa*cs_turb_cstlog);
   const double ypluli = cs_glob_wall_functions->ypluli;
   const double epzero = cs_math_epzero;
 
   (*htur) = CS_MAX(yplus,epzero)/CS_MAX(yplus+dplus,epzero);
 
   /* Shift of the temperature profile due to roughness */
-  cs_real_t shift_temp = -log(1. + cs_turb_cstlog_alpha * sg_rough * uk/l_visc)
+  cs_real_t shift_temp = -log(1. + hp)
     / cs_turb_xkappa;
 
   if (yplus > ypluli) {
     cs_real_t tplus = log(yplus+dplus)/cs_turb_xkappa + cs_turb_cstlog + shift_temp;
-    (*htur) = prl * yk / tplus;
+    (*htur) = prl * yplus / tplus;
   }
 }
 
@@ -1248,7 +1251,6 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
  const cs_real_t  *const l_visc,
  const cs_real_t  *const prl,
  const cs_real_t  *const prt,
- const cs_real_t  *const y,
  const cs_real_t  *const rough_t,
  const cs_real_t  *const uk,
  const cs_real_t  *const yplus,
@@ -1335,7 +1337,6 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
  * \param[in]     l_visc        kinematic viscosity
  * \param[in]     prl           laminar Prandtl number
  * \param[in]     prt           turbulent Prandtl number
- * \param[in]     y             wall distance
  * \param[in]     rough_t       scalar roughness lenghth scale
  * \param[in]     uk            velocity scale based on TKE
  * \param[in]     yplus         dimensionless distance to the wall
@@ -1351,7 +1352,6 @@ cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
                          cs_real_t           l_visc,
                          cs_real_t           prl,
                          cs_real_t           prt,
-                         cs_real_t           y,
                          cs_real_t           rough_t,
                          cs_real_t           uk,
                          cs_real_t           yplus,

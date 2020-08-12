@@ -265,7 +265,6 @@ void CS_PROCF (hturbp, HTURBP)
  const cs_real_t  *const l_visc,
  const cs_real_t  *const prl,
  const cs_real_t  *const prt,
- const cs_real_t  *const y,
  const cs_real_t  *const rough_t,
  const cs_real_t  *const uk,
  const cs_real_t  *const yplus,
@@ -278,7 +277,6 @@ void CS_PROCF (hturbp, HTURBP)
                            *l_visc,
                            *prl,
                            *prt,
-                           *y,
                            *rough_t,
                            *uk,
                            *yplus,
@@ -521,7 +519,6 @@ cs_wall_functions_velocity(cs_wall_f_type_t  iwallf,
  * \param[in]     l_visc        kinematic viscosity
  * \param[in]     prl           laminar Prandtl number
  * \param[in]     prt           turbulent Prandtl number
- * \param[in]     y             wall distance
  * \param[in]     rough_t       scalar roughness lenghth scale
  * \param[in]     uk            velocity scale based on TKE
  * \param[in]     yplus         dimensionless distance to the wall
@@ -537,7 +534,6 @@ cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
                          cs_real_t           l_visc,
                          cs_real_t           prl,
                          cs_real_t           prt,
-                         cs_real_t           y,
                          cs_real_t           rough_t,
                          cs_real_t           uk,
                          cs_real_t           yplus,
@@ -564,7 +560,6 @@ cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
     cs_wall_functions_s_smooth_rough(l_visc,
                                      prl,
                                      prt,
-                                     y,
                                      rough_t,
                                      uk,
                                      yplus,

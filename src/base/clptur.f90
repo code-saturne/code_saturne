@@ -2627,7 +2627,7 @@ do ifac = 1, nfabor
       ! Note: to make things clearer yplus is always
       ! "y uk /nu" even for rough modelling. And the roughness correction is
       ! multiplied afterwards where needed.
-      call hturbp(iwalfs,xnuii,prdtl,turb_schmidt,distbf,rough_t,uk,yplus,dplus,hflui,ypth)
+      call hturbp(iwalfs,xnuii,prdtl,turb_schmidt,rough_t,uk,yplus,dplus,hflui,ypth)
 
       ! Correction for non-neutral condition in atmospheric flows
       hflui = hflui * bcfnns(ifac)
@@ -3175,7 +3175,7 @@ do ifac = 1, nfabor
       endif
 
       !FIXME use Re* = rough_t * uk / nu ? * PrT ?
-      call hturbp(iwalfs,xnuii,prdtl,turb_schmidt,distbf,rough_t,uk,yplus,dplus,hflui,ypth)
+      call hturbp(iwalfs,xnuii,prdtl,turb_schmidt,rough_t,uk,yplus,dplus,hflui,ypth)
       ! Compute (y+-d+)/T+ *PrT
       yptp = hflui/prdtl
       ! Compute lambda/y * (y+-d+)/T+
