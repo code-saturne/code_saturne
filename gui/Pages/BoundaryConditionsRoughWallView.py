@@ -96,7 +96,7 @@ class BoundaryConditionsRoughWallView(QWidget, Ui_BoundaryConditionsRoughWallFor
         self.lineEditRoughCoef.setValidator(validatorRoughCoef)
 
         turb_mdl = TurbulenceModel(self.case)
-        if turb_mdl.getWallFunction() in [0, 1, 4, 7]:
+        if turb_mdl.getWallFunction() in [0, 1, 7]:
             self.radioButtonRough.setEnabled(False)
 
         self.case.undoStartGlobal()
