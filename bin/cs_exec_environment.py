@@ -851,20 +851,17 @@ def source_syrthes_env(pkg):
                                    'bin', 'syrthes.profile')
         print("Sourcing SYRTHES environment: " + syr_profile)
         source_shell_script(syr_profile)
-    elif os.path.isdir(str(syrthes_home)):
-        cur_path = os.environ['PATH']
-        syrthes_bin = os.path.join(str(syrthes_home), 'bin')
-        if not syrthes_bin in cur_path.split(":"):
-            os.environ['PATH'] = syrthes_bin + ':' + cur_path
-            print("Inserting Syrthes path in PATH")
 
     # Finally, ensure module can be imported
 
+    syrthes_bin = os.path.join(syrthes_home, 'bin')
     syr_datapath = os.path.join(syrthes_home,
                                 os.path.join('share', 'syrthes'))
-    if sys.path.count(syr_datapath) > 0:
-        sys.path.remove(syr_datapath)
-    sys.path.insert(0, syr_datapath)
+
+    for p in (syrthes_bin, syr_datapath):
+        if sys.path.count(p) > 0:
+            sys.path.remove(p)
+    sys.path.insert(0, p)
 
 #-------------------------------------------------------------------------------
 
