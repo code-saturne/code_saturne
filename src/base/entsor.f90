@@ -51,33 +51,14 @@ module entsor
   !>   - \>0: period
   integer, save :: ntsuit
 
-  !> field key for output label
+  !> field key for output label (\ref label field keyword).
   integer, save :: keylbl = -1
 
-  !> field key for logging \n
-  !> For every quantity (variable, physical or numerical property ...),
-  !> indicator concerning the writing in the execution report file
-  !>    - 1: writing in the execution log.
-  !>    - 0: no writing.
-  !> always useful
+  !> field key for logging (\ref log field keyword).
   integer, save :: keylog = -1
 
   !> <a name="keyvis"></a>
-  !> field key for postprocessing output.
-  !>
-  !> Each quantity defined at the cell centres (physical or
-  !> numerical variable), indicator of whether it should be
-  !> post-processed or not
-  !>   - -999: not initialised. By default, the post-processed quantities are the
-  !> unknowns (pressure, velocity, \f$ k, \epsilon, Rij, \omega, \phi, f \f$k, scalars),
-  !> density, turbulent viscosity and the time step if is not uniform
-  !>   - 0: not post-processed
-  !>   - 1: post-processed on main location
-  !>   - 2: non-reconstructed values postprocessed on boundary if main location is cells
-  !>   - 3: both 1 and 2
-  !> useful if and only if the variable is defined at the cell centers or boundary faces:
-  !> calculation variable, physical property (time step, density, viscosity, specific heat) or
-  !> turbulent viscosity if \ref iturb = 10
+  !> field key for postprocessing output (\ref post_vis field keyword).
   integer, save :: keyvis = -1
 
   !> \}

@@ -121,10 +121,22 @@
 
   \snippet cs_user_mesh-input-save.c mesh_input_1
 
+  Multiple inputs read through this function are automatically concatenated, and
+  may be later joined using the mesh joining options.
+
   A mesh can also be read while its groups are renamed, and its geometry
   transformed.
 
   \snippet cs_user_mesh-input-save.c mesh_input_2
+
+  Geometric transformations are defined using a homogeneous coordinates
+  transformation matrix. Such a matrix has 3 lines and 4 columns, with the
+  first 3 columns describing a rotation/scaling factor, and the last column
+  describing a translation. A 4th line is implicit, containing zeroes
+  off-diagonal, and 1 on the diagonal. The advantages of this representation
+  is that any rotation/translation/scaling combination may be expressed
+  by matrix multiplication, while simple rotations or translations
+  may still be defined easily.
 
   \subsection  cs_user_mesh_h_cs_user_mesh_save Mesh saving
 

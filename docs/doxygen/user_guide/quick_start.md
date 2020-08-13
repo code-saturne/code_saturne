@@ -20,8 +20,8 @@
 
 \page cs_ug_quick_start Quick start
 
-We assume in this section that the users has the calculation data file
-(calculation set up) at his disposal, or has already prepared it following
+We assume in this section that the user has the calculation data files
+(calculation setup) at his disposal, or has already prepared it following
 for instance the step-by-step guidance provided in the code_saturne tutorials.
 The steps described below are intended to provide a way to quickly run through the
 Graphical User Interface (GUI).

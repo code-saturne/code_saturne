@@ -63,23 +63,23 @@ BEGIN_C_DECLS
 
 /* Default writer ids and filters */
 
-#define CS_POST_WRITER_ALL_ASSOCIATED  0       /* all associated writers */
+#define CS_POST_WRITER_ALL_ASSOCIATED  0       /*!< all associated writers */
 
-#define CS_POST_WRITER_DEFAULT        -1       /* default visualisation */
-#define CS_POST_WRITER_ERRORS         -2       /* error visualisation */
-#define CS_POST_WRITER_PARTICLES      -3       /* particle visualisation */
-#define CS_POST_WRITER_TRAJECTORIES   -4       /* trajectories visualisation */
-#define CS_POST_WRITER_PROBES         -5       /* probe monitoring */
-#define CS_POST_WRITER_PROFILES       -6       /* profiles */
-#define CS_POST_WRITER_HISTOGRAMS     -7       /* histograms */
+#define CS_POST_WRITER_DEFAULT        -1       /*!< default visualisation */
+#define CS_POST_WRITER_ERRORS         -2       /*!< error visualisation */
+#define CS_POST_WRITER_PARTICLES      -3       /*!< particle visualisation */
+#define CS_POST_WRITER_TRAJECTORIES   -4       /*!< trajectories visualisation */
+#define CS_POST_WRITER_PROBES         -5       /*!< probe monitoring */
+#define CS_POST_WRITER_PROFILES       -6       /*!< profiles */
+#define CS_POST_WRITER_HISTOGRAMS     -7       /*!< histograms */
 
 /* Default mesh ids */
 
-#define CS_POST_MESH_VOLUME           -1       /* volume mesh output */
-#define CS_POST_MESH_BOUNDARY         -2       /* boundary mesh output */
-#define CS_POST_MESH_PARTICLES        -3       /* particle output */
-#define CS_POST_MESH_TRAJECTORIES     -4       /* particle output */
-#define CS_POST_MESH_PROBES           -5       /* probes output */
+#define CS_POST_MESH_VOLUME           -1       /*!< volume mesh output */
+#define CS_POST_MESH_BOUNDARY         -2       /*!< boundary mesh output */
+#define CS_POST_MESH_PARTICLES        -3       /*!< particle output */
+#define CS_POST_MESH_TRAJECTORIES     -4       /*!< particle output */
+#define CS_POST_MESH_PROBES           -5       /*!< probes output */
 
 /* Additional categories (no associated default mesh) */
 

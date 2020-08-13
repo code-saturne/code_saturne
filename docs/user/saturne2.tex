@@ -104,7 +104,7 @@ corresponds to $10^{12}$.
 
 \minititre{Notes}
 \begin{list}{$\bullet$}{}
-\item Two different files can have neither the same unit number nor the
+\item Two different files can not use the same unit number (in Fortran) nor the
       same name.
 \end{list}
 
@@ -118,53 +118,6 @@ corresponds to $10^{12}$.
 
 For the calculation file related to the thermochemistry, please refer
 to the dedicated \doxygenfile{group__userfile.html}{\texttt{Doxygen} documentation}.
-
-%==================================
-\subsubsection{Post-processing for {\em EnSight} or other tools}
-%==================================
-
-\minititre{Notes}
-$\bullet\quad$The format depends on the user choices, and most options
-are defined using the GUI or \\
-\texttt{cs\_user\_postprocess.c}.\\
-$\bullet\quad$The post-processing files can be of the following formats: {\em Ensight Gold},
-{\em MED} or {\em CGNS}. The use of the two latter formats depends on
-the installation of the corresponding external libraries.\\
-$\bullet\quad$For each quantity (problem unknown, preselected numerical
-variable or preselected physical parameter), the user specifies if a
-post-processing output is wanted. The output frequency can be set.\\
-
-See the dedicated \doxygenanchor{group__entsor.html\#keyvis}{\texttt{Doxygen}
-documentation about \texttt{keyvis}}.
-
-%==================================
-\subsubsection{Chronological records of the variables on specific points}
-%==================================
-
-\minititre{Standard use through Interface or \texttt{cs\_user\_parameters.f90}}
-For each quantity (problem unknown, preselected numerical variable or
-preselected physical parameter), the user indicates whether chronological records
-should be generated, the output period and the position of the
-probes. The code generates chronological records at the cell centers located
-closest to the geometric points defined by the user by means of their
-coordinates. For each quantity, the number of probes and their
-index-numbers must be specified (it is not mandatory to generate all
-the variables at all the probes).
-
-Please refer to the dedicated \doxygenfile{group__history.html}{\texttt{Doxygen} documentation}.
-
-%==================================
-\subsubsection{Time averages}
-%==================================
-See \doxygenfile{parameters.html}{the dedicated \texttt{Doxygen} documentation}.
-
-%==================================
-\subsubsection{Others}
-%==================================
-
-For user calculation file, see the following \doxygenfile{group_userfile.html}{\texttt{Doxygen}
-documentation}. For other printing options, please refer to the
-\doxygenfile{group_entsor.html}{\texttt{Doxygen} documentation} dealing with input/output options.
 
 %==================================
 \subsection{Numerical options}

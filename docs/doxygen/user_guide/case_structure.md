@@ -218,7 +218,7 @@ examples of thermochemical data files used for pulverized coal combustion,
 gas combustion, electric arcs, or a meteorological profile.
 The files to be actually used for the calculation must be copied directly in
 the `DATA` directory and its name may either be unchanged, or be referenced using
-the GUI or using the [usppmo](@ref usppmo) user subroutine.
+the GUI or using the [cs_user_model](@ref cs_user_model) user function.
 In same manner, under the `SRC` directory, a sub-directory named `REFERENCE`
 containing all the available user-defined function templates and a
 the sub-directory named `EXAMPLES`  containing multiple examples are copied.
@@ -226,6 +226,139 @@ the sub-directory named `EXAMPLES`  containing multiple examples are copied.
 As a rule of thumb, all files in `DATA` or `SRC` except for the
 `code_saturne` script are copied for use during code execution,
 but subdirectories are not.
+
+Using the GUI and user-defined functions {#sec_prg_run_gui_udf}
+----------------------------------------
+
+A Graphical User Interface (GUI) is available with code_saturne.  This tool
+creates or reads an XML file according to a specific code_saturne schema which
+is then interpreted by the main script and by the Solver.
+
+The GUI manages calculation parameters, standard initialization values and
+boundary conditions, most available specific physical models (coal and gas combustion,
+atmospheric flows, Lagrangian module, electrical model, compressible model and radiative
+transfers).
+
+Using the GUI is optional, but highly recommended. Each setting or definition
+that can be specified through the GUI can also be specified in the user-defined sources.
+
+The GUI and user-defined functions are designed to be used in combination:
+it is generally preferable to use the GUI for as many settings
+as possible, and resort to user-defined functions only for more complex
+settings which cannot be done through the GUI. This may also include
+settings with many elements that can be better defined using programmatic
+loops. As a general rule, the most concise and easily verifiable approach
+should be used.
+
+In general, user functions and subroutines are called after the GUI-defined
+settings for the relevant settings are loaded, so that when a given parameter
+is specified both in the interface and in a user-defined function or subroutine,
+the value in the user function has priority, or rather has the last word.
+
+\warning
+There are a few limitations to the changes that can be made between the GUI and
+the user routines, related to which variables are solved. In particular, it is
+not possible to activate a specific physical or turbulence model in the GUI and
+activate a conflicting one in use functions (for example, specifying the use
+of a <em>k-ε</em> model in the GUI and change it to
+<em>R<sub>ij</sub>-ε</em> \ref cs_user_model.
+
+For example, in order to set the boundary conditions of a calculation
+corresponding to a channel flow with a given inlet velocity profile, the recommended
+practice is to:
+
+- Using the GUI:
+  - Set the boundary conditions corresponding to the wall and the output.
+  - Set a dummy boundary condition for the inlet (uniform velocity for instance)
+    so as to define the appropriate zone.
+- With user-defined functions:
+  - set the proper velocity profile at inlet in \ref cs_user_boundary_conditions.f90.
+    The dummy velocity entered in the GUI will not be taken into account as it is
+    superceded by this definition (but should appear as the initial value
+    in the corresponding arrays).
+
+The GUI is launched with the `./code_saturne` command in a case's
+`DATA` directory. The first step is then to load an existing parameter file (in
+order to modify it) or to create a new one. By default, the assumed file name
+is `setup.xml`, and changing it is not recommended (though many setting files
+from older versions using various names may be encountered).
+
+The settings available for a typical calculation are the following:
+
+- Calculation environment: case path info,
+  definition of notebook (parametric) variables.
+
+- Mesh: definition of the mesh file(s),
+  mesh preprocessing options, and mesh checking mode.
+
+- Calculation features: choice of physical model, ALE mobile mesh features,
+      turbulence model, thermal model, coupling with SYRTHES...
+
+- Fluid properties: reference pressure, fluid characteristics, gravity.
+  It is also possible to write user laws for the density, the viscosity,
+  the specific heat and the thermal conductivity in the interface through
+  the use of a formulae generator.
+
+- Volume zones: variables initialization, and definition of
+  the zones where to apply head losses or source terms.
+
+- Boundary zones: definition of the boundary conditions for
+  each variable. The colors of the boundary faces may be read
+  directly from a `preprocessor.log*` files created by the Preprocessor
+  or a `run_solver.log` file from a previous solver run.
+
+- Time settings: time stepping scheme, number of time steps,
+   management of calculation restart from a previous run.
+
+- Numerical parameters: advanced parameters
+  for the numerical solution of the equations.
+
+- Postprocessing: visualizable output settings, time averages,
+  probe sets and 1-d profile definitions.
+
+- Performance settings: advanced parallel computing settings
+  (such as partitioning and, IO options).
+
+### User-defined function templates and examples
+
+Reference user-defined functions and subroutines may be found in
+the `SRC\REFERENCE subdirectory of a given case, unless it was created
+with the `--noref` option. In this case, they may always be found
+in the code's installation directory, usually under
+`${install_prefix}/share/code_saturne/user`.
+
+In a similar manners, examples may be found in
+the `SRC\EXAMPLES subdirectory of a given case, unless it was created
+with the `--noref` option, and may always be found
+in the code's installation directory, usually under
+`${install_prefix}/share/code_saturne/user_examples`.
+
+Note that all C, C++, and Fortran files present directly under a case's
+`SRC` directory will be used when running, while those in subdirectories
+will be ignored. To use a given user-defined function, it should be
+copied from the reference to `SRC` and adapted, possibly using code snippets
+from the examples. To temporarily deactivate a given source file,
+a recommended practice is to create a `SRC/STASH` subdirectory
+nd move them to that subdirectory (rather than renaming them).
+
+The GUI also includes a tool which can help manage and edit user-defined
+functions, and check their validity (i.e. correct compilation).
+
+### Upgrading to a newer code_saturne version
+
+Note that when upgrading to a new code_saturne version, the GUI can
+automatically update the XML file (and in the rare case where somelements cannot
+be updated, a warning will be issued). Whereas although an effort is made
+not to break user-defined functions too often, those functions
+are guaranteed to be "stable" only within a same release series.
+
+So for example functions written for v6.0.0 need not be changed in
+bug-fix release 6.0.4, but should be at least verified and possibly updated
+when moving to a release from the 6.1.* series for example.
+
+The easier upgrade mechanism using the GUI is one of the main reasons for which
+defining as many settings as possible using the GUI and keeping user-defined functions
+to the minimum required is so strongly encouraged.
 
 Run configuration file (run.cfg) {#sec_prg_run_cfg}
 ----------------------

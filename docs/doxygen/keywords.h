@@ -53,16 +53,20 @@ char *label:
 /*!
   \var log
 
-  Logging flag fo this field (0: off, 1: on)
+  Logging flag for this field (0: off, 1: on)
 */
 int log:
 
 /*!
   \var post_vis
 
-  Postprocessing and visualization flag fo this field;
-  The value may be a combination of 0, \ref CS_POST_ON_LOCATION,
-  and \ref CS_POST_BOUNDARY_NR
+  Postprocessing and visualization flag for this field;
+  The value may be a combination (sum) of:
+  -  0 (not active)
+  - \ref CS_POST_ON_LOCATION (output on main location)
+  - \ref CS_POST_BOUNDARY_NR (non-reconstructed values postprocessed on boundary
+    if main location is cells)
+  - \ref CS_POST_MONITOR (output on main probe set)
 */
 int post_vis;
 
