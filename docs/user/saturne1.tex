@@ -1667,37 +1667,35 @@ open a new one. The headings to be filled for a standard calculation are the
 following:
 
 \begin{list}{-}{}
-\item Identity and paths: definition of the calculation directories
-      (STUDY, CASE, DATA, SRC, SCRIPTS, MESH).
+\item Calculation environment: case path info,
+      definition of notebook (parametric) variables.
 
-\item Calculation environment: definition of the mesh file(s),
-      stand-alone execution of the Preprocessor module
-      (used by the Interface to get the groups of the boundary
-      faces).
+\item Mesh: definition of the mesh file(s),
+      mesh preprocessing options, and mesh checking mode.
 
-\item Thermophysical models: physical model, ALE mobile mesh features,
-      turbulence model, thermal model, coupling with \syrthes.
+\item Calculation features: choice of physical model, ALE mobile mesh features,
+      turbulence model, thermal model, coupling with \syrthes...
 
-\item Additional scalars: definition, initialisation of the scalars,
-      and physical characteristics.
-
-\item Physical properties: reference pressure, fluid characteristics, gravity.
+\item Fluid properties: reference pressure, fluid characteristics, gravity.
       It is also possible to write user laws for the density, the viscosity,
       the specific heat and the thermal conductivity in the interface through
       the use of a formulae interpreter.
 
-\item Volume conditions: initialisation of the variables, and definition of
+\item Volume zones: initialisation of the variables, and definition of
       the zones where to apply head losses or source terms.
 
-\item Boundary conditions: definition of the boundary conditions for
+\item Boundary zones: definition of the boundary conditions for
       each variable. The colors of the boundary faces may be read
-      directly from a ``preprocessor.log*'' files created by the \pcs
-      or a ``run\_solver.log'' file from a previous Solver run.
+      directly from a ``preprocessor.log*'' files created by the Preprocessor
+      or a ``run\_solver.log'' file from a previous solver run.
 
-\item Numerical parameters: number and type of time step, advanced parameters
+\item Time settings: time stepping scheme, number of time steps,
+      management of calculation restart from a previous run.
+
+\item Numerical parameters: advanced parameters
       for the numerical solution of the equations.
 
-\item Calculation control: parameters concerning the time averages, time step,
+\item Postprocessing: parameters concerning the time averages, time step,
       location of
       the probes where some variables will be monitored over time,
       definition of the frequency of the outputs in the calculation
@@ -1705,10 +1703,8 @@ following:
       The item {\itshape Profiles} allows to save, with a  given frequency,
       1D profiles on an axis defined from two points provided by the user.
 
-\item Calculation management: management of the calculation restarts,
-      updating of the launch script (temporary execution directory, parallel
-      computing, user data or result files, ...) and interactive launch of the
-      calculation.
+\item Performance settings: advanced parallel computing settings
+      (partitioning, IO, ...).
 
 \end{list}
 
