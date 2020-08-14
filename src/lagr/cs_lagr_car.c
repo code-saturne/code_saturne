@@ -392,20 +392,24 @@ cs_lagr_car(int              iprev,
 
         if (cs_glob_lagr_model->modcpl == 1) {
 
-          /* The turbulence dispersion model is made isotropic
-           *
-           * TL_i^* = TL / B_i
-           *
-           * B^2_n  = 1 +  beta^2 |<u_r>|^2/(2 k_f / 3)
-           * B^2_t1 = 1 +4 beta^2 |<u_r>|^2/(2 k_f / 3)
-           * B^2_t2 = 1 +4 beta^2 |<u_r>|^2/(2 k_f / 3)
-           *
-           * is replaced by "tr(B^2)/3 Id"
-           * */
+          /* relative main direction */
+          cs_real_3_t vrn, n_dir;
+          for (cs_lnum_t i = 0; i < 3; i++)
+            vrn[i] = vpart[i] - vflui[i]; // FIXME should be MEAN particle velocity
 
-          bbi[0] = sqrt(1.0 + 3. * cbcb * uvwdif);
-          bbi[1] = sqrt(1.0 + 3. * cbcb * uvwdif);
-          bbi[2] = sqrt(1.0 + 3. * cbcb * uvwdif);
+          cs_math_3_normalise(vrn, n_dir);
+
+          /* crossing trajectory in the n_dir direction */
+          cs_real_t an, at;
+          an = (1.0 + cbcb * uvwdif);
+          at = (1.0 + 4.0 * cbcb * uvwdif);
+
+          /* We take (only) the diagonal part of
+           *  an. n(x)n + at (1 - n(x)n) */
+
+          for (cs_lnum_t id = 0; id < 3; id++)
+            bbi[id] = sqrt(an * cs_math_pow2(n_dir[id]) +
+                           at * (1. - cs_math_pow2(n_dir[id])));
 
           /* Compute the timescale of the fluid velocities seen by discrete
            * particles in parallel and transverse directions */
