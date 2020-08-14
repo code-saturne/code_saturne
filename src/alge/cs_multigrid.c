@@ -57,6 +57,7 @@
 #include "cs_log.h"
 #include "cs_matrix.h"
 #include "cs_matrix_default.h"
+#include "cs_matrix_util.h"
 #include "cs_mesh.h"
 #include "cs_mesh_quantities.h"
 #include "cs_multigrid_smoother.h"
@@ -2958,7 +2959,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
     c_cvg = mg_sles->solve_func(mg_sles->context,
                                 lv_names[level*2],
                                 _matrix,
-                                0, /* verbosity */
+                                verbosity - 4, /* verbosity */
                                 rotation_mode,
                                 precision*mg->info.precision_mult[0],
                                 r_norm_l,
@@ -2981,7 +2982,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
     if (level == 0 && cycle_id == 1)
       *initial_residue = _initial_residue;
 
-    if (verbosity > 0)
+    if (verbosity > 1)
       _log_residual(mg, cycle_id, lv_names[level*2],
                     _matrix, rotation_mode, rhs_lv, vx_lv);
 
@@ -3101,7 +3102,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
     c_cvg = mg_sles->solve_func(mg_sles->context,
                                 lv_names[level*2],
                                 _matrix,
-                                verbosity - 2,
+                                verbosity - 3,
                                 rotation_mode,
                                 precision*mg->info.precision_mult[2],
                                 r_norm_l,
@@ -3125,7 +3126,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
 
     *n_equiv_iter += n_iter * n_g_rows * denom_n_g_rows_0;
 
-    if (verbosity > 0)
+    if (verbosity > 1)
       _log_residual(mg, cycle_id, lv_names[level*2],
                     _matrix, rotation_mode, rhs_lv, vx_lv);
 
@@ -3190,7 +3191,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
         c_cvg = mg_sles->solve_func(mg_sles->context,
                                     lv_names[level*2+1],
                                     _matrix,
-                                    0, /* verbosity */
+                                    verbosity - 4, /* verbosity */
                                     rotation_mode,
                                     precision*mg->info.precision_mult[1],
                                     r_norm_l,
@@ -3214,7 +3215,7 @@ _multigrid_v_cycle(cs_multigrid_t       *mg,
 
         *n_equiv_iter += n_iter * n_g_rows * denom_n_g_rows_0;
 
-        if (verbosity > 0)
+        if (verbosity > 1)
           _log_residual(mg, cycle_id, lv_names[level*2+1],
                         _matrix, rotation_mode, rhs_lv, vx_lv);
 
@@ -4193,9 +4194,15 @@ cs_multigrid_setup_conv_diff(void               *context,
 
   cs_timer_t t0 = cs_timer_time();
 
-  if (verbosity > 1)
+  if (verbosity > 1) {
+    if (!(mg->info.is_pc)) {
+      bft_printf(_("\n Setup of solver for linear system \"%s\"\n"),
+                 name);
+      cs_matrix_log_info(a, verbosity);
+    }
     bft_printf(_("\n Construction of grid hierarchy for \"%s\"\n"),
                name);
+  }
 
   /* Build coarse grids hierarchy */
   /*------------------------------*/
@@ -4301,6 +4308,10 @@ cs_multigrid_solve(void                *context,
     /* Restart solve timer */
     t0 = cs_timer_time();
   }
+
+  if (mg_info->is_pc == false && verbosity > 1)
+    cs_log_printf(CS_LOG_DEFAULT,
+                  _(" RHS norm:          %11.4e\n\n"), r_norm);
 
   /* Buffer size sufficient to avoid local reallocation for most solvers */
   size_t  lv_names_size = _level_names_size(name, mg->setup_data->n_levels);
