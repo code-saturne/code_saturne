@@ -3435,9 +3435,9 @@ _automatic_aggregation_fc(const cs_grid_t       *f,
     cs_real_t ag_mult = 1.;
     cs_real_t ag_threshold = 1. - epsilon;
     if (coarsening_type == CS_GRID_COARSENING_CONV_DIFF_DX) {
-      // ag_mult = -1.;
-      // ag_threshold = - (1. - epsilon) * pow(relaxation_parameter, npass);
-      ag_threshold = (1. - epsilon) * pow(relaxation_parameter, npass);
+      ag_mult = -1.;
+      ag_threshold = - (1. - epsilon) * pow(relaxation_parameter, npass);
+      // ag_threshold = (1. - epsilon) * pow(relaxation_parameter, npass);
     }
 
     for (cs_lnum_t face_id = 0; face_id < n_faces; face_id++) {

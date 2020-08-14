@@ -58,6 +58,14 @@ User changes:
 
 Numerics and physical modelling:
 
+- Convection-diffusion multigrid: restore original aggregation criteria.
+  * This criteria seemed to strangely limit the grid hierarchy depth
+    on a provided test case, but seems to provide much better performance
+    on Rij-epsilon-EBRSM test cases during the initial iterations (with
+    no purely diffusive zone, but we assume a solver adapted to both
+    convection and diffusion should behave well in convective zones).
+  * This solver may now also be selected in the GUI for non-scalar variables.
+
 - Turbulence: remove the vortex method for LES.
 
 - CDO: Add the treatment of the non-linear advection term in
