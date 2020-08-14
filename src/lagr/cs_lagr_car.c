@@ -189,7 +189,6 @@ cs_lagr_car(int              iprev,
     cs_real_t fdr;
     if (rep <= rec)
       fdr = 18.0 * xnul * (1.0 + 0.15 * pow (rep, 0.687)) / d2;
-
     else
       fdr = 0.44 * 3.0 / 4.0 * rel_vel_norm / p_diam;
 
@@ -272,7 +271,6 @@ cs_lagr_car(int              iprev,
       }
 
     }
-
     else if (extra->itytur == 3) {
 
       if (extra->cvar_rij == NULL) {
@@ -298,7 +296,6 @@ cs_lagr_car(int              iprev,
         }
       }
     }
-
     else if (extra->iturb == 60) {
 
       for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
@@ -309,7 +306,6 @@ cs_lagr_car(int              iprev,
       }
 
     }
-
     else {
 
       bft_error
@@ -354,10 +350,8 @@ cs_lagr_car(int              iprev,
         tl  = CS_MAX(tl, cs_math_epzero);
 
         for (cs_lnum_t i = 0; i < 3; i++) {
-
           vpart[i] = part_vel[i];
           vflui[i] = part_vel_seen[i];
-
         }
 
         if (cs_glob_lagr_model->modcpl == 1) {
@@ -429,13 +423,11 @@ cs_lagr_car(int              iprev,
               cs_real_t r11  = extra->cvar_rij->vals[iprev][6*cell_id    ];
               cs_real_t r22  = extra->cvar_rij->vals[iprev][6*cell_id + 1];
               cs_real_t r33  = extra->cvar_rij->vals[iprev][6*cell_id + 2];
-
               ktil = 3.0 * (r11 * bbi[0] + r22 * bbi[1] + r33 * bbi[2])
                          / (2.0 * (bbi[0] + bbi[1] + bbi[2]));
             }
 
           }
-
           else if (   extra->itytur == 2
                    || extra->iturb == 50 || extra->iturb == 60)
             ktil = energi[cell_id];
@@ -454,7 +446,6 @@ cs_lagr_car(int              iprev,
           }
 
         }
-
         else {
 
           for (cs_lnum_t id = 0; id < 3; id++)

@@ -191,8 +191,7 @@ _lages1(cs_real_t           dtp,
   cs_lnum_t nor = cs_glob_lagr_time_step->nor;
 
   const int _prev_id = (extra->vel->n_time_vals > 1) ? 1 : 0;
-  const cs_real_3_t *cvar_vel
-    = (const cs_real_3_t *)(extra->vel->vals[_prev_id]);
+  const cs_real_3_t *cvar_vel = (const cs_real_3_t *)(extra->vel->vals[_prev_id]);
 
   /* Obtain the mean particle velocity for each cell */
 
@@ -201,8 +200,7 @@ _lages1(cs_real_t           dtp,
   cs_field_t *mean_vel_field = cs_lagr_stat_get_moment(
       stat_type, CS_LAGR_STAT_GROUP_PARTICLE, CS_LAGR_MOMENT_MEAN, 0, -1);
 
-  const cs_real_3_t *mean_vel =
-      (const cs_real_3_t *)(mean_vel_field->vals[_prev_id]);
+  const cs_real_3_t *mean_vel = (const cs_real_3_t *)(mean_vel_field->vals[_prev_id]);
 
   /* Integrate SDE's over particles
    * Note: new particles will be integrated at the next time step, otherwise
@@ -257,7 +255,7 @@ _lages1(cs_real_t           dtp,
 
       /* ===========================================================================
        * 1bis. Reference frame change:
-       * --------------------------
+       * -----------------------------
        * global reference frame --> local reference frame for ellipsoids
        * ========================================================================
        */
@@ -269,14 +267,14 @@ _lages1(cs_real_t           dtp,
         // Use euler angles for spheroids (jeffery)
         cs_real_t *euler = cs_lagr_particle_attr(particle, p_am, CS_LAGR_EULER);
 
-        trans_m[0][0] = 2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5);/* (0,0) */
-        trans_m[0][1] = 2.*(euler[1]*euler[2]-euler[0]*euler[3]);    /* (0,1) */
-        trans_m[0][2] = 2.*(euler[1]*euler[3]+euler[0]*euler[2]);    /* (0,2) */
-        trans_m[1][0] = 2.*(euler[1]*euler[2]+euler[0]*euler[3]);    /* (1,0) */
-        trans_m[1][1] = 2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5);/* (1,1) */
-        trans_m[1][2] = 2.*(euler[2]*euler[3]-euler[0]*euler[1]);    /* (1,2) */
-        trans_m[2][0] = 2.*(euler[1]*euler[3]-euler[0]*euler[2]);    /* (2,0) */
-        trans_m[2][1] = 2.*(euler[2]*euler[3]+euler[0]*euler[1]);    /* (2,1) */
+        trans_m[0][0] = 2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5); /* (0,0) */
+        trans_m[0][1] = 2.*(euler[1]*euler[2]-euler[0]*euler[3]);     /* (0,1) */
+        trans_m[0][2] = 2.*(euler[1]*euler[3]+euler[0]*euler[2]);     /* (0,2) */
+        trans_m[1][0] = 2.*(euler[1]*euler[2]+euler[0]*euler[3]);     /* (1,0) */
+        trans_m[1][1] = 2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5); /* (1,1) */
+        trans_m[1][2] = 2.*(euler[2]*euler[3]-euler[0]*euler[1]);     /* (1,2) */
+        trans_m[2][0] = 2.*(euler[1]*euler[3]-euler[0]*euler[2]);     /* (2,0) */
+        trans_m[2][1] = 2.*(euler[2]*euler[3]+euler[0]*euler[1]);     /* (2,1) */
         trans_m[2][2] = 2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5); /* (2,2) */
 
         perform_rotation = true;
@@ -318,7 +316,7 @@ _lages1(cs_real_t           dtp,
                cs_glob_lagr_model->modcpl == 1) {
 
         // Rotate the frame of reference with respect to the
-        // relative particle direction, if possible
+        // relative particle direction
         cs_real_t new_dir[3];
         for (cs_lnum_t i = 0; i < 3; i++)
           new_dir[i] = mean_part_vel[i] - fluid_vel_r[i];
@@ -540,7 +538,6 @@ _lages1(cs_real_t           dtp,
             tempf = tempf + tkelvi;
 
           }
-
           else
             tempf = cs_glob_fluid_properties->t0;
 
@@ -568,25 +565,19 @@ _lages1(cs_real_t           dtp,
             tbrix1    = 0.0;
 
           if (tiu2 > 0.0) {
-
             tbriu      = sqrt(tiu2) * brgaus[ip * 6 + id + 3];
             terbru[ip] = sqrt(tiu2);
-
           }
           else {
-
             tbriu     = 0.0;
             terbru[ip]  = 0.0;
-
           }
 
         }
         else {
-
           tbrix1  = 0.0;
           tbrix2  = 0.0;
           tbriu   = 0.0;
-
         }
 
         /* Finalisation des ecritures */
@@ -653,14 +644,14 @@ _lages1(cs_real_t           dtp,
 
         cs_real_t *euler = cs_lagr_particle_attr(particle, p_am, CS_LAGR_EULER);
 
-        trans_m[0][0] = 2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5);/* (0,0) */
-        trans_m[0][1] = 2.*(euler[1]*euler[2]-euler[0]*euler[3]);    /* (0,1) */
-        trans_m[0][2] = 2.*(euler[1]*euler[3]+euler[0]*euler[2]);    /* (0,2) */
-        trans_m[1][0] = 2.*(euler[1]*euler[2]+euler[0]*euler[3]);    /* (1,0) */
-        trans_m[1][1] = 2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5);/* (1,1) */
-        trans_m[1][2] = 2.*(euler[2]*euler[3]-euler[0]*euler[1]);    /* (1,2) */
-        trans_m[2][0] = 2.*(euler[1]*euler[3]-euler[0]*euler[2]);    /* (2,0) */
-        trans_m[2][1] = 2.*(euler[2]*euler[3]+euler[0]*euler[1]);    /* (2,1) */
+        trans_m[0][0] = 2.*(euler[0]*euler[0]+euler[1]*euler[1]-0.5); /* (0,0) */
+        trans_m[0][1] = 2.*(euler[1]*euler[2]-euler[0]*euler[3]);     /* (0,1) */
+        trans_m[0][2] = 2.*(euler[1]*euler[3]+euler[0]*euler[2]);     /* (0,2) */
+        trans_m[1][0] = 2.*(euler[1]*euler[2]+euler[0]*euler[3]);     /* (1,0) */
+        trans_m[1][1] = 2.*(euler[0]*euler[0]+euler[2]*euler[2]-0.5); /* (1,1) */
+        trans_m[1][2] = 2.*(euler[2]*euler[3]-euler[0]*euler[1]);     /* (1,2) */
+        trans_m[2][0] = 2.*(euler[1]*euler[3]-euler[0]*euler[2]);     /* (2,0) */
+        trans_m[2][1] = 2.*(euler[2]*euler[3]+euler[0]*euler[1]);     /* (2,1) */
         trans_m[2][2] = 2.*(euler[0]*euler[0]+euler[3]*euler[3]-0.5); /* (2,2) */
 
         perform_rotation = true;
