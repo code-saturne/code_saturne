@@ -2666,6 +2666,7 @@ do ifac = 1, nfabor
 
   yplus = byplus(ifac)
   dplus = bdplus(ifac)
+  uk = buk(ifac)
 
   ! Test on the presence of a smooth wall condition (start)
   if (icodcl(ifac,iu).eq.5) then
