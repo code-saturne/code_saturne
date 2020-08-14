@@ -1176,6 +1176,7 @@ cs_wall_functions_s_vdriest(cs_real_t  prl,
  *                              (\f$ Pr y^+/T^+ \f$)
  */
 /*----------------------------------------------------------------------------*/
+
 inline static void
 cs_wall_functions_s_smooth_rough(cs_real_t  l_visc,
                                  cs_real_t  prl,
@@ -1186,6 +1187,8 @@ cs_wall_functions_s_smooth_rough(cs_real_t  l_visc,
                                  cs_real_t  dplus,
                                  cs_real_t *htur)
 {
+  CS_UNUSED(prt);
+
   /* Sand grain roughness is:
    * zeta = z0 * exp(kappa 8.5)
    * Then:
@@ -1245,7 +1248,7 @@ void CS_PROCF (wallfunctions, WALLFUNCTIONS)
  * Wrapper to cs_wall_functions_scalar.
  *----------------------------------------------------------------------------*/
 
-  void CS_PROCF (hturbp, HTURBP)
+void CS_PROCF (hturbp, HTURBP)
 (
  const int        *const iwalfs,
  const cs_real_t  *const l_visc,

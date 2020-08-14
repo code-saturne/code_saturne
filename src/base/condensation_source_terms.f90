@@ -80,7 +80,7 @@ implicit none
 
 ! Variables
 
-integer          ncelet, ncel
+integer          ncelet
 integer          nfbpcd, ncmast
 integer          iscal
 integer          ifbpcd(nfbpcd), itypcd(nfbpcd)

@@ -648,7 +648,12 @@ contains
     c_type_flag = type_flag
     c_location_id = location_id
     c_dim = dim
-    c_has_previous = has_previous
+
+    if (has_previous) then
+      c_has_previous = .true.
+    else
+      c_has_previous = .false.
+    endif
 
     f = cs_field_create(c_name, c_type_flag, c_location_id, c_dim, &
                         c_has_previous)
@@ -1159,10 +1164,31 @@ contains
     c_id = id
 
     f = cs_field_by_id(c_id)
-    c_have_flux_bc = have_flux_bc
-    c_have_mom_bc = have_mom_bc
-    c_have_conv_bc = have_conv_bc
-    c_have_exch_bc = have_exch_bc
+
+    if (have_flux_bc) then
+      c_have_flux_bc = .true.
+    else
+      c_have_flux_bc = .false.
+    endif
+
+    if (have_mom_bc) then
+      c_have_mom_bc = .true.
+    else
+      c_have_mom_bc = .false.
+    endif
+
+    if (have_conv_bc) then
+      c_have_conv_bc = .true.
+    else
+      c_have_conv_bc = .false.
+    endif
+
+    if (have_exch_bc) then
+      c_have_exch_bc = .true.
+    else
+      c_have_exch_bc = .false.
+    endif
+
     call cs_field_allocate_bc_coeffs(f, c_have_flux_bc, c_have_mom_bc, &
                                         c_have_conv_bc, c_have_exch_bc)
 
