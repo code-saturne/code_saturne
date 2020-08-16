@@ -1422,6 +1422,8 @@ cs_turb_compute_constants(void)
   cs_turb_cstlog_alpha = exp(-cs_turb_xkappa
                              * (cs_turb_cstlog_rough - cs_turb_cstlog));
 
+  cs_field_pointer_ensure_init();
+
   if (CS_F_(k) != NULL)
     cs_field_set_key_double(CS_F_(k), cs_field_key_id("turbulent_schmidt"), 1.);
 
