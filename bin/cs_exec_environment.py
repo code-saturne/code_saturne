@@ -861,7 +861,7 @@ def source_syrthes_env(pkg):
     for p in (syrthes_bin, syr_datapath):
         if sys.path.count(p) > 0:
             sys.path.remove(p)
-    sys.path.insert(0, p)
+        sys.path.insert(0, p)
 
 #-------------------------------------------------------------------------------
 

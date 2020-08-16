@@ -182,27 +182,6 @@ def unset_executable(path):
     return
 
 #-------------------------------------------------------------------------------
-# Build lines necessary to import SYRTHES packages
-#-------------------------------------------------------------------------------
-
-def syrthes_path_line(pkg):
-    """
-    Build lines necessary to import SYRTHES packages
-    """
-
-    line = None
-
-    config = configparser.ConfigParser()
-    config.read(pkg.get_configfiles())
-
-    if config.has_option('install', 'syrthes'):
-        syr_datapath = os.path.join(config.get('install', 'syrthes'),
-                                    os.path.join('share', 'syrthes'))
-        line = 'sys.path.insert(1, \'' + syr_datapath + '\')\n'
-
-    return line
-
-#-------------------------------------------------------------------------------
 # Create local launch script
 #-------------------------------------------------------------------------------
 
