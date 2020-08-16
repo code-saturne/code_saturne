@@ -599,11 +599,6 @@ class case:
         s_path = os.path.join(self.exec_dir, 'summary')
         s = open(s_path, 'w')
 
-        preprocessor = self.package.get_preprocessor()
-        solver = os.path.join(self.exec_dir, self.package.solver)
-        if not os.path.isfile(solver):
-            solver = self.package.get_solver()
-
         r = exec_env.resources
 
         date = (datetime.datetime.now()).strftime("%A %B %d %H:%M:%S CEST %Y")

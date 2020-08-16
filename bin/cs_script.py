@@ -151,6 +151,8 @@ Options:
         return cs_create.main(options, self.package)
 
     def gui(self, options = None):
+        if self.package.config.features["gui"] == "no":
+            raise Exception("This code_saturne build does not include the GUI.")
         from code_saturne import cs_gui
         return cs_gui.main(options, self.package)
 

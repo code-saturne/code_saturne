@@ -129,6 +129,9 @@ class package:
 
     def get_preprocessor(self):
 
+        if self.config.features['frontend'] == "no":
+            raise Exception("This " + self.name + " build does not " + \
+                            "include the front-end and Preprocessor.")
         return os.path.join(self.get_dir("pkglibexecdir"),
                             self.preprocessor)
 
