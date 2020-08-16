@@ -221,7 +221,8 @@ class BoundaryConditionsScalarsView(QWidget, Ui_BoundaryConditionsScalarsForm):
 
             if bb.getMeteoDataStatus() == 'off':
                 self.groupBoxMeteo.hide()
-                self.groupBoxThermal.show()
+                if self.model_th != 'off':
+                    self.groupBoxThermal.show()
                 self.modelMeteo = ComboModel(self.comboBoxMeteo, 1, 1)
                 if len(self.meteo_list) > 0:
                     self.groupBoxMeteo.show()

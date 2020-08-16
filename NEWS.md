@@ -3,6 +3,9 @@ Release 6.1.2 (unreleased)
 
 Bug fixes:
 
+- Fix GUI crash when accessing thermal boundary condition which should be
+  hidden using constant density atmospheric model (GitLab issue #223).
+
 - Fix missing intialization of Lagrangian 2-way coupling source terms.
 
 - Fix mesh coordinates update in case of ALE restart.
@@ -99,6 +102,9 @@ Architectural changes:
 Release 6.1.0 (April 15 2020)
 -----------------------------
 
+User changes:
+
+- Add lambda0 field for thermal conductivity to the
 User changes:
 
 - Add lambda0 field for thermal conductivity to the
@@ -3512,6 +3518,3 @@ Code_Saturne 1.3 is a major (fully validated) production release.
 Release 1.3.0 is the feature-freeze release, and versions 1.3.1
 and 1.3.2 are validation bug-fix versions. 1.3.3 is the first production
 version of Code_Saturne 1.3.
-
-This version of the code is also the first version of Code_Saturne distributed
-under a free software (GPL + LGPL) licence.
