@@ -3,6 +3,9 @@ Release 6.0.5 (unreleased)
 
 Bug fixes:
 
+- Fix GUI crash when accessing thermal boundary condition which should be
+  hidden using constant density atmospheric model (GitLab issue #223).
+
 - Fix missing intialization of Lagrangian 2-way coupling source terms.
 
 - Fix mesh coordinates update in case of ALE restart.
