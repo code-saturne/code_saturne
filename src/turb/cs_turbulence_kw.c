@@ -130,12 +130,12 @@ BEGIN_C_DECLS
  *                              mass source
  *                              (for ivar=ipr, smacel is the mass flux)
  */
- /*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_turbulence_kw(int              nvar,
-                 int              ncesmp,
-                 int              icetsm[],
+                 cs_lnum_t        ncesmp,
+                 cs_lnum_t        icetsm[],
                  int              itypsm[nvar][ncesmp],
                  const cs_real_t  dt[],
                  cs_real_t        smacel[nvar][ncesmp])
@@ -993,19 +993,6 @@ cs_turbulence_kw(int              nvar,
 
   if (ncesmp > 0) {
 
-    int itypsm_k[ncesmp];
-    int itypsm_omg[ncesmp];
-    cs_real_t smacel_k[ncesmp];
-    cs_real_t smacel_omg[ncesmp];
-    cs_real_t smacel_p[ncesmp];
-    for (int ii = 0; ii < ncesmp; ii++) {
-      itypsm_k[ii] = itypsm[ii][ivar_k];
-      itypsm_omg[ii] = itypsm[ii][ivar_omg];
-      smacel_k[ii] = smacel[ii][ivar_k];
-      smacel_omg[ii] = smacel[ii][ivar_omg];
-      smacel_p[ii] = smacel[ii][ivar_p];
-    }
-
     cs_real_t *gamk;
     cs_real_t *gamw;
     BFT_MALLOC(gamk, n_cells_ext, cs_real_t);
@@ -1017,11 +1004,11 @@ cs_turbulence_kw(int              nvar,
     cs_mass_source_terms(ncesmp,
                          1,
                          icetsm,
-                         itypsm_k,
+                         itypsm[ivar_k],
                          cell_f_vol,
                          cvara_k,
-                         smacel_k,
-                         smacel_p,
+                         smacel[ivar_k],
+                         smacel[ivar_p],
                          smbrk,
                          tinstk,
                          gamk);
@@ -1031,11 +1018,11 @@ cs_turbulence_kw(int              nvar,
     cs_mass_source_terms(ncesmp,
                          1,
                          icetsm,
-                         itypsm_omg,
+                         itypsm[ivar_omg],
                          cell_f_vol,
                          cvara_omg,
-                         smacel_omg,
-                         smacel_p,
+                         smacel[ivar_omg],
+                         smacel[ivar_p],
                          smbrw,
                          tinstw,
                          gamw);

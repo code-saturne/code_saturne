@@ -257,12 +257,12 @@ _tsepls(cs_real_t w1[])
  *                              (for ivar=ipr, smacel is the mass flux)
  * \param[out]    prdv2f        v2f production term
  */
- /*----------------------------------------------------------------------------*/
+/*----------------------------------------------------------------------------*/
 
 void
 cs_turbulence_ke(int              nvar,
-                 int              ncesmp,
-                 int              icetsm[],
+                 cs_lnum_t        ncesmp,
+                 cs_lnum_t        icetsm[],
                  int              itypsm[nvar][ncesmp],
                  const cs_real_t  dt[],
                  cs_real_t        smacel[nvar][ncesmp],
@@ -1478,37 +1478,22 @@ cs_turbulence_ke(int              nvar,
       w2[c_id] = 0.;
       w3[c_id] = 0.;
     }
+
     int ivar_k = cs_field_get_key_int(f_k, var_key_id) - 1;
     int ivar_eps = cs_field_get_key_int(f_eps, var_key_id) - 1;
     int ivar_p = cs_field_get_key_int(CS_F_(p), var_key_id) - 1;
 
-    int itypsm_k[ncesmp];
-    int itypsm_eps[ncesmp];
-    cs_real_t smacel_k[ncesmp];
-    cs_real_t smacel_eps[ncesmp];
-    cs_real_t smacel_p[ncesmp];
-
-    for (cs_lnum_t ii = 0; ii < ncesmp; ii++) {
-
-      itypsm_k[ii] = itypsm[ii][ivar_k];
-      itypsm_eps[ii] = itypsm[ii][ivar_eps];
-      smacel_k[ii] = smacel[ii][ivar_k];
-      smacel_eps[ii] = smacel[ii][ivar_eps];
-      smacel_p[ii] = smacel[ii][ivar_p];
-
-    }
-
-    /* We incremente smbrs with -Gamma.var_prev and rovsdt with Gamma */
+    /* We increment smbrs with -Gamma.var_prev and rovsdt with Gamma */
     /* ivar = k; */
 
     cs_mass_source_terms(ncesmp,
                          1,
                          icetsm,
-                         itypsm_k,
+                         itypsm[ivar_k],
                          cell_f_vol,
                          cvara_k,
-                         smacel_k,
-                         smacel_p,
+                         smacel[ivar_k],
+                         smacel[ivar_p],
                          smbrk,
                          w2,
                          w4);
@@ -1517,11 +1502,11 @@ cs_turbulence_ke(int              nvar,
     cs_mass_source_terms(ncesmp,
                          1,
                          icetsm,
-                         itypsm_eps,
+                         itypsm[ivar_eps],
                          cell_f_vol,
                          cvara_ep,
-                         smacel_eps,
-                         smacel_p,
+                         smacel[ivar_eps],
+                         smacel[ivar_p],
                          smbre,
                          w3,
                          w5);

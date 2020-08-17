@@ -62,8 +62,8 @@ BEGIN_C_DECLS
 
 void
 cs_turbulence_kw(int              nvar,
-                 int              ncesmp,
-                 int              icetsm[],
+                 cs_lnum_t        ncesmp,
+                 cs_lnum_t        icetsm[],
                  int              itypsm[nvar][ncesmp],
                  const cs_real_t  dt[],
                  cs_real_t        smacel[nvar][ncesmp]);
