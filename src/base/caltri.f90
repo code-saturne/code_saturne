@@ -93,7 +93,7 @@ integer          modhis, iappel, iisuit
 integer          iel
 integer          inod   , idim, ifac
 integer          itrale , ntmsav
-integer          nent , nstruct, volmode
+integer          nent   , nstruct, volmode
 integer          iterns
 integer          stats_id, restart_stats_id, lagr_stats_id, post_stats_id
 
@@ -101,6 +101,8 @@ double precision titer1, titer2
 
 integer          ivoid(1)
 double precision rvoid(1)
+
+logical          legacy_mass_st_zones
 
 double precision, save :: ttchis
 
@@ -210,6 +212,16 @@ interface
 
   !=============================================================================
 
+  subroutine cs_volume_mass_injection_build_lists(ncetsm, icetsm, izctsm) &
+    bind(C, name='cs_volume_mass_injection_build_lists')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    integer(kind=c_int), value :: ncetsm
+    integer(kind=c_int), dimension(*), intent(out) :: icetsm, izctsm
+  end subroutine cs_volume_mass_injection_build_lists
+
+  !=============================================================================
+
 end interface
 
 !===============================================================================
@@ -254,6 +266,8 @@ call initi2
 
 ! First pass for every subroutine
 iappel = 1
+
+legacy_mass_st_zones = .false.
 
 ! Allocate temporary arrays for zones definition
 allocate(izctsm(ncel))
@@ -305,18 +319,25 @@ endif
 ! Mass source terms
 ! -----------------
 
-call cs_user_mass_source_terms &
-( nvar   , nscal  , ncepdc ,                                     &
-  ncetsm , iappel ,                                              &
-  ivoid  ,                                                       &
-  ivoid  , ivoid  , izctsm ,                                     &
-  rvoid  ,                                                       &
-  ckupdc , rvoid  )
-
 ! Total number of cells with mass source term
 nctsmt = ncetsm
 if (irangp.ge.0) then
   call parcpt(nctsmt)
+endif
+
+! If already defined through zones, do not use first (counting)
+! call for legacy user mass source terms.
+if (nctsmt.eq.0) then
+  call cs_user_mass_source_terms(nvar, nscal, ncepdc, ncetsm, 1,   &
+                                 ivoid, ivoid, ivoid, izctsm,      &
+                                 rvoid, ckupdc, rvoid )
+  nctsmt = ncetsm
+  if (irangp.ge.0) then
+    call parcpt(nctsmt)
+  endif
+  if (nctsmt.gt.0) then
+    legacy_mass_st_zones = .true.
+  endif
 endif
 
 if (nctsmt.gt.0) then
@@ -423,7 +444,7 @@ if (ncpdct.gt.0) then
 endif
 
 if (nctsmt.gt.0) then
-  call init_tsma ( nvar )
+  call init_tsma (nvar)
 endif
 
 if (nftcdt.gt.0) then
@@ -727,24 +748,18 @@ if (ncpdct.gt.0) then
 
 endif
 
-! On appelle cs_user_mass_source_terms lorsqu'il y a sur un processeur au moins
-!     des cellules avec terme source de masse.
-!     On ne fait que remplir le tableau d'indirection des cellules
-!     On appelle cependant cs_user_mass_source_terms avec tous les processeurs,
-!     au cas ou l'utilisateur aurait mis en oeuvre des operations globales.
+! Build volume mass injection cell lists when present on at least one rank.
+! This is a collective call for consistency and in case the user requires it.
 
 if (nctsmt.gt.0) then
 
-  call volume_zone_select_type_cells(VOLUME_ZONE_MASS_SOURCE_TERM, icetsm)
-
-  iappel = 2
-  call cs_user_mass_source_terms &
-( nvar   , nscal  , ncepdc ,                                     &
-  ncetsm , iappel ,                                              &
-  icepdc ,                                                       &
-  icetsm , itypsm , izctsm ,                                     &
-  dt     ,                                                       &
-  ckupdc , smacel )
+  if (.not. legacy_mass_st_zones) then
+    call cs_volume_mass_injection_build_lists(ncetsm, icetsm, izctsm)
+  else
+    call cs_user_mass_source_terms(nvar, nscal, ncepdc, ncetsm, 2,   &
+                                   icepdc, icetsm, itypsm, izctsm,   &
+                                   dt, ckupdc, smacel)
+  endif
 
 endif
 

@@ -180,7 +180,6 @@ end subroutine usphyv
 !> \param[in]     icepdc        head loss cell numbering
 !> \param[in]     icetsm        numbering of cells with mass source term
 !> \param[in]     itypsm        kind of mass source for each variable
-!>                               (cf. \ref cs_user_mass_source_terms)
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     ckupdc        work array for head loss terms
 !> \param[in]     smacel        values of variables related to mass source
@@ -267,7 +266,6 @@ end subroutine usvist
 !> \param[in]     icepdc        head loss cell numbering
 !> \param[in]     icetsm        numbering of cells with mass source term
 !> \param[in]     itypsm        kind of mass source for each variable
-!>                               (cf. \ref cs_user_mass_source_terms)
 !> \param[in]     dt            time step (per cell)
 !> \param[in]     ckupdc        work array for head loss terms
 !> \param[in]     smacel        values of variables related to mass source

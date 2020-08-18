@@ -1,8 +1,9 @@
-#ifndef __CS_TURBUBELNCE_KE_H__
-#define __CS_TURBUBELNCE_KE_H__
+
+#ifndef __CS_TURBULENCE_INFLOW_H__
+#define __CS_TURBULENCE_INFLOW_H__
 
 /*============================================================================
- * k-epsilon turbulence model.
+ * Turbulent inflow generation
  *============================================================================*/
 
 /*
@@ -27,15 +28,25 @@
 
 /*----------------------------------------------------------------------------*/
 
+#include "cs_defs.h"
+
 /*----------------------------------------------------------------------------
  *  Local headers
  *----------------------------------------------------------------------------*/
 
-#include "cs_defs.h"
+#include "cs_base.h"
 
 /*----------------------------------------------------------------------------*/
 
 BEGIN_C_DECLS
+
+/*============================================================================
+ * Macro definitions
+ *============================================================================*/
+
+/*============================================================================
+ * Type definitions
+ *============================================================================*/
 
 /*=============================================================================
  * Public function prototypes
@@ -43,36 +54,26 @@ BEGIN_C_DECLS
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief Solve the k-epsilon equations.
+ * \brief Define mass injection for turbulent quantities based
+ *        on a hydraulic diameter and reference velocity.
  *
- * Solve the \f$ k - \varepsilon \f$  for incompressible flows
- * or slightly compressible flows for one time step.
- *
- * \param[in]     nvar          total number of variables
- * \param[in]     ncesmp        number of cells with mass source term
- * \param[in]     icetsm        index of cells with mass source term
- * \param[in]     itypsm        mass source type for the variables
- *                              size: [nvar][ncesmp]
- * \param[in]     dt            time step (per cell)
- * \param[in]     smacel        values of the variables associated to the
- *                              mass source (for the pressure variable,
- *                              smacel is the mass flux)
- *                              size: [nvar][ncesmp]
- * \param[out]    prdv2f        v2f production term
+ * \param[in]  zone_name  name of zone to which injection should be added
+ * \param[in]  uref2      square of the reference flow velocity
+ * \param[in]  dh         hydraulic diameter \f$ D_H \f$
+ * \param[in]  rho        mass density \f$ \rho \f$
+ * \param[in]  mu         dynamic viscosity \f$ \nu \f$
  */
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_ke(int              nvar,
-                 cs_lnum_t        ncesmp,
-                 cs_lnum_t        icetsm[],
-                 int              itypsm[],
-                 const cs_real_t *dt,
-                 cs_real_t        smacel[],
-                 cs_real_t       *prdv2f);
+cs_turbulence_inflow_volume_mass_injection_ke_hyd_diam(const char  *zone_name,
+                                                       double       uref2,
+                                                       double       dh,
+                                                       double       rho,
+                                                       double       mu);
 
 /*----------------------------------------------------------------------------*/
 
 END_C_DECLS
 
-#endif /* __CS_TURBUBELNCE_KE_H__ */
+#endif /* __CS_TURBULENCE_INFLOW_H__ */

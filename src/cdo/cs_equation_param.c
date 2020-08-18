@@ -1947,6 +1947,11 @@ cs_equation_create_param(const char            *name,
   eqp->n_source_terms = 0;
   eqp->source_terms = NULL;
 
+  /* Mass injection in the volume term (always in the right-hand side)
+     No volume mass injection term by default */
+  eqp->n_volume_mass_injections = 0;
+  eqp->volume_mass_injections = NULL;
+
   /* Members of the structure to handle the enforcement of (internal) DoFs */
   eqp->enforcement_type = 0;
   BFT_MALLOC(eqp->enforcement_ref_value, eqp->dim, cs_real_t);
@@ -2094,6 +2099,15 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
   for (int i = 0; i < dst->n_source_terms; i++)
     dst->source_terms[i] = cs_xdef_copy(ref->source_terms[i]);
 
+  /* Mass injection term */
+  dst->n_volume_mass_injections = ref->n_volume_mass_injections;
+  BFT_MALLOC(dst->volume_mass_injections,
+             dst->n_volume_mass_injections,
+             cs_xdef_t *);
+  for (int i = 0; i < dst->n_volume_mass_injections; i++)
+    dst->volume_mass_injections[i]
+      = cs_xdef_copy(ref->volume_mass_injections[i]);
+
   /* No enforcement of internal DoFs */
   dst->enforcement_type = ref->enforcement_type;
   BFT_MALLOC(dst->enforcement_ref_value, dst->dim, cs_real_t);
@@ -2151,16 +2165,20 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
 
 /*----------------------------------------------------------------------------*/
 /*!
- * \brief  Free a \ref cs_equation_param_t
+ * \brief  Free the contents of a \ref cs_equation_param_t
  *
- * \param[in, out] eqp          pointer to a \ref cs_equation_param_t
+ * The cs_equation_param_t structure itself is not freed, but all its
+ * sub-structures are freed.
  *
- * \return a NULL pointer
+ * This is useful for equation parameters which are accessed through
+ * field keywords.
+ *
+ * \param[in, out]  eqp  pointer to a \ref cs_equation_param_t
  */
 /*----------------------------------------------------------------------------*/
 
-cs_equation_param_t *
-cs_equation_free_param(cs_equation_param_t     *eqp)
+void
+cs_equation_param_clear(cs_equation_param_t   *eqp)
 {
   if (eqp == NULL)
     return NULL;
@@ -2192,6 +2210,16 @@ cs_equation_free_param(cs_equation_param_t     *eqp)
 
   }
 
+  /* Information related to the definition of mass injection terms */
+  if (eqp->n_volume_mass_injections > 0) {
+
+    for (int i = 0; i < eqp->n_volume_mass_injections; i++)
+      eqp->volume_mass_injections[i]
+        = cs_xdef_free(eqp->volume_mass_injections[i]);
+    BFT_FREE(eqp->volume_mass_injections);
+
+  }
+
   /* Information related to the enforcement of internal DoFs */
   BFT_FREE(eqp->enforcement_ref_value);
 
@@ -2217,6 +2245,26 @@ cs_equation_free_param(cs_equation_param_t     *eqp)
   }
 
   BFT_FREE(eqp->name);
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Free a \ref cs_equation_param_t
+ *
+ * \param[in, out] eqp          pointer to a \ref cs_equation_param_t
+ *
+ * \return a NULL pointer
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_param_t *
+cs_equation_free_param(cs_equation_param_t     *eqp)
+{
+  if (eqp == NULL)
+    return NULL;
+
+  cs_equation_param_clear(eqp);
+
   BFT_FREE(eqp);
 
   return NULL;
@@ -3594,6 +3642,151 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
   eqp->n_source_terms += 1;
   BFT_REALLOC(eqp->source_terms, eqp->n_source_terms, cs_xdef_t *);
   eqp->source_terms[new_id] = d;
+
+  return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new volume mass injection definition source term by
+ *         initializing a cs_xdef_t structure, using a constant value.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      val       pointer to the value
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_volume_mass_injection_by_value(cs_equation_param_t  *eqp,
+                                               const char           *z_name,
+                                               double               *val)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+
+  /* Add a new cs_xdef_t structure */
+  int z_id = cs_get_vol_zone_id(z_name);
+
+  cs_flag_t state_flag = 0, meta_flag = 0;
+
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
+
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_VALUE,
+                                        eqp->dim,
+                                        z_id,
+                                        state_flag,
+                                        meta_flag,
+                                        val);
+
+  int  new_id = eqp->n_volume_mass_injections;
+  eqp->n_volume_mass_injections += 1;
+  BFT_REALLOC(eqp->volume_mass_injections,
+              eqp->n_volume_mass_injections,
+              cs_xdef_t *);
+  eqp->volume_mass_injections[new_id] = d;
+
+  return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new volume mass injection definition source term by
+ *         initializing a cs_xdef_t structure, using a constant quantity
+ *         distributed over the associated zone's volume.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      quantity  pointer to quantity to distribute over the zone
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_volume_mass_injection_by_qov(cs_equation_param_t  *eqp,
+                                             const char           *z_name,
+                                             double               *quantity)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+
+  /* Add a new cs_xdef_t structure */
+  int z_id = cs_get_vol_zone_id(z_name);
+
+  cs_flag_t state_flag = 0, meta_flag = 0;
+
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
+
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_QOV,
+                                        eqp->dim,
+                                        z_id,
+                                        state_flag,
+                                        meta_flag,
+                                        quantity);
+
+  int  new_id = eqp->n_volume_mass_injections;
+  eqp->n_volume_mass_injections += 1;
+  BFT_REALLOC(eqp->volume_mass_injections,
+              eqp->n_volume_mass_injections,
+              cs_xdef_t *);
+  eqp->volume_mass_injections[new_id] = d;
+
+  return d;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new volume mass injection definition source term by
+ *         initializing a cs_xdef_t structure, using an analytical function.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      func      pointer to an analytical function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t    *eqp,
+                                                  const char             *z_name,
+                                                  cs_analytic_func_t     *func,
+                                                  void                   *input)
+{
+  if (eqp == NULL)
+    bft_error(__FILE__, __LINE__, 0, "%s: %s\n", __func__, _err_empty_eqp);
+
+  /* Add a new cs_xdef_t structure */
+  int z_id = cs_get_vol_zone_id(z_name);
+
+  cs_flag_t state_flag = 0, meta_flag = 0;
+
+  if (z_id == 0)
+    meta_flag |= CS_FLAG_FULL_LOC;
+
+  cs_xdef_analytic_input_t  ana_input = {.func = func, .input = input};
+  cs_xdef_t  *d = cs_xdef_volume_create(CS_XDEF_BY_ANALYTIC_FUNCTION,
+                                        eqp->dim,
+                                        z_id,
+                                        state_flag,
+                                        meta_flag,
+                                        &ana_input);
+
+  int  new_id = eqp->n_volume_mass_injections;
+  eqp->n_volume_mass_injections += 1;
+  BFT_REALLOC(eqp->volume_mass_injections,
+              eqp->n_volume_mass_injections,
+              cs_xdef_t *);
+  eqp->volume_mass_injections[new_id] = d;
 
   return d;
 }

@@ -46,6 +46,7 @@
 #include "bft_error.h"
 #include "bft_printf.h"
 
+#include "cs_equation_param.h"
 #include "cs_log.h"
 #include "cs_mesh_location.h"
 #include "cs_post.h"
@@ -209,6 +210,70 @@ cs_variable_field_create(const char  *name,
     cs_field_set_key_int(f, cs_field_key_id("coupled"), 1);
 
   return f->id;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Access a field's equation parameters for read only.
+ *
+ * If the equation parameters were never initialized, they will be initialized
+ * based on the current defaults.
+ *
+ * If the field does not have associated equaton paremeters (i.e. is not
+ * a variable field or is a CDO field (which is referenced by but does not
+ * directly reference equations), NULL is returned.
+ *
+ * \param[in, out]  f  pointer to associated field
+ *
+ * \return  pointer to field's equation parameters, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_equation_param_t *
+cs_field_get_equation_param(cs_field_t  *f)
+{
+  cs_equation_param_t *eqp = NULL;
+
+  static int k_id = -1;
+  if (k_id < 0)
+    k_id = cs_field_key_id_try("var_cal_opt");
+
+  if (k_id >= 0 && (f->type & CS_FIELD_VARIABLE))
+    eqp = cs_field_get_key_struct_ptr(f, k_id);
+
+  return eqp;
+}
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Access a field's equation parameters.
+ *
+ * If the equation parameters were never initialized, the currect default
+ * parameters will be returned instead.
+ *
+ * If the field does not have associated equaton paremeters (i.e. is not
+ * a variable field or is a CDO field (which is referenced by but does not
+ * directly reference equations), NULL is returned.
+ *
+ * \param[in]  f  pointer to associated field
+ *
+ * \return  const-qaulified pointer to field's equation parameters, or NULL
+ */
+/*----------------------------------------------------------------------------*/
+
+const cs_equation_param_t *
+cs_field_get_equation_param_const(const cs_field_t  *f)
+{
+  const cs_equation_param_t *eqp = NULL;
+
+  static int k_id = -1;
+  if (k_id < 0)
+    k_id = cs_field_key_id_try("var_cal_opt");
+
+  if (k_id >= 0 && (f->type & CS_FIELD_VARIABLE))
+    eqp = cs_field_get_key_struct_const_ptr(f, k_id);
+
+  return eqp;
 }
 
 /*----------------------------------------------------------------------------*/

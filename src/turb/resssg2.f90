@@ -374,7 +374,7 @@ if (ncesmp.gt.0) then
   do isou = 1, dimrij
 
     ! We increment smbr with -Gamma.var_prev and rovsdr with Gamma
-    call catsmt(ncelet, ncel, ncesmp, 1, icetsm, itypsm(:,ivar+isou-1),       &
+    call catsmt(ncesmp, 1, icetsm, itypsm(:,ivar+isou-1),                     &
                 cell_f_vol, cvara_var, smacel(:,ivar+isou-1), smacel(:,ipr),  &
                 smbr, rovsdt, gatinj)
 

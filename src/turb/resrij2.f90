@@ -323,9 +323,9 @@ if (ncesmp.gt.0) then
   do isou = 1, dimrij
 
     ! We increment smbr with -Gamma.var_prev and rovsdr with Gamma
-    call catsmt(ncelet, ncel, ncesmp, 1, icetsm, itypsm(:,irij+isou-1),       &
+    call catsmt(ncesmp, 1, icetsm, itypsm(:,irij+isou-1),                     &
                 cell_f_vol, cvara_var, smacel(:,irij+isou-1), smacel(:,ipr),  &
-                smbr,  rovsdt, w1)
+                smbr, rovsdt, w1)
 
     ! If we extrapolate the source terms we put Gamma Pinj in the previous st
     if (st_prv_id.ge.0) then

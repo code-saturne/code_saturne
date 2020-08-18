@@ -449,9 +449,11 @@ cs_xdef_eval_at_cells_by_analytic(cs_lnum_t                    n_elts,
 
   cs_xdef_analytic_input_t  *anai = (cs_xdef_analytic_input_t *)input;
 
+  const cs_real_t *cell_centers = (quant != NULL) ? quant->cell_centers : NULL;
+
   /* Evaluate the function for this time at the cell center */
   anai->func(time_eval,
-             n_elts, elt_ids, quant->cell_centers,
+             n_elts, elt_ids, cell_centers,
              compact, /* Is output compacted ? */
              anai->input,
              eval);

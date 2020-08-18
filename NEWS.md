@@ -3,6 +3,14 @@ Master (not on release branches yet)
 
 User changes:
 
+- Volume mass injections can now be defined using zone and
+  equation parameter based cs_equation_add_volume_mass_injection_*
+  functions.
+  * Previous definitions remain compatible but are deprecated.
+  * Using the legacy mathod, if at least one zone is defined using
+    the CS_VOLUME_ZONE_MASS_SOURCE_TERM flag, these zones will be used
+    and the first 2 calls to cs_user_mass_source_terms are not needed.
+
 - Add possibility to edit coupling parameters in the GUI using an editor.
   * Editor can be launched from the GUI of any Code_Saturne coupled case
     (CASE/DATA/code_saturne).
@@ -11,7 +19,7 @@ User changes:
     code_saturne [gui|cplgui] run.cfg
 
 - Thermal model:
-  * the iscacp(iscal) array is replaced by the field key-word "is_temperature".
+  * The iscacp(iscal) array is replaced by the field key-word "is_temperature".
     This allows using it also from C code.
 
 - Various improvments to CGNS output:

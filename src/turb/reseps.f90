@@ -112,7 +112,6 @@ double precision smbr(ncelet), rovsdt(ncelet)
 integer          init
 integer          ivar
 integer          iel
-integer          iiun
 integer          iflmas, iflmab
 integer          imrgrp, nswrgp, imligp, iwarnp
 integer          iconvp, idiffp, ndircp
@@ -308,15 +307,10 @@ endif
 
 if (ncesmp.gt.0) then
 
-  ! Integer equal to 1 (forr navsto: nb of sur-iter)
-  iiun = 1
-
   ! We increment smbr with -Gamma.var_prev. and rovsdt with Gamma
-  call catsma &
- ( ncesmp , iiun   ,                                              &
-   icetsm , itypsm(:,ivar)  ,                                     &
-   cell_f_vol , cvara_ep        , smacel(:,ivar)   , smacel(:,ipr) ,  &
-   smbr   , rovsdt , w1 )
+  call catsma(ncesmp, 1, icetsm, itypsm(:,ivar),                    &
+              cell_f_vol, cvara_ep, smacel(:,ivar), smacel(:,ipr),  &
+              smbr, rovsdt, w1)
 
   ! If we extrapolate the source terms, we put Gamma Pinj in c_st_prv
   if (st_prv_id.ge.0) then

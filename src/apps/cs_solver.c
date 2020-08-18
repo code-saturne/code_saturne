@@ -113,6 +113,7 @@
 #include "cs_timer_stats.h"
 #include "cs_tree.h"
 #include "cs_turbomachinery.h"
+#include "cs_volume_mass_injection.h"
 #include "cs_volume_zone.h"
 
 /*----------------------------------------------------------------------------*/
@@ -411,6 +412,8 @@ _run(void)
           cs_fan_build_all(cs_glob_mesh, cs_glob_mesh_quantities);
 
           cs_ctwr_build_all();
+
+          cs_volume_mass_injection_flag_zones();
 
           /* Setup couplings and fixed-mesh postprocessing */
 

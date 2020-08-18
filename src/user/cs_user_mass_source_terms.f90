@@ -30,9 +30,18 @@
 !>
 !> \brief Mass source term user subroutine.
 !>
-!> See \ref cs_user_mass_source_terms for examples.
+!> \deprecated Replaced by \ref cs_equation_add_source_term_by_val,
+!> \ref cs_equation_add_volume_mass_injection_by_qov, and
+!> \ref cs_equation_add_volume_mass_injection_by_analytic.
+!> See \ref cs_user_volume_mass_injection for examples.
 !>
-
+!> \remark Compared to previous versions, this subroutine is only
+!> called with parameter id iappel 1 or 2 of no user-defined zone already
+!> has the CS_VOLUME_ZONE_MASS_SOURCE_TERM type. If this type was assigned
+!> to one or more zones (using \ref cs_volume_zone_set_type or directly
+!> modifying the type flag), the matching zones will be selected
+!> automaticaly (and izctsm set accordingly).
+!>
 !-------------------------------------------------------------------------------
 !>           Arguments
 !______________________________________________________________________________.
@@ -101,9 +110,6 @@ integer, allocatable, dimension(:) :: lstelt
 
 !===============================================================================
 
-! Allocate a temporary array for cells selection
-allocate(lstelt(ncel))
-
 if (iappel.eq.1.or.iappel.eq.2) then
 
 !===============================================================================
@@ -114,8 +120,7 @@ if (iappel.eq.1.or.iappel.eq.2) then
 !       iappel = 1: ncesmp: calculation of the number of cells with
 !                             mass source term
 
-
-!   Second call (if ncesmp>0):
+!   Second call:
 !       iappel = 2: icetsm: index number of cells with mass source terms
 
 ! WARNINGS
@@ -127,9 +132,17 @@ if (iappel.eq.1.or.iappel.eq.2) then
 !   This section (iappel=1 or 2) is only accessed at the beginning of a
 !     calculation. Should the localization of the mass source terms evolve
 !     in time, the user must identify at the beginning all cells that can
-!     potentially becomea mass source term.
+!     potentially become mass source term.
 
 !===============================================================================
+
+! Allocate a temporary array for cells selection
+allocate(lstelt(ncel))
+
+! INSERT_USER_CODE_HERE
+
+! Deallocate the temporary array
+deallocate(lstelt)
 
 !-------------------------------------------------------------------------------
 
@@ -142,18 +155,16 @@ elseif (iappel.eq.3) then
 !       iappel = 3 : itypsm : type of mass source term
 !                    smacel : mass source term
 
-
 ! Remark
 ! ======
 ! If itypsm(ieltsm,ivar) is set to 1, smacel(ieltsm,ivar) must be set.
 
 !===============================================================================
 
+!  Set itypsm and smacel values
+!  ----------------------------
 
-
-!  2.1 To be completed by the user: itypsm and smacel
-!  --------------------------------------------------
-
+! INSERT_USER_CODE_HERE
 
 endif
 
@@ -161,20 +172,9 @@ endif
 ! Formats
 !--------
 
- 1000 format(/,'Mass rate generated in the domain: ',E14.5,/)
-
- 2000 format(/,'Mass flux rate generated in the domain: ',E14.5,/,         &
-               '                         distributed on the volume: ',E14.5)
-
- 9000 format(/,'Error in cs_user_mass_source_terms',/,               &
-               '   the volume of the mass suction area is = ',E14.5,/)
-
 !----
 ! End
 !----
-
-! Deallocate the temporary array
-deallocate(lstelt)
 
 return
 end subroutine cs_user_mass_source_terms

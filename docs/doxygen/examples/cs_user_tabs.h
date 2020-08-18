@@ -55,6 +55,7 @@ Here is a list of user examples. Thoroughly documented snippets are provided.
    - \subpage drift_scalars
 
 \section example_volume_bc Volume and boundary conditions
+   - \subpage cs_user_zones_examples "Volume and boundary zone definitions"
    - \subpage user_initialization "Physical fields user initialization"
    - \subpage cs_user_boundary_conditions_examples "User boundary condition definitions"
    - \subpage cs_user_boundary_conditions_ale "User boundary condition definition for the ALE model"
@@ -62,7 +63,7 @@ Here is a list of user examples. Thoroughly documented snippets are provided.
    - \subpage les_inflow "Inflow Boundary conditions for LES"
    - \subpage cs_head_losses "Define head losses zones"
    - \subpage user_source_terms "Define additional source terms for transport equations (momentum and species)"
-   - \subpage cs_user_mass_source_terms "Define mass source terms"
+   - \subpage cs_user_volume_mass_injection "Define volume injection (mass source terms)"
    - \subpage condens "Define condensation"
 
 \section example_numerical_param Numerical parameters

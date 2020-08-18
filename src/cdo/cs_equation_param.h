@@ -706,6 +706,26 @@ typedef struct {
 
   /*!
    * @}
+   * @name Definition of the related volume mass injection
+   * The contribution of a volume mass injection to the algebraic system
+   * is always at right-hand side whatever is the choice of time scheme,
+   * and is defined in a manner similar to boundary conditions. For
+   * variables whose injection value matches the "ambient" value, no term
+   * needs to be added.
+   * @{
+   *
+   * \var n_volume_mass_injections
+   * Number of volume injections to consider.
+   *
+   * \var volume_mass_injections
+   * List of definitions of injection values
+   */
+
+  int                           n_volume_mass_injections;
+  cs_xdef_t                   **volume_mass_injections;
+
+  /*!
+   * @}
    * @name Enforcement of values inside the computational domain
    *
    * This is different from the enforcement of boundary conditions but rely on
@@ -1332,6 +1352,23 @@ cs_equation_param_update_from(const cs_equation_param_t   *ref,
 
 /*----------------------------------------------------------------------------*/
 /*!
+ * \brief  Free the contents of a \ref cs_equation_param_t
+ *
+ * The cs_equation_param_t structure itself is not freed, but all its
+ * sub-structures are freed.
+ *
+ * This is useful for equation parameters which are accessed through
+ * field keywords.
+ *
+ * \param[in, out]  eqp  pointer to a \ref cs_equation_param_t
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_equation_param_clear(cs_equation_param_t   *eqp);
+
+/*----------------------------------------------------------------------------*/
+/*!
  * \brief  Free a \ref cs_equation_param_t
  *
  * \param[in] eqp          pointer to a \ref cs_equation_param_t
@@ -1772,6 +1809,66 @@ cs_equation_add_source_term_by_array(cs_equation_param_t    *eqp,
                                      cs_real_t              *array,
                                      bool                    is_owner,
                                      cs_lnum_t              *index);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new volume mass injection definition source term by
+ *         initializing a cs_xdef_t structure, using a constant value.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      val       pointer to the value
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_volume_mass_injection_by_value(cs_equation_param_t  *eqp,
+                                               const char           *z_name,
+                                               double               *val);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new volume mass injection definition source term by
+ *         initializing a cs_xdef_t structure, using a constant quantity
+ *         distributed over the associated zone's volume.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      quantity  pointer to quantity to distribute over the zone
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_volume_mass_injection_by_qov(cs_equation_param_t  *eqp,
+                                             const char           *z_name,
+                                             double               *quantity);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief  Add a new volume mass injection definition source term by
+ *         initializing a cs_xdef_t structure, using an analytical function.
+ *
+ * \param[in, out] eqp       pointer to a cs_equation_param_t structure
+ * \param[in]      z_name    name of the associated zone (if NULL or "" if
+ *                           all cells are considered)
+ * \param[in]      func      pointer to an analytical function
+ * \param[in]      input     NULL or pointer to a structure cast on-the-fly
+ *
+ * \return a pointer to the new \ref cs_xdef_t structure
+ */
+/*----------------------------------------------------------------------------*/
+
+cs_xdef_t *
+cs_equation_add_volume_mass_injection_by_analytic(cs_equation_param_t    *eqp,
+                                                  const char             *z_name,
+                                                  cs_analytic_func_t     *func,
+                                                  void                   *input);
 
 /*----------------------------------------------------------------------------*/
 /*!

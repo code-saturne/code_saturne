@@ -1,5 +1,5 @@
-#ifndef __CS_HEADERS_H__
-#define __CS_HEADERS_H__
+#ifndef __CS_TURBULENCE_HEADERS_H__
+#define __CS_TURBULENCE_HEADERS_H__
 
 /*============================================================================
  * Global Code_Saturne headers file for easier include
@@ -29,31 +29,17 @@
  * Local headers
  *----------------------------------------------------------------------------*/
 
-/* Disable some compiler warnings */
-
-#if defined __INTEL_COMPILER
-#pragma warning disable 2259
-#endif
-
-/* Include headers by groups */
-
-#include "cs_bft_headers.h"
-#include "cs_base_headers.h"
-#include "fvm_headers.h"
-#include "cs_mesh_headers.h"
-#include "cs_alge_headers.h"
-#include "cs_atmo_headers.h"
-#include "cs_cfbl_headers.h"
-#include "cs_cdo_headers.h"
-#include "cs_ctwr_headers.h"
-#include "cs_darc_headers.h"
-#include "cs_elec_headers.h"
-#include "cs_gui_headers.h"
-#include "cs_lagr_headers.h"
-#include "cs_pprt_headers.h"
-#include "cs_rad_headers.h"
-#include "cs_turbulence_headers.h"
+#include "cs_clip_ke.h"
+#include "cs_les_balance.h"
+#include "cs_les_filter.h"
+#include "cs_les_inflow.h"
+#include "cs_turbulence_bc.h"
+#include "cs_turbulence_inflow.h"
+#include "cs_turbulence_ke.h"
+#include "cs_turbulence_kw.h"
+#include "cs_turbulence_model.h"
+#include "cs_turbulence_rotation.h"
 
 /*----------------------------------------------------------------------------*/
 
-#endif /* __CS_HEADERS_H__ */
+#endif /* __CS_TURBULENCE_HEADERS_H__ */

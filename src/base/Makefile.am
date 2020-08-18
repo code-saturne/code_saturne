@@ -123,6 +123,7 @@ cs_log.h \
 cs_log_iteration.h \
 cs_log_setup.h \
 cs_map.h \
+cs_mass_source_terms.h \
 cs_math.h \
 cs_measures_util.h \
 cs_rank_neighbors.h \
@@ -173,11 +174,11 @@ cs_tree.h \
 cs_turbomachinery.h \
 cs_vof.h \
 cs_volume_zone.h \
+cs_volume_mass_injection.h \
 cs_wall_functions.h \
 cs_zone.h \
 cs_base_headers.h \
-cs_headers.h \
-cs_mass_source_terms.h
+cs_headers.h
 
 if HAVE_CUDA
 pkginclude_HEADERS += cs_base_cuda.h
@@ -234,8 +235,6 @@ c_h_to_t.f90 \
 calhyd.f90 \
 caltri.f90 \
 cs_mass_source_terms.c \
-catsmv.f90 \
-catsmt.f90 \
 clpsca.f90 \
 clptrg.f90 \
 clptur.f90 \
@@ -333,6 +332,7 @@ cs_time_step.c \
 cs_timer_stats.c \
 cs_turbomachinery.c \
 cs_vof.c \
+cs_volume_mass_injection.c \
 cs_volume_zone.c \
 cs_wall_functions.c \
 cs_internal_coupling.c \

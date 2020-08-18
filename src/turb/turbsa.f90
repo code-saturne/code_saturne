@@ -467,9 +467,9 @@ if (ncesmp.gt.0) then
   !     -Gamma.var_prev is added to the RHS and Gamma to tinssa
   ivar = inusa
 
-  call catsma(ncesmp, 1, icetsm, itypsm(:,ivar),                     &
-             cell_f_vol, cvara_nusa, smacel(:,ivar), smacel(:,ipr),  &
-             rhssa, tinssa, w1)
+  call catsma(ncesmp, 1, icetsm, itypsm(:,ivar),                      &
+              cell_f_vol, cvara_nusa, smacel(:,ivar), smacel(:,ipr),  &
+              rhssa, tinssa, w1)
 
   ! --- Explicit part: Gamma Pinj
   !     (if we extrapolate source terms, Gamma.var_prev is stored in prev. TS)

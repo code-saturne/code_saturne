@@ -147,7 +147,7 @@ logical          lprev
 character(len=80) :: chaine, fname
 integer          ivar
 integer          ii, ifac , iel, isou
-integer          iprev , inc   , iccocg, iiun, ibcl
+integer          iprev , inc   , iccocg, ibcl
 integer          ivarsc
 integer          iiscav, iscacp
 integer          ifcvsl, iflmas, iflmab, f_oi_id
@@ -282,7 +282,7 @@ call field_get_key_int(iflid, kbmasf, iflmab) ! boundary mass flux
 ! Pointer to the Boundary mass flux
 call field_get_val_s(iflmab, bmasfl)
 
-call field_get_key_struct_var_cal_opt(ivarfl(ivar), vcopt)
+call field_get_key_struct_var_cal_opt(iflid, vcopt)
 
 if (vcopt%iwgrec.eq.1) then
   ! Id weighting field for gradient
@@ -319,7 +319,7 @@ else
 endif
 
 ! --- Numero des grandeurs physiques
-call field_get_key_int (ivarfl(isca(iscal)), kromsl, icrom_scal)
+call field_get_key_int (iflid, kromsl, icrom_scal)
 
 if (icrom_scal.eq.-1) then
   icrom_scal = icrom
@@ -333,7 +333,7 @@ endif
 call field_get_val_s(ivisct, visct)
 call field_get_val_s(iviscl, viscl)
 
-call field_get_key_int (ivarfl(isca(iscal)), kivisl, ifcvsl)
+call field_get_key_int (iflid, kivisl, ifcvsl)
 if (ifcvsl.ge.0) then
   call field_get_val_s(ifcvsl, cpro_viscls)
 endif
@@ -401,10 +401,10 @@ if (irangp.ge.0.or.iperio.eq.1) then
 endif
 
 ! Retrieve turbulent Schmidt value for current scalar
-call field_get_key_double(ivarfl(isca(iscal)), ksigmas, turb_schmidt)
+call field_get_key_double(iflid, ksigmas, turb_schmidt)
 ! If turbulent Schmidt is variable, id of the corresponding field
 call field_get_key_id("turbulent_schmidt_id", key_turb_schmidt)
-call field_get_key_int(ivarfl(isca(iscal)), key_turb_schmidt, t_scd_id)
+call field_get_key_int(iflid, key_turb_schmidt, t_scd_id)
 if (t_scd_id.ge.0) then
   call field_get_val_s(t_scd_id, cpro_turb_schmidt)
 endif
@@ -434,7 +434,7 @@ call ustssc &
   ckupdc , smacel , smbrs  , rovsdt )
 
 ! C version
-call user_source_terms(ivarfl(isca(iscal)), smbrs, rovsdt)
+call user_source_terms(iflid, smbrs, rovsdt)
 
 ! Take into account radioactive decay rate (implicit source term)
 if (ippmod(idarcy).eq.1) then
@@ -640,9 +640,6 @@ endif
 
 if (ncesmp.gt.0) then
 
-  ! Entier egal a 1 (pour navsto : nb de sur-iter)
-  iiun = 1
-
   allocate(srcmas(ncesmp))
 
   ! When treating the Temperature, the equation is multiplied by Cp
@@ -655,11 +652,9 @@ if (ncesmp.gt.0) then
   enddo
 
   ! On incremente SMBRS par -Gamma RTPA et ROVSDT par Gamma
-  call catsma &
- ( ncesmp , iiun   ,                                              &
-   icetsm , itypsm(:,ivar) ,                                      &
-   cell_f_vol , cvara_var    , smacel(:,ivar) , srcmas   ,        &
-   smbrs  , rovsdt , w1)
+  call catsma(ncesmp, 1, icetsm, itypsm(:,ivar),               &
+              cell_f_vol, cvara_var, smacel(:,ivar), srcmas,   &
+              smbrs, rovsdt, w1)
 
   deallocate(srcmas)
 
@@ -1054,7 +1049,7 @@ if (vcopt%idiff.ge.1) then
     ! EB-GGDH/AFM/DFM: solving alpha for the scalar
     if (iturt(iscal).eq.11.or.iturt(iscal).eq.21.or.iturt(iscal).eq.31) then
       ! Name of the scalar
-      call field_get_name(ivarfl(isca(iscal)), fname)
+      call field_get_name(iflid, fname)
 
       ! Index of the corresponding turbulent flux
       call field_get_id(trim(fname)//'_alpha', f_id)

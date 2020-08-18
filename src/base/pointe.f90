@@ -447,7 +447,7 @@ contains
 
   !=============================================================================
 
-  subroutine init_tsma ( nvar )
+  subroutine init_tsma(nvar)
 
     implicit none
 
@@ -463,13 +463,13 @@ contains
 
   subroutine finalize_tsma
 
+    ncetsm = 0
     deallocate(icetsm)
     deallocate(itypsm)
     deallocate(smacel)
 
   end subroutine finalize_tsma
 
-  !=============================================================================
   !=============================================================================
 
   subroutine init_pcond ( nvar )

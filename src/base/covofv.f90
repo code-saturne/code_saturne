@@ -372,11 +372,9 @@ if (ncesmp.gt.0) then
 
   ! On incremente SMBRV par -Gamma RTPA et ROVSDT par Gamma
   allocate(gavinj(3,ncelet))
-  call catsmv &
- ( ncelet , ncel   , ncesmp , iiun   ,                            &
-   icetsm , itypsm(:,ivar) ,                                      &
-   cell_f_vol , cvara_var    , smacel(:,ivar) , smacel(:,ipr),    &
-   smbrv  , fimp , gavinj)
+  call catsmv(ncesmp, 1, icetsm, itypsm(:,ivar),                     &
+              cell_f_vol, cvara_var, smacel(:,ivar), smacel(:,ipr),  &
+              smbrv, fimp, gavinj)
 
   ! Si on extrapole les TS on met Gamma Pinj dans cproa_vect_st
   if (st_prv_id .ge. 0) then

@@ -408,7 +408,7 @@ cs_user_time_moments(void)
       int moment_f_id[] = {f_id};
       int moment_c_id[] = {-1};
       int n_fields = 1;
-      char *extension = "_mean";
+      const char extension[] = "_mean";
       char *mean_name;
       BFT_MALLOC(mean_name, strlen(f->name) + 1 + 5, char);
 

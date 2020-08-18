@@ -116,6 +116,7 @@ cs_user_parameters-coupling.c \
 cs_user_parameters-fans.c \
 cs_user_parameters-cdo-gwf.c \
 cs_user_parameters-linear_solvers.c \
+cs_user_parameters-volume_mass_injection.c \
 cs_user_parameters-time_moments.c \
 cs_user_performance_tuning-matrix.c \
 cs_user_performance_tuning-numbering.c \
@@ -170,7 +171,6 @@ cs_user_initialization-richards.f90 \
 cs_user_initialization-time_step.f90 \
 cs_user_initialization-unified_combustion_coal.f90 \
 cs_user_les_inflow-base.f90 \
-cs_user_mass_source_terms.f90 \
 cs_user_metal_structures_source_terms-condensation.f90 \
 cs_user_modules-user-arrays.f90 \
 cs_user_parameters-richards.f90 \

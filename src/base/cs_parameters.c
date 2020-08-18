@@ -368,6 +368,8 @@ static cs_equation_param_t _equation_param_default
    .reaction_properties = NULL,
    .n_source_terms = 0,
    .source_terms = NULL,
+   .n_volume_mass_injections = 0,
+   .volume_mass_injections = NULL,
 
    .enforcement_type = 0,
    .enforcement_ref_value = NULL,
@@ -1092,17 +1094,20 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_int("limiter_choice", -1, CS_FIELD_VARIABLE);
 
   /* Structure containing the calculation options of the field variables */
-  cs_field_define_key_struct("var_cal_opt",
-                             &_equation_param_default,
-                             _log_func_var_cal_opt,
-                             _log_func_default_var_cal_opt,
-                             sizeof(cs_var_cal_opt_t),
-                             CS_FIELD_VARIABLE);
+  cs_field_define_key_struct
+    ("var_cal_opt",
+     &_equation_param_default,
+     _log_func_var_cal_opt,
+     _log_func_default_var_cal_opt,
+     (cs_field_clear_key_struct_t *)cs_equation_param_clear,
+     sizeof(cs_var_cal_opt_t),
+     CS_FIELD_VARIABLE);
 
   /* Structure containing the solving info of the field variables
      (used for log, not setup, so set NULL setup logging function) */
   cs_field_define_key_struct("solving_info",
                              &_solving_info,
+                             NULL,
                              NULL,
                              NULL,
                              sizeof(cs_solving_info_t),
@@ -1130,6 +1135,7 @@ cs_parameters_define_field_key_gas_mix(void)
                              &_gas_mix_species_prop,
                              _log_func_gas_mix_species_prop,
                              _log_func_default_gas_mix_species_prop,
+                             NULL,
                              sizeof(cs_gas_mix_species_prop_t),
                              0);
 }

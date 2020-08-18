@@ -1499,17 +1499,13 @@ if (ncesmp.gt.0) then
 !       ROVSDT a chaque iteration recoit Gamma
   allocate(gavinj(3,ncelet))
   if (nterup.eq.1) then
-    call catsmv &
-  ( ncelet , ncel , ncesmp , iterns ,                           &
-    icetsm , itypsm(1,iu),                                      &
-    cell_f_vol    , vela , smacel(:,iu) , smacel(:,ipr) ,       &
-    trav   , fimp , gavinj )
+    call catsmv(ncesmp, iterns, icetsm, itypsm(1,iu),               &
+                cell_f_vol, vela, smacel(:,iu), smacel(:,ipr),      &
+                trav, fimp, gavinj)
   else
-    call catsmv &
-  ( ncelet , ncel , ncesmp , iterns ,                           &
-    icetsm , itypsm(1,iu),                                      &
-    cell_f_vol    , vela , smacel(:,iu) , smacel(:,ipr) ,       &
-    trava  , fimp  , gavinj )
+    call catsmv(ncesmp, iterns, icetsm, itypsm(1,iu),               &
+                cell_f_vol, vela, smacel(:,iu), smacel(:,ipr),      &
+                trava, fimp, gavinj)
   endif
 
   ! At the first PISO iteration, the explicit part "Gamma u^{in}" is added

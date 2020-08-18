@@ -1,0 +1,63 @@
+/*============================================================================
+ * Code_Saturne documentation page
+ *============================================================================*/
+
+/*
+  This file is part of Code_Saturne, a general-purpose CFD tool.
+
+  Copyright (C) 1998-2020 EDF S.A.
+
+  This program is free software; you can redistribute it and/or modify it under
+  the terms of the GNU General Public License as published by the Free Software
+  Foundation; either version 2 of the License, or (at your option) any later
+  version.
+
+  This program is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+  details.
+
+  You should have received a copy of the GNU General Public License along with
+  this program; if not, write to the Free Software Foundation, Inc., 51 Franklin
+  Street, Fifth Floor, Boston, MA 02110-1301, USA.
+*/
+
+/*-----------------------------------------------------------------------------*/
+
+/*!
+  \page cs_user_zones_examples  Volume and boundary zone definitions
+  (cs_user_zones.c)
+
+  Volume and boundary zones may be defined using the GUI, or through
+  the \ref cs_user_zones (in cs_user_zones.c).
+
+  \section cs_user_zones_volume_simple Simple volume zone example
+
+  Most zones may be defined in a simple manner using the general
+  \ref sec_selection_criteria "selection criteria", such as in the following
+  example:
+
+  \snippet cs_user_zones.c user_zones_head_loss_1
+
+  \section cs_user_zones_volume_advanced Advanced volume zone example
+
+  More complex selections can be done by defining an appropriate selection
+  function. For example, to select cells adjacent to boundary faces belonging
+  to a group named "G3", the following selection function must first be defined:
+
+  \snippet cs_user_zones.c select_func_vol2
+
+  It can then simply be used in a zone definition:
+
+  \snippet cs_user_zones.c user_zones_volume_2
+
+  \remark If defined as "static", as in this example, an with no function
+          prototype, the selection function must be defined in the same file
+          (i.e. cs_user_zones.c), and appear before the definition of
+          \ref cs_user_zones. If a appropriate selection function is
+          available in another source file, it must have non-static linkage
+          an a function prototype must be provided (usually through an
+          associated .h file).
+
+*/
+// _____________________________________________________________________________
