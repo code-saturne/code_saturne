@@ -1918,7 +1918,7 @@ class case:
             if run_id_prefix:
                 run_id = run_id_prefix + run_id
             if run_id_suffix:
-                run_id = run_id_suffix + run_id
+                run_id = run_id + run_id_suffix
 
             result_dir = os.path.join(r, run_id)
 
