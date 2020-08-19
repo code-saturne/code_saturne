@@ -57,6 +57,7 @@ except Exception:
     from code_saturne.Base.QtGui import QMainWindow, QMessageBox, \
         QAction, QFileDialog, QTextEdit, QPlainTextEdit, QSizePolicy, QMenu, QMessagBox
 
+from code_saturne.model.Common import GuiParam
 #-------------------------------------------------------------------------------
 # log config
 #-------------------------------------------------------------------------------
@@ -326,7 +327,7 @@ class QCouplingEditor(QMainWindow):
 
         self.cfgfile = cfgfile
 
-        self.editorView = CouplingEditorView(self, None, self.cfgfile)
+        self.editorView = CouplingEditorView(None, self.cfgfile)
 
         # If standalone mode, exit if file not loaded
         if self.stdalone:
