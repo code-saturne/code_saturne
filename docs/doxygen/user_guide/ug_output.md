@@ -229,7 +229,7 @@ For each solved variable, it provides:
   chosen solver type, and may be converted to an "equivalent" cost estimation
   in some cases).
 - The normalized residual.
-- The *time drift*;
+- The *time drift*;\n
   For a given variable \f$ \varia \f$ this is usually the following term:
 
   \f[
@@ -238,7 +238,7 @@ For each solved variable, it provides:
 
   For the pressure variable it is computed in a different manner.
 
-- The *time residual*;
+- The *time residual*;\n
   For a given variable \f$ \varia \f$ this is the normalized L<sup>2</sup> unsteady term:
 
   \f[
