@@ -579,13 +579,15 @@ class Case(object):
         if msg:
             studies.reporting(msg)
         repo = os.path.join(result, repo, 'checkpoint', 'main')
+        if not os.path.isfile(repo):
+            repo += '.csc'
 
         result = os.path.join(self.__dest, self.label, self.resu)
         # check_dir called again here to get run_id (possibly date-hour)
         dest, msg = self.check_dir(node, result, d, "dest")
         if msg:
             studies.reporting(msg)
-        dest = os.path.join(result, dest, 'checkpoint', 'main')
+        dest = os.path.join(result, dest, 'checkpoint', 'main.csc')
 
         cmd = self.__diff + ' ' + repo + ' ' + dest
 
@@ -1307,6 +1309,11 @@ class Studies(object):
         if self.__xmlupdate:
             os.remove(file)
             os.remove(doc)
+
+        # Handle relative paths:
+        if self.__ref:
+            if not os.path.isabs(self.__ref):
+                self.__ref = os.path.join(os.getcwd(), self.__ref)
 
     #---------------------------------------------------------------------------
 

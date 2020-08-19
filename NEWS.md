@@ -3,6 +3,8 @@ Release 6.1.2 (unreleased)
 
 Bug fixes:
 
+- Studymanager: fix comparison mode (broken since 6.1.0).
+
 - Fix GUI crash when accessing thermal boundary condition which should be
   hidden using constant density atmospheric model (GitLab issue #223).
 
