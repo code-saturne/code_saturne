@@ -141,7 +141,7 @@ class CathareCouplingModel(Variables, Model):
 
     def getCathareInstanceName(self):
 
-        name = self.__node_nepcat.xmlGetDouble('cathare_instance_name')
+        name = self.__node_nepcat.xmlGetString('cathare_instance_name')
         if name == None:
             name = 'CATHARE'
 
@@ -155,7 +155,7 @@ class CathareCouplingModel(Variables, Model):
 
     def getNeptuneInstanceName(self):
 
-        name = self.__node_nepcat.xmlGetDouble('neptune_instance_name')
+        name = self.__node_nepcat.xmlGetString('neptune_instance_name')
         if name == None:
             name = 'NEPTUNE'
 
