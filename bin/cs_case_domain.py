@@ -1634,7 +1634,7 @@ class cathare_domain(domain):
             user_shell = '/bin/sh'
 
         # log
-        log = open('cathare2_so_generation.log')
+        log = open('cathare2_so_generation.log', 'w')
 
         p = subprocess.Popen(shell_cmd,
                              shell=True,
