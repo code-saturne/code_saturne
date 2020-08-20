@@ -3,6 +3,12 @@ Release 6.0.6 (unreleased)
 
 Bug fixes:
 
+- Major fix in hydrostatic pressure algorithm in the Rhie and Chow filter.
+
+  It only impact cases where external force is not colinear to boundary
+  faces where pressure Dirichlets are imposed (e.g. in atmospheric flows
+  at the top of the domain with automatic BCs).
+
 - Fix boundary reconstruction for hybrid Gauss + least-squares vector
   gradient (GitLab issue #247).
 
