@@ -213,15 +213,14 @@ double precision, allocatable, dimension(:) :: coefa_dp2
 double precision, allocatable, dimension(:) :: coefa_rho, coefb_rho
 double precision, allocatable, dimension(:) :: coefaf_dp2
 double precision, allocatable, dimension(:) :: rhs, rovsdt
-double precision, allocatable, dimension(:), target :: hydro_pres
-double precision, dimension(:), pointer :: cpro_hydro_pres
+double precision, dimension(:), pointer :: cvar_hydro_pres
+double precision, dimension(:), pointer :: cvar_hydro_pres_prev
 double precision, allocatable, dimension(:) :: velflx, velflb, ddphi
 double precision, allocatable, dimension(:,:) :: coefar, cofafr
 double precision, allocatable, dimension(:,:,:) :: coefbr, cofbfr
 double precision, allocatable, dimension(:) :: adxk, adxkm1, dphim1, rhs0
 double precision, allocatable, dimension(:,:) :: weighf
 double precision, allocatable, dimension(:) :: weighb
-double precision, allocatable, dimension(:,:) :: frchy, dfrchy
 double precision, dimension(:), pointer :: coefa_p, coefb_p
 double precision, dimension(:), pointer :: coefaf_p, coefbf_p
 double precision, allocatable, dimension(:) :: iflux, bflux
@@ -274,21 +273,12 @@ allocate(trav(3, ncelet))
 iswdyp = vcopt_p%iswdyn
 if (iswdyp.ge.1) allocate(adxk(ncelet), adxkm1(ncelet),   &
                           dphim1(ncelet), rhs0(ncelet))
-if (icalhy.eq.1) allocate(frchy(ndim,ncelet),             &
-                          dfrchy(ndim,ncelet))
 
 call field_get_id_try("hydrostatic_pressure", f_id)
 if (f_id.ge.0) then
-  call field_get_val_s(f_id, cpro_hydro_pres)
-else
-  allocate(hydro_pres(ncelet))
-  cpro_hydro_pres => hydro_pres
+  call field_get_val_s(f_id, cvar_hydro_pres)
+  call field_get_val_prev_s(f_id, cvar_hydro_pres_prev)
 endif
-
-! Initialize hydrostatic pressure to 0
-do iel = 1, ncel
-  cpro_hydro_pres(iel) = 0.d0
-enddo
 
 ! Diffusive flux Boundary conditions for delta P
 allocate(coefaf_dp(ndimfb), coefbf_dp(ndimfb))
@@ -461,7 +451,7 @@ do ifac = 1, nfabor
 enddo
 
 ! Compute a pseudo hydrostatic pressure increment stored
-! in cpro_hydro_pres(.) with Homogeneous Neumann BCs everywhere
+! in cvar_hydro_pres(.) with Homogeneous Neumann BCs everywhere
 if (iphydr.eq.1.and.icalhy.eq.1) then
 
   ifcsor = isostd(nfabor+1)
@@ -474,31 +464,12 @@ if (iphydr.eq.1.and.icalhy.eq.1) then
     indhyd = 0
   else
 
-    ! External forces containing buoyancy force ONLY
-    do iel = 1, ncel
-      dronm1 = (croma(iel)-ro0)
-      drom   = (crom(iel)-ro0)
-      frchy(1,iel)  = dronm1*gx
-      frchy(2,iel)  = dronm1*gy
-      frchy(3,iel)  = dronm1*gz
-      dfrchy(1,iel) = drom  *gx - frchy(1,iel)
-      dfrchy(2,iel) = drom  *gy - frchy(2,iel)
-      dfrchy(3,iel) = drom  *gz - frchy(3,iel)
-    enddo
-
-    ! Parallelism and periodicity treatment
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synvin(frchy)
-      call synvin(dfrchy)
-    endif
-
     call calhyd &
     !==========
-    ( indhyd ,                                &
-      !TODO
-      !frchy, dfrchy,                         &!FIXME
-      frcxt  , dfrcxt ,                       &!FIXME
-      cpro_hydro_pres, iflux  , bflux ,       &
+    ( indhyd , iterns ,                       &
+      isostd ,                                &
+      frcxt  , dfrcxt ,                       &
+      cvar_hydro_pres, iflux  , bflux ,       &
       viscf  , viscb  ,                       &
       dam    , xam    ,                       &
       dphi   , rhs    ) !FIXME remove work arrays.
@@ -524,7 +495,7 @@ if (iphydr.eq.1.or.iifren.eq.1) then
     ifac0 = isostd(nfabor+1)
     if (ifac0.gt.0) then
       iel0 = ifabor(ifac0)
-      phydr0 = cpro_hydro_pres(iel0)                                     &
+      phydr0 = cvar_hydro_pres(iel0)                         &
            +(cdgfbo(1,ifac0)-xyzcen(1,iel0))*dfrcxt(1 ,iel0) &
            +(cdgfbo(2,ifac0)-xyzcen(2,iel0))*dfrcxt(2 ,iel0) &
            +(cdgfbo(3,ifac0)-xyzcen(3,iel0))*dfrcxt(3 ,iel0)
@@ -535,9 +506,9 @@ if (iphydr.eq.1.or.iifren.eq.1) then
     endif
   endif
 
-  ! Rescale cpro_hydro_pres so that it is 0 on the reference face
+  ! Rescale cvar_hydro_pres so that it is 0 on the reference face
   do iel = 1, ncel
-    cpro_hydro_pres(iel) = cpro_hydro_pres(iel) - phydr0
+    cvar_hydro_pres(iel) = cvar_hydro_pres(iel) - phydr0
   enddo
 
   ! If hydrostatic pressure increment or free entrance Inlet
@@ -552,13 +523,6 @@ if (iphydr.eq.1.or.iifren.eq.1) then
 
       if (isostd(ifac).eq.1.or.iatmst.ge.1.and.iautof.ge.1) then
         iel=ifabor(ifac)
-
-        if (indhyd.eq.1) then
-          coefa_dp(ifac) =  cpro_hydro_pres(iel)                               &
-                         + (cdgfbo(1,ifac)-xyzcen(1,iel))*dfrcxt(1 ,iel)  &
-                         + (cdgfbo(2,ifac)-xyzcen(2,iel))*dfrcxt(2 ,iel)  &
-                         + (cdgfbo(3,ifac)-xyzcen(3,iel))*dfrcxt(3 ,iel)
-        endif
 
         ! Diffusive flux BCs
         if (iand(vcopt_p%idften, ISOTROPIC_DIFFUSION).ne.0) then
@@ -611,6 +575,15 @@ if (iphydr.eq.1.or.iifren.eq.1) then
           hint = viscis/surfbn(ifac)/fikis
 
         endif
+
+        if (indhyd.eq.1) then
+          coefa_dp(ifac) =  cvar_hydro_pres(iel) - cvar_hydro_pres_prev(iel)   &
+                         + (cdgfbo(1,ifac)-xyzcen(1,iel))*dfrcxt(1 ,iel)  &
+                         + (cdgfbo(2,ifac)-xyzcen(2,iel))*dfrcxt(2 ,iel)  &
+                         + (cdgfbo(3,ifac)-xyzcen(3,iel))*dfrcxt(3 ,iel)
+
+        endif
+
 
         ! Free entrance boundary face (Bernoulli condition to link the pressure
         ! increment and the predicted velocity)
@@ -972,7 +945,7 @@ if (iphydr.eq.1) then
     !==========
  ( init   , nswrgp ,                                              &
    dfrcxt ,                                                       &
-   coefbf_p ,                                                     &
+   coefbf_dp ,                                                    &
    imasfl , bmasfl ,                                              &
    viscf  , viscb  ,                                              &
    viscap , viscap , viscap     )
@@ -984,7 +957,7 @@ if (iphydr.eq.1) then
     !==========
   ( init   , nswrgp , ircflp ,                                     &
     dfrcxt ,                                                       &
-    coefbf_p ,                                                     &
+    coefbf_dp ,                                                    &
     viscf  , viscb  ,                                              &
     vitenp ,                                                       &
     weighf ,                                                       &
@@ -1156,15 +1129,15 @@ endif
 ! --- Number of sweeps
 nswmpr = vcopt_p%nswrsm
 
-! --- Variables are set to 0
+! --- Variables are set to 0 (or hydro pressure increment)
 !       phi        is the increment of the pressure
 !       dphi       is the increment of the increment between sweeps
 !       cpro_divu  is the initial divergence of the predicted mass flux
 
 do iel = 1, ncel
-  phi(iel)  = 0.d0
+  phi(iel)  = cvar_hydro_pres(iel) - cvar_hydro_pres_prev(iel)
   dphi(iel) = 0.d0
-  phia(iel) = 0.d0
+  phia(iel) = phi(iel)
 enddo
 
 relaxp = vcopt_p%relaxv
@@ -1455,7 +1428,7 @@ if (iswdyp.ge.1) then
    iwgrp  , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
    dfrcxt ,                                                                    &
-   dphi   ,                                                                    &
+   phi    ,                                                                    &
    coefa_dp  , coefb_dp  ,                                                     &
    coefaf_dp , coefbf_dp ,                                                     &
    viscf  , viscb  ,                                                           &
@@ -1470,7 +1443,7 @@ if (iswdyp.ge.1) then
    iphydr , iwgrp  , iwarnp ,                                              &
    epsrgp , climgp , extrap ,                                              &
    dfrcxt ,                                                                &
-   dphi   ,                                                                &
+   phi    ,                                                                &
    coefa_dp  , coefb_dp  ,                                                 &
    coefaf_dp , coefbf_dp ,                                                 &
    viscf  , viscb  ,                                                       &
@@ -2281,8 +2254,6 @@ deallocate(coefaf_dp, coefbf_dp)
 deallocate(rhs, rovsdt)
 if (allocated(weighf)) deallocate(weighf, weighb)
 if (iswdyp.ge.1) deallocate(adxk, adxkm1, dphim1, rhs0)
-if (icalhy.eq.1) deallocate(frchy, dfrchy)
-if (allocated(hydro_pres)) deallocate(hydro_pres)
 if (ivofmt.gt.0.or.idilat.eq.4) then
   if (allocated(xdtsro)) deallocate(xdtsro)
   if (allocated(tpusro)) deallocate(tpusro)

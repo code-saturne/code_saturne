@@ -143,6 +143,11 @@ Architectural changes:
 
 Bug fixes:
 
+- Major fix in hydrostatic pressure algorithm in the Rhie and Chow filter.
+  It only impact cases where external force is not colinear to boundary
+  faces where pressure Dirichlets are imposed (e.g. in atmospheric flows
+  at the top of the domain with automatic BCs).
+
 - Fix field output numbering on polyhedra or polygons when writer
   subdivision is activated in serial mode.
 

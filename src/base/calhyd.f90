@@ -32,6 +32,9 @@
 !   mode          name          role
 !------------------------------------------------------------------------------
 !> \param[out]    indhyd        indicateur de mise a jour de phydr
+!> \param[in]     iterns        Navier-Stokes iteration number
+!> \param[in]     isostd        indicator of standard outlet and index
+!>                               of the reference outlet face
 !> \param[in]     fext          external force generating hydrostatic pressure
 !> \param[in]     dfext         external force increment
 !>                              generating hydrostatic pressure
@@ -43,16 +46,17 @@
 !> \param[in,out] dam           work array
 !> \param[in,out] xam           work array
 !> \param[in,out] dpvar         work array
-!> \param[in,out] smbr          work array
+!> \param[in,out] rhs           work array
 !______________________________________________________________________________
 
 subroutine calhyd &
- ( indhyd ,                                                       &
+ ( indhyd , iterns ,                                              &
+   isostd ,                                                       &
    fext   , dfext  ,                                              &
    phydr  , flumas , flumab ,                                     &
    viscf  , viscb  ,                                              &
    dam    , xam    ,                                              &
-   dpvar  , smbr   )
+   dpvar  , rhs   )
 
 !===============================================================================
 ! Module files
@@ -64,10 +68,12 @@ use paramx
 use numvar
 use entsor
 use cstnum
+use cstphy
 use optcal
 use parall
 use period
 use mesh
+use field_operator
 use cs_c_bindings
 
 !===============================================================================
@@ -76,7 +82,9 @@ implicit none
 
 ! Arguments
 
-integer          indhyd
+integer          indhyd, iterns
+
+integer          isostd(nfabor+1)
 
 double precision fext(3,ncelet)
 double precision dfext(3,ncelet)
@@ -85,7 +93,7 @@ double precision flumas(nfac), flumab(nfabor)
 double precision viscf(nfac), viscb(nfabor)
 double precision dam(ncelet), xam(nfac)
 double precision dpvar(ncelet)
-double precision smbr(ncelet)
+double precision rhs(ncelet)
 
 ! Local variables
 
@@ -108,11 +116,12 @@ double precision qimp, hint
 
 double precision rvoid(1)
 
-double precision, allocatable, dimension(:) :: rovsdt, div_dfext, viscce
-double precision, allocatable, dimension(:) :: coefap, coefbp
-double precision, allocatable, dimension(:) :: cofafp, cofbfp
+double precision, allocatable, dimension(:) :: rovsdt, div_fext, viscce
+double precision, allocatable, dimension(:,:) :: next_fext
+double precision, dimension(:), pointer :: coefap, coefbp, cofafp, cofbfp
 
-type(var_cal_opt) :: vcopt_u, vcopt_pr
+type(solving_info) sinfo
+type(var_cal_opt) :: vcopt_pr
 
 !===============================================================================
 
@@ -121,16 +130,25 @@ type(var_cal_opt) :: vcopt_u, vcopt_pr
 !===============================================================================
 
 ! Allocate temporary arrays
-allocate(rovsdt(ncelet), div_dfext(ncelet), viscce(ncelet))
+allocate(rovsdt(ncelet), div_fext(ncelet), viscce(ncelet))
+allocate(next_fext(3, ncelet))
+
+! Field id
+call field_get_id_try("hydrostatic_pressure", f_id)
 
 ! Get variables calculation options
+call field_get_key_struct_var_cal_opt(f_id, vcopt_pr)
+call field_get_key_struct_solving_info(f_id, sinfo)
 
-call field_get_key_struct_var_cal_opt(ivarfl(iu), vcopt_u)
-call field_get_key_struct_var_cal_opt(ivarfl(ipr), vcopt_pr)
+if (iterns.le.1) then
+  sinfo%nbivar = 0
+endif
 
-! Variable name
+call field_get_coefa_s (f_id, coefap)
+call field_get_coefb_s (f_id, coefbp)
+call field_get_coefaf_s(f_id, cofafp)
+call field_get_coefbf_s(f_id, cofbfp)
 
-f_id = -1
 chaine = 'hydrostatic_p'
 lchain = 16
 
@@ -172,7 +190,7 @@ if (iatmst.eq.0) then
   endif
 endif
 
-if (mod(ntcabs,ntlist).eq.0.or.vcopt_u%iwarni.ge.0) write(nfecra,1000)
+if (mod(ntcabs,ntlist).eq.0.or.vcopt_pr%iwarni.ge.0) write(nfecra,1000)
 
  1000 format(                                                           &
 '  Hydrostatic pressure computation: ',/,                   &
@@ -182,15 +200,20 @@ indhyd = 1
 
 f_id0 = -1
 
+do iel=1,ncel
+  next_fext(1 ,iel) = fext(1 ,iel) * cell_is_active(iel) + dfext(1 ,iel)
+  next_fext(2 ,iel) = fext(2 ,iel) * cell_is_active(iel) + dfext(2 ,iel)
+  next_fext(3 ,iel) = fext(3 ,iel) * cell_is_active(iel) + dfext(3 ,iel)
+enddo
+
 !===============================================================================
 ! 2. Prepare matrix and boundary conditions
 !===============================================================================
 
 ! Boundary conditions
 
-! Work arrays for BCs
-allocate(coefap(ndimfb), cofafp(ndimfb))
-allocate(coefbp(ndimfb), cofbfp(ndimfb))
+!  On resout avec des CL de flux nul partout
+ndircp = 0
 
 do ifac = 1, nfabor
   ! LOCAL Neumann Boundary Conditions on the hydrostatic pressure
@@ -222,13 +245,9 @@ call viscfa &
    viscce ,                                                       &
    viscf  , viscb  )
 
-
-iconvp = 0
-idiffp = 1
-!  On resout avec des CL de flux nul partout
-ndircp = 0
-
-thetap = 1.d0
+iconvp = vcopt_pr%iconv
+idiffp = vcopt_pr%idiff
+thetap = vcopt_pr%thetav
 imucpp = 0
 
 call matrix &
@@ -252,18 +271,19 @@ iwarnp = vcopt_pr%iwarni
 epsrgp = vcopt_pr%epsrgr
 climgp = vcopt_pr%climgr
 
+! Compute div(f_ext^n+1)
 call projts &
 !==========
  ( init   , nswrgp ,                                              &
-   dfext  ,                                                       &
+   next_fext,                                                     &
    cofbfp ,                                                       &
    flumas, flumab ,                                               &
    viscf  , viscb  ,                                              &
    viscce , viscce , viscce    )
 
 init = 1
-call divmas(init,flumas,flumab,div_dfext)
-rnorm = sqrt(cs_gdot(ncel,div_dfext,div_dfext))
+call divmas(init,flumas,flumab, div_fext)
+rnorm = sqrt(cs_gdot(ncel,div_fext,div_fext))
 
 !===============================================================================
 ! 4.  BOUCLES SUR LES NON ORTHOGONALITES (RESOLUTION)
@@ -273,74 +293,23 @@ rnorm = sqrt(cs_gdot(ncel,div_dfext,div_dfext))
 nswmpr = vcopt_pr%nswrsm
 
 ! --- Mise a zero des variables
-!       phydr      sera l'increment de pression cumule
 !       dpvar      sera l'increment d'increment a chaque sweep
-!       div_dfext         sera la divergence du flux de masse predit
-do iel = 1,ncel
-  phydr(iel) = 0.d0
+!       div_fext         sera la divergence du flux de masse predit
+do iel = 1, ncel
   dpvar(iel) = 0.d0
-  smbr(iel) = 0.d0
 enddo
 
+! Reconstruction loop (beginning)
+!--------------------------------
 
-! --- Boucle de reconstruction : debut
 do isweep = 1, nswmpr
 
-! --- Mise a jour du second membre
-!     (signe "-" a cause de celui qui est implicitement dans la matrice)
-  do iel = 1, ncel
-    smbr(iel) = - div_dfext(iel) - smbr(iel)
-  enddo
-
-! --- Test de convergence du calcul
-
-  residu = sqrt(cs_gdot(ncel,smbr,smbr))
-  if (vcopt_pr%iwarni.ge.2) then
-    write(nfecra,1400)chaine(1:16),isweep,residu
-  endif
-
-  ! FIXME coherent with resopv!
-  if (residu.le.10.d0*vcopt_pr%epsrsm*rnorm) then
-!     Si convergence,  sortie
-
-    goto 101
-
-  endif
-
-! --- Resolution implicite sur l'increment d'increment DPVAR
-  do iel = 1, ncel
-    dpvar(iel) = 0.d0
-  enddo
-
-  iwarnp = vcopt_pr%iwarni
-  epsilp = vcopt_pr%epsilo
-  ibsize = 1
-  iesize = 1
-
-  call sles_solve_native(f_id, chaine,                            &
-                         isym, ibsize, iesize, dam, xam,          &
-                         epsilp, rnorm, niterf, residu, smbr, dpvar)
-
-  if (isweep.eq.nswmpr ) then
-!     Mise a jour de l'increment de pression
-    do iel = 1, ncel
-      phydr(iel) = phydr(iel) + dpvar(iel)
-    enddo
-
-
-  else
-
-! --- Si ce n'est pas le dernier sweep
-!       Mise a jour de l'increment de pression et calcul direct de la
-!       partie en gradient d'increment de pression du second membre
-!       (avec reconstruction)
-
-    do iel = 1, ncel
-      phydr(iel) = phydr(iel) + dpvar(iel)
-    enddo
+  ! --- Update the right hand side and update the residual
+  !      rhs^{k+1} = - div(fext^n+1) - D(1, p_h^{k+1})
+  !-------------------------------------------------------------
 
     iccocg = 1
-    init = 1
+    init = 1 ! re-init rhs to 0 if init = 1
     inc  = 1
     imrgrp = vcopt_pr%imrgra
     nswrgp = vcopt_pr%nswrgr
@@ -357,42 +326,96 @@ do isweep = 1, nswmpr
  ( f_id0  , init   , inc    , imrgrp , iccocg , nswrgp , imligp , iphydp ,     &
    iwgrp  , iwarnp ,                                                           &
    epsrgp , climgp , extrap ,                                                  &
-   dfext  ,                                                                    &
+   next_fext,                                                                  &
    phydr  ,                                                                    &
    coefap , coefbp ,                                                           &
    cofafp , cofbfp ,                                                           &
    viscf  , viscb  ,                                                           &
    viscce ,                                                                    &
-   smbr   )
+   rhs   )
+
+
+  do iel = 1, ncel
+    rhs(iel) = - div_fext(iel) - rhs(iel)
+  enddo
+
+  ! --- Convergence test
+  residu = sqrt(cs_gdot(ncel,rhs,rhs))
+  if (vcopt_pr%iwarni.ge.2) then
+    write(nfecra,1400) chaine(1:16), isweep,residu, rnorm
+  endif
+
+  if (isweep.eq.1) then
+    sinfo%rnsmbr = residu
+  endif
+
+  if (residu.le.vcopt_pr%epsrsm*rnorm) then
+    !     Si convergence,  sortie
+
+    goto 101
 
   endif
 
+  ! Solving on the increment
+  !-------------------------
+  do iel = 1, ncel
+    dpvar(iel) = 0.d0
+  enddo
+
+  iwarnp = vcopt_pr%iwarni
+  epsilp = vcopt_pr%epsilo
+  ibsize = 1
+  iesize = 1
+
+  call sles_solve_native(f_id, '',                              &
+                         isym, ibsize, iesize, dam, xam,          &
+                         epsilp, rnorm, niterf, residu, rhs, dpvar)
+
+  ! Writing
+  sinfo%nbivar = sinfo%nbivar + niterf
+
+  ! Update the increment of pressure
+  !---------------------------------
+
+  do iel = 1, ncel
+    phydr(iel) = phydr(iel) + dpvar(iel)
+  enddo
+
 enddo
 
-! --- Boucle de reconstruction : fin
+! --- Reconstruction loop (end)
 
-if(vcopt_pr%iwarni.ge.2) then
-   write( nfecra,1600)chaine(1:16),nswmpr
+if (vcopt_pr%iwarni.ge.2) then
+  write(nfecra,1600) chaine(1:16), nswmpr
 endif
 
  101  continue
 
+ ! For logging
+if (abs(rnorm).gt.0.d0) then
+  sinfo%resvar = residu/rnorm
+else
+  sinfo%resvar = 0.d0
+endif
+
+! Save convergence info
+call field_set_key_struct_solving_info(f_id, sinfo)
+
 ! Free memory
-deallocate(rovsdt, div_dfext, viscce)
-deallocate(coefap, cofafp)
-deallocate(coefbp, cofbfp)
+deallocate(rovsdt, div_fext, viscce)
+deallocate(next_fext)
 
 !===============================================================================
 ! 5. Free solver setup
 !===============================================================================
 
-call sles_free_native(-1, chaine)
+call sles_free_native(f_id, '')
 
 !--------
 ! Formats
 !--------
 
- 1400 format(1X,A16,' : SWEEP = ',I5,' RIGHT HAND SIDE NORM = ',E14.6)
+ 1400 format(1X,A16,' : sweep = ',I5,' RHS residual = ',E14.6, ' NORM =',E14.6)
  1600 format(                                                           &
 '@                                                            ',/,&
 '@ @@ WARNING: ', A16,' HYDROSTATIC PRESSURE STEP             ',/,&

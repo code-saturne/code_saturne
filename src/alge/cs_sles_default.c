@@ -134,7 +134,7 @@ _sles_default_native(int                f_id,
     if (!strcmp(name, "yplus_wall")) { /* distyp.f90 */
       sles_it_type = CS_SLES_P_SYM_GAUSS_SEIDEL;
     }
-    else if (   !strcmp(name, "hydrostatic_p")  /* calhyd.f90 */
+    else if (   !strcmp(name, "hydrostatic_pressure")  /* calhyd.f90 */
              || !strcmp(name, "potential")) {   /* predfl.f90 */
       /* Copy from pressure if possible */
       cs_field_t *cvar_p = (cs_field_by_name_try("pressure"));

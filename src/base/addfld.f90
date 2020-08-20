@@ -224,6 +224,24 @@ do ii = 1, nscal
 
 enddo
 
+! Hydrostatic pressure used to update pressure BCs
+if (icalhy.eq.1) then
+  f_name  = 'hydrostatic_pressure'
+  f_label = 'Hydrostatic Pressure'
+  call add_variable_field(f_name, f_label, 1, ivar)
+  f_id = ivarfl(ivar)
+
+  ! Elliptic equation (no convection, no time term)
+  call field_get_key_struct_var_cal_opt(f_id, vcopt)
+  vcopt%iconv = 0
+  vcopt%istat = 0
+  vcopt%iwarni = 2
+  vcopt%nswrsm = 2
+  vcopt%idifft = 0
+  vcopt%relaxv = 1.d0 ! No relaxation, even for steady algorithm.
+  call field_set_key_struct_var_cal_opt(f_id, vcopt)
+endif
+
 !===============================================================================
 ! 2. Additional property fields
 !===============================================================================
