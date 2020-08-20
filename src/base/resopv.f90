@@ -211,7 +211,6 @@ double precision, dimension(:,:), allocatable :: gradp
 double precision, allocatable, dimension(:) :: coefaf_dp, coefbf_dp
 double precision, allocatable, dimension(:) :: coefa_dp2
 double precision, allocatable, dimension(:) :: coefa_rho, coefb_rho
-double precision, allocatable, dimension(:) :: cofbfp
 double precision, allocatable, dimension(:) :: coefaf_dp2
 double precision, allocatable, dimension(:) :: rhs, rovsdt
 double precision, allocatable, dimension(:), target :: hydro_pres
@@ -1068,23 +1067,15 @@ if (arak.gt.0.d0) then
       epsrgp = vcopt_p%epsrgr
       climgp = vcopt_p%climgr
 
-      ! A 0 boundary coefficient coefbf_dp is passed to projts
-      ! to cancel boundary terms
-      allocate(cofbfp(ndimfb))
-      do ifac = 1,nfabor
-        cofbfp(ifac) = 0.d0
-      enddo
-
       call projts &
       !==========
  ( init   , nswrgp ,                                              &
    frcxt  ,                                                       &
-   cofbfp ,                                                       &
+   coefbf_p ,                                                     &
    imasfl , bmasfl ,                                              &
    ipro_visc       , bpro_visc  ,                                 &
    cpro_visc, cpro_visc, cpro_visc    )
 
-      deallocate(cofbfp)
 
     endif
 
@@ -1137,24 +1128,15 @@ if (arak.gt.0.d0) then
       epsrgp = vcopt_p%epsrgr
       climgp = vcopt_p%climgr
 
-      ! A 0 boundary coefficient coefbf_dp is passed to projtv
-      ! to cancel boundary terms
-      allocate(cofbfp(ndimfb))
-      do ifac = 1, nfabor
-        cofbfp(ifac) = 0.d0
-      enddo
-
       call projtv &
       !==========
    ( init   , nswrgp , ircflp ,                                     &
      frcxt  ,                                                       &
-     cofbfp ,                                                       &
+     coefbf_p,                                                      &
      ipro_visc  , bpro_visc ,                                       &
      cpro_vitenp ,                                                  &
      weighf ,                                                       &
      imasfl, bmasfl )
-
-      deallocate(cofbfp)
 
     endif
 
