@@ -134,7 +134,7 @@ f_id = -1
 chaine = 'hydrostatic_p'
 lchain = 16
 
-! Symetric
+! Symmetric
 isym  = 1
 
 ! Matrix block size

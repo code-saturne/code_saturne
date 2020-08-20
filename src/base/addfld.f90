@@ -428,7 +428,7 @@ if (ineedy.eq.1) then
     call field_set_key_int(iflid, keyvis, 1)
     call field_set_key_int(iflid, keylog, 1)
 
-    ! Elliptic equation (no convection, no time term)
+    ! Pure convection (no time term)
     call field_get_key_struct_var_cal_opt(iflid, vcopt)
     vcopt%iconv = 1 ! default
     vcopt%istat = 0
@@ -461,7 +461,7 @@ if (ippmod(iatmos).ge.0.and.compute_z_ground) then
   call add_variable_field(f_name, f_label, 1, ivar)
   iflid = ivarfl(ivar)
 
-  ! Elliptic equation (no convection, no time term)
+  ! Pure convection equation (no convection, no time term)
   call field_get_key_struct_var_cal_opt(iflid, vcopt)
   vcopt%iconv = 1
   vcopt%blencv= 0.d0 ! Pure upwind
@@ -492,7 +492,7 @@ if (compute_porosity_from_scan) then
   call add_variable_field(f_name, f_label, 1, ivar)
   iflid = ivarfl(ivar)
 
-  ! Elliptic equation (no convection, no time term)
+  ! Pure convection equation (no time term)
   call field_get_key_struct_var_cal_opt(iflid, vcopt)
   vcopt%iconv = 1
   vcopt%blencv= 0.d0 ! Pure upwind

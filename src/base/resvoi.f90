@@ -184,19 +184,19 @@ thetv = vcopt%thetav
 ! --- Initialization
 
 do iel = 1, ncel
-   smbrs(iel) = 0.d0
+  smbrs(iel) = 0.d0
 enddo
 
 do iel = 1, ncel
-   rovsdt(iel) = 0.d0
+  rovsdt(iel) = 0.d0
 enddo
 
 ! Arbitrary initialization (no diffusion for void fraction)
 do ifac = 1, nfac
-   viscf(ifac) = 1.d0
+  viscf(ifac) = 1.d0
 enddo
 do ifac = 1, nfabor
-   viscb(ifac) = 1.d0
+  viscb(ifac) = 1.d0
 enddo
 
 ! Initialize void fraction convection flux
