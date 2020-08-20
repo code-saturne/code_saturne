@@ -96,10 +96,7 @@ heurtu = float(shour) + float(smin)/60.d0+ssec/3600.d0
 call raysze(xlat,xlon,qureel,heurtu,0,albe,dlmuzero,fo)
 azi = dabs(dacos(dlmuzero)*180.d0/pi)
 
-! To be sure to cut photolysis (SPACK does not) if azi>90
-if (azi.gt.90.0d0) then
-  iphotolysis = 2
-endif
+! Note: Photolysis should be cut in SPACK and not here even if the azimuthal angle is > 90
 
 ! Loop on cells
 do iel = 1, ncel

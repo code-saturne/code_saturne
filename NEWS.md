@@ -3,6 +3,11 @@ Release 6.0.5 (unreleased)
 
 Bug fixes:
 
+- Fixes in atmospheric chemistry.
+  * Photolysis should not be cut when azimuthal angle is > 90.
+  * Restarts from run without chemistry was bugged.
+  * Use chemistry files to initialize chemistry fields.
+
 - Fix GUI crash when accessing thermal boundary condition which should be
   hidden using constant density atmospheric model (GitLab issue #223).
 
