@@ -201,7 +201,7 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
                                    def->input,
                                    st_loc);
         for (cs_lnum_t i = 0; i < z->n_elts; i++)
-          st_loc[z->elt_ids[i]] /= z->f_measure;
+          st_loc[i] /= z->f_measure;
       }
       else if (dim == 3) {
         cs_xdef_eval_vector_by_val(z->n_elts,
@@ -215,7 +215,7 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
                                    st_loc);
         for (cs_lnum_t i = 0; i < z->n_elts; i++) {
           for (cs_lnum_t j = 0; j < 3; j++)
-            st_loc[z->elt_ids[i]*3 + j] /= z->f_measure;
+            st_loc[i*3 + j] /= z->f_measure;
         }
       }
       else if (dim == 6) {
@@ -230,7 +230,7 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
                                    st_loc);
         for (cs_lnum_t i = 0; i < z->n_elts; i++) {
           for (cs_lnum_t j = 0; j < 6; j++)
-            st_loc[z->elt_ids[i]*6 + j] /= z->f_measure;
+            st_loc[i*6 + j] /= z->f_measure;
         }
       }
     }
@@ -246,7 +246,7 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
     if (dim == 1)
       cs_xdef_eval_scalar_at_cells_by_time_func(z->n_elts,
                                                 z->elt_ids,
-                                                false,  /* sparse */
+                                                dense,
                                                 m,
                                                 connect,
                                                 quant,
@@ -256,7 +256,7 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
     else if (dim == 3)
       cs_xdef_eval_vector_at_cells_by_time_func(z->n_elts,
                                                 z->elt_ids,
-                                                false,  /* sparse */
+                                                dense,
                                                 m,
                                                 connect,
                                                 quant,
@@ -266,7 +266,7 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
     else if (dim == 6)
       cs_xdef_eval_tensor_at_cells_by_time_func(z->n_elts,
                                                 z->elt_ids,
-                                                false,  /* sparse */
+                                                dense,
                                                 m,
                                                 connect,
                                                 quant,
@@ -279,7 +279,7 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
     if (dim == 1)
       cs_xdef_eval_scalar_by_val(z->n_elts,
                                  z->elt_ids,
-                                 false,  /* sparse */
+                                 dense,
                                  m,
                                  connect,
                                  quant,
@@ -289,7 +289,7 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
     else if (dim == 3)
       cs_xdef_eval_vector_by_val(z->n_elts,
                                  z->elt_ids,
-                                 false,  /* sparse */
+                                 dense,
                                  m,
                                  connect,
                                  quant,
@@ -299,7 +299,7 @@ _volume_mass_injection_eval(cs_xdef_t  *def,
     else if (dim == 6)
       cs_xdef_eval_tensor_by_val(z->n_elts,
                                  z->elt_ids,
-                                 false,  /* sparse */
+                                 dense,
                                  m,
                                  connect,
                                  quant,

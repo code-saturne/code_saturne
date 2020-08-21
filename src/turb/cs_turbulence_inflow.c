@@ -115,7 +115,7 @@ cs_turbulence_inflow_volume_mass_injection_k_eps(const char  *zone_name,
       (cs_field_get_equation_param(CS_F_(k)), zone_name, &k);
 
     cs_equation_add_volume_mass_injection_by_value
-      (cs_field_get_equation_param(CS_F_(k)), zone_name, &eps);
+      (cs_field_get_equation_param(CS_F_(eps)), zone_name, &eps);
 
   }
   else if (itytur == 3) {
@@ -146,7 +146,7 @@ cs_turbulence_inflow_volume_mass_injection_k_eps(const char  *zone_name,
       (cs_field_get_equation_param(CS_F_(k)), zone_name, &k);
 
     cs_equation_add_volume_mass_injection_by_value
-      (cs_field_get_equation_param(CS_F_(k)), zone_name, &eps);
+      (cs_field_get_equation_param(CS_F_(eps)), zone_name, &eps);
 
     cs_equation_add_volume_mass_injection_by_value
       (cs_field_get_equation_param(CS_F_(phi)), zone_name, &twothirds);
