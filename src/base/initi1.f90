@@ -61,11 +61,18 @@ double precision ttsuit, wtsuit
 
 interface
 
-  subroutine gui_output()  &
+  subroutine cs_gui_boundary_conditions_define(bdy)  &
+    bind(C, name='cs_gui_boundary_conditions_define')
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(c_ptr), value :: bdy
+  end subroutine cs_gui_boundary_conditions_define
+
+  subroutine cs_gui_output()  &
       bind(C, name='cs_gui_output')
     use, intrinsic :: iso_c_binding
     implicit none
-  end subroutine gui_output
+  end subroutine cs_gui_output
 
   subroutine user_finalize_setup_wrapper()  &
       bind(C, name='cs_user_finalize_setup_wrapper')
@@ -82,14 +89,7 @@ interface
 end interface
 
 !===============================================================================
-! 1. Initialize modules before user.
-!      . entsor
-!      . dimens
-!      . numvar
-!      . pointe
-!      . optcal
-!      . mltgrd
-!      . cstphy
+! Initialize modules before user has access
 !===============================================================================
 
 call iniini
@@ -102,8 +102,7 @@ do ipp = 2, nmodmx
 enddo
 
 !===============================================================================
-! 2. ENTREE DES DONNEES PAR L'UTILISATEUR
-!      ET POSITIONNEMENT DES VARIABLES
+! User input, variable definitions
 !===============================================================================
 
 call iniusi
@@ -143,7 +142,7 @@ call cs_user_time_moments
 
 ! Postprocessing and logging
 
-call gui_output
+call cs_gui_output
 
 ! Restart
 
@@ -153,27 +152,33 @@ wtsuit = -1.d0
 call dflsui(ntsuit, ttsuit, wtsuit);
 
 !===============================================================================
-! 3. MODIFS APRES USINI1
+! Changes after user initialization and additional fields dependent on
+! main fields and options.
 !===============================================================================
 
 ! Do not call this routine if CDO mode only (default variables and properties
 ! are not defined anymore)
 if (icdo.lt.2) then
-   call modini
+  call modini
+  call fldini
 endif
 
 !===============================================================================
-! 4. Some additional fields and mappings
+! GUI-based boundary condition definitions
+!===============================================================================
+
+call cs_gui_boundary_conditions_define(c_null_ptr)
+
+!===============================================================================
+! Some final settings
 !===============================================================================
 
 ! Do not call this routine if CDO mode only (default variables and properties
 ! are not defined anymore)
 if (icdo.lt.2) then
-   call fldini
    call usipes(nmodpp)
-
    ! Avoid a second spurious call to this function
-   ! Call in the C part if CDO is activated, i.e. when
+   ! Called in the C part if CDO is activated, i.e. when
    ! additional geometric quantities and connectivities are built
    if (icdo.lt.0) then
       call user_finalize_setup_wrapper
@@ -181,7 +186,7 @@ if (icdo.lt.2) then
 endif
 
 !===============================================================================
-! 5. Coherency checks
+! Coherency checks
 !===============================================================================
 
 iok = 0
@@ -222,7 +227,7 @@ endif
 '@'                                                            ,/)
 
 !===============================================================================
-! 7. Output
+! Output
 !===============================================================================
 
 call impini

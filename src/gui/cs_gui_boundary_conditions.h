@@ -118,7 +118,8 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
 /*!
  * \brief Define boundary conditions based on setup file.
  *
- * \param[in, out]  bdy   main boundaries structure to update
+ * \param[in, out]  bdy   boundaries structure to update
+ *                        (if NULL, default to cs_glob_domain->boundaries)
  */
 /*----------------------------------------------------------------------------*/
 

@@ -2657,12 +2657,16 @@ void CS_PROCF (uiclve, UICLVE)(const int  *nozppm,
  * \brief Define boundary conditions based on setup file.
  *
  * \param[in, out]  bdy   boundaries structure to update
+ *                        (if NULL, default to cs_glob_domain->boundaries)
  */
 /*----------------------------------------------------------------------------*/
 
 void
 cs_gui_boundary_conditions_define(cs_boundary_t  *bdy)
 {
+  if (bdy == NULL)
+    bdy = cs_glob_domain->boundaries;
+
   cs_tree_node_t *tn_b0 = cs_tree_get_node(cs_glob_tree,
                                            "boundary_conditions");
 
