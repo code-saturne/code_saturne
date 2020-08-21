@@ -1078,7 +1078,7 @@ class VolumeLocalizationView(LocalizationView):
     """
     Define volume regions class.
     """
-    def __init__(self, parent=None, case=None, tree = None):
+    def __init__(self, parent=None, case=None, tree = None, hide_all=False):
         """
         Constructor.
         """
@@ -1090,6 +1090,9 @@ class VolumeLocalizationView(LocalizationView):
 
         title = self.tr("Definition of volume regions")
         self.groupBoxLocalization.setTitle(title)
+
+        if hide_all:
+            self.groupBoxLocalization.hide()
 
         # Delegates
         delegateNature = VolumeNatureDelegate(self.tableView, self.case)
