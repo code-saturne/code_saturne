@@ -3,6 +3,8 @@ Release 6.1.2 (unreleased)
 
 Bug fixes:
 
+- Lagrangian module: fix crash in agglomeration model on some cases.
+
 - Studymanager: fix comparison mode (broken since 6.1.0).
 
 - Fix GUI crash when accessing thermal boundary condition which should be
