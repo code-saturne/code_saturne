@@ -184,7 +184,7 @@ integer          iescap, ircflp, ischcp, isstpp, ivar, f_id0
 integer          imrgrp, nswrsp, iwgrp
 integer          imvisp, i_vof_mass_transfer
 integer          iflid, iflwgr, f_dim, imasac
-integer          f_id
+integer          f_id, f_id_ph
 integer          icvflb
 integer          ivoid(1)
 
@@ -274,10 +274,10 @@ iswdyp = vcopt_p%iswdyn
 if (iswdyp.ge.1) allocate(adxk(ncelet), adxkm1(ncelet),   &
                           dphim1(ncelet), rhs0(ncelet))
 
-call field_get_id_try("hydrostatic_pressure", f_id)
-if (f_id.ge.0) then
-  call field_get_val_s(f_id, cvar_hydro_pres)
-  call field_get_val_prev_s(f_id, cvar_hydro_pres_prev)
+call field_get_id_try("hydrostatic_pressure", f_id_ph)
+if (f_id_ph.ge.0) then
+  call field_get_val_s(f_id_ph, cvar_hydro_pres)
+  call field_get_val_prev_s(f_id_ph, cvar_hydro_pres_prev)
 endif
 
 ! Diffusive flux Boundary conditions for delta P
@@ -1134,11 +1134,19 @@ nswmpr = vcopt_p%nswrsm
 !       dphi       is the increment of the increment between sweeps
 !       cpro_divu  is the initial divergence of the predicted mass flux
 
-do iel = 1, ncel
-  phi(iel)  = cvar_hydro_pres(iel) - cvar_hydro_pres_prev(iel)
-  dphi(iel) = 0.d0
-  phia(iel) = phi(iel)
-enddo
+if (f_id_ph.ge.0) then
+  do iel = 1, ncel
+    phi(iel)  = cvar_hydro_pres(iel) - cvar_hydro_pres_prev(iel)
+    dphi(iel) = 0.d0
+    phia(iel) = phi(iel)
+  enddo
+else
+  do iel = 1, ncel
+    phi(iel)  = 0.d0
+    dphi(iel) = 0.d0
+    phia(iel) = phi(iel)
+  enddo
+endif
 
 relaxp = vcopt_p%relaxv
 
