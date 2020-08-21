@@ -2787,8 +2787,15 @@ cs_gui_boundary_conditions_define(cs_boundary_t  *bdy)
             && wall_fnt->iwallf != CS_WALL_F_2SCALES_CONTINUOUS) {
           cs_real_t roughness = -1.;
           cs_gui_node_get_child_real(tn_vp, "roughness", &roughness);
-          if (roughness > 0)
+          if (roughness > 0) {
             bc_type |= CS_BOUNDARY_ROUGH_WALL;
+            /* Create roughness field if needed */
+            cs_field_find_or_create("boundary_roughness",
+                                    CS_FIELD_INTENSIVE + CS_FIELD_PROPERTY,
+                                    CS_MESH_LOCATION_BOUNDARY_FACES,
+                                    1, /* dim */
+                                    false); /* has previous */
+          }
         }
 
       }
