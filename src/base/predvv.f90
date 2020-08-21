@@ -225,6 +225,7 @@ double precision, dimension(:,:), pointer :: cvara_rij
 double precision, dimension(:), pointer :: viscl, visct, c_estim
 double precision, dimension(:,:), pointer :: lapla, lagr_st_vel
 double precision, dimension(:,:), pointer :: cpro_gradp
+double precision, dimension(:,:), pointer :: cpro_pred_vel
 double precision, dimension(:), pointer :: cpro_wgrec_s, wgrec_crom
 double precision, dimension(:,:), pointer :: cpro_wgrec_v
 double precision, dimension(:), pointer :: imasfl, bmasfl
@@ -1774,6 +1775,16 @@ else if (iappel.eq.2) then
 endif
 
 ! ---> Finilaze estimators + Printings
+
+call field_get_id_try("predicted_velocity", f_id)
+if (f_id.ge.0) then
+  call field_get_val_v(f_id, cpro_pred_vel)
+  do iel = 1, ncel
+    do isou = 1, 3
+      cpro_pred_vel(isou, iel) = vel(isou, iel)
+    enddo
+  enddo
+endif
 
 if (iappel.eq.1) then
 
