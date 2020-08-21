@@ -191,18 +191,22 @@ const char *cs_lagr_attribute_name[] = {
   "neighbor_face_id",
   "marko_value",
   "fouling_index",
+
   "n_large_asperities",
   "n_small_asperities",
   "adhesion_force",
   "adhesion_torque",
   "displacement_norm",
+
   "height",
   "cluster_nb_part",
   "depo_time",
   "consol_height",
+
   "temperature",
   "fluid_temperature",
   "cp",
+
   "water_mass",
   "coal_mass",
   "coke_mass",
@@ -210,8 +214,14 @@ const char *cs_lagr_attribute_name[] = {
   "initial_diameter",
   "coal_id",
   "coal_density",
+
   "emissivity",
+
   "stat_class",
+
+  "agglo_class_id",
+  "agglo_fractal_dim",
+
   "user",
   "<none>"};
 
