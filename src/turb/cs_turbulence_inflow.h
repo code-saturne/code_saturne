@@ -55,6 +55,22 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 /*!
  * \brief Define mass injection for turbulent quantities based
+ *        on k and epsilon values.
+ *
+ * \param[in]  zone_name  name of zone to which injection should be added
+ * \param[in]  k          turbulent kinetic energy
+ * \param[in]  eps        turbulent dissipation
+ */
+/*----------------------------------------------------------------------------*/
+
+void
+cs_turbulence_inflow_volume_mass_injection_k_eps(const char  *zone_name,
+                                                 double       k,
+                                                 double       eps);
+
+/*----------------------------------------------------------------------------*/
+/*!
+ * \brief Define mass injection for turbulent quantities based
  *        on a hydraulic diameter and reference velocity.
  *
  * \param[in]  zone_name  name of zone to which injection should be added
