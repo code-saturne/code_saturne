@@ -491,25 +491,26 @@ endif
 if (iphydr.eq.1.or.iifren.eq.1) then
 
   phydr0 = 0.d0
-  if (indhyd.eq.1) then
+
+  if (f_id_ph.ge.0 .and. indhyd.eq.1) then
     ifac0 = isostd(nfabor+1)
     if (ifac0.gt.0) then
       iel0 = ifabor(ifac0)
-      phydr0 = cvar_hydro_pres(iel0)                         &
-           +(cdgfbo(1,ifac0)-xyzcen(1,iel0))*dfrcxt(1 ,iel0) &
-           +(cdgfbo(2,ifac0)-xyzcen(2,iel0))*dfrcxt(2 ,iel0) &
-           +(cdgfbo(3,ifac0)-xyzcen(3,iel0))*dfrcxt(3 ,iel0)
+      phydr0 =   cvar_hydro_pres(iel0)                             &
+               + (cdgfbo(1,ifac0)-xyzcen(1,iel0))*dfrcxt(1 ,iel0)  &
+               + (cdgfbo(2,ifac0)-xyzcen(2,iel0))*dfrcxt(2 ,iel0)  &
+               + (cdgfbo(3,ifac0)-xyzcen(3,iel0))*dfrcxt(3 ,iel0)
     endif
 
     if (irangp.ge.0) then
       call parsom (phydr0)
     endif
-  endif
 
-  ! Rescale cvar_hydro_pres so that it is 0 on the reference face
-  do iel = 1, ncel
-    cvar_hydro_pres(iel) = cvar_hydro_pres(iel) - phydr0
-  enddo
+    ! Rescale cvar_hydro_pres so that it is 0 on the reference face
+    do iel = 1, ncel
+      cvar_hydro_pres(iel) = cvar_hydro_pres(iel) - phydr0
+    enddo
+  endif
 
   ! If hydrostatic pressure increment or free entrance Inlet
   if (indhyd.eq.1.or.iifren.eq.1) then
@@ -577,13 +578,15 @@ if (iphydr.eq.1.or.iifren.eq.1) then
         endif
 
         if (indhyd.eq.1) then
-          coefa_dp(ifac) =  cvar_hydro_pres(iel) - cvar_hydro_pres_prev(iel)   &
-                         + (cdgfbo(1,ifac)-xyzcen(1,iel))*dfrcxt(1 ,iel)  &
-                         + (cdgfbo(2,ifac)-xyzcen(2,iel))*dfrcxt(2 ,iel)  &
-                         + (cdgfbo(3,ifac)-xyzcen(3,iel))*dfrcxt(3 ,iel)
+          if (f_id_ph.ge.0) then
+            coefa_dp(ifac) = cvar_hydro_pres(iel) - cvar_hydro_pres_prev(iel)
+          endif
+          coefa_dp(ifac) =   coefa_dp(ifac)                                  &
+                           + (cdgfbo(1,ifac)-xyzcen(1,iel))*dfrcxt(1 ,iel)   &
+                           + (cdgfbo(2,ifac)-xyzcen(2,iel))*dfrcxt(2 ,iel)   &
+                           + (cdgfbo(3,ifac)-xyzcen(3,iel))*dfrcxt(3 ,iel)
 
         endif
-
 
         ! Free entrance boundary face (Bernoulli condition to link the pressure
         ! increment and the predicted velocity)
