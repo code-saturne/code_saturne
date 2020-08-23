@@ -508,7 +508,6 @@ if (itrfin.eq.1 .and. itrfup.eq.1) then
 
 endif
 
-
 !Radiative transfer: add contribution to energy BCs.
 if (iirayo.gt.0 .and. itrfin.eq.1 .and. itrfup.eq.1) then
   call cs_rad_transfer_bcs(nvar, itypfb, icodcl, dt, rcodcl)
@@ -2608,7 +2607,7 @@ if (nscal.ge.1) then
       call field_get_val_s(ifcvsl, viscls)
     endif
 
-    call field_get_key_int(f_id, kscacp, iscacp)
+    call field_get_key_int(ivarfl(ivar), kscacp, iscacp)
 
     ! --- Indicateur de prise en compte de Cp ou non
     !       (selon si le scalaire (scalaire associe pour une fluctuation)
@@ -2871,6 +2870,7 @@ if (nscal.ge.1) then
           ! ---> Radiative transfer
           if (iirayo.ge.1 .and. ii.eq.iscalt) then
             bhconv(ifac) = exchange_coef
+            write(nfecra,*) "CONDLI, exchange=",ifac, bhconv(ifac)
 
             ! The outgoing flux is stored (Q = h(Ti'-Tp): negative if
             !  gain for the fluid) in W/m2
