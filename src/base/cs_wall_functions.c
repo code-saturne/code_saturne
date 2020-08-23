@@ -543,8 +543,11 @@ cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
 {
   switch (iwalfs) {
   case CS_WALL_F_S_ARPACI_LARSEN:
-    cs_wall_functions_s_arpaci_larsen(prl,
+    cs_wall_functions_s_arpaci_larsen(l_visc,
+                                      prl,
                                       prt,
+                                      rough_t,
+                                      uk,
                                       yplus,
                                       dplus,
                                       htur,
@@ -567,6 +570,20 @@ cs_wall_functions_scalar(cs_wall_f_s_type_t  iwalfs,
                                      htur);
     break;
   default:
+    /* TODO Monin Obukhov or Louis atmospheric wall function
+     * must be adapted to smooth wall functions.
+     * Arpaci and Larsen walll functions are put as in previous versions of
+     * Code_Saturne.
+     * */
+    cs_wall_functions_s_arpaci_larsen(l_visc,
+                                      prl,
+                                      prt,
+                                      rough_t,
+                                      uk,
+                                      yplus,
+                                      dplus,
+                                      htur,
+                                      yplim);
     break;
   }
 }

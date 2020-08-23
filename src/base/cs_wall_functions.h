@@ -1016,8 +1016,11 @@ cs_wall_functions_disabled(cs_real_t   l_visc,
  *  h = \dfrac{K}{\centip \centf} h_{tur}
  *  \f]
  *
+ * \param[in]     l_visc        kinetic viscosity
  * \param[in]     prl           laminar Prandtl number
  * \param[in]     prt           turbulent Prandtl number
+ * \param[in]     rough_t       scalar roughness length scale
+ * \param[in]     uk            velocity scale based on TKE
  * \param[in]     yplus         dimensionless distance to the wall
  * \param[out]    dplus         dimensionless shift to the wall for scalable
  *                              wall functions
@@ -1028,8 +1031,11 @@ cs_wall_functions_disabled(cs_real_t   l_visc,
 /*----------------------------------------------------------------------------*/
 
 inline static void
-cs_wall_functions_s_arpaci_larsen(cs_real_t  prl,
+cs_wall_functions_s_arpaci_larsen(cs_real_t  l_visc,
+                                  cs_real_t  prl,
                                   cs_real_t  prt,
+                                  cs_real_t  rough_t,
+                                  cs_real_t  uk,
                                   cs_real_t  yplus,
                                   cs_real_t  dplus,
                                   cs_real_t *htur,
@@ -1051,6 +1057,20 @@ cs_wall_functions_s_arpaci_larsen(cs_real_t  prl,
 
   prlm1 = 0.1;
 
+  /* Sand grain roughness is:
+   * zeta = z0 * exp(kappa 8.5)
+   * Then:
+   * hp = zeta uk / nu * exp( -kappa(8.5 - 5.2))
+   *    = z0 * uk / nu * exp(kappa * 5.2)
+   *   where 5.2 is the smooth log constant, and 8.5 the rough one
+   *
+   *   FIXME check if we should use a molecular Schmidt number
+   */
+  cs_real_t hp = rough_t *uk / l_visc * exp(cs_turb_xkappa*cs_turb_cstlog);
+
+  /* Shift of the temperature profile due to roughness */
+  cs_real_t shift_temp = -log(1. + hp);
+
   /*==========================================================================
     2. Compute htur for small Prandtl numbers
     ==========================================================================*/
@@ -1058,7 +1078,7 @@ cs_wall_functions_s_arpaci_larsen(cs_real_t  prl,
   if (prl <= prlm1) {
     (*yplim)   = prt/(prl*cs_turb_xkappa);
     if (yplus > (*yplim)) {
-      tplus = prl*(*yplim) + prt/cs_turb_xkappa * log((yplus+dplus)/(*yplim));
+      tplus = prl*(*yplim) + prt/cs_turb_xkappa * (log((yplus+dplus)/(*yplim)) + shift_temp);
       (*htur) = prl * yplus / tplus;
     }
 
@@ -1071,7 +1091,6 @@ cs_wall_functions_s_arpaci_larsen(cs_real_t  prl,
     (*yplim)   = pow(1000./prl, 1./3.);
 
     a2 = 15.*pow(prl, 2./3.);
-    beta2 = a2 - 0.5 * prt /cs_turb_xkappa;
 
     if (yplus >= (*yplim) && yplus < yp2) {
       tplus = a2 - 500./((yplus+dplus)*(yplus+dplus));
@@ -1079,6 +1098,7 @@ cs_wall_functions_s_arpaci_larsen(cs_real_t  prl,
     }
 
     if (yplus >= yp2) {
+      beta2 = a2 - 0.5 * prt /cs_turb_xkappa;
       tplus = beta2 + prt/cs_turb_xkappa*log((yplus+dplus)/yp2);
       (*htur) = prl * yplus / tplus;
     }
@@ -1205,11 +1225,10 @@ cs_wall_functions_s_smooth_rough(cs_real_t  l_visc,
   (*htur) = CS_MAX(yplus,epzero)/CS_MAX(yplus+dplus,epzero);
 
   /* Shift of the temperature profile due to roughness */
-  cs_real_t shift_temp = -log(1. + hp)
-    / cs_turb_xkappa;
+  cs_real_t shift_temp = -log(1. + hp);
 
   if (yplus > ypluli) {
-    cs_real_t tplus = log(yplus+dplus)/cs_turb_xkappa + cs_turb_cstlog + shift_temp;
+    cs_real_t tplus = prt * ((log(yplus+dplus) + shift_temp)/cs_turb_xkappa + cs_turb_cstlog);
     (*htur) = prl * yplus / tplus;
   }
 }
