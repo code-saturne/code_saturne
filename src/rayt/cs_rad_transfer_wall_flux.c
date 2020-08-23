@@ -55,7 +55,6 @@
 #include "cs_mesh_quantities.h"
 #include "cs_parall.h"
 #include "cs_parameters.h"
-#include "cs_physical_constants.h"
 #include "cs_sles.h"
 #include "cs_sles_it.h"
 #include "cs_timer.h"
@@ -143,8 +142,8 @@ cs_rad_transfer_wall_flux(int         nvar,
   const int     nb2int = 5;
   const int     nbrrdp = 5;
 
-  const cs_real_t stephn = cs_physical_constants_stephan;
-  const cs_real_t tkelvi = cs_physical_constants_celsius_to_kelvin;
+  const cs_real_t stephn = 5.6703e-8;
+  const cs_real_t tkelvi = 273.15e0;
 
   /* local variables */
   cs_gnum_t  inttm1[nb1int], inttm2[nb2int];
