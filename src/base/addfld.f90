@@ -235,7 +235,6 @@ if (icalhy.eq.1) then
   call field_get_key_struct_var_cal_opt(f_id, vcopt)
   vcopt%iconv = 0
   vcopt%istat = 0
-  vcopt%iwarni = 2
   vcopt%nswrsm = 2
   vcopt%idifft = 0
   vcopt%relaxv = 1.d0 ! No relaxation, even for steady algorithm.
