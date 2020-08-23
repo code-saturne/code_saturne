@@ -2870,7 +2870,6 @@ if (nscal.ge.1) then
           ! ---> Radiative transfer
           if (iirayo.ge.1 .and. ii.eq.iscalt) then
             bhconv(ifac) = exchange_coef
-            write(nfecra,*) "CONDLI, exchange=",ifac, bhconv(ifac)
 
             ! The outgoing flux is stored (Q = h(Ti'-Tp): negative if
             !  gain for the fluid) in W/m2
