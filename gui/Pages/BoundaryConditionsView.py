@@ -80,12 +80,18 @@ class BoundaryConditionsView(QWidget, Ui_BoundaryConditionsForm):
 
         self.case.undoStopGlobal()
 
-        self.groupBoxMain.setTitle(zone_name)
         d = LocalizationModel('BoundaryZone', self.case)
         for zone in d.getZones():
             if zone.getLabel() == zone_name:
                 self.zone = zone
 
+        _title = zone_name
+        if self.zone:
+            _title+= " ["
+            _title+= self.zone.getModel2ViewDictionary()[self.zone.getNature()]
+            _title+= "]"
+
+        self.groupBoxMain.setTitle(_title)
 
         # Set the case for custom widgets
         self.roughWidget.setup(self.case)
