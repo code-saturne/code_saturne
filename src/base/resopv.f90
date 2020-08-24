@@ -496,10 +496,10 @@ if (iphydr.eq.1.or.iifren.eq.1) then
     ifac0 = isostd(nfabor+1)
     if (ifac0.gt.0) then
       iel0 = ifabor(ifac0)
-      phydr0 =   cvar_hydro_pres(iel0)                             &
-               + (cdgfbo(1,ifac0)-xyzcen(1,iel0))*dfrcxt(1 ,iel0)  &
-               + (cdgfbo(2,ifac0)-xyzcen(2,iel0))*dfrcxt(2 ,iel0)  &
-               + (cdgfbo(3,ifac0)-xyzcen(3,iel0))*dfrcxt(3 ,iel0)
+      phydr0 =   cvar_hydro_pres(iel0)                                       &
+        + (cdgfbo(1,ifac0)-xyzcen(1,iel0))*(dfrcxt(1 ,iel0)+frcxt(1 ,iel0))  &
+        + (cdgfbo(2,ifac0)-xyzcen(2,iel0))*(dfrcxt(2 ,iel0)+frcxt(2 ,iel0))  &
+        + (cdgfbo(3,ifac0)-xyzcen(3,iel0))*(dfrcxt(3 ,iel0)+frcxt(3 ,iel0))
     endif
 
     if (irangp.ge.0) then
