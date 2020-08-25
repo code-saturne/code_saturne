@@ -425,6 +425,7 @@ _boundary_scalar_init_mei_tree(const char   *formula,
   mei_tree_insert(tree, "t", ttcabs);
   mei_tree_insert(tree, "dt", dtref);
   mei_tree_insert(tree, "iter", ntcabs);
+  mei_tree_insert(tree, "surface", 0);
 
   /* add variable from notebook */
   cs_gui_add_notebook_variables(tree);

@@ -3,6 +3,9 @@ Release 6.0.5 (unreleased)
 
 Bug fixes:
 
+- Fix error on expression check when mathematical expression for boundary
+  conditions uses the "surface" value (GitLab issue #225).
+
 - Fixes in atmospheric chemistry.
   * Photolysis should not be cut when azimuthal angle is > 90.
   * Restarts from run without chemistry was bugged.
