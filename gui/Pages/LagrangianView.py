@@ -348,6 +348,12 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
         self.modelIPHYLA.setItem(str_model=part_model)
         self.slotIPHYLA(self.modelIPHYLA.dicoM2V[part_model])
 
+        regular_particles = self.model.getRegularParticles()
+        if regular_particles >= 1:
+            self.checkBoxMODCPL.setChecked(True)
+        else:
+            self.checkBoxMODCPL.setChecked(False)
+
         self.case.undoStartGlobal()
 
     @pyqtSlot(str)
