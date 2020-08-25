@@ -257,17 +257,15 @@ cs_lagr_car(int              iprev,
 
   if (cs_glob_lagr_model->idistu == 1) {
 
-    cs_real_t  *energi = NULL, * dissip = NULL;
+    cs_real_t  *energi = NULL, *dissip = NULL;
     BFT_MALLOC(energi, ncel, cs_real_t);
     BFT_MALLOC(dissip, ncel, cs_real_t);
 
     if (extra->itytur == 2 || extra->iturb == 50) {
 
       for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
-
         energi[cell_id] = extra->cvar_k->vals[iprev][cell_id];
         dissip[cell_id] = extra->cvar_ep->vals[iprev][cell_id];
-
       }
 
     }
@@ -282,10 +280,11 @@ cs_lagr_car(int              iprev,
                                    + extra->cvar_r22->vals[iprev][cell_id]
                                    + extra->cvar_r33->vals[iprev][cell_id]);
           dissip[cell_id] = extra->cvar_ep->vals[iprev][cell_id];
-
         }
+
       } else {
         /* irijco = 1 */
+        
         for (cs_lnum_t cell_id = 0; cell_id < ncel; cell_id++) {
 
           energi[cell_id] = 0.5 * ( extra->cvar_rij->vals[iprev][6*cell_id]
@@ -294,6 +293,7 @@ cs_lagr_car(int              iprev,
                                   );
           dissip[cell_id] = extra->cvar_ep->vals[iprev][cell_id];
         }
+
       }
     }
     else if (extra->iturb == 60) {
@@ -302,7 +302,6 @@ cs_lagr_car(int              iprev,
         energi[cell_id] = extra->cvar_k->vals[iprev][cell_id];
         dissip[cell_id] = extra->cmu * energi[cell_id]
                                      * extra->cvar_omg->vals[iprev][cell_id];
-
       }
 
     }
@@ -389,7 +388,7 @@ cs_lagr_car(int              iprev,
           /* relative main direction */
           cs_real_3_t vrn, n_dir;
           for (cs_lnum_t i = 0; i < 3; i++)
-            vrn[i] = vpart[i] - vflui[i]; // FIXME should be MEAN particle velocity
+            vrn[i] = vpart[i] - vflui[i];
 
           cs_math_3_normalise(vrn, n_dir);
 
@@ -452,12 +451,10 @@ cs_lagr_car(int              iprev,
             tlag[ip][id] = tl;
 
           if (cs_glob_lagr_model->idiffl == 0) {
-
             uvwdif      = sqrt(uvwdif);
             tlag[ip][0] = tl / (1.0 + cb * uvwdif);
             tlag[ip][1] = tlag[ip][0];
             tlag[ip][2] = tlag[ip][0];
-
           }
 
           bx[ip][0][nor-1] = sqrt (c0 * dissip[cell_id]);
@@ -472,8 +469,8 @@ cs_lagr_car(int              iprev,
 
     BFT_FREE(energi);
     BFT_FREE(dissip);
+    
   }
-
   else {
 
     for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {
@@ -483,10 +480,8 @@ cs_lagr_car(int              iprev,
         continue;
 
       for (cs_lnum_t id = 0; id < 3; id++ ) {
-
         tlag[ip][id] = cs_math_epzero;
         bx[ip][id][nor-1] = 0.0;
-
       }
 
     }
@@ -527,11 +522,9 @@ cs_lagr_car(int              iprev,
         if (stat_w->val[cell_id] > cs_glob_lagr_stat_options->threshold) {
 
           for (cs_lnum_t i = 0; i < 3; i++) {
-
             cs_real_t vpm   = stat_vel->val[cell_id*3 + i];
             cs_real_t vflui = extra->vel->vals[iprev][cell_id*3 + i];
             piil[ip][id] += gradvf[cell_id][id][i] * (vpm - vflui);
-
           }
 
         }
@@ -539,7 +532,6 @@ cs_lagr_car(int              iprev,
       }
     }
   }
-
   else {
 
     for (cs_lnum_t ip = 0; ip < p_set->n_particles; ip++) {

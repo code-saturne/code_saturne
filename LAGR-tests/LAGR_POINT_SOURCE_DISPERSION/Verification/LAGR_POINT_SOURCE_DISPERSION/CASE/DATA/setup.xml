@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI case="CASE" solver_version="6.2-alpha" study="LAGR_POINT_SOURCE_DISPERSION" version="2.0">
+<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI case="CASE" solver_version="4.0;4.2;4.3;6.1-alpha;6.0;6.1.1;6.2-alpha" study="LAGR_POINT_SOURCE_DISPERSION" version="2.0">
   <additional_scalars>
     <users/>
   </additional_scalars>
@@ -21,25 +21,34 @@
         <location>all[]</location>
         <writer id="-3"/>
       </mesh>
-      <probe_format choice="CSV"/>
+      <mesh id="1" label="particles(1)" type="trajectories">
+        <all_variables status="on"/>
+        <location>all[]</location>
+        <writer id="-4"/>
+      </mesh>
+      <mesh id="2" label="tambour" type="cells">
+        <all_variables status="on"/>
+        <location>cylinder[0,0,1,1,0,1,0.75]</location>
+      </mesh>
+      <probe_format choice="DAT"/>
       <probe_recording_frequency>1</probe_recording_frequency>
       <writer id="-1" label="results">
         <directory name="postprocessing"/>
-        <format name="ensight" options="separate_meshes"/>
+        <format name="ensight" options="binary"/>
         <frequency period="time_step">100</frequency>
         <output_at_end status="on"/>
         <time_dependency choice="fixed_mesh"/>
       </writer>
       <writer id="-3" label="particles">
         <directory name="postprocessing"/>
-        <format name="ensight" options=""/>
+        <format name="ensight" options="binary"/>
         <frequency period="time_step">100</frequency>
         <output_at_end status="on"/>
         <time_dependency choice="transient_connectivity"/>
       </writer>
       <writer id="-4" label="trajectories">
         <directory name="postprocessing"/>
-        <format name="ensight" options=""/>
+        <format name="ensight" options="binary"/>
         <frequency period="none"/>
         <output_at_end status="on"/>
         <time_dependency choice="fixed_mesh"/>
@@ -62,10 +71,12 @@
       <ale choice="fixed_boundary"/>
       <particles choice="part_symmetry"/>
     </symmetry>
+    <variable/>
   </boundary_conditions>
   <calculation_management>
     <block_io/>
     <partitioning/>
+    <run_type>standard</run_type>
     <start_restart>
       <frozen_field status="off"/>
       <restart_rescue>0</restart_rescue>
@@ -77,46 +88,44 @@
     <deposition_submodel status="off"/>
     <fluid_particles_turbulent_diffusion status="off"/>
     <output>
+      <char_mass_fraction status="off"/>
       <diameter status="on"/>
       <listing_printing_frequency>1</listing_printing_frequency>
       <mass status="on"/>
+      <moisture_mass_fraction status="off"/>
+      <raw_coal_mass_fraction status="off"/>
       <resident_time status="on"/>
+      <shrinking_core_diameter status="off"/>
       <temperature status="on"/>
       <velocity_fluid_seen status="on"/>
       <velocity_particles status="on"/>
     </output>
     <particles_models model="off">
       <coal_fouling status="off"/>
+      <thermal status="off"/>
     </particles_models>
     <regular_particles>1</regular_particles>
     <restart status="off"/>
     <scheme_order choice="1"/>
     <statistics>
-      <boundary status="off"/>
+      <boundary status="off">
+        <property label="Part_bndy_mass_flux" name="particle_mass_flux_density" support="boundary"/>
+        <property label="Part_impact_angle" name="mean_particle_impact_angle" support="boundary"/>
+        <property label="Part_impact_number" name="particle_events_weight" support="boundary"/>
+        <property label="Part_impact_velocity" name="mean_particle_impact_velocity" support="boundary"/>
+      </boundary>
       <iteration_start>1</iteration_start>
       <iteration_steady_start>1</iteration_steady_start>
       <restart status="off"/>
       <statistics_groups_of_particles>0</statistics_groups_of_particles>
       <threshold>0</threshold>
-      <volume status="on">
-        <property name="mean_particle_diameter"/>
-        <property name="mean_particle_mass"/>
-        <property name="mean_particle_residence_time"/>
-        <property name="mean_particle_velocity"/>
-        <property name="mean_particle_volume_fraction"/>
-        <property name="particle_cumulative_weight"/>
-        <property name="var_particle_diameter"/>
-        <property name="var_particle_mass"/>
-        <property name="var_particle_residence_time"/>
-        <property name="var_particle_velocity"/>
-        <property name="var_particle_volume_fraction"/>
-      </volume>
+      <volume status="on"/>
     </statistics>
     <turbulent_dispersion status="on"/>
   </lagrangian>
   <numerical_parameters>
     <extended_neighborhood choice=""/>
-    <gradient_reconstruction choice=""/>
+    <gradient_reconstruction choice="green_iter"/>
     <gradient_transposed status="on"/>
     <hydrostatic_pressure status="off"/>
     <pressure_relaxation>1</pressure_relaxation>
@@ -134,17 +143,24 @@
         <listing_printing status="off"/>
         <postprocessing_recording status="off"/>
       </property>
-      <property choice="constant" label="DiffDyn" name="dynamic_diffusion">
-        <initial_value>0.01</initial_value>
-        <listing_printing status="off"/>
-        <postprocessing_recording status="off"/>
-      </property>
       <property choice="constant" label="LamVisc" name="molecular_viscosity">
         <initial_value>0.001002</initial_value>
         <listing_printing status="off"/>
         <postprocessing_recording status="off"/>
       </property>
+      <property choice="constant" label="SpecHeat" name="specific_heat">
+        <initial_value>4180</initial_value>
+        <listing_printing status="off"/>
+        <postprocessing_recording status="off"/>
+      </property>
+      <property choice="constant" label="ThermalCond" name="thermal_conductivity">
+        <initial_value>0.02495</initial_value>
+        <listing_printing status="off"/>
+        <postprocessing_recording status="off"/>
+      </property>
+      <reference choice="user_material"/>
       <reference_pressure>101325</reference_pressure>
+      <reference_temperature>273.15</reference_temperature>
     </fluid_properties>
     <gravity>
       <gravity_x>0</gravity_x>
@@ -173,14 +189,20 @@
     <periodicity/>
     <thin_walls/>
     <volumic_conditions>
-      <zone groundwater_law="off" head_losses="off" id="1" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" porosity="off" scalar_source_term="off" thermal_source_term="off">all[]</zone>
+      <zone darcy_law="off" groundwater_law="off" head_losses="off" id="1" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" porosity="off" scalar_source_term="off" thermal_source_term="off">all[]</zone>
     </volumic_conditions>
   </solution_domain>
   <thermophysical_models>
-    <ale_method/>
+    <ale_method status="off">
+      <formula>mesh_viscosity_1 = 1;</formula>
+      <mesh_viscosity type="isotrop"/>
+    </ale_method>
     <atmospheric_flows model="off"/>
     <compressible_model model="off"/>
-    <gas_combustion model="off"/>
+    <conjugate_heat_transfer>
+      <external_coupling/>
+    </conjugate_heat_transfer>
+    <gas_combustion model="off" option="off"/>
     <groundwater_model model="off"/>
     <hgn_model model="off"/>
     <joule_effect model="off"/>
@@ -188,6 +210,7 @@
     <radiative_transfer model="off"/>
     <reference_values>
       <length/>
+      <velocity>0</velocity>
     </reference_values>
     <solid_fuels model="off"/>
     <source_terms/>

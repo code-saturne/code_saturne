@@ -189,18 +189,17 @@ _lages1(cs_real_t           dtp,
   cs_real_t tbrix1, tbrix2, tbriu;
 
   cs_lnum_t nor = cs_glob_lagr_time_step->nor;
-
   const int _prev_id = (extra->vel->n_time_vals > 1) ? 1 : 0;
-  const cs_real_3_t *cvar_vel = (const cs_real_3_t *)(extra->vel->vals[_prev_id]);
+
+  const cs_real_3_t *cvar_vel =
+      (const cs_real_3_t *)(extra->vel->vals[_prev_id]);
 
   /* Obtain the mean particle velocity for each cell */
 
   int stat_type = cs_lagr_stat_type_from_attr_id(CS_LAGR_VELOCITY);
 
-  cs_field_t *mean_vel_field = cs_lagr_stat_get_moment(
+  cs_field_t *stat_vel = cs_lagr_stat_get_moment(
       stat_type, CS_LAGR_STAT_GROUP_PARTICLE, CS_LAGR_MOMENT_MEAN, 0, -1);
-
-  const cs_real_3_t *mean_vel = (const cs_real_3_t *)(mean_vel_field->vals[_prev_id]);
 
   /* Integrate SDE's over particles
    * Note: new particles will be integrated at the next time step, otherwise
@@ -232,10 +231,6 @@ _lages1(cs_real_t           dtp,
                                                            CS_LAGR_VELOCITY_SEEN);
       cs_real_t *part_coords       = cs_lagr_particle_attr(particle, p_am,
                                                            CS_LAGR_COORDS);
-
-      /* Get mean particle velocity*/
-      cs_real_t mean_part_vel[3] = {mean_vel[cell_id][0], mean_vel[cell_id][1],
-                                    mean_vel[cell_id][2]};
 
       /* Initialize (without change of frame)*/
 
@@ -319,7 +314,7 @@ _lages1(cs_real_t           dtp,
         // relative particle direction
         cs_real_t new_dir[3];
         for (cs_lnum_t i = 0; i < 3; i++)
-          new_dir[i] = mean_part_vel[i] - fluid_vel_r[i];
+          new_dir[i] = stat_vel->val[cell_id * 3 + i] - cvar_vel[cell_id][i];
 
         cs_math_3_normalise(new_dir, new_dir);
 
@@ -456,17 +451,13 @@ _lages1(cs_real_t           dtp,
         gagam = (aux9 - aux11) * (aux8 / aux3);
 
         if (CS_ABS(p11) > cs_math_epzero) {
-
           p21 = gagam / p11;
           p22 = grga2 - cs_math_pow2(p21);
           p22 = sqrt(CS_MAX(0.0, p22));
-
         }
         else {
-
           p21 = 0.0;
           p22 = 0.0;
-
         }
 
         ter5p = p21 * vagaus[ip][id][0] + p22 * vagaus[ip][id][1];
@@ -611,7 +602,7 @@ _lages1(cs_real_t           dtp,
         // relative particle direction, if possible
         cs_real_t new_dir[3];
         for (cs_lnum_t i = 0; i < 3; i++)
-          new_dir[i] = mean_part_vel[i] - fluid_vel_r[i];
+          new_dir[i] = stat_vel->val[cell_id * 3 + i] - cvar_vel[cell_id][i];
 
         cs_math_3_normalise(new_dir, new_dir);
 

@@ -1025,24 +1025,7 @@ class LagrangianTestCase(ModelTest):
 
         assert mdl.node_lagr == self.xmlNodeFromString(doc), \
             'Could not set default values for turbulent diffusion status.'
-
-
-    def checkTurbulenceDispersionStartIteration(self):
-        """Check whether the turbulence dispersion model start iteration could be set and get."""
-        mdl = LagrangianModel(self.case)
-        status = mdl.getTurbulenceDispersionStartIteration()
-
-        assert status == mdl.defaultParticlesValues()['complete_model_iteration'], \
-            'Could not get default values for complete model start iteration.'
-
-        mdl.setTurbulenceDispersionStartIteration(1234)
-        doc = """<lagrangian model="off">
-                     <regular_particles>1234</regular_particles>
-                 </lagrangian>"""
-
-        assert mdl.node_lagr == self.xmlNodeFromString(doc), \
-            'Could not set default values for complete model start iteration.'
-
+            
 
 def suite():
     testSuite = unittest.makeSuite(LagrangianTestCase, "check")
