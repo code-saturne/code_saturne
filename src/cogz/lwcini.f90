@@ -126,7 +126,6 @@ save             ipass
 
 ipass = ipass + 1
 
-
 do igg = 1, ngazgm
   coefg(igg) = zero
 enddo
@@ -301,12 +300,6 @@ if ( isuite.eq.0 ) then
           hinit  , tentm )
     endif
 
-
-! ----- On donne la main a l'utilisateur
-    call cs_user_f_initialization &
-  ( nvar   , nscal  ,                                            &
-    dt     )
-
 ! ----- En periodique et en parallele,
 !       il faut echanger ces initialisations
 
@@ -326,7 +319,6 @@ if ( isuite.eq.0 ) then
       endif
 
     endif
-
 
 !      Impressions de controle
 

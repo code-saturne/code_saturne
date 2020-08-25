@@ -27,6 +27,7 @@
 !>
 !> Initialise for example the meteorological field for each cell of
 !> the domain by interpolation of the data from the meteo file
+!> First stage.
 !
 !-------------------------------------------------------------------------------
 ! Arguments
@@ -38,7 +39,7 @@
 !> \param[in]   dt          time step value
 !-------------------------------------------------------------------------------
 
-subroutine ctiniv(nvar   , nscal  , dt)
+subroutine ctiniv0(nvar   , nscal  , dt)
 
 !===============================================================================
 ! Module files
@@ -130,8 +131,7 @@ if (isuite.eq.0) then
 
 else
 
-   !! Add - NAT
-   !! Restarts
+   !! TODO Add restarts
 
    ! Diffusivities of the dry air and the injected liquid
    visls0(iymw) = 1.d-12
@@ -144,16 +144,84 @@ else
 
 endif
 
+!--------
+! Formats
+!--------
+
+!----
+! End
+!----
+
+return
+
+end subroutine
+
+!-------------------------------------------------------------------------------
+!> \file ctiniv.f90
+!> \brief Initialisation of calculation variables for the cooling tower module,
+!> it is the counterpart of usiniv.f90.
+!>
+!> Second stage
+!
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]   nvar        total number of variables
+!> \param[in]   nscal       total number of scalars
+!> \param[in]   dt          time step value
+!-------------------------------------------------------------------------------
+
+subroutine ctiniv1(nvar   , nscal  , dt)
+
 !===============================================================================
-! 3. User initialization
+! Module files
 !===============================================================================
 
-call cs_user_f_initialization &
-( nvar   , nscal  ,                                            &
-  dt     )
+use paramx
+use numvar
+use optcal
+use cstphy
+use cstnum
+use entsor
+use ppppar
+use ppthch
+use ctincl
+use ppincl
+use field
+use mesh
+use cs_c_bindings
+use atincl, only : iymw
 
 !===============================================================================
-! 5. Imposed injected liquid mass flux in packing zones
+
+implicit none
+
+integer          nvar   , nscal
+
+double precision dt(ncelet)
+
+! Local variables
+
+integer          iel, ifac, f_id
+integer          iflmas, iflmab
+
+double precision, dimension(:), pointer :: cvar_temp, cvar_templ, cvar_yml
+double precision, dimension(:), pointer :: cvar_ymw
+double precision, dimension(:), pointer :: imasfl, bmasfl
+
+!===============================================================================
+! 1. Initialization
+!===============================================================================
+
+call field_get_val_s(ivarfl(isca(iscalt)), cvar_temp)
+call field_get_val_s(ivarfl(isca(iyml)), cvar_yml)
+call field_get_val_s(ivarfl(isca(iymw)), cvar_ymw)
+call field_get_val_s(itml, cvar_templ)
+
+!===============================================================================
+! 2. Imposed injected liquid mass flux in packing zones
 !===============================================================================
 
 f_id = ivarfl(isca(iyml))
@@ -181,7 +249,6 @@ call synsca(cvar_yml)
 do ifac = 1, nfabor
   bmasfl(ifac) = 0.d0
 enddo
-
 
 !--------
 ! Formats

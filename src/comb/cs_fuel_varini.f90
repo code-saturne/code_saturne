@@ -21,8 +21,6 @@
 !-------------------------------------------------------------------------------
 
 subroutine cs_fuel_varini &
-!========================
-
  ( nvar   , nscal  ,                                            &
    dt     )
 
@@ -115,10 +113,6 @@ double precision, dimension(:), pointer :: cvar_yco2
 double precision, dimension(:), pointer :: cvar_yhcn, cvar_yno, cvar_hox
 double precision, dimension(:), pointer :: x1, b_x1
 
-integer          ipass
-data             ipass /0/
-save             ipass
-
 !===============================================================================
 ! 1. Initializations
 !===============================================================================
@@ -126,8 +120,6 @@ save             ipass
 ! Massic fraction of gas
 call field_get_val_s_by_name("x_c", x1)
 call field_get_val_s_by_name("b_x_c", b_x1)
-
-ipass = ipass + 1
 
 d2s3 = 2.d0/3.d0
 
@@ -172,7 +164,7 @@ endif
 
 ! RQ IMPORTANTE : pour la combustion FU, 1 seul passage suffit
 
-if ( isuite.eq.0 .and. ipass.eq.1 ) then
+if (isuite.eq.0) then
 
 ! --> Initialisation de k et epsilon comme dans ESTET
 
@@ -296,19 +288,6 @@ if ( isuite.eq.0 .and. ipass.eq.1 ) then
   do ifac = 1, nfabor
     b_x1(ifac) = 1.d0
   enddo
-
-endif
-
-!===============================================================================
-! 3. User initialization
-!===============================================================================
-
-if (ipass.eq.1) then
-
-  call cs_user_f_initialization &
-  !==========================
-( nvar   , nscal  ,                                            &
-  dt     )
 
 endif
 

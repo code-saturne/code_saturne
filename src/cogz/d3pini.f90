@@ -60,10 +60,6 @@ subroutine d3pini &
 ! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
 !__________________!____!_____!________________________________________________!
 
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
 !===============================================================================
 
 !===============================================================================
@@ -179,11 +175,6 @@ if ( isuite.eq.0 ) then
   ( mode   , ngazg , ngazgm  , coefg  ,                           &
     npo    , npot   , th     , ehgazg ,                           &
     hinfue , tinfue )
-
-  ! User initilization
-  call cs_user_f_initialization &
-  ( nvar   , nscal  ,                                            &
-    dt     )
 
   ! ---> Parallelism and periodic exchange
   if (irangp.ge.0.or.iperio.eq.1) then

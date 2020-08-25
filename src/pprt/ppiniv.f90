@@ -20,51 +20,25 @@
 
 !-------------------------------------------------------------------------------
 
-subroutine ppiniv &
-!================
+!-------------------------------------------------------------------------------
+!> \file ppiniv.f90
+!> \brief Initialisation of specific physic variables
+!>
+!>  Physical properties SHOULD not be modified here
+!>  First stage BEFOR user input (GUI and user subroutines).
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]   nvar        total number of variables
+!> \param[in]   nscal       total number of scalars
+!> \param[in]   dt          time step value
+!-------------------------------------------------------------------------------
 
+subroutine ppiniv0 &
  ( nvar   , nscal  ,                                              &
    dt     )
-
-!===============================================================================
-! FONCTION :
-! --------
-
-! INITIALISATION DES VARIABLES DE CALCUL POUR
-!      LA PHYSIQUE PARTICULIERE
-
-! Cette routine est appelee en debut de calcul (suite ou non)
-!     avant le debut de la boucle en temps
-
-! Elle permet d'INITIALISER ou de MODIFIER (pour les calculs suite)
-!     les variables de calcul,
-!     les valeurs du pas de temps
-
-
-! On dispose ici de ROM et VISCL initialises par RO0 et VISCL0
-!     ou relues d'un fichier suite
-! On ne dispose des variables VISCLS, CP (quand elles sont
-!     definies) que si elles ont pu etre relues dans un fichier
-!     suite de calcul
-
-! LA MODIFICATION DES PROPRIETES PHYSIQUES (ROM, VISCL, VISCLS, CP)
-!     SE FERA EN STANDARD DANS LE SOUS PROGRAMME PPPHYV
-!     ET PAS ICI
-
-! Arguments
-!__________________.____._____.________________________________________________.
-! name             !type!mode ! role                                           !
-!__________________!____!_____!________________________________________________!
-! nvar             ! i  ! <-- ! total number of variables                      !
-! nscal            ! i  ! <-- ! total number of scalars                        !
-! dt(ncelet)       ! tr ! <-- ! valeur du pas de temps                         !
-!__________________!____!_____!________________________________________________!
-
-!     TYPE : E (ENTIER), R (REEL), A (ALPHANUMERIQUE), T (TABLEAU)
-!            L (LOGIQUE)   .. ET TYPES COMPOSES (EX : TR TABLEAU REEL)
-!     MODE : <-- donnee, --> resultat, <-> Donnee modifiee
-!            --- tableau de travail
-!===============================================================================
 
 !===============================================================================
 ! Module files
@@ -94,32 +68,20 @@ double precision dt(ncelet)
 
 ! Local variables
 
-
 !===============================================================================
-
-!===============================================================================
-! 1.  INITIALISATION VARIABLES LOCALES
-!===============================================================================
-
-
-!===============================================================================
-! 2. AIGUILLAGE VERS LE MODELE ADEQUAT
-!===============================================================================
-
 
 ! ---> Combustion gaz
 !      Flamme de diffusion : chimie 3 points
-
- if ( ippmod(icod3p).ge.0 ) then
+if ( ippmod(icod3p).ge.0 ) then
   call d3pini                                                     &
- ( nvar   , nscal  ,                                              &
-   dt     )
-  endif
+    ( nvar   , nscal  ,                                              &
+    dt     )
+endif
 
 ! ---> Combustion gaz
 !      Flamme de premelange : modele EBU
 
- if (ippmod(icoebu).ge.0) then
+if (ippmod(icoebu).ge.0) then
   call ebuini(nvar, nscal, dt)
 endif
 
@@ -156,14 +118,9 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
      ippmod(ielarc).ge.1       ) then
 
   call eliniv(isuite)
-
-  ! give back the hand to the user... in fortran.
-  call cs_user_f_initialization(nvar, nscal, dt)
-
 endif
 
 ! ---> Ecoulements atmospheriques
-
 if (ippmod(iatmos).ge.0) then
 
   call atiniv                                                     &
@@ -175,19 +132,85 @@ endif
 ! ---> Cooling towers
 
 if (ippmod(iaeros).ge.0) then
+  call ctiniv0(nvar, nscal, dt)
+endif
 
-  call ctiniv(nvar, nscal, dt)
+!----
+! Formats
+!----
 
+!----
+! End
+!----
+
+return
+end subroutine
+
+!-------------------------------------------------------------------------------
+!> \file ppiniv.f90
+!> \brief Initialisation of specific physic variables
+!>
+!>  Physical properties SHOULD not be modified here
+!>  Second stage after the GUI and user modifications.
+!-------------------------------------------------------------------------------
+! Arguments
+!______________________________________________________________________________.
+!  mode           name          role                                           !
+!______________________________________________________________________________!
+!> \param[in]   nvar        total number of variables
+!> \param[in]   nscal       total number of scalars
+!> \param[in]   dt          time step value
+!-------------------------------------------------------------------------------
+
+
+subroutine ppiniv1 &
+ ( nvar   , nscal  ,                                              &
+   dt     )
+
+!===============================================================================
+
+!===============================================================================
+! Module files
+!===============================================================================
+
+use paramx
+use numvar
+use optcal
+use cstphy
+use cstnum
+use entsor
+use parall
+use ppppar
+use ppthch
+use coincl
+use cpincl
+use ppincl
+use mesh
+
+!===============================================================================
+
+implicit none
+
+integer          nvar   , nscal
+
+double precision dt(ncelet)
+
+! Local variables
+
+!===============================================================================
+
+! ---> Cooling towers
+
+if (ippmod(iaeros).ge.0) then
+  call ctiniv1(nvar, nscal, dt)
 endif
 
 ! Gas mixture modelling in presence of noncondensable gases and
 ! condensable gas as stream.
 if (ippmod(igmix).ge.0) then
-
   call cs_gas_mix_initialization &
   ( nvar   , nscal  ,                                            &
     dt     )
-
 endif
 
 ! Compressible
@@ -195,9 +218,7 @@ endif
 ! mixture composition is taken into account in the thermodynamic
 ! law, if gas mix specific physics is enabled.
 if (ippmod(icompf).ge.0) then
-
   call cfiniv(nvar, nscal, dt)
-
 endif
 
 !----
