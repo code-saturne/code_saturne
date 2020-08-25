@@ -350,9 +350,9 @@ class LagrangianView(QWidget, Ui_LagrangianForm):
 
         regular_particles = self.model.getRegularParticles()
         if regular_particles >= 1:
-            self.checkBoxMODCPL.setChecked(True)
-        else:
             self.checkBoxMODCPL.setChecked(False)
+        else:
+            self.checkBoxMODCPL.setChecked(True)
 
         self.case.undoStartGlobal()
 
