@@ -1218,6 +1218,9 @@ if test x$cs_have_frontend = xno ; then
   echo " use frontend: no"
 else
   echo " use graphical user interface: "$cs_have_gui""
+  if test x$cs_have_gui_qt4=xyes ; then
+    echo "    Warning: using PyQt4 is deprecated"
+  fi
 fi
 if test x$cs_have_backend = xno ; then
   echo " use backend: no"

@@ -209,30 +209,62 @@ class TurbulenceView(QWidget, Ui_TurbulenceForm):
         # RANS - 1st order
         self.modelTurbModel.addItemGroup(self.tr("RANS - 1st order"))
 
-        self.modelTurbModel.addItem(self.tr("k-\u03B5 Linear Production"), "k-epsilon-PL", groupName="RANS - 1st order")
-        self.modelTurbModel.addItem(self.tr("v\u00B2-f BL-v\u00B2/k"), "v2f-BL-v2/k", groupName="RANS - 1st order")
-        self.modelTurbModel.addItem(self.tr("k-\u03C9 SST"), "k-omega-SST", groupName="RANS - 1st order")
-        self.modelTurbModel.addItem(self.tr("Spalart-Allmaras"), "Spalart-Allmaras", groupName="RANS - 1st order")
+        e = {"k-epsilon-PL": "k-\u03B5 Linear Production",
+             "v2f-BL-v2/k": "v\u00B2-f BL-v\u00B2/k",
+             "k-omega-SST": "k-\u03C9 SST",
+             "Spalart-Allmaras": "Spalart-Allmaras"}
+
+        if QT_API == "PYQT4":
+            e["k-epsilon-PL"] = "k-epsilon Linear Production"
+            e["v2f-BL-v2/k"] = "v2f BL-v2/k"
+            e["k-omega-SST"] = "k-omega SST"
+
+        for k in ("k-epsilon-PL", "v2f-BL-v2/k",
+                  "k-omega-SST", "Spalart-Allmaras"):
+            self.modelTurbModel.addItem(self.tr(e[k]), k,
+                                        groupName="RANS - 1st order")
 
         # RANS - 2nd order
         self.modelTurbModel.addItemGroup(self.tr("RANS - 2nd order"))
 
-        self.modelTurbModel.addItem(self.tr("R\u1D62\u2C7C-\u03B5 SSG"), "Rij-SSG", groupName="RANS - 2nd order")
-        self.modelTurbModel.addItem(self.tr("R\u1D62\u2C7C-\u03B5 EBRSM"), "Rij-EBRSM", groupName="RANS - 2nd order")
+        e = {"Rij-SSG": "R\u1D62\u2C7C-\u03B5 SSG",
+             "Rij-EBRSM": "R\u1D62\u2C7C-\u03B5 EBRSM"}
+
+        if QT_API == "PYQT4":
+            e["Rij-SSG"] = "Rij-SSG"
+            e["Rij-EBRSM"] = "Rij-EBRSM"
+
+        for k in ("Rij-SSG", "Rij-EBRSM"):
+            self.modelTurbModel.addItem(self.tr(e[k]), k,
+                                        groupName="RANS - 2nd order")
 
         # LES
         self.modelTurbModel.addItemGroup(self.tr("LES"))
 
-        self.modelTurbModel.addItem(self.tr("Smagorinsky"), "LES_Smagorinsky", groupName="LES")
-        self.modelTurbModel.addItem(self.tr("Standard dynamic model"), "LES_dynamique", groupName="LES")
-        self.modelTurbModel.addItem(self.tr("WALE"), "LES_WALE", groupName="LES")
+        self.modelTurbModel.addItem(self.tr("Smagorinsky"),
+                                    "LES_Smagorinsky",
+                                    groupName="LES")
+        self.modelTurbModel.addItem(self.tr("Standard dynamic model"),
+                                    "LES_dynamique",
+                                    groupName="LES")
+        self.modelTurbModel.addItem(self.tr("WALE"),
+                                    "LES_WALE",
+                                    groupName="LES")
 
         # Others
         self.modelTurbModel.addItemGroup(self.tr(""))
         self.modelTurbModel.addItemGroup(self.tr("Others"))
 
-        self.modelTurbModel.addItem(self.tr("R\u1D62\u2C7C-\u03B5 LRR"), "Rij-epsilon", groupName="Others")
-        self.modelTurbModel.addItem(self.tr("k-\u03B5"), "k-epsilon", groupName="Others")
+        e = {"Rij-epsilon": "R\u1D62\u2C7C-\u03B5 LRR",
+             "k-epsilon": "k-\u03B5"}
+
+        if QT_API == "PYQT4":
+            e["Rij-epsilon"] = "Rij-LRR"
+            e["k-epsilon"] = "k-epsilon"
+
+        for k in ("Rij-epsilon", "k-epsilon"):
+            self.modelTurbModel.addItem(self.tr(e[k]), k,
+                                        groupName="Others")
 
         self.modelLength = ComboModel(self.comboBoxLength,2,1)
         self.modelLength.addItem(self.tr("Automatic"), 'automatic')
