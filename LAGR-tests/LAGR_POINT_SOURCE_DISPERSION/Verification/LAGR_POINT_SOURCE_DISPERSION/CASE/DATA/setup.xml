@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI case="CASE" solver_version="4.0;4.2;4.3;6.1-alpha;6.0;6.1.1;6.2-alpha" study="LAGR_POINT_SOURCE_DISPERSION" version="2.0">
+<?xml version="1.0" encoding="utf-8"?><Code_Saturne_GUI study="LAGR_POINT_SOURCE_DISPERSION" case="CASE" version="2.0" solver_version="6.2-alpha">
   <additional_scalars>
     <users/>
   </additional_scalars>
@@ -21,34 +21,25 @@
         <location>all[]</location>
         <writer id="-3"/>
       </mesh>
-      <mesh id="1" label="particles(1)" type="trajectories">
-        <all_variables status="on"/>
-        <location>all[]</location>
-        <writer id="-4"/>
-      </mesh>
-      <mesh id="2" label="tambour" type="cells">
-        <all_variables status="on"/>
-        <location>cylinder[0,0,1,1,0,1,0.75]</location>
-      </mesh>
-      <probe_format choice="DAT"/>
+      <probe_format choice="CSV"/>
       <probe_recording_frequency>1</probe_recording_frequency>
       <writer id="-1" label="results">
         <directory name="postprocessing"/>
-        <format name="ensight" options="binary"/>
+        <format name="ensight" options="separate_meshes"/>
         <frequency period="time_step">100</frequency>
         <output_at_end status="on"/>
         <time_dependency choice="fixed_mesh"/>
       </writer>
       <writer id="-3" label="particles">
         <directory name="postprocessing"/>
-        <format name="ensight" options="binary"/>
+        <format name="ensight" options=""/>
         <frequency period="time_step">100</frequency>
         <output_at_end status="on"/>
         <time_dependency choice="transient_connectivity"/>
       </writer>
       <writer id="-4" label="trajectories">
         <directory name="postprocessing"/>
-        <format name="ensight" options="binary"/>
+        <format name="ensight" options=""/>
         <frequency period="none"/>
         <output_at_end status="on"/>
         <time_dependency choice="fixed_mesh"/>
@@ -59,26 +50,24 @@
     <time_averages/>
     <time_parameters>
       <iterations>4000</iterations>
-      <property label="CourantNb" name="courant_number"/>
-      <property label="FourierNb" name="fourier_number"/>
+      <property name="courant_number" label="CourantNb"/>
+      <property name="fourier_number" label="FourierNb"/>
       <time_passing>0</time_passing>
       <time_step_ref>0.001</time_step_ref>
     </time_parameters>
   </analysis_control>
   <boundary_conditions>
     <boundary label="BC_1" name="1" nature="symmetry">all[]</boundary>
-    <symmetry field_id="none" label="BC_1">
-      <ale choice="fixed_boundary"/>
+    <symmetry label="BC_1" field_id="none">
       <particles choice="part_symmetry"/>
     </symmetry>
-    <variable/>
   </boundary_conditions>
   <calculation_management>
     <block_io/>
     <partitioning/>
-    <run_type>standard</run_type>
     <start_restart>
-      <frozen_field status="off"/>
+      <frozen_field status="on"/>
+      <restart path="../FLUID/RESU/fluid/checkpoint"/>
       <restart_rescue>0</restart_rescue>
       <restart_with_auxiliary status="on"/>
     </start_restart>
@@ -88,14 +77,10 @@
     <deposition_submodel status="off"/>
     <fluid_particles_turbulent_diffusion status="off"/>
     <output>
-      <char_mass_fraction status="off"/>
       <diameter status="on"/>
       <listing_printing_frequency>1</listing_printing_frequency>
       <mass status="on"/>
-      <moisture_mass_fraction status="off"/>
-      <raw_coal_mass_fraction status="off"/>
       <resident_time status="on"/>
-      <shrinking_core_diameter status="off"/>
       <temperature status="on"/>
       <velocity_fluid_seen status="on"/>
       <velocity_particles status="on"/>
@@ -108,26 +93,31 @@
     <restart status="off"/>
     <scheme_order choice="1"/>
     <statistics>
-      <boundary status="on">
-        <property label="Part_bndy_mass_flux" name="particle_mass_flux_density" support="boundary"/>
-        <property label="Part_impact_angle" name="mean_particle_impact_angle" support="boundary"/>
-        <property label="Part_impact_number" name="particle_events_weight" support="boundary"/>
-        <property label="Part_impact_velocity" name="mean_particle_impact_velocity" support="boundary"/>
-        <property label="var_particle_impact_angle" name="var_particle_impact_angle"/>
-        <property label="var_particle_impact_velocity" name="var_particle_impact_velocity"/>
-      </boundary>
+      <boundary status="off"/>
       <iteration_start>1</iteration_start>
       <iteration_steady_start>1</iteration_steady_start>
       <restart status="off"/>
       <statistics_groups_of_particles>0</statistics_groups_of_particles>
       <threshold>0</threshold>
-      <volume status="on"/>
+      <volume status="on">
+        <property name="mean_particle_diameter"/>
+        <property name="mean_particle_mass"/>
+        <property name="mean_particle_residence_time"/>
+        <property name="mean_particle_velocity"/>
+        <property name="mean_particle_volume_fraction"/>
+        <property name="particle_cumulative_weight"/>
+        <property name="var_particle_diameter"/>
+        <property name="var_particle_mass"/>
+        <property name="var_particle_residence_time"/>
+        <property name="var_particle_velocity"/>
+        <property name="var_particle_volume_fraction"/>
+      </volume>
     </statistics>
     <turbulent_dispersion status="on"/>
   </lagrangian>
   <numerical_parameters>
     <extended_neighborhood choice=""/>
-    <gradient_reconstruction choice="green_iter"/>
+    <gradient_reconstruction choice=""/>
     <gradient_transposed status="on"/>
     <hydrostatic_pressure status="off"/>
     <pressure_relaxation>1</pressure_relaxation>
@@ -140,29 +130,22 @@
     <fluid_properties>
       <material choice="user_material"/>
       <method choice="user_properties"/>
-      <property choice="constant" label="Density" name="density">
+      <property name="density" choice="constant" label="Density">
         <initial_value>998</initial_value>
         <listing_printing status="off"/>
         <postprocessing_recording status="off"/>
       </property>
-      <property choice="constant" label="LamVisc" name="molecular_viscosity">
+      <property name="dynamic_diffusion" choice="constant" label="DiffDyn">
+        <initial_value>0.01</initial_value>
+        <listing_printing status="off"/>
+        <postprocessing_recording status="off"/>
+      </property>
+      <property name="molecular_viscosity" choice="constant" label="LamVisc">
         <initial_value>0.001002</initial_value>
         <listing_printing status="off"/>
         <postprocessing_recording status="off"/>
       </property>
-      <property choice="constant" label="SpecHeat" name="specific_heat">
-        <initial_value>4180</initial_value>
-        <listing_printing status="off"/>
-        <postprocessing_recording status="off"/>
-      </property>
-      <property choice="constant" label="ThermalCond" name="thermal_conductivity">
-        <initial_value>0.02495</initial_value>
-        <listing_printing status="off"/>
-        <postprocessing_recording status="off"/>
-      </property>
-      <reference choice="user_material"/>
       <reference_pressure>101325</reference_pressure>
-      <reference_temperature>273.15</reference_temperature>
     </fluid_properties>
     <gravity>
       <gravity_x>0</gravity_x>
@@ -170,9 +153,9 @@
       <gravity_z>0</gravity_z>
     </gravity>
     <notebook>
-      <var editable="No" id="0" name="taup" oturns="No" value="0.1"/>
-      <var description="Lagrangian time" editable="No" id="1" name="tlag" oturns="No" value="0.2"/>
-      <var editable="No" id="2" name="bx" oturns="No" value="10.0"/>
+      <var id="0" name="taup" value="0.1" oturns="No" editable="No"/>
+      <var id="1" name="tlag" value="0.2" oturns="No" editable="No" description="Lagrangian time"/>
+      <var id="2" name="bx" value="10.0" oturns="No" editable="No"/>
     </notebook>
     <omega>
       <omega_x>0</omega_x>
@@ -191,20 +174,14 @@
     <periodicity/>
     <thin_walls/>
     <volumic_conditions>
-      <zone darcy_law="off" groundwater_law="off" head_losses="off" id="1" initialization="on" label="all_cells" mass_source_term="off" momentum_source_term="off" porosity="off" scalar_source_term="off" thermal_source_term="off">all[]</zone>
+      <zone label="all_cells" id="1" initialization="on" head_losses="off" porosity="off" momentum_source_term="off" mass_source_term="off" thermal_source_term="off" scalar_source_term="off" groundwater_law="off">all[]</zone>
     </volumic_conditions>
   </solution_domain>
   <thermophysical_models>
-    <ale_method status="off">
-      <formula>mesh_viscosity_1 = 1;</formula>
-      <mesh_viscosity type="isotrop"/>
-    </ale_method>
+    <ale_method/>
     <atmospheric_flows model="off"/>
     <compressible_model model="off"/>
-    <conjugate_heat_transfer>
-      <external_coupling/>
-    </conjugate_heat_transfer>
-    <gas_combustion model="off" option="off"/>
+    <gas_combustion model="off"/>
     <groundwater_model model="off"/>
     <hgn_model model="off"/>
     <joule_effect model="off"/>
@@ -212,7 +189,6 @@
     <radiative_transfer model="off"/>
     <reference_values>
       <length/>
-      <velocity>0</velocity>
     </reference_values>
     <solid_fuels model="off"/>
     <source_terms/>
@@ -222,14 +198,14 @@
     </turbomachinery>
     <turbulence model="k-epsilon">
       <gravity_terms status="on"/>
-      <initialization choice="reference_value" zone_id="1"/>
-      <property label="TurbVisc" name="turbulent_viscosity"/>
+      <initialization zone_id="1" choice="reference_value"/>
+      <property name="turbulent_viscosity" label="TurbVisc"/>
       <reference_velocity>1</reference_velocity>
-      <variable label="epsilon" name="epsilon">
+      <variable name="epsilon" label="epsilon">
         <blending_factor>0</blending_factor>
         <rhs_reconstruction>1</rhs_reconstruction>
       </variable>
-      <variable label="k" name="k">
+      <variable name="k" label="k">
         <blending_factor>0</blending_factor>
         <rhs_reconstruction>1</rhs_reconstruction>
       </variable>
@@ -241,19 +217,19 @@
 velocity[1] = 0.;
 velocity[2] = 0.;</formula>
       </initialization>
-      <property label="Stress" name="stress" support="boundary"/>
-      <property label="Stress, normal" name="stress_normal" support="boundary">
+      <property name="stress" label="Stress" support="boundary"/>
+      <property name="stress_normal" label="Stress, normal" support="boundary">
         <postprocessing_recording status="off"/>
       </property>
-      <property label="Stress, tangential" name="stress_tangential" support="boundary">
+      <property name="stress_tangential" label="Stress, tangential" support="boundary">
         <postprocessing_recording status="off"/>
       </property>
-      <property label="total_pressure" name="total_pressure"/>
-      <property label="Yplus" name="yplus" support="boundary"/>
-      <variable label="Pressure" name="pressure">
+      <property name="total_pressure" label="total_pressure"/>
+      <property name="yplus" label="Yplus" support="boundary"/>
+      <variable name="pressure" label="Pressure">
         <rhs_reconstruction>2</rhs_reconstruction>
       </variable>
-      <variable dimension="3" label="Velocity" name="velocity">
+      <variable name="velocity" dimension="3" label="Velocity">
         <blending_factor>1</blending_factor>
         <rhs_reconstruction>1</rhs_reconstruction>
       </variable>

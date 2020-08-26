@@ -46,9 +46,7 @@
   </analysis_control>
   <boundary_conditions>
     <boundary label="BC_1" name="1" nature="symmetry">all[]</boundary>
-    <symmetry field_id="none" label="BC_1">
-      <ale choice="fixed_boundary"/>
-    </symmetry>
+    <symmetry label="BC_1" field_id="none"/>
     <variable/>
   </boundary_conditions>
   <calculation_management>
@@ -63,7 +61,6 @@
   </calculation_management>
   <lagrangian model="off">
     <carrier_field_stationary status="on"/>
-    <regular_particles>1</regular_particles>
     <deposition_submodel status="off"/>
     <fluid_particles_turbulent_diffusion status="off"/>
     <output>
@@ -101,6 +98,7 @@
         <property label="Part_vol_frac" name="mean_particle_volume_fraction"/>
       </volume>
     </statistics>
+    <regular_particles>1</regular_particles>
     <turbulent_dispersion status="on"/>
   </lagrangian>
   <numerical_parameters>

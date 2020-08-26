@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Ensure the correct command is found:
-#export PATH="/home/yohann-ws2/Code_Saturne/6.2-alpha/code_saturne-6.2-alpha/arch/Linux_x86_64/bin":$PATH
+# export PATH="/home/yohann-ws2/Code_Saturne/6.2-alpha/code_saturne-6.2-alpha/arch/Linux_x86_64/bin":$PATH
 
 # Insert default command
 cs_cmd=""
