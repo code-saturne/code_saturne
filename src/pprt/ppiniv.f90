@@ -120,10 +120,10 @@ if ( ippmod(ieljou).ge.1 .or.                                     &
   call eliniv(isuite)
 endif
 
-! ---> Ecoulements atmospheriques
+! Atmospheric flows, first stage
 if (ippmod(iatmos).ge.0) then
 
-  call atiniv                                                     &
+  call atiniv0                                                     &
  ( nvar   , nscal  ,                                              &
    dt     )
 
@@ -199,8 +199,16 @@ double precision dt(ncelet)
 
 !===============================================================================
 
-! ---> Cooling towers
+! Atmospheric flows, second stage
+if (ippmod(iatmos).ge.0) then
 
+  call atiniv1                                                     &
+ ( nvar   , nscal  ,                                              &
+   dt     )
+
+endif
+
+! ---> Cooling towers
 if (ippmod(iaeros).ge.0) then
   call ctiniv1(nvar, nscal, dt)
 endif
