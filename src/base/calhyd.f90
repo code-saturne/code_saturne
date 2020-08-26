@@ -109,7 +109,7 @@ integer          idiffp, iconvp, ndircp
 integer          ibsize, iesize
 integer          imucpp, f_id0
 
-double precision residu, rnorm , rnrmf , rnrmdf
+double precision ressol, residu, rnorm , rnrmf , rnrmdf
 double precision epsrgp, climgp, extrap, epsilp
 double precision precre, precab, thetap
 double precision qimp, hint
@@ -161,7 +161,6 @@ iesize = 1
 
 !     TEST DE VARIATION DE LA PRESSION HYDROSTATIQUE EN SORTIE
 
-
 !     on regarde si les terme source ont varie
 !     on ne passe dans calhyd que si on a des faces de sortie std
 !     la precision pour les tests est a peu pres arbitraire.
@@ -197,7 +196,7 @@ indhyd = 1
 
 f_id0 = -1
 
-do iel=1,ncel
+do iel = 1, ncel
   next_fext(1 ,iel) = fext(1 ,iel) * cell_is_active(iel) + dfext(1 ,iel)
   next_fext(2 ,iel) = fext(2 ,iel) * cell_is_active(iel) + dfext(2 ,iel)
   next_fext(3 ,iel) = fext(3 ,iel) * cell_is_active(iel) + dfext(3 ,iel)
@@ -365,12 +364,13 @@ do isweep = 1, nswmpr
 
   iwarnp = vcopt_pr%iwarni
   epsilp = vcopt_pr%epsilo
-  ibsize = 1
-  iesize = 1
+
+  ! Solver residual
+  ressol = residu
 
   call sles_solve_native(f_id, '',                              &
                          isym, ibsize, iesize, dam, xam,          &
-                         epsilp, rnorm, niterf, residu, rhs, dpvar)
+                         epsilp, rnorm, niterf, ressol, rhs, dpvar)
 
   ! Writing
   sinfo%nbivar = sinfo%nbivar + niterf
