@@ -331,6 +331,8 @@ class InitializationView(QWidget, Ui_InitializationForm):
         """
         exa = """#example \n""" + self.init.getDefaultThermalFormula()
 
+        exp, req, sym = self.init.getThermalFormulaComponents(self.zone_id)
+
         dialog = QMegEditorView(parent=self,
                                 function_type="ini",
                                 zone_name=self.zone_name,
