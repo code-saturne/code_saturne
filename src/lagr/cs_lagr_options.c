@@ -751,16 +751,15 @@ cs_lagr_options_definition(int         isuite,
 
   if (lagr_model->modcpl == 1) {
 
-    if (lagr_model->modcpl < cs_glob_lagr_stat_options->idstnt)
+    if (cs_glob_lagr_stat_options->idstnt != 1)
       cs_parameters_error
         (CS_ABORT_DELAYED,
          _("in Lagrangian module"),
          _("The turbulent dispersion option is incompatible with that of\n"
            "statistics.\n\n"
            "Statistics must be actιve fo this model, so we must have\n"
-           "lagr_model->modcpl >= cs_glob_lagr_stat_options->idstnt\n"
-           "while their current values are %d < %d."),
-         lagr_model->modcpl,
+           "cs_glob_lagr_stat_options->idstnt = 1\n"
+           "while its current value is %d."),
          cs_glob_lagr_stat_options->idstnt);
 
     /* Velocity statistics are needed for this model */
