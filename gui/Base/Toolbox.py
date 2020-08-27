@@ -63,7 +63,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
         item = index.internalPointer()
         zone_name = item.itemData[0]
 
-        if item.parentItem.itemData[0] == tr("Boundary zones"):
+        if item.parentItem.itemData[0] == tr("Boundary conditions"):
             if case.xmlRootNode().tagName == tr("NEPTUNE_CFD_GUI"):
                 import code_saturne.Pages.BoundaryConditionsViewNeptune as Page
                 thisPage = Page.BoundaryConditionsView(root, case, zone_name)
@@ -99,7 +99,7 @@ def displaySelectedPage(page_name, root, case, stbar=None, tree=None):
             import code_saturne.Pages.GroundwaterLawView as Page
             thisPage = Page.GroundwaterLawView(root, case, zone_name)
 
-        elif item.parentItem.itemData[0] == tr("Volume zones"):
+        elif item.parentItem.itemData[0] in (tr("Boundary zones"), tr("Volume zones")):
             import code_saturne.Pages.LocalizationView as Page
             thisPage = Page.VolumeLocalizationView(root, case, tree, hide_all=True)
 
@@ -221,11 +221,6 @@ def displayStaticPage(case, page_name, root, stbar, tree):
     elif page_name == tr("Boundary zones"):
         import code_saturne.Pages.LocalizationView as Page
         thisPage = Page.BoundaryLocalizationView(root, case, tree)
-
-    elif page_name == tr("Boundary conditions"):
-        if case.xmlRootNode().tagName == "NEPTUNE_CFD_GUI":
-            import code_saturne.Pages.BoundaryConditionsViewNeptune as Page
-            thisPage = Page.BoundaryConditionsView(root, case)
 
     elif page_name == tr("Particle boundary conditions"):
         import code_saturne.Pages.LagrangianBoundariesView as Page

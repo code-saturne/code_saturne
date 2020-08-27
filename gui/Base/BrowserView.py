@@ -501,7 +501,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
             return ['Initialization', 'Head losses', 'Porosity',
                     'Source terms', 'Groundwater laws']
         elif section == 'Boundary zones':
-            return ['Particle boundary conditions',
+            return ['Boundary conditions', 'Particle boundary conditions',
                     'Fluid structure interaction', 'Cathare Coupling',
                     'Immersed Boundaries']
         elif section == 'Time settings':
@@ -1083,7 +1083,7 @@ class BrowserView(QWidget, Ui_BrowserForm):
 
         # Update boundary zones display
         boundary_zone_labels = self._getSortedZoneLabels(case, "BoundaryZone")
-        self.updateBrowserZones(boundary_zone_labels, "Boundary zones")
+        self.updateBrowserZones(boundary_zone_labels, "Boundary conditions")
 
         # Update volume zones display
         # TODO split code into smaller methods
