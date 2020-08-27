@@ -1,8 +1,0 @@
-FORMAT
-type: ensight gold
-
-GEOMETRY
-model: results_boundary.geo
-
-VARIABLE
-scalar per element:                   boundary_zone_id       results_boundary.boundary_zone_id

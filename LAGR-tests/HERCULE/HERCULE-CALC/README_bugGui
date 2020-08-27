@@ -1,3 +1,0 @@
-Bug dans le GUI de CS 6.0.2 : Il y a un bug quand on ajoute les mean_particle_velocity et var_particle_velocity sur un profil à extraire. En effet en faisant cela, on ajoute seulement la première composante de ces deux vecteurs. Pour contourner ce problème, il faut éditer le setup.xml et modifier les lignes correspondantes à ces deux variables -> modifier component="0" en "-1". Remarque, en faisant cela, on affiche tous les élémentes des vecteurs dans les résultats mais pas dans le GUI de 6.0.2.
-
-Remarque annexe : Il faudrait compléter les options du module lagrangien dans le setup.log.
