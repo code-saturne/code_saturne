@@ -23,6 +23,8 @@
 
 if HAVE_MPI4PY
 
+EXTRA_DIST = pyple_coupler.py.in
+
 edit_python = sed \
 	-e 's|@mpi4pydir[@]|$(MPI4PY_PATH)|g'
 
@@ -33,12 +35,13 @@ pyple_coupler.py: Makefile
 	$(edit_python) $${srcdir}$@.in >$@.tmp;
 	mv $@.tmp $@
 
-
 AM_CPPFLAGS = $(MPI_CPPFLAGS)
 AM_CFLAGS = $(CFLAGS_DBG) $(CFLAGS_OPT)
 AM_LDFLAGS = $(MPI_LDFLAGS)
 
-pkgpython_PYTHON = __init__.py Coupling.py Init.py pyple_coupler.py
+pkgpython_PYTHON = __init__.py Coupling.py Init.py
+nodist_pkgpython_PYTHON = pyple_coupler.py
+
 pkgpyexec_LTLIBRARIES = libpyplecoupling.la
 libpyplecoupling_la_SOURCES = ple_coupling_wrapper.c
 libpyplecoupling_la_CFLAGS = $(MPI4PY_CFLAGS) $(PYTHON_CPPFLAGS) -I$(srcdir)/../src $(MPI_CPPFLAGS)
@@ -46,5 +49,6 @@ libpyplecoupling_la_CPPFLAGS = $(MPI4PY_CFLAGS) $(PYTHON_CPPFLAGS) -I$(srcdir)/.
 libpyplecoupling_la_LDFLAGS = $(PYTHON_LIBS) $(PYTHON_EXTRA_LIBS)
 libpyplecoupling_la_LIBADD = $(top_builddir)/src/libple.la
 
+DISTCLEANFILES = pyple_coupler.py
 
 endif
