@@ -121,7 +121,7 @@ cs_sync_scalar_halo(const cs_mesh_t  *m,
 
 inline static cs_real_t *
 cs_get_v_slope_test(int                       f_id,
-                  const cs_var_cal_opt_t    var_cal_opt)
+                    const cs_var_cal_opt_t    var_cal_opt)
 {
   const int iconvp = var_cal_opt.iconv;
   const int isstpp = var_cal_opt.isstpc;

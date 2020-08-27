@@ -225,7 +225,7 @@ c  TempC        0.10728E+07      13   0.12667E-02   0.13931E-02 0.27664E-02
 ```
 
 For each solved variable, it provides:
-- The number if iterations required for the linear solvers (which depends on the
+- The number of iterations required for the linear solvers (which depends on the
   chosen solver type, and may be converted to an "equivalent" cost estimation
   in some cases).
 - The normalized residual.
