@@ -1,5 +1,5 @@
-Release 6.2.0 (unreleased)
---------------------------
+Release 6.2.0 (August 27 2020)
+------------------------------
 
 User changes:
 
