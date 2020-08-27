@@ -1971,7 +1971,7 @@ cs_equation_create_param(const char            *name,
 
     .verbosity = 0,                         /* SLES verbosity */
     .field_id = -1,                         /* associated field id */
-    .solver_class = CS_PARAM_SLES_CLASS_CS, /* in-house solverq */
+    .solver_class = CS_PARAM_SLES_CLASS_CS, /* built-in solver */
     .precond = CS_PARAM_PRECOND_DIAG,       /* preconditioner */
     .solver = CS_PARAM_ITSOL_GMRES,         /* iterative solver */
     .amg_type = CS_PARAM_AMG_NONE,          /* no predefined AMG type */

@@ -844,8 +844,8 @@ typedef struct {
  * - "boomer" --> Boomer AMG multigrid from the Hypre library
  * - "gamg" --> GAMG multigrid from the PETSc library
  * - "pcmg" --> MG multigrid as preconditioner from the PETSc library
- * - "v_cycle" --> Code_Saturne's in house multigrid with a V-cycle strategy
- * - "k_cycle" --> Code_Saturne's in house multigrid with a K-cycle strategy
+ * - "v_cycle" --> Code_Saturne's built-in multigrid with a V-cycle strategy
+ * - "k_cycle" --> Code_Saturne's built-in multigrid with a K-cycle strategy
  * WARNING: For "boomer" and "gamg",one needs to install Code_Saturne with
  * PETSc in this case
  *
