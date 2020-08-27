@@ -3947,9 +3947,8 @@ cs_file_endswith(const char  *path,
     const int lpath = strlen(path);
     const int lext  = strlen(end);
 
-    /* If either strings is empty, or if the path is shorter than the end
-     * string, return 0
-     */
+    /* If either string is empty, or if the path is shorter than the end
+     * string, return 0 */
     if (lpath == 0 || lext == 0)
       retval = 0;
 
