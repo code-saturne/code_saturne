@@ -1,0 +1,30 @@
+FORMAT
+type: ensight gold
+
+GEOMETRY
+model: results_boundary.geo
+
+VARIABLE
+scalar per element:                   boundary_zone_id       results_boundary.boundary_zone_id
+scalar per element: 1               Part_impact_number       results_boundary.part_impact_number.*****
+scalar per element: 1              Part_bndy_mass_flux       results_boundary.part_bndy_mass_flux.*****
+scalar per element: 1        particle_events_weight_c1       results_boundary.particle_events_weight_c1.*****
+scalar per element: 1    particle_mass_flux_density_c1       results_boundary.particle_mass_flux_density_c1.*****
+scalar per element: 1                Part_impact_angle       results_boundary.part_impact_angle.*****
+scalar per element: 1        var_particle_impact_angle       results_boundary.var_particle_impact_angle.*****
+scalar per element: 1    mean_particle_impact_angle_c1       results_boundary.mean_particle_impact_angle_c1.*****
+scalar per element: 1     var_particle_impact_angle_c1       results_boundary.var_particle_impact_angle_c1.*****
+scalar per element: 1             Part_impact_velocity       results_boundary.part_impact_velocity.*****
+scalar per element: 1     var_particle_impact_velocity       results_boundary.var_particle_impact_velocity.*****
+scalar per element: 1 mean_particle_impact_velocity_c1       results_boundary.mean_particle_impact_velocity_c1.*****
+scalar per element: 1  var_particle_impact_velocity_c1       results_boundary.var_particle_impact_velocity_c1.*****
+scalar per element: 1                            Yplus       results_boundary.yplus.*****
+vector per element: 1                           Stress       results_boundary.stress.*****
+
+TIME
+time set:              1
+number of steps:       1
+filename start number: 1
+filename increment:    1
+time values:
+            7.

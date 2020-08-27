@@ -1,0 +1,29 @@
+
+Local case configuration:
+
+  Date:                Fri 14 Aug 2020 15:09:29 CEST
+  System:              Linux 5.4.0-42-generic (Ubuntu 20.04.1 LTS)
+  Machine:             Riemann
+  Processor:           model name	: Intel(R) Core(TM) i7-7700T CPU @ 2.90GHz
+  Memory:              15806 MB
+  Directory:           /home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509_1
+  OpenMP threads:      8
+  Processors/node:     8
+
+  Compilers used for build:
+    C compiler:        gcc (Ubuntu 9.3.0-10ubuntu2) 9.3.0
+    C++ compiler:      g++ (Ubuntu 9.3.0-10ubuntu2) 9.3.0
+    Fortran compiler:  GNU Fortran (Ubuntu 9.3.0-10ubuntu2) 9.3.0
+
+  I/O read method:     standard input and output, serial access
+  I/O write method:    standard input and output, serial access
+
+--------------------------------------------------------------------------------
+
+Halo creation times summary
+
+  Halo creation:                             0 s
+
+  Total time for halo creation:              0 s
+
+--------------------------------------------------------------------------------

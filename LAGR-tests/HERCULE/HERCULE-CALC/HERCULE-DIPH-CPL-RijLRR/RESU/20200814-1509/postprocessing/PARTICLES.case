@@ -1,0 +1,20 @@
+FORMAT
+type: ensight gold
+
+GEOMETRY
+model: 1 particles.geo.*****
+
+VARIABLE
+scalar per node:    1          particle_residence_time       particles.particle_residence_time.*****
+scalar per node:    1                    particle_mass       particles.particle_mass.*****
+scalar per node:    1                particle_diameter       particles.particle_diameter.*****
+vector per node:    1                particle_velocity       particles.particle_velocity.*****
+vector per node:    1           particle_velocity_seen       particles.particle_velocity_seen.*****
+
+TIME
+time set:              1
+number of steps:       1
+filename start number: 1
+filename increment:    1
+time values:
+            7.

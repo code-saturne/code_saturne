@@ -1,0 +1,434 @@
+========================================================
+Start time       : Friday August 14 15:09:29 CEST 2020
+========================================================
+  Command        : /home/panos/Applications/Code_Saturne/code_saturne/arch/Linux_x86_64/bin/code_saturne run
+========================================================
+  Package path   : /home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/
+  ----------------------------------------------------
+  MPI path       : 
+  MPI type       : OpenMPI
+  ----------------------------------------------------
+  User           : panos
+  ----------------------------------------------------
+  Machine        : Linux Riemann 5.4.0-42-generic #46-Ubuntu SMP Fri Jul 10 00:24:02 UTC 2020 x86_64 x86_64 
+  N Procs        : 1
+  ----------------------------------------------------
+  Environment variables
+    ALABASTER_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    ATLAS=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/lapack/lib
+    BABEL_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    BASH_ENV=/usr/share/modules/init/bash
+    BASH_FUNC__module_raw%%=() {  unset _mlshdbg;
+ if [ "${MODULES_SILENT_SHELL_DEBUG:-0}" = '1' ]; then
+ case "$-" in 
+ *v*x*)
+ set +vx;
+ _mlshdbg='vx'
+ ;;
+ *v*)
+ set +v;
+ _mlshdbg='v'
+ ;;
+ *x*)
+ set +x;
+ _mlshdbg='x'
+ ;;
+ *)
+ _mlshdbg=''
+ ;;
+ esac;
+ fi;
+ unset _mlre _mlIFS;
+ if [ -n "${IFS+x}" ]; then
+ _mlIFS=$IFS;
+ fi;
+ IFS=' ';
+ for _mlv in ${MODULES_RUN_QUARANTINE:-};
+ do
+ if [ "${_mlv}" = "${_mlv##*[!A-Za-z0-9_]}" -a "${_mlv}" = "${_mlv#[0-9]}" ]; then
+ if [ -n "`eval 'echo ${'$_mlv'+x}'`" ]; then
+ _mlre="${_mlre:-}${_mlv}_modquar='`eval 'echo ${'$_mlv'}'`' ";
+ fi;
+ _mlrv="MODULES_RUNENV_${_mlv}";
+ _mlre="${_mlre:-}${_mlv}='`eval 'echo ${'$_mlrv':-}'`' ";
+ fi;
+ done;
+ if [ -n "${_mlre:-}" ]; then
+ eval `eval ${_mlre}/usr/bin/tclsh8.6 /usr/lib/x86_64-linux-gnu/modulecmd.tcl bash '"$@"'`;
+ else
+ eval `/usr/bin/tclsh8.6 /usr/lib/x86_64-linux-gnu/modulecmd.tcl bash "$@"`;
+ fi;
+ _mlstatus=$?;
+ if [ -n "${_mlIFS+x}" ]; then
+ IFS=$_mlIFS;
+ else
+ unset IFS;
+ fi;
+ unset _mlre _mlv _mlrv _mlIFS;
+ if [ -n "${_mlshdbg:-}" ]; then
+ set -$_mlshdbg;
+ fi;
+ unset _mlshdbg;
+ return $_mlstatus
+}
+    BASH_FUNC_module%%=() {  _module_raw "$@" 2>&1
+}
+    BASH_FUNC_switchml%%=() {  typeset swfound=1;
+ if [ "${MODULES_USE_COMPAT_VERSION:-0}" = '1' ]; then
+ typeset swname='main';
+ if [ -e /usr/lib/x86_64-linux-gnu/modulecmd.tcl ]; then
+ typeset swfound=0;
+ unset MODULES_USE_COMPAT_VERSION;
+ fi;
+ else
+ typeset swname='compatibility';
+ if [ -e /usr/lib/x86_64-linux-gnu/modulecmd-compat ]; then
+ typeset swfound=0;
+ MODULES_USE_COMPAT_VERSION=1;
+ export MODULES_USE_COMPAT_VERSION;
+ fi;
+ fi;
+ if [ $swfound -eq 0 ]; then
+ echo "Switching to Modules $swname version";
+ source /usr/share/modules/init/bash;
+ else
+ echo "Cannot switch to Modules $swname version, command not found";
+ return 1;
+ fi
+}
+    BLAS=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/lapack/lib
+    BLAS_SRC=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/lapack/BLAS/SRC
+    BLSURFPLUGIN_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/BLSURFPLUGIN
+    BLSURFPLUGIN_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/BLSURFPLUGIN
+    BOOSTDIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/boost
+    BOOST_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/boost
+    CALCULATOR_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/CALCULATOR
+    CALCULATOR_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/CALCULATOR
+    CASROOT=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/CAS
+    CERTIFI_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    CFLAGS=-fPIC
+    CGNS_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/cgns
+    CHARDET_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    CLICK_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    CLUTTER_IM_MODULE=ibus
+    CMAKE_ROOT=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/cmake
+    COLORTERM=truecolor
+    COMPONENT_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/COMPONENT
+    COMPONENT_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/COMPONENT
+    CONFIGURATION_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/CONFIGURATION
+    CONFIGURATION_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/CONFIGURATION
+    CPLUS_INCLUDE_PATH=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/sip/include/python3.6:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/sip/include/python3.6:
+    CPPUNITHOME=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/cppunit
+    CPPUNITINSTDIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/cppunit
+    CPPUNIT_ROOT=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/cppunit
+    CPPUNIT_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/cppunit
+    CSF_MDTVTexturesDirectory=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/CAS/share/opencascade/resources/Textures
+    CSF_PluginDefaults=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/CAS/share/opencascade/resources/StdResource
+    CSF_SHMessage=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/CAS/share/opencascade/resources/SHMessage
+    CSF_ShadersDirectory=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/CAS/share/opencascade/resources/Shaders
+    CSF_StandardDefaults=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/CAS/share/opencascade/resources/StdResource
+    CSF_UnitsDefinition=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/CAS/share/opencascade/resources/UnitsAPI/Units.dat
+    CSF_UnitsLexicon=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/CAS/share/opencascade/resources/UnitsAPI/Lexi_Expr.dat
+    CSF_XSMessage=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/CAS/share/opencascade/resources/XSMessage
+    CS_ENVIRONMENT_SET=true
+    CXXFLAGS=-fPIC
+    CYCLER_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    CYTHON_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    DATA_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/SAMPLES
+    DATEUTIL_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus,guid=67f4eeb26338cde4b671ac535f3407fb
+    DBUS_STARTER_ADDRESS=unix:path=/run/user/1000/bus,guid=67f4eeb26338cde4b671ac535f3407fb
+    DBUS_STARTER_BUS_TYPE=session
+    DEFAULTS_PATH=/usr/share/gconf/ubuntu.default.path
+    DESKTOP_SESSION=ubuntu
+    DISPLAY=:0
+    DOCUMENTATION_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/DOCUMENTATION
+    DOCUMENTATION_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/DOCUMENTATION
+    DOCUTILSDIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    DOCUTILS_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    DOXYGENDIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/doxygen
+    DOXYGEN_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/doxygen
+    EFICAS_ROOT=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS
+    EFICAS_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS
+    EFICAS_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/EFICAS
+    EFICAS_TOOLS_ROOT=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS
+    EFICAS_TOOLS_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS
+    EIGEN_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/eigen
+    EMBREE_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/embree
+    ENV=/usr/share/modules/init/profile.sh
+    FFLAGS=-fPIC
+    FIELDS_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/FIELDS
+    FIELDS_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/FIELDS
+    FREEIMAGEDIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/freeimage
+    FREEIMAGE_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/freeimage
+    FREETYPEDIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/freetype
+    FREETYPE_BIN=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/freetype/bin
+    FREETYPE_INCLUDE_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/freetype/include
+    FREETYPE_LIBRARY=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/freetype/lib
+    FREETYPE_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/freetype
+    GDMSESSION=ubuntu
+    GEOM_PluginsList=BREPPlugin:STEPPlugin:IGESPlugin:STLPlugin:XAOPlugin:VTKPlugin:AdvancedGEOM
+    GEOM_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/GEOM
+    GEOM_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/GEOM
+    GHS3DPLUGIN_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/GHS3DPLUGIN
+    GHS3DPLUGIN_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/GHS3DPLUGIN
+    GL2PSDIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/gl2ps
+    GL2PS_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/gl2ps
+    GMSHHOME=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/gmsh
+    GMSHPLUGIN_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/GMSHPLUGIN
+    GMSHPLUGIN_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/GMSHPLUGIN
+    GMSH_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/gmsh
+    GNOME_DESKTOP_SESSION_ID=this-is-deprecated
+    GNOME_SHELL_SESSION_MODE=ubuntu
+    GNOME_TERMINAL_SCREEN=/org/gnome/Terminal/screen/e52e92f7_57ba_4ed8_8524_1dd1b2ebe7e6
+    GNOME_TERMINAL_SERVICE=:1.133
+    GPG_AGENT_INFO=/run/user/1000/gnupg/S.gpg-agent:0:1
+    GRAPHVIZROOT=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/graphviz
+    GRAPHVIZ_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/graphviz
+    GTK_IM_MODULE=ibus
+    GTK_MODULES=gail:atk-bridge
+    GUI_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/GUI
+    GUI_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/GUI
+    HDF5HOME=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/hdf5
+    HDF5_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/hdf5
+    HDF5_INCLUDE_DIRS=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/hdf5/include
+    HDF5_LIBRARIES=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/hdf5/lib
+    HDF5_ROOT=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/hdf5
+    HDF5_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/hdf5
+    HDF5_VERSION=1.10.3
+    HELLO_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/HELLO
+    HELLO_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/HELLO
+    HEXABLOCKPLUGIN_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/HEXABLOCKPLUGIN
+    HEXABLOCKPLUGIN_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/HEXABLOCKPLUGIN
+    HEXABLOCK_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/HEXABLOCK
+    HEXABLOCK_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/HEXABLOCK
+    HOMARD_EXE=homard
+    HOMARD_REP_EXE=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/homard_bin
+    HOMARD_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/HOMARD
+    HOMARD_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/HOMARD
+    HOME=/home/panos
+    HYBRIDPLUGIN_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/HYBRIDPLUGIN
+    HYBRIDPLUGIN_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/HYBRIDPLUGIN
+    HexoticPLUGIN_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/HexoticPLUGIN
+    HexoticPLUGIN_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/HexoticPLUGIN
+    IDNA_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    IMAGESIZE_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    IM_CONFIG_PHASE=1
+    INCLUDE=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/libxml2/include:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tcl/include:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/libxml2/include:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tcl/include:
+    INSIDE_NAUTILUS_PYTHON=
+    INVOCATION_ID=16d6012659e24567843100e33b08be05
+    ISPC_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ispc
+    JINJADIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    JINJA_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    JOBMANAGER_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/JOBMANAGER
+    JOBMANAGER_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/JOBMANAGER
+    JOURNAL_STREAM=9:52894
+    KERNEL_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/KERNEL
+    KERNEL_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/KERNEL
+    KIWISOLVER_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    LANG=en_GB.UTF-8
+    LANGUAGE=en_GB:en
+    LAPACK=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/lapack/lib
+    LAPACKHOME=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/lapack
+    LAPACK_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/lapack
+    LAPACK_SRC=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/lapack/SRC
+    LC_ADDRESS=en_GB.UTF-8
+    LC_IDENTIFICATION=en_GB.UTF-8
+    LC_MEASUREMENT=en_GB.UTF-8
+    LC_MONETARY=en_GB.UTF-8
+    LC_NAME=en_GB.UTF-8
+    LC_NUMERIC=en_GB.UTF-8
+    LC_PAPER=en_GB.UTF-8
+    LC_TELEPHONE=en_GB.UTF-8
+    LC_TIME=en_GB.UTF-8
+    LDFLAGS=-fPIC
+    LD_LIBRARY_PATH=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/mesa/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/gmsh/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/medfile/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ParaView/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ParaView/lib/paraview-5.6:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/cgns/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/PyQt:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/sip/lib/python3.6/site-packages:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/LIBBATCH/lib/python3.6:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/LIBBATCH/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/libxml2/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/hdf5/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/netgen/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/CAS/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/gl2ps/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/freeimage/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/planegcs/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/boost/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ospray/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/embree/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tbb/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/llvm/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tcl/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/opencv/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python/lib/python3.6/site-packages:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/lapack/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/qwt/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/qt/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/freetype/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/cppunit/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/MeshGems/lib/Linux_64:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/omniORB/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/graphviz/lib/graphviz:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/graphviz/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python/lib::/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/Accas:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/Aide:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/convert:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/Doc:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/Editeur:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/Efi2Xsd:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/Extensions:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/generator:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/Ihm:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/InterfaceQT4:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/Noyau:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/Telemac:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/Traducteur:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/UiQT5
+    LD_LIBRARY_PATH_modshare=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/Efi2Xsd:1::1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/Traducteur:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/generator:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/qwt/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/omniORB/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/Accas:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/gmsh/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/embree/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/Ihm:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/graphviz/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/UiQT5:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/sip/lib/python3.6/site-packages:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/lapack/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/medfile/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/Telemac:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/CAS/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/libxml2/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ParaView/lib/paraview-5.6:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/llvm/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/cppunit/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/convert:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/Editeur:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/PyQt:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/Noyau:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/LIBBATCH/lib/python3.6:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python/lib/python3.6/site-packages:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/cgns/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tcl/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/freeimage/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/planegcs/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/hdf5/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/netgen/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/qt/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/boost/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tbb/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/MeshGems/lib/Linux_64:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/Doc:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/opencv/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/graphviz/lib/graphviz:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/mesa/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ParaView/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/Aide:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/LIBBATCH/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/freetype/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/Extensions:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS_TOOLS/InterfaceQT4:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ospray/lib:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/gl2ps/lib:1
+    LESSCLOSE=/usr/bin/lesspipe %s %s
+    LESSOPEN=| /usr/bin/lesspipe %s
+    LIBBATCH_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/LIBBATCH
+    LIBXML2_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/libxml2
+    LIBXML_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/libxml2
+    LICENCE_FILE=dlim8.var.py
+    LLVMROOT=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/llvm
+    LLVM_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/llvm
+    LOGNAME=panos
+    LS_COLORS=rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:
+    MANAGERPID=2406
+    MANDATORY_PATH=/usr/share/gconf/ubuntu.mandatory.path
+    MANPATH=:
+    MANPATH_modshare=:1
+    MARKUPSAFE_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    MATPLOTLIB_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/matplotlib
+    MED2HOME=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/medfile
+    MED3HOME=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/medfile
+    MEDCOUPLING_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/MEDCOUPLING
+    MEDCOUPLING_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/MEDCOUPLING
+    MEDFILE_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/medfile
+    MESAROOT=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/mesa
+    MESA_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/mesa
+    MESHGEMSHOME=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/MeshGems
+    MESHGEMS_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/MeshGems
+    METISDIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/metis
+    METIS_BIN=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/metis/bin
+    METIS_INCLUDE_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/metis/include
+    METIS_LIBRARIES=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/metis/lib
+    METIS_LIBRARY=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/metis/lib
+    METIS_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/metis
+    MMGT_REENTRANT=1
+    MODULEPATH=/etc/environment-modules/modules:/usr/share/modules/versions:/usr/share/modules/$MODULE_VERSION/modulefiles:/usr/share/modules/modulefiles
+    MODULEPATH_modshare=/etc/environment-modules/modules:1:/usr/share/modules/$MODULE_VERSION/modulefiles:1:/usr/share/modules/modulefiles:1:/usr/share/modules/versions:1
+    MODULESHOME=/usr/share/modules
+    MODULES_CMD=/usr/lib/x86_64-linux-gnu/modulecmd.tcl
+    MPLCONFIGDIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/matplotlib
+    NETGENHOME=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/netgen
+    NETGENPLUGIN_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/NETGENPLUGIN
+    NETGENPLUGIN_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/NETGENPLUGIN
+    NETGEN_BIN=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/netgen/bin
+    NETGEN_INCLUDE_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/netgen/include
+    NETGEN_INCLUDE_DIRS=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/netgen/include
+    NETGEN_LIBRARIES=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/netgen/lib
+    NETGEN_LIBRARY=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/netgen/lib
+    NETGEN_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/netgen
+    NUMPY_INCLUDE_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python/lib/python3.6/site-packages
+    NUMPY_INCLUDE_DIR2=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python/lib/python3.6/site-packages/numpy/core/include
+    OLDPWD=/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC
+    OMNIORBPY_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/omniORB
+    OMNIORB_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/omniORB
+    OMNIORB_USER_PATH=/tmp
+    OPENCASCADE_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/CAS
+    OPENCV_HOME=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/opencv
+    OPENCV_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/opencv
+    OSPRAY_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ospray
+    PACKAGING_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    PAPERSIZE=a4
+    PARALLEL_VISU=1
+    PARAVIEW_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ParaView
+    PARAVIEW_VERSION=5.6
+    PARAVIS_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/PARAVIS
+    PARAVIS_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/PARAVIS
+    PATH=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/mesa/include/GL:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/homard_bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/YACSGEN/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/medfile/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ParaView/include/paraview-5.6:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ParaView/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/cgns/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/PyQt/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/sip/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/libxml2/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/hdf5/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/netgen/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/CAS/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/CAS:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/doxygen/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/gl2ps/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/freeimage/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/boost/include:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ispc/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/llvm/include/llvm:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/llvm/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/swig/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tcl/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/opencv/include:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/opencv/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/qt/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/freetype/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/cppunit/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/MeshGems/bin/Linux_64:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/MeshGems/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/omniORB/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/graphviz/include/graphviz:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/graphviz/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/eigen/include/eigen3:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/cmake/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/mesa/include/GL:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/homard_bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/YACSGEN/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/medfile/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ParaView/include/paraview-5.6:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ParaView/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/cgns/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/PyQt/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/sip/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/libxml2/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/hdf5/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/netgen/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/CAS/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/CAS:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/doxygen/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/gl2ps/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/freeimage/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/boost/include:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ispc/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/llvm/include/llvm:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/llvm/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/swig/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tcl/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/opencv/include:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/opencv/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/qt/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/freetype/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/cppunit/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/MeshGems/bin/Linux_64:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/MeshGems/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/omniORB/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/graphviz/include/graphviz:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/graphviz/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/eigen/include/eigen3:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/cmake/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python/bin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python:/home/panos/.local/bin:./:/home/panos/.local/bin:./:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/home/panos/.dotnet/tools:/home/panos/.dotnet/tools:/opt/Julia/bin:/opt/nvidia/hpc_sdk/Linux_x86_64/2020/compilers/bin:/opt/flang/bin:/home/panos/Applications/Code_Saturne/code_saturne/arch/Linux_x86_64/bin:/home/panos/Applications/Code_Saturne/code_saturne/arch/Linux_x86_64/libexec/code_saturne:/home/panos/Development/Syrthes/arch/Linux_x86_64/bin
+    PATH_modshare=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/CAS:1:/opt/flang/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/boost/include:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tcl/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/mesa/include/GL:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/cgns/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/freeimage/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/opencv/include:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/hdf5/bin:1:/snap/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/netgen/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/MeshGems/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/YACSGEN/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/swig/bin:1:/home/panos/Applications/Code_Saturne/code_saturne/arch/Linux_x86_64/libexec/code_saturne:1:/opt/nvidia/hpc_sdk/Linux_x86_64/2020/compilers/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/sip/bin:1:./:1:/usr/games:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/qt/bin:1:/usr/local/games:1:/usr/local/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/opencv/bin:1:/home/panos/Development/Syrthes/arch/Linux_x86_64/bin:1:/home/panos/Applications/Code_Saturne/code_saturne/arch/Linux_x86_64/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ParaView/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/freetype/bin:1:/usr/local/sbin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/gl2ps/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/llvm/include/llvm:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/MeshGems/bin/Linux_64:1:/home/panos/.dotnet/tools:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/homard_bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ispc/bin:1:/home/panos/.local/bin:1:/sbin:1:/usr/sbin:1:/opt/Julia/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/eigen/include/eigen3:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/doxygen/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/omniORB/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/graphviz/include/graphviz:1:/usr/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/graphviz/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/medfile/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ParaView/include/paraview-5.6:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/PyQt/bin:1:/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/CAS/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/cmake/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/libxml2/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/cppunit/bin:1:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/llvm/bin:1
+    PKG_CONFIG_PATH=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/freetype/lib/pkgconfig:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/freetype/lib/pkgconfig
+    PKG_CONFIG_PATH_modshare=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/freetype/lib/pkgconfig:1
+    PLANEGCS_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/planegcs
+    POCKETS_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    PRODUCT_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/..
+    PVHOME=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ParaView
+    PVVERSION=5.6
+    PV_PLUGIN_PATH=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/lata/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/PARAVIS/lib/paraview;/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ParaView/lib/paraview-5.6:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/lata/lib:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/PARAVIS/lib/paraview;/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ParaView/lib/paraview-5.6:
+    PWD=/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR
+    PYCALCULATOR_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/PYCALCULATOR
+    PYCALCULATOR_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/PYCALCULATOR
+    PYGMENTSDIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    PYGMENTS_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    PYHELLO_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/PYHELLO
+    PYHELLO_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/PYHELLO
+    PYPARSING_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    PYQT5_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/PyQt
+    PYQTDIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/PyQt
+    PYQT_SIPS=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/PyQt/sip
+    PYQT_SIPS_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/PyQt
+    PYREADLINE_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    PYTHONBIN=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python/bin/python3
+    PYTHONHOME=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    PYTHON_INCLUDE=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python/include/python3.6
+    PYTHON_LIBDIR=lib/python3.6/site-packages
+    PYTHON_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    PYTHON_VERSION=3.6
+    PYTZ_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    ParaView_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ParaView/lib/paraview-5.6
+    QT4_IM_MODULE=ibus
+    QT5_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/qt
+    QTDIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/qt
+    QT_ACCESSIBILITY=1
+    QT_IM_MODULE=ibus
+    QT_PLUGIN_PATH=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/qt/plugins:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/qt/plugins:
+    QT_QPA_PLATFORMTHEME=qt5ct
+    QT_QPA_PLATFORM_PLUGIN_PATH=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/qt/plugins:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/qt/plugins:
+    QWTHOME=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/qwt
+    QWT_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/qwt
+    REQUESTS_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    SALOME_MODULES=SHAPER,GEOM,SMESH,PARAVIS,YACS,JOBMANAGER,FIELDS,PYHELLO,HEXABLOCK,EFICAS,CALCULATOR,HELLO,HOMARD
+    SALOME_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/SALOME
+    SALOME_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/SALOME
+    SALOME_trace=local
+    SAMPLES_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/SAMPLES
+    SCIPY_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    SCOTCHDIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/scotch
+    SCOTCH_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/scotch
+    SESSION_MANAGER=local/Riemann:@/tmp/.ICE-unix/2773,unix/Riemann:/tmp/.ICE-unix/2773
+    SETUPTOOLDIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    SETUPTOOLS_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    SHAPER_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/SHAPER
+    SHAPER_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/SHAPER
+    SHELL=/bin/bash
+    SHLVL=1
+    SIPDIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/sip
+    SIP_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/sip
+    SIX_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    SMESH_MeshersList=GHS3DPlugin:GMSHPlugin:HexoticPlugin:HYBRIDPlugin:NETGENPlugin:BLSURFPlugin:HEXABLOCKPlugin:StdMeshers:GHS3DPlugin:GMSHPlugin:HexoticPlugin:HYBRIDPlugin:NETGENPlugin:BLSURFPlugin:HEXABLOCKPlugin:StdMeshers:
+    SMESH_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/SMESH
+    SMESH_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/SMESH
+    SNOWBALLSTEMMER_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    SPHINXCONTRIB_NAPOLEON_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    SPHINXCONTRIB_WEBSUPPORT_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    SPHINXDIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    SPHINXINTL_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    SPHINX_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    SSH_AGENT_PID=2655
+    SSH_AUTH_SOCK=/run/user/1000/keyring/ssh
+    SWIG_LIB=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/swig/share/swig/3.0.12
+    SWIG_ROOT=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/swig
+    SWIG_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/swig
+    SalomeAppConfig=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/SALOME/share/salome/resources/salome:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/SALOME/share/salome/resources/salome::/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/GUI/share/salome/resources/gui:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/FIELDS/share/salome/resources/fields:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/GEOM/share/salome/resources/geom:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/SMESH/share/salome/resources/smesh:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/PARAVIS/share/salome/resources/paravis:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/HEXABLOCK/share/salome/resources/hexablock:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/HEXABLOCKPLUGIN/share/salome/resources/hexablock:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS/share/salome/resources/eficas:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/NETGENPLUGIN/share/salome/resources/netgenplugin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/HYBRIDPLUGIN/share/salome/resources/hybridplugin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/YACS/share/salome/resources/yacs:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/SHAPER/share/salome/resources/shaper:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/HOMARD/share/salome/resources/homard:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/GMSHPLUGIN/share/salome/resources/gmshplugin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/JOBMANAGER/share/salome/resources/jobmanager:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/GHS3DPLUGIN/share/salome/resources/ghs3dplugin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/GUI/share/salome/resources/gui:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/FIELDS/share/salome/resources/fields:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/GEOM/share/salome/resources/geom:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/SMESH/share/salome/resources/smesh:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/PARAVIS/share/salome/resources/paravis:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/HEXABLOCK/share/salome/resources/hexablock:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/HEXABLOCKPLUGIN/share/salome/resources/hexablock:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/EFICAS/share/salome/resources/eficas:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/NETGENPLUGIN/share/salome/resources/netgenplugin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/HYBRIDPLUGIN/share/salome/resources/hybridplugin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/YACS/share/salome/resources/yacs:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/SHAPER/share/salome/resources/shaper:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/HOMARD/share/salome/resources/homard:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/GMSHPLUGIN/share/salome/resources/gmshplugin:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/JOBMANAGER/share/salome/resources/jobmanager:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/GHS3DPLUGIN/share/salome/resources/ghs3dplugin
+    TBB_INCLUDE_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tbb/include
+    TBB_INSTALL_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tbb
+    TBB_LIBRARY_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tbb/lib
+    TBB_ROOT=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tbb
+    TBB_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tbb
+    TCLHOME=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tcl
+    TCLLIBPATH=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ParaView/lib/vtk-5.0/tcl /home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tcl/lib /home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tcl/lib/tcl/8.6 /home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ParaView/lib/vtk-5.0/tcl /home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tcl/lib /home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tcl/lib/tcl/8.6 
+    TCL_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tcl
+    TCL_SHORT_VERSION=8.6
+    TERM=xterm-256color
+    TKHOME=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tcl
+    TKLIBPATH=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tcl/lib /home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tcl/lib/tk/8.6 /home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tcl/lib /home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tcl/lib/tk/8.6 
+    TK_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/tcl
+    TURBINATOR_HOME=/home/panos/Development/Turbinator/build
+    URLLIB3_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/Python
+    USER=panos
+    USERNAME=panos
+    VTE_VERSION=6003
+    VTKHOME=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ParaView
+    VTK_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ParaView/lib/cmake/paraview-5.6
+    VTK_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ParaView/lib/cmake/paraview-5.6:/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/ParaView
+    WINDOWPATH=2
+    XAUTHORITY=/run/user/1000/gdm/Xauthority
+    XDG_CONFIG_DIRS=/etc/xdg/xdg-ubuntu:/etc/xdg
+    XDG_CURRENT_DESKTOP=ubuntu:GNOME
+    XDG_DATA_DIRS=/usr/share/ubuntu:/home/panos/.local/share/flatpak/exports/share:/var/lib/flatpak/exports/share:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
+    XDG_MENU_PREFIX=gnome-
+    XDG_RUNTIME_DIR=/run/user/1000
+    XDG_SESSION_CLASS=user
+    XDG_SESSION_DESKTOP=ubuntu
+    XDG_SESSION_TYPE=x11
+    XLIB_SKIP_ARGB_VISUALS=1
+    XMODIFIERS=@im=ibus
+    YACSGENROOT=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/YACSGEN
+    YACSGEN_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/YACSGEN
+    YACS_ROOT_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/YACS
+    YACS_SRC_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../SOURCES/YACS
+    _=/home/panos/Applications/Code_Saturne/code_saturne/arch/Linux_x86_64/bin/code_saturne
+    embree_DIR=/home/panos/Development/Salome/SALOME-9.4.0/salomeTools/../INSTALL/embree
+    out_dir_Path=/home/panos/Development/Salome/SALOME-9.4.0
+  ----------------------------------------------------
+  Case           : HERCULE-DIPH-CPL-RijLRR
+    directory    : /home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR
+    results dir. : /home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509_1
+    solver       : ./cs_solver
+  ----------------------------------------------------
+  solver failed
+========================================================
+Finish time      : Friday August 14 15:09:39 CEST 2020
+========================================================

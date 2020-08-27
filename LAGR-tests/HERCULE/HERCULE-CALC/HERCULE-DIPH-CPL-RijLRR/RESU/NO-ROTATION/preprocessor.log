@@ -1,0 +1,183 @@
+
+/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/libexec/code_saturne/cs_preprocess 
+--log --out mesh_input.csm 
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/MESH/Hercule.med 
+
+  .------------------------------.
+  |                              |
+  |   Code_Saturne Preprocessor  |
+  |                              |
+  `------------------------------'
+
+  code_saturne version 6.2-alpha   (built Fri Aug 14 11:32:16 2020)
+
+  CGNS 4.0.0 file format support
+  MED 4.0.0 (HDF5 1.10.5) file format support
+  Reading of compressed files ('.gz') with Zlib 1.2.11
+
+
+
+Case configuration
+------------------
+
+  Date                : Fri Aug 14 14:05:13 2020
+  System              : Linux 5.4.0-42-generic
+  Machine             : Riemann
+  Processor           : Intel(R) Core(TM) i7-7700T CPU @ 2.90GHz
+  Memory              : 16185948
+  User                : panos (Panos Asproulis)
+  Directory           : /home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1405
+
+  Case name           : preprocess
+  Mesh file           : /home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/MESH/Hercule.med
+
+
+
+Reading mesh from file in MED (EDF/CEA) format
+----------------------
+  Mesh file: /home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/MESH/Hercule.med
+
+
+  Mesh name: Hercule
+
+  Number of vertices                          :    17595
+  Number of faces                             :    17594
+                                   Family 6   :       38
+                                   Family 7   :       33
+                                   Family 8   :        5
+                                   Family 9   :      114
+                                   Family 10  :     8664
+                                   Family 11  :     8664
+                                   Family 12  :       76
+  Number of cells                             :     8664
+                                   Family 13  :     8664
+
+  Wall-clock time: 0.006621 s; CPU time: 0.006483 s
+
+
+Done reading mesh
+-----------------
+  Theoretical mesh size:                 1.465 Mb
+  Theoretical current memory:            1.867 Mb
+  Theoretical peak memory:               2.808 Mb
+  Total memory used:                    18.109 Mb
+
+  Domain coordinate extents:
+
+  [ 0.00000e+00, -6.54291e-03,  0.00000e+00]
+  [ 1.49857e-01,  6.54291e-03,  1.50000e+00]
+  Number of elements                    tria3 :        2
+  Number of elements                    quad4 :    17592
+  Number of elements                   penta6 :      114
+  Number of elements                    hexa8 :     8550
+
+
+
+Defining families
+-----------------
+
+
+  Element orientation check.
+
+
+End of conversion to descending connectivity
+--------------------------------------------
+  Theoretical mesh size:                 1.952 Mb
+  Theoretical current memory:            2.354 Mb
+  Theoretical peak memory:               5.337 Mb
+  Total memory used:                    21.000 Mb
+
+
+Main mesh properties
+--------------------
+
+  Number of cells:                                  8664
+  Number of internal faces:                        17138
+  Number of boundary faces:                        17594
+  Number of vertices:                              17595
+
+
+Definition of face and cell families
+------------------------------------
+
+  Family 1
+         Group "Fluid"
+  Number of cells          :     8664
+  Family 2
+         Group "Injection"
+  Number of boundary faces :        5
+  Family 3
+         Group "Inlet"
+  Number of boundary faces :       38
+  Family 4
+         Group "Outlet"
+  Number of boundary faces :       76
+  Family 5
+         Group "Symmetry-1"
+  Number of boundary faces :     8664
+  Family 6
+         Group "Symmetry-2"
+  Number of boundary faces :     8664
+  Family 7
+         Group "Wall-1"
+  Number of boundary faces :      114
+  Family 8
+         Group "Wall-2"
+  Number of boundary faces :       33
+  Family 8
+         Default family
+         (no group)
+  Number of internal faces :    17138
+
+
+Write output for Kernel
+-----------------------
+
+  Opening file: mesh_input.csm
+
+  Wrote: "start_block:dimensions"
+  Wrote: "n_cells"                         ; Type: "u8"; Size: 1
+  Wrote: "n_faces"                         ; Type: "u8"; Size: 1
+  Wrote: "n_vertices"                      ; Type: "u8"; Size: 1
+  Wrote: "face_vertices_size"              ; Type: "u8"; Size: 1
+  Wrote: "n_group_classes"                 ; Type: "i8"; Size: 1
+  Wrote: "n_group_class_props_max"         ; Type: "i8"; Size: 1
+  Wrote: "n_groups"                        ; Type: "u8"; Size: 1
+  Wrote: "group_name_index"                ; Type: "i8"; Size: 9
+  Wrote: "group_name"                      ; Type: "c "; Size: 65
+  Wrote: "group_class_properties"          ; Type: "i8"; Size: 9
+  Wrote: "end_block:dimensions"
+  Wrote: "start_block:data"
+  Wrote: "face_cells"                      ; Type: "i8"; Size: 69464
+  Wrote: "cell_group_class_id"             ; Type: "i8"; Size: 8664
+  Wrote: "face_group_class_id"             ; Type: "i8"; Size: 34732
+  Wrote: "face_vertices_index"             ; Type: "u8"; Size: 34733
+  Wrote: "face_vertices"                   ; Type: "i8"; Size: 138813
+  Wrote: "vertex_coords"                   ; Type: "r8"; Size: 52785
+  Wrote: "end_block:data"
+  Wrote: "EOF"
+
+  Closing file: mesh_input.csm
+
+
+Time and memory summary
+-----------------------
+
+  User CPU time                       (sec)   :        0.02
+  System CPU time                     (sec)   :        0.01
+  Total time                          (sec)   :        0.02
+  Total CPU time / Total time                 :        1.18
+
+Memory use summary:
+
+  Total memory used:                                  21.000 Mb
+  Theoretical instrumented dynamic memory:             5.337 Mb
+
+
+  .-----------------------.
+  |                       |
+  |  Preprocessor finish  |
+  |                       |
+  `-----------------------'
+
+

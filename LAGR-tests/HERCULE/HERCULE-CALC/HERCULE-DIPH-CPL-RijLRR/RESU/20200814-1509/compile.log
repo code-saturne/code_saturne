@@ -1,0 +1,118 @@
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_lagr_particle.c: In function ‘_inlet2’:
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_lagr_particle.c:134:9: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+  134 |   if(xx != 0.0 && yy != 0.0)
+      |         ^~
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_lagr_particle.c:134:22: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+  134 |   if(xx != 0.0 && yy != 0.0)
+      |                      ^~
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_lagr_particle.c:138:15: warning: comparing floating point with == or != is unsafe [-Wfloat-equal]
+  138 |   else if (xx == 0.0)
+      |               ^~
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_lagr_particle.c:157:14: warning: unused variable ‘vt’ [-Wunused-variable]
+  157 |   cs_real_t  vt[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
+      |              ^~
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_lagr_particle.c: In function ‘cs_user_lagr_in’:
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_lagr_particle.c:296:49: warning: unused parameter ‘zis’ [-Wunused-parameter]
+  296 |                 const cs_lagr_injection_set_t  *zis,
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_lagr_particle.c:298:49: warning: unused parameter ‘particle_face_id’ [-Wunused-parameter]
+  298 |                 const cs_lnum_t                 particle_face_id[],
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~~~~~~
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_lagr_particle.c:299:49: warning: unused parameter ‘visc_length’ [-Wunused-parameter]
+  299 |                 const cs_real_t                 visc_length[])
+      |                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^~~~~~~~~~~~~
+At top level:
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_lagr_particle.c:96:18: warning: ‘_m_flow’ defined but not used [-Wunused-variable]
+   96 | static cs_real_t _m_flow[4];
+      |                  ^~~~~~~
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_meg_initialization.c: In function ‘cs_meg_initialization’:
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_meg_initialization.c:48:17: warning: unused variable ‘c_id’ [-Wunused-variable]
+   48 |       cs_lnum_t c_id = zone->elt_ids[e_id];
+      |                 ^~~~
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_modules.f90:67:25:
+
+   67 |       DOUBLE PRECISION D1,D2,D3,D4
+      |                         1
+Warning: Unused variable ‘d1’ declared at (1) [-Wunused-variable]
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_modules.f90:67:28:
+
+   67 |       DOUBLE PRECISION D1,D2,D3,D4
+      |                            1
+Warning: Unused variable ‘d2’ declared at (1) [-Wunused-variable]
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_modules.f90:67:31:
+
+   67 |       DOUBLE PRECISION D1,D2,D3,D4
+      |                               1
+Warning: Unused variable ‘d3’ declared at (1) [-Wunused-variable]
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_modules.f90:67:34:
+
+   67 |       DOUBLE PRECISION D1,D2,D3,D4
+      |                                  1
+Warning: Unused variable ‘d4’ declared at (1) [-Wunused-variable]
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_modules.f90:65:35:
+
+   65 |       DOUBLE PRECISION UU,VV,WW,XLM
+      |                                   1
+Warning: Unused variable ‘xlm’ declared at (1) [-Wunused-variable]
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_boundary_conditions.f90:462:52:
+
+  462 | double precision, dimension(:), pointer :: bfpro_rom
+      |                                                    1
+Warning: Unused variable ‘bfpro_rom’ declared at (1) [-Wunused-variable]
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_boundary_conditions.f90:399:5:
+
+  399 |    dt     ,                                                       &
+      |     1
+Warning: Unused dummy argument ‘dt’ at (1) [-Wunused-dummy-argument]
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_boundary_conditions.f90:398:9:
+
+  398 |    icodcl , itrifb , itypfb , izfppp ,                            &
+      |         1
+Warning: Unused dummy argument ‘icodcl’ at (1) [-Wunused-dummy-argument]
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_boundary_conditions.f90:451:30:
+
+  451 | integer          ifac, iel, ii
+      |                              1
+Warning: Unused variable ‘ii’ declared at (1) [-Wunused-variable]
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_boundary_conditions.f90:398:18:
+
+  398 |    icodcl , itrifb , itypfb , izfppp ,                            &
+      |                  1
+Warning: Unused dummy argument ‘itrifb’ at (1) [-Wunused-dummy-argument]
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_boundary_conditions.f90:398:36:
+
+  398 |    icodcl , itrifb , itypfb , izfppp ,                            &
+      |                                    1
+Warning: Unused dummy argument ‘izfppp’ at (1) [-Wunused-dummy-argument]
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_boundary_conditions.f90:397:17:
+
+  397 |  ( nvar   , nscal  ,                                              &
+      |                 1
+Warning: Unused dummy argument ‘nscal’ at (1) [-Wunused-dummy-argument]
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_boundary_conditions.f90:454:23:
+
+  454 | double precision rhomoy, xdh
+      |                       1
+Warning: Unused variable ‘rhomoy’ declared at (1) [-Wunused-variable]
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_boundary_conditions.f90:453:22:
+
+  453 | double precision uref2
+      |                      1
+Warning: Unused variable ‘uref2’ declared at (1) [-Wunused-variable]
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_boundary_conditions.f90:454:28:
+
+  454 | double precision rhomoy, xdh
+      |                            1
+Warning: Unused variable ‘xdh’ declared at (1) [-Wunused-variable]
+/home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_boundary_conditions.f90:455:22:
+
+  455 | double precision xitur
+      |                      1
+Warning: Unused variable ‘xitur’ declared at (1) [-Wunused-variable]
+/usr/bin/mpicc -DHAVE_CONFIG_H -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include/code_saturne -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/CGNS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/MED/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/HDF5/include -I/home/panos/Development/Salome/SALOME-9.4.0/INSTALL/MEDCOUPLING/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/PARMETIS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/SCOTCH/include -DOMPI_SKIP_MPICXX -D_POSIX_C_SOURCE=200809L -DNDEBUG -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wfloat-equal -Werror=implicit-function-declaration -Wmisleading-indentation -Wduplicated-cond -fdiagnostics-color=auto -Werror=format-security -march=native -O3 -fPIC -fopenmp -funroll-loops -O2 -Wuninitialized -fexcess-precision=fast -c /home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_lagr_particle.c
+/usr/bin/mpicc -DHAVE_CONFIG_H -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include/code_saturne -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/CGNS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/MED/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/HDF5/include -I/home/panos/Development/Salome/SALOME-9.4.0/INSTALL/MEDCOUPLING/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/PARMETIS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/SCOTCH/include -DOMPI_SKIP_MPICXX -D_POSIX_C_SOURCE=200809L -DNDEBUG -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wfloat-equal -Werror=implicit-function-declaration -Wmisleading-indentation -Wduplicated-cond -fdiagnostics-color=auto -Werror=format-security -march=native -O3 -fPIC -fopenmp -funroll-loops -O2 -Wuninitialized -fexcess-precision=fast -c /home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_meg_volume_function.c
+/usr/bin/mpicc -DHAVE_CONFIG_H -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include/code_saturne -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/CGNS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/MED/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/HDF5/include -I/home/panos/Development/Salome/SALOME-9.4.0/INSTALL/MEDCOUPLING/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/PARMETIS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/SCOTCH/include -DOMPI_SKIP_MPICXX -D_POSIX_C_SOURCE=200809L -DNDEBUG -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wfloat-equal -Werror=implicit-function-declaration -Wmisleading-indentation -Wduplicated-cond -fdiagnostics-color=auto -Werror=format-security -march=native -O3 -fPIC -fopenmp -funroll-loops -O2 -Wuninitialized -fexcess-precision=fast -c /home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_meg_initialization.c
+/usr/bin/mpicc -DHAVE_CONFIG_H -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include -I/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include/code_saturne -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/CGNS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/MED/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/HDF5/include -I/home/panos/Development/Salome/SALOME-9.4.0/INSTALL/MEDCOUPLING/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/PARMETIS/include -I/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/SCOTCH/include -DOMPI_SKIP_MPICXX -D_POSIX_C_SOURCE=200809L -DNDEBUG -funsigned-char -W -Wall -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wnested-externs -Wunused -Wfloat-equal -Werror=implicit-function-declaration -Wmisleading-indentation -Wduplicated-cond -fdiagnostics-color=auto -Werror=format-security -march=native -O3 -fPIC -fopenmp -funroll-loops -O2 -Wuninitialized -fexcess-precision=fast -c /home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_meg_post_profile.c
+/usr/bin/mpifort -I /home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include/code_saturne -x f95-cpp-input -Wall -pedantic-errors -std=f2003 -fdiagnostics-color=auto -fopenmp -O -c /home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_modules.f90
+/usr/bin/mpifort -o cs_f_user_boundary_conditions.o -I /home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/include/code_saturne -x f95-cpp-input -Wall -pedantic-errors -std=f2003 -fdiagnostics-color=auto -fopenmp -O -c /home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/src/cs_user_boundary_conditions.f90
+/usr/bin/mpic++ -o /home/panos/Runs/LAGR/HERCULE/HERCULE-6.0.2-CALC/HERCULE-DIPH-CPL-RijLRR/RESU/20200814-1509/cs_solver cs_user_lagr_particle.o cs_meg_volume_function.o cs_meg_initialization.o cs_meg_post_profile.o cs_user_modules.o cs_f_user_boundary_conditions.o -lcs_solver -L/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/lib -L/home/panos/Development/Code_Saturne/Libraries/CGNS/lib -L/home/panos/Development/Code_Saturne/Libraries/MED/lib -L/home/panos/Development/Code_Saturne/Libraries/HDF5/lib -L/home/panos/Development/Salome/SALOME-9.4.0/INSTALL/MEDCOUPLING/lib -L/home/panos/Development/Code_Saturne/Libraries/PARMETIS/lib -L/home/panos/Development/Code_Saturne/Libraries/SCOTCH/lib -fPIC -O -Wl,-export-dynamic -fopenmp -lsaturne -lple -lfreesteam -lcgns -lmedC -lhdf5 -lmedcoupling -linterpkernel -lmedcouplingremapper -lmedloader -lparmetis -lmetis -lptscotch -lscotch -lz -ldl -L/usr/lib/x86_64-linux-gnu/openmpi/lib -L/opt/intel/inteloneapi/mpi/2021.1-beta07/libfabric/lib -L/opt/intel/inteloneapi/mpi/2021.1-beta07/lib -L/opt/intel/inteloneapi/compiler/2021.1-beta07/linux/lib -L/usr/lib/gcc/x86_64-linux-gnu/9 -L/usr/lib/x86_64-linux-gnu -L/usr/lib -L/lib/x86_64-linux-gnu -L/lib -L/opt/intel/inteloneapi/ipp/2021.1-beta06/lib/intel64 -L/opt/intel/inteloneapi/mkl/2021.1-beta07/lib/intel64 -L/opt/intel/inteloneapi/mpi/2021.1-beta07/lib/release -L/opt/intel/inteloneapi/tbb/2021.1-beta07/lib/intel64/gcc4.8 -lmpi_usempif08 -lmpi_usempi_ignore_tkr -lmpi_mpifh -lmpi -lgfortran -lquadmath -lpthread -lm -Wl,-rpath -Wl,:/home/panos/Applications/Code_Saturne/code_saturne-lagr/arch/Linux_x86_64/lib:/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/CGNS/lib:/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/MED/lib:/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/HDF5/lib:/home/panos/Development/Salome/SALOME-9.4.0/INSTALL/MEDCOUPLING/lib:/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/PARMETIS/lib:/home/panos/Development/Code_Saturne_LAGR/../Code_Saturne/Libraries/SCOTCH/lib:/opt/intel/inteloneapi/mpi/2021.1-beta07/libfabric/lib/../lib:/opt/intel/inteloneapi/mpi/2021.1-beta07/lib/../lib:/opt/intel/inteloneapi/compiler/2021.1-beta07/linux/lib/../lib:/opt/intel/inteloneapi/ipp/2021.1-beta06/lib/intel64:/opt/intel/inteloneapi/mkl/2021.1-beta07/lib/intel64:/opt/intel/inteloneapi/mpi/2021.1-beta07/libfabric/lib:/opt/intel/inteloneapi/mpi/2021.1-beta07/lib/release:/opt/intel/inteloneapi/mpi/2021.1-beta07/lib:/opt/intel/inteloneapi/compiler/2021.1-beta07/linux/lib:/opt/intel/inteloneapi/tbb/2021.1-beta07/lib/intel64/gcc4.8

@@ -1,0 +1,5 @@
+FORMAT
+type: ensight gold
+
+GEOMETRY
+model: results_fluid_domain.geo

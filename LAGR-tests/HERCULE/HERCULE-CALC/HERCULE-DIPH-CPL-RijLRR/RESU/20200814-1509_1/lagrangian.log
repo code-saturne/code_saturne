@@ -1,0 +1,30 @@
+# ** Information on Lagrangian computation
+#    --------------------------------------
+#
+# column  1: time step number
+# column  2: physical time
+# column  3: inst. number of particles
+# column  4: inst. number of particles (weighted)
+# column  5: inst. number of injected particles
+# column  6: inst. number of injected particles (weighted)
+# column  7: inst. number of exited, or deposited and removed particles
+# column  8: inst. number of exited, or deposited and removed particles (weighted)
+# column  9: inst. number of deposited particles
+# column 10: inst. number of deposited particles (weighted)
+# column 11: inst. number of lost particles
+#
+     7001  7.0010e+00       10  1.1920e+01       10  1.1920e+01        0  0.0000e+00        0  0.0000e+00        0
+     7002  7.0020e+00       17  2.1159e+01       10  1.2815e+01        3  3.5759e+00        0  0.0000e+00        0
+     7003  7.0030e+00       15  2.2219e+01       10  1.5901e+01       12  1.4841e+01        0  0.0000e+00        0
+     7004  7.0040e+00       18  2.4806e+01       10  1.2792e+01        7  1.0205e+01        0  0.0000e+00        0
+     7005  7.0050e+00       21  2.8007e+01       10  1.3710e+01        7  1.0509e+01        0  0.0000e+00        0
+     7006  7.0060e+00       21  3.0782e+01       10  1.5934e+01       10  1.3159e+01        0  0.0000e+00        0
+     7007  7.0070e+00       18  2.3658e+01       10  1.2256e+01       13  1.9380e+01        0  0.0000e+00        0
+     7008  7.0080e+00       19  2.2350e+01       10  1.0826e+01        9  1.2133e+01        0  0.0000e+00        0
+     7009  7.0090e+00       21  2.4150e+01       10  1.0890e+01        8  9.0895e+00        0  0.0000e+00        0
+     7010  7.0100e+00       29  2.9914e+01       10  7.9356e+00        2  2.1716e+00        0  0.0000e+00        0
+     7011  7.0110e+00       27  3.2334e+01       10  1.2822e+01       12  1.0403e+01        0  0.0000e+00        0
+     7012  7.0120e+00       27  3.1347e+01       10  1.1347e+01       10  1.2333e+01        0  0.0000e+00        0
+     7013  7.0130e+00       36  3.9706e+01       10  9.4932e+00        1  1.1347e+00        0  0.0000e+00        0
+     7014  7.0140e+00       39  4.6563e+01       10  1.4429e+01        7  7.5719e+00        0  0.0000e+00        0
+     7015  7.0150e+00       35  3.5668e+01       10  8.0733e+00       14  1.8968e+01        0  0.0000e+00        0

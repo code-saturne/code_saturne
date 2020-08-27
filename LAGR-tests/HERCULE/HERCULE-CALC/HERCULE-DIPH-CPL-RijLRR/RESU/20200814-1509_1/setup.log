@@ -1,0 +1,1203 @@
+
+Fields of type: variable
+---------------
+
+  Field                            Dim. Location             Id   Type flag
+  -------------------------------- ---- -------------------- ---- ---------
+  velocity                         3    cells                0    5    (intensive, variable)
+  pressure                         1    cells                1    5    (intensive, variable)
+  rij                              6    cells                2    5    (intensive, variable)
+  epsilon                          1    cells                3    5    (intensive, variable)
+
+Fields of type: property
+---------------
+
+  Field                            Dim. Location             Id   Type flag
+  -------------------------------- ---- -------------------- ---- ---------
+  density                          1    cells                4    9    (intensive, property)
+  boundary_density                 1    boundary_faces       5    9    (intensive, property)
+  molecular_viscosity              1    cells                6    9    (intensive, property)
+  turbulent_viscosity              1    cells                7    9    (intensive, property)
+  courant_number                   1    cells                8    9    (intensive, property)
+  fourier_number                   1    cells                9    9    (intensive, property)
+  total_pressure                   1    cells                10   9    (intensive, property)
+  velocity_st_lagr                 3    cells                12   9    (intensive, property)
+  rij_st_lagr                      6    cells                13   9    (intensive, property)
+  yplus                            1    boundary_faces       47   9    (intensive, property)
+  inner_mass_flux                  1    interior_faces       50   10   (extensive, property)
+  boundary_mass_flux               1    boundary_faces       51   10   (extensive, property)
+  anisotropic_turbulent_viscosity  6    cells                52   9    (intensive, property)
+
+Fields of type: postprocess
+---------------
+
+  Field                            Dim. Location             Id   Type flag
+  -------------------------------- ---- -------------------- ---- ---------
+  particle_cumulative_weight       1    cells                14   48   (postprocess, accumulator)
+  mean_particle_volume_fraction    1    cells                15   48   (postprocess, accumulator)
+  mean_particle_residence_time     1    cells                16   48   (postprocess, accumulator)
+  var_particle_residence_time      1    cells                17   48   (postprocess, accumulator)
+  mean_particle_mass               1    cells                18   48   (postprocess, accumulator)
+  var_particle_mass                1    cells                19   48   (postprocess, accumulator)
+  mean_particle_diameter           1    cells                20   48   (postprocess, accumulator)
+  var_particle_diameter            1    cells                21   48   (postprocess, accumulator)
+  mean_particle_velocity           3    cells                22   48   (postprocess, accumulator)
+  var_particle_velocity            6    cells                23   48   (postprocess, accumulator)
+  particle_cumulative_weight_c1    1    cells                24   48   (postprocess, accumulator)
+  mean_particle_volume_fraction_c1 1    cells                25   48   (postprocess, accumulator)
+  mean_particle_residence_time_c1  1    cells                26   48   (postprocess, accumulator)
+  var_particle_residence_time_c1   1    cells                27   48   (postprocess, accumulator)
+  mean_particle_mass_c1            1    cells                28   48   (postprocess, accumulator)
+  var_particle_mass_c1             1    cells                29   48   (postprocess, accumulator)
+  mean_particle_diameter_c1        1    cells                30   48   (postprocess, accumulator)
+  var_particle_diameter_c1         1    cells                31   48   (postprocess, accumulator)
+  mean_particle_velocity_c1        3    cells                32   48   (postprocess, accumulator)
+  var_particle_velocity_c1         6    cells                33   48   (postprocess, accumulator)
+  particle_events_weight           1    boundary_faces       34   48   (postprocess, accumulator)
+  particle_mass_flux_density       1    boundary_faces       35   48   (postprocess, accumulator)
+  particle_events_weight_c1        1    boundary_faces       36   48   (postprocess, accumulator)
+  particle_mass_flux_density_c1    1    boundary_faces       37   48   (postprocess, accumulator)
+  mean_particle_impact_angle       1    boundary_faces       38   48   (postprocess, accumulator)
+  var_particle_impact_angle        1    boundary_faces       39   48   (postprocess, accumulator)
+  mean_particle_impact_angle_c1    1    boundary_faces       40   48   (postprocess, accumulator)
+  var_particle_impact_angle_c1     1    boundary_faces       41   48   (postprocess, accumulator)
+  mean_particle_impact_velocity    1    boundary_faces       42   48   (postprocess, accumulator)
+  var_particle_impact_velocity     1    boundary_faces       43   48   (postprocess, accumulator)
+  mean_particle_impact_velocity_c1 1    boundary_faces       44   48   (postprocess, accumulator)
+  var_particle_impact_velocity_c1  1    boundary_faces       45   48   (postprocess, accumulator)
+  boundary_forces                  3    boundary_faces       46   18   (extensive, postprocess)
+  TimeAverage_vx                   1    cells                48   48   (postprocess, accumulator)
+  TimeAverage_vz                   1    cells                49   48   (postprocess, accumulator)
+
+Other fields:
+-------------
+
+  Field                    Dim. Location             Id   Type flag
+  ------------------------ ---- -------------------- ---- ---------
+  dt                       1    cells                11   1    (intensive)
+
+Defined field keys:
+-------------------
+
+  Key                      Default      Type    Id   Type flag
+  ------------------------ ------------ ------- ---- ---------
+  alpha_turbulent_flux_id  -1           integer 21   4    (variable)
+  boundary_flux_id         -1           integer 8    4    (variable)
+  boundary_mass_flux_id    -1           integer 6    4    (variable)
+  boundary_value_id        -1           integer 33   0
+  clipping_id              -1           integer 32   4    (variable)
+  convection_limiter_id    -1           integer 34   0
+  coupled                  0            integer 3    4    (variable)
+  coupling_entity          -1           integer 36   0
+  density_id               -1           integer 16   4    (variable)
+  diffusion_coef_id        -1           integer 11   4    (variable)
+  diffusion_coef_ref       -1e+13       real    12   4    (variable)
+  diffusion_limiter_id     -1           integer 35   4    (variable)
+  diffusivity_id           -1           integer 13   4    (variable)
+  diffusivity_ref          -1e+13       real    14   4    (variable)
+  diffusivity_tensor       0            integer 24   4    (variable)
+  drift_scalar_model       0            integer 25   0
+  first_moment_id          -1           integer 27   0
+  gradient_weighting_id    -1           integer 23   4    (variable)
+  inner_flux_id            -1           integer 7    4    (variable)
+  inner_mass_flux_id       -1           integer 5    4    (variable)
+  is_buoyant               0            integer 17   4    (variable)
+  is_temperature           -1           integer 18   4    (variable)
+  label                    (null)       string  0    0
+  limiter_choice           -1           integer 45   4    (variable)
+  log                      0            integer 1    0
+  max_scalar               1            real    43   0
+  max_scalar_clipping      1e+12        real    42   0
+  measures_set_id          -1           integer 38   4    (variable)
+  min_scalar               0            real    44   0
+  min_scalar_clipping      -1e+12       real    41   0
+  moment_id                -1           integer 4    48   (postprocess, accumulator)
+  opt_interp_analysis_id   -1           integer 40   4    (variable)
+  opt_interp_id            -1           integer 39   4    (variable)
+  post_vis                 0            integer 2    0
+  restart_file             -1           integer 48   0
+  scalar_class             0            integer 26   0
+  scalar_id                -1           integer 10   0
+  slope_test_upwind_id     -1           integer 31   4    (variable)
+  source_term_id           -1           integer 30   4    (variable)
+  source_term_prev_id      -1           integer 29   4    (variable)
+  syrthes_coupling         0            integer 28   0
+  time_extrapolated        -1           integer 37   0
+  turbulent_diffusivity_id -1           integer 15   4    (variable)
+  turbulent_flux_id        -1           integer 20   4    (variable)
+  turbulent_flux_model     0            integer 19   4    (variable)
+  turbulent_schmidt        1            real    22   4    (variable)
+  variable_id              -1           integer 9    0
+  solving_info                          struct  47   4    (variable)
+  var_cal_opt                           struct  46   4    (variable)
+
+Default values for structure keys:
+----------------------------------
+
+  Key                      Default      Description
+  ------------------------ ------------ -----------------------------------------
+  var_cal_opt
+    Printing
+      iwarni               0            Verbosity level.
+    Time stepping
+      istat                1            Take unsteady terms into account.
+    Convection/Diffusion
+      iconv                1            Take convection into account.
+      idiff                1            Take diffusion into account.
+      idifft               1            Take turbulent diffusion into account.
+      idften               1            Type of diffusivity: scalar (1), orthotropic (3) or symmetric tensor (6)
+      ischcv               1            Type of convective scheme: 2nd order with centered-gradient upwind reconstruction (0), centered (1), 2nd order with upwind-gradient upwind-reconstruction (SOLU) (2)and 3 for NVD/TVD scheme
+      isstpc               1            0 for slope test, 1 for no slope test, 2 for min/max limiter 
+      blencv               1            [0.;1.] (1-upwind proportion (0: upwind))
+      blend_st             0            [0.;1.] (1-upwind proportion after slope test (0: upwind))
+    Gradients calculation
+      imrgra               -1           Reconstruction mode
+      nswrgr               100          Number of sweeps gradient reconstruction
+      epsrgr               1e-05        Gradient reconstruction precision
+      extrag               0            [0.;1.] (gradients extrapolation)
+      imligr               -1           < 0, 0 or 1 (gradient limitation method)
+      climgr               1.5          > 1 or 1 (gradient limitation coefficient)
+      iwgrec               0            Gradient calculation: standard (0) or weighted (1)
+    Rhs reconstruction
+      ircflu               1            0 or 1 (flux reconstruction)
+      nswrsm               1            Number of sweeps rhs reconstruction
+      epsrsm               1e-07        Rhs reconstruction precision
+      iswdyn               0            Dynamic relaxation type
+    Iterative solvers
+      epsilo               1e-08        Resolution precision
+    Time-scheme
+      thetav               1            [0.;1.] theta-scheme for the main variables (0.5 for Crank-Nicolson)
+      ibdtso               1            Backward differential scheme in time order
+      relaxv               1            Relaxation of variables (1 for no relaxation)
+
+Defined key values per field:
+-----------------------------
+
+
+  Key: "label", values per field
+  ----
+    velocity                         Velocity
+    pressure                         Pressure
+    rij                              Rij
+    epsilon                          epsilon
+    density                          Density
+    boundary_density                 Boundary Density
+    molecular_viscosity              LamVisc
+    turbulent_viscosity              TurbVisc
+    courant_number                   CourantNb
+    fourier_number                   FourierNb
+    total_pressure                   total_pressure
+    yplus                            Yplus
+    particle_cumulative_weight       Part_statis_weight
+    mean_particle_volume_fraction    Part_vol_frac
+    mean_particle_residence_time     Part_resid_time
+    mean_particle_velocity           Part_velocity
+    particle_events_weight           Part_impact_number
+    particle_mass_flux_density       Part_bndy_mass_flux
+    mean_particle_impact_angle       Part_impact_angle
+    var_particle_impact_angle        var_particle_impact_angle
+    mean_particle_impact_velocity    Part_impact_velocity
+    var_particle_impact_velocity     var_particle_impact_velocity
+    dt                               Local Time Step
+
+  Key: "log", values per field
+  ----
+    velocity                         1
+    pressure                         1
+    rij                              1
+    epsilon                          1
+    density                          0
+    boundary_density                 0
+    molecular_viscosity              0
+    turbulent_viscosity              1
+    courant_number                   1
+    fourier_number                   1
+    total_pressure                   1
+    yplus                            1
+    particle_cumulative_weight       1
+    mean_particle_volume_fraction    1
+    mean_particle_residence_time     1
+    var_particle_residence_time      1
+    mean_particle_mass               1
+    var_particle_mass                1
+    mean_particle_diameter           1
+    var_particle_diameter            1
+    mean_particle_velocity           1
+    var_particle_velocity            1
+    particle_cumulative_weight_c1    1
+    mean_particle_volume_fraction_c1 1
+    mean_particle_residence_time_c1  1
+    var_particle_residence_time_c1   1
+    mean_particle_mass_c1            1
+    var_particle_mass_c1             1
+    mean_particle_diameter_c1        1
+    var_particle_diameter_c1         1
+    mean_particle_velocity_c1        1
+    var_particle_velocity_c1         1
+    particle_events_weight           1
+    particle_mass_flux_density       1
+    particle_events_weight_c1        1
+    particle_mass_flux_density_c1    1
+    mean_particle_impact_angle       1
+    var_particle_impact_angle        1
+    mean_particle_impact_angle_c1    1
+    var_particle_impact_angle_c1     1
+    mean_particle_impact_velocity    1
+    var_particle_impact_velocity     1
+    mean_particle_impact_velocity_c1 1
+    var_particle_impact_velocity_c1  1
+    TimeAverage_vx                   1
+    TimeAverage_vz                   1
+
+  Key: "post_vis", values per field
+  ----
+    velocity                         5
+    pressure                         5
+    rij                              5
+    epsilon                          5
+    density                          0
+    boundary_density                 0
+    molecular_viscosity              0
+    turbulent_viscosity              5
+    courant_number                   5
+    fourier_number                   5
+    total_pressure                   5
+    yplus                            1
+    particle_cumulative_weight       5
+    mean_particle_volume_fraction    5
+    mean_particle_residence_time     5
+    var_particle_residence_time      5
+    mean_particle_mass               5
+    var_particle_mass                5
+    mean_particle_diameter           5
+    var_particle_diameter            5
+    mean_particle_velocity           5
+    var_particle_velocity            5
+    particle_cumulative_weight_c1    1
+    mean_particle_volume_fraction_c1 1
+    mean_particle_residence_time_c1  1
+    var_particle_residence_time_c1   1
+    mean_particle_mass_c1            1
+    var_particle_mass_c1             1
+    mean_particle_diameter_c1        1
+    var_particle_diameter_c1         1
+    mean_particle_velocity_c1        1
+    var_particle_velocity_c1         1
+    particle_events_weight           1
+    particle_mass_flux_density       1
+    particle_events_weight_c1        1
+    particle_mass_flux_density_c1    1
+    mean_particle_impact_angle       1
+    var_particle_impact_angle        1
+    mean_particle_impact_angle_c1    1
+    var_particle_impact_angle_c1     1
+    mean_particle_impact_velocity    1
+    var_particle_impact_velocity     1
+    mean_particle_impact_velocity_c1 1
+    var_particle_impact_velocity_c1  1
+    TimeAverage_vx                   5
+    TimeAverage_vz                   5
+
+  Key: "coupled", values per field
+  ----
+    velocity                         1
+    rij                              1
+
+  Key: "moment_id", values per field
+  ----
+
+  Key: "inner_mass_flux_id", values per field
+  ----
+    velocity                         50
+    pressure                         50
+    rij                              50
+    epsilon                          50
+
+  Key: "boundary_mass_flux_id", values per field
+  ----
+    velocity                         51
+    pressure                         51
+    rij                              51
+    epsilon                          51
+
+  Key: "inner_flux_id", values per field
+  ----
+
+  Key: "boundary_flux_id", values per field
+  ----
+
+  Key: "variable_id", values per field
+  ----
+    velocity                         1
+    pressure                         4
+    rij                              5
+    epsilon                          11
+
+  Key: "scalar_id", values per field
+  ----
+
+  Key: "diffusion_coef_id", values per field
+  ----
+
+  Key: "diffusion_coef_ref", values per field
+  ----
+
+  Key: "diffusivity_id", values per field
+  ----
+
+  Key: "diffusivity_ref", values per field
+  ----
+
+  Key: "turbulent_diffusivity_id", values per field
+  ----
+
+  Key: "density_id", values per field
+  ----
+
+  Key: "is_buoyant", values per field
+  ----
+
+  Key: "is_temperature", values per field
+  ----
+
+  Key: "turbulent_flux_model", values per field
+  ----
+
+  Key: "turbulent_flux_id", values per field
+  ----
+
+  Key: "alpha_turbulent_flux_id", values per field
+  ----
+
+  Key: "turbulent_schmidt", values per field
+  ----
+
+  Key: "gradient_weighting_id", values per field
+  ----
+
+  Key: "diffusivity_tensor", values per field
+  ----
+
+  Key: "drift_scalar_model", values per field
+  ----
+
+  Key: "scalar_class", values per field
+  ----
+
+  Key: "first_moment_id", values per field
+  ----
+
+  Key: "syrthes_coupling", values per field
+  ----
+
+  Key: "source_term_prev_id", values per field
+  ----
+
+  Key: "source_term_id", values per field
+  ----
+
+  Key: "slope_test_upwind_id", values per field
+  ----
+
+  Key: "clipping_id", values per field
+  ----
+
+  Key: "boundary_value_id", values per field
+  ----
+
+  Key: "convection_limiter_id", values per field
+  ----
+
+  Key: "diffusion_limiter_id", values per field
+  ----
+
+  Key: "coupling_entity", values per field
+  ----
+
+  Key: "time_extrapolated", values per field
+  ----
+    density                          0
+    molecular_viscosity              0
+    turbulent_viscosity              0
+
+  Key: "measures_set_id", values per field
+  ----
+
+  Key: "opt_interp_id", values per field
+  ----
+
+  Key: "opt_interp_analysis_id", values per field
+  ----
+
+  Key: "min_scalar_clipping", values per field
+  ----
+
+  Key: "max_scalar_clipping", values per field
+  ----
+
+  Key: "max_scalar", values per field
+  ----
+
+  Key: "min_scalar", values per field
+  ----
+
+  Key: "limiter_choice", values per field
+  ----
+
+  Key: "var_cal_opt", values per field
+  ----
+    velocity                        
+      iwarni               0
+      iconv                1
+      istat                1
+      idircl               1
+      ndircl               0
+      idiff                1
+      idifft               1
+      idften               1
+      iswdyn               0
+      ischcv               1
+      ibdtso               1
+      isstpc               0
+      nswrgr               100
+      nswrsm               1
+      imrgra               0
+      imligr               -1
+      ircflu               1
+      iwgrec               0
+      icoupl               -1
+      thetav               1           
+      blencv               1           
+      blend_st             0           
+      epsilo               1e-08       
+      epsrsm               1e-07       
+      epsrgr               1e-05       
+      climgr               1.5         
+      extrag               0           
+      relaxv               1           
+    pressure                        
+      iwarni               0
+      iconv                0
+      istat                0
+      idircl               1
+      ndircl               0
+      idiff                1
+      idifft               1
+      idften               1
+      iswdyn               0
+      ischcv               1
+      ibdtso               1
+      isstpc               0
+      nswrgr               100
+      nswrsm               2
+      imrgra               0
+      imligr               -1
+      ircflu               1
+      iwgrec               0
+      icoupl               -1
+      thetav               1           
+      blencv               0           
+      blend_st             0           
+      epsilo               1e-08       
+      epsrsm               1e-07       
+      epsrgr               1e-05       
+      climgr               1.5         
+      extrag               0           
+      relaxv               1           
+    rij                             
+      iwarni               0
+      iconv                1
+      istat                1
+      idircl               1
+      ndircl               0
+      idiff                1
+      idifft               1
+      idften               8
+      iswdyn               0
+      ischcv               1
+      ibdtso               1
+      isstpc               0
+      nswrgr               100
+      nswrsm               1
+      imrgra               0
+      imligr               -1
+      ircflu               1
+      iwgrec               0
+      icoupl               -1
+      thetav               1           
+      blencv               0           
+      blend_st             0           
+      epsilo               1e-08       
+      epsrsm               1e-07       
+      epsrgr               1e-05       
+      climgr               1.5         
+      extrag               0           
+      relaxv               1           
+    epsilon                         
+      iwarni               0
+      iconv                1
+      istat                1
+      idircl               1
+      ndircl               0
+      idiff                1
+      idifft               1
+      idften               8
+      iswdyn               0
+      ischcv               1
+      ibdtso               1
+      isstpc               0
+      nswrgr               100
+      nswrsm               1
+      imrgra               0
+      imligr               -1
+      ircflu               1
+      iwgrec               0
+      icoupl               -1
+      thetav               1           
+      blencv               0           
+      blend_st             0           
+      epsilo               1e-08       
+      epsrsm               1e-07       
+      epsrgr               1e-05       
+      climgr               1.5         
+      extrag               0           
+      relaxv               1           
+
+  Key: "solving_info", values per field
+  ----
+
+  Key: "restart_file", values per field
+  ----
+    total_pressure                   1
+
+Temporal moments
+----------------
+
+  Accumulator      Location             Start            Weight          
+  ---------------- -------------------- ---------------- ----------------
+  0                global               nt 3500          -               
+
+  Moment           Dim. Location             Type     Id   Acc. Lower  Field 
+  ---------------- ---- -------------------- -------- ---- ---- ------ ------
+  TimeAverage_vx   1    cells                mean     0    0    -      48
+  TimeAverage_vz   1    cells                mean     1    0    -      49
+
+--------------------------------------------------------------------------------
+
+Linear solver options for fields
+--------------------------------
+
+Linear solver options for "Velocity" (field id 0)
+  Solver type:                       Symmetric Gauss-Seidel
+  Maximum number of iterations:      10000
+  Verbosity: 0
+
+Linear solver options for "Pressure" (field id 1)
+  Solver type:                       Flexible Conjugate Gradient
+  Preconditioning:                   Multigrid
+  Maximum number of iterations:      10000
+  Multigrid preconditioner parameters:
+  Coarsening type:                   default
+    Max fine rows per coarse row:    3
+    Maximum number of levels :       25
+    Minimum number of coarse rows:   30
+    P0/P1 relaxation parameter:      0.95
+  Maximum number of cycles:          1
+  Cycle type:                        V-cycle
+  Descent smoother:
+    Type:                            Symmetric Gauss-Seidel
+    Maximum number of iterations:    1
+    Precision multiplier:            -1
+  Ascent smoother:
+    Type:                            Symmetric Gauss-Seidel
+    Maximum number of iterations:    1
+    Precision multiplier:            -1
+  Coarsest level solver:
+    Type:                            Conjugate Gradient
+    Maximum number of iterations:    500
+    Precision multiplier:            1
+  Postprocess coarsening:            0
+  Verbosity: 0
+
+Linear solver options for "Rij" (field id 2)
+  Solver type:                       Symmetric Gauss-Seidel
+  Maximum number of iterations:      10000
+  Verbosity: 0
+
+Linear solver options for "epsilon" (field id 3)
+  Solver type:                       Symmetric Gauss-Seidel
+  Maximum number of iterations:      10000
+  Verbosity: 0
+
+--------------------------------------------------------------------------------
+
+Mesh quantity computation options
+---------------------------------
+
+  Cell centers: weighted center of face centers
+
+   Mesh quantity corrections:
+      CS_BAD_CELLS_WARPED_CORRECTION
+      CS_FACE_DISTANCE_CLIP
+
+Physical model options
+----------------------
+
+Physical properties
+-------------------
+
+    gravity vector:    [0, 0, 9.81]
+    icorio:        0 (ignore Coriolis source terms)
+
+  Continuous phase:
+    ro0:            1.17861e+00 (Reference density)
+    viscl0:         1.83337e-05 (Ref. molecular dyn. visc.)
+    cp0:            1.01724e+03 (Ref. specific heat)
+    icp:           -1 (> 0: Variable Cp (cs_user_physical_properties))
+    p0:             1.01325e+05 (Ref. total pressure)
+    pred0:          0.00000e+00 (Ref. reduced pressure)
+    t0:             2.93150e+02 (Ref. temperature)
+
+    Initial reference point for pressure
+    xyzp0:          0.00000e+00    0.00000e+00    0.00000e+00
+
+    irovar:    0 (constant density)
+    ivivar:    0 (constant molecular viscosity)
+
+Thermal model options
+---------------------
+
+  Continuous phase:
+
+    Thermal model
+    itherm:    0 (no thermal model)
+    Temperature scale
+    itpscl:    0 (none)
+    iscalt:       -1 (thermal scalar number)
+
+Turbulence model options
+------------------------
+
+  Continuous phase:
+
+    RANS model (type = CS_TURB_RANS)
+
+    Rij-epsilon (LRR) model
+      (iturb = CS_TURB_RIJ_EPSILON_LRR)
+
+    iwallf                      (wall function:
+                                 Two scales log law)
+    iwalfs                      (Scalar wall function:
+                                 Arparci and Larsen)
+    iwallt:        0 (no exchange coefficient correlation)
+    ypluli:         2.38095e+00 (Limit Y+)
+
+    igrhok:        0 (ignore Grad(rho k) in velocity equation)
+    almax:         -9.99000e+02 (Characteristic length)
+    uref:           1.00000e+00 (Characteristic velocity)
+    irijco:                   1 (Coupled resolution)
+    irijnu:                   0 (Matrix stabilization)
+    irijrb:                   0 (Reconstruct at boundaries)
+    igrari:                   1 (Account for gravity)
+    iclsyr:                   1 (Symmetry implicitation)
+    iclptr:                   0 (Wall implicitation)
+    irijec:                   0 (Wall echo terms)
+    idifre:                   1 (Handle diffusion tensor)
+
+Constants:
+
+    xkappa:         4.20000e-01 (Von Karman constant)
+    cstlog:         5.20000e+00 (U+=Log(y+)/kappa +cstlog)
+    apow:           8.30000e+00 (U+=apow (y+)**bpow (W&W law))
+    bpow:           1.42857e-01 (U+=apow (y+)**bpow (W&W law))
+
+  Rij-epsilon (LRR) model constants:
+    ce1:            1.44000e+00 (Cepsilon 1: production coef.)
+    ce2:            1.92000e+00 (Cepsilon 2: dissipat.  coef.)
+    crij1:          1.80000e+00 (Slow term coefficient)
+    crij2:          6.00000e-01 (Fast term coefficient)
+    crij3:          5.50000e-01 (Gravity term coefficient)
+    sigmae:         1.22000e+00 (sigma_eps coeff.)
+    csrij:          2.20000e-01 (Rij diffusion coeff.)
+    crijp1:         5.00000e-01 (Slow coeff. for wall echo)
+    crijp2:         3.00000e-01 (Fast coeff. for wall echo)
+    cmu:            9.00000e-02 (Cmu constant)
+
+Time stepping options
+---------------------
+
+  Unsteady algorithm
+
+    Time step parameters
+
+      idtvar: CS_TIME_STEP_CONSTANT (constant)
+      dtref:                  0.001 (Reference time step)
+
+
+Secondary viscosity
+-------------------
+
+  Continuous phase:
+
+    Viscous term of transposed velocity gradient
+    ivisse:        1 (taken into account)
+
+Stokes model
+-------------------
+
+    idilat:        1 (without unsteady term in the continuity equation)
+    iporos:        0 (without porous media)
+    iphydr:        0 (no treatment (default) for the improvement of
+                      static pressure algorithm)
+    iprco:         1 (compute the pressure step
+                      using the continuity equation)
+    ipucou:        0 (standard algorithm for velocity/pressure coupling)
+
+    nterup:        1 (n: n sweeps on navsto for
+                      velocity/pressure coupling)
+
+  Continuous phase:
+
+    irevmc:         0 (Velocity reconstruction mode)
+    relaxv:         1.00000e+00 for Pressure (relaxation)
+    arak:           1.00000e+00 (Arakawa factor)
+
+Atmospheric chemistry options
+-----------------------------
+
+  No atmospheric chemistry
+
+
+Atmospheric aerosols options
+---------------------
+
+  No atmospheric aerosol
+
+Space discretization options
+----------------------------
+
+    imvisf:    0 (arithmetic face viscosity field interpolation)
+
+    imrgra:    0 (gradient reconstruction:
+                  Green-Gauss, iterative handling of non-orthogonalities,
+                  using face neighbors)
+
+    Method to compute inner mass flux due to mesh velocity in ALE
+    iflxmw:    0 (based on mesh velocity at cell centers)
+
+Subdomain rotation
+------------------
+
+  Global domain rotation:
+    axis:             [0, 0, 0]
+    invariant point:  [0, 0, 0]
+    angular velocity:  0 radians/s
+
+Volume zones
+------------
+
+  Zone: "cells"
+    id:                         0
+    location_id:                1
+    allow overlay
+
+  Zone: "all_cells"
+    id:                         1
+    type:                       1 (initialization)
+    location_id:                1
+    allow overlay
+
+Boundary zones
+--------------
+
+  Zone: "boundary_faces"
+    id:                         0
+    location_id:                3
+    allow overlay
+
+  Zone: "BC_1"
+    id:                         1
+    location_id:                7
+    selection criteria:         "Injection"
+
+  Zone: "BC_2"
+    id:                         2
+    location_id:                8
+    selection criteria:         "Inlet"
+
+  Zone: "BC_3"
+    id:                         3
+    location_id:                9
+    selection criteria:         "Outlet"
+
+  Zone: "BC_4"
+    id:                         4
+    location_id:                10
+    selection criteria:         "Symmetry-1"
+
+  Zone: "BC_5"
+    id:                         5
+    location_id:                11
+    selection criteria:         "Symmetry-2"
+
+  Zone: "BC_6"
+    id:                         6
+    location_id:                12
+    selection criteria:         "Wall-1"
+
+  Zone: "BC_7"
+    id:                         7
+    location_id:                13
+    selection criteria:         "Wall-2"
+
+## Domain boundary settings
+ * Domain boundary | Category: flow conditions
+ * Domain boundary | Default: wall
+ * Domain boundary | Number of definitions: 7
+
+  Boundary:   BC_1
+    type:     inlet, imposed velocity
+    zone id:  1
+
+  Boundary:   BC_2
+    type:     inlet, imposed velocity
+    zone id:  2
+
+  Boundary:   BC_3
+    type:     outlet
+    zone id:  3
+
+  Boundary:   BC_4
+    type:     undefined
+    zone id:  4
+
+  Boundary:   BC_5
+    type:     undefined
+    zone id:  5
+
+  Boundary:   BC_6
+    type:     wall
+    zone id:  6
+
+  Boundary:   BC_7
+    type:     wall
+    zone id:  7
+
+## Domain boundary settings
+ * Domain boundary | Category: ALE
+ * Domain boundary | Default: fixed
+ * Domain boundary | Number of definitions: 0
+
+Lagrangian model options
+------------------------
+  Continuous phase:
+    iilagr:      CS_LAGR_TOWAY_COUPLING (two way coupling)
+    Restart options
+    isuila:      off (restart not activated)
+    Statistics/return source terms restart
+    isuist:      off (reinitialized)
+    Additional models associated with particles
+    physical_model:      0 (no additional equations)
+
+  Global parameters:
+    user particle variables:                      0
+    isttio:      0 (unsteady the continuous phase flow)
+
+  Statistics options:
+  starting iteration for statistics:        1
+  starting iteration for steady statistics: 4000
+  threshold for statistical meaning:          0.000e+00
+
+  Turbulent dispersion options:
+    Lagrangian turbulent dispersion:              on
+      identical to fluid turbulent diffusion:     off
+    apply model from time step:                   1
+
+  Numerical options:
+    trajectory time scheme order:                 1
+    Poisson correction for particle velocity:     off
+
+  Trajectory/particle postprocessing options:
+    residence_time
+    mass
+    diameter
+    velocity
+    velocity_seen
+    temperature
+
+  Statistics for particles/boundary interaction:
+    none
+
+Lagrangian statistics
+---------------------
+
+  Start of calculation from absolute iteration number:          1
+
+
+  Mesh-based statistics
+  ---------------------
+
+  statistic 0
+    group: CS_LAGR_STAT_TRACKING_EVENT
+    class: 0
+    field: "particle_mass_flux_density" (35)
+    location: boundary_faces
+    start time step: 1
+    mesh-based data function
+
+  statistic 1
+    group: CS_LAGR_STAT_TRACKING_EVENT
+    class: 1
+    field: "particle_mass_flux_density_c1" (37)
+    location: boundary_faces
+    start time step: 1
+    mesh-based data function
+
+  Lagrangian moment accumulators
+  ------------------------------
+
+  accumulator 0
+    group: CS_LAGR_STAT_GROUP_PARTICLE
+    class: 0
+    field: "particle_cumulative_weight" (14)
+    start time step: 1 (reset allowed)
+    location: cells
+
+  accumulator 1
+    group: CS_LAGR_STAT_GROUP_PARTICLE
+    class: 0
+    start time step: 1 (reset allowed)
+    location: global
+    mesh-based data function
+
+  accumulator 2
+    group: CS_LAGR_STAT_GROUP_PARTICLE
+    class: 1
+    field: "particle_cumulative_weight_c1" (24)
+    start time step: 1 (reset allowed)
+    location: cells
+
+  accumulator 3
+    group: CS_LAGR_STAT_GROUP_PARTICLE
+    class: 1
+    start time step: 1 (reset allowed)
+    location: global
+    mesh-based data function
+
+  accumulator 4
+    group: CS_LAGR_STAT_TRACKING_EVENT
+    class: 0
+    field: "particle_events_weight" (34)
+    start time step: 1 (reset allowed)
+    location: boundary_faces
+
+  accumulator 5
+    group: CS_LAGR_STAT_TRACKING_EVENT
+    class: 1
+    field: "particle_events_weight_c1" (36)
+    start time step: 1 (reset allowed)
+    location: boundary_faces
+
+  Lagrangian moments
+  ------------------
+
+  moment 0
+    accumulator id: 1
+    class: 0
+    moment type: MEAN
+    field: "mean_particle_volume_fraction" (15)
+    location: cells
+    predefined stat type: 1
+
+  moment 1
+    accumulator id: 0
+    class: 0
+    moment type: MEAN
+    field: "mean_particle_residence_time" (16)
+    location: cells
+    predefined stat type: 18
+
+  moment 2
+    accumulator id: 0
+    class: 0
+    moment type: VARIANCE
+    field: "var_particle_residence_time" (17)
+    location: cells
+    predefined stat type: 18
+
+  moment 3
+    accumulator id: 0
+    class: 0
+    moment type: MEAN
+    field: "mean_particle_mass" (18)
+    location: cells
+    predefined stat type: 19
+
+  moment 4
+    accumulator id: 0
+    class: 0
+    moment type: VARIANCE
+    field: "var_particle_mass" (19)
+    location: cells
+    predefined stat type: 19
+
+  moment 5
+    accumulator id: 0
+    class: 0
+    moment type: MEAN
+    field: "mean_particle_diameter" (20)
+    location: cells
+    predefined stat type: 20
+
+  moment 6
+    accumulator id: 0
+    class: 0
+    moment type: VARIANCE
+    field: "var_particle_diameter" (21)
+    location: cells
+    predefined stat type: 20
+
+  moment 7
+    accumulator id: 0
+    class: 0
+    moment type: MEAN
+    field: "mean_particle_velocity" (22)
+    location: cells
+    predefined stat type: 23
+
+  moment 8
+    accumulator id: 0
+    class: 0
+    moment type: VARIANCE
+    field: "var_particle_velocity" (23)
+    location: cells
+    predefined stat type: 23
+
+  moment 9
+    accumulator id: 3
+    class: 1
+    moment type: MEAN
+    field: "mean_particle_volume_fraction_c1" (25)
+    location: cells
+    predefined stat type: 1
+
+  moment 10
+    accumulator id: 2
+    class: 1
+    moment type: MEAN
+    field: "mean_particle_residence_time_c1" (26)
+    location: cells
+    predefined stat type: 18
+
+  moment 11
+    accumulator id: 2
+    class: 1
+    moment type: VARIANCE
+    field: "var_particle_residence_time_c1" (27)
+    location: cells
+    predefined stat type: 18
+
+  moment 12
+    accumulator id: 2
+    class: 1
+    moment type: MEAN
+    field: "mean_particle_mass_c1" (28)
+    location: cells
+    predefined stat type: 19
+
+  moment 13
+    accumulator id: 2
+    class: 1
+    moment type: VARIANCE
+    field: "var_particle_mass_c1" (29)
+    location: cells
+    predefined stat type: 19
+
+  moment 14
+    accumulator id: 2
+    class: 1
+    moment type: MEAN
+    field: "mean_particle_diameter_c1" (30)
+    location: cells
+    predefined stat type: 20
+
+  moment 15
+    accumulator id: 2
+    class: 1
+    moment type: VARIANCE
+    field: "var_particle_diameter_c1" (31)
+    location: cells
+    predefined stat type: 20
+
+  moment 16
+    accumulator id: 2
+    class: 1
+    moment type: MEAN
+    field: "mean_particle_velocity_c1" (32)
+    location: cells
+    predefined stat type: 23
+
+  moment 17
+    accumulator id: 2
+    class: 1
+    moment type: VARIANCE
+    field: "var_particle_velocity_c1" (33)
+    location: cells
+    predefined stat type: 23
+
+  moment 18
+    accumulator id: 4
+    class: 0
+    moment type: MEAN
+    field: "mean_particle_impact_angle" (38)
+    location: boundary_faces
+
+  moment 19
+    accumulator id: 4
+    class: 0
+    moment type: VARIANCE
+    field: "var_particle_impact_angle" (39)
+    location: boundary_faces
+
+  moment 20
+    accumulator id: 5
+    class: 1
+    moment type: MEAN
+    field: "mean_particle_impact_angle_c1" (40)
+    location: boundary_faces
+
+  moment 21
+    accumulator id: 5
+    class: 1
+    moment type: VARIANCE
+    field: "var_particle_impact_angle_c1" (41)
+    location: boundary_faces
+
+  moment 22
+    accumulator id: 4
+    class: 0
+    moment type: MEAN
+    field: "mean_particle_impact_velocity" (42)
+    location: boundary_faces
+
+  moment 23
+    accumulator id: 4
+    class: 0
+    moment type: VARIANCE
+    field: "var_particle_impact_velocity" (43)
+    location: boundary_faces
+
+  moment 24
+    accumulator id: 5
+    class: 1
+    moment type: MEAN
+    field: "mean_particle_impact_velocity_c1" (44)
+    location: boundary_faces
+
+  moment 25
+    accumulator id: 5
+    class: 1
+    moment type: VARIANCE
+    field: "var_particle_impact_velocity_c1" (45)
+    location: boundary_faces
+
