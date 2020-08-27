@@ -478,6 +478,12 @@ _build_local_probe_set(cs_probe_set_t  *pset)
  */
 /*----------------------------------------------------------------------------*/
 
+#if defined(__INTEL_COMPILER)
+#if __INTEL_COMPILER < 1800
+#pragma optimization_level 1 /* Bug with O2 or above with icc 17.0.0 20160721 */
+#endif
+#endif
+
 static void
 _merge_snapped_to_center(cs_probe_set_t   *pset,
                          const cs_real_t   centers[])
