@@ -12,11 +12,11 @@
 # batch =
 
 ### Define the command used for job submission
-###(if batch system unknown or a local command needs to be used instead)
+### (if batch system unknown or a local command needs to be used instead)
 # submit_command =
 
 ### Define the local resource name, to appear as a section in the run.cfg file.
-## If not defined, "resource_default" or "<batch>_default" will be used.
+### If not defined, "resource_default" or "<batch>_default" will be used.
 # resource_name =
 
 ### Define installation prefixes of alternate builds for compute tasks.
@@ -51,7 +51,7 @@
 ### End of section.
 
 ### Section for Code_Saturne run customizations.
-### ---------------------------------------
+### --------------------------------------------
 
 [run]
 ### Set the temporary directory.
@@ -101,4 +101,3 @@
 ### Multiple Program Multiple Data mode: 'mpiexec' (mpiexec ':'-separated syntax),
 ### 'configfile' (mpiexec -configfile syntax), or 'script'
 # mpmd = mpiexec
-
