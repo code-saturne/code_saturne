@@ -114,6 +114,13 @@ if (ipass .eq. 1) then
   call field_init_bc_coeffs(ivarfl(ivar))
 endif
 
+call field_get_id('pressure_increment', f_id)
+
+if (ipass .eq. 1) then
+  call field_allocate_bc_coeffs(f_id, .true., .false., .false., .false.)
+  call field_init_bc_coeffs(f_id)
+endif
+
 ivar = iu
 
 if (ipass.eq.1) then

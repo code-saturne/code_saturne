@@ -1006,6 +1006,9 @@ cs_parameters_define_field_keys(void)
   cs_field_define_key_int("inner_flux_id", -1, CS_FIELD_VARIABLE);
   cs_field_define_key_int("boundary_flux_id", -1, CS_FIELD_VARIABLE);
 
+  /* field id of the variable associated to a given property */
+  cs_field_define_key_int("parent_field_id", -1, 0);
+
   cs_field_define_key_int("variable_id", -1, 0); /* inverse of ivarfl(ivar) */
   cs_field_define_key_int("scalar_id", -1, 0);   /* inverse of isca(iscal) */
 

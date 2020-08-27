@@ -552,13 +552,21 @@ cs_field_gradient_scalar(const cs_field_t          *f,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
+  /* Has field a parent (variable) field */
+  int f_parent_id = cs_field_get_key_int(f, cs_field_key_id("parent_field_id"));
+
+  /* Parent field is itself or parent field if existing */
+  cs_field_t *parent_f = f;
+  if (f_parent_id > -1)
+    parent_f = cs_field_by_id(f_parent_id);
+
   static int key_cal_opt_id = -1;
   if (key_cal_opt_id < 0)
     key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
   /* Get the calculation option from the field */
   cs_var_cal_opt_t var_cal_opt;
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  cs_field_get_key_struct(parent_f, key_cal_opt_id, &var_cal_opt);
   cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
                              &gradient_type,
                              &halo_type);
@@ -568,11 +576,11 @@ cs_field_gradient_scalar(const cs_field_t          *f,
   cs_real_t *c_weight = NULL;
   cs_internal_coupling_t  *cpl = NULL;
 
-  if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
+  if (parent_f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
     if (var_cal_opt.idiff > 0) {
       /* Weighted gradient coefficients */
       int key_id = cs_field_key_id("gradient_weighting_id");
-      int diff_id = cs_field_get_key_int(f, key_id);
+      int diff_id = cs_field_get_key_int(parent_f, key_id);
       if (diff_id > -1) {
         cs_field_t *f_weight = cs_field_by_id(diff_id);
         c_weight = f_weight->val;
@@ -581,12 +589,12 @@ cs_field_gradient_scalar(const cs_field_t          *f,
     }
   }
 
-  if (f->type & CS_FIELD_VARIABLE) {
+  if (parent_f->type & CS_FIELD_VARIABLE) {
     if (var_cal_opt.idiff > 0) {
       /* Internal coupling structure */
       int key_id = cs_field_key_id_try("coupling_entity");
       if (key_id > -1) {
-        int coupl_id = cs_field_get_key_int(f, key_id);
+        int coupl_id = cs_field_get_key_int(parent_f, key_id);
         if (coupl_id > -1)
           cpl = cs_internal_coupling_by_id(coupl_id);
       }
@@ -649,13 +657,21 @@ cs_field_gradient_potential(const cs_field_t          *f,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
+  /* Has field a parent (variable) field */
+  int f_parent_id = cs_field_get_key_int(f, cs_field_key_id("parent_field_id"));
+
+  /* Parent field is itself or parent field if existing */
+  cs_field_t *parent_f = f;
+  if (f_parent_id > -1)
+    parent_f = cs_field_by_id(f_parent_id);
+
   static int key_cal_opt_id = -1;
   if (key_cal_opt_id < 0)
     key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
   /* Get the calculation option from the field */
   cs_var_cal_opt_t var_cal_opt;
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  cs_field_get_key_struct(parent_f, key_cal_opt_id, &var_cal_opt);
   cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
                              &gradient_type,
                              &halo_type);
@@ -666,10 +682,10 @@ cs_field_gradient_potential(const cs_field_t          *f,
   cs_real_t *c_weight = NULL;
   cs_internal_coupling_t  *cpl = NULL;
 
-  if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
+  if (parent_f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
     if (var_cal_opt.idiff > 0) {
       int key_id = cs_field_key_id("gradient_weighting_id");
-      int diff_id = cs_field_get_key_int(f, key_id);
+      int diff_id = cs_field_get_key_int(parent_f, key_id);
       if (diff_id > -1) {
         cs_field_t *f_weight = cs_field_by_id(diff_id);
         c_weight = f_weight->val;
@@ -678,12 +694,12 @@ cs_field_gradient_potential(const cs_field_t          *f,
     }
   }
 
-  if (f->type & CS_FIELD_VARIABLE) {
+  if (parent_f->type & CS_FIELD_VARIABLE) {
     if (var_cal_opt.idiff > 0) {
       /* Internal coupling structure */
       int key_id = cs_field_key_id_try("coupling_entity");
       if (key_id > -1) {
-        int coupl_id = cs_field_get_key_int(f, key_id);
+        int coupl_id = cs_field_get_key_int(parent_f, key_id);
         if (coupl_id > -1)
           cpl = cs_internal_coupling_by_id(coupl_id);
       }

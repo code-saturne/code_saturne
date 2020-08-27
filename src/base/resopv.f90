@@ -184,7 +184,7 @@ integer          iescap, ircflp, ischcp, isstpp, ivar, f_id0
 integer          imrgrp, nswrsp, iwgrp
 integer          imvisp, i_vof_mass_transfer
 integer          iflid, iflwgr, f_dim, imasac
-integer          f_id, f_id_ph
+integer          f_id, f_id_ph, f_iddp
 integer          icvflb
 integer          ivoid(1)
 
@@ -208,7 +208,7 @@ double precision rvoid(1)
 double precision, allocatable, dimension(:) :: dam, xam
 double precision, allocatable, dimension(:) :: res, phia
 double precision, dimension(:,:), allocatable :: gradp
-double precision, allocatable, dimension(:) :: coefaf_dp, coefbf_dp
+double precision, dimension(:), pointer :: coefaf_dp, coefbf_dp
 double precision, allocatable, dimension(:) :: coefa_dp2
 double precision, allocatable, dimension(:) :: coefa_rho, coefb_rho
 double precision, allocatable, dimension(:) :: coefaf_dp2
@@ -280,8 +280,11 @@ if (f_id_ph.ge.0) then
   call field_get_val_prev_s(f_id_ph, cvar_hydro_pres_prev)
 endif
 
+call field_get_id('pressure_increment',f_iddp)
+
 ! Diffusive flux Boundary conditions for delta P
-allocate(coefaf_dp(ndimfb), coefbf_dp(ndimfb))
+call field_get_coefaf_s(f_iddp, coefaf_dp)
+call field_get_coefbf_s(f_iddp, coefbf_dp)
 
 ! Associate pointers to pressure diffusion coefficient
 viscap => dt(:)
@@ -2261,7 +2264,6 @@ deallocate(trav)
 deallocate(res, phia, dphi)
 if (allocated(divu)) deallocate(divu)
 deallocate(gradp)
-deallocate(coefaf_dp, coefbf_dp)
 deallocate(rhs, rovsdt)
 if (allocated(weighf)) deallocate(weighf, weighb)
 if (iswdyp.ge.1) deallocate(adxk, adxkm1, dphim1, rhs0)

@@ -73,6 +73,7 @@ character(len=80) :: f_label, f_name, s_name, s_label
 integer           :: ii, ivar, isorb, keysrb, igwfpr, keypre, ischcp
 integer           :: idim1, idim3, idim6, iflid, k_restart_id
 integer           :: type_flag, post_flag, location_id
+integer           :: keypid
 logical           :: has_previous
 
 type(gwf_soilwater_partition) :: sorption_scal
@@ -104,6 +105,12 @@ interface
   !=============================================================================
 
 end interface
+
+!===============================================================================
+! 0. Initialisation
+!===============================================================================
+
+call field_get_key_id("parent_field_id", keypid)
 
 !===============================================================================
 ! 1. PROPRIETES PRINCIPALES
@@ -144,6 +151,9 @@ icrom = irom
 ! Postprocessed and in the log file by default, hidden in modini if not variable
 call field_set_key_int(icrom, keylog, 1)
 call field_set_key_int(icrom, keyvis, 1)
+
+call add_property_field_1d('pressure_increment', 'Pressure increment', iflid)
+call field_set_key_int(iflid, keypid, ivarfl(ipr))
 
 call add_boundary_property_field_owner('boundary_density', 'Boundary Density', &
                                        ibrom)
