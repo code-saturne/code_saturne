@@ -334,7 +334,7 @@ if the code's source tree is in /home/user/code_Saturne/src/code_saturne:
 ```
 $ /home/user/code_Saturne/src/code_saturne/configure \
 --prefix=/home/user/code_saturne/<version>/arch/prod \
---with-med=/home/user/opt/med-4.0 \
+--with-med=/home/user/opt/med-4.1 \
 CC=/home/user/opt/mpich-3.3/bin/mpicc FC=gfortran
 ```
 
@@ -797,15 +797,15 @@ MED can be built using either CMake or the GNU Autotools.
 The Autotools installation of MED is simple on most machines,
 but a few remarks may be useful for specific cases.
 
-Note that up to MED 3.3.1, HDF5 1.8 is required, while MED 4.x
-uses  HDF5 1.10.
+Note that up to MED 3.3.1, HDF5 1.8 was required, while MED 4.x
+uses  HDF5 1.10. It does not accept HDF5 1.12 yet.
 
 MED has a C API, is written in a mix of C and C++ code, and provides both
 a C (`libmedC`) and an Fortran API (`libmed`) by default (i.e. unless
 the `--disable-fortran` configure option is used. code_saturne only requires
 the C API.
 
-MED does require a C++ runtime library, which is usually transparent when shared
+MED requires a C++ runtime library, which is usually transparent when shared
 libraries are used. When built with static libraries only, this is not sufficient,
 so when testing for a MED library, the code_saturne `configure` script also tries
 linking with a C++ compiler if linking with a C compiler fails. This must be the
@@ -938,7 +938,7 @@ setup also cleans the directory.
 By default, this library is built with a GUI, but it may also be be
 built using OSMesa for offscreen rendering. The build documentation
 on the ParaView website and Wiki details this. On a workstation,
-an regular build of ParaViw with MPI support may be sufficient.
+a regular build of ParaViw with MPI support may be sufficient.
 
 For a compute cluster or server in which code_saturne will run
 outside a graphical (X11) environment, the recommended solution is to build
@@ -962,21 +962,32 @@ $ cmake \
 -DOSMESA_INCLUDE_DIR=${MESA_INSTALL_PREFIX}/include \
 -DOSMESA_LIBRARY}=${MESA_INSTALL_PREFIX}/lib/libOSMesa.so \
 -DVTK_OPENGL_HAS_OSMESA=ON \
--DVTK_USE_OFFSCREEN}=OFF \
+-DVTK_USE_OFFSCREEN=OFF \
 ${PARAVIEW_SRC_PATH}
 ```
 
 More info may also be found on the
 [ParaView Wiki](http://www.paraview.org/Wiki/ParaView/ParaView_And_Mesa_3D).
 
-[Catalyst editions](http://www.paraview.org/Wiki/ParaView/Catalyst/BuildCatalyst}
+Note that when ParaView uses libraries which are in non-standard locations,
+it may be necessary to specify those locations in the CMake prefix path
+for ParaView detection by code_saturne. Actually, the option
+passed to `--with-paraview` when running code_saturne's `configure` step is
+the `CMAKE_PREFIX_PATH`, so if multiple directories need to be included,
+an enquoted and semicolon-separated path may be used, for example:
+
+```
+--with-catalyst="/home/user/opt/paraview-5.8;/home/user/opt/ospray2"
+```
+
+[Catalyst editions](https://blog.kitware.com/paraview-editions/}
 may be used instead of a full ParaView build, but some
 coprocessing scripts may not work depending on what is included in the
 editions, so this is recommended only for advanced users.
 
 On some systems, loading the Catalyst module as a plug-in (which is the
 default) seems to interfere with the detection of required OpenGL2 features
-or extensions required by ParaView 5.2 an above. In this case, Catalyst
+or extensions required by ParaView 5.2 and above. In this case, Catalyst
 support may be linked in the standard manner by using the
 `--disable-catalyst-as-plugin` configuration option.
 A less extreme option is to use the `--enable-dlopen-rtld-global`
@@ -1020,9 +1031,9 @@ $ mkdir dbg
 $ cd dbg
 $ ../../code_saturne/configure \
 --prefix=/home/user/Code_Saturne/<version>/arch/dbg \
---with-med}=/home/user/opt/med-4.0 \
+--with-med}=/home/user/opt/med-4.1 \
 --enable-debug \
-CC=/home/user/opt/mpich-3.2/bin/mpicc FC=gfortran
+CC=/home/user/opt/mpich-3.3/bin/mpicc FC=gfortran
 ```
 
 Shared or static builds
@@ -1234,7 +1245,7 @@ ${SRC_PATH}/configure \
 --prefix=${INSTALL_PATH}/arch/gaia_ompi \
 --with-blas=/opt/mkl-2019.0.045/mkl \
 --with-hdf5=${CS_OPT}/hdf5-1.10/arch/gaia \
---with-med=${CS_OPT}/med-4.0/arch/gaia \
+--with-med=${CS_OPT}/med-4.1/arch/gaia \
 --with-cgns=${CS_OPT}/cgns-3.4/arch/gaia \
 --with-ccm=${CS_OPT}/libccmio-2.06.23/arch/gaia \
 --with-scotch=${CS_OPT}/scotch-6.0/arch/gaia_ompi \
@@ -1310,7 +1321,7 @@ options such as in the following example are recommended:
 \$ ${SRC_PATH}/configure \
 --prefix=${INSTALL_PATH}/arch/xc30 \
 --with-hdf5=${CS_OPT}/hdf5-1.10/arch/xc30 \
---with-med}=${CS_OPT}/med-4.0/arch/xc30 \
+--with-med}=${CS_OPT}/med-4.1/arch/xc30 \
 --with-cgns}=${CS_OPT}/cgns-3.4/arch/xc30 \
 --with-scotch}=${CS_OPT}/scotch-6.0/arch/xc30 \
 --disable-sockets \
