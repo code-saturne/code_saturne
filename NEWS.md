@@ -1,3 +1,10 @@
+Release 6.2.1 (unreleased)
+--------------------------
+
+Architectural changes:
+
+- Update Syrthes coupling example from `coupling_parameters.py` to `run.cfg`.
+
 Release 6.2.0 (August 27 2020)
 ------------------------------
 
