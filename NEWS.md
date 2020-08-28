@@ -1,5 +1,5 @@
-Release 6.1.2 (unreleased)
---------------------------
+Release 6.1.2 (August 28 2020)
+------------------------------
 
 Bug fixes:
 
@@ -39,8 +39,8 @@ Bug fixes:
   dispersed phases in NCFD. Option is ignored inside the code, but could
   lead to wrong behavior.
 
-Release 6.1.1 (June 12, 2020)
------------------------------
+Release 6.1.1 (June 12 2020)
+----------------------------
 
 Bug fixes:
 
