@@ -1154,7 +1154,7 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
                 " does not have associated BC coefficients."),
               f->name);
 
-  if (f->type & CS_FIELD_VARIABLE) {
+  if (f->bc_coeffs != NULL) {
 
     if (pointer_type == 1)
       *p = f->bc_coeffs->a;
@@ -1186,10 +1186,12 @@ cs_f_field_bc_coeffs_ptr_by_id(int          id,
     else {
 
       int coupled = 0;
-      int coupled_key_id = cs_field_key_id_try("coupled");
 
-      if (coupled_key_id > -1)
-        coupled = cs_field_get_key_int(f, coupled_key_id);
+      if (f->type & CS_FIELD_VARIABLE) {
+        int coupled_key_id = cs_field_key_id_try("coupled");
+        if (coupled_key_id > -1)
+          coupled = cs_field_get_key_int(f, coupled_key_id);
+      }
 
       if (coupled) {
 
