@@ -103,9 +103,9 @@ if test "x$with_catalyst" != "xno" ; then
     if test $cs_have_catalyst != yes ; then
 
       if test $detection_variant = catalyst ; then
-        cs_catalyst_vers_check="above 5.6"
+        cs_catalyst_vers_check="(more recent than 5.6)"
       else
-        cs_catalyst_vers_check="5.6 or older"
+        cs_catalyst_vers_check="(5.6 or older)"
       fi
 
       AC_MSG_CHECKING([ParaView/Catalyst version $cs_catalyst_vers_check])

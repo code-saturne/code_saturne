@@ -73,9 +73,11 @@ should be present).])
   saved_LDFLAGS="$LDFLAGS"
   saved_LIBS="$LIBS"
 
-  CPPFLAGS="${CPPFLAGS} ${PETSC_CPPFLAGS}"
-  LDFLAGS="${LDFLAGS}"
-  LIBS="${LIBS} ${PETSC_LIBS}"
+  CPPFLAGS="${CPPFLAGS} ${PETSC_CPPFLAGS} ${MPI_CPPFLAGS}"
+  LDFLAGS="${LDFLAGS} ${MPI_LDFLAGS}"
+  LIBS="${LIBS} ${PETSC_LIBS} ${MPI_LIBS}"
+
+  AC_MSG_CHECKING([for PETSc library])
 
   AC_LINK_IFELSE([AC_LANG_PROGRAM(
 [[#include <petscsys.h>]],
@@ -88,6 +90,8 @@ should be present).])
                      cs_have_petsc=no
                    ],
                   )
+
+  AC_MSG_RESULT($cs_have_petsc)
 
   if test "x$cs_have_petsc" = "xno"; then
     PETSC_CPPFLAGS=""
