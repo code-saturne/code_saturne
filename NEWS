@@ -4,6 +4,8 @@ Release 5.0.13 (Unreleased)
 Bug fixes
 ---------
 
+- Fix the '--id-suffix' run option which behaved as '--id-prefix'.
+
 - Fix inversion of tensor component time plots (probes) YZ and XZ
   (GitLab issue #208).
 
@@ -13,7 +15,6 @@ Bug fixes
   pressure correction step is anisotropic.
   This could have an impact on calculations with either head losses,
   tensorial porosity or the pseudo-coupled velocity-pressure solver.
-
 
 Release 5.0.12 (Feb 7 2020)
 ===========================
