@@ -695,6 +695,7 @@ CS_AC_TEST_CATALYST
 CS_AC_TEST_MELISSA
 CS_AC_TEST_MUMPS
 CS_AC_TEST_PETSC
+CS_AC_TEST_AMGX
 
 CS_AC_TEST_DOCS
 
@@ -1274,6 +1275,7 @@ echo " freesteam support: "$cs_have_freesteam""
 echo " CoolProp support: "$cs_have_coolprop""
 echo " PETSc support: "$cs_have_petsc""
 echo " MUMPS support: "$cs_have_mumps""
+echo " AMGX support: "$cs_have_amgx""
 echo " Dynamic loader support: "$cs_have_dlloader""
 if (test "x$cs_env_modules" != "x") ; then
   echo " Auto load environment modules: "$cs_env_modules""
