@@ -257,11 +257,11 @@ z = 0.42;</formula>
       </time_average>
     </time_averages>
     <time_parameters>
-      <iterations>14000</iterations>
+      <iterations>28000</iterations>
       <property label="CourantNb" name="courant_number"/>
       <property label="FourierNb" name="fourier_number"/>
       <time_passing>0</time_passing>
-      <time_step_ref>0.005</time_step_ref>
+      <time_step_ref>0.0025</time_step_ref>
     </time_parameters>
   </analysis_control>
   <boundary_conditions>
@@ -400,6 +400,7 @@ z = 0.42;</formula>
     </two_way_coupling>
   </lagrangian>
   <numerical_parameters>
+    <extended_neighborhood choice=""/>
     <gradient_reconstruction choice="green_iter"/>
     <gradient_transposed status="on"/>
     <hydrostatic_pressure status="off"/>
