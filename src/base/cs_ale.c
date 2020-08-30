@@ -356,14 +356,18 @@ _free_surface(const cs_domain_t  *domain,
       cs_real_t dz_fn = cs_math_3_dot_product(normal, v1_cog);
 
       for (int i = 0; i < 3; i++)
-        _mesh_vel[v_id1][i] += (f_vel[i] + invdt * f_need_filter * dz_fn * normal[i]) * portion_surf;
+        _mesh_vel[v_id1][i] +=   (  f_vel[i]
+                                  + invdt * f_need_filter * dz_fn * normal[i])
+                               * portion_surf;
     }
 
   } /* Loop on selected border faces */
 
   cs_var_cal_opt_t var_cal_opt;
-  cs_field_get_key_struct(CS_F_(mesh_u), cs_field_key_id("var_cal_opt"), &var_cal_opt);
-  if (var_cal_opt.iwarni >= 1) {
+  cs_field_get_key_struct(CS_F_(mesh_u),
+                          cs_field_key_id("var_cal_opt"),
+                          &var_cal_opt);
+  if (var_cal_opt.verbosity >= 1) {
     cs_parall_sum(1, CS_GNUM_TYPE, &_f_count_filter);
     cs_parall_sum(1, CS_GNUM_TYPE, &_f_n_elts);
     bft_printf("Free surface condition %d: %f percents of limited face\n",
@@ -918,7 +922,7 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
   cs_var_cal_opt_t var_cal_opt;
   cs_field_get_key_struct(CS_F_(mesh_u), key_cal_opt_id, &var_cal_opt);
 
-  if (var_cal_opt.iwarni >= 1)
+  if (var_cal_opt.verbosity >= 1)
     bft_printf("\n   ** SOLVING MESH VELOCITY\n"
                "      ---------------------\n");
 
@@ -970,7 +974,7 @@ _ale_solve_poisson_legacy(const cs_domain_t *domain,
 
   /* 2. Solving of the mesh velocity equation */
 
-  if (var_cal_opt.iwarni >= 1)
+  if (var_cal_opt.verbosity >= 1)
     bft_printf("\n\n           SOLVING VARIABLE %s\n\n",
                CS_F_(mesh_u)->name);
 
@@ -1382,7 +1386,7 @@ cs_ale_update_mesh(const int           itrale,
   cs_var_cal_opt_t var_cal_opt;
   cs_field_get_key_struct(CS_F_(mesh_u), key_cal_opt_id, &var_cal_opt);
 
-  if (var_cal_opt.iwarni >= 1)
+  if (var_cal_opt.verbosity >= 1)
     bft_printf("\n ---------------------------------------------------"
                "---------\n\n"
                "  Update mesh (ALE)\n"
@@ -1559,7 +1563,7 @@ cs_ale_init_setup(cs_domain_t   *domain)
   cs_domain_set_output_param(domain,
                              -1, /* restart frequency: Only at the end */
                              cs_glob_log_frequency,
-                             var_cal_opt.iwarni);
+                             var_cal_opt.verbosity);
 
   cs_equation_param_t  *eqp = cs_equation_param_by_name("mesh_velocity");
 

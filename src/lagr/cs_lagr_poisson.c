@@ -321,8 +321,8 @@ _lageqp(cs_real_t   *vitessel,
 
   cs_var_cal_opt_t  var_cal_opt = cs_parameters_var_cal_opt_default();
 
-  var_cal_opt.iwarni = 2;  /* quasi-debug at this stage, TODO clean */
-  var_cal_opt.iconv  = 0;  /* no convection, pure diffusion here */
+  var_cal_opt.verbosity = 2;  /* quasi-debug at this stage, TODO clean */
+  var_cal_opt.iconv  = 0;     /* no convection, pure diffusion here */
   var_cal_opt.istat  = -1;
   var_cal_opt.ndircl = 1;
   var_cal_opt.idifft = -1;

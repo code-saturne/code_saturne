@@ -1681,7 +1681,7 @@ cs_elec_source_terms(const cs_mesh_t             *mesh,
 
   /* enthalpy source term */
   if (strcmp(name, "enthalpy") == 0) {
-    if (var_cal_opt.iwarni > 0)
+    if (var_cal_opt.verbosity > 0)
       bft_printf("compute source terms for variable : %s\n", name);
 
     if (cs_glob_time_step->nt_cur > 2) {
@@ -1696,7 +1696,7 @@ cs_elec_source_terms(const cs_mesh_t             *mesh,
       for (cs_lnum_t iel = 0; iel < n_cells; iel++)
         smbrs[iel] += w1[iel];
 
-      if (var_cal_opt.iwarni > 0) {
+      if (var_cal_opt.verbosity > 0) {
         double valmin = w1[0];
         double valmax = w1[0];
 
@@ -1742,7 +1742,7 @@ cs_elec_source_terms_v(const cs_mesh_t             *mesh,
   if (ielarc >= 2 && f_id == (CS_F_(potva)->id)) {
     cs_real_3_t *cpro_curre = (cs_real_3_t *)(CS_F_(curre)->val);
 
-    if (var_cal_opt.iwarni > 0)
+    if (var_cal_opt.verbosity > 0)
       bft_printf("compute source terms for variable : %s\n", f->name);
 
     for (cs_lnum_t iel = 0; iel < n_cells; iel++)

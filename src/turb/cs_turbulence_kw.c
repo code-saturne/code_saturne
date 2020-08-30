@@ -120,7 +120,6 @@ BEGIN_C_DECLS
  * Solve the \f$ k - \omega \f$ SST for incompressible flows
  * or slightly compressible flows for one time step.
  *
- * \param[in]     nvar          total number of variables
  * \param[in]     ncesmp        number of cells with mass source term
  * \param[in]     icetsm        index of cells with mass source term
  * \param[in]     itypsm        mass source type for the variables
@@ -134,8 +133,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_kw(int              nvar,
-                 cs_lnum_t        ncesmp,
+cs_turbulence_kw(cs_lnum_t        ncesmp,
                  cs_lnum_t        icetsm[],
                  int              itypsm[],
                  const cs_real_t  dt[],
@@ -312,7 +310,7 @@ cs_turbulence_kw(int              nvar,
 
   const cs_real_t *w_dist =  cs_field_by_name("wall_distance")->val;
 
-  if (vcopt_k->iwarni >= 1)
+  if (vcopt_k->verbosity >= 1)
     cs_log_printf(CS_LOG_DEFAULT,
                   "\n"
                   "  ** Solving k-omega\n"
@@ -738,7 +736,7 @@ cs_turbulence_kw(int              nvar,
                          0,
                          0,
                          1,             /* w_stride */
-                         vcopt_k->iwarni,
+                         vcopt_k->verbosity,
                          vcopt_k->imligr,
                          vcopt_k->epsrgr,
                          vcopt_k->extrag,
@@ -1165,7 +1163,7 @@ cs_turbulence_kw(int              nvar,
                       NULL,
                       w5);
 
-    if (vcopt_k->iwarni >= 2) {
+    if (vcopt_k->verbosity >= 2) {
       cs_log_printf(CS_LOG_DEFAULT,
                     " Variable %s: EXPLICIT BALANCE =  %12.5e\n",
                     cs_field_get_label(f_k),
@@ -1224,7 +1222,7 @@ cs_turbulence_kw(int              nvar,
                       NULL,
                       w6);
 
-    if (vcopt_w->iwarni >= 2) {
+    if (vcopt_w->verbosity >= 2) {
       cs_log_printf(CS_LOG_DEFAULT,
                     " Variable %s: EXPLICIT BALANCE =  %12.5e\n",
                     cs_field_get_label(f_omg),

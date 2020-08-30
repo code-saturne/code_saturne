@@ -515,7 +515,7 @@ _log_func_var_cal_opt(const void *t)
   const char fmt_i[] = N_("      %-19s  %d\n");
   const char fmt_r[] = N_("      %-19s  %-12.3g\n");
   const cs_var_cal_opt_t *_t = (const void *)t;
-  cs_log_printf(CS_LOG_SETUP, fmt_i, "iwarni", _t->iwarni);
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "verbosity", _t->verbosity);
   cs_log_printf(CS_LOG_SETUP, fmt_i, "iconv ", _t->iconv );
   cs_log_printf(CS_LOG_SETUP, fmt_i, "istat ", _t->istat );
   cs_log_printf(CS_LOG_SETUP, fmt_i, "idircl", _t->idircl);
@@ -556,7 +556,7 @@ _log_func_default_var_cal_opt(const void *t)
   cs_log_printf(CS_LOG_SETUP,"  var_cal_opt\n");
 
   cs_log_printf(CS_LOG_SETUP,_("    Printing\n"));
-  cs_log_printf(CS_LOG_SETUP, fmt_i, "iwarni", _t->iwarni,
+  cs_log_printf(CS_LOG_SETUP, fmt_i, "verbosity", _t->verbosity,
                 _("Verbosity level."));
 
   cs_log_printf(CS_LOG_SETUP,"    Time stepping\n");
@@ -696,7 +696,7 @@ static void
 _var_cal_opt_to_equation_params(const cs_f_var_cal_opt_t  *vcopt,
                                 cs_equation_param_t       *eqp)
 {
-  eqp->iwarni = vcopt->iwarni;
+  eqp->verbosity = vcopt->iwarni;
   eqp->iconv  = vcopt->iconv;
   eqp->istat  = vcopt->istat;
   eqp->idircl = vcopt->idircl;
@@ -820,7 +820,7 @@ cs_f_field_get_key_struct_var_cal_opt(int                  f_id,
     = cs_field_get_key_struct_const_ptr(cs_field_by_id(f_id),
                                         c_k_id);
 
-  vcopt->iwarni = eqp->iwarni;
+  vcopt->iwarni = eqp->verbosity;
   vcopt->iconv  = eqp->iconv;
   vcopt->istat  = eqp->istat;
   vcopt->idircl = eqp->idircl;

@@ -134,7 +134,7 @@ cs_clip_ke(cs_lnum_t  n_cells,
   const int key_cal_opt_id = cs_field_key_id("var_cal_opt");
   cs_field_get_key_struct(CS_F_(k), key_cal_opt_id, &vcopt);
 
-  int iwarnk = vcopt.iwarni;
+  int iwarnk = vcopt.verbosity;
 
   /* Une petite valeur pour eviter des valeurs exactement nulles. */
 

@@ -186,7 +186,7 @@ cs_rad_transfer_pun(int              iband,
   vcopt.istat  = -1;
   vcopt.ndircl =  1; /* There are Dirichlet BCs  */
   vcopt.isstpc =  0;
-  vcopt.iwarni =  cs_glob_rad_transfer_params->verbosity;
+  vcopt.verbosity =  cs_glob_rad_transfer_params->verbosity;
   vcopt.blencv =  0.0;
   vcopt.epsrsm =  1e-08;  /* TODO: try with default (1e-07) */
   vcopt.iconv  =  0;      /* No convection for P1 model */

@@ -210,7 +210,7 @@ cs_balance_scalar(int                idtvar,
 
   if (f_id < 0) {
     var_cal_opt_loc = cs_parameters_var_cal_opt_default();
-    var_cal_opt_loc.iwarni   = var_cal_opt->iwarni;
+    var_cal_opt_loc.verbosity   = var_cal_opt->verbosity;
     var_cal_opt_loc.iconv    = var_cal_opt->iconv;
     var_cal_opt_loc.istat    = -1; /* unused in balance */
     var_cal_opt_loc.idiff    = var_cal_opt->idiff;
@@ -468,7 +468,7 @@ cs_balance_vector(int                  idtvar,
 
   if (f_id < 0) {
     var_cal_opt_loc = cs_parameters_var_cal_opt_default();
-    var_cal_opt_loc.iwarni   = var_cal_opt->iwarni;
+    var_cal_opt_loc.verbosity   = var_cal_opt->verbosity;
     var_cal_opt_loc.iconv    = var_cal_opt->iconv;
     var_cal_opt_loc.istat    = -1; /* unused in balance */
     var_cal_opt_loc.idiff    = var_cal_opt->idiff;
@@ -694,7 +694,7 @@ cs_balance_tensor(int                 idtvar,
 
   if (f_id < 0) {
     var_cal_opt_loc = cs_parameters_var_cal_opt_default();
-    var_cal_opt_loc.iwarni   = var_cal_opt->iwarni;
+    var_cal_opt_loc.verbosity   = var_cal_opt->verbosity;
     var_cal_opt_loc.iconv    = var_cal_opt->iconv;
     var_cal_opt_loc.istat    = -1; /* unused in balance */
     var_cal_opt_loc.idiff    = var_cal_opt->idiff;

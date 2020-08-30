@@ -556,7 +556,7 @@ cs_field_gradient_scalar(const cs_field_t          *f,
   int f_parent_id = cs_field_get_key_int(f, cs_field_key_id("parent_field_id"));
 
   /* Parent field is itself or parent field if existing */
-  cs_field_t *parent_f = f;
+  const cs_field_t *parent_f = f;
   if (f_parent_id > -1)
     parent_f = cs_field_by_id(f_parent_id);
 
@@ -614,7 +614,7 @@ cs_field_gradient_scalar(const cs_field_t          *f,
                      tr_dim,
                      0, /* hyd_p_flag */
                      w_stride,
-                     var_cal_opt.iwarni,
+                     var_cal_opt.verbosity,
                      var_cal_opt.imligr,
                      var_cal_opt.epsrgr,
                      var_cal_opt.extrag,
@@ -661,7 +661,7 @@ cs_field_gradient_potential(const cs_field_t          *f,
   int f_parent_id = cs_field_get_key_int(f, cs_field_key_id("parent_field_id"));
 
   /* Parent field is itself or parent field if existing */
-  cs_field_t *parent_f = f;
+  const cs_field_t *parent_f = f;
   if (f_parent_id > -1)
     parent_f = cs_field_by_id(f_parent_id);
 
@@ -716,7 +716,7 @@ cs_field_gradient_potential(const cs_field_t          *f,
                      0, /* tr_dim */
                      hyd_p_flag,
                      w_stride,
-                     var_cal_opt.iwarni,
+                     var_cal_opt.verbosity,
                      var_cal_opt.imligr,
                      var_cal_opt.epsrgr,
                      var_cal_opt.extrag,
@@ -796,7 +796,7 @@ cs_field_gradient_vector(const cs_field_t          *f,
                      halo_type,
                      inc,
                      var_cal_opt.nswrgr,
-                     var_cal_opt.iwarni,
+                     var_cal_opt.verbosity,
                      var_cal_opt.imligr,
                      var_cal_opt.epsrgr,
                      var_cal_opt.climgr,
@@ -848,7 +848,7 @@ cs_field_gradient_tensor(const cs_field_t          *f,
                      halo_type,
                      inc,
                      var_cal_opt.nswrgr,
-                     var_cal_opt.iwarni,
+                     var_cal_opt.verbosity,
                      var_cal_opt.imligr,
                      var_cal_opt.epsrgr,
                      var_cal_opt.climgr,

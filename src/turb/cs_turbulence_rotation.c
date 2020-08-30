@@ -298,7 +298,7 @@ cs_turbulence_rotation_correction(const cs_real_t   dt[],
 
   int nswrgp = var_cal_opt.nswrgr;
   int imligp = var_cal_opt.imligr;
-  int iwarnp = var_cal_opt.iwarni;
+  int iwarnp = var_cal_opt.verbosity;
   cs_real_t epsrgp = var_cal_opt.epsrgr;
   cs_real_t climgp = var_cal_opt.climgr;
 

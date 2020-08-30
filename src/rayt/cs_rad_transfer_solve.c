@@ -496,7 +496,7 @@ _cs_rad_transfer_sol(int                        gg_id,
 
   cs_var_cal_opt_t vcopt = cs_parameters_var_cal_opt_default();
 
-  vcopt.iwarni =  rt_params->verbosity;
+  vcopt.verbosity =  rt_params->verbosity;
   vcopt.iconv  =  1; /* Pure convection */
   vcopt.istat  = -1;
   vcopt.ndircl = 1;/* There are Dirichlet BCs */

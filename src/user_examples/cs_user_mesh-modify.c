@@ -410,7 +410,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
   /*! [mesh_modify_refine_1] */
 
   /* Remove cells from a selection
-   * Note: do not use that with periodicity */
+   * Note: if present, remove periodicity info first */
   /*! [mesh_modify_remove_cells] */
   {
     cs_lnum_t   n_selected_elts = 0;
@@ -435,10 +435,7 @@ cs_user_mesh_modify(cs_mesh_t  *mesh)
       flag[selected_elts[i]] = 1;
     }
 
-
-    cs_mesh_remove_cells(mesh,
-                         flag,
-                         "[Building]");
+    cs_mesh_remove_cells(mesh, flag, "[Building]");
 
     BFT_FREE(selected_elts);
     BFT_FREE(flag);

@@ -1784,7 +1784,7 @@ void CS_PROCF (uinum1, UINUM1) (double  *cdtvar)
                                        &var_cal_opt.ircflu);
       cs_gui_node_get_child_int(tn_v, "rhs_reconstruction",
                                 &var_cal_opt.nswrsm);
-      cs_gui_node_get_child_int(tn_v, "verbosity", &var_cal_opt.iwarni);
+      cs_gui_node_get_child_int(tn_v, "verbosity", &var_cal_opt.verbosity);
 
       /* For CDO equation, if non-automatic value ie != -1 */
       cs_equation_param_t *eqp = cs_equation_param_by_name(f->name);

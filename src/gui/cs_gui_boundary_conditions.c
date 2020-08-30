@@ -2234,7 +2234,6 @@ void CS_PROCF (uiclim, UICLIM)(const int  *idarcy,
       if (boundaries->rough[izone] >= 0.0) {
         const cs_field_t  *fv = cs_field_by_name_try("velocity");
         const int var_key_id = cs_field_key_id("variable_id");
-        int ivarv = cs_field_get_key_int(fv, var_key_id) -1;
 
         iwall = CS_ROUGHWALL;
         cs_field_t *f_roughness = cs_field_by_name_try("boundary_roughness");

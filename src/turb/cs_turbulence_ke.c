@@ -246,7 +246,6 @@ _tsepls(cs_real_t w1[])
  * Solve the \f$ k - \varepsilon \f$  for incompressible flows
  * or slightly compressible flows for one time step.
  *
- * \param[in]     nvar          total number of variables
  * \param[in]     ncesmp        number of cells with mass source term
  * \param[in]     icetsm        index of cells with mass source term
  * \param[in]     itypsm        mass source type for the variables
@@ -261,8 +260,7 @@ _tsepls(cs_real_t w1[])
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_ke(int              nvar,
-                 cs_lnum_t        ncesmp,
+cs_turbulence_ke(cs_lnum_t        ncesmp,
                  cs_lnum_t        icetsm[],
                  int              itypsm[],
                  const cs_real_t  dt[],
@@ -460,7 +458,7 @@ cs_turbulence_ke(int              nvar,
   cs_var_cal_opt_t *vcopt_eps
     = cs_field_get_key_struct_ptr(f_eps, key_cal_opt_id);
 
-  if (vcopt_k->iwarni >= 1) {
+  if (vcopt_k->verbosity >= 1) {
     if (cs_glob_turb_model->iturb == CS_TURB_K_EPSILON) {
       cs_log_printf(CS_LOG_DEFAULT,
                     "\n"
@@ -923,7 +921,7 @@ cs_turbulence_ke(int              nvar,
                          0,
                          0,
                          1,             /* w_stride */
-                         vcopt_k->iwarni,
+                         vcopt_k->verbosity,
                          vcopt_k->imligr,
                          vcopt_k->epsrgr,
                          vcopt_k->extrag,
@@ -1039,7 +1037,7 @@ cs_turbulence_ke(int              nvar,
                            vcopt_k->imligr,
                            0,     /* iphydp */
                            vcopt_k->iwgrec,
-                           vcopt_k->iwarni,
+                           vcopt_k->verbosity,
                            vcopt_k->epsrgr,
                            vcopt_k->climgr,
                            vcopt_k->extrag,
@@ -1140,7 +1138,7 @@ cs_turbulence_ke(int              nvar,
                        0,
                        0,
                        1,     /* w_stride */
-                       vcopt_k->iwarni,
+                       vcopt_k->verbosity,
                        vcopt_k->imligr,
                        vcopt_k->epsrgr,
                        vcopt_k->extrag,
@@ -1174,7 +1172,7 @@ cs_turbulence_ke(int              nvar,
                        0,
                        0,
                        1,     /* w_stride */
-                       vcopt_k->iwarni,
+                       vcopt_k->verbosity,
                        vcopt_k->imligr,
                        vcopt_k->epsrgr,
                        vcopt_k->extrag,
@@ -1612,7 +1610,7 @@ cs_turbulence_ke(int              nvar,
                       NULL,
                       w7);
 
-    if (vcopt_k->iwarni >= 2) {
+    if (vcopt_k->verbosity >= 2) {
       cs_log_printf(CS_LOG_DEFAULT,
                     " Variable %s: explicit balance = %12.5e\n",
                     cs_field_get_label(f_k),
@@ -1680,7 +1678,7 @@ cs_turbulence_ke(int              nvar,
                       NULL,
                       w8);
 
-    if (vcopt_eps->iwarni >= 2) {
+    if (vcopt_eps->verbosity >= 2) {
       cs_log_printf(CS_LOG_DEFAULT,
                     " Variable %s: EXPLICIT BALANCE =  %12.5e\n",
                     cs_field_get_label(f_eps),

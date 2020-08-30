@@ -616,12 +616,8 @@ cs_user_parameters(cs_domain_t *domain)
       cs_field_t  *f = cs_field_by_id(f_id);
 
       if (f->type & CS_FIELD_VARIABLE) {
-        cs_var_cal_opt_t vcopt;
-        int key_cal_opt_id = cs_field_key_id("var_cal_opt");
-
-        cs_field_get_key_struct(f, key_cal_opt_id, &vcopt);
-        vcopt.iwarni = 2;
-        cs_field_set_key_struct(f, key_cal_opt_id, &vcopt);
+        cs_equation_param_t *eqp = cs_field_get_equation_param(f);
+        eqp->verbosity = 2;
       }
     }
   }

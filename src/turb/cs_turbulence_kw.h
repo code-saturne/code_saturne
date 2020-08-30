@@ -48,7 +48,6 @@ BEGIN_C_DECLS
  * Solve the \f$ k - \omega \f$ SST for incompressible flows
  * or slightly compressible flows for one time step.
  *
- * \param[in]     nvar          total number of variables
  * \param[in]     ncesmp        number of cells with mass source term
  * \param[in]     icetsm        index of cells with mass source term
  * \param[in]     itypsm        mass source type for the variables
@@ -62,8 +61,7 @@ BEGIN_C_DECLS
 /*----------------------------------------------------------------------------*/
 
 void
-cs_turbulence_kw(int              nvar,
-                 cs_lnum_t        ncesmp,
+cs_turbulence_kw(cs_lnum_t        ncesmp,
                  cs_lnum_t        icetsm[],
                  int              itypsm[],
                  const cs_real_t  dt[],

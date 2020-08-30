@@ -376,7 +376,7 @@ cs_sles_default_get_verbosity(int          f_id,
     if (f->type & CS_FIELD_VARIABLE) {
       cs_var_cal_opt_t var_cal_opt;
       cs_field_get_key_struct(f, k_cal_opt_id, &var_cal_opt);
-      retval = var_cal_opt.iwarni;
+      retval = var_cal_opt.verbosity;
     }
     else
       retval = cs_field_get_key_int(f, k_log);

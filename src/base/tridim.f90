@@ -261,22 +261,22 @@ interface
   end subroutine cs_syr_coupling_send_boundary
 
   subroutine cs_turbulence_ke &
-       (nvar, ncesmp, icetsm, itypsm, dt, smacel, prdv2f) &
+       (ncesmp, icetsm, itypsm, dt, smacel, prdv2f) &
     bind(C, name='cs_turbulence_ke')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value :: nvar, ncesmp
+    integer(c_int), value :: ncesmp
     integer(c_int), dimension(*), intent(in) :: icetsm, itypsm
     real(kind=c_double), dimension(*) :: dt, smacel
     real(kind=c_double), dimension(*), intent(in) :: prdv2f
   end subroutine cs_turbulence_ke
 
   subroutine cs_turbulence_kw &
-       (nvar, ncesmp, icetsm, itypsm, dt, smacel) &
+       (ncesmp, icetsm, itypsm, dt, smacel) &
     bind(C, name='cs_turbulence_kw')
     use, intrinsic :: iso_c_binding
     implicit none
-    integer(c_int), value :: nvar, ncesmp
+    integer(c_int), value :: ncesmp
     integer(c_int), dimension(*), intent(in) :: icetsm, itypsm
     real(kind=c_double), dimension(*) :: dt, smacel
   end subroutine cs_turbulence_kw
@@ -1299,8 +1299,7 @@ if (iccvfg.eq.0) then
 
   if ((itytur.eq.2) .or. (itytur.eq.5)) then
 
-    call cs_turbulence_ke(nvar, ncetsm, icetsm,   &
-                          itypsm, dt, smacel, prdv2f)
+    call cs_turbulence_ke(ncetsm, icetsm, itypsm, dt, smacel, prdv2f)
 
     if( itytur.eq.5 )  then
 
@@ -1352,7 +1351,7 @@ if (iccvfg.eq.0) then
 
   else if (iturb.eq.60) then
 
-    call cs_turbulence_kw(nvar, ncetsm, icetsm, itypsm, dt, smacel)
+    call cs_turbulence_kw(ncetsm, icetsm, itypsm, dt, smacel)
 
     call field_get_val_s(ivarfl(ik), cvar_k)
     call field_get_val_prev_s(ivarfl(ik), cvara_k)

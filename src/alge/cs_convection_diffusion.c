@@ -1626,7 +1626,7 @@ cs_convection_diffusion_scalar(int                       idtvar,
   const int ircflp = var_cal_opt.ircflu;
   const int ischcp = var_cal_opt.ischcv;
   const int isstpp = var_cal_opt.isstpc;
-  const int iwarnp = var_cal_opt.iwarni;
+  const int iwarnp = var_cal_opt.verbosity;
   const int icoupl = var_cal_opt.icoupl;
   int limiter_choice = -1;
   const double blencp = var_cal_opt.blencv;
@@ -3063,7 +3063,7 @@ cs_face_convection_scalar(int                       idtvar,
   const int ircflp = var_cal_opt.ircflu;
   const int ischcp = var_cal_opt.ischcv;
   const int isstpp = var_cal_opt.isstpc;
-  const int iwarnp = var_cal_opt.iwarni;
+  const int iwarnp = var_cal_opt.verbosity;
   const int icoupl = var_cal_opt.icoupl;
   int limiter_choice = -1;
   const double blencp = var_cal_opt.blencv;
@@ -4185,7 +4185,7 @@ cs_convection_diffusion_vector(int                         idtvar,
   const int ircflp = var_cal_opt.ircflu;
   const int ischcp = var_cal_opt.ischcv;
   const int isstpp = var_cal_opt.isstpc;
-  const int iwarnp = var_cal_opt.iwarni;
+  const int iwarnp = var_cal_opt.verbosity;
   const int icoupl = var_cal_opt.icoupl;
   const double blencp = var_cal_opt.blencv;
   const double blend_st = var_cal_opt.blend_st;
@@ -5872,7 +5872,7 @@ cs_convection_diffusion_tensor(int                         idtvar,
   const int ircflp = var_cal_opt.ircflu;
   const int ischcp = var_cal_opt.ischcv;
   const int isstpp = var_cal_opt.isstpc;
-  const int iwarnp = var_cal_opt.iwarni;
+  const int iwarnp = var_cal_opt.verbosity;
   const double blencp = var_cal_opt.blencv;
   const double blend_st = var_cal_opt.blend_st;
   const double epsrgp = var_cal_opt.epsrgr;
@@ -6839,7 +6839,7 @@ cs_convection_diffusion_thermal(int                       idtvar,
   const int ircflp = var_cal_opt.ircflu;
   const int ischcp = var_cal_opt.ischcv;
   const int isstpp = var_cal_opt.isstpc;
-  const int iwarnp = var_cal_opt.iwarni;
+  const int iwarnp = var_cal_opt.verbosity;
   const int icoupl = var_cal_opt.icoupl;
   int limiter_choice = -1;
   const double blencp = var_cal_opt.blencv;
@@ -8175,7 +8175,7 @@ cs_anisotropic_diffusion_scalar(int                       idtvar,
   const int imrgra = var_cal_opt.imrgra;
   const int imligp = var_cal_opt.imligr;
   const int ircflp = var_cal_opt.ircflu;
-  const int iwarnp = var_cal_opt.iwarni;
+  const int iwarnp = var_cal_opt.verbosity;
   const int icoupl = var_cal_opt.icoupl;
   const double epsrgp = var_cal_opt.epsrgr;
   const double climgp = var_cal_opt.climgr;
@@ -8931,7 +8931,7 @@ cs_anisotropic_left_diffusion_vector(int                         idtvar,
   const int imrgra = var_cal_opt.imrgra;
   const int imligp = var_cal_opt.imligr;
   const int ircflp = var_cal_opt.ircflu;
-  const int iwarnp = var_cal_opt.iwarni;
+  const int iwarnp = var_cal_opt.verbosity;
   const int icoupl = var_cal_opt.icoupl;
   const double epsrgp = var_cal_opt.epsrgr;
   const double climgp = var_cal_opt.climgr;
@@ -9479,7 +9479,7 @@ cs_anisotropic_right_diffusion_vector(int                         idtvar,
   const int imrgra = var_cal_opt.imrgra;
   const int imligp = var_cal_opt.imligr;
   const int ircflp = var_cal_opt.ircflu;
-  const int iwarnp = var_cal_opt.iwarni;
+  const int iwarnp = var_cal_opt.verbosity;
   const int icoupl = var_cal_opt.icoupl;
   const double epsrgp = var_cal_opt.epsrgr;
   const double climgp = var_cal_opt.climgr;
@@ -10192,7 +10192,7 @@ cs_anisotropic_diffusion_tensor(int                         idtvar,
   const int imrgra = var_cal_opt.imrgra;
   const int imligp = var_cal_opt.imligr;
   const int ircflp = var_cal_opt.ircflu;
-  const int iwarnp = var_cal_opt.iwarni;
+  const int iwarnp = var_cal_opt.verbosity;
   const double epsrgp = var_cal_opt.epsrgr;
   const double climgp = var_cal_opt.climgr;
   const double relaxp = var_cal_opt.relaxv;

@@ -240,7 +240,7 @@ cs_equation_iterative_solve_scalar(int                   idtvar,
 
   int iconvp = var_cal_opt->iconv;
   int idiffp = var_cal_opt->idiff;
-  int iwarnp = var_cal_opt->iwarni;
+  int iwarnp = var_cal_opt->verbosity;
   int iswdyp = var_cal_opt->iswdyn;
   int ndircp = var_cal_opt->ndircl;
   double epsrsp = var_cal_opt->epsrsm;
@@ -1218,7 +1218,7 @@ cs_equation_iterative_solve_vector(int                   idtvar,
 
   int iconvp = var_cal_opt->iconv;
   int idiffp = var_cal_opt->idiff;
-  int iwarnp = var_cal_opt->iwarni;
+  int iwarnp = var_cal_opt->verbosity;
   int iswdyp = var_cal_opt->iswdyn;
   int idftnp = var_cal_opt->idften;
   int ndircp = var_cal_opt->ndircl;
@@ -2052,7 +2052,7 @@ cs_equation_iterative_solve_tensor(int                   idtvar,
 
   int iconvp = var_cal_opt->iconv;
   int idiffp = var_cal_opt->idiff;
-  int iwarnp = var_cal_opt->iwarni;
+  int iwarnp = var_cal_opt->verbosity;
   int iswdyp = var_cal_opt->iswdyn;
   int idftnp = var_cal_opt->idften;
   int ndircp = var_cal_opt->ndircl;
