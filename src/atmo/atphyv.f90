@@ -88,11 +88,9 @@ if (idilat.eq.0) then
 endif
 
 ! This routine computes the density and the thermodynamic temperature.
-! The computations require the pressure profile which is here taken from
-! the meteo file. If no meteo file is used, the user should
+! The computations may require the pressure profile which is here taken from
+! the meteo file. If no meteo file is used, the user can
 ! give the laws for RHO and T in cs_user_physical_properties.f90
-
-if (imeteo.eq.0) return
 
 !===============================================================================
 
@@ -138,7 +136,7 @@ do iel = 1, ncel
   zent = xyzcen(3,iel)
 
   ! Reference pressure
-  if (imeteo.eq.0) then !FIXME useless...
+  if (imeteo.eq.0) then
     call atmstd(zent,pp,dum,dum)
   else
     ! Pressure profile from meteo file:

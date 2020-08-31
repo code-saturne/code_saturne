@@ -103,10 +103,10 @@ cs_atmo_profile_std(cs_real_t   z,
                     cs_real_t  *r)
 {
   cs_real_t rair = cs_glob_fluid_properties->r_pg_cnst;
-  cs_real_t p0 = 101325.;
-  cs_real_t t0 = 288.15;
+  cs_real_t p0 = cs_glob_fluid_properties->p0;
+  cs_real_t t0 = cs_glob_fluid_properties->t0;
   cs_real_t zt = 11000.;
-  cs_real_t g = 9.81;
+  cs_real_t g = cs_math_3_norm(cs_glob_physical_constants->gravity);
   cs_real_t a = -6.5e-3;
 
   if (z <= zt){
