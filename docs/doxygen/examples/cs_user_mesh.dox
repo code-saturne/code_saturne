@@ -138,6 +138,10 @@
   by matrix multiplication, while simple rotations or translations
   may still be defined easily.
 
+  Cells from a selection can also be removed.
+
+  \snippet cs_user_mesh-modify.c mesh_modify_remove_cells
+
   \subsection  cs_user_mesh_h_cs_user_mesh_save Mesh saving
 
   The user function \ref cs_user_mesh_save can enable or disable mesh saving.
