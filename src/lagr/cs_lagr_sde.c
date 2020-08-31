@@ -239,12 +239,15 @@ _lages1(cs_real_t           dtp,
       cs_real_t part_vel_seen_r[3] = {part_vel_seen[0], part_vel_seen[1], part_vel_seen[2]};
       cs_real_t old_part_vel_seen_r[3] = {old_part_vel_seen[0], old_part_vel_seen[1], old_part_vel_seen[2]};
       cs_real_t fluid_vel_r[3] = {cvar_vel[cell_id][0], cvar_vel[cell_id][1], cvar_vel[cell_id][2]};
-      cs_real_t fluid_vel[3] = {cvar_vel[cell_id][0], cvar_vel[cell_id][1], cvar_vel[cell_id][2]};
       cs_real_t force_p_r[3] = {force_p[ip][0], force_p[ip][1], force_p[ip][2]} ;
       cs_real_t piil_r[3] = {piil[ip][0], piil[ip][1], piil[ip][2]};
       cs_real_t tlag_r[3] = {tlag[ip][0], tlag[ip][1], tlag[ip][2]};
       cs_real_t taup_r[3] = {taup[ip], taup[ip], taup[ip]};
       cs_real_t displ_r[3];
+
+      const cs_real_t fluid_vel[3] = {cvar_vel[cell_id][0], 
+                                      cvar_vel[cell_id][1],
+                                      cvar_vel[cell_id][2]};
 
       cs_real_t mean_part_vel[3];
       for (cs_lnum_t i = 0; i < 3; i++)

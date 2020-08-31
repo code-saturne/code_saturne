@@ -1599,14 +1599,91 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
       event_flag = event_flag | CS_EVENT_REBOUND;
     }
+
   }
 
-  else if (b_type == CS_LAGR_REBOUND || b_type == CS_LAGR_SYM) {
+  else if (b_type == CS_LAGR_REBOUND) {
 
     particle_state = CS_LAGR_PART_TO_SYNC;
 
     cs_real_t *cell_cen = fvq->cell_cen + (3*cell_id);
     cs_real_3_t vect_cen;
+
+    for (int k = 0; k < 3; k++) {
+      vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
+      p_info->start_coords[k] = intersect_pt[k] + bc_epsilon * vect_cen[k];
+    }
+
+    /* Modify the ending point. */
+
+    for (int k = 0; k < 3; k++)
+      disp[k] = particle_coord[k] - intersect_pt[k];
+
+    tmp = 2. * cs_math_3_dot_product(disp, face_norm);
+
+    for (int k = 0; k < 3; k++)
+      particle_coord[k] -= tmp * face_norm[k];
+
+    /* Modify particle velocity and velocity seen */
+
+    tmp = 2. * cs_math_3_dot_product(particle_velocity, face_norm);
+
+    for (int k = 0; k < 3; k++)
+      particle_velocity[k] -= tmp * face_norm[k];
+
+    cs_lagr_extra_module_t *extra = cs_get_lagr_extra_module();
+    cs_real_t ustar = extra->ustar->val[face_id];
+
+    tmp = 2. * cs_math_3_dot_product(particle_velocity_seen, face_norm);
+    
+    int iprev = 0; // Use fields at current time step
+
+    if (extra->iturb == 30 || extra->iturb == 31 || extra->iturb == 32) {
+
+      if (extra->cvar_rij == NULL) {
+
+        particle_velocity_seen[0] -= -2. * tmp * face_norm[2];
+        particle_velocity_seen[2] -= 2. * tmp * face_norm[2];
+      
+      } 
+      else {
+
+        particle_velocity_seen[0] -=
+            2. * tmp * face_norm[2] * (-pow(ustar, 2)) /
+            extra->cvar_rij->vals[iprev][6 * cell_id + 2];
+
+        particle_velocity_seen[1] -=
+            2. * tmp * face_norm[2] * (-pow(ustar, 2)) /
+            extra->cvar_rij->vals[iprev][6 * cell_id + 2];
+
+        particle_velocity_seen[2] -= 2 * tmp * face_norm[2];
+      
+      }
+
+    } 
+    else if (extra->iturb == 20 || extra->iturb == 21) {
+
+      const cs_real_t *cvar_k = CS_F_(k)->val;
+      
+      particle_velocity_seen[0] -= 2 * tmp * face_norm[2] * (-pow(ustar, 2)) /
+                                   (2 / 3 * cvar_k[cell_id] + 1.e-30);
+      particle_velocity_seen[1] -= 2 * tmp * face_norm[2] * (-pow(ustar, 2)) /
+                                   (2 / 3 * cvar_k[cell_id] + 1.e-30);
+      particle_velocity_seen[2] -= 2 * tmp * face_norm[2];
+
+    }
+
+    event_flag = event_flag | CS_EVENT_REBOUND;
+
+  }
+
+  else if (b_type == CS_LAGR_SYM) {
+
+    particle_state = CS_LAGR_PART_TO_SYNC;
+
+    cs_real_t *cell_cen = fvq->cell_cen + (3 * cell_id);
+    cs_real_3_t vect_cen;
+
     for (int k = 0; k < 3; k++) {
       vect_cen[k] = (cell_cen[k] - intersect_pt[k]);
       p_info->start_coords[k] = intersect_pt[k] + bc_epsilon * vect_cen[k];
@@ -1630,11 +1707,12 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
       particle_velocity[k] -= tmp * face_norm[k];
 
     tmp = 2. * cs_math_3_dot_product(particle_velocity_seen, face_norm);
-
+    
     for (int k = 0; k < 3; k++)
-      particle_velocity_seen[k] -= tmp * face_norm[k];
+        particle_velocity_seen[k] -= tmp * face_norm[k];
 
     event_flag = event_flag | CS_EVENT_REBOUND;
+
   }
 
   else if (b_type == CS_LAGR_FOULING) {
@@ -1830,7 +1908,7 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
   }
 
   return particle_state;
-}
+    }
 
 /*----------------------------------------------------------------------------
  * Move a particle as far as possible while remaining on a given rank.
