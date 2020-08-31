@@ -1,6 +1,10 @@
 Release 6.2.1 (unreleased)
 --------------------------
 
+Bug fixes:
+
+- Fix run for builds without MPI.
+
 Architectural changes:
 
 - Update Syrthes coupling example from `coupling_parameters.py` to `run.cfg`.
