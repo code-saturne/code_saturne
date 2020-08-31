@@ -906,7 +906,7 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
       call field_get_dim(iflwgr, f_dim)
       call field_get_val_s(iflwgr, cpro_wgrec_s)
       do iel = 1, ncel
-        cpro_wgrec_s(iel) = dt(iel) / wgrec_crom(iel)
+        cpro_wgrec_s(iel) = dt(iel) / crom(iel)
       enddo
       call synsca(cpro_wgrec_s)
     endif
