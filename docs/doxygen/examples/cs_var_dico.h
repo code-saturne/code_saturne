@@ -402,7 +402,7 @@
   viscb         | b_visc     | \f$ \mu_\fib \dfrac{S_\fib}{\ipf \centf} \f$ \n  at border faces for the r.h.s.
   smbrp         | rhs        | Right hand side \f$ \vect{Rhs} \f$ </tt>
 
-  \section cs_var_dico_conv Local naming convention for fields (Fotran and C)
+  \section cs_var_dico_conv Local naming convention for fields (Fortran and C)
 
   Rules have been stablished for local names denoting fields, depending on their nature. The convention, applying both in Fortran and in C, is as follows:
 
