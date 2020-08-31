@@ -167,7 +167,6 @@ double precision, dimension(:,:), pointer :: disale
 double precision, dimension(:,:), pointer :: disala
 double precision, dimension(:), pointer :: porosi
 double precision, dimension(:), pointer :: cvar_pr
-double precision, dimension(:), pointer :: phi
 double precision, dimension(:), pointer :: cpro_prtot, c_estim
 double precision, dimension(:), pointer :: cvar_voidf, cvara_voidf
 double precision, dimension(:), pointer :: cpro_rho_mass
@@ -190,8 +189,7 @@ interface
      coefav , coefbv , coefa_dp        , coefb_dp ,               &
      smacel , spcond , svcond ,                                   &
      frcxt  , dfrcxt , tpucou ,                                   &
-     viscf  , viscb  ,                                            &
-     phi    , tslagr )
+     viscf  , viscb  ,  tslagr )
 
     use dimens, only: ndimfb
     use mesh
@@ -213,7 +211,6 @@ interface
     double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
     double precision, dimension (1:6,1:ncelet), target :: tpucou
     double precision viscf(nfac), viscb(ndimfb)
-    double precision phi(ncelet)
     double precision tslagr(ncelet,*)
     double precision coefav(3  ,ndimfb)
     double precision coefbv(3,3,ndimfb)
@@ -248,7 +245,6 @@ allocate(trav(3,ncelet))
 ! Allocate other arrays, depending on user options
 
 call field_get_id("pressure_increment",f_iddp)
-call field_get_val_s(f_iddp, phi)
 
 call field_get_coefa_s(f_iddp, coefa_dp)
 call field_get_coefb_s(f_iddp, coefb_dp)
@@ -863,8 +859,7 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
   coefau , coefbu , coefa_dp        , coefb_dp ,                 &
   smacel , spcond , svcond ,                                     &
   frcxt  , dfrcxt , dttens ,                                     &
-  viscf  , viscb  ,                                              &
-  phi    , tslagr )
+  viscf  , viscb  , tslagr )
 
 endif
 
@@ -895,13 +890,6 @@ if (ippmod(icompf).lt.0.or.ippmod(icompf).eq.3) then
 
     ! The predicted velocity is corrected by the cell gradient of the
     ! pressure increment.
-
-    ! Phi is the pressure increment
-
-    ! ---> Periodicity and parallelism
-    if (irangp.ge.0.or.iperio.eq.1) then
-      call synsca(phi)
-    endif
 
     iccocg = 1
     inc = 0

@@ -92,7 +92,6 @@
 !>                               velocity pressure coupling
 !> \param[in]     viscf         visc*surface/dist aux faces internes
 !> \param[in]     viscb         visc*surface/dist aux faces de bord
-!> \param[in]     phi           potential to be solved (pressure increment)
 !> \param[in]     tslagr        coupling term for the Lagrangian module
 !_______________________________________________________________________________
 
@@ -103,8 +102,7 @@ subroutine resopv &
    coefav , coefbv , coefa_dp        , coefb_dp ,                 &
    smacel , spcond , svcond ,                                     &
    frcxt  , dfrcxt , tpucou ,                                     &
-   viscf  , viscb  ,                                              &
-   phi    , tslagr )
+   viscf  , viscb  , tslagr )
 
 !===============================================================================
 
@@ -156,7 +154,6 @@ double precision svcond(ncelet,nvar)
 double precision frcxt(3,ncelet), dfrcxt(3,ncelet)
 double precision, dimension (1:6,1:ncelet), target :: tpucou
 double precision viscf(nfac), viscb(nfabor)
-double precision phi(ncelet)
 double precision tslagr(ncelet,*)
 double precision coefav(3  ,nfabor)
 double precision coefbv(3,3,nfabor)
@@ -249,6 +246,7 @@ double precision, dimension(:), allocatable, target :: cpro_rho_tc, bpro_rho_tc
 double precision, allocatable, dimension(:) :: c2
 double precision, dimension(:), pointer :: cpro_cp, cpro_cv
 double precision, dimension(:), pointer :: cvar_fracv, cvar_fracm, cvar_frace
+double precision, dimension(:), pointer :: phi
 
 !===============================================================================
 
@@ -280,7 +278,8 @@ if (f_id_ph.ge.0) then
   call field_get_val_prev_s(f_id_ph, cvar_hydro_pres_prev)
 endif
 
-call field_get_id('pressure_increment',f_iddp)
+call field_get_id('pressure_increment', f_iddp)
+call field_get_val_s(f_iddp, phi)
 
 ! Diffusive flux Boundary conditions for delta P
 call field_get_coefaf_s(f_iddp, coefaf_dp)
