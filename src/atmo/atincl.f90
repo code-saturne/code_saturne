@@ -170,7 +170,7 @@ integer, save :: initmeteo
 
 !> add a momentum source term based on the meteo profile
 !> for automatic open boundaries
-integer, save :: iatmst
+integer(c_int), pointer, save :: iatmst
 
 !> flag for meteo velocity field interpolation
 !> - 0: linear interpolation of the meteo profile
@@ -397,7 +397,7 @@ integer, save :: kopint
 
     subroutine cs_f_atmo_get_pointers(syear, squant, shour, smin, ssec, &
         longitude, latitude,                                            &
-        compute_z_ground,                                               &
+        compute_z_ground, iatmst,                                       &
         sedimentation_model, deposition_model, nucleation_model,        &
         subgrid_model, ichemistry, nespg, nrg, chem_with_photo,         &
         iaerosol, frozen_gas_chem, init_gas_with_lib,                   &
@@ -406,7 +406,8 @@ integer, save :: kopint
       bind(C, name='cs_f_atmo_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: compute_z_ground, ichemistry, nespg, nrg
+      type(c_ptr), intent(out) :: compute_z_ground, iatmst
+      type(c_ptr), intent(out) :: ichemistry, nespg, nrg
       type(c_ptr), intent(out) :: sedimentation_model, deposition_model
       type(c_ptr), intent(out) :: nucleation_model
       type(c_ptr), intent(out) :: subgrid_model
@@ -549,7 +550,7 @@ contains
     implicit none
 
     ! Local variables
-    type(c_ptr) :: c_compute_z_ground, c_model, c_nrg, c_nespg
+    type(c_ptr) :: c_compute_z_ground, c_iatmst, c_model, c_nrg, c_nespg
     type(c_ptr) :: c_sedimentation_model, c_deposition_model, c_nucleation_model
     type(c_ptr) :: c_subgrid_model
     type(c_ptr) :: c_syear, c_squant, c_shour, c_smin, c_ssec
@@ -562,7 +563,7 @@ contains
     call cs_f_atmo_get_pointers(                  &
       c_syear, c_squant, c_shour, c_smin, c_ssec, &
       c_longitude, c_latitude,                    &
-      c_compute_z_ground,                         &
+      c_compute_z_ground, c_iatmst,               &
       c_sedimentation_model, c_deposition_model,  &
       c_nucleation_model, c_subgrid_model,        &
       c_model, c_nespg, c_nrg, c_chem_with_photo, &
@@ -582,6 +583,7 @@ contains
     call c_f_pointer(c_latitude, xlat)
 
     call c_f_pointer(c_compute_z_ground, compute_z_ground)
+    call c_f_pointer(c_iatmst, iatmst)
 
     call c_f_pointer(c_sedimentation_model, modsedi)
     call c_f_pointer(c_deposition_model, moddep)

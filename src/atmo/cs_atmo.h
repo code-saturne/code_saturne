@@ -112,21 +112,29 @@ typedef struct {
   int nbmetd;
   /*! numbers of altitudes for the temperature and specific humidity */
   int nbmett;
-  /* numbers of time steps for the meteo profiles */
+  /*! numbers of time steps for the meteo profiles */
+  /*! Number of vertical levels */
   int nbmetm;
-  /* Number of vertical levels */
   int nbmaxt;
   /*! Domain orientation (angle in degree between y direction and north),
    * 0 by default */
   cs_real_t domain_orientation;
 
-  /* Model options */
+  /*! Option to compute ground elevation in the domain */
   bool compute_z_ground;
+
+  int open_bcs_treatment;
+
+  /* Model options */
   int sedimentation_model;
   int deposition_model;
   int nucleation_model;
   int subgrid_model;
-  int imeteo;
+  /*! Use meteo profile:
+   *  - 0: not use
+   *  - 1: use a meteo file
+   *  - 2: directly enter values */
+  int meteo_profile;
 
   /* Altitudes of the temperature profile */
   cs_real_t *z_temp_met;

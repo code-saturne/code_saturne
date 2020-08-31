@@ -115,15 +115,16 @@ static cs_atmo_option_t  _atmo_option = {
   .latitude = 1e12,
   .domain_orientation = 0.,
   .compute_z_ground = false,
+  .open_bcs_treatment = 0,
   .sedimentation_model = 0,
   .deposition_model = 0,
   .nucleation_model = 0,
   .subgrid_model = 0,
-  .imeteo = 0,
-  .nbmetd = -1,
-  .nbmett = -1,
-  .nbmetm = -1,
-  .nbmaxt = -1,
+  .meteo_profile = 0, /* no meteo profile */
+  .nbmetd = 0,
+  .nbmett = 0,
+  .nbmetm = 0,
+  .nbmaxt = 0,
 
   .z_temp_met = NULL,
   .time_met   = NULL,
@@ -182,6 +183,7 @@ cs_f_atmo_get_pointers(int                    **syear,
                        cs_real_t              **longitude,
                        cs_real_t              **latitude,
                        bool                   **compute_z_ground,
+                       int                    **open_bcs_treatment,
                        int                    **sedimentation_model,
                        int                    **deposition_model,
                        int                    **nucleation_model,
@@ -196,7 +198,7 @@ cs_f_atmo_get_pointers(int                    **syear,
                        bool                   **init_aero_with_lib,
                        int                    **n_layer,
                        int                    **n_size,
-                       int                    **imeteo,
+                       int                    **meteo_profile,
                        int                    **nbmetd,
                        int                    **nbmett,
                        int                    **nbmetm,
@@ -241,6 +243,7 @@ cs_f_atmo_get_pointers(int                    **syear,
                        cs_real_t              **longitude,
                        cs_real_t              **latitude,
                        bool                   **compute_z_ground,
+                       int                    **open_bcs_treatment,
                        int                    **sedimentation_model,
                        int                    **deposition_model,
                        int                    **nucleation_model,
@@ -255,7 +258,7 @@ cs_f_atmo_get_pointers(int                    **syear,
                        bool                   **init_aero_with_lib,
                        int                    **n_layer,
                        int                    **n_size,
-                       int                    **imeteo,
+                       int                    **meteo_profile,
                        int                    **nbmetd,
                        int                    **nbmett,
                        int                    **nbmetm,
@@ -269,11 +272,12 @@ cs_f_atmo_get_pointers(int                    **syear,
   *longitude = &(_atmo_option.longitude);
   *latitude  = &(_atmo_option.latitude);
   *compute_z_ground = &(_atmo_option.compute_z_ground);
+  *open_bcs_treatment = &(_atmo_option.open_bcs_treatment);
   *sedimentation_model = &(_atmo_option.sedimentation_model);
   *deposition_model = &(_atmo_option.deposition_model);
   *nucleation_model = &(_atmo_option.nucleation_model);
   *subgrid_model = &(_atmo_option.subgrid_model);
-  *imeteo     = &(_atmo_option.imeteo);
+  *meteo_profile = &(_atmo_option.meteo_profile);
   *nbmetd     = &(_atmo_option.nbmetd);
   *nbmett     = &(_atmo_option.nbmett);
   *nbmetm     = &(_atmo_option.nbmetm);

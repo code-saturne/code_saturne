@@ -80,13 +80,11 @@ void CS_PROCF (uicpi2, UICPI2) (double *const toxy,
  *
  * subroutine uiati1
  * *****************
- * integer         imeteo   <--   on/off index
  * char(*)         fmeteo   <--   meteo file name
  * int             len      <--   meteo file name destination string length
  *----------------------------------------------------------------------------*/
 
-void CS_PROCF (uiati1, UIATI1) (int           *imeteo,
-                                char          *fmeteo,
+void CS_PROCF (uiati1, UIATI1) (char          *fmeteo,
                                 int           *len
                                 CS_ARGF_SUPP_CHAINE);
 

@@ -350,7 +350,7 @@ if (imode.eq.1) then
     do k = 2, nbmaxt
       tmoy = 0.5d0*(ttmet(k-1,itp) + ttmet(k,itp)) + tkelvi
 
-      if(ippmod(iatmos).eq.2) then ! take liquid water into account
+      if (ippmod(iatmos).eq.2) then ! take liquid water into account
         q0 = min( qvmet(k-1,itp), cs_air_yw_sat( ttmet(k-1,itp) &
             , phmet(k-1,itp)))
         q1 = min( qvmet(k  ,itp), cs_air_yw_sat( ttmet(k  ,itp) &

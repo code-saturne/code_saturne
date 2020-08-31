@@ -655,11 +655,6 @@ enddo
 
 !--> Initialisation for the meteo profile
 
-imeteo = 0
-nbmetd = 0
-nbmett = 0
-nbmetm = 0
-nbmaxt = 0
 do izone = 1, nozppm
   iprofm(izone) = 0
 enddo

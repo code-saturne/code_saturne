@@ -1141,7 +1141,7 @@ _init_boundaries(const cs_lnum_t   n_b_faces,
 
       /* Inlet: data for ATMOSPHERIC FLOWS */
       if (cs_gui_strcmp(vars->model, "atmospheric_flows")) {
-        if (cs_glob_atmo_option->imeteo) {
+        if (cs_glob_atmo_option->meteo_profile == 1) {
           cs_gui_node_get_child_status_int
             (tn_vp, "meteo_data", &boundaries->meteo[izone].read_data);
           cs_gui_node_get_child_status_int
