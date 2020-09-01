@@ -183,7 +183,7 @@ cs_f_combustion_model_get_pointers(int  **isoot)
  *
  * parameters:
  *   ngaze  --> pointer to number of elementary species
- *   ngaze  --> pointer to number of global species
+ *   ngazg  --> pointer to number of global species
  *   nato   --> pointer to number of atomic species
  *   iic    --> pointer to rank of C in gas composition
  *   wmole  --> pointer to molar mass of elementary gas components
