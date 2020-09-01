@@ -265,10 +265,6 @@ ifrace = 0
 ! ---> Initialisation Common / TCHPPI /
 
 npo   = 0
-ngaze = 0
-ngazg = 0
-nato  = 0
-nrgaz = 0
 
 ! ---> Initialisation Common / TCHPPR /
 

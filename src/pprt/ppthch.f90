@@ -83,15 +83,16 @@ module ppthch
 
   !> number of tabulation points
   integer, save ::           npo
+
   !> number of elementary gas components
-  integer, save ::           ngaze
+  integer, pointer, save ::  ngaze
   !> number of global species
-  integer, save ::           ngazg
+  integer, pointer, save ::  ngazg
   !> number of atomic species
-  integer, save ::           nato
+  integer, pointer, save ::  nato
 
   !> number of global reactions in gas phase
-  integer, save ::           nrgaz
+  integer, pointer, save ::  nrgaz
 
   !> rank of O2 in gas composition
   integer, save ::           iio2
@@ -182,13 +183,13 @@ module ppthch
     ! Interface to C function retrieving pointers to members of the
     ! global physical model flags
 
-    subroutine cs_f_ppthch_get_pointers(p_iic,                            &
-                                        p_wmole, p_wmolg,                 &
-                                        p_xco2, p_xh2o, p_ckabs1)         &
+    subroutine cs_f_ppthch_get_pointers(p_ngaze, p_ngazg, p_nato, p_nrgaz,  &
+                                        p_iic, p_wmole, p_wmolg,            &
+                                        p_xco2, p_xh2o, p_ckabs1)           &
       bind(C, name='cs_f_ppthch_get_pointers')
       use, intrinsic :: iso_c_binding
       implicit none
-      type(c_ptr), intent(out) :: p_iic,                                  &
+      type(c_ptr), intent(out) :: p_ngaze, p_ngazg, p_nato, p_nrgaz, p_iic,    &
                                   p_wmolg, p_wmole, p_xco2, p_xh2o, p_ckabs1
     end subroutine cs_f_ppthch_get_pointers
 
@@ -216,12 +217,17 @@ contains
 
     ! Local variables
 
-    type(c_ptr) :: p_iic, p_wmole, p_wmolg, p_xco2, p_xh2o, p_ckabs1
+    type(c_ptr) :: p_ngaze, p_ngazg, p_nato, p_nrgaz, p_iic
+    type(c_ptr) :: p_wmole, p_wmolg, p_xco2, p_xh2o, p_ckabs1
 
-    call cs_f_ppthch_get_pointers(p_iic,                        &
-                                  p_wmole, p_wmolg,             &
+    call cs_f_ppthch_get_pointers(p_ngaze, p_ngazg, p_nato, p_nrgaz, p_iic,  &
+                                  p_wmole, p_wmolg,                          &
                                   p_xco2, p_xh2o, p_ckabs1)
 
+    call c_f_pointer(p_ngaze, ngaze)
+    call c_f_pointer(p_ngazg, ngazg)
+    call c_f_pointer(p_nato, nato)
+    call c_f_pointer(p_nrgaz, nrgaz)
     call c_f_pointer(p_iic, iic)
     call c_f_pointer(p_wmole, wmole, [ngazem])
     call c_f_pointer(p_wmolg, wmolg, [ngazgm])
