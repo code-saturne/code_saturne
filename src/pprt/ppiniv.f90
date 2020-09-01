@@ -72,10 +72,8 @@ double precision dt(ncelet)
 
 ! ---> Combustion gaz
 !      Flamme de diffusion : chimie 3 points
-if ( ippmod(icod3p).ge.0 ) then
-  call d3pini                                                     &
-    ( nvar   , nscal  ,                                              &
-    dt     )
+if (ippmod(icod3p).ge.0) then
+  call d3pini(nvar, nscal, dt)
 endif
 
 ! ---> Combustion gaz
@@ -106,27 +104,13 @@ endif
 
 ! ---> Combustion fuel
 
-if  (ippmod(icfuel).ge.0) then
+if (ippmod(icfuel).ge.0) then
   call cs_fuel_varini(nvar, nscal, dt)
-endif
-
-! ---> Version electrique
-!      Effet Joule
-!      Conduction ionique
-
-if ( ippmod(ieljou).ge.1 .or.                                     &
-     ippmod(ielarc).ge.1       ) then
-
-  call eliniv(isuite)
 endif
 
 ! Atmospheric flows, first stage
 if (ippmod(iatmos).ge.0) then
-
-  call atiniv0                                                     &
- ( nvar   , nscal  ,                                              &
-   dt     )
-
+  call atiniv0(nvar, nscal, dt)
 endif
 
 ! ---> Cooling towers
@@ -199,13 +183,15 @@ double precision dt(ncelet)
 
 !===============================================================================
 
+! Electric arcs, Joule effect or ionic conduction
+
+if (ippmod(ieljou).ge.1 .or. ippmod(ielarc).ge.1) then
+  call eliniv(isuite)
+endif
+
 ! Atmospheric flows, second stage
 if (ippmod(iatmos).ge.0) then
-
-  call atiniv1                                                     &
- ( nvar   , nscal  ,                                              &
-   dt     )
-
+  call atiniv1(nvar, nscal, dt)
 endif
 
 ! ---> Cooling towers
@@ -216,9 +202,7 @@ endif
 ! Gas mixture modelling in presence of noncondensable gases and
 ! condensable gas as stream.
 if (ippmod(igmix).ge.0) then
-  call cs_gas_mix_initialization &
-  ( nvar   , nscal  ,                                            &
-    dt     )
+  call cs_gas_mix_initialization(nvar, nscal, dt)
 endif
 
 ! Compressible
