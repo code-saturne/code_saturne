@@ -73,17 +73,17 @@ character(len=12) :: nomgaz
 
 integer          it, igg, ir, ige, iat, ios, igf, igo, igp
 integer          ncgm, nrgm
-integer          inicoe , inicha
-integer          idebch , ifinch , lonch
-integer          ichai , ichcoe
-integer          atgaze(ngazem,natom)
+integer          inicoe, inicha
+integer          idebch, ifinch, lonch
+integer          ichai, ichcoe
+integer          atgaze(ngazem, natom)
 integer          iereac(ngazem)
 integer          ncoel
 integer          mode, icalck
 
-double precision tmin , tmax
+double precision tmin, tmax
 double precision kabse(ngazem)
-double precision wmolce (ngazem)
+double precision wmolce(ngazem)
 double precision cpgaze(ngazem,npot)
 double precision coefg(ngazgm), tgaz, efgaz(ngazgm)
 double precision mfuel, mreac, epsi, nmolg, bilan
@@ -109,11 +109,9 @@ moxyd = 0.d0
 
 epsi = 1.d-9
 
-
 if (indjon.ne.1.and.indjon.ne.0) then
-  write(nfecra,9900) indjon
-  call csexit (1)
-  !==========
+  write(nfecra, 9900) indjon
+  call csexit(1)
 endif
 
 !===============================================================================
@@ -122,72 +120,68 @@ endif
 
 if (indjon.eq.1) then
 
+  ! 1.1 LECTURE DU FICHIER DONNEES SPECIFIQUES
+  !===========================================
 
-! 1.1 LECTURE DU FICHIER DONNEES SPECIFIQUES
-!===================================================
+  ! --> Ouverture du fichier
 
-! --> Ouverture du fichier
+  open(unit=impfpp, file=ficfpp, status='old', form='formatted',    &
+       access='sequential', iostat=ios, err=99)
+  rewind(unit=impfpp, err=99)
 
-  open ( unit=impfpp, file=ficfpp,                                &
-          STATUS='OLD', FORM='FORMATTED', ACCESS='SEQUENTIAL',    &
-                                          iostat=ios, err=99 )
-  rewind ( unit=impfpp,err=99 )
+  ! --> On se limite pour l'instant a de la combustion gaz
+  !     Plus exactement a une flamme de diffusion chimie 3 corps
+  !                  et a une flamme de premelange modele EBU
+  !     --------------------------------------------------------
 
-! --> On se limite pour l'instant a de la combustion gaz
-!     Plus exactement a une flamme de diffusion chimie 3 corps
-!                  et a une flamme de premelange modele EBU
-!     --------------------------------------------------------
+  ! --> Lecture des donnees
 
-! --> Lecture des donnees
+  ! ---- Nb de constituants gazeux elementaires
 
-! ---- Nb de constituants gazeux elementaires
-
-  read ( impfpp,*,err=999,end=999 ) ngaze
-  if ( ngaze.gt.ngazem ) then
-    write(nfecra,9980) ngazem,ngaze
-    call csexit (1)
-    !==========
+  read(impfpp, *, err=999, end=999 ) ngaze
+  if (ngaze.gt.ngazem) then
+    write(nfecra,9980) ngazem, ngaze
+    call csexit(1)
   endif
 
-! ---- Nb de points de tabulation ENTH-TEMP
+  ! ---- Nb de points de tabulation ENTH-TEMP
 
-  read ( impfpp,*,err=999,end=999 ) npo
-  if ( npo.gt.npot ) then
+  read(impfpp, *, err=999, end=999) npo
+  if (npo.gt.npot) then
     write(nfecra,9981) npot, npo
-    call csexit (1)
-    !==========
+    call csexit(1)
   endif
 
-! --- Temperature Min et Max
+  ! --- Temperature Min et Max
 
-  read (impfpp,*,err=999,end=999) tmin
-  read (impfpp,*,err=999,end=999) tmax
+  read(impfpp,*,err=999,end=999) tmin
+  read(impfpp,*,err=999,end=999) tmax
 
-! ---- Lecture des noms des constituants elementaires gazeux
+  ! ---- Lecture des noms des constituants elementaires gazeux
 
   do ige=1 , ngaze
     do inicoe=1,len(nomcoe(ige))
-      NOMCOE(IGE)(INICOE:INICOE)=' '
+      nomcoe(ige)(inicoe:inicoe) = ' '
     enddo
   enddo
 
   do inicha=1,len(chain1)
-    CHAIN1(INICHA:INICHA)=' '
+    chain1(inicha:inicha) = ' '
   enddo
 
   do inicha=1,len(chain2)
-    CHAIN2(INICHA:INICHA)=' '
+    chain2(inicha:inicha) = ' '
   enddo
 
-  read ( impfpp,*,err=999,end=999 )
-  read ( impfpp,1010,err=999,end=999 ) chain1
-  call verlon (chain1 , idebch , ifinch , lonch)
-  chain2(1:lonch)=chain1(idebch:ifinch)
+  read(impfpp, *, err=999, end=999)
+  read(impfpp, 1010, err=999, end=999) chain1
+  call verlon(chain1, idebch, ifinch, lonch)
+  chain2(1:lonch) = chain1(idebch:ifinch)
 
-  ige   =1
-  ichcoe=0
+  ige = 1
+  ichcoe = 0
   do ichai = 1, lonch
-    IF (CHAIN2(ICHAI:ICHAI).NE.' ') THEN
+    if (chain2(ichai:ichai).ne.' ') then
       ichcoe=ichcoe+1
       nomcoe(ige)(ichcoe:ichcoe)=chain2(ichai:ichai)
     else
@@ -205,15 +199,14 @@ if (indjon.eq.1) then
 
   1010 format(a150)
 
+  ! ---- Rayonnement
 
-! ---- Rayonnement
+  ! FIXME ce test n'a plus sa place ici, iirayo n'est plus fixe
+  ! dans le fichier de thermochimie
 
-! FIXME ce test n'a plus sa place ici, iirayo n'est plus fixe
-! dans le fichier de thermochimie
-
-! Le rayonnement n'est autorise qu'avec des modeles permeatiques,
-! car en adiabatique l'enthalpie est une grandeur algebrique qui
-! ne prend pas en compte les pertes par rayonnement.
+  ! Le rayonnement n'est autorise qu'avec des modeles permeatiques,
+  ! car en adiabatique l'enthalpie est une grandeur algebrique qui
+  ! ne prend pas en compte les pertes par rayonnement.
 
   if ( iirayo.gt.0 .and. ippmod(icod3p).ne.1                      &
        .and. ippmod(icoebu).ne.1 .and. ippmod(icoebu).ne.3        &
@@ -224,32 +217,32 @@ if (indjon.eq.1) then
     call csexit (1)
   endif
 
-! ---- Coefficient d'absorption des especes courantes
+  ! ---- Coefficient d'absorption des especes courantes
 
-  read (impfpp,*,err=999,end=999 ) ( kabse(ige),ige=1,ngaze )
+  read(impfpp, *, err=999, end=999) (kabse(ige), ige = 1, ngaze)
 
-! ---- Nb especes atomiques (C, H, O, N, ...)
+  ! ---- Nb especes atomiques (C, H, O, N, ...)
 
-  read (impfpp,*,err=999,end=999 ) nato
-  if ( nato.gt.natom ) then
-    write(nfecra,9983) natom,nato
-    call csexit (1)
+  read(impfpp, *, err=999, end=999) nato
+  if (nato.gt.natom) then
+    write(nfecra,9983) natom, nato
+    call csexit(1)
   endif
 
-! ---- Masse molaire especes atomiques
-!      Composition des especes courantes en fonction des especes
-!        elementaires
+  ! ---- Masse molaire especes atomiques
+  !      Composition des especes courantes en fonction des especes
+  !        elementaires
 
   do iat = 1, nato
-    read (impfpp,*,err=999,end=999 ) wmolat(iat),                 &
-                      ( atgaze(ige,iat),ige=1,ngaze )
+    read(impfpp,*,err=999,end=999 ) wmolat(iat),                 &
+         (atgaze(ige, iat), ige = 1, ngaze)
   enddo
 
-! ---- Nb especes globales
+  ! ---- Nb especes globales
 
   ! lecture du nombre d'especes globales dont la composition est connue
   ! souvent fuel et oxydant
-  read (impfpp,*,err=999,end=999 ) ngazg
+  read(impfpp,*,err=999,end=999 ) ngazg
   ! On ne considere qu'UNE SEULE REACTION GLOBALE
   !   NGAZG = NCGM = 3 par consequent (F, O, P)
   ncgm = 3
@@ -258,7 +251,7 @@ if (indjon.eq.1) then
   ! soit on calcule l'equilibre et l'utilisateur doit donner les deux especes
   ! globales reactives
   if (ngazg.lt.2.or.ngazg.gt.ncgm) then
-    write(nfecra,9985) ncgm,ngazg
+    write(nfecra,9985) ncgm, ngazg
     call csexit (1)
   endif
 
@@ -269,10 +262,9 @@ if (indjon.eq.1) then
 
   if (ngazg.eq.3) then
 
-    ! ---- Composition des especes globales en fonction des especes
-    !      courantes
+    ! Composition des especes globales en fonction des especes courantes
     do igg = 1, ngazg
-      read (impfpp,*,err=999,end=999) (compog(ige,igg),ige=1,ngaze)
+      read (impfpp, *, err=999, end=999) (compog(ige,igg), ige = 1, ngaze)
     enddo
 
     ! ----- Nb de reactions globales
@@ -290,8 +282,8 @@ if (indjon.eq.1) then
     ! igoxy (ir) : espece global oxydant de la reaction ir
     ! igprod(ir) : espece global produit de la reaction ir
     do ir = 1, nrgaz
-      read (impfpp,*,err=999,end=999 )                              &
-          igfuel(ir),igoxy(ir),( stoeg(igg,ir),igg=1,ngazg )
+      read(impfpp, *, err=999, end=999)                             &
+           igfuel(ir), igoxy(ir), (stoeg(igg,ir), igg = 1, ngazg)
     enddo
     ! Produit
     igprod(1) = 3
@@ -348,14 +340,14 @@ if (indjon.eq.1) then
 
   endif
 
-! --> Fermeture du fichier
+  ! --> Fermeture du fichier
 
   close(impfpp)
 
-! 1.2 CALCULS DE DONNEES COMPLEMENTAIRES
-!===============================================
+  ! 1.2 CALCULS DE DONNEES COMPLEMENTAIRES
+  !===============================================
 
-! ---- Calcul des masses molaires des especes courantes
+  ! ---- Calcul des masses molaires des especes courantes
 
   do ige = 1, ngaze
     wmole(ige) = 0.d0
@@ -495,35 +487,32 @@ if (indjon.eq.1) then
   1 format(a,1x,a,1x,a)
   2 format(a,1x,f6.3,1X,a,1x,a)
 
-! --- Discretisation de la temperature
+  ! --- Discretisation de la temperature
 
   do it = 1, npo
     th(it) = dble(it-1)*(tmax-tmin)/dble(npo-1)+tmin
   enddo
 
-! ---Calcul des enthalpies par appel a la subroutine PPTBHT
+  ! ---Calcul des enthalpies par appel a la subroutine PPTBHT
 
   ncoel  = ngaze
   do ige = 1, ngaze
     wmolce(ige) = wmole (ige)
   enddo
 
-  call pptbht                                                     &
-  !==========
- ( ncoel ,                                                        &
-  nomcoe , ehgaze , cpgaze , wmolce )
+  call pptbht(ncoel, nomcoe, ehgaze, cpgaze, wmolce)
 
-! ---- Calcul des masses molaires des especes globales
-!          de la tabulation temperature - enthalpie massique
-!          et des coefficients d'absorption des especes globales
-!             si RAYONNEMENT
+  ! Calcul des masses molaires des especes globales
+  ! de la tabulation temperature - enthalpie massique
+  ! et des coefficients d'absorption des especes globales
+  ! si RAYONNEMENT
 
   icalck = 0
   if ((ippmod(icod3p).eq.1.or.                           &
        ippmod(icoebu).eq.1.or.ippmod(icoebu).eq.3.or.    &
        ippmod(icolwc).eq.1.or.ippmod(icolwc).eq.3.or.    &
        ippmod(icolwc).eq.5 ).and.iirayo.ge.1) then
-     icalck = 1
+    icalck = 1
   endif
 
   do igg = 1 , ngazg
@@ -559,36 +548,34 @@ if (indjon.eq.1) then
     enddo
   enddo
 
-! ---- Calcul des coefficients molaires XCO2 , XH2O
+  ! Calcul des coefficients molaires XCO2, XH2O
 
   do ige = 1 , ngaze
     nomgaz = nomcoe(ige)
-    IF (trim(nomgaz).EQ.'C(S)') IIC=IGE
-    IF (trim(nomgaz).EQ.'CO'  ) IICO=IGE
-    IF (trim(nomgaz).EQ.'O2'  ) IIO2=IGE
-    IF (trim(nomgaz).EQ.'CO2' ) IICO2=IGE
-    IF (trim(nomgaz).EQ.'H2O' ) IIH2O=IGE
+    if (trim(nomgaz).EQ.'C(S)') IIC=IGE
+    if (trim(nomgaz).EQ.'CO'  ) IICO=IGE
+    if (trim(nomgaz).EQ.'O2'  ) IIO2=IGE
+    if (trim(nomgaz).EQ.'CO2' ) IICO2=IGE
+    if (trim(nomgaz).EQ.'H2O' ) IIH2O=IGE
   enddo
 
   xco2 =  compog(iico2,3)
   xh2o =  compog(iih2o,3)
 
-! ---- Calcul bilan pour verification
-!        et taux de melange a la stochio pour chaque reaction
+  ! Calcul bilan pour verification
+  ! et taux de melange a la stochio pour chaque reaction
 
   do ir = 1, nrgaz
     do iat = 1, nato
       bilan = 0.d0
       do igg = 1, ngazg
         do ige = 1, ngaze
-          bilan = bilan                                           &
-              + stoeg(igg,ir)*compog(ige,igg)*atgaze(ige,iat)
+          bilan = bilan + stoeg(igg,ir)*compog(ige,igg)*atgaze(ige,iat)
         enddo
       enddo
-      if ( abs(bilan) .gt. epsi ) then
+      if (abs(bilan) .gt. epsi) then
         write(nfecra,9991) ir, iat
-        call csexit (1)
-        !==========
+        call csexit(1)
       endif
     enddo
     mfuel = stoeg(igfuel(ir),ir)*wmolg(igfuel(ir))
@@ -597,16 +584,14 @@ if (indjon.eq.1) then
     fs(ir) = mfuel/mreac
   enddo
 
-! ---- Calcul des coefficients de la fraction massique d'oxydant
-!      du programme pdflwc
+  ! Calcul des coefficients de la fraction massique d'oxydant
+  ! du programme pdflwc
 
   coeff1 = compog(2,2)*wmole(2)/wmolg(2)
-
-  coeff3 =   moxyd / mfuel
-
+  coeff3 = moxyd / mfuel
   coeff2 = coeff3*coeff1
 
-  ! --- Conversion coefficients from global species to elementary species
+  ! Conversion coefficients from global species to elementary species
 
   do igg = 1, ngazg
     do ige = 1, ngaze
@@ -614,7 +599,7 @@ if (indjon.eq.1) then
     enddo
   enddo
 
-  ! --- PCI calculation
+  ! PCI calculation
 
   ! gas name storage
   namgas = nomcoe(1)
@@ -633,11 +618,8 @@ if (indjon.eq.1) then
       tgaz      = 300.d0
 
       mode = -1
-      call cothht                                                   &
-      !==========
-        ( mode   , ngazg , ngazgm  , coefg  ,                     &
-          npo    , npot   , th     , ehgazg ,                     &
-          efgaz(igg)      , tgaz   )
+      call cothht(mode, ngazg, ngazgm, coefg,                 &
+                  npo, npot, th, ehgazg, efgaz(igg), tgaz)
 
       pcigas = pcigas + stoeg(igg,ir)*wmolg(igg)*efgaz(igg)
 
@@ -654,74 +636,69 @@ if (indjon.eq.1) then
 
 else
 
-  open ( unit=impfpp, file=ficfpp,                                &
-          STATUS='OLD', FORM='FORMATTED', ACCESS='SEQUENTIAL',    &
-                                          iostat=ios, err=99 )
-  rewind ( unit=impfpp,err=99 )
+  open (unit=impfpp, file=ficfpp, status='old', form='formatted',  &
+        access='sequential', iostat=ios, err=99)
+  rewind (unit=impfpp, err=99)
 
-! ---- Nb de points de tabulation ENTH-TEMP
+  ! Nb de points de tabulation ENTH-TEMP
 
-  read ( impfpp,*,err=999,end=999 ) npo
-  if ( npo.gt.npot ) then
-    write(nfecra,9981) npot, npo
+  read(impfpp, *, err=999, end=999) npo
+  if (npo.gt.npot) then
+    write(nfecra, 9981) npot, npo
     call csexit (1)
-    !==========
   endif
 
-! --- Tabulation ENTH-TEMP pour les especes globales
+  ! Tabulation ENTH-TEMP pour les especes globales
 
   do it = 1, npo
-    read (impfpp,*,err=999,end=999) th(it),                       &
+    read(impfpp, *, err=999, end=999) th(it),                       &
                  ehgazg(1,it),ehgazg(2,it),ehgazg(3,it)
   enddo
 
-!       On ne considere qu'UNE SEULE REACTION GLOBALE
-!         NGAZG = NCGM = 3 par consequent (F, O, P)
+  ! On ne considere qu'UNE SEULE REACTION GLOBALE
+  ! NGAZG = NCGM = 3 par consequent (F, O, P)
   ngazg = 3
 
-!       On ne considere qu'UNE SEULE REACTION GLOBALE
+  ! On ne considere qu'UNE SEULE REACTION GLOBALE
   nrgaz = 1
 
-! --- Masses molaires pour les especes globales
+  ! Masses molaires pour les especes globales
 
   read (impfpp,*,err=999,end=999) wmolg(1),wmolg(2),wmolg(3)
 
-! --- Fraction de melange a la stoechiometrie
+  ! Fraction de melange a la stoechiometrie
 
   read (impfpp,*,err=999,end=999) fs(1)
 
-  ! --- Rayonnement
+  ! Rayonnement
 
   ! FIXME ce test n'a plus sa place ici, iirayo n'est plus fixe
   ! dans le fichier de thermochimie
 
-  if ( iirayo.gt.0 .and. ippmod(icod3p).ne.1                      &
-       .and. ippmod(icoebu).ne.1 .and. ippmod(icoebu).ne.3        &
-       .and. ippmod(icolwc).ne.1 .and. ippmod(icolwc).ne.3        &
-       .and. ippmod(icolwc).ne.5 ) then
-    write(nfecra,9982)                                            &
+  if (iirayo.gt.0 .and. ippmod(icod3p).ne.1                      &
+      .and. ippmod(icoebu).ne.1 .and. ippmod(icoebu).ne.3        &
+      .and. ippmod(icolwc).ne.1 .and. ippmod(icolwc).ne.3        &
+      .and. ippmod(icolwc).ne.5) then
+    write(nfecra,9982)                                           &
          iirayo,ippmod(icod3p),ippmod(icoebu),ippmod(icolwc)
-    call csexit (1)
-    !==========
+    call csexit(1)
   endif
 
-! --- Coefficients d'absorption des especes globales
+  ! Coefficients d'absorption des especes globales
 
   read (impfpp,*,err=999,end=999) ckabsg(1),ckabsg(2),ckabsg(3)
 
-! --- Coefficients molaires de CO2 et H2O dans les produits
-!      (pour le rayonnement)
+  ! Coefficients molaires de CO2 et H2O dans les produits
+  ! (pour le rayonnement)
 
   read (impfpp,*,err=999,end=999) xco2, xh2o
 
+  ! Fermeture du fichier
 
-! ---> Fermeture du fichier
+  close(impfpp)
 
-  close (impfpp)
-
-
-! ---- Calcul des coefficients de la fraction massique d oxydant
-!      on considère que l'oxydant est un mélange d'O2 et N2
+  ! Calcul des coefficients de la fraction massique d oxydant
+  ! on considère que l'oxydant est un mélange d'O2 et N2
 
   coeff1 = ((wmolg(2)-0.028)/(0.032-0.028))* (0.032/wmolg(2))
 
@@ -729,7 +706,7 @@ else
 
   coeff2 = coeff3*coeff1
 
-  ! --- Conversion coefficients from global species to elementary species
+  ! Conversion coefficients from global species to elementary species
 
   do igg = 1, ngazg
     do ige = 1, ngaze
@@ -773,7 +750,6 @@ else
 
 endif
 
-
 return
 
 !============================
@@ -781,271 +757,218 @@ return
 !============================
 
   99  continue
-write ( nfecra,9992 )
-call csexit (1)
-!==========
+write(nfecra, 9992)
+call csexit(1)
 
   999 continue
-write ( nfecra,9993 )
-call csexit (1)
-!==========
-
+write(nfecra, 9993)
+call csexit(1)
 
 !--------
-! FORMATS
+! Formats
 !--------
 
-
- 9900 format(                                                           &
-'@                                                            ',/,&
+ 9900 format(                                                     &
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (COLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (COMBUSTION GAZ)                ',/,&
-'@                                                            ',/,&
-'@  L''indicateur INDJON doit etre un entier de valeur        ',/,&
-'@    1 (utilisation de Janaf) ou 0 (tabulation utilisateur). ',/,&
-'@                                                            ',/,&
-'@  Il vaut ici ',I10                                          ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier INDJON dans usppmo.                              ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ERROR:   STOP WHILE READING INPUT DATA (COLECD)',         /,&
+'@    =====',                                                   /,&
+'@             GAS COMBUSTION',                                 /,&
+'@',                                                            /,&
+'@  The INDJON indicator must have value 1 (use Janaf)',        /,&
+'@    or 0 (user tabulation).',                                 /,&
+'@',                                                            /,&
+'@  Its current value is', i10                                  /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9980 format(                                                           &
-'@                                                            ',/,&
+'@',                                                            /)
+ 9980 format(                                                     &
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (COLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (COMBUSTION GAZ)                ',/,&
-'@                                                            ',/,&
-'@  Le nombre d''especes courantes doit etre ',I10             ,/,&
-'@   Il vaut ',I10   ,' dans le fichier parametrique          ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ERROR:   STOP WHILE READING INPUT DATA (COLECD)',         /,&
+'@    =====',                                                   /,&
+'@             GAS COMBUSTION',                                 /,&
+'@',                                                            /,&
+'@  The number of current species must be ', i10,               /,&
+'@   Its value is ', i10, ' in the parameters file.',           /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9981 format(                                                           &
-'@                                                            ',/,&
+'@',                                                            /)
+ 9981 format(                                                     &
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (COLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (COMBUSTION GAZ)                ',/,&
-'@                                                            ',/,&
-'@  Le nombre de points de tabulation est limite a ',I10       ,/,&
-'@   Il vaut ',I10   ,' dans le fichier parametrique          ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ERROR:   STOP WHILE READING INPUT DATA (COLECD)',         /,&
+'@    =====',                                                   /,&
+'@             GAS COMBUSTION',                                 /,&
+'@',                                                            /,&
+'@  The number of tabulation points is limited to ', i10,       /,&
+'@   Its value is ', i10, ' in the parameters file.',           /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9982 format(                                                           &
-'@                                                            ',/,&
+'@',                                                            /)
+ 9982 format(                                                     &
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (COLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (COMBUSTION GAZ)                ',/,&
-'@                                                            ',/,&
-'@  LE RAYONNEMENT NE PEUT ETRE ACTIVE QU''AVEC UN MODELE DE  ',/,&
-'@   COMBUSTION EN CONDITIONS PERMEATIQUES.                   ',/,&
-'@                                                            ',/,&
-'@  Un mode de rayonnement a ete specifie                     ',/,&
-'@   IIRAYO = ',I10                                            ,/,&
-'@  Or dans usppmo on a :                                     ',/,&
-'@   IPPMOD(ICOD3P) = ',I10                                    ,/,&
-'@   IPPMOD(ICOEBU) = ',I10                                    ,/,&
-'@   IPPMOD(ICOLWC) = ',I10                                    ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique et usppmo.               ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ERROR:   STOP WHILE READING INPUT DATA (COLECD)',         /,&
+'@    =====',                                                   /,&
+'@             GAS COMBUSTION',                                 /,&
+'@',                                                            /,&
+'@  The radiation model can only be activated with a',          /,&
+'@   combustion model in permeatic conditions.',                /,&
+'@',                                                            /,&
+'@  A radiation model was specified:',                          /,&
+'@   iirayo = ', i10,                                           /,&
+'@  But we have:',                                              /,&
+'@   ippmod(icod3p) = ', i10,                                   /,&
+'@   ippmod(icoebu) = ', i10,                                   /,&
+'@   ippmod(icolwc) = ', i10,                                   /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9983 format(                                                           &
-'@                                                            ',/,&
+'@',                                                            /)
+ 9983 format(                                                     &
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (COLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (COMBUSTION GAZ)                ',/,&
-'@                                                            ',/,&
-'@  Le nombre d''especes elementaires est limite a ',I10       ,/,&
-'@   Il vaut ',I10   ,' dans le fichier parametrique          ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ERROR:   STOP WHILE READING INPUT DATA (COLECD)',         /,&
+'@    =====',                                                   /,&
+'@             GAS COMBUSTION',                                 /,&
+'@',                                                            /,&
+'@  The number of elementary species must be ', i10,            /,&
+'@   Its value is ', i10, ' in the parameters file.',           /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9984 format(                                                           &
-"@                                                            ",/,&
-"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",/,&
-"@                                                            ",/,&
-"@ @@ ATTENTION : ARRET A L'ENTREE DES DONNEES (COLECD)       ",/,&
-"@    =========                                               ",/,&
-"@      PHYSIQUE PARTICULIERE (COMBUSTION GAZ)                ",/,&
-"@                                                            ",/,&
-"@  Le nombre d'especes courantes est fixe a ",I10             ,/,&
-"@  or seulement ",I10   ," especes courantes sont listees    ",/,&
-"@  dans le fichier parametrique.                             ",/,&
-"@                                                            ",/,&
-"@  Le calcul ne sera pas execute.                            ",/,&
-"@                                                            ",/,&
-"@  Verifier le fichier parametrique.                         ",/,&
-"@                                                            ",/,&
+'@',                                                            /)
+ 9984 format(                                                     &
+'@',                                                            /,&
+'@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
+'@',                                                            /,&
+'@ @@ ERROR:   STOP WHILE READING INPUT DATA (COLECD)',         /,&
+'@    =====',                                                   /,&
+'@             GAS COMBUSTION',                                 /,&
+'@',                                                            /,&
+'@  The number of current species is set to ', i10,             /,&
+'@  but only ', i10, ' current species are listed',             /,&
+'@  in the parameters file.',                                   /,&
+'@',                                                            /,&
 "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@",/,&
 "@                                                            ",/)
- 9985 format(                                                           &
-'@                                                            ',/,&
+ 9985 format(                                                     &
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (COLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (COMBUSTION GAZ)                ',/,&
-'@                                                            ',/,&
-"@  Le nombre d'especes globales ne peut etre egal qu'a ",I10  ,/,&
-"@  (equilibre automatique de la reaction) ou ",I10            ,/,&
-"@  (composition des produits connue).                        ",/,&
-"@  Il vaut ",I10," dans le fichier parametrique.             ",/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ERROR:   STOP WHILE READING INPUT DATA (COLECD)',         /,&
+'@    =====',                                                   /,&
+'@             GAS COMBUSTION',                                 /,&
+'@',                                                            /,&
+'@  The number of global species can only be equal to ', i10,   /,&
+'@  (automatic reaction balance) or ', i10,                     /,&
+'@  (composition of known products).',                          /,&
+'@   Its value is ', i10, ' in the parameters file.',           /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9987 format(                                                           &
-'@                                                            ',/,&
+'@',                                                            /)
+ 9987 format(                                                     &
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (COLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (COMBUSTION GAZ)                ',/,&
-'@                                                            ',/,&
-"@  Les especes dont la part est specifiee doivent etre       ",/,&
-"@  positionnees en dernier dans les produits.                ",/,&
-"@  L'espece elementaire ",a6," est a la position ",i6         ,/,&
-"@  dans la composition de l'espece globale produit dans le   ",/,&
-"@  fichier parametrique.                                     ",/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ERROR:   STOP WHILE READING INPUT DATA (COLECD)',         /,&
+'@    =====',                                                   /,&
+'@             GAS COMBUSTION',                                 /,&
+'@',                                                            /,&
+'@  The species whose part is specified must be positionned',   /,&
+'@  last among the products.',                                  /,&
+'@  The elementary species ', a6, 'is at position ', i6,        /,&
+'@  in the compositions of the global species product in the',  /,&
+'@  parameters file.',                                          /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9988 format(                                                           &
-'@                                                            ',/,&
+'@',                                                            /)
+ 9988 format(                                                     &
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (COLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (COMBUSTION GAZ)                ',/,&
-'@                                                            ',/,&
-"@  Le nombre de moles dans l'espece globale ",i6,"           ",/,&
-"@  vaut ",f10.4," .                                          ",/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ERROR:   STOP WHILE READING INPUT DATA (COLECD)',         /,&
+'@    =====',                                                   /,&
+'@             GAS COMBUSTION',                                 /,&
+'@',                                                            /,&
+'@  The number of moles in the global species ', i6,            /,&
+'@  is ', f10.4, '.',                                           /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9989 format(                                                           &
-'@                                                            ',/,&
+'@',                                                            /)
+ 9989 format(                                                     &
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (COLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (COMBUSTION GAZ)                ',/,&
-'@                                                            ',/,&
-"@  L'espece elementaire reactive ", I10," n'est pas presente ",/,&
-"@  dans l'espece globale ",I10,".                            ",/,&
-"@  Sa proportion vaut ",f10.4," dans le fichier parametrique.",/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ERROR:   STOP WHILE READING INPUT DATA (COLECD)',         /,&
+'@    =====',                                                   /,&
+'@             GAS COMBUSTION',                                 /,&
+'@',                                                            /,&
+'@  The reactive elementary species ', i10, 'is not present',   /,&
+'@  in the global species ', i10, '.',                          /,&
+'@  Its ratio is ', f10.4, ' in the parameters file.',          /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9990 format(                                                           &
-'@                                                            ',/,&
+'@',                                                            /)
+ 9990 format(                                                     &
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (COLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (COMBUSTION GAZ)                ',/,&
-'@                                                            ',/,&
-'@  Le nombre de reactions globales doit etre ',I10            ,/,&
-'@   Il vaut ',I10   ,' dans le fichier parametrique          ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ERROR:   STOP WHILE READING INPUT DATA (COLECD)',         /,&
+'@    =====',                                                   /,&
+'@             GAS COMBUSTION',                                 /,&
+'@',                                                            /,&
+'@  The number of global reactions must be ', i10,              /,&
+'@   Its value is ', i10, ' in the parameters file.',           /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9991 format(                                                           &
-'@                                                            ',/,&
+'@',                                                            /)
+ 9991 format(                                                     &
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (COLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (COMBUSTION GAZ)                ',/,&
-'@                                                            ',/,&
-'@  Probleme de conservation rencontre dans la                ',/,&
-'@   reaction ',I10   ,' pour l''element ',I10                 ,/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
-'@  Verifier le fichier parametrique.                         ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ERROR:   STOP WHILE READING INPUT DATA (COLECD)',         /,&
+'@    =====',                                                   /,&
+'@             GAS COMBUSTION',                                 /,&
+'@',                                                            /,&
+'@  Conservation problem encountered in reaction ', i10,        /,&
+'@   for element ', i10,                                        /,&
+'@',                                                            /,&
+'@  Check the parameters file.',                                /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
 
- 9992 format(                                                           &
-'@                                                            ',/,&
+ 9992 format(                                                     &
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (COLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (COMBUSTION GAZ)                ',/,&
-'@                                                            ',/,&
-'@  Erreur a l''ouverture du fichier parametrique.            ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ERROR:   STOP WHILE READING INPUT DATA (COLECD)',         /,&
+'@    =====',                                                   /,&
+'@             GAS COMBUSTION',                                 /,&
+'@',                                                            /,&
+'@  Error opening the parameters file.',                        /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
- 9993 format(                                                           &
-'@                                                            ',/,&
+'@',                                                            /)
+ 9993 format(                                                     &
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/,&
-'@ @@ ATTENTION : ARRET A L''ENTREE DES DONNEES (COLECD)      ',/,&
-'@    =========                                               ',/,&
-'@      PHYSIQUE PARTICULIERE (COMBUSTION GAZ)                ',/,&
-'@                                                            ',/,&
-'@  Erreur a la lecture du fichier parametrique.              ',/,&
-'@    Le fichier a ete ouvert mais est peut etre incomplet    ',/,&
-'@    ou son format inadapte.                                 ',/,&
-'@                                                            ',/,&
-'@  Le calcul ne sera pas execute.                            ',/,&
-'@                                                            ',/,&
+'@',                                                            /,&
+'@ @@ ERROR:   STOP WHILE READING INPUT DATA (COLECD)',         /,&
+'@    =====',                                                   /,&
+'@             GAS COMBUSTION',                                 /,&
+'@',                                                            /,&
+'@  Error reading the parameters file.',                        /,&
+'@    It may be incomplete or incorrectly formatted.',          /,&
+'@',                                                            /,&
 '@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@',/,&
-'@                                                            ',/)
+'@',                                                            /)
 
-end subroutine
+end subroutine colecd
 
 
