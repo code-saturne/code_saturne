@@ -75,16 +75,17 @@ class BrowserView(SaturneBrowserView):
 
         SaturneBrowserView.__init__(self, parent)
         tree = self._browser()
-        self.model = TreeModel(str(tree))
+        self.model = TreeModel(tree)
 
         self.treeView.setModel(self.model)
 
     def _browser(self):
-        tree ="""
-Paths
-Manage cases
-Define plotter
-"""
+        tree = [TreeItem(['Pages'], 'folder')]
+
+        for section in ("Paths", "Manage cases", "Define plotter"):
+            section_item = TreeItem([section], typename='folder-new', parent=tree[0])
+            tree[0].appendChild(section_item)
+
         return tree
 
 
