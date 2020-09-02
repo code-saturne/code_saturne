@@ -3,6 +3,8 @@ Release 6.2.1 (unreleased)
 
 Bug fixes:
 
+- Fix non-wall radiative conditions for combustion (non-atmospheric) cases.
+
 - Fix run for builds without MPI.
 
 Architectural changes:
