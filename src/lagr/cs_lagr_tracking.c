@@ -1642,21 +1642,21 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
 
       if (extra->cvar_rij == NULL) {
 
-        particle_velocity_seen[0] -= -2. * tmp * face_norm[2];
-        particle_velocity_seen[2] -= 2. * tmp * face_norm[2];
-      
+        for (int k = 0; k < 3; k++)
+          particle_velocity_seen[k] -= tmp * face_norm[k];
+
       } 
       else {
 
         particle_velocity_seen[0] -=
-            2. * tmp * face_norm[2] * (-pow(ustar, 2)) /
+            tmp * face_norm[2] * (-pow(ustar, 2)) /
             extra->cvar_rij->vals[iprev][6 * cell_id + 2];
 
         particle_velocity_seen[1] -=
-            2. * tmp * face_norm[2] * (-pow(ustar, 2)) /
+            tmp * face_norm[2] * (-pow(ustar, 2)) /
             extra->cvar_rij->vals[iprev][6 * cell_id + 2];
 
-        particle_velocity_seen[2] -= 2 * tmp * face_norm[2];
+        particle_velocity_seen[2] -= tmp * face_norm[2];
       
       }
 
@@ -1664,12 +1664,12 @@ _boundary_treatment(cs_lagr_particle_set_t    *particles,
     else if (extra->iturb == 20 || extra->iturb == 21) {
 
       const cs_real_t *cvar_k = CS_F_(k)->val;
-      
-      particle_velocity_seen[0] -= 2 * tmp * face_norm[2] * (-pow(ustar, 2)) /
-                                   (2 / 3 * cvar_k[cell_id] + 1.e-30);
-      particle_velocity_seen[1] -= 2 * tmp * face_norm[2] * (-pow(ustar, 2)) /
-                                   (2 / 3 * cvar_k[cell_id] + 1.e-30);
-      particle_velocity_seen[2] -= 2 * tmp * face_norm[2];
+
+      particle_velocity_seen[0] -= tmp * face_norm[2] * (-pow(ustar, 2)) /
+                                   (2. / 3. * cvar_k[cell_id] + 1.e-30);
+      particle_velocity_seen[1] -= tmp * face_norm[2] * (-pow(ustar, 2)) /
+                                   (2. / 3. * cvar_k[cell_id] + 1.e-30);
+      particle_velocity_seen[2] -= tmp * face_norm[2];
 
     }
 
