@@ -205,7 +205,6 @@ cs_rad_transfer_wall_flux(int         nvar,
 
   for (cs_lnum_t ifac = 0; ifac < n_b_faces; ifac++) {
 
-    bft_printf("hfconp =%f\n", hfconp[ifac]);
     cs_real_t qconv = 0.0;
     cs_real_t qrayt = 0.0;
 
