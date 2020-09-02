@@ -1209,6 +1209,9 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
   /* Pointer to the radiative incident flux field */
   cs_field_t *f_qincid = cs_field_by_name("rad_incident_flux");
 
+  /* Pointer to the wall emissivity field */
+  cs_field_t *f_eps = cs_field_by_name("emissivity");
+
   /* Wall temperature */
   cs_field_t *f_tempb = CS_F_(t_b);
   cs_real_t xptk;
@@ -1255,6 +1258,32 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
           || bc_type[face_id] == CS_FREE_INLET
           || bc_type[face_id] == CS_SYMMETRY) {
 
+        /* Legacy open boundary conditions if (eps < 0)
+           TODO use boundary definitions from cs_boundary.h instead
+           of this temporary hack. */
+
+        if (f_eps->val[face_id] < 0.5) {
+
+          cs_real_t pimp;
+          /* Symmetry: pseudo-reflecting boundary conditions
+           * true symmetry would require coupling directions */
+          if (bc_type[face_id] == CS_SYMMETRY)
+            pimp  = qpatmp * onedpi;
+          /* Inlet/Outlet face: entering intensity fixed to zero
+           * (warning: the treatment is different from than of P-1 model) */
+          else
+            pimp  = cs_math_epzero;
+
+          cs_boundary_conditions_set_dirichlet_scalar(&coefap[face_id],
+                                                      &cofafp[face_id],
+                                                      &coefbp[face_id],
+                                                      &cofbfp[face_id],
+                                                      pimp,
+                                                      hint,
+                                                      cs_math_infinite_r);
+          continue;
+        }
+
         /* Inlet/Outlet face: entering intensity fixed to zero flux
          * which mimics an infinite extrusion
          * (warning: the treatment is different from than of P-1 model)
@@ -1271,8 +1300,7 @@ cs_rad_transfer_bc_coeffs(int        bc_type[],
           cs_real_t normal[3];
           cs_math_3_normalise(b_face_normal[face_id], normal);
           cs_real_t vs_dot_n = cs_math_3_dot_product(vect_s, normal);
-          /* The two vectors are colinear */
-          if (CS_ABS(vs_dot_n) > 0.99)
+          if (CS_ABS(vs_dot_n) < cs_math_epzero) /* entering */
             neumann = false;
 
           /* Top of the domain */

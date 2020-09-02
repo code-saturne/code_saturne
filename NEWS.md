@@ -1,3 +1,10 @@
+Release 6.1.3 (unreleased)
+--------------------------
+
+Bug fixes:
+
+- Fix non-wall radiative conditions for combustion (non-atmospheric) cases.
+
 Release 6.1.2 (August 28 2020)
 ------------------------------
 
