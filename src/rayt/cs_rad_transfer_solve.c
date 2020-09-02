@@ -475,7 +475,8 @@ _cs_rad_transfer_sol(int                        gg_id,
       vect_s[2] = - muzero; /* cos(za) */
 
       if (rt_params->verbosity > 0)
-        bft_printf("     Solar direction [%f, %f, %f] \n", vect_s[0], vect_s[1], vect_s[2]);
+        bft_printf("     Solar direction [%f, %f, %f] \n",
+                   vect_s[0], vect_s[1], vect_s[2]);
 
     }
   }
@@ -496,7 +497,7 @@ _cs_rad_transfer_sol(int                        gg_id,
 
   cs_var_cal_opt_t vcopt = cs_parameters_var_cal_opt_default();
 
-  vcopt.verbosity =  rt_params->verbosity;
+  vcopt.verbosity =  rt_params->verbosity - 1;
   vcopt.iconv  =  1; /* Pure convection */
   vcopt.istat  = -1;
   vcopt.ndircl = 1;/* There are Dirichlet BCs */
@@ -1421,7 +1422,8 @@ cs_rad_transfer_solve(int               bc_type[],
       if (rt_params->verbosity > 0 && ckumax <= cs_math_epzero)
         cs_log_printf
           (CS_LOG_DEFAULT,
-           _("      Atmospheric radiative transfer with transparent medium %s for band %d\n"),
+           _("      Atmospheric radiative transfer with transparent "
+             "medium %s for band %d\n"),
            _("for upward directions."), _(gg_id));
 
       cs_real_t ckdmax = 0.0;
@@ -1434,7 +1436,8 @@ cs_rad_transfer_solve(int               bc_type[],
       if (rt_params->verbosity > 0 && ckdmax <= cs_math_epzero)
         cs_log_printf
           (CS_LOG_DEFAULT,
-           _("      Atmospheric radiative transfer with transparent medium %s for band %d\n"),
+           _("      Atmospheric radiative transfer with transparent "
+             "medium %s for band %d\n"),
            _("for downward directions."), _(gg_id));
 
       if (ckumax <= cs_math_epzero && ckdmax <= cs_math_epzero)
@@ -2059,9 +2062,7 @@ cs_rad_transfer_solve(int               bc_type[],
   }
 
   if (rt_params->verbosity > 0)
-    cs_log_printf
-      (CS_LOG_DEFAULT,
-       _("-------------------------------------------------------------------\n"));
+    cs_log_separator(CS_LOG_DEFAULT);
 
   /* Free memory */
 
