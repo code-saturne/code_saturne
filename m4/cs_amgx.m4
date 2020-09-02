@@ -28,7 +28,6 @@ dnl-----------------------------------------------------------------------------
 AC_DEFUN([CS_AC_TEST_AMGX], [
 
 cs_have_amgx=no
-amgx_prefix=""
 cs_abs_srcdir=`cd $srcdir && pwd`
 
 AC_ARG_WITH(amgx,
@@ -147,12 +146,12 @@ if test "x$with_amgx" != "xno" ; then
 
 fi
 
+AM_CONDITIONAL(HAVE_AMGX, test x$cs_have_amgx = xyes)
+
 AC_SUBST(cs_have_amgx)
-AC_SUBST(amgx_prefix, [${amgx_prefix}])
 AC_SUBST(AMGX_CPPFLAGS)
 AC_SUBST(AMGX_LDFLAGS)
 AC_SUBST(AMGX_LIBS)
 AC_SUBST(AMGXRUNPATH)
-
 
 ])dnl

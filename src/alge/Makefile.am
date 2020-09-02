@@ -63,6 +63,13 @@ if HAVE_MUMPS
   $(MUMPS_CPPFLAGS) $(MPI_CPPFLAGS)
 endif
 
+libcsalge_amgx_la_CPPFLAGS =\
+-I$(top_srcdir)/src/base \
+-I$(top_srcdir)/src/bft \
+-I$(top_srcdir)/src/fvm \
+-I$(top_srcdir)/src/mesh \
+$(AMGX_CPPFLAGS) $(MPI_CPPFLAGS)
+
 # Public header files (to be installed)
 
 pkginclude_HEADERS = \
@@ -102,6 +109,10 @@ endif
 
 if HAVE_MUMPS
 pkginclude_HEADERS += cs_sles_mumps.h
+endif
+
+if HAVE_AMGX
+pkginclude_HEADERS += cs_sles_amgx.h
 endif
 
 # Library source files
@@ -157,6 +168,12 @@ libcsalge_mumps_la_SOURCES = cs_sles_mumps.c
 libcsalge_mumps_la_LIBADD = \
 $(MUMPS_LDFLAGS) $(MUMPSRUNPATH) $(MUMPS_LIBS)
 libcsalge_mumps_la_LDFLAGS = -no-undefined
+endif
+
+if HAVE_AMGX
+noinst_LTLIBRARIES += libcsalge_amgx.la
+libcsalge_la_LIBADD += libcsalge_amgx.la
+libcsalge_amgx_la_SOURCES = cs_sles_amgx.c
 endif
 
 clean-local:
