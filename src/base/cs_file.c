@@ -3885,6 +3885,11 @@ cs_file_remove(const char  *path)
   if (stat(path, &s) == 0) {
     if (S_ISREG(s.st_mode) != 0) {
       retval = unlink(path);
+      if (retval != 0) {
+        /* Some error types are accepted */
+        if (errno == ENOENT)
+          retval = 0;
+      }
     }
     else if (S_ISDIR(s.st_mode) != 0) {
       retval = rmdir(path);
@@ -3906,6 +3911,9 @@ cs_file_remove(const char  *path)
   if ((f = fopen(path, "w")) != NULL) {
     fclose(f);
     retval = remove(f);
+    /* Some error types are accepted */
+    if (errno == ENOENT)
+      retval = 0;
   }
 
 #endif
