@@ -140,27 +140,37 @@ _cut32(uint8_t *out, int val)
 cs_stl_mesh_t *
 cs_stl_mesh_add(const char  *name)
 {
-  _stl_meshes.n_meshes++;
-  BFT_REALLOC(_stl_meshes.mesh_list, _stl_meshes.n_meshes, cs_stl_mesh_t *);
+  /* First check if it already exists */
+  cs_stl_mesh_t  *stl_mesh = cs_stl_mesh_get_by_name(name);
 
-  cs_stl_mesh_t *stl_mesh = NULL;
-  BFT_MALLOC(stl_mesh, 1, cs_stl_mesh_t);
-
-  if (name != NULL) {
-    strncpy(stl_mesh->name, name, 9);
-    stl_mesh->name[9] = '\0';
-  }
-  else
+  if (stl_mesh != NULL) {
+    // The STL mesh already exists
     bft_error(__FILE__, __LINE__, 0,
-              _("Error creating stl mesh: no name given."));
+              _("Error creating stl mesh: mesh %s already exists."),name);
 
-  memset(stl_mesh->header, 0, 80);
-  stl_mesh->n_faces = 0;
-  stl_mesh->normals = NULL;
-  stl_mesh->coords = NULL;
-  stl_mesh->ext_mesh = NULL;
+  } else {
+    // If it does not exists create it
+    _stl_meshes.n_meshes++;
+    BFT_REALLOC(_stl_meshes.mesh_list, _stl_meshes.n_meshes, cs_stl_mesh_t *);
 
-  _stl_meshes.mesh_list[_stl_meshes.n_meshes - 1] = stl_mesh;
+    BFT_MALLOC(stl_mesh, 1, cs_stl_mesh_t);
+
+    if (name != NULL) {
+      strncpy(stl_mesh->name, name, 9);
+      stl_mesh->name[9] = '\0';
+    }
+    else
+      bft_error(__FILE__, __LINE__, 0,
+                _("Error creating stl mesh: no name given."));
+
+    memset(stl_mesh->header, 0, 80);
+    stl_mesh->n_faces = 0;
+    stl_mesh->normals = NULL;
+    stl_mesh->coords = NULL;
+    stl_mesh->ext_mesh = NULL;
+
+    _stl_meshes.mesh_list[_stl_meshes.n_meshes - 1] = stl_mesh;
+  }
 
   return stl_mesh;
 }
