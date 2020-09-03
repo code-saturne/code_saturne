@@ -47,6 +47,7 @@
 #include "bft_printf.h"
 
 #include "cs_field.h"
+#include "cs_field_default.h"
 #include "cs_gradient.h"
 #include "cs_gradient_perio.h"
 #include "cs_halo.h"
@@ -560,14 +561,15 @@ cs_field_gradient_scalar(const cs_field_t          *f,
   if (f_parent_id > -1)
     parent_f = cs_field_by_id(f_parent_id);
 
-  static int key_cal_opt_id = -1;
-  if (key_cal_opt_id < 0)
-    key_cal_opt_id = cs_field_key_id("var_cal_opt");
-
   /* Get the calculation option from the field */
-  cs_var_cal_opt_t var_cal_opt;
-  cs_field_get_key_struct(parent_f, key_cal_opt_id, &var_cal_opt);
-  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
+  const cs_equation_param_t
+    *eqp = cs_field_get_equation_param_const(parent_f);
+
+  int imrgra = cs_glob_space_disc->imrgra;
+  if (eqp != NULL)
+    imrgra = eqp->imrgra;
+
+  cs_gradient_type_by_imrgra(imrgra,
                              &gradient_type,
                              &halo_type);
 
@@ -576,8 +578,8 @@ cs_field_gradient_scalar(const cs_field_t          *f,
   cs_real_t *c_weight = NULL;
   cs_internal_coupling_t  *cpl = NULL;
 
-  if (parent_f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
-    if (var_cal_opt.idiff > 0) {
+  if (parent_f->type & CS_FIELD_VARIABLE && eqp->iwgrec == 1) {
+    if (eqp->idiff > 0) {
       /* Weighted gradient coefficients */
       int key_id = cs_field_key_id("gradient_weighting_id");
       int diff_id = cs_field_get_key_int(parent_f, key_id);
@@ -590,7 +592,7 @@ cs_field_gradient_scalar(const cs_field_t          *f,
   }
 
   if (parent_f->type & CS_FIELD_VARIABLE) {
-    if (var_cal_opt.idiff > 0) {
+    if (eqp->idiff > 0) {
       /* Internal coupling structure */
       int key_id = cs_field_key_id_try("coupling_entity");
       if (key_id > -1) {
@@ -610,15 +612,15 @@ cs_field_gradient_scalar(const cs_field_t          *f,
                      halo_type,
                      inc,
                      recompute_cocg,
-                     var_cal_opt.nswrgr,
+                     eqp->nswrgr,
                      tr_dim,
                      0, /* hyd_p_flag */
                      w_stride,
-                     var_cal_opt.verbosity,
-                     var_cal_opt.imligr,
-                     var_cal_opt.epsrgr,
-                     var_cal_opt.extrag,
-                     var_cal_opt.climgr,
+                     eqp->verbosity,
+                     eqp->imligr,
+                     eqp->epsrgr,
+                     eqp->extrag,
+                     eqp->climgr,
                      NULL, /* f_ext */
                      f->bc_coeffs->a,
                      f->bc_coeffs->b,
@@ -665,14 +667,15 @@ cs_field_gradient_potential(const cs_field_t          *f,
   if (f_parent_id > -1)
     parent_f = cs_field_by_id(f_parent_id);
 
-  static int key_cal_opt_id = -1;
-  if (key_cal_opt_id < 0)
-    key_cal_opt_id = cs_field_key_id("var_cal_opt");
-
   /* Get the calculation option from the field */
-  cs_var_cal_opt_t var_cal_opt;
-  cs_field_get_key_struct(parent_f, key_cal_opt_id, &var_cal_opt);
-  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
+  const cs_equation_param_t
+    *eqp = cs_field_get_equation_param_const(parent_f);
+
+  int imrgra = cs_glob_space_disc->imrgra;
+  if (eqp != NULL)
+    imrgra = eqp->imrgra;
+
+  cs_gradient_type_by_imrgra(imrgra,
                              &gradient_type,
                              &halo_type);
 
@@ -682,8 +685,8 @@ cs_field_gradient_potential(const cs_field_t          *f,
   cs_real_t *c_weight = NULL;
   cs_internal_coupling_t  *cpl = NULL;
 
-  if (parent_f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
-    if (var_cal_opt.idiff > 0) {
+  if (parent_f->type & CS_FIELD_VARIABLE && eqp->iwgrec == 1) {
+    if (eqp->idiff > 0) {
       int key_id = cs_field_key_id("gradient_weighting_id");
       int diff_id = cs_field_get_key_int(parent_f, key_id);
       if (diff_id > -1) {
@@ -695,7 +698,7 @@ cs_field_gradient_potential(const cs_field_t          *f,
   }
 
   if (parent_f->type & CS_FIELD_VARIABLE) {
-    if (var_cal_opt.idiff > 0) {
+    if (eqp->idiff > 0) {
       /* Internal coupling structure */
       int key_id = cs_field_key_id_try("coupling_entity");
       if (key_id > -1) {
@@ -712,15 +715,15 @@ cs_field_gradient_potential(const cs_field_t          *f,
                      halo_type,
                      inc,
                      recompute_cocg,
-                     var_cal_opt.nswrgr,
+                     eqp->nswrgr,
                      0, /* tr_dim */
                      hyd_p_flag,
                      w_stride,
-                     var_cal_opt.verbosity,
-                     var_cal_opt.imligr,
-                     var_cal_opt.epsrgr,
-                     var_cal_opt.extrag,
-                     var_cal_opt.climgr,
+                     eqp->verbosity,
+                     eqp->imligr,
+                     eqp->epsrgr,
+                     eqp->extrag,
+                     eqp->climgr,
                      f_ext,
                      f->bc_coeffs->a,
                      f->bc_coeffs->b,
@@ -751,22 +754,22 @@ cs_field_gradient_vector(const cs_field_t          *f,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  static int key_cal_opt_id = -1;
-  if (key_cal_opt_id < 0)
-    key_cal_opt_id = cs_field_key_id("var_cal_opt");
-
   /* Get the calculation option from the field */
-  cs_var_cal_opt_t var_cal_opt;
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
+  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
+
+  int imrgra = cs_glob_space_disc->imrgra;
+  if (eqp != NULL)
+    imrgra = eqp->imrgra;
+
+  cs_gradient_type_by_imrgra(imrgra,
                              &gradient_type,
                              &halo_type);
 
   cs_real_t *c_weight = NULL;
   cs_internal_coupling_t  *cpl = NULL;
 
-  if (f->type & CS_FIELD_VARIABLE && var_cal_opt.iwgrec == 1) {
-    if (var_cal_opt.idiff > 0) {
+  if (f->type & CS_FIELD_VARIABLE && eqp->iwgrec == 1) {
+    if (eqp->idiff > 0) {
       /* Weighted gradient coefficients */
       int key_id = cs_field_key_id("gradient_weighting_id");
       int diff_id = cs_field_get_key_int(f, key_id);
@@ -778,7 +781,7 @@ cs_field_gradient_vector(const cs_field_t          *f,
   }
 
   if (f->type & CS_FIELD_VARIABLE) {
-    if (var_cal_opt.idiff > 0) {
+    if (eqp->idiff > 0) {
       int key_id = cs_field_key_id_try("coupling_entity");
       if (key_id > -1) {
         int coupl_id = cs_field_get_key_int(f, key_id);
@@ -795,11 +798,11 @@ cs_field_gradient_vector(const cs_field_t          *f,
                      gradient_type,
                      halo_type,
                      inc,
-                     var_cal_opt.nswrgr,
-                     var_cal_opt.verbosity,
-                     var_cal_opt.imligr,
-                     var_cal_opt.epsrgr,
-                     var_cal_opt.climgr,
+                     eqp->nswrgr,
+                     eqp->verbosity,
+                     eqp->imligr,
+                     eqp->epsrgr,
+                     eqp->climgr,
                      (const cs_real_3_t *)(f->bc_coeffs->a),
                      (const cs_real_33_t *)(f->bc_coeffs->b),
                      var,
@@ -829,14 +832,14 @@ cs_field_gradient_tensor(const cs_field_t          *f,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  static int key_cal_opt_id = -1;
-  if (key_cal_opt_id < 0)
-    key_cal_opt_id = cs_field_key_id("var_cal_opt");
-
   /* Get the calculation option from the field */
-  cs_var_cal_opt_t var_cal_opt;
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
-  cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
+  const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
+
+  int imrgra = cs_glob_space_disc->imrgra;
+  if (eqp != NULL)
+    imrgra = eqp->imrgra;
+
+  cs_gradient_type_by_imrgra(imrgra,
                              &gradient_type,
                              &halo_type);
 
@@ -847,11 +850,11 @@ cs_field_gradient_tensor(const cs_field_t          *f,
                      gradient_type,
                      halo_type,
                      inc,
-                     var_cal_opt.nswrgr,
-                     var_cal_opt.verbosity,
-                     var_cal_opt.imligr,
-                     var_cal_opt.epsrgr,
-                     var_cal_opt.climgr,
+                     eqp->nswrgr,
+                     eqp->verbosity,
+                     eqp->imligr,
+                     eqp->epsrgr,
+                     eqp->climgr,
                      (const cs_real_6_t *)(f->bc_coeffs->a),
                      (const cs_real_66_t *)(f->bc_coeffs->b),
                      var,
