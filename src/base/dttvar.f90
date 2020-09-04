@@ -473,7 +473,7 @@ if (idtvar.ge.0) then
     endif
 
     !     En compressible, on prend obligatoirement
-    !     en compte la limitation associee à la masse volumique.
+    !     en compte la limitation associee a la masse volumique.
 
     if (icoucf.eq.1) then
       do iel = 1, ncel
@@ -744,8 +744,8 @@ if (idtvar.ge.0) then
 
     cfmax  = -grand
     cfmin  =  grand
-    icfmax(1) = 0
-    icfmin(1) = 0
+    icfmax(1) = 1
+    icfmin(1) = 1
 
     do iel = 1, ncel
       cpro_four(iel) = w1(iel)*dt(iel)
