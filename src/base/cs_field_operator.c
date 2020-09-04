@@ -557,8 +557,12 @@ cs_field_gradient_scalar(const cs_field_t          *f,
     key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
   /* Get the calculation option from the field */
-  cs_var_cal_opt_t var_cal_opt;
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  cs_var_cal_opt_t var_cal_opt = cs_parameters_var_cal_opt_default();
+  if (f->type & CS_FIELD_VARIABLE)
+    cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  else
+    var_cal_opt.imrgra = cs_glob_space_disc->imrgra;
+
   cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
                              &gradient_type,
                              &halo_type);
@@ -654,7 +658,12 @@ cs_field_gradient_potential(const cs_field_t          *f,
     key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
   /* Get the calculation option from the field */
-  cs_var_cal_opt_t var_cal_opt;
+  cs_var_cal_opt_t var_cal_opt = cs_parameters_var_cal_opt_default();
+  if (f->type & CS_FIELD_VARIABLE)
+    cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  else
+    var_cal_opt.imrgra = cs_glob_space_disc->imrgra;
+
   cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
   cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
                              &gradient_type,
@@ -740,8 +749,12 @@ cs_field_gradient_vector(const cs_field_t          *f,
     key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
   /* Get the calculation option from the field */
-  cs_var_cal_opt_t var_cal_opt;
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  cs_var_cal_opt_t var_cal_opt = cs_parameters_var_cal_opt_default();
+  if (f->type & CS_FIELD_VARIABLE)
+    cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  else
+    var_cal_opt.imrgra = cs_glob_space_disc->imrgra;
+
   cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
                              &gradient_type,
                              &halo_type);
@@ -818,8 +831,12 @@ cs_field_gradient_tensor(const cs_field_t          *f,
     key_cal_opt_id = cs_field_key_id("var_cal_opt");
 
   /* Get the calculation option from the field */
-  cs_var_cal_opt_t var_cal_opt;
-  cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  cs_var_cal_opt_t var_cal_opt = cs_parameters_var_cal_opt_default();
+  if (f->type & CS_FIELD_VARIABLE)
+    cs_field_get_key_struct(f, key_cal_opt_id, &var_cal_opt);
+  else
+    var_cal_opt.imrgra = cs_glob_space_disc->imrgra;
+
   cs_gradient_type_by_imrgra(var_cal_opt.imrgra,
                              &gradient_type,
                              &halo_type);
