@@ -553,21 +553,27 @@ cs_field_gradient_scalar(const cs_field_t          *f,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  /* Has field a parent (variable) field */
-  int f_parent_id = cs_field_get_key_int(f, cs_field_key_id("parent_field_id"));
+  /* Does the field have a parent (variable) ?
+     Field is its own parent if not parent is specified */
 
-  /* Parent field is itself or parent field if existing */
   const cs_field_t *parent_f = f;
+
+  const int f_parent_id
+    = cs_field_get_key_int(f, cs_field_key_id("parent_field_id"));
   if (f_parent_id > -1)
     parent_f = cs_field_by_id(f_parent_id);
+
+  int imrgra = cs_glob_space_disc->imrgra;
+  cs_var_cal_opt_t eqp_default = cs_parameters_var_cal_opt_default();
 
   /* Get the calculation option from the field */
   const cs_equation_param_t
     *eqp = cs_field_get_equation_param_const(parent_f);
 
-  int imrgra = cs_glob_space_disc->imrgra;
   if (eqp != NULL)
     imrgra = eqp->imrgra;
+  else
+    eqp = &eqp_default;
 
   cs_gradient_type_by_imrgra(imrgra,
                              &gradient_type,
@@ -578,8 +584,9 @@ cs_field_gradient_scalar(const cs_field_t          *f,
   cs_real_t *c_weight = NULL;
   cs_internal_coupling_t  *cpl = NULL;
 
-  if (parent_f->type & CS_FIELD_VARIABLE && eqp->iwgrec == 1) {
-    if (eqp->idiff > 0) {
+  if (parent_f->type & CS_FIELD_VARIABLE && eqp->idiff > 0) {
+
+    if (eqp->iwgrec == 1) {
       /* Weighted gradient coefficients */
       int key_id = cs_field_key_id("gradient_weighting_id");
       int diff_id = cs_field_get_key_int(parent_f, key_id);
@@ -589,18 +596,15 @@ cs_field_gradient_scalar(const cs_field_t          *f,
         w_stride = f_weight->dim;
       }
     }
-  }
 
-  if (parent_f->type & CS_FIELD_VARIABLE) {
-    if (eqp->idiff > 0) {
-      /* Internal coupling structure */
-      int key_id = cs_field_key_id_try("coupling_entity");
-      if (key_id > -1) {
-        int coupl_id = cs_field_get_key_int(parent_f, key_id);
-        if (coupl_id > -1)
-          cpl = cs_internal_coupling_by_id(coupl_id);
-      }
+    /* Internal coupling structure */
+    int key_id = cs_field_key_id_try("coupling_entity");
+    if (key_id > -1) {
+      int coupl_id = cs_field_get_key_int(parent_f, key_id);
+      if (coupl_id > -1)
+        cpl = cs_internal_coupling_by_id(coupl_id);
     }
+
   }
 
   cs_real_t *var = (use_previous_t) ? f->val_pre : f->val;
@@ -659,21 +663,27 @@ cs_field_gradient_potential(const cs_field_t          *f,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
-  /* Has field a parent (variable) field */
-  int f_parent_id = cs_field_get_key_int(f, cs_field_key_id("parent_field_id"));
+  /* Does the field have a parent (variable) ?
+     Field is its own parent if not parent is specified */
 
-  /* Parent field is itself or parent field if existing */
   const cs_field_t *parent_f = f;
+
+  const int f_parent_id
+    = cs_field_get_key_int(f, cs_field_key_id("parent_field_id"));
   if (f_parent_id > -1)
     parent_f = cs_field_by_id(f_parent_id);
+
+  int imrgra = cs_glob_space_disc->imrgra;
+  cs_var_cal_opt_t eqp_default = cs_parameters_var_cal_opt_default();
 
   /* Get the calculation option from the field */
   const cs_equation_param_t
     *eqp = cs_field_get_equation_param_const(parent_f);
 
-  int imrgra = cs_glob_space_disc->imrgra;
   if (eqp != NULL)
     imrgra = eqp->imrgra;
+  else
+    eqp = &eqp_default;
 
   cs_gradient_type_by_imrgra(imrgra,
                              &gradient_type,
@@ -685,8 +695,9 @@ cs_field_gradient_potential(const cs_field_t          *f,
   cs_real_t *c_weight = NULL;
   cs_internal_coupling_t  *cpl = NULL;
 
-  if (parent_f->type & CS_FIELD_VARIABLE && eqp->iwgrec == 1) {
-    if (eqp->idiff > 0) {
+  if (parent_f->type & CS_FIELD_VARIABLE && eqp->idiff > 0) {
+
+    if (eqp->iwgrec == 1) {
       int key_id = cs_field_key_id("gradient_weighting_id");
       int diff_id = cs_field_get_key_int(parent_f, key_id);
       if (diff_id > -1) {
@@ -695,20 +706,16 @@ cs_field_gradient_potential(const cs_field_t          *f,
         w_stride = f_weight->dim;
       }
     }
-  }
 
-  if (parent_f->type & CS_FIELD_VARIABLE) {
-    if (eqp->idiff > 0) {
-      /* Internal coupling structure */
-      int key_id = cs_field_key_id_try("coupling_entity");
-      if (key_id > -1) {
-        int coupl_id = cs_field_get_key_int(parent_f, key_id);
-        if (coupl_id > -1)
-          cpl = cs_internal_coupling_by_id(coupl_id);
-      }
+    /* Internal coupling structure */
+    int key_id = cs_field_key_id_try("coupling_entity");
+    if (key_id > -1) {
+      int coupl_id = cs_field_get_key_int(parent_f, key_id);
+      if (coupl_id > -1)
+        cpl = cs_internal_coupling_by_id(coupl_id);
     }
-  }
 
+  }
 
   cs_gradient_scalar(f->name,
                      gradient_type,
@@ -754,12 +761,16 @@ cs_field_gradient_vector(const cs_field_t          *f,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
+  int imrgra = cs_glob_space_disc->imrgra;
+  cs_var_cal_opt_t eqp_default = cs_parameters_var_cal_opt_default();
+
   /* Get the calculation option from the field */
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
 
-  int imrgra = cs_glob_space_disc->imrgra;
   if (eqp != NULL)
     imrgra = eqp->imrgra;
+  else
+    eqp = &eqp_default;
 
   cs_gradient_type_by_imrgra(imrgra,
                              &gradient_type,
@@ -768,8 +779,9 @@ cs_field_gradient_vector(const cs_field_t          *f,
   cs_real_t *c_weight = NULL;
   cs_internal_coupling_t  *cpl = NULL;
 
-  if (f->type & CS_FIELD_VARIABLE && eqp->iwgrec == 1) {
-    if (eqp->idiff > 0) {
+  if (f->type & CS_FIELD_VARIABLE && eqp->idiff > 0) {
+
+    if (eqp->iwgrec == 1) {
       /* Weighted gradient coefficients */
       int key_id = cs_field_key_id("gradient_weighting_id");
       int diff_id = cs_field_get_key_int(f, key_id);
@@ -778,17 +790,14 @@ cs_field_gradient_vector(const cs_field_t          *f,
         c_weight = f_weight->val;
       }
     }
-  }
 
-  if (f->type & CS_FIELD_VARIABLE) {
-    if (eqp->idiff > 0) {
-      int key_id = cs_field_key_id_try("coupling_entity");
-      if (key_id > -1) {
-        int coupl_id = cs_field_get_key_int(f, key_id);
-        if (coupl_id > -1)
-          cpl = cs_internal_coupling_by_id(coupl_id);
-      }
+    int key_id = cs_field_key_id_try("coupling_entity");
+    if (key_id > -1) {
+      int coupl_id = cs_field_get_key_int(f, key_id);
+      if (coupl_id > -1)
+        cpl = cs_internal_coupling_by_id(coupl_id);
     }
+
   }
 
   cs_real_3_t *var = (use_previous_t) ? (cs_real_3_t *)(f->val_pre)
@@ -832,12 +841,16 @@ cs_field_gradient_tensor(const cs_field_t          *f,
   cs_halo_type_t halo_type = CS_HALO_STANDARD;
   cs_gradient_type_t gradient_type = CS_GRADIENT_GREEN_ITER;
 
+  int imrgra = cs_glob_space_disc->imrgra;
+  cs_var_cal_opt_t eqp_default = cs_parameters_var_cal_opt_default();
+
   /* Get the calculation option from the field */
   const cs_equation_param_t *eqp = cs_field_get_equation_param_const(f);
 
-  int imrgra = cs_glob_space_disc->imrgra;
   if (eqp != NULL)
     imrgra = eqp->imrgra;
+  else
+    eqp = &eqp_default;
 
   cs_gradient_type_by_imrgra(imrgra,
                              &gradient_type,
