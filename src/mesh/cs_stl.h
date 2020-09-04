@@ -57,8 +57,6 @@ typedef struct {
 
   cs_lnum_t     n_faces;       /*!< Number of triangles */
 
-  float        *normals;       /*!< Array of normals to the faces
-                                *  [n_faces][3] */
   float        *coords;        /*!< Array of face vertex coordinates
                                 *  vtx_coord[n_vertices][3] */
 
@@ -128,11 +126,13 @@ cs_stl_mesh_destroy_all(void);
  * parameters:
  *   stl_mesh  <-- pointer to the associated STL mesh structure
  *   path      <-- path to the STL file
+ *   matrix    <-- transformation matrix
  *----------------------------------------------------------------------------*/
 
 void
 cs_stl_file_read(cs_stl_mesh_t  *stl_mesh,
-                 const char     *path);
+                 const char     *path,
+                 double         matrix[3][4]);
 
 /*----------------------------------------------------------------------------
  * Write a binary STL file according to a given STL mesh structure.
